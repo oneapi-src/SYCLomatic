@@ -11,9 +11,9 @@
 
 __device__ float4 fun() {
   float4 a, b, c;
-  // CHECK: sycl::fma(a.x(), b.x(), c.x());
+  // CHECK: sycl::fma(a[0], b[0], c[0]);
   __fmaf_rn(a.x, b.x, c.x);
-  // CHECK: return float4(sycl::fma(a.x(), b.x(), c.x()), sycl::fma(a.y(), b.y(), c.y()), sycl::fma(a.z(), b.z(), c.z()), sycl::fma(a.w(), b.w(), c.w()));
+  // CHECK: return mfloat4(sycl::fma(a[0], b[0], c[0]), sycl::fma(a[1], b[1], c[1]), sycl::fma(a[2], b[2], c[2]), sycl::fma(a[3], b[3], c[3]));
   return make_float4(__fmaf_rd(a.x, b.x, c.x), __fmaf_rz(a.y, b.y, c.y), __fmaf_rn(a.z, b.z, c.z), __fmaf_rn(a.w, b.w, c.w));
 }
 

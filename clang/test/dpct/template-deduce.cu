@@ -77,39 +77,39 @@ template<class T1, class T2, size_t S> void template_host() {
 
 int main() {
 
-    // CHECK:  sycl::local_accessor<TemplateClass<sycl::float4, int>, 1> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::local_accessor<TemplateClass<sycl::mfloat4, int>, 1> a_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
     // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
-    // CHECK-NEXT:      template_kernel1<sycl::float4, int>(a_acc_ct1.get_pointer());
+    // CHECK-NEXT:      template_kernel1<sycl::mfloat4, int>(a_acc_ct1.get_pointer());
     // CHECK-NEXT:    });
     template_kernel1<float4, int><<<1,1>>>();
 
-    // CHECK:  sycl::local_accessor<TemplateClass<sycl::float2, int>, 1> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::local_accessor<TemplateClass<sycl::mfloat2, int>, 1> a_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
     // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
-    // CHECK-NEXT:      template_kernel2<sycl::float2>(a_acc_ct1.get_pointer());
+    // CHECK-NEXT:      template_kernel2<sycl::mfloat2>(a_acc_ct1.get_pointer());
     // CHECK-NEXT:    });
     template_kernel2<float2><<<1,1>>>();
 
-    // CHECK:  sycl::local_accessor<TemplateClass<sycl::float2, sycl::float2>, 1> a_acc_ct1(sycl::range<1>(3), cgh);
+    // CHECK:  sycl::local_accessor<TemplateClass<sycl::mfloat2, sycl::mfloat2>, 1> a_acc_ct1(sycl::range<1>(3), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
     // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
-    // CHECK-NEXT:      template_kernel3<sycl::float2, 3>(a_acc_ct1.get_pointer());
+    // CHECK-NEXT:      template_kernel3<sycl::mfloat2, 3>(a_acc_ct1.get_pointer());
     // CHECK-NEXT:    });
     template_kernel3<float2, 3><<<1,1>>>();
 
-    // CHECK:  sycl::local_accessor<TemplateClass<sycl::float2, float>, 1> a_acc_ct1(sycl::range<1>(3), cgh);
+    // CHECK:  sycl::local_accessor<TemplateClass<sycl::mfloat2, float>, 1> a_acc_ct1(sycl::range<1>(3), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
     // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
-    // CHECK-NEXT:      template_kernel4<sycl::float2>(a_acc_ct1.get_pointer());
+    // CHECK-NEXT:      template_kernel4<sycl::mfloat2>(a_acc_ct1.get_pointer());
     // CHECK-NEXT:    });
     template_kernel4<float2><<<1,1>>>();
 }

@@ -183,8 +183,8 @@ int main(int argc, char **argv) {
   a = sizeof(h);
   a = sizeof h;
 
-  //CHECK:sycl::half2 h2;
-  //CHECK-NEXT:a = sizeof(sycl::half2);
+  //CHECK:sycl::mhalf2 h2;
+  //CHECK-NEXT:a = sizeof(sycl::mhalf2);
   //CHECK-NEXT:a = sizeof(h2);
   //CHECK-NEXT:a = sizeof h2;
   half2 h2;
@@ -201,8 +201,8 @@ int main(int argc, char **argv) {
   a = sizeof(blasStatus);
   a = sizeof blasStatus;
 
-  //CHECK:sycl::float2 complex;
-  //CHECK-NEXT:a = sizeof(sycl::float2);
+  //CHECK:sycl::mfloat2 complex;
+  //CHECK-NEXT:a = sizeof(sycl::mfloat2);
   //CHECK-NEXT:a = sizeof(complex);
   //CHECK-NEXT:a = sizeof complex;
   cuComplex complex;
@@ -210,8 +210,8 @@ int main(int argc, char **argv) {
   a = sizeof(complex);
   a = sizeof complex;
 
-  //CHECK:sycl::double2 doubleComplex;
-  //CHECK-NEXT:a = sizeof(sycl::double2);
+  //CHECK:sycl::mdouble2 doubleComplex;
+  //CHECK-NEXT:a = sizeof(sycl::mdouble2);
   //CHECK-NEXT:a = sizeof(doubleComplex);
   //CHECK-NEXT:a = sizeof doubleComplex;
   cuDoubleComplex doubleComplex;
@@ -431,8 +431,8 @@ template <typename T> struct S {};
 
 // CHECK: template <> struct S<dpct::queue_ptr> {};
 // CHECK-NEXT: template <> struct S<sycl::queue> {};
-// CHECK-NEXT: template <> struct S<sycl::float2> {};
-// CHECK-NEXT: template <> struct S<sycl::float4> {};
+// CHECK-NEXT: template <> struct S<sycl::mfloat2> {};
+// CHECK-NEXT: template <> struct S<sycl::mfloat4> {};
 template <> struct S<cudaStream_t> {};
 template <> struct S<CUstream_st> {};
 template <> struct S<float2> {};
@@ -441,9 +441,9 @@ template <> struct S<float4> {};
 void foobar() {
   // CHECK: S<dpct::queue_ptr> s0;
   S<cudaStream_t> s0;
-  // CHECK: S<sycl::float2> s1;
+  // CHECK: S<sycl::mfloat2> s1;
   S<float2> s1;
-  // CHECK: S<sycl::float4> s2;
+  // CHECK: S<sycl::mfloat4> s2;
   S<float4> s2;
 }
 

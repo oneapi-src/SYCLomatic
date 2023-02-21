@@ -20,8 +20,8 @@ int main(int argc, char **argv) {
   a = sizeof(_h);
   a = sizeof _h;
 
-  //CHECK:sycl::half2 _h2;
-  //CHECK-NEXT:a = sizeof(sycl::half2);
+  //CHECK:sycl::mhalf2 _h2;
+  //CHECK-NEXT:a = sizeof(sycl::mhalf2);
   //CHECK-NEXT:a = sizeof(_h2);
   //CHECK-NEXT:a = sizeof _h2;
   __half2 _h2;

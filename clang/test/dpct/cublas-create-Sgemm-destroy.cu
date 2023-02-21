@@ -175,7 +175,7 @@ int foo2(cudaDataType DT) {
   // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(A);
   // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(B);
   // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(C);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, std::complex<float>(alpha_C.x(), alpha_C.y()), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, std::complex<float>(beta_C.x(), beta_C.y()), C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, std::complex<float>(alpha_C[0], alpha_C[1]), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, std::complex<float>(beta_C[0], beta_C[1]), C_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
   cublasSgemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, &alpha_S, A, CUDA_R_16F, N, B, CUDA_R_16F, N, &beta_S, C, CUDA_R_16F, N);
   cublasSgemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, &alpha_S, A, CUDA_R_16F, N, B, CUDA_R_16F, N, &beta_S, C, CUDA_R_32F, N);

@@ -49,7 +49,7 @@ __global__ void char3_shared_kernel() {
 
 // CHECK: void char3_noshared_kernel() {
 // CHECK: DPCT1083:{{[0-9]+}}: The size of char3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
-// CHECK: int a[sizeof(sycl::char3)];
+// CHECK: int a[sizeof(sycl::mchar3)];
 // CHECK: }
 __global__ void char3_noshared_kernel() {
   int a[sizeof(char3)];
@@ -61,11 +61,11 @@ __global__ void char3_noshared_kernel() {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::char3) * 3), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::mchar3) * 3), cgh);
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::char3)), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::mchar3)), cgh);
 // CHECK-NEXT: sycl::local_accessor<int, 1> c_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK: });
 // CHECK: }
@@ -119,7 +119,7 @@ __global__ void uchar3_shared_kernel() {
 
 // CHECK: void uchar3_noshared_kernel() {
 // CHECK: DPCT1083:{{[0-9]+}}: The size of uchar3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
-// CHECK: int a[sizeof(sycl::uchar3)];
+// CHECK: int a[sizeof(sycl::muchar3)];
 // CHECK: }
 __global__ void uchar3_noshared_kernel() {
   int a[sizeof(uchar3)];
@@ -131,11 +131,11 @@ __global__ void uchar3_noshared_kernel() {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::uchar3) * 3), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::muchar3) * 3), cgh);
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::uchar3)), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::muchar3)), cgh);
 // CHECK-NEXT: sycl::local_accessor<int, 1> c_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK: });
 // CHECK: }
@@ -189,7 +189,7 @@ __global__ void short3_shared_kernel() {
 
 // CHECK: void short3_noshared_kernel() {
 // CHECK: DPCT1083:{{[0-9]+}}: The size of short3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
-// CHECK: int a[sizeof(sycl::short3)];
+// CHECK: int a[sizeof(sycl::mshort3)];
 // CHECK: }
 __global__ void short3_noshared_kernel() {
   int a[sizeof(short3)];
@@ -201,11 +201,11 @@ __global__ void short3_noshared_kernel() {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::short3) * 3), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::mshort3) * 3), cgh);
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::short3)), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::mshort3)), cgh);
 // CHECK-NEXT: sycl::local_accessor<int, 1> c_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK: });
 // CHECK: }
@@ -259,7 +259,7 @@ __global__ void ushort3_shared_kernel() {
 
 // CHECK: void ushort3_noshared_kernel() {
 // CHECK: DPCT1083:{{[0-9]+}}: The size of ushort3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
-// CHECK: int a[sizeof(sycl::ushort3)];
+// CHECK: int a[sizeof(sycl::mushort3)];
 // CHECK: }
 __global__ void ushort3_noshared_kernel() {
   int a[sizeof(ushort3)];
@@ -271,11 +271,11 @@ __global__ void ushort3_noshared_kernel() {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::ushort3) * 3), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::mushort3) * 3), cgh);
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::ushort3)), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::mushort3)), cgh);
 // CHECK-NEXT: sycl::local_accessor<int, 1> c_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK: });
 // CHECK: }
@@ -329,7 +329,7 @@ __global__ void int3_shared_kernel() {
 
 // CHECK: void int3_noshared_kernel() {
 // CHECK: DPCT1083:{{[0-9]+}}: The size of int3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
-// CHECK: int a[sizeof(sycl::int3)];
+// CHECK: int a[sizeof(sycl::mint3)];
 // CHECK: }
 __global__ void int3_noshared_kernel() {
   int a[sizeof(int3)];
@@ -341,11 +341,11 @@ __global__ void int3_noshared_kernel() {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::int3) * 3), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::mint3) * 3), cgh);
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::int3)), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::mint3)), cgh);
 // CHECK-NEXT: sycl::local_accessor<int, 1> c_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK: });
 // CHECK: }
@@ -399,7 +399,7 @@ __global__ void uint3_shared_kernel() {
 
 // CHECK: void uint3_noshared_kernel() {
 // CHECK: DPCT1083:{{[0-9]+}}: The size of uint3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
-// CHECK: int a[sizeof(sycl::uint3)];
+// CHECK: int a[sizeof(sycl::muint3)];
 // CHECK: }
 __global__ void uint3_noshared_kernel() {
   int a[sizeof(uint3)];
@@ -411,11 +411,11 @@ __global__ void uint3_noshared_kernel() {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::uint3) * 3), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::muint3) * 3), cgh);
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::uint3)), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::muint3)), cgh);
 // CHECK-NEXT: sycl::local_accessor<int, 1> c_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK: });
 // CHECK: }
@@ -469,7 +469,7 @@ __global__ void long3_shared_kernel() {
 
 // CHECK: void long3_noshared_kernel() {
 // CHECK: DPCT1083:{{[0-9]+}}: The size of long3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
-// CHECK: int a[sizeof(sycl::long3)];
+// CHECK: int a[sizeof(sycl::mlong3)];
 // CHECK: }
 __global__ void long3_noshared_kernel() {
   int a[sizeof(long3)];
@@ -481,11 +481,11 @@ __global__ void long3_noshared_kernel() {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::long3) * 3), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::mlong3) * 3), cgh);
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::long3)), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::mlong3)), cgh);
 // CHECK-NEXT: sycl::local_accessor<int, 1> c_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK: });
 // CHECK: }
@@ -539,7 +539,7 @@ __global__ void ulong3_shared_kernel() {
 
 // CHECK: void ulong3_noshared_kernel() {
 // CHECK: DPCT1083:{{[0-9]+}}: The size of ulong3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
-// CHECK: int a[sizeof(sycl::ulong3)];
+// CHECK: int a[sizeof(sycl::mulong3)];
 // CHECK: }
 __global__ void ulong3_noshared_kernel() {
   int a[sizeof(ulong3)];
@@ -551,11 +551,11 @@ __global__ void ulong3_noshared_kernel() {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::ulong3) * 3), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::mulong3) * 3), cgh);
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::ulong3)), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::mulong3)), cgh);
 // CHECK-NEXT: sycl::local_accessor<int, 1> c_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK: });
 // CHECK: }
@@ -609,7 +609,7 @@ __global__ void longlong3_shared_kernel() {
 
 // CHECK: void longlong3_noshared_kernel() {
 // CHECK: DPCT1083:{{[0-9]+}}: The size of longlong3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
-// CHECK: int a[sizeof(sycl::longlong3)];
+// CHECK: int a[sizeof(sycl::mlonglong3)];
 // CHECK: }
 __global__ void longlong3_noshared_kernel() {
   int a[sizeof(longlong3)];
@@ -621,11 +621,11 @@ __global__ void longlong3_noshared_kernel() {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::longlong3) * 3), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::mlonglong3) * 3), cgh);
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::longlong3)), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::mlonglong3)), cgh);
 // CHECK-NEXT: sycl::local_accessor<int, 1> c_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK: });
 // CHECK: }
@@ -679,7 +679,7 @@ __global__ void ulonglong3_shared_kernel() {
 
 // CHECK: void ulonglong3_noshared_kernel() {
 // CHECK: DPCT1083:{{[0-9]+}}:  The size of ulonglong3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
-// CHECK: int a[sizeof(sycl::ulonglong3)];
+// CHECK: int a[sizeof(sycl::mulonglong3)];
 // CHECK: }
 __global__ void ulonglong3_noshared_kernel() {
   int a[sizeof(ulonglong3)];
@@ -691,11 +691,11 @@ __global__ void ulonglong3_noshared_kernel() {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::ulonglong3) * 3), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::mulonglong3) * 3), cgh);
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::ulonglong3)), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::mulonglong3)), cgh);
 // CHECK-NEXT: sycl::local_accessor<int, 1> c_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK: });
 // CHECK: }
@@ -750,7 +750,7 @@ __global__ void float3_shared_kernel() {
 
 // CHECK: void float3_noshared_kernel() {
 // CHECK: DPCT1083:{{[0-9]+}}: The size of float3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
-// CHECK: int a[sizeof(sycl::float3)];
+// CHECK: int a[sizeof(sycl::mfloat3)];
 // CHECK: }
 __global__ void float3_noshared_kernel() {
   int a[sizeof(float3)];
@@ -762,11 +762,11 @@ __global__ void float3_noshared_kernel() {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::float3) * 3), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::mfloat3) * 3), cgh);
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::float3)), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::mfloat3)), cgh);
 // CHECK-NEXT: sycl::local_accessor<int, 1> c_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK: });
 // CHECK: }
@@ -820,7 +820,7 @@ __global__ void double3_shared_kernel() {
 
 // CHECK: void double3_noshared_kernel() {
 // CHECK: DPCT1083:{{[0-9]+}}: The size of double3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
-// CHECK: int a[sizeof(sycl::double3)];
+// CHECK: int a[sizeof(sycl::mdouble3)];
 // CHECK: }
 __global__ void double3_noshared_kernel() {
   int a[sizeof(double3)];
@@ -832,11 +832,11 @@ __global__ void double3_noshared_kernel() {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::double3) * 3), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::mdouble3) * 3), cgh);
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::double3)), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::mdouble3)), cgh);
 // CHECK-NEXT: sycl::local_accessor<int, 1> c_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK: });
 // CHECK: }

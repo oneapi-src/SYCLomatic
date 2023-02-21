@@ -17,7 +17,7 @@ int main() {
 
 template<typename T>
 class M{};
-// CHECK: void foo(const M<sycl::float2>& in) {
+// CHECK: void foo(const M<sycl::mfloat2>& in) {
 void foo(const M<float2>& in) {
 }
 

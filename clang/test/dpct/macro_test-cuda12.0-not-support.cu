@@ -38,7 +38,7 @@ texture<float4, 1, cudaReadModeElementType> table;
 __global__ void foo4(){
   float r2 = 2.0;
   MMM( float rsqrtfr2; );
-  // CHECK: sycl::float4 f4 = table.read(MMM(rsqrtfr2 =) sycl::rsqrt(r2) MMM(== 0));
+  // CHECK: sycl::mfloat4 f4 = table.read(MMM(rsqrtfr2 =) sycl::rsqrt(r2) MMM(== 0));
   float4 f4 = tex1D(table, MMM(rsqrtfr2 =) rsqrtf(r2) MMM(==0));
 }
 
@@ -71,7 +71,7 @@ void foo15(){
 } while(0)
 
 //CHECK: void foo19(){
-//CHECK-NEXT:   dpct::image_wrapper<sycl::float4, 2> tex42;
+//CHECK-NEXT:   dpct::image_wrapper<sycl::mfloat4, 2> tex42;
 //CHECK-NEXT:   dpct::image_matrix_p a42;
 //CHECK-NEXT:   CBTTA(tex42,a42);
 //CHECK-NEXT:   CBTTA2(tex42, a42, tex42.get_channel());

@@ -86,7 +86,7 @@ int foo(int aaaaa){
   //CHECK: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(*handle, mat_handle_ct{{[0-9]+}}, m, n, descrA->get_index_base(), const_cast<int*>(csrRowPtrA), const_cast<int*>(csrColIndA), (std::complex<double>*)csrValA_Z);
-  //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, std::complex<double>(alpha_Z.x(), alpha_Z.y()), mat_handle_ct{{[0-9]+}}, (std::complex<double>*)x_Z, std::complex<double>(beta_Z.x(), beta_Z.y()), (std::complex<double>*)y_Z);
+  //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, std::complex<double>(alpha_Z[0], alpha_Z[1]), mat_handle_ct{{[0-9]+}}, (std::complex<double>*)x_Z, std::complex<double>(beta_Z[0], beta_Z[1]), (std::complex<double>*)y_Z);
   //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(*handle, &mat_handle_ct{{[0-9]+}});
   cusparseZcsrmv(handle, transA, m, n, nnz, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, &beta_Z, y_Z);
 
@@ -100,7 +100,7 @@ int foo(int aaaaa){
   //CHECK: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(*handle, mat_handle_ct{{[0-9]+}}, m, k, descrA->get_index_base(), const_cast<int*>(csrRowPtrA), const_cast<int*>(csrColIndA), (std::complex<double>*)csrValA_Z);
-  //CHECK-NEXT: oneapi::mkl::sparse::gemm(*handle, oneapi::mkl::layout::row_major, transA, oneapi::mkl::transpose::nontrans, std::complex<double>(alpha_Z.x(), alpha_Z.y()), mat_handle_ct{{[0-9]+}}, (std::complex<double>*)x_Z, n, ldb, std::complex<double>(beta_Z.x(), beta_Z.y()), (std::complex<double>*)y_Z, ldc);
+  //CHECK-NEXT: oneapi::mkl::sparse::gemm(*handle, oneapi::mkl::layout::row_major, transA, oneapi::mkl::transpose::nontrans, std::complex<double>(alpha_Z[0], alpha_Z[1]), mat_handle_ct{{[0-9]+}}, (std::complex<double>*)x_Z, n, ldb, std::complex<double>(beta_Z[0], beta_Z[1]), (std::complex<double>*)y_Z, ldc);
   //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(*handle, &mat_handle_ct{{[0-9]+}});
   cusparseZcsrmm(handle, transA, m, n, k, nnz, &alpha_Z, descrA, csrValA_Z, csrRowPtrA, csrColIndA, x_Z, ldb, &beta_Z, y_Z, ldc);
 

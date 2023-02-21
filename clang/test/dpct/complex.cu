@@ -5,9 +5,9 @@
 #include <cuComplex.h>
 #include <iostream>
 
-// CHECK: #define COMPLEX_D_MAKE(r,i) sycl::double2(r, i)
-// CHECK: #define COMPLEX_D_REAL(a) (a).x()
-// CHECK: #define COMPLEX_D_IMAG(a) (a).y()
+// CHECK: #define COMPLEX_D_MAKE(r,i) sycl::mdouble2(r, i)
+// CHECK: #define COMPLEX_D_REAL(a) (a)[0]
+// CHECK: #define COMPLEX_D_IMAG(a) (a)[1]
 // CHECK: #define COMPLEX_D_FREAL(a) a.x()
 // CHECK: #define COMPLEX_D_FIMAG(a) a.y()
 // CHECK: #define COMPLEX_D_ADD(a, b) a + b
@@ -15,7 +15,7 @@
 // CHECK: #define COMPLEX_D_MUL(a, b) dpct::cmul<double>(a, b)
 // CHECK: #define COMPLEX_D_DIV(a, b) dpct::cdiv<double>(a, b)
 // CHECK: #define COMPLEX_D_ABS(a) dpct::cabs<double>(a)
-// CHECK: #define COMPLEX_D_ABS1(a) (sycl::fabs((a).x()) + sycl::fabs((a).y()))
+// CHECK: #define COMPLEX_D_ABS1(a) (sycl::fabs((a)[0]) + sycl::fabs((a)[1]))
 // CHECK: #define COMPLEX_D_CONJ(a) dpct::conj<double>(a)
 #define COMPLEX_D_MAKE(r,i) make_cuDoubleComplex(r, i)
 #define COMPLEX_D_REAL(a) (a).x
@@ -30,9 +30,9 @@
 #define COMPLEX_D_ABS1(a) (fabs((a).x) + fabs((a).y))
 #define COMPLEX_D_CONJ(a) cuConj(a)
 
-// CHECK: #define COMPLEX_F_MAKE(r,i) sycl::float2(r, i)
-// CHECK: #define COMPLEX_F_REAL(a) (a).x()
-// CHECK: #define COMPLEX_F_IMAG(a) (a).y()
+// CHECK: #define COMPLEX_F_MAKE(r,i) sycl::mfloat2(r, i)
+// CHECK: #define COMPLEX_F_REAL(a) (a)[0]
+// CHECK: #define COMPLEX_F_IMAG(a) (a)[1]
 // CHECK: #define COMPLEX_F_FREAL(a) a.x()
 // CHECK: #define COMPLEX_F_FIMAG(a) a.y()
 // CHECK: #define COMPLEX_F_ADD(a, b) a + b
@@ -40,7 +40,7 @@
 // CHECK: #define COMPLEX_F_MUL(a, b) dpct::cmul<float>(a, b)
 // CHECK: #define COMPLEX_F_DIV(a, b) dpct::cdiv<float>(a, b)
 // CHECK: #define COMPLEX_F_ABS(a) dpct::cabs<float>(a)
-// CHECK: #define COMPLEX_F_ABS1(a) (sycl::fabs((a).x()) + sycl::fabs((a).y()))
+// CHECK: #define COMPLEX_F_ABS1(a) (sycl::fabs((a)[0]) + sycl::fabs((a)[1]))
 // CHECK: #define COMPLEX_F_CONJ(a) dpct::conj<float>(a)
 #define COMPLEX_F_MAKE(r,i) make_cuFloatComplex(r, i)
 #define COMPLEX_F_REAL(a) (a).x
@@ -80,8 +80,8 @@ __host__ __device__ bool check<double>(double x, float e[], int& index) {
 }
 
 __global__ void kernel(int *result) {
-    // CHECK: sycl::float2 f1, f2;
-    // CHECK: sycl::double2 d1, d2;
+    // CHECK: sycl::mfloat2 f1, f2;
+    // CHECK: sycl::mdouble2 d1, d2;
     cuFloatComplex f1, f2;
     cuDoubleComplex d1, d2;
     // CHECK: f1 = COMPLEX_F_MAKE(1.8, -2.7);
@@ -172,8 +172,8 @@ __global__ void kernel(int *result) {
 }
 
 int main() {
-    // CHECK: sycl::float2 f1, f2;
-    // CHECK: sycl::double2 d1, d2;
+    // CHECK: sycl::mfloat2 f1, f2;
+    // CHECK: sycl::mdouble2 d1, d2;
     cuFloatComplex f1, f2;
     cuDoubleComplex d1, d2;
     // CHECK: f1 = COMPLEX_F_MAKE(1.8, -2.7);
@@ -283,7 +283,7 @@ void testRemoveVolatile() {
       // CHECK: /*
       // CHECK-NEXT: DPCT1052:{{[0-9]+}}: SYCL does not support the member access for a volatile qualified vector type. The volatile qualifier was removed. You may need to rewrite the code.
       // CHECK-NEXT: */
-      // CHECK-NEXT: return const_cast<struct Complex *>(this)->x();
+      // CHECK-NEXT: return const_cast<struct Complex &>(*this)[0];
       return x;
     }
 
@@ -291,7 +291,7 @@ void testRemoveVolatile() {
       // CHECK: /*
       // CHECK-NEXT: DPCT1052:{{[0-9]+}}: SYCL does not support the member access for a volatile qualified vector type. The volatile qualifier was removed. You may need to rewrite the code.
       // CHECK-NEXT: */
-      // CHECK-NEXT: return const_cast<struct Complex *>(this)->y();
+      // CHECK-NEXT: return const_cast<struct Complex &>(*this)[1];
       return y;
     }
 
@@ -299,14 +299,14 @@ void testRemoveVolatile() {
       // CHECK: /*
       // CHECK-NEXT: DPCT1052:{{[0-9]+}}: SYCL does not support the member access for a volatile qualified vector type. The volatile qualifier was removed. You may need to rewrite the code.
       // CHECK-NEXT: */
-      // CHECK-NEXT: const_cast<struct Complex *>(this)->y();
+      // CHECK-NEXT: const_cast<struct Complex &>(*this)[1];
       this->y;
 
       auto self = this;
       // CHECK: /*
       // CHECK-NEXT: DPCT1052:{{[0-9]+}}: SYCL does not support the member access for a volatile qualified vector type. The volatile qualifier was removed. You may need to rewrite the code.
       // CHECK-NEXT: */
-      // CHECK-NEXT: const_cast<struct Complex *>(self)->y();
+      // CHECK-NEXT: const_cast<struct Complex &>(*self)[1];
       self->y;
     }
 

@@ -41,7 +41,7 @@ template <class T> void BindTextureObject(CUarray &data, CUtexObject &tex) {
 
 int main() {
 
-  // CHECK: sycl::float4 *d_data42;
+  // CHECK: sycl::mfloat4 *d_data42;
   // CHECK-NEXT: dpct::image_matrix_p a42;
   // CHECK-NEXT: size_t desc42_x_ct1, desc42_y_ct1;
   // CHECK-NEXT: unsigned desc42_channel_num_ct1;
@@ -56,9 +56,9 @@ int main() {
   // CHECK-NEXT: dpct::sampling_info texDesc42;
   // CHECK-NEXT: res42.set_data_type(dpct::image_data_type::pitch);
   // CHECK-NEXT: res42.set_data_ptr((dpct::device_ptr)d_data42);
-  // CHECK-NEXT: res42.set_x(sizeof(sycl::float4) * 32);
+  // CHECK-NEXT: res42.set_x(sizeof(sycl::mfloat4) * 32);
   // CHECK-NEXT: res42.set_y(32);
-  // CHECK-NEXT: res42.set_pitch(sizeof(sycl::float4) * 32);
+  // CHECK-NEXT: res42.set_pitch(sizeof(sycl::mfloat4) * 32);
   // CHECK-NEXT: res42.set_channel_num(4);
   // CHECK-NEXT: res42.set_channel_type(sycl::image_channel_type::fp32);
   // CHECK-NEXT: res42.set_data_type(dpct::image_data_type::matrix);
@@ -92,8 +92,8 @@ int main() {
   texDesc42.flags = CU_TRSF_READ_AS_INTEGER | CU_TRSF_NORMALIZED_COORDINATES;
   cuTexObjectCreate(&tex42, &res42, &texDesc42, NULL);
 
-  // CHECK: sycl::uint2 *d_data21;
-  // CHECK-NEXT: d_data21 = (sycl::uint2 *)dpct::dpct_malloc(sizeof(sycl::uint2) * 32);
+  // CHECK: sycl::muint2 *d_data21;
+  // CHECK-NEXT: d_data21 = (sycl::muint2 *)dpct::dpct_malloc(sizeof(sycl::muint2) * 32);
   // CHECK-NEXT: dpct::image_wrapper_base_p tex21;
   // CHECK-NEXT: dpct::image_data res21;
   // CHECK-NEXT: dpct::sampling_info texDesc21;
@@ -101,7 +101,7 @@ int main() {
   // CHECK-NEXT: res21.set_data_ptr((dpct::device_ptr)d_data21);
   // CHECK-NEXT: res21.set_channel_num(2);
   // CHECK-NEXT: res21.set_channel_type(sycl::image_channel_type::unsigned_int32);
-  // CHECK-NEXT: res21.set_x(32*sizeof(sycl::uint2));
+  // CHECK-NEXT: res21.set_x(32*sizeof(sycl::muint2));
   // CHECK-NEXT: unsigned chnX = res21.get_channel_num();
   // CHECK-NEXT: sycl::image_channel_type formatKind = res21.get_channel_type();
   // CHECK-NEXT: texDesc21.set(sycl::addressing_mode::clamp_to_edge, sycl::filtering_mode::linear, sycl::coordinate_normalization_mode::normalized);
@@ -179,9 +179,9 @@ void foo(){
   // CHECK-NEXT: res42.set_data_ptr((dpct::device_ptr)d_data42);
   // CHECK-NEXT: res42.set_channel_num(4);
   // CHECK-NEXT: res42.set_channel_type(sycl::image_channel_type::fp32);
-  // CHECK-NEXT: res42.set_x(sizeof(sycl::float4) * 32);
+  // CHECK-NEXT: res42.set_x(sizeof(sycl::mfloat4) * 32);
   // CHECK-NEXT: res42.set_y(32);
-  // CHECK-NEXT: res42.set_pitch(sizeof(sycl::float4) * 32);
+  // CHECK-NEXT: res42.set_pitch(sizeof(sycl::mfloat4) * 32);
   res42.resType = CU_RESOURCE_TYPE_PITCH2D;
   res42.res.pitch2D.devPtr = (CUdeviceptr)d_data42;
   res42.res.pitch2D.numChannels = 4;
@@ -193,7 +193,7 @@ void foo(){
   uint2 *d_data21;
   // CHECK: res42.set_data_type(dpct::image_data_type::linear);
   // CHECK-NEXT: res42.set_data_ptr((dpct::device_ptr)d_data21);
-  // CHECK-NEXT: res42.set_x(sizeof(sycl::float4) * 32);
+  // CHECK-NEXT: res42.set_x(sizeof(sycl::mfloat4) * 32);
   // CHECK-NEXT: res42.set_channel_num(4);
   // CHECK-NEXT: res42.set_channel_type(sycl::image_channel_type::fp32);
   res42.resType = CU_RESOURCE_TYPE_LINEAR;

@@ -11,8 +11,8 @@ __global__ void test() {
 
   // Half2 Accessors
 
-  // CHECK: h2.x();
+  // CHECK: h2[0];
   h2.x;
-  // CHECK: h2.y();
+  // CHECK: h2[1];
   h2.y;
 }

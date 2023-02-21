@@ -35,7 +35,7 @@ __device__ __constant__ uint2 const keccak_round_constants[4] = {
 
 
 // CHECK:namespace dpct_operator_overloading {
-// CHECK:inline sycl::uint2 &operator^=(sycl::uint2 &v, const sycl::uint2 &v2) {
+// CHECK:inline sycl::muint2 &operator^=(sycl::muint2 &v, const sycl::muint2 &v2) {
 // CHECK:  return v;
 // CHECK:}
 // CHECK:}  // namespace dpct_operator_overloading

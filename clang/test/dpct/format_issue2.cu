@@ -20,4 +20,4 @@ int main(){ int2 i; }
 // CHECK-NEXT: #define EEE
 // CHECK-NEXT: #define FFF
 // CHECK-NEXT: foo1(){ return 1; }
-// CHECK-NEXT: int main() { sycl::int2 i; }
+// CHECK-NEXT: int main() { sycl::mint2 i; }

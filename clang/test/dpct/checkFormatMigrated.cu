@@ -270,7 +270,7 @@ float2* xx;
 
 //     CHECK:void foo4()
 //CHECK-NEXT:{
-//CHECK-NEXT:  cl::sycl::float2 a;
+//CHECK-NEXT:  cl::sycl::mfloat2 a;
 //CHECK-NEXT:}
 void foo4()
 {
@@ -278,36 +278,36 @@ void foo4()
 }
 
 //     CHECK:void foo5() {
-//CHECK-NEXT:  cl::sycl::float2 a;
+//CHECK-NEXT:  cl::sycl::mfloat2 a;
 //CHECK-NEXT:}
 void foo5() {
   float2 a;
 }
 
-//     CHECK:void foo6() { cl::sycl::float2 a; }
+//     CHECK:void foo6() { cl::sycl::mfloat2 a; }
 void foo6() { float2 a; }
 
-//     CHECK:void foo7(cl::sycl::float2 b) {
-//CHECK-NEXT:  cl::sycl::float2 a;
+//     CHECK:void foo7(cl::sycl::mfloat2 b) {
+//CHECK-NEXT:  cl::sycl::mfloat2 a;
 //CHECK-NEXT:}
 void foo7(float2 b) {
   float2 a;
 }
 
-//     CHECK:void foo8(cl::sycl::float2 b)
+//     CHECK:void foo8(cl::sycl::mfloat2 b)
 //CHECK-NEXT:{
-//CHECK-NEXT:  cl::sycl::float2 a;
+//CHECK-NEXT:  cl::sycl::mfloat2 a;
 //CHECK-NEXT:}
 void foo8(float2 b)
 {
   float2 a;
 }
 
-//     CHECK:void foo9(cl::sycl::float2 b) { cl::sycl::float2 a; }
+//     CHECK:void foo9(cl::sycl::mfloat2 b) { cl::sycl::mfloat2 a; }
 void foo9(float2 b) { float2 a; }
 
 //     CHECK:void foo10(){
-//CHECK-NEXT:  if ((cl::sycl::float2 *)xx) {}
+//CHECK-NEXT:  if ((cl::sycl::mfloat2 *)xx) {}
 //CHECK-NEXT:}
 void foo10(){
   if ((float2*)xx) {}
@@ -338,12 +338,12 @@ void foo12(float *Result) {
 }
 
      //CHECK:void foo13() {
-//CHECK-NEXT:                cl::sycl::int4 n;
-//CHECK-NEXT:                cl::sycl::int4 m;
-//CHECK-NEXT:                n.x() = m.w();
-//CHECK-NEXT:                n.y() = m.z();
-//CHECK-NEXT:                n.z() = m.y();
-//CHECK-NEXT:                n.w() = m.x();
+//CHECK-NEXT:                cl::sycl::mint4 n;
+//CHECK-NEXT:                cl::sycl::mint4 m;
+//CHECK-NEXT:                n[0] = m[3];
+//CHECK-NEXT:                n[1] = m[2];
+//CHECK-NEXT:                n[2] = m[1];
+//CHECK-NEXT:                n[3] = m[0];
 //CHECK-NEXT:}
 __global__ void foo13() {
 		int4 n;

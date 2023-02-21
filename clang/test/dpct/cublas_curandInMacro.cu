@@ -117,7 +117,7 @@ int main() {
     // CHECK-NEXT:auto d_A_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(d_A_C);
     // CHECK-NEXT:auto d_B_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(d_B_C);
     // CHECK-NEXT:auto d_C_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(d_C_C);
-    // CHECK-NEXT:oneapi::mkl::blas::column_major::gemm(*handle, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, trans1==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans1, N, N, N, std::complex<float>(alpha_C.x(), alpha_C.y()), d_A_C_buf_ct{{[0-9]+}}, N, d_B_C_buf_ct{{[0-9]+}}, N, std::complex<float>(beta_C.x(), beta_C.y()), d_C_C_buf_ct{{[0-9]+}}, N);
+    // CHECK-NEXT:oneapi::mkl::blas::column_major::gemm(*handle, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, trans1==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans1, N, N, N, std::complex<float>(alpha_C[0], alpha_C[1]), d_A_C_buf_ct{{[0-9]+}}, N, d_B_C_buf_ct{{[0-9]+}}, N, std::complex<float>(beta_C[0], beta_C[1]), d_C_C_buf_ct{{[0-9]+}}, N);
     // CHECK-NEXT:return 0;
     // CHECK-NEXT:}());
     cublasErrCheck(cublasCgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_C, d_A_C, N, d_B_C, N, &beta_C, d_C_C, N));

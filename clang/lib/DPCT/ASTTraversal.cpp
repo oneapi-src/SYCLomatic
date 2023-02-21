@@ -2995,31 +2995,40 @@ void VectorTypeMemberAccessRule::renameMemberField(const MemberExpr *ME) {
     isPtr = true;
   }
   auto &SM = DpctGlobalInfo::getSourceManager();
-  if (*(BaseTy.end() - 1) == '1') {
-    auto Begin = ME->getOperatorLoc();
-    bool isImplicit = false;
-    if (Begin.isInvalid()) {
-      Begin = ME->getMemberLoc();
-      isImplicit = true;
-    }
-    Begin = SM.getSpellingLoc(Begin);
-    auto End =
-        Lexer::getLocForEndOfToken(SM.getSpellingLoc(ME->getMemberLoc()), 0, SM,
-                                   DpctGlobalInfo::getContext().getLangOpts());
-    auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
-    if (isPtr && isImplicit) {
-      return emplaceTransformation(new ReplaceText(Begin, Length, "*this"));
-    }
-    if (isPtr) {
-      auto BaseBegin = ME->getBeginLoc();
-      emplaceTransformation(new InsertText(BaseBegin, "*"));
-    }
-    return emplaceTransformation(new ReplaceText(Begin, Length, ""));
+  //  if (*(BaseTy.end() - 1) == '1') {
+  auto Begin = ME->getOperatorLoc();
+  bool isImplicit = false;
+  if (Begin.isInvalid()) {
+    Begin = ME->getMemberLoc();
+    isImplicit = true;
   }
+  Begin = SM.getSpellingLoc(Begin);
+  auto End =
+      Lexer::getLocForEndOfToken(SM.getSpellingLoc(ME->getMemberLoc()), 0, SM,
+                                 DpctGlobalInfo::getContext().getLangOpts());
+  auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
+  if (isPtr && isImplicit) {
+    if (*(BaseTy.end() - 1) == '1')
+      return emplaceTransformation(new ReplaceText(Begin, Length, "*this"));
+    emplaceTransformation(new InsertText(Begin, "(*this)"));
+  }
+  if (isPtr && !isImplicit) {
+    //    if (*(BaseTy.end() - 1) == '1') {
+    auto BaseBegin = ME->getBeginLoc();
+    emplaceTransformation(new InsertText(BaseBegin, "*"));
+    //    }
+  }
+  if (*(BaseTy.end() - 1) == '1')
+    return emplaceTransformation(new ReplaceText(Begin, Length, ""));
   std::string MemberName = ME->getMemberNameInfo().getAsString();
   if (MapNames::replaceName(MapNames::MemberNamesMap, MemberName))
-    emplaceTransformation(
-        new RenameFieldInMemberExpr(ME, std::move(MemberName)));
+    return emplaceTransformation(
+        new ReplaceText(Begin, Length, std::move(MemberName)));
+  //  }
+  //  std::string MemberName = ME->getMemberNameInfo().getAsString();
+  //  if (MapNames::replaceName(MapNames::MemberNamesMap, MemberName))
+  //    emplaceTransformation(
+  //        new RenameFieldInMemberExpr(ME, std::move(MemberName)));
 }
 
 void VectorTypeMemberAccessRule::runRule(
@@ -3049,13 +3058,13 @@ void VectorTypeMemberAccessRule::runRule(
           BaseType->getPointeeType().getUnqualifiedType().getAsString();
       if (ME->isImplicitAccess()) {
         const std::string VolatileCast =
-            std::string("const_cast<") + TypeName + " *>(this)->";
+            std::string("const_cast<") + TypeName + " &>";
         report(Loc, Diagnostics::VOLATILE_VECTOR_ACCESS, false);
         emplaceTransformation(
             new InsertText(ME->getBeginLoc(), VolatileCast.c_str()));
       } else if (BaseAndThisSameType && BaseIsVolatile) {
         const std::string VolatileCast =
-            std::string("const_cast<") + TypeName + " *>(";
+            std::string("const_cast<") + TypeName + " &>(";
         report(Loc, Diagnostics::VOLATILE_VECTOR_ACCESS, false);
         emplaceTransformation(
             new InsertText(ME->getBase()->getBeginLoc(), VolatileCast.c_str()));
@@ -4027,7 +4036,9 @@ std::string getValueStr(const Expr *Expr, std::string ExprStr,
       std::string NewStr = EA.ref(UO->getSubExpr());
       if (ValueType == "std::complex<float>" ||
           ValueType == "std::complex<double>")
-        return ValueType + "(" + NewStr + ".x(), " + NewStr + ".y())";
+        return ValueType + "(" + NewStr +
+               MapNames::MemberNamesMap.find("x")->second + ", " + NewStr +
+               MapNames::MemberNamesMap.find("y")->second + ")";
       else
         return NewStr;
     }
@@ -4038,7 +4049,9 @@ std::string getValueStr(const Expr *Expr, std::string ExprStr,
       std::string NewStr = EA.ref(COCE->getArg(0));
       if (ValueType == "std::complex<float>" ||
           ValueType == "std::complex<double>")
-        return ValueType + "(" + NewStr + ".x(), " + NewStr + ".y())";
+        return ValueType + "(" + NewStr +
+               MapNames::MemberNamesMap.find("x")->second + ", " + NewStr +
+               MapNames::MemberNamesMap.find("y")->second + ")";
       else
         return NewStr;
     }
@@ -5596,10 +5609,10 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       if (VD) {
         VarType = VD->getType().getAsString();
         if (VarType == "cuComplex" || VarType == "cuFloatComplex") {
-          VarType = MapNames::getClNamespace() + "float2";
+          VarType = MapNames::getClNamespace() + "mfloat2";
         }
         if (VarType == "cuDoubleComplex") {
-          VarType = MapNames::getClNamespace() + "double2";
+          VarType = MapNames::getClNamespace() + "mdouble2";
         }
         VarName = VD->getNameAsString();
       } else {
@@ -5650,12 +5663,17 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
           if (isAnIdentifierOrLiteral(CE->getArg(i)))
             CallExprReplStr =
                 CallExprReplStr + ", " + ReplInfo.PointerTypeInfo[IndexTemp] +
-                "(" + ParamsStrsVec[i] + ".x()," + ParamsStrsVec[i] + ".y())";
+                "(" + ParamsStrsVec[i] +
+                              MapNames::MemberNamesMap.find("x")->second + "," +
+                              ParamsStrsVec[i] +
+                              MapNames::MemberNamesMap.find("y")->second + ")";
           else
             CallExprReplStr = CallExprReplStr + ", " +
                               ReplInfo.PointerTypeInfo[IndexTemp] + "((" +
-                              ParamsStrsVec[i] + ").x(),(" + ParamsStrsVec[i] +
-                              ").y())";
+                              ParamsStrsVec[i] + ")" +
+                              MapNames::MemberNamesMap.find("x")->second +
+                              ",(" + ParamsStrsVec[i] + ")" +
+                              MapNames::MemberNamesMap.find("y")->second + ")";
         }
       } else if (isReplIndex(i, ReplInfo.OperationIndexInfo, IndexTemp)) {
         Expr::EvalResult ER;
@@ -5844,9 +5862,9 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
       std::string Repl;
       if (FuncName == "cublasCdotu" || FuncName == "cublasCdotc") {
-        Repl = MapNames::getClNamespace() + "float2" + ReturnValueParamsStr;
+        Repl = MapNames::getClNamespace() + "mfloat2" + ReturnValueParamsStr;
       } else if (FuncName == "cublasZdotu" || FuncName == "cublasZdotc") {
-        Repl = MapNames::getClNamespace() + "double2" + ReturnValueParamsStr;
+        Repl = MapNames::getClNamespace() + "mdouble2" + ReturnValueParamsStr;
       } else {
         if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
           if (NeedUseLambda)

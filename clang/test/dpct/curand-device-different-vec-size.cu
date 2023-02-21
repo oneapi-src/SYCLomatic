@@ -23,7 +23,7 @@ __global__ void picount(int *totals) {
 
   for (int i = 0; i < ITERATIONS; i++) {
     //CHECK: float x = rng.generate<oneapi::mkl::rng::device::uniform<float>, 1>();
-    //CHECK-NEXT: sycl::float2 y = rng.generate<oneapi::mkl::rng::device::gaussian<float>, 2>();
+    //CHECK-NEXT: sycl::mfloat2 y = rng.generate<oneapi::mkl::rng::device::gaussian<float>, 2>();
     float x = curand_uniform(&rng);
     float2 y = curand_normal2(&rng);
     counter[threadIdx.x] += 1 - int(x * x + y.x * y.x);

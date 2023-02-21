@@ -26,7 +26,7 @@ int main(){
 
 
     int2 * d_data_int2;
-    // CHECK: d_data_int2 = sycl::malloc_device<sycl::int2>(1, q_ct1);
+    // CHECK: d_data_int2 = sycl::malloc_device<sycl::mint2>(1, q_ct1);
     cudaMalloc((void **) &d_data_int2, sizeof(int2));
 
     Point * d_data_Point;
@@ -34,18 +34,18 @@ int main(){
     cudaMalloc((void **) &d_data_Point, sizeof(Point));
 
     const int2 * d_const_int2;
-    // CHECK: d_const_int2 = (const sycl::int2 *)sycl::malloc_device(sizeof(sycl::int2), q_ct1);
+    // CHECK: d_const_int2 = (const sycl::mint2 *)sycl::malloc_device(sizeof(sycl::mint2), q_ct1);
     cudaMalloc((void **) &d_const_int2, sizeof(int2));
 
     int2 const * volatile * d_data;
-    // CHECK: d_data = (const sycl::int2 *volatile *)sycl::malloc_device(sizeof(sycl::int2), q_ct1);
+    // CHECK: d_data = (const sycl::mint2 *volatile *)sycl::malloc_device(sizeof(sycl::mint2), q_ct1);
     cudaMalloc((void **) &d_data, sizeof(int2));
 
 
 #define INT2 int2
-    // CHECK: d_data_int2 = (sycl::int2 *)sycl::malloc_device(sizeof(INT2)*100, q_ct1);
+    // CHECK: d_data_int2 = (sycl::mint2 *)sycl::malloc_device(sizeof(INT2)*100, q_ct1);
     cudaMalloc(&d_data_int2, sizeof(INT2)*100);
-    // CHECK: d_data_int2 = (sycl::int2 *)sycl::malloc_device(sizeof(INT2)*100, q_ct1);
+    // CHECK: d_data_int2 = (sycl::mint2 *)sycl::malloc_device(sizeof(INT2)*100, q_ct1);
     cudaMalloc((void **)&d_data_int2, sizeof(INT2)*100);
 }
 

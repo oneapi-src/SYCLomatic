@@ -41,30 +41,30 @@ void test_00() {
 void test_01() {
   uint3 threadIdx, blockIdx, blockDim, gridDim;
 
-  // CHECK:size_t tix = threadIdx.x();
-  // CHECK:size_t tiy = threadIdx.y();
-  // CHECK:size_t tiz = threadIdx.z();
+  // CHECK:size_t tix = threadIdx[0];
+  // CHECK:size_t tiy = threadIdx[1];
+  // CHECK:size_t tiz = threadIdx[2];
   size_t tix = threadIdx.x;
   size_t tiy = threadIdx.y;
   size_t tiz = threadIdx.z;
 
-  // CHECK: size_t bix = blockIdx.x();
-  // CHECK: size_t biy = blockIdx.y();
-  // CHECK: size_t biz = blockIdx.z();
+  // CHECK: size_t bix = blockIdx[0];
+  // CHECK: size_t biy = blockIdx[1];
+  // CHECK: size_t biz = blockIdx[2];
   size_t bix = blockIdx.x;
   size_t biy = blockIdx.y;
   size_t biz = blockIdx.z;
 
-  // CHECK:  size_t bdx = blockDim.x();
-  // CHECK:  size_t bdy = blockDim.y();
-  // CHECK:  size_t bdz = blockDim.z();
+  // CHECK:  size_t bdx = blockDim[0];
+  // CHECK:  size_t bdy = blockDim[1];
+  // CHECK:  size_t bdz = blockDim[2];
   size_t bdx = blockDim.x;
   size_t bdy = blockDim.y;
   size_t bdz = blockDim.z;
 
-  // CHECK:  size_t gdx = gridDim.x();
-  // CHECK:  size_t gdy = gridDim.y();
-  // CHECK:  size_t gdz = gridDim.z();
+  // CHECK:  size_t gdx = gridDim[0];
+  // CHECK:  size_t gdy = gridDim[1];
+  // CHECK:  size_t gdz = gridDim[2];
   size_t gdx = gridDim.x;
   size_t gdy = gridDim.y;
   size_t gdz = gridDim.z;
@@ -75,30 +75,30 @@ void test_01() {
 __global__ void test_02() {
   uint3 threadIdx, blockIdx, blockDim, gridDim;
 
-  // CHECK:size_t tix = threadIdx.x();
-  // CHECK:size_t tiy = threadIdx.y();
-  // CHECK:size_t tiz = threadIdx.z();
+  // CHECK:size_t tix = threadIdx[0];
+  // CHECK:size_t tiy = threadIdx[1];
+  // CHECK:size_t tiz = threadIdx[2];
   size_t tix = threadIdx.x;
   size_t tiy = threadIdx.y;
   size_t tiz = threadIdx.z;
 
-  // CHECK: size_t bix = blockIdx.x();
-  // CHECK: size_t biy = blockIdx.y();
-  // CHECK: size_t biz = blockIdx.z();
+  // CHECK: size_t bix = blockIdx[0];
+  // CHECK: size_t biy = blockIdx[1];
+  // CHECK: size_t biz = blockIdx[2];
   size_t bix = blockIdx.x;
   size_t biy = blockIdx.y;
   size_t biz = blockIdx.z;
 
-  // CHECK:  size_t bdx = blockDim.x();
-  // CHECK:  size_t bdy = blockDim.y();
-  // CHECK:  size_t bdz = blockDim.z();
+  // CHECK:  size_t bdx = blockDim[0];
+  // CHECK:  size_t bdy = blockDim[1];
+  // CHECK:  size_t bdz = blockDim[2];
   size_t bdx = blockDim.x;
   size_t bdy = blockDim.y;
   size_t bdz = blockDim.z;
 
-  // CHECK:  size_t gdx = gridDim.x();
-  // CHECK:  size_t gdy = gridDim.y();
-  // CHECK:  size_t gdz = gridDim.z();
+  // CHECK:  size_t gdx = gridDim[0];
+  // CHECK:  size_t gdy = gridDim[1];
+  // CHECK:  size_t gdz = gridDim[2];
   size_t gdx = gridDim.x;
   size_t gdy = gridDim.y;
   size_t gdz = gridDim.z;

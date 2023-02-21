@@ -150,7 +150,7 @@ int main(int argc, char* argv[]) {
   std::list<cudaError> errors;
   std::list<cudaDeviceProp> props;
 
-  // CHECK: std::vector<sycl::float2> const vf(5);
+  // CHECK: std::vector<sycl::mfloat2> const vf(5);
   std::vector<float2> const vf(5);
 }
 

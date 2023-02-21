@@ -42,8 +42,8 @@ void foo() {
   // CHECK: MY_SAFE_CALL((d_A = (float *)sycl::malloc_device(size, q_ct1), 0));
   MY_SAFE_CALL(cudaMalloc((void **)&d_A, size));
 
-  // CHECK: d_A = (float *)sycl::malloc_device(sizeof(sycl::double2) + size, q_ct1);
-  // CHECK-NEXT: d_A = (float *)sycl::malloc_device(sizeof(sycl::uchar4) + size, q_ct1);
+  // CHECK: d_A = (float *)sycl::malloc_device(sizeof(sycl::mdouble2) + size, q_ct1);
+  // CHECK-NEXT: d_A = (float *)sycl::malloc_device(sizeof(sycl::muchar4) + size, q_ct1);
   // CHECK-NEXT: d_A = (float *)sycl::malloc_device(sizeof(d_A[0]), q_ct1);
   cudaMalloc((void **)&d_A, sizeof(double2) + size);
   cudaMalloc((void **)&d_A, sizeof(uchar4) + size);
@@ -64,12 +64,12 @@ void foo() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1048:{{[0-9]+}}: The original value cudaHostAllocDefault is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: h_A = (float *)sycl::malloc_host(sizeof(sycl::double2) - size, q_ct1);
+  // CHECK-NEXT: h_A = (float *)sycl::malloc_host(sizeof(sycl::mdouble2) - size, q_ct1);
   cudaHostAlloc((void **)&h_A, sizeof(double2) - size, cudaHostAllocDefault);
   // CHECK: /*
   // CHECK-NEXT: DPCT1048:{{[0-9]+}}: The original value cudaHostAllocDefault is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: h_A = (float *)sycl::malloc_host(sizeof(sycl::uchar4) - size, q_ct1);
+  // CHECK-NEXT: h_A = (float *)sycl::malloc_host(sizeof(sycl::muchar4) - size, q_ct1);
   cudaHostAlloc((void **)&h_A, sizeof(uchar4) - size, cudaHostAllocDefault);
 
   // CHECK: h_A = (float *)sycl::malloc_host(size, q_ct1);
@@ -86,8 +86,8 @@ void foo() {
   // CHECK: MY_SAFE_CALL((h_A = (float *)sycl::malloc_host(size, q_ct1), 0));
   MY_SAFE_CALL(cuMemAllocHost((void **)&h_A, size));
 
-  // CHECK: h_A = (float *)sycl::malloc_host(sizeof(sycl::double2) * size, q_ct1);
-  // CHECK-NEXT: h_A = (float *)sycl::malloc_host(sizeof(sycl::uchar4) * size, q_ct1);
+  // CHECK: h_A = (float *)sycl::malloc_host(sizeof(sycl::mdouble2) * size, q_ct1);
+  // CHECK-NEXT: h_A = (float *)sycl::malloc_host(sizeof(sycl::muchar4) * size, q_ct1);
   cudaMallocHost((void **)&h_A, sizeof(double2) * size);
   cudaMallocHost((void **)&h_A, sizeof(uchar4) * size);
 
@@ -98,8 +98,8 @@ void foo() {
   // CHECK: MY_SAFE_CALL((h_A = (float *)sycl::malloc_host(size, q_ct1), 0));
   MY_SAFE_CALL(cudaMallocHost(&h_A, size));
 
-  // CHECK: h_A = (float *)sycl::malloc_host(sizeof(sycl::double2) / size, q_ct1);
-  // CHECK-NEXT: h_A = (float *)sycl::malloc_host(sizeof(sycl::uchar4) / size, q_ct1);
+  // CHECK: h_A = (float *)sycl::malloc_host(sizeof(sycl::mdouble2) / size, q_ct1);
+  // CHECK-NEXT: h_A = (float *)sycl::malloc_host(sizeof(sycl::muchar4) / size, q_ct1);
   cudaMallocHost(&h_A, sizeof(double2) / size);
   cudaMallocHost(&h_A, sizeof(uchar4) / size);
 
@@ -118,8 +118,8 @@ void foo() {
   // CHECK: MY_SAFE_CALL((d_A = (float *)sycl::malloc_shared(size, q_ct1), 0));
   MY_SAFE_CALL(cudaMallocManaged((void **)&d_A, size));
 
-  // CHECK: d_A = (float *)sycl::malloc_shared(sizeof(sycl::double2) + size + sizeof(sycl::uchar4), q_ct1);
-  // CHECK-NEXT: d_A = (float *)sycl::malloc_shared(sizeof(sycl::double2) * size * sizeof(sycl::uchar4), q_ct1);
+  // CHECK: d_A = (float *)sycl::malloc_shared(sizeof(sycl::mdouble2) + size + sizeof(sycl::muchar4), q_ct1);
+  // CHECK-NEXT: d_A = (float *)sycl::malloc_shared(sizeof(sycl::mdouble2) * size * sizeof(sycl::muchar4), q_ct1);
   cudaMallocManaged((void **)&d_A, sizeof(double2) + size + sizeof(uchar4));
   cudaMallocManaged((void **)&d_A, sizeof(double2) * size * sizeof(uchar4));
 
@@ -875,12 +875,12 @@ void foo4(){
   // CHECK: /*
   // CHECK: DPCT1048:{{[0-9]+}}: The original value CU_MEMHOSTALLOC_PORTABLE is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
   // CHECK: */
-  // CHECK: h_A = (float *)sycl::malloc_host(sizeof(sycl::double2) - size, q_ct1);
+  // CHECK: h_A = (float *)sycl::malloc_host(sizeof(sycl::mdouble2) - size, q_ct1);
   cuMemHostAlloc((void **)&h_A, sizeof(double2) - size, CU_MEMHOSTALLOC_PORTABLE);
   // CHECK: /*
   // CHECK: DPCT1048:{{[0-9]+}}: The original value CU_MEMHOSTALLOC_PORTABLE is not meaningful in the migrated code and was removed or replaced with 0. You may need to check the migrated code.
   // CHECK: */
-  // CHECK: h_A = (float *)sycl::malloc_host(sizeof(sycl::uchar4) - size, q_ct1);
+  // CHECK: h_A = (float *)sycl::malloc_host(sizeof(sycl::muchar4) - size, q_ct1);
   cuMemHostAlloc((void **)&h_A, sizeof(uchar4) - size, CU_MEMHOSTALLOC_PORTABLE);
 }
 

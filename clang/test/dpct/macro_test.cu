@@ -605,14 +605,14 @@ __global__ void foo11(){
 //CHECK-NEXT:     typedef sycl::type##2 Type;                                                \
 //CHECK-NEXT:     __dpct_inline__ MyVector2 operator+(const MyVector2 &other) const {        \
 //CHECK-NEXT:       MyVector2 retval;                                                        \
-//CHECK-NEXT:       retval.x() = x() + other.x();                                            \
-//CHECK-NEXT:       retval.y() = y() + other.y();                                            \
+//CHECK-NEXT:       retval[0] = (*this)[0] + other[0];                                            \
+//CHECK-NEXT:       retval[1] = (*this)[1] + other[1];                                            \
 //CHECK-NEXT:       return retval;                                                           \
 //CHECK-NEXT:     }                                                                          \
 //CHECK-NEXT:     __dpct_inline__ MyVector2 operator-(const MyVector2 &other) const {        \
 //CHECK-NEXT:       MyVector2 retval;                                                        \
-//CHECK-NEXT:       retval.x() = x() - other.x();                                            \
-//CHECK-NEXT:       retval.y() = y() - other.y();                                            \
+//CHECK-NEXT:       retval[0] = (*this)[0] - other[0];                                            \
+//CHECK-NEXT:       retval[1] = (*this)[1] - other[1];                                            \
 //CHECK-NEXT:       return retval;                                                           \
 //CHECK-NEXT:     }                                                                          \
 //CHECK-NEXT:   };
@@ -700,10 +700,10 @@ void foo13(){
 }
 
 //CHECK: #define CONST const
-//CHECK-NEXT: #define INT2 sycl::int2
+//CHECK-NEXT: #define INT2 sycl::mint2
 //CHECK-NEXT: #define PTR *
 //CHECK-NEXT: #define PTR2 PTR
-//CHECK-NEXT: #define ALL const sycl::int2 *
+//CHECK-NEXT: #define ALL const sycl::mint2 *
 //CHECK-NEXT: #define TYPE_PTR(T) T *
 //CHECK-NEXT: #define ALL2(C, T, P) C T P
 //CHECK-NEXT: #define ALL3(X) X
@@ -717,18 +717,18 @@ void foo13(){
 #define ALL3(X) X
 
 //CHECK: int foo14(){
-//CHECK-NEXT:   const sycl::int2 *aaa;
-//CHECK-NEXT:   CONST sycl::int3 *bbb;
-//CHECK-NEXT:   ALL3(const sycl::int2 *) ccc;
-//CHECK-NEXT:   ALL2(const, sycl::int2, *) ddd;
-//CHECK-NEXT:   ALL3(const) ALL3(sycl::int2) ALL3(*) eee;
+//CHECK-NEXT:   const sycl::mint2 *aaa;
+//CHECK-NEXT:   CONST sycl::mint3 *bbb;
+//CHECK-NEXT:   ALL3(const sycl::mint2 *) ccc;
+//CHECK-NEXT:   ALL2(const, sycl::mint2, *) ddd;
+//CHECK-NEXT:   ALL3(const) ALL3(sycl::mint2) ALL3(*) eee;
 //CHECK-NEXT:   ALL fff;
 //CHECK-NEXT:   CONST INT2 PTR ggg;
 //CHECK-NEXT:   CONST INT2 PTR2 hhh;
-//CHECK-NEXT:   CONST sycl::int3 PTR2 iii;
-//CHECK-NEXT:   TYPE_PTR(sycl::int2) jjj;
-//CHECK-NEXT:   ALL3(ALL3(const sycl::int2 *)) kkk;
-//CHECK-NEXT:   ALL2(const, ALL3(sycl::int2), *) lll;
+//CHECK-NEXT:   CONST sycl::mint3 PTR2 iii;
+//CHECK-NEXT:   TYPE_PTR(sycl::mint2) jjj;
+//CHECK-NEXT:   ALL3(ALL3(const sycl::mint2 *)) kkk;
+//CHECK-NEXT:   ALL2(const, ALL3(sycl::mint2), *) lll;
 //CHECK-NEXT: }
 int foo14(){
   const int2 *aaa;
@@ -745,8 +745,8 @@ int foo14(){
   ALL2(const, ALL3(int2), *) lll;
 }
 
-//CHECK: #define FABS(a) (sycl::fabs((float)((a).x())) + sycl::fabs((float)((a).y())))
-//CHECK-NEXT: static inline double foo16(const sycl::float2 &x) { return FABS(x); }
+//CHECK: #define FABS(a) (sycl::fabs((float)((a)[0])) + sycl::fabs((float)((a)[1])))
+//CHECK-NEXT: static inline double foo16(const sycl::mfloat2 &x) { return FABS(x); }
 #define FABS(a)       (fabs((a).x) + fabs((a).y))
 __host__ __device__ static inline double foo16(const float2 &x) { return FABS(x); }
 
@@ -775,7 +775,7 @@ _mulhilo_(64, uint64_t, __umul64hi)
 //CHECK-NEXT: #define KKK JJJ
 //CHECK-NEXT: void foo16() {
 //CHECK-NEXT:     sycl::half h, h_1, h_2;
-//CHECK-NEXT:     sycl::half2 h2, h2_1, h2_2;
+//CHECK-NEXT:     sycl::mhalf2 h2, h2_1, h2_2;
 //CHECK-NEXT:     bool b;
 //CHECK-NEXT:     CALL(CALL(CALL(JJJ)));
 //CHECK-NEXT: }
@@ -995,10 +995,10 @@ int a = cublasSetVector(10, sizeof(float), h_a, 11111, d_C_S, 11111);
 return 0;
 }
 
-//CHECK:#define AAAAA_Z_MAKE(r, i) sycl::double2(r, i)
+//CHECK:#define AAAAA_Z_MAKE(r, i) sycl::mdouble2(r, i)
 //CHECK-NEXT:#define AAAAA_Z_ZERO AAAAA_Z_MAKE(0.0, 0.0)
 //CHECK-NEXT:void aaaaa_zprint_vector() {
-//CHECK-NEXT:  sycl::double2 z_zero = AAAAA_Z_ZERO;
+//CHECK-NEXT:  sycl::mdouble2 z_zero = AAAAA_Z_ZERO;
 //CHECK-NEXT:#ifdef COMPLEX
 //CHECK-NEXT:#define AAA
 //CHECK-NEXT:#else

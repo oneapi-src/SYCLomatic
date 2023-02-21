@@ -9,7 +9,7 @@
 //CHECK-NEXT: };
 //CHECK-NEXT: template<typename _T1>
 //CHECK-NEXT: struct pair {
-//CHECK-NEXT:   sycl::int2 a;
+//CHECK-NEXT:   sycl::mint2 a;
 //CHECK-NEXT:   pair& operator=(typename conditional<true, const pair&, _T1>::type __p) {
 //CHECK-NEXT:     return *this;
 //CHECK-NEXT:   }

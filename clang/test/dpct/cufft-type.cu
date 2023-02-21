@@ -9,16 +9,16 @@ size_t size;
 int main() {
   //CHECK:float fftreal;
   //CHECK-NEXT:double fftdreal;
-  //CHECK-NEXT:sycl::float2 fftcomplex;
-  //CHECK-NEXT:sycl::double2 fftdcomplex;
-  //CHECK-NEXT:sycl::float2 ccomplex;
-  //CHECK-NEXT:sycl::double2 cdcomplex;
+  //CHECK-NEXT:sycl::mfloat2 fftcomplex;
+  //CHECK-NEXT:sycl::mdouble2 fftdcomplex;
+  //CHECK-NEXT:sycl::mfloat2 ccomplex;
+  //CHECK-NEXT:sycl::mdouble2 cdcomplex;
   //CHECK-NEXT:size = sizeof(float);
   //CHECK-NEXT:size = sizeof(double);
-  //CHECK-NEXT:size = sizeof(sycl::float2);
-  //CHECK-NEXT:size = sizeof(sycl::double2);
-  //CHECK-NEXT:size = sizeof(sycl::float2);
-  //CHECK-NEXT:size = sizeof(sycl::double2);
+  //CHECK-NEXT:size = sizeof(sycl::mfloat2);
+  //CHECK-NEXT:size = sizeof(sycl::mdouble2);
+  //CHECK-NEXT:size = sizeof(sycl::mfloat2);
+  //CHECK-NEXT:size = sizeof(sycl::mdouble2);
   cufftReal fftreal;
   cufftDoubleReal fftdreal;
   cufftComplex fftcomplex;
@@ -113,10 +113,10 @@ int main() {
 //CHECK:template<
 //CHECK-NEXT:typename A = float,
 //CHECK-NEXT:typename B = double,
-//CHECK-NEXT:typename C = sycl::float2,
-//CHECK-NEXT:typename D = sycl::double2,
-//CHECK-NEXT:typename E = sycl::float2,
-//CHECK-NEXT:typename F = sycl::double2,
+//CHECK-NEXT:typename C = sycl::mfloat2,
+//CHECK-NEXT:typename D = sycl::mdouble2,
+//CHECK-NEXT:typename E = sycl::mfloat2,
+//CHECK-NEXT:typename F = sycl::mdouble2,
 //CHECK-NEXT:typename G = dpct::fft::fft_type,
 //CHECK-NEXT:typename H = dpct::fft::fft_type,
 //CHECK-NEXT:typename I = dpct::fft::fft_engine_ptr,
@@ -125,10 +125,10 @@ int main() {
 //CHECK-NEXT:void foo1(
 //CHECK-NEXT:float a,
 //CHECK-NEXT:double b,
-//CHECK-NEXT:sycl::float2 c,
-//CHECK-NEXT:sycl::double2 d,
-//CHECK-NEXT:sycl::float2 e,
-//CHECK-NEXT:sycl::double2 f,
+//CHECK-NEXT:sycl::mfloat2 c,
+//CHECK-NEXT:sycl::mdouble2 d,
+//CHECK-NEXT:sycl::mfloat2 e,
+//CHECK-NEXT:sycl::mdouble2 f,
 //CHECK-NEXT:dpct::fft::fft_type g,
 //CHECK-NEXT:dpct::fft::fft_type h,
 //CHECK-NEXT:dpct::fft::fft_engine_ptr i,
@@ -273,22 +273,22 @@ template<typename T>
 cufftDoubleReal foo4(){}
 
 //CHECK:template<typename T>
-//CHECK-NEXT:sycl::float2 foo5(){}
+//CHECK-NEXT:sycl::mfloat2 foo5(){}
 template<typename T>
 cufftComplex foo5(){}
 
 //CHECK:template<typename T>
-//CHECK-NEXT:sycl::double2 foo6(){}
+//CHECK-NEXT:sycl::mdouble2 foo6(){}
 template<typename T>
 cufftDoubleComplex foo6(){}
 
 //CHECK:template<typename T>
-//CHECK-NEXT:sycl::float2 foo7(){}
+//CHECK-NEXT:sycl::mfloat2 foo7(){}
 template<typename T>
 cuComplex foo7(){}
 
 //CHECK:template<typename T>
-//CHECK-NEXT:sycl::double2 foo8(){}
+//CHECK-NEXT:sycl::mdouble2 foo8(){}
 template<typename T>
 cuDoubleComplex foo8(){}
 

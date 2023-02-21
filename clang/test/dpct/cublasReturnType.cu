@@ -15,15 +15,15 @@ cublasHandle_t foo1(int m) {
   return 0;
 }
 
-// CHECK: sycl::float2 foo2(sycl::float2 m) {
+// CHECK: sycl::mfloat2 foo2(sycl::mfloat2 m) {
 cuComplex foo2(cuComplex m) {
-  // CHECK: return sycl::float2(1, 0);
+  // CHECK: return sycl::mfloat2(1, 0);
   return make_cuComplex(1, 0);
 }
 
-// CHECK: sycl::double2 foo3(sycl::double2 m) {
+// CHECK: sycl::mdouble2 foo3(sycl::mdouble2 m) {
 cuDoubleComplex foo3(cuDoubleComplex m) {
-  // CHECK: return sycl::double2(1, 0);
+  // CHECK: return sycl::mdouble2(1, 0);
   return make_cuDoubleComplex(1, 0);
 }
 

@@ -3,7 +3,7 @@
 
 // CHECK: static dpct::constant_memory<const int *, 0> schsfirst;
 static __constant__ const int *schsfirst;
-// CHECK: static dpct::constant_memory<const sycl::double2 *, 0> zm;
+// CHECK: static dpct::constant_memory<const sycl::mdouble2 *, 0> zm;
 static __constant__ const double2 *zm;
 
 static int *schsfirstD;

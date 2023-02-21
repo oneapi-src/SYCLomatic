@@ -62,7 +62,7 @@ int main() {
 // CHECK:  auto tmp4 = [=](auto _1){return _1;};
   auto tmp4 = _1;
 
-// CHECK:  auto tmp5 = [=](auto _1,auto _2){return _1 + sizeof(sycl::float2) + _2;};
+// CHECK:  auto tmp5 = [=](auto _1,auto _2){return _1 + sizeof(sycl::mfloat2) + _2;};
   auto tmp5 = _1 + sizeof(float2) + _2;
 
 }

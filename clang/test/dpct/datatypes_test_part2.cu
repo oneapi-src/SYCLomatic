@@ -88,10 +88,10 @@ cublasStatus_t &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::float2 var1;
-// CHECK-NEXT: sycl::float2 *var2;
-// CHECK-NEXT: sycl::float2 &var3 = var1;
-// CHECK-NEXT: sycl::float2 &&var4 = std::move(var1);
+// CHECK: sycl::mfloat2 var1;
+// CHECK-NEXT: sycl::mfloat2 *var2;
+// CHECK-NEXT: sycl::mfloat2 &var3 = var1;
+// CHECK-NEXT: sycl::mfloat2 &&var4 = std::move(var1);
 cuComplex var1;
 cuComplex *var2;
 cuComplex &var3 = var1;
@@ -99,10 +99,10 @@ cuComplex &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::double2 var1;
-// CHECK-NEXT: sycl::double2 *var2;
-// CHECK-NEXT: sycl::double2 &var3 = var1;
-// CHECK-NEXT: sycl::double2 &&var4 = std::move(var1);
+// CHECK: sycl::mdouble2 var1;
+// CHECK-NEXT: sycl::mdouble2 *var2;
+// CHECK-NEXT: sycl::mdouble2 &var3 = var1;
+// CHECK-NEXT: sycl::mdouble2 &&var4 = std::move(var1);
 cuDoubleComplex var1;
 cuDoubleComplex *var2;
 cuDoubleComplex &var3 = var1;
@@ -288,15 +288,15 @@ void case_2(void) {
 }
 
 {
-// CHECK:  new sycl::float2();
-// CHECK-NEXT:  new sycl::float2 *();
+// CHECK:  new sycl::mfloat2();
+// CHECK-NEXT:  new sycl::mfloat2 *();
   new cuComplex();
   new cuComplex *();
 }
 
 {
-// CHECK:  new sycl::double2();
-// CHECK-NEXT:  new sycl::double2 *();
+// CHECK:  new sycl::mdouble2();
+// CHECK-NEXT:  new sycl::mdouble2 *();
   new cuDoubleComplex();
   new cuDoubleComplex *();
 }
@@ -434,16 +434,16 @@ cublasStatus_t foo18();
 cublasStatus_t *foo19();
 cublasStatus_t &foo20();
 
-// CHECK: sycl::float2 foo21();
-// CHECK-NEXT: sycl::float2 *foo22();
-// CHECK-NEXT: sycl::float2 &foo23();
+// CHECK: sycl::mfloat2 foo21();
+// CHECK-NEXT: sycl::mfloat2 *foo22();
+// CHECK-NEXT: sycl::mfloat2 &foo23();
 cuComplex foo21();
 cuComplex *foo22();
 cuComplex &foo23();
 
-// CHECK: sycl::double2 foo24();
-// CHECK-NEXT: sycl::double2 *foo25();
-// CHECK-NEXT: sycl::double2 &foo26();
+// CHECK: sycl::mdouble2 foo24();
+// CHECK-NEXT: sycl::mdouble2 *foo25();
+// CHECK-NEXT: sycl::mdouble2 &foo26();
 cuDoubleComplex foo24();
 cuDoubleComplex *foo25();
 cuDoubleComplex &foo26();
@@ -580,19 +580,19 @@ template <> struct S<cublasHandle_t &> {};
 template <> struct S<cublasHandle_t &&> {};
 
 
-// CHECK: template <> struct S<sycl::float2> {};
-// CHECK-NEXT: template <> struct S<sycl::float2 *> {};
-// CHECK-NEXT: template <> struct S<sycl::float2 &> {};
-// CHECK-NEXT: template <> struct S<sycl::float2 &&> {};
+// CHECK: template <> struct S<sycl::mfloat2> {};
+// CHECK-NEXT: template <> struct S<sycl::mfloat2 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mfloat2 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mfloat2 &&> {};
 template <> struct S<cuComplex> {};
 template <> struct S<cuComplex *> {};
 template <> struct S<cuComplex &> {};
 template <> struct S<cuComplex &&> {};
 
-// CHECK: template <> struct S<sycl::double2> {};
-// CHECK-NEXT: template <> struct S<sycl::double2 *> {};
-// CHECK-NEXT: template <> struct S<sycl::double2 &> {};
-// CHECK-NEXT: template <> struct S<sycl::double2 &&> {};
+// CHECK: template <> struct S<sycl::mdouble2> {};
+// CHECK-NEXT: template <> struct S<sycl::mdouble2 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mdouble2 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mdouble2 &&> {};
 template <> struct S<cuDoubleComplex> {};
 template <> struct S<cuDoubleComplex *> {};
 template <> struct S<cuDoubleComplex &> {};
@@ -765,19 +765,19 @@ template_foo<cublasStatus_t *>();
 template_foo<cublasStatus_t &>();
 template_foo<cublasStatus_t &&>();
 
-// CHECK: template_foo<sycl::float2>();
-// CHECK-NEXT: template_foo<sycl::float2 *>();
-// CHECK-NEXT: template_foo<sycl::float2 &>();
-// CHECK-NEXT: template_foo<sycl::float2 &&>();
+// CHECK: template_foo<sycl::mfloat2>();
+// CHECK-NEXT: template_foo<sycl::mfloat2 *>();
+// CHECK-NEXT: template_foo<sycl::mfloat2 &>();
+// CHECK-NEXT: template_foo<sycl::mfloat2 &&>();
 template_foo<cuComplex>();
 template_foo<cuComplex *>();
 template_foo<cuComplex &>();
 template_foo<cuComplex &&>();
 
-// CHECK: template_foo<sycl::double2>();
-// CHECK-NEXT: template_foo<sycl::double2 *>();
-// CHECK-NEXT: template_foo<sycl::double2 &>();
-// CHECK-NEXT: template_foo<sycl::double2 &&>();
+// CHECK: template_foo<sycl::mdouble2>();
+// CHECK-NEXT: template_foo<sycl::mdouble2 *>();
+// CHECK-NEXT: template_foo<sycl::mdouble2 &>();
+// CHECK-NEXT: template_foo<sycl::mdouble2 &&>();
 template_foo<cuDoubleComplex>();
 template_foo<cuDoubleComplex *>();
 template_foo<cuDoubleComplex &>();
@@ -958,19 +958,19 @@ using UT25 = cublasStatus_t *;
 using UT26 = cublasStatus_t &;
 using UT27 = cublasStatus_t &&;
 
-// CHECK: using UT28 = sycl::float2;
-// CHECK-NEXT: using UT29 = sycl::float2 *;
-// CHECK-NEXT: using UT30 = sycl::float2 &;
-// CHECK-NEXT: using UT31 = sycl::float2 &&;
+// CHECK: using UT28 = sycl::mfloat2;
+// CHECK-NEXT: using UT29 = sycl::mfloat2 *;
+// CHECK-NEXT: using UT30 = sycl::mfloat2 &;
+// CHECK-NEXT: using UT31 = sycl::mfloat2 &&;
 using UT28 = cuComplex;
 using UT29 = cuComplex *;
 using UT30 = cuComplex &;
 using UT31 = cuComplex &&;
 
-// CHECK: using UT32 = sycl::double2;
-// CHECK-NEXT: using UT33 = sycl::double2 *;
-// CHECK-NEXT: using UT34 = sycl::double2 &;
-// CHECK-NEXT: using UT35 = sycl::double2 &&;
+// CHECK: using UT32 = sycl::mdouble2;
+// CHECK-NEXT: using UT33 = sycl::mdouble2 *;
+// CHECK-NEXT: using UT34 = sycl::mdouble2 &;
+// CHECK-NEXT: using UT35 = sycl::mdouble2 &&;
 using UT32 = cuDoubleComplex;
 using UT33 = cuDoubleComplex *;
 using UT34 = cuDoubleComplex &;
@@ -1150,19 +1150,19 @@ typedef cublasStatus_t* T25;
 typedef cublasStatus_t& T26;
 typedef cublasStatus_t&& T27;
 
-// CHECK: typedef sycl::float2 T28;
-// CHECK-NEXT: typedef sycl::float2* T29;
-// CHECK-NEXT: typedef sycl::float2& T30;
-// CHECK-NEXT: typedef sycl::float2&& T31;
+// CHECK: typedef sycl::mfloat2 T28;
+// CHECK-NEXT: typedef sycl::mfloat2* T29;
+// CHECK-NEXT: typedef sycl::mfloat2& T30;
+// CHECK-NEXT: typedef sycl::mfloat2&& T31;
 typedef cuComplex T28;
 typedef cuComplex* T29;
 typedef cuComplex& T30;
 typedef cuComplex&& T31;
 
-// CHECK: typedef sycl::double2 T32;
-// CHECK-NEXT: typedef sycl::double2* T33;
-// CHECK-NEXT: typedef sycl::double2& T34;
-// CHECK-NEXT: typedef sycl::double2&& T35;
+// CHECK: typedef sycl::mdouble2 T32;
+// CHECK-NEXT: typedef sycl::mdouble2* T33;
+// CHECK-NEXT: typedef sycl::mdouble2& T34;
+// CHECK-NEXT: typedef sycl::mdouble2&& T35;
 typedef cuDoubleComplex T32;
 typedef cuDoubleComplex* T33;
 typedef cuDoubleComplex& T34;
@@ -1433,10 +1433,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_28 sycl::float2
-// CHECK-NEXT: #define T8_29 sycl::float2 *
-// CHECK-NEXT: #define T8_30 sycl::float2 &
-// CHECK-NEXT: #define T8_31 sycl::float2 &&
+// CHECK: #define T8_28 sycl::mfloat2
+// CHECK-NEXT: #define T8_29 sycl::mfloat2 *
+// CHECK-NEXT: #define T8_30 sycl::mfloat2 &
+// CHECK-NEXT: #define T8_31 sycl::mfloat2 &&
 // CHECK-NEXT:     T8_28 a1;
 // CHECK-NEXT:     T8_29 a2;
 // CHECK-NEXT:     T8_30 a3=a1;
@@ -1453,10 +1453,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_32 sycl::double2
-// CHECK-NEXT: #define T8_33 sycl::double2 *
-// CHECK-NEXT: #define T8_34 sycl::double2 &
-// CHECK-NEXT: #define T8_35 sycl::double2 &&
+// CHECK: #define T8_32 sycl::mdouble2
+// CHECK-NEXT: #define T8_33 sycl::mdouble2 *
+// CHECK-NEXT: #define T8_34 sycl::mdouble2 &
+// CHECK-NEXT: #define T8_35 sycl::mdouble2 &&
 // CHECK-NEXT:     T8_32 a1;
 // CHECK-NEXT:     T8_33 a2;
 // CHECK-NEXT:     T8_34 a3=a1;
@@ -1753,19 +1753,19 @@ template <> void foo2(cublasHandle_t){}
 template <> void foo3(cublasHandle_t){}
 template <> void foo4(cublasHandle_t){}
 
-// CHECK: template <> void foo1(sycl::float2){}
-// CHECK-NEXT: template <> void foo2(sycl::float2){}
-// CHECK-NEXT: template <> void foo3(sycl::float2){}
-// CHECK-NEXT: template <> void foo4(sycl::float2){}
+// CHECK: template <> void foo1(sycl::mfloat2){}
+// CHECK-NEXT: template <> void foo2(sycl::mfloat2){}
+// CHECK-NEXT: template <> void foo3(sycl::mfloat2){}
+// CHECK-NEXT: template <> void foo4(sycl::mfloat2){}
 template <> void foo1(cuComplex){}
 template <> void foo2(cuComplex){}
 template <> void foo3(cuComplex){}
 template <> void foo4(cuComplex){}
 
-// CHECK: template <> void foo1(sycl::double2){}
-// CHECK-NEXT: template <> void foo2(sycl::double2){}
-// CHECK-NEXT: template <> void foo3(sycl::double2){}
-// CHECK-NEXT: template <> void foo4(sycl::double2){}
+// CHECK: template <> void foo1(sycl::mdouble2){}
+// CHECK-NEXT: template <> void foo2(sycl::mdouble2){}
+// CHECK-NEXT: template <> void foo3(sycl::mdouble2){}
+// CHECK-NEXT: template <> void foo4(sycl::mdouble2){}
 template <> void foo1(cuDoubleComplex){}
 template <> void foo2(cuDoubleComplex){}
 template <> void foo3(cuDoubleComplex){}

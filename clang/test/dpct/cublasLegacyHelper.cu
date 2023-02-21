@@ -75,8 +75,8 @@ int main() {
   // CHECK: int a = sizeof(int);
   // CHECK-NEXT: a = sizeof(int);
   // CHECK-NEXT: a = sizeof(dpct::queue_ptr);
-  // CHECK-NEXT: a = sizeof(cl::sycl::float2);
-  // CHECK-NEXT: a = sizeof(cl::sycl::double2);
+  // CHECK-NEXT: a = sizeof(cl::sycl::mfloat2);
+  // CHECK-NEXT: a = sizeof(cl::sycl::mdouble2);
   int a = sizeof(cublasStatus);
   a = sizeof(cublasStatus_t);
   a = sizeof(cublasHandle_t);

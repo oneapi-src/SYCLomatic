@@ -11,14 +11,14 @@ typedef struct new_s {
 } new_t;
 
 int main() {
-  //CHECK:sycl::float2 *f2;
-  //CHECK-NEXT:sycl::double3 *d3;
-  //CHECK-NEXT:sycl::int4 *i4;
+  //CHECK:sycl::mfloat2 *f2;
+  //CHECK-NEXT:sycl::mdouble3 *d3;
+  //CHECK-NEXT:sycl::mint4 *i4;
   //CHECK-NEXT:new_t *new_o;
   //CHECK-NEXT:new_o = (new_t *)calloc(1, sizeof(new_t));
-  //CHECK-NEXT:f2 = (sycl::float2 *)realloc(new_o, sizeof(new_t));
-  //CHECK-NEXT:d3 = (sycl::double3 *)malloc(sizeof(new_t));
-  //CHECK-NEXT:i4 = (sycl::int4 *)calloc(1, sizeof(new_t));
+  //CHECK-NEXT:f2 = (sycl::mfloat2 *)realloc(new_o, sizeof(new_t));
+  //CHECK-NEXT:d3 = (sycl::mdouble3 *)malloc(sizeof(new_t));
+  //CHECK-NEXT:i4 = (sycl::mint4 *)calloc(1, sizeof(new_t));
   float2 *f2;
   double3 *d3;
   int4 *i4;

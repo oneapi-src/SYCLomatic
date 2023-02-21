@@ -35,10 +35,10 @@ uchar1 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::char2 var1;
-// CHECK-NEXT: sycl::char2 *var2;
-// CHECK-NEXT: sycl::char2 &var3 = var1;
-// CHECK-NEXT: sycl::char2 &&var4 = std::move(var1);
+// CHECK: sycl::mchar2 var1;
+// CHECK-NEXT: sycl::mchar2 *var2;
+// CHECK-NEXT: sycl::mchar2 &var3 = var1;
+// CHECK-NEXT: sycl::mchar2 &&var4 = std::move(var1);
 char2 var1;
 char2 *var2;
 char2 &var3 = var1;
@@ -46,10 +46,10 @@ char2 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::uchar2 var1;
-// CHECK-NEXT: sycl::uchar2 *var2;
-// CHECK-NEXT: sycl::uchar2 &var3 = var1;
-// CHECK-NEXT: sycl::uchar2 &&var4 = std::move(var1);
+// CHECK: sycl::muchar2 var1;
+// CHECK-NEXT: sycl::muchar2 *var2;
+// CHECK-NEXT: sycl::muchar2 &var3 = var1;
+// CHECK-NEXT: sycl::muchar2 &&var4 = std::move(var1);
 uchar2 var1;
 uchar2 *var2;
 uchar2 &var3 = var1;
@@ -57,10 +57,10 @@ uchar2 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::char3 var1;
-// CHECK-NEXT: sycl::char3 *var2;
-// CHECK-NEXT: sycl::char3 &var3 = var1;
-// CHECK-NEXT: sycl::char3 &&var4 = std::move(var1);
+// CHECK: sycl::mchar3 var1;
+// CHECK-NEXT: sycl::mchar3 *var2;
+// CHECK-NEXT: sycl::mchar3 &var3 = var1;
+// CHECK-NEXT: sycl::mchar3 &&var4 = std::move(var1);
 char3 var1;
 char3 *var2;
 char3 &var3 = var1;
@@ -68,10 +68,10 @@ char3 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::uchar3 var1;
-// CHECK-NEXT: sycl::uchar3 *var2;
-// CHECK-NEXT: sycl::uchar3 &var3 = var1;
-// CHECK-NEXT: sycl::uchar3 &&var4 = std::move(var1);
+// CHECK: sycl::muchar3 var1;
+// CHECK-NEXT: sycl::muchar3 *var2;
+// CHECK-NEXT: sycl::muchar3 &var3 = var1;
+// CHECK-NEXT: sycl::muchar3 &&var4 = std::move(var1);
 uchar3 var1;
 uchar3 *var2;
 uchar3 &var3 = var1;
@@ -79,10 +79,10 @@ uchar3 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::char4 var1;
-// CHECK-NEXT: sycl::char4 *var2;
-// CHECK-NEXT: sycl::char4 &var3 = var1;
-// CHECK-NEXT: sycl::char4 &&var4 = std::move(var1);
+// CHECK: sycl::mchar4 var1;
+// CHECK-NEXT: sycl::mchar4 *var2;
+// CHECK-NEXT: sycl::mchar4 &var3 = var1;
+// CHECK-NEXT: sycl::mchar4 &&var4 = std::move(var1);
 char4 var1;
 char4 *var2;
 char4 &var3 = var1;
@@ -90,10 +90,10 @@ char4 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::uchar4 var1;
-// CHECK-NEXT: sycl::uchar4 *var2;
-// CHECK-NEXT: sycl::uchar4 &var3 = var1;
-// CHECK-NEXT: sycl::uchar4 &&var4 = std::move(var1);
+// CHECK: sycl::muchar4 var1;
+// CHECK-NEXT: sycl::muchar4 *var2;
+// CHECK-NEXT: sycl::muchar4 &var3 = var1;
+// CHECK-NEXT: sycl::muchar4 &&var4 = std::move(var1);
 uchar4 var1;
 uchar4 *var2;
 uchar4 &var3 = var1;
@@ -123,10 +123,10 @@ ushort1 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::short2 var1;
-// CHECK-NEXT: sycl::short2 *var2;
-// CHECK-NEXT: sycl::short2 &var3 = var1;
-// CHECK-NEXT: sycl::short2 &&var4 = std::move(var1);
+// CHECK: sycl::mshort2 var1;
+// CHECK-NEXT: sycl::mshort2 *var2;
+// CHECK-NEXT: sycl::mshort2 &var3 = var1;
+// CHECK-NEXT: sycl::mshort2 &&var4 = std::move(var1);
 short2 var1;
 short2 *var2;
 short2 &var3 = var1;
@@ -134,10 +134,10 @@ short2 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::ushort2 var1;
-// CHECK-NEXT: sycl::ushort2 *var2;
-// CHECK-NEXT: sycl::ushort2 &var3 = var1;
-// CHECK-NEXT: sycl::ushort2 &&var4 = std::move(var1);
+// CHECK: sycl::mushort2 var1;
+// CHECK-NEXT: sycl::mushort2 *var2;
+// CHECK-NEXT: sycl::mushort2 &var3 = var1;
+// CHECK-NEXT: sycl::mushort2 &&var4 = std::move(var1);
 ushort2 var1;
 ushort2 *var2;
 ushort2 &var3 = var1;
@@ -145,10 +145,10 @@ ushort2 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::short3 var1;
-// CHECK-NEXT: sycl::short3 *var2;
-// CHECK-NEXT: sycl::short3 &var3 = var1;
-// CHECK-NEXT: sycl::short3 &&var4 = std::move(var1);
+// CHECK: sycl::mshort3 var1;
+// CHECK-NEXT: sycl::mshort3 *var2;
+// CHECK-NEXT: sycl::mshort3 &var3 = var1;
+// CHECK-NEXT: sycl::mshort3 &&var4 = std::move(var1);
 short3 var1;
 short3 *var2;
 short3 &var3 = var1;
@@ -156,10 +156,10 @@ short3 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::ushort3 var1;
-// CHECK-NEXT: sycl::ushort3 *var2;
-// CHECK-NEXT: sycl::ushort3 &var3 = var1;
-// CHECK-NEXT: sycl::ushort3 &&var4 = std::move(var1);
+// CHECK: sycl::mushort3 var1;
+// CHECK-NEXT: sycl::mushort3 *var2;
+// CHECK-NEXT: sycl::mushort3 &var3 = var1;
+// CHECK-NEXT: sycl::mushort3 &&var4 = std::move(var1);
 ushort3 var1;
 ushort3 *var2;
 ushort3 &var3 = var1;
@@ -167,10 +167,10 @@ ushort3 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::short4 var1;
-// CHECK-NEXT: sycl::short4 *var2;
-// CHECK-NEXT: sycl::short4 &var3 = var1;
-// CHECK-NEXT: sycl::short4 &&var4 = std::move(var1);
+// CHECK: sycl::mshort4 var1;
+// CHECK-NEXT: sycl::mshort4 *var2;
+// CHECK-NEXT: sycl::mshort4 &var3 = var1;
+// CHECK-NEXT: sycl::mshort4 &&var4 = std::move(var1);
 short4 var1;
 short4 *var2;
 short4 &var3 = var1;
@@ -178,10 +178,10 @@ short4 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::ushort4 var1;
-// CHECK-NEXT: sycl::ushort4 *var2;
-// CHECK-NEXT: sycl::ushort4 &var3 = var1;
-// CHECK-NEXT: sycl::ushort4 &&var4 = std::move(var1);
+// CHECK: sycl::mushort4 var1;
+// CHECK-NEXT: sycl::mushort4 *var2;
+// CHECK-NEXT: sycl::mushort4 &var3 = var1;
+// CHECK-NEXT: sycl::mushort4 &&var4 = std::move(var1);
 ushort4 var1;
 ushort4 *var2;
 ushort4 &var3 = var1;
@@ -211,10 +211,10 @@ uint1 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::int2 var1;
-// CHECK-NEXT: sycl::int2 *var2;
-// CHECK-NEXT: sycl::int2 &var3 = var1;
-// CHECK-NEXT: sycl::int2 &&var4 = std::move(var1);
+// CHECK: sycl::mint2 var1;
+// CHECK-NEXT: sycl::mint2 *var2;
+// CHECK-NEXT: sycl::mint2 &var3 = var1;
+// CHECK-NEXT: sycl::mint2 &&var4 = std::move(var1);
 int2 var1;
 int2 *var2;
 int2 &var3 = var1;
@@ -222,10 +222,10 @@ int2 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::uint2 var1;
-// CHECK-NEXT: sycl::uint2 *var2;
-// CHECK-NEXT: sycl::uint2 &var3 = var1;
-// CHECK-NEXT: sycl::uint2 &&var4 = std::move(var1);
+// CHECK: sycl::muint2 var1;
+// CHECK-NEXT: sycl::muint2 *var2;
+// CHECK-NEXT: sycl::muint2 &var3 = var1;
+// CHECK-NEXT: sycl::muint2 &&var4 = std::move(var1);
 uint2 var1;
 uint2 *var2;
 uint2 &var3 = var1;
@@ -233,10 +233,10 @@ uint2 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::int3 var1;
-// CHECK-NEXT: sycl::int3 *var2;
-// CHECK-NEXT: sycl::int3 &var3 = var1;
-// CHECK-NEXT: sycl::int3 &&var4 = std::move(var1);
+// CHECK: sycl::mint3 var1;
+// CHECK-NEXT: sycl::mint3 *var2;
+// CHECK-NEXT: sycl::mint3 &var3 = var1;
+// CHECK-NEXT: sycl::mint3 &&var4 = std::move(var1);
 int3 var1;
 int3 *var2;
 int3 &var3 = var1;
@@ -244,10 +244,10 @@ int3 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::uint3 var1;
-// CHECK-NEXT: sycl::uint3 *var2;
-// CHECK-NEXT: sycl::uint3 &var3 = var1;
-// CHECK-NEXT: sycl::uint3 &&var4 = std::move(var1);
+// CHECK: sycl::muint3 var1;
+// CHECK-NEXT: sycl::muint3 *var2;
+// CHECK-NEXT: sycl::muint3 &var3 = var1;
+// CHECK-NEXT: sycl::muint3 &&var4 = std::move(var1);
 uint3 var1;
 uint3 *var2;
 uint3 &var3 = var1;
@@ -255,10 +255,10 @@ uint3 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::int4 var1;
-// CHECK-NEXT: sycl::int4 *var2;
-// CHECK-NEXT: sycl::int4 &var3 = var1;
-// CHECK-NEXT: sycl::int4 &&var4 = std::move(var1);
+// CHECK: sycl::mint4 var1;
+// CHECK-NEXT: sycl::mint4 *var2;
+// CHECK-NEXT: sycl::mint4 &var3 = var1;
+// CHECK-NEXT: sycl::mint4 &&var4 = std::move(var1);
 int4 var1;
 int4 *var2;
 int4 &var3 = var1;
@@ -266,10 +266,10 @@ int4 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::uint4 var1;
-// CHECK-NEXT: sycl::uint4 *var2;
-// CHECK-NEXT: sycl::uint4 &var3 = var1;
-// CHECK-NEXT: sycl::uint4 &&var4 = std::move(var1);
+// CHECK: sycl::muint4 var1;
+// CHECK-NEXT: sycl::muint4 *var2;
+// CHECK-NEXT: sycl::muint4 &var3 = var1;
+// CHECK-NEXT: sycl::muint4 &&var4 = std::move(var1);
 uint4 var1;
 uint4 *var2;
 uint4 &var3 = var1;
@@ -299,10 +299,10 @@ ulong1 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::long2 var1;
-// CHECK-NEXT: sycl::long2 *var2;
-// CHECK-NEXT: sycl::long2 &var3 = var1;
-// CHECK-NEXT: sycl::long2 &&var4 = std::move(var1);
+// CHECK: sycl::mlong2 var1;
+// CHECK-NEXT: sycl::mlong2 *var2;
+// CHECK-NEXT: sycl::mlong2 &var3 = var1;
+// CHECK-NEXT: sycl::mlong2 &&var4 = std::move(var1);
 long2 var1;
 long2 *var2;
 long2 &var3 = var1;
@@ -310,10 +310,10 @@ long2 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::ulong2 var1;
-// CHECK-NEXT: sycl::ulong2 *var2;
-// CHECK-NEXT: sycl::ulong2 &var3 = var1;
-// CHECK-NEXT: sycl::ulong2 &&var4 = std::move(var1);
+// CHECK: sycl::mulong2 var1;
+// CHECK-NEXT: sycl::mulong2 *var2;
+// CHECK-NEXT: sycl::mulong2 &var3 = var1;
+// CHECK-NEXT: sycl::mulong2 &&var4 = std::move(var1);
 ulong2 var1;
 ulong2 *var2;
 ulong2 &var3 = var1;
@@ -321,10 +321,10 @@ ulong2 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::long3 var1;
-// CHECK-NEXT: sycl::long3 *var2;
-// CHECK-NEXT: sycl::long3 &var3 = var1;
-// CHECK-NEXT: sycl::long3 &&var4 = std::move(var1);
+// CHECK: sycl::mlong3 var1;
+// CHECK-NEXT: sycl::mlong3 *var2;
+// CHECK-NEXT: sycl::mlong3 &var3 = var1;
+// CHECK-NEXT: sycl::mlong3 &&var4 = std::move(var1);
 long3 var1;
 long3 *var2;
 long3 &var3 = var1;
@@ -332,10 +332,10 @@ long3 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::ulong3 var1;
-// CHECK-NEXT: sycl::ulong3 *var2;
-// CHECK-NEXT: sycl::ulong3 &var3 = var1;
-// CHECK-NEXT: sycl::ulong3 &&var4 = std::move(var1);
+// CHECK: sycl::mulong3 var1;
+// CHECK-NEXT: sycl::mulong3 *var2;
+// CHECK-NEXT: sycl::mulong3 &var3 = var1;
+// CHECK-NEXT: sycl::mulong3 &&var4 = std::move(var1);
 ulong3 var1;
 ulong3 *var2;
 ulong3 &var3 = var1;
@@ -343,10 +343,10 @@ ulong3 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::long4 var1;
-// CHECK-NEXT: sycl::long4 *var2;
-// CHECK-NEXT: sycl::long4 &var3 = var1;
-// CHECK-NEXT: sycl::long4 &&var4 = std::move(var1);
+// CHECK: sycl::mlong4 var1;
+// CHECK-NEXT: sycl::mlong4 *var2;
+// CHECK-NEXT: sycl::mlong4 &var3 = var1;
+// CHECK-NEXT: sycl::mlong4 &&var4 = std::move(var1);
 long4 var1;
 long4 *var2;
 long4 &var3 = var1;
@@ -354,10 +354,10 @@ long4 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::ulong4 var1;
-// CHECK-NEXT: sycl::ulong4 *var2;
-// CHECK-NEXT: sycl::ulong4 &var3 = var1;
-// CHECK-NEXT: sycl::ulong4 &&var4 = std::move(var1);
+// CHECK: sycl::mulong4 var1;
+// CHECK-NEXT: sycl::mulong4 *var2;
+// CHECK-NEXT: sycl::mulong4 &var3 = var1;
+// CHECK-NEXT: sycl::mulong4 &&var4 = std::move(var1);
 ulong4 var1;
 ulong4 *var2;
 ulong4 &var3 = var1;
@@ -376,10 +376,10 @@ float1 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::float2 var1;
-// CHECK-NEXT: sycl::float2 *var2;
-// CHECK-NEXT: sycl::float2 &var3 = var1;
-// CHECK-NEXT: sycl::float2 &&var4 = std::move(var1);
+// CHECK: sycl::mfloat2 var1;
+// CHECK-NEXT: sycl::mfloat2 *var2;
+// CHECK-NEXT: sycl::mfloat2 &var3 = var1;
+// CHECK-NEXT: sycl::mfloat2 &&var4 = std::move(var1);
 float2 var1;
 float2 *var2;
 float2 &var3 = var1;
@@ -387,10 +387,10 @@ float2 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::float3 var1;
-// CHECK-NEXT: sycl::float3 *var2;
-// CHECK-NEXT: sycl::float3 &var3 = var1;
-// CHECK-NEXT: sycl::float3 &&var4 = std::move(var1);
+// CHECK: sycl::mfloat3 var1;
+// CHECK-NEXT: sycl::mfloat3 *var2;
+// CHECK-NEXT: sycl::mfloat3 &var3 = var1;
+// CHECK-NEXT: sycl::mfloat3 &&var4 = std::move(var1);
 float3 var1;
 float3 *var2;
 float3 &var3 = var1;
@@ -398,10 +398,10 @@ float3 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::float4 var1;
-// CHECK-NEXT: sycl::float4 *var2;
-// CHECK-NEXT: sycl::float4 &var3 = var1;
-// CHECK-NEXT: sycl::float4 &&var4 = std::move(var1);
+// CHECK: sycl::mfloat4 var1;
+// CHECK-NEXT: sycl::mfloat4 *var2;
+// CHECK-NEXT: sycl::mfloat4 &var3 = var1;
+// CHECK-NEXT: sycl::mfloat4 &&var4 = std::move(var1);
 float4 var1;
 float4 *var2;
 float4 &var3 = var1;
@@ -431,10 +431,10 @@ ulonglong1 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::longlong2 var1;
-// CHECK-NEXT: sycl::longlong2 *var2;
-// CHECK-NEXT: sycl::longlong2 &var3 = var1;
-// CHECK-NEXT: sycl::longlong2 &&var4 = std::move(var1);
+// CHECK: sycl::mlonglong2 var1;
+// CHECK-NEXT: sycl::mlonglong2 *var2;
+// CHECK-NEXT: sycl::mlonglong2 &var3 = var1;
+// CHECK-NEXT: sycl::mlonglong2 &&var4 = std::move(var1);
 longlong2 var1;
 longlong2 *var2;
 longlong2 &var3 = var1;
@@ -442,10 +442,10 @@ longlong2 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::ulonglong2 var1;
-// CHECK-NEXT: sycl::ulonglong2 *var2;
-// CHECK-NEXT: sycl::ulonglong2 &var3 = var1;
-// CHECK-NEXT: sycl::ulonglong2 &&var4 = std::move(var1);
+// CHECK: sycl::mulonglong2 var1;
+// CHECK-NEXT: sycl::mulonglong2 *var2;
+// CHECK-NEXT: sycl::mulonglong2 &var3 = var1;
+// CHECK-NEXT: sycl::mulonglong2 &&var4 = std::move(var1);
 ulonglong2 var1;
 ulonglong2 *var2;
 ulonglong2 &var3 = var1;
@@ -453,10 +453,10 @@ ulonglong2 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::longlong3 var1;
-// CHECK-NEXT: sycl::longlong3 *var2;
-// CHECK-NEXT: sycl::longlong3 &var3 = var1;
-// CHECK-NEXT: sycl::longlong3 &&var4 = std::move(var1);
+// CHECK: sycl::mlonglong3 var1;
+// CHECK-NEXT: sycl::mlonglong3 *var2;
+// CHECK-NEXT: sycl::mlonglong3 &var3 = var1;
+// CHECK-NEXT: sycl::mlonglong3 &&var4 = std::move(var1);
 longlong3 var1;
 longlong3 *var2;
 longlong3 &var3 = var1;
@@ -464,10 +464,10 @@ longlong3 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::ulonglong3 var1;
-// CHECK-NEXT: sycl::ulonglong3 *var2;
-// CHECK-NEXT: sycl::ulonglong3 &var3 = var1;
-// CHECK-NEXT: sycl::ulonglong3 &&var4 = std::move(var1);
+// CHECK: sycl::mulonglong3 var1;
+// CHECK-NEXT: sycl::mulonglong3 *var2;
+// CHECK-NEXT: sycl::mulonglong3 &var3 = var1;
+// CHECK-NEXT: sycl::mulonglong3 &&var4 = std::move(var1);
 ulonglong3 var1;
 ulonglong3 *var2;
 ulonglong3 &var3 = var1;
@@ -475,10 +475,10 @@ ulonglong3 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::longlong4 var1;
-// CHECK-NEXT: sycl::longlong4 *var2;
-// CHECK-NEXT: sycl::longlong4 &var3 = var1;
-// CHECK-NEXT: sycl::longlong4 &&var4 = std::move(var1);
+// CHECK: sycl::mlonglong4 var1;
+// CHECK-NEXT: sycl::mlonglong4 *var2;
+// CHECK-NEXT: sycl::mlonglong4 &var3 = var1;
+// CHECK-NEXT: sycl::mlonglong4 &&var4 = std::move(var1);
 longlong4 var1;
 longlong4 *var2;
 longlong4 &var3 = var1;
@@ -486,10 +486,10 @@ longlong4 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::ulonglong4 var1;
-// CHECK-NEXT: sycl::ulonglong4 *var2;
-// CHECK-NEXT: sycl::ulonglong4 &var3 = var1;
-// CHECK-NEXT: sycl::ulonglong4 &&var4 = std::move(var1);
+// CHECK: sycl::mulonglong4 var1;
+// CHECK-NEXT: sycl::mulonglong4 *var2;
+// CHECK-NEXT: sycl::mulonglong4 &var3 = var1;
+// CHECK-NEXT: sycl::mulonglong4 &&var4 = std::move(var1);
 ulonglong4 var1;
 ulonglong4 *var2;
 ulonglong4 &var3 = var1;
@@ -508,10 +508,10 @@ double1 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::double2 var1;
-// CHECK-NEXT: sycl::double2 *var2;
-// CHECK-NEXT: sycl::double2 &var3 = var1;
-// CHECK-NEXT: sycl::double2 &&var4 = std::move(var1);
+// CHECK: sycl::mdouble2 var1;
+// CHECK-NEXT: sycl::mdouble2 *var2;
+// CHECK-NEXT: sycl::mdouble2 &var3 = var1;
+// CHECK-NEXT: sycl::mdouble2 &&var4 = std::move(var1);
 double2 var1;
 double2 *var2;
 double2 &var3 = var1;
@@ -519,10 +519,10 @@ double2 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::double3 var1;
-// CHECK-NEXT: sycl::double3 *var2;
-// CHECK-NEXT: sycl::double3 &var3 = var1;
-// CHECK-NEXT: sycl::double3 &&var4 = std::move(var1);
+// CHECK: sycl::mdouble3 var1;
+// CHECK-NEXT: sycl::mdouble3 *var2;
+// CHECK-NEXT: sycl::mdouble3 &var3 = var1;
+// CHECK-NEXT: sycl::mdouble3 &&var4 = std::move(var1);
 double3 var1;
 double3 *var2;
 double3 &var3 = var1;
@@ -530,10 +530,10 @@ double3 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::double4 var1;
-// CHECK-NEXT: sycl::double4 *var2;
-// CHECK-NEXT: sycl::double4 &var3 = var1;
-// CHECK-NEXT: sycl::double4 &&var4 = std::move(var1);
+// CHECK: sycl::mdouble4 var1;
+// CHECK-NEXT: sycl::mdouble4 *var2;
+// CHECK-NEXT: sycl::mdouble4 &var3 = var1;
+// CHECK-NEXT: sycl::mdouble4 &&var4 = std::move(var1);
 double4 var1;
 double4 *var2;
 double4 &var3 = var1;
@@ -557,43 +557,43 @@ void case_2(void) {
 }
 
 {
-// CHECK:  new sycl::char2();
-// CHECK-NEXT:  new sycl::char2 *();
+// CHECK:  new sycl::mchar2();
+// CHECK-NEXT:  new sycl::mchar2 *();
   new char2();
   new char2 *();
 }
 
 {
-// CHECK:  new sycl::uchar2();
-// CHECK-NEXT:  new sycl::uchar2 *();
+// CHECK:  new sycl::muchar2();
+// CHECK-NEXT:  new sycl::muchar2 *();
   new uchar2();
   new uchar2 *();
 }
 
 {
-// CHECK:  new sycl::char3();
-// CHECK-NEXT:  new sycl::char3 *();
+// CHECK:  new sycl::mchar3();
+// CHECK-NEXT:  new sycl::mchar3 *();
   new char3();
   new char3 *();
 }
 
 {
-// CHECK:  new sycl::uchar3();
-// CHECK-NEXT:  new sycl::uchar3 *();
+// CHECK:  new sycl::muchar3();
+// CHECK-NEXT:  new sycl::muchar3 *();
   new uchar3();
   new uchar3 *();
 }
 
 {
-// CHECK:  new sycl::char4();
-// CHECK-NEXT:  new sycl::char4 *();
+// CHECK:  new sycl::mchar4();
+// CHECK-NEXT:  new sycl::mchar4 *();
   new char4();
   new char4 *();
 }
 
 {
-// CHECK:  new sycl::uchar4();
-// CHECK-NEXT:  new sycl::uchar4 *();
+// CHECK:  new sycl::muchar4();
+// CHECK-NEXT:  new sycl::muchar4 *();
   new uchar4();
   new uchar4 *();
 }
@@ -613,43 +613,43 @@ void case_2(void) {
 }
 
 {
-// CHECK:  new sycl::short2();
-// CHECK-NEXT:  new sycl::short2 *();
+// CHECK:  new sycl::mshort2();
+// CHECK-NEXT:  new sycl::mshort2 *();
   new short2();
   new short2 *();
 }
 
 {
-// CHECK:  new sycl::ushort2();
-// CHECK-NEXT:  new sycl::ushort2 *();
+// CHECK:  new sycl::mushort2();
+// CHECK-NEXT:  new sycl::mushort2 *();
   new ushort2();
   new ushort2 *();
 }
 
 {
-// CHECK:  new sycl::short3();
-// CHECK-NEXT:  new sycl::short3 *();
+// CHECK:  new sycl::mshort3();
+// CHECK-NEXT:  new sycl::mshort3 *();
   new short3();
   new short3 *();
 }
 
 {
-// CHECK:  new sycl::ushort3();
-// CHECK-NEXT:  new sycl::ushort3 *();
+// CHECK:  new sycl::mushort3();
+// CHECK-NEXT:  new sycl::mushort3 *();
   new ushort3();
   new ushort3 *();
 }
 
 {
-// CHECK:  new sycl::short4();
-// CHECK-NEXT:  new sycl::short4 *();
+// CHECK:  new sycl::mshort4();
+// CHECK-NEXT:  new sycl::mshort4 *();
   new short4();
   new short4 *();
 }
 
 {
-// CHECK:  new sycl::ushort4();
-// CHECK-NEXT:  new sycl::ushort4 *();
+// CHECK:  new sycl::mushort4();
+// CHECK-NEXT:  new sycl::mushort4 *();
   new ushort4();
   new ushort4 *();
 }
@@ -669,43 +669,43 @@ void case_2(void) {
 }
 
 {
-// CHECK:  new sycl::int2();
-// CHECK-NEXT:  new sycl::int2 *();
+// CHECK:  new sycl::mint2();
+// CHECK-NEXT:  new sycl::mint2 *();
   new int2();
   new int2 *();
 }
 
 {
-// CHECK:  new sycl::uint2();
-// CHECK-NEXT:  new sycl::uint2 *();
+// CHECK:  new sycl::muint2();
+// CHECK-NEXT:  new sycl::muint2 *();
   new uint2();
   new uint2 *();
 }
 
 {
-// CHECK:  new sycl::int3();
-// CHECK-NEXT:  new sycl::int3 *();
+// CHECK:  new sycl::mint3();
+// CHECK-NEXT:  new sycl::mint3 *();
   new int3();
   new int3 *();
 }
 
 {
-// CHECK:  new sycl::uint3();
-// CHECK-NEXT:  new sycl::uint3 *();
+// CHECK:  new sycl::muint3();
+// CHECK-NEXT:  new sycl::muint3 *();
   new uint3();
   new uint3 *();
 }
 
 {
-// CHECK:  new sycl::int4();
-// CHECK-NEXT:  new sycl::int4 *();
+// CHECK:  new sycl::mint4();
+// CHECK-NEXT:  new sycl::mint4 *();
   new int4();
   new int4 *();
 }
 
 {
-// CHECK:  new sycl::uint4();
-// CHECK-NEXT:  new sycl::uint4 *();
+// CHECK:  new sycl::muint4();
+// CHECK-NEXT:  new sycl::muint4 *();
   new uint4();
   new uint4 *();
 }
@@ -725,43 +725,43 @@ void case_2(void) {
 }
 
 {
-// CHECK:  new sycl::long2();
-// CHECK-NEXT:  new sycl::long2 *();
+// CHECK:  new sycl::mlong2();
+// CHECK-NEXT:  new sycl::mlong2 *();
   new long2();
   new long2 *();
 }
 
 {
-// CHECK:  new sycl::ulong2();
-// CHECK-NEXT:  new sycl::ulong2 *();
+// CHECK:  new sycl::mulong2();
+// CHECK-NEXT:  new sycl::mulong2 *();
   new ulong2();
   new ulong2 *();
 }
 
 {
-// CHECK:  new sycl::long3();
-// CHECK-NEXT:  new sycl::long3 *();
+// CHECK:  new sycl::mlong3();
+// CHECK-NEXT:  new sycl::mlong3 *();
   new long3();
   new long3 *();
 }
 
 {
-// CHECK:  new sycl::ulong3();
-// CHECK-NEXT:  new sycl::ulong3 *();
+// CHECK:  new sycl::mulong3();
+// CHECK-NEXT:  new sycl::mulong3 *();
   new ulong3();
   new ulong3 *();
 }
 
 {
-// CHECK:  new sycl::long4();
-// CHECK-NEXT:  new sycl::long4 *();
+// CHECK:  new sycl::mlong4();
+// CHECK-NEXT:  new sycl::mlong4 *();
   new long4();
   new long4 *();
 }
 
 {
-// CHECK:  new sycl::ulong4();
-// CHECK-NEXT:  new sycl::ulong4 *();
+// CHECK:  new sycl::mulong4();
+// CHECK-NEXT:  new sycl::mulong4 *();
   new ulong4();
   new ulong4 *();
 }
@@ -774,22 +774,22 @@ void case_2(void) {
 }
 
 {
-// CHECK:  new sycl::float2();
-// CHECK-NEXT:  new sycl::float2 *();
+// CHECK:  new sycl::mfloat2();
+// CHECK-NEXT:  new sycl::mfloat2 *();
   new float2();
   new float2 *();
 }
 
 {
-// CHECK:  new sycl::float3();
-// CHECK-NEXT:  new sycl::float3 *();
+// CHECK:  new sycl::mfloat3();
+// CHECK-NEXT:  new sycl::mfloat3 *();
   new float3();
   new float3 *();
 }
 
 {
-// CHECK:  new sycl::float4();
-// CHECK-NEXT:  new sycl::float4 *();
+// CHECK:  new sycl::mfloat4();
+// CHECK-NEXT:  new sycl::mfloat4 *();
   new float4();
   new float4 *();
 }
@@ -809,43 +809,43 @@ void case_2(void) {
 }
 
 {
-// CHECK:  new sycl::longlong2();
-// CHECK-NEXT:  new sycl::longlong2 *();
+// CHECK:  new sycl::mlonglong2();
+// CHECK-NEXT:  new sycl::mlonglong2 *();
   new longlong2();
   new longlong2 *();
 }
 
 {
-// CHECK:  new sycl::ulonglong2();
-// CHECK-NEXT:  new sycl::ulonglong2 *();
+// CHECK:  new sycl::mulonglong2();
+// CHECK-NEXT:  new sycl::mulonglong2 *();
   new ulonglong2();
   new ulonglong2 *();
 }
 
 {
-// CHECK:  new sycl::longlong3();
-// CHECK-NEXT:  new sycl::longlong3 *();
+// CHECK:  new sycl::mlonglong3();
+// CHECK-NEXT:  new sycl::mlonglong3 *();
   new longlong3();
   new longlong3 *();
 }
 
 {
-// CHECK:  new sycl::ulonglong3();
-// CHECK-NEXT:  new sycl::ulonglong3 *();
+// CHECK:  new sycl::mulonglong3();
+// CHECK-NEXT:  new sycl::mulonglong3 *();
   new ulonglong3();
   new ulonglong3 *();
 }
 
 {
-// CHECK:  new sycl::longlong4();
-// CHECK-NEXT:  new sycl::longlong4 *();
+// CHECK:  new sycl::mlonglong4();
+// CHECK-NEXT:  new sycl::mlonglong4 *();
   new longlong4();
   new longlong4 *();
 }
 
 {
-// CHECK:  new sycl::ulonglong4();
-// CHECK-NEXT:  new sycl::ulonglong4 *();
+// CHECK:  new sycl::mulonglong4();
+// CHECK-NEXT:  new sycl::mulonglong4 *();
   new ulonglong4();
   new ulonglong4 *();
 }
@@ -858,22 +858,22 @@ void case_2(void) {
 }
 
 {
-// CHECK:  new sycl::double2();
-// CHECK-NEXT:  new sycl::double2 *();
+// CHECK:  new sycl::mdouble2();
+// CHECK-NEXT:  new sycl::mdouble2 *();
   new double2();
   new double2 *();
 }
 
 {
-// CHECK:  new sycl::double3();
-// CHECK-NEXT:  new sycl::double3 *();
+// CHECK:  new sycl::mdouble3();
+// CHECK-NEXT:  new sycl::mdouble3 *();
   new double3();
   new double3 *();
 }
 
 {
-// CHECK:  new sycl::double4();
-// CHECK-NEXT:  new sycl::double4 *();
+// CHECK:  new sycl::mdouble4();
+// CHECK-NEXT:  new sycl::mdouble4 *();
   new double4();
   new double4 *();
 }
@@ -895,44 +895,44 @@ uchar1 foo3();
 uchar1 *foo4();
 uchar1 &foo5();
 
-// CHECK: sycl::char2 foo6();
-// CHECK-NEXT: sycl::char2 *foo7();
-// CHECK-NEXT: sycl::char2 &foo8();
+// CHECK: sycl::mchar2 foo6();
+// CHECK-NEXT: sycl::mchar2 *foo7();
+// CHECK-NEXT: sycl::mchar2 &foo8();
 char2 foo6();
 char2 *foo7();
 char2 &foo8();
 
-// CHECK: sycl::uchar2 foo9();
-// CHECK-NEXT: sycl::uchar2 *foo10();
-// CHECK-NEXT: sycl::uchar2 &foo11();
+// CHECK: sycl::muchar2 foo9();
+// CHECK-NEXT: sycl::muchar2 *foo10();
+// CHECK-NEXT: sycl::muchar2 &foo11();
 uchar2 foo9();
 uchar2 *foo10();
 uchar2 &foo11();
 
-// CHECK: sycl::char3 foo12();
-// CHECK-NEXT: sycl::char3 *foo13();
-// CHECK-NEXT: sycl::char3 &foo14();
+// CHECK: sycl::mchar3 foo12();
+// CHECK-NEXT: sycl::mchar3 *foo13();
+// CHECK-NEXT: sycl::mchar3 &foo14();
 char3 foo12();
 char3 *foo13();
 char3 &foo14();
 
-// CHECK: sycl::uchar3 foo15();
-// CHECK-NEXT: sycl::uchar3 *foo16();
-// CHECK-NEXT: sycl::uchar3 &foo17();
+// CHECK: sycl::muchar3 foo15();
+// CHECK-NEXT: sycl::muchar3 *foo16();
+// CHECK-NEXT: sycl::muchar3 &foo17();
 uchar3 foo15();
 uchar3 *foo16();
 uchar3 &foo17();
 
-// CHECK: sycl::char4 foo18();
-// CHECK-NEXT: sycl::char4 *foo19();
-// CHECK-NEXT: sycl::char4 &foo20();
+// CHECK: sycl::mchar4 foo18();
+// CHECK-NEXT: sycl::mchar4 *foo19();
+// CHECK-NEXT: sycl::mchar4 &foo20();
 char4 foo18();
 char4 *foo19();
 char4 &foo20();
 
-// CHECK: sycl::uchar4 foo21();
-// CHECK-NEXT: sycl::uchar4 *foo22();
-// CHECK-NEXT: sycl::uchar4 &foo23();
+// CHECK: sycl::muchar4 foo21();
+// CHECK-NEXT: sycl::muchar4 *foo22();
+// CHECK-NEXT: sycl::muchar4 &foo23();
 uchar4 foo21();
 uchar4 *foo22();
 uchar4 &foo23();
@@ -951,44 +951,44 @@ ushort1 foo27();
 ushort1 *foo28();
 ushort1 &foo29();
 
-// CHECK: sycl::short2 foo30();
-// CHECK-NEXT: sycl::short2 *foo31();
-// CHECK-NEXT: sycl::short2 &foo32();
+// CHECK: sycl::mshort2 foo30();
+// CHECK-NEXT: sycl::mshort2 *foo31();
+// CHECK-NEXT: sycl::mshort2 &foo32();
 short2 foo30();
 short2 *foo31();
 short2 &foo32();
 
-// CHECK: sycl::ushort2 foo33();
-// CHECK-NEXT: sycl::ushort2 *foo34();
-// CHECK-NEXT: sycl::ushort2 &foo35();
+// CHECK: sycl::mushort2 foo33();
+// CHECK-NEXT: sycl::mushort2 *foo34();
+// CHECK-NEXT: sycl::mushort2 &foo35();
 ushort2 foo33();
 ushort2 *foo34();
 ushort2 &foo35();
 
-// CHECK: sycl::short3 foo36();
-// CHECK-NEXT: sycl::short3 *foo37();
-// CHECK-NEXT: sycl::short3 &foo38();
+// CHECK: sycl::mshort3 foo36();
+// CHECK-NEXT: sycl::mshort3 *foo37();
+// CHECK-NEXT: sycl::mshort3 &foo38();
 short3 foo36();
 short3 *foo37();
 short3 &foo38();
 
-// CHECK: sycl::ushort3 foo39();
-// CHECK-NEXT: sycl::ushort3 *foo40();
-// CHECK-NEXT: sycl::ushort3 &foo41();
+// CHECK: sycl::mushort3 foo39();
+// CHECK-NEXT: sycl::mushort3 *foo40();
+// CHECK-NEXT: sycl::mushort3 &foo41();
 ushort3 foo39();
 ushort3 *foo40();
 ushort3 &foo41();
 
-// CHECK: sycl::short4 foo42();
-// CHECK-NEXT: sycl::short4 *foo43();
-// CHECK-NEXT: sycl::short4 &foo44();
+// CHECK: sycl::mshort4 foo42();
+// CHECK-NEXT: sycl::mshort4 *foo43();
+// CHECK-NEXT: sycl::mshort4 &foo44();
 short4 foo42();
 short4 *foo43();
 short4 &foo44();
 
-// CHECK: sycl::ushort4 foo45();
-// CHECK-NEXT: sycl::ushort4 *foo46();
-// CHECK-NEXT: sycl::ushort4 &foo47();
+// CHECK: sycl::mushort4 foo45();
+// CHECK-NEXT: sycl::mushort4 *foo46();
+// CHECK-NEXT: sycl::mushort4 &foo47();
 ushort4 foo45();
 ushort4 *foo46();
 ushort4 &foo47();
@@ -1007,44 +1007,44 @@ uint1 foo51();
 uint1 *foo52();
 uint1 &foo53();
 
-// CHECK: sycl::int2 foo54();
-// CHECK-NEXT: sycl::int2 *foo55();
-// CHECK-NEXT: sycl::int2 &foo56();
+// CHECK: sycl::mint2 foo54();
+// CHECK-NEXT: sycl::mint2 *foo55();
+// CHECK-NEXT: sycl::mint2 &foo56();
 int2 foo54();
 int2 *foo55();
 int2 &foo56();
 
-// CHECK: sycl::uint2 foo57();
-// CHECK-NEXT: sycl::uint2 *foo58();
-// CHECK-NEXT: sycl::uint2 &foo59();
+// CHECK: sycl::muint2 foo57();
+// CHECK-NEXT: sycl::muint2 *foo58();
+// CHECK-NEXT: sycl::muint2 &foo59();
 uint2 foo57();
 uint2 *foo58();
 uint2 &foo59();
 
-// CHECK: sycl::int3 foo60();
-// CHECK-NEXT: sycl::int3 *foo61();
-// CHECK-NEXT: sycl::int3 &foo62();
+// CHECK: sycl::mint3 foo60();
+// CHECK-NEXT: sycl::mint3 *foo61();
+// CHECK-NEXT: sycl::mint3 &foo62();
 int3 foo60();
 int3 *foo61();
 int3 &foo62();
 
-// CHECK: sycl::uint3 foo63();
-// CHECK-NEXT: sycl::uint3 *foo64();
-// CHECK-NEXT: sycl::uint3 &foo65();
+// CHECK: sycl::muint3 foo63();
+// CHECK-NEXT: sycl::muint3 *foo64();
+// CHECK-NEXT: sycl::muint3 &foo65();
 uint3 foo63();
 uint3 *foo64();
 uint3 &foo65();
 
-// CHECK: sycl::int4 foo66();
-// CHECK-NEXT: sycl::int4 *foo67();
-// CHECK-NEXT: sycl::int4 &foo68();
+// CHECK: sycl::mint4 foo66();
+// CHECK-NEXT: sycl::mint4 *foo67();
+// CHECK-NEXT: sycl::mint4 &foo68();
 int4 foo66();
 int4 *foo67();
 int4 &foo68();
 
-// CHECK: sycl::uint4 foo69();
-// CHECK-NEXT: sycl::uint4 *foo70();
-// CHECK-NEXT: sycl::uint4 &foo71();
+// CHECK: sycl::muint4 foo69();
+// CHECK-NEXT: sycl::muint4 *foo70();
+// CHECK-NEXT: sycl::muint4 &foo71();
 uint4 foo69();
 uint4 *foo70();
 uint4 &foo71();
@@ -1063,44 +1063,44 @@ ulong1 foo75();
 ulong1 *foo76();
 ulong1 &foo77();
 
-// CHECK: sycl::long2 foo78();
-// CHECK-NEXT: sycl::long2 *foo79();
-// CHECK-NEXT: sycl::long2 &foo80();
+// CHECK: sycl::mlong2 foo78();
+// CHECK-NEXT: sycl::mlong2 *foo79();
+// CHECK-NEXT: sycl::mlong2 &foo80();
 long2 foo78();
 long2 *foo79();
 long2 &foo80();
 
-// CHECK: sycl::ulong2 foo81();
-// CHECK-NEXT: sycl::ulong2 *foo82();
-// CHECK-NEXT: sycl::ulong2 &foo83();
+// CHECK: sycl::mulong2 foo81();
+// CHECK-NEXT: sycl::mulong2 *foo82();
+// CHECK-NEXT: sycl::mulong2 &foo83();
 ulong2 foo81();
 ulong2 *foo82();
 ulong2 &foo83();
 
-// CHECK: sycl::long3 foo84();
-// CHECK-NEXT: sycl::long3 *foo85();
-// CHECK-NEXT: sycl::long3 &foo86();
+// CHECK: sycl::mlong3 foo84();
+// CHECK-NEXT: sycl::mlong3 *foo85();
+// CHECK-NEXT: sycl::mlong3 &foo86();
 long3 foo84();
 long3 *foo85();
 long3 &foo86();
 
-// CHECK: sycl::ulong3 foo87();
-// CHECK-NEXT: sycl::ulong3 *foo88();
-// CHECK-NEXT: sycl::ulong3 &foo89();
+// CHECK: sycl::mulong3 foo87();
+// CHECK-NEXT: sycl::mulong3 *foo88();
+// CHECK-NEXT: sycl::mulong3 &foo89();
 ulong3 foo87();
 ulong3 *foo88();
 ulong3 &foo89();
 
-// CHECK: sycl::long4 foo90();
-// CHECK-NEXT: sycl::long4 *foo91();
-// CHECK-NEXT: sycl::long4 &foo92();
+// CHECK: sycl::mlong4 foo90();
+// CHECK-NEXT: sycl::mlong4 *foo91();
+// CHECK-NEXT: sycl::mlong4 &foo92();
 long4 foo90();
 long4 *foo91();
 long4 &foo92();
 
-// CHECK: sycl::ulong4 foo93();
-// CHECK-NEXT: sycl::ulong4 *foo94();
-// CHECK-NEXT: sycl::ulong4 &foo95();
+// CHECK: sycl::mulong4 foo93();
+// CHECK-NEXT: sycl::mulong4 *foo94();
+// CHECK-NEXT: sycl::mulong4 &foo95();
 ulong4 foo93();
 ulong4 *foo94();
 ulong4 &foo95();
@@ -1112,23 +1112,23 @@ float1 foo96();
 float1 *foo97();
 float1 &foo98();
 
-// CHECK: sycl::float2 foo99();
-// CHECK-NEXT: sycl::float2 *foo100();
-// CHECK-NEXT: sycl::float2 &foo101();
+// CHECK: sycl::mfloat2 foo99();
+// CHECK-NEXT: sycl::mfloat2 *foo100();
+// CHECK-NEXT: sycl::mfloat2 &foo101();
 float2 foo99();
 float2 *foo100();
 float2 &foo101();
 
-// CHECK: sycl::float3 foo102();
-// CHECK-NEXT: sycl::float3 *foo103();
-// CHECK-NEXT: sycl::float3 &foo104();
+// CHECK: sycl::mfloat3 foo102();
+// CHECK-NEXT: sycl::mfloat3 *foo103();
+// CHECK-NEXT: sycl::mfloat3 &foo104();
 float3 foo102();
 float3 *foo103();
 float3 &foo104();
 
-// CHECK: sycl::float4 foo105();
-// CHECK-NEXT: sycl::float4 *foo106();
-// CHECK-NEXT: sycl::float4 &foo107();
+// CHECK: sycl::mfloat4 foo105();
+// CHECK-NEXT: sycl::mfloat4 *foo106();
+// CHECK-NEXT: sycl::mfloat4 &foo107();
 float4 foo105();
 float4 *foo106();
 float4 &foo107();
@@ -1147,44 +1147,44 @@ ulonglong1 foo111();
 ulonglong1 *foo112();
 ulonglong1 &foo113();
 
-// CHECK: sycl::longlong2 foo114();
-// CHECK-NEXT: sycl::longlong2 *foo115();
-// CHECK-NEXT: sycl::longlong2 &foo116();
+// CHECK: sycl::mlonglong2 foo114();
+// CHECK-NEXT: sycl::mlonglong2 *foo115();
+// CHECK-NEXT: sycl::mlonglong2 &foo116();
 longlong2 foo114();
 longlong2 *foo115();
 longlong2 &foo116();
 
-// CHECK: sycl::ulonglong2 foo117();
-// CHECK-NEXT: sycl::ulonglong2 *foo118();
-// CHECK-NEXT: sycl::ulonglong2 &foo119();
+// CHECK: sycl::mulonglong2 foo117();
+// CHECK-NEXT: sycl::mulonglong2 *foo118();
+// CHECK-NEXT: sycl::mulonglong2 &foo119();
 ulonglong2 foo117();
 ulonglong2 *foo118();
 ulonglong2 &foo119();
 
-// CHECK: sycl::longlong3 foo120();
-// CHECK-NEXT: sycl::longlong3 *foo121();
-// CHECK-NEXT: sycl::longlong3 &foo122();
+// CHECK: sycl::mlonglong3 foo120();
+// CHECK-NEXT: sycl::mlonglong3 *foo121();
+// CHECK-NEXT: sycl::mlonglong3 &foo122();
 longlong3 foo120();
 longlong3 *foo121();
 longlong3 &foo122();
 
-// CHECK: sycl::ulonglong3 foo123();
-// CHECK-NEXT: sycl::ulonglong3 *foo124();
-// CHECK-NEXT: sycl::ulonglong3 &foo125();
+// CHECK: sycl::mulonglong3 foo123();
+// CHECK-NEXT: sycl::mulonglong3 *foo124();
+// CHECK-NEXT: sycl::mulonglong3 &foo125();
 ulonglong3 foo123();
 ulonglong3 *foo124();
 ulonglong3 &foo125();
 
-// CHECK: sycl::longlong4 foo126();
-// CHECK-NEXT: sycl::longlong4 *foo127();
-// CHECK-NEXT: sycl::longlong4 &foo128();
+// CHECK: sycl::mlonglong4 foo126();
+// CHECK-NEXT: sycl::mlonglong4 *foo127();
+// CHECK-NEXT: sycl::mlonglong4 &foo128();
 longlong4 foo126();
 longlong4 *foo127();
 longlong4 &foo128();
 
-// CHECK: sycl::ulonglong4 foo129();
-// CHECK-NEXT: sycl::ulonglong4 *foo130();
-// CHECK-NEXT: sycl::ulonglong4 &foo131();
+// CHECK: sycl::mulonglong4 foo129();
+// CHECK-NEXT: sycl::mulonglong4 *foo130();
+// CHECK-NEXT: sycl::mulonglong4 &foo131();
 ulonglong4 foo129();
 ulonglong4 *foo130();
 ulonglong4 &foo131();
@@ -1196,23 +1196,23 @@ double1 foo132();
 double1 *foo133();
 double1 &foo134();
 
-// CHECK: sycl::double2 foo135();
-// CHECK-NEXT: sycl::double2 *foo136();
-// CHECK-NEXT: sycl::double2 &foo137();
+// CHECK: sycl::mdouble2 foo135();
+// CHECK-NEXT: sycl::mdouble2 *foo136();
+// CHECK-NEXT: sycl::mdouble2 &foo137();
 double2 foo135();
 double2 *foo136();
 double2 &foo137();
 
-// CHECK: sycl::double3 foo138();
-// CHECK-NEXT: sycl::double3 *foo139();
-// CHECK-NEXT: sycl::double3 &foo140();
+// CHECK: sycl::mdouble3 foo138();
+// CHECK-NEXT: sycl::mdouble3 *foo139();
+// CHECK-NEXT: sycl::mdouble3 &foo140();
 double3 foo138();
 double3 *foo139();
 double3 &foo140();
 
-// CHECK: sycl::double4 foo141();
-// CHECK-NEXT: sycl::double4 *foo142();
-// CHECK-NEXT: sycl::double4 &foo143();
+// CHECK: sycl::mdouble4 foo141();
+// CHECK-NEXT: sycl::mdouble4 *foo142();
+// CHECK-NEXT: sycl::mdouble4 &foo143();
 double4 foo141();
 double4 *foo142();
 double4 &foo143();
@@ -1238,55 +1238,55 @@ template <> struct S<uchar1 *> {};
 template <> struct S<uchar1 &> {};
 template <> struct S<uchar1 &&> {};
 
-// CHECK: template <> struct S<sycl::char2> {};
-// CHECK-NEXT: template <> struct S<sycl::char2 *> {};
-// CHECK-NEXT: template <> struct S<sycl::char2 &> {};
-// CHECK-NEXT: template <> struct S<sycl::char2 &&> {};
+// CHECK: template <> struct S<sycl::mchar2> {};
+// CHECK-NEXT: template <> struct S<sycl::mchar2 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mchar2 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mchar2 &&> {};
 template <> struct S<char2> {};
 template <> struct S<char2 *> {};
 template <> struct S<char2 &> {};
 template <> struct S<char2 &&> {};
 
-// CHECK: template <> struct S<sycl::uchar2> {};
-// CHECK-NEXT: template <> struct S<sycl::uchar2 *> {};
-// CHECK-NEXT: template <> struct S<sycl::uchar2 &> {};
-// CHECK-NEXT: template <> struct S<sycl::uchar2 &&> {};
+// CHECK: template <> struct S<sycl::muchar2> {};
+// CHECK-NEXT: template <> struct S<sycl::muchar2 *> {};
+// CHECK-NEXT: template <> struct S<sycl::muchar2 &> {};
+// CHECK-NEXT: template <> struct S<sycl::muchar2 &&> {};
 template <> struct S<uchar2> {};
 template <> struct S<uchar2 *> {};
 template <> struct S<uchar2 &> {};
 template <> struct S<uchar2 &&> {};
 
-// CHECK: template <> struct S<sycl::char3> {};
-// CHECK-NEXT: template <> struct S<sycl::char3 *> {};
-// CHECK-NEXT: template <> struct S<sycl::char3 &> {};
-// CHECK-NEXT: template <> struct S<sycl::char3 &&> {};
+// CHECK: template <> struct S<sycl::mchar3> {};
+// CHECK-NEXT: template <> struct S<sycl::mchar3 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mchar3 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mchar3 &&> {};
 template <> struct S<char3> {};
 template <> struct S<char3 *> {};
 template <> struct S<char3 &> {};
 template <> struct S<char3 &&> {};
 
-// CHECK: template <> struct S<sycl::uchar3> {};
-// CHECK-NEXT: template <> struct S<sycl::uchar3 *> {};
-// CHECK-NEXT: template <> struct S<sycl::uchar3 &> {};
-// CHECK-NEXT: template <> struct S<sycl::uchar3 &&> {};
+// CHECK: template <> struct S<sycl::muchar3> {};
+// CHECK-NEXT: template <> struct S<sycl::muchar3 *> {};
+// CHECK-NEXT: template <> struct S<sycl::muchar3 &> {};
+// CHECK-NEXT: template <> struct S<sycl::muchar3 &&> {};
 template <> struct S<uchar3> {};
 template <> struct S<uchar3 *> {};
 template <> struct S<uchar3 &> {};
 template <> struct S<uchar3 &&> {};
 
-// CHECK: template <> struct S<sycl::char4> {};
-// CHECK-NEXT: template <> struct S<sycl::char4 *> {};
-// CHECK-NEXT: template <> struct S<sycl::char4 &> {};
-// CHECK-NEXT: template <> struct S<sycl::char4 &&> {};
+// CHECK: template <> struct S<sycl::mchar4> {};
+// CHECK-NEXT: template <> struct S<sycl::mchar4 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mchar4 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mchar4 &&> {};
 template <> struct S<char4> {};
 template <> struct S<char4 *> {};
 template <> struct S<char4 &> {};
 template <> struct S<char4 &&> {};
 
-// CHECK: template <> struct S<sycl::uchar4> {};
-// CHECK-NEXT: template <> struct S<sycl::uchar4 *> {};
-// CHECK-NEXT: template <> struct S<sycl::uchar4 &> {};
-// CHECK-NEXT: template <> struct S<sycl::uchar4 &&> {};
+// CHECK: template <> struct S<sycl::muchar4> {};
+// CHECK-NEXT: template <> struct S<sycl::muchar4 *> {};
+// CHECK-NEXT: template <> struct S<sycl::muchar4 &> {};
+// CHECK-NEXT: template <> struct S<sycl::muchar4 &&> {};
 template <> struct S<uchar4> {};
 template <> struct S<uchar4 *> {};
 template <> struct S<uchar4 &> {};
@@ -1310,55 +1310,55 @@ template <> struct S<ushort1 *> {};
 template <> struct S<ushort1 &> {};
 template <> struct S<ushort1 &&> {};
 
-// CHECK: template <> struct S<sycl::short2> {};
-// CHECK-NEXT: template <> struct S<sycl::short2 *> {};
-// CHECK-NEXT: template <> struct S<sycl::short2 &> {};
-// CHECK-NEXT: template <> struct S<sycl::short2 &&> {};
+// CHECK: template <> struct S<sycl::mshort2> {};
+// CHECK-NEXT: template <> struct S<sycl::mshort2 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mshort2 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mshort2 &&> {};
 template <> struct S<short2> {};
 template <> struct S<short2 *> {};
 template <> struct S<short2 &> {};
 template <> struct S<short2 &&> {};
 
-// CHECK: template <> struct S<sycl::ushort2> {};
-// CHECK-NEXT: template <> struct S<sycl::ushort2 *> {};
-// CHECK-NEXT: template <> struct S<sycl::ushort2 &> {};
-// CHECK-NEXT: template <> struct S<sycl::ushort2 &&> {};
+// CHECK: template <> struct S<sycl::mushort2> {};
+// CHECK-NEXT: template <> struct S<sycl::mushort2 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mushort2 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mushort2 &&> {};
 template <> struct S<ushort2> {};
 template <> struct S<ushort2 *> {};
 template <> struct S<ushort2 &> {};
 template <> struct S<ushort2 &&> {};
 
-// CHECK: template <> struct S<sycl::short3> {};
-// CHECK-NEXT: template <> struct S<sycl::short3 *> {};
-// CHECK-NEXT: template <> struct S<sycl::short3 &> {};
-// CHECK-NEXT: template <> struct S<sycl::short3 &&> {};
+// CHECK: template <> struct S<sycl::mshort3> {};
+// CHECK-NEXT: template <> struct S<sycl::mshort3 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mshort3 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mshort3 &&> {};
 template <> struct S<short3> {};
 template <> struct S<short3 *> {};
 template <> struct S<short3 &> {};
 template <> struct S<short3 &&> {};
 
-// CHECK: template <> struct S<sycl::ushort3> {};
-// CHECK-NEXT: template <> struct S<sycl::ushort3 *> {};
-// CHECK-NEXT: template <> struct S<sycl::ushort3 &> {};
-// CHECK-NEXT: template <> struct S<sycl::ushort3 &&> {};
+// CHECK: template <> struct S<sycl::mushort3> {};
+// CHECK-NEXT: template <> struct S<sycl::mushort3 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mushort3 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mushort3 &&> {};
 template <> struct S<ushort3> {};
 template <> struct S<ushort3 *> {};
 template <> struct S<ushort3 &> {};
 template <> struct S<ushort3 &&> {};
 
-// CHECK: template <> struct S<sycl::short4> {};
-// CHECK-NEXT: template <> struct S<sycl::short4 *> {};
-// CHECK-NEXT: template <> struct S<sycl::short4 &> {};
-// CHECK-NEXT: template <> struct S<sycl::short4 &&> {};
+// CHECK: template <> struct S<sycl::mshort4> {};
+// CHECK-NEXT: template <> struct S<sycl::mshort4 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mshort4 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mshort4 &&> {};
 template <> struct S<short4> {};
 template <> struct S<short4 *> {};
 template <> struct S<short4 &> {};
 template <> struct S<short4 &&> {};
 
-// CHECK: template <> struct S<sycl::ushort4> {};
-// CHECK-NEXT: template <> struct S<sycl::ushort4 *> {};
-// CHECK-NEXT: template <> struct S<sycl::ushort4 &> {};
-// CHECK-NEXT: template <> struct S<sycl::ushort4 &&> {};
+// CHECK: template <> struct S<sycl::mushort4> {};
+// CHECK-NEXT: template <> struct S<sycl::mushort4 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mushort4 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mushort4 &&> {};
 template <> struct S<ushort4> {};
 template <> struct S<ushort4 *> {};
 template <> struct S<ushort4 &> {};
@@ -1382,55 +1382,55 @@ template <> struct S<uint1 *> {};
 template <> struct S<uint1 &> {};
 template <> struct S<uint1 &&> {};
 
-// CHECK: template <> struct S<sycl::int2> {};
-// CHECK-NEXT: template <> struct S<sycl::int2 *> {};
-// CHECK-NEXT: template <> struct S<sycl::int2 &> {};
-// CHECK-NEXT: template <> struct S<sycl::int2 &&> {};
+// CHECK: template <> struct S<sycl::mint2> {};
+// CHECK-NEXT: template <> struct S<sycl::mint2 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mint2 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mint2 &&> {};
 template <> struct S<int2> {};
 template <> struct S<int2 *> {};
 template <> struct S<int2 &> {};
 template <> struct S<int2 &&> {};
 
-// CHECK: template <> struct S<sycl::uint2> {};
-// CHECK-NEXT: template <> struct S<sycl::uint2 *> {};
-// CHECK-NEXT: template <> struct S<sycl::uint2 &> {};
-// CHECK-NEXT: template <> struct S<sycl::uint2 &&> {};
+// CHECK: template <> struct S<sycl::muint2> {};
+// CHECK-NEXT: template <> struct S<sycl::muint2 *> {};
+// CHECK-NEXT: template <> struct S<sycl::muint2 &> {};
+// CHECK-NEXT: template <> struct S<sycl::muint2 &&> {};
 template <> struct S<uint2> {};
 template <> struct S<uint2 *> {};
 template <> struct S<uint2 &> {};
 template <> struct S<uint2 &&> {};
 
-// CHECK: template <> struct S<sycl::int3> {};
-// CHECK-NEXT: template <> struct S<sycl::int3 *> {};
-// CHECK-NEXT: template <> struct S<sycl::int3 &> {};
-// CHECK-NEXT: template <> struct S<sycl::int3 &&> {};
+// CHECK: template <> struct S<sycl::mint3> {};
+// CHECK-NEXT: template <> struct S<sycl::mint3 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mint3 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mint3 &&> {};
 template <> struct S<int3> {};
 template <> struct S<int3 *> {};
 template <> struct S<int3 &> {};
 template <> struct S<int3 &&> {};
 
-// CHECK: template <> struct S<sycl::uint3> {};
-// CHECK-NEXT: template <> struct S<sycl::uint3 *> {};
-// CHECK-NEXT: template <> struct S<sycl::uint3 &> {};
-// CHECK-NEXT: template <> struct S<sycl::uint3 &&> {};
+// CHECK: template <> struct S<sycl::muint3> {};
+// CHECK-NEXT: template <> struct S<sycl::muint3 *> {};
+// CHECK-NEXT: template <> struct S<sycl::muint3 &> {};
+// CHECK-NEXT: template <> struct S<sycl::muint3 &&> {};
 template <> struct S<uint3> {};
 template <> struct S<uint3 *> {};
 template <> struct S<uint3 &> {};
 template <> struct S<uint3 &&> {};
 
-// CHECK: template <> struct S<sycl::int4> {};
-// CHECK-NEXT: template <> struct S<sycl::int4 *> {};
-// CHECK-NEXT: template <> struct S<sycl::int4 &> {};
-// CHECK-NEXT: template <> struct S<sycl::int4 &&> {};
+// CHECK: template <> struct S<sycl::mint4> {};
+// CHECK-NEXT: template <> struct S<sycl::mint4 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mint4 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mint4 &&> {};
 template <> struct S<int4> {};
 template <> struct S<int4 *> {};
 template <> struct S<int4 &> {};
 template <> struct S<int4 &&> {};
 
-// CHECK: template <> struct S<sycl::uint4> {};
-// CHECK-NEXT: template <> struct S<sycl::uint4 *> {};
-// CHECK-NEXT: template <> struct S<sycl::uint4 &> {};
-// CHECK-NEXT: template <> struct S<sycl::uint4 &&> {};
+// CHECK: template <> struct S<sycl::muint4> {};
+// CHECK-NEXT: template <> struct S<sycl::muint4 *> {};
+// CHECK-NEXT: template <> struct S<sycl::muint4 &> {};
+// CHECK-NEXT: template <> struct S<sycl::muint4 &&> {};
 template <> struct S<uint4> {};
 template <> struct S<uint4 *> {};
 template <> struct S<uint4 &> {};
@@ -1454,55 +1454,55 @@ template <> struct S<ulong1 *> {};
 template <> struct S<ulong1 &> {};
 template <> struct S<ulong1 &&> {};
 
-// CHECK: template <> struct S<sycl::long2> {};
-// CHECK-NEXT: template <> struct S<sycl::long2 *> {};
-// CHECK-NEXT: template <> struct S<sycl::long2 &> {};
-// CHECK-NEXT: template <> struct S<sycl::long2 &&> {};
+// CHECK: template <> struct S<sycl::mlong2> {};
+// CHECK-NEXT: template <> struct S<sycl::mlong2 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mlong2 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mlong2 &&> {};
 template <> struct S<long2> {};
 template <> struct S<long2 *> {};
 template <> struct S<long2 &> {};
 template <> struct S<long2 &&> {};
 
-// CHECK: template <> struct S<sycl::ulong2> {};
-// CHECK-NEXT: template <> struct S<sycl::ulong2 *> {};
-// CHECK-NEXT: template <> struct S<sycl::ulong2 &> {};
-// CHECK-NEXT: template <> struct S<sycl::ulong2 &&> {};
+// CHECK: template <> struct S<sycl::mulong2> {};
+// CHECK-NEXT: template <> struct S<sycl::mulong2 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mulong2 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mulong2 &&> {};
 template <> struct S<ulong2> {};
 template <> struct S<ulong2 *> {};
 template <> struct S<ulong2 &> {};
 template <> struct S<ulong2 &&> {};
 
-// CHECK: template <> struct S<sycl::long3> {};
-// CHECK-NEXT: template <> struct S<sycl::long3 *> {};
-// CHECK-NEXT: template <> struct S<sycl::long3 &> {};
-// CHECK-NEXT: template <> struct S<sycl::long3 &&> {};
+// CHECK: template <> struct S<sycl::mlong3> {};
+// CHECK-NEXT: template <> struct S<sycl::mlong3 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mlong3 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mlong3 &&> {};
 template <> struct S<long3> {};
 template <> struct S<long3 *> {};
 template <> struct S<long3 &> {};
 template <> struct S<long3 &&> {};
 
-// CHECK: template <> struct S<sycl::ulong3> {};
-// CHECK-NEXT: template <> struct S<sycl::ulong3 *> {};
-// CHECK-NEXT: template <> struct S<sycl::ulong3 &> {};
-// CHECK-NEXT: template <> struct S<sycl::ulong3 &&> {};
+// CHECK: template <> struct S<sycl::mulong3> {};
+// CHECK-NEXT: template <> struct S<sycl::mulong3 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mulong3 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mulong3 &&> {};
 template <> struct S<ulong3> {};
 template <> struct S<ulong3 *> {};
 template <> struct S<ulong3 &> {};
 template <> struct S<ulong3 &&> {};
 
-// CHECK: template <> struct S<sycl::long4> {};
-// CHECK-NEXT: template <> struct S<sycl::long4 *> {};
-// CHECK-NEXT: template <> struct S<sycl::long4 &> {};
-// CHECK-NEXT: template <> struct S<sycl::long4 &&> {};
+// CHECK: template <> struct S<sycl::mlong4> {};
+// CHECK-NEXT: template <> struct S<sycl::mlong4 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mlong4 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mlong4 &&> {};
 template <> struct S<long4> {};
 template <> struct S<long4 *> {};
 template <> struct S<long4 &> {};
 template <> struct S<long4 &&> {};
 
-// CHECK: template <> struct S<sycl::ulong4> {};
-// CHECK-NEXT: template <> struct S<sycl::ulong4 *> {};
-// CHECK-NEXT: template <> struct S<sycl::ulong4 &> {};
-// CHECK-NEXT: template <> struct S<sycl::ulong4 &&> {};
+// CHECK: template <> struct S<sycl::mulong4> {};
+// CHECK-NEXT: template <> struct S<sycl::mulong4 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mulong4 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mulong4 &&> {};
 template <> struct S<ulong4> {};
 template <> struct S<ulong4 *> {};
 template <> struct S<ulong4 &> {};
@@ -1517,28 +1517,28 @@ template <> struct S<float1 *> {};
 template <> struct S<float1 &> {};
 template <> struct S<float1 &&> {};
 
-// CHECK: template <> struct S<sycl::float2> {};
-// CHECK-NEXT: template <> struct S<sycl::float2 *> {};
-// CHECK-NEXT: template <> struct S<sycl::float2 &> {};
-// CHECK-NEXT: template <> struct S<sycl::float2 &&> {};
+// CHECK: template <> struct S<sycl::mfloat2> {};
+// CHECK-NEXT: template <> struct S<sycl::mfloat2 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mfloat2 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mfloat2 &&> {};
 template <> struct S<float2> {};
 template <> struct S<float2 *> {};
 template <> struct S<float2 &> {};
 template <> struct S<float2 &&> {};
 
-// CHECK: template <> struct S<sycl::float3> {};
-// CHECK-NEXT: template <> struct S<sycl::float3 *> {};
-// CHECK-NEXT: template <> struct S<sycl::float3 &> {};
-// CHECK-NEXT: template <> struct S<sycl::float3 &&> {};
+// CHECK: template <> struct S<sycl::mfloat3> {};
+// CHECK-NEXT: template <> struct S<sycl::mfloat3 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mfloat3 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mfloat3 &&> {};
 template <> struct S<float3> {};
 template <> struct S<float3 *> {};
 template <> struct S<float3 &> {};
 template <> struct S<float3 &&> {};
 
-// CHECK: template <> struct S<sycl::float4> {};
-// CHECK-NEXT: template <> struct S<sycl::float4 *> {};
-// CHECK-NEXT: template <> struct S<sycl::float4 &> {};
-// CHECK-NEXT: template <> struct S<sycl::float4 &&> {};
+// CHECK: template <> struct S<sycl::mfloat4> {};
+// CHECK-NEXT: template <> struct S<sycl::mfloat4 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mfloat4 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mfloat4 &&> {};
 template <> struct S<float4> {};
 template <> struct S<float4 *> {};
 template <> struct S<float4 &> {};
@@ -1562,55 +1562,55 @@ template <> struct S<ulonglong1 *> {};
 template <> struct S<ulonglong1 &> {};
 template <> struct S<ulonglong1 &&> {};
 
-// CHECK: template <> struct S<sycl::longlong2> {};
-// CHECK-NEXT: template <> struct S<sycl::longlong2 *> {};
-// CHECK-NEXT: template <> struct S<sycl::longlong2 &> {};
-// CHECK-NEXT: template <> struct S<sycl::longlong2 &&> {};
+// CHECK: template <> struct S<sycl::mlonglong2> {};
+// CHECK-NEXT: template <> struct S<sycl::mlonglong2 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mlonglong2 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mlonglong2 &&> {};
 template <> struct S<longlong2> {};
 template <> struct S<longlong2 *> {};
 template <> struct S<longlong2 &> {};
 template <> struct S<longlong2 &&> {};
 
-// CHECK: template <> struct S<sycl::ulonglong2> {};
-// CHECK-NEXT: template <> struct S<sycl::ulonglong2 *> {};
-// CHECK-NEXT: template <> struct S<sycl::ulonglong2 &> {};
-// CHECK-NEXT: template <> struct S<sycl::ulonglong2 &&> {};
+// CHECK: template <> struct S<sycl::mulonglong2> {};
+// CHECK-NEXT: template <> struct S<sycl::mulonglong2 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mulonglong2 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mulonglong2 &&> {};
 template <> struct S<ulonglong2> {};
 template <> struct S<ulonglong2 *> {};
 template <> struct S<ulonglong2 &> {};
 template <> struct S<ulonglong2 &&> {};
 
-// CHECK: template <> struct S<sycl::longlong3> {};
-// CHECK-NEXT: template <> struct S<sycl::longlong3 *> {};
-// CHECK-NEXT: template <> struct S<sycl::longlong3 &> {};
-// CHECK-NEXT: template <> struct S<sycl::longlong3 &&> {};
+// CHECK: template <> struct S<sycl::mlonglong3> {};
+// CHECK-NEXT: template <> struct S<sycl::mlonglong3 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mlonglong3 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mlonglong3 &&> {};
 template <> struct S<longlong3> {};
 template <> struct S<longlong3 *> {};
 template <> struct S<longlong3 &> {};
 template <> struct S<longlong3 &&> {};
 
-// CHECK: template <> struct S<sycl::ulonglong3> {};
-// CHECK-NEXT: template <> struct S<sycl::ulonglong3 *> {};
-// CHECK-NEXT: template <> struct S<sycl::ulonglong3 &> {};
-// CHECK-NEXT: template <> struct S<sycl::ulonglong3 &&> {};
+// CHECK: template <> struct S<sycl::mulonglong3> {};
+// CHECK-NEXT: template <> struct S<sycl::mulonglong3 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mulonglong3 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mulonglong3 &&> {};
 template <> struct S<ulonglong3> {};
 template <> struct S<ulonglong3 *> {};
 template <> struct S<ulonglong3 &> {};
 template <> struct S<ulonglong3 &&> {};
 
-// CHECK: template <> struct S<sycl::longlong4> {};
-// CHECK-NEXT: template <> struct S<sycl::longlong4 *> {};
-// CHECK-NEXT: template <> struct S<sycl::longlong4 &> {};
-// CHECK-NEXT: template <> struct S<sycl::longlong4 &&> {};
+// CHECK: template <> struct S<sycl::mlonglong4> {};
+// CHECK-NEXT: template <> struct S<sycl::mlonglong4 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mlonglong4 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mlonglong4 &&> {};
 template <> struct S<longlong4> {};
 template <> struct S<longlong4 *> {};
 template <> struct S<longlong4 &> {};
 template <> struct S<longlong4 &&> {};
 
-// CHECK: template <> struct S<sycl::ulonglong4> {};
-// CHECK-NEXT: template <> struct S<sycl::ulonglong4 *> {};
-// CHECK-NEXT: template <> struct S<sycl::ulonglong4 &> {};
-// CHECK-NEXT: template <> struct S<sycl::ulonglong4 &&> {};
+// CHECK: template <> struct S<sycl::mulonglong4> {};
+// CHECK-NEXT: template <> struct S<sycl::mulonglong4 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mulonglong4 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mulonglong4 &&> {};
 template <> struct S<ulonglong4> {};
 template <> struct S<ulonglong4 *> {};
 template <> struct S<ulonglong4 &> {};
@@ -1625,28 +1625,28 @@ template <> struct S<double1 *> {};
 template <> struct S<double1 &> {};
 template <> struct S<double1 &&> {};
 
-// CHECK: template <> struct S<sycl::double2> {};
-// CHECK-NEXT: template <> struct S<sycl::double2 *> {};
-// CHECK-NEXT: template <> struct S<sycl::double2 &> {};
-// CHECK-NEXT: template <> struct S<sycl::double2 &&> {};
+// CHECK: template <> struct S<sycl::mdouble2> {};
+// CHECK-NEXT: template <> struct S<sycl::mdouble2 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mdouble2 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mdouble2 &&> {};
 template <> struct S<double2> {};
 template <> struct S<double2 *> {};
 template <> struct S<double2 &> {};
 template <> struct S<double2 &&> {};
 
-// CHECK: template <> struct S<sycl::double3> {};
-// CHECK-NEXT: template <> struct S<sycl::double3 *> {};
-// CHECK-NEXT: template <> struct S<sycl::double3 &> {};
-// CHECK-NEXT: template <> struct S<sycl::double3 &&> {};
+// CHECK: template <> struct S<sycl::mdouble3> {};
+// CHECK-NEXT: template <> struct S<sycl::mdouble3 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mdouble3 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mdouble3 &&> {};
 template <> struct S<double3> {};
 template <> struct S<double3 *> {};
 template <> struct S<double3 &> {};
 template <> struct S<double3 &&> {};
 
-// CHECK: template <> struct S<sycl::double4> {};
-// CHECK-NEXT: template <> struct S<sycl::double4 *> {};
-// CHECK-NEXT: template <> struct S<sycl::double4 &> {};
-// CHECK-NEXT: template <> struct S<sycl::double4 &&> {};
+// CHECK: template <> struct S<sycl::mdouble4> {};
+// CHECK-NEXT: template <> struct S<sycl::mdouble4 *> {};
+// CHECK-NEXT: template <> struct S<sycl::mdouble4 &> {};
+// CHECK-NEXT: template <> struct S<sycl::mdouble4 &&> {};
 template <> struct S<double4> {};
 template <> struct S<double4 *> {};
 template <> struct S<double4 &> {};
@@ -1675,55 +1675,55 @@ template_foo<uchar1 *>();
 template_foo<uchar1 &>();
 template_foo<uchar1 &&>();
 
-// CHECK: template_foo<sycl::char2>();
-// CHECK-NEXT: template_foo<sycl::char2 *>();
-// CHECK-NEXT: template_foo<sycl::char2 &>();
-// CHECK-NEXT: template_foo<sycl::char2 &&>();
+// CHECK: template_foo<sycl::mchar2>();
+// CHECK-NEXT: template_foo<sycl::mchar2 *>();
+// CHECK-NEXT: template_foo<sycl::mchar2 &>();
+// CHECK-NEXT: template_foo<sycl::mchar2 &&>();
 template_foo<char2>();
 template_foo<char2 *>();
 template_foo<char2 &>();
 template_foo<char2 &&>();
 
-// CHECK: template_foo<sycl::uchar2>();
-// CHECK-NEXT: template_foo<sycl::uchar2 *>();
-// CHECK-NEXT: template_foo<sycl::uchar2 &>();
-// CHECK-NEXT: template_foo<sycl::uchar2 &&>();
+// CHECK: template_foo<sycl::muchar2>();
+// CHECK-NEXT: template_foo<sycl::muchar2 *>();
+// CHECK-NEXT: template_foo<sycl::muchar2 &>();
+// CHECK-NEXT: template_foo<sycl::muchar2 &&>();
 template_foo<uchar2>();
 template_foo<uchar2 *>();
 template_foo<uchar2 &>();
 template_foo<uchar2 &&>();
 
-// CHECK: template_foo<sycl::char3>();
-// CHECK-NEXT: template_foo<sycl::char3 *>();
-// CHECK-NEXT: template_foo<sycl::char3 &>();
-// CHECK-NEXT: template_foo<sycl::char3 &&>();
+// CHECK: template_foo<sycl::mchar3>();
+// CHECK-NEXT: template_foo<sycl::mchar3 *>();
+// CHECK-NEXT: template_foo<sycl::mchar3 &>();
+// CHECK-NEXT: template_foo<sycl::mchar3 &&>();
 template_foo<char3>();
 template_foo<char3 *>();
 template_foo<char3 &>();
 template_foo<char3 &&>();
 
-// CHECK: template_foo<sycl::uchar3>();
-// CHECK-NEXT: template_foo<sycl::uchar3 *>();
-// CHECK-NEXT: template_foo<sycl::uchar3 &>();
-// CHECK-NEXT: template_foo<sycl::uchar3 &&>();
+// CHECK: template_foo<sycl::muchar3>();
+// CHECK-NEXT: template_foo<sycl::muchar3 *>();
+// CHECK-NEXT: template_foo<sycl::muchar3 &>();
+// CHECK-NEXT: template_foo<sycl::muchar3 &&>();
 template_foo<uchar3>();
 template_foo<uchar3 *>();
 template_foo<uchar3 &>();
 template_foo<uchar3 &&>();
 
-// CHECK: template_foo<sycl::char4>();
-// CHECK-NEXT: template_foo<sycl::char4 *>();
-// CHECK-NEXT: template_foo<sycl::char4 &>();
-// CHECK-NEXT: template_foo<sycl::char4 &&>();
+// CHECK: template_foo<sycl::mchar4>();
+// CHECK-NEXT: template_foo<sycl::mchar4 *>();
+// CHECK-NEXT: template_foo<sycl::mchar4 &>();
+// CHECK-NEXT: template_foo<sycl::mchar4 &&>();
 template_foo<char4>();
 template_foo<char4 *>();
 template_foo<char4 &>();
 template_foo<char4 &&>();
 
-// CHECK: template_foo<sycl::uchar4>();
-// CHECK-NEXT: template_foo<sycl::uchar4 *>();
-// CHECK-NEXT: template_foo<sycl::uchar4 &>();
-// CHECK-NEXT: template_foo<sycl::uchar4 &&>();
+// CHECK: template_foo<sycl::muchar4>();
+// CHECK-NEXT: template_foo<sycl::muchar4 *>();
+// CHECK-NEXT: template_foo<sycl::muchar4 &>();
+// CHECK-NEXT: template_foo<sycl::muchar4 &&>();
 template_foo<uchar4>();
 template_foo<uchar4 *>();
 template_foo<uchar4 &>();
@@ -1747,55 +1747,55 @@ template_foo<ushort1 *>();
 template_foo<ushort1 &>();
 template_foo<ushort1 &&>();
 
-// CHECK: template_foo<sycl::short2>();
-// CHECK-NEXT: template_foo<sycl::short2 *>();
-// CHECK-NEXT: template_foo<sycl::short2 &>();
-// CHECK-NEXT: template_foo<sycl::short2 &&>();
+// CHECK: template_foo<sycl::mshort2>();
+// CHECK-NEXT: template_foo<sycl::mshort2 *>();
+// CHECK-NEXT: template_foo<sycl::mshort2 &>();
+// CHECK-NEXT: template_foo<sycl::mshort2 &&>();
 template_foo<short2>();
 template_foo<short2 *>();
 template_foo<short2 &>();
 template_foo<short2 &&>();
 
-// CHECK: template_foo<sycl::ushort2>();
-// CHECK-NEXT: template_foo<sycl::ushort2 *>();
-// CHECK-NEXT: template_foo<sycl::ushort2 &>();
-// CHECK-NEXT: template_foo<sycl::ushort2 &&>();
+// CHECK: template_foo<sycl::mushort2>();
+// CHECK-NEXT: template_foo<sycl::mushort2 *>();
+// CHECK-NEXT: template_foo<sycl::mushort2 &>();
+// CHECK-NEXT: template_foo<sycl::mushort2 &&>();
 template_foo<ushort2>();
 template_foo<ushort2 *>();
 template_foo<ushort2 &>();
 template_foo<ushort2 &&>();
 
-// CHECK: template_foo<sycl::short3>();
-// CHECK-NEXT: template_foo<sycl::short3 *>();
-// CHECK-NEXT: template_foo<sycl::short3 &>();
-// CHECK-NEXT: template_foo<sycl::short3 &&>();
+// CHECK: template_foo<sycl::mshort3>();
+// CHECK-NEXT: template_foo<sycl::mshort3 *>();
+// CHECK-NEXT: template_foo<sycl::mshort3 &>();
+// CHECK-NEXT: template_foo<sycl::mshort3 &&>();
 template_foo<short3>();
 template_foo<short3 *>();
 template_foo<short3 &>();
 template_foo<short3 &&>();
 
-// CHECK: template_foo<sycl::ushort3>();
-// CHECK-NEXT: template_foo<sycl::ushort3 *>();
-// CHECK-NEXT: template_foo<sycl::ushort3 &>();
-// CHECK-NEXT: template_foo<sycl::ushort3 &&>();
+// CHECK: template_foo<sycl::mushort3>();
+// CHECK-NEXT: template_foo<sycl::mushort3 *>();
+// CHECK-NEXT: template_foo<sycl::mushort3 &>();
+// CHECK-NEXT: template_foo<sycl::mushort3 &&>();
 template_foo<ushort3>();
 template_foo<ushort3 *>();
 template_foo<ushort3 &>();
 template_foo<ushort3 &&>();
 
-// CHECK: template_foo<sycl::short4>();
-// CHECK-NEXT: template_foo<sycl::short4 *>();
-// CHECK-NEXT: template_foo<sycl::short4 &>();
-// CHECK-NEXT: template_foo<sycl::short4 &&>();
+// CHECK: template_foo<sycl::mshort4>();
+// CHECK-NEXT: template_foo<sycl::mshort4 *>();
+// CHECK-NEXT: template_foo<sycl::mshort4 &>();
+// CHECK-NEXT: template_foo<sycl::mshort4 &&>();
 template_foo<short4>();
 template_foo<short4 *>();
 template_foo<short4 &>();
 template_foo<short4 &&>();
 
-// CHECK: template_foo<sycl::ushort4>();
-// CHECK-NEXT: template_foo<sycl::ushort4 *>();
-// CHECK-NEXT: template_foo<sycl::ushort4 &>();
-// CHECK-NEXT: template_foo<sycl::ushort4 &&>();
+// CHECK: template_foo<sycl::mushort4>();
+// CHECK-NEXT: template_foo<sycl::mushort4 *>();
+// CHECK-NEXT: template_foo<sycl::mushort4 &>();
+// CHECK-NEXT: template_foo<sycl::mushort4 &&>();
 template_foo<ushort4>();
 template_foo<ushort4 *>();
 template_foo<ushort4 &>();
@@ -1819,55 +1819,55 @@ template_foo<uint1 *>();
 template_foo<uint1 &>();
 template_foo<uint1 &&>();
 
-// CHECK: template_foo<sycl::int2>();
-// CHECK-NEXT: template_foo<sycl::int2 *>();
-// CHECK-NEXT: template_foo<sycl::int2 &>();
-// CHECK-NEXT: template_foo<sycl::int2 &&>();
+// CHECK: template_foo<sycl::mint2>();
+// CHECK-NEXT: template_foo<sycl::mint2 *>();
+// CHECK-NEXT: template_foo<sycl::mint2 &>();
+// CHECK-NEXT: template_foo<sycl::mint2 &&>();
 template_foo<int2>();
 template_foo<int2 *>();
 template_foo<int2 &>();
 template_foo<int2 &&>();
 
-// CHECK: template_foo<sycl::uint2>();
-// CHECK-NEXT: template_foo<sycl::uint2 *>();
-// CHECK-NEXT: template_foo<sycl::uint2 &>();
-// CHECK-NEXT: template_foo<sycl::uint2 &&>();
+// CHECK: template_foo<sycl::muint2>();
+// CHECK-NEXT: template_foo<sycl::muint2 *>();
+// CHECK-NEXT: template_foo<sycl::muint2 &>();
+// CHECK-NEXT: template_foo<sycl::muint2 &&>();
 template_foo<uint2>();
 template_foo<uint2 *>();
 template_foo<uint2 &>();
 template_foo<uint2 &&>();
 
-// CHECK: template_foo<sycl::int3>();
-// CHECK-NEXT: template_foo<sycl::int3 *>();
-// CHECK-NEXT: template_foo<sycl::int3 &>();
-// CHECK-NEXT: template_foo<sycl::int3 &&>();
+// CHECK: template_foo<sycl::mint3>();
+// CHECK-NEXT: template_foo<sycl::mint3 *>();
+// CHECK-NEXT: template_foo<sycl::mint3 &>();
+// CHECK-NEXT: template_foo<sycl::mint3 &&>();
 template_foo<int3>();
 template_foo<int3 *>();
 template_foo<int3 &>();
 template_foo<int3 &&>();
 
-// CHECK: template_foo<sycl::uint3>();
-// CHECK-NEXT: template_foo<sycl::uint3 *>();
-// CHECK-NEXT: template_foo<sycl::uint3 &>();
-// CHECK-NEXT: template_foo<sycl::uint3 &&>();
+// CHECK: template_foo<sycl::muint3>();
+// CHECK-NEXT: template_foo<sycl::muint3 *>();
+// CHECK-NEXT: template_foo<sycl::muint3 &>();
+// CHECK-NEXT: template_foo<sycl::muint3 &&>();
 template_foo<uint3>();
 template_foo<uint3 *>();
 template_foo<uint3 &>();
 template_foo<uint3 &&>();
 
-// CHECK: template_foo<sycl::int4>();
-// CHECK-NEXT: template_foo<sycl::int4 *>();
-// CHECK-NEXT: template_foo<sycl::int4 &>();
-// CHECK-NEXT: template_foo<sycl::int4 &&>();
+// CHECK: template_foo<sycl::mint4>();
+// CHECK-NEXT: template_foo<sycl::mint4 *>();
+// CHECK-NEXT: template_foo<sycl::mint4 &>();
+// CHECK-NEXT: template_foo<sycl::mint4 &&>();
 template_foo<int4>();
 template_foo<int4 *>();
 template_foo<int4 &>();
 template_foo<int4 &&>();
 
-// CHECK: template_foo<sycl::uint4>();
-// CHECK-NEXT: template_foo<sycl::uint4 *>();
-// CHECK-NEXT: template_foo<sycl::uint4 &>();
-// CHECK-NEXT: template_foo<sycl::uint4 &&>();
+// CHECK: template_foo<sycl::muint4>();
+// CHECK-NEXT: template_foo<sycl::muint4 *>();
+// CHECK-NEXT: template_foo<sycl::muint4 &>();
+// CHECK-NEXT: template_foo<sycl::muint4 &&>();
 template_foo<uint4>();
 template_foo<uint4 *>();
 template_foo<uint4 &>();
@@ -1891,55 +1891,55 @@ template_foo<ulong1 *>();
 template_foo<ulong1 &>();
 template_foo<ulong1 &&>();
 
-// CHECK: template_foo<sycl::long2>();
-// CHECK-NEXT: template_foo<sycl::long2 *>();
-// CHECK-NEXT: template_foo<sycl::long2 &>();
-// CHECK-NEXT: template_foo<sycl::long2 &&>();
+// CHECK: template_foo<sycl::mlong2>();
+// CHECK-NEXT: template_foo<sycl::mlong2 *>();
+// CHECK-NEXT: template_foo<sycl::mlong2 &>();
+// CHECK-NEXT: template_foo<sycl::mlong2 &&>();
 template_foo<long2>();
 template_foo<long2 *>();
 template_foo<long2 &>();
 template_foo<long2 &&>();
 
-// CHECK: template_foo<sycl::ulong2>();
-// CHECK-NEXT: template_foo<sycl::ulong2 *>();
-// CHECK-NEXT: template_foo<sycl::ulong2 &>();
-// CHECK-NEXT: template_foo<sycl::ulong2 &&>();
+// CHECK: template_foo<sycl::mulong2>();
+// CHECK-NEXT: template_foo<sycl::mulong2 *>();
+// CHECK-NEXT: template_foo<sycl::mulong2 &>();
+// CHECK-NEXT: template_foo<sycl::mulong2 &&>();
 template_foo<ulong2>();
 template_foo<ulong2 *>();
 template_foo<ulong2 &>();
 template_foo<ulong2 &&>();
 
-// CHECK: template_foo<sycl::long3>();
-// CHECK-NEXT: template_foo<sycl::long3 *>();
-// CHECK-NEXT: template_foo<sycl::long3 &>();
-// CHECK-NEXT: template_foo<sycl::long3 &&>();
+// CHECK: template_foo<sycl::mlong3>();
+// CHECK-NEXT: template_foo<sycl::mlong3 *>();
+// CHECK-NEXT: template_foo<sycl::mlong3 &>();
+// CHECK-NEXT: template_foo<sycl::mlong3 &&>();
 template_foo<long3>();
 template_foo<long3 *>();
 template_foo<long3 &>();
 template_foo<long3 &&>();
 
-// CHECK: template_foo<sycl::ulong3>();
-// CHECK-NEXT: template_foo<sycl::ulong3 *>();
-// CHECK-NEXT: template_foo<sycl::ulong3 &>();
-// CHECK-NEXT: template_foo<sycl::ulong3 &&>();
+// CHECK: template_foo<sycl::mulong3>();
+// CHECK-NEXT: template_foo<sycl::mulong3 *>();
+// CHECK-NEXT: template_foo<sycl::mulong3 &>();
+// CHECK-NEXT: template_foo<sycl::mulong3 &&>();
 template_foo<ulong3>();
 template_foo<ulong3 *>();
 template_foo<ulong3 &>();
 template_foo<ulong3 &&>();
 
-// CHECK: template_foo<sycl::long4>();
-// CHECK-NEXT: template_foo<sycl::long4 *>();
-// CHECK-NEXT: template_foo<sycl::long4 &>();
-// CHECK-NEXT: template_foo<sycl::long4 &&>();
+// CHECK: template_foo<sycl::mlong4>();
+// CHECK-NEXT: template_foo<sycl::mlong4 *>();
+// CHECK-NEXT: template_foo<sycl::mlong4 &>();
+// CHECK-NEXT: template_foo<sycl::mlong4 &&>();
 template_foo<long4>();
 template_foo<long4 *>();
 template_foo<long4 &>();
 template_foo<long4 &&>();
 
-// CHECK: template_foo<sycl::ulong4>();
-// CHECK-NEXT: template_foo<sycl::ulong4 *>();
-// CHECK-NEXT: template_foo<sycl::ulong4 &>();
-// CHECK-NEXT: template_foo<sycl::ulong4 &&>();
+// CHECK: template_foo<sycl::mulong4>();
+// CHECK-NEXT: template_foo<sycl::mulong4 *>();
+// CHECK-NEXT: template_foo<sycl::mulong4 &>();
+// CHECK-NEXT: template_foo<sycl::mulong4 &&>();
 template_foo<ulong4>();
 template_foo<ulong4 *>();
 template_foo<ulong4 &>();
@@ -1954,28 +1954,28 @@ template_foo<float1 *>();
 template_foo<float1 &>();
 template_foo<float1 &&>();
 
-// CHECK: template_foo<sycl::float2>();
-// CHECK-NEXT: template_foo<sycl::float2 *>();
-// CHECK-NEXT: template_foo<sycl::float2 &>();
-// CHECK-NEXT: template_foo<sycl::float2 &&>();
+// CHECK: template_foo<sycl::mfloat2>();
+// CHECK-NEXT: template_foo<sycl::mfloat2 *>();
+// CHECK-NEXT: template_foo<sycl::mfloat2 &>();
+// CHECK-NEXT: template_foo<sycl::mfloat2 &&>();
 template_foo<float2>();
 template_foo<float2 *>();
 template_foo<float2 &>();
 template_foo<float2 &&>();
 
-// CHECK: template_foo<sycl::float3>();
-// CHECK-NEXT: template_foo<sycl::float3 *>();
-// CHECK-NEXT: template_foo<sycl::float3 &>();
-// CHECK-NEXT: template_foo<sycl::float3 &&>();
+// CHECK: template_foo<sycl::mfloat3>();
+// CHECK-NEXT: template_foo<sycl::mfloat3 *>();
+// CHECK-NEXT: template_foo<sycl::mfloat3 &>();
+// CHECK-NEXT: template_foo<sycl::mfloat3 &&>();
 template_foo<float3>();
 template_foo<float3 *>();
 template_foo<float3 &>();
 template_foo<float3 &&>();
 
-// CHECK: template_foo<sycl::float4>();
-// CHECK-NEXT: template_foo<sycl::float4 *>();
-// CHECK-NEXT: template_foo<sycl::float4 &>();
-// CHECK-NEXT: template_foo<sycl::float4 &&>();
+// CHECK: template_foo<sycl::mfloat4>();
+// CHECK-NEXT: template_foo<sycl::mfloat4 *>();
+// CHECK-NEXT: template_foo<sycl::mfloat4 &>();
+// CHECK-NEXT: template_foo<sycl::mfloat4 &&>();
 template_foo<float4>();
 template_foo<float4 *>();
 template_foo<float4 &>();
@@ -1999,55 +1999,55 @@ template_foo<ulonglong1 *>();
 template_foo<ulonglong1 &>();
 template_foo<ulonglong1 &&>();
 
-// CHECK: template_foo<sycl::longlong2>();
-// CHECK-NEXT: template_foo<sycl::longlong2 *>();
-// CHECK-NEXT: template_foo<sycl::longlong2 &>();
-// CHECK-NEXT: template_foo<sycl::longlong2 &&>();
+// CHECK: template_foo<sycl::mlonglong2>();
+// CHECK-NEXT: template_foo<sycl::mlonglong2 *>();
+// CHECK-NEXT: template_foo<sycl::mlonglong2 &>();
+// CHECK-NEXT: template_foo<sycl::mlonglong2 &&>();
 template_foo<longlong2>();
 template_foo<longlong2 *>();
 template_foo<longlong2 &>();
 template_foo<longlong2 &&>();
 
-// CHECK: template_foo<sycl::ulonglong2>();
-// CHECK-NEXT: template_foo<sycl::ulonglong2 *>();
-// CHECK-NEXT: template_foo<sycl::ulonglong2 &>();
-// CHECK-NEXT: template_foo<sycl::ulonglong2 &&>();
+// CHECK: template_foo<sycl::mulonglong2>();
+// CHECK-NEXT: template_foo<sycl::mulonglong2 *>();
+// CHECK-NEXT: template_foo<sycl::mulonglong2 &>();
+// CHECK-NEXT: template_foo<sycl::mulonglong2 &&>();
 template_foo<ulonglong2>();
 template_foo<ulonglong2 *>();
 template_foo<ulonglong2 &>();
 template_foo<ulonglong2 &&>();
 
-// CHECK: template_foo<sycl::longlong3>();
-// CHECK-NEXT: template_foo<sycl::longlong3 *>();
-// CHECK-NEXT: template_foo<sycl::longlong3 &>();
-// CHECK-NEXT: template_foo<sycl::longlong3 &&>();
+// CHECK: template_foo<sycl::mlonglong3>();
+// CHECK-NEXT: template_foo<sycl::mlonglong3 *>();
+// CHECK-NEXT: template_foo<sycl::mlonglong3 &>();
+// CHECK-NEXT: template_foo<sycl::mlonglong3 &&>();
 template_foo<longlong3>();
 template_foo<longlong3 *>();
 template_foo<longlong3 &>();
 template_foo<longlong3 &&>();
 
-// CHECK: template_foo<sycl::ulonglong3>();
-// CHECK-NEXT: template_foo<sycl::ulonglong3 *>();
-// CHECK-NEXT: template_foo<sycl::ulonglong3 &>();
-// CHECK-NEXT: template_foo<sycl::ulonglong3 &&>();
+// CHECK: template_foo<sycl::mulonglong3>();
+// CHECK-NEXT: template_foo<sycl::mulonglong3 *>();
+// CHECK-NEXT: template_foo<sycl::mulonglong3 &>();
+// CHECK-NEXT: template_foo<sycl::mulonglong3 &&>();
 template_foo<ulonglong3>();
 template_foo<ulonglong3 *>();
 template_foo<ulonglong3 &>();
 template_foo<ulonglong3 &&>();
 
-// CHECK: template_foo<sycl::longlong4>();
-// CHECK-NEXT: template_foo<sycl::longlong4 *>();
-// CHECK-NEXT: template_foo<sycl::longlong4 &>();
-// CHECK-NEXT: template_foo<sycl::longlong4 &&>();
+// CHECK: template_foo<sycl::mlonglong4>();
+// CHECK-NEXT: template_foo<sycl::mlonglong4 *>();
+// CHECK-NEXT: template_foo<sycl::mlonglong4 &>();
+// CHECK-NEXT: template_foo<sycl::mlonglong4 &&>();
 template_foo<longlong4>();
 template_foo<longlong4 *>();
 template_foo<longlong4 &>();
 template_foo<longlong4 &&>();
 
-// CHECK: template_foo<sycl::ulonglong4>();
-// CHECK-NEXT: template_foo<sycl::ulonglong4 *>();
-// CHECK-NEXT: template_foo<sycl::ulonglong4 &>();
-// CHECK-NEXT: template_foo<sycl::ulonglong4 &&>();
+// CHECK: template_foo<sycl::mulonglong4>();
+// CHECK-NEXT: template_foo<sycl::mulonglong4 *>();
+// CHECK-NEXT: template_foo<sycl::mulonglong4 &>();
+// CHECK-NEXT: template_foo<sycl::mulonglong4 &&>();
 template_foo<ulonglong4>();
 template_foo<ulonglong4 *>();
 template_foo<ulonglong4 &>();
@@ -2062,28 +2062,28 @@ template_foo<double1 *>();
 template_foo<double1 &>();
 template_foo<double1 &&>();
 
-// CHECK: template_foo<sycl::double2>();
-// CHECK-NEXT: template_foo<sycl::double2 *>();
-// CHECK-NEXT: template_foo<sycl::double2 &>();
-// CHECK-NEXT: template_foo<sycl::double2 &&>();
+// CHECK: template_foo<sycl::mdouble2>();
+// CHECK-NEXT: template_foo<sycl::mdouble2 *>();
+// CHECK-NEXT: template_foo<sycl::mdouble2 &>();
+// CHECK-NEXT: template_foo<sycl::mdouble2 &&>();
 template_foo<double2>();
 template_foo<double2 *>();
 template_foo<double2 &>();
 template_foo<double2 &&>();
 
-// CHECK: template_foo<sycl::double3>();
-// CHECK-NEXT: template_foo<sycl::double3 *>();
-// CHECK-NEXT: template_foo<sycl::double3 &>();
-// CHECK-NEXT: template_foo<sycl::double3 &&>();
+// CHECK: template_foo<sycl::mdouble3>();
+// CHECK-NEXT: template_foo<sycl::mdouble3 *>();
+// CHECK-NEXT: template_foo<sycl::mdouble3 &>();
+// CHECK-NEXT: template_foo<sycl::mdouble3 &&>();
 template_foo<double3>();
 template_foo<double3 *>();
 template_foo<double3 &>();
 template_foo<double3 &&>();
 
-// CHECK: template_foo<sycl::double4>();
-// CHECK-NEXT: template_foo<sycl::double4 *>();
-// CHECK-NEXT: template_foo<sycl::double4 &>();
-// CHECK-NEXT: template_foo<sycl::double4 &&>();
+// CHECK: template_foo<sycl::mdouble4>();
+// CHECK-NEXT: template_foo<sycl::mdouble4 *>();
+// CHECK-NEXT: template_foo<sycl::mdouble4 &>();
+// CHECK-NEXT: template_foo<sycl::mdouble4 &&>();
 template_foo<double4>();
 template_foo<double4 *>();
 template_foo<double4 &>();
@@ -2111,55 +2111,55 @@ using UT5 = uchar1 *;
 using UT6 = uchar1 &;
 using UT7 = uchar1 &&;
 
-// CHECK: using UT8 = sycl::char2;
-// CHECK-NEXT: using UT9 = sycl::char2 *;
-// CHECK-NEXT: using UT10 = sycl::char2 &;
-// CHECK-NEXT: using UT11 = sycl::char2 &&;
+// CHECK: using UT8 = sycl::mchar2;
+// CHECK-NEXT: using UT9 = sycl::mchar2 *;
+// CHECK-NEXT: using UT10 = sycl::mchar2 &;
+// CHECK-NEXT: using UT11 = sycl::mchar2 &&;
 using UT8 = char2;
 using UT9 = char2 *;
 using UT10 = char2 &;
 using UT11 = char2 &&;
 
-// CHECK: using UT12 = sycl::uchar2;
-// CHECK-NEXT: using UT13 = sycl::uchar2 *;
-// CHECK-NEXT: using UT14 = sycl::uchar2 &;
-// CHECK-NEXT: using UT15 = sycl::uchar2 &&;
+// CHECK: using UT12 = sycl::muchar2;
+// CHECK-NEXT: using UT13 = sycl::muchar2 *;
+// CHECK-NEXT: using UT14 = sycl::muchar2 &;
+// CHECK-NEXT: using UT15 = sycl::muchar2 &&;
 using UT12 = uchar2;
 using UT13 = uchar2 *;
 using UT14 = uchar2 &;
 using UT15 = uchar2 &&;
 
-// CHECK: using UT16 = sycl::char3;
-// CHECK-NEXT: using UT17 = sycl::char3 *;
-// CHECK-NEXT: using UT18 = sycl::char3 &;
-// CHECK-NEXT: using UT19 = sycl::char3 &&;
+// CHECK: using UT16 = sycl::mchar3;
+// CHECK-NEXT: using UT17 = sycl::mchar3 *;
+// CHECK-NEXT: using UT18 = sycl::mchar3 &;
+// CHECK-NEXT: using UT19 = sycl::mchar3 &&;
 using UT16 = char3;
 using UT17 = char3 *;
 using UT18 = char3 &;
 using UT19 = char3 &&;
 
-// CHECK: using UT20 = sycl::uchar3;
-// CHECK-NEXT: using UT21 = sycl::uchar3 *;
-// CHECK-NEXT: using UT22 = sycl::uchar3 &;
-// CHECK-NEXT: using UT23 = sycl::uchar3 &&;
+// CHECK: using UT20 = sycl::muchar3;
+// CHECK-NEXT: using UT21 = sycl::muchar3 *;
+// CHECK-NEXT: using UT22 = sycl::muchar3 &;
+// CHECK-NEXT: using UT23 = sycl::muchar3 &&;
 using UT20 = uchar3;
 using UT21 = uchar3 *;
 using UT22 = uchar3 &;
 using UT23 = uchar3 &&;
 
-// CHECK: using UT24 = sycl::char4;
-// CHECK-NEXT: using UT25 = sycl::char4 *;
-// CHECK-NEXT: using UT26 = sycl::char4 &;
-// CHECK-NEXT: using UT27 = sycl::char4 &&;
+// CHECK: using UT24 = sycl::mchar4;
+// CHECK-NEXT: using UT25 = sycl::mchar4 *;
+// CHECK-NEXT: using UT26 = sycl::mchar4 &;
+// CHECK-NEXT: using UT27 = sycl::mchar4 &&;
 using UT24 = char4;
 using UT25 = char4 *;
 using UT26 = char4 &;
 using UT27 = char4 &&;
 
-// CHECK: using UT28 = sycl::uchar4;
-// CHECK-NEXT: using UT29 = sycl::uchar4 *;
-// CHECK-NEXT: using UT30 = sycl::uchar4 &;
-// CHECK-NEXT: using UT31 = sycl::uchar4 &&;
+// CHECK: using UT28 = sycl::muchar4;
+// CHECK-NEXT: using UT29 = sycl::muchar4 *;
+// CHECK-NEXT: using UT30 = sycl::muchar4 &;
+// CHECK-NEXT: using UT31 = sycl::muchar4 &&;
 using UT28 = uchar4;
 using UT29 = uchar4 *;
 using UT30 = uchar4 &;
@@ -2183,55 +2183,55 @@ using UT37 = ushort1 *;
 using UT38 = ushort1 &;
 using UT39 = ushort1 &&;
 
-// CHECK: using UT40 = sycl::short2;
-// CHECK-NEXT: using UT41 = sycl::short2 *;
-// CHECK-NEXT: using UT42 = sycl::short2 &;
-// CHECK-NEXT: using UT43 = sycl::short2 &&;
+// CHECK: using UT40 = sycl::mshort2;
+// CHECK-NEXT: using UT41 = sycl::mshort2 *;
+// CHECK-NEXT: using UT42 = sycl::mshort2 &;
+// CHECK-NEXT: using UT43 = sycl::mshort2 &&;
 using UT40 = short2;
 using UT41 = short2 *;
 using UT42 = short2 &;
 using UT43 = short2 &&;
 
-// CHECK: using UT44 = sycl::ushort2;
-// CHECK-NEXT: using UT45 = sycl::ushort2 *;
-// CHECK-NEXT: using UT46 = sycl::ushort2 &;
-// CHECK-NEXT: using UT47 = sycl::ushort2 &&;
+// CHECK: using UT44 = sycl::mushort2;
+// CHECK-NEXT: using UT45 = sycl::mushort2 *;
+// CHECK-NEXT: using UT46 = sycl::mushort2 &;
+// CHECK-NEXT: using UT47 = sycl::mushort2 &&;
 using UT44 = ushort2;
 using UT45 = ushort2 *;
 using UT46 = ushort2 &;
 using UT47 = ushort2 &&;
 
-// CHECK: using UT48 = sycl::short3;
-// CHECK-NEXT: using UT49 = sycl::short3 *;
-// CHECK-NEXT: using UT50 = sycl::short3 &;
-// CHECK-NEXT: using UT51 = sycl::short3 &&;
+// CHECK: using UT48 = sycl::mshort3;
+// CHECK-NEXT: using UT49 = sycl::mshort3 *;
+// CHECK-NEXT: using UT50 = sycl::mshort3 &;
+// CHECK-NEXT: using UT51 = sycl::mshort3 &&;
 using UT48 = short3;
 using UT49 = short3 *;
 using UT50 = short3 &;
 using UT51 = short3 &&;
 
-// CHECK: using UT52 = sycl::ushort3;
-// CHECK-NEXT: using UT53 = sycl::ushort3 *;
-// CHECK-NEXT: using UT54 = sycl::ushort3 &;
-// CHECK-NEXT: using UT55 = sycl::ushort3 &&;
+// CHECK: using UT52 = sycl::mushort3;
+// CHECK-NEXT: using UT53 = sycl::mushort3 *;
+// CHECK-NEXT: using UT54 = sycl::mushort3 &;
+// CHECK-NEXT: using UT55 = sycl::mushort3 &&;
 using UT52 = ushort3;
 using UT53 = ushort3 *;
 using UT54 = ushort3 &;
 using UT55 = ushort3 &&;
 
-// CHECK: using UT56 = sycl::short4;
-// CHECK-NEXT: using UT57 = sycl::short4 *;
-// CHECK-NEXT: using UT58 = sycl::short4 &;
-// CHECK-NEXT: using UT59 = sycl::short4 &&;
+// CHECK: using UT56 = sycl::mshort4;
+// CHECK-NEXT: using UT57 = sycl::mshort4 *;
+// CHECK-NEXT: using UT58 = sycl::mshort4 &;
+// CHECK-NEXT: using UT59 = sycl::mshort4 &&;
 using UT56 = short4;
 using UT57 = short4 *;
 using UT58 = short4 &;
 using UT59 = short4 &&;
 
-// CHECK: using UT60 = sycl::ushort4;
-// CHECK-NEXT: using UT61 = sycl::ushort4 *;
-// CHECK-NEXT: using UT62 = sycl::ushort4 &;
-// CHECK-NEXT: using UT63 = sycl::ushort4 &&;
+// CHECK: using UT60 = sycl::mushort4;
+// CHECK-NEXT: using UT61 = sycl::mushort4 *;
+// CHECK-NEXT: using UT62 = sycl::mushort4 &;
+// CHECK-NEXT: using UT63 = sycl::mushort4 &&;
 using UT60 = ushort4;
 using UT61 = ushort4 *;
 using UT62 = ushort4 &;
@@ -2255,55 +2255,55 @@ using UT69 = uint1 *;
 using UT70 = uint1 &;
 using UT71 = uint1 &&;
 
-// CHECK: using UT72 = sycl::int2;
-// CHECK-NEXT: using UT73 = sycl::int2 *;
-// CHECK-NEXT: using UT74 = sycl::int2 &;
-// CHECK-NEXT: using UT75 = sycl::int2 &&;
+// CHECK: using UT72 = sycl::mint2;
+// CHECK-NEXT: using UT73 = sycl::mint2 *;
+// CHECK-NEXT: using UT74 = sycl::mint2 &;
+// CHECK-NEXT: using UT75 = sycl::mint2 &&;
 using UT72 = int2;
 using UT73 = int2 *;
 using UT74 = int2 &;
 using UT75 = int2 &&;
 
-// CHECK: using UT76 = sycl::uint2;
-// CHECK-NEXT: using UT77 = sycl::uint2 *;
-// CHECK-NEXT: using UT78 = sycl::uint2 &;
-// CHECK-NEXT: using UT79 = sycl::uint2 &&;
+// CHECK: using UT76 = sycl::muint2;
+// CHECK-NEXT: using UT77 = sycl::muint2 *;
+// CHECK-NEXT: using UT78 = sycl::muint2 &;
+// CHECK-NEXT: using UT79 = sycl::muint2 &&;
 using UT76 = uint2;
 using UT77 = uint2 *;
 using UT78 = uint2 &;
 using UT79 = uint2 &&;
 
-// CHECK: using UT80 = sycl::int3;
-// CHECK-NEXT: using UT81 = sycl::int3 *;
-// CHECK-NEXT: using UT82 = sycl::int3 &;
-// CHECK-NEXT: using UT83 = sycl::int3 &&;
+// CHECK: using UT80 = sycl::mint3;
+// CHECK-NEXT: using UT81 = sycl::mint3 *;
+// CHECK-NEXT: using UT82 = sycl::mint3 &;
+// CHECK-NEXT: using UT83 = sycl::mint3 &&;
 using UT80 = int3;
 using UT81 = int3 *;
 using UT82 = int3 &;
 using UT83 = int3 &&;
 
-// CHECK: using UT84 = sycl::uint3;
-// CHECK-NEXT: using UT85 = sycl::uint3 *;
-// CHECK-NEXT: using UT86 = sycl::uint3 &;
-// CHECK-NEXT: using UT87 = sycl::uint3 &&;
+// CHECK: using UT84 = sycl::muint3;
+// CHECK-NEXT: using UT85 = sycl::muint3 *;
+// CHECK-NEXT: using UT86 = sycl::muint3 &;
+// CHECK-NEXT: using UT87 = sycl::muint3 &&;
 using UT84 = uint3;
 using UT85 = uint3 *;
 using UT86 = uint3 &;
 using UT87 = uint3 &&;
 
-// CHECK: using UT88 = sycl::int4;
-// CHECK-NEXT: using UT89 = sycl::int4 *;
-// CHECK-NEXT: using UT90 = sycl::int4 &;
-// CHECK-NEXT: using UT91 = sycl::int4 &&;
+// CHECK: using UT88 = sycl::mint4;
+// CHECK-NEXT: using UT89 = sycl::mint4 *;
+// CHECK-NEXT: using UT90 = sycl::mint4 &;
+// CHECK-NEXT: using UT91 = sycl::mint4 &&;
 using UT88 = int4;
 using UT89 = int4 *;
 using UT90 = int4 &;
 using UT91 = int4 &&;
 
-// CHECK: using UT92 = sycl::uint4;
-// CHECK-NEXT: using UT93 = sycl::uint4 *;
-// CHECK-NEXT: using UT94 = sycl::uint4 &;
-// CHECK-NEXT: using UT95 = sycl::uint4 &&;
+// CHECK: using UT92 = sycl::muint4;
+// CHECK-NEXT: using UT93 = sycl::muint4 *;
+// CHECK-NEXT: using UT94 = sycl::muint4 &;
+// CHECK-NEXT: using UT95 = sycl::muint4 &&;
 using UT92 = uint4;
 using UT93 = uint4 *;
 using UT94 = uint4 &;
@@ -2327,55 +2327,55 @@ using UT101 = ulong1 *;
 using UT102 = ulong1 &;
 using UT103 = ulong1 &&;
 
-// CHECK: using UT104 = sycl::long2;
-// CHECK-NEXT: using UT105 = sycl::long2 *;
-// CHECK-NEXT: using UT106 = sycl::long2 &;
-// CHECK-NEXT: using UT107 = sycl::long2 &&;
+// CHECK: using UT104 = sycl::mlong2;
+// CHECK-NEXT: using UT105 = sycl::mlong2 *;
+// CHECK-NEXT: using UT106 = sycl::mlong2 &;
+// CHECK-NEXT: using UT107 = sycl::mlong2 &&;
 using UT104 = long2;
 using UT105 = long2 *;
 using UT106 = long2 &;
 using UT107 = long2 &&;
 
-// CHECK: using UT108 = sycl::ulong2;
-// CHECK-NEXT: using UT109 = sycl::ulong2 *;
-// CHECK-NEXT: using UT110 = sycl::ulong2 &;
-// CHECK-NEXT: using UT111 = sycl::ulong2 &&;
+// CHECK: using UT108 = sycl::mulong2;
+// CHECK-NEXT: using UT109 = sycl::mulong2 *;
+// CHECK-NEXT: using UT110 = sycl::mulong2 &;
+// CHECK-NEXT: using UT111 = sycl::mulong2 &&;
 using UT108 = ulong2;
 using UT109 = ulong2 *;
 using UT110 = ulong2 &;
 using UT111 = ulong2 &&;
 
-// CHECK: using UT112 = sycl::long3;
-// CHECK-NEXT: using UT113 = sycl::long3 *;
-// CHECK-NEXT: using UT114 = sycl::long3 &;
-// CHECK-NEXT: using UT115 = sycl::long3 &&;
+// CHECK: using UT112 = sycl::mlong3;
+// CHECK-NEXT: using UT113 = sycl::mlong3 *;
+// CHECK-NEXT: using UT114 = sycl::mlong3 &;
+// CHECK-NEXT: using UT115 = sycl::mlong3 &&;
 using UT112 = long3;
 using UT113 = long3 *;
 using UT114 = long3 &;
 using UT115 = long3 &&;
 
-// CHECK: using UT116 = sycl::ulong3;
-// CHECK-NEXT: using UT117 = sycl::ulong3 *;
-// CHECK-NEXT: using UT118 = sycl::ulong3 &;
-// CHECK-NEXT: using UT119 = sycl::ulong3 &&;
+// CHECK: using UT116 = sycl::mulong3;
+// CHECK-NEXT: using UT117 = sycl::mulong3 *;
+// CHECK-NEXT: using UT118 = sycl::mulong3 &;
+// CHECK-NEXT: using UT119 = sycl::mulong3 &&;
 using UT116 = ulong3;
 using UT117 = ulong3 *;
 using UT118 = ulong3 &;
 using UT119 = ulong3 &&;
 
-// CHECK: using UT120 = sycl::long4;
-// CHECK-NEXT: using UT121 = sycl::long4 *;
-// CHECK-NEXT: using UT122 = sycl::long4 &;
-// CHECK-NEXT: using UT123 = sycl::long4 &&;
+// CHECK: using UT120 = sycl::mlong4;
+// CHECK-NEXT: using UT121 = sycl::mlong4 *;
+// CHECK-NEXT: using UT122 = sycl::mlong4 &;
+// CHECK-NEXT: using UT123 = sycl::mlong4 &&;
 using UT120 = long4;
 using UT121 = long4 *;
 using UT122 = long4 &;
 using UT123 = long4 &&;
 
-// CHECK: using UT124 = sycl::ulong4;
-// CHECK-NEXT: using UT125 = sycl::ulong4 *;
-// CHECK-NEXT: using UT126 = sycl::ulong4 &;
-// CHECK-NEXT: using UT127 = sycl::ulong4 &&;
+// CHECK: using UT124 = sycl::mulong4;
+// CHECK-NEXT: using UT125 = sycl::mulong4 *;
+// CHECK-NEXT: using UT126 = sycl::mulong4 &;
+// CHECK-NEXT: using UT127 = sycl::mulong4 &&;
 using UT124 = ulong4;
 using UT125 = ulong4 *;
 using UT126 = ulong4 &;
@@ -2390,28 +2390,28 @@ using UT129 = float1 *;
 using UT130 = float1 &;
 using UT131 = float1 &&;
 
-// CHECK: using UT132 = sycl::float2;
-// CHECK-NEXT: using UT133 = sycl::float2 *;
-// CHECK-NEXT: using UT134 = sycl::float2 &;
-// CHECK-NEXT: using UT135 = sycl::float2 &&;
+// CHECK: using UT132 = sycl::mfloat2;
+// CHECK-NEXT: using UT133 = sycl::mfloat2 *;
+// CHECK-NEXT: using UT134 = sycl::mfloat2 &;
+// CHECK-NEXT: using UT135 = sycl::mfloat2 &&;
 using UT132 = float2;
 using UT133 = float2 *;
 using UT134 = float2 &;
 using UT135 = float2 &&;
 
-// CHECK: using UT136 = sycl::float3;
-// CHECK-NEXT: using UT137 = sycl::float3 *;
-// CHECK-NEXT: using UT138 = sycl::float3 &;
-// CHECK-NEXT: using UT139 = sycl::float3 &&;
+// CHECK: using UT136 = sycl::mfloat3;
+// CHECK-NEXT: using UT137 = sycl::mfloat3 *;
+// CHECK-NEXT: using UT138 = sycl::mfloat3 &;
+// CHECK-NEXT: using UT139 = sycl::mfloat3 &&;
 using UT136 = float3;
 using UT137 = float3 *;
 using UT138 = float3 &;
 using UT139 = float3 &&;
 
-// CHECK: using UT140 = sycl::float4;
-// CHECK-NEXT: using UT141 = sycl::float4 *;
-// CHECK-NEXT: using UT142 = sycl::float4 &;
-// CHECK-NEXT: using UT143 = sycl::float4 &&;
+// CHECK: using UT140 = sycl::mfloat4;
+// CHECK-NEXT: using UT141 = sycl::mfloat4 *;
+// CHECK-NEXT: using UT142 = sycl::mfloat4 &;
+// CHECK-NEXT: using UT143 = sycl::mfloat4 &&;
 using UT140 = float4;
 using UT141 = float4 *;
 using UT142 = float4 &;
@@ -2435,55 +2435,55 @@ using UT149 = ulonglong1 *;
 using UT150 = ulonglong1 &;
 using UT151 = ulonglong1 &&;
 
-// CHECK: using UT152 = sycl::longlong2;
-// CHECK-NEXT: using UT153 = sycl::longlong2 *;
-// CHECK-NEXT: using UT154 = sycl::longlong2 &;
-// CHECK-NEXT: using UT155 = sycl::longlong2 &&;
+// CHECK: using UT152 = sycl::mlonglong2;
+// CHECK-NEXT: using UT153 = sycl::mlonglong2 *;
+// CHECK-NEXT: using UT154 = sycl::mlonglong2 &;
+// CHECK-NEXT: using UT155 = sycl::mlonglong2 &&;
 using UT152 = longlong2;
 using UT153 = longlong2 *;
 using UT154 = longlong2 &;
 using UT155 = longlong2 &&;
 
-// CHECK: using UT156 = sycl::ulonglong2;
-// CHECK-NEXT: using UT157 = sycl::ulonglong2 *;
-// CHECK-NEXT: using UT158 = sycl::ulonglong2 &;
-// CHECK-NEXT: using UT159 = sycl::ulonglong2 &&;
+// CHECK: using UT156 = sycl::mulonglong2;
+// CHECK-NEXT: using UT157 = sycl::mulonglong2 *;
+// CHECK-NEXT: using UT158 = sycl::mulonglong2 &;
+// CHECK-NEXT: using UT159 = sycl::mulonglong2 &&;
 using UT156 = ulonglong2;
 using UT157 = ulonglong2 *;
 using UT158 = ulonglong2 &;
 using UT159 = ulonglong2 &&;
 
-// CHECK: using UT160 = sycl::longlong3;
-// CHECK-NEXT: using UT161 = sycl::longlong3 *;
-// CHECK-NEXT: using UT162 = sycl::longlong3 &;
-// CHECK-NEXT: using UT163 = sycl::longlong3 &&;
+// CHECK: using UT160 = sycl::mlonglong3;
+// CHECK-NEXT: using UT161 = sycl::mlonglong3 *;
+// CHECK-NEXT: using UT162 = sycl::mlonglong3 &;
+// CHECK-NEXT: using UT163 = sycl::mlonglong3 &&;
 using UT160 = longlong3;
 using UT161 = longlong3 *;
 using UT162 = longlong3 &;
 using UT163 = longlong3 &&;
 
-// CHECK: using UT164 = sycl::ulonglong3;
-// CHECK-NEXT: using UT165 = sycl::ulonglong3 *;
-// CHECK-NEXT: using UT166 = sycl::ulonglong3 &;
-// CHECK-NEXT: using UT167 = sycl::ulonglong3 &&;
+// CHECK: using UT164 = sycl::mulonglong3;
+// CHECK-NEXT: using UT165 = sycl::mulonglong3 *;
+// CHECK-NEXT: using UT166 = sycl::mulonglong3 &;
+// CHECK-NEXT: using UT167 = sycl::mulonglong3 &&;
 using UT164 = ulonglong3;
 using UT165 = ulonglong3 *;
 using UT166 = ulonglong3 &;
 using UT167 = ulonglong3 &&;
 
-// CHECK: using UT168 = sycl::longlong4;
-// CHECK-NEXT: using UT169 = sycl::longlong4 *;
-// CHECK-NEXT: using UT170 = sycl::longlong4 &;
-// CHECK-NEXT: using UT171 = sycl::longlong4 &&;
+// CHECK: using UT168 = sycl::mlonglong4;
+// CHECK-NEXT: using UT169 = sycl::mlonglong4 *;
+// CHECK-NEXT: using UT170 = sycl::mlonglong4 &;
+// CHECK-NEXT: using UT171 = sycl::mlonglong4 &&;
 using UT168 = longlong4;
 using UT169 = longlong4 *;
 using UT170 = longlong4 &;
 using UT171 = longlong4 &&;
 
-// CHECK: using UT172 = sycl::ulonglong4;
-// CHECK-NEXT: using UT173 = sycl::ulonglong4 *;
-// CHECK-NEXT: using UT174 = sycl::ulonglong4 &;
-// CHECK-NEXT: using UT175 = sycl::ulonglong4 &&;
+// CHECK: using UT172 = sycl::mulonglong4;
+// CHECK-NEXT: using UT173 = sycl::mulonglong4 *;
+// CHECK-NEXT: using UT174 = sycl::mulonglong4 &;
+// CHECK-NEXT: using UT175 = sycl::mulonglong4 &&;
 using UT172 = ulonglong4;
 using UT173 = ulonglong4 *;
 using UT174 = ulonglong4 &;
@@ -2498,28 +2498,28 @@ using UT177 = double1 *;
 using UT178 = double1 &;
 using UT179 = double1 &&;
 
-// CHECK: using UT180 = sycl::double2;
-// CHECK-NEXT: using UT181 = sycl::double2 *;
-// CHECK-NEXT: using UT182 = sycl::double2 &;
-// CHECK-NEXT: using UT183 = sycl::double2 &&;
+// CHECK: using UT180 = sycl::mdouble2;
+// CHECK-NEXT: using UT181 = sycl::mdouble2 *;
+// CHECK-NEXT: using UT182 = sycl::mdouble2 &;
+// CHECK-NEXT: using UT183 = sycl::mdouble2 &&;
 using UT180 = double2;
 using UT181 = double2 *;
 using UT182 = double2 &;
 using UT183 = double2 &&;
 
-// CHECK: using UT184 = sycl::double3;
-// CHECK-NEXT: using UT185 = sycl::double3 *;
-// CHECK-NEXT: using UT186 = sycl::double3 &;
-// CHECK-NEXT: using UT187 = sycl::double3 &&;
+// CHECK: using UT184 = sycl::mdouble3;
+// CHECK-NEXT: using UT185 = sycl::mdouble3 *;
+// CHECK-NEXT: using UT186 = sycl::mdouble3 &;
+// CHECK-NEXT: using UT187 = sycl::mdouble3 &&;
 using UT184 = double3;
 using UT185 = double3 *;
 using UT186 = double3 &;
 using UT187 = double3 &&;
 
-// CHECK: using UT188 = sycl::double4;
-// CHECK-NEXT: using UT189 = sycl::double4 *;
-// CHECK-NEXT: using UT190 = sycl::double4 &;
-// CHECK-NEXT: using UT191 = sycl::double4 &&;
+// CHECK: using UT188 = sycl::mdouble4;
+// CHECK-NEXT: using UT189 = sycl::mdouble4 *;
+// CHECK-NEXT: using UT190 = sycl::mdouble4 &;
+// CHECK-NEXT: using UT191 = sycl::mdouble4 &&;
 using UT188 = double4;
 using UT189 = double4 *;
 using UT190 = double4 &;
@@ -2546,55 +2546,55 @@ typedef uchar1* T5;
 typedef uchar1& T6;
 typedef uchar1&& T7;
 
-// CHECK: typedef sycl::char2 T8;
-// CHECK-NEXT: typedef sycl::char2* T9;
-// CHECK-NEXT: typedef sycl::char2& T10;
-// CHECK-NEXT: typedef sycl::char2&& T11;
+// CHECK: typedef sycl::mchar2 T8;
+// CHECK-NEXT: typedef sycl::mchar2* T9;
+// CHECK-NEXT: typedef sycl::mchar2& T10;
+// CHECK-NEXT: typedef sycl::mchar2&& T11;
 typedef char2 T8;
 typedef char2* T9;
 typedef char2& T10;
 typedef char2&& T11;
 
-// CHECK: typedef sycl::uchar2 T12;
-// CHECK-NEXT: typedef sycl::uchar2* T13;
-// CHECK-NEXT: typedef sycl::uchar2& T14;
-// CHECK-NEXT: typedef sycl::uchar2&& T15;
+// CHECK: typedef sycl::muchar2 T12;
+// CHECK-NEXT: typedef sycl::muchar2* T13;
+// CHECK-NEXT: typedef sycl::muchar2& T14;
+// CHECK-NEXT: typedef sycl::muchar2&& T15;
 typedef uchar2 T12;
 typedef uchar2* T13;
 typedef uchar2& T14;
 typedef uchar2&& T15;
 
-// CHECK: typedef sycl::char3 T16;
-// CHECK-NEXT: typedef sycl::char3* T17;
-// CHECK-NEXT: typedef sycl::char3& T18;
-// CHECK-NEXT: typedef sycl::char3&& T19;
+// CHECK: typedef sycl::mchar3 T16;
+// CHECK-NEXT: typedef sycl::mchar3* T17;
+// CHECK-NEXT: typedef sycl::mchar3& T18;
+// CHECK-NEXT: typedef sycl::mchar3&& T19;
 typedef char3 T16;
 typedef char3* T17;
 typedef char3& T18;
 typedef char3&& T19;
 
-// CHECK: typedef sycl::uchar3 T20;
-// CHECK-NEXT: typedef sycl::uchar3* T21;
-// CHECK-NEXT: typedef sycl::uchar3& T22;
-// CHECK-NEXT: typedef sycl::uchar3&& T23;
+// CHECK: typedef sycl::muchar3 T20;
+// CHECK-NEXT: typedef sycl::muchar3* T21;
+// CHECK-NEXT: typedef sycl::muchar3& T22;
+// CHECK-NEXT: typedef sycl::muchar3&& T23;
 typedef uchar3 T20;
 typedef uchar3* T21;
 typedef uchar3& T22;
 typedef uchar3&& T23;
 
-// CHECK: typedef sycl::char4 T24;
-// CHECK-NEXT: typedef sycl::char4* T25;
-// CHECK-NEXT: typedef sycl::char4& T26;
-// CHECK-NEXT: typedef sycl::char4&& T27;
+// CHECK: typedef sycl::mchar4 T24;
+// CHECK-NEXT: typedef sycl::mchar4* T25;
+// CHECK-NEXT: typedef sycl::mchar4& T26;
+// CHECK-NEXT: typedef sycl::mchar4&& T27;
 typedef char4 T24;
 typedef char4* T25;
 typedef char4& T26;
 typedef char4&& T27;
 
-// CHECK: typedef sycl::uchar4 T28;
-// CHECK-NEXT: typedef sycl::uchar4* T29;
-// CHECK-NEXT: typedef sycl::uchar4& T30;
-// CHECK-NEXT: typedef sycl::uchar4&& T31;
+// CHECK: typedef sycl::muchar4 T28;
+// CHECK-NEXT: typedef sycl::muchar4* T29;
+// CHECK-NEXT: typedef sycl::muchar4& T30;
+// CHECK-NEXT: typedef sycl::muchar4&& T31;
 typedef uchar4 T28;
 typedef uchar4* T29;
 typedef uchar4& T30;
@@ -2618,55 +2618,55 @@ typedef ushort1* T37;
 typedef ushort1& T38;
 typedef ushort1&& T39;
 
-// CHECK: typedef sycl::short2 T40;
-// CHECK-NEXT: typedef sycl::short2* T41;
-// CHECK-NEXT: typedef sycl::short2& T42;
-// CHECK-NEXT: typedef sycl::short2&& T43;
+// CHECK: typedef sycl::mshort2 T40;
+// CHECK-NEXT: typedef sycl::mshort2* T41;
+// CHECK-NEXT: typedef sycl::mshort2& T42;
+// CHECK-NEXT: typedef sycl::mshort2&& T43;
 typedef short2 T40;
 typedef short2* T41;
 typedef short2& T42;
 typedef short2&& T43;
 
-// CHECK: typedef sycl::ushort2 T44;
-// CHECK-NEXT: typedef sycl::ushort2* T45;
-// CHECK-NEXT: typedef sycl::ushort2& T46;
-// CHECK-NEXT: typedef sycl::ushort2&& T47;
+// CHECK: typedef sycl::mushort2 T44;
+// CHECK-NEXT: typedef sycl::mushort2* T45;
+// CHECK-NEXT: typedef sycl::mushort2& T46;
+// CHECK-NEXT: typedef sycl::mushort2&& T47;
 typedef ushort2 T44;
 typedef ushort2* T45;
 typedef ushort2& T46;
 typedef ushort2&& T47;
 
-// CHECK: typedef sycl::short3 T48;
-// CHECK-NEXT: typedef sycl::short3* T49;
-// CHECK-NEXT: typedef sycl::short3& T50;
-// CHECK-NEXT: typedef sycl::short3&& T51;
+// CHECK: typedef sycl::mshort3 T48;
+// CHECK-NEXT: typedef sycl::mshort3* T49;
+// CHECK-NEXT: typedef sycl::mshort3& T50;
+// CHECK-NEXT: typedef sycl::mshort3&& T51;
 typedef short3 T48;
 typedef short3* T49;
 typedef short3& T50;
 typedef short3&& T51;
 
-// CHECK: typedef sycl::ushort3 T52;
-// CHECK-NEXT: typedef sycl::ushort3* T53;
-// CHECK-NEXT: typedef sycl::ushort3& T54;
-// CHECK-NEXT: typedef sycl::ushort3&& T55;
+// CHECK: typedef sycl::mushort3 T52;
+// CHECK-NEXT: typedef sycl::mushort3* T53;
+// CHECK-NEXT: typedef sycl::mushort3& T54;
+// CHECK-NEXT: typedef sycl::mushort3&& T55;
 typedef ushort3 T52;
 typedef ushort3* T53;
 typedef ushort3& T54;
 typedef ushort3&& T55;
 
-// CHECK: typedef sycl::short4 T56;
-// CHECK-NEXT: typedef sycl::short4* T57;
-// CHECK-NEXT: typedef sycl::short4& T58;
-// CHECK-NEXT: typedef sycl::short4&& T59;
+// CHECK: typedef sycl::mshort4 T56;
+// CHECK-NEXT: typedef sycl::mshort4* T57;
+// CHECK-NEXT: typedef sycl::mshort4& T58;
+// CHECK-NEXT: typedef sycl::mshort4&& T59;
 typedef short4 T56;
 typedef short4* T57;
 typedef short4& T58;
 typedef short4&& T59;
 
-// CHECK: typedef sycl::ushort4 T60;
-// CHECK-NEXT: typedef sycl::ushort4* T61;
-// CHECK-NEXT: typedef sycl::ushort4& T62;
-// CHECK-NEXT: typedef sycl::ushort4&& T63;
+// CHECK: typedef sycl::mushort4 T60;
+// CHECK-NEXT: typedef sycl::mushort4* T61;
+// CHECK-NEXT: typedef sycl::mushort4& T62;
+// CHECK-NEXT: typedef sycl::mushort4&& T63;
 typedef ushort4 T60;
 typedef ushort4* T61;
 typedef ushort4& T62;
@@ -2690,55 +2690,55 @@ typedef uint1* T69;
 typedef uint1& T70;
 typedef uint1&& T71;
 
-// CHECK: typedef sycl::int2 T72;
-// CHECK-NEXT: typedef sycl::int2* T73;
-// CHECK-NEXT: typedef sycl::int2& T74;
-// CHECK-NEXT: typedef sycl::int2&& T75;
+// CHECK: typedef sycl::mint2 T72;
+// CHECK-NEXT: typedef sycl::mint2* T73;
+// CHECK-NEXT: typedef sycl::mint2& T74;
+// CHECK-NEXT: typedef sycl::mint2&& T75;
 typedef int2 T72;
 typedef int2* T73;
 typedef int2& T74;
 typedef int2&& T75;
 
-// CHECK: typedef sycl::uint2 T76;
-// CHECK-NEXT: typedef sycl::uint2* T77;
-// CHECK-NEXT: typedef sycl::uint2& T78;
-// CHECK-NEXT: typedef sycl::uint2&& T79;
+// CHECK: typedef sycl::muint2 T76;
+// CHECK-NEXT: typedef sycl::muint2* T77;
+// CHECK-NEXT: typedef sycl::muint2& T78;
+// CHECK-NEXT: typedef sycl::muint2&& T79;
 typedef uint2 T76;
 typedef uint2* T77;
 typedef uint2& T78;
 typedef uint2&& T79;
 
-// CHECK: typedef sycl::int3 T80;
-// CHECK-NEXT: typedef sycl::int3* T81;
-// CHECK-NEXT: typedef sycl::int3& T82;
-// CHECK-NEXT: typedef sycl::int3&& T83;
+// CHECK: typedef sycl::mint3 T80;
+// CHECK-NEXT: typedef sycl::mint3* T81;
+// CHECK-NEXT: typedef sycl::mint3& T82;
+// CHECK-NEXT: typedef sycl::mint3&& T83;
 typedef int3 T80;
 typedef int3* T81;
 typedef int3& T82;
 typedef int3&& T83;
 
-// CHECK: typedef sycl::uint3 T84;
-// CHECK-NEXT: typedef sycl::uint3* T85;
-// CHECK-NEXT: typedef sycl::uint3& T86;
-// CHECK-NEXT: typedef sycl::uint3&& T87;
+// CHECK: typedef sycl::muint3 T84;
+// CHECK-NEXT: typedef sycl::muint3* T85;
+// CHECK-NEXT: typedef sycl::muint3& T86;
+// CHECK-NEXT: typedef sycl::muint3&& T87;
 typedef uint3 T84;
 typedef uint3* T85;
 typedef uint3& T86;
 typedef uint3&& T87;
 
-// CHECK: typedef sycl::int4 T88;
-// CHECK-NEXT: typedef sycl::int4* T89;
-// CHECK-NEXT: typedef sycl::int4& T90;
-// CHECK-NEXT: typedef sycl::int4&& T91;
+// CHECK: typedef sycl::mint4 T88;
+// CHECK-NEXT: typedef sycl::mint4* T89;
+// CHECK-NEXT: typedef sycl::mint4& T90;
+// CHECK-NEXT: typedef sycl::mint4&& T91;
 typedef int4 T88;
 typedef int4* T89;
 typedef int4& T90;
 typedef int4&& T91;
 
-// CHECK: typedef sycl::uint4 T92;
-// CHECK-NEXT: typedef sycl::uint4* T93;
-// CHECK-NEXT: typedef sycl::uint4& T94;
-// CHECK-NEXT: typedef sycl::uint4&& T95;
+// CHECK: typedef sycl::muint4 T92;
+// CHECK-NEXT: typedef sycl::muint4* T93;
+// CHECK-NEXT: typedef sycl::muint4& T94;
+// CHECK-NEXT: typedef sycl::muint4&& T95;
 typedef uint4 T92;
 typedef uint4* T93;
 typedef uint4& T94;
@@ -2762,55 +2762,55 @@ typedef ulong1* T101;
 typedef ulong1& T102;
 typedef ulong1&& T103;
 
-// CHECK: typedef sycl::long2 T104;
-// CHECK-NEXT: typedef sycl::long2* T105;
-// CHECK-NEXT: typedef sycl::long2& T106;
-// CHECK-NEXT: typedef sycl::long2&& T107;
+// CHECK: typedef sycl::mlong2 T104;
+// CHECK-NEXT: typedef sycl::mlong2* T105;
+// CHECK-NEXT: typedef sycl::mlong2& T106;
+// CHECK-NEXT: typedef sycl::mlong2&& T107;
 typedef long2 T104;
 typedef long2* T105;
 typedef long2& T106;
 typedef long2&& T107;
 
-// CHECK: typedef sycl::ulong2 T108;
-// CHECK-NEXT: typedef sycl::ulong2* T109;
-// CHECK-NEXT: typedef sycl::ulong2& T110;
-// CHECK-NEXT: typedef sycl::ulong2&& T111;
+// CHECK: typedef sycl::mulong2 T108;
+// CHECK-NEXT: typedef sycl::mulong2* T109;
+// CHECK-NEXT: typedef sycl::mulong2& T110;
+// CHECK-NEXT: typedef sycl::mulong2&& T111;
 typedef ulong2 T108;
 typedef ulong2* T109;
 typedef ulong2& T110;
 typedef ulong2&& T111;
 
-// CHECK: typedef sycl::long3 T112;
-// CHECK-NEXT: typedef sycl::long3* T113;
-// CHECK-NEXT: typedef sycl::long3& T114;
-// CHECK-NEXT: typedef sycl::long3&& T115;
+// CHECK: typedef sycl::mlong3 T112;
+// CHECK-NEXT: typedef sycl::mlong3* T113;
+// CHECK-NEXT: typedef sycl::mlong3& T114;
+// CHECK-NEXT: typedef sycl::mlong3&& T115;
 typedef long3 T112;
 typedef long3* T113;
 typedef long3& T114;
 typedef long3&& T115;
 
-// CHECK: typedef sycl::ulong3 T116;
-// CHECK-NEXT: typedef sycl::ulong3* T117;
-// CHECK-NEXT: typedef sycl::ulong3& T118;
-// CHECK-NEXT: typedef sycl::ulong3&& T119;
+// CHECK: typedef sycl::mulong3 T116;
+// CHECK-NEXT: typedef sycl::mulong3* T117;
+// CHECK-NEXT: typedef sycl::mulong3& T118;
+// CHECK-NEXT: typedef sycl::mulong3&& T119;
 typedef ulong3 T116;
 typedef ulong3* T117;
 typedef ulong3& T118;
 typedef ulong3&& T119;
 
-// CHECK: typedef sycl::long4 T120;
-// CHECK-NEXT: typedef sycl::long4* T121;
-// CHECK-NEXT: typedef sycl::long4& T122;
-// CHECK-NEXT: typedef sycl::long4&& T123;
+// CHECK: typedef sycl::mlong4 T120;
+// CHECK-NEXT: typedef sycl::mlong4* T121;
+// CHECK-NEXT: typedef sycl::mlong4& T122;
+// CHECK-NEXT: typedef sycl::mlong4&& T123;
 typedef long4 T120;
 typedef long4* T121;
 typedef long4& T122;
 typedef long4&& T123;
 
-// CHECK: typedef sycl::ulong4 T124;
-// CHECK-NEXT: typedef sycl::ulong4* T125;
-// CHECK-NEXT: typedef sycl::ulong4& T126;
-// CHECK-NEXT: typedef sycl::ulong4&& T127;
+// CHECK: typedef sycl::mulong4 T124;
+// CHECK-NEXT: typedef sycl::mulong4* T125;
+// CHECK-NEXT: typedef sycl::mulong4& T126;
+// CHECK-NEXT: typedef sycl::mulong4&& T127;
 typedef ulong4 T124;
 typedef ulong4* T125;
 typedef ulong4& T126;
@@ -2825,28 +2825,28 @@ typedef float1* T129;
 typedef float1& T130;
 typedef float1&& T131;
 
-// CHECK: typedef sycl::float2 T132;
-// CHECK-NEXT: typedef sycl::float2* T133;
-// CHECK-NEXT: typedef sycl::float2& T134;
-// CHECK-NEXT: typedef sycl::float2&& T135;
+// CHECK: typedef sycl::mfloat2 T132;
+// CHECK-NEXT: typedef sycl::mfloat2* T133;
+// CHECK-NEXT: typedef sycl::mfloat2& T134;
+// CHECK-NEXT: typedef sycl::mfloat2&& T135;
 typedef float2 T132;
 typedef float2* T133;
 typedef float2& T134;
 typedef float2&& T135;
 
-// CHECK: typedef sycl::float3 T136;
-// CHECK-NEXT: typedef sycl::float3* T137;
-// CHECK-NEXT: typedef sycl::float3& T138;
-// CHECK-NEXT: typedef sycl::float3&& T139;
+// CHECK: typedef sycl::mfloat3 T136;
+// CHECK-NEXT: typedef sycl::mfloat3* T137;
+// CHECK-NEXT: typedef sycl::mfloat3& T138;
+// CHECK-NEXT: typedef sycl::mfloat3&& T139;
 typedef float3 T136;
 typedef float3* T137;
 typedef float3& T138;
 typedef float3&& T139;
 
-// CHECK: typedef sycl::float4 T140;
-// CHECK-NEXT: typedef sycl::float4* T141;
-// CHECK-NEXT: typedef sycl::float4& T142;
-// CHECK-NEXT: typedef sycl::float4&& T143;
+// CHECK: typedef sycl::mfloat4 T140;
+// CHECK-NEXT: typedef sycl::mfloat4* T141;
+// CHECK-NEXT: typedef sycl::mfloat4& T142;
+// CHECK-NEXT: typedef sycl::mfloat4&& T143;
 typedef float4 T140;
 typedef float4* T141;
 typedef float4& T142;
@@ -2870,55 +2870,55 @@ typedef ulonglong1* T149;
 typedef ulonglong1& T150;
 typedef ulonglong1&& T151;
 
-// CHECK: typedef sycl::longlong2 T152;
-// CHECK-NEXT: typedef sycl::longlong2* T153;
-// CHECK-NEXT: typedef sycl::longlong2& T154;
-// CHECK-NEXT: typedef sycl::longlong2&& T155;
+// CHECK: typedef sycl::mlonglong2 T152;
+// CHECK-NEXT: typedef sycl::mlonglong2* T153;
+// CHECK-NEXT: typedef sycl::mlonglong2& T154;
+// CHECK-NEXT: typedef sycl::mlonglong2&& T155;
 typedef longlong2 T152;
 typedef longlong2* T153;
 typedef longlong2& T154;
 typedef longlong2&& T155;
 
-// CHECK: typedef sycl::ulonglong2 T156;
-// CHECK-NEXT: typedef sycl::ulonglong2* T157;
-// CHECK-NEXT: typedef sycl::ulonglong2& T158;
-// CHECK-NEXT: typedef sycl::ulonglong2&& T159;
+// CHECK: typedef sycl::mulonglong2 T156;
+// CHECK-NEXT: typedef sycl::mulonglong2* T157;
+// CHECK-NEXT: typedef sycl::mulonglong2& T158;
+// CHECK-NEXT: typedef sycl::mulonglong2&& T159;
 typedef ulonglong2 T156;
 typedef ulonglong2* T157;
 typedef ulonglong2& T158;
 typedef ulonglong2&& T159;
 
-// CHECK: typedef sycl::longlong3 T160;
-// CHECK-NEXT: typedef sycl::longlong3* T161;
-// CHECK-NEXT: typedef sycl::longlong3& T162;
-// CHECK-NEXT: typedef sycl::longlong3&& T163;
+// CHECK: typedef sycl::mlonglong3 T160;
+// CHECK-NEXT: typedef sycl::mlonglong3* T161;
+// CHECK-NEXT: typedef sycl::mlonglong3& T162;
+// CHECK-NEXT: typedef sycl::mlonglong3&& T163;
 typedef longlong3 T160;
 typedef longlong3* T161;
 typedef longlong3& T162;
 typedef longlong3&& T163;
 
-// CHECK: typedef sycl::ulonglong3 T164;
-// CHECK-NEXT: typedef sycl::ulonglong3* T165;
-// CHECK-NEXT: typedef sycl::ulonglong3& T166;
-// CHECK-NEXT: typedef sycl::ulonglong3&& T167;
+// CHECK: typedef sycl::mulonglong3 T164;
+// CHECK-NEXT: typedef sycl::mulonglong3* T165;
+// CHECK-NEXT: typedef sycl::mulonglong3& T166;
+// CHECK-NEXT: typedef sycl::mulonglong3&& T167;
 typedef ulonglong3 T164;
 typedef ulonglong3* T165;
 typedef ulonglong3& T166;
 typedef ulonglong3&& T167;
 
-// CHECK: typedef sycl::longlong4 T168;
-// CHECK-NEXT: typedef sycl::longlong4* T169;
-// CHECK-NEXT: typedef sycl::longlong4& T170;
-// CHECK-NEXT: typedef sycl::longlong4&& T171;
+// CHECK: typedef sycl::mlonglong4 T168;
+// CHECK-NEXT: typedef sycl::mlonglong4* T169;
+// CHECK-NEXT: typedef sycl::mlonglong4& T170;
+// CHECK-NEXT: typedef sycl::mlonglong4&& T171;
 typedef longlong4 T168;
 typedef longlong4* T169;
 typedef longlong4& T170;
 typedef longlong4&& T171;
 
-// CHECK: typedef sycl::ulonglong4 T172;
-// CHECK-NEXT: typedef sycl::ulonglong4* T173;
-// CHECK-NEXT: typedef sycl::ulonglong4& T174;
-// CHECK-NEXT: typedef sycl::ulonglong4&& T175;
+// CHECK: typedef sycl::mulonglong4 T172;
+// CHECK-NEXT: typedef sycl::mulonglong4* T173;
+// CHECK-NEXT: typedef sycl::mulonglong4& T174;
+// CHECK-NEXT: typedef sycl::mulonglong4&& T175;
 typedef ulonglong4 T172;
 typedef ulonglong4* T173;
 typedef ulonglong4& T174;
@@ -2933,28 +2933,28 @@ typedef double1* T177;
 typedef double1& T178;
 typedef double1&& T179;
 
-// CHECK: typedef sycl::double2 T180;
-// CHECK-NEXT: typedef sycl::double2* T181;
-// CHECK-NEXT: typedef sycl::double2& T182;
-// CHECK-NEXT: typedef sycl::double2&& T183;
+// CHECK: typedef sycl::mdouble2 T180;
+// CHECK-NEXT: typedef sycl::mdouble2* T181;
+// CHECK-NEXT: typedef sycl::mdouble2& T182;
+// CHECK-NEXT: typedef sycl::mdouble2&& T183;
 typedef double2 T180;
 typedef double2* T181;
 typedef double2& T182;
 typedef double2&& T183;
 
-// CHECK: typedef sycl::double3 T184;
-// CHECK-NEXT: typedef sycl::double3* T185;
-// CHECK-NEXT: typedef sycl::double3& T186;
-// CHECK-NEXT: typedef sycl::double3&& T187;
+// CHECK: typedef sycl::mdouble3 T184;
+// CHECK-NEXT: typedef sycl::mdouble3* T185;
+// CHECK-NEXT: typedef sycl::mdouble3& T186;
+// CHECK-NEXT: typedef sycl::mdouble3&& T187;
 typedef double3 T184;
 typedef double3* T185;
 typedef double3& T186;
 typedef double3&& T187;
 
-// CHECK: typedef sycl::double4 T188;
-// CHECK-NEXT: typedef sycl::double4* T189;
-// CHECK-NEXT: typedef sycl::double4& T190;
-// CHECK-NEXT: typedef sycl::double4&& T191;
+// CHECK: typedef sycl::mdouble4 T188;
+// CHECK-NEXT: typedef sycl::mdouble4* T189;
+// CHECK-NEXT: typedef sycl::mdouble4& T190;
+// CHECK-NEXT: typedef sycl::mdouble4&& T191;
 typedef double4 T188;
 typedef double4* T189;
 typedef double4& T190;
@@ -3006,10 +3006,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_8 sycl::char2
-// CHECK-NEXT: #define T8_9 sycl::char2 *
-// CHECK-NEXT: #define T8_10 sycl::char2 &
-// CHECK-NEXT: #define T8_11 sycl::char2 &&
+// CHECK: #define T8_8 sycl::mchar2
+// CHECK-NEXT: #define T8_9 sycl::mchar2 *
+// CHECK-NEXT: #define T8_10 sycl::mchar2 &
+// CHECK-NEXT: #define T8_11 sycl::mchar2 &&
 // CHECK-NEXT:     T8_8 a1;
 // CHECK-NEXT:     T8_9 a2;
 // CHECK-NEXT:     T8_10 a3=a1;
@@ -3026,10 +3026,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_12 sycl::uchar2
-// CHECK-NEXT: #define T8_13 sycl::uchar2 *
-// CHECK-NEXT: #define T8_14 sycl::uchar2 &
-// CHECK-NEXT: #define T8_15 sycl::uchar2 &&
+// CHECK: #define T8_12 sycl::muchar2
+// CHECK-NEXT: #define T8_13 sycl::muchar2 *
+// CHECK-NEXT: #define T8_14 sycl::muchar2 &
+// CHECK-NEXT: #define T8_15 sycl::muchar2 &&
 // CHECK-NEXT:     T8_12 a1;
 // CHECK-NEXT:     T8_13 a2;
 // CHECK-NEXT:     T8_14 a3=a1;
@@ -3046,10 +3046,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_16 sycl::char3
-// CHECK-NEXT: #define T8_17 sycl::char3 *
-// CHECK-NEXT: #define T8_18 sycl::char3 &
-// CHECK-NEXT: #define T8_19 sycl::char3 &&
+// CHECK: #define T8_16 sycl::mchar3
+// CHECK-NEXT: #define T8_17 sycl::mchar3 *
+// CHECK-NEXT: #define T8_18 sycl::mchar3 &
+// CHECK-NEXT: #define T8_19 sycl::mchar3 &&
 // CHECK-NEXT:     T8_16 a1;
 // CHECK-NEXT:     T8_17 a2;
 // CHECK-NEXT:     T8_18 a3=a1;
@@ -3066,10 +3066,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_20 sycl::uchar3
-// CHECK-NEXT: #define T8_21 sycl::uchar3 *
-// CHECK-NEXT: #define T8_22 sycl::uchar3 &
-// CHECK-NEXT: #define T8_23 sycl::uchar3 &&
+// CHECK: #define T8_20 sycl::muchar3
+// CHECK-NEXT: #define T8_21 sycl::muchar3 *
+// CHECK-NEXT: #define T8_22 sycl::muchar3 &
+// CHECK-NEXT: #define T8_23 sycl::muchar3 &&
 // CHECK-NEXT:     T8_20 a1;
 // CHECK-NEXT:     T8_21 a2;
 // CHECK-NEXT:     T8_22 a3=a1;
@@ -3086,10 +3086,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_24 sycl::char4
-// CHECK-NEXT: #define T8_25 sycl::char4 *
-// CHECK-NEXT: #define T8_26 sycl::char4 &
-// CHECK-NEXT: #define T8_27 sycl::char4 &&
+// CHECK: #define T8_24 sycl::mchar4
+// CHECK-NEXT: #define T8_25 sycl::mchar4 *
+// CHECK-NEXT: #define T8_26 sycl::mchar4 &
+// CHECK-NEXT: #define T8_27 sycl::mchar4 &&
 // CHECK-NEXT:     T8_24 a1;
 // CHECK-NEXT:     T8_25 a2;
 // CHECK-NEXT:     T8_26 a3=a1;
@@ -3106,10 +3106,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_28 sycl::uchar4
-// CHECK-NEXT: #define T8_29 sycl::uchar4 *
-// CHECK-NEXT: #define T8_30 sycl::uchar4 &
-// CHECK-NEXT: #define T8_31 sycl::uchar4 &&
+// CHECK: #define T8_28 sycl::muchar4
+// CHECK-NEXT: #define T8_29 sycl::muchar4 *
+// CHECK-NEXT: #define T8_30 sycl::muchar4 &
+// CHECK-NEXT: #define T8_31 sycl::muchar4 &&
 // CHECK-NEXT:     T8_28 a1;
 // CHECK-NEXT:     T8_29 a2;
 // CHECK-NEXT:     T8_30 a3=a1;
@@ -3166,10 +3166,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_40 sycl::short2
-// CHECK-NEXT: #define T8_41 sycl::short2 *
-// CHECK-NEXT: #define T8_42 sycl::short2 &
-// CHECK-NEXT: #define T8_43 sycl::short2 &&
+// CHECK: #define T8_40 sycl::mshort2
+// CHECK-NEXT: #define T8_41 sycl::mshort2 *
+// CHECK-NEXT: #define T8_42 sycl::mshort2 &
+// CHECK-NEXT: #define T8_43 sycl::mshort2 &&
 // CHECK-NEXT:     T8_40 a1;
 // CHECK-NEXT:     T8_41 a2;
 // CHECK-NEXT:     T8_42 a3=a1;
@@ -3186,10 +3186,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_44 sycl::ushort2
-// CHECK-NEXT: #define T8_45 sycl::ushort2 *
-// CHECK-NEXT: #define T8_46 sycl::ushort2 &
-// CHECK-NEXT: #define T8_47 sycl::ushort2 &&
+// CHECK: #define T8_44 sycl::mushort2
+// CHECK-NEXT: #define T8_45 sycl::mushort2 *
+// CHECK-NEXT: #define T8_46 sycl::mushort2 &
+// CHECK-NEXT: #define T8_47 sycl::mushort2 &&
 // CHECK-NEXT:     T8_44 a1;
 // CHECK-NEXT:     T8_45 a2;
 // CHECK-NEXT:     T8_46 a3=a1;
@@ -3206,10 +3206,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_48 sycl::short3
-// CHECK-NEXT: #define T8_49 sycl::short3 *
-// CHECK-NEXT: #define T8_50 sycl::short3 &
-// CHECK-NEXT: #define T8_51 sycl::short3 &&
+// CHECK: #define T8_48 sycl::mshort3
+// CHECK-NEXT: #define T8_49 sycl::mshort3 *
+// CHECK-NEXT: #define T8_50 sycl::mshort3 &
+// CHECK-NEXT: #define T8_51 sycl::mshort3 &&
 // CHECK-NEXT:     T8_48 a1;
 // CHECK-NEXT:     T8_49 a2;
 // CHECK-NEXT:     T8_50 a3=a1;
@@ -3226,10 +3226,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_52 sycl::ushort3
-// CHECK-NEXT: #define T8_53 sycl::ushort3 *
-// CHECK-NEXT: #define T8_54 sycl::ushort3 &
-// CHECK-NEXT: #define T8_55 sycl::ushort3 &&
+// CHECK: #define T8_52 sycl::mushort3
+// CHECK-NEXT: #define T8_53 sycl::mushort3 *
+// CHECK-NEXT: #define T8_54 sycl::mushort3 &
+// CHECK-NEXT: #define T8_55 sycl::mushort3 &&
 // CHECK-NEXT:     T8_52 a1;
 // CHECK-NEXT:     T8_53 a2;
 // CHECK-NEXT:     T8_54 a3=a1;
@@ -3246,10 +3246,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_56 sycl::short4
-// CHECK-NEXT: #define T8_57 sycl::short4 *
-// CHECK-NEXT: #define T8_58 sycl::short4 &
-// CHECK-NEXT: #define T8_59 sycl::short4 &&
+// CHECK: #define T8_56 sycl::mshort4
+// CHECK-NEXT: #define T8_57 sycl::mshort4 *
+// CHECK-NEXT: #define T8_58 sycl::mshort4 &
+// CHECK-NEXT: #define T8_59 sycl::mshort4 &&
 // CHECK-NEXT:     T8_56 a1;
 // CHECK-NEXT:     T8_57 a2;
 // CHECK-NEXT:     T8_58 a3=a1;
@@ -3266,10 +3266,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_60 sycl::ushort4
-// CHECK-NEXT: #define T8_61 sycl::ushort4 *
-// CHECK-NEXT: #define T8_62 sycl::ushort4 &
-// CHECK-NEXT: #define T8_63 sycl::ushort4 &&
+// CHECK: #define T8_60 sycl::mushort4
+// CHECK-NEXT: #define T8_61 sycl::mushort4 *
+// CHECK-NEXT: #define T8_62 sycl::mushort4 &
+// CHECK-NEXT: #define T8_63 sycl::mushort4 &&
 // CHECK-NEXT:     T8_60 a1;
 // CHECK-NEXT:     T8_61 a2;
 // CHECK-NEXT:     T8_62 a3=a1;
@@ -3326,10 +3326,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_72 sycl::int2
-// CHECK-NEXT: #define T8_73 sycl::int2 *
-// CHECK-NEXT: #define T8_74 sycl::int2 &
-// CHECK-NEXT: #define T8_75 sycl::int2 &&
+// CHECK: #define T8_72 sycl::mint2
+// CHECK-NEXT: #define T8_73 sycl::mint2 *
+// CHECK-NEXT: #define T8_74 sycl::mint2 &
+// CHECK-NEXT: #define T8_75 sycl::mint2 &&
 // CHECK-NEXT:     T8_72 a1;
 // CHECK-NEXT:     T8_73 a2;
 // CHECK-NEXT:     T8_74 a3=a1;
@@ -3346,10 +3346,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_76 sycl::uint2
-// CHECK-NEXT: #define T8_77 sycl::uint2 *
-// CHECK-NEXT: #define T8_78 sycl::uint2 &
-// CHECK-NEXT: #define T8_79 sycl::uint2 &&
+// CHECK: #define T8_76 sycl::muint2
+// CHECK-NEXT: #define T8_77 sycl::muint2 *
+// CHECK-NEXT: #define T8_78 sycl::muint2 &
+// CHECK-NEXT: #define T8_79 sycl::muint2 &&
 // CHECK-NEXT:     T8_76 a1;
 // CHECK-NEXT:     T8_77 a2;
 // CHECK-NEXT:     T8_78 a3=a1;
@@ -3366,10 +3366,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_80 sycl::int3
-// CHECK-NEXT: #define T8_81 sycl::int3 *
-// CHECK-NEXT: #define T8_82 sycl::int3 &
-// CHECK-NEXT: #define T8_83 sycl::int3 &&
+// CHECK: #define T8_80 sycl::mint3
+// CHECK-NEXT: #define T8_81 sycl::mint3 *
+// CHECK-NEXT: #define T8_82 sycl::mint3 &
+// CHECK-NEXT: #define T8_83 sycl::mint3 &&
 // CHECK-NEXT:     T8_80 a1;
 // CHECK-NEXT:     T8_81 a2;
 // CHECK-NEXT:     T8_82 a3=a1;
@@ -3386,10 +3386,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_84 sycl::uint3
-// CHECK-NEXT: #define T8_85 sycl::uint3 *
-// CHECK-NEXT: #define T8_86 sycl::uint3 &
-// CHECK-NEXT: #define T8_87 sycl::uint3 &&
+// CHECK: #define T8_84 sycl::muint3
+// CHECK-NEXT: #define T8_85 sycl::muint3 *
+// CHECK-NEXT: #define T8_86 sycl::muint3 &
+// CHECK-NEXT: #define T8_87 sycl::muint3 &&
 // CHECK-NEXT:     T8_84 a1;
 // CHECK-NEXT:     T8_85 a2;
 // CHECK-NEXT:     T8_86 a3=a1;
@@ -3406,10 +3406,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_88 sycl::int4
-// CHECK-NEXT: #define T8_89 sycl::int4 *
-// CHECK-NEXT: #define T8_90 sycl::int4 &
-// CHECK-NEXT: #define T8_91 sycl::int4 &&
+// CHECK: #define T8_88 sycl::mint4
+// CHECK-NEXT: #define T8_89 sycl::mint4 *
+// CHECK-NEXT: #define T8_90 sycl::mint4 &
+// CHECK-NEXT: #define T8_91 sycl::mint4 &&
 // CHECK-NEXT:     T8_88 a1;
 // CHECK-NEXT:     T8_89 a2;
 // CHECK-NEXT:     T8_90 a3=a1;
@@ -3426,10 +3426,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_92 sycl::uint4
-// CHECK-NEXT: #define T8_93 sycl::uint4 *
-// CHECK-NEXT: #define T8_94 sycl::uint4 &
-// CHECK-NEXT: #define T8_95 sycl::uint4 &&
+// CHECK: #define T8_92 sycl::muint4
+// CHECK-NEXT: #define T8_93 sycl::muint4 *
+// CHECK-NEXT: #define T8_94 sycl::muint4 &
+// CHECK-NEXT: #define T8_95 sycl::muint4 &&
 // CHECK-NEXT:     T8_92 a1;
 // CHECK-NEXT:     T8_93 a2;
 // CHECK-NEXT:     T8_94 a3=a1;
@@ -3486,10 +3486,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_104 sycl::long2
-// CHECK-NEXT: #define T8_105 sycl::long2 *
-// CHECK-NEXT: #define T8_106 sycl::long2 &
-// CHECK-NEXT: #define T8_107 sycl::long2 &&
+// CHECK: #define T8_104 sycl::mlong2
+// CHECK-NEXT: #define T8_105 sycl::mlong2 *
+// CHECK-NEXT: #define T8_106 sycl::mlong2 &
+// CHECK-NEXT: #define T8_107 sycl::mlong2 &&
 // CHECK-NEXT:     T8_104 a1;
 // CHECK-NEXT:     T8_105 a2;
 // CHECK-NEXT:     T8_106 a3=a1;
@@ -3506,10 +3506,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_108 sycl::ulong2
-// CHECK-NEXT: #define T8_109 sycl::ulong2 *
-// CHECK-NEXT: #define T8_110 sycl::ulong2 &
-// CHECK-NEXT: #define T8_111 sycl::ulong2 &&
+// CHECK: #define T8_108 sycl::mulong2
+// CHECK-NEXT: #define T8_109 sycl::mulong2 *
+// CHECK-NEXT: #define T8_110 sycl::mulong2 &
+// CHECK-NEXT: #define T8_111 sycl::mulong2 &&
 // CHECK-NEXT:     T8_108 a1;
 // CHECK-NEXT:     T8_109 a2;
 // CHECK-NEXT:     T8_110 a3=a1;
@@ -3526,10 +3526,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_112 sycl::long3
-// CHECK-NEXT: #define T8_113 sycl::long3 *
-// CHECK-NEXT: #define T8_114 sycl::long3 &
-// CHECK-NEXT: #define T8_115 sycl::long3 &&
+// CHECK: #define T8_112 sycl::mlong3
+// CHECK-NEXT: #define T8_113 sycl::mlong3 *
+// CHECK-NEXT: #define T8_114 sycl::mlong3 &
+// CHECK-NEXT: #define T8_115 sycl::mlong3 &&
 // CHECK-NEXT:     T8_112 a1;
 // CHECK-NEXT:     T8_113 a2;
 // CHECK-NEXT:     T8_114 a3=a1;
@@ -3546,10 +3546,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_116 sycl::ulong3
-// CHECK-NEXT: #define T8_117 sycl::ulong3 *
-// CHECK-NEXT: #define T8_118 sycl::ulong3 &
-// CHECK-NEXT: #define T8_119 sycl::ulong3 &&
+// CHECK: #define T8_116 sycl::mulong3
+// CHECK-NEXT: #define T8_117 sycl::mulong3 *
+// CHECK-NEXT: #define T8_118 sycl::mulong3 &
+// CHECK-NEXT: #define T8_119 sycl::mulong3 &&
 // CHECK-NEXT:     T8_116 a1;
 // CHECK-NEXT:     T8_117 a2;
 // CHECK-NEXT:     T8_118 a3=a1;
@@ -3566,10 +3566,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_120 sycl::long4
-// CHECK-NEXT: #define T8_121 sycl::long4 *
-// CHECK-NEXT: #define T8_122 sycl::long4 &
-// CHECK-NEXT: #define T8_123 sycl::long4 &&
+// CHECK: #define T8_120 sycl::mlong4
+// CHECK-NEXT: #define T8_121 sycl::mlong4 *
+// CHECK-NEXT: #define T8_122 sycl::mlong4 &
+// CHECK-NEXT: #define T8_123 sycl::mlong4 &&
 // CHECK-NEXT:     T8_120 a1;
 // CHECK-NEXT:     T8_121 a2;
 // CHECK-NEXT:     T8_122 a3=a1;
@@ -3586,10 +3586,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_124 sycl::ulong4
-// CHECK-NEXT: #define T8_125 sycl::ulong4 *
-// CHECK-NEXT: #define T8_126 sycl::ulong4 &
-// CHECK-NEXT: #define T8_127 sycl::ulong4 &&
+// CHECK: #define T8_124 sycl::mulong4
+// CHECK-NEXT: #define T8_125 sycl::mulong4 *
+// CHECK-NEXT: #define T8_126 sycl::mulong4 &
+// CHECK-NEXT: #define T8_127 sycl::mulong4 &&
 // CHECK-NEXT:     T8_124 a1;
 // CHECK-NEXT:     T8_125 a2;
 // CHECK-NEXT:     T8_126 a3=a1;
@@ -3626,10 +3626,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_132 sycl::float2
-// CHECK-NEXT: #define T8_133 sycl::float2 *
-// CHECK-NEXT: #define T8_134 sycl::float2 &
-// CHECK-NEXT: #define T8_135 sycl::float2 &&
+// CHECK: #define T8_132 sycl::mfloat2
+// CHECK-NEXT: #define T8_133 sycl::mfloat2 *
+// CHECK-NEXT: #define T8_134 sycl::mfloat2 &
+// CHECK-NEXT: #define T8_135 sycl::mfloat2 &&
 // CHECK-NEXT:     T8_132 a1;
 // CHECK-NEXT:     T8_133 a2;
 // CHECK-NEXT:     T8_134 a3=a1;
@@ -3646,10 +3646,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_136 sycl::float3
-// CHECK-NEXT: #define T8_137 sycl::float3 *
-// CHECK-NEXT: #define T8_138 sycl::float3 &
-// CHECK-NEXT: #define T8_139 sycl::float3 &&
+// CHECK: #define T8_136 sycl::mfloat3
+// CHECK-NEXT: #define T8_137 sycl::mfloat3 *
+// CHECK-NEXT: #define T8_138 sycl::mfloat3 &
+// CHECK-NEXT: #define T8_139 sycl::mfloat3 &&
 // CHECK-NEXT:     T8_136 a1;
 // CHECK-NEXT:     T8_137 a2;
 // CHECK-NEXT:     T8_138 a3=a1;
@@ -3666,10 +3666,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_140 sycl::float4
-// CHECK-NEXT: #define T8_141 sycl::float4 *
-// CHECK-NEXT: #define T8_142 sycl::float4 &
-// CHECK-NEXT: #define T8_143 sycl::float4 &&
+// CHECK: #define T8_140 sycl::mfloat4
+// CHECK-NEXT: #define T8_141 sycl::mfloat4 *
+// CHECK-NEXT: #define T8_142 sycl::mfloat4 &
+// CHECK-NEXT: #define T8_143 sycl::mfloat4 &&
 // CHECK-NEXT:     T8_140 a1;
 // CHECK-NEXT:     T8_141 a2;
 // CHECK-NEXT:     T8_142 a3=a1;
@@ -3726,10 +3726,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_152 sycl::longlong2
-// CHECK-NEXT: #define T8_153 sycl::longlong2 *
-// CHECK-NEXT: #define T8_154 sycl::longlong2 &
-// CHECK-NEXT: #define T8_155 sycl::longlong2 &&
+// CHECK: #define T8_152 sycl::mlonglong2
+// CHECK-NEXT: #define T8_153 sycl::mlonglong2 *
+// CHECK-NEXT: #define T8_154 sycl::mlonglong2 &
+// CHECK-NEXT: #define T8_155 sycl::mlonglong2 &&
 // CHECK-NEXT:     T8_152 a1;
 // CHECK-NEXT:     T8_153 a2;
 // CHECK-NEXT:     T8_154 a3=a1;
@@ -3746,10 +3746,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_156 sycl::ulonglong2
-// CHECK-NEXT: #define T8_157 sycl::ulonglong2 *
-// CHECK-NEXT: #define T8_158 sycl::ulonglong2 &
-// CHECK-NEXT: #define T8_159 sycl::ulonglong2 &&
+// CHECK: #define T8_156 sycl::mulonglong2
+// CHECK-NEXT: #define T8_157 sycl::mulonglong2 *
+// CHECK-NEXT: #define T8_158 sycl::mulonglong2 &
+// CHECK-NEXT: #define T8_159 sycl::mulonglong2 &&
 // CHECK-NEXT:     T8_156 a1;
 // CHECK-NEXT:     T8_157 a2;
 // CHECK-NEXT:     T8_158 a3=a1;
@@ -3766,10 +3766,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_160 sycl::longlong3
-// CHECK-NEXT: #define T8_161 sycl::longlong3 *
-// CHECK-NEXT: #define T8_162 sycl::longlong3 &
-// CHECK-NEXT: #define T8_163 sycl::longlong3 &&
+// CHECK: #define T8_160 sycl::mlonglong3
+// CHECK-NEXT: #define T8_161 sycl::mlonglong3 *
+// CHECK-NEXT: #define T8_162 sycl::mlonglong3 &
+// CHECK-NEXT: #define T8_163 sycl::mlonglong3 &&
 // CHECK-NEXT:     T8_160 a1;
 // CHECK-NEXT:     T8_161 a2;
 // CHECK-NEXT:     T8_162 a3=a1;
@@ -3786,10 +3786,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_164 sycl::ulonglong3
-// CHECK-NEXT: #define T8_165 sycl::ulonglong3 *
-// CHECK-NEXT: #define T8_166 sycl::ulonglong3 &
-// CHECK-NEXT: #define T8_167 sycl::ulonglong3 &&
+// CHECK: #define T8_164 sycl::mulonglong3
+// CHECK-NEXT: #define T8_165 sycl::mulonglong3 *
+// CHECK-NEXT: #define T8_166 sycl::mulonglong3 &
+// CHECK-NEXT: #define T8_167 sycl::mulonglong3 &&
 // CHECK-NEXT:     T8_164 a1;
 // CHECK-NEXT:     T8_165 a2;
 // CHECK-NEXT:     T8_166 a3=a1;
@@ -3806,10 +3806,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_168 sycl::longlong4
-// CHECK-NEXT: #define T8_169 sycl::longlong4 *
-// CHECK-NEXT: #define T8_170 sycl::longlong4 &
-// CHECK-NEXT: #define T8_171 sycl::longlong4 &&
+// CHECK: #define T8_168 sycl::mlonglong4
+// CHECK-NEXT: #define T8_169 sycl::mlonglong4 *
+// CHECK-NEXT: #define T8_170 sycl::mlonglong4 &
+// CHECK-NEXT: #define T8_171 sycl::mlonglong4 &&
 // CHECK-NEXT:     T8_168 a1;
 // CHECK-NEXT:     T8_169 a2;
 // CHECK-NEXT:     T8_170 a3=a1;
@@ -3826,10 +3826,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_172 sycl::ulonglong4
-// CHECK-NEXT: #define T8_173 sycl::ulonglong4 *
-// CHECK-NEXT: #define T8_174 sycl::ulonglong4 &
-// CHECK-NEXT: #define T8_175 sycl::ulonglong4 &&
+// CHECK: #define T8_172 sycl::mulonglong4
+// CHECK-NEXT: #define T8_173 sycl::mulonglong4 *
+// CHECK-NEXT: #define T8_174 sycl::mulonglong4 &
+// CHECK-NEXT: #define T8_175 sycl::mulonglong4 &&
 // CHECK-NEXT:     T8_172 a1;
 // CHECK-NEXT:     T8_173 a2;
 // CHECK-NEXT:     T8_174 a3=a1;
@@ -3866,10 +3866,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_180 sycl::double2
-// CHECK-NEXT: #define T8_181 sycl::double2 *
-// CHECK-NEXT: #define T8_182 sycl::double2 &
-// CHECK-NEXT: #define T8_183 sycl::double2 &&
+// CHECK: #define T8_180 sycl::mdouble2
+// CHECK-NEXT: #define T8_181 sycl::mdouble2 *
+// CHECK-NEXT: #define T8_182 sycl::mdouble2 &
+// CHECK-NEXT: #define T8_183 sycl::mdouble2 &&
 // CHECK-NEXT:     T8_180 a1;
 // CHECK-NEXT:     T8_181 a2;
 // CHECK-NEXT:     T8_182 a3=a1;
@@ -3886,10 +3886,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_184 sycl::double3
-// CHECK-NEXT: #define T8_185 sycl::double3 *
-// CHECK-NEXT: #define T8_186 sycl::double3 &
-// CHECK-NEXT: #define T8_187 sycl::double3 &&
+// CHECK: #define T8_184 sycl::mdouble3
+// CHECK-NEXT: #define T8_185 sycl::mdouble3 *
+// CHECK-NEXT: #define T8_186 sycl::mdouble3 &
+// CHECK-NEXT: #define T8_187 sycl::mdouble3 &&
 // CHECK-NEXT:     T8_184 a1;
 // CHECK-NEXT:     T8_185 a2;
 // CHECK-NEXT:     T8_186 a3=a1;
@@ -3906,10 +3906,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_188 sycl::double4
-// CHECK-NEXT: #define T8_189 sycl::double4 *
-// CHECK-NEXT: #define T8_190 sycl::double4 &
-// CHECK-NEXT: #define T8_191 sycl::double4 &&
+// CHECK: #define T8_188 sycl::mdouble4
+// CHECK-NEXT: #define T8_189 sycl::mdouble4 *
+// CHECK-NEXT: #define T8_190 sycl::mdouble4 &
+// CHECK-NEXT: #define T8_191 sycl::mdouble4 &&
 // CHECK-NEXT:     T8_188 a1;
 // CHECK-NEXT:     T8_189 a2;
 // CHECK-NEXT:     T8_190 a3=a1;
@@ -3952,55 +3952,55 @@ template <> void foo2(uchar1){}
 template <> void foo3(uchar1){}
 template <> void foo4(uchar1){}
 
-// CHECK: template <> void foo1(sycl::char2){}
-// CHECK-NEXT: template <> void foo2(sycl::char2){}
-// CHECK-NEXT: template <> void foo3(sycl::char2){}
-// CHECK-NEXT: template <> void foo4(sycl::char2){}
+// CHECK: template <> void foo1(sycl::mchar2){}
+// CHECK-NEXT: template <> void foo2(sycl::mchar2){}
+// CHECK-NEXT: template <> void foo3(sycl::mchar2){}
+// CHECK-NEXT: template <> void foo4(sycl::mchar2){}
 template <> void foo1(char2){}
 template <> void foo2(char2){}
 template <> void foo3(char2){}
 template <> void foo4(char2){}
 
-// CHECK: template <> void foo1(sycl::uchar2){}
-// CHECK-NEXT: template <> void foo2(sycl::uchar2){}
-// CHECK-NEXT: template <> void foo3(sycl::uchar2){}
-// CHECK-NEXT: template <> void foo4(sycl::uchar2){}
+// CHECK: template <> void foo1(sycl::muchar2){}
+// CHECK-NEXT: template <> void foo2(sycl::muchar2){}
+// CHECK-NEXT: template <> void foo3(sycl::muchar2){}
+// CHECK-NEXT: template <> void foo4(sycl::muchar2){}
 template <> void foo1(uchar2){}
 template <> void foo2(uchar2){}
 template <> void foo3(uchar2){}
 template <> void foo4(uchar2){}
 
-// CHECK: template <> void foo1(sycl::char3){}
-// CHECK-NEXT: template <> void foo2(sycl::char3){}
-// CHECK-NEXT: template <> void foo3(sycl::char3){}
-// CHECK-NEXT: template <> void foo4(sycl::char3){}
+// CHECK: template <> void foo1(sycl::mchar3){}
+// CHECK-NEXT: template <> void foo2(sycl::mchar3){}
+// CHECK-NEXT: template <> void foo3(sycl::mchar3){}
+// CHECK-NEXT: template <> void foo4(sycl::mchar3){}
 template <> void foo1(char3){}
 template <> void foo2(char3){}
 template <> void foo3(char3){}
 template <> void foo4(char3){}
 
-// CHECK: template <> void foo1(sycl::uchar3){}
-// CHECK-NEXT: template <> void foo2(sycl::uchar3){}
-// CHECK-NEXT: template <> void foo3(sycl::uchar3){}
-// CHECK-NEXT: template <> void foo4(sycl::uchar3){}
+// CHECK: template <> void foo1(sycl::muchar3){}
+// CHECK-NEXT: template <> void foo2(sycl::muchar3){}
+// CHECK-NEXT: template <> void foo3(sycl::muchar3){}
+// CHECK-NEXT: template <> void foo4(sycl::muchar3){}
 template <> void foo1(uchar3){}
 template <> void foo2(uchar3){}
 template <> void foo3(uchar3){}
 template <> void foo4(uchar3){}
 
-// CHECK: template <> void foo1(sycl::char4){}
-// CHECK-NEXT: template <> void foo2(sycl::char4){}
-// CHECK-NEXT: template <> void foo3(sycl::char4){}
-// CHECK-NEXT: template <> void foo4(sycl::char4){}
+// CHECK: template <> void foo1(sycl::mchar4){}
+// CHECK-NEXT: template <> void foo2(sycl::mchar4){}
+// CHECK-NEXT: template <> void foo3(sycl::mchar4){}
+// CHECK-NEXT: template <> void foo4(sycl::mchar4){}
 template <> void foo1(char4){}
 template <> void foo2(char4){}
 template <> void foo3(char4){}
 template <> void foo4(char4){}
 
-// CHECK: template <> void foo1(sycl::uchar4){}
-// CHECK-NEXT: template <> void foo2(sycl::uchar4){}
-// CHECK-NEXT: template <> void foo3(sycl::uchar4){}
-// CHECK-NEXT: template <> void foo4(sycl::uchar4){}
+// CHECK: template <> void foo1(sycl::muchar4){}
+// CHECK-NEXT: template <> void foo2(sycl::muchar4){}
+// CHECK-NEXT: template <> void foo3(sycl::muchar4){}
+// CHECK-NEXT: template <> void foo4(sycl::muchar4){}
 template <> void foo1(uchar4){}
 template <> void foo2(uchar4){}
 template <> void foo3(uchar4){}
@@ -4024,55 +4024,55 @@ template <> void foo2(ushort1){}
 template <> void foo3(ushort1){}
 template <> void foo4(ushort1){}
 
-// CHECK: template <> void foo1(sycl::short2){}
-// CHECK-NEXT: template <> void foo2(sycl::short2){}
-// CHECK-NEXT: template <> void foo3(sycl::short2){}
-// CHECK-NEXT: template <> void foo4(sycl::short2){}
+// CHECK: template <> void foo1(sycl::mshort2){}
+// CHECK-NEXT: template <> void foo2(sycl::mshort2){}
+// CHECK-NEXT: template <> void foo3(sycl::mshort2){}
+// CHECK-NEXT: template <> void foo4(sycl::mshort2){}
 template <> void foo1(short2){}
 template <> void foo2(short2){}
 template <> void foo3(short2){}
 template <> void foo4(short2){}
 
-// CHECK: template <> void foo1(sycl::ushort2){}
-// CHECK-NEXT: template <> void foo2(sycl::ushort2){}
-// CHECK-NEXT: template <> void foo3(sycl::ushort2){}
-// CHECK-NEXT: template <> void foo4(sycl::ushort2){}
+// CHECK: template <> void foo1(sycl::mushort2){}
+// CHECK-NEXT: template <> void foo2(sycl::mushort2){}
+// CHECK-NEXT: template <> void foo3(sycl::mushort2){}
+// CHECK-NEXT: template <> void foo4(sycl::mushort2){}
 template <> void foo1(ushort2){}
 template <> void foo2(ushort2){}
 template <> void foo3(ushort2){}
 template <> void foo4(ushort2){}
 
-// CHECK: template <> void foo1(sycl::short3){}
-// CHECK-NEXT: template <> void foo2(sycl::short3){}
-// CHECK-NEXT: template <> void foo3(sycl::short3){}
-// CHECK-NEXT: template <> void foo4(sycl::short3){}
+// CHECK: template <> void foo1(sycl::mshort3){}
+// CHECK-NEXT: template <> void foo2(sycl::mshort3){}
+// CHECK-NEXT: template <> void foo3(sycl::mshort3){}
+// CHECK-NEXT: template <> void foo4(sycl::mshort3){}
 template <> void foo1(short3){}
 template <> void foo2(short3){}
 template <> void foo3(short3){}
 template <> void foo4(short3){}
 
-// CHECK: template <> void foo1(sycl::ushort3){}
-// CHECK-NEXT: template <> void foo2(sycl::ushort3){}
-// CHECK-NEXT: template <> void foo3(sycl::ushort3){}
-// CHECK-NEXT: template <> void foo4(sycl::ushort3){}
+// CHECK: template <> void foo1(sycl::mushort3){}
+// CHECK-NEXT: template <> void foo2(sycl::mushort3){}
+// CHECK-NEXT: template <> void foo3(sycl::mushort3){}
+// CHECK-NEXT: template <> void foo4(sycl::mushort3){}
 template <> void foo1(ushort3){}
 template <> void foo2(ushort3){}
 template <> void foo3(ushort3){}
 template <> void foo4(ushort3){}
 
-// CHECK: template <> void foo1(sycl::short4){}
-// CHECK-NEXT: template <> void foo2(sycl::short4){}
-// CHECK-NEXT: template <> void foo3(sycl::short4){}
-// CHECK-NEXT: template <> void foo4(sycl::short4){}
+// CHECK: template <> void foo1(sycl::mshort4){}
+// CHECK-NEXT: template <> void foo2(sycl::mshort4){}
+// CHECK-NEXT: template <> void foo3(sycl::mshort4){}
+// CHECK-NEXT: template <> void foo4(sycl::mshort4){}
 template <> void foo1(short4){}
 template <> void foo2(short4){}
 template <> void foo3(short4){}
 template <> void foo4(short4){}
 
-// CHECK: template <> void foo1(sycl::ushort4){}
-// CHECK-NEXT: template <> void foo2(sycl::ushort4){}
-// CHECK-NEXT: template <> void foo3(sycl::ushort4){}
-// CHECK-NEXT: template <> void foo4(sycl::ushort4){}
+// CHECK: template <> void foo1(sycl::mushort4){}
+// CHECK-NEXT: template <> void foo2(sycl::mushort4){}
+// CHECK-NEXT: template <> void foo3(sycl::mushort4){}
+// CHECK-NEXT: template <> void foo4(sycl::mushort4){}
 template <> void foo1(ushort4){}
 template <> void foo2(ushort4){}
 template <> void foo3(ushort4){}
@@ -4096,55 +4096,55 @@ template <> void foo2(uint1){}
 template <> void foo3(uint1){}
 template <> void foo4(uint1){}
 
-// CHECK: template <> void foo1(sycl::int2){}
-// CHECK-NEXT: template <> void foo2(sycl::int2){}
-// CHECK-NEXT: template <> void foo3(sycl::int2){}
-// CHECK-NEXT: template <> void foo4(sycl::int2){}
+// CHECK: template <> void foo1(sycl::mint2){}
+// CHECK-NEXT: template <> void foo2(sycl::mint2){}
+// CHECK-NEXT: template <> void foo3(sycl::mint2){}
+// CHECK-NEXT: template <> void foo4(sycl::mint2){}
 template <> void foo1(int2){}
 template <> void foo2(int2){}
 template <> void foo3(int2){}
 template <> void foo4(int2){}
 
-// CHECK: template <> void foo1(sycl::uint2){}
-// CHECK-NEXT: template <> void foo2(sycl::uint2){}
-// CHECK-NEXT: template <> void foo3(sycl::uint2){}
-// CHECK-NEXT: template <> void foo4(sycl::uint2){}
+// CHECK: template <> void foo1(sycl::muint2){}
+// CHECK-NEXT: template <> void foo2(sycl::muint2){}
+// CHECK-NEXT: template <> void foo3(sycl::muint2){}
+// CHECK-NEXT: template <> void foo4(sycl::muint2){}
 template <> void foo1(uint2){}
 template <> void foo2(uint2){}
 template <> void foo3(uint2){}
 template <> void foo4(uint2){}
 
-// CHECK: template <> void foo1(sycl::int3){}
-// CHECK-NEXT: template <> void foo2(sycl::int3){}
-// CHECK-NEXT: template <> void foo3(sycl::int3){}
-// CHECK-NEXT: template <> void foo4(sycl::int3){}
+// CHECK: template <> void foo1(sycl::mint3){}
+// CHECK-NEXT: template <> void foo2(sycl::mint3){}
+// CHECK-NEXT: template <> void foo3(sycl::mint3){}
+// CHECK-NEXT: template <> void foo4(sycl::mint3){}
 template <> void foo1(int3){}
 template <> void foo2(int3){}
 template <> void foo3(int3){}
 template <> void foo4(int3){}
 
-// CHECK: template <> void foo1(sycl::uint3){}
-// CHECK-NEXT: template <> void foo2(sycl::uint3){}
-// CHECK-NEXT: template <> void foo3(sycl::uint3){}
-// CHECK-NEXT: template <> void foo4(sycl::uint3){}
+// CHECK: template <> void foo1(sycl::muint3){}
+// CHECK-NEXT: template <> void foo2(sycl::muint3){}
+// CHECK-NEXT: template <> void foo3(sycl::muint3){}
+// CHECK-NEXT: template <> void foo4(sycl::muint3){}
 template <> void foo1(uint3){}
 template <> void foo2(uint3){}
 template <> void foo3(uint3){}
 template <> void foo4(uint3){}
 
-// CHECK: template <> void foo1(sycl::int4){}
-// CHECK-NEXT: template <> void foo2(sycl::int4){}
-// CHECK-NEXT: template <> void foo3(sycl::int4){}
-// CHECK-NEXT: template <> void foo4(sycl::int4){}
+// CHECK: template <> void foo1(sycl::mint4){}
+// CHECK-NEXT: template <> void foo2(sycl::mint4){}
+// CHECK-NEXT: template <> void foo3(sycl::mint4){}
+// CHECK-NEXT: template <> void foo4(sycl::mint4){}
 template <> void foo1(int4){}
 template <> void foo2(int4){}
 template <> void foo3(int4){}
 template <> void foo4(int4){}
 
-// CHECK: template <> void foo1(sycl::uint4){}
-// CHECK-NEXT: template <> void foo2(sycl::uint4){}
-// CHECK-NEXT: template <> void foo3(sycl::uint4){}
-// CHECK-NEXT: template <> void foo4(sycl::uint4){}
+// CHECK: template <> void foo1(sycl::muint4){}
+// CHECK-NEXT: template <> void foo2(sycl::muint4){}
+// CHECK-NEXT: template <> void foo3(sycl::muint4){}
+// CHECK-NEXT: template <> void foo4(sycl::muint4){}
 template <> void foo1(uint4){}
 template <> void foo2(uint4){}
 template <> void foo3(uint4){}
@@ -4168,55 +4168,55 @@ template <> void foo2(ulong1){}
 template <> void foo3(ulong1){}
 template <> void foo4(ulong1){}
 
-// CHECK: template <> void foo1(sycl::long2){}
-// CHECK-NEXT: template <> void foo2(sycl::long2){}
-// CHECK-NEXT: template <> void foo3(sycl::long2){}
-// CHECK-NEXT: template <> void foo4(sycl::long2){}
+// CHECK: template <> void foo1(sycl::mlong2){}
+// CHECK-NEXT: template <> void foo2(sycl::mlong2){}
+// CHECK-NEXT: template <> void foo3(sycl::mlong2){}
+// CHECK-NEXT: template <> void foo4(sycl::mlong2){}
 template <> void foo1(long2){}
 template <> void foo2(long2){}
 template <> void foo3(long2){}
 template <> void foo4(long2){}
 
-// CHECK: template <> void foo1(sycl::ulong2){}
-// CHECK-NEXT: template <> void foo2(sycl::ulong2){}
-// CHECK-NEXT: template <> void foo3(sycl::ulong2){}
-// CHECK-NEXT: template <> void foo4(sycl::ulong2){}
+// CHECK: template <> void foo1(sycl::mulong2){}
+// CHECK-NEXT: template <> void foo2(sycl::mulong2){}
+// CHECK-NEXT: template <> void foo3(sycl::mulong2){}
+// CHECK-NEXT: template <> void foo4(sycl::mulong2){}
 template <> void foo1(ulong2){}
 template <> void foo2(ulong2){}
 template <> void foo3(ulong2){}
 template <> void foo4(ulong2){}
 
-// CHECK: template <> void foo1(sycl::long3){}
-// CHECK-NEXT: template <> void foo2(sycl::long3){}
-// CHECK-NEXT: template <> void foo3(sycl::long3){}
-// CHECK-NEXT: template <> void foo4(sycl::long3){}
+// CHECK: template <> void foo1(sycl::mlong3){}
+// CHECK-NEXT: template <> void foo2(sycl::mlong3){}
+// CHECK-NEXT: template <> void foo3(sycl::mlong3){}
+// CHECK-NEXT: template <> void foo4(sycl::mlong3){}
 template <> void foo1(long3){}
 template <> void foo2(long3){}
 template <> void foo3(long3){}
 template <> void foo4(long3){}
 
-// CHECK: template <> void foo1(sycl::ulong3){}
-// CHECK-NEXT: template <> void foo2(sycl::ulong3){}
-// CHECK-NEXT: template <> void foo3(sycl::ulong3){}
-// CHECK-NEXT: template <> void foo4(sycl::ulong3){}
+// CHECK: template <> void foo1(sycl::mulong3){}
+// CHECK-NEXT: template <> void foo2(sycl::mulong3){}
+// CHECK-NEXT: template <> void foo3(sycl::mulong3){}
+// CHECK-NEXT: template <> void foo4(sycl::mulong3){}
 template <> void foo1(ulong3){}
 template <> void foo2(ulong3){}
 template <> void foo3(ulong3){}
 template <> void foo4(ulong3){}
 
-// CHECK: template <> void foo1(sycl::long4){}
-// CHECK-NEXT: template <> void foo2(sycl::long4){}
-// CHECK-NEXT: template <> void foo3(sycl::long4){}
-// CHECK-NEXT: template <> void foo4(sycl::long4){}
+// CHECK: template <> void foo1(sycl::mlong4){}
+// CHECK-NEXT: template <> void foo2(sycl::mlong4){}
+// CHECK-NEXT: template <> void foo3(sycl::mlong4){}
+// CHECK-NEXT: template <> void foo4(sycl::mlong4){}
 template <> void foo1(long4){}
 template <> void foo2(long4){}
 template <> void foo3(long4){}
 template <> void foo4(long4){}
 
-// CHECK: template <> void foo1(sycl::ulong4){}
-// CHECK-NEXT: template <> void foo2(sycl::ulong4){}
-// CHECK-NEXT: template <> void foo3(sycl::ulong4){}
-// CHECK-NEXT: template <> void foo4(sycl::ulong4){}
+// CHECK: template <> void foo1(sycl::mulong4){}
+// CHECK-NEXT: template <> void foo2(sycl::mulong4){}
+// CHECK-NEXT: template <> void foo3(sycl::mulong4){}
+// CHECK-NEXT: template <> void foo4(sycl::mulong4){}
 template <> void foo1(ulong4){}
 template <> void foo2(ulong4){}
 template <> void foo3(ulong4){}
@@ -4231,28 +4231,28 @@ template <> void foo2(float1){}
 template <> void foo3(float1){}
 template <> void foo4(float1){}
 
-// CHECK: template <> void foo1(sycl::float2){}
-// CHECK-NEXT: template <> void foo2(sycl::float2){}
-// CHECK-NEXT: template <> void foo3(sycl::float2){}
-// CHECK-NEXT: template <> void foo4(sycl::float2){}
+// CHECK: template <> void foo1(sycl::mfloat2){}
+// CHECK-NEXT: template <> void foo2(sycl::mfloat2){}
+// CHECK-NEXT: template <> void foo3(sycl::mfloat2){}
+// CHECK-NEXT: template <> void foo4(sycl::mfloat2){}
 template <> void foo1(float2){}
 template <> void foo2(float2){}
 template <> void foo3(float2){}
 template <> void foo4(float2){}
 
-// CHECK: template <> void foo1(sycl::float3){}
-// CHECK-NEXT: template <> void foo2(sycl::float3){}
-// CHECK-NEXT: template <> void foo3(sycl::float3){}
-// CHECK-NEXT: template <> void foo4(sycl::float3){}
+// CHECK: template <> void foo1(sycl::mfloat3){}
+// CHECK-NEXT: template <> void foo2(sycl::mfloat3){}
+// CHECK-NEXT: template <> void foo3(sycl::mfloat3){}
+// CHECK-NEXT: template <> void foo4(sycl::mfloat3){}
 template <> void foo1(float3){}
 template <> void foo2(float3){}
 template <> void foo3(float3){}
 template <> void foo4(float3){}
 
-// CHECK: template <> void foo1(sycl::float4){}
-// CHECK-NEXT: template <> void foo2(sycl::float4){}
-// CHECK-NEXT: template <> void foo3(sycl::float4){}
-// CHECK-NEXT: template <> void foo4(sycl::float4){}
+// CHECK: template <> void foo1(sycl::mfloat4){}
+// CHECK-NEXT: template <> void foo2(sycl::mfloat4){}
+// CHECK-NEXT: template <> void foo3(sycl::mfloat4){}
+// CHECK-NEXT: template <> void foo4(sycl::mfloat4){}
 template <> void foo1(float4){}
 template <> void foo2(float4){}
 template <> void foo3(float4){}
@@ -4276,55 +4276,55 @@ template <> void foo2(ulonglong1){}
 template <> void foo3(ulonglong1){}
 template <> void foo4(ulonglong1){}
 
-// CHECK: template <> void foo1(sycl::longlong2){}
-// CHECK-NEXT: template <> void foo2(sycl::longlong2){}
-// CHECK-NEXT: template <> void foo3(sycl::longlong2){}
-// CHECK-NEXT: template <> void foo4(sycl::longlong2){}
+// CHECK: template <> void foo1(sycl::mlonglong2){}
+// CHECK-NEXT: template <> void foo2(sycl::mlonglong2){}
+// CHECK-NEXT: template <> void foo3(sycl::mlonglong2){}
+// CHECK-NEXT: template <> void foo4(sycl::mlonglong2){}
 template <> void foo1(longlong2){}
 template <> void foo2(longlong2){}
 template <> void foo3(longlong2){}
 template <> void foo4(longlong2){}
 
-// CHECK: template <> void foo1(sycl::ulonglong2){}
-// CHECK-NEXT: template <> void foo2(sycl::ulonglong2){}
-// CHECK-NEXT: template <> void foo3(sycl::ulonglong2){}
-// CHECK-NEXT: template <> void foo4(sycl::ulonglong2){}
+// CHECK: template <> void foo1(sycl::mulonglong2){}
+// CHECK-NEXT: template <> void foo2(sycl::mulonglong2){}
+// CHECK-NEXT: template <> void foo3(sycl::mulonglong2){}
+// CHECK-NEXT: template <> void foo4(sycl::mulonglong2){}
 template <> void foo1(ulonglong2){}
 template <> void foo2(ulonglong2){}
 template <> void foo3(ulonglong2){}
 template <> void foo4(ulonglong2){}
 
-// CHECK: template <> void foo1(sycl::longlong3){}
-// CHECK-NEXT: template <> void foo2(sycl::longlong3){}
-// CHECK-NEXT: template <> void foo3(sycl::longlong3){}
-// CHECK-NEXT: template <> void foo4(sycl::longlong3){}
+// CHECK: template <> void foo1(sycl::mlonglong3){}
+// CHECK-NEXT: template <> void foo2(sycl::mlonglong3){}
+// CHECK-NEXT: template <> void foo3(sycl::mlonglong3){}
+// CHECK-NEXT: template <> void foo4(sycl::mlonglong3){}
 template <> void foo1(longlong3){}
 template <> void foo2(longlong3){}
 template <> void foo3(longlong3){}
 template <> void foo4(longlong3){}
 
-// CHECK: template <> void foo1(sycl::ulonglong3){}
-// CHECK-NEXT: template <> void foo2(sycl::ulonglong3){}
-// CHECK-NEXT: template <> void foo3(sycl::ulonglong3){}
-// CHECK-NEXT: template <> void foo4(sycl::ulonglong3){}
+// CHECK: template <> void foo1(sycl::mulonglong3){}
+// CHECK-NEXT: template <> void foo2(sycl::mulonglong3){}
+// CHECK-NEXT: template <> void foo3(sycl::mulonglong3){}
+// CHECK-NEXT: template <> void foo4(sycl::mulonglong3){}
 template <> void foo1(ulonglong3){}
 template <> void foo2(ulonglong3){}
 template <> void foo3(ulonglong3){}
 template <> void foo4(ulonglong3){}
 
-// CHECK: template <> void foo1(sycl::longlong4){}
-// CHECK-NEXT: template <> void foo2(sycl::longlong4){}
-// CHECK-NEXT: template <> void foo3(sycl::longlong4){}
-// CHECK-NEXT: template <> void foo4(sycl::longlong4){}
+// CHECK: template <> void foo1(sycl::mlonglong4){}
+// CHECK-NEXT: template <> void foo2(sycl::mlonglong4){}
+// CHECK-NEXT: template <> void foo3(sycl::mlonglong4){}
+// CHECK-NEXT: template <> void foo4(sycl::mlonglong4){}
 template <> void foo1(longlong4){}
 template <> void foo2(longlong4){}
 template <> void foo3(longlong4){}
 template <> void foo4(longlong4){}
 
-// CHECK: template <> void foo1(sycl::ulonglong4){}
-// CHECK-NEXT: template <> void foo2(sycl::ulonglong4){}
-// CHECK-NEXT: template <> void foo3(sycl::ulonglong4){}
-// CHECK-NEXT: template <> void foo4(sycl::ulonglong4){}
+// CHECK: template <> void foo1(sycl::mulonglong4){}
+// CHECK-NEXT: template <> void foo2(sycl::mulonglong4){}
+// CHECK-NEXT: template <> void foo3(sycl::mulonglong4){}
+// CHECK-NEXT: template <> void foo4(sycl::mulonglong4){}
 template <> void foo1(ulonglong4){}
 template <> void foo2(ulonglong4){}
 template <> void foo3(ulonglong4){}
@@ -4339,28 +4339,28 @@ template <> void foo2(double1){}
 template <> void foo3(double1){}
 template <> void foo4(double1){}
 
-// CHECK: template <> void foo1(sycl::double2){}
-// CHECK-NEXT: template <> void foo2(sycl::double2){}
-// CHECK-NEXT: template <> void foo3(sycl::double2){}
-// CHECK-NEXT: template <> void foo4(sycl::double2){}
+// CHECK: template <> void foo1(sycl::mdouble2){}
+// CHECK-NEXT: template <> void foo2(sycl::mdouble2){}
+// CHECK-NEXT: template <> void foo3(sycl::mdouble2){}
+// CHECK-NEXT: template <> void foo4(sycl::mdouble2){}
 template <> void foo1(double2){}
 template <> void foo2(double2){}
 template <> void foo3(double2){}
 template <> void foo4(double2){}
 
-// CHECK: template <> void foo1(sycl::double3){}
-// CHECK-NEXT: template <> void foo2(sycl::double3){}
-// CHECK-NEXT: template <> void foo3(sycl::double3){}
-// CHECK-NEXT: template <> void foo4(sycl::double3){}
+// CHECK: template <> void foo1(sycl::mdouble3){}
+// CHECK-NEXT: template <> void foo2(sycl::mdouble3){}
+// CHECK-NEXT: template <> void foo3(sycl::mdouble3){}
+// CHECK-NEXT: template <> void foo4(sycl::mdouble3){}
 template <> void foo1(double3){}
 template <> void foo2(double3){}
 template <> void foo3(double3){}
 template <> void foo4(double3){}
 
-// CHECK: template <> void foo1(sycl::double4){}
-// CHECK-NEXT: template <> void foo2(sycl::double4){}
-// CHECK-NEXT: template <> void foo3(sycl::double4){}
-// CHECK-NEXT: template <> void foo4(sycl::double4){}
+// CHECK: template <> void foo1(sycl::mdouble4){}
+// CHECK-NEXT: template <> void foo2(sycl::mdouble4){}
+// CHECK-NEXT: template <> void foo3(sycl::mdouble4){}
+// CHECK-NEXT: template <> void foo4(sycl::mdouble4){}
 template <> void foo1(double4){}
 template <> void foo2(double4){}
 template <> void foo3(double4){}

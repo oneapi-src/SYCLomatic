@@ -17,8 +17,8 @@ int rank;
 
 //CHECK:void foo1(dpct::fft::fft_engine_ptr plan) {
 //CHECK-NEXT:  double* odata;
-//CHECK-NEXT:  sycl::double2* idata;
-//CHECK-NEXT:  plan->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward);
+//CHECK-NEXT:  sycl::mdouble2* idata;
+//CHECK-NEXT:  plan->compute<sycl::mdouble2, double>(idata, odata, dpct::fft::fft_direction::backward);
 //CHECK-NEXT:}
 void foo1(cufftHandle plan) {
   double* odata;
@@ -28,8 +28,8 @@ void foo1(cufftHandle plan) {
 
 //CHECK:void foo2(dpct::fft::fft_engine_ptr plan) {
 //CHECK-NEXT:  float* odata;
-//CHECK-NEXT:  sycl::float2* idata;
-//CHECK-NEXT:  plan->compute<sycl::float2, float>(idata, odata, dpct::fft::fft_direction::backward);
+//CHECK-NEXT:  sycl::mfloat2* idata;
+//CHECK-NEXT:  plan->compute<sycl::mfloat2, float>(idata, odata, dpct::fft::fft_direction::backward);
 //CHECK-NEXT:}
 void foo2(cufftHandle plan) {
   float* odata;

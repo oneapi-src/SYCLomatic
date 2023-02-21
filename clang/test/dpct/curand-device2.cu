@@ -168,7 +168,7 @@ __global__ void kernel2() {
 //CHECK-NEXT:rng1 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(11, {1234, 1 * 4});
 //CHECK-NEXT:rng2 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(22, {4321, 2 * 4});
 //CHECK-NEXT:float x = rng1.generate<oneapi::mkl::rng::device::uniform<float>, 1>();
-//CHECK-NEXT:sycl::float2 y = rng2.generate<oneapi::mkl::rng::device::gaussian<float>, 2>();
+//CHECK-NEXT:sycl::mfloat2 y = rng2.generate<oneapi::mkl::rng::device::gaussian<float>, 2>();
   curandStatePhilox4_32_10_t rng1;
   curandStatePhilox4_32_10_t rng2;
   curand_init(11, 1, 1234, &rng1);

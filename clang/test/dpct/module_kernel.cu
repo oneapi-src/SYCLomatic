@@ -48,7 +48,7 @@ __global__ void foo(float* k, float* y){
     int a = threadIdx.x;
 }
 
-// CHECK: extern "C" void foo2(float* k, float* y, const sycl::nd_item<3> &item_ct1, sycl::int2 x=sycl::int2(1, 2)) {
+// CHECK: extern "C" void foo2(float* k, float* y, const sycl::nd_item<3> &item_ct1, sycl::mint2 x=sycl::mint2(1, 2)) {
 // CHECK-NEXT: (void)item_ct1.get_local_id(2);
 // CHECK-NEXT: }
 

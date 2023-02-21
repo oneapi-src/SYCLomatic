@@ -40,12 +40,12 @@ void foo1() {
 }
 
      //CHECK:void foo2() {
-//CHECK-NEXT:        sycl::int4 n;
-//CHECK-NEXT:        sycl::int4 m;
-//CHECK-NEXT:        n.x() = m.w();
-//CHECK-NEXT:        n.y() = m.z();
-//CHECK-NEXT:        n.z() = m.y();
-//CHECK-NEXT:        n.w() = m.x();
+//CHECK-NEXT:        sycl::mint4 n;
+//CHECK-NEXT:        sycl::mint4 m;
+//CHECK-NEXT:        n[0] = m[3];
+//CHECK-NEXT:        n[1] = m[2];
+//CHECK-NEXT:        n[2] = m[1];
+//CHECK-NEXT:        n[3] = m[0];
 //CHECK-NEXT:}
 __global__ void foo2() {
 		int4 n;

@@ -8,16 +8,16 @@
 texture<float4, 1, cudaReadModeElementType> posTexture;
 texture<int4, 1, cudaReadModeElementType> posTexture_dp;
 struct texReader_sp {
-// CHECK:     __dpct_inline__ sycl::float4 operator()(int idx,
-// CHECK-NEXT:              dpct::image_accessor_ext<sycl::float4, 1> posTexture) const
+// CHECK:     __dpct_inline__ sycl::mfloat4 operator()(int idx,
+// CHECK-NEXT:              dpct::image_accessor_ext<sycl::mfloat4, 1> posTexture) const
    __device__ __forceinline__ float4 operator()(int idx) const
    {
        return tex1Dfetch(posTexture, idx);
    }
 };
 struct texReader_dp {
-// CHECK:   __dpct_inline__ sycl::double4 operator()(int idx,
-// CHECK-NEXT:              dpct::image_accessor_ext<sycl::int4, 1> posTexture_dp) const
+// CHECK:   __dpct_inline__ sycl::mdouble4 operator()(int idx,
+// CHECK-NEXT:              dpct::image_accessor_ext<sycl::mint4, 1> posTexture_dp) const
    __device__ __forceinline__ double4 operator()(int idx) const
    {
        int4 v = tex1Dfetch(posTexture_dp, idx*2);
@@ -27,7 +27,7 @@ struct texReader_dp {
 
 // CHECK: template <typename texReader>
 // CHECK-NEXT: void compute_lj_force(const sycl::nd_item<3> &item_ct1,
-// CHECK-NEXT:                       dpct::image_accessor_ext<sycl::int4, 1> posTexture_dp)
+// CHECK-NEXT:                       dpct::image_accessor_ext<sycl::mint4, 1> posTexture_dp)
 template <typename texReader>
 __global__ void compute_lj_force()
 {
@@ -36,7 +36,7 @@ __global__ void compute_lj_force()
     // CHECK: /*
     // CHECK-NEXT: DPCT1084:{{[0-9]+}}: The function call "texReader_sp::operator()" has multiple migration results in different template instantiations that could not be unified. You may need to adjust the code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: float j = positionTexReader(idx, posTexture_dp).x();
+    // CHECK-NEXT: float j = positionTexReader(idx, posTexture_dp)[0];
     float j = positionTexReader(idx).x;
 }
 
@@ -56,7 +56,7 @@ struct tex_reader_2 {
 template <typename tex_reader> __global__ void kernel_2() {
   //CHECK:int idx = item_ct1.get_local_id(2);
   //CHECK-NEXT:tex_reader reader;
-  //CHECK-NEXT:float res = reader(idx, tex_1).x();
+  //CHECK-NEXT:float res = reader(idx, tex_1)[0];
   int idx = threadIdx.x;
   tex_reader reader;
   float res = reader(idx).x;

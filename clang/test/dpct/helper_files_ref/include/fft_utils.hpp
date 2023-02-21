@@ -567,37 +567,37 @@ public:
     }
   }
   template <>
-  void compute(float *input, sycl::float2 *output, fft_direction direction) {
+  void compute(float *input, sycl::mfloat2 *output, fft_direction direction) {
     _direction = direction;
     compute_real<float, oneapi::mkl::dft::precision::SINGLE>((float *)input,
                                                              (float *)output);
   }
   template <>
-  void compute(sycl::float2 *input, float *output, fft_direction direction) {
+  void compute(sycl::mfloat2 *input, float *output, fft_direction direction) {
     _direction = direction;
     compute_real<float, oneapi::mkl::dft::precision::SINGLE>((float *)input,
                                                              (float *)output);
   }
   template <>
-  void compute(double *input, sycl::double2 *output, fft_direction direction) {
+  void compute(double *input, sycl::mdouble2 *output, fft_direction direction) {
     _direction = direction;
     compute_real<double, oneapi::mkl::dft::precision::DOUBLE>((double *)input,
                                                               (double *)output);
   }
   template <>
-  void compute(sycl::double2 *input, double *output, fft_direction direction) {
+  void compute(sycl::mdouble2 *input, double *output, fft_direction direction) {
     _direction = direction;
     compute_real<double, oneapi::mkl::dft::precision::DOUBLE>((double *)input,
                                                               (double *)output);
   }
   template <>
-  void compute(sycl::float2 *input, sycl::float2 *output,
+  void compute(sycl::mfloat2 *input, sycl::mfloat2 *output,
                fft_direction direction) {
     compute_complex<float, oneapi::mkl::dft::precision::SINGLE>(
         (float *)input, (float *)output, direction);
   }
   template <>
-  void compute(sycl::double2 *input, sycl::double2 *output,
+  void compute(sycl::mdouble2 *input, sycl::mdouble2 *output,
                fft_direction direction) {
     compute_complex<double, oneapi::mkl::dft::precision::DOUBLE>(
         (double *)input, (double *)output, direction);

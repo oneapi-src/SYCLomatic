@@ -215,30 +215,30 @@ void test() {
     void *d_dst = NULL;
     FILE* dumpfile = NULL;
 
-    // CHECK: sycl::uchar4* h_dst = (sycl::uchar4*) malloc(3*sizeof(sycl::uchar4));
+    // CHECK: sycl::muchar4* h_dst = (sycl::muchar4*) malloc(3*sizeof(sycl::muchar4));
     uchar4* h_dst = (uchar4*) malloc(3*sizeof(uchar4));
 
     for (int32_t i = 0; i < 3; ++i)
     {
-        // CHECK: fwrite(&h_dst[i].x(), sizeof(char), 1, dumpfile);
+        // CHECK: fwrite(&h_dst[i][0], sizeof(char), 1, dumpfile);
         fwrite(&h_dst[i].x, sizeof(char), 1, dumpfile);
 
-        // CHECK: fwrite(&h_dst[i].y(), sizeof(char), 1, dumpfile);
+        // CHECK: fwrite(&h_dst[i][1], sizeof(char), 1, dumpfile);
         fwrite(&h_dst[i].y, sizeof(char), 1, dumpfile);
 
-        // CHECK: fwrite(&h_dst[i].z(), sizeof(char), 1, dumpfile);
+        // CHECK: fwrite(&h_dst[i][2], sizeof(char), 1, dumpfile);
         fwrite(&h_dst[i].z, sizeof(char), 1, dumpfile);
     }
 
-    // CHECK: sycl::uchar4 data;
+    // CHECK: sycl::muchar4 data;
     uchar4 data;
 
-    // CHECK: *(&data.x()) = 'a';
+    // CHECK: *(&data[0]) = 'a';
     *(&data.x) = 'a';
 }
 
 // CHECK:struct wrap {
-// CHECK-NEXT:  sycl::float3 f3;
+// CHECK-NEXT:  sycl::mfloat3 f3;
 // CHECK-NEXT:};
 struct wrap {
   float3 f3;
@@ -249,7 +249,7 @@ struct wrap {
 // CHECK-NEXT: const sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT:   const unsigned int i = item_ct1.get_group(2)*item_ct1.get_local_range(2)+item_ct1.get_local_id(2);
 // CHECK-NEXT:   if (i<N) {
-// CHECK-NEXT:     dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(&mt[i].f3.x(), a[i]);
+// CHECK-NEXT:     dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(&mt[i].f3[0], a[i]);
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
 __global__ void kernel_foo(float *a, wrap *mt, unsigned int N) {

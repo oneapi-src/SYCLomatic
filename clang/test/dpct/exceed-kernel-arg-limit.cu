@@ -57,7 +57,7 @@ int main() {
     kernel<<<dim3(1, 1, 1), dim3(array_size, 1, 1)>>>(global);
 
     // 208(stream) + 16(i4) + 8(ip) + 48(image accessor + sampler) + 32(a) + 56(b) + 32(c) + 32(d) + 56(e) + 7*80 = 1048
-    //CHECK: sycl::int4 i4;
+    //CHECK: sycl::mint4 i4;
     //CHECK: int* ip = 0;
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1042:{{[0-9]+}}: The size of the arguments passed to the SYCL kernel exceeds the minimum size limit (1024) for a non-custom SYCL device. You can get the hardware argument size limit by querying info::device::max_parameter_size. You may need to rewrite this code if the size of the arguments exceeds the hardware limit.

@@ -4,10 +4,10 @@
 // RUN: FileCheck --input-file %T/cufft-func-ptr/cufft-func-ptr.dp.cpp --match-full-lines cufft-func-ptr.cu
 #include <cufft.h>
 
-//CHECK:static int (*pt2CufftExec)(dpct::fft::fft_engine_ptr, sycl::double2 *,
+//CHECK:static int (*pt2CufftExec)(dpct::fft::fft_engine_ptr, sycl::mdouble2 *,
 //CHECK-NEXT:                               double *) = [](dpct::fft::fft_engine_ptr engine,
-//CHECK-NEXT:                                              sycl::double2 *in, double *out) {
-//CHECK-NEXT:      engine->compute<sycl::double2, double>(in, out,
+//CHECK-NEXT:                                              sycl::mdouble2 *in, double *out) {
+//CHECK-NEXT:      engine->compute<sycl::mdouble2, double>(in, out,
 //CHECK-NEXT:                                             dpct::fft::fft_direction::backward);
 //CHECK-NEXT:      return 0;
 //CHECK-NEXT:    };
@@ -20,7 +20,7 @@ int main() {
 //CHECK-NEXT:      &dpct::get_default_queue(), 10,
 //CHECK-NEXT:      dpct::fft::fft_type::complex_double_to_real_double, 1);
 //CHECK-NEXT:  double* odata;
-//CHECK-NEXT:  sycl::double2 *idata;
+//CHECK-NEXT:  sycl::mdouble2 *idata;
 //CHECK-NEXT:  pt2CufftExec(plan1, idata, odata);
 //CHECK-NEXT:  return 0;
   cufftHandle plan1;
@@ -32,12 +32,12 @@ int main() {
 }
 
 int foo1() {
-//CHECK:  typedef int (*Func_t)(dpct::fft::fft_engine_ptr, sycl::double2 *, double *);
+//CHECK:  typedef int (*Func_t)(dpct::fft::fft_engine_ptr, sycl::mdouble2 *, double *);
   typedef cufftResult (*Func_t)(cufftHandle, cufftDoubleComplex *, double *);
 
 //     CHECK:  static Func_t FuncPtr = [](dpct::fft::fft_engine_ptr engine,
-//CHECK-NEXT:                             sycl::double2 *in, double *out) {
-//CHECK-NEXT:    engine->compute<sycl::double2, double>(in, out,
+//CHECK-NEXT:                             sycl::mdouble2 *in, double *out) {
+//CHECK-NEXT:    engine->compute<sycl::mdouble2, double>(in, out,
 //CHECK-NEXT:                                           dpct::fft::fft_direction::backward);
 //CHECK-NEXT:    return 0;
 //CHECK-NEXT:  };
@@ -48,7 +48,7 @@ int foo1() {
 //CHECK-NEXT:      &dpct::get_default_queue(), 10,
 //CHECK-NEXT:      dpct::fft::fft_type::complex_double_to_real_double, 1);
 //CHECK-NEXT:  double* odata;
-//CHECK-NEXT:  sycl::double2 *idata;
+//CHECK-NEXT:  sycl::mdouble2 *idata;
 //CHECK-NEXT:  FuncPtr(plan1, idata, odata);
 //CHECK-NEXT:  return 0;
   cufftHandle plan1;
@@ -60,12 +60,12 @@ int foo1() {
 }
 
 int foo2() {
-//CHECK:  using Func_t = int (*)(dpct::fft::fft_engine_ptr, sycl::double2 *, double *);
+//CHECK:  using Func_t = int (*)(dpct::fft::fft_engine_ptr, sycl::mdouble2 *, double *);
   using Func_t = cufftResult (*)(cufftHandle, cufftDoubleComplex *, double *);
 
-//     CHECK:  Func_t FuncPtr2 = [](dpct::fft::fft_engine_ptr engine, sycl::double2 *in,
+//     CHECK:  Func_t FuncPtr2 = [](dpct::fft::fft_engine_ptr engine, sycl::mdouble2 *in,
 //CHECK-NEXT:                       double *out) {
-//CHECK-NEXT:    engine->compute<sycl::double2, double>(in, out,
+//CHECK-NEXT:    engine->compute<sycl::mdouble2, double>(in, out,
 //CHECK-NEXT:                                           dpct::fft::fft_direction::backward);
 //CHECK-NEXT:    return 0;
 //CHECK-NEXT:  };
@@ -76,7 +76,7 @@ int foo2() {
 //CHECK-NEXT:      &dpct::get_default_queue(), 10,
 //CHECK-NEXT:      dpct::fft::fft_type::complex_double_to_real_double, 1);
 //CHECK-NEXT:  double* odata;
-//CHECK-NEXT:  sycl::double2 *idata;
+//CHECK-NEXT:  sycl::mdouble2 *idata;
 //CHECK-NEXT:  FuncPtr2(plan1, idata, odata);
 //CHECK-NEXT:  return 0;
   cufftHandle plan1;
@@ -88,13 +88,13 @@ int foo2() {
 }
 
 int foo3() {
-//CHECK:  using Func_t = int (*)(dpct::fft::fft_engine_ptr, sycl::double2 *, double *);
+//CHECK:  using Func_t = int (*)(dpct::fft::fft_engine_ptr, sycl::mdouble2 *, double *);
   using Func_t = cufftResult (*)(cufftHandle, cufftDoubleComplex *, double *);
 
 //CHECK:  Func_t FuncPtr3;
-//CHECK-NEXT:  FuncPtr3 = [](dpct::fft::fft_engine_ptr engine, sycl::double2 *in,
+//CHECK-NEXT:  FuncPtr3 = [](dpct::fft::fft_engine_ptr engine, sycl::mdouble2 *in,
 //CHECK-NEXT:                double *out) {
-//CHECK-NEXT:    engine->compute<sycl::double2, double>(in, out,
+//CHECK-NEXT:    engine->compute<sycl::mdouble2, double>(in, out,
 //CHECK-NEXT:                                           dpct::fft::fft_direction::backward);
 //CHECK-NEXT:    return 0;
 //CHECK-NEXT:  };
@@ -106,7 +106,7 @@ int foo3() {
 //CHECK-NEXT:      &dpct::get_default_queue(), 10, 
 //CHECK-NEXT:      dpct::fft::fft_type::complex_double_to_real_double, 1);
 //CHECK-NEXT:  double* odata;
-//CHECK-NEXT:  sycl::double2 *idata;
+//CHECK-NEXT:  sycl::mdouble2 *idata;
 //CHECK-NEXT:  FuncPtr3(plan1, idata, odata);
 //CHECK-NEXT:  return 0;
   cufftHandle plan1;
@@ -118,12 +118,12 @@ int foo3() {
 }
 
 int foo4() {
-//CHECK:  int (*FuncPtr4)(dpct::fft::fft_engine_ptr, sycl::double2 *, double *);
+//CHECK:  int (*FuncPtr4)(dpct::fft::fft_engine_ptr, sycl::mdouble2 *, double *);
   cufftResult (*FuncPtr4)(cufftHandle, cufftDoubleComplex *, double *);
 
-//CHECK:  FuncPtr4 = [](dpct::fft::fft_engine_ptr engine, sycl::double2 *in,
+//CHECK:  FuncPtr4 = [](dpct::fft::fft_engine_ptr engine, sycl::mdouble2 *in,
 //CHECK-NEXT:                double *out) {
-//CHECK-NEXT:    engine->compute<sycl::double2, double>(in, out,
+//CHECK-NEXT:    engine->compute<sycl::mdouble2, double>(in, out,
 //CHECK-NEXT:                                           dpct::fft::fft_direction::backward);
 //CHECK-NEXT:    return 0;
 //CHECK-NEXT:  };
@@ -134,7 +134,7 @@ int foo4() {
 //CHECK-NEXT:      &dpct::get_default_queue(), 10,
 //CHECK-NEXT:      dpct::fft::fft_type::complex_double_to_real_double, 1);
 //CHECK-NEXT:  double* odata;
-//CHECK-NEXT:  sycl::double2 *idata;
+//CHECK-NEXT:  sycl::mdouble2 *idata;
 //CHECK-NEXT:  FuncPtr4(plan1, idata, odata);
 //CHECK-NEXT:  return 0;
   cufftHandle plan1;

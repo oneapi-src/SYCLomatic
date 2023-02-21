@@ -6,15 +6,15 @@
 //
 //===----------------------------------------------------------------------===//
 
-CALL_FACTORY_ENTRY("make_cuComplex", CALL(MapNames::getClNamespace() + "float2",
+CALL_FACTORY_ENTRY("make_cuComplex", CALL(MapNames::getClNamespace() + "mfloat2",
                                           makeCallArgCreatorWithCall(0),
                                           makeCallArgCreatorWithCall(1)))
 CALL_FACTORY_ENTRY("make_cuFloatComplex",
-                   CALL(MapNames::getClNamespace() + "float2",
+                   CALL(MapNames::getClNamespace() + "mfloat2",
                         makeCallArgCreatorWithCall(0),
                         makeCallArgCreatorWithCall(1)))
 CALL_FACTORY_ENTRY("make_cuDoubleComplex",
-                   CALL(MapNames::getClNamespace() + "double2",
+                   CALL(MapNames::getClNamespace() + "mdouble2",
                         makeCallArgCreatorWithCall(0),
                         makeCallArgCreatorWithCall(1)))
 CALL_FACTORY_ENTRY("__saturatef",

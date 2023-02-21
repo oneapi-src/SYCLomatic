@@ -10,20 +10,20 @@ void f() {
   using dim3_z_type = decltype(dim3::z);
   // CHECK: using int1_x_type = int;
   using int1_x_type = decltype(int1::x);
-  // CHECK: using uint3_x_type = sycl::uint3::element_type;
+  // CHECK: using uint3_x_type = sycl::muint3::value_type;
   using uint3_x_type = decltype(uint3::x);
-  // CHECK: using uint3_y_type = sycl::uint3::element_type;
+  // CHECK: using uint3_y_type = sycl::muint3::value_type;
   using uint3_y_type = decltype(uint3::y);
-  // CHECK: using uint3_z_type = sycl::uint3::element_type;
+  // CHECK: using uint3_z_type = sycl::muint3::value_type;
   using uint3_z_type = decltype(uint3::z);
   // CHECK: using char1_x_type = char;
   using char1_x_type = decltype(char1::x);
-  // CHECK: using char4_x_type = sycl::char4::element_type;
+  // CHECK: using char4_x_type = sycl::mchar4::value_type;
   using char4_x_type = decltype(char4::x);
-  // CHECK: using char4_y_type = sycl::char4::element_type;
+  // CHECK: using char4_y_type = sycl::mchar4::value_type;
   using char4_y_type = decltype(char4::y);
-  // CHECK: using char4_z_type = sycl::char4::element_type;
+  // CHECK: using char4_z_type = sycl::mchar4::value_type;
   using char4_z_type = decltype(char4::z);
-  // CHECK: using char4_w_type = sycl::char4::element_type;
+  // CHECK: using char4_w_type = sycl::mchar4::value_type;
   using char4_w_type = decltype(char4::w);
 }

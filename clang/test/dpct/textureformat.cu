@@ -18,11 +18,11 @@ __global__ void transformKernel(float* output, cudaTextureObject_t texObj, int w
 
   output[y * width + x] = tex2D<float>(texObj, tu, tv);
 }
-// CHECK: dpct::image_wrapper<sycl::float4, 2> tex42;
+// CHECK: dpct::image_wrapper<sycl::mfloat4, 2> tex42;
 // CHECK-NEXT: /*
 // CHECK-NEXT: DPCT1059:{{[0-9]+}}: SYCL only supports 4-channel image format. Adjust the code.
 // CHECK-NEXT: */
-// CHECK-NEXT: dpct::image_wrapper<sycl::float3, 2> tex32;
+// CHECK-NEXT: dpct::image_wrapper<sycl::mfloat3, 2> tex32;
 static texture<float4, 2> tex42;
 static texture<float3, 2> tex32;
 
@@ -42,7 +42,7 @@ int main()
   // CHECK: /*
   // CHECK-NEXT: DPCT1059:{{[0-9]+}}: SYCL only supports 4-channel image format. Adjust the code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::image_channel channelDesc1 = dpct::image_channel::create<sycl::float3>();
+  // CHECK-NEXT: dpct::image_channel channelDesc1 = dpct::image_channel::create<sycl::mfloat3>();
   cudaChannelFormatDesc channelDesc1 = cudaCreateChannelDesc<float3>();
 
   cudaArray* cuArray;

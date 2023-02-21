@@ -13,7 +13,7 @@ Replacements:
   - FilePath:        '/home/testfolder/test.cu'
     Offset:          42
     Length:          6
-    ReplacementText: 'sycl::float2'
+    ReplacementText: 'sycl::mfloat2'
     ConstantFlag:    ''
     ConstantOffset:  0
     InitStr:         ''

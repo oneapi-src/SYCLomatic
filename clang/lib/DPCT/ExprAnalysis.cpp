@@ -805,9 +805,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       std::string MemberName = ME->getMemberNameInfo().getAsString();
       if (MapNames::replaceName(MapNames::MemberNamesMap, MemberName)) {
         // Retrieve the correct location before addReplacement
-        auto Loc =
-            getLocInRange(ME->getMemberLoc(), getStmtExpansionSourceRange(ME));
-        addReplacement(Loc, MemberName);
+        addReplacement(ME->getOperatorLoc(), ME->getEndLoc(), MemberName);
       }
     }
   }
@@ -1153,7 +1151,7 @@ void ExprAnalysis::analyzeDecltypeType(DecltypeTypeLoc TL) {
       auto ReplacedStr =
           MapNames::findReplacedName(MapNames::TypeNamesMap, Name);
       if (Name.back() != '1') {
-        ReplacedStr += "::element_type";
+        ReplacedStr += "::value_type";
       }
       addReplacement(Range.getBegin(), Range.getEnd(), ReplacedStr);
     }

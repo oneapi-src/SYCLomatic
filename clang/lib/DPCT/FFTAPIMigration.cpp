@@ -11,7 +11,7 @@
 namespace clang {
 namespace dpct {
 
-TextModification* processFunctionPointer(const UnaryOperator *UO) {
+TextModification *processFunctionPointer(const UnaryOperator *UO) {
   if (!UO)
     return nullptr;
   const DeclRefExpr *DRE = dyn_cast_or_null<DeclRefExpr>(UO->getSubExpr());
@@ -21,8 +21,8 @@ TextModification* processFunctionPointer(const UnaryOperator *UO) {
   if (!FD)
     return nullptr;
   StringRef FuncNameRef = FD->getName();
-  std::string ParameterTypes = MapNames::getDpctNamespace() +
-                               "fft::fft_engine_ptr engine";
+  std::string ParameterTypes =
+      MapNames::getDpctNamespace() + "fft::fft_engine_ptr engine";
   requestFeature(HelperFeatureEnum::FftUtils_fft_engine, UO->getBeginLoc());
   std::string Dir;
   std::string NewFuncName;
@@ -32,36 +32,42 @@ TextModification* processFunctionPointer(const UnaryOperator *UO) {
                      "float2 *out, " + MapNames::getDpctNamespace() +
                      "fft::fft_direction dir";
     Dir = "dir";
-    NewFuncName = "compute<" + MapNames::getClNamespace() + "float2, " +
-                  MapNames::getClNamespace() + "float2>";
+    NewFuncName = "compute<" + MapNames::getClNamespace() + "mfloat2, " +
+                  MapNames::getClNamespace() + "mfloat2>";
   } else if (FuncNameRef == "cufftExecZ2Z") {
-    ParameterTypes = ParameterTypes + ", " + MapNames::getClNamespace() +
-                     "double2 *in, " + MapNames::getClNamespace() +
-                     "double2 *out, " + MapNames::getDpctNamespace() +
-                     "fft::fft_direction dir";
+    ParameterTypes = ParameterTypes + ", " +
+                     MapNames::TypeNamesMap["double2"]->NewName + " *in, " +
+                     MapNames::TypeNamesMap["double2"]->NewName + " *out, " +
+                     MapNames::getDpctNamespace() + "fft::fft_direction dir";
     Dir = "dir";
-    NewFuncName = "compute<" + MapNames::getClNamespace() + "double2, " +
-                  MapNames::getClNamespace() + "double2>";
+    NewFuncName = "compute<" + MapNames::TypeNamesMap["double2"]->NewName +
+                  ", " + MapNames::TypeNamesMap["double2"]->NewName + ">";
   } else if (FuncNameRef == "cufftExecR2C") {
     ParameterTypes = ParameterTypes + ", float *in, " +
-                     MapNames::getClNamespace() + "float2 *out";
+                     MapNames::TypeNamesMap["float2"]->NewName + " *out";
     Dir = MapNames::getDpctNamespace() + "fft::fft_direction::forward";
-    NewFuncName = "compute<float, " + MapNames::getClNamespace() + "float2>";
+    NewFuncName =
+        "compute<float, " + MapNames::TypeNamesMap["float2"]->NewName + ">";
   } else if (FuncNameRef == "cufftExecC2R") {
-    ParameterTypes = ParameterTypes + ", " + MapNames::getClNamespace() +
-                     "float2 *in, float *out";
+    ParameterTypes = ParameterTypes + ", " +
+                     MapNames::TypeNamesMap["float2"]->NewName +
+                     " *in, float *out";
     Dir = MapNames::getDpctNamespace() + "fft::fft_direction::backward";
-    NewFuncName = "compute<" + MapNames::getClNamespace() + "float2, float>";
+    NewFuncName =
+        "compute<" + MapNames::TypeNamesMap["float2"]->NewName + ", float>";
   } else if (FuncNameRef == "cufftExecD2Z") {
     ParameterTypes = ParameterTypes + ", double *in, " +
-                     MapNames::getClNamespace() + "double2 *out";
+                     MapNames::TypeNamesMap["double2"]->NewName + " *out";
     Dir = MapNames::getDpctNamespace() + "fft::fft_direction::forward";
-    NewFuncName = "compute<double, " + MapNames::getClNamespace() + "double2>";
+    NewFuncName =
+        "compute<double, " + MapNames::TypeNamesMap["double2"]->NewName + ">";
   } else if (FuncNameRef == "cufftExecZ2D") {
-    ParameterTypes = ParameterTypes + ", " + MapNames::getClNamespace() +
-                     "double2 *in, double *out";
+    ParameterTypes = ParameterTypes + ", " +
+                     MapNames::TypeNamesMap["double2"]->NewName +
+                     " *in, double *out";
     Dir = MapNames::getDpctNamespace() + "fft::fft_direction::backward";
-    NewFuncName = "compute<" + MapNames::getClNamespace() + "double2, double>";
+    NewFuncName =
+        "compute<" + MapNames::TypeNamesMap["double2"]->NewName + ", double>";
   } else {
     return nullptr;
   }
@@ -72,7 +78,6 @@ TextModification* processFunctionPointer(const UnaryOperator *UO) {
   TM->setBlockLevelFormatFlag(true);
   return TM;
 }
-
 
 } // namespace dpct
 } // namespace clang

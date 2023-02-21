@@ -81,8 +81,8 @@ namespace detail {
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Image object type traits, with accessor type and sampled data type defined.
-/// The data type of an image accessor must be one of sycl::int4, sycl::uint4,
-/// sycl::float4 and sycl::half4. The data type of accessors with 8bits/16bits
+/// The data type of an image accessor must be one of sycl::mint4, sycl::muint4,
+/// sycl::mfloat4 and sycl::half4. The data type of accessors with 8bits/16bits
 /// channel width will be 32 bits. sycl::half is an exception.
 template <class T> struct image_trait {
   using acc_data_t = sycl::vec<T, 4>;
@@ -1581,7 +1581,7 @@ public:
   typename std::enable_if<Available, data_t>::type read(float x, float y,
                                                         float z) {
     return detail::fetch_data<T>()(
-        _img_acc.read(sycl::float4(x, y, z, 0), _sampler));
+        _img_acc.read(sycl::mfloat4(x, y, z, 0), _sampler));
   }
   /// Read data from accessor.
   template <class Coord0, class Coord1, class Coord2,
@@ -1592,13 +1592,13 @@ public:
   typename std::enable_if<Available, data_t>::type read(Coord0 x, Coord1 y,
                                                         Coord2 z) {
     return detail::fetch_data<T>()(
-        _img_acc.read(sycl::int4(x, y, z, 0), _sampler));
+        _img_acc.read(sycl::mint4(x, y, z, 0), _sampler));
   }
   /// Read data from accessor.
   template <bool Available = dimensions == 2>
   typename std::enable_if<Available, data_t>::type read(float x, float y) {
     return detail::fetch_data<T>()(
-        _img_acc.read(sycl::float2(x, y), _sampler));
+        _img_acc.read(sycl::mfloat2(x, y), _sampler));
   }
   /// Read data from accessor.
   template <class Coord0, class Coord1,
@@ -1607,7 +1607,7 @@ public:
                                  &&std::is_integral<Coord1>::value>
   typename std::enable_if<Available, data_t>::type read(Coord0 x, Coord1 y) {
     return detail::fetch_data<T>()(
-        _img_acc.read(sycl::int2(x, y), _sampler));
+        _img_acc.read(sycl::mint2(x, y), _sampler));
   }
   /// Read data from accessor.
   template <bool Available = dimensions == 1>
@@ -1639,13 +1639,13 @@ public:
   typename std::enable_if<Available, data_t>::type read(int index, float x,
                                                         float y) {
     return detail::fetch_data<T>()(
-        _img_acc[index].read(sycl::float2(x, y), _sampler));
+        _img_acc[index].read(sycl::mfloat2(x, y), _sampler));
   }
   /// Read data from accessor.
   template <bool Available = dimensions == 2>
   typename std::enable_if<Available, data_t>::type read(int index, int x, int y) {
     return detail::fetch_data<T>()(
-        _img_acc[index].read(sycl::int2(x, y), _sampler));
+        _img_acc[index].read(sycl::mint2(x, y), _sampler));
   }
   /// Read data from accessor.
   template <bool Available = dimensions == 1>

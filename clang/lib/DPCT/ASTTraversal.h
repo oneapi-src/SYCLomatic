@@ -764,9 +764,9 @@ public:
               std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
         Prefix = Prefix + Type + "* " + Var + " = " +
                  ExprAnalysis::ref(CE->getArg(Idx)) + ";" + getNL() + IndentStr;
-        if (Type == MapNames::getClNamespace() + "float2")
+        if (Type == MapNames::getClNamespace() + "mfloat2")
           CallExprArguReplVec[Idx] = "(std::complex<float>*)" + Var;
-        else if (Type == MapNames::getClNamespace() + "double2")
+        else if (Type == MapNames::getClNamespace() + "mdouble2")
           CallExprArguReplVec[Idx] = "(std::complex<double>*)" + Var;
         else
           CallExprArguReplVec[Idx] = Var;
@@ -837,10 +837,10 @@ public:
           Type = "double";
           RealType = "double";
         } else if (FuncName == "cublasCrotg_v2") {
-          Type = MapNames::getClNamespace() + "float2";
+          Type = MapNames::getClNamespace() + "mfloat2";
           RealType = "float";
         } else {
-          Type = MapNames::getClNamespace() + "double2";
+          Type = MapNames::getClNamespace() + "mdouble2";
           RealType = "double";
         }
 
@@ -919,11 +919,11 @@ public:
 
       std::string OriginType;
       if (Type == "std::complex<float>") {
-        OriginType = MapNames::getClNamespace() + "float2";
+        OriginType = MapNames::getClNamespace() + "mfloat2";
         CallExprArguReplVec[ArgIndex] =
             "(std::complex<float>*)" + ResultTempPtr;
       } else if (Type == "std::complex<double>") {
-        OriginType = MapNames::getClNamespace() + "double2";
+        OriginType = MapNames::getClNamespace() + "mdouble2";
         CallExprArguReplVec[ArgIndex] =
             "(std::complex<double>*)" + ResultTempPtr;
       } else {

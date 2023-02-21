@@ -116,7 +116,7 @@ void foo8(float *Result) {
   }
 }
 
-     //CHECK:void foo9(sycl::float2 *Result) {
+     //CHECK:void foo9(sycl::mfloat2 *Result) {
 //CHECK-NEXT:  int a;
 //CHECK-NEXT:  int b;
 //CHECK-NEXT:}

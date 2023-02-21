@@ -1584,7 +1584,7 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: h = sycl::vec<float, 1>{f}.convert<sycl::half, sycl::rounding_mode::automatic>()[0];
   h = __float2half(f);
 
-  // CHECK: h2 = sycl::float2{f,f}.convert<sycl::half, sycl::rounding_mode::rte>();
+  // CHECK: h2 = sycl::mfloat2{f,f}.convert<sycl::half, sycl::rounding_mode::rte>();
   h2 = __float2half2_rn(f);
 
   // CHECK: h = sycl::vec<float, 1>{f}.convert<sycl::half, sycl::rounding_mode::rtn>()[0];
@@ -1599,7 +1599,7 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: h = sycl::vec<float, 1>{f}.convert<sycl::half, sycl::rounding_mode::rtz>()[0];
   h = __float2half_rz(f);
 
-  // CHECK: h2 = sycl::float2{f,f}.convert<sycl::half, sycl::rounding_mode::rte>();
+  // CHECK: h2 = sycl::mfloat2{f,f}.convert<sycl::half, sycl::rounding_mode::rte>();
   h2 = __floats2half2_rn(f, f);
 
   // CHECK: f2 = h2.convert<float, sycl::rounding_mode::automatic>();
@@ -1608,7 +1608,7 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: f = sycl::vec<sycl::half, 1>{h}.convert<float, sycl::rounding_mode::automatic>()[0];
   f = __half2float(h);
 
-  // CHECK: h2 = sycl::half2{h,h};
+  // CHECK: h2 = sycl::mhalf2{h,h};
   h2 = __half2half2(h);
 
   // CHECK: i = sycl::vec<sycl::half, 1>{h}.convert<int, sycl::rounding_mode::rtn>()[0];
@@ -1689,7 +1689,7 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: us = sycl::bit_cast<unsigned short>(h);
   us = __half_as_ushort(h);
 
-  // CHECK: h2 = sycl::half2{h,h};
+  // CHECK: h2 = sycl::mhalf2{h,h};
   h2 = __halves2half2(h, h);
 
   // CHECK: f = h2[0];
@@ -1698,10 +1698,10 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: h = h2[0];
   h = __high2half(h2);
 
-  // CHECK: h2 = sycl::half2{h2[0], h2[0]};
+  // CHECK: h2 = sycl::mhalf2{h2[0], h2[0]};
   h2 = __high2half2(h2);
 
-  // CHECK: h2 = sycl::half2{h2[0], h2[0]};
+  // CHECK: h2 = sycl::mhalf2{h2[0], h2[0]};
   h2 = __highs2half2(h2, h2);
 
   // CHECK: h = sycl::vec<int, 1>{i}.convert<sycl::half, sycl::rounding_mode::rtn>()[0];
@@ -1736,13 +1736,13 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: h = h2[1];
   h = __low2half(h2);
 
-  // CHECK: h2 = sycl::half2{h2[1], h2[1]};
+  // CHECK: h2 = sycl::mhalf2{h2[1], h2[1]};
   h2 = __low2half2(h2);
 
-  // CHECK: h2 = sycl::half2{h2[1], h2[0]};
+  // CHECK: h2 = sycl::mhalf2{h2[1], h2[0]};
   h2 = __lowhigh2highlow(h2);
 
-  // CHECK: h2 = sycl::half2{h2[1], h2[1]};
+  // CHECK: h2 = sycl::mhalf2{h2[1], h2[1]};
   h2 = __lows2half2(h2, h2);
 
   // CHECK: h = sycl::vec<short, 1>{s}.convert<sycl::half, sycl::rounding_mode::rtn>()[0];
@@ -2230,9 +2230,9 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: */
   f = jnf(i, f);
 
-  // CHECK: f = sycl::fast_length(sycl::float3(f, f, f));
+  // CHECK: f = sycl::fast_length(sycl::mfloat3(f, f, f));
   f = norm3df(f, f, f);
-  // CHECK: f = sycl::fast_length(sycl::float4(f, f, f, f));
+  // CHECK: f = sycl::fast_length(sycl::mfloat4(f, f, f, f));
   f = norm4df(f, f, f, f);
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdff is not supported.
@@ -2248,9 +2248,9 @@ __global__ void testUnsupported() {
   f = normf(i, &f);
   // CHECK: f = sycl::native::recip((float)sycl::cbrt(f));
   f = rcbrtf(f);
-  // CHECK: f = sycl::native::recip(sycl::fast_length(sycl::float3(f, f, f)));
+  // CHECK: f = sycl::native::recip(sycl::fast_length(sycl::mfloat3(f, f, f)));
   f = rnorm3df(f, f, f);
-  // CHECK: f = sycl::native::recip(sycl::fast_length(sycl::float4(f, f, f, f)));
+  // CHECK: f = sycl::native::recip(sycl::fast_length(sycl::mfloat4(f, f, f, f)));
   f = rnorm4df(f, f, f, f);
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of rnormf is not supported.
@@ -2305,9 +2305,9 @@ __global__ void testUnsupported() {
   d = jn(i, d);
   // CHECK: d = dpct::fast_length((float *)&d, i);
   d = norm(i, &d);
-  // CHECK: d = sycl::fast_length(sycl::float3(d, d, d));
+  // CHECK: d = sycl::fast_length(sycl::mfloat3(d, d, d));
   d = norm3d(d, d, d);
-  // CHECK: d = sycl::fast_length(sycl::float4(d, d, d, d));
+  // CHECK: d = sycl::fast_length(sycl::mfloat4(d, d, d, d));
   d = norm4d(d, d, d, d);
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdf is not supported.
@@ -2319,9 +2319,9 @@ __global__ void testUnsupported() {
   d = normcdfinv(d);
   // CHECK: d = sycl::native::recip((float)sycl::cbrt(d));
   d = rcbrt(d);
-  // CHECK: d = sycl::native::recip(sycl::fast_length(sycl::float3(d, d, d)));
+  // CHECK: d = sycl::native::recip(sycl::fast_length(sycl::mfloat3(d, d, d)));
   d = rnorm3d(d, d, d);
-  // CHECK: d = sycl::native::recip(sycl::fast_length(sycl::float4(d, d, d, d)));
+  // CHECK: d = sycl::native::recip(sycl::fast_length(sycl::mfloat4(d, d, d, d)));
   d = rnorm4d(d, d, d, d);
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of rnorm is not supported.
@@ -3212,25 +3212,25 @@ __global__ void k2() {
   erfcx(d0);
   // CHECK: sycl::exp(f0*f0)*sycl::erfc(f0);
   erfcxf(f0);
-  // CHECK: sycl::fast_length(sycl::float3(d0, d1, d2));
+  // CHECK: sycl::fast_length(sycl::mfloat3(d0, d1, d2));
   norm3d(d0, d1, d2);
-  // CHECK: sycl::fast_length(sycl::float3(f0, f1, f2));
+  // CHECK: sycl::fast_length(sycl::mfloat3(f0, f1, f2));
   norm3df(f0, f1, f2);
-  // CHECK: sycl::fast_length(sycl::float4(d0, d1, d2, d3));
+  // CHECK: sycl::fast_length(sycl::mfloat4(d0, d1, d2, d3));
   norm4d(d0, d1, d2, d3);
-  // CHECK: sycl::fast_length(sycl::float4(f0, f1, f2, f3));
+  // CHECK: sycl::fast_length(sycl::mfloat4(f0, f1, f2, f3));
   norm4df(f0, f1, f2, f3);
   // CHECK: sycl::native::recip((float)sycl::cbrt(d0));
   rcbrt(d0);
   // CHECK: sycl::native::recip((float)sycl::cbrt(f0));
   rcbrtf(f0);
-  // CHECK: sycl::native::recip(sycl::fast_length(sycl::float3(d0, d1, d2)));
+  // CHECK: sycl::native::recip(sycl::fast_length(sycl::mfloat3(d0, d1, d2)));
   rnorm3d(d0, d1, d2);
-  // CHECK: sycl::native::recip(sycl::fast_length(sycl::float3(f0, f1, f2)));
+  // CHECK: sycl::native::recip(sycl::fast_length(sycl::mfloat3(f0, f1, f2)));
   rnorm3df(f0, f1, f2);
-  // CHECK: sycl::native::recip(sycl::fast_length(sycl::float4(d0, d1, d2, d3)));
+  // CHECK: sycl::native::recip(sycl::fast_length(sycl::mfloat4(d0, d1, d2, d3)));
   rnorm4d(d0, d1, d2, d3);
-  // CHECK: sycl::native::recip(sycl::fast_length(sycl::float4(f0, f1, f2, f3)));
+  // CHECK: sycl::native::recip(sycl::fast_length(sycl::mfloat4(f0, f1, f2, f3)));
   rnorm4df(f0, f1, f2, f3);
   // CHECK: d0*(2<<l);
   scalbln(d0, l);
@@ -3293,22 +3293,22 @@ __global__ void k2() {
   // CHECK: sycl::rhadd(u, u2);
   __urhadd(u, u2);
 
-  // CHECK: u = dpct::vectorized_max<sycl::char4>(u, u2);
+  // CHECK: u = dpct::vectorized_max<sycl::mchar4>(u, u2);
   u = __vmaxs4(u, u2);
 
-  // CHECK: u = dpct::vectorized_max<sycl::ushort2>(u, u2);
+  // CHECK: u = dpct::vectorized_max<sycl::mushort2>(u, u2);
   u = __vmaxu2(u, u2);
 
-  // CHECK: u = dpct::vectorized_min<sycl::ushort2>(u, u2);
+  // CHECK: u = dpct::vectorized_min<sycl::mushort2>(u, u2);
   u = __vminu2(u, u2);
 
-  // CHECK: u = dpct::vectorized_min<sycl::uchar4>(u, u2);
+  // CHECK: u = dpct::vectorized_min<sycl::muchar4>(u, u2);
   u = __vminu4(u, u2);
 
-  // CHECK: u = dpct::vectorized_isgreater<sycl::ushort2, unsigned>(u, u2);
+  // CHECK: u = dpct::vectorized_isgreater<sycl::mushort2, unsigned>(u, u2);
   u = __vcmpgtu2(u, u2);
 
-  // CHECK: u = dpct::vectorized_isgreater<sycl::uchar4, unsigned>(u, u2);
+  // CHECK: u = dpct::vectorized_isgreater<sycl::muchar4, unsigned>(u, u2);
   u = __vcmpgtu4(u, u2);
 
   double *a_d;
@@ -3316,11 +3316,11 @@ __global__ void k2() {
   norm(0, a_d);
   // CHECK: sycl::fast_length((float)a_d[0]);
   norm(1, a_d);
-  // CHECK: sycl::fast_length(sycl::float2(a_d[0], a_d[1]));
+  // CHECK: sycl::fast_length(sycl::mfloat2(a_d[0], a_d[1]));
   norm(2, a_d);
-  // CHECK: sycl::fast_length(sycl::float3(a_d[0], a_d[1], a_d[2]));
+  // CHECK: sycl::fast_length(sycl::mfloat3(a_d[0], a_d[1], a_d[2]));
   norm(3, a_d);
-  // CHECK: sycl::fast_length(sycl::float4(a_d[0], a_d[1], a_d[2], a_d[3]));
+  // CHECK: sycl::fast_length(sycl::mfloat4(a_d[0], a_d[1], a_d[2], a_d[3]));
   norm(4, a_d);
   // CHECK: dpct::fast_length((float *)a_d, 5);
   norm(5, a_d);

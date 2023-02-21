@@ -135,7 +135,7 @@ int foo(int num) {
 
 int foo1() {
 //CHECK: #ifdef SYCL_LANGUAGE_VERSION
-//CHECK-NEXT: sycl::int2 a;
+//CHECK-NEXT: sycl::mint2 a;
 //CHECK-NEXT: #endif
 //CHECK-NEXT: #ifndef SYCL_LANGUAGE_VERSION
 //CHECK-NEXT: int2 b;
