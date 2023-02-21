@@ -1,3 +1,5 @@
+// UNSUPPORTED: cuda-8.0
+// UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none --assume-nd-range-dim=1  -out-root %T/cu_jit %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --input-file %T/cu_jit/cu_jit.dp.cpp --match-full-lines %s
 
