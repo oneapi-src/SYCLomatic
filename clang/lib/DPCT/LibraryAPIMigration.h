@@ -94,20 +94,6 @@ void initVars(const CallExpr *CE, const VarDecl *VD, const BinaryOperator *BO,
               LibraryMigrationFlags &Flags,
               LibraryMigrationStrings &ReplaceStrs,
               LibraryMigrationLocations &Locations);
-void replacementLocation(const LibraryMigrationLocations Locations,
-                         const LibraryMigrationFlags Flags,
-                         unsigned int &ReplaceOffset, unsigned int &ReplaceLen,
-                         std::pair<unsigned int, unsigned int> &InsertOffsets,
-                         std::string &FilePath);
-void replacementText(LibraryMigrationFlags Flags,
-                     const std::string PrePrefixStmt,
-                     const std::vector<std::string> PrefixStmts,
-                     const std::vector<std::string> SuffixStmts,
-                     std::string CallExprRepl, const std::string IndentStr,
-                     const std::string FilePath,
-                     const unsigned int ReplaceOffset,
-                     const unsigned int ReplaceLen,
-                     const std::pair<unsigned int, unsigned int> InsertOffsets);
 
 } // namespace dpct
 } // namespace clang

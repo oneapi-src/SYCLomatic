@@ -80,14 +80,22 @@ void foo2() {
   dynamicReverse<<<1, 1, shared_memory_size>>>();
 }
 
+// CHECK: void kernel3(int *a) {
+// CHECK-NOT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
+// CHECK: }
 __global__ void kernel3() {
   __shared__ int a[sizeof(float3) * 3];
 }
 
+// CHECK: void foo3() {
+// CHECK: dpct::get_default_queue().submit(
+// CHECK-NEXT: [&](sycl::handler &cgh) {
+// CHECK: /*
+// CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
+// CHECK-NEXT: */
+// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::float3) * 3), cgh);
+// CHECK: });
+// CHECK: }
 void foo3() {
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::float3) * 3), cgh);
   kernel3<<<1, 1>>>();
 }

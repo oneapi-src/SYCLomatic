@@ -1877,13 +1877,6 @@ public:
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo);
   }
 
-  static bool getSpBLASUnsupportedMatrixTypeFlag() {
-    return SpBLASUnsupportedMatrixTypeFlag;
-  }
-  static void setSpBLASUnsupportedMatrixTypeFlag(bool Flag) {
-    SpBLASUnsupportedMatrixTypeFlag = Flag;
-  }
-
   inline std::shared_ptr<DpctFileInfo> insertFile(const std::string &FilePath) {
     return insertObject(FileMap, FilePath);
   }
@@ -2176,7 +2169,6 @@ private:
   static bool UsingDRYPattern;
   static bool UsingGenericSpace;
   static bool UsingThisItem;
-  static bool SpBLASUnsupportedMatrixTypeFlag;
   static unsigned int CudaKernelDimDFIIndex;
   static std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
       CudaKernelDimDFIMap;
