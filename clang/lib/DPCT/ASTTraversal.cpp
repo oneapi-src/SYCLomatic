@@ -9816,7 +9816,7 @@ void MemVarRule::removeHostConstantWarning(Replacement &R) {
   std::string ReplStr = R.getReplacementText().str();
 
   // warning text of Diagnostics::HOST_CONSTANT
-  std::string Warning = "The use of variable [_a-zA-Z][_a-zA-Z0-9]+ in device "
+  std::string Warning = "The use of [_a-zA-Z][_a-zA-Z0-9]+ in device "
                         "code was not detected. If this variable is also used "
                         "in device code, you need to rewrite the code.";
   std::string Pattern =

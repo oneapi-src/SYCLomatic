@@ -4,7 +4,7 @@
 #include <cuda_runtime.h>
 
 // CHECK: /*
-// CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D or 3D vector. Adjust the code.
+// CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D, or 3D vector. Adjust the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: dpct::global_memory<int, 4> dev_mem(10, 10, 10, 10);
 __device__ int dev_mem[10][10][10][10];
@@ -12,13 +12,13 @@ __device__ int dev_mem[10][10][10][10];
 __shared__ int sha1_mem[10][10][10][10];
 
 // CHECK: /*
-// CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D or 3D vector. Adjust the code.
+// CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D, or 3D vector. Adjust the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: dpct::shared_memory<int, 4> man_mem(10, 10, 10, 10);
 __managed__ int man_mem[10][10][10][10];
 
 // CHECK: /*
-// CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D or 3D vector. Adjust the code.
+// CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D, or 3D vector. Adjust the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: static dpct::constant_memory<int, 4> con_mem(10, 10, 10, 10);
 __constant__ int con_mem[10][10][10][10];
@@ -39,7 +39,7 @@ __global__ void dynamicReverse()
 int main(void)
 {
 // CHECK: /*
-// CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D or 3D vector. Adjust the code.
+// CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D, or 3D vector. Adjust the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: sycl::local_accessor<int, 4> sha2_mem_acc_ct1(sycl::range<4>(10, 10, 10, 10), cgh);
 
@@ -49,7 +49,7 @@ int main(void)
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
 // CHECK: /*
-// CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D or 3D vector. Adjust the code.
+// CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D, or 3D vector. Adjust the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: sycl::local_accessor<uint8_t, 4> dpct_local_acc_ct1(sycl::range<4>(16*sizeof(int), 2, 2, 2), cgh);
 
