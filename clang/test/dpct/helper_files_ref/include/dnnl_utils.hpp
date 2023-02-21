@@ -725,7 +725,7 @@ public:
       _distr = new oneapi::mkl::rng::bernoulli(p);
     }
   }
-}
+};
 
 /// A class holding the oneDNN engine.
 class engine_ext {

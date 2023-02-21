@@ -38,6 +38,7 @@
 
 namespace dpct {
 namespace dnnl {
+class engine_ext;
 // DPCT_LABEL_BEGIN|memory_format_tag|dpct::dnnl
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
@@ -726,14 +727,16 @@ public:
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|dropout_desc|dpct::dnnl
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|dropout_desc_def
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// A class holding description for a Dropout operation.
 class dropout_desc {
   float _p;
   unsigned long long _seed;
   oneapi::mkl::rng::philox4x32x10 *_rng_engine;
-  oneapi::mkl::rng::bernoulli *_distr;
+  oneapi::mkl::rng::bernoulli<std::int32_t, oneapi::mkl::rng::bernoulli_method::icdf> *_distr;
   void *_state;
 
 public:
@@ -753,10 +756,10 @@ public:
   }
   /// Getting the random generate engine from a dropout descriptor.
   /// \returns Random generate engine.
-  oneapi::mkl::rng::philox4x32x10 *get_rng_engine() { return _rng_engine; }
+  oneapi::mkl::rng::philox4x32x10 *get_rng_engine() const { return _rng_engine; }
   /// Getting the distribution from a dropout descriptor.
   /// \returns Distribution.
-  oneapi::mkl::rng::bernoulli *get_distr() { return _distr; }
+  oneapi::mkl::rng::bernoulli<std::int32_t, oneapi::mkl::rng::bernoulli_method::icdf> *get_distr() const { return _distr; }
   /// Setting a dropout descriptor with given parameters.
   /// \param [in] engine Engine of the dropout operation.
   /// \param [in] p Success probability p of a trial.
@@ -764,38 +767,25 @@ public:
   /// \param [in] state_size Required size to store random generator state.
   /// \param [in] seed Seed to initialize conditions of the generator state.
   void set(engine_ext &engine, float p, void *state, size_t state_size,
-           unsigned long long seed) {
-    _p = p;
-    _seed = seed;
-    if (state) {
-      _state = state;
-      sycl::queue *q = engine.get_queue();
-      _rng_engine = new oneapi::mkl::rng::philox4x32x10(*q, seed);
-      _distr = new oneapi::mkl::rng::bernoulli(p);
-      if (state_size < oneapi::mkl::rng::get_state_size(*_rng_engine)) {
-        throw std::runtime_error("set: no sufficient memory to save states.");
-      }
-      oneapi::mkl::rng::save_state(*_rng_engine, state);
-    }
-  }
+           unsigned long long seed);
   /// Getting parameters from a dropout descriptor.
   /// \param [in] engine Engine of the dropout operation.
   /// \param [in] p Success probability p of a trial.
   /// \param [in] state Memory that store random generator state.
   /// \param [in] seed Seed to initialize conditions of the generator state.
-  void get(float *p, void **states, unsigned long long *seed) {
+  void get(float *p, void **states, unsigned long long *seed) const {
     *seed = _seed;
     *states = _state;
     *p = _p;
   }
   /// Getting the random generator state.
   /// \returns State.
-  void *get_state(){
+  void *get_state() const {
     return _state;
   }
   /// Getting the success probability.
   /// \returns Probability.
-  float get_probability(){
+  float get_probability() const {
     return _p;
   }
   /// Restoreing a dropout descriptor from stored state.
@@ -805,19 +795,8 @@ public:
   /// \param [in] state_size Required size to store random generator state.
   /// \param [in] seed Seed to initialize conditions of the generator state.
   void restore(engine_ext &engine, float p, void *state, size_t state_size,
-               unsigned long long seed) {
-    _p = p;
-    _seed = seed;
-    if (state) {
-      _state = state;
-      sycl::queue *q = engine.get_queue();
-      _rng_engine = new oneapi::mkl::rng::philox4x32x10(
-          oneapi::mkl::rng::load_state<oneapi::mkl::rng::philox4x32x10>(*q,
-                                                                        state));
-      _distr = new oneapi::mkl::rng::bernoulli(p);
-    }
-  }
-}
+               unsigned long long seed);
+};
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|engine_ext|dpct::dnnl
@@ -2268,6 +2247,42 @@ public:
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 };
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|dropout_desc_def|dpct::dnnl
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+void dropout_desc::restore(engine_ext &engine, float p, void *state,
+                           size_t state_size, unsigned long long seed) {
+  _p = p;
+  _seed = seed;
+  if (state) {
+    _state = state;
+    sycl::queue *q = engine.get_queue();
+    _rng_engine = new oneapi::mkl::rng::philox4x32x10(
+        oneapi::mkl::rng::load_state<oneapi::mkl::rng::philox4x32x10>(*q,
+                                                                      (std::uint8_t *)state));
+    _distr = new oneapi::mkl::rng::bernoulli<
+        std::int32_t, oneapi::mkl::rng::bernoulli_method::icdf>(p);
+  }
+}
+
+void dropout_desc::set(engine_ext &engine, float p, void *state,
+                       size_t state_size, unsigned long long seed) {
+  _p = p;
+  _seed = seed;
+  if (state) {
+    _state = state;
+    sycl::queue *q = engine.get_queue();
+    _rng_engine = new oneapi::mkl::rng::philox4x32x10(*q, seed);
+    _distr = new oneapi::mkl::rng::bernoulli<
+        std::int32_t, oneapi::mkl::rng::bernoulli_method::icdf>(p);
+    if (state_size < oneapi::mkl::rng::get_state_size(*_rng_engine)) {
+      throw std::runtime_error("set: no sufficient memory to save states.");
+    }
+    oneapi::mkl::rng::save_state(*_rng_engine, (std::uint8_t *)state);
+  }
+}
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|memory_desc_ext_def|dpct::dnnl
@@ -4934,11 +4949,11 @@ sycl::event engine_ext::async_dropout_forward(const dropout_desc &desc,
       ::dnnl::memory::desc(src_desc.get_dims(), ::dnnl::memory::data_type::s32,
                            src_desc.get_strides()));
   if (src_desc.get_desc().get_data_type() != ::dnnl::memory::data_type::s32) {
-    cache = allocate(workspace_desc);
+    cache = allocate(rng_data_desc);
   }
   oneapi::mkl::rng::generate(*desc.get_distr(), *desc.get_rng_engine(),
-                             rng.get_element_num(), cache);
-  oneapi::mkl::rng::save_state(*desc.get_rng_engine(), desc.get_state());
+                             rng_data_desc.get_element_num(), (std::int32_t*)cache);
+  oneapi::mkl::rng::save_state(*desc.get_rng_engine(), (std::uint8_t *)desc.get_state());
 
   async_reorder(scale_factor, rng_data_desc, cache, 0.f, src_desc, workspace);
 
@@ -4958,7 +4973,7 @@ sycl::event engine_ext::async_dropout_backward(
     void *workspace, size_t workspace_size) {
   float p = desc.get_probability();
   if (p == 1.f) {
-    return _q->memset(diff_src, 0, dst_desc.get_size());
+    return _q->memset(diff_src, 0, diff_src_desc.get_size());
   } else if (p == 0.f) {
     return async_reorder(1.f, diff_dst_desc, diff_dst, 0.f, diff_src_desc,
                          diff_src);
