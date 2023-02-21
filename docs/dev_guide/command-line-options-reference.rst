@@ -9,7 +9,7 @@ deprecated options, and information for working with source files.
 Command Line Options
 --------------------
 
-The following table lists all current |tool_name| command line options
+The following table lists all current |compatibility_tool| command line options
 in alphabetical order.
 
 .. list-table::
@@ -35,9 +35,11 @@ in alphabetical order.
    * - ``--build-script-file=<file>``
      - Specifies the name of generated makefile for migrated file(s). Default
        name: ``Makefile.dpct``.
-   * - ``=c_cxx_standard_library``
-     - A set of functions from the C and C++ standard libraries that are allowed
-       to be used in SYCL device code.
+   * - ``--change-cuda-files-extension-only``
+     - Limit extension change to .cu and .cuh files only. Default: off.
+   * - ``--change-filename-extension=<file>``
+     - DEPRECATED: Specifies which extensions of migrated fileswill be changed,
+       split by comma. Default: .cu, .cuh, .cpp, .cxx, .cc, .c, .C
    * - ``--check-unicode-security``
      - Enable detection and warnings about Unicode constructs that can be
        exploited by using bi-directional formatting codes and homoglyphs in
@@ -51,6 +53,8 @@ in alphabetical order.
        header file name. Default: ``dpct``.
    * - ``--enable-ctad``
      - Use a C++17 class template argument deduction (CTAD) in your generated code.
+   * - ``--enable-profiling``
+     - Enables sycl queue profiling in helper functions. Default: off.
    * - ``--extra-arg=<string>``
      - Additional argument to append to the migration command line, example:
        ``--extra-arg="-I /path/to/header"``. The options that can be passed this
@@ -109,10 +113,12 @@ in alphabetical order.
        option will be ignored if the replacement option ``--use-explicit-namespace``
        is used.
    * - ``--no-dpcpp-extensions=<value>``
-     - A comma-separated list of extensions not to be used in migrated code.
-       By default, these extensions will be used in migrated code.
+     - A comma separated list of extensions not to be used in migrated code.
+       By default, these extensions are used in migrated code.
 
        - ``=enqueued_barriers``: Enqueued barriers extension.
+       - ``=device_info``: Use Intel's Extensions for Device Information if it is
+         supported by the compiler and the backend.
    * - ``--no-dry-pattern``
      - Do not use a Don't Repeat Yourself (DRY) pattern when functions from the
        ``dpct`` namespace are inserted. Default: ``off``.
@@ -143,7 +149,7 @@ in alphabetical order.
      - Sets the output verbosity level:
 
        - ``=silent``: Only messages from clang.
-       - ``=normal``: 'silent' and warnings, errors, and notes from |tool_name|.
+       - ``=normal``: 'silent' and warnings, errors, and notes from the |compatibility_tool|.
        - ``=detailed``: 'normal' and messages about which file is being processed.
        - ``=diagnostics``: 'detailed' and information about the detected conflicts
          and crashes (default).
@@ -225,8 +231,16 @@ in alphabetical order.
        - ``=all``: Generate a complete set of helper header files and place them
          in the ``--out-root`` directory.
    * - ``--use-dpcpp-extensions=<value>``
-     - A comma-separated list of extensions to be used in migrated code. By
-       default, these extensions are not used in migrated code.
+     - A comma separated list of extensions to be used in migrated code.
+       By default, these extensions are not used in migrated code.
+
+       - ``=c_cxx_standard_library``: Use std functions from libdevice (provided by
+         Intel(R) oneAPI DPC++/C++ Compiler) and C/C++ standard library to migrate
+         functions which has no mapping in SYCL standard. If this value is used together
+         with intel_device_math, intel_device_math functions take precedence.
+       - ``=intel_device_math``: Use sycl::ext::intel::math functions from libdevice
+         (provided by Intel(R) oneAPI DPC++/C++ Compiler) to migrate functions which
+         have no mapping in SYCL standard.
    * - ``--use-experimental-features=<value>``
      - A comma-separated list of experimental features to be used in migrated code.
        By default, experimental features will not be used in migrated code.
@@ -261,7 +275,7 @@ in alphabetical order.
      - Sets the Unified Shared Memory (USM) level to use in source code generation:
 
        - ``=restricted``: Uses USM API for memory management migration. (default).
-       - ``=none``: Uses helper functions from |tool_name| header files
+       - ``=none``: Uses helper functions from |compatibility_tool| header files
          for memory management migration.
    * - ``--vcxprojfile=<file>``
      - The file path of ``vcxproj``.
@@ -281,7 +295,7 @@ in alphabetical order.
 Deprecated Command Line Options
 -------------------------------
 
-The following table lists |tool_name| command line options that are 
+The following table lists |compatibility_tool| command line options that are 
 currently deprecated.
 
 .. list-table::
