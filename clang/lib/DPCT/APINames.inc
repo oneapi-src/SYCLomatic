@@ -568,17 +568,10 @@ ENTRY(cospif, cospif, true, NO_FLAG, P0, "Successful")
 ENTRY(cyl_bessel_i0f, cyl_bessel_i0f, false, NO_FLAG, P4, "Unsupported: [TODO]: explain why unsupported")
 ENTRY(cyl_bessel_i1f, cyl_bessel_i1f, false, NO_FLAG, P4, "Unsupported: [TODO]: explain why unsupported")
 ENTRY(erfcf, erfcf, true, NO_FLAG, P0, "Successful")
-<<<<<<< HEAD
 ENTRY(erfcinvf, erfcinvf, true, NO_FLAG, P4, "Successful")
 ENTRY(erfcxf, erfcxf, true, NO_FLAG, P4, "DPCT1017")
 ENTRY(erff, erff, true, NO_FLAG, P0, "Successful")
 ENTRY(erfinvf, erfinvf, true, NO_FLAG, P4, "Successful")
-=======
-ENTRY(erfcinvf, erfcinvf, false, NO_FLAG, P4, "Unsupported: [TODO]: explain why unsupported")
-ENTRY(erfcxf, erfcxf, true, NO_FLAG, P4, "DPCT1017")
-ENTRY(erff, erff, true, NO_FLAG, P0, "Successful")
-ENTRY(erfinvf, erfinvf, false, NO_FLAG, P4, "Unsupported: [TODO]: explain why unsupported")
->>>>>>> upstream/SYCLomatic
 ENTRY(exp10f, exp10f, true, NO_FLAG, P0, "Successful")
 ENTRY(exp2f, exp2f, true, NO_FLAG, P0, "Successful")
 ENTRY(expf, expf, true, NO_FLAG, P0, "Successful")
@@ -616,15 +609,9 @@ ENTRY(nearbyintf, nearbyintf, true, NO_FLAG, P0, "DPCT1017")
 ENTRY(nextafterf, nextafterf, true, NO_FLAG, P0, "Successful")
 ENTRY(norm3df, norm3df, true, NO_FLAG, P4, "DPCT1017")
 ENTRY(norm4df, norm4df, true, NO_FLAG, P4, "DPCT1017")
-<<<<<<< HEAD
 ENTRY(normcdff, normcdff, true, NO_FLAG, P4, "Successful")
 ENTRY(normcdfinvf, normcdfinvf, true, NO_FLAG, P4, "Successful")
 ENTRY(normf, normf, true, NO_FLAG, P0, "Successful")
-=======
-ENTRY(normcdff, normcdff, false, NO_FLAG, P4, "Unsupported: [TODO]: explain why unsupported")
-ENTRY(normcdfinvf, normcdfinvf, false, NO_FLAG, P4, "Unsupported: [TODO]: explain why unsupported")
-ENTRY(normf, normf, false, NO_FLAG, P0, "Unsupported: [TODO]: explain why unsupported")
->>>>>>> upstream/SYCLomatic
 ENTRY(powf, powf, true, NO_FLAG, P0, "Successful")
 ENTRY(rcbrtf, rcbrtf, true, NO_FLAG, P0, "DPCT1017")
 ENTRY(remainderf, remainderf, true, NO_FLAG, P0, "Successful")
@@ -633,11 +620,7 @@ ENTRY(rhypotf, rhypotf, true, NO_FLAG, P4, "DPCT1017")
 ENTRY(rintf, rintf, true, NO_FLAG, P0, "Successful")
 ENTRY(rnorm3df, rnorm3df, true, NO_FLAG, P4, "DPCT1017")
 ENTRY(rnorm4df, rnorm4df, true, NO_FLAG, P4, "DPCT1017")
-<<<<<<< HEAD
 ENTRY(rnormf, rnormf, true, NO_FLAG, P4, "Successful")
-=======
-ENTRY(rnormf, rnormf, false, NO_FLAG, P4, "Unsupported: [TODO]: explain why unsupported")
->>>>>>> upstream/SYCLomatic
 ENTRY(roundf, roundf, true, NO_FLAG, P0, "Successful")
 ENTRY(rsqrtf, rsqrtf, true, NO_FLAG, P0, "Successful")
 ENTRY(scalblnf, scalblnf, true, NO_FLAG, P4, "DPCT1017")
@@ -675,15 +658,9 @@ ENTRY(cyl_bessel_i0, cyl_bessel_i0, false, NO_FLAG, P4, "Unsupported: [TODO]: ex
 ENTRY(cyl_bessel_i1, cyl_bessel_i1, false, NO_FLAG, P4, "Unsupported: [TODO]: explain why unsupported")
 ENTRY(erf, erf, true, NO_FLAG, P0, "Successful")
 ENTRY(erfc, erfc, true, NO_FLAG, P0, "Successful")
-<<<<<<< HEAD
 ENTRY(erfcinv, erfcinv, true, NO_FLAG, P0, "Successful")
 ENTRY(erfcx, erfcx, true, NO_FLAG, P0, "DPCT1017")
 ENTRY(erfinv, erfinv, true, NO_FLAG, P0, "Successful")
-=======
-ENTRY(erfcinv, erfcinv, false, NO_FLAG, P0, "Unsupported: [TODO]: explain why unsupported")
-ENTRY(erfcx, erfcx, true, NO_FLAG, P0, "DPCT1017")
-ENTRY(erfinv, erfinv, false, NO_FLAG, P0, "Unsupported: [TODO]: explain why unsupported")
->>>>>>> upstream/SYCLomatic
 ENTRY(exp, exp, true, NO_FLAG, P0, "Successful")
 ENTRY(exp10, exp10, true, NO_FLAG, P0, "Successful")
 ENTRY(exp2, exp2, true, NO_FLAG, P0, "Successful")
@@ -718,24 +695,15 @@ ENTRY(nextafter, nextafter, true, NO_FLAG, P0, "Successful")
 ENTRY(norm, norm, true, NO_FLAG, P0, "Successful")
 ENTRY(norm3d, norm3d, true, NO_FLAG, P0, "DPCT1017")
 ENTRY(norm4d, norm4d, true, NO_FLAG, P4, "DPCT1017")
-<<<<<<< HEAD
 ENTRY(normcdf, normcdf, true, NO_FLAG, P4, "Successful")
 ENTRY(normcdfinv, normcdfinv, true, NO_FLAG, P4, "Successful")
-=======
-ENTRY(normcdf, normcdf, false, NO_FLAG, P4, "Unsupported: [TODO]: explain why unsupported")
-ENTRY(normcdfinv, normcdfinv, false, NO_FLAG, P4, "Unsupported: [TODO]: explain why unsupported")
->>>>>>> upstream/SYCLomatic
 ENTRY(pow, pow, true, NO_FLAG, P0, "Successful")
 ENTRY(rcbrt, rcbrt, true, NO_FLAG, P0, "DPCT1017")
 ENTRY(remainder, remainder, true, NO_FLAG, P0, "Successful")
 ENTRY(remquo, remquo, true, NO_FLAG, P0, "Successful: DPCT1017")
 ENTRY(rhypot, rhypot, true, NO_FLAG, P4, "DPCT1017")
 ENTRY(rint, rint, true, NO_FLAG, P0, "Successful")
-<<<<<<< HEAD
 ENTRY(rnorm, rnorm, true, NO_FLAG, P0, "Successful")
-=======
-ENTRY(rnorm, rnorm, false, NO_FLAG, P0, "Unsupported: [TODO]: explain why unsupported")
->>>>>>> upstream/SYCLomatic
 ENTRY(rnorm3d, rnorm3d, true, NO_FLAG, P4, "DPCT1017")
 ENTRY(rnorm4d, rnorm4d, true, NO_FLAG, P4, "DPCT1017")
 ENTRY(round, round, true, NO_FLAG, P0, "Successful")
