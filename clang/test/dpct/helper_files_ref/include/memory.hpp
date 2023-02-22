@@ -823,7 +823,7 @@ inline void async_dpct_free(const std::vector<void *> &pointers,
     cgh.host_task([=] {
       for (auto p : pointers)
         if (p) {
-          dpct_free(p, q);
+          dpct_free(p, const_cast<sycl::queue>(q));
         }
     });
   });
