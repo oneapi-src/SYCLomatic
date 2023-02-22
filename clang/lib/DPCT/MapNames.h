@@ -33,7 +33,8 @@ const std::string StringLiteralUnsupported{"UNSUPPORTED"};
       "uint4", "long1", "ulong1", "long2", "ulong2", "long3", "ulong3",        \
       "long4", "ulong4", "float1", "float2", "float3", "float4", "longlong1",  \
       "ulonglong1", "longlong2", "ulonglong2", "longlong3", "ulonglong3",      \
-      "longlong4", "ulonglong4", "double1", "double2", "double3", "double4"
+      "longlong4", "ulonglong4", "double1", "double2", "double3", "double4",   \
+      "__half2"
 
 /// Record mapping between names
 class MapNames {
@@ -421,7 +422,6 @@ public:
   static MapNames::MapTy MathFuncNameMap;
 
   static std::unordered_map<std::string, std::string> AtomicFuncNamesMap;
-  static const MapNames::SetTy PredefinedStreamName;
 
   /// {Original API, {ToType, FromType}}
   static std::unordered_map<std::string, std::pair<std::string, std::string>>

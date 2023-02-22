@@ -126,7 +126,7 @@ int IncludesCallbacks::findPoundSign(SourceLocation DirectiveStart) {
   if (CharDataInvalid || !Entry.isFile()) {
     return -1;
   }
-  llvm::Optional<llvm::MemoryBufferRef> Buffer =
+  std::optional<llvm::MemoryBufferRef> Buffer =
       Entry.getFile().getContentCache().getBufferOrNone(
           SM.getDiagnostics(), SM.getFileManager(), SourceLocation());
   if (!Buffer.has_value())
@@ -289,8 +289,8 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     std::string MacroNameStr;
     if (auto Identifier = MacroNameTok.getIdentifierInfo())
       MacroNameStr = Identifier->getName().str();
-    if (MapNames::PredefinedStreamName.find(MacroNameStr) !=
-        MapNames::PredefinedStreamName.end()) {
+    if (MacroNameStr == "cudaStreamDefault"
+        || MacroNameStr == "cudaStreamNonBlocking") {
       // Currently, only support examples like,
       // #define CONCATE(name) cuda##name
       // which contains 3 tokens, and the 2nd token is ##.
@@ -312,7 +312,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
                        DefRange.getBegin());
         TransformSet.emplace_back(new ReplaceText(
             DefRange.getBegin(), Length,
-            "&" + MapNames::getDpctNamespace() + "get_default_queue()"));
+            "0"));
       }
     }
 
@@ -1924,6 +1924,7 @@ void AtomicFunctionRule::MigrateAtomicFunc(
           {"atomicCAS",
            HelperFeatureEnum::Atomic_atomic_compare_exchange_strong},
           {"atomicInc", HelperFeatureEnum::Atomic_atomic_fetch_compare_inc},
+          {"atomicDec", HelperFeatureEnum::Atomic_atomic_fetch_compare_dec},
       };
   requestFeature(FunctionNameToFeatureMap.at(AtomicFuncName), CE);
 
@@ -1965,9 +1966,11 @@ void AtomicFunctionRule::MigrateAtomicFunc(
         MapNames::getClNamespace() + "access::address_space::generic_space";
 
     std::string ReplAtomicFuncNameWithSpace;
-    if (ReplacedAtomicFuncName == "dpct::atomic_fetch_compare_inc") {
-      // dpct::atomic_fetch_compare_inc only supports unsigned int type and it
-      // has no type info for template parameter.
+    if (ReplacedAtomicFuncName == "dpct::atomic_fetch_compare_inc" ||
+        ReplacedAtomicFuncName == "dpct::atomic_fetch_compare_dec") {
+      // dpct::atomic_fetch_compare_inc and dpct::atomic_fetch_compare_dec only
+      // support unsigned int type and it has no type info for template
+      // parameter.
       ReplAtomicFuncNameWithSpace =
           ReplacedAtomicFuncName + "<" + SpaceName + ">";
     } else {
@@ -2172,7 +2175,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cudaDataType_t", "cudaDataType", "cublasComputeType_t",
                   "cublasAtomicsMode_t", "CUmem_advise_enum", "CUmem_advise",
                   "thrust::tuple_element", "thrust::tuple_size", "cublasMath_t",
-                  "cudaPointerAttributes")
+                  "cudaPointerAttributes", "thrust::zip_iterator")
               )))))
           .bind("cudaTypeDef"),
       this);
@@ -2674,7 +2677,8 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     }
 
     std::string CanonicalTypeStr =
-        DpctGlobalInfo::getTypeName(TL->getType().getCanonicalType());
+      DpctGlobalInfo::getUnqualifiedTypeName(
+        TL->getType().getCanonicalType());
     StringRef CanonicalTypeStrRef(CanonicalTypeStr);
     if (CanonicalTypeStrRef.startswith(
             "cooperative_groups::__v1::thread_block_tile<")) {
@@ -2702,8 +2706,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
 
-    if (DpctGlobalInfo::getTypeName(TL->getType().getCanonicalType()) ==
-        "cooperative_groups::__v1::thread_block") {
+    if (CanonicalTypeStr == "cooperative_groups::__v1::thread_block") {
       // Skip migrate the type in function body.
       if (DpctGlobalInfo::findAncestor<clang::CompoundStmt>(TL) &&
           DpctGlobalInfo::findAncestor<clang::FunctionDecl>(TL))
@@ -2942,6 +2945,23 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
       cxxRecordDecl(isDirectlyDerivedFrom(hasAnyName(SUPPORTEDVECTORTYPENAMES)))
           .bind("inheritanceType"),
       this);
+
+  auto Vec3Types = [&]() {
+    return hasAnyName("char3", "uchar3", "short3", "ushort3", "int3", "uint3",
+                      "long3", "ulong3", "float3", "double3", "longlong3",
+                      "ulonglong3");
+  };
+
+  MF.addMatcher(stmt(sizeOfExpr(hasArgumentOfType(hasCanonicalType(
+                         hasDeclaration(namedDecl(Vec3Types()))))))
+                    .bind("SizeofVector3Warn"),
+                this);
+  MF.addMatcher(cxxRecordDecl(isDirectlyDerivedFrom(hasAnyName(
+                                  "char1", "uchar1", "short1", "ushort1",
+                                  "int1", "uint1", "long1", "ulong1", "float1",
+                                  "longlong1", "ulonglong1", "double1")))
+                    .bind("inherit"),
+                this);
 }
 
 void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -3056,60 +3076,26 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
   }
-  if (auto CRD = getNodeAsType<CXXRecordDecl>(Result, "inheritanceType")) {
-    const auto *Base = CRD->bases_begin();
-    std::string TypeName = Base->getBaseTypeInfo()->getType().getAsString();
-    if (MapNames::SupportedVectorTypes.find(TypeName) ==
-        MapNames::SupportedVectorTypes.end())
-      return;
-    auto Begin = Base->getSourceRange().getBegin();
-    auto End = Base->getSourceRange().getEnd();
-    if (Begin.isInvalid()) {
-      return;
-    }
-    if (*(TypeName.end() - 1) == '1') {
-      if (Begin.isMacroID() &&
-          (SM->isWrittenInScratchSpace(SM->getSpellingLoc(Begin)) ||
-            SM->isWrittenInScratchSpace(SM->getSpellingLoc(End)))) {
-        // Macro concatenate --> use immediateExpansion
-        // Make (Begin, End) be the range of "##1"
-        Begin = SM->getImmediateExpansionRange(Begin).getBegin();
-        End = SM->getImmediateExpansionRange(End).getEnd();
-        Begin = SM->getSpellingLoc(Begin);
-        End = SM->getSpellingLoc(End);
-        Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
-            Begin, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-        End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-            End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-        report(Begin, Comments::VECTYPE_INHERITATED, false);
-      } else {
-        // Make (Begin, End) be the range of "1"
-        Begin = SM->getSpellingLoc(Begin);
-        End = SM->getSpellingLoc(End);
-        Begin = Begin.getLocWithOffset(
-            Lexer::MeasureTokenLength(
-                Begin, *SM, DpctGlobalInfo::getContext().getLangOpts()) -
-            1);
-        End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-            End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-      }
-      auto Length = SM->getFileOffset(End) - SM->getFileOffset(Begin);
-      return emplaceTransformation(new ReplaceText(Begin, Length, ""));
-    }
 
-    if (Begin.isInvalid())
-      return;
+  if (auto RD = getNodeAsType<CXXRecordDecl>(Result, "inherit")) {
+    report(RD->getBeginLoc(), Diagnostics::VECTYPE_INHERITATED, false);
+  }
 
-    if (Begin.isMacroID()) {
-      // Macro concatenate --> use immediateExpansion
-      // Make Begin being the begin of "MACROARG##1"
-      if (SM->isWrittenInScratchSpace(SM->getSpellingLoc(Begin))) {
-        Begin = SM->getImmediateExpansionRange(Begin).getBegin();
-      }
-      Begin = SM->getSpellingLoc(Begin);
+  if (const auto *UETT =
+          getNodeAsType<UnaryExprOrTypeTraitExpr>(Result, "SizeofVector3Warn")) {
+
+    // Ignore shared variables.
+    // .e.g: __shared__ int a[sizeof(float3)], b[sizeof(float3)], ...;
+    if (const auto *V = DpctGlobalInfo::findAncestor<VarDecl>(UETT)) {
+      if (V->hasAttr<CUDASharedAttr>())
+        return;
     }
-    return emplaceTransformation(
-        new InsertText(Begin, MapNames::getClNamespace()));
+    std::string argTypeName = DpctGlobalInfo::getTypeName(UETT->getTypeOfArgument());
+    std::string argCanTypeName = DpctGlobalInfo::getTypeName(UETT->getTypeOfArgument().getCanonicalType());
+    if (argTypeName != argCanTypeName)
+      argTypeName += " (aka " + argCanTypeName + ")";
+
+    report(UETT, Diagnostics::SIZEOF_WARNING, true, argTypeName);
   }
 }
 
@@ -6437,20 +6423,20 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       std::string IncyStr =
           IncyExprResult.Val.getAsString(*Result.Context, IncyExpr->getType());
       if (IncxStr != IncyStr) {
-        report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
+        report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMANCE_ISSUE,
                false, MapNames::ITFName.at(FuncName),
                "parameter " + ParamsStrsVec[3] +
                    " does not equal to parameter " + ParamsStrsVec[5]);
       } else if ((IncxStr == IncyStr) && (IncxStr != "1")) {
         // incx equals to incy, but does not equal to 1. Performance issue may
         // occur.
-        report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
+        report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMANCE_ISSUE,
                false, MapNames::ITFName.at(FuncName),
                "parameter " + ParamsStrsVec[3] + " equals to parameter " +
                    ParamsStrsVec[5] + " but greater than 1");
       }
     } else {
-      report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE, false,
+      report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMANCE_ISSUE, false,
              MapNames::ITFName.at(FuncName),
              "parameter(s) " + ParamsStrsVec[3] + " and/or " +
                  ParamsStrsVec[5] + " could not be evaluated");
@@ -6506,7 +6492,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       std::string LdbStr =
           LdbExprResult.Val.getAsString(*Result.Context, LdbExpr->getType());
       if (LdaStr != LdbStr) {
-        report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
+        report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMANCE_ISSUE,
                false, MapNames::ITFName.at(FuncName),
                "parameter " + ParamsStrsVec[4] +
                    " does not equal to parameter " + ParamsStrsVec[6]);
@@ -6518,7 +6504,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
               *Result.Context, RowsExpr->getType());
           if (std::stoi(LdaStr) > std::stoi(RowsStr)) {
             // lda > rows. Performance issue may occur.
-            report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE,
+            report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMANCE_ISSUE,
                    false, MapNames::ITFName.at(FuncName),
                    "parameter " + ParamsStrsVec[0] +
                        " is smaller than parameter " + ParamsStrsVec[4]);
@@ -6526,7 +6512,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         } else {
           // rows cannot be evaluated. Performance issue may occur.
           report(
-              CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE, false,
+              CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMANCE_ISSUE, false,
               MapNames::ITFName.at(FuncName),
               "parameter " + ParamsStrsVec[0] +
                   " could not be evaluated and may be smaller than parameter " +
@@ -6534,7 +6520,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         }
       }
     } else {
-      report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMACE_ISSUE, false,
+      report(CE->getBeginLoc(), Diagnostics::POTENTIAL_PERFORMANCE_ISSUE, false,
              MapNames::ITFName.at(FuncName),
              "parameter(s) " + ParamsStrsVec[4] + " and/or " +
                  ParamsStrsVec[6] + " could not be evaluated");
@@ -7350,7 +7336,7 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 void SOLVERFunctionCallRule::getParameterEnd(
     const SourceLocation &ParameterEnd, SourceLocation &ParameterEndAfterComma,
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  Optional<Token> TokSharedPtr;
+  std::optional<Token> TokSharedPtr;
   TokSharedPtr = Lexer::findNextToken(ParameterEnd, *(Result.SourceManager),
                                       LangOptions());
   Token TokComma = TokSharedPtr.value();
@@ -9537,7 +9523,7 @@ void KernelCallRule::runRule(
                                                   ExprContainSizeofType)) {
             if (ExprContainSizeofType) {
               report(ExprContainSizeofType->getBeginLoc(),
-                     Diagnostics::SIZEOF_WARNING, false);
+                     Diagnostics::SIZEOF_WARNING, false, "local memory");
             }
           }
         }
@@ -10780,6 +10766,12 @@ void MemoryMigrationRule::mallocMigration(
 void MemoryMigrationRule::memcpyMigration(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
+  for (unsigned I = 0, E = C->getNumArgs(); I != E; ++I) {
+    if (isa<PackExpansionExpr>(C->getArg(I))) {
+      return;
+    }
+  }
+
   std::string Name;
   if (ULExpr) {
     Name = ULExpr->getName().getAsString();
@@ -13994,7 +13986,7 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
                       const Expr *, RenameWithSuffix, StringRef>>>(
                       CE, Name, CE->getArg(0), true,
                       RenameWithSuffix("set", MethodName), Value));
-      Optional<std::string> Result = Rewriter->rewrite();
+      std::optional<std::string> Result = Rewriter->rewrite();
       if (Result.has_value())
         emplaceTransformation(
             new ReplaceStmt(CE, true, std::move(Result).value()));
@@ -14600,42 +14592,68 @@ void RemoveBaseClassRule::runRule(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(RemoveBaseClassRule, PassKind::PK_Migration)
 
-void PreDefinedStreamHandleRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(integerLiteral(equals(0)).bind("stream"), this);
-  MF.addMatcher(parenExpr(has(cStyleCastExpr(has(
-                              integerLiteral(anyOf(equals(1), equals(2)))))))
-                    .bind("stream"),
-                this);
-}
-
-void PreDefinedStreamHandleRule::runRule(
-    const MatchFinder::MatchResult &Result) {
-  if (auto E = getNodeAsType<Expr>(Result, "stream")) {
-    std::string Str = getStmtSpelling(E);
-    if (Str == "cudaStreamDefault" || Str == "cudaStreamLegacy" ||
-        Str == "cudaStreamPerThread") {
-      auto &SM = DpctGlobalInfo::getSourceManager();
-      auto Begin = getStmtExpansionSourceRange(E).getBegin();
-      unsigned int Length = Lexer::MeasureTokenLength(
-          Begin, SM, DpctGlobalInfo::getContext().getLangOpts());
-      if (isPlaceholderIdxDuplicated(E))
-        return;
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, E, HelperFuncType::HFT_DefaultQueue);
-      emplaceTransformation(new ReplaceText(
-          Begin, Length, "&{{NEEDREPLACEQ" + std::to_string(Index) + "}}"));
-    }
-  }
-}
-
-REGISTER_RULE(PreDefinedStreamHandleRule, PassKind::PK_Migration)
-
 void AsmRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
       asmStmt(hasAncestor(functionDecl(
                   anyOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)))))
           .bind("asm"),
       this);
+}
+
+bool canAsmLop3ExprFast(std::ostringstream &OS, const std::string &a,
+                        const std::string &b, const std::string &c,
+                        const std::uint8_t imm) {
+#define EMPTY4 "", "", "", ""
+#define EMPTY16 EMPTY4, EMPTY4, EMPTY4, EMPTY4
+  static const std::string FastMap[256] = {
+      /*0x00*/ "0",
+      // clang-format off
+      EMPTY16, EMPTY4, EMPTY4, "",
+      /*0x1a*/ "(@a & @b | @c) ^ @a",
+      "", "", "",
+      /*0x1e*/ "@a ^ (@b | @c)",
+      EMPTY4, EMPTY4, EMPTY4, "", "",
+      /*0x2d*/ "~@a ^ (~@b & @c)",
+      EMPTY16, "", "",
+      /*0x40*/ "@a & @b & ~@c",
+      EMPTY16, EMPTY16, EMPTY16, EMPTY4, "", "", "",
+      /*0x78*/ "@a ^ (@b & @c)",
+      EMPTY4, "", "", "",
+      /*0x80*/ "@a & @b & @c",
+      EMPTY16, EMPTY4, "",
+      /*0x96*/ "@a ^ @b ^ @c",
+      EMPTY16, EMPTY4, EMPTY4, EMPTY4, "",
+      /*0xb4*/ "@a ^ (@b & ~@c)",
+      "", "", "",
+      /*0xb8*/ "(@a ^ (@b & (@c ^ @a)))",
+      EMPTY16, EMPTY4, EMPTY4, "",
+      /*0xd2*/ "@a ^ (~@b & @c)",
+      EMPTY16, EMPTY4, "",
+      /*0xe8*/ "((@a & (@b | @c)) | (@b & @c))",
+      "",
+      /*0xea*/ "(@a & @b) | @c",
+      EMPTY16, "", "", "",
+      // clang-format on
+      /*0xfe*/ "@a | @b | @c",
+      /*0xff*/ "1"};
+#undef EMPTY16
+#undef EMPTY4
+  const StringRef Expr = FastMap[imm];
+  if (Expr.empty()) {
+    return false;
+  }
+  OS << " ";
+  const StringRef ReplaceMap[3] = {a, b, c};
+  std::string::size_type Pre = 0;
+  auto Pos = Expr.find('@');
+  while (Pos != std::string::npos) {
+    OS << Expr.substr(Pre, Pos - Pre).str();
+    OS << ReplaceMap[Expr[Pos + 1] - 'a'].str();
+    Pre = Pos + 2;
+    Pos = Expr.find('@', Pre);
+  }
+  OS << Expr.substr(Pre).str();
+  return true;
 }
 
 std::string getAsmLop3Expr(const llvm::SmallVector<std::string, 5> &Operands) {
@@ -14647,11 +14665,12 @@ std::string getAsmLop3Expr(const llvm::SmallVector<std::string, 5> &Operands) {
   const auto &b = Operands[2];
   const auto &c = Operands[3];
   auto imm = std::stoi(Operands[4], 0, 16);
-  if (imm == 0x00) {
-    return buildString(d, " = 0");
-  }
+  assert(imm >= 0 && imm <= UINT8_MAX);
   std::ostringstream OS;
   OS << d << " =";
+  if (canAsmLop3ExprFast(OS, a, b, c, imm)) {
+    return OS.str();
+  }
   if (imm & 0x01)
     OS << " (~" << a << " & ~" << b << " & ~" << c << ") |";
   if (imm & 0x02)
@@ -15409,10 +15428,10 @@ REGISTER_RULE(TemplateSpecializationTypeLocRule, PassKind::PK_Migration)
 
 void CudaStreamCastRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
-    castExpr(
-      hasType(typedefDecl(hasAnyName("CUstream", "cudaStream_t"))))
-    .bind("cast"),
-    this);
+     castExpr(hasType(qualType(hasCanonicalType(
+        qualType(pointsTo(namedDecl(hasName("CUstream_st"))))))))
+     .bind("cast"),
+     this);
 }
 
 void CudaStreamCastRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {

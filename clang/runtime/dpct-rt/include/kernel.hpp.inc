@@ -31,7 +31,8 @@
 // DPCT_COMMENT some code
 // DPCT_COMMENT // DPCT_LABEL_END
 // DPCT_COMMENT
-// DPCT_COMMENT For header file including dependency, please use predefined feature name:
+// DPCT_COMMENT For header file including dependency, please use predefined
+// DPCT_COMMENT feature name:
 // DPCT_COMMENT   local_include_dependency: dpct helper files
 // DPCT_COMMENT   non_local_include_dependency: other header files
 
@@ -88,13 +89,14 @@ struct kernel_function_info {
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 static inline void get_kernel_function_info(kernel_function_info *kernel_info,
-                                     const void *function) {
+                                            const void *function) {
   kernel_info->max_work_group_size =
       dpct::dev_mgr::instance()
           .current_device()
           .get_info<sycl::info::device::max_work_group_size>();
 }
-static inline kernel_function_info get_kernel_function_info(const void *function) {
+static inline kernel_function_info
+get_kernel_function_info(const void *function) {
   kernel_function_info kernel_info;
   kernel_info.max_work_group_size =
       dpct::dev_mgr::instance()
@@ -118,13 +120,16 @@ namespace fs = std::filesystem;
 namespace fs = std::experimental::filesystem;
 #endif
 
- /// Write data to temporary file and return absolute path to temporary file.
- /// Temporary file is created in a temporary directory both of which have random names
- /// with only the user having access permissions.  Only one temporary file will be
- /// created in the temporary directory.
-static inline fs::path write_data_to_file(char const *const data,
-                                   size_t size) {
+/// Write data to temporary file and return absolute path to temporary file.
+/// Temporary file is created in a temporary directory both of which have random
+/// names with only the user having access permissions.  Only one temporary file
+/// will be created in the temporary directory.
+static inline fs::path write_data_to_file(char const *const data, size_t size) {
   std::error_code ec;
+
+  if (sizeof(size_t) >= sizeof(std::streamsize) &&
+      size > std::numeric_limits<std::streamsize>::max())
+    throw std::runtime_error("data file too large");
 
   // random number generator
   std::random_device dev;
@@ -153,8 +158,7 @@ static inline fs::path write_data_to_file(char const *const data,
     throw std::runtime_error("could not create directory");
 
   // only allow owner permissions to private directory
-  fs::permissions(directory_path,
-                  fs::perms::owner_all, ec);
+  fs::permissions(directory_path, fs::perms::owner_all, ec);
   if (ec)
     throw std::runtime_error("could not set directory permissions");
 
@@ -171,21 +175,17 @@ static inline fs::path write_data_to_file(char const *const data,
   auto outfile = std::ofstream(filepath, std::ios::out | std::ios::binary);
   if (outfile) {
     // only allow program to write file
-    fs::permissions(filepath,
-                    fs::perms::owner_write,
-                    ec);
+    fs::permissions(filepath, fs::perms::owner_write, ec);
     if (ec)
       throw std::runtime_error("could not set permissions");
 
     outfile.write(data, size);
-    outfile.close();
-    if (outfile.bad())
+    if (!outfile.good())
       throw std::runtime_error("could not write data");
+    outfile.close();
 
     // only allow program to read/execute file
-    fs::permissions(filepath,
-                    fs::perms::owner_read |
-                    fs::perms::owner_exec,
+    fs::permissions(filepath, fs::perms::owner_read | fs::perms::owner_exec,
                     ec);
     if (ec)
       throw std::runtime_error("could not set permissions");
@@ -196,15 +196,17 @@ static inline fs::path write_data_to_file(char const *const data,
   auto infile = std::ifstream(filepath, std::ios::in | std::ios::binary);
   if (infile) {
     bool mismatch = false;
-    int  cnt=0;
+    size_t cnt = 0;
 
     while (1) {
       char c;
       infile.get(c);
-      if (infile.eof()) break;
-      if (c != data[cnt++]) mismatch = true;
+      if (infile.eof())
+        break;
+      if (c != data[cnt++])
+        mismatch = true;
     }
-    if (cnt!=size || mismatch)
+    if (cnt != size || mismatch)
       throw std::runtime_error("file contents not written correctly");
   } else
     throw std::runtime_error("could not validate file");
@@ -349,7 +351,7 @@ public:
 
     FreeLibrary(static_cast<HMODULE>(library));
     fs::permissions(path, fs::perms::owner_all);
-    if (fs::remove_all(path.remove_filename(),ec) != 2 || ec)
+    if (fs::remove_all(path.remove_filename(), ec) != 2 || ec)
       // one directory and one temporary file should have been deleted
       throw std::runtime_error("Directory delete failed");
 
@@ -357,7 +359,7 @@ public:
   }
 
 private:
-  static inline std::unordered_map<void *,fs::path> lib_to_path;
+  static inline std::unordered_map<void *, fs::path> lib_to_path;
 };
 #endif
 
@@ -379,10 +381,11 @@ private:
 
 namespace detail {
 
-static inline kernel_library load_dl_from_data(char const *const data, size_t size) {
+static inline kernel_library load_dl_from_data(char const *const data,
+                                               size_t size) {
   fs::path filename = write_data_to_file(data, size);
 #ifdef _WIN32
-  void *so = LoadLibraryA(filename.string().c_str());
+  void *so = LoadLibraryW(filename.wstring().c_str());
 #else
   void *so = dlopen(filename.c_str(), RTLD_LAZY);
 #endif
@@ -395,7 +398,7 @@ static inline kernel_library load_dl_from_data(char const *const data, size_t si
   std::error_code ec;
 
   // Windows DLL cannot be deleted while in use
-  if (fs::remove_all(filename.remove_filename(),ec) != 2 || ec)
+  if (fs::remove_all(filename.remove_filename(), ec) != 2 || ec)
     // one directory and one temporary file should have been deleted
     throw std::runtime_error("Directory delete failed");
 #endif
@@ -405,8 +408,8 @@ static inline kernel_library load_dl_from_data(char const *const data, size_t si
 
 } // namespace detail
 
- /// Load kernel library and return a handle to use the library.
- /// \param [in] name The name of the library.
+/// Load kernel library and return a handle to use the library.
+/// \param [in] name The name of the library.
 static inline kernel_library load_kernel_library(const std::string &name) {
   std::ifstream ifs;
   ifs.open(name, std::ios::in | std::ios::binary);
@@ -418,16 +421,17 @@ static inline kernel_library load_kernel_library(const std::string &name) {
   return detail::load_dl_from_data(buffer_string.c_str(), buffer_string.size());
 }
 
- /// Load kernel library whose image is alreay in memory and return a handle to use the library.
- /// \param [in] image A pointer to the image in memory.
+/// Load kernel library whose image is alreay in memory and return a handle to
+/// use the library.
+/// \param [in] image A pointer to the image in memory.
 static inline kernel_library load_kernel_library_mem(char const *const image) {
   const size_t size = detail::get_lib_size(image);
 
   return detail::load_dl_from_data(image, size);
 }
 
- /// Unload kernel library.
- /// \param [in,out] library Handle to the library to be closed.
+/// Unload kernel library.
+/// \param [in,out] library Handle to the library to be closed.
 static inline void unload_kernel_library(const kernel_library &library) {
 #ifdef _WIN32
   detail::path_lib_record::remove_lib(library);
@@ -452,11 +456,11 @@ private:
   dpct::kernel_functor ptr;
 };
 
- /// Find kernel function in a kernel library and return its address.
- /// \param [in] library Handle to the kernel library.
- /// \param [in] name Name of the kernel function.
-static inline dpct::kernel_function get_kernel_function(kernel_library &library,
-                                                 const std::string &name) {
+/// Find kernel function in a kernel library and return its address.
+/// \param [in] library Handle to the kernel library.
+/// \param [in] name Name of the kernel function.
+static inline dpct::kernel_function
+get_kernel_function(kernel_library &library, const std::string &name) {
 #ifdef _WIN32
   dpct::kernel_functor fn = reinterpret_cast<dpct::kernel_functor>(
       GetProcAddress(static_cast<HMODULE>(static_cast<void *>(library)),
@@ -470,20 +474,23 @@ static inline dpct::kernel_function get_kernel_function(kernel_library &library,
   return fn;
 }
 
- /// Invoke a kernel function.
- /// \param [in] function kernel function.
- /// \param [in] queue SYCL queue used to execute kernel
- /// \param [in] groupRange SYCL group range
- /// \param [in] localRange SYCL local range
- /// \param [in] localMemSize The size of local memory required by the kernel function.
- /// \param [in] kernelParams Array of pointers to kernel arguments.
- /// \param [in] extra Extra arguments.
+/// Invoke a kernel function.
+/// \param [in] function kernel function.
+/// \param [in] queue SYCL queue used to execute kernel
+/// \param [in] groupRange SYCL group range
+/// \param [in] localRange SYCL local range
+/// \param [in] localMemSize The size of local memory required by the kernel
+///             function.
+/// \param [in] kernelParams Array of pointers to kernel arguments.
+/// \param [in] extra Extra arguments.
 static inline void invoke_kernel_function(dpct::kernel_function &function,
-                                   sycl::queue &queue, sycl::range<3> groupRange,
-                                   sycl::range<3> localRange, unsigned int localMemSize,
-                                   void **kernelParams, void **extra) {
-  function(queue, sycl::nd_range<3>(groupRange * localRange, localRange), localMemSize, kernelParams,
-           extra);
+                                          sycl::queue &queue,
+                                          sycl::range<3> groupRange,
+                                          sycl::range<3> localRange,
+                                          unsigned int localMemSize,
+                                          void **kernelParams, void **extra) {
+  function(queue, sycl::nd_range<3>(groupRange * localRange, localRange),
+           localMemSize, kernelParams, extra);
 }
 // DPCT_LABEL_END
 
@@ -493,9 +500,9 @@ static inline void invoke_kernel_function(dpct::kernel_function &function,
 // Image|image_wrapper_base_p_alias
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
- /// Find image wrapper in a kernel library and return its address.
- /// \param [in] library Handle to the kernel library.
- /// \param [in] name Name of the target image wrapper.
+/// Find image wrapper in a kernel library and return its address.
+/// \param [in] library Handle to the kernel library.
+/// \param [in] name Name of the target image wrapper.
 static inline dpct::image_wrapper_base_p
 get_image_wrapper(dpct::kernel_library &library, const std::string &name) {
 #ifdef _WIN32

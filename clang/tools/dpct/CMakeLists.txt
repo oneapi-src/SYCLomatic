@@ -19,6 +19,26 @@ include_directories(
   ../../../clang/lib/Driver/
   )
 
-install_dpct()
+target_link_libraries(dpct-binary
+  PRIVATE
+  DPCT
+  )
+
+add_clang_symlink(c2s dpct-binary)
+if(UNIX)
+  set(dpct_autocomplete_script bash-autocomplete.sh)
+endif()
+
+if(UNIX)
+  install(
+    FILES ${dpct_autocomplete_script}
+    COMPONENT dpct-autocomplete
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+    DESTINATION ./env)
+  if (NOT CMAKE_CONFIGURATION_TYPES)
+    add_llvm_install_targets(install-dpct-autocomplete
+                             COMPONENT dpct-autocomplete)
+  endif()
+endif()
 
 add_subdirectory(DpctOptRules)

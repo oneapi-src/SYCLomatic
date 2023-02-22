@@ -19,10 +19,11 @@
 #include <algorithm>
 #include <deque>
 #include <fstream>
+#include <optional>
 
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
 
-llvm::Optional<std::string> getReplacedName(const clang::NamedDecl *D) {
+std::optional<std::string> getReplacedName(const clang::NamedDecl *D) {
   auto Iter = MapNames::TypeNamesMap.find(D->getQualifiedNameAsString(false));
   if (Iter != MapNames::TypeNamesMap.end()) {
     auto Range = getDefinitionRange(D->getBeginLoc(), D->getEndLoc());
@@ -33,7 +34,7 @@ llvm::Optional<std::string> getReplacedName(const clang::NamedDecl *D) {
     }
     return Iter->second->NewName;
   }
-  return llvm::Optional<std::string>();
+  return std::nullopt;
 }
 
 namespace clang {
@@ -114,7 +115,6 @@ std::unordered_map<std::string, DpctGlobalInfo::TempVariableDeclCounter>
 std::unordered_map<std::string, int> DpctGlobalInfo::TempVariableHandledMap;
 bool DpctGlobalInfo::UsingDRYPattern = true;
 bool DpctGlobalInfo::UsingGenericSpace = true;
-bool DpctGlobalInfo::SpBLASUnsupportedMatrixTypeFlag = false;
 unsigned int DpctGlobalInfo::CudaKernelDimDFIIndex = 1;
 std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CudaKernelDimDFIMap;
@@ -293,7 +293,6 @@ void DpctGlobalInfo::resetInfo() {
   TempVariableDeclCounterMap.clear();
   TempVariableHandledMap.clear();
   UsingDRYPattern = true;
-  SpBLASUnsupportedMatrixTypeFlag = false;
   NeedRunAgain = false;
   SpellingLocToDFIsMapForAssumeNDRange.clear();
   DFIToSpellingLocsMapForAssumeNDRange.clear();
@@ -628,13 +627,6 @@ void DpctFileInfo::buildReplacements() {
         std::get<2>(DistrInfo.first), std::get<3>(DistrInfo.first));
   }
 
-  if (DpctGlobalInfo::getSpBLASUnsupportedMatrixTypeFlag()) {
-    for (auto &SpBLASWarningLocOffset : SpBLASSet) {
-      DiagnosticsUtils::report(getFilePath(), SpBLASWarningLocOffset,
-                               Diagnostics::UNSUPPORT_MATRIX_TYPE, true, false);
-    }
-  }
-
   for (auto &AtomicInfo : AtomicMap) {
     if (std::get<2>(AtomicInfo.second))
       DiagnosticsUtils::report(getFilePath(), std::get<0>(AtomicInfo.second),
@@ -883,7 +875,7 @@ void DpctGlobalInfo::insertBuiltinVarInfo(
   }
 }
 
-llvm::Optional<std::string> DpctGlobalInfo::getAbsolutePath(FileID ID) {
+std::optional<std::string> DpctGlobalInfo::getAbsolutePath(FileID ID) {
   assert(SM && "SourceManager must be initialized");
   if (const auto *FileEntry = SM->getFileEntryForID(ID)) {
     // To avoid potential path inconsistent issue,
@@ -900,7 +892,7 @@ llvm::Optional<std::string> DpctGlobalInfo::getAbsolutePath(FileID ID) {
     llvm::sys::path::remove_dots(FilePathAbs, true);
     return (std::string)FilePathAbs;
   }
-  return llvm::None;
+  return std::nullopt;
 }
 
 int KernelCallExpr::calculateOriginArgsSize() const {
@@ -3314,10 +3306,10 @@ void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
     }
     if ((isExtern() && ExternEmitWarning) || getType()->containSizeofType()) {
       DiagnosticsUtils::report(getFilePath(), getOffset(),
-                               Diagnostics::SIZEOF_WARNING, false, false);
+                               Diagnostics::SIZEOF_WARNING, false, false, "local memory");
       AccDecl.Warnings.push_back(
           DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
-              Diagnostics::SIZEOF_WARNING));
+              Diagnostics::SIZEOF_WARNING, "local memory"));
     }
     if (getType()->getDimension() > 3) {
       if (DiagnosticsUtils::report(getFilePath(), getOffset(),

@@ -11,16 +11,16 @@ If your project uses Microsoft Visual Studio\*, you can use the
 migration. |tool_name| will migrate the files you
 provided as input files.
 
-For example, the following steps show migration of the Vector Add sample using
-the ``dpct`` tool:
+The following steps show how to migrate the Vector Add sample using |tool_name|:
 
-.. include:: /_include_files/wip.rst
-
-#. Open the Vector Add sample:
+#. Get the Vector Add sample:
 
    .. include:: /_include_files/open_sample_dgr.rst
 
-#. Navigate to the root of the Vector Add sample project.
+#. Navigate to the root of the Vector Add sample.
+
+   The sample contains a single
+   CUDA file, ``vector_add.cu``, located in the ``src`` folder.
 
 #. From the root folder of the sample project, run |tool_name|.
 

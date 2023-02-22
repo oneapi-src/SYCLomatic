@@ -96,73 +96,63 @@ in the output. For example:
 Migrate a Simple Test Project
 -----------------------------
 
-|tool_name| comes with several sample projects so you can explore
-the tool and familiarize yourself with how it functions.
-
-.. include:: /_include_files/wip.rst
-
-.. list-table::
-   :widths: 30 70
-   :header-rows: 1
-
-   *  -  Sample Project
-      -  Description
-   *  -  Vector Add DPCT
-
-         +  ``vector_add.cu``
-      -  The Vector Add DPCT sample demonstrates how to migrate a simple program
-         from CUDA to SYCL. Vector Add provides an easy way to verify that your
-         development environment is setup correctly to use |tool_name|.
-   *  -  Folder Options DPCT
-
-         +  ``main.cu``
-         +  ``bar/util.cu``
-         +  ``bar/util.h``
-      -  The Folder Options DPCT sample shows how to migrate more complex projects
-         and to use options.
-   *  -  Rodinia NW DPCT
-
-         +  ``needle.cu``
-         +  ``needle.h``
-         +  ``needle_kernel.cu``
-      -  The Rodinia NW DPCT sample demonstrates how to migrate a Make/CMake
-         project from CUDA to SYCL using |tool_name|.
-
-Review the README file provided with each sample for more detailed information
-about the purpose and usage of the sample project.
+Several sample projects for |tool_name| are available to explore the tool and
+familiarize yourself with how it functions.
 
 .. include:: /_include_files/access_samples.rst
+
+.. include:: /_include_files/samples.rst
+
+
+
+
 
 
 Try a Sample Project
 ~~~~~~~~~~~~~~~~~~~~
 
-Follow these steps to migrate the Vector Add DPCT sample project using
-|tool_name|:
+The following steps show how to migrate the Vector Add sample using |tool_name|:
 
-#. Download the ``vector_add.cu`` sample.
+#. Download the `Vector Add sample <https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/Migration/vector-add-dpct>`_.
 
-#. Run |tool_name| from the sample root directory:
+#. Navigate to the root of the Vector Add sample. The sample contains a single
+   CUDA file, ``vector_add.cu``, located in the ``src`` folder.
+
+
+#. From the root folder of the sample project, run |tool_name|:
 
    .. code-block::
 
       dpct --in-root=. src/vector_add.cu
 
-   The ``vector_add.dp.cpp`` file should appear in the ``dpct_output``
-   directory. The file is now a SYCL source file.
+   The ``--in-root`` option specifies the location of the CUDA file that needs
+   migration. By default, the migrated files are created in a new folder named
+   ``dpct_output``.
+
+#. As a result of the migration command, you should see the new SYCL source file
+   in the output folder:
+
+   .. code-block::
+
+      dpct_output
+      └── src
+          └── vector_add.dp.cpp
+
+   The relative paths of the migrated files are maintained.
 
 #. Navigate to the new SYCL source file:
 
    .. code-block::
 
-      cd dpct_output
+      cd dpct_output/src
 
-   Verify the generated source code and fix any code that |tool_name|
+   Verify the migrated source code and fix any code that |tool_name|
    was unable to migrate. (The code used in this example is simple, so manual
-   changes may not be needed). For the most accurate and detailed instructions
-   on addressing warnings emitted from |tool_name|, see the
-   **Addressing Warnings in Migrated Code** section of the
-   `README files <https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/Migration>`_.
+   changes may not be needed).
+
+   For the most accurate and detailed instructions on addressing warnings emitted
+   from |tool_name|, see the **Addressing Warnings in Migrated Code** section of
+   the `README files <https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/Migration>`_.
 
    .. note::
 

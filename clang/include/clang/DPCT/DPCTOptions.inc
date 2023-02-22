@@ -369,6 +369,9 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
         false),
              DPCT_OPT_ENUM("nd_range_barrier", int(ExperimentalFeatures::Exp_NdRangeBarrier),
         "Experimental helper function used to help cross group synchronization during migration.\n",
+        false),
+             DPCT_OPT_ENUM("user-defined-reductions", int(ExperimentalFeatures::Exp_UserDefineReductions),
+        "Experimental extension that allows user define reductions.\n",
         false)
            ),
            llvm::cl::desc("Comma separated list of experimental features to be used in migrated "

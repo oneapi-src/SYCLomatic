@@ -2407,6 +2407,11 @@ __global__ void testUnsupported() {
   u = __urhadd(u, u);
   // CHECK: u = sycl::abs_diff(u, u)+u;
   u = __usad(u, u, u);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hadd is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: h = __hadd(h, h);
+  h = __hadd(h, h);
 }
 
 __global__ void testSimulation() {

@@ -93,8 +93,12 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaDeviceProp",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "device_info",
                                       HelperFeatureEnum::Device_device_info)},
-      {"cudaError_t", std::make_shared<TypeNameRule>(getDpctNamespace() + "err0")},
-      {"cudaError", std::make_shared<TypeNameRule>(getDpctNamespace() + "err0")},
+      {"cudaError_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "err0",
+                                      HelperFeatureEnum::Util_err_types)},
+      {"cudaError",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "err0",
+                                      HelperFeatureEnum::Util_err_types)},
       {"CUresult", std::make_shared<TypeNameRule>("int")},
       {"CUcontext", std::make_shared<TypeNameRule>("int")},
       {"CUmodule", std::make_shared<TypeNameRule>(getDpctNamespace() + "kernel_library",
@@ -278,6 +282,10 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("std::tuple_size")},
        {"thrust::swap",
        std::make_shared<TypeNameRule>("std::swap")},
+       {"thrust::zip_iterator",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "zip_iterator",
+           HelperFeatureEnum::DplExtrasIterators_zip_iterator)},
       {"cusolverDnHandle_t",
        std::make_shared<TypeNameRule>(getClNamespace() + "queue*")},
       {"cusolverEigType_t", std::make_shared<TypeNameRule>("int64_t")},
@@ -421,7 +429,9 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudnnHandle_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::engine_ext",
                                       HelperFeatureEnum::DnnlUtils_engine_ext)},
-      {"cudnnStatus_t", std::make_shared<TypeNameRule>(getDpctNamespace() + "err1")},
+      {"cudnnStatus_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "err1",
+                                      HelperFeatureEnum::Util_err_types)},
       {"cudnnTensorDescriptor_t",
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "dnnl::memory_desc_ext",
@@ -1595,6 +1605,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"atomicExch", getDpctNamespace() + "atomic_exchange"},
       {"atomicCAS", getDpctNamespace() + "atomic_compare_exchange_strong"},
       {"atomicInc", getDpctNamespace() + "atomic_fetch_compare_inc"},
+      {"atomicDec", getDpctNamespace() + "atomic_fetch_compare_dec"},
   };
 
   BLASComputingAPIWithRewriter = {
@@ -4108,6 +4119,9 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
     {"cudaMemAttachGlobal",
      MacroMigrationRule("flag_macro_rule", RulePriority::Fallback,
                         "cudaMemAttachGlobal", "0")},
+    {"cudaStreamDefault",
+     MacroMigrationRule("cudaStreamDefault_rule", RulePriority::Fallback,
+                        "cudaStreamDefault", "0")},
     //...
 };
 
@@ -4303,10 +4317,6 @@ const MapNames::MapTy MemoryDataTypeRule::SizeOrPosToMember{
 
 const std::vector<std::string> MemoryDataTypeRule::RemoveMember{
     "dstLOD", "srcLOD", "dstMemoryType", "srcMemoryType"};
-
-const MapNames::SetTy MapNames::PredefinedStreamName{
-    "cudaStreamDefault", "cudaStreamNonBlocking", "cudaStreamLegacy",
-    "cudaStreamPerThread"};
 
 const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "this_thread_block", "sync", "tiled_partition",
