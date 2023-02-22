@@ -44,3 +44,15 @@ WARNING_FACTORY_ENTRY(
         MEMBER_FACTORY(MEM_BASE, IS_ARROW, MEM_CALL("get_global_mem_size"))),
     Diagnostics::UNCOMPATIBLE_DEVICE_PROP, std::string("totalConstMem"),
     std::string("get_global_mem_size"))
+
+MEMBER_REWRITE_ENTRY(
+    "cub::DoubleBuffer.d_buffers",
+    MEMBER_FACTORY(MEM_BASE, IS_ARROW, LITERAL("iter")))
+
+MEMBER_REWRITE_ENTRY(
+    "cub::DoubleBuffer.Current",
+    MEMBER_FACTORY(MEM_BASE, IS_ARROW, LITERAL("input")))
+
+MEMBER_REWRITE_ENTRY(
+    "cub::DoubleBuffer.Alternate",
+    MEMBER_FACTORY(MEM_BASE, IS_ARROW, LITERAL("output")))

@@ -1,4 +1,5 @@
 // UNSUPPORTED: -windows-
+// RUN: rm -rf %T/build %T/source && mkdir -p %T/build/objs
 // RUN: mkdir -p %T/build/objs
 // RUN: mkdir %T/source
 // RUN: cat %s > %T/source/foo.cu
