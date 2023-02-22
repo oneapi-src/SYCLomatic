@@ -1699,7 +1699,7 @@ public:
 
   ~device_memory() {
     if (_device_ptr && !_reference)
-      dpct_free(_device_ptr);
+      dpct::dpct_free(_device_ptr);
     if (_host_ptr)
       std::free(_host_ptr);
   }
