@@ -73,7 +73,7 @@ struct UserMin
 //CHECK:    for(int i = 0; i < num_segments + 1; i++) {
 //CHECK:      device_offsets[i] = i * 10;
 //CHECK:    }
-//CHECK-DPCT1092:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
+//CHECK-DPCT1092:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with different value for specific hardware for better performance.
 //CHECK-DPCT1026:    DPCT1026:{{[0-9]+}}: The call to cub::DeviceSegmentedReduce::Reduce was removed because this call is redundant in SYCL.
 //CHECK:    dpct::device::experimental::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, device_offsets, device_offsets + 1, min_op, initial_value);
 //CHECK:    dev_ct1.queues_wait_and_throw();

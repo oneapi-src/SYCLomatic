@@ -1425,7 +1425,8 @@ private:
                            const std::string &PaddingArgs, SourceManager &SM);
   void insertToPitchedData(const CallExpr *C, size_t ArgIndex) {
     if (C->getNumArgs() > ArgIndex) {
-      if (needExtraParens(C->getArg(ArgIndex)))
+      if (C->getArg(ArgIndex)->IgnoreImplicit()->getStmtClass() !=
+          Stmt::StmtClass::DeclRefExprClass)
         insertAroundStmt(C->getArg(ArgIndex), "(", ")");
       requestFeature(HelperFeatureEnum::Image_image_matrix_to_pitched_data, C);
       emplaceTransformation(
