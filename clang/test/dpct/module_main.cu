@@ -28,6 +28,16 @@ int main(){
     //CHECK: F = dpct::get_kernel_function(M, FunctionName.c_str());
     cuModuleGetFunction(&F, M, FunctionName.c_str());
 
+
+    int    *argBuffer[3];
+    size_t  argBufferSize = sizeof(argBuffer);
+    //CHECK: void *extra[] = {DPCT_KERNEL_PARM_SIZE, &argBufferSize,
+    //CHECK-NEXT: DPCT_KERNEL_PARM_PTR, argBuffer,
+    //CHECK-NEXT: DPCT_KERNEL_PARM_END};
+    void   *extra[] = {CU_LAUNCH_PARAM_BUFFER_SIZE, &argBufferSize,
+                       CU_LAUNCH_PARAM_BUFFER_POINTER, argBuffer,
+                       CU_LAUNCH_PARAM_END};
+
     int sharedSize;
     CUstream s;
     void **param, **extra;
