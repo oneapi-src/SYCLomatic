@@ -4559,7 +4559,7 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       ReplaceStrs.Repl =
           "oneapi::mkl::sparse::gemm(*" + CallExprArguReplVec[0] +
           ", oneapi::mkl::layout::row_major, " + TransStr +
-          ", oneapi::mkl::transpose:nontrans, " +
+          ", oneapi::mkl::transpose::nontrans, " +
           getValueStr(CE->getArg(6), CallExprArguReplVec[6],
                       CallExprArguReplVec[0], BufferType) +
           ", " + MatrixHandleName + ", " + B + ", " + CallExprArguReplVec[3] +
@@ -4572,7 +4572,7 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         ReplaceStrs.Repl =
             "oneapi::mkl::sparse::gemm(*" + CallExprArguReplVec[0] +
             ", oneapi::mkl::layout::row_major, " + TransStr +
-            ", oneapi::mkl::transpose:nontrans, " +
+            ", oneapi::mkl::transpose::nontrans, " +
             getValueStr(CE->getArg(6), CallExprArguReplVec[6],
                         CallExprArguReplVec[0], BufferType) +
             ", " + MatrixHandleName + ", const_cast<" + BufferType + "*>(" + B +
@@ -4585,7 +4585,7 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         ReplaceStrs.Repl =
             "oneapi::mkl::sparse::gemm(*" + CallExprArguReplVec[0] +
             ", oneapi::mkl::layout::row_major, " + TransStr +
-            ", oneapi::mkl::transpose:nontrans, " +
+            ", oneapi::mkl::transpose::nontrans, " +
             getValueStr(CE->getArg(6), CallExprArguReplVec[6],
                         CallExprArguReplVec[0], BufferType) +
             ", " + MatrixHandleName + ", (" + BufferType + "*)" + B + ", " +
