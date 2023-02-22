@@ -159,7 +159,7 @@ static void getCompileInfo(
     // -isystem
     bool IsSystemInclude = false;
 
-    // -I /path/to/some/header
+    // To parse option "-I <space> <path>"
     bool IsIncludeWithWhitespace = false;
 
     const std::string Directory = Entry.second[0];
