@@ -44,3 +44,14 @@ FEATURE_REQUEST_FACTORY(
                               MapNames::getDpctNamespace() +
                               "sparse::matrix_info>")))
 REMOVE_API_FACTORY_ENTRY("cusparseDestroyMatDescr")
+
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseCreate", DEREF(0),
+                                        QUEUEPTRSTR))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseDestroy", ARG(0),
+                                        ARG("nullptr")))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseSetStream", ARG(0), ARG(1)))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseGetStream", DEREF(1), ARG(0)))
+REMOVE_API_FACTORY_ENTRY("cusparseGetPointerMode")
+REMOVE_API_FACTORY_ENTRY("cusparseSetPointerMode")
+REMOVE_API_FACTORY_ENTRY("cusparseCreateSolveAnalysisInfo")
+REMOVE_API_FACTORY_ENTRY("cusparseDestroySolveAnalysisInfo")

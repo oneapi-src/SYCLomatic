@@ -4237,22 +4237,14 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   if (!CE->getDirectCallee())
     return;
 
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  auto SL = SM.getExpansionLoc(CE->getBeginLoc());
-  std::string Key =
-      SM.getFilename(SL).str() + std::to_string(SM.getDecomposedLoc(SL).second);
-  DpctGlobalInfo::updateInitSuffixIndexInRule(
-      DpctGlobalInfo::getSuffixIndexInitValue(Key));
-
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
   StringRef FuncNameRef(FuncName);
-
-  LibraryMigrationFlags Flags;
-  LibraryMigrationStrings ReplaceStrs;
-  LibraryMigrationLocations Locations;
-  initVars(CE, nullptr, nullptr, Flags, ReplaceStrs, Locations);
-  Flags.IsAssigned = IsAssigned;
+  if (FuncNameRef.endswith("csrmv") || FuncNameRef.endswith("csrmm")) {
+    report(
+        DpctGlobalInfo::getSourceManager().getExpansionLoc(CE->getBeginLoc()),
+        Diagnostics::UNSUPPORT_MATRIX_TYPE, true, false);
+  }
 
   if (MapNames::SPARSEAPIWithRewriter.find(FuncName) !=
       MapNames::SPARSEAPIWithRewriter.end()) {
@@ -4260,7 +4252,9 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
     return;
-  } else if (FuncName == "cusparseCreate" || FuncName == "cusparseDestroy" ||
+  } 
+#if 0
+    else if (FuncName == "cusparseCreate" || FuncName == "cusparseDestroy" ||
              FuncName == "cusparseSetStream" || FuncName == "cusparseGetStream") {
     Flags.NeedUseLambda = false;
     if (FuncName == "cusparseCreate") {
@@ -4589,18 +4583,7 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                            CallExprArguReplVec[15] + ")";
     }
   }
-
-  if (FuncNameRef.endswith("csrmv") || FuncNameRef.endswith("csrmm")) {
-    if (Flags.NeedUseLambda && Flags.CanAvoidUsingLambda && !Flags.IsMacroArg) {
-      report(Locations.OuterInsertLoc, Diagnostics::UNSUPPORT_MATRIX_TYPE, true,
-             false);
-    } else {
-      report(Locations.PrefixInsertLoc, Diagnostics::UNSUPPORT_MATRIX_TYPE,
-             true, false);
-    }
-  }
-
-  addReplacementForLibraryAPI(Flags, ReplaceStrs, Locations, FuncName, CE);
+#endif
 }
 
 REGISTER_RULE(SPBLASFunctionCallRule, PassKind::PK_Migration)
