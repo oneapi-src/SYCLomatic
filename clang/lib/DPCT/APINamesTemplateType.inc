@@ -39,6 +39,13 @@ TYPE_REWRITE_ENTRY(
                      TEMPLATE_ARG(0))))
 
 TYPE_REWRITE_ENTRY(
+    "cudaExtent",
+    TYPE_CONDITIONAL_FACTORY(
+        CheckTypeNameAndInVarDecl("cudaExtent"),
+        CTAD_TYPE_FACTORY(STR(MapNames::getClNamespace() + "range"), STR("3")),
+        TYPE_FACTORY(STR(MapNames::getClNamespace() + "range"), STR("3"))))
+
+TYPE_REWRITE_ENTRY(
     "cub::CountingInputIterator",
     HEADER_INSERTION_FACTORY(HeaderType::HT_DPL_Iterator,
                              TYPE_FACTORY(STR("oneapi::dpl::counting_iterator"),

@@ -824,6 +824,22 @@ public:
   }
 };
 
+template <class NameT, class... TemplateArgsT> class CtadTemplatedNamePrinter {
+  NameT Name;
+  ArgsPrinter<false, TemplateArgsT...> TAs;
+public:
+  CtadTemplatedNamePrinter(NameT Name, TemplateArgsT &&...TAs)
+      : Name(Name), TAs(std::forward<TemplateArgsT>(TAs)...) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    dpct::print(Stream, Name);
+    if (!DpctGlobalInfo::isCtadEnabled()) {
+      Stream << "<";
+      TAs.print(Stream);
+      Stream << ">";
+    }
+  }
+};
+
 // Print a type with no template.
 template <class NameT> class TypeNamePrinter {
   NameT Name;
