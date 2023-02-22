@@ -828,7 +828,7 @@ inline void async_dpct_free(const std::vector<void *> &pointers,
     cgh.host_task([=] {
       for (auto p : pointers)
         if (p) {
-          detail::dpct_free(ptr, q);
+          detail::dpct_free(p, q);
         }
     });
   });
