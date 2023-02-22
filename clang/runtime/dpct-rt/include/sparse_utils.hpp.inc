@@ -369,6 +369,74 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|csrmm|dpct::sparse
+// DPCT_DEPENDENCY_BEGIN
+// SparseUtils|sparse_matrix_handle_t
+// SparseUtils|create_csr_matrix_handle
+// SparseUtils|matrix_info
+// LibCommonUtils|get_value
+// LibCommonUtils|get_memory
+// SparseUtils|get_type_as_library_data
+// SparseUtils|destroy_csr_matrix_handle_async
+// Util|DataType
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T>
+void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
+           int dense_cols, int sparse_cols, const T *alpha, const matrix_info info, const T *val,
+           const int *row_ptr, const int *col_ind, T* b, int ldb, const T *beta,
+           T* c, int ldc) {
+  sparse_matrix_handle_t *sparse_matrix_handle = new sparse_matrix_handle_t;
+  create_csr_matrix_handle(queue, *sparse_matrix_handle, sparse_rows, sparse_cols,
+                           row_ptr, col_ind, val,
+                           detail::get_type_as_library_data<int>(),
+                           detail::get_type_as_library_data<int>(),
+                           info.get<oneapi::mkl::index_base>(),
+                           detail::get_type_as_library_data<T>());
+
+  using Ty = typename dpct::DataType<T>::T2;
+  auto alpha_value = get_value(reinterpret_cast<const Ty *>(alpha), queue);
+  auto beta_value = get_value(reinterpret_cast<const Ty *>(beta), queue);
+  auto data_b = dpct::detail::get_memory(reinterpret_cast<const Ty *>(b));
+  auto data_c = dpct::detail::get_memory(reinterpret_cast<Ty *>(c));
+
+  switch (info.get<matrix_info::matrix_type>()) {
+  case matrix_info::matrix_type::ge: {
+    oneapi::mkl::sparse::optimize_gemv(queue, trans, *sparse_matrix_handle);
+    oneapi::mkl::sparse::gemv(queue, trans, alpha_value, *sparse_matrix_handle,
+                              data_x, beta_value, data_y);
+    break;
+  }
+  case matrix_info::matrix_type::sy: {
+    oneapi::mkl::sparse::symv(queue, info.get<oneapi::mkl::uplo>(), alpha_value,
+                              *sparse_matrix_handle, const_cast<Ty *>(data_x),
+                              beta_value, data_y);
+    break;
+  }
+  case matrix_info::matrix_type::tr: {
+    oneapi::mkl::sparse::optimize_trmv(queue, info.get<oneapi::mkl::uplo>(),
+                                       trans, info.get<oneapi::mkl::diag>(),
+                                       *sparse_matrix_handle);
+    oneapi::mkl::sparse::trmv(queue, info.get<oneapi::mkl::uplo>(), trans,
+                              info.get<oneapi::mkl::diag>(), alpha_value,
+                              *sparse_matrix_handle, const_cast<Ty *>(data_x),
+                              beta_value, data_y);
+    break;
+  }
+  default:
+    throw std::runtime_error(
+        "the spmv does not support matrix_info::matrix_type::he");
+  }
+
+  sycl::event e =
+      detail::destroy_csr_matrix_handle_async(queue, *sparse_matrix_handle);
+  queue.submit([&](sycl::handler &cgh) {
+    cgh.depends_on(e);
+    cgh.host_task([=] { delete sparse_matrix_handle; });
+  });
+}
+// DPCT_LABEL_END
+
 } // namespace sparse
 } // namespace dpct
 
