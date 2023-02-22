@@ -5494,6 +5494,9 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                          "std::complex<double>") {
             CurrentArgumentRepl = getArgWithTypeCast(
                 CE->getArg(i), ReplInfo.BufferTypeInfo[IndexTemp] + "*");
+//            auto var = ExprAnalysis::ref(CE->getArg(i));
+//            CurrentArgumentRepl = "&" + ReplInfo.BufferTypeInfo[IndexTemp] +
+//                                  "(" + var + "[0], " + var + "[1])";
           } else {
             CurrentArgumentRepl = ExprAnalysis::ref(CE->getArg(i));
           }
@@ -5637,6 +5640,10 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                          "std::complex<float>" ||
                      ReplInfo.BufferTypeInfo[IndexTemp] ==
                          "std::complex<double>") {
+//            auto var = ExprAnalysis::ref(CE->getArg(i));
+            //            CurrentArgumentRepl =
+            //            ReplInfo.BufferTypeInfo[IndexTemp] + "(" +
+            //                                  var + "[0], " + var + "[1])";
             CallExprReplStr =
                 CallExprReplStr + ", " +
                 getArgWithTypeCast(CE->getArg(i),

@@ -29,8 +29,8 @@ __global__ void picount(int *totals) {
   counter[threadIdx.x] = 0;
 
   for (int i = 0; i < ITERATIONS; i++) {
-    //CHECK: float x = rng.generate<oneapi::mkl::rng::device::uniform<float>, 1>();
-    //CHECK-NEXT: float y = rng.generate<oneapi::mkl::rng::device::uniform<float>, 1>();
+    //CHECK: float x = dpct::vec2marray(rng.generate<oneapi::mkl::rng::device::uniform<float>, 1>());
+    //CHECK-NEXT: float y = dpct::vec2marray(rng.generate<oneapi::mkl::rng::device::uniform<float>, 1>());
     float x = curand_uniform(&rng);
     float y = curand_uniform(&rng);
     counter[threadIdx.x] += 1 - int(x * x + y * y);
@@ -68,7 +68,7 @@ __global__ void cuda_kernel_RNDnormalDitribution(double *Image, curandState *Sta
   int id    = bid*32 + tid;
   int pixel = bid*32 + tid;
 
-  //CHECK: Image[pixel] = States[id].generate<oneapi::mkl::rng::device::gaussian<double>, 1>();
+  //CHECK: Image[pixel] = dpct::vec2marray(States[id].generate<oneapi::mkl::rng::device::gaussian<double>, 1>());
   Image[pixel] = curand_normal_double(&States[id]);
 }
 

@@ -45,6 +45,9 @@ template <typename T> struct DataType { using T2 = T; };
 template <typename T> struct DataType<sycl::vec<T, 2>> {
   using T2 = std::complex<T>;
 };
+template <typename T> struct DataType<sycl::marray<T, 2>> {
+  using T2 = std::complex<T>;
+};
 
 inline void matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld,
                             int from_ld, int rows, int cols, int elem_size,
@@ -681,6 +684,28 @@ public:
 #else
 #define DPCT_EXPORT
 #endif
+
+template <typename ele_type, int n>
+sycl::marray<ele_type, n> vec2marray(sycl::vec<ele_type, n> input) {
+  sycl::marray<ele_type, n> output;
+  if (n < 1) {
+    return output;
+  }
+  output[0] = input[0];
+  if (n < 2) {
+    return output;
+  }
+  output[1] = input[1];
+  if (n < 3) {
+    return output;
+  }
+  output[2] = input[2];
+  if (n < 4) {
+    return output;
+  }
+  output[3] = input[3];
+  return output;
+}
 
 } // namespace dpct
 

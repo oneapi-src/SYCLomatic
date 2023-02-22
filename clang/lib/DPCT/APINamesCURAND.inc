@@ -117,110 +117,185 @@ FEATURE_REQUEST_FACTORY(
 // bits
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::bits<std::uint32_t>, 1>"))
+    CALL_FACTORY_ENTRY(
+        "curand",
+        CALL(
+            "dpct::vec2marray",
+            MEMBER_CALL(
+                DEREF(makeDerefArgCreatorWithCall(0)), false,
+                "generate<oneapi::mkl::rng::device::bits<std::uint32_t>, 1>"))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand4",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::bits<std::uint32_t>, 4>"))
+    CALL_FACTORY_ENTRY(
+        "curand4",
+        CALL(
+            "dpct::vec2marray",
+            MEMBER_CALL(
+                DEREF(makeDerefArgCreatorWithCall(0)), false,
+                "generate<oneapi::mkl::rng::device::bits<std::uint32_t>, 4>"))))
 // gaussian
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand_normal",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::gaussian<float>, 1>"))
+    CALL_FACTORY_ENTRY(
+        "curand_normal",
+        CALL("dpct::vec2marray",
+             MEMBER_CALL(
+                 DEREF(makeDerefArgCreatorWithCall(0)), false,
+                 "generate<oneapi::mkl::rng::device::gaussian<float>, 1>"))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand_normal2",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::gaussian<float>, 2>"))
+    CALL_FACTORY_ENTRY(
+        "curand_normal2",
+        CALL("dpct::vec2marray",
+             MEMBER_CALL(
+                 DEREF(makeDerefArgCreatorWithCall(0)), false,
+                 "generate<oneapi::mkl::rng::device::gaussian<float>, 2>"))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand_normal2_double",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::gaussian<double>, 2>"))
+    CALL_FACTORY_ENTRY(
+        "curand_normal2_double",
+        CALL("dpct::vec2marray",
+             MEMBER_CALL(
+                 DEREF(makeDerefArgCreatorWithCall(0)), false,
+                 "generate<oneapi::mkl::rng::device::gaussian<double>, 2>"))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand_normal4",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::gaussian<float>, 4>"))
+    CALL_FACTORY_ENTRY(
+        "curand_normal4",
+        CALL("dpct::vec2marray",
+             MEMBER_CALL(
+                 DEREF(makeDerefArgCreatorWithCall(0)), false,
+                 "generate<oneapi::mkl::rng::device::gaussian<float>, 4>"))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand_normal_double",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::gaussian<double>, 1>"))
+    CALL_FACTORY_ENTRY(
+        "curand_normal_double",
+        CALL("dpct::vec2marray",
+             MEMBER_CALL(
+                 DEREF(makeDerefArgCreatorWithCall(0)), false,
+                 "generate<oneapi::mkl::rng::device::gaussian<double>, 1>"))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand_normal4_double",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::gaussian<double>, 4>"))
+    CALL_FACTORY_ENTRY(
+        "curand_normal4_double",
+        CALL("dpct::vec2marray",
+             MEMBER_CALL(
+                 DEREF(makeDerefArgCreatorWithCall(0)), false,
+                 "generate<oneapi::mkl::rng::device::gaussian<double>, 4>"))))
 // lognormal
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand_log_normal",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::lognormal<float>, 1>", ARG(1), ARG(2)))
+    CALL_FACTORY_ENTRY(
+        "curand_log_normal",
+        CALL("dpct::vec2marray",
+             MEMBER_CALL(
+                 DEREF(makeDerefArgCreatorWithCall(0)), false,
+                 "generate<oneapi::mkl::rng::device::lognormal<float>, 1>",
+                 ARG(1), ARG(2)))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand_log_normal2",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::lognormal<float>, 2>", ARG(1), ARG(2)))
+    CALL_FACTORY_ENTRY(
+        "curand_log_normal2",
+        CALL("dpct::vec2marray",
+             MEMBER_CALL(
+                 DEREF(makeDerefArgCreatorWithCall(0)), false,
+                 "generate<oneapi::mkl::rng::device::lognormal<float>, 2>",
+                 ARG(1), ARG(2)))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand_log_normal2_double",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::lognormal<double>, 2>", ARG(1), ARG(2)))
+    CALL_FACTORY_ENTRY(
+        "curand_log_normal2_double",
+        CALL("dpct::vec2marray",
+             MEMBER_CALL(
+                 DEREF(makeDerefArgCreatorWithCall(0)), false,
+                 "generate<oneapi::mkl::rng::device::lognormal<double>, 2>",
+                 ARG(1), ARG(2)))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand_log_normal4",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::lognormal<float>, 4>", ARG(1), ARG(2)))
+    CALL_FACTORY_ENTRY(
+        "curand_log_normal4",
+        CALL("dpct::vec2marray",
+             MEMBER_CALL(
+                 DEREF(makeDerefArgCreatorWithCall(0)), false,
+                 "generate<oneapi::mkl::rng::device::lognormal<float>, 4>",
+                 ARG(1), ARG(2)))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand_log_normal_double",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::lognormal<double>, 1>", ARG(1), ARG(2)))
+    CALL_FACTORY_ENTRY(
+        "curand_log_normal_double",
+        CALL("dpct::vec2marray",
+             MEMBER_CALL(
+                 DEREF(makeDerefArgCreatorWithCall(0)), false,
+                 "generate<oneapi::mkl::rng::device::lognormal<double>, 1>",
+                 ARG(1), ARG(2)))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand_log_normal4_double",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::lognormal<double>, 4>", ARG(1), ARG(2)))
+    CALL_FACTORY_ENTRY(
+        "curand_log_normal4_double",
+        CALL("dpct::vec2marray",
+             MEMBER_CALL(
+                 DEREF(makeDerefArgCreatorWithCall(0)), false,
+                 "generate<oneapi::mkl::rng::device::lognormal<double>, 4>",
+                 ARG(1), ARG(2)))))
 // uniform
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand_uniform",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::uniform<float>, 1>"))
+    CALL_FACTORY_ENTRY(
+        "curand_uniform",
+        CALL("dpct::vec2marray",
+             MEMBER_CALL(
+                 DEREF(makeDerefArgCreatorWithCall(0)), false,
+                 "generate<oneapi::mkl::rng::device::uniform<float>, 1>"))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand_uniform2_double",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::uniform<double>, 2>"))
+    CALL_FACTORY_ENTRY(
+        "curand_uniform2_double",
+        CALL("dpct::vec2marray",
+             MEMBER_CALL(
+                 DEREF(makeDerefArgCreatorWithCall(0)), false,
+                 "generate<oneapi::mkl::rng::device::uniform<double>, 2>"))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand_uniform4",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::uniform<float>, 4>"))
+    CALL_FACTORY_ENTRY(
+        "curand_uniform4",
+        CALL("dpct::vec2marray",
+             MEMBER_CALL(
+                 DEREF(makeDerefArgCreatorWithCall(0)), false,
+                 "generate<oneapi::mkl::rng::device::uniform<float>, 4>"))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand_uniform_double",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::uniform<double>, 1>"))
+    CALL_FACTORY_ENTRY(
+        "curand_uniform_double",
+        CALL("dpct::vec2marray",
+             MEMBER_CALL(
+                 DEREF(makeDerefArgCreatorWithCall(0)), false,
+                 "generate<oneapi::mkl::rng::device::uniform<double>, 1>"))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand_uniform4_double",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::uniform<double>, 4>"))
+    CALL_FACTORY_ENTRY(
+        "curand_uniform4_double",
+        CALL("dpct::vec2marray",
+             MEMBER_CALL(
+                 DEREF(makeDerefArgCreatorWithCall(0)), false,
+                 "generate<oneapi::mkl::rng::device::uniform<double>, 4>"))))
 // Poisson
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand_poisson",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::poisson<std::uint32_t>, 1>", ARG(1)))
+    CALL_FACTORY_ENTRY(
+        "curand_poisson",
+        CALL(
+            "dpct::vec2marray",
+            MEMBER_CALL(
+                DEREF(makeDerefArgCreatorWithCall(0)), false,
+                "generate<oneapi::mkl::rng::device::poisson<std::uint32_t>, 1>",
+                ARG(1)))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand_poisson4",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::poisson<std::uint32_t>, 4>", ARG(1)))
+    CALL_FACTORY_ENTRY(
+        "curand_poisson4",
+        CALL(
+            "dpct::vec2marray",
+            MEMBER_CALL(
+                DEREF(makeDerefArgCreatorWithCall(0)), false,
+                "generate<oneapi::mkl::rng::device::poisson<std::uint32_t>, 4>",
+                ARG(1)))))

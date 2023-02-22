@@ -16,147 +16,147 @@ __global__ void kernel1() {
 
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng1;
   //CHECK-NEXT:rng1 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1, {3, 2 * 4});
-  //CHECK-NEXT:u = rng1.generate<oneapi::mkl::rng::device::bits<std::uint32_t>, 1>();
+  //CHECK-NEXT:u = dpct::vec2marray(rng1.generate<oneapi::mkl::rng::device::bits<std::uint32_t>, 1>());
   curandStatePhilox4_32_10_t rng1;
   curand_init(1, 2, 3, &rng1);
   u = curand(&rng1);
 
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng2;
   //CHECK-NEXT:rng2 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1, {3, 2 * 4});
-  //CHECK-NEXT:u4 = rng2.generate<oneapi::mkl::rng::device::bits<std::uint32_t>, 4>();
+  //CHECK-NEXT:u4 = dpct::vec2marray(rng2.generate<oneapi::mkl::rng::device::bits<std::uint32_t>, 4>());
   curandStatePhilox4_32_10_t rng2;
   curand_init(1, 2, 3, &rng2);
   u4 = curand4(&rng2);
 
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng3;
   //CHECK-NEXT:rng3 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1, {3, 2 * 4});
-  //CHECK-NEXT:f = rng3.generate<oneapi::mkl::rng::device::gaussian<float>, 1>();
+  //CHECK-NEXT:f = dpct::vec2marray(rng3.generate<oneapi::mkl::rng::device::gaussian<float>, 1>());
   curandStatePhilox4_32_10_t rng3;
   curand_init(1, 2, 3, &rng3);
   f = curand_normal(&rng3);
 
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng4;
   //CHECK-NEXT:rng4 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1, {3, 2 * 4});
-  //CHECK-NEXT:f2 = rng4.generate<oneapi::mkl::rng::device::gaussian<float>, 2>();
+  //CHECK-NEXT:f2 = dpct::vec2marray(rng4.generate<oneapi::mkl::rng::device::gaussian<float>, 2>());
   curandStatePhilox4_32_10_t rng4;
   curand_init(1, 2, 3, &rng4);
   f2 = curand_normal2(&rng4);
 
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng5;
   //CHECK-NEXT:rng5 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1, {3, 2 * 4});
-  //CHECK-NEXT:d2 = rng5.generate<oneapi::mkl::rng::device::gaussian<double>, 2>();
+  //CHECK-NEXT:d2 = dpct::vec2marray(rng5.generate<oneapi::mkl::rng::device::gaussian<double>, 2>());
   curandStatePhilox4_32_10_t rng5;
   curand_init(1, 2, 3, &rng5);
   d2 = curand_normal2_double(&rng5);
 
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng6;
   //CHECK-NEXT:rng6 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1, {3, 2 * 4});
-  //CHECK-NEXT:f4 = rng6.generate<oneapi::mkl::rng::device::gaussian<float>, 4>();
+  //CHECK-NEXT:f4 = dpct::vec2marray(rng6.generate<oneapi::mkl::rng::device::gaussian<float>, 4>());
   curandStatePhilox4_32_10_t rng6;
   curand_init(1, 2, 3, &rng6);
   f4 = curand_normal4(&rng6);
 
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng7;
   //CHECK-NEXT:rng7 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1, {3, 2 * 4});
-  //CHECK-NEXT:d = rng7.generate<oneapi::mkl::rng::device::gaussian<double>, 1>();
+  //CHECK-NEXT:d = dpct::vec2marray(rng7.generate<oneapi::mkl::rng::device::gaussian<double>, 1>());
   curandStatePhilox4_32_10_t rng7;
   curand_init(1, 2, 3, &rng7);
   d = curand_normal_double(&rng7);
 
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng8;
   //CHECK-NEXT:rng8 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1, {3, 2 * 4});
-  //CHECK-NEXT:f = rng8.generate<oneapi::mkl::rng::device::lognormal<float>, 1>(3, 7);
+  //CHECK-NEXT:f = dpct::vec2marray(rng8.generate<oneapi::mkl::rng::device::lognormal<float>, 1>(3, 7));
   curandStatePhilox4_32_10_t rng8;
   curand_init(1, 2, 3, &rng8);
   f = curand_log_normal(&rng8, 3, 7);
 
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng9;
   //CHECK-NEXT:rng9 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1, {3, 2 * 4});
-  //CHECK-NEXT:f2 = rng9.generate<oneapi::mkl::rng::device::lognormal<float>, 2>(3, 7);
+  //CHECK-NEXT:f2 = dpct::vec2marray(rng9.generate<oneapi::mkl::rng::device::lognormal<float>, 2>(3, 7));
   curandStatePhilox4_32_10_t rng9;
   curand_init(1, 2, 3, &rng9);
   f2 = curand_log_normal2(&rng9, 3, 7);
 
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng10;
   //CHECK-NEXT:rng10 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1, {3, 2 * 4});
-  //CHECK-NEXT:d2 = rng10.generate<oneapi::mkl::rng::device::lognormal<double>, 2>(3, 7);
+  //CHECK-NEXT:d2 = dpct::vec2marray(rng10.generate<oneapi::mkl::rng::device::lognormal<double>, 2>(3, 7));
   curandStatePhilox4_32_10_t rng10;
   curand_init(1, 2, 3, &rng10);
   d2 = curand_log_normal2_double(&rng10, 3, 7);
 
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng11;
   //CHECK-NEXT:rng11 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1, {3, 2 * 4});
-  //CHECK-NEXT:f4 = rng11.generate<oneapi::mkl::rng::device::lognormal<float>, 4>(3, 7);
+  //CHECK-NEXT:f4 = dpct::vec2marray(rng11.generate<oneapi::mkl::rng::device::lognormal<float>, 4>(3, 7));
   curandStatePhilox4_32_10_t rng11;
   curand_init(1, 2, 3, &rng11);
   f4 = curand_log_normal4(&rng11, 3, 7);
 
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng12;
   //CHECK-NEXT:rng12 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1, {3, 2 * 4});
-  //CHECK-NEXT:d = rng12.generate<oneapi::mkl::rng::device::lognormal<double>, 1>(3, 7);
+  //CHECK-NEXT:d = dpct::vec2marray(rng12.generate<oneapi::mkl::rng::device::lognormal<double>, 1>(3, 7));
   curandStatePhilox4_32_10_t rng12;
   curand_init(1, 2, 3, &rng12);
   d = curand_log_normal_double(&rng12, 3, 7);
 
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng13;
   //CHECK-NEXT:rng13 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1, {3, 2 * 4});
-  //CHECK-NEXT:f = rng13.generate<oneapi::mkl::rng::device::uniform<float>, 1>();
+  //CHECK-NEXT:f = dpct::vec2marray(rng13.generate<oneapi::mkl::rng::device::uniform<float>, 1>());
   curandStatePhilox4_32_10_t rng13;
   curand_init(1, 2, 3, &rng13);
   f = curand_uniform(&rng13);
 
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng14;
   //CHECK-NEXT:rng14 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1, {3, 2 * 4});
-  //CHECK-NEXT:d2 = rng14.generate<oneapi::mkl::rng::device::uniform<double>, 2>();
+  //CHECK-NEXT:d2 = dpct::vec2marray(rng14.generate<oneapi::mkl::rng::device::uniform<double>, 2>());
   curandStatePhilox4_32_10_t rng14;
   curand_init(1, 2, 3, &rng14);
   d2 = curand_uniform2_double(&rng14);
 
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng15;
   //CHECK-NEXT:rng15 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1, {3, 2 * 4});
-  //CHECK-NEXT:f4 = rng15.generate<oneapi::mkl::rng::device::uniform<float>, 4>();
+  //CHECK-NEXT:f4 = dpct::vec2marray(rng15.generate<oneapi::mkl::rng::device::uniform<float>, 4>());
   curandStatePhilox4_32_10_t rng15;
   curand_init(1, 2, 3, &rng15);
   f4 = curand_uniform4(&rng15);
 
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng16;
   //CHECK-NEXT:rng16 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1, {3, 2 * 4});
-  //CHECK-NEXT:d = rng16.generate<oneapi::mkl::rng::device::uniform<double>, 1>();
+  //CHECK-NEXT:d = dpct::vec2marray(rng16.generate<oneapi::mkl::rng::device::uniform<double>, 1>());
   curandStatePhilox4_32_10_t rng16;
   curand_init(1, 2, 3, &rng16);
   d = curand_uniform_double(&rng16);
 
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng17;
   //CHECK-NEXT:rng17 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1, {3, 2 * 4});
-  //CHECK-NEXT:u = rng17.generate<oneapi::mkl::rng::device::poisson<std::uint32_t>, 1>(3);
+  //CHECK-NEXT:u = dpct::vec2marray(rng17.generate<oneapi::mkl::rng::device::poisson<std::uint32_t>, 1>(3));
   curandStatePhilox4_32_10_t rng17;
   curand_init(1, 2, 3, &rng17);
   u = curand_poisson(&rng17, 3);
 
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng18;
   //CHECK-NEXT:rng18 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1, {3, 2 * 4});
-  //CHECK-NEXT:u4 = rng18.generate<oneapi::mkl::rng::device::poisson<std::uint32_t>, 4>(3);
+  //CHECK-NEXT:u4 = dpct::vec2marray(rng18.generate<oneapi::mkl::rng::device::poisson<std::uint32_t>, 4>(3));
   curandStatePhilox4_32_10_t rng18;
   curand_init(1, 2, 3, &rng18);
   u4 = curand_poisson4(&rng18, 3);
 
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng19;
   //CHECK-NEXT:rng19 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1, {3, 2 * 4});
-  //CHECK-NEXT:d4 = rng19.generate<oneapi::mkl::rng::device::uniform<double>, 4>();
+  //CHECK-NEXT:d4 = dpct::vec2marray(rng19.generate<oneapi::mkl::rng::device::uniform<double>, 4>());
   curandStatePhilox4_32_10_t rng19;
   curand_init(1, 2, 3, &rng19);
   d4 = curand_uniform4_double(&rng19);
 
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng20;
   //CHECK-NEXT:rng20 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1, {3, 2 * 4});
-  //CHECK-NEXT:d4 = rng20.generate<oneapi::mkl::rng::device::gaussian<double>, 4>();
+  //CHECK-NEXT:d4 = dpct::vec2marray(rng20.generate<oneapi::mkl::rng::device::gaussian<double>, 4>());
   curandStatePhilox4_32_10_t rng20;
   curand_init(1, 2, 3, &rng20);
   d4 = curand_normal4_double(&rng20);
 
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng21;
   //CHECK-NEXT:rng21 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1, {3, 2 * 4});
-  //CHECK-NEXT:d4 = rng21.generate<oneapi::mkl::rng::device::lognormal<double>, 4>(3, 7);
+  //CHECK-NEXT:d4 = dpct::vec2marray(rng21.generate<oneapi::mkl::rng::device::lognormal<double>, 4>(3, 7));
   curandStatePhilox4_32_10_t rng21;
   curand_init(1, 2, 3, &rng21);
   d4 = curand_log_normal4_double(&rng21, 3, 7);
@@ -167,8 +167,8 @@ __global__ void kernel2() {
 //CHECK-NEXT:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng2;
 //CHECK-NEXT:rng1 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(11, {1234, 1 * 4});
 //CHECK-NEXT:rng2 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(22, {4321, 2 * 4});
-//CHECK-NEXT:float x = rng1.generate<oneapi::mkl::rng::device::uniform<float>, 1>();
-//CHECK-NEXT:sycl::mfloat2 y = rng2.generate<oneapi::mkl::rng::device::gaussian<float>, 2>();
+//CHECK-NEXT:float x = dpct::vec2marray(rng1.generate<oneapi::mkl::rng::device::uniform<float>, 1>());
+//CHECK-NEXT:sycl::mfloat2 y = dpct::vec2marray(rng2.generate<oneapi::mkl::rng::device::gaussian<float>, 2>());
   curandStatePhilox4_32_10_t rng1;
   curandStatePhilox4_32_10_t rng2;
   curand_init(11, 1, 1234, &rng1);

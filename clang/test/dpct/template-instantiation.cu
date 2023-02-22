@@ -27,7 +27,8 @@ __global__ void kernel1(T *) {
   int b = blockDim.x;
 }
 
-// CHECK: template void kernel1(sycl::mchar4 *, const sycl::nd_item<3> &item_ct1, sycl::mchar4 *a);
+// CHECK: template void kernel1(sycl::mchar4 *, const sycl::nd_item<3> &item_ct1,
+// CHECK-NEXT:  sycl::mchar4 *a);
 template __global__ void kernel1(char4 *);
 
 // CHECK: template void kernel1<int>(int *, const sycl::nd_item<3> &item_ct1, int *a);
@@ -51,7 +52,7 @@ template __global__ void kernel2<int>(int *, float2 *);
 
 // CHECK: template void kernel2<sycl::mfloat2, sycl::mchar4>(sycl::mfloat2 *, sycl::mchar4 *,
 // CHECK-NEXT:   const sycl::nd_item<3> &item_ct1,
-// CHECK-NEXT:   sycl::float2 *a1, sycl::mfloat2 *a1, sycl::mchar4 *a2);
+// CHECK-NEXT:   sycl::mfloat2 *a1, sycl::mchar4 *a2);
 template __global__ void kernel2<float2, char4>(float2 *, char4 *);
 
 template<unsigned S, class T>

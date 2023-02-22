@@ -27,8 +27,8 @@ __global__ void picount(int *totals) {
   counter[threadIdx.x] = 0;
 
   for (int i = 0; i < ITERATIONS; i++) {
-    //CHECK: sycl::mfloat2 x = rng.generate<oneapi::mkl::rng::device::gaussian<float>, 2>();
-    //CHECK-NEXT: sycl::mfloat2 y = rng.generate<oneapi::mkl::rng::device::gaussian<float>, 2>();
+    //CHECK: sycl::mfloat2 x = dpct::vec2marray(rng.generate<oneapi::mkl::rng::device::gaussian<float>, 2>());
+    //CHECK-NEXT: sycl::mfloat2 y = dpct::vec2marray(rng.generate<oneapi::mkl::rng::device::gaussian<float>, 2>());
     float2 x = curand_normal2(&rng);
     float2 y = curand_normal2(&rng);
     counter[threadIdx.x] += 1 - int(x.x * x.x + y.y * y.y);
@@ -66,7 +66,7 @@ __global__ void cuda_kernel_RNDnormalDitribution(double2 *Image, curandStateMRG3
   int id    = bid*32 + tid;
   int pixel = bid*32 + tid;
 
-  //CHECK: Image[pixel] = States[id].generate<oneapi::mkl::rng::device::gaussian<double>, 2>();
+  //CHECK: Image[pixel] = dpct::vec2marray(States[id].generate<oneapi::mkl::rng::device::gaussian<double>, 2>());
   Image[pixel] = curand_normal2_double(&States[id]);
 }
 
@@ -154,7 +154,7 @@ int foo() {
 
 //CHECK:void kernel(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *state) {
 //CHECK-NEXT:  *state = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1111, {0, 2222 * 8});
-//CHECK-NEXT:  float rand = state->generate<oneapi::mkl::rng::device::uniform<float>, 1>();
+//CHECK-NEXT:  float rand = dpct::vec2marray(state->generate<oneapi::mkl::rng::device::uniform<float>, 1>());
 //CHECK-NEXT:}
 __global__ void kernel(curandState *state) {
   curand_init(1111, 2222, 0, state);

@@ -131,19 +131,19 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1052:{{[0-9]+}}: SYCL does not support the member access for a volatile qualified vector type. The volatile qualifier was removed. You may need to rewrite the code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: sycl::int2 *pv2;
+  // CHECK-NEXT: sycl::mint2 *pv2;
   volatile int2 *pv2;
 
     // CHECK: /*
   // CHECK-NEXT: DPCT1052:{{[0-9]+}}: SYCL does not support the member access for a volatile qualified vector type. The volatile qualifier was removed. You may need to rewrite the code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: sycl::int3 *pv3;
+  // CHECK-NEXT: sycl::mint3 *pv3;
   volatile int3 *pv3;
 
     // CHECK: /*
   // CHECK-NEXT: DPCT1052:{{[0-9]+}}: SYCL does not support the member access for a volatile qualified vector type. The volatile qualifier was removed. You may need to rewrite the code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: sycl::int4 *pv4;
+  // CHECK-NEXT: sycl::mint4 *pv4;
   volatile int4 *pv4;
 }
 

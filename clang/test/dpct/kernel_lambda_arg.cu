@@ -50,7 +50,7 @@ template <typename Foo> __global__ void my_kernel2(const Foo &foo) {
 //CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:      my_kernel2([] (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> * state) {
-//CHECK-NEXT:    return state->generate<oneapi::mkl::rng::device::uniform<double>, 2>();
+//CHECK-NEXT:    return dpct::vec2marray(state->generate<oneapi::mkl::rng::device::uniform<double>, 2>());
 //CHECK-NEXT:  }, item_ct1);
 //CHECK-NEXT:    });
 //CHECK-NEXT:}
