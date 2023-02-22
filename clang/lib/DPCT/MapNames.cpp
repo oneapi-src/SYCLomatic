@@ -426,6 +426,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cuda::std::tuple", std::make_shared<TypeNameRule>("std::tuple")},
       {"cuda::std::complex", std::make_shared<TypeNameRule>("std::complex")},
       {"cuda::std::array", std::make_shared<TypeNameRule>("std::array")},
+      {"cusolverEigRange_t", std::make_shared<TypeNameRule>("char")},
       // ...
   };
 
@@ -1193,6 +1194,9 @@ void MapNames::setExplicitNamespaceMap() {
       {"ncclFloat64", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float64")},
       {"ncclDouble", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float64")},
       {"ncclBfloat16", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::bfloat16")},
+      {"CUSOLVER_EIG_RANGE_ALL", std::make_shared<EnumNameRule>("'A'")},
+      {"CUSOLVER_EIG_RANGE_V", std::make_shared<EnumNameRule>("'V'")},
+      {"CUSOLVER_EIG_RANGE_I", std::make_shared<EnumNameRule>("'I'")},
       // ...
   };
 

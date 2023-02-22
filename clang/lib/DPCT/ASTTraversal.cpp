@@ -2018,7 +2018,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cudaDataType_t", "cudaDataType", "cublasComputeType_t",
                   "cublasAtomicsMode_t", "CUmem_advise_enum", "CUmem_advise",
                   "thrust::tuple_element", "thrust::tuple_size", "cublasMath_t",
-                  "cudaPointerAttributes", "thrust::zip_iterator")
+                  "cudaPointerAttributes", "thrust::zip_iterator",
+                  "cusolverEigRange_t")
               )))))
           .bind("cudaTypeDef"),
       this);
@@ -3606,7 +3607,7 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
                   "cudaDeviceAttr", "libraryPropertyType_t", "cudaDataType_t",
                   "cublasComputeType_t", "CUmem_advise_enum", "cufftType_t",
                   "cufftType", "cudaMemoryType", "CUctx_flags_enum"))),
-              matchesName("CUDNN_.*")))))
+              matchesName("CUDNN_.*"), matchesName("CUSOLVER_.*")))))
           .bind("EnumConstant"),
       this);
 }
