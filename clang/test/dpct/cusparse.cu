@@ -87,9 +87,9 @@ int main(){
   //CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y);
   //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
+  //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(*handle, mat_handle_ct{{[0-9]+}}, m, n, descrA->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
   //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, oneapi::mkl::transpose::nontrans, alpha, mat_handle_ct{{[0-9]+}}, x_buf_ct{{[0-9]+}}, beta, y_buf_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
+  //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(*handle, &mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: }
   cusparseCreateMatDescr(&descrA);
   cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL);
@@ -106,9 +106,9 @@ int main(){
   //CHECK-NEXT: auto y_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_C);
   //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_C_buf_ct{{[0-9]+}});
+  //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(*handle, mat_handle_ct{{[0-9]+}}, m, n, descrA->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_C_buf_ct{{[0-9]+}});
   //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, std::complex<float>(alpha_C.x(), alpha_C.y()), mat_handle_ct{{[0-9]+}}, x_C_buf_ct{{[0-9]+}}, std::complex<float>(beta_C.x(), beta_C.y()), y_C_buf_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
+  //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(*handle, &mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: }
   cusparseCcsrmv(handle, transA, m, n, nnz, &alpha_C, descrA, csrValA_C, csrRowPtrA, csrColIndA, x_C, &beta_C, y_C);
 
@@ -120,9 +120,9 @@ int main(){
   //CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y);
   //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, k, descrA->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::gemm(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, x_buf_ct{{[0-9]+}}, n, ldb, beta, y_buf_ct{{[0-9]+}}, ldc);
-  //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
+  //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(*handle, mat_handle_ct{{[0-9]+}}, m, k, descrA->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
+  //CHECK-NEXT: oneapi::mkl::sparse::gemm(*handle, oneapi::mkl::layout::row_major, transA, oneapi::mkl::transpose:nontrans, alpha, mat_handle_ct{{[0-9]+}}, x_buf_ct{{[0-9]+}}, n, ldb, beta, y_buf_ct{{[0-9]+}}, ldc);
+  //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(*handle, &mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: }
   cusparseScsrmm(handle, transA, m, n, k, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, ldb, &beta, y, ldc);
 
@@ -134,9 +134,9 @@ int main(){
   //CHECK-NEXT: auto y_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_C);
   //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, k, descrA->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_C_buf_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::gemm(*handle, transA, std::complex<float>(alpha_C.x(), alpha_C.y()), mat_handle_ct{{[0-9]+}}, x_C_buf_ct{{[0-9]+}}, n, ldb, std::complex<float>(beta_C.x(), beta_C.y()), y_C_buf_ct{{[0-9]+}}, ldc);
-  //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
+  //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(*handle, mat_handle_ct{{[0-9]+}}, m, k, descrA->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_C_buf_ct{{[0-9]+}});
+  //CHECK-NEXT: oneapi::mkl::sparse::gemm(*handle, oneapi::mkl::layout::row_major, transA, oneapi::mkl::transpose:nontrans, std::complex<float>(alpha_C.x(), alpha_C.y()), mat_handle_ct{{[0-9]+}}, x_C_buf_ct{{[0-9]+}}, n, ldb, std::complex<float>(beta_C.x(), beta_C.y()), y_C_buf_ct{{[0-9]+}}, ldc);
+  //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(*handle, &mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: }
   cusparseCcsrmm(handle, transA, m, n, k, nnz, &alpha_C, descrA, csrValA_C, csrRowPtrA, csrColIndA, x_C, ldb, &beta_C, y_C, ldc);
 
@@ -151,9 +151,9 @@ int main(){
   //CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y);
   //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
+  //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(*handle, mat_handle_ct{{[0-9]+}}, m, n, descrA->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
   //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, x_buf_ct{{[0-9]+}}, beta, y_buf_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
+  //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(*handle, &mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: }
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in an if statement. You may need to rewrite this code.
@@ -169,9 +169,9 @@ int main(){
   //CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y);
   //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
+  //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(*handle, mat_handle_ct{{[0-9]+}}, m, n, descrA->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
   //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, x_buf_ct{{[0-9]+}}, beta, y_buf_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
+  //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(*handle, &mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: }
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a for statement. You may need to rewrite this code.
@@ -187,9 +187,9 @@ int main(){
   //CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y);
   //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
+  //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(*handle, mat_handle_ct{{[0-9]+}}, m, n, descrA->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
   //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, x_buf_ct{{[0-9]+}}, beta, y_buf_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
+  //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(*handle, &mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: }
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a switch statement. You may need to rewrite this code.
@@ -236,9 +236,9 @@ int main(){
 //CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y);
 //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
 //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-//CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrB->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
+//CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(*handle, mat_handle_ct{{[0-9]+}}, m, n, descrB->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
 //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, x_buf_ct{{[0-9]+}}, beta, y_buf_ct{{[0-9]+}});
-//CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
+//CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(*handle, &mat_handle_ct{{[0-9]+}});
 //CHECK-NEXT: /*
 //CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a return statement. You may need to rewrite this code.
 //CHECK-NEXT: */
@@ -259,9 +259,9 @@ int foo(cusparseMatDescr_t descrB){
 //CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y);
 //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
 //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-//CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrB->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
+//CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(*handle, mat_handle_ct{{[0-9]+}}, m, n, descrB->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
 //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, x_buf_ct{{[0-9]+}}, beta, y_buf_ct{{[0-9]+}});
-//CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
+//CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(*handle, &mat_handle_ct{{[0-9]+}});
 //CHECK-NEXT: }
 void foo2(cusparseMatDescr_t descrB){
   cusparseScsrmv(handle, transA, m, n, nnz, &alpha, descrB, csrValA, csrRowPtrA, csrColIndA, x, &beta, y);
