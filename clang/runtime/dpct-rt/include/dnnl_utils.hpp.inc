@@ -909,6 +909,16 @@ class engine_ext {
                              int *direction_num, int *gate_num);
 public:
   engine_ext() {}
+  operator bool() const {
+    return bool(_eng) && bool(_s) && bool(_q);
+  }
+
+  engine_ext &operator=(std::nullptr_t) {
+    _eng.reset(nullptr);
+    _s.reset(nullptr);
+    _q = nullptr;
+    return *this;
+  }
   /// Creating oneDNN engine.
   void create_engine() {
     _eng = ::dnnl::sycl_interop::make_engine(
@@ -2128,17 +2138,6 @@ public:
       void *weight, void *diff_weight, size_t scratchpad_size, void *scratchpad,
       size_t workspace_size, void *workspace);
 // DPCT_LABEL_END
-
-  operator bool() const {
-    return bool(_eng) && bool(_s) && bool(_q);
-  }
-
-  engine_ext &operator=(std::nullptr_t) {
-    _eng.reset(nullptr);
-    _s.reset(nullptr);
-    _q = nullptr;
-    return *this;
-  }
 // DPCT_LABEL_BEGIN|engine_ext_1|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext
