@@ -184,7 +184,7 @@ static void getCompileInfo(
         continue;
       }
 
-      if (llvm::StringRef(Option).startswith("-I")) {
+      if (IsIncludeWithWhitespace  || llvm::StringRef(Option).startswith("-I")) {
 
         if (llvm::StringRef(Option).trim() == "-I") {
           IsIncludeWithWhitespace = true;
