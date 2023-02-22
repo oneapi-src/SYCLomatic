@@ -168,9 +168,9 @@ Follow instructions from the link below to build and run tests:
 
 
 ## Useful Links
-* More information about how to use SYCLomatic can be found in Intel(R) DPC++ Compatibility Tool documentation, which is the Intel product version of SYCLomatic:
-    * [Get Started](https://software.intel.com/content/www/us/en/develop/documentation/get-started-with-intel-dpcpp-compatibility-tool/top.html)
-    * [Developer Guide and Reference](https://software.intel.com/content/www/us/en/develop/documentation/intel-dpcpp-compatibility-tool-user-guide/top.html)
+* More information about how to use SYCLomatic can be found in the SYCLomatic online document:
+    * [Get Started](https://oneapi-src.github.io/SYCLomatic/get_started/index.html)
+    * [Developer Guide and Reference](https://oneapi-src.github.io/SYCLomatic/dev_guide/index.html)
 * [oneAPI DPC++ Compiler documentation](https://intel.github.io/llvm-docs/)
 * [Book: Mastering Programming of Heterogeneous Systems using C++ & SYCL](https://protect-eu.mimecast.com/s/P9FyCjvlRipPPWgT5ya8e?domain=link.springer.com)
 * [Essentials of SYCL training](https://www.intel.com/content/www/us/en/developer/tools/oneapi/training/dpc-essentials.html)
