@@ -3462,8 +3462,8 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
 
   MF.addMatcher(
       typeLoc(loc(qualType(hasDeclaration(anyOf(
-                  namedDecl(hasAnyName("dim3", "cudaPos")),
-                  typedefDecl(hasAnyName("dim3", "cudaPos")))))))
+                  namedDecl(hasAnyName("dim3")),
+                  typedefDecl(hasAnyName("dim3")))))))
           .bind("dim3Type"),
       this);
 }
@@ -3553,17 +3553,9 @@ void ReplaceDim3CtorRule::runRule(const MatchFinder::MatchResult &Result) {
       requestHelperFeatureForTypeNames(TypeName, BeginLoc);
       if (auto VD = DpctGlobalInfo::findAncestor<VarDecl>(TL)) {
         auto TypeStr = VD->getType().getAsString();
-        if (VD->getKind() == Decl::Var &&
-            (TypeStr == "dim3" ||
-             TypeStr == "cudaPos")) {
+        if (VD->getKind() == Decl::Var && TypeStr == "dim3") {
           std::string Replacement;
           std::string ReplacedType = "range";
-          if (TypeStr == "dim3") {
-            ReplacedType = "range";
-          } else if (TypeStr == "cudaPos") {
-            ReplacedType = "id";
-          }
-
           llvm::raw_string_ostream OS(Replacement);
           DpctGlobalInfo::printCtadClass(
               OS, buildString(MapNames::getClNamespace(), ReplacedType), 3);
@@ -15466,31 +15458,32 @@ REGISTER_RULE(CudaStreamCastRule, PassKind::PK_Migration)
 void CudaExtentRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
   // 1. Match any cudaExtent TypeLoc.
-  MF.addMatcher(
-      typeLoc(loc(qualType(hasDeclaration(namedDecl(hasName("cudaExtent"))))))
-          .bind("loc"),
-      this);
+  MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(
+                            namedDecl(hasAnyName("cudaExtent", "cudaPos"))))))
+                    .bind("loc"),
+                this);
 
   // 2. Match cudaExtent default ctor.
   //    cudaExtent()    - CXXTemporaryObjectExpr, handled by (1) and (2).
   //    cudaExtent a    - VarDecl, handled by (1) and (2)
   MF.addMatcher(
-      cxxConstructExpr(hasType(namedDecl(hasName("cudaExtent")))/*, hasDeclaration(
-                            cxxConstructorDecl(isDefaultConstructor()))*/)
+      cxxConstructExpr(hasType(namedDecl(hasAnyName("cudaExtent", "cudaPos"))))
           .bind("defaultCtor"),
       this);
 
   // 3. Match field declaration, which doesn't has an in-class initializer.
   //    The in-class initializer case will handled by other matchers.
-  MF.addMatcher(fieldDecl(hasType(namedDecl(hasName("cudaExtent"))),
-                          unless(hasInClassInitializer(anything())))
-                    .bind("fieldDeclHasNoInit"),
-                this);
-  
+  MF.addMatcher(
+      fieldDecl(hasType(namedDecl(hasAnyName("cudaExtent", "cudaPos"))),
+                unless(hasInClassInitializer(anything())))
+          .bind("fieldDeclHasNoInit"),
+      this);
+
   // 4. Match c++ initializer_list, which has cudaExtent type.
-  MF.addMatcher(initListExpr(hasType(namedDecl(hasName("cudaExtent"))))
-                    .bind("initListExpr"),
-                this);
+  MF.addMatcher(
+      initListExpr(hasType(namedDecl(hasAnyName("cudaExtent", "cudaPos"))))
+          .bind("initListExpr"),
+      this);
 }
 
 void CudaExtentRule::runRule(

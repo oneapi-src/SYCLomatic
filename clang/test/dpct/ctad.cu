@@ -23,7 +23,7 @@ int main() {
   dim3 deflt;
 
   // CHECK:  sycl::range deflt_1{0, 0, 0};
-  // CHECK-NEXT: sycl::id deflt_2;
+  // CHECK-NEXT: sycl::id deflt_2{0, 0, 0};
   cudaExtent deflt_1;
   cudaPos deflt_2;
 
