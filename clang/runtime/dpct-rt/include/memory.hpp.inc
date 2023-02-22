@@ -950,6 +950,24 @@ public:
 // DPCT_LABEL_END
 
 } // namespace deprecated
+
+// DPCT_LABEL_BEGIN|dpct_free_detail|dpct::detail
+// DPCT_DEPENDENCY_BEGIN
+// Device|get_default_queue
+// Memory|mem_mgr_mem_free|UsmNone
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+inline void dpct_free(void *ptr,
+                      const sycl::queue &q) {
+  if (ptr) {
+#ifdef DPCT_USM_LEVEL_NONE
+    detail::mem_mgr::instance().mem_free(ptr);
+#else
+    sycl::free(ptr, q.get_context());
+#endif // DPCT_USM_LEVEL_NONE
+  }
+}
+// DPCT_LABEL_END
 } // namespace detail
 
 // DPCT_LABEL_BEGIN|is_device_ptr|dpct
@@ -1158,7 +1176,7 @@ static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y,
 // DPCT_LABEL_BEGIN|dpct_free|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Device|get_default_queue
-// Memory|mem_mgr_mem_free|UsmNone
+// Memory|dpct_free_detail
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// free
@@ -1167,20 +1185,14 @@ static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y,
 /// \returns no return value.
 static inline void dpct_free(void *ptr,
                              sycl::queue &q = get_default_queue()) {
-  if (ptr) {
-#ifdef DPCT_USM_LEVEL_NONE
-    detail::mem_mgr::instance().mem_free(ptr);
-#else
-    sycl::free(ptr, q.get_context());
-#endif // DPCT_USM_LEVEL_NONE
-  }
+  detail::dpct_free(ptr, q);
 }
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|async_dpct_free|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Device|get_default_queue
-// Memory|dpct_free
+// Memory|dpct_free_detail
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Free the device memory pointed by a batch of pointers in \p pointers which
@@ -1197,7 +1209,7 @@ inline void async_dpct_free(const std::vector<void *> &pointers,
     cgh.host_task([=] {
       for (auto p : pointers)
         if (p) {
-          dpct_free(p, const_cast<sycl::queue>(q));
+          detail::dpct_free(ptr, q);
         }
     });
   });
