@@ -1937,9 +1937,7 @@ void AtomicFunctionRule::MigrateAtomicFunc(
   const QualType PointeeType = Arg0Type->getPointeeType();
 
   std::string TypeName;
-  bool IsTemplateType = false;
   if (auto *SubstedType = dyn_cast<SubstTemplateTypeParmType>(PointeeType)) {
-    IsTemplateType = true;
     // Type is substituted in template initialization, use the template
     // parameter name
     if (!SubstedType->getReplacedParameter()->getIdentifier()) {
@@ -1987,58 +1985,6 @@ void AtomicFunctionRule::MigrateAtomicFunc(
     bool HasSharedAttr = false;
     bool NeedReport = false;
     getShareAttrRecursive(CE->getArg(0), HasSharedAttr, NeedReport);
-
-    // Inline the code for integer types
-    static std::unordered_map<std::string, std::string> AtomicMap = {
-        {"atomicAdd", "fetch_add"}, {"atomicSub", "fetch_sub"},
-        {"atomicAnd", "fetch_and"}, {"atomicOr", "fetch_or"},
-        {"atomicXor", "fetch_xor"}, {"atomicMin", "fetch_min"},
-        {"atomicMax", "fetch_max"},
-    };
-
-    auto IsMacro = CE->getBeginLoc().isMacroID();
-    auto Iter = AtomicMap.find(AtomicFuncName);
-    if (!IsMacro && !IsTemplateType && PointeeType->isIntegerType() &&
-        Iter != AtomicMap.end()) {
-      if (NeedReport)
-        report(CE->getArg(0)->getBeginLoc(),
-               Diagnostics::SHARE_MEMORY_ATTR_DEDUCE, false,
-               getStmtSpelling(CE->getArg(0)),
-               MapNames::getClNamespace() + "global_ptr",
-               MapNames::getClNamespace() + "local_ptr");
-
-      std::string ReplStr{MapNames::getClNamespace(true)};
-      ReplStr += "atomic<";
-      ReplStr += TypeName;
-      if (HasSharedAttr) {
-        ReplStr += ", ";
-        ReplStr += MapNames::getClNamespace();
-        ReplStr += "access::address_space::local_space";
-      }
-      ReplStr += ">(";
-      ReplStr += MapNames::getClNamespace();
-      if (HasSharedAttr)
-        ReplStr += "local_ptr<";
-      else
-        ReplStr += "global_ptr<";
-      ReplStr += TypeName;
-      ReplStr += ">(";
-
-      ArgumentAnalysis A0(CE->getArg(0), false);
-      A0.analyze();
-      ReplStr += A0.getReplacedString();
-      ReplStr += ")).";
-      ReplStr += Iter->second;
-      ReplStr += "(";
-
-      ArgumentAnalysis A1(CE->getArg(1), false);
-      A1.analyze();
-      ReplStr += A1.getReplacedString();
-      ReplStr += ")";
-
-      emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
-      return;
-    }
 
     std::string SpaceName =
         MapNames::getClNamespace() + "access::address_space::local_space";
@@ -9848,7 +9794,7 @@ void MemVarRule::removeHostConstantWarning(Replacement &R) {
   std::string ReplStr = R.getReplacementText().str();
 
   // warning text of Diagnostics::HOST_CONSTANT
-  std::string Warning = "The use of variable [_a-zA-Z][_a-zA-Z0-9]+ in device "
+  std::string Warning = "The use of [_a-zA-Z][_a-zA-Z0-9]+ in device "
                         "code was not detected. If this variable is also used "
                         "in device code, you need to rewrite the code.";
   std::string Pattern =

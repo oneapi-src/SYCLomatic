@@ -8,7 +8,7 @@ Message
 
 .. _msg-1089-start:
 
-The value of the sub-group size attribute argument *<argument name>* cannot be\evaluated. Replace \"dpct_placeholder\" with an integral constant expression.
+The value of the sub-group size attribute argument *<argument name>* cannot be evaluated. Replace ``dpct_placeholder`` with an integral constant expression.
 
 .. _msg-1089-end:
 
