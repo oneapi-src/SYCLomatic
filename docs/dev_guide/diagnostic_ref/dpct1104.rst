@@ -31,20 +31,23 @@ compatibility tool to generate wrapped kernel functions:
 .. code-block:: bash
    :linenos:
    dpct <module source file(s)> --extra-arg=--ptx
+
 The migrated module source file(s) should be compiled to build a kernel library.
 On Linux:
 
 .. code-block:: bash
    :linenos:
    icpx -fsycl <migrated module source file(s)> -fPIC -shared -o <kernel library filename>
+
 On Windows:
 
 .. code-block:: bash
    :linenos:
    icpx -fsycl <migrated module source file(s)> -shared -o <kernel library filename>
+
 The user should ensure that the application will load the kernel library image into
 memory at runtime. For the following example this can be ensured by setting
-``<kernel library filename>`` to "module.ptx".
+``<kernel library filename>`` to ``library.so``.
 
 Example:
 
@@ -52,11 +55,19 @@ Original code:
 
 .. code-block:: cpp
    :linenos:
-   const void *image = copyFileToMemory("module.ptx");
+   const void *image = loadFile("module.ptx");
    cuModuleLoadData(&module, image);
+
 Migrated code:
 
 .. code-block:: cpp
    :linenos:
-   const void *image = copyFileToMemory("module.ptx");
+   const void *image = loadFile("module.ptx");
+   module = dpct::load_kernel_library(image);
+
+Fixed code:
+
+.. code-block:: cpp
+   :linenos:
+   const void *image = loadFile("library.so");
    module = dpct::load_kernel_library(image);

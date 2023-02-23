@@ -25,25 +25,28 @@ Suggestions to Fix
 
 The user should find the module source file(s) that are used to make the CUDA module
 and migrate them to SYCL with the --extra-arg=-ptx option of the compatibility tool
-to generate "wrapped" kernel functions:
+to generate wrapped kernel functions:
 
 .. code-block:: bash
    :linenos:
    dpct <module source file(s)> --extra-arg=--ptx
+
 The migrated module source file(s) should be compiled to make a kernel library.
 On Linux:
 
 .. code-block:: bash
    :linenos:
    icpx -fsycl <migrated module source file(s)> -fPIC -shared -o <kernel library filename>
+
 On Windows:
 
 .. code-block:: bash
    :linenos:
    icpx -fsycl <migrated module source file(s)> -shared -o <kernel library filename>
+
 The ``<kernel library filename>`` should be chosen so that ``<expression text>`` will have
 the same filename at runtime. For the following example, ``<kernel library filename>`` should
-be set to ``module.ptx``.
+be set to ``library.so``.
 
 Example:
 
@@ -53,9 +56,17 @@ Original code:
    :linenos:
    char *ptxFile = "module.ptx";
    cuModuleLoad(&module, ptxFile);
+
 Migrated code:
 
 .. code-block:: cpp
    :linenos:
-   char *ptxFile = "module.ptx"; 
+   char *ptxFile = "module.ptx";
    module = dpct::load_kernel_library(ptxFile);
+
+Fixed code:
+
+.. code-block:: cpp
+   :linenos:
+   char *libraryFile = "library.so";
+   module = dpct::load_kernel_library(libraryFile);
