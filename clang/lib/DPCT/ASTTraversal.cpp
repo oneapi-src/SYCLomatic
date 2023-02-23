@@ -4314,16 +4314,17 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                                   ReplaceStrs.IndentStr;
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
       ReplaceStrs.PrefixInsertStr =
-          ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
-          MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
-          CallExprArguReplVec[3] + ", " + CallExprArguReplVec[6] +
-          "->get_index_base(), " + CSRRowPtrA + ", " +
+          ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(*" +
+          CallExprArguReplVec[0] + ", " + MatrixHandleName + ", " +
+          CallExprArguReplVec[2] + ", " + CallExprArguReplVec[3] + ", " +
+          CallExprArguReplVec[6] + "->get_index_base(), " + CSRRowPtrA + ", " +
           CSRColIndA + ", " + CSRValA + ");" + getNL() + ReplaceStrs.IndentStr;
     } else {
       if (FuncName == "cusparseScsrmv" || FuncName == "cusparseDcsrmv")
         ReplaceStrs.PrefixInsertStr =
-            ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
-            MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
+            ReplaceStrs.PrefixInsertStr +
+            "oneapi::mkl::sparse::set_csr_data(*" + CallExprArguReplVec[0] +
+            ", " + MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
             CallExprArguReplVec[3] + ", " + CallExprArguReplVec[6] +
             "->get_index_base(), const_cast<int*>(" + CSRRowPtrA +
             "), const_cast<int*>(" + CSRColIndA + "), const_cast<" +
@@ -4331,8 +4332,9 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
             ReplaceStrs.IndentStr;
       else
         ReplaceStrs.PrefixInsertStr =
-            ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
-            MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
+            ReplaceStrs.PrefixInsertStr +
+            "oneapi::mkl::sparse::set_csr_data(*" + CallExprArguReplVec[0] +
+            ", " + MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
             CallExprArguReplVec[3] + ", " + CallExprArguReplVec[6] +
             "->get_index_base(), const_cast<int*>(" + CSRRowPtrA +
             "), const_cast<int*>(" + CSRColIndA + "), (" + BufferType + "*)" +
@@ -4340,8 +4342,8 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     }
     ReplaceStrs.SuffixInsertStr =
         ReplaceStrs.SuffixInsertStr + getNL() + ReplaceStrs.IndentStr +
-        "oneapi::mkl::sparse::release_matrix_handle(&" + MatrixHandleName +
-        ");";
+        "oneapi::mkl::sparse::release_matrix_handle(*" +
+        CallExprArguReplVec[0] + ", &" + MatrixHandleName + ");";
 
     std::string TransStr;
     Expr::EvalResult ER;
@@ -4452,16 +4454,17 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                                   ReplaceStrs.IndentStr;
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
       ReplaceStrs.PrefixInsertStr =
-          ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
-          MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
-          CallExprArguReplVec[4] + ", " + CallExprArguReplVec[7] +
-          "->get_index_base(), " + CSRRowPtrA + ", " +
+          ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(*" +
+          CallExprArguReplVec[0] + ", " + MatrixHandleName + ", " +
+          CallExprArguReplVec[2] + ", " + CallExprArguReplVec[4] + ", " +
+          CallExprArguReplVec[7] + "->get_index_base(), " + CSRRowPtrA + ", " +
           CSRColIndA + ", " + CSRValA + ");" + getNL() + ReplaceStrs.IndentStr;
     } else {
       if (FuncName == "cusparseScsrmm" || FuncName == "cusparseDcsrmm")
         ReplaceStrs.PrefixInsertStr =
-            ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
-            MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
+            ReplaceStrs.PrefixInsertStr +
+            "oneapi::mkl::sparse::set_csr_data(*" + CallExprArguReplVec[0] +
+            ", " + MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
             CallExprArguReplVec[4] + ", " + CallExprArguReplVec[7] +
             "->get_index_base(), const_cast<int*>(" + CSRRowPtrA +
             "), const_cast<int*>(" + CSRColIndA + "), const_cast<" +
@@ -4469,8 +4472,9 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
             ReplaceStrs.IndentStr;
       else
         ReplaceStrs.PrefixInsertStr =
-            ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
-            MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
+            ReplaceStrs.PrefixInsertStr +
+            "oneapi::mkl::sparse::set_csr_data(*" + CallExprArguReplVec[0] +
+            ", " + MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
             CallExprArguReplVec[4] + ", " + CallExprArguReplVec[7] +
             "->get_index_base(), const_cast<int*>(" + CSRRowPtrA +
             "), const_cast<int*>(" + CSRColIndA + "), (" + BufferType + "*)" +
@@ -4478,8 +4482,8 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     }
     ReplaceStrs.SuffixInsertStr =
         ReplaceStrs.SuffixInsertStr + getNL() + ReplaceStrs.IndentStr +
-        "oneapi::mkl::sparse::release_matrix_handle(&" + MatrixHandleName +
-        ");";
+        "oneapi::mkl::sparse::release_matrix_handle(*" +
+        CallExprArguReplVec[0] + ", &" + MatrixHandleName + ");";
 
     std::string TransStr;
     Expr::EvalResult ER;
@@ -4505,41 +4509,44 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     }
 
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-      ReplaceStrs.Repl = "oneapi::mkl::sparse::gemm(*" +
-                         CallExprArguReplVec[0] + ", " + TransStr + ", " +
-                         getValueStr(CE->getArg(6), CallExprArguReplVec[6],
-                                     CallExprArguReplVec[0], BufferType) +
-                         ", " + MatrixHandleName + ", " + B + ", " +
-                         CallExprArguReplVec[3] + ", " +
-                         CallExprArguReplVec[12] + ", " +
-                         getValueStr(CE->getArg(13), CallExprArguReplVec[13],
-                                     CallExprArguReplVec[0], BufferType) +
-                         ", " + C + ", " + CallExprArguReplVec[15] + ")";
+      ReplaceStrs.Repl =
+          "oneapi::mkl::sparse::gemm(*" + CallExprArguReplVec[0] +
+          ", oneapi::mkl::layout::row_major, " + TransStr +
+          ", oneapi::mkl::transpose::nontrans, " +
+          getValueStr(CE->getArg(6), CallExprArguReplVec[6],
+                      CallExprArguReplVec[0], BufferType) +
+          ", " + MatrixHandleName + ", " + B + ", " + CallExprArguReplVec[3] +
+          ", " + CallExprArguReplVec[12] + ", " +
+          getValueStr(CE->getArg(13), CallExprArguReplVec[13],
+                      CallExprArguReplVec[0], BufferType) +
+          ", " + C + ", " + CallExprArguReplVec[15] + ")";
     } else {
       if (FuncName == "cusparseScsrmm" || FuncName == "cusparseDcsrmm")
-        ReplaceStrs.Repl = "oneapi::mkl::sparse::gemm(*" +
-                           CallExprArguReplVec[0] + ", " + TransStr + ", " +
-                           getValueStr(CE->getArg(6), CallExprArguReplVec[6],
-                                       CallExprArguReplVec[0], BufferType) +
-                           ", " + MatrixHandleName + ", const_cast<" +
-                           BufferType + "*>(" + B + "), " +
-                           CallExprArguReplVec[3] + ", " +
-                           CallExprArguReplVec[12] + ", " +
-                           getValueStr(CE->getArg(13), CallExprArguReplVec[13],
-                                       CallExprArguReplVec[0], BufferType) +
-                           ", " + C + ", " + CallExprArguReplVec[15] + ")";
+        ReplaceStrs.Repl =
+            "oneapi::mkl::sparse::gemm(*" + CallExprArguReplVec[0] +
+            ", oneapi::mkl::layout::row_major, " + TransStr +
+            ", oneapi::mkl::transpose::nontrans, " +
+            getValueStr(CE->getArg(6), CallExprArguReplVec[6],
+                        CallExprArguReplVec[0], BufferType) +
+            ", " + MatrixHandleName + ", const_cast<" + BufferType + "*>(" + B +
+            "), " + CallExprArguReplVec[3] + ", " + CallExprArguReplVec[12] +
+            ", " +
+            getValueStr(CE->getArg(13), CallExprArguReplVec[13],
+                        CallExprArguReplVec[0], BufferType) +
+            ", " + C + ", " + CallExprArguReplVec[15] + ")";
       else
-        ReplaceStrs.Repl = "oneapi::mkl::sparse::gemm(*" +
-                           CallExprArguReplVec[0] + ", " + TransStr + ", " +
-                           getValueStr(CE->getArg(6), CallExprArguReplVec[6],
-                                       CallExprArguReplVec[0], BufferType) +
-                           ", " + MatrixHandleName + ", (" + BufferType + "*)" +
-                           B + ", " + CallExprArguReplVec[3] + ", " +
-                           CallExprArguReplVec[12] + ", " +
-                           getValueStr(CE->getArg(13), CallExprArguReplVec[13],
-                                       CallExprArguReplVec[0], BufferType) +
-                           ", (" + BufferType + "*)" + C + ", " +
-                           CallExprArguReplVec[15] + ")";
+        ReplaceStrs.Repl =
+            "oneapi::mkl::sparse::gemm(*" + CallExprArguReplVec[0] +
+            ", oneapi::mkl::layout::row_major, " + TransStr +
+            ", oneapi::mkl::transpose::nontrans, " +
+            getValueStr(CE->getArg(6), CallExprArguReplVec[6],
+                        CallExprArguReplVec[0], BufferType) +
+            ", " + MatrixHandleName + ", (" + BufferType + "*)" + B + ", " +
+            CallExprArguReplVec[3] + ", " + CallExprArguReplVec[12] + ", " +
+            getValueStr(CE->getArg(13), CallExprArguReplVec[13],
+                        CallExprArguReplVec[0], BufferType) +
+            ", (" + BufferType + "*)" + C + ", " + CallExprArguReplVec[15] +
+            ")";
     }
   }
 
