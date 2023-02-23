@@ -56,9 +56,9 @@ get_kernel_function_info(const void *function) {
 }
 
 
-#define DPCT_KERNEL_PARM_SIZE ((void *) 2)
-#define DPCT_KERNEL_PARM_PTR  ((void *) 1)
-#define DPCT_KERNEL_PARM_END  ((void *) 0)
+#define DPCT_KERNEL_PARAM_SIZE ((void *) DPCT_KERNEL_PARAM_SIZE_VAL)
+#define DPCT_KERNEL_PARAM_PTR  ((void *) DPCT_KERNEL_PARAM_PTR_VAL)
+#define DPCT_KERNEL_PARAM_END  ((void *) DPCT_KERNEL_PARAM_END_VAL)
 
 namespace detail {
 

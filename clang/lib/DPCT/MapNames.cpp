@@ -4128,16 +4128,16 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
                         "cudaStreamDefault", "0")},
 
     {"CU_LAUNCH_PARAM_BUFFER_SIZE",
-     MacroMigrationRule("kernel_parm_rule", RulePriority::Fallback,
-                        "CU_LAUNCH_PARAM_BUFFER_SIZE", "DPCT_KERNEL_PARM_SIZE",
+     MacroMigrationRule("kernel_param_rule", RulePriority::Fallback,
+                        "CU_LAUNCH_PARAM_BUFFER_SIZE", "DPCT_KERNEL_PARAM_SIZE",
                         HelperFeatureEnum::Kernel_kernel_library)},
     {"CU_LAUNCH_PARAM_BUFFER_POINTER",
-     MacroMigrationRule("kernel_parm_rule", RulePriority::Fallback,
-                        "CU_LAUNCH_PARAM_BUFFER_POINTER", "DPCT_KERNEL_PARM_PTR",
+     MacroMigrationRule("kernel_param_rule", RulePriority::Fallback,
+                        "CU_LAUNCH_PARAM_BUFFER_POINTER", "DPCT_KERNEL_PARAM_PTR",
                         HelperFeatureEnum::Kernel_kernel_library)},
     {"CU_LAUNCH_PARAM_END",
-     MacroMigrationRule("kernel_parm_rule", RulePriority::Fallback,
-                        "CU_LAUNCH_PARAM_END", "DPCT_KERNEL_PARM_END",
+     MacroMigrationRule("kernel_param_rule", RulePriority::Fallback,
+                        "CU_LAUNCH_PARAM_END", "DPCT_KERNEL_PARAM_END",
                         HelperFeatureEnum::Kernel_kernel_library)},
     //...
 };

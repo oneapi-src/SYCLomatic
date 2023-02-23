@@ -1,6 +1,8 @@
 // RUN: dpct --format-range=none -out-root %T/module_main %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/module_main/module_main.dp.cpp
 
+//CHECK: #include <dpct/dpct.hpp>
+
 #include <string>
 int main(){
     //CHECK: dpct::kernel_library M;
@@ -31,9 +33,9 @@ int main(){
 
     int    *argBuffer[3];
     size_t  argBufferSize = sizeof(argBuffer);
-    //CHECK: void *extra[] = {DPCT_KERNEL_PARM_SIZE, &argBufferSize,
-    //CHECK-NEXT: DPCT_KERNEL_PARM_PTR, argBuffer,
-    //CHECK-NEXT: DPCT_KERNEL_PARM_END};
+    //CHECK: void *extra[] = {DPCT_KERNEL_PARAM_SIZE, &argBufferSize,
+    //CHECK-NEXT: DPCT_KERNEL_PARAM_PTR, argBuffer,
+    //CHECK-NEXT: DPCT_KERNEL_PARAM_END};
     void   *extra[] = {CU_LAUNCH_PARAM_BUFFER_SIZE, &argBufferSize,
                        CU_LAUNCH_PARAM_BUFFER_POINTER, argBuffer,
                        CU_LAUNCH_PARAM_END};
