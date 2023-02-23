@@ -9,6 +9,6 @@ Message
 .. _msg-1103-start:
 
 ``<expression text>`` should be a dynamic library. The dynamic library should supply
-"wrapped" kernel functions.
+wrapped kernel functions.
 
 .. _msg-1103-end:

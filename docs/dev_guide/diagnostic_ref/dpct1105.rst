@@ -9,7 +9,7 @@ Message
 .. _msg-1105-start:
 
 ``<expression text>`` should point to a dynamic library loaded in memory. The dynamic
-library should supply "wrapped" kernel functions. Compilation options passed to
-cuModuleLoadDataEx are not migrated.
+library should supply wrapped kernel functions. Compilation options passed to
+``cuModuleLoadDataEx`` are not migrated.
 
 .. _msg-1105-end:

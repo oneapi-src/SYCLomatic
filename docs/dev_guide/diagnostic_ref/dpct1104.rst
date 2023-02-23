@@ -9,6 +9,6 @@ Message
 .. _msg-1104-start:
 
 ``<expression text>`` should point to a dynamic library loaded in memory. The dynamic
-library should supply "wrapped" kernel functions.
+library should supply wrapped kernel functions.
 
 .. _msg-1104-end:

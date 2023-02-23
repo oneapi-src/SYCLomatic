@@ -8,7 +8,7 @@ Message
 
 .. _msg-1106-start:
 
-``<function name>`` was migrated with Intel's Extensions for Device Information which
+``<function name>`` was migrated with the Intel extensions for device information which
 may be not supported by all compilers or runtimes. You may need to adjust the code.
 
 .. _msg-1106-end:
