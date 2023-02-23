@@ -137,9 +137,6 @@ static image_wrapper_base *create_image_wrapper(unsigned channel_num, int dims);
 /// Create image with channel info and specified dimensions.
 static image_wrapper_base *create_image_wrapper(image_channel channel, int dims);
 
-/// Functor to create sycl::image from image_data.
-template <int dimensions> struct image_creator;
-
 } // namespace detail
 
 /// Image channel info, include channel number, order, data width and type
@@ -637,6 +634,50 @@ template <class T, int dimensions, bool IsImageArray> class image_accessor_ext;
 template <class T, int dimensions, bool IsImageArray = false> class image_wrapper : public image_wrapper_base {
   sycl::image<dimensions> *_image = nullptr;
 
+#ifndef DPCT_USM_LEVEL_NONE
+  std::vector<char> _host_buffer;
+#endif
+
+  void create_image(sycl::queue q) {
+    if (data.get_data_type() == image_data_type::linear) {
+      _image = static_cast<image_matrix_p>(data.get_data_ptr())
+          ->create_image<dimensions>(data.get_channel());
+      return;
+    }
+    auto ptr = data.get_data_ptr();
+
+    if (detail::get_pointer_attribute(q, ptr) == detail::pointer_access_attribute::device_only) {
+#ifdef DPCT_USM_LEVEL_NONE
+      ptr = get_buffer(ptr)
+                .template get_access<sycl::access_mode::read_write>()
+                .get_pointer();
+#else
+      auto sz = data.get_x();
+      if (data.get_data_type() == image_data_type::pitch)
+        sz *= data.get_y();
+      _host_buffer.resize(sz);
+      q.memcpy(_host_buffer.data(), ptr, sz).wait();
+      ptr = _host_buffer.data();
+#endif
+    }
+
+    auto channel = data.get_channel();
+    if constexpr (dimensions == 1) {
+      assert(data.get_data_type() == image_data_type::linear)
+      _image = new sycl::image<1>(
+        ptr, channel.get_channel_order(), channel.get_channel_type(),
+        sycl::range<1>(data.get_x() / channel.get_total_size()));
+    } else if constexpr (dimensions == 2) {
+      assert(data.get_data_type() == image_data_type::pitch);
+      _image = new sycl::image<2>(
+        ptr, channel.get_channel_order(), channel.get_channel_type(),
+        sycl::range<2>(data.get_x() / channel.get_total_size(),
+                           data.get_y()),
+        sycl::range<1>(data.get_pitch()));
+    }
+    return;
+  }
+
 public:
   using acc_data_t = typename detail::image_trait<T>::acc_data_t;
   using accessor_t =
@@ -645,10 +686,11 @@ public:
 
   image_wrapper() { set_channel(image_channel::create<T>()); }
   ~image_wrapper() { detach(); }
+
   /// Get image accessor.
-  accessor_t get_access(sycl::handler &cgh) {
+  accessor_t get_access(sycl::handler &cgh, sycl::queue &q = get_default_queue()) {
     if (!_image)
-      _image = detail::image_creator<dimensions>()(get_data());
+      create_image(q);
     return accessor_t(*_image, cgh);
   }
 
@@ -788,59 +830,6 @@ static inline image_wrapper_base *create_image_wrapper(image_data data,
 }
 
 namespace detail {
-/// Functor to create sycl::image from image_data
-template <> struct image_creator<1> {
-  sycl::image<1> *operator()(image_data data) {
-    assert(data.get_data_type() == image_data_type::linear ||
-           data.get_data_type() == image_data_type::matrix);
-    if (data.get_data_type() == image_data_type::matrix) {
-      return static_cast<image_matrix_p>(data.get_data_ptr())
-          ->create_image<1>(data.get_channel());
-    }
-    auto ptr = data.get_data_ptr();
-#ifdef DPCT_USM_LEVEL_NONE
-    if (detail::mem_mgr::instance().is_device_ptr(ptr))
-      ptr = get_buffer(ptr)
-                .template get_access<sycl::access_mode::read_write>()
-                .get_pointer();
-#endif
-    auto channel = data.get_channel();
-    return new sycl::image<1>(
-        ptr, channel.get_channel_order(), channel.get_channel_type(),
-        sycl::range<1>(data.get_x() / channel.get_total_size()));
-  }
-};
-template <> struct image_creator<2> {
-  sycl::image<2> *operator()(image_data data) {
-    assert(data.get_data_type() == image_data_type::pitch ||
-           data.get_data_type() == image_data_type::matrix);
-    if (data.get_data_type() == image_data_type::matrix) {
-      return static_cast<image_matrix_p>(data.get_data_ptr())
-          ->create_image<2>(data.get_channel());
-    }
-    auto ptr = data.get_data_ptr();
-#ifdef DPCT_USM_LEVEL_NONE
-    if (detail::mem_mgr::instance().is_device_ptr(ptr))
-      ptr = get_buffer(ptr)
-                .template get_access<sycl::access_mode::read_write>()
-                .get_pointer();
-#endif
-    auto channel = data.get_channel();
-    return new sycl::image<2>(
-        ptr, channel.get_channel_order(), channel.get_channel_type(),
-        sycl::range<2>(data.get_x() / channel.get_total_size(),
-                           data.get_y()),
-        sycl::range<1>(data.get_pitch()));
-  }
-};
-template <> struct image_creator<3> {
-  sycl::image<3> *operator()(image_data data) {
-    assert(data.get_data_type() == image_data_type::matrix);
-    return static_cast<image_matrix_p>(data.get_data_ptr())
-        ->create_image<3>(data.get_channel());
-  }
-};
-
 /// Create image according with given type \p T and \p dims.
 template <class T> static image_wrapper_base *create_image_wrapper(int dims) {
   switch (dims) {
