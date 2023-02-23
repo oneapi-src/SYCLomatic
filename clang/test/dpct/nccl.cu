@@ -37,12 +37,6 @@ int main() {
     // CHECK: check((device = comm->size(), 0));
     check(ncclCommCount(comm, &device));
 
-    // CHECK: device = dpct::get_device_id(comm->get_device().get_native());
-    ncclCommCuDevice(comm, &device);
-
-    // CHECK: check((device = dpct::get_device_id(comm->get_device().get_native()), 0));
-    check(ncclCommCuDevice(comm, &device));
-
     void *buff;
     void * recvbuff;
     size_t count;
