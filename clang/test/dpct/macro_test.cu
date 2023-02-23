@@ -499,9 +499,12 @@ __global__ void foo7() {
 //CHECK-NEXT:   #define SLOW(X) X
 //CHECK-NEXT:   double* data;
 //CHECK-NEXT:   unsigned long long int tid;
-//CHECK-NEXT:   SLOW(dpct::atomic_fetch_add(&data[0], tid);
-//CHECK-NEXT:         dpct::atomic_fetch_add(&data[1], tid + 1);
-//CHECK-NEXT:         dpct::atomic_fetch_add(&data[2], tid + 2););
+//CHECK-NEXT:   SLOW(dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(
+//CHECK-NEXT:            &data[0], tid);
+//CHECK-NEXT:        dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(
+//CHECK-NEXT:            &data[1], tid + 1);
+//CHECK-NEXT:        dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(
+//CHECK-NEXT:            &data[2], tid + 2););
 //CHECK-NEXT: }
 __global__ void foo8(){
 #define SLOW(X) X

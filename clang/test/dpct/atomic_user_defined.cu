@@ -52,7 +52,7 @@ __global__ void ker4(char *count)
 __global__ void ker5(unsigned int *count)
 {
   int n = 1, x = 0;
-  // CHECK: x = dpct::atomic_fetch_add(count, n);
+  // CHECK: x = dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(count, n);
   x = atomicAdd(count, n);
 }
 
