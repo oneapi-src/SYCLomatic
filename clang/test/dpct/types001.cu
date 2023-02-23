@@ -673,3 +673,11 @@ void foo_4() {
   // CHECK: m = std::min(int64_t(threads[2]), int64_t{cfoo});
   m = std::min(int64_t{threads.x}, int64_t{cfoo});
 }
+
+
+// CHECK: dpct::device_ptr a = (dpct::device_ptr)0, b = (dpct::device_ptr)0;
+CUdeviceptr a = (CUdeviceptr)0, b = (CUdeviceptr)0;
+void test() {
+  // CHECK: dpct::device_ptr a = (dpct::device_ptr)0, b = (dpct::device_ptr)0;
+  CUdeviceptr a = (CUdeviceptr)0, b = (CUdeviceptr)0;
+}

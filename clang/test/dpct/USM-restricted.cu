@@ -123,7 +123,7 @@ void foo() {
   cudaMallocManaged((void **)&d_A, sizeof(double2) * size * sizeof(uchar4));
 
   CUdeviceptr* D_ptr;
-  // CHECK: *D_ptr = (char *)sycl::malloc_shared(size, q_ct1);
+  // CHECK: *D_ptr = (dpct::device_ptr)sycl::malloc_shared(size, q_ct1);
   cuMemAllocManaged(D_ptr, size, CU_MEM_ATTACH_HOST);
 
   /// memcpy
@@ -828,7 +828,7 @@ void foo3() {
   MY_SAFE_CALL(cudaMemPrefetchAsync (d_A, 100, deviceID, cudaStreamPerThread));
   // CHECK: int cudevice = 0;
   CUdevice cudevice = 0;
-  // CHECK: char * devPtr;
+  // CHECK: dpct::device_ptr devPtr;
   CUdeviceptr devPtr;
   // CHECK: dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100);
   // CHECK: dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100);

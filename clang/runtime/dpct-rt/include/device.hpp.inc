@@ -95,6 +95,12 @@ typedef sycl::event *event_ptr;
 typedef sycl::queue *queue_ptr;
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|typedef_device_ptr|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+typedef char *device_ptr;
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|destroy_event|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Device|typedef_event_ptr

@@ -49,6 +49,8 @@ typedef sycl::event *event_ptr;
 
 typedef sycl::queue *queue_ptr;
 
+typedef char *device_ptr;
+
 /// Destroy \p event pointed memory.
 ///
 /// \param event Pointer to the sycl::event address.
