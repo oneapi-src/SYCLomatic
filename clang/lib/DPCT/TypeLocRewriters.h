@@ -54,6 +54,18 @@ public:
             TL, TypeNameCreator(TL), TAsCreator(TL)...) {}
 };
 
+template <class TypeNameT, class... TemplateArgsT>
+class CtadTemplateTypeLocRewriter
+    : public TypePrinterRewriter<CtadTemplatedNamePrinter<TypeNameT, TemplateArgsT...>> {
+public:
+  CtadTemplateTypeLocRewriter(
+      const TypeLoc TL,
+      const std::function<TypeNameT(const TypeLoc)> &TypeNameCreator,
+      const std::function<TemplateArgsT(const TypeLoc)> &...TAsCreator)
+      : TypePrinterRewriter<CtadTemplatedNamePrinter<TypeNameT, TemplateArgsT...>>(
+            TL, TypeNameCreator(TL), TAsCreator(TL)...) {}
+};
+
 template <class TypeNameT>
 struct TypeNameTypeLocRewriter
     : public TypePrinterRewriter<TypeNamePrinter<TypeNameT>> {
