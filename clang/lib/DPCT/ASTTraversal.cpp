@@ -4019,13 +4019,11 @@ void CU_JITEnumsRule::registerMatcher(MatchFinder &MF) {
 void CU_JITEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   if (const DeclRefExpr *DE =
           getNodeAsType<DeclRefExpr>(Result, "CU_JITConstants")) {
-    auto *EC = cast<EnumConstantDecl>(DE->getDecl());
     emplaceTransformation(new ReplaceStmt(DE, "0"));
 
     report(DE->getBeginLoc(),
            Diagnostics::HOSTALLOCMACRO_NO_MEANING,
            true, DE->getDecl()->getNameAsString());
-    return;
   }
 }
 
