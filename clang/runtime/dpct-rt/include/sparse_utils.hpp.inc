@@ -187,11 +187,27 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
 }
 // DPCT_LABEL_END
 
+class optimize_info {
+public:
+  optimize_info() {
+    oneapi::mkl::sparse::init_matrix_handle(&_matrix_handle);
+  }
+  ~optimize_info() {
+    oneapi::mkl::sparse::init_matrix_handle(&_matrix_handle);
+  }
+  void set_queue() {
+    
+  }
+private:
+  oneapi::mkl::sparse::matrix_handle_t _matrix_handle = nullptr;
+  sycl::queue _q = get_default_queue();
+};
+
 template <typename T>
 void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
                     int row_col, const matrix_info info, const T *val,
                     const int *row_ptr, const int *col_ind,
-                    oneapi::mkl::sparse::matrix_handle_t &matrix_handle) {
+                    oneapi::mkl::sparse::matrix_handle_t &matrix_handle) { // What happens if the matrix_handle is r-value? It may occur in cuda code.
   oneapi::mkl::sparse::init_matrix_handle(&matrix_handle);
   auto data_row_ptr = detail::get_memory(row_ptr);
   auto data_col_ind = detail::get_memory(col_ind);

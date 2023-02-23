@@ -55,3 +55,8 @@ REMOVE_API_FACTORY_ENTRY("cusparseGetPointerMode")
 REMOVE_API_FACTORY_ENTRY("cusparseSetPointerMode")
 REMOVE_API_FACTORY_ENTRY("cusparseCreateSolveAnalysisInfo")
 REMOVE_API_FACTORY_ENTRY("cusparseDestroySolveAnalysisInfo")
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseScsrsv_analysis",
+    CALL(MapNames::getDpctNamespace() + "sparse::optimize_csrsv", DEREF(0),
+         ARG(1), ARG(2), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8))))
