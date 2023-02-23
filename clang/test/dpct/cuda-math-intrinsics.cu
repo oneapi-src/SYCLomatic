@@ -428,9 +428,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::fmod((double)i, d1);
   d2 = fmod(i, d1);
 
-  // CHECK: d2 = sycl::frexp(d0, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: d2 = sycl::frexp(d0, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   d2 = frexp(d0, &i);
-  // CHECK: d2 = sycl::frexp((double)i, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: d2 = sycl::frexp((double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   d2 = frexp(i, &i);
 
   // CHECK: d2 = sycl::hypot(d0, d1);
@@ -497,9 +497,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::round((double)i);
   d2 = lround(i);
 
-  // CHECK: d2 = sycl::modf(d0, sycl::make_ptr<double, sycl::access::address_space::global_space>(&d1));
+  // CHECK: d2 = sycl::modf(d0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(&d1));
   d2 = modf(d0, &d1);
-  // CHECK: d2 = sycl::modf((double)i, sycl::make_ptr<double, sycl::access::address_space::global_space>(&d1));
+  // CHECK: d2 = sycl::modf((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(&d1));
   d2 = modf(i, &d1);
 
   // CHECK: d2 = sycl::nan(0u);
@@ -527,13 +527,13 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::remainder((double)i, d1);
   d2 = remainder(i, d1);
 
-  // CHECK: d2 = sycl::remquo(d0, d1, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: d2 = sycl::remquo(d0, d1, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   d2 = remquo(d0, d1, &i);
-  // CHECK: d2 = sycl::remquo((double)i, (double)i, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: d2 = sycl::remquo((double)i, (double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   d2 = remquo(i, i, &i);
-  // CHECK: d2 = sycl::remquo(d0, (double)i, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: d2 = sycl::remquo(d0, (double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   d2 = remquo(d0, i, &i);
-  // CHECK: d2 = sycl::remquo((double)i, d1, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: d2 = sycl::remquo((double)i, d1, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   d2 = remquo(i, d1, &i);
 
   // CHECK: d2 = sycl::rint(d0);
@@ -551,9 +551,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::rsqrt((double)i);
   d2 = rsqrt((double)i);
 
-  // CHECK: d1 = sycl::sincos(d0, sycl::make_ptr<double, sycl::access::address_space::global_space>(&d2));
+  // CHECK: d1 = sycl::sincos(d0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(&d2));
   sincos(d0, &d1, &d2);
-  // CHECK: d1 = sycl::sincos((double)i, sycl::make_ptr<double, sycl::access::address_space::global_space>(&d2));
+  // CHECK: d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(&d2));
   sincos(i, &d1, &d2);
 
   // CHECK: d2 = sycl::sin(d0);
@@ -1034,9 +1034,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::fmod((float)i, f1);
   f2 = fmodf(i, f1);
 
-  // CHECK: f2 = sycl::frexp(f0, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: f2 = sycl::frexp(f0, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   f2 = frexpf(f0, &i);
-  // CHECK: f2 = sycl::frexp((float)i, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: f2 = sycl::frexp((float)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   f2 = frexpf(i, &i);
 
   // CHECK: f2 = sycl::hypot(f0, f1);
@@ -1118,9 +1118,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::round((float)i);
   f2 = lroundf(i);
 
-  // CHECK: f2 = sycl::modf(f0, sycl::make_ptr<float, sycl::access::address_space::global_space>(&f1));
+  // CHECK: f2 = sycl::modf(f0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f1));
   f2 = modff(f0, &f1);
-  // CHECK: f2 = sycl::modf((float)i, sycl::make_ptr<float, sycl::access::address_space::global_space>(&f1));
+  // CHECK: f2 = sycl::modf((float)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f1));
   f2 = modff(i, &f1);
 
   // CHECK: f2 = sycl::nan(0u);
@@ -1144,13 +1144,13 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::remainder((float)i, f1);
   f2 = remainderf(i, f1);
 
-  // CHECK: f2 = sycl::remquo(f0, f1, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: f2 = sycl::remquo(f0, f1, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   f2 = remquof(f0, f1, &i);
-  // CHECK: f2 = sycl::remquo((float)i, (float)i, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: f2 = sycl::remquo((float)i, (float)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   f2 = remquof(i, i, &i);
-  // CHECK: f2 = sycl::remquo(f0, (float)i, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: f2 = sycl::remquo(f0, (float)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   f2 = remquof(f0, i, &i);
-  // CHECK: f2 = sycl::remquo((float)i, f1, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: f2 = sycl::remquo((float)i, f1, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   f2 = remquof(i, f1, &i);
 
   // CHECK: f2 = sycl::rint(f0);
@@ -1173,9 +1173,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::signbit((float)i);
   f2 = signbit(i);
 
-  // CHECK: f1 = sycl::sincos(f0, sycl::make_ptr<float, sycl::access::address_space::global_space>(&f2));
+  // CHECK: f1 = sycl::sincos(f0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f2));
   sincosf(f0, &f1, &f2);
-  // CHECK: f1 = sycl::sincos((float)i, sycl::make_ptr<float, sycl::access::address_space::global_space>(&f2));
+  // CHECK: f1 = sycl::sincos((float)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f2));
   sincosf(i, &f1, &f2);
 
   // CHECK: f2 = sycl::sin(f0);
@@ -1476,9 +1476,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::pow<float>(i, f1);
   f2 = __powf(i, f1);
 
-  // CHECK: f1 = sycl::sincos(f0, sycl::make_ptr<float, sycl::access::address_space::global_space>(&f2));
+  // CHECK: f1 = sycl::sincos(f0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f2));
   __sincosf(f0, &f1, &f2);
-  // CHECK: f1 = sycl::sincos((float)i, sycl::make_ptr<float, sycl::access::address_space::global_space>(&f2));
+  // CHECK: f1 = sycl::sincos((float)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f2));
   __sincosf(i, &f1, &f2);
 
   // CHECK: f1 = sycl::sin(f1);
@@ -2439,13 +2439,13 @@ __global__ void testSimulation() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincospif call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: f = sycl::sincos(f * DPCT_PI_F, sycl::make_ptr<float, sycl::access::address_space::private_space>(&f));
+  // CHECK-NEXT: f = sycl::sincos(f * DPCT_PI_F, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, float>(&f));
   sincospif(f, &f, &f);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincospi call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: d = sycl::sincos(d * DPCT_PI, sycl::make_ptr<double, sycl::access::address_space::private_space>(&d));
+  // CHECK-NEXT: d = sycl::sincos(d * DPCT_PI, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(&d));
   sincospi(d, &d, &d);
 }
 
@@ -2864,11 +2864,11 @@ __device__ void do_migration5() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexpf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modff call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<float, sycl::access::address_space::private_space>(&f));
+  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, float>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2876,7 +2876,7 @@ __device__ void do_migration5() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::remquo(f, f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
@@ -2885,11 +2885,11 @@ __device__ void do_migration5() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<double, sycl::access::address_space::private_space>(&f));
+  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2897,7 +2897,7 @@ __device__ void do_migration5() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquo call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::remquo(f, f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
@@ -2934,11 +2934,11 @@ __global__ void do_migration6() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexpf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modff call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<float, sycl::access::address_space::private_space>(&f));
+  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, float>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2946,7 +2946,7 @@ __global__ void do_migration6() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::remquo(f, f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
@@ -2955,11 +2955,11 @@ __global__ void do_migration6() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<double, sycl::access::address_space::private_space>(&f));
+  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2967,7 +2967,7 @@ __global__ void do_migration6() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquo call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::remquo(f, f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
@@ -3004,11 +3004,11 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexpf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modff call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<float, sycl::access::address_space::private_space>(&f));
+  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, float>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -3016,7 +3016,7 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::remquo(f, f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
@@ -3024,11 +3024,11 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<double, sycl::access::address_space::private_space>(&f));
+  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -3036,7 +3036,7 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquo call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::remquo(f, f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
@@ -3489,7 +3489,7 @@ __device__ void bar1(double *d) {
   double &d2 = *d;
 
   // CHECK: DPCT1081:{{[0-9]+}}: The generated code assumes that "&d2" points to the global memory address space. If it points to a local or private memory address space, replace "address_space::global" with "address_space::local" or "address_space::private".
-  // CHECK: d1 = sycl::sincos((double)i, sycl::make_ptr<double, sycl::access::address_space::global_space>(&d2));
+  // CHECK: d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(&d2));
   sincos(i, &d1, &d2);
 }
 
@@ -3503,7 +3503,7 @@ __device__ void bar1(double *d, bool flag) {
   //CHECK:/*
   //CHECK-NEXT:DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincos call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::make_ptr<double, sycl::access::address_space::private_space>(d2_p));
+  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(d2_p));
   //CHECK-NEXT:if (flag) {
   //CHECK-NEXT:  d2_p = d + 2;
   //CHECK-NEXT:}
@@ -3513,12 +3513,12 @@ __device__ void bar1(double *d, bool flag) {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1081:{{[0-9]+}}: The generated code assumes that "d2_p" points to the global memory address space. If it points to a local or private memory address space, replace "address_space::global" with "address_space::local" or "address_space::private".
   //CHECK-NEXT:*/
-  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::make_ptr<double, sycl::access::address_space::global_space>(d2_p));
+  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(d2_p));
   //CHECK-NEXT:d2_p = &d2;
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincos call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::make_ptr<double, sycl::access::address_space::private_space>(d2_p));
+  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(d2_p));
   sincos(i, &d1, d2_p);
   if (flag) {
     d2_p = d + 2;
@@ -3538,7 +3538,7 @@ __device__ void bar2() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1081:{{[0-9]+}}: The generated code assumes that "get_ptr() + i" points to the global memory address space. If it points to a local or private memory address space, replace "address_space::global" with "address_space::local" or "address_space::private".
   //CHECK-NEXT:*/
-  //CHECK-NEXT:double d2 = sycl::frexp(d0, sycl::make_ptr<int, sycl::access::address_space::global_space>(get_ptr() + i));
+  //CHECK-NEXT:double d2 = sycl::frexp(d0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, int>(get_ptr() + i));
   double d2 = frexp(d0, get_ptr() + i);
 }
 
