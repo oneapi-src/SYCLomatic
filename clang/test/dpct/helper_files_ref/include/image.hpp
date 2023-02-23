@@ -401,42 +401,42 @@ public:
     _channel = channel;
   }
 
-  image_data_type get_data_type() { return _type; }
+  image_data_type get_data_type() const { return _type; }
   void set_data_type(image_data_type type) { _type = type; }
 
-  void *get_data_ptr() { return _data; }
+  void *get_data_ptr() const { return _data; }
   void set_data_ptr(void *data) { _data = data; }
 
-  size_t get_x() { return _x; }
+  size_t get_x() const { return _x; }
   void set_x(size_t x) { _x = x; }
 
-  size_t get_y() { return _y; }
+  size_t get_y() const { return _y; }
   void set_y(size_t y) { _y = y; }
 
-  size_t get_pitch() { return _pitch; }
+  size_t get_pitch() const { return _pitch; }
   void set_pitch(size_t pitch) { _pitch = pitch; }
 
-  image_channel get_channel() { return _channel; }
+  image_channel get_channel() const { return _channel; }
   void set_channel(image_channel channel) { _channel = channel; }
 
-  image_channel_data_type get_channel_data_type() {
+  image_channel_data_type get_channel_data_type() const {
     return _channel.get_channel_data_type();
   }
   void set_channel_data_type(image_channel_data_type type) {
     _channel.set_channel_data_type(type);
   }
 
-  unsigned get_channel_size() { return _channel.get_channel_size(); }
+  unsigned get_channel_size() const { return _channel.get_channel_size(); }
   void set_channel_size(unsigned channel_num, unsigned channel_size) {
     return _channel.set_channel_size(channel_num, channel_size);
   }
 
-  unsigned get_channel_num() { return _channel.get_channel_num(); }
+  unsigned get_channel_num() const { return _channel.get_channel_num(); }
   void set_channel_num(unsigned num) {
     return _channel.set_channel_num(num);
   }
 
-  sycl::image_channel_type get_channel_type() {
+  sycl::image_channel_type get_channel_type() const {
     return _channel.get_channel_type();
   }
   void set_channel_type(sycl::image_channel_type type) {
@@ -639,12 +639,13 @@ template <class T, int dimensions, bool IsImageArray = false> class image_wrappe
 #endif
 
   void create_image(sycl::queue q) {
-    if (_data.get_data_type() == image_data_type::linear) {
-      _image = static_cast<image_matrix_p>(_data.get_data_ptr())
-          ->create_image<dimensions>(_data.get_channel());
+    auto &data = _data;
+    if (data.get_data_type() == image_data_type::linear) {
+      _image = static_cast<image_matrix_p>(data.get_data_ptr())
+          ->create_image<dimensions>(data.get_channel());
       return;
     }
-    auto ptr = _data.get_data_ptr();
+    auto ptr = data.get_data_ptr();
 
     if (detail::get_pointer_attribute(q, ptr) == detail::pointer_access_attribute::device_only) {
 #ifdef DPCT_USM_LEVEL_NONE
@@ -652,28 +653,28 @@ template <class T, int dimensions, bool IsImageArray = false> class image_wrappe
                 .template get_access<sycl::access_mode::read_write>()
                 .get_pointer();
 #else
-      auto sz = _data.get_x();
-      if (_data.get_data_type() == image_data_type::pitch)
-        sz *= _data.get_y();
+      auto sz = data.get_x();
+      if (data.get_data_type() == image_data_type::pitch)
+        sz *= data.get_y();
       _host_buffer.resize(sz);
       q.memcpy(_host_buffer.data(), ptr, sz).wait();
       ptr = _host_buffer.data();
 #endif
     }
 
-    auto channel = _data.get_channel();
+    auto channel = data.get_channel();
     if constexpr (dimensions == 1) {
-      assert(_data.get_data_type() == image_data_type::linear)
+      assert(data.get_data_type() == image_data_type::linear)
       _image = new sycl::image<1>(
         ptr, channel.get_channel_order(), channel.get_channel_type(),
-        sycl::range<1>(_data.get_x() / channel.get_total_size()));
+        sycl::range<1>(data.get_x() / channel.get_total_size()));
     } else if constexpr (dimensions == 2) {
-      assert(_data.get_data_type() == image_data_type::pitch);
+      assert(data.get_data_type() == image_data_type::pitch);
       _image = new sycl::image<2>(
         ptr, channel.get_channel_order(), channel.get_channel_type(),
-        sycl::range<2>(_data.get_x() / channel.get_total_size(),
-                           _data.get_y()),
-        sycl::range<1>(_data.get_pitch()));
+        sycl::range<2>(data.get_x() / channel.get_total_size(),
+                           data.get_y()),
+        sycl::range<1>(data.get_pitch()));
     }
     return;
   }
