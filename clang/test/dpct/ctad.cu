@@ -22,8 +22,8 @@ int main() {
   // CHECK: sycl::range deflt(1, 1, 1);
   dim3 deflt;
 
-  // CHECK:  sycl::range deflt_1;
-  // CHECK-NEXT: sycl::id deflt_2;
+  // CHECK:  sycl::range deflt_1{0, 0, 0};
+  // CHECK-NEXT: sycl::id deflt_2{0, 0, 0};
   cudaExtent deflt_1;
   cudaPos deflt_2;
 
@@ -60,6 +60,8 @@ int main() {
   // CHECK: func(deflt, sycl::range(deflt), sycl::range(deflt), sycl::range(1, 1, 2 + 3 * 3));
   func(deflt, dim3(deflt), (dim3)deflt, 2 + 3 * 3);
 
+  // CHECK: sycl::range<3> *p_extent = nullptr;
+  cudaExtent *p_extent = nullptr;
 
   // CHECK: sycl::range<3> *p = &deflt;
   dim3 *p = &deflt;
