@@ -43,7 +43,7 @@ ENTRY(ncclCommGetAsyncError, ncclCommGetAsyncError, false, NO_FLAG, P4, "comment
 ENTRY(ncclCommCount, ncclCommCount, true, NO_FLAG, P4, "Successful")
 ENTRY(ncclCommCuDevice, ncclCommCuDevice, true, NO_FLAG, P4, "Successful")
 ENTRY(ncclCommUserRank, ncclCommUserRank, false, NO_FLAG, P4, "comment")
-ENTRY(ncclAllReduce, ncclAllReduce, true, NO_FLAG, P4, "Successful")
+ENTRY(ncclAllReduce, ncclAllReduce, true, NO_FLAG, P4, "Successful: DPCT1067")
 ENTRY(ncclBroadcast, ncclBroadcast, false, NO_FLAG, P4, "comment")
 ENTRY(ncclReduce, ncclReduce, false, NO_FLAG, P4, "comment")
 ENTRY(ncclAllGather, ncclAllGather, false, NO_FLAG, P4, "comment")

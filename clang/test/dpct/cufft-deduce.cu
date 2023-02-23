@@ -44,7 +44,7 @@ int main() {
 
   //CHECK:dpct::fft::fft_engine_ptr plan1;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
@@ -55,7 +55,7 @@ int main() {
 
   //CHECK:dpct::fft::fft_engine_ptr plan2;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
@@ -66,7 +66,7 @@ int main() {
 
   //CHECK:dpct::fft::fft_engine_ptr plan3;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.

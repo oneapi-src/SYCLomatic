@@ -1937,9 +1937,7 @@ void AtomicFunctionRule::MigrateAtomicFunc(
   const QualType PointeeType = Arg0Type->getPointeeType();
 
   std::string TypeName;
-  bool IsTemplateType = false;
   if (auto *SubstedType = dyn_cast<SubstTemplateTypeParmType>(PointeeType)) {
-    IsTemplateType = true;
     // Type is substituted in template initialization, use the template
     // parameter name
     if (!SubstedType->getReplacedParameter()->getIdentifier()) {
@@ -1987,58 +1985,6 @@ void AtomicFunctionRule::MigrateAtomicFunc(
     bool HasSharedAttr = false;
     bool NeedReport = false;
     getShareAttrRecursive(CE->getArg(0), HasSharedAttr, NeedReport);
-
-    // Inline the code for integer types
-    static std::unordered_map<std::string, std::string> AtomicMap = {
-        {"atomicAdd", "fetch_add"}, {"atomicSub", "fetch_sub"},
-        {"atomicAnd", "fetch_and"}, {"atomicOr", "fetch_or"},
-        {"atomicXor", "fetch_xor"}, {"atomicMin", "fetch_min"},
-        {"atomicMax", "fetch_max"},
-    };
-
-    auto IsMacro = CE->getBeginLoc().isMacroID();
-    auto Iter = AtomicMap.find(AtomicFuncName);
-    if (!IsMacro && !IsTemplateType && PointeeType->isIntegerType() &&
-        Iter != AtomicMap.end()) {
-      if (NeedReport)
-        report(CE->getArg(0)->getBeginLoc(),
-               Diagnostics::SHARE_MEMORY_ATTR_DEDUCE, false,
-               getStmtSpelling(CE->getArg(0)),
-               MapNames::getClNamespace() + "global_ptr",
-               MapNames::getClNamespace() + "local_ptr");
-
-      std::string ReplStr{MapNames::getClNamespace(true)};
-      ReplStr += "atomic<";
-      ReplStr += TypeName;
-      if (HasSharedAttr) {
-        ReplStr += ", ";
-        ReplStr += MapNames::getClNamespace();
-        ReplStr += "access::address_space::local_space";
-      }
-      ReplStr += ">(";
-      ReplStr += MapNames::getClNamespace();
-      if (HasSharedAttr)
-        ReplStr += "local_ptr<";
-      else
-        ReplStr += "global_ptr<";
-      ReplStr += TypeName;
-      ReplStr += ">(";
-
-      ArgumentAnalysis A0(CE->getArg(0), false);
-      A0.analyze();
-      ReplStr += A0.getReplacedString();
-      ReplStr += ")).";
-      ReplStr += Iter->second;
-      ReplStr += "(";
-
-      ArgumentAnalysis A1(CE->getArg(1), false);
-      A1.analyze();
-      ReplStr += A1.getReplacedString();
-      ReplStr += ")";
-
-      emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
-      return;
-    }
 
     std::string SpaceName =
         MapNames::getClNamespace() + "access::address_space::local_space";
@@ -2941,6 +2887,21 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
                     .bind("vectorTypeTL"),
                 this);
 
+  MF.addMatcher(
+      cxxRecordDecl(isDirectlyDerivedFrom(hasAnyName(SUPPORTEDVECTORTYPENAMES)))
+          .bind("inheritanceType"),
+      this);
+
+  auto Vec3Types = [&]() {
+    return hasAnyName("char3", "uchar3", "short3", "ushort3", "int3", "uint3",
+                      "long3", "ulong3", "float3", "double3", "longlong3",
+                      "ulonglong3");
+  };
+
+  MF.addMatcher(stmt(sizeOfExpr(hasArgumentOfType(hasCanonicalType(
+                         hasDeclaration(namedDecl(Vec3Types()))))))
+                    .bind("SizeofVector3Warn"),
+                this);
   MF.addMatcher(cxxRecordDecl(isDirectlyDerivedFrom(hasAnyName(
                                   "char1", "uchar1", "short1", "ushort1",
                                   "int1", "uint1", "long1", "ulong1", "float1",
@@ -3064,6 +3025,23 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
 
   if (auto RD = getNodeAsType<CXXRecordDecl>(Result, "inherit")) {
     report(RD->getBeginLoc(), Diagnostics::VECTYPE_INHERITATED, false);
+  }
+
+  if (const auto *UETT =
+          getNodeAsType<UnaryExprOrTypeTraitExpr>(Result, "SizeofVector3Warn")) {
+
+    // Ignore shared variables.
+    // .e.g: __shared__ int a[sizeof(float3)], b[sizeof(float3)], ...;
+    if (const auto *V = DpctGlobalInfo::findAncestor<VarDecl>(UETT)) {
+      if (V->hasAttr<CUDASharedAttr>())
+        return;
+    }
+    std::string argTypeName = DpctGlobalInfo::getTypeName(UETT->getTypeOfArgument());
+    std::string argCanTypeName = DpctGlobalInfo::getTypeName(UETT->getTypeOfArgument().getCanonicalType());
+    if (argTypeName != argCanTypeName)
+      argTypeName += " (aka " + argCanTypeName + ")";
+
+    report(UETT, Diagnostics::SIZEOF_WARNING, true, argTypeName);
   }
 }
 
@@ -9491,7 +9469,7 @@ void KernelCallRule::runRule(
                                                   ExprContainSizeofType)) {
             if (ExprContainSizeofType) {
               report(ExprContainSizeofType->getBeginLoc(),
-                     Diagnostics::SIZEOF_WARNING, false);
+                     Diagnostics::SIZEOF_WARNING, false, "local memory");
             }
           }
         }
@@ -9816,7 +9794,7 @@ void MemVarRule::removeHostConstantWarning(Replacement &R) {
   std::string ReplStr = R.getReplacementText().str();
 
   // warning text of Diagnostics::HOST_CONSTANT
-  std::string Warning = "The use of variable [_a-zA-Z][_a-zA-Z0-9]+ in device "
+  std::string Warning = "The use of [_a-zA-Z][_a-zA-Z0-9]+ in device "
                         "code was not detected. If this variable is also used "
                         "in device code, you need to rewrite the code.";
   std::string Pattern =
@@ -11395,7 +11373,10 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
         report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       }
       emplaceTransformation(new ReplaceStmt(C, OS.str()));
+      requestFeature(HelperFeatureEnum::Device_get_current_device, C);
       requestFeature(HelperFeatureEnum::Device_device_ext_get_memory_info, C);
+      report(C->getBeginLoc(), Diagnostics::EXTENSION_DEVICE_INFO, false,
+             Name == "cuMemGetInfo_v2" ? "cuMemGetInfo" : Name);
     } else {
       auto &SM = DpctGlobalInfo::getSourceManager();
       std::ostringstream OS;
