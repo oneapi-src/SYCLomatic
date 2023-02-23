@@ -447,7 +447,7 @@ namespace experimental {
 /// a SYCL kernel can be scheduled actively at the same time on a device.
 template <int dimensions = 3>
 inline void
-nd_range_barrier(sycl::nd_item<dimensions> item,
+nd_range_barrier(const sycl::nd_item<dimensions> &item,
                  sycl::atomic_ref<
                      unsigned int, sycl::memory_order::seq_cst,
                      sycl::memory_scope::device,
@@ -487,7 +487,7 @@ nd_range_barrier(sycl::nd_item<dimensions> item,
 /// a SYCL kernel can be scheduled actively at the same time on a device.
 template <>
 inline void
-nd_range_barrier(sycl::nd_item<1> item,
+nd_range_barrier(const sycl::nd_item<1> &item,
                  sycl::atomic_ref<
                      unsigned int, sycl::memory_order::seq_cst,
                      sycl::memory_scope::device,

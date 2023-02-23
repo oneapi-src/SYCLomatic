@@ -428,7 +428,7 @@ __device__ R tex2D_bar(
 // CHECK-NEXT:                          unsigned int srcImgWidth,
 // CHECK-NEXT:                          unsigned int srcImgHeight,
 // CHECK-NEXT:                          float inverseOfScale, float tx,
-// CHECK-NEXT:                          float ty, sycl::nd_item<3> item_ct1,
+// CHECK-NEXT:                          float ty, const sycl::nd_item<3> &item_ct1,
 // CHECK-NEXT:                          dpct::image_accessor_ext<unsigned char, 2> tex) {
 // CHECK-NEXT:  unsigned int x = sycl::mul24((unsigned int)item_ct1.get_group(2), (unsigned int)item_ct1.get_local_range(2)) + item_ct1.get_local_id(2);
 // CHECK-NEXT:  unsigned int y = sycl::mul24((unsigned int)item_ct1.get_group(1), (unsigned int)item_ct1.get_local_range(1)) + item_ct1.get_local_id(1);
