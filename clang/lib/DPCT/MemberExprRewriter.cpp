@@ -6,6 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "CustomHelperFiles.h"
 #include "MemberExprRewriter.h"
 
 namespace clang {
@@ -46,6 +47,22 @@ public:
   }
 };
 
+class MemberExprRewriterWithFeatureRequestFactory
+    : public MemberExprRewriterFactoryBase {
+  std::shared_ptr<MemberExprRewriterFactoryBase> Inner;
+  HelperFeatureEnum Feature;
+
+public:
+  MemberExprRewriterWithFeatureRequestFactory(
+      HelperFeatureEnum Feature,
+      std::shared_ptr<MemberExprRewriterFactoryBase> InnerFactory)
+      : Inner(InnerFactory), Feature(Feature) {}
+  std::shared_ptr<MemberExprBaseRewriter>
+  create(const MemberExpr *M) const override {
+    requestFeature(Feature, M);
+    return Inner->create(M);
+  }
+};
 
 std::function<std::string(const MemberExpr *)> makeMemberBase() {
   return [=] (const MemberExpr *ME) -> std::string {
@@ -80,16 +97,38 @@ makeLiteral(std::string literal) {
 }
 
 std::unique_ptr<std::unordered_map<
-        std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>>
-        MemberExprRewriterFactoryBase::MemberExprRewriterMap;
+    std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>>
+    MemberExprRewriterFactoryBase::MemberExprRewriterMap;
 
 template <class... ArgsT>
-inline std::shared_ptr<MemberExprRewriterFactoryBase> createReportMemWarningRewriterFactory(
+inline std::shared_ptr<MemberExprRewriterFactoryBase>
+createReportMemWarningRewriterFactory(
     std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>
-        Factory, const std::string &FuncName, Diagnostics MsgId,
-        ArgsT... ArgsCreator) {
-  return std::make_shared<ReportMemWarningRewriterFactory<ArgsT...>> (
+        Factory,
+    const std::string &FuncName, Diagnostics MsgId, ArgsT... ArgsCreator) {
+  return std::make_shared<ReportMemWarningRewriterFactory<ArgsT...>>(
       Factory.second, FuncName, MsgId, ArgsCreator...);
+}
+
+std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>
+createMemberExprFeatureRequestFactory(
+    HelperFeatureEnum Feature,
+    std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>
+        &&Input) {
+  return std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>(
+      std::move(Input.first),
+      std::make_shared<MemberExprRewriterWithFeatureRequestFactory>(
+          Feature, Input.second));
+}
+
+template <class T>
+std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>
+createMemberExprFeatureRequestFactory(
+    HelperFeatureEnum Feature,
+    std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>
+        &&Input,
+    T) {
+  return createMemberExprFeatureRequestFactory(Feature, std::move(Input));
 }
 
 void MemberExprRewriterFactoryBase::initMemberExprRewriterMap() {
@@ -100,20 +139,25 @@ void MemberExprRewriterFactoryBase::initMemberExprRewriterMap() {
 
 #define CALL(...) makeCallExprCreator(__VA_ARGS__)
 #define MEMBER_REWRITE_ENTRY(Name, Factory) {Name, Factory},
-#define WARNING_FACTORY_ENTRY(Name, Factory, ...) {Name,                \
-        createReportMemWarningRewriterFactory(Factory Name, __VA_ARGS__)},
+#define WARNING_FACTORY_ENTRY(Name, Factory, ...)                              \
+  {Name, createReportMemWarningRewriterFactory(Factory Name, __VA_ARGS__)},
 #define MEMBER_FACTORY(...) createMemberRewriterFactory(__VA_ARGS__)
 #define MEM_BASE makeMemberBase()
 #define MEM_CALL(x) makeMemberGetCall(x)
 #define LITERAL(x) makeLiteral(x)
 #define IS_ARROW isArrow()
+#define FEATURE_REQUEST_FACTORY(FEATURE, x)                                    \
+  createMemberExprFeatureRequestFactory(FEATURE, x 0),
 #include "APINamesMemberExpr.inc"
-#undef MEMBER_REWRITE_ENTRY
-#undef WARNING_FACTORY_ENTRY
-#undef MEMBER_FACTORY
-#undef MEM_BASE
-#undef MEM_ATTR
+#undef FEATURE_REQUEST_FACTORY
+#undef IS_ARROW
 #undef LITERAL
+#undef MEM_CALL
+#undef MEM_BASE
+#undef MEMBER_FACTORY
+#undef WARNING_FACTORY_ENTRY
+#undef MEMBER_REWRITE_ENTRY
+#undef CALL
       }));
 }
 } // namespace dpct

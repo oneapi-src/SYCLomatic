@@ -380,13 +380,35 @@ void foobar() {
 
   size_t free_mem, total_mem;
 
-  //CHECK: dpct::get_current_device().get_memory_info(free_mem, total_mem);
+  // CHECK:  /*
+  // CHECK-NEXT:DPCT1106:{{[0-9]+}}: 'cudaMemGetInfo' was migrated with Intel's Extensions for Device Information which may be not supported by all compilers or runtimes. You may need to adjust the code.
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:dpct::get_current_device().get_memory_info(free_mem, total_mem);
   cudaMemGetInfo(&free_mem, &total_mem);
-  //CHECK: MY_ERROR_CHECKER((dpct::get_current_device().get_memory_info(free_mem, total_mem), 0));
+
+
+  // CHECK:   /*
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:*/
+  // CHECK-NEXT: /*
+  // CHECK-NEXT:DPCT1106:{{[0-9]+}}: 'cudaMemGetInfo' was migrated with Intel's Extensions for Device Information which may be not supported by all compilers or runtimes. You may need to adjust the code.
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:  MY_ERROR_CHECKER((dpct::get_current_device().get_memory_info(free_mem, total_mem), 0));
   MY_ERROR_CHECKER(cudaMemGetInfo(&free_mem, &total_mem));
-  //CHECK: dpct::get_current_device().get_memory_info(free_mem, total_mem);
+
+  // CHECK:  /*
+  // CHECK-NEXT:  DPCT1106:{{[0-9]+}}: 'cuMemGetInfo' was migrated with Intel's Extensions for Device Information which may be not supported by all compilers or runtimes. You may need to adjust the code.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  dpct::get_current_device().get_memory_info(free_mem, total_mem);
   cuMemGetInfo(&free_mem, &total_mem);
-  //CHECK: MY_ERROR_CHECKER((dpct::get_current_device().get_memory_info(free_mem, total_mem), 0));
+
+  // CHECK:  /*
+  // CHECK-NEXT:  DPCT1003:42: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:*/
+  // CHECK-NEXT: /*
+  // CHECK-NEXT:DPCT1106:{{[0-9]+}}: 'cuMemGetInfo' was migrated with Intel's Extensions for Device Information which may be not supported by all compilers or runtimes. You may need to adjust the code.
+  // CHECK-NEXT:*/
+  // CHECK-NEXT: MY_ERROR_CHECKER((dpct::get_current_device().get_memory_info(free_mem, total_mem), 0));
   MY_ERROR_CHECKER(cuMemGetInfo(&free_mem, &total_mem));
 }
 
