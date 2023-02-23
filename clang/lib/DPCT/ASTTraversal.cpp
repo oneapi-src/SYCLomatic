@@ -14830,11 +14830,8 @@ void DriverModuleAPIRule::runRule(
   if (APIName == "cuModuleLoad") {
     report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD, false,
            getStmtSpelling(CE->getArg(1)));
-  } else if (APIName == "cuModuleLoadData") {
+  } else if (APIName == "cuModuleLoadData" || APIName == "cuModuleLoadDataEx") {
     report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD_DATA, false,
-           getStmtSpelling(CE->getArg(1)));
-  } else if (APIName == "cuModuleLoadDataEx") {
-    report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD_DATA_EX, false,
            getStmtSpelling(CE->getArg(1)));
   }
 
