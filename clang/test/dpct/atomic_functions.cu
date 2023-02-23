@@ -569,3 +569,24 @@ __global__ void atomicInc_foo() {
 __shared__ unsigned int  share_v;
   atomicInc(&share_v, 1);
 }
+
+
+typedef long long mm_long;
+typedef unsigned long long mm_ulong;
+
+//CHECK: #define ATOMIC_ADD2(dest, value) dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(dest, value)
+#define ATOMIC_ADD2(dest, value) atomicAdd2(dest, value)
+
+#define ATOMIC_ADD3(ID) ATOMIC_ADD2(&b2[0], ((long long)(deriv##ID##_1)));
+
+__global__ void test() {
+  int a;
+  float3 f;
+  float deriv1_1 = 0;
+  unsigned long long *b;
+  unsigned long long *b2;
+
+  ATOMIC_ADD2(&b[a],
+             (unsigned long long)((long long)(f.x * 0x100000000)));
+  ATOMIC_ADD3(1)
+}

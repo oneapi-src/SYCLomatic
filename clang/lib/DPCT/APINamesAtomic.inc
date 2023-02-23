@@ -27,17 +27,26 @@ FEATURE_REQUEST_FACTORY(
                                  "access::address_space::local_space")),
                      makeCallArgCreatorWithCall(0),
                      makeCallArgCreatorWithCall(1))),
-            WARNING_FACTORY_ENTRY(
-                "atomicAdd",
+            CONDITIONAL_FACTORY_ENTRY(
+                ReportMemoryAttrDeduce(0),
+                WARNING_FACTORY_ENTRY(
+                    "atomicAdd",
+                    CALL_FACTORY_ENTRY("atomicAdd",
+                                       CALL(MapNames::getDpctNamespace() +
+                                                "atomic_fetch_add",
+                                            makeCallArgCreatorWithCall(0),
+                                            makeCallArgCreatorWithCall(1))),
+                    Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
+                    makeCallArgCreatorWithCall(0),
+                    std::string("atomic_fetch_add"),
+                    std::string("atomic_fetch_add<") +
+                        MapNames::getClNamespace() +
+                        std::string("access::address_space::local_space>")),
                 CALL_FACTORY_ENTRY("atomicAdd",
                                    CALL(MapNames::getDpctNamespace() +
                                             "atomic_fetch_add",
                                         makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))),
-                Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
-                makeCallArgCreatorWithCall(0), std::string("atomic_fetch_add"),
-                std::string("atomic_fetch_add<") + MapNames::getClNamespace() +
-                    std::string("access::address_space::local_space>")))))
+                                        makeCallArgCreatorWithCall(1)))))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::Atomic_atomic_fetch_sub,
@@ -60,17 +69,26 @@ FEATURE_REQUEST_FACTORY(
                                  "access::address_space::local_space")),
                      makeCallArgCreatorWithCall(0),
                      makeCallArgCreatorWithCall(1))),
-            WARNING_FACTORY_ENTRY(
-                "atomicSub",
+            CONDITIONAL_FACTORY_ENTRY(
+                ReportMemoryAttrDeduce(0),
+                WARNING_FACTORY_ENTRY(
+                    "atomicSub",
+                    CALL_FACTORY_ENTRY("atomicSub",
+                                       CALL(MapNames::getDpctNamespace() +
+                                                "atomic_fetch_sub",
+                                            makeCallArgCreatorWithCall(0),
+                                            makeCallArgCreatorWithCall(1))),
+                    Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
+                    makeCallArgCreatorWithCall(0),
+                    std::string("atomic_fetch_sub"),
+                    std::string("atomic_fetch_sub<") +
+                        MapNames::getClNamespace() +
+                        std::string("access::address_space::local_space>")),
                 CALL_FACTORY_ENTRY("atomicSub",
                                    CALL(MapNames::getDpctNamespace() +
                                             "atomic_fetch_sub",
                                         makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))),
-                Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
-                makeCallArgCreatorWithCall(0), std::string("atomic_fetch_sub"),
-                std::string("atomic_fetch_sub<") + MapNames::getClNamespace() +
-                    std::string("access::address_space::local_space>")))))
+                                        makeCallArgCreatorWithCall(1)))))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::Atomic_atomic_exchange,
@@ -93,17 +111,26 @@ FEATURE_REQUEST_FACTORY(
                                  "access::address_space::local_space")),
                      makeCallArgCreatorWithCall(0),
                      makeCallArgCreatorWithCall(1))),
-            WARNING_FACTORY_ENTRY(
-                "atomicExch",
+            CONDITIONAL_FACTORY_ENTRY(
+                ReportMemoryAttrDeduce(0),
+                WARNING_FACTORY_ENTRY(
+                    "atomicExch",
+                    CALL_FACTORY_ENTRY("atomicExch",
+                                       CALL(MapNames::getDpctNamespace() +
+                                                "atomic_exchange",
+                                            makeCallArgCreatorWithCall(0),
+                                            makeCallArgCreatorWithCall(1))),
+                    Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
+                    makeCallArgCreatorWithCall(0),
+                    std::string("atomic_exchange"),
+                    std::string("atomic_exchange<") +
+                        MapNames::getClNamespace() +
+                        std::string("access::address_space::local_space>")),
                 CALL_FACTORY_ENTRY("atomicExch",
                                    CALL(MapNames::getDpctNamespace() +
                                             "atomic_exchange",
                                         makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))),
-                Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
-                makeCallArgCreatorWithCall(0), std::string("atomic_exchange"),
-                std::string("atomic_exchange<") + MapNames::getClNamespace() +
-                    std::string("access::address_space::local_space>")))))
+                                        makeCallArgCreatorWithCall(1)))))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::Atomic_atomic_fetch_max,
@@ -126,17 +153,26 @@ FEATURE_REQUEST_FACTORY(
                                  "access::address_space::local_space")),
                      makeCallArgCreatorWithCall(0),
                      makeCallArgCreatorWithCall(1))),
-            WARNING_FACTORY_ENTRY(
-                "atomicMax",
+            CONDITIONAL_FACTORY_ENTRY(
+                ReportMemoryAttrDeduce(0),
+                WARNING_FACTORY_ENTRY(
+                    "atomicMax",
+                    CALL_FACTORY_ENTRY("atomicMax",
+                                       CALL(MapNames::getDpctNamespace() +
+                                                "atomic_fetch_max",
+                                            makeCallArgCreatorWithCall(0),
+                                            makeCallArgCreatorWithCall(1))),
+                    Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
+                    makeCallArgCreatorWithCall(0),
+                    std::string("atomic_fetch_max"),
+                    std::string("atomic_fetch_max<") +
+                        MapNames::getClNamespace() +
+                        std::string("access::address_space::local_space>")),
                 CALL_FACTORY_ENTRY("atomicMax",
                                    CALL(MapNames::getDpctNamespace() +
                                             "atomic_fetch_max",
                                         makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))),
-                Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
-                makeCallArgCreatorWithCall(0), std::string("atomic_fetch_max"),
-                std::string("atomic_fetch_max<") + MapNames::getClNamespace() +
-                    std::string("access::address_space::local_space>")))))
+                                        makeCallArgCreatorWithCall(1)))))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::Atomic_atomic_fetch_min,
@@ -159,17 +195,26 @@ FEATURE_REQUEST_FACTORY(
                                  "access::address_space::local_space")),
                      makeCallArgCreatorWithCall(0),
                      makeCallArgCreatorWithCall(1))),
-            WARNING_FACTORY_ENTRY(
-                "atomicMin",
+            CONDITIONAL_FACTORY_ENTRY(
+                ReportMemoryAttrDeduce(0),
+                WARNING_FACTORY_ENTRY(
+                    "atomicMin",
+                    CALL_FACTORY_ENTRY("atomicMin",
+                                       CALL(MapNames::getDpctNamespace() +
+                                                "atomic_fetch_min",
+                                            makeCallArgCreatorWithCall(0),
+                                            makeCallArgCreatorWithCall(1))),
+                    Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
+                    makeCallArgCreatorWithCall(0),
+                    std::string("atomic_fetch_min"),
+                    std::string("atomic_fetch_min<") +
+                        MapNames::getClNamespace() +
+                        std::string("access::address_space::local_space>")),
                 CALL_FACTORY_ENTRY("atomicMin",
                                    CALL(MapNames::getDpctNamespace() +
                                             "atomic_fetch_min",
                                         makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))),
-                Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
-                makeCallArgCreatorWithCall(0), std::string("atomic_fetch_min"),
-                std::string("atomic_fetch_min<") + MapNames::getClNamespace() +
-                    std::string("access::address_space::local_space>")))))
+                                        makeCallArgCreatorWithCall(1)))))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::Atomic_atomic_compare_exchange_strong,
@@ -196,20 +241,28 @@ FEATURE_REQUEST_FACTORY(
                      makeCallArgCreatorWithCall(0),
                      makeCallArgCreatorWithCall(1),
                      makeCallArgCreatorWithCall(2))),
-            WARNING_FACTORY_ENTRY(
-                "atomicCAS",
+            CONDITIONAL_FACTORY_ENTRY(
+                ReportMemoryAttrDeduce(0),
+                WARNING_FACTORY_ENTRY(
+                    "atomicCAS",
+                    CALL_FACTORY_ENTRY(
+                        "atomicCAS", CALL(MapNames::getDpctNamespace() +
+                                              "atomic_compare_exchange_strong",
+                                          makeCallArgCreatorWithCall(0),
+                                          makeCallArgCreatorWithCall(1),
+                                          makeCallArgCreatorWithCall(2))),
+                    Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
+                    makeCallArgCreatorWithCall(0),
+                    std::string("atomic_compare_exchange_strong"),
+                    std::string("atomic_compare_exchange_strong<") +
+                        MapNames::getClNamespace() +
+                        std::string("access::address_space::local_space>")),
                 CALL_FACTORY_ENTRY("atomicCAS",
                                    CALL(MapNames::getDpctNamespace() +
                                             "atomic_compare_exchange_strong",
                                         makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1),
-                                        makeCallArgCreatorWithCall(2))),
-                Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
-                makeCallArgCreatorWithCall(0),
-                std::string("atomic_compare_exchange_strong"),
-                std::string("atomic_compare_exchange_strong<") +
-                    MapNames::getClNamespace() +
-                    std::string("access::address_space::local_space>")))))
+                                        makeCallArgCreatorWithCall(2)))))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::Atomic_atomic_fetch_compare_inc,
@@ -233,19 +286,26 @@ FEATURE_REQUEST_FACTORY(
                                  "access::address_space::local_space")),
                      makeCallArgCreatorWithCall(0),
                      makeCallArgCreatorWithCall(1))),
-            WARNING_FACTORY_ENTRY(
-                "atomicInc",
+            CONDITIONAL_FACTORY_ENTRY(
+                ReportMemoryAttrDeduce(0),
+                WARNING_FACTORY_ENTRY(
+                    "atomicInc",
+                    CALL_FACTORY_ENTRY("atomicInc",
+                                       CALL(MapNames::getDpctNamespace() +
+                                                "atomic_fetch_compare_inc",
+                                            makeCallArgCreatorWithCall(0),
+                                            makeCallArgCreatorWithCall(1))),
+                    Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
+                    makeCallArgCreatorWithCall(0),
+                    std::string("atomic_fetch_compare_inc"),
+                    std::string("atomic_fetch_compare_inc<") +
+                        MapNames::getClNamespace() +
+                        std::string("access::address_space::local_space>")),
                 CALL_FACTORY_ENTRY("atomicInc",
                                    CALL(MapNames::getDpctNamespace() +
                                             "atomic_fetch_compare_inc",
                                         makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))),
-                Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
-                makeCallArgCreatorWithCall(0),
-                std::string("atomic_fetch_compare_inc"),
-                std::string("atomic_fetch_compare_inc<") +
-                    MapNames::getClNamespace() +
-                    std::string("access::address_space::local_space>")))))
+                                        makeCallArgCreatorWithCall(1)))))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::Atomic_atomic_fetch_compare_dec,
@@ -269,19 +329,26 @@ FEATURE_REQUEST_FACTORY(
                                  "access::address_space::local_space")),
                      makeCallArgCreatorWithCall(0),
                      makeCallArgCreatorWithCall(1))),
-            WARNING_FACTORY_ENTRY(
-                "atomicDec",
+            CONDITIONAL_FACTORY_ENTRY(
+                ReportMemoryAttrDeduce(0),
+                WARNING_FACTORY_ENTRY(
+                    "atomicDec",
+                    CALL_FACTORY_ENTRY("atomicDec",
+                                       CALL(MapNames::getDpctNamespace() +
+                                                "atomic_fetch_compare_dec",
+                                            makeCallArgCreatorWithCall(0),
+                                            makeCallArgCreatorWithCall(1))),
+                    Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
+                    makeCallArgCreatorWithCall(0),
+                    std::string("atomic_fetch_compare_dec"),
+                    std::string("atomic_fetch_compare_dec<") +
+                        MapNames::getClNamespace() +
+                        std::string("access::address_space::local_space>")),
                 CALL_FACTORY_ENTRY("atomicDec",
                                    CALL(MapNames::getDpctNamespace() +
                                             "atomic_fetch_compare_dec",
                                         makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))),
-                Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
-                makeCallArgCreatorWithCall(0),
-                std::string("atomic_fetch_compare_dec"),
-                std::string("atomic_fetch_compare_dec<") +
-                    MapNames::getClNamespace() +
-                    std::string("access::address_space::local_space>")))))
+                                        makeCallArgCreatorWithCall(1)))))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::Atomic_atomic_fetch_and,
@@ -304,17 +371,26 @@ FEATURE_REQUEST_FACTORY(
                                  "access::address_space::local_space")),
                      makeCallArgCreatorWithCall(0),
                      makeCallArgCreatorWithCall(1))),
-            WARNING_FACTORY_ENTRY(
-                "atomicAnd",
+            CONDITIONAL_FACTORY_ENTRY(
+                ReportMemoryAttrDeduce(0),
+                WARNING_FACTORY_ENTRY(
+                    "atomicAnd",
+                    CALL_FACTORY_ENTRY("atomicAnd",
+                                       CALL(MapNames::getDpctNamespace() +
+                                                "atomic_fetch_and",
+                                            makeCallArgCreatorWithCall(0),
+                                            makeCallArgCreatorWithCall(1))),
+                    Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
+                    makeCallArgCreatorWithCall(0),
+                    std::string("atomic_fetch_and"),
+                    std::string("atomic_fetch_and<") +
+                        MapNames::getClNamespace() +
+                        std::string("access::address_space::local_space>")),
                 CALL_FACTORY_ENTRY("atomicAnd",
                                    CALL(MapNames::getDpctNamespace() +
                                             "atomic_fetch_and",
                                         makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))),
-                Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
-                makeCallArgCreatorWithCall(0), std::string("atomic_fetch_and"),
-                std::string("atomic_fetch_and<") + MapNames::getClNamespace() +
-                    std::string("access::address_space::local_space>")))))
+                                        makeCallArgCreatorWithCall(1)))))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::Atomic_atomic_fetch_or,
@@ -337,17 +413,26 @@ FEATURE_REQUEST_FACTORY(
                                  "access::address_space::local_space")),
                      makeCallArgCreatorWithCall(0),
                      makeCallArgCreatorWithCall(1))),
-            WARNING_FACTORY_ENTRY(
-                "atomicOr",
+            CONDITIONAL_FACTORY_ENTRY(
+                ReportMemoryAttrDeduce(0),
+                WARNING_FACTORY_ENTRY(
+                    "atomicOr",
+                    CALL_FACTORY_ENTRY("atomicOr",
+                                       CALL(MapNames::getDpctNamespace() +
+                                                "atomic_fetch_or",
+                                            makeCallArgCreatorWithCall(0),
+                                            makeCallArgCreatorWithCall(1))),
+                    Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
+                    makeCallArgCreatorWithCall(0),
+                    std::string("atomic_fetch_or"),
+                    std::string("atomic_fetch_or<") +
+                        MapNames::getClNamespace() +
+                        std::string("access::address_space::local_space>")),
                 CALL_FACTORY_ENTRY("atomicOr",
                                    CALL(MapNames::getDpctNamespace() +
                                             "atomic_fetch_or",
                                         makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))),
-                Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
-                makeCallArgCreatorWithCall(0), std::string("atomic_fetch_or"),
-                std::string("atomic_fetch_or<") + MapNames::getClNamespace() +
-                    std::string("access::address_space::local_space>")))))
+                                        makeCallArgCreatorWithCall(1)))))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::Atomic_atomic_fetch_xor,
@@ -370,14 +455,23 @@ FEATURE_REQUEST_FACTORY(
                                  "access::address_space::local_space")),
                      makeCallArgCreatorWithCall(0),
                      makeCallArgCreatorWithCall(1))),
-            WARNING_FACTORY_ENTRY(
-                "atomicXor",
+            CONDITIONAL_FACTORY_ENTRY(
+                ReportMemoryAttrDeduce(0),
+                WARNING_FACTORY_ENTRY(
+                    "atomicXor",
+                    CALL_FACTORY_ENTRY("atomicXor",
+                                       CALL(MapNames::getDpctNamespace() +
+                                                "atomic_fetch_xor",
+                                            makeCallArgCreatorWithCall(0),
+                                            makeCallArgCreatorWithCall(1))),
+                    Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
+                    makeCallArgCreatorWithCall(0),
+                    std::string("atomic_fetch_xor"),
+                    std::string("atomic_fetch_xor<") +
+                        MapNames::getClNamespace() +
+                        std::string("access::address_space::local_space>")),
                 CALL_FACTORY_ENTRY("atomicXor",
                                    CALL(MapNames::getDpctNamespace() +
                                             "atomic_fetch_xor",
                                         makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))),
-                Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
-                makeCallArgCreatorWithCall(0), std::string("atomic_fetch_xor"),
-                std::string("atomic_fetch_xor<") + MapNames::getClNamespace() +
-                    std::string("access::address_space::local_space>")))))
+                                        makeCallArgCreatorWithCall(1)))))))

@@ -235,9 +235,6 @@ __shared__ uint32_t share_v;
 // CHECK-NEXT:  p_3 = p_2;
 // CHECK-NEXT:  p_3 = dmem;
 // CHECK-NEXT:  uint32_t *p_5 = p_3;
-// CHECK-NEXT:  /*
-// CHECK-NEXT:  DPCT1039:{{[0-9]+}}: The generated code assumes that "p_5" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_add" with "atomic_fetch_add<sycl::access::address_space::local_space>".
-// CHECK-NEXT:  */
 // CHECK-NEXT:  dpct::atomic_fetch_add(p_5, 1);
 // CHECK-NEXT:}
 __device__ uint32_t dmem[100];
@@ -273,9 +270,6 @@ __device__ uint32_t* func(uint32_t *in){
 // CHECK-NEXT:  p_3 = p_2;
 // CHECK-NEXT:  uint32_t *p_4;
 // CHECK-NEXT:  p_4= p_4 + 1;
-// CHECK-NEXT:   /*
-// CHECK-NEXT:   DPCT1039:{{[0-9]+}}: The generated code assumes that "p_4" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_add" with "atomic_fetch_add<sycl::access::address_space::local_space>".
-// CHECK-NEXT:   */
 // CHECK-NEXT:   dpct::atomic_fetch_add(p_4, 1);
 // CHECK-NEXT:   p_4=func(p_3);
 // CHECK-NEXT:   /*
@@ -409,34 +403,13 @@ __global__ void k() {
   float f;
   __shared__ uint32_t u32;
 
-  //CHECK: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&i" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_add" with "atomic_fetch_add<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
-  //CHECK-NEXT: dpct::atomic_fetch_add(&i, i);
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&i" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_sub" with "atomic_fetch_sub<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
+  //CHECK: dpct::atomic_fetch_add(&i, i);
   //CHECK-NEXT: dpct::atomic_fetch_sub(&i, i);
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&i" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_and" with "atomic_fetch_and<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
   //CHECK-NEXT: dpct::atomic_fetch_and(&i, i);
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&i" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_or" with "atomic_fetch_or<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
   //CHECK-NEXT: dpct::atomic_fetch_or(&i, i);
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&i" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_xor" with "atomic_fetch_xor<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
   //CHECK-NEXT: dpct::atomic_fetch_xor(&i, i);
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&i" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_min" with "atomic_fetch_min<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
   //CHECK-NEXT: dpct::atomic_fetch_min(&i, i);
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&i" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_max" with "atomic_fetch_max<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
-  dpct::atomic_fetch_max(&i, i);
+  //CHECK-NEXT: dpct::atomic_fetch_max(&i, i);
   atomicAdd(&i, i);
   atomicSub(&i, i);
   atomicAnd(&i, i);
@@ -445,34 +418,13 @@ __global__ void k() {
   atomicMin(&i, i);
   atomicMax(&i, i);
 
-  //CHECK: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&ui" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_add" with "atomic_fetch_add<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
-  //CHECK-NEXT: dpct::atomic_fetch_add(&ui, ui);
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&ui" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_sub" with "atomic_fetch_sub<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
+  //CHECK: dpct::atomic_fetch_add(&ui, ui);
   //CHECK-NEXT: dpct::atomic_fetch_sub(&ui, ui);
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&ui" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_and" with "atomic_fetch_and<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
   //CHECK-NEXT: dpct::atomic_fetch_and(&ui, ui);
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&ui" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_or" with "atomic_fetch_or<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
   //CHECK-NEXT: dpct::atomic_fetch_or(&ui, ui);
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&ui" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_xor" with "atomic_fetch_xor<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
   //CHECK-NEXT: dpct::atomic_fetch_xor(&ui, ui);
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&ui" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_min" with "atomic_fetch_min<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
   //CHECK-NEXT: dpct::atomic_fetch_min(&ui, ui);
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&ui" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_max" with "atomic_fetch_max<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
-  dpct::atomic_fetch_max(&ui, ui);
+  //CHECK-NEXT: dpct::atomic_fetch_max(&ui, ui);
   atomicAdd(&ui, ui);
   atomicSub(&ui, ui);
   atomicAnd(&ui, ui);
@@ -481,29 +433,11 @@ __global__ void k() {
   atomicMin(&ui, ui);
   atomicMax(&ui, ui);
 
-  //CHECK: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&ull" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_add" with "atomic_fetch_add<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
-  //CHECK-NEXT: dpct::atomic_fetch_add(&ull, ull);
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&ull" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_and" with "atomic_fetch_and<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
+  //CHECK: dpct::atomic_fetch_add(&ull, ull);
   //CHECK-NEXT: dpct::atomic_fetch_and(&ull, ull);
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&ull" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_or" with "atomic_fetch_or<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
   //CHECK-NEXT: dpct::atomic_fetch_or(&ull, ull);
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&ull" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_xor" with "atomic_fetch_xor<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
   //CHECK-NEXT: dpct::atomic_fetch_xor(&ull, ull);
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&ull" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_min" with "atomic_fetch_min<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
   //CHECK-NEXT: dpct::atomic_fetch_min(&ull, ull);
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&ull" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_max" with "atomic_fetch_max<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
   //CHECK-NEXT: dpct::atomic_fetch_max(&ull, ull);
   atomicAdd(&ull, ull);
   atomicAnd(&ull, ull);
@@ -512,25 +446,16 @@ __global__ void k() {
   atomicMin(&ull, ull);
   atomicMax(&ull, ull);
 
-  //CHECK: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&ui" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_add" with "atomic_fetch_add<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
-  //CHECK-NEXT: dpct::atomic_fetch_add(&ui, i);
+  //CHECK: dpct::atomic_fetch_add(&ui, i);
   atomicAdd(&ui, i);
 
-  //CHECK: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&ui" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_add" with "atomic_fetch_add<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
-  //CHECK-NEXT: dpct::atomic_fetch_add(&ui, i + i);
+  //CHECK: dpct::atomic_fetch_add(&ui, i + i);
   atomicAdd(&ui, i + i);
 
   // CHECK: dpct::atomic_fetch_add<sycl::access::address_space::local_space>(&u32, u32);
   atomicAdd(&u32, u32);
 
-  //CHECK: /*
-  //CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&f" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_add" with "atomic_fetch_add<sycl::access::address_space::local_space>".
-  //CHECK-NEXT: */
-  //CHECK-NEXT: dpct::atomic_fetch_add(&f, f);
+  //CHECK: dpct::atomic_fetch_add(&f, f);
   atomicAdd(&f, f);
 }
 
@@ -566,9 +491,6 @@ __global__ void mykernel(unsigned int *dev) {
 // CHECK-NEXT:    i += offset;
 // CHECK-NEXT:  }
 // CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
-// CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1039:{{[0-9]+}}: The generated code assumes that "&(histo[item_ct1.get_local_id(2)])" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_add" with "atomic_fetch_add<sycl::access::address_space::local_space>".
-// CHECK-NEXT: */
 // CHECK-NEXT: dpct::atomic_fetch_add(&(histo[item_ct1.get_local_id(2)]), temp[item_ct1.get_local_id(2)]);
 // CHECK-NEXT:}
 __global__ void mykernel_1(unsigned char *buffer, long size,
@@ -629,9 +551,6 @@ __shared__ unsigned int s_Hist[100];
 volatile __device__ int g_mutex = 0;
 
 //CHECK:void __gpu_sync(int blocks_to_synch, volatile int &g_mutex) {
-//CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1039:{{[0-9]+}}: The generated code assumes that "(int *)&g_mutex" points to the global memory address space. If it points to a local memory address space, replace "atomic_fetch_add" with "atomic_fetch_add<sycl::access::address_space::local_space>".
-//CHECK-NEXT:  */
 //CHECK-NEXT:  dpct::atomic_fetch_add((int *)&g_mutex, 1);
 //CHECK-NEXT:  while(g_mutex < blocks_to_synch);
 //CHECK-NEXT:}
