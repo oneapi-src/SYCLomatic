@@ -110,6 +110,7 @@ add_clang_library(DPCT
   ASTTraversal.cpp
   AnalysisInfo.cpp
   CallExprRewriter.cpp
+  CallExprRewriterAtomic.cpp
   CallExprRewriterCUB.cpp
   CallExprRewriterCUFFT.cpp
   CallExprRewriterCUBLAS.cpp
