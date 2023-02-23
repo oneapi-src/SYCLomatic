@@ -811,7 +811,7 @@ public:
 // Image|image_channel_get_channel_data_type
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  image_channel_data_type get_channel_data_type() const {
+  image_channel_data_type get_channel_data_type() {
     return _channel.get_channel_data_type();
   }
 // DPCT_LABEL_END
@@ -834,7 +834,7 @@ public:
 // Image|image_channel_get_channel_size
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  unsigned get_channel_size() const { return _channel.get_channel_size(); }
+  unsigned get_channel_size() { return _channel.get_channel_size(); }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|image_data_set_channel_size|dpct
 // DPCT_PARENT_FEATURE|image_data
@@ -855,7 +855,7 @@ public:
 // Image|image_channel_get_channel_num
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  unsigned get_channel_num() const { return _channel.get_channel_num(); }
+  unsigned get_channel_num() { return _channel.get_channel_num(); }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|image_data_set_channel_num|dpct
 // DPCT_PARENT_FEATURE|image_data
@@ -876,7 +876,7 @@ public:
 // Image|image_channel_get_channel_type
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  sycl::image_channel_type get_channel_type() const {
+  sycl::image_channel_type get_channel_type() {
     return _channel.get_channel_type();
   }
 // DPCT_LABEL_END
@@ -1465,7 +1465,7 @@ template <class T, int dimensions, bool IsImageArray = false> class image_wrappe
 #endif
 
   void create_image(sycl::queue q) {
-    auto &data = _data;
+    auto &data = get_data();
     if (data.get_data_type() == image_data_type::linear) {
       _image = static_cast<image_matrix_p>(data.get_data_ptr())
           ->create_image<dimensions>(data.get_channel());

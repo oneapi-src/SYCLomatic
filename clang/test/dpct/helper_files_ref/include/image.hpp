@@ -419,24 +419,24 @@ public:
   image_channel get_channel() const { return _channel; }
   void set_channel(image_channel channel) { _channel = channel; }
 
-  image_channel_data_type get_channel_data_type() const {
+  image_channel_data_type get_channel_data_type() {
     return _channel.get_channel_data_type();
   }
   void set_channel_data_type(image_channel_data_type type) {
     _channel.set_channel_data_type(type);
   }
 
-  unsigned get_channel_size() const { return _channel.get_channel_size(); }
+  unsigned get_channel_size() { return _channel.get_channel_size(); }
   void set_channel_size(unsigned channel_num, unsigned channel_size) {
     return _channel.set_channel_size(channel_num, channel_size);
   }
 
-  unsigned get_channel_num() const { return _channel.get_channel_num(); }
+  unsigned get_channel_num() { return _channel.get_channel_num(); }
   void set_channel_num(unsigned num) {
     return _channel.set_channel_num(num);
   }
 
-  sycl::image_channel_type get_channel_type() const {
+  sycl::image_channel_type get_channel_type() {
     return _channel.get_channel_type();
   }
   void set_channel_type(sycl::image_channel_type type) {
@@ -639,7 +639,7 @@ template <class T, int dimensions, bool IsImageArray = false> class image_wrappe
 #endif
 
   void create_image(sycl::queue q) {
-    auto &data = _data;
+    auto &data = get_data();
     if (data.get_data_type() == image_data_type::linear) {
       _image = static_cast<image_matrix_p>(data.get_data_ptr())
           ->create_image<dimensions>(data.get_channel());
