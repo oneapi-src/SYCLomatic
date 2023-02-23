@@ -572,6 +572,17 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+class CudaExtentRule : public NamedMigrationRule<CudaExtentRule> {
+  CharSourceRange getConstructorRange(const CXXConstructExpr *Ctor);
+  void replaceConstructor(const CXXConstructExpr *Ctor);
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+  std::optional<TraversalKind> getCheckTraversalKind() const override {
+    return TK_IgnoreUnlessSpelledInSource;
+  }
+};
+
 /// Migration rule for return types replacements.
 class ReturnTypeRule : public NamedMigrationRule<ReturnTypeRule> {
 public:

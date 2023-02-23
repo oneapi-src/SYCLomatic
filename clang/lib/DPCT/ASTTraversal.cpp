@@ -3423,8 +3423,8 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
 
   MF.addMatcher(
       typeLoc(loc(qualType(hasDeclaration(anyOf(
-                  namedDecl(hasAnyName("dim3", "cudaExtent", "cudaPos")),
-                  typedefDecl(hasAnyName("dim3", "cudaExtent", "cudaPos")))))))
+                  namedDecl(hasAnyName("dim3")),
+                  typedefDecl(hasAnyName("dim3")))))))
           .bind("dim3Type"),
       this);
 }
@@ -3514,17 +3514,9 @@ void ReplaceDim3CtorRule::runRule(const MatchFinder::MatchResult &Result) {
       requestHelperFeatureForTypeNames(TypeName, BeginLoc);
       if (auto VD = DpctGlobalInfo::findAncestor<VarDecl>(TL)) {
         auto TypeStr = VD->getType().getAsString();
-        if (VD->getKind() == Decl::Var &&
-            (TypeStr == "dim3" || TypeStr == "cudaExtent" ||
-             TypeStr == "cudaPos")) {
+        if (VD->getKind() == Decl::Var && TypeStr == "dim3") {
           std::string Replacement;
           std::string ReplacedType = "range";
-          if (TypeStr == "dim3" || TypeStr == "cudaExtent") {
-            ReplacedType = "range";
-          } else if (TypeStr == "cudaPos") {
-            ReplacedType = "id";
-          }
-
           llvm::raw_string_ostream OS(Replacement);
           DpctGlobalInfo::printCtadClass(
               OS, buildString(MapNames::getClNamespace(), ReplacedType), 3);
@@ -15444,3 +15436,133 @@ void CudaStreamCastRule::runRule(const ast_matchers::MatchFinder::MatchResult &R
 
 
 REGISTER_RULE(CudaStreamCastRule, PassKind::PK_Migration)
+
+void CudaExtentRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+
+  // 1. Match any cudaExtent TypeLoc.
+  MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(
+                            namedDecl(hasAnyName("cudaExtent", "cudaPos"))))))
+                    .bind("loc"),
+                this);
+
+  // 2. Match cudaExtent default ctor.
+  //    cudaExtent()    - CXXTemporaryObjectExpr, handled by (1) and (2).
+  //    cudaExtent a    - VarDecl, handled by (1) and (2)
+  MF.addMatcher(
+      cxxConstructExpr(hasType(namedDecl(hasAnyName("cudaExtent", "cudaPos"))))
+          .bind("defaultCtor"),
+      this);
+
+  // 3. Match field declaration, which doesn't has an in-class initializer.
+  //    The in-class initializer case will handled by other matchers.
+  MF.addMatcher(
+      fieldDecl(hasType(namedDecl(hasAnyName("cudaExtent", "cudaPos"))),
+                unless(hasInClassInitializer(anything())))
+          .bind("fieldDeclHasNoInit"),
+      this);
+
+  // 4. Match c++ initializer_list, which has cudaExtent type.
+  MF.addMatcher(
+      initListExpr(hasType(namedDecl(hasAnyName("cudaExtent", "cudaPos"))))
+          .bind("initListExpr"),
+      this);
+}
+
+void CudaExtentRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+
+  // cudaExtent -> sycl::range<3>
+  if (const TypeLoc *TL = getAssistNodeAsType<TypeLoc>(Result, "loc")) {
+    ExprAnalysis EA;
+    EA.analyze(*TL);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  }
+
+  // cudaExtent a;  -> sycl::range<3> a{0, 0, 0};
+  // cudaExtent()   -> sycl::range<3>{0, 0, 0};
+  // struct Foo { cudaExtent e; Foo() : e() {} }; -> struct Foo { sycl::range<3> e; Foo() : e{0, 0, 0} {} };
+  if (const CXXConstructExpr *Ctor =
+          getNodeAsType<CXXConstructExpr>(Result, "defaultCtor")) {
+    
+    // Ignore implicit move/copy ctor
+    if (Ctor->getNumArgs() != 0)
+      return;
+    CharSourceRange CSR;
+    SourceRange SR = Ctor->getParenOrBraceRange();
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    std::string Replacement = "{0, 0, 0}";
+    
+    if (SR.isInvalid()) {
+      auto CtorLoc = Ctor->getLocation().isMacroID()
+                         ? SM.getSpellingLoc(Ctor->getLocation())
+                         : Ctor->getLocation();
+      auto CtorEndLoc = Lexer::getLocForEndOfToken(
+          CtorLoc, 0, SM, DpctGlobalInfo::getContext().getLangOpts());
+      CSR = CharSourceRange(SourceRange(CtorEndLoc, CtorEndLoc), false);
+      DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(
+            SM, CSR, Replacement, new InsertText(CSR.getBegin(), Replacement)));
+    } else {
+      auto CtorEndLoc = Lexer::getLocForEndOfToken(
+          SR.getEnd(), 0, SM, DpctGlobalInfo::getContext().getLangOpts());
+      CharSourceRange CSR(SourceRange(SR.getBegin(), CtorEndLoc), false);
+      DpctGlobalInfo::getInstance().addReplacement(
+          std::make_shared<ExtReplacement>(
+              SM, CSR, Replacement, new ReplaceStmt(Ctor, true, Replacement)));
+    }
+    return;
+  }
+
+  // struct Foo { cudaExtent a; }; -> struct Foo { syc::range<3> a{0, 0, 0}; };
+  if (const FieldDecl *FD =
+          getNodeAsType<FieldDecl>(Result, "fieldDeclHasNoInit")) {
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    auto IdentBeginLoc = FD->getEndLoc().isMacroID()
+                             ? SM.getSpellingLoc(FD->getEndLoc())
+                             : FD->getEndLoc();
+    auto IdentEndLoc = Lexer::getLocForEndOfToken(
+        IdentBeginLoc, 0, SM, DpctGlobalInfo::getContext().getLangOpts());
+    CharSourceRange CSR =
+        CharSourceRange(SourceRange(IdentEndLoc, IdentEndLoc), false);
+    std::string Replacement = "{0, 0, 0}";
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(
+            SM, CSR, Replacement, new InsertText(CSR.getBegin(), Replacement)));
+    return;
+  }
+
+  // cudaExtent a{};          -> sycl::range<3> a{0, 0, 0};
+  // cudaExtent b{1};         -> sycl::range<3> b{1, 0, 0};
+  // cudaExtent c{1, 1};      -> sycl::range<3> c{1, 1, 0};
+  // cudaExtent d{1, 1, 1};   -> sycl::range<3> d{1, 1, 1};
+  // cudaExtent({1, 1, 1});   -> sycl::range<3>({1, 1, 1});
+  if (const InitListExpr *Init =
+          getNodeAsType<InitListExpr>(Result, "initListExpr")) {
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    std::string Replacement;
+    llvm::raw_string_ostream OS(Replacement);
+    OS << "{";
+    for (size_t I = 0; I < Init->getNumInits(); ++I) {
+      const Expr *E = Init->getInit(I);
+      if (isa<ImplicitValueInitExpr>(E)) {
+        OS << "0";
+      } else {
+        ExprAnalysis EA;
+        EA.analyze(E);
+        OS << EA.getReplacedString();
+      }
+      if (I + 1 < Init->getNumInits())
+        OS << ", ";
+    }
+    OS << "}";
+    OS.flush();
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(
+            SM, Init, Replacement, new ReplaceStmt(Init, true, Replacement)));
+    return;
+  }
+}
+
+REGISTER_RULE(CudaExtentRule, PassKind::PK_Analysis)
