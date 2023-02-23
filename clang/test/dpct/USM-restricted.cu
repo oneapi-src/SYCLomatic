@@ -9,6 +9,7 @@
 #include <cuda.h>
 #include <stdio.h>
 #include <memory>
+#include <vector>
 
 #define MY_SAFE_CALL(CALL) do {    \
   int Error = CALL;                \
@@ -1069,4 +1070,16 @@ void foo14() {
   //CHECK-NEXT:q_ct1.memcpy((void *)h_out, (void *)d_out, h_selected_num * sizeof(int)).wait();
   cudaMemcpy((void *)&h_selected_num, (void *)d_selected_num, sizeof(int), cudaMemcpyDeviceToHost);
   cudaMemcpy((void *)h_out, (void *)d_out, h_selected_num * sizeof(int), cudaMemcpyDeviceToHost);
+}
+
+struct TEST_STR {
+  int a[10];
+};
+
+void foo15() {
+  std::vector<volatile TEST_STR *> buf;
+  for (int i = 0; i < 32; i++) {
+    //CHECK: buf[i] = (volatile TEST_STR *)sycl::malloc_host(sizeof(TEST_STR), dpct::get_default_queue());
+    cudaMallocHost(&buf[i], sizeof(TEST_STR));
+  }
 }
