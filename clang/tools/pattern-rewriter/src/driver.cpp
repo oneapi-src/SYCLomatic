@@ -16,11 +16,26 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/YAMLTraits.h"
 
-static constexpr auto HelpMessage = R"--(
-DESCRIPTION:
+static constexpr auto Description = R"--(
 
-SYCLomatic provides the pattern-rewriter tool to apply code updates and adjustments automatically based on user-defined patterns in YAML format. It can process any code before or after migration.
-For example, you can use it to automate the manual adjustments after migration to SYCL, enabling you to re-run migration multiple times and re-apply your adjustments.
+SYCLomatic provides the pattern-rewriter tool to apply code updates and
+adjustments automatically based on user-defined patterns in YAML format. It can
+process any code before or after migration. For example, you can use it to
+automate the manual adjustments after migration to SYCL, enabling you to re-run
+migration multiple times and re-apply your adjustments.
+)--";
+
+static constexpr auto Examples = R"--(
+EXAMPLES:
+
+Rewrite SYCL source file:
+
+  pattern-rewriter source.dp.cpp -r rules.yaml -o output.dp.cpp
+
+Rewrite CUDA source file:
+
+  pattern-rewriter source.cu -r rules.yaml -o output.cu
+
 )--";
 
 template <>
@@ -89,9 +104,9 @@ int main(int argc, char *argv[]) {
       "r", llvm::cl::desc("Specify rules filename"),
       llvm::cl::value_desc("filename"), llvm::cl::Required);
 
-  llvm::cl::extrahelp MoreHelp(HelpMessage);
+  llvm::cl::extrahelp MoreHelp(Examples);
 
-  llvm::cl::ParseCommandLineOptions(argc, argv);
+  llvm::cl::ParseCommandLineOptions(argc, argv, Description);
 
   const auto RulesFile = fixLineEndings(readFile(RulesFilename.getValue()));
   llvm::yaml::Input RulesParser(RulesFile);
