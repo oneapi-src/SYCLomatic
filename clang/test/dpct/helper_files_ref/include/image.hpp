@@ -718,9 +718,9 @@ public:
   typename std::enable_if<Available, data_t>::type read(CoordT x) {
     sycl::sampler smpl;
     if (_sampler.get_filtering_mode() == sycl::filtering_mode::linear) {
-      smpl = sampler(_sampler.get_coordinate_normalization_mode(),
-                     _sampler.get_addressing_mode(),
-                     sycl::filtering_mode::nearest);
+      smpl = sycl::sampler(_sampler.get_coordinate_normalization_mode(),
+                           _sampler.get_addressing_mode(),
+                           sycl::filtering_mode::nearest);
     } else {
       smpl = _sampler;
     }
