@@ -1107,8 +1107,8 @@ template<class T1, class T2, int N> __global__ void foo31();
 //CHECK:   q_ct1.submit([&](sycl::handler &cgh) {
 //CHECK-NEXT:     /*
 //CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'BLOCK_PAIR / SIMD_SIZE' expression was replaced with a
-//CHECK-NEXT:     value. Modify the code to use original expression, provided in comments,
-//CHECK-NEXT:     if it is correct.
+//CHECK-NEXT:     value. Modify the code to use the original expression, provided in
+//CHECK-NEXT:     comments, if it is correct.
 //CHECK-NEXT:     */
 //CHECK-NEXT:     sycl::local_accessor<double, 2> red_acc_acc_ct1(
 //CHECK-NEXT:         sycl::range<2>(8, 8 /*BLOCK_PAIR / SIMD_SIZE*/), cgh);
