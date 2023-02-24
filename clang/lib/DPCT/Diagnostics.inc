@@ -225,5 +225,5 @@ DEF_WARNING(MODULE_LOAD_DATA, 1104, "'%0' should point to a dynamic library load
 DEF_COMMENT(MODULE_LOAD_DATA, 1104, "'{0}' should point to a dynamic library loaded in memory. The dynamic library should supply wrapped kernel functions.")
 DEF_WARNING(RESERVE_FOR_FUTURE, 1105, "")
 DEF_COMMENT(RESERVE_FOR_FUTURE, 1105, "")
-DEF_WARNING(EXTENSION_DEVICE_INFO, 1106, "'%0' was migrated with the Intel extensions for device information which may be not supported by all compilers or runtimes. You may need to adjust the code.")
-DEF_COMMENT(EXTENSION_DEVICE_INFO, 1106, "'{0}' was migrated with the Intel extensions for device information which may be not supported by all compilers or runtimes. You may need to adjust the code.")
+DEF_WARNING(EXTENSION_DEVICE_INFO, 1106, "'%0' was migrated with the Intel extensions for device information which may not be supported by all compilers or runtimes. You may need to adjust the code.")
+DEF_COMMENT(EXTENSION_DEVICE_INFO, 1106, "'{0}' was migrated with the Intel extensions for device information which may not be supported by all compilers or runtimes. You may need to adjust the code.")
