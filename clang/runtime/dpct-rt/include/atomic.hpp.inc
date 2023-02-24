@@ -110,7 +110,7 @@ template <sycl::access::address_space addressSpace =
           typename T1, typename T2>
 inline T1 atomic_fetch_add(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
-  atomic_fetch_add(addr, (T1)operand, memoryOrder);
+  atomic_fetch_add<addressSpace, T1>(addr, operand, memoryOrder);
 }
 // DPCT_LABEL_END
 
@@ -177,7 +177,7 @@ template <sycl::access::address_space addressSpace =
           typename T1, typename T2>
 inline T1 atomic_fetch_sub(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
-  atomic_fetch_sub(addr, (T1)operand, memoryOrder);
+  atomic_fetch_sub<addressSpace, T1>(addr, operand, memoryOrder);
 }
 // DPCT_LABEL_END
 
@@ -244,7 +244,7 @@ template <sycl::access::address_space addressSpace =
           typename T1, typename T2>
 inline T1 atomic_fetch_and(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
-  atomic_fetch_and(addr, (T1)operand, memoryOrder);
+  atomic_fetch_and<addressSpace, T1>(addr, operand, memoryOrder);
 }
 // DPCT_LABEL_END
 
@@ -311,7 +311,7 @@ template <sycl::access::address_space addressSpace =
           typename T1, typename T2>
 inline T1 atomic_fetch_or(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
-  atomic_fetch_or(addr, (T1)operand, memoryOrder);
+  atomic_fetch_or<addressSpace, T1>(addr, operand, memoryOrder);
 }
 // DPCT_LABEL_END
 
@@ -378,7 +378,7 @@ template <sycl::access::address_space addressSpace =
           typename T1, typename T2>
 inline T1 atomic_fetch_xor(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
-  atomic_fetch_xor(addr, (T1)operand, memoryOrder);
+  atomic_fetch_xor<addressSpace, T1>(addr, operand, memoryOrder);
 }
 // DPCT_LABEL_END
 
@@ -445,7 +445,7 @@ template <sycl::access::address_space addressSpace =
           typename T1, typename T2>
 inline T1 atomic_fetch_min(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
-  atomic_fetch_min(addr, (T1)operand, memoryOrder);
+  atomic_fetch_min<addressSpace, T1>(addr, operand, memoryOrder);
 }
 // DPCT_LABEL_END
 
@@ -512,7 +512,7 @@ template <sycl::access::address_space addressSpace =
           typename T1, typename T2>
 inline T1 atomic_fetch_max(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
-  atomic_fetch_max(addr, (T1)operand, memoryOrder);
+  atomic_fetch_max<addressSpace, T1>(addr, operand, memoryOrder);
 }
 // DPCT_LABEL_END
 
@@ -670,7 +670,7 @@ template <sycl::access::address_space addressSpace =
           typename T1, typename T2>
 inline T1 atomic_exchange(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
-  atomic_exchange(addr, (T1)operand, memoryOrder);
+  atomic_exchange<addressSpace, T1>(addr, operand, memoryOrder);
 }
 // DPCT_LABEL_END
 
