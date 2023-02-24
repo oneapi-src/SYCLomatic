@@ -78,6 +78,18 @@ inline auto CheckForPostfixDeclaratorType(unsigned Idx) {
   };
 }
 
+class CheckTypeNameAndInVarDecl {
+  std::string Name;
+public:
+  CheckTypeNameAndInVarDecl(const std::string &N) : Name(N) {}
+  bool operator()(const TypeLoc TL) {
+    if (const auto *VD = DpctGlobalInfo::findAncestor<VarDecl>(&TL)) {
+      return DpctGlobalInfo::getTypeName(VD->getType()) == Name;
+    }
+    return false;
+  }
+};
+
 // Print a templated type. Pass a STR("") as a template argument for types with
 // no template argument e.g. MyType<>
 template <class TypeNameT, class... TemplateArgsT>
@@ -95,6 +107,32 @@ std::shared_ptr<TypeLocRewriterFactoryBase> createTypeLocRewriterFactory(
 // Print a type with no template.
 template <class TypeNameT>
 std::shared_ptr<TypeLocRewriterFactoryBase> createTypeLocRewriterFactory(
+    std::function<TypeNameT(const TypeLoc)> TypeNameCreator) {
+  return std::make_shared<
+      TypeLocRewriterFactory<TypeNameTypeLocRewriter<TypeNameT>,
+                             std::function<TypeNameT(const TypeLoc)>>>(
+      std::forward<std::function<TypeNameT(const TypeLoc)>>(TypeNameCreator));
+}
+
+// Print a templated type. Pass a STR("") as a template argument for types with
+// empty template argument e.g. MyType<>, If --enable-ctad is set, the template
+// arguments which could be deduced with class template argument deduction(CTAD)
+// will be omitted in the generated code.
+template <class TypeNameT, class... TemplateArgsT>
+std::shared_ptr<TypeLocRewriterFactoryBase> createCtadTypeLocRewriterFactory(
+    std::function<TypeNameT(const TypeLoc)> TypeNameCreator,
+    std::function<TemplateArgsT(const TypeLoc)>... TAsCreator) {
+  return std::make_shared<
+      TypeLocRewriterFactory<CtadTemplateTypeLocRewriter<TypeNameT, TemplateArgsT...>,
+                             std::function<TypeNameT(const TypeLoc)>,
+                             std::function<TemplateArgsT(const TypeLoc)>...>>(
+      std::forward<std::function<TypeNameT(const TypeLoc)>>(TypeNameCreator),
+      std::forward<std::function<TemplateArgsT(const TypeLoc)>>(TAsCreator)...);
+}
+
+// Print a type without template.
+template <class TypeNameT>
+std::shared_ptr<TypeLocRewriterFactoryBase> createCtadTypeLocRewriterFactory(
     std::function<TypeNameT(const TypeLoc)> TypeNameCreator) {
   return std::make_shared<
       TypeLocRewriterFactory<TypeNameTypeLocRewriter<TypeNameT>,
@@ -161,6 +199,7 @@ void TypeLocRewriterFactoryBase::initTypeLocRewriterMap() {
 #define TYPE_CONDITIONAL_FACTORY(Pred, First, Second)                          \
   createTypeLocConditionalFactory(Pred, First, Second)
 #define TYPE_FACTORY(...) createTypeLocRewriterFactory(__VA_ARGS__)
+#define CTAD_TYPE_FACTORY(...) createCtadTypeLocRewriterFactory(__VA_ARGS__)
 #define FEATURE_REQUEST_FACTORY(FEATURE, x)                                    \
   createFeatureRequestFactory(FEATURE, x 0),
 #define HEADER_INSERTION_FACTORY(HEADER, SUB)                                  \

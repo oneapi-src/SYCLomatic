@@ -10,7 +10,8 @@
 #include <stdio.h>
 #define VECTOR_SIZE 256
 
-//     CHECK:void VectorAddKernel(float* A, float* B, float* C, sycl::nd_item<3> item_ct1)
+//     CHECK:void VectorAddKernel(float* A, float* B, float* C,
+// CHECK-NEXT:                     const sycl::nd_item<3> &item_ct1)
 //CHECK-NEXT:{
 //CHECK-NEXT:    A[item_ct1.get_local_id(2)] = item_ct1.get_local_id(2) + 1.0f;
 //CHECK-NEXT:    B[item_ct1.get_local_id(2)] = item_ct1.get_local_id(2) + 1.0f;
