@@ -116,7 +116,7 @@ DEF_COMMENT(EXCEED_MAX_WORKGROUP_SIZE, 1049, "The work-group size passed to the 
 DEF_WARNING(UNDEDUCED_TYPE, 1050, "The template argument of the %0 could not be deduced. You need to update this code.")
 DEF_COMMENT(UNDEDUCED_TYPE, 1050, "The template argument of the {0} could not be deduced. You need to update this code.")
 DEF_WARNING(UNCOMPATIBLE_DEVICE_PROP, 1051, "SYCL does not support a device property functionally compatible with %0. It was migrated to %1. You may need to adjust the value of %1 for the specific device.")
-DEF_COMMENT(UNCOMPATIBLE_DEVICE_PROP, 1051, "SYCL does not support a device property functionally compatible with {0}. It was migrated to {1}. You may need to adjust the value of {1} for the specific device")
+DEF_COMMENT(UNCOMPATIBLE_DEVICE_PROP, 1051, "SYCL does not support a device property functionally compatible with {0}. It was migrated to {1}. You may need to adjust the value of {1} for the specific device.")
 DEF_WARNING(VOLATILE_VECTOR_ACCESS, 1052, "SYCL does not support the member access for a volatile qualified vector type. The volatile qualifier was removed. You may need to rewrite the code.")
 DEF_COMMENT(VOLATILE_VECTOR_ACCESS, 1052, "SYCL does not support the member access for a volatile qualified vector type. The volatile qualifier was removed. You may need to rewrite the code.")
 DEF_WARNING(DEVICE_ASM, 1053, "Migration of device assembly code is not supported.")
