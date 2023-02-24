@@ -8,7 +8,8 @@
 #include <cuda.h>
 #include <stdio.h>
 
-// CHECK: void VectorAddKernel(float* A, float* B, float* C, sycl::nd_item<3> item_ct1)
+// CHECK: void VectorAddKernel(float* A, float* B, float* C, 
+// CHECK-NEXT: const sycl::nd_item<3> &item_ct1)
 // CHECK-NEXT: {
 // CHECK-NEXT: #ifdef _FOO_
 // CHECK-NEXT:      A[item_ct1.get_local_id(2)] = item_ct1.get_local_id(2) + 4.0f;

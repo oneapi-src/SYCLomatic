@@ -696,6 +696,9 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
       } else if (BaseType->isPointerType()) {
         DerefQT = BaseType->getPointeeType();
       }
+    } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(TE)) {
+      // Handle cases like A[3] where A is a vector with sepecfying type.
+      DerefQT = COCE->getType().getCanonicalType();
     }
 
     // All other cases

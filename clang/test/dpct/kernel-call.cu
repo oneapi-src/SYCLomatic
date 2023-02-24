@@ -9,7 +9,7 @@
 //CHECK: void helloFromGPUDDefaultArgs(int i, int j
 //CHECK-NEXT: #ifdef PAR
 //CHECK-NEXT:   , int k
-//CHECK-NEXT: , cl::sycl::nd_item<3> item_ct1
+//CHECK-NEXT: , const cl::sycl::nd_item<3> &item_ct1
 //CHECK-NEXT: #endif
 //CHECK-NEXT:   , int l = 0,
 //CHECK-NEXT:   int m = 0, int n = 0) {
@@ -27,14 +27,14 @@ blockDim.x + threadIdx.x;
 }
 
 
-//CHECK: void testKernel(int L, int M, cl::sycl::nd_item<3> item_ct1, int N);
+//CHECK: void testKernel(int L, int M, const cl::sycl::nd_item<3> &item_ct1, int N);
 __global__ void testKernel(int L, int M, int N);
 
-// CHECK: void testKernel(int L, int M, cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]], int N = 0);
+// CHECK: void testKernel(int L, int M, const cl::sycl::nd_item<3> &[[ITEMNAME:item_ct1]], int N = 0);
 __global__ void testKernel(int L, int M, int N = 0);
 
 // CHECK: void testKernelPtr(const int *L, const int *M, int N,
-// CHECK-NEXT: cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
+// CHECK-NEXT: const cl::sycl::nd_item<3> &[[ITEMNAME:item_ct1]]) {
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
   L[0];
   M[0];
@@ -44,14 +44,14 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 
 
 // CHECK: // Test Launch Bounds
-// CHECK-NEXT: void testKernel(int L, int M, cl::sycl::nd_item<3> [[ITEMNAME:item_ct1]], int N) {
+// CHECK-NEXT: void testKernel(int L, int M, const cl::sycl::nd_item<3> &[[ITEMNAME:item_ct1]], int N) {
 __launch_bounds__(256, 512) // Test Launch Bounds
 __global__ void testKernel(int L, int M, int N) {
   // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range(2) + [[ITEMNAME]].get_local_id(2);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
 
-// CHECK: void helloFromGPU(int i, cl::sycl::nd_item<3> item_ct1) {
+// CHECK: void helloFromGPU(int i, const cl::sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT:     int a = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2) + item_ct1.get_group(2) +
 // CHECK-NEXT:     item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
 // CHECK-NEXT: }
@@ -60,7 +60,7 @@ __global__ void helloFromGPU(int i) {
           blockDim.x + threadIdx.x;
 }
 
-// CHECK: void helloFromGPU(cl::sycl::nd_item<3> item_ct1) {
+// CHECK: void helloFromGPU(const cl::sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT:     int a = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2) + item_ct1.get_group(2) +
 // CHECK-NEXT:     item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
 // CHECK-NEXT: }
@@ -69,7 +69,7 @@ __global__ void helloFromGPU(void) {
           blockDim.x + threadIdx.x;
 }
 
-// CHECK: void helloFromGPU2(cl::sycl::nd_item<3> item_ct1) {
+// CHECK: void helloFromGPU2(const cl::sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT:     int a = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2) + item_ct1.get_group(2) +
 // CHECK-NEXT:     item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
 // CHECK-NEXT: }
@@ -386,7 +386,7 @@ void run_foo4(dim3 c, dim3 d) {
 }
 
 //CHECK:dpct::shared_memory<float, 1> result(32);
-//CHECK-NEXT:void my_kernel(float* result, cl::sycl::nd_item<3> item_ct1,
+//CHECK-NEXT:void my_kernel(float* result, const cl::sycl::nd_item<3> &item_ct1,
 //CHECK-NEXT:               float *resultInGroup) {
 //CHECK-NEXT:  // __shared__ variable
 //CHECK-NEXT:  resultInGroup[item_ct1.get_local_id(2)] = item_ct1.get_group(2);
@@ -461,7 +461,7 @@ int run_foo7 () {
 
 //CHECK:dpct::shared_memory<float, 0> in;
 //CHECK-NEXT:dpct::shared_memory<float, 0> out;
-//CHECK-NEXT:void my_kernel2(float in, float *out, cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:void my_kernel2(float in, float *out, const cl::sycl::nd_item<3> &item_ct1) {
 //CHECK-NEXT:  if (item_ct1.get_local_id(2) == 0) {
 //CHECK-NEXT:    memcpy(out, &in, sizeof(float));
 //CHECK-NEXT:  }
@@ -496,7 +496,7 @@ int run_foo8() {
   printf("%f ", out);
 }
 
-//CHECK: void deviceFoo(int i, int j, int k, cl::sycl::nd_item<3> item_ct1,
+//CHECK: void deviceFoo(int i, int j, int k, const cl::sycl::nd_item<3> &item_ct1,
 //CHECK-NEXT: int l = 0,
 //CHECK-NEXT: int m = 0, int n = 0){
 //CHECK-NEXT: int a = item_ct1.get_group(2);
@@ -508,14 +508,14 @@ __device__ void deviceFoo(int i, int j, int k,
 }
 
 
-//CHECK: void deviceFoo2(cl::sycl::nd_item<3> item_ct1, int i = 0, int j = 0){
+//CHECK: void deviceFoo2(const cl::sycl::nd_item<3> &item_ct1, int i = 0, int j = 0){
 //CHECK-NEXT:   int a = item_ct1.get_group(2);
 //CHECK-NEXT: }
 __device__ void deviceFoo2(int i = 0, int j = 0){
   int a = blockIdx.x;
 }
 
-//CHECK: void callDeviceFoo(cl::sycl::nd_item<3> item_ct1){
+//CHECK: void callDeviceFoo(const cl::sycl::nd_item<3> &item_ct1){
 //CHECK-NEXT:   deviceFoo(1,2,3, item_ct1,4,5,6);
 //CHECK-NEXT:   deviceFoo2(item_ct1, 1,2);
 //CHECK-NEXT: }
@@ -592,16 +592,16 @@ int run_foo10() {
 
 struct test_class {
   __device__ test_class() = default;
-  // CHECK: test_class(int *a, cl::sycl::nd_item<3> item_ct1, int *s1) {
+  // CHECK: test_class(int *a, const cl::sycl::nd_item<3> &item_ct1, int *s1) {
   // CHECK-NEXT:  // __shared__ variable
   // CHECK-NEXT:   s1[0] = item_ct1.get_local_range(2);
   // CHECK-NEXT: }
-  // CHECK-NEXT: test_class(int *a, int *b, cl::sycl::nd_item<3> item_ct1, float &s2) {
+  // CHECK-NEXT: test_class(int *a, int *b, const cl::sycl::nd_item<3> &item_ct1, float &s2) {
   // CHECK-NEXT:  // __shared__ variable
   // CHECK-NEXT:   int d = item_ct1.get_local_range(2);
   // CHECK-NEXT: }
   // CHECK-NEXT: template<class T>
-  // CHECK-NEXT: test_class(T *a, T *b, cl::sycl::nd_item<3> item_ct1, T &s3) {
+  // CHECK-NEXT: test_class(T *a, T *b, const cl::sycl::nd_item<3> &item_ct1, T &s3) {
   // CHECK-NEXT:  // __shared__ variable
   // CHECK-NEXT:   int d = item_ct1.get_local_range(2);
   // CHECK-NEXT: }
@@ -620,7 +620,8 @@ struct test_class {
   }
 };
 
-// CHECK: void kernel_ctor(cl::sycl::nd_item<3> item_ct1, int *s1, float &s2, float &s3) {
+// CHECK: void kernel_ctor(const cl::sycl::nd_item<3> &item_ct1, int *s1, float &s2,
+// CHECK-NEXT: float &s3) {
 // CHECK-NEXT:   float *fa, *fb;
 // CHECK-NEXT:   int *la, *lb;
 // CHECK-NEXT:   test_class tc(la, item_ct1, s1);
@@ -835,7 +836,7 @@ void run_foo15() {
   //CHECK-NEXT:    dpct::access_wrapper<float *> f_acc_ct1(f, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel7_{{[0-9a-z]+}}, float>>(
-  //CHECK-NEXT:      cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)), 
+  //CHECK-NEXT:      cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](cl::sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        my_kernel7(f_acc_ct0.get_raw_pointer(), f_acc_ct1.get_raw_pointer());
   //CHECK-NEXT:      });
@@ -847,7 +848,7 @@ void run_foo15() {
   //CHECK-NEXT:    dpct::access_wrapper<double *> d_acc_ct1(d, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel7_{{[0-9a-z]+}}, double>>(
-  //CHECK-NEXT:      cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)), 
+  //CHECK-NEXT:      cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](cl::sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        my_kernel7(d_acc_ct0.get_raw_pointer(), d_acc_ct1.get_raw_pointer());
   //CHECK-NEXT:      });

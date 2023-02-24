@@ -72,7 +72,7 @@ static inline fs::path write_data_to_file(char const *const data, size_t size) {
   std::error_code ec;
 
   if (sizeof(size_t) >= sizeof(std::streamsize) &&
-      size > std::numeric_limits<std::streamsize>::max())
+      size > (std::numeric_limits<std::streamsize>::max)())
     throw std::runtime_error("data file too large");
 
   // random number generator

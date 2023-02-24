@@ -62,7 +62,7 @@ __global__ void foo_kernel() {}
 //CHECK-NEXT:   #ifdef MACRO_CC
 //CHECK-NEXT:   , int c
 //CHECK-NEXT:   #endif
-//CHECK-NEXT:   , sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:   , const sycl::nd_item<3> &item_ct1) {
 //CHECK-NEXT:     int x = item_ct1.get_group(2);
 //CHECK-NEXT:   }
 __global__ void foo_kernel2(int a, int b
@@ -432,7 +432,7 @@ FFF
 
 }
 
-// CHECK: #define FFFFF(aaa,bbb) void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb, int *c, BBB, sycl::nd_item<3> item_ct1, float *sp_lj, float *sp_coul, int *ljd, sycl::local_accessor<double, 2> la)
+// CHECK: #define FFFFF(aaa,bbb) void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb, int *c, BBB, const sycl::nd_item<3> &item_ct1, float *sp_lj, float *sp_coul, int *ljd, sycl::local_accessor<double, 2> la)
 #define FFFFF(aaa,bbb) __device__ void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb, int *c, BBB)
 
 // CHECK: FFFFF(pos, q)
@@ -449,7 +449,7 @@ FFFFF(pos, q)
   const int tid = threadIdx.x;
 }
 
-// CHECK: #define FFFFFF(aaa,bbb) void foo5(const int * __restrict__ aaa, const float * __restrict__ bbb, sycl::nd_item<3> item_ct1, float *sp_lj, float *sp_coul, int *ljd, sycl::local_accessor<double, 2> la)
+// CHECK: #define FFFFFF(aaa,bbb) void foo5(const int * __restrict__ aaa, const float * __restrict__ bbb, const sycl::nd_item<3> &item_ct1, float *sp_lj, float *sp_coul, int *ljd, sycl::local_accessor<double, 2> la)
 #define FFFFFF(aaa,bbb) __device__ void foo5(const int * __restrict__ aaa, const float * __restrict__ bbb)
 
 // CHECK: FFFFFF(pos, q)
@@ -481,7 +481,7 @@ __device__ void foo6(AAA, BBB)
 
 //CHECK: #define MM __umul24
 //CHECK-NEXT: #define MUL(a, b) sycl::mul24((unsigned int)a, (unsigned int)b)
-//CHECK-NEXT: void foo7(sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT: void foo7(const sycl::nd_item<3> &item_ct1) {
 //CHECK-NEXT:   unsigned int tid = MUL(item_ct1.get_local_range(2), item_ct1.get_group(2)) +
 //CHECK-NEXT:       item_ct1.get_local_range(2);
 //CHECK-NEXT:   unsigned int tid2 = sycl::mul24((unsigned int)item_ct1.get_local_range(2),
@@ -569,7 +569,7 @@ void templatefoo2(){
   CALL_KERNEL2(8, AAA)
 }
 
-//CHECK: void foo11(sycl::nd_item<3> item_ct1){
+//CHECK: void foo11(const sycl::nd_item<3> &item_ct1){
 //CHECK-NEXT:   sycl::exp((double)(THREAD_IDX_X));
 //CHECK-NEXT: }
 __global__ void foo11(){
@@ -1107,8 +1107,8 @@ template<class T1, class T2, int N> __global__ void foo31();
 //CHECK:   q_ct1.submit([&](sycl::handler &cgh) {
 //CHECK-NEXT:     /*
 //CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'BLOCK_PAIR / SIMD_SIZE' expression was replaced with a
-//CHECK-NEXT:     value. Modify the code to use original expression, provided in comments,
-//CHECK-NEXT:     if it is correct.
+//CHECK-NEXT:     value. Modify the code to use the original expression, provided in
+//CHECK-NEXT:     comments, if it is correct.
 //CHECK-NEXT:     */
 //CHECK-NEXT:     sycl::local_accessor<double, 2> red_acc_acc_ct1(
 //CHECK-NEXT:         sycl::range<2>(8, 8 /*BLOCK_PAIR / SIMD_SIZE*/), cgh);

@@ -659,6 +659,17 @@ public:
 };
 
 } // namespace deprecated
+
+inline void dpct_free(void *ptr,
+                      const sycl::queue &q) {
+  if (ptr) {
+#ifdef DPCT_USM_LEVEL_NONE
+    detail::mem_mgr::instance().mem_free(ptr);
+#else
+    sycl::free(ptr, q.get_context());
+#endif // DPCT_USM_LEVEL_NONE
+  }
+}
 } // namespace detail
 
 #ifdef DPCT_USM_LEVEL_NONE
@@ -800,36 +811,28 @@ static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y,
 /// \returns no return value.
 static inline void dpct_free(void *ptr,
                              sycl::queue &q = get_default_queue()) {
-  if (ptr) {
-#ifdef DPCT_USM_LEVEL_NONE
-    detail::mem_mgr::instance().mem_free(ptr);
-#else
-    sycl::free(ptr, q.get_context());
-#endif // DPCT_USM_LEVEL_NONE
-  }
+  detail::dpct_free(ptr, q);
 }
 
-#ifndef DPCT_USM_LEVEL_NONE
 /// Free the device memory pointed by a batch of pointers in \p pointers which
 /// are related to \p q after \p events completed.
 ///
 /// \param pointers The pointers point to the device memory requested to be freed.
 /// \param events The events to be waited.
 /// \param q The sycl::queue the memory relates to.
-inline void async_dpct_free(std::vector<void *> pointers,
-                            std::vector<sycl::event> events,
+inline void async_dpct_free(const std::vector<void *> &pointers,
+                            const std::vector<sycl::event> &events,
                             sycl::queue &q = get_default_queue()) {
-  std::thread t(
-      [](std::vector<void *> pointers, std::vector<sycl::event> events,
-         sycl::context ctxt) {
-        sycl::event::wait(events);
-        for (auto p : pointers)
-          sycl::free(p, ctxt);
-      },
-      std::move(pointers), std::move(events), q.get_context());
-  get_current_device().add_task(std::move(t));
+  q.submit([&](sycl::handler &cgh) {
+    cgh.depends_on(events);
+    cgh.host_task([=] {
+      for (auto p : pointers)
+        if (p) {
+          detail::dpct_free(p, q);
+        }
+    });
+  });
 }
-#endif
 
 /// Synchronously copies \p size bytes from the address specified by \p from_ptr
 /// to the address specified by \p to_ptr. The value of \p direction is used to
@@ -1170,7 +1173,7 @@ public:
 
   ~device_memory() {
     if (_device_ptr && !_reference)
-      dpct_free(_device_ptr);
+      dpct::dpct_free(_device_ptr);
     if (_host_ptr)
       std::free(_host_ptr);
   }
