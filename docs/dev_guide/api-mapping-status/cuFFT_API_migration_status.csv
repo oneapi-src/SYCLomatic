@@ -3,7 +3,7 @@ cufftPlan1d,YES,
 cufftPlan2d,YES,
 cufftPlan3d,YES,
 cufftPlanMany,YES,
-cufftXtMakePlanMany,YES,:ref:`DPCT1100`
+cufftXtMakePlanMany,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
 cufftExecC2C,YES,
 cufftExecZ2Z,YES,
 cufftExecR2C,YES,
@@ -12,14 +12,14 @@ cufftExecC2R,YES,
 cufftExecZ2D,YES,
 cufftCreate,YES,
 cufftXtSetGPUs,NO,
-cufftMakePlan1d,YES,:ref:`DPCT1100`
-cufftMakePlan2d,YES,:ref:`DPCT1100`
-cufftMakePlan3d,YES,:ref:`DPCT1100`
-cufftMakePlanMany,YES,:ref:`DPCT1100`
-cufftGetSize1d,YES,:ref:`DPCT1100`
-cufftGetSize2d,YES,:ref:`DPCT1100`
-cufftGetSize3d,YES,:ref:`DPCT1100`
-cufftGetSizeMany,YES,:ref:`DPCT1100`
+cufftMakePlan1d,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftMakePlan2d,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftMakePlan3d,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftMakePlanMany,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftGetSize1d,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftGetSize2d,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftGetSize3d,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftGetSizeMany,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
 cufftGetSize,YES,:ref:`DPCT1100`
 cufftXtSetWorkArea,NO,
 cufftXtMalloc,NO,
@@ -37,13 +37,13 @@ cufftXtSetCallbackSharedSize,NO,
 cufftXtFree,NO,
 cufftDestroy,YES,
 cufftSetAutoAllocation,YES,:ref:`DPCT1100`
-cufftEstimate1d,YES,:ref:`DPCT1100`
-cufftEstimate2d,YES,:ref:`DPCT1100`
-cufftEstimate3d,YES,:ref:`DPCT1100`
-cufftEstimateMany,YES,:ref:`DPCT1100`
+cufftEstimate1d,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftEstimate2d,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftEstimate3d,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftEstimateMany,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
 cufftXtSetWorkAreaPolicy,NO,
-cufftMakePlanMany64,YES,:ref:`DPCT1100`
-cufftGetSizeMany64,YES,:ref:`DPCT1100`
+cufftMakePlanMany64,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftGetSizeMany64,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
 cufftXtGetSizeMany,NO,
 cufftSetWorkArea,YES,:ref:`DPCT1100`
 cufftXtExec,YES,

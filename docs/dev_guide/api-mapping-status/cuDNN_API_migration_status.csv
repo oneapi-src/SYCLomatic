@@ -115,11 +115,11 @@ cudnnGetBatchNormalizationTrainingExReserveSpaceSize,YES,
 cudnnGetNormalizationBackwardWorkspaceSize,YES,
 cudnnGetNormalizationForwardTrainingWorkspaceSize,YES,
 cudnnGetNormalizationTrainingReserveSpaceSize,YES,
-cudnnLRNCrossChannelBackward,YES,
+cudnnLRNCrossChannelBackward,YES,:ref:`DPCT1097`
 cudnnNormalizationBackward,YES,
 cudnnNormalizationForwardTraining,YES,
 cudnnOpsTrainVersionCheck,NO,
-cudnnPoolingBackward,YES,
+cudnnPoolingBackward,YES,:ref:`DPCT1097`
 cudnnSoftmaxBackward,YES,
 cudnnSpatialTfGridGeneratorBackward,NO,
 cudnnSpatialTfSamplerBackward,NO,

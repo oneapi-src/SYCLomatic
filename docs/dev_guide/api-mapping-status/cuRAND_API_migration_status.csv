@@ -1,6 +1,6 @@
 Function,Migration Support,Diagnostic Message
-curandCreateGenerator,YES,
-curandCreateGeneratorHost,YES,
+curandCreateGenerator,YES,:ref:`DPCT1028` / :ref:`DPCT1032` / :ref:`DPCT1033`
+curandCreateGeneratorHost,YES,:ref:`DPCT1028` / :ref:`DPCT1032` / :ref:`DPCT1033`
 curandCreatePoissonDistribution,NO,
 curandDestroyDistribution,NO,
 curandDestroyGenerator,YES,
@@ -28,7 +28,7 @@ curandSetStream,YES,
 curandMakeMTGP32KernelState,NO,
 curand,YES,
 curand4,YES,
-curand_init,YES,
+curand_init,YES,:ref:`DPCT1028`
 curand_log_normal,YES,
 curand_log_normal2,YES,
 curand_log_normal2_double,YES,

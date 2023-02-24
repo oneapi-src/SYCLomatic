@@ -65,48 +65,48 @@ cub::DeviceHistogram::MultiHistogramEven,NO,
 cub::DeviceHistogram::HistogramRange,NO,
 cub::DeviceHistogram::MultiHistogramRange,NO,
 cub::DevicePartition::Flagged,NO,
-cub::DevicePartition::If,YES,
+cub::DevicePartition::If,NO,
 cub::DeviceMergeSort::SortPairs,NO,
 cub::DeviceMergeSort::SortPairsCopy,NO,
 cub::DeviceMergeSort::SortKeys,NO,
 cub::DeviceMergeSort::SortKeysCopy,NO,
 cub::DeviceMergeSort::StableSortPairs,NO,
 cub::DeviceMergeSort::StableSortKeys,NO,
-cub::DeviceRadixSort::SortPairs,NO,
-cub::DeviceRadixSort::SortPairsDescending,NO,
-cub::DeviceRadixSort::SortKeys,NO,
-cub::DeviceRadixSort::SortKeysDescending,NO,
-cub::DeviceReduce::Reduce,YES,
-cub::DeviceReduce::Sum,YES,
-cub::DeviceReduce::Min,YES,
+cub::DeviceRadixSort::SortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceRadixSort::SortPairsDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceRadixSort::SortKeys,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceRadixSort::SortKeysDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceReduce::Reduce,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceReduce::Sum,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceReduce::Min,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceReduce::ArgMin,NO,
-cub::DeviceReduce::Max,YES,
+cub::DeviceReduce::Max,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceReduce::ArgMax,NO,
-cub::DeviceReduce::ReduceByKey,YES,
-cub::DeviceRunLengthEncode::Encode,YES,
+cub::DeviceReduce::ReduceByKey,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceRunLengthEncode::Encode,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceRunLengthEncode::NonTrivialRuns,NO,
-cub::DeviceScan::ExclusiveSum,YES,
-cub::DeviceScan::ExclusiveScan,YES,
-cub::DeviceScan::InclusiveSum,YES,
-cub::DeviceScan::InclusiveScan,YES,
-cub::DeviceScan::InclusiveSumByKey,YES,
-cub::DeviceScan::ExclusiveSumByKey,YES,
-cub::DeviceScan::InclusiveScanByKey,YES,
-cub::DeviceScan::ExclusiveScanByKey,YES,
-cub::DeviceSelect::Flagged,YES,
-cub::DeviceSelect::If,NO,
-cub::DeviceSelect::Unique,YES,
-cub::DeviceSelect::UniqueByKey,YES,
+cub::DeviceScan::ExclusiveSum,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceScan::ExclusiveScan,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceScan::InclusiveSum,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceScan::InclusiveScan,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceScan::InclusiveSumByKey,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceScan::ExclusiveSumByKey,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceScan::InclusiveScanByKey,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceScan::ExclusiveScanByKey,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSelect::Flagged,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSelect::If,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSelect::Unique,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSelect::UniqueByKey,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSpmv::CsrMV,NO,
-cub::DeviceSegmentedRadixSort::SortPairs,YES,
-cub::DeviceSegmentedRadixSort::SortPairsDescending,YES,
+cub::DeviceSegmentedRadixSort::SortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSegmentedRadixSort::SortPairsDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSegmentedRadixSort::SortKeys,NO,
 cub::DeviceSegmentedRadixSort::SortKeysDescending,NO,
-cub::DeviceSegmentedReduce::Reduce,YES,
-cub::DeviceSegmentedReduce::Sum,YES,
-cub::DeviceSegmentedReduce::Min,YES,
+cub::DeviceSegmentedReduce::Reduce,YES,:ref:`DPCT1026` / :ref:`DPCT1027` / :ref:`DPCT1091` / :ref:`DPCT1092`
+cub::DeviceSegmentedReduce::Sum,YES,:ref:`DPCT1026` / :ref:`DPCT1027` / :ref:`DPCT1092`
+cub::DeviceSegmentedReduce::Min,YES,:ref:`DPCT1026` / :ref:`DPCT1027` / :ref:`DPCT1092`
 cub::DeviceSegmentedReduce::ArgMin,NO,
-cub::DeviceSegmentedReduce::Max,YES,
+cub::DeviceSegmentedReduce::Max,YES,:ref:`DPCT1026` / :ref:`DPCT1027` / :ref:`DPCT1092`
 cub::DeviceSegmentedReduce::ArgMax,NO,
 cub::DeviceSegmentedSort::SortKeys,NO,
 cub::DeviceSegmentedSort::SortKeysDescending,NO,

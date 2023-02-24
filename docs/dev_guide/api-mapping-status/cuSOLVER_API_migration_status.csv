@@ -1,6 +1,6 @@
 Function,Migration Support,Diagnostic Message
-cusolverDnCreate,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cusolverDnDestroy,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cusolverDnCreate,YES,
+cusolverDnDestroy,YES,
 cusolverDnSetStream,YES,
 cusolverDnGetStream,YES,
 cusolverDnCreateSyevjInfo,NO,
@@ -17,10 +17,10 @@ cusolverDnXgesvdjSetMaxSweeps,NO,
 cusolverDnXgesvdjSetSortEig,NO,
 cusolverDnXgesvdjGetResidual,NO,
 cusolverDnXgesvdjGetSweeps,NO,
-cusolverDnSpotrf_bufferSize,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cusolverDnDpotrf_bufferSize,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cusolverDnCpotrf_bufferSize,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cusolverDnZpotrf_bufferSize,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cusolverDnSpotrf_bufferSize,YES,
+cusolverDnDpotrf_bufferSize,YES,
+cusolverDnCpotrf_bufferSize,YES,
+cusolverDnZpotrf_bufferSize,YES,
 cusolverDnSpotrf,YES,
 cusolverDnDpotrf,YES,
 cusolverDnCpotrf,YES,
@@ -29,22 +29,22 @@ cusolverDnSpotrs,YES,
 cusolverDnDpotrs,YES,
 cusolverDnCpotrs,YES,
 cusolverDnZpotrs,YES,
-cusolverDnSpotri_bufferSize,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cusolverDnDpotri_bufferSize,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cusolverDnCpotri_bufferSize,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cusolverDnZpotri_bufferSize,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cusolverDnSpotri_bufferSize,YES,
+cusolverDnDpotri_bufferSize,YES,
+cusolverDnCpotri_bufferSize,YES,
+cusolverDnZpotri_bufferSize,YES,
 cusolverDnSpotri,YES,
 cusolverDnDpotri,YES,
 cusolverDnCpotri,YES,
 cusolverDnZpotri,YES,
-cusolverDnSgetrf_bufferSize,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cusolverDnDgetrf_bufferSize,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cusolverDnCgetrf_bufferSize,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cusolverDnZgetrf_bufferSize,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cusolverDnSgetrf,YES,
-cusolverDnDgetrf,YES,
-cusolverDnCgetrf,YES,
-cusolverDnZgetrf,YES,
+cusolverDnSgetrf_bufferSize,YES,
+cusolverDnDgetrf_bufferSize,YES,
+cusolverDnCgetrf_bufferSize,YES,
+cusolverDnZgetrf_bufferSize,YES,
+cusolverDnSgetrf,YES,:ref:`DPCT1047`
+cusolverDnDgetrf,YES,:ref:`DPCT1047`
+cusolverDnCgetrf,YES,:ref:`DPCT1047`
+cusolverDnZgetrf,YES,:ref:`DPCT1047`
 cusolverDnSgetrs,YES,
 cusolverDnDgetrs,YES,
 cusolverDnCgetrs,YES,
