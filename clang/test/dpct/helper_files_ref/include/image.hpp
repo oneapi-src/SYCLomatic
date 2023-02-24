@@ -664,7 +664,7 @@ template <class T, int dimensions, bool IsImageArray = false> class image_wrappe
 
     auto channel = data.get_channel();
     if constexpr (dimensions == 1) {
-      assert(data.get_data_type() == image_data_type::linear)
+      assert(data.get_data_type() == image_data_type::linear);
       _image = new sycl::image<1>(
         ptr, channel.get_channel_order(), channel.get_channel_type(),
         sycl::range<1>(data.get_x() / channel.get_total_size()));
