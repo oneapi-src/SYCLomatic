@@ -4,7 +4,8 @@
 #include <stdio.h>
 
 
-// CHECK: void VectorAddKernel(float* A, float* B, float* C, sycl::nd_item<3> item_ct1)
+// CHECK: void VectorAddKernel(float* A, float* B, float* C,
+// CHECK-NEXT: const sycl::nd_item<3> &item_ct1)
 // CHECK-NEXT: {
 // CHECK-NEXT: #ifdef _FOO_
 // CHECK-NEXT:      A[threadIdx.x] = threadIdx.x + 4.0f;

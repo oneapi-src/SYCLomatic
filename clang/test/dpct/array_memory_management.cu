@@ -26,7 +26,7 @@ void foo() {
   // CHECK-NEXT: dpct::image_matrix_p a1;
   // CHECK-NEXT: dpct::image_matrix* a2;
   // CHECK-NEXT: dpct::err0 err;
-  // CHECK-NEXT: sycl::range<3> extent;
+  // CHECK-NEXT: sycl::range<3> extent{0, 0, 0};
   // CHECK-NEXT: dpct::image_channel channel;
   cudaStream_t s;
   cudaArray_t a1;
