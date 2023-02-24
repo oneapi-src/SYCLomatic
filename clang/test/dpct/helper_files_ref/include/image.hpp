@@ -640,7 +640,7 @@ template <class T, int dimensions, bool IsImageArray = false> class image_wrappe
 
   void create_image(sycl::queue q) {
     auto &data = get_data();
-    if (data.get_data_type() == image_data_type::linear) {
+    if (data.get_data_type() == image_data_type::matrix) {
       _image = static_cast<image_matrix_p>(data.get_data_ptr())
           ->create_image<dimensions>(data.get_channel());
       return;
