@@ -53,10 +53,46 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseSetStream", ARG(0), ARG(1)))
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseGetStream", DEREF(1), ARG(0)))
 REMOVE_API_FACTORY_ENTRY("cusparseGetPointerMode")
 REMOVE_API_FACTORY_ENTRY("cusparseSetPointerMode")
-REMOVE_API_FACTORY_ENTRY("cusparseCreateSolveAnalysisInfo")
-REMOVE_API_FACTORY_ENTRY("cusparseDestroySolveAnalysisInfo")
+
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseCreateSolveAnalysisInfo",
+                                        DEREF(0),
+                                        CALL("std::make_shared<" +
+                                             MapNames::getDpctNamespace() +
+                                             "sparse::optimize_info>")))
+
+ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cusparseDestroySolveAnalysisInfo",
+                                             ARG(0), true, "reset"))
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseScsrsv_analysis",
     CALL(MapNames::getDpctNamespace() + "sparse::optimize_csrsv", DEREF(0),
          ARG(1), ARG(2), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8))))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseDcsrsv_analysis",
+    CALL(MapNames::getDpctNamespace() + "sparse::optimize_csrsv", DEREF(0),
+         ARG(1), ARG(2), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8))))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseCcsrsv_analysis",
+    CALL(MapNames::getDpctNamespace() + "sparse::optimize_csrsv", DEREF(0),
+         ARG(1), ARG(2), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8))))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseZcsrsv_analysis",
+    CALL(MapNames::getDpctNamespace() + "sparse::optimize_csrsv", DEREF(0),
+         ARG(1), ARG(2), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseScsrsv_solve",
+    CALL(MapNames::getDpctNamespace() + "sparse::csrsv", DEREF(0), ARG(1),
+         ARG(2), ARG(4), ARG(8), ARG(9), ARG(10))))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseDcsrsv_solve",
+    CALL(MapNames::getDpctNamespace() + "sparse::csrsv", DEREF(0), ARG(1),
+         ARG(2), ARG(4), ARG(8), ARG(9), ARG(10))))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseCcsrsv_solve",
+    CALL(MapNames::getDpctNamespace() + "sparse::csrsv", DEREF(0), ARG(1),
+         ARG(2), ARG(4), ARG(8), ARG(9), ARG(10))))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseZcsrsv_solve",
+    CALL(MapNames::getDpctNamespace() + "sparse::csrsv", DEREF(0), ARG(1),
+         ARG(2), ARG(4), ARG(8), ARG(9), ARG(10))))

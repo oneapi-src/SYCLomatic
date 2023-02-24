@@ -189,41 +189,45 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
 
 class optimize_info {
 public:
-  optimize_info() {
-    oneapi::mkl::sparse::init_matrix_handle(&_matrix_handle);
-  }
+  optimize_info() { oneapi::mkl::sparse::init_matrix_handle(&_matrix_handle); }
   ~optimize_info() {
-    oneapi::mkl::sparse::init_matrix_handle(&_matrix_handle);
+    oneapi::mkl::sparse::release_matrix_handle(get_default_queue(),
+                                               &_matrix_handle, _deps);
   }
-  void set_queue() {
-    
+  void add_dependency(sycl::event e) { _deps.push_back(e); }
+  oneapi::mkl::sparse::matrix_handle_t &get_matrix_handle() {
+    return _matrix_handle;
   }
+
 private:
   oneapi::mkl::sparse::matrix_handle_t _matrix_handle = nullptr;
-  sycl::queue _q = get_default_queue();
+  std::vector<sycl::event> _deps;
 };
 
 template <typename T>
 void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
                     int row_col, const matrix_info info, const T *val,
                     const int *row_ptr, const int *col_ind,
-                    oneapi::mkl::sparse::matrix_handle_t &matrix_handle) { // What happens if the matrix_handle is r-value? It may occur in cuda code.
-  oneapi::mkl::sparse::init_matrix_handle(&matrix_handle);
+                    std::shared_ptr<optimize_info> optimize_info_ptr) {
   auto data_row_ptr = detail::get_memory(row_ptr);
   auto data_col_ind = detail::get_memory(col_ind);
   auto data_val = detail::get_memory(val);
-  oneapi::mkl::sparse::set_csr_data(queue, &matrix_handle, sparse_rows,
-                                    sparse_cols, info.get_index_base(),
-                                    data_row_ptr, data_col_ind, data_val);
+  oneapi::mkl::sparse::set_csr_data(
+      queue, &(optimize_info_ptr->get_matrix_handle()), sparse_rows,
+      sparse_cols, info.get_index_base(), data_row_ptr, data_col_ind, data_val);
+  sycl::event e;
+#ifndef DPCT_USM_LEVEL_NONE
+  e =
+#endif
   oneapi::mkl::sparse::optimize_trsv(queue, info.get_uplo(), trans,
                                      info.get_diag(), matrix_handle);
+  optimize_info_ptr->add_dependency(e);
 }
 
 template <typename T>
 void csrsv(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
            const T *alpha, const matrix_info info,
-           oneapi::mkl::sparse::matrix_handle_t matrix_handle, const T *f,
-           T *x) {
+           std::shared_ptr<optimize_info> optimize_info_ptr, const T *f, T *x) {
   using Ty = typename dpct::DataType<T>::T2;
   auto alpha_value = get_value(reinterpret_cast<const Ty *>(alpha), queue);
   T *new_f;
@@ -240,6 +244,7 @@ void csrsv(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
 #endif
       oneapi::mkl::sparse::trsv(queue, info.get_uplo(), trans, info.get_diag(),
                                 matrix_handle, data_new_f, data_x);
+  optimize_info_ptr->add_dependency(e);
   dpct::async_dpct_free({new_f}, {e}, queue);
 }
 
