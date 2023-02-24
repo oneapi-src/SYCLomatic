@@ -16,7 +16,7 @@
 #include "../inc/utils.cuh"
 #include "../inc/empty.h"
 
-//CHECK:void kernel(float *input, sycl::nd_item<3> item_ct1, float *smem) {
+//CHECK:void kernel(float *input, const sycl::nd_item<3> &item_ct1, float *smem) {
 __global__ void kernel(float *input) {
   float sum = 0;
   __shared__ float smem[128];
@@ -32,7 +32,7 @@ void foo() {
   //CHECK-NEXT:    dpct::access_wrapper<float *> input_acc_ct0(input, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for(
-  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)), 
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   //CHECK-NEXT:        kernel(input_acc_ct0.get_raw_pointer(), item_ct1, smem_acc_ct1.get_pointer());
   //CHECK-NEXT:      });
@@ -41,7 +41,8 @@ void foo() {
 }
 
 template <class ReduceOp>
-//CHECK:float WarpReduce(float val, const ReduceOp &op, sycl::nd_item<3> item_ct1) {
+//CHECK:float WarpReduce(float val, const ReduceOp &op,
+//CHECK:const sycl::nd_item<3> &item_ct1) {
 //CHECK-NEXT:  val = op.warp_shfl_down(val, 16, item_ct1);
 __device__ float WarpReduce(float val, const ReduceOp &op) {
   val = op.warp_shfl_down(val, 16);
@@ -49,10 +50,11 @@ __device__ float WarpReduce(float val, const ReduceOp &op) {
 }
 
 template <size_t num>
-//CHECK:void compute_mode(float *input, sycl::nd_item<3> item_ct1) {
+//CHECK:void compute_mode(float *input, const sycl::nd_item<3> &item_ct1) {
 __global__ void compute_mode(float *input) {
   struct MaxOp {
-    //CHECK:float warp_shfl_down(float acc, int offset, sycl::nd_item<3> item_ct1) const {
+    //CHECK:float warp_shfl_down(float acc, int offset,
+    //CHECK-NEXT: const sycl::nd_item<3> &item_ct1) const {
     //CHECK-NEXT:  return WARP_SHFL_DOWN(acc, offset, item_ct1);
     __device__ float warp_shfl_down(float acc, int offset) const {
       return WARP_SHFL_DOWN(acc, offset);
@@ -69,7 +71,7 @@ void foo_2(float *ptr) {
   //CHECK-NEXT:    dpct::access_wrapper<float *> ptr_acc_ct0(ptr, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for(
-  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)), 
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
   //CHECK-NEXT:        compute_mode<8>(ptr_acc_ct0.get_raw_pointer(), item_ct1);
   //CHECK-NEXT:      });

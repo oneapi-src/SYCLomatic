@@ -3,7 +3,7 @@
 
 // device function
 // CHECK:template <typename ValueType>
-// CHECK-NEXT:int device_kernel(sycl::nd_item<3> item_ct1)
+// CHECK-NEXT:int device_kernel(const sycl::nd_item<3> &item_ct1)
 template <typename ValueType>
 __device__ int device_kernel()
 {
@@ -12,7 +12,7 @@ __device__ int device_kernel()
 
 // global function
 // CHECK:template <typename ValueType>
-// CHECK-NEXT:void kernel(sycl::nd_item<3> item_ct1)
+// CHECK-NEXT:void kernel(const sycl::nd_item<3> &item_ct1)
 template <typename ValueType>
 __global__ void kernel()
 {
@@ -79,7 +79,7 @@ void kernel(int i, int j)
 
 
 // CHECK:template <typename ValueType>
-// CHECK-NEXT:void kernel_2(sycl::nd_item<3> item_ct1)
+// CHECK-NEXT:void kernel_2(const sycl::nd_item<3> &item_ct1)
 // CHECK-NEXT:{
 // CHECK-NEXT:    auto tidx = item_ct1.get_local_id(2);
 // CHECK-NEXT:}
@@ -91,7 +91,7 @@ __global__ void kernel_2()
 
 // CHECK:template <typename ValueType>
 // CHECK-NEXT:void kernel_2(int a,
-// CHECK-NEXT:              sycl::nd_item<3> item_ct1)
+// CHECK-NEXT:              const sycl::nd_item<3> &item_ct1)
 // CHECK-NEXT:{
 // CHECK-NEXT:    auto tidx = item_ct1.get_local_id(2);
 // CHECK-NEXT:}
