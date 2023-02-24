@@ -16,7 +16,7 @@ library should supply wrapped kernel functions.
 Detailed Help
 -------------
 
-The CUDA application expects ``<expression text>`` to point to a CUDA module whose file
+The CUDA\* application expects ``<expression text>`` to point to a CUDA module whose file
 image has been copied to memory. The user should ensure that the CUDA code that generated
 the CUDA module is migrated to SYCL code, compiled to generate a kernel library, and then
 copied to memory by the migrated SYCL application.
@@ -25,8 +25,8 @@ Suggestions to Fix
 ------------------
 
 The user should find the module source file(s) that are used to make the CUDA module and
-migrate the module source file(s) to SYCL with the --extra-arg=--ptx option of the
-compatibility tool to generate wrapped kernel functions:
+migrate the module source file(s) to SYCL using the ``--extra-arg=--ptx`` option of the
+|tool_name| to generate wrapped kernel functions:
 
 .. code-block:: bash
    :linenos:
@@ -49,23 +49,21 @@ The user should ensure that the application will load the kernel library image i
 memory at runtime. For the following example this can be ensured by setting
 ``<kernel library filename>`` to ``library.so``.
 
-Example:
-
-Original code:
+For example, this original CUDA\* code:
 
 .. code-block:: cpp
    :linenos:
    const void *image = loadFile("module.ptx");
    cuModuleLoadData(&module, image);
 
-Migrated code:
+results in the following migrated SYCL code:
 
 .. code-block:: cpp
    :linenos:
    const void *image = loadFile("module.ptx");
    module = dpct::load_kernel_library(image);
 
-Fixed code:
+which is rewritten to:
 
 .. code-block:: cpp
    :linenos:

@@ -15,18 +15,16 @@ Zero-length arrays are not permitted in SYCL device code.
 Detailed Help
 -------------
 
-Zero-length arrays are not supported in C++ standard and SYCL Spec. It may be
+Zero-length arrays are not supported in the C++ standard or SYCL specification. It may be
 supported by some host compiler implementations, but it is not supported by
-Intel(R) oneAPI DPC++/C++ Compiler for device code.
+Intel® oneAPI DPC++/C++ Compiler for device code.
 
 Suggestions to Fix
 ------------------
 
-Use array which length is greater than zero.
+Use an array with length greater than zero.
 
-Example:
-
-Original code:
+For example, this original CUDA\* code:
 
 .. code-block:: cpp
    :linenos:
@@ -43,7 +41,8 @@ Original code:
      kernel<<<1, 1>>>(foo);
      ...
    }
-Migrated code:
+
+results in the following migrated SYCL code:
 
 .. code-block:: cpp
    :linenos:
@@ -66,7 +65,8 @@ Migrated code:
          });
      ...
    }
-Fixed code:
+
+which is rewritten to:
 
 .. code-block:: cpp
    :linenos:

@@ -16,7 +16,7 @@ use the original expression, provided in comments, if it is correct.
 Detailed Help
 -------------
 
-Identities including constant variable name(s), type(s) and macro(s) used in the
+Identities including constant variable name(s), type(s), and macro(s) used in the
 migrated SYCL code are replaced with their value since they may not be available
 in the code scope. User can replace the value with the original expression listed
 in the comment manually after confirming that the identities are available in the
@@ -25,11 +25,9 @@ code scope.
 Suggestions to Fix
 ------------------
 
-Use macro or const variable to replace the value.
+Use a macro or const variable to replace the value.
 
-Example:
-
-Original code:
+For example, this original CUDA\* code:
 
 .. code-block:: cpp
    :linenos:
@@ -41,7 +39,8 @@ Original code:
      f<<<1, 1>>>();
      return 0;
    }
-Migrated code:
+
+results in the following migrated SYCL code:
 
 .. code-block:: cpp
    :linenos:
@@ -60,7 +59,8 @@ Migrated code:
      });
      return 0;
    }
-Fixed code:
+
+which is rewritten to:
 
 .. code-block:: cpp
    :linenos:

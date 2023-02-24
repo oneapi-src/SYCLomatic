@@ -9,18 +9,18 @@ Message
 .. _msg-1106-start:
 
 ``<function name>`` was migrated with the Intel extensions for device information which
-may be not supported by all compilers or runtimes. You may need to adjust the code.
+may not be supported by all compilers or runtimes. You may need to adjust the code.
 
 .. _msg-1106-end:
 
 Detailed Help
 -------------
 
-The CUDA ``<function name>`` for example ``cudaMemGetInfo`` or ``cuMemGetInfo`` was
-migrated with Intel's Extensions for Device Information, which may be not supported
-by all compilers or runtimes.
+The CUDA\* function ``<function name>`` (for example ``cudaMemGetInfo`` or ``cuMemGetInfo``) was
+migrated with the Intel extensions for device information, which may be not supported
+by all compilers or runtimes. You may need to adjust the code.
 
-Original code:
+For example, this original CUDA\* code:
 
 .. code-block:: cpp
    :linenos:
@@ -28,20 +28,22 @@ Original code:
      size_t free_mem, total_mem;
      cudaMemGetInfo(&free_mem, &total_mem);
    }
-Migrated code:
+
+results in the following migrated SYCL code:
 
 .. code-block:: cpp
    :linenos:
    void foo() {
      size_t free_mem, total_mem;
      /*
-     DPCT1106:0: 'cudaMemGetInfo' was migrated with Intel's Extensions for Device
-     Information which may be not supported by all compilers or runtimes. You may
+     DPCT1106:0: 'cudaMemGetInfo' was migrated with the Intel extensions for device
+     information which may not be supported by all compilers or runtimes. You may
      need to adjust the code.
      */
      dpct::get_current_device().get_memory_info(free_mem, total_mem);
    }
-Fixed code:
+
+which is rewritten to:
 
 .. code-block:: cpp
    :linenos:
@@ -51,6 +53,7 @@ Fixed code:
      // free_mem should be adjusted
      free_mem = /*implementation defined*/;
    }
+
 Suggestions to Fix
 ------------------
 
