@@ -416,8 +416,8 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), AnalysisS
 DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), ChangeExtension,
     "change-filename-extension",
-    llvm::cl::desc("DEPRECATED: Specifies which extensions of migrated files"
-                   "will be changed, split by comma. Default:\n"
+    llvm::cl::desc("DEPRECATED: A comma-separated list that specifies which\n"
+                   "extensions of migrated files will be changed. Default:\n"
                    ".cu, .cuh, .cpp, .cxx, .cc, .c, .C"),
     llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 
