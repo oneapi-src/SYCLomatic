@@ -73,7 +73,7 @@ template <sycl::access::address_space addressSpace =
           typename T1, typename T2>
 inline T1 atomic_fetch_add(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
-  atomic_fetch_add<addressSpace, T1>(addr, operand, memoryOrder);
+  atomic_fetch_add<T1, addressSpace>(addr, operand, memoryOrder);
 }
 
 /// Atomically subtract the value operand from the value at the addr and assign
@@ -136,7 +136,7 @@ template <sycl::access::address_space addressSpace =
           typename T1, typename T2>
 inline T1 atomic_fetch_sub(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
-  atomic_fetch_sub<addressSpace, T1>(addr, operand, memoryOrder);
+  atomic_fetch_sub<T1, addressSpace>(addr, operand, memoryOrder);
 }
 
 /// Atomically perform a bitwise AND between the value operand and the value at the addr
@@ -199,7 +199,7 @@ template <sycl::access::address_space addressSpace =
           typename T1, typename T2>
 inline T1 atomic_fetch_and(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
-  atomic_fetch_and<addressSpace, T1>(addr, operand, memoryOrder);
+  atomic_fetch_and<T1, addressSpace>(addr, operand, memoryOrder);
 }
 
 /// Atomically or the value at the addr with the value operand, and assign
@@ -262,7 +262,7 @@ template <sycl::access::address_space addressSpace =
           typename T1, typename T2>
 inline T1 atomic_fetch_or(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
-  atomic_fetch_or<addressSpace, T1>(addr, operand, memoryOrder);
+  atomic_fetch_or<T1, addressSpace>(addr, operand, memoryOrder);
 }
 
 /// Atomically xor the value at the addr with the value operand, and assign
@@ -325,7 +325,7 @@ template <sycl::access::address_space addressSpace =
           typename T1, typename T2>
 inline T1 atomic_fetch_xor(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
-  atomic_fetch_xor<addressSpace, T1>(addr, operand, memoryOrder);
+  atomic_fetch_xor<T1, addressSpace>(addr, operand, memoryOrder);
 }
 
 /// Atomically calculate the minimum of the value at addr and the value operand
@@ -388,7 +388,7 @@ template <sycl::access::address_space addressSpace =
           typename T1, typename T2>
 inline T1 atomic_fetch_min(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
-  atomic_fetch_min<addressSpace, T1>(addr, operand, memoryOrder);
+  atomic_fetch_min<T1, addressSpace>(addr, operand, memoryOrder);
 }
 
 /// Atomically calculate the maximum of the value at addr and the value operand
@@ -451,7 +451,7 @@ template <sycl::access::address_space addressSpace =
           typename T1, typename T2>
 inline T1 atomic_fetch_max(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
-  atomic_fetch_max<addressSpace, T1>(addr, operand, memoryOrder);
+  atomic_fetch_max<T1, addressSpace>(addr, operand, memoryOrder);
 }
 
 /// Atomically set \p operand to the value stored in \p addr, if old value stored in
@@ -597,7 +597,7 @@ template <sycl::access::address_space addressSpace =
           typename T1, typename T2>
 inline T1 atomic_exchange(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
-  atomic_exchange<addressSpace, T1>(addr, operand, memoryOrder);
+  atomic_exchange<T1, addressSpace>(addr, operand, memoryOrder);
 }
 
 /// Atomically compare the value at \p addr to the value expected and exchange
