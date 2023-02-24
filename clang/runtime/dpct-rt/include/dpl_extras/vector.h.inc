@@ -682,10 +682,6 @@ public:
   reference front() { return *begin(); }
   const_reference back(void) const { return *(end() - 1); }
   reference back(void) { return *(end() - 1); }
-  pointer data(void) { return reinterpret_cast<pointer>(_storage); }
-  const_pointer data(void) const {
-    return reinterpret_cast<const_pointer>(_storage);
-  }
   void shrink_to_fit(void) {
     if (_size != capacity()) {
       void *a = alloc_store(_size * sizeof(T));
