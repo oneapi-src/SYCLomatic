@@ -20,7 +20,7 @@ The following steps show how to migrate the Vector Add sample using |tool_name|:
 #. Navigate to the root of the Vector Add sample.
 
    The sample contains a single
-   CUDA file, ``vector_add.cu``, located in the ``src`` folder.
+   CUDA\* file, ``vector_add.cu``, located in the ``src`` folder.
 
 #. From the root folder of the sample project, run |tool_name|.
 
