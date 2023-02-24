@@ -575,7 +575,7 @@ typedef long long mm_long;
 typedef unsigned long long mm_ulong;
 
 //CHECK: #define ATOMIC_ADD2(dest, value) dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(dest, value)
-#define ATOMIC_ADD2(dest, value) atomicAdd2(dest, value)
+#define ATOMIC_ADD2(dest, value) atomicAdd(dest, value)
 
 #define ATOMIC_ADD3(ID) ATOMIC_ADD2(&b2[0], ((long long)(deriv##ID##_1)));
 
