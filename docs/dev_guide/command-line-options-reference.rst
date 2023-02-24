@@ -37,6 +37,9 @@ in alphabetical order.
        name: ``Makefile.dpct``.
    * - ``--change-cuda-files-extension-only``
      - Limit extension change to ``.cu`` and ``.cuh`` files only. Default: ``off``.
+   * - ``--change-filename-extension=<file>``
+     - DEPRECATED: A comma-separated list that specifies which extensions of migrated files will be changed.
+       Default: ``.cu``, ``.cuh``, ``.cpp``, ``.cxx``, ``.cc``, ``.c``, ``.C``
    * - ``--check-unicode-security``
      - Enable detection and warnings about Unicode constructs that can be
        exploited by using bi-directional formatting codes and homoglyphs in
