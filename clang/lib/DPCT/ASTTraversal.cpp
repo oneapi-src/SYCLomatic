@@ -2008,7 +2008,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cufftReal", "cufftDoubleReal", "cufftComplex",
                   "cufftDoubleComplex", "cufftResult_t", "cufftResult",
                   "cufftType_t", "cufftType", "thrust::pair", "CUdeviceptr",
-                  "cudaDeviceAttr", "CUmodule", "CUfunction", "cudaMemcpyKind",
+                  "cudaDeviceAttr", "CUmodule", "CUjit_option",
+                  "CUfunction", "cudaMemcpyKind",
                   "cudaComputeMode", "__nv_bfloat16",
                   "cooperative_groups::__v1::thread_block_tile",
                   "cooperative_groups::__v1::thread_block",
@@ -3884,6 +3885,29 @@ void FFTEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(FFTEnumsRule, PassKind::PK_Migration)
+
+// Rule for CU_JIT enums.
+void CU_JITEnumsRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      declRefExpr(
+          to(enumConstantDecl(matchesName(
+              "(CU_JIT_*)"))))
+          .bind("CU_JITConstants"),
+      this);
+}
+
+void CU_JITEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
+  if (const DeclRefExpr *DE =
+          getNodeAsType<DeclRefExpr>(Result, "CU_JITConstants")) {
+    emplaceTransformation(new ReplaceStmt(DE, "0"));
+
+    report(DE->getBeginLoc(),
+           Diagnostics::HOSTALLOCMACRO_NO_MEANING,
+           true, DE->getDecl()->getNameAsString());
+  }
+}
+
+REGISTER_RULE(CU_JITEnumsRule, PassKind::PK_Migration)
 
 // Rule for BLAS enums.
 // Migrate BLAS status values to corresponding int values
