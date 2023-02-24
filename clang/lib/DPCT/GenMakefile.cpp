@@ -159,6 +159,9 @@ static void getCompileInfo(
     // -isystem
     bool IsSystemInclude = false;
 
+    // To parse option "-I <space> <path>"
+    bool IsIncludeWithWhitespace = false;
+
     const std::string Directory = Entry.second[0];
     std::unordered_set<std::string> DuplicateDuplicateFilter;
     for (const auto &Option : Entry.second) {
@@ -181,12 +184,23 @@ static void getCompileInfo(
         continue;
       }
 
-      if (llvm::StringRef(Option).startswith("-I")) {
-        // Parse include path specified by "-I"
-        std::string IncPath = Option.substr(strlen("-I"));
-        size_t Begin = IncPath.find_first_not_of(" ");
-        IncPath = IncPath.substr(Begin);
+      if (IsIncludeWithWhitespace  || llvm::StringRef(Option).startswith("-I")) {
 
+        if (llvm::StringRef(Option).trim() == "-I") {
+          IsIncludeWithWhitespace = true;
+          continue;
+        }
+
+        // Parse include path specified by "-I"
+        std::string IncPath = Option;
+        if (!IsIncludeWithWhitespace) {
+          IncPath = Option.substr(strlen("-I"));
+          size_t Begin = IncPath.find_first_not_of(" ");
+          IncPath = IncPath.substr(Begin);
+        }
+
+        IsIncludeWithWhitespace = false;
+      
         if (!llvm::sys::fs::exists(IncPath)) {
           // Skip including path that does not exist.
           continue;

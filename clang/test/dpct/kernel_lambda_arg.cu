@@ -30,7 +30,7 @@ void run_foo1() {
 }
 
 //     CHECK:template <typename Foo> void my_kernel2(const Foo &foo,
-//CHECK-NEXT:                                        sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:                                        const sycl::nd_item<3> &item_ct1) {
 //CHECK-NEXT:  std::tuple<unsigned int, unsigned int> seeds = {1, 2};
 //CHECK-NEXT:  int idx = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
 //CHECK-NEXT:  dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> state;

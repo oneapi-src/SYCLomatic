@@ -668,9 +668,9 @@ public:
   }
 
   operator bool() const {
-    return _strides.size() == 0
-      && _dilates.size() == 0
-      && _paddings.size() == 0;
+    return !(_strides.size() == 0
+             && _dilates.size() == 0
+             && _paddings.size() == 0);
   }
 };
 // DPCT_LABEL_END

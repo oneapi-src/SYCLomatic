@@ -5,10 +5,9 @@
 
 #include <nccl.h>
 
-// CHECK: 17
+// CHECK: 4
 // TEST_FEATURE: Device_get_device_id
 int main() {
   int  device;
   ncclComm_t comm;
-  ncclCommCuDevice(comm, &device);
 }

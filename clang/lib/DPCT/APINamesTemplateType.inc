@@ -39,6 +39,13 @@ TYPE_REWRITE_ENTRY(
                      TEMPLATE_ARG(0))))
 
 TYPE_REWRITE_ENTRY(
+    "cudaExtent",
+    TYPE_CONDITIONAL_FACTORY(
+        CheckTypeNameAndInVarDecl("cudaExtent"),
+        CTAD_TYPE_FACTORY(STR(MapNames::getClNamespace() + "range"), STR("3")),
+        TYPE_FACTORY(STR(MapNames::getClNamespace() + "range"), STR("3"))))
+
+TYPE_REWRITE_ENTRY(
     "cub::CountingInputIterator",
     HEADER_INSERTION_FACTORY(HeaderType::HT_DPL_Iterator,
                              TYPE_FACTORY(STR("oneapi::dpl::counting_iterator"),
@@ -151,3 +158,9 @@ TYPE_REWRITE_ENTRY(
         HEADER_INSERTION_FACTORY(HeaderType::HT_DPCT_DPL_Utils,
         TYPE_FACTORY(STR("dpct::io_iterator_pair"), ADD_POINTER(TEMPLATE_ARG(0))))))
 
+TYPE_REWRITE_ENTRY(
+    "cudaPos",
+    TYPE_CONDITIONAL_FACTORY(
+        CheckTypeNameAndInVarDecl("cudaPos"),
+        CTAD_TYPE_FACTORY(STR(MapNames::getClNamespace() + "id"), STR("3")),
+        TYPE_FACTORY(STR(MapNames::getClNamespace() + "id"), STR("3"))))
