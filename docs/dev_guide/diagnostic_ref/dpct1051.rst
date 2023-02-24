@@ -8,9 +8,9 @@ Message
 
 .. _msg-1051-start:
 
-SYCL does not support the device property functionally compatible with *<property name>*.
-It was migrated to *<migrated token>*, which value may need to be adjusted for
-specific device.
+SYCL does not support a device property functionally compatible with *<property name>*.
+It was migrated to *<migrated token>*. You may need to adjust the value of
+*<migrated token>* for the specific device.
 
 .. _msg-1051-end:
 
