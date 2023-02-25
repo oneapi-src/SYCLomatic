@@ -716,13 +716,11 @@ public:
   template <class CoordT,
             bool Available = dimensions == 1 && std::is_integral<CoordT>::value>
   typename std::enable_if<Available, data_t>::type read(CoordT x) {
-    sycl::sampler smpl;
+    sycl::sampler smpl = _sampler;
     if (_sampler.get_filtering_mode() == sycl::filtering_mode::linear) {
       smpl = sycl::sampler(_sampler.get_coordinate_normalization_mode(),
                            _sampler.get_addressing_mode(),
                            sycl::filtering_mode::nearest);
-    } else {
-      smpl = _sampler;
     }
     return detail::fetch_data<T>()(_img_acc.read(x, smpl));
   }
