@@ -217,7 +217,7 @@ void foo_test_3() {
     sumArrays<<<grid, block, 0, stream[i]>>>(&d_A[ioffset], &d_B[ioffset],
                                              &d_C[ioffset], iElem);
     // CHECK:    CHECK((dpct::async_dpct_memcpy(&gpuRef[ioffset], &d_C[ioffset], iBytes,
-    // CHECK-NEXT:                          dpct::device_to_host, *(stream[i])), 0));
+    // CHECK-NEXT:                          dpct::device_to_host, *stream[i]), 0));
     CHECK(cudaMemcpyAsync(&gpuRef[ioffset], &d_C[ioffset], iBytes,
                           cudaMemcpyDeviceToHost, stream[i]));
   }

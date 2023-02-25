@@ -10797,11 +10797,14 @@ void MemoryMigrationRule::arrayMigration(
   if (IsAsync) {
     NameRef = NameRef.drop_back(5 /* len of "Async" */);
     ReplaceStr = MapNames::getDpctNamespace() + "async_dpct_memcpy";
+    handleAsync(C, C->getNumArgs() - 1, Result);
+    handleDirection(C, C->getNumArgs() - 2);
     requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy, C);
     requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_2d, C);
     requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_3d, C);
   } else {
     ReplaceStr = MapNames::getDpctNamespace() + "dpct_memcpy";
+    handleDirection(C, C->getNumArgs() - 1);
     requestFeature(HelperFeatureEnum::Memory_dpct_memcpy, C);
     requestFeature(HelperFeatureEnum::Memory_dpct_memcpy_2d, C);
     requestFeature(HelperFeatureEnum::Memory_dpct_memcpy_3d, C);
@@ -10814,18 +10817,13 @@ void MemoryMigrationRule::arrayMigration(
     insertToPitchedData(C, 3);
     aggregate3DVectorClassCtor(C, "id", 4, "0", SM);
     aggregate3DVectorClassCtor(C, "range", 6, "1", SM);
-    emplaceTransformation(removeArg(C, 8, SM));
   } else if (NameRef == "cudaMemcpy2DFromArray") {
-    handleAsync(C, 8, Result);
-    emplaceTransformation(removeArg(C, 7, *Result.SourceManager));
     aggregatePitchedData(C, 0, 1, SM);
     insertZeroOffset(C, 2);
     insertToPitchedData(C, 2);
     aggregate3DVectorClassCtor(C, "id", 3, "0", SM);
     aggregate3DVectorClassCtor(C, "range", 5, "1", SM);
   } else if (NameRef == "cudaMemcpy2DToArray") {
-    handleAsync(C, 8, Result);
-    emplaceTransformation(removeArg(C, 7, *Result.SourceManager));
     insertToPitchedData(C, 0);
     aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
     aggregatePitchedData(C, 3, 4, SM);
@@ -10837,18 +10835,13 @@ void MemoryMigrationRule::arrayMigration(
     insertToPitchedData(C, 3);
     aggregate3DVectorClassCtor(C, "id", 4, "0", SM);
     aggregate3DVectorClassCtor(C, "range", 6, "1", SM, 1);
-    emplaceTransformation(removeArg(C, 7, SM));
   } else if (NameRef == "cudaMemcpyFromArray") {
-    handleAsync(C, 6, Result);
-    emplaceTransformation(removeArg(C, 5, SM));
     aggregatePitchedData(C, 0, 4, SM, true);
     insertZeroOffset(C, 1);
     insertToPitchedData(C, 1);
     aggregate3DVectorClassCtor(C, "id", 2, "0", SM);
     aggregate3DVectorClassCtor(C, "range", 4, "1", SM, 1);
   } else if (NameRef == "cudaMemcpyToArray") {
-    handleAsync(C, 6, Result);
-    emplaceTransformation(removeArg(C, 5, SM));
     insertToPitchedData(C, 0);
     aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
     aggregatePitchedData(C, 3, 4, SM, true);
@@ -11783,19 +11776,12 @@ void MemoryMigrationRule::handleAsync(const CallExpr *C, unsigned i,
                                       const MatchFinder::MatchResult &Result) {
   if (C->getNumArgs() > i && !C->getArg(i)->isDefaultArgument()) {
     auto StreamExpr = C->getArg(i)->IgnoreImplicitAsWritten();
-    emplaceTransformation(new InsertBeforeStmt(StreamExpr, "*"));
-    if (auto IL = dyn_cast<IntegerLiteral>(StreamExpr)) {
-      if (IL->getValue().getZExtValue() == 0) {
-        emplaceTransformation(removeArg(C, i, *Result.SourceManager));
-        return;
-      } else {
-        emplaceTransformation(new InsertBeforeStmt(
-            StreamExpr, "(" + MapNames::getClNamespace() + "queue *)"));
-      }
-    } else if (isDefaultStream(StreamExpr)) {
+    if (isDefaultStream(StreamExpr)) {
       emplaceTransformation(removeArg(C, i, *Result.SourceManager));
       return;
-    } else if (!isa<DeclRefExpr>(StreamExpr)) {
+    }
+    emplaceTransformation(new InsertBeforeStmt(StreamExpr, "*"));
+    if (needExtraParens(StreamExpr)) {
       insertAroundStmt(StreamExpr, "(", ")");
     }
   }
