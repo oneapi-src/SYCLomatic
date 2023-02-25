@@ -2891,7 +2891,11 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
     const ValueDecl *VD = DpctGlobalInfo::findAncestor<ValueDecl>(TL);
     if (VD) {
-      if (VD->getType().isVolatileQualified()) {
+      bool isPointerToVolatile = false;
+      if (const auto PT = dyn_cast<PointerType>(VD->getType())) {
+        isPointerToVolatile = PT->getPointeeType().isVolatileQualified();
+      }
+      if (isPointerToVolatile || VD->getType().isVolatileQualified()) {
         SourceLocation Loc = SM->getExpansionLoc(VD->getBeginLoc());
         report(Loc, Diagnostics::VOLATILE_VECTOR_ACCESS, false);
 
