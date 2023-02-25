@@ -29,22 +29,25 @@ namespace {
 constexpr size_t MinAvailableMemorySize = 512 * 1024 * 1024; // 512Mb
 constexpr size_t MinAvailableMemoryPercent = 25;             // 25 percent
 
+/// Check whether available memory size is enough to cache more translate unit
+/// info.
 /// Return true if available phy memory is larger than \p
 /// MinAvailableMemorySize and available phy memory percents is larger than \p
 /// MinAvailableMemoryPercent. Otherwise return false.
-bool checkMemoryStatus();
+bool canCacheMoreTranslateUnit();
 
 #ifdef _WIN32
-bool checkMemoryStatus() {
+bool canCacheMoreTranslateUnit() {
   MEMORYSTATUSEX MStatus;
   MStatus.dwLength = sizeof(MStatus);
-  GlobalMemoryStatusEx(&MStatus);
+  if (!GlobalMemoryStatusEx(&MStatus))
+    return false;
 
   return MinAvailableMemoryPercent < 100 - MStatus.dwMemoryLoad &&
          MStatus.ullAvailPhys > MinAvailableMemorySize;
 }
 #else  // _WIN32
-bool checkMemoryStatus() {
+bool canCacheMoreTranslateUnit() {
   std::ifstream File("/proc/meminfo", std::ios::in);
 
   ///  Always return false if can not open meminfo file.
@@ -159,7 +162,7 @@ bool DpctToolAction::runInvocation(
     std::shared_ptr<CompilerInvocation> Invocation, FileManager *Files,
     std::shared_ptr<PCHContainerOperations> PCHContainerOps,
     DiagnosticConsumer *DiagConsumer) {
-  if (checkMemoryStatus()) {
+  if (canCacheMoreTranslateUnit()) {
     bool Success;
     if (auto Info = createTranslationUnitInfo(Invocation, Success)) {
       IOTUs.emplace_back(Info);
