@@ -21,7 +21,7 @@ source that should be migrated:
   source file is implied.
 
 Use the tool's ``--out-root`` option to specify the directory where the
-SYCL code produced by |tool_name| is written:
+SYCL\* code produced by |tool_name| is written:
 
 * Relative paths of the migrated files are maintained.
 * Extensions are changed to ``.dp.cpp``.
