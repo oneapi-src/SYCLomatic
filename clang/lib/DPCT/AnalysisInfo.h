@@ -808,7 +808,7 @@ public:
   static bool isInRoot(const std::string &FilePath,
                        bool IsChildRelative = true) {
     if (IsChildRelative) {
-      std::string Path = removeSymlinks(getFileManager(), FilePath);
+      std::string Path(FilePath);
       makeCanonical(Path);
       if (isChildPath(InRoot, Path)) {
         return !isExcluded(Path);
@@ -4587,10 +4587,8 @@ generateHelperFuncReplInfo(const T *S) {
   }
 
   Info.IsLocationValid = true;
-  Info.DeclLocFile =
-      DpctGlobalInfo::getSourceManager().getFilename(EndOfLBrace).str();
-  Info.DeclLocOffset =
-      DpctGlobalInfo::getSourceManager().getDecomposedLoc(EndOfLBrace).second;
+  std::tie(Info.DeclLocFile, Info.DeclLocOffset) =
+      DpctGlobalInfo::getLocInfo(EndOfLBrace);
   return Info;
 }
 
