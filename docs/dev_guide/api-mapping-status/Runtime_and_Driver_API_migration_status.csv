@@ -1216,7 +1216,7 @@ cuModuleGetSurfRef,NO,
 cuModuleGetTexRef,YES,
 cuModuleLoad,YES,:ref:`DPCT1103`
 cuModuleLoadData,YES,:ref:`DPCT1104`
-cuModuleLoadDataEx,YES,:ref:`DPCT1105`
+cuModuleLoadDataEx,YES,:ref:`DPCT1104`
 cuModuleLoadFatBinary,NO,
 cuModuleUnload,YES,
 cuOccupancyMaxActiveBlocksPerMultiprocessor,NO,
