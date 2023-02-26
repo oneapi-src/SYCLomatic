@@ -66,7 +66,7 @@ int main() {
   // CHECK-NEXT: sycl::float4 *d_test;
   // CHECK-NEXT: d_test = (sycl::float4 *)dpct::dpct_malloc(sizeof(sycl::float4) * 32 * 32);
   // CHECK-NEXT: *a_ptr = new dpct::image_matrix(tex42.get_channel(), sycl::range<2>(32, 32));
-  // CHECK-NEXT: dpct::dpct_memcpy((*a_ptr)->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(d_test, 32 * 32 * sizeof(sycl::float4), 32 * 32 * sizeof(sycl::float4), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(32 * 32 * sizeof(sycl::float4), 1, 1), dpct::device_to_device);
+  // CHECK-NEXT: dpct::dpct_memcpy((*a_ptr)->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(d_test, 32 * 32 * sizeof(sycl::float4), 32 * 32 * sizeof(sycl::float4), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(32 * 32 * sizeof(sycl::float4), 1, 1));
   // CHECK-NEXT: delete *a_ptr;
   // CHECK-NEXT: dpct::dpct_free(d_test);
   // CHECK-NEXT: delete a_ptr;
@@ -84,7 +84,7 @@ int main() {
   // CHECK-NEXT: dpct::image_matrix_p a42;
   // CHECK-NEXT: d_data42 = (sycl::float4 *)dpct::dpct_malloc(sizeof(sycl::float4) * 32 * 32);
   // CHECK-NEXT: a42 = new dpct::image_matrix(tex42.get_channel(), sycl::range<2>(32, 32));
-  // CHECK-NEXT: dpct::dpct_memcpy(a42->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(d_data42, 32 * 32 * sizeof(sycl::float4), 32 * 32 * sizeof(sycl::float4), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(32 * 32 * sizeof(sycl::float4), 1, 1), dpct::device_to_device);
+  // CHECK-NEXT: dpct::dpct_memcpy(a42->to_pitched_data(), sycl::id<3>(0, 0, 0), dpct::pitched_data(d_data42, 32 * 32 * sizeof(sycl::float4), 32 * 32 * sizeof(sycl::float4), 1), sycl::id<3>(0, 0, 0), sycl::range<3>(32 * 32 * sizeof(sycl::float4), 1, 1));
   // CHECK-NEXT: tex42.set(sycl::addressing_mode::clamp_to_edge);
   // CHECK-NEXT: tex42.set(sycl::filtering_mode::nearest);
   // CHECK-NEXT: tex42_ptr->attach(d_data42, 32 * sizeof(sycl::float4), 32, 32 * sizeof(sycl::float4), tex42.get_channel());
