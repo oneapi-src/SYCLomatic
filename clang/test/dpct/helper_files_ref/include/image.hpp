@@ -675,6 +675,8 @@ template <class T, int dimensions, bool IsImageArray = false> class image_wrappe
         sycl::range<2>(data.get_x() / channel.get_total_size(),
                            data.get_y()),
         sycl::range<1>(data.get_pitch()));
+    } else {
+      throw std::runtime_error("3D image only support matrix data");
     }
     return;
   }
