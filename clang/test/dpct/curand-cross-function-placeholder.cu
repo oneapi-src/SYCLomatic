@@ -5,12 +5,8 @@
 #include <stdio.h>
 #include <curand.h>
 
-//CHECK: /*
-//CHECK-NEXT: DPCT1050:{{[0-9]+}}: The template argument of the RNG engine could not be deduced. You need to update this code.
-//CHECK-NEXT: */
-//CHECK-NEXT: void update(float* randvals, std::shared_ptr<dpct_placeholder/*Fix the engine type manually*/> rng, long long nx, long long ny) {
-//CHECK-NEXT:   oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
-//CHECK-NEXT:   oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, nx*ny/2, randvals);
+//CHECK: void update(float* randvals, dpct::rng::host_rng_ptr rng, long long nx, long long ny) {
+//CHECK-NEXT:   rng->generate_uniform(randvals, nx*ny/2);
 //CHECK-NEXT: }
 void update(float* randvals, curandGenerator_t rng, long long nx, long long ny) {
   curandGenerateUniform(rng, randvals, nx*ny/2);
@@ -18,24 +14,17 @@ void update(float* randvals, curandGenerator_t rng, long long nx, long long ny) 
 
 
 //CHECK: int main(){
-//CHECK-NEXT:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
-//CHECK-NEXT:   sycl::queue &q_ct1 = dev_ct1.default_queue();
-//CHECK-NEXT:   oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
 //CHECK-NEXT:   long long nx = 5120;
 //CHECK-NEXT:   long long ny = 5120;
 //CHECK-NEXT:   unsigned long long seed = 1234ULL;
-//CHECK-NEXT:   std::shared_ptr<oneapi::mkl::rng::philox4x32x10> rng;
-//CHECK-NEXT:   std::shared_ptr<oneapi::mkl::rng::mrg32k3a> rng1;
-//CHECK-NEXT:   rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(q_ct1, seed);
-//CHECK-NEXT:   rng1 = std::make_shared<oneapi::mkl::rng::mrg32k3a>(q_ct1, seed);
-//CHECK-NEXT:   /*
-//CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because this call is redundant in SYCL.
-//CHECK-NEXT:   */
-//CHECK-NEXT:   /*
-//CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because this call is redundant in SYCL.
-//CHECK-NEXT:   */
+//CHECK-NEXT:   dpct::rng::host_rng_ptr rng;
+//CHECK-NEXT:   dpct::rng::host_rng_ptr rng1;
+//CHECK-NEXT:   rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::philox4x32x10);
+//CHECK-NEXT:   rng1 = dpct::rng::create_host_rng(dpct::rng::random_engine_type::mrg32k3a);
+//CHECK-NEXT:   rng->set_seed(seed);
+//CHECK-NEXT:   rng1->set_seed(seed);
 //CHECK-NEXT:   float *randvals;
-//CHECK-NEXT:   oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, nx*ny/2, randvals);
+//CHECK-NEXT:   rng->generate_uniform(randvals, nx*ny/2);
 //CHECK-NEXT:   update(randvals, rng1, nx, ny);
 //CHECK-NEXT:   rng.reset();
 //CHECK-NEXT:   rng1.reset();
@@ -58,31 +47,15 @@ int main(){
 }
 
 //CHECK: void foo(){
-//CHECK-NEXT:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
-//CHECK-NEXT:   sycl::queue &q_ct1 = dev_ct1.default_queue();
-//CHECK-NEXT:   oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
 //CHECK-NEXT:   float *randvals;
-//CHECK-NEXT:   /*
-//CHECK-NEXT:   DPCT1050:{{[0-9]+}}: The template argument of the RNG engine could not be deduced. You need to update this code.
-//CHECK-NEXT:   */
-//CHECK-NEXT:   std::shared_ptr<dpct_placeholder/*Fix the engine type manually*/> rng;
-//CHECK-NEXT:   /*
-//CHECK-NEXT:   DPCT1050:{{[0-9]+}}: The template argument of the RNG engine could not be deduced. You need to update this code.
-//CHECK-NEXT:   */
-//CHECK-NEXT:   rng = std::make_shared<dpct_placeholder/*Fix the engine type manually*/>(q_ct1, 222);
-//CHECK-NEXT:   /*
-//CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because this call is redundant in SYCL.
-//CHECK-NEXT:   */
-//CHECK-NEXT:   oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 0, randvals);
+//CHECK-NEXT:   dpct::rng::host_rng_ptr rng;
+//CHECK-NEXT:   rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::philox4x32x10);
+//CHECK-NEXT:   rng->set_seed(111);
+//CHECK-NEXT:   rng->generate_uniform(randvals, 0);
 //CHECK-EMPTY:
-//CHECK-NEXT:   /*
-//CHECK-NEXT:   DPCT1050:{{[0-9]+}}: The template argument of the RNG engine could not be deduced. You need to update this code.
-//CHECK-NEXT:   */
-//CHECK-NEXT:   rng = std::make_shared<dpct_placeholder/*Fix the engine type manually*/>(q_ct1, 222);
-//CHECK-NEXT:   /*
-//CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because this call is redundant in SYCL.
-//CHECK-NEXT:   */
-//CHECK-NEXT:   oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 0, randvals);
+//CHECK-NEXT:   rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::mrg32k3a);
+//CHECK-NEXT:   rng->set_seed(222);
+//CHECK-NEXT:   rng->generate_uniform(randvals, 0);
 //CHECK-NEXT:   rng.reset();
 //CHECK-NEXT: }
 void foo(){

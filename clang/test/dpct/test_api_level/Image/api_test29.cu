@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/Image/api_test29_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Image/api_test29_out
 
-// CHECK: 82
+// CHECK: 83
 // TEST_FEATURE: Image_image_wrapper_get_access
 // TEST_FEATURE: Image_image_wrapper_base_get_sampler
 

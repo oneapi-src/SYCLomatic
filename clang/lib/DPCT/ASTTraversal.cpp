@@ -64,6 +64,13 @@ TextModification *clang::dpct::replaceText(SourceLocation Begin, SourceLocation 
   return nullptr;
 }
 
+SourceLocation getArgEndLocation(const CallExpr *C, unsigned Idx,
+                                 const SourceManager &SM) {
+  auto SL = getStmtExpansionSourceRange(C->getArg(Idx)).getEnd();
+  return SL.getLocWithOffset(Lexer::MeasureTokenLength(
+      SL, SM, DpctGlobalInfo::getContext().getLangOpts()));
+}
+
 /// Return a TextModication that removes nth argument of the CallExpr,
 /// together with the preceding comma.
 TextModification *clang::dpct::removeArg(const CallExpr *C, unsigned n,
@@ -75,20 +82,14 @@ TextModification *clang::dpct::removeArg(const CallExpr *C, unsigned n,
 
   SourceLocation Begin, End;
   if (n) {
-    Begin = getStmtExpansionSourceRange(C->getArg(n - 1)).getEnd();
-    Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
-        Begin, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
-    End = getStmtExpansionSourceRange(C->getArg(n)).getEnd();
-    End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-        End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
+    Begin = getArgEndLocation(C, n - 1, SM);
+    End = getArgEndLocation(C, n, SM);
   } else {
     Begin = getStmtExpansionSourceRange(C->getArg(n)).getBegin();
     if (C->getNumArgs() > 1) {
       End = getStmtExpansionSourceRange(C->getArg(n + 1)).getBegin();
     } else {
-      End = getStmtExpansionSourceRange(C->getArg(n)).getEnd();
-      End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-          End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
+      End = getArgEndLocation(C, n, SM);
     }
   }
   return replaceText(Begin, End, "", SM);
@@ -2583,14 +2584,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
 
-    if (TypeStr == "curandGenerator_t") {
-      DpctGlobalInfo::getInstance().insertHostRandomEngineTypeInfo(
-          BeginLoc,
-          Lexer::MeasureTokenLength(
-              BeginLoc, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-      return;
-    }
-
     if (replaceDependentNameTypeLoc(SM, LOpts, TL)) {
       return;
     }
@@ -4509,11 +4502,6 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     return;
 
   auto &SM = DpctGlobalInfo::getSourceManager();
-  auto SL = SM.getExpansionLoc(CE->getBeginLoc());
-  std::string Key =
-      SM.getFilename(SL).str() + std::to_string(SM.getDecomposedLoc(SL).second);
-  DpctGlobalInfo::updateInitSuffixIndexInRule(
-      DpctGlobalInfo::getSuffixIndexInitValue(Key));
 
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
@@ -4542,305 +4530,94 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   // Offset 1 is the length of the last token ")"
   FuncCallEnd = SM.getExpansionLoc(FuncCallEnd).getLocWithOffset(1);
   auto SR = getScopeInsertRange(CE, FuncNameBegin, FuncCallEnd);
-  SourceLocation PrefixInsertLoc = SR.getBegin(), SuffixInsertLoc = SR.getEnd();
+  SourceLocation PrefixInsertLoc = SR.getBegin();
 
-  bool CanAvoidUsingLambda = false;
-  SourceLocation OuterInsertLoc;
-  std::string OriginStmtType;
-  bool NeedUseLambda = isConditionOfFlowControl(
-      CE, OriginStmtType, CanAvoidUsingLambda, OuterInsertLoc);
-  bool IsInReturnStmt = isInReturnStmt(CE, OuterInsertLoc);
-  bool CanAvoidBrace = false;
-  const CompoundStmt *CS = findImmediateBlock(CE);
-  if (CS && (CS->size() == 1)) {
-    const Stmt *S = *(CS->child_begin());
-    if (CE == S || dyn_cast<ReturnStmt>(S))
-      CanAvoidBrace = true;
-  }
-
-  if (NeedUseLambda || IsMacroArg || IsInReturnStmt) {
-    NeedUseLambda = true;
-    SourceRange SR = getFunctionRange(CE);
-    PrefixInsertLoc = SR.getBegin();
-    SuffixInsertLoc = SR.getEnd();
-    if (IsInReturnStmt) {
-      CanAvoidUsingLambda = true;
-      OriginStmtType = "return";
-    }
-  }
-
-  std::string IndentStr = getIndent(PrefixInsertLoc, SM).str();
-  std::string PrefixInsertStr;
-
-  std::string Msg = "this call is redundant in SYCL.";
-  if (FuncName == "curandSetPseudoRandomGeneratorSeed" ||
-      FuncName == "curandSetQuasiRandomGeneratorDimensions") {
-    if (IsAssigned) {
-      report(PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED_0, false, FuncName,
-             Msg);
-      emplaceTransformation(new ReplaceStmt(CE, false, "0"));
-    } else {
-      report(PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED, false, FuncName,
-             Msg);
-      emplaceTransformation(new ReplaceStmt(CE, false, ""));
-    }
+  if (IsAssigned) {
+    report(PrefixInsertLoc, Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+    insertAroundStmt(CE, "(", ", 0)");
   }
 
   if (FuncName == "curandCreateGenerator" ||
       FuncName == "curandCreateGeneratorHost") {
-    bool IsDuplicated = true;
-    auto REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
-    if (!REInfo) {
-      DpctGlobalInfo::getInstance().insertRandomEngine(CE->getArg(0));
-      REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
-      IsDuplicated = false;
-    }
-
     std::string EnumStr = ExprAnalysis::ref(CE->getArg(1));
     if (MapNames::RandomEngineTypeMap.find(EnumStr) ==
         MapNames::RandomEngineTypeMap.end()) {
-      report(SM.getExpansionLoc(REInfo->getDeclaratorDeclTypeBeginLoc()),
-             Diagnostics::UNMIGRATED_TYPE, false, "curandGenerator_t",
-             "the migration depends on the second argument of " + FuncName);
       report(PrefixInsertLoc, Diagnostics::NOT_SUPPORTED_PARAMETER, false,
              FuncName, "parameter " + EnumStr + " is unsupported");
       return;
     }
-    REInfo->setUnsupportEngineFlag(false);
 
     if (EnumStr == "CURAND_RNG_PSEUDO_XORWOW" ||
         EnumStr == "CURAND_RNG_QUASI_SOBOL64" ||
         EnumStr == "CURAND_RNG_QUASI_SCRAMBLED_SOBOL64") {
-      report(SM.getExpansionLoc(REInfo->getDeclaratorDeclTypeBeginLoc()),
-             Diagnostics::DIFFERENT_GENERATOR, false);
+      report(CE->getArg(1)->getBeginLoc(), Diagnostics::DIFFERENT_GENERATOR,
+             false);
     } else if (EnumStr == "CURAND_RNG_QUASI_SCRAMBLED_SOBOL32") {
-      report(SM.getExpansionLoc(REInfo->getDeclaratorDeclTypeBeginLoc()),
+      report(CE->getArg(1)->getBeginLoc(),
              Diagnostics::DIFFERENT_BASIC_GENERATOR, false);
     }
 
-    REInfo->setGeneratorName(getDrefName(CE->getArg(0)));
-
     std::string EngineType =
         MapNames::RandomEngineTypeMap.find(EnumStr)->second;
-    if (IsDuplicated && (REInfo->getEngineType() != EngineType) &&
-        REInfo->getIsRealCreate()) {
-      REInfo->setEngineTypeReplacement("");
-    } else {
-      REInfo->setEngineTypeReplacement(EngineType);
-    }
-    REInfo->setIsRealCreate(true);
-    DpctGlobalInfo::getHostRNGEngineTypeSet().insert(
-        MapNames::RandomEngineTypeMap.find(EnumStr)->second);
-
-    if (EnumStr == "CURAND_RNG_QUASI_DEFAULT" ||
-        EnumStr == "CURAND_RNG_QUASI_SOBOL32" ||
-        EnumStr == "CURAND_RNG_QUASI_SCRAMBLED_SOBOL32" ||
-        EnumStr == "CURAND_RNG_QUASI_SOBOL64" ||
-        EnumStr == "CURAND_RNG_QUASI_SCRAMBLED_SOBOL64")
-      REInfo->setQuasiEngineFlag();
-
-    REInfo->setCreateAPIInfo(FuncNameBegin, FuncCallEnd);
-
-    if (FuncName == "curandCreateGenerator") {
-      if (isPlaceholderIdxDuplicated(CE->getArg(0)))
-        return;
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      REInfo->setQueueStr("{{NEEDREPLACEQ" + std::to_string(Index) + "}}");
-      buildTempVariableMap(Index, CE->getArg(0),
-                           HelperFuncType::HFT_DefaultQueue);
-    } else {
-      REInfo->setQueueStr(MapNames::getDpctNamespace() +
-                          "cpu_device().default_queue()");
-      requestFeature(HelperFeatureEnum::Device_cpu_device, CE);
-      requestFeature(HelperFeatureEnum::Device_device_ext_default_queue, CE);
-    }
-
-    if (IsAssigned) {
-      REInfo->setAssigned();
-    }
-  } else if (FuncName == "curandDestroyGenerator") {
-    if (IsAssigned) {
-      report(PrefixInsertLoc, Diagnostics::NOERROR_RETURN_COMMA_OP, false);
-      insertAroundStmt(CE, "(", ", 0)");
-    }
-    emplaceTransformation(new ReplaceStmt(
-        CE, false, ExprAnalysis::ref(CE->getArg(0)) + ".reset()"));
-  } else if (FuncName == "curandSetPseudoRandomGeneratorSeed") {
-    auto REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
-    if (!REInfo) {
-      DpctGlobalInfo::getInstance().insertRandomEngine(CE->getArg(0));
-      REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
-    }
-    REInfo->setSeedExpr(CE->getArg(1));
-  } else if (FuncName == "curandSetQuasiRandomGeneratorDimensions") {
-    auto REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
-    if (!REInfo) {
-      DpctGlobalInfo::getInstance().insertRandomEngine(CE->getArg(0));
-      REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
-    }
-    REInfo->setDimExpr(CE->getArg(1));
-  } else if (MapNames::RandomGenerateFuncReplInfoMap.find(FuncName) !=
-             MapNames::RandomGenerateFuncReplInfoMap.end()) {
-    auto ReplInfoPair = MapNames::RandomGenerateFuncReplInfoMap.find(FuncName);
-    MapNames::RandomGenerateFuncReplInfo ReplInfo = ReplInfoPair->second;
-    std::string BufferDecl;
-    std::string BufferName;
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-      requestFeature(HelperFeatureEnum::Memory_get_buffer_T, CE);
-      BufferName = getBufferNameAndDeclStr(
-          CE->getArg(1), ReplInfo.BufferTypeInfo, IndentStr, BufferDecl);
-    }
-
-    if (!CS)
-      return;
-    auto BF = CS->body_front();
-    if (!BF)
-      return;
-    SourceLocation DistrInsertLoc = SM.getExpansionLoc(BF->getBeginLoc());
-    std::string DistrIndentStr = getIndent(DistrInsertLoc, SM).str();
-    std::string DistrName;
-    if (FuncName == "curandGenerateLogNormal" ||
-        FuncName == "curandGenerateLogNormalDouble") {
-      ExprAnalysis EMean(CE->getArg(3)), EDev(CE->getArg(4));
-      std::string DistrArg = EMean.getReplacedString() + ", " +
-                             EDev.getReplacedString() + ", 0.0, 1.0";
-      DistrName = DpctGlobalInfo::getInstance().insertHostRandomDistrInfo(
-          DistrInsertLoc, ReplInfo.DistributeType, ReplInfo.ValueType, DistrArg,
-          DistrIndentStr);
-    } else if (FuncName == "curandGenerateNormal" ||
-               FuncName == "curandGenerateNormalDouble") {
-      ExprAnalysis EMean(CE->getArg(3)), EDev(CE->getArg(4));
-      std::string DistrArg =
-          EMean.getReplacedString() + ", " + EDev.getReplacedString();
-      DistrName = DpctGlobalInfo::getInstance().insertHostRandomDistrInfo(
-          DistrInsertLoc, ReplInfo.DistributeType, ReplInfo.ValueType, DistrArg,
-          DistrIndentStr);
-    } else if (FuncName == "curandGeneratePoisson") {
-      ExprAnalysis ELambda(CE->getArg(3));
-      DistrName = DpctGlobalInfo::getInstance().insertHostRandomDistrInfo(
-          DistrInsertLoc, ReplInfo.DistributeType, ReplInfo.ValueType,
-          ELambda.getReplacedString(), DistrIndentStr);
-    } else {
-      DistrName = DpctGlobalInfo::getInstance().insertHostRandomDistrInfo(
-          DistrInsertLoc, ReplInfo.DistributeType, ReplInfo.ValueType, "",
-          DistrIndentStr);
-    }
-    std::string Data;
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
-      auto TypePtr = CE->getArg(1)->getType().getTypePtr();
-      if (!TypePtr || !TypePtr->isPointerType()) {
-        Data =
-            "(" + ReplInfo.ValueType + "*)" + ExprAnalysis::ref(CE->getArg(1));
-      } else if (TypePtr->getPointeeType().getAsString() ==
-                 ReplInfo.ValueType) {
-        Data = ExprAnalysis::ref(CE->getArg(1));
-      } else {
-        Data =
-            "(" + ReplInfo.ValueType + "*)" + ExprAnalysis::ref(CE->getArg(1));
-      }
-    } else {
-      PrefixInsertStr = BufferDecl;
-      Data = BufferName;
-    }
-    ArgumentAnalysis AA;
-    AA.setCallSpelling(CE);
-    AA.analyze(CE->getArg(2));
-    auto ArgStr =
-        AA.getRewritePrefix() + AA.getRewriteString() + AA.getRewritePostfix();
-
-    std::string ReplStr;
-    ReplStr = "oneapi::mkl::rng::generate(" + DistrName + ", " +
-              getDrefName(CE->getArg(0)) + ", " + ArgStr + ", " + Data + ")";
-
-    if (NeedUseLambda) {
-      if (PrefixInsertStr.empty()) {
-        // If there is one API call in the migrated code, it is unnecessary to
-        // use a lambda expression
-        NeedUseLambda = false;
+    const auto *const Arg0 = CE->getArg(0);
+    requestFeature(HelperFeatureEnum::RngUtils_create_host_rng, CE);
+    if (Arg0->getStmtClass() == Stmt::UnaryOperatorClass) {
+      const auto *const UO = cast<const UnaryOperator>(Arg0);
+      auto SE = UO->getSubExpr();
+      if (UO->getOpcode() == UO_AddrOf &&
+          (SE->getStmtClass() == Stmt::DeclRefExprClass ||
+           SE->getStmtClass() == Stmt::MemberExprClass)) {
+        return emplaceTransformation(new ReplaceStmt(
+            CE, false,
+            buildString(ExprAnalysis::ref(SE), " = dpct::rng::create_host_rng(",
+                        EngineType, ")")));
       }
     }
-
-    if (NeedUseLambda) {
-      if (CanAvoidUsingLambda) {
-        std::string InsertStr;
-        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
-            !CanAvoidBrace)
-          InsertStr = std::string("{") + getNL() + IndentStr + PrefixInsertStr +
-                      ReplStr + ";" + getNL() + IndentStr + "}" + getNL() +
-                      IndentStr;
-        else
-          InsertStr = PrefixInsertStr + ReplStr + ";" + getNL() + IndentStr;
-
-        auto IT = new InsertText(OuterInsertLoc, std::move(InsertStr));
-        IT->setBlockLevelFormatFlag();
-        emplaceTransformation(std::move(IT));
-        report(OuterInsertLoc, Diagnostics::CODE_LOGIC_CHANGED, true,
-               OriginStmtType == "if" ? "an " + OriginStmtType
-                                      : "a " + OriginStmtType);
-        emplaceTransformation(new ReplaceStmt(CE, "0"));
-      } else {
-        if (IsAssigned) {
-          report(PrefixInsertLoc, Diagnostics::NOERROR_RETURN_LAMBDA, false);
-          insertAroundRange(
-              PrefixInsertLoc, SuffixInsertLoc,
-              std::string("[&](){") + getNL() + IndentStr + PrefixInsertStr,
-              std::string(";") + getNL() + IndentStr + "return 0;" + getNL() +
-                  IndentStr + std::string("}()"),
-              true);
-        } else {
-          insertAroundRange(
-              PrefixInsertLoc, SuffixInsertLoc,
-              std::string("[&](){") + getNL() + IndentStr + PrefixInsertStr,
-              std::string(";") + getNL() + IndentStr + std::string("}()"),
-              true);
-        }
-        emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
-      }
-    } else {
-      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
-          !CanAvoidBrace) {
-        if (!PrefixInsertStr.empty()) {
-          insertAroundRange(PrefixInsertLoc, SuffixInsertLoc,
-                            std::string("{") + getNL() + IndentStr +
-                                PrefixInsertStr,
-                            getNL() + IndentStr + std::string("}"), true);
-        }
-      } else {
-        emplaceTransformation(
-            new InsertText(PrefixInsertLoc, std::move(PrefixInsertStr)));
-      }
-      if (IsAssigned) {
-        insertAroundStmt(CE, "(", ", 0)");
-        report(PrefixInsertLoc, Diagnostics::NOERROR_RETURN_COMMA_OP, true);
-      }
-      emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
+    return emplaceTransformation(new ReplaceStmt(
+        CE, false,
+        buildString("*(", ExprAnalysis::ref(CE->getArg(0)),
+                    ") = dpct::rng::create_host_rng(", EngineType, ")")));
+  }
+  if (FuncName == "curandDestroyGenerator") {
+    return emplaceTransformation(new ReplaceStmt(
+        CE, false, buildString(ExprAnalysis::ref(CE->getArg(0)), ".reset()")));
+  }
+  if (FuncName == "curandSetPseudoRandomGeneratorSeed") {
+    return emplaceTransformation(new ReplaceStmt(
+        CE, false,
+        buildString(ExprAnalysis::ref(CE->getArg(0)), "->set_seed(",
+                    ExprAnalysis::ref(CE->getArg(1)), ")")));
+  }
+  if (FuncName == "curandSetQuasiRandomGeneratorDimensions") {
+    return emplaceTransformation(new ReplaceStmt(
+        CE, false,
+        buildString(ExprAnalysis::ref(CE->getArg(0)), "->set_dimensions(",
+                    ExprAnalysis::ref(CE->getArg(1)), ")")));
+  }
+  if (MapNames::RandomGenerateFuncMap.find(FuncName) !=
+      MapNames::RandomGenerateFuncMap.end()) {
+    auto ArgStr = ExprAnalysis::ref(CE->getArg(1));
+    for (unsigned i = 2; i < CE->getNumArgs(); ++i) {
+      ArgStr += buildString(", ", ExprAnalysis::ref(CE->getArg(i)));
     }
-  } else if (FuncName == "curandSetGeneratorOffset") {
-    if (IsAssigned) {
-      insertAroundStmt(CE, "(", ", 0)");
-      report(PrefixInsertLoc, Diagnostics::NOERROR_RETURN_COMMA_OP, false);
-    }
-    std::string Repl =
-        "oneapi::mkl::rng::skip_ahead(" + getDrefName(CE->getArg(0)) + ", ";
-    ExprAnalysis EO;
-    EO.analyze(CE->getArg(1));
-    Repl = Repl + EO.getReplacedString() + ")";
-    emplaceTransformation(new ReplaceStmt(CE, std::move(Repl)));
-  } else if (FuncName == "curandSetStream") {
-    auto REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
-    if (!REInfo) {
-      // Cannot find matched curandCreateGenerator, construct a fake
-      // RandomEngineInfo
-      DpctGlobalInfo::getInstance().insertRandomEngine(CE->getArg(0));
-      REInfo = DpctGlobalInfo::getInstance().findRandomEngine(CE->getArg(0));
-      REInfo->setEngineTypeReplacement("");
-      REInfo->setIsRealCreate(false);
-    }
-    REInfo->setCreateAPIInfo(FuncNameBegin, FuncCallEnd,
-                             getDrefName(CE->getArg(1)));
-    if (IsAssigned) {
-      REInfo->setAssigned();
-    }
+    return emplaceTransformation(new ReplaceStmt(
+        CE, false,
+        buildString(
+            ExprAnalysis::ref(CE->getArg(0)),
+            "->" + MapNames::RandomGenerateFuncMap.find(FuncName)->second + "(",
+            ArgStr, ")")));
+  }
+  if (FuncName == "curandSetGeneratorOffset") {
+    return emplaceTransformation(new ReplaceStmt(
+        CE, false,
+        buildString(ExprAnalysis::ref(CE->getArg(0)), "->skip_ahead(",
+                    ExprAnalysis::ref(CE->getArg(1)), ")")));
+  }
+  if (FuncName == "curandSetStream") {
+    return emplaceTransformation(new ReplaceStmt(
+        CE, false,
+        buildString(ExprAnalysis::ref(CE->getArg(0)), "->set_queue(",
+                    ExprAnalysis::ref(CE->getArg(1)), ")")));
   }
 }
 
@@ -10795,41 +10572,48 @@ void MemoryMigrationRule::arrayMigration(
     Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
 
+  auto& SM = *Result.SourceManager;
   std::string ReplaceStr;
   StringRef NameRef(Name);
+  auto EndPos = C->getNumArgs() - 1;
   bool IsAsync = NameRef.endswith("Async");
   if (IsAsync) {
     NameRef = NameRef.drop_back(5 /* len of "Async" */);
     ReplaceStr = MapNames::getDpctNamespace() + "async_dpct_memcpy";
-    requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy, C);
-    requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_2d, C);
-    requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_3d, C);
+
+    auto StreamExpr = C->getArg(EndPos);
+    std::string Str;
+    if (isDefaultStream(StreamExpr)) {
+      emplaceTransformation(removeArg(C, EndPos, SM));
+      emplaceTransformation(removeArg(C, --EndPos, SM));
+    } else {
+      auto Begin = getArgEndLocation(C, EndPos - 2, SM),
+           End = getArgEndLocation(C, EndPos, SM);
+      llvm::raw_string_ostream OS(Str);
+      OS << ", " << MapNames::getDpctNamespace() << "automatic";
+      OS << ", ";
+      DerefExpr::create(StreamExpr, C).print(OS);
+      emplaceTransformation(replaceText(Begin, End, std::move(Str), SM));
+    }
   } else {
     ReplaceStr = MapNames::getDpctNamespace() + "dpct_memcpy";
-    requestFeature(HelperFeatureEnum::Memory_dpct_memcpy, C);
-    requestFeature(HelperFeatureEnum::Memory_dpct_memcpy_2d, C);
-    requestFeature(HelperFeatureEnum::Memory_dpct_memcpy_3d, C);
+    emplaceTransformation(removeArg(C, EndPos, SM));
   }
+  requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_3d, C);
 
-  auto &SM = *Result.SourceManager;
   if (NameRef == "cudaMemcpy2DArrayToArray") {
     insertToPitchedData(C, 0);
     aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
     insertToPitchedData(C, 3);
     aggregate3DVectorClassCtor(C, "id", 4, "0", SM);
     aggregate3DVectorClassCtor(C, "range", 6, "1", SM);
-    emplaceTransformation(removeArg(C, 8, SM));
   } else if (NameRef == "cudaMemcpy2DFromArray") {
-    handleAsync(C, 8, Result);
-    emplaceTransformation(removeArg(C, 7, *Result.SourceManager));
     aggregatePitchedData(C, 0, 1, SM);
     insertZeroOffset(C, 2);
     insertToPitchedData(C, 2);
     aggregate3DVectorClassCtor(C, "id", 3, "0", SM);
     aggregate3DVectorClassCtor(C, "range", 5, "1", SM);
   } else if (NameRef == "cudaMemcpy2DToArray") {
-    handleAsync(C, 8, Result);
-    emplaceTransformation(removeArg(C, 7, *Result.SourceManager));
     insertToPitchedData(C, 0);
     aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
     aggregatePitchedData(C, 3, 4, SM);
@@ -10841,18 +10625,13 @@ void MemoryMigrationRule::arrayMigration(
     insertToPitchedData(C, 3);
     aggregate3DVectorClassCtor(C, "id", 4, "0", SM);
     aggregate3DVectorClassCtor(C, "range", 6, "1", SM, 1);
-    emplaceTransformation(removeArg(C, 7, SM));
   } else if (NameRef == "cudaMemcpyFromArray") {
-    handleAsync(C, 6, Result);
-    emplaceTransformation(removeArg(C, 5, SM));
     aggregatePitchedData(C, 0, 4, SM, true);
     insertZeroOffset(C, 1);
     insertToPitchedData(C, 1);
     aggregate3DVectorClassCtor(C, "id", 2, "0", SM);
     aggregate3DVectorClassCtor(C, "range", 4, "1", SM, 1);
   } else if (NameRef == "cudaMemcpyToArray") {
-    handleAsync(C, 6, Result);
-    emplaceTransformation(removeArg(C, 5, SM));
     insertToPitchedData(C, 0);
     aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
     aggregatePitchedData(C, 3, 4, SM, true);
@@ -11787,19 +11566,12 @@ void MemoryMigrationRule::handleAsync(const CallExpr *C, unsigned i,
                                       const MatchFinder::MatchResult &Result) {
   if (C->getNumArgs() > i && !C->getArg(i)->isDefaultArgument()) {
     auto StreamExpr = C->getArg(i)->IgnoreImplicitAsWritten();
-    emplaceTransformation(new InsertBeforeStmt(StreamExpr, "*"));
-    if (auto IL = dyn_cast<IntegerLiteral>(StreamExpr)) {
-      if (IL->getValue().getZExtValue() == 0) {
-        emplaceTransformation(removeArg(C, i, *Result.SourceManager));
-        return;
-      } else {
-        emplaceTransformation(new InsertBeforeStmt(
-            StreamExpr, "(" + MapNames::getClNamespace() + "queue *)"));
-      }
-    } else if (isDefaultStream(StreamExpr)) {
+    if (isDefaultStream(StreamExpr)) {
       emplaceTransformation(removeArg(C, i, *Result.SourceManager));
       return;
-    } else if (!isa<DeclRefExpr>(StreamExpr)) {
+    }
+    emplaceTransformation(new InsertBeforeStmt(StreamExpr, "*"));
+    if (!isa<DeclRefExpr>(StreamExpr)) {
       insertAroundStmt(StreamExpr, "(", ")");
     }
   }
