@@ -17,10 +17,10 @@ def diag_DPCT_link(DPCT_diag:str):
     return "https://www.intel.com/content/www/us/en/develop/documentation/intel-dpcpp-compatibility-tool-user-guide/top/diagnostics-reference/"+DPCT_diag.lower()+".html"
 
 def format_diagnostic_info_md(DPCT_diag_number:list, is_supported:bool):
-    return " / ".join(("["+diag_number+"]("+diag_DPCT_link(diag_number)+")" for diag_number in DPCT_diag_number if not is_supported or diag_number != "DPCT1007"))
+    return " / ".join(("["+diag_number+"]("+diag_DPCT_link(diag_number)+")" for diag_number in DPCT_diag_number if is_supported and diag_number != "DPCT1007"))
 
 def format_diagnostic_info_csv(DPCT_diag_number:list, is_supported:bool):
-    return " / ".join((":ref:`"+diag_number+"`" for diag_number in DPCT_diag_number if not is_supported or diag_number != "DPCT1007"))
+    return " / ".join((":ref:`"+diag_number+"`" for diag_number in DPCT_diag_number if is_supported and diag_number != "DPCT1007"))
 
 format_diagnostic_info = {"md":format_diagnostic_info_md, "csv":format_diagnostic_info_csv}
 
@@ -96,6 +96,7 @@ def parse_macro_entry(line: str):
         DPCT_dia_msg += pattern_re.findall(i)
     if("DPCT1030" in DPCT_dia_msg):
         API_list[-1] = "NO"
+        is_supported = False
     if(DPCT_dia_msg):
         API_list.append(format_diagnostic_info[output_file_suffix](DPCT_dia_msg, is_supported))
     else:
