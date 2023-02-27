@@ -747,7 +747,7 @@ template <sycl::access::address_space addressSpace =
               sycl::access::address_space::global_space,
           sycl::memory_order memoryOrder = sycl::memory_order::relaxed,
           sycl::memory_scope memoryScope = sycl::memory_scope::device,
-          typename T1, typename T2>
+          typename T1, typename T2, typename T3>
 T1 atomic_compare_exchange_strong(
     T1 *addr, T2 expected, T3 desired,
     sycl::memory_order success = sycl::memory_order::relaxed,
