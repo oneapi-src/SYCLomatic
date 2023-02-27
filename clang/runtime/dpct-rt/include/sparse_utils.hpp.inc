@@ -187,6 +187,10 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|optimize_info|dpct::sparse
+// DPCT_DEPENDENCY_BEGIN
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 class optimize_info {
 public:
   optimize_info() { oneapi::mkl::sparse::init_matrix_handle(&_matrix_handle); }
@@ -203,7 +207,12 @@ private:
   oneapi::mkl::sparse::matrix_handle_t _matrix_handle = nullptr;
   std::vector<sycl::event> _deps;
 };
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|optimize_csrsv|dpct::sparse
+// DPCT_DEPENDENCY_BEGIN
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 template <typename T>
 void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
                     int row_col, const matrix_info info, const T *val,
@@ -223,7 +232,12 @@ void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
                                      info.get_diag(), matrix_handle);
   optimize_info_ptr->add_dependency(e);
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|csrsv|dpct::sparse
+// DPCT_DEPENDENCY_BEGIN
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 template <typename T>
 void csrsv(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
            const T *alpha, const matrix_info info,
@@ -247,7 +261,7 @@ void csrsv(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
   optimize_info_ptr->add_dependency(e);
   dpct::async_dpct_free({new_f}, {e}, queue);
 }
-
+// DPCT_LABEL_END
 } // namespace sparse
 } // namespace dpct
 
