@@ -54,6 +54,18 @@ public:
             TL, TypeNameCreator(TL), TAsCreator(TL)...) {}
 };
 
+template <class TypeNameT, class... TemplateArgsT>
+class CtadTemplateTypeLocRewriter
+    : public TypePrinterRewriter<CtadTemplatedNamePrinter<TypeNameT, TemplateArgsT...>> {
+public:
+  CtadTemplateTypeLocRewriter(
+      const TypeLoc TL,
+      const std::function<TypeNameT(const TypeLoc)> &TypeNameCreator,
+      const std::function<TemplateArgsT(const TypeLoc)> &...TAsCreator)
+      : TypePrinterRewriter<CtadTemplatedNamePrinter<TypeNameT, TemplateArgsT...>>(
+            TL, TypeNameCreator(TL), TAsCreator(TL)...) {}
+};
+
 template <class TypeNameT>
 struct TypeNameTypeLocRewriter
     : public TypePrinterRewriter<TypeNamePrinter<TypeNameT>> {
@@ -62,6 +74,39 @@ struct TypeNameTypeLocRewriter
       const std::function<TypeNameT(const TypeLoc)> &TypeNameCreator)
       : TypePrinterRewriter<TypeNamePrinter<TypeNameT>>(TL,
                                                         TypeNameCreator(TL)) {}
+};
+
+class ReportWarningTypeLocRewriter : public TypeLocRewriter {
+public:
+  template <class F>
+  static std::string getMsgArg(F&& f, const TypeLoc TL) {
+    std::string Result;
+    llvm::raw_string_ostream OS(Result);
+    print(OS, f(TL));
+    return OS.str();
+  }
+
+  template <typename IDTy, typename... Ts>
+  inline void report(IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
+    TransformSetTy TS;
+    auto SL = TL.getBeginLoc();
+    DiagnosticsUtils::report(
+        SL, MsgID, &TS, UseTextBegin, std::forward<Ts>(Vals)...);
+    for (auto &T : TS)
+      DpctGlobalInfo::getInstance().addReplacement(
+          T->getReplacement(DpctGlobalInfo::getContext()));
+  }
+
+  template <class... MsgArgs>
+  ReportWarningTypeLocRewriter(const TypeLoc TL,
+                               Diagnostics MsgID, MsgArgs&&...Args)
+    : TypeLocRewriter(TL) {
+    report(MsgID, false, getMsgArg(std::forward<MsgArgs>(Args), TL)...);
+  }
+
+  Optional<std::string> rewrite() override {
+    return {};
+  }
 };
 
 class TypeLocRewriterFactoryBase {

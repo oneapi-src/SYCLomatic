@@ -121,9 +121,6 @@ static inline std::string getMessagePrefix(int ID) {
 template <typename... Ts>
 void reportWarning(SourceLocation SL, const DiagnosticsMessage &Msg,
                    DiagnosticsEngine &Engine, Ts &&...Vals) {
-  // Do not emit diagnostic message for source location outside --in-root
-  if (!DpctGlobalInfo::isInRoot(SL))
-    return;
   std::string Message = getMessagePrefix(Msg.ID) + Msg.Msg;
   if (OutputVerbosity != OutputVerbosityLevel::OVL_Silent) {
     unsigned ID = Engine.getDiagnosticIDs()->getCustomDiagID(
@@ -286,7 +283,7 @@ private:
 };
 
 template <typename IDTy, typename... Ts>
-bool report(const std::string FileAbsPath, unsigned int Offset, IDTy MsgID,
+bool report(const std::string &FileAbsPath, unsigned int Offset, IDTy MsgID,
             bool IsInsertWarningIntoCode, bool UseTextBegin, Ts &&...Vals);
 
 // Emits a warning/error/note and/or comment depending on MsgID. For details
@@ -307,14 +304,13 @@ inline bool report(SourceLocation SL, IDTy MsgID,
     }
   }
 
-  SmallString<4096> FileName(SM.getFilename(SL));
-  makeCanonical(FileName);
-  // Convert path to the native form.
-  // E.g, on Windows all '/' are converted to '\'.
-  llvm::sys::path::native(FileName);
+  auto FileName = DpctGlobalInfo::getLocInfo(SL).first;
 
+  // Do not emit diagnostic message for source location outside --in-root
+  if (!DpctGlobalInfo::isInRoot(FileName))
+    return false;
   std::string FileAndLine = clang::dpct::buildString(
-      FileName.str(), ":", SM.getPresumedLineNumber(SL));
+      FileName, ":", SM.getPresumedLineNumber(SL));
   std::string WarningIDAndMsg = clang::dpct::buildString(
       std::to_string(static_cast<int>(MsgID)), ":", Vals...);
 
@@ -373,8 +369,11 @@ private:
 
 // Emits a warning/error/note and/or comment depending on MsgID. For details
 template <typename IDTy, typename... Ts>
-bool report(const std::string FileAbsPath, unsigned int Offset, IDTy MsgID,
+bool report(const std::string &FileAbsPath, unsigned int Offset, IDTy MsgID,
             bool IsInsertWarningIntoCode, bool UseTextBegin, Ts &&...Vals) {
+  // Do not emit diagnostic message for source location outside --in-root
+  if (!DpctGlobalInfo::isInRoot(FileAbsPath))
+    return false;
   std::shared_ptr<DpctFileInfo> Fileinfo =
       dpct::DpctGlobalInfo::getInstance().insertFile(FileAbsPath);
 

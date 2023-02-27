@@ -24,56 +24,56 @@ In the example below, ``3*sizeof(float)`` is used to represent the size of
 ``float3`` in the original code. In the migrated code the size of ``sycl::float3``
 is different, so the allocated size needs adjustment.
 
-For example, this original code:
+For example, this original CUDA\* code:
 
 .. code-block:: cpp
    :linenos:
 
-	_global_ void kernel() {   extern __shared__ float3 shared_memory[]; }
+     _global_ void kernel() {   extern __shared__ float3 shared_memory[]; }
+     
+     int main()
+     {   size_t shared_size = 3 * sizeof(float);   kernel<<<1, 1, shared_size>>>();  ... }
 
-	int main()
-	{   size_t shared_size = 3 * sizeof(float);   kernel<<<1, 1, shared_size>>>();  ... }
-
-results in the following migrated DPC++ code:
+results in the following migrated SYCL\* code:
 
 .. code-block:: cpp
    :linenos:
 
-	void kernel(uint8_t *dpct_local)
-	{   auto shared_memory = (float3 *)dpct_local; }
-	int main() {
-	  /*
-	  DPCT1083
-	  */
-	  size_t shared_size = 3 * sizeof(float);
-	  get_default_queue().submit([&](handler &cgh) {
-	    accessor<...> dpct_local_acc_ct1(range<1>(shared_size), cgh);
-	    cgh.parallel_for(...,
-	        [=](nd_item<3> item_ct1) {
-	        kernel(dpct_local_acc_ct1.get_pointer());         });
-	  });
-	  ...
-	}
+     void kernel(uint8_t *dpct_local)
+     {   auto shared_memory = (float3 *)dpct_local; }
+     int main() {
+       /*
+       DPCT1083
+       */
+       size_t shared_size = 3 * sizeof(float);
+       get_default_queue().submit([&](handler &cgh) {
+         accessor<...> dpct_local_acc_ct1(range<1>(shared_size), cgh);
+         cgh.parallel_for(...,
+             [=](nd_item<3> item_ct1) {
+             kernel(dpct_local_acc_ct1.get_pointer());         });
+       });
+       ...
+     }
 
 which is manually adjusted to:
 
 .. code-block:: cpp
    :linenos:
 
-	void kernel(uint8_t *dpct_local) {   auto shared_memory = (float3 *)dpct_local; }
-
-	int main() {
-	  size_t shared_size = 1 * sizeof(float3);
-	  get_default_queue().submit([&](handler &cgh)
-	    Unknown macro: {
-	      accessor<...> dpct_local_acc_ct1(range<1>(shared_size), cgh);    cgh.parallel_for(...,        [=](nd_item<3> item_ct1) {
-	        kernel(dpct_local_acc_ct1.get_pointer());
-	      });
-	    }
-	  );
-	  ...
-	}
-
+     void kernel(uint8_t *dpct_local) {   auto shared_memory = (float3 *)dpct_local; }
+     
+     int main() {
+       size_t shared_size = 1 * sizeof(float3);
+       get_default_queue().submit([&](handler &cgh)
+         Unknown macro: {
+           accessor<...> dpct_local_acc_ct1(range<1>(shared_size), cgh);    cgh.parallel_for(...,        [=](nd_item<3> item_ct1) {
+             kernel(dpct_local_acc_ct1.get_pointer());
+           });
+         }
+       );
+       ...
+     }
+     
 Suggestions to Fix
 ------------------
 

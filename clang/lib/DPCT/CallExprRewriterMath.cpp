@@ -766,10 +766,13 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     }
     auto MigratedArg1 = getMigratedArg(1);
     OS << MapNames::getClNamespace(false, true) + "frexp(" << MigratedArg0
-       << ", " + MapNames::getClNamespace() + "make_ptr<int, "
+       << ", " + MapNames::getClNamespace() + "address_space_cast<"
        << MapNames::getClNamespace() + "access::address_space::" +
-              getAddressSpace(Call->getArg(1), MigratedArg1) + ">("
-       << MigratedArg1 << "))";
+              getAddressSpace(Call->getArg(1), MigratedArg1)
+       << ", " << MapNames::getClNamespace() + "access::decorated::yes"
+       << ", "
+       << "int"
+       << ">(" << MigratedArg1 << "))";
   } else if (FuncName == "modf" || FuncName == "modff") {
     auto Arg = Call->getArg(0);
     std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
@@ -792,13 +795,23 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     auto MigratedArg1 = getMigratedArg(1);
     OS << MapNames::getClNamespace(false, true) + "modf(" << MigratedArg0;
     if (FuncName == "modf")
-      OS << ", " + MapNames::getClNamespace() + "make_ptr<double, " +
-                MapNames::getClNamespace() + "access::address_space::" +
-                getAddressSpace(Call->getArg(1), MigratedArg1) + ">(";
+      OS << ", " + MapNames::getClNamespace() + "address_space_cast<"
+         << MapNames::getClNamespace() + "access::address_space::" +
+                getAddressSpace(Call->getArg(1), MigratedArg1)
+         << ", " << MapNames::getClNamespace() + "access::decorated::yes"
+         << ", "
+         << "double"
+         << ">(";
     else
-      OS << ", " + MapNames::getClNamespace() + "make_ptr<float, " +
-                MapNames::getClNamespace() + "access::address_space::" +
-                getAddressSpace(Call->getArg(1), MigratedArg1) + ">(";
+      OS << ", " + MapNames::getClNamespace() + "address_space_cast<"
+         << MapNames::getClNamespace() + "access::address_space::" +
+                getAddressSpace(Call->getArg(1), MigratedArg1)
+         << ", " << MapNames::getClNamespace() + "access::decorated::yes"
+         << ", "
+         << "float"
+         << ">(";
+
+
     OS << MigratedArg1 << "))";
   } else if (FuncName == "nan" || FuncName == "nanf") {
     OS << MapNames::getClNamespace(false, true) + "nan(0u)";
@@ -835,13 +848,22 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
        << MigratedArg0;
 
     if (FuncName == "sincos")
-      RSO << ", " + MapNames::getClNamespace() + "make_ptr<double, " +
-                MapNames::getClNamespace() + "access::address_space::" +
-                getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
+      RSO << ", " + MapNames::getClNamespace() + "address_space_cast<"
+          << MapNames::getClNamespace() + "access::address_space::" +
+                 getAddressSpace(Call->getArg(2), MigratedArg2)
+          << ", " << MapNames::getClNamespace() + "access::decorated::yes"
+          << ", "
+          << "double"
+          << ">(";
     else
-      RSO << ", " + MapNames::getClNamespace() + "make_ptr<float, " +
-                MapNames::getClNamespace() + "access::address_space::" +
-                getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
+      RSO << ", " + MapNames::getClNamespace() + "address_space_cast<"
+          << MapNames::getClNamespace() + "access::address_space::" +
+                 getAddressSpace(Call->getArg(2), MigratedArg2)
+          << ", " << MapNames::getClNamespace() + "access::decorated::yes"
+          << ", "
+          << "float"
+          << ">(";
+
     RSO << MigratedArg2 << "))";
 
     if(IsInReturnStmt) {
@@ -872,13 +894,22 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     }
 
     if (FuncName == "sincospi")
-      RSO << ", " + MapNames::getClNamespace() + "make_ptr<double, " +
-                MapNames::getClNamespace() + "access::address_space::" +
-                getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
+      RSO << ", " + MapNames::getClNamespace() + "address_space_cast<"
+          << MapNames::getClNamespace() + "access::address_space::" +
+                 getAddressSpace(Call->getArg(2), MigratedArg2)
+          << ", " << MapNames::getClNamespace() + "access::decorated::yes"
+          << ", "
+          << "double"
+          << ">(";
     else
-      RSO << ", " + MapNames::getClNamespace() + "make_ptr<float, " +
-                MapNames::getClNamespace() + "access::address_space::" +
-                getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
+      RSO << ", " + MapNames::getClNamespace() + "address_space_cast<"
+          << MapNames::getClNamespace() + "access::address_space::" +
+                 getAddressSpace(Call->getArg(2), MigratedArg2)
+          << ", " << MapNames::getClNamespace() + "access::decorated::yes"
+          << ", "
+          << "float"
+          << ">(";
+
     RSO << MigratedArg2 << "))";
     if(IsInReturnStmt) {
       OS << "[&](){ " << Buf << ";"<< " }()";
@@ -931,10 +962,13 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     auto MigratedArg2 = getMigratedArg(2);
     OS << MapNames::getClNamespace(false, true) + "remquo(" << MigratedArg0
        << ", " << MigratedArg1
-       << ", " + MapNames::getClNamespace() + "make_ptr<int, " +
-              MapNames::getClNamespace() + "access::address_space::" +
-              getAddressSpace(Call->getArg(2), MigratedArg2) + ">("
-       << MigratedArg2 << "))";
+       << ", " + MapNames::getClNamespace() + "address_space_cast<"
+       << MapNames::getClNamespace() + "access::address_space::" +
+              getAddressSpace(Call->getArg(2), MigratedArg2)
+       << ", " << MapNames::getClNamespace() + "access::decorated::yes"
+       << ", "
+       << "int"
+       << ">(" << MigratedArg2 << "))";
   } else if (FuncName == "nearbyint" || FuncName == "nearbyintf") {
     OS << MapNames::getClNamespace(false, true) + "floor(" << MigratedArg0
        << " + 0.5)";

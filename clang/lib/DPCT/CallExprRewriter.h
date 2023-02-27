@@ -47,6 +47,7 @@ public:
   static void initRewriterMap();
   RulePriority Priority = RulePriority::Fallback;
 private:
+  static void initRewriterMapAtomic();
   static void initRewriterMapCUB();
   static void initRewriterMapCUFFT();
   static void initRewriterMapCUBLAS();
@@ -213,6 +214,29 @@ public:
       return First->create(C);
     else
       return Second->create(C);
+  }
+};
+
+class CaseRewriterFactory : public CallExprRewriterFactoryBase {
+public:
+  using PredT = std::function<bool(const CallExpr *)>;
+  using CaseT = std::pair<PredT, std::shared_ptr<CallExprRewriterFactoryBase>>;
+
+  inline static const PredT true_pred = [](const CallExpr *) { return true; };
+  
+  std::vector<CaseT> Cases;
+
+  template <class... CaseTs>
+  CaseRewriterFactory(CaseTs&&... cases)
+    : Cases{std::forward<CaseTs>(cases)...} {}
+  
+  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
+    for (const auto& [Pred, Factory] : Cases) {
+      if (Pred(C)) {
+	return Factory->create(C);
+      }
+    }
+    throw std::runtime_error("Non-exhaustive CaseRewriterFactory");
   }
 };
 
@@ -801,6 +825,22 @@ public:
   }
 };
 
+template <class NameT, class... TemplateArgsT> class CtadTemplatedNamePrinter {
+  NameT Name;
+  ArgsPrinter<false, TemplateArgsT...> TAs;
+public:
+  CtadTemplatedNamePrinter(NameT Name, TemplateArgsT &&...TAs)
+      : Name(Name), TAs(std::forward<TemplateArgsT>(TAs)...) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    dpct::print(Stream, Name);
+    if (!DpctGlobalInfo::isCtadEnabled()) {
+      Stream << "<";
+      TAs.print(Stream);
+      Stream << ">";
+    }
+  }
+};
+
 // Print a type with no template.
 template <class NameT> class TypeNamePrinter {
   NameT Name;
@@ -902,6 +942,24 @@ public:
   }
 };
 
+template <UnaryOperatorKind UO, class ArgValueT>
+class UnaryOperatorPrinter {
+  ArgValueT ArgValue;
+
+  static std::string UOStr;
+
+public:
+  UnaryOperatorPrinter(ArgValueT &&Arg)
+      : ArgValue(std::forward<ArgValueT>(Arg)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    Stream << UOStr;
+    dpct::print(Stream, ArgValue);
+  }
+};
+template <UnaryOperatorKind UO, class ArgValueT>
+std::string UnaryOperatorPrinter<UO, ArgValueT>::UOStr =
+    UnaryOperator::getOpcodeStr(UO).str();
+
 template <BinaryOperatorKind Op, class LValueT, class RValueT>
 std::string BinaryOperatorPrinter<Op, LValueT, RValueT>::OpStr =
     BinaryOperator::getOpcodeStr(Op).str();
@@ -978,7 +1036,7 @@ public:
 };
 
 template <class FirstPrinter, class... RestPrinter>
-class MultiStmtsPrinter : MultiStmtsPrinter<RestPrinter...> {
+class MultiStmtsPrinter : public MultiStmtsPrinter<RestPrinter...> {
   using Base = MultiStmtsPrinter<RestPrinter...>;
   FirstPrinter First;
 
@@ -1194,6 +1252,16 @@ public:
                    const std::function<RValueT(const CallExpr *)> &RCreator)
       : PrinterRewriter<BinaryOperatorPrinter<BO, LValueT, RValueT>>(
             C, Source, LCreator(C), RCreator(C)) {}
+};
+
+template <UnaryOperatorKind UO, class ArgValueT>
+class UnaryOpRewriter
+    : public PrinterRewriter<UnaryOperatorPrinter<UO, ArgValueT>> {
+public:
+  UnaryOpRewriter(const CallExpr *C, StringRef Source,
+                   const std::function<ArgValueT(const CallExpr *)> &ArgCreator)
+      : PrinterRewriter<UnaryOperatorPrinter<UO, ArgValueT>> (
+            C, Source, ArgCreator(C)) {}
 };
 
 class SubGroupPrinter {

@@ -79,7 +79,8 @@ void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                       "cub::TransformInputIterator",
                       "cub::ConstantInputIterator",
                       "cub::ArgIndexInputIterator",
-                      "cub::DiscardOutputIterator");
+                      "cub::DiscardOutputIterator",
+                      "cub::DoubleBuffer");
   };
 
   MF.addMatcher(
@@ -129,22 +130,29 @@ void CubDeviceLevelRule::runRule(
 void CubMemberCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
       cxxMemberCallExpr(
-          allOf(on(hasType(hasCanonicalType(qualType(hasDeclaration(
-                    namedDecl(hasName("cub::ArgIndexInputIterator"))))))),
-                callee(cxxMethodDecl(hasName("normalize")))))
-          .bind("ArgIndexInputIterator.normalize"),
+              allOf(on(hasType(hasCanonicalType(qualType(hasDeclaration(
+                        namedDecl(hasName("cub::ArgIndexInputIterator"))))))),
+                    callee(cxxMethodDecl(hasName("normalize")))))
+          .bind("memberCall"),
+      this);
+
+  MF.addMatcher(
+      memberExpr(hasObjectExpression(hasType(hasCanonicalType(qualType(hasDeclaration(namedDecl(hasName("cub::DoubleBuffer"))))))),
+                    member(hasAnyName("Current", "Alternate", "d_buffers")))
+      .bind("memberExpr"),
       this);
 }
 
 void CubMemberCallRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  if (const auto *MC = getNodeAsType<CXXMemberCallExpr>(
-          Result, "ArgIndexInputIterator.normalize")) {
-    ExprAnalysis EA;
-    EA.analyze(MC);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
+  ExprAnalysis EA;
+  if (const auto E1 = getNodeAsType<CXXMemberCallExpr>(Result, "memberCall")) {
+    EA.analyze(E1);
+  } else if (const auto E2 = getNodeAsType<MemberExpr>(Result, "memberExpr")) {
+    EA.analyze(E2);
   }
+  emplaceTransformation(EA.getReplacement());
+  EA.applyAllSubExprRepl();
 }
 
 static bool isNullPointerConstant(const clang::Expr *E) {

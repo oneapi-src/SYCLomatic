@@ -99,6 +99,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaError",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "err0",
                                       HelperFeatureEnum::Util_err_types)},
+      {"CUjit_option", std::make_shared<TypeNameRule>("int")},
       {"CUresult", std::make_shared<TypeNameRule>("int")},
       {"CUcontext", std::make_shared<TypeNameRule>("int")},
       {"CUmodule", std::make_shared<TypeNameRule>(getDpctNamespace() + "kernel_library",
@@ -282,6 +283,10 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("std::tuple_size")},
        {"thrust::swap",
        std::make_shared<TypeNameRule>("std::swap")},
+       {"thrust::zip_iterator",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "zip_iterator",
+           HelperFeatureEnum::DplExtrasIterators_zip_iterator)},
       {"cusolverDnHandle_t",
        std::make_shared<TypeNameRule>(getClNamespace() + "queue*")},
       {"cusolverEigType_t", std::make_shared<TypeNameRule>("int64_t")},
@@ -1601,6 +1606,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"atomicExch", getDpctNamespace() + "atomic_exchange"},
       {"atomicCAS", getDpctNamespace() + "atomic_compare_exchange_strong"},
       {"atomicInc", getDpctNamespace() + "atomic_fetch_compare_inc"},
+      {"atomicDec", getDpctNamespace() + "atomic_fetch_compare_dec"},
   };
 
   BLASComputingAPIWithRewriter = {

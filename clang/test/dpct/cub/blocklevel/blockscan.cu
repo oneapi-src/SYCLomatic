@@ -25,7 +25,7 @@ void print_data(int* data, int num) {
   std::cout << std::endl;
 }
 //CHECK: void ExclusiveScanKernel(int* data,
-//CHECK-NEXT:   sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:
@@ -48,7 +48,7 @@ __global__ void ExclusiveScanKernel(int* data) {
 }
 
 //CHECK: void ExclusiveSumKernel(int* data,
-//CHECK-NEXT:   sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:
@@ -71,7 +71,7 @@ __global__ void ExclusiveSumKernel(int* data) {
 }
 
 //CHECK: void InclusiveScanKernel(int* data,
-//CHECK-NEXT:   sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:
@@ -94,7 +94,7 @@ __global__ void InclusiveScanKernel(int* data) {
 }
 
 //CHECK: void InclusiveSumKernel(int* data,
-//CHECK-NEXT:   sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:
@@ -124,7 +124,7 @@ int main() {
   int TotalThread = GridSize.x * BlockSize.x * BlockSize.y * BlockSize.z;
 
   cudaMallocManaged(&dev_data, TotalThread * sizeof(int));
-  
+
   init_data(dev_data, TotalThread);
 //CHECK:  q_ct1.parallel_for(
 //CHECK-NEXT:        sycl::nd_range<3>(GridSize * BlockSize, BlockSize),

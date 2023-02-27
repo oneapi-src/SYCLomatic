@@ -4,7 +4,7 @@
 //CHECK: dpct::image_wrapper_base_p tex;
 CUtexref tex;
 
-//CHECK: extern "C" void foo(float* k, float* y, sycl::nd_item<3> item_ct1,
+//CHECK: extern "C" void foo(float* k, float* y, const sycl::nd_item<3> &item_ct1,
 //CHECK-NEXT:     uint8_t *dpct_local, unsigned int *const_data);
 
 //CHECK:extern "C" {
@@ -15,8 +15,8 @@ extern "C" __global__ void foo(float* k, float* y);
 
 __constant__ unsigned int const_data[3] = {1, 2, 3};
 
-//CHECK: void foo(float* k, float* y, sycl::nd_item<3> item_ct1, uint8_t *dpct_local,
-//CHECK-NEXT:     unsigned int *const_data){
+//CHECK: void foo(float* k, float* y, const sycl::nd_item<3> &item_ct1,
+//CHECK-NEXT: uint8_t *dpct_local, unsigned int *const_data){
 //CHECK-NEXT: auto s = (int *)dpct_local;
 //CHECK-NEXT: unsigned int cd = const_data[2];
 //CHECK-NEXT: int a = item_ct1.get_local_id(2);
@@ -48,7 +48,7 @@ __global__ void foo(float* k, float* y){
     int a = threadIdx.x;
 }
 
-// CHECK: extern "C" void foo2(float* k, float* y, sycl::nd_item<3> item_ct1, sycl::int2 x=sycl::int2(1, 2)) {
+// CHECK: extern "C" void foo2(float* k, float* y, const sycl::nd_item<3> &item_ct1, sycl::int2 x=sycl::int2(1, 2)) {
 // CHECK-NEXT: (void)item_ct1.get_local_id(2);
 // CHECK-NEXT: }
 
@@ -78,7 +78,7 @@ extern "C" __global__ void foo2(float* k, float* y, int2 x=make_int2(1, 2)) {
 //CHECK:         auto const_data_ptr_ct1 = const_data.get_ptr();
 //CHECK:         sycl::local_accessor<uint8_t, 1> dpct_local_acc_ct1(sycl::range<1>(0), cgh);
 //CHECK:         cgh.parallel_for(
-//CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)), 
+//CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
 //CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:             foo(a, b, item_ct1, dpct_local_acc_ct1.get_pointer(), const_data_ptr_ct1);
 //CHECK-NEXT:           });

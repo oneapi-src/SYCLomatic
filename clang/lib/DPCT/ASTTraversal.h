@@ -78,6 +78,7 @@ public:
   bool isInAnalysisScope(SourceLocation Loc);
   // Find the "#" before a preprocessing directive, return -1 if have some false
   int findPoundSign(SourceLocation DirectiveStart);
+  void insertCudaArchRepl(std::shared_ptr<clang::dpct::ExtReplacement> Repl);
 
 private:
   /// e.g. "__launch_bounds(32, 32)  void foo()"
@@ -219,7 +220,7 @@ public:
     CHECKPOINT_ASTMATCHER_RUN_ENTRY();
     try {
       static_cast<T *>(this)->runRule(Result);
-    } catch (std::exception &e) {
+    } catch (std::exception &) {
       std::string FaultMsg =
           "Error: dpct internal error. Migration rule causing the error "
           "skipped. Migration continues.\n";
@@ -571,6 +572,17 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+class CudaExtentRule : public NamedMigrationRule<CudaExtentRule> {
+  CharSourceRange getConstructorRange(const CXXConstructExpr *Ctor);
+  void replaceConstructor(const CXXConstructExpr *Ctor);
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+  std::optional<TraversalKind> getCheckTraversalKind() const override {
+    return TK_IgnoreUnlessSpelledInSource;
+  }
+};
+
 /// Migration rule for return types replacements.
 class ReturnTypeRule : public NamedMigrationRule<ReturnTypeRule> {
 public:
@@ -639,6 +651,13 @@ public:
 
 /// Migration rule for FFT enums.
 class FFTEnumsRule : public NamedMigrationRule<FFTEnumsRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+/// Migration rule for CU_JIT enums.
+class CU_JITEnumsRule : public NamedMigrationRule<CU_JITEnumsRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
@@ -1425,7 +1444,8 @@ private:
                            const std::string &PaddingArgs, SourceManager &SM);
   void insertToPitchedData(const CallExpr *C, size_t ArgIndex) {
     if (C->getNumArgs() > ArgIndex) {
-      if (needExtraParens(C->getArg(ArgIndex)))
+      if (C->getArg(ArgIndex)->IgnoreImplicit()->getStmtClass() !=
+          Stmt::StmtClass::DeclRefExprClass)
         insertAroundStmt(C->getArg(ArgIndex), "(", ")");
       requestFeature(HelperFeatureEnum::Image_image_matrix_to_pitched_data, C);
       emplaceTransformation(
