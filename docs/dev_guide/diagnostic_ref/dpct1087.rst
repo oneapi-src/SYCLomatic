@@ -18,7 +18,7 @@ Detailed Help
 -------------
 
 By default, the dpct helper function ``nd_range_barrier`` is not used to migrate
-CUDA grid level synchronization. To use ``nd_range_barrier`` to migrate CUDA
+CUDA\* grid level synchronization. To use ``nd_range_barrier`` to migrate CUDA
 grid level synchronization, specify ``--use-experimental-features=nd_range_barrier``
 in the migration command.
 

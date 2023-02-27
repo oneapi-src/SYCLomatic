@@ -16,7 +16,7 @@ Consult with your hardware vendor to find a replacement.
 Detailed Help
 -------------
 
-The clock function call was not replaced, because it is not defined in SYCL.
+The clock function call was not replaced, because it is not defined in SYCL\*.
 Replace this hardware-specific feature with the one offered by your hardware
 vendor.
 

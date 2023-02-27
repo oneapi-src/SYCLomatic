@@ -808,7 +808,7 @@ public:
   static bool isInRoot(const std::string &FilePath,
                        bool IsChildRelative = true) {
     if (IsChildRelative) {
-      std::string Path = removeSymlinks(getFileManager(), FilePath);
+      std::string Path(FilePath);
       makeCanonical(Path);
       if (isChildPath(InRoot, Path)) {
         return !isExcluded(Path);
@@ -2494,14 +2494,11 @@ public:
 
   std::string getDeclarationReplacement(const VarDecl *);
 
-  std::string getInitStmt() { return getInitStmt("", false); }
-  std::string getInitStmt(StringRef QueueString, bool IsQueuePtr) {
+  std::string getInitStmt() { return getInitStmt(""); }
+  std::string getInitStmt(StringRef QueueString) {
     if (QueueString.empty())
       return getConstVarName() + ".init();";
-    std::string DerefQueuePtr = "";
-    if(IsQueuePtr)
-      DerefQueuePtr = "*";
-    return buildString(getConstVarName(), ".init(", DerefQueuePtr, QueueString, ");");
+    return buildString(getConstVarName(), ".init(", QueueString, ");");
   }
 
   inline std::string getMemoryDecl(const std::string &MemSize) {
@@ -2762,6 +2759,13 @@ protected:
            << " " << Name;
   }
 
+  template <class StreamT>
+  static void printQueueStr(StreamT &OS, const std::string &Queue) {
+    if (Queue.empty())
+      return;
+    OS << ", " << Queue;
+  }
+
 public:
   TextureInfo(unsigned Offset, const std::string &FilePath, const VarDecl *VD)
       : TextureInfo(Offset, FilePath, VD->getName()) {
@@ -2823,13 +2827,17 @@ public:
     return buildString("auto ", NewVarName, "_smpl = ", Name,
                        ".get_sampler();");
   }
-  virtual std::string getAccessorDecl() {
+  virtual std::string getAccessorDecl(const std::string &QueueStr) {
     requestFeature(HelperFeatureEnum::Image_image_wrapper_get_access, FilePath);
-    return buildString("auto ", NewVarName, "_acc = ", Name,
-                       ".get_access(cgh);");
+    std::string Ret;
+    llvm::raw_string_ostream OS(Ret);
+    OS << "auto " << NewVarName << "_acc = " << Name << ".get_access(cgh";
+    printQueueStr(OS, QueueStr);
+    OS << ");";
+    return Ret;
   }
-  virtual void addDecl(StmtList &AccessorList, StmtList &SamplerList) {
-    AccessorList.emplace_back(getAccessorDecl());
+  virtual void addDecl(StmtList &AccessorList, StmtList &SamplerList, const std::string&QueueStr) {
+    AccessorList.emplace_back(getAccessorDecl(QueueStr));
     SamplerList.emplace_back(getSamplerDecl());
   }
 
@@ -2880,12 +2888,14 @@ public:
       : TextureObjectInfo(VD, Subscript, 0) {}
 
   virtual ~TextureObjectInfo() = default;
-  std::string getAccessorDecl() override {
+  std::string getAccessorDecl(const std::string &QueueString) override {
     ParameterStream PS;
 
     PS << "auto " << NewVarName << "_acc = static_cast<";
     getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
-        << " *>(" << Name << ")->get_access(cgh);";
+        << " *>(" << Name << ")->get_access(cgh";
+    printQueueStr(PS, QueueString);
+    PS << ");";
     requestFeature(HelperFeatureEnum::Image_image_wrapper_get_access, FilePath);
     requestFeature(HelperFeatureEnum::Image_image_wrapper, FilePath);
     return PS.Str;
@@ -2932,13 +2942,15 @@ class CudaLaunchTextureObjectInfo : public TextureObjectInfo {
 public:
   CudaLaunchTextureObjectInfo(const ParmVarDecl *PVD, const std::string &ArgStr)
       : TextureObjectInfo(static_cast<const VarDecl *>(PVD)), ArgStr(ArgStr) {}
-  std::string getAccessorDecl() override {
+  std::string getAccessorDecl(const std::string &QueueString) override {
     requestFeature(HelperFeatureEnum::Image_image_wrapper, FilePath);
     requestFeature(HelperFeatureEnum::Image_image_wrapper_get_access, FilePath);
     ParameterStream PS;
     PS << "auto " << Name << "_acc = static_cast<";
     getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
-        << " *>(" << ArgStr << ")->get_access(cgh);";
+        << " *>(" << ArgStr << ")->get_access(cgh";
+    printQueueStr(PS, QueueString);
+    PS << ");";
     return PS.Str;
   }
   std::string getSamplerDecl() override {
@@ -2977,9 +2989,10 @@ public:
     Ret->MemberName = ME->getMemberDecl()->getNameAsString();
     return Ret;
   }
-  void addDecl(StmtList &AccessorList, StmtList &SamplerList) override {
+  void addDecl(StmtList &AccessorList, StmtList &SamplerList,
+               const std::string &QueueStr) override {
     NewVarNameRAII RAII(this);
-    TextureObjectInfo::addDecl(AccessorList, SamplerList);
+    TextureObjectInfo::addDecl(AccessorList, SamplerList, QueueStr);
   }
   void setBaseName(StringRef Name) { BaseName = Name; }
   StringRef getMemberName() { return MemberName; }
@@ -3006,7 +3019,8 @@ public:
     auto Member = MemberTextureObjectInfo::create(ME);
     return Members.emplace(Member->getMemberName().str(), Member).first->second;
   }
-  void addDecl(StmtList &AccessorList, StmtList &SamplerList) override {
+  void addDecl(StmtList &AccessorList, StmtList &SamplerList,
+               const std::string &Queue) override {
     for (const auto &M : Members) {
       M.second->setBaseName(Name);
     }
@@ -4217,13 +4231,20 @@ private:
       }
     }
   }
-  bool isDefaultStream() {
+  bool isDefaultStream() const {
     return StringRef(ExecutionConfig.Stream).startswith("{{NEEDREPLACEQ") ||
            ExecutionConfig.IsDefaultStream;
   }
 
-  bool isQueuePtr() {
-    return ExecutionConfig.IsQueuePtr;
+  bool isQueuePtr() const { return ExecutionConfig.IsQueuePtr; }
+
+  std::string getQueueStr() const {
+    if (isDefaultStream())
+      return "";
+    std::string Ret;
+    if (isQueuePtr())
+      Ret = "*";
+    return Ret += ExecutionConfig.Stream;
   }
 
   void buildKernelInfo(const CUDAKernelCallExpr *KernelCall);
@@ -4587,10 +4608,8 @@ generateHelperFuncReplInfo(const T *S) {
   }
 
   Info.IsLocationValid = true;
-  Info.DeclLocFile =
-      DpctGlobalInfo::getSourceManager().getFilename(EndOfLBrace).str();
-  Info.DeclLocOffset =
-      DpctGlobalInfo::getSourceManager().getDecomposedLoc(EndOfLBrace).second;
+  std::tie(Info.DeclLocFile, Info.DeclLocOffset) =
+      DpctGlobalInfo::getLocInfo(EndOfLBrace);
   return Info;
 }
 

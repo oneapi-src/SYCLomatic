@@ -64,6 +64,13 @@ TextModification *clang::dpct::replaceText(SourceLocation Begin, SourceLocation 
   return nullptr;
 }
 
+SourceLocation getArgEndLocation(const CallExpr *C, unsigned Idx,
+                                 const SourceManager &SM) {
+  auto SL = getStmtExpansionSourceRange(C->getArg(Idx)).getEnd();
+  return SL.getLocWithOffset(Lexer::MeasureTokenLength(
+      SL, SM, DpctGlobalInfo::getContext().getLangOpts()));
+}
+
 /// Return a TextModication that removes nth argument of the CallExpr,
 /// together with the preceding comma.
 TextModification *clang::dpct::removeArg(const CallExpr *C, unsigned n,
@@ -75,20 +82,14 @@ TextModification *clang::dpct::removeArg(const CallExpr *C, unsigned n,
 
   SourceLocation Begin, End;
   if (n) {
-    Begin = getStmtExpansionSourceRange(C->getArg(n - 1)).getEnd();
-    Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
-        Begin, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
-    End = getStmtExpansionSourceRange(C->getArg(n)).getEnd();
-    End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-        End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
+    Begin = getArgEndLocation(C, n - 1, SM);
+    End = getArgEndLocation(C, n, SM);
   } else {
     Begin = getStmtExpansionSourceRange(C->getArg(n)).getBegin();
     if (C->getNumArgs() > 1) {
       End = getStmtExpansionSourceRange(C->getArg(n + 1)).getBegin();
     } else {
-      End = getStmtExpansionSourceRange(C->getArg(n)).getEnd();
-      End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-          End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
+      End = getArgEndLocation(C, n, SM);
     }
   }
   return replaceText(Begin, End, "", SM);
@@ -1913,135 +1914,15 @@ void AtomicFunctionRule::MigrateAtomicFunc(
     return;
   };
 
-  // TODO: 1. Investigate are there usages of atomic functions on local address
-  //          space
-  //       2. If item 1. shows atomic functions on local address space is
-  //          significant, detect whether this atomic operation operates in
-  //          global space or local space (currently, all in global space,
-  //          see dpct_atomic.hpp for more details)
-  const std::string AtomicFuncName = CE->getDirectCallee()->getName().str();
-  if (MapNames::AtomicFuncNamesMap.find(AtomicFuncName) ==
-      MapNames::AtomicFuncNamesMap.end())
+  const std::string FuncName = CE->getDirectCallee()->getName().str();
+  if (!CallExprRewriterFactoryBase::RewriterMap)
     return;
-  std::string ReplacedAtomicFuncName =
-      MapNames::AtomicFuncNamesMap.at(AtomicFuncName);
-
-  static const std::unordered_map<std::string, HelperFeatureEnum>
-      FunctionNameToFeatureMap = {
-          {"atomicAdd", HelperFeatureEnum::Atomic_atomic_fetch_add},
-          {"atomicSub", HelperFeatureEnum::Atomic_atomic_fetch_sub},
-          {"atomicAnd", HelperFeatureEnum::Atomic_atomic_fetch_and},
-          {"atomicOr", HelperFeatureEnum::Atomic_atomic_fetch_or},
-          {"atomicXor", HelperFeatureEnum::Atomic_atomic_fetch_xor},
-          {"atomicMin", HelperFeatureEnum::Atomic_atomic_fetch_min},
-          {"atomicMax", HelperFeatureEnum::Atomic_atomic_fetch_max},
-          {"atomicExch", HelperFeatureEnum::Atomic_atomic_exchange},
-          {"atomicCAS",
-           HelperFeatureEnum::Atomic_atomic_compare_exchange_strong},
-          {"atomicInc", HelperFeatureEnum::Atomic_atomic_fetch_compare_inc},
-          {"atomicDec", HelperFeatureEnum::Atomic_atomic_fetch_compare_dec},
-      };
-  requestFeature(FunctionNameToFeatureMap.at(AtomicFuncName), CE);
-
-  // Explicitly cast all arguments except first argument
-  const Type *Arg0Type = CE->getArg(0)->getType().getTypePtrOrNull();
-  // Atomic operation's first argument is always pointer type
-  if (!Arg0Type || !Arg0Type->isPointerType()) {
+  auto Iter = CallExprRewriterFactoryBase::RewriterMap->find(FuncName);
+  if (Iter != CallExprRewriterFactoryBase::RewriterMap->end()) {
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
     return;
-  }
-  const QualType PointeeType = Arg0Type->getPointeeType();
-
-  std::string TypeName;
-  if (auto *SubstedType = dyn_cast<SubstTemplateTypeParmType>(PointeeType)) {
-    // Type is substituted in template initialization, use the template
-    // parameter name
-    if (!SubstedType->getReplacedParameter()->getIdentifier()) {
-      return;
-    }
-    TypeName =
-        SubstedType->getReplacedParameter()->getIdentifier()->getName().str();
-  } else {
-    TypeName = PointeeType.getAsString();
-  }
-
-  // add exceptions for atomic translation:
-  // eg. source code: atomicMin(double), don't migrate it, its user code.
-  //     also: atomic_fetch_min<double> is not available in compute++.
-  if ((TypeName == "double" && AtomicFuncName != "atomicAdd") ||
-      (TypeName == "float" &&
-       !(AtomicFuncName == "atomicAdd" || AtomicFuncName == "atomicExch"))) {
-
-    return;
-  }
-
-  if (DpctGlobalInfo::getUsingGenericSpace()) {
-    std::string SpaceName =
-        MapNames::getClNamespace() + "access::address_space::generic_space";
-
-    std::string ReplAtomicFuncNameWithSpace;
-    if (ReplacedAtomicFuncName == "dpct::atomic_fetch_compare_inc" ||
-        ReplacedAtomicFuncName == "dpct::atomic_fetch_compare_dec") {
-      // dpct::atomic_fetch_compare_inc and dpct::atomic_fetch_compare_dec only
-      // support unsigned int type and it has no type info for template
-      // parameter.
-      ReplAtomicFuncNameWithSpace =
-          ReplacedAtomicFuncName + "<" + SpaceName + ">";
-    } else {
-      if (CE->getBeginLoc().isMacroID())
-        ReplAtomicFuncNameWithSpace = ReplacedAtomicFuncName;
-      else
-        ReplAtomicFuncNameWithSpace =
-            ReplacedAtomicFuncName + "<" + TypeName + ", " + SpaceName + ">";
-    }
-
-    emplaceTransformation(
-        new ReplaceCalleeName(CE, std::move(ReplAtomicFuncNameWithSpace)));
-  } else {
-    bool HasSharedAttr = false;
-    bool NeedReport = false;
-    getShareAttrRecursive(CE->getArg(0), HasSharedAttr, NeedReport);
-
-    std::string SpaceName =
-        MapNames::getClNamespace() + "access::address_space::local_space";
-    std::string ReplAtomicFuncNameWithSpace =
-        ReplacedAtomicFuncName + "<" + TypeName + ", " + SpaceName + ">";
-    if (NeedReport)
-      report(CE->getArg(0)->getBeginLoc(),
-             Diagnostics::SHARE_MEMORY_ATTR_DEDUCE, false,
-             getStmtSpelling(CE->getArg(0)), ReplacedAtomicFuncName,
-             ReplAtomicFuncNameWithSpace);
-
-    if (HasSharedAttr) {
-      ReplacedAtomicFuncName = ReplAtomicFuncNameWithSpace;
-    }
-
-    emplaceTransformation(
-        new ReplaceCalleeName(CE, std::move(ReplacedAtomicFuncName)));
-  }
-
-  const unsigned NumArgs = CE->getNumArgs();
-  for (unsigned i = 0; i < NumArgs; ++i) {
-    const Expr *Arg = CE->getArg(i);
-    if (auto *ImpCast = dyn_cast<ImplicitCastExpr>(Arg)) {
-      if (ImpCast->getCastKind() != clang::CK_LValueToRValue) {
-        if (i == 0) {
-          if (dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts())) {
-            emplaceTransformation(
-                new InsertBeforeStmt(Arg, "(" + TypeName + "*)"));
-          } else {
-            insertAroundStmt(Arg, "(" + TypeName + "*)(", ")");
-          }
-        } else {
-          if (dyn_cast<IntegerLiteral>(Arg->IgnoreImpCasts()) ||
-              dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts())) {
-            emplaceTransformation(
-                new InsertBeforeStmt(Arg, "(" + TypeName + ")"));
-          } else {
-            insertAroundStmt(Arg, "(" + TypeName + ")(", ")");
-          }
-        }
-      }
-    }
   }
 }
 
@@ -2128,7 +2009,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cufftReal", "cufftDoubleReal", "cufftComplex",
                   "cufftDoubleComplex", "cufftResult_t", "cufftResult",
                   "cufftType_t", "cufftType", "thrust::pair", "CUdeviceptr",
-                  "cudaDeviceAttr", "CUmodule", "CUfunction", "cudaMemcpyKind",
+                  "cudaDeviceAttr", "CUmodule", "CUjit_option",
+                  "CUfunction", "cudaMemcpyKind",
                   "cudaComputeMode", "__nv_bfloat16",
                   "cooperative_groups::__v1::thread_block_tile",
                   "cooperative_groups::__v1::thread_block",
@@ -3010,7 +2892,11 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
     const ValueDecl *VD = DpctGlobalInfo::findAncestor<ValueDecl>(TL);
     if (VD) {
-      if (VD->getType().isVolatileQualified()) {
+      bool isPointerToVolatile = false;
+      if (const auto PT = dyn_cast<PointerType>(VD->getType())) {
+        isPointerToVolatile = PT->getPointeeType().isVolatileQualified();
+      }
+      if (isPointerToVolatile || VD->getType().isVolatileQualified()) {
         SourceLocation Loc = SM->getExpansionLoc(VD->getBeginLoc());
         report(Loc, Diagnostics::VOLATILE_VECTOR_ACCESS, false);
 
@@ -4004,6 +3890,29 @@ void FFTEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(FFTEnumsRule, PassKind::PK_Migration)
+
+// Rule for CU_JIT enums.
+void CU_JITEnumsRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(
+      declRefExpr(
+          to(enumConstantDecl(matchesName(
+              "(CU_JIT_*)"))))
+          .bind("CU_JITConstants"),
+      this);
+}
+
+void CU_JITEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
+  if (const DeclRefExpr *DE =
+          getNodeAsType<DeclRefExpr>(Result, "CU_JITConstants")) {
+    emplaceTransformation(new ReplaceStmt(DE, "0"));
+
+    report(DE->getBeginLoc(),
+           Diagnostics::HOSTALLOCMACRO_NO_MEANING,
+           true, DE->getDecl()->getNameAsString());
+  }
+}
+
+REGISTER_RULE(CU_JITEnumsRule, PassKind::PK_Migration)
 
 // Rule for BLAS enums.
 // Migrate BLAS status values to corresponding int values
@@ -10870,41 +10779,48 @@ void MemoryMigrationRule::arrayMigration(
     Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
 
+  auto& SM = *Result.SourceManager;
   std::string ReplaceStr;
   StringRef NameRef(Name);
+  auto EndPos = C->getNumArgs() - 1;
   bool IsAsync = NameRef.endswith("Async");
   if (IsAsync) {
     NameRef = NameRef.drop_back(5 /* len of "Async" */);
     ReplaceStr = MapNames::getDpctNamespace() + "async_dpct_memcpy";
-    requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy, C);
-    requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_2d, C);
-    requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_3d, C);
+
+    auto StreamExpr = C->getArg(EndPos);
+    std::string Str;
+    if (isDefaultStream(StreamExpr)) {
+      emplaceTransformation(removeArg(C, EndPos, SM));
+      emplaceTransformation(removeArg(C, --EndPos, SM));
+    } else {
+      auto Begin = getArgEndLocation(C, EndPos - 2, SM),
+           End = getArgEndLocation(C, EndPos, SM);
+      llvm::raw_string_ostream OS(Str);
+      OS << ", " << MapNames::getDpctNamespace() << "automatic";
+      OS << ", ";
+      DerefExpr::create(StreamExpr, C).print(OS);
+      emplaceTransformation(replaceText(Begin, End, std::move(Str), SM));
+    }
   } else {
     ReplaceStr = MapNames::getDpctNamespace() + "dpct_memcpy";
-    requestFeature(HelperFeatureEnum::Memory_dpct_memcpy, C);
-    requestFeature(HelperFeatureEnum::Memory_dpct_memcpy_2d, C);
-    requestFeature(HelperFeatureEnum::Memory_dpct_memcpy_3d, C);
+    emplaceTransformation(removeArg(C, EndPos, SM));
   }
+  requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_3d, C);
 
-  auto &SM = *Result.SourceManager;
   if (NameRef == "cudaMemcpy2DArrayToArray") {
     insertToPitchedData(C, 0);
     aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
     insertToPitchedData(C, 3);
     aggregate3DVectorClassCtor(C, "id", 4, "0", SM);
     aggregate3DVectorClassCtor(C, "range", 6, "1", SM);
-    emplaceTransformation(removeArg(C, 8, SM));
   } else if (NameRef == "cudaMemcpy2DFromArray") {
-    handleAsync(C, 8, Result);
-    emplaceTransformation(removeArg(C, 7, *Result.SourceManager));
     aggregatePitchedData(C, 0, 1, SM);
     insertZeroOffset(C, 2);
     insertToPitchedData(C, 2);
     aggregate3DVectorClassCtor(C, "id", 3, "0", SM);
     aggregate3DVectorClassCtor(C, "range", 5, "1", SM);
   } else if (NameRef == "cudaMemcpy2DToArray") {
-    handleAsync(C, 8, Result);
-    emplaceTransformation(removeArg(C, 7, *Result.SourceManager));
     insertToPitchedData(C, 0);
     aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
     aggregatePitchedData(C, 3, 4, SM);
@@ -10916,18 +10832,13 @@ void MemoryMigrationRule::arrayMigration(
     insertToPitchedData(C, 3);
     aggregate3DVectorClassCtor(C, "id", 4, "0", SM);
     aggregate3DVectorClassCtor(C, "range", 6, "1", SM, 1);
-    emplaceTransformation(removeArg(C, 7, SM));
   } else if (NameRef == "cudaMemcpyFromArray") {
-    handleAsync(C, 6, Result);
-    emplaceTransformation(removeArg(C, 5, SM));
     aggregatePitchedData(C, 0, 4, SM, true);
     insertZeroOffset(C, 1);
     insertToPitchedData(C, 1);
     aggregate3DVectorClassCtor(C, "id", 2, "0", SM);
     aggregate3DVectorClassCtor(C, "range", 4, "1", SM, 1);
   } else if (NameRef == "cudaMemcpyToArray") {
-    handleAsync(C, 6, Result);
-    emplaceTransformation(removeArg(C, 5, SM));
     insertToPitchedData(C, 0);
     aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
     aggregatePitchedData(C, 3, 4, SM, true);
@@ -11862,19 +11773,12 @@ void MemoryMigrationRule::handleAsync(const CallExpr *C, unsigned i,
                                       const MatchFinder::MatchResult &Result) {
   if (C->getNumArgs() > i && !C->getArg(i)->isDefaultArgument()) {
     auto StreamExpr = C->getArg(i)->IgnoreImplicitAsWritten();
-    emplaceTransformation(new InsertBeforeStmt(StreamExpr, "*"));
-    if (auto IL = dyn_cast<IntegerLiteral>(StreamExpr)) {
-      if (IL->getValue().getZExtValue() == 0) {
-        emplaceTransformation(removeArg(C, i, *Result.SourceManager));
-        return;
-      } else {
-        emplaceTransformation(new InsertBeforeStmt(
-            StreamExpr, "(" + MapNames::getClNamespace() + "queue *)"));
-      }
-    } else if (isDefaultStream(StreamExpr)) {
+    if (isDefaultStream(StreamExpr)) {
       emplaceTransformation(removeArg(C, i, *Result.SourceManager));
       return;
-    } else if (!isa<DeclRefExpr>(StreamExpr)) {
+    }
+    emplaceTransformation(new InsertBeforeStmt(StreamExpr, "*"));
+    if (!isa<DeclRefExpr>(StreamExpr)) {
       insertAroundStmt(StreamExpr, "(", ")");
     }
   }

@@ -91,11 +91,24 @@ void test1() {
     cudnnSetTensor4dDescriptor(dataTensor, CUDNN_TENSOR_NCHW, T, n, c, h, w);
 
     cudnnSetTensor4dDescriptor(diffdataTensor, CUDNN_TENSOR_NCHW, T, n, c, h, w);
+    cudnnPoolingMode_t mode;
+    cudnnNanPropagation_t pmode;
+    int height, width, vpad, hpad, vstride, hstride;
+    // CHECK: desc.get(&mode, &height, &width, &vpad, &hpad, &vstride, &hstride);
+    cudnnGetPooling2dDescriptor(desc, &mode, &pmode, &height, &width, &vpad, &hpad, &vstride, &hstride);    
+    
+    int w_d[2], pad_d[2], stride_d[2], pndim;
+    // CHECK: desc.get(2, &mode, &pndim, w_d, pad_d, stride_d);
+    cudnnGetPoolingNdDescriptor(desc, 2, &mode, &pmode, &pndim, w_d, pad_d, stride_d);
 
 
     int on, oc, oh, ow;
     // CHECK: desc.get_forward_output_dim(dataTensor, &on, &oc, &oh, &ow);
     cudnnGetPooling2dForwardOutputDim(desc, dataTensor, &on, &oc, &oh, &ow);
+
+    int out_dim[5];
+    // CHECK: desc.get_forward_output_dim(dataTensor, 5, out_dim);
+    cudnnGetPoolingNdForwardOutputDim(desc, dataTensor, 5, out_dim);
 
     cudnnSetTensor4dDescriptor(outTensor, CUDNN_TENSOR_NCHW, T, on, oc, oh, ow);
     cudnnSetTensor4dDescriptor(diffoutTensor, CUDNN_TENSOR_NCHW, T, on, oc, oh, ow);

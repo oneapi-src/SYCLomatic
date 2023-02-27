@@ -213,7 +213,7 @@ FEATURE_REQUEST_FACTORY(
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_pooling_desc,
-    WARNING_FACTORY_ENTRY("cudnnGetPooling2dDescriptor",
+    WARNING_FACTORY_ENTRY("cudnnGetPoolingNdDescriptor",
                           ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                               "cudnnGetPoolingNdDescriptor", ARG_WC(0), false,
                               "get", ARG_WC(1), ARG_WC(2), ARG_WC(4), ARG_WC(5),
@@ -384,16 +384,6 @@ FEATURE_REQUEST_FACTORY(
         ARG_WC(16), ARG_WC(13), ARG_WC(14), DEREF(ARG_WC(5)), ARG_WC(17),
         ARG_WC(18), ARG_WC(19), DEREF(ARG_WC(6)), ARG_WC(20), ARG_WC(21),
         ARG_WC(23), ARG_WC(24), ARG_WC(29), ARG_WC(28))))
-
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_engine_ext,
-    ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
-        "cudnnDeriveBNTensorDescriptor", ARG_WC(0), false,
-        "derive_batch_normalization_memory_desc", ARG_WC(1), ARG_WC(2), ARG_WC(25),
-        DEREF(ARG_WC(3)), ARG_WC(7), ARG_WC(8), ARG_WC(9), ARG_WC(10),
-        DEREF(ARG_WC(4)), ARG_WC(15), ARG_WC(16), ARG_WC(13), ARG_WC(14),
-        DEREF(ARG_WC(5)), ARG_WC(17), ARG_WC(18), ARG_WC(19), DEREF(ARG_WC(6)),
-        ARG_WC(20), ARG_WC(21), ARG_WC(23), ARG_WC(24))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_engine_ext,

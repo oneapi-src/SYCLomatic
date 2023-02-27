@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/Image/api_test10_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Image/api_test10_out
 
-// CHECK: 60
+// CHECK: 40
 // TEST_FEATURE: Image_image_wrapper
 
 int main() {
