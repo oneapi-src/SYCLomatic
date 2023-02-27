@@ -36,6 +36,28 @@ Rewrite CUDA source file:
 
   pattern-rewriter source.cu -r rules.yaml -o output.cu
 
+Contents for YAML rules file:
+
+  # Remove function call expression
+  - match: foo(${args})
+    rewrite: (/* foo(${args}) */ 0)
+
+  # Insert an include directive
+  - match: "#include <cuda.h>"
+    rewrite: |+
+      #include <cuda.h>
+      #include "./helper.h"
+
+  # Rename a struct
+  - match: |+
+      struct point {
+        ${members}
+      }
+    rewrite: |+
+      struct Point2D {
+        ${members}
+      }
+
 )--";
 
 template <>
