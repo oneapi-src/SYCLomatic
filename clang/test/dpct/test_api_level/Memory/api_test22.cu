@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Memory/api_test22_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Memory/api_test22_out
 
-// CHECK: 52
+// CHECK: 53
 // TEST_FEATURE: Memory_device_memory_assign
 
 static __constant__ const int *schsfirst;

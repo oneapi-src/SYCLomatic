@@ -30,7 +30,7 @@ auto double_buffer(cub::DoubleBuffer<int> &buffers) {
   buffers.d_buffers[0] += 1;
   // CHECK: *buffers.iter[1] = 5;
   *buffers.d_buffers[1] = 5;
-  // CHECK: buffers = dpct::io_iterator_pair<int *>(buffers.output(), buffers.input());
+  // CHECK: buffers = dpct::io_iterator_pair<int *>(buffers.second(), buffers.first());
   buffers = cub::DoubleBuffer<int>(buffers.Alternate(), buffers.Current());
   // CHECK: buffers = dpct::io_iterator_pair<int *>();
   buffers = cub::DoubleBuffer<int>();

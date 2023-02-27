@@ -304,7 +304,7 @@ Shifting bits where the shift is greater than the type length is undefined
 behavior for the |dpcpp_compiler| and may result in different behavior on
 different devices. Adjust your code to avoid this type of shift.
 
-For example, the migrated SYCL code:
+For example, the migrated SYCL\* code:
 
 .. code-block:: cpp
    :linenos:

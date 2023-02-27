@@ -47,6 +47,7 @@ public:
   static void initRewriterMap();
   RulePriority Priority = RulePriority::Fallback;
 private:
+  static void initRewriterMapAtomic();
   static void initRewriterMapCUB();
   static void initRewriterMapCUFFT();
   static void initRewriterMapCUBLAS();
@@ -821,6 +822,22 @@ public:
     Stream << "<";
     TAs.print(Stream);
     Stream << ">";
+  }
+};
+
+template <class NameT, class... TemplateArgsT> class CtadTemplatedNamePrinter {
+  NameT Name;
+  ArgsPrinter<false, TemplateArgsT...> TAs;
+public:
+  CtadTemplatedNamePrinter(NameT Name, TemplateArgsT &&...TAs)
+      : Name(Name), TAs(std::forward<TemplateArgsT>(TAs)...) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    dpct::print(Stream, Name);
+    if (!DpctGlobalInfo::isCtadEnabled()) {
+      Stream << "<";
+      TAs.print(Stream);
+      Stream << ">";
+    }
   }
 };
 

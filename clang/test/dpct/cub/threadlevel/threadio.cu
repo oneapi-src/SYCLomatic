@@ -9,7 +9,7 @@
 #include <cuda_runtime.h>
 #include <cub/cub.cuh>
 
-// CHECK: void ThreadLoadKernel(sycl::nd_item<3> item_ct1) {
+// CHECK: void ThreadLoadKernel(const sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT:     int *d_in;
 // CHECK-NEXT:     int val = *(d_in + item_ct1.get_local_id(2));
 // CHECK-NEXT:   }
@@ -22,7 +22,7 @@ __global__ void ThreadLoadKernel() {
 // CHECK-NEXT:     int *d_out;
 // CHECK-NEXT:     int val;
 // CHECK-NEXT:     *(d_out) = val;
-// CHECK-NEXT:   }  
+// CHECK-NEXT:   }
 __global__ void ThreadStoreKernel() {
   int *d_out;
   int val;
@@ -34,4 +34,3 @@ int main(){
   ThreadStoreKernel<<<10, 10>>>();
   return 0;
 }
-  

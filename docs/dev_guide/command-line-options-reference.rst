@@ -35,9 +35,11 @@ in alphabetical order.
    * - ``--build-script-file=<file>``
      - Specifies the name of generated makefile for migrated file(s). Default
        name: ``Makefile.dpct``.
-   * - ``=c_cxx_standard_library``
-     - A set of functions from the C and C++ standard libraries that are allowed
-       to be used in SYCL device code.
+   * - ``--change-cuda-files-extension-only``
+     - Limit extension change to ``.cu`` and ``.cuh`` files only. Default: ``off``.
+   * - ``--change-filename-extension=<file>``
+     - DEPRECATED: A comma-separated list that specifies which extensions of migrated files will be changed.
+       Default: ``.cu``, ``.cuh``, ``.cpp``, ``.cxx``, ``.cc``, ``.c``, ``.C``
    * - ``--check-unicode-security``
      - Enable detection and warnings about Unicode constructs that can be
        exploited by using bi-directional formatting codes and homoglyphs in
@@ -51,6 +53,8 @@ in alphabetical order.
        header file name. Default: ``dpct``.
    * - ``--enable-ctad``
      - Use a C++17 class template argument deduction (CTAD) in your generated code.
+   * - ``--enable-profiling``
+     - Enable SYCL\* queue profiling in helper functions. Default: ``off``.
    * - ``--extra-arg=<string>``
      - Additional argument to append to the migration command line, example:
        ``--extra-arg="-I /path/to/header"``. The options that can be passed this
@@ -110,9 +114,11 @@ in alphabetical order.
        is used.
    * - ``--no-dpcpp-extensions=<value>``
      - A comma-separated list of extensions not to be used in migrated code.
-       By default, these extensions will be used in migrated code.
+       By default, these extensions are used in migrated code.
 
        - ``=enqueued_barriers``: Enqueued barriers extension.
+       - ``=device_info``: Use the Intel extensions for device information if supported
+         by the compiler and the backend.
    * - ``--no-dry-pattern``
      - Do not use a Don't Repeat Yourself (DRY) pattern when functions from the
        ``dpct`` namespace are inserted. Default: ``off``.
@@ -225,8 +231,17 @@ in alphabetical order.
        - ``=all``: Generate a complete set of helper header files and place them
          in the ``--out-root`` directory.
    * - ``--use-dpcpp-extensions=<value>``
-     - A comma-separated list of extensions to be used in migrated code. By
-       default, these extensions are not used in migrated code.
+     - A comma-separated list of extensions to be used in migrated code.
+       By default, these extensions are not used in migrated code.
+
+       - ``=c_cxx_standard_library``: Use std functions from the libdevice library
+         (provided by |dpcpp_compiler|) and C/C++ Standard Library
+         to migrate functions which have no mapping in the SYCL standard.
+         If this value is used together with ``intel_device_math``, the ``intel_device_math``
+         functions take precedence.
+       - ``=intel_device_math``: Use ``sycl::ext::intel::math`` functions from the libdevice
+         library (provided by |dpcpp_compiler|) to migrate functions which
+         have no mapping in the SYCL standard.
    * - ``--use-experimental-features=<value>``
      - A comma-separated list of experimental features to be used in migrated code.
        By default, experimental features will not be used in migrated code.

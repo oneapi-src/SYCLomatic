@@ -14,10 +14,69 @@
 #include "MigrationRuleManager.h"
 #include "MisleadingBidirectional.h"
 
+#ifdef _WIN32
+#include <Windows.h>
+#else // __WIN32
+#include <fstream>
+#endif // __WIN32
+
 extern bool StopOnParseErr;
 
 namespace clang {
 namespace dpct {
+
+namespace {
+constexpr size_t MinAvailableMemorySize = 512 * 1024 * 1024; // 512Mb
+constexpr size_t MinAvailableMemoryPercent = 25;             // 25 percent
+
+/// Check whether available memory size is enough to cache more translate unit
+/// info.
+/// Return true if available phy memory is larger than \p
+/// MinAvailableMemorySize and available phy memory percents is larger than \p
+/// MinAvailableMemoryPercent. Otherwise return false.
+bool canCacheMoreTranslateUnit();
+
+#ifdef _WIN32
+bool canCacheMoreTranslateUnit() {
+  MEMORYSTATUSEX MStatus;
+  MStatus.dwLength = sizeof(MStatus);
+  if (!GlobalMemoryStatusEx(&MStatus))
+    return false;
+
+  return MinAvailableMemoryPercent < 100 - MStatus.dwMemoryLoad &&
+         MStatus.ullAvailPhys > MinAvailableMemorySize;
+}
+#else  // _WIN32
+bool canCacheMoreTranslateUnit() {
+  std::ifstream File("/proc/meminfo", std::ios::in);
+
+  ///  Always return false if can not open meminfo file.
+  if (!File.is_open())
+    return false;
+
+  std::string Dummy;
+  size_t Total = 0, Available = 0;
+
+  try {
+    /// 1st line:  "MemTotal:       **** kB"
+    File >> Dummy >> Total >> Dummy;
+    if (!Total)
+      return false;
+
+    /// 2nd line: "MemFree:        **** kB"
+    File >> Dummy >> Dummy >> Dummy;
+    /// 3rd line: "MemAvailable:   **** kB"
+    File >> Dummy >> Available >> Dummy;
+
+    return Available * 100 / Total > MinAvailableMemoryPercent &&
+           Available * 1024 > MinAvailableMemorySize;
+  } catch (std::exception) {
+    /// Return false if any exception
+    return false;
+  }
+}
+#endif // _WIN32
+} // namespace
 
 DpctConsumer::DpctConsumer(TranslationUnitInfo *TUI, Preprocessor &PP)
     : Info(TUI) {
@@ -37,8 +96,7 @@ void DpctConsumer::Initialize(ASTContext &Context) {
   auto Path = DpctGlobalInfo::getAbsolutePath(SM.getMainFileID());
   assert(Path && "Can not find absolute path");
   DpctGlobalInfo::getInstance().setMainFile(
-      Info->MainFile =
-          DpctGlobalInfo::getInstance().insertFile(Path.value()));
+      Info->MainFile = DpctGlobalInfo::getInstance().insertFile(Path.value()));
 }
 
 void DpctConsumer::HandleCXXExplicitFunctionInstantiation(
@@ -63,6 +121,10 @@ DpctFrontEndAction::CreateASTConsumer(CompilerInstance &CI, StringRef InFile) {
   return std::make_unique<DpctConsumer>(Info, CI.getPreprocessor());
 }
 
+void DpctFrontEndAction::EndSourceFileAction() {
+  getCompilerInstance().getASTContext().getParentMapContext().clear();
+}
+
 DpctToolAction::DpctToolAction(llvm::raw_ostream &DS, ReplTy &Replacements,
                                const std::string &RuleNames,
                                std::vector<PassKind> Passes)
@@ -76,11 +138,11 @@ DpctToolAction::DpctToolAction(llvm::raw_ostream &DS, ReplTy &Replacements,
   }
 }
 
-bool DpctToolAction::runInvocation(
-    std::shared_ptr<CompilerInvocation> Invocation, FileManager *Files,
-    std::shared_ptr<PCHContainerOperations> PCHContainerOps,
-    DiagnosticConsumer *DiagConsumer) {
-  auto Info = std::make_unique<TranslationUnitInfo>();
+std::shared_ptr<TranslationUnitInfo> DpctToolAction::createTranslationUnitInfo(
+    std::shared_ptr<CompilerInvocation> Invocation, bool &Success) {
+  auto DiagConsumer = new TextDiagnosticPrinter(
+      DiagnosticStream, &Invocation->getDiagnosticOpts());
+  auto Info = std::make_shared<TranslationUnitInfo>();
   auto Diags = CompilerInstance::createDiagnostics(
       &Invocation->getDiagnosticOpts(), DiagConsumer,
       /*ShouldOwnClient=*/false, &Invocation->getCodeGenOpts());
@@ -88,53 +150,79 @@ bool DpctToolAction::runInvocation(
   Info->AST = ASTUnit::create(Invocation, Diags, CaptureDiagsKind::None, false);
   DpctFrontEndAction FEAction(Info.get());
   auto Ret = ASTUnit::LoadFromCompilerInvocationAction(
-          Invocation, PCHContainerOps, Diags, &FEAction, Info->AST.get());
+      Invocation, std::make_shared<PCHContainerOperations>(), Diags, &FEAction,
+      Info->AST.get());
+  Success = !DiagConsumer->getNumErrors();
   if (Ret && (bool)&Info->AST->getASTContext())
-    ASTs.push_back(std::move(Info));
-  return !DiagConsumer->getNumErrors();
+    return Info;
+  return std::shared_ptr<TranslationUnitInfo>();
+}
+
+bool DpctToolAction::runInvocation(
+    std::shared_ptr<CompilerInvocation> Invocation, FileManager *Files,
+    std::shared_ptr<PCHContainerOperations> PCHContainerOps,
+    DiagnosticConsumer *DiagConsumer) {
+  if (canCacheMoreTranslateUnit()) {
+    bool Success;
+    if (auto Info = createTranslationUnitInfo(Invocation, Success)) {
+      IOTUs.emplace_back(Info);
+    }
+    return Success;
+  }
+  IOTUs.emplace_back(Invocation);
+  return true;
+}
+
+void DpctToolAction::traversTranslationUnit(PassKind Pass,
+                                            TranslationUnitInfo &Info) {
+  auto &Context = Info.AST->getASTContext();
+  auto &Transforms = Info.Transforms;
+  auto &IncludeMap = Info.IncludeMapSet;
+  Info.AST->getDiagnostics().getClient()->BeginSourceFile(
+      Context.getLangOpts());
+  DpctGlobalInfo::setContext(Context);
+  DpctGlobalInfo::getInstance().setMainFile(Info.MainFile);
+  MigrationRuleManager MRM(Pass, Transforms);
+  Global.getProcessedFile().insert(Info.MainFile->getFilePath());
+  MRM.matchAST(Context, MigrationRuleNames);
+  for (const auto &I : Transforms) {
+    auto Repl = I->getReplacement(Context);
+
+    // When processing __constant__ between two executions, tool may set the
+    // replacement from TextModification as nullptr to ignore this
+    // replacement.
+    if (Repl == nullptr)
+      continue;
+
+    // If a file has replacement, all include statement need change, so we add
+    // them to global replacement here.
+    const auto FilePath = Repl->getFilePath().str();
+    auto Find = IncludeMap.find(FilePath);
+    if (Find != IncludeMap.end()) {
+      for (const auto &Entry : Find->second) {
+        Global.addReplacement(Entry->getReplacement(Context));
+      }
+      IncludeMap.erase(FilePath);
+    }
+    Global.addReplacement(Repl);
+
+    StaticsInfo::printReplacements(Transforms, Context);
+  }
+  Transforms.clear();
 }
 
 void DpctToolAction::runPass(PassKind Pass) {
-  for (auto &Info : ASTs) {
-    auto &Context = Info->AST->getASTContext();
-    auto &Transforms = Info->Transforms;
-    auto &IncludeMap = Info->IncludeMapSet;
-    auto DiagClient = new TextDiagnosticPrinter(
-        DiagnosticStream, &Info->AST->getDiagnostics().getDiagnosticOptions());
-    Info->AST->getDiagnostics().setClient(DiagClient);
-    DiagClient->BeginSourceFile(Context.getLangOpts(),
-                                &Info->AST->getPreprocessor());
-    Context.getParentMapContext().clear();
-    DpctGlobalInfo::setContext(Context);
-    DpctGlobalInfo::getInstance().setMainFile(Info->MainFile);
-    MigrationRuleManager MRM(Pass, Transforms);
-    Global.getProcessedFile().insert(Info->MainFile->getFilePath());
-    MRM.matchAST(Context, MigrationRuleNames);
-    for (const auto &I : Transforms) {
-      auto Repl = I->getReplacement(Context);
-
-      // When processing __constant__ between two executions, tool may set the
-      // replacement from TextModification as nullptr to ignore this
-      // replacement.
-      if (Repl == nullptr)
+  for (auto &Info : IOTUs) {
+    std::shared_ptr<TranslationUnitInfo> TU = Info.TU;
+    if (!TU) {
+      bool Dummy;
+      TU = createTranslationUnitInfo(Info.CI, Dummy);
+      if (!TU)
         continue;
-
-      // If a file has replacement, all include statement need change, so we add
-      // them to global replacement here.
-      const auto FilePath = Repl->getFilePath().str();
-      auto Find = IncludeMap.find(FilePath);
-      if (Find != IncludeMap.end()) {
-        for (const auto &Entry : Find->second) {
-          Global.addReplacement(Entry->getReplacement(Context));
-        }
-        IncludeMap.erase(FilePath);
-      }
-      Global.addReplacement(Repl);
-
-      StaticsInfo::printReplacements(Transforms, Context);
     }
-    Transforms.clear();
+    traversTranslationUnit(Pass, *TU);
   }
+
   if (Pass == PassKind::PK_Analysis) {
     int RetJmp = 0;
     CHECKPOINT_ReplacementPostProcess_ENTRY(RetJmp);
