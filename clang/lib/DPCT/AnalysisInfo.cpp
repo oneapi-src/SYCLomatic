@@ -1353,7 +1353,8 @@ void KernelCallExpr::buildKernelArgsStmt() {
     }
     if (ArgCounter != 0)
       KernelArgs += ", ";
-    if (Arg.IsDoublePointer) {
+    if (Arg.IsDoublePointer &&
+        DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
       DiagnosticsUtils::report(getFilePath(), getBegin(),
                                Diagnostics::VIRTUAL_POINTER, true, false,
                                Arg.getArgString());
