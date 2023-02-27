@@ -4,8 +4,8 @@ cudaDeviceGetAttribute,YES,:ref:`DPCT1076`
 cudaDeviceGetByPCIBusId,NO,
 cudaDeviceGetCacheConfig,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cudaDeviceGetLimit,YES,:ref:`DPCT1029`
-cudaDeviceGetP2PAttribute,NO,:ref:`DPCT1007`
-cudaDeviceGetPCIBusId,NO,:ref:`DPCT1007`
+cudaDeviceGetP2PAttribute,NO,
+cudaDeviceGetPCIBusId,NO,
 cudaDeviceGetSharedMemConfig,NO,
 cudaDeviceGetStreamPriorityRange,YES,:ref:`DPCT1014`
 cudaDeviceReset,YES,
@@ -18,11 +18,11 @@ cudaGetDeviceCount,YES,
 cudaGetDeviceFlags,NO,
 cudaGetDeviceProperties,YES,
 cudaGetDeviceProperties_v2,YES,
-cudaIpcCloseMemHandle,NO,:ref:`DPCT1030`
-cudaIpcGetEventHandle,NO,:ref:`DPCT1030`
-cudaIpcGetMemHandle,NO,:ref:`DPCT1030`
-cudaIpcOpenEventHandle,NO,:ref:`DPCT1030`
-cudaIpcOpenMemHandle,NO,:ref:`DPCT1030`
+cudaIpcCloseMemHandle,NO,
+cudaIpcGetEventHandle,NO,
+cudaIpcGetMemHandle,NO,
+cudaIpcOpenEventHandle,NO,
+cudaIpcOpenMemHandle,NO,
 cudaSetDevice,YES,:ref:`DPCT1093`
 cudaSetDeviceFlags,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cudaSetValidDevices,NO,
@@ -103,7 +103,7 @@ cudaMallocManaged,YES,
 cudaMallocMipmappedArray,NO,
 cudaMallocPitch,YES,
 cudaMemAdvise,YES,:ref:`DPCT1063`
-cudaMemGetInfo,YES,:ref:`DPCT1072`
+cudaMemGetInfo,YES,:ref:`DPCT1072` / :ref:`DPCT1106`
 cudaMemPrefetchAsync,YES,
 cudaMemRangeGetAttribute,NO,
 cudaMemRangeGetAttributes,NO,
@@ -217,7 +217,7 @@ cudaGetSurfaceReference,NO,
 cudaCreateTextureObject,YES,
 cudaDestroyTextureObject,YES,
 cudaGetTextureObjectResourceDesc,YES,
-cudaGetTextureObjectResourceViewDesc,NO,:ref:`DPCT1007`
+cudaGetTextureObjectResourceViewDesc,NO,
 cudaGetTextureObjectTextureDesc,YES,
 cudaCreateSurfaceObject,NO,
 cudaDestroySurfaceObject,NO,
@@ -890,8 +890,8 @@ __cudaRegisterSurface,NO,
 __cudaRegisterTexture,NO,
 __cudaRegisterVar,NO,
 __cudaUnregisterFatBinary,NO,
-h2div,NO,
-hdiv,NO,
+h2div,YES,
+hdiv,YES,
 make_char1,YES,
 make_char2,YES,
 make_char3,YES,
@@ -1160,7 +1160,7 @@ cuMemAllocPitch,YES,
 cuMemFree,YES,
 cuMemFreeHost,YES,
 cuMemGetAddressRange,NO,
-cuMemGetInfo,YES,
+cuMemGetInfo,YES,:ref:`DPCT1106`
 cuMemHostAlloc,YES,:ref:`DPCT1072`
 cuMemHostGetDevicePointer,YES,
 cuMemHostGetFlags,YES,
@@ -1542,7 +1542,7 @@ cuMemGetAddressRange,NO,
 cuMemGetAllocationGranularity,NO,
 cuMemGetAllocationPropertiesFromHandle,NO,
 cuMemGetHandleForAddressRange,NO,
-cuMemGetInfo,NO,:ref:`DPCT1072`
+cuMemGetInfo,NO,
 cuMemImportFromShareableHandle,NO,
 cuMemMap,NO,
 cuMemMapArrayAsync,NO,
