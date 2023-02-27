@@ -292,12 +292,6 @@ public:
     std::string ReplName;
   };
 
-  struct RandomGenerateFuncReplInfo {
-    std::string BufferTypeInfo;
-    std::string DistributeType;
-    std::string ValueType;
-  };
-
   struct BLASGemmExTypeInfo {
     std::string OriginScalarType;
     std::string ScalarType;
@@ -361,8 +355,7 @@ public:
 
   static MapTy ITFName;
   static const MapTy RandomEngineTypeMap;
-  static const std::map<std::string, MapNames::RandomGenerateFuncReplInfo>
-      RandomGenerateFuncReplInfoMap;
+  static const std::map<std::string, std::string> RandomGenerateFuncMap;
 
   static const MapTy DeviceRandomGeneratorTypeMap;
 

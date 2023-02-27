@@ -31,7 +31,7 @@ __global__ void gather_force(const cudaTextureObject_t gridTexObj){}
 // CHECK-NEXT:  */
 // CHECK-NEXT:  stream->submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
-// CHECK-NEXT:      auto gridTexObj_acc = static_cast<dpct::image_wrapper<dpct_placeholder/*Fix the type manually*/, 1> *>(gridTexObj)->get_access(cgh);
+// CHECK-NEXT:      auto gridTexObj_acc = static_cast<dpct::image_wrapper<dpct_placeholder/*Fix the type manually*/, 1> *>(gridTexObj)->get_access(cgh, *stream);
 // CHECK-EMPTY:
 // CHECK-NEXT:      auto gridTexObj_smpl = gridTexObj->get_sampler();
 // CHECK-EMPTY:

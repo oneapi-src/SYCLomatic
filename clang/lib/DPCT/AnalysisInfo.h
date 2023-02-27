@@ -68,7 +68,6 @@ struct PriorityReplInfo {
 };
 
 class CudaMallocInfo;
-class RandomEngineInfo;
 class TextureInfo;
 class KernelCallExpr;
 class DeviceFunctionInfo;
@@ -79,41 +78,6 @@ class MemVarInfo;
 class VarInfo;
 class ExplicitInstantiationDecl;
 class KernelPrinter;
-
-// This struct saves the engine's type.
-// These rules determine the engine's type:
-//   1. Tool can detect the related info, then using that engine type.
-//   2. Tool cannot detect the related info, but there is only one generate
-//       API used, then use that info.
-//   3. Tool cannot detect the related info, and there are more than one
-//       generate APIs used, then use placeholder and emit warning.
-struct HostRandomEngineTypeInfo {
-  HostRandomEngineTypeInfo(unsigned int Length) : Length(Length) {}
-  HostRandomEngineTypeInfo(unsigned int Length, std::string EngineType,
-                           bool UnsupportEngineFlag = false)
-      : Length(Length), EngineType(EngineType) {
-    HasValue = true;
-    IsUnsupportEngine = UnsupportEngineFlag;
-  }
-  void buildInfo(std::string FilePath, unsigned int Offset);
-
-  unsigned int Length;
-  std::string EngineType;
-  bool HasValue = false;
-  bool IsUnsupportEngine = false;
-};
-
-// This struct saves the info for building the definition of distr variables.
-struct HostRandomDistrInfo {
-  HostRandomDistrInfo(std::string DistrName, std::string IndentStr)
-      : DistrName(DistrName), IndentStr(IndentStr) {}
-  void buildInfo(std::string FilePath, unsigned int Offset,
-                 std::string DistrType, std::string ValueType,
-                 std::string DistrArg);
-
-  std::string DistrName;
-  std::string IndentStr;
-};
 
 struct EventSyncTypeInfo {
   EventSyncTypeInfo(unsigned int Length, std::string ReplText, bool NeedReport,
@@ -579,11 +543,6 @@ public:
     return FuncDeclRangeMap;
   }
 
-  std::map<unsigned int, HostRandomEngineTypeInfo> &
-  getHostRandomEngineTypeMap() {
-    return HostRandomEngineTypeMap;
-  }
-
   std::map<unsigned int, EventSyncTypeInfo> &getEventSyncTypeMap() {
     return EventSyncTypeMap;
   }
@@ -592,11 +551,6 @@ public:
     return TimeStubTypeMap;
   }
 
-  std::map<std::tuple<unsigned int, std::string, std::string, std::string>,
-           HostRandomDistrInfo> &
-  getHostRandomDistrMap() {
-    return HostRandomDistrMap;
-  }
   std::map<unsigned int, BuiltinVarInfo> &getBuiltinVarInfoMap() {
     return BuiltinVarInfoMap;
   }
@@ -667,10 +621,6 @@ private:
                          unsigned int /*End location of function signature*/>>>
       FuncDeclRangeMap;
 
-  std::map<unsigned int, HostRandomEngineTypeInfo> HostRandomEngineTypeMap;
-  std::map<std::tuple<unsigned int, std::string, std::string, std::string>,
-           HostRandomDistrInfo>
-      HostRandomDistrMap;
   std::map<unsigned int, EventSyncTypeInfo> EventSyncTypeMap;
   std::map<unsigned int, TimeStubTypeInfo> TimeStubTypeMap;
   std::map<unsigned int, BuiltinVarInfo> BuiltinVarInfoMap;
@@ -678,7 +628,6 @@ private:
   GlobalMap<DeviceFunctionDecl> FuncMap;
   GlobalMap<KernelCallExpr> KernelMap;
   GlobalMap<CudaMallocInfo> CudaMallocMap;
-  GlobalMap<RandomEngineInfo> RandomEngineMap;
   GlobalMap<TextureInfo> TextureMap;
   std::set<unsigned int> SpBLASSet;
   std::unordered_set<std::shared_ptr<TextModification>> ConstantMacroTMSet;
@@ -713,9 +662,6 @@ template <> inline GlobalMap<KernelCallExpr> &DpctFileInfo::getMap() {
 }
 template <> inline GlobalMap<CudaMallocInfo> &DpctFileInfo::getMap() {
   return CudaMallocMap;
-}
-template <> inline GlobalMap<RandomEngineInfo> &DpctFileInfo::getMap() {
-  return RandomEngineMap;
 }
 template <> inline GlobalMap<TextureInfo> &DpctFileInfo::getMap() {
   return TextureMap;
@@ -1164,13 +1110,6 @@ public:
     IsMLKHeaderUsed = Used;
   }
 
-  // This set collects all the host RNG engine type from the generator create
-  // API. If the size of this set is 1, then can use this engine type in all
-  // generator types. Otherwise, a placeholder will be inserted.
-  inline static std::unordered_set<std::string> &getHostRNGEngineTypeSet() {
-    return HostRNGEngineTypeSet;
-  }
-
   inline static int getSuffixIndexInitValue(std::string FileNameAndOffset) {
     auto Res = LocationInitIndexMap.find(FileNameAndOffset);
     if (Res == LocationInitIndexMap.end()) {
@@ -1411,7 +1350,6 @@ public:
   GLOBAL_TYPE(DeviceFunctionDecl, FunctionDecl)
   GLOBAL_TYPE(KernelCallExpr, CUDAKernelCallExpr)
   GLOBAL_TYPE(CudaMallocInfo, VarDecl)
-  GLOBAL_TYPE(RandomEngineInfo, DeclaratorDecl)
   GLOBAL_TYPE(TextureInfo, VarDecl)
 #undef GLOBAL_TYPE
 
@@ -1567,16 +1505,6 @@ public:
     insertFile(Repl->getFilePath().str())->addReplacement(Repl);
   }
 
-  void insertHostRandomEngineTypeInfo(SourceLocation SL, unsigned int Length) {
-    auto LocInfo = getLocInfo(SL);
-    auto FileInfo = insertFile(LocInfo.first);
-    auto &M = FileInfo->getHostRandomEngineTypeMap();
-    if (M.find(LocInfo.second) == M.end()) {
-      M.insert(
-          std::make_pair(LocInfo.second, HostRandomEngineTypeInfo(Length)));
-    }
-  }
-
   CudaArchPPMap &getCudaArchPPInfoMap() { return CAPPInfoMap; }
   HDFuncInfoMap &getHostDeviceFuncInfoMap() { return HostDeviceFuncInfoMap; }
   std::unordered_map<std::string, std::shared_ptr<ExtReplacement>> &
@@ -1599,30 +1527,6 @@ public:
       return FileInfo->PreviousTUReplFromYAML;
     else
       return nullptr;
-  }
-
-  std::string insertHostRandomDistrInfo(SourceLocation DistrInsetLoc,
-                                        std::string DistrType,
-                                        std::string ValueType,
-                                        std::string DistrArg,
-                                        std::string DistrIndentStr) {
-    auto DistrInsetLocInfo = getLocInfo(DistrInsetLoc);
-    auto FileInfo = insertFile(DistrInsetLocInfo.first);
-    auto &M = FileInfo->getHostRandomDistrMap();
-    std::tuple<unsigned int, std::string, std::string, std::string> T(
-        DistrInsetLocInfo.second, DistrType, ValueType, DistrArg);
-    auto Iter = M.find(T);
-    std::string Name;
-    if (Iter == M.end()) {
-      // Since device RNG APIs are only used in device function and host RNG
-      // APIs are only used in host function. So we can use independent id in
-      // host distr and device distr.
-      Name = "distr_ct" + std::to_string(M.size() + 1);
-      M.insert(std::make_pair(T, HostRandomDistrInfo(Name, DistrIndentStr)));
-    } else {
-      Name = Iter->second.DistrName;
-    }
-    return Name;
   }
 
   void insertEventSyncTypeInfo(
@@ -1695,9 +1599,6 @@ public:
   void insertBuiltinVarInfo(SourceLocation SL, unsigned int Len,
                             std::string Repl,
                             std::shared_ptr<DeviceFunctionInfo> DFI);
-
-  void insertRandomEngine(const Expr *E);
-  std::shared_ptr<RandomEngineInfo> findRandomEngine(const Expr *E);
 
   void insertSpBLASWarningLocOffset(SourceLocation SL) {
     auto LocInfo = getLocInfo(SL);
@@ -2078,7 +1979,6 @@ private:
   // FunctionDecl=>DeviceFunctionDecl
   // CUDAKernelCallExpr=>KernelCallExpr
   // VarDecl=>CudaMallocInfo
-  // DeclaratorDecl=>RandomEngineInfo
   template <class Info, class Node>
   inline std::shared_ptr<Info> findNode(const Node *N) {
     if (!N)
@@ -2135,7 +2035,6 @@ private:
   static HelperFilesCustomizationLevel HelperFilesCustomizationLvl;
   static std::string CustomHelperFileName;
   static std::unordered_set<std::string> PrecAndDomPairSet;
-  static std::unordered_set<std::string> HostRNGEngineTypeSet;
   static format::FormatRange FmtRng;
   static DPCTFormatStyle FmtST;
   static bool EnableCtad;
@@ -2494,14 +2393,11 @@ public:
 
   std::string getDeclarationReplacement(const VarDecl *);
 
-  std::string getInitStmt() { return getInitStmt("", false); }
-  std::string getInitStmt(StringRef QueueString, bool IsQueuePtr) {
+  std::string getInitStmt() { return getInitStmt(""); }
+  std::string getInitStmt(StringRef QueueString) {
     if (QueueString.empty())
       return getConstVarName() + ".init();";
-    std::string DerefQueuePtr = "";
-    if(IsQueuePtr)
-      DerefQueuePtr = "*";
-    return buildString(getConstVarName(), ".init(", DerefQueuePtr, QueueString, ");");
+    return buildString(getConstVarName(), ".init(", QueueString, ");");
   }
 
   inline std::string getMemoryDecl(const std::string &MemSize) {
@@ -2762,6 +2658,13 @@ protected:
            << " " << Name;
   }
 
+  template <class StreamT>
+  static void printQueueStr(StreamT &OS, const std::string &Queue) {
+    if (Queue.empty())
+      return;
+    OS << ", " << Queue;
+  }
+
 public:
   TextureInfo(unsigned Offset, const std::string &FilePath, const VarDecl *VD)
       : TextureInfo(Offset, FilePath, VD->getName()) {
@@ -2823,13 +2726,17 @@ public:
     return buildString("auto ", NewVarName, "_smpl = ", Name,
                        ".get_sampler();");
   }
-  virtual std::string getAccessorDecl() {
+  virtual std::string getAccessorDecl(const std::string &QueueStr) {
     requestFeature(HelperFeatureEnum::Image_image_wrapper_get_access, FilePath);
-    return buildString("auto ", NewVarName, "_acc = ", Name,
-                       ".get_access(cgh);");
+    std::string Ret;
+    llvm::raw_string_ostream OS(Ret);
+    OS << "auto " << NewVarName << "_acc = " << Name << ".get_access(cgh";
+    printQueueStr(OS, QueueStr);
+    OS << ");";
+    return Ret;
   }
-  virtual void addDecl(StmtList &AccessorList, StmtList &SamplerList) {
-    AccessorList.emplace_back(getAccessorDecl());
+  virtual void addDecl(StmtList &AccessorList, StmtList &SamplerList, const std::string&QueueStr) {
+    AccessorList.emplace_back(getAccessorDecl(QueueStr));
     SamplerList.emplace_back(getSamplerDecl());
   }
 
@@ -2880,12 +2787,14 @@ public:
       : TextureObjectInfo(VD, Subscript, 0) {}
 
   virtual ~TextureObjectInfo() = default;
-  std::string getAccessorDecl() override {
+  std::string getAccessorDecl(const std::string &QueueString) override {
     ParameterStream PS;
 
     PS << "auto " << NewVarName << "_acc = static_cast<";
     getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
-        << " *>(" << Name << ")->get_access(cgh);";
+        << " *>(" << Name << ")->get_access(cgh";
+    printQueueStr(PS, QueueString);
+    PS << ");";
     requestFeature(HelperFeatureEnum::Image_image_wrapper_get_access, FilePath);
     requestFeature(HelperFeatureEnum::Image_image_wrapper, FilePath);
     return PS.Str;
@@ -2932,13 +2841,15 @@ class CudaLaunchTextureObjectInfo : public TextureObjectInfo {
 public:
   CudaLaunchTextureObjectInfo(const ParmVarDecl *PVD, const std::string &ArgStr)
       : TextureObjectInfo(static_cast<const VarDecl *>(PVD)), ArgStr(ArgStr) {}
-  std::string getAccessorDecl() override {
+  std::string getAccessorDecl(const std::string &QueueString) override {
     requestFeature(HelperFeatureEnum::Image_image_wrapper, FilePath);
     requestFeature(HelperFeatureEnum::Image_image_wrapper_get_access, FilePath);
     ParameterStream PS;
     PS << "auto " << Name << "_acc = static_cast<";
     getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
-        << " *>(" << ArgStr << ")->get_access(cgh);";
+        << " *>(" << ArgStr << ")->get_access(cgh";
+    printQueueStr(PS, QueueString);
+    PS << ");";
     return PS.Str;
   }
   std::string getSamplerDecl() override {
@@ -2977,9 +2888,10 @@ public:
     Ret->MemberName = ME->getMemberDecl()->getNameAsString();
     return Ret;
   }
-  void addDecl(StmtList &AccessorList, StmtList &SamplerList) override {
+  void addDecl(StmtList &AccessorList, StmtList &SamplerList,
+               const std::string &QueueStr) override {
     NewVarNameRAII RAII(this);
-    TextureObjectInfo::addDecl(AccessorList, SamplerList);
+    TextureObjectInfo::addDecl(AccessorList, SamplerList, QueueStr);
   }
   void setBaseName(StringRef Name) { BaseName = Name; }
   StringRef getMemberName() { return MemberName; }
@@ -3006,7 +2918,8 @@ public:
     auto Member = MemberTextureObjectInfo::create(ME);
     return Members.emplace(Member->getMemberName().str(), Member).first->second;
   }
-  void addDecl(StmtList &AccessorList, StmtList &SamplerList) override {
+  void addDecl(StmtList &AccessorList, StmtList &SamplerList,
+               const std::string &Queue) override {
     for (const auto &M : Members) {
       M.second->setBaseName(Name);
     }
@@ -4217,13 +4130,20 @@ private:
       }
     }
   }
-  bool isDefaultStream() {
+  bool isDefaultStream() const {
     return StringRef(ExecutionConfig.Stream).startswith("{{NEEDREPLACEQ") ||
            ExecutionConfig.IsDefaultStream;
   }
 
-  bool isQueuePtr() {
-    return ExecutionConfig.IsQueuePtr;
+  bool isQueuePtr() const { return ExecutionConfig.IsQueuePtr; }
+
+  std::string getQueueStr() const {
+    if (isDefaultStream())
+      return "";
+    std::string Ret;
+    if (isQueuePtr())
+      Ret = "*";
+    return Ret += ExecutionConfig.Stream;
   }
 
   void buildKernelInfo(const CUDAKernelCallExpr *KernelCall);
@@ -4428,113 +4348,6 @@ public:
 private:
   std::string Size;
   std::string Name;
-};
-
-class RandomEngineInfo {
-public:
-  RandomEngineInfo(unsigned Offset, const std::string &FilePath,
-                   const DeclaratorDecl *DD)
-      : SeedExpr("0"), DimExpr("1"), IsQuasiEngine(false) {
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    DeclaratorDeclName = DD->getNameAsString();
-
-    auto LocInfo = DpctGlobalInfo::getLocInfo(
-        DD->getTypeSourceInfo()->getTypeLoc().getBeginLoc());
-    DeclFilePath = LocInfo.first;
-    DeclaratorDeclTypeBeginOffset = LocInfo.second;
-
-    DeclaratorDeclEndOffset = SM.getDecomposedLoc(DD->getEndLoc()).second;
-    TypeLength = Lexer::MeasureTokenLength(
-        SM.getExpansionLoc(DD->getTypeSourceInfo()->getTypeLoc().getBeginLoc()),
-        SM, DpctGlobalInfo::getContext().getLangOpts());
-  }
-  // Seed is an unsigned long long type value in origin code, if it is not set,
-  // use 0 as default.
-  // The legal value of Dim in origin code is 1 to 20000, so if it is not set,
-  // use 1 as default.
-
-  void setEngineTypeReplacement(std::string EngineType) {
-    TypeReplacement = EngineType;
-  }
-  void setSeedExpr(const Expr *Seed) {
-    ArgumentAnalysis AS(Seed, false);
-    AS.analyze();
-    SeedExpr = AS.getReplacedString();
-  }
-  void setDimExpr(const Expr *Dim) {
-    ArgumentAnalysis AD(Dim, false);
-    AD.analyze();
-    DimExpr = AD.getReplacedString();
-  }
-  std::string getSeedExpr() { return SeedExpr; }
-  std::string getDimExpr() { return DimExpr; }
-
-  void setCreateAPIInfo(SourceLocation Begin, SourceLocation End,
-                        std::string QueueStr = "") {
-    auto BeginInfo = DpctGlobalInfo::getLocInfo(Begin);
-    auto EndInfo = DpctGlobalInfo::getLocInfo(End);
-    CreateAPILength.push_back(EndInfo.second - BeginInfo.second);
-    CreateAPIBegin.push_back(BeginInfo.second);
-    CreateCallFilePath.push_back(BeginInfo.first);
-    CreateAPIQueueName.push_back(QueueStr);
-    CreateAPINum++;
-  }
-
-  void setTypeReplacement(std::string Repl) { TypeReplacement = Repl; }
-  void setQuasiEngineFlag() { IsQuasiEngine = true; }
-
-  void buildInfo();
-  void updateEngineType();
-  void setAssigned() { IsAssigned = true; }
-  std::string getDeclaratorDeclName() { return DeclaratorDeclName; }
-  void setGeneratorName(std::string Name) { GeneratorName = Name; }
-  SourceLocation getDeclaratorDeclTypeBeginLoc() {
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    auto FE = SM.getFileManager().getFile(DeclFilePath);
-    if (std::error_code ec = FE.getError())
-      return SourceLocation();
-    auto FID = SM.getOrCreateFileID(FE.get(), SrcMgr::C_User);
-    return SM.getComposedLoc(FID, DeclaratorDeclTypeBeginOffset);
-  }
-  SourceLocation getDeclaratorDeclEndLoc() {
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    auto FE = SM.getFileManager().getFile(DeclFilePath);
-    if (std::error_code ec = FE.getError())
-      return SourceLocation();
-    auto FID = SM.getOrCreateFileID(FE.get(), SrcMgr::C_User);
-    return SM.getComposedLoc(FID, DeclaratorDeclEndOffset);
-  }
-  void setUnsupportEngineFlag(bool Flag) { IsUnsupportEngine = Flag; }
-  void setQueueStr(std::string Q) { QueueStr = Q; }
-  std::string getEngineType() { return TypeReplacement; }
-  void setIsRealCreate(bool IRC) { IsRealCreate = IRC; };
-  bool getIsRealCreate() { return IsRealCreate; };
-
-private:
-  std::string SeedExpr; // Replaced Seed variable string
-  std::string DimExpr;  // Replaced Dimension variable string
-  bool IsQuasiEngine;   // If origin code used a quasirandom number generator,
-                        // this flag need be set as true.
-  std::string DeclFilePath; // Where the curandGenerator_t handle is declared.
-  std::vector<std::string>
-      CreateCallFilePath;  // Where the curandCreateGenerator API is called.
-  unsigned int TypeLength; // The length of the curandGenerator_t handle type.
-  std::vector<unsigned int>
-      CreateAPIBegin; // The offset of the begin of curandCreateGenerator API.
-  std::vector<unsigned int>
-      CreateAPILength; // The length of the begin of curandCreateGenerator API.
-  std::vector<std::string> CreateAPIQueueName;
-  std::string TypeReplacement;    // The replcaement string of the type of
-                                  // curandGenerator_t handle.
-  std::string DeclaratorDeclName; // Name of declarator declaration.
-  unsigned int DeclaratorDeclTypeBeginOffset;
-  unsigned int DeclaratorDeclEndOffset;
-  bool IsUnsupportEngine = true;
-  std::string QueueStr;
-  std::string GeneratorName;
-  bool IsAssigned = false;
-  unsigned int CreateAPINum = 0;
-  bool IsRealCreate = true;
 };
 
 /// Find the innermost FunctionDecl's child node (CompoundStmt node) where \S
