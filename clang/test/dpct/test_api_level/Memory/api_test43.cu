@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Memory/api_test43_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Memory/api_test43_out
 
-// CHECK: 22
+// CHECK: 20
 
 // TEST_FEATURE: Memory_async_dpct_free
 

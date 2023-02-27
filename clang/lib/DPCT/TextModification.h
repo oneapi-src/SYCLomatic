@@ -226,7 +226,7 @@ class InsertText : public TextModification {
   unsigned PairID;
 
 public:
-  InsertText(SourceLocation Loc, std::string &&S, unsigned PairID = 0)
+  InsertText(SourceLocation Loc, const std::string &S, unsigned PairID = 0)
       : TextModification(TMID::InsertText), Begin(Loc), T(S), PairID(PairID) {}
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;

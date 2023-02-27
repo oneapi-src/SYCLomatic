@@ -56,6 +56,12 @@
 
 namespace dpct {
 
+// DPCT_LABEL_BEGIN|null_type|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+struct null_type {};
+// DPCT_LABEL_END
+
 namespace internal {
 
 // DPCT_LABEL_BEGIN|enable_if_execution_policy|dpct::internal

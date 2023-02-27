@@ -22,8 +22,6 @@
 namespace clang {
 namespace dpct {
 
-using namespace clang;
-using namespace clang::dpct;
 using namespace clang::ast_matchers;
 
 void CuDNNTypeRule::registerMatcher(MatchFinder &MF) {

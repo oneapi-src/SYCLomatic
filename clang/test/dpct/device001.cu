@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
   cudaDeviceProp deviceProp;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by host to submit tasks. You may need to adjust this code.
+  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by the host to submit tasks. You may need to adjust this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (false) {
   if (deviceProp.computeMode == cudaComputeModeProhibited) {
@@ -167,12 +167,12 @@ void test3() {
   //CHECK:int *a1_ptr = deviceProp.get_max_work_item_sizes<int *>();
   int *a1_ptr = deviceProp.maxThreadsDim;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with memPitch. It was migrated to INT_MAX, which value may need to be adjusted for specific device.
+  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with memPitch. It was migrated to INT_MAX. You may need to adjust the value of INT_MAX for the specific device.
   //CHECK-NEXT:*/
   //CHECK-NEXT:int a2 = INT_MAX;
   int a2 = deviceProp.memPitch;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with totalConstMem. It was migrated to get_global_mem_size, which value may need to be adjusted for specific device.
+  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with totalConstMem. It was migrated to get_global_mem_size. You may need to adjust the value of get_global_mem_size for the specific device.
   //CHECK-NEXT:*/
   //CHECK-NEXT:size_t a3 = deviceProp.get_global_mem_size();
   size_t a3 = deviceProp.totalConstMem;
@@ -182,12 +182,12 @@ void test3() {
   //CHECK-NEXT:int a4 = deviceProp.regsPerBlock;
   int a4 = deviceProp.regsPerBlock;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with textureAlignment. It was migrated to dpct::get_current_device().get_info<sycl::info::device::mem_base_addr_align>(), which value may need to be adjusted for specific device.
+  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with textureAlignment. It was migrated to dpct::get_current_device().get_info<sycl::info::device::mem_base_addr_align>(). You may need to adjust the value of dpct::get_current_device().get_info<sycl::info::device::mem_base_addr_align>() for the specific device.
   //CHECK-NEXT:*/
   //CHECK-NEXT:int a5 = dpct::get_current_device().get_info<sycl::info::device::mem_base_addr_align>();
   int a5 = deviceProp.textureAlignment;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with kernelExecTimeoutEnabled. It was migrated to false, which value may need to be adjusted for specific device.
+  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with kernelExecTimeoutEnabled. It was migrated to false. You may need to adjust the value of false for the specific device.
   //CHECK-NEXT:*/
   //CHECK-NEXT:int a6 = false;
   int a6 = deviceProp.kernelExecTimeoutEnabled;

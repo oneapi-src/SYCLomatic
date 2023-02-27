@@ -108,6 +108,7 @@ std::unique_ptr<std::unordered_map<
     std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>();
 
 void CallExprRewriterFactoryBase::initRewriterMap() {
+  initRewriterMapAtomic();
   initRewriterMapCUB();
   initRewriterMapCUFFT();
   initRewriterMapCUBLAS();

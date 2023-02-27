@@ -172,6 +172,15 @@ public:
     }
     return result;
   }
+
+  operator bool() const {
+    return bool(_desc);
+  }
+
+  memory_desc_ext &operator=(std::nullptr_t) {
+    _desc.reset(nullptr);
+    return *this;
+  }
 };
 
 /// A class holding description for an activation operation.
@@ -586,6 +595,16 @@ public:
                          (1 + (_dilates[i - 2] * (weight_dims[i] - 1)))) /
                             _strides[i - 2];
     }
+  }
+
+  convolution_desc &operator=(std::nullptr_t) {
+    return *this = convolution_desc();
+  }
+
+  operator bool() const {
+    return !(_strides.size() == 0
+             && _dilates.size() == 0
+             && _paddings.size() == 0);
   }
 };
 
