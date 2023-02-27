@@ -45,7 +45,7 @@ __global__ void picount(int *totals) {
 }
 
 //CHECK: void cuda_kernel_initRND(unsigned long seed, dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *States,
-//CHECK-NEXT:                     sycl::nd_item<3> item_ct1)
+//CHECK:                     const sycl::nd_item<3> &item_ct1)
 __global__ void cuda_kernel_initRND(unsigned long seed, curandState *States)
 {
   int tid = threadIdx.x;
@@ -59,7 +59,7 @@ __global__ void cuda_kernel_initRND(unsigned long seed, curandState *States)
 }
 
 //CHECK: void cuda_kernel_RNDnormalDitribution(double *Image, dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *States,
-//CHECK-NEXT:                                  sycl::nd_item<3> item_ct1)
+//CHECK:                                  const sycl::nd_item<3> &item_ct1)
 __global__ void cuda_kernel_RNDnormalDitribution(double *Image, curandState *States)
 {
   int tid = threadIdx.x;

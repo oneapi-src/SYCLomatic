@@ -433,3 +433,23 @@ messages, detailed help, and suggestion to fix your errors.
      - .. include:: diagnostic_ref/dpct1100.rst
           :start-after: msg-1100-start:
           :end-before: msg-1100-end:
+   * - :ref:`id_DPCT1101`
+     - .. include:: diagnostic_ref/dpct1101.rst
+          :start-after: msg-1101-start:
+          :end-before: msg-1101-end:
+   * - :ref:`id_DPCT1102`
+     - .. include:: diagnostic_ref/dpct1102.rst
+          :start-after: msg-1102-start:
+          :end-before: msg-1102-end:
+   * - :ref:`id_DPCT1103`
+     - .. include:: diagnostic_ref/dpct1103.rst
+          :start-after: msg-1103-start:
+          :end-before: msg-1103-end:
+   * - :ref:`id_DPCT1104`
+     - .. include:: diagnostic_ref/dpct1104.rst
+          :start-after: msg-1104-start:
+          :end-before: msg-1104-end:
+   * - :ref:`id_DPCT1106`
+     - .. include:: diagnostic_ref/dpct1106.rst
+          :start-after: msg-1106-start:
+          :end-before: msg-1106-end:

@@ -37,8 +37,8 @@ void print_data(T* data, int num) {
   std::cout << std::endl;
 }
 
-//CHECK:  void ExclusiveSumKernel1(int* data, int* aggregate, sycl::nd_item<3> item_ct1) {
-
+//CHECK: void ExclusiveSumKernel1(int* data, int* aggregate,
+//CHECK-NEXT:                          const sycl::nd_item<3> &item_ct1) {
 //CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
 //CHECK:                        + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
 //CHECK:                        + item_ct1.get_local_id(1) * item_ct1.get_local_range(2)
@@ -82,7 +82,7 @@ __global__ void ExclusiveSumKernel1(int* data, int* aggregate) {
 //CHECK:      }
 //CHECK:  };
 
-//CHECK:  void ExclusiveSumKernel2(int* data, sycl::nd_item<3> item_ct1) {
+//CHECK:  void ExclusiveSumKernel2(int* data, const sycl::nd_item<3> &item_ct1) {
 
 //CHECK:      CallbackOp1 CB(0);
 //CHECK:      int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
@@ -126,7 +126,7 @@ __global__ void ExclusiveSumKernel2(int* data) {
 
     data[threadid] = output;
 }
-//CHECK:  void ExclusiveSumKernel3(int* data, sycl::nd_item<3> item_ct1) {
+//CHECK:  void ExclusiveSumKernel3(int* data, const sycl::nd_item<3> &item_ct1) {
 
 //CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
 //CHECK:                      + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
@@ -167,7 +167,8 @@ __global__ void ExclusiveSumKernel3(int* data) {
     data[4 * threadid + 2] = output[2];
     data[4 * threadid + 3] = output[3];
 }
-//CHECK:  void ExclusiveScanKernel1(int* data, int* aggregate, sycl::nd_item<3> item_ct1) {
+//CHECK:  void ExclusiveScanKernel1(int* data, int* aggregate,
+//CHECK: const sycl::nd_item<3> &item_ct1) {
 
 //CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
 //CHECK:                      + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
@@ -212,7 +213,7 @@ __global__ void ExclusiveScanKernel1(int* data, int* aggregate) {
 //CHECK:      }
 //CHECK:  };
 
-//CHECK:  void ExclusiveScanKernel2(int* data, sycl::nd_item<3> item_ct1) {
+//CHECK:  void ExclusiveScanKernel2(int* data, const sycl::nd_item<3> &item_ct1) {
 
 //CHECK:      CallbackOp2 CB(0);
 //CHECK:      int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
@@ -256,7 +257,7 @@ __global__ void ExclusiveScanKernel2(int* data) {
 
     data[threadid] = output;
 }
-//CHECK:  void ExclusiveScanKernel3(int* data, sycl::nd_item<3> item_ct1) {
+//CHECK:  void ExclusiveScanKernel3(int* data, const sycl::nd_item<3> &item_ct1) {
 //CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
 //CHECK:                      + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
 //CHECK:                      + item_ct1.get_local_id(1) * item_ct1.get_local_range(2)
@@ -297,7 +298,8 @@ __global__ void ExclusiveScanKernel3(int* data) {
     data[4 * threadid + 3] = output[3];
 }
 
-//CHECK:  void InclusiveSumKernel1(int* data, int* aggregate, sycl::nd_item<3> item_ct1) {
+//CHECK:  void InclusiveSumKernel1(int* data, int* aggregate,
+//CHECK-NEXT: const sycl::nd_item<3> &item_ct1) {
 
 //CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
 //CHECK:                      + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
@@ -345,7 +347,7 @@ __global__ void InclusiveSumKernel1(int* data, int* aggregate) {
 //CHECK:      }
 //CHECK:  };
 
-//CHECK:  void InclusiveSumKernel2(int* data, sycl::nd_item<3> item_ct1) {
+//CHECK:  void InclusiveSumKernel2(int* data, const sycl::nd_item<3> &item_ct1) {
 //CHECK:      CallbackOp3 CB(0);
 //CHECK:      int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
 //CHECK:                        + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
@@ -389,7 +391,7 @@ __global__ void InclusiveSumKernel2(int* data) {
     data[threadid] = output;
 }
 
-//CHECK:  void InclusiveSumKernel3(int* data, sycl::nd_item<3> item_ct1) {
+//CHECK:  void InclusiveSumKernel3(int* data, const sycl::nd_item<3> &item_ct1) {
 
 //CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
 //CHECK:                      + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
@@ -432,7 +434,8 @@ __global__ void InclusiveSumKernel3(int* data) {
     data[4 * threadid + 3] = output[3];
 }
 
-//CHECK:  void InclusiveScanKernel1(int* data, int* aggregate, sycl::nd_item<3> item_ct1) {
+//CHECK:  void InclusiveScanKernel1(int* data, int* aggregate,
+//CHECK-NEXT: const sycl::nd_item<3> &item_ct1) {
 
 //CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
 //CHECK:                      + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
@@ -480,7 +483,7 @@ __global__ void InclusiveScanKernel1(int* data, int* aggregate) {
 //CHECK:      }
 //CHECK:  };
 
-//CHECK:  void InclusiveScanKernel2(int* data, sycl::nd_item<3> item_ct1) {
+//CHECK:  void InclusiveScanKernel2(int* data, const sycl::nd_item<3> &item_ct1) {
 //CHECK:      CallbackOp4 CB(0);
 //CHECK:      int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
 //CHECK:                        + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
@@ -524,7 +527,7 @@ __global__ void InclusiveScanKernel2(int* data) {
     data[threadid] = output;
 }
 
-//CHECK:  void InclusiveScanKernel3(int* data, sycl::nd_item<3> item_ct1) {
+//CHECK:  void InclusiveScanKernel3(int* data, const sycl::nd_item<3> &item_ct1) {
 
 //CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
 //CHECK:                      + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
@@ -602,7 +605,7 @@ int main() {
   init_data(dev_data, DATA_NUM);
   init_data(dev_agg, DATA_NUM);
   //CHECK:  q_ct1.parallel_for(
-  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize), 
+  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
   //CHECK:    [=](sycl::nd_item<3> item_ct1) {
   //CHECK:      ExclusiveSumKernel1(dev_data, dev_agg, item_ct1);
   //CHECK:    });
@@ -640,7 +643,7 @@ int main() {
   };
   init_data(dev_data, DATA_NUM);
   //CHECK:  q_ct1.parallel_for(
-  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize), 
+  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
   //CHECK:    [=](sycl::nd_item<3> item_ct1) {
   //CHECK:      ExclusiveSumKernel2(dev_data, item_ct1);
   //CHECK:    });
@@ -670,7 +673,7 @@ int main() {
   };
   init_data(dev_data, DATA_NUM);
   //CHECK:  q_ct1.parallel_for(
-  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize), 
+  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
   //CHECK:    [=](sycl::nd_item<3> item_ct1) {
   //CHECK:      ExclusiveSumKernel3(dev_data, item_ct1);
   //CHECK:    });
@@ -712,7 +715,7 @@ int main() {
   init_data(dev_data, DATA_NUM);
   init_data(dev_agg, DATA_NUM);
   //CHECK:  q_ct1.parallel_for(
-  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize), 
+  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
   //CHECK:    [=](sycl::nd_item<3> item_ct1) {
   //CHECK:      ExclusiveScanKernel1(dev_data, dev_agg, item_ct1);
   //CHECK:    });
@@ -750,7 +753,7 @@ int main() {
   };
   init_data(dev_data, DATA_NUM);
   //CHECK:  q_ct1.parallel_for(
-  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize), 
+  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
   //CHECK:    [=](sycl::nd_item<3> item_ct1) {
   //CHECK:      ExclusiveScanKernel2(dev_data, item_ct1);
   //CHECK:    });
@@ -780,7 +783,7 @@ int main() {
   };
   init_data(dev_data, DATA_NUM);
   //CHECK:  q_ct1.parallel_for(
-  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize), 
+  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
   //CHECK:    [=](sycl::nd_item<3> item_ct1) {
   //CHECK:      ExclusiveScanKernel3(dev_data, item_ct1);
   //CHECK:    });
@@ -822,7 +825,7 @@ int main() {
   init_data(dev_data, DATA_NUM);
   init_data(dev_agg, DATA_NUM);
   //CHECK:  q_ct1.parallel_for(
-  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize), 
+  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
   //CHECK:    [=](sycl::nd_item<3> item_ct1) {
   //CHECK:      InclusiveSumKernel1(dev_data, dev_agg, item_ct1);
   //CHECK:    });
@@ -860,7 +863,7 @@ int main() {
   };
   init_data(dev_data, DATA_NUM);
   //CHECK:  q_ct1.parallel_for(
-  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize), 
+  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
   //CHECK:    [=](sycl::nd_item<3> item_ct1) {
   //CHECK:      InclusiveSumKernel2(dev_data, item_ct1);
   //CHECK:    });
@@ -890,7 +893,7 @@ int main() {
   };
   init_data(dev_data, DATA_NUM);
   //CHECK:  q_ct1.parallel_for(
-  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize), 
+  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
   //CHECK:    [=](sycl::nd_item<3> item_ct1) {
   //CHECK:      InclusiveSumKernel3(dev_data, item_ct1);
   //CHECK:    });
@@ -931,7 +934,7 @@ int main() {
   init_data(dev_data, DATA_NUM);
   init_data(dev_agg, DATA_NUM);
   //CHECK:  q_ct1.parallel_for(
-  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize), 
+  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
   //CHECK:    [=](sycl::nd_item<3> item_ct1) {
   //CHECK:      InclusiveScanKernel1(dev_data, dev_agg, item_ct1);
   //CHECK:    });
@@ -969,7 +972,7 @@ int main() {
   };
   init_data(dev_data, DATA_NUM);
   //CHECK:  q_ct1.parallel_for(
-  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize), 
+  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
   //CHECK:    [=](sycl::nd_item<3> item_ct1) {
   //CHECK:      InclusiveScanKernel2(dev_data, item_ct1);
   //CHECK:    });
@@ -999,7 +1002,7 @@ int main() {
   };
   init_data(dev_data, DATA_NUM);
   //CHECK:  q_ct1.parallel_for(
-  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize), 
+  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
   //CHECK:    [=](sycl::nd_item<3> item_ct1) {
   //CHECK:      InclusiveScanKernel3(dev_data, item_ct1);
   //CHECK:    });
