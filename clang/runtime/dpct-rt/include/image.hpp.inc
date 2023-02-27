@@ -207,15 +207,6 @@ static image_wrapper_base *create_image_wrapper(unsigned channel_num, int dims);
 static image_wrapper_base *create_image_wrapper(image_channel channel, int dims);
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_creator_forward_decl|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_creator
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-/// Functor to create sycl::image from image_data.
-template <int dimensions> struct image_creator;
-// DPCT_LABEL_END
-
 } // namespace detail
 
 // DPCT_LABEL_BEGIN|image_channel|dpct
@@ -715,7 +706,7 @@ public:
 // Image|image_data
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  image_data_type get_data_type() { return _type; }
+  image_data_type get_data_type() const { return _type; }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|image_data_set_data_type|dpct
 // DPCT_PARENT_FEATURE|image_data
@@ -732,7 +723,7 @@ public:
 // Image|image_data
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  void *get_data_ptr() { return _data; }
+  void *get_data_ptr() const { return _data; }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|image_data_set_data_ptr|dpct
 // DPCT_PARENT_FEATURE|image_data
@@ -749,7 +740,7 @@ public:
 // Image|image_data
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  size_t get_x() { return _x; }
+  size_t get_x() const { return _x; }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|image_data_set_x|dpct
 // DPCT_PARENT_FEATURE|image_data
@@ -766,7 +757,7 @@ public:
 // Image|image_data
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  size_t get_y() { return _y; }
+  size_t get_y() const { return _y; }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|image_data_set_y|dpct
 // DPCT_PARENT_FEATURE|image_data
@@ -783,7 +774,7 @@ public:
 // Image|image_data
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  size_t get_pitch() { return _pitch; }
+  size_t get_pitch() const { return _pitch; }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|image_data_set_pitch|dpct
 // DPCT_PARENT_FEATURE|image_data
@@ -801,7 +792,7 @@ public:
 // Image|image_channel
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  image_channel get_channel() { return _channel; }
+  image_channel get_channel() const { return _channel; }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|image_data_set_channel|dpct
 // DPCT_PARENT_FEATURE|image_data
@@ -1439,9 +1430,9 @@ template <class T, int dimensions, bool IsImageArray> class image_accessor_ext;
 // DPCT_DEPENDENCY_BEGIN
 // Image|image_wrapper_base
 // Image|image_accessor_ext_forward_decl
-// Image|image_creator_forward_decl
 // Image|image_trait
 // Image|image_wrapper_1
+// Image|image_wrapper_2
 // Image|image_channel_create
 // Image|image_wrapper_base_set_channel
 // DPCT_DEPENDENCY_END
@@ -1450,6 +1441,79 @@ template <class T, int dimensions, bool IsImageArray> class image_accessor_ext;
 template <class T, int dimensions, bool IsImageArray = false> class image_wrapper : public image_wrapper_base {
   sycl::image<dimensions> *_image = nullptr;
 
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|image_wrapper_create_image|dpct
+// DPCT_PARENT_FEATURE|image_wrapper
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper
+// Memory|get_pointer_attribute
+// Image|image_wrapper_base
+// Image|image_data_get_data_type
+// Image|image_data_get_data_ptr
+// Image|image_data_get_channel
+// Image|image_data_get_x
+// Image|image_data_get_y
+// Image|image_data_get_pitch
+// Image|image_channel_get_channel_order
+// Image|image_channel_get_channel_type
+// Image|image_channel_get_total_size
+// Image|image_matrix_create_image_with_channel
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+#ifndef DPCT_USM_LEVEL_NONE
+  std::vector<char> _host_buffer;
+#endif
+
+  void create_image(sycl::queue q) {
+    auto &data = get_data();
+    if (data.get_data_type() == image_data_type::matrix) {
+      _image = static_cast<image_matrix_p>(data.get_data_ptr())
+          ->create_image<dimensions>(data.get_channel());
+      return;
+    }
+    auto ptr = data.get_data_ptr();
+
+    if (detail::get_pointer_attribute(q, ptr) == detail::pointer_access_attribute::device_only) {
+#ifdef DPCT_USM_LEVEL_NONE
+      ptr = get_buffer(ptr)
+                .template get_access<sycl::access_mode::read_write>()
+                .get_pointer();
+#else
+      auto sz = data.get_x();
+      if (data.get_data_type() == image_data_type::pitch)
+        sz *= data.get_y();
+      _host_buffer.resize(sz);
+      q.memcpy(_host_buffer.data(), ptr, sz).wait();
+      ptr = _host_buffer.data();
+#endif
+    }
+
+    auto channel = data.get_channel();
+    if constexpr (dimensions == 1) {
+      assert(data.get_data_type() == image_data_type::linear);
+      _image = new sycl::image<1>(
+        ptr, channel.get_channel_order(), channel.get_channel_type(),
+        sycl::range<1>(data.get_x() / channel.get_total_size()));
+    } else if constexpr (dimensions == 2) {
+      assert(data.get_data_type() == image_data_type::pitch);
+      _image = new sycl::image<2>(
+        ptr, channel.get_channel_order(), channel.get_channel_type(),
+        sycl::range<2>(data.get_x() / channel.get_total_size(),
+                           data.get_y()),
+        sycl::range<1>(data.get_pitch()));
+    } else {
+      throw std::runtime_error("3D image only support matrix data");
+    }
+    return;
+  }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|image_wrapper_2|dpct
+// DPCT_PARENT_FEATURE|image_wrapper
+// DPCT_DEPENDENCY_BEGIN
+// Image|image_wrapper
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 public:
   using acc_data_t = typename detail::image_trait<T>::acc_data_t;
   using accessor_t =
@@ -1459,17 +1523,19 @@ public:
   image_wrapper() { set_channel(image_channel::create<T>()); }
   ~image_wrapper() { detach(); }
 // DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|image_wrapper_get_access|dpct
 // DPCT_PARENT_FEATURE|image_wrapper
 // DPCT_DEPENDENCY_BEGIN
 // Image|image_wrapper
-// Image|image_wrapper_base_get_data
+// Image|image_wrapper_create_image
+// Device|get_default_queue
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   /// Get image accessor.
-  accessor_t get_access(sycl::handler &cgh) {
+  accessor_t get_access(sycl::handler &cgh, sycl::queue &q = get_default_queue()) {
     if (!_image)
-      _image = detail::image_creator<dimensions>()(get_data());
+      create_image(q);
     return accessor_t(*_image, cgh);
   }
 // DPCT_LABEL_END
@@ -1644,77 +1710,6 @@ static inline image_wrapper_base *create_image_wrapper(image_data data,
 // DPCT_LABEL_END
 
 namespace detail {
-// DPCT_LABEL_BEGIN|image_creator|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Memory|mem_mgr_is_device_ptr|UsmNone
-// Memory|get_buffer_byte_t|UsmNone
-// Image|image_data_get_data_type
-// Image|image_data_get_data_ptr
-// Image|image_data_get_channel
-// Image|image_data_get_x
-// Image|image_data_get_y
-// Image|image_data_get_pitch
-// Image|image_channel_get_channel_order
-// Image|image_channel_get_channel_type
-// Image|image_channel_get_total_size
-// Image|image_matrix_create_image_with_channel
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-/// Functor to create sycl::image from image_data
-template <> struct image_creator<1> {
-  sycl::image<1> *operator()(image_data data) {
-    assert(data.get_data_type() == image_data_type::linear ||
-           data.get_data_type() == image_data_type::matrix);
-    if (data.get_data_type() == image_data_type::matrix) {
-      return static_cast<image_matrix_p>(data.get_data_ptr())
-          ->create_image<1>(data.get_channel());
-    }
-    auto ptr = data.get_data_ptr();
-#ifdef DPCT_USM_LEVEL_NONE
-    if (detail::mem_mgr::instance().is_device_ptr(ptr))
-      ptr = get_buffer(ptr)
-                .template get_access<sycl::access_mode::read_write>()
-                .get_pointer();
-#endif
-    auto channel = data.get_channel();
-    return new sycl::image<1>(
-        ptr, channel.get_channel_order(), channel.get_channel_type(),
-        sycl::range<1>(data.get_x() / channel.get_total_size()));
-  }
-};
-template <> struct image_creator<2> {
-  sycl::image<2> *operator()(image_data data) {
-    assert(data.get_data_type() == image_data_type::pitch ||
-           data.get_data_type() == image_data_type::matrix);
-    if (data.get_data_type() == image_data_type::matrix) {
-      return static_cast<image_matrix_p>(data.get_data_ptr())
-          ->create_image<2>(data.get_channel());
-    }
-    auto ptr = data.get_data_ptr();
-#ifdef DPCT_USM_LEVEL_NONE
-    if (detail::mem_mgr::instance().is_device_ptr(ptr))
-      ptr = get_buffer(ptr)
-                .template get_access<sycl::access_mode::read_write>()
-                .get_pointer();
-#endif
-    auto channel = data.get_channel();
-    return new sycl::image<2>(
-        ptr, channel.get_channel_order(), channel.get_channel_type(),
-        sycl::range<2>(data.get_x() / channel.get_total_size(),
-                           data.get_y()),
-        sycl::range<1>(data.get_pitch()));
-  }
-};
-template <> struct image_creator<3> {
-  sycl::image<3> *operator()(image_data data) {
-    assert(data.get_data_type() == image_data_type::matrix);
-    return static_cast<image_matrix_p>(data.get_data_ptr())
-        ->create_image<3>(data.get_channel());
-  }
-};
-// DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|create_image_wrapper_detail|dpct::detail
 // DPCT_DEPENDENCY_BEGIN
 // Image|image_wrapper_base

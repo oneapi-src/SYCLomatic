@@ -95,6 +95,12 @@ typedef sycl::event *event_ptr;
 typedef sycl::queue *queue_ptr;
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|typedef_device_ptr|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+typedef char *device_ptr;
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|destroy_event|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Device|typedef_event_ptr
@@ -986,23 +992,6 @@ private:
     i++;
     minor = std::stoi(&(ver[i]));
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|device_ext_add_task|dpct
-// DPCT_PARENT_FEATURE|device_ext
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-  void add_task(std::thread &&task) {
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
-    _tasks.push_back(std::move(task));
-  }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|device_ext_async_dpct_free_friend_decl|dpct
-// DPCT_PARENT_FEATURE|device_ext
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-  friend void async_dpct_free(std::vector<void *>,
-                              std::vector<sycl::event>,
-                              sycl::queue &);
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_ext_2|dpct
 // DPCT_PARENT_FEATURE|device_ext
