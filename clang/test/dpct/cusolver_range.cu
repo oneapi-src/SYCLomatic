@@ -9,10 +9,10 @@
 #include "cusolverDn.h"
 
 void test0() {
-  // CHECK: char range = 'A';
+  // CHECK: oneapi::mkl::rangev range = oneapi::mkl::rangev::all;
   cusolverEigRange_t range = CUSOLVER_EIG_RANGE_ALL;
-  // CHECK: range = 'V';
+  // CHECK: range = oneapi::mkl::rangev::values;
   range = CUSOLVER_EIG_RANGE_V;
-  // CHECK: range = 'I';
+  // CHECK: range = oneapi::mkl::rangev::indices;
   range = CUSOLVER_EIG_RANGE_I;
 }
