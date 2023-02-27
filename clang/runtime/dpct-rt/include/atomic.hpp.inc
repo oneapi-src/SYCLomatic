@@ -707,10 +707,10 @@ template <sycl::access::address_space addressSpace =
               sycl::access::address_space::global_space,
           sycl::memory_order memoryOrder = sycl::memory_order::relaxed,
           sycl::memory_scope memoryScope = sycl::memory_scope::device,
-          typename T1, typename T2>
+          typename T1, typename T2, typename T3>
 T1 atomic_compare_exchange_strong(
     sycl::multi_ptr<T1, sycl::access::address_space::global_space> addr,
-    T1 expected, T1 desired,
+    T2 expected, T3 desired,
     sycl::memory_order success = sycl::memory_order::relaxed,
     sycl::memory_order fail = sycl::memory_order::relaxed) {
   auto atm = sycl::atomic_ref<T1, memoryOrder, memoryScope, addressSpace>(*addr);
@@ -747,9 +747,9 @@ template <sycl::access::address_space addressSpace =
               sycl::access::address_space::global_space,
           sycl::memory_order memoryOrder = sycl::memory_order::relaxed,
           sycl::memory_scope memoryScope = sycl::memory_scope::device,
-          typename T1, typename T2>
+          typename T1, typename T2, typename T3>
 T1 atomic_compare_exchange_strong(
-    T1 *addr, T2 expected, T2 desired,
+    T1 *addr, T2 expected, T3 desired,
     sycl::memory_order success = sycl::memory_order::relaxed,
     sycl::memory_order fail = sycl::memory_order::relaxed) {
   auto atm =
