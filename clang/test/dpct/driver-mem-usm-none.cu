@@ -18,11 +18,11 @@ int main(){
     // CHECK: f_A = (float *)malloc(size);
     cuMemHostAlloc((void **)&f_A, size, CU_MEMHOSTALLOC_DEVICEMAP);
 
-    // CHECK: char * f_D = 0;
+    // CHECK: dpct::device_ptr f_D = 0;
     CUdeviceptr f_D = 0;
-    // CHECK: char * f_D2 = 0;
+    // CHECK: dpct::device_ptr f_D2 = 0;
     CUdeviceptr f_D2 = 0;
-    // CHECK: f_D = (char *)dpct::dpct_malloc(size);
+    // CHECK: f_D = (dpct::device_ptr)dpct::dpct_malloc(size);
     cuMemAlloc(&f_D, size);
 
     // CHECK: dpct::queue_ptr stream;

@@ -1290,11 +1290,13 @@ void KernelCallExpr::addAccessorDecl() {
                                  Diagnostics::UNDEDUCED_TYPE, true, false,
                                  "image_accessor_ext");
       }
-      Tex->addDecl(SubmitStmtsList.TextureList, SubmitStmtsList.SamplerList);
+      Tex->addDecl(SubmitStmtsList.TextureList, SubmitStmtsList.SamplerList,
+                   getQueueStr());
     }
   }
-  for (auto& Tex : VM.getTextureMap()) {
-    Tex.second->addDecl(SubmitStmtsList.TextureList, SubmitStmtsList.SamplerList);
+  for (auto &Tex : VM.getTextureMap()) {
+    Tex.second->addDecl(SubmitStmtsList.TextureList,
+                        SubmitStmtsList.SamplerList, getQueueStr());
   }
 }
 
@@ -1310,8 +1312,7 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
                        ? HelperFeatureEnum::Memory_device_memory_init
                        : HelperFeatureEnum::Memory_device_memory_init_q,
                    getFilePath());
-    SubmitStmtsList.InitList.emplace_back(VI->getInitStmt(
-        isDefaultStream() ? "" : ExecutionConfig.Stream, isQueuePtr()));
+    SubmitStmtsList.InitList.emplace_back(VI->getInitStmt(getQueueStr()));
     if (VI->isLocal()) {
       SubmitStmtsList.MemoryList.emplace_back(
           VI->getMemoryDecl(ExecutionConfig.ExternMemSize));

@@ -64,6 +64,13 @@ TextModification *clang::dpct::replaceText(SourceLocation Begin, SourceLocation 
   return nullptr;
 }
 
+SourceLocation getArgEndLocation(const CallExpr *C, unsigned Idx,
+                                 const SourceManager &SM) {
+  auto SL = getStmtExpansionSourceRange(C->getArg(Idx)).getEnd();
+  return SL.getLocWithOffset(Lexer::MeasureTokenLength(
+      SL, SM, DpctGlobalInfo::getContext().getLangOpts()));
+}
+
 /// Return a TextModication that removes nth argument of the CallExpr,
 /// together with the preceding comma.
 TextModification *clang::dpct::removeArg(const CallExpr *C, unsigned n,
@@ -75,20 +82,14 @@ TextModification *clang::dpct::removeArg(const CallExpr *C, unsigned n,
 
   SourceLocation Begin, End;
   if (n) {
-    Begin = getStmtExpansionSourceRange(C->getArg(n - 1)).getEnd();
-    Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
-        Begin, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
-    End = getStmtExpansionSourceRange(C->getArg(n)).getEnd();
-    End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-        End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
+    Begin = getArgEndLocation(C, n - 1, SM);
+    End = getArgEndLocation(C, n, SM);
   } else {
     Begin = getStmtExpansionSourceRange(C->getArg(n)).getBegin();
     if (C->getNumArgs() > 1) {
       End = getStmtExpansionSourceRange(C->getArg(n + 1)).getBegin();
     } else {
-      End = getStmtExpansionSourceRange(C->getArg(n)).getEnd();
-      End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-          End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
+      End = getArgEndLocation(C, n, SM);
     }
   }
   return replaceText(Begin, End, "", SM);
@@ -10791,41 +10792,48 @@ void MemoryMigrationRule::arrayMigration(
     Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
 
+  auto& SM = *Result.SourceManager;
   std::string ReplaceStr;
   StringRef NameRef(Name);
+  auto EndPos = C->getNumArgs() - 1;
   bool IsAsync = NameRef.endswith("Async");
   if (IsAsync) {
     NameRef = NameRef.drop_back(5 /* len of "Async" */);
     ReplaceStr = MapNames::getDpctNamespace() + "async_dpct_memcpy";
-    requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy, C);
-    requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_2d, C);
-    requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_3d, C);
+
+    auto StreamExpr = C->getArg(EndPos);
+    std::string Str;
+    if (isDefaultStream(StreamExpr)) {
+      emplaceTransformation(removeArg(C, EndPos, SM));
+      emplaceTransformation(removeArg(C, --EndPos, SM));
+    } else {
+      auto Begin = getArgEndLocation(C, EndPos - 2, SM),
+           End = getArgEndLocation(C, EndPos, SM);
+      llvm::raw_string_ostream OS(Str);
+      OS << ", " << MapNames::getDpctNamespace() << "automatic";
+      OS << ", ";
+      DerefExpr::create(StreamExpr, C).print(OS);
+      emplaceTransformation(replaceText(Begin, End, std::move(Str), SM));
+    }
   } else {
     ReplaceStr = MapNames::getDpctNamespace() + "dpct_memcpy";
-    requestFeature(HelperFeatureEnum::Memory_dpct_memcpy, C);
-    requestFeature(HelperFeatureEnum::Memory_dpct_memcpy_2d, C);
-    requestFeature(HelperFeatureEnum::Memory_dpct_memcpy_3d, C);
+    emplaceTransformation(removeArg(C, EndPos, SM));
   }
+  requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_3d, C);
 
-  auto &SM = *Result.SourceManager;
   if (NameRef == "cudaMemcpy2DArrayToArray") {
     insertToPitchedData(C, 0);
     aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
     insertToPitchedData(C, 3);
     aggregate3DVectorClassCtor(C, "id", 4, "0", SM);
     aggregate3DVectorClassCtor(C, "range", 6, "1", SM);
-    emplaceTransformation(removeArg(C, 8, SM));
   } else if (NameRef == "cudaMemcpy2DFromArray") {
-    handleAsync(C, 8, Result);
-    emplaceTransformation(removeArg(C, 7, *Result.SourceManager));
     aggregatePitchedData(C, 0, 1, SM);
     insertZeroOffset(C, 2);
     insertToPitchedData(C, 2);
     aggregate3DVectorClassCtor(C, "id", 3, "0", SM);
     aggregate3DVectorClassCtor(C, "range", 5, "1", SM);
   } else if (NameRef == "cudaMemcpy2DToArray") {
-    handleAsync(C, 8, Result);
-    emplaceTransformation(removeArg(C, 7, *Result.SourceManager));
     insertToPitchedData(C, 0);
     aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
     aggregatePitchedData(C, 3, 4, SM);
@@ -10837,18 +10845,13 @@ void MemoryMigrationRule::arrayMigration(
     insertToPitchedData(C, 3);
     aggregate3DVectorClassCtor(C, "id", 4, "0", SM);
     aggregate3DVectorClassCtor(C, "range", 6, "1", SM, 1);
-    emplaceTransformation(removeArg(C, 7, SM));
   } else if (NameRef == "cudaMemcpyFromArray") {
-    handleAsync(C, 6, Result);
-    emplaceTransformation(removeArg(C, 5, SM));
     aggregatePitchedData(C, 0, 4, SM, true);
     insertZeroOffset(C, 1);
     insertToPitchedData(C, 1);
     aggregate3DVectorClassCtor(C, "id", 2, "0", SM);
     aggregate3DVectorClassCtor(C, "range", 4, "1", SM, 1);
   } else if (NameRef == "cudaMemcpyToArray") {
-    handleAsync(C, 6, Result);
-    emplaceTransformation(removeArg(C, 5, SM));
     insertToPitchedData(C, 0);
     aggregate3DVectorClassCtor(C, "id", 1, "0", SM);
     aggregatePitchedData(C, 3, 4, SM, true);
@@ -11783,19 +11786,12 @@ void MemoryMigrationRule::handleAsync(const CallExpr *C, unsigned i,
                                       const MatchFinder::MatchResult &Result) {
   if (C->getNumArgs() > i && !C->getArg(i)->isDefaultArgument()) {
     auto StreamExpr = C->getArg(i)->IgnoreImplicitAsWritten();
-    emplaceTransformation(new InsertBeforeStmt(StreamExpr, "*"));
-    if (auto IL = dyn_cast<IntegerLiteral>(StreamExpr)) {
-      if (IL->getValue().getZExtValue() == 0) {
-        emplaceTransformation(removeArg(C, i, *Result.SourceManager));
-        return;
-      } else {
-        emplaceTransformation(new InsertBeforeStmt(
-            StreamExpr, "(" + MapNames::getClNamespace() + "queue *)"));
-      }
-    } else if (isDefaultStream(StreamExpr)) {
+    if (isDefaultStream(StreamExpr)) {
       emplaceTransformation(removeArg(C, i, *Result.SourceManager));
       return;
-    } else if (!isa<DeclRefExpr>(StreamExpr)) {
+    }
+    emplaceTransformation(new InsertBeforeStmt(StreamExpr, "*"));
+    if (!isa<DeclRefExpr>(StreamExpr)) {
       insertAroundStmt(StreamExpr, "(", ")");
     }
   }
