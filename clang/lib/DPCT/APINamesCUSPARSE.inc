@@ -63,7 +63,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_optimize_info,
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_optimize_info,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
-                            "cusparseDestroySolveAnalysisInfo", ARG(0), true,
+                            "cusparseDestroySolveAnalysisInfo", ARG(0), false,
                             "reset")))
 
 FEATURE_REQUEST_FACTORY(

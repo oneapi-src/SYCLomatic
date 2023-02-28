@@ -231,7 +231,9 @@ void MapNames::setExplicitNamespaceMap() {
            HelperFeatureEnum::SparseUtils_matrix_info)},
       {"cusparseOperation_t",
        std::make_shared<TypeNameRule>("oneapi::mkl::transpose")},
-      {"cusparseSolveAnalysisInfo_t", std::make_shared<TypeNameRule>("int")},
+      {"cusparseSolveAnalysisInfo_t", std::make_shared<TypeNameRule>(
+           "std::shared_ptr<" + getDpctNamespace() + "sparse::optimize_info>",
+           HelperFeatureEnum::SparseUtils_optimize_info)},
       {"thrust::device_ptr",
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "device_pointer",

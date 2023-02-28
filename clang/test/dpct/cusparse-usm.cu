@@ -127,10 +127,10 @@ int foo(int aaaaa){
   //CHECK-NEXT: switch(status = (dpct::sparse::csrmv(*handle, transA, m, n, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y), 0)){}
   switch(status = cusparseDcsrmv(handle, transA, m, n, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y)){}
 
-  //CHECK: int info;
+  //CHECK: std::shared_ptr<dpct::sparse::optimize_info> info;
   //CHECK-NEXT: info = std::make_shared<dpct::sparse::optimize_info>();
   //CHECK-NEXT: dpct::sparse::optimize_csrsv(*handle, transA, m, descrA, csrValA, csrRowPtrA, csrColIndA, info);
-  //CHECK-NEXT: info->reset();
+  //CHECK-NEXT: info.reset();
   cusparseSolveAnalysisInfo_t info;
   cusparseCreateSolveAnalysisInfo(&info);
   cusparseDcsrsv_analysis(handle, transA, m, nnz, descrA, csrValA, csrRowPtrA, csrColIndA, info);
