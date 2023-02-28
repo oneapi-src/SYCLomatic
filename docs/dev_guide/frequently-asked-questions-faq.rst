@@ -81,6 +81,14 @@ database depends on the optional [target] parameter. If you need to get the
 list of files corresponding to default build target, do not specify the [target]
 parameter.
 
+Make sure to disable ccache (compiler cache) in your project before using intercept-build.
+If ccache is enabled, intercept-build cannot generate the complete compilation database as
+some compile commands may be skipped if the target objects are already available in the cache.
+Use the following command to disable ccache before running the intercept-build command:
+
+.. code-block:: bash
+export CCACHE_DISABLE=1
+
 **How do I use the migrated module file in the new project?**
 
 ``.cu`` module files are compiled with the ``-ptx`` or ``-cubin`` options in the
@@ -335,6 +343,3 @@ is adjusted to avoid a bit shift that is greater than the type length:
        val = in[tid] << 32 - bit;
      ...
    }
-
-
-
