@@ -1,4 +1,4 @@
-.. _id_DPCT1051:
+.. _DPCT1051:
 
 DPCT1051
 ========
@@ -18,7 +18,7 @@ Detailed Help
 -------------
 
 Not all CUDA\* device properties currently have functionally compatible equivalents
-in SYCL. If such a property is detected and it is the integer type, it will be
+in SYCL\*. If such a property is detected and it is the integer type, it will be
 migrated to -1. If it is the Boolean type, it will be migrated to false or true
 depending on the context.
 

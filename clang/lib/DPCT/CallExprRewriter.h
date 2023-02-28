@@ -47,6 +47,7 @@ public:
   static void initRewriterMap();
   RulePriority Priority = RulePriority::Fallback;
 private:
+  static void initRewriterMapAtomic();
   static void initRewriterMapCUB();
   static void initRewriterMapCUFFT();
   static void initRewriterMapCUBLAS();

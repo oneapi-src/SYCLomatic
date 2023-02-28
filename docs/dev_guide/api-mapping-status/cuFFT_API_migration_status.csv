@@ -1,0 +1,53 @@
+Function,Migration Support,Diagnostic Message
+cufftPlan1d,YES,
+cufftPlan2d,YES,
+cufftPlan3d,YES,
+cufftPlanMany,YES,
+cufftXtMakePlanMany,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftExecC2C,YES,
+cufftExecZ2Z,YES,
+cufftExecR2C,YES,
+cufftExecD2Z,YES,
+cufftExecC2R,YES,
+cufftExecZ2D,YES,
+cufftCreate,YES,
+cufftXtSetGPUs,NO,
+cufftMakePlan1d,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftMakePlan2d,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftMakePlan3d,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftMakePlanMany,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftGetSize1d,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftGetSize2d,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftGetSize3d,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftGetSizeMany,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftGetSize,YES,:ref:`DPCT1100`
+cufftXtSetWorkArea,NO,
+cufftXtMalloc,NO,
+cufftXtMemcpy,NO,
+cufftXtClearCallback,NO,
+cufftXtExecDescriptorC2R,NO,
+cufftXtExecDescriptorD2Z,NO,
+cufftXtExecDescriptorR2C,NO,
+cufftXtExecDescriptorZ2D,NO,
+cufftXtExecDescriptorC2C,NO,
+cufftXtExecDescriptorZ2Z,NO,
+cufftXtQueryPlan,NO,
+cufftXtSetCallback,NO,
+cufftXtSetCallbackSharedSize,NO,
+cufftXtFree,NO,
+cufftDestroy,YES,
+cufftSetAutoAllocation,YES,:ref:`DPCT1100`
+cufftEstimate1d,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftEstimate2d,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftEstimate3d,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftEstimateMany,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftXtSetWorkAreaPolicy,NO,
+cufftMakePlanMany64,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftGetSizeMany64,YES,:ref:`DPCT1099` / :ref:`DPCT1100`
+cufftXtGetSizeMany,NO,
+cufftSetWorkArea,YES,:ref:`DPCT1100`
+cufftXtExec,YES,
+cufftXtExecDescriptor,NO,
+cufftSetStream,YES,
+cufftGetVersion,YES,
+cufftGetProperty,YES,

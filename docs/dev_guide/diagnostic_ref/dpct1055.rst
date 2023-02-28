@@ -1,4 +1,4 @@
-.. _id_DPCT1055:
+.. _DPCT1055:
 
 DPCT1055
 ========
@@ -27,22 +27,22 @@ Suggestions to Fix
 You can declare a new field with the corresponding fundamental type, for example
 int for int1, in the class/struct and override the required operators.
 
-For example, the following migrated DPC++ code:
+For example, the following migrated SYCL\* code:
 
 .. code-block:: cpp
    :linenos:
 
-   class MyClass : int {
-     ...
-   }
+     class MyClass : int {
+       ...
+     }
 
 is manually adjusted to:
 
 .. code-block:: cpp
    :linenos:
 
-   class MyClass {
-     int x;
-     MyClass operator+(const MyClass& y) { ... }
-     MyClass operator=(const MyClass& y){...}...
-   }
+     class MyClass {
+       int x;
+       MyClass operator+(const MyClass& y) { ... }
+       MyClass operator=(const MyClass& y){...}...
+     }

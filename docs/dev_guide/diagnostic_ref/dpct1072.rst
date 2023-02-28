@@ -1,4 +1,4 @@
-.. _id_DPCT1072:
+.. _DPCT1072:
 
 DPCT1072
 ========
@@ -17,7 +17,7 @@ device. You may need to adjust the code.
 Detailed Help
 -------------
 
-SYCL currently does not support getting the available memory on the current
+SYCL\* currently does not support getting the available memory on the current
 device.
 
 Suggestions to Fix

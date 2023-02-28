@@ -14,8 +14,6 @@
 namespace clang {
 namespace dpct {
 
-using namespace clang;
-using namespace clang::dpct;
 using namespace clang::ast_matchers;
 
 void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {

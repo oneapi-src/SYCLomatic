@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/Image/api_test25_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Image/api_test25_out
 
-// CHECK: 62
+// CHECK: 42
 // TEST_FEATURE: Image_sampling_info_is_coordinate_normalized
 
 int main() {

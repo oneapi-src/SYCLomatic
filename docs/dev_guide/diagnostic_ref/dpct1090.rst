@@ -1,4 +1,4 @@
-.. _id_DPCT1090:
+.. _DPCT1090:
 
 DPCT1090
 ========
@@ -16,7 +16,7 @@ Detailed Help
 -------------
 
 Not all CUDA\* device properties have functionally compatible equivalents in
-SYCL. These device properties are not migrated.
+SYCL\*. These device properties are not migrated.
 
 Suggestions to Fix
 ------------------
