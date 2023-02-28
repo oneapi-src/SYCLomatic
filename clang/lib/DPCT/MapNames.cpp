@@ -319,6 +319,10 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(getClNamespace() + "addressing_mode")},
       {"cudaTextureFilterMode",
        std::make_shared<TypeNameRule>(getClNamespace() + "filtering_mode")},
+      {"curandGenerator_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "rng::host_rng_ptr",
+           HelperFeatureEnum::RngUtils_typedef_host_rng_ptr)},
       {"curandStatus_t", std::make_shared<TypeNameRule>("int")},
       {"curandStatus", std::make_shared<TypeNameRule>("int")},
       {"cusparseStatus_t", std::make_shared<TypeNameRule>("int")},
@@ -4017,19 +4021,24 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
              "oneapi::mkl::lapack::gesvd")},
     };
 
-// Random Engine Type mapping
+// Host Random Engine Type mapping
 const MapNames::MapTy MapNames::RandomEngineTypeMap{
-    {"CURAND_RNG_PSEUDO_DEFAULT", "oneapi::mkl::rng::philox4x32x10"},
-    {"CURAND_RNG_PSEUDO_XORWOW", "oneapi::mkl::rng::philox4x32x10"},
-    {"CURAND_RNG_PSEUDO_MRG32K3A", "oneapi::mkl::rng::mrg32k3a"},
-    {"CURAND_RNG_PSEUDO_MTGP32", "oneapi::mkl::rng::mt2203"},
-    {"CURAND_RNG_PSEUDO_MT19937", "oneapi::mkl::rng::mt19937"},
-    {"CURAND_RNG_PSEUDO_PHILOX4_32_10", "oneapi::mkl::rng::philox4x32x10"},
-    {"CURAND_RNG_QUASI_DEFAULT", "oneapi::mkl::rng::sobol"},
-    {"CURAND_RNG_QUASI_SOBOL32", "oneapi::mkl::rng::sobol"},
-    {"CURAND_RNG_QUASI_SCRAMBLED_SOBOL32", "oneapi::mkl::rng::sobol"},
-    {"CURAND_RNG_QUASI_SOBOL64", "oneapi::mkl::rng::sobol"},
-    {"CURAND_RNG_QUASI_SCRAMBLED_SOBOL64", "oneapi::mkl::rng::sobol"},
+    {"CURAND_RNG_PSEUDO_DEFAULT",
+     "dpct::rng::random_engine_type::philox4x32x10"},
+    {"CURAND_RNG_PSEUDO_XORWOW",
+     "dpct::rng::random_engine_type::philox4x32x10"},
+    {"CURAND_RNG_PSEUDO_MRG32K3A", "dpct::rng::random_engine_type::mrg32k3a"},
+    {"CURAND_RNG_PSEUDO_MTGP32", "dpct::rng::random_engine_type::mt2203"},
+    {"CURAND_RNG_PSEUDO_MT19937", "dpct::rng::random_engine_type::mt19937"},
+    {"CURAND_RNG_PSEUDO_PHILOX4_32_10",
+     "dpct::rng::random_engine_type::philox4x32x10"},
+    {"CURAND_RNG_QUASI_DEFAULT", "dpct::rng::random_engine_type::sobol"},
+    {"CURAND_RNG_QUASI_SOBOL32", "dpct::rng::random_engine_type::sobol"},
+    {"CURAND_RNG_QUASI_SCRAMBLED_SOBOL32",
+     "dpct::rng::random_engine_type::sobol"},
+    {"CURAND_RNG_QUASI_SOBOL64", "dpct::rng::random_engine_type::sobol"},
+    {"CURAND_RNG_QUASI_SCRAMBLED_SOBOL64",
+     "dpct::rng::random_engine_type::sobol"},
 };
 
 // Device Random Generator Type mapping
@@ -4053,27 +4062,17 @@ const MapNames::MapTy MapNames::DeviceRandomGeneratorTypeMap{
                             "mkl::rng::device::mrg32k3a<1>>"},
 };
 
-const std::map<std::string, MapNames::RandomGenerateFuncReplInfo>
-    MapNames::RandomGenerateFuncReplInfoMap{
-        {"curandGenerate",
-         {"uint32_t", "oneapi::mkl::rng::uniform_bits", "uint32_t"}},
-        {"curandGenerateLongLong",
-         {"uint64_t", "oneapi::mkl::rng::uniform_bits", "uint64_t"}},
-        {"curandGenerateLogNormal",
-         {"float", "oneapi::mkl::rng::lognormal", "float"}},
-        {"curandGenerateLogNormalDouble",
-         {"double", "oneapi::mkl::rng::lognormal", "double"}},
-        {"curandGenerateNormal",
-         {"float", "oneapi::mkl::rng::gaussian", "float"}},
-        {"curandGenerateNormalDouble",
-         {"double", "oneapi::mkl::rng::gaussian", "double"}},
-        {"curandGeneratePoisson",
-         {"int32_t", "oneapi::mkl::rng::poisson", "int32_t"}},
-        {"curandGenerateUniform",
-         {"float", "oneapi::mkl::rng::uniform", "float"}},
-        {"curandGenerateUniformDouble",
-         {"double", "oneapi::mkl::rng::uniform", "double"}},
-    };
+const std::map<std::string, std::string> MapNames::RandomGenerateFuncMap{
+    {"curandGenerate", {"generate_uniform_bits"}},
+    {"curandGenerateLongLong", {"generate_uniform_bits"}},
+    {"curandGenerateLogNormal", {"generate_lognormal"}},
+    {"curandGenerateLogNormalDouble", {"generate_lognormal"}},
+    {"curandGenerateNormal", {"generate_gaussian"}},
+    {"curandGenerateNormalDouble", {"generate_gaussian"}},
+    {"curandGeneratePoisson", {"generate_poisson"}},
+    {"curandGenerateUniform", {"generate_uniform"}},
+    {"curandGenerateUniformDouble", {"generate_uniform"}},
+};
 
 const std::map<std::string, std::vector<unsigned int>>
     MapNames::FFTPlanAPINeedParenIdxMap{
