@@ -1160,7 +1160,7 @@ cuMemAllocPitch,YES,
 cuMemFree,YES,
 cuMemFreeHost,YES,
 cuMemGetAddressRange,NO,
-cuMemGetInfo,YES,:ref:`DPCT1106`
+cuMemGetInfo,YES,:ref:`DPCT1106` / :ref:`DPCT1072`
 cuMemHostAlloc,YES,:ref:`DPCT1072`
 cuMemHostGetDevicePointer,YES,
 cuMemHostGetFlags,YES,
@@ -1542,7 +1542,6 @@ cuMemGetAddressRange,NO,
 cuMemGetAllocationGranularity,NO,
 cuMemGetAllocationPropertiesFromHandle,NO,
 cuMemGetHandleForAddressRange,NO,
-cuMemGetInfo,NO,
 cuMemImportFromShareableHandle,NO,
 cuMemMap,NO,
 cuMemMapArrayAsync,NO,
