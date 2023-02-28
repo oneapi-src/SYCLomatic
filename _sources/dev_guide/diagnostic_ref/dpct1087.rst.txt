@@ -1,4 +1,4 @@
-.. _id_DPCT1087:
+.. _DPCT1087:
 
 DPCT1087
 ========
@@ -10,7 +10,7 @@ Message
 
 SYCL currently does not support cross group synchronization. You can specify
 ``--use-experimental-features=nd_range_barrier`` to use the dpct helper function
-``nd_range_barrier`` to migrate ``<grid type variable name>.sync()``.
+``nd_range_barrier`` to migrate ``<synchronization API call>``.
 
 .. _msg-1087-end:
 
@@ -18,7 +18,7 @@ Detailed Help
 -------------
 
 By default, the dpct helper function ``nd_range_barrier`` is not used to migrate
-CUDA grid level synchronization. To use ``nd_range_barrier`` to migrate CUDA
+CUDA\* grid level synchronization. To use ``nd_range_barrier`` to migrate CUDA
 grid level synchronization, specify ``--use-experimental-features=nd_range_barrier``
 in the migration command.
 

@@ -1,4 +1,4 @@
-.. _id_DPCT1051:
+.. _DPCT1051:
 
 DPCT1051
 ========
@@ -8,9 +8,9 @@ Message
 
 .. _msg-1051-start:
 
-SYCL does not support the device property that would be functionally compatible
-with *<property name>*. It was migrated to *<migrated token>*. You may need
-to rewrite the code.
+SYCL does not support a device property functionally compatible with *<property name>*.
+It was migrated to *<migrated token>*. You may need to adjust the value of
+*<migrated token>* for the specific device.
 
 .. _msg-1051-end:
 
@@ -18,7 +18,7 @@ Detailed Help
 -------------
 
 Not all CUDA\* device properties currently have functionally compatible equivalents
-in SYCL. If such a property is detected and it is the integer type, it will be
+in SYCL\*. If such a property is detected and it is the integer type, it will be
 migrated to -1. If it is the Boolean type, it will be migrated to false or true
 depending on the context.
 

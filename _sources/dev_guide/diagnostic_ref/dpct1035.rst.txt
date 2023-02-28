@@ -1,4 +1,4 @@
-.. _id_DPCT1035:
+.. _DPCT1035:
 
 DPCT1035
 ========
@@ -16,7 +16,7 @@ adjust this code.
 Detailed Help
 -------------
 
-In SYCL, the host can freely submit tasks to all SYCL devices. There’s no
+In SYCL\*, the host can freely submit tasks to all SYCL devices. There’s no
 need to check for device compute mode.
 
 Suggestions to Fix

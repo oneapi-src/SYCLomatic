@@ -1,7 +1,9 @@
-.. _id_DPCT1066:
+.. _DPCT1066:
 
 DPCT1066
 ========
+
+.. include:: deprecated-msg.txt
 
 Message
 -------

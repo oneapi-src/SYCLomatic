@@ -1,4 +1,4 @@
-.. _id_DPCT1033:
+.. _DPCT1033:
 
 DPCT1033
 ========
@@ -8,7 +8,7 @@ Message
 
 .. _msg-1033-start:
 
-Migrated code uses a basic Sobol generator. Initialize ``oneapi:mkl::rng::sobol``
+Migrated code uses a basic Sobol generator. Initialize ``oneapi::mkl::rng::sobol``
 generator with user-defined direction numbers to use it as Scrambled Sobol generator.
 
 .. _msg-1033-end:

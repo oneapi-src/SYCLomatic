@@ -1,4 +1,4 @@
-.. _id_DPCT1069:
+.. _DPCT1069:
 
 DPCT1069
 ========
@@ -10,7 +10,7 @@ Message
 
 The argument *<argument name>* of the kernel function contains virtual
 pointer(s), which cannot be dereferenced. Try to migrate the code with
-``\"usm-level=restricted\"``.
+``usm-level=restricted``.
 
 .. _msg-1069-end:
 

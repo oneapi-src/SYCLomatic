@@ -1,4 +1,4 @@
-.. _id_DPCT1041:
+.. _DPCT1041:
 
 DPCT1041
 ========
@@ -9,7 +9,8 @@ Message
 .. _msg-1041-start:
 
 SYCL uses exceptions to report errors, it does not use error codes. 0 is used
- instead of an error code in *<statement>*. You may need to rewrite this code.
+instead of an error code in *<statement name>* statement. You may need to rewrite
+this code.
 
 .. _msg-1041-end:
 
