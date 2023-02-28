@@ -91,31 +91,6 @@ FEATURE_REQUEST_FACTORY(
         CALL(MapNames::getDpctNamespace() + "sparse::optimize_csrsv", DEREF(0),
              ARG(1), ARG(2), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8)))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrsv,
-                        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-                            "cusparseScsrsv_solve",
-                            CALL(MapNames::getDpctNamespace() + "sparse::csrsv",
-                                 DEREF(0), ARG(1), ARG(2), ARG(4), ARG(8),
-                                 ARG(9), ARG(10)))))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrsv,
-                        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-                            "cusparseDcsrsv_solve",
-                            CALL(MapNames::getDpctNamespace() + "sparse::csrsv",
-                                 DEREF(0), ARG(1), ARG(2), ARG(4), ARG(8),
-                                 ARG(9), ARG(10)))))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrsv,
-                        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-                            "cusparseCcsrsv_solve",
-                            CALL(MapNames::getDpctNamespace() + "sparse::csrsv",
-                                 DEREF(0), ARG(1), ARG(2), ARG(4), ARG(8),
-                                 ARG(9), ARG(10)))))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrsv,
-                        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-                            "cusparseZcsrsv_solve",
-                            CALL(MapNames::getDpctNamespace() + "sparse::csrsv",
-                                 DEREF(0), ARG(1), ARG(2), ARG(4), ARG(8),
-                                 ARG(9), ARG(10)))))
-
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrmv,
                         ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
                             "cusparseScsrmv",

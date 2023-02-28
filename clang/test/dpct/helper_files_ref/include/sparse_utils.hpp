@@ -176,29 +176,6 @@ void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
   optimize_info_ptr->add_dependency(e);
 }
 
-template <typename T>
-void csrsv(sycl::queue &queue, oneapi::mkl::transpose trans, int row_col,
-           const T *alpha, const matrix_info info,
-           std::shared_ptr<optimize_info> optimize_info_ptr, const T *f, T *x) {
-  using Ty = typename dpct::DataType<T>::T2;
-  auto alpha_value = get_value(reinterpret_cast<const Ty *>(alpha), queue);
-  T *new_f;
-  dpct::dpct_malloc(new_f, sizeof(T) * row_col);
-  dpct::dpct_memcpy(queue, new_f, f, sizeof(T) * row_col,
-                    dpct::memcpy_direction::device_to_device);
-  auto data_x = detail::get_memory(x);
-  auto data_new_f = detail::get_memory(new_f);
-  oneapi::mkl::blas::row_major::scal(queue, row_col, alpha_value, data_new_f,
-                                     1);
-  sycl::event e;
-#ifndef DPCT_USM_LEVEL_NONE
-  e =
-#endif
-      oneapi::mkl::sparse::trsv(queue, info.get_uplo(), trans, info.get_diag(),
-                                matrix_handle, data_new_f, data_x);
-  optimize_info_ptr->add_dependency(e);
-  dpct::async_dpct_free({new_f}, {e}, queue);
-}
 } // namespace sparse
 } // namespace dpct
 
