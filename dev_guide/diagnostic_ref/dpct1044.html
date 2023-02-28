@@ -668,6 +668,31 @@
      DPCT1100
     </a>
    </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1101.html">
+     DPCT1101
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1102.html">
+     DPCT1102
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1103.html">
+     DPCT1103
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1104.html">
+     DPCT1104
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1106.html">
+     DPCT1106
+    </a>
+   </li>
   </ul>
  </li>
  <li class="toctree-l1">
@@ -947,17 +972,17 @@ is removed.</p>
 <p>If any of the typedef identifiers are referenced in the class definition, they
 should be replaced with the original template arguments.</p>
 <p>For example, the following code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="k">class</span><span class="w"> </span><span class="nc">C</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">thrust</span><span class="o">::</span><span class="n">unary_function</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="linenos">2</span><span class="w">  </span><span class="n">argument_type</span><span class="w"> </span><span class="n">arg_data</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">3</span><span class="w">  </span><span class="n">result_type</span><span class="w"> </span><span class="n">result_data</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">4</span><span class="p">};</span><span class="w"></span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="k">class</span><span class="w"> </span><span class="nc">C</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">thrust</span><span class="o">::</span><span class="n">unary_function</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">    </span><span class="n">argument_type</span><span class="w"> </span><span class="n">arg_data</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">    </span><span class="n">result_type</span><span class="w"> </span><span class="n">result_data</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">4</span><span class="w">  </span><span class="p">};</span><span class="w"></span>
 </pre></div>
 </div>
 <p>is rewritten as:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="k">class</span><span class="w"> </span><span class="nc">C</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="linenos">2</span><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">arg_data</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">3</span><span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="n">result_data</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">4</span><span class="p">};</span><span class="w"></span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="k">class</span><span class="w"> </span><span class="nc">C</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">arg_data</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">result_data</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">4</span><span class="w">  </span><span class="p">};</span><span class="w"></span>
 </pre></div>
 </div>
 </div>
@@ -995,9 +1020,6 @@ should be replaced with the original template arguments.</p>
     By Intel<br/>
   
       &copy; Copyright Intel Corporation.<br/>
-    <div class="extra_footer">
-      <p align="right"><a href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">Cookies</a></p>
-    </div>
 </p>
         </footer>
     </div>

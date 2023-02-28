@@ -668,6 +668,31 @@
      DPCT1100
     </a>
    </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1101.html">
+     DPCT1101
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1102.html">
+     DPCT1102
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1103.html">
+     DPCT1103
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1104.html">
+     DPCT1104
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1106.html">
+     DPCT1106
+    </a>
+   </li>
   </ul>
  </li>
  <li class="toctree-l1">
@@ -932,14 +957,14 @@ title="Print to PDF"
 <span id="id1"></span><h1>DPCT1051<a class="headerlink" href="#dpct1051" title="Permalink to this headline">#</a></h1>
 <div class="section" id="message">
 <h2>Message<a class="headerlink" href="#message" title="Permalink to this headline">#</a></h2>
-<p id="msg-1051-start">SYCL does not support the device property that would be functionally compatible
-with <em>&lt;property name&gt;</em>. It was migrated to <em>&lt;migrated token&gt;</em>. You may need
-to rewrite the code.</p>
+<p id="msg-1051-start">SYCL does not support a device property functionally compatible with <em>&lt;property name&gt;</em>.
+It was migrated to <em>&lt;migrated token&gt;</em>. You may need to adjust the value of
+<em>&lt;migrated token&gt;</em> for the specific device.</p>
 </div>
 <div class="section" id="detailed-help">
 <span id="msg-1051-end"></span><h2>Detailed Help<a class="headerlink" href="#detailed-help" title="Permalink to this headline">#</a></h2>
 <p>Not all CUDA* device properties currently have functionally compatible equivalents
-in SYCL. If such a property is detected and it is the integer type, it will be
+in SYCL*. If such a property is detected and it is the integer type, it will be
 migrated to -1. If it is the Boolean type, it will be migrated to false or true
 depending on the context.</p>
 </div>
@@ -983,9 +1008,6 @@ for help.</p>
     By Intel<br/>
   
       &copy; Copyright Intel Corporation.<br/>
-    <div class="extra_footer">
-      <p align="right"><a href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">Cookies</a></p>
-    </div>
 </p>
         </footer>
     </div>

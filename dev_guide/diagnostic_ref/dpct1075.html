@@ -668,6 +668,31 @@
      DPCT1100
     </a>
    </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1101.html">
+     DPCT1101
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1102.html">
+     DPCT1102
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1103.html">
+     DPCT1103
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1104.html">
+     DPCT1104
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1106.html">
+     DPCT1106
+    </a>
+   </li>
   </ul>
  </li>
  <li class="toctree-l1">
@@ -949,37 +974,31 @@ calls.</p></li>
 SYCLomatic could not deduce how to generate the correct set of commit
 calls.</p></li>
 </ol>
-<p>For example, this original code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="c1">// original code:</span>
-<span class="linenos">2</span>
-<span class="linenos">3</span><span class="n">cufftPlan1d</span><span class="p">(</span><span class="n">plan</span><span class="p">,</span><span class="w"> </span><span class="p">...);</span><span class="w"></span>
-<span class="linenos">4</span><span class="n">cufftExecR2C</span><span class="p">(</span><span class="n">plan</span><span class="p">,</span><span class="w"> </span><span class="p">...);</span><span class="w"> </span><span class="c1">// this call is using default stream</span>
-<span class="linenos">5</span><span class="n">cufftSetStream</span><span class="p">(</span><span class="n">plan</span><span class="p">,</span><span class="w"> </span><span class="n">s2</span><span class="p">);</span><span class="w"></span>
-<span class="linenos">6</span><span class="n">cufftExecR2C</span><span class="p">(</span><span class="n">plan</span><span class="p">,</span><span class="w"> </span><span class="p">...);</span><span class="w"> </span><span class="c1">// this call is using s2 stream</span>
+<p>For example, this original CUDA* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="n">cufftPlan1d</span><span class="p">(</span><span class="n">plan</span><span class="p">,</span><span class="w"> </span><span class="p">...);</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">  </span><span class="n">cufftExecR2C</span><span class="p">(</span><span class="n">plan</span><span class="p">,</span><span class="w"> </span><span class="p">...);</span><span class="w"> </span><span class="c1">// this call is using default stream</span>
+<span class="linenos">3</span><span class="w">  </span><span class="n">cufftSetStream</span><span class="p">(</span><span class="n">plan</span><span class="p">,</span><span class="w"> </span><span class="n">s2</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">4</span><span class="w">  </span><span class="n">cufftExecR2C</span><span class="p">(</span><span class="n">plan</span><span class="p">,</span><span class="w"> </span><span class="p">...);</span><span class="w"> </span><span class="c1">// this call is using s2 stream</span>
 </pre></div>
 </div>
-<p>results in the following migrated DPC++ code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="c1">// migrated DPC++ code:</span>
-<span class="linenos"> 2</span>
-<span class="linenos"> 3</span><span class="cm">/*</span>
-<span class="linenos"> 4</span><span class="cm">DPCT1075: Migration of cuFFT calls may be incorrect and requires review.</span>
-<span class="linenos"> 5</span><span class="cm">*/</span><span class="w"></span>
-<span class="linenos"> 6</span><span class="n">plan</span><span class="o">-&gt;</span><span class="n">commit</span><span class="p">(</span><span class="o">*</span><span class="n">s2</span><span class="p">);</span><span class="w"> </span><span class="c1">// wrong queue is used</span>
-<span class="linenos"> 7</span><span class="p">...</span><span class="w"></span>
-<span class="linenos"> 8</span><span class="n">dft</span><span class="o">::</span><span class="n">compute_forward</span><span class="w"> </span><span class="p">(...);</span><span class="w"></span>
-<span class="linenos"> 9</span><span class="p">...</span><span class="w">                                  </span><span class="c1">// missing commit call</span>
-<span class="linenos">10</span><span class="n">dft</span><span class="o">::</span><span class="n">compute_forward</span><span class="p">(...);</span><span class="w"></span>
+<p>results in the following migrated SYCL* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="cm">/*</span>
+<span class="linenos">2</span><span class="cm">  DPCT1075: Migration of cuFFT calls may be incorrect and requires review.</span>
+<span class="linenos">3</span><span class="cm">  */</span><span class="w"></span>
+<span class="linenos">4</span><span class="w">  </span><span class="n">plan</span><span class="o">-&gt;</span><span class="n">commit</span><span class="p">(</span><span class="o">*</span><span class="n">s2</span><span class="p">);</span><span class="w"> </span><span class="c1">// wrong queue is used</span>
+<span class="linenos">5</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos">6</span><span class="w">  </span><span class="n">dft</span><span class="o">::</span><span class="n">compute_forward</span><span class="w"> </span><span class="p">(...);</span><span class="w"></span>
+<span class="linenos">7</span><span class="w">  </span><span class="p">...</span><span class="w">                                  </span><span class="c1">// missing commit call</span>
+<span class="linenos">8</span><span class="w">  </span><span class="n">dft</span><span class="o">::</span><span class="n">compute_forward</span><span class="p">(...);</span><span class="w"></span>
 </pre></div>
 </div>
 <p>which is manually adjusted to:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="c1">// adjusted DPC++ code:</span>
-<span class="linenos">2</span>
-<span class="linenos">3</span><span class="n">plan</span><span class="o">-&gt;</span><span class="n">commit</span><span class="p">(</span><span class="n">dpct</span><span class="o">::</span><span class="n">get_default_queue</span><span class="p">());</span><span class="w"> </span><span class="c1">// using default queue</span>
-<span class="linenos">4</span><span class="p">...</span><span class="w"></span>
-<span class="linenos">5</span><span class="n">dft</span><span class="o">::</span><span class="n">compute_forward</span><span class="w"> </span><span class="p">(...);</span><span class="w"></span>
-<span class="linenos">6</span><span class="p">...</span><span class="w"></span>
-<span class="linenos">7</span><span class="n">plan</span><span class="o">-&gt;</span><span class="n">commit</span><span class="p">(</span><span class="o">*</span><span class="n">s2</span><span class="p">);</span><span class="w"> </span><span class="c1">// added new commit call with *s2 queue</span>
-<span class="linenos">8</span><span class="n">dft</span><span class="o">::</span><span class="n">compute_forward</span><span class="p">(...);</span><span class="w"></span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="n">plan</span><span class="o">-&gt;</span><span class="n">commit</span><span class="p">(</span><span class="n">dpct</span><span class="o">::</span><span class="n">get_default_queue</span><span class="p">());</span><span class="w"> </span><span class="c1">// using default queue</span>
+<span class="linenos">2</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">  </span><span class="n">dft</span><span class="o">::</span><span class="n">compute_forward</span><span class="w"> </span><span class="p">(...);</span><span class="w"></span>
+<span class="linenos">4</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos">5</span><span class="w">  </span><span class="n">plan</span><span class="o">-&gt;</span><span class="n">commit</span><span class="p">(</span><span class="o">*</span><span class="n">s2</span><span class="p">);</span><span class="w"> </span><span class="c1">// added new commit call with *s2 queue</span>
+<span class="linenos">6</span><span class="w">  </span><span class="n">dft</span><span class="o">::</span><span class="n">compute_forward</span><span class="p">(...);</span><span class="w"></span>
 </pre></div>
 </div>
 </div>
@@ -1025,9 +1044,6 @@ adding missing commit calls and adjusting queue parameters.</p>
     By Intel<br/>
   
       &copy; Copyright Intel Corporation.<br/>
-    <div class="extra_footer">
-      <p align="right"><a href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">Cookies</a></p>
-    </div>
 </p>
         </footer>
     </div>

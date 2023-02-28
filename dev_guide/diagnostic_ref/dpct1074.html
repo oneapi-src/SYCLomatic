@@ -668,6 +668,31 @@
      DPCT1100
     </a>
    </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1101.html">
+     DPCT1101
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1102.html">
+     DPCT1102
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1103.html">
+     DPCT1103
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1104.html">
+     DPCT1104
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1106.html">
+     DPCT1106
+    </a>
+   </li>
   </ul>
  </li>
  <li class="toctree-l1">
@@ -945,28 +970,22 @@ except coordinate normalization mode.</p>
 <div class="section" id="suggestions-to-fix">
 <h2>Suggestions to Fix<a class="headerlink" href="#suggestions-to-fix" title="Permalink to this headline">#</a></h2>
 <p>Adjust the code manually.</p>
-<p>For example, this original code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="c1">// original code:</span>
-<span class="linenos">2</span>
-<span class="linenos">3</span><span class="n">cuSetTexFlags</span><span class="p">(</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="n">CU_TRSF_NORMALIZED_COORDINATES</span><span class="p">);</span><span class="w"> </span><span class="c1">// Need manually fix the read code if the flag CU_TRSF_READ_AS_INTEGER is unset.</span>
-<span class="linenos">4</span><span class="p">...</span><span class="w"></span>
-<span class="linenos">5</span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tex2D</span><span class="p">(</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">);</span><span class="w"></span>
+<p>For example, this original CUDA* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="n">cuSetTexFlags</span><span class="p">(</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="n">CU_TRSF_NORMALIZED_COORDINATES</span><span class="p">);</span><span class="w"> </span><span class="c1">// Need manually fix the read code if the flag CU_TRSF_READ_AS_INTEGER is unset.</span>
+<span class="linenos">2</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">  </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tex2D</span><span class="p">(</span><span class="n">tex</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">);</span><span class="w"></span>
 </pre></div>
 </div>
-<p>results in the following migrated DPC++ code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="c1">// migrated DPC++ code:</span>
-<span class="linenos">2</span>
-<span class="linenos">3</span><span class="n">tex</span><span class="p">.</span><span class="n">set</span><span class="p">(</span><span class="n">sycl</span><span class="o">::</span><span class="n">coordinate_normalization_mode</span><span class="o">::</span><span class="n">normalized</span><span class="p">);</span><span class="w"></span>
-<span class="linenos">4</span><span class="p">...</span><span class="w"></span>
-<span class="linenos">5</span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tex</span><span class="p">.</span><span class="n">read</span><span class="p">(</span><span class="mf">0.5f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">);</span><span class="w"> </span><span class="c1">// data normalization does not match original code</span>
+<p>results in the following migrated SYCL code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="n">tex</span><span class="p">.</span><span class="n">set</span><span class="p">(</span><span class="n">sycl</span><span class="o">::</span><span class="n">coordinate_normalization_mode</span><span class="o">::</span><span class="n">normalized</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">  </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tex</span><span class="p">.</span><span class="n">read</span><span class="p">(</span><span class="mf">0.5f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">);</span><span class="w"> </span><span class="c1">// data normalization does not match original code</span>
 </pre></div>
 </div>
 <p>which is manually adjusted to:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="c1">// adjusted DPC++ code:</span>
-<span class="linenos">2</span>
-<span class="linenos">3</span><span class="n">tex</span><span class="p">.</span><span class="n">set</span><span class="p">(</span><span class="n">sycl</span><span class="o">::</span><span class="n">coordinate_normalization_mode</span><span class="o">::</span><span class="n">normalized</span><span class="p">);</span><span class="w"></span>
-<span class="linenos">4</span><span class="p">...</span><span class="w"></span>
-<span class="linenos">5</span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalization</span><span class="p">(</span><span class="n">tex</span><span class="p">.</span><span class="n">read</span><span class="p">(</span><span class="mf">0.5f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">));</span><span class="w"> </span><span class="c1">// Implement the function “normalization” to normalize the result data as required.</span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="n">tex</span><span class="p">.</span><span class="n">set</span><span class="p">(</span><span class="n">sycl</span><span class="o">::</span><span class="n">coordinate_normalization_mode</span><span class="o">::</span><span class="n">normalized</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">  </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">normalization</span><span class="p">(</span><span class="n">tex</span><span class="p">.</span><span class="n">read</span><span class="p">(</span><span class="mf">0.5f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">));</span><span class="w"> </span><span class="c1">// Implement the function “normalization” to normalize the result data as required.</span>
 </pre></div>
 </div>
 </div>
@@ -1004,9 +1023,6 @@ except coordinate normalization mode.</p>
     By Intel<br/>
   
       &copy; Copyright Intel Corporation.<br/>
-    <div class="extra_footer">
-      <p align="right"><a href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">Cookies</a></p>
-    </div>
 </p>
         </footer>
     </div>

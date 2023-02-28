@@ -668,6 +668,31 @@
      DPCT1100
     </a>
    </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1101.html">
+     DPCT1101
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1102.html">
+     DPCT1102
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1103.html">
+     DPCT1103
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1104.html">
+     DPCT1104
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1106.html">
+     DPCT1106
+    </a>
+   </li>
   </ul>
  </li>
  <li class="toctree-l1">
@@ -940,13 +965,13 @@ logic consuming the error code.</p>
 <span id="msg-1024-end"></span><h2>Detailed Help<a class="headerlink" href="#detailed-help" title="Permalink to this headline">#</a></h2>
 <p>This warning is generated in cases where in the original code, the CUDA* API call
 returns the error code, which is consumed by the program logic:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="n">handleError</span><span class="p">(</span><span class="n">cudaEventRecord</span><span class="p">(</span><span class="n">e</span><span class="p">));</span><span class="w"></span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">handleError</span><span class="p">(</span><span class="n">cudaEventRecord</span><span class="p">(</span><span class="n">e</span><span class="p">));</span><span class="w"></span>
 </pre></div>
 </div>
 <p>If in the resulting code the CUDA API call is replaced by the code, which does
 not return the error code, 0 is used as an input to the program logic, consuming
 the error code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="n">e_ct1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">clock</span><span class="p">(),</span><span class="w"> </span><span class="n">handleError</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">e_ct1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">clock</span><span class="p">(),</span><span class="w"> </span><span class="n">handleError</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
 </pre></div>
 </div>
 <p>The error handling code in that case must be verified and may require replacing
@@ -990,9 +1015,6 @@ it with exception handling code or removed completely.</p>
     By Intel<br/>
   
       &copy; Copyright Intel Corporation.<br/>
-    <div class="extra_footer">
-      <p align="right"><a href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">Cookies</a></p>
-    </div>
 </p>
         </footer>
     </div>

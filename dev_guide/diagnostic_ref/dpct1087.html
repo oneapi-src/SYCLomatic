@@ -668,6 +668,31 @@
      DPCT1100
     </a>
    </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1101.html">
+     DPCT1101
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1102.html">
+     DPCT1102
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1103.html">
+     DPCT1103
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1104.html">
+     DPCT1104
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1106.html">
+     DPCT1106
+    </a>
+   </li>
   </ul>
  </li>
  <li class="toctree-l1">
@@ -934,12 +959,12 @@ title="Print to PDF"
 <h2>Message<a class="headerlink" href="#message" title="Permalink to this headline">#</a></h2>
 <p id="msg-1087-start">SYCL currently does not support cross group synchronization. You can specify
 <code class="docutils literal notranslate"><span class="pre">--use-experimental-features=nd_range_barrier</span></code> to use the dpct helper function
-<code class="docutils literal notranslate"><span class="pre">nd_range_barrier</span></code> to migrate <code class="docutils literal notranslate"><span class="pre">&lt;grid</span> <span class="pre">type</span> <span class="pre">variable</span> <span class="pre">name&gt;.sync()</span></code>.</p>
+<code class="docutils literal notranslate"><span class="pre">nd_range_barrier</span></code> to migrate <code class="docutils literal notranslate"><span class="pre">&lt;synchronization</span> <span class="pre">API</span> <span class="pre">call&gt;</span></code>.</p>
 </div>
 <div class="section" id="detailed-help">
 <span id="msg-1087-end"></span><h2>Detailed Help<a class="headerlink" href="#detailed-help" title="Permalink to this headline">#</a></h2>
 <p>By default, the dpct helper function <code class="docutils literal notranslate"><span class="pre">nd_range_barrier</span></code> is not used to migrate
-CUDA grid level synchronization. To use <code class="docutils literal notranslate"><span class="pre">nd_range_barrier</span></code> to migrate CUDA
+CUDA* grid level synchronization. To use <code class="docutils literal notranslate"><span class="pre">nd_range_barrier</span></code> to migrate CUDA
 grid level synchronization, specify <code class="docutils literal notranslate"><span class="pre">--use-experimental-features=nd_range_barrier</span></code>
 in the migration command.</p>
 </div>
@@ -983,9 +1008,6 @@ synchronization.</p>
     By Intel<br/>
   
       &copy; Copyright Intel Corporation.<br/>
-    <div class="extra_footer">
-      <p align="right"><a href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">Cookies</a></p>
-    </div>
 </p>
         </footer>
     </div>
