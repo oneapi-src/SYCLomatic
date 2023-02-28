@@ -1,4 +1,4 @@
-.. _id_DPCT1036:
+.. _DPCT1036:
 
 DPCT1036
 ========
@@ -19,7 +19,7 @@ Detailed Help
 the *<type name>* type was not migrated.
 
 
-See :ref:`id_DPCT1028` for more details.
+See :ref:`DPCT1028` for more details.
 
 Suggestions to Fix
 ------------------
