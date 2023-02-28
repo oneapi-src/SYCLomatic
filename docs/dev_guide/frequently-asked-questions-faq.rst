@@ -351,3 +351,6 @@ output, which includes information about which paths the tool searches
 for includes. To add an additional path for the tool to use when
 searching for includes during migration, use the option
 ``--extra-arg="-I<extra include path>"`` in your migration command.
+Alternatively, if you are using a compilation database, then you can
+add ``-I<extra include path>`` to the compile command for the
+necessary files.
