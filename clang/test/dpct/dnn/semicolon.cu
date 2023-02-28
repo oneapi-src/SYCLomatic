@@ -3,6 +3,15 @@
 #include <cudnn.h>
 
 int main() {
+  // CHECK:      if (true) {
+  // CHECK-NEXT:   /*
+  // CHECK-NEXT:   DPCT1026:0: The call to cudnnDestroy was removed because this call is redundant in SYCL.
+  // CHECK-NEXT:   */
+  // CHECK-NEXT: }
+  if (true) {
+    cudnnDestroy(nullptr);
+  }
+
   // CHECK:      if (true)
   // CHECK-NEXT:   /*
   // CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to cudnnDestroy was removed because this call is redundant in SYCL.
