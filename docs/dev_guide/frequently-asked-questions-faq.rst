@@ -81,11 +81,11 @@ database depends on the optional [target] parameter. If you need to get the
 list of files corresponding to default build target, do not specify the [target]
 parameter.
 
-Also please make sure ccache (compiler cache) is disabled in your project. 
-If ccache is enabled, intercept-build cannot generate complete compilation database,
-since some compile commands may be skipped as the target object(s) may be already
-available in cache. You can disable ccache by following command before running
-intercept-build command.
+Make sure to disable ccache (compiler cache) in your project before using intercept-build.
+If ccache is enabled, intercept-build cannot generate the complete compilation database as
+some compile commands may be skipped if the target objects are already available in the cache.
+Use the following command to disable ccache before running the intercept-build command:
+
 .. code-block:: bash
 export CCACHE_DISABLE=1
 
