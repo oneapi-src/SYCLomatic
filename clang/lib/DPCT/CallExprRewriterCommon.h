@@ -1545,6 +1545,14 @@ public:
   }
 };
 
+class CheckIsMaskedSubGroupFunctionEnabled {
+public:
+  CheckIsMaskedSubGroupFunctionEnabled() {}
+  bool operator()(const CallExpr *C) {
+    return DpctGlobalInfo::useMaskedSubGroupFunction();
+  }
+};
+
 class CheckArgIsConstantIntWithValue {
   int value;
   int index;
