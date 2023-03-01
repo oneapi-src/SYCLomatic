@@ -3264,7 +3264,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
       makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::partition_copy(policy, ptr, ptr, ptr, ptr, pred);
         IFELSE_FACTORY_ENTRY(
           "thrust::partition_copy",
@@ -3304,7 +3304,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                     ARG("oneapi::dpl::execution::seq"),
                                     ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5)))))),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::partition_copy(policy, itr, itr, itr, itr, pred);
         CALL_FACTORY_ENTRY("thrust::partition_copy",
                           CALL("oneapi::dpl::partition_copy",
