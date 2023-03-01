@@ -143,14 +143,37 @@ namespace detail {
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 inline constexpr std::size_t library_data_size[] = {
-    sizeof(float),
-    sizeof(std::complex<float>),
-    sizeof(double),
-    sizeof(std::complex<double>),
-    sizeof(sycl::half),
-    sizeof(std::complex<sycl::half>),
-    sizeof(oneapi::mkl::bfloat16),
-    sizeof(std::complex<oneapi::mkl::bfloat16>),
+    8 * sizeof(float),                    // real_float
+    8 * sizeof(std::complex<float>),      // complex_float
+    8 * sizeof(double),                   // real_double
+    8 * sizeof(std::complex<double>),     // complex_double
+    8 * sizeof(sycl::half),               // real_half
+    8 * sizeof(std::complex<sycl::half>), // complex_half
+    16,                                   // real_bfloat16
+    16 * 2,                               // complex_bfloat16
+    4,                                    // real_int4
+    4 * 2,                                // complex_int4
+    4,                                    // real_uint4
+    4 * 2,                                // complex_uint4
+    8,                                    // real_int8
+    8 * 2,                                // complex_int8
+    8,                                    // real_uint8
+    8 * 2,                                // complex_uint8
+    16,                                   // real_int16
+    16 * 2,                               // complex_int16
+    16,                                   // real_uint16
+    16 * 2,                               // complex_uint16
+    32,                                   // real_int32
+    32 * 2,                               // complex_int32
+    32,                                   // real_uint32
+    32 * 2,                               // complex_uint32
+    64,                                   // real_int64
+    64 * 2,                               // complex_int64
+    64,                                   // real_uint64
+    64 * 2,                               // complex_uint64
+    8,                                    // real_int8_4
+    8,                                    // real_int8_32
+    8                                     // real_uint8_4
 };
 // DPCT_LABEL_END
 }

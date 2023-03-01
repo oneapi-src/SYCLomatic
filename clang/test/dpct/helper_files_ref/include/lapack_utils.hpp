@@ -436,14 +436,16 @@ private:
 std::size_t byte_to_element_number(std::size_t size_in_byte,
                                    dpct::library_data_t element_type) {
   return size_in_byte /
-         dpct::detail::library_data_size[static_cast<unsigned int>(
-             element_type)];
+         (dpct::detail::library_data_size[static_cast<unsigned int>(
+              element_type)] /
+          8);
 }
 std::size_t element_number_to_byte(std::size_t size_in_element,
                                    dpct::library_data_t element_type) {
   return size_in_element *
-         dpct::detail::library_data_size[static_cast<unsigned int>(
-             element_type)];
+         (dpct::detail::library_data_size[static_cast<unsigned int>(
+              element_type)] /
+          8);
 }
 
 inline oneapi::mkl::jobsvd char2jobsvd(signed char job) {
@@ -667,6 +669,7 @@ inline int getrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
 }
 
 /// Computes the LU factorization of a general m-by-n matrix.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q The queue where the routine should be executed.
 /// \param [in] m The number of rows in the matrix A.
 /// \param [in] n The number of columns in the matrix A.
@@ -698,6 +701,7 @@ inline int getrf(sycl::queue &q, std::int64_t m, std::int64_t n,
 
 /// Solves a system of linear equations with a LU-factored square coefficient
 /// matrix, with multiple right-hand sides.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q The queue where the routine should be executed.
 /// \param [in] trans Indicates the form of the linear equation.
 /// \param [in] n The order of the matrix A and the number of rows in matrix B.
@@ -746,6 +750,7 @@ inline int geqrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
 }
 
 /// Computes the QR factorization of a general m-by-n matrix.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q The queue where the routine should be executed.
 /// \param [in] m The number of rows in the matrix A.
 /// \param [in] n The number of columns in the matrix A.
@@ -983,6 +988,7 @@ inline int potrf_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
 
 /// Computes the Cholesky factorization of a symmetric (Hermitian)
 /// positive-definite matrix.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q The queue where the routine should be executed.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
 /// \param [in] n The number of columns in the matrix A.
@@ -1006,6 +1012,7 @@ inline int potrf(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
 
 /// Solves a system of linear equations with a Cholesky-factored symmetric
 /// (Hermitian) positive-definite coefficient matrix.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q The queue where the routine should be executed.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
 /// \param [in] n The order of the matrix A and the number of rows in matrix B.
