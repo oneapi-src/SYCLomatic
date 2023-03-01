@@ -712,8 +712,8 @@ T1 atomic_compare_exchange_strong(
     sycl::memory_order fail = sycl::memory_order::relaxed) {
   auto atm =
       sycl::atomic_ref<T1, memoryOrder, memoryScope, addressSpace>(*addr);
-
-  atm.compare_exchange_strong(expected, desired, success, fail);
+  T1 expected_value = expected;
+  atm.compare_exchange_strong(expected_value, desired, success, fail);
   return expected;
 }
 
@@ -750,9 +750,10 @@ T1 atomic_compare_exchange_strong(
     T1 *addr, T2 expected, T3 desired,
     sycl::memory_order success = sycl::memory_order::relaxed,
     sycl::memory_order fail = sycl::memory_order::relaxed) {
+  T1 expected_value = expected;
   auto atm =
       sycl::atomic_ref<T1, memoryOrder, memoryScope, addressSpace>(addr[0]);
-  atm.compare_exchange_strong(expected, desired, success, fail);
+  atm.compare_exchange_strong(expected_value, desired, success, fail);
   return expected;
 }
 // DPCT_LABEL_END
