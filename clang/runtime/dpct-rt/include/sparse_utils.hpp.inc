@@ -92,8 +92,8 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
            T *y) {
   using Ty = typename dpct::DataType<T>::T2;
   static_assert(
-      std::disjunction_v<std::is_same<Ty, std::complex<float>>,
-                         std::is_same<Ty, std::complex<double>>>,
+      std::disjunction_v<std::is_same<Ty, float>,
+                         std::is_same<Ty, double>>,
       "Unimplemented functionality: oneapi::mkl::sparse::optimize_gemv/gemv, "
       "oneapi::mkl::sparse::symv and oneapi::mkl::sparse::optimize_trmv/trmv "
       "currently do not support complex data types");
@@ -161,8 +161,8 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
            const int *row_ptr, const int *col_ind, T *b, int ldb, const T *beta,
            T *c, int ldc) {
   using Ty = typename dpct::DataType<T>::T2;
-  static_assert(std::disjunction_v<std::is_same<Ty, std::complex<float>>,
-                                   std::is_same<Ty, std::complex<double>>>,
+  static_assert(std::disjunction_v<std::is_same<Ty, float>,
+                                   std::is_same<Ty, double>>,
                 "Unimplemented functionality: oneapi::mkl::sparse::gemm "
                 "currently does not support complex data types");
   auto alpha_value =
@@ -239,8 +239,8 @@ void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
                     std::shared_ptr<optimize_info> optimize_info_ptr) {
   using Ty = typename dpct::DataType<T>::T2;
   static_assert(
-      std::disjunction_v<std::is_same<Ty, std::complex<float>>,
-                         std::is_same<Ty, std::complex<double>>>,
+      std::disjunction_v<std::is_same<Ty, float>,
+                         std::is_same<Ty, double>>,
       "Unimplemented functionality: oneapi::mkl::sparse::optimize_trsv "
       "currently does not support complex data types");
   auto data_row_ptr = detail::get_memory(const_cast<int *>(row_ptr));
