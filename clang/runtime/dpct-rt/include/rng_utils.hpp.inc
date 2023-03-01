@@ -273,7 +273,7 @@ public:
 // DPCT_CODE
   /// Set the queue of host rng_generator.
   /// \param queue The engine queue.
-  virtual void set_queue(const sycl::queue &queue) = 0;
+  virtual void set_queue(sycl::queue *queue) = 0;
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|rng_generator_base_generate_uniform_bits_uint|dpct::rng::host
@@ -383,7 +383,7 @@ public:
 // DPCT_LABEL_END
 
 protected:
-  sycl::queue _queue{dpct::get_default_queue()};
+  sycl::queue *_queue{&dpct::get_default_queue()};
   std::uint64_t _seed{0};
   std::uint32_t _dimensions{1};
 // DPCT_LABEL_BEGIN|rng_generator_base_1|dpct::rng::host
@@ -452,7 +452,7 @@ public:
 // DPCT_CODE
   /// Set the queue of host rng_generator.
   /// \param queue The engine queue.
-  void set_queue(const sycl::queue &queue) {
+  void set_queue(sycl::queue *queue) {
     if (queue == _queue) {
       return;
     }
@@ -615,12 +615,12 @@ private:
 // DPCT_LABEL_BEGIN|rng_generator_host_creat_engine|dpct::rng::host
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-  static inline engine_t creat_engine(const sycl::queue &queue,
+  static inline engine_t creat_engine(sycl::queue *queue,
                                       const std::uint64_t seed,
                                       const std::uint32_t dimensions) {
     return std::is_same_v<engine_t, oneapi::mkl::rng::sobol>
-               ? engine_t(queue, dimensions)
-               : engine_t(queue, seed);
+               ? engine_t(*queue, dimensions)
+               : engine_t(*queue, seed);
   }
 // DPCT_LABEL_END
 
