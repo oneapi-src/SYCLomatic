@@ -87,7 +87,8 @@ some compile commands may be skipped if the target objects are already available
 Use the following command to disable ccache before running the intercept-build command:
 
 .. code-block:: bash
-export CCACHE_DISABLE=1
+
+   export CCACHE_DISABLE=1
 
 **How do I use the migrated module file in the new project?**
 
