@@ -348,9 +348,15 @@ is adjusted to avoid a bit shift that is greater than the type length:
 
 Use the option ``--extra-arg=-v`` to prompt |tool_name| to use verbose
 output, which includes information about which paths the tool searches
-for includes. To add an additional path for the tool to use when
-searching for includes during migration, use the option
-``--extra-arg="-I<extra include path>"`` in your migration command.
-Alternatively, if you are using a compilation database, then you can
-add ``-I<extra include path>`` to the compile command for the
-necessary files.
+for includes.
+
+You can provide an additional path to look for includes in one of the following
+ways:
+
+* Use the ``--extra-arg="-I<extra include path>"`` option in your migration command
+  to specify an additional path for the tool to use when searching for includes
+  during migration.
+
+* If you are using a compilation database, add the ``-I<extra include path>``
+  option to the compile command in the database for the source files, to 
+  specify the include path.
