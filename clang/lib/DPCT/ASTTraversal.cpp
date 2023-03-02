@@ -2433,6 +2433,9 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD) {
   auto SD = getAllDecls(DD);
 
   auto replaceInitParam = [&](const clang::Expr *replExpr) {
+    if (auto type = DpctGlobalInfo::getUnqualifiedTypeName(replExpr->getType());
+        !(type == "CUstream" || type == "cudaStream_t"))
+      return;
     if (!replExpr)
       return;
     if (isDefaultStream(replExpr)) {

@@ -191,7 +191,7 @@ public:
 
   /// Set the queue of host rng_generator.
   /// \param queue The engine queue.
-  virtual void set_queue(const sycl::queue &queue) = 0;
+  virtual void set_queue(sycl::queue *queue) = 0;
 
   /// Generate unsigned int random number(s) with 'uniform_bits' distribution.
   /// \param output The pointer of the first random number.
@@ -260,7 +260,7 @@ public:
   virtual void skip_ahead(const std::uint64_t num_to_skip) = 0;
 
 protected:
-  sycl::queue _queue{dpct::get_default_queue()};
+  sycl::queue *_queue{&dpct::get_default_queue()};
   std::uint64_t _seed{0};
   std::uint32_t _dimensions{1};
 };
@@ -294,7 +294,7 @@ public:
 
   /// Set the queue of host rng_generator.
   /// \param queue The engine queue.
-  void set_queue(const sycl::queue &queue) {
+  void set_queue(sycl::queue *queue) {
     if (queue == _queue) {
       return;
     }
@@ -395,12 +395,12 @@ public:
   }
 
 private:
-  static inline engine_t creat_engine(const sycl::queue &queue,
+  static inline engine_t creat_engine(sycl::queue *queue,
                                       const std::uint64_t seed,
                                       const std::uint32_t dimensions) {
     return std::is_same_v<engine_t, oneapi::mkl::rng::sobol>
-               ? engine_t(queue, dimensions)
-               : engine_t(queue, seed);
+               ? engine_t(*queue, dimensions)
+               : engine_t(*queue, seed);
   }
 
   template <typename distr_t, typename buffer_t, class... distr_params_t>
