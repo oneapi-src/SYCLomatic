@@ -167,11 +167,11 @@ float test_atanh(float a) { return atanh(a); }
 // CHECK: float test_hypot(float a, float b) { return hypot(a, b); }
 float test_hypot(float a, float b) { return hypot(a, b); }
 
-// CHECK: float test_norm3d(float a, float b, float c) { return norm3d(a, b, c); }
+// CHECK: float test_norm3d(float a, float b, float c) { return sycl::length(sycl::double3(a, b, c)); }
 float test_norm3d(float a, float b, float c) { return norm3d(a, b, c); }
 
 // CHECK: float test_norm4d(float a, float b, float c, float d) {
-// CHECK:   return norm4d(a, b, c, d);
+// CHECK:   return sycl::length(sycl::double4(a, b, c, d));
 // CHECK: }
 float test_norm4d(float a, float b, float c, float d) {
   return norm4d(a, b, c, d);
