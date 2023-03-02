@@ -1079,15 +1079,15 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
              FuncName == "scalbn" || FuncName == "scalbnf") {
     OS << MigratedArg0 << "*(2<<" << getMigratedArg(1) << ")";
   } else if (FuncName == "__double2hiint") {
-    requestFeature(HelperFeatureEnum::Util_cast_double_to_int, Call);
+    requestFeature(HelperFeatureEnum::Math_cast_double_to_int, Call);
     OS << MapNames::getDpctNamespace() << "cast_double_to_int(" << MigratedArg0
        << ")";
   } else if (FuncName == "__double2loint") {
-    requestFeature(HelperFeatureEnum::Util_cast_double_to_int, Call);
+    requestFeature(HelperFeatureEnum::Math_cast_double_to_int, Call);
     OS << MapNames::getDpctNamespace() << "cast_double_to_int(" << MigratedArg0
        << ", false)";
   } else if (FuncName == "__hiloint2double") {
-    requestFeature(HelperFeatureEnum::Util_cast_ints_to_double, Call);
+    requestFeature(HelperFeatureEnum::Math_cast_ints_to_double, Call);
     OS << MapNames::getDpctNamespace() << "cast_ints_to_double(" << MigratedArg0
        << ", " << getMigratedArg(1) << ")";
   } else if (FuncName == "__sad" || FuncName == "__usad") {
@@ -1143,12 +1143,12 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
            << "[2], " << MigratedArg1 << "[3]))";
         break;
       default:
-        requestFeature(HelperFeatureEnum::Util_fast_length, Call);
+        requestFeature(HelperFeatureEnum::Math_fast_length, Call);
         OS << MapNames::getDpctNamespace() << "fast_length("
            << "(float *)" << getMigratedArg(1) << ", " << MigratedArg0 << ")";
       }
     } else {
-      requestFeature(HelperFeatureEnum::Util_fast_length, Call);
+      requestFeature(HelperFeatureEnum::Math_fast_length, Call);
       OS << MapNames::getDpctNamespace() << "fast_length("
          << "(float *)" << getMigratedArg(1) << ", " << MigratedArg0 << ")";
     }

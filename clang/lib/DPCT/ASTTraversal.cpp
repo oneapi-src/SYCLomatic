@@ -12060,19 +12060,19 @@ void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
   if (FD) {
     std::string Name = FD->getNameInfo().getName().getAsString();
     if (Name == "__brev" || Name == "__brevll") {
-      requestFeature(HelperFeatureEnum::Util_reverse_bits, CE);
+      requestFeature(HelperFeatureEnum::Math_reverse_bits, CE);
     } else if (Name == "__vmaxs4" || Name == "__vmaxu2") {
-      requestFeature(HelperFeatureEnum::Util_vectorized_max, CE);
+      requestFeature(HelperFeatureEnum::Math_vectorized_max, CE);
     } else if (Name == "__vminu2" || Name == "__vminu4") {
-      requestFeature(HelperFeatureEnum::Util_vectorized_min, CE);
+      requestFeature(HelperFeatureEnum::Math_vectorized_min, CE);
     } else if (Name == "__vcmpgtu2" || Name == "__vcmpgtu4") {
-      requestFeature(HelperFeatureEnum::Util_vectorized_isgreater_T, CE);
-      requestFeature(HelperFeatureEnum::Util_vectorized_isgreater_unsigned,
+      requestFeature(HelperFeatureEnum::Math_vectorized_isgreater_T, CE);
+      requestFeature(HelperFeatureEnum::Math_vectorized_isgreater_unsigned,
                      CE);
     } else if (Name == "__byte_perm") {
-      requestFeature(HelperFeatureEnum::Util_byte_level_permute, CE);
+      requestFeature(HelperFeatureEnum::Math_byte_level_permute, CE);
     } else if (Name == "__ffs" || Name == "__ffsll") {
-      requestFeature(HelperFeatureEnum::Util_ffs, CE);
+      requestFeature(HelperFeatureEnum::Math_ffs, CE);
     }
   }
 }

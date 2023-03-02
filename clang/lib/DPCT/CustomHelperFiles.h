@@ -120,6 +120,7 @@ extern const std::string DeviceAllContentStr;
 extern const std::string DplUtilsAllContentStr;
 extern const std::string ImageAllContentStr;
 extern const std::string KernelAllContentStr;
+extern const std::string MathAllContentStr;
 extern const std::string MemoryAllContentStr;
 extern const std::string UtilAllContentStr;
 extern const std::string RngUtilsAllContentStr;
