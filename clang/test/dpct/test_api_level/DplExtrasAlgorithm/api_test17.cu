@@ -10,6 +10,7 @@
 
 #include <thrust/functional.h>
 #include <thrust/partition.h>
+#include <thrust/host_vector.h>
 
 template <typename T> struct is_even {
   __host__ __device__ bool operator()(T x) const { return ((int)x % 2) == 0; }
@@ -21,7 +22,6 @@ int main() {
   const int N = sizeof(data) / sizeof(int);
   int *evens = result;
   int *odds = result + N / 2;
-  thrust::partition_copy(thrust::host, data, data + N, evens, odds,
-                         is_even<int>());
+  thrust::partition_copy(data, data + N, evens, odds,is_even<int>());
   return 0;
 }
