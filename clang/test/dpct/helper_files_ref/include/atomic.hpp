@@ -637,7 +637,7 @@ T1 atomic_compare_exchange_strong(
       sycl::atomic_ref<T1, memoryOrder, memoryScope, addressSpace>(*addr);
   T1 expected_value = expected;
   atm.compare_exchange_strong(expected_value, desired, success, fail);
-  return expected;
+  return expected_value;
 }
 
 /// Atomically compare the value at \p addr to the value expected and exchange
@@ -677,7 +677,7 @@ T1 atomic_compare_exchange_strong(
   auto atm =
       sycl::atomic_ref<T1, memoryOrder, memoryScope, addressSpace>(addr[0]);
   atm.compare_exchange_strong(expected_value, desired, success, fail);
-  return expected;
+  return expected_value;
 }
 
 /// Atomic extension to implement standard APIs in std::atomic
