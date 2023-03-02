@@ -2271,6 +2271,7 @@ public:
 // DPCT_LABEL_BEGIN|dropout_desc_def|dpct::dnnl
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
+inline
 void dropout_desc::restore(engine_ext &engine, float p, void *state,
                            size_t state_size, unsigned long long seed) {
   _p = p;
@@ -2286,6 +2287,7 @@ void dropout_desc::restore(engine_ext &engine, float p, void *state,
   }
 }
 
+inline
 void dropout_desc::set(engine_ext &engine, float p, void *state,
                        size_t state_size, unsigned long long seed) {
   _p = p;
@@ -4934,6 +4936,7 @@ sycl::event engine_ext::async_rnn_backward(
 // DnnlUtils|dropout_get_state_size_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+inline
 size_t engine_ext::dropout_get_state_size(){
   auto rng_engine = oneapi::mkl::rng::philox4x32x10(*_q, 0ull);
   return oneapi::mkl::rng::get_state_size(rng_engine);
@@ -4945,6 +4948,7 @@ size_t engine_ext::dropout_get_state_size(){
 // DnnlUtils|async_dropout_forward_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+inline
 sycl::event engine_ext::async_dropout_forward(const dropout_desc &desc,
                                               const memory_desc_ext &src_desc,
                                               void *src,
@@ -4986,6 +4990,7 @@ sycl::event engine_ext::async_dropout_forward(const dropout_desc &desc,
 // DnnlUtils|async_dropout_backward_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+inline
 sycl::event engine_ext::async_dropout_backward(
     const dropout_desc &desc, const memory_desc_ext &diff_dst_desc,
     void *diff_dst, const memory_desc_ext &diff_src_desc, void *diff_src,
