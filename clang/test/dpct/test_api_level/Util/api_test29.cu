@@ -1,3 +1,5 @@
+// UNSUPPORTED: cuda-8.0
+// UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none  --usm-level=none --use-experimental-features=masked_sub_group_function --use-custom-helper=api -out-root %T/Util/api_test29_out %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: grep "IsCalled" %T/Util/api_test29_out/MainSourceFiles.yaml | wc -l > %T/Util/api_test29_out/count.txt
 // RUN: FileCheck --input-file %T/Util/api_test29_out/count.txt --match-full-lines %s
@@ -17,7 +19,7 @@ __device__ void foo1() {
     result = __shfl_sync(mask, a, src);
 }
 
-__device__ void foo1() {
+__device__ void foo2() {
     int a;
     int result;
     unsigned mask;
@@ -25,7 +27,7 @@ __device__ void foo1() {
     result = __shfl_up_sync(mask, a, delta);
 }
 
-__device__ void foo1() {
+__device__ void foo3() {
     int a;
     int result;
     unsigned mask;
@@ -33,7 +35,7 @@ __device__ void foo1() {
     result = __shfl_down_sync(mask, a, delta);
 }
 
-__device__ void foo1() {
+__device__ void foo4() {
     int a;
     int result;
     unsigned mask;
