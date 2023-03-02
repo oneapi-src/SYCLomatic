@@ -128,10 +128,9 @@ The following steps show how to migrate the Vector Add sample using |tool_name|:
    The ``--in-root`` option specifies the root location of the program sources
    that should be migrated. Only files and folders located within the
    ``--in-root`` directory will be considered for migration by the tool. Files
-   located outside the ``--in-root`` directory are considered system files and
-   will not be migrated, even if they are included by a source file located within
-   the ``--in-root`` directory. By default, the migrated files are created in a
-   new folder named ``dpct_output``.
+   located outside the ``--in-root`` directory  will not be migrated, even if
+   they are included by a source file located within the ``--in-root`` directory.
+   By default, the migrated files are created in a new folder named ``dpct_output``.
 
 #. As a result of the migration command, you should see the new SYCL source file
    in the output folder:
