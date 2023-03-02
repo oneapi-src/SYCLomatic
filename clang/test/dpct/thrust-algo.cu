@@ -803,6 +803,7 @@ void partition_copy_test() {
   thrust::device_vector<int> device_S(S, S + N);
 
 
+<<<<<<< HEAD
 // CHECK:    oneapi::dpl::partition_copy(oneapi::dpl::execution::seq, data, data + N, evens, odds, is_even());
 // CHECK-NEXT:  oneapi::dpl::partition_copy(oneapi::dpl::execution::seq, host_a.begin(), host_a.begin() + N, host_evens.begin(), host_odds.begin(), is_even());
 // CHECK-NEXT:  oneapi::dpl::partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_a.begin(), device_a.begin() + N, device_evens.begin(), device_odds.begin(), is_even());
@@ -828,3 +829,31 @@ void partition_copy_test() {
   thrust::partition_copy(host_a.begin(), host_a.begin() + N, host_S.begin(), host_evens.begin(), host_odds.begin(), is_even());
   thrust::partition_copy(device_a.begin(), device_a.begin() + N, device_S.begin(), device_evens.begin(), device_odds.begin(), is_even());
 }
+=======
+// CHECK:    dpct::stable_partition_copy(oneapi::dpl::execution::seq, data, data + N, evens, odds, is_even());
+// CHECK-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::seq, host_a.begin(), host_a.begin() + N, host_evens.begin(), host_odds.begin(), is_even());
+// CHECK-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_a.begin(), device_a.begin() + N, device_evens.begin(), device_odds.begin(), is_even());
+// CHECK-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::seq, data, data + N, evens, odds, is_even());
+// CHECK-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::seq, host_a.begin(), host_a.begin() + N, host_evens.begin(), host_odds.begin(), is_even());
+// CHECK-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_a.begin(), device_a.begin() + N, device_evens.begin(), device_odds.begin(), is_even());
+// CHECK-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::seq, data, data + N, S, evens, odds, is_even());
+// CHECK-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::seq, host_a.begin(), host_a.begin() + N, host_S.begin(), host_evens.begin(), host_odds.begin(), is_even());
+// CHECK-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_a.begin(), device_a.begin() + N, device_S.begin(), device_evens.begin(), device_odds.begin(), is_even());
+// CHECK-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::seq, data, data + N, S, evens, odds, is_even());
+// CHECK-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::seq, host_a.begin(), host_a.begin() + N, host_S.begin(), host_evens.begin(), host_odds.begin(), is_even());
+// CHECK-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_a.begin(), device_a.begin() + N, device_S.begin(), device_evens.begin(), device_odds.begin(), is_even());
+  thrust::stable_partition_copy(thrust::host, data, data + N, evens, odds, is_even());
+  thrust::stable_partition_copy(thrust::host, host_a.begin(), host_a.begin() + N, host_evens.begin(), host_odds.begin(), is_even());
+  thrust::stable_partition_copy(thrust::device, device_a.begin(), device_a.begin() + N, device_evens.begin(), device_odds.begin(), is_even());
+  thrust::stable_partition_copy(data, data + N, evens, odds, is_even());
+  thrust::stable_partition_copy(host_a.begin(), host_a.begin() + N, host_evens.begin(), host_odds.begin(), is_even());
+  thrust::stable_partition_copy(device_a.begin(), device_a.begin() + N, device_evens.begin(), device_odds.begin(), is_even());
+  thrust::stable_partition_copy(thrust::host, data, data + N, S, evens, odds, is_even());
+  thrust::stable_partition_copy(thrust::host, host_a.begin(), host_a.begin() + N, host_S.begin(), host_evens.begin(), host_odds.begin(), is_even());
+  thrust::stable_partition_copy(thrust::device, device_a.begin(), device_a.begin() + N, device_S.begin(), device_evens.begin(), device_odds.begin(), is_even());
+  thrust::stable_partition_copy(data, data + N, S, evens, odds, is_even());
+  thrust::stable_partition_copy(host_a.begin(), host_a.begin() + N, host_S.begin(), host_evens.begin(), host_odds.begin(), is_even());
+  thrust::stable_partition_copy(device_a.begin(), device_a.begin() + N, device_S.begin(), device_evens.begin(), device_odds.begin(), is_even());
+}
+
+>>>>>>> Add lit test
