@@ -1002,7 +1002,7 @@ configure_file(
 if (NOT CLANG_BUILT_STANDALONE)
   if(WIN32)
     list(APPEND DPCT_RUN
-      install-dpct-pattern-rewriter
+      #install-dpct-pattern-rewriter
       install-dpct-headers
       install-clang-resource-headers
       install-dpct-binary
@@ -1013,7 +1013,7 @@ if (NOT CLANG_BUILT_STANDALONE)
   else()
     list(APPEND DPCT_RUN
       install-dpct-intercept-build
-      install-dpct-pattern-rewriter
+      #install-dpct-pattern-rewriter
       install-dpct-headers
       install-clang-resource-headers
       install-dpct-binary

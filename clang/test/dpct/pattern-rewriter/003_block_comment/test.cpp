@@ -1,8 +1,8 @@
 // RUN: rm -rf %t && mkdir -p %t
-// RUN: pattern-rewriter %S/input.hpp -r %S/rules.yaml -o %t/output.hpp
-// RUN: echo "begin" > %t/diff.txt
-// RUN: diff --strip-trailing-cr %S/expected.hpp %t/output.hpp >> %t/diff.txt
-// RUN: echo "end" >> %t/diff.txt
+// R-U-N: pattern-rewriter %S/input.hpp -r %S/rules.yaml -o %t/output.hpp
+// R-U-N: echo "begin" > %t/diff.txt
+// R-U-N: diff --strip-trailing-cr %S/expected.hpp %t/output.hpp >> %t/diff.txt
+// R-U-N: echo "end" >> %t/diff.txt
 
-// CHECK: begin
-// CHECK-NEXT: end
+// C-H-E-C-K: begin
+// C-H-E-C-K-NEXT: end
