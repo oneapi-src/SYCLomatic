@@ -425,13 +425,17 @@ namespace detail {
 // DPCT_CODE
 template <template <typename> typename functor_t, typename... args_t>
 inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
-                       std::string const &lapack_api_name, args_t... args) {
+                       std::string const &lapack_api_name, args_t &&...args) {
   auto handle_lapack_exception = [&](const oneapi::mkl::lapack::exception &e) {
     std::cerr << "Unexpected exception caught during call to LAPACK API: "
               << lapack_api_name << std::endl
               << "reason: " << e.what() << std::endl
               << "info: " << e.info() << std::endl
               << "detail: " << e.detail() << std::endl;
+    if (e.info() < std::numeric_limits<int>::min() ||
+        e.info() > std::numeric_limits<int>::max()) {
+      throw std::runtime_error("e.info() exceeds the limit of int type");
+    }
     int info_val = static_cast<int>(e.info());
     if (info)
       dpct::detail::dpct_memcpy(q, info, &info_val, sizeof(int),
@@ -442,24 +446,23 @@ inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
   try {
     switch (a_type) {
     case library_data_t::real_float: {
-      functor_t<float>()(args...);
+      functor_t<float>()(std::forward<args_t>(args)...);
       break;
     }
     case library_data_t::real_double: {
-      functor_t<double>()(args...);
+      functor_t<double>()(std::forward<args_t>(args)...);
       break;
     }
     case library_data_t::complex_float: {
-      functor_t<std::complex<float>>()(args...);
+      functor_t<std::complex<float>>()(std::forward<args_t>(args)...);
       break;
     }
     case library_data_t::complex_double: {
-      functor_t<std::complex<double>>()(args...);
+      functor_t<std::complex<double>>()(std::forward<args_t>(args)...);
       break;
     }
     default:
-      throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
-                            "the data type is unsupported");
+      throw std::runtime_error("the data type is unsupported");
     }
   } catch (oneapi::mkl::lapack::batch_error const &be) {
     try {
@@ -489,7 +492,7 @@ inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
 // DPCT_CODE
 template <typename T> class working_memory {
 public:
-  working_memory(size_t element_number, sycl::queue q) : _q(q) {
+  working_memory(std::size_t element_number, const sycl::queue &q) : _q(q) {
     _ptr = dpct::detail::dpct_malloc(element_number * sizeof(T), _q);
   }
   auto get_memory() {
@@ -517,17 +520,26 @@ private:
 // DPCT_CODE
 std::size_t byte_to_element_number(std::size_t size_in_byte,
                                    dpct::library_data_t element_type) {
-  return size_in_byte /
-         (dpct::detail::library_data_size[static_cast<unsigned int>(
-              element_type)] /
+  auto dv = std::lldiv(
+      size_in_byte,
+      dpct::detail::library_data_size[static_cast<unsigned int>(element_type)] /
           8);
+  if (dv.rem) {
+    throw std::runtime_error(
+        "size_in_byte is not divisible by the size of element (in bytes)");
+  }
+  return dv.quot;
 }
 std::size_t element_number_to_byte(std::size_t size_in_element,
                                    dpct::library_data_t element_type) {
-  return size_in_element *
-         (dpct::detail::library_data_size[static_cast<unsigned int>(
-              element_type)] /
-          8);
+  auto dv = std::lldiv(
+      dpct::detail::library_data_size[static_cast<unsigned int>(element_type)],
+      8);
+  if (dv.rem) {
+    throw std::runtime_error(
+        "the size of element (in bits) is not divisible by 8");
+  }
+  return size_in_element * dv.quot;
 }
 // DPCT_LABEL_END
 
@@ -545,8 +557,7 @@ inline oneapi::mkl::jobsvd char2jobsvd(signed char job) {
   case 'N':
     return oneapi::mkl::jobsvd::novec;
   default:
-    throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
-                          "the job type is unsupported");
+    throw std::runtime_error("the job type is unsupported");
   }
 }
 // DPCT_LABEL_END
@@ -559,7 +570,7 @@ inline oneapi::mkl::jobsvd char2jobsvd(signed char job) {
 template <typename T> struct getrf_scratchpad_size_impl {
   void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
                   library_data_t a_type, std::int64_t lda,
-                  size_t *device_ws_size) {
+                  std::size_t *device_ws_size) {
     *device_ws_size =
         oneapi::mkl::lapack::getrf_scratchpad_size<T>(q, m, n, lda);
   }
@@ -576,8 +587,8 @@ template <typename T> struct getrf_scratchpad_size_impl {
 template <typename T> struct getrf_impl {
   void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
                   library_data_t a_type, void *a, std::int64_t lda,
-                  std::int64_t *ipiv, void *device_ws, size_t device_ws_size,
-                  int *info) {
+                  std::int64_t *ipiv, void *device_ws,
+                  std::size_t device_ws_size, int *info) {
     auto ipiv_data = dpct::detail::get_memory(ipiv);
     auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
     auto device_ws_data =
@@ -625,7 +636,7 @@ template <typename T> struct getrs_impl {
 template <typename T> struct geqrf_scratchpad_size_impl {
   void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
                   library_data_t a_type, std::int64_t lda,
-                  size_t *device_ws_size) {
+                  std::size_t *device_ws_size) {
     *device_ws_size =
         oneapi::mkl::lapack::geqrf_scratchpad_size<T>(q, m, n, lda);
   }
@@ -643,7 +654,7 @@ template <typename T> struct geqrf_impl {
   void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
                   library_data_t a_type, void *a, std::int64_t lda,
                   library_data_t tau_type, void *tau, void *device_ws,
-                  size_t device_ws_size, int *info) {
+                  std::size_t device_ws_size, int *info) {
     auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
     auto tau_data = dpct::detail::get_memory(reinterpret_cast<T *>(tau));
     auto device_ws_data =
@@ -665,8 +676,8 @@ template <typename T> struct geqrf_impl {
 template <typename T> struct getrfnp_impl {
   void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
                   library_data_t a_type, void *a, std::int64_t lda,
-                  std::int64_t *ipiv, void *device_ws, size_t device_ws_size,
-                  int *info) {
+                  std::int64_t *ipiv, void *device_ws,
+                  std::size_t device_ws_size, int *info) {
     std::int64_t a_stride = m * lda;
     auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
     auto device_ws_data =
@@ -689,7 +700,7 @@ template <typename T> struct gesvd_scratchpad_size_impl {
                   library_data_t a_type, std::int64_t lda,
                   library_data_t u_type, std::int64_t ldu,
                   library_data_t vt_type, std::int64_t ldvt,
-                  size_t *device_ws_size) {
+                  std::size_t *device_ws_size) {
     *device_ws_size = oneapi::mkl::lapack::gesvd_scratchpad_size<T>(
         q, jobu, jobvt, m, n, lda, ldu, ldvt);
   }
@@ -715,8 +726,8 @@ template <typename T> struct gesvd_impl {
                   library_data_t a_type, void *a, std::int64_t lda,
                   library_data_t s_type, void *s, library_data_t u_type,
                   void *u, std::int64_t ldu, library_data_t vt_type, void *vt,
-                  std::int64_t ldvt, void *device_ws, size_t device_ws_size,
-                  int *info) {
+                  std::int64_t ldvt, void *device_ws,
+                  std::size_t device_ws_size, int *info) {
     auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
     auto s_data = dpct::detail::get_memory(
         reinterpret_cast<typename ElementType<T>::value_tpye *>(s));
@@ -736,8 +747,8 @@ template <typename T> struct gesvd_conj_impl : public gesvd_impl<T> {
                   library_data_t a_type, void *a, std::int64_t lda,
                   library_data_t s_type, void *s, library_data_t u_type,
                   void *u, std::int64_t ldu, library_data_t vt_type, void *vt,
-                  std::int64_t ldvt, void *device_ws, size_t device_ws_size,
-                  int *info) {
+                  std::int64_t ldvt, void *device_ws,
+                  std::size_t device_ws_size, int *info) {
     using base = gesvd_impl<T>;
     base::operator()(q, jobu, jobvt, m, n, a_type, a, lda, s_type, s, u_type, u,
                      ldu, vt_type, vt, ldvt, device_ws, device_ws_size, info);
@@ -757,7 +768,7 @@ template <typename T> struct gesvd_conj_impl : public gesvd_impl<T> {
 template <typename T> struct potrf_scratchpad_size_impl {
   void operator()(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                   library_data_t a_type, std::int64_t lda,
-                  size_t *device_ws_size) {
+                  std::size_t *device_ws_size) {
     *device_ws_size =
         oneapi::mkl::lapack::potrf_scratchpad_size<T>(q, uplo, n, lda);
   }
@@ -774,7 +785,7 @@ template <typename T> struct potrf_scratchpad_size_impl {
 template <typename T> struct potrf_impl {
   void operator()(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                   library_data_t a_type, void *a, std::int64_t lda,
-                  void *device_ws, size_t device_ws_size, int *info) {
+                  void *device_ws, std::size_t device_ws_size, int *info) {
     auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
     auto device_ws_data =
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
@@ -832,8 +843,8 @@ template <typename T> struct potrs_impl {
 /// value is always zero.
 inline int getrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
                                  library_data_t a_type, std::int64_t lda,
-                                 size_t *device_ws_size,
-                                 size_t *host_ws_size = nullptr) {
+                                 std::size_t *device_ws_size,
+                                 std::size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
   std::size_t device_ws_size_tmp;
@@ -870,8 +881,8 @@ inline int getrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
 /// returned from info() method of the exception is set to \p info.
 inline int getrf(sycl::queue &q, std::int64_t m, std::int64_t n,
                  library_data_t a_type, void *a, std::int64_t lda,
-                 std::int64_t *ipiv, void *device_ws, size_t device_ws_size,
-                 int *info) {
+                 std::int64_t *ipiv, void *device_ws,
+                 std::size_t device_ws_size, int *info) {
   std::size_t device_ws_size_in_element_number =
       detail::byte_to_element_number(device_ws_size, a_type);
   if (ipiv == nullptr) {
@@ -938,8 +949,8 @@ inline int getrs(sycl::queue &q, oneapi::mkl::transpose trans, std::int64_t n,
 /// value is always zero.
 inline int geqrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
                                  library_data_t a_type, std::int64_t lda,
-                                 size_t *device_ws_size,
-                                 size_t *host_ws_size = nullptr) {
+                                 std::size_t *device_ws_size,
+                                 std::size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
   std::size_t device_ws_size_tmp;
@@ -976,7 +987,7 @@ inline int geqrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
 inline int geqrf(sycl::queue &q, std::int64_t m, std::int64_t n,
                  library_data_t a_type, void *a, std::int64_t lda,
                  library_data_t tau_type, void *tau, void *device_ws,
-                 size_t device_ws_size, int *info) {
+                 std::size_t device_ws_size, int *info) {
   std::size_t device_ws_size_in_element_number =
       detail::byte_to_element_number(device_ws_size, a_type);
   return detail::lapack_shim<detail::geqrf_impl>(
@@ -1018,8 +1029,8 @@ inline int gesvd_scratchpad_size(sycl::queue &q, signed char jobu,
                                  std::int64_t n, library_data_t a_type,
                                  std::int64_t lda, library_data_t u_type,
                                  std::int64_t ldu, library_data_t vt_type,
-                                 std::int64_t ldvt, size_t *device_ws_size,
-                                 size_t *host_ws_size = nullptr) {
+                                 std::int64_t ldvt, std::size_t *device_ws_size,
+                                 std::size_t *host_ws_size = nullptr) {
   oneapi::mkl::jobsvd jobu_enum = detail::char2jobsvd(jobu);
   oneapi::mkl::jobsvd jobvt_enum = detail::char2jobsvd(jobvt);
   if (host_ws_size)
@@ -1058,7 +1069,7 @@ inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
                                  std::int64_t lda, library_data_t u_type,
                                  std::int64_t ldu, library_data_t vt_type,
                                  std::int64_t ldvt, int *device_ws_size,
-                                 size_t *host_ws_size = nullptr) {
+                                 std::size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
   oneapi::mkl::jobsvd jobu;
@@ -1072,8 +1083,7 @@ inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
   } else if (jobz == oneapi::mkl::job::novec) {
     jobu = jobvt = oneapi::mkl::jobsvd::novec;
   } else {
-    throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
-                          "the job type is unsupported");
+    throw std::runtime_error("the job type is unsupported");
   }
   std::size_t device_ws_size_64;
   int ret = detail::lapack_shim<detail::gesvd_scratchpad_size_impl>(
@@ -1120,13 +1130,12 @@ inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
 /// \param [in] device_ws_size The workspace size in bytes.
 /// \param [out] info If lapack synchronous exception is caught, the value
 /// returned from info() method of the exception is set to \p info.
-inline int gesvd(sycl::queue &q, signed char jobu,
-                 signed char jobvt, std::int64_t m, std::int64_t n,
-                 library_data_t a_type, void *a, std::int64_t lda,
-                 library_data_t s_type, void *s, library_data_t u_type, void *u,
-                 std::int64_t ldu, library_data_t vt_type, void *vt,
-                 std::int64_t ldvt, void *device_ws, size_t device_ws_size,
-                 int *info) {
+inline int gesvd(sycl::queue &q, signed char jobu, signed char jobvt,
+                 std::int64_t m, std::int64_t n, library_data_t a_type, void *a,
+                 std::int64_t lda, library_data_t s_type, void *s,
+                 library_data_t u_type, void *u, std::int64_t ldu,
+                 library_data_t vt_type, void *vt, std::int64_t ldvt,
+                 void *device_ws, std::size_t device_ws_size, int *info) {
   oneapi::mkl::jobsvd jobu_enum = detail::char2jobsvd(jobu);
   oneapi::mkl::jobsvd jobvt_enum = detail::char2jobsvd(jobvt);
   std::size_t device_ws_size_in_element_number =
@@ -1168,7 +1177,7 @@ inline int gesvd(sycl::queue &q, oneapi::mkl::job jobz, std::int64_t all_vec,
                  std::int64_t lda, library_data_t s_type, void *s,
                  library_data_t u_type, void *u, std::int64_t ldu,
                  library_data_t vt_type, void *vt, std::int64_t ldvt,
-                 void *device_ws, size_t device_ws_size, int *info) {
+                 void *device_ws, std::size_t device_ws_size, int *info) {
   oneapi::mkl::jobsvd jobu;
   oneapi::mkl::jobsvd jobvt;
   if (jobz == oneapi::mkl::job::vec) {
@@ -1180,8 +1189,7 @@ inline int gesvd(sycl::queue &q, oneapi::mkl::job jobz, std::int64_t all_vec,
   } else if (jobz == oneapi::mkl::job::novec) {
     jobu = jobvt = oneapi::mkl::jobsvd::novec;
   } else {
-    throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
-                          "the job type is unsupported");
+    throw std::runtime_error("the job type is unsupported");
   }
 
   detail::lapack_shim<detail::gesvd_conj_impl>(
@@ -1210,8 +1218,8 @@ inline int gesvd(sycl::queue &q, oneapi::mkl::job jobz, std::int64_t all_vec,
 /// value is always zero.
 inline int potrf_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
                                  std::int64_t n, library_data_t a_type,
-                                 std::int64_t lda, size_t *device_ws_size,
-                                 size_t *host_ws_size = nullptr) {
+                                 std::int64_t lda, std::size_t *device_ws_size,
+                                 std::size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
   std::size_t device_ws_size_tmp;
@@ -1246,7 +1254,7 @@ inline int potrf_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
 /// returned from info() method of the exception is set to \p info.
 inline int potrf(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                  library_data_t a_type, void *a, std::int64_t lda,
-                 void *device_ws, size_t device_ws_size, int *info) {
+                 void *device_ws, std::size_t device_ws_size, int *info) {
   std::size_t device_ws_size_in_element_number =
       detail::byte_to_element_number(device_ws_size, a_type);
   return detail::lapack_shim<detail::potrf_impl>(
