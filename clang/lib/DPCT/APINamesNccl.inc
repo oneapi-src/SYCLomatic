@@ -33,6 +33,16 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("ncclCommCount", DEREF(1),
                                         MEMBER_CALL(ARG(0), true,
                                                     LITERAL("size"))))
 
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::Device_get_device_id,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "ncclCommCuDevice", DEREF(1),
+        CALL(MapNames::getDpctNamespace() + "get_device_id",
+             MEMBER_CALL(MEMBER_CALL(ARG(0), true, LITERAL("get_device")),
+                         false, LITERAL("get_native"))))))
+
+FEATURE_REQUEST_FACTORY(
+HelperFeatureEnum::CclUtils_communicator_ext_get_ccl_communicator,
 CONDITIONAL_FACTORY_ENTRY(
     CheckEnumArgStr(4, "ncclAvg"),
     UNSUPPORT_FACTORY_ENTRY("ncclAllReduce", Diagnostics::UNSUPPORTED_PARAM,
