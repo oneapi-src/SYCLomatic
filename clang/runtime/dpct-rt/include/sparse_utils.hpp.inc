@@ -88,6 +88,21 @@ private:
 // LibCommonUtils|get_memory
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+/// Computes a CSR format sparse matrix-dense vector product.
+/// y = alpha * op(A) * x + beta * y
+/// \param [in] queue The queue where the routine should be executed.
+/// \param [in] trans The operation applied to the matrix A.
+/// \param [in] num_rows Number of rows of the matrix A.
+/// \param [in] num_cols Number of columns of the matrix A.
+/// \param [in] alpha Scaling factor for the matrix A.
+/// \param [in] info Matrix info of the matrix A.
+/// \param [in] val An array containing the non-zero elements of the matrix A.
+/// \param [in] row_ptr An array of length \p num_rows + 1.
+/// \param [in] col_ind An array containing the column indices in index-based
+/// numbering.
+/// \param [in] x Data of the vector x.
+/// \param [in] beta Scaling factor for the vector x.
+/// \param [in, out] y Data of the vector y.
 template <typename T>
 void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
            int num_cols, const T *alpha,
@@ -161,6 +176,24 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
 // LibCommonUtils|get_memory
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+/// Computes a CSR format sparse matrix-dense matrix product.
+/// C = alpha * op(A) * B + beta * C
+/// \param [in] queue The queue where the routine should be executed.
+/// \param [in] trans The operation applied to the matrix A.
+/// \param [in] sparse_rows Number of rows of the matrix A.
+/// \param [in] dense_cols Number of columns of the matrix B or C.
+/// \param [in] sparse_cols Number of columns of the matrix A.
+/// \param [in] alpha Scaling factor for the matrix A.
+/// \param [in] info Matrix info of the matrix A.
+/// \param [in] val An array containing the non-zero elements of the matrix A.
+/// \param [in] row_ptr An array of length \p num_rows + 1.
+/// \param [in] col_ind An array containing the column indices in index-based
+/// numbering.
+/// \param [in] b Data of the matrix B.
+/// \param [in] ldb Leading dimension of the matrix B.
+/// \param [in] beta Scaling factor for the matrix B.
+/// \param [in, out] c Data of the matrix C.
+/// \param [in] ldc Leading dimension of the matrix C.
 template <typename T>
 void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
            int dense_cols, int sparse_cols, const T *alpha,
@@ -216,14 +249,20 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
 // DPCT_LABEL_BEGIN|optimize_info|dpct::sparse
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
+/// Saving the optimization information for solving a system of linear
+/// equations.
 class optimize_info {
 public:
+  /// Constructor
   optimize_info() { oneapi::mkl::sparse::init_matrix_handle(&_matrix_handle); }
+  /// Destructor
   ~optimize_info() {
     oneapi::mkl::sparse::release_matrix_handle(get_default_queue(),
                                                &_matrix_handle, _deps);
   }
+  /// Add dependency of destruction
   void add_dependency(sycl::event e) { _deps.push_back(e); }
+  /// Get the matrix handle
   oneapi::mkl::sparse::matrix_handle_t get_matrix_handle() {
     return _matrix_handle;
   }
@@ -242,6 +281,17 @@ private:
 // LibCommonUtils|get_memory
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+/// Performs internal optimizations for solving a system of linear equations for
+/// a CSR format sparse matrix.
+/// \param [in] queue The queue where the routine should be executed.
+/// \param [in] trans The operation applied to the sparse matrix.
+/// \param [in] row_col Number of rows of the sparse matrix.
+/// \param [in] info Matrix info of the sparse matrix.
+/// \param [in] val An array containing the non-zero elements of the sparse matrix.
+/// \param [in] row_ptr An array of length \p num_rows + 1.
+/// \param [in] col_ind An array containing the column indices in index-based
+/// numbering.
+/// \param [out] optimize_info The result of the optimizations.
 template <typename T>
 void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
                     int row_col, const std::shared_ptr<matrix_info> info,
