@@ -25,5 +25,5 @@ If the parameter is an engine type:
 Rewrite this code manually by using a supported random number generator. See the
 `Random Number Generators <https://software.intel.com/content/www/us/en/develop/documentation/oneapi-mkl-dpcpp-developer-reference/top/random-number-generators/manual-offload-rng-routines/engines-basic-random-number-generators.html>`_ topic for more information.
 
-If the parameter is a CUDA\* device attribute:
-Redesign the code logic to get rid of the usage of the device attribute.
+If the parameter is a CUDA device attribute:
+Redesign the code logic to remove use of the device attribute.
