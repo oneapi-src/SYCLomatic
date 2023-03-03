@@ -7,52 +7,52 @@
 //===----------------------------------------------------------------------===//
 
 // thrust::replace_copy_if
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(7), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::replace_copy_if, MapNames::getDpctNamespace()+"replace_copy_if", HelperFeatureEnum::DplExtrasAlgorithm_replace_copy_if, 6,4),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(6), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::replace_copy_if, "oneapi::dpl::replace_copy_if",                 NO_FEATURE,                                            5,3),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(6), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::replace_copy_if, MapNames::getDpctNamespace()+"replace_copy_if", HelperFeatureEnum::DplExtrasAlgorithm_replace_copy_if, 6,4),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(5), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::replace_copy_if, "oneapi::dpl::replace_copy_if",                 NO_FEATURE,                                            5,3),
-                                                                       OVERLOAD_UNSUPPORTED_WARNING_FACTORY("thrust::replace_copy_if")))))
+thrustFactory("thrust::replace_copy_if",
+              {{7,HasPolicy,4,MapNames::getDpctNamespace()+"replace_copy_if", HelperFeatureEnum::DplExtrasAlgorithm_replace_copy_if},
+               {6,HasPolicy,3,"oneapi::dpl::replace_copy_if",                 HelperFeatureEnum::no_feature_helper                 },
+               {6, NoPolicy,4,MapNames::getDpctNamespace()+"replace_copy_if", HelperFeatureEnum::DplExtrasAlgorithm_replace_copy_if},
+               {5, NoPolicy,3,"oneapi::dpl::replace_copy_if",                 HelperFeatureEnum::no_feature_helper                 }}),
 
 // thrust::replace_if
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(6), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::replace_if, MapNames::getDpctNamespace()+"replace_if", HelperFeatureEnum::DplExtrasAlgorithm_replace_if, 5,3),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(5), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::replace_if, "oneapi::dpl::replace_if",                 NO_FEATURE,                                       4,2),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(5), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::replace_if, MapNames::getDpctNamespace()+"replace_if", HelperFeatureEnum::DplExtrasAlgorithm_replace_if, 5,3),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(4), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::replace_if, "oneapi::dpl::replace_if",                 NO_FEATURE,                                       4,2),
-                                                                       OVERLOAD_UNSUPPORTED_WARNING_FACTORY("thrust::replace_if")))))
+thrustFactory("thrust::replace_if",
+              {{6,HasPolicy,3,MapNames::getDpctNamespace()+"replace_if", HelperFeatureEnum::DplExtrasAlgorithm_replace_if},
+               {5,HasPolicy,2,"oneapi::dpl::replace_if",                 HelperFeatureEnum::no_feature_helper            },
+               {5, NoPolicy,3,MapNames::getDpctNamespace()+"replace_if", HelperFeatureEnum::DplExtrasAlgorithm_replace_if},
+               {4, NoPolicy,2,"oneapi::dpl::replace_if",                 HelperFeatureEnum::no_feature_helper            }}),
 
 // thrust::remove_copy_if
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(6), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::remove_copy_if, MapNames::getDpctNamespace()+"remove_copy_if", HelperFeatureEnum::DplExtrasAlgorithm_remove_copy_if, 5,4),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(5), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::remove_copy_if, "oneapi::dpl::remove_copy_if",                 NO_FEATURE,                                           4,3),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(5), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::remove_copy_if, MapNames::getDpctNamespace()+"remove_copy_if", HelperFeatureEnum::DplExtrasAlgorithm_remove_copy_if, 5,4),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(4), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::remove_copy_if, "oneapi::dpl::remove_copy_if",                 NO_FEATURE,                                           4,3),
-                                                                       OVERLOAD_UNSUPPORTED_WARNING_FACTORY("thrust::remove_copy_if")))))
+thrustFactory("thrust::remove_copy_if",
+              {{6,HasPolicy,4,MapNames::getDpctNamespace()+"remove_copy_if", HelperFeatureEnum::DplExtrasAlgorithm_remove_copy_if},
+               {5,HasPolicy,3,"oneapi::dpl::remove_copy_if",                 HelperFeatureEnum::no_feature_helper                 },
+               {5, NoPolicy,4,MapNames::getDpctNamespace()+"remove_copy_if", HelperFeatureEnum::DplExtrasAlgorithm_remove_copy_if},
+               {4, NoPolicy,3,"oneapi::dpl::remove_copy_if",                 HelperFeatureEnum::no_feature_helper                 }}),
 
 // thrust::remove_if
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(5), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::remove_if, MapNames::getDpctNamespace()+"remove_if", HelperFeatureEnum::DplExtrasAlgorithm_remove_if, 4,3),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(4), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::remove_if, "oneapi::dpl::remove_if",                 NO_FEATURE,                                      3,2),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(4), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::remove_if, MapNames::getDpctNamespace()+"remove_if", HelperFeatureEnum::DplExtrasAlgorithm_remove_if, 4,3),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(3), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::remove_if, "oneapi::dpl::remove_if",                 NO_FEATURE,                                      3,2),
-                                                                       OVERLOAD_UNSUPPORTED_WARNING_FACTORY("thrust::remove_if")))))
+thrustFactory("thrust::remove_if",
+              {{5,HasPolicy,3,MapNames::getDpctNamespace()+"remove_if", HelperFeatureEnum::DplExtrasAlgorithm_remove_if},
+               {4,HasPolicy,2,"oneapi::dpl::remove_if",                 HelperFeatureEnum::no_feature_helper            },
+               {4, NoPolicy,3,MapNames::getDpctNamespace()+"remove_if", HelperFeatureEnum::DplExtrasAlgorithm_remove_if},
+               {3, NoPolicy,2,"oneapi::dpl::remove_if",                 HelperFeatureEnum::no_feature_helper            }}),
 
 // thrust::not1
 CALL_FACTORY_ENTRY("thrust::not1", CALL("oneapi::dpl::not1", ARG(0)))
 
 // thrust::any_of
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(4), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::any_of, "oneapi::dpl::any_of", NO_FEATURE, 3,2),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(3), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::any_of, "oneapi::dpl::any_of", NO_FEATURE, 3,2),
-                                                                       OVERLOAD_UNSUPPORTED_WARNING_FACTORY("thrust::any_of")))
+thrustFactory("thrust::any_of",
+              {{4,HasPolicy,2,"oneapi::dpl::any_of", HelperFeatureEnum::no_feature_helper },
+               {3, NoPolicy,2,"oneapi::dpl::any_of", HelperFeatureEnum::no_feature_helper }}),
 
 // thrust::replace
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(5), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::replace, "oneapi::dpl::replace", NO_FEATURE, 4,2),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(4), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::replace, "oneapi::dpl::replace", NO_FEATURE, 4,2),
-                                                                       OVERLOAD_UNSUPPORTED_WARNING_FACTORY("thrust::replace")))
+thrustFactory("thrust::replace",
+              {{5,HasPolicy,2,"oneapi::dpl::replace", HelperFeatureEnum::no_feature_helper },
+               {4, NoPolicy,2,"oneapi::dpl::replace", HelperFeatureEnum::no_feature_helper }}),
 
 // thrust::adjacent_difference
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(5), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::adjacent_difference, "oneapi::dpl::adjacent_difference", NO_FEATURE, 4,3),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(4), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::adjacent_difference, "oneapi::dpl::adjacent_difference", NO_FEATURE, 3,3),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(4), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::adjacent_difference, "oneapi::dpl::adjacent_difference", NO_FEATURE, 4,3),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(3), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::adjacent_difference, "oneapi::dpl::adjacent_difference", NO_FEATURE, 3,3),
-                                                                       OVERLOAD_UNSUPPORTED_WARNING_FACTORY("thrust::adjacent_difference")))))
+thrustFactory("thrust::adjacent_difference",
+              {{5,HasPolicy,3,"oneapi::dpl::adjacent_difference", HelperFeatureEnum::no_feature_helper },
+               {4,HasPolicy,3,"oneapi::dpl::adjacent_difference", HelperFeatureEnum::no_feature_helper },
+               {4, NoPolicy,3,"oneapi::dpl::adjacent_difference", HelperFeatureEnum::no_feature_helper },
+               {3, NoPolicy,3,"oneapi::dpl::adjacent_difference", HelperFeatureEnum::no_feature_helper }}),
 
 // thrust::inclusive_scan
 CONDITIONAL_FACTORY_ENTRY(

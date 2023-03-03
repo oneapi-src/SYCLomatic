@@ -105,6 +105,186 @@ makeMappedThrustPolicyEnum(unsigned Idx) {
   };
 }
 
+#define ARGS1(INDEX) ARG(INDEX)
+#define ARGS2(INDEX) ARGS1(INDEX), ARGS1(INDEX+1)
+#define ARGS3(INDEX) ARGS1(INDEX), ARGS2(INDEX+1)
+#define ARGS4(INDEX) ARGS1(INDEX), ARGS3(INDEX+1)
+#define ARGS5(INDEX) ARGS1(INDEX), ARGS4(INDEX+1)
+#define ARGS6(INDEX) ARGS1(INDEX), ARGS5(INDEX+1)
+#define ARGS7(INDEX) ARGS1(INDEX), ARGS6(INDEX+1)
+
+#define TEMPLATED_ARGS1(INDEX) CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(INDEX)), ARG(INDEX))
+#define TEMPLATED_ARGS2(INDEX) TEMPLATED_ARGS1(INDEX), TEMPLATED_ARGS1(INDEX+1)
+#define TEMPLATED_ARGS3(INDEX) TEMPLATED_ARGS1(INDEX), TEMPLATED_ARGS2(INDEX+1)
+#define TEMPLATED_ARGS4(INDEX) TEMPLATED_ARGS1(INDEX), TEMPLATED_ARGS3(INDEX+1)
+#define TEMPLATED_ARGS5(INDEX) TEMPLATED_ARGS1(INDEX), TEMPLATED_ARGS4(INDEX+1)
+#define TEMPLATED_ARGS6(INDEX) TEMPLATED_ARGS1(INDEX), TEMPLATED_ARGS5(INDEX+1)
+#define TEMPLATED_ARGS7(INDEX) TEMPLATED_ARGS1(INDEX), TEMPLATED_ARGS6(INDEX+1)
+
+enum PolicyState : bool {
+  HasPolicy=true,
+  NoPolicy=false
+};
+
+typedef struct thrust_overload {
+  int               argCnt;
+  PolicyState       hasPolicy;
+  int               ptrCnt;
+  std::string       migratedFunc;
+  HelperFeatureEnum feature;
+} ThrustOverload;
+
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>> thrustFactory(const std::string &thrustFunc, std::vector<ThrustOverload> overloads);
+
+auto createSequentialPolicyCallExprRewriterFactory(const std::string &thrustFunc, const std::string &syclFunc, int argCnt, PolicyState hasPolicy) {
+
+  int argStart=0;
+
+  if (hasPolicy) {
+    // Skip policy argument
+    argCnt--;
+    argStart=1;
+  }
+
+  assert (argCnt<=7);
+
+  if (argCnt==0) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,ARG("oneapi::dpl::execution::seq")));
+  else if (argCnt==1) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,ARG("oneapi::dpl::execution::seq"),ARGS1(argStart)));
+  else if (argCnt==2) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,ARG("oneapi::dpl::execution::seq"),ARGS2(argStart)));
+  else if (argCnt==3) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,ARG("oneapi::dpl::execution::seq"),ARGS3(argStart)));
+  else if (argCnt==4) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,ARG("oneapi::dpl::execution::seq"),ARGS4(argStart)));
+  else if (argCnt==5) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,ARG("oneapi::dpl::execution::seq"),ARGS5(argStart)));
+  else if (argCnt==6) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,ARG("oneapi::dpl::execution::seq"),ARGS6(argStart)));
+
+  // argCnt==7
+  return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,ARG("oneapi::dpl::execution::seq"),ARGS7(argStart)));
+}
+
+auto createMappedPolicyCallExprRewriterFactory(const std::string &thrustFunc, const std::string &syclFunc, int argCnt) {
+
+  // Skip policy argument
+  int argStart=1;
+  argCnt--;
+
+  auto mappedPolicy = makeMappedThrustPolicyEnum(0);
+
+  assert (argCnt<=7);
+
+  if (argCnt==0) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc, mappedPolicy));
+  else if (argCnt==1) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc, mappedPolicy, ARGS1(argStart)));
+  else if (argCnt==2) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc, mappedPolicy, ARGS2(argStart)));
+  else if (argCnt==3) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc, mappedPolicy, ARGS3(argStart)));
+  else if (argCnt==4) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc, mappedPolicy, ARGS4(argStart)));
+  else if (argCnt==5) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc, mappedPolicy, ARGS5(argStart)));
+  else if (argCnt==6) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc, mappedPolicy, ARGS6(argStart)));
+
+  // argCnt==7
+  return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc, mappedPolicy, ARGS7(argStart)));
+}
+
+auto createDevicePolicyCallExprRewriterFactory(const std::string &thrustFunc, const std::string &syclFunc, int argCnt, int templatedCnt, PolicyState hasPolicy) {
+
+  auto makeDevicePolicy = makeCallExprCreator("oneapi::dpl::execution::make_device_policy", QUEUESTR);
+
+  int argStart=0;
+
+  if (hasPolicy) {
+    // Skip policy argument
+    argCnt--;
+    argStart=1;
+  }
+
+  assert (argCnt<=7);
+  assert (templatedCnt<=7);
+
+  if (argCnt==0) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy));
+  else if (argCnt==1)  {
+    if      (templatedCnt==0) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,                          ARGS1(argStart)));
+    else if (templatedCnt==1) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS1(argStart)));
+  } else if (argCnt==2)  {
+    if      (templatedCnt==0) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,                          ARGS2(argStart)));
+    else if (templatedCnt==1) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS1(argStart),ARGS1(argStart+1)));
+    else if (templatedCnt==2) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS2(argStart)));
+  } else if (argCnt==3)  {
+    if      (templatedCnt==0) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,                          ARGS3(argStart)));
+    else if (templatedCnt==1) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS1(argStart),ARGS2(argStart+1)));
+    else if (templatedCnt==2) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS2(argStart),ARGS1(argStart+2)));
+    else if (templatedCnt==3) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS3(argStart)));
+  } else if (argCnt==4)  {
+    if      (templatedCnt==0) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,                          ARGS4(argStart)));
+    else if (templatedCnt==1) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS1(argStart),ARGS3(argStart+1)));
+    else if (templatedCnt==2) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS2(argStart),ARGS2(argStart+2)));
+    else if (templatedCnt==3) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS3(argStart),ARGS1(argStart+3)));
+    else if (templatedCnt==4) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS4(argStart)));
+  } else if (argCnt==5)  {
+    if      (templatedCnt==0) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,                          ARGS5(argStart)));
+    else if (templatedCnt==1) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS1(argStart),ARGS4(argStart+1)));
+    else if (templatedCnt==2) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS2(argStart),ARGS3(argStart+2)));
+    else if (templatedCnt==3) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS3(argStart),ARGS2(argStart+3)));
+    else if (templatedCnt==4) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS4(argStart),ARGS1(argStart+4)));
+    else if (templatedCnt==5) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS5(argStart)));
+  } else if (argCnt==6)  {
+    if      (templatedCnt==0) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,                          ARGS6(argStart)));
+    else if (templatedCnt==1) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS1(argStart),ARGS5(argStart+1)));
+    else if (templatedCnt==2) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS2(argStart),ARGS4(argStart+2)));
+    else if (templatedCnt==3) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS3(argStart),ARGS3(argStart+3)));
+    else if (templatedCnt==4) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS4(argStart),ARGS2(argStart+4)));
+    else if (templatedCnt==5) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS5(argStart),ARGS1(argStart+5)));
+    else if (templatedCnt==6) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS6(argStart)));
+  }
+
+  // argCnt==7
+  if      (templatedCnt==0) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,                          ARGS7(argStart)));
+  else if (templatedCnt==1) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS1(argStart),ARGS6(argStart+1)));
+  else if (templatedCnt==2) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS2(argStart),ARGS5(argStart+2)));
+  else if (templatedCnt==3) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS3(argStart),ARGS4(argStart+3)));
+  else if (templatedCnt==4) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS4(argStart),ARGS3(argStart+4)));
+  else if (templatedCnt==5) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS5(argStart),ARGS2(argStart+5)));
+  else if (templatedCnt==6) return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS6(argStart),ARGS1(argStart+6)));
+
+  // templatedCnt==7
+  return createCallExprRewriterFactory(thrustFunc, makeCallExprCreator(syclFunc,makeDevicePolicy,TEMPLATED_ARGS7(argStart)));
+}
+
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>> thrustOverloadFactory(const std::string &thrustFunc, const ThrustOverload &overload) {
+  auto not_usm = createIfElseRewriterFactory(thrustFunc,
+                                             createFeatureRequestFactory(HelperFeatureEnum::Memory_is_device_ptr,
+                                                                         {thrustFunc, createCallExprRewriterFactory(thrustFunc,makeCallExprCreator(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))}),
+                                             createFeatureRequestFactory(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+                                                                         {thrustFunc, createDevicePolicyCallExprRewriterFactory(thrustFunc,overload.migratedFunc,overload.argCnt,overload.ptrCnt,overload.hasPolicy)}),
+                                             {thrustFunc, createSequentialPolicyCallExprRewriterFactory(thrustFunc,overload.migratedFunc,overload.argCnt,overload.hasPolicy)},
+                                             0);
+
+  auto usm = (overload.hasPolicy ?
+              std::pair{thrustFunc, createMappedPolicyCallExprRewriterFactory(thrustFunc,overload.migratedFunc,overload.argCnt)} :
+              createConditionalFactory(CheckArgType(1, "thrust::device_ptr"),
+                                       {thrustFunc, createDevicePolicyCallExprRewriterFactory(thrustFunc,overload.migratedFunc,overload.argCnt,0,overload.hasPolicy)},
+                                       {thrustFunc, createSequentialPolicyCallExprRewriterFactory(thrustFunc,overload.migratedFunc,overload.argCnt,overload.hasPolicy)}));
+
+  return createFeatureRequestFactory(overload.feature,
+                                     createConditionalFactory(makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+                                                              {thrustFunc, not_usm},
+                                                              std::move(usm)));
+}
+
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>> thrustFactory(const std::string &thrustFunc, std::vector<ThrustOverload> overloads) {
+
+  auto u = std::pair{thrustFunc,createUnsupportRewriterFactory(thrustFunc,Diagnostics::OVERLOAD_UNSUPPORTED,makeCallArgCreator(thrustFunc))};
+
+  for (auto it = overloads.rbegin(); it != overloads.rend(); it++) {
+    auto  c = (it->hasPolicy ?
+               createConditionalFactory(makeCheckAnd(CheckArgCount(it->argCnt),IsPolicyArgType(0)),
+                                        thrustOverloadFactory(thrustFunc,*it),
+                                        std::move(u)) :
+               createConditionalFactory(makeCheckAnd(CheckArgCount(it->argCnt),makeCheckNot(IsPolicyArgType(0))),
+                                        thrustOverloadFactory(thrustFunc,*it),
+                                        std::move(u)));
+    u = c;
+  }
+
+  return u;
+}
+
 #define THRUST_FUNCTOR(x) makeThrustFunctorArgCreator(x)
 #define REWRITER_FACTORY_ENTRY(FuncName, RewriterFactory, ...)                 \
   {FuncName, std::make_shared<RewriterFactory>(FuncName, __VA_ARGS__)},

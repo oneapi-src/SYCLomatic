@@ -102,9 +102,4 @@ template <int Arg> class dpct_kernel_scalar;
 #define DPCT_PI (3.141592653589793115998)
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|no_feature|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-// DPCT_LABEL_END
-
 #endif // __DPCT_HPP__
