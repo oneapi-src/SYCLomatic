@@ -783,3 +783,48 @@ void raw_reference_cast_test() {
   int &ref1 = thrust::raw_reference_cast(d_vec[0]);
   int &ref2 = thrust::raw_reference_cast(ref_const);
 }
+
+void partition_copy_test() {
+  int data[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  int S[] = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0};
+  int result[10];
+  const int N = sizeof(data) / sizeof(int);
+  int *evens = result;
+  int *odds = result + N / 2;
+
+  thrust::host_vector<int> host_a(data, data + N);
+  thrust::host_vector<int> host_evens(N / 2);
+  thrust::host_vector<int> host_odds(N / 2);
+
+  thrust::device_vector<int> device_a(data, data + N);
+  thrust::device_vector<int> device_evens(N / 2);
+  thrust::device_vector<int> device_odds(N / 2);
+  thrust::host_vector<int> host_S(S, S + N);
+  thrust::device_vector<int> device_S(S, S + N);
+
+
+// CHECK:    oneapi::dpl::partition_copy(oneapi::dpl::execution::seq, data, data + N, evens, odds, is_even());
+// CHECK-NEXT:  oneapi::dpl::partition_copy(oneapi::dpl::execution::seq, host_a.begin(), host_a.begin() + N, host_evens.begin(), host_odds.begin(), is_even());
+// CHECK-NEXT:  oneapi::dpl::partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_a.begin(), device_a.begin() + N, device_evens.begin(), device_odds.begin(), is_even());
+// CHECK-NEXT:  oneapi::dpl::partition_copy(oneapi::dpl::execution::seq, data, data + N, evens, odds, is_even());
+// CHECK-NEXT:  oneapi::dpl::partition_copy(oneapi::dpl::execution::seq, host_a.begin(), host_a.begin() + N, host_evens.begin(), host_odds.begin(), is_even());
+// CHECK-NEXT:  oneapi::dpl::partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_a.begin(), device_a.begin() + N, device_evens.begin(), device_odds.begin(), is_even());
+// CHECK-NEXT:  dpct::partition_copy(oneapi::dpl::execution::seq, data, data + N, S, evens, odds, is_even());
+// CHECK-NEXT:  dpct::partition_copy(oneapi::dpl::execution::seq, host_a.begin(), host_a.begin() + N, host_S.begin(), host_evens.begin(), host_odds.begin(), is_even());
+// CHECK-NEXT:  dpct::partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_a.begin(), device_a.begin() + N, device_S.begin(), device_evens.begin(), device_odds.begin(), is_even());
+// CHECK-NEXT:  dpct::partition_copy(oneapi::dpl::execution::seq, data, data + N, S, evens, odds, is_even());
+// CHECK-NEXT:  dpct::partition_copy(oneapi::dpl::execution::seq, host_a.begin(), host_a.begin() + N, host_S.begin(), host_evens.begin(), host_odds.begin(), is_even());
+// CHECK-NEXT:  dpct::partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_a.begin(), device_a.begin() + N, device_S.begin(), device_evens.begin(), device_odds.begin(), is_even());
+  thrust::partition_copy(thrust::host, data, data + N, evens, odds, is_even());
+  thrust::partition_copy(thrust::host, host_a.begin(), host_a.begin() + N, host_evens.begin(), host_odds.begin(), is_even());
+  thrust::partition_copy(thrust::device, device_a.begin(), device_a.begin() + N, device_evens.begin(), device_odds.begin(), is_even());
+  thrust::partition_copy(data, data + N, evens, odds, is_even());
+  thrust::partition_copy(host_a.begin(), host_a.begin() + N, host_evens.begin(), host_odds.begin(), is_even());
+  thrust::partition_copy(device_a.begin(), device_a.begin() + N, device_evens.begin(), device_odds.begin(), is_even());
+  thrust::partition_copy(thrust::host, data, data + N, S, evens, odds, is_even());
+  thrust::partition_copy(thrust::host, host_a.begin(), host_a.begin() + N, host_S.begin(), host_evens.begin(), host_odds.begin(), is_even());
+  thrust::partition_copy(thrust::device, device_a.begin(), device_a.begin() + N, device_S.begin(), device_evens.begin(), device_odds.begin(), is_even());
+  thrust::partition_copy(data, data + N, S, evens, odds, is_even());
+  thrust::partition_copy(host_a.begin(), host_a.begin() + N, host_S.begin(), host_evens.begin(), host_odds.begin(), is_even());
+  thrust::partition_copy(device_a.begin(), device_a.begin() + N, device_S.begin(), device_evens.begin(), device_odds.begin(), is_even());
+}

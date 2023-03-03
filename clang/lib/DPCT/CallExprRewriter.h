@@ -47,6 +47,7 @@ public:
   static void initRewriterMap();
   RulePriority Priority = RulePriority::Fallback;
 private:
+  static void initRewriterMapAtomic();
   static void initRewriterMapCUB();
   static void initRewriterMapCUFFT();
   static void initRewriterMapCUBLAS();
@@ -824,6 +825,22 @@ public:
   }
 };
 
+template <class NameT, class... TemplateArgsT> class CtadTemplatedNamePrinter {
+  NameT Name;
+  ArgsPrinter<false, TemplateArgsT...> TAs;
+public:
+  CtadTemplatedNamePrinter(NameT Name, TemplateArgsT &&...TAs)
+      : Name(Name), TAs(std::forward<TemplateArgsT>(TAs)...) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    dpct::print(Stream, Name);
+    if (!DpctGlobalInfo::isCtadEnabled()) {
+      Stream << "<";
+      TAs.print(Stream);
+      Stream << ">";
+    }
+  }
+};
+
 // Print a type with no template.
 template <class NameT> class TypeNamePrinter {
   NameT Name;
@@ -924,6 +941,24 @@ public:
     dpct::print(Stream, RVal);
   }
 };
+
+template <UnaryOperatorKind UO, class ArgValueT>
+class UnaryOperatorPrinter {
+  ArgValueT ArgValue;
+
+  static std::string UOStr;
+
+public:
+  UnaryOperatorPrinter(ArgValueT &&Arg)
+      : ArgValue(std::forward<ArgValueT>(Arg)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    Stream << UOStr;
+    dpct::print(Stream, ArgValue);
+  }
+};
+template <UnaryOperatorKind UO, class ArgValueT>
+std::string UnaryOperatorPrinter<UO, ArgValueT>::UOStr =
+    UnaryOperator::getOpcodeStr(UO).str();
 
 template <BinaryOperatorKind Op, class LValueT, class RValueT>
 std::string BinaryOperatorPrinter<Op, LValueT, RValueT>::OpStr =
@@ -1217,6 +1252,16 @@ public:
                    const std::function<RValueT(const CallExpr *)> &RCreator)
       : PrinterRewriter<BinaryOperatorPrinter<BO, LValueT, RValueT>>(
             C, Source, LCreator(C), RCreator(C)) {}
+};
+
+template <UnaryOperatorKind UO, class ArgValueT>
+class UnaryOpRewriter
+    : public PrinterRewriter<UnaryOperatorPrinter<UO, ArgValueT>> {
+public:
+  UnaryOpRewriter(const CallExpr *C, StringRef Source,
+                   const std::function<ArgValueT(const CallExpr *)> &ArgCreator)
+      : PrinterRewriter<UnaryOperatorPrinter<UO, ArgValueT>> (
+            C, Source, ArgCreator(C)) {}
 };
 
 class SubGroupPrinter {

@@ -84,6 +84,7 @@ struct make_allocatable<void>
 // DPCT_LABEL_BEGIN|__buffer_allocator|dpct::detail
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasMemory|make_allocatable
+// DplExtrasMemory|_DPCT_LIBSYCL_VERSION
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename _DataT>

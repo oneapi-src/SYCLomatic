@@ -226,7 +226,7 @@ class InsertText : public TextModification {
   unsigned PairID;
 
 public:
-  InsertText(SourceLocation Loc, std::string &&S, unsigned PairID = 0)
+  InsertText(SourceLocation Loc, const std::string &S, unsigned PairID = 0)
       : TextModification(TMID::InsertText), Begin(Loc), T(S), PairID(PairID) {}
   std::shared_ptr<ExtReplacement>
   getReplacement(const ASTContext &Context) const override;
@@ -273,17 +273,21 @@ class ReplaceStmt : public TextModification {
   // this macro will be removed also.
   mutable bool IsMacroRemoved = false;
 
+  static bool inCompoundStmt(const Stmt *E);
+
 public:
   template <class... Args>
   ReplaceStmt(const Stmt *E, Args &&...S)
       : TextModification(TMID::ReplaceStmt), TheStmt(E), IsProcessMacro(false),
-        ReplacementString(std::forward<Args>(S)...) {}
+        ReplacementString(std::forward<Args>(S)...),
+        IsCleanup(inCompoundStmt(E)) {}
 
   template <class... Args>
   ReplaceStmt(const Stmt *E, bool IsNeedProcessMacro, Args &&...S)
       : TextModification(TMID::ReplaceStmt), TheStmt(E),
         IsProcessMacro(IsNeedProcessMacro),
-        ReplacementString(std::forward<Args>(S)...) {}
+        ReplacementString(std::forward<Args>(S)...),
+        IsCleanup(inCompoundStmt(E)) {}
 
   template <class... Args>
   ReplaceStmt(const Stmt *E, bool IsNeedProcessMacro, bool IsNeedCleanup,

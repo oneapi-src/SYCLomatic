@@ -22,7 +22,6 @@ void curandErrCheck_(curandStatus_t stat, const char *file, int line) {
 
 
 int main() {
-    //CHECK:oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
     cublasHandle_t handle;
     int N = 275;
     float *d_A_S = 0;
@@ -54,7 +53,7 @@ int main() {
     cublasErrCheck(cublasGetStream(handle, &stream1));
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: cublasErrCheck([&](){
     // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
@@ -67,7 +66,7 @@ int main() {
 
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT: cublasErrCheck([&](){
     // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
@@ -112,7 +111,7 @@ int main() {
 
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT:cublasErrCheck([&](){
     // CHECK-NEXT:auto d_A_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(d_A_C);
@@ -124,7 +123,7 @@ int main() {
     cublasErrCheck(cublasCgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_C, d_A_C, N, d_B_C, N, &beta_C, d_C_C, N));
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    // CHECK-NEXT: DPCT1034:{{[0-9]+}}: Migrated API does not return an error code. 0 is returned in the lambda. You may need to rewrite this code.
     // CHECK-NEXT: */
     // CHECK-NEXT:cublasErrCheck([&](){
     // CHECK-NEXT:auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
@@ -159,20 +158,19 @@ int main() {
 
 
     float * __restrict__ d_data;
-    //CHECK:std::shared_ptr<oneapi::mkl::rng::philox4x32x10> rng;
-    //CHECK-NEXT:curandErrCheck((rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(dpct::get_default_queue(), 1337ull), 0));
+    //CHECK:dpct::rng::host_rng_ptr rng;
     //CHECK-NEXT:/*
-    //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was replaced with 0 because this call is redundant in SYCL.
+    //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT:*/
-    //CHECK-NEXT:curandErrCheck(0);
+    //CHECK-NEXT:curandErrCheck((rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::philox4x32x10), 0));
     //CHECK-NEXT:/*
-    //CHECK-NEXT:DPCT1034:{{[0-9]+}}: Migrated API does not return error code. 0 is returned in the lambda. You may need to rewrite this code.
+    //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT:*/
-    //CHECK-NEXT:curandErrCheck([&](){
-    //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
-    //CHECK-NEXT:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, (100 + 1) * (200) * 4, d_data_buf_ct{{[0-9]+}});
-    //CHECK-NEXT:return 0;
-    //CHECK-NEXT:}());
+    //CHECK-NEXT:curandErrCheck((rng->set_seed(1337ull), 0));
+    //CHECK-NEXT:/*
+    //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    //CHECK-NEXT:*/
+    //CHECK-NEXT:curandErrCheck((rng->generate_uniform(d_data, (100 + 1) * (200) * 4), 0));
     //CHECK-NEXT:/*
     //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT:*/

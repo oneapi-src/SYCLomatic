@@ -1,4 +1,4 @@
-.. _id_DPCT1011:
+.. _DPCT1011:
 
 DPCT1011
 ========
@@ -9,8 +9,8 @@ Message
 .. _msg-1011-start:
 
 The tool detected overloaded operators for built-in vector types, which may
-conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface).
-The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard
+conflict with the SYCL 2020 standard operators (see 4.14.2.1 Vec interface).
+The tool inserted a namespace to avoid the conflict. Use SYCL 2020 standard
 operators instead.
 
 .. _msg-1011-end:

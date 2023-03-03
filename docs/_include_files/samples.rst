@@ -8,7 +8,7 @@
 
          +  ``vector_add.cu``
       -  The Vector Add sample demonstrates how to migrate a simple program
-         from CUDA\* to SYCL. Vector Add provides an easy way to verify that your
+         from CUDA\* to SYCL\*. Vector Add provides an easy way to verify that your
          development environment is setup correctly to use |tool_name|.
    *  -  Folder Options 
 

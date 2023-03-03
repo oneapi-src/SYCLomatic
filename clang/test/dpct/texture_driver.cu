@@ -263,7 +263,7 @@ void test_texref() {
   func(cuTexRefSetArray(tex,arr, CU_TRSA_OVERRIDE_FORMAT));
   funcT(cuTexRefSetArray(tex,arr, CU_TRSA_OVERRIDE_FORMAT));
 
-  // CHECK: char * dptr;
+  // CHECK: dpct::device_ptr dptr;
   // CHECK-Next: size_t s, b;
   // CHECK-Next: tex->attach(dptr, b);
   // CHECK-Next: size_t desc_x_ct1, desc_y_ct1;

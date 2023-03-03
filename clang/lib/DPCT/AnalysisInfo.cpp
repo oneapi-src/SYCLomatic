@@ -42,6 +42,7 @@ extern std::function<bool(SourceLocation)> IsInAnalysisScopeFunc;
 extern std::function<unsigned int()> GetRunRound;
 extern std::function<void(SourceLocation, unsigned)> RecordTokenSplit;
 namespace dpct {
+int HostDeviceFuncInfo::MaxId = 0;
 std::string DpctGlobalInfo::InRoot = std::string();
 std::string DpctGlobalInfo::OutRoot = std::string();
 std::string DpctGlobalInfo::AnalysisScope = std::string();
@@ -56,7 +57,6 @@ HelperFilesCustomizationLevel DpctGlobalInfo::HelperFilesCustomizationLvl =
     HelperFilesCustomizationLevel::HFCL_None;
 std::string DpctGlobalInfo::CustomHelperFileName = "dpct";
 std::unordered_set<std::string> DpctGlobalInfo::PrecAndDomPairSet;
-std::unordered_set<std::string> DpctGlobalInfo::HostRNGEngineTypeSet;
 format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
 DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::FS_LLVM;
 std::set<ExplicitNamespace> DpctGlobalInfo::ExplicitNamespaceSet;
@@ -126,12 +126,11 @@ bool DpctGlobalInfo::OptimizeMigrationFlag = false;
 std::unordered_map<std::string, std::shared_ptr<DeviceFunctionInfo>>
     DeviceFunctionDecl::FuncInfoMap;
 CudaArchPPMap DpctGlobalInfo::CAPPInfoMap;
-HDCallMap DpctGlobalInfo::HostDeviceFCallIMap;
-HDDefMap DpctGlobalInfo::HostDeviceFDefIMap;
-HDDeclMap DpctGlobalInfo::HostDeviceFDeclIMap;
+HDFuncInfoMap DpctGlobalInfo::HostDeviceFuncInfoMap;
 // __CUDA_ARCH__ Offset -> defined(...) Offset
 CudaArchDefMap DpctGlobalInfo::CudaArchDefinedMap;
-std::set<std::shared_ptr<ExtReplacement>> DpctGlobalInfo::CudaArchMacroRepl;
+std::unordered_map<std::string, std::shared_ptr<ExtReplacement>>
+    DpctGlobalInfo::CudaArchMacroRepl;
 std::unordered_map<std::string, std::shared_ptr<ExtReplacements>>
     DpctGlobalInfo::FileReplCache;
 std::set<std::string> DpctGlobalInfo::ReProcessFile;
@@ -155,6 +154,8 @@ std::map<std::string, clang::tooling::OptionInfo> DpctGlobalInfo::CurrentOptMap;
 std::unordered_map<std::string,
                    std::unordered_map<std::string, std::vector<unsigned>>>
     DpctGlobalInfo::RnnInputMap;
+std::unordered_map<std::string, std::vector<std::string>>
+    DpctGlobalInfo::MainSourceFileMap;
 
 /// This variable saved the info of previous migration from the
 /// MainSourceFiles.yaml file. This variable is valid after
@@ -269,7 +270,6 @@ public:
 void DpctGlobalInfo::resetInfo() {
   FileMap.clear();
   PrecAndDomPairSet.clear();
-  HostRNGEngineTypeSet.clear();
   KCIndentWidthMap.clear();
   LocationInitIndexMap.clear();
   ExpansionRangeToMacroRecord.clear();
@@ -322,6 +322,259 @@ DpctGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall) {
   }
 
   return KernelInfo;
+}
+
+void DpctGlobalInfo::processCudaArchMacro(){
+  // process __CUDA_ARCH__ macro
+  auto &ReplMap = DpctGlobalInfo::getInstance().getCudaArchMacroReplMap();
+  // process __CUDA_ARCH__ macro of directive condition in generated host code:
+  // if __CUDA_ARCH__ > 800      -->  if !DPCT_COMPATIBILITY_TEMP
+  // if defined(__CUDA_ARCH__)   -->  if !defined(DPCT_COMPATIBILITY_TEMP)
+  // if !defined(__CUDA_ARCH__)  -->  if defined(DPCT_COMPATIBILITY_TEMP)
+  auto processIfMacro = [&](std::shared_ptr<ExtReplacement> Repl,
+                            DirectiveInfo DI) {
+    std::string FilePath = Repl->getFilePath().str();
+    auto &CudaArchDefinedMap =
+        DpctGlobalInfo::getInstance()
+            .getCudaArchDefinedMap()[FilePath];
+    if (CudaArchDefinedMap.count((*Repl).getOffset())) {
+      unsigned int ExclamationOffset =
+          CudaArchDefinedMap[(*Repl).getOffset()] - DI.ConditionLoc - 1;
+      if (ExclamationOffset <= (DI.Condition.length() - 1) &&
+          DI.Condition[ExclamationOffset] == '!') {
+        addReplacement(std::make_shared<ExtReplacement>(
+            FilePath, CudaArchDefinedMap[(*Repl).getOffset()] - 1, 1, "",
+            nullptr));
+      } else {
+        addReplacement(std::make_shared<ExtReplacement>(
+            FilePath, CudaArchDefinedMap[(*Repl).getOffset()], 0, "!",
+            nullptr));
+      }
+    } else {
+      (*Repl).setReplacementText("!DPCT_COMPATIBILITY_TEMP");
+    }
+  };
+
+  for (auto Iter = ReplMap.begin(); Iter != ReplMap.end();) {
+    auto Repl = Iter->second;
+    unsigned CudaArchOffset = Repl->getOffset();
+    std::string FilePath = Repl->getFilePath().str();
+    auto &CudaArchPPInfosMap =
+        DpctGlobalInfo::getInstance()
+            .getCudaArchPPInfoMap()[FilePath];
+    bool DirectiveReserved = true;
+    for (auto Iterator = CudaArchPPInfosMap.begin();
+         Iterator != CudaArchPPInfosMap.end(); Iterator++) {
+      auto Info = Iterator->second;
+      if (!Info.isInHDFunc)
+        continue;
+      unsigned Pos_a = 0, Len_a = 0, Pos_b = 0, Len_b = 0,
+               Round = DpctGlobalInfo::getRunRound();
+      if (CudaArchOffset >= Info.IfInfo.ConditionLoc &&
+          CudaArchOffset <=
+              Info.IfInfo.ConditionLoc + Info.IfInfo.Condition.length()) {
+        if (Info.ElInfo.size() == 0) {
+          if (Info.ElseInfo.DirectiveLoc == 0) {
+            //  Remove unnecessary condition branch, as code is absolutely dead
+            //  or active Origin Code:
+            //  ...
+            //  #ifdef __CUDA_ARCH__ / #if defined(__CUDA_ARCH__) / #if
+            //  __CUDA_ARCH__ / #ifndef __CUDA_ARCH__ / #if
+            //  !defined(__CUDA_ARCH__)
+            //    host_code/device code;
+            //  #endif
+            //  ...
+            //
+            //  After Migration:
+            //  Round = 0 for device code, final migration code:
+            //    ...
+            //    empty/device code;
+            //    ...
+            //  Round = 1 for host code, final migration code:
+            //    ...
+            //    host_code/empty;
+            //    ...
+            if ((Info.DT == IfType::IT_Ifdef && Round == 1) ||
+                (Info.DT == IfType::IT_Ifndef && Round == 0) ||
+                (Info.DT == IfType::IT_If && Round == 1 &&
+                 (Info.IfInfo.Condition == "defined(__CUDA_ARCH__)" ||
+                  Info.IfInfo.Condition == "__CUDA_ARCH__")) ||
+                (Info.DT == IfType::IT_If && Round == 0 &&
+                 Info.IfInfo.Condition == "!defined(__CUDA_ARCH__)")) {
+              Pos_a = Info.IfInfo.NumberSignLoc;
+              if (Pos_a != UINT_MAX) {
+                Len_a =
+                    Info.EndInfo.DirectiveLoc - Pos_a + 5 /*length of endif*/;
+                addReplacement(std::make_shared<ExtReplacement>(
+                    FilePath, Pos_a, Len_a, "", nullptr));
+                DirectiveReserved = false;
+              }
+            } else if ((Info.DT == IfType::IT_Ifdef && Round == 0) ||
+                       (Info.DT == IfType::IT_Ifndef && Round == 1) ||
+                       (Info.DT == IfType::IT_If && Round == 0 &&
+                        (Info.IfInfo.Condition == "defined(__CUDA_ARCH__)" ||
+                         Info.IfInfo.Condition == "__CUDA_ARCH__")) ||
+                       (Info.DT == IfType::IT_If && Round == 1 &&
+                        Info.IfInfo.Condition == "!defined(__CUDA_ARCH__)")) {
+              Pos_a = Info.IfInfo.NumberSignLoc;
+              Pos_b = Info.EndInfo.NumberSignLoc;
+              if (Pos_a != UINT_MAX && Pos_b != UINT_MAX) {
+                Len_a = Info.IfInfo.ConditionLoc +
+                        Info.IfInfo.Condition.length() - Pos_a;
+                Len_b =
+                    Info.EndInfo.DirectiveLoc - Pos_b + 5 /*length of endif*/;
+                addReplacement(std::make_shared<ExtReplacement>(
+                    FilePath, Pos_a, Len_a, "", nullptr));
+                addReplacement(std::make_shared<ExtReplacement>(
+                    FilePath, Pos_b, Len_b, "", nullptr));
+                DirectiveReserved = false;
+              }
+            }
+          } else {
+            //  Remove conditional branch, as code is absolutely dead or active
+            //  Origin Code:
+            //  ...
+            //  #ifdef __CUDA_ARCH__ / #if defined(__CUDA_ARCH__) / #if
+            //  __CUDA_ARCH__ / #ifndef __CUDA_ARCH / #if
+            //  !defined(__CUDA_ARCH__)
+            //    host_code/device_code;
+            //  #else
+            //    device_code/host_code;
+            //  #endif
+            //  ...
+            //
+            //  After Migration:
+            //  Round = 0 for device code, final migration code:
+            //    ...
+            //    device_code;
+            //    ...
+            //  Round = 1 for host code, final migration code:
+            //    ...
+            //    host_code;
+            //    ...
+            if ((Info.DT == IfType::IT_Ifdef && Round == 1) ||
+                (Info.DT == IfType::IT_Ifndef && Round == 0) ||
+                (Info.DT == IfType::IT_If && Round == 1 &&
+                 (Info.IfInfo.Condition == "defined(__CUDA_ARCH__)" ||
+                  Info.IfInfo.Condition == "__CUDA_ARCH__")) ||
+                (Info.DT == IfType::IT_If && Round == 0 &&
+                 Info.IfInfo.Condition == "!defined(__CUDA_ARCH__)")) {
+              Pos_a = Info.IfInfo.NumberSignLoc;
+              Pos_b = Info.EndInfo.NumberSignLoc;
+              if (Pos_a != UINT_MAX && Pos_b != UINT_MAX) {
+                Len_a =
+                    Info.ElseInfo.DirectiveLoc - Pos_a + 4 /*length of else*/;
+                Len_b =
+                    Info.EndInfo.DirectiveLoc - Pos_b + 5 /*length of endif*/;
+                addReplacement(std::make_shared<ExtReplacement>(
+                    FilePath, Pos_a, Len_a, "", nullptr));
+                addReplacement(std::make_shared<ExtReplacement>(
+                    FilePath, Pos_b, Len_b, "", nullptr));
+                DirectiveReserved = false;
+              }
+            } else if ((Info.DT == IfType::IT_Ifdef && Round == 0) ||
+                       (Info.DT == IfType::IT_Ifndef && Round == 1) ||
+                       (Info.DT == IfType::IT_If && Round == 0 &&
+                        (Info.IfInfo.Condition == "defined(__CUDA_ARCH__)" ||
+                         Info.IfInfo.Condition == "__CUDA_ARCH__")) ||
+                       (Info.DT == IfType::IT_If && Round == 1 &&
+                        Info.IfInfo.Condition == "!defined(__CUDA_ARCH__)")) {
+              Pos_a = Info.IfInfo.NumberSignLoc;
+              Pos_b = Info.ElseInfo.NumberSignLoc;
+              if (Pos_a != UINT_MAX && Pos_b != UINT_MAX) {
+                Len_a = Info.IfInfo.ConditionLoc +
+                        Info.IfInfo.Condition.length() - Pos_a;
+                Len_b =
+                    Info.EndInfo.DirectiveLoc - Pos_b + 5 /*length of endif*/;
+                addReplacement(std::make_shared<ExtReplacement>(
+                    FilePath, Pos_a, Len_a, "", nullptr));
+                addReplacement(std::make_shared<ExtReplacement>(
+                    FilePath, Pos_b, Len_b, "", nullptr));
+                DirectiveReserved = false;
+              }
+            }
+          }
+        }
+        //  if directive in which __CUDA_ARCH__ inside was reserved, then we
+        //  need process this directive for generated host code:
+        //  ifndef__CUDA_ARCH__ --> ifdef DPCT_COMPATIBILITY_TEMP
+        //  ifdef __CUDA_ARCH__ --> ifndef DPCT_COMPATIBILITY_TEMP
+        if (DirectiveReserved && Round == 1) {
+          if (Info.DT == IfType::IT_Ifdef) {
+            Pos_a = Info.IfInfo.DirectiveLoc;
+            Len_a = 5 /*length of ifdef*/;
+            addReplacement(std::make_shared<ExtReplacement>(
+                FilePath, Pos_a, Len_a, "ifndef", nullptr));
+          } else if (Info.DT == IfType::IT_Ifndef) {
+            Pos_a = Info.IfInfo.DirectiveLoc;
+            Len_a = 6 /*length of ifndef*/;
+            addReplacement(std::make_shared<ExtReplacement>(
+                FilePath, Pos_a, Len_a, "ifdef", nullptr));
+          } else if (Info.DT == IfType::IT_If) {
+            processIfMacro(Repl, Info.IfInfo);
+          }
+        }
+        break;
+      } else {
+        //  Info.ElInfo.size() == 0
+        if (Round == 0)
+          continue;
+        for (auto &ElifInfoPair : Info.ElInfo) {
+          auto &ElifInfo = ElifInfoPair.second;
+          if (CudaArchOffset >= ElifInfo.ConditionLoc &&
+              CudaArchOffset <=
+                  ElifInfo.ConditionLoc + ElifInfo.Condition.length()) {
+            processIfMacro(Repl, ElifInfo);
+            break;
+          }
+        }
+      }
+    }
+    if (DirectiveReserved) {
+      addReplacement(Repl);
+      Iter = ReplMap.erase(Iter);
+    } else {
+      Iter++;
+    }
+  }
+}
+
+void DpctGlobalInfo::generateHostCode(
+    std::multimap<unsigned int, std::shared_ptr<clang::dpct::ExtReplacement>>
+        &ProcessedReplList,
+    HostDeviceFuncLocInfo Info, unsigned ID) {
+  std::vector<std::shared_ptr<ExtReplacement>> ExtraRepl;
+
+  unsigned int Pos, Len;
+  std::string OriginText = Info.FuncContentCache;
+  StringRef SR(OriginText);
+  RewriteBuffer RB;
+  RB.Initialize(SR.begin(), SR.end());
+  for (auto &Element : ProcessedReplList) {
+    auto R = Element.second;
+    unsigned ROffset = R->getOffset();
+    if (ROffset >= Info.FuncStartOffset && ROffset <= Info.FuncEndOffset) {
+      Pos = ROffset - Info.FuncStartOffset;
+      Len = R->getLength();
+      RB.ReplaceText(Pos, Len, R->getReplacementText());
+    }
+  }
+  Pos = Info.FuncNameOffset - Info.FuncStartOffset;
+  Len = 0;
+  RB.ReplaceText(Pos, Len, "_host_ct" + std::to_string(ID));
+  std::string DefResult;
+  llvm::raw_string_ostream DefStream(DefResult);
+  RB.write(DefStream);
+  std::string NewFuncBody = DefStream.str();
+  auto R = std::make_shared<ExtReplacement>(
+      Info.FilePath, Info.FuncEndOffset + 1, 0, getNL() + NewFuncBody, nullptr);
+  ExtraRepl.emplace_back(R);
+
+  for (auto &R : ExtraRepl) {
+    auto &FileReplCache = DpctGlobalInfo::getFileReplCache();
+    FileReplCache[R->getFilePath().str()]->addReplacement(R);
+  }
+  return;
 }
 
 bool DpctFileInfo::isInAnalysisScope() { return DpctGlobalInfo::isInAnalysisScope(FilePath); }
@@ -610,23 +863,6 @@ void DpctFileInfo::buildReplacements() {
     }
   }
 
-  // DPCT needs collect the information of curandGenerator_t decl,
-  // curandCreateGenerator API call and curandSetPseudoRandomGeneratorSeed API
-  // call before migrating to MKL API.
-  for (auto &RandomEngine : RandomEngineMap) {
-    RandomEngine.second->updateEngineType();
-    RandomEngine.second->buildInfo();
-  }
-
-  for (auto &EngineType : HostRandomEngineTypeMap)
-    EngineType.second.buildInfo(FilePath, EngineType.first);
-
-  for (auto &DistrInfo : HostRandomDistrMap) {
-    DistrInfo.second.buildInfo(
-        FilePath, std::get<0>(DistrInfo.first), std::get<1>(DistrInfo.first),
-        std::get<2>(DistrInfo.first), std::get<3>(DistrInfo.first));
-  }
-
   for (auto &AtomicInfo : AtomicMap) {
     if (std::get<2>(AtomicInfo.second))
       DiagnosticsUtils::report(getFilePath(), std::get<0>(AtomicInfo.second),
@@ -849,19 +1085,6 @@ std::shared_ptr<CudaMallocInfo> DpctGlobalInfo::findCudaMalloc(const Expr *E) {
   return std::shared_ptr<CudaMallocInfo>();
 }
 
-void DpctGlobalInfo::insertRandomEngine(const Expr *E) {
-  if (auto Src = getHandleVar(E)) {
-    insertRandomEngineInfo(Src);
-  }
-}
-std::shared_ptr<RandomEngineInfo>
-DpctGlobalInfo::findRandomEngine(const Expr *E) {
-  if (auto Src = getHandleVar(E)) {
-    return findRandomEngineInfo(Src);
-  }
-  return std::shared_ptr<RandomEngineInfo>();
-}
-
 void DpctGlobalInfo::insertBuiltinVarInfo(
     SourceLocation SL, unsigned int Len, std::string Repl,
     std::shared_ptr<DeviceFunctionInfo> DFI) {
@@ -1035,11 +1258,13 @@ void KernelCallExpr::addAccessorDecl() {
                                  Diagnostics::UNDEDUCED_TYPE, true, false,
                                  "image_accessor_ext");
       }
-      Tex->addDecl(SubmitStmtsList.TextureList, SubmitStmtsList.SamplerList);
+      Tex->addDecl(SubmitStmtsList.TextureList, SubmitStmtsList.SamplerList,
+                   getQueueStr());
     }
   }
-  for (auto& Tex : VM.getTextureMap()) {
-    Tex.second->addDecl(SubmitStmtsList.TextureList, SubmitStmtsList.SamplerList);
+  for (auto &Tex : VM.getTextureMap()) {
+    Tex.second->addDecl(SubmitStmtsList.TextureList,
+                        SubmitStmtsList.SamplerList, getQueueStr());
   }
 }
 
@@ -1055,8 +1280,7 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
                        ? HelperFeatureEnum::Memory_device_memory_init
                        : HelperFeatureEnum::Memory_device_memory_init_q,
                    getFilePath());
-    SubmitStmtsList.InitList.emplace_back(VI->getInitStmt(
-        isDefaultStream() ? "" : ExecutionConfig.Stream, isQueuePtr()));
+    SubmitStmtsList.InitList.emplace_back(VI->getInitStmt(getQueueStr()));
     if (VI->isLocal()) {
       SubmitStmtsList.MemoryList.emplace_back(
           VI->getMemoryDecl(ExecutionConfig.ExternMemSize));
@@ -1098,7 +1322,8 @@ void KernelCallExpr::buildKernelArgsStmt() {
     }
     if (ArgCounter != 0)
       KernelArgs += ", ";
-    if (Arg.IsDoublePointer) {
+    if (Arg.IsDoublePointer &&
+        DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
       DiagnosticsUtils::report(getFilePath(), getBegin(),
                                Diagnostics::VIRTUAL_POINTER, true, false,
                                Arg.getArgString());
@@ -3306,10 +3531,10 @@ void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
     }
     if ((isExtern() && ExternEmitWarning) || getType()->containSizeofType()) {
       DiagnosticsUtils::report(getFilePath(), getOffset(),
-                               Diagnostics::SIZEOF_WARNING, false, false);
+                               Diagnostics::SIZEOF_WARNING, false, false, "local memory");
       AccDecl.Warnings.push_back(
           DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
-              Diagnostics::SIZEOF_WARNING));
+              Diagnostics::SIZEOF_WARNING, "local memory"));
     }
     if (getType()->getDimension() > 3) {
       if (DiagnosticsUtils::report(getFilePath(), getOffset(),
@@ -3578,53 +3803,6 @@ void SizeInfo::setTemplateList(
     TDSI = TDSI->applyTemplateArguments(TemplateList);
 }
 
-// In the type migration rule, only location has been recorded. So in this
-// function, other info from generator creation API is added.
-void RandomEngineInfo::updateEngineType() {
-  auto FileInfo = DpctGlobalInfo::getInstance().insertFile(DeclFilePath);
-  auto &M = FileInfo->getHostRandomEngineTypeMap();
-
-  auto Iter = M.find(DeclaratorDeclTypeBeginOffset);
-  if (Iter != M.end()) {
-    Iter->second.EngineType = TypeReplacement;
-    Iter->second.HasValue = true;
-    Iter->second.IsUnsupportEngine = IsUnsupportEngine;
-  } else {
-    M.insert(
-        std::make_pair(DeclaratorDeclTypeBeginOffset,
-                       HostRandomEngineTypeInfo(TypeLength, TypeReplacement,
-                                                IsUnsupportEngine)));
-  }
-}
-
-void RandomEngineInfo::buildInfo() {
-  if (IsUnsupportEngine)
-    return;
-
-  if (TypeReplacement.empty()) {
-    TypeReplacement = "dpct_placeholder/*Fix the engine type manually*/";
-    for (unsigned int i = 0; i < CreateAPINum; ++i)
-      DiagnosticsUtils::report(CreateCallFilePath[i], CreateAPIBegin[i],
-                               Diagnostics::UNDEDUCED_TYPE, true, false,
-                               "RNG engine");
-  }
-
-  for (unsigned int i = 0; i < CreateAPINum; ++i) {
-    auto QueueStrFromStream =
-        CreateAPIQueueName[i] == "" ? QueueStr : CreateAPIQueueName[i];
-    std::string Repl = GeneratorName + " = std::make_shared<" +
-                       TypeReplacement + ">(" + QueueStrFromStream + ", " +
-                       (IsQuasiEngine ? DimExpr : SeedExpr) + ")";
-    if (IsAssigned) {
-      Repl = "(" + Repl + ", 0)";
-    }
-    DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(CreateCallFilePath[i],
-                                         CreateAPIBegin[i], CreateAPILength[i],
-                                         Repl, nullptr));
-  }
-}
-
 void TimeStubTypeInfo::buildInfo(std::string FilePath, unsigned int Offset,
                                  bool isReplTxtWithSB) {
   if (isReplTxtWithSB)
@@ -3635,51 +3813,6 @@ void TimeStubTypeInfo::buildInfo(std::string FilePath, unsigned int Offset,
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, Offset, Length, StrWithoutSB,
                                          nullptr));
-}
-
-void HostRandomEngineTypeInfo::buildInfo(std::string FilePath,
-                                         unsigned int Offset) {
-  // The warning of unsupported engine type is emitted in the generator
-  // creation API migration rule. So do not emit undeduced type warning again.
-  if (IsUnsupportEngine)
-    return;
-
-  if (HasValue && !EngineType.empty()) {
-    DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(FilePath, Offset, Length,
-                                         "std::shared_ptr<" + EngineType + ">",
-                                         nullptr));
-  } else if (DpctGlobalInfo::getHostRNGEngineTypeSet().size() == 1) {
-    DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(
-            FilePath, Offset, Length,
-            "std::shared_ptr<" +
-                *DpctGlobalInfo::getHostRNGEngineTypeSet().begin() + ">",
-            nullptr));
-  } else {
-    DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(
-            FilePath, Offset, Length,
-            "std::shared_ptr<dpct_placeholder/*Fix the engine type manually*/>",
-            nullptr));
-    DiagnosticsUtils::report(FilePath, Offset, Diagnostics::UNDEDUCED_TYPE,
-                             true, false, "RNG engine");
-  }
-}
-
-void HostRandomDistrInfo::buildInfo(std::string FilePath, unsigned int Offset,
-                                    std::string DistrType,
-                                    std::string ValueType,
-                                    std::string DistrArg) {
-  std::string InsertStr;
-  if (DistrArg.empty())
-    InsertStr = DistrType + "<" + ValueType + "> " + DistrName + ";" + getNL() +
-                IndentStr;
-  else
-    InsertStr = DistrType + "<" + ValueType + "> " + DistrName + "(" +
-                DistrArg + ");" + getNL() + IndentStr;
-  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
-      FilePath, Offset, 0, InsertStr, nullptr));
 }
 
 void EventSyncTypeInfo::buildInfo(std::string FilePath, unsigned int Offset) {

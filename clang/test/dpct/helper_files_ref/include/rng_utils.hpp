@@ -12,6 +12,8 @@
 #include <sycl/sycl.hpp>
 #include <oneapi/mkl.hpp>
 #include <oneapi/mkl/rng/device.hpp>
+#include "device.hpp"
+#include "lib_common_utils.hpp"
 
 namespace dpct {
 namespace rng {
@@ -174,6 +176,278 @@ private:
 };
 
 } // namespace device
+
+namespace host {
+namespace detail {
+class rng_generator_base {
+public:
+  /// Set the seed of host rng_generator.
+  /// \param seed The engine seed.
+  virtual void set_seed(const std::uint64_t seed) = 0;
+
+  /// Set the dimensions of host rng_generator.
+  /// \param dimensions The engine dimensions.
+  virtual void set_dimensions(const std::uint32_t dimensions) = 0;
+
+  /// Set the queue of host rng_generator.
+  /// \param queue The engine queue.
+  virtual void set_queue(sycl::queue *queue) = 0;
+
+  /// Generate unsigned int random number(s) with 'uniform_bits' distribution.
+  /// \param output The pointer of the first random number.
+  /// \param n The number of random numbers.
+  virtual inline void generate_uniform_bits(unsigned int *output,
+                                            std::int64_t n) = 0;
+
+  /// Generate unsigned long long random number(s) with 'uniform_bits'
+  /// distribution.
+  /// \param output The pointer of the first random number.
+  /// \param n The number of random numbers.
+  virtual inline void generate_uniform_bits(unsigned long long *output,
+                                            std::int64_t n) = 0;
+
+  /// Generate float random number(s) with 'lognormal' distribution.
+  /// \param output The pointer of the first random number.
+  /// \param n The number of random numbers.
+  /// \param m Mean of associated normal distribution
+  /// \param s Standard deviation of associated normal distribution.
+  virtual inline void generate_lognormal(float *output, std::int64_t n, float m,
+                                         float s) = 0;
+
+  /// Generate double random number(s) with 'lognormal' distribution.
+  /// \param output The pointer of the first random number.
+  /// \param n The number of random numbers.
+  /// \param m Mean of associated normal distribution
+  /// \param s Standard deviation of associated normal distribution.
+  virtual inline void generate_lognormal(double *output, std::int64_t n,
+                                         double m, double s) = 0;
+
+  /// Generate float random number(s) with 'gaussian' distribution.
+  /// \param output The pointer of the first random number.
+  /// \param n The number of random numbers.
+  /// \param mean Mean of normal distribution
+  /// \param stddev Standard deviation of normal distribution.
+  virtual inline void generate_gaussian(float *output, std::int64_t n,
+                                        float mean, float stddev) = 0;
+
+  /// Generate double random number(s) with 'gaussian' distribution.
+  /// \param output The pointer of the first random number.
+  /// \param n The number of random numbers.
+  /// \param mean Mean of normal distribution
+  /// \param stddev Standard deviation of normal distribution.
+  virtual inline void generate_gaussian(double *output, std::int64_t n,
+                                        double mean, double stddev) = 0;
+
+  /// Generate unsigned int random number(s) with 'poisson' distribution.
+  /// \param output The pointer of the first random number.
+  /// \param n The number of random numbers.
+  /// \param lambda Lambda for the Poisson distribution.
+  virtual inline void generate_poisson(unsigned int *output, std::int64_t n,
+                                       double lambda) = 0;
+
+  /// Generate float random number(s) with 'uniform' distribution.
+  /// \param output The pointer of the first random number.
+  /// \param n The number of random numbers.
+  virtual inline void generate_uniform(float *output, std::int64_t n) = 0;
+
+  /// Generate double random number(s) with 'uniform' distribution.
+  /// \param output The pointer of the first random number.
+  /// \param n The number of random numbers.
+  virtual inline void generate_uniform(double *output, std::int64_t n) = 0;
+
+  /// Skip ahead several random number(s).
+  /// \param num_to_skip The number of random numbers to be skipped.
+  virtual void skip_ahead(const std::uint64_t num_to_skip) = 0;
+
+protected:
+  sycl::queue *_queue{&dpct::get_default_queue()};
+  std::uint64_t _seed{0};
+  std::uint32_t _dimensions{1};
+};
+
+/// The random number generator on host.
+template <typename engine_t = oneapi::mkl::rng::philox4x32x10>
+class rng_generator : public rng_generator_base {
+public:
+  /// Constructor of rng_generator.
+  rng_generator() : _engine(creat_engine(_queue, _seed, _dimensions)) {}
+
+  /// Set the seed of host rng_generator.
+  /// \param seed The engine seed.
+  void set_seed(const std::uint64_t seed) {
+    if (seed == _seed) {
+      return;
+    }
+    _seed = seed;
+    _engine = creat_engine(_queue, _seed, _dimensions);
+  }
+
+  /// Set the dimensions of host rng_generator.
+  /// \param dimensions The engine dimensions.
+  void set_dimensions(const std::uint32_t dimensions) {
+    if (dimensions == _dimensions) {
+      return;
+    }
+    _dimensions = dimensions;
+    _engine = creat_engine(_queue, _seed, _dimensions);
+  }
+
+  /// Set the queue of host rng_generator.
+  /// \param queue The engine queue.
+  void set_queue(sycl::queue *queue) {
+    if (queue == _queue) {
+      return;
+    }
+    _queue = queue;
+    _engine = creat_engine(_queue, _seed, _dimensions);
+  }
+
+  /// Generate unsigned int random number(s) with 'uniform_bits' distribution.
+  /// \param output The pointer of the first random number.
+  /// \param n The number of random numbers.
+  inline void generate_uniform_bits(unsigned int *output, std::int64_t n) {
+    static_assert(sizeof(unsigned int) == sizeof(std::uint32_t));
+    generate<oneapi::mkl::rng::uniform_bits<std::uint32_t>>(
+        (std::uint32_t *)output, n);
+  }
+
+  /// Generate unsigned long long random number(s) with 'uniform_bits'
+  /// distribution.
+  /// \param output The pointer of the first random number.
+  /// \param n The number of random numbers.
+  inline void generate_uniform_bits(unsigned long long *output,
+                                    std::int64_t n) {
+    static_assert(sizeof(unsigned long long) == sizeof(std::uint64_t));
+    generate<oneapi::mkl::rng::uniform_bits<std::uint64_t>>(
+        (std::uint64_t *)output, n);
+  }
+
+  /// Generate float random number(s) with 'lognormal' distribution.
+  /// \param output The pointer of the first random number.
+  /// \param n The number of random numbers.
+  /// \param m Mean of associated normal distribution
+  /// \param s Standard deviation of associated normal distribution.
+  inline void generate_lognormal(float *output, std::int64_t n, float m,
+                                 float s) {
+    generate<oneapi::mkl::rng::lognormal<float>>(output, n, m, s);
+  }
+
+  /// Generate double random number(s) with 'lognormal' distribution.
+  /// \param output The pointer of the first random number.
+  /// \param n The number of random numbers.
+  /// \param m Mean of associated normal distribution
+  /// \param s Standard deviation of associated normal distribution.
+  inline void generate_lognormal(double *output, std::int64_t n, double m,
+                                 double s) {
+    generate<oneapi::mkl::rng::lognormal<double>>(output, n, m, s);
+  }
+
+  /// Generate float random number(s) with 'gaussian' distribution.
+  /// \param output The pointer of the first random number.
+  /// \param n The number of random numbers.
+  /// \param mean Mean of normal distribution
+  /// \param stddev Standard deviation of normal distribution.
+  inline void generate_gaussian(float *output, std::int64_t n, float mean,
+                                float stddev) {
+    generate<oneapi::mkl::rng::gaussian<float>>(output, n, mean, stddev);
+  }
+
+  /// Generate double random number(s) with 'gaussian' distribution.
+  /// \param output The pointer of the first random number.
+  /// \param n The number of random numbers.
+  /// \param mean Mean of normal distribution
+  /// \param stddev Standard deviation of normal distribution.
+  inline void generate_gaussian(double *output, std::int64_t n, double mean,
+                                double stddev) {
+    generate<oneapi::mkl::rng::gaussian<double>>(output, n, mean, stddev);
+  }
+
+  /// Generate unsigned int random number(s) with 'poisson' distribution.
+  /// \param output The pointer of the first random number.
+  /// \param n The number of random numbers.
+  /// \param lambda Lambda for the Poisson distribution.
+  inline void generate_poisson(unsigned int *output, std::int64_t n,
+                               double lambda) {
+    generate<oneapi::mkl::rng::poisson<unsigned int>>(output, n, lambda);
+  }
+
+  /// Generate float random number(s) with 'uniform' distribution.
+  /// \param output The pointer of the first random number.
+  /// \param n The number of random numbers.
+  inline void generate_uniform(float *output, std::int64_t n) {
+    generate<oneapi::mkl::rng::uniform<float>>(output, n);
+  }
+
+  /// Generate double random number(s) with 'uniform' distribution.
+  /// \param output The pointer of the first random number.
+  /// \param n The number of random numbers.
+  inline void generate_uniform(double *output, std::int64_t n) {
+    generate<oneapi::mkl::rng::uniform<double>>(output, n);
+  }
+
+  /// Skip ahead several random number(s).
+  /// \param num_to_skip The number of random numbers to be skipped.
+  void skip_ahead(const std::uint64_t num_to_skip) {
+    if constexpr (std::is_same_v<engine_t, oneapi::mkl::rng::mt2203>)
+      throw std::runtime_error("no skip_ahead method of mt2203 engine.");
+    else
+      oneapi::mkl::rng::skip_ahead(_engine, num_to_skip);
+  }
+
+private:
+  static inline engine_t creat_engine(sycl::queue *queue,
+                                      const std::uint64_t seed,
+                                      const std::uint32_t dimensions) {
+    return std::is_same_v<engine_t, oneapi::mkl::rng::sobol>
+               ? engine_t(*queue, dimensions)
+               : engine_t(*queue, seed);
+  }
+
+  template <typename distr_t, typename buffer_t, class... distr_params_t>
+  void generate(buffer_t *output, const std::int64_t n,
+                const distr_params_t... distr_params) {
+    auto output_buf = dpct::detail::get_memory(output);
+    oneapi::mkl::rng::generate(distr_t(distr_params...), _engine, n,
+                               output_buf);
+  }
+  engine_t _engine{};
+};
+} // namespace detail
+} // namespace host
+
+enum class random_engine_type {
+  philox4x32x10,
+  mrg32k3a,
+  mt2203,
+  mt19937,
+  sobol
+};
+
+
+typedef std::shared_ptr<rng::host::detail::rng_generator_base> host_rng_ptr;
+
+/// Create a host random number generator.
+/// \param type The random engine type.
+/// \return The pointer of random number generator.
+inline host_rng_ptr create_host_rng(const random_engine_type type) {
+  switch (type) {
+  case random_engine_type::philox4x32x10:
+    return std::make_shared<
+        rng::host::detail::rng_generator<oneapi::mkl::rng::philox4x32x10>>();
+  case random_engine_type::mrg32k3a:
+    return std::make_shared<
+        rng::host::detail::rng_generator<oneapi::mkl::rng::mrg32k3a>>();
+  case random_engine_type::mt2203:
+    return std::make_shared<
+        rng::host::detail::rng_generator<oneapi::mkl::rng::mt2203>>();
+  case random_engine_type::mt19937:
+    return std::make_shared<
+        rng::host::detail::rng_generator<oneapi::mkl::rng::mt19937>>();
+  case random_engine_type::sobol:
+    return std::make_shared<
+        rng::host::detail::rng_generator<oneapi::mkl::rng::sobol>>();
+  }
+}
 } // namespace rng
 } // namespace dpct
 

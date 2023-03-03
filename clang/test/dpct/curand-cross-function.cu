@@ -5,9 +5,8 @@
 #include <stdio.h>
 #include <curand.h>
 
-//CHECK: void update(float* randvals, std::shared_ptr<oneapi::mkl::rng::philox4x32x10> rng, long long nx, long long ny) {
-//CHECK-NEXT:   oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
-//CHECK-NEXT:   oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, nx*ny/2, randvals);
+//CHECK: void update(float* randvals, dpct::rng::host_rng_ptr rng, long long nx, long long ny) {
+//CHECK-NEXT:   rng->generate_uniform(randvals, nx*ny/2);
 //CHECK-NEXT: }
 void update(float* randvals, curandGenerator_t rng, long long nx, long long ny) {
   curandGenerateUniform(rng, randvals, nx*ny/2);
@@ -15,17 +14,14 @@ void update(float* randvals, curandGenerator_t rng, long long nx, long long ny) 
 
 
 //CHECK: int main(){
-//CHECK-NEXT:   oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
 //CHECK-NEXT:   long long nx = 5120;
 //CHECK-NEXT:   long long ny = 5120;
 //CHECK-NEXT:   unsigned long long seed = 1234ULL;
-//CHECK-NEXT:   std::shared_ptr<oneapi::mkl::rng::philox4x32x10> rng;
-//CHECK-NEXT:   rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(dpct::get_default_queue(), seed);
-//CHECK-NEXT:   /*
-//CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because this call is redundant in SYCL.
-//CHECK-NEXT:   */
+//CHECK-NEXT:   dpct::rng::host_rng_ptr rng;
+//CHECK-NEXT:   rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::philox4x32x10);
+//CHECK-NEXT:   rng->set_seed(seed);
 //CHECK-NEXT:   float *randvals;
-//CHECK-NEXT:   oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, nx*ny/2, randvals);
+//CHECK-NEXT:   rng->generate_uniform(randvals, nx*ny/2);
 //CHECK-NEXT:   update(randvals, rng, nx, ny);
 //CHECK-NEXT:   rng.reset();
 //CHECK-NEXT: }

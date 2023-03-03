@@ -73,7 +73,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
       makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::replace_copy_if(policy, ptr, ptr, dst, pred, val);
         IFELSE_FACTORY_ENTRY(
           "thrust::replace_copy_if",
@@ -111,7 +111,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                     ARG("oneapi::dpl::execution::seq"),
                                     ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5)))))),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::replace_copy_if(policy, device.begin(), device.end(), dst.begin(), pred, 0);
         CALL_FACTORY_ENTRY("thrust::replace_copy_if",
                           CALL("oneapi::dpl::replace_copy_if",
@@ -199,7 +199,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
       makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::replace_if(policy, ptr, ptr, pred, val);
         IFELSE_FACTORY_ENTRY(
           "thrust::replace_if",
@@ -235,7 +235,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                     ARG("oneapi::dpl::execution::seq"),
                                     ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))))),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::replace_if(policy, device.begin(), device.end(), pred, 0);
         CALL_FACTORY_ENTRY("thrust::replace_if",
                           CALL("oneapi::dpl::replace_if",
@@ -323,7 +323,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
       makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
       CONDITIONAL_FACTORY_ENTRY(
-      CompareArgType(0, 1),
+      IsPolicyArgType(0),
       //Handling case: thrust::remove_if(policy, ptr, ptr, pred);
       IFELSE_FACTORY_ENTRY(
         "thrust::remove_if",
@@ -359,7 +359,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   ARG("oneapi::dpl::execution::seq"),
                                   ARG(0), ARG(1), ARG(2), ARG(3)))))),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::remove_if(thrust::device, device.begin(), device.end(), pred);
         CALL_FACTORY_ENTRY("thrust::remove_if",
                           CALL("oneapi::dpl::remove_if",
@@ -449,7 +449,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
       makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::remove_copy_if(policy, ptr, ptr, ptr, pred);
         IFELSE_FACTORY_ENTRY(
           "thrust::remove_copy_if",
@@ -487,7 +487,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                     ARG("oneapi::dpl::execution::seq"),
                                     ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))))),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::remove_copy_if(thrust::device, device.begin(), device.end(), result, pred);
         CALL_FACTORY_ENTRY("thrust::remove_copy_if",
                           CALL("oneapi::dpl::remove_copy_if",
@@ -683,7 +683,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
       makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::adjacent_difference(policy, ptr, ptr, ptr);
         IFELSE_FACTORY_ENTRY(
           "thrust::adjacent_difference",
@@ -718,7 +718,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   ARG("oneapi::dpl::execution::seq"),
                                   ARG(0), ARG(1), ARG(2), ARG(3))))),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::adjacent_difference(policy, device.begin(), device.end(), result);
         CALL_FACTORY_ENTRY("thrust::adjacent_difference",
                           CALL("oneapi::dpl::adjacent_difference",
@@ -802,7 +802,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
       makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::inclusive_scan(policy, ptr, ptr, ptr);
         IFELSE_FACTORY_ENTRY(
           "thrust::inclusive_scan",
@@ -837,7 +837,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   ARG("oneapi::dpl::execution::seq"),
                                   ARG(0), ARG(1), ARG(2), ARG(3))))),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::inclusive_scan(policy, device.begin(), device.end(), result);
         CALL_FACTORY_ENTRY("thrust::inclusive_scan",
                           CALL("oneapi::dpl::inclusive_scan",
@@ -1046,7 +1046,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_unique_copy,
       CONDITIONAL_FACTORY_ENTRY(
         makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
         CONDITIONAL_FACTORY_ENTRY(
-          CompareArgType(0, 1),
+          IsPolicyArgType(0),
           //Handling case: thrust::unique_by_key_copy(policy, ptr, ptr, ptr, ptr, ptr);
           IFELSE_FACTORY_ENTRY(
             "thrust::unique_by_key_copy",
@@ -1085,7 +1085,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_unique_copy,
                                     ARG("oneapi::dpl::execution::seq"),
                                     ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))))),
         CONDITIONAL_FACTORY_ENTRY(
-          CompareArgType(0, 1),
+          IsPolicyArgType(0),
           // Handling case: thrust::unique_by_key_copy(thrust::device, d_keys.begin(), d_keys.end(), d_values.begin(),d_output_keys.begin(), d_output_values.begin());
           CALL_FACTORY_ENTRY("thrust::unique_by_key_copy",
                              CALL(MapNames::getDpctNamespace() + "unique_copy",
@@ -1204,7 +1204,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_stable_sort,
       CONDITIONAL_FACTORY_ENTRY(
         makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
         CONDITIONAL_FACTORY_ENTRY(
-          CompareArgType(0, 1),
+          IsPolicyArgType(0),
           // Handling case: thrust::stable_sort_by_key(policy, ptr, ptr, ptr);
           IFELSE_FACTORY_ENTRY(
             "thrust::stable_sort_by_key",
@@ -1239,7 +1239,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_stable_sort,
                                     ARG("oneapi::dpl::execution::seq"),
                                     ARG(0), ARG(1), ARG(2), ARG(3))))),
         CONDITIONAL_FACTORY_ENTRY(
-          CompareArgType(0, 1),
+          IsPolicyArgType(0),
           // Handling case: thrust::stable_sort_by_key(thrust::device, d_keys.begin(), d_keys.end(), d_values.begin());
           CALL_FACTORY_ENTRY("thrust::stable_sort_by_key",
                              CALL(MapNames::getDpctNamespace() + "stable_sort",
@@ -1305,7 +1305,7 @@ CONDITIONAL_FACTORY_ENTRY(
                             ARG("oneapi::dpl::execution::seq"),
                             ARG(0), ARG(1), ARG(2)))),
     CONDITIONAL_FACTORY_ENTRY(
-      CompareArgType(0, 1),
+      IsPolicyArgType(0),
       //Handling case: thrust::sort_by_key(policy, device.begin(), device.end(), device.begin());
       CALL_FACTORY_ENTRY("thrust::sort_by_key",
                       CALL(MapNames::getDpctNamespace() + "sort",
@@ -1378,7 +1378,7 @@ CONDITIONAL_FACTORY_ENTRY(
   CONDITIONAL_FACTORY_ENTRY(
     CheckArgCount(7),
     CONDITIONAL_FACTORY_ENTRY(
-      CompareArgType(0, 1),
+      IsPolicyArgType(0),
       //Handling case: thrust::reduce_by_key(policy, device.begin(), device.end(), device.begin(), device.end(), device.begin(), binary_pred);
       CALL_FACTORY_ENTRY("thrust::reduce_by_key",
                       CALL("oneapi::dpl::reduce_by_segment",
@@ -1399,7 +1399,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
       CheckArgCount(6),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::reduce_by_key(policy, device.begin(), device.end(), device.begin(), device.end(), device.begin());
         CALL_FACTORY_ENTRY("thrust::reduce_by_key",
                         CALL("oneapi::dpl::reduce_by_segment",
@@ -1473,7 +1473,7 @@ CONDITIONAL_FACTORY_ENTRY(
                               ARG("oneapi::dpl::execution::seq"),
                               ARG(0), ARG(1), ARG(2), THRUST_FUNCTOR(3)))),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::transform(policy, device.begin(), device.end(), device.begin(), f);
         CALL_FACTORY_ENTRY("thrust::transform",
                         CALL("std::transform",
@@ -1516,7 +1516,7 @@ CONDITIONAL_FACTORY_ENTRY(
                               ARG("oneapi::dpl::execution::seq"),
                               ARG(0), ARG(1), ARG(2), THRUST_FUNCTOR(3)))),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::copy_if(policy, device.begin(), device.end(), device.begin(), f);
         CALL_FACTORY_ENTRY("thrust::copy_if",
                         CALL("std::copy_if",
@@ -1550,7 +1550,7 @@ CONDITIONAL_FACTORY_ENTRY(
   CONDITIONAL_FACTORY_ENTRY(
     CheckArgCount(6),
     CONDITIONAL_FACTORY_ENTRY(
-      CompareArgType(0, 1),
+      IsPolicyArgType(0),
       //Handling case: thrust::inclusive_scan_by_key(policy, device.begin(), device.end(), device.begin(), result, binary_pred);
       CALL_FACTORY_ENTRY("thrust::inclusive_scan_by_key",
                       CALL("oneapi::dpl::inclusive_scan_by_segment",
@@ -1571,7 +1571,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
       CheckArgCount(5),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::inclusive_scan_by_key(policy, device.begin(), device.end(), device.begin(), result);
         CALL_FACTORY_ENTRY("thrust::inclusive_scan_by_key",
                         CALL("oneapi::dpl::inclusive_scan_by_segment",
@@ -1614,7 +1614,7 @@ CONDITIONAL_FACTORY_ENTRY(
   CONDITIONAL_FACTORY_ENTRY(
     CheckArgCount(7),
     CONDITIONAL_FACTORY_ENTRY(
-      CompareArgType(0, 1),
+      IsPolicyArgType(0),
       //Handling case: thrust::exclusive_scan_by_key(policy, device.begin(), device.end(), device.begin(), result, init, binary_pred);
       CALL_FACTORY_ENTRY("thrust::exclusive_scan_by_key",
                       CALL("oneapi::dpl::exclusive_scan_by_segment",
@@ -1635,7 +1635,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
         CheckArgCount(6),
         CONDITIONAL_FACTORY_ENTRY(
-          CompareArgType(0, 1),
+          IsPolicyArgType(0),
           //Handling case: thrust::exclusive_scan_by_key(policy, device.begin(), device.end(), device.begin(), result, init);
           CALL_FACTORY_ENTRY("thrust::exclusive_scan_by_key",
                           CALL("oneapi::dpl::exclusive_scan_by_segment",
@@ -1656,7 +1656,7 @@ CONDITIONAL_FACTORY_ENTRY(
         CONDITIONAL_FACTORY_ENTRY(
           CheckArgCount(5),
           CONDITIONAL_FACTORY_ENTRY(
-            CompareArgType(0, 1),
+            IsPolicyArgType(0),
             //Handling case: thrust::exclusive_scan_by_key(policy, device.begin(), device.end(), device.begin(), result);
             CALL_FACTORY_ENTRY("thrust::exclusive_scan_by_key",
                             CALL("oneapi::dpl::exclusive_scan_by_segment",
@@ -1709,7 +1709,7 @@ CONDITIONAL_FACTORY_ENTRY(
   CONDITIONAL_FACTORY_ENTRY(
     CheckArgCount(4),
     CONDITIONAL_FACTORY_ENTRY(
-      CompareArgType(0, 1),
+      IsPolicyArgType(0),
       // thrust::exclusive_scan(thrust::host, data, data + 6, data);
       CALL_FACTORY_ENTRY("thrust::exclusive_scan",
         CALL("std::exclusive_scan",
@@ -1729,7 +1729,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
       CheckArgCount(5),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         // thrust::exclusive_scan(thrust::host, data, data + 6, data, 4);
         CALL_FACTORY_ENTRY("thrust::exclusive_scan",
           CALL("std::exclusive_scan",
@@ -1823,7 +1823,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_unique_copy,
       CONDITIONAL_FACTORY_ENTRY(
         makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
         CONDITIONAL_FACTORY_ENTRY(
-          CompareArgType(0, 1),
+          IsPolicyArgType(0),
           //Handling case: thrust::unique_by_key(policy, ptr, ptr, ptr);
           IFELSE_FACTORY_ENTRY(
             "thrust::unique_by_key",
@@ -1858,7 +1858,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_unique_copy,
                                     ARG("oneapi::dpl::execution::seq"),
                                     ARG(0), ARG(1), ARG(2), ARG(3))))),
         CONDITIONAL_FACTORY_ENTRY(
-          CompareArgType(0, 1),
+          IsPolicyArgType(0),
           // Handling case: thrust::unique_by_key(thrust::device, d_keys.begin(), d_keys.end(), d_values.begin());
           CALL_FACTORY_ENTRY("thrust::unique_by_key",
                              CALL(MapNames::getDpctNamespace() + "unique",
@@ -2024,7 +2024,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
       makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::minmax_element(policy, ptr, ptr);
         IFELSE_FACTORY_ENTRY(
           "thrust::minmax_element",
@@ -2056,7 +2056,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   ARG("oneapi::dpl::execution::seq"),
                                   ARG(0), ARG(1), ARG(2))))),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         // Handling case: thrust::minmax_element(thrust::device, iterator, iterator);
         CALL_FACTORY_ENTRY("thrust::minmax_element",
                             CALL("oneapi::dpl::minmax_element",
@@ -2138,7 +2138,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
       makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::is_sorted(policy, ptr, ptr);
         IFELSE_FACTORY_ENTRY(
           "thrust::is_sorted",
@@ -2170,7 +2170,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   ARG("oneapi::dpl::execution::seq"),
                                   ARG(0), ARG(1), ARG(2))))),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         // Handling case: thrust::is_sorted(thrust::device, iterator, iterator);
         CALL_FACTORY_ENTRY("thrust::is_sorted",
                             CALL("oneapi::dpl::is_sorted",
@@ -2254,7 +2254,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
       makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::partition(policy, ptr, ptr, pred);
         IFELSE_FACTORY_ENTRY(
           "thrust::partition",
@@ -2289,7 +2289,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   ARG("oneapi::dpl::execution::seq"),
                                   ARG(0), ARG(1), ARG(2), ARG(3))))),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         // Handling case: thrust::partition(thrust::device, iterator, iterator, pred);
         CALL_FACTORY_ENTRY("thrust::partition",
                             CALL("oneapi::dpl::partition",
@@ -2374,7 +2374,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
       makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::unique_copy(policy, ptr, ptr, pred);
         IFELSE_FACTORY_ENTRY(
           "thrust::unique_copy",
@@ -2410,7 +2410,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   ARG("oneapi::dpl::execution::seq"),
                                   ARG(0), ARG(1), ARG(2), ARG(3))))),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         // Handling case: thrust::unique_copy(thrust::device, iterator, iterator, pred);
         CALL_FACTORY_ENTRY("thrust::unique_copy",
                             CALL("oneapi::dpl::unique_copy",
@@ -2492,7 +2492,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
       makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::stable_sort(policy, ptr, ptr);
         IFELSE_FACTORY_ENTRY(
           "thrust::stable_sort",
@@ -2525,7 +2525,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   ARG("oneapi::dpl::execution::seq"),
                                   ARG(0), ARG(1), ARG(2))))),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         // Handling case: thrust::stable_sort(thrust::device, d_values.begin(), d_values.end());
         CALL_FACTORY_ENTRY("thrust::stable_sort",
                             CALL("oneapi::dpl::stable_sort",
@@ -2620,7 +2620,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
       makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::set_difference_by_key(policy, ptr, ptr, ptr, ptr, ptr, ptr ptr, ptr);
         IFELSE_FACTORY_ENTRY(
           "thrust::set_difference_by_key",
@@ -2665,7 +2665,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   ARG("oneapi::dpl::execution::seq"),
                                   ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8))))),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         // Handling case: thrust::stabsset_difference_by_keyet_difference_by_keyle_sort(thrust::device, iterator, iterator, iterator, iterator, iterator, iterator, iterator, iterator);
         CALL_FACTORY_ENTRY("thrust::set_difference_by_key",
                             CALL(MapNames::getDpctNamespace() + "set_difference",
@@ -2753,7 +2753,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
       makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::set_difference(policy, ptr, ptr, ptr, ptr, ptr, ptr,ptr, ptr);
         IFELSE_FACTORY_ENTRY(
           "thrust::set_difference",
@@ -2792,7 +2792,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   ARG("oneapi::dpl::execution::seq"),
                                   ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))))),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         // Handling case: thrust::stabsset_difference_by_keyet_difference_by_keyle_sort(thrust::device, iterator, iterator, iterator, iterator, iterator, iterator, iterator, iterator);
         CALL_FACTORY_ENTRY("thrust::set_difference",
                             CALL("oneapi::dpl::set_difference",
@@ -3131,7 +3131,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
       makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         //Handling case: thrust::set_intersection_by_key(policy, ptr, ptr, ptr, ptr, ptr, ptr ptr);
         IFELSE_FACTORY_ENTRY(
           "thrust::set_intersection_by_key",
@@ -3174,7 +3174,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   ARG("oneapi::dpl::execution::seq"),
                                   ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),ARG(7))))),
       CONDITIONAL_FACTORY_ENTRY(
-        CompareArgType(0, 1),
+        IsPolicyArgType(0),
         // Handling case: thrust::stabsset_difference_by_keyet_difference_by_keyle_sort(thrust::device, iterator, iterator, iterator, iterator, iterator, iterator, iterator);
         CALL_FACTORY_ENTRY("thrust::set_intersection_by_key",
                             CALL(MapNames::getDpctNamespace() + "set_intersection",
@@ -3191,6 +3191,138 @@ CONDITIONAL_FACTORY_ENTRY(
                               CALL(MapNames::getDpctNamespace() + "set_intersection",
                                   ARG("oneapi::dpl::execution::seq"),
                                   ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7)))))
+    )
+  )
+)
+
+// thrust::partition_copy
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(7),
+  CONDITIONAL_FACTORY_ENTRY(
+    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+    // Handling case: thrust::partition_copy(policy, ptr, ptr, ptr,  ptr, ptr, pred);
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_partition_copy,
+      IFELSE_FACTORY_ENTRY(
+        "thrust::partition_copy",
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+          CALL_FACTORY_ENTRY("thrust::partition_copy", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          CALL_FACTORY_ENTRY("thrust::partition_copy",
+                            CALL(MapNames::getDpctNamespace() + "partition_copy",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(4)), ARG(4)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(5)), ARG(5)),
+                                  ARG(6)))),
+        CALL_FACTORY_ENTRY("thrust::partition_copy",
+                          CALL(MapNames::getDpctNamespace() + "partition_copy",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))))),
+    // Handling case: thrust::partition_copy(thrust::device, itr, itr, itr, itr, itr, pred);
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_partition_copy,
+        CALL_FACTORY_ENTRY("thrust::partition_copy",
+                           CALL(MapNames::getDpctNamespace() + "partition_copy",
+                                makeMappedThrustPolicyEnum(0),
+                                ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))))
+  ),
+  CONDITIONAL_FACTORY_ENTRY(
+    CheckArgCount(5),
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      //Handling case: thrust::partition_copy(ptr, ptr, ptr, pred);
+      IFELSE_FACTORY_ENTRY(
+        "thrust::partition_copy",
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+          CALL_FACTORY_ENTRY("thrust::partition_copy", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          CALL_FACTORY_ENTRY("thrust::partition_copy",
+                            CALL("oneapi::dpl::partition_copy",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                  ARG(4)))),
+        CALL_FACTORY_ENTRY("thrust::partition_copy",
+                           CALL("oneapi::dpl::partition_copy",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))),
+      //Handling case: thrust::partition_copy(iter, iter, iter, iter, pred);
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        CALL_FACTORY_ENTRY("thrust::partition_copy",
+                          CALL("oneapi::dpl::partition_copy",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                ARG(0), ARG(1), ARG(2), ARG(3),ARG(4))),
+        CALL_FACTORY_ENTRY("thrust::partition_copy",
+                          CALL("oneapi::dpl::partition_copy",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))))
+    ),
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      CONDITIONAL_FACTORY_ENTRY(
+        IsPolicyArgType(0),
+        //Handling case: thrust::partition_copy(policy, ptr, ptr, ptr, ptr, pred);
+        IFELSE_FACTORY_ENTRY(
+          "thrust::partition_copy",
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+            CALL_FACTORY_ENTRY("thrust::partition_copy", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+            CALL_FACTORY_ENTRY("thrust::partition_copy",
+                              CALL("oneapi::dpl::partition_copy",
+                                    CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(4)), ARG(4)),
+                                    ARG(5)))),
+          CALL_FACTORY_ENTRY("thrust::partition_copy",
+                             CALL("oneapi::dpl::partition_copy",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(1), ARG(2), ARG(3), ARG(4), ARG(5)))),
+        //Handling case: thrust::partition_copy(ptr, ptr, ptr, ptr, ptr, pred);
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_partition_copy,
+          IFELSE_FACTORY_ENTRY(
+            "thrust::partition_copy",
+            FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+              CALL_FACTORY_ENTRY("thrust::partition_copy", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+            FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+              CALL_FACTORY_ENTRY("thrust::partition_copy",
+                                CALL(MapNames::getDpctNamespace() + "partition_copy",
+                                      CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                      CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                      CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                      CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                      CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                      CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(4)), ARG(4)),
+                                      ARG(5)))),
+            CALL_FACTORY_ENTRY("thrust::partition_copy",
+                              CALL(MapNames::getDpctNamespace() + "partition_copy",
+                                    ARG("oneapi::dpl::execution::seq"),
+                                    ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5)))))),
+      CONDITIONAL_FACTORY_ENTRY(
+        IsPolicyArgType(0),
+        //Handling case: thrust::partition_copy(policy, itr, itr, itr, itr, pred);
+        CALL_FACTORY_ENTRY("thrust::partition_copy",
+                          CALL("oneapi::dpl::partition_copy",
+                                makeMappedThrustPolicyEnum(0),
+                                ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))),
+        //Handling case: thrust::partition_copy(itr, itr, itr, itr, itr, pred);
+        CONDITIONAL_FACTORY_ENTRY(
+          CheckArgType(1, "thrust::device_ptr"),
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_partition_copy,
+            CALL_FACTORY_ENTRY("thrust::partition_copy",
+                              CALL(MapNames::getDpctNamespace() + "partition_copy",
+                                    CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                    ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5)))),
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_partition_copy,
+            CALL_FACTORY_ENTRY("thrust::partition_copy",
+                              CALL(MapNames::getDpctNamespace() + "partition_copy",
+                                    ARG("oneapi::dpl::execution::seq"),
+                                    ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))))))
     )
   )
 )

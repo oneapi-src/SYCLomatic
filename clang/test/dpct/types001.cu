@@ -482,9 +482,9 @@ void fun() {
   cudaStream_t const *s8, *s9;
   // CHECK: const dpct::queue_ptr *s10, *s11;
   const cudaStream_t *s10, *s11;
-  // CHECK: dpct::queue_ptr *const s12 = &q_ct1, *const s13 = &q_ct1;
+  // CHECK: dpct::queue_ptr *const s12 = NULL, *const s13 = NULL;
   cudaStream_t *const s12 = NULL, *const s13 = NULL;
-  // CHECK: const dpct::queue_ptr *const s14 = &q_ct1, *const s15 = &q_ct1;
+  // CHECK: const dpct::queue_ptr *const s14 = NULL, *const s15 = NULL;
   const cudaStream_t *const s14 = NULL, *const s15 = NULL;
 }
 
@@ -498,17 +498,17 @@ void fun2() {
   // CHECK: const dpct::queue_ptr s5 = &q_ct1, s6 = &q_ct1;
   const cudaStream_t s5 = NULL, s6 = NULL;
 
-  // CHECK: dpct::queue_ptr *s7, *const s8 = &q_ct1;
+  // CHECK: dpct::queue_ptr *s7, *const s8 = NULL;
   cudaStream_t *s7, *const s8 = NULL;
-  // CHECK: dpct::queue_ptr *const s9 = &q_ct1, *s10;
+  // CHECK: dpct::queue_ptr *const s9 = NULL, *s10;
   cudaStream_t *const s9 = NULL, *s10;
-  // CHECK: const dpct::queue_ptr *s11, *const s12 = &q_ct1;
+  // CHECK: const dpct::queue_ptr *s11, *const s12 = NULL;
   const cudaStream_t *s11, *const s12 = NULL;
-  // CHECK: dpct::queue_ptr const *const s13 = &q_ct1, *s14;
+  // CHECK: dpct::queue_ptr const *const s13 = NULL, *s14;
   cudaStream_t const *const s13 = NULL, *s14;
-  // CHECK: const dpct::queue_ptr *const s15 = &q_ct1, *s16;
+  // CHECK: const dpct::queue_ptr *const s15 = NULL, *s16;
   const cudaStream_t *const s15 = NULL, *s16;
-  // CHECK: dpct::queue_ptr const *s17, *const s18 = &q_ct1;
+  // CHECK: dpct::queue_ptr const *s17, *const s18 = NULL;
   cudaStream_t const *s17, *const s18 = NULL;
 }
 
@@ -543,22 +543,22 @@ void fun3() {
   char devstr[128] = "";
   // CHECK: dpct::device_info deviceProp;
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with pciDomainID. It was migrated to -1, which value may need to be adjusted for specific device.
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with pciDomainID. It was migrated to -1. You may need to adjust the value of -1 for the specific device.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with pciBusID. It was migrated to -1, which value may need to be adjusted for specific device.
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with pciBusID. It was migrated to -1. You may need to adjust the value of -1 for the specific device.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with pciDeviceID. It was migrated to -1, which value may need to be adjusted for specific device.
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with pciDeviceID. It was migrated to -1. You may need to adjust the value of -1 for the specific device.
   // CHECK-NEXT: */
   // CHECK-NEXT: sprintf(devstr, "pci %x:%x:%x", -1, -1, -1);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with concurrentKernels. It was migrated to true, which value may need to be adjusted for specific device.
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with concurrentKernels. It was migrated to true. You may need to adjust the value of true for the specific device.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (true) {
   // CHECK-NEXT: }
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with canMapHostMemory. It was migrated to false, which value may need to be adjusted for specific device.
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with canMapHostMemory. It was migrated to false. You may need to adjust the value of false for the specific device.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (!false) {
   // CHECK-NEXT: }
@@ -672,4 +672,12 @@ void foo_4() {
   CFoo cfoo{num};
   // CHECK: m = std::min(int64_t(threads[2]), int64_t{cfoo});
   m = std::min(int64_t{threads.x}, int64_t{cfoo});
+}
+
+
+// CHECK: dpct::device_ptr a = (dpct::device_ptr)0, b = (dpct::device_ptr)0;
+CUdeviceptr a = (CUdeviceptr)0, b = (CUdeviceptr)0;
+void test() {
+  // CHECK: dpct::device_ptr a = (dpct::device_ptr)0, b = (dpct::device_ptr)0;
+  CUdeviceptr a = (CUdeviceptr)0, b = (CUdeviceptr)0;
 }

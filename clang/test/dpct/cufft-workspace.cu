@@ -30,28 +30,28 @@ int main() {
 
   
   // CHECK: /*
-  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
+  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" is correct.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::fft::fft_engine::estimate_size(n[0], type, batch, workSize);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
+  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" is correct.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::fft::fft_engine::estimate_size(n[0], n[1], type, workSize);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
+  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" is correct.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::fft::fft_engine::estimate_size(n[0], n[1], n[2], type, workSize);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
+  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" is correct.
@@ -64,35 +64,35 @@ int main() {
 
   cufftCreate(&plan);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
+  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" is correct.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::fft::fft_engine::estimate_size(n[0], type, batch, workSize);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
+  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" is correct.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::fft::fft_engine::estimate_size(n[0], n[1], type, workSize);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
+  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" is correct.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::fft::fft_engine::estimate_size(n[0], n[1], n[2], type, workSize);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
+  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" is correct.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::fft::fft_engine::estimate_size(rank, n, inembed, istride, idist, onembed, ostride, odist, type, batch, workSize);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
+  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "dpct::fft::fft_engine::estimate_size" is correct.
@@ -105,12 +105,12 @@ int main() {
   cufftGetSizeMany64(plan, rank, n_ll, inembed_ll, istride_ll, idist_ll, onembed_ll, ostride_ll, odist_ll, type, batch_ll, workSize);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
+  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: plan->use_internal_workspace(0);
   cufftSetAutoAllocation(plan, 0);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
+  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
@@ -118,14 +118,14 @@ int main() {
   // CHECK-NEXT: plan->commit(&dpct::get_default_queue(), n[0], type, batch, workSize);
   cufftMakePlan1d(plan, n[0], type, batch, workSize);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
+  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: plan->get_workspace_size(workSize);
   cufftGetSize(plan, workSize);
 
   void *workArea;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
+  // CHECK-NEXT: DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported on GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: plan->set_workspace(workArea);
   cufftSetWorkArea(plan, workArea);

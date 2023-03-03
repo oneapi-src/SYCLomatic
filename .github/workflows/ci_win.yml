@@ -65,6 +65,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DLLVM_TARGETS_TO_BUILD="X86;NVPTX" \
             -DLLVM_ENABLE_TERMINFO=OFF  \
+            -DLLVM_ENABLE_ASSERTIONS=ON \
             -DCMAKE_C_COMPILER="$DPCPP_INSTALL_PREFIX/bin/icx.exe"  \
             -DCMAKE_CXX_COMPILER="$DPCPP_INSTALL_PREFIX/bin/icx.exe"  \
             -DCMAKE_INSTALL_PREFIX=$PWD/../../c2s.obj  \
