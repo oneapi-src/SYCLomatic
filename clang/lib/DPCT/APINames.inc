@@ -981,7 +981,6 @@ ENTRY(__vsubss4, __vsubss4, false, NO_FLAG, P4, "comment")
 ENTRY(__vsubus2, __vsubus2, false, NO_FLAG, P4, "comment")
 ENTRY(__vsubus4, __vsubus4, false, NO_FLAG, P4, "comment")
 
-
 ENTRY(max, max, true, NO_FLAG, P0, "Successful")
 ENTRY(min, min, true, NO_FLAG, P0, "Successful")
 ENTRY(abs, abs, true, NO_FLAG, P0, "Successful")
