@@ -12,6 +12,7 @@
 #include <sycl/sycl.hpp>
 #include <oneapi/mkl.hpp>
 #include "memory.hpp"
+#include "util.hpp"
 
 namespace dpct {
 namespace detail {

@@ -46,6 +46,7 @@
 // DPCT_CODE
 // DPCT_LABEL_END
 #include "memory.hpp"
+#include "util.hpp"
 
 namespace dpct {
 namespace detail {
