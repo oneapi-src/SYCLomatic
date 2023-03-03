@@ -81,12 +81,12 @@ std::vector<std::string> CallExprRewriter::getMigratedArgs() {
   return ArgList;
 }
 
-Optional<std::string> FuncCallExprRewriter::rewrite() {
+std::optional<std::string> FuncCallExprRewriter::rewrite() {
   RewriteArgList = getMigratedArgs();
   return buildRewriteString();
 }
 
-Optional<std::string> FuncCallExprRewriter::buildRewriteString() {
+std::optional<std::string> FuncCallExprRewriter::buildRewriteString() {
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   OS << TargetCalleeName << "(";
@@ -108,6 +108,7 @@ std::unique_ptr<std::unordered_map<
     std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>();
 
 void CallExprRewriterFactoryBase::initRewriterMap() {
+  initRewriterMapAtomic();
   initRewriterMapCUB();
   initRewriterMapCUFFT();
   initRewriterMapCUBLAS();

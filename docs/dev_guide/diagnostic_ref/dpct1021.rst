@@ -1,4 +1,4 @@
-.. _id_DPCT1021:
+.. _DPCT1021:
 
 DPCT1021
 ========
@@ -9,7 +9,7 @@ Message
 .. _msg-1021-start:
 
 Migration of ``cublasHandle_t`` in ``__global__`` or ``__device__`` function is
-not supported. You may need to redesign the code
+not supported. You may need to redesign the code.
 
 .. _msg-1021-end:
 

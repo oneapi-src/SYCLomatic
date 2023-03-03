@@ -62,7 +62,7 @@ __global__ void foo_kernel() {}
 //CHECK-NEXT:   #ifdef MACRO_CC
 //CHECK-NEXT:   , int c
 //CHECK-NEXT:   #endif
-//CHECK-NEXT:   , sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:   , const sycl::nd_item<3> &item_ct1) {
 //CHECK-NEXT:     int x = item_ct1.get_group(2);
 //CHECK-NEXT:   }
 __global__ void foo_kernel2(int a, int b
@@ -432,7 +432,7 @@ FFF
 
 }
 
-// CHECK: #define FFFFF(aaa,bbb) void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb, int *c, BBB, sycl::nd_item<3> item_ct1, float *sp_lj, float *sp_coul, int *ljd, sycl::local_accessor<double, 2> la)
+// CHECK: #define FFFFF(aaa,bbb) void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb, int *c, BBB, const sycl::nd_item<3> &item_ct1, float *sp_lj, float *sp_coul, int *ljd, sycl::local_accessor<double, 2> la)
 #define FFFFF(aaa,bbb) __device__ void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb, int *c, BBB)
 
 // CHECK: FFFFF(pos, q)
@@ -449,7 +449,7 @@ FFFFF(pos, q)
   const int tid = threadIdx.x;
 }
 
-// CHECK: #define FFFFFF(aaa,bbb) void foo5(const int * __restrict__ aaa, const float * __restrict__ bbb, sycl::nd_item<3> item_ct1, float *sp_lj, float *sp_coul, int *ljd, sycl::local_accessor<double, 2> la)
+// CHECK: #define FFFFFF(aaa,bbb) void foo5(const int * __restrict__ aaa, const float * __restrict__ bbb, const sycl::nd_item<3> &item_ct1, float *sp_lj, float *sp_coul, int *ljd, sycl::local_accessor<double, 2> la)
 #define FFFFFF(aaa,bbb) __device__ void foo5(const int * __restrict__ aaa, const float * __restrict__ bbb)
 
 // CHECK: FFFFFF(pos, q)
@@ -481,7 +481,7 @@ __device__ void foo6(AAA, BBB)
 
 //CHECK: #define MM __umul24
 //CHECK-NEXT: #define MUL(a, b) sycl::mul24((unsigned int)a, (unsigned int)b)
-//CHECK-NEXT: void foo7(sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT: void foo7(const sycl::nd_item<3> &item_ct1) {
 //CHECK-NEXT:   unsigned int tid = MUL(item_ct1.get_local_range(2), item_ct1.get_group(2)) +
 //CHECK-NEXT:       item_ct1.get_local_range(2);
 //CHECK-NEXT:   unsigned int tid2 = sycl::mul24((unsigned int)item_ct1.get_local_range(2),
@@ -499,9 +499,12 @@ __global__ void foo7() {
 //CHECK-NEXT:   #define SLOW(X) X
 //CHECK-NEXT:   double* data;
 //CHECK-NEXT:   unsigned long long int tid;
-//CHECK-NEXT:   SLOW(dpct::atomic_fetch_add(&data[0], (double)tid);
-//CHECK-NEXT:         dpct::atomic_fetch_add(&data[1], (double)(tid + 1));
-//CHECK-NEXT:         dpct::atomic_fetch_add(&data[2], (double)(tid + 2)););
+//CHECK-NEXT:   SLOW(dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(
+//CHECK-NEXT:            &data[0], tid);
+//CHECK-NEXT:        dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(
+//CHECK-NEXT:            &data[1], tid + 1);
+//CHECK-NEXT:        dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(
+//CHECK-NEXT:            &data[2], tid + 2););
 //CHECK-NEXT: }
 __global__ void foo8(){
 #define SLOW(X) X
@@ -569,7 +572,7 @@ void templatefoo2(){
   CALL_KERNEL2(8, AAA)
 }
 
-//CHECK: void foo11(sycl::nd_item<3> item_ct1){
+//CHECK: void foo11(const sycl::nd_item<3> &item_ct1){
 //CHECK-NEXT:   sycl::exp((double)(THREAD_IDX_X));
 //CHECK-NEXT: }
 __global__ void foo11(){
@@ -839,12 +842,16 @@ void foo18(){
   CONCATE(StreamDestroy)(stream2);
 }
 
-// CHECK: static const int streamDefault2 = &dpct::get_default_queue();
-// CHECK-NEXT: static const int streamDefault = CALL(&dpct::get_default_queue());
-// CHECK-NEXT: static const int streamNonBlocking = &dpct::get_default_queue();
+// CHECK: static const int streamDefault2 = 0;
+// CHECK-NEXT: static const int streamDefault = CALL(0);
+// CHECK-NEXT: static const int streamNonBlocking = 0;
+// CHECK-NEXT: static const dpct::queue_ptr streamDefault3 = &dpct::get_default_queue();
+// CHECK-NEXT: static const dpct::queue_ptr streamDefault4 = CALL(&dpct::get_default_queue());
 static const int streamDefault2 = cudaStreamDefault;
 static const int streamDefault = CALL(CONCATE(StreamDefault));
 static const int streamNonBlocking = CONCATE(StreamNonBlocking);
+static const cudaStream_t streamDefault3 = cudaStreamDefault;
+static const cudaStream_t streamDefault4 = CALL(cudaStreamDefault);
 
 
 //     CHECK:#define CMC_PROFILING_BEGIN()                                                  \
@@ -883,7 +890,7 @@ static const int streamNonBlocking = CONCATE(StreamNonBlocking);
 //CHECK-NEXT:    dpct::destroy_event(start);                                                \
 //CHECK-NEXT:    dpct::destroy_event(stop);                                                 \
 //CHECK-NEXT:  }                                                                            \
-//CHECK-NEXT:  int error = 0;
+//CHECK-NEXT:  dpct::err0 error = 0;
 #define CMC_PROFILING_END(lineno)                                                                          \
   if (CMC_profile)                                                                                         \
   {                                                                                                        \
@@ -1103,8 +1110,8 @@ template<class T1, class T2, int N> __global__ void foo31();
 //CHECK:   q_ct1.submit([&](sycl::handler &cgh) {
 //CHECK-NEXT:     /*
 //CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'BLOCK_PAIR / SIMD_SIZE' expression was replaced with a
-//CHECK-NEXT:     value. Modify the code to use original expression, provided in comments,
-//CHECK-NEXT:     if it is correct.
+//CHECK-NEXT:     value. Modify the code to use the original expression, provided in
+//CHECK-NEXT:     comments, if it is correct.
 //CHECK-NEXT:     */
 //CHECK-NEXT:     sycl::local_accessor<double, 2> red_acc_acc_ct1(
 //CHECK-NEXT:         sycl::range<2>(8, 8 /*BLOCK_PAIR / SIMD_SIZE*/), cgh);

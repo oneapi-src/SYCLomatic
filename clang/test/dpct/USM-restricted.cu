@@ -9,6 +9,7 @@
 #include <cuda.h>
 #include <stdio.h>
 #include <memory>
+#include <vector>
 
 #define MY_SAFE_CALL(CALL) do {    \
   int Error = CALL;                \
@@ -123,7 +124,7 @@ void foo() {
   cudaMallocManaged((void **)&d_A, sizeof(double2) * size * sizeof(uchar4));
 
   CUdeviceptr* D_ptr;
-  // CHECK: *D_ptr = (char *)sycl::malloc_shared(size, q_ct1);
+  // CHECK: *D_ptr = (dpct::device_ptr)sycl::malloc_shared(size, q_ct1);
   cuMemAllocManaged(D_ptr, size, CU_MEM_ATTACH_HOST);
 
   /// memcpy
@@ -828,7 +829,7 @@ void foo3() {
   MY_SAFE_CALL(cudaMemPrefetchAsync (d_A, 100, deviceID, cudaStreamPerThread));
   // CHECK: int cudevice = 0;
   CUdevice cudevice = 0;
-  // CHECK: char * devPtr;
+  // CHECK: dpct::device_ptr devPtr;
   CUdeviceptr devPtr;
   // CHECK: dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100);
   // CHECK: dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100);
@@ -1069,4 +1070,16 @@ void foo14() {
   //CHECK-NEXT:q_ct1.memcpy((void *)h_out, (void *)d_out, h_selected_num * sizeof(int)).wait();
   cudaMemcpy((void *)&h_selected_num, (void *)d_selected_num, sizeof(int), cudaMemcpyDeviceToHost);
   cudaMemcpy((void *)h_out, (void *)d_out, h_selected_num * sizeof(int), cudaMemcpyDeviceToHost);
+}
+
+struct TEST_STR {
+  int a[10];
+};
+
+void foo15() {
+  std::vector<volatile TEST_STR *> buf;
+  for (int i = 0; i < 32; i++) {
+    //CHECK: buf[i] = (volatile TEST_STR *)sycl::malloc_host(sizeof(TEST_STR), dpct::get_default_queue());
+    cudaMallocHost(&buf[i], sizeof(TEST_STR));
+  }
 }

@@ -17,7 +17,7 @@ __device__ void testDevice(const int *K) {
 __device__ void testDevice1(const int *K) { int t = K[0]; }
 
      //CHECK:void testKernelPtr(const int *L, const int *M, int N,
-//CHECK-NEXT:                   sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:                   const sycl::nd_item<3> &item_ct1) {
 //CHECK-NEXT:  testDevice(L);
 //CHECK-NEXT:  int gtid = item_ct1.get_group(2) * item_ct1.get_local_range(2) +
 //CHECK-NEXT:             item_ct1.get_local_id(2);

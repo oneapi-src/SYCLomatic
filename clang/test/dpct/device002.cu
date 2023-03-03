@@ -16,7 +16,7 @@ cudaDeviceProp cdp;
 // CHECK:/*
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/
-// CHECK-NEXT: int error_code = (dpct::dev_mgr::instance().get_device(devID).get_device_info(cdp), 0);
+// CHECK-NEXT: dpct::err0 error_code = (dpct::dev_mgr::instance().get_device(devID).get_device_info(cdp), 0);
 cudaError_t error_code = cudaGetDeviceProperties(&cdp, devID);
 
 if (error_code == cudaSuccess) {
@@ -115,7 +115,7 @@ cudaDeviceGetAttribute(&val, attr6, dev_id);
 
 int computeMode = -1, minor = 0;
 // CHECK: /*
-// CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by host to submit tasks. You may need to adjust this code.
+// CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by the host to submit tasks. You may need to adjust this code.
 // CHECK-NEXT: */
 // CHECK-NEXT: checkError((computeMode = 1, 0));
 checkError(cudaDeviceGetAttribute(&computeMode, cudaDevAttrComputeMode, dev_id));
@@ -182,7 +182,7 @@ cudaThreadExit();
 error_code = cudaThreadExit();
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1093:{{[0-9]+}}: The "device2" may not be the best XPU device. Adjust the selected device if needed.
+// CHECK-NEXT:DPCT1093:{{[0-9]+}}: The "device2" device may be not the one intended for use. Adjust the selected device if needed.
 // CHECK-NEXT:*/
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -190,7 +190,7 @@ error_code = cudaThreadExit();
 // CHECK-NEXT:error_code = (dpct::select_device(device2), 0);
 error_code = cudaSetDevice(device2);
 // CHECK:/*
-// CHECK-NEXT:DPCT1093:{{[0-9]+}}: The "device2" may not be the best XPU device. Adjust the selected device if needed.
+// CHECK-NEXT:DPCT1093:{{[0-9]+}}: The "device2" device may be not the one intended for use. Adjust the selected device if needed.
 // CHECK-NEXT:*/
 // CHECK-NEXT: dpct::select_device(device2);
 cudaSetDevice(device2);
@@ -199,7 +199,7 @@ cudaSetDevice(device2);
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/
-// CHECK-NEXT:int err = (dpct::get_current_device().queues_wait_and_throw(), 0);
+// CHECK-NEXT:dpct::err0 err = (dpct::get_current_device().queues_wait_and_throw(), 0);
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/

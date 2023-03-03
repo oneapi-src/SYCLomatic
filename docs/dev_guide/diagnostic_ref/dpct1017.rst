@@ -1,4 +1,4 @@
-.. _id_DPCT1017:
+.. _DPCT1017:
 
 DPCT1017
 ========
@@ -18,7 +18,7 @@ Detailed Help
 -------------
 
 |tool_name| did not find an exact functional equivalent of the function
-in SYCL, so it used the closest alternative. The replacement may impact your
+in SYCL\*, so it used the closest alternative. The replacement may impact your
 code precision and/or performance. Verify the code correctness/performance.
 
 

@@ -30,6 +30,17 @@ inline T atomic_fetch_add(T *addr, T operand) {
   return atm.fetch_add(operand);
 }
 
+template <sycl::access::address_space addressSpace =
+              sycl::access::address_space::global_space,
+          sycl::memory_order memoryOrder = sycl::memory_order::relaxed,
+          sycl::memory_scope memoryScope = sycl::memory_scope::device,
+          typename T1, typename T2>
+inline T1 atomic_fetch_add(T1 *addr, T2 operand) {
+  auto atm =
+      sycl::atomic_ref<T1, memoryOrder, memoryScope, addressSpace>(addr[0]);
+  return atm.fetch_add(operand);
+}
+
 /// Atomically add the value operand to the value at the addr and assign the
 /// result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
@@ -57,6 +68,14 @@ inline T atomic_fetch_add(T *addr, T operand,
   }
 }
 
+template <sycl::access::address_space addressSpace =
+              sycl::access::address_space::global_space,
+          typename T1, typename T2>
+inline T1 atomic_fetch_add(T1 *addr, T2 operand,
+                           sycl::memory_order memoryOrder) {
+  atomic_fetch_add<T1, addressSpace>(addr, operand, memoryOrder);
+}
+
 /// Atomically subtract the value operand from the value at the addr and assign
 /// the result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
@@ -71,6 +90,17 @@ template <typename T,
 inline T atomic_fetch_sub(T *addr, T operand) {
   auto atm =
       sycl::atomic_ref<T, memoryOrder, memoryScope, addressSpace>(addr[0]);
+  return atm.fetch_sub(operand);
+}
+
+template <sycl::access::address_space addressSpace =
+              sycl::access::address_space::global_space,
+          sycl::memory_order memoryOrder = sycl::memory_order::relaxed,
+          sycl::memory_scope memoryScope = sycl::memory_scope::device,
+          typename T1, typename T2>
+inline T1 atomic_fetch_sub(T1 *addr, T2 operand) {
+  auto atm =
+      sycl::atomic_ref<T1, memoryOrder, memoryScope, addressSpace>(addr[0]);
   return atm.fetch_sub(operand);
 }
 
@@ -101,6 +131,14 @@ inline T atomic_fetch_sub(T *addr, T operand,
   }
 }
 
+template <sycl::access::address_space addressSpace =
+              sycl::access::address_space::global_space,
+          typename T1, typename T2>
+inline T1 atomic_fetch_sub(T1 *addr, T2 operand,
+                           sycl::memory_order memoryOrder) {
+  atomic_fetch_sub<T1, addressSpace>(addr, operand, memoryOrder);
+}
+
 /// Atomically perform a bitwise AND between the value operand and the value at the addr
 /// and assign the result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
@@ -115,6 +153,17 @@ template <typename T,
 inline T atomic_fetch_and(T *addr, T operand) {
   auto atm =
       sycl::atomic_ref<T, memoryOrder, memoryScope, addressSpace>(addr[0]);
+  return atm.fetch_and(operand);
+}
+
+template <sycl::access::address_space addressSpace =
+              sycl::access::address_space::global_space,
+          sycl::memory_order memoryOrder = sycl::memory_order::relaxed,
+          sycl::memory_scope memoryScope = sycl::memory_scope::device,
+          typename T1, typename T2>
+inline T1 atomic_fetch_and(T1 *addr, T2 operand) {
+  auto atm =
+      sycl::atomic_ref<T1, memoryOrder, memoryScope, addressSpace>(addr[0]);
   return atm.fetch_and(operand);
 }
 
@@ -145,6 +194,14 @@ inline T atomic_fetch_and(T *addr, T operand,
   }
 }
 
+template <sycl::access::address_space addressSpace =
+              sycl::access::address_space::global_space,
+          typename T1, typename T2>
+inline T1 atomic_fetch_and(T1 *addr, T2 operand,
+                           sycl::memory_order memoryOrder) {
+  atomic_fetch_and<T1, addressSpace>(addr, operand, memoryOrder);
+}
+
 /// Atomically or the value at the addr with the value operand, and assign
 /// the result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
@@ -159,6 +216,17 @@ template <typename T,
 inline T atomic_fetch_or(T *addr, T operand) {
   auto atm =
       sycl::atomic_ref<T, memoryOrder, memoryScope, addressSpace>(addr[0]);
+  return atm.fetch_or(operand);
+}
+
+template <sycl::access::address_space addressSpace =
+              sycl::access::address_space::global_space,
+          sycl::memory_order memoryOrder = sycl::memory_order::relaxed,
+          sycl::memory_scope memoryScope = sycl::memory_scope::device,
+          typename T1, typename T2>
+inline T1 atomic_fetch_or(T1 *addr, T2 operand) {
+  auto atm =
+      sycl::atomic_ref<T1, memoryOrder, memoryScope, addressSpace>(addr[0]);
   return atm.fetch_or(operand);
 }
 
@@ -189,6 +257,14 @@ inline T atomic_fetch_or(T *addr, T operand,
   }
 }
 
+template <sycl::access::address_space addressSpace =
+              sycl::access::address_space::global_space,
+          typename T1, typename T2>
+inline T1 atomic_fetch_or(T1 *addr, T2 operand,
+                           sycl::memory_order memoryOrder) {
+  atomic_fetch_or<T1, addressSpace>(addr, operand, memoryOrder);
+}
+
 /// Atomically xor the value at the addr with the value operand, and assign
 /// the result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
@@ -203,6 +279,17 @@ template <typename T,
 inline T atomic_fetch_xor(T *addr, T operand) {
   auto atm =
       sycl::atomic_ref<T, memoryOrder, memoryScope, addressSpace>(addr[0]);
+  return atm.fetch_xor(operand);
+}
+
+template <sycl::access::address_space addressSpace =
+              sycl::access::address_space::global_space,
+          sycl::memory_order memoryOrder = sycl::memory_order::relaxed,
+          sycl::memory_scope memoryScope = sycl::memory_scope::device,
+          typename T1, typename T2>
+inline T1 atomic_fetch_xor(T1 *addr, T2 operand) {
+  auto atm =
+      sycl::atomic_ref<T1, memoryOrder, memoryScope, addressSpace>(addr[0]);
   return atm.fetch_xor(operand);
 }
 
@@ -233,6 +320,14 @@ inline T atomic_fetch_xor(T *addr, T operand,
   }
 }
 
+template <sycl::access::address_space addressSpace =
+              sycl::access::address_space::global_space,
+          typename T1, typename T2>
+inline T1 atomic_fetch_xor(T1 *addr, T2 operand,
+                           sycl::memory_order memoryOrder) {
+  atomic_fetch_xor<T1, addressSpace>(addr, operand, memoryOrder);
+}
+
 /// Atomically calculate the minimum of the value at addr and the value operand
 /// and assign the result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
@@ -247,6 +342,17 @@ template <typename T,
 inline T atomic_fetch_min(T *addr, T operand) {
   auto atm =
       sycl::atomic_ref<T, memoryOrder, memoryScope, addressSpace>(addr[0]);
+  return atm.fetch_min(operand);
+}
+
+template <sycl::access::address_space addressSpace =
+              sycl::access::address_space::global_space,
+          sycl::memory_order memoryOrder = sycl::memory_order::relaxed,
+          sycl::memory_scope memoryScope = sycl::memory_scope::device,
+          typename T1, typename T2>
+inline T1 atomic_fetch_min(T1 *addr, T2 operand) {
+  auto atm =
+      sycl::atomic_ref<T1, memoryOrder, memoryScope, addressSpace>(addr[0]);
   return atm.fetch_min(operand);
 }
 
@@ -277,6 +383,14 @@ inline T atomic_fetch_min(T *addr, T operand,
   }
 }
 
+template <sycl::access::address_space addressSpace =
+              sycl::access::address_space::global_space,
+          typename T1, typename T2>
+inline T1 atomic_fetch_min(T1 *addr, T2 operand,
+                           sycl::memory_order memoryOrder) {
+  atomic_fetch_min<T1, addressSpace>(addr, operand, memoryOrder);
+}
+
 /// Atomically calculate the maximum of the value at addr and the value operand
 /// and assign the result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
@@ -291,6 +405,17 @@ template <typename T,
 inline T atomic_fetch_max(T *addr, T operand) {
   auto atm =
       sycl::atomic_ref<T, memoryOrder, memoryScope, addressSpace>(addr[0]);
+  return atm.fetch_max(operand);
+}
+
+template <sycl::access::address_space addressSpace =
+              sycl::access::address_space::global_space,
+          sycl::memory_order memoryOrder = sycl::memory_order::relaxed,
+          sycl::memory_scope memoryScope = sycl::memory_scope::device,
+          typename T1, typename T2>
+inline T1 atomic_fetch_max(T1 *addr, T2 operand) {
+  auto atm =
+      sycl::atomic_ref<T1, memoryOrder, memoryScope, addressSpace>(addr[0]);
   return atm.fetch_max(operand);
 }
 
@@ -319,6 +444,42 @@ inline T atomic_fetch_max(T *addr, T operand,
                     "atomics are: sycl::memory_order::relaxed, "
                     "sycl::memory_order::acq_rel, sycl::memory_order::seq_cst!");
   }
+}
+
+template <sycl::access::address_space addressSpace =
+              sycl::access::address_space::global_space,
+          typename T1, typename T2>
+inline T1 atomic_fetch_max(T1 *addr, T2 operand,
+                           sycl::memory_order memoryOrder) {
+  atomic_fetch_max<T1, addressSpace>(addr, operand, memoryOrder);
+}
+
+/// Atomically set \p operand to the value stored in \p addr, if old value stored in
+/// \p addr is equal to zero or greater than \p operand, else decrease the value stored
+/// in \p addr.
+/// \param [in, out] addr The pointer to the data.
+/// \param operand The threshold value.
+/// \param memoryOrder The memory ordering used.
+/// \returns The old value stored in \p addr.
+template <sycl::access::address_space addressSpace = sycl::access::address_space::global_space,
+          sycl::memory_order memoryOrder = sycl::memory_order::relaxed,
+          sycl::memory_scope memoryScope = sycl::memory_scope::device>
+inline unsigned int atomic_fetch_compare_dec(unsigned int *addr,
+                                             unsigned int operand) {
+  auto atm = sycl::atomic_ref<unsigned int, memoryOrder, memoryScope,
+                                  addressSpace>(addr[0]);
+  unsigned int old;
+
+	while (true) {
+	  old = atm.load();
+	  if (old == 0 || old > operand) {
+		  if (atm.compare_exchange_strong(old, operand))
+        break;
+	  } else if (atm.compare_exchange_strong(old, old - 1))
+      break;
+	}
+
+  return old;
 }
 
 /// Atomically increment the value stored in \p addr if old value stored in \p
@@ -394,6 +555,17 @@ inline T atomic_exchange(T *addr, T operand) {
   return atm.exchange(operand);
 }
 
+template <sycl::access::address_space addressSpace =
+              sycl::access::address_space::global_space,
+          sycl::memory_order memoryOrder = sycl::memory_order::relaxed,
+          sycl::memory_scope memoryScope = sycl::memory_scope::device,
+          typename T1, typename T2>
+inline T1 atomic_exchange(T1 *addr, T2 operand) {
+  auto atm =
+      sycl::atomic_ref<T1, memoryOrder, memoryScope, addressSpace>(addr[0]);
+  return atm.exchange(operand);
+}
+
 /// Atomically exchange the value at the address addr with the value operand.
 /// \param [in, out] addr The pointer to the data.
 /// \param operand The value to be exchanged with the value pointed by \p addr.
@@ -420,6 +592,14 @@ inline T atomic_exchange(T *addr, T operand,
   }
 }
 
+template <sycl::access::address_space addressSpace =
+              sycl::access::address_space::global_space,
+          typename T1, typename T2>
+inline T1 atomic_exchange(T1 *addr, T2 operand,
+                           sycl::memory_order memoryOrder) {
+  atomic_exchange<T1, addressSpace>(addr, operand, memoryOrder);
+}
+
 /// Atomically compare the value at \p addr to the value expected and exchange
 /// with the value desired if the value at \p addr is equal to the value expected.
 /// Returns the value at the \p addr before the call.
@@ -435,15 +615,29 @@ template <typename T,
           sycl::memory_order memoryOrder = sycl::memory_order::relaxed,
           sycl::memory_scope memoryScope = sycl::memory_scope::device>
 T atomic_compare_exchange_strong(
-    sycl::multi_ptr<T, sycl::access::address_space::global_space> addr,
-    T expected, T desired,
+    sycl::multi_ptr<T, addressSpace> addr, T expected, T desired,
     sycl::memory_order success = sycl::memory_order::relaxed,
     sycl::memory_order fail = sycl::memory_order::relaxed) {
-  auto atm =
-      sycl::atomic_ref<T, memoryOrder, memoryScope, addressSpace>(*addr);
+  auto atm = sycl::atomic_ref<T, memoryOrder, memoryScope, addressSpace>(*addr);
 
   atm.compare_exchange_strong(expected, desired, success, fail);
   return expected;
+}
+
+template <sycl::access::address_space addressSpace =
+              sycl::access::address_space::global_space,
+          sycl::memory_order memoryOrder = sycl::memory_order::relaxed,
+          sycl::memory_scope memoryScope = sycl::memory_scope::device,
+          typename T1, typename T2, typename T3>
+T1 atomic_compare_exchange_strong(
+    sycl::multi_ptr<T1, addressSpace> addr, T2 expected, T3 desired,
+    sycl::memory_order success = sycl::memory_order::relaxed,
+    sycl::memory_order fail = sycl::memory_order::relaxed) {
+  auto atm =
+      sycl::atomic_ref<T1, memoryOrder, memoryScope, addressSpace>(*addr);
+  T1 expected_value = expected;
+  atm.compare_exchange_strong(expected_value, desired, success, fail);
+  return expected_value;
 }
 
 /// Atomically compare the value at \p addr to the value expected and exchange
@@ -468,6 +662,22 @@ T atomic_compare_exchange_strong(
       sycl::atomic_ref<T, memoryOrder, memoryScope, addressSpace>(addr[0]);
   atm.compare_exchange_strong(expected, desired, success, fail);
   return expected;
+}
+
+template <sycl::access::address_space addressSpace =
+              sycl::access::address_space::global_space,
+          sycl::memory_order memoryOrder = sycl::memory_order::relaxed,
+          sycl::memory_scope memoryScope = sycl::memory_scope::device,
+          typename T1, typename T2, typename T3>
+T1 atomic_compare_exchange_strong(
+    T1 *addr, T2 expected, T3 desired,
+    sycl::memory_order success = sycl::memory_order::relaxed,
+    sycl::memory_order fail = sycl::memory_order::relaxed) {
+  T1 expected_value = expected;
+  auto atm =
+      sycl::atomic_ref<T1, memoryOrder, memoryScope, addressSpace>(addr[0]);
+  atm.compare_exchange_strong(expected_value, desired, success, fail);
+  return expected_value;
 }
 
 /// Atomic extension to implement standard APIs in std::atomic

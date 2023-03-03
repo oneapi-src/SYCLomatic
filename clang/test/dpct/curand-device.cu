@@ -43,7 +43,7 @@ __global__ void picount(int *totals) {
 }
 
 //CHECK: void cuda_kernel_initRND(unsigned long seed, dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *States,
-//CHECK-NEXT:                     sycl::nd_item<3> item_ct1)
+//CHECK-NEXT:                     const sycl::nd_item<3> &item_ct1)
 __global__ void cuda_kernel_initRND(unsigned long seed, curandStateMRG32k3a_t *States)
 {
   int tid = threadIdx.x;
@@ -57,7 +57,7 @@ __global__ void cuda_kernel_initRND(unsigned long seed, curandStateMRG32k3a_t *S
 }
 
 //CHECK: void cuda_kernel_RNDnormalDitribution(sycl::double2 *Image, dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *States,
-//CHECK-NEXT:                                  sycl::nd_item<3> item_ct1)
+//CHECK-NEXT:                                  const sycl::nd_item<3> &item_ct1)
 __global__ void cuda_kernel_RNDnormalDitribution(double2 *Image, curandStateMRG32k3a_t *States)
 {
   int tid = threadIdx.x;
@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
   //CHECK-NEXT:    /*
-  //CHECK-NEXT:    DPCT1101:{{[0-9]+}}: 'WARP_SIZE' expression was replaced with a value. Modify the code to use original expression, provided in comments, if it is correct.
+  //CHECK-NEXT:    DPCT1101:{{[0-9]+}}: 'WARP_SIZE' expression was replaced with a value. Modify the code to use the original expression, provided in comments, if it is correct.
   //CHECK-NEXT:    */
   //CHECK-NEXT:    sycl::local_accessor<int, 1> counter_acc_ct1(sycl::range<1>(32/*WARP_SIZE*/), cgh);
   //CHECK-NEXT:    dpct::access_wrapper<int *> dOut_acc_ct0(dOut, cgh);

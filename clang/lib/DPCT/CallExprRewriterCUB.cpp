@@ -27,6 +27,13 @@ RemoveCubTempStorageFactory::create(const CallExpr *C) const {
 }
 
 std::function<bool(const CallExpr *)>
+checkEnableUserDefineReductions() {
+  return [=](const CallExpr *) -> bool {
+    return DpctGlobalInfo::useUserDefineReductions();
+  };
+}
+
+std::function<bool(const CallExpr *)>
 checkArgCanMappingToSyclNativeBinaryOp(size_t ArgIdx) {
   return [=](const CallExpr *C) -> bool {
     const Expr *Arg = C->getArg(ArgIdx);

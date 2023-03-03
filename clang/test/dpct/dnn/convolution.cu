@@ -52,6 +52,14 @@ int main() {
     cudnnCreateConvolutionDescriptor(&covdes);
     cudnnSetConvolution2dDescriptor(covdes, 0, 0, 1, 1, 1, 1, CUDNN_CONVOLUTION, CUDNN_DATA_FLOAT);
     cudnnSetConvolutionGroupCount(covdes, 2);
+
+    // CHECK: covdes.get_forward_output_dim(dataTensor, filterTensor, &on, &oc, &oh, &ow);
+    cudnnGetConvolution2dForwardOutputDim(covdes, dataTensor, filterTensor, &on, &oc, &oh, &ow);
+
+    int out_dim[5];
+    // CHECK: covdes.get_forward_output_dim(dataTensor, filterTensor, 5, out_dim);
+    cudnnGetConvolutionNdForwardOutputDim(covdes, dataTensor, filterTensor, 5, out_dim);
+
     // CHECK: /*
     // CHECK: DPCT1007:{{[0-9]+}}: Migration of CUDNN_CONVOLUTION is not supported.
     // CHECK: */
@@ -70,6 +78,10 @@ int main() {
     float alpha = 1.0f, beta = 0.0f;
     // CHECK: handle.async_convolution_forward(covdes, dnnl::algorithm::convolution_direct, alpha, dataTensor, data, filterTensor, filter, beta, outTensor, out);
     cudnnConvolutionForward(handle, &alpha, dataTensor, data, filterTensor, filter, covdes, CUDNN_CONVOLUTION_FWD_ALGO_DIRECT, workspacesize, size, &beta, outTensor, out);
+    // CHECK: handle.async_convolution_forward(covdes, dnnl::algorithm::convolution_direct, *(float *)(void *)&alpha, dataTensor, data, filterTensor, filter, *(float *)(void *)&beta, outTensor, out);
+    cudnnConvolutionForward(handle, (void *)&alpha, dataTensor, data, filterTensor, filter, covdes, CUDNN_CONVOLUTION_FWD_ALGO_DIRECT, workspacesize, size, (void *)&beta, outTensor, out);
+    // CHECK: handle.async_convolution_forward(covdes, dnnl::algorithm::convolution_direct, *(float *)&alpha, dataTensor, data, filterTensor, filter, *(float *)&beta, outTensor, out);
+    cudnnConvolutionForward(handle, (float *)&alpha, dataTensor, data, filterTensor, filter, covdes, CUDNN_CONVOLUTION_FWD_ALGO_DIRECT, workspacesize, size, (float *)&beta, outTensor, out);
 
     cudaDeviceSynchronize();
     cudaMemcpy(host_bias.data(), bias, sizeof(float) * on * oc * oh * ow, cudaMemcpyDeviceToHost);

@@ -10,5 +10,4 @@
 int main() {
   int  device;
   ncclComm_t comm;
-  ncclCommCuDevice(comm, &device);
 }

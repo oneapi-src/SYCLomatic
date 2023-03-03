@@ -209,7 +209,7 @@ void testCommas() {
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  int err = (d_A = (float *)dpct::dpct_malloc(size), 0);
+  // CHECK-NEXT:  dpct::err0 err = (d_A = (float *)dpct::dpct_malloc(size), 0);
   cudaError_t err = cudaMalloc((void **)&d_A, size);
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -894,18 +894,18 @@ void testCommas_in_global_memory() {
 
   CUdeviceptr  devicePtr;
   size_t size;
-  // CHECK: devicePtr = (char *)dpct::dpct_malloc(size, size, size);
+  // CHECK: devicePtr = (dpct::device_ptr)dpct::dpct_malloc(size, size, size);
   cuMemAllocPitch((CUdeviceptr *)&devicePtr, &size, size, size, size);
 
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT: cu_err = ((devicePtr = (char *)dpct::dpct_malloc(size, size, size), 0), 0);
+  // CHECK-NEXT: cu_err = ((devicePtr = (dpct::device_ptr)dpct::dpct_malloc(size, size, size), 0), 0);
   cu_err = cuMemAllocPitch((CUdeviceptr *)&devicePtr, &size, size, size, size);
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  cuCheckError(((devicePtr = (char *)dpct::dpct_malloc(size, size, size), 0), 0));
+  // CHECK-NEXT:  cuCheckError(((devicePtr = (dpct::device_ptr)dpct::dpct_malloc(size, size, size), 0), 0));
   cuCheckError(cuMemAllocPitch((CUdeviceptr *)&devicePtr, &size, size, size, size));
 
   int* a;
@@ -968,7 +968,7 @@ void uninstantiated_template_call(const T * d_data, size_t width, size_t height)
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT: int err = (dpct::dpct_memcpy(data, d_data, datasize * sizeof(T), dpct::device_to_host), 0);
+  // CHECK-NEXT: dpct::err0 err = (dpct::dpct_memcpy(data, d_data, datasize * sizeof(T), dpct::device_to_host), 0);
   cudaError_t err = cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost);
 
   // CHECK:/*

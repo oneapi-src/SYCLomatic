@@ -1,4 +1,4 @@
-.. _id_DPCT1031:
+.. _DPCT1031:
 
 DPCT1031
 ========
@@ -16,7 +16,7 @@ parameter(s) are set to 0.
 Detailed Help
 -------------
 
-SYCL currently does not support memory access across peer devices. The output
+SYCL\* currently does not support memory access across peer devices. The output
 parameter(s) are set to 0.
 
 Contact `Support <https://software.intel.com/content/www/us/en/develop/support.html>`_

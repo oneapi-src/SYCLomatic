@@ -24,6 +24,14 @@ using namespace clang;
 using namespace clang::dpct;
 using namespace clang::tooling;
 
+bool ReplaceStmt::inCompoundStmt(const Stmt *E) {
+  auto &context = DpctGlobalInfo::getContext();
+  const auto parents = context.getParents(*E);
+  return std::find_if(parents.begin(), parents.end(), [](const DynTypedNode &n) {
+    return bool(n.get<CompoundStmt>());
+  }) != parents.end();
+}
+
 std::shared_ptr<ExtReplacement>
 ReplaceStmt::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
@@ -169,7 +177,7 @@ ReplaceStmt::removeStmtWithCleanups(const SourceManager &SM) const {
 
   // Get the length of spaces and the semicolon after the TheStmt
   SourceLocation PostStmtLoc;
-  Optional<Token> TokSharedPtr;
+  std::optional<Token> TokSharedPtr;
   if (IsProcessMacro) {
     PostStmtLoc = End;
     if (End.getRawEncoding() == 0) {

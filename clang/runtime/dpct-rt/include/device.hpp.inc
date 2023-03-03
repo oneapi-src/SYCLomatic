@@ -95,6 +95,12 @@ typedef sycl::event *event_ptr;
 typedef sycl::queue *queue_ptr;
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|typedef_device_ptr|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+typedef char *device_ptr;
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|destroy_event|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Device|typedef_event_ptr
@@ -285,6 +291,8 @@ public:
 // Device|device_info
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+  /// Returns the maximum clock rate of device's global memory in kHz. If
+  /// compiler does not support this API then returns default value 3200000 kHz.
   unsigned int get_memory_clock_rate() const { return _memory_clock_rate; }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_info_get_memory_bus_width|dpct
@@ -292,6 +300,8 @@ public:
 // Device|device_info
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+  /// Returns the maximum bus width between device and memory in bits. If
+  /// compiler does not support this API then returns default value 64 bits.
   unsigned int get_memory_bus_width() const { return _memory_bus_width; }
 // DPCT_LABEL_END
   // set interface
@@ -483,7 +493,9 @@ private:
   int _minor;
   int _integrated = 0;
   int _frequency;
-  unsigned int _memory_clock_rate = 0;
+  // Set estimated value 3200000 kHz as default value.
+  unsigned int _memory_clock_rate = 3200000;
+  // Set estimated value 64 bits as default value.
   unsigned int _memory_bus_width = 64;
   int _max_compute_units;
   int _max_work_group_size;
@@ -710,6 +722,9 @@ public:
 // Device|device_info_set_max_sub_group_size
 // Device|device_info_set_max_work_items_per_compute_unit
 // Device|device_info_set_max_nd_range_size
+// Device|device_info_set_memory_clock_rate
+// Device|device_info_set_memory_bus_width
+// Device|device_info_set_max_register_size_per_work_group
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   void get_device_info(device_info &out) const {
@@ -745,32 +760,25 @@ public:
 
 #if (defined(SYCL_EXT_INTEL_DEVICE_INFO) && SYCL_EXT_INTEL_DEVICE_INFO >= 6)
     if (this->has(sycl::aspect::ext_intel_memory_clock_rate)) {
-      prop.set_memory_clock_rate(
-          this->get_info<sycl::ext::intel::info::device::memory_clock_rate>());
-    } else {
-      std::cerr << "Querying ext_intel_device_info_memory_clock_rate is not "
-                   "supported "
-                   "by the device"
-                << std::endl;
-      std::cerr << "memory_clock_rate default value is 0." << std::endl;
+      unsigned int tmp =
+          this->get_info<sycl::ext::intel::info::device::memory_clock_rate>();
+      if (tmp != 0)
+        prop.set_memory_clock_rate(1000 * tmp);
     }
     if (this->has(sycl::aspect::ext_intel_memory_bus_width)) {
       prop.set_memory_bus_width(
           this->get_info<sycl::ext::intel::info::device::memory_bus_width>());
-    } else {
-      std::cerr
-          << "Querying ext_intel_device_info_memory_bus_width is not supported "
-             "by the device"
-          << std::endl;
-      std::cerr << "memory_bus_width default value is 64." << std::endl;
     }
+#elif defined(_MSC_VER) && !defined(__clang__)
+#pragma message("get_device_info: querying memory_clock_rate and \
+memory_bus_width are not supported by the compiler used. \
+Use 3200000 kHz as memory_clock_rate default value. \
+Use 64 bits as memory_bus_width default value.")
 #else
-    std::cerr
-        << "get_device_info: query memory_clock_rate and memory_bus_width are "
-           "not supported by the compiler you currently used."
-        << std::endl;
-    std::cerr << "memory_clock_rate default value is 0." << std::endl;
-    std::cerr << "memory_bus_width default value is 64." << std::endl;
+#warning "get_device_info: querying memory_clock_rate and \
+memory_bus_width are not supported by the compiler used. \
+Use 3200000 kHz as memory_clock_rate default value. \
+Use 64 bits as memory_bus_width default value."
 #endif
 
     size_t max_sub_group_size = 1;
@@ -984,23 +992,6 @@ private:
     i++;
     minor = std::stoi(&(ver[i]));
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|device_ext_add_task|dpct
-// DPCT_PARENT_FEATURE|device_ext
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-  void add_task(std::thread &&task) {
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
-    _tasks.push_back(std::move(task));
-  }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|device_ext_async_dpct_free_friend_decl|dpct
-// DPCT_PARENT_FEATURE|device_ext
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-  friend void async_dpct_free(std::vector<void *>,
-                              std::vector<sycl::event>,
-                              sycl::queue &);
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_ext_2|dpct
 // DPCT_PARENT_FEATURE|device_ext

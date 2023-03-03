@@ -428,9 +428,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::fmod((double)i, d1);
   d2 = fmod(i, d1);
 
-  // CHECK: d2 = sycl::frexp(d0, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: d2 = sycl::frexp(d0, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   d2 = frexp(d0, &i);
-  // CHECK: d2 = sycl::frexp((double)i, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: d2 = sycl::frexp((double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   d2 = frexp(i, &i);
 
   // CHECK: d2 = sycl::hypot(d0, d1);
@@ -497,9 +497,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::round((double)i);
   d2 = lround(i);
 
-  // CHECK: d2 = sycl::modf(d0, sycl::make_ptr<double, sycl::access::address_space::global_space>(&d1));
+  // CHECK: d2 = sycl::modf(d0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(&d1));
   d2 = modf(d0, &d1);
-  // CHECK: d2 = sycl::modf((double)i, sycl::make_ptr<double, sycl::access::address_space::global_space>(&d1));
+  // CHECK: d2 = sycl::modf((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(&d1));
   d2 = modf(i, &d1);
 
   // CHECK: d2 = sycl::nan(0u);
@@ -527,13 +527,13 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::remainder((double)i, d1);
   d2 = remainder(i, d1);
 
-  // CHECK: d2 = sycl::remquo(d0, d1, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: d2 = sycl::remquo(d0, d1, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   d2 = remquo(d0, d1, &i);
-  // CHECK: d2 = sycl::remquo((double)i, (double)i, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: d2 = sycl::remquo((double)i, (double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   d2 = remquo(i, i, &i);
-  // CHECK: d2 = sycl::remquo(d0, (double)i, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: d2 = sycl::remquo(d0, (double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   d2 = remquo(d0, i, &i);
-  // CHECK: d2 = sycl::remquo((double)i, d1, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: d2 = sycl::remquo((double)i, d1, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   d2 = remquo(i, d1, &i);
 
   // CHECK: d2 = sycl::rint(d0);
@@ -551,9 +551,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::rsqrt((double)i);
   d2 = rsqrt((double)i);
 
-  // CHECK: d1 = sycl::sincos(d0, sycl::make_ptr<double, sycl::access::address_space::global_space>(&d2));
+  // CHECK: d1 = sycl::sincos(d0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(&d2));
   sincos(d0, &d1, &d2);
-  // CHECK: d1 = sycl::sincos((double)i, sycl::make_ptr<double, sycl::access::address_space::global_space>(&d2));
+  // CHECK: d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(&d2));
   sincos(i, &d1, &d2);
 
   // CHECK: d2 = sycl::sin(d0);
@@ -597,195 +597,195 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   d2 = trunc(i);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 + d1;
   d2 = __dadd_rd(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 + d1;
   d2 = __dadd_rn(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 + d1;
   d2 = __dadd_ru(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 + d1;
   d2 = __dadd_rz(d0, d1);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 / d1;
   d2 = __ddiv_rd(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 / d1;
   d2 = __ddiv_rn(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 / d1;
   d2 = __ddiv_ru(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 / d1;
   d2 = __ddiv_rz(d0, d1);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 * d1;
   d2 = __dmul_rd(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 * d1;
   d2 = __dmul_rn(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 * d1;
   d2 = __dmul_ru(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 * d1;
   d2 = __dmul_rz(d0, d1);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d1 = (1.0/d0);
   d1 = __drcp_rd(d0);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d1 = (1.0/d0);
   d1 = __drcp_rn(d0);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d1 = (1.0/d0);
   d1 = __drcp_ru(d0);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d1 = (1.0/d0);
   d1 = __drcp_rz(d0);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d1 = (1.0/(d0+d0));
   d1 = __drcp_rz(d0+d0);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d0 = sycl::sqrt(d0);
   d0 = __dsqrt_rd(d0);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d1 = sycl::sqrt(d1);
   d1 = __dsqrt_rn(d1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d0 = sycl::sqrt(d0);
   d0 = __dsqrt_ru(d0);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d1 = sycl::sqrt(d1);
   d1 = __dsqrt_rz(d1);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d0 = sycl::sqrt((double)i);
   d0 = __dsqrt_rd(i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d1 = sycl::sqrt((double)i);
   d1 = __dsqrt_rn(i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d0 = sycl::sqrt((double)i);
   d0 = __dsqrt_ru(i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d1 = sycl::sqrt((double)i);
   d1 = __dsqrt_rz(i);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 - d1;
   d2 = __dsub_rd(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 - d1;
   d2 = __dsub_rn(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 - d1;
   d2 = __dsub_ru(d0, d1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = d0 - d1;
   d2 = __dsub_rz(d0, d1);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = sycl::fma(d0, d1, d2);
   d2 = __fma_rd(d0, d1, d2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = sycl::fma(d0, d1, d2);
   d2 = __fma_rn(d0, d1, d2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = sycl::fma(d0, d1, d2);
   d2 = __fma_ru(d0, d1, d2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = sycl::fma(d0, d1, d2);
   d2 = __fma_rz(d0, d1, d2);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = sycl::fma((double)i, (double)i, (double)i);
   d2 = __fma_rd(i, i, i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = sycl::fma((double)i, (double)i, (double)i);
   d2 = __fma_rn(i, i, i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = sycl::fma((double)i, (double)i, (double)i);
   d2 = __fma_ru(i, i, i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: d2 = sycl::fma((double)i, (double)i, (double)i);
   d2 = __fma_rz(i, i, i);
@@ -1034,9 +1034,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::fmod((float)i, f1);
   f2 = fmodf(i, f1);
 
-  // CHECK: f2 = sycl::frexp(f0, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: f2 = sycl::frexp(f0, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   f2 = frexpf(f0, &i);
-  // CHECK: f2 = sycl::frexp((float)i, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: f2 = sycl::frexp((float)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   f2 = frexpf(i, &i);
 
   // CHECK: f2 = sycl::hypot(f0, f1);
@@ -1118,9 +1118,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::round((float)i);
   f2 = lroundf(i);
 
-  // CHECK: f2 = sycl::modf(f0, sycl::make_ptr<float, sycl::access::address_space::global_space>(&f1));
+  // CHECK: f2 = sycl::modf(f0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f1));
   f2 = modff(f0, &f1);
-  // CHECK: f2 = sycl::modf((float)i, sycl::make_ptr<float, sycl::access::address_space::global_space>(&f1));
+  // CHECK: f2 = sycl::modf((float)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f1));
   f2 = modff(i, &f1);
 
   // CHECK: f2 = sycl::nan(0u);
@@ -1144,13 +1144,13 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::remainder((float)i, f1);
   f2 = remainderf(i, f1);
 
-  // CHECK: f2 = sycl::remquo(f0, f1, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: f2 = sycl::remquo(f0, f1, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   f2 = remquof(f0, f1, &i);
-  // CHECK: f2 = sycl::remquo((float)i, (float)i, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: f2 = sycl::remquo((float)i, (float)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   f2 = remquof(i, i, &i);
-  // CHECK: f2 = sycl::remquo(f0, (float)i, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: f2 = sycl::remquo(f0, (float)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   f2 = remquof(f0, i, &i);
-  // CHECK: f2 = sycl::remquo((float)i, f1, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  // CHECK: f2 = sycl::remquo((float)i, f1, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   f2 = remquof(i, f1, &i);
 
   // CHECK: f2 = sycl::rint(f0);
@@ -1173,9 +1173,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::signbit((float)i);
   f2 = signbit(i);
 
-  // CHECK: f1 = sycl::sincos(f0, sycl::make_ptr<float, sycl::access::address_space::global_space>(&f2));
+  // CHECK: f1 = sycl::sincos(f0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f2));
   sincosf(f0, &f1, &f2);
-  // CHECK: f1 = sycl::sincos((float)i, sycl::make_ptr<float, sycl::access::address_space::global_space>(&f2));
+  // CHECK: f1 = sycl::sincos((float)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f2));
   sincosf(i, &f1, &f2);
 
   // CHECK: f2 = sycl::sin(f0);
@@ -1234,43 +1234,43 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f0 = __expf(i);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 + f1;
   f2 = __fadd_rd(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 + f1;
   f2 = __fadd_rn(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 + f1;
   f2 = __fadd_ru(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 + f1;
   f2 = __fadd_rz(f0, f1);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 / f1;
   f2 = __fdiv_rd(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 / f1;
   f2 = __fdiv_rn(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 / f1;
   f2 = __fdiv_ru(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 / f1;
   f2 = __fdiv_rz(f0, f1);
@@ -1285,169 +1285,169 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = __fdividef(i, f1);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = sycl::fma(f0, f1, f2);
   f2 = __fmaf_rd(f0, f1, f2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = sycl::fma(f0, f1, f2);
   f2 = __fmaf_rn(f0, f1, f2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = sycl::fma(f0, f1, f2);
   f2 = __fmaf_ru(f0, f1, f2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = sycl::fma(f0, f1, f2);
   f2 = __fmaf_rz(f0, f1, f2);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = sycl::fma((float)i, (float)i, (float)i);
   f2 = __fmaf_rd(i, i, i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = sycl::fma((float)i, (float)i, (float)i);
   f2 = __fmaf_rn(i, i, i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = sycl::fma((float)i, (float)i, (float)i);
   f2 = __fmaf_ru(i, i, i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = sycl::fma((float)i, (float)i, (float)i);
   f2 = __fmaf_rz(i, i, i);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK: f2 = f0 * f1;
   f2 = __fmul_rd(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK: f2 = f0 * f1;
   f2 = __fmul_rn(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK: f2 = f0 * f1;
   f2 = __fmul_ru(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK: f2 = f0 * f1;
   f2 = __fmul_rz(f0, f1);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = sycl::native::recip(f0);
   f1 = __frcp_rd(f0);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = sycl::native::recip(f0);
   f1 = __frcp_rn(f0);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = sycl::native::recip(f0);
   f1 = __frcp_ru(f0);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = sycl::native::recip(f0);
   f1 = __frcp_rz(f0);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = sycl::native::recip((float)i);
   f1 = __frcp_rd(i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = sycl::native::recip((float)i);
   f1 = __frcp_rn(i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = sycl::native::recip((float)i);
   f1 = __frcp_ru(i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = sycl::native::recip((float)i);
   f1 = __frcp_rz(i);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f0 = sycl::sqrt(f0);
   f0 = __fsqrt_rd(f0);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = sycl::sqrt(f1);
   f1 = __fsqrt_rn(f1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f0 = sycl::sqrt(f0);
   f0 = __fsqrt_ru(f0);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = sycl::sqrt(f1);
   f1 = __fsqrt_rz(f1);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f0 = sycl::sqrt((float)i);
   f0 = __fsqrt_rd(i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = sycl::sqrt((float)i);
   f1 = __fsqrt_rn(i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f0 = sycl::sqrt((float)i);
   f0 = __fsqrt_ru(i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f1 = sycl::sqrt((float)i);
   f1 = __fsqrt_rz(i);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 - f1;
   f2 = __fsub_rd(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 - f1;
   f2 = __fsub_rn(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 - f1;
   f2 = __fsub_ru(f0, f1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = f0 - f1;
   f2 = __fsub_rz(f0, f1);
@@ -1476,9 +1476,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::pow<float>(i, f1);
   f2 = __powf(i, f1);
 
-  // CHECK: f1 = sycl::sincos(f0, sycl::make_ptr<float, sycl::access::address_space::global_space>(&f2));
+  // CHECK: f1 = sycl::sincos(f0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f2));
   __sincosf(f0, &f1, &f2);
-  // CHECK: f1 = sycl::sincos((float)i, sycl::make_ptr<float, sycl::access::address_space::global_space>(&f2));
+  // CHECK: f1 = sycl::sincos((float)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, float>(&f2));
   __sincosf(i, &f1, &f2);
 
   // CHECK: f1 = sycl::sin(f1);
@@ -1540,13 +1540,13 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = nanf("NaN");
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = sycl::rsqrt(f2);
   f2 = __frsqrt_rn(f2);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: f2 = sycl::rsqrt((float)i);
   f2 = __frsqrt_rn(i);
@@ -2407,6 +2407,11 @@ __global__ void testUnsupported() {
   u = __urhadd(u, u);
   // CHECK: u = sycl::abs_diff(u, u)+u;
   u = __usad(u, u, u);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hadd is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: h = __hadd(h, h);
+  h = __hadd(h, h);
 }
 
 __global__ void testSimulation() {
@@ -2434,13 +2439,13 @@ __global__ void testSimulation() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincospif call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: f = sycl::sincos(f * DPCT_PI_F, sycl::make_ptr<float, sycl::access::address_space::private_space>(&f));
+  // CHECK-NEXT: f = sycl::sincos(f * DPCT_PI_F, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, float>(&f));
   sincospif(f, &f, &f);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincospi call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: d = sycl::sincos(d * DPCT_PI, sycl::make_ptr<double, sycl::access::address_space::private_space>(&d));
+  // CHECK-NEXT: d = sycl::sincos(d * DPCT_PI, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(&d));
   sincospi(d, &d, &d);
 }
 
@@ -2859,11 +2864,11 @@ __device__ void do_migration5() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexpf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modff call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<float, sycl::access::address_space::private_space>(&f));
+  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, float>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2871,7 +2876,7 @@ __device__ void do_migration5() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::remquo(f, f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
@@ -2880,11 +2885,11 @@ __device__ void do_migration5() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<double, sycl::access::address_space::private_space>(&f));
+  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2892,7 +2897,7 @@ __device__ void do_migration5() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquo call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::remquo(f, f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
@@ -2929,11 +2934,11 @@ __global__ void do_migration6() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexpf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modff call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<float, sycl::access::address_space::private_space>(&f));
+  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, float>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2941,7 +2946,7 @@ __global__ void do_migration6() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::remquo(f, f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
@@ -2950,11 +2955,11 @@ __global__ void do_migration6() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<double, sycl::access::address_space::private_space>(&f));
+  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2962,7 +2967,7 @@ __global__ void do_migration6() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquo call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::remquo(f, f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
@@ -2999,11 +3004,11 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexpf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modff call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<float, sycl::access::address_space::private_space>(&f));
+  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, float>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -3011,7 +3016,7 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::remquo(f, f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
@@ -3019,11 +3024,11 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::make_ptr<double, sycl::access::address_space::private_space>(&f));
+  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(&f));
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyint call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -3031,7 +3036,7 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquo call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
+  //CHECK-NEXT: sycl::remquo(f, f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
@@ -3248,27 +3253,27 @@ __global__ void k2() {
   __usad(u, u1, u2);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d0);
   __drcp_rd(d0);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d0);
   __drcp_rn(d0);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d0);
   __drcp_ru(d0);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d0);
   __drcp_rz(d0);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/(d0+d0));
   __drcp_rz(d0+d0);
@@ -3484,7 +3489,7 @@ __device__ void bar1(double *d) {
   double &d2 = *d;
 
   // CHECK: DPCT1081:{{[0-9]+}}: The generated code assumes that "&d2" points to the global memory address space. If it points to a local or private memory address space, replace "address_space::global" with "address_space::local" or "address_space::private".
-  // CHECK: d1 = sycl::sincos((double)i, sycl::make_ptr<double, sycl::access::address_space::global_space>(&d2));
+  // CHECK: d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(&d2));
   sincos(i, &d1, &d2);
 }
 
@@ -3498,7 +3503,7 @@ __device__ void bar1(double *d, bool flag) {
   //CHECK:/*
   //CHECK-NEXT:DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincos call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::make_ptr<double, sycl::access::address_space::private_space>(d2_p));
+  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(d2_p));
   //CHECK-NEXT:if (flag) {
   //CHECK-NEXT:  d2_p = d + 2;
   //CHECK-NEXT:}
@@ -3508,12 +3513,12 @@ __device__ void bar1(double *d, bool flag) {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1081:{{[0-9]+}}: The generated code assumes that "d2_p" points to the global memory address space. If it points to a local or private memory address space, replace "address_space::global" with "address_space::local" or "address_space::private".
   //CHECK-NEXT:*/
-  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::make_ptr<double, sycl::access::address_space::global_space>(d2_p));
+  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(d2_p));
   //CHECK-NEXT:d2_p = &d2;
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincos call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::make_ptr<double, sycl::access::address_space::private_space>(d2_p));
+  //CHECK-NEXT:d1 = sycl::sincos((double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, double>(d2_p));
   sincos(i, &d1, d2_p);
   if (flag) {
     d2_p = d + 2;
@@ -3533,7 +3538,7 @@ __device__ void bar2() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1081:{{[0-9]+}}: The generated code assumes that "get_ptr() + i" points to the global memory address space. If it points to a local or private memory address space, replace "address_space::global" with "address_space::local" or "address_space::private".
   //CHECK-NEXT:*/
-  //CHECK-NEXT:double d2 = sycl::frexp(d0, sycl::make_ptr<int, sycl::access::address_space::global_space>(get_ptr() + i));
+  //CHECK-NEXT:double d2 = sycl::frexp(d0, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, int>(get_ptr() + i));
   double d2 = frexp(d0, get_ptr() + i);
 }
 
@@ -3625,85 +3630,85 @@ __device__ void qualified(double d1,
 			  volatile double d3,
 			  const volatile double d4) {
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d1);
   __drcp_rd(d1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d2);
   __drcp_rd(d2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d3);
   __drcp_rd(d3);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d4);
   __drcp_rd(d4);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d1);
   __drcp_rn(d1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d2);
   __drcp_rn(d2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d3);
   __drcp_rn(d3);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d4);
   __drcp_rn(d4);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d1);
   __drcp_ru(d1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d2);
   __drcp_ru(d2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d3);
   __drcp_ru(d3);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d4);
   __drcp_ru(d4);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d1);
   __drcp_rz(d1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d2);
   __drcp_rz(d2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d3);
   __drcp_rz(d3);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different accuracy than the original code. Verify the correctness. SYCL math built-in function rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d4);
   __drcp_rz(d4);

@@ -93,8 +93,13 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaDeviceProp",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "device_info",
                                       HelperFeatureEnum::Device_device_info)},
-      {"cudaError_t", std::make_shared<TypeNameRule>("int")},
-      {"cudaError", std::make_shared<TypeNameRule>("int")},
+      {"cudaError_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "err0",
+                                      HelperFeatureEnum::Util_err_types)},
+      {"cudaError",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "err0",
+                                      HelperFeatureEnum::Util_err_types)},
+      {"CUjit_option", std::make_shared<TypeNameRule>("int")},
       {"CUresult", std::make_shared<TypeNameRule>("int")},
       {"CUcontext", std::make_shared<TypeNameRule>("int")},
       {"CUmodule", std::make_shared<TypeNameRule>(getDpctNamespace() + "kernel_library",
@@ -278,6 +283,10 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("std::tuple_size")},
        {"thrust::swap",
        std::make_shared<TypeNameRule>("std::swap")},
+       {"thrust::zip_iterator",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "zip_iterator",
+           HelperFeatureEnum::DplExtrasIterators_zip_iterator)},
       {"cusolverDnHandle_t",
        std::make_shared<TypeNameRule>(getClNamespace() + "queue*")},
       {"cusolverEigType_t", std::make_shared<TypeNameRule>("int64_t")},
@@ -310,6 +319,10 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(getClNamespace() + "addressing_mode")},
       {"cudaTextureFilterMode",
        std::make_shared<TypeNameRule>(getClNamespace() + "filtering_mode")},
+      {"curandGenerator_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "rng::host_rng_ptr",
+           HelperFeatureEnum::RngUtils_typedef_host_rng_ptr)},
       {"curandStatus_t", std::make_shared<TypeNameRule>("int")},
       {"curandStatus", std::make_shared<TypeNameRule>("int")},
       {"cusparseStatus_t", std::make_shared<TypeNameRule>("int")},
@@ -378,7 +391,7 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(getClNamespace() + "filtering_mode")},
       {"CUfilter_mode_enum",
        std::make_shared<TypeNameRule>(getClNamespace() + "filtering_mode")},
-      {"CUdeviceptr", std::make_shared<TypeNameRule>("char *")},
+      {"CUdeviceptr", std::make_shared<TypeNameRule>(getDpctNamespace() + "device_ptr")},
       {"CUresourcetype_enum", std::make_shared<TypeNameRule>(
                                   getDpctNamespace() + "image_data_type",
                                   HelperFeatureEnum::Image_image_data_type)},
@@ -412,6 +425,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cuda::std::tuple", std::make_shared<TypeNameRule>("std::tuple")},
       {"cuda::std::complex", std::make_shared<TypeNameRule>("std::complex")},
       {"cuda::std::array", std::make_shared<TypeNameRule>("std::array")},
+      {"cusolverEigRange_t", std::make_shared<TypeNameRule>("oneapi::mkl::rangev")},
       // ...
   };
 
@@ -420,7 +434,9 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudnnHandle_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::engine_ext",
                                       HelperFeatureEnum::DnnlUtils_engine_ext)},
-      {"cudnnStatus_t", std::make_shared<TypeNameRule>("int")},
+      {"cudnnStatus_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "err1",
+                                      HelperFeatureEnum::Util_err_types)},
       {"cudnnTensorDescriptor_t",
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "dnnl::memory_desc_ext",
@@ -1177,6 +1193,9 @@ void MapNames::setExplicitNamespaceMap() {
       {"ncclFloat64", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float64")},
       {"ncclDouble", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float64")},
       {"ncclBfloat16", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::bfloat16")},
+      {"CUSOLVER_EIG_RANGE_ALL", std::make_shared<EnumNameRule>("oneapi::mkl::rangev::all")},
+      {"CUSOLVER_EIG_RANGE_V", std::make_shared<EnumNameRule>("oneapi::mkl::rangev::values")},
+      {"CUSOLVER_EIG_RANGE_I", std::make_shared<EnumNameRule>("oneapi::mkl::rangev::indices")},
       // ...
   };
 
@@ -1594,6 +1613,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"atomicExch", getDpctNamespace() + "atomic_exchange"},
       {"atomicCAS", getDpctNamespace() + "atomic_compare_exchange_strong"},
       {"atomicInc", getDpctNamespace() + "atomic_fetch_compare_inc"},
+      {"atomicDec", getDpctNamespace() + "atomic_fetch_compare_dec"},
   };
 
   BLASComputingAPIWithRewriter = {
@@ -4004,19 +4024,24 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
              "oneapi::mkl::lapack::gesvd")},
     };
 
-// Random Engine Type mapping
+// Host Random Engine Type mapping
 const MapNames::MapTy MapNames::RandomEngineTypeMap{
-    {"CURAND_RNG_PSEUDO_DEFAULT", "oneapi::mkl::rng::philox4x32x10"},
-    {"CURAND_RNG_PSEUDO_XORWOW", "oneapi::mkl::rng::philox4x32x10"},
-    {"CURAND_RNG_PSEUDO_MRG32K3A", "oneapi::mkl::rng::mrg32k3a"},
-    {"CURAND_RNG_PSEUDO_MTGP32", "oneapi::mkl::rng::mt2203"},
-    {"CURAND_RNG_PSEUDO_MT19937", "oneapi::mkl::rng::mt19937"},
-    {"CURAND_RNG_PSEUDO_PHILOX4_32_10", "oneapi::mkl::rng::philox4x32x10"},
-    {"CURAND_RNG_QUASI_DEFAULT", "oneapi::mkl::rng::sobol"},
-    {"CURAND_RNG_QUASI_SOBOL32", "oneapi::mkl::rng::sobol"},
-    {"CURAND_RNG_QUASI_SCRAMBLED_SOBOL32", "oneapi::mkl::rng::sobol"},
-    {"CURAND_RNG_QUASI_SOBOL64", "oneapi::mkl::rng::sobol"},
-    {"CURAND_RNG_QUASI_SCRAMBLED_SOBOL64", "oneapi::mkl::rng::sobol"},
+    {"CURAND_RNG_PSEUDO_DEFAULT",
+     "dpct::rng::random_engine_type::philox4x32x10"},
+    {"CURAND_RNG_PSEUDO_XORWOW",
+     "dpct::rng::random_engine_type::philox4x32x10"},
+    {"CURAND_RNG_PSEUDO_MRG32K3A", "dpct::rng::random_engine_type::mrg32k3a"},
+    {"CURAND_RNG_PSEUDO_MTGP32", "dpct::rng::random_engine_type::mt2203"},
+    {"CURAND_RNG_PSEUDO_MT19937", "dpct::rng::random_engine_type::mt19937"},
+    {"CURAND_RNG_PSEUDO_PHILOX4_32_10",
+     "dpct::rng::random_engine_type::philox4x32x10"},
+    {"CURAND_RNG_QUASI_DEFAULT", "dpct::rng::random_engine_type::sobol"},
+    {"CURAND_RNG_QUASI_SOBOL32", "dpct::rng::random_engine_type::sobol"},
+    {"CURAND_RNG_QUASI_SCRAMBLED_SOBOL32",
+     "dpct::rng::random_engine_type::sobol"},
+    {"CURAND_RNG_QUASI_SOBOL64", "dpct::rng::random_engine_type::sobol"},
+    {"CURAND_RNG_QUASI_SCRAMBLED_SOBOL64",
+     "dpct::rng::random_engine_type::sobol"},
 };
 
 // Device Random Generator Type mapping
@@ -4040,27 +4065,17 @@ const MapNames::MapTy MapNames::DeviceRandomGeneratorTypeMap{
                             "mkl::rng::device::mrg32k3a<1>>"},
 };
 
-const std::map<std::string, MapNames::RandomGenerateFuncReplInfo>
-    MapNames::RandomGenerateFuncReplInfoMap{
-        {"curandGenerate",
-         {"uint32_t", "oneapi::mkl::rng::uniform_bits", "uint32_t"}},
-        {"curandGenerateLongLong",
-         {"uint64_t", "oneapi::mkl::rng::uniform_bits", "uint64_t"}},
-        {"curandGenerateLogNormal",
-         {"float", "oneapi::mkl::rng::lognormal", "float"}},
-        {"curandGenerateLogNormalDouble",
-         {"double", "oneapi::mkl::rng::lognormal", "double"}},
-        {"curandGenerateNormal",
-         {"float", "oneapi::mkl::rng::gaussian", "float"}},
-        {"curandGenerateNormalDouble",
-         {"double", "oneapi::mkl::rng::gaussian", "double"}},
-        {"curandGeneratePoisson",
-         {"int32_t", "oneapi::mkl::rng::poisson", "int32_t"}},
-        {"curandGenerateUniform",
-         {"float", "oneapi::mkl::rng::uniform", "float"}},
-        {"curandGenerateUniformDouble",
-         {"double", "oneapi::mkl::rng::uniform", "double"}},
-    };
+const std::map<std::string, std::string> MapNames::RandomGenerateFuncMap{
+    {"curandGenerate", {"generate_uniform_bits"}},
+    {"curandGenerateLongLong", {"generate_uniform_bits"}},
+    {"curandGenerateLogNormal", {"generate_lognormal"}},
+    {"curandGenerateLogNormalDouble", {"generate_lognormal"}},
+    {"curandGenerateNormal", {"generate_gaussian"}},
+    {"curandGenerateNormalDouble", {"generate_gaussian"}},
+    {"curandGeneratePoisson", {"generate_poisson"}},
+    {"curandGenerateUniform", {"generate_uniform"}},
+    {"curandGenerateUniformDouble", {"generate_uniform"}},
+};
 
 const std::map<std::string, std::vector<unsigned int>>
     MapNames::FFTPlanAPINeedParenIdxMap{
@@ -4107,6 +4122,9 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
     {"cudaMemAttachGlobal",
      MacroMigrationRule("flag_macro_rule", RulePriority::Fallback,
                         "cudaMemAttachGlobal", "0")},
+    {"cudaStreamDefault",
+     MacroMigrationRule("cudaStreamDefault_rule", RulePriority::Fallback,
+                        "cudaStreamDefault", "0")},
     //...
 };
 
@@ -4302,10 +4320,6 @@ const MapNames::MapTy MemoryDataTypeRule::SizeOrPosToMember{
 
 const std::vector<std::string> MemoryDataTypeRule::RemoveMember{
     "dstLOD", "srcLOD", "dstMemoryType", "srcMemoryType"};
-
-const MapNames::SetTy MapNames::PredefinedStreamName{
-    "cudaStreamDefault", "cudaStreamNonBlocking", "cudaStreamLegacy",
-    "cudaStreamPerThread"};
 
 const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "this_thread_block", "sync", "tiled_partition",

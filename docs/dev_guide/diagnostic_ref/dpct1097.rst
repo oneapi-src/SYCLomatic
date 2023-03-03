@@ -1,4 +1,4 @@
-.. _id_DPCT1097:
+.. _DPCT1097:
 
 DPCT1097
 ========
@@ -23,28 +23,28 @@ For example, this original CUDA\* code:
 .. code-block:: cpp
    :linenos:
 
-    cudnnLRNCrossChannelForward(handle, ...);
-    ...
-    cudnnLRNCrossChannelBackward(handle, ...);
+     cudnnLRNCrossChannelForward(handle, ...);
+     ...
+     cudnnLRNCrossChannelBackward(handle, ...);
 
 results in the following migrated SYCL\* code:
 
 .. code-block:: cpp
    :linenos:
 
-    handle.lrn_forward(...);
-    ...
-    handle.lrn_backward(...);
+     handle.lrn_forward(...);
+     ...
+     handle.lrn_backward(...);
 
 which is manually adjusted to:
 
 .. code-block:: cpp
    :linenos:
 
-    dnnl::memory workspace;
-    handle.lrn_forward(..., &workspace);
-    ...
-    handle.lrn_backward(..., &workspace);
+     dnnl::memory workspace;
+     handle.lrn_forward(..., &workspace);
+     ...
+     handle.lrn_backward(..., &workspace);
 
 
 Suggestions to Fix

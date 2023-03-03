@@ -151,7 +151,7 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), CheckUnico
            llvm::cl::cat(DPCTCat), llvm::cl::location(CheckUnicodeSecurityFlag))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), EnablepProfiling, "enable-profiling",
-           llvm::cl::desc("Enable sycl queue profiling in helper functions. Default: off.\n"),
+           llvm::cl::desc("Enable SYCL queue profiling in helper functions. Default: off.\n"),
            llvm::cl::cat(DPCTCat), llvm::cl::location(EnablepProfilingFlag))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), SyclNamedLambda, "sycl-named-lambda",
@@ -328,29 +328,29 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultEnabl
                                      false),
              DPCT_OPT_ENUM("device_info",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo),
-                                     "Intel's Extensions for Device Information.",
+                                     "Use the Intel extensions for device information if supported by the compiler and the backend.",
                                      false)
            ),
-           llvm::cl::desc("Comma separated list of extensions not to be used in migrated "
-           "code.\n"
-           "By default, these extensions will be used in migrated code."),
+           llvm::cl::desc("A comma-separated list of extensions not to be used in migrated code.\n"
+           "By default, these extensions are used in migrated code."),
            llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultDisabled>), UseDPCPPExtensions, "use-dpcpp-extensions",
            DPCT_OPTION_VALUES(
              DPCT_OPT_ENUM("c_cxx_standard_library",
                                      int(DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary),
-                                     "When no SYCL standard API is available, use functions from std namespace from\n"
-                                     "libdevice or C/C++ standard library if allowed. If this option is used together with\n"
-                                     "intel_device_math extension option, intel_device_math functions take precedence.",
+                                     "Use std functions from the libdevice library (provided by Intel(R) oneAPI DPC++/C++ Compiler)\n"
+                                     "and C/C++ Standard Library to migrate functions which have no mapping in the SYCL standard.\n"
+                                     "If this value is used together with intel_device_math, the intel_device_math functions take\n"
+                                     "precedence.",
                                      false),
              DPCT_OPT_ENUM("intel_device_math",
                                      int(DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath),
-                                     "When no SYCL standard API is available, use functions from sycl::ext::intel::math\n"
-                                     "namespace.",
+                                     "Use sycl::ext::intel::math functions from the libdevice library (provided by Intel(R) oneAPI\n"
+                                     "DPC++/C++ Compiler) to migrate functions which have no mapping in the SYCL standard.",
                                      false)
            ),
-           llvm::cl::desc("A comma separated list of extensions to be used in migrated code.\n"
+           llvm::cl::desc("A comma-separated list of extensions to be used in migrated code.\n"
            "By default, these extensions are not used in migrated code."),
            llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
 
@@ -369,6 +369,9 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
         false),
              DPCT_OPT_ENUM("nd_range_barrier", int(ExperimentalFeatures::Exp_NdRangeBarrier),
         "Experimental helper function used to help cross group synchronization during migration.\n",
+        false),
+             DPCT_OPT_ENUM("user-defined-reductions", int(ExperimentalFeatures::Exp_UserDefineReductions),
+        "Experimental extension that allows user define reductions.\n",
         false)
            ),
            llvm::cl::desc("Comma separated list of experimental features to be used in migrated "
@@ -413,8 +416,8 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), AnalysisS
 DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), ChangeExtension,
     "change-filename-extension",
-    llvm::cl::desc("DEPRECATED: Specifies which extensions of migrated files"
-                   "will be changed, split by comma. Default:\n"
+    llvm::cl::desc("DEPRECATED: A comma-separated list that specifies which\n"
+                   "extensions of migrated files will be changed. Default:\n"
                    ".cu, .cuh, .cpp, .cxx, .cc, .c, .C"),
     llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 

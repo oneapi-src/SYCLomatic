@@ -53,10 +53,7 @@ html_theme_options = {
     'path_to_docs': 'docs',
     'use_issues_button': True,
     'use_edit_page_button': True,
-    'repository_branch': 'SYCLomatic',
-    'extra_footer': '<p align="right"><a href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">Cookies</a></p>'
-
-
+    'repository_branch': 'SYCLomatic'
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,

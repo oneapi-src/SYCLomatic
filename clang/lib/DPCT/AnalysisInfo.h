@@ -34,11 +34,9 @@
 #include "clang/Format/Format.h"
 #include "clang/Frontend/CompilerInstance.h"
 
-#include "llvm/ADT/Optional.h"
-
-llvm::Optional<std::string> getReplacedName(const clang::NamedDecl *D);
+std::optional<std::string> getReplacedName(const clang::NamedDecl *D);
 void setGetReplacedNamePtr(
-    llvm::Optional<std::string> (*Ptr)(const clang::NamedDecl *D));
+    std::optional<std::string> (*Ptr)(const clang::NamedDecl *D));
 
 namespace clang {
 namespace dpct {
@@ -70,7 +68,6 @@ struct PriorityReplInfo {
 };
 
 class CudaMallocInfo;
-class RandomEngineInfo;
 class TextureInfo;
 class KernelCallExpr;
 class DeviceFunctionInfo;
@@ -81,41 +78,6 @@ class MemVarInfo;
 class VarInfo;
 class ExplicitInstantiationDecl;
 class KernelPrinter;
-
-// This struct saves the engine's type.
-// These rules determine the engine's type:
-//   1. Tool can detect the related info, then using that engine type.
-//   2. Tool cannot detect the related info, but there is only one generate
-//       API used, then use that info.
-//   3. Tool cannot detect the related info, and there are more than one
-//       generate APIs used, then use placeholder and emit warning.
-struct HostRandomEngineTypeInfo {
-  HostRandomEngineTypeInfo(unsigned int Length) : Length(Length) {}
-  HostRandomEngineTypeInfo(unsigned int Length, std::string EngineType,
-                           bool UnsupportEngineFlag = false)
-      : Length(Length), EngineType(EngineType) {
-    HasValue = true;
-    IsUnsupportEngine = UnsupportEngineFlag;
-  }
-  void buildInfo(std::string FilePath, unsigned int Offset);
-
-  unsigned int Length;
-  std::string EngineType;
-  bool HasValue = false;
-  bool IsUnsupportEngine = false;
-};
-
-// This struct saves the info for building the definition of distr variables.
-struct HostRandomDistrInfo {
-  HostRandomDistrInfo(std::string DistrName, std::string IndentStr)
-      : DistrName(DistrName), IndentStr(IndentStr) {}
-  void buildInfo(std::string FilePath, unsigned int Offset,
-                 std::string DistrType, std::string ValueType,
-                 std::string DistrArg);
-
-  std::string DistrName;
-  std::string IndentStr;
-};
 
 struct EventSyncTypeInfo {
   EventSyncTypeInfo(unsigned int Length, std::string ReplText, bool NeedReport,
@@ -165,11 +127,26 @@ struct FormatInfo {
   bool IsFirstArg = false;
 };
 
-struct HostDeviceFuncInfo {
-  unsigned FuncStartOffset;
-  unsigned FuncEndOffset;
-  unsigned FuncNameOffset;
+enum HDFuncInfoType{HDFI_Def, HDFI_Decl, HDFI_Call};
+
+struct HostDeviceFuncLocInfo {
+  std::string FilePath;
   std::string FuncContentCache;
+  unsigned FuncStartOffset = 0;
+  unsigned FuncEndOffset = 0;
+  unsigned FuncNameOffset = 0;
+  bool Processed = false;
+  HDFuncInfoType Type;
+};
+
+struct HostDeviceFuncInfo {
+  std::unordered_map<std::string, HostDeviceFuncLocInfo>
+  LocInfos;
+  bool isCalledInHost = false;
+  bool isDefInserted = false;
+  bool needGenerateHostCode = false;
+  int PostFixId = -1;
+  static int MaxId;
 };
 
 enum IfType { IT_Unknow, IT_If, IT_Ifdef, IT_Ifndef, IT_Elif };
@@ -214,16 +191,10 @@ struct RnnBackwardFuncInfo {
   std::vector<std::string> FuncArgs;
 };
 
-// function name, <file path, Info>
-using HDDefMap =
-    std::unordered_multimap<std::string,
-                            std::pair<std::string, HostDeviceFuncInfo>>;
-using HDDeclMap =
-    std::unordered_multimap<std::string,
-                            std::pair<std::string, HostDeviceFuncInfo>>;
-using HDCallMap =
-    std::unordered_multimap<std::string, std::pair<std::string, unsigned int>>;
-// file path, <Offset, Info>
+// <function name, Info>
+using HDFuncInfoMap =
+    std::unordered_map<std::string, HostDeviceFuncInfo>;
+// <file path, <Offset, Info>>
 using CudaArchPPMap =
     std::unordered_map<std::string,
                        std::unordered_map<unsigned int, CudaArchPPInfo>>;
@@ -572,11 +543,6 @@ public:
     return FuncDeclRangeMap;
   }
 
-  std::map<unsigned int, HostRandomEngineTypeInfo> &
-  getHostRandomEngineTypeMap() {
-    return HostRandomEngineTypeMap;
-  }
-
   std::map<unsigned int, EventSyncTypeInfo> &getEventSyncTypeMap() {
     return EventSyncTypeMap;
   }
@@ -585,11 +551,6 @@ public:
     return TimeStubTypeMap;
   }
 
-  std::map<std::tuple<unsigned int, std::string, std::string, std::string>,
-           HostRandomDistrInfo> &
-  getHostRandomDistrMap() {
-    return HostRandomDistrMap;
-  }
   std::map<unsigned int, BuiltinVarInfo> &getBuiltinVarInfoMap() {
     return BuiltinVarInfoMap;
   }
@@ -660,10 +621,6 @@ private:
                          unsigned int /*End location of function signature*/>>>
       FuncDeclRangeMap;
 
-  std::map<unsigned int, HostRandomEngineTypeInfo> HostRandomEngineTypeMap;
-  std::map<std::tuple<unsigned int, std::string, std::string, std::string>,
-           HostRandomDistrInfo>
-      HostRandomDistrMap;
   std::map<unsigned int, EventSyncTypeInfo> EventSyncTypeMap;
   std::map<unsigned int, TimeStubTypeInfo> TimeStubTypeMap;
   std::map<unsigned int, BuiltinVarInfo> BuiltinVarInfoMap;
@@ -671,7 +628,6 @@ private:
   GlobalMap<DeviceFunctionDecl> FuncMap;
   GlobalMap<KernelCallExpr> KernelMap;
   GlobalMap<CudaMallocInfo> CudaMallocMap;
-  GlobalMap<RandomEngineInfo> RandomEngineMap;
   GlobalMap<TextureInfo> TextureMap;
   std::set<unsigned int> SpBLASSet;
   std::unordered_set<std::shared_ptr<TextModification>> ConstantMacroTMSet;
@@ -706,9 +662,6 @@ template <> inline GlobalMap<KernelCallExpr> &DpctFileInfo::getMap() {
 }
 template <> inline GlobalMap<CudaMallocInfo> &DpctFileInfo::getMap() {
   return CudaMallocMap;
-}
-template <> inline GlobalMap<RandomEngineInfo> &DpctFileInfo::getMap() {
-  return RandomEngineMap;
 }
 template <> inline GlobalMap<TextureInfo> &DpctFileInfo::getMap() {
   return TextureMap;
@@ -801,7 +754,7 @@ public:
   static bool isInRoot(const std::string &FilePath,
                        bool IsChildRelative = true) {
     if (IsChildRelative) {
-      std::string Path = removeSymlinks(getFileManager(), FilePath);
+      std::string Path(FilePath);
       makeCanonical(Path);
       if (isChildPath(InRoot, Path)) {
         return !isExcluded(Path);
@@ -1157,13 +1110,6 @@ public:
     IsMLKHeaderUsed = Used;
   }
 
-  // This set collects all the host RNG engine type from the generator create
-  // API. If the size of this set is 1, then can use this engine type in all
-  // generator types. Otherwise, a placeholder will be inserted.
-  inline static std::unordered_set<std::string> &getHostRNGEngineTypeSet() {
-    return HostRNGEngineTypeSet;
-  }
-
   inline static int getSuffixIndexInitValue(std::string FileNameAndOffset) {
     auto Res = LocationInitIndexMap.find(FileNameAndOffset);
     if (Res == LocationInitIndexMap.end()) {
@@ -1313,7 +1259,7 @@ public:
   }
 
   // Return the absolute path of \p ID
-  static llvm::Optional<std::string> getAbsolutePath(FileID ID);
+  static std::optional<std::string> getAbsolutePath(FileID ID);
 
   static inline std::pair<std::string, unsigned>
   getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */) {
@@ -1404,7 +1350,6 @@ public:
   GLOBAL_TYPE(DeviceFunctionDecl, FunctionDecl)
   GLOBAL_TYPE(KernelCallExpr, CUDAKernelCallExpr)
   GLOBAL_TYPE(CudaMallocInfo, VarDecl)
-  GLOBAL_TYPE(RandomEngineInfo, DeclaratorDecl)
   GLOBAL_TYPE(TextureInfo, VarDecl)
 #undef GLOBAL_TYPE
 
@@ -1476,34 +1421,65 @@ public:
   std::set<std::string> &getProcessedFile() {
     return ProcessedFile;
   }
+  void processCudaArchMacro();
+  void generateHostCode(
+      std::multimap<unsigned int, std::shared_ptr<clang::dpct::ExtReplacement>>
+          &ProcessedReplList,
+      HostDeviceFuncLocInfo Info, unsigned ID);
   void postProcess() {
+    auto &MSMap = DpctGlobalInfo::getMainSourceFileMap();
+    bool isFirstPass = !DpctGlobalInfo::getRunRound();
+
+    processCudaArchMacro();
+
+    for (auto &Element : HostDeviceFuncInfoMap) {
+      auto &Info = Element.second;
+      if (Info.isCalledInHost && Info.isDefInserted) {
+        Info.needGenerateHostCode = true;
+        if (Info.PostFixId == -1) {
+          Info.PostFixId = HostDeviceFuncInfo::MaxId++;
+        }
+        for (auto &E : Info.LocInfos) {
+          auto &LocInfo = E.second;
+          if (isFirstPass) {
+            auto &MSFiles = MSMap[LocInfo.FilePath];
+            for (auto &File : MSFiles) {
+              if (ProcessedFile.count(File))
+                ReProcessFile.emplace(File);
+            }
+          }
+          if (LocInfo.Type == HDFuncInfoType::HDFI_Call &&
+            !LocInfo.Processed) {
+            LocInfo.Processed = true;
+            auto R = std::make_shared<ExtReplacement>(
+                LocInfo.FilePath, LocInfo.FuncEndOffset, 0,
+                "_host_ct" + std::to_string(Info.PostFixId), nullptr);
+            addReplacement(R);
+          }
+        }
+      }
+    }
+
+    if (!ReProcessFile.empty() && isFirstPass) {
+      DpctGlobalInfo::setNeedRunAgain(true);
+    }
+
     for (auto &File : FileMap) {
       File.second->postProcess();
     }
-    if (DpctGlobalInfo::getRunRound() == 0) {
-      for (auto &Info : HostDeviceFDefIMap) {
-        if (HostDeviceFCallIMap.count(Info.first)) {
-          DpctGlobalInfo::setNeedRunAgain(true);
-          break;
-        }
-      }
-      // record file that needs to be parsed again
-      if (DpctGlobalInfo::isNeedRunAgain()) {
-        for (auto &Info : HostDeviceFDefIMap) {
-          if (HostDeviceFCallIMap.count(Info.first) &&
-              ProcessedFile.count(Info.second.first))
-            ReProcessFile.emplace(Info.second.first);
-        }
-        for (auto &Info : HostDeviceFCallIMap) {
-          if (HostDeviceFDefIMap.count(Info.first) &&
-              ProcessedFile.count(Info.second.first))
-            ReProcessFile.emplace(Info.second.first);
-        }
-        for (auto &Info : HostDeviceFDeclIMap) {
-          if (HostDeviceFDefIMap.count(Info.first) &&
-              HostDeviceFCallIMap.count(Info.first) &&
-              ProcessedFile.count(Info.second.first))
-            ReProcessFile.emplace(Info.second.first);
+    if (!isFirstPass) {
+      for (auto &Element : HostDeviceFuncInfoMap) {
+        auto &Info = Element.second;
+        if (Info.needGenerateHostCode) {
+          for (auto &E : Info.LocInfos) {
+            auto &LocInfo = E.second;
+            if (LocInfo.Type == HDFuncInfoType::HDFI_Call) {
+              continue;
+            }
+            auto &ReplLists =
+                FileMap[LocInfo.FilePath]->getRepls()->getReplMap();
+            generateHostCode(ReplLists, LocInfo, Info.PostFixId);
+          }
         }
       }
     }
@@ -1529,36 +1505,10 @@ public:
     insertFile(Repl->getFilePath().str())->addReplacement(Repl);
   }
 
-  void insertHostRandomEngineTypeInfo(SourceLocation SL, unsigned int Length) {
-    auto LocInfo = getLocInfo(SL);
-    auto FileInfo = insertFile(LocInfo.first);
-    auto &M = FileInfo->getHostRandomEngineTypeMap();
-    if (M.find(LocInfo.second) == M.end()) {
-      M.insert(
-          std::make_pair(LocInfo.second, HostRandomEngineTypeInfo(Length)));
-    }
-  }
-
-  void
-  insertHostDeviceFuncCallInfo(std::string &&FuncName,
-                               std::pair<std::string, unsigned int> &&Info) {
-    HostDeviceFCallIMap.emplace(std::move(FuncName), std::move(Info));
-  }
-  void insertHostDeviceFuncDefInfo(
-      std::string &&FuncName,
-      std::pair<std::string, HostDeviceFuncInfo> &&Info) {
-    HostDeviceFDefIMap.emplace(std::move(FuncName), std::move(Info));
-  }
-  void insertHostDeviceFuncDeclInfo(
-      std::string &&FuncName,
-      std::pair<std::string, HostDeviceFuncInfo> &&Info) {
-    HostDeviceFDeclIMap.emplace(std::move(FuncName), std::move(Info));
-  }
   CudaArchPPMap &getCudaArchPPInfoMap() { return CAPPInfoMap; }
-  HDCallMap &getHostDeviceFuncCallInfoMap() { return HostDeviceFCallIMap; }
-  HDDefMap &getHostDeviceFuncDefInfoMap() { return HostDeviceFDefIMap; }
-  HDDeclMap &getHostDeviceFuncDeclInfoMap() { return HostDeviceFDeclIMap; }
-  std::set<std::shared_ptr<ExtReplacement>> &getCudaArchMacroReplSet() {
+  HDFuncInfoMap &getHostDeviceFuncInfoMap() { return HostDeviceFuncInfoMap; }
+  std::unordered_map<std::string, std::shared_ptr<ExtReplacement>> &
+  getCudaArchMacroReplMap() {
     return CudaArchMacroRepl;
   }
   CudaArchDefMap &getCudaArchDefinedMap() { return CudaArchDefinedMap; }
@@ -1577,30 +1527,6 @@ public:
       return FileInfo->PreviousTUReplFromYAML;
     else
       return nullptr;
-  }
-
-  std::string insertHostRandomDistrInfo(SourceLocation DistrInsetLoc,
-                                        std::string DistrType,
-                                        std::string ValueType,
-                                        std::string DistrArg,
-                                        std::string DistrIndentStr) {
-    auto DistrInsetLocInfo = getLocInfo(DistrInsetLoc);
-    auto FileInfo = insertFile(DistrInsetLocInfo.first);
-    auto &M = FileInfo->getHostRandomDistrMap();
-    std::tuple<unsigned int, std::string, std::string, std::string> T(
-        DistrInsetLocInfo.second, DistrType, ValueType, DistrArg);
-    auto Iter = M.find(T);
-    std::string Name;
-    if (Iter == M.end()) {
-      // Since device RNG APIs are only used in device function and host RNG
-      // APIs are only used in host function. So we can use independent id in
-      // host distr and device distr.
-      Name = "distr_ct" + std::to_string(M.size() + 1);
-      M.insert(std::make_pair(T, HostRandomDistrInfo(Name, DistrIndentStr)));
-    } else {
-      Name = Iter->second.DistrName;
-    }
-    return Name;
   }
 
   void insertEventSyncTypeInfo(
@@ -1673,9 +1599,6 @@ public:
   void insertBuiltinVarInfo(SourceLocation SL, unsigned int Len,
                             std::string Repl,
                             std::shared_ptr<DeviceFunctionInfo> DFI);
-
-  void insertRandomEngine(const Expr *E);
-  std::shared_ptr<RandomEngineInfo> findRandomEngine(const Expr *E);
 
   void insertSpBLASWarningLocOffset(SourceLocation SL) {
     auto LocInfo = getLocInfo(SL);
@@ -1862,6 +1785,9 @@ public:
   static bool useLogicalGroup() {
     return getUsingExperimental<ExperimentalFeatures::Exp_LogicalGroup>();
   }
+  static bool useUserDefineReductions() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_UserDefineReductions>();
+  }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
   }
@@ -1874,13 +1800,6 @@ public:
 
   static bool useDeviceInfo() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo);
-  }
-
-  static bool getSpBLASUnsupportedMatrixTypeFlag() {
-    return SpBLASUnsupportedMatrixTypeFlag;
-  }
-  static void setSpBLASUnsupportedMatrixTypeFlag(bool Flag) {
-    SpBLASUnsupportedMatrixTypeFlag = Flag;
   }
 
   inline std::shared_ptr<DpctFileInfo> insertFile(const std::string &FilePath) {
@@ -2028,6 +1947,10 @@ public:
   getRnnInputMap() {
     return RnnInputMap;
   }
+  static inline std::unordered_map<std::string, std::vector<std::string>> &
+  getMainSourceFileMap(){
+    return MainSourceFileMap;
+  };
 
 private:
   DpctGlobalInfo();
@@ -2056,7 +1979,6 @@ private:
   // FunctionDecl=>DeviceFunctionDecl
   // CUDAKernelCallExpr=>KernelCallExpr
   // VarDecl=>CudaMallocInfo
-  // DeclaratorDecl=>RandomEngineInfo
   template <class Info, class Node>
   inline std::shared_ptr<Info> findNode(const Node *N) {
     if (!N)
@@ -2113,7 +2035,6 @@ private:
   static HelperFilesCustomizationLevel HelperFilesCustomizationLvl;
   static std::string CustomHelperFileName;
   static std::unordered_set<std::string> PrecAndDomPairSet;
-  static std::unordered_set<std::string> HostRNGEngineTypeSet;
   static format::FormatRange FmtRng;
   static DPCTFormatStyle FmtST;
   static bool EnableCtad;
@@ -2175,16 +2096,14 @@ private:
   static bool UsingDRYPattern;
   static bool UsingGenericSpace;
   static bool UsingThisItem;
-  static bool SpBLASUnsupportedMatrixTypeFlag;
   static unsigned int CudaKernelDimDFIIndex;
   static std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
       CudaKernelDimDFIMap;
   static CudaArchPPMap CAPPInfoMap;
-  static HDCallMap HostDeviceFCallIMap;
-  static HDDefMap HostDeviceFDefIMap;
-  static HDDeclMap HostDeviceFDeclIMap;
+  static HDFuncInfoMap HostDeviceFuncInfoMap;
   static CudaArchDefMap CudaArchDefinedMap;
-  static std::set<std::shared_ptr<ExtReplacement>> CudaArchMacroRepl;
+  static std::unordered_map<std::string, std::shared_ptr<ExtReplacement>>
+      CudaArchMacroRepl;
   static std::unordered_map<std::string, std::shared_ptr<ExtReplacements>>
       FileReplCache;
   static std::set<std::string> ReProcessFile;
@@ -2212,6 +2131,8 @@ private:
   static std::unordered_map<
       std::string, std::unordered_map<std::string, std::vector<unsigned>>>
       RnnInputMap;
+  static std::unordered_map<std::string, std::vector<std::string>>
+      MainSourceFileMap;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.
@@ -2472,14 +2393,11 @@ public:
 
   std::string getDeclarationReplacement(const VarDecl *);
 
-  std::string getInitStmt() { return getInitStmt("", false); }
-  std::string getInitStmt(StringRef QueueString, bool IsQueuePtr) {
+  std::string getInitStmt() { return getInitStmt(""); }
+  std::string getInitStmt(StringRef QueueString) {
     if (QueueString.empty())
       return getConstVarName() + ".init();";
-    std::string DerefQueuePtr = "";
-    if(IsQueuePtr)
-      DerefQueuePtr = "*";
-    return buildString(getConstVarName(), ".init(", DerefQueuePtr, QueueString, ");");
+    return buildString(getConstVarName(), ".init(", QueueString, ");");
   }
 
   inline std::string getMemoryDecl(const std::string &MemSize) {
@@ -2740,6 +2658,13 @@ protected:
            << " " << Name;
   }
 
+  template <class StreamT>
+  static void printQueueStr(StreamT &OS, const std::string &Queue) {
+    if (Queue.empty())
+      return;
+    OS << ", " << Queue;
+  }
+
 public:
   TextureInfo(unsigned Offset, const std::string &FilePath, const VarDecl *VD)
       : TextureInfo(Offset, FilePath, VD->getName()) {
@@ -2801,13 +2726,17 @@ public:
     return buildString("auto ", NewVarName, "_smpl = ", Name,
                        ".get_sampler();");
   }
-  virtual std::string getAccessorDecl() {
+  virtual std::string getAccessorDecl(const std::string &QueueStr) {
     requestFeature(HelperFeatureEnum::Image_image_wrapper_get_access, FilePath);
-    return buildString("auto ", NewVarName, "_acc = ", Name,
-                       ".get_access(cgh);");
+    std::string Ret;
+    llvm::raw_string_ostream OS(Ret);
+    OS << "auto " << NewVarName << "_acc = " << Name << ".get_access(cgh";
+    printQueueStr(OS, QueueStr);
+    OS << ");";
+    return Ret;
   }
-  virtual void addDecl(StmtList &AccessorList, StmtList &SamplerList) {
-    AccessorList.emplace_back(getAccessorDecl());
+  virtual void addDecl(StmtList &AccessorList, StmtList &SamplerList, const std::string&QueueStr) {
+    AccessorList.emplace_back(getAccessorDecl(QueueStr));
     SamplerList.emplace_back(getSamplerDecl());
   }
 
@@ -2858,12 +2787,14 @@ public:
       : TextureObjectInfo(VD, Subscript, 0) {}
 
   virtual ~TextureObjectInfo() = default;
-  std::string getAccessorDecl() override {
+  std::string getAccessorDecl(const std::string &QueueString) override {
     ParameterStream PS;
 
     PS << "auto " << NewVarName << "_acc = static_cast<";
     getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
-        << " *>(" << Name << ")->get_access(cgh);";
+        << " *>(" << Name << ")->get_access(cgh";
+    printQueueStr(PS, QueueString);
+    PS << ");";
     requestFeature(HelperFeatureEnum::Image_image_wrapper_get_access, FilePath);
     requestFeature(HelperFeatureEnum::Image_image_wrapper, FilePath);
     return PS.Str;
@@ -2910,13 +2841,15 @@ class CudaLaunchTextureObjectInfo : public TextureObjectInfo {
 public:
   CudaLaunchTextureObjectInfo(const ParmVarDecl *PVD, const std::string &ArgStr)
       : TextureObjectInfo(static_cast<const VarDecl *>(PVD)), ArgStr(ArgStr) {}
-  std::string getAccessorDecl() override {
+  std::string getAccessorDecl(const std::string &QueueString) override {
     requestFeature(HelperFeatureEnum::Image_image_wrapper, FilePath);
     requestFeature(HelperFeatureEnum::Image_image_wrapper_get_access, FilePath);
     ParameterStream PS;
     PS << "auto " << Name << "_acc = static_cast<";
     getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
-        << " *>(" << ArgStr << ")->get_access(cgh);";
+        << " *>(" << ArgStr << ")->get_access(cgh";
+    printQueueStr(PS, QueueString);
+    PS << ");";
     return PS.Str;
   }
   std::string getSamplerDecl() override {
@@ -2955,9 +2888,10 @@ public:
     Ret->MemberName = ME->getMemberDecl()->getNameAsString();
     return Ret;
   }
-  void addDecl(StmtList &AccessorList, StmtList &SamplerList) override {
+  void addDecl(StmtList &AccessorList, StmtList &SamplerList,
+               const std::string &QueueStr) override {
     NewVarNameRAII RAII(this);
-    TextureObjectInfo::addDecl(AccessorList, SamplerList);
+    TextureObjectInfo::addDecl(AccessorList, SamplerList, QueueStr);
   }
   void setBaseName(StringRef Name) { BaseName = Name; }
   StringRef getMemberName() { return MemberName; }
@@ -2984,7 +2918,8 @@ public:
     auto Member = MemberTextureObjectInfo::create(ME);
     return Members.emplace(Member->getMemberName().str(), Member).first->second;
   }
-  void addDecl(StmtList &AccessorList, StmtList &SamplerList) override {
+  void addDecl(StmtList &AccessorList, StmtList &SamplerList,
+               const std::string &Queue) override {
     for (const auto &M : Members) {
       M.second->setBaseName(Name);
     }
@@ -3369,7 +3304,7 @@ MemVarMap::getItem<MemVarMap::DeclParameter>(ParameterStream &PS) const {
   }
 
   std::string ItemParamDecl =
-      MapNames::getClNamespace() + NDItem + " " + getItemName();
+      "const " + MapNames::getClNamespace() + NDItem + " &" + getItemName();
   return PS << ItemParamDecl;
 }
 
@@ -4195,13 +4130,20 @@ private:
       }
     }
   }
-  bool isDefaultStream() {
+  bool isDefaultStream() const {
     return StringRef(ExecutionConfig.Stream).startswith("{{NEEDREPLACEQ") ||
            ExecutionConfig.IsDefaultStream;
   }
 
-  bool isQueuePtr() {
-    return ExecutionConfig.IsQueuePtr;
+  bool isQueuePtr() const { return ExecutionConfig.IsQueuePtr; }
+
+  std::string getQueueStr() const {
+    if (isDefaultStream())
+      return "";
+    std::string Ret;
+    if (isQueuePtr())
+      Ret = "*";
+    return Ret += ExecutionConfig.Stream;
   }
 
   void buildKernelInfo(const CUDAKernelCallExpr *KernelCall);
@@ -4408,113 +4350,6 @@ private:
   std::string Name;
 };
 
-class RandomEngineInfo {
-public:
-  RandomEngineInfo(unsigned Offset, const std::string &FilePath,
-                   const DeclaratorDecl *DD)
-      : SeedExpr("0"), DimExpr("1"), IsQuasiEngine(false) {
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    DeclaratorDeclName = DD->getNameAsString();
-
-    auto LocInfo = DpctGlobalInfo::getLocInfo(
-        DD->getTypeSourceInfo()->getTypeLoc().getBeginLoc());
-    DeclFilePath = LocInfo.first;
-    DeclaratorDeclTypeBeginOffset = LocInfo.second;
-
-    DeclaratorDeclEndOffset = SM.getDecomposedLoc(DD->getEndLoc()).second;
-    TypeLength = Lexer::MeasureTokenLength(
-        SM.getExpansionLoc(DD->getTypeSourceInfo()->getTypeLoc().getBeginLoc()),
-        SM, DpctGlobalInfo::getContext().getLangOpts());
-  }
-  // Seed is an unsigned long long type value in origin code, if it is not set,
-  // use 0 as default.
-  // The legal value of Dim in origin code is 1 to 20000, so if it is not set,
-  // use 1 as default.
-
-  void setEngineTypeReplacement(std::string EngineType) {
-    TypeReplacement = EngineType;
-  }
-  void setSeedExpr(const Expr *Seed) {
-    ArgumentAnalysis AS(Seed, false);
-    AS.analyze();
-    SeedExpr = AS.getReplacedString();
-  }
-  void setDimExpr(const Expr *Dim) {
-    ArgumentAnalysis AD(Dim, false);
-    AD.analyze();
-    DimExpr = AD.getReplacedString();
-  }
-  std::string getSeedExpr() { return SeedExpr; }
-  std::string getDimExpr() { return DimExpr; }
-
-  void setCreateAPIInfo(SourceLocation Begin, SourceLocation End,
-                        std::string QueueStr = "") {
-    auto BeginInfo = DpctGlobalInfo::getLocInfo(Begin);
-    auto EndInfo = DpctGlobalInfo::getLocInfo(End);
-    CreateAPILength.push_back(EndInfo.second - BeginInfo.second);
-    CreateAPIBegin.push_back(BeginInfo.second);
-    CreateCallFilePath.push_back(BeginInfo.first);
-    CreateAPIQueueName.push_back(QueueStr);
-    CreateAPINum++;
-  }
-
-  void setTypeReplacement(std::string Repl) { TypeReplacement = Repl; }
-  void setQuasiEngineFlag() { IsQuasiEngine = true; }
-
-  void buildInfo();
-  void updateEngineType();
-  void setAssigned() { IsAssigned = true; }
-  std::string getDeclaratorDeclName() { return DeclaratorDeclName; }
-  void setGeneratorName(std::string Name) { GeneratorName = Name; }
-  SourceLocation getDeclaratorDeclTypeBeginLoc() {
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    auto FE = SM.getFileManager().getFile(DeclFilePath);
-    if (std::error_code ec = FE.getError())
-      return SourceLocation();
-    auto FID = SM.getOrCreateFileID(FE.get(), SrcMgr::C_User);
-    return SM.getComposedLoc(FID, DeclaratorDeclTypeBeginOffset);
-  }
-  SourceLocation getDeclaratorDeclEndLoc() {
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    auto FE = SM.getFileManager().getFile(DeclFilePath);
-    if (std::error_code ec = FE.getError())
-      return SourceLocation();
-    auto FID = SM.getOrCreateFileID(FE.get(), SrcMgr::C_User);
-    return SM.getComposedLoc(FID, DeclaratorDeclEndOffset);
-  }
-  void setUnsupportEngineFlag(bool Flag) { IsUnsupportEngine = Flag; }
-  void setQueueStr(std::string Q) { QueueStr = Q; }
-  std::string getEngineType() { return TypeReplacement; }
-  void setIsRealCreate(bool IRC) { IsRealCreate = IRC; };
-  bool getIsRealCreate() { return IsRealCreate; };
-
-private:
-  std::string SeedExpr; // Replaced Seed variable string
-  std::string DimExpr;  // Replaced Dimension variable string
-  bool IsQuasiEngine;   // If origin code used a quasirandom number generator,
-                        // this flag need be set as true.
-  std::string DeclFilePath; // Where the curandGenerator_t handle is declared.
-  std::vector<std::string>
-      CreateCallFilePath;  // Where the curandCreateGenerator API is called.
-  unsigned int TypeLength; // The length of the curandGenerator_t handle type.
-  std::vector<unsigned int>
-      CreateAPIBegin; // The offset of the begin of curandCreateGenerator API.
-  std::vector<unsigned int>
-      CreateAPILength; // The length of the begin of curandCreateGenerator API.
-  std::vector<std::string> CreateAPIQueueName;
-  std::string TypeReplacement;    // The replcaement string of the type of
-                                  // curandGenerator_t handle.
-  std::string DeclaratorDeclName; // Name of declarator declaration.
-  unsigned int DeclaratorDeclTypeBeginOffset;
-  unsigned int DeclaratorDeclEndOffset;
-  bool IsUnsupportEngine = true;
-  std::string QueueStr;
-  std::string GeneratorName;
-  bool IsAssigned = false;
-  unsigned int CreateAPINum = 0;
-  bool IsRealCreate = true;
-};
-
 /// Find the innermost FunctionDecl's child node (CompoundStmt node) where \S
 /// is located. If there is no CompoundStmt of FunctionDecl out of \S, return
 /// nullptr.
@@ -4565,10 +4400,8 @@ generateHelperFuncReplInfo(const T *S) {
   }
 
   Info.IsLocationValid = true;
-  Info.DeclLocFile =
-      DpctGlobalInfo::getSourceManager().getFilename(EndOfLBrace).str();
-  Info.DeclLocOffset =
-      DpctGlobalInfo::getSourceManager().getDecomposedLoc(EndOfLBrace).second;
+  std::tie(Info.DeclLocFile, Info.DeclLocOffset) =
+      DpctGlobalInfo::getLocInfo(EndOfLBrace);
   return Info;
 }
 

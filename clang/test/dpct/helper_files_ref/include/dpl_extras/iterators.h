@@ -146,7 +146,18 @@ template <typename KeyTp, typename _ValueTp> struct make_key_value_pair {
   }
 };
 
+template <class T> struct __zip_iterator_impl;
+template <class... Ts> struct __zip_iterator_impl<std::tuple<Ts...>> {
+  using type = oneapi::dpl::zip_iterator<Ts...>;
+};
+
 } // end namespace detail
+
+// dpct::zip_iterator can only accept std::tuple type as template argument for
+// compatibility purpose. Please use oneapi::dpl::zip_iterator if you want to
+// pass iterator's types directly.
+template <typename... Ts>
+using zip_iterator = typename detail::__zip_iterator_impl<Ts...>::type;
 
 // arg_index_input_iterator is an iterator over a input iterator, with a index.
 // When dereferenced, it returns a key_value_pair, which can be interrogated for
@@ -255,15 +266,15 @@ public:
 template <typename IterT> struct io_iterator_pair {
   inline io_iterator_pair() : selector(false) {}
 
-  inline io_iterator_pair(const IterT &first_input, const IterT &first_output)
+  inline io_iterator_pair(const IterT &first, const IterT &second)
       : selector(false) {
-    iter[0] = first_input;
-    iter[1] = first_output;
+    iter[0] = first;
+    iter[1] = second;
   }
 
-  inline IterT input() const { return selector ? iter[1] : iter[0]; }
+  inline IterT first() const { return selector ? iter[1] : iter[0]; }
 
-  inline IterT output() const { return selector ? iter[0] : iter[1]; }
+  inline IterT second() const { return selector ? iter[0] : iter[1]; }
 
   inline void swap() { selector = !selector; }
 

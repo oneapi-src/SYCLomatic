@@ -54,7 +54,7 @@ checkErrors(cudaDeviceGetP2PAttribute(&perfRank, cudaDevP2PAttrPerformanceRank, 
 // CHECK-NEXT: checkErrors(atomicSupported = 0);
 checkErrors(cudaDeviceGetP2PAttribute(&atomicSupported, cudaDevP2PAttrNativeAtomicSupported, device1, device2));
 // CHECK:/*
-// CHECK-NEXT:DPCT1093:{{[0-9]+}}: The "device2" may not be the best XPU device. Adjust the selected device if needed.
+// CHECK-NEXT:DPCT1093:{{[0-9]+}}: The "device2" device may be not the one intended for use. Adjust the selected device if needed.
 // CHECK-NEXT:*/
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -86,7 +86,7 @@ void get_version(void) {
     // CHECK-NEXT:    /*
     // CHECK-NEXT:    DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
     // CHECK-NEXT:    */
-    // CHECK-NEXT:    int error_code_1 = (driverVersion = dpct::get_current_device().get_major_version(), 0);
+    // CHECK-NEXT:    dpct::err0 error_code_1 = (driverVersion = dpct::get_current_device().get_major_version(), 0);
     cudaError_t error_code_1 = cudaDriverGetVersion(&driverVersion);
 
     // CHECK:    /*
@@ -95,7 +95,7 @@ void get_version(void) {
     // CHECK-NEXT:    /*
     // CHECK-NEXT:    DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
     // CHECK-NEXT:    */
-    // CHECK-NEXT:    int error_code_2 = (runtimeVersion = dpct::get_current_device().get_major_version(), 0);
+    // CHECK-NEXT:    dpct::err0 error_code_2 = (runtimeVersion = dpct::get_current_device().get_major_version(), 0);
     cudaError_t error_code_2 = cudaRuntimeGetVersion(&runtimeVersion);
 }
 

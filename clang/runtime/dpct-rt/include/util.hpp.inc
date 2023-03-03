@@ -51,6 +51,27 @@
 
 namespace dpct {
 
+// DPCT_LABEL_BEGIN|err_types|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+namespace detail {
+
+template <typename tag, typename T> class generic_error_type {
+public:
+  generic_error_type() = default;
+  generic_error_type(T value) : value{value} {}
+  operator T() const { return value; }
+
+private:
+  T value;
+};
+
+} // namespace detail
+
+using err0 = detail::generic_error_type<struct err0_tag, int>;
+using err1 = detail::generic_error_type<struct err1_tag, int>;
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|make_index_sequence|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
@@ -89,7 +110,7 @@ inline void matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld,
   }
 
   if (to_ld == from_ld) {
-    size_t cpoy_size = elem_size * ((cols - 1) * to_ld + rows);
+    size_t cpoy_size = elem_size * ((cols - 1) * (size_t)to_ld + rows);
     if (async)
       detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr,
                           cpoy_size, direction);
@@ -573,7 +594,7 @@ namespace experimental {
 /// a SYCL kernel can be scheduled actively at the same time on a device.
 template <int dimensions = 3>
 inline void
-nd_range_barrier(sycl::nd_item<dimensions> item,
+nd_range_barrier(const sycl::nd_item<dimensions> &item,
                  sycl::atomic_ref<
                      unsigned int, sycl::memory_order::seq_cst,
                      sycl::memory_scope::device,
@@ -613,7 +634,7 @@ nd_range_barrier(sycl::nd_item<dimensions> item,
 /// a SYCL kernel can be scheduled actively at the same time on a device.
 template <>
 inline void
-nd_range_barrier(sycl::nd_item<1> item,
+nd_range_barrier(const sycl::nd_item<1> &item,
                  sycl::atomic_ref<
                      unsigned int, sycl::memory_order::seq_cst,
                      sycl::memory_scope::device,

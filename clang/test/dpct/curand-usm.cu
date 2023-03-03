@@ -8,24 +8,11 @@
 #include <curand.h>
 
 int main(){
-  //CHECK:dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  //CHECK-NEXT:sycl::queue &q_ct1 = dev_ct1.default_queue();
-  //CHECK:oneapi::mkl::rng::gaussian<double> distr_ct{{[0-9]+}}(123, 456);
-  //CHECK-NEXT:oneapi::mkl::rng::gaussian<float> distr_ct{{[0-9]+}}(123, 456);
-  //CHECK-NEXT:oneapi::mkl::rng::lognormal<double> distr_ct{{[0-9]+}}(123, 456, 0.0, 1.0);
-  //CHECK-NEXT:oneapi::mkl::rng::lognormal<float> distr_ct{{[0-9]+}}(123, 456, 0.0, 1.0);
-  //CHECK-NEXT:oneapi::mkl::rng::poisson<int32_t> distr_ct{{[0-9]+}}(123.456);
-  //CHECK-NEXT:oneapi::mkl::rng::uniform<double> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:oneapi::mkl::rng::uniform_bits<uint32_t> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:oneapi::mkl::rng::uniform_bits<uint64_t> distr_ct{{[0-9]+}};
-  //CHECK-NEXT:int s1;
+  //CHECK:int s1;
   //CHECK-NEXT:int s2;
-  //CHECK-NEXT:std::shared_ptr<oneapi::mkl::rng::philox4x32x10> rng;
-  //CHECK-NEXT:rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(q_ct1, 1337ull);
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because this call is redundant in SYCL.
-  //CHECK-NEXT:*/
+  //CHECK-NEXT:dpct::rng::host_rng_ptr rng;
+  //CHECK-NEXT:rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::philox4x32x10);
+  //CHECK-NEXT:rng->set_seed(1337ull);
   //CHECK-NEXT:float *d_data;
   curandStatus_t s1;
   curandStatus s2;
@@ -34,73 +21,69 @@ int main(){
   curandSetPseudoRandomGeneratorSeed(rng, 1337ull);
   float *d_data;
 
-  //CHECK:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100*100, d_data);
+  //CHECK:rng->generate_uniform(d_data, 100*100);
   curandGenerateUniform(rng, d_data, 100*100);
 
 
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100*100, d_data), 0);
+  //CHECK-NEXT:s1 = (rng->generate_uniform(d_data, 100*100), 0);
   s1 = curandGenerateUniform(rng, d_data, 100*100);
 
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100*100, d_data), 0);
+  //CHECK-NEXT:s1 = (rng->generate_lognormal(d_data, 100*100, 123, 456), 0);
   s1 = curandGenerateLogNormal(rng, d_data, 100*100, 123, 456);
 
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100*100, d_data), 0);
+  //CHECK-NEXT:s1 = (rng->generate_gaussian(d_data, 100*100, 123, 456), 0);
   s1 = curandGenerateNormal(rng, d_data, 100*100, 123, 456);
 
   double* d_data_d;
-  //CHECK:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100*100, d_data_d);
+  //CHECK:rng->generate_uniform(d_data_d, 100*100);
+  //CHECK-NEXT:rng->generate_lognormal(d_data_d, 100*100, 123, 456);
+  //CHECK-NEXT:rng->generate_gaussian(d_data_d, 100*100, 123, 456);
   curandGenerateUniformDouble(rng, d_data_d, 100*100);
-
-  //CHECK:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100*100, d_data_d);
   curandGenerateLogNormalDouble(rng, d_data_d, 100*100, 123, 456);
-
-  //CHECK:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100*100, d_data_d);
   curandGenerateNormalDouble(rng, d_data_d, 100*100, 123, 456);
 
   unsigned int* d_data_ui;
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100*100, (uint32_t*)d_data_ui), 0);
+  //CHECK-NEXT:s1 = (rng->generate_uniform_bits(d_data_ui, 100*100), 0);
   s1 = curandGenerate(rng, d_data_ui, 100*100);
 
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100*100, (int32_t*)d_data_ui), 0);
+  //CHECK-NEXT:s1 = (rng->generate_poisson(d_data_ui, 100*100, 123.456), 0);
   s1 = curandGeneratePoisson(rng, d_data_ui, 100*100, 123.456);
 
   unsigned long long* d_data_ull;
-  //CHECK:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100*100, (uint64_t*)d_data_ull);
+  //CHECK:rng->generate_uniform_bits(d_data_ull, 100*100);
   curandGenerateLongLong(rng, d_data_ull, 100*100);
 
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:if(s1 = (oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100*100, (uint64_t*)d_data_ull), 0)){}
+  //CHECK-NEXT:if(s1 = (rng->generate_uniform_bits(d_data_ull, 100*100), 0)){}
   if(s1 = curandGenerateLongLong(rng, d_data_ull, 100*100)){}
 
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:if((oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100*100, (uint64_t*)d_data_ull), 0)){}
+  //CHECK-NEXT:if((rng->generate_uniform_bits(d_data_ull, 100*100), 0)){}
   if(curandGenerateLongLong(rng, d_data_ull, 100*100)){}
 
-  //CHECK:std::shared_ptr<oneapi::mkl::rng::sobol> rng2;
-  //CHECK-NEXT:rng2 = std::make_shared<oneapi::mkl::rng::sobol>(q_ct1, 1111);
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed because this call is redundant in SYCL.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng2, 100*100, d_data);
+  //CHECK:dpct::rng::host_rng_ptr rng2;
+  //CHECK-NEXT:rng2 = dpct::rng::create_host_rng(dpct::rng::random_engine_type::sobol);
+  //CHECK-NEXT:rng2->set_dimensions(1111);
+  //CHECK-NEXT:rng2->generate_uniform(d_data, 100*100);
   curandGenerator_t rng2;
   curandCreateGenerator(&rng2, CURAND_RNG_QUASI_DEFAULT);
   curandSetQuasiRandomGeneratorDimensions(rng2, 1111);
@@ -108,16 +91,16 @@ int main(){
 
 #define M 100
 #define N 200
-  //CHECK:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng2, M * N, d_data);
+//CHECK:rng2->generate_uniform(d_data, M * N);
   curandGenerateUniform(rng2, d_data, M * N);
 #undef M
 #undef N
 
-  //CHECK:oneapi::mkl::rng::skip_ahead(*rng, 100);
+  //CHECK:rng->skip_ahead(100);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (oneapi::mkl::rng::skip_ahead(*rng2, 200), 0);
+  //CHECK-NEXT:s1 = (rng2->skip_ahead(200), 0);
   curandSetGeneratorOffset(rng, 100);
   s1 = curandSetGeneratorOffset(rng2, 200);
 
@@ -130,7 +113,7 @@ int main(){
   s1 = curandDestroyGenerator(rng);
 
   //CHECK: dpct::queue_ptr stream;
-  //CHECK-NEXT: rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(*stream, 1337ull);
+  //CHECK-NEXT: rng->set_queue(stream);
   cudaStream_t stream;
   curandSetStream(rng, stream);
 }
@@ -143,16 +126,14 @@ curandStatus foo2();
 //CHECK:class A{
 //CHECK-NEXT:public:
 //CHECK-NEXT:  A(){
-//CHECK-NEXT:    rng = std::make_shared<oneapi::mkl::rng::sobol>(dpct::get_default_queue(), 1243);
-//CHECK-NEXT:    /*
-//CHECK-NEXT:    DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed because this call is redundant in SYCL.
-//CHECK-NEXT:    */
+//CHECK-NEXT:    rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::sobol);
+//CHECK-NEXT:    rng->set_dimensions(1243);
 //CHECK-NEXT:  }
 //CHECK-NEXT:  ~A(){
 //CHECK-NEXT:    rng.reset();
 //CHECK-NEXT:  }
      //CHECK:private:
-//CHECK-NEXT:  std::shared_ptr<oneapi::mkl::rng::sobol> rng;
+//CHECK-NEXT:  dpct::rng::host_rng_ptr rng;
 //CHECK-NEXT:};
 class A{
 public:
@@ -170,20 +151,16 @@ private:
 //CHECK:class B{
 //CHECK-NEXT:public:
 //CHECK-NEXT:  B(){
-//CHECK-NEXT:    dpct::device_ext &dev_ct1 = dpct::get_current_device();
-//CHECK-NEXT:    sycl::queue &q_ct1 = dev_ct1.default_queue();
-//CHECK-NEXT:    rng = std::make_shared<oneapi::mkl::rng::sobol>(q_ct1, 1243);
-//CHECK-NEXT:    /*
-//CHECK-NEXT:    DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed because this call is redundant in SYCL.
-//CHECK-NEXT:    */
-//CHECK-NEXT:    karg1 = sycl::malloc_device<int>(32, q_ct1);
+//CHECK-NEXT:    rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::sobol);
+//CHECK-NEXT:    rng->set_dimensions(1243);
+//CHECK-NEXT:    karg1 = sycl::malloc_device<int>(32, dpct::get_default_queue());
 //CHECK-NEXT:  }
 //CHECK-NEXT:  ~B(){
 //CHECK-NEXT:    rng.reset();
 //CHECK-NEXT:    sycl::free(karg1, dpct::get_default_queue());
 //CHECK-NEXT:  }
      //CHECK:private:
-//CHECK-NEXT:  std::shared_ptr<oneapi::mkl::rng::sobol> rng;
+//CHECK-NEXT:  dpct::rng::host_rng_ptr rng;
 //CHECK-NEXT:  int *karg1;
 //CHECK-NEXT:};
 class B{
@@ -204,14 +181,12 @@ private:
 
 void bar1(){
 
-//CHECK:/*
+//CHECK:dpct::rng::host_rng_ptr rng;
+//CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1032:{{[0-9]+}}: A different random number generator is used. You may need to adjust the code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:std::shared_ptr<oneapi::mkl::rng::philox4x32x10> rng;
-//CHECK-NEXT:rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(dpct::get_default_queue(), 1337ull);
-//CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because this call is redundant in SYCL.
-//CHECK-NEXT:*/
+//CHECK-NEXT:rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::philox4x32x10);
+//CHECK-NEXT:rng->set_seed(1337ull);
   curandGenerator_t rng;
   curandCreateGenerator(&rng, CURAND_RNG_PSEUDO_XORWOW);
   curandSetPseudoRandomGeneratorSeed(rng, 1337ull);
@@ -219,14 +194,12 @@ void bar1(){
 
 
 void bar2(){
-//CHECK:/*
+//CHECK:dpct::rng::host_rng_ptr rng;
+//CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1032:{{[0-9]+}}: A different random number generator is used. You may need to adjust the code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:std::shared_ptr<oneapi::mkl::rng::sobol> rng;
-//CHECK-NEXT:rng = std::make_shared<oneapi::mkl::rng::sobol>(dpct::get_default_queue(), 1243);
-//CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed because this call is redundant in SYCL.
-//CHECK-NEXT:*/
+//CHECK-NEXT:rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::sobol);
+//CHECK-NEXT:rng->set_dimensions(1243);
   curandGenerator_t rng;
   curandCreateGenerator(&rng, CURAND_RNG_QUASI_SCRAMBLED_SOBOL64);
   curandSetQuasiRandomGeneratorDimensions(rng, 1243);
@@ -241,18 +214,20 @@ void curandErrCheck_(curandStatus_t stat, const char *file, int line) {
 }
 
 void bar3(){
-//CHECK:oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
-//CHECK-NEXT:std::shared_ptr<oneapi::mkl::rng::philox4x32x10> rng;
-//CHECK-NEXT:curandErrCheck((rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(dpct::get_default_queue(), 1337ull), 0));
+//CHECK:dpct::rng::host_rng_ptr rng;
 //CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was replaced with 0 because this call is redundant in SYCL.
+//CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:curandErrCheck(0);
+//CHECK-NEXT:curandErrCheck((rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::philox4x32x10), 0));
+//CHECK-NEXT:/*
+//CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+//CHECK-NEXT:*/
+//CHECK-NEXT:curandErrCheck((rng->set_seed(1337ull), 0));
 //CHECK-NEXT:float *d_data;
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:curandErrCheck((oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100*100, d_data), 0));
+//CHECK-NEXT:curandErrCheck((rng->generate_uniform(d_data, 100*100), 0));
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 //CHECK-NEXT:*/
@@ -266,31 +241,26 @@ void bar3(){
 }
 
 void bar4(){
-//CHECK:/*
+//CHECK:dpct::rng::host_rng_ptr rng;
+//CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1033:{{[0-9]+}}: Migrated code uses a basic Sobol generator. Initialize oneapi::mkl::rng::sobol generator with user-defined direction numbers to use it as Scrambled Sobol generator.
 //CHECK-NEXT:*/
-//CHECK-NEXT:std::shared_ptr<oneapi::mkl::rng::sobol> rng;
-//CHECK-NEXT:rng = std::make_shared<oneapi::mkl::rng::sobol>(dpct::get_default_queue(), 1243);
-//CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed because this call is redundant in SYCL.
-//CHECK-NEXT:*/
+//CHECK-NEXT:rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::sobol);
+//CHECK-NEXT:rng->set_dimensions(1243);
   curandGenerator_t rng;
   curandCreateGenerator(&rng, CURAND_RNG_QUASI_SCRAMBLED_SOBOL32);
   curandSetQuasiRandomGeneratorDimensions(rng, 1243);
 }
 
 //CHECK:int bar5() try {
-//CHECK-NEXT:  oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
 //CHECK-NEXT:  float *d_data;
-//CHECK-NEXT:  std::shared_ptr<oneapi::mkl::rng::sobol> rng2;
-//CHECK-NEXT:  rng2 = std::make_shared<oneapi::mkl::rng::sobol>(dpct::get_default_queue(), 1111);
-//CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed because this call is redundant in SYCL.
-//CHECK-NEXT:  */
+//CHECK-NEXT:  dpct::rng::host_rng_ptr rng2;
+//CHECK-NEXT:  rng2 = dpct::rng::create_host_rng(dpct::rng::random_engine_type::sobol);
+//CHECK-NEXT:  rng2->set_dimensions(1111);
 //CHECK-NEXT:  /*
 //CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 //CHECK-NEXT:  */
-//CHECK-NEXT:  return (oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng2, 100*100, d_data), 0);
+//CHECK-NEXT:  return (rng2->generate_uniform(d_data, 100*100), 0);
 //CHECK-NEXT:}
 int bar5(){
   float *d_data;
@@ -301,21 +271,18 @@ int bar5(){
 }
 
 void bar6(float *x_gpu, size_t n) {
-  //CHECK: oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
-  //CHECK-NEXT: static std::shared_ptr<oneapi::mkl::rng::philox4x32x10> gen[16];
+  //CHECK: static dpct::rng::host_rng_ptr gen[16];
   static curandGenerator_t gen[16];
   static int init[16] = {0};
   int i = 0;
   if(!init[i]) {
-    //CHECK: gen[i] = std::make_shared<oneapi::mkl::rng::philox4x32x10>(dpct::get_default_queue(), 1234);
-    //CHECK-NEXT: /*
-    //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because this call is redundant in SYCL.
-    //CHECK-NEXT: */
+    //CHECK: *(&gen[i]) = dpct::rng::create_host_rng(dpct::rng::random_engine_type::philox4x32x10);
+    //CHECK-NEXT: gen[i]->set_seed(1234);
     curandCreateGenerator(&gen[i], CURAND_RNG_PSEUDO_DEFAULT);
     curandSetPseudoRandomGeneratorSeed(gen[i], 1234);
     init[i] = 1;
   }
-  //CHECK: oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *(gen[i]), n, x_gpu);
+  //CHECK: gen[i]->generate_uniform(x_gpu, n);
   curandGenerateUniform(gen[i], x_gpu, n);
 }
 

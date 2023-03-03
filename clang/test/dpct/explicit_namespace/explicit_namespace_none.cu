@@ -44,7 +44,7 @@ const int num_elements = 16;
 __device__ float fx[2], fy[num_elements][4 * num_elements];
 const int size = 64;
 __device__ float tmp[size];
-// CHECK: void kernel2(float *out, nd_item<3> [[ITEM:item_ct1]], int &al, float *fx,
+// CHECK: void kernel2(float *out, const nd_item<3> &[[ITEM:item_ct1]], int &al, float *fx,
 // CHECK-NEXT:              dpct::accessor<float, global, 2> fy, float *tmp) {
 // CHECK-NEXT:   out[{{.*}}[[ITEM]].get_local_id(2)] += al;
 // CHECK-NEXT:   fx[{{.*}}[[ITEM]].get_local_id(2)] = fy[{{.*}}[[ITEM]].get_local_id(2)][{{.*}}[[ITEM]].get_local_id(2)];
@@ -57,7 +57,7 @@ __global__ void kernel2(float *out) {
 }
 
 // CHECK:void test_assignment() try {
-// CHECK-NEXT:  int err;
+// CHECK-NEXT:  err0 err;
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/

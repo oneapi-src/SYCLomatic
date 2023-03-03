@@ -27,18 +27,18 @@ const cudaEvent_t *pevents[23];
 // CHECK: const dpct::event_ptr **ppevents[23];
 const cudaEvent_t **ppevents[23];
 
-// CHECK: int errors[23];
+// CHECK: dpct::err0 errors[23];
 cudaError_t errors[23];
-// CHECK: const int *perrors[23];
+// CHECK: const dpct::err0 *perrors[23];
 const cudaError_t *perrors[23];
-// CHECK: const int **pperrors[23];
+// CHECK: const dpct::err0 **pperrors[23];
 const cudaError_t **pperrors[23];
 
-// CHECK: int errors1[23];
+// CHECK: dpct::err0 errors1[23];
 cudaError errors1[23];
-// CHECK: const int *perrors1[23];
+// CHECK: const dpct::err0 *perrors1[23];
 const cudaError *perrors1[23];
-// CHECK: const int **pperrors1[23];
+// CHECK: const dpct::err0 **pperrors1[23];
 const cudaError **pperrors1[23];
 
 // CHECK: sycl::range<3> dims[23];
@@ -56,18 +56,18 @@ struct s {
   // CHECK: const dpct::event_ptr **ppevents[23];
   const cudaEvent_t **ppevents[23];
 
-  // CHECK: int errors[23];
+  // CHECK: dpct::err0 errors[23];
   cudaError_t errors[23];
-  // CHECK: const int *perrors[23];
+  // CHECK: const dpct::err0 *perrors[23];
   const cudaError_t *perrors[23];
-  // CHECK: const int **pperrors[23];
+  // CHECK: const dpct::err0 **pperrors[23];
   const cudaError_t **pperrors[23];
 
-  // CHECK: int errors1[23];
+  // CHECK: dpct::err0 errors1[23];
   cudaError errors1[23];
-  // CHECK: const int *perrors1[23];
+  // CHECK: const dpct::err0 *perrors1[23];
   const cudaError *perrors1[23];
-  // CHECK: const int **pperrors1[23];
+  // CHECK: const dpct::err0 **pperrors1[23];
   const cudaError **pperrors1[23];
 
   // CHECK: sycl::range<3> dims[23];
@@ -83,24 +83,24 @@ void foo(cudaDeviceProp p) {
   return;
 }
 
-// CHECK: int e;
+// CHECK: dpct::err0 e;
 cudaError e;
 
-// CHECK: int ee;
+// CHECK: dpct::err0 ee;
 cudaError_t ee;
 
-// CHECK: int foo_0(int);
+// CHECK: dpct::err0 foo_0(dpct::err0);
 cudaError_t foo_0(cudaError_t);
 
-// CHECK: int foo_1(int);
+// CHECK: dpct::err0 foo_1(dpct::err0);
 cudaError foo_1(cudaError_t);
 
-// CHECK: int apicall(int i) {
+// CHECK: dpct::err0 apicall(int i) {
 cudaError_t apicall(int i) {
   return cudaSuccess;
 };
 
-// CHECK: int err = apicall(0);
+// CHECK: dpct::err0 err = apicall(0);
 cudaError_t err = apicall(0);
 
 template <typename T>
@@ -120,8 +120,8 @@ int main(int argc, char **argv) {
   a = sizeof(d3);
   a = sizeof d3;
 
-  //CHECK:int cudaErr_t;
-  //CHECK-NEXT:a = sizeof(int);
+  //CHECK:dpct::err0 cudaErr_t;
+  //CHECK-NEXT:a = sizeof(dpct::err0);
   //CHECK-NEXT:a = sizeof(cudaErr_t);
   //CHECK-NEXT:a = sizeof cudaErr_t;
   cudaError_t cudaErr_t;
@@ -165,8 +165,8 @@ int main(int argc, char **argv) {
   a = sizeof(stream);
   a = sizeof stream;
 
-  //CHECK:int cudaErr;
-  //CHECK-NEXT:a = sizeof(int);
+  //CHECK:dpct::err0 cudaErr;
+  //CHECK-NEXT:a = sizeof(dpct::err0);
   //CHECK-NEXT:a = sizeof(cudaErr);
   //CHECK-NEXT:a = sizeof cudaErr;
   cudaError_t cudaErr;
@@ -300,8 +300,8 @@ int main(int argc, char **argv) {
   a = sizeof(randstatus_t);
   a = sizeof randstatus_t;
 
-  //CHECK:int cudaerror;
-  //CHECK-NEXT:a = sizeof(int);
+  //CHECK:dpct::err0 cudaerror;
+  //CHECK-NEXT:a = sizeof(dpct::err0);
   //CHECK-NEXT:a = sizeof(cudaerror);
   //CHECK-NEXT:a = sizeof cudaerror;
   cudaError cudaerror;
@@ -407,10 +407,10 @@ __global__ void foo() {
   malloc(sizeof(cudaStream_t &));
 
   int i;
-  // CHECK: (int)i;
-  // CHECK-NEXT: (int *)p;
-  // CHECK-NEXT: (int **)p;
-  // CHECK-NEXT: (int ***)p;
+  // CHECK: (dpct::err0) i;
+  // CHECK-NEXT: (dpct::err0 *)p;
+  // CHECK-NEXT: (dpct::err0 **)p;
+  // CHECK-NEXT: (dpct::err0 ***)p;
   (cudaError)i;
   (cudaError *)p;
   (cudaError **)p;
@@ -482,9 +482,9 @@ void fun() {
   cudaStream_t const *s8, *s9;
   // CHECK: const dpct::queue_ptr *s10, *s11;
   const cudaStream_t *s10, *s11;
-  // CHECK: dpct::queue_ptr *const s12 = &q_ct1, *const s13 = &q_ct1;
+  // CHECK: dpct::queue_ptr *const s12 = NULL, *const s13 = NULL;
   cudaStream_t *const s12 = NULL, *const s13 = NULL;
-  // CHECK: const dpct::queue_ptr *const s14 = &q_ct1, *const s15 = &q_ct1;
+  // CHECK: const dpct::queue_ptr *const s14 = NULL, *const s15 = NULL;
   const cudaStream_t *const s14 = NULL, *const s15 = NULL;
 }
 
@@ -498,26 +498,26 @@ void fun2() {
   // CHECK: const dpct::queue_ptr s5 = &q_ct1, s6 = &q_ct1;
   const cudaStream_t s5 = NULL, s6 = NULL;
 
-  // CHECK: dpct::queue_ptr *s7, *const s8 = &q_ct1;
+  // CHECK: dpct::queue_ptr *s7, *const s8 = NULL;
   cudaStream_t *s7, *const s8 = NULL;
-  // CHECK: dpct::queue_ptr *const s9 = &q_ct1, *s10;
+  // CHECK: dpct::queue_ptr *const s9 = NULL, *s10;
   cudaStream_t *const s9 = NULL, *s10;
-  // CHECK: const dpct::queue_ptr *s11, *const s12 = &q_ct1;
+  // CHECK: const dpct::queue_ptr *s11, *const s12 = NULL;
   const cudaStream_t *s11, *const s12 = NULL;
-  // CHECK: dpct::queue_ptr const *const s13 = &q_ct1, *s14;
+  // CHECK: dpct::queue_ptr const *const s13 = NULL, *s14;
   cudaStream_t const *const s13 = NULL, *s14;
-  // CHECK: const dpct::queue_ptr *const s15 = &q_ct1, *s16;
+  // CHECK: const dpct::queue_ptr *const s15 = NULL, *s16;
   const cudaStream_t *const s15 = NULL, *s16;
-  // CHECK: dpct::queue_ptr const *s17, *const s18 = &q_ct1;
+  // CHECK: dpct::queue_ptr const *s17, *const s18 = NULL;
   cudaStream_t const *s17, *const s18 = NULL;
 }
 
 // CHECK:template <>
 // CHECK-NEXT:struct S<int &&> {};
-// CHECK-NEXT:template <> struct S<int> {};
-// CHECK-NEXT:template <> struct S<int *> {};
-// CHECK-NEXT:template <> struct S<int &> {};
-// CHECK-NEXT:template <> struct S<int &&> {};
+// CHECK-NEXT:template <> struct S<dpct::err0> {};
+// CHECK-NEXT:template <> struct S<dpct::err0 *> {};
+// CHECK-NEXT:template <> struct S<dpct::err0 &> {};
+// CHECK-NEXT:template <> struct S<dpct::err0 &&> {};
 template <>
 struct S<int &&> {};
 template <> struct S<cudaError_t> {};
@@ -543,22 +543,22 @@ void fun3() {
   char devstr[128] = "";
   // CHECK: dpct::device_info deviceProp;
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with pciDomainID. It was migrated to -1, which value may need to be adjusted for specific device.
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with pciDomainID. It was migrated to -1. You may need to adjust the value of -1 for the specific device.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with pciBusID. It was migrated to -1, which value may need to be adjusted for specific device.
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with pciBusID. It was migrated to -1. You may need to adjust the value of -1 for the specific device.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with pciDeviceID. It was migrated to -1, which value may need to be adjusted for specific device.
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with pciDeviceID. It was migrated to -1. You may need to adjust the value of -1 for the specific device.
   // CHECK-NEXT: */
   // CHECK-NEXT: sprintf(devstr, "pci %x:%x:%x", -1, -1, -1);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with concurrentKernels. It was migrated to true, which value may need to be adjusted for specific device.
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with concurrentKernels. It was migrated to true. You may need to adjust the value of true for the specific device.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (true) {
   // CHECK-NEXT: }
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with canMapHostMemory. It was migrated to false, which value may need to be adjusted for specific device.
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with canMapHostMemory. It was migrated to false. You may need to adjust the value of false for the specific device.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (!false) {
   // CHECK-NEXT: }
@@ -672,4 +672,12 @@ void foo_4() {
   CFoo cfoo{num};
   // CHECK: m = std::min(int64_t(threads[2]), int64_t{cfoo});
   m = std::min(int64_t{threads.x}, int64_t{cfoo});
+}
+
+
+// CHECK: dpct::device_ptr a = (dpct::device_ptr)0, b = (dpct::device_ptr)0;
+CUdeviceptr a = (CUdeviceptr)0, b = (CUdeviceptr)0;
+void test() {
+  // CHECK: dpct::device_ptr a = (dpct::device_ptr)0, b = (dpct::device_ptr)0;
+  CUdeviceptr a = (CUdeviceptr)0, b = (CUdeviceptr)0;
 }

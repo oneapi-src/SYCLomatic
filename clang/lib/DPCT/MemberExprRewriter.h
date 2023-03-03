@@ -21,7 +21,7 @@ protected:
   MemberExprBaseRewriter(const MemberExpr *ME) : ME(ME) {}
 public:
   virtual ~MemberExprBaseRewriter() {}
-  virtual Optional<std::string> rewrite() = 0;
+  virtual std::optional<std::string> rewrite() = 0;
 
   // Emits a warning/error/note and/or comment depending on MsgID. For details
   // see Diagnostics.inc, Diagnostics.h and Diagnostics.cpp
@@ -44,7 +44,7 @@ public:
   MemberExprPrinterRewriter(const MemberExpr *ME, ArgsT &&...Args):
     Printer(std::forward<ArgsT>(Args)...), MemberExprBaseRewriter(ME) {}
 
-  Optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite() override {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     Printer::print(OS);
@@ -122,7 +122,7 @@ public:
     report(MsgID, false, getMsgArg(Args, ME)...);
   }
 
-  Optional<std::string> rewrite() override { return Optional<std::string>(); }
+  std::optional<std::string> rewrite() override { return std::nullopt; }
 
   friend UnsupportFunctionRewriterFactory<MsgArgs...>;
 };
