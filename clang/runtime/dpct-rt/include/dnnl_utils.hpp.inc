@@ -985,6 +985,15 @@ class engine_ext {
                              int *direction_num, int *gate_num);
 public:
   engine_ext() {}
+  operator bool() const {
+    return bool(_eng) && bool(_s) && bool(_q);
+  }
+  engine_ext &operator=(std::nullptr_t) {
+    _eng.reset(nullptr);
+    _s.reset(nullptr);
+    _q = nullptr;
+    return *this;
+  }
   /// Creating oneDNN engine.
   void create_engine() {
     _eng = ::dnnl::sycl_interop::make_engine(
