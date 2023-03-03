@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/SparseUtils/api_test3_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/SparseUtils/api_test3_out
 
-// CHECK: 3
+// CHECK: 11
 // TEST_FEATURE: SparseUtils_csrmm
 
 #include "cusparse.h"

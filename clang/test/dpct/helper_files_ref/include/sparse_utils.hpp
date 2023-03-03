@@ -50,8 +50,7 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
            T *y) {
   using Ty = typename dpct::DataType<T>::T2;
   static_assert(
-      std::disjunction_v<std::is_same<Ty, float>,
-                         std::is_same<Ty, double>>,
+      std::disjunction_v<std::is_same<Ty, float>, std::is_same<Ty, double>>,
       "Unimplemented functionality: oneapi::mkl::sparse::optimize_gemv/gemv, "
       "oneapi::mkl::sparse::symv and oneapi::mkl::sparse::optimize_trmv/trmv "
       "currently do not support complex data types");
@@ -114,10 +113,10 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
            const int *row_ptr, const int *col_ind, T *b, int ldb, const T *beta,
            T *c, int ldc) {
   using Ty = typename dpct::DataType<T>::T2;
-  static_assert(std::disjunction_v<std::is_same<Ty, float>,
-                                   std::is_same<Ty, double>>,
-                "Unimplemented functionality: oneapi::mkl::sparse::gemm "
-                "currently does not support complex data types");
+  static_assert(
+      std::disjunction_v<std::is_same<Ty, float>, std::is_same<Ty, double>>,
+      "Unimplemented functionality: oneapi::mkl::sparse::gemm "
+      "currently does not support complex data types");
   auto alpha_value =
       detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
   auto beta_value =
@@ -179,28 +178,27 @@ template <typename T>
 void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
                     int row_col, const std::shared_ptr<matrix_info> info,
                     const T *val, const int *row_ptr, const int *col_ind,
-                    std::shared_ptr<optimize_info> optimize_info_ptr) {
+                    std::shared_ptr<optimize_info> optimize_info) {
   using Ty = typename dpct::DataType<T>::T2;
   static_assert(
-      std::disjunction_v<std::is_same<Ty, float>,
-                         std::is_same<Ty, double>>,
+      std::disjunction_v<std::is_same<Ty, float>, std::is_same<Ty, double>>,
       "Unimplemented functionality: oneapi::mkl::sparse::optimize_trsv "
       "currently does not support complex data types");
   auto data_row_ptr = detail::get_memory(const_cast<int *>(row_ptr));
   auto data_col_ind = detail::get_memory(const_cast<int *>(col_ind));
   auto data_val =
       detail::get_memory(reinterpret_cast<Ty *>(const_cast<T *>(val)));
-  oneapi::mkl::sparse::set_csr_data(
-      queue, optimize_info_ptr->get_matrix_handle(), row_col, row_col,
-      info->get_index_base(), data_row_ptr, data_col_ind, data_val);
+  oneapi::mkl::sparse::set_csr_data(queue, optimize_info->get_matrix_handle(),
+                                    row_col, row_col, info->get_index_base(),
+                                    data_row_ptr, data_col_ind, data_val);
   sycl::event e;
 #ifndef DPCT_USM_LEVEL_NONE
   e =
 #endif
-      oneapi::mkl::sparse::optimize_trsv(
-          queue, info->get_uplo(), trans, info->get_diag(),
-          optimize_info_ptr->get_matrix_handle());
-  optimize_info_ptr->add_dependency(e);
+      oneapi::mkl::sparse::optimize_trsv(queue, info->get_uplo(), trans,
+                                         info->get_diag(),
+                                         optimize_info->get_matrix_handle());
+  optimize_info->add_dependency(e);
 }
 
 } // namespace sparse
