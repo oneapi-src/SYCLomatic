@@ -15,6 +15,9 @@
 #include <thrust/iterator/permutation_iterator.h>
 #include <thrust/logical.h>
 #include <thrust/functional.h>
+#include <thrust/functional.h>
+#include <thrust/host_vector.h>
+
 // for cuda 12.0
 #include <thrust/execution_policy.h>
 
@@ -204,4 +207,27 @@ void foo_host(){
   thrust::inclusive_scan(A.begin(), A.end(), R.begin());
   thrust::inclusive_scan(thrust::device, A.begin(), A.end(), R.begin());
   thrust::inclusive_scan(thrust::seq, B.begin(), B.end(), R2.begin());
+}
+
+struct s_pred_A {
+  __host__ __device__ bool operator()(short int x) const { return true; }
+  typedef short int argument_type;
+};
+static s_pred_A pred_A;
+
+template <typename ELT_TYPE> void testfunc() {
+  thrust::host_vector<ELT_TYPE> V1(1);
+  thrust::host_vector<short int> V2(1);
+  thrust::host_vector<short int> V6(1);
+  V1[0x0] = 0x0;
+  V2[0x0] = 0x0;
+  V6[0x0] = 0xfcdd;
+
+  //CHECK:  dpct::remove_copy_if(oneapi::dpl::execution::seq, V2.begin(), V2.end(), V1.begin(), V6.begin(), pred_A);
+  thrust::remove_copy_if(V2.begin(), V2.end(), V1.begin(), V6.begin(), pred_A);
+}
+
+int main() {
+  testfunc<short int>();
+  return 0;
 }
