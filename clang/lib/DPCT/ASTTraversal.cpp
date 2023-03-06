@@ -4727,28 +4727,32 @@ void DeviceRandomFunctionCallRule::runRule(
       FirstOffsetArg = "static_cast<std::uint64_t>(" + RNGOffset + ")";
     }
 
-    std::string Factor = "8";
-    if (GeneratorType == "dpct::rng::device::rng_generator<oneapi::"
-                         "mkl::rng::device::philox4x32x10<1>>" &&
-        (DRefArg3Type == "curandStatePhilox4_32_10_t" ||
-         DRefArg3Type == "curandStatePhilox4_32_10")) {
-      Factor = "4";
-    }
-
-    if (needExtraParens(CE->getArg(1))) {
-      RNGSubseq = "(" + RNGSubseq + ")";
-    }
-    if (IsRNGSubseqLiteral) {
-      SecondOffsetArg = RNGSubseq + " * " + Factor;
+    std::string ReplStr;
+    if (DRefArg3Type == "curandStateXORWOW") {
+      report(FuncNameBegin, Diagnostics::DIFFERENT_GENERATOR, false);
+      ReplStr = RNGStateName + " = " + GeneratorType + "(" + RNGSeed + ", {" +
+                FirstOffsetArg + "})";
     } else {
-      SecondOffsetArg =
-          "static_cast<std::uint64_t>(" + RNGSubseq + " * " + Factor + ")";
+      std::string Factor = "8";
+      if (GeneratorType == "dpct::rng::device::rng_generator<oneapi::"
+                           "mkl::rng::device::philox4x32x10<1>>" &&
+          DRefArg3Type == "curandStatePhilox4_32_10") {
+        Factor = "4";
+      }
+
+      if (needExtraParens(CE->getArg(1))) {
+        RNGSubseq = "(" + RNGSubseq + ")";
+      }
+      if (IsRNGSubseqLiteral) {
+        SecondOffsetArg = RNGSubseq + " * " + Factor;
+      } else {
+        SecondOffsetArg =
+            "static_cast<std::uint64_t>(" + RNGSubseq + " * " + Factor + ")";
+      }
+
+      ReplStr = RNGStateName + " = " + GeneratorType + "(" + RNGSeed + ", {" +
+                FirstOffsetArg + ", " + SecondOffsetArg + "})";
     }
-
-    std::string ReplStr = RNGStateName + " = " + GeneratorType + "(" + RNGSeed +
-                          ", {" + FirstOffsetArg + ", " + SecondOffsetArg +
-                          "})";
-
     emplaceTransformation(
         new ReplaceText(FuncNameBegin, FuncCallLength, std::move(ReplStr)));
   } else if (FuncName == "skipahead" || FuncName == "skipahead_sequence" ||

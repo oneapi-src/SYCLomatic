@@ -30,14 +30,17 @@ template <typename engine_t> class rng_generator {
           std::is_same<engine_t, oneapi::mkl::rng::device::mrg32k3a<1>>,
           std::is_same<engine_t, oneapi::mkl::rng::device::mrg32k3a<4>>,
           std::is_same<engine_t, oneapi::mkl::rng::device::philox4x32x10<1>>,
-          std::is_same<engine_t, oneapi::mkl::rng::device::philox4x32x10<4>>>,
+          std::is_same<engine_t, oneapi::mkl::rng::device::philox4x32x10<4>>,
+          std::is_same<engine_t, oneapi::mkl::rng::device::mcg59<1>>>,
       "engine_t can only be oneapi::mkl::rng::device::mrg32k3a<1> or "
       "oneapi::mkl::rng::device::mrg32k3a<4> or "
       "oneapi::mkl::rng::device::philox4x32x10<1> or "
-      "oneapi::mkl::rng::device::philox4x32x10<4>.");
+      "oneapi::mkl::rng::device::philox4x32x10<4> or "
+      "oneapi::mkl::rng::device::mcg59<1>.");
   static constexpr bool _is_engine_vec_size_one = std::disjunction_v<
       std::is_same<engine_t, oneapi::mkl::rng::device::mrg32k3a<1>>,
-      std::is_same<engine_t, oneapi::mkl::rng::device::philox4x32x10<1>>>;
+      std::is_same<engine_t, oneapi::mkl::rng::device::philox4x32x10<1>>,
+      std::is_same<engine_t, oneapi::mkl::rng::device::mcg59<1>>>;
   static constexpr std::uint64_t default_seed = 0;
   oneapi::mkl::rng::device::bits<std::uint32_t> _distr_bits;
   oneapi::mkl::rng::device::gaussian<float> _distr_gaussian_float;
@@ -395,7 +398,7 @@ public:
   }
 
 private:
-  static inline engine_t creat_engine(sycl::queue *queue,
+  static inline engine_t create_engine(sycl::queue *queue,
                                       const std::uint64_t seed,
                                       const std::uint32_t dimensions) {
     return std::is_same_v<engine_t, oneapi::mkl::rng::sobol>
@@ -420,7 +423,8 @@ enum class random_engine_type {
   mrg32k3a,
   mt2203,
   mt19937,
-  sobol
+  sobol,
+  mcg59
 };
 
 
@@ -446,6 +450,9 @@ inline host_rng_ptr create_host_rng(const random_engine_type type) {
   case random_engine_type::sobol:
     return std::make_shared<
         rng::host::detail::rng_generator<oneapi::mkl::rng::sobol>>();
+  case random_engine_type::mcg59:
+    return std::make_shared<
+        rng::host::detail::rng_generator<oneapi::mkl::rng::mcg59>>();
   }
 }
 } // namespace rng
