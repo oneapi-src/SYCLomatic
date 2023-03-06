@@ -1448,6 +1448,10 @@ ENTRY(nvrtcGetProgramLog, nvrtcGetProgramLog, false, NO_FLAG, P4, "comment")
 ENTRY(nvrtcAddNameExpression, nvrtcAddNameExpression, false, NO_FLAG, P4, "comment")
 ENTRY(nvrtcGetLoweredName, nvrtcGetLoweredName, false, NO_FLAG, P4, "comment")
 ENTRY(nvrtcGetTypeName, nvrtcGetTypeName, false, NO_FLAG, P4, "comment")
+ENTRY(nvrtcGetLTOIR, nvrtcGetLTOIR, false, NO_FLAG, P4, "comment")
+ENTRY(nvrtcGetLTOIRSize, nvrtcGetLTOIRSize, false, NO_FLAG, P4, "comment")
+ENTRY(nvrtcGetOptiXIR, nvrtcGetOptiXIR, false, NO_FLAG, P4, "comment")
+ENTRY(nvrtcGetOptiXIRSize, nvrtcGetOptiXIRSize, false, NO_FLAG, P4, "comment")
 
 // crt wrapper API
 ENTRY(mul24, mul24, true, NO_FLAG, P0, "Successful")
