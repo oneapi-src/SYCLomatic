@@ -64,11 +64,11 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
            const int *row_ptr, const int *col_ind, const T *x, const T *beta,
            T *y) {
   using Ty = typename dpct::DataType<T>::T2;
-  static_assert(
-      std::disjunction_v<std::is_same<Ty, float>, std::is_same<Ty, double>>,
-      "Unimplemented functionality: oneapi::mkl::sparse::optimize_gemv/gemv, "
-      "oneapi::mkl::sparse::symv and oneapi::mkl::sparse::optimize_trmv/trmv "
-      "currently do not support complex data types");
+  //static_assert(
+  //    std::disjunction_v<std::is_same<Ty, float>, std::is_same<Ty, double>>,
+  //    "Unimplemented functionality: oneapi::mkl::sparse::optimize_gemv/gemv, "
+  //    "oneapi::mkl::sparse::symv and oneapi::mkl::sparse::optimize_trmv/trmv "
+  //    "currently do not support complex data types");
   auto alpha_value =
       detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
   auto beta_value =
@@ -143,13 +143,13 @@ template <typename T>
 void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
            int dense_cols, int sparse_cols, const T *alpha,
            const std::shared_ptr<matrix_info> info, const T *val,
-           const int *row_ptr, const int *col_ind, T *b, int ldb, const T *beta,
-           T *c, int ldc) {
+           const int *row_ptr, const int *col_ind, const T *b, int ldb,
+           const T *beta, T *c, int ldc) {
   using Ty = typename dpct::DataType<T>::T2;
-  static_assert(
-      std::disjunction_v<std::is_same<Ty, float>, std::is_same<Ty, double>>,
-      "Unimplemented functionality: oneapi::mkl::sparse::gemm "
-      "currently does not support complex data types");
+  //static_assert(
+  //    std::disjunction_v<std::is_same<Ty, float>, std::is_same<Ty, double>>,
+  //    "Unimplemented functionality: oneapi::mkl::sparse::gemm "
+  //    "currently does not support complex data types");
   auto alpha_value =
       detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
   auto beta_value =
@@ -230,10 +230,10 @@ void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
                     const T *val, const int *row_ptr, const int *col_ind,
                     std::shared_ptr<optimize_info> optimize_info) {
   using Ty = typename dpct::DataType<T>::T2;
-  static_assert(
-      std::disjunction_v<std::is_same<Ty, float>, std::is_same<Ty, double>>,
-      "Unimplemented functionality: oneapi::mkl::sparse::optimize_trsv "
-      "currently does not support complex data types");
+  //static_assert(
+  //    std::disjunction_v<std::is_same<Ty, float>, std::is_same<Ty, double>>,
+  //    "Unimplemented functionality: oneapi::mkl::sparse::optimize_trsv "
+  //    "currently does not support complex data types");
   auto data_row_ptr = detail::get_memory(const_cast<int *>(row_ptr));
   auto data_col_ind = detail::get_memory(const_cast<int *>(col_ind));
   auto data_val =
