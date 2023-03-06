@@ -61,81 +61,127 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
 
   // Half Arithmetic Functions
 
-  // TODO:1CHECK: h2_2 = h2 / h2_1;
-  //h2_2 = __h2div(h2, h2_1);
-  // TODO:1CHECK: h_2 = h / h_1;
-  //h_2 = __hdiv(h, h_1);
+  // CHECK: h_2 = sycl::clamp<sycl::half>(h + h_1, 0.f, 1.0f);
+  h_2 = __hadd_sat(h, h_1);
   // CHECK: h_2 = sycl::fma(h, h_1, h_2);
   h_2 = __hfma(h, h_1, h_2);
+  // CHECK: h_2 = sycl::clamp<sycl::half>(sycl::fma(h, h_1, h_2), 0.f, 1.0f);
+  h_2 = __hfma_sat(h, h_1, h_2);
   // CHECK: h_2 = h * h_1;
   h_2 = __hmul(h, h_1);
+  // CHECK: h_2 = sycl::clamp<sycl::half>(h * h_1, 0.f, 1.0f);
+  h_2 = __hmul_sat(h, h_1);
   // CHECK: h_2 = -h;
   h_2 = __hneg(h);
   // CHECK: h_2 = h - h_1;
   h_2 = __hsub(h, h_1);
+  // CHECK: h_2 = sycl::clamp<sycl::half>(h - h_1, 0.f, 1.0f);
+  h_2 = __hsub_sat(h, h_1);
 
   // Half2 Arithmetic Functions
 
   // CHECK: h2_2 = h2 + h2_1;
   h2_2 = __hadd2(h2, h2_1);
+  // CHECK: h2_2 = sycl::clamp<sycl::half2>(h2 + h2_1, {0.f, 0.f}, {1.f, 1.f});
+  h2_2 = __hadd2_sat(h2, h2_1);
   // CHECK: h2_2 = sycl::fma(h2, h2_1, h2_2);
   h2_2 = __hfma2(h2, h2_1, h2_2);
+  // CHECK: h2_2 = sycl::clamp<sycl::half2>(sycl::fma(h2, h2_1, h2_2), {0.f, 0.f}, {1.f, 1.f});
+  h2_2 = __hfma2_sat(h2, h2_1, h2_2);
   // CHECK: h2_2 = h2 * h2_1;
   h2_2 = __hmul2(h2, h2_1);
+  // CHECK: h2_2 = sycl::clamp<sycl::half2>(h2 * h2_1, {0.f, 0.f}, {1.f, 1.f});
+  h2_2 = __hmul2_sat(h2, h2_1);
   // CHECK: h2_2 = -h2;
   h2_2 = __hneg2(h2);
   // CHECK: h2_2 = h2 - h2_1;
   h2_2 = __hsub2(h2, h2_1);
+  // CHECK: h2_2 = sycl::clamp<sycl::half2>(h2 - h2_1, {0.f, 0.f}, {1.f, 1.f});
+  h2_2 = __hsub2_sat(h2, h2_1);
 
   // Half Comparison Functions
 
   // CHECK: b = h == h_1;
   b = __heq(h, h_1);
+  // CHECK: b = dpct::half_unordered_compare(h, h_1, std::equal_to<>());
+  b = __hequ(h, h_1);
   // CHECK: b = h >= h_1;
   b = __hge(h, h_1);
+  // CHECK: b = dpct::half_unordered_compare(h, h_1, std::greater_equal<>());
+  b = __hgeu(h, h_1);
   // CHECK: b = h > h_1;
   b = __hgt(h, h_1);
+  // CHECK: b = dpct::half_unordered_compare(h, h_1, std::greater<>());
+  b = __hgtu(h, h_1);
   // CHECK: b = sycl::isinf(h);
   b = __hisinf(h);
   // CHECK: b = sycl::isnan(h);
   b = __hisnan(h);
   // CHECK: b = h <= h_1;
   b = __hle(h, h_1);
+  // CHECK: b = dpct::half_unordered_compare(h, h_1, std::less_equal<>());
+  b = __hleu(h, h_1);
   // CHECK: b = h < h_1;
   b = __hlt(h, h_1);
-  // CHECK: b = h != h_1;
+  // CHECK: b = dpct::half_unordered_compare(h, h_1, std::less<>());
+  b = __hltu(h, h_1);
+  // CHECK: b = !dpct::half_unordered_compare(h, h_1, std::equal_to<>());
   b = __hne(h, h_1);
+  // CHECK: b = dpct::half_unordered_compare(h, h_1, std::not_equal_to<>());
+  b = __hneu(h, h_1);
 
   // Half2 Comparison Functions
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __heq2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: b = dpct::half2_both_compare(h2, h2_1, std::equal_to<>());
+  b = __hbeq2(h2, h2_1);
+  // CHECK: b = dpct::half2_both_unordered_compare(h2, h2_1, std::equal_to<>());
+  b = __hbequ2(h2, h2_1);
+  // CHECK: b = dpct::half2_both_compare(h2, h2_1, std::greater_equal<>());
+  b = __hbge2(h2, h2_1);
+  // CHECK: b = dpct::half2_both_unordered_compare(h2, h2_1, std::greater_equal<>());
+  b = __hbgeu2(h2, h2_1);
+  // CHECK: b = dpct::half2_both_compare(h2, h2_1, std::greater<>());
+  b = __hbgt2(h2, h2_1);
+  // CHECK: b = dpct::half2_both_unordered_compare(h2, h2_1, std::greater<>());
+  b = __hbgtu2(h2, h2_1);
+  // CHECK: b = dpct::half2_both_compare(h2, h2_1, std::less_equal<>());
+  b = __hble2(h2, h2_1);
+  // CHECK: b = dpct::half2_both_unordered_compare(h2, h2_1, std::less_equal<>());
+  b = __hbleu2(h2, h2_1);
+  // CHECK: b = dpct::half2_both_compare(h2, h2_1, std::less<>());
+  b = __hblt2(h2, h2_1);
+  // CHECK: b = dpct::half2_both_unordered_compare(h2, h2_1, std::less<>());
+  b = __hbltu2(h2, h2_1);
+  // CHECK: b = dpct::half2_both_compare(h2, h2_1, std::not_equal_to<>());
+  b = __hbne2(h2, h2_1);
+  // CHECK: b = dpct::half2_both_unordered_compare(h2, h2_1, std::not_equal_to<>());
+  b = __hbneu2(h2, h2_1);
+  // CHECK: h2_2 = dpct::half2_compare(h2, h2_1, std::equal_to<>());
   h2_2 = __heq2(h2, h2_1);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hge2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: h2_2 = dpct::half2_unordered_compare(h2, h2_1, std::equal_to<>());
+  h2_2 = __hequ2(h2, h2_1);
+  // CHECK: h2_2 = dpct::half2_compare(h2, h2_1, std::greater_equal<>());
   h2_2 = __hge2(h2, h2_1);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hgt2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: h2_2 = dpct::half2_unordered_compare(h2, h2_1, std::greater_equal<>());
+  h2_2 = __hgeu2(h2, h2_1);
+  // CHECK: h2_2 = dpct::half2_compare(h2, h2_1, std::greater<>());
   h2_2 = __hgt2(h2, h2_1);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hisnan2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: h2_2 = dpct::half2_unordered_compare(h2, h2_1, std::greater<>());
+  h2_2 = __hgtu2(h2, h2_1);
+  // CHECK: h2_2 = dpct::half2_isnan(h2);
   h2_2 = __hisnan2(h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hle2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: h2_2 = dpct::half2_compare(h2, h2_1, std::less_equal<>());
   h2_2 = __hle2(h2, h2_1);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hlt2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: h2_2 = dpct::half2_unordered_compare(h2, h2_1, std::less_equal<>());
+  h2_2 = __hleu2(h2, h2_1);
+  // CHECK: h2_2 = dpct::half2_compare(h2, h2_1, std::less<>());
   h2_2 = __hlt2(h2, h2_1);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hne2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: h2_2 = dpct::half2_unordered_compare(h2, h2_1, std::less<>());
+  h2_2 = __hltu2(h2, h2_1);
+  // CHECK: h2_2 = dpct::half2_compare(h2, h2_1, std::not_equal_to<>());
   h2_2 = __hne2(h2, h2_1);
+  // CHECK: h2_2 = dpct::half2_unordered_compare(h2, h2_1, std::not_equal_to<>());
+  h2_2 = __hneu2(h2, h2_1);
 
   // Half Math Functions
 
@@ -2067,139 +2113,6 @@ __global__ void testUnsupported() {
   bool b;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hadd_sat is not supported.
-  // CHECK-NEXT: */
-  __hadd_sat(h, h);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hfma_sat is not supported.
-  // CHECK-NEXT: */
-  __hfma_sat(h, h, h);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hmul_sat is not supported.
-  // CHECK-NEXT: */
-  __hmul_sat(h, h);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hsub_sat is not supported.
-  // CHECK-NEXT: */
-  __hsub_sat(h, h);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hadd2_sat is not supported.
-  // CHECK-NEXT: */
-  __hadd2_sat(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hfma2_sat is not supported.
-  // CHECK-NEXT: */
-  __hfma2_sat(h2, h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hmul2_sat is not supported.
-  // CHECK-NEXT: */
-  __hmul2_sat(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hsub2_sat is not supported.
-  // CHECK-NEXT: */
-  __hsub2_sat(h2, h2);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hequ is not supported.
-  // CHECK-NEXT: */
-  b = __hequ(h, h);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hgeu is not supported.
-  // CHECK-NEXT: */
-  b = __hgeu(h, h);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hgtu is not supported.
-  // CHECK-NEXT: */
-  b = __hgtu(h, h);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hleu is not supported.
-  // CHECK-NEXT: */
-  b = __hleu(h, h);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hltu is not supported.
-  // CHECK-NEXT: */
-  b = __hltu(h, h);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hneu is not supported.
-  // CHECK-NEXT: */
-  b = __hneu(h, h);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbeq2 is not supported.
-  // CHECK-NEXT: */
-  b = __hbeq2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbequ2 is not supported.
-  // CHECK-NEXT: */
-  b = __hbequ2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbge2 is not supported.
-  // CHECK-NEXT: */
-  b = __hbge2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbgeu2 is not supported.
-  // CHECK-NEXT: */
-  b = __hbgeu2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbgt2 is not supported.
-  // CHECK-NEXT: */
-  b = __hbgt2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbgtu2 is not supported.
-  // CHECK-NEXT: */
-  b = __hbgtu2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hble2 is not supported.
-  // CHECK-NEXT: */
-  b = __hble2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbleu2 is not supported.
-  // CHECK-NEXT: */
-  b = __hbleu2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hblt2 is not supported.
-  // CHECK-NEXT: */
-  b = __hblt2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbltu2 is not supported.
-  // CHECK-NEXT: */
-  b = __hbltu2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbne2 is not supported.
-  // CHECK-NEXT: */
-  b = __hbne2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbneu2 is not supported.
-  // CHECK-NEXT: */
-  b = __hbneu2(h2, h2);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hequ2 is not supported.
-  // CHECK-NEXT: */
-  __hequ2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hgeu2 is not supported.
-  // CHECK-NEXT: */
-  __hgeu2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hgtu2 is not supported.
-  // CHECK-NEXT: */
-  __hgtu2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hleu2 is not supported.
-  // CHECK-NEXT: */
-  __hleu2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hltu2 is not supported.
-  // CHECK-NEXT: */
-  __hltu2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hneu2 is not supported.
-  // CHECK-NEXT: */
-  __hneu2(h2, h2);
-
-  // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cyl_bessel_i0f is not supported.
   // CHECK-NEXT: */
   f = cyl_bessel_i0f(f);
@@ -2407,10 +2320,7 @@ __global__ void testUnsupported() {
   u = __urhadd(u, u);
   // CHECK: u = sycl::abs_diff(u, u)+u;
   u = __usad(u, u, u);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hadd is not supported.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: h = __hadd(h, h);
+  // CHECK: h = h + h;
   h = __hadd(h, h);
 }
 

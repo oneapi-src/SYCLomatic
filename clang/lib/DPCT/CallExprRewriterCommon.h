@@ -480,6 +480,14 @@ makeBinaryOperatorCreator(std::function<LValueT(const CallExpr *)> L,
                                                                   std::move(R));
 }
 
+template <UnaryOperatorKind Op, class SubExprT>
+inline std::function<UnaryOperatorPrinter<Op, SubExprT>(const CallExpr *)>
+makeUnaryOperatorCreator(std::function<SubExprT(const CallExpr *)> Sub) {
+  return PrinterCreator<UnaryOperatorPrinter<Op, SubExprT>,
+                        std::function<SubExprT(const CallExpr *)>>(
+      std::move(Sub));
+}
+
 template <class CalleeT, class... CallArgsT>
 inline std::function<CallExprPrinter<CalleeT, CallArgsT...>(const CallExpr *)>
 makeCallExprCreator(std::function<CalleeT(const CallExpr *)> Callee,
@@ -1780,6 +1788,7 @@ public:
 #define QUEUESTR makeQueueStr()
 #define QUEUEPTRSTR makeQueuePtrStr()
 #define BO(Op, L, R) makeBinaryOperatorCreator<Op>(L, R)
+#define UO(Op, S) makeUnaryOperatorCreator<Op>(S)
 #define MEMBER_CALL(...) makeMemberCallCreator(__VA_ARGS__)
 #define MEMBER_EXPR(...) makeMemberExprCreator(__VA_ARGS__)
 #define STATIC_MEMBER_EXPR(...) makeStaticMemberExprCreator(__VA_ARGS__)
