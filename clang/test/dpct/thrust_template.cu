@@ -223,8 +223,11 @@ template <typename ELT_TYPE> void testfunc() {
   V2[0x0] = 0x0;
   V6[0x0] = 0xfcdd;
 
-  //CHECK:  dpct::remove_copy_if(oneapi::dpl::execution::seq, V2.begin(), V2.end(), V1.begin(), V6.begin(), pred_A);
+  // CHECK: dpct::remove_copy_if(oneapi::dpl::execution::seq, V2.begin(), V2.end(), V1.begin(), V6.begin(), pred_A);
   thrust::remove_copy_if(V2.begin(), V2.end(), V1.begin(), V6.begin(), pred_A);
+
+  // CHECK: oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, V2.begin(), V2.end(), V2.begin());
+  thrust::unique_copy(V2.begin(), V2.end(), V2.begin());
 }
 
 int main() {
