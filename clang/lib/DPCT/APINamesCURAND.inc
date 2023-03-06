@@ -42,15 +42,13 @@ CONDITIONAL_FACTORY_ENTRY(
                          ARG(") * 4)}"))))),
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::RngUtils_rng_generator_get_engine,
+            WARNING_FACTORY_ENTRY("skipahead_sequence",
             CALL_FACTORY_ENTRY(
                 "skipahead_sequence",
                 CALL("oneapi::mkl::rng::device::skip_ahead",
                      MEMBER_CALL(DEREF(makeDerefArgCreatorWithCall(1)),
                                         false, "get_engine"),
-                     makeCombinedArg(
-                         makeCombinedArg(ARG("{0, static_cast<std::uint64_t>(("),
-                                         ARG(0)),
-                         ARG(") * 8)}"))))))),
+                     ARG("0"))), Diagnostics::DIFFERENT_GENERATOR)))),
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgType(1, "struct curandStateMRG32k3a *"),
     FEATURE_REQUEST_FACTORY(
@@ -77,15 +75,13 @@ CONDITIONAL_FACTORY_ENTRY(
                          ARG(" * 4)}"))))),
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::RngUtils_rng_generator_get_engine,
+            WARNING_FACTORY_ENTRY("skipahead_sequence",
             CALL_FACTORY_ENTRY(
                 "skipahead_sequence",
                 CALL("oneapi::mkl::rng::device::skip_ahead",
                      MEMBER_CALL(DEREF(makeDerefArgCreatorWithCall(1)),
                                         false, "get_engine"),
-                     makeCombinedArg(
-                         makeCombinedArg(ARG("{0, static_cast<std::uint64_t>("),
-                                         ARG(0)),
-                         ARG(" * 8)}")))))))
+                     ARG("0"))), Diagnostics::DIFFERENT_GENERATOR))))
 )
 
 CONDITIONAL_FACTORY_ENTRY(

@@ -15,7 +15,7 @@ __global__ void picount(int *totals) {
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
   // CHECK: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> rng;
-  // CHECK: rng = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>(clock64(), {1234});
+  // CHECK: rng = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>(clock64(), 1234);
   curandState_t rng;
   curand_init(clock64(), tid, 1234, &rng);
 

@@ -22,7 +22,7 @@ __global__ void picount(int *totals) {
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
   //CHECK: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> rng;
-  //CHECK: rng = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>(clock64(), {0});
+  //CHECK: rng = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>(clock64(), 0);
   curandState_t rng;
   curand_init(clock64(), tid, 0, &rng);
 
@@ -54,7 +54,7 @@ __global__ void cuda_kernel_initRND(unsigned long seed, curandState *States)
   int id    = bid*32 + tid;
   int pixel = bid*32 + tid;
 
-  //CHECK: States[id] = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>(seed, {0});
+  //CHECK: States[id] = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>(seed, 0);
   curand_init(seed, pixel, 0, &States[id]);
 }
 

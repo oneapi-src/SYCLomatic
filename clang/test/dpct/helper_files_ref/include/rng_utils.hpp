@@ -55,13 +55,25 @@ template <typename engine_t> class rng_generator {
 public:
   /// Default constructor of rng_generator
   rng_generator() { _engine = engine_t(default_seed); }
-  /// Constructor of rng_generator
+  /// Constructor of rng_generator if engine type is not mcg59
   /// \param [in] seed The seed to initialize the engine state.
   /// \param [in] num_to_skip Set the number of elements need to be skipped.
   /// The number is calculated as: num_to_skip[0] + num_to_skip[1] * 2^64 +
   /// num_to_skip[2] * 2^128 + ... + num_to_skip[n-1] * 2^(64*(n-1))
+  template <typename T = engine_t,
+            typename std::enable_if<!std::is_same_v<
+                T, oneapi::mkl::rng::device::mcg59<1>>>::type * = nullptr>
   rng_generator(std::uint64_t seed,
                 std::initializer_list<std::uint64_t> num_to_skip) {
+    _engine = engine_t(seed, num_to_skip);
+  }
+  /// Constructor of rng_generator if engine type is mcg59
+  /// \param [in] seed The seed to initialize the engine state.
+  /// \param [in] num_to_skip Set the number of elements need to be skipped.
+  template <typename T = engine_t,
+            typename std::enable_if<std::is_same_v<
+                T, oneapi::mkl::rng::device::mcg59<1>>>::type * = nullptr>
+  rng_generator(std::uint64_t seed, std::uint64_t num_to_skip) {
     _engine = engine_t(seed, num_to_skip);
   }
 

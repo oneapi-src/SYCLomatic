@@ -4730,8 +4730,8 @@ void DeviceRandomFunctionCallRule::runRule(
     std::string ReplStr;
     if (DRefArg3Type == "curandStateXORWOW") {
       report(FuncNameBegin, Diagnostics::DIFFERENT_GENERATOR, false);
-      ReplStr = RNGStateName + " = " + GeneratorType + "(" + RNGSeed + ", {" +
-                FirstOffsetArg + "})";
+      ReplStr = RNGStateName + " = " + GeneratorType + "(" + RNGSeed + ", " +
+                FirstOffsetArg + ")";
     } else {
       std::string Factor = "8";
       if (GeneratorType == "dpct::rng::device::rng_generator<oneapi::"
