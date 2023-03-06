@@ -85,7 +85,7 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
                                     num_cols, info->get_index_base(),
                                     data_row_ptr, data_col_ind, data_val);
 
-  auto data_x = detail::get_memory(reinterpret_cast<const Ty *>(x));
+  auto data_x = detail::get_memory(reinterpret_cast<Ty *>(const_cast<T *>(x)));
   auto data_y = detail::get_memory(reinterpret_cast<Ty *>(y));
   switch (info->get_matrix_type()) {
   case matrix_info::matrix_type::ge: {
@@ -96,16 +96,16 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
   }
   case matrix_info::matrix_type::sy: {
     oneapi::mkl::sparse::symv(queue, info->get_uplo(), alpha_value,
-                              *sparse_matrix_handle, const_cast<Ty *>(data_x),
-                              beta_value, data_y);
+                              *sparse_matrix_handle, data_x, beta_value,
+                              data_y);
     break;
   }
   case matrix_info::matrix_type::tr: {
     oneapi::mkl::sparse::optimize_trmv(queue, info->get_uplo(), trans,
                                        info->get_diag(), *sparse_matrix_handle);
     oneapi::mkl::sparse::trmv(queue, info->get_uplo(), trans, info->get_diag(),
-                              alpha_value, *sparse_matrix_handle,
-                              const_cast<Ty *>(data_x), beta_value, data_y);
+                              alpha_value, *sparse_matrix_handle, data_x,
+                              beta_value, data_y);
     break;
   }
   default:
