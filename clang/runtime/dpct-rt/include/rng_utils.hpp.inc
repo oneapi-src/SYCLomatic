@@ -413,7 +413,7 @@ public:
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   /// Constructor of rng_generator.
-  rng_generator() : _engine(creat_engine(_queue, _seed, _dimensions)) {}
+  rng_generator() : _engine(create_engine(_queue, _seed, _dimensions)) {}
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|rng_generator_host_set_seed|dpct::rng::host
@@ -428,7 +428,7 @@ public:
       return;
     }
     _seed = seed;
-    _engine = creat_engine(_queue, _seed, _dimensions);
+    _engine = create_engine(_queue, _seed, _dimensions);
   }
 // DPCT_LABEL_END
 
@@ -444,7 +444,7 @@ public:
       return;
     }
     _dimensions = dimensions;
-    _engine = creat_engine(_queue, _seed, _dimensions);
+    _engine = create_engine(_queue, _seed, _dimensions);
   }
 // DPCT_LABEL_END
 
@@ -460,7 +460,7 @@ public:
       return;
     }
     _queue = queue;
-    _engine = creat_engine(_queue, _seed, _dimensions);
+    _engine = create_engine(_queue, _seed, _dimensions);
   }
 // DPCT_LABEL_END
 

@@ -273,7 +273,7 @@ template <typename engine_t = oneapi::mkl::rng::philox4x32x10>
 class rng_generator : public rng_generator_base {
 public:
   /// Constructor of rng_generator.
-  rng_generator() : _engine(creat_engine(_queue, _seed, _dimensions)) {}
+  rng_generator() : _engine(create_engine(_queue, _seed, _dimensions)) {}
 
   /// Set the seed of host rng_generator.
   /// \param seed The engine seed.
@@ -282,7 +282,7 @@ public:
       return;
     }
     _seed = seed;
-    _engine = creat_engine(_queue, _seed, _dimensions);
+    _engine = create_engine(_queue, _seed, _dimensions);
   }
 
   /// Set the dimensions of host rng_generator.
@@ -292,7 +292,7 @@ public:
       return;
     }
     _dimensions = dimensions;
-    _engine = creat_engine(_queue, _seed, _dimensions);
+    _engine = create_engine(_queue, _seed, _dimensions);
   }
 
   /// Set the queue of host rng_generator.
@@ -302,7 +302,7 @@ public:
       return;
     }
     _queue = queue;
-    _engine = creat_engine(_queue, _seed, _dimensions);
+    _engine = create_engine(_queue, _seed, _dimensions);
   }
 
   /// Generate unsigned int random number(s) with 'uniform_bits' distribution.
