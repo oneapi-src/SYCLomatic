@@ -3195,3 +3195,135 @@ CONDITIONAL_FACTORY_ENTRY(
   )
 )
 
+// thrust::partition_copy
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(7),
+  CONDITIONAL_FACTORY_ENTRY(
+    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+    // Handling case: thrust::partition_copy(policy, ptr, ptr, ptr,  ptr, ptr, pred);
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_partition_copy,
+      IFELSE_FACTORY_ENTRY(
+        "thrust::partition_copy",
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+          CALL_FACTORY_ENTRY("thrust::partition_copy", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          CALL_FACTORY_ENTRY("thrust::partition_copy",
+                            CALL(MapNames::getDpctNamespace() + "partition_copy",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(4)), ARG(4)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(5)), ARG(5)),
+                                  ARG(6)))),
+        CALL_FACTORY_ENTRY("thrust::partition_copy",
+                          CALL(MapNames::getDpctNamespace() + "partition_copy",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))))),
+    // Handling case: thrust::partition_copy(thrust::device, itr, itr, itr, itr, itr, pred);
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_partition_copy,
+        CALL_FACTORY_ENTRY("thrust::partition_copy",
+                           CALL(MapNames::getDpctNamespace() + "partition_copy",
+                                makeMappedThrustPolicyEnum(0),
+                                ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))))
+  ),
+  CONDITIONAL_FACTORY_ENTRY(
+    CheckArgCount(5),
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      //Handling case: thrust::partition_copy(ptr, ptr, ptr, pred);
+      IFELSE_FACTORY_ENTRY(
+        "thrust::partition_copy",
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+          CALL_FACTORY_ENTRY("thrust::partition_copy", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          CALL_FACTORY_ENTRY("thrust::partition_copy",
+                            CALL("oneapi::dpl::partition_copy",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                  ARG(4)))),
+        CALL_FACTORY_ENTRY("thrust::partition_copy",
+                           CALL("oneapi::dpl::partition_copy",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))),
+      //Handling case: thrust::partition_copy(iter, iter, iter, iter, pred);
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        CALL_FACTORY_ENTRY("thrust::partition_copy",
+                          CALL("oneapi::dpl::partition_copy",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                ARG(0), ARG(1), ARG(2), ARG(3),ARG(4))),
+        CALL_FACTORY_ENTRY("thrust::partition_copy",
+                          CALL("oneapi::dpl::partition_copy",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))))
+    ),
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      CONDITIONAL_FACTORY_ENTRY(
+        IsPolicyArgType(0),
+        //Handling case: thrust::partition_copy(policy, ptr, ptr, ptr, ptr, pred);
+        IFELSE_FACTORY_ENTRY(
+          "thrust::partition_copy",
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+            CALL_FACTORY_ENTRY("thrust::partition_copy", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+            CALL_FACTORY_ENTRY("thrust::partition_copy",
+                              CALL("oneapi::dpl::partition_copy",
+                                    CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(4)), ARG(4)),
+                                    ARG(5)))),
+          CALL_FACTORY_ENTRY("thrust::partition_copy",
+                             CALL("oneapi::dpl::partition_copy",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(1), ARG(2), ARG(3), ARG(4), ARG(5)))),
+        //Handling case: thrust::partition_copy(ptr, ptr, ptr, ptr, ptr, pred);
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_partition_copy,
+          IFELSE_FACTORY_ENTRY(
+            "thrust::partition_copy",
+            FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+              CALL_FACTORY_ENTRY("thrust::partition_copy", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+            FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+              CALL_FACTORY_ENTRY("thrust::partition_copy",
+                                CALL(MapNames::getDpctNamespace() + "partition_copy",
+                                      CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                      CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                      CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                      CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                      CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                      CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(4)), ARG(4)),
+                                      ARG(5)))),
+            CALL_FACTORY_ENTRY("thrust::partition_copy",
+                              CALL(MapNames::getDpctNamespace() + "partition_copy",
+                                    ARG("oneapi::dpl::execution::seq"),
+                                    ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5)))))),
+      CONDITIONAL_FACTORY_ENTRY(
+        IsPolicyArgType(0),
+        //Handling case: thrust::partition_copy(policy, itr, itr, itr, itr, pred);
+        CALL_FACTORY_ENTRY("thrust::partition_copy",
+                          CALL("oneapi::dpl::partition_copy",
+                                makeMappedThrustPolicyEnum(0),
+                                ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))),
+        //Handling case: thrust::partition_copy(itr, itr, itr, itr, itr, pred);
+        CONDITIONAL_FACTORY_ENTRY(
+          CheckArgType(1, "thrust::device_ptr"),
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_partition_copy,
+            CALL_FACTORY_ENTRY("thrust::partition_copy",
+                              CALL(MapNames::getDpctNamespace() + "partition_copy",
+                                    CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                    ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5)))),
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_partition_copy,
+            CALL_FACTORY_ENTRY("thrust::partition_copy",
+                              CALL(MapNames::getDpctNamespace() + "partition_copy",
+                                    ARG("oneapi::dpl::execution::seq"),
+                                    ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))))))
+    )
+  )
+)
+
