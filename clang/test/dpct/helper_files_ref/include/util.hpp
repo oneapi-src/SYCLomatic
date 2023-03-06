@@ -571,11 +571,6 @@ inline queue_ptr int_as_queue_ptr(uintptr_t x) {
   : reinterpret_cast<queue_ptr>(x);
 }
 
-
-#define DPCT_KERNEL_PARAM_SIZE_VAL 2
-#define DPCT_KERNEL_PARAM_PTR_VAL  1
-#define DPCT_KERNEL_PARAM_END_VAL  0
-
 template <int n_nondefault_params, int n_default_params, typename T>
 class args_selector;
 
@@ -647,8 +642,8 @@ private:
   static char *get_args_buffer(void **extra) {
     if (!extra)
       return nullptr;
-    for (; (std::size_t) *extra != DPCT_KERNEL_PARAM_END_VAL; ++extra) {
-      if ((std::size_t) *extra == DPCT_KERNEL_PARAM_PTR_VAL) {
+    for (; (std::size_t) *extra != 0; ++extra) {
+      if ((std::size_t) *extra == 1) {
 	return static_cast<char*>(*(extra+1));
       }
     }

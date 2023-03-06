@@ -33,9 +33,9 @@ int main(){
 
     int    *argBuffer[3];
     size_t  argBufferSize = sizeof(argBuffer);
-    //CHECK: void *extra[] = {DPCT_KERNEL_PARAM_SIZE, &argBufferSize,
-    //CHECK-NEXT: DPCT_KERNEL_PARAM_PTR, argBuffer,
-    //CHECK-NEXT: DPCT_KERNEL_PARAM_END};
+    //CHECK: void *extra[] = {((void *) 2), &argBufferSize,
+    //CHECK-NEXT: ((void *) 1), argBuffer,
+    //CHECK-NEXT: ((void *) 0)};
     void   *extra[] = {CU_LAUNCH_PARAM_BUFFER_SIZE, &argBufferSize,
                        CU_LAUNCH_PARAM_BUFFER_POINTER, argBuffer,
                        CU_LAUNCH_PARAM_END};
