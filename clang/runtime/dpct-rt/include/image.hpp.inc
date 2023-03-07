@@ -1458,6 +1458,10 @@ template <class T, int dimensions, bool IsImageArray = false> class image_wrappe
 // Image|image_channel_get_channel_type
 // Image|image_channel_get_total_size
 // Image|image_matrix_create_image_with_channel
+// Image|image_wrapper_base_get_data
+// Image|image_data_type
+// Image|image_matrix_p_alias
+// Memory|get_buffer_byte_t|UsmNone
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 #ifndef DPCT_USM_LEVEL_NONE

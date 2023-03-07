@@ -10611,11 +10611,12 @@ void MemoryMigrationRule::arrayMigration(
       DerefExpr::create(StreamExpr, C).print(OS);
       emplaceTransformation(replaceText(Begin, End, std::move(Str), SM));
     }
+    requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_3d, C);
   } else {
     ReplaceStr = MapNames::getDpctNamespace() + "dpct_memcpy";
     emplaceTransformation(removeArg(C, EndPos, SM));
+    requestFeature(HelperFeatureEnum::Memory_dpct_memcpy_3d, C);
   }
-  requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_3d, C);
 
   if (NameRef == "cudaMemcpy2DArrayToArray") {
     insertToPitchedData(C, 0);

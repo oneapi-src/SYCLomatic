@@ -393,7 +393,9 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(getClNamespace() + "filtering_mode")},
       {"CUfilter_mode_enum",
        std::make_shared<TypeNameRule>(getClNamespace() + "filtering_mode")},
-      {"CUdeviceptr", std::make_shared<TypeNameRule>(getDpctNamespace() + "device_ptr")},
+      {"CUdeviceptr", std::make_shared<TypeNameRule>(
+                          getDpctNamespace() + "device_ptr",
+                          HelperFeatureEnum::Device_typedef_device_ptr)},
       {"CUresourcetype_enum", std::make_shared<TypeNameRule>(
                                   getDpctNamespace() + "image_data_type",
                                   HelperFeatureEnum::Image_image_data_type)},
