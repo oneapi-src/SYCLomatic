@@ -17,6 +17,7 @@
 #include <thrust/functional.h>
 #include <thrust/functional.h>
 #include <thrust/host_vector.h>
+#include <thrust/unique.h>
 
 // for cuda 12.0
 #include <thrust/execution_policy.h>
