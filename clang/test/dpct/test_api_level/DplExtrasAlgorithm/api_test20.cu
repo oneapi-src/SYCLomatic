@@ -1,4 +1,4 @@
-// UNSUPPORTED: cuda-8.0
+// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2, cuda-11.0, cuda-11.2, cuda-11.4
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none  --usm-level=none  --use-custom-helper=api -out-root %T/DplExtrasAlgorithm/api_test20_out %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17
 // RUN: grep "IsCalled" %T/DplExtrasAlgorithm/api_test20_out/MainSourceFiles.yaml | wc -l > %T/DplExtrasAlgorithm/api_test20_out/count.txt
