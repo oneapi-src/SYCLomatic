@@ -1752,3 +1752,10 @@ FEATURE_REQUEST_FACTORY(
             "cub::ArgIndexInputIterator.normalize", MemberExprBase(),
             MEMBER_CALL(MemberExprBase(), false, LITERAL("create_normalize")))))
 #endif
+
+// cub::IADD3
+CALL_FACTORY_ENTRY(
+    "cub::IADD3",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS("static_cast", LITERAL("unsigned")),
+         BO(BinaryOperatorKind::BO_Add,
+            BO(BinaryOperatorKind::BO_Add, ARG(0), ARG(1)), ARG(2))))

@@ -72,6 +72,7 @@ auto isDeviceFuncCallExpr = []() {
 REGISTER_RULE(CubTypeRule, PassKind::PK_Analysis)
 REGISTER_RULE(CubMemberCallRule, PassKind::PK_Analysis)
 REGISTER_RULE(CubDeviceLevelRule, PassKind::PK_Analysis)
+REGISTER_RULE(CubIntrinsicRule, PassKind::PK_Analysis)
 
 void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto TargetTypeName = [&]() {
@@ -155,6 +156,24 @@ void CubMemberCallRule::runRule(
   }
   emplaceTransformation(EA.getReplacement());
   EA.applyAllSubExprRepl();
+}
+
+void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(callExpr(callee(functionDecl(allOf(
+                             hasName("IADD3"),
+                             hasDeclContext(namespaceDecl(hasName("cub")))))))
+                    .bind("IntrinsicCall"),
+                this);
+}
+
+void CubIntrinsicRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (const auto *CE = getNodeAsType<CallExpr>(Result, "IntrinsicCall")) {
+    ExprAnalysis EA;
+    EA.analyze(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  }
 }
 
 static bool isNullPointerConstant(const clang::Expr *E) {
