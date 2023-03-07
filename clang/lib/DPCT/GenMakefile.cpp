@@ -242,15 +242,18 @@ static void getCompileInfo(
           NewOptions += Option + " ";
       } else if (llvm::StringRef(Option).startswith("-std=")) {
 
+        printf("####### [%s]\n", Option.c_str());
         size_t Idx = 0;
         for (; Idx < Option.length(); Idx++) {
           if (std::isdigit(Option[Idx]))
             break;
         }
         auto Version = Option.substr(Idx, Option.length() - Idx);
+        printf("####### Version [%s]\n", Version.c_str());
         int Val = std::atoi(Version.c_str());
+        printf("####### Val [%d]\n", Val);
         // SYCL support c++17 as default.
-        if (llvm::StringRef(Entry.second[1]).endswith("nvcc") && Val <= 17)
+        if (Val <= 17)
           continue;
 
         // Skip duplicate options.
@@ -260,6 +263,7 @@ static void getCompileInfo(
         DuplicateDuplicateFilter.insert(Option);
 
         NewOptions += Option + " ";
+        printf("########### [%s]\n", NewOptions.c_str());
       } else if (Option == "-o") {
         IsObjName = true;
         IsObjSpecified = true;
