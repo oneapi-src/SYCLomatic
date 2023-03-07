@@ -501,6 +501,25 @@ reduce(Item item, T (&inputs)[VALUES_PER_THREAD], BinaryOperation binary_op) {
   return detail::__reduce_over_group(item.get_group(), result, binary_op);
 }
 
+/// Perform a reduction on a limited number of the work items in a subgroup
+///
+/// \param item A work-item in a group.
+/// \param value value per work item which is to be reduced
+/// \param items_to_reduce num work items at the start of the subgroup to reduce
+/// \param identity identity for type and binary_op
+/// \param binary_op functor that implements the binary operation used to
+/// perform the scan. \returns value of the reduction using binary_op
+template <typename Item, typename T, class BinaryOperation>
+__attribute__((always_inline)) T
+reduce_over_partial_group(const Item &item, const T &value,
+                          const ::std::uint16_t &items_to_reduce,
+                          const T &identity, BinaryOperation binary_op) {
+  T value_temp =
+      (item.get_local_linear_id() < items_to_reduce) ? value : identity;
+  return detail::__reduce_over_group(item.get_sub_group(), value_temp,
+                                     binary_op);
+}
+
 /// Perform an inclusive scan over the values of inputs from all work-items in
 /// the group using the operator binary_op, which must be one of the SYCL 2020
 /// group algorithms library function objects.
