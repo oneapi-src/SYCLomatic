@@ -439,7 +439,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   if (TKind == tok::identifier &&
       (Name == "__host__" || Name == "__device__" || Name == "__global__" ||
        Name == "__constant__" || Name == "__launch_bounds__" ||
-       Name == "__shared__")) {
+       Name == "__shared__" || Name == "__grid_constant__")) {
     auto TM = removeMacroInvocationAndTrailingSpaces(
         SourceRange(SM.getSpellingLoc(Range.getBegin()),
                     SM.getSpellingLoc(Range.getEnd())));
