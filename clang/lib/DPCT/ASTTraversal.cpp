@@ -1985,6 +1985,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cudaPitchedPtr", "thrust::counting_iterator",
                   "thrust::transform_iterator", "thrust::permutation_iterator",
                   "thrust::iterator_difference", "cusolverDnHandle_t",
+                  "cusolverDnParams_t", "gesvdjInfo_t",
                   "thrust::device_malloc_allocator", "thrust::divides",
                   "thrust::tuple", "thrust::maximum", "thrust::multiplies",
                   "thrust::plus", "cudaDataType_t", "cudaError_t", "CUresult",
@@ -6461,24 +6462,24 @@ REGISTER_RULE(SOLVEREnumsRule, PassKind::PK_Migration)
 void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
     return hasAnyName(
-        "cusolverDnGetStream", "cusolverDnSetStream",
-        "cusolverDnCreate", "cusolverDnDestroy", "cusolverDnSpotrf_bufferSize",
-        "cusolverDnDpotrf_bufferSize", "cusolverDnCpotrf_bufferSize",
-        "cusolverDnZpotrf_bufferSize", "cusolverDnSpotri_bufferSize",
-        "cusolverDnDpotri_bufferSize", "cusolverDnCpotri_bufferSize",
-        "cusolverDnZpotri_bufferSize", "cusolverDnSgetrf_bufferSize",
-        "cusolverDnDgetrf_bufferSize", "cusolverDnCgetrf_bufferSize",
-        "cusolverDnZgetrf_bufferSize", "cusolverDnSpotrf", "cusolverDnDpotrf",
-        "cusolverDnCpotrf", "cusolverDnZpotrf", "cusolverDnSpotrs",
-        "cusolverDnDpotrs", "cusolverDnCpotrs", "cusolverDnZpotrs",
-        "cusolverDnSpotri", "cusolverDnDpotri", "cusolverDnCpotri",
-        "cusolverDnZpotri", "cusolverDnSgetrf", "cusolverDnDgetrf",
-        "cusolverDnCgetrf", "cusolverDnZgetrf", "cusolverDnSgetrs",
-        "cusolverDnDgetrs", "cusolverDnCgetrs", "cusolverDnZgetrs",
-        "cusolverDnSgeqrf_bufferSize", "cusolverDnDgeqrf_bufferSize",
-        "cusolverDnCgeqrf_bufferSize", "cusolverDnZgeqrf_bufferSize",
-        "cusolverDnSgeqrf", "cusolverDnDgeqrf", "cusolverDnCgeqrf",
-        "cusolverDnZgeqrf", "cusolverDnSormqr_bufferSize",
+        "cusolverDnGetStream", "cusolverDnSetStream", "cusolverDnCreateParams",
+        "cusolverDnDestroyParams", "cusolverDnCreate", "cusolverDnDestroy",
+        "cusolverDnSpotrf_bufferSize", "cusolverDnDpotrf_bufferSize",
+        "cusolverDnCpotrf_bufferSize", "cusolverDnZpotrf_bufferSize",
+        "cusolverDnSpotri_bufferSize", "cusolverDnDpotri_bufferSize",
+        "cusolverDnCpotri_bufferSize", "cusolverDnZpotri_bufferSize",
+        "cusolverDnSgetrf_bufferSize", "cusolverDnDgetrf_bufferSize",
+        "cusolverDnCgetrf_bufferSize", "cusolverDnZgetrf_bufferSize",
+        "cusolverDnSpotrf", "cusolverDnDpotrf", "cusolverDnCpotrf",
+        "cusolverDnZpotrf", "cusolverDnSpotrs", "cusolverDnDpotrs",
+        "cusolverDnCpotrs", "cusolverDnZpotrs", "cusolverDnSpotri",
+        "cusolverDnDpotri", "cusolverDnCpotri", "cusolverDnZpotri",
+        "cusolverDnSgetrf", "cusolverDnDgetrf", "cusolverDnCgetrf",
+        "cusolverDnZgetrf", "cusolverDnSgetrs", "cusolverDnDgetrs",
+        "cusolverDnCgetrs", "cusolverDnZgetrs", "cusolverDnSgeqrf_bufferSize",
+        "cusolverDnDgeqrf_bufferSize", "cusolverDnCgeqrf_bufferSize",
+        "cusolverDnZgeqrf_bufferSize", "cusolverDnSgeqrf", "cusolverDnDgeqrf",
+        "cusolverDnCgeqrf", "cusolverDnZgeqrf", "cusolverDnSormqr_bufferSize",
         "cusolverDnDormqr_bufferSize", "cusolverDnSormqr", "cusolverDnDormqr",
         "cusolverDnCunmqr_bufferSize", "cusolverDnZunmqr_bufferSize",
         "cusolverDnCunmqr", "cusolverDnZunmqr", "cusolverDnSorgqr_bufferSize",
@@ -6509,15 +6510,26 @@ void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusolverDnDsyevd_bufferSize", "cusolverDnSsyevd_bufferSize",
         "cusolverDnCheevd_bufferSize", "cusolverDnZheevd_bufferSize",
         "cusolverDnDsyevd", "cusolverDnSsyevd", "cusolverDnCheevd",
-        "cusolverDnZheevd",
-        "cusolverDnSpotrfBatched", "cusolverDnDpotrfBatched",
-        "cusolverDnCpotrfBatched", "cusolverDnZpotrfBatched",
-        "cusolverDnSpotrsBatched", "cusolverDnDpotrsBatched",
-        "cusolverDnCpotrsBatched", "cusolverDnZpotrsBatched",
-        "cusolverDnSsygvd", "cusolverDnDsygvd",
+        "cusolverDnZheevd", "cusolverDnSpotrfBatched",
+        "cusolverDnDpotrfBatched", "cusolverDnCpotrfBatched",
+        "cusolverDnZpotrfBatched", "cusolverDnSpotrsBatched",
+        "cusolverDnDpotrsBatched", "cusolverDnCpotrsBatched",
+        "cusolverDnZpotrsBatched", "cusolverDnSsygvd", "cusolverDnDsygvd",
         "cusolverDnSsygvd_bufferSize", "cusolverDnDsygvd_bufferSize",
-        "cusolverDnChegvd", "cusolverDnZhegvd",
-        "cusolverDnChegvd_bufferSize", "cusolverDnZhegvd_bufferSize");
+        "cusolverDnChegvd", "cusolverDnZhegvd", "cusolverDnChegvd_bufferSize",
+        "cusolverDnZhegvd_bufferSize", "cusolverDnXgetrf",
+        "cusolverDnXgetrf_bufferSize", "cusolverDnXgetrs", "cusolverDnXgeqrf",
+        "cusolverDnXgeqrf_bufferSize", "cusolverDnGetrf",
+        "cusolverDnGetrf_bufferSize", "cusolverDnGetrs", "cusolverDnGeqrf",
+        "cusolverDnGeqrf_bufferSize", "cusolverDnCreateGesvdjInfo",
+        "cusolverDnDestroyGesvdjInfo", "cusolverDnSgesvdj_bufferSize",
+        "cusolverDnDgesvdj_bufferSize", "cusolverDnCgesvdj_bufferSize",
+        "cusolverDnZgesvdj_bufferSize", "cusolverDnXgesvd_bufferSize",
+        "cusolverDnGesvd_bufferSize", "cusolverDnSgesvdj", "cusolverDnDgesvdj",
+        "cusolverDnCgesvdj", "cusolverDnZgesvdj", "cusolverDnXgesvd",
+        "cusolverDnGesvd", "cusolverDnXpotrf_bufferSize",
+        "cusolverDnPotrf_bufferSize", "cusolverDnXpotrf", "cusolverDnPotrf",
+        "cusolverDnXpotrs", "cusolverDnPotrs");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
@@ -10599,11 +10611,12 @@ void MemoryMigrationRule::arrayMigration(
       DerefExpr::create(StreamExpr, C).print(OS);
       emplaceTransformation(replaceText(Begin, End, std::move(Str), SM));
     }
+    requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_3d, C);
   } else {
     ReplaceStr = MapNames::getDpctNamespace() + "dpct_memcpy";
     emplaceTransformation(removeArg(C, EndPos, SM));
+    requestFeature(HelperFeatureEnum::Memory_dpct_memcpy_3d, C);
   }
-  requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_3d, C);
 
   if (NameRef == "cudaMemcpy2DArrayToArray") {
     insertToPitchedData(C, 0);

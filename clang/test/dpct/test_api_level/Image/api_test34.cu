@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Image/api_test34_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Image/api_test34_out
 
-// CHECK: 30
+// CHECK: 31
 // TEST_FEATURE: Image_image_data_get_data_type
 // TEST_FEATURE: Image_image_data_get_channel_num
 // TEST_FEATURE: Image_image_data_get_channel_type
