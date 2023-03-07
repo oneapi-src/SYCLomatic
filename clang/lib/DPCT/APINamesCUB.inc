@@ -146,6 +146,60 @@ CONDITIONAL_FACTORY_ENTRY(
                         LITERAL("1")),
                     false, "wait"))))))
 
+// cub::DeviceReduce::ArgMin
+CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY("cub::DeviceReduce::ArgMin"),
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::DplExtrasAlgorithm_reduce_argmin,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPL_Execution,
+            HEADER_INSERT_FACTORY(
+                HeaderType::HT_DPCT_DPL_Utils,
+                REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+                    makeCheckAnd(CheckArgCount(6, std::greater_equal<>(),
+                                               /* IncludeDefaultArg */ false),
+                                 makeCheckNot(CheckArgIsDefaultCudaStream(5))),
+                    CALL_FACTORY_ENTRY(
+                        "cub::DeviceReduce::ArgMin",
+                        CALL(MapNames::getDpctNamespace() + "reduce_argmin",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  STREAM(5)),
+                             ARG(2), ARG(3), ARG(4))),
+                    CALL_FACTORY_ENTRY(
+                        "cub::DeviceReduce::ArgMin",
+                        CALL(MapNames::getDpctNamespace() + "reduce_argmin",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  QUEUESTR),
+                             ARG(2), ARG(3), ARG(4)))))))))
+
+// cub::DeviceReduce::ArgMax
+CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY("cub::DeviceReduce::ArgMax"),
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::DplExtrasAlgorithm_reduce_argmax,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPL_Execution,
+            HEADER_INSERT_FACTORY(
+                HeaderType::HT_DPCT_DPL_Utils,
+                REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+                    makeCheckAnd(CheckArgCount(6, std::greater_equal<>(),
+                                               /* IncludeDefaultArg */ false),
+                                 makeCheckNot(CheckArgIsDefaultCudaStream(5))),
+                    CALL_FACTORY_ENTRY(
+                        "cub::DeviceReduce::ArgMax",
+                        CALL(MapNames::getDpctNamespace() + "reduce_argmax",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  STREAM(5)),
+                             ARG(2), ARG(3), ARG(4))),
+                    CALL_FACTORY_ENTRY(
+                        "cub::DeviceReduce::ArgMax",
+                        CALL(MapNames::getDpctNamespace() + "reduce_argmax",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  QUEUESTR),
+                             ARG(2), ARG(3), ARG(4)))))))))
+
 // cub::DeviceReduce::Reduce
 CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),

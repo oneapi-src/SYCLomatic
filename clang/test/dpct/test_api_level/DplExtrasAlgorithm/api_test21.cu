@@ -1,0 +1,38 @@
+// UNSUPPORTED: cuda-8.0
+// UNSUPPORTED: v8.0
+// RUN: dpct --format-range=none  --usm-level=none  --use-custom-helper=api -out-root %T/DplExtrasAlgorithm/api_test21_out %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17
+// RUN: grep "IsCalled" %T/DplExtrasAlgorithm/api_test21_out/MainSourceFiles.yaml | wc -l > %T/DplExtrasAlgorithm/api_test21_out/count.txt
+// RUN: FileCheck --input-file %T/DplExtrasAlgorithm/api_test21_out/count.txt --match-full-lines %s
+// RUN: rm -rf %T/DplExtrasAlgorithm/api_test21_out
+
+// CHECK: 51
+// TEST_FEATURE: DplExtrasAlgorithm_reduce_argmax
+
+#include <cub/cub.cuh>
+#include <initializer_list>
+
+template <typename T> T *init(std::initializer_list<T> list) {
+  T *p = nullptr;
+  cudaMalloc<T>(&p, sizeof(T) * list.size());
+  cudaMemcpy(p, list.begin(), sizeof(T) * list.size(), cudaMemcpyHostToDevice);
+  return p;
+}
+
+int main() {
+  int num_items = 7;
+  int *d_in = init({8, 6, 7, 5, 3, 0, 9});
+  cub::KeyValuePair<int, int> *d_out = init<cub::KeyValuePair<int, int>>({{-1, -1}});
+
+  void *d_temp_storage = NULL;
+  size_t temp_storage_bytes = 0;
+  cub::DeviceReduce::ArgMax(d_temp_storage, temp_storage_bytes, d_in, d_out,
+                         num_items);
+  cudaMalloc(&d_temp_storage, temp_storage_bytes);
+  cub::DeviceReduce::ArgMax(d_temp_storage, temp_storage_bytes, d_in, d_out,
+                         num_items);
+  
+  cub::KeyValuePair<int, int> out;
+  cudaMemcpy(&out, d_out, sizeof(out), cudaMemcpyDeviceToHost);
+  printf("%d-%d\n", out.key, out.value);
+  return 0;
+}

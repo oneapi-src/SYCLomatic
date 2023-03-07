@@ -46,17 +46,19 @@ auto parentStmt = []() {
 
 auto isDeviceFuncCallExpr = []() {
   auto hasDeviceFuncName = []() {
-    return hasAnyName(
-        "Sum", "Min", "Max", "Reduce", "ReduceByKey", "ExclusiveSum",
-        "InclusiveSum", "InclusiveScan", "ExclusiveScan", "InclusiveScanByKey",
-        "InclusiveSumByKey", "ExclusiveScanByKey", "ExclusiveSumByKey",
-        "Flagged", "Unique", "UniqueByKey", "Encode", "SortKeys",
-        "SortKeysDescending", "SortPairs", "SortPairsDescending", "If");
+    return hasAnyName("Sum", "Min", "Max", "ArgMin", "ArgMax", "Reduce",
+                      "ReduceByKey", "ExclusiveSum", "InclusiveSum",
+                      "InclusiveScan", "ExclusiveScan", "InclusiveScanByKey",
+                      "InclusiveSumByKey", "ExclusiveScanByKey",
+                      "ExclusiveSumByKey", "Flagged", "Unique", "UniqueByKey",
+                      "Encode", "SortKeys", "SortKeysDescending", "SortPairs",
+                      "SortPairsDescending", "If");
   };
   auto hasDeviceRecordName = []() {
     return hasAnyName("DeviceSegmentedReduce", "DeviceReduce", "DeviceScan",
                       "DeviceSelect", "DeviceRunLengthEncode",
-                      "DeviceRadixSort", "DeviceSegmentedRadixSort");
+                      "DeviceRadixSort", "DeviceSegmentedRadixSort",
+                      "DeviceSegmentedSort");
   };
   return callExpr(callee(functionDecl(
       allOf(hasDeviceFuncName(),
@@ -146,9 +148,9 @@ void CubMemberCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 void CubMemberCallRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   ExprAnalysis EA;
-  if (const auto E1 = getNodeAsType<CXXMemberCallExpr>(Result, "memberCall")) {
+  if (const auto *E1 = getNodeAsType<CXXMemberCallExpr>(Result, "memberCall")) {
     EA.analyze(E1);
-  } else if (const auto E2 = getNodeAsType<MemberExpr>(Result, "memberExpr")) {
+  } else if (const auto *E2 = getNodeAsType<MemberExpr>(Result, "memberExpr")) {
     EA.analyze(E2);
   }
   emplaceTransformation(EA.getReplacement());
