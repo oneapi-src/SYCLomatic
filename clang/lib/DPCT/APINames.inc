@@ -61,6 +61,7 @@ ENTRY(cudaIpcOpenMemHandle, cudaIpcOpenMemHandle, true, NO_FLAG, P0, "DPCT1030")
 ENTRY(cudaSetDevice, cudaSetDevice, true, NO_FLAG, P0, "DPCT1093")
 ENTRY(cudaSetDeviceFlags, cudaSetDeviceFlags, true, NO_FLAG, P0, "DPCT1026/DPCT1027")
 ENTRY(cudaSetValidDevices, cudaSetValidDevices, false, NO_FLAG, P4, "comment")
+ENTRY(cudaInitDevice, cudaInitDevice, false, NO_FLAG, P4, "comment")
 
 // thread management functions of API
 ENTRY(cudaThreadExit, cudaThreadExit, true, NO_FLAG, P0, "Successful")
@@ -91,6 +92,7 @@ ENTRY(cudaStreamIsCapturing, cudaStreamIsCapturing, true, API_CALL_REMOVED, P4, 
 ENTRY(cudaStreamQuery, cudaStreamQuery, true, API_CALL_REMOVED, P0, "DPCT1026/DPCT1027")
 ENTRY(cudaStreamSynchronize, cudaStreamSynchronize, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaStreamWaitEvent, cudaStreamWaitEvent, true, API_CALL_UNSUPPORTED, P0, "Successful")
+ENTRY(cudaStreamGetId, cudaStreamGetId, false, NO_FLAG, P4, "comment")
 
 // event management functions of runtime API
 ENTRY(cudaEventCreate, cudaEventCreate, true, API_CALL_REMOVED, P0, "DPCT1026/DPCT1027")
@@ -352,6 +354,7 @@ ENTRY(cudaGraphNodeGetType, cudaGraphNodeGetType, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphRemoveDependencies, cudaGraphRemoveDependencies, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGetCurrentGraphExec, cudaGetCurrentGraphExec, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphExecGetFlags, cudaGraphExecGetFlags, false, NO_FLAG, P4, "comment")
+ENTRY(cudaGraphInstantiateWithParams, cudaGraphInstantiateWithParams, false, NO_FLAG, P4, "comment")
 
 
 // C++ high level API functions of runtime API
@@ -1733,6 +1736,8 @@ ENTRY(cuOccupancyMaxPotentialClusterSize, cuOccupancyMaxPotentialClusterSize, fa
 ENTRY(cuTensorMapEncodeIm2col, cuTensorMapEncodeIm2col, false, NO_FLAG, P4, "comment")
 ENTRY(cuTensorMapEncodeTiled, cuTensorMapEncodeTiled, false, NO_FLAG, P4, "comment")
 ENTRY(cuTensorMapReplaceAddress, cuTensorMapReplaceAddress, false, NO_FLAG, P4, "comment")
+ENTRY(cuGraphInstantiateWithParams, cuGraphInstantiateWithParams, false, NO_FLAG, P4, "comment")
+ENTRY(cuStreamGetId, cuStreamGetId, false, NO_FLAG, P4, "comment")
 
 ENTRY(cuCabs, cuCabs, true, NO_FLAG, P4, "comment")
 ENTRY(cuCabsf, cuCabsf, true, NO_FLAG, P4, "comment")
