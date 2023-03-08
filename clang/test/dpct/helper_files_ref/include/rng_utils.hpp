@@ -439,7 +439,6 @@ enum class random_engine_type {
   mcg59
 };
 
-
 typedef std::shared_ptr<rng::host::detail::rng_generator_base> host_rng_ptr;
 
 /// Create a host random number generator.

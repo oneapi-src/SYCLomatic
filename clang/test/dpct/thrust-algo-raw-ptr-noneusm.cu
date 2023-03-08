@@ -440,7 +440,6 @@ void set_intersection_by_key_test() {
   thrust::set_intersection_by_key(Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue, thrust::greater<int>());
 }
 
-
 void partition_copy_test() {
   int data[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
   int S[] = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0};
@@ -473,4 +472,71 @@ void partition_copy_test() {
   thrust::partition_copy(data, data + N, evens, odds, is_even());
   thrust::partition_copy(thrust::host, data, data + N, S, evens, odds, is_even());
   thrust::partition_copy(data, data + N, S, evens, odds, is_even());
+}
+
+void partition_copy_test() {
+  int data[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  int S[] = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0};
+  int result[10];
+  const int N = sizeof(data) / sizeof(int);
+  int *evens = result;
+  int *odds = result + N / 2;
+
+//CHECK:  if (dpct::is_device_ptr(data)) {
+//CHECK-NEXT:    dpct::stable_partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), dpct::device_pointer<int>(evens), dpct::device_pointer<int>(odds), is_even());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    dpct::stable_partition_copy(oneapi::dpl::execution::seq, data, data + N, evens, odds, is_even());
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(data + N)) {
+//CHECK-NEXT:    dpct::stable_partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), dpct::device_pointer<int>(evens), dpct::device_pointer<int>(odds), is_even());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    dpct::stable_partition_copy(oneapi::dpl::execution::seq, data, data + N, evens, odds, is_even());
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(data)) {
+//CHECK-NEXT:    dpct::stable_partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), dpct::device_pointer<int>(S), dpct::device_pointer<int>(evens), dpct::device_pointer<int>(odds), is_even());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    dpct::stable_partition_copy(oneapi::dpl::execution::seq, data, data + N, S, evens, odds, is_even());
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(data + N)) {
+//CHECK-NEXT:    dpct::stable_partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), dpct::device_pointer<int>(S), dpct::device_pointer<int>(evens), dpct::device_pointer<int>(odds), is_even());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    dpct::stable_partition_copy(oneapi::dpl::execution::seq, data, data + N, S, evens, odds, is_even());
+//CHECK-NEXT:  };
+  thrust::stable_partition_copy(thrust::host, data, data + N, evens, odds, is_even());
+  thrust::stable_partition_copy(data, data + N, evens, odds, is_even());
+  thrust::stable_partition_copy(thrust::host, data, data + N, S, evens, odds, is_even());
+  thrust::stable_partition_copy(data, data + N, S, evens, odds, is_even());
+}
+
+void stable_partition_test() {
+
+  int data[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  int S[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  const int N = sizeof(data) / sizeof(int);
+
+
+//CHECK:  if (dpct::is_device_ptr(data)) {
+//CHECK-NEXT:    oneapi::dpl::stable_partition(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), is_even());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::stable_partition(oneapi::dpl::execution::seq, data, data + N, is_even());
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(data + N)) {
+//CHECK-NEXT:    oneapi::dpl::stable_partition(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), is_even());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::stable_partition(oneapi::dpl::execution::seq, data, data + N, is_even());
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(data)) {
+//CHECK-NEXT:    dpct::stable_partition(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), dpct::device_pointer<int>(S), is_even());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    dpct::stable_partition(oneapi::dpl::execution::seq, data, data + N, S, is_even());
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(data + N)) {
+//CHECK-NEXT:    dpct::stable_partition(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), dpct::device_pointer<int>(S), is_even());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    dpct::stable_partition(oneapi::dpl::execution::seq, data, data + N, S, is_even());
+//CHECK-NEXT:  };
+  thrust::stable_partition(thrust::host, data, data + N, is_even());
+  thrust::stable_partition(data, data + N, is_even());
+  thrust::stable_partition(thrust::host, data, data + N, S, is_even());
+  thrust::stable_partition(data, data + N, S, is_even());
 }

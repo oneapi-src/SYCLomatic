@@ -259,62 +259,38 @@ private:
 
 namespace host {
 namespace detail {
-// DPCT_LABEL_BEGIN|rng_generator_base|dpct::rng::host
+// DPCT_LABEL_BEGIN|rng_generator_base|dpct::rng::host::detail
 // DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator_host_1
+// Device|get_default_queue
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 class rng_generator_base {
-// DPCT_LABEL_END
 public:
-// DPCT_LABEL_BEGIN|rng_generator_base_set_seed|dpct::rng::host
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
   /// Set the seed of host rng_generator.
   /// \param seed The engine seed.
   virtual void set_seed(const std::uint64_t seed) = 0;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_base_set_dimensions|dpct::rng::host
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
   /// Set the dimensions of host rng_generator.
   /// \param dimensions The engine dimensions.
   virtual void set_dimensions(const std::uint32_t dimensions) = 0;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_base_set_queue|dpct::rng::host
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
   /// Set the queue of host rng_generator.
   /// \param queue The engine queue.
   virtual void set_queue(sycl::queue *queue) = 0;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_base_generate_uniform_bits_uint|dpct::rng::host
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
   /// Generate unsigned int random number(s) with 'uniform_bits' distribution.
   /// \param output The pointer of the first random number.
   /// \param n The number of random numbers.
   virtual inline void generate_uniform_bits(unsigned int *output,
                                             std::int64_t n) = 0;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_base_generate_uniform_bits_ulonglong|dpct::rng::host
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
   /// Generate unsigned long long random number(s) with 'uniform_bits'
   /// distribution.
   /// \param output The pointer of the first random number.
   /// \param n The number of random numbers.
   virtual inline void generate_uniform_bits(unsigned long long *output,
                                             std::int64_t n) = 0;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_base_generate_lognormal_float|dpct::rng::host
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
   /// Generate float random number(s) with 'lognormal' distribution.
   /// \param output The pointer of the first random number.
   /// \param n The number of random numbers.
@@ -322,11 +298,7 @@ public:
   /// \param s Standard deviation of associated normal distribution.
   virtual inline void generate_lognormal(float *output, std::int64_t n, float m,
                                          float s) = 0;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_base_generate_lognormal_double|dpct::rng::host
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
   /// Generate double random number(s) with 'lognormal' distribution.
   /// \param output The pointer of the first random number.
   /// \param n The number of random numbers.
@@ -334,11 +306,7 @@ public:
   /// \param s Standard deviation of associated normal distribution.
   virtual inline void generate_lognormal(double *output, std::int64_t n,
                                          double m, double s) = 0;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_base_generate_gaussian_float|dpct::rng::host
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
   /// Generate float random number(s) with 'gaussian' distribution.
   /// \param output The pointer of the first random number.
   /// \param n The number of random numbers.
@@ -346,11 +314,7 @@ public:
   /// \param stddev Standard deviation of normal distribution.
   virtual inline void generate_gaussian(float *output, std::int64_t n,
                                         float mean, float stddev) = 0;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_base_generate_gaussian_double|dpct::rng::host
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
   /// Generate double random number(s) with 'gaussian' distribution.
   /// \param output The pointer of the first random number.
   /// \param n The number of random numbers.
@@ -358,81 +322,48 @@ public:
   /// \param stddev Standard deviation of normal distribution.
   virtual inline void generate_gaussian(double *output, std::int64_t n,
                                         double mean, double stddev) = 0;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_base_generate_poisson|dpct::rng::host
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
   /// Generate unsigned int random number(s) with 'poisson' distribution.
   /// \param output The pointer of the first random number.
   /// \param n The number of random numbers.
   /// \param lambda Lambda for the Poisson distribution.
   virtual inline void generate_poisson(unsigned int *output, std::int64_t n,
                                        double lambda) = 0;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_base_generate_uniform_float|dpct::rng::host
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
   /// Generate float random number(s) with 'uniform' distribution.
   /// \param output The pointer of the first random number.
   /// \param n The number of random numbers.
   virtual inline void generate_uniform(float *output, std::int64_t n) = 0;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_base_generate_uniform_double|dpct::rng::host
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
   /// Generate double random number(s) with 'uniform' distribution.
   /// \param output The pointer of the first random number.
   /// \param n The number of random numbers.
   virtual inline void generate_uniform(double *output, std::int64_t n) = 0;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_base_skip_ahead|dpct::rng::host
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
   /// Skip ahead several random number(s).
   /// \param num_to_skip The number of random numbers to be skipped.
   virtual void skip_ahead(const std::uint64_t num_to_skip) = 0;
-// DPCT_LABEL_END
 
 protected:
   sycl::queue *_queue{&dpct::get_default_queue()};
   std::uint64_t _seed{0};
   std::uint32_t _dimensions{1};
-// DPCT_LABEL_BEGIN|rng_generator_base_1|dpct::rng::host
-// DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator_base
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 };
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_host|dpct::rng::host
+// DPCT_LABEL_BEGIN|rng_generator_host|dpct::rng::host::detail
 // DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator_host_1
+// RngUtils|rng_generator_base
+// LibCommonUtils|get_memory
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// The random number generator on host.
 template <typename engine_t = oneapi::mkl::rng::philox4x32x10>
 class rng_generator : public rng_generator_base {
-// DPCT_LABEL_END
 public:
-// DPCT_LABEL_BEGIN|rng_generator_host_constructor|dpct::rng::host
-// DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator_host_create_engine
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Constructor of rng_generator.
   rng_generator() : _engine(create_engine(_queue, _seed, _dimensions)) {}
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_host_set_seed|dpct::rng::host
-// DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator_host_create_engine
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Set the seed of host rng_generator.
   /// \param seed The engine seed.
   void set_seed(const std::uint64_t seed) {
@@ -442,13 +373,7 @@ public:
     _seed = seed;
     _engine = create_engine(_queue, _seed, _dimensions);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_host_set_dimensions|dpct::rng::host
-// DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator_host_create_engine
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Set the dimensions of host rng_generator.
   /// \param dimensions The engine dimensions.
   void set_dimensions(const std::uint32_t dimensions) {
@@ -458,13 +383,7 @@ public:
     _dimensions = dimensions;
     _engine = create_engine(_queue, _seed, _dimensions);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_host_set_queue|dpct::rng::host
-// DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator_host_create_engine
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Set the queue of host rng_generator.
   /// \param queue The engine queue.
   void set_queue(sycl::queue *queue) {
@@ -474,13 +393,7 @@ public:
     _queue = queue;
     _engine = create_engine(_queue, _seed, _dimensions);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_host_generate_uniform_bits_uint|dpct::rng::host
-// DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator_host_generate
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Generate unsigned int random number(s) with 'uniform_bits' distribution.
   /// \param output The pointer of the first random number.
   /// \param n The number of random numbers.
@@ -489,13 +402,7 @@ public:
     generate<oneapi::mkl::rng::uniform_bits<std::uint32_t>>(
         (std::uint32_t *)output, n);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_host_generate_uniform_bits_ulonglong|dpct::rng::host
-// DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator_host_generate
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Generate unsigned long long random number(s) with 'uniform_bits'
   /// distribution.
   /// \param output The pointer of the first random number.
@@ -506,13 +413,7 @@ public:
     generate<oneapi::mkl::rng::uniform_bits<std::uint64_t>>(
         (std::uint64_t *)output, n);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_host_generate_lognormal_float|dpct::rng::host
-// DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator_host_generate
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Generate float random number(s) with 'lognormal' distribution.
   /// \param output The pointer of the first random number.
   /// \param n The number of random numbers.
@@ -522,13 +423,7 @@ public:
                                  float s) {
     generate<oneapi::mkl::rng::lognormal<float>>(output, n, m, s);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_host_generate_lognormal_double|dpct::rng::host
-// DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator_host_generate
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Generate double random number(s) with 'lognormal' distribution.
   /// \param output The pointer of the first random number.
   /// \param n The number of random numbers.
@@ -538,13 +433,7 @@ public:
                                  double s) {
     generate<oneapi::mkl::rng::lognormal<double>>(output, n, m, s);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_host_generate_gaussian_float|dpct::rng::host
-// DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator_host_generate
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Generate float random number(s) with 'gaussian' distribution.
   /// \param output The pointer of the first random number.
   /// \param n The number of random numbers.
@@ -554,13 +443,7 @@ public:
                                 float stddev) {
     generate<oneapi::mkl::rng::gaussian<float>>(output, n, mean, stddev);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_host_generate_gaussian_double|dpct::rng::host
-// DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator_host_generate
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Generate double random number(s) with 'gaussian' distribution.
   /// \param output The pointer of the first random number.
   /// \param n The number of random numbers.
@@ -570,13 +453,7 @@ public:
                                 double stddev) {
     generate<oneapi::mkl::rng::gaussian<double>>(output, n, mean, stddev);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_host_generate_poisson|dpct::rng::host
-// DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator_host_generate
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Generate unsigned int random number(s) with 'poisson' distribution.
   /// \param output The pointer of the first random number.
   /// \param n The number of random numbers.
@@ -585,37 +462,21 @@ public:
                                double lambda) {
     generate<oneapi::mkl::rng::poisson<unsigned int>>(output, n, lambda);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_host_generate_uniform_float|dpct::rng::host
-// DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator_host_generate
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Generate float random number(s) with 'uniform' distribution.
   /// \param output The pointer of the first random number.
   /// \param n The number of random numbers.
   inline void generate_uniform(float *output, std::int64_t n) {
     generate<oneapi::mkl::rng::uniform<float>>(output, n);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_host_generate_uniform_double|dpct::rng::host
-// DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator_host_generate
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Generate double random number(s) with 'uniform' distribution.
   /// \param output The pointer of the first random number.
   /// \param n The number of random numbers.
   inline void generate_uniform(double *output, std::int64_t n) {
     generate<oneapi::mkl::rng::uniform<double>>(output, n);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_host_skip_ahead|dpct::rng::host
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
   /// Skip ahead several random number(s).
   /// \param num_to_skip The number of random numbers to be skipped.
   void skip_ahead(const std::uint64_t num_to_skip) {
@@ -624,26 +485,16 @@ public:
     else
       oneapi::mkl::rng::skip_ahead(_engine, num_to_skip);
   }
-// DPCT_LABEL_END
 
 private:
-// DPCT_LABEL_BEGIN|rng_generator_host_create_engine|dpct::rng::host
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
   static inline engine_t create_engine(sycl::queue *queue,
-                                      const std::uint64_t seed,
-                                      const std::uint32_t dimensions) {
+                                       const std::uint64_t seed,
+                                       const std::uint32_t dimensions) {
     return std::is_same_v<engine_t, oneapi::mkl::rng::sobol>
                ? engine_t(*queue, dimensions)
                : engine_t(*queue, seed);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_host_generate|dpct::rng::host
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|get_memory
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   template <typename distr_t, typename buffer_t, class... distr_params_t>
   void generate(buffer_t *output, const std::int64_t n,
                 const distr_params_t... distr_params) {
@@ -651,19 +502,13 @@ private:
     oneapi::mkl::rng::generate(distr_t(distr_params...), _engine, n,
                                output_buf);
   }
-// DPCT_LABEL_END
   engine_t _engine{};
-// DPCT_LABEL_BEGIN|rng_generator_host_1|dpct::rng::host
-// DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator_host
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 };
 // DPCT_LABEL_END
 } // namespace detail
 } // namespace host
 
-// DPCT_LABEL_BEGIN|random_engine_type|dpct
+// DPCT_LABEL_BEGIN|random_engine_type|dpct::rng
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 enum class random_engine_type {
@@ -676,18 +521,17 @@ enum class random_engine_type {
 };
 // DPCT_LABEL_END
 
-
-// DPCT_LABEL_BEGIN|typedef_host_rng_ptr|dpct
+// DPCT_LABEL_BEGIN|typedef_host_rng_ptr|dpct::rng
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 typedef std::shared_ptr<rng::host::detail::rng_generator_base> host_rng_ptr;
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|create_host_rng|dpct
+// DPCT_LABEL_BEGIN|create_host_rng|dpct::rng
 // DPCT_DEPENDENCY_BEGIN
 // RngUtils|typedef_host_rng_ptr
 // RngUtils|random_engine_type
-// RngUtils|rng_generator_host_constructor
+// RngUtils|rng_generator_host
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Create a host random number generator.
