@@ -4163,6 +4163,19 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
     {"cudaStreamDefault",
      MacroMigrationRule("cudaStreamDefault_rule", RulePriority::Fallback,
                         "cudaStreamDefault", "0")},
+
+    {"CU_LAUNCH_PARAM_BUFFER_SIZE",
+     MacroMigrationRule("kernel_param_rule", RulePriority::Fallback,
+                        "CU_LAUNCH_PARAM_BUFFER_SIZE", "((void *) 2)",
+                        HelperFeatureEnum::Kernel_kernel_library)},
+    {"CU_LAUNCH_PARAM_BUFFER_POINTER",
+     MacroMigrationRule("kernel_param_rule", RulePriority::Fallback,
+                        "CU_LAUNCH_PARAM_BUFFER_POINTER", "((void *) 1)",
+                        HelperFeatureEnum::Kernel_kernel_library)},
+    {"CU_LAUNCH_PARAM_END",
+     MacroMigrationRule("kernel_param_rule", RulePriority::Fallback,
+                        "CU_LAUNCH_PARAM_END", "((void *) 0)",
+                        HelperFeatureEnum::Kernel_kernel_library)},
     //...
 };
 
