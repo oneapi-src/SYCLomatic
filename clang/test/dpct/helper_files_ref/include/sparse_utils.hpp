@@ -64,11 +64,6 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
            const int *row_ptr, const int *col_ind, const T *x, const T *beta,
            T *y) {
   using Ty = typename dpct::DataType<T>::T2;
-  //static_assert(
-  //    std::disjunction_v<std::is_same<Ty, float>, std::is_same<Ty, double>>,
-  //    "Unimplemented functionality: oneapi::mkl::sparse::optimize_gemv/gemv, "
-  //    "oneapi::mkl::sparse::symv and oneapi::mkl::sparse::optimize_trmv/trmv "
-  //    "currently do not support complex data types");
   auto alpha_value =
       detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
   auto beta_value =
@@ -146,10 +141,6 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
            const int *row_ptr, const int *col_ind, const T *b, int ldb,
            const T *beta, T *c, int ldc) {
   using Ty = typename dpct::DataType<T>::T2;
-  //static_assert(
-  //    std::disjunction_v<std::is_same<Ty, float>, std::is_same<Ty, double>>,
-  //    "Unimplemented functionality: oneapi::mkl::sparse::gemm "
-  //    "currently does not support complex data types");
   auto alpha_value =
       detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
   auto beta_value =
@@ -199,16 +190,20 @@ public:
   /// Destructor
   ~optimize_info() {
     oneapi::mkl::sparse::release_matrix_handle(get_default_queue(),
-                                               &_matrix_handle, _deps);
-  }
-  /// Add dependency of destruction
-  void add_dependency(sycl::event e) { _deps.push_back(e); }
-  /// Get the matrix handle
-  oneapi::mkl::sparse::matrix_handle_t get_matrix_handle() {
-    return _matrix_handle;
+                                               &_matrix_handle, _deps)
+        .wait();
   }
 
 private:
+  void add_dependency(sycl::event e) { _deps.push_back(e); }
+  oneapi::mkl::sparse::matrix_handle_t get_matrix_handle() {
+    return _matrix_handle;
+  }
+  template <typename T>
+  friend void optimize_csrsv(sycl::queue &, oneapi::mkl::transpose, int,
+                             const std::shared_ptr<matrix_info>, const T *,
+                             const int *, const int *,
+                             std::shared_ptr<optimize_info>);
   oneapi::mkl::sparse::matrix_handle_t _matrix_handle = nullptr;
   std::vector<sycl::event> _deps;
 };
@@ -229,11 +224,9 @@ void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
                     int row_col, const std::shared_ptr<matrix_info> info,
                     const T *val, const int *row_ptr, const int *col_ind,
                     std::shared_ptr<optimize_info> optimize_info) {
+  if (info->get_matrix_type() != matrix_info::matrix_type::tr)
+    return;
   using Ty = typename dpct::DataType<T>::T2;
-  //static_assert(
-  //    std::disjunction_v<std::is_same<Ty, float>, std::is_same<Ty, double>>,
-  //    "Unimplemented functionality: oneapi::mkl::sparse::optimize_trsv "
-  //    "currently does not support complex data types");
   auto data_row_ptr = detail::get_memory(const_cast<int *>(row_ptr));
   auto data_col_ind = detail::get_memory(const_cast<int *>(col_ind));
   auto data_val =
