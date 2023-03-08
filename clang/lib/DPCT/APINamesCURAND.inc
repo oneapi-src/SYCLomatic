@@ -48,7 +48,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 CALL("oneapi::mkl::rng::device::skip_ahead",
                      MEMBER_CALL(DEREF(makeDerefArgCreatorWithCall(1)),
                                         false, "get_engine"),
-                     ARG("0"))), Diagnostics::DIFFERENT_GENERATOR)))),
+                     ARG("0"))), Diagnostics::CHECK_SEMANTICS_OF_DIFFERENT_GENERATOR)))),
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgType(1, "struct curandStateMRG32k3a *"),
     FEATURE_REQUEST_FACTORY(
@@ -81,7 +81,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 CALL("oneapi::mkl::rng::device::skip_ahead",
                      MEMBER_CALL(DEREF(makeDerefArgCreatorWithCall(1)),
                                         false, "get_engine"),
-                     ARG("0"))), Diagnostics::DIFFERENT_GENERATOR))))
+                     ARG("0"))), Diagnostics::CHECK_SEMANTICS_OF_DIFFERENT_GENERATOR))))
 )
 
 CONDITIONAL_FACTORY_ENTRY(
