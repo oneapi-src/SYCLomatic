@@ -411,8 +411,8 @@ public:
 
 private:
   static inline engine_t create_engine(sycl::queue *queue,
-                                      const std::uint64_t seed,
-                                      const std::uint32_t dimensions) {
+                                       const std::uint64_t seed,
+                                       const std::uint32_t dimensions) {
     return std::is_same_v<engine_t, oneapi::mkl::rng::sobol>
                ? engine_t(*queue, dimensions)
                : engine_t(*queue, seed);
