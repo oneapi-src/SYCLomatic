@@ -1,13 +1,14 @@
-// UNSUPPORTED: cuda-8.0
-// UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none --use-experimental-features=DPL_async -out-root %T/thrust-foeach-nosync %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only -fno-delayed-template-parsing -ferror-limit=50
-// RUN: FileCheck --input-file %T/thrust-foeach-nosync/thrust-foeach-nosync.dp.cpp --match-full-lines %s
+// UNSUPPORTED: cuda-8.0, cuda-9.0
+// UNSUPPORTED: v8.0, v9.0
+// RUN: dpct --format-range=none --use-experimental-features=DPL_async -out-root %T/thrust-for-each-nosync %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only -fno-delayed-template-parsing -ferror-limit=50
+// RUN: FileCheck --input-file %T/thrust-for-each-nosync/thrust-for-each-nosync.dp.cpp --match-full-lines %s
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
 // CHECK-NEXT: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <chrono>
 // CHECK-NEXT: #include <dpct/dpl_utils.hpp>
+// CHECK: #include <oneapi/dpl/async>
 #include <cuda.h>
 #include <chrono>
 #include <thrust/for_each.h>
@@ -15,12 +16,12 @@
 
 
 int main() {
-    
-    
+    // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+    // CHECK: sycl::queue &q_ct1 = dev_ct1.default_queue();
     const int n = 1e8;
     
     float* d_A;
-    //CHECK: d_A = sycl::malloc_device<float>(n, dpct::get_default_queue());
+    //CHECK: d_A = sycl::malloc_device<float>(n, q_ct1);
     cudaMalloc( (void**) &d_A, n*sizeof(float));
     //CHECK: auto loop_begin = oneapi::dpl::counting_iterator<int>(0);
     auto loop_begin = thrust::counting_iterator<int>(0);
@@ -30,10 +31,10 @@ int main() {
 
     for(int i=0;i<100;i++)
     {
-      //CHECK: oneapi::dpl::experimental::for_each_async(oneapi::dpl::execution::par_unseq, loop_begin, loop_end, loop_body);
+      //CHECK: oneapi::dpl::experimental::for_each_async(oneapi::dpl::execution::make_device_policy(q_ct1), loop_begin, loop_end, loop_body);
 	    thrust::for_each(thrust::cuda::par_nosync, loop_begin, loop_end, loop_body );
     }
-    //CHECK: dpct::get_current_device().queues_wait_and_throw();
+    //CHECK: dev_ct1.queues_wait_and_throw();
     cudaDeviceSynchronize();    
     return 0;
 }

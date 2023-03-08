@@ -1435,12 +1435,18 @@ CONDITIONAL_FACTORY_ENTRY(
     CheckArgCount(4),
     // Handling case: thrust::for_each(policy, device.begin(), device.end(), f);
     CONDITIONAL_FACTORY_ENTRY(
-        makeCheckAnd(CheckArgType(0, "thrust::cuda_cub::par_nosync"),
-                     checkEnableExtDPLAsyncAPI()),
-        CALL_FACTORY_ENTRY("thrust::for_each",
-                           CALL("oneapi::dpl::experimental::for_each_async",
-                                ARG("oneapi::dpl::execution::par_unseq"),
-                                ARG(1), ARG(2), THRUST_FUNCTOR(3))),
+        makeCheckAnd(makeCheckAnd(CheckArgType(0,
+                                               "thrust::cuda_cub::par_nosync"),
+                                  checkEnableExtDPLAsyncAPI()),
+                     CheckArgType(1, "thrust::device_ptr")),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPL_Async,
+            CALL_FACTORY_ENTRY(
+                "thrust::for_each",
+                CALL("oneapi::dpl::experimental::for_each_async",
+                     CALL("oneapi::dpl::execution::make_device_policy",
+                          QUEUESTR),
+                     ARG(1), ARG(2), THRUST_FUNCTOR(3)))),
         CALL_FACTORY_ENTRY("thrust::for_each",
                            CALL("std::for_each", makeMappedThrustPolicyEnum(0),
                                 ARG(1), ARG(2), THRUST_FUNCTOR(3)))),
