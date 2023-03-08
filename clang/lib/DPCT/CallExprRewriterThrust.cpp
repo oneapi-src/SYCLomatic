@@ -257,7 +257,7 @@ std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>> thrustOverl
 
   auto usm = (overload.hasPolicy ?
               std::pair{thrustFunc, createMappedPolicyCallExprRewriterFactory(thrustFunc,overload.migratedFunc,overload.argCnt)} :
-              createConditionalFactory(CheckArgType(1, "thrust::device_ptr"),
+              createConditionalFactory(CheckThrustArgType(1, "thrust::device_ptr"),
                                        {thrustFunc, createDevicePolicyCallExprRewriterFactory(thrustFunc,overload.migratedFunc,overload.argCnt,0,overload.hasPolicy)},
                                        {thrustFunc, createSequentialPolicyCallExprRewriterFactory(thrustFunc,overload.migratedFunc,overload.argCnt,overload.hasPolicy)}));
 
