@@ -29,9 +29,6 @@ set "PATH=%~dp0..\bin;%PATH%"
 set "INCLUDE=%~dp0..\include;%INCLUDE%"
 set "CPATH=%~dp0..\include;%CPATH%"
 
-set "VS_TARGET_ARCH=x64"
-set "INTEL_TARGET_ARCH=intel64"
-
 :ParseArgs
 rem Parse the incoming arguments
 if /i [%1] == []         goto EndParseArgs
@@ -42,6 +39,23 @@ if /i [%1] == [vs2019]   (set TARGET_VS=vs2019)
 if /i [%1] == [vs2022]   (set TARGET_VS=vs2022)
 shift & goto ParseArgs
 :EndParseArgs
+
+:CheckArgs
+:: set correct defaults
+if /i "%INTEL_TARGET_ARCH%" == "" (set INTEL_TARGET_ARCH=intel64) & (set VS_TARGET_ARCH=amd64)
+
+if defined VSCMD_VER (
+    if /i "%VSCMD_ARG_TGT_ARCH%" == "x86" (
+        :: Skip VS configure if Visual Studio is configured for 32-bit development environment.
+        echo  Visual Studio is configured for 32-bit development environment.
+        echo  The compatibility tool requires a 64-bit development environment.
+        set ERRORSTATE=1
+        goto End
+    ) else (
+        :: Skip VS configure if Visual Studio is configured for 64-bit development environment.
+        goto End
+    )
+)
 
 
 rem ===========================================================================
