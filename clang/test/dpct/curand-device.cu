@@ -154,7 +154,7 @@ int foo() {
 
 //CHECK:void kernel(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *state) {
 //CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1105:{{[0-9]+}}: The mcg59 random number generator is used. The subsequence argument is removed or set to 0. You need to verify the migration.
+//CHECK-NEXT:  DPCT1105:{{[0-9]+}}: The mcg59 random number generator is used. The subsequence argument is treated as 0. You need to verify the migration.
 //CHECK-NEXT:  */
 //CHECK-NEXT:  *state = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>(1111, 0);
 //CHECK-NEXT:  float rand = state->generate<oneapi::mkl::rng::device::uniform<float>, 1>();
