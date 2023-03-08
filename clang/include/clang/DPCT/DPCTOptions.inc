@@ -373,7 +373,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
              DPCT_OPT_ENUM("user-defined-reductions", int(ExperimentalFeatures::Exp_UserDefineReductions),
         "Experimental extension that allows user define reductions.\n",
         false),
-             DPCT_OPT_ENUM("DPL_async", int(ExperimentalFeatures::Exp_DPLAsync),
+             DPCT_OPT_ENUM("async-dpl-algorithm", int(ExperimentalFeatures::Exp_AsyncDPLAlgorithm),
         "Experimental extension that allows DPL Async API.\n",
         false)
            ),

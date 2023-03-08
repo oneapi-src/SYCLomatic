@@ -1789,7 +1789,7 @@ public:
     return getUsingExperimental<ExperimentalFeatures::Exp_UserDefineReductions>();
   }
   static bool useExtDPLAsyncAPI() {
-    return getUsingExperimental<ExperimentalFeatures::Exp_DPLAsync>();
+    return getUsingExperimental<ExperimentalFeatures::Exp_AsyncDPLAlgorithm>();
   }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
