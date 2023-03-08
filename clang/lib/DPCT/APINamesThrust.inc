@@ -1432,24 +1432,30 @@ CONDITIONAL_FACTORY_ENTRY(
 
 // thrust::for_each
 CONDITIONAL_FACTORY_ENTRY(
-  CheckArgCount(4),
-  //Handling case: thrust::for_each(policy, device.begin(), device.end(), f);
-  CALL_FACTORY_ENTRY("thrust::for_each",
-                      CALL("std::for_each",
-                            makeMappedThrustPolicyEnum(0),
-                            ARG(1), ARG(2), THRUST_FUNCTOR(3))),
-  //Handling case: thrust::for_each(host.begin(), host.end(), f);
-  CONDITIONAL_FACTORY_ENTRY(
-    CheckArgType(0, "thrust::device_ptr"),
-    CALL_FACTORY_ENTRY("thrust::for_each",
-                       CALL("std::for_each",
-                            CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                            ARG(0), ARG(1), THRUST_FUNCTOR(2))),
-    CALL_FACTORY_ENTRY("thrust::for_each",
-                       CALL("std::for_each",
-                            ARG("oneapi::dpl::execution::seq"),
-                            ARG(0), ARG(1), THRUST_FUNCTOR(2))))
-)
+    CheckArgCount(4),
+    // Handling case: thrust::for_each(policy, device.begin(), device.end(), f);
+    CONDITIONAL_FACTORY_ENTRY(
+        makeCheckAnd(CheckArgType(0, "thrust::cuda_cub::par_nosync"),
+                     checkEnableExtDPLAsyncAPI()),
+        CALL_FACTORY_ENTRY("thrust::for_each",
+                           CALL("oneapi::dpl::experimental::for_each_async",
+                                ARG("oneapi::dpl::execution::par_unseq"),
+                                ARG(1), ARG(2), THRUST_FUNCTOR(3))),
+        CALL_FACTORY_ENTRY("thrust::for_each",
+                           CALL("std::for_each", makeMappedThrustPolicyEnum(0),
+                                ARG(1), ARG(2), THRUST_FUNCTOR(3)))),
+    // Handling case: thrust::for_each(host.begin(), host.end(), f);
+    CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(0, "thrust::device_ptr"),
+        CALL_FACTORY_ENTRY(
+            "thrust::for_each",
+            CALL("std::for_each",
+                 CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                 ARG(0), ARG(1), THRUST_FUNCTOR(2))),
+        CALL_FACTORY_ENTRY("thrust::for_each",
+                           CALL("std::for_each",
+                                ARG("oneapi::dpl::execution::seq"), ARG(0),
+                                ARG(1), THRUST_FUNCTOR(2)))))
 
 // thrust::transform
 CONDITIONAL_FACTORY_ENTRY(
