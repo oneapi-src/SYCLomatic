@@ -49,7 +49,7 @@ inline void mkl_get_version(version_field field, int *result) {
   }
 }
 
-enum class library_data_t : unsigned char {
+enum library_data_t {
   real_float = 0,
   complex_float,
   real_double,

@@ -35,7 +35,9 @@ CONDITIONAL_FACTORY_ENTRY(
     CheckEnumArgStr(4, "ncclAvg"),
     UNSUPPORT_FACTORY_ENTRY("ncclAllReduce", Diagnostics::UNSUPPORTED_PARAM,
                             ARG(4)),
-    CALL_FACTORY_ENTRY("ncclAllReduce",
-                       CALL("oneapi::ccl::allreduce", ARG(0), ARG(1), ARG(2),
-                            ARG(3), ARG(4), DEREF(5),
-                            CALL("oneapi::ccl::create_stream", STREAM(6)))))
+    CALL_FACTORY_ENTRY(
+        "ncclAllReduce",
+        CALL("oneapi::ccl::allreduce", ARG(0), ARG(1), ARG(2),
+             CALL(MapNames::getDpctNamespace() + "ccl::to_ccl_datatype",
+                  ARG(3)),
+             ARG(4), DEREF(5), CALL("oneapi::ccl::create_stream", STREAM(6)))))

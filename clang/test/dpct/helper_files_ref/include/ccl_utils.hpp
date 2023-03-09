@@ -14,6 +14,8 @@
 #include <unordered_map>
 #include <memory>
 
+#include "lib_common_utils.hpp"
+
 namespace dpct {
 namespace ccl {
 namespace detail {
@@ -33,6 +35,32 @@ get_kvs(const oneapi::ccl::kvs::address_type &addr) {
 }
 
 } // namespace detail
+
+/// Convert dpct::library_data_t to oneapi::ccl::datatype.
+inline oneapi::ccl::datatype to_ccl_datatype(dpct::library_data_t dt) {
+  switch (dt) {
+  case dpct::library_data_t::real_int8:
+    return oneapi::ccl::datatype::int8;
+  case dpct::library_data_t::real_uint8:
+    return oneapi::ccl::datatype::uint8;
+  case dpct::library_data_t::real_int32:
+    return oneapi::ccl::datatype::int32;
+  case dpct::library_data_t::real_uint32:
+    return oneapi::ccl::datatype::uint32;
+  case dpct::library_data_t::real_int64:
+    return oneapi::ccl::datatype::int6;
+  case dpct::library_data_t::real_half:
+    return oneapi::ccl::datatype::float16;
+  case dpct::library_data_t::real_float:
+    return oneapi::ccl::datatype::float32;
+  case dpct::library_data_t::real_double:
+    return oneapi::ccl::datatype::float64;
+  case dpct::library_data_t::real_bfloat16:
+    return oneapi::ccl::datatype::bfloat16;
+  default:
+    throw std::runtime_error("to_dnnl_data_type: unsupported data type.");
+  }
+}
 
 /// Get concatenated library version as an integer.
 static inline int get_version() {
