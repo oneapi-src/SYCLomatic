@@ -745,6 +745,68 @@ MATH_API_REWRITER_HOST_DEVICE(
             EMPTY_FACTORY_ENTRY("abs"), EMPTY_FACTORY_ENTRY("abs"),
             EMPTY_FACTORY_ENTRY("abs"))))
 
+MATH_API_REWRITER_DEVICE(
+    "llmax",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("llmax"), EMPTY_FACTORY_ENTRY("llmax"),
+        EMPTY_FACTORY_ENTRY("llmax"),
+        CALL_FACTORY_ENTRY("llmax",
+                           CALL(MapNames::getClNamespace(false, true) + "max",
+                                CAST_IF_NEED(LITERAL("long long"), ARG(0)),
+                                CAST_IF_NEED(LITERAL("long long"), ARG(1))))))
+
+MATH_API_REWRITER_DEVICE(
+    "llmin",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("llmin"), EMPTY_FACTORY_ENTRY("llmin"),
+        EMPTY_FACTORY_ENTRY("llmin"),
+        CALL_FACTORY_ENTRY("llmin",
+                           CALL(MapNames::getClNamespace(false, true) + "min",
+                                CAST_IF_NEED(LITERAL("long long"), ARG(0)),
+                                CAST_IF_NEED(LITERAL("long long"), ARG(1))))))
+
+MATH_API_REWRITER_DEVICE(
+    "ullmax",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("ullmax"), EMPTY_FACTORY_ENTRY("ullmax"),
+        EMPTY_FACTORY_ENTRY("ullmax"),
+        CALL_FACTORY_ENTRY(
+            "ullmax",
+            CALL(MapNames::getClNamespace(false, true) + "max",
+                 CAST_IF_NEED(LITERAL("unsigned long long"), ARG(0)),
+                 CAST_IF_NEED(LITERAL("unsigned long long"), ARG(1))))))
+
+MATH_API_REWRITER_DEVICE(
+    "ullmin",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("ullmin"), EMPTY_FACTORY_ENTRY("ullmin"),
+        EMPTY_FACTORY_ENTRY("ullmin"),
+        CALL_FACTORY_ENTRY(
+            "ullmin",
+            CALL(MapNames::getClNamespace(false, true) + "min",
+                 CAST_IF_NEED(LITERAL("unsigned long long"), ARG(0)),
+                 CAST_IF_NEED(LITERAL("unsigned long long"), ARG(1))))))
+
+MATH_API_REWRITER_DEVICE(
+    "umax",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("umax"), EMPTY_FACTORY_ENTRY("umax"),
+        EMPTY_FACTORY_ENTRY("umax"),
+        CALL_FACTORY_ENTRY(
+            "umax", CALL(MapNames::getClNamespace(false, true) + "max",
+                         CAST_IF_NEED(LITERAL("unsigned int"), ARG(0)),
+                         CAST_IF_NEED(LITERAL("unsigned int"), ARG(1))))))
+
+MATH_API_REWRITER_DEVICE(
+    "umin",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("umin"), EMPTY_FACTORY_ENTRY("umin"),
+        EMPTY_FACTORY_ENTRY("umin"),
+        CALL_FACTORY_ENTRY(
+            "umin", CALL(MapNames::getClNamespace(false, true) + "min",
+                         CAST_IF_NEED(LITERAL("unsigned int"), ARG(0)),
+                         CAST_IF_NEED(LITERAL("unsigned int"), ARG(1))))))
+
 // C++ API Routines
 MATH_API_REWRITER_DEVICE(
     "saturate",

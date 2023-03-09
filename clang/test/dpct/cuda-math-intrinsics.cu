@@ -2488,6 +2488,55 @@ __global__ void testIntegerFunctions() {
   i = abs(i);
   l = labs(l);
   ll = llabs(ll);
+
+  // CHECK: ll = sycl::max(ll, ll);
+  // CHECK-NEXT: ll = sycl::max(ll, (long long)l);
+  // CHECK-NEXT: ll = sycl::max((long long)l, ll);
+  // CHECK-NEXT: ll = sycl::max((long long)l, (long long)l);
+  // CHECK-NEXT: ll = sycl::min(ll, ll);
+  // CHECK-NEXT: ll = sycl::min(ll, (long long)l);
+  // CHECK-NEXT: ll = sycl::min((long long)l, ll);
+  // CHECK-NEXT: ll = sycl::min((long long)l, (long long)l);
+  // CHECK-NEXT: ull = sycl::max(ull, ull);
+  // CHECK-NEXT: ull = sycl::max((unsigned long long)ll, ull);
+  // CHECK-NEXT: ull = sycl::max(ull, (unsigned long long)ll);
+  // CHECK-NEXT: ull = sycl::max((unsigned long long)ll, (unsigned long long)ll);
+  // CHECK-NEXT: ull = sycl::min(ull, ull);
+  // CHECK-NEXT: ull = sycl::min(ull, (unsigned long long)ll);
+  // CHECK-NEXT: ull = sycl::min((unsigned long long)ll, ull);
+  // CHECK-NEXT: ull = sycl::min((unsigned long long)ll, (unsigned long long)ll);
+  // CHECK-NEXT: u = sycl::max(u, u);
+  // CHECK-NEXT: u = sycl::max((unsigned int)i, u);
+  // CHECK-NEXT: u = sycl::max(u, (unsigned int)i);
+  // CHECK-NEXT: u = sycl::max((unsigned int)i, (unsigned int)i);
+  // CHECK-NEXT: u = sycl::min(u, u);
+  // CHECK-NEXT: u = sycl::min(u, (unsigned int)i);
+  // CHECK-NEXT: u = sycl::min((unsigned int)i, u);
+  // CHECK-NEXT: u = sycl::min((unsigned int)i, (unsigned int)i);
+  ll = llmax(ll, ll);
+  ll = llmax(ll, l);
+  ll = llmax(l, ll);
+  ll = llmax(l, l);
+  ll = llmin(ll, ll);
+  ll = llmin(ll, l);
+  ll = llmin(l, ll);
+  ll = llmin(l, l);
+  ull = ullmax(ull, ull);
+  ull = ullmax(ll, ull);
+  ull = ullmax(ull, ll);
+  ull = ullmax(ll, ll);
+  ull = ullmin(ull, ull);
+  ull = ullmin(ull, ll);
+  ull = ullmin(ll, ull);
+  ull = ullmin(ll, ll);
+  u = umax(u, u);
+  u = umax(i, u);
+  u = umax(u, i);
+  u = umax(i, i);
+  u = umin(u, u);
+  u = umin(u, i);
+  u = umin(i, u);
+  u = umin(i, i);
 }
 
 void testTypecasts() {
