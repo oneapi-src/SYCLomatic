@@ -91,7 +91,7 @@ inline oneapi::ccl::datatype to_ccl_datatype(dpct::library_data_t dt) {
   case dpct::library_data_t::real_uint32:
     return oneapi::ccl::datatype::uint32;
   case dpct::library_data_t::real_int64:
-    return oneapi::ccl::datatype::int6;
+    return oneapi::ccl::datatype::int64;
   case dpct::library_data_t::real_half:
     return oneapi::ccl::datatype::float16;
   case dpct::library_data_t::real_float:
