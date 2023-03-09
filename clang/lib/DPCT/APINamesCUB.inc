@@ -1754,8 +1754,8 @@ FEATURE_REQUEST_FACTORY(
 #endif
 
 // cub::IADD3
-CALL_FACTORY_ENTRY(
-    "cub::IADD3",
-    CALL(TEMPLATED_CALLEE_WITH_ARGS("static_cast", LITERAL("unsigned")),
-         BO(BinaryOperatorKind::BO_Add,
-            BO(BinaryOperatorKind::BO_Add, ARG(0), ARG(1)), ARG(2))))
+CALL_FACTORY_ENTRY("cub::IADD3",
+                   CALL(TEMPLATED_NAME("static_cast", LITERAL("unsigned")),
+                        BO(BinaryOperatorKind::BO_Add,
+                           BO(BinaryOperatorKind::BO_Add, ARG(0), ARG(1)),
+                           ARG(2))))
