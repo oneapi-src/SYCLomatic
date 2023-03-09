@@ -3582,3 +3582,20 @@ CONDITIONAL_FACTORY_ENTRY(
     )
   )
 )
+
+// thrust::copy
+CONDITIONAL_FACTORY_ENTRY(
+    CheckArgCount(3),
+    CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(0, "thrust::device_ptr"),
+        CALL_FACTORY_ENTRY(
+            "thrust::copy",
+            CALL("std::copy",
+                 CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                 ARG(0), ARG(1), ARG(2))),
+        CALL_FACTORY_ENTRY("thrust::copy",
+                           CALL("std::copy", ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), ARG(2)))),
+    CALL_FACTORY_ENTRY("thrust::copy",
+                       CALL("std::copy", makeMappedThrustPolicyEnum(0), ARG(1),
+                            ARG(2), ARG(3))))
