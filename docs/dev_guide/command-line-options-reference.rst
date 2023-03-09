@@ -308,8 +308,7 @@ in alphabetical order.
 Deprecated Command Line Options
 -------------------------------
 
-The following table lists |tool_name| command line options that are 
-currently deprecated.
+The following table lists |tool_name| command line options that are deprecated.
 
 .. list-table::
    :widths: 50 50
@@ -318,26 +317,24 @@ currently deprecated.
    * - Deprecated Option
      - Suggested Replacement
    * - .. include:: /_include_files/options_def.rst
+          :start-after: opt-change-filename-extension:
+          :end-before: desc-change-filename-extension:
+     - .. include:: /_include_files/options_def.rst
+          :start-after: opt-change-cuda-files-extension-only:
+          :end-before: desc-change-cuda-files-extension-only:
+   * - .. include:: /_include_files/options_def.rst
+          :start-after: opt-custom-helper-name:
+          :end-before: desc-custom-helper-name:
+     - No replacement
+   * - .. include:: /_include_files/options_def.rst
           :start-after: opt-no-cl-namespace-inline:
           :end-before: desc-no-cl-namespace-inline:
      - .. include:: /_include_files/options_def.rst
           :start-after: opt-use-explicit-namespace:
           :end-before: desc-use-explicit-namespace:
+   * - .. include:: /_include_files/options_def.rst
+          :start-after: opt-use-custom-helper:
+          :end-before: desc-use-custom-helper:
+     - No replacement
 
-
-Source Files
-------------
-
-To work with source files use ``<source0> ...`` to create paths
-for your input source files. These paths can be found in the
-compilation database.
-
-Examples:
-
--  Migrate single source file: ``dpct source.cpp``
--  Migrate single source file with C++11 features:
-   ``dpct --extra-arg="-std=c++11" source.cpp``
--  Migrate all files available in compilation database:
-   ``dpct -p=<path to location of compilation database file>``
--  Migrate one file in compilation database:
-   ``dpct -p=<path to location of compilation database file> source.cpp``
+     
