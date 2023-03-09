@@ -189,14 +189,31 @@ template <typename T> inline int ffs(T a) {
   return (sycl::ctz(a) + 1) % (sizeof(T) * 8 + 1);
 }
 
+/// Performs half comparison.
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] binary_op functor that implements the binary operation
+/// \returns the comparison result
+template <class BinaryOperation>
+inline bool compare_half(const sycl::half a, const sycl::half b,
+                         const BinaryOperation binary_op) {
+  return binary_op(a, b);
+}
+template <>
+inline bool
+compare_half<std::not_equal_to<>>(const sycl::half a, const sycl::half b,
+                                  const std::not_equal_to<> binary_op) {
+  return !sycl::isnan(a) && !sycl::isnan(b) && binary_op(a, b);
+}
+
 /// Performs half unordered comparison.
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] binary_op functor that implements the binary operation
 /// \returns the comparison result
 template <class BinaryOperation>
-inline bool half_unordered_compare(const sycl::half &a, const sycl::half &b,
-                                   const BinaryOperation &binary_op) {
+inline bool unordered_compare_half(const sycl::half a, const sycl::half b,
+                                   const BinaryOperation binary_op) {
   return sycl::isnan(a) || sycl::isnan(b) || binary_op(a, b);
 }
 
@@ -206,14 +223,10 @@ inline bool half_unordered_compare(const sycl::half &a, const sycl::half &b,
 /// \param [in] binary_op functor that implements the binary operation
 /// \returns the comparison result
 template <class BinaryOperation>
-inline bool half2_both_compare(const sycl::half2 &a, const sycl::half2 &b,
-                               const BinaryOperation &binary_op) {
-  if constexpr (std::is_same_v<BinaryOperation, std::not_equal_to<>>) {
-    // Notice: not equal compare need consider 'isnan'.
-    return !half_unordered_compare(a.s0(), b.s0(), std::equal_to<>()) &&
-           !half_unordered_compare(a.s1(), b.s1(), std::equal_to<>());
-  }
-  return binary_op(a.s0(), b.s0()) && binary_op(a.s1(), b.s1());
+inline bool compare_both_half2(const sycl::half2 a, const sycl::half2 b,
+                               const BinaryOperation binary_op) {
+  return compare_half(a.x(), b.x(), binary_op) &&
+         compare_half(a.y(), b.y(), binary_op);
 }
 
 /// Performs half2 unordered comparison and return a bool value.
@@ -222,11 +235,11 @@ inline bool half2_both_compare(const sycl::half2 &a, const sycl::half2 &b,
 /// \param [in] binary_op functor that implements the binary operation
 /// \returns the comparison result
 template <class BinaryOperation>
-inline bool half2_both_unordered_compare(const sycl::half2 &a,
-                                         const sycl::half2 &b,
-                                         const BinaryOperation &binary_op) {
-  return half_unordered_compare(a.s0(), b.s0(), binary_op) &&
-         half_unordered_compare(a.s1(), b.s1(), binary_op);
+inline bool unordered_compare_both_half2(const sycl::half2 a,
+                                         const sycl::half2 b,
+                                         const BinaryOperation binary_op) {
+  return unordered_compare_half(a.x(), b.x(), binary_op) &&
+         unordered_compare_half(a.y(), b.y(), binary_op);
 }
 
 /// Performs half2 comparison and return a half2 value.
@@ -235,17 +248,10 @@ inline bool half2_both_unordered_compare(const sycl::half2 &a,
 /// \param [in] binary_op functor that implements the binary operation
 /// \returns the comparison result
 template <class BinaryOperation>
-inline sycl::half2 half2_compare(const sycl::half2 &a, const sycl::half2 &b,
-                                 const BinaryOperation &binary_op) {
-  if constexpr (std::is_same_v<BinaryOperation, std::not_equal_to<>>) {
-    // Notice: not equal compare need consider 'isnan'.
-    return {!half_unordered_compare(a.s0(), b.s0(), std::equal_to<>()) ? 1.0f
-                                                                       : 0.f,
-            !half_unordered_compare(a.s1(), b.s1(), std::equal_to<>()) ? 1.0f
-                                                                       : 0.f};
-  }
-  return {binary_op(a.s0(), b.s0()) ? 1.0f : 0.f,
-          binary_op(a.s1(), b.s1()) ? 1.0f : 0.f};
+inline sycl::half2 compare_half2(const sycl::half2 a, const sycl::half2 b,
+                                 const BinaryOperation binary_op) {
+  return {compare_half(a.x(), b.x(), binary_op),
+          compare_half(a.y(), b.y(), binary_op)};
 }
 
 /// Performs half2 unordered comparison and return a half2 value.
@@ -254,18 +260,18 @@ inline sycl::half2 half2_compare(const sycl::half2 &a, const sycl::half2 &b,
 /// \param [in] binary_op functor that implements the binary operation
 /// \returns the comparison result
 template <class BinaryOperation>
-inline sycl::half2 half2_unordered_compare(const sycl::half2 &a,
-                                           const sycl::half2 &b,
-                                           const BinaryOperation &binary_op) {
-  return {half_unordered_compare(a.s0(), b.s0(), binary_op) ? 1.0f : 0.f,
-          half_unordered_compare(a.s1(), b.s1(), binary_op) ? 1.0f : 0.f};
+inline sycl::half2 unordered_compare_half2(const sycl::half2 a,
+                                           const sycl::half2 b,
+                                           const BinaryOperation binary_op) {
+  return {unordered_compare_half(a.x(), b.x(), binary_op),
+          unordered_compare_half(a.y(), b.y(), binary_op)};
 }
 
 /// Determine whether half2 is NaN and return a half2 value.
 /// \param [in] h The half value
 /// \returns the comparison result
-inline sycl::half2 half2_isnan(const sycl::half2 &h) {
-  return {sycl::isnan(h.s0()) ? 1.0f : 0.f, sycl::isnan(h.s1()) ? 1.0f : 0.f};
+inline sycl::half2 half2_isnan(const sycl::half2 h) {
+  return {sycl::isnan(h.x()), sycl::isnan(h.y())};
 }
 } // namespace dpct
 
