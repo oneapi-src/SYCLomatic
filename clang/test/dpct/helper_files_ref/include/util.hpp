@@ -430,12 +430,9 @@ T select_from_sub_group(unsigned int member_mask,
       start_index + remote_local_id % logical_sub_group_size;
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
 #if defined(__SPIR__)
-  if ((1 << g.get_local_linear_id()) & member_mask) {
-    return __spirv_GroupNonUniformShuffle(__spv::Scope::Subgroup, x, logical_remote_id);
-  }
-  return x;
+  return __spirv_GroupNonUniformShuffle(__spv::Scope::Subgroup, x, logical_remote_id);
 #elif defined(__NVPTX__)
-   return __nvvm_shfl_sync_idx_i32(member_mask, x, logical_remote_id, 0x1f);
+  return __nvvm_shfl_sync_idx_i32(member_mask, x, logical_remote_id, 0x1f);
 #else
   #error "Masked version of select_from_sub_group only supports SPIR-V and NVPTX backends"
 #endif // __SPIR__
@@ -469,14 +466,11 @@ T shift_sub_group_left(unsigned int member_mask,
       (id / logical_sub_group_size + 1) * logical_sub_group_size;
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
 #if defined(__SPIR__)
-  if ((1 << g.get_local_linear_id()) & member_mask) {
-    T result = __spirv_GroupNonUniformShuffleDown(__spv::Scope::Subgroup, x, delta);
-    if ((id + delta) >= end_index) {
-      result = x;
-    }
-    return result;
+  T result = __spirv_GroupNonUniformShuffleDown(__spv::Scope::Subgroup, x, delta);
+  if ((id + delta) >= end_index) {
+    result = x;
   }
-  return x;
+  return result;
 #elif defined(__NVPTX__)
   return __nvvm_shfl_sync_down_i32(member_mask, x, delta, 0x1f);
 #else
@@ -512,16 +506,12 @@ T shift_sub_group_right(unsigned int member_mask,
       id / logical_sub_group_size * logical_sub_group_size;
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
 #if defined(__SPIR__)
-  if ((1 << g.get_local_linear_id()) & member_mask) {
-    T result = __spirv_GroupNonUniformShuffleUp(__spv::Scope::Subgroup, x, delta);
-    if ((id - start_index) < delta) {
-      result = x;
-    }
-    return result;
+  T result = __spirv_GroupNonUniformShuffleUp(__spv::Scope::Subgroup, x, delta);
+  if ((id - start_index) < delta) {
+    result = x;
   }
-  return x;
+  return result;
 #elif defined(__NVPTX__)
-   // TODO: May need to call this twice for 64-bit types
   return __nvvm_shfl_sync_up_i32(member_mask, x, delta, 0);
 #else
   #error "Masked version of shift_sub_group_right only supports SPIR-V and NVPTX backends"
@@ -558,13 +548,9 @@ T permute_sub_group_by_xor(unsigned int member_mask,
   unsigned logical_remote_id = (target_offset < logical_sub_group_size) ? start_index + target_offset : id;
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
 #if defined(__SPIR__)
-  if ((1 << g.get_local_linear_id()) & member_mask) {
-    return __spirv_GroupNonUniformShuffle(__spv::Scope::Subgroup, x, logical_remote_id);
-  }
-  return x;
+  return __spirv_GroupNonUniformShuffle(__spv::Scope::Subgroup, x, logical_remote_id);
 #elif defined(__NVPTX__)
-   // TODO: May need to call this twice for 64-bit types
-   return __nvvm_shfl_sync_idx_i32(member_mask, x, logical_remote_id, 0x1f);
+  return __nvvm_shfl_sync_idx_i32(member_mask, x, logical_remote_id, 0x1f);
 #else
   #error "Masked version of select_from_sub_group only supports SPIR-V and NVPTX backends"
 #endif // __SPIR__

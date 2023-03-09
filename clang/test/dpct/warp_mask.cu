@@ -16,7 +16,7 @@ __global__ void kernel1() {
   // CHECK: /*
   // CHECK: DPCT1107:{{[0-9]+}}: '__shfl_sync' was migrated with the experimental feature __shfl_sync which may not be supported by all compilers or runtimes. You may need to adjust the code.
   // CHECK: */
-  // CHECK: dpct::select_from_sub_group(mask, item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
+  // CHECK: dpct::experimental::select_from_sub_group(mask, item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
   __shfl_sync(mask, val, srcLane);
 }
 
@@ -27,7 +27,7 @@ __global__ void kernel2() {
   // CHECK: /*
   // CHECK: DPCT1107:{{[0-9]+}}: '__shfl_up_sync' was migrated with the experimental feature __shfl_up_sync which may not be supported by all compilers or runtimes. You may need to adjust the code.
   // CHECK: */
-  // CHECK: dpct::shift_sub_group_right(mask, item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
+  // CHECK: dpct::experimental::shift_sub_group_right(mask, item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
   __shfl_up_sync(mask, val, delta);
 }
 
@@ -38,7 +38,7 @@ __global__ void kernel3() {
   // CHECK: /*
   // CHECK: DPCT1107:{{[0-9]+}}: '__shfl_down_sync' was migrated with the experimental feature __shfl_down_sync which may not be supported by all compilers or runtimes. You may need to adjust the code.
   // CHECK: */
-  // CHECK: dpct::shift_sub_group_left(mask, item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
+  // CHECK: dpct::experimental::shift_sub_group_left(mask, item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
   __shfl_down_sync(mask, val, delta);
 }
 
@@ -49,7 +49,7 @@ __global__ void kernel4() {
   // CHECK: /*
   // CHECK: DPCT1107:{{[0-9]+}}: '__shfl_xor_sync' was migrated with the experimental feature __shfl_xor_sync which may not be supported by all compilers or runtimes. You may need to adjust the code.
   // CHECK: */
-  // CHECK: dpct::permute_sub_group_by_xor(mask, item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask);
+  // CHECK: dpct::experimental::permute_sub_group_by_xor(mask, item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask);
   __shfl_xor_sync(mask, val, laneMask);
 }
 
