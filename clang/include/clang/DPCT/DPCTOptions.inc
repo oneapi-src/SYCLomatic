@@ -374,7 +374,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
         "Experimental extension that allows user define reductions.\n",
         false),
              DPCT_OPT_ENUM("masked_sub_group_function", int(ExperimentalFeatures::Exp_MaskedSubGroupFunction),
-        "Experimental maksed sub_group call.\n",
+        "Experimental helper function used to help maksed sub_group call during migration.\n",
         false)
            ),
            llvm::cl::desc("Comma separated list of experimental features to be used in migrated "

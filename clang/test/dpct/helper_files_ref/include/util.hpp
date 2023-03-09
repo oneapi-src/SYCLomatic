@@ -16,7 +16,7 @@
 #include <cstdint>
 
 // TODO: Remove these function definitions once they exist in the DPC++ compiler
-#ifdef __SYCL_DEVICE_ONLY__
+#if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
 __SYCL_CONVERGENT__ extern SYCL_EXTERNAL __SYCL_EXPORT __ocl_vec_t<uint32_t, 4>
 __spirv_GroupNonUniformBallot(uint32_t Execution, bool Predicate) noexcept;
 
@@ -410,43 +410,6 @@ T permute_sub_group_by_xor(sycl::sub_group g, T x, unsigned int mask,
 }
 
 namespace experimental {
-namespace detail {
-#ifdef __SYCL_DEVICE_ONLY__
-template <typename Function>
-auto masked_sub_group_call(uint32_t Mask, sycl::sub_group G, Function F) -> std::invoke_result_t<Function> {
-  typename std::invoke_result_t<Function> Result;
-  uint32_t LocalId = G.get_local_linear_id();
-
-  // Check if work-item is in the mask passed to this function
-  // This branch is convergent, but allows for different Mask values
-  // TODO: Check if it is possible to remove this branch
-  if ((1 << LocalId) & Mask) {
-
-    // Loop until all work-items have called Function
-    // There may be multiple partitions active simultaneously
-    // This loop is still convergent
-    uint32_t ToDo = __spirv_GroupNonUniformBallot(__spv::Scope::Subgroup, true)[0];
-    while (ToDo) {
-      // Identify which mask will be processed in this iteration of the while loop
-      uint32_t First = __spirv_GroupNonUniformBallotFindLSB(__spv::Scope::Subgroup, ToDo);
-      uint32_t CurrentMask = __spirv_GroupNonUniformBroadcast(__spv::Scope::Subgroup, Mask, First);
-
-      // Call Function if work-item is in the mask currently being processed
-      if ((1 << LocalId) & CurrentMask) {
-        Result = F();
-      }
-
-      // Remove work-items which called Function from remaining work-items
-      ToDo &= ~CurrentMask;
-    }
-
-  }
-
-  return Result;
-}
-#endif // __SYCL_DEVICE_ONLY__
-}
-
 /// Masked version of select_from_sub_group. The parameter member_mask indicating 
 /// the work-items participating the call. Whether the n-th bit is set to 1 
 /// representing whether the work-item with id n is participating the call.
@@ -465,16 +428,16 @@ T select_from_sub_group(unsigned int member_mask,
       g.get_local_linear_id() / logical_sub_group_size * logical_sub_group_size;
   unsigned logical_remote_id =
       start_index + remote_local_id % logical_sub_group_size;
-#if defined(__SYCL_DEVICE_ONLY__)
+#if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
 #if defined(__SPIR__)
-  return detail::masked_sub_group_call(member_mask, g, [=]() {
-        return __spirv_GroupNonUniformShuffle(__spv::Scope::Subgroup, x, logical_remote_id);
-    });
+  if ((1 << g.get_local_linear_id()) & member_mask) {
+    return __spirv_GroupNonUniformShuffle(__spv::Scope::Subgroup, x, logical_remote_id);
+  }
+  return x;
 #elif defined(__NVPTX__)
-   // TODO: May need to call this twice for 64-bit types
-   return __nvvm_shfl_sync_idx_i32(mask, x, logical_remote_id, 0x1f);
+   return __nvvm_shfl_sync_idx_i32(member_mask, x, logical_remote_id, 0x1f);
 #else
-  #error "select_from_sub_group only supports SPIR-V and NVPTX backends"
+  #error "Masked version of select_from_sub_group only supports SPIR-V and NVPTX backends"
 #endif // __SPIR__
 #else
   (void)g;
@@ -482,8 +445,9 @@ T select_from_sub_group(unsigned int member_mask,
   (void)remote_local_id;
   (void)logical_sub_group_size;
   (void)member_mask;
-  throw sycl::exception(sycl::errc::runtime, "Not supported on host device.");
-#endif // __SYCL_DEVICE_ONLY__
+  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+                        "supported on host device and none intel compiler.");
+#endif // __SYCL_DEVICE_ONLY__ && __INTEL_LLVM_COMPILER
 }
 
 /// Masked version of shift_sub_group_left. The parameter member_mask indicating 
@@ -503,20 +467,20 @@ T shift_sub_group_left(unsigned int member_mask,
   unsigned int id = g.get_local_linear_id();
   unsigned int end_index =
       (id / logical_sub_group_size + 1) * logical_sub_group_size;
-#if defined(__SYCL_DEVICE_ONLY__)
+#if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
 #if defined(__SPIR__)
-  T result = detail::masked_sub_group_call(member_mask, g, [=]() {
-    return __spirv_GroupNonUniformShuffleDown(__spv::Scope::Subgroup, x, delta);
-  });
-  if ((id + delta) >= end_index) {
-    result = x;
+  if ((1 << g.get_local_linear_id()) & member_mask) {
+    T result = __spirv_GroupNonUniformShuffleDown(__spv::Scope::Subgroup, x, delta);
+    if ((id + delta) >= end_index) {
+      result = x;
+    }
+    return result;
   }
-  return result;
+  return x;
 #elif defined(__NVPTX__)
-   // TODO: May need to call this twice for 64-bit types
-  return __nvvm_shfl_sync_down_i32(mask, x, delta, 0x1f);
+  return __nvvm_shfl_sync_down_i32(member_mask, x, delta, 0x1f);
 #else
-  #error "shift_sub_group_left only supports SPIR-V and NVPTX backends"
+  #error "Masked version of shift_sub_group_left only supports SPIR-V and NVPTX backends"
 #endif // __SPIR__
 #else
   (void)g;
@@ -524,8 +488,9 @@ T shift_sub_group_left(unsigned int member_mask,
   (void)delta;
   (void)logical_sub_group_size;
   (void)member_mask;
-  throw sycl::exception(sycl::errc::runtime, "Not supported on host device.");
-#endif // __SYCL_DEVICE_ONLY__
+  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+                        "supported on host device and none intel compiler.");
+#endif // __SYCL_DEVICE_ONLY__ && __INTEL_LLVM_COMPILER
 }
 
 /// Masked version of shift_sub_group_right. The parameter member_mask indicating 
@@ -545,20 +510,21 @@ T shift_sub_group_right(unsigned int member_mask,
   unsigned int id = g.get_local_linear_id();
   unsigned int start_index =
       id / logical_sub_group_size * logical_sub_group_size;
-#if defined(__SYCL_DEVICE_ONLY__)
+#if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
 #if defined(__SPIR__)
-  T result = detail::masked_sub_group_call(member_mask, g, [=]() {
-    return __spirv_GroupNonUniformShuffleUp(__spv::Scope::Subgroup, x, delta);
-  });
-  if ((id - start_index) < delta) {
-    result = x;
+  if ((1 << g.get_local_linear_id()) & member_mask) {
+    T result = __spirv_GroupNonUniformShuffleUp(__spv::Scope::Subgroup, x, delta);
+    if ((id - start_index) < delta) {
+      result = x;
+    }
+    return result;
   }
-  return result;
+  return x;
 #elif defined(__NVPTX__)
    // TODO: May need to call this twice for 64-bit types
-  return __nvvm_shfl_sync_up_i32(mask, x, delta, 0);
+  return __nvvm_shfl_sync_up_i32(member_mask, x, delta, 0);
 #else
-  #error "shift_sub_group_right only supports SPIR-V and NVPTX backends"
+  #error "Masked version of shift_sub_group_right only supports SPIR-V and NVPTX backends"
 #endif // __SPIR__
 #else
   (void)g;
@@ -566,8 +532,9 @@ T shift_sub_group_right(unsigned int member_mask,
   (void)delta;
   (void)logical_sub_group_size;
   (void)member_mask;
-  throw sycl::exception(sycl::errc::runtime, "Not supported on host device.");
-#endif // __SYCL_DEVICE_ONLY
+  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+                        "supported on host device and none intel compiler.");
+#endif // __SYCL_DEVICE_ONLY && __INTEL_LLVM_COMPILER
 }
 
 /// Masked version of permute_sub_group_by_xor. The parameter member_mask indicating 
@@ -589,16 +556,17 @@ T permute_sub_group_by_xor(unsigned int member_mask,
       id / logical_sub_group_size * logical_sub_group_size;
   unsigned int target_offset = (id % logical_sub_group_size) ^ mask;
   unsigned logical_remote_id = (target_offset < logical_sub_group_size) ? start_index + target_offset : id;
-#if defined(__SYCL_DEVICE_ONLY__)
+#if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
 #if defined(__SPIR__)
-  return detail::masked_sub_group_call(member_mask, g, [=]() {
-        return __spirv_GroupNonUniformShuffle(__spv::Scope::Subgroup, x, logical_remote_id);
-    });
+  if ((1 << g.get_local_linear_id()) & member_mask) {
+    return __spirv_GroupNonUniformShuffle(__spv::Scope::Subgroup, x, logical_remote_id);
+  }
+  return x;
 #elif defined(__NVPTX__)
    // TODO: May need to call this twice for 64-bit types
-   return __nvvm_shfl_sync_idx_i32(mask, x, logical_remote_id, 0x1f);
+   return __nvvm_shfl_sync_idx_i32(member_mask, x, logical_remote_id, 0x1f);
 #else
-  #error "select_from_sub_group only supports SPIR-V and NVPTX backends"
+  #error "Masked version of select_from_sub_group only supports SPIR-V and NVPTX backends"
 #endif // __SPIR__
 #else
   (void)g;
@@ -606,8 +574,9 @@ T permute_sub_group_by_xor(unsigned int member_mask,
   (void)mask;
   (void)logical_sub_group_size;
   (void)member_mask;
-  throw sycl::exception(sycl::errc::runtime, "Not supported on host device.");
-#endif // __SYCL_DEVICE_ONLY__
+  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+                        "supported on host device and none intel compiler.");
+#endif // __SYCL_DEVICE_ONLY__ && __INTEL_LLVM_COMPILER
 }
 } // namespace experimental
 

@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/Util/api_test29_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Util/api_test29_out
 
-// CHECK: 7
+// CHECK: 6
 // TEST_FEATURE: Util_select_from_sub_group_mask
 // TEST_FEATURE: Util_shift_sub_group_right_mask
 // TEST_FEATURE: Util_shift_sub_group_left_mask
