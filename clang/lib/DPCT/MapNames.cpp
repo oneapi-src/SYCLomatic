@@ -431,6 +431,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cuda::std::complex", std::make_shared<TypeNameRule>("std::complex")},
       {"cuda::std::array", std::make_shared<TypeNameRule>("std::array")},
       {"cusolverEigRange_t", std::make_shared<TypeNameRule>("oneapi::mkl::rangev")},
+      {"cudaUUID_t", std::make_shared<TypeNameRule>("std::array<unsigned char, 16>")},
       // ...
   };
 
@@ -4228,6 +4229,8 @@ const MapNames::MapTy DeviceInfoVarRule::PropNamesMap{
     {"maxThreadsDim", "max_work_item_sizes"},
     {"memoryClockRate", "memory_clock_rate"},
     {"memoryBusWidth", "memory_bus_width"},
+    {"pciDeviceID", "device_id"},
+    {"uuid", "uuid"},
     // ...
 };
 
