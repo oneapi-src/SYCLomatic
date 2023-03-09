@@ -3,7 +3,8 @@
 // RUN: FileCheck --input-file %T/Image/api_test33_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Image/api_test33_out
 
-// CHECK: 28
+// CHECK: 29
+// TEST_FEATURE: Device_typedef_device_ptr
 // TEST_FEATURE: Image_image_data_set_data
 // TEST_FEATURE: Image_image_data_set_data_type
 // TEST_FEATURE: Image_image_data_set_channel_num

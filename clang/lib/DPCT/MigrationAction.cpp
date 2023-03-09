@@ -162,6 +162,8 @@ bool DpctToolAction::runInvocation(
     std::shared_ptr<CompilerInvocation> Invocation, FileManager *Files,
     std::shared_ptr<PCHContainerOperations> PCHContainerOps,
     DiagnosticConsumer *DiagConsumer) {
+  if(!Invocation)
+    return false;
   if (canCacheMoreTranslateUnit()) {
     bool Success;
     if (auto Info = createTranslationUnitInfo(Invocation, Success)) {

@@ -12,6 +12,36 @@
 namespace clang {
 namespace dpct {
 
+class CheckThrustArgType {
+  unsigned Idx;
+  std::string TypeName;
+
+public:
+  CheckThrustArgType(unsigned I, std::string Name) : Idx(I), TypeName(Name) {}
+  bool operator()(const CallExpr *C) {
+    std::string ArgType;
+    int NumArgs = C->getNumArgs();
+    if (Idx < NumArgs) {
+      ArgType = C->getArg(Idx)
+                    ->getType()
+                    .getCanonicalType()
+                    .getUnqualifiedType()
+                    .getAsString();
+    }
+
+    // template <class T>
+    // void foo_host(){
+    //  ...
+    //  thrust::remove_copy_if(A.begin(), A.end(), R.begin(), pred);
+    // }
+    // For the code above argument "A.begin()" has type <dependent type> in AST,
+    // we follow currrent solution assuming it a device iterator.
+    if (ArgType == "<dependent type>")
+      return true;
+    return ArgType.find(TypeName) != std::string::npos;
+  }
+};
+
 inline std::function<ThrustFunctor(const CallExpr *)>
 makeThrustFunctorArgCreator(unsigned Idx) {
   return [=](const CallExpr *C) -> ThrustFunctor {

@@ -138,6 +138,12 @@ int main(){
   // CHECK: MY_SAFE_CALL((result1 = dpct::dev_mgr::instance().get_device(device).get_max_compute_units(), 0));
   MY_SAFE_CALL(cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, device));
 
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1028:{{[0-9]+}}: The cuDeviceGetAttribute was not migrated because parameter CU_DEVICE_ATTRIBUTE_GPU_OVERLAP is unsupported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_GPU_OVERLAP, device);
+  cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_GPU_OVERLAP, device);
+
   // CHECK: result1 = dpct::dev_mgr::instance().get_device(device).get_major_version();
   // CHECK: result2 = dpct::dev_mgr::instance().get_device(device).get_minor_version();
   cuDeviceComputeCapability(&result1, &result2, device);

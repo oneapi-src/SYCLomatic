@@ -2200,6 +2200,15 @@ public:
   // will follow as comments. If NeedSizeFold is false, original size expression
   // will be the size string.
   CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold = false);
+  CtTypeInfo(const VarDecl *D, bool NeedSizeFold = false)
+    : CtTypeInfo(D->getTypeSourceInfo()->getTypeLoc(), NeedSizeFold) {
+    if (D &&
+        D->getTypeSourceInfo()
+          ->getTypeLoc().getTypeLocClass()
+        == TypeLoc::IncompleteArray)
+      if (auto CAT = dyn_cast<ConstantArrayType>(D->getType()))
+        Range[0] = std::to_string(CAT->getSize().getZExtValue());
+  }
 
   inline const std::string &getBaseName() { return BaseName; }
 
@@ -2297,10 +2306,9 @@ private:
 class VarInfo {
 public:
   VarInfo(unsigned Offset, const std::string &FilePathIn,
-          const DeclaratorDecl *Var, bool NeedFoldSize = false)
+          const VarDecl *Var, bool NeedFoldSize = false)
       : FilePath(FilePathIn), Offset(Offset), Name(Var->getName()),
-        Ty(std::make_shared<CtTypeInfo>(Var->getTypeSourceInfo()->getTypeLoc(),
-                                        NeedFoldSize)) {}
+        Ty(std::make_shared<CtTypeInfo>(Var, NeedFoldSize)) {}
 
   inline const std::string &getFilePath() { return FilePath; }
   inline unsigned getOffset() { return Offset; }
