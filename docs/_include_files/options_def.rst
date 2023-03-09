@@ -261,8 +261,8 @@ Any source within the directory specified by ``--in-root`` (at any nesting
 level) may be migrated. Any header file within the directory specified by
 ``--in-root`` (at any nesting level) included by the source or header file,
 which is being migrated, is also migrated. Files from outside the ``--in-root``
-directory are considered system files and they will not be migrated even
-if they are included by any of the program source files.
+directory will not be migrated even if they are included by any of the program
+source files.
 
 .. _end-in-root:
 
