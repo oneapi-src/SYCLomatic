@@ -168,7 +168,7 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   h2_2 = __hgt2(h2, h2_1);
   // CHECK: h2_2 = dpct::unordered_compare_half2(h2, h2_1, std::greater<>());
   h2_2 = __hgtu2(h2, h2_1);
-  // CHECK: h2_2 = dpct::half2_isnan(h2);
+  // CHECK: h2_2 = dpct::isnan(h2);
   h2_2 = __hisnan2(h2);
   // CHECK: h2_2 = dpct::compare_half2(h2, h2_1, std::less_equal<>());
   h2_2 = __hle2(h2, h2_1);

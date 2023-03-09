@@ -836,10 +836,10 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0)))),
         EMPTY_FACTORY_ENTRY("__hisnan2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_half2_isnan,
-            CALL_FACTORY_ENTRY("__hisnan2", CALL(MapNames::getDpctNamespace() +
-                                                     "half2_isnan",
-                                                 ARG(0))))))
+            HelperFeatureEnum::Math_isnan,
+            CALL_FACTORY_ENTRY("__hisnan2",
+                               CALL(MapNames::getDpctNamespace() + "isnan",
+                                    ARG(0))))))
 
 MATH_API_REWRITER_DEVICE(
     "__hle2",

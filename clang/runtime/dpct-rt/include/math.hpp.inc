@@ -239,12 +239,16 @@ template <typename T> inline T reverse_bits(T a) {
 /// specified by \p s from \p a and \p b
 inline unsigned int byte_level_permute(unsigned int a, unsigned int b,
                                        unsigned int s) {
-  unsigned int ret;
+  unsigned int ret = 0;
   std::uint64_t temp = (std::uint64_t)b << 32 | a;
-  ret = ((temp >> (s & 0x7) * 8) & 0xff) |
-        (((temp >> ((s >> 4) & 0x7) * 8) & 0xff) << 8) |
-        (((temp >> ((s >> 8) & 0x7) * 8) & 0xff) << 16) |
-        (((temp >> ((s >> 12) & 0x7) * 8) & 0xff) << 24);
+  // (temp >> (s & 0x7) * 8) & 0xff
+  ret |= (temp >> (s << 3 & 0x38)) & 0xff;
+  // ((temp >> ((s >> 4) & 0x7) * 8) & 0xff) << 8
+  ret |= (temp >> (s >> 1 & 0x38) << 8) & 0xff00;
+  // ((temp >> ((s >> 8) & 0x7) * 8) & 0xff) << 16
+  ret |= (temp >> (s >> 5 & 0x38) << 16) & 0xff0000;
+  // ((temp >> ((s >> 12) & 0x7) * 8) & 0xff) << 24
+  ret |= (temp >> (s >> 9 & 0x38) << 24) & 0xff000000;
   return ret;
 }
 // DPCT_LABEL_END
@@ -276,11 +280,9 @@ inline bool compare_half(const sycl::half a, const sycl::half b,
                          const BinaryOperation binary_op) {
   return binary_op(a, b);
 }
-template <>
-inline bool
-compare_half<std::not_equal_to<>>(const sycl::half a, const sycl::half b,
-                                  const std::not_equal_to<> binary_op) {
-  return !sycl::isnan(a) && !sycl::isnan(b) && binary_op(a, b);
+inline bool compare_half(const sycl::half a, const sycl::half b,
+                         const std::not_equal_to<> binary_op) {
+  return !sycl::isnan(a) && !sycl::isnan(b) && a != b;
 }
 // DPCT_LABEL_END
 
@@ -373,13 +375,13 @@ inline sycl::half2 unordered_compare_half2(const sycl::half2 a,
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|half2_isnan|dpct
+// DPCT_LABEL_BEGIN|isnan|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 /// Determine whether half2 is NaN and return a half2 value.
 /// \param [in] h The half value
 /// \returns the comparison result
-inline sycl::half2 half2_isnan(const sycl::half2 h) {
+inline sycl::half2 isnan(const sycl::half2 h) {
   return {sycl::isnan(h.x()), sycl::isnan(h.y())};
 }
 // DPCT_LABEL_END

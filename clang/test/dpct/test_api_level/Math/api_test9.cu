@@ -10,7 +10,7 @@
 // TEST_FEATURE: Math_unordered_compare_both_half2
 // TEST_FEATURE: Math_compare_half2
 // TEST_FEATURE: Math_unordered_compare_half2
-// TEST_FEATURE: Math_half2_isnan
+// TEST_FEATURE: Math_isnan
 
 #include "cuda_fp16.h"
 
