@@ -3395,7 +3395,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))),
       //Handling case: thrust::stable_partition_copy(iter, iter, iter, iter, pred);
       CONDITIONAL_FACTORY_ENTRY(
-        CheckArgType(1, "thrust::device_ptr"),
+        CheckThrustArgType(1, "thrust::device_ptr"),
         CALL_FACTORY_ENTRY("thrust::stable_partition_copy",
                           CALL(MapNames::getDpctNamespace() + "stable_partition_copy",
                                 CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
@@ -3456,7 +3456,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))),
         //Handling case: thrust::stable_partition_copy(itr, itr, itr, itr, itr, pred);
         CONDITIONAL_FACTORY_ENTRY(
-          CheckArgType(1, "thrust::device_ptr"),
+          CheckThrustArgType(1, "thrust::device_ptr"),
           FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_stable_partition_copy,
             CALL_FACTORY_ENTRY("thrust::stable_partition_copy",
                               CALL(MapNames::getDpctNamespace() + "stable_partition_copy",
@@ -3523,7 +3523,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 ARG(0), ARG(1), ARG(2)))),
       //Handling case: thrust::stable_partition(iter, iter, pred);
       CONDITIONAL_FACTORY_ENTRY(
-        CheckArgType(1, "thrust::device_ptr"),
+        CheckThrustArgType(1, "thrust::device_ptr"),
         CALL_FACTORY_ENTRY("thrust::stable_partition",
                           CALL("oneapi::dpl::stable_partition",
                                 CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
@@ -3580,7 +3580,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 ARG(1), ARG(2), ARG(3))),
         //Handling case: thrust::stable_partition(itr, itr, itr, itr, itr, pred);
         CONDITIONAL_FACTORY_ENTRY(
-          CheckArgType(1, "thrust::device_ptr"),
+          CheckThrustArgType(1, "thrust::device_ptr"),
           FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_stable_partition,
             CALL_FACTORY_ENTRY("thrust::stable_partition",
                               CALL(MapNames::getDpctNamespace() + "stable_partition",
