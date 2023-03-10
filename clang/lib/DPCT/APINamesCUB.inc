@@ -1755,7 +1755,23 @@ FEATURE_REQUEST_FACTORY(
 
 // cub::IADD3
 CALL_FACTORY_ENTRY("cub::IADD3",
-                   CALL(TEMPLATED_NAME("static_cast", LITERAL("unsigned")),
+                   CALL("",
                         BO(BinaryOperatorKind::BO_Add,
                            BO(BinaryOperatorKind::BO_Add, ARG(0), ARG(1)),
                            ARG(2))))
+
+// cub::SHR_ADD
+CALL_FACTORY_ENTRY("cub::SHR_ADD",
+                                CALL("",
+                                     BO(BinaryOperatorKind::BO_Add,
+                                        CALL("", BO(BinaryOperatorKind::BO_Shr,
+                                                    ARG(0), ARG(1))),
+                                        ARG(2))))
+
+// cub::SHL_ADD
+CALL_FACTORY_ENTRY("cub::SHL_ADD",
+                                CALL("",
+                                     BO(BinaryOperatorKind::BO_Add,
+                                        CALL("", BO(BinaryOperatorKind::BO_Shl,
+                                                    ARG(0), ARG(1))),
+                                        ARG(2))))
