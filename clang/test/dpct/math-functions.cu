@@ -92,19 +92,19 @@ int main() {
     DECLARE2I
     DECLARE2LD
 
-    // CHECK: f_b = fmaxf(f_a, f_b);
+    // CHECK: f_b = max(f_a, f_b);
     f_b = max(f_a, f_b);
 
-    // CHECK: d_b = fmax(d_a, d_b);
+    // CHECK: d_b = max(d_a, d_b);
     d_b = max(d_a, d_b);
 
-    // CHECK: u_b = std::max(u_a, u_b);
+    // CHECK: u_b = max(u_a, u_b);
     u_b = max(u_a, u_b);
 
-    // CHECK: i_b = std::max(i_a, i_b);
+    // CHECK: i_b = max(i_a, i_b);
     i_b = max(i_a, i_b);
 
-    // CHECK: ld_b = fmaxl(ld_a, ld_b);
+    // CHECK: ld_b = max(ld_a, ld_b);
     ld_b = max(ld_a, ld_b);
 
     // TODO: Check more primitive type and vector types
@@ -119,19 +119,19 @@ int main() {
     DECLARE2I
     DECLARE2LD
 
-    // CHECK: f_b = fminf(f_a, f_b);
+    // CHECK: f_b = min(f_a, f_b);
     f_b = min(f_a, f_b);
 
-    // CHECK: d_b = fmin(d_a, d_b);
+    // CHECK: d_b = min(d_a, d_b);
     d_b = min(d_a, d_b);
 
-    // CHECK: u_b = std::min(u_a, u_b);
+    // CHECK: u_b = min(u_a, u_b);
     u_b = min(u_a, u_b);
 
-    // CHECK: i_b = std::min(i_a, i_b);
+    // CHECK: i_b = min(i_a, i_b);
     i_b = min(i_a, i_b);
 
-    // CHECK: ld_b = fminl(ld_a, ld_b);
+    // CHECK: ld_b = min(ld_a, ld_b);
     ld_b = min(ld_a, ld_b);
 
     // TODO: Check more primitive type and vector types

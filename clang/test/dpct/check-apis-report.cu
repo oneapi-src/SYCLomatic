@@ -130,6 +130,5 @@ void SVMTrain(void){
     CUdeviceptr base, dptr;
     size_t size_range;
     cuMemGetAddressRange_v2(&base, &size_range, dptr);
-    int a = max(1, 3);
 }
 }

@@ -437,6 +437,39 @@ inline int get_sycl_language_version() {
 #endif
 }
 
+#define DPCT_MATH_MIN_MAX_OVERLOAD(FUNC, IMPL_FUNC, TYPE, PROMOTED_TYPE)       \
+  inline auto FUNC(TYPE a, TYPE b) { return IMPL_FUNC(a, b); }                 \
+  inline auto FUNC(PROMOTED_TYPE a, TYPE b) {                                  \
+    return IMPL_FUNC(a, static_cast<PROMOTED_TYPE>(b));                        \
+  }                                                                            \
+  inline auto FUNC(TYPE a, PROMOTED_TYPE b) {                                  \
+    return IMPL_FUNC(static_cast<PROMOTED_TYPE>(a), b);                        \
+  }                                                                            \
+  inline auto FUNC(PROMOTED_TYPE a, PROMOTED_TYPE b) { return IMPL_FUNC(a, b); }
+
+#ifdef __SYCL_DEVICE_ONLY__
+DPCT_MATH_MIN_MAX_OVERLOAD(min, sycl::fmin, float, double)
+DPCT_MATH_MIN_MAX_OVERLOAD(min, sycl::min, int, unsigned int)
+DPCT_MATH_MIN_MAX_OVERLOAD(min, sycl::min, long int, unsigned long int)
+DPCT_MATH_MIN_MAX_OVERLOAD(min, sycl::min, long long int,
+                           unsigned long long int)
+DPCT_MATH_MIN_MAX_OVERLOAD(max, sycl::fmax, float, double)
+DPCT_MATH_MIN_MAX_OVERLOAD(max, sycl::max, int, unsigned int)
+DPCT_MATH_MIN_MAX_OVERLOAD(max, sycl::max, long int, unsigned long int)
+DPCT_MATH_MIN_MAX_OVERLOAD(max, sycl::max, long long int,
+                           unsigned long long int)
+#else
+DPCT_MATH_MIN_MAX_OVERLOAD(min, std::fmin, float, double)
+DPCT_MATH_MIN_MAX_OVERLOAD(min, std::min, int, unsigned int)
+DPCT_MATH_MIN_MAX_OVERLOAD(min, std::min, long int, unsigned long int)
+DPCT_MATH_MIN_MAX_OVERLOAD(min, std::min, long long int, unsigned long long int)
+DPCT_MATH_MIN_MAX_OVERLOAD(max, std::fmax, float, double)
+DPCT_MATH_MIN_MAX_OVERLOAD(max, std::max, int, unsigned int)
+DPCT_MATH_MIN_MAX_OVERLOAD(max, std::max, long int, unsigned long int)
+DPCT_MATH_MIN_MAX_OVERLOAD(max, std::max, long long int, unsigned long long int)
+#endif
+#undef DPCT_MATH_MIN_MAX_OVERLOAD
+
 namespace experimental {
 /// Synchronize work items from all work groups within a SYCL kernel.
 /// \param [in] item:  Represents a work group.
