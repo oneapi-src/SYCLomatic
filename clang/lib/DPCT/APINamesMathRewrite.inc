@@ -745,6 +745,80 @@ MATH_API_REWRITER_HOST_DEVICE(
             EMPTY_FACTORY_ENTRY("abs"), EMPTY_FACTORY_ENTRY("abs"),
             EMPTY_FACTORY_ENTRY("abs"))))
 
+MATH_API_REWRITER_HOST_DEVICE(
+    MATH_API_REWRITER_HOST(
+        "min",
+        FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::Util_min_max,
+            CALL_FACTORY_ENTRY("min", CALL(MapNames::getDpctNamespace() + "min",
+                                           ARG(0), ARG(1))))),
+    MATH_API_REWRITER_DEVICE(
+        "min",
+        MATH_API_DEVICE_NODES(
+            FEATURE_REQUEST_FACTORY(
+                HelperFeatureEnum::Util_min_max,
+                CALL_FACTORY_ENTRY("min",
+                                   CALL(MapNames::getDpctNamespace() + "min",
+                                        ARG(0), ARG(1)))),
+            EMPTY_FACTORY_ENTRY("min"), EMPTY_FACTORY_ENTRY("min"),
+            EMPTY_FACTORY_ENTRY("min"))))
+
+MATH_API_REWRITER_HOST_DEVICE(
+    MATH_API_REWRITER_HOST(
+        "std::min",
+        FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::Util_min_max,
+            CALL_FACTORY_ENTRY("std::min",
+                               CALL(MapNames::getDpctNamespace() + "min",
+                                    ARG(0), ARG(1))))),
+    MATH_API_REWRITER_DEVICE(
+        "std::min",
+        MATH_API_DEVICE_NODES(
+            FEATURE_REQUEST_FACTORY(
+                HelperFeatureEnum::Util_min_max,
+                CALL_FACTORY_ENTRY("std::min",
+                                   CALL(MapNames::getDpctNamespace() + "min",
+                                        ARG(0), ARG(1)))),
+            EMPTY_FACTORY_ENTRY("std::min"), EMPTY_FACTORY_ENTRY("std::min"),
+            EMPTY_FACTORY_ENTRY("std::min"))))
+
+MATH_API_REWRITER_HOST_DEVICE(
+    MATH_API_REWRITER_HOST(
+        "max",
+        FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::Util_min_max,
+            CALL_FACTORY_ENTRY("max", CALL(MapNames::getDpctNamespace() + "max",
+                                           ARG(0), ARG(1))))),
+    MATH_API_REWRITER_DEVICE(
+        "max",
+        MATH_API_DEVICE_NODES(
+            FEATURE_REQUEST_FACTORY(
+                HelperFeatureEnum::Util_min_max,
+                CALL_FACTORY_ENTRY("max",
+                                   CALL(MapNames::getDpctNamespace() + "max",
+                                        ARG(0), ARG(1)))),
+            EMPTY_FACTORY_ENTRY("max"), EMPTY_FACTORY_ENTRY("max"),
+            EMPTY_FACTORY_ENTRY("max"))))
+
+MATH_API_REWRITER_HOST_DEVICE(
+    MATH_API_REWRITER_HOST(
+        "std::max",
+        FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::Util_min_max,
+            CALL_FACTORY_ENTRY("std::max",
+                               CALL(MapNames::getDpctNamespace() + "max",
+                                    ARG(0), ARG(1))))),
+    MATH_API_REWRITER_DEVICE(
+        "std::max",
+        MATH_API_DEVICE_NODES(
+            FEATURE_REQUEST_FACTORY(
+                HelperFeatureEnum::Util_min_max,
+                CALL_FACTORY_ENTRY("std::max",
+                                   CALL(MapNames::getDpctNamespace() + "max",
+                                        ARG(0), ARG(1)))),
+            EMPTY_FACTORY_ENTRY("std::max"), EMPTY_FACTORY_ENTRY("std::max"),
+            EMPTY_FACTORY_ENTRY("std::max"))))
+
 // C++ API Routines
 MATH_API_REWRITER_DEVICE(
     "saturate",

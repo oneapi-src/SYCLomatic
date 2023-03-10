@@ -10,8 +10,8 @@
 #ifndef __CLANG_DPCT_MATH_H__
 #define __CLANG_DPCT_MATH_H__
 
-float max(float a, float b);
-int min(int a, int b);
+int max(const int a, const int b);
+int min(const int a, const int b);
 
 #if (defined(_WIN64) || defined(_WIN32))
 
