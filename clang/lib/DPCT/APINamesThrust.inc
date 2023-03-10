@@ -1435,10 +1435,10 @@ CONDITIONAL_FACTORY_ENTRY(
     CheckArgCount(4),
     // Handling case: thrust::for_each(policy, device.begin(), device.end(), f);
     CONDITIONAL_FACTORY_ENTRY(
-        makeCheckAnd(makeCheckAnd(CheckThrustArgType(0,
-                                               "thrust::cuda_cub::par_nosync"),
-                                  checkEnableExtDPLAsyncAPI()),
-                     CheckThrustArgType(1, "thrust::device_ptr")),
+        makeCheckAnd(
+            makeCheckAnd(CheckThrustArgType(0, "thrust::cuda_cub::par_nosync"),
+                         checkEnableExtDPLAPI()),
+            CheckThrustArgType(1, "thrust::device_ptr")),
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPL_Async,
             CALL_FACTORY_ENTRY(

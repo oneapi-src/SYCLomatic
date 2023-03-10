@@ -1788,8 +1788,8 @@ public:
   static bool useUserDefineReductions() {
     return getUsingExperimental<ExperimentalFeatures::Exp_UserDefineReductions>();
   }
-  static bool useExtDPLAsyncAPI() {
-    return getUsingExperimental<ExperimentalFeatures::Exp_AsyncDPLAlgorithm>();
+  static bool useExtDPLAPI() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_DPLExperimentalAPI>();
   }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);

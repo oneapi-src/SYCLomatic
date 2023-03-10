@@ -50,9 +50,9 @@ makeThrustFunctorArgCreator(unsigned Idx) {
 }
 
 std::function<bool(const CallExpr *)>
-checkEnableExtDPLAsyncAPI() {
+checkEnableExtDPLAPI() {
   return [=](const CallExpr *) -> bool {
-    return DpctGlobalInfo::useExtDPLAsyncAPI();
+    return DpctGlobalInfo::useExtDPLAPI();
   };
 }
 

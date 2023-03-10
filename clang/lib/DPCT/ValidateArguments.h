@@ -74,7 +74,7 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_LogicalGroup,
   Exp_ExperimentalFeaturesEnumSize,
   Exp_UserDefineReductions,
-  Exp_AsyncDPLAlgorithm
+  Exp_DPLExperimentalAPI
 };
 
 bool makeInRootCanonicalOrSetDefaults(
