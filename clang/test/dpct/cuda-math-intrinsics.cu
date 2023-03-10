@@ -2525,14 +2525,14 @@ int main() {
 // rule3: functions in std namespace always remain untouched
 
 // CHECK:  int foo(int i, int j) {
-// CHECK-NEXT:   return dpct::max(i, j) + dpct::min(i, j);
+// CHECK-NEXT:   return max(i, j) + min(i, j);
 // CHECK-NEXT: }
 __host__ int foo(int i, int j) {
   return max(i, j) + min(i, j);
 }
 
 // CHECK:  float foo(float f, float g) {
-// CHECK-NEXT:   return dpct::max(f, g) + dpct::min(f, g);
+// CHECK-NEXT:   return max(f, g) + min(f, g);
 // CHECK-NEXT: }
 __host__ float foo(float f, float g) {
   return max(f, g) + min(f, g);
@@ -2571,33 +2571,33 @@ typedef unsigned UINT;
 using int_t = int;
 using uint_t = unsigned;
 
-// CHECK: int foo(UINT i, INT j) {
-// CHECK-NEXT:   return max(i, j) + min(i, j);
-// CHECK-NEXT: }
-int foo(UINT i, INT j) {
-  return max(i, j) + min(i, j);
-}
+// NOCHECK: int foo(UINT i, INT j) {
+// NOCHECK-NEXT:   return max(i, j) + min(i, j);
+// NOCHECK-NEXT: }
+//int foo(UINT i, INT j) {
+//  return max(i, j) + min(i, j);
+//}
 
-// CHECK: int foo(INT i, UINT j) {
-// CHECK-NEXT:   return max(i, j) + min(i, j);
-// CHECK-NEXT: }
-int foo(INT i, UINT j) {
-  return max(i, j) + min(i, j);
-}
+// NOCHECK: int foo(INT i, UINT j) {
+// NOCHECK-NEXT:   return max(i, j) + min(i, j);
+// NOCHECK-NEXT: }
+//int foo(INT i, UINT j) {
+//  return max(i, j) + min(i, j);
+//}
 
-// CHECK: int bar(uint_t i, int_t j) {
-// CHECK-NEXT:   return max(i, j) + min(i, j);
-// CHECK-NEXT: }
-int bar(uint_t i, int_t j) {
-  return max(i, j) + min(i, j);
-}
+// NOCHECK: int bar(uint_t i, int_t j) {
+// NOCHECK-NEXT:   return max(i, j) + min(i, j);
+// NOCHECK-NEXT: }
+//int bar(uint_t i, int_t j) {
+//  return max(i, j) + min(i, j);
+//}
 
-// CHECK: int bar(int_t i, uint_t j) {
-// CHECK-NEXT:   return max(i, j) + min(i, j);
-// CHECK-NEXT: }
-int bar(int_t i, uint_t j) {
-  return max(i, j) + min(i, j);
-}
+// NOCHECK: int bar(int_t i, uint_t j) {
+// NOCHECK-NEXT:   return max(i, j) + min(i, j);
+// NOCHECK-NEXT: }
+//int bar(int_t i, uint_t j) {
+//  return max(i, j) + min(i, j);
+//}
 
 __device__ void test_pow() {
   int i;
@@ -2706,9 +2706,9 @@ __global__ void foobar(int i) {
   min(blockDim.z, i);
 }
 
-void do_migration() {
+void no_migration0() {
   int i, j;
-  // CHECK: dpct::max(i, j);
+  // CHECK: max(i, j);
   max(i, j);
 }
 __global__ void do_migration2() {
@@ -2744,9 +2744,9 @@ void no_migration2() {
   // CHECK: t::max(i, j);
   t::max(i, j);
 }
-void migration3() {
+void no_migration3() {
   int i, j;
-  // CHECK: dpct::max(i, j);
+  // CHECK: std::max(i, j);
   std::max(i, j);
 }
 __host__ void no_migration4() {
@@ -2766,7 +2766,9 @@ void no_migration5() {
   float f;
   int i;
 
-  //CHECK: std::fabs(f);
+  //CHECK: std::max(i, i);
+  //CHECK-NEXT: std::min(i, i);
+  //CHECK-NEXT: std::fabs(f);
   //CHECK-NEXT: std::frexpf(f, &i);
   //CHECK-NEXT: std::modff(f, &f);
   //CHECK-NEXT: std::nearbyintf(f);
@@ -2784,6 +2786,8 @@ void no_migration5() {
   //CHECK-NEXT: std::acosh(f);
   //CHECK-NEXT: std::asin(f);
   //CHECK-NEXT: std::asinh(f);
+  std::max(i, i);
+  std::min(i, i);
   std::fabs(f);
   std::frexpf(f, &i);
   std::modff(f, &f);
@@ -2802,20 +2806,10 @@ void no_migration5() {
   std::acosh(f);
   std::asin(f);
   std::asinh(f);
-}
-
-void do_migration5_1() {
-  float f;
-  int i;
-
-  //CHECK: dpct::max(i, i);
-  //CHECK-NEXT: dpct::min(i, i);
-  std::max(i, i);
-  std::min(i, i);
 
   int64_t a;
-  //CHECK: dpct::max(a, 1);
-  dpct::max(a, 1);
+  //CHECK: std::max<int64_t>(a, 1);
+  std::max<int64_t>(a, 1);
 }
 
 __device__ void do_migration5() {

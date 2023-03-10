@@ -850,6 +850,25 @@ void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
   dispatch(Cast->getSubExprAsWritten());
 }
 
+bool isSpecialFunctions(const CallExpr *CE, const std::string &RefString) {
+  // Special process for std::min/std::max
+  auto FD = CE->getDirectCallee();
+  if (FD) {
+    std::string Name = FD->getNameInfo().getName().getAsString();
+    auto FDFile = DpctGlobalInfo::getLocInfo(FD->getLocation()).first;
+    makeCanonical(FDFile);
+    if ((Name == "min" || Name == "max") &&
+        isChildPath(DpctInstallPath, FDFile)) {
+      auto ContextFD = getImmediateOuterFuncDecl(CE);
+      if (ContextFD && !ContextFD->hasAttr<CUDADeviceAttr>() &&
+          !ContextFD->hasAttr<CUDAGlobalAttr>()) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 // Precondition: CE != nullptr
 void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   // To set the RefString
@@ -858,7 +877,8 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   if (!CallExprRewriterFactoryBase::RewriterMap)
     return;
   auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(RefString);
-  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
+  if ((Itr != CallExprRewriterFactoryBase::RewriterMap->end()) &&
+      (!isSpecialFunctions(CE, RefString))) {
     for (unsigned I = 0, E = CE->getNumArgs(); I != E; ++I) {
       if (isa<PackExpansionExpr>(CE->getArg(I))) {
         return;

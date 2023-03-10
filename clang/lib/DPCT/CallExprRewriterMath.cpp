@@ -162,10 +162,7 @@ std::optional<std::string> MathFuncNameRewriter::rewrite() {
 ///    attribute are treated as device functions;
 /// 3) Functions whose calling functions are augmented with __device__
 ///    or __global__ attributes are treated as device functions;
-/// 4) std::min and std::max are treated as host functions if they are
-///    called by host functions or by local lambda expressions without
-//     explicit __host__ or __device__ attributes in host functions;
-/// 5) Other functions are treated as host functions.
+/// 4) Other functions are treated as host functions.
 ///    eg. "__host__ __device__ fabs()" falls in 5) if fabs is not called in
 ///    device or kernel
 std::string MathFuncNameRewriter::getNewFuncName() {
@@ -191,12 +188,6 @@ std::string MathFuncNameRewriter::getNewFuncName() {
     }
 
     auto ContextFD = getImmediateOuterFuncDecl(Call);
-    //if (NamespaceStr == "std" &&
-    //    (SourceCalleeName == "min" || SourceCalleeName == "max")) {
-    //  while (auto LE = getImmediateOuterLambdaExpr(ContextFD)) {
-    //    ContextFD = getImmediateOuterFuncDecl(LE);
-    //  }
-    //}
     if (NamespaceStr == "std" && ContextFD &&
         !ContextFD->hasAttr<CUDADeviceAttr>() &&
         !ContextFD->hasAttr<CUDAGlobalAttr>()) {

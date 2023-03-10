@@ -642,11 +642,11 @@ void foo_4() {
   // CHECK: sycl::range<3> threads(1, 1, 32);
   dim3 threads(32);
   int64_t maxGridDim = 1024;
-  // CHECK: sycl::range<3> grid_1(1, dpct::min(maxGridDim, ceil_div(num_irows, int64_t(threads[2]))), dpct::min(maxGridDim, num_orows));
+  // CHECK: sycl::range<3> grid_1(1, std::min(maxGridDim, ceil_div(num_irows, int64_t(threads[2]))), std::min(maxGridDim, num_orows));
   dim3 grid_1(std::min(maxGridDim, num_orows), std::min(maxGridDim, ceil_div(num_irows, int64_t{threads.x})));
 
   int row_size = 16;
-  // CHECK: sycl::range<3> grid_2(1, 1, dpct::min(maxGridDim, ceil_div(row_size, int(threads[1]))));
+  // CHECK: sycl::range<3> grid_2(1, 1, std::min<int>(maxGridDim, ceil_div(row_size, int(threads[1]))));
   dim3 grid_2(std::min<int>(maxGridDim, ceil_div(row_size, int(threads.y))));
 
   // CHECK: int64_t m = int64_t(threads[1]);
@@ -654,13 +654,13 @@ void foo_4() {
   // CHECK: m = int64_t(threads[1]);
   m = int64_t{threads.y};
   typedef int64_t MY_INT64;
-  // CHECK: m = dpct::min(int64_t(threads[2]), MY_INT64(threads[0]));
+  // CHECK: m = std::min(int64_t(threads[2]), MY_INT64(threads[0]));
   m = std::min(int64_t{threads.x}, MY_INT64{threads.z});
 
   int num = 1024;
   // CHECK: m = int64_t{num};
   m = int64_t{num};
-  // CHECK: m = dpct::min(int64_t(threads[2]), MY_INT64{num});
+  // CHECK: m = std::min(int64_t(threads[2]), MY_INT64{num});
   m = std::min(int64_t{threads.x}, MY_INT64{num});
 
   struct CFoo {
@@ -670,7 +670,7 @@ void foo_4() {
   };
   // CHECK: CFoo cfoo{num};
   CFoo cfoo{num};
-  // CHECK: m = dpct::min(int64_t(threads[2]), int64_t{cfoo});
+  // CHECK: m = std::min(int64_t(threads[2]), int64_t{cfoo});
   m = std::min(int64_t{threads.x}, int64_t{cfoo});
 }
 
