@@ -3564,6 +3564,13 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
     report(ME->getBeginLoc(), Diagnostics::MAX_GRID_SIZE, false);
   }
 
+  if (!DpctGlobalInfo::useDeviceInfo() &&
+      (MemberName == "pciDeviceID" || MemberName == "uuid")) {
+    report(ME->getBeginLoc(), Diagnostics::UNMIGRATED_DEVICE_PROP, false,
+           MemberName);
+    return;
+  }
+
   auto Search = PropNamesMap.find(MemberName);
   if (Search == PropNamesMap.end()) {
     return;
