@@ -15188,14 +15188,14 @@ void CudaExtentRule::runRule(
       CSR = CharSourceRange(SourceRange(CtorEndLoc, CtorEndLoc), false);
       DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(
-            SM, CSR, Replacement, new InsertText(CSR.getBegin(), Replacement)));
+            SM, CSR, Replacement, nullptr));
     } else {
       auto CtorEndLoc = Lexer::getLocForEndOfToken(
           SR.getEnd(), 0, SM, DpctGlobalInfo::getContext().getLangOpts());
       CharSourceRange CSR(SourceRange(SR.getBegin(), CtorEndLoc), false);
       DpctGlobalInfo::getInstance().addReplacement(
           std::make_shared<ExtReplacement>(
-              SM, CSR, Replacement, new ReplaceStmt(Ctor, true, Replacement)));
+              SM, CSR, Replacement, nullptr));
     }
     return;
   }
@@ -15214,7 +15214,7 @@ void CudaExtentRule::runRule(
     std::string Replacement = "{0, 0, 0}";
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(
-            SM, CSR, Replacement, new InsertText(CSR.getBegin(), Replacement)));
+            SM, CSR, Replacement, nullptr));
     return;
   }
 
