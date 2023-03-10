@@ -136,4 +136,24 @@ __global__ void kernelFuncHalf2() {
   h2_2 = __hneg2(h2_1);
 }
 
+__global__ void kernelFuncInt() {
+  int i;
+  unsigned u;
+  long l;
+  long long ll;
+  unsigned long long ull;
+  // CHECK: ll = sycl::max(ll, ll);
+  // CHECK-NEXT: ll = sycl::min(ll, ll);
+  // CHECK-NEXT: ull = sycl::max(ull, ull);
+  // CHECK-NEXT: ull = sycl::min(ull, ull);
+  // CHECK-NEXT: u = sycl::max(u, u);
+  // CHECK-NEXT: u = sycl::min(u, u);
+  ll = llmax(ll, ll);
+  ll = llmin(ll, ll);
+  ull = ullmax(ull, ull);
+  ull = ullmin(ull, ull);
+  u = umax(u, u);
+  u = umin(u, u);
+}
+
 int main() { return 0; }
