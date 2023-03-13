@@ -15,47 +15,45 @@ __global__ void kernelFuncHalf() {
   h_2 = __hadd_sat(h, h_1);
   // CHECK: h_2 = sycl::ext::intel::math::hfma_sat(h, h_1, h_2);
   h_2 = __hfma_sat(h, h_1, h_2);
+  // CHECK: h_2 = sycl::ext::intel::math::hmul(h, h_1);
+  h_2 = __hmul(h, h_1);
   // CHECK: h_2 = sycl::ext::intel::math::hmul_sat(h, h_1);
   h_2 = __hmul_sat(h, h_1);
+  // CHECK: h_2 = sycl::ext::intel::math::hneg(h_1);
+  h_2 = __hneg(h_1);
+  // CHECK: h_2 = sycl::ext::intel::math::hsub(h, h_1);
+  h_2 = __hsub(h, h_1);
   // CHECK: h_2 = sycl::ext::intel::math::hsub_sat(h, h_1);
   h_2 = __hsub_sat(h, h_1);
   // CHECK: h_2 = sycl::ext::intel::math::hadd(h, h_1);
   h_2 = __hadd(h, h_1);
 
-  // CHECK: h_2 = sycl::ext::intel::math::hmul(h, h_1);
-  h_2 = __hmul(h, h_1);
-  // CHECK: h_2 = sycl::ext::intel::math::hsub(h, h_1);
-  h_2 = __hsub(h, h_1);
-  // CHECK: h_2 = sycl::ext::intel::math::hneg(h_1);
-  h_2 = __hneg(h_1);
-
-
   // Half Comparison Functions
 
-  // CHECK: b = sycl::ext::intel::math::hequ(h, h_1);
-  b = __hequ(h, h_1);
-  // CHECK: b = sycl::ext::intel::math::hgeu(h, h_1);
-  b = __hgeu(h, h_1);
-  // CHECK: b = sycl::ext::intel::math::hgtu(h, h_1);
-  b = __hgtu(h, h_1);
-  // CHECK: b = sycl::ext::intel::math::hleu(h, h_1);
-  b = __hleu(h, h_1);
-  // CHECK: b = sycl::ext::intel::math::hltu(h, h_1);
-  b = __hltu(h, h_1);
-  // CHECK: b = sycl::ext::intel::math::hneu(h, h_1);
-  b = __hneu(h, h_1);
   // CHECK: b = sycl::ext::intel::math::heq(h, h_1);
   b = __heq(h, h_1);
-  // CHECK: b = sycl::ext::intel::math::hne(h, h_1);
-  b = __hne(h, h_1);
+  // CHECK: b = sycl::ext::intel::math::hequ(h, h_1);
+  b = __hequ(h, h_1);
   // CHECK: b = sycl::ext::intel::math::hge(h, h_1);
   b = __hge(h, h_1);
+  // CHECK: b = sycl::ext::intel::math::hgeu(h, h_1);
+  b = __hgeu(h, h_1);
   // CHECK: b = sycl::ext::intel::math::hgt(h, h_1);
   b = __hgt(h, h_1);
+  // CHECK: b = sycl::ext::intel::math::hgtu(h, h_1);
+  b = __hgtu(h, h_1);
   // CHECK: b = sycl::ext::intel::math::hle(h, h_1);
   b = __hle(h, h_1);
+  // CHECK: b = sycl::ext::intel::math::hleu(h, h_1);
+  b = __hleu(h, h_1);
   // CHECK: b = sycl::ext::intel::math::hlt(h, h_1);
   b = __hlt(h, h_1);
+  // CHECK: b = sycl::ext::intel::math::hltu(h, h_1);
+  b = __hltu(h, h_1);
+  // CHECK: b = sycl::ext::intel::math::hne(h, h_1);
+  b = __hne(h, h_1);
+  // CHECK: b = sycl::ext::intel::math::hneu(h, h_1);
+  b = __hneu(h, h_1);
 }
 
 __global__ void kernelFuncHalf2() {
@@ -64,12 +62,22 @@ __global__ void kernelFuncHalf2() {
 
   // Half2 Arithmetic Functions
 
+  // CHECK: h2_2 = sycl::ext::intel::math::h2div(h2, h2_1);
+  h2_2 = __h2div(h2, h2_1);
+  // CHECK: h2_2 = sycl::ext::intel::math::hadd2(h2, h2_1);
+  h2_2 = __hadd2(h2, h2_1);
   // CHECK: h2_2 = sycl::ext::intel::math::hadd2_sat(h2, h2_1);
   h2_2 = __hadd2_sat(h2, h2_1);
   // CHECK: h2_2 = sycl::ext::intel::math::hfma2_sat(h2, h2_1, h2_2);
   h2_2 = __hfma2_sat(h2, h2_1, h2_2);
+  // CHECK: h2_2 = sycl::ext::intel::math::hmul2(h2, h2_1);
+  h2_2 = __hmul2(h2, h2_1);
   // CHECK: h2_2 = sycl::ext::intel::math::hmul2_sat(h2, h2_1);
   h2_2 = __hmul2_sat(h2, h2_1);
+  // CHECK: h2_2 = sycl::ext::intel::math::hneg2(h2_1);
+  h2_2 = __hneg2(h2_1);
+  // CHECK: h2_2 = sycl::ext::intel::math::hsub2(h2, h2_1);
+  h2_2 = __hsub2(h2, h2_1);
   // CHECK: h2_2 = sycl::ext::intel::math::hsub2_sat(h2, h2_1);
   h2_2 = __hsub2_sat(h2, h2_1);
 
@@ -126,14 +134,6 @@ __global__ void kernelFuncHalf2() {
   h2_2 = __hne2(h2, h2_1);
   // CHECK: sycl::ext::intel::math::hneu2(h2, h2);
   __hneu2(h2, h2);
-  // CHECK: h2_2 = sycl::ext::intel::math::hadd2(h2, h2_1);
-  h2_2 = __hadd2(h2, h2_1);
-  // CHECK: h2_2 = sycl::ext::intel::math::hmul2(h2, h2_1);
-  h2_2 = __hmul2(h2, h2_1);
-  // CHECK: h2_2 = sycl::ext::intel::math::hsub2(h2, h2_1);
-  h2_2 = __hsub2(h2, h2_1);
-  // CHECK: h2_2 = sycl::ext::intel::math::hneg2(h2_1);
-  h2_2 = __hneg2(h2_1);
 }
 
 int main() { return 0; }

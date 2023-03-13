@@ -9,6 +9,7 @@
 HELPERFILE(dpct.hpp.inc, Dpct)
 HELPERFILE(device.hpp.inc, Device)
 HELPERFILE(kernel.hpp.inc, Kernel)
+HELPERFILE(math.hpp.inc, Math)
 HELPERFILE(memory.hpp.inc, Memory)
 HELPERFILE(util.hpp.inc, Util)
 HELPERFILE(dpl_utils.hpp.inc, DplUtils)
