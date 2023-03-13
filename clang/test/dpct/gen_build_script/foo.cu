@@ -3,7 +3,7 @@
 // RUN: mkdir -p %T/build/objs
 // RUN: mkdir %T/source
 // RUN: cat %s > %T/source/foo.cu
-// RUN: cat %s > %T/source/bar.cu
+// RUN: cat %S/bar.cpp > %T/source/bar.cpp
 // RUN: cd %T/build
 // RUN: echo "[" > compile_commands.json
 // RUN: echo "    {" >> compile_commands.json
@@ -12,12 +12,12 @@
 // RUN: echo "        \"file\": \"/%T/source/foo.cu\"" >> compile_commands.json
 // RUN: echo "    }," >> compile_commands.json
 // RUN: echo "    {" >> compile_commands.json
-// RUN: echo "        \"command\": \"g++ -c -std=c++11 -o /%T/build/objs/bar.cu.o /%T/source/bar.cu\"," >> compile_commands.json
+// RUN: echo "        \"command\": \"g++ -c -std=c++11 -o /%T/build/objs/bar.cpp.dp.o /%T/source/bar.cpp\"," >> compile_commands.json
 // RUN: echo "        \"directory\": \"/%T\"," >> compile_commands.json
-// RUN: echo "        \"file\": \"/%T/source/bar.cu\"" >> compile_commands.json
+// RUN: echo "        \"file\": \"/%T/source/bar.cpp\"" >> compile_commands.json
 // RUN: echo "    }," >> compile_commands.json
 // RUN: echo "    {" >> compile_commands.json
-// RUN: echo "        \"command\": \"ld objs/foo.cu.o objs/bar.cu.o -o app\"," >> compile_commands.json
+// RUN: echo "        \"command\": \"ld objs/foo.cu.o objs/bar.cpp.dp.o -o app\"," >> compile_commands.json
 // RUN: echo "        \"directory\": \"/%T/build\"" >> compile_commands.json
 // RUN: echo "    }" >> compile_commands.json
 // RUN: echo "]" >> compile_commands.json
