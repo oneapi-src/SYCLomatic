@@ -861,6 +861,7 @@ bool isSpecialFunctions(const CallExpr *CE, const std::string &RefString) {
     llvm::SmallString<256> AlgoFile(DpctInstallPath);
     llvm::sys::path::append(AlgoFile, "lib/clang", DPCT_VERSION_MAJOR,
                             "include/cuda_wrappers/algorithm");
+
     if ((Name == "min" || Name == "max") &&
         isChildOrSamePath(AlgoFile.c_str(), FDFile) &&
         isChildOrSamePath(FDFile, AlgoFile.c_str())) {
