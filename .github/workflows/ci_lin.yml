@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - SYCLomatic
+    types: [opened, synchronize, reopened, ready_for_review]
 
 env:
   BUILD_CONCURRENCY: 2
@@ -13,6 +14,7 @@ env:
 jobs:
   linux-build-lit:
     name: linux-build-lit
+    if: github.event.pull_request.draft == false
     runs-on: build
     outputs:
       build_success: ${{ steps.Echo-Build-Success.outputs.build_success }}
@@ -120,7 +122,7 @@ jobs:
     runs-on: test
     needs: [linux-build-lit]
     if: |
-      needs.linux-build-lit.outputs.build_success == 'true'
+      needs.linux-build-lit.outputs.build_success == 'true' &&  github.event.pull_request.draft == false
     strategy:
       fail-fast: false
       matrix:
