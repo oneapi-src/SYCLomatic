@@ -3582,3 +3582,69 @@ CONDITIONAL_FACTORY_ENTRY(
     )
   )
 )
+
+
+// thrust::remove
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(4),
+  CONDITIONAL_FACTORY_ENTRY(
+    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+    //Handling case: thrust::remove(policy, ptr, ptr, val);
+    IFELSE_FACTORY_ENTRY(
+      "thrust::remove",
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+        CALL_FACTORY_ENTRY("thrust::remove", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+        CALL_FACTORY_ENTRY("thrust::remove",
+                          CALL("oneapi::dpl::remove",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+								CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                ARG(3)))),
+      CALL_FACTORY_ENTRY("thrust::remove",
+                        CALL("oneapi::dpl::remove",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), ARG(3)))),
+    // Handling case: thrust::remove(thrust::device, itr, itr, val);
+    CALL_FACTORY_ENTRY("thrust::remove",
+                      CALL("oneapi::dpl::remove",
+                            makeMappedThrustPolicyEnum(0),
+                            ARG(1), ARG(2), ARG(3)))
+  ),
+
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(0), makeCheckNot(checkIsUSM())),
+      //Handling case: thrust::remove(ptr, ptr, val);
+      IFELSE_FACTORY_ENTRY(
+        "thrust::remove",
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+          CALL_FACTORY_ENTRY("thrust::remove", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          CALL_FACTORY_ENTRY("thrust::remove",
+                            CALL("oneapi::dpl::remove",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+								  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                  ARG(2)))),
+        CALL_FACTORY_ENTRY("thrust::remove",
+                          CALL("oneapi::dpl::remove",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), ARG(2)))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckThrustArgType(1, "thrust::device_ptr"),
+        // Handling case: thrust::remove(itr, itr, itr);
+        CALL_FACTORY_ENTRY("thrust::remove",
+                            CALL("oneapi::dpl::remove",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                ARG(0), ARG(1), ARG(2))),
+        CALL_FACTORY_ENTRY("thrust::remove",
+                            CALL("oneapi::dpl::remove",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), ARG(2))))
+    )
+)
+
+
+
+
+
