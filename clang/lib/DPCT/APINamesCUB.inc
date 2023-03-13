@@ -1757,21 +1757,25 @@ FEATURE_REQUEST_FACTORY(
 CALL_FACTORY_ENTRY("cub::IADD3",
                    CALL("",
                         BO(BinaryOperatorKind::BO_Add,
-                           BO(BinaryOperatorKind::BO_Add, ARG(0), ARG(1)),
-                           ARG(2))))
+                           BO(BinaryOperatorKind::BO_Add,
+                              CAST_IF_NEED(LITERAL("unsigned int"), ARG(0)),
+                              CAST_IF_NEED(LITERAL("unsigned int"), ARG(1))),
+                           CAST_IF_NEED(LITERAL("unsigned int"), ARG(2)))))
 
 // cub::SHR_ADD
-CALL_FACTORY_ENTRY("cub::SHR_ADD",
-                                CALL("",
-                                     BO(BinaryOperatorKind::BO_Add,
-                                        CALL("", BO(BinaryOperatorKind::BO_Shr,
-                                                    ARG(0), ARG(1))),
-                                        ARG(2))))
+CALL_FACTORY_ENTRY(
+    "cub::SHR_ADD",
+    CALL("", BO(BinaryOperatorKind::BO_Add,
+                CALL("", BO(BinaryOperatorKind::BO_Shr,
+                            CAST_IF_NEED(LITERAL("unsigned int"), ARG(0)),
+                            CAST_IF_NEED(LITERAL("unsigned int"), ARG(1)))),
+                CAST_IF_NEED(LITERAL("unsigned int"), ARG(2)))))
 
 // cub::SHL_ADD
-CALL_FACTORY_ENTRY("cub::SHL_ADD",
-                                CALL("",
-                                     BO(BinaryOperatorKind::BO_Add,
-                                        CALL("", BO(BinaryOperatorKind::BO_Shl,
-                                                    ARG(0), ARG(1))),
-                                        ARG(2))))
+CALL_FACTORY_ENTRY(
+    "cub::SHL_ADD",
+    CALL("", BO(BinaryOperatorKind::BO_Add,
+                CALL("", BO(BinaryOperatorKind::BO_Shl,
+                            CAST_IF_NEED(LITERAL("unsigned int"), ARG(0)),
+                            CAST_IF_NEED(LITERAL("unsigned int"), ARG(1)))),
+                CAST_IF_NEED(LITERAL("unsigned int"), ARG(2)))))

@@ -9,18 +9,32 @@
 #include <limits>
 #include <stdio.h>
 
-// CHECK:void kernel(int *res) {
-// CHECK-NEXT:  *res = (1 + 2 + 3);
+// CHECK:void kernel1(int *res) {
+// CHECK-NEXT:  *res = ((unsigned int)1 + (unsigned int)2 + (unsigned int)3);
 // CHECK-NEXT:}
-__global__ void kernel(int *res) {
+__global__ void kernel1(int *res) {
   *res = cub::IADD3(1, 2, 3);
+}
+
+// CHECK:void kernel2(int *res, unsigned a, int b, unsigned c) {
+// CHECK-NEXT:  *res = (a + (unsigned int)b + c);
+// CHECK-NEXT:}
+__global__ void kernel2(int *res, unsigned a, int b, unsigned c) {
+  *res = cub::IADD3(a, b, c);
+}
+
+// CHECK:void kernel3(int *res, unsigned a, unsigned b, unsigned c) {
+// CHECK-NEXT:  *res = (a + b + c);
+// CHECK-NEXT:}
+__global__ void kernel3(int *res, unsigned a, unsigned b, unsigned c) {
+  *res = cub::IADD3(a, b, c);
 }
 
 int main() {
   int *val = nullptr;
   int v = 0;
   cudaMalloc(&val, sizeof(int));
-  kernel<<<1, 1>>>(val);
+  kernel1<<<1, 1>>>(val);
   cudaMemcpy(&v, val, sizeof(int), cudaMemcpyDeviceToHost);
   printf("%d\n", v);
   return 0;
