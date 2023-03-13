@@ -4099,10 +4099,15 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
   StringRef FuncNameRef(FuncName);
-  if (FuncNameRef.endswith("csrmv") || FuncNameRef.endswith("csrmm")) {
+  if (FuncNameRef.endswith("csrmv")) {
     report(
         DpctGlobalInfo::getSourceManager().getExpansionLoc(CE->getBeginLoc()),
-        Diagnostics::UNSUPPORT_MATRIX_TYPE, true, false);
+        Diagnostics::UNSUPPORT_MATRIX_TYPE, true,
+        "general/symmetric/triangular");
+  } else if (FuncNameRef.endswith("csrmm")) {
+    report(
+        DpctGlobalInfo::getSourceManager().getExpansionLoc(CE->getBeginLoc()),
+        Diagnostics::UNSUPPORT_MATRIX_TYPE, true, "general");
   }
 
   if (MapNames::SPARSEAPIWithRewriter.find(FuncName) !=

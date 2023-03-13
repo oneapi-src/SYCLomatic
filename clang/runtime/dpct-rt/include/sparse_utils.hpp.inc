@@ -291,8 +291,6 @@ void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
                     int row_col, const std::shared_ptr<matrix_info> info,
                     const T *val, const int *row_ptr, const int *col_ind,
                     std::shared_ptr<optimize_info> optimize_info) {
-  if (info->get_matrix_type() != matrix_info::matrix_type::tr)
-    return;
   using Ty = typename dpct::DataType<T>::T2;
   auto data_row_ptr = detail::get_memory(const_cast<int *>(row_ptr));
   auto data_col_ind = detail::get_memory(const_cast<int *>(col_ind));
@@ -301,14 +299,18 @@ void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
   oneapi::mkl::sparse::set_csr_data(queue, optimize_info->get_matrix_handle(),
                                     row_col, row_col, info->get_index_base(),
                                     data_row_ptr, data_col_ind, data_val);
-  sycl::event e;
+  if (info->get_matrix_type() != matrix_info::matrix_type::tr)
+    return;
 #ifndef DPCT_USM_LEVEL_NONE
+  sycl::event e;
   e =
 #endif
       oneapi::mkl::sparse::optimize_trsv(queue, info->get_uplo(), trans,
                                          info->get_diag(),
                                          optimize_info->get_matrix_handle());
+#ifndef DPCT_USM_LEVEL_NONE
   optimize_info->add_dependency(e);
+#endif
 }
 // DPCT_LABEL_END
 
