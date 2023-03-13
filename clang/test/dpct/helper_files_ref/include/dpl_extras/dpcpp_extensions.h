@@ -16,6 +16,8 @@
 #include <sycl/ext/oneapi/experimental/user_defined_reductions.hpp>
 #endif
 
+#include "../dpct.hpp"
+
 namespace dpct {
 namespace group {
 

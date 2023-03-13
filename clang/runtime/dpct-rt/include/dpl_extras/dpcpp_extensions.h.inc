@@ -24,6 +24,12 @@
 #endif
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|local_include_dependency|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+#include "../dpct.hpp"
+// DPCT_LABEL_END
+
 namespace dpct {
 namespace group {
 
