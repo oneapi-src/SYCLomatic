@@ -193,17 +193,16 @@ public:
                                                &_matrix_handle, _deps)
         .wait();
   }
-
-private:
+  /// Add dependency for the destructor.
+  /// \param [in] e The event which the destructor depends on.
   void add_dependency(sycl::event e) { _deps.push_back(e); }
-  oneapi::mkl::sparse::matrix_handle_t get_matrix_handle() {
+  /// Get the internal saved matrix handle.
+  /// \return Returns the matrix handle.
+  oneapi::mkl::sparse::matrix_handle_t get_matrix_handle() const noexcept {
     return _matrix_handle;
   }
-  template <typename T>
-  friend void optimize_csrsv(sycl::queue &, oneapi::mkl::transpose, int,
-                             const std::shared_ptr<matrix_info>, const T *,
-                             const int *, const int *,
-                             std::shared_ptr<optimize_info>);
+
+private:
   oneapi::mkl::sparse::matrix_handle_t _matrix_handle = nullptr;
   std::vector<sycl::event> _deps;
 };
