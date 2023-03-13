@@ -17,16 +17,6 @@
 
 // TODO: Remove these function definitions once they exist in the DPC++ compiler
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
-__SYCL_CONVERGENT__ extern SYCL_EXTERNAL __SYCL_EXPORT __ocl_vec_t<uint32_t, 4>
-__spirv_GroupNonUniformBallot(uint32_t Execution, bool Predicate) noexcept;
-
-__SYCL_CONVERGENT__ extern SYCL_EXTERNAL __SYCL_EXPORT __attribute__((noduplicate))
-int __spirv_GroupNonUniformBallotFindLSB(__spv::Scope::Flag, __ocl_vec_t<uint32_t, 4>) noexcept;
-
-template <typename ValueT, typename IdT>
-__SYCL_CONVERGENT__ extern SYCL_EXTERNAL __SYCL_EXPORT __attribute__((noduplicate))
-ValueT __spirv_GroupNonUniformBroadcast(__spv::Scope::Flag, ValueT, IdT) noexcept;
-
 template <typename T>
 __SYCL_CONVERGENT__ extern SYCL_EXTERNAL __SYCL_EXPORT __attribute__((noduplicate))
 T __spirv_GroupNonUniformShuffle(__spv::Scope::Flag, T, unsigned) noexcept;
