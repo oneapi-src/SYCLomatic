@@ -196,9 +196,8 @@ __global__ void kernel3() {
   //CHECK:oneapi::mkl::rng::device::skip_ahead(rng1.get_engine(), {0, 1 * (std::uint64_t(1) << 63)});
   //CHECK-NEXT:oneapi::mkl::rng::device::skip_ahead(rng2.get_engine(), {0, static_cast<std::uint64_t>(2 * 4)});
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1105:{{[0-9]+}}: The mcg59 random number generator is used. The subsequence argument is treated as 0. You need to verify the migration.
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to skipahead_sequence was removed because this API is not supported for mcg59 engine.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:oneapi::mkl::rng::device::skip_ahead(rng3.get_engine(), 0);
   skipahead_sequence(1, &rng1);
   skipahead_sequence(2, &rng2);
   skipahead_sequence(3, &rng3);

@@ -78,7 +78,7 @@ ENTRY(curand_uniform2_double, curand_uniform2_double, true, NO_FLAG, P4, "Succes
 ENTRY(curand_uniform4, curand_uniform4, true, NO_FLAG, P4, "Successful")
 ENTRY(curand_uniform_double, curand_uniform_double, true, NO_FLAG, P4, "Successful")
 ENTRY(skipahead, skipahead, true, NO_FLAG, P4, "Successful")
-ENTRY(skipahead_sequence, skipahead_sequence, true, NO_FLAG, P4, "DPCT1105")
+ENTRY(skipahead_sequence, skipahead_sequence, true, NO_FLAG, P4, "DPCT1026/DPCT1027")
 ENTRY(skipahead_subsequence, skipahead_subsequence, true, NO_FLAG, P4, "Successful")
 ENTRY(curand_uniform4_double, curand_uniform4_double, true, NO_FLAG, P4, "Successful")
 ENTRY(curand_normal4_double, curand_normal4_double, true, NO_FLAG, P4, "Successful")

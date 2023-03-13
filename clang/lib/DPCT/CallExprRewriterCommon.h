@@ -1084,8 +1084,11 @@ inline std::shared_ptr<CallExprRewriterFactoryBase> createToStringExprRewriterFa
 }
 
 inline std::shared_ptr<CallExprRewriterFactoryBase>
-createRemoveAPIRewriterFactory(const std::string &SourceName) {
-  return std::make_shared<CallExprRewriterFactory<RemoveAPIRewriter>>(SourceName);
+createRemoveAPIRewriterFactory(const std::string &SourceName,
+                               std::string Message = "") {
+  return std::make_shared<
+      CallExprRewriterFactory<RemoveAPIRewriter, std::string>>(SourceName,
+                                                               Message);
 }
 
 /// Create AssignableRewriterFactory key-value pair with inner key-value.
@@ -1846,6 +1849,8 @@ public:
   {FuncName, createToStringExprRewriterFactory(FuncName, __VA_ARGS__)},
 #define REMOVE_API_FACTORY_ENTRY(FuncName)                                     \
   {FuncName, createRemoveAPIRewriterFactory(FuncName)},
+#define REMOVE_API_FACTORY_ENTRY_WITH_MSG(FuncName, Msg)                       \
+  {FuncName, createRemoveAPIRewriterFactory(FuncName, Msg)},
 #define CASE_FACTORY_ENTRY(...) \
   createCaseRewriterFactory(__VA_ARGS__),
 

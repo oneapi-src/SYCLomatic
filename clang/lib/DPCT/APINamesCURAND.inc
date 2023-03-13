@@ -40,15 +40,7 @@ CONDITIONAL_FACTORY_ENTRY(
                          makeCombinedArg(ARG("{0, static_cast<std::uint64_t>(("),
                                          ARG(0)),
                          ARG(") * 4)}"))))),
-        FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::RngUtils_rng_generator_get_engine,
-            WARNING_FACTORY_ENTRY("skipahead_sequence",
-            CALL_FACTORY_ENTRY(
-                "skipahead_sequence",
-                CALL("oneapi::mkl::rng::device::skip_ahead",
-                     MEMBER_CALL(DEREF(makeDerefArgCreatorWithCall(1)),
-                                        false, "get_engine"),
-                     ARG("0"))), Diagnostics::CHECK_SEMANTICS_OF_DIFFERENT_GENERATOR)))),
+        REMOVE_API_FACTORY_ENTRY_WITH_MSG("skipahead_sequence", "this API is redudant for mcg59 engine."))),
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgType(1, "struct curandStateMRG32k3a *"),
     FEATURE_REQUEST_FACTORY(
@@ -73,15 +65,7 @@ CONDITIONAL_FACTORY_ENTRY(
                          makeCombinedArg(ARG("{0, static_cast<std::uint64_t>("),
                                          ARG(0)),
                          ARG(" * 4)}"))))),
-        FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::RngUtils_rng_generator_get_engine,
-            WARNING_FACTORY_ENTRY("skipahead_sequence",
-            CALL_FACTORY_ENTRY(
-                "skipahead_sequence",
-                CALL("oneapi::mkl::rng::device::skip_ahead",
-                     MEMBER_CALL(DEREF(makeDerefArgCreatorWithCall(1)),
-                                        false, "get_engine"),
-                     ARG("0"))), Diagnostics::CHECK_SEMANTICS_OF_DIFFERENT_GENERATOR))))
+        REMOVE_API_FACTORY_ENTRY_WITH_MSG("skipahead_sequence", "this API is not supported for mcg59 engine.")))
 )
 
 CONDITIONAL_FACTORY_ENTRY(

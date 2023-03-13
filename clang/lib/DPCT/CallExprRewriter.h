@@ -307,16 +307,19 @@ public:
 class RemoveAPIRewriter : public CallExprRewriter {
   bool IsAssigned = false;
   std::string CalleeName;
+  std::string Message;
 
 public:
-  RemoveAPIRewriter(const CallExpr *C, std::string CalleeName)
-      : CallExprRewriter(C, CalleeName), IsAssigned(isAssigned(C)), CalleeName(CalleeName) {}
+  RemoveAPIRewriter(const CallExpr *C, std::string CalleeName,
+                    std::string Message = "")
+      : CallExprRewriter(C, CalleeName), IsAssigned(isAssigned(C)),
+        CalleeName(CalleeName), Message(Message) {}
 
   std::optional<std::string> rewrite() override {
-    std::string Msg = "this call is redundant in SYCL.";
+    std::string Msg =
+        Message.empty() ? "this call is redundant in SYCL." : Message;
     if (IsAssigned) {
-      report(Diagnostics::FUNC_CALL_REMOVED_0, false,
-             CalleeName, Msg);
+      report(Diagnostics::FUNC_CALL_REMOVED_0, false, CalleeName, Msg);
       return std::optional<std::string>("0");
     }
     report(Diagnostics::FUNC_CALL_REMOVED, false,
