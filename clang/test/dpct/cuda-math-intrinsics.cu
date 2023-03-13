@@ -2518,7 +2518,7 @@ int main() {
 }
 
 // CHECK:  int foo(int i, int j) {
-// CHECK-NEXT:   return max(i, j) + min(i, j);
+// CHECK-NEXT:   return dpct::max(i, j) + dpct::min(i, j);
 // CHECK-NEXT: }
 __host__ int foo(int i, int j) {
   return max(i, j) + min(i, j);
@@ -2560,42 +2560,42 @@ __device__ float __host__ foo3(float f, float g) {
 }
 
 // CHECK:  int bar(short i, long j) {
-// CHECK-NEXT:   return max(i, j) + min(i, j);
+// CHECK-NEXT:   return dpct::max(i, j) + dpct::min(i, j);
 // CHECK-NEXT: }
 __host__ int bar(short i, long j) {
   return max(i, j) + min(i, j);
 }
 
 // CHECK:  int bar(unsigned short i, unsigned long j) {
-// CHECK-NEXT:   return max(i, j) + min(i, j);
+// CHECK-NEXT:   return dpct::max(i, j) + dpct::min(i, j);
 // CHECK-NEXT: }
 __host__ int bar(unsigned short i, unsigned long j) {
   return max(i, j) + min(i, j);
 }
 
 // CHECK:  int bar(unsigned short i, long j) {
-// CHECK-NEXT:   return max(i, j) + min(i, j);
+// CHECK-NEXT:   return dpct::max(i, j) + dpct::min(i, j);
 // CHECK-NEXT: }
 __host__ int bar(unsigned short i, long j) {
   return max(i, j) + min(i, j);
 }
 
 // CHECK:  int bar(long i, unsigned short j) {
-// CHECK-NEXT:   return max(i, j) + min(i, j);
+// CHECK-NEXT:   return dpct::max(i, j) + dpct::min(i, j);
 // CHECK-NEXT: }
 __host__ int bar(long i, unsigned short j) {
   return max(i, j) + min(i, j);
 }
 
 // CHECK:  int bar(short i, unsigned long j) {
-// CHECK-NEXT:   return max(i, j) + min(i, j);
+// CHECK-NEXT:   return dpct::max(i, j) + dpct::min(i, j);
 // CHECK-NEXT: }
 __host__ int bar(short i, unsigned long j) {
   return max(i, j) + min(i, j);
 }
 
 // CHECK:  int bar(unsigned long i, short j) {
-// CHECK-NEXT:   return max(i, j) + min(i, j);
+// CHECK-NEXT:   return dpct::max(i, j) + dpct::min(i, j);
 // CHECK-NEXT: }
 __host__ int bar(unsigned long i, short j) {
   return max(i, j) + min(i, j);
@@ -2607,28 +2607,28 @@ using int_t = int;
 using uint_t = unsigned;
 
 // CHECK: int foo(UINT i, INT j) {
-// CHECK-NEXT:   return max(i, j) + min(i, j);
+// CHECK-NEXT:   return dpct::max(i, j) + dpct::min(i, j);
 // CHECK-NEXT: }
 int foo(UINT i, INT j) {
   return max(i, j) + min(i, j);
 }
 
 // CHECK: int foo(INT i, UINT j) {
-// CHECK-NEXT:   return max(i, j) + min(i, j);
+// CHECK-NEXT:   return dpct::max(i, j) + dpct::min(i, j);
 // CHECK-NEXT: }
 int foo(INT i, UINT j) {
   return max(i, j) + min(i, j);
 }
 
 // CHECK: int bar(uint_t i, int_t j) {
-// CHECK-NEXT:   return max(i, j) + min(i, j);
+// CHECK-NEXT:   return dpct::max(i, j) + dpct::min(i, j);
 // CHECK-NEXT: }
 int bar(uint_t i, int_t j) {
   return max(i, j) + min(i, j);
 }
 
 // CHECK: int bar(int_t i, uint_t j) {
-// CHECK-NEXT:   return max(i, j) + min(i, j);
+// CHECK-NEXT:   return dpct::max(i, j) + dpct::min(i, j);
 // CHECK-NEXT: }
 int bar(int_t i, uint_t j) {
   return max(i, j) + min(i, j);
@@ -2743,7 +2743,7 @@ __global__ void foobar(int i) {
 
 void do_migration() {
   int i, j;
-  // CHECK: max(i, j);
+  // CHECK: dpct::max(i, j);
   max(i, j);
 }
 __global__ void do_migration2() {

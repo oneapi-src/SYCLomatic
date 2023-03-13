@@ -451,24 +451,26 @@ inline int get_sycl_language_version() {
 
 #ifdef __SYCL_DEVICE_ONLY__
 DPCT_MATH_MIN_MAX_OVERLOAD(min, sycl::fmin, float, double)
-DPCT_MATH_MIN_MAX_OVERLOAD(min, sycl::min, int, unsigned int)
-DPCT_MATH_MIN_MAX_OVERLOAD(min, sycl::min, long int, unsigned long int)
-DPCT_MATH_MIN_MAX_OVERLOAD(min, sycl::min, long long int,
-                           unsigned long long int)
+DPCT_MATH_MIN_MAX_OVERLOAD(min, sycl::min, std::int32_t, std::uint32_t)
+DPCT_MATH_MIN_MAX_OVERLOAD(min, sycl::min, std::int64_t, std::uint64_t)
+DPCT_MATH_MIN_MAX_OVERLOAD(min, sycl::min, std::int32_t, std::uint64_t)
+DPCT_MATH_MIN_MAX_OVERLOAD(min, sycl::min, std::uint32_t, std::uint64_t)
 DPCT_MATH_MIN_MAX_OVERLOAD(max, sycl::fmax, float, double)
-DPCT_MATH_MIN_MAX_OVERLOAD(max, sycl::max, int, unsigned int)
-DPCT_MATH_MIN_MAX_OVERLOAD(max, sycl::max, long int, unsigned long int)
-DPCT_MATH_MIN_MAX_OVERLOAD(max, sycl::max, long long int,
-                           unsigned long long int)
+DPCT_MATH_MIN_MAX_OVERLOAD(max, sycl::max, std::int32_t, std::uint32_t)
+DPCT_MATH_MIN_MAX_OVERLOAD(max, sycl::max, std::int64_t, std::uint64_t)
+DPCT_MATH_MIN_MAX_OVERLOAD(max, sycl::max, std::int32_t, std::uint64_t)
+DPCT_MATH_MIN_MAX_OVERLOAD(max, sycl::max, std::uint32_t, std::uint64_t)
 #else
 DPCT_MATH_MIN_MAX_OVERLOAD(min, std::fmin, float, double)
-DPCT_MATH_MIN_MAX_OVERLOAD(min, std::min, int, unsigned int)
-DPCT_MATH_MIN_MAX_OVERLOAD(min, std::min, long int, unsigned long int)
-DPCT_MATH_MIN_MAX_OVERLOAD(min, std::min, long long int, unsigned long long int)
+DPCT_MATH_MIN_MAX_OVERLOAD(min, std::min, std::int32_t, std::uint32_t)
+DPCT_MATH_MIN_MAX_OVERLOAD(min, std::min, std::int64_t, std::uint64_t)
+DPCT_MATH_MIN_MAX_OVERLOAD(min, std::min, std::int32_t, std::uint64_t)
+DPCT_MATH_MIN_MAX_OVERLOAD(min, std::min, std::uint32_t, std::uint64_t)
 DPCT_MATH_MIN_MAX_OVERLOAD(max, std::fmax, float, double)
-DPCT_MATH_MIN_MAX_OVERLOAD(max, std::max, int, unsigned int)
-DPCT_MATH_MIN_MAX_OVERLOAD(max, std::max, long int, unsigned long int)
-DPCT_MATH_MIN_MAX_OVERLOAD(max, std::max, long long int, unsigned long long int)
+DPCT_MATH_MIN_MAX_OVERLOAD(max, std::max, std::int32_t, std::uint32_t)
+DPCT_MATH_MIN_MAX_OVERLOAD(max, std::max, std::int64_t, std::uint64_t)
+DPCT_MATH_MIN_MAX_OVERLOAD(max, std::max, std::int32_t, std::uint64_t)
+DPCT_MATH_MIN_MAX_OVERLOAD(max, std::max, std::uint32_t, std::uint64_t)
 #endif
 #undef DPCT_MATH_MIN_MAX_OVERLOAD
 

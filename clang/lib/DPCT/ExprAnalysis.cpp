@@ -12,6 +12,7 @@
 #include "AnalysisInfo.h"
 #include "CUBAPIMigration.h"
 #include "CallExprRewriter.h"
+#include "Config.h"
 #include "DNNAPIMigration.h"
 #include "TypeLocRewriters.h"
 #include "clang/AST/DeclTemplate.h"
@@ -857,8 +858,12 @@ bool isSpecialFunctions(const CallExpr *CE, const std::string &RefString) {
     std::string Name = FD->getNameInfo().getName().getAsString();
     auto FDFile = DpctGlobalInfo::getLocInfo(FD->getLocation()).first;
     makeCanonical(FDFile);
+    llvm::SmallString<256> AlgoFile(DpctInstallPath);
+    llvm::sys::path::append(AlgoFile, "lib/clang", DPCT_VERSION_MAJOR,
+                            "include/cuda_wrappers/algorithm");
     if ((Name == "min" || Name == "max") &&
-        isChildPath(DpctInstallPath, FDFile)) {
+        isChildOrSamePath(AlgoFile.c_str(), FDFile) &&
+        isChildOrSamePath(FDFile, AlgoFile.c_str())) {
       auto ContextFD = getImmediateOuterFuncDecl(CE);
       if (ContextFD && !ContextFD->hasAttr<CUDADeviceAttr>() &&
           !ContextFD->hasAttr<CUDAGlobalAttr>()) {
@@ -877,8 +882,8 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   if (!CallExprRewriterFactoryBase::RewriterMap)
     return;
   auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(RefString);
-  if ((Itr != CallExprRewriterFactoryBase::RewriterMap->end()) &&
-      (!isSpecialFunctions(CE, RefString))) {
+  if (!isSpecialFunctions(CE, RefString) &&
+      Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
     for (unsigned I = 0, E = CE->getNumArgs(); I != E; ++I) {
       if (isa<PackExpansionExpr>(CE->getArg(I))) {
         return;
