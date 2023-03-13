@@ -657,7 +657,8 @@ static int generate_file(char *filename, int ar_binary_used) {
   memset(cmd, '\0', PATH_MAX);
   memset(buf, '\0', PATH_MAX);
   int len = strlen(filename);
-  if (len > 500) {
+  // 10 is strlen of "mkdir -p  "
+  if (len >= PATH_MAX - 10) {
     perror("bear: generate file fail.");
     return -1;
   }
@@ -679,9 +680,8 @@ static int generate_file(char *filename, int ar_binary_used) {
   }
   if(ar_binary_used) {
     fwrite(g_data, 1, sizeof g_data, fd);
-  } else {
-    fprintf(fd, "\n");
   }
+
   if (fclose(fd)) {
     perror("bear: fclose");
     return -1;
@@ -1406,12 +1406,12 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
   } else if (is_nvcc_or_ld == 1) {
     // object is not given by -o. Need figure out the default output for cmd "gcc
     // -c xx.c"
-    char *tmp = malloc(4096);
+    char *tmp = malloc(PATH_MAX);
     if (tmp == NULL) {
       perror("bear: malloc memory fail.");
       exit(EXIT_FAILURE);
     }
-    memset(tmp, '\0', 4096);
+    memset(tmp, '\0', PATH_MAX);
     int idx = 0;
     int c_option;
     char ofilename[PATH_MAX];
@@ -1432,7 +1432,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
       }
       if (olen == -1) {
         olen = strlen(ofilename);
-        if (olen > 499) {
+        if (olen >= PATH_MAX - 2) {
           perror("bear: filename length too long.");
           exit(EXIT_FAILURE);
         }
@@ -1440,7 +1440,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
         ofilename[olen + 1] = 'o';
         ofilename[olen + 2] = '\0';
       } else {
-        if (olen > 500) {
+        if (olen > PATH_MAX - 2) {
           perror("bear: filename length too long.");
           exit(EXIT_FAILURE);
         }
