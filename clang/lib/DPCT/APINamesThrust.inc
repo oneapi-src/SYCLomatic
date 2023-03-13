@@ -3583,7 +3583,6 @@ CONDITIONAL_FACTORY_ENTRY(
   )
 )
 
-
 // thrust::remove
 CONDITIONAL_FACTORY_ENTRY(
   CheckArgCount(4),
@@ -3643,8 +3642,3 @@ CONDITIONAL_FACTORY_ENTRY(
                               ARG(0), ARG(1), ARG(2))))
     )
 )
-
-
-
-
-
