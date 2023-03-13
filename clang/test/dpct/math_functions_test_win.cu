@@ -450,7 +450,7 @@ float test_max(float a, float b) { return max(a, b); }
 // CHECK: double test_max(double a, double b) { return dpct::max(a, b); }
 double test_max(double a, double b) { return max(a, b); }
 
-// CHECK: double test_max(float a, double b) { return max(a, b); }
+// CHECK: double test_max(float a, double b) { return dpct::max(a, b); }
 double test_max(float a, double b) { return max(a, b); }
 
 // CHECK: double test_max(double a, float b) { return dpct::max(a, b); }
