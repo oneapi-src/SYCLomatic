@@ -517,7 +517,7 @@ __global__ void foo8(){
 
 
 //CHECK: #define DFABS(x) (double)sycl::fabs((x))
-//CHECK-NEXT: #define MAX(x, y) sycl::max(x, y)
+//CHECK-NEXT: #define MAX(x, y) dpct::max(a, sycl::sqrt(DFABS(b)))
 //CHECK-NEXT: void foo9(){
 //CHECK-NEXT:   double a,b,c;
 //CHECK-NEXT:   MAX(a, sycl::sqrt(DFABS(b)));
