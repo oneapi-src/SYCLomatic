@@ -1605,8 +1605,6 @@ public:
 };
 
 /// Migration rule for replacing __syncthreads() function call.
-///
-/// This rule replace __syncthreads() with item.barrier()
 class SyncThreadsRule : public NamedMigrationRule<SyncThreadsRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;

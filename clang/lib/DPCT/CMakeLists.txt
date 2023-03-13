@@ -152,7 +152,6 @@ add_clang_library(DPCT
   Rules.cpp
   Homoglyph.cpp
   MisleadingBidirectional.cpp
-  BarrierFenceSpaceAnalyzer.cpp
   BLASAPIMigration.cpp
   FFTAPIMigration.cpp
   DNNAPIMigration.cpp

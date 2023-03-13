@@ -10,26 +10,15 @@
 
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgType(0, "const class cooperative_groups::__v1::thread_block &"),
-    WARNING_FACTORY_ENTRY(
-        "sync",
-        MEMBER_CALL_FACTORY_ENTRY("sync", NDITEM,
-                                  false, "barrier"),
-        Diagnostics::BARRIER_PERFORMANCE_TUNNING, ARG("nd_item")),
+        CALL_FACTORY_ENTRY("sync",  CALL(MapNames::getClNamespace() + "group_barrier", GROUP)),
     CONDITIONAL_FACTORY_ENTRY(
         CheckArgType(0, "const class cooperative_groups::__v1::coalesced_group &"),
-        WARNING_FACTORY_ENTRY(
-            "sync",
-            MEMBER_CALL_FACTORY_ENTRY("sync", NDITEM,
-                                      false, "barrier"),
-            Diagnostics::BARRIER_PERFORMANCE_TUNNING, ARG("nd_item")),
+            CALL_FACTORY_ENTRY("sync", CALL(MapNames::getClNamespace() + "group_barrier", GROUP)),
         CONDITIONAL_FACTORY_ENTRY(
             CheckArgType(
                 0, "const class cooperative_groups::__v1::thread_block_tile<32> &"),
-            WARNING_FACTORY_ENTRY(
-                "sync",
-                MEMBER_CALL_FACTORY_ENTRY("sync",
-                                          SUBGROUP, false, "barrier"),
-                Diagnostics::BARRIER_PERFORMANCE_TUNNING, ARG("sub_group")),
+                CALL_FACTORY_ENTRY("sync", CALL(MapNames::getClNamespace() + "group_barrier",
+                                                SUBGROUP)),
             CONDITIONAL_FACTORY_ENTRY(
                 CheckArgType(0, "const class cooperative_groups::__v1::grid_group &"),
                 CONDITIONAL_FACTORY_ENTRY(
@@ -89,30 +78,19 @@ CONDITIONAL_FACTORY_ENTRY(
 #ifdef CLASS_METHOD_CALL
 // T.sync()
 // === cuda header file <= 10.2 === begin ===
-WARNING_FACTORY_ENTRY(
-    "cooperative_groups::__v1::__thread_block_tile_base<32>.sync",
-    MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base<32>.sync",
-                              SUBGROUP, false, "barrier"),
-    Diagnostics::BARRIER_PERFORMANCE_TUNNING, ARG("sub_group"))
+CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base<32>.sync",
+                          CALL(MapNames::getClNamespace() + "group_barrier", SUBGROUP))
 // === cuda header file <= 10.2 === end ===
 // === cuda header file >= 11.0 === begin ===
-WARNING_FACTORY_ENTRY(
-    "cooperative_groups::__v1::thread_block_tile<32>.sync",
-    MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile<32>.sync",
-                              SUBGROUP, false, "barrier"),
-    Diagnostics::BARRIER_PERFORMANCE_TUNNING, ARG("sub_group"))
+CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile<32>.sync",
+                          CALL(MapNames::getClNamespace() + "group_barrier", SUBGROUP))
 // === cuda header file >= 11.0 === end ===
 
-WARNING_FACTORY_ENTRY(
-    "cooperative_groups::__v1::thread_block.sync",
-    MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.sync", NDITEM,
-                              false, "barrier"),
-    Diagnostics::BARRIER_PERFORMANCE_TUNNING, ARG("nd_item"))
-WARNING_FACTORY_ENTRY(
-    "cooperative_groups::__v1::coalesced_group.sync",
-    MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::coalesced_group.sync", NDITEM,
-                              false, "barrier"),
-    Diagnostics::BARRIER_PERFORMANCE_TUNNING, ARG("nd_item"))
+CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.sync",
+                          CALL(MapNames::getClNamespace() + "group_barrier", GROUP))
+
+CALL_FACTORY_ENTRY("cooperative_groups::__v1::coalesced_group.sync",
+                          CALL(MapNames::getClNamespace() + "group_barrier", GROUP))
 CONDITIONAL_FACTORY_ENTRY(
     UseNDRangeBarrier,
     FEATURE_REQUEST_FACTORY(
