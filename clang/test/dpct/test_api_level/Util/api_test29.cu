@@ -4,7 +4,7 @@
 // RUN: rm -rf %T/Util/api_test29_out
 
 // CHECK: 2
-// TEST_FEATURE: Util_min_max
+// TEST_FEATURE: Math_min_max
 
 __device__ void foo() {
   int i;
