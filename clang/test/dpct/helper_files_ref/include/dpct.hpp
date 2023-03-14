@@ -21,6 +21,7 @@ template <int Arg> class dpct_kernel_scalar;
 #include "device.hpp"
 #include "image.hpp"
 #include "kernel.hpp"
+#include "math.hpp"
 #include "memory.hpp"
 #include "util.hpp"
 

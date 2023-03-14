@@ -61,6 +61,7 @@ ENTRY(cudaIpcOpenMemHandle, cudaIpcOpenMemHandle, true, NO_FLAG, P0, "DPCT1030")
 ENTRY(cudaSetDevice, cudaSetDevice, true, NO_FLAG, P0, "DPCT1093")
 ENTRY(cudaSetDeviceFlags, cudaSetDeviceFlags, true, NO_FLAG, P0, "DPCT1026/DPCT1027")
 ENTRY(cudaSetValidDevices, cudaSetValidDevices, false, NO_FLAG, P4, "comment")
+ENTRY(cudaInitDevice, cudaInitDevice, false, NO_FLAG, P4, "comment")
 
 // thread management functions of API
 ENTRY(cudaThreadExit, cudaThreadExit, true, NO_FLAG, P0, "Successful")
@@ -91,6 +92,7 @@ ENTRY(cudaStreamIsCapturing, cudaStreamIsCapturing, true, API_CALL_REMOVED, P4, 
 ENTRY(cudaStreamQuery, cudaStreamQuery, true, API_CALL_REMOVED, P0, "DPCT1026/DPCT1027")
 ENTRY(cudaStreamSynchronize, cudaStreamSynchronize, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaStreamWaitEvent, cudaStreamWaitEvent, true, API_CALL_UNSUPPORTED, P0, "Successful")
+ENTRY(cudaStreamGetId, cudaStreamGetId, false, NO_FLAG, P4, "comment")
 
 // event management functions of runtime API
 ENTRY(cudaEventCreate, cudaEventCreate, true, API_CALL_REMOVED, P0, "DPCT1026/DPCT1027")
@@ -123,10 +125,16 @@ ENTRY(cudaLaunchHostFunc, cudaLaunchHostFunc, false, NO_FLAG, P4, "comment")
 ENTRY(cudaLaunchKernel, cudaLaunchKernel, true, NO_FLAG, P0, "DPCT1007, success only when directly using of kernel function name")
 ENTRY(cudaSetDoubleForDevice, cudaSetDoubleForDevice, false, NO_FLAG, P0, "comment")
 ENTRY(cudaSetDoubleForHost, cudaSetDoubleForHost, false, NO_FLAG, P0, "comment")
+ENTRY(cudaGridDependencySynchronize, cudaGridDependencySynchronize, false, NO_FLAG, P4, "comment")
+ENTRY(cudaLaunchKernelExC, cudaLaunchKernelExC, false, NO_FLAG, P4, "comment")
+ENTRY(cudaTriggerProgrammaticLaunchCompletion, cudaTriggerProgrammaticLaunchCompletion, false, NO_FLAG, P4, "comments")
+
 
 // occupancy calculation functions of runtime API
 ENTRY(cudaOccupancyMaxActiveBlocksPerMultiprocessor, cudaOccupancyMaxActiveBlocksPerMultiprocessor, false, NO_FLAG, P0, "comment")
 ENTRY(cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags, cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags, false, NO_FLAG, P0, "comment")
+ENTRY(cudaOccupancyMaxActiveClusters, cudaOccupancyMaxActiveClusters, false, NO_FLAG, P4, "comment")
+ENTRY(cudaOccupancyMaxPotentialClusterSize, cudaOccupancyMaxPotentialClusterSize, false, NO_FLAG, P4, "comment")
 
 // deprecated execution control functions of runtime API
 ENTRY(cudaConfigureCall, cudaConfigureCall, false, NO_FLAG, P0, "comment")
@@ -312,6 +320,7 @@ ENTRY(cudaGetSurfaceObjectResourceDesc, cudaGetSurfaceObjectResourceDesc, false,
 ENTRY(cudaDriverGetVersion, cudaDriverGetVersion, true, NO_FLAG, P0, "DPCT1043")
 ENTRY(cudaRuntimeGetVersion, cudaRuntimeGetVersion, true, NO_FLAG, P0, "DPCT1043")
 
+// Graph Management
 ENTRY(cudaGraphAddChildGraphNode, cudaGraphAddChildGraphNode, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphAddDependencies, cudaGraphAddDependencies, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphAddEmptyNode, cudaGraphAddEmptyNode, false, NO_FLAG, P4, "comment")
@@ -343,6 +352,10 @@ ENTRY(cudaGraphNodeGetDependencies, cudaGraphNodeGetDependencies, false, NO_FLAG
 ENTRY(cudaGraphNodeGetDependentNodes, cudaGraphNodeGetDependentNodes, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphNodeGetType, cudaGraphNodeGetType, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphRemoveDependencies, cudaGraphRemoveDependencies, false, NO_FLAG, P4, "comment")
+ENTRY(cudaGetCurrentGraphExec, cudaGetCurrentGraphExec, false, NO_FLAG, P4, "comment")
+ENTRY(cudaGraphExecGetFlags, cudaGraphExecGetFlags, false, NO_FLAG, P4, "comment")
+ENTRY(cudaGraphInstantiateWithParams, cudaGraphInstantiateWithParams, false, NO_FLAG, P4, "comment")
+
 
 // C++ high level API functions of runtime API
 ENTRY(cudaOccupancyMaxPotentialBlockSize, cudaOccupancyMaxPotentialBlockSize, false, NO_FLAG, P0, "no direct mapping yet")
@@ -1703,6 +1716,29 @@ ENTRY(cuUserObjectCreate, cuUserObjectCreate, false, NO_FLAG, P4, "comment")
 ENTRY(cuUserObjectRelease, cuUserObjectRelease, false, NO_FLAG, P4, "comment")
 ENTRY(cuUserObjectRetain, cuUserObjectRetain, false, NO_FLAG, P4, "comment")
 
+// add driver APIs for v12.0
+ENTRY(cuCtxGetId, cuCtxGetId, false, NO_FLAG, P4, "comment")
+ENTRY(cuKernelGetAttribute, cuKernelGetAttribute, false, NO_FLAG, P4, "comment")
+ENTRY(cuKernelGetFunction, cuKernelGetFunction, false, NO_FLAG, P4, "comment")
+ENTRY(cuKernelSetAttribute, cuKernelSetAttribute, false, NO_FLAG, P4, "comment")
+ENTRY(cuKernelSetCacheConfig, cuKernelSetCacheConfig, false, NO_FLAG, P4, "comment")
+ENTRY(cuLibraryGetGlobal, cuLibraryGetGlobal, false, NO_FLAG, P4, "comment")
+ENTRY(cuLibraryGetKernel, cuLibraryGetKernel, false, NO_FLAG, P4, "comment")
+ENTRY(cuLibraryGetManaged, cuLibraryGetManaged, false, NO_FLAG, P4, "comment")
+ENTRY(cuLibraryGetModule, cuLibraryGetModule, false, NO_FLAG, P4, "comment")
+ENTRY(cuLibraryGetUnifiedFunction, cuLibraryGetUnifiedFunction, false, NO_FLAG, P4, "comment")
+ENTRY(cuLibraryLoadData, cuLibraryLoadData, false, NO_FLAG, P4, "comment")
+ENTRY(cuLibraryLoadFromFile, cuLibraryLoadFromFile, false, NO_FLAG, P4, "comment")
+ENTRY(cuLibraryUnload, cuLibraryUnload, false, NO_FLAG, P4, "comment")
+ENTRY(cuLaunchKernelEx, cuLaunchKernelEx, false, NO_FLAG, P4, "comment")
+ENTRY(cuOccupancyMaxActiveClusters, cuOccupancyMaxActiveClusters, false, NO_FLAG, P4, "comment")
+ENTRY(cuOccupancyMaxPotentialClusterSize, cuOccupancyMaxPotentialClusterSize, false, NO_FLAG, P4, "comment")
+ENTRY(cuTensorMapEncodeIm2col, cuTensorMapEncodeIm2col, false, NO_FLAG, P4, "comment")
+ENTRY(cuTensorMapEncodeTiled, cuTensorMapEncodeTiled, false, NO_FLAG, P4, "comment")
+ENTRY(cuTensorMapReplaceAddress, cuTensorMapReplaceAddress, false, NO_FLAG, P4, "comment")
+ENTRY(cuGraphInstantiateWithParams, cuGraphInstantiateWithParams, false, NO_FLAG, P4, "comment")
+ENTRY(cuStreamGetId, cuStreamGetId, false, NO_FLAG, P4, "comment")
+
 ENTRY(cuCabs, cuCabs, true, NO_FLAG, P4, "comment")
 ENTRY(cuCabsf, cuCabsf, true, NO_FLAG, P4, "comment")
 ENTRY(cuCadd, cuCadd, true, NO_FLAG, P4, "comment")
@@ -1887,4 +1923,3 @@ ENTRY(__nv_cvt_float_to_fp8, __nv_cvt_float_to_fp8, false, NO_FLAG, P4, "comment
 ENTRY(__nv_cvt_fp8_to_halfraw, __nv_cvt_fp8_to_halfraw, false, NO_FLAG, P4, "comment")
 ENTRY(__nv_cvt_halfraw2_to_fp8x2, __nv_cvt_halfraw2_to_fp8x2, false, NO_FLAG, P4, "comment")
 ENTRY(__nv_cvt_halfraw_to_fp8, __nv_cvt_halfraw_to_fp8, false, NO_FLAG, P4, "comment")
-

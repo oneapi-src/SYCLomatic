@@ -31,8 +31,13 @@ __constant__ int *const_ptr;
 
 // CHECK: static dpct::constant_memory<int, 1> const_init(sycl::range<1>(5), {1, 2, 3, 7, 8});
 __constant__ int const_init[5] = {1, 2, 3, 7, 8};
+// CHECK: static dpct::constant_memory<int, 1> incomplete_size_init(sycl::range<1>(5), {1, 2, 3, 7, 8});
+__constant__ int incomplete_size_init[] = {1, 2, 3, 7, 8};
 // CHECK: static dpct::constant_memory<int, 2> const_init_2d(sycl::range<2>(5, 5), {{[{][{]}}1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7, 8, 0}, {1, 3}, {4, 0, 56}});
 __constant__ int const_init_2d[5][5] = {{1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7, 8, 0}, {1, 3}, {4, 0, 56}};
+// CHECK: static dpct::constant_memory<int, 2> incomplete_size_init_2d(sycl::range<2>(3, 2), { {1,2},{3,4},{5,6}});
+__constant__ int incomplete_size_init_2d[][2] = { {1,2},{3,4},{5,6}};
+
 
 // CHECK: struct FuncObj {
 // CHECK-NEXT: void operator()(float *out, int index, float *const_angle) {

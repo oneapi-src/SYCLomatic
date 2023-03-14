@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - SYCLomatic
+    types: [opened, synchronize, reopened, ready_for_review]
 
 env:
   BUILD_CONCURRENCY: 2
@@ -13,6 +14,7 @@ env:
 jobs:
   windows-build-lit:
     name: windows-build-lit
+    if: github.event.pull_request.draft == false
     runs-on: win_build_sc
     outputs:
       build_success: ${{ steps.Echo-Build-Success.outputs.build_success }}
@@ -165,7 +167,7 @@ jobs:
     runs-on: win_build_sc
     needs: [windows-build-lit]
     if: |
-      needs.windows-build-lit.outputs.build_success == 'true'
+      needs.windows-build-lit.outputs.build_success == 'true' && github.event.pull_request.draft == false
 
     strategy:
       fail-fast: false

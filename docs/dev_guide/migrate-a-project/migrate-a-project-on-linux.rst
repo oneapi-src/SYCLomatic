@@ -14,9 +14,8 @@ source that should be migrated:
 * Any header file within the ``--in-root`` directory (at any nesting level) that
   is included by the source or header file, which is being migrated, is also
   migrated.
-* Files from outside the ``--in-root`` directory are considered system files and
-  will not be migrated even if they are included by any of your program source
-  files.
+* Files from outside the ``--in-root`` directory will not be migrated even if
+  they are included by any of your program source files.
 * If the ``--in-root`` option is not specified, the directory of the first input
   source file is implied.
 

@@ -873,3 +873,40 @@ void partition_copy_test() {
   thrust::stable_partition_copy(host_a.begin(), host_a.begin() + N, host_S.begin(), host_evens.begin(), host_odds.begin(), is_even());
   thrust::stable_partition_copy(device_a.begin(), device_a.begin() + N, device_S.begin(), device_evens.begin(), device_odds.begin(), is_even());
 }
+void stable_partition_test() {
+
+  int data[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  int S[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  const int N = sizeof(data) / sizeof(int);
+  thrust::host_vector<int> host_data(data, data + N);
+  thrust::device_vector<int> device_data(data, data + N);
+  thrust::host_vector<int> host_S(S, S + N);
+  thrust::device_vector<int> device_s(S, S + N);
+
+
+// CHECK:  oneapi::dpl::stable_partition(oneapi::dpl::execution::seq, data, data + N, is_even());
+// CHECK-NEXT:  oneapi::dpl::stable_partition(oneapi::dpl::execution::seq, host_data.begin(), host_data.begin() + N, is_even());
+// CHECK-NEXT:  oneapi::dpl::stable_partition(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.begin() + N, is_even());
+// CHECK-NEXT:  oneapi::dpl::stable_partition(oneapi::dpl::execution::seq, data, data + N, is_even());
+// CHECK-NEXT:  oneapi::dpl::stable_partition(oneapi::dpl::execution::seq, host_data.begin(), host_data.begin() + N, is_even());
+// CHECK-NEXT:  oneapi::dpl::stable_partition(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.begin() + N, is_even());
+// CHECK-NEXT:  dpct::stable_partition(oneapi::dpl::execution::seq, data, data + N, S, is_even());
+// CHECK-NEXT:  dpct::stable_partition(oneapi::dpl::execution::seq, host_data.begin(), host_data.begin() + N, host_S.begin(), is_even());
+// CHECK-NEXT:  dpct::stable_partition(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.begin() + N, device_s.begin(), is_even());
+// CHECK-NEXT:  dpct::stable_partition(oneapi::dpl::execution::seq, data, data + N, S, is_even());
+// CHECK-NEXT:  dpct::stable_partition(oneapi::dpl::execution::seq, host_data.begin(), host_data.begin() + N, host_S.begin(), is_even());
+// CHECK-NEXT:  dpct::stable_partition(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.begin() + N, device_s.begin(), is_even());
+  thrust::stable_partition(thrust::host, data, data + N, is_even());
+  thrust::stable_partition(thrust::host, host_data.begin(), host_data.begin() + N, is_even());
+  thrust::stable_partition(thrust::device, device_data.begin(), device_data.begin() + N, is_even());
+  thrust::stable_partition(data, data + N, is_even());
+  thrust::stable_partition(host_data.begin(), host_data.begin() + N, is_even());
+  thrust::stable_partition(device_data.begin(), device_data.begin() + N, is_even());
+  thrust::stable_partition(thrust::host, data, data + N, S, is_even());
+  thrust::stable_partition(thrust::host, host_data.begin(), host_data.begin() + N, host_S.begin(), is_even());
+  thrust::stable_partition(thrust::device, device_data.begin(), device_data.begin() + N, device_s.begin(), is_even());
+  thrust::stable_partition(data, data + N, S, is_even());
+  thrust::stable_partition(host_data.begin(), host_data.begin() + N, host_S.begin(), is_even());
+  thrust::stable_partition(device_data.begin(), device_data.begin() + N, device_s.begin(), is_even());
+}
+
