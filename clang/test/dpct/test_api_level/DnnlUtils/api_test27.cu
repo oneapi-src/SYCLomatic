@@ -7,7 +7,7 @@
 // TEST_FEATURE: DnnlUtils_async_dropout_backward
 // TEST_FEATURE: DnnlUtils_async_dropout_forward
 // TEST_FEATURE: DnnlUtils_dropout_desc
-// TEST_FEATURE: DnnlUtils_dropout_get_state_size
+// TEST_FEATURE: DnnlUtils_get_dropout_state_size
 
 #include<cuda_runtime.h>
 #include<cudnn.h>

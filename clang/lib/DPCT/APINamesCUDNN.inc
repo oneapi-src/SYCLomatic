@@ -702,10 +702,10 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_dropout_desc,
                             "restore", ARG_WC(1), ARG_WC(2), ARG_WC(3),
                             ARG_WC(4), ARG_WC(5))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_dropout_get_state_size,
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_get_dropout_state_size,
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                             "cudnnDropoutGetStatesSize", DEREF(ARG_WC(1)),
-                            MEMBER_CALL(ARG_WC(0), false, "dropout_get_state_size"))))
+                            MEMBER_CALL(ARG_WC(0), false, "get_dropout_state_size"))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_memory_desc_ext,
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(

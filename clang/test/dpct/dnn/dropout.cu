@@ -21,7 +21,7 @@ int main(){
 
     size_t state_size;
     void *state, *state2;
-    // CHECK: state_size = handle.dropout_get_state_size();
+    // CHECK: state_size = handle.get_dropout_state_size();
     cudnnDropoutGetStatesSize(handle, &state_size);
 
     cudaMallocManaged(&data, ele_num * sizeof(float));
