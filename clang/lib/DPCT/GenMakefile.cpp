@@ -257,7 +257,9 @@ static void getCompileInfo(
         makeCanonical(RealPath);
 
         bool HasCudaSemantics = false;
-        if (IncludeFileMap[std::string(RealPath.str())]) {
+
+        if (IncludeFileMap.count(std::string(RealPath.str())) &&
+            IncludeFileMap.at(std::string(RealPath.str()))) {
           HasCudaSemantics = true;
         }
 
