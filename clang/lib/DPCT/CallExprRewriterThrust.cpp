@@ -103,7 +103,7 @@ makeMappedThrustPolicyEnum(unsigned Idx) {
   };
 }
 
-enum PolicyState : bool { HasPolicy = true, NoPolicy = false };
+enum class PolicyState : bool { HasPolicy = true, NoPolicy = false };
 
 struct ThrustOverload {
   int argCnt;
@@ -164,7 +164,7 @@ auto createSequentialPolicyCallExprRewriterFactory(
 
   int argStart = 0;
 
-  if (hasPolicy) {
+  if (static_cast<bool>(hasPolicy)) {
     // Skip policy argument
     argCnt--;
     argStart = 1;
@@ -202,7 +202,7 @@ auto createDevicePolicyCallExprRewriterFactory(const std::string &thrustFunc,
 
   int argStart = 0;
 
-  if (hasPolicy) {
+  if (static_cast<bool>(hasPolicy)) {
     // Skip policy argument
     argCnt--;
     argStart = 1;
@@ -239,7 +239,7 @@ thrustOverloadFactory(const std::string &thrustFunc,
       0);
 
   auto usm =
-      (overload.hasPolicy
+    (static_cast<bool>(overload.hasPolicy)
            ? std::pair{thrustFunc,
                        createMappedPolicyCallExprRewriterFactory(
                            thrustFunc, overload.migratedFunc, overload.argCnt)}
@@ -269,7 +269,7 @@ thrustFactory(const std::string &thrustFunc,
                                 makeCallArgCreator(thrustFunc))};
 
   for (auto it = overloads.rbegin(); it != overloads.rend(); it++) {
-    u = (it->hasPolicy
+    u = (static_cast<bool>(it->hasPolicy)
              ? createConditionalFactory(
                    makeCheckAnd(CheckArgCount(it->argCnt), IsPolicyArgType(0)),
                    thrustOverloadFactory(thrustFunc, *it), std::move(u))
