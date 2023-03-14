@@ -120,6 +120,7 @@ bool StopOnParseErr = false;
 bool CheckUnicodeSecurityFlag = false;
 bool EnablepProfilingFlag = false;
 bool SyclNamedLambdaFlag = false;
+bool AlwaysInlineDevFuncFlag = false;
 bool ExplicitClNamespace = false;
 bool NoDRYPatternFlag = false;
 bool NoUseGenericSpaceFlag = false;
@@ -852,6 +853,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setCudaPath(CudaPath);
   DpctGlobalInfo::setKeepOriginCode(KeepOriginalCodeFlag);
   DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);
+  DpctGlobalInfo::setAlwaysInlineDevFunc(AlwaysInlineDevFunc);
   DpctGlobalInfo::setUsmLevel(USMLevel);
   DpctGlobalInfo::setIsIncMigration(!NoIncrementalMigration);
   DpctGlobalInfo::setHelperFilesCustomizationLevel(UseCustomHelperFileLevel);
@@ -972,6 +974,8 @@ int runDPCT(int argc, const char **argv) {
                      ProcessAll.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_SyclNamedLambda, SyclNamedLambdaFlag,
                      SyclNamedLambda.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_AlwaysInlineDevFunc, AlwaysInlineDevFuncFlag,
+                     AlwaysInlineDevFunc.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_ExperimentalFlag,
                      DpctGlobalInfo::getExperimentalFlag(),
                      Experimentals.getNumOccurrences());

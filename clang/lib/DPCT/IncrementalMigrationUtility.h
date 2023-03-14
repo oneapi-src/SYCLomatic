@@ -34,6 +34,7 @@ const std::string OPTION_VcxprojFile = "VcxprojFile";
 #endif
 const std::string OPTION_ProcessAll = "ProcessAll";
 const std::string OPTION_SyclNamedLambda = "SyclNamedLambda";
+const std::string OPTION_AlwaysInlineDevFunc = "AlwaysInlineDevFunc";
 const std::string OPTION_ExperimentalFlag = "ExperimentalFlag";
 const std::string OPTION_ExplicitNamespace = "ExplicitNamespace";
 const std::string OPTION_UsmLevel = "UsmLevel";

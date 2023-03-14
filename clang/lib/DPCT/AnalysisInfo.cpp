@@ -70,6 +70,7 @@ SourceManager *DpctGlobalInfo::SM = nullptr;
 FileManager *DpctGlobalInfo::FM = nullptr;
 bool DpctGlobalInfo::KeepOriginCode = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
+bool DpctGlobalInfo::AlwaysInlineDevFunc = false;
 bool DpctGlobalInfo::CheckUnicodeSecurityFlag = false;
 std::unordered_map<std::string, SourceRange> DpctGlobalInfo::ExpansionRangeBeginMap;
 bool DpctGlobalInfo::EnablepProfilingFlag = false;
@@ -2790,6 +2791,11 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl,
                                          nullptr));
+  }
+  if (FuncInfo->IsAlwaysInlineDevFunc()) {
+    std::string StrRepl = "inline ";
+    DpctGlobalInfo::getInstance().addReplacement(
+      std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl, nullptr));
   }
   for (auto &Obj : TextureObjectList) {
     if (Obj) {

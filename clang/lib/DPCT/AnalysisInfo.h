@@ -899,6 +899,10 @@ public:
   inline static void setSyclNamedLambda(bool SNL = true) {
     SyclNamedLambda = SNL;
   }
+  inline static bool isAlwaysInlineDevFunc() { return AlwaysInlineDevFunc; }
+  inline static void setAlwaysInlineDevFunc(bool AIDF = true) {
+    AlwaysInlineDevFunc = AIDF;
+  }
   inline static void setCheckUnicodeSecurityFlag(bool CUS) {
     CheckUnicodeSecurityFlag = CUS;
   }
@@ -2053,6 +2057,7 @@ private:
   static FileManager *FM;
   static bool KeepOriginCode;
   static bool SyclNamedLambda;
+  static bool AlwaysInlineDevFunc;
   static bool GuessIndentWidthMatcherFlag;
   static unsigned int IndentWidth;
   static std::map<unsigned int, unsigned int> KCIndentWidthMap;
@@ -3787,6 +3792,8 @@ public:
   const std::string &getDefinitionFilePath() { return DefinitionFilePath; }
   void setNeedSyclExternMacro() { NeedSyclExternMacro = true; }
   bool IsSyclExternMacroNeeded() { return NeedSyclExternMacro; }
+  void setAlwaysInlineDevFunc() { AlwaysInlineDevFunc = true; }
+  bool IsAlwaysInlineDevFunc() {return AlwaysInlineDevFunc;}
   void merge(std::shared_ptr<DeviceFunctionInfo> Other);
   size_t ParamsNum;
   size_t NonDefaultParamNum;
@@ -3827,6 +3834,7 @@ private:
   bool IsBuilt;
   std::string DefinitionFilePath;
   bool NeedSyclExternMacro = false;
+  bool AlwaysInlineDevFunc= false;
   // subgroup size, filepath, offset, API name, var name
   std::vector<std::tuple<unsigned int, std::string, unsigned int, std::string,
                          std::string>>

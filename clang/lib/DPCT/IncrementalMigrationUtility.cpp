@@ -255,6 +255,10 @@ bool printOptions(
       if ("true" == Value)
         Opts.emplace_back("--sycl-named-lambda");
     }
+    if (Key == clang::dpct::OPTION_AlwaysInlineDevFunc) {
+      if ("true" == Value)
+        Opts.emplace_back("--inline-dev-function");
+    }
     if (Key == clang::dpct::OPTION_ExperimentalFlag && Specified) {
       std::string MaxValueStr = std::to_string(static_cast<unsigned>(-1));
       if (Value.empty() || Value.length() > MaxValueStr.length() ||

@@ -158,6 +158,10 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), SyclNamedL
            llvm::cl::desc("Generates kernels with the kernel name. Default: off.\n"),
            llvm::cl::cat(DPCTCat), llvm::cl::location(SyclNamedLambdaFlag))
 
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), AlwaysInlineDevFunc, "inline-dev-function",
+           llvm::cl::desc("Add inline to all the migrated device function. Default: off.\n"),
+           llvm::cl::cat(DPCTCat), llvm::cl::location(AlwaysInlineDevFuncFlag))
+
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<OutputVerbosityLevel>), OutputVerbosity, "output-verbosity",
            DPCT_OPTION_VALUES(
              DPCT_OPT_ENUM("silent", int(OutputVerbosityLevel::OVL_Silent),

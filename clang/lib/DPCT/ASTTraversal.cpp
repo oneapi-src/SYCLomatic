@@ -9314,6 +9314,11 @@ void DeviceFunctionDeclRule::runRule(
     FuncInfo->setLambda();
   }
 
+  if (DpctGlobalInfo::isAlwaysInlineDevFunc() && !FD->isInlined() &&
+          !FuncInfo->IsAlwaysInlineDevFunc()) {
+    FuncInfo->setAlwaysInlineDevFunc();
+  }
+
   if (auto CE = getAssistNodeAsType<CallExpr>(Result, "callExpr")) {
     FuncInfo->addCallee(CE);
   } else if (CE = getAssistNodeAsType<CallExpr>(Result, "PrintfExpr")) {
