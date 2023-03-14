@@ -363,6 +363,7 @@ void generateAllHelperFiles() {
   GENERATE_ALL_FILE_CONTENT(DnnlUtils)
   GENERATE_ALL_FILE_CONTENT(Image)
   GENERATE_ALL_FILE_CONTENT(Kernel)
+  GENERATE_ALL_FILE_CONTENT(Math)
   GENERATE_ALL_FILE_CONTENT(Memory)
   GENERATE_ALL_FILE_CONTENT(Util)
   GENERATE_ALL_FILE_CONTENT(RngUtils)
@@ -461,6 +462,7 @@ void generateHelperFunctions() {
   std::vector<clang::dpct::HelperFunc> DplUtilsFileContent;
   std::vector<clang::dpct::HelperFunc> ImageFileContent;
   std::vector<clang::dpct::HelperFunc> KernelFileContent;
+  std::vector<clang::dpct::HelperFunc> MathFileContent;
   std::vector<clang::dpct::HelperFunc> MemoryFileContent;
   std::vector<clang::dpct::HelperFunc> UtilFileContent;
   std::vector<clang::dpct::HelperFunc> RngUtilsFileContent;
@@ -578,6 +580,7 @@ void generateHelperFunctions() {
       UPDATE_FILE(DplUtils)
       UPDATE_FILE(Image)
       UPDATE_FILE(Kernel)
+      UPDATE_FILE(Math)
       UPDATE_FILE(Memory)
       UPDATE_FILE(Util)
       UPDATE_FILE(RngUtils)
@@ -677,6 +680,7 @@ void generateHelperFunctions() {
   // will be a multi definition issue. ADD_INCLUDE_DIRECTIVE(DplUtils)
   ADD_INCLUDE_DIRECTIVE(Image)
   ADD_INCLUDE_DIRECTIVE(Kernel)
+  ADD_INCLUDE_DIRECTIVE(Math)
   ADD_INCLUDE_DIRECTIVE(Memory)
   ADD_INCLUDE_DIRECTIVE(Util)
   ADD_INCLUDE_DIRECTIVE(RngUtils)
@@ -723,6 +727,7 @@ void generateHelperFunctions() {
   GENERATE_FILE(DplUtils)
   GENERATE_FILE(Image)
   GENERATE_FILE(Kernel)
+  GENERATE_FILE(Math)
   GENERATE_FILE(Memory)
   GENERATE_FILE(Util)
   GENERATE_FILE(RngUtils)
@@ -918,6 +923,7 @@ std::map<HelperFeatureIDTy, clang::dpct::HelperFunc> HelperNameContentMap {
 #include "clang/DPCT/sparse_utils.inc"
 #include "clang/DPCT/fft_utils.inc"
 #include "clang/DPCT/lapack_utils.inc"
+#include "clang/DPCT/math.inc"
 #include "clang/DPCT/memory.inc"
 #include "clang/DPCT/rng_utils.inc"
 #include "clang/DPCT/util.inc"
@@ -935,6 +941,7 @@ std::unordered_map<clang::dpct::HelperFileEnum, std::string> HelperFileNameMap{
     {clang::dpct::HelperFileEnum::DplUtils, "dpl_utils.hpp"},
     {clang::dpct::HelperFileEnum::Image, "image.hpp"},
     {clang::dpct::HelperFileEnum::Kernel, "kernel.hpp"},
+    {clang::dpct::HelperFileEnum::Math, "math.hpp"},
     {clang::dpct::HelperFileEnum::Memory, "memory.hpp"},
     {clang::dpct::HelperFileEnum::Util, "util.hpp"},
     {clang::dpct::HelperFileEnum::RngUtils, "rng_utils.hpp"},
@@ -961,6 +968,7 @@ std::unordered_map<std::string, clang::dpct::HelperFileEnum> HelperFileIDMap{
     {"dpl_utils.hpp", clang::dpct::HelperFileEnum::DplUtils},
     {"image.hpp", clang::dpct::HelperFileEnum::Image},
     {"kernel.hpp", clang::dpct::HelperFileEnum::Kernel},
+    {"math.hpp", clang::dpct::HelperFileEnum::Math},
     {"memory.hpp", clang::dpct::HelperFileEnum::Memory},
     {"util.hpp", clang::dpct::HelperFileEnum::Util},
     {"rng_utils.hpp", clang::dpct::HelperFileEnum::RngUtils},
@@ -988,6 +996,7 @@ const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
         {clang::dpct::HelperFileEnum::DplUtils, "__DPCT_DPL_UTILS_HPP__"},
         {clang::dpct::HelperFileEnum::Image, "__DPCT_IMAGE_HPP__"},
         {clang::dpct::HelperFileEnum::Kernel, "__DPCT_KERNEL_HPP__"},
+        {clang::dpct::HelperFileEnum::Math, "__DPCT_MATH_HPP__"},
         {clang::dpct::HelperFileEnum::Memory, "__DPCT_MEMORY_HPP__"},
         {clang::dpct::HelperFileEnum::Util, "__DPCT_UTIL_HPP__"},
         {clang::dpct::HelperFileEnum::RngUtils, "__DPCT_RNG_UTILS_HPP__"},
@@ -1041,6 +1050,9 @@ const std::string ImageAllContentStr =
     ;
 const std::string KernelAllContentStr =
 #include "clang/DPCT/kernel.all.inc"
+    ;
+const std::string MathAllContentStr =
+#include "clang/DPCT/math.all.inc"
     ;
 const std::string MemoryAllContentStr =
 #include "clang/DPCT/memory.all.inc"
