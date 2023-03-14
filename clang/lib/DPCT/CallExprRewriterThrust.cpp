@@ -22,6 +22,28 @@ public:
     std::string ArgType;
     unsigned NumArgs = C->getNumArgs();
     if (Idx < NumArgs) {
+      // template<typename ELT_TYPE>
+      // void testfunc() {
+      //   thrust::host_vector<ELT_TYPE> V(1);
+      //   V[0]=0;
+      //  thrust::stable_sort(V.begin(),V.end(),thrust::not2(thrust::greater_equal()));
+      // }
+      // void foo() {
+      //   testfunc<int>();
+      // }
+      // For the code above argument "A.begin()" has type
+      // "thrust::host_vector<ELT_TYPE>" in AST.
+      if (auto Call = dyn_cast<CallExpr>(C->getArg(Idx))) {
+        if (auto CDSME =
+                dyn_cast<CXXDependentScopeMemberExpr>(Call->getCallee())) {
+          if (auto DRE = dyn_cast<DeclRefExpr>(CDSME->getBase())) {
+            ArgType = DRE->getType().getAsString();
+            if (ArgType.find("thrust::host_vector") != std::string::npos)
+              return false;
+          }
+        }
+      }
+
       ArgType = C->getArg(Idx)
                     ->getType()
                     .getCanonicalType()
@@ -38,6 +60,18 @@ public:
     // we follow currrent solution assuming it a device iterator.
     if (ArgType == "<dependent type>")
       return true;
+
+    // template <class T>
+    // void foo() {
+    //   greater_than_zero pred;
+    //   thrust::device_vector<T> A(4);
+    //   thrust::replace_if(A.begin(), A.end(), pred, 0);
+    // }
+    // For the code above argument "A.begin()" has type
+    // "thrust::device_vector<T>"" in AST.
+    if (ArgType.find("thrust::device_vector") != std::string::npos)
+      return true;
+
     return ArgType.find(TypeName) != std::string::npos;
   }
 };
