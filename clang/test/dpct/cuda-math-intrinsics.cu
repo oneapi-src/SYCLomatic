@@ -2419,402 +2419,189 @@ __global__ void kernelFuncSIMD() {
   unsigned int u, u_1, u_2;
   bool b;
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vabs2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: u_2 = dpct::vectorized_abs<sycl::short2, unsigned>(u);
+  // CHECK-NEXT: u_2 = dpct::vectorized_abs<sycl::char4, unsigned>(u);
+  // CHECK-NEXT: u_2 = dpct::vectorized_abs_diff<sycl::short2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_abs_diff<sycl::char4, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_abs_diff<sycl::ushort2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_abs_diff<sycl::uchar4, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_abs_sat<sycl::short2, unsigned>(u);
+  // CHECK-NEXT: u_2 = dpct::vectorized_abs_sat<sycl::char4, unsigned>(u);
   u_2 = __vabs2(u);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vabs4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vabs4(u);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vabsdiffs2 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vabsdiffs2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vabsdiffs4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vabsdiffs4(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vabsdiffu2 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vabsdiffu2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vabsdiffu4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vabsdiffu4(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vabsss2 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vabsss2(u);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vabsss4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vabsss4(u);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vadd2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::ushort2, unsigned>(u, u_1, std::plus<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4, unsigned>(u, u_1, std::plus<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_add_sat<sycl::short2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_add_sat<sycl::char4, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_add_sat<sycl::ushort2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_add_sat<sycl::uchar4, unsigned>(u, u_1);
   u_2 = __vadd2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vadd4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vadd4(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vaddss2 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vaddss2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vaddss4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vaddss4(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vaddus2 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vaddus2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vaddus4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vaddus4(u, u_1);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vavgs2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: u_2 = dpct::vectorized_avg_sat<sycl::short2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_avg_sat<sycl::char4, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_avg_sat<sycl::ushort2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_avg_sat<sycl::uchar4, unsigned>(u, u_1);
   u_2 = __vavgs2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vavgs4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vavgs4(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vavgu2 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vavgu2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vavgu4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vavgu4(u, u_1);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vcmpeq2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::ushort2, unsigned>(u, u_1, std::equal_to<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4, unsigned>(u, u_1, std::equal_to<>());
   u_2 = __vcmpeq2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vcmpeq4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vcmpeq4(u, u_1);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vcmpges2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2, unsigned>(u, u_1, std::greater_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4, unsigned>(u, u_1, std::greater_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2, unsigned>(u, u_1, std::greater_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4, unsigned>(u, u_1, std::greater_equal<>());
   u_2 = __vcmpges2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vcmpges4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vcmpges4(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vcmpgeu2 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vcmpgeu2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vcmpgeu4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vcmpgeu4(u, u_1);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vcmpgts2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2, unsigned>(u, u_1, std::greater<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4, unsigned>(u, u_1, std::greater<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2, unsigned>(u, u_1, std::greater<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4, unsigned>(u, u_1, std::greater<>());
   u_2 = __vcmpgts2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vcmpgts4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vcmpgts4(u, u_1);
-
-  // CHECK: u_2 = dpct::vectorized_isgreater<sycl::ushort2, unsigned>(u, u_1);
   u_2 = __vcmpgtu2(u, u_1);
-
-  // CHECK: u_2 = dpct::vectorized_isgreater<sycl::uchar4, unsigned>(u, u_1);
   u_2 = __vcmpgtu4(u, u_1);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vcmples2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2, unsigned>(u, u_1, std::less_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4, unsigned>(u, u_1, std::less_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2, unsigned>(u, u_1, std::less_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4, unsigned>(u, u_1, std::less_equal<>());
   u_2 = __vcmples2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vcmples4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vcmples4(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vcmpleu2 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vcmpleu2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vcmpleu4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vcmpleu4(u, u_1);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vcmplts2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2, unsigned>(u, u_1, std::less<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4, unsigned>(u, u_1, std::less<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2, unsigned>(u, u_1, std::less<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4, unsigned>(u, u_1, std::less<>());
   u_2 = __vcmplts2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vcmplts4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vcmplts4(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vcmpltu2 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vcmpltu2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vcmpltu4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vcmpltu4(u, u_1);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vcmpne2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::ushort2, unsigned>(u, u_1, std::not_equal_to<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4, unsigned>(u, u_1, std::not_equal_to<>());
   u_2 = __vcmpne2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vcmpne4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vcmpne4(u, u_1);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vhaddu2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: u_2 = dpct::vectorized_hadd<sycl::ushort2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_hadd<sycl::uchar4, unsigned>(u, u_1);
   u_2 = __vhaddu2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vhaddu4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vhaddu4(u, u_1);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vmaxs2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: u_2 = dpct::vectorized_max<sycl::short2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_max<sycl::char4, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_max<sycl::ushort2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_max<sycl::uchar4, unsigned>(u, u_1);
   u_2 = __vmaxs2(u, u_1);
-
-  // CHECK: u_2 = dpct::vectorized_max<sycl::char4>(u, u_1);
   u_2 = __vmaxs4(u, u_1);
-
-  // CHECK: u_2 = dpct::vectorized_max<sycl::ushort2>(u, u_1);
   u_2 = __vmaxu2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vmaxu4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vmaxu4(u, u_1);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vmins2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: u_2 = dpct::vectorized_min<sycl::short2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_min<sycl::char4, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_min<sycl::ushort2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_min<sycl::uchar4, unsigned>(u, u_1);
   u_2 = __vmins2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vmins4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vmins4(u, u_1);
-
-  // CHECK: u_2 = dpct::vectorized_min<sycl::ushort2>(u, u_1);
   u_2 = __vminu2(u, u_1);
-
-  // CHECK: u_2 = dpct::vectorized_min<sycl::uchar4>(u, u_1);
   u_2 = __vminu4(u, u_1);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vneg2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: u_2 = dpct::vectorized_unary<sycl::short2, unsigned>(u, std::negate<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_unary<sycl::char4, unsigned>(u, std::negate<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_neg_sat<sycl::short2, unsigned>(u);
+  // CHECK-NEXT: u_2 = dpct::vectorized_neg_sat<sycl::char4, unsigned>(u);
   u_2 = __vneg2(u);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vneg4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vneg4(u);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vnegss2 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vnegss2(u);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vnegss4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vnegss4(u);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsads2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: u_2 = dpct::vectorized_sum_abs_diff<sycl::short2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_sum_abs_diff<sycl::char4, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_sum_abs_diff<sycl::ushort2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_sum_abs_diff<sycl::uchar4, unsigned>(u, u_1);
   u_2 = __vsads2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsads4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vsads4(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsadu2 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vsadu2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsadu4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vsadu4(u, u_1);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vseteq2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: u_2 = dpct::vectorized_set_compare<sycl::ushort2, unsigned>(u, u_1, std::equal_to<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::uchar4, unsigned>(u, u_1, std::equal_to<>());
   u_2 = __vseteq2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vseteq4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vseteq4(u, u_1);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsetges2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: u_2 = dpct::vectorized_set_compare<sycl::short2, unsigned>(u, u_1, std::greater_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::char4, unsigned>(u, u_1, std::greater_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::ushort2, unsigned>(u, u_1, std::greater_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::uchar4, unsigned>(u, u_1, std::greater_equal<>());
   u_2 = __vsetges2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsetges4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vsetges4(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsetgeu2 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vsetgeu2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsetgeu4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vsetgeu4(u, u_1);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsetgts2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: u_2 = dpct::vectorized_set_compare<sycl::short2, unsigned>(u, u_1, std::greater<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::char4, unsigned>(u, u_1, std::greater<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::ushort2, unsigned>(u, u_1, std::greater<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::uchar4, unsigned>(u, u_1, std::greater<>());
   u_2 = __vsetgts2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsetgts4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vsetgts4(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsetgtu2 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vsetgtu2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsetgtu4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vsetgtu4(u, u_1);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsetles2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: u_2 = dpct::vectorized_set_compare<sycl::short2, unsigned>(u, u_1, std::less_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::char4, unsigned>(u, u_1, std::less_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::ushort2, unsigned>(u, u_1, std::less_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::uchar4, unsigned>(u, u_1, std::less_equal<>());
   u_2 = __vsetles2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsetles4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vsetles4(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsetleu2 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vsetleu2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsetleu4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vsetleu4(u, u_1);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsetlts2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: u_2 = dpct::vectorized_set_compare<sycl::short2, unsigned>(u, u_1, std::less<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::char4, unsigned>(u, u_1, std::less<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::ushort2, unsigned>(u, u_1, std::less<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::uchar4, unsigned>(u, u_1, std::less<>());
   u_2 = __vsetlts2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsetlts4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vsetlts4(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsetltu2 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vsetltu2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsetltu4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vsetltu4(u, u_1);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsetne2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: u_2 = dpct::vectorized_set_compare<sycl::ushort2, unsigned>(u, u_1, std::not_equal_to<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::uchar4, unsigned>(u, u_1, std::not_equal_to<>());
   u_2 = __vsetne2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsetne4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vsetne4(u, u_1);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsub2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::ushort2, unsigned>(u, u_1, std::minus<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4, unsigned>(u, u_1, std::minus<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_sub_sat<sycl::short2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_sub_sat<sycl::char4, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_sub_sat<sycl::ushort2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_sub_sat<sycl::uchar4, unsigned>(u, u_1);
   u_2 = __vsub2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsub4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vsub4(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsubss2 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vsubss2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsubss4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vsubss4(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsubus2 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vsubus2(u, u_1);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __vsubus4 is not supported.
-  // CHECK-NEXT: */
   u_2 = __vsubus4(u, u_1);
 }
 
