@@ -439,7 +439,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   if (TKind == tok::identifier &&
       (Name == "__host__" || Name == "__device__" || Name == "__global__" ||
        Name == "__constant__" || Name == "__launch_bounds__" ||
-       Name == "__shared__")) {
+       Name == "__shared__" || Name == "__grid_constant__")) {
     auto TM = removeMacroInvocationAndTrailingSpaces(
         SourceRange(SM.getSpellingLoc(Range.getBegin()),
                     SM.getSpellingLoc(Range.getEnd())));
@@ -1985,6 +1985,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cudaPitchedPtr", "thrust::counting_iterator",
                   "thrust::transform_iterator", "thrust::permutation_iterator",
                   "thrust::iterator_difference", "cusolverDnHandle_t",
+                  "cusolverDnParams_t", "gesvdjInfo_t",
                   "thrust::device_malloc_allocator", "thrust::divides",
                   "thrust::tuple", "thrust::maximum", "thrust::multiplies",
                   "thrust::plus", "cudaDataType_t", "cudaError_t", "CUresult",
@@ -2019,7 +2020,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cublasAtomicsMode_t", "CUmem_advise_enum", "CUmem_advise",
                   "thrust::tuple_element", "thrust::tuple_size", "cublasMath_t",
                   "cudaPointerAttributes", "thrust::zip_iterator",
-                  "cusolverEigRange_t")
+                  "cusolverEigRange_t", "cudaUUID_t")
               )))))
           .bind("cudaTypeDef"),
       this);
@@ -3523,8 +3524,7 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(
         new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), "false"));
     return;
-  } else if (MemberName == "pciDomainID" || MemberName == "pciBusID" ||
-             MemberName == "pciDeviceID") {
+  } else if (MemberName == "pciDomainID" || MemberName == "pciBusID") {
     report(ME->getBeginLoc(), Diagnostics::UNCOMPATIBLE_DEVICE_PROP, false,
            MemberName, "-1");
     emplaceTransformation(
@@ -3564,6 +3564,13 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
     report(ME->getBeginLoc(), Diagnostics::MAX_GRID_SIZE, false);
   }
 
+  if (!DpctGlobalInfo::useDeviceInfo() &&
+      (MemberName == "pciDeviceID" || MemberName == "uuid")) {
+    report(ME->getBeginLoc(), Diagnostics::UNMIGRATED_DEVICE_PROP, false,
+           MemberName);
+    return;
+  }
+
   auto Search = PropNamesMap.find(MemberName);
   if (Search == PropNamesMap.end()) {
     return;
@@ -3587,6 +3594,15 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
           new RenameFieldInMemberExpr(ME, "set_" + Search->second));
       emplaceTransformation(new ReplaceText(BO->getOperatorLoc(), 1, "("));
       emplaceTransformation(new InsertAfterStmt(BO, ")"));
+    }
+  } else if (auto *OCE = Parents[0].get<clang::CXXOperatorCallExpr>()) {
+    // migrate to set_XXX() for types with an overloaded = operator
+    if (OCE->getOperator() == clang::OverloadedOperatorKind::OO_Equal) {
+      requestFeature(PropToSetFeatureMap.at(MemberName), ME);
+      emplaceTransformation(
+          new RenameFieldInMemberExpr(ME, "set_" + Search->second));
+      emplaceTransformation(new ReplaceText(OCE->getOperatorLoc(), 1, "("));
+      emplaceTransformation(new InsertAfterStmt(OCE, ")"));
     }
   }
   if ((Search->second.compare(0, 13, "major_version") == 0) ||
@@ -6461,24 +6477,24 @@ REGISTER_RULE(SOLVEREnumsRule, PassKind::PK_Migration)
 void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
     return hasAnyName(
-        "cusolverDnGetStream", "cusolverDnSetStream",
-        "cusolverDnCreate", "cusolverDnDestroy", "cusolverDnSpotrf_bufferSize",
-        "cusolverDnDpotrf_bufferSize", "cusolverDnCpotrf_bufferSize",
-        "cusolverDnZpotrf_bufferSize", "cusolverDnSpotri_bufferSize",
-        "cusolverDnDpotri_bufferSize", "cusolverDnCpotri_bufferSize",
-        "cusolverDnZpotri_bufferSize", "cusolverDnSgetrf_bufferSize",
-        "cusolverDnDgetrf_bufferSize", "cusolverDnCgetrf_bufferSize",
-        "cusolverDnZgetrf_bufferSize", "cusolverDnSpotrf", "cusolverDnDpotrf",
-        "cusolverDnCpotrf", "cusolverDnZpotrf", "cusolverDnSpotrs",
-        "cusolverDnDpotrs", "cusolverDnCpotrs", "cusolverDnZpotrs",
-        "cusolverDnSpotri", "cusolverDnDpotri", "cusolverDnCpotri",
-        "cusolverDnZpotri", "cusolverDnSgetrf", "cusolverDnDgetrf",
-        "cusolverDnCgetrf", "cusolverDnZgetrf", "cusolverDnSgetrs",
-        "cusolverDnDgetrs", "cusolverDnCgetrs", "cusolverDnZgetrs",
-        "cusolverDnSgeqrf_bufferSize", "cusolverDnDgeqrf_bufferSize",
-        "cusolverDnCgeqrf_bufferSize", "cusolverDnZgeqrf_bufferSize",
-        "cusolverDnSgeqrf", "cusolverDnDgeqrf", "cusolverDnCgeqrf",
-        "cusolverDnZgeqrf", "cusolverDnSormqr_bufferSize",
+        "cusolverDnGetStream", "cusolverDnSetStream", "cusolverDnCreateParams",
+        "cusolverDnDestroyParams", "cusolverDnCreate", "cusolverDnDestroy",
+        "cusolverDnSpotrf_bufferSize", "cusolverDnDpotrf_bufferSize",
+        "cusolverDnCpotrf_bufferSize", "cusolverDnZpotrf_bufferSize",
+        "cusolverDnSpotri_bufferSize", "cusolverDnDpotri_bufferSize",
+        "cusolverDnCpotri_bufferSize", "cusolverDnZpotri_bufferSize",
+        "cusolverDnSgetrf_bufferSize", "cusolverDnDgetrf_bufferSize",
+        "cusolverDnCgetrf_bufferSize", "cusolverDnZgetrf_bufferSize",
+        "cusolverDnSpotrf", "cusolverDnDpotrf", "cusolverDnCpotrf",
+        "cusolverDnZpotrf", "cusolverDnSpotrs", "cusolverDnDpotrs",
+        "cusolverDnCpotrs", "cusolverDnZpotrs", "cusolverDnSpotri",
+        "cusolverDnDpotri", "cusolverDnCpotri", "cusolverDnZpotri",
+        "cusolverDnSgetrf", "cusolverDnDgetrf", "cusolverDnCgetrf",
+        "cusolverDnZgetrf", "cusolverDnSgetrs", "cusolverDnDgetrs",
+        "cusolverDnCgetrs", "cusolverDnZgetrs", "cusolverDnSgeqrf_bufferSize",
+        "cusolverDnDgeqrf_bufferSize", "cusolverDnCgeqrf_bufferSize",
+        "cusolverDnZgeqrf_bufferSize", "cusolverDnSgeqrf", "cusolverDnDgeqrf",
+        "cusolverDnCgeqrf", "cusolverDnZgeqrf", "cusolverDnSormqr_bufferSize",
         "cusolverDnDormqr_bufferSize", "cusolverDnSormqr", "cusolverDnDormqr",
         "cusolverDnCunmqr_bufferSize", "cusolverDnZunmqr_bufferSize",
         "cusolverDnCunmqr", "cusolverDnZunmqr", "cusolverDnSorgqr_bufferSize",
@@ -6505,19 +6521,27 @@ void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusolverDnCungtr", "cusolverDnZungtr", "cusolverDnSgesvd_bufferSize",
         "cusolverDnDgesvd_bufferSize", "cusolverDnCgesvd_bufferSize",
         "cusolverDnZgesvd_bufferSize", "cusolverDnSgesvd", "cusolverDnDgesvd",
-        "cusolverDnCgesvd", "cusolverDnZgesvd", "cusolverDnSsyevd_bufferSize",
-        "cusolverDnDsyevd_bufferSize", "cusolverDnSsyevd_bufferSize",
-        "cusolverDnCheevd_bufferSize", "cusolverDnZheevd_bufferSize",
-        "cusolverDnDsyevd", "cusolverDnSsyevd", "cusolverDnCheevd",
-        "cusolverDnZheevd",
+        "cusolverDnCgesvd", "cusolverDnZgesvd",
         "cusolverDnSpotrfBatched", "cusolverDnDpotrfBatched",
         "cusolverDnCpotrfBatched", "cusolverDnZpotrfBatched",
         "cusolverDnSpotrsBatched", "cusolverDnDpotrsBatched",
         "cusolverDnCpotrsBatched", "cusolverDnZpotrsBatched",
         "cusolverDnSsygvd", "cusolverDnDsygvd",
         "cusolverDnSsygvd_bufferSize", "cusolverDnDsygvd_bufferSize",
-        "cusolverDnChegvd", "cusolverDnZhegvd",
-        "cusolverDnChegvd_bufferSize", "cusolverDnZhegvd_bufferSize");
+        "cusolverDnChegvd", "cusolverDnZhegvd", "cusolverDnChegvd_bufferSize",
+        "cusolverDnZhegvd_bufferSize", "cusolverDnXgetrf",
+        "cusolverDnXgetrf_bufferSize", "cusolverDnXgetrs", "cusolverDnXgeqrf",
+        "cusolverDnXgeqrf_bufferSize", "cusolverDnGetrf",
+        "cusolverDnGetrf_bufferSize", "cusolverDnGetrs", "cusolverDnGeqrf",
+        "cusolverDnGeqrf_bufferSize", "cusolverDnCreateGesvdjInfo",
+        "cusolverDnDestroyGesvdjInfo", "cusolverDnSgesvdj_bufferSize",
+        "cusolverDnDgesvdj_bufferSize", "cusolverDnCgesvdj_bufferSize",
+        "cusolverDnZgesvdj_bufferSize", "cusolverDnXgesvd_bufferSize",
+        "cusolverDnGesvd_bufferSize", "cusolverDnSgesvdj", "cusolverDnDgesvdj",
+        "cusolverDnCgesvdj", "cusolverDnZgesvdj", "cusolverDnXgesvd",
+        "cusolverDnGesvd", "cusolverDnXpotrf_bufferSize",
+        "cusolverDnPotrf_bufferSize", "cusolverDnXpotrf", "cusolverDnPotrf",
+        "cusolverDnXpotrs", "cusolverDnPotrs");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
@@ -10599,11 +10623,12 @@ void MemoryMigrationRule::arrayMigration(
       DerefExpr::create(StreamExpr, C).print(OS);
       emplaceTransformation(replaceText(Begin, End, std::move(Str), SM));
     }
+    requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_3d, C);
   } else {
     ReplaceStr = MapNames::getDpctNamespace() + "dpct_memcpy";
     emplaceTransformation(removeArg(C, EndPos, SM));
+    requestFeature(HelperFeatureEnum::Memory_dpct_memcpy_3d, C);
   }
-  requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_3d, C);
 
   if (NameRef == "cudaMemcpy2DArrayToArray") {
     insertToPitchedData(C, 0);
@@ -15191,14 +15216,14 @@ void CudaExtentRule::runRule(
       CSR = CharSourceRange(SourceRange(CtorEndLoc, CtorEndLoc), false);
       DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(
-            SM, CSR, Replacement, new InsertText(CSR.getBegin(), Replacement)));
+            SM, CSR, Replacement, nullptr));
     } else {
       auto CtorEndLoc = Lexer::getLocForEndOfToken(
           SR.getEnd(), 0, SM, DpctGlobalInfo::getContext().getLangOpts());
       CharSourceRange CSR(SourceRange(SR.getBegin(), CtorEndLoc), false);
       DpctGlobalInfo::getInstance().addReplacement(
           std::make_shared<ExtReplacement>(
-              SM, CSR, Replacement, new ReplaceStmt(Ctor, true, Replacement)));
+              SM, CSR, Replacement, nullptr));
     }
     return;
   }
@@ -15217,7 +15242,7 @@ void CudaExtentRule::runRule(
     std::string Replacement = "{0, 0, 0}";
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(
-            SM, CSR, Replacement, new InsertText(CSR.getBegin(), Replacement)));
+            SM, CSR, Replacement, nullptr));
     return;
   }
 
@@ -15248,9 +15273,28 @@ void CudaExtentRule::runRule(
     OS.flush();
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(
-            SM, Init, Replacement, new ReplaceStmt(Init, true, Replacement)));
+            SM, Init, Replacement, nullptr));
     return;
   }
 }
 
 REGISTER_RULE(CudaExtentRule, PassKind::PK_Analysis)
+
+void CudaUuidRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(memberExpr(hasObjectExpression(hasType(namedDecl(
+                               hasAnyName("CUuuid_st", "cudaUUID_t")))),
+                           member(hasName("bytes")))
+                    .bind("UUID_bytes"),
+                this);
+}
+
+void CudaUuidRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (auto ME = Result.Nodes.getNodeAs<MemberExpr>("UUID_bytes")) {
+    const auto SM = Result.SourceManager;
+    const auto Begin = SM->getSpellingLoc(ME->getOperatorLoc());
+    return emplaceTransformation(new ReplaceText(Begin, 6, ""));
+  }
+}
+
+REGISTER_RULE(CudaUuidRule, PassKind::PK_Analysis)

@@ -119,11 +119,11 @@ int main(int argc, char *argv[]) {
       llvm::cl::value_desc("filename"), llvm::cl::Required);
 
   llvm::cl::opt<std::string> OutputFilename(
-      "o", llvm::cl::desc("Specify output filename"),
+      "o", llvm::cl::desc("[required] Specify output filename"),
       llvm::cl::value_desc("filename"), llvm::cl::Required);
 
   llvm::cl::opt<std::string> RulesFilename(
-      "r", llvm::cl::desc("Specify rules filename"),
+      "r", llvm::cl::desc("[required] Specify rules filename"),
       llvm::cl::value_desc("filename"), llvm::cl::Required);
 
   llvm::cl::extrahelp MoreHelp(Examples);

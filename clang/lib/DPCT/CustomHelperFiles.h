@@ -23,9 +23,7 @@ namespace dpct {
 
 enum class HelperFileEnum : unsigned int {
 #define HELPERFILE(PATH, UNIQUE_ENUM) UNIQUE_ENUM,
-#define HELPER_FEATURE_MAP_TO_APINAME(File, FeatureName, APIName)
-#include "../../runtime/dpct-rt/include/HelperFileAndFeatureNames.inc"
-#undef HELPER_FEATURE_MAP_TO_APINAME
+#include "../../runtime/dpct-rt/include/HelperFileNames.inc"
 #undef HELPERFILE
   Unknown,
   HelperFileEnumTypeSize,
@@ -122,6 +120,7 @@ extern const std::string DeviceAllContentStr;
 extern const std::string DplUtilsAllContentStr;
 extern const std::string ImageAllContentStr;
 extern const std::string KernelAllContentStr;
+extern const std::string MathAllContentStr;
 extern const std::string MemoryAllContentStr;
 extern const std::string UtilAllContentStr;
 extern const std::string RngUtilsAllContentStr;
@@ -138,8 +137,6 @@ extern const std::string DplExtrasNumericAllContentStr;
 extern const std::string DplExtrasVectorAllContentStr;
 extern const std::string DplExtrasDpcppExtensionsAllContentStr;
 
-extern const std::map<clang::dpct::HelperFeatureIDTy, std::string>
-    FeatureNameToAPINameMap;
 extern const std::unordered_map<clang::dpct::HelperFeatureEnum,
                                 clang::dpct::HelperFeatureIDTy>
     HelperFeatureEnumPairMap;
