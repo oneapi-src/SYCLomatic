@@ -96,7 +96,6 @@ static inline oneapi::ccl::kvs::address_type create_kvs_address() {
 }
 // DPCT_LABEL_END
 
-
 // DPCT_LABEL_BEGIN|create_kvs|dpct::ccl
 // DPCT_DEPENDENCY_BEGIN
 // CclUtils|get_kvs_detail
@@ -112,7 +111,6 @@ create_kvs(const oneapi::ccl::kvs::address_type &addr) {
   return ptr;
 }
 // DPCT_LABEL_END
-
 
 // DPCT_LABEL_BEGIN|communicator_ext|dpct::ccl
 // DPCT_DEPENDENCY_BEGIN
@@ -148,7 +146,7 @@ public:
    * Return the rank in a oneapi::ccl::communicator
    * @return rank corresponding to communicator object
    */
-  inline int rank() const{
+  inline int rank() const {
     return _comm.rank();
   }
 // DPCT_LABEL_END
@@ -162,8 +160,8 @@ public:
    * Return the number of rank in oneapi::ccl::communicator
    * @return number of the ranks
    */
-  inline int size() const{
-  return _comm.size();
+  inline int size() const {
+    return _comm.size();
   }
 // DPCT_LABEL_END
 
@@ -173,10 +171,10 @@ public:
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   /**
-   * Return underlying device, which was used in oneapi::ccl::communicator 
+   * Return underlying device, which was used in oneapi::ccl::communicator
    */
-  inline oneapi::ccl::device get_device() const{
-  return _comm.get_device();
+  inline oneapi::ccl::device get_device() const {
+    return _comm.get_device();
   }
 // DPCT_LABEL_END
 
@@ -188,7 +186,7 @@ public:
   /**
    * Return underlying context, which was used in oneapi::ccl::communicator
    */
-  inline oneapi::ccl::context get_context() const{
+  inline oneapi::ccl::context get_context() const {
     return _comm.get_context();
   };
 // DPCT_LABEL_END
@@ -199,10 +197,9 @@ public:
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   /**
-  * Return oneapi::ccl::communicator
-  */
-  inline const oneapi::ccl::communicator &get_ccl_communicator()
-  {
+   * Return oneapi::ccl::communicator
+   */
+  inline const oneapi::ccl::communicator &get_ccl_communicator() {
     return _comm;
   }
 // DPCT_LABEL_END

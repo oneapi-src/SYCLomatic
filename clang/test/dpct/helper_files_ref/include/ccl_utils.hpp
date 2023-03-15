@@ -52,7 +52,6 @@ static inline oneapi::ccl::kvs::address_type create_kvs_address() {
   return addr;
 }
 
-
 /// Get stored kvs with /p addr if exist. Otherwise, create kvs with /p addr.
 static inline std::shared_ptr<oneapi::ccl::kvs>
 create_kvs(const oneapi::ccl::kvs::address_type &addr) {
@@ -62,7 +61,6 @@ create_kvs(const oneapi::ccl::kvs::address_type &addr) {
     ptr = oneapi::ccl::create_kvs(addr);
   return ptr;
 }
-
 
 /// dpct communicator extension
 class communicator_ext {
@@ -85,7 +83,7 @@ public:
    * Return the rank in a oneapi::ccl::communicator
    * @return rank corresponding to communicator object
    */
-  inline int rank() const{
+  inline int rank() const {
     return _comm.rank();
   }
 
@@ -93,29 +91,28 @@ public:
    * Return the number of rank in oneapi::ccl::communicator
    * @return number of the ranks
    */
-  inline int size() const{
-  return _comm.size();
+  inline int size() const {
+    return _comm.size();
   }
 
   /**
-   * Return underlying device, which was used in oneapi::ccl::communicator 
+   * Return underlying device, which was used in oneapi::ccl::communicator
    */
-  inline oneapi::ccl::device get_device() const{
-  return _comm.get_device();
+  inline oneapi::ccl::device get_device() const {
+    return _comm.get_device();
   }
 
   /**
    * Return underlying context, which was used in oneapi::ccl::communicator
    */
-  inline oneapi::ccl::context get_context() const{
+  inline oneapi::ccl::context get_context() const {
     return _comm.get_context();
   };
 
   /**
-  * Return oneapi::ccl::communicator
-  */
-  inline const oneapi::ccl::communicator &get_ccl_communicator()
-  {
+   * Return oneapi::ccl::communicator
+   */
+  inline const oneapi::ccl::communicator &get_ccl_communicator() {
     return _comm;
   }
 
