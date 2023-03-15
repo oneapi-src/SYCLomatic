@@ -26,6 +26,7 @@
 // DASH-NEXT: --help
 // DASH-NEXT: --in-root
 // DASH-NEXT: --in-root-exclude
+// DASH-NEXT: --inline-dev-function
 // DASH-NEXT: --keep-original-code
 // DASH-NEXT: --no-cl-namespace-inline
 // DASH-NEXT: --no-dpcpp-extensions=
