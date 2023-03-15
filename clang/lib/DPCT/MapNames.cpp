@@ -4177,6 +4177,8 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
      MacroMigrationRule("kernel_param_rule", RulePriority::Fallback,
                         "CU_LAUNCH_PARAM_END", "((void *) 0)",
                         HelperFeatureEnum::Kernel_kernel_library)},
+    {"CUDART_PI_F", MacroMigrationRule("CUDART_PI_F", RulePriority::Fallback,
+                        "CUDART_PI_F", "3.141592654F")}
     //...
 };
 
