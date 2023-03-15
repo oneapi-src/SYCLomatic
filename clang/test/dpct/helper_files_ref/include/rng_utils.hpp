@@ -43,6 +43,7 @@ template <typename engine_t> class rng_generator {
       std::is_same<engine_t, oneapi::mkl::rng::device::mcg59<1>>>;
   static constexpr std::uint64_t default_seed = 0;
   oneapi::mkl::rng::device::bits<std::uint32_t> _distr_bits;
+  oneapi::mkl::rng::device::uniform_bits<std::uint32_t> _distr_uniform_bits;
   oneapi::mkl::rng::device::gaussian<float> _distr_gaussian_float;
   oneapi::mkl::rng::device::gaussian<double> _distr_gaussian_double;
   oneapi::mkl::rng::device::lognormal<float> _distr_lognormal_float;
@@ -80,6 +81,7 @@ public:
   /// Generate random number(s) obeys distribution \tparam distr_t.
   /// \tparam T The distribution of the random number. It can only be
   /// oneapi::mkl::rng::device::bits<std::uint32_t>,
+  /// oneapi::mkl::rng::device::uniform_bits<std::uint32_t>,
   /// oneapi::mkl::rng::device::gaussian<float>,
   /// oneapi::mkl::rng::device::gaussian<double>,
   /// oneapi::mkl::rng::device::lognormal<float>,
@@ -100,6 +102,8 @@ public:
         std::disjunction_v<
             std::is_same<distr_t,
                          oneapi::mkl::rng::device::bits<std::uint32_t>>,
+            std::is_same<distr_t,
+                         oneapi::mkl::rng::device::uniform_bits<std::uint32_t>>,
             std::is_same<distr_t, oneapi::mkl::rng::device::gaussian<float>>,
             std::is_same<distr_t, oneapi::mkl::rng::device::gaussian<double>>,
             std::is_same<distr_t, oneapi::mkl::rng::device::lognormal<float>>,
@@ -113,6 +117,11 @@ public:
     if constexpr (std::is_same_v<
                       distr_t, oneapi::mkl::rng::device::bits<std::uint32_t>>) {
       return generate_vec<vec_size>(_distr_bits);
+    }
+    if constexpr (std::is_same_v<
+                      distr_t,
+                      oneapi::mkl::rng::device::uniform_bits<std::uint32_t>>) {
+      return generate_vec<vec_size>(_distr_uniform_bits);
     }
     if constexpr (std::is_same_v<distr_t,
                                  oneapi::mkl::rng::device::gaussian<float>>) {

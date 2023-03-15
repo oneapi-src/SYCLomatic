@@ -246,3 +246,18 @@ __global__ void kernel4() {
   skipahead_subsequence(2 + 3, &rng);
 }
 
+__global__ void kernel5() {
+  unsigned int u;
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1032:{{[0-9]+}}: A different random number generator is used. You may need to adjust the code.
+  //CHECK-NEXT: */
+  //CHECK-NEXT: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> rng1;
+  //CHECK-NEXT: /*
+  //CHECK-NEXT: DPCT1105:{{[0-9]+}}: The mcg59 random number generator is used. The subsequence argument "2" is ignored. You need to verify the migration.
+  //CHECK-NEXT: */
+  //CHECK-NEXT: rng1 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>(1, 3);
+  //CHECK-NEXT: u = rng1.generate<oneapi::mkl::rng::device::uniform_bits<std::uint32_t>, 1>();
+  curandStateXORWOW_t rng1;
+  curand_init(1, 2, 3, &rng1);
+  u = curand(&rng1);
+}

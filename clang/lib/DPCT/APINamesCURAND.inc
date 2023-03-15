@@ -97,9 +97,15 @@ FEATURE_REQUEST_FACTORY(
 // bits
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::bits<std::uint32_t>, 1>"))
+    CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(0, "struct curandStateXORWOW *"),
+        MEMBER_CALL_FACTORY_ENTRY("curand",
+                                  DEREF(makeDerefArgCreatorWithCall(0)), false,
+                                  "generate<oneapi::mkl::rng::device::uniform_"
+                                  "bits<std::uint32_t>, 1>"),
+        MEMBER_CALL_FACTORY_ENTRY(
+            "curand", DEREF(makeDerefArgCreatorWithCall(0)), false,
+            "generate<oneapi::mkl::rng::device::bits<std::uint32_t>, 1>")))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
     MEMBER_CALL_FACTORY_ENTRY("curand4",
