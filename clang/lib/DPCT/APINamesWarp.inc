@@ -311,3 +311,8 @@ SUBGROUPSIZE_FACTORY(
                                  ARG(".get_local_linear_id()) : 0, " +
                                      MapNames::getClNamespace() +
                                      "ext::oneapi::plus<>()")))))))))
+
+// __syncthreads
+MEMBER_CALL_FACTORY_ENTRY("__syncthreads", NDITEM, false, "barrier",
+                          ARG(MapNames::getClNamespace() +
+                              "access::fence_space::local_space"))

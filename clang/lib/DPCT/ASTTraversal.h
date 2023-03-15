@@ -1612,7 +1612,7 @@ public:
 
 /// Migration rule for replacing __syncthreads() function call.
 ///
-/// This rule replace __syncthreads() with item.barrier()
+/// This rule replace __syncthreads() with item.barrier(sycl::access::fence_space::local_space)
 class SyncThreadsRule : public NamedMigrationRule<SyncThreadsRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;

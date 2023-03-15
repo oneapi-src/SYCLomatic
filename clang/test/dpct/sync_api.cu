@@ -20,20 +20,20 @@ __device__ void foo(int i) {}
 __global__ void k() {
   // CHECK: auto cta = item_ct1.get_group();
   cg::thread_block cta = cg::this_thread_block();
-  // CHECK: item_ct1.barrier();
+  // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
   cg::sync(cta);
 
   // CHECK: auto block = item_ct1.get_group();
   cg::thread_block block = cg::this_thread_block();
-  // CHECK: item_ct1.barrier();
+  // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
   __syncthreads();
-  // CHECK: item_ct1.barrier();
+  // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
   block.sync();
-  // CHECK: item_ct1.barrier();
+  // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
   cg::sync(block);
-  // CHECK: item_ct1.barrier();
+  // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
   cg::this_thread_block().sync();
-  // CHECK: item_ct1.barrier();
+  // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
   cg::sync(cg::this_thread_block());
 
   // CHECK: auto b0 = item_ct1.get_group(), b1 = item_ct1.get_group();
@@ -57,37 +57,37 @@ __global__ void k() {
   // CHECK-NEXT: */
   // CHECK-NEXT: sycl::atomic_fence(sycl::memory_order::acq_rel, sycl::memory_scope::system);
   __threadfence_system();
-  // CHECK: item_ct1.barrier();
+  // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
   // CHECK-NEXT: sycl::all_of_group(item_ct1.get_group(), p);
   __syncthreads_and(p);
-  // CHECK: item_ct1.barrier();
+  // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
   // CHECK-NEXT: sycl::any_of_group(item_ct1.get_group(), p);
   __syncthreads_or(p);
-  // CHECK: item_ct1.barrier();
+  // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
   // CHECK-NEXT: sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ext::oneapi::plus<>());
   __syncthreads_count(p);
   // CHECK: sycl::group_barrier(item_ct1.get_sub_group());
   __syncwarp(0xffffffff);
 
-  // CHECK: int a = (item_ct1.barrier(), sycl::all_of_group(item_ct1.get_group(), p));
+  // CHECK: int a = (item_ct1.barrier(sycl::access::fence_space::local_space), sycl::all_of_group(item_ct1.get_group(), p));
   int a = __syncthreads_and(p);
-  // CHECK: int b = (item_ct1.barrier(), sycl::any_of_group(item_ct1.get_group(), p));
+  // CHECK: int b = (item_ct1.barrier(sycl::access::fence_space::local_space), sycl::any_of_group(item_ct1.get_group(), p));
   int b = __syncthreads_or(p);
-  // CHECK: int c = (item_ct1.barrier(), sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ext::oneapi::plus<>()));
+  // CHECK: int c = (item_ct1.barrier(sycl::access::fence_space::local_space), sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ext::oneapi::plus<>()));
   int c = __syncthreads_count(p);
 
-  // CHECK: foo((item_ct1.barrier(), sycl::all_of_group(item_ct1.get_group(), p)));
+  // CHECK: foo((item_ct1.barrier(sycl::access::fence_space::local_space), sycl::all_of_group(item_ct1.get_group(), p)));
   foo(__syncthreads_and(p));
-  // CHECK: foo((item_ct1.barrier(), sycl::any_of_group(item_ct1.get_group(), p)));
+  // CHECK: foo((item_ct1.barrier(sycl::access::fence_space::local_space), sycl::any_of_group(item_ct1.get_group(), p)));
   foo(__syncthreads_or(p));
-  // CHECK: foo((item_ct1.barrier(), sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ext::oneapi::plus<>())));
+  // CHECK: foo((item_ct1.barrier(sycl::access::fence_space::local_space), sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ext::oneapi::plus<>())));
   foo(__syncthreads_count(p));
 
-  // CHECK: FOO((item_ct1.barrier(), sycl::all_of_group(item_ct1.get_group(), p)));
+  // CHECK: FOO((item_ct1.barrier(sycl::access::fence_space::local_space), sycl::all_of_group(item_ct1.get_group(), p)));
   FOO(__syncthreads_and(p));
-  // CHECK: FOO((item_ct1.barrier(), sycl::any_of_group(item_ct1.get_group(), p)));
+  // CHECK: FOO((item_ct1.barrier(sycl::access::fence_space::local_space), sycl::any_of_group(item_ct1.get_group(), p)));
   FOO(__syncthreads_or(p));
-  // CHECK: FOO((item_ct1.barrier(), sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ext::oneapi::plus<>())));
+  // CHECK: FOO((item_ct1.barrier(sycl::access::fence_space::local_space), sycl::reduce_over_group(item_ct1.get_group(), p == 0 ? 0 : 1, sycl::ext::oneapi::plus<>())));
   FOO(__syncthreads_count(p));
 }
 
@@ -133,22 +133,10 @@ __device__ void foo1(cg::thread_block &tb,
   cg::thread_rank(tb);
   cg::thread_rank(tbt32);
 
-// CHECK: /*
-// CHECK-NEXT: DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
-// CHECK-NEXT: */
-// CHECK-NEXT: item_ct1.barrier();
-// CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1065:{{[0-9]+}}: Consider replacing sycl::sub_group::barrier() with sycl::sub_group::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
-// CHECK-NEXT: */
-// CHECK-NEXT: item_ct1.get_sub_group().barrier();
-// CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
-// CHECK-NEXT: */
-// CHECK-NEXT: item_ct1.barrier();
-// CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1065:{{[0-9]+}}: Consider replacing sycl::sub_group::barrier() with sycl::sub_group::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
-// CHECK-NEXT: */
-// CHECK-NEXT: item_ct1.get_sub_group().barrier();
+// CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
+// CHECK-NEXT: item_ct1.get_sub_group().barrier(sycl::access::fence_space::local_space);
+// CHECK-NEXT: item_ct1.barrier(sycl::access::fence_space::local_space);
+// CHECK-NEXT: item_ct1.get_sub_group().barrier(sycl::access::fence_space::local_space);
   tb.sync();
   tbt32.sync();
   cg::sync(tb);
