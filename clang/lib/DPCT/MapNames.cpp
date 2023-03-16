@@ -327,6 +327,12 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "rng::host_rng_ptr",
            HelperFeatureEnum::RngUtils_typedef_host_rng_ptr)},
+      {"curandRngType_t", std::make_shared<TypeNameRule>(
+                              getDpctNamespace() + "rng::random_engine_type",
+                              HelperFeatureEnum::RngUtils_random_engine_type)},
+      {"curandRngType", std::make_shared<TypeNameRule>(
+                              getDpctNamespace() + "rng::random_engine_type",
+                              HelperFeatureEnum::RngUtils_random_engine_type)},
       {"curandStatus_t", std::make_shared<TypeNameRule>("int")},
       {"curandStatus", std::make_shared<TypeNameRule>("int")},
       {"cusparseStatus_t", std::make_shared<TypeNameRule>("int")},
