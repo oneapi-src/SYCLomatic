@@ -1099,7 +1099,7 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
       OS << TargetCalleeName;
       OS << "(" << MigratedArg0 << ")";
     }
-  }  else if (FuncName == "__funnelshift_l" || FuncName == "__funnelshift_lc" ||
+  } else if (FuncName == "__funnelshift_l" || FuncName == "__funnelshift_lc" ||
              FuncName == "__funnelshift_r" || FuncName == "__funnelshift_rc") {
     report(Diagnostics::MATH_EMULATION_EXPRESSION, false,
            MapNames::ITFName.at(SourceCalleeName.str()), TargetCalleeName);

@@ -302,7 +302,7 @@ float test_erfcinv(float a) { return erfcinv(a); }
 // CHECK: float test_normcdfinv(float a) { return normcdfinv(a); }
 float test_normcdfinv(float a) { return normcdfinv(a); }
 
-// CHECK: float test_normcdf(float a) { return normcdf(a); }
+// CHECK: float test_normcdf(float a) { return sycl::erfc((double)a / -sycl::sqrt(2.0)) / 2; }
 float test_normcdf(float a) { return normcdf(a); }
 
 // CHECK: float test_erfcx(float a) { return erfcx(a); }

@@ -977,7 +977,15 @@ MATH_API_REWRITER_DEVICE(
                 "normcdff",
                 CALL(MapNames::getClNamespace() + "ext::intel::math::cdfnorm",
                      CAST_IF_NEED(makeLiteral("float"), ARG(0))))),
-        EMPTY_FACTORY_ENTRY("normcdff"), EMPTY_FACTORY_ENTRY("normcdff")))
+        EMPTY_FACTORY_ENTRY("normcdff"),
+        BINARY_OP_FACTORY_ENTRY(
+            "normcdff", BinaryOperatorKind::BO_Div,
+            CALL(MapNames::getClNamespace() + "erfc",
+                 BO(BinaryOperatorKind::BO_Div,
+                    CAST_IF_NEED(makeLiteral("float"), ARG(0)),
+                    makeLiteral("-" + MapNames::getClNamespace(false, true) +
+                                "sqrt(2.0)"))),
+            makeLiteral("2"))))
 
 MATH_API_REWRITER_DEVICE(
     "normcdfinvf",
@@ -1018,19 +1026,17 @@ MATH_API_REWRITER_DEVICE(
         EMPTY_FACTORY_ENTRY("normf"),
         HEADER_INSERT_FACTORY(
             HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY(
-                "normf",
-                CALL(MapNames::getClNamespace() + "ext::intel::math::norm",
-                     CAST_IF_NEED(makeLiteral("int"), ARG(0)),
-                     CAST_IF_NEED(makeLiteral("const float *"), ARG(1))))),
+            CALL_FACTORY_ENTRY("normf", CALL(MapNames::getClNamespace() +
+                                                 "ext::intel::math::norm",
+                                             ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("normf"),
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::Math_length,
             WARNING_FACTORY_ENTRY(
                 "normf",
-                CALL_FACTORY_ENTRY("normf", CALL(MapNames::getDpctNamespace() +
-                                                     "length<float>",
-                                                 ARG(1), ARG(0))),
+                CALL_FACTORY_ENTRY("normf",
+                                   CALL(MapNames::getDpctNamespace() + "length",
+                                        ARG(1), ARG(0))),
                 Diagnostics::MATH_EMULATION, std::string("normf"),
                 MapNames::getDpctNamespace() + "length"))))
 
@@ -1064,22 +1070,19 @@ MATH_API_REWRITER_DEVICE(
         EMPTY_FACTORY_ENTRY("rnormf"),
         HEADER_INSERT_FACTORY(
             HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY(
-                "rnormf",
-                CALL(MapNames::getClNamespace() + "ext::intel::math::rnorm",
-                     CAST_IF_NEED(makeLiteral("int"), ARG(0)),
-                     CAST_IF_NEED(makeLiteral("const float *"), ARG(1))))),
+            CALL_FACTORY_ENTRY("rnormf", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::rnorm",
+                                              ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("rnormf"),
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::Math_length,
             WARNING_FACTORY_ENTRY(
                 "rnormf",
-                CALL_FACTORY_ENTRY("rnormf",
-                                   CALL(MapNames::getClNamespace(false, true) +
-                                            "native::recip",
-                                        CALL(MapNames::getDpctNamespace() +
-                                                 "length<float>",
-                                             ARG(1), ARG(0)))),
+                CALL_FACTORY_ENTRY(
+                    "rnormf", CALL(MapNames::getClNamespace(false, true) +
+                                       "native::recip",
+                                   CALL(MapNames::getDpctNamespace() + "length",
+                                        ARG(1), ARG(0)))),
                 Diagnostics::MATH_EMULATION, std::string("rnormf"),
                 MapNames::getDpctNamespace() + "length"))))
 
@@ -1114,19 +1117,17 @@ MATH_API_REWRITER_DEVICE(
         EMPTY_FACTORY_ENTRY("norm"),
         HEADER_INSERT_FACTORY(
             HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY(
-                "norm",
-                CALL(MapNames::getClNamespace() + "ext::intel::math::norm",
-                     CAST_IF_NEED(makeLiteral("int"), ARG(0)),
-                     CAST_IF_NEED(makeLiteral("const double *"), ARG(1))))),
+            CALL_FACTORY_ENTRY("norm", CALL(MapNames::getClNamespace() +
+                                                "ext::intel::math::norm",
+                                            ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("norm"),
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::Math_length,
             WARNING_FACTORY_ENTRY(
                 "norm",
-                CALL_FACTORY_ENTRY("norm", CALL(MapNames::getDpctNamespace() +
-                                                    "length<double>",
-                                                ARG(1), ARG(0))),
+                CALL_FACTORY_ENTRY("norm",
+                                   CALL(MapNames::getDpctNamespace() + "length",
+                                        ARG(1), ARG(0))),
                 Diagnostics::MATH_EMULATION, std::string("norm"),
                 MapNames::getDpctNamespace() + "length"))))
 
@@ -1160,7 +1161,15 @@ MATH_API_REWRITER_DEVICE(
                 "normcdf",
                 CALL(MapNames::getClNamespace() + "ext::intel::math::cdfnorm",
                      CAST_IF_NEED(makeLiteral("double"), ARG(0))))),
-        EMPTY_FACTORY_ENTRY("normcdf"), EMPTY_FACTORY_ENTRY("normcdf")))
+        EMPTY_FACTORY_ENTRY("normcdf"),
+        BINARY_OP_FACTORY_ENTRY(
+            "normcdf", BinaryOperatorKind::BO_Div,
+            CALL(MapNames::getClNamespace() + "erfc",
+                 BO(BinaryOperatorKind::BO_Div,
+                    CAST_IF_NEED(makeLiteral("double"), ARG(0)),
+                    makeLiteral("-" + MapNames::getClNamespace(false, true) +
+                                "sqrt(2.0)"))),
+            makeLiteral("2"))))
 
 MATH_API_REWRITER_DEVICE(
     "normcdfinv",
@@ -1181,11 +1190,9 @@ MATH_API_REWRITER_DEVICE(
         EMPTY_FACTORY_ENTRY("rnorm"),
         HEADER_INSERT_FACTORY(
             HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY(
-                "rnorm",
-                CALL(MapNames::getClNamespace() + "ext::intel::math::rnorm",
-                     CAST_IF_NEED(makeLiteral("int"), ARG(0)),
-                     CAST_IF_NEED(makeLiteral("const double *"), ARG(1))))),
+            CALL_FACTORY_ENTRY("rnorm", CALL(MapNames::getClNamespace() +
+                                                 "ext::intel::math::rnorm",
+                                             ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("rnorm"),
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::Math_length,
@@ -1193,8 +1200,8 @@ MATH_API_REWRITER_DEVICE(
                 "rnorm",
                 BINARY_OP_FACTORY_ENTRY(
                     "rnorm", BinaryOperatorKind::BO_Div, makeLiteral("1"),
-                    CALL(MapNames::getDpctNamespace() + "length<double>",
-                         ARG(1), ARG(0))),
+                    CALL(MapNames::getDpctNamespace() + "length", ARG(1),
+                         ARG(0))),
                 Diagnostics::MATH_EMULATION, std::string("rnorm"),
                 MapNames::getDpctNamespace() + "length"))))
 

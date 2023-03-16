@@ -16,10 +16,10 @@ namespace dpct {
 /// \param [in] a The array
 /// \param [in] len Length of the array
 /// \returns The computed fast_length
-[[deprecated]] inline float fast_length(const float *a, int len) {
+inline float fast_length(const float *a, int len) {
   switch (len) {
   case 1:
-    return sycl::fast_length(a[0]);
+    return a[0];
   case 2:
     return sycl::fast_length(sycl::float2(a[0], a[1]));
   case 3:
@@ -45,7 +45,7 @@ template <typename T> inline T length(const T *a, const int len) {
     return 0;
   switch (len) {
   case 1:
-    return sycl::length(a[0]);
+    return a[0];
   case 2:
     return sycl::length(sycl::vec<T, 2>(a[0], a[1]));
   case 3:
