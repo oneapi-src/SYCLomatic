@@ -40,7 +40,7 @@ CONDITIONAL_FACTORY_ENTRY(
                          makeCombinedArg(ARG("{0, static_cast<std::uint64_t>(("),
                                          ARG(0)),
                          ARG(") * 4)}"))))),
-        REMOVE_API_FACTORY_ENTRY_WITH_MSG("skipahead_sequence", "this API is redudant for mcg59 engine."))),
+        REMOVE_API_FACTORY_ENTRY_WITH_MSG("skipahead_sequence", "this API is not supported for mcg59 engine."))),
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgType(1, "struct curandStateMRG32k3a *"),
     FEATURE_REQUEST_FACTORY(

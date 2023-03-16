@@ -198,9 +198,13 @@ __global__ void kernel3() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to skipahead_sequence was removed because this API is not supported for mcg59 engine.
   //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to skipahead_sequence was removed because this API is not supported for mcg59 engine.
+  //CHECK-NEXT:*/
   skipahead_sequence(1, &rng1);
   skipahead_sequence(2, &rng2);
   skipahead_sequence(3, &rng3);
+  skipahead_sequence(3 + 3, &rng3);
 
   //CHECK:oneapi::mkl::rng::device::skip_ahead(rng1.get_engine(), {0, static_cast<std::uint64_t>(1 * 8)});
   skipahead_subsequence(1, &rng1);
