@@ -79,39 +79,29 @@ public:
 
   ~communicator_ext(){};
 
-  /**
-   * Return the rank in a oneapi::ccl::communicator
-   * @return rank corresponding to communicator object
-   */
+  /// Return the rank in a oneapi::ccl::communicator
+  /// \returns The rank corresponding to communicator object
   inline int rank() const {
     return _comm.rank();
   }
 
-  /**
-   * Return the number of rank in oneapi::ccl::communicator
-   * @return number of the ranks
-   */
+  /// Retrieves the number of rank in oneapi::ccl::communicator
+  /// \returns The number of the ranks
   inline int size() const {
     return _comm.size();
   }
 
-  /**
-   * Return underlying device, which was used in oneapi::ccl::communicator
-   */
+  /// Return underlying device, which was used in oneapi::ccl::communicator
   inline oneapi::ccl::device get_device() const {
     return _comm.get_device();
   }
 
-  /**
-   * Return underlying context, which was used in oneapi::ccl::communicator
-   */
+  /// Return underlying context, which was used in oneapi::ccl::communicator
   inline oneapi::ccl::context get_context() const {
     return _comm.get_context();
   };
 
-  /**
-   * Return oneapi::ccl::communicator
-   */
+  /// Return oneapi::ccl::communicator
   inline const oneapi::ccl::communicator &get_ccl_communicator() {
     return _comm;
   }

@@ -142,10 +142,8 @@ public:
 // CclUtils|communicator_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  /**
-   * Return the rank in a oneapi::ccl::communicator
-   * @return rank corresponding to communicator object
-   */
+  /// Return the rank in a oneapi::ccl::communicator
+  /// \returns The rank corresponding to communicator object
   inline int rank() const {
     return _comm.rank();
   }
@@ -156,10 +154,8 @@ public:
 // CclUtils|communicator_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  /**
-   * Return the number of rank in oneapi::ccl::communicator
-   * @return number of the ranks
-   */
+  /// Retrieves the number of rank in oneapi::ccl::communicator
+  /// \returns The number of the ranks
   inline int size() const {
     return _comm.size();
   }
@@ -170,9 +166,7 @@ public:
 // CclUtils|communicator_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  /**
-   * Return underlying device, which was used in oneapi::ccl::communicator
-   */
+  /// Return underlying device, which was used in oneapi::ccl::communicator
   inline oneapi::ccl::device get_device() const {
     return _comm.get_device();
   }
@@ -183,9 +177,7 @@ public:
 // CclUtils|communicator_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  /**
-   * Return underlying context, which was used in oneapi::ccl::communicator
-   */
+  /// Return underlying context, which was used in oneapi::ccl::communicator
   inline oneapi::ccl::context get_context() const {
     return _comm.get_context();
   };
@@ -196,9 +188,7 @@ public:
 // CclUtils|communicator_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  /**
-   * Return oneapi::ccl::communicator
-   */
+  /// Return oneapi::ccl::communicator
   inline const oneapi::ccl::communicator &get_ccl_communicator() {
     return _comm;
   }
