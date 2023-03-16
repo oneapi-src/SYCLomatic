@@ -22,17 +22,16 @@ public:
     std::string ArgType;
     unsigned NumArgs = C->getNumArgs();
     if (Idx < NumArgs) {
-      // template<typename ELT_TYPE>
+      // template<typename T>
       // void testfunc() {
-      //   thrust::host_vector<ELT_TYPE> V(1);
-      //   V[0]=0;
+      //  thrust::host_vector<T> V(1);
       //  thrust::stable_sort(V.begin(),V.end(),thrust::not2(thrust::greater_equal()));
       // }
       // void foo() {
       //   testfunc<int>();
       // }
       // For the code above argument "A.begin()" has type
-      // "thrust::host_vector<ELT_TYPE>" in AST.
+      // "thrust::host_vector<T>" in AST.
       if (auto Call = dyn_cast<CallExpr>(C->getArg(Idx))) {
         if (auto CDSME =
                 dyn_cast<CXXDependentScopeMemberExpr>(Call->getCallee())) {
