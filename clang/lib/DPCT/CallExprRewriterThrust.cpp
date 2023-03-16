@@ -20,7 +20,7 @@ public:
   CheckThrustArgType(unsigned I, std::string Name) : Idx(I), TypeName(Name) {}
   bool operator()(const CallExpr *C) {
     std::string ArgType;
-    int NumArgs = C->getNumArgs();
+    unsigned NumArgs = C->getNumArgs();
     if (Idx < NumArgs) {
       ArgType = C->getArg(Idx)
                     ->getType()
