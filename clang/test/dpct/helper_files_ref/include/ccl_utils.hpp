@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <memory>
 
+#include "lib_common_utils.hpp"
 #include "device.hpp"
 
 namespace dpct {
@@ -32,6 +33,32 @@ get_kvs(const oneapi::ccl::kvs::address_type &addr) {
                             std::shared_ptr<oneapi::ccl::kvs>, hash>
       kvs_map;
   return kvs_map[addr];
+}
+
+/// Convert dpct::library_data_t to oneapi::ccl::datatype.
+inline oneapi::ccl::datatype to_ccl_datatype(dpct::library_data_t dt) {
+  switch (dt) {
+  case dpct::library_data_t::real_int8:
+    return oneapi::ccl::datatype::int8;
+  case dpct::library_data_t::real_uint8:
+    return oneapi::ccl::datatype::uint8;
+  case dpct::library_data_t::real_int32:
+    return oneapi::ccl::datatype::int32;
+  case dpct::library_data_t::real_uint32:
+    return oneapi::ccl::datatype::uint32;
+  case dpct::library_data_t::real_int64:
+    return oneapi::ccl::datatype::int64;
+  case dpct::library_data_t::real_half:
+    return oneapi::ccl::datatype::float16;
+  case dpct::library_data_t::real_float:
+    return oneapi::ccl::datatype::float32;
+  case dpct::library_data_t::real_double:
+    return oneapi::ccl::datatype::float64;
+  case dpct::library_data_t::real_bfloat16:
+    return oneapi::ccl::datatype::bfloat16;
+  default:
+    throw std::runtime_error("to_dnnl_data_type: unsupported data type.");
+  }
 }
 
 } // namespace detail
@@ -91,26 +118,41 @@ public:
     return _comm.size();
   }
 
-  /// Return underlying device, which was used in oneapi::ccl::communicator
-  inline oneapi::ccl::device get_device() const {
-    return _comm.get_device();
+  /// Return underlying native device, which was used in oneapi::ccl::communicator
+  inline sycl::device get_device() const {
+    return _comm.get_device().get_native();
   }
 
-  /// Return underlying context, which was used in oneapi::ccl::communicator
-  inline oneapi::ccl::context get_context() const {
-    return _comm.get_context();
+  /// Return underlying native context, which was used in oneapi::ccl::communicator
+  inline sycl::context get_context() const {
+    return _comm.get_context().get_native();
   };
 
-  /// Return oneapi::ccl::communicator
-  inline const oneapi::ccl::communicator &get_ccl_communicator() {
-    return _comm;
-  }
+  /// \brief Allreduce is a collective communication operation that performs the global reduction operation
+  ///       on values from all ranks of communicator and distributes the result back to all ranks.
+  /// \param send_buf the buffer with @c count elements of @c dtype that stores local data to be reduced
+  /// \param recv_buf [out] the buffer to store reduced result, must have the same dimension as @c send_buf
+  /// \param count the number of elements of type @c dtype in @c send_buf and @c recv_buf
+  /// \param dtype the datatype of elements in @c send_buf and @c recv_buf
+  /// \param rtype the type of the reduction operation to be applied
+  /// \param queue a sycl queue associated with the operation
+  /// \return @ref return sycl event to track the progress of the operation
+  inline sycl::event allreduce(const void *sendbuff, void *recvbuff,
+                               size_t count, dpct::library_data_t dtype,
+                               oneapi::ccl::reduction rtype,
+                               sycl::queue &queue) const {
+    return oneapi::ccl::allreduce(
+        sendbuff, recvbuff, count, dpct::ccl::detail::to_ccl_datatype(dtype),
+        rtype, _comm, oneapi::ccl::create_stream(queue)).get_native();
+  };
 
 private:
   oneapi::ccl::device _device_comm;
   oneapi::ccl::context _context_comm;
   oneapi::ccl::communicator _comm;
 };
+
+typedef dpct::ccl::communicator_ext * ccl_comm_ptr;
 
 } // namespace ccl
 } // namespace dpct

@@ -42,12 +42,11 @@ FEATURE_REQUEST_FACTORY(
                          false, LITERAL("get_native"))))))
 
 FEATURE_REQUEST_FACTORY(
-HelperFeatureEnum::CclUtils_communicator_ext_get_ccl_communicator,
-CONDITIONAL_FACTORY_ENTRY(
-    CheckEnumArgStr(4, "ncclAvg"),
-    UNSUPPORT_FACTORY_ENTRY("ncclAllReduce", Diagnostics::UNSUPPORTED_PARAM,
-                            ARG(4)),
-    CALL_FACTORY_ENTRY("ncclAllReduce",
-                       CALL("oneapi::ccl::allreduce", ARG(0), ARG(1), ARG(2),
-                            ARG(3), ARG(4), MEMBER_CALL(ARG(5),true,"get_ccl_communicator"),
-                            CALL("oneapi::ccl::create_stream", STREAM(6))))))
+    HelperFeatureEnum::CclUtils_communicator_ext_allreduce,
+    CONDITIONAL_FACTORY_ENTRY(
+        CheckEnumArgStr(4, "ncclAvg"),
+        UNSUPPORT_FACTORY_ENTRY("ncclAllReduce", Diagnostics::UNSUPPORTED_PARAM,
+                                ARG(4)),
+        MEMBER_CALL_FACTORY_ENTRY("ncclAllReduce", ARG(5), true, "allreduce",
+                                  ARG(0), ARG(1), ARG(2), ARG(3), ARG(4),
+                                  STREAM(6))))

@@ -5,7 +5,8 @@
 
 #include <nccl.h>
 
-// CHECK: 16
+// CHECK: 26
+// TEST_FEATURE: CclUtils_typedef_ccl_comm_ptr
 // TEST_FEATURE: Device_get_device_id
 int main() {
   int  device;
