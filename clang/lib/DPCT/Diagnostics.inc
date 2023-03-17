@@ -227,3 +227,5 @@ DEF_WARNING(SUBSEQUENCE_IGNORED, 1105, "The mcg59 random number generator is use
 DEF_COMMENT(SUBSEQUENCE_IGNORED, 1105, "The mcg59 random number generator is used. The subsequence argument \"{0}\" is ignored. You need to verify the migration.")
 DEF_WARNING(EXTENSION_DEVICE_INFO, 1106, "'%0' was migrated with the Intel extensions for device information which may not be supported by all compilers or runtimes. You may need to adjust the code.")
 DEF_COMMENT(EXTENSION_DEVICE_INFO, 1106, "'{0}' was migrated with the Intel extensions for device information which may not be supported by all compilers or runtimes. You may need to adjust the code.")
+DEF_WARNING(OVERLOAD_UNSUPPORTED, 1107, "Migration for this overload of %0 is not supported.")
+DEF_COMMENT(OVERLOAD_UNSUPPORTED, 1107, "Migration for this overload of {0} is not supported.")
