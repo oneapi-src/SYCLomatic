@@ -136,4 +136,24 @@ __global__ void kernelFuncHalf2() {
   __hneu2(h2, h2);
 }
 
+__global__ void kernelFuncInt() {
+  int i;
+  unsigned u;
+  long l;
+  long long ll;
+  unsigned long long ull;
+  // CHECK: ll = sycl::max<long long>(ll, ll);
+  // CHECK-NEXT: ll = sycl::min<long long>(ll, ll);
+  // CHECK-NEXT: ull = sycl::max<unsigned long long>(ull, ull);
+  // CHECK-NEXT: ull = sycl::min<unsigned long long>(ull, ull);
+  // CHECK-NEXT: u = sycl::max<unsigned int>(u, u);
+  // CHECK-NEXT: u = sycl::min<unsigned int>(u, u);
+  ll = llmax(ll, ll);
+  ll = llmin(ll, ll);
+  ull = ullmax(ull, ull);
+  ull = ullmin(ull, ull);
+  u = umax(u, u);
+  u = umin(u, u);
+}
+
 int main() { return 0; }
