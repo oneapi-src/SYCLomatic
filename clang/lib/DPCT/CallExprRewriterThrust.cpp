@@ -30,7 +30,7 @@ public:
       // void foo() {
       //   testfunc<int>();
       // }
-      // For the code above argument "A.begin()" has type
+      // For the code above argument "V.begin()" has type
       // "thrust::host_vector<T>" in AST.
       if (auto Call = dyn_cast<CallExpr>(C->getArg(Idx))) {
         if (auto CDSME =
