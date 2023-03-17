@@ -431,6 +431,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cuda::std::complex", std::make_shared<TypeNameRule>("std::complex")},
       {"cuda::std::array", std::make_shared<TypeNameRule>("std::array")},
       {"cusolverEigRange_t", std::make_shared<TypeNameRule>("oneapi::mkl::rangev")},
+      {"cudaUUID_t", std::make_shared<TypeNameRule>("std::array<unsigned char, 16>")},
       // ...
   };
 
@@ -4180,6 +4181,8 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
      MacroMigrationRule("kernel_param_rule", RulePriority::Fallback,
                         "CU_LAUNCH_PARAM_END", "((void *) 0)",
                         HelperFeatureEnum::Kernel_kernel_library)},
+    {"CUDART_PI_F", MacroMigrationRule("CUDART_PI_F", RulePriority::Fallback,
+                        "CUDART_PI_F", "3.141592654F")}
     //...
 };
 
@@ -4232,6 +4235,8 @@ const MapNames::MapTy DeviceInfoVarRule::PropNamesMap{
     {"maxThreadsDim", "max_work_item_sizes"},
     {"memoryClockRate", "memory_clock_rate"},
     {"memoryBusWidth", "memory_bus_width"},
+    {"pciDeviceID", "device_id"},
+    {"uuid", "uuid"},
     // ...
 };
 
