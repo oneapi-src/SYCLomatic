@@ -658,24 +658,36 @@ public:
 
 /// A class holding description for a Dropout operation.
 class dropout_desc {
-  float _p = 0.5f;
-  unsigned long long _seed = 0;
-  std::shared_ptr<oneapi::mkl::rng::philox4x32x10> _rng_engine;
-  std::shared_ptr<oneapi::mkl::rng::bernoulli<std::int32_t>> _distr;
-  std::shared_ptr<std::vector<std::uint8_t>> _state_host = nullptr;
-  void *_state = nullptr;
-  void generate(sycl::queue *q, std::int64_t state_size, std::int64_t num, void *buffer) {
-    sycl::event e_gen = 
-      oneapi::mkl::rng::generate(*_distr, *_rng_engine, num, (std::int32_t*)buffer);
+  struct dropout_desc_imp {
+    float _p = 0.5f;
+    unsigned long long _seed = 1;
+    void *_state = nullptr;
+    std::vector<std::uint8_t> _host_state;
+    std::shared_ptr<oneapi::mkl::rng::philox4x32x10> _rng_engine = nullptr;
+  };
+  std::shared_ptr<dropout_desc_imp> _imp;
+
+  void generate(sycl::queue *q, std::int64_t required_state_size,
+                std::int64_t num, void *buffer) {
+    sycl::event e_gen = oneapi::mkl::rng::generate(
+        oneapi::mkl::rng::bernoulli<std::int32_t>(_imp->_p),
+        *(_imp->_rng_engine), num, (std::int32_t *)buffer);
     sycl::event e_save = q->submit([&](sycl::handler &cgh) {
       cgh.depends_on(e_gen);
       cgh.host_task([=] {
-        oneapi::mkl::rng::save_state(*_rng_engine, _state_host->data());
+        oneapi::mkl::rng::save_state(*(_imp->_rng_engine),
+                                     _imp->_host_state.data());
       });
     });
-    q->memcpy(_state, _state_host->data(), state_size, e_save);
+    q->memcpy(_imp->_state, _imp->_host_state.data(), required_state_size,
+              e_save);
   }
 public:
+  dropout_desc() {
+    _imp = std::make_shared<dropout_desc_imp>();
+    _imp->_rng_engine = std::make_shared<oneapi::mkl::rng::philox4x32x10>(
+        dpct::get_default_queue(), 1);
+  }
   /// Setting a dropout descriptor with given parameters.
   /// \param [in] engine Engine of the dropout operation.
   /// \param [in] p Success probability p of a trial.
@@ -690,14 +702,14 @@ public:
   /// \param [in] state Memory that store random generator state.
   /// \param [in] seed Seed to initialize conditions of the generator state.
   void get(float *p, void **states, unsigned long long *seed) const {
-    *seed = _seed;
-    *states = _state;
-    *p = _p;
+    *seed = _imp->_seed;
+    *states = _imp->_state;
+    *p = _imp->_p;
   }
   /// Getting the success probability.
   /// \returns Probability.
   float get_probability() const {
-    return _p;
+    return _imp->_p;
   }
   /// Restoreing a dropout descriptor from stored state.
   /// \param [in] engine Engine of the dropout operation.
@@ -1883,44 +1895,39 @@ public:
 inline
 void dropout_desc::restore(engine_ext &engine, float p, void *state,
                                   size_t state_size, unsigned long long seed) {
-  _p = p;
-  _seed = seed;
   if (state) {
-    _state = state;
-    sycl::queue *q = engine.get_queue();
     std::int64_t required_state_size = engine.get_dropout_state_size();
-    if (!_state_host) {
-      _state_host =
-          std::make_shared<std::vector<std::uint8_t>>(required_state_size);
+    if (state_size < required_state_size) {
+      throw std::runtime_error("restore: state_size less than required state size.");
     }
-    q->memcpy(_state_host->data(), _state, required_state_size).wait();
-    _rng_engine = std::make_shared<oneapi::mkl::rng::philox4x32x10>(
+    sycl::queue *q = engine.get_queue();
+    _imp->_p = p;
+    _imp->_seed = seed;
+    _imp->_state = state;
+    _imp->_host_state = std::vector<std::uint8_t>(required_state_size);
+    q->memcpy(_imp->_host_state.data(), _imp->_state, required_state_size).wait();
+    *(_imp->_rng_engine) = oneapi::mkl::rng::philox4x32x10(
         oneapi::mkl::rng::load_state<oneapi::mkl::rng::philox4x32x10>(
-            *q, _state_host->data()));
-    _distr = std::make_shared<oneapi::mkl::rng::bernoulli<std::int32_t>>(p);
+            *q, _imp->_host_state.data()));
   }
 }
 
 inline
 void dropout_desc::set(engine_ext &engine, float p, void *state,
                               size_t state_size, unsigned long long seed) {
-  _p = p;
-  _seed = seed;
+  _imp->_p = p;
   if (state) {
-    _state = state;
     std::int64_t required_state_size = engine.get_dropout_state_size();
-    if (!_state_host) {
-      _state_host =
-          std::make_shared<std::vector<std::uint8_t>>(required_state_size);
-    }
-    sycl::queue *q = engine.get_queue();
-    _rng_engine = std::make_shared<oneapi::mkl::rng::philox4x32x10>(*q, seed);
-    _distr = std::make_shared<oneapi::mkl::rng::bernoulli<std::int32_t>>(p);
     if (state_size < required_state_size) {
       throw std::runtime_error("set: no sufficient memory to save states.");
     }
-    oneapi::mkl::rng::save_state(*_rng_engine, _state_host->data());
-    q->memcpy(_state, _state_host->data(), required_state_size).wait();
+    sycl::queue *q = engine.get_queue();
+    _imp->_seed = seed;
+    _imp->_state = state;
+    _imp->_host_state = std::vector<std::uint8_t>(required_state_size);
+    *(_imp->_rng_engine) = oneapi::mkl::rng::philox4x32x10(*q, seed);
+    oneapi::mkl::rng::save_state(*(_imp->_rng_engine), _imp->_host_state.data());
+    q->memcpy(_imp->_state, _imp->_host_state.data(), required_state_size).wait();
   }
 }
 
