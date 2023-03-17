@@ -1003,22 +1003,22 @@ MATH_API_REWRITER_DEVICE(
 MATH_API_REWRITER_DEVICE(
     "norm3df",
     MATH_API_DEVICE_NODES(
-        EMPTY_FACTORY_ENTRY("norm3df"), EMPTY_FACTORY_ENTRY("norm3df"),
-        EMPTY_FACTORY_ENTRY("norm3df"),
         CALL_FACTORY_ENTRY(
             "norm3df", CALL(MapNames::getClNamespace(false, true) + "length",
                             CALL(MapNames::getClNamespace() + "float3", ARG(0),
-                                 ARG(1), ARG(2))))))
+                                 ARG(1), ARG(2)))),
+        EMPTY_FACTORY_ENTRY("norm3df"), EMPTY_FACTORY_ENTRY("norm3df"),
+        EMPTY_FACTORY_ENTRY("norm3df")))
 
 MATH_API_REWRITER_DEVICE(
     "norm4df",
     MATH_API_DEVICE_NODES(
-        EMPTY_FACTORY_ENTRY("norm4df"), EMPTY_FACTORY_ENTRY("norm4df"),
-        EMPTY_FACTORY_ENTRY("norm4df"),
         CALL_FACTORY_ENTRY(
             "norm4df", CALL(MapNames::getClNamespace(false, true) + "length",
                             CALL(MapNames::getClNamespace() + "float4", ARG(0),
-                                 ARG(1), ARG(2), ARG(3))))))
+                                 ARG(1), ARG(2), ARG(3)))),
+        EMPTY_FACTORY_ENTRY("norm4df"), EMPTY_FACTORY_ENTRY("norm4df"),
+        EMPTY_FACTORY_ENTRY("norm4df")))
 
 MATH_API_REWRITER_DEVICE(
     "normf",
@@ -1043,26 +1043,26 @@ MATH_API_REWRITER_DEVICE(
 MATH_API_REWRITER_DEVICE(
     "rnorm3df",
     MATH_API_DEVICE_NODES(
-        EMPTY_FACTORY_ENTRY("rnorm3df"), EMPTY_FACTORY_ENTRY("rnorm3df"),
-        EMPTY_FACTORY_ENTRY("rnorm3df"),
         CALL_FACTORY_ENTRY(
             "rnorm3df",
             CALL(MapNames::getClNamespace(false, true) + "native::recip",
                  CALL(MapNames::getClNamespace(false, true) + "length",
                       CALL(MapNames::getClNamespace() + "float3", ARG(0),
-                           ARG(1), ARG(2)))))))
+                           ARG(1), ARG(2))))),
+        EMPTY_FACTORY_ENTRY("rnorm3df"), EMPTY_FACTORY_ENTRY("rnorm3df"),
+        EMPTY_FACTORY_ENTRY("rnorm3df")))
 
 MATH_API_REWRITER_DEVICE(
     "rnorm4df",
     MATH_API_DEVICE_NODES(
-        EMPTY_FACTORY_ENTRY("rnorm4df"), EMPTY_FACTORY_ENTRY("rnorm4df"),
-        EMPTY_FACTORY_ENTRY("rnorm4df"),
         CALL_FACTORY_ENTRY(
             "rnorm4df",
             CALL(MapNames::getClNamespace(false, true) + "native::recip",
                  CALL(MapNames::getClNamespace(false, true) + "length",
                       CALL(MapNames::getClNamespace() + "float4", ARG(0),
-                           ARG(1), ARG(2), ARG(3)))))))
+                           ARG(1), ARG(2), ARG(3))))),
+        EMPTY_FACTORY_ENTRY("rnorm4df"), EMPTY_FACTORY_ENTRY("rnorm4df"),
+        EMPTY_FACTORY_ENTRY("rnorm4df")))
 
 MATH_API_REWRITER_DEVICE(
     "rnormf",
