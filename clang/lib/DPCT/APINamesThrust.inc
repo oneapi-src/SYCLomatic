@@ -54,6 +54,11 @@ thrustFactory("thrust::adjacent_difference",
                {4,PolicyState::NoPolicy ,3,"oneapi::dpl::adjacent_difference", HelperFeatureEnum::no_feature_helper },
                {3,PolicyState::NoPolicy ,3,"oneapi::dpl::adjacent_difference", HelperFeatureEnum::no_feature_helper }}),
 
+// thrust::gather_if
+thrustFactory("thrust::gather_if",
+              {{7,PolicyState::HasPolicy,5,"dpct::gather_if", HelperFeatureEnum::DplExtrasAlgorithm_gather_if},
+               {6,PolicyState::NoPolicy ,5,"dpct::gather_if", HelperFeatureEnum::DplExtrasAlgorithm_gather_if}}),
+
 // thrust::inclusive_scan
 CONDITIONAL_FACTORY_ENTRY(
   CheckArgCount(5),
