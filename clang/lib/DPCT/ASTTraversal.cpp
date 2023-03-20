@@ -10328,7 +10328,7 @@ void MemoryMigrationRule::mallocMigration(
     }
   } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost" ||
              Name == "cuMemHostAlloc" || Name == "cuMemAllocHost_v2" ||
-             Name == "cuMemAllocPitch_v2") {
+             Name == "cuMemAllocPitch_v2" || Name == "cudaMallocPitch") {
     ExprAnalysis EA(C);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
@@ -10397,7 +10397,7 @@ void MemoryMigrationRule::mallocMigration(
         report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       }
     }
-  } else if (Name == "cudaMallocPitch" || Name == "cudaMalloc3D") {
+  } else if (Name == "cudaMalloc3D") {
     std::ostringstream OS;
     std::string Type;
     if (IsAssigned)
@@ -10416,9 +10416,6 @@ void MemoryMigrationRule::mallocMigration(
     emplaceTransformation(removeArg(C, 0, *Result.SourceManager));
     std::ostringstream OS2;
     printDerefOp(OS2, C->getArg(1));
-    if (Name == "cudaMallocPitch") {
-      emplaceTransformation(new ReplaceStmt(C->getArg(1), OS2.str()));
-    }
     if (IsAssigned) {
       emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
