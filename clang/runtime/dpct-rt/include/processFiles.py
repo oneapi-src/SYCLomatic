@@ -17,13 +17,14 @@ from enum import Enum
 
 cur_file_dir = os.path.dirname(os.path.realpath(__file__))
 content_files_list = ["atomic", "blas_utils", "device",
-                      "dpct", "dpl_utils", "image", "kernel", "memory", "util", "rng_utils", "lib_common_utils", 
+                      "dpct", "dpl_utils", "image", "kernel", "math", "memory", "util", "rng_utils", "lib_common_utils",
                       "dnnl_utils", "ccl_utils", "fft_utils", "lapack_utils", "sparse_utils"]
 dpl_extras_content_files_list = [
     "algorithm", "functional", "iterators", "memory", "numeric", "vector", "dpcpp_extensions"]
 
 content_files_name_list = ["Atomic", "BlasUtils", "Device",
-                           "Dpct", "DplUtils", "Image", "Kernel", "Memory", "Util", "RngUtils", "LibCommonUtils", 
+                           "Dpct", "DplUtils", "Image", "Kernel", "Math", "Memory", "Util", "RngUtils",
+                           "LibCommonUtils",
                            "DnnlUtils", "CclUtils", "FftUtils", "LapackUtils", "SparseUtils"]
 dpl_extras_content_files_name_list = [
     "Algorithm", "Functional", "Iterators", "Memory", "Numeric", "Vector", "DpcppExtensions"]
@@ -478,7 +479,7 @@ def main():
         content_str = features_enum_file_handle.read()
         if (content_str != features_enum_str):
             features_enum_file_handle.seek(0)
-            features_enum_file_handle.truncate() 
+            features_enum_file_handle.truncate()
             features_enum_file_handle.write(features_enum_str)
     else:
         features_enum_file_handle = io.open(features_enum_file_name, "wb")
