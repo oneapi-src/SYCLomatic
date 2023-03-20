@@ -5,6 +5,7 @@
 
 
 // CHECK: begin
+// CHECK-NEXT: DplExtrasAlgorithm_merge
 // CHECK-NEXT: end
 
 
