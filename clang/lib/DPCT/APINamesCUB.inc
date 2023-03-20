@@ -1761,21 +1761,3 @@ CALL_FACTORY_ENTRY("cub::IADD3",
                               CAST_IF_NEED(LITERAL("unsigned int"), ARG(0)),
                               CAST_IF_NEED(LITERAL("unsigned int"), ARG(1))),
                            CAST_IF_NEED(LITERAL("unsigned int"), ARG(2)))))
-
-// cub::SHR_ADD
-CALL_FACTORY_ENTRY(
-    "cub::SHR_ADD",
-    CALL("", BO(BinaryOperatorKind::BO_Add,
-                CALL("", BO(BinaryOperatorKind::BO_Shr,
-                            CAST_IF_NEED(LITERAL("unsigned int"), ARG(0)),
-                            CAST_IF_NEED(LITERAL("unsigned int"), ARG(1)))),
-                CAST_IF_NEED(LITERAL("unsigned int"), ARG(2)))))
-
-// cub::SHL_ADD
-CALL_FACTORY_ENTRY(
-    "cub::SHL_ADD",
-    CALL("", BO(BinaryOperatorKind::BO_Add,
-                CALL("", BO(BinaryOperatorKind::BO_Shl,
-                            CAST_IF_NEED(LITERAL("unsigned int"), ARG(0)),
-                            CAST_IF_NEED(LITERAL("unsigned int"), ARG(1)))),
-                CAST_IF_NEED(LITERAL("unsigned int"), ARG(2)))))

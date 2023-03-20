@@ -1228,13 +1228,36 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
            ")";
     NewFuncName = "group_broadcast";
     emplaceTransformation(new ReplaceStmt(WarpMC, Repl));
-  } else if (FuncName == "Reduce" || FuncName == "Sum") {
-    auto FuncArgs = WarpMC->getArgs();
-    const Expr *InData = FuncArgs[0];
+  } else if (FuncName == "Reduce") {
+    ExprAnalysis InDateEA(WarpMC->getArg(0));
+    switch (NumArgs) {
+    case 2: {
+      OpRepl = getOpRepl(WarpMC->getArg(1));
+      Repl = MapNames::getClNamespace() + "reduce_over_group(" +
+             GroupOrWorkitem + ", " + InDateEA.getReplacedString() + ", " +
+             OpRepl + ")";
+      break;
+    }
+    case 3: {
+      ExprAnalysis ValidItemEA(WarpMC->getArg(2));
+      OpRepl = getOpRepl(WarpMC->getArg(1));
+      Repl = MapNames::getDpctNamespace() +
+             "group::reduce_over_partial_group(" + GroupOrWorkitem + ", " +
+             InDateEA.getReplacedString() + ", " +
+             ValidItemEA.getReplacedString() + ", " + OpRepl + ")";
+      break;
+    }
+    default:
+      report(WarpMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+             "cub::" + FuncName);
+      return;
+    }
+    emplaceTransformation(new ReplaceStmt(WarpMC, Repl));
+  } else if (FuncName == "Sum") {
+    const auto *FuncArgs = WarpMC->getArgs();
+    const auto *InData = FuncArgs[0];
     ExprAnalysis InEA(InData);
-    if (FuncName == "Reduce" && NumArgs == 2) {
-      OpRepl = getOpRepl(FuncArgs[1]);
-    } else if (FuncName == "Sum" && NumArgs == 1) {
+    if (NumArgs == 1) {
       OpRepl = getOpRepl(nullptr);
     } else {
       report(WarpMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
@@ -1246,6 +1269,8 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
            ", " + InEA.getReplacedString() + ", " + OpRepl + ")";
     emplaceTransformation(new ReplaceStmt(WarpMC, Repl));
   }
+
+
   if (auto FuncInfo = DeviceFunctionDecl::LinkRedecls(FD)) {
     FuncInfo->addSubGroupSizeRequest(WarpSize, WarpMC->getBeginLoc(),
                                      NewFuncName);
