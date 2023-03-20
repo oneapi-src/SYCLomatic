@@ -100,9 +100,19 @@ inline oneapi::ccl::datatype to_ccl_datatype(dpct::library_data_t dt) {
   case dpct::library_data_t::real_bfloat16:
     return oneapi::ccl::datatype::bfloat16;
   default:
-    throw std::runtime_error("to_dnnl_data_type: unsupported data type.");
+    throw std::runtime_error("to_ccl_datatype: unsupported data type.");
   }
 }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|ccl_init_helper|dpct::ccl::detail
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+/// helper class to make sure ccl::init() be called before other oneCCL API
+class ccl_init_helper {
+public:
+  ccl_init_helper() { oneapi::ccl::init(); }
+};
 // DPCT_LABEL_END
 
 } // namespace detail
@@ -152,24 +162,24 @@ create_kvs(const oneapi::ccl::kvs::address_type &addr) {
 // DPCT_LABEL_BEGIN|communicator_ext|dpct::ccl
 // DPCT_DEPENDENCY_BEGIN
 // CclUtils|communicator_ext_2
+// CclUtils|create_kvs
+// CclUtils|ccl_init_helper
 // Device|get_default_context
 // Device|get_current_device
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// dpct communicator extension
-class communicator_ext {
+class communicator_ext:public dpct::ccl::detail::ccl_init_helper {
 public:
   communicator_ext(
-      int size, int rank,
-      oneapi::ccl::shared_ptr_class<oneapi::ccl::kvs_interface> kvs,
+      int size, int rank, oneapi::ccl::kvs::address_type id,
       const oneapi::ccl::comm_attr &attr = oneapi::ccl::default_comm_attr)
       : _device_comm(oneapi::ccl::create_device(
-            static_cast<sycl::device>(dpct::get_current_device()))),
+            static_cast<sycl::device &>(dpct::get_current_device()))),
         _context_comm(oneapi::ccl::create_context(dpct::get_default_context())),
-        _comm(oneapi::ccl::create_communicator(size, rank, _device_comm,
-                                               _context_comm, kvs)) {
-    oneapi::ccl::init();
-  }
+        _comm(oneapi::ccl::create_communicator(
+            size, rank, _device_comm, _context_comm, dpct::ccl::create_kvs(id),
+            attr)) {}
 
   ~communicator_ext(){};
 // DPCT_LABEL_END
@@ -181,7 +191,7 @@ public:
 // DPCT_CODE
   /// Return the rank in a oneapi::ccl::communicator
   /// \returns The rank corresponding to communicator object
-  inline int rank() const {
+  int rank() const {
     return _comm.rank();
   }
 // DPCT_LABEL_END
@@ -193,7 +203,7 @@ public:
 // DPCT_CODE
   /// Retrieves the number of rank in oneapi::ccl::communicator
   /// \returns The number of the ranks
-  inline int size() const {
+  int size() const {
     return _comm.size();
   }
 // DPCT_LABEL_END
@@ -204,7 +214,7 @@ public:
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   /// Return underlying native device, which was used in oneapi::ccl::communicator
-  inline sycl::device get_device() const {
+  sycl::device get_device() const {
     return _comm.get_device().get_native();
   }
 // DPCT_LABEL_END
@@ -215,7 +225,7 @@ public:
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   /// Return underlying native context, which was used in oneapi::ccl::communicator
-  inline sycl::context get_context() const {
+  sycl::context get_context() const {
     return _comm.get_context().get_native();
   };
 // DPCT_LABEL_END
@@ -233,15 +243,15 @@ public:
   /// \param count the number of elements of type @c dtype in @c send_buf and @c recv_buf
   /// \param dtype the datatype of elements in @c send_buf and @c recv_buf
   /// \param rtype the type of the reduction operation to be applied
-  /// \param queue a sycl queue associated with the operation
-  /// \return @ref return sycl event to track the progress of the operation
-  inline sycl::event allreduce(const void *sendbuff, void *recvbuff,
+  /// \param stream a oneapi::ccl::stream associated with the operation
+  /// \return @ref return oneapi::ccl::event to track the progress of the operation
+  oneapi::ccl::event allreduce(const void *sendbuff, void *recvbuff,
                                size_t count, dpct::library_data_t dtype,
                                oneapi::ccl::reduction rtype,
-                               sycl::queue &queue) const {
-    return oneapi::ccl::allreduce(
-        sendbuff, recvbuff, count, dpct::ccl::detail::to_ccl_datatype(dtype),
-        rtype, _comm, oneapi::ccl::create_stream(queue)).get_native();
+                               const oneapi::ccl::stream &stream) const {
+    return oneapi::ccl::allreduce(sendbuff, recvbuff, count,
+                                  dpct::ccl::detail::to_ccl_datatype(dtype),
+                                  rtype, _comm, stream);
   };
 // DPCT_LABEL_END
 
@@ -257,12 +267,12 @@ private:
 };
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|typedef_ccl_comm_ptr|dpct::ccl
+// DPCT_LABEL_BEGIN|typedef_comm_ptr|dpct::ccl
 // DPCT_DEPENDENCY_BEGIN
 // CclUtils|communicator_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-typedef dpct::ccl::communicator_ext * ccl_comm_ptr;
+typedef dpct::ccl::communicator_ext * comm_ptr;
 // DPCT_LABEL_END
 
 } // namespace ccl

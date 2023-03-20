@@ -3,10 +3,11 @@
 // RUN: FileCheck --input-file %T/CclUtils/apt_test3_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/CclUtils/apt_test3_out
 
-// CHECK: 29
+// CHECK: 30
 // TEST_FEATURE: CclUtils_create_kvs
 // TEST_FEATURE: CclUtils_get_kvs_detail
-// TEST_FEATURE: CclUtils_typedef_ccl_comm_ptr
+// TEST_FEATURE: CclUtils_ccl_init_helper
+// TEST_FEATURE: CclUtils_typedef_comm_ptr
 // TEST_FEATURE: CclUtils_communicator_ext
 // TEST_FEATURE: CclUtils_communicator_ext_allreduce
 // TEST_FEATURE: Device_get_default_context

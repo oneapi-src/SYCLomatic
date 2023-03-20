@@ -10,7 +10,7 @@ int main() {
     int version, nranks, rank, device;
     // CHECK: oneapi::ccl::kvs::address_type id;
     ncclUniqueId id;
-    // CHECK: dpct::ccl::ccl_comm_ptr comm;
+    // CHECK: dpct::ccl::comm_ptr comm;
     ncclComm_t comm;
 
     // CHECK: version = dpct::ccl::get_version();
@@ -25,10 +25,10 @@ int main() {
     // CHECK: check((id = dpct::ccl::create_kvs_address(), 0));
     check(ncclGetUniqueId(&id));
 
-    // CHECK: comm = new dpct::ccl::communicator_ext(nranks, rank, dpct::ccl::create_kvs(id));
+    // CHECK: comm = new dpct::ccl::communicator_ext(nranks, rank, id);
     ncclCommInitRank(&comm, nranks, id, rank);
 
-    // CHECK: check((comm = new dpct::ccl::communicator_ext(nranks, rank, dpct::ccl::create_kvs(id)), 0));    
+    // CHECK: check((comm = new dpct::ccl::communicator_ext(nranks, rank, id), 0));    
     check(ncclCommInitRank(&comm, nranks, id, rank));
 
     // CHECK: device = comm->size();
@@ -37,10 +37,10 @@ int main() {
     // CHECK: check((device = comm->size(), 0));
     check(ncclCommCount(comm, &device));
 
-    // CHECK: device = dpct::get_device_id(comm->get_device().get_native());
+    // CHECK: device = dpct::get_device_id(comm->get_device());
     ncclCommCuDevice(comm, &device);
 
-    // CHECK: check((device = dpct::get_device_id(comm->get_device().get_native()), 0));
+    // CHECK: check((device = dpct::get_device_id(comm->get_device()), 0));
     check(ncclCommCuDevice(comm, &device));
 
     void *buff;
@@ -104,7 +104,7 @@ int main() {
     // CHECK-NEXT: */
     ncclGroupEnd();
 
-    // CHECK: comm->allreduce(buff, recvbuff, count, dpct::library_data_t::real_int8, oneapi::ccl::reduction::sum, *stream);
+    // CHECK: comm->allreduce(buff, recvbuff, count, dpct::library_data_t::real_int8, oneapi::ccl::reduction::sum, oneapi::ccl::create_stream(*stream));
     ncclAllReduce(buff, recvbuff, count, ncclChar, ncclSum, comm, stream);
 
     // CHECK:     /*

@@ -5,9 +5,11 @@
 
 #include <nccl.h>
 
-// CHECK: 26
+// CHECK: 28
 // TEST_FEATURE: CclUtils_typedef_ccl_comm_ptr
 // TEST_FEATURE: Device_get_device_id
+// TEST_FEATURE: CclUtils_ccl_init_helper
+// TEST_FEATURE: CclUtils_communicator_ext_get_device
 int main() {
   int  device;
   ncclComm_t comm;

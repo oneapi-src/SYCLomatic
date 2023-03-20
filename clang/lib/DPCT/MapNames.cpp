@@ -423,8 +423,8 @@ void MapNames::setExplicitNamespaceMap() {
                            "oneapi::ccl::kvs::address_type",
                            HelperFeatureEnum::CclUtils_create_kvs_address)},
       {"ncclComm_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() +"ccl::ccl_comm_ptr",
-                           HelperFeatureEnum::CclUtils_typedef_ccl_comm_ptr)},
+       std::make_shared<TypeNameRule>(getDpctNamespace() +"ccl::comm_ptr",
+                           HelperFeatureEnum::CclUtils_typedef_comm_ptr)},
       {"ncclRedOp_t", std::make_shared<TypeNameRule>("oneapi::ccl::reduction")},
       {"ncclDataType_t", std::make_shared<TypeNameRule>(
                                       getDpctNamespace() + "library_data_t")},
