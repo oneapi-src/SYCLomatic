@@ -1,5 +1,5 @@
 // FIXME
-// UNSUPPORTED: -windows-
+// UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/sharedmem_var_dynamic %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/sharedmem_var_dynamic/sharedmem_var_dynamic.dp.cpp
 

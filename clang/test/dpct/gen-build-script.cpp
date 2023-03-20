@@ -1,4 +1,4 @@
-// UNSUPPORTED: -windows-
+// UNSUPPORTED: system-windows
 // intercept-build not found on windows
 //
 // ------ prepare test directory

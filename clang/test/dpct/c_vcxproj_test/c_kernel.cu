@@ -1,4 +1,4 @@
-// UNSUPPORTED: -linux-
+// UNSUPPORTED: system-linux
 // RUN: cat %S/proj_c.vcxproj > %T/proj_c.vcxproj
 // RUN: cd %T
 
