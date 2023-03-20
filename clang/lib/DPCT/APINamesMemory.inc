@@ -364,7 +364,7 @@ ASSIGNABLE_FACTORY(
             "cudaPointerGetAttributes", DEREF(0), false, "init", ARG(1))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::Device_dev_mgr_get_device,
+    HelperFeatureEnum::Memory_dpct_malloc_2d,
     CONDITIONAL_FACTORY_ENTRY(
         CheckDerefedTypeBeforeCast(0, "void *"),
         ASSIGN_FACTORY_ENTRY(
