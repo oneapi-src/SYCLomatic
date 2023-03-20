@@ -663,7 +663,8 @@ class dropout_desc {
     unsigned long long _seed = 1;
     void *_state = nullptr;
     std::vector<std::uint8_t> _host_state;
-    std::shared_ptr<oneapi::mkl::rng::philox4x32x10> _rng_engine = nullptr;
+    oneapi::mkl::rng::philox4x32x10 _rng_engine;
+    dropout_desc_imp():_rng_engine(dpct::get_default_queue(), 1){}
   };
   std::shared_ptr<dropout_desc_imp> _imp;
 
@@ -671,11 +672,11 @@ class dropout_desc {
                 std::int64_t num, void *buffer) {
     sycl::event e_gen = oneapi::mkl::rng::generate(
         oneapi::mkl::rng::bernoulli<std::int32_t>(_imp->_p),
-        *(_imp->_rng_engine), num, (std::int32_t *)buffer);
+        _imp->_rng_engine, num, (std::int32_t *)buffer);
     sycl::event e_save = q->submit([&](sycl::handler &cgh) {
       cgh.depends_on(e_gen);
       cgh.host_task([=] {
-        oneapi::mkl::rng::save_state(*(_imp->_rng_engine),
+        oneapi::mkl::rng::save_state(_imp->_rng_engine,
                                      _imp->_host_state.data());
       });
     });
@@ -683,10 +684,16 @@ class dropout_desc {
               e_save);
   }
 public:
-  dropout_desc() {
+  operator bool() const {
+    return bool(_imp);
+  }
+  dropout_desc &operator=(std::nullptr_t) {
+    _imp.reset();
+    return *this;
+  }
+  /// Initializing a dropout descriptor.
+  void init(){
     _imp = std::make_shared<dropout_desc_imp>();
-    _imp->_rng_engine = std::make_shared<oneapi::mkl::rng::philox4x32x10>(
-        dpct::get_default_queue(), 1);
   }
   /// Setting a dropout descriptor with given parameters.
   /// \param [in] engine Engine of the dropout operation.
@@ -701,16 +708,14 @@ public:
   /// \param [in] p Success probability p of a trial.
   /// \param [in] state Memory that store random generator state.
   /// \param [in] seed Seed to initialize conditions of the generator state.
-  void get(float *p, void **states, unsigned long long *seed) const {
+  void get(float *p, void **states, unsigned long long *seed) const noexcept {
     *seed = _imp->_seed;
     *states = _imp->_state;
     *p = _imp->_p;
   }
   /// Getting the success probability.
   /// \returns Probability.
-  float get_probability() const {
-    return _imp->_p;
-  }
+  float get_probability() const noexcept { return _imp->_p; }
   /// Restoreing a dropout descriptor from stored state.
   /// \param [in] engine Engine of the dropout operation.
   /// \param [in] p Success probability p of a trial.
@@ -1906,7 +1911,7 @@ void dropout_desc::restore(engine_ext &engine, float p, void *state,
     _imp->_state = state;
     _imp->_host_state = std::vector<std::uint8_t>(required_state_size);
     q->memcpy(_imp->_host_state.data(), _imp->_state, required_state_size).wait();
-    *(_imp->_rng_engine) = oneapi::mkl::rng::philox4x32x10(
+    _imp->_rng_engine = oneapi::mkl::rng::philox4x32x10(
         oneapi::mkl::rng::load_state<oneapi::mkl::rng::philox4x32x10>(
             *q, _imp->_host_state.data()));
   }
@@ -1925,8 +1930,8 @@ void dropout_desc::set(engine_ext &engine, float p, void *state,
     _imp->_seed = seed;
     _imp->_state = state;
     _imp->_host_state = std::vector<std::uint8_t>(required_state_size);
-    *(_imp->_rng_engine) = oneapi::mkl::rng::philox4x32x10(*q, seed);
-    oneapi::mkl::rng::save_state(*(_imp->_rng_engine), _imp->_host_state.data());
+    _imp->_rng_engine = oneapi::mkl::rng::philox4x32x10(*q, seed);
+    oneapi::mkl::rng::save_state(_imp->_rng_engine, _imp->_host_state.data());
     q->memcpy(_imp->_state, _imp->_host_state.data(), required_state_size).wait();
   }
 }

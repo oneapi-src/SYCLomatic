@@ -681,7 +681,10 @@ FEATURE_REQUEST_FACTORY(
         ARG_WC(15), ARG_WC(16), ARG_WC(17), ARG_WC(18), ARG_WC(19))))
 
 // Dropout Layer
-REMOVE_API_FACTORY_ENTRY("cudnnCreateDropoutDescriptor")
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_dropout_desc,
+                        ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                            "cudnnCreateDropoutDescriptor", DEREF(ARG_WC(0)), false,
+                            "init")))
 
 REMOVE_API_FACTORY_ENTRY("cudnnDestroyDropoutDescriptor")
 

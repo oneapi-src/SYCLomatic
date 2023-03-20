@@ -43,9 +43,7 @@ int main(){
     void *reserve;
     // CHECK: dpct::dnnl::dropout_desc desc, desc2;
     cudnnDropoutDescriptor_t desc, desc2;
-    // CHECK: /*
-    // CHECK: DPCT1026:{{[0-9]+}}: The call to cudnnCreateDropoutDescriptor was removed because this call is redundant in SYCL.
-    // CHECK: */
+    // CHECK: desc.init();
     cudnnCreateDropoutDescriptor(&desc);
 
     cudaMallocManaged(&state, state_size);
