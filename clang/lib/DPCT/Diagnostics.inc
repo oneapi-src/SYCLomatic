@@ -229,3 +229,5 @@ DEF_WARNING(EXTENSION_DEVICE_INFO, 1106, "'%0' was migrated with the Intel exten
 DEF_COMMENT(EXTENSION_DEVICE_INFO, 1106, "'{0}' was migrated with the Intel extensions for device information which may not be supported by all compilers or runtimes. You may need to adjust the code.")
 DEF_WARNING(OVERLOAD_UNSUPPORTED, 1107, "Migration for this overload of %0 is not supported.")
 DEF_COMMENT(OVERLOAD_UNSUPPORTED, 1107, "Migration for this overload of {0} is not supported.")
+DEF_WARNING(EXPERIMENTAL_FEATURE, 1108, "'%0' was migrated with the experimental feature %0 which may not be supported by all compilers or runtimes. You may need to adjust the code.")
+DEF_COMMENT(EXPERIMENTAL_FEATURE, 1108, "'{0}' was migrated with the experimental feature {0} which may not be supported by all compilers or runtimes. You may need to adjust the code.")
