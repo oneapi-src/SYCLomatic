@@ -41,8 +41,6 @@ inline float fast_length(const float *a, int len) {
 /// \param [in] len Length of the array
 /// \returns The square root
 template <typename T> inline T length(const T *a, const int len) {
-  if (len < 1)
-    return 0;
   switch (len) {
   case 1:
     return a[0];
@@ -53,10 +51,10 @@ template <typename T> inline T length(const T *a, const int len) {
   case 4:
     return sycl::length(sycl::vec<T, 4>(a[0], a[1], a[2], a[3]));
   default:
-    T ret = a[0];
-    for (int i = 1; i < len; ++i)
-      ret = sycl::hypot(ret, a[i]);
-    return ret;
+    T ret = 0;
+    for (int i = 0; i < len; ++i)
+      ret += a[i] * a[i];
+    return sycl::sqrt(ret);
   }
 }
 
