@@ -1788,6 +1788,9 @@ public:
   static bool useUserDefineReductions() {
     return getUsingExperimental<ExperimentalFeatures::Exp_UserDefineReductions>();
   }
+  static bool useMaskedSubGroupFunction() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_MaskedSubGroupFunction>();
+  }
   static bool useExtDPLAPI() {
     return getUsingExperimental<ExperimentalFeatures::Exp_DPLExperimentalAPI>();
   }

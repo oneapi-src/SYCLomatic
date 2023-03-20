@@ -15,6 +15,8 @@
 #include <thrust/set_operations.h>
 #include <thrust/tabulate.h>
 #include <thrust/functional.h>
+#include <thrust/remove.h>
+
 // for cuda 12.0
 #include <thrust/iterator/constant_iterator.h>
 #include <thrust/partition.h>
@@ -539,4 +541,24 @@ void stable_partition_test() {
   thrust::stable_partition(data, data + N, is_even());
   thrust::stable_partition(thrust::host, data, data + N, S, is_even());
   thrust::stable_partition(data, data + N, S, is_even());
+}
+
+
+
+void remvoe_test() {
+  const int N = 6;
+  int data[N] = {3, 1, 4, 1, 5, 9};
+
+//CHECK:  if (dpct::is_device_ptr(data)) {
+//CHECK-NEXT:    oneapi::dpl::remove(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), 1);
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::remove(oneapi::dpl::execution::seq, data, data + N, 1);
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(data + N)) {
+//CHECK-NEXT:    oneapi::dpl::remove(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), 1);
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::remove(oneapi::dpl::execution::seq, data, data + N, 1);
+//CHECK-NEXT:  };
+  thrust::remove(thrust::host, data, data + N, 1);
+  thrust::remove(data, data + N, 1);
 }

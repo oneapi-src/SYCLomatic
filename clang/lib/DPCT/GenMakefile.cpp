@@ -62,6 +62,8 @@ static std::string getCustomBaseName(const std::string &Path) {
     return Filename;
 }
 
+extern std::map<std::string, bool> IncludeFileMap;
+
 static void getCompileInfo(
     StringRef InRoot, StringRef OutRoot,
     std::map<std::string, std::vector<clang::tooling::CompilationInfo>>
@@ -108,9 +110,7 @@ static void getCompileInfo(
           if (!llvm::sys::path::is_absolute(Obj))
             FilePathAbs = Directory + "/" + Obj;
 
-          llvm::sys::path::native(FilePathAbs);
-          llvm::sys::fs::make_absolute(FilePathAbs);
-          llvm::sys::path::remove_dots(FilePathAbs, true);
+          makeCanonical(FilePathAbs);
           ObjsInLKOrARCmd.push_back(std::string(FilePathAbs.str()));
           ObjName = std::string(FilePathAbs.str());
         } else if (Obj == "ar") {
@@ -184,7 +184,7 @@ static void getCompileInfo(
         continue;
       }
 
-      if (IsIncludeWithWhitespace  || llvm::StringRef(Option).startswith("-I")) {
+      if (IsIncludeWithWhitespace || llvm::StringRef(Option).startswith("-I")) {
 
         if (llvm::StringRef(Option).trim() == "-I") {
           IsIncludeWithWhitespace = true;
@@ -200,7 +200,7 @@ static void getCompileInfo(
         }
 
         IsIncludeWithWhitespace = false;
-      
+
         if (!llvm::sys::fs::exists(IncPath)) {
           // Skip including path that does not exist.
           continue;
@@ -249,8 +249,22 @@ static void getCompileInfo(
         }
         auto Version = Option.substr(Idx, Option.length() - Idx);
         int Val = std::atoi(Version.c_str());
+
+        llvm::SmallString<512> RealPath;
+        llvm::sys::fs::real_path(FileName, RealPath, true);
+        if (!llvm::sys::path::is_absolute(FileName))
+          RealPath = Directory + "/" + FileName;
+        makeCanonical(RealPath);
+
+        bool HasCudaSemantics = false;
+
+        if (IncludeFileMap.count(std::string(RealPath.str())) &&
+            IncludeFileMap.at(std::string(RealPath.str()))) {
+          HasCudaSemantics = true;
+        }
+
         // SYCL support c++17 as default.
-        if (llvm::StringRef(Entry.second[1]).endswith("nvcc") && Val <= 17)
+        if (HasCudaSemantics && Val <= 17)
           continue;
 
         // Skip duplicate options.
@@ -269,9 +283,7 @@ static void getCompileInfo(
         if (!llvm::sys::path::is_absolute(Option))
           FilePathAbs = Directory + "/" + Option;
 
-        llvm::sys::path::native(FilePathAbs);
-        llvm::sys::fs::make_absolute(FilePathAbs);
-        llvm::sys::path::remove_dots(FilePathAbs, true);
+        makeCanonical(FilePathAbs);
         Orig2ObjMap[FileName] = std::string(FilePathAbs.str());
         IsObjName = false;
       } else if (llvm::StringRef(Option).startswith("-O")) {
