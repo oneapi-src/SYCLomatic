@@ -372,6 +372,12 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
         false),
              DPCT_OPT_ENUM("user-defined-reductions", int(ExperimentalFeatures::Exp_UserDefineReductions),
         "Experimental extension that allows user define reductions.\n",
+        false),
+             DPCT_OPT_ENUM("masked_sub_group_function", int(ExperimentalFeatures::Exp_MaskedSubGroupFunction),
+        "Experimental extension that allows masked sub_group call during migration.\n",
+        false),
+             DPCT_OPT_ENUM("dpl-experimental-api", int(ExperimentalFeatures::Exp_DPLExperimentalAPI),
+        "Experimental extension that allows oneDPL experimental API.\n",
         false)
            ),
            llvm::cl::desc("Comma separated list of experimental features to be used in migrated "
