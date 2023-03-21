@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/DplExtrasAlgorithm/api_test19_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasAlgorithm/api_test19_out
 
-// CHECK: 19
+// CHECK: 2
 // TEST_FEATURE: DplExtrasAlgorithm_stable_partition
 
 #include <thrust/functional.h>

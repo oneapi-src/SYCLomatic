@@ -50,7 +50,6 @@ jobs:
           cmake \
             -G Ninja \
             -DLLVM_ENABLE_PROJECTS="clang"  \
-            -DCMAKE_COLOR_MAKEFILE=0 \
             -DCMAKE_BUILD_TYPE=Release \
             -DLLVM_TARGETS_TO_BUILD="X86;NVPTX" \
             -DLLVM_ENABLE_TERMINFO=OFF  \

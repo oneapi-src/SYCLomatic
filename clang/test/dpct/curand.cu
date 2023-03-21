@@ -157,8 +157,7 @@ void bar1(){
 //CHECK-NEXT:DPCT1032:{{[0-9]+}}: A different random number generator is used. You may need to
 //CHECK-NEXT:adjust the code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:rng =
-//CHECK-NEXT:    dpct::rng::create_host_rng(dpct::rng::random_engine_type::philox4x32x10);
+//CHECK-NEXT:rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::mcg59);
 //CHECK-NEXT:rng->set_seed(1337ull);
   curandGenerator_t rng;
   curandCreateGenerator(&rng, CURAND_RNG_PSEUDO_XORWOW);

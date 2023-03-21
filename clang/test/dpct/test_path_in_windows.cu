@@ -1,4 +1,4 @@
-// UNSUPPORTED: -linux-
+// UNSUPPORTED: system-linux
 // RUN: dpct --format-range=none --usm-level=none -out-root=%T/test_path_in_windows -in-root=%S %S/test_PATH_in_Windows.cu --cuda-include-path="%cuda-path/include" --sycl-named-lambda --comments -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/test_path_in_windows/test_path_in_windows.dp.cpp --match-full-lines %S/test_path_in_windows.cu
 

@@ -150,8 +150,8 @@ private:
 } // namespace
 
 #ifdef SYCLomatic_CUSTOMIZATION
-static Optional<std::string> (*getReplacedNamePtr)(const NamedDecl *D) = 0;
-void setGetReplacedNamePtr(Optional<std::string> (*Ptr)(const NamedDecl *D)) {
+static StringRef (*getReplacedNamePtr)(const NamedDecl *D) = 0;
+void setGetReplacedNamePtr(StringRef (*Ptr)(const NamedDecl *D)) {
   getReplacedNamePtr = Ptr;
 }
 #endif // SYCLomatic_CUSTOMIZATION
@@ -1063,11 +1063,11 @@ void TypePrinter::printFunctionNoProtoAfter(const FunctionNoProtoType *T,
 
 void TypePrinter::printTypeSpec(NamedDecl *D, raw_ostream &OS) {
 #ifdef SYCLomatic_CUSTOMIZATION
-  Optional<std::string> Name;
+  StringRef Name;
   if (getReplacedNamePtr)
     Name = getReplacedNamePtr(D);
-  if (Name.has_value()) {
-    OS << Name.value();
+  if (!Name.empty()) {
+    OS << Name;
     spaceBeforePlaceHolder(OS);
     return;
   }
@@ -1367,18 +1367,18 @@ void TypePrinter::printTag(TagDecl *D, raw_ostream &OS) {
   }
 
 #ifdef SYCLomatic_CUSTOMIZATION
-  Optional<std::string> Name;
+  StringRef Name;
   if (getReplacedNamePtr)
     Name = getReplacedNamePtr(D);
 
   // Compute the full nested-name-specifier for this type.
   // In C, this will always be empty except when the type
   // being printed is anonymous within other Record.
-  if (!Name.has_value() && !Policy.SuppressScope)
+  if (Name.empty() && !Policy.SuppressScope)
     AppendScope(D->getDeclContext(), OS, D->getDeclName());
 
-  if (Name.has_value())
-    OS << Name.value();
+  if (!Name.empty())
+    OS << Name;
   else
 #else
   // Compute the full nested-name-specifier for this type.
@@ -1550,11 +1550,11 @@ void TypePrinter::printTemplateId(const TemplateSpecializationType *T,
 
   TemplateDecl *TD = T->getTemplateName().getAsTemplateDecl();
 #ifdef SYCLomatic_CUSTOMIZATION
-  Optional<std::string> Name;
+  StringRef Name;
   if (getReplacedNamePtr)
     Name = getReplacedNamePtr(TD);
-  if (Name.has_value())
-    OS << Name.value();
+  if (!Name.empty())
+    OS << Name;
   else
 #endif // SYCLomatic_CUSTOMIZATION
   // FIXME: Null TD never excercised in test suite.
@@ -2109,6 +2109,36 @@ static bool isSubstitutedType(ASTContext &Ctx, QualType T, QualType Pattern,
   return false;
 }
 
+/// Evaluates the expression template argument 'Pattern' and returns true
+/// if 'Arg' evaluates to the same result.
+static bool templateArgumentExpressionsEqual(ASTContext const &Ctx,
+                                             TemplateArgument const &Pattern,
+                                             TemplateArgument const &Arg) {
+  if (Pattern.getKind() != TemplateArgument::Expression)
+    return false;
+
+  // Can't evaluate value-dependent expressions so bail early
+  Expr const *pattern_expr = Pattern.getAsExpr();
+  if (pattern_expr->isValueDependent() ||
+      !pattern_expr->isIntegerConstantExpr(Ctx))
+    return false;
+
+  if (Arg.getKind() == TemplateArgument::Integral)
+    return llvm::APSInt::isSameValue(pattern_expr->EvaluateKnownConstInt(Ctx),
+                                     Arg.getAsIntegral());
+
+  if (Arg.getKind() == TemplateArgument::Expression) {
+    Expr const *args_expr = Arg.getAsExpr();
+    if (args_expr->isValueDependent() || !args_expr->isIntegerConstantExpr(Ctx))
+      return false;
+
+    return llvm::APSInt::isSameValue(args_expr->EvaluateKnownConstInt(Ctx),
+                                     pattern_expr->EvaluateKnownConstInt(Ctx));
+  }
+
+  return false;
+}
+
 static bool isSubstitutedTemplateArgument(ASTContext &Ctx, TemplateArgument Arg,
                                           TemplateArgument Pattern,
                                           ArrayRef<TemplateArgument> Args,
@@ -2127,15 +2157,8 @@ static bool isSubstitutedTemplateArgument(ASTContext &Ctx, TemplateArgument Arg,
     }
   }
 
-  if (Arg.getKind() == TemplateArgument::Integral &&
-      Pattern.getKind() == TemplateArgument::Expression) {
-    Expr const *expr = Pattern.getAsExpr();
-
-    if (!expr->isValueDependent() && expr->isIntegerConstantExpr(Ctx)) {
-      return llvm::APSInt::isSameValue(expr->EvaluateKnownConstInt(Ctx),
-                                       Arg.getAsIntegral());
-    }
-  }
+  if (templateArgumentExpressionsEqual(Ctx, Pattern, Arg))
+    return true;
 
   if (Arg.getKind() != Pattern.getKind())
     return false;
@@ -2188,14 +2211,10 @@ printTo(raw_ostream &OS, ArrayRef<TA> Args, const PrintingPolicy &Policy,
   if (TPL && Policy.SuppressDefaultTemplateArgs &&
       !Policy.PrintCanonicalTypes && !Args.empty() && !IsPack &&
       Args.size() <= TPL->size()) {
-    ASTContext &Ctx = TPL->getParam(0)->getASTContext();
     llvm::SmallVector<TemplateArgument, 8> OrigArgs;
     for (const TA &A : Args)
       OrigArgs.push_back(getArgument(A));
-    while (!Args.empty() &&
-           isSubstitutedDefaultArgument(Ctx, getArgument(Args.back()),
-                                        TPL->getParam(Args.size() - 1),
-                                        OrigArgs, TPL->getDepth()))
+    while (!Args.empty() && getArgument(Args.back()).getIsDefaulted())
       Args = Args.drop_back();
   }
 
