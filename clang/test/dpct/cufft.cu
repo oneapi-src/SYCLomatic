@@ -353,8 +353,8 @@ int main() {
   cufftPlanMany(&plan_many_D2Z, 3, n_many_D2Z, inembed_many_D2Z, istride_many_D2Z, idist_many_D2Z, onembed_many_D2Z, ostride_many_D2Z, odist_many_D2Z, CUFFT_D2Z, 12);
   cufftExecD2Z(plan_many_D2Z, idata_many_D2Z, odata_many_D2Z);
 
+  size_t* work_size;
   //CHECK:dpct::fft::fft_engine_ptr plan_m1d_C2C;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:sycl::float2* odata_m1d_C2C;
   //CHECK-NEXT:sycl::float2* idata_m1d_C2C;
   //CHECK-NEXT:/*
@@ -366,14 +366,12 @@ int main() {
   //CHECK-NEXT:plan_m1d_C2C->commit(&q_ct1, 10, dpct::fft::fft_type::complex_float_to_complex_float, 3, work_size);
   //CHECK-NEXT:plan_m1d_C2C->compute<sycl::float2, sycl::float2>(idata_m1d_C2C, odata_m1d_C2C, dpct::fft::fft_direction::forward);
   cufftHandle plan_m1d_C2C;
-  size_t* work_size;
   float2* odata_m1d_C2C;
   float2* idata_m1d_C2C;
   cufftMakePlan1d(plan_m1d_C2C, 10, CUFFT_C2C, 3, work_size);
   cufftExecC2C(plan_m1d_C2C, idata_m1d_C2C, odata_m1d_C2C, CUFFT_FORWARD);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_m1d_C2R;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:float* odata_m1d_C2R;
   //CHECK-NEXT:sycl::float2* idata_m1d_C2R;
   //CHECK-NEXT:/*
@@ -385,14 +383,12 @@ int main() {
   //CHECK-NEXT:plan_m1d_C2R->commit(&q_ct1, 10, dpct::fft::fft_type::complex_float_to_real_float, 3, work_size);
   //CHECK-NEXT:plan_m1d_C2R->compute<sycl::float2, float>(idata_m1d_C2R, odata_m1d_C2R, dpct::fft::fft_direction::backward);
   cufftHandle plan_m1d_C2R;
-  size_t* work_size;
   float* odata_m1d_C2R;
   float2* idata_m1d_C2R;
   cufftMakePlan1d(plan_m1d_C2R, 10, CUFFT_C2R, 3, work_size);
   cufftExecC2R(plan_m1d_C2R, idata_m1d_C2R, odata_m1d_C2R);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_m1d_R2C;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:sycl::float2* odata_m1d_R2C;
   //CHECK-NEXT:float* idata_m1d_R2C;
   //CHECK-NEXT:/*
@@ -404,14 +400,12 @@ int main() {
   //CHECK-NEXT:plan_m1d_R2C->commit(&q_ct1, 10, dpct::fft::fft_type::real_float_to_complex_float, 3, work_size);
   //CHECK-NEXT:plan_m1d_R2C->compute<float, sycl::float2>(idata_m1d_R2C, odata_m1d_R2C, dpct::fft::fft_direction::forward);
   cufftHandle plan_m1d_R2C;
-  size_t* work_size;
   float2* odata_m1d_R2C;
   float* idata_m1d_R2C;
   cufftMakePlan1d(plan_m1d_R2C, 10, CUFFT_R2C, 3, work_size);
   cufftExecR2C(plan_m1d_R2C, idata_m1d_R2C, odata_m1d_R2C);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_m1d_Z2Z;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:sycl::double2* odata_m1d_Z2Z;
   //CHECK-NEXT:sycl::double2* idata_m1d_Z2Z;
   //CHECK-NEXT:/*
@@ -423,14 +417,12 @@ int main() {
   //CHECK-NEXT:plan_m1d_Z2Z->commit(&q_ct1, 10, dpct::fft::fft_type::complex_double_to_complex_double, 3, work_size);
   //CHECK-NEXT:plan_m1d_Z2Z->compute<sycl::double2, sycl::double2>(idata_m1d_Z2Z, odata_m1d_Z2Z, dpct::fft::fft_direction::backward);
   cufftHandle plan_m1d_Z2Z;
-  size_t* work_size;
   double2* odata_m1d_Z2Z;
   double2* idata_m1d_Z2Z;
   cufftMakePlan1d(plan_m1d_Z2Z, 10, CUFFT_Z2Z, 3, work_size);
   cufftExecZ2Z(plan_m1d_Z2Z, idata_m1d_Z2Z, odata_m1d_Z2Z, CUFFT_INVERSE);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_m1d_Z2D;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:double* odata_m1d_Z2D;
   //CHECK-NEXT:sycl::double2* idata_m1d_Z2D;
   //CHECK-NEXT:/*
@@ -442,14 +434,12 @@ int main() {
   //CHECK-NEXT:plan_m1d_Z2D->commit(&q_ct1, 10, dpct::fft::fft_type::complex_double_to_real_double, 3, work_size);
   //CHECK-NEXT:plan_m1d_Z2D->compute<sycl::double2, double>(idata_m1d_Z2D, odata_m1d_Z2D, dpct::fft::fft_direction::backward);
   cufftHandle plan_m1d_Z2D;
-  size_t* work_size;
   double* odata_m1d_Z2D;
   double2* idata_m1d_Z2D;
   cufftMakePlan1d(plan_m1d_Z2D, 10, CUFFT_Z2D, 3, work_size);
   cufftExecZ2D(plan_m1d_Z2D, idata_m1d_Z2D, odata_m1d_Z2D);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_m1d_D2Z;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:sycl::double2* odata_m1d_D2Z;
   //CHECK-NEXT:double* idata_m1d_D2Z;
   //CHECK-NEXT:/*
@@ -461,14 +451,12 @@ int main() {
   //CHECK-NEXT:plan_m1d_D2Z->commit(&q_ct1, 10, dpct::fft::fft_type::real_double_to_complex_double, 3, work_size);
   //CHECK-NEXT:plan_m1d_D2Z->compute<double, sycl::double2>(idata_m1d_D2Z, odata_m1d_D2Z, dpct::fft::fft_direction::forward);
   cufftHandle plan_m1d_D2Z;
-  size_t* work_size;
   double2* odata_m1d_D2Z;
   double* idata_m1d_D2Z;
   cufftMakePlan1d(plan_m1d_D2Z, 10, CUFFT_D2Z, 3, work_size);
   cufftExecD2Z(plan_m1d_D2Z, idata_m1d_D2Z, odata_m1d_D2Z);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_m2d_C2C;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:sycl::float2* odata_m2d_C2C;
   //CHECK-NEXT:sycl::float2* idata_m2d_C2C;
   //CHECK-NEXT:/*
@@ -480,14 +468,12 @@ int main() {
   //CHECK-NEXT:plan_m2d_C2C->commit(&q_ct1, 10, 20, dpct::fft::fft_type::complex_float_to_complex_float, work_size);
   //CHECK-NEXT:plan_m2d_C2C->compute<sycl::float2, sycl::float2>(idata_m2d_C2C, odata_m2d_C2C, dpct::fft::fft_direction::forward);
   cufftHandle plan_m2d_C2C;
-  size_t* work_size;
   float2* odata_m2d_C2C;
   float2* idata_m2d_C2C;
   cufftMakePlan2d(plan_m2d_C2C, 10, 20, CUFFT_C2C, work_size);
   cufftExecC2C(plan_m2d_C2C, idata_m2d_C2C, odata_m2d_C2C, CUFFT_FORWARD);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_m2d_C2R;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:float* odata_m2d_C2R;
   //CHECK-NEXT:sycl::float2* idata_m2d_C2R;
   //CHECK-NEXT:/*
@@ -499,14 +485,12 @@ int main() {
   //CHECK-NEXT:plan_m2d_C2R->commit(&q_ct1, 10, 20, dpct::fft::fft_type::complex_float_to_real_float, work_size);
   //CHECK-NEXT:plan_m2d_C2R->compute<sycl::float2, float>(idata_m2d_C2R, odata_m2d_C2R, dpct::fft::fft_direction::backward);
   cufftHandle plan_m2d_C2R;
-  size_t* work_size;
   float* odata_m2d_C2R;
   float2* idata_m2d_C2R;
   cufftMakePlan2d(plan_m2d_C2R, 10, 20, CUFFT_C2R, work_size);
   cufftExecC2R(plan_m2d_C2R, idata_m2d_C2R, odata_m2d_C2R);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_m2d_R2C;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:sycl::float2* odata_m2d_R2C;
   //CHECK-NEXT:float* idata_m2d_R2C;
   //CHECK-NEXT:/*
@@ -518,14 +502,12 @@ int main() {
   //CHECK-NEXT:plan_m2d_R2C->commit(&q_ct1, 10, 20, dpct::fft::fft_type::real_float_to_complex_float, work_size);
   //CHECK-NEXT:plan_m2d_R2C->compute<float, sycl::float2>(idata_m2d_R2C, odata_m2d_R2C, dpct::fft::fft_direction::forward);
   cufftHandle plan_m2d_R2C;
-  size_t* work_size;
   float2* odata_m2d_R2C;
   float* idata_m2d_R2C;
   cufftMakePlan2d(plan_m2d_R2C, 10, 20, CUFFT_R2C, work_size);
   cufftExecR2C(plan_m2d_R2C, idata_m2d_R2C, odata_m2d_R2C);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_m2d_Z2Z;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:sycl::double2* odata_m2d_Z2Z;
   //CHECK-NEXT:sycl::double2* idata_m2d_Z2Z;
   //CHECK-NEXT:/*
@@ -537,14 +519,12 @@ int main() {
   //CHECK-NEXT:plan_m2d_Z2Z->commit(&q_ct1, 10, 20, dpct::fft::fft_type::complex_double_to_complex_double, work_size);
   //CHECK-NEXT:plan_m2d_Z2Z->compute<sycl::double2, sycl::double2>(idata_m2d_Z2Z, odata_m2d_Z2Z, dpct::fft::fft_direction::backward);
   cufftHandle plan_m2d_Z2Z;
-  size_t* work_size;
   double2* odata_m2d_Z2Z;
   double2* idata_m2d_Z2Z;
   cufftMakePlan2d(plan_m2d_Z2Z, 10, 20, CUFFT_Z2Z, work_size);
   cufftExecZ2Z(plan_m2d_Z2Z, idata_m2d_Z2Z, odata_m2d_Z2Z, CUFFT_INVERSE);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_m2d_Z2D;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:double* odata_m2d_Z2D;
   //CHECK-NEXT:sycl::double2* idata_m2d_Z2D;
   //CHECK-NEXT:/*
@@ -556,14 +536,12 @@ int main() {
   //CHECK-NEXT:plan_m2d_Z2D->commit(&q_ct1, 10, 20, dpct::fft::fft_type::complex_double_to_real_double, work_size);
   //CHECK-NEXT:plan_m2d_Z2D->compute<sycl::double2, double>(idata_m2d_Z2D, odata_m2d_Z2D, dpct::fft::fft_direction::backward);
   cufftHandle plan_m2d_Z2D;
-  size_t* work_size;
   double* odata_m2d_Z2D;
   double2* idata_m2d_Z2D;
   cufftMakePlan2d(plan_m2d_Z2D, 10, 20, CUFFT_Z2D, work_size);
   cufftExecZ2D(plan_m2d_Z2D, idata_m2d_Z2D, odata_m2d_Z2D);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_m2d_D2Z;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:sycl::double2* odata_m2d_D2Z;
   //CHECK-NEXT:double* idata_m2d_D2Z;
   //CHECK-NEXT:/*
@@ -575,14 +553,12 @@ int main() {
   //CHECK-NEXT:plan_m2d_D2Z->commit(&q_ct1, 10, 20, dpct::fft::fft_type::real_double_to_complex_double, work_size);
   //CHECK-NEXT:plan_m2d_D2Z->compute<double, sycl::double2>(idata_m2d_D2Z, odata_m2d_D2Z, dpct::fft::fft_direction::forward);
   cufftHandle plan_m2d_D2Z;
-  size_t* work_size;
   double2* odata_m2d_D2Z;
   double* idata_m2d_D2Z;
   cufftMakePlan2d(plan_m2d_D2Z, 10, 20, CUFFT_D2Z, work_size);
   cufftExecD2Z(plan_m2d_D2Z, idata_m2d_D2Z, odata_m2d_D2Z);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_m3d_C2C;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:sycl::float2* odata_m3d_C2C;
   //CHECK-NEXT:sycl::float2* idata_m3d_C2C;
   //CHECK-NEXT:/*
@@ -594,14 +570,12 @@ int main() {
   //CHECK-NEXT:plan_m3d_C2C->commit(&q_ct1, 10, 20, 30, dpct::fft::fft_type::complex_float_to_complex_float, work_size);
   //CHECK-NEXT:plan_m3d_C2C->compute<sycl::float2, sycl::float2>(idata_m3d_C2C, odata_m3d_C2C, dpct::fft::fft_direction::forward);
   cufftHandle plan_m3d_C2C;
-  size_t* work_size;
   float2* odata_m3d_C2C;
   float2* idata_m3d_C2C;
   cufftMakePlan3d(plan_m3d_C2C, 10, 20, 30, CUFFT_C2C, work_size);
   cufftExecC2C(plan_m3d_C2C, idata_m3d_C2C, odata_m3d_C2C, CUFFT_FORWARD);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_m3d_C2R;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:float* odata_m3d_C2R;
   //CHECK-NEXT:sycl::float2* idata_m3d_C2R;
   //CHECK-NEXT:/*
@@ -613,14 +587,12 @@ int main() {
   //CHECK-NEXT:plan_m3d_C2R->commit(&q_ct1, 10, 20, 30, dpct::fft::fft_type::complex_float_to_real_float, work_size);
   //CHECK-NEXT:plan_m3d_C2R->compute<sycl::float2, float>(idata_m3d_C2R, odata_m3d_C2R, dpct::fft::fft_direction::backward);
   cufftHandle plan_m3d_C2R;
-  size_t* work_size;
   float* odata_m3d_C2R;
   float2* idata_m3d_C2R;
   cufftMakePlan3d(plan_m3d_C2R, 10, 20, 30, CUFFT_C2R, work_size);
   cufftExecC2R(plan_m3d_C2R, idata_m3d_C2R, odata_m3d_C2R);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_m3d_R2C;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:sycl::float2* odata_m3d_R2C;
   //CHECK-NEXT:float* idata_m3d_R2C;
   //CHECK-NEXT:/*
@@ -632,14 +604,12 @@ int main() {
   //CHECK-NEXT:plan_m3d_R2C->commit(&q_ct1, 10, 20, 30, dpct::fft::fft_type::real_float_to_complex_float, work_size);
   //CHECK-NEXT:plan_m3d_R2C->compute<float, sycl::float2>(idata_m3d_R2C, odata_m3d_R2C, dpct::fft::fft_direction::forward);
   cufftHandle plan_m3d_R2C;
-  size_t* work_size;
   float2* odata_m3d_R2C;
   float* idata_m3d_R2C;
   cufftMakePlan3d(plan_m3d_R2C, 10, 20, 30, CUFFT_R2C, work_size);
   cufftExecR2C(plan_m3d_R2C, idata_m3d_R2C, odata_m3d_R2C);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_m3d_Z2Z;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:sycl::double2* odata_m3d_Z2Z;
   //CHECK-NEXT:sycl::double2* idata_m3d_Z2Z;
   //CHECK-NEXT:/*
@@ -651,14 +621,12 @@ int main() {
   //CHECK-NEXT:plan_m3d_Z2Z->commit(&q_ct1, 10, 20, 30, dpct::fft::fft_type::complex_double_to_complex_double, work_size);
   //CHECK-NEXT:plan_m3d_Z2Z->compute<sycl::double2, sycl::double2>(idata_m3d_Z2Z, odata_m3d_Z2Z, dpct::fft::fft_direction::backward);
   cufftHandle plan_m3d_Z2Z;
-  size_t* work_size;
   double2* odata_m3d_Z2Z;
   double2* idata_m3d_Z2Z;
   cufftMakePlan3d(plan_m3d_Z2Z, 10, 20, 30, CUFFT_Z2Z, work_size);
   cufftExecZ2Z(plan_m3d_Z2Z, idata_m3d_Z2Z, odata_m3d_Z2Z, CUFFT_INVERSE);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_m3d_Z2D;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:double* odata_m3d_Z2D;
   //CHECK-NEXT:sycl::double2* idata_m3d_Z2D;
   //CHECK-NEXT:/*
@@ -670,14 +638,12 @@ int main() {
   //CHECK-NEXT:plan_m3d_Z2D->commit(&q_ct1, 10, 20, 30, dpct::fft::fft_type::complex_double_to_real_double, work_size);
   //CHECK-NEXT:plan_m3d_Z2D->compute<sycl::double2, double>(idata_m3d_Z2D, odata_m3d_Z2D, dpct::fft::fft_direction::backward);
   cufftHandle plan_m3d_Z2D;
-  size_t* work_size;
   double* odata_m3d_Z2D;
   double2* idata_m3d_Z2D;
   cufftMakePlan3d(plan_m3d_Z2D, 10, 20, 30, CUFFT_Z2D, work_size);
   cufftExecZ2D(plan_m3d_Z2D, idata_m3d_Z2D, odata_m3d_Z2D);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_m3d_D2Z;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:sycl::double2* odata_m3d_D2Z;
   //CHECK-NEXT:double* idata_m3d_D2Z;
   //CHECK-NEXT:/*
@@ -689,14 +655,12 @@ int main() {
   //CHECK-NEXT:plan_m3d_D2Z->commit(&q_ct1, 10, 20, 30, dpct::fft::fft_type::real_double_to_complex_double, work_size);
   //CHECK-NEXT:plan_m3d_D2Z->compute<double, sycl::double2>(idata_m3d_D2Z, odata_m3d_D2Z, dpct::fft::fft_direction::forward);
   cufftHandle plan_m3d_D2Z;
-  size_t* work_size;
   double2* odata_m3d_D2Z;
   double* idata_m3d_D2Z;
   cufftMakePlan3d(plan_m3d_D2Z, 10, 20, 30, CUFFT_D2Z, work_size);
   cufftExecD2Z(plan_m3d_D2Z, idata_m3d_D2Z, odata_m3d_D2Z);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_mmany_C2C;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:int odist_mmany_C2C;
   //CHECK-NEXT:int ostride_mmany_C2C;
   //CHECK-NEXT:int * onembed_mmany_C2C;
@@ -715,7 +679,6 @@ int main() {
   //CHECK-NEXT:plan_mmany_C2C->commit(&q_ct1, 3, n_mmany_C2C, inembed_mmany_C2C, istride_mmany_C2C, idist_mmany_C2C, onembed_mmany_C2C, ostride_mmany_C2C, odist_mmany_C2C, dpct::fft::fft_type::complex_float_to_complex_float, 12, work_size);
   //CHECK-NEXT:plan_mmany_C2C->compute<sycl::float2, sycl::float2>(idata_mmany_C2C, odata_mmany_C2C, dpct::fft::fft_direction::forward);
   cufftHandle plan_mmany_C2C;
-  size_t* work_size;
   int odist_mmany_C2C;
   int ostride_mmany_C2C;
   int * onembed_mmany_C2C;
@@ -729,7 +692,6 @@ int main() {
   cufftExecC2C(plan_mmany_C2C, idata_mmany_C2C, odata_mmany_C2C, CUFFT_FORWARD);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_mmany_C2R;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:int odist_mmany_C2R;
   //CHECK-NEXT:int ostride_mmany_C2R;
   //CHECK-NEXT:int * onembed_mmany_C2R;
@@ -748,7 +710,6 @@ int main() {
   //CHECK-NEXT:plan_mmany_C2R->commit(&q_ct1, 3, n_mmany_C2R, inembed_mmany_C2R, istride_mmany_C2R, idist_mmany_C2R, onembed_mmany_C2R, ostride_mmany_C2R, odist_mmany_C2R, dpct::fft::fft_type::complex_float_to_real_float, 12, work_size);
   //CHECK-NEXT:plan_mmany_C2R->compute<sycl::float2, float>(idata_mmany_C2R, odata_mmany_C2R, dpct::fft::fft_direction::backward);
   cufftHandle plan_mmany_C2R;
-  size_t* work_size;
   int odist_mmany_C2R;
   int ostride_mmany_C2R;
   int * onembed_mmany_C2R;
@@ -762,7 +723,6 @@ int main() {
   cufftExecC2R(plan_mmany_C2R, idata_mmany_C2R, odata_mmany_C2R);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_mmany_R2C;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:int odist_mmany_R2C;
   //CHECK-NEXT:int ostride_mmany_R2C;
   //CHECK-NEXT:int * onembed_mmany_R2C;
@@ -781,7 +741,6 @@ int main() {
   //CHECK-NEXT:plan_mmany_R2C->commit(&q_ct1, 3, n_mmany_R2C, inembed_mmany_R2C, istride_mmany_R2C, idist_mmany_R2C, onembed_mmany_R2C, ostride_mmany_R2C, odist_mmany_R2C, dpct::fft::fft_type::real_float_to_complex_float, 12, work_size);
   //CHECK-NEXT:plan_mmany_R2C->compute<float, sycl::float2>(idata_mmany_R2C, odata_mmany_R2C, dpct::fft::fft_direction::forward);
   cufftHandle plan_mmany_R2C;
-  size_t* work_size;
   int odist_mmany_R2C;
   int ostride_mmany_R2C;
   int * onembed_mmany_R2C;
@@ -795,7 +754,6 @@ int main() {
   cufftExecR2C(plan_mmany_R2C, idata_mmany_R2C, odata_mmany_R2C);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_mmany_Z2Z;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:int odist_mmany_Z2Z;
   //CHECK-NEXT:int ostride_mmany_Z2Z;
   //CHECK-NEXT:int * onembed_mmany_Z2Z;
@@ -814,7 +772,6 @@ int main() {
   //CHECK-NEXT:plan_mmany_Z2Z->commit(&q_ct1, 3, n_mmany_Z2Z, inembed_mmany_Z2Z, istride_mmany_Z2Z, idist_mmany_Z2Z, onembed_mmany_Z2Z, ostride_mmany_Z2Z, odist_mmany_Z2Z, dpct::fft::fft_type::complex_double_to_complex_double, 12, work_size);
   //CHECK-NEXT:plan_mmany_Z2Z->compute<sycl::double2, sycl::double2>(idata_mmany_Z2Z, odata_mmany_Z2Z, dpct::fft::fft_direction::backward);
   cufftHandle plan_mmany_Z2Z;
-  size_t* work_size;
   int odist_mmany_Z2Z;
   int ostride_mmany_Z2Z;
   int * onembed_mmany_Z2Z;
@@ -828,7 +785,6 @@ int main() {
   cufftExecZ2Z(plan_mmany_Z2Z, idata_mmany_Z2Z, odata_mmany_Z2Z, CUFFT_INVERSE);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_mmany_Z2D;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:int odist_mmany_Z2D;
   //CHECK-NEXT:int ostride_mmany_Z2D;
   //CHECK-NEXT:int * onembed_mmany_Z2D;
@@ -847,7 +803,6 @@ int main() {
   //CHECK-NEXT:plan_mmany_Z2D->commit(&q_ct1, 3, n_mmany_Z2D, inembed_mmany_Z2D, istride_mmany_Z2D, idist_mmany_Z2D, onembed_mmany_Z2D, ostride_mmany_Z2D, odist_mmany_Z2D, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size);
   //CHECK-NEXT:plan_mmany_Z2D->compute<sycl::double2, double>(idata_mmany_Z2D, odata_mmany_Z2D, dpct::fft::fft_direction::backward);
   cufftHandle plan_mmany_Z2D;
-  size_t* work_size;
   int odist_mmany_Z2D;
   int ostride_mmany_Z2D;
   int * onembed_mmany_Z2D;
@@ -861,7 +816,6 @@ int main() {
   cufftExecZ2D(plan_mmany_Z2D, idata_mmany_Z2D, odata_mmany_Z2D);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_mmany_D2Z;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:int odist_mmany_D2Z;
   //CHECK-NEXT:int ostride_mmany_D2Z;
   //CHECK-NEXT:int * onembed_mmany_D2Z;
@@ -880,7 +834,6 @@ int main() {
   //CHECK-NEXT:plan_mmany_D2Z->commit(&q_ct1, 3, n_mmany_D2Z, inembed_mmany_D2Z, istride_mmany_D2Z, idist_mmany_D2Z, onembed_mmany_D2Z, ostride_mmany_D2Z, odist_mmany_D2Z, dpct::fft::fft_type::real_double_to_complex_double, 12, work_size);
   //CHECK-NEXT:plan_mmany_D2Z->compute<double, sycl::double2>(idata_mmany_D2Z, odata_mmany_D2Z, dpct::fft::fft_direction::forward);
   cufftHandle plan_mmany_D2Z;
-  size_t* work_size;
   int odist_mmany_D2Z;
   int ostride_mmany_D2Z;
   int * onembed_mmany_D2Z;
@@ -894,7 +847,6 @@ int main() {
   cufftExecD2Z(plan_mmany_D2Z, idata_mmany_D2Z, odata_mmany_D2Z);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_mmany64_C2C;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:long long int odist_mmany64_C2C;
   //CHECK-NEXT:long long int ostride_mmany64_C2C;
   //CHECK-NEXT:long long int * onembed_mmany64_C2C;
@@ -913,7 +865,6 @@ int main() {
   //CHECK-NEXT:plan_mmany64_C2C->commit(&q_ct1, 3, n_mmany64_C2C, inembed_mmany64_C2C, istride_mmany64_C2C, idist_mmany64_C2C, onembed_mmany64_C2C, ostride_mmany64_C2C, odist_mmany64_C2C, dpct::fft::fft_type::complex_float_to_complex_float, 12, work_size);
   //CHECK-NEXT:plan_mmany64_C2C->compute<sycl::float2, sycl::float2>(idata_mmany64_C2C, odata_mmany64_C2C, dpct::fft::fft_direction::forward);
   cufftHandle plan_mmany64_C2C;
-  size_t* work_size;
   long long int odist_mmany64_C2C;
   long long int ostride_mmany64_C2C;
   long long int * onembed_mmany64_C2C;
@@ -927,7 +878,6 @@ int main() {
   cufftExecC2C(plan_mmany64_C2C, idata_mmany64_C2C, odata_mmany64_C2C, CUFFT_FORWARD);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_mmany64_C2R;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:long long int odist_mmany64_C2R;
   //CHECK-NEXT:long long int ostride_mmany64_C2R;
   //CHECK-NEXT:long long int * onembed_mmany64_C2R;
@@ -946,7 +896,6 @@ int main() {
   //CHECK-NEXT:plan_mmany64_C2R->commit(&q_ct1, 3, n_mmany64_C2R, inembed_mmany64_C2R, istride_mmany64_C2R, idist_mmany64_C2R, onembed_mmany64_C2R, ostride_mmany64_C2R, odist_mmany64_C2R, dpct::fft::fft_type::complex_float_to_real_float, 12, work_size);
   //CHECK-NEXT:plan_mmany64_C2R->compute<sycl::float2, float>(idata_mmany64_C2R, odata_mmany64_C2R, dpct::fft::fft_direction::backward);
   cufftHandle plan_mmany64_C2R;
-  size_t* work_size;
   long long int odist_mmany64_C2R;
   long long int ostride_mmany64_C2R;
   long long int * onembed_mmany64_C2R;
@@ -960,7 +909,6 @@ int main() {
   cufftExecC2R(plan_mmany64_C2R, idata_mmany64_C2R, odata_mmany64_C2R);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_mmany64_R2C;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:long long int odist_mmany64_R2C;
   //CHECK-NEXT:long long int ostride_mmany64_R2C;
   //CHECK-NEXT:long long int * onembed_mmany64_R2C;
@@ -979,7 +927,6 @@ int main() {
   //CHECK-NEXT:plan_mmany64_R2C->commit(&q_ct1, 3, n_mmany64_R2C, inembed_mmany64_R2C, istride_mmany64_R2C, idist_mmany64_R2C, onembed_mmany64_R2C, ostride_mmany64_R2C, odist_mmany64_R2C, dpct::fft::fft_type::real_float_to_complex_float, 12, work_size);
   //CHECK-NEXT:plan_mmany64_R2C->compute<float, sycl::float2>(idata_mmany64_R2C, odata_mmany64_R2C, dpct::fft::fft_direction::forward);
   cufftHandle plan_mmany64_R2C;
-  size_t* work_size;
   long long int odist_mmany64_R2C;
   long long int ostride_mmany64_R2C;
   long long int * onembed_mmany64_R2C;
@@ -993,7 +940,6 @@ int main() {
   cufftExecR2C(plan_mmany64_R2C, idata_mmany64_R2C, odata_mmany64_R2C);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_mmany64_Z2Z;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:long long int odist_mmany64_Z2Z;
   //CHECK-NEXT:long long int ostride_mmany64_Z2Z;
   //CHECK-NEXT:long long int * onembed_mmany64_Z2Z;
@@ -1012,7 +958,6 @@ int main() {
   //CHECK-NEXT:plan_mmany64_Z2Z->commit(&q_ct1, 3, n_mmany64_Z2Z, inembed_mmany64_Z2Z, istride_mmany64_Z2Z, idist_mmany64_Z2Z, onembed_mmany64_Z2Z, ostride_mmany64_Z2Z, odist_mmany64_Z2Z, dpct::fft::fft_type::complex_double_to_complex_double, 12, work_size);
   //CHECK-NEXT:plan_mmany64_Z2Z->compute<sycl::double2, sycl::double2>(idata_mmany64_Z2Z, odata_mmany64_Z2Z, dpct::fft::fft_direction::backward);
   cufftHandle plan_mmany64_Z2Z;
-  size_t* work_size;
   long long int odist_mmany64_Z2Z;
   long long int ostride_mmany64_Z2Z;
   long long int * onembed_mmany64_Z2Z;
@@ -1026,7 +971,6 @@ int main() {
   cufftExecZ2Z(plan_mmany64_Z2Z, idata_mmany64_Z2Z, odata_mmany64_Z2Z, CUFFT_INVERSE);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_mmany64_Z2D;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:long long int odist_mmany64_Z2D;
   //CHECK-NEXT:long long int ostride_mmany64_Z2D;
   //CHECK-NEXT:long long int * onembed_mmany64_Z2D;
@@ -1045,7 +989,6 @@ int main() {
   //CHECK-NEXT:plan_mmany64_Z2D->commit(&q_ct1, 3, n_mmany64_Z2D, inembed_mmany64_Z2D, istride_mmany64_Z2D, idist_mmany64_Z2D, onembed_mmany64_Z2D, ostride_mmany64_Z2D, odist_mmany64_Z2D, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size);
   //CHECK-NEXT:plan_mmany64_Z2D->compute<sycl::double2, double>(idata_mmany64_Z2D, odata_mmany64_Z2D, dpct::fft::fft_direction::backward);
   cufftHandle plan_mmany64_Z2D;
-  size_t* work_size;
   long long int odist_mmany64_Z2D;
   long long int ostride_mmany64_Z2D;
   long long int * onembed_mmany64_Z2D;
@@ -1059,7 +1002,6 @@ int main() {
   cufftExecZ2D(plan_mmany64_Z2D, idata_mmany64_Z2D, odata_mmany64_Z2D);
 
   //CHECK:dpct::fft::fft_engine_ptr plan_mmany64_D2Z;
-  //CHECK-NEXT:size_t* work_size;
   //CHECK-NEXT:long long int odist_mmany64_D2Z;
   //CHECK-NEXT:long long int ostride_mmany64_D2Z;
   //CHECK-NEXT:long long int * onembed_mmany64_D2Z;
@@ -1078,7 +1020,6 @@ int main() {
   //CHECK-NEXT:plan_mmany64_D2Z->commit(&q_ct1, 3, n_mmany64_D2Z, inembed_mmany64_D2Z, istride_mmany64_D2Z, idist_mmany64_D2Z, onembed_mmany64_D2Z, ostride_mmany64_D2Z, odist_mmany64_D2Z, dpct::fft::fft_type::real_double_to_complex_double, 12, work_size);
   //CHECK-NEXT:plan_mmany64_D2Z->compute<double, sycl::double2>(idata_mmany64_D2Z, odata_mmany64_D2Z, dpct::fft::fft_direction::forward);
   cufftHandle plan_mmany64_D2Z;
-  size_t* work_size;
   long long int odist_mmany64_D2Z;
   long long int ostride_mmany64_D2Z;
   long long int * onembed_mmany64_D2Z;

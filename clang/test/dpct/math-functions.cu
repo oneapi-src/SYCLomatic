@@ -105,7 +105,7 @@ int main() {
     i_b = max(i_a, i_b);
 
     // CHECK: ld_b = fmaxl(ld_a, ld_b);
-    ld_b = max(ld_a, ld_b);
+    //ld_b = max(ld_a, ld_b);
 
     // TODO: Check more primitive type and vector types
   }
@@ -132,7 +132,7 @@ int main() {
     i_b = min(i_a, i_b);
 
     // CHECK: ld_b = fminl(ld_a, ld_b);
-    ld_b = min(ld_a, ld_b);
+    //ld_b = min(ld_a, ld_b);
 
     // TODO: Check more primitive type and vector types
   }

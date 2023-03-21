@@ -12,8 +12,8 @@
 #include <thrust/partition.h>
 #include <thrust/host_vector.h>
 
-template <typename T> struct is_even {
-  __host__ __device__ bool operator()(T x) const { return ((int)x % 2) == 0; }
+struct is_even {
+  __host__ __device__ bool operator()(int x) const { return ((int)x % 2) == 0; }
 };
 
 int main() {

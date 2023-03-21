@@ -883,17 +883,16 @@ void testCommas_in_global_memory() {
   // CHECK: /*
   // CHECK: DPCT1072:{{[0-9]+}}: SYCL currently does not support getting the available memory on the current device. You may need to adjust the code.
   // CHECK: */
-  // CHECK: cu_err = (result2 = dpct::get_current_device().get_device_info().get_global_mem_size(), 0);
-  cu_err = cudaMemGetInfo(&result1, &result2);
+  // CHECK: err = (result2 = dpct::get_current_device().get_device_info().get_global_mem_size(), 0);
+  err = cudaMemGetInfo(&result1, &result2);
 
   // CHECK: /*
   // CHECK: DPCT1072:{{[0-9]+}}: SYCL currently does not support getting the available memory on the current device. You may need to adjust the code.
   // CHECK: */
-  // CHECK: cuCheckError((result2 = dpct::get_current_device().get_device_info().get_global_mem_size(), 0));
-  cuCheckError(cudaMemGetInfo(&result1, &result2));
+  // CHECK: checkError((result2 = dpct::get_current_device().get_device_info().get_global_mem_size(), 0));
+  checkError(cudaMemGetInfo(&result1, &result2));
 
   CUdeviceptr  devicePtr;
-  size_t size;
   // CHECK: devicePtr = (dpct::device_ptr)dpct::dpct_malloc(size, size, size);
   cuMemAllocPitch((CUdeviceptr *)&devicePtr, &size, size, size, size);
 

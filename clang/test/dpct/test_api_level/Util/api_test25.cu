@@ -9,13 +9,16 @@
 // TEST_FEATURE: Util_logical_group
 // TEST_FEATURE: Util_get_sycl_language_version
 
+#include "cuda.h"
 #include <cooperative_groups.h>
 namespace cg = cooperative_groups;
 
 __device__ void foo() {
   cg::thread_block ttb = cg::this_thread_block();
   cg::thread_block_tile<8> tbt = cg::tiled_partition<8>(ttb);
+}
 
+void foo2() {
   unsigned int ver;
   CUcontext ctx;
   cuCtxGetApiVersion(ctx, &ver);

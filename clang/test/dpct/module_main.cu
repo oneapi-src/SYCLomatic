@@ -3,6 +3,7 @@
 
 //CHECK: #include <dpct/dpct.hpp>
 
+#include "cuda.h"
 #include <string>
 int main(){
     //CHECK: dpct::kernel_library M;
@@ -42,7 +43,7 @@ int main(){
 
     int sharedSize;
     CUstream s;
-    void **param, **extra;
+    void **param;
     //CHECK:  dpct::invoke_kernel_function(F, *s, sycl::range<3>(32, 16, 1), sycl::range<3>(64, 32, 4), sharedSize, param, extra);
     cuLaunchKernel(F, 1, 16, 32, 4, 32, 64, sharedSize, s, param, extra);
     //CHECK:  dpct::invoke_kernel_function(F, q_ct1, sycl::range<3>(32, 16, 1), sycl::range<3>(64, 32, 4), sharedSize, param, extra);

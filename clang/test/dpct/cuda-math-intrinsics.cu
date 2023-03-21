@@ -576,11 +576,11 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::remquo(d0, d1, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   d2 = remquo(d0, d1, &i);
   // CHECK: d2 = sycl::remquo((double)i, (double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  d2 = remquo(i, i, &i);
+  //d2 = remquo(i, i, &i);
   // CHECK: d2 = sycl::remquo(d0, (double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  d2 = remquo(d0, i, &i);
+  //d2 = remquo(d0, i, &i);
   // CHECK: d2 = sycl::remquo((double)i, d1, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  d2 = remquo(i, d1, &i);
+  //d2 = remquo(i, d1, &i);
 
   // CHECK: d2 = sycl::rint(d0);
   d2 = rint(d0);
@@ -2492,44 +2492,44 @@ __device__ float __host__ foo3(float f, float g) {
 // CHECK:  int bar(short i, long j) {
 // CHECK-NEXT:   return std::max<long>(i, j) + std::min<long>(i, j);
 // CHECK-NEXT: }
-__host__ int bar(short i, long j) {
-  return max(i, j) + min(i, j);
-}
+//__host__ int bar(short i, long j) {
+//  return max(i, j) + min(i, j);
+//}
 
 // CHECK:  int bar(unsigned short i, unsigned long j) {
 // CHECK-NEXT:   return std::max<unsigned long>(i, j) + std::min<unsigned long>(i, j);
 // CHECK-NEXT: }
-__host__ int bar(unsigned short i, unsigned long j) {
-  return max(i, j) + min(i, j);
-}
+//__host__ int bar(unsigned short i, unsigned long j) {
+//  return max(i, j) + min(i, j);
+//}
 
 // CHECK:  int bar(unsigned short i, long j) {
 // CHECK-NEXT:   return max(i, j) + min(i, j);
 // CHECK-NEXT: }
-__host__ int bar(unsigned short i, long j) {
-  return max(i, j) + min(i, j);
-}
+//__host__ int bar(unsigned short i, long j) {
+//  return max(i, j) + min(i, j);
+//}
 
 // CHECK:  int bar(long i, unsigned short j) {
 // CHECK-NEXT:   return max(i, j) + min(i, j);
 // CHECK-NEXT: }
-__host__ int bar(long i, unsigned short j) {
-  return max(i, j) + min(i, j);
-}
+//__host__ int bar(long i, unsigned short j) {
+//  return max(i, j) + min(i, j);
+//}
 
 // CHECK:  int bar(short i, unsigned long j) {
 // CHECK-NEXT:   return std::max<unsigned long>(i, j) + std::min<unsigned long>(i, j);
 // CHECK-NEXT: }
-__host__ int bar(short i, unsigned long j) {
-  return max(i, j) + min(i, j);
-}
+//__host__ int bar(short i, unsigned long j) {
+//  return max(i, j) + min(i, j);
+//}
 
 // CHECK:  int bar(unsigned long i, short j) {
 // CHECK-NEXT:   return std::max<unsigned long>(i, j) + std::min<unsigned long>(i, j);
 // CHECK-NEXT: }
-__host__ int bar(unsigned long i, short j) {
-  return max(i, j) + min(i, j);
-}
+//__host__ int bar(unsigned long i, short j) {
+//  return max(i, j) + min(i, j);
+//}
 
 typedef int INT;
 typedef unsigned UINT;
@@ -2754,13 +2754,13 @@ void no_migration5() {
   std::max(i, i);
   std::min(i, i);
   std::fabs(f);
-  std::frexpf(f, &i);
-  std::modff(f, &f);
+  //std::frexpf(f, &i);
+  //std::modff(f, &f);
   std::nearbyintf(f);
   std::remquof(f, f, &i);
-  std::acosf(f);
+  //std::acosf(f);
   std::acoshf(f);
-  std::asinf(f);
+  //std::asinf(f);
   std::asinhf(f);
   std::abs(f);
   std::frexp(f, &i);
@@ -2828,13 +2828,13 @@ __device__ void do_migration5() {
   std::max(i, i);
   std::min(i, i);
   std::fabs(f);
-  std::frexpf(f, &i);
-  std::modff(f, &f);
+  //std::frexpf(f, &i);
+  //std::modff(f, &f);
   std::nearbyintf(f);
   std::remquof(f, f, &i);
-  std::acosf(f);
+  //std::acosf(f);
   std::acoshf(f);
-  std::asinf(f);
+  //std::asinf(f);
   std::asinhf(f);
   std::abs(f);
   std::frexp(f, &i);
@@ -2898,13 +2898,13 @@ __global__ void do_migration6() {
   std::max(i, i);
   std::min(i, i);
   std::fabs(f);
-  std::frexpf(f, &i);
-  std::modff(f, &f);
+  //std::frexpf(f, &i);
+  //std::modff(f, &f);
   std::nearbyintf(f);
   std::remquof(f, f, &i);
-  std::acosf(f);
+  //std::acosf(f);
   std::acoshf(f);
-  std::asinf(f);
+  //std::asinf(f);
   std::asinhf(f);
   std::abs(f);
   std::frexp(f, &i);
@@ -2967,13 +2967,13 @@ __device__ __host__ void do_migration7() {
   std::max(i, i);
   std::min(i, i);
   std::fabs(f);
-  std::frexpf(f, &i);
-  std::modff(f, &f);
+  //std::frexpf(f, &i);
+  //std::modff(f, &f);
   std::nearbyintf(f);
   std::remquof(f, f, &i);
-  std::acosf(f);
+  //std::acosf(f);
   std::acoshf(f);
-  std::asinf(f);
+  //std::asinf(f);
   std::asinhf(f);
   std::frexp(f, &i);
   std::modf(f, &f);

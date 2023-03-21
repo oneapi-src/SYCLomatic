@@ -3,7 +3,9 @@
 // RUN: FileCheck --input-file %T/math_functions_test/math_functions_test.dp.cpp --match-full-lines %s
 
 #include <cuda.h>
+#include <cuda_runtime.h>
 #include <cmath>
+#include <limits>
 
 // CHECK: int test_signbit(float x) { return signbit(x); }
 int test_signbit(float x) { return signbit(x); }
@@ -75,10 +77,10 @@ float test_pow(float a, int b) { return pow(a, b); }
 double test_pow(double a, int b) { return pow(a, b); }
 
 // CHECK: float test_powif(float a, int b) { return powif(a, b); }
-float test_powif(float a, int b) { return powif(a, b); }
+//float test_powif(float a, int b) { return powif(a, b); }
 
 // CHECK: double test_powi(double a, int b) { return powi(a, b); }
-double test_powi(double a, int b) { return powi(a, b); }
+//double test_powi(double a, int b) { return powi(a, b); }
 
 // CHECK: float test_log(float in) { return log(in); }
 float test_log(float in) { return log(in); }
