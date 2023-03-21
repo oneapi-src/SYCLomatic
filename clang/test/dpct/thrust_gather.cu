@@ -53,10 +53,8 @@ int main(void) {
   thrust::gather_if(                AH.begin(), AH.end(), SH.begin(), BH.begin(), RH.begin(), pred);
   thrust::gather_if(                AD.begin(), AD.end(), SD.begin(), BD.begin(), RD.begin(), pred);
   thrust::gather_if(                h_ptr,      h_ptr+4,  SH.begin(), BH.begin(), RH.begin(), pred);
-#ifdef ADD_BUG
-  // This fails with nvcc
-  thrust::gather_if(                d_ptr,      d_ptr+4,  SD.begin(), BD.begin(), RD.begin(), pred);
-#endif
+  // Overload not supported with thrust
+  // thrust::gather_if(                d_ptr,      d_ptr+4,  SD.begin(), BD.begin(), RD.begin(), pred);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CHECK:dpct::gather_if(oneapi::dpl::execution::seq, AH.begin(), AH.end(), SH.begin(), BH.begin(), RH.begin(), pred);
@@ -95,10 +93,8 @@ int main(void) {
   thrust::gather_if(                AH.begin(), AH.end(), SH.begin(), BH.begin(), RH.begin());
   thrust::gather_if(                AD.begin(), AD.end(), SD.begin(), BD.begin(), RD.begin());
   thrust::gather_if(                h_ptr,      h_ptr+4,  SH.begin(), BH.begin(), RH.begin());
-#ifdef ADD_BUG
-  // This fails with nvcc  
-  thrust::gather_if(                d_ptr,      d_ptr+4,  SD.begin(), BD.begin(), RD.begin());
-#endif
+  // Overload not supported with thrust
+  // thrust::gather_if(                d_ptr,      d_ptr+4,  SD.begin(), BD.begin(), RD.begin());
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
