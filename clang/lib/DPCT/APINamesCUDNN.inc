@@ -710,10 +710,12 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_get_dropout_state_size,
                             "cudnnDropoutGetStatesSize", DEREF(ARG_WC(1)),
                             MEMBER_CALL(ARG_WC(0), false, "get_dropout_state_size"))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_memory_desc_ext,
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_get_dropout_workspace_size,
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                             "cudnnDropoutGetReserveSpaceSize", DEREF(ARG_WC(1)),
-                            MEMBER_CALL(ARG_WC(0), false, "get_size"))))
+                            CALL(MapNames::getDpctNamespace() +
+                            "dnnl::engine_ext::get_dropout_workspace_size",
+                            ARG_WC(0)))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_async_dropout_forward,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(

@@ -56,7 +56,7 @@ int main(){
     unsigned long long se;
     // CHECK: desc.get(&d, &st, &se);
     cudnnGetDropoutDescriptor(desc, handle, &d, &st, &se);
-    // CHECK: reserve_size = dataTensor.get_size();
+    // CHECK: reserve_size = dpct::dnnl::engine_ext::get_dropout_workspace_size(dataTensor);
     cudnnDropoutGetReserveSpaceSize(dataTensor, &reserve_size);
     cudaMalloc(&reserve, reserve_size);
 

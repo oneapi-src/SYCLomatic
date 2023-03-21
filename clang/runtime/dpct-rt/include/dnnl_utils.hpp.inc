@@ -39,6 +39,7 @@
 namespace dpct {
 namespace dnnl {
 class engine_ext;
+typedef oneapi::mkl::rng::philox4x32x10 rng_engine_t;
 // DPCT_LABEL_BEGIN|memory_format_tag|dpct::dnnl
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
@@ -757,8 +758,8 @@ class dropout_desc {
     unsigned long long _seed = 1;
     void *_state = nullptr;
     std::vector<std::uint8_t> _host_state;
-    oneapi::mkl::rng::philox4x32x10 _rng_engine;
-    dropout_desc_imp():_rng_engine(dpct::get_default_queue(), 1){}
+    rng_engine_t _rng_engine;
+    dropout_desc_imp() : _rng_engine(dpct::get_default_queue(), 1) {}
   };
   std::shared_ptr<dropout_desc_imp> _imp;
 
@@ -1005,7 +1006,7 @@ public:
     _s = ::dnnl::sycl_interop::make_stream(
         _eng, dpct::get_current_device().default_queue());
     _q = &dpct::get_current_device().default_queue();
-    auto rand_engine = oneapi::mkl::rng::philox4x32x10(*_q, 0);
+    auto rand_engine = rng_engine_t(*_q, 0);
     _random_engine_state_size = oneapi::mkl::rng::get_state_size(rand_engine);
   }
   /// Setting the user's SYCL queue for an oneDNN engine.
@@ -2232,6 +2233,17 @@ public:
   size_t get_dropout_state_size();
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|get_dropout_workspace_size_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Getting the required workspace size for dropout operation.
+  /// \param [in] src_desc Source memory descriptor.
+  /// \returns Required size of workspace.
+  static size_t get_dropout_workspace_size(const memory_desc_ext &src_desc);
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|async_dropout_forward_decl|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext
@@ -2300,9 +2312,9 @@ void dropout_desc::restore(engine_ext &engine, float p, void *state,
     _imp->_state = state;
     _imp->_host_state = std::vector<std::uint8_t>(required_state_size);
     q->memcpy(_imp->_host_state.data(), _imp->_state, required_state_size).wait();
-    _imp->_rng_engine = oneapi::mkl::rng::philox4x32x10(
-        oneapi::mkl::rng::load_state<oneapi::mkl::rng::philox4x32x10>(
-            *q, _imp->_host_state.data()));
+    _imp->_rng_engine =
+        oneapi::mkl::rng::load_state<rng_engine_t>(
+            *q, _imp->_host_state.data());
   }
 }
 
@@ -2319,7 +2331,7 @@ void dropout_desc::set(engine_ext &engine, float p, void *state,
     _imp->_seed = seed;
     _imp->_state = state;
     _imp->_host_state = std::vector<std::uint8_t>(required_state_size);
-    _imp->_rng_engine = oneapi::mkl::rng::philox4x32x10(*q, seed);
+    _imp->_rng_engine = rng_engine_t(*q, seed);
     oneapi::mkl::rng::save_state(_imp->_rng_engine, _imp->_host_state.data());
     q->memcpy(_imp->_state, _imp->_host_state.data(), required_state_size).wait();
   }
@@ -4959,6 +4971,17 @@ sycl::event engine_ext::async_rnn_backward(
 inline
 size_t engine_ext::get_dropout_state_size(){
   return _random_engine_state_size;
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|get_dropout_workspace_size|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|get_dropout_workspace_size_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+inline size_t
+engine_ext::get_dropout_workspace_size(const memory_desc_ext &src_desc) {
+  return src_desc.get_size();
 }
 // DPCT_LABEL_END
 
