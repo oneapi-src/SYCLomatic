@@ -1128,6 +1128,10 @@ const std::unordered_map<std::string, HelperFeatureEnum> PropToGetFeatureMap = {
      HelperFeatureEnum::Device_device_info_get_memory_clock_rate},
     {"memoryBusWidth",
      HelperFeatureEnum::Device_device_info_get_memory_bus_width},
+    {"pciDeviceID",
+     HelperFeatureEnum::Device_device_info_get_device_id},
+    {"uuid",
+     HelperFeatureEnum::Device_device_info_get_uuid},
 };
 
 const std::unordered_map<std::string, HelperFeatureEnum> PropToSetFeatureMap = {
@@ -1156,6 +1160,10 @@ const std::unordered_map<std::string, HelperFeatureEnum> PropToSetFeatureMap = {
      HelperFeatureEnum::Device_device_info_set_memory_clock_rate},
     {"memoryBusWidth",
      HelperFeatureEnum::Device_device_info_set_memory_bus_width},
+    {"pciDeviceID",
+     HelperFeatureEnum::Device_device_info_set_device_id},
+    {"uuid",
+     HelperFeatureEnum::Device_device_info_set_uuid},
 };
 
 const std::unordered_map<std::string, HelperFeatureEnum>
