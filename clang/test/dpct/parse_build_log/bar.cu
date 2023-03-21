@@ -1,4 +1,4 @@
-// UNSUPPORTED: -windows-
+// UNSUPPORTED: system-windows
 // intercept-build only supports Linux
 // RUN: cp %S/build_log.txt %T/
 // RUN: cp %S/bar.cu %T/

@@ -1,4 +1,4 @@
-// UNSUPPORTED: -windows-
+// UNSUPPORTED: system-windows
 
 // RUN: cp %S/* .
 // RUN: dpct -p=%S --out-root=%T --cuda-include-path="%cuda-path/include"
