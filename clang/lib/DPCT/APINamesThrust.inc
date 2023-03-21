@@ -2969,3 +2969,111 @@ CONDITIONAL_FACTORY_ENTRY(
                               ARG(0), ARG(1), ARG(2))))
     )
 )
+
+// thrust::copy
+CONDITIONAL_FACTORY_ENTRY(
+    CheckArgCount(3),
+    CONDITIONAL_FACTORY_ENTRY(
+      // Handle case thrust::copy(ptr, ptr, des_ptr)
+        makeCheckAnd(CheckIsPtr(0), makeCheckNot(checkIsUSM())),
+            IFELSE_FACTORY_ENTRY("thrust::copy",
+            FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+                CALL_FACTORY_ENTRY("thrust::copy", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(0)))),
+            FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+                CALL_FACTORY_ENTRY("thrust::copy",
+                            CALL("std::copy",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2))))),
+            CALL_FACTORY_ENTRY("thrust::copy",
+                          CALL("std::copy",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), ARG(2)))),
+        CONDITIONAL_FACTORY_ENTRY(
+            CheckArgType(0, "thrust::device_ptr"),
+            // Handle case thrust::copy(dev_itr, dev_itr, dev_itr)
+            CALL_FACTORY_ENTRY("thrust::copy",
+                CALL("std::copy",
+                     CALL("oneapi::dpl::execution::make_device_policy",
+                          QUEUESTR),
+                     ARG(0), ARG(1), ARG(2))),
+            // Handle case thrust::copy(host_itr, host_itr, host_itr)
+            CALL_FACTORY_ENTRY("thrust::copy",
+                               CALL("std::copy",
+                                    ARG("oneapi::dpl::execution::seq"), ARG(0),
+                                    ARG(1), ARG(2))))),
+    CONDITIONAL_FACTORY_ENTRY(
+        makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+            IFELSE_FACTORY_ENTRY("thrust::copy",
+            FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+                CALL_FACTORY_ENTRY("thrust::copy", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+            FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+                CALL_FACTORY_ENTRY("thrust::copy",
+                            CALL("std::copy",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3))))),
+            CALL_FACTORY_ENTRY("thrust::copy",
+                          CALL("std::copy",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(1), ARG(2), ARG(3)))),
+        // Handle case thrust::copy(policy,itr,itr,itr)
+        CALL_FACTORY_ENTRY("thrust::copy",
+                           CALL("std::copy", makeMappedThrustPolicyEnum(0),
+                                ARG(1), ARG(2), ARG(3)))))
+
+// thrust::copy_n
+CONDITIONAL_FACTORY_ENTRY(
+    CheckArgCount(3),
+    CONDITIONAL_FACTORY_ENTRY(
+      // Handle case thrust::copy(ptr, N, des_ptr)
+        makeCheckAnd(CheckIsPtr(0), makeCheckNot(checkIsUSM())),
+            IFELSE_FACTORY_ENTRY("thrust::copy_n",
+            FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+                CALL_FACTORY_ENTRY("thrust::copy_n", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(0)))),
+            FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+                CALL_FACTORY_ENTRY("thrust::copy_n",
+                            CALL("std::copy_n",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                  ARG(1),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2))))),
+            CALL_FACTORY_ENTRY("thrust::copy_n",
+                          CALL("std::copy_n",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), ARG(2)))),
+        CONDITIONAL_FACTORY_ENTRY(
+            CheckArgType(0, "thrust::device_ptr"),
+            // Handle case thrust::copy(dev_itr, N, dev_itr)
+            CALL_FACTORY_ENTRY("thrust::copy_n",
+                CALL("std::copy_n",
+                     CALL("oneapi::dpl::execution::make_device_policy",
+                          QUEUESTR),
+                     ARG(0), ARG(1), ARG(2))),
+            // Handle case thrust::copy(host_itr, N, host_itr)
+            CALL_FACTORY_ENTRY("thrust::copy_n",
+                               CALL("std::copy_n",
+                                    ARG("oneapi::dpl::execution::seq"), ARG(0),
+                                    ARG(1), ARG(2))))),
+    CONDITIONAL_FACTORY_ENTRY(
+        makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+            IFELSE_FACTORY_ENTRY("thrust::copy_n",
+            FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+                CALL_FACTORY_ENTRY("thrust::copy_n", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+            FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+                CALL_FACTORY_ENTRY("thrust::copy_n",
+                            CALL("std::copy_n",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                  ARG(2),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3))))),
+            CALL_FACTORY_ENTRY("thrust::copy_n",
+                          CALL("std::copy_n",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(1), ARG(2), ARG(3)))),
+        // Handle case thrust::copy(policy,itr, N, itr)
+        CALL_FACTORY_ENTRY("thrust::copy_n",
+                           CALL("std::copy_n", makeMappedThrustPolicyEnum(0),
+                                ARG(1), ARG(2), ARG(3)))))
