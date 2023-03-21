@@ -26,13 +26,13 @@
 // DASH-NEXT: --help
 // DASH-NEXT: --in-root
 // DASH-NEXT: --in-root-exclude
-// DASH-NEXT: --inline-dev-function
 // DASH-NEXT: --keep-original-code
 // DASH-NEXT: --no-cl-namespace-inline
 // DASH-NEXT: --no-dpcpp-extensions=
 // DASH-NEXT: --no-dry-pattern
 // DASH-NEXT: --no-incremental-migration
-// DASH-NEXT: --optimize-migration
+// DASH-NEXT: --optimize-migration-all
+// DASH-NEXT: --optimize-migration=
 // DASH-NEXT: --out-root
 // DASH-NEXT: --output-file
 // DASH-NEXT: --output-verbosity=

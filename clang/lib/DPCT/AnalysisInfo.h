@@ -899,10 +899,6 @@ public:
   inline static void setSyclNamedLambda(bool SNL = true) {
     SyclNamedLambda = SNL;
   }
-  inline static bool isAlwaysInlineDevFunc() { return AlwaysInlineDevFunc; }
-  inline static void setAlwaysInlineDevFunc(bool AIDF = true) {
-    AlwaysInlineDevFunc = AIDF;
-  }
   inline static void setCheckUnicodeSecurityFlag(bool CUS) {
     CheckUnicodeSecurityFlag = CUS;
   }
@@ -978,6 +974,12 @@ public:
   inline static void setExtensionDDFlag(unsigned Flag) { ExtensionDDFlag = Flag; }
   inline static unsigned getExtensionDDFlag() { return ExtensionDDFlag; }
 
+  template <OptimizeMigration Exp> static bool getOptimizeMigration() {
+    if (isOptimizeMigrationAll()) return true;
+    return OptimizeMigrationFlag & (1 << static_cast<unsigned>(Exp));
+  }
+  static void setOptimizeMigrationFlag(unsigned Flag) { OptimizeMigrationFlag = Flag; }
+  static unsigned getOptimizeMigrationFlag() { return OptimizeMigrationFlag; }
 
   template <ExperimentalFeatures Exp> static bool getUsingExperimental() {
     return ExperimentalFlag & (1 << static_cast<unsigned>(Exp));
@@ -1792,6 +1794,15 @@ public:
   static bool useUserDefineReductions() {
     return getUsingExperimental<ExperimentalFeatures::Exp_UserDefineReductions>();
   }
+  static bool useRemoveNotReferenedKernelArg() {
+    return getOptimizeMigration<OptimizeMigration::Opt_RemoveNotReferencedKernelArg>();
+  }
+  static bool useOptMathMigration() {
+    return getOptimizeMigration<OptimizeMigration::Opt_MathMigration>();
+  }
+  static bool useInlineKernel() {
+    return getOptimizeMigration<OptimizeMigration::Opt_InlineKernel>();
+  }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
   }
@@ -1929,10 +1940,10 @@ public:
     }
   }
 
-  static void setOptimizeMigrationFlag(bool Flag) {
-    OptimizeMigrationFlag = Flag;
+  static void setOptimizeMigrationAllFlag(bool Flag) {
+    OptimizeMigrationAllFlag = Flag;
   }
-  static bool isOptimizeMigration() { return OptimizeMigrationFlag; }
+  static bool isOptimizeMigrationAll() { return OptimizeMigrationAllFlag; }
 
   static inline std::map<std::string, clang::tooling::OptionInfo> &
   getCurrentOptMap() {
@@ -2057,7 +2068,6 @@ private:
   static FileManager *FM;
   static bool KeepOriginCode;
   static bool SyclNamedLambda;
-  static bool AlwaysInlineDevFunc;
   static bool GuessIndentWidthMatcherFlag;
   static unsigned int IndentWidth;
   static std::map<unsigned int, unsigned int> KCIndentWidthMap;
@@ -2128,7 +2138,8 @@ private:
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;
-  static bool OptimizeMigrationFlag;
+  static bool OptimizeMigrationAllFlag;
+  static unsigned OptimizeMigrationFlag;
   static std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
       PriorityReplInfoMap;
   static std::unordered_map<std::string, bool> ExcludePath;
@@ -3801,7 +3812,7 @@ public:
   void setNeedSyclExternMacro() { NeedSyclExternMacro = true; }
   bool IsSyclExternMacroNeeded() { return NeedSyclExternMacro; }
   void setAlwaysInlineDevFunc() { AlwaysInlineDevFunc = true; }
-  bool IsAlwaysInlineDevFunc() {return AlwaysInlineDevFunc;}
+  bool IsAlwaysInlineDevFunc() { return AlwaysInlineDevFunc; }
   void merge(std::shared_ptr<DeviceFunctionInfo> Other);
   size_t ParamsNum;
   size_t NonDefaultParamNum;

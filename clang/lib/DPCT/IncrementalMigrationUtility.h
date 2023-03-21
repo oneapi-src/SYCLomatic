@@ -34,10 +34,10 @@ const std::string OPTION_VcxprojFile = "VcxprojFile";
 #endif
 const std::string OPTION_ProcessAll = "ProcessAll";
 const std::string OPTION_SyclNamedLambda = "SyclNamedLambda";
-const std::string OPTION_AlwaysInlineDevFunc = "AlwaysInlineDevFunc";
 const std::string OPTION_ExperimentalFlag = "ExperimentalFlag";
 const std::string OPTION_ExplicitNamespace = "ExplicitNamespace";
 const std::string OPTION_UsmLevel = "UsmLevel";
+const std::string OPTION_OptimizeMigrationAll = "OptimizeMigrationAll";
 const std::string OPTION_OptimizeMigration = "OptimizeMigration";
 const std::string OPTION_EnablepProfiling = "EnablepProfiling";
 const std::string OPTION_RuleFile = "RuleFile";

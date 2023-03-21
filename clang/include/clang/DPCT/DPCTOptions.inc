@@ -158,10 +158,6 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), SyclNamedL
            llvm::cl::desc("Generates kernels with the kernel name. Default: off.\n"),
            llvm::cl::cat(DPCTCat), llvm::cl::location(SyclNamedLambdaFlag))
 
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), AlwaysInlineDevFunc, "inline-dev-function",
-           llvm::cl::desc("Add inline to all the migrated device function. Default: off.\n"),
-           llvm::cl::cat(DPCTCat), llvm::cl::location(AlwaysInlineDevFuncFlag))
-
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<OutputVerbosityLevel>), OutputVerbosity, "output-verbosity",
            DPCT_OPTION_VALUES(
              DPCT_OPT_ENUM("silent", int(OutputVerbosityLevel::OVL_Silent),
@@ -383,6 +379,25 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
            "By default, experimental features will not be used in migrated code.\nThe values are:\n"),
            llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
 
+DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<OptimizeMigration>), Optimizes, "optimize-migration",
+           DPCT_OPTION_VALUES(
+             DPCT_OPT_ENUM("remove-not-referenced-kernel-arg", int(OptimizeMigration::Opt_RemoveNotReferencedKernelArg),
+        "Remove the arguments declaration that was not referenced in the kernel function call.",
+        false),
+             DPCT_OPT_ENUM("optimize-math-migration", int(OptimizeMigration::Opt_MathMigration),
+        "Migrate some math function to optimized implementation.\n",
+        false),
+             DPCT_OPT_ENUM("inline-kernel-function", int(OptimizeMigration::Opt_InlineKernel),
+        "Add inline all kernel functions to improve performance execution.\n",
+        false)
+        ),
+           llvm::cl::desc("Comma separated list of optimized migration to be used in migrated "
+           "code.\n"
+           "By default, optimize migration will not be used in migrated code.\n"
+           "Using --optimize-migration-all can generate the SYCL code with all optmize migration. "
+           "The values are:\n"),
+           llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
+
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<bool>), GenBuildScript, "gen-build-script",
         llvm::cl::desc("Generates makefile for migrated file(s) in -out-root directory. Default: off."),
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
@@ -395,7 +410,7 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<std::string>), ExcludeP
         llvm::cl::desc("Excludes the specified directory or file from processing."),
         llvm::cl::value_desc("dir|file"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
 
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), OptimizeMigration, "optimize-migration",
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), OptimizeMigrationAll, "optimize-migration-all",
         llvm::cl::desc("Generates SYCL code applying more aggressive assumptions that potentially\n"
                    "may alter the semantics of your program. Default: off."),
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))

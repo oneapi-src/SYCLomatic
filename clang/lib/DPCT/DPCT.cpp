@@ -853,7 +853,6 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setCudaPath(CudaPath);
   DpctGlobalInfo::setKeepOriginCode(KeepOriginalCodeFlag);
   DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);
-  DpctGlobalInfo::setAlwaysInlineDevFunc(AlwaysInlineDevFunc);
   DpctGlobalInfo::setUsmLevel(USMLevel);
   DpctGlobalInfo::setIsIncMigration(!NoIncrementalMigration);
   DpctGlobalInfo::setHelperFilesCustomizationLevel(UseCustomHelperFileLevel);
@@ -882,7 +881,8 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setExtensionDDFlag(UseDPCPPExtensions.getBits());
   DpctGlobalInfo::setAssumedNDRangeDim(
       (NDRangeDim == AssumedNDRangeDimEnum::ARE_Dim1) ? 1 : 3);
-  DpctGlobalInfo::setOptimizeMigrationFlag(OptimizeMigration.getValue());
+  DpctGlobalInfo::setOptimizeMigrationAllFlag(OptimizeMigrationAll.getValue());
+  DpctGlobalInfo::setOptimizeMigrationFlag(Optimizes.getBits());
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRoot;
 
@@ -974,8 +974,6 @@ int runDPCT(int argc, const char **argv) {
                      ProcessAll.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_SyclNamedLambda, SyclNamedLambdaFlag,
                      SyclNamedLambda.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_AlwaysInlineDevFunc, AlwaysInlineDevFuncFlag,
-                     AlwaysInlineDevFunc.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_ExperimentalFlag,
                      DpctGlobalInfo::getExperimentalFlag(),
                      Experimentals.getNumOccurrences());
@@ -985,9 +983,12 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_UsmLevel,
                      static_cast<unsigned int>(DpctGlobalInfo::getUsmLevel()),
                      USMLevel.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_OptimizeMigrationAll,
+                     OptimizeMigrationAll.getValue(),
+                     OptimizeMigrationAll.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_OptimizeMigration,
-                     OptimizeMigration.getValue(),
-                     OptimizeMigration.getNumOccurrences());
+                  DpctGlobalInfo::getOptimizeMigrationFlag(),
+                  Optimizes.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_EnablepProfiling,
                      EnablepProfilingFlag, EnablepProfilingFlag);
     setValueToOptMap(clang::dpct::OPTION_RuleFile, MetaRuleObject::RuleFiles,

@@ -75,7 +75,11 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_ExperimentalFeaturesEnumSize,
   Exp_UserDefineReductions
 };
-
+enum class OptimizeMigration : unsigned int {
+  Opt_RemoveNotReferencedKernelArg = 0,
+  Opt_MathMigration,
+  Opt_InlineKernel,
+};
 bool makeInRootCanonicalOrSetDefaults(
     std::string &InRoot, const std::vector<std::string> SourceFiles);
 bool makeOutRootCanonicalOrSetDefaults(std::string &OutRoot);

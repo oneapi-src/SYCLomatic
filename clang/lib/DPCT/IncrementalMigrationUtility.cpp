@@ -255,10 +255,6 @@ bool printOptions(
       if ("true" == Value)
         Opts.emplace_back("--sycl-named-lambda");
     }
-    if (Key == clang::dpct::OPTION_AlwaysInlineDevFunc) {
-      if ("true" == Value)
-        Opts.emplace_back("--inline-dev-function");
-    }
     if (Key == clang::dpct::OPTION_ExperimentalFlag && Specified) {
       std::string MaxValueStr = std::to_string(static_cast<unsigned>(-1));
       if (Value.empty() || Value.length() > MaxValueStr.length() ||
@@ -330,9 +326,9 @@ bool printOptions(
                Value)
         Opts.emplace_back("--usm-level=none");
     }
-    if (Key == clang::dpct::OPTION_OptimizeMigration) {
+    if (Key == clang::dpct::OPTION_OptimizeMigrationAll) {
       if ("true" == Value)
-        Opts.emplace_back("--optimize-migration");
+        Opts.emplace_back("--optimize-migration-all");
     }
     if (Key == clang::dpct::OPTION_EnablepProfiling) {
       if ("true" == Value)

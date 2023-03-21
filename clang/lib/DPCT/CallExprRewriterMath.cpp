@@ -1242,7 +1242,7 @@ bool useMathLibdevice() {
 }
 
 auto IsPerf = [](const CallExpr *C) -> bool {
-  return DpctGlobalInfo::isOptimizeMigration();
+  return DpctGlobalInfo::useOptMathMigration();
 };
 
 auto UseStdLibdevice = [](const CallExpr *C) -> bool {

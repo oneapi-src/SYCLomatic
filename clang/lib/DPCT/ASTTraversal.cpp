@@ -9323,7 +9323,7 @@ void DeviceFunctionDeclRule::runRule(
     FuncInfo->setLambda();
   }
 
-  if (DpctGlobalInfo::isAlwaysInlineDevFunc() && !FD->isInlined() &&
+  if (DpctGlobalInfo::useInlineKernel() && !FD->isInlined() &&
           !FuncInfo->IsAlwaysInlineDevFunc()) {
     FuncInfo->setAlwaysInlineDevFunc();
   }

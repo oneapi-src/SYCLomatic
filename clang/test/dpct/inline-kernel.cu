@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/inline-kernel %s --cuda-include-path="%cuda-path/include" --inline-dev-function
+// RUN: dpct --format-range=none -out-root %T/inline-kernel %s --cuda-include-path="%cuda-path/include" --optimize-migration=inline-kernel-function
 // RUN: FileCheck %s --match-full-lines --input-file %T/inline-kernel/inline-kernel.dp.cpp
 
 // CHECK: inline void Reset_kernel_parameters()
