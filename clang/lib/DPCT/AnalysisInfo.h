@@ -1791,6 +1791,9 @@ public:
   static bool useMaskedSubGroupFunction() {
     return getUsingExperimental<ExperimentalFeatures::Exp_MaskedSubGroupFunction>();
   }
+  static bool useExtDPLAPI() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_DPLExperimentalAPI>();
+  }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
   }

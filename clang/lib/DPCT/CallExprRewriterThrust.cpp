@@ -49,6 +49,13 @@ makeThrustFunctorArgCreator(unsigned Idx) {
   };
 }
 
+std::function<bool(const CallExpr *)>
+checkEnableExtDPLAPI() {
+  return [=](const CallExpr *) -> bool {
+    return DpctGlobalInfo::useExtDPLAPI();
+  };
+}
+
 inline std::function<std::string(const CallExpr *)>
 makeMappedThrustPolicyEnum(unsigned Idx) {
   auto getBaseType = [](QualType QT) -> std::string {

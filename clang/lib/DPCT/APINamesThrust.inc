@@ -747,24 +747,36 @@ CONDITIONAL_FACTORY_ENTRY(
 
 // thrust::for_each
 CONDITIONAL_FACTORY_ENTRY(
-  CheckArgCount(4),
-  //Handling case: thrust::for_each(policy, device.begin(), device.end(), f);
-  CALL_FACTORY_ENTRY("thrust::for_each",
-                      CALL("std::for_each",
-                            makeMappedThrustPolicyEnum(0),
-                            ARG(1), ARG(2), THRUST_FUNCTOR(3))),
-  //Handling case: thrust::for_each(host.begin(), host.end(), f);
-  CONDITIONAL_FACTORY_ENTRY(
-    CheckThrustArgType(0, "thrust::device_ptr"),
-    CALL_FACTORY_ENTRY("thrust::for_each",
-                       CALL("std::for_each",
-                            CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                            ARG(0), ARG(1), THRUST_FUNCTOR(2))),
-    CALL_FACTORY_ENTRY("thrust::for_each",
-                       CALL("std::for_each",
-                            ARG("oneapi::dpl::execution::seq"),
-                            ARG(0), ARG(1), THRUST_FUNCTOR(2))))
-)
+    CheckArgCount(4),
+    // Handling case: thrust::for_each(policy, device.begin(), device.end(), f);
+    CONDITIONAL_FACTORY_ENTRY(
+        makeCheckAnd(
+            makeCheckAnd(CheckThrustArgType(0, "thrust::cuda_cub::par_nosync"),
+                         checkEnableExtDPLAPI()),
+            CheckThrustArgType(1, "thrust::device_ptr")),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPL_Async,
+            CALL_FACTORY_ENTRY(
+                "thrust::for_each",
+                CALL("oneapi::dpl::experimental::for_each_async",
+                     CALL("oneapi::dpl::execution::make_device_policy",
+                          QUEUESTR),
+                     ARG(1), ARG(2), THRUST_FUNCTOR(3)))),
+        CALL_FACTORY_ENTRY("thrust::for_each",
+                           CALL("std::for_each", makeMappedThrustPolicyEnum(0),
+                                ARG(1), ARG(2), THRUST_FUNCTOR(3)))),
+    // Handling case: thrust::for_each(host.begin(), host.end(), f);
+    CONDITIONAL_FACTORY_ENTRY(
+        CheckThrustArgType(0, "thrust::device_ptr"),
+        CALL_FACTORY_ENTRY(
+            "thrust::for_each",
+            CALL("std::for_each",
+                 CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                 ARG(0), ARG(1), THRUST_FUNCTOR(2))),
+        CALL_FACTORY_ENTRY("thrust::for_each",
+                           CALL("std::for_each",
+                                ARG("oneapi::dpl::execution::seq"), ARG(0),
+                                ARG(1), THRUST_FUNCTOR(2)))))
 
 // thrust::transform
 CONDITIONAL_FACTORY_ENTRY(
@@ -2698,7 +2710,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))),
       //Handling case: thrust::stable_partition_copy(iter, iter, iter, iter, pred);
       CONDITIONAL_FACTORY_ENTRY(
-        CheckArgType(1, "thrust::device_ptr"),
+        CheckThrustArgType(1, "thrust::device_ptr"),
         CALL_FACTORY_ENTRY("thrust::stable_partition_copy",
                           CALL(MapNames::getDpctNamespace() + "stable_partition_copy",
                                 CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
@@ -2759,7 +2771,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))),
         //Handling case: thrust::stable_partition_copy(itr, itr, itr, itr, itr, pred);
         CONDITIONAL_FACTORY_ENTRY(
-          CheckArgType(1, "thrust::device_ptr"),
+          CheckThrustArgType(1, "thrust::device_ptr"),
           FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_stable_partition_copy,
             CALL_FACTORY_ENTRY("thrust::stable_partition_copy",
                               CALL(MapNames::getDpctNamespace() + "stable_partition_copy",
@@ -2826,7 +2838,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 ARG(0), ARG(1), ARG(2)))),
       //Handling case: thrust::stable_partition(iter, iter, pred);
       CONDITIONAL_FACTORY_ENTRY(
-        CheckArgType(1, "thrust::device_ptr"),
+        CheckThrustArgType(1, "thrust::device_ptr"),
         CALL_FACTORY_ENTRY("thrust::stable_partition",
                           CALL("oneapi::dpl::stable_partition",
                                 CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
@@ -2883,7 +2895,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 ARG(1), ARG(2), ARG(3))),
         //Handling case: thrust::stable_partition(itr, itr, itr, itr, itr, pred);
         CONDITIONAL_FACTORY_ENTRY(
-          CheckArgType(1, "thrust::device_ptr"),
+          CheckThrustArgType(1, "thrust::device_ptr"),
           FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_stable_partition,
             CALL_FACTORY_ENTRY("thrust::stable_partition",
                               CALL(MapNames::getDpctNamespace() + "stable_partition",
