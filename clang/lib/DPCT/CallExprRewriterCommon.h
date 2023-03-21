@@ -1727,7 +1727,7 @@ inline std::function<std::string(const CallExpr *)> MemberExprBase() {
     auto Base = ME->getBase()->IgnoreImpCasts();
     if (!Base)
       return "";
-    return getStmtSpelling(Base);
+    return ExprAnalysis::ref(Base);
   };
 }
 
