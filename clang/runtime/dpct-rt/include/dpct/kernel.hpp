@@ -6,6 +6,16 @@
 //
 //===----------------------------------------------------------------------===//
 
+/**
+ * @file kernel.hpp
+ * @brief Utility functions to load kernel from module
+ * @version 0.1
+ * @date 2023-03-18
+ * 
+ * @copyright Copyright (C) Intel Corporation
+ * 
+ */
+
 #ifndef __DPCT_KERNEL_HPP__
 #define __DPCT_KERNEL_HPP__
 
@@ -31,9 +41,23 @@
 
 namespace dpct {
 
+// DPCT_LABEL_BEGIN|kernel_functor|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+/**
+ * @brief Function pointer for wrapped kernel functions
+ * @details Type define for function pointers pointing to kernel wrappers created by SYCLomatic
+ */
 typedef void (*kernel_functor)(sycl::queue &, const sycl::nd_range<3> &,
                                unsigned int, void **, void **);
 
+// DPCT_LABEL_BEGIN|kernel_function_info|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+/**
+ * @brief Struct to collect kernel function information
+ * @details Struct to collect kernel function information like max_work_group_size
+ */
 struct kernel_function_info {
   int max_work_group_size = 0;
 };
@@ -64,10 +88,31 @@ namespace fs = std::filesystem;
 namespace fs = std::experimental::filesystem;
 #endif
 
-/// Write data to temporary file and return absolute path to temporary file.
-/// Temporary file is created in a temporary directory both of which have random
-/// names with only the user having access permissions.  Only one temporary file
-/// will be created in the temporary directory.
+/** 
+ * @defgroup file_io
+ * 
+ * @brief read/write module from/to files
+ * 
+ * - Sample code
+ * @code
+ * write_data_to_file(...)
+ * 
+ * @endcode
+ * 
+ * @{
+ */
+
+/**
+ * @brief Write a module from buffer to a file
+ * @details Write data to temporary file and return absolute path to temporary file.
+ * Temporary file is created in a temporary directory both of which have random
+ * names with only the user having access permissions.  Only one temporary file
+ * will be created in the temporary directory.
+ * 
+ * @param[in] data The buffer contains the module.
+ * @param[in] size The length of the buffer.
+ * @return The path object to the created file.
+ */
 static inline fs::path write_data_to_file(char const *const data, size_t size) {
   std::error_code ec;
 
@@ -160,7 +205,9 @@ static inline fs::path write_data_to_file(char const *const data, size_t size) {
 
   return filepath;
 }
-
+/**
+ * @brief extract16
+ */
 static inline uint16_t extract16(unsigned char const *const ptr) {
   uint16_t ret = 0;
 
@@ -169,7 +216,9 @@ static inline uint16_t extract16(unsigned char const *const ptr) {
 
   return (ret);
 }
-
+/**
+ * @brief extract32
+ */
 static inline uint32_t extract32(unsigned char const *const ptr) {
   uint32_t ret = 0;
 
@@ -180,7 +229,9 @@ static inline uint32_t extract32(unsigned char const *const ptr) {
 
   return (ret);
 }
-
+/**
+ * @brief extract64
+ */
 static inline uint64_t extract64(unsigned char const *const ptr) {
   uint64_t ret = 0;
 
@@ -195,6 +246,8 @@ static inline uint64_t extract64(unsigned char const *const ptr) {
 
   return (ret);
 }
+
+/** @}*/ //end of file io
 
 static inline uint64_t get_lib_size(char const *const blob) {
 #ifdef _WIN32
