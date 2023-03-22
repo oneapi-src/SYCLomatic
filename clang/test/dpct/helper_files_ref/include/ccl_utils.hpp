@@ -96,7 +96,7 @@ create_kvs(const oneapi::ccl::kvs::address_type &addr) {
 }
 
 /// dpct communicator extension
-class communicator_ext:public dpct::ccl::detail::ccl_init_helper {
+class communicator_ext : public dpct::ccl::detail::ccl_init_helper {
 public:
   communicator_ext(
       int size, int rank, oneapi::ccl::kvs::address_type id,
@@ -127,36 +127,119 @@ public:
     return _comm.get_device().get_native();
   }
 
-  /// Return underlying native context, which was used in oneapi::ccl::communicator
-  sycl::context get_context() const {
-    return _comm.get_context().get_native();
-  };
-
-  /// \brief Allreduce is a collective communication operation that performs the global reduction operation
+  /// \brief allreduce is a collective communication operation that performs the global reduction operation
   ///       on values from all ranks of communicator and distributes the result back to all ranks.
   /// \param send_buf the buffer with @c count elements of @c dtype that stores local data to be reduced
   /// \param recv_buf [out] the buffer to store reduced result, must have the same dimension as @c send_buf
   /// \param count the number of elements of type @c dtype in @c send_buf and @c recv_buf
   /// \param dtype the datatype of elements in @c send_buf and @c recv_buf
   /// \param rtype the type of the reduction operation to be applied
-  /// \param stream a oneapi::ccl::stream associated with the operation
+  /// \param stream a sycl::queue ptr associated with the operation
   /// \return @ref return oneapi::ccl::event to track the progress of the operation
   oneapi::ccl::event allreduce(const void *sendbuff, void *recvbuff,
                                size_t count, dpct::library_data_t dtype,
                                oneapi::ccl::reduction rtype,
-                               const oneapi::ccl::stream &stream) const {
+                               sycl::queue *stream) {
+    const oneapi::ccl::stream &ccl_stream = get_ccl_stream(stream);
     return oneapi::ccl::allreduce(sendbuff, recvbuff, count,
                                   dpct::ccl::detail::to_ccl_datatype(dtype),
-                                  rtype, _comm, stream);
+                                  rtype, _comm, ccl_stream);
+  };
+
+  /// \brief allgather is a collective communication operation that collects data
+  ///        from all the ranks within a communicator into a single buffer.
+  ///        Different ranks may contribute segments of different sizes.
+  ///        The resulting data in the output buffer must be the same for each rank.
+  /// \param send_buf the buffer with @c count elements of @c dtype that stores local data to be reduced
+  /// \param recv_buf [out] the buffer to store reduced result, must have the same dimension as @c send_buf
+  /// \param send_count the number of elements of type @c dtype in @c send_buf
+  /// \param dtype the datatype of elements in @c send_buf and @c recv_buf
+  /// \param stream a sycl::queue ptr associated with the operation
+  /// \return @ref return oneapi::ccl::event to track the progress of the operation
+  oneapi::ccl::event allgather(const void *sendbuff, void *recvbuff,
+                               size_t send_count, dpct::library_data_t dtype,
+                               sycl::queue *stream) {
+    const oneapi::ccl::stream &ccl_stream = get_ccl_stream(stream);
+    std::vector<size_t> tmp;
+    return oneapi::ccl::allgatherv(sendbuff, send_count, recvbuff, tmp,
+                                   dpct::ccl::detail::to_ccl_datatype(dtype),
+                                   _comm, ccl_stream);
+  };
+
+  /// \brief reduce is a collective communication operation that performs the
+  ///        global reduction operation on values from all ranks of the communicator
+  ///        and returns the result to the root rank.
+  /// \param send_buf the buffer with @c count elements of @c dtype that stores
+  ///        local data to be reduced 
+  /// \param recv_buf [out] the buffer to store reduced result, 
+  ///        must have the same dimension as @c send_buf 
+  /// \param count the number of elements of type @c dtype in @c send_buf and @c recv_buf 
+  /// \param dtype the datatype of elements in @c send_buf and @c recv_buf 
+  /// \param root the rank that gets the result of reduction 
+  /// \param rtype the type of the reduction operation to be applied 
+  /// \param stream a sycl::queue ptr associated with the operation 
+  /// \return @ref return oneapi::ccl::event to track the progress of the operation
+  oneapi::ccl::event reduce(const void *sendbuff, void *recvbuff, size_t count,
+                            dpct::library_data_t dtype,
+                            oneapi::ccl::reduction rtype, int root,
+                            sycl::queue *stream) {
+    const oneapi::ccl::stream &ccl_stream = get_ccl_stream(stream);
+    return oneapi::ccl::reduce(sendbuff, recvbuff, count,
+                               dpct::ccl::detail::to_ccl_datatype(dtype), rtype,
+                               root, _comm, ccl_stream);
+  };
+
+  /// \brief broadcast is a collective communication operation that broadcasts data
+  ///        from one rank of communicator (denoted as root) to all other ranks.
+  /// \param buf [in,out] the buffer with @c count elements of @c dtype serves
+  ///        as send buffer for root and as receive buffer for other ranks 
+  /// \param count the number of elements of type @c dtype in @c buf 
+  /// \param dtype thedatatype of elements in @c buf 
+  /// \param root the rank that broadcasts @c buf
+  /// \param stream a sycl::queue ptr associated with the operation
+  /// \return @ref return oneapi::ccl::event to track the progress of the operation
+  oneapi::ccl::event broadcast(void *buff, size_t count,
+                               dpct::library_data_t dtype, int root,
+                               sycl::queue *stream) {
+    const oneapi::ccl::stream &ccl_stream = get_ccl_stream(stream);
+    return oneapi::ccl::broadcast(buff, count,
+                                  dpct::ccl::detail::to_ccl_datatype(dtype),
+                                  root, _comm, ccl_stream);
+  };
+
+  /// \brief reduce_scatter is a collective communication operation that performs the global reduction operation
+  ///        on values from all ranks of the communicator and scatters the result in blocks back to all ranks.
+  /// \param send_buf the buffer with @c count elements of @c dtype that stores local data to be reduced
+  /// \param recv_buf [out] the buffer to store reduced result, must have the same dimension as @c send_buf
+  /// \param recv_count the number of elements of type @c dtype in receive block
+  /// \param dtype the datatype of elements in @c send_buf and @c recv_buf
+  /// \param rtype the type of the reduction operation to be applied
+  /// \param stream a sycl::queue ptr associated with the operation
+  /// \return @ref return oneapi::ccl::event to track the progress of the operation
+  oneapi::ccl::event reduce_scatter(const void *sendbuff, void *recvbuff,
+                                    size_t recv_count, dpct::library_data_t dtype,
+                                    oneapi::ccl::reduction rtype,
+                                    sycl::queue *stream) {
+    const oneapi::ccl::stream &ccl_stream = get_ccl_stream(stream);
+    return oneapi::ccl::reduce_scatter(sendbuff, recvbuff, recv_count,
+                                       dpct::ccl::detail::to_ccl_datatype(dtype),
+                                       rtype, _comm, ccl_stream);
   };
 
 private:
+  const oneapi::ccl::stream &get_ccl_stream(sycl::queue *stream) {
+    auto pa_itr =
+        _stream_map_comm.emplace(stream, oneapi::ccl::create_stream(*stream));
+    return pa_itr.first->second;
+  }
+
   oneapi::ccl::device _device_comm;
   oneapi::ccl::context _context_comm;
   oneapi::ccl::communicator _comm;
+  std::unordered_map<sycl::queue*,oneapi::ccl::stream> _stream_map_comm;
 };
 
-typedef dpct::ccl::communicator_ext * comm_ptr;
+typedef dpct::ccl::communicator_ext *comm_ptr;
 
 } // namespace ccl
 } // namespace dpct

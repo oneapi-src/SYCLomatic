@@ -23,7 +23,9 @@ void clang::dpct::NCCLRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
       callExpr(callee(functionDecl(hasAnyName(
                    "ncclGetVersion", "ncclGetUniqueId", "ncclCommInitRank",
-                   "ncclCommCount", "ncclCommCuDevice", "ncclAllReduce"))))
+                   "ncclCommCount", "ncclCommCuDevice", "ncclAllReduce",
+                   "ncclCommUserRank", "ncclBroadcast", "ncclCommDestroy",
+                   "ncclReduce", "ncclAllGather", "ncclReduceScatter"))))
           .bind("call"),
       this);
   MF.addMatcher(

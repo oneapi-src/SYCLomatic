@@ -5,7 +5,7 @@
 
 #include <nccl.h>
 
-// CHECK: 28
+// CHECK: 29
 // TEST_FEATURE: CclUtils_typedef_ccl_comm_ptr
 // TEST_FEATURE: Device_get_device_id
 // TEST_FEATURE: CclUtils_ccl_init_helper
