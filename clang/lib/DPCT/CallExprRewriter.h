@@ -307,16 +307,19 @@ public:
 class RemoveAPIRewriter : public CallExprRewriter {
   bool IsAssigned = false;
   std::string CalleeName;
+  std::string Message;
 
 public:
-  RemoveAPIRewriter(const CallExpr *C, std::string CalleeName)
-      : CallExprRewriter(C, CalleeName), IsAssigned(isAssigned(C)), CalleeName(CalleeName) {}
+  RemoveAPIRewriter(const CallExpr *C, std::string CalleeName,
+                    std::string Message = "")
+      : CallExprRewriter(C, CalleeName), IsAssigned(isAssigned(C)),
+        CalleeName(CalleeName), Message(Message) {}
 
   std::optional<std::string> rewrite() override {
-    std::string Msg = "this call is redundant in SYCL.";
+    std::string Msg =
+        Message.empty() ? "this call is redundant in SYCL." : Message;
     if (IsAssigned) {
-      report(Diagnostics::FUNC_CALL_REMOVED_0, false,
-             CalleeName, Msg);
+      report(Diagnostics::FUNC_CALL_REMOVED_0, false, CalleeName, Msg);
       return std::optional<std::string>("0");
     }
     report(Diagnostics::FUNC_CALL_REMOVED, false,
@@ -633,6 +636,7 @@ class DerefExpr {
     if (!AddrOfRemoved && !IgnoreDerefOp)
       Stream << "*";
 
+    AA.setCallSpelling(C);
     printWithParens(Stream, AA, P);
   }
 
@@ -641,7 +645,7 @@ class DerefExpr {
 public:
   template <class StreamT>
   void printArg(StreamT &Stream, ArgumentAnalysis &A) const {
-    print(Stream, A, false);
+    print(Stream);
   }
   template <class StreamT> void printMemberBase(StreamT &Stream) const {
     ExprAnalysis EA;
@@ -655,6 +659,7 @@ public:
       print(Stream, EA, false);
     } else {
       ArgumentAnalysis AA;
+
       std::pair<const CallExpr*, const Expr*> ExprPair(C, E);
       print(Stream, AA, false, ExprPair);
     }

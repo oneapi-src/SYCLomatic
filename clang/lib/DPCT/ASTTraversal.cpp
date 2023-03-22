@@ -4743,28 +4743,32 @@ void DeviceRandomFunctionCallRule::runRule(
       FirstOffsetArg = "static_cast<std::uint64_t>(" + RNGOffset + ")";
     }
 
-    std::string Factor = "8";
-    if (GeneratorType == "dpct::rng::device::rng_generator<oneapi::"
-                         "mkl::rng::device::philox4x32x10<1>>" &&
-        (DRefArg3Type == "curandStatePhilox4_32_10_t" ||
-         DRefArg3Type == "curandStatePhilox4_32_10")) {
-      Factor = "4";
-    }
-
-    if (needExtraParens(CE->getArg(1))) {
-      RNGSubseq = "(" + RNGSubseq + ")";
-    }
-    if (IsRNGSubseqLiteral) {
-      SecondOffsetArg = RNGSubseq + " * " + Factor;
+    std::string ReplStr;
+    if (DRefArg3Type == "curandStateXORWOW") {
+      report(FuncNameBegin, Diagnostics::SUBSEQUENCE_IGNORED, false, RNGSubseq);
+      ReplStr = RNGStateName + " = " + GeneratorType + "(" + RNGSeed + ", " +
+                FirstOffsetArg + ")";
     } else {
-      SecondOffsetArg =
-          "static_cast<std::uint64_t>(" + RNGSubseq + " * " + Factor + ")";
+      std::string Factor = "8";
+      if (GeneratorType == "dpct::rng::device::rng_generator<oneapi::"
+                           "mkl::rng::device::philox4x32x10<1>>" &&
+          DRefArg3Type == "curandStatePhilox4_32_10") {
+        Factor = "4";
+      }
+
+      if (needExtraParens(CE->getArg(1))) {
+        RNGSubseq = "(" + RNGSubseq + ")";
+      }
+      if (IsRNGSubseqLiteral) {
+        SecondOffsetArg = RNGSubseq + " * " + Factor;
+      } else {
+        SecondOffsetArg =
+            "static_cast<std::uint64_t>(" + RNGSubseq + " * " + Factor + ")";
+      }
+
+      ReplStr = RNGStateName + " = " + GeneratorType + "(" + RNGSeed + ", {" +
+                FirstOffsetArg + ", " + SecondOffsetArg + "})";
     }
-
-    std::string ReplStr = RNGStateName + " = " + GeneratorType + "(" + RNGSeed +
-                          ", {" + FirstOffsetArg + ", " + SecondOffsetArg +
-                          "})";
-
     emplaceTransformation(
         new ReplaceText(FuncNameBegin, FuncCallLength, std::move(ReplStr)));
   } else if (FuncName == "skipahead" || FuncName == "skipahead_sequence" ||
@@ -10333,7 +10337,7 @@ void MemoryMigrationRule::mallocMigration(
     }
   } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost" ||
              Name == "cuMemHostAlloc" || Name == "cuMemAllocHost_v2" ||
-             Name == "cuMemAllocPitch_v2") {
+             Name == "cuMemAllocPitch_v2" || Name == "cudaMallocPitch") {
     ExprAnalysis EA(C);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
@@ -10402,7 +10406,7 @@ void MemoryMigrationRule::mallocMigration(
         report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       }
     }
-  } else if (Name == "cudaMallocPitch" || Name == "cudaMalloc3D") {
+  } else if (Name == "cudaMalloc3D") {
     std::ostringstream OS;
     std::string Type;
     if (IsAssigned)
@@ -10421,9 +10425,6 @@ void MemoryMigrationRule::mallocMigration(
     emplaceTransformation(removeArg(C, 0, *Result.SourceManager));
     std::ostringstream OS2;
     printDerefOp(OS2, C->getArg(1));
-    if (Name == "cudaMallocPitch") {
-      emplaceTransformation(new ReplaceStmt(C->getArg(1), OS2.str()));
-    }
     if (IsAssigned) {
       emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
