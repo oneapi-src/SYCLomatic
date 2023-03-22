@@ -181,7 +181,7 @@ CONDITIONAL_FACTORY_ENTRY(
 /*
   --- X.size() ---
   cg::thread_block::size()
-  => item_ct1.get_local_linear_range()
+  => item_ct1.get_group().get_local_linear_range()
 
   cg::thread_block_tile<32>::size()
   => item_ct1.get_subgroup().get_local_linear_range()
@@ -190,7 +190,7 @@ CONDITIONAL_FACTORY_ENTRY(
   => if UseLogicalGroup then
      MemberBase().get_local_linear_id()
 */
-MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.size", NDITEM,
+MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.size", GROUP,
                           false, "get_local_linear_range")
 // for cuda <= 10.2
 CASE_FACTORY_ENTRY(
@@ -289,7 +289,15 @@ CASE_FACTORY_ENTRY(
     OTHERWISE(
         UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.thread_rank",
                                 Diagnostics::API_NOT_MIGRATED, ARG("thread_rank"))))
+/*
+  --- X.shfl_down() ---
+  cg::thread_block_tile<32>::shfl_down(v, delta)
+  => MemberExprBase().shfl_down(v, delta)
 
+  cg::thread_block_tile<N>::shfl_down(v, delta) if N in {1,2,4,8,16}
+  => dpct::shift_sub_group_left(item_ct1.get_sub_group(), v, delta, N)
+*/
+// for cuda <= 10.2
 CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(32),
          MEMBER_CALL_FACTORY_ENTRY(
@@ -334,6 +342,7 @@ CASE_FACTORY_ENTRY(
          UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.shfl_down",
                                  Diagnostics::API_NOT_MIGRATED, ARG("shfl_down"))))
 
+// for cuda >= 11.0
 CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(32),
          MEMBER_CALL_FACTORY_ENTRY(
@@ -377,73 +386,4 @@ CASE_FACTORY_ENTRY(
     OTHERWISE(
          UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_down",
                                  Diagnostics::API_NOT_MIGRATED, ARG("shfl_down"))))
-// T.shfl_down()
-// === cuda header file <= 10.2 === begin ===
-FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_left,
-            CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base<1>.shfl_down",
-                           CALL(MapNames::getDpctNamespace() +
-                                    "shift_sub_group_left",
-                                SUBGROUP, ARG(0), ARG(1), ARG("1"))))
-FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_left,
-            CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base<2>.shfl_down",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_left",
-                                    SUBGROUP, ARG(0), ARG(1), ARG("2"))))
-FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_left,
-            CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base<4>.shfl_down",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_left",
-                                    SUBGROUP, ARG(0), ARG(1), ARG("4"))))
-FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_left,
-            CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base<8>.shfl_down",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_left",
-                                    SUBGROUP, ARG(0), ARG(1), ARG("8"))))
-FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_left,
-            CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base<16>.shfl_down",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_left",
-                                    SUBGROUP, ARG(0), ARG(1), ARG("16"))))
-MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base<32>.shfl_down",
-                                MemberExprBase(), false, "shuffle_down", ARG(0), ARG(1))
-// === cuda header file <= 10.2 === end ===
-// === cuda header file >= 11.0 === begin ===
-FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::Util_shift_sub_group_left,
-        CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base<1>.shfl_down",
-                           CALL(MapNames::getDpctNamespace() +
-                                    "shift_sub_group_left",
-                                SUBGROUP, ARG(0), ARG(1), ARG("1"))))
-FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_left,
-            CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base<2>.shfl_down",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_left",
-                                    SUBGROUP, ARG(0), ARG(1), ARG("2"))))
-FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_left,
-            CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base<4>.shfl_down",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_left",
-                                    SUBGROUP, ARG(0), ARG(1), ARG("4"))))
-FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_left,
-            CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base<8>.shfl_down",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_left",
-                                    SUBGROUP, ARG(0), ARG(1), ARG("8"))))
-FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_left,
-            CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base<16>.shfl_down",
-                               CALL(MapNames::getDpctNamespace() +
-                                        "shift_sub_group_left",
-                                    SUBGROUP, ARG(0), ARG(1), ARG("16"))))
-MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base<32>.shfl_down",
-                                MemberExprBase(), false, "shuffle_down", ARG(0), ARG(1))
-// === cuda header file >= 11.0 === end ===
 #endif

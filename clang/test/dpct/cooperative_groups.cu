@@ -142,7 +142,7 @@ __device__ void foo() {
   tile16.thread_rank();
 
   // X.size()
-  // CHECK-COUNT-5: item_ct1.get_local_linear_range();
+  // CHECK-COUNT-5: item_ct1.get_group().get_local_linear_range();
   cg::this_thread_block().size();
   block.size();
   cblock.size();
