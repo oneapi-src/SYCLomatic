@@ -181,7 +181,7 @@ int main(void) {
 
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     sycl::local_accessor<std::complex<int>, 1> s_acc_ct1(sycl::range<1>(2*SIZE*SIZE), cgh);
+  // CHECK-NEXT:     sycl::local_accessor<sycl::int2, 1> s_acc_ct1(sycl::range<1>(2*SIZE*SIZE), cgh);
   // CHECK-NEXT:     auto d_d_acc_ct0 = dpct::get_access(d_d, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class nonTypeTemplateReverse_{{[a-f0-9]+}}, dpct_kernel_scalar<SIZE>>>(

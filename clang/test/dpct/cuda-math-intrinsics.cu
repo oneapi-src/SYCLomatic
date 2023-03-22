@@ -575,12 +575,6 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
 
   // CHECK: d2 = sycl::remquo(d0, d1, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   d2 = remquo(d0, d1, &i);
-  // CHECK: d2 = sycl::remquo((double)i, (double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //d2 = remquo(i, i, &i);
-  // CHECK: d2 = sycl::remquo(d0, (double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //d2 = remquo(d0, i, &i);
-  // CHECK: d2 = sycl::remquo((double)i, d1, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //d2 = remquo(i, d1, &i);
 
   // CHECK: d2 = sycl::rint(d0);
   d2 = rint(d0);
@@ -2489,48 +2483,6 @@ __device__ float __host__ foo3(float f, float g) {
   return max(f, g) + min(f, g);
 }
 
-// CHECK:  int bar(short i, long j) {
-// CHECK-NEXT:   return std::max<long>(i, j) + std::min<long>(i, j);
-// CHECK-NEXT: }
-//__host__ int bar(short i, long j) {
-//  return max(i, j) + min(i, j);
-//}
-
-// CHECK:  int bar(unsigned short i, unsigned long j) {
-// CHECK-NEXT:   return std::max<unsigned long>(i, j) + std::min<unsigned long>(i, j);
-// CHECK-NEXT: }
-//__host__ int bar(unsigned short i, unsigned long j) {
-//  return max(i, j) + min(i, j);
-//}
-
-// CHECK:  int bar(unsigned short i, long j) {
-// CHECK-NEXT:   return max(i, j) + min(i, j);
-// CHECK-NEXT: }
-//__host__ int bar(unsigned short i, long j) {
-//  return max(i, j) + min(i, j);
-//}
-
-// CHECK:  int bar(long i, unsigned short j) {
-// CHECK-NEXT:   return max(i, j) + min(i, j);
-// CHECK-NEXT: }
-//__host__ int bar(long i, unsigned short j) {
-//  return max(i, j) + min(i, j);
-//}
-
-// CHECK:  int bar(short i, unsigned long j) {
-// CHECK-NEXT:   return std::max<unsigned long>(i, j) + std::min<unsigned long>(i, j);
-// CHECK-NEXT: }
-//__host__ int bar(short i, unsigned long j) {
-//  return max(i, j) + min(i, j);
-//}
-
-// CHECK:  int bar(unsigned long i, short j) {
-// CHECK-NEXT:   return std::max<unsigned long>(i, j) + std::min<unsigned long>(i, j);
-// CHECK-NEXT: }
-//__host__ int bar(unsigned long i, short j) {
-//  return max(i, j) + min(i, j);
-//}
-
 typedef int INT;
 typedef unsigned UINT;
 using int_t = int;
@@ -2696,9 +2648,9 @@ int max(int i, int j) {
   return i > j ? i : j;
 }
 }
-void no_migration() {
+void do_migration5() {
   int i, j;
-  // CHECK: max(i, j);
+  // CHECK: std::max(i, j);
   max(i, j);
 }
 void no_migration2() {
@@ -2711,16 +2663,16 @@ void no_migration3() {
   // CHECK: std::max(i, j);
   std::max(i, j);
 }
-__host__ void no_migration4() {
+__host__ void do_migration6() {
   int i, j;
-  // CHECK: max(i, j);
+  // CHECK: std::max(i, j);
   max(i, j);
 }
 
 void ns() {
   using namespace std;
   int i, j;
-  // CHECK: max(i, j);
+  // CHECK: std::max(i, j);
   max(i, j);
 }
 
@@ -2731,13 +2683,9 @@ void no_migration5() {
   //CHECK: std::max(i, i);
   //CHECK-NEXT: std::min(i, i);
   //CHECK-NEXT: std::fabs(f);
-  //CHECK-NEXT: std::frexpf(f, &i);
-  //CHECK-NEXT: std::modff(f, &f);
   //CHECK-NEXT: std::nearbyintf(f);
   //CHECK-NEXT: std::remquof(f, f, &i);
-  //CHECK-NEXT: std::acosf(f);
   //CHECK-NEXT: std::acoshf(f);
-  //CHECK-NEXT: std::asinf(f);
   //CHECK-NEXT: std::asinhf(f);
   //CHECK-NEXT: std::abs(f);
   //CHECK-NEXT: std::frexp(f, &i);
@@ -2751,13 +2699,9 @@ void no_migration5() {
   std::max(i, i);
   std::min(i, i);
   std::fabs(f);
-  //std::frexpf(f, &i);
-  //std::modff(f, &f);
   std::nearbyintf(f);
   std::remquof(f, f, &i);
-  //std::acosf(f);
   std::acoshf(f);
-  //std::asinf(f);
   std::asinhf(f);
   std::abs(f);
   std::frexp(f, &i);
@@ -2782,14 +2726,6 @@ __device__ void do_migration5() {
   //CHECK-NEXT: sycl::min(i, i);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexpf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modff call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, float>(&f));
-  //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::floor(f + 0.5);
@@ -2797,9 +2733,7 @@ __device__ void do_migration5() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::remquo(f, f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
-  //CHECK-NEXT: sycl::asin(f);
   //CHECK-NEXT: sycl::asinh(f);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
@@ -2825,13 +2759,9 @@ __device__ void do_migration5() {
   std::max(i, i);
   std::min(i, i);
   std::fabs(f);
-  //std::frexpf(f, &i);
-  //std::modff(f, &f);
   std::nearbyintf(f);
   std::remquof(f, f, &i);
-  //std::acosf(f);
   std::acoshf(f);
-  //std::asinf(f);
   std::asinhf(f);
   std::abs(f);
   std::frexp(f, &i);
@@ -2852,14 +2782,6 @@ __global__ void do_migration6() {
   //CHECK-NEXT: sycl::min(i, i);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexpf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modff call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, float>(&f));
-  //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::floor(f + 0.5);
@@ -2867,9 +2789,7 @@ __global__ void do_migration6() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::remquo(f, f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
-  //CHECK-NEXT: sycl::asin(f);
   //CHECK-NEXT: sycl::asinh(f);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
@@ -2895,13 +2815,9 @@ __global__ void do_migration6() {
   std::max(i, i);
   std::min(i, i);
   std::fabs(f);
-  //std::frexpf(f, &i);
-  //std::modff(f, &f);
   std::nearbyintf(f);
   std::remquof(f, f, &i);
-  //std::acosf(f);
   std::acoshf(f);
-  //std::asinf(f);
   std::asinhf(f);
   std::abs(f);
   std::frexp(f, &i);
@@ -2922,14 +2838,6 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: sycl::min(i, i);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexpf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modff call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, float>(&f));
-  //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::floor(f + 0.5);
@@ -2937,9 +2845,7 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::remquo(f, f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
-  //CHECK-NEXT: sycl::asin(f);
   //CHECK-NEXT: sycl::asinh(f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
@@ -2964,13 +2870,9 @@ __device__ __host__ void do_migration7() {
   std::max(i, i);
   std::min(i, i);
   std::fabs(f);
-  //std::frexpf(f, &i);
-  //std::modff(f, &f);
   std::nearbyintf(f);
   std::remquof(f, f, &i);
-  //std::acosf(f);
   std::acoshf(f);
-  //std::asinf(f);
   std::asinhf(f);
   std::frexp(f, &i);
   std::modf(f, &f);

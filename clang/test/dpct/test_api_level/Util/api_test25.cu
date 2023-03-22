@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/Util/api_test25_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Util/api_test25_out
 
-// CHECK: 3
+// CHECK: 4
 // TEST_FEATURE: Util_logical_group
 // TEST_FEATURE: Util_get_sycl_language_version
 

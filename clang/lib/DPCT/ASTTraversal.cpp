@@ -1954,12 +1954,18 @@ void ZeroLengthArrayRule::runRule(
   if (!(CAT->getSize().isZero()))
     return;
 
-  // Check if the array is in device code
-  const clang::FunctionDecl *FD = DpctGlobalInfo::getParentFunction(TL);
-  if (!FD)
-    return;
-  if (!(FD->getAttr<CUDADeviceAttr>()) && !(FD->getAttr<CUDAGlobalAttr>()))
-    return;
+  const clang::FieldDecl *MemberVariable =
+      DpctGlobalInfo::findAncestor<clang::FieldDecl>(TL);
+  if (MemberVariable) {
+    report(TL->getBeginLoc(), Diagnostics::ZERO_LENGTH_ARRAY, false);
+  } else {
+    const clang::FunctionDecl *FD = DpctGlobalInfo::getParentFunction(TL);
+    if (FD) {
+      // Check if the array is in device code
+      if (!(FD->getAttr<CUDADeviceAttr>()) && !(FD->getAttr<CUDAGlobalAttr>()))
+        return;
+    }
+  }
 
   // Check if the array is a shared variable
   const VarDecl* VD = DpctGlobalInfo::findAncestor<VarDecl>(TL);
