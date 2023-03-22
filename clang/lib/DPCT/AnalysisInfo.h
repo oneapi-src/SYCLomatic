@@ -947,6 +947,12 @@ public:
   inline static void setAssumedNDRangeDim(unsigned int Dim) {
     AssumedNDRangeDim = Dim;
   }
+  inline static bool isGeneratingHeadersInOutRoot() {
+    return GeneratingHeadersInOutRootFlag;
+  }
+  inline static void setGeneratingHeadersInOutRootFlag(bool Flag) {
+    GeneratingHeadersInOutRootFlag = Flag;
+  }
   inline static HelperFilesCustomizationLevel
   getHelperFilesCustomizationLevel() {
     return HelperFilesCustomizationLvl;
@@ -2038,6 +2044,7 @@ private:
   static UsmLevel UsmLvl;
   static bool IsIncMigration;
   static unsigned int AssumedNDRangeDim;
+  static bool GeneratingHeadersInOutRootFlag;
   static HelperFilesCustomizationLevel HelperFilesCustomizationLvl;
   static std::string CustomHelperFileName;
   static std::unordered_set<std::string> PrecAndDomPairSet;

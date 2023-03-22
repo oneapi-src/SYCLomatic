@@ -798,6 +798,14 @@ int runDPCT(int argc, const char **argv) {
   }
   ValidateInputDirectory(Tool, AnalysisScope);
 
+  if (GenHeadersInOutRoot.getNumOccurrences() &&
+      (UseCustomHelperFileLevel.getNumOccurrences() ||
+       CustomHelperFileName.getNumOccurrences())) {
+    ShowStatus(MigrationErrorConflictOptions,
+               "Option --gen-headers-in-out-root cannot be used with "
+               "--use-custom-helper or --custom-helper-name together");
+    dpctExit(MigrationErrorConflictOptions);
+  }
   validateCustomHelperFileNameArg(UseCustomHelperFileLevel,
                                   CustomHelperFileName,
                                   dpct::DpctGlobalInfo::getOutRoot());

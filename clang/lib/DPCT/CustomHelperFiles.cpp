@@ -449,7 +449,8 @@ void generateHelperFunctions() {
       HelperFilesCustomizationLevel::HFCL_None)
     return;
   else if (clang::dpct::DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-           HelperFilesCustomizationLevel::HFCL_All) {
+               HelperFilesCustomizationLevel::HFCL_All ||
+           clang::dpct::DpctGlobalInfo::isGeneratingHeadersInOutRoot()) {
     generateAllHelperFiles();
     return;
   }
