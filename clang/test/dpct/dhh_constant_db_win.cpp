@@ -1,4 +1,4 @@
-// UNSUPPORTED: -linux-
+// UNSUPPORTED: system-linux
 // RUN: cd %T
 // RUN: mkdir dhh_constant_db_win
 // RUN: cd dhh_constant_db_win

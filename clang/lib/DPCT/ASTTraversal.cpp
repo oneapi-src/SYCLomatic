@@ -2020,7 +2020,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cublasAtomicsMode_t", "CUmem_advise_enum", "CUmem_advise",
                   "thrust::tuple_element", "thrust::tuple_size", "cublasMath_t",
                   "cudaPointerAttributes", "thrust::zip_iterator",
-                  "cusolverEigRange_t")
+                  "cusolverEigRange_t", "cudaUUID_t")
               )))))
           .bind("cudaTypeDef"),
       this);
@@ -3524,8 +3524,7 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(
         new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), "false"));
     return;
-  } else if (MemberName == "pciDomainID" || MemberName == "pciBusID" ||
-             MemberName == "pciDeviceID") {
+  } else if (MemberName == "pciDomainID" || MemberName == "pciBusID") {
     report(ME->getBeginLoc(), Diagnostics::UNCOMPATIBLE_DEVICE_PROP, false,
            MemberName, "-1");
     emplaceTransformation(
@@ -3565,6 +3564,13 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
     report(ME->getBeginLoc(), Diagnostics::MAX_GRID_SIZE, false);
   }
 
+  if (!DpctGlobalInfo::useDeviceInfo() &&
+      (MemberName == "pciDeviceID" || MemberName == "uuid")) {
+    report(ME->getBeginLoc(), Diagnostics::UNMIGRATED_DEVICE_PROP, false,
+           MemberName);
+    return;
+  }
+
   auto Search = PropNamesMap.find(MemberName);
   if (Search == PropNamesMap.end()) {
     return;
@@ -3588,6 +3594,15 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
           new RenameFieldInMemberExpr(ME, "set_" + Search->second));
       emplaceTransformation(new ReplaceText(BO->getOperatorLoc(), 1, "("));
       emplaceTransformation(new InsertAfterStmt(BO, ")"));
+    }
+  } else if (auto *OCE = Parents[0].get<clang::CXXOperatorCallExpr>()) {
+    // migrate to set_XXX() for types with an overloaded = operator
+    if (OCE->getOperator() == clang::OverloadedOperatorKind::OO_Equal) {
+      requestFeature(PropToSetFeatureMap.at(MemberName), ME);
+      emplaceTransformation(
+          new RenameFieldInMemberExpr(ME, "set_" + Search->second));
+      emplaceTransformation(new ReplaceText(OCE->getOperatorLoc(), 1, "("));
+      emplaceTransformation(new InsertAfterStmt(OCE, ")"));
     }
   }
   if ((Search->second.compare(0, 13, "major_version") == 0) ||
@@ -4728,28 +4743,32 @@ void DeviceRandomFunctionCallRule::runRule(
       FirstOffsetArg = "static_cast<std::uint64_t>(" + RNGOffset + ")";
     }
 
-    std::string Factor = "8";
-    if (GeneratorType == "dpct::rng::device::rng_generator<oneapi::"
-                         "mkl::rng::device::philox4x32x10<1>>" &&
-        (DRefArg3Type == "curandStatePhilox4_32_10_t" ||
-         DRefArg3Type == "curandStatePhilox4_32_10")) {
-      Factor = "4";
-    }
-
-    if (needExtraParens(CE->getArg(1))) {
-      RNGSubseq = "(" + RNGSubseq + ")";
-    }
-    if (IsRNGSubseqLiteral) {
-      SecondOffsetArg = RNGSubseq + " * " + Factor;
+    std::string ReplStr;
+    if (DRefArg3Type == "curandStateXORWOW") {
+      report(FuncNameBegin, Diagnostics::SUBSEQUENCE_IGNORED, false, RNGSubseq);
+      ReplStr = RNGStateName + " = " + GeneratorType + "(" + RNGSeed + ", " +
+                FirstOffsetArg + ")";
     } else {
-      SecondOffsetArg =
-          "static_cast<std::uint64_t>(" + RNGSubseq + " * " + Factor + ")";
+      std::string Factor = "8";
+      if (GeneratorType == "dpct::rng::device::rng_generator<oneapi::"
+                           "mkl::rng::device::philox4x32x10<1>>" &&
+          DRefArg3Type == "curandStatePhilox4_32_10") {
+        Factor = "4";
+      }
+
+      if (needExtraParens(CE->getArg(1))) {
+        RNGSubseq = "(" + RNGSubseq + ")";
+      }
+      if (IsRNGSubseqLiteral) {
+        SecondOffsetArg = RNGSubseq + " * " + Factor;
+      } else {
+        SecondOffsetArg =
+            "static_cast<std::uint64_t>(" + RNGSubseq + " * " + Factor + ")";
+      }
+
+      ReplStr = RNGStateName + " = " + GeneratorType + "(" + RNGSeed + ", {" +
+                FirstOffsetArg + ", " + SecondOffsetArg + "})";
     }
-
-    std::string ReplStr = RNGStateName + " = " + GeneratorType + "(" + RNGSeed +
-                          ", {" + FirstOffsetArg + ", " + SecondOffsetArg +
-                          "})";
-
     emplaceTransformation(
         new ReplaceText(FuncNameBegin, FuncCallLength, std::move(ReplStr)));
   } else if (FuncName == "skipahead" || FuncName == "skipahead_sequence" ||
@@ -15264,3 +15283,22 @@ void CudaExtentRule::runRule(
 }
 
 REGISTER_RULE(CudaExtentRule, PassKind::PK_Analysis)
+
+void CudaUuidRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(memberExpr(hasObjectExpression(hasType(namedDecl(
+                               hasAnyName("CUuuid_st", "cudaUUID_t")))),
+                           member(hasName("bytes")))
+                    .bind("UUID_bytes"),
+                this);
+}
+
+void CudaUuidRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (auto ME = Result.Nodes.getNodeAs<MemberExpr>("UUID_bytes")) {
+    const auto SM = Result.SourceManager;
+    const auto Begin = SM->getSpellingLoc(ME->getOperatorLoc());
+    return emplaceTransformation(new ReplaceText(Begin, 6, ""));
+  }
+}
+
+REGISTER_RULE(CudaUuidRule, PassKind::PK_Analysis)

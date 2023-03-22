@@ -1,4 +1,4 @@
-// UNSUPPORTED: -windows-
+// UNSUPPORTED: system-windows
 // RUN: dpct -out-root %T/check_api_level_test_coverage_out %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: bash %S/script.sh %S %T
 // RUN: FileCheck --input-file %T/result.txt --match-full-lines %s

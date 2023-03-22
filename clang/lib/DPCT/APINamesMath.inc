@@ -587,6 +587,14 @@ ENTRY_UNSUPPORTED("y0")
 ENTRY_UNSUPPORTED("y1")
 ENTRY_UNSUPPORTED("yn")
 
+// Integer Mathematical Functions
+ENTRY_REWRITE("llmax")
+ENTRY_REWRITE("llmin")
+ENTRY_REWRITE("ullmax")
+ENTRY_REWRITE("ullmin")
+ENTRY_REWRITE("umax")
+ENTRY_REWRITE("umin")
+
 // crt wrapper API
 ENTRY_RENAMED("mul24", MapNames::getClNamespace(false, true) + "mul24")
 

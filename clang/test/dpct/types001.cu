@@ -548,10 +548,7 @@ void fun3() {
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with pciBusID. It was migrated to -1. You may need to adjust the value of -1 for the specific device.
   // CHECK-NEXT: */
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with pciDeviceID. It was migrated to -1. You may need to adjust the value of -1 for the specific device.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: sprintf(devstr, "pci %x:%x:%x", -1, -1, -1);
+  // CHECK-NEXT: sprintf(devstr, "pci %x:%x:%x", -1, -1, deviceProp.get_device_id());
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with concurrentKernels. It was migrated to true. You may need to adjust the value of true for the specific device.
   // CHECK-NEXT: */

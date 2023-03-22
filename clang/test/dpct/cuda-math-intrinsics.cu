@@ -2398,6 +2398,19 @@ __global__ void testIntegerFunctions() {
   i = abs(i);
   l = labs(l);
   ll = llabs(ll);
+
+  // CHECK: ll = sycl::max<long long>(ll, ll);
+  // CHECK-NEXT: ll = sycl::min<long long>(ll, l);
+  // CHECK-NEXT: ull = sycl::max<unsigned long long>(ll, ull);
+  // CHECK-NEXT: ull = sycl::min<unsigned long long>(ll, ll);
+  // CHECK-NEXT: u = sycl::max<unsigned int>(u, u);
+  // CHECK-NEXT: u = sycl::min<unsigned int>(u, u);
+  ll = llmax(ll, ll);
+  ll = llmin(ll, l);
+  ull = ullmax(ll, ull);
+  ull = ullmin(ll, ll);
+  u = umax(u, u);
+  u = umin(u, u);
 }
 
 void testTypecasts() {

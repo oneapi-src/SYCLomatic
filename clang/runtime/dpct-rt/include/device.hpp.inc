@@ -40,6 +40,7 @@
 // DPCT_CODE
 #include <sycl/sycl.hpp>
 #include <algorithm>
+#include <array>
 #include <cstring>
 #include <iostream>
 #include <mutex>
@@ -304,6 +305,20 @@ public:
   /// compiler does not support this API then returns default value 64 bits.
   unsigned int get_memory_bus_width() const { return _memory_bus_width; }
 // DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_get_device_id|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  uint32_t get_device_id() const { return _device_id; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_get_uuid|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  std::array<unsigned char, 16> get_uuid() const { return _uuid; }
+// DPCT_LABEL_END
   // set interface
 // DPCT_LABEL_BEGIN|device_info_set_name|dpct
 // DPCT_PARENT_FEATURE|device_info
@@ -478,6 +493,26 @@ public:
     _max_register_size_per_work_group = max_register_size_per_work_group;
   }
 // DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_set_device_id|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  void set_device_id(uint32_t device_id) {
+    _device_id = device_id;
+  }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_set_uuid|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  void set_uuid(std::array<unsigned char, 16> uuid) {
+    _uuid = std::move(uuid);
+  }
+// DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_info_1|dpct
 // DPCT_PARENT_FEATURE|device_info
 // DPCT_DEPENDENCY_BEGIN
@@ -506,6 +541,8 @@ private:
   size_t _local_mem_size;
   size_t _max_nd_range_size[3];
   int _max_nd_range_size_i[3];
+  uint32_t _device_id;
+  std::array<unsigned char, 16> _uuid;
 };
 // DPCT_LABEL_END
 
@@ -768,6 +805,14 @@ public:
     if (this->has(sycl::aspect::ext_intel_memory_bus_width)) {
       prop.set_memory_bus_width(
           this->get_info<sycl::ext::intel::info::device::memory_bus_width>());
+    }
+    if (this->has(sycl::aspect::ext_intel_device_id)) {
+      prop.set_device_id(
+          this->get_info<sycl::ext::intel::info::device::device_id>());
+    }
+    if (this->has(sycl::aspect::ext_intel_device_info_uuid)) {
+      prop.set_uuid(
+          this->get_info<sycl::ext::intel::info::device::uuid>());
     }
 #elif defined(_MSC_VER) && !defined(__clang__)
 #pragma message("get_device_info: querying memory_clock_rate and \

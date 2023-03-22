@@ -32,6 +32,8 @@ std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
     MapNames::TypeNamesMap;
 std::unordered_map<std::string, std::shared_ptr<ClassFieldRule>>
     MapNames::ClassFieldMap;
+MapNames::MapTy MapNames::RandomEngineTypeMap;
+MapNames::MapTy MapNames::DeviceRandomGeneratorTypeMap;
 std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
     MapNames::CuDNNTypeNamesMap;
 std::unordered_map<std::string, std::shared_ptr<EnumNameRule>>
@@ -431,7 +433,48 @@ void MapNames::setExplicitNamespaceMap() {
       {"cuda::std::complex", std::make_shared<TypeNameRule>("std::complex")},
       {"cuda::std::array", std::make_shared<TypeNameRule>("std::array")},
       {"cusolverEigRange_t", std::make_shared<TypeNameRule>("oneapi::mkl::rangev")},
+      {"cudaUUID_t", std::make_shared<TypeNameRule>("std::array<unsigned char, 16>")},
       // ...
+  };
+
+  // Host Random Engine Type mapping
+  RandomEngineTypeMap = {
+      {"CURAND_RNG_PSEUDO_DEFAULT", getDpctNamespace() + "rng::random_engine_type::mcg59"},
+      {"CURAND_RNG_PSEUDO_XORWOW", getDpctNamespace() + "rng::random_engine_type::mcg59"},
+      {"CURAND_RNG_PSEUDO_MRG32K3A", getDpctNamespace() + "rng::random_engine_type::mrg32k3a"},
+      {"CURAND_RNG_PSEUDO_MTGP32", getDpctNamespace() + "rng::random_engine_type::mt2203"},
+      {"CURAND_RNG_PSEUDO_MT19937", getDpctNamespace() + "rng::random_engine_type::mt19937"},
+      {"CURAND_RNG_PSEUDO_PHILOX4_32_10",
+       getDpctNamespace() + "rng::random_engine_type::philox4x32x10"},
+      {"CURAND_RNG_QUASI_DEFAULT", getDpctNamespace() + "rng::random_engine_type::sobol"},
+      {"CURAND_RNG_QUASI_SOBOL32", getDpctNamespace() + "rng::random_engine_type::sobol"},
+      {"CURAND_RNG_QUASI_SCRAMBLED_SOBOL32",
+       getDpctNamespace() + "rng::random_engine_type::sobol"},
+      {"CURAND_RNG_QUASI_SOBOL64", getDpctNamespace() + "rng::random_engine_type::sobol"},
+      {"CURAND_RNG_QUASI_SCRAMBLED_SOBOL64",
+       getDpctNamespace() + "rng::random_engine_type::sobol"},
+  };
+
+  // Device Random Generator Type mapping
+  DeviceRandomGeneratorTypeMap = {
+      {"curandStateXORWOW_t", getDpctNamespace() + "rng::device::rng_generator<oneapi::"
+                              "mkl::rng::device::mcg59<1>>"},
+      {"curandStateXORWOW", getDpctNamespace() + "rng::device::rng_generator<oneapi::"
+                            "mkl::rng::device::mcg59<1>>"},
+      {"curandState_t", getDpctNamespace() + "rng::device::rng_generator<oneapi::mkl::"
+                        "rng::device::mcg59<1>>"},
+      {"curandState", getDpctNamespace() + "rng::device::rng_generator<oneapi::mkl::"
+                      "rng::device::mcg59<1>>"},
+      {"curandStatePhilox4_32_10_t",
+       getDpctNamespace() + "rng::device::rng_generator<oneapi::mkl::rng::device::"
+       "philox4x32x10<1>>"},
+      {"curandStatePhilox4_32_10",
+       getDpctNamespace() + "rng::device::rng_generator<"
+       "oneapi::mkl::rng::device::philox4x32x10<1>>"},
+      {"curandStateMRG32k3a_t", getDpctNamespace() + "rng::device::rng_generator<"
+                                "oneapi::mkl::rng::device::mrg32k3a<1>>"},
+      {"curandStateMRG32k3a", getDpctNamespace() + "rng::device::rng_generator<oneapi::"
+                              "mkl::rng::device::mrg32k3a<1>>"},
   };
 
   // CuDNN Type names mapping.
@@ -4064,47 +4107,6 @@ const std::map<std::string, MapNames::SOLVERFuncReplInfo>
              "oneapi::mkl::lapack::gesvd")},
     };
 
-// Host Random Engine Type mapping
-const MapNames::MapTy MapNames::RandomEngineTypeMap{
-    {"CURAND_RNG_PSEUDO_DEFAULT",
-     "dpct::rng::random_engine_type::philox4x32x10"},
-    {"CURAND_RNG_PSEUDO_XORWOW",
-     "dpct::rng::random_engine_type::philox4x32x10"},
-    {"CURAND_RNG_PSEUDO_MRG32K3A", "dpct::rng::random_engine_type::mrg32k3a"},
-    {"CURAND_RNG_PSEUDO_MTGP32", "dpct::rng::random_engine_type::mt2203"},
-    {"CURAND_RNG_PSEUDO_MT19937", "dpct::rng::random_engine_type::mt19937"},
-    {"CURAND_RNG_PSEUDO_PHILOX4_32_10",
-     "dpct::rng::random_engine_type::philox4x32x10"},
-    {"CURAND_RNG_QUASI_DEFAULT", "dpct::rng::random_engine_type::sobol"},
-    {"CURAND_RNG_QUASI_SOBOL32", "dpct::rng::random_engine_type::sobol"},
-    {"CURAND_RNG_QUASI_SCRAMBLED_SOBOL32",
-     "dpct::rng::random_engine_type::sobol"},
-    {"CURAND_RNG_QUASI_SOBOL64", "dpct::rng::random_engine_type::sobol"},
-    {"CURAND_RNG_QUASI_SCRAMBLED_SOBOL64",
-     "dpct::rng::random_engine_type::sobol"},
-};
-
-// Device Random Generator Type mapping
-const MapNames::MapTy MapNames::DeviceRandomGeneratorTypeMap{
-    {"curandStateXORWOW_t", "dpct::rng::device::rng_generator<oneapi::"
-                            "mkl::rng::device::philox4x32x10<1>>"},
-    {"curandStateXORWOW", "dpct::rng::device::rng_generator<oneapi::"
-                          "mkl::rng::device::philox4x32x10<1>>"},
-    {"curandState_t", "dpct::rng::device::rng_generator<oneapi::mkl::"
-                      "rng::device::philox4x32x10<1>>"},
-    {"curandState", "dpct::rng::device::rng_generator<oneapi::mkl::"
-                    "rng::device::philox4x32x10<1>>"},
-    {"curandStatePhilox4_32_10_t",
-     "dpct::rng::device::rng_generator<oneapi::mkl::rng::device::"
-     "philox4x32x10<1>>"},
-    {"curandStatePhilox4_32_10", "dpct::rng::device::rng_generator<"
-                                 "oneapi::mkl::rng::device::philox4x32x10<1>>"},
-    {"curandStateMRG32k3a_t", "dpct::rng::device::rng_generator<"
-                              "oneapi::mkl::rng::device::mrg32k3a<1>>"},
-    {"curandStateMRG32k3a", "dpct::rng::device::rng_generator<oneapi::"
-                            "mkl::rng::device::mrg32k3a<1>>"},
-};
-
 const std::map<std::string, std::string> MapNames::RandomGenerateFuncMap{
     {"curandGenerate", {"generate_uniform_bits"}},
     {"curandGenerateLongLong", {"generate_uniform_bits"}},
@@ -4178,6 +4180,8 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
      MacroMigrationRule("kernel_param_rule", RulePriority::Fallback,
                         "CU_LAUNCH_PARAM_END", "((void *) 0)",
                         HelperFeatureEnum::Kernel_kernel_library)},
+    {"CUDART_PI_F", MacroMigrationRule("CUDART_PI_F", RulePriority::Fallback,
+                        "CUDART_PI_F", "3.141592654F")}
     //...
 };
 
@@ -4230,6 +4234,8 @@ const MapNames::MapTy DeviceInfoVarRule::PropNamesMap{
     {"maxThreadsDim", "max_work_item_sizes"},
     {"memoryClockRate", "memory_clock_rate"},
     {"memoryBusWidth", "memory_bus_width"},
+    {"pciDeviceID", "device_id"},
+    {"uuid", "uuid"},
     // ...
 };
 
