@@ -1,4 +1,4 @@
-// UNSUPPORTED: -linux-
+// UNSUPPORTED: system-linux
 // RUN: cat %S/SVMbenchmark.vcxproj > %T/SVMbenchmark.vcxproj
 // RUN: dpct -output-file=b_kernel_outputfile_win.txt --format-range=none  --vcxprojfile=%T/SVMbenchmark.vcxproj  -in-root=%S -out-root=%T  %s -extra-arg="-I %S" --cuda-include-path="%cuda-path/include"
 

@@ -1,4 +1,4 @@
-// UNSUPPORTED: -windows-
+// UNSUPPORTED: system-windows
 // RUN: dpct -report-type=apis -report-file-prefix=check_apis_report -out-root %T/check-apis-report %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: cat %S/check-apis-report_csv_ref.txt > %T/check-apis-report/check_apis_report_csv_check.txt
 // RUN: cat %T/check-apis-report/check_apis_report.apis.csv >>%T/check-apis-report/check_apis_report_csv_check.txt

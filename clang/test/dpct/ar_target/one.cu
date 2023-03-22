@@ -1,4 +1,4 @@
-// UNSUPPORTED: -windows-
+// UNSUPPORTED: system-windows
 
 // RUN: cat %S/compile_commands.json > %T/compile_commands.json
 // RUN: cat %S/one.cu > %T/one.cu

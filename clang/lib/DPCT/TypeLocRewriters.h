@@ -104,7 +104,7 @@ public:
     report(MsgID, false, getMsgArg(std::forward<MsgArgs>(Args), TL)...);
   }
 
-  Optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite() override {
     return {};
   }
 };

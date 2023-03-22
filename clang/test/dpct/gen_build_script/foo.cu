@@ -1,4 +1,4 @@
-// UNSUPPORTED: -windows-
+// UNSUPPORTED: system-windows
 // RUN: rm -rf %T/build %T/source && mkdir -p %T/build/objs
 // RUN: mkdir -p %T/build/objs
 // RUN: mkdir %T/source
