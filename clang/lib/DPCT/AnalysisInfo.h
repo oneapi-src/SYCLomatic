@@ -34,9 +34,9 @@
 #include "clang/Format/Format.h"
 #include "clang/Frontend/CompilerInstance.h"
 
-std::optional<std::string> getReplacedName(const clang::NamedDecl *D);
+llvm::StringRef getReplacedName(const clang::NamedDecl *D);
 void setGetReplacedNamePtr(
-    std::optional<std::string> (*Ptr)(const clang::NamedDecl *D));
+    llvm::StringRef (*Ptr)(const clang::NamedDecl *D));
 
 namespace clang {
 namespace dpct {
@@ -1787,6 +1787,12 @@ public:
   }
   static bool useUserDefineReductions() {
     return getUsingExperimental<ExperimentalFeatures::Exp_UserDefineReductions>();
+  }
+  static bool useMaskedSubGroupFunction() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_MaskedSubGroupFunction>();
+  }
+  static bool useExtDPLAPI() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_DPLExperimentalAPI>();
   }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);

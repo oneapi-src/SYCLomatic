@@ -5,9 +5,15 @@
 
 // CHECK: 35
 // TEST_FEATURE: Device_device_ext_get_device_info_return_info
+// TEST_FEATURE: Device_device_info_get_device_id
+// TEST_FEATURE: Device_device_info_set_device_id
+// TEST_FEATURE: Device_device_info_get_uuid
+// TEST_FEATURE: Device_device_info_set_uuid
 
 int main() {
   cudaDeviceProp deviceProp;
   cudaGetDeviceProperties(&deviceProp, 0);
+  deviceProp.uuid;
+  deviceProp.pciDeviceID;
   return 0;
 }

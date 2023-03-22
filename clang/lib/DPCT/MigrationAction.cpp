@@ -70,7 +70,7 @@ bool canCacheMoreTranslateUnit() {
 
     return Available * 100 / Total > MinAvailableMemoryPercent &&
            Available * 1024 > MinAvailableMemorySize;
-  } catch (std::exception) {
+  } catch (std::exception &) {
     /// Return false if any exception
     return false;
   }

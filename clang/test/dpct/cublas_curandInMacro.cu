@@ -162,7 +162,7 @@ int main() {
     //CHECK-NEXT:/*
     //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT:*/
-    //CHECK-NEXT:curandErrCheck((rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::philox4x32x10), 0));
+    //CHECK-NEXT:curandErrCheck((rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::mcg59), 0));
     //CHECK-NEXT:/*
     //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT:*/
