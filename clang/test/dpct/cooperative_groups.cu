@@ -166,4 +166,28 @@ __device__ void foo() {
   ctile16.size();
   // CHECK: tile16.get_local_linear_range();
   tile16.size();
+
+  // X.shfl_down()
+  // CHECK-COUNT-5: sycl::shift_group_left(item_ct1.get_sub_group(), 1, 0);
+  cg::tiled_partition<32>(block).shfl_down(1, 0);
+  catile32.shfl_down(1, 0);
+  atile32.shfl_down(1, 0);
+  ctile32.shfl_down(1, 0);
+  tile32.shfl_down(1, 0);
+
+  // CHECK-COUNT-5: dpct::shift_sub_group_left(item_ct1.get_sub_group(), 1, 0, 16);
+  cg::tiled_partition<16>(block).shfl_down(1, 0);
+  catile16.shfl_down(1, 0);
+  atile16.shfl_down(1, 0);
+  ctile16.shfl_down(1, 0);
+  tile16.shfl_down(1, 0);
+
+  // CHECK: dpct::shift_sub_group_left(item_ct1.get_sub_group(), 1, 0, 8);
+  cg::tiled_partition<8>(block).shfl_down(1, 0);
+  // CHECK: dpct::shift_sub_group_left(item_ct1.get_sub_group(), 1, 0, 4);
+  cg::tiled_partition<4>(block).shfl_down(1, 0);
+  // CHECK: dpct::shift_sub_group_left(item_ct1.get_sub_group(), 1, 0, 2);
+  cg::tiled_partition<2>(block).shfl_down(1, 0);
+  // CHECK: dpct::shift_sub_group_left(item_ct1.get_sub_group(), 1, 0, 1);
+  cg::tiled_partition<1>(block).shfl_down(1, 0);
 }

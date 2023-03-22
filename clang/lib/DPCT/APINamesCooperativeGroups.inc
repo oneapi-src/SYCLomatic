@@ -292,7 +292,7 @@ CASE_FACTORY_ENTRY(
 /*
   --- X.shfl_down() ---
   cg::thread_block_tile<32>::shfl_down(v, delta)
-  => MemberExprBase().shfl_down(v, delta)
+  => sycl::shift_group_left(item_ct1.get_sub_group(), v, delta)
 
   cg::thread_block_tile<N>::shfl_down(v, delta) if N in {1,2,4,8,16}
   => dpct::shift_sub_group_left(item_ct1.get_sub_group(), v, delta, N)
@@ -300,9 +300,10 @@ CASE_FACTORY_ENTRY(
 // for cuda <= 10.2
 CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(32),
-         MEMBER_CALL_FACTORY_ENTRY(
+         CALL_FACTORY_ENTRY(
              "cooperative_groups::__v1::__thread_block_tile_base.shfl_down",
-             MemberExprBase(), false, "shuffle_down", ARG(0), ARG(1))),
+             CALL(MapNames::getClNamespace() + "shift_group_left",
+                  SUBGROUP, ARG(0), ARG(1)))),
     CASE(baseHasThreadBlockTileType(16),
          FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::Util_shift_sub_group_left,
@@ -345,9 +346,10 @@ CASE_FACTORY_ENTRY(
 // for cuda >= 11.0
 CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(32),
-         MEMBER_CALL_FACTORY_ENTRY(
+         CALL_FACTORY_ENTRY(
              "cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_down",
-             MemberExprBase(), false, "shuffle_down", ARG(0), ARG(1))),
+             CALL(MapNames::getClNamespace() + "shift_group_left",
+                  SUBGROUP, ARG(0), ARG(1)))),
     CASE(baseHasThreadBlockTileType(16),
          FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::Util_shift_sub_group_left,
