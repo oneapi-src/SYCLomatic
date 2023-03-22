@@ -9326,6 +9326,9 @@ void DeviceFunctionDeclRule::runRule(
   if (FD->isVariadic()) {
     report(FD->getBeginLoc(), Warnings::DEVICE_VARIADIC_FUNCTION, false);
   }
+  if (FD->isVirtualAsWritten()) {
+    report(FD->getBeginLoc(), Warnings::DEVICE_VIRTUAL_FUNCTION, false);
+  }
   FuncInfo = DeviceFunctionDecl::LinkRedecls(FD);
   if (!FuncInfo)
     return;
