@@ -30,14 +30,14 @@ __global__ void memberAcc() {
 }
 
 // CHECK: void nonTypeTemplateReverse(int *d, int n, const sycl::nd_item<3> &[[ITEM:item_ct1]],
-// CHECK-NEXT: std::complex<int> *s) {
+// CHECK-NEXT: sycl::int2 *s) {
 // CHECK-NEXT:  // the size of s is dependent on parameter
 template <int ArraySize>
 __global__ void nonTypeTemplateReverse(int *d, int n) {
-  __shared__ std::complex<int> s[2*ArraySize*ArraySize]; // the size of s is dependent on parameter
+  __shared__ int2 s[2*ArraySize*ArraySize]; // the size of s is dependent on parameter
   int t = threadIdx.x;
   if (t < 64) {
-    s[t] = d[t];
+    s[t] = int2{d[t], 0};
   }
 }
 

@@ -5,5 +5,4 @@
 // CHECK-NEXT: #include <math.h>
 #include <math.h>
 
-__global__ void header3() {
-}
+__global__ void header3();

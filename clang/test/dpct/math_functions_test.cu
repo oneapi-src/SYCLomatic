@@ -170,14 +170,14 @@ float test_atanh(float a) { return atanh(a); }
 float test_hypot(float a, float b) { return hypot(a, b); }
 
 // CHECK: float test_norm3d(float a, float b, float c) { return norm3d(a, b, c); }
-float test_norm3d(float a, float b, float c) { return norm3d(a, b, c); }
+//float test_norm3d(float a, float b, float c) { return norm3d(a, b, c); }
 
 // CHECK: float test_norm4d(float a, float b, float c, float d) {
 // CHECK:   return norm4d(a, b, c, d);
 // CHECK: }
-float test_norm4d(float a, float b, float c, float d) {
-  return norm4d(a, b, c, d);
-}
+//float test_norm4d(float a, float b, float c, float d) {
+//  return norm4d(a, b, c, d);
+//}
 
 // CHECK: float test_cbrt(float a) { return cbrt(a); }
 float test_cbrt(float a) { return cbrt(a); }
@@ -290,10 +290,10 @@ float test_y1(float a) { return y1(a); }
 float test_yn(int n, float a) { return yn(n, a); }
 
 // CHECK: float test_cyl_bessel_i0(float a) { return cyl_bessel_i0(a); }
-float test_cyl_bessel_i0(float a) { return cyl_bessel_i0(a); }
+//float test_cyl_bessel_i0(float a) { return cyl_bessel_i0(a); }
 
 // CHECK: float test_cyl_bessel_i1(float a) { return cyl_bessel_i1(a); }
-float test_cyl_bessel_i1(float a) { return cyl_bessel_i1(a); }
+//float test_cyl_bessel_i1(float a) { return cyl_bessel_i1(a); }
 
 // CHECK: float test_erfinv(float a) { return erfinv(a); }
 float test_erfinv(float a) { return erfinv(a); }

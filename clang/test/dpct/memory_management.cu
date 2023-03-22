@@ -6,7 +6,7 @@
 #include <cuda_runtime.h>
 #include<cuda.h>
 
-__constant__ float constData[1234567 * 4];
+__constant__ float constData[123 * 4];
 
 // CHECK: template<typename T>
 //CHECK-NEXT: void test(){

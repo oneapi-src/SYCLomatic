@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <memory>
 
-__constant__ float constData[1234567 * 4];
+__constant__ float constData[123 * 4];
 
 void foo() {
   size_t size = 1234567 * sizeof(float);

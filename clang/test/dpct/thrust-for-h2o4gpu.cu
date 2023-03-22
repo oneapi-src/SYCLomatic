@@ -585,10 +585,6 @@ public:
   FooType m_Stream;
 };
 
-struct my_math {
-  __host__ __device__ int operator()(int &r) { return r + 1; }
-};
-
 template <typename InputType, typename OutputType>
 void myfunction(const std::shared_ptr<const Container<InputType>> &inImageData,
                 int *dev_a, int *dev_b) {

@@ -2691,9 +2691,6 @@ __host__ __device__ void do_migration4() {
   // CHECK: sycl::max(i, j);
   max(i, j);
 }
-int max(int i, int j) {
-  return i > j ? i : j;
-}
 namespace t {
 int max(int i, int j) {
   return i > j ? i : j;
