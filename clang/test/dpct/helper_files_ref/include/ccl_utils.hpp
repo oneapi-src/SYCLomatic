@@ -146,26 +146,6 @@ public:
                                   rtype, _comm, ccl_stream);
   };
 
-  /// \brief allgather is a collective communication operation that collects data
-  ///        from all the ranks within a communicator into a single buffer.
-  ///        Different ranks may contribute segments of different sizes.
-  ///        The resulting data in the output buffer must be the same for each rank.
-  /// \param send_buf the buffer with @c count elements of @c dtype that stores local data to be reduced
-  /// \param recv_buf [out] the buffer to store reduced result, must have the same dimension as @c send_buf
-  /// \param send_count the number of elements of type @c dtype in @c send_buf
-  /// \param dtype the datatype of elements in @c send_buf and @c recv_buf
-  /// \param stream a sycl::queue ptr associated with the operation
-  /// \return @ref return oneapi::ccl::event to track the progress of the operation
-  oneapi::ccl::event allgather(const void *sendbuff, void *recvbuff,
-                               size_t send_count, dpct::library_data_t dtype,
-                               sycl::queue *stream) {
-    const oneapi::ccl::stream &ccl_stream = get_ccl_stream(stream);
-    std::vector<size_t> tmp;
-    return oneapi::ccl::allgatherv(sendbuff, send_count, recvbuff, tmp,
-                                   dpct::ccl::detail::to_ccl_datatype(dtype),
-                                   _comm, ccl_stream);
-  };
-
   /// \brief reduce is a collective communication operation that performs the
   ///        global reduction operation on values from all ranks of the communicator
   ///        and returns the result to the root rank.

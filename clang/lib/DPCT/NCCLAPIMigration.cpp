@@ -25,7 +25,7 @@ void clang::dpct::NCCLRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                    "ncclGetVersion", "ncclGetUniqueId", "ncclCommInitRank",
                    "ncclCommCount", "ncclCommCuDevice", "ncclAllReduce",
                    "ncclCommUserRank", "ncclBroadcast", "ncclCommDestroy",
-                   "ncclReduce", "ncclAllGather", "ncclReduceScatter"))))
+                   "ncclReduce", "ncclReduceScatter"))))
           .bind("call"),
       this);
   MF.addMatcher(

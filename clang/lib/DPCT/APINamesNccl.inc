@@ -74,11 +74,6 @@ FEATURE_REQUEST_FACTORY(
                                   ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
                                   ARG(7))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::CclUtils_communicator_ext_allgather,
-                        MEMBER_CALL_FACTORY_ENTRY("ncclAllGather", ARG(4), true,
-                                                  "allgather", ARG(0), ARG(1),
-                                                  ARG(2), ARG(3), ARG(5)))
-
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::CclUtils_communicator_ext_reduce_scatter,
     CONDITIONAL_FACTORY_ENTRY(

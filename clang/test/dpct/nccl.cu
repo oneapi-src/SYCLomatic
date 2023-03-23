@@ -133,9 +133,6 @@ int main() {
     // CHECK: comm->broadcast(recvbuff, count, dpct::library_data_t::real_int8, rank, stream);
     ncclBroadcast(buff, recvbuff, count, ncclChar, rank, comm, stream);
 
-    // CHECK: comm->allgather(buff, recvbuff, count, dpct::library_data_t::real_int8, stream);
-    ncclAllGather(buff, recvbuff, count, ncclChar, comm, stream);
-
     // CHECK: comm->reduce_scatter(buff, recvbuff, count, dpct::library_data_t::real_int8, oneapi::ccl::reduction::sum, stream);
     ncclReduceScatter(buff, recvbuff, count, ncclChar, ncclSum, comm, stream);
 
