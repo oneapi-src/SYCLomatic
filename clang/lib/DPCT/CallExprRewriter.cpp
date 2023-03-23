@@ -57,6 +57,12 @@ DerefExpr DerefExpr::create(const Expr *E, const CallExpr * C) {
   }
 
   D.NeedParens = needExtraParens(E);
+  if (const auto UO =
+          dyn_cast_or_null<UnaryOperator>(E->IgnoreImpCasts())) {
+    if (UO->getOpcode() == UnaryOperatorKind::UO_Deref) {
+      D.NeedParens = false;
+    }
+  }  
   return D;
 }
 
