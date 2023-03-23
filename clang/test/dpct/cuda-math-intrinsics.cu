@@ -2137,31 +2137,31 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: */
   f = jnf(i, f);
 
-  // CHECK: f = sycl::fast_length(sycl::float3(f, f, f));
+  // CHECK: f = sycl::length(sycl::float3(f, f, f));
   f = norm3df(f, f, f);
-  // CHECK: f = sycl::fast_length(sycl::float4(f, f, f, f));
+  // CHECK: f = sycl::length(sycl::float4(f, f, f, f));
   f = norm4df(f, f, f, f);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdff is not supported.
-  // CHECK-NEXT: */
+  // CHECK: f = sycl::erfc(f / -sycl::sqrt(2.0)) / 2;
   f = normcdff(f);
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdfinvf is not supported.
   // CHECK-NEXT: */
   f = normcdfinvf(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normf is not supported.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the normf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
+  // CHECK-NEXT: f = dpct::length(&f, i);
   f = normf(i, &f);
   // CHECK: f = sycl::native::recip((float)sycl::cbrt(f));
   f = rcbrtf(f);
-  // CHECK: f = sycl::native::recip(sycl::fast_length(sycl::float3(f, f, f)));
+  // CHECK: f = sycl::native::recip(sycl::length(sycl::float3(f, f, f)));
   f = rnorm3df(f, f, f);
-  // CHECK: f = sycl::native::recip(sycl::fast_length(sycl::float4(f, f, f, f)));
+  // CHECK: f = sycl::native::recip(sycl::length(sycl::float4(f, f, f, f)));
   f = rnorm4df(f, f, f, f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of rnormf is not supported.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the rnormf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
+  // CHECK-NEXT: f = sycl::native::recip(dpct::length(&f, i));
   f = rnormf(i, &f);
   // CHECK: f = f*(2<<l);
   f = scalblnf(f, l);
@@ -2210,15 +2210,16 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of jn is not supported.
   // CHECK-NEXT: */
   d = jn(i, d);
-  // CHECK: d = dpct::fast_length((float *)&d, i);
-  d = norm(i, &d);
-  // CHECK: d = sycl::fast_length(sycl::float3(d, d, d));
-  d = norm3d(d, d, d);
-  // CHECK: d = sycl::fast_length(sycl::float4(d, d, d, d));
-  d = norm4d(d, d, d, d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdf is not supported.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the norm call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
+  // CHECK-NEXT: d = dpct::length(&d, i);
+  d = norm(i, &d);
+  // CHECK: d = sycl::length(sycl::double3(d, d, d));
+  d = norm3d(d, d, d);
+  // CHECK: d = sycl::length(sycl::double4(d, d, d, d));
+  d = norm4d(d, d, d, d);
+  // CHECK:  d = sycl::erfc(d / -sycl::sqrt(2.0)) / 2;
   d = normcdf(d);
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdfinv is not supported.
@@ -2226,13 +2227,14 @@ __global__ void testUnsupported() {
   d = normcdfinv(d);
   // CHECK: d = sycl::native::recip((float)sycl::cbrt(d));
   d = rcbrt(d);
-  // CHECK: d = sycl::native::recip(sycl::fast_length(sycl::float3(d, d, d)));
+  // CHECK: d = 1 / sycl::length(sycl::double3(d, d, d));
   d = rnorm3d(d, d, d);
-  // CHECK: d = sycl::native::recip(sycl::fast_length(sycl::float4(d, d, d, d)));
+  // CHECK: d = 1 / sycl::length(sycl::double4(d, d, d, d));
   d = rnorm4d(d, d, d, d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of rnorm is not supported.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the rnorm call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
+  // CHECK-NEXT: d = 1 / dpct::length(&d, i);
   d = rnorm(i, &d);
   // CHECK: d = d*(2<<l);
   d = scalbln(d, l);
@@ -3034,25 +3036,25 @@ __global__ void k2() {
   erfcx(d0);
   // CHECK: sycl::exp(f0*f0)*sycl::erfc(f0);
   erfcxf(f0);
-  // CHECK: sycl::fast_length(sycl::float3(d0, d1, d2));
+  // CHECK: sycl::length(sycl::double3(d0, d1, d2));
   norm3d(d0, d1, d2);
-  // CHECK: sycl::fast_length(sycl::float3(f0, f1, f2));
+  // CHECK: sycl::length(sycl::float3(f0, f1, f2));
   norm3df(f0, f1, f2);
-  // CHECK: sycl::fast_length(sycl::float4(d0, d1, d2, d3));
+  // CHECK: sycl::length(sycl::double4(d0, d1, d2, d3));
   norm4d(d0, d1, d2, d3);
-  // CHECK: sycl::fast_length(sycl::float4(f0, f1, f2, f3));
+  // CHECK: sycl::length(sycl::float4(f0, f1, f2, f3));
   norm4df(f0, f1, f2, f3);
   // CHECK: sycl::native::recip((float)sycl::cbrt(d0));
   rcbrt(d0);
   // CHECK: sycl::native::recip((float)sycl::cbrt(f0));
   rcbrtf(f0);
-  // CHECK: sycl::native::recip(sycl::fast_length(sycl::float3(d0, d1, d2)));
+  // CHECK: 1 / sycl::length(sycl::double3(d0, d1, d2));
   rnorm3d(d0, d1, d2);
-  // CHECK: sycl::native::recip(sycl::fast_length(sycl::float3(f0, f1, f2)));
+  // CHECK: sycl::native::recip(sycl::length(sycl::float3(f0, f1, f2)));
   rnorm3df(f0, f1, f2);
-  // CHECK: sycl::native::recip(sycl::fast_length(sycl::float4(d0, d1, d2, d3)));
+  // CHECK: 1 / sycl::length(sycl::double4(d0, d1, d2, d3));
   rnorm4d(d0, d1, d2, d3);
-  // CHECK: sycl::native::recip(sycl::fast_length(sycl::float4(f0, f1, f2, f3)));
+  // CHECK: sycl::native::recip(sycl::length(sycl::float4(f0, f1, f2, f3)));
   rnorm4df(f0, f1, f2, f3);
   // CHECK: d0*(2<<l);
   scalbln(d0, l);
@@ -3134,17 +3136,35 @@ __global__ void k2() {
   u = __vcmpgtu4(u, u2);
 
   double *a_d;
-  // CHECK: 0;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the norm call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::length(a_d, 0);
   norm(0, a_d);
-  // CHECK: sycl::fast_length((float)a_d[0]);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the norm call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::length(a_d, 1);
   norm(1, a_d);
-  // CHECK: sycl::fast_length(sycl::float2(a_d[0], a_d[1]));
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the norm call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::length(a_d, 2);
   norm(2, a_d);
-  // CHECK: sycl::fast_length(sycl::float3(a_d[0], a_d[1], a_d[2]));
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the norm call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::length(a_d, 3);
   norm(3, a_d);
-  // CHECK: sycl::fast_length(sycl::float4(a_d[0], a_d[1], a_d[2], a_d[3]));
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the norm call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::length(a_d, 4);
   norm(4, a_d);
-  // CHECK: dpct::fast_length((float *)a_d, 5);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the norm call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::length(a_d, 5);
   norm(5, a_d);
 }
 
