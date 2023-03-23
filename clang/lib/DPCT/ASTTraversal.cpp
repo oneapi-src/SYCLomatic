@@ -11015,11 +11015,14 @@ void MemoryMigrationRule::prefetchMigration(
 
     // In clang "define NULL __null"
     if (StmtStrArg3 == "0" || StmtStrArg3 == "") {
+      const auto Prefix =
+          MapNames::getDpctNamespace() +
+          (StmtStrArg2 == "cudaCpuDeviceId"
+               ? +"cpu_device()"
+               : "dev_mgr::instance().get_device(" + StmtStrArg2 + ")");
       requestFeature(HelperFeatureEnum::Device_dev_mgr_get_device, C);
       requestFeature(HelperFeatureEnum::Device_device_ext_default_queue, C);
-      Replacement = MapNames::getDpctNamespace() +
-                    "dev_mgr::instance().get_device(" + StmtStrArg2 +
-                    ").default_queue().prefetch(" + StmtStrArg0 + "," +
+      Replacement = Prefix + ".default_queue().prefetch(" + StmtStrArg0 + "," +
                     StmtStrArg1 + ")";
     } else {
       if (SM->getCharacterData(C->getArg(3)->getBeginLoc()) -
