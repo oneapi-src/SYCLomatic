@@ -195,6 +195,8 @@ void checkError(cudaError_t err) {
 
 void cuCheckError(CUresult err) {
 }
+//CHECK: #define PITCH(a,b,c,d) a = (float *)dpct::dpct_malloc(b, c, d);
+#define PITCH(a,b,c,d) cudaMallocPitch(a, b, c, d);
 
 void testCommas() {
   size_t size = 1234567 * sizeof(float);
@@ -219,10 +221,13 @@ void testCommas() {
 
   // CHECK: d_A = (float *)dpct::dpct_malloc(size, size, size);
   cudaMallocPitch((void **)&d_A, &size, size, size);
+
+  // CHECK: PITCH((void **)&d_A, &size, size, size);
+  PITCH((void **)&d_A, &size, size, size);
   int sz;
-  // CHECK: d_A = (float *)dpct::dpct_malloc(*((size_t *)&size), size, size);
+  // CHECK: d_A = (float *)dpct::dpct_malloc(*(size_t *)&size, size, size);
   cudaMallocPitch((void **)&d_A, (size_t *)&size, size, size);
-  // CHECK: d_A = (float *)dpct::dpct_malloc(*((size_t *)&sz), size, size);
+  // CHECK: d_A = (float *)dpct::dpct_malloc(*(size_t *)&sz, size, size);
   cudaMallocPitch((void **)&d_A, (size_t *)&sz, size, size);
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
