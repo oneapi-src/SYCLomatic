@@ -5,7 +5,6 @@
 
 
 // CHECK: begin
-// CHECK-NEXT: DplExtrasAlgorithm_gather_if
 // CHECK-NEXT: end
 
 
