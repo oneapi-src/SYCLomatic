@@ -210,34 +210,6 @@ inline double cast_ints_to_double(int high32, int low32) {
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|fast_length|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-/// Compute fast_length for variable-length array
-/// \param [in] a The array
-/// \param [in] len Length of the array
-/// \returns The computed fast_length
-inline float fast_length(const float *a, int len) {
-  switch (len) {
-  case 1:
-    return sycl::fast_length(a[0]);
-  case 2:
-    return sycl::fast_length(sycl::float2(a[0], a[1]));
-  case 3:
-    return sycl::fast_length(sycl::float3(a[0], a[1], a[2]));
-  case 4:
-    return sycl::fast_length(sycl::float4(a[0], a[1], a[2], a[3]));
-  case 0:
-    return 0;
-  default:
-    float f = 0;
-    for (int i = 0; i < len; ++i)
-      f += a[i] * a[i];
-    return sycl::sqrt(f);
-  }
-}
-// DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|vectorized_max|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE

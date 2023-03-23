@@ -640,6 +640,7 @@ class DerefExpr {
     if (!AddrOfRemoved && !IgnoreDerefOp)
       Stream << "*";
 
+    AA.setCallSpelling(C);
     if (NeedParens) {
       printWithParens(Stream, AA, P);
     } else {
@@ -652,7 +653,7 @@ class DerefExpr {
 public:
   template <class StreamT>
   void printArg(StreamT &Stream, ArgumentAnalysis &A) const {
-    print(Stream, A, false);
+    print(Stream);
   }
   template <class StreamT> void printMemberBase(StreamT &Stream) const {
     ExprAnalysis EA;
@@ -666,6 +667,7 @@ public:
       print(Stream, EA, false);
     } else {
       ArgumentAnalysis AA;
+
       std::pair<const CallExpr*, const Expr*> ExprPair(C, E);
       print(Stream, AA, false, ExprPair);
     }
