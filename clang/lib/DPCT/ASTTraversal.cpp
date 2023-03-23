@@ -34,6 +34,8 @@
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/Path.h"
 #include "MemberExprRewriter.h"
+#include "clang/Analysis/CallGraph.h"
+#include "llvm/ADT/SCCIterator.h"
 
 #include <algorithm>
 #include <iostream>
@@ -9329,6 +9331,22 @@ void DeviceFunctionDeclRule::runRule(
   if (FD->isVirtualAsWritten()) {
     report(FD->getBeginLoc(), Warnings::DEVICE_VIRTUAL_FUNCTION, false);
   }
+
+  // Build call graph for FunctionDecl and look for cycles in call graph.
+  // Emit the warning message when the recursive call exists in kernel function.
+  CallGraph CG;
+  CG.addToCallGraph(const_cast<FunctionDecl *>(FD));
+  for (llvm::scc_iterator<CallGraph *> SCCI = llvm::scc_begin(&CG),
+                              SCCE = llvm::scc_end(&CG);
+                              SCCI != SCCE; ++SCCI) {
+    if (SCCI.hasCycle()) {
+      for (auto node : *SCCI) {
+        FunctionDecl *RecFD = node->getDefinition();
+        report(RecFD->getBeginLoc(), Warnings::DEVICE_RECURSIVE_FUNCTION, false);
+      }
+    }
+  }
+
   FuncInfo = DeviceFunctionDecl::LinkRedecls(FD);
   if (!FuncInfo)
     return;

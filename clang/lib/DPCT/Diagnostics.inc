@@ -233,3 +233,5 @@ DEF_WARNING(EXPERIMENTAL_FEATURE, 1108, "'%0' was migrated with the experimental
 DEF_COMMENT(EXPERIMENTAL_FEATURE, 1108, "'{0}' was migrated with the experimental feature {0} which may not be supported by all compilers or runtimes. You may need to adjust the code.")
 DEF_WARNING(DEVICE_VIRTUAL_FUNCTION, 1109, "Virtual functions cannot be called in a SYCL kernel or by functions called by the kernel. You may need to adjust the code.")
 DEF_COMMENT(DEVICE_VIRTUAL_FUNCTION, 1109, "Virtual functions cannot be called in a SYCL kernel or by functions called by the kernel. You may need to adjust the code.")
+DEF_WARNING(DEVICE_RECURSIVE_FUNCTION, 1110, "Recursive functions cannot be called in a SYCL kernel or by functions called by the kernel. You may need to adjust the code.")
+DEF_COMMENT(DEVICE_RECURSIVE_FUNCTION, 1110, "Recursive functions cannot be called in a SYCL kernel or by functions called by the kernel. You may need to adjust the code.")

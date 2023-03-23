@@ -1,0 +1,28 @@
+#include<cuda.h>
+// CHECK: /*
+// CHECK-NEXT: DPCT1110:{{[0-9]+}}: Recursive functions cannot be called in a SYCL kernel or by functions called by the kernel. You may need to adjust the code.
+// CHECK-NEXT: */
+__device__ int factorial(int n) {
+    if (n <= 1) {
+        return 1;
+    } else {
+        return n * factorial(n - 1);
+    }
+}
+
+__global__ void test_kernel() {
+    factorial(10);
+}
+
+
+int factorial2(int n) {
+    if (n <= 1) {
+        return 1;
+    } else {
+        return n * factorial2(n - 1);
+    }
+}
+
+int main() {
+    test_kernel<<<1,1>>>();
+}
