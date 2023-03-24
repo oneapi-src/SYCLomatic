@@ -9329,7 +9329,8 @@ void DeviceFunctionDeclRule::runRule(
     report(FD->getBeginLoc(), Warnings::DEVICE_VARIADIC_FUNCTION, false);
   }
   if (FD->isVirtualAsWritten()) {
-    report(FD->getBeginLoc(), Warnings::DEVICE_VIRTUAL_FUNCTION, false);
+    report(FD->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
+                              false, "Virtual functions");
   }
 
   // Build call graph for FunctionDecl and look for cycles in call graph.
@@ -9342,7 +9343,8 @@ void DeviceFunctionDeclRule::runRule(
     if (SCCI.hasCycle()) {
       for (auto node : *SCCI) {
         FunctionDecl *RecFD = node->getDefinition();
-        report(RecFD->getBeginLoc(), Warnings::DEVICE_RECURSIVE_FUNCTION, false);
+        report(RecFD->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
+                                      false, "Recursive functions");
       }
     }
   }
