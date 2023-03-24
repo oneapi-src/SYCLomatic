@@ -90,7 +90,8 @@ private:
 // DPCT_CODE
 /// Computes a CSR format sparse matrix-dense vector product.
 /// y = alpha * op(A) * x + beta * y
-/// \param [in] queue The queue where the routine should be executed.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] trans The operation applied to the matrix A.
 /// \param [in] num_rows Number of rows of the matrix A.
 /// \param [in] num_cols Number of columns of the matrix A.
@@ -173,7 +174,8 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
 // DPCT_CODE
 /// Computes a CSR format sparse matrix-dense matrix product.
 /// C = alpha * op(A) * B + beta * C
-/// \param [in] queue The queue where the routine should be executed.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] trans The operation applied to the matrix A.
 /// \param [in] sparse_rows Number of rows of the matrix A.
 /// \param [in] dense_cols Number of columns of the matrix B or C.
@@ -277,7 +279,8 @@ private:
 // DPCT_CODE
 /// Performs internal optimizations for solving a system of linear equations for
 /// a CSR format sparse matrix.
-/// \param [in] queue The queue where the routine should be executed.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] trans The operation applied to the sparse matrix.
 /// \param [in] row_col Number of rows of the sparse matrix.
 /// \param [in] info Matrix info of the sparse matrix.
