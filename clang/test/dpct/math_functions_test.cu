@@ -1,4 +1,4 @@
-// UNSUPPORTED: -windows-
+// UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none -out-root %T/math_functions_test %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/math_functions_test/math_functions_test.dp.cpp --match-full-lines %s
 
@@ -167,11 +167,11 @@ float test_atanh(float a) { return atanh(a); }
 // CHECK: float test_hypot(float a, float b) { return hypot(a, b); }
 float test_hypot(float a, float b) { return hypot(a, b); }
 
-// CHECK: float test_norm3d(float a, float b, float c) { return norm3d(a, b, c); }
+// CHECK: float test_norm3d(float a, float b, float c) { return sycl::length(sycl::double3(a, b, c)); }
 float test_norm3d(float a, float b, float c) { return norm3d(a, b, c); }
 
 // CHECK: float test_norm4d(float a, float b, float c, float d) {
-// CHECK:   return norm4d(a, b, c, d);
+// CHECK:   return sycl::length(sycl::double4(a, b, c, d));
 // CHECK: }
 float test_norm4d(float a, float b, float c, float d) {
   return norm4d(a, b, c, d);
@@ -302,7 +302,7 @@ float test_erfcinv(float a) { return erfcinv(a); }
 // CHECK: float test_normcdfinv(float a) { return normcdfinv(a); }
 float test_normcdfinv(float a) { return normcdfinv(a); }
 
-// CHECK: float test_normcdf(float a) { return normcdf(a); }
+// CHECK: float test_normcdf(float a) { return sycl::erfc((double)a / -sycl::sqrt(2.0)) / 2; }
 float test_normcdf(float a) { return normcdf(a); }
 
 // CHECK: float test_erfcx(float a) { return erfcx(a); }

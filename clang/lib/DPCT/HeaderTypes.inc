@@ -50,6 +50,7 @@ STD_HEADER(DL, "<dlfcn.h>")
 ONEDPL_HEADER(Algorithm, "<oneapi/dpl/algorithm>")
 ONEDPL_HEADER(Execution, "<oneapi/dpl/execution>")
 ONEDPL_HEADER(Iterator, "<oneapi/dpl/iterator>")
+ONEDPL_HEADER(Async, "<oneapi/dpl/async>")
 
 MKL_HEADER(Mkl, "<oneapi/mkl.hpp>")
 MKL_HEADER(RNG, "<oneapi/mkl/rng/device.hpp>")
