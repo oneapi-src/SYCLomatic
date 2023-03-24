@@ -419,11 +419,6 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<std::string>), ExcludeP
         llvm::cl::desc("Excludes the specified directory or file from processing."),
         llvm::cl::value_desc("dir|file"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
 
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), OptimizeMigrationAll, "optimize-migration-all",
-        llvm::cl::desc("Generates SYCL code applying more aggressive assumptions that potentially\n"
-                   "may alter the semantics of your program. Default: off."),
-        llvm::cl::cat(DPCTCat), llvm::cl::init(false))
-
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), NoIncrementalMigration, "no-incremental-migration",
         llvm::cl::desc("Tells the tool to not perform an incremental migration.\n"
                    "Default: off (incremental migration happens)."),

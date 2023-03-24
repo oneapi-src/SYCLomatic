@@ -328,6 +328,30 @@ bool printOptions(
                Value)
         Opts.emplace_back("--usm-level=none");
     }
+    if (Key == clang::dpct::OPTION_OptimizeMigration && Specified) {
+      std::vector<std::string> Values;
+      unsigned int UValue = std::stoul(Value);
+      if (UValue & (1 << static_cast<unsigned>(OptimizeMigration::Opt_All))) {
+        Values.emplace_back("all");
+      }
+      if (UValue & (1 << static_cast<unsigned>(OptimizeMigration::Opt_InlineKernel))) {
+        Values.emplace_back("inline-kernel-function ");
+      }
+      if (UValue & (1 << static_cast<unsigned>(OptimizeMigration::Opt_MathMigration))) {
+        Values.emplace_back("optimize-math-migration");
+      }
+      if (UValue &
+          (1 << static_cast<unsigned>(OptimizeMigration::Opt_NullKernelArg))) {
+        Values.emplace_back("null-kernel-arg");
+      }
+
+      std::string Str;
+      if (!Values.empty())
+        Str += "--optimize-migration=";
+      for (auto &I : Values)
+        Str = Str + I + ",";
+      Opts.emplace_back(Str.substr(0, Str.size() - 1));
+    }
     if (Key == clang::dpct::OPTION_EnablepProfiling) {
       if ("true" == Value)
         Opts.emplace_back("--enable-profiling");
