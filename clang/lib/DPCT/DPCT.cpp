@@ -120,7 +120,6 @@ bool StopOnParseErr = false;
 bool CheckUnicodeSecurityFlag = false;
 bool EnablepProfilingFlag = false;
 bool SyclNamedLambdaFlag = false;
-bool AlwaysInlineDevFuncFlag = false;
 bool ExplicitClNamespace = false;
 bool NoDRYPatternFlag = false;
 bool NoUseGenericSpaceFlag = false;
@@ -881,7 +880,6 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setExtensionDDFlag(UseDPCPPExtensions.getBits());
   DpctGlobalInfo::setAssumedNDRangeDim(
       (NDRangeDim == AssumedNDRangeDimEnum::ARE_Dim1) ? 1 : 3);
-  DpctGlobalInfo::setOptimizeMigrationAllFlag(OptimizeMigrationAll.getValue());
   DpctGlobalInfo::setOptimizeMigrationFlag(Optimizes.getBits());
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRoot;
@@ -983,9 +981,6 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_UsmLevel,
                      static_cast<unsigned int>(DpctGlobalInfo::getUsmLevel()),
                      USMLevel.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_OptimizeMigrationAll,
-                     OptimizeMigrationAll.getValue(),
-                     OptimizeMigrationAll.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_OptimizeMigration,
                   DpctGlobalInfo::getOptimizeMigrationFlag(),
                   Optimizes.getNumOccurrences());

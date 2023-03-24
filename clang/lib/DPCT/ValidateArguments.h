@@ -78,7 +78,8 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_DPLExperimentalAPI
 };
 enum class OptimizeMigration : unsigned int {
-  Opt_RemoveNotReferencedKernelArg = 0,
+  Opt_All = 0,
+  Opt_NullKernelArg,
   Opt_MathMigration,
   Opt_InlineKernel,
 };

@@ -975,7 +975,7 @@ public:
   inline static unsigned getExtensionDDFlag() { return ExtensionDDFlag; }
 
   template <OptimizeMigration Exp> static bool getOptimizeMigration() {
-    if (isOptimizeMigrationAll()) return true;
+    if (OptimizeMigrationFlag & 0x1) return true;
     return OptimizeMigrationFlag & (1 << static_cast<unsigned>(Exp));
   }
   static void setOptimizeMigrationFlag(unsigned Flag) { OptimizeMigrationFlag = Flag; }
@@ -1794,8 +1794,8 @@ public:
   static bool useUserDefineReductions() {
     return getUsingExperimental<ExperimentalFeatures::Exp_UserDefineReductions>();
   }
-  static bool useRemoveNotReferenedKernelArg() {
-    return getOptimizeMigration<OptimizeMigration::Opt_RemoveNotReferencedKernelArg>();
+  static bool useNullKernelArg() {
+    return getOptimizeMigration<OptimizeMigration::Opt_NullKernelArg>();
   }
   static bool useOptMathMigration() {
     return getOptimizeMigration<OptimizeMigration::Opt_MathMigration>();
@@ -1945,11 +1945,6 @@ public:
       PriorityReplInfoMap[Key] = Info;
     }
   }
-
-  static void setOptimizeMigrationAllFlag(bool Flag) {
-    OptimizeMigrationAllFlag = Flag;
-  }
-  static bool isOptimizeMigrationAll() { return OptimizeMigrationAllFlag; }
 
   static inline std::map<std::string, clang::tooling::OptionInfo> &
   getCurrentOptMap() {
@@ -2144,7 +2139,6 @@ private:
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;
-  static bool OptimizeMigrationAllFlag;
   static unsigned OptimizeMigrationFlag;
   static std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
       PriorityReplInfoMap;

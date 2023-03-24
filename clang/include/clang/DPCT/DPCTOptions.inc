@@ -387,20 +387,23 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
 
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<OptimizeMigration>), Optimizes, "optimize-migration",
            DPCT_OPTION_VALUES(
-             DPCT_OPT_ENUM("remove-not-referenced-kernel-arg", int(OptimizeMigration::Opt_RemoveNotReferencedKernelArg),
-        "Remove the arguments declaration that was not referenced in the kernel function call.",
+             DPCT_OPT_ENUM("null-kernel-arg", int(OptimizeMigration::Opt_NullKernelArg),
+        "When the pointer not accessed in kernel, then set default value to nullptr. Only work with --usm-level=none",
         false),
              DPCT_OPT_ENUM("optimize-math-migration", int(OptimizeMigration::Opt_MathMigration),
-        "Migrate some math function to optimized implementation.\n",
+        "Migrate some math function to the optimized implementation.\n",
         false),
              DPCT_OPT_ENUM("inline-kernel-function", int(OptimizeMigration::Opt_InlineKernel),
-        "Add inline all kernel functions to improve performance execution.\n",
+        "Force to inline all kernel functions to improve execution performance.\n",
+        false),
+             DPCT_OPT_ENUM("all", int(OptimizeMigration::Opt_All),
+        "Generate the SYCL code with all optimized migration option.\n",
         false)
         ),
            llvm::cl::desc("Comma separated list of optimized migration to be used in migrated "
            "code.\n"
            "By default, optimize migration will not be used in migrated code.\n"
-           "Using --optimize-migration-all can generate the SYCL code with all optmize migration. "
+           "Using --optimize-migration=all can generate the SYCL code with all optmize migration. "
            "The values are:\n"),
            llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
 

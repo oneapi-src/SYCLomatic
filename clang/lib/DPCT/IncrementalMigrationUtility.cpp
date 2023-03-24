@@ -328,10 +328,6 @@ bool printOptions(
                Value)
         Opts.emplace_back("--usm-level=none");
     }
-    if (Key == clang::dpct::OPTION_OptimizeMigrationAll) {
-      if ("true" == Value)
-        Opts.emplace_back("--optimize-migration-all");
-    }
     if (Key == clang::dpct::OPTION_EnablepProfiling) {
       if ("true" == Value)
         Opts.emplace_back("--enable-profiling");

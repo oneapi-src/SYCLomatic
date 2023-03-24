@@ -39,6 +39,7 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <iostream>
 
 namespace llvm {
 
@@ -1842,6 +1843,9 @@ template <class DataType> class bits_storage<DataType, bool> {
 
   template <class T> static unsigned Bit(const T &V) {
     unsigned BitPos = static_cast<unsigned>(V);
+    std::cout << " Oirginal V is  " << static_cast<int>(V) << std::endl;
+    std::cout << "Bit pos is " << BitPos << std::endl;
+    std::cout << sizeof(unsigned) * CHAR_BIT << std::endl;
     assert(BitPos < sizeof(unsigned) * CHAR_BIT &&
            "enum exceeds width of bit vector!");
     return 1 << BitPos;
