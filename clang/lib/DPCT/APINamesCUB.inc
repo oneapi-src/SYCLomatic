@@ -1761,3 +1761,124 @@ CALL_FACTORY_ENTRY("cub::IADD3",
                               CAST_IF_NEED(LITERAL("unsigned int"), ARG(0)),
                               CAST_IF_NEED(LITERAL("unsigned int"), ARG(1))),
                            CAST_IF_NEED(LITERAL("unsigned int"), ARG(2)))))
+
+// cub::DeviceSegmentedSort::StableSortPairs
+CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY("cub::DeviceSegmentedSort::StableSortPairs"),
+    REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::DplExtrasAlgorithm_segmented_sort_pairs,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPCT_DPL_Utils,
+            REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
+                CASE(CheckArgCount(11, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                         "cub::DeviceSegmentedSort::StableSortPairs",
+                         CALL(MapNames::getDpctNamespace() +
+                                  "segmented_sort_pairs",
+                              CALL("oneapi::dpl::execution::device_policy",
+                                   STREAM(10)),
+                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7),
+                              ARG(8), ARG(9)))),
+                CASE(makeCheckAnd(CheckArgCount(10, std::greater_equal<>(),
+                                                /* IncludeDefaultArg */ false),
+                                  CheckArgType(9, "_Bool")),
+                     CALL_FACTORY_ENTRY(
+                         "cub::DeviceSegmentedSort::StableSortPairs",
+                         CALL(MapNames::getDpctNamespace() +
+                                  "segmented_sort_pairs",
+                              CALL("oneapi::dpl::execution::device_"
+                                   "policy",
+                                   STREAM(8)),
+                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7),
+                              LITERAL("false"), LITERAL("true")))),
+                CASE(CheckArgCount(10, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                         "cub::DeviceSegmentedSort::StableSortPairs",
+                         CALL(MapNames::getDpctNamespace() +
+                                  "segmented_sort_pairs",
+                              CALL("oneapi::dpl::execution::device_policy",
+                                   QUEUESTR),
+                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7),
+                              ARG(8), ARG(9)))),
+                CASE(CheckArgCount(9, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                         "cub::DeviceSegmentedSort::StableSortPairs",
+                         CALL(MapNames::getDpctNamespace() +
+                                  "segmented_sort_pairs",
+                              CALL("oneapi::dpl::execution::device_"
+                                   "policy",
+                                   STREAM(8)),
+                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7),
+                              LITERAL("false"), LITERAL("true")))),
+                OTHERWISE(CALL_FACTORY_ENTRY(
+                    "cub::DeviceSegmentedSort::StableSortPairs",
+                    CALL(MapNames::getDpctNamespace() + "segmented_sort_pairs",
+                         CALL("oneapi::dpl::execution::device_policy",
+                              QUEUESTR),
+                         ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7),
+                         LITERAL("false"), LITERAL("true"))))))))))
+
+// cub::DeviceSegmentedSort::StableSortPairsDescending
+CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY(
+        "cub::DeviceSegmentedSort::StableSortPairsDescending"),
+    REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::DplExtrasAlgorithm_segmented_sort_pairs,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPCT_DPL_Utils,
+            REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
+                CASE(CheckArgCount(11, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                         "cub::DeviceSegmentedSort::StableSortPairsDescending",
+                         CALL(MapNames::getDpctNamespace() +
+                                  "segmented_sort_pairs",
+                              CALL("oneapi::dpl::execution::device_policy",
+                                   STREAM(10)),
+                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7),
+                              ARG(8), ARG(9), LITERAL("true")))),
+                CASE(makeCheckAnd(CheckArgCount(10, std::greater_equal<>(),
+                                                /* IncludeDefaultArg */ false),
+                                  CheckArgType(9, "_Bool")),
+                     CALL_FACTORY_ENTRY(
+                         "cub::DeviceSegmentedSort::StableSortPairsDescending",
+                         CALL(MapNames::getDpctNamespace() +
+                                  "segmented_sort_pairs",
+                              CALL("oneapi::dpl::execution::device_"
+                                   "policy",
+                                   STREAM(8)),
+                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7),
+                              LITERAL("true"), LITERAL("true")))),
+                CASE(CheckArgCount(10, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                         "cub::DeviceSegmentedSort::StableSortPairsDescending",
+                         CALL(MapNames::getDpctNamespace() +
+                                  "segmented_sort_pairs",
+                              CALL("oneapi::dpl::execution::device_policy",
+                                   QUEUESTR),
+                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7),
+                              ARG(8), ARG(9), LITERAL("true")))),
+                CASE(CheckArgCount(9, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                         "cub::DeviceSegmentedSort::StableSortPairsDescending",
+                         CALL(MapNames::getDpctNamespace() +
+                                  "segmented_sort_pairs",
+                              CALL("oneapi::dpl::execution::device_"
+                                   "policy",
+                                   STREAM(8)),
+                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7),
+                              LITERAL("true"), LITERAL("true")))),
+                OTHERWISE(CALL_FACTORY_ENTRY(
+                    "cub::DeviceSegmentedSort::StableSortPairsDescending",
+                    CALL(MapNames::getDpctNamespace() + "segmented_sort_pairs",
+                         CALL("oneapi::dpl::execution::device_policy",
+                              QUEUESTR),
+                         ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7),
+                         LITERAL("true"), LITERAL("true"))))))))))

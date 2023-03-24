@@ -46,13 +46,13 @@ auto parentStmt = []() {
 
 auto isDeviceFuncCallExpr = []() {
   auto hasDeviceFuncName = []() {
-    return hasAnyName("Sum", "Min", "Max", "ArgMin", "ArgMax", "Reduce",
-                      "ReduceByKey", "ExclusiveSum", "InclusiveSum",
-                      "InclusiveScan", "ExclusiveScan", "InclusiveScanByKey",
-                      "InclusiveSumByKey", "ExclusiveScanByKey",
-                      "ExclusiveSumByKey", "Flagged", "Unique", "UniqueByKey",
-                      "Encode", "SortKeys", "SortKeysDescending", "SortPairs",
-                      "SortPairsDescending", "If");
+    return hasAnyName(
+        "Sum", "Min", "Max", "ArgMin", "ArgMax", "Reduce", "ReduceByKey",
+        "ExclusiveSum", "InclusiveSum", "InclusiveScan", "ExclusiveScan",
+        "InclusiveScanByKey", "InclusiveSumByKey", "ExclusiveScanByKey",
+        "ExclusiveSumByKey", "Flagged", "Unique", "UniqueByKey", "Encode",
+        "SortKeys", "SortKeysDescending", "SortPairs", "SortPairsDescending",
+        "If", "StableSortPairs", "StableSortPairsDescending");
   };
   auto hasDeviceRecordName = []() {
     return hasAnyName("DeviceSegmentedReduce", "DeviceReduce", "DeviceScan",
