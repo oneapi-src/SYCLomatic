@@ -24,6 +24,13 @@
 
 namespace dpct {
 namespace dnnl {
+
+/// Get concatenated library version as an integer.
+static inline size_t get_version(){
+  version_t* ver = ::dnnl::version();
+  return ver->major * 1000 + ver->minor * 100 + ver->patch;
+}
+
 /// An enum class representing memory layout. Used by
 /// memory_desc_ext to create a memory with pre-defined layout.
 enum class memory_format_tag { nchw, nhwc, nchw_blocked };

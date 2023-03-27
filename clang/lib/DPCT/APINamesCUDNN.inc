@@ -7,6 +7,11 @@
 //===-----------------------------------------------------------------===//
 
 // Base API
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_get_version,
+                        CALL_FACTORY_ENTRY("cudnnGetVersion",
+                                           CALL(MapNames::getDpctNamespace() +
+                                                "dnnl::get_version")))
+
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_engine_ext,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnCreate", DEREF(ARG_WC(0)), false,

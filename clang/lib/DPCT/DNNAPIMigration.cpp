@@ -175,7 +175,7 @@ void CuDNNAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cudnnDestroyRNNDataDescriptor", "cudnnSetRNNDataDescriptor", "cudnnGetRNNDataDescriptor",
         "cudnnSetRNNDescriptor_v8", "cudnnGetRNNDescriptor_v8", "cudnnGetRNNWeightSpaceSize",
         "cudnnGetRNNTempSpaceSizes", "cudnnRNNForward", "cudnnRNNBackwardData_v8",
-        "cudnnRNNBackwardWeights_v8");
+        "cudnnRNNBackwardWeights_v8", "cudnnGetVersion");
   };
 
   MF.addMatcher(
