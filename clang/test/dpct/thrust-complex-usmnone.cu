@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-// RUN: dpct --format-range=none --optimize-migration=null-kernel-arg -out-root %T/thrust-complex-usmnone %s --cuda-include-path="%cuda-path/include" -usm-level=none -- -x cuda --cuda-host-only --std=c++14
+// RUN: dpct --format-range=none --opt-migration=null-kernel-arg -out-root %T/thrust-complex-usmnone %s --cuda-include-path="%cuda-path/include" -usm-level=none -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/thrust-complex-usmnone/thrust-complex-usmnone.dp.cpp --match-full-lines %s
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>

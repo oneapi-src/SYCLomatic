@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/optimize-migration-all %s --cuda-include-path="%cuda-path/include" --usm-level=none --sycl-named-lambda --optimize-migration=all
+// RUN: dpct --format-range=none -out-root %T/optimize-migration-all %s --cuda-include-path="%cuda-path/include" --usm-level=none --sycl-named-lambda --optimize-migration
 // RUN: FileCheck %s --match-full-lines --input-file %T/optimize-migration-all/optimize-migration-all.dp.cpp
 
 // CHECK: inline void Reset_kernel_parameters()

@@ -880,7 +880,11 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setExtensionDDFlag(UseDPCPPExtensions.getBits());
   DpctGlobalInfo::setAssumedNDRangeDim(
       (NDRangeDim == AssumedNDRangeDimEnum::ARE_Dim1) ? 1 : 3);
-  DpctGlobalInfo::setOptimizeMigrationFlag(Optimizes.getBits());
+  unsigned Flags = Optimizes.getBits();
+  if (OptimizeMigration.getValue()) {
+    Flags = Flags | 0x1;    // Set the opt-migration=all
+  }
+  DpctGlobalInfo::setOptimizeMigrationFlag(Flags);
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRoot;
 

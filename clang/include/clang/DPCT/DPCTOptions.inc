@@ -385,7 +385,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
            "By default, experimental features will not be used in migrated code.\nThe values are:\n"),
            llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
 
-DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<OptimizeMigration>), Optimizes, "optimize-migration",
+DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<OptimizeMigration>), Optimizes, "opt-migration",
            DPCT_OPTION_VALUES(
              DPCT_OPT_ENUM("null-kernel-arg", int(OptimizeMigration::Opt_NullKernelArg),
         "When the pointer not accessed in kernel, then set default value to nullptr. Only work with --usm-level=none",
@@ -403,9 +403,15 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<OptimizeMigration>), Optimi
            llvm::cl::desc("Comma separated list of optimized migration to be used in migrated "
            "code.\n"
            "By default, optimize migration will not be used in migrated code.\n"
-           "Using --optimize-migration=all can generate the SYCL code with all optmize migration. "
+           "Using --opt-migration=all can generate the SYCL code with all optmize migration. "
            "The values are:\n"),
            llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
+
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), OptimizeMigration, "optimize-migration",
+        llvm::cl::desc("DEPRECATED: Generates SYCL code applying more aggressive assumptions that potentially\n"
+                   "may alter the semantics of your program. Please use --opt-migration=all as a replace.\n"
+                   "Default: off.\n"),
+        llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<bool>), GenBuildScript, "gen-build-script",
         llvm::cl::desc("Generates makefile for migrated file(s) in -out-root directory. Default: off."),

@@ -31,7 +31,8 @@
 // DASH-NEXT: --no-dpcpp-extensions=
 // DASH-NEXT: --no-dry-pattern
 // DASH-NEXT: --no-incremental-migration
-// DASH-NEXT: --optimize-migration=
+// DASH-NEXT: --opt-migration=
+// DASH-NEXT: --optimize-migration
 // DASH-NEXT: --out-root
 // DASH-NEXT: --output-file
 // DASH-NEXT: --output-verbosity=

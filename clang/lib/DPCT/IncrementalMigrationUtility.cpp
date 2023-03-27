@@ -347,7 +347,7 @@ bool printOptions(
 
       std::string Str;
       if (!Values.empty())
-        Str += "--optimize-migration=";
+        Str += "--opt-migration=";
       for (auto &I : Values)
         Str = Str + I + ",";
       Opts.emplace_back(Str.substr(0, Str.size() - 1));
