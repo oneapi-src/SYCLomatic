@@ -42,7 +42,7 @@ namespace dnnl {
 // DPCT_CODE
 /// Get concatenated library version as an integer.
 static inline size_t get_version(){
-  version_t* ver = ::dnnl::version();
+  const ::dnnl::version_t* ver = ::dnnl::version();
   return ver->major * 1000 + ver->minor * 100 + ver->patch;
 }
 // DPCT_LABEL_END
