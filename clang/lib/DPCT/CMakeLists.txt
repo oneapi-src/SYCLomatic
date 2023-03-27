@@ -112,28 +112,30 @@ add_subdirectory(ConfusableTable)
 add_clang_library(DPCT
   ASTTraversal.cpp
   AnalysisInfo.cpp
-  CallExprRewriter.cpp
-  CallExprRewriterAtomic.cpp
-  CallExprRewriterCUB.cpp
-  CallExprRewriterCUFFT.cpp
-  CallExprRewriterCUBLAS.cpp
-  CallExprRewriterCURAND.cpp
-  CallExprRewriterCUSOLVER.cpp
-  CallExprRewriterCUSPARSE.cpp
-  CallExprRewriterComplex.cpp
-  CallExprRewriterDriver.cpp
-  CallExprRewriterMemory.cpp
-  CallExprRewriterNccl.cpp
-  CallExprRewriterStream.cpp
-  CallExprRewriterTexture.cpp
-  CallExprRewriterThrust.cpp
-  CallExprRewriterWarp.cpp
-  CallExprRewriterCUDNN.cpp
-  CallExprRewriterErrorHandling.cpp
-  CallExprRewriterLIBCU.cpp
-  CallExprRewriterEvent.cpp
-  CallExprRewriterMath.cpp
-  CallExprRewriterCG.cpp
+  Rewriters/TypeLocRewriters.cpp
+  Rewriters/MemberExprRewriter.cpp
+  Rewriters/CallExprRewriter.cpp
+  Rewriters/Atomic/CallExprRewriterAtomic.cpp
+  Rewriters/CUB/CallExprRewriterCUB.cpp
+  Rewriters/CUFFT/CallExprRewriterCUFFT.cpp
+  Rewriters/CUBLAS/CallExprRewriterCUBLAS.cpp
+  Rewriters/CURAND/CallExprRewriterCURAND.cpp
+  Rewriters/CUSOLVER/CallExprRewriterCUSOLVER.cpp
+  Rewriters/CUSPARSE/CallExprRewriterCUSPARSE.cpp
+  Rewriters/Complex/CallExprRewriterComplex.cpp
+  Rewriters/Driver/CallExprRewriterDriver.cpp
+  Rewriters/Memory/CallExprRewriterMemory.cpp
+  Rewriters/Nccl/CallExprRewriterNccl.cpp
+  Rewriters/Stream/CallExprRewriterStream.cpp
+  Rewriters/Texture/CallExprRewriterTexture.cpp
+  Rewriters/Thrust/CallExprRewriterThrust.cpp
+  Rewriters/Wrap/CallExprRewriterWarp.cpp
+  Rewriters/CUDNN/CallExprRewriterCUDNN.cpp
+  Rewriters/ErrorHandling/CallExprRewriterErrorHandling.cpp
+  Rewriters/LIBCU/CallExprRewriterLIBCU.cpp
+  Rewriters/Event/CallExprRewriterEvent.cpp
+  Rewriters/Math/CallExprRewriterMath.cpp
+  Rewriters/CooperativeGroups/CallExprRewriterCG.cpp
   Diagnostics.cpp
   Error.cpp
   Statics.cpp
@@ -160,12 +162,10 @@ add_clang_library(DPCT
   FFTAPIMigration.cpp
   DNNAPIMigration.cpp
   NCCLAPIMigration.cpp
-  TypeLocRewriters.cpp
   QueryApiMapping.cpp
   AutoComplete.cpp
   LIBCUAPIMigration.cpp
   CUBAPIMigration.cpp
-  MemberExprRewriter.cpp
   MigrationRuleManager.cpp
   MigrationAction.cpp
   ThrustAPIMigration.cpp

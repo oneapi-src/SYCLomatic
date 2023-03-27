@@ -1,4 +1,4 @@
-//===--------------- CallExprRewriterAtomic.cpp ---------------------------===//
+//===--------------- CallExprRewriterCUSOLVER.cpp -------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,19 +6,17 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "CallExprRewriter.h"
-#include "CallExprRewriterCommon.h"
+#include "../CallExprRewriter.h"
+#include "../CallExprRewriterCommon.h"
 
 namespace clang {
 namespace dpct {
-// clang-format off
-void CallExprRewriterFactoryBase::initRewriterMapAtomic() {
+void CallExprRewriterFactoryBase::initRewriterMapCUSPARSE() {
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
-#include "APINamesAtomic.inc"
+#include "CallExprRewriterCUSPARSE.inc"
       }));
-      // clang-format on
 }
 
 } // namespace dpct

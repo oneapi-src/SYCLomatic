@@ -36,7 +36,7 @@ void CallExprRewriterFactoryBase::initMethodRewriterMapLIBCU() {
   MethodRewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
-#include "APINamesLIBCU.inc"
+#include "CallExprRewriterLIBCU.inc"
       }));
 }
 
