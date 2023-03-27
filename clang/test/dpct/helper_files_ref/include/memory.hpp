@@ -200,9 +200,7 @@ private:
 template <class T, memory_region Memory, size_t Dimension> class accessor;
 template <memory_region Memory, class T = byte_t> class memory_traits {
 public:
-  static constexpr sycl::access::target target =
-      (Memory == constant) ? sycl::access::target::constant_buffer
-                           : sycl::access::target::device;
+  static constexpr sycl::access::target target = sycl::access::target::device;
   static constexpr sycl::access_mode mode =
       (Memory == constant) ? sycl::access_mode::read
                            : sycl::access_mode::read_write;
@@ -777,7 +775,7 @@ static inline void *dpct_malloc(T num_bytes,
 template <typename T> static inline T *get_host_ptr(const void *ptr) {
   auto BufferOffset = get_buffer_and_offset(ptr);
   auto host_ptr =
-      BufferOffset.first.get_access<sycl::access_mode::read_write>()
+      BufferOffset.first.get_host_access<sycl::access_mode::read_write>()
           .get_pointer();
   return (T *)(host_ptr + BufferOffset.second);
 }
