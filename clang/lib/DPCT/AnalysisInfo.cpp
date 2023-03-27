@@ -1007,6 +1007,8 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
       OS << "#define DPCT_PROFILING_ENABLED" << getNL();
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
       OS << "#define DPCT_USM_LEVEL_NONE" << getNL();
+    if (!RTVersionValue.empty())
+      OS << "#define DPCT_COMPAT_RT_VERSION " << RTVersionValue << getNL();
     concatHeader(OS, getHeaderSpelling(Type));
     concatHeader(OS, getHeaderSpelling(HT_DPCT_Dpct));
     HeaderInsertedBitMap[HT_DPCT_Dpct] = true;

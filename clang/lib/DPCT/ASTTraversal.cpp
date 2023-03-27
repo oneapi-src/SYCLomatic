@@ -417,6 +417,12 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   } else if (MacroNameTok.getIdentifierInfo() &&
              MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_INVERSE") {
     TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13, "1"));
+  } else if (MacroNameTok.getIdentifierInfo() &&
+             MacroNameTok.getIdentifierInfo()->getName() == "CUDART_VERSION") {
+    TransformSet.emplace_back(new ReplaceText(
+        Range.getBegin(), strlen("CUDART_VERSION"), "DPCT_COMPAT_RT_VERSION"));
+    auto LocInfo = DpctGlobalInfo::getLocInfo(Range.getBegin());
+    DpctGlobalInfo::getInstance().insertFile(LocInfo.first)->setRTVersionValue("");
   }
 
   // For the un-specialized struct, there is no AST for the extern function
