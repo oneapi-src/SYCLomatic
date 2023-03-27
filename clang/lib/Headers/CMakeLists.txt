@@ -455,7 +455,7 @@ add_header_target("utility-resource-headers" ${utility_files})
 
 # SYCLomatic_CUSTOMIZATION begin
 if(INTEL_DEPLOY_UNIFIED_LAYOUT)
-  set(header_install_dir share/dpct/lib${LLVM_LIBDIR_SUFFIX}/clang/${CLANG_VERSION_MAJOR}/include)
+  set(header_install_dir opt/dpct/lib${LLVM_LIBDIR_SUFFIX}/clang/${CLANG_VERSION_MAJOR}/include)
 else()
   set(header_install_dir lib${LLVM_LIBDIR_SUFFIX}/clang/${CLANG_VERSION_MAJOR}/include)
 endif()

@@ -8,7 +8,7 @@ if(INTEL_DEPLOY_UNIFIED_LAYOUT)
     FILES ${dpct_opt_rule_files}
     COMPONENT dpct-opt-rules
     PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
-    DESTINATION ./share/dpct/extensions/opt_rules)
+    DESTINATION ./opt/dpct/extensions/opt_rules)
 else()
   install(
     FILES ${dpct_opt_rule_files}

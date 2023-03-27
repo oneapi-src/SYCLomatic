@@ -1163,12 +1163,12 @@ char *replace_binary_name(const char *src, const char *pos, int compiler_idx,
 
   char* dest = strrchr(file_path, '/');
 
-  if ((strlen(dest) + strlen("/../share/dpct/lib/libear/intercept-stub")) >= PATH_MAX) {
-    perror("bear: strcpy overflow, path to dpct is too long.\n");
+  if ((strlen(dest) + strlen("/../opt/dpct/lib/libear/intercept-stub")) >= PATH_MAX) {
+    perror("bear: strcpy overflow, path to intercept-stub is too long.\n");
     exit(EXIT_FAILURE);
   }
 
-  strcpy(dest, "/../share/dpct/lib/libear/intercept-stub");
+  strcpy(dest, "/../opt/dpct/lib/libear/intercept-stub");
   if (access(file_path, F_OK) != 0) {
     // file_path does not exists
     strcpy(dest, "/../lib/libear/intercept-stub");

@@ -11,7 +11,7 @@ this_dir = os.path.dirname(os.path.realpath(__file__))
 if(os.path.exists(os.path.join(os.path.dirname(this_dir), 'lib'))):
     sys.path.append(os.path.join(os.path.dirname(this_dir), 'lib'))
 else:
-    sys.path.append(os.path.join(os.path.dirname(this_dir), 'share/dpct/lib'))
+    sys.path.append(os.path.join(os.path.dirname(this_dir), 'opt/dpct/lib'))
 
 from libscanbuild.intercept import intercept_build
 

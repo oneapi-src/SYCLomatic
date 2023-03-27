@@ -96,7 +96,7 @@ foreach(lib ${LibScanbuild})
 
   if(INTEL_DEPLOY_UNIFIED_LAYOUT)
     install(PROGRAMS lib/libscanbuild/${lib}
-            DESTINATION share/dpct/lib/libscanbuild
+            DESTINATION opt/dpct/lib/libscanbuild
             COMPONENT dpct-intercept-build)
   else()
     install(PROGRAMS lib/libscanbuild/${lib}
@@ -166,7 +166,7 @@ if (SYCLomatic_CUSTOMIZATION)
       target_compile_options(ear PRIVATE "-DINTEL_DEPLOY_UNIFIED_LAYOUT")
       install(TARGETS ear
               LIBRARY
-              DESTINATION share/dpct/lib/libear
+              DESTINATION opt/dpct/lib/libear
               COMPONENT dpct-intercept-build
       )
     else()
@@ -185,7 +185,7 @@ if (SYCLomatic_CUSTOMIZATION)
 
     if(INTEL_DEPLOY_UNIFIED_LAYOUT)
       install(TARGETS intercept-stub
-              DESTINATION share/dpct/lib/libear
+              DESTINATION opt/dpct/lib/libear
               COMPONENT dpct-intercept-build
       )
     else()
@@ -201,7 +201,7 @@ if (SYCLomatic_CUSTOMIZATION)
 
     if(INTEL_DEPLOY_UNIFIED_LAYOUT)
       install(PROGRAMS lib/libear/__init__.py
-              DESTINATION share/dpct/lib/libear
+              DESTINATION opt/dpct/lib/libear
               COMPONENT dpct-intercept-build)
 
     else()

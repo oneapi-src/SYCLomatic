@@ -53,13 +53,13 @@ if(INTEL_DEPLOY_UNIFIED_LAYOUT)
       FILES ${dpct_syscheck_script}
       COMPONENT dpct-syscheck
       PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-      DESTINATION etc/dpct)
+      DESTINATION etc/dpct/sys_check)
   endif()
   install(
     FILES ${dpct_modulefiles_script}
     COMPONENT dpct-modulefiles
     PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
-    DESTINATION etc/dpct/modulefiles)
+    DESTINATION etc/modulefiles)
 else()
   install(
     FILES ${dpct_vars_script}
