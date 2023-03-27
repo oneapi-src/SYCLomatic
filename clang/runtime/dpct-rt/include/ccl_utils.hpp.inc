@@ -233,16 +233,24 @@ public:
   /// \param dtype the datatype of elements in @c send_buf and @c recv_buf
   /// \param rtype the type of the reduction operation to be applied
   /// \param stream a sycl::queue ptr associated with the operation
-  /// \return @ref return oneapi::ccl::event to track the progress of the operation
-  oneapi::ccl::event allreduce(const void *sendbuff, void *recvbuff,
-                               size_t count, dpct::library_data_t dtype,
-                               oneapi::ccl::reduction rtype,
-                               sycl::queue *stream) {
-    const oneapi::ccl::stream &ccl_stream = get_ccl_stream(stream);
-    return oneapi::ccl::allreduce(sendbuff, recvbuff, count,
-                                  dpct::ccl::detail::to_ccl_datatype(dtype),
-                                  rtype, _comm, ccl_stream);
-  };
+  /// \return @ref void
+  void allreduce(const void *sendbuff, void *recvbuff, size_t count,
+                 dpct::library_data_t dtype, oneapi::ccl::reduction rtype,
+                 sycl::queue *stream) const {
+    oneapi::ccl::stream *ccl_stream_ptr =
+        new oneapi::ccl::stream(oneapi::ccl::create_stream(*stream));
+    oneapi::ccl::event *eptr = new oneapi::ccl::event(std::move(
+        oneapi::ccl::allreduce(sendbuff, recvbuff, count,
+                               dpct::ccl::detail::to_ccl_datatype(dtype), rtype,
+                               _comm, *ccl_stream_ptr)));
+    stream->submit([&](sycl::handler &cgh) {
+      cgh.host_task([=] {
+        eptr->wait();
+        delete ccl_stream_ptr;
+        delete eptr;
+      });
+    });
+  }
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|communicator_ext_reduce|dpct::ccl
@@ -263,16 +271,24 @@ public:
   /// \param root the rank that gets the result of reduction 
   /// \param rtype the type of the reduction operation to be applied 
   /// \param stream a sycl::queue ptr associated with the operation 
-  /// \return @ref return oneapi::ccl::event to track the progress of the operation
-  oneapi::ccl::event reduce(const void *sendbuff, void *recvbuff, size_t count,
-                            dpct::library_data_t dtype,
-                            oneapi::ccl::reduction rtype, int root,
-                            sycl::queue *stream) {
-    const oneapi::ccl::stream &ccl_stream = get_ccl_stream(stream);
-    return oneapi::ccl::reduce(sendbuff, recvbuff, count,
-                               dpct::ccl::detail::to_ccl_datatype(dtype), rtype,
-                               root, _comm, ccl_stream);
-  };
+  /// \return @ref void
+  void reduce(const void *sendbuff, void *recvbuff, size_t count,
+              dpct::library_data_t dtype, oneapi::ccl::reduction rtype,
+              int root, sycl::queue *stream) const {
+    oneapi::ccl::stream *ccl_stream_ptr =
+        new oneapi::ccl::stream(oneapi::ccl::create_stream(*stream));
+    oneapi::ccl::event *eptr = new oneapi::ccl::event(
+        std::move(oneapi::ccl::reduce(sendbuff, recvbuff, count,
+                                      dpct::ccl::detail::to_ccl_datatype(dtype),
+                                      rtype, root, _comm, *ccl_stream_ptr)));
+    stream->submit([&](sycl::handler &cgh) {
+      cgh.host_task([=] {
+        eptr->wait();
+        delete ccl_stream_ptr;
+        delete eptr;
+      });
+    });
+  }
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|communicator_ext_broadcast|dpct::ccl
@@ -289,15 +305,23 @@ public:
   /// \param dtype thedatatype of elements in @c buf 
   /// \param root the rank that broadcasts @c buf
   /// \param stream a sycl::queue ptr associated with the operation
-  /// \return @ref return oneapi::ccl::event to track the progress of the operation
-  oneapi::ccl::event broadcast(void *buff, size_t count,
-                               dpct::library_data_t dtype, int root,
-                               sycl::queue *stream) {
-    const oneapi::ccl::stream &ccl_stream = get_ccl_stream(stream);
-    return oneapi::ccl::broadcast(buff, count,
-                                  dpct::ccl::detail::to_ccl_datatype(dtype),
-                                  root, _comm, ccl_stream);
-  };
+  /// \return @ref void
+  void broadcast(void *buff, size_t count, dpct::library_data_t dtype, int root,
+                 sycl::queue *stream) const {
+    oneapi::ccl::stream *ccl_stream_ptr =
+        new oneapi::ccl::stream(oneapi::ccl::create_stream(*stream));
+    oneapi::ccl::event *eptr =
+        new oneapi::ccl::event(std::move(oneapi::ccl::broadcast(
+            buff, count, dpct::ccl::detail::to_ccl_datatype(dtype), root, _comm,
+            *ccl_stream_ptr)));
+    stream->submit([&](sycl::handler &cgh) {
+      cgh.host_task([=] {
+        eptr->wait();
+        delete ccl_stream_ptr;
+        delete eptr;
+      });
+    });
+  }
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|communicator_ext_reduce_scatter|dpct::ccl
@@ -314,16 +338,24 @@ public:
   /// \param dtype the datatype of elements in @c send_buf and @c recv_buf
   /// \param rtype the type of the reduction operation to be applied
   /// \param stream a sycl::queue ptr associated with the operation
-  /// \return @ref return oneapi::ccl::event to track the progress of the operation
-  oneapi::ccl::event reduce_scatter(const void *sendbuff, void *recvbuff,
-                                    size_t recv_count, dpct::library_data_t dtype,
-                                    oneapi::ccl::reduction rtype,
-                                    sycl::queue *stream) {
-    const oneapi::ccl::stream &ccl_stream = get_ccl_stream(stream);
-    return oneapi::ccl::reduce_scatter(sendbuff, recvbuff, recv_count,
-                                       dpct::ccl::detail::to_ccl_datatype(dtype),
-                                       rtype, _comm, ccl_stream);
-  };
+  /// \return @ref void
+  void reduce_scatter(const void *sendbuff, void *recvbuff, size_t recv_count,
+                      dpct::library_data_t dtype, oneapi::ccl::reduction rtype,
+                      sycl::queue *stream) const {
+    oneapi::ccl::stream *ccl_stream_ptr =
+        new oneapi::ccl::stream(oneapi::ccl::create_stream(*stream));
+    oneapi::ccl::event *eptr = new oneapi::ccl::event(std::move(
+        oneapi::ccl::reduce_scatter(sendbuff, recvbuff, recv_count,
+                                    dpct::ccl::detail::to_ccl_datatype(dtype),
+                                    rtype, _comm, *ccl_stream_ptr)));
+    stream->submit([&](sycl::handler &cgh) {
+      cgh.host_task([=] {
+        eptr->wait();
+        delete ccl_stream_ptr;
+        delete eptr;
+      });
+    });
+  }
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|communicator_ext_2|dpct::ccl
@@ -332,16 +364,9 @@ public:
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 private:
-  const oneapi::ccl::stream &get_ccl_stream(sycl::queue *stream) {
-    auto pa_itr =
-        _stream_map_comm.emplace(stream, oneapi::ccl::create_stream(*stream));
-    return pa_itr.first->second;
-  }
-
   oneapi::ccl::device _device_comm;
   oneapi::ccl::context _context_comm;
   oneapi::ccl::communicator _comm;
-  std::unordered_map<sycl::queue*,oneapi::ccl::stream> _stream_map_comm;
 };
 // DPCT_LABEL_END
 
