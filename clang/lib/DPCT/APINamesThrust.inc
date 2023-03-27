@@ -37,6 +37,9 @@ thrustFactory("thrust::remove_if",
 // thrust::not1
 CALL_FACTORY_ENTRY("thrust::not1", CALL("oneapi::dpl::not1", ARG(0)))
 
+// thrust::not2
+CALL_FACTORY_ENTRY("thrust::not2", CALL("std::not2", ARG(0)))
+
 // thrust::any_of
 thrustFactory("thrust::any_of",
               {{4,PolicyState::HasPolicy,2,"oneapi::dpl::any_of", HelperFeatureEnum::no_feature_helper },
