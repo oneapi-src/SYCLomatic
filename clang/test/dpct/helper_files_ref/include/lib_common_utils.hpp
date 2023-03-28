@@ -12,6 +12,7 @@
 #include <sycl/sycl.hpp>
 #include <oneapi/mkl.hpp>
 #include "memory.hpp"
+#include "util.hpp"
 
 namespace dpct {
 namespace detail {
@@ -21,6 +22,14 @@ template <typename T> inline auto get_memory(T *x) {
 #else
   return x;
 #endif
+}
+
+template <typename T>
+inline typename DataType<T>::T2 get_value(const T *s, sycl::queue &q) {
+  using Ty = typename DataType<T>::T2;
+  Ty s_h;
+  detail::dpct_memcpy(q, (void *)&s_h, (void *)s, sizeof(T), automatic).wait();
+  return s_h;
 }
 }
 enum class version_field : int {
@@ -85,6 +94,26 @@ enum class library_data_t : unsigned char {
 };
 
 namespace detail {
+template <typename ArgT>
+inline constexpr std::uint64_t get_type_combination_id(ArgT Val) {
+  static_assert((unsigned char)library_data_t::library_data_t_size <=
+                    std::numeric_limits<unsigned char>::max() &&
+                "library_data_t size exceeds limit.");
+  static_assert(std::is_same_v<ArgT, library_data_t>, "Unsupported ArgT");
+  return (std::uint64_t)Val;
+}
+
+template <typename FirstT, typename... RestT>
+inline constexpr std::uint64_t get_type_combination_id(FirstT FirstVal,
+                                                       RestT... RestVal) {
+  static_assert((std::uint8_t)library_data_t::library_data_t_size <=
+                    std::numeric_limits<unsigned char>::max() &&
+                "library_data_t size exceeds limit.");
+  static_assert(sizeof...(RestT) <= 8 && "Too many parameters");
+  static_assert(std::is_same_v<FirstT, library_data_t>, "Unsupported FirstT");
+  return get_type_combination_id(RestVal...) << 8 | ((std::uint64_t)FirstVal);
+}
+
 inline constexpr std::size_t library_data_size[] = {
     8 * sizeof(float),                    // real_float
     8 * sizeof(std::complex<float>),      // complex_float
@@ -118,7 +147,7 @@ inline constexpr std::size_t library_data_size[] = {
     8,                                    // real_int8_32
     8                                     // real_uint8_4
 };
-}
+} // namespace detail
 } // namespace dpct
 
 #endif // __DPCT_LIB_COMMON_UTILS_HPP__
