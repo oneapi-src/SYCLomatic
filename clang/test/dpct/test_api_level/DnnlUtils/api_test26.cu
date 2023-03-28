@@ -177,7 +177,7 @@ int main() {
 
     e = cudnnRNNBackwardWeights_v8(
         handle,
-        rnnsDesc,
+        rnnDesc,
         CUDNN_WGRAD_MODE_ADD,
         seqlenarray,
         xDesc,

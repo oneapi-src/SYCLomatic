@@ -6,6 +6,8 @@
 // CHECK: 2
 // TEST_FEATURE: Image_image_data_type
 
+#include "cuda.h"
+
 int main() {
   CUresourcetype_enum a;
   return 0;

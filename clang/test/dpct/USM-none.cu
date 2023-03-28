@@ -7,10 +7,11 @@
 // CHECK-NEXT: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 #include <cuda_runtime.h>
+#include <cuda.h>
 #include <stdio.h>
 #include <memory>
 
-__constant__ float constData[1234567 * 4];
+__constant__ float constData[123 * 4];
 
 void foo() {
   size_t size = 1234567 * sizeof(float);
