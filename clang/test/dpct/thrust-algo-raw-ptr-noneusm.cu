@@ -585,3 +585,22 @@ void find_if_test() {
   thrust::find_if(data, data+3, greater_than_four());
   thrust::find_if(thrust::host, data, data+3, greater_than_four());
 }
+
+void find_if_not_test() {
+  const int N = 4;
+  int data[4] = {0,5, 3, 7};
+
+//CHECK:  if (dpct::is_device_ptr(data + 3)) {
+//CHECK-NEXT:    oneapi::dpl::find_if_not(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + 3), greater_than_four());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::find_if_not(oneapi::dpl::execution::seq, data, data + 3, greater_than_four());
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(data)) {
+//CHECK-NEXT:    oneapi::dpl::find_if_not(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + 3), greater_than_four());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::find_if_not(oneapi::dpl::execution::seq, data, data + 3, greater_than_four());
+//CHECK-NEXT:  };
+  thrust::find_if_not(data, data+3, greater_than_four());
+  thrust::find_if_not(thrust::host, data, data+3, greater_than_four());
+}
+
