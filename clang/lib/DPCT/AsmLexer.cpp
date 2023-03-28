@@ -1,4 +1,4 @@
-//===----------------------- InlineAsmParser.cpp---------------------------===//
+//===----------------------- AsmLexer.cpp -----------------------*- C++ -*-===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "InlineAsmParser.h"
+#include "AsmLexer.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/ADT/StringSet.h"
 #include "llvm/Support/SaveAndRestore.h"
@@ -61,6 +61,44 @@ bool AsmToken::isFundamentalTypeSpecifier() const {
     "pred"
   };
   return Types.contains(getString());
+}
+
+bool AsmToken::isStorageClass() const {
+  return llvm::StringSwitch<bool>(getString())
+      .Case(".reg", true)
+      .Case(".const", true)
+      .Case(".global", true)
+      .Case(".local", true)
+      .Case(".param", true)
+      .Case(".shared", true)
+      .Case(".tex", true)
+      .Default(false);
+}
+
+bool AsmToken::isInstructionStorageClass() const {
+  return llvm::StringSwitch<bool>(getString())
+      .Case(".const", true)
+      .Case(".global", true)
+      .Case(".local", true)
+      .Case(".param", true)
+      .Case(".shared", true)
+      .Case(".tex", true)
+      .Default(false);
+}
+
+bool AsmToken::isTypeName() const {
+  static StringSet<> TypeNames{
+    ".s2", ".s4", ".s8", ".s16", ".s32", ".s64",
+    ".u2", ".u4", ".u8", ".u16", ".u32", ".u64",
+    ".byte", ".4byte", ".b8", ".b16", ".b32", ".b64", ".b128",
+    ".f16", ".f16x2", ".f32", ".f64", ".e4m3", ".e5m2", ".e4m3x2", ".e5m2x2",
+    ".quad", ".pred"
+  };
+  return TypeNames.contains(getString());
+}
+
+bool AsmToken::isVarAttributes() const {
+  return getString() == ".align" || getString() == ".attribute" || isStorageClass();
 }
 
 void AsmToken::dump(raw_ostream &OS) const {
@@ -131,14 +169,25 @@ void AsmToken::dump(raw_ostream &OS) const {
   OS << "\")";
 }
 
-AsmLexer::AsmLexer(StringRef Buffer) {
-  CurBuf = Buffer;
-  CurPtr = CurBuf.begin();
+AsmLexer::AsmLexer() {
   TokStart = nullptr;
   CurTok.emplace_back(AsmToken::Space, StringRef());
 }
 
 AsmLexer::~AsmLexer() = default;
+
+void AsmLexer::setBuffer(StringRef Buf, const char *Ptr,
+                         bool EndStatementAtEOF) {
+  CurBuf = Buf;
+
+  if (Ptr)
+    CurPtr = Ptr;
+  else
+    CurPtr = CurBuf.begin();
+
+  TokStart = nullptr;
+  this->EndStatementAtEOF = EndStatementAtEOF;
+}
 
 const AsmToken &AsmLexer::Lex() {
   assert(!CurTok.empty());
@@ -581,23 +630,6 @@ AsmToken AsmLexer::LexToken() {
   TokStart = CurPtr;
   // This always consumes at least one character.
   int CurChar = getNextChar();
-
-  if (!IsPeeking && CurChar == '#' && IsAtStartOfStatement) {
-    // If this starts with a '#', this may be a cpp
-    // hash directive and otherwise a line comment.
-    AsmToken TokenBuf[2];
-    MutableArrayRef<AsmToken> Buf(TokenBuf, 2);
-    size_t num = peekTokens(Buf);
-    // There cannot be a space preceding this
-    if (IsAtStartOfLine && num == 2 && TokenBuf[0].is(AsmToken::Integer) &&
-        TokenBuf[1].is(AsmToken::String)) {
-      CurPtr = TokStart; // reset curPtr;
-      StringRef s = LexUntilEndOfLine();
-      UnLex(TokenBuf[1]);
-      UnLex(TokenBuf[0]);
-      return AsmToken(AsmToken::HashDirective, s);
-    }
-  }
 
   if (isAtStartOfComment(TokStart))
     return LexLineComment();

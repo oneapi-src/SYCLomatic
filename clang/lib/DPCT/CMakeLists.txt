@@ -163,8 +163,9 @@ add_clang_library(DPCT
   NCCLAPIMigration.cpp
   TypeLocRewriters.cpp
   AutoComplete.cpp
-  InlineAsmParser.cpp
-  InlineAsmMigration.cpp
+  AsmLexer.cpp
+  AsmParser.cpp
+  AsmMigration.cpp
   LIBCUAPIMigration.cpp
   CUBAPIMigration.cpp
   MemberExprRewriter.cpp
