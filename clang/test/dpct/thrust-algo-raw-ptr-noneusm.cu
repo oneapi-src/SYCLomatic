@@ -16,6 +16,7 @@
 #include <thrust/tabulate.h>
 #include <thrust/functional.h>
 #include <thrust/remove.h>
+#include <thrust/find.h>
 
 // for cuda 12.0
 #include <thrust/iterator/constant_iterator.h>
@@ -561,4 +562,26 @@ void remvoe_test() {
 //CHECK-NEXT:  };
   thrust::remove(thrust::host, data, data + N, 1);
   thrust::remove(data, data + N, 1);
+}
+
+struct greater_than_four {
+  __host__ __device__ bool operator()(int x) const { return x > 4; }
+};
+
+void find_if_test() {
+  const int N = 4;
+  int data[4] = {0,5, 3, 7};
+
+//CHECK:  if (dpct::is_device_ptr(data + 3)) {
+//CHECK-NEXT:    oneapi::dpl::find_if(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + 3), greater_than_four());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::find_if(oneapi::dpl::execution::seq, data, data + 3, greater_than_four());
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(data)) {
+//CHECK-NEXT:    oneapi::dpl::find_if(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + 3), greater_than_four());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::find_if(oneapi::dpl::execution::seq, data, data + 3, greater_than_four());
+//CHECK-NEXT:  };
+  thrust::find_if(data, data+3, greater_than_four());
+  thrust::find_if(thrust::host, data, data+3, greater_than_four());
 }

@@ -45,6 +45,11 @@ thrustFactory("thrust::any_of",
               {{4,PolicyState::HasPolicy,2,"oneapi::dpl::any_of", HelperFeatureEnum::no_feature_helper },
                {3,PolicyState::NoPolicy ,2,"oneapi::dpl::any_of", HelperFeatureEnum::no_feature_helper }}),
 
+// thrust::find_if
+thrustFactory("thrust::find_if",
+              {{4,PolicyState::HasPolicy,2,"oneapi::dpl::find_if", HelperFeatureEnum::no_feature_helper },
+               {3,PolicyState::NoPolicy ,2,"oneapi::dpl::find_if", HelperFeatureEnum::no_feature_helper }}),
+
 // thrust::replace
 thrustFactory("thrust::replace",
               {{5,PolicyState::HasPolicy,2,"oneapi::dpl::replace", HelperFeatureEnum::no_feature_helper },
