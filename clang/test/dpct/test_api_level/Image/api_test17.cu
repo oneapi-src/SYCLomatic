@@ -6,6 +6,8 @@
 // CHECK: 28
 // TEST_FEATURE: Image_image_wrapper_base_set_filtering_mode
 
+#include "cuda.h"
+
 int main() {
   CUtexref tex;
   CUfilter_mode filter_mode;

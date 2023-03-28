@@ -77,20 +77,9 @@ int main(){
   //CHECK-NEXT: descrA->set_matrix_type(dpct::sparse::matrix_info::matrix_type::ge);
   //CHECK-NEXT: descrA->set_index_base(oneapi::mkl::index_base::zero);
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general sparse matrix type. You may need to adjust the code.
+  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general/symmetric/triangular sparse matrix type. You may need to adjust the code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: {
-  //CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(csrValA);
-  //CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrRowPtrA);
-  //CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrColIndA);
-  //CHECK-NEXT: auto x_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x);
-  //CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y);
-  //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
-  //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(*handle, mat_handle_ct{{[0-9]+}}, m, n, descrA->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, oneapi::mkl::transpose::nontrans, alpha, mat_handle_ct{{[0-9]+}}, x_buf_ct{{[0-9]+}}, beta, y_buf_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(*handle, &mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: }
+  //CHECK-NEXT: dpct::sparse::csrmv(*handle, (oneapi::mkl::transpose)zero, m, n, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y);
   cusparseCreateMatDescr(&descrA);
   cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL);
   cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO);
@@ -98,123 +87,64 @@ int main(){
 
   cuComplex alpha_C, beta_C, *csrValA_C, *x_C, *y_C;
 
-  //CHECK: {
-  //CHECK-NEXT: auto csrValA_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(csrValA_C);
-  //CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrRowPtrA);
-  //CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrColIndA);
-  //CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
-  //CHECK-NEXT: auto y_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_C);
-  //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
-  //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(*handle, mat_handle_ct{{[0-9]+}}, m, n, descrA->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_C_buf_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, std::complex<float>(alpha_C.x(), alpha_C.y()), mat_handle_ct{{[0-9]+}}, x_C_buf_ct{{[0-9]+}}, std::complex<float>(beta_C.x(), beta_C.y()), y_C_buf_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(*handle, &mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: }
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general/symmetric/triangular sparse matrix type. You may need to adjust the code.
+  //CHECK-NEXT: */
+  //CHECK-NEXT: dpct::sparse::csrmv(*handle, transA, m, n, &alpha_C, descrA, csrValA_C, csrRowPtrA, csrColIndA, x_C, &beta_C, y_C);
   cusparseCcsrmv(handle, transA, m, n, nnz, &alpha_C, descrA, csrValA_C, csrRowPtrA, csrColIndA, x_C, &beta_C, y_C);
 
-  //CHECK: {
-  //CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(csrValA);
-  //CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrRowPtrA);
-  //CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrColIndA);
-  //CHECK-NEXT: auto x_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x);
-  //CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y);
-  //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
-  //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(*handle, mat_handle_ct{{[0-9]+}}, m, k, descrA->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::gemm(*handle, oneapi::mkl::layout::row_major, transA, oneapi::mkl::transpose::nontrans, alpha, mat_handle_ct{{[0-9]+}}, x_buf_ct{{[0-9]+}}, n, ldb, beta, y_buf_ct{{[0-9]+}}, ldc);
-  //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(*handle, &mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: }
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general sparse matrix type. You may need to adjust the code.
+  //CHECK-NEXT: */
+  //CHECK-NEXT: dpct::sparse::csrmm(*handle, transA, m, n, k, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, ldb, &beta, y, ldc);
   cusparseScsrmm(handle, transA, m, n, k, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, ldb, &beta, y, ldc);
 
-  //CHECK: {
-  //CHECK-NEXT: auto csrValA_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(csrValA_C);
-  //CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrRowPtrA);
-  //CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrColIndA);
-  //CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
-  //CHECK-NEXT: auto y_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_C);
-  //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
-  //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(*handle, mat_handle_ct{{[0-9]+}}, m, k, descrA->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_C_buf_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::gemm(*handle, oneapi::mkl::layout::row_major, transA, oneapi::mkl::transpose::nontrans, std::complex<float>(alpha_C.x(), alpha_C.y()), mat_handle_ct{{[0-9]+}}, x_C_buf_ct{{[0-9]+}}, n, ldb, std::complex<float>(beta_C.x(), beta_C.y()), y_C_buf_ct{{[0-9]+}}, ldc);
-  //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(*handle, &mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: }
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general sparse matrix type. You may need to adjust the code.
+  //CHECK-NEXT: */
+  //CHECK-NEXT: dpct::sparse::csrmm(*handle, transA, m, n, k, &alpha_C, descrA, csrValA_C, csrRowPtrA, csrColIndA, x_C, ldb, &beta_C, y_C, ldc);
   cusparseCcsrmm(handle, transA, m, n, k, nnz, &alpha_C, descrA, csrValA_C, csrRowPtrA, csrColIndA, x_C, ldb, &beta_C, y_C, ldc);
 
   //CHECK:int status;
   cusparseStatus_t status;
 
-  //CHECK: {
-  //CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(csrValA);
-  //CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrRowPtrA);
-  //CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrColIndA);
-  //CHECK-NEXT: auto x_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x);
-  //CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y);
-  //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
-  //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(*handle, mat_handle_ct{{[0-9]+}}, m, n, descrA->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, x_buf_ct{{[0-9]+}}, beta, y_buf_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(*handle, &mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: }
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in an if statement. You may need to rewrite this code.
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: if(status = 0){}
+  //CHECK-NEXT: /*
+  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general/symmetric/triangular sparse matrix type. You may need to adjust the code.
+  //CHECK-NEXT: */
+  //CHECK-NEXT: if(status = (dpct::sparse::csrmv(*handle, transA, m, n, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y), 0)){}
   if(status = cusparseScsrmv(handle, transA, m, n, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y)){}
 
-  //CHECK: {
-  //CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(csrValA);
-  //CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrRowPtrA);
-  //CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrColIndA);
-  //CHECK-NEXT: auto x_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x);
-  //CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y);
-  //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
-  //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(*handle, mat_handle_ct{{[0-9]+}}, m, n, descrA->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, x_buf_ct{{[0-9]+}}, beta, y_buf_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(*handle, &mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: }
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a for statement. You may need to rewrite this code.
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: for(status = 0;;){}
+  //CHECK-NEXT: /*
+  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general/symmetric/triangular sparse matrix type. You may need to adjust the code.
+  //CHECK-NEXT: */
+  //CHECK-NEXT: for(status = (dpct::sparse::csrmv(*handle, transA, m, n, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y), 0);;){}
   for(status = cusparseScsrmv(handle, transA, m, n, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y);;){}
 
-  //CHECK: {
-  //CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(csrValA);
-  //CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrRowPtrA);
-  //CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrColIndA);
-  //CHECK-NEXT: auto x_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x);
-  //CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y);
-  //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
-  //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(*handle, mat_handle_ct{{[0-9]+}}, m, n, descrA->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, x_buf_ct{{[0-9]+}}, beta, y_buf_ct{{[0-9]+}});
-  //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(*handle, &mat_handle_ct{{[0-9]+}});
-  //CHECK-NEXT: }
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a switch statement. You may need to rewrite this code.
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: switch(status = 0){}
+  //CHECK-NEXT: /*
+  //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general/symmetric/triangular sparse matrix type. You may need to adjust the code.
+  //CHECK-NEXT: */
+  //CHECK-NEXT: switch(status = (dpct::sparse::csrmv(*handle, transA, m, n, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y), 0)){}
   switch(status = cusparseScsrmv(handle, transA, m, n, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y)){}
 
-  //CHECK: int info;
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseCreateSolveAnalysisInfo was removed because this call is redundant in SYCL.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseScsrsv_analysis was removed because this call is redundant in SYCL.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseDestroySolveAnalysisInfo was removed because this call is redundant in SYCL.
-  //CHECK-NEXT: */
+  //CHECK: std::shared_ptr<dpct::sparse::optimize_info> info;
+  //CHECK-NEXT: info = std::make_shared<dpct::sparse::optimize_info>();
+  //CHECK-NEXT: dpct::sparse::optimize_csrsv(*handle, transA, m, descrA, csrValA, csrRowPtrA, csrColIndA, info);
+  //CHECK-NEXT: info.reset();
   cusparseSolveAnalysisInfo_t info;
   cusparseCreateSolveAnalysisInfo(&info);
   cusparseScsrsv_analysis(handle, transA, m, nnz, descrA, csrValA, csrRowPtrA, csrColIndA, info);
   cusparseDestroySolveAnalysisInfo(info);
 
-  //CHECK: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseCcsrsv_analysis was removed because this call is redundant in SYCL.
-  //CHECK-NEXT: */
+  //CHECK: dpct::sparse::optimize_csrsv(*handle, transA, m, descrA, csrValA_C, csrRowPtrA, csrColIndA, info);
   cusparseCcsrsv_analysis(handle, transA, m, nnz, descrA, csrValA_C, csrRowPtrA, csrColIndA, info);
 
   //CHECK: /*
@@ -226,43 +156,24 @@ int main(){
 }
 
 //CHECK: int foo(std::shared_ptr<dpct::sparse::matrix_info> descrB) try {
-//CHECK-NEXT: /*
-//CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general sparse matrix type. You may need to adjust the code.
-//CHECK-NEXT: */
-//CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(csrValA);
-//CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrRowPtrA);
-//CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrColIndA);
-//CHECK-NEXT: auto x_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x);
-//CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y);
-//CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
-//CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-//CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(*handle, mat_handle_ct{{[0-9]+}}, m, n, descrB->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
-//CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, x_buf_ct{{[0-9]+}}, beta, y_buf_ct{{[0-9]+}});
-//CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(*handle, &mat_handle_ct{{[0-9]+}});
-//CHECK-NEXT: /*
-//CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a return statement. You may need to rewrite this code.
-//CHECK-NEXT: */
-//CHECK-NEXT: return 0;
-//CHECK-NEXT: }
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general/symmetric/triangular sparse matrix type. You may need to adjust the code.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  return (dpct::sparse::csrmv(*handle, transA, m, n, &alpha, descrB, csrValA, csrRowPtrA, csrColIndA, x, &beta, y), 0);
+//CHECK-NEXT:}
 int foo(cusparseMatDescr_t descrB){
   return cusparseScsrmv(handle, transA, m, n, nnz, &alpha, descrB, csrValA, csrRowPtrA, csrColIndA, x, &beta, y);
 }
 
 //CHECK: void foo2(std::shared_ptr<dpct::sparse::matrix_info> descrB){
-//CHECK-NEXT: /*
-//CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general sparse matrix type. You may need to adjust the code.
-//CHECK-NEXT: */
-//CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(csrValA);
-//CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrRowPtrA);
-//CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrColIndA);
-//CHECK-NEXT: auto x_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x);
-//CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y);
-//CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
-//CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
-//CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(*handle, mat_handle_ct{{[0-9]+}}, m, n, descrB->get_index_base(), csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
-//CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, transA, alpha, mat_handle_ct{{[0-9]+}}, x_buf_ct{{[0-9]+}}, beta, y_buf_ct{{[0-9]+}});
-//CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(*handle, &mat_handle_ct{{[0-9]+}});
-//CHECK-NEXT: }
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general/symmetric/triangular sparse matrix type. You may need to adjust the code.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  dpct::sparse::csrmv(*handle, transA, m, n, &alpha, descrB, csrValA, csrRowPtrA, csrColIndA, x, &beta, y);
+//CHECK-NEXT:}
 void foo2(cusparseMatDescr_t descrB){
   cusparseScsrmv(handle, transA, m, n, nnz, &alpha, descrB, csrValA, csrRowPtrA, csrColIndA, x, &beta, y);
 }

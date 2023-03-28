@@ -1,7 +1,8 @@
 // RUN: dpct -out-root %T/driver-stream-and-event %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --match-full-lines --input-file %T/driver-stream-and-event/driver-stream-and-event.dp.cpp %s
 
-#include<vector>
+#include "cuda.h"
+#include <vector>
 // CHECK: #include <future>
 template <typename T>
 // CHECK: void my_error_checker(T ReturnValue, char const *const FuncName) {

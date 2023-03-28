@@ -125,8 +125,8 @@ __global__ void k_mdppp_outer_nn(const int * __restrict__ pos,
                                  const int loop_trip) {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
-  __shared__ int ljd[0];
-  __shared__ double la[8][0];
+  __shared__ int ljd[1];
+  __shared__ double la[8][1];
   const int tid = threadIdx.x;
 }
 

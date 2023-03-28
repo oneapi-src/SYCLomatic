@@ -9,14 +9,14 @@
 #include "cublas_v2.h"
 
      //CHECK:void testDevice(const int *K) {
-//CHECK-NEXT:  int t = K[0];
+//CHECK-NEXT:  int t = K[1];
 //CHECK-NEXT:}
 __device__ void testDevice(const int *K) {
-  int t = K[0];
+  int t = K[1];
 }
 
-     //CHECK:void testDevice1(const int *K) { int t = K[0]; }
-__device__ void testDevice1(const int *K) { int t = K[0]; }
+     //CHECK:void testDevice1(const int *K) { int t = K[1]; }
+__device__ void testDevice1(const int *K) { int t = K[1]; }
 
 //CHECK:void testKernelPtr(const int *L, const int *M, int N,
 //CHECK-NEXT:                   const cl::sycl::nd_item<3> &item_ct1) {
@@ -127,8 +127,8 @@ __global__ void k_mdppp_outer_nn(const int * __restrict__ pos,
                                  const int loop_trip) {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
-  __shared__ int ljd[0];
-  __shared__ double la[8][0];
+  __shared__ int ljd[1];
+  __shared__ double la[8][1];
   const int tid = threadIdx.x;
 }
 
@@ -158,8 +158,8 @@ void test() {
 __global__ void k_mdppp_outer_n0() {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
-  __shared__ int ljd[0];
-  __shared__ double la[8][0];
+  __shared__ int ljd[1];
+  __shared__ double la[8][1];
   const int tid = threadIdx.x;
 }
 
@@ -170,8 +170,8 @@ __global__ void k_mdppp_outer_n0() {
 __global__ void k_mdppp_outer_n1(const int * __restrict__ pos) {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
-  __shared__ int ljd[0];
-  __shared__ double la[8][0];
+  __shared__ int ljd[1];
+  __shared__ double la[8][1];
   const int tid = threadIdx.x;
 }
 
@@ -186,8 +186,8 @@ __global__ void k_mdppp_outer_22(const int * __restrict__ pos,
                                  const float * __restrict__ q) {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
-  __shared__ int ljd[0];
-  __shared__ double la[8][0];
+  __shared__ int ljd[1];
+  __shared__ double la[8][1];
   const int tid = threadIdx.x;
 }
 
@@ -199,8 +199,8 @@ __global__ void k_mdppp_outer_22(const int * __restrict__ pos,
 void __device__ k_mdppp_outer_n2(const int * __restrict__ pos, const float * __restrict__ q) {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
-  __shared__ int ljd[0];
-  __shared__ double la[8][0];
+  __shared__ int ljd[1];
+  __shared__ double la[8][1];
   const int tid = threadIdx.x;
 }
 
@@ -214,8 +214,8 @@ __device__
 void k_mdppp_outer_n3(const int * __restrict__ pos, const float * __restrict__ q) {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
-  __shared__ int ljd[0];
-  __shared__ double la[8][0];
+  __shared__ int ljd[1];
+  __shared__ double la[8][1];
   const int tid = threadIdx.x;
 }
 
@@ -227,8 +227,8 @@ void k_mdppp_outer_n3(const int * __restrict__ pos, const float * __restrict__ q
 __device__ void foo1(AAA, BBB) {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
-  __shared__ int ljd[0];
-  __shared__ double la[8][0];
+  __shared__ int ljd[1];
+  __shared__ double la[8][1];
   const int tid = threadIdx.x;
 }
 
@@ -238,8 +238,8 @@ __device__ void foo1(AAA, BBB) {
 __device__ void foo2(const int * __restrict__ pos, BBB) {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
-  __shared__ int ljd[0];
-  __shared__ double la[8][0];
+  __shared__ int ljd[1];
+  __shared__ double la[8][1];
   const int tid = threadIdx.x;
 }
 
@@ -249,8 +249,8 @@ __device__ void foo2(const int * __restrict__ pos, BBB) {
 __device__ void foo3(AAA, const float * __restrict__ q) {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
-  __shared__ int ljd[0];
-  __shared__ double la[8][0];
+  __shared__ int ljd[1];
+  __shared__ double la[8][1];
   const int tid = threadIdx.x;
 }
 
@@ -261,8 +261,8 @@ FFFFF(pos, q)
 {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
-  __shared__ int ljd[0];
-  __shared__ double la[8][0];
+  __shared__ int ljd[1];
+  __shared__ double la[8][1];
   const int tid = threadIdx.x;
 }
 

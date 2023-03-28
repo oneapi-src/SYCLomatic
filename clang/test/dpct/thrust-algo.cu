@@ -335,8 +335,8 @@ struct key_value
 struct compare_key_value
 	{
 		__host__ __device__
-			bool operator()(key_value lhs, key_value rhs) const {
-			return lhs.key < rhs.key;
+			bool operator()(int lhs, int rhs) const {
+			return lhs < rhs;
 		}
 	};
 
@@ -644,7 +644,7 @@ void for_each_n_test() {
 // CHECK-NEXT:  oneapi::dpl::for_each_n(oneapi::dpl::execution::seq, A, N, add_functor());
   thrust::for_each_n(thrust::host, h_V.begin(), h_V.size(), add_functor());
   thrust::for_each_n(h_V.begin(), h_V.size(), add_functor());
-  thrust::for_each_n(thrust::deice, d_V.begin(), d_V.size(), add_functor());
+  thrust::for_each_n(thrust::device, d_V.begin(), d_V.size(), add_functor());
   thrust::for_each_n(d_V.begin(), d_V.size(), add_functor());
   thrust::for_each_n(thrust::host, A, N, add_functor());
   thrust::for_each_n(A, N, add_functor());
@@ -708,13 +708,13 @@ void transform_exclusive_scan_test() {
   thrust::negate<int> unary_op;
   thrust::plus<int> binary_op;
 
-// CHECK:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_V.begin(), 4, binary_op, unary_op)
+// CHECK:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_V.begin(), 4, binary_op, unary_op);
 // CHECK-NEXT:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_V.begin(), 4, binary_op, unary_op);
 // CHECK-NEXT:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_V.begin(), 4, binary_op, unary_op);
 // CHECK-NEXT:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_V.begin(), 4, binary_op, unary_op);
 // CHECK-NEXT:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, A, A+N, A, 4, binary_op, unary_op);
 // CHECK-NEXT: oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, A, A+N, A, 4, binary_op, unary_op);
-  thrust::transform_exclusive_scan(thrust::host, h_V.begin(), h_V.end(), h_V.begin(), unary_op, 4, binary_op)
+  thrust::transform_exclusive_scan(thrust::host, h_V.begin(), h_V.end(), h_V.begin(), unary_op, 4, binary_op);
   thrust::transform_exclusive_scan(h_V.begin(), h_V.end(), h_V.begin(), unary_op, 4, binary_op);
   thrust::transform_exclusive_scan(thrust::device, d_V.begin(), d_V.end(), d_V.begin(), unary_op, 4, binary_op);
   thrust::transform_exclusive_scan(d_V.begin(), d_V.end(), d_V.begin(), unary_op, 4, binary_op);
@@ -831,7 +831,7 @@ void partition_copy_test() {
   thrust::partition_copy(device_a.begin(), device_a.begin() + N, device_S.begin(), device_evens.begin(), device_odds.begin(), is_even());
 }
 
-void partition_copy_test() {
+void stable_partition_copy_test() {
   int data[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
   int S[] = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0};
   int result[10];

@@ -5,7 +5,8 @@
 // CHECK-NEXT:#include <sycl/sycl.hpp>
 // CHECK-NEXT:#include <dpct/dpct.hpp>
 // CHECK-NEXT:#include <vector>
-#include<vector>
+#include "cuda.h"
+#include <vector>
 
 template <typename T>
 void my_error_checker(T ReturnValue, char const *const FuncName) {

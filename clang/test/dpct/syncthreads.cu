@@ -136,7 +136,7 @@ __global__ void test8(S3 *s3) {
 }
 
 // Unsupport c++ constructor
-__device__ void process_data(float*, float*);
+__device__ void process_data(float*, float*) {}
 
 struct S4 {
   float *data;

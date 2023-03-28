@@ -1,5 +1,4 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/no_cuda_syntax.dp.cpp
 
-// CHECK: static void hello(){
-static void hello(){
-}
+// CHECK: void hello();
+void hello();

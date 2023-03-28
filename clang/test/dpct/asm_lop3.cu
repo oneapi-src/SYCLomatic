@@ -1,6 +1,8 @@
 // RUN: dpct -out-root %T/asm_lop3 %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/asm_lop3/asm_lop3.dp.cpp
 
+#include <cstdint>
+
 // a^b^c
 static __device__ __forceinline__ uint32_t LOP3LUT_XOR(uint32_t a, uint32_t b, uint32_t c) {
   uint32_t d1;
