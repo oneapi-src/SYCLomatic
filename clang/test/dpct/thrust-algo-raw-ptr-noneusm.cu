@@ -40,8 +40,8 @@ struct key_value
 struct compare_key_value
 	{
 		__host__ __device__
-			bool operator()(key_value lhs, key_value rhs) {
-			return lhs.key < rhs.key;
+			bool operator()(int lhs, int rhs) {
+			return lhs < rhs;
 		}
 	};
 
@@ -476,7 +476,7 @@ void partition_copy_test() {
   thrust::partition_copy(data, data + N, S, evens, odds, is_even());
 }
 
-void partition_copy_test() {
+void stable_partition_copy_test() {
   int data[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
   int S[] = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0};
   int result[10];

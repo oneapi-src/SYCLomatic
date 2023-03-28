@@ -233,7 +233,9 @@ void MapNames::setExplicitNamespaceMap() {
            HelperFeatureEnum::SparseUtils_matrix_info)},
       {"cusparseOperation_t",
        std::make_shared<TypeNameRule>("oneapi::mkl::transpose")},
-      {"cusparseSolveAnalysisInfo_t", std::make_shared<TypeNameRule>("int")},
+      {"cusparseSolveAnalysisInfo_t", std::make_shared<TypeNameRule>(
+           "std::shared_ptr<" + getDpctNamespace() + "sparse::optimize_info>",
+           HelperFeatureEnum::SparseUtils_optimize_info)},
       {"thrust::device_ptr",
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "device_pointer",
@@ -327,6 +329,12 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "rng::host_rng_ptr",
            HelperFeatureEnum::RngUtils_typedef_host_rng_ptr)},
+      {"curandRngType_t", std::make_shared<TypeNameRule>(
+                              getDpctNamespace() + "rng::random_engine_type",
+                              HelperFeatureEnum::RngUtils_random_engine_type)},
+      {"curandRngType", std::make_shared<TypeNameRule>(
+                              getDpctNamespace() + "rng::random_engine_type",
+                              HelperFeatureEnum::RngUtils_random_engine_type)},
       {"curandStatus_t", std::make_shared<TypeNameRule>("int")},
       {"curandStatus", std::make_shared<TypeNameRule>("int")},
       {"cusparseStatus_t", std::make_shared<TypeNameRule>("int")},
@@ -1762,13 +1770,42 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusolverDnXpotrf",
                            "cusolverDnPotrf",
                            "cusolverDnXpotrs",
-                           "cusolverDnPotrs"};
+                           "cusolverDnPotrs",
+                           "cusolverDnSgeqrf_bufferSize",
+                           "cusolverDnDgeqrf_bufferSize",
+                           "cusolverDnCgeqrf_bufferSize",
+                           "cusolverDnZgeqrf_bufferSize"};
 
-  SPARSEAPIWithRewriter = {"cusparseCreateMatDescr",  "cusparseDestroyMatDescr",
-                           "cusparseSetMatType",      "cusparseGetMatType",
-                           "cusparseSetMatIndexBase", "cusparseGetMatIndexBase",
-                           "cusparseSetMatDiagType",  "cusparseGetMatDiagType",
-                           "cusparseSetMatFillMode",  "cusparseGetMatFillMode"};
+  SPARSEAPIWithRewriter = {"cusparseCreateMatDescr",
+                           "cusparseDestroyMatDescr",
+                           "cusparseSetMatType",
+                           "cusparseGetMatType",
+                           "cusparseSetMatIndexBase",
+                           "cusparseGetMatIndexBase",
+                           "cusparseSetMatDiagType",
+                           "cusparseGetMatDiagType",
+                           "cusparseSetMatFillMode",
+                           "cusparseGetMatFillMode",
+                           "cusparseCreate",
+                           "cusparseDestroy",
+                           "cusparseSetStream",
+                           "cusparseGetStream",
+                           "cusparseGetPointerMode",
+                           "cusparseSetPointerMode",
+                           "cusparseCreateSolveAnalysisInfo",
+                           "cusparseDestroySolveAnalysisInfo",
+                           "cusparseScsrmv",
+                           "cusparseDcsrmv",
+                           "cusparseCcsrmv",
+                           "cusparseZcsrmv",
+                           "cusparseScsrsv_analysis",
+                           "cusparseDcsrsv_analysis",
+                           "cusparseCcsrsv_analysis",
+                           "cusparseZcsrsv_analysis",
+                           "cusparseScsrmm",
+                           "cusparseDcsrmm",
+                           "cusparseCcsrmm",
+                           "cusparseZcsrmm"};
 
   // This map now is only used to migrate using declaration
   MathFuncNameMap = {

@@ -509,6 +509,7 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       REPLACE_ENUM(MapNames::BLASEnumsMap);
       REPLACE_ENUM(MapNames::FunctionAttrMap);
       REPLACE_ENUM(CuDNNTypeRule::CuDNNEnumNamesMap);
+      REPLACE_ENUM(MapNames::RandomEngineTypeMap);
       REPLACE_ENUM(MapNames::SOLVEREnumsMap);
       REPLACE_ENUM(MapNames::SPBLASEnumsMap);
 #undef REPLACE_ENUM
@@ -1134,6 +1135,10 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
   case TypeLoc::Decltype:
     analyzeDecltypeType(TYPELOC_CAST(DecltypeTypeLoc));
     break;
+  case TypeLoc::Enum: {
+    TyName = DpctGlobalInfo::getTypeName(TL.getType());
+    break;
+  }
   default:
     return;
   }
