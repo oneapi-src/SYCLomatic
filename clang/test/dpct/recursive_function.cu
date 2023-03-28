@@ -8,6 +8,9 @@ __device__ int factorial(int n) {
     if (n <= 1) {
         return 1;
     } else {
+        // CHECK: /*
+        // CHECK-NEXT: DPCT1109:{{[0-9]+}}: Recursive functions cannot be called in a SYCL kernel or by functions called by the kernel. You may need to adjust the code.
+        // CHECK-NEXT: */
         return n * factorial(n - 1);
     }
 }

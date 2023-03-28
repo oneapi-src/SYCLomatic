@@ -41,6 +41,9 @@ private:
 __global__ void func(){
     
     auto seq = new TestSeqContainer<int>(10);
+    // CHECK: /*
+    // CHECK-NEXT: DPCT1109:{{[0-9]+}}: Virtual functions cannot be called in a SYCL kernel or by functions called by the kernel. You may need to adjust the code.
+    // CHECK-NEXT: */
     seq->push(10);
     delete seq;
 }
