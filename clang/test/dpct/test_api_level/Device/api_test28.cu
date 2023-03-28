@@ -8,6 +8,8 @@
 // TEST_FEATURE: Device_get_device
 // TEST_FEATURE: Device_device_ext_get_device_info_return_info
 
+#include "cuda.h"
+
 int main() {
   size_t size;
   CUdevice device;

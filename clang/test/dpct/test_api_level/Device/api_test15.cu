@@ -6,6 +6,8 @@
 // CHECK: 13
 // TEST_FEATURE: Device_dev_mgr_device_count
 
+#include "cuda.h"
+
 int main() {
   int result1;
   cuDeviceGetCount(&result1);

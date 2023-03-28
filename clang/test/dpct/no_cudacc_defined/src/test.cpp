@@ -24,23 +24,23 @@ __host__ __device__ T rounduptomult(T x, T m)
 
 // CHECK: #if __CUDACC__
 // CHECK-NEXT: __global__ void k1(){
-// CHECK-NEXT:   return 0;
+// CHECK-NEXT:   return;
 // CHECK-NEXT: }
 // CHECK-NEXT: #endif
 #if __CUDACC__
 __global__ void k1(){
-  return 0;
+  return;
 }
 #endif
 
 // CHECK: #if defined(__CUDACC__)
 // CHECK-NEXT: __global__ void k2(){
-// CHECK-NEXT:   return 0;
+// CHECK-NEXT:   return;
 // CHECK-NEXT: }
 // CHECK-NEXT: #endif
 #if defined(__CUDACC__)
 __global__ void k2(){
-  return 0;
+  return;
 }
 #endif
 

@@ -7,6 +7,7 @@
 // CHECK-NEXT:#include <dpct/dpct.hpp>
 // CHECK-NEXT:#include <stdio.h>
 // CHECK-NEXT:#include <cmath>
+#include "cuda.h"
 #include <stdio.h>
 
 #define N 1000
@@ -234,8 +235,8 @@ void foo_test_3() {
   // CHECK-NEXT:  return 0;}());
   // CHECK-NEXT:  /*
   // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-   // CHECK-NEXT: */
-  CHECK((stop->wait_and_throw(), 0));
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  CHECK((stop->wait_and_throw(), 0));
   CHECK(cudaEventRecord(stop, 0));
   CHECK(cudaEventSynchronize(stop));
   float execution_time;

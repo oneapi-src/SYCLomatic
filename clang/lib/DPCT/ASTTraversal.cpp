@@ -1057,7 +1057,7 @@ void IncludesCallbacks::InclusionDirective(
     if (FileName.compare(StringRef("cuda/std/tuple")) == 0) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Tuple);
     }
-    
+
   }
 
   if (!isChildPath(CudaPath, IncludePath) &&
@@ -1960,12 +1960,18 @@ void ZeroLengthArrayRule::runRule(
   if (!(CAT->getSize().isZero()))
     return;
 
-  // Check if the array is in device code
-  const clang::FunctionDecl *FD = DpctGlobalInfo::getParentFunction(TL);
-  if (!FD)
-    return;
-  if (!(FD->getAttr<CUDADeviceAttr>()) && !(FD->getAttr<CUDAGlobalAttr>()))
-    return;
+  const clang::FieldDecl *MemberVariable =
+      DpctGlobalInfo::findAncestor<clang::FieldDecl>(TL);
+  if (MemberVariable) {
+    report(TL->getBeginLoc(), Diagnostics::ZERO_LENGTH_ARRAY, false);
+  } else {
+    const clang::FunctionDecl *FD = DpctGlobalInfo::getParentFunction(TL);
+    if (FD) {
+      // Check if the array is in device code
+      if (!(FD->getAttr<CUDADeviceAttr>()) && !(FD->getAttr<CUDAGlobalAttr>()))
+        return;
+    }
+  }
 
   // Check if the array is a shared variable
   const VarDecl* VD = DpctGlobalInfo::findAncestor<VarDecl>(TL);
@@ -1980,54 +1986,48 @@ REGISTER_RULE(ZeroLengthArrayRule, PassKind::PK_Migration)
 void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       typeLoc(
-          loc(qualType(hasDeclaration(namedDecl(
-              hasAnyName(
-                  "cudaError", "curandStatus", "cublasStatus", "CUstream",
-                  "CUstream_st", "thrust::complex", "thrust::device_vector",
-                  "thrust::device_ptr", "thrust::device_reference",
-                  "thrust::host_vector", "cublasHandle_t",
-                  "CUevent_st", "__half", "half", "__half2", "half2",
-                  "cudaMemoryAdvise", "cudaError_enum", "cudaDeviceProp",
-                  "cudaPitchedPtr", "thrust::counting_iterator",
-                  "thrust::transform_iterator", "thrust::permutation_iterator",
-                  "thrust::iterator_difference", "cusolverDnHandle_t",
-                  "cusolverDnParams_t", "gesvdjInfo_t",
-                  "thrust::device_malloc_allocator", "thrust::divides",
-                  "thrust::tuple", "thrust::maximum", "thrust::multiplies",
-                  "thrust::plus", "cudaDataType_t", "cudaError_t", "CUresult",
-                  "CUdevice", "cudaEvent_t", "cublasStatus_t", "cuComplex",
-                  "cuFloatComplex", "cuDoubleComplex", "CUevent",
-                  "cublasFillMode_t", "cublasDiagType_t", "cublasSideMode_t",
-                  "cublasOperation_t", "cusolverStatus_t", "cusolverEigType_t",
-                  "cusolverEigMode_t", "curandStatus_t", "cudaStream_t",
-                  "cusparseStatus_t", "cusparseDiagType_t",
-                  "cusparseFillMode_t", "cusparseIndexBase_t",
-                  "cusparseMatrixType_t", "cusparseOperation_t",
-                  "cusparseMatDescr_t", "cusparseHandle_t", "CUcontext",
-                  "cublasPointerMode_t", "cusparsePointerMode_t",
-                  "cublasGemmAlgo_t", "cusparseSolveAnalysisInfo_t",
-                  "cudaDataType", "cublasDataType_t", "curandState_t",
-                  "curandState", "curandStateXORWOW_t", "curandStateXORWOW",
-                  "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
-                  "curandStateMRG32k3a_t", "curandStateMRG32k3a",
-                  "thrust::minus", "thrust::negate", "thrust::logical_or",
-                  "thrust::identity", "thrust::equal_to", "thrust::less",
-                  "cudaSharedMemConfig", "curandGenerator_t", "cufftHandle",
-                  "cufftReal", "cufftDoubleReal", "cufftComplex",
-                  "cufftDoubleComplex", "cufftResult_t", "cufftResult",
-                  "cufftType_t", "cufftType", "thrust::pair", "CUdeviceptr",
-                  "cudaDeviceAttr", "CUmodule", "CUjit_option",
-                  "CUfunction", "cudaMemcpyKind",
-                  "cudaComputeMode", "__nv_bfloat16",
-                  "cooperative_groups::__v1::thread_block_tile",
-                  "cooperative_groups::__v1::thread_block",
-                  "libraryPropertyType_t", "libraryPropertyType",
-                  "cudaDataType_t", "cudaDataType", "cublasComputeType_t",
-                  "cublasAtomicsMode_t", "CUmem_advise_enum", "CUmem_advise",
-                  "thrust::tuple_element", "thrust::tuple_size", "cublasMath_t",
-                  "cudaPointerAttributes", "thrust::zip_iterator",
-                  "cusolverEigRange_t", "cudaUUID_t")
-              )))))
+          loc(qualType(hasDeclaration(namedDecl(hasAnyName(
+              "cudaError", "curandStatus", "cublasStatus", "CUstream",
+              "CUstream_st", "thrust::complex", "thrust::device_vector",
+              "thrust::device_ptr", "thrust::device_reference",
+              "thrust::host_vector", "cublasHandle_t", "CUevent_st", "__half",
+              "half", "__half2", "half2", "cudaMemoryAdvise", "cudaError_enum",
+              "cudaDeviceProp", "cudaPitchedPtr", "thrust::counting_iterator",
+              "thrust::transform_iterator", "thrust::permutation_iterator",
+              "thrust::iterator_difference", "cusolverDnHandle_t",
+              "cusolverDnParams_t", "gesvdjInfo_t",
+              "thrust::device_malloc_allocator", "thrust::divides",
+              "thrust::tuple", "thrust::maximum", "thrust::multiplies",
+              "thrust::plus", "cudaDataType_t", "cudaError_t", "CUresult",
+              "CUdevice", "cudaEvent_t", "cublasStatus_t", "cuComplex",
+              "cuFloatComplex", "cuDoubleComplex", "CUevent",
+              "cublasFillMode_t", "cublasDiagType_t", "cublasSideMode_t",
+              "cublasOperation_t", "cusolverStatus_t", "cusolverEigType_t",
+              "cusolverEigMode_t", "curandStatus_t", "cudaStream_t",
+              "cusparseStatus_t", "cusparseDiagType_t", "cusparseFillMode_t",
+              "cusparseIndexBase_t", "cusparseMatrixType_t",
+              "cusparseOperation_t", "cusparseMatDescr_t", "cusparseHandle_t",
+              "CUcontext", "cublasPointerMode_t", "cusparsePointerMode_t",
+              "cublasGemmAlgo_t", "cusparseSolveAnalysisInfo_t", "cudaDataType",
+              "cublasDataType_t", "curandState_t", "curandState",
+              "curandStateXORWOW_t", "curandStateXORWOW",
+              "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
+              "curandStateMRG32k3a_t", "curandStateMRG32k3a", "thrust::minus",
+              "thrust::negate", "thrust::logical_or", "thrust::identity",
+              "thrust::equal_to", "thrust::less", "cudaSharedMemConfig",
+              "curandGenerator_t", "curandRngType_t", "cufftHandle",
+              "cufftReal", "cufftDoubleReal", "cufftComplex",
+              "cufftDoubleComplex", "cufftResult_t", "cufftResult",
+              "cufftType_t", "cufftType", "thrust::pair", "CUdeviceptr",
+              "cudaDeviceAttr", "CUmodule", "CUjit_option", "CUfunction",
+              "cudaMemcpyKind", "cudaComputeMode", "__nv_bfloat16",
+              "cooperative_groups::__v1::thread_block_tile",
+              "cooperative_groups::__v1::thread_block", "libraryPropertyType_t",
+              "libraryPropertyType", "cudaDataType_t", "cudaDataType",
+              "cublasComputeType_t", "cublasAtomicsMode_t", "CUmem_advise_enum",
+              "CUmem_advise", "thrust::tuple_element", "thrust::tuple_size",
+              "cublasMath_t", "cudaPointerAttributes", "thrust::zip_iterator",
+              "cusolverEigRange_t", "cudaUUID_t"))))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -3973,12 +3973,14 @@ void BLASEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(BLASEnumsRule, PassKind::PK_Migration)
 
 // Rule for RANDOM enums.
-// Migrate RANDOM status values to corresponding int values
 void RandomEnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       declRefExpr(to(enumConstantDecl(matchesName("CURAND_STATUS.*"))))
           .bind("RANDOMStatusConstants"),
       this);
+  MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName("CURAND_RNG.*"))))
+                    .bind("RandomTypeEnum"),
+                this);
 }
 
 void RandomEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -3986,6 +3988,23 @@ void RandomEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
           getNodeAsType<DeclRefExpr>(Result, "RANDOMStatusConstants")) {
     auto *EC = cast<EnumConstantDecl>(DE->getDecl());
     emplaceTransformation(new ReplaceStmt(DE, toString(EC->getInitVal(), 10)));
+  }
+  if (const DeclRefExpr *DE =
+          getNodeAsType<DeclRefExpr>(Result, "RandomTypeEnum")) {
+    std::string EnumStr = DE->getNameInfo().getName().getAsString();
+    auto Search = MapNames::RandomEngineTypeMap.find(EnumStr);
+    if (Search == MapNames::RandomEngineTypeMap.end()) {
+      report(DE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumStr);
+      return;
+    }
+    if (EnumStr == "CURAND_RNG_PSEUDO_XORWOW" ||
+        EnumStr == "CURAND_RNG_QUASI_SOBOL64" ||
+        EnumStr == "CURAND_RNG_QUASI_SCRAMBLED_SOBOL64") {
+      report(DE->getBeginLoc(), Diagnostics::DIFFERENT_GENERATOR, false);
+    } else if (EnumStr == "CURAND_RNG_QUASI_SCRAMBLED_SOBOL32") {
+      report(DE->getBeginLoc(), Diagnostics::DIFFERENT_BASIC_GENERATOR, false);
+    }
+    emplaceTransformation(new ReplaceStmt(DE, Search->second));
   }
 }
 
@@ -4215,26 +4234,6 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
   if (FuncName == "curandCreateGenerator" ||
       FuncName == "curandCreateGeneratorHost") {
-    std::string EnumStr = ExprAnalysis::ref(CE->getArg(1));
-    if (MapNames::RandomEngineTypeMap.find(EnumStr) ==
-        MapNames::RandomEngineTypeMap.end()) {
-      report(PrefixInsertLoc, Diagnostics::NOT_SUPPORTED_PARAMETER, false,
-             FuncName, "parameter " + EnumStr + " is unsupported");
-      return;
-    }
-
-    if (EnumStr == "CURAND_RNG_PSEUDO_XORWOW" ||
-        EnumStr == "CURAND_RNG_QUASI_SOBOL64" ||
-        EnumStr == "CURAND_RNG_QUASI_SCRAMBLED_SOBOL64") {
-      report(CE->getArg(1)->getBeginLoc(), Diagnostics::DIFFERENT_GENERATOR,
-             false);
-    } else if (EnumStr == "CURAND_RNG_QUASI_SCRAMBLED_SOBOL32") {
-      report(CE->getArg(1)->getBeginLoc(),
-             Diagnostics::DIFFERENT_BASIC_GENERATOR, false);
-    }
-
-    std::string EngineType =
-        MapNames::RandomEngineTypeMap.find(EnumStr)->second;
     const auto *const Arg0 = CE->getArg(0);
     requestFeature(HelperFeatureEnum::RngUtils_create_host_rng, CE);
     if (Arg0->getStmtClass() == Stmt::UnaryOperatorClass) {
@@ -4246,13 +4245,14 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         return emplaceTransformation(new ReplaceStmt(
             CE, false,
             buildString(ExprAnalysis::ref(SE), " = dpct::rng::create_host_rng(",
-                        EngineType, ")")));
+                        ExprAnalysis::ref(CE->getArg(1)), ")")));
       }
     }
-    return emplaceTransformation(new ReplaceStmt(
-        CE, false,
-        buildString("*(", ExprAnalysis::ref(CE->getArg(0)),
-                    ") = dpct::rng::create_host_rng(", EngineType, ")")));
+    return emplaceTransformation(
+        new ReplaceStmt(CE, false,
+                        buildString("*(", ExprAnalysis::ref(CE->getArg(0)),
+                                    ") = dpct::rng::create_host_rng(",
+                                    ExprAnalysis::ref(CE->getArg(1)), ")")));
   }
   if (FuncName == "curandDestroyGenerator") {
     return emplaceTransformation(new ReplaceStmt(
@@ -9988,7 +9988,7 @@ void MemoryMigrationRule::mallocMigration(
     }
   } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost" ||
              Name == "cuMemHostAlloc" || Name == "cuMemAllocHost_v2" ||
-             Name == "cuMemAllocPitch_v2") {
+             Name == "cuMemAllocPitch_v2" || Name == "cudaMallocPitch") {
     ExprAnalysis EA(C);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
@@ -10057,7 +10057,7 @@ void MemoryMigrationRule::mallocMigration(
         report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       }
     }
-  } else if (Name == "cudaMallocPitch" || Name == "cudaMalloc3D") {
+  } else if (Name == "cudaMalloc3D") {
     std::ostringstream OS;
     std::string Type;
     if (IsAssigned)
@@ -10076,9 +10076,6 @@ void MemoryMigrationRule::mallocMigration(
     emplaceTransformation(removeArg(C, 0, *Result.SourceManager));
     std::ostringstream OS2;
     printDerefOp(OS2, C->getArg(1));
-    if (Name == "cudaMallocPitch") {
-      emplaceTransformation(new ReplaceStmt(C->getArg(1), OS2.str()));
-    }
     if (IsAssigned) {
       emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
@@ -10680,11 +10677,14 @@ void MemoryMigrationRule::prefetchMigration(
 
     // In clang "define NULL __null"
     if (StmtStrArg3 == "0" || StmtStrArg3 == "") {
+      const auto Prefix =
+          MapNames::getDpctNamespace() +
+          (StmtStrArg2 == "cudaCpuDeviceId"
+               ? +"cpu_device()"
+               : "dev_mgr::instance().get_device(" + StmtStrArg2 + ")");
       requestFeature(HelperFeatureEnum::Device_dev_mgr_get_device, C);
       requestFeature(HelperFeatureEnum::Device_device_ext_default_queue, C);
-      Replacement = MapNames::getDpctNamespace() +
-                    "dev_mgr::instance().get_device(" + StmtStrArg2 +
-                    ").default_queue().prefetch(" + StmtStrArg0 + "," +
+      Replacement = Prefix + ".default_queue().prefetch(" + StmtStrArg0 + "," +
                     StmtStrArg1 + ")";
     } else {
       if (SM->getCharacterData(C->getArg(3)->getBeginLoc()) -
@@ -14858,7 +14858,7 @@ void CudaExtentRule::runRule(
   // struct Foo { cudaExtent e; Foo() : e() {} }; -> struct Foo { sycl::range<3> e; Foo() : e{0, 0, 0} {} };
   if (const CXXConstructExpr *Ctor =
           getNodeAsType<CXXConstructExpr>(Result, "defaultCtor")) {
-    
+
     // Ignore implicit move/copy ctor
     if (Ctor->getNumArgs() != 0)
       return;
@@ -14866,7 +14866,7 @@ void CudaExtentRule::runRule(
     SourceRange SR = Ctor->getParenOrBraceRange();
     auto &SM = DpctGlobalInfo::getSourceManager();
     std::string Replacement = "{0, 0, 0}";
-    
+
     if (SR.isInvalid()) {
       auto CtorLoc = Ctor->getLocation().isMacroID()
                          ? SM.getSpellingLoc(Ctor->getLocation())

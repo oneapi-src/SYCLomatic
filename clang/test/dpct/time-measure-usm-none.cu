@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -usm-level=none -out-root %T/time-measure-usm-none %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/time-measure-usm-none/time-measure-usm-none.dp.cpp --match-full-lines %s
+#include "cuda.h"
 #include <stdio.h>
 
 #define N 1000

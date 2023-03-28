@@ -192,7 +192,7 @@ struct TEST {
 
 // Test description:
 // This test covers the case when the type of the arg has alias.
-__device__ void foo() {
+__device__ void foo2() {
   unsigned long long seed;
   unsigned long long sequence;
   unsigned long long offset;
