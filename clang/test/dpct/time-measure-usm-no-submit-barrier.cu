@@ -487,7 +487,7 @@ CUDAStream getCurrentCUDAStream(int device_index = -1);
 } // namespace user
 
 
-void foo() {
+void foo2() {
   user::CUDAStream stream = user::getCurrentCUDAStream();
   void* dst = NULL;
   void* src = NULL;

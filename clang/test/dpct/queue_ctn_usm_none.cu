@@ -10,7 +10,7 @@ void bar();
 size_t size = 1234567 * sizeof(float);
 float *h_A = (float *)malloc(size);
 float *d_A = NULL;
-__constant__ float constData[1234567 * 4];
+__constant__ float constData[123 * 4];
 
 // CHECK: void foo1() {
 // CHECK-NEXT: dpct::dpct_memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE, dpct::device_to_host );

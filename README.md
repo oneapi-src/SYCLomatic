@@ -38,9 +38,9 @@ expected to be similar to the daily releases.
 * `ninja` -
 [Download](https://github.com/ninja-build/ninja/wiki/Pre-built-Ninja-packages)
 * C++ compiler
-  * Linux: `GCC` version 7.1.0 or later (including libstdc++) -
+  * Linux: `GCC` version 7.5.0 or later (including libstdc++) -
     [Download](https://gcc.gnu.org/install/)
-  * Windows: `Visual Studio` version 15.7 preview 4 or later -
+  * Windows: `Visual Studio` 2019 or 2022 -
     [Download](https://visualstudio.microsoft.com/downloads/)
 
 ### Create SYCLomatic workspace
@@ -101,7 +101,8 @@ cmake -G Ninja -DCMAKE_INSTALL_PREFIX=%PATH_TO_C2S_INSTALL_FOLDER%  -DCMAKE_BUIL
 ninja install-c2s
 ```
 
-Note: For build system with 16G or less memory, recommend to use less than 5 threads for compilation, you may meet out of memory issue when more than 4 threads used for compilation.
+Note: For build system with 16G or less memory, to avoid out of memory issues,
+it is recommended to add the option `-DLLVM_PARALLEL_LINK_JOBS=1` in the CMake step and use 4 or less total parallel jobs when building SYCLomatic by invoking `ninja` with the option `-j4`:
 ```
 ninja -j4 install-c2s
 ```

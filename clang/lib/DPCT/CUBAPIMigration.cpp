@@ -47,16 +47,18 @@ auto parentStmt = []() {
 auto isDeviceFuncCallExpr = []() {
   auto hasDeviceFuncName = []() {
     return hasAnyName(
-        "Sum", "Min", "Max", "Reduce", "ReduceByKey", "ExclusiveSum",
-        "InclusiveSum", "InclusiveScan", "ExclusiveScan", "InclusiveScanByKey",
-        "InclusiveSumByKey", "ExclusiveScanByKey", "ExclusiveSumByKey",
-        "Flagged", "Unique", "UniqueByKey", "Encode", "SortKeys",
-        "SortKeysDescending", "SortPairs", "SortPairsDescending", "If");
+        "Sum", "Min", "Max", "ArgMin", "ArgMax", "Reduce", "ReduceByKey",
+        "ExclusiveSum", "InclusiveSum", "InclusiveScan", "ExclusiveScan",
+        "InclusiveScanByKey", "InclusiveSumByKey", "ExclusiveScanByKey",
+        "ExclusiveSumByKey", "Flagged", "Unique", "UniqueByKey", "Encode",
+        "SortKeys", "SortKeysDescending", "SortPairs", "SortPairsDescending",
+        "If", "StableSortPairs", "StableSortPairsDescending");
   };
   auto hasDeviceRecordName = []() {
     return hasAnyName("DeviceSegmentedReduce", "DeviceReduce", "DeviceScan",
                       "DeviceSelect", "DeviceRunLengthEncode",
-                      "DeviceRadixSort", "DeviceSegmentedRadixSort");
+                      "DeviceRadixSort", "DeviceSegmentedRadixSort",
+                      "DeviceSegmentedSort");
   };
   return callExpr(callee(functionDecl(
       allOf(hasDeviceFuncName(),
@@ -70,6 +72,7 @@ auto isDeviceFuncCallExpr = []() {
 REGISTER_RULE(CubTypeRule, PassKind::PK_Analysis)
 REGISTER_RULE(CubMemberCallRule, PassKind::PK_Analysis)
 REGISTER_RULE(CubDeviceLevelRule, PassKind::PK_Analysis)
+REGISTER_RULE(CubIntrinsicRule, PassKind::PK_Analysis)
 
 void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto TargetTypeName = [&]() {
@@ -146,13 +149,31 @@ void CubMemberCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 void CubMemberCallRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   ExprAnalysis EA;
-  if (const auto E1 = getNodeAsType<CXXMemberCallExpr>(Result, "memberCall")) {
+  if (const auto *E1 = getNodeAsType<CXXMemberCallExpr>(Result, "memberCall")) {
     EA.analyze(E1);
-  } else if (const auto E2 = getNodeAsType<MemberExpr>(Result, "memberExpr")) {
+  } else if (const auto *E2 = getNodeAsType<MemberExpr>(Result, "memberExpr")) {
     EA.analyze(E2);
   }
   emplaceTransformation(EA.getReplacement());
   EA.applyAllSubExprRepl();
+}
+
+void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(callExpr(callee(functionDecl(allOf(
+                             hasAnyName("IADD3", "SHR_ADD", "SHL_ADD"),
+                             hasDeclContext(namespaceDecl(hasName("cub")))))))
+                    .bind("IntrinsicCall"),
+                this);
+}
+
+void CubIntrinsicRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (const auto *CE = getNodeAsType<CallExpr>(Result, "IntrinsicCall")) {
+    ExprAnalysis EA;
+    EA.analyze(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  }
 }
 
 static bool isNullPointerConstant(const clang::Expr *E) {
@@ -1207,13 +1228,39 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
            ")";
     NewFuncName = "group_broadcast";
     emplaceTransformation(new ReplaceStmt(WarpMC, Repl));
-  } else if (FuncName == "Reduce" || FuncName == "Sum") {
-    auto FuncArgs = WarpMC->getArgs();
-    const Expr *InData = FuncArgs[0];
+  } else if (FuncName == "Reduce") {
+    ExprAnalysis InDateEA(WarpMC->getArg(0));
+    switch (NumArgs) {
+    case 2: {
+      OpRepl = getOpRepl(WarpMC->getArg(1));
+      Repl = MapNames::getClNamespace() + "reduce_over_group(" +
+             GroupOrWorkitem + ", " + InDateEA.getReplacedString() + ", " +
+             OpRepl + ")";
+      break;
+    }
+    case 3: {
+      DpctGlobalInfo::getInstance().insertHeader(WarpMC->getBeginLoc(),
+                                                 HeaderType::HT_DPCT_DPL_Utils);
+      GroupOrWorkitem = DpctGlobalInfo::getItem(WarpMC, FD);
+      ExprAnalysis ValidItemEA(WarpMC->getArg(2));
+      OpRepl = getOpRepl(WarpMC->getArg(1));
+      Repl = MapNames::getDpctNamespace() +
+             "group::reduce_over_partial_group(" + GroupOrWorkitem + ", " +
+             InDateEA.getReplacedString() + ", " +
+             ValidItemEA.getReplacedString() + ", " + OpRepl + ")";
+      break;
+    }
+    default:
+      report(WarpMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+             "cub::" + FuncName);
+      return;
+    }
+    emplaceTransformation(new ReplaceStmt(WarpMC, Repl));
+  } else if (FuncName == "Sum") {
+    const auto *FuncArgs = WarpMC->getArgs();
+    const auto *InData = FuncArgs[0];
     ExprAnalysis InEA(InData);
-    if (FuncName == "Reduce" && NumArgs == 2) {
-      OpRepl = getOpRepl(FuncArgs[1]);
-    } else if (FuncName == "Sum" && NumArgs == 1) {
+    if (NumArgs == 1) {
       OpRepl = getOpRepl(nullptr);
     } else {
       report(WarpMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
@@ -1225,6 +1272,8 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
            ", " + InEA.getReplacedString() + ", " + OpRepl + ")";
     emplaceTransformation(new ReplaceStmt(WarpMC, Repl));
   }
+
+
   if (auto FuncInfo = DeviceFunctionDecl::LinkRedecls(FD)) {
     FuncInfo->addSubGroupSizeRequest(WarpSize, WarpMC->getBeginLoc(),
                                      NewFuncName);

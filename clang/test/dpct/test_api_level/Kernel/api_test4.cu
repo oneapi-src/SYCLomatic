@@ -7,6 +7,8 @@
 // TEST_FEATURE: Kernel_kernel_library
 // TEST_FEATURE: Kernel_get_image_wrapper
 
+#include "cuda.h"
+
 int main() {
   CUmodule module;
   cuModuleLoad(&module,"kernel_library.ptx");

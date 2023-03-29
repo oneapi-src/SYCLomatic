@@ -8,6 +8,8 @@
 #include <iostream>
 
 #define N 10
+template <typename T>
+using Tuple = typename cub::ArgIndexInputIterator<T *>::value_type;
 
 void test1(void) {
   int *d_in;
@@ -17,19 +19,22 @@ void test1(void) {
 
 // CHECK: int test2(dpct::arg_index_input_iterator<double *> Iter)
 int test2(cub::ArgIndexInputIterator<double *> Iter) {
-  return Iter->key;
+  Tuple<double> t = *Iter;
+  return t.key;
 }
 
 // CHECK: T test3(dpct::arg_index_input_iterator<T *> Iter)
 template <typename T>
 T test3(cub::ArgIndexInputIterator<T *> Iter) {
-  return Iter->key;
+  Tuple<T> t = *Iter;
+  return t.value;
 }
 
 // CHECK: decltype(auto) test4(dpct::arg_index_input_iterator<IteratorT> Iter)
 template <typename IteratorT>
 decltype(auto) test4(cub::ArgIndexInputIterator<IteratorT> Iter) {
-  return Iter->key;
+  Tuple<typename std::iterator_traits<IteratorT>::value_type> t = *Iter;
+  return t.key;
 }
 
 class Test5 {
@@ -60,7 +65,8 @@ int test9(void) {
   };
   // CHECK: auto Ptr = dpct::arg_index_input_iterator<Foo *>(nullptr);
   auto Ptr = cub::ArgIndexInputIterator<Foo *>(nullptr);
-  return Ptr->value.field;
+  Tuple<Foo> t = *Ptr;
+  return t.value.field;
 }
 
 void test10(void) {
@@ -70,4 +76,5 @@ void test10(void) {
 
   // CHECK: Iter = Iter.create_normalize();
   Iter.normalize();
-} 
+}
+
