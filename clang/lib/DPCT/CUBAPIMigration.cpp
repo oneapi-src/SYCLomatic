@@ -1239,6 +1239,9 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
       break;
     }
     case 3: {
+      DpctGlobalInfo::getInstance().insertHeader(WarpMC->getBeginLoc(),
+                                                 HeaderType::HT_DPCT_DPL_Utils);
+      GroupOrWorkitem = DpctGlobalInfo::getItem(WarpMC, FD);
       ExprAnalysis ValidItemEA(WarpMC->getArg(2));
       OpRepl = getOpRepl(WarpMC->getArg(1));
       Repl = MapNames::getDpctNamespace() +
