@@ -81,13 +81,7 @@ public:
     _set_capacity_and_alloc();
   }
   ~device_vector() /*= default*/ { _alloc.deallocate(_storage, _capacity); };
-  explicit device_vector(size_type n) : _alloc(get_default_queue()), _size(n) {
-    _set_capacity_and_alloc();
-    if (_size > 0) {
-      ::std::fill(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-                begin(), end(), T());
-    }
-  }
+  explicit device_vector(size_type n) : device_vector(n, T()) {}
   explicit device_vector(size_type n, const T &value)
       : _alloc(get_default_queue()), _size(n) {
     _set_capacity_and_alloc();
@@ -430,13 +424,7 @@ public:
   device_vector()
       : _storage(alloc_store(_min_capacity() * sizeof(T))), _size(0) {}
   ~device_vector() = default;
-  explicit device_vector(size_type n)
-      : _storage(alloc_store(std::max(n, _min_capacity()) * sizeof(T))),
-        _size(n) {
-    auto buf = get_buffer();
-    std::fill(oneapi::dpl::execution::dpcpp_default, oneapi::dpl::begin(buf),
-              oneapi::dpl::begin(buf) + n, T());
-  }
+  explicit device_vector(size_type n) : device_vector(n, T()) {}
   explicit device_vector(size_type n, const T &value)
       : _storage(alloc_store(std::max(n, _min_capacity()) * sizeof(T))),
         _size(n) {
