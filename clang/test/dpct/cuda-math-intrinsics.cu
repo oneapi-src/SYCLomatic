@@ -2645,7 +2645,7 @@ int max(int i, int j) {
 }
 void do_migration5() {
   int i, j;
-  // CHECK: std::max(i, j);
+  // CHECK: dpct::max(i, j);
   max(i, j);
 }
 void no_migration2() {
@@ -2660,14 +2660,14 @@ void no_migration3() {
 }
 __host__ void do_migration6() {
   int i, j;
-  // CHECK: std::max(i, j);
+  // CHECK: dpct::max(i, j);
   max(i, j);
 }
 
 void ns() {
   using namespace std;
   int i, j;
-  // CHECK: std::max(i, j);
+  // CHECK: dpct::max(i, j);
   max(i, j);
 }
 

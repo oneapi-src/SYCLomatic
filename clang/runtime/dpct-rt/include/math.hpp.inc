@@ -230,7 +230,6 @@ inline sycl::half2 isnan(const sycl::half2 h) {
     return IMPL_FUNC(a, b);                                                    \
   }
 
-#ifdef __SYCL_DEVICE_ONLY__
 DPCT_MATH_MIN_MAX_OVERLOAD_1(min, sycl::fmin, float, double)
 DPCT_MATH_MIN_MAX_OVERLOAD_2(min, sycl::fmin, float)
 DPCT_MATH_MIN_MAX_OVERLOAD_2(min, sycl::fmin, double)
@@ -253,31 +252,8 @@ DPCT_MATH_MIN_MAX_OVERLOAD_2(max, sycl::max, std::int32_t)
 DPCT_MATH_MIN_MAX_OVERLOAD_2(max, sycl::max, std::uint32_t)
 DPCT_MATH_MIN_MAX_OVERLOAD_2(max, sycl::max, std::int64_t)
 DPCT_MATH_MIN_MAX_OVERLOAD_2(max, sycl::max, std::uint64_t)
-#else
-DPCT_MATH_MIN_MAX_OVERLOAD_1(min, std::fmin, float, double)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(min, std::fmin, float)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(min, std::fmin, double)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(min, std::min, std::int32_t, std::uint32_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(min, std::min, std::int64_t, std::uint64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(min, std::min, std::int32_t, std::uint64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(min, std::min, std::uint32_t, std::uint64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(min, std::min, std::int32_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(min, std::min, std::uint32_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(min, std::min, std::int64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(min, std::min, std::uint64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(max, std::fmax, float, double)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(max, std::fmax, float)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(max, std::fmax, double)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(max, std::max, std::int32_t, std::uint32_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(max, std::max, std::int64_t, std::uint64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(max, std::max, std::int32_t, std::uint64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(max, std::max, std::uint32_t, std::uint64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(max, std::max, std::int32_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(max, std::max, std::uint32_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(max, std::max, std::int64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(max, std::max, std::uint64_t)
-#endif
-#undef DPCT_MATH_MIN_MAX_OVERLOAD
+#undef DPCT_MATH_MIN_MAX_OVERLOAD_1
+#undef DPCT_MATH_MIN_MAX_OVERLOAD_2
 // DPCT_LABEL_END
 } // namespace dpct
 
