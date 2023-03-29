@@ -127,10 +127,7 @@ int main() {
     ncclReduce(buff, recvbuff, count, ncclChar, ncclAvg, rank, comm, stream);
 
     
-    // CHECK:     /*
-    // CHECK-NEXT: DPCT1109:{{[0-9]+}}: OneCCL currently only supports in-plane Broadcast operations. You may need to modify the code.
-    // CHECK-NEXT: */
-    // CHECK: comm->broadcast(recvbuff, count, dpct::library_data_t::real_int8, rank, stream);
+    // CHECK: comm->broadcast(buff, recvbuff, count, dpct::library_data_t::real_int8, rank, stream);
     ncclBroadcast(buff, recvbuff, count, ncclChar, rank, comm, stream);
 
     // CHECK: comm->reduce_scatter(buff, recvbuff, count, dpct::library_data_t::real_int8, oneapi::ccl::reduction::sum, stream);

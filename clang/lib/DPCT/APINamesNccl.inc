@@ -54,13 +54,10 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::CclUtils_communicator_ext_rank,
                             "ncclCommUserRank", DEREF(1),
                             MEMBER_CALL(ARG(0), true, LITERAL("rank")))))
 
-WARNING_FACTORY_ENTRY(
-    "ncclBroadcast",
-    FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::CclUtils_communicator_ext_broadcast,
-        MEMBER_CALL_FACTORY_ENTRY("ncclBroadcast", ARG(5), true, "broadcast",
-                                  ARG(1), ARG(2), ARG(3), ARG(4), ARG(6))),
-    Diagnostics::CCL_NOINPLANE)
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::CclUtils_communicator_ext_broadcast,
+                        MEMBER_CALL_FACTORY_ENTRY("ncclBroadcast", ARG(5), true,
+                                                  "broadcast", ARG(0),ARG(1), ARG(2),
+                                                  ARG(3), ARG(4), ARG(6)))
 
 ASSIGNABLE_FACTORY(DELETER_FACTORY_ENTRY("ncclCommDestroy", ARG(0)))
 
