@@ -62,6 +62,13 @@ thrustFactory("thrust::gather_if",
               {{7,PolicyState::HasPolicy,5,"dpct::gather_if", HelperFeatureEnum::DplExtrasAlgorithm_gather_if},
                {6,PolicyState::NoPolicy ,5,"dpct::gather_if", HelperFeatureEnum::DplExtrasAlgorithm_gather_if}}),
 
+// thrust::merge_by_key
+thrustFactory("thrust::merge_by_key",
+              {{10,PolicyState::HasPolicy,8,"dpct::merge", HelperFeatureEnum::DplExtrasAlgorithm_merge},
+               { 9,PolicyState::HasPolicy,8,"dpct::merge", HelperFeatureEnum::DplExtrasAlgorithm_merge},
+               { 9,PolicyState::NoPolicy ,8,"dpct::merge", HelperFeatureEnum::DplExtrasAlgorithm_merge},
+               { 8,PolicyState::NoPolicy ,8,"dpct::merge", HelperFeatureEnum::DplExtrasAlgorithm_merge}}),
+
 // thrust::inclusive_scan
 thrustFactory("thrust::inclusive_scan",
               {{5,PolicyState::HasPolicy,3,"oneapi::dpl::inclusive_scan", HelperFeatureEnum::no_feature_helper },
