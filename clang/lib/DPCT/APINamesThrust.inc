@@ -67,6 +67,13 @@ thrustFactory("thrust::adjacent_difference",
                {4,PolicyState::NoPolicy ,3,"oneapi::dpl::adjacent_difference", HelperFeatureEnum::no_feature_helper },
                {3,PolicyState::NoPolicy ,3,"oneapi::dpl::adjacent_difference", HelperFeatureEnum::no_feature_helper }}),
 
+// thrust::mismatch
+thrustFactory("thrust::mismatch",
+              {{5,PolicyState::HasPolicy,3,"oneapi::dpl::mismatch", HelperFeatureEnum::no_feature_helper },
+               {4,PolicyState::HasPolicy,3,"oneapi::dpl::mismatch", HelperFeatureEnum::no_feature_helper },
+               {4,PolicyState::NoPolicy ,3,"oneapi::dpl::mismatch", HelperFeatureEnum::no_feature_helper },
+               {3,PolicyState::NoPolicy ,3,"oneapi::dpl::mismatch", HelperFeatureEnum::no_feature_helper }}),
+
 // thrust::gather_if
 thrustFactory("thrust::gather_if",
               {{7,PolicyState::HasPolicy,5,"dpct::gather_if", HelperFeatureEnum::DplExtrasAlgorithm_gather_if},

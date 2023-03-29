@@ -22,6 +22,7 @@
 #include <thrust/tabulate.h>
 #include <thrust/functional.h>
 #include <thrust/remove.h>
+#include <thrust/mismatch.h>
 
 // for cuda 12.0
 #include <thrust/iterator/constant_iterator.h>
@@ -974,4 +975,40 @@ void find_if_not_test() {
   thrust::find_if_not(thrust::host, data, data+3, greater_than_four());
   thrust::find_if_not(thrust::device, device_data.begin(), device_data.end(),  greater_than_four());
   thrust::find_if_not(thrust::host, host_data.begin(), host_data.end(),  greater_than_four());
+}
+
+void mismatch_test() {
+  const int N = 4;
+  int A[N] = {0, 5, 3, 7};
+  int B[N] = {0, 5, 8, 7};
+
+  thrust::host_vector<int> VA(A, A + N);
+  thrust::host_vector<int> VB(B, B + N);
+  thrust::device_vector<int> d_VA(A, A + N);
+  thrust::device_vector<int> d_VB(B, B + N);
+
+  // CHECK:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, VA.begin(), VA.end(), VB.begin());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, VA.begin(), VA.end(), VB.begin());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, VA.begin(), VA.end(), VB.begin(), oneapi::dpl::equal_to<int>());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, VA.begin(), VA.end(), VB.begin(), oneapi::dpl::equal_to<int>());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin(), oneapi::dpl::equal_to<int>());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin(), oneapi::dpl::equal_to<int>());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, A, A+N, B);
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, A, A+N, B);
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, A, A+N, B, oneapi::dpl::equal_to<int>());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, A, A+N, B, oneapi::dpl::equal_to<int>());
+  thrust::mismatch(thrust::host, VA.begin(), VA.end(), VB.begin());
+  thrust::mismatch(VA.begin(), VA.end(), VB.begin());
+  thrust::mismatch(thrust::host, VA.begin(), VA.end(), VB.begin(), thrust::equal_to<int>());
+  thrust::mismatch(VA.begin(), VA.end(), VB.begin(), thrust::equal_to<int>());
+  thrust::mismatch(thrust::device, d_VA.begin(), d_VA.end(), d_VB.begin());
+  thrust::mismatch(d_VA.begin(), d_VA.end(), d_VB.begin());
+  thrust::mismatch(thrust::device, d_VA.begin(), d_VA.end(), d_VB.begin(), thrust::equal_to<int>());
+  thrust::mismatch( d_VA.begin(), d_VA.end(), d_VB.begin(), thrust::equal_to<int>());
+  thrust::mismatch(thrust::host, A, A+N, B);
+  thrust::mismatch( A, A+N, B);
+  thrust::mismatch(thrust::host, A, A+N, B, thrust::equal_to<int>());
+  thrust::mismatch( A, A+N, B, thrust::equal_to<int>());
 }

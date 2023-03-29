@@ -17,6 +17,7 @@
 #include <thrust/functional.h>
 #include <thrust/remove.h>
 #include <thrust/find.h>
+#include <thrust/mismatch.h>
 
 // for cuda 12.0
 #include <thrust/iterator/constant_iterator.h>
@@ -604,3 +605,33 @@ void find_if_not_test() {
   thrust::find_if_not(thrust::host, data, data+3, greater_than_four());
 }
 
+void mismatch_test() {
+  const int N = 4;
+  int A[N] = {0, 5, 3, 7};
+  int B[N] = {0, 5, 8, 7};
+
+//CHECK:  if (dpct::is_device_ptr(A)) {
+//CHECK-NEXT:    oneapi::dpl::mismatch(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + N), dpct::device_pointer<int>(B));
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::mismatch(oneapi::dpl::execution::seq, A, A + N, B);
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(A + N)) {
+//CHECK-NEXT:    oneapi::dpl::mismatch(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + N), dpct::device_pointer<int>(B));
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::mismatch(oneapi::dpl::execution::seq, A, A + N, B);
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(A)) {
+//CHECK-NEXT:    oneapi::dpl::mismatch(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + N), dpct::device_pointer<int>(B), oneapi::dpl::equal_to<int>());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::mismatch(oneapi::dpl::execution::seq, A, A + N, B, oneapi::dpl::equal_to<int>());
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(A + N)) {
+//CHECK-NEXT:    oneapi::dpl::mismatch(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + N), dpct::device_pointer<int>(B), oneapi::dpl::equal_to<int>());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::mismatch(oneapi::dpl::execution::seq, A, A + N, B, oneapi::dpl::equal_to<int>());
+//CHECK-NEXT:  };
+  thrust::mismatch(thrust::host, A, A+N, B);
+  thrust::mismatch( A, A+N, B);
+  thrust::mismatch(thrust::host, A, A+N, B, thrust::equal_to<int>());
+  thrust::mismatch( A, A+N, B, thrust::equal_to<int>());
+}
