@@ -678,6 +678,11 @@ template <typename T> struct getrfnp_impl {
                   library_data_t a_type, void *a, std::int64_t lda,
                   std::int64_t *ipiv, void *device_ws,
                   std::size_t device_ws_size, int *info) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error(
+        "The oneAPI Math Kernel Library (oneMKL) Interfaces "
+        "Project does not support this API.");
+#endif
     std::int64_t a_stride = m * lda;
     auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
     auto device_ws_data =
@@ -883,6 +888,10 @@ inline int getrf(sycl::queue &q, std::int64_t m, std::int64_t n,
                  library_data_t a_type, void *a, std::int64_t lda,
                  std::int64_t *ipiv, void *device_ws,
                  std::size_t device_ws_size, int *info) {
+#ifndef __INTEL_MKL__
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
+                           "Project does not support this API.");
+#endif
   std::size_t device_ws_size_in_element_number =
       detail::byte_to_element_number(device_ws_size, a_type);
   if (ipiv == nullptr) {

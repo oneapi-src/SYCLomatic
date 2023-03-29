@@ -666,6 +666,11 @@ public:
     if (!_use_external_workspace) {
       return;
     }
+#ifndef __INTEL_MKL__
+    throw std::runtime_error(
+        "The oneAPI Math Kernel Library (oneMKL) Interfaces "
+        "Project does not support this API.");
+#endif
     if (_input_type == library_data_t::complex_float &&
         _output_type == library_data_t::complex_float) {
       if (_q->get_device().is_gpu()) {
@@ -739,6 +744,11 @@ private:
   }
 
   void config_and_commit_basic() {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error(
+        "The oneAPI Math Kernel Library (oneMKL) Interfaces "
+        "Project does not support this API.");
+#endif
     if (_input_type == library_data_t::complex_float &&
         _output_type == library_data_t::complex_float) {
       _desc_sc = std::make_shared<
@@ -904,6 +914,11 @@ private:
   }
 
   void config_and_commit_advanced() {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error(
+        "The oneAPI Math Kernel Library (oneMKL) Interfaces "
+        "Project does not support this API.");
+#endif
 #define CONFIG_AND_COMMIT(DESC, PREC, DOM, TYPE)                                  \
   {                                                                               \
     DESC = std::make_shared<oneapi::mkl::dft::descriptor<                         \
@@ -1162,6 +1177,11 @@ private:
       // Here we check the conditions, and new config values are set and
       // re-committed if needed.
       if (direction != _direction || is_this_compute_inplace != _is_inplace) {
+#ifndef __INTEL_MKL__
+        throw std::runtime_error(
+            "The oneAPI Math Kernel Library (oneMKL) Interfaces "
+            "Project does not support this API.");
+#endif
         if constexpr (Precision == oneapi::mkl::dft::precision::SINGLE) {
           if (direction != _direction) {
             swap_distance(_desc_sc);
@@ -1215,6 +1235,11 @@ private:
       // Here we check the condition, and new config values are set and
       // re-committed if needed.
       if (is_this_compute_inplace != _is_inplace) {
+#ifndef __INTEL_MKL__
+        throw std::runtime_error(
+            "The oneAPI Math Kernel Library (oneMKL) Interfaces "
+            "Project does not support this API.");
+#endif
         if constexpr (Precision == oneapi::mkl::dft::precision::SINGLE) {
           _is_inplace = is_this_compute_inplace;
           if (_is_inplace) {
