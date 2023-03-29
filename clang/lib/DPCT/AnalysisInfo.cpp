@@ -51,6 +51,7 @@ std::unordered_set<std::string> DpctGlobalInfo::ChangeExtensions = {};
 std::string DpctGlobalInfo::CudaPath = std::string();
 std::string DpctGlobalInfo::RuleFile = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
+clang::CudaVersion DpctGlobalInfo::SDKVersion = clang::CudaVersion::UNKNOWN;
 bool DpctGlobalInfo::IsIncMigration = true;
 unsigned int DpctGlobalInfo::AssumedNDRangeDim = 3;
 HelperFilesCustomizationLevel DpctGlobalInfo::HelperFilesCustomizationLvl =

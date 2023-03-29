@@ -29,6 +29,7 @@
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Analysis/AnalysisDeclContext.h"
 #include "clang/Basic/CharInfo.h"
+#include "clang/Basic/Cuda.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/StringSet.h"
 #include "llvm/Support/Casting.h"
@@ -179,6 +180,13 @@ void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
     if (MacroName == "__CUDACC__" &&
         !MacroNameTok.getIdentifierInfo()->hasMacroDefinition())
       return;
+    if (MacroName == "CUDART_VERSION" || MacroName == "__CUDART_API_VERSION") {
+      auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
+      DpctGlobalInfo::getInstance()
+          .insertFile(LocInfo.first)
+          ->setRTVersionValue(
+              clang::CudaVersionToMacroDefStr(DpctGlobalInfo::getSDKVersion()));
+    }
     TransformSet.emplace_back(Repl);
   }
 }
@@ -417,12 +425,6 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   } else if (MacroNameTok.getIdentifierInfo() &&
              MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_INVERSE") {
     TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13, "1"));
-  } else if (MacroNameTok.getIdentifierInfo() &&
-             MacroNameTok.getIdentifierInfo()->getName() == "CUDART_VERSION") {
-    TransformSet.emplace_back(new ReplaceText(
-        Range.getBegin(), strlen("CUDART_VERSION"), "DPCT_COMPAT_RT_VERSION"));
-    auto LocInfo = DpctGlobalInfo::getLocInfo(Range.getBegin());
-    DpctGlobalInfo::getInstance().insertFile(LocInfo.first)->setRTVersionValue("");
   }
 
   // For the un-specialized struct, there is no AST for the extern function

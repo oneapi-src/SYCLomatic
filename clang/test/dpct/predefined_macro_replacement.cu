@@ -1,5 +1,9 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/predefined_macro_replacement %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -D__NVCC__ -D__CUDACC__
 // RUN: FileCheck --input-file %T/predefined_macro_replacement/predefined_macro_replacement.dp.cpp --match-full-lines %s
+// RUN: rm -rf %T/predefined_macro_replacement
+
+//CHECK: #define DPCT_COMPAT_RT_VERSION {{[1-9][0-9]+}}
+
 #include <stdio.h>
 //CHECK: #ifdef DPCT_COMPATIBILITY_TEMP
 //CHECK-NEXT: void hello(const sycl::stream &[[STREAM:stream_ct1]]) { [[STREAM]] << "foo"; }
@@ -121,7 +125,7 @@ int main() {
 #endif
 
 int foo(int num) {
-//CHECK: #if SYCL_LANGUAGE_VERSION >= 4000
+//CHECK: #if DPCT_COMPAT_RT_VERSION >= 4000
 //CHECK-NEXT: dpct::get_current_device().reset();
 //CHECK-NEXT: #else
 //CHECK-NEXT: cudaThreadExit();
@@ -134,10 +138,10 @@ int foo(int num) {
 }
 
 int foo1() {
-//CHECK: #ifdef SYCL_LANGUAGE_VERSION
+//CHECK: #ifdef DPCT_COMPAT_RT_VERSION
 //CHECK-NEXT: sycl::int2 a;
 //CHECK-NEXT: #endif
-//CHECK-NEXT: #ifndef SYCL_LANGUAGE_VERSION
+//CHECK-NEXT: #ifndef DPCT_COMPAT_RT_VERSION
 //CHECK-NEXT: int2 b;
 //CHECK-NEXT: #endif
 #ifdef CUDART_VERSION
@@ -145,5 +149,29 @@ int2 a;
 #endif
 #ifndef CUDART_VERSION
 int2 b;
+#endif
+}
+
+//CHECK: void foo2() {
+//CHECK-NEXT:   float* f;
+//CHECK-NEXT: #if (DPCT_COMPAT_RT_VERSION >= 12000)
+void foo2() {
+  float* f;
+#if (CUDART_VERSION >= 12000)
+  cudaMalloc(&f, 4);
+#else
+  cudaMallocHost(&f, 4);
+#endif
+}
+
+//CHECK: void foo3() {
+//CHECK-NEXT:   float* f;
+//CHECK-NEXT: #if (DPCT_COMPAT_RT_VERSION >= 12000)
+void foo3() {
+  float* f;
+#if (__CUDART_API_VERSION >= 12000)
+  cudaMalloc(&f, 4);
+#else
+  cudaMallocHost(&f, 4);
 #endif
 }

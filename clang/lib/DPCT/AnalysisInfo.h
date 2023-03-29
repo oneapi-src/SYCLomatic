@@ -31,6 +31,8 @@
 #include "clang/AST/Mangle.h"
 #include "clang/AST/ParentMapContext.h"
 
+#include "clang/Basic/Cuda.h"
+
 #include "clang/Format/Format.h"
 #include "clang/Frontend/CompilerInstance.h"
 
@@ -946,6 +948,8 @@ public:
   }
   inline static UsmLevel getUsmLevel() { return UsmLvl; }
   inline static void setUsmLevel(UsmLevel UL) { UsmLvl = UL; }
+  inline static clang::CudaVersion getSDKVersion() { return SDKVersion; }
+  inline static void setSDKVersion(clang::CudaVersion V) { SDKVersion = V; }
   inline static bool isIncMigration() { return IsIncMigration; }
   inline static void setIsIncMigration(bool Flag) { IsIncMigration = Flag; }
   inline static unsigned int getAssumedNDRangeDim() {
@@ -2043,6 +2047,7 @@ private:
   static std::string CudaPath;
   static std::string RuleFile;
   static UsmLevel UsmLvl;
+  static clang::CudaVersion SDKVersion;
   static bool IsIncMigration;
   static unsigned int AssumedNDRangeDim;
   static HelperFilesCustomizationLevel HelperFilesCustomizationLvl;
