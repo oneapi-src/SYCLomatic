@@ -748,6 +748,13 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
           DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
         insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
         requestFeature(HelperFeatureEnum::Dpct_dpct_compatibility_temp, Begin);
+      } else if (MacroName == "CUDART_VERSION" || MacroName == "__CUDART_API_VERSION") {
+        auto LocInfo = DpctGlobalInfo::getLocInfo(IB);
+        DpctGlobalInfo::getInstance()
+            .insertFile(LocInfo.first)
+            ->setRTVersionValue(clang::CudaVersionToMacroDefStr(
+                DpctGlobalInfo::getSDKVersion()));
+        TransformSet.emplace_back(Repl);
       } else if ((MacroName != "__CUDACC__" ||
                   DpctGlobalInfo::getMacroDefines().count(MacroName)) &&
                  MacroName != "__CUDA_ARCH__") {
