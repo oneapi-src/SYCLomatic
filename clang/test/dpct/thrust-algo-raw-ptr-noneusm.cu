@@ -17,11 +17,8 @@
 #include <thrust/functional.h>
 #include <thrust/remove.h>
 #include <thrust/find.h>
-<<<<<<< HEAD
 #include <thrust/mismatch.h>
-=======
 #include <thrust/replace.h>
->>>>>>> [SYCLomatic] Enable migration of thrust::replace_copy
 
 // for cuda 12.0
 #include <thrust/iterator/constant_iterator.h>
