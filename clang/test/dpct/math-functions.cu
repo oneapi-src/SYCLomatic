@@ -128,12 +128,6 @@ int main() {
     // CHECK: i_b = dpct::min(i_a, i_b);
     i_b = min(i_a, i_b);
 
-<<<<<<< HEAD
-    // CHECK: ld_b = dpct::min(ld_a, ld_b);
-    ld_b = min(ld_a, ld_b);
-
-=======
->>>>>>> origin/SYCLomatic
     // TODO: Check more primitive type and vector types
   }
 
