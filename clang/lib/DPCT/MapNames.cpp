@@ -591,6 +591,10 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "dnnl::rnn_memory_format_tag",
            HelperFeatureEnum::DnnlUtils_rnn_memory_format_tag)},
+      {"cudnnDropoutDescriptor_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::dropout_desc",
+           HelperFeatureEnum::DnnlUtils_dropout_desc)},
   };
 
   // CuDNN Enum constants name mapping.
