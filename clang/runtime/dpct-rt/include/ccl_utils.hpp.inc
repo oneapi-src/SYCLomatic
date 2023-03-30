@@ -115,37 +115,6 @@ public:
 };
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|ccl_func_adapter|dpct::ccl::detail
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-class ccl_func_adapter {
-  sycl::queue *_q_ptr;
-  struct ccl_adapter_data {
-    oneapi::ccl::stream _ccl_stream;
-    oneapi::ccl::event _ccl_event;
-    template <class Fn>
-    explicit ccl_adapter_data(Fn &&func, sycl::queue *qptr)
-        : _ccl_stream(oneapi::ccl::create_stream(*qptr)),
-          _ccl_event(std::invoke(std::forward<Fn &&>(func), _ccl_stream)) {}
-  };
-  ccl_adapter_data *data;
-
-public:
-  template <class Fn>
-  explicit ccl_func_adapter(Fn &&func, sycl::queue *qptr)
-      : _q_ptr(qptr),
-        data(new ccl_adapter_data(std::forward<Fn &&>(func), qptr)) {}
-  ~ccl_func_adapter() {
-    _q_ptr->submit([&](sycl::handler &cgh) {
-      cgh.host_task([&] {
-        data->_ccl_event.wait();
-        delete data;
-      });
-    });
-  }
-};
-// DPCT_LABEL_END
-
 } // namespace detail
 
 // DPCT_LABEL_BEGIN|get_version|dpct::ccl
@@ -254,7 +223,6 @@ public:
 // DPCT_DEPENDENCY_BEGIN
 // CclUtils|communicator_ext
 // CclUtils|ccl_datatype_convert
-// CclUtils|ccl_func_adapter
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   /// \brief allreduce is a collective communication operation that performs the global reduction operation
@@ -269,7 +237,7 @@ public:
   void allreduce(const void *sendbuff, void *recvbuff, size_t count,
                  dpct::library_data_t dtype, oneapi::ccl::reduction rtype,
                  sycl::queue *stream) const {
-    detail::ccl_func_adapter(
+    ccl_func_adapter(
         [=](const oneapi::ccl::stream &queue) {
           return oneapi::ccl::allreduce(
               sendbuff, recvbuff, count,
@@ -283,7 +251,6 @@ public:
 // DPCT_DEPENDENCY_BEGIN
 // CclUtils|communicator_ext
 // CclUtils|ccl_datatype_convert
-// CclUtils|ccl_func_adapter
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   /// \brief reduce is a collective communication operation that performs the
@@ -302,7 +269,7 @@ public:
   void reduce(const void *sendbuff, void *recvbuff, size_t count,
               dpct::library_data_t dtype, oneapi::ccl::reduction rtype,
               int root, sycl::queue *stream) const {
-    detail::ccl_func_adapter(
+    ccl_func_adapter(
         [=](const oneapi::ccl::stream &queue) {
           return oneapi::ccl::reduce(sendbuff, recvbuff, count,
                                      dpct::ccl::detail::to_ccl_datatype(dtype),
@@ -316,7 +283,6 @@ public:
 // DPCT_DEPENDENCY_BEGIN
 // CclUtils|communicator_ext
 // CclUtils|ccl_datatype_convert
-// CclUtils|ccl_func_adapter
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   /// \brief broadcast is a collective communication operation that broadcasts data
@@ -330,14 +296,14 @@ public:
   /// \param root the rank that broadcasts @c buf
   /// \param stream a sycl::queue ptr associated with the operation
   /// \return @ref void
-  void broadcast(void* sendbuff, void* recvbuff, size_t count, dpct::library_data_t dtype, int root,
+  void broadcast(void *sendbuff, void *recvbuff, size_t count, dpct::library_data_t dtype, int root,
                  sycl::queue *stream) const {
-    if(sendbuff !=  recvbuff){
-      std::cerr <<"oneCCL broadcast only support in-place operation. "
-                <<"send_buf and recv_buf must be same."<<'\n';
+    if (sendbuff != recvbuff) {
+      throw std::runtime_error("oneCCL broadcast only support in-place operation. " \
+                               "send_buf and recv_buf must be same.");
       return;
     }
-    detail::ccl_func_adapter(
+    ccl_func_adapter(
         [=](const oneapi::ccl::stream &queue) {
           return oneapi::ccl::broadcast(
               recvbuff, count, dpct::ccl::detail::to_ccl_datatype(dtype), root,
@@ -351,7 +317,6 @@ public:
 // DPCT_DEPENDENCY_BEGIN
 // CclUtils|communicator_ext
 // CclUtils|ccl_datatype_convert
-// CclUtils|ccl_func_adapter
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   /// \brief reduce_scatter is a collective communication operation that performs the global reduction operation
@@ -366,7 +331,7 @@ public:
   void reduce_scatter(const void *sendbuff, void *recvbuff, size_t recv_count,
                       dpct::library_data_t dtype, oneapi::ccl::reduction rtype,
                       sycl::queue *stream) const {
-    detail::ccl_func_adapter(
+    ccl_func_adapter(
         [=](const oneapi::ccl::stream &queue) {
           return oneapi::ccl::reduce_scatter(
               sendbuff, recvbuff, recv_count,
@@ -385,6 +350,32 @@ private:
   oneapi::ccl::device _device_comm;
   oneapi::ccl::context _context_comm;
   oneapi::ccl::communicator _comm;
+
+  class ccl_func_adapter {
+    sycl::queue *_q_ptr;
+    struct ccl_adapter_data {
+      oneapi::ccl::stream _ccl_stream;
+      oneapi::ccl::event _ccl_event;
+      template <class Fn>
+      explicit ccl_adapter_data(Fn func, sycl::queue *qptr)
+          : _ccl_stream(oneapi::ccl::create_stream(*qptr)),
+            _ccl_event(std::invoke(func, _ccl_stream)) {}
+    };
+    ccl_adapter_data *_data;
+
+  public:
+    template <class Fn>
+    explicit ccl_func_adapter(Fn func, sycl::queue *qptr)
+        : _q_ptr(qptr),
+          _data(new ccl_adapter_data(func, qptr)) {}
+    ~ccl_func_adapter() {
+      _q_ptr->submit([&](sycl::handler &cgh)
+                     { cgh.host_task([=]
+                                     {
+        _data->_ccl_event.wait();
+        delete _data; }); });
+    }
+  };
 };
 // DPCT_LABEL_END
 

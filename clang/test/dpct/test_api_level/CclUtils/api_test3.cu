@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/CclUtils/apt_test3_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/CclUtils/apt_test3_out
 
-// CHECK: 36
+// CHECK: 35
 // TEST_FEATURE: CclUtils_create_kvs
 // TEST_FEATURE: CclUtils_get_kvs_detail
 // TEST_FEATURE: CclUtils_ccl_init_helper
@@ -16,7 +16,6 @@
 // TEST_FEATURE: CclUtils_communicator_ext_reduce_scatter
 // TEST_FEATURE: CclUtils_communicator_ext_reduce
 // TEST_FEATURE: CclUtils_communicator_ext_broadcast
-// TEST_FEATURE: CclUtils_ccl_func_adapter
 
 #include <nccl.h>
 
