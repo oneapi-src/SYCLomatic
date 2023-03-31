@@ -314,7 +314,13 @@ T select_from_sub_group(unsigned int member_mask,
   #error "Masked version of select_from_sub_group only supports SPIR-V backends"
 #endif // __SPIR__
 #else
-  #error "Masked version of select_from_sub_group not supported on host device and none intel compiler."
+  (void)g;
+  (void)x;
+  (void)remote_local_id;
+  (void)logical_sub_group_size;
+  (void)member_mask;
+  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+                        "supported on host device and none intel compiler.");
 #endif // __SYCL_DEVICE_ONLY__ && __INTEL_LLVM_COMPILER
 }
 
@@ -348,7 +354,13 @@ T shift_sub_group_left(unsigned int member_mask,
   #error "Masked version of shift_sub_group_left only supports SPIR-V backends"
 #endif // __SPIR__
 #else
-  #error "Masked version of shift_sub_group_left not supported on host device and none intel compiler."
+  (void)g;
+  (void)x;
+  (void)delta;
+  (void)logical_sub_group_size;
+  (void)member_mask;
+  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+                        "supported on host device and none intel compiler.");
 #endif // __SYCL_DEVICE_ONLY__ && __INTEL_LLVM_COMPILER
 }
 
@@ -382,7 +394,13 @@ T shift_sub_group_right(unsigned int member_mask,
   #error "Masked version of shift_sub_group_right only supports SPIR-V backends"
 #endif // __SPIR__
 #else
-  #error "Masked version of shift_sub_group_right not supported on host device and none intel compiler."
+  (void)g;
+  (void)x;
+  (void)delta;
+  (void)logical_sub_group_size;
+  (void)member_mask;
+  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+                        "supported on host device and none intel compiler.");
 #endif // __SYCL_DEVICE_ONLY && __INTEL_LLVM_COMPILER
 }
 
@@ -414,7 +432,13 @@ T permute_sub_group_by_xor(unsigned int member_mask,
   #error "Masked version of permute_sub_group_by_xor only supports SPIR-V backends."
 #endif // __SPIR__
 #else
-  #error "Masked version of permute_sub_group_by_xor not supported on host device and none intel compiler."
+  (void)g;
+  (void)x;
+  (void)mask;
+  (void)logical_sub_group_size;
+  (void)member_mask;
+  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+                        "supported on host device and none intel compiler.");
 #endif // __SYCL_DEVICE_ONLY__ && __INTEL_LLVM_COMPILER
 }
 } // namespace experimental
