@@ -11997,8 +11997,7 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
   if (FuncName == "__syncthreads") {
-    BarrierFenceSpaceAnalyzer A;
-    if (A.canSetLocalFenceSpace(CE)) {
+    if (canSetLocalFenceSpace(CE)) {
       std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
                                 MapNames::getClNamespace() +
                                 "access::fence_space::local_space)";

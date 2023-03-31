@@ -1,4 +1,4 @@
-//===--------------- BarrierFenceSpaceAnalyzer.h --------------------------===//
+//===--------------- ReadWriteOrderAnalyzer.h --------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -23,8 +23,14 @@
 namespace clang {
 namespace dpct {
 
-class BarrierFenceSpaceAnalyzer
-    : public clang::RecursiveASTVisitor<BarrierFenceSpaceAnalyzer> {
+class BarrierFenceSpaceAnalyzerBase
+    : public RecursiveASTVisitor<BarrierFenceSpaceAnalyzerBase> {
+protected:
+  std::unordered_map<DeclRefExpr *, ValueDecl *> DREDeclMap;
+  std::unordered_map<ValueDecl *, std::unordered_set<DeclRefExpr *>>
+      DeclDREsMap;
+  static const std::unordered_set<std::string> AllowedDeviceFunctions;
+
 public:
   bool shouldVisitImplicitCode() const { return true; }
   bool shouldTraversePostOrder() const { return false; }
@@ -35,8 +41,8 @@ public:
   bool Traverse##CLASS(CLASS *Node) {                                          \
     if (!Visit(Node))                                                          \
       return false;                                                            \
-    if (!clang::RecursiveASTVisitor<                                           \
-            BarrierFenceSpaceAnalyzer>::Traverse##CLASS(Node))                 \
+    if (!RecursiveASTVisitor<BarrierFenceSpaceAnalyzerBase>::Traverse##CLASS(  \
+            Node))                                                             \
       return false;                                                            \
     PostVisit(Node);                                                           \
     return true;                                                               \
@@ -51,13 +57,14 @@ public:
   VISIT_NODE(CXXDependentScopeMemberExpr)
   VISIT_NODE(CXXConstructExpr)
 #undef VISIT_NODE
+  virtual bool analyze(const CallExpr *CE) = 0;
+};
 
-public:
-  bool canSetLocalFenceSpace(const clang::CallExpr *CE);
+class ReadWriteOrderAnalyzer : public BarrierFenceSpaceAnalyzerBase {
+  using Base = BarrierFenceSpaceAnalyzerBase;
 
-private:
-  bool traverseFunction(const clang::FunctionDecl *FD);
-  using Ranges = std::vector<clang::SourceRange>;
+  bool traverseFunction(const FunctionDecl *FD);
+  using Ranges = std::vector<SourceRange>;
   struct SyncCallInfo {
     SyncCallInfo(Ranges Predecessors, Ranges Successors)
         : Predecessors(Predecessors), Successors(Successors){};
@@ -65,17 +72,16 @@ private:
     Ranges Successors;
   };
   struct Level {
-    clang::SourceLocation CurrentLoc;
-    clang::SourceLocation LevelBeginLoc;
-    clang::SourceLocation FirstSyncBeginLoc;
-    std::vector<std::pair<clang::CallExpr *, SyncCallInfo>> SyncCallsVec;
+    SourceLocation CurrentLoc;
+    SourceLocation LevelBeginLoc;
+    SourceLocation FirstSyncBeginLoc;
+    std::vector<std::pair<CallExpr *, SyncCallInfo>> SyncCallsVec;
   };
 
   Level CurrentLevel;
   std::stack<Level> LevelStack;
   std::multimap<unsigned int, Level> LevelMap;
   std::vector<Level> LevelVec;
-  std::unordered_map<clang::DeclRefExpr *, clang::ValueDecl *> DREDeclMap;
   std::string CELoc;
   std::string FDLoc;
 
@@ -90,8 +96,34 @@ private:
   /// (FD location, (Call location, result))
   static std::unordered_map<std::string, std::unordered_map<std::string, bool>>
       CachedResults;
-  static const std::unordered_set<std::string> AllowedDeviceFunctions;
+
+public:
+  bool Visit(ForStmt *Node);
+  void PostVisit(ForStmt *Node);
+  bool Visit(CallExpr *Node);
+  bool Visit(GotoStmt *Node);
+  bool Visit(LabelStmt *Node);
+  bool Visit(MemberExpr *Node);
+  bool Visit(CXXDependentScopeMemberExpr *Node);
+  bool Visit(CXXConstructExpr *Node);
+
+  bool analyze(const CallExpr *CE) override;
 };
+
+class NewAnalyzer : public BarrierFenceSpaceAnalyzerBase {
+  using Base = BarrierFenceSpaceAnalyzerBase;
+  bool HasGlobalDeviceVariable = false;
+  bool checkNewPattern(const CallExpr *CE, const FunctionDecl *FD);
+  void collectAlias(VarDecl *VD,
+                    std::unordered_set<VarDecl *> &NewNonconstPointerDecls);
+
+public:
+  bool Visit(DeclRefExpr *Node);
+  bool analyze(const CallExpr *CE) override;
+};
+
+bool canSetLocalFenceSpace(const CallExpr *CE);
+
 } // namespace dpct
 } // namespace clang
 
