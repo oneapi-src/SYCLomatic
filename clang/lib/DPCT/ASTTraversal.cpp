@@ -34,6 +34,8 @@
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/Path.h"
 #include "MemberExprRewriter.h"
+#include "clang/Analysis/CallGraph.h"
+#include "llvm/ADT/SCCIterator.h"
 
 #include <algorithm>
 #include <iostream>
@@ -8898,6 +8900,28 @@ void KernelCallRule::removeTrailingSemicolon(
 
 REGISTER_RULE(KernelCallRule, PassKind::PK_Analysis)
 
+
+bool isRecursiveDeviceFuncDecl(const FunctionDecl* FD) {
+  // Build call graph for FunctionDecl and look for cycles in call graph.
+  // Emit the warning message when the recursive call exists in kernel function.
+  if (!FD) return false;
+  CallGraph CG;
+  CG.addToCallGraph(const_cast<FunctionDecl *>(FD));
+  bool FDIsRecursive = false;
+  for (llvm::scc_iterator<CallGraph *> SCCI = llvm::scc_begin(&CG),
+                              SCCE = llvm::scc_end(&CG);
+                              SCCI != SCCE; ++SCCI) {
+    if (SCCI.hasCycle()) FDIsRecursive = true;
+  }
+  return FDIsRecursive;
+}
+
+bool isRecursiveDeviceCallExpr(const CallExpr* CE) {
+  if (isRecursiveDeviceFuncDecl(CE->getDirectCallee()))
+    return true;
+  return false;
+}
+
 // __device__ function call information collection
 void DeviceFunctionDeclRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto DeviceFunctionMatcher =
@@ -8976,6 +9000,16 @@ void DeviceFunctionDeclRule::runRule(
   if (FD->isVariadic()) {
     report(FD->getBeginLoc(), Warnings::DEVICE_VARIADIC_FUNCTION, false);
   }
+
+  if (FD->isVirtualAsWritten()) {
+    report(FD->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
+                              false, "Virtual functions");
+  }
+
+  if(isRecursiveDeviceFuncDecl(FD))
+    report(FD->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
+                            false, "Recursive functions");
+
   FuncInfo = DeviceFunctionDecl::LinkRedecls(FD);
   if (!FuncInfo)
     return;
@@ -8993,6 +9027,15 @@ void DeviceFunctionDeclRule::runRule(
   }
 
   if (auto CE = getAssistNodeAsType<CallExpr>(Result, "callExpr")) {
+    if (CE->getDirectCallee()) {
+      if (CE->getDirectCallee()->isVirtualAsWritten())
+        report(CE->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
+                        false, "Virtual functions");
+    }
+
+    if (isRecursiveDeviceCallExpr(CE))
+      report(CE->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
+                                false, "Recursive functions");
     FuncInfo->addCallee(CE);
   } else if (CE = getAssistNodeAsType<CallExpr>(Result, "PrintfExpr")) {
     if (FD->hasAttr<CUDAHostAttr>()) {
