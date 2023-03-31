@@ -396,3 +396,20 @@ FEATURE_REQUEST_FACTORY(
                             ARG(MapNames::getDpctNamespace() +
                                 "library_data_t::complex_double"),
                             ARG(10), ARG(11), ARG(12), ARG(13), ARG(14))))
+
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+    "cusolverDnSgeqrf_bufferSize", DEREF(5),
+    CALL("oneapi::mkl::lapack::geqrf_scratchpad_size<float>", DEREF(0), ARG(1),
+         ARG(2), ARG(4))))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+    "cusolverDnDgeqrf_bufferSize", DEREF(5),
+    CALL("oneapi::mkl::lapack::geqrf_scratchpad_size<double>", DEREF(0), ARG(1),
+         ARG(2), ARG(4))))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+    "cusolverDnCgeqrf_bufferSize", DEREF(5),
+    CALL("oneapi::mkl::lapack::geqrf_scratchpad_size<std::complex<float>>",
+         DEREF(0), ARG(1), ARG(2), ARG(4))))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+    "cusolverDnZgeqrf_bufferSize", DEREF(5),
+    CALL("oneapi::mkl::lapack::geqrf_scratchpad_size<std::complex<double>>",
+         DEREF(0), ARG(1), ARG(2), ARG(4))))

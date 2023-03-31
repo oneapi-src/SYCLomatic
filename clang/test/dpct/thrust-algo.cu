@@ -22,6 +22,7 @@
 #include <thrust/tabulate.h>
 #include <thrust/functional.h>
 #include <thrust/remove.h>
+#include <thrust/mismatch.h>
 
 // for cuda 12.0
 #include <thrust/iterator/constant_iterator.h>
@@ -335,8 +336,8 @@ struct key_value
 struct compare_key_value
 	{
 		__host__ __device__
-			bool operator()(key_value lhs, key_value rhs) const {
-			return lhs.key < rhs.key;
+			bool operator()(int lhs, int rhs) const {
+			return lhs < rhs;
 		}
 	};
 
@@ -644,7 +645,7 @@ void for_each_n_test() {
 // CHECK-NEXT:  oneapi::dpl::for_each_n(oneapi::dpl::execution::seq, A, N, add_functor());
   thrust::for_each_n(thrust::host, h_V.begin(), h_V.size(), add_functor());
   thrust::for_each_n(h_V.begin(), h_V.size(), add_functor());
-  thrust::for_each_n(thrust::deice, d_V.begin(), d_V.size(), add_functor());
+  thrust::for_each_n(thrust::device, d_V.begin(), d_V.size(), add_functor());
   thrust::for_each_n(d_V.begin(), d_V.size(), add_functor());
   thrust::for_each_n(thrust::host, A, N, add_functor());
   thrust::for_each_n(A, N, add_functor());
@@ -708,13 +709,13 @@ void transform_exclusive_scan_test() {
   thrust::negate<int> unary_op;
   thrust::plus<int> binary_op;
 
-// CHECK:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_V.begin(), 4, binary_op, unary_op)
+// CHECK:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_V.begin(), 4, binary_op, unary_op);
 // CHECK-NEXT:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_V.begin(), 4, binary_op, unary_op);
 // CHECK-NEXT:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_V.begin(), 4, binary_op, unary_op);
 // CHECK-NEXT:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_V.begin(), 4, binary_op, unary_op);
 // CHECK-NEXT:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, A, A+N, A, 4, binary_op, unary_op);
 // CHECK-NEXT: oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, A, A+N, A, 4, binary_op, unary_op);
-  thrust::transform_exclusive_scan(thrust::host, h_V.begin(), h_V.end(), h_V.begin(), unary_op, 4, binary_op)
+  thrust::transform_exclusive_scan(thrust::host, h_V.begin(), h_V.end(), h_V.begin(), unary_op, 4, binary_op);
   thrust::transform_exclusive_scan(h_V.begin(), h_V.end(), h_V.begin(), unary_op, 4, binary_op);
   thrust::transform_exclusive_scan(thrust::device, d_V.begin(), d_V.end(), d_V.begin(), unary_op, 4, binary_op);
   thrust::transform_exclusive_scan(d_V.begin(), d_V.end(), d_V.begin(), unary_op, 4, binary_op);
@@ -831,7 +832,7 @@ void partition_copy_test() {
   thrust::partition_copy(device_a.begin(), device_a.begin() + N, device_S.begin(), device_evens.begin(), device_odds.begin(), is_even());
 }
 
-void partition_copy_test() {
+void stable_partition_copy_test() {
   int data[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
   int S[] = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0};
   int result[10];
@@ -930,4 +931,84 @@ void remvoe_test() {
   thrust::remove(data, data + N, 1);
   thrust::remove(host_data.begin(), host_data.begin() + N, 1);
   thrust::remove(device_data.begin(), device_data.begin() + N, 1);
+}
+
+struct greater_than_four {
+  __host__ __device__ bool operator()(int x) const { return x > 4; }
+};
+
+void find_if_test() {
+  const int N = 4;
+  int data[4] = {0,5, 3, 7};
+  thrust::device_vector<int> device_data(data, data + N);
+  thrust::host_vector<int> host_data(data, data + N);
+
+  // CHECK:oneapi::dpl::find_if(oneapi::dpl::execution::seq, data, data+3, greater_than_four());
+  // CHECK-NEXT:oneapi::dpl::find_if(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end(), greater_than_four());
+  // CHECK-NEXT:oneapi::dpl::find_if(oneapi::dpl::execution::seq, host_data.begin(), host_data.end(), greater_than_four());
+  // CHECK-NEXT:oneapi::dpl::find_if(oneapi::dpl::execution::seq, data, data+3, greater_than_four());
+  // CHECK-NEXT:oneapi::dpl::find_if(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end(), greater_than_four());
+  // CHECK-NEXT:oneapi::dpl::find_if(oneapi::dpl::execution::seq, host_data.begin(), host_data.end(), greater_than_four());
+  thrust::find_if(data, data+3, greater_than_four());
+  thrust::find_if(device_data.begin(), device_data.end(),  greater_than_four());
+  thrust::find_if(host_data.begin(), host_data.end(),  greater_than_four());
+  thrust::find_if(thrust::host, data, data+3, greater_than_four());
+  thrust::find_if(thrust::device, device_data.begin(), device_data.end(),  greater_than_four());
+  thrust::find_if(thrust::host, host_data.begin(), host_data.end(),  greater_than_four());
+}
+
+void find_if_not_test() {
+  const int N = 4;
+  int data[4] = {0,5, 3, 7};
+  thrust::device_vector<int> device_data(data, data + N);
+  thrust::host_vector<int> host_data(data, data + N);
+
+  // CHECK:oneapi::dpl::find_if_not(oneapi::dpl::execution::seq, data, data+3, greater_than_four());
+  // CHECK-NEXT:oneapi::dpl::find_if_not(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end(), greater_than_four());
+  // CHECK-NEXT:oneapi::dpl::find_if_not(oneapi::dpl::execution::seq, host_data.begin(), host_data.end(), greater_than_four());
+  // CHECK-NEXT:oneapi::dpl::find_if_not(oneapi::dpl::execution::seq, data, data+3, greater_than_four());
+  // CHECK-NEXT:oneapi::dpl::find_if_not(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end(), greater_than_four());
+  // CHECK-NEXT:oneapi::dpl::find_if_not(oneapi::dpl::execution::seq, host_data.begin(), host_data.end(), greater_than_four());
+  thrust::find_if_not(data, data+3, greater_than_four());
+  thrust::find_if_not(device_data.begin(), device_data.end(),  greater_than_four());
+  thrust::find_if_not(host_data.begin(), host_data.end(),  greater_than_four());
+  thrust::find_if_not(thrust::host, data, data+3, greater_than_four());
+  thrust::find_if_not(thrust::device, device_data.begin(), device_data.end(),  greater_than_four());
+  thrust::find_if_not(thrust::host, host_data.begin(), host_data.end(),  greater_than_four());
+}
+
+void mismatch_test() {
+  const int N = 4;
+  int A[N] = {0, 5, 3, 7};
+  int B[N] = {0, 5, 8, 7};
+
+  thrust::host_vector<int> VA(A, A + N);
+  thrust::host_vector<int> VB(B, B + N);
+  thrust::device_vector<int> d_VA(A, A + N);
+  thrust::device_vector<int> d_VB(B, B + N);
+
+  // CHECK:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, VA.begin(), VA.end(), VB.begin());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, VA.begin(), VA.end(), VB.begin());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, VA.begin(), VA.end(), VB.begin(), oneapi::dpl::equal_to<int>());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, VA.begin(), VA.end(), VB.begin(), oneapi::dpl::equal_to<int>());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin(), oneapi::dpl::equal_to<int>());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin(), oneapi::dpl::equal_to<int>());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, A, A+N, B);
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, A, A+N, B);
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, A, A+N, B, oneapi::dpl::equal_to<int>());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, A, A+N, B, oneapi::dpl::equal_to<int>());
+  thrust::mismatch(thrust::host, VA.begin(), VA.end(), VB.begin());
+  thrust::mismatch(VA.begin(), VA.end(), VB.begin());
+  thrust::mismatch(thrust::host, VA.begin(), VA.end(), VB.begin(), thrust::equal_to<int>());
+  thrust::mismatch(VA.begin(), VA.end(), VB.begin(), thrust::equal_to<int>());
+  thrust::mismatch(thrust::device, d_VA.begin(), d_VA.end(), d_VB.begin());
+  thrust::mismatch(d_VA.begin(), d_VA.end(), d_VB.begin());
+  thrust::mismatch(thrust::device, d_VA.begin(), d_VA.end(), d_VB.begin(), thrust::equal_to<int>());
+  thrust::mismatch( d_VA.begin(), d_VA.end(), d_VB.begin(), thrust::equal_to<int>());
+  thrust::mismatch(thrust::host, A, A+N, B);
+  thrust::mismatch( A, A+N, B);
+  thrust::mismatch(thrust::host, A, A+N, B, thrust::equal_to<int>());
+  thrust::mismatch( A, A+N, B, thrust::equal_to<int>());
 }

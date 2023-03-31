@@ -15,7 +15,7 @@
   int Error = CALL;                \
 } while (0)
 
-__constant__ float constData[1234567 * 4];
+__constant__ float constData[123 * 4];
 
 int foo_b(int a){
   return 0;

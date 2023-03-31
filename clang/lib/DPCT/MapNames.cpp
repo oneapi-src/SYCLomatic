@@ -233,7 +233,9 @@ void MapNames::setExplicitNamespaceMap() {
            HelperFeatureEnum::SparseUtils_matrix_info)},
       {"cusparseOperation_t",
        std::make_shared<TypeNameRule>("oneapi::mkl::transpose")},
-      {"cusparseSolveAnalysisInfo_t", std::make_shared<TypeNameRule>("int")},
+      {"cusparseSolveAnalysisInfo_t", std::make_shared<TypeNameRule>(
+           "std::shared_ptr<" + getDpctNamespace() + "sparse::optimize_info>",
+           HelperFeatureEnum::SparseUtils_optimize_info)},
       {"thrust::device_ptr",
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "device_pointer",
@@ -589,6 +591,10 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "dnnl::rnn_memory_format_tag",
            HelperFeatureEnum::DnnlUtils_rnn_memory_format_tag)},
+      {"cudnnDropoutDescriptor_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::dropout_desc",
+           HelperFeatureEnum::DnnlUtils_dropout_desc)},
   };
 
   // CuDNN Enum constants name mapping.
@@ -1299,7 +1305,7 @@ void MapNames::setExplicitNamespaceMap() {
 #include "APINames_NCCL.inc"
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"
-#include "APINames_cuGRAPH.inc"
+#include "APINames_nvGRAPH.inc"
 #include "APINames_cuRAND.inc"
 #include "APINames_cuSOLVER.inc"
 #include "APINames_cuSPARSE.inc"
@@ -1768,13 +1774,42 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusolverDnXpotrf",
                            "cusolverDnPotrf",
                            "cusolverDnXpotrs",
-                           "cusolverDnPotrs"};
+                           "cusolverDnPotrs",
+                           "cusolverDnSgeqrf_bufferSize",
+                           "cusolverDnDgeqrf_bufferSize",
+                           "cusolverDnCgeqrf_bufferSize",
+                           "cusolverDnZgeqrf_bufferSize"};
 
-  SPARSEAPIWithRewriter = {"cusparseCreateMatDescr",  "cusparseDestroyMatDescr",
-                           "cusparseSetMatType",      "cusparseGetMatType",
-                           "cusparseSetMatIndexBase", "cusparseGetMatIndexBase",
-                           "cusparseSetMatDiagType",  "cusparseGetMatDiagType",
-                           "cusparseSetMatFillMode",  "cusparseGetMatFillMode"};
+  SPARSEAPIWithRewriter = {"cusparseCreateMatDescr",
+                           "cusparseDestroyMatDescr",
+                           "cusparseSetMatType",
+                           "cusparseGetMatType",
+                           "cusparseSetMatIndexBase",
+                           "cusparseGetMatIndexBase",
+                           "cusparseSetMatDiagType",
+                           "cusparseGetMatDiagType",
+                           "cusparseSetMatFillMode",
+                           "cusparseGetMatFillMode",
+                           "cusparseCreate",
+                           "cusparseDestroy",
+                           "cusparseSetStream",
+                           "cusparseGetStream",
+                           "cusparseGetPointerMode",
+                           "cusparseSetPointerMode",
+                           "cusparseCreateSolveAnalysisInfo",
+                           "cusparseDestroySolveAnalysisInfo",
+                           "cusparseScsrmv",
+                           "cusparseDcsrmv",
+                           "cusparseCcsrmv",
+                           "cusparseZcsrmv",
+                           "cusparseScsrsv_analysis",
+                           "cusparseDcsrsv_analysis",
+                           "cusparseCcsrsv_analysis",
+                           "cusparseZcsrsv_analysis",
+                           "cusparseScsrmm",
+                           "cusparseDcsrmm",
+                           "cusparseCcsrmm",
+                           "cusparseZcsrmm"};
 
   // This map now is only used to migrate using declaration
   MathFuncNameMap = {
@@ -4277,7 +4312,7 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #include "APINames_NVML.inc"
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"
-#include "APINames_cuGRAPH.inc"
+#include "APINames_nvGRAPH.inc"
 #include "APINames_cuRAND.inc"
 #include "APINames_cuSOLVER.inc"
 #include "APINames_cuSPARSE.inc"

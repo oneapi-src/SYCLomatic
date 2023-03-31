@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/DplExtrasAlgorithm/api_test10_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasAlgorithm/api_test10_out
 
-// CHECK: 5
+// CHECK: 38
 // TEST_FEATURE: DplExtrasAlgorithm_sort
 
 #include <thrust/sort.h>

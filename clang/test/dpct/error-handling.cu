@@ -3,6 +3,7 @@
 // RUN: dpct --usm-level=none -out-root %T/error-handling error-handling.cu --cuda-include-path="%cuda-path/include" -- -w -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck error-handling.cu --match-full-lines --input-file %T/error-handling/error-handling.dp.cpp
 
+#include "cuda.h"
 #include <stdexcept>
 #include <cublas.h>
 #include <vector>
