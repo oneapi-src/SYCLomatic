@@ -419,10 +419,8 @@ T select_from_sub_group(unsigned int member_mask,
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
 #if defined(__SPIR__)
   return __spirv_GroupNonUniformShuffle(__spv::Scope::Subgroup, x, logical_remote_id);
-#elif defined(__NVPTX__)
-  return __nvvm_shfl_sync_idx_i32(member_mask, x, logical_remote_id, 0x1f);
 #else
-  #error "Masked version of select_from_sub_group only supports SPIR-V and NVPTX backends"
+  #error "Masked version of select_from_sub_group only supports SPIR-V backends"
 #endif // __SPIR__
 #else
   (void)g;
@@ -467,10 +465,8 @@ T shift_sub_group_left(unsigned int member_mask,
     result = x;
   }
   return result;
-#elif defined(__NVPTX__)
-  return __nvvm_shfl_sync_down_i32(member_mask, x, delta, 0x1f);
 #else
-  #error "Masked version of shift_sub_group_left only supports SPIR-V and NVPTX backends"
+  #error "Masked version of shift_sub_group_left only supports SPIR-V backends"
 #endif // __SPIR__
 #else
   (void)g;
@@ -515,10 +511,8 @@ T shift_sub_group_right(unsigned int member_mask,
     result = x;
   }
   return result;
-#elif defined(__NVPTX__)
-  return __nvvm_shfl_sync_up_i32(member_mask, x, delta, 0);
 #else
-  #error "Masked version of shift_sub_group_right only supports SPIR-V and NVPTX backends"
+  #error "Masked version of shift_sub_group_right only supports SPIR-V backends"
 #endif // __SPIR__
 #else
   (void)g;
@@ -561,10 +555,8 @@ T permute_sub_group_by_xor(unsigned int member_mask,
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
 #if defined(__SPIR__)
   return __spirv_GroupNonUniformShuffle(__spv::Scope::Subgroup, x, logical_remote_id);
-#elif defined(__NVPTX__)
-  return __nvvm_shfl_sync_idx_i32(member_mask, x, logical_remote_id, 0x1f);
 #else
-  #error "Masked version of select_from_sub_group only supports SPIR-V and NVPTX backends"
+  #error "Masked version of permute_sub_group_by_xor only supports SPIR-V backends."
 #endif // __SPIR__
 #else
   (void)g;
