@@ -14,6 +14,7 @@
 #include "clang/Sema/Ownership.h"
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallSet.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
@@ -24,7 +25,6 @@
 
 namespace clang::dpct {
 
-using llvm::APFloat;
 using llvm::SMLoc;
 using llvm::SMRange;
 using llvm::SourceMgr;
@@ -280,19 +280,45 @@ using llvm::SourceMgr;
 //   AsmDeclRefExpr *Predicate;
 // };
 
+namespace RoundMod {
+
+} // namespace RoundMod
+
 
 struct AsmType;
-struct Member;
 
 struct AsmSymbol {
-  AsmSymbol *Next;
   StringRef Name;
   AsmType *Type;
-  AsmToken Token;
-  int Align;
+  bool IsVariable;
+  bool IsLabel;
 };
 
-struct AsmStmt {
+struct VarAttr {
+  uint64_t Align;
+  bool IsShared;
+};
+
+struct InstAttr {
+  unsigned RoundMod;
+  unsigned SatMod;
+  unsigned SatfMod;
+  unsigned FtzMod;
+  unsigned AbsMod;
+  unsigned TypeMod;
+  unsigned AppxMod;
+  unsigned ClampMod;
+  unsigned SyncMod;
+  unsigned ShuffleMod;
+  unsigned Vector;
+  unsigned Comparison;
+  unsigned BooleanOp;
+  unsigned ArithmeticOp;
+  unsigned StorageClass;
+  SmallVector<AsmType *, 4> Types;
+};
+
+struct AsmStatement {
   enum StmtKind {
     SK_NullExpr,
     SK_Add,
@@ -327,35 +353,44 @@ struct AsmStmt {
     SK_Variable,
     SK_VLAPtr,
     SK_Integer,
+    SK_Unsigned,
     SK_Float,
+    SK_Double,
     SK_Cast,
-    SK_Inst
+    SK_Inst,
+    SK_Sink,
+    SK_Tuple,
   };
 
   StmtKind Kind;
-  AsmStmt *Next;
+  AsmStatement *Next;
   AsmType *Type;
-  AsmStmt *Lhs;
-  AsmStmt *Rhs;
-  AsmStmt *Pred;
-  AsmStmt *Then;
-  AsmStmt *Init;
-  AsmStmt *Body;
+  AsmStatement *LHS;
+  AsmStatement *RHS;
+  AsmStatement *SubExpr;
+  AsmStatement *Pred;
+  AsmStatement *PredOutput;
+  AsmStatement *Cond;
+  AsmStatement *Then;
+  AsmStatement *Else;
+  AsmStatement *Init;
+  AsmStatement *Body;
   StringRef Label;
-  AsmStmt *Bar;
+  AsmStatement *Bar;
   AsmSymbol *Variable;
-  APInt Integer;
-  APFloat Float;
 
-  /// TODO: Modifiers
-  /// TODO: Operands 
+  union {
+    uint64_t u64;
+    int64_t i64;
+    float f32;
+    double f64;
+  };
 
-  AsmStmt(StmtKind K) : Kind(K), Integer(64, 0), Float(0.0) {}
-};
+  InstAttr InstructionAttr;
+  SmallVector<AsmStatement *, 4> Operands;
+  SmallVector<AsmStatement *, 4> Tuple;
 
-struct VarAttr {
-  APInt Align;
-  bool IsShared;
+  AsmStatement(StmtKind K) : Kind(K) {}
 };
 
 struct AsmType {
@@ -402,49 +437,15 @@ struct AsmType {
   AsmType *Base;
   AsmToken Name;
   size_t ArrayLength;
-  Member *Members;
   bool IsFlexible;
-  AsmType *Next;
-
-  static AsmType *getB8();
-  static AsmType *getB16();
-  static AsmType *getB32();
-  static AsmType *getB64();
-  static AsmType *getB128();
-  static AsmType *getS2();
-  static AsmType *getS4();
-  static AsmType *getS8();
-  static AsmType *getS16();
-  static AsmType *getS32();
-  static AsmType *getS64();
-  static AsmType *getU2();
-  static AsmType *getU4();
-  static AsmType *getU8();
-  static AsmType *getU16();
-  static AsmType *getU32();
-  static AsmType *getU64();
-  static AsmType *getF16();
-  static AsmType *getF16x2();
-  static AsmType *getF32();
-  static AsmType *getF64();
-  static AsmType *getE4m3();
-  static AsmType *getE5m2();
-  static AsmType *getE4m3x2();
-  static AsmType *getF5m2x2();
-  static AsmType *getByte();
-  static AsmType *get4Byte();
-  static AsmType *getPred();
-
-  static AsmType *PointTo(AsmType *Base);
-  static AsmType *ArrayOf(AsmType *Base, size_t Len);
-  static AsmType *VLAOf(AsmType *Base, AsmStmt *Expr);
 };
 
-using AsmStmtResult = ActionResult<dpct::AsmStmt *>;
+using AsmStmtResult = ActionResult<dpct::AsmStatement *>;
 
 class AsmContext {
   llvm::BumpPtrAllocator Allocator;
-
+  std::map<AsmType::TypeKind, AsmType *> ScalarTypes;
+  AsmStatement *SinkExpression;
 public:
   void *allocate(unsigned Size, unsigned Align = 8) {
     return Allocator.Allocate(Size, Align);
@@ -452,8 +453,54 @@ public:
 
   void deallocate(void *Ptr) {}
 
-  AsmStmt *CreateStmt(AsmStmt::StmtKind Kind);
-  AsmStmt *CreateIntegerConstant(AsmType *Type, APInt Val);
+  
+  AsmType *getScalarType(AsmType::TypeKind Kind);
+  AsmType *getScalarTypeFromName(StringRef TypeName);
+  AsmType::TypeKind getScalarTypeKindFromName(StringRef TypeName);
+
+  // AsmType *getB8();
+  // AsmType *getB16();
+  // AsmType *getB32();
+  // AsmType *getB64();
+  // AsmType *getB128();
+  // AsmType *getS2();
+  // AsmType *getS4();
+  // AsmType *getS8();
+  // AsmType *getS16();
+  // AsmType *getS32();
+  // AsmType *getS64();
+  // AsmType *getU2();
+  // AsmType *getU4();
+  // AsmType *getU8();
+  // AsmType *getU16();
+  // AsmType *getU32();
+  // AsmType *getU64();
+  // AsmType *getF16();
+  // AsmType *getF16x2();
+  // AsmType *getF32();
+  // AsmType *getF64();
+  // AsmType *getE4m3();
+  // AsmType *getE5m2();
+  // AsmType *getE4m3x2();
+  // AsmType *getF5m2x2();
+  // AsmType *getByte();
+  // AsmType *get4Byte();
+  // AsmType *getPred();
+  AsmType *PointTo(AsmType *Base);
+  AsmType *ArrayOf(AsmType *Base, size_t Len);
+  AsmType *VLAOf(AsmType *Base, AsmStatement *Expr);
+
+  AsmStatement *CreateStmt(AsmStatement::StmtKind Kind);
+  AsmStatement *CreateIntegerConstant(AsmType *Type, int64_t Val);
+  AsmStatement *CreateIntegerConstant(AsmType *Type, uint64_t Val);
+  AsmStatement *CreateFloatConstant(AsmType *Type, float Val);
+  AsmStatement *CreateFloatConstant(AsmType *Type, double Val);
+  AsmStatement *CreateConditionalExpression(AsmStatement *Cond, AsmStatement *Then, AsmStatement *Else);
+  AsmStatement *CreateBinaryOperator(AsmStatement::StmtKind Opcode, AsmStatement *LHS, AsmStatement *RHS);
+  AsmStatement *CreateUnaryExpression(AsmStatement::StmtKind Opcode, AsmStatement *SubExpr);
+  AsmStatement *CreateCastExpression(AsmType *Type, AsmStatement *SubExpr);
+  AsmStatement *CreateVariableRefExpression(AsmSymbol *Symbol);
+  AsmStatement *GetOrCreateSinkExpression();
 };
 
 class AsmIdentifierInfo {
@@ -556,6 +603,8 @@ public:
   bool isDeclScope(const AsmSymbol *D) const { return DeclsInScope.contains(D); }
 
   bool Contains(const AsmScope &rhs) const { return Depth < rhs.Depth; }
+
+  AsmSymbol *LookupSymbol(StringRef Symbol) const;
 };
 
 
@@ -618,32 +667,35 @@ public:
     delete CurScope;
   }
 
-  AsmStmtResult ParseAlign();
-  AsmStmtResult ParseDeclSpecs();
-
   /// TODO: bool Parse();
   AsmStmtResult ParseStatement();
   AsmStmtResult ParseCompoundStatement();
   AsmStmtResult ParsePredicate();
   AsmStmtResult ParseUnGuardInstruction();
   AsmStmtResult ParseInstruction();
-  bool ParseExpression();
-  bool ParsePrimaryExpression();
-  bool ParseAssignExpression();
-  bool ParseConditionalExpression();
-  bool ParseLogicOrExpression();
-  bool ParseLogicAndExpression();
-  bool ParseInclusiveOrExpression();
-  bool ParseExclusiveOrExpression();
-  bool ParseAndExpression();
-  bool ParseEqualityExpression();
-  bool ParseRelationExpression();
-  bool ParseShiftExpression();
-  bool ParseAdditiveExpression();
-  bool ParseMultiplicativeExpression();
-  bool ParseCaseExpresion();
-  bool ParseUnaryExpression();
-  bool ParsePostfixExpression();
+  InstAttr ParseInstructionFlags();
+  AsmStmtResult ParseTuple();
+  AsmStmtResult ParseInstructionFirstOperand();
+  AsmStmtResult ParseInstructionOperand();
+
+  AsmStmtResult ParseConstantExpression();
+  // bool ParseExpression();
+  AsmStmtResult ParsePrimaryExpression();
+  // bool ParseAssignExpression();
+  AsmStmtResult ParseConditionalExpression();
+  AsmStmtResult ParseLogicOrExpression();
+  AsmStmtResult ParseLogicAndExpression();
+  AsmStmtResult ParseInclusiveOrExpression();
+  AsmStmtResult ParseExclusiveOrExpression();
+  AsmStmtResult ParseAndExpression();
+  AsmStmtResult ParseEqualityExpression();
+  AsmStmtResult ParseRelationExpression();
+  AsmStmtResult ParseShiftExpression();
+  AsmStmtResult ParseAdditiveExpression();
+  AsmStmtResult ParseMultiplicativeExpression();
+  AsmStmtResult ParseCaseExpresion();
+  AsmStmtResult ParseUnaryExpression();
+  // bool ParsePostfixExpression();
 };
 
 } // namespace clang::dpct

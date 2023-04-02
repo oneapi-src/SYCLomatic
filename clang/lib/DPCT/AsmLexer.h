@@ -20,7 +20,6 @@
 
 namespace clang::dpct {
 
-using llvm::APInt;
 using llvm::StringRef;
 
 class AsmToken {
@@ -36,16 +35,19 @@ public:
 
     // Integer values.
     Integer,
-    BigNum, // larger than 64 bits
+    Unsigned,
 
-    // Real values.
-    Real,
+    // IEEE754 floating point values.
+    Float,
+    Double,
 
     // Comments
     Comment,
     HashDirective,
     // No-value.
     EndOfStatement,
+    Sink,     // '_'
+    Question, // '?'
     Colon,
     Space,
     Plus,
@@ -93,18 +95,33 @@ private:
   /// a memory buffer owned by the source manager.
   StringRef Str;
 
-  APInt IntVal;
-
+  union {
+    int64_t i64;
+    uint64_t u64;
+    float f32;
+    double f64;
+  };
 public:
   AsmToken() = default;
-  AsmToken(TokenKind Kind, StringRef Str, APInt IntVal)
-      : Kind(Kind), Str(Str), IntVal(std::move(IntVal)) {}
-  AsmToken(TokenKind Kind, StringRef Str, int64_t IntVal = 0)
-      : Kind(Kind), Str(Str), IntVal(64, IntVal, true) {}
+  AsmToken(TokenKind Kind, StringRef Str)
+      : Kind(Kind), Str(Str), u64(0U) {}
+  AsmToken(TokenKind Kind, StringRef Str, int64_t I64)
+      : Kind(Kind), Str(Str), i64(I64) {}
+  AsmToken(TokenKind Kind, StringRef Str, uint64_t U64)
+      : Kind(Kind), Str(Str), u64(U64) {}
+  AsmToken(TokenKind Kind, StringRef Str, float FpVal)
+      : Kind(Kind), Str(Str), f32(FpVal) {}
+  AsmToken(TokenKind Kind, StringRef Str, double FpVal)
+      : Kind(Kind), Str(Str), f64(FpVal) {}
 
   TokenKind getKind() const { return Kind; }
   bool is(TokenKind K) const { return Kind == K; }
   bool isNot(TokenKind K) const { return Kind != K; }
+
+  template <typename K, typename... Ks>
+  bool is(K k, Ks... ks) const {
+    return is(k) || (is(ks) || ...);
+  }
 
   /// Get the contents of a string token (without quotes).
   StringRef getStringContents() const {
@@ -170,13 +187,22 @@ public:
   // as a single token, then diagnose as an invalid number).
   int64_t getIntVal() const {
     assert(Kind == Integer && "This token isn't an integer!");
-    return IntVal.getZExtValue();
+    return i64;
   }
 
-  APInt getAPIntVal() const {
-    assert((Kind == Integer || Kind == BigNum) &&
-           "This token isn't an integer!");
-    return IntVal;
+  uint64_t getUnsignedVal() const {
+    assert(Kind == Unsigned  && "This token isn't an integer!");
+    return u64;
+  }
+
+  float getF32Val() const {
+    assert(Kind == Float  && "This token isn't an integer!");
+    return f32;
+  }
+
+  double getF64Val() const {
+    assert(Kind == Double  && "This token isn't an integer!");
+    return f64;
   }
 
   void dump(raw_ostream &OS) const;
@@ -234,16 +260,14 @@ private:
   bool isAtStatementSeparator(const char *Ptr);
   int getNextChar();
   int peekNextChar();
+  AsmToken ConsumeIntegerSuffix(unsigned Radix);
   AsmToken ReturnError(const char *Loc, const std::string &Msg);
 
   AsmToken LexIdentifier();
   AsmToken LexSlash();
   AsmToken LexLineComment();
   AsmToken LexDigit();
-  AsmToken LexSingleQuote();
   AsmToken LexQuote();
-  AsmToken LexFloatLiteral();
-  AsmToken LexHexFloatLiteral(bool NoIntDigits);
 
   StringRef LexUntilEndOfLine();
 };

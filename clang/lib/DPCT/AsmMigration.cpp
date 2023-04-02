@@ -1,4 +1,5 @@
-//===------------------------ AsmMigration.cpp -----------------------------===//
+//===------------------------ AsmMigration.cpp
+//-----------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -8,38 +9,50 @@
 
 #include "AsmMigration.h"
 #include "AnalysisInfo.h"
-#include "CallExprRewriter.h"
 #include "AsmLexer.h"
+#include "AsmParser.h"
+#include "CallExprRewriter.h"
 #include "MigrationRuleManager.h"
 
 using namespace clang;
 using namespace clang::dpct;
 
-
 void actionOnGCCAsmStmt(const GCCAsmStmt *Asm) {
   const auto &C = DpctGlobalInfo::getContext();
-  std::string S  = Asm->generateAsmString(C);
+  std::string S = Asm->generateAsmString(C);
   unsigned DiagOffsets = 0;
   SmallVector<GCCAsmStmt::AsmStringPiece> Pieces;
   if (Asm->AnalyzeAsmString(Pieces, C, DiagOffsets)) {
-    llvm::errs() << llvm::raw_ostream::RED << "Invalid inline asm" << llvm::raw_ostream::RESET << "\n";
+    llvm::errs() << llvm::raw_ostream::RED << "Invalid inline asm"
+                 << llvm::raw_ostream::RESET << "\n";
     return;
   }
 
   for (const auto &P : Pieces) {
     if (P.isString())
-      llvm::errs() << llvm::raw_ostream::BLUE << " S " << P.getString() << llvm::raw_ostream::RESET << "\n";
+      llvm::errs() << llvm::raw_ostream::BLUE << " S " << P.getString()
+                   << llvm::raw_ostream::RESET << "\n";
     else
-      llvm::errs() << llvm::raw_ostream::BLUE << " O " << P.getOperandNo() << " " << (P.getModifier() != 0 ? P.getModifier() : '0') << llvm::raw_ostream::RESET << "\n";;
+      llvm::errs() << llvm::raw_ostream::BLUE << " O " << P.getOperandNo()
+                   << " " << (P.getModifier() != 0 ? P.getModifier() : '0')
+                   << llvm::raw_ostream::RESET << "\n";
+    ;
   }
 
   AsmToken Tok;
-  AsmLexer Lexer(S);
+  AsmLexer Lexer;
+  Lexer.setBuffer(S);
   do {
     Tok = Lexer.Lex();
     Tok.dump(llvm::errs());
     llvm::errs() << "\n";
   } while (Tok.isNot(AsmToken::Eof));
+  AsmContext Context;
+  llvm::SourceMgr Mgr;
+  Mgr.AddNewSourceBuffer(llvm::MemoryBuffer::getMemBuffer(S), llvm::SMLoc());
+  AsmParser Parser(Context, Mgr);
+
+  auto Inst = Parser.ParseStatement();
 }
 
 void AsmRule::registerMatcher(ast_matchers::MatchFinder &MF) {
@@ -199,5 +212,3 @@ void AsmRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
   }
   return;
 }
-
-
