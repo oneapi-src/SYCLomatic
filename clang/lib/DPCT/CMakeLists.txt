@@ -7,6 +7,7 @@ set(CONT_FILES
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/atomic.hpp.inc
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/device.hpp.inc
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/image.hpp.inc
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/math.hpp.inc
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/memory.hpp.inc
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/util.hpp.inc
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/blas_utils.hpp.inc
@@ -52,6 +53,7 @@ set(PROCESS_FILES_OUTPUT
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_utils.all.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/image.all.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/kernel.all.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/math.all.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/memory.all.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/util.all.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/rng_utils.all.inc
@@ -68,6 +70,7 @@ set(PROCESS_FILES_OUTPUT
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_utils.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/image.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/kernel.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/math.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/memory.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/util.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/rng_utils.inc
@@ -86,7 +89,7 @@ add_custom_command(
   )
 
 add_custom_command(
-  DEPENDS ${CONT_FILES} ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/HelperFileAndFeatureNames.inc ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/processFiles.py
+  DEPENDS ${CONT_FILES} ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/HelperFileNames.inc ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/processFiles.py
   OUTPUT  ${PROCESS_FILES_OUTPUT}
   COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/processFiles.py --build-dir ${CMAKE_BINARY_DIR}
   )

@@ -31,7 +31,6 @@ FeatureMap:
       IsCalled:        true
       CallerSrcFiles:
         - ''
-      FeatureName:     ''
       SubFeatureMap:   {}
 CompileTargets:  {}
 OptionMap:

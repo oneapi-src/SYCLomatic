@@ -40,17 +40,7 @@ CONDITIONAL_FACTORY_ENTRY(
                          makeCombinedArg(ARG("{0, static_cast<std::uint64_t>(("),
                                          ARG(0)),
                          ARG(") * 4)}"))))),
-        FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::RngUtils_rng_generator_get_engine,
-            CALL_FACTORY_ENTRY(
-                "skipahead_sequence",
-                CALL("oneapi::mkl::rng::device::skip_ahead",
-                     MEMBER_CALL(DEREF(makeDerefArgCreatorWithCall(1)),
-                                        false, "get_engine"),
-                     makeCombinedArg(
-                         makeCombinedArg(ARG("{0, static_cast<std::uint64_t>(("),
-                                         ARG(0)),
-                         ARG(") * 8)}"))))))),
+        REMOVE_API_FACTORY_ENTRY_WITH_MSG("skipahead_sequence", "this API is not supported for mcg59 engine."))),
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgType(1, "struct curandStateMRG32k3a *"),
     FEATURE_REQUEST_FACTORY(
@@ -75,17 +65,7 @@ CONDITIONAL_FACTORY_ENTRY(
                          makeCombinedArg(ARG("{0, static_cast<std::uint64_t>("),
                                          ARG(0)),
                          ARG(" * 4)}"))))),
-        FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::RngUtils_rng_generator_get_engine,
-            CALL_FACTORY_ENTRY(
-                "skipahead_sequence",
-                CALL("oneapi::mkl::rng::device::skip_ahead",
-                     MEMBER_CALL(DEREF(makeDerefArgCreatorWithCall(1)),
-                                        false, "get_engine"),
-                     makeCombinedArg(
-                         makeCombinedArg(ARG("{0, static_cast<std::uint64_t>("),
-                                         ARG(0)),
-                         ARG(" * 8)}")))))))
+        REMOVE_API_FACTORY_ENTRY_WITH_MSG("skipahead_sequence", "this API is not supported for mcg59 engine.")))
 )
 
 CONDITIONAL_FACTORY_ENTRY(
@@ -117,9 +97,15 @@ FEATURE_REQUEST_FACTORY(
 // bits
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
-    MEMBER_CALL_FACTORY_ENTRY("curand",
-                              DEREF(makeDerefArgCreatorWithCall(0)), false,
-                              "generate<oneapi::mkl::rng::device::bits<std::uint32_t>, 1>"))
+    CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(0, "struct curandStateXORWOW *"),
+        MEMBER_CALL_FACTORY_ENTRY("curand",
+                                  DEREF(makeDerefArgCreatorWithCall(0)), false,
+                                  "generate<oneapi::mkl::rng::device::uniform_"
+                                  "bits<std::uint32_t>, 1>"),
+        MEMBER_CALL_FACTORY_ENTRY(
+            "curand", DEREF(makeDerefArgCreatorWithCall(0)), false,
+            "generate<oneapi::mkl::rng::device::bits<std::uint32_t>, 1>")))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
     MEMBER_CALL_FACTORY_ENTRY("curand4",

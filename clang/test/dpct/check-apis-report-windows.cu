@@ -1,4 +1,4 @@
-// UNSUPPORTED: -linux-
+// UNSUPPORTED: system-linux
 // RUN: dpct -report-type=apis -report-file-prefix=check_apis_report -out-root %T/check_apis_report-windows %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: cat %S/check-apis-report_csv_ref_windows.txt > %T/check_apis_report-windows/check_apis_report_csv_check_windows.txt
 // RUN: cat %T/check_apis_report-windows/check_apis_report.apis.csv >>%T/check_apis_report-windows/check_apis_report_csv_check_windows.txt
@@ -34,6 +34,7 @@
 // RUN: dpct -output-verbosity=detailed  -out-root %T/check_apis_report-windows %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only  2>&1  \
 // RUN: | FileCheck -check-prefix=FAKE-FILE-STDERR -allow-empty %s
 
+#include <cuda.h>
 #include <cuda_runtime.h>
 
 void checkError(cudaError_t err) {

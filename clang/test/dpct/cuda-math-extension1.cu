@@ -15,5 +15,6 @@ __global__ void kernelFuncHalf() {
 
   // CHECK: h_2 = sycl::ext::intel::math::hdiv(h, h_1);
   h_2 = __hdiv(h, h_1);
+}
 
 int main() { return 0; }

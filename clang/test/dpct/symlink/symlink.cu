@@ -1,4 +1,4 @@
-// UNSUPPORTED: -windows-
+// UNSUPPORTED: system-windows
 // RUN: rm -rf /tmp/%basename_t && mkdir -p /tmp/%basename_t && cd /tmp/%basename_t
 // RUN: ln -s `which dpct` ./dpct
 // RUN: cp %S/symlink.cu ./symlink.cu

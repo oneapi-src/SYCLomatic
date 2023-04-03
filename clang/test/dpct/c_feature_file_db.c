@@ -1,4 +1,4 @@
-// UNSUPPORTED: -windows-
+// UNSUPPORTED: system-windows
 // RUN: cd %T
 // RUN: mkdir c_feature_file_db
 // RUN: cd c_feature_file_db

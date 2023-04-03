@@ -61,81 +61,127 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
 
   // Half Arithmetic Functions
 
-  // TODO:1CHECK: h2_2 = h2 / h2_1;
-  //h2_2 = __h2div(h2, h2_1);
-  // TODO:1CHECK: h_2 = h / h_1;
-  //h_2 = __hdiv(h, h_1);
+  // CHECK: h_2 = sycl::clamp<sycl::half>(h + h_1, 0.f, 1.0f);
+  h_2 = __hadd_sat(h, h_1);
   // CHECK: h_2 = sycl::fma(h, h_1, h_2);
   h_2 = __hfma(h, h_1, h_2);
+  // CHECK: h_2 = sycl::clamp<sycl::half>(sycl::fma(h, h_1, h_2), 0.f, 1.0f);
+  h_2 = __hfma_sat(h, h_1, h_2);
   // CHECK: h_2 = h * h_1;
   h_2 = __hmul(h, h_1);
+  // CHECK: h_2 = sycl::clamp<sycl::half>(h * h_1, 0.f, 1.0f);
+  h_2 = __hmul_sat(h, h_1);
   // CHECK: h_2 = -h;
   h_2 = __hneg(h);
   // CHECK: h_2 = h - h_1;
   h_2 = __hsub(h, h_1);
+  // CHECK: h_2 = sycl::clamp<sycl::half>(h - h_1, 0.f, 1.0f);
+  h_2 = __hsub_sat(h, h_1);
 
   // Half2 Arithmetic Functions
 
   // CHECK: h2_2 = h2 + h2_1;
   h2_2 = __hadd2(h2, h2_1);
+  // CHECK: h2_2 = sycl::clamp<sycl::half2>(h2 + h2_1, {0.f, 0.f}, {1.f, 1.f});
+  h2_2 = __hadd2_sat(h2, h2_1);
   // CHECK: h2_2 = sycl::fma(h2, h2_1, h2_2);
   h2_2 = __hfma2(h2, h2_1, h2_2);
+  // CHECK: h2_2 = sycl::clamp<sycl::half2>(sycl::fma(h2, h2_1, h2_2), {0.f, 0.f}, {1.f, 1.f});
+  h2_2 = __hfma2_sat(h2, h2_1, h2_2);
   // CHECK: h2_2 = h2 * h2_1;
   h2_2 = __hmul2(h2, h2_1);
+  // CHECK: h2_2 = sycl::clamp<sycl::half2>(h2 * h2_1, {0.f, 0.f}, {1.f, 1.f});
+  h2_2 = __hmul2_sat(h2, h2_1);
   // CHECK: h2_2 = -h2;
   h2_2 = __hneg2(h2);
   // CHECK: h2_2 = h2 - h2_1;
   h2_2 = __hsub2(h2, h2_1);
+  // CHECK: h2_2 = sycl::clamp<sycl::half2>(h2 - h2_1, {0.f, 0.f}, {1.f, 1.f});
+  h2_2 = __hsub2_sat(h2, h2_1);
 
   // Half Comparison Functions
 
   // CHECK: b = h == h_1;
   b = __heq(h, h_1);
+  // CHECK: b = dpct::unordered_compare_half(h, h_1, std::equal_to<>());
+  b = __hequ(h, h_1);
   // CHECK: b = h >= h_1;
   b = __hge(h, h_1);
+  // CHECK: b = dpct::unordered_compare_half(h, h_1, std::greater_equal<>());
+  b = __hgeu(h, h_1);
   // CHECK: b = h > h_1;
   b = __hgt(h, h_1);
+  // CHECK: b = dpct::unordered_compare_half(h, h_1, std::greater<>());
+  b = __hgtu(h, h_1);
   // CHECK: b = sycl::isinf(h);
   b = __hisinf(h);
   // CHECK: b = sycl::isnan(h);
   b = __hisnan(h);
   // CHECK: b = h <= h_1;
   b = __hle(h, h_1);
+  // CHECK: b = dpct::unordered_compare_half(h, h_1, std::less_equal<>());
+  b = __hleu(h, h_1);
   // CHECK: b = h < h_1;
   b = __hlt(h, h_1);
-  // CHECK: b = h != h_1;
+  // CHECK: b = dpct::unordered_compare_half(h, h_1, std::less<>());
+  b = __hltu(h, h_1);
+  // CHECK: b = dpct::compare_half(h, h_1, std::not_equal_to<>());
   b = __hne(h, h_1);
+  // CHECK: b = dpct::unordered_compare_half(h, h_1, std::not_equal_to<>());
+  b = __hneu(h, h_1);
 
   // Half2 Comparison Functions
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __heq2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: b = dpct::compare_both_half2(h2, h2_1, std::equal_to<>());
+  b = __hbeq2(h2, h2_1);
+  // CHECK: b = dpct::unordered_compare_both_half2(h2, h2_1, std::equal_to<>());
+  b = __hbequ2(h2, h2_1);
+  // CHECK: b = dpct::compare_both_half2(h2, h2_1, std::greater_equal<>());
+  b = __hbge2(h2, h2_1);
+  // CHECK: b = dpct::unordered_compare_both_half2(h2, h2_1, std::greater_equal<>());
+  b = __hbgeu2(h2, h2_1);
+  // CHECK: b = dpct::compare_both_half2(h2, h2_1, std::greater<>());
+  b = __hbgt2(h2, h2_1);
+  // CHECK: b = dpct::unordered_compare_both_half2(h2, h2_1, std::greater<>());
+  b = __hbgtu2(h2, h2_1);
+  // CHECK: b = dpct::compare_both_half2(h2, h2_1, std::less_equal<>());
+  b = __hble2(h2, h2_1);
+  // CHECK: b = dpct::unordered_compare_both_half2(h2, h2_1, std::less_equal<>());
+  b = __hbleu2(h2, h2_1);
+  // CHECK: b = dpct::compare_both_half2(h2, h2_1, std::less<>());
+  b = __hblt2(h2, h2_1);
+  // CHECK: b = dpct::unordered_compare_both_half2(h2, h2_1, std::less<>());
+  b = __hbltu2(h2, h2_1);
+  // CHECK: b = dpct::compare_both_half2(h2, h2_1, std::not_equal_to<>());
+  b = __hbne2(h2, h2_1);
+  // CHECK: b = dpct::unordered_compare_both_half2(h2, h2_1, std::not_equal_to<>());
+  b = __hbneu2(h2, h2_1);
+  // CHECK: h2_2 = dpct::compare_half2(h2, h2_1, std::equal_to<>());
   h2_2 = __heq2(h2, h2_1);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hge2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: h2_2 = dpct::unordered_compare_half2(h2, h2_1, std::equal_to<>());
+  h2_2 = __hequ2(h2, h2_1);
+  // CHECK: h2_2 = dpct::compare_half2(h2, h2_1, std::greater_equal<>());
   h2_2 = __hge2(h2, h2_1);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hgt2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: h2_2 = dpct::unordered_compare_half2(h2, h2_1, std::greater_equal<>());
+  h2_2 = __hgeu2(h2, h2_1);
+  // CHECK: h2_2 = dpct::compare_half2(h2, h2_1, std::greater<>());
   h2_2 = __hgt2(h2, h2_1);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hisnan2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: h2_2 = dpct::unordered_compare_half2(h2, h2_1, std::greater<>());
+  h2_2 = __hgtu2(h2, h2_1);
+  // CHECK: h2_2 = dpct::isnan(h2);
   h2_2 = __hisnan2(h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hle2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: h2_2 = dpct::compare_half2(h2, h2_1, std::less_equal<>());
   h2_2 = __hle2(h2, h2_1);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hlt2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: h2_2 = dpct::unordered_compare_half2(h2, h2_1, std::less_equal<>());
+  h2_2 = __hleu2(h2, h2_1);
+  // CHECK: h2_2 = dpct::compare_half2(h2, h2_1, std::less<>());
   h2_2 = __hlt2(h2, h2_1);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hne2 is not supported.
-  // CHECK-NEXT: */
+  // CHECK: h2_2 = dpct::unordered_compare_half2(h2, h2_1, std::less<>());
+  h2_2 = __hltu2(h2, h2_1);
+  // CHECK: h2_2 = dpct::compare_half2(h2, h2_1, std::not_equal_to<>());
   h2_2 = __hne2(h2, h2_1);
+  // CHECK: h2_2 = dpct::unordered_compare_half2(h2, h2_1, std::not_equal_to<>());
+  h2_2 = __hneu2(h2, h2_1);
 
   // Half Math Functions
 
@@ -529,12 +575,6 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
 
   // CHECK: d2 = sycl::remquo(d0, d1, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   d2 = remquo(d0, d1, &i);
-  // CHECK: d2 = sycl::remquo((double)i, (double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  d2 = remquo(i, i, &i);
-  // CHECK: d2 = sycl::remquo(d0, (double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  d2 = remquo(d0, i, &i);
-  // CHECK: d2 = sycl::remquo((double)i, d1, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  d2 = remquo(i, d1, &i);
 
   // CHECK: d2 = sycl::rint(d0);
   d2 = rint(d0);
@@ -2067,139 +2107,6 @@ __global__ void testUnsupported() {
   bool b;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hadd_sat is not supported.
-  // CHECK-NEXT: */
-  __hadd_sat(h, h);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hfma_sat is not supported.
-  // CHECK-NEXT: */
-  __hfma_sat(h, h, h);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hmul_sat is not supported.
-  // CHECK-NEXT: */
-  __hmul_sat(h, h);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hsub_sat is not supported.
-  // CHECK-NEXT: */
-  __hsub_sat(h, h);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hadd2_sat is not supported.
-  // CHECK-NEXT: */
-  __hadd2_sat(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hfma2_sat is not supported.
-  // CHECK-NEXT: */
-  __hfma2_sat(h2, h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hmul2_sat is not supported.
-  // CHECK-NEXT: */
-  __hmul2_sat(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hsub2_sat is not supported.
-  // CHECK-NEXT: */
-  __hsub2_sat(h2, h2);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hequ is not supported.
-  // CHECK-NEXT: */
-  b = __hequ(h, h);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hgeu is not supported.
-  // CHECK-NEXT: */
-  b = __hgeu(h, h);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hgtu is not supported.
-  // CHECK-NEXT: */
-  b = __hgtu(h, h);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hleu is not supported.
-  // CHECK-NEXT: */
-  b = __hleu(h, h);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hltu is not supported.
-  // CHECK-NEXT: */
-  b = __hltu(h, h);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hneu is not supported.
-  // CHECK-NEXT: */
-  b = __hneu(h, h);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbeq2 is not supported.
-  // CHECK-NEXT: */
-  b = __hbeq2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbequ2 is not supported.
-  // CHECK-NEXT: */
-  b = __hbequ2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbge2 is not supported.
-  // CHECK-NEXT: */
-  b = __hbge2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbgeu2 is not supported.
-  // CHECK-NEXT: */
-  b = __hbgeu2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbgt2 is not supported.
-  // CHECK-NEXT: */
-  b = __hbgt2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbgtu2 is not supported.
-  // CHECK-NEXT: */
-  b = __hbgtu2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hble2 is not supported.
-  // CHECK-NEXT: */
-  b = __hble2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbleu2 is not supported.
-  // CHECK-NEXT: */
-  b = __hbleu2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hblt2 is not supported.
-  // CHECK-NEXT: */
-  b = __hblt2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbltu2 is not supported.
-  // CHECK-NEXT: */
-  b = __hbltu2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbne2 is not supported.
-  // CHECK-NEXT: */
-  b = __hbne2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbneu2 is not supported.
-  // CHECK-NEXT: */
-  b = __hbneu2(h2, h2);
-
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hequ2 is not supported.
-  // CHECK-NEXT: */
-  __hequ2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hgeu2 is not supported.
-  // CHECK-NEXT: */
-  __hgeu2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hgtu2 is not supported.
-  // CHECK-NEXT: */
-  __hgtu2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hleu2 is not supported.
-  // CHECK-NEXT: */
-  __hleu2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hltu2 is not supported.
-  // CHECK-NEXT: */
-  __hltu2(h2, h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hneu2 is not supported.
-  // CHECK-NEXT: */
-  __hneu2(h2, h2);
-
-  // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cyl_bessel_i0f is not supported.
   // CHECK-NEXT: */
   f = cyl_bessel_i0f(f);
@@ -2230,31 +2137,31 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: */
   f = jnf(i, f);
 
-  // CHECK: f = sycl::fast_length(sycl::float3(f, f, f));
+  // CHECK: f = sycl::length(sycl::float3(f, f, f));
   f = norm3df(f, f, f);
-  // CHECK: f = sycl::fast_length(sycl::float4(f, f, f, f));
+  // CHECK: f = sycl::length(sycl::float4(f, f, f, f));
   f = norm4df(f, f, f, f);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdff is not supported.
-  // CHECK-NEXT: */
+  // CHECK: f = sycl::erfc(f / -sycl::sqrt(2.0)) / 2;
   f = normcdff(f);
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdfinvf is not supported.
   // CHECK-NEXT: */
   f = normcdfinvf(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normf is not supported.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the normf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
+  // CHECK-NEXT: f = dpct::length(&f, i);
   f = normf(i, &f);
   // CHECK: f = sycl::native::recip((float)sycl::cbrt(f));
   f = rcbrtf(f);
-  // CHECK: f = sycl::native::recip(sycl::fast_length(sycl::float3(f, f, f)));
+  // CHECK: f = sycl::native::recip(sycl::length(sycl::float3(f, f, f)));
   f = rnorm3df(f, f, f);
-  // CHECK: f = sycl::native::recip(sycl::fast_length(sycl::float4(f, f, f, f)));
+  // CHECK: f = sycl::native::recip(sycl::length(sycl::float4(f, f, f, f)));
   f = rnorm4df(f, f, f, f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of rnormf is not supported.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the rnormf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
+  // CHECK-NEXT: f = sycl::native::recip(dpct::length(&f, i));
   f = rnormf(i, &f);
   // CHECK: f = f*(2<<l);
   f = scalblnf(f, l);
@@ -2303,15 +2210,16 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of jn is not supported.
   // CHECK-NEXT: */
   d = jn(i, d);
-  // CHECK: d = dpct::fast_length((float *)&d, i);
-  d = norm(i, &d);
-  // CHECK: d = sycl::fast_length(sycl::float3(d, d, d));
-  d = norm3d(d, d, d);
-  // CHECK: d = sycl::fast_length(sycl::float4(d, d, d, d));
-  d = norm4d(d, d, d, d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdf is not supported.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the norm call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
+  // CHECK-NEXT: d = dpct::length(&d, i);
+  d = norm(i, &d);
+  // CHECK: d = sycl::length(sycl::double3(d, d, d));
+  d = norm3d(d, d, d);
+  // CHECK: d = sycl::length(sycl::double4(d, d, d, d));
+  d = norm4d(d, d, d, d);
+  // CHECK:  d = sycl::erfc(d / -sycl::sqrt(2.0)) / 2;
   d = normcdf(d);
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdfinv is not supported.
@@ -2319,13 +2227,14 @@ __global__ void testUnsupported() {
   d = normcdfinv(d);
   // CHECK: d = sycl::native::recip((float)sycl::cbrt(d));
   d = rcbrt(d);
-  // CHECK: d = sycl::native::recip(sycl::fast_length(sycl::float3(d, d, d)));
+  // CHECK: d = 1 / sycl::length(sycl::double3(d, d, d));
   d = rnorm3d(d, d, d);
-  // CHECK: d = sycl::native::recip(sycl::fast_length(sycl::float4(d, d, d, d)));
+  // CHECK: d = 1 / sycl::length(sycl::double4(d, d, d, d));
   d = rnorm4d(d, d, d, d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of rnorm is not supported.
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the rnorm call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
+  // CHECK-NEXT: d = 1 / dpct::length(&d, i);
   d = rnorm(i, &d);
   // CHECK: d = d*(2<<l);
   d = scalbln(d, l);
@@ -2407,10 +2316,7 @@ __global__ void testUnsupported() {
   u = __urhadd(u, u);
   // CHECK: u = sycl::abs_diff(u, u)+u;
   u = __usad(u, u, u);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hadd is not supported.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: h = __hadd(h, h);
+  // CHECK: h = h + h;
   h = __hadd(h, h);
 }
 
@@ -2488,6 +2394,209 @@ __global__ void testIntegerFunctions() {
   i = abs(i);
   l = labs(l);
   ll = llabs(ll);
+
+  // CHECK: ll = sycl::max<long long>(ll, ll);
+  // CHECK-NEXT: ll = sycl::min<long long>(ll, l);
+  // CHECK-NEXT: ull = sycl::max<unsigned long long>(ll, ull);
+  // CHECK-NEXT: ull = sycl::min<unsigned long long>(ll, ll);
+  // CHECK-NEXT: u = sycl::max<unsigned int>(u, u);
+  // CHECK-NEXT: u = sycl::min<unsigned int>(u, u);
+  ll = llmax(ll, ll);
+  ll = llmin(ll, l);
+  ull = ullmax(ll, ull);
+  ull = ullmin(ll, ll);
+  u = umax(u, u);
+  u = umin(u, u);
+}
+
+__global__ void kernelFuncSIMD() {
+  unsigned int u, u_1, u_2;
+  bool b;
+
+  // CHECK: u_2 = dpct::vectorized_abs<sycl::short2, unsigned>(u);
+  // CHECK-NEXT: u_2 = dpct::vectorized_abs<sycl::char4, unsigned>(u);
+  // CHECK-NEXT: u_2 = dpct::vectorized_abs_diff<sycl::short2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_abs_diff<sycl::char4, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_abs_diff<sycl::ushort2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_abs_diff<sycl::uchar4, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_abs_sat<sycl::short2, unsigned>(u);
+  // CHECK-NEXT: u_2 = dpct::vectorized_abs_sat<sycl::char4, unsigned>(u);
+  u_2 = __vabs2(u);
+  u_2 = __vabs4(u);
+  u_2 = __vabsdiffs2(u, u_1);
+  u_2 = __vabsdiffs4(u, u_1);
+  u_2 = __vabsdiffu2(u, u_1);
+  u_2 = __vabsdiffu4(u, u_1);
+  u_2 = __vabsss2(u);
+  u_2 = __vabsss4(u);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::ushort2, unsigned>(u, u_1, std::plus<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4, unsigned>(u, u_1, std::plus<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_add_sat<sycl::short2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_add_sat<sycl::char4, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_add_sat<sycl::ushort2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_add_sat<sycl::uchar4, unsigned>(u, u_1);
+  u_2 = __vadd2(u, u_1);
+  u_2 = __vadd4(u, u_1);
+  u_2 = __vaddss2(u, u_1);
+  u_2 = __vaddss4(u, u_1);
+  u_2 = __vaddus2(u, u_1);
+  u_2 = __vaddus4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_avg_sat<sycl::short2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_avg_sat<sycl::char4, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_avg_sat<sycl::ushort2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_avg_sat<sycl::uchar4, unsigned>(u, u_1);
+  u_2 = __vavgs2(u, u_1);
+  u_2 = __vavgs4(u, u_1);
+  u_2 = __vavgu2(u, u_1);
+  u_2 = __vavgu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::ushort2, unsigned>(u, u_1, std::equal_to<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4, unsigned>(u, u_1, std::equal_to<>());
+  u_2 = __vcmpeq2(u, u_1);
+  u_2 = __vcmpeq4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2, unsigned>(u, u_1, std::greater_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4, unsigned>(u, u_1, std::greater_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2, unsigned>(u, u_1, std::greater_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4, unsigned>(u, u_1, std::greater_equal<>());
+  u_2 = __vcmpges2(u, u_1);
+  u_2 = __vcmpges4(u, u_1);
+  u_2 = __vcmpgeu2(u, u_1);
+  u_2 = __vcmpgeu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2, unsigned>(u, u_1, std::greater<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4, unsigned>(u, u_1, std::greater<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2, unsigned>(u, u_1, std::greater<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4, unsigned>(u, u_1, std::greater<>());
+  u_2 = __vcmpgts2(u, u_1);
+  u_2 = __vcmpgts4(u, u_1);
+  u_2 = __vcmpgtu2(u, u_1);
+  u_2 = __vcmpgtu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2, unsigned>(u, u_1, std::less_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4, unsigned>(u, u_1, std::less_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2, unsigned>(u, u_1, std::less_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4, unsigned>(u, u_1, std::less_equal<>());
+  u_2 = __vcmples2(u, u_1);
+  u_2 = __vcmples4(u, u_1);
+  u_2 = __vcmpleu2(u, u_1);
+  u_2 = __vcmpleu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2, unsigned>(u, u_1, std::less<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4, unsigned>(u, u_1, std::less<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2, unsigned>(u, u_1, std::less<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4, unsigned>(u, u_1, std::less<>());
+  u_2 = __vcmplts2(u, u_1);
+  u_2 = __vcmplts4(u, u_1);
+  u_2 = __vcmpltu2(u, u_1);
+  u_2 = __vcmpltu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::ushort2, unsigned>(u, u_1, std::not_equal_to<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4, unsigned>(u, u_1, std::not_equal_to<>());
+  u_2 = __vcmpne2(u, u_1);
+  u_2 = __vcmpne4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_hadd<sycl::ushort2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_hadd<sycl::uchar4, unsigned>(u, u_1);
+  u_2 = __vhaddu2(u, u_1);
+  u_2 = __vhaddu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_max<sycl::short2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_max<sycl::char4, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_max<sycl::ushort2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_max<sycl::uchar4, unsigned>(u, u_1);
+  u_2 = __vmaxs2(u, u_1);
+  u_2 = __vmaxs4(u, u_1);
+  u_2 = __vmaxu2(u, u_1);
+  u_2 = __vmaxu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_min<sycl::short2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_min<sycl::char4, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_min<sycl::ushort2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_min<sycl::uchar4, unsigned>(u, u_1);
+  u_2 = __vmins2(u, u_1);
+  u_2 = __vmins4(u, u_1);
+  u_2 = __vminu2(u, u_1);
+  u_2 = __vminu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_unary<sycl::short2, unsigned>(u, std::negate<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_unary<sycl::char4, unsigned>(u, std::negate<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_neg_sat<sycl::short2, unsigned>(u);
+  // CHECK-NEXT: u_2 = dpct::vectorized_neg_sat<sycl::char4, unsigned>(u);
+  u_2 = __vneg2(u);
+  u_2 = __vneg4(u);
+  u_2 = __vnegss2(u);
+  u_2 = __vnegss4(u);
+
+  // CHECK: u_2 = dpct::vectorized_sum_abs_diff<sycl::short2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_sum_abs_diff<sycl::char4, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_sum_abs_diff<sycl::ushort2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_sum_abs_diff<sycl::uchar4, unsigned>(u, u_1);
+  u_2 = __vsads2(u, u_1);
+  u_2 = __vsads4(u, u_1);
+  u_2 = __vsadu2(u, u_1);
+  u_2 = __vsadu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_set_compare<sycl::ushort2, unsigned>(u, u_1, std::equal_to<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::uchar4, unsigned>(u, u_1, std::equal_to<>());
+  u_2 = __vseteq2(u, u_1);
+  u_2 = __vseteq4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_set_compare<sycl::short2, unsigned>(u, u_1, std::greater_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::char4, unsigned>(u, u_1, std::greater_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::ushort2, unsigned>(u, u_1, std::greater_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::uchar4, unsigned>(u, u_1, std::greater_equal<>());
+  u_2 = __vsetges2(u, u_1);
+  u_2 = __vsetges4(u, u_1);
+  u_2 = __vsetgeu2(u, u_1);
+  u_2 = __vsetgeu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_set_compare<sycl::short2, unsigned>(u, u_1, std::greater<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::char4, unsigned>(u, u_1, std::greater<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::ushort2, unsigned>(u, u_1, std::greater<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::uchar4, unsigned>(u, u_1, std::greater<>());
+  u_2 = __vsetgts2(u, u_1);
+  u_2 = __vsetgts4(u, u_1);
+  u_2 = __vsetgtu2(u, u_1);
+  u_2 = __vsetgtu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_set_compare<sycl::short2, unsigned>(u, u_1, std::less_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::char4, unsigned>(u, u_1, std::less_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::ushort2, unsigned>(u, u_1, std::less_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::uchar4, unsigned>(u, u_1, std::less_equal<>());
+  u_2 = __vsetles2(u, u_1);
+  u_2 = __vsetles4(u, u_1);
+  u_2 = __vsetleu2(u, u_1);
+  u_2 = __vsetleu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_set_compare<sycl::short2, unsigned>(u, u_1, std::less<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::char4, unsigned>(u, u_1, std::less<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::ushort2, unsigned>(u, u_1, std::less<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::uchar4, unsigned>(u, u_1, std::less<>());
+  u_2 = __vsetlts2(u, u_1);
+  u_2 = __vsetlts4(u, u_1);
+  u_2 = __vsetltu2(u, u_1);
+  u_2 = __vsetltu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_set_compare<sycl::ushort2, unsigned>(u, u_1, std::not_equal_to<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_set_compare<sycl::uchar4, unsigned>(u, u_1, std::not_equal_to<>());
+  u_2 = __vsetne2(u, u_1);
+  u_2 = __vsetne4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::ushort2, unsigned>(u, u_1, std::minus<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4, unsigned>(u, u_1, std::minus<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_sub_sat<sycl::short2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_sub_sat<sycl::char4, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_sub_sat<sycl::ushort2, unsigned>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_sub_sat<sycl::uchar4, unsigned>(u, u_1);
+  u_2 = __vsub2(u, u_1);
+  u_2 = __vsub4(u, u_1);
+  u_2 = __vsubss2(u, u_1);
+  u_2 = __vsubss4(u, u_1);
+  u_2 = __vsubus2(u, u_1);
+  u_2 = __vsubus4(u, u_1);
 }
 
 void testTypecasts() {
@@ -2564,48 +2673,6 @@ __device__ int __host__ foo3(int i, int j) {
 // CHECK-NEXT: }
 __device__ float __host__ foo3(float f, float g) {
   return max(f, g) + min(f, g);
-}
-
-// CHECK:  int bar(short i, long j) {
-// CHECK-NEXT:   return std::max<long>(i, j) + std::min<long>(i, j);
-// CHECK-NEXT: }
-__host__ int bar(short i, long j) {
-  return max(i, j) + min(i, j);
-}
-
-// CHECK:  int bar(unsigned short i, unsigned long j) {
-// CHECK-NEXT:   return std::max<unsigned long>(i, j) + std::min<unsigned long>(i, j);
-// CHECK-NEXT: }
-__host__ int bar(unsigned short i, unsigned long j) {
-  return max(i, j) + min(i, j);
-}
-
-// CHECK:  int bar(unsigned short i, long j) {
-// CHECK-NEXT:   return max(i, j) + min(i, j);
-// CHECK-NEXT: }
-__host__ int bar(unsigned short i, long j) {
-  return max(i, j) + min(i, j);
-}
-
-// CHECK:  int bar(long i, unsigned short j) {
-// CHECK-NEXT:   return max(i, j) + min(i, j);
-// CHECK-NEXT: }
-__host__ int bar(long i, unsigned short j) {
-  return max(i, j) + min(i, j);
-}
-
-// CHECK:  int bar(short i, unsigned long j) {
-// CHECK-NEXT:   return std::max<unsigned long>(i, j) + std::min<unsigned long>(i, j);
-// CHECK-NEXT: }
-__host__ int bar(short i, unsigned long j) {
-  return max(i, j) + min(i, j);
-}
-
-// CHECK:  int bar(unsigned long i, short j) {
-// CHECK-NEXT:   return std::max<unsigned long>(i, j) + std::min<unsigned long>(i, j);
-// CHECK-NEXT: }
-__host__ int bar(unsigned long i, short j) {
-  return max(i, j) + min(i, j);
 }
 
 typedef int INT;
@@ -2768,17 +2835,14 @@ __host__ __device__ void do_migration4() {
   // CHECK: sycl::max(i, j);
   max(i, j);
 }
-int max(int i, int j) {
-  return i > j ? i : j;
-}
 namespace t {
 int max(int i, int j) {
   return i > j ? i : j;
 }
 }
-void no_migration() {
+void do_migration5() {
   int i, j;
-  // CHECK: max(i, j);
+  // CHECK: std::max(i, j);
   max(i, j);
 }
 void no_migration2() {
@@ -2791,16 +2855,16 @@ void no_migration3() {
   // CHECK: std::max(i, j);
   std::max(i, j);
 }
-__host__ void no_migration4() {
+__host__ void do_migration6() {
   int i, j;
-  // CHECK: max(i, j);
+  // CHECK: std::max(i, j);
   max(i, j);
 }
 
 void ns() {
   using namespace std;
   int i, j;
-  // CHECK: max(i, j);
+  // CHECK: std::max(i, j);
   max(i, j);
 }
 
@@ -2811,13 +2875,9 @@ void no_migration5() {
   //CHECK: std::max(i, i);
   //CHECK-NEXT: std::min(i, i);
   //CHECK-NEXT: std::fabs(f);
-  //CHECK-NEXT: std::frexpf(f, &i);
-  //CHECK-NEXT: std::modff(f, &f);
   //CHECK-NEXT: std::nearbyintf(f);
   //CHECK-NEXT: std::remquof(f, f, &i);
-  //CHECK-NEXT: std::acosf(f);
   //CHECK-NEXT: std::acoshf(f);
-  //CHECK-NEXT: std::asinf(f);
   //CHECK-NEXT: std::asinhf(f);
   //CHECK-NEXT: std::abs(f);
   //CHECK-NEXT: std::frexp(f, &i);
@@ -2831,13 +2891,9 @@ void no_migration5() {
   std::max(i, i);
   std::min(i, i);
   std::fabs(f);
-  std::frexpf(f, &i);
-  std::modff(f, &f);
   std::nearbyintf(f);
   std::remquof(f, f, &i);
-  std::acosf(f);
   std::acoshf(f);
-  std::asinf(f);
   std::asinhf(f);
   std::abs(f);
   std::frexp(f, &i);
@@ -2862,14 +2918,6 @@ __device__ void do_migration5() {
   //CHECK-NEXT: sycl::min(i, i);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexpf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modff call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, float>(&f));
-  //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::floor(f + 0.5);
@@ -2877,9 +2925,7 @@ __device__ void do_migration5() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::remquo(f, f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
-  //CHECK-NEXT: sycl::asin(f);
   //CHECK-NEXT: sycl::asinh(f);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
@@ -2905,13 +2951,9 @@ __device__ void do_migration5() {
   std::max(i, i);
   std::min(i, i);
   std::fabs(f);
-  std::frexpf(f, &i);
-  std::modff(f, &f);
   std::nearbyintf(f);
   std::remquof(f, f, &i);
-  std::acosf(f);
   std::acoshf(f);
-  std::asinf(f);
   std::asinhf(f);
   std::abs(f);
   std::frexp(f, &i);
@@ -2932,14 +2974,6 @@ __global__ void do_migration6() {
   //CHECK-NEXT: sycl::min(i, i);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexpf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modff call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, float>(&f));
-  //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::floor(f + 0.5);
@@ -2947,9 +2981,7 @@ __global__ void do_migration6() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::remquo(f, f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
-  //CHECK-NEXT: sycl::asin(f);
   //CHECK-NEXT: sycl::asinh(f);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
@@ -2975,13 +3007,9 @@ __global__ void do_migration6() {
   std::max(i, i);
   std::min(i, i);
   std::fabs(f);
-  std::frexpf(f, &i);
-  std::modff(f, &f);
   std::nearbyintf(f);
   std::remquof(f, f, &i);
-  std::acosf(f);
   std::acoshf(f);
-  std::asinf(f);
   std::asinhf(f);
   std::abs(f);
   std::frexp(f, &i);
@@ -3002,14 +3030,6 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: sycl::min(i, i);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexpf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modff call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, float>(&f));
-  //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::floor(f + 0.5);
@@ -3017,9 +3037,7 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::remquo(f, f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
-  //CHECK-NEXT: sycl::asin(f);
   //CHECK-NEXT: sycl::asinh(f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
@@ -3044,13 +3062,9 @@ __device__ __host__ void do_migration7() {
   std::max(i, i);
   std::min(i, i);
   std::fabs(f);
-  std::frexpf(f, &i);
-  std::modff(f, &f);
   std::nearbyintf(f);
   std::remquof(f, f, &i);
-  std::acosf(f);
   std::acoshf(f);
-  std::asinf(f);
   std::asinhf(f);
   std::frexp(f, &i);
   std::modf(f, &f);
@@ -3212,25 +3226,25 @@ __global__ void k2() {
   erfcx(d0);
   // CHECK: sycl::exp(f0*f0)*sycl::erfc(f0);
   erfcxf(f0);
-  // CHECK: sycl::fast_length(sycl::float3(d0, d1, d2));
+  // CHECK: sycl::length(sycl::double3(d0, d1, d2));
   norm3d(d0, d1, d2);
-  // CHECK: sycl::fast_length(sycl::float3(f0, f1, f2));
+  // CHECK: sycl::length(sycl::float3(f0, f1, f2));
   norm3df(f0, f1, f2);
-  // CHECK: sycl::fast_length(sycl::float4(d0, d1, d2, d3));
+  // CHECK: sycl::length(sycl::double4(d0, d1, d2, d3));
   norm4d(d0, d1, d2, d3);
-  // CHECK: sycl::fast_length(sycl::float4(f0, f1, f2, f3));
+  // CHECK: sycl::length(sycl::float4(f0, f1, f2, f3));
   norm4df(f0, f1, f2, f3);
   // CHECK: sycl::native::recip((float)sycl::cbrt(d0));
   rcbrt(d0);
   // CHECK: sycl::native::recip((float)sycl::cbrt(f0));
   rcbrtf(f0);
-  // CHECK: sycl::native::recip(sycl::fast_length(sycl::float3(d0, d1, d2)));
+  // CHECK: 1 / sycl::length(sycl::double3(d0, d1, d2));
   rnorm3d(d0, d1, d2);
-  // CHECK: sycl::native::recip(sycl::fast_length(sycl::float3(f0, f1, f2)));
+  // CHECK: sycl::native::recip(sycl::length(sycl::float3(f0, f1, f2)));
   rnorm3df(f0, f1, f2);
-  // CHECK: sycl::native::recip(sycl::fast_length(sycl::float4(d0, d1, d2, d3)));
+  // CHECK: 1 / sycl::length(sycl::double4(d0, d1, d2, d3));
   rnorm4d(d0, d1, d2, d3);
-  // CHECK: sycl::native::recip(sycl::fast_length(sycl::float4(f0, f1, f2, f3)));
+  // CHECK: sycl::native::recip(sycl::length(sycl::float4(f0, f1, f2, f3)));
   rnorm4df(f0, f1, f2, f3);
   // CHECK: d0*(2<<l);
   scalbln(d0, l);
@@ -3293,36 +3307,36 @@ __global__ void k2() {
   // CHECK: sycl::rhadd(u, u2);
   __urhadd(u, u2);
 
-  // CHECK: u = dpct::vectorized_max<sycl::char4>(u, u2);
-  u = __vmaxs4(u, u2);
-
-  // CHECK: u = dpct::vectorized_max<sycl::ushort2>(u, u2);
-  u = __vmaxu2(u, u2);
-
-  // CHECK: u = dpct::vectorized_min<sycl::ushort2>(u, u2);
-  u = __vminu2(u, u2);
-
-  // CHECK: u = dpct::vectorized_min<sycl::uchar4>(u, u2);
-  u = __vminu4(u, u2);
-
-  // CHECK: u = dpct::vectorized_isgreater<sycl::ushort2, unsigned>(u, u2);
-  u = __vcmpgtu2(u, u2);
-
-  // CHECK: u = dpct::vectorized_isgreater<sycl::uchar4, unsigned>(u, u2);
-  u = __vcmpgtu4(u, u2);
-
   double *a_d;
-  // CHECK: 0;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the norm call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::length(a_d, 0);
   norm(0, a_d);
-  // CHECK: sycl::fast_length((float)a_d[0]);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the norm call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::length(a_d, 1);
   norm(1, a_d);
-  // CHECK: sycl::fast_length(sycl::float2(a_d[0], a_d[1]));
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the norm call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::length(a_d, 2);
   norm(2, a_d);
-  // CHECK: sycl::fast_length(sycl::float3(a_d[0], a_d[1], a_d[2]));
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the norm call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::length(a_d, 3);
   norm(3, a_d);
-  // CHECK: sycl::fast_length(sycl::float4(a_d[0], a_d[1], a_d[2], a_d[3]));
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the norm call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::length(a_d, 4);
   norm(4, a_d);
-  // CHECK: dpct::fast_length((float *)a_d, 5);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The dpct::length call is used instead of the norm call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::length(a_d, 5);
   norm(5, a_d);
 }
 

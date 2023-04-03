@@ -1,5 +1,5 @@
 // FIXME
-// UNSUPPORTED: -windows-
+// UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none --usm-level=restricted -out-root %T/memory_management_restricted %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck --match-full-lines --input-file %T/memory_management_restricted/memory_management_restricted.dp.cpp %s
 
@@ -48,7 +48,7 @@ int main(){
     cudaError_t err;
 
     //CHECK:  /*
-    //CHECK-NEXT:  DPCT1003:0: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    //CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT:  */
     //CHECK-NEXT:  MY_ERROR_CHECKER((*data = (float *)sycl::malloc_device(DATAMACRO, q_ct1), 0));
     MY_ERROR_CHECKER(cudaMalloc((void **)data, DATAMACRO));
@@ -108,6 +108,12 @@ int main(){
     // CHECK-NEXT: */
     // CHECK-NEXT: MY_ERROR_CHECKER((dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100), 0));
     MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, deviceID, nullptr));
+
+    // CHECK: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: MY_ERROR_CHECKER((dpct::cpu_device().default_queue().prefetch(a,100), 0));
+    MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, cudaCpuDeviceId, nullptr));
 
     //CHECK: stream_array[0]->memcpy(h_A, d_A, size2);
     cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, stream_array[0]);
@@ -403,7 +409,7 @@ void foobar() {
   cuMemGetInfo(&free_mem, &total_mem);
 
   // CHECK:  /*
-  // CHECK-NEXT:  DPCT1003:42: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
   // CHECK-NEXT: /*
   // CHECK-NEXT:DPCT1106:{{[0-9]+}}: 'cuMemGetInfo' was migrated with the Intel extensions for device information which may not be supported by all compilers or runtimes. You may need to adjust the code.
@@ -449,4 +455,29 @@ void foo3() {
   auto flag = cudaMemAttachGlobal;
   cudaMallocManaged(&a, 100, flag);
   cudaMallocManaged(&b, 100, cudaMemAttachGlobal);
+}
+
+__global__ void MyKernel(cudaPitchedPtr devPitchedPtr,
+                         int width, int height, int depth){}
+
+// CHECK:void foo_8() {
+// CHECK-NEXT:  int width = 64, height = 64, depth = 64;
+// CHECK-NEXT:  sycl::range<3> extent = sycl::range<3>(width * sizeof(float), height, depth);
+// CHECK-NEXT:  dpct::pitched_data devPitchedPtr;
+// CHECK-NEXT:  devPitchedPtr = dpct::dpct_malloc(extent);
+// CHECK-NEXT:  /*
+// CHECK-NEXT:  DPCT1049:0: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
+// CHECK-NEXT:  */
+// CHECK-NEXT:  dpct::get_default_queue().parallel_for(
+// CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 100) * sycl::range<3>(1, 1, 512), sycl::range<3>(1, 1, 512)),
+// CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:      MyKernel(devPitchedPtr, width, height, depth);
+// CHECK-NEXT:    });
+// CHECK-NEXT:}
+void foo_8() {
+  int width = 64, height = 64, depth = 64;
+  cudaExtent extent = make_cudaExtent(width * sizeof(float), height, depth);
+  cudaPitchedPtr devPitchedPtr;
+  cudaMalloc3D(&devPitchedPtr, extent);
+  MyKernel<<<100, 512>>>(devPitchedPtr, width, height, depth);
 }

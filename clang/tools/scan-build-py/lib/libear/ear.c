@@ -651,13 +651,14 @@ const unsigned char g_data[] = {
 // if ar_binary_used is zero, the content of file is filled with "/*emtpy-file*/"
 // if ar_binary_used is not zero,  the content of file is initialized by g_data[].
 static int generate_file(char *filename, int ar_binary_used) {
-  char buf[512];
-  char cmd[512];
+  char buf[PATH_MAX];
+  char cmd[PATH_MAX];
   int ret = 0;
-  memset(cmd, '\0', 512);
-  memset(buf, '\0', 512);
+  memset(cmd, '\0', PATH_MAX);
+  memset(buf, '\0', PATH_MAX);
   int len = strlen(filename);
-  if (len > 500) {
+  // 10 is strlen of "mkdir -p  "
+  if (len >= PATH_MAX - 10) {
     perror("bear: generate file fail.");
     return -1;
   }
@@ -679,9 +680,8 @@ static int generate_file(char *filename, int ar_binary_used) {
   }
   if(ar_binary_used) {
     fwrite(g_data, 1, sizeof g_data, fd);
-  } else {
-    fprintf(fd, "/*emtpy-file*/\n");
   }
+
   if (fclose(fd)) {
     perror("bear: fclose");
     return -1;
@@ -713,8 +713,8 @@ int find_create_object(const char *str) {
       q++;
     }
 
-    char ofilename[512];
-    memset(ofilename, '\0', 512);
+    char ofilename[PATH_MAX];
+    memset(ofilename, '\0', PATH_MAX);
     memcpy(ofilename, p, q - p);
     ofilename[q - p] = '\0';
     int ret = generate_file(ofilename, 0);
@@ -1003,8 +1003,8 @@ void dump_US_field(const char *str, FILE *fd, int US, int has_parenthesis) {
     return;
   }
 
-  char tmpbuf[512];
-  memset(tmpbuf, '\0', 512);
+  char tmpbuf[PATH_MAX];
+  memset(tmpbuf, '\0', PATH_MAX);
   begin = working;
   while (*working != '\0') {
     if (isblank(*working)) {
@@ -1317,10 +1317,10 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
       is_nvcc_or_ld = 1;
       for (size_t i = it; i < argc; i++) {
         if (strcmp(argv[i], "-o") == 0) {
-          char ofilename[512];
+          char ofilename[PATH_MAX];
           int olen = strlen(argv[i + 1]);
-          memset(ofilename, '\0', 512);
-          if (olen >= 512) {
+          memset(ofilename, '\0', PATH_MAX);
+          if (olen >= PATH_MAX) {
             perror("bear: filename length too long.");
             pthread_mutex_unlock(&mutex);
             exit(EXIT_FAILURE);
@@ -1337,11 +1337,11 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
                (len > 2 && tail[len - 3] == '/' && tail[len - 2] == 'a' &&
                 tail[len - 1] == 'r')) {
       is_nvcc_or_ld = 1;
-      char ofilename[512];
+      char ofilename[PATH_MAX];
       int olen = strlen(argv[2]);
-      memset(ofilename, '\0', 512);
+      memset(ofilename, '\0', PATH_MAX);
 
-      if (olen >= 512) {
+      if (olen >= PATH_MAX) {
         perror("bear: filename length too long.");
         pthread_mutex_unlock(&mutex);
         exit(EXIT_FAILURE);
@@ -1356,10 +1356,10 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     }
 
     if (flag_optval == 1) {
-      char ofilename[512];
+      char ofilename[PATH_MAX];
       int olen = strlen(argv[it]);
-      memset(ofilename, '\0', 512);
-      if (olen >= 512) {
+      memset(ofilename, '\0', PATH_MAX);
+      if (olen >= PATH_MAX) {
         perror("bear: filename length too long.");
         pthread_mutex_unlock(&mutex);
         exit(EXIT_FAILURE);
@@ -1412,16 +1412,16 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
   } else if (is_nvcc_or_ld == 1) {
     // object is not given by -o. Need figure out the default output for cmd "gcc
     // -c xx.c"
-    char *tmp = malloc(4096);
+    char *tmp = malloc(PATH_MAX);
     if (tmp == NULL) {
       perror("bear: malloc memory fail.");
       exit(EXIT_FAILURE);
     }
-    memset(tmp, '\0', 4096);
+    memset(tmp, '\0', PATH_MAX);
     int idx = 0;
     int c_option;
-    char ofilename[512];
-    memset(ofilename, '\0', 512);
+    char ofilename[PATH_MAX];
+    memset(ofilename, '\0', PATH_MAX);
     int parse_ret = 0;
     for (size_t it = it_cp; it < argc; ++it) {
       memcpy(tmp + idx, argv[it], strlen(argv[it]));
@@ -1438,7 +1438,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
       }
       if (olen == -1) {
         olen = strlen(ofilename);
-        if (olen > 499) {
+        if (olen >= PATH_MAX - 2) {
           perror("bear: filename length too long.");
           exit(EXIT_FAILURE);
         }
@@ -1446,7 +1446,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
         ofilename[olen + 1] = 'o';
         ofilename[olen + 2] = '\0';
       } else {
-        if (olen > 500) {
+        if (olen > PATH_MAX - 2) {
           perror("bear: filename length too long.");
           exit(EXIT_FAILURE);
         }

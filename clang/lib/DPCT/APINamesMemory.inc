@@ -362,3 +362,20 @@ ASSIGNABLE_FACTORY(
         HelperFeatureEnum::Memory_pointer_attributes,
         MEMBER_CALL_FACTORY_ENTRY(
             "cudaPointerGetAttributes", DEREF(0), false, "init", ARG(1))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::Memory_dpct_malloc_2d,
+    CONDITIONAL_FACTORY_ENTRY(
+        CheckDerefedTypeBeforeCast(0, "void *"),
+        ASSIGN_FACTORY_ENTRY(
+            "cudaMallocPitch", DEREF(makeDerefArgCreatorWithCall(0)),
+            CALL(MapNames::getDpctNamespace() + "dpct_malloc",
+                 DEREF(makeCallArgCreatorWithCall(1)),
+                 makeCallArgCreatorWithCall(2), makeDerefArgCreatorWithCall(3))),
+        ASSIGN_FACTORY_ENTRY(
+            "cudaMallocPitch", DEREF(makeDerefArgCreatorWithCall(0)),
+            CAST(getDerefedType(0),
+                 CALL(MapNames::getDpctNamespace() + "dpct_malloc",
+                      DEREF(makeCallArgCreatorWithCall(1)),
+                      makeCallArgCreatorWithCall(2),
+                      makeCallArgCreatorWithCall(3)))))))

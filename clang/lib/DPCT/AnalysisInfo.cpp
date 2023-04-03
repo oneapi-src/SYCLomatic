@@ -23,7 +23,7 @@
 
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
 
-std::optional<std::string> getReplacedName(const clang::NamedDecl *D) {
+llvm::StringRef getReplacedName(const clang::NamedDecl *D) {
   auto Iter = MapNames::TypeNamesMap.find(D->getQualifiedNameAsString(false));
   if (Iter != MapNames::TypeNamesMap.end()) {
     auto Range = getDefinitionRange(D->getBeginLoc(), D->getEndLoc());
@@ -34,7 +34,7 @@ std::optional<std::string> getReplacedName(const clang::NamedDecl *D) {
     }
     return Iter->second->NewName;
   }
-  return std::nullopt;
+  return llvm::StringRef();
 }
 
 namespace clang {
@@ -1322,7 +1322,8 @@ void KernelCallExpr::buildKernelArgsStmt() {
     }
     if (ArgCounter != 0)
       KernelArgs += ", ";
-    if (Arg.IsDoublePointer) {
+    if (Arg.IsDoublePointer &&
+        DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
       DiagnosticsUtils::report(getFilePath(), getBegin(),
                                Diagnostics::VIRTUAL_POINTER, true, false,
                                Arg.getArgString());

@@ -1,3 +1,5 @@
+// UNSUPPORTED: cuda-8.0, cuda-9.1, cuda-9.2
+// UNSUPPORTED: v8.0, v9.1, v9.2
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/device001 %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/device001/device001.dp.cpp
 
@@ -7,6 +9,16 @@ int main(int argc, char **argv) {
 
   // CHECK: dpct::device_info deviceProp;
   cudaDeviceProp deviceProp;
+
+  // CHECK: std::array<unsigned char, 16> uuid = deviceProp.get_uuid();
+  cudaUUID_t uuid = deviceProp.uuid;
+  // CHECK: deviceProp.set_uuid(uuid);
+  deviceProp.uuid=uuid;
+
+  // CHECK: int device_id = deviceProp.get_device_id();
+  int device_id = deviceProp.pciDeviceID;
+  // CHECK: deviceProp.set_device_id(device_id);
+  deviceProp.pciDeviceID=device_id;
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by the host to submit tasks. You may need to adjust this code.

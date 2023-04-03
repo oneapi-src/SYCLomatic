@@ -113,6 +113,12 @@ struct is_even_4 {
   }
 };
 
+struct my_math
+{
+//CHECK: int operator()(const int &r) const{ return r+1;}
+__host__ __device__ int operator()(const int &r) const{ return r+1;}
+};
+
 void foo() {
   //CHECK: copy_if_device(oneapi::dpl::execution::seq);
   copy_if_device(thrust::seq);
@@ -315,12 +321,6 @@ void foo() {
  }
 
 {
-  struct my_math
-  {
-  //CHECK: int operator()(const int &r) const{ return r+1;}
-  __host__ __device__ int operator()(const int &r) const{ return r+1;}
-  };
-
   int *dev_a = NULL, *dev_b = NULL;
   cudaStream_t stream;
   my_math c;
@@ -583,10 +583,6 @@ public:
   FooType getStream() const { return m_Stream; }
 
   FooType m_Stream;
-};
-
-struct my_math {
-  __host__ __device__ int operator()(int &r) { return r + 1; }
 };
 
 template <typename InputType, typename OutputType>

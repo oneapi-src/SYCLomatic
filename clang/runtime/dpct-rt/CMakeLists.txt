@@ -2,6 +2,7 @@ set(dpct_rt_files
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/dpct.hpp
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/atomic.hpp
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/device.hpp
+  ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/math.hpp
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/memory.hpp
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/kernel.hpp
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/image.hpp

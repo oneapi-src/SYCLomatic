@@ -583,6 +583,12 @@ public:
   }
 };
 
+class CudaUuidRule : public NamedMigrationRule<CudaUuidRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
 /// Migration rule for return types replacements.
 class ReturnTypeRule : public NamedMigrationRule<ReturnTypeRule> {
 public:

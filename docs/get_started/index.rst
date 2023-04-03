@@ -45,6 +45,10 @@ and versions may be extended in the future.
 
 .. include:: /_include_files/env_setup_gsg.rst
 
+
+Invoke the Tool
+---------------
+
 The general invocation syntax from the operating system shell is:
 
 .. code-block::
@@ -55,8 +59,6 @@ The general invocation syntax from the operating system shell is:
 
    ``c2s`` is an alias to the ``dpct`` command and may be used in it's place.
 
-Built-in Usage Information
-~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To see the list of |tool_name|–specific options, use ``--help``:
 
@@ -70,6 +72,43 @@ as the Clang option:
 .. code-block::
 
    dpct -- -help
+
+
+Specify Files to Migrate
+------------------------
+
+If no directory or file is specified for migration, the tool will try to migrate
+source files found in the current directory. The default output directory is
+``dpct_output``. Use the ``--out-root`` option to specify an output directory.
+
+You can optionally provide file paths for source files that should be migrated.
+The paths can be found in the compilation database. The following examples show
+ways to specify a file or directory for migration.
+
+Migrate single source file:
+
+.. code-block::
+
+   dpct source.cpp
+
+Migrate all files available in compilation database:
+
+.. code-block::
+
+   dpct -p=<path to location of compilation database file>
+
+Migrate one file in compilation database:
+
+.. code-block::
+
+   dpct -p=<path to location of compilation database file> source.cpp
+
+Migrate source files in the directory specified by the ``--in-root`` option and
+place generated files in the directory specified by the ``--out-root`` option:
+
+.. code-block::
+
+   dpct --in-root=foo --out-root=bar
 
 
 Emitted Warnings
@@ -125,9 +164,12 @@ The following steps show how to migrate the Vector Add sample using |tool_name|:
 
       dpct --in-root=. src/vector_add.cu
 
-   The ``--in-root`` option specifies the location of the CUDA file that needs
-   migration. By default, the migrated files are created in a new folder named
-   ``dpct_output``.
+   The ``--in-root`` option specifies the root location of the program sources
+   that should be migrated. Only files and folders located within the
+   ``--in-root`` directory will be considered for migration by the tool. Files
+   located outside the ``--in-root`` directory  will not be migrated, even if
+   they are included by a source file located within the ``--in-root`` directory.
+   By default, the migrated files are created in a new folder named ``dpct_output``.
 
 #. As a result of the migration command, you should see the new SYCL source file
    in the output folder:

@@ -1,12 +1,12 @@
 // FIXME
-// UNSUPPORTED: -windows-
+// UNSUPPORTED: system-windows
 // RUN: dpct --no-dpcpp-extensions=device_info --format-range=none --usm-level=none -out-root %T/memory_management %s --cuda-include-path="%cuda-path/include" -output-file=memory_management_outputfile.txt -- -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/memory_management/memory_management.dp.cpp %s
 
 #include <cuda_runtime.h>
 #include<cuda.h>
 
-__constant__ float constData[1234567 * 4];
+__constant__ float constData[123 * 4];
 
 // CHECK: template<typename T>
 //CHECK-NEXT: void test(){
@@ -195,6 +195,8 @@ void checkError(cudaError_t err) {
 
 void cuCheckError(CUresult err) {
 }
+//CHECK: #define PITCH(a,b,c,d) a = (float *)dpct::dpct_malloc(b, c, d);
+#define PITCH(a,b,c,d) cudaMallocPitch(a, b, c, d);
 
 void testCommas() {
   size_t size = 1234567 * sizeof(float);
@@ -219,10 +221,13 @@ void testCommas() {
 
   // CHECK: d_A = (float *)dpct::dpct_malloc(size, size, size);
   cudaMallocPitch((void **)&d_A, &size, size, size);
+
+  // CHECK: PITCH((void **)&d_A, &size, size, size);
+  PITCH((void **)&d_A, &size, size, size);
   int sz;
-  // CHECK: d_A = (float *)dpct::dpct_malloc(*((size_t *)&size), size, size);
+  // CHECK: d_A = (float *)dpct::dpct_malloc(*(size_t *)&size, size, size);
   cudaMallocPitch((void **)&d_A, (size_t *)&size, size, size);
-  // CHECK: d_A = (float *)dpct::dpct_malloc(*((size_t *)&sz), size, size);
+  // CHECK: d_A = (float *)dpct::dpct_malloc(*(size_t *)&sz, size, size);
   cudaMallocPitch((void **)&d_A, (size_t *)&sz, size, size);
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -883,17 +888,16 @@ void testCommas_in_global_memory() {
   // CHECK: /*
   // CHECK: DPCT1072:{{[0-9]+}}: SYCL currently does not support getting the available memory on the current device. You may need to adjust the code.
   // CHECK: */
-  // CHECK: cu_err = (result2 = dpct::get_current_device().get_device_info().get_global_mem_size(), 0);
-  cu_err = cudaMemGetInfo(&result1, &result2);
+  // CHECK: err = (result2 = dpct::get_current_device().get_device_info().get_global_mem_size(), 0);
+  err = cudaMemGetInfo(&result1, &result2);
 
   // CHECK: /*
   // CHECK: DPCT1072:{{[0-9]+}}: SYCL currently does not support getting the available memory on the current device. You may need to adjust the code.
   // CHECK: */
-  // CHECK: cuCheckError((result2 = dpct::get_current_device().get_device_info().get_global_mem_size(), 0));
-  cuCheckError(cudaMemGetInfo(&result1, &result2));
+  // CHECK: checkError((result2 = dpct::get_current_device().get_device_info().get_global_mem_size(), 0));
+  checkError(cudaMemGetInfo(&result1, &result2));
 
   CUdeviceptr  devicePtr;
-  size_t size;
   // CHECK: devicePtr = (dpct::device_ptr)dpct::dpct_malloc(size, size, size);
   cuMemAllocPitch((CUdeviceptr *)&devicePtr, &size, size, size, size);
 

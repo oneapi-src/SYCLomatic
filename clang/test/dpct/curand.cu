@@ -157,8 +157,7 @@ void bar1(){
 //CHECK-NEXT:DPCT1032:{{[0-9]+}}: A different random number generator is used. You may need to
 //CHECK-NEXT:adjust the code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:rng =
-//CHECK-NEXT:    dpct::rng::create_host_rng(dpct::rng::random_engine_type::philox4x32x10);
+//CHECK-NEXT:rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::mcg59);
 //CHECK-NEXT:rng->set_seed(1337ull);
   curandGenerator_t rng;
   curandCreateGenerator(&rng, CURAND_RNG_PSEUDO_XORWOW);
@@ -236,11 +235,7 @@ void bar4(){
 
 void bar5(){
 //CHECK:dpct::rng::host_rng_ptr rng;
-//CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1028:{{[0-9]+}}: The curandCreateGenerator was not migrated because parameter
-//CHECK-NEXT:(curandRngType)101 is unsupported.
-//CHECK-NEXT:*/
-//CHECK-NEXT:curandCreateGenerator(&rng, (curandRngType)101);
+//CHECK-NEXT:rng = dpct::rng::create_host_rng((dpct::rng::random_engine_type)101);
 //CHECK-NEXT:rng->set_seed(1337ull);
   curandGenerator_t rng;
   curandCreateGenerator(&rng, (curandRngType)101);
@@ -268,7 +263,48 @@ int bar6(){
 
 void bar7() {
   curandGenerator_t rng;
-  //CHECK:rng =
-  //CHECK:    dpct::rng::create_host_rng(dpct::rng::random_engine_type::philox4x32x10);
-  curandCreateGeneratorHost(&rng, CURAND_RNG_PSEUDO_PHILOX4_32_10);
+  // CHECK: dpct::rng::random_engine_type rngT;
+  // CHECK-NEXT: dpct::rng::random_engine_type rngT1 = dpct::rng::random_engine_type::mcg59;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1032:{{[0-9]+}}: A different random number generator is used. You may need to
+  // CHECK-NEXT: adjust the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::rng::random_engine_type rngT2 = dpct::rng::random_engine_type::mcg59;
+  // CHECK-NEXT: dpct::rng::random_engine_type rngT3 = dpct::rng::random_engine_type::mrg32k3a;
+  // CHECK-NEXT: dpct::rng::random_engine_type rngT4 = dpct::rng::random_engine_type::mt2203;
+  // CHECK-NEXT: dpct::rng::random_engine_type rngT5 = dpct::rng::random_engine_type::mt19937;
+  // CHECK-NEXT: dpct::rng::random_engine_type rngT6 =
+  // CHECK-NEXT:     dpct::rng::random_engine_type::philox4x32x10;
+  // CHECK-NEXT: dpct::rng::random_engine_type rngT7 = dpct::rng::random_engine_type::sobol;
+  // CHECK-NEXT: dpct::rng::random_engine_type rngT8 = dpct::rng::random_engine_type::sobol;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1033:{{[0-9]+}}: Migrated code uses a basic Sobol generator. Initialize
+  // CHECK-NEXT: oneapi::mkl::rng::sobol generator with user-defined direction numbers to use
+  // CHECK-NEXT: it as Scrambled Sobol generator.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::rng::random_engine_type rngT9 = dpct::rng::random_engine_type::sobol;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1032:{{[0-9]+}}: A different random number generator is used. You may need to
+  // CHECK-NEXT: adjust the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::rng::random_engine_type rngT10 = dpct::rng::random_engine_type::sobol;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1032:{{[0-9]+}}: A different random number generator is used. You may need to
+  // CHECK-NEXT: adjust the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::rng::random_engine_type rngT11 = dpct::rng::random_engine_type::sobol;
+  curandRngType_t rngT;
+  curandRngType_t rngT1 = CURAND_RNG_PSEUDO_DEFAULT;
+  curandRngType_t rngT2 = CURAND_RNG_PSEUDO_XORWOW;
+  curandRngType_t rngT3 = CURAND_RNG_PSEUDO_MRG32K3A;
+  curandRngType_t rngT4 = CURAND_RNG_PSEUDO_MTGP32;
+  curandRngType_t rngT5 = CURAND_RNG_PSEUDO_MT19937;
+  curandRngType_t rngT6 = CURAND_RNG_PSEUDO_PHILOX4_32_10;
+  curandRngType_t rngT7 = CURAND_RNG_QUASI_DEFAULT;
+  curandRngType_t rngT8 = CURAND_RNG_QUASI_SOBOL32;
+  curandRngType_t rngT9 = CURAND_RNG_QUASI_SCRAMBLED_SOBOL32;
+  curandRngType_t rngT10 = CURAND_RNG_QUASI_SOBOL64;
+  curandRngType_t rngT11 = CURAND_RNG_QUASI_SCRAMBLED_SOBOL64;
+  // CHECK: rng = dpct::rng::create_host_rng(rngT);
+  curandCreateGeneratorHost(&rng, rngT);
 }

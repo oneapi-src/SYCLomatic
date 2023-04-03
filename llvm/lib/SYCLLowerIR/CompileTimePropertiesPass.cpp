@@ -19,6 +19,7 @@
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Operator.h"
+#include "llvm/TargetParser/Triple.h"
 
 using namespace llvm;
 
@@ -209,6 +210,19 @@ attributeToExecModeMetadata(Module &M, const Attribute &Attr) {
                                             MDNode::get(Ctx, MD));
   }
 
+  // The sycl-single-task attribute currently only has an effect when targeting
+  // SPIR FPGAs, in which case it will generate a "max_global_work_dim" MD node
+  // with a 0 value, similar to applying [[intel::max_global_work_dim(0)]] to
+  // a SYCL single_target kernel.
+  if (AttrKindStr == "sycl-single-task" &&
+      Triple(M.getTargetTriple()).getSubArch() == Triple::SPIRSubArch_fpga) {
+    IntegerType *Ty = Type::getInt32Ty(Ctx);
+    Metadata *MDVal = ConstantAsMetadata::get(Constant::getNullValue(Ty));
+    SmallVector<Metadata *, 1> MD{MDVal};
+    return std::pair<std::string, MDNode *>("max_global_work_dim",
+                                            MDNode::get(Ctx, MD));
+  }
+
   auto getIpInterface = [](const char *Name, LLVMContext &Ctx,
                            const Attribute &Attr) {
     // generate either:
@@ -323,6 +337,7 @@ PreservedAnalyses CompileTimePropertiesPass::run(Module &M,
     if (F.getCallingConv() != CallingConv::SPIR_KERNEL)
       continue;
 
+    // Compile time properties on kernel arguments
     {
       SmallVector<Metadata *, 8> MDOps;
       MDOps.reserve(F.arg_size());
@@ -331,8 +346,12 @@ PreservedAnalyses CompileTimePropertiesPass::run(Module &M,
         SmallVector<Metadata *, 8> MDArgOps;
         for (auto &Attribute : F.getAttributes().getParamAttrs(I)) {
           if (MDNode *SPIRVMetadata =
-                  attributeToDecorateMetadata(Ctx, Attribute))
+                  attributeToDecorateMetadata(Ctx, Attribute)) {
+            // sycl-alignment is not collected to SPIRV.ParamDecoration
+            if (Attribute.getKindAsString() == "sycl-alignment")
+              continue;
             MDArgOps.push_back(SPIRVMetadata);
+          }
         }
         if (!MDArgOps.empty())
           FoundKernelProperties = true;
@@ -418,9 +437,6 @@ PreservedAnalyses CompileTimePropertiesPass::run(Module &M,
 
 void CompileTimePropertiesPass::parseAlignmentAndApply(
     Module &M, IntrinsicInst *IntrInst) {
-  LLVMContext &Ctx = M.getContext();
-  unsigned MDKindID = Ctx.getMDKindID(SPIRV_DECOR_MD_KIND);
-
   // Get the global variable with the annotation string.
   const GlobalVariable *AnnotStrArgGV = nullptr;
   const Value *IntrAnnotStringArg = IntrInst->getArgOperand(1);
@@ -435,54 +451,48 @@ void CompileTimePropertiesPass::parseAlignmentAndApply(
     return;
 
   // parse properties string to decoration-value pairs
-  auto properties = parseSYCLPropertiesString(M, IntrInst);
+  auto Properties = parseSYCLPropertiesString(M, IntrInst);
 
-  SmallVector<Value *, 8> userList;
-  SmallVector<Instruction *, 4> instList;
+  SmallVector<Value *, 8> UserList;
+  SmallVector<Instruction *, 4> InstList;
   // check if used by a load or store instructions
-  for (auto val : IntrInst->users()) {
+  for (auto Val : IntrInst->users()) {
     // if castInst, push successors
-    if (auto cast = dyn_cast<CastInst>(val)) {
-      for (auto successor : cast->users())
-        userList.push_back(successor);
+    if (auto CInst = dyn_cast<CastInst>(Val)) {
+      for (auto Successor : CInst->users())
+        UserList.push_back(Successor);
     } else {
-      userList.push_back(val);
+      UserList.push_back(Val);
     }
   }
 
-  for (auto &value : userList) {
-    if (isa<LoadInst>(value) || isa<StoreInst>(value))
-      instList.push_back(cast<Instruction>(value));
+  for (auto &Value : UserList) {
+    if (isa<LoadInst>(Value) || isa<StoreInst>(Value))
+      InstList.push_back(cast<Instruction>(Value));
   }
 
-  for (auto property : properties) {
-    // get decorcode code
-    auto DecorIt = SpirvDecorMap.find(*property.first);
-    if (DecorIt == SpirvDecorMap.end())
-      continue;
-
-    uint32_t DecorCode = DecorIt->second.Code;
-    auto DecorStr = property.first->str();
-    auto DecorValue = property.second;
-    uint32_t attr_val;
+  for (auto &Property : Properties) {
+    auto DecorStr = Property.first->str();
+    auto DecorValue = Property.second;
+    uint32_t AttrVal;
 
     if (DecorStr == "sycl-alignment") {
       assert(DecorValue && "sycl-alignment attribute is missing");
 
-      bool DecorValueIntConvFailed = DecorValue->getAsInteger(0, attr_val);
+      bool DecorValueIntConvFailed = DecorValue->getAsInteger(0, AttrVal);
 
       std::ignore = DecorValueIntConvFailed;
       assert(!DecorValueIntConvFailed &&
              "sycl-alignment attribute is not an integer");
-      assert(llvm::isPowerOf2_64(attr_val) &&
+      assert(llvm::isPowerOf2_64(AttrVal) &&
              "sycl-alignment attribute is not a power of 2");
 
       // apply alignment attributes to load/store
-      for (auto inst : instList) {
-        if (auto loadinst = dyn_cast<LoadInst>(inst))
-          loadinst->setAlignment(Align(attr_val));
-        else if (auto storeinst = dyn_cast<StoreInst>(inst))
-          storeinst->setAlignment(Align(attr_val));
+      for (auto Inst : InstList) {
+        if (auto LInst = dyn_cast<LoadInst>(Inst))
+          LInst->setAlignment(Align(AttrVal));
+        else if (auto SInst = dyn_cast<StoreInst>(Inst))
+          SInst->setAlignment(Align(AttrVal));
       }
     }
   }
@@ -517,9 +527,9 @@ bool CompileTimePropertiesPass::transformSYCLPropertiesAnnotation(
 
   // Read the annotation values and create the new annotation string.
   std::string NewAnnotString = "";
-  auto properties = parseSYCLPropertiesString(M, IntrInst);
-  for (auto property : properties) {
-    auto DecorIt = SpirvDecorMap.find(*property.first);
+  auto Properties = parseSYCLPropertiesString(M, IntrInst);
+  for (auto &Property : Properties) {
+    auto DecorIt = SpirvDecorMap.find(*Property.first);
     if (DecorIt == SpirvDecorMap.end())
       continue;
     uint32_t DecorCode = DecorIt->second.Code;
@@ -529,8 +539,8 @@ bool CompileTimePropertiesPass::transformSYCLPropertiesAnnotation(
     // string values are handled correctly. Note that " around values are
     // always valid, even if the decoration parameters are not strings.
     NewAnnotString += "{" + std::to_string(DecorCode);
-    if (property.second)
-      NewAnnotString += ":\"" + property.second->str() + "\"";
+    if (Property.second)
+      NewAnnotString += ":\"" + Property.second->str() + "\"";
     NewAnnotString += "}";
   }
 
@@ -568,7 +578,7 @@ bool CompileTimePropertiesPass::transformSYCLPropertiesAnnotation(
   // The values are not in the annotation string, so we can remove the original
   // annotation value.
   PointerType *Arg4PtrTy =
-      dyn_cast<PointerType>(IntrInst->getArgOperand(4)->getType());
+      cast<PointerType>(IntrInst->getArgOperand(4)->getType());
   IntrInst->setArgOperand(4, ConstantPointerNull::get(Arg4PtrTy));
   return true;
 }

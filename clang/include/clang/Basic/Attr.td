@@ -1350,6 +1350,7 @@ def SYCLDeviceHas : InheritableAttr {
   let LangOpts = [SYCLIsDevice, SilentlyIgnoreSYCLIsHost];
   let Documentation = [SYCLDeviceHasDocs];
   let SupportsNonconformingLambdaSyntax = 1;
+  let AcceptsExprPack = 1;
 }
 
 def SYCLUsesAspects : InheritableAttr {
@@ -1518,17 +1519,17 @@ def SYCLIntelMaxWorkGroupSize : InheritableAttr {
   let LangOpts = [SYCLIsDevice, SilentlyIgnoreSYCLIsHost];
   let Subjects = SubjectList<[Function], ErrorDiag>;
   let AdditionalMembers = [{
-    Optional<llvm::APSInt> getXDimVal() const {
+    std::optional<llvm::APSInt> getXDimVal() const {
       if (const auto *CE = dyn_cast<ConstantExpr>(getXDim()))
         return CE->getResultAsAPSInt();
       return std::nullopt;
     }
-    Optional<llvm::APSInt> getYDimVal() const {
+    std::optional<llvm::APSInt> getYDimVal() const {
       if (const auto *CE = dyn_cast<ConstantExpr>(getYDim()))
         return CE->getResultAsAPSInt();
       return std::nullopt;
     }
-    Optional<llvm::APSInt> getZDimVal() const {
+    std::optional<llvm::APSInt> getZDimVal() const {
       if (const auto *CE = dyn_cast<ConstantExpr>(getZDim()))
         return CE->getResultAsAPSInt();
       return std::nullopt;
@@ -1592,7 +1593,7 @@ class SYCLAddIRAttrMemberCodeHolder<code Code> {
 
 // Common class for SYCL add_ir_attributes_* attributes.
 def SYCLAddIRAttrCommonMembers : SYCLAddIRAttrMemberCodeHolder<[{
-  static Optional<std::string>
+  static std::optional<std::string>
   getValidAttributeNameAsString(const Expr *NameE, const ASTContext &Context) {
     if (const auto *NameLiteral = dyn_cast<StringLiteral>(NameE))
       return NameLiteral->getString().str();
@@ -1621,7 +1622,7 @@ def SYCLAddIRAttrCommonMembers : SYCLAddIRAttrMemberCodeHolder<[{
     return std::nullopt;
   }
 
-  static Optional<std::string>
+  static std::optional<std::string>
   getValidAttributeValueAsString(const APValue &Value,
                                  const ASTContext &Context,
                                  QualType ValueQType) {
@@ -1652,7 +1653,7 @@ def SYCLAddIRAttrCommonMembers : SYCLAddIRAttrMemberCodeHolder<[{
     return std::nullopt;
   }
 
-  static Optional<std::string>
+  static std::optional<std::string>
   getValidAttributeValueAsString(const Expr *ValueE,
                                  const ASTContext &Context) {
     if (ValueE->getType()->isNullPtrType())
@@ -1730,7 +1731,7 @@ def SYCLAddIRAttrCommonMembers : SYCLAddIRAttrMemberCodeHolder<[{
     return std::nullopt;
   }
 
-  static Optional<llvm::SmallSet<StringRef, 4>> getAttributeFilterFromExprs(
+  static std::optional<llvm::SmallSet<StringRef, 4>> getAttributeFilterFromExprs(
       Expr **AttributeExprs, size_t AttributeExprsSize) {
     if (!AttributeExprsSize)
       return std::nullopt;
@@ -1748,7 +1749,7 @@ def SYCLAddIRAttrCommonMembers : SYCLAddIRAttrMemberCodeHolder<[{
     return Filter;
   }
 
-  Optional<llvm::SmallSet<StringRef, 4>> getAttributeFilter() const {
+  std::optional<llvm::SmallSet<StringRef, 4>> getAttributeFilter() const {
     return getAttributeFilterFromExprs(args_begin(), args_size());
   }
 
@@ -1758,7 +1759,7 @@ def SYCLAddIRAttrCommonMembers : SYCLAddIRAttrMemberCodeHolder<[{
 
   SmallVector<std::pair<std::string, std::string>, 4>
   getFilteredAttributeNameValuePairs(
-      const Optional<llvm::SmallSet<StringRef, 4>> &AttributeNameFilter,
+      const std::optional<llvm::SmallSet<StringRef, 4>> &AttributeNameFilter,
       const ASTContext &Context) const {
     Expr **AttributeExprs = args_begin() + hasFilterList();
     size_t AttributeExprsSize = args_size() - hasFilterList();
@@ -1767,7 +1768,7 @@ def SYCLAddIRAttrCommonMembers : SYCLAddIRAttrMemberCodeHolder<[{
 
     SmallVector<std::pair<std::string, std::string>, 4> Attrs;
     for (size_t I = 0; I < AttributeExprsSize / 2; ++I) {
-      Optional<std::string> NameStr =
+      std::optional<std::string> NameStr =
           getValidAttributeNameAsString(AttributeExprs[I], Context);
       assert(NameStr && "Attribute name is not a valid string.");
 
@@ -1779,7 +1780,7 @@ def SYCLAddIRAttrCommonMembers : SYCLAddIRAttrMemberCodeHolder<[{
       if (AttributeNameFilter && !AttributeNameFilter->contains(*NameStr))
         continue;
 
-      Optional<std::string> ValueStr = getValidAttributeValueAsString(
+      std::optional<std::string> ValueStr = getValidAttributeValueAsString(
           AttributeExprs[I + AttributeExprsSize / 2], Context);
       assert(ValueStr && "Attribute value is not a valid type.");
 
@@ -1791,7 +1792,7 @@ def SYCLAddIRAttrCommonMembers : SYCLAddIRAttrMemberCodeHolder<[{
 
   SmallVector<std::pair<std::string, std::string>, 4>
   getFilteredAttributeNameValuePairs(const ASTContext &Context) const {
-    Optional<llvm::SmallSet<StringRef, 4>> AttributeNameFilter =
+    std::optional<llvm::SmallSet<StringRef, 4>> AttributeNameFilter =
         getAttributeFilter();
     return getFilteredAttributeNameValuePairs(AttributeNameFilter, Context);
   }
@@ -3474,19 +3475,19 @@ def SYCLReqdWorkGroupSize : InheritableAttr, LanguageOptionsSpecificAttr {
   let Subjects = SubjectList<[Function], ErrorDiag>;
   let LangOpts = [SYCLIsDevice, SilentlyIgnoreSYCLIsHost];
   let AdditionalMembers = [{
-    Optional<llvm::APSInt> getXDimVal() const {
+    std::optional<llvm::APSInt> getXDimVal() const {
       // X-dimension is not optional.
       if (const auto *CE = dyn_cast<ConstantExpr>(getXDim()))
         return CE->getResultAsAPSInt();
       return std::nullopt;
     }
-    Optional<llvm::APSInt> getYDimVal() const {
+    std::optional<llvm::APSInt> getYDimVal() const {
       // Y-dimension is optional so a nullptr value is allowed.
       if (const auto *CE = dyn_cast_or_null<ConstantExpr>(getYDim()))
         return CE->getResultAsAPSInt();
       return std::nullopt;
     }
-    Optional<llvm::APSInt> getZDimVal() const {
+    std::optional<llvm::APSInt> getZDimVal() const {
       // Z-dimension is optional so a nullptr value is allowed.
       if (const auto *CE = dyn_cast_or_null<ConstantExpr>(getZDim()))
         return CE->getResultAsAPSInt();
@@ -3525,19 +3526,19 @@ def SYCLWorkGroupSizeHint :  InheritableAttr, LanguageOptionsSpecificAttr {
   // "handleWorkGroupSizeHint". 
   let HasCustomParsing = 1;
   let AdditionalMembers = [{
-    Optional<llvm::APSInt> getXDimVal() const {
+    std::optional<llvm::APSInt> getXDimVal() const {
       // X-dimension is not optional.
       if (const auto *CE = dyn_cast<ConstantExpr>(getXDim()))
         return CE->getResultAsAPSInt();
       return std::nullopt;
     }
-    Optional<llvm::APSInt> getYDimVal() const {
+    std::optional<llvm::APSInt> getYDimVal() const {
       // Y-dimension is optional so a nullptr value is allowed.
       if (const auto *CE = dyn_cast_or_null<ConstantExpr>(getYDim()))
         return CE->getResultAsAPSInt();
       return std::nullopt;
     }
-    Optional<llvm::APSInt> getZDimVal() const {
+    std::optional<llvm::APSInt> getZDimVal() const {
       // Z-dimension is optional so a nullptr value is allowed.
       if (const auto *CE = dyn_cast_or_null<ConstantExpr>(getZDim()))
         return CE->getResultAsAPSInt();
@@ -5018,6 +5019,12 @@ def ReleaseHandle : InheritableParamAttr {
   let Args = [StringArgument<"HandleType">];
   let Subjects = SubjectList<[ParmVar]>;
   let Documentation = [ReleaseHandleDocs];
+}
+
+def UnsafeBufferUsage : InheritableAttr {
+  let Spellings = [Clang<"unsafe_buffer_usage">];
+  let Subjects = SubjectList<[Function]>;
+  let Documentation = [UnsafeBufferUsageDocs];
 }
 
 def DiagnoseAsBuiltin : InheritableAttr {

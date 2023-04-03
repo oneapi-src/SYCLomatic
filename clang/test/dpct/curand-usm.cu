@@ -185,7 +185,7 @@ void bar1(){
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1032:{{[0-9]+}}: A different random number generator is used. You may need to adjust the code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::philox4x32x10);
+//CHECK-NEXT:rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::mcg59);
 //CHECK-NEXT:rng->set_seed(1337ull);
   curandGenerator_t rng;
   curandCreateGenerator(&rng, CURAND_RNG_PSEUDO_XORWOW);
@@ -276,7 +276,7 @@ void bar6(float *x_gpu, size_t n) {
   static int init[16] = {0};
   int i = 0;
   if(!init[i]) {
-    //CHECK: *(&gen[i]) = dpct::rng::create_host_rng(dpct::rng::random_engine_type::philox4x32x10);
+    //CHECK: *(&gen[i]) = dpct::rng::create_host_rng(dpct::rng::random_engine_type::mcg59);
     //CHECK-NEXT: gen[i]->set_seed(1234);
     curandCreateGenerator(&gen[i], CURAND_RNG_PSEUDO_DEFAULT);
     curandSetPseudoRandomGeneratorSeed(gen[i], 1234);

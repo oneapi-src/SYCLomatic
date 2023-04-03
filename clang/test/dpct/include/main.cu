@@ -1,4 +1,4 @@
-// UNSUPPORTED: -windows-
+// UNSUPPORTED: system-windows
 // RUN: echo "[" > %T/compile_commands.json
 // RUN: echo "    {" >> %T/compile_commands.json
 // RUN: echo "        \"command\": \"nvcc %S/main.cu\"," >> %T/compile_commands.json

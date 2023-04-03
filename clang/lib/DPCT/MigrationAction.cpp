@@ -70,7 +70,7 @@ bool canCacheMoreTranslateUnit() {
 
     return Available * 100 / Total > MinAvailableMemoryPercent &&
            Available * 1024 > MinAvailableMemorySize;
-  } catch (std::exception) {
+  } catch (std::exception &) {
     /// Return false if any exception
     return false;
   }
@@ -162,7 +162,11 @@ bool DpctToolAction::runInvocation(
     std::shared_ptr<CompilerInvocation> Invocation, FileManager *Files,
     std::shared_ptr<PCHContainerOperations> PCHContainerOps,
     DiagnosticConsumer *DiagConsumer) {
+<<<<<<< HEAD
   if (!Invocation)
+=======
+  if(!Invocation)
+>>>>>>> SYCLomatic/SYCLomatic
     return false;
   if (canCacheMoreTranslateUnit()) {
     bool Success;

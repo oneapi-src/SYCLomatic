@@ -1,4 +1,4 @@
-// UNSUPPORTED: -windows-
+// UNSUPPORTED: system-windows
 // RUN: cd %T
 // RUN: mkdir dh_constant_db
 // RUN: cd dh_constant_db

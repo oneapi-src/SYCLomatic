@@ -16,6 +16,50 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/YAMLTraits.h"
 
+static constexpr auto Description = R"--(
+
+SYCLomatic provides the pattern-rewriter tool to apply code updates and
+adjustments automatically based on user-defined patterns in YAML format. It can
+process any code before or after migration. For example, you can use it to
+automate the manual adjustments after migration to SYCL, enabling you to re-run
+migration multiple times and re-apply your adjustments.
+)--";
+
+static constexpr auto Examples = R"--(
+EXAMPLES:
+
+Rewrite SYCL source file:
+
+  pattern-rewriter source.dp.cpp -r rules.yaml -o output.dp.cpp
+
+Rewrite CUDA source file:
+
+  pattern-rewriter source.cu -r rules.yaml -o output.cu
+
+Contents for YAML rules file:
+
+  # Remove function call expression
+  - match: foo(${args})
+    rewrite: (/* foo(${args}) */ 0)
+
+  # Insert an include directive
+  - match: "#include <cuda.h>"
+    rewrite: |+
+      #include <cuda.h>
+      #include "./helper.h"
+
+  # Rename a struct
+  - match: |+
+      struct point {
+        ${members}
+      }
+    rewrite: |+
+      struct Point2D {
+        ${members}
+      }
+
+)--";
+
 template <>
 struct llvm::yaml::CustomMappingTraits<std::map<std::string, pattern::Rule>> {
   static void inputOne(IO &IO, StringRef Key,
@@ -75,21 +119,23 @@ int main(int argc, char *argv[]) {
       llvm::cl::value_desc("filename"), llvm::cl::Required);
 
   llvm::cl::opt<std::string> OutputFilename(
-      "o", llvm::cl::desc("Specify output filename"),
+      "o", llvm::cl::desc("[required] Specify output filename"),
       llvm::cl::value_desc("filename"), llvm::cl::Required);
 
   llvm::cl::opt<std::string> RulesFilename(
-      "r", llvm::cl::desc("Specify rules filename"),
+      "r", llvm::cl::desc("[required] Specify rules filename"),
       llvm::cl::value_desc("filename"), llvm::cl::Required);
 
-  llvm::cl::ParseCommandLineOptions(argc, argv);
+  llvm::cl::extrahelp MoreHelp(Examples);
+
+  llvm::cl::ParseCommandLineOptions(argc, argv, Description);
 
   const auto RulesFile = fixLineEndings(readFile(RulesFilename.getValue()));
   llvm::yaml::Input RulesParser(RulesFile);
   std::vector<pattern::Rule> Rules;
   RulesParser >> Rules;
 
-  std::string Output = fixLineEndings(readFile(InputFilename.getValue()));;
+  std::string Output = fixLineEndings(readFile(InputFilename.getValue()));
   for (const auto &Rule : Rules) {
     Output = pattern::applyRule(Rule, Output);
   }

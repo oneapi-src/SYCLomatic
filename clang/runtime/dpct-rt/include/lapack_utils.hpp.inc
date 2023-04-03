@@ -41,6 +41,7 @@
 // DPCT_LABEL_END
 #include "memory.hpp"
 #include "util.hpp"
+#include "lib_common_utils.hpp"
 
 // DPCT_LABEL_BEGIN|non_local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
@@ -410,6 +411,891 @@ inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
   queue.memset(info, 0, group_size * sizeof(int));
   return 0;
 #endif
+}
+// DPCT_LABEL_END
+
+namespace detail {
+// DPCT_LABEL_BEGIN|lapack_shim|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// Memory|dpct_memcpy_detail
+// Memory|dpct_memset_detail
+// Memory|dpct_free
+// LibCommonUtils|library_data_t
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <template <typename> typename functor_t, typename... args_t>
+inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
+                       std::string const &lapack_api_name, args_t &&...args) {
+  auto handle_lapack_exception = [&](const oneapi::mkl::lapack::exception &e) {
+    std::cerr << "Unexpected exception caught during call to LAPACK API: "
+              << lapack_api_name << std::endl
+              << "reason: " << e.what() << std::endl
+              << "info: " << e.info() << std::endl
+              << "detail: " << e.detail() << std::endl;
+    if (e.info() < std::numeric_limits<int>::min() ||
+        e.info() > std::numeric_limits<int>::max()) {
+      throw std::runtime_error("e.info() exceeds the limit of int type");
+    }
+    int info_val = static_cast<int>(e.info());
+    if (info)
+      dpct::detail::dpct_memcpy(q, info, &info_val, sizeof(int),
+                                memcpy_direction::host_to_device)
+          .wait();
+    return 1;
+  };
+  try {
+    switch (a_type) {
+    case library_data_t::real_float: {
+      functor_t<float>()(std::forward<args_t>(args)...);
+      break;
+    }
+    case library_data_t::real_double: {
+      functor_t<double>()(std::forward<args_t>(args)...);
+      break;
+    }
+    case library_data_t::complex_float: {
+      functor_t<std::complex<float>>()(std::forward<args_t>(args)...);
+      break;
+    }
+    case library_data_t::complex_double: {
+      functor_t<std::complex<double>>()(std::forward<args_t>(args)...);
+      break;
+    }
+    default:
+      throw std::runtime_error("the data type is unsupported");
+    }
+  } catch (oneapi::mkl::lapack::batch_error const &be) {
+    try {
+      std::rethrow_exception(be.exceptions()[0]);
+    } catch (oneapi::mkl::lapack::exception &e) {
+      return handle_lapack_exception(e);
+    }
+  } catch (oneapi::mkl::lapack::exception const &e) {
+    return handle_lapack_exception(e);
+  } catch (sycl::exception const &e) {
+    std::cerr << "Caught synchronous SYCL exception:" << std::endl
+              << "reason: " << e.what() << std::endl;
+    if (info)
+      dpct::detail::dpct_memset(q, info, 0, sizeof(int)).wait();
+    return 1;
+  }
+  return 0;
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|working_memory|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// Memory|dpct_malloc_detail
+// Memory|async_dpct_free
+// LibCommonUtils|get_memory
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T> class working_memory {
+public:
+  working_memory(std::size_t element_number, const sycl::queue &q) : _q(q) {
+    _ptr = dpct::detail::dpct_malloc(element_number * sizeof(T), _q);
+  }
+  auto get_memory() {
+    return dpct::detail::get_memory(reinterpret_cast<T *>(_ptr));
+  }
+  void set_event(sycl::event e) { _e = e; }
+  ~working_memory() {
+    if (_ptr) {
+      dpct::async_dpct_free({_ptr}, {_e}, _q);
+    }
+  }
+
+private:
+  void *_ptr = nullptr;
+  sycl::event _e;
+  sycl::queue _q;
+};
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|byte_to_from_element_number|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_size
+// LibCommonUtils|library_data_t
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+std::size_t byte_to_element_number(std::size_t size_in_byte,
+                                   dpct::library_data_t element_type) {
+  auto dv = std::lldiv(
+      size_in_byte,
+      dpct::detail::library_data_size[static_cast<unsigned int>(element_type)] /
+          8);
+  if (dv.rem) {
+    throw std::runtime_error(
+        "size_in_byte is not divisible by the size of element (in bytes)");
+  }
+  return dv.quot;
+}
+std::size_t element_number_to_byte(std::size_t size_in_element,
+                                   dpct::library_data_t element_type) {
+  auto dv = std::lldiv(
+      dpct::detail::library_data_size[static_cast<unsigned int>(element_type)],
+      8);
+  if (dv.rem) {
+    throw std::runtime_error(
+        "the size of element (in bits) is not divisible by 8");
+  }
+  return size_in_element * dv.quot;
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|char2jobsvd|dpct::lapack::detail
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+inline oneapi::mkl::jobsvd char2jobsvd(signed char job) {
+  switch (job) {
+  case 'A':
+    return oneapi::mkl::jobsvd::vectors;
+  case 'S':
+    return oneapi::mkl::jobsvd::somevec;
+  case 'O':
+    return oneapi::mkl::jobsvd::vectorsina;
+  case 'N':
+    return oneapi::mkl::jobsvd::novec;
+  default:
+    throw std::runtime_error("the job type is unsupported");
+  }
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|getrf_scratchpad_size_impl|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T> struct getrf_scratchpad_size_impl {
+  void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
+                  library_data_t a_type, std::int64_t lda,
+                  std::size_t *device_ws_size) {
+    *device_ws_size =
+        oneapi::mkl::lapack::getrf_scratchpad_size<T>(q, m, n, lda);
+  }
+};
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|getrf_impl|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LibCommonUtils|get_memory
+// Memory|dpct_memset_detail
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T> struct getrf_impl {
+  void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
+                  library_data_t a_type, void *a, std::int64_t lda,
+                  std::int64_t *ipiv, void *device_ws,
+                  std::size_t device_ws_size, int *info) {
+    auto ipiv_data = dpct::detail::get_memory(ipiv);
+    auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
+    auto device_ws_data =
+        dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
+    oneapi::mkl::lapack::getrf(q, m, n, a_data, lda, ipiv_data, device_ws_data,
+                               device_ws_size);
+    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+  }
+};
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|getrs_impl|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LibCommonUtils|get_memory
+// LapackUtils|working_memory
+// Memory|dpct_memset_detail
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T> struct getrs_impl {
+  void operator()(sycl::queue &q, oneapi::mkl::transpose trans, std::int64_t n,
+                  std::int64_t nrhs, library_data_t a_type, void *a,
+                  std::int64_t lda, std::int64_t *ipiv, library_data_t b_type,
+                  void *b, std::int64_t ldb, int *info) {
+    auto ipiv_data = dpct::detail::get_memory(ipiv);
+    std::int64_t device_ws_size = oneapi::mkl::lapack::getrs_scratchpad_size<T>(
+        q, trans, n, nrhs, lda, ldb);
+    working_memory<T> device_ws(device_ws_size, q);
+    auto device_ws_data = device_ws.get_memory();
+    auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
+    auto b_data = dpct::detail::get_memory(reinterpret_cast<T *>(b));
+    oneapi::mkl::lapack::getrs(q, trans, n, nrhs, a_data, lda, ipiv_data,
+                               b_data, ldb, device_ws_data, device_ws_size);
+    sycl::event e = dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+    device_ws.set_event(e);
+  }
+};
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|geqrf_scratchpad_size_impl|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T> struct geqrf_scratchpad_size_impl {
+  void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
+                  library_data_t a_type, std::int64_t lda,
+                  std::size_t *device_ws_size) {
+    *device_ws_size =
+        oneapi::mkl::lapack::geqrf_scratchpad_size<T>(q, m, n, lda);
+  }
+};
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|geqrf_impl|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|get_memory
+// LibCommonUtils|library_data_t
+// Memory|dpct_memset_detail
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T> struct geqrf_impl {
+  void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
+                  library_data_t a_type, void *a, std::int64_t lda,
+                  library_data_t tau_type, void *tau, void *device_ws,
+                  std::size_t device_ws_size, int *info) {
+    auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
+    auto tau_data = dpct::detail::get_memory(reinterpret_cast<T *>(tau));
+    auto device_ws_data =
+        dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
+    oneapi::mkl::lapack::geqrf(q, m, n, a_data, lda, tau_data, device_ws_data,
+                               device_ws_size);
+    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+  }
+};
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|getrfnp_impl|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LibCommonUtils|get_memory
+// Memory|dpct_memset_detail
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T> struct getrfnp_impl {
+  void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
+                  library_data_t a_type, void *a, std::int64_t lda,
+                  std::int64_t *ipiv, void *device_ws,
+                  std::size_t device_ws_size, int *info) {
+    std::int64_t a_stride = m * lda;
+    auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
+    auto device_ws_data =
+        dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
+    oneapi::mkl::lapack::getrfnp_batch(q, m, n, a_data, lda, a_stride, 1,
+                                       device_ws_data, device_ws_size);
+    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+  }
+};
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|gesvd_scratchpad_size_impl|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T> struct gesvd_scratchpad_size_impl {
+  void operator()(sycl::queue &q, oneapi::mkl::jobsvd jobu,
+                  oneapi::mkl::jobsvd jobvt, std::int64_t m, std::int64_t n,
+                  library_data_t a_type, std::int64_t lda,
+                  library_data_t u_type, std::int64_t ldu,
+                  library_data_t vt_type, std::int64_t ldvt,
+                  std::size_t *device_ws_size) {
+    *device_ws_size = oneapi::mkl::lapack::gesvd_scratchpad_size<T>(
+        q, jobu, jobvt, m, n, lda, ldu, ldvt);
+  }
+};
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|gesvd_impl|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LibCommonUtils|get_memory
+// Memory|dpct_memset_detail
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T> struct ElementType {
+  using value_tpye = T;
+};
+template <typename T> struct ElementType<std::complex<T>> {
+  using value_tpye = T;
+};
+template <typename T> struct gesvd_impl {
+  void operator()(sycl::queue &q, oneapi::mkl::jobsvd jobu,
+                  oneapi::mkl::jobsvd jobvt, std::int64_t m, std::int64_t n,
+                  library_data_t a_type, void *a, std::int64_t lda,
+                  library_data_t s_type, void *s, library_data_t u_type,
+                  void *u, std::int64_t ldu, library_data_t vt_type, void *vt,
+                  std::int64_t ldvt, void *device_ws,
+                  std::size_t device_ws_size, int *info) {
+    auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
+    auto s_data = dpct::detail::get_memory(
+        reinterpret_cast<typename ElementType<T>::value_tpye *>(s));
+    auto u_data = dpct::detail::get_memory(reinterpret_cast<T *>(u));
+    auto vt_data = dpct::detail::get_memory(reinterpret_cast<T *>(vt));
+    auto device_ws_data =
+        dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
+    oneapi::mkl::lapack::gesvd(q, jobu, jobvt, m, n, a_data, lda, s_data,
+                               u_data, ldu, vt_data, ldvt, device_ws_data,
+                               device_ws_size);
+    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+  }
+};
+template <typename T> struct gesvd_conj_impl : public gesvd_impl<T> {
+  void operator()(sycl::queue &q, oneapi::mkl::jobsvd jobu,
+                  oneapi::mkl::jobsvd jobvt, std::int64_t m, std::int64_t n,
+                  library_data_t a_type, void *a, std::int64_t lda,
+                  library_data_t s_type, void *s, library_data_t u_type,
+                  void *u, std::int64_t ldu, library_data_t vt_type, void *vt,
+                  std::int64_t ldvt, void *device_ws,
+                  std::size_t device_ws_size, int *info) {
+    using base = gesvd_impl<T>;
+    base::operator()(q, jobu, jobvt, m, n, a_type, a, lda, s_type, s, u_type, u,
+                     ldu, vt_type, vt, ldvt, device_ws, device_ws_size, info);
+    auto vt_data = dpct::detail::get_memory(reinterpret_cast<T *>(vt));
+    oneapi::mkl::blas::row_major::imatcopy(q, oneapi::mkl::transpose::conjtrans,
+                                           n, n, T(1.0f), vt_data, ldvt, ldvt);
+    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+  }
+};
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|potrf_scratchpad_size_impl|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T> struct potrf_scratchpad_size_impl {
+  void operator()(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
+                  library_data_t a_type, std::int64_t lda,
+                  std::size_t *device_ws_size) {
+    *device_ws_size =
+        oneapi::mkl::lapack::potrf_scratchpad_size<T>(q, uplo, n, lda);
+  }
+};
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|potrf_impl|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LibCommonUtils|get_memory
+// Memory|dpct_memset_detail
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T> struct potrf_impl {
+  void operator()(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
+                  library_data_t a_type, void *a, std::int64_t lda,
+                  void *device_ws, std::size_t device_ws_size, int *info) {
+    auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
+    auto device_ws_data =
+        dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
+    oneapi::mkl::lapack::potrf(q, uplo, n, a_data, lda, device_ws_data,
+                               device_ws_size);
+    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+  }
+};
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|potrs_impl|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LibCommonUtils|get_memory
+// LapackUtils|working_memory
+// Memory|dpct_memset_detail
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T> struct potrs_impl {
+  void operator()(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
+                  std::int64_t nrhs, library_data_t a_type, void *a,
+                  std::int64_t lda, library_data_t b_type, void *b,
+                  std::int64_t ldb, int *info) {
+    std::int64_t device_ws_size = oneapi::mkl::lapack::potrs_scratchpad_size<T>(
+        q, uplo, n, nrhs, lda, ldb);
+    working_memory<T> device_ws(device_ws_size, q);
+    auto device_ws_data = device_ws.get_memory();
+    auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
+    auto b_data = dpct::detail::get_memory(reinterpret_cast<T *>(b));
+    oneapi::mkl::lapack::potrs(q, uplo, n, nrhs, a_data, lda, b_data, ldb,
+                               device_ws_data, device_ws_size);
+    sycl::event e = dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+    device_ws.set_event(e);
+  }
+};
+// DPCT_LABEL_END
+} // namespace detail
+
+// DPCT_LABEL_BEGIN|getrf_scratchpad_size|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LapackUtils|lapack_shim
+// LapackUtils|getrf_scratchpad_size_impl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Computes the size of workspace memory of getrf function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] m The number of rows in the matrix A.
+/// \param [in] n The number of columns in the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [out] device_ws_size The workspace size in bytes.
+/// \param [out] host_ws_size The host workspace size in bytes. Currently the
+/// value is always zero.
+inline int getrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
+                                 library_data_t a_type, std::int64_t lda,
+                                 std::size_t *device_ws_size,
+                                 std::size_t *host_ws_size = nullptr) {
+  if (host_ws_size)
+    *host_ws_size = 0;
+  std::size_t device_ws_size_tmp;
+  int ret = detail::lapack_shim<detail::getrf_scratchpad_size_impl>(
+      q, a_type, nullptr, "getrf_scratchpad_size", q, m, n, a_type, lda,
+      &device_ws_size_tmp);
+  *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
+  return ret;
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|getrf|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LapackUtils|lapack_shim
+// LapackUtils|getrf_impl
+// LapackUtils|getrfnp_impl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Computes the LU factorization of a general m-by-n matrix.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q The queue where the routine should be executed.
+/// \param [in] m The number of rows in the matrix A.
+/// \param [in] n The number of columns in the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in, out] a The input matrix A. Overwritten by L and U. The unit
+/// diagonal elements of L are not stored.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [out] ipiv The pivot indices. If \p ipiv is nullptr, non-pivoting
+/// LU factorization is computed.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The workspace size in bytes.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
+inline int getrf(sycl::queue &q, std::int64_t m, std::int64_t n,
+                 library_data_t a_type, void *a, std::int64_t lda,
+                 std::int64_t *ipiv, void *device_ws,
+                 std::size_t device_ws_size, int *info) {
+  std::size_t device_ws_size_in_element_number =
+      detail::byte_to_element_number(device_ws_size, a_type);
+  if (ipiv == nullptr) {
+    return detail::lapack_shim<detail::getrfnp_impl>(
+        q, a_type, info, "getrfnp_batch", q, m, n, a_type, a, lda, ipiv,
+        device_ws, device_ws_size_in_element_number, info);
+  }
+  return detail::lapack_shim<detail::getrf_impl>(
+      q, a_type, info, "getrf", q, m, n, a_type, a, lda, ipiv, device_ws,
+      device_ws_size_in_element_number, info);
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|getrs|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LapackUtils|lapack_shim
+// LapackUtils|getrs_impl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Solves a system of linear equations with a LU-factored square coefficient
+/// matrix, with multiple right-hand sides.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q The queue where the routine should be executed.
+/// \param [in] trans Indicates the form of the linear equation.
+/// \param [in] n The order of the matrix A and the number of rows in matrix B.
+/// \param [in] nrhs The number of right hand sides.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in] a The input matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] ipiv The pivot indices.
+/// \param [in] b_type The data type of the matrix B.
+/// \param [in, out] b The matrix B, whose columns are the right-hand sides
+/// for the systems of equations.
+/// \param [in] ldb The leading dimension of the matrix B.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
+inline int getrs(sycl::queue &q, oneapi::mkl::transpose trans, std::int64_t n,
+                 std::int64_t nrhs, library_data_t a_type, void *a,
+                 std::int64_t lda, std::int64_t *ipiv, library_data_t b_type,
+                 void *b, std::int64_t ldb, int *info) {
+  return detail::lapack_shim<detail::getrs_impl>(
+      q, a_type, info, "getrs_scratchpad_size/getrs", q, trans, n, nrhs, a_type,
+      a, lda, ipiv, b_type, b, ldb, info);
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|geqrf_scratchpad_size|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LapackUtils|lapack_shim
+// LapackUtils|geqrf_scratchpad_size_impl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Computes the size of workspace memory of geqrf function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] m The number of rows in the matrix A.
+/// \param [in] n The number of columns in the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [out] device_ws_size The device workspace size in bytes.
+/// \param [out] host_ws_size The host workspace size in bytes. Currently the
+/// value is always zero.
+inline int geqrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
+                                 library_data_t a_type, std::int64_t lda,
+                                 std::size_t *device_ws_size,
+                                 std::size_t *host_ws_size = nullptr) {
+  if (host_ws_size)
+    *host_ws_size = 0;
+  std::size_t device_ws_size_tmp;
+  int ret = detail::lapack_shim<detail::geqrf_scratchpad_size_impl>(
+      q, a_type, nullptr, "geqrf_scratchpad_size", q, m, n, a_type, lda,
+      &device_ws_size_tmp);
+  *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
+  return ret;
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|geqrf|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LapackUtils|lapack_shim
+// LapackUtils|geqrf_impl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Computes the QR factorization of a general m-by-n matrix.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q The queue where the routine should be executed.
+/// \param [in] m The number of rows in the matrix A.
+/// \param [in] n The number of columns in the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in, out] a The input matrix A. Overwritten by the factorization data.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] tau_type The data type of the array tau.
+/// \param [in] tau The array contains scalars that define elementary reflectors
+/// for the matrix Q in its decomposition in a product of elementary reflectors.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The workspace size in bytes.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
+inline int geqrf(sycl::queue &q, std::int64_t m, std::int64_t n,
+                 library_data_t a_type, void *a, std::int64_t lda,
+                 library_data_t tau_type, void *tau, void *device_ws,
+                 std::size_t device_ws_size, int *info) {
+  std::size_t device_ws_size_in_element_number =
+      detail::byte_to_element_number(device_ws_size, a_type);
+  return detail::lapack_shim<detail::geqrf_impl>(
+      q, a_type, info, "geqrf", q, m, n, a_type, a, lda, tau_type, tau,
+      device_ws, device_ws_size_in_element_number, info);
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|gesvd_scratchpad_size|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LapackUtils|lapack_shim
+// LapackUtils|gesvd_scratchpad_size_impl
+// LapackUtils|char2jobsvd
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Computes the size of workspace memory of gesvd function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] jobu Must be 'A' (representing jobsvd::vectors), 'S'
+/// (representing jobsvd::somevec), 'O' (representing jobsvd::vectorsina) or 'N'
+/// (representing jobsvd::novec).
+/// \param [in] jobvt Must be 'A' (representing jobsvd::vectors), 'S'
+/// (representing jobsvd::somevec), 'O' (representing jobsvd::vectorsina) or 'N'
+/// (representing jobsvd::novec).
+/// \param [in] m The number of rows in the matrix A.
+/// \param [in] n The number of columns in the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] u_type The data type of the matrix U.
+/// \param [in] ldu The leading dimension of the matrix U.
+/// \param [in] vt_type The data type of the matrix VT.
+/// \param [in] ldvt The leading dimension of the matrix VT.
+/// \param [out] device_ws_size The device workspace size in bytes.
+/// \param [out] host_ws_size The host workspace size in bytes. Currently the
+/// value is always zero.
+inline int gesvd_scratchpad_size(sycl::queue &q, signed char jobu,
+                                 signed char jobvt, std::int64_t m,
+                                 std::int64_t n, library_data_t a_type,
+                                 std::int64_t lda, library_data_t u_type,
+                                 std::int64_t ldu, library_data_t vt_type,
+                                 std::int64_t ldvt, std::size_t *device_ws_size,
+                                 std::size_t *host_ws_size = nullptr) {
+  oneapi::mkl::jobsvd jobu_enum = detail::char2jobsvd(jobu);
+  oneapi::mkl::jobsvd jobvt_enum = detail::char2jobsvd(jobvt);
+  if (host_ws_size)
+    *host_ws_size = 0;
+  std::size_t device_ws_size_tmp;
+  int ret = detail::lapack_shim<detail::gesvd_scratchpad_size_impl>(
+      q, a_type, nullptr, "gesvd_scratchpad_size", q, jobu_enum, jobvt_enum, m,
+      n, a_type, lda, u_type, ldu, vt_type, ldvt, &device_ws_size_tmp);
+  *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
+  return ret;
+}
+
+/// Computes the size of workspace memory of gesvd function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] jobz Must be job::vec or job::novec
+/// \param [in] all_vec Only have effects when \param jobz is job::vec.If the
+/// value is zero, all m columns of U are returned in the matrix U, otherwise
+/// the first min( \param m, \param n ) columns of U (the left singular vectors)
+/// are returned in the matrix U.
+/// \param [in] m The number of rows in the matrix A.
+/// \param [in] n The number of columns in the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] u_type The data type of the matrix U.
+/// \param [in] ldu The leading dimension of the matrix U.
+/// \param [in] vt_type The data type of the matrix VT.
+/// \param [in] ldvt The leading dimension of the matrix VT.
+/// \param [out] device_ws_size The device workspace size as a number of
+/// elements of type \param a_type.
+/// \param [out] host_ws_size The host workspace size as a number of elements
+/// of type \param a_type. Currently the value is always zero.
+inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
+                                 std::int64_t all_vec, std::int64_t m,
+                                 std::int64_t n, library_data_t a_type,
+                                 std::int64_t lda, library_data_t u_type,
+                                 std::int64_t ldu, library_data_t vt_type,
+                                 std::int64_t ldvt, int *device_ws_size,
+                                 std::size_t *host_ws_size = nullptr) {
+  if (host_ws_size)
+    *host_ws_size = 0;
+  oneapi::mkl::jobsvd jobu;
+  oneapi::mkl::jobsvd jobvt;
+  if (jobz == oneapi::mkl::job::vec) {
+    if (all_vec) {
+      jobu = jobvt = oneapi::mkl::jobsvd::somevec;
+    } else {
+      jobu = jobvt = oneapi::mkl::jobsvd::vectors;
+    }
+  } else if (jobz == oneapi::mkl::job::novec) {
+    jobu = jobvt = oneapi::mkl::jobsvd::novec;
+  } else {
+    throw std::runtime_error("the job type is unsupported");
+  }
+  std::size_t device_ws_size_64;
+  int ret = detail::lapack_shim<detail::gesvd_scratchpad_size_impl>(
+      q, a_type, nullptr, "gesvd_scratchpad_size", q, jobu, jobvt, m, n, a_type,
+      lda, u_type, ldu, vt_type, ldvt, &device_ws_size_64);
+  *device_ws_size = device_ws_size_64;
+  return ret;
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|gesvd|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LapackUtils|lapack_shim
+// LapackUtils|gesvd_impl
+// LibCommonUtils|get_memory
+// LapackUtils|char2jobsvd
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Computes the size of workspace memory of gesvd function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] jobu Must be 'A' (representing jobsvd::vectors), 'S'
+/// (representing jobsvd::somevec), 'O' (representing jobsvd::vectorsina) or 'N'
+/// (representing jobsvd::novec).
+/// \param [in] jobvt Must be 'A' (representing jobsvd::vectors), 'S'
+/// (representing jobsvd::somevec), 'O' (representing jobsvd::vectorsina) or 'N'
+/// (representing jobsvd::novec).
+/// \param [in] m The number of rows in the matrix A.
+/// \param [in] n The number of columns in the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in, out] a The input matrix A and it will be overwritten according
+/// to \p jobu and \p jobvt.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] s_type The data type of the matrix S.
+/// \param [out] s The output matrix S.
+/// \param [in] u_type The data type of the matrix U.
+/// \param [out] u The output matrix U.
+/// \param [in] ldu The leading dimension of the matrix U.
+/// \param [in] vt_type The data type of the matrix VT.
+/// \param [out] vt The output matrix VT.
+/// \param [in] ldvt The leading dimension of the matrix VT.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The workspace size in bytes.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
+inline int gesvd(sycl::queue &q, signed char jobu, signed char jobvt,
+                 std::int64_t m, std::int64_t n, library_data_t a_type, void *a,
+                 std::int64_t lda, library_data_t s_type, void *s,
+                 library_data_t u_type, void *u, std::int64_t ldu,
+                 library_data_t vt_type, void *vt, std::int64_t ldvt,
+                 void *device_ws, std::size_t device_ws_size, int *info) {
+  oneapi::mkl::jobsvd jobu_enum = detail::char2jobsvd(jobu);
+  oneapi::mkl::jobsvd jobvt_enum = detail::char2jobsvd(jobvt);
+  std::size_t device_ws_size_in_element_number =
+      detail::byte_to_element_number(device_ws_size, a_type);
+  return detail::lapack_shim<detail::gesvd_impl>(
+      q, a_type, info, "gesvd", q, jobu_enum, jobvt_enum, m, n, a_type, a, lda,
+      s_type, s, u_type, u, ldu, vt_type, vt, ldvt, device_ws,
+      device_ws_size_in_element_number, info);
+}
+
+/// Computes the size of workspace memory of gesvd function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] jobz Must be job::vec or job::novec.
+/// \param [in] all_vec Only have effects when \param jobz is job::vec.If the
+/// value is zero, all m columns of U are returned in the matrix U, otherwise
+/// the first min( \param m, \param n ) columns of U (the left singular vectors)
+/// are returned in the matrix U.
+/// \param [in] m The number of rows in the matrix A.
+/// \param [in] n The number of columns in the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in, out] a The input matrix A and it will be overwritten according
+/// to \p jobu and \p jobvt.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] s_type The data type of the matrix S.
+/// \param [out] s The output matrix S.
+/// \param [in] u_type The data type of the matrix U.
+/// \param [out] u The output matrix U.
+/// \param [in] ldu The leading dimension of the matrix U.
+/// \param [in] vt_type The data type of the matrix VT.
+/// \param [out] vt The output matrix VT.
+/// \param [in] ldvt The leading dimension of the matrix VT.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The workspace size in bytes.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
+inline int gesvd(sycl::queue &q, oneapi::mkl::job jobz, std::int64_t all_vec,
+                 std::int64_t m, std::int64_t n, library_data_t a_type, void *a,
+                 std::int64_t lda, library_data_t s_type, void *s,
+                 library_data_t u_type, void *u, std::int64_t ldu,
+                 library_data_t vt_type, void *vt, std::int64_t ldvt,
+                 void *device_ws, std::size_t device_ws_size, int *info) {
+  oneapi::mkl::jobsvd jobu;
+  oneapi::mkl::jobsvd jobvt;
+  if (jobz == oneapi::mkl::job::vec) {
+    if (all_vec) {
+      jobu = jobvt = oneapi::mkl::jobsvd::somevec;
+    } else {
+      jobu = jobvt = oneapi::mkl::jobsvd::vectors;
+    }
+  } else if (jobz == oneapi::mkl::job::novec) {
+    jobu = jobvt = oneapi::mkl::jobsvd::novec;
+  } else {
+    throw std::runtime_error("the job type is unsupported");
+  }
+
+  detail::lapack_shim<detail::gesvd_conj_impl>(
+      q, a_type, info, "gesvd", q, jobu, jobvt, m, n, a_type, a, lda, s_type, s,
+      u_type, u, ldu, vt_type, vt, ldvt, device_ws, device_ws_size, info);
+  return 0;
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|potrf_scratchpad_size|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LapackUtils|lapack_shim
+// LapackUtils|potrf_scratchpad_size_impl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Computes the size of workspace memory of potrf function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The number of columns in the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [out] device_ws_size The device workspace size in bytes.
+/// \param [out] host_ws_size The host workspace size in bytes. Currently the
+/// value is always zero.
+inline int potrf_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
+                                 std::int64_t n, library_data_t a_type,
+                                 std::int64_t lda, std::size_t *device_ws_size,
+                                 std::size_t *host_ws_size = nullptr) {
+  if (host_ws_size)
+    *host_ws_size = 0;
+  std::size_t device_ws_size_tmp;
+  int ret = detail::lapack_shim<detail::potrf_scratchpad_size_impl>(
+      q, a_type, nullptr, "potrf_scratchpad_size", q, uplo, n, a_type, lda,
+      &device_ws_size_tmp);
+  *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
+  return ret;
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|potrf|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LapackUtils|lapack_shim
+// LapackUtils|potrf_impl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Computes the Cholesky factorization of a symmetric (Hermitian)
+/// positive-definite matrix.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q The queue where the routine should be executed.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The number of columns in the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in, out] a The input matrix A. Overwritten by the Cholesky factor U
+/// or L, as specified by \p uplo.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The workspace size in bytes.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
+inline int potrf(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
+                 library_data_t a_type, void *a, std::int64_t lda,
+                 void *device_ws, std::size_t device_ws_size, int *info) {
+  std::size_t device_ws_size_in_element_number =
+      detail::byte_to_element_number(device_ws_size, a_type);
+  return detail::lapack_shim<detail::potrf_impl>(
+      q, a_type, info, "potrf", q, uplo, n, a_type, a, lda, device_ws,
+      device_ws_size_in_element_number, info);
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|potrs|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LapackUtils|lapack_shim
+// LapackUtils|potrs_impl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Solves a system of linear equations with a Cholesky-factored symmetric
+/// (Hermitian) positive-definite coefficient matrix.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q The queue where the routine should be executed.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A and the number of rows in matrix B.
+/// \param [in] nrhs The number of right hand sides.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in, out] a The input matrix A. Overwritten by the Cholesky factor U
+/// or L, as specified by \p uplo.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] b_type The data type of the matrix B.
+/// \param [in, out] b The matrix B, whose columns are the right-hand sides
+/// for the systems of equations.
+/// \param [in] ldb The leading dimension of the matrix B.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The workspace size in bytes.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
+inline int potrs(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
+                 std::int64_t nrhs, library_data_t a_type, void *a,
+                 std::int64_t lda, library_data_t b_type, void *b,
+                 std::int64_t ldb, int *info) {
+  return detail::lapack_shim<detail::potrs_impl>(
+      q, a_type, info, "potrs_scratchpad_size/potrs", q, uplo, n, nrhs, a_type,
+      a, lda, b_type, b, ldb, info);
 }
 // DPCT_LABEL_END
 } // namespace lapack

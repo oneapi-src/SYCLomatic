@@ -3,6 +3,7 @@
 
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK: #include <dpct/dpct.hpp>
+#include "cuda.h"
 
 struct a{
   // CHECK: dpct::queue_ptr s9;
@@ -85,6 +86,12 @@ int main(){
   // CHECK: dpct::queue_ptr sarr[2] = {&q_ct1, &q_ct1};
   cudaStream_t sarr[2] = {0, NULL};
 
+  // CHECK: dpct::queue_ptr *psarr[] = {0, 0};
+  cudaStream_t *psarr[] = {0, 0};
+
+  // CHECK: dpct::queue_ptr *ps = 0;
+  cudaStream_t *ps = 0;
+
   // CHECK: my_synchronize(&q_ct1);
   my_synchronize(0);
 
@@ -138,6 +145,12 @@ int main2(){
   // CHECK: dpct::queue_ptr sarr[2] = {&q_ct1, &q_ct1};
   CUstream sarr[2] = {0, NULL};
 
+  // CHECK: dpct::queue_ptr *psarr[] = {0, 0};
+  CUstream *psarr[] = {0, 0};
+
+  // CHECK: dpct::queue_ptr *ps = 0;
+  CUstream *ps = 0;
+
   // CHECK: my_synchronize1(&q_ct1);
   my_synchronize1(0);
 
@@ -155,7 +168,7 @@ int main2(){
 
 
   // CHECK: dpct::queue_ptr legacy = &q_ct1;
-  CUsream legacy = CU_STREAM_LEGACY;
+  CUstream legacy = CU_STREAM_LEGACY;
   // CHECK: dpct::queue_ptr perThread = &q_ct1;
   CUstream perThread = CU_STREAM_PER_THREAD;
 

@@ -1,4 +1,4 @@
-// UNSUPPORTED: -windows-
+// UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none -out-root %T/template-deduce %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck %s --match-full-lines --input-file %T/template-deduce/template-deduce.dp.cpp
 

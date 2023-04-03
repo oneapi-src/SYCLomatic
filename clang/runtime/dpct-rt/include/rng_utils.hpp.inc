@@ -69,16 +69,20 @@ template <typename engine_t> class rng_generator {
           std::is_same<engine_t, oneapi::mkl::rng::device::mrg32k3a<1>>,
           std::is_same<engine_t, oneapi::mkl::rng::device::mrg32k3a<4>>,
           std::is_same<engine_t, oneapi::mkl::rng::device::philox4x32x10<1>>,
-          std::is_same<engine_t, oneapi::mkl::rng::device::philox4x32x10<4>>>,
+          std::is_same<engine_t, oneapi::mkl::rng::device::philox4x32x10<4>>,
+          std::is_same<engine_t, oneapi::mkl::rng::device::mcg59<1>>>,
       "engine_t can only be oneapi::mkl::rng::device::mrg32k3a<1> or "
       "oneapi::mkl::rng::device::mrg32k3a<4> or "
       "oneapi::mkl::rng::device::philox4x32x10<1> or "
-      "oneapi::mkl::rng::device::philox4x32x10<4>.");
+      "oneapi::mkl::rng::device::philox4x32x10<4> or "
+      "oneapi::mkl::rng::device::mcg59<1>.");
   static constexpr bool _is_engine_vec_size_one = std::disjunction_v<
       std::is_same<engine_t, oneapi::mkl::rng::device::mrg32k3a<1>>,
-      std::is_same<engine_t, oneapi::mkl::rng::device::philox4x32x10<1>>>;
+      std::is_same<engine_t, oneapi::mkl::rng::device::philox4x32x10<1>>,
+      std::is_same<engine_t, oneapi::mkl::rng::device::mcg59<1>>>;
   static constexpr std::uint64_t default_seed = 0;
   oneapi::mkl::rng::device::bits<std::uint32_t> _distr_bits;
+  oneapi::mkl::rng::device::uniform_bits<std::uint32_t> _distr_uniform_bits;
   oneapi::mkl::rng::device::gaussian<float> _distr_gaussian_float;
   oneapi::mkl::rng::device::gaussian<double> _distr_gaussian_double;
   oneapi::mkl::rng::device::lognormal<float> _distr_lognormal_float;
@@ -91,13 +95,25 @@ template <typename engine_t> class rng_generator {
 public:
   /// Default constructor of rng_generator
   rng_generator() { _engine = engine_t(default_seed); }
-  /// Constructor of rng_generator
+  /// Constructor of rng_generator if engine type is not mcg59
   /// \param [in] seed The seed to initialize the engine state.
   /// \param [in] num_to_skip Set the number of elements need to be skipped.
   /// The number is calculated as: num_to_skip[0] + num_to_skip[1] * 2^64 +
   /// num_to_skip[2] * 2^128 + ... + num_to_skip[n-1] * 2^(64*(n-1))
+  template <typename T = engine_t,
+            typename std::enable_if<!std::is_same_v<
+                T, oneapi::mkl::rng::device::mcg59<1>>>::type * = nullptr>
   rng_generator(std::uint64_t seed,
                 std::initializer_list<std::uint64_t> num_to_skip) {
+    _engine = engine_t(seed, num_to_skip);
+  }
+  /// Constructor of rng_generator if engine type is mcg59
+  /// \param [in] seed The seed to initialize the engine state.
+  /// \param [in] num_to_skip Set the number of elements need to be skipped.
+  template <typename T = engine_t,
+            typename std::enable_if<std::is_same_v<
+                T, oneapi::mkl::rng::device::mcg59<1>>>::type * = nullptr>
+  rng_generator(std::uint64_t seed, std::uint64_t num_to_skip) {
     _engine = engine_t(seed, num_to_skip);
   }
 // DPCT_LABEL_END
@@ -111,6 +127,7 @@ public:
   /// Generate random number(s) obeys distribution \tparam distr_t.
   /// \tparam T The distribution of the random number. It can only be
   /// oneapi::mkl::rng::device::bits<std::uint32_t>,
+  /// oneapi::mkl::rng::device::uniform_bits<std::uint32_t>,
   /// oneapi::mkl::rng::device::gaussian<float>,
   /// oneapi::mkl::rng::device::gaussian<double>,
   /// oneapi::mkl::rng::device::lognormal<float>,
@@ -131,6 +148,8 @@ public:
         std::disjunction_v<
             std::is_same<distr_t,
                          oneapi::mkl::rng::device::bits<std::uint32_t>>,
+            std::is_same<distr_t,
+                         oneapi::mkl::rng::device::uniform_bits<std::uint32_t>>,
             std::is_same<distr_t, oneapi::mkl::rng::device::gaussian<float>>,
             std::is_same<distr_t, oneapi::mkl::rng::device::gaussian<double>>,
             std::is_same<distr_t, oneapi::mkl::rng::device::lognormal<float>>,
@@ -144,6 +163,11 @@ public:
     if constexpr (std::is_same_v<
                       distr_t, oneapi::mkl::rng::device::bits<std::uint32_t>>) {
       return generate_vec<vec_size>(_distr_bits);
+    }
+    if constexpr (std::is_same_v<
+                      distr_t,
+                      oneapi::mkl::rng::device::uniform_bits<std::uint32_t>>) {
+      return generate_vec<vec_size>(_distr_uniform_bits);
     }
     if constexpr (std::is_same_v<distr_t,
                                  oneapi::mkl::rng::device::gaussian<float>>) {
@@ -347,7 +371,11 @@ template <typename engine_t = oneapi::mkl::rng::philox4x32x10>
 class rng_generator : public rng_generator_base {
 public:
   /// Constructor of rng_generator.
+<<<<<<< HEAD
   rng_generator() : _engine(creat_engine(_queue, _seed, _dimensions)) {}
+=======
+  rng_generator() : _engine(create_engine(_queue, _seed, _dimensions)) {}
+>>>>>>> SYCLomatic/SYCLomatic
 
   /// Set the seed of host rng_generator.
   /// \param seed The engine seed.
@@ -356,7 +384,7 @@ public:
       return;
     }
     _seed = seed;
-    _engine = creat_engine(_queue, _seed, _dimensions);
+    _engine = create_engine(_queue, _seed, _dimensions);
   }
 
   /// Set the dimensions of host rng_generator.
@@ -366,7 +394,7 @@ public:
       return;
     }
     _dimensions = dimensions;
-    _engine = creat_engine(_queue, _seed, _dimensions);
+    _engine = create_engine(_queue, _seed, _dimensions);
   }
 
   /// Set the queue of host rng_generator.
@@ -376,7 +404,7 @@ public:
       return;
     }
     _queue = queue;
-    _engine = creat_engine(_queue, _seed, _dimensions);
+    _engine = create_engine(_queue, _seed, _dimensions);
   }
 
   /// Generate unsigned int random number(s) with 'uniform_bits' distribution.
@@ -472,9 +500,15 @@ public:
   }
 
 private:
+<<<<<<< HEAD
   static inline engine_t creat_engine(sycl::queue *queue,
                                       const std::uint64_t seed,
                                       const std::uint32_t dimensions) {
+=======
+  static inline engine_t create_engine(sycl::queue *queue,
+                                       const std::uint64_t seed,
+                                       const std::uint32_t dimensions) {
+>>>>>>> SYCLomatic/SYCLomatic
     return std::is_same_v<engine_t, oneapi::mkl::rng::sobol>
                ? engine_t(*queue, dimensions)
                : engine_t(*queue, seed);
@@ -501,7 +535,8 @@ enum class random_engine_type {
   mrg32k3a,
   mt2203,
   mt19937,
-  sobol
+  sobol,
+  mcg59
 };
 // DPCT_LABEL_END
 
@@ -538,6 +573,9 @@ inline host_rng_ptr create_host_rng(const random_engine_type type) {
   case random_engine_type::sobol:
     return std::make_shared<
         rng::host::detail::rng_generator<oneapi::mkl::rng::sobol>>();
+  case random_engine_type::mcg59:
+    return std::make_shared<
+        rng::host::detail::rng_generator<oneapi::mkl::rng::mcg59>>();
   }
 }
 // DPCT_LABEL_END

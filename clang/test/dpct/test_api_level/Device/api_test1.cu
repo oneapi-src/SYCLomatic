@@ -8,6 +8,8 @@
 // TEST_FEATURE: Device_device_ext_get_major_version
 // TEST_FEATURE: Device_device_ext_get_minor_version
 
+#include "cuda.h"
+
 int main() {
   int result1, result2;
   CUdevice device;
