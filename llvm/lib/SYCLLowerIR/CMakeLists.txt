@@ -44,10 +44,10 @@ if (NOT TARGET LLVMGenXIntrinsics)
       # default repo path for public xmain builds, not using ICS
       set(LLVMGenXIntrinsics_GIT_REPO_PATH https://github.com/intel)
       set(LLVMGenXIntrinsics_GIT_REPO_NAME vc-intrinsics.git)
-      # Author: "Gorban, Igor" <igor.gorban@intel.com>
-      # Date: Wed, 21 Dec 2022 23:00:51 +0000
-      # Fix build against llvm tot
-      set(LLVMGenXIntrinsics_GIT_TAG dd72efa3b4aafdbbf599e6f3c6f8c55450e348de)
+      # Author: Gorban, Igor <igor.gorban@intel.com>
+      # Date: Wed Feb 15 09:37:04 2023 +0000
+      # Fix module globals accessors
+      set(LLVMGenXIntrinsics_GIT_TAG 3ac855c9253d608a36d10b8ff87e62aa413bbf23)
 
       # Determine if the build is embargo and provide specific settings.
       set(IS_INTERNAL_ESIMD_BUILD FALSE)
