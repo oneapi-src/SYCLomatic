@@ -13,6 +13,14 @@
 
 using namespace clang::dpct;
 
+ptx::InstKind ptx::FindInstructionKindFromName(StringRef InstName) {
+  return llvm::StringSwitch<ptx::InstKind>(InstName)
+    .Case("cvt", ptx::Cvt)
+    .Case("mov", ptx::Mov)
+    .Case("bfe", ptx::Bfe)
+    .Default(ptx::Invalid);
+}
+
 AsmType *AsmContext::getScalarType(AsmType::TypeKind Kind) {
   if (Kind < AsmType::TK_B8 || Kind > AsmType::TK_Pred)
     return nullptr;
@@ -128,7 +136,22 @@ AsmStatement *AsmContext::GetOrCreateSinkExpression() {
   return SinkExpression = CreateStmt(AsmStatement::SK_Sink);
 }
 
-AsmParser::~AsmParser() = default;
+AsmSymbol *AsmContext::CreateSymbol(const std::string &Name, AsmType *Type, bool IsVar) {
+  AsmSymbol *Sym = new (*this) AsmSymbol;
+  Sym->Name = Name;
+  Sym->Type = Type;
+  Sym->IsVariable = IsVar;
+  return Sym;
+}
+
+AsmParser::~AsmParser() {
+  ExitScope();
+}
+
+void AsmParser::AddBuiltinSymbol(const std::string &Name, AsmType *Type) {
+  AsmSymbol *Sym = Context.CreateSymbol(Name, Type);
+  getCurScope()->AddDecl(Sym);
+}
 
 const AsmToken &AsmParser::Lex() {
   if (Lexer.getTok().is(AsmToken::Error))
@@ -201,20 +224,42 @@ AsmStmtResult AsmParser::ParseUnGuardInstruction() {
   if (getTok().isNot(AsmToken::Identifier))
     return true;
   AsmStatement *Inst = Context.CreateStmt(AsmStatement::SK_Inst);
-  Inst->InstructionAttr = ParseInstructionFlags();
+  if (ParseInstructionFlags(Inst->InstructionAttr))
+    return true;
 
-  while (getTok().isNot(AsmToken::EndOfStatement)) {
+  do {
+    if (getTok().is(AsmToken::Comma))
+      Lex(); // eat ','
     AsmStmtResult Operand = ParseInstructionOperand();
     if (Operand.isInvalid())
       return true;
     Inst->Operands.push_back(Operand.get());
-  }
+  } while (getTok().is(AsmToken::Comma));
+  
+  if (getTok().isNot(AsmToken::EndOfStatement))
+    return true;
+  Lex(); // eat ';'
   return Inst;
 }
 
-InstAttr AsmParser::ParseInstructionFlags() {
-  InstAttr Inst;
-  return Inst;
+bool AsmParser::ParseInstructionFlags(InstAttr &Attr) {
+  if (getTok().isNot(AsmToken::Identifier))
+    return true;
+  ptx::InstKind Opcode = ptx::FindInstructionKindFromName(getTok().getString());
+  if (Opcode == ptx::Invalid)
+    return true;
+  
+  Attr.Opcode = Opcode;
+  Lex(); // eat identifier
+
+  while (getTok().is(AsmToken::DotIdentifier)) {
+    if (getTok().isTypeName())
+      Attr.Types.push_back(Context.getScalarTypeFromName(getTok().getString()));
+    
+    /// TODO: Parse Other modifiers
+    Lex(); // eat a 'dot identifier
+  }
+  return false;
 }
 
 AsmStmtResult AsmParser::ParseTuple() {
@@ -224,8 +269,9 @@ AsmStmtResult AsmParser::ParseTuple() {
     if (getTok().is(AsmToken::Comma))
       Lex(); // eat ','
     switch (getTok().getKind()) {
-    if (AsmSymbol *S = getCurScope()->LookupSymbol(getTok().getString()))
-      Tuple.get()->Tuple.push_back(Context.CreateVariableRefExpression(S));
+    case AsmToken::Identifier:
+      if (AsmSymbol *S = getCurScope()->LookupSymbol(getTok().getString()))
+        Tuple.get()->Tuple.push_back(Context.CreateVariableRefExpression(S));
       else
         return true;
       break;
@@ -288,16 +334,60 @@ AsmStmtResult AsmParser::ParseInstructionFirstOperand() {
   return FirstOp;
 }
 
+AsmStmtResult AsmParser::ParseInstructionPrimaryOperand() {
+  if (getTok().is(AsmToken::Identifier)) {
+    auto ID = getTok();
+    Lex(); // eat identifier
+    if (AsmSymbol *S = getCurScope()->LookupSymbol(ID.getString()))
+        return Context.CreateVariableRefExpression(S);
+    return true;
+  }
+
+  if (getTok().is(AsmToken::LBrac))
+    return ParseTuple();
+  
+  return ParseConstantExpression();
+}
+
+AsmStmtResult AsmParser::ParseInstructionUnaryOperand() {
+  AsmToken Tok = getTok();
+  AsmStmtResult Operand = ParseInstructionPrimaryOperand();
+  if (Operand.isInvalid())
+    return true;
+  if (Tok.is(AsmToken::Exclaim, AsmToken::Minus)) {
+    switch (Tok.getKind()) {
+    case AsmToken::Exclaim:
+      return Context.CreateUnaryExpression(AsmStatement::SK_Not, Operand.get());
+    case AsmToken::Minus:
+      return Context.CreateUnaryExpression(AsmStatement::SK_Neg, Operand.get());
+    default:
+      break;
+    }
+    return true;
+  }
+  return Operand;
+}
+
 AsmStmtResult AsmParser::ParseInstructionOperand() {
-  return {};
+  AsmStmtResult Operand = ParseInstructionUnaryOperand();
+  if (Operand.isInvalid())
+    return true;
+  
+  /// TODO: Parse operand postfix here, e.g. var[Imm], [Imm], ...
+  return Operand;
 }
 
 AsmStmtResult AsmParser::ParseConstantExpression() {
-  switch (getTok().getKind()) {
-  case AsmToken::Float:
-    return Context.CreateFloatConstant(Context.getScalarType(AsmType::TK_F32), getTok().getF32Val());
-  case AsmToken::Double:
-    return Context.CreateFloatConstant(Context.getScalarType(AsmType::TK_F64), getTok().getF64Val());
+  AsmToken Tok = getTok();
+  switch (Tok.getKind()) {
+  case AsmToken::Float: {
+    Lex();
+    return Context.CreateFloatConstant(Context.getScalarType(AsmType::TK_F32), Tok.getF32Val());
+  }
+  case AsmToken::Double: {
+    Lex();
+    return Context.CreateFloatConstant(Context.getScalarType(AsmType::TK_F64), Tok.getF64Val());
+  }
   default:
     break;
   }
@@ -553,22 +643,23 @@ AsmStmtResult AsmParser::ParsePrimaryExpression() {
     auto *Symbol = getCurScope()->LookupSymbol(getTok().getString());
     return Context.CreateVariableRefExpression(Symbol);
   }
-  switch (getTok().getKind()) {
+
+  auto Tok = getTok();
+  Lex();
+  switch (Tok.getKind()) {
   case AsmToken::Identifier: {
-    if (getTok().getString() == "WARP_SIZE") {
-      auto *Symbol = getCurScope()->LookupSymbol(getTok().getString());
+    auto *Symbol = getCurScope()->LookupSymbol(getTok().getString());
+    if (Symbol)
       return Context.CreateVariableRefExpression(Symbol);
-    }
     return true;
   }
   case AsmToken::Integer:
-    return Context.CreateIntegerConstant(Context.getScalarType(AsmType::TK_S64), getTok().getIntVal());
+    return Context.CreateIntegerConstant(Context.getScalarType(AsmType::TK_S64), Tok.getIntVal());
   case AsmToken::Unsigned:
-    return Context.CreateIntegerConstant(Context.getScalarType(AsmType::TK_U64), getTok().getUnsignedVal());
+    return Context.CreateIntegerConstant(Context.getScalarType(AsmType::TK_U64), Tok.getUnsignedVal());
   case AsmToken::Double:
-    return Context.CreateFloatConstant(Context.getScalarType(AsmType::TK_F64), getTok().getF64Val());
+    return Context.CreateFloatConstant(Context.getScalarType(AsmType::TK_F64), Tok.getF64Val());
   case AsmToken::LParen: {
-    Lex(); // eat '('
     AsmStmtResult Expr = ParseConstantExpression();
     if (getTok().is(AsmToken::RParen))
       return true;

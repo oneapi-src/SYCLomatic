@@ -357,13 +357,16 @@ static bool isIdentifierChar(char C) {
 // identifier:  [a-zA-Z]{followsym}* | {[_$%]{followsym}+
 // directive:   .identifier
 AsmToken AsmLexer::LexIdentifier() {
+  auto Kind = AsmToken::Identifier;
+  if (CurPtr[-1] == '.')
+    Kind = AsmToken::DotIdentifier;
   while (isIdentifierBody(*CurPtr))
     ++CurPtr;
 
   // Handle . as a special case.
   if (CurPtr == TokStart + 1 && TokStart[0] == '.')
     return AsmToken(AsmToken::Dot, StringRef(TokStart, 1));
-  return AsmToken(AsmToken::Identifier, StringRef(TokStart, CurPtr - TokStart));
+  return AsmToken(Kind, StringRef(TokStart, CurPtr - TokStart));
 }
 
 /// LexSlash: Slash: /

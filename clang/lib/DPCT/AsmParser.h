@@ -29,6 +29,157 @@ using llvm::SMLoc;
 using llvm::SMRange;
 using llvm::SourceMgr;
 
+namespace ptx {
+enum InstKind {
+  Abs,
+  Activemask,
+  Add,
+  Addc,
+  Alloca,
+  And,
+  Applypriority,
+  Atom,
+  Bar,
+  Barrier,
+  Bfe,
+  Bfi,
+  Bfind,
+  Bmsk,
+  Bra,
+  Brev,
+  Brkpt,
+  Brx,
+  Call,
+  Clz,
+  Cnot,
+  Copysign,
+  Cos,
+  Cp,
+  Createpolicy,
+  Cvt,
+  Cvta,
+  Discard,
+  Div,
+  Dp2a,
+  Dp4a,
+  Elect,
+  Ex2,
+  Exit,
+  Fence,
+  Fma,
+  Fns,
+  Getctarank,
+  Griddepcontrol,
+  Isspacep,
+  Istypep,
+  Ld,
+  Ldmatrix,
+  Ldu,
+  Lg2,
+  Lop3,
+  Mad,
+  Mad24,
+  Madc,
+  Mapa,
+  Match,
+  Max,
+  Mbarrier,
+  Membar,
+  Min,
+  Mma,
+  Mov,
+  Movmatrix,
+  Mul,
+  Mul24,
+  Multimem,
+  Nanosleep,
+  Neg,
+  Not,
+  Or,
+  Pmevent,
+  Popc,
+  Prefetch,
+  Prefetchu,
+  Prmt,
+  Rcp,
+  Red,
+  Redux,
+  Rem,
+  Ret,
+  Rsqrt,
+  Sad,
+  Selp,
+  Set,
+  Setmaxnreg,
+  Setp,
+  Shf,
+  Shfl,
+  Shl,
+  Shr,
+  Sin,
+  Slct,
+  Sqrt,
+  St,
+  Stackrestore,
+  Stacksave,
+  Stmatrix,
+  Sub,
+  Subc,
+  Suld,
+  Suq,
+  Sured,
+  Sust,
+  Szext,
+  Tanh,
+  Testp,
+  Tex,
+  Tld4,
+  Trap,
+  Txq,
+  Vabsdiff,
+  Vabsdiff2,
+  Vabsdiff4,
+  Vadd,
+  Vadd2,
+  Vadd4,
+  Vavrg2,
+  Vavrg4,
+  Vmad,
+  Vmax,
+  Vmax2,
+  Vmax4,
+  Vmin,
+  Vmin2,
+  Vmin4,
+  Vote,
+  Vset,
+  Vset2,
+  Vset4,
+  Vshl,
+  Vshr,
+  Vsub,
+  Vsub2,
+  Vsub4,
+  Wgmma,
+  Wmma,
+  Xor,
+  Invalid,
+};
+
+enum StorageClass {
+  SC_Reg = 0x01,
+  SC_Const = 0x02,
+  SC_Global = 0x04,
+  SC_Local = 0x08,
+  SC_Param = 0x10,
+  SC_Shared = 0x20,
+  SC_Tex = 0x40
+};
+
+InstKind FindInstructionKindFromName(StringRef InstName);
+
+} // namespace ptx
+
 // struct AsmType {
 // public:
 //   enum TypeClass {
@@ -288,10 +439,9 @@ namespace RoundMod {
 struct AsmType;
 
 struct AsmSymbol {
-  StringRef Name;
+  std::string Name;
   AsmType *Type;
   bool IsVariable;
-  bool IsLabel;
 };
 
 struct VarAttr {
@@ -300,6 +450,7 @@ struct VarAttr {
 };
 
 struct InstAttr {
+  unsigned Opcode;
   unsigned RoundMod;
   unsigned SatMod;
   unsigned SatfMod;
@@ -320,7 +471,6 @@ struct InstAttr {
 
 struct AsmStatement {
   enum StmtKind {
-    SK_NullExpr,
     SK_Add,
     SK_Sub,
     SK_Mul,
@@ -452,7 +602,6 @@ public:
   }
 
   void deallocate(void *Ptr) {}
-
   
   AsmType *getScalarType(AsmType::TypeKind Kind);
   AsmType *getScalarTypeFromName(StringRef TypeName);
@@ -490,6 +639,7 @@ public:
   AsmType *ArrayOf(AsmType *Base, size_t Len);
   AsmType *VLAOf(AsmType *Base, AsmStatement *Expr);
 
+  AsmSymbol *CreateSymbol(const std::string &Name, AsmType *Type, bool IsVar = true);
   AsmStatement *CreateStmt(AsmStatement::StmtKind Kind);
   AsmStatement *CreateIntegerConstant(AsmType *Type, int64_t Val);
   AsmStatement *CreateIntegerConstant(AsmType *Type, uint64_t Val);
@@ -642,6 +792,8 @@ public:
     unsigned MainFileID = Mgr.getMainFileID();
     StringRef BufferRef = Mgr.getMemoryBuffer(MainFileID)->getBuffer();
     Lexer.setBuffer(BufferRef);
+    Lex();
+    EnterScope();
   }
   ~AsmParser();
 
@@ -656,6 +808,8 @@ public:
   const AsmToken &getTok() const { return getLexer().getTok(); }
   const AsmToken &Lex();
 
+  void AddBuiltinSymbol(const std::string &Name, AsmType *Type);
+
   AsmScope *getCurScope() const { return CurScope; }
 
   void EnterScope() { CurScope = new AsmScope(getCurScope()); }
@@ -664,7 +818,7 @@ public:
     assert(getCurScope());
     AsmScope *OldScope = getCurScope();
     CurScope = OldScope->getParent();
-    delete CurScope;
+    delete OldScope;
   }
 
   /// TODO: bool Parse();
@@ -673,10 +827,13 @@ public:
   AsmStmtResult ParsePredicate();
   AsmStmtResult ParseUnGuardInstruction();
   AsmStmtResult ParseInstruction();
-  InstAttr ParseInstructionFlags();
+  bool ParseInstructionFlags(InstAttr &Attr);
   AsmStmtResult ParseTuple();
   AsmStmtResult ParseInstructionFirstOperand();
   AsmStmtResult ParseInstructionOperand();
+  AsmStmtResult ParseInstructionPrimaryOperand();
+  AsmStmtResult ParseInstructionUnaryOperand();
+  AsmStmtResult ParseInstructionPostfixOperand();
 
   AsmStmtResult ParseConstantExpression();
   // bool ParseExpression();

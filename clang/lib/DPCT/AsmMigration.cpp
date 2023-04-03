@@ -28,31 +28,23 @@ void actionOnGCCAsmStmt(const GCCAsmStmt *Asm) {
     return;
   }
 
-  for (const auto &P : Pieces) {
-    if (P.isString())
-      llvm::errs() << llvm::raw_ostream::BLUE << " S " << P.getString()
-                   << llvm::raw_ostream::RESET << "\n";
-    else
-      llvm::errs() << llvm::raw_ostream::BLUE << " O " << P.getOperandNo()
-                   << " " << (P.getModifier() != 0 ? P.getModifier() : '0')
-                   << llvm::raw_ostream::RESET << "\n";
-    ;
-  }
-
-  AsmToken Tok;
-  AsmLexer Lexer;
-  Lexer.setBuffer(S);
-  do {
-    Tok = Lexer.Lex();
-    Tok.dump(llvm::errs());
-    llvm::errs() << "\n";
-  } while (Tok.isNot(AsmToken::Eof));
   AsmContext Context;
   llvm::SourceMgr Mgr;
   Mgr.AddNewSourceBuffer(llvm::MemoryBuffer::getMemBuffer(S), llvm::SMLoc());
   AsmParser Parser(Context, Mgr);
 
+  unsigned OperandIdx = 0;
+
+  for (unsigned I = 0; I < Asm->getNumInputs(); ++I) {
+    Parser.AddBuiltinSymbol("$" + std::to_string(OperandIdx++) , nullptr);
+  }
+
+  for (unsigned I = 0; I < Asm->getNumOutputs(); ++I) {
+    Parser.AddBuiltinSymbol("$" + std::to_string(OperandIdx++) , nullptr);
+  }
+
   auto Inst = Parser.ParseStatement();
+  std::cout << std::boolalpha << Inst.isInvalid() << std::endl;
 }
 
 void AsmRule::registerMatcher(ast_matchers::MatchFinder &MF) {

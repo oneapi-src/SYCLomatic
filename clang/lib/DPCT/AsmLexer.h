@@ -31,6 +31,7 @@ public:
 
     // String values.
     Identifier,
+    DotIdentifier,
     String,
 
     // Integer values.

@@ -8,8 +8,6 @@
 
 namespace clang::dpct {
 
-using llvm::APFloat;
-
 namespace InstKind {
 enum {
   Abs,
