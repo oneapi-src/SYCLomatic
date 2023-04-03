@@ -14961,8 +14961,7 @@ void CudaExtentRule::runRule(
     OS << "}";
     OS.flush();
     DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(
-            SM, Init, Replacement, nullptr));
+        std::make_shared<ExtReplacement>(SM, Init, Replacement, nullptr));
     return;
   }
 }
