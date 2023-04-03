@@ -2684,16 +2684,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         DpctGlobalInfo::getInstance().insertHeader(BeginLoc,
                                                    HT_DPCT_COMMON_Utils);
       }
-      return ;
     }
-
-    // if (TypeStr.rfind("identity", 0) == 0) {
-    //   emplaceTransformation(new ReplaceToken(
-    //       TL->getBeginLoc().getLocWithOffset(Lexer::MeasureTokenLength(
-    //           TL->getBeginLoc(), dpct::DpctGlobalInfo::getSourceManager(),
-    //           dpct::DpctGlobalInfo::getContext().getLangOpts())),
-    //       TL->getEndLoc(), ""));
-    // }
 
     const DeclaratorDecl *DD = nullptr;
     const VarDecl *VarD = DpctGlobalInfo::findAncestor<VarDecl>(TL);
