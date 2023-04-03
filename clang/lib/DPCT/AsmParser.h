@@ -28,6 +28,7 @@ namespace clang::dpct {
 using llvm::SMLoc;
 using llvm::SMRange;
 using llvm::SourceMgr;
+using llvm::SmallPtrSet;
 
 namespace ptx {
 enum InstKind {
@@ -528,6 +529,7 @@ struct AsmStatement {
   StringRef Label;
   AsmStatement *Bar;
   AsmSymbol *Variable;
+  SmallPtrSet<AsmSymbol *, 32> DeclsInScope;
 
   union {
     uint64_t u64;
@@ -539,6 +541,7 @@ struct AsmStatement {
   InstAttr InstructionAttr;
   SmallVector<AsmStatement *, 4> Operands;
   SmallVector<AsmStatement *, 4> Tuple;
+  SmallVector<AsmStatement *, 4> Block;
 
   AsmStatement(StmtKind K) : Kind(K) {}
 };
@@ -736,7 +739,7 @@ class AsmScope {
   unsigned Depth;
 
 public:
-  AsmScope(AsmScope *Parent) : AnyParent(Parent), Depth(Parent->Depth + 1) {}
+  AsmScope(AsmScope *Parent) : AnyParent(Parent), Depth(Parent ? Parent->Depth + 1 : 0) {}
 
   const AsmScope *getParent() const { return AnyParent; }
   AsmScope *getParent() { return AnyParent; }
@@ -788,7 +791,7 @@ private:
 
 public:
   AsmParser(AsmContext &Ctx, SourceMgr &Mgr)
-      : Lexer(), Context(Ctx), SrcMgr(Mgr) {
+      : Lexer(), Context(Ctx), SrcMgr(Mgr), CurScope(nullptr) {
     unsigned MainFileID = Mgr.getMainFileID();
     StringRef BufferRef = Mgr.getMemoryBuffer(MainFileID)->getBuffer();
     Lexer.setBuffer(BufferRef);
@@ -812,13 +815,19 @@ public:
 
   AsmScope *getCurScope() const { return CurScope; }
 
-  void EnterScope() { CurScope = new AsmScope(getCurScope()); }
+  void EnterScope() {
+    CurScope = new AsmScope(getCurScope()); 
+  }
 
   void ExitScope() {
     assert(getCurScope());
     AsmScope *OldScope = getCurScope();
-    CurScope = OldScope->getParent();
-    delete OldScope;
+    if (OldScope) {
+      CurScope = OldScope->getParent();
+      delete OldScope;
+    } else {
+      CurScope = nullptr;
+    }
   }
 
   /// TODO: bool Parse();

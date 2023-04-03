@@ -129,6 +129,9 @@ void AsmToken::dump(raw_ostream &OS) const {
   case AsmToken::Identifier:
     OS << "identifier";
     break;
+  case AsmToken::DotIdentifier:
+    OS << "dot identifier";
+    break;
   case AsmToken::Integer:
     OS << "int";
     break;
@@ -517,7 +520,7 @@ AsmToken AsmLexer::LexDigit() {
           CurPtr, "Invalid IEEE 754 double-precision floating point values");
 
     double F64;
-    uint32_t F64bytes = 0;
+    uint64_t F64bytes = 0;
     (void)StringRef(Begin, 8).getAsInteger(16, F64bytes);
     std::memcpy(&F64, &F64bytes, sizeof(double));
     return AsmToken(AsmToken::Double, StringRef(TokStart, CurPtr - TokStart),

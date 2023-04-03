@@ -15,10 +15,10 @@ using namespace clang::dpct;
 
 ptx::InstKind ptx::FindInstructionKindFromName(StringRef InstName) {
   return llvm::StringSwitch<ptx::InstKind>(InstName)
-    .Case("cvt", ptx::Cvt)
-    .Case("mov", ptx::Mov)
-    .Case("bfe", ptx::Bfe)
-    .Default(ptx::Invalid);
+      .Case("cvt", ptx::Cvt)
+      .Case("mov", ptx::Mov)
+      .Case("bfe", ptx::Bfe)
+      .Default(ptx::Invalid);
 }
 
 AsmType *AsmContext::getScalarType(AsmType::TypeKind Kind) {
@@ -93,8 +93,9 @@ AsmStatement *AsmContext::CreateFloatConstant(AsmType *Type, double Val) {
   return Fp;
 }
 
-AsmStatement *AsmContext::CreateConditionalExpression(AsmStatement *Cond, AsmStatement *Then,
-                                                 AsmStatement *Else) {
+AsmStatement *AsmContext::CreateConditionalExpression(AsmStatement *Cond,
+                                                      AsmStatement *Then,
+                                                      AsmStatement *Else) {
   AsmStatement *S = CreateStmt(AsmStatement::SK_Cond);
   S->Cond = Cond;
   S->Then = Then;
@@ -103,14 +104,16 @@ AsmStatement *AsmContext::CreateConditionalExpression(AsmStatement *Cond, AsmSta
 }
 
 AsmStatement *AsmContext::CreateBinaryOperator(AsmStatement::StmtKind Opcode,
-                                          AsmStatement *LHS, AsmStatement *RHS) {
+                                               AsmStatement *LHS,
+                                               AsmStatement *RHS) {
   AsmStatement *S = CreateStmt(Opcode);
   S->LHS = LHS;
   S->RHS = RHS;
   return S;
 }
 
-AsmStatement *AsmContext::CreateCastExpression(AsmType *Type, AsmStatement *SubExpr) {
+AsmStatement *AsmContext::CreateCastExpression(AsmType *Type,
+                                               AsmStatement *SubExpr) {
   AsmStatement *S = CreateStmt(AsmStatement::SK_Cast);
   S->Type = Type;
   S->SubExpr = SubExpr;
@@ -118,7 +121,7 @@ AsmStatement *AsmContext::CreateCastExpression(AsmType *Type, AsmStatement *SubE
 }
 
 AsmStatement *AsmContext::CreateUnaryExpression(AsmStatement::StmtKind Opcode,
-                                           AsmStatement *SubExpr) {
+                                                AsmStatement *SubExpr) {
   AsmStatement *S = CreateStmt(Opcode);
   S->SubExpr = SubExpr;
   return S;
@@ -136,7 +139,8 @@ AsmStatement *AsmContext::GetOrCreateSinkExpression() {
   return SinkExpression = CreateStmt(AsmStatement::SK_Sink);
 }
 
-AsmSymbol *AsmContext::CreateSymbol(const std::string &Name, AsmType *Type, bool IsVar) {
+AsmSymbol *AsmContext::CreateSymbol(const std::string &Name, AsmType *Type,
+                                    bool IsVar) {
   AsmSymbol *Sym = new (*this) AsmSymbol;
   Sym->Name = Name;
   Sym->Type = Type;
@@ -144,9 +148,7 @@ AsmSymbol *AsmContext::CreateSymbol(const std::string &Name, AsmType *Type, bool
   return Sym;
 }
 
-AsmParser::~AsmParser() {
-  ExitScope();
-}
+AsmParser::~AsmParser() { ExitScope(); }
 
 void AsmParser::AddBuiltinSymbol(const std::string &Name, AsmType *Type) {
   AsmSymbol *Sym = Context.CreateSymbol(Name, Type);
@@ -195,12 +197,11 @@ AsmStmtResult AsmParser::ParseCompoundStatement() {
       Stmts.push_back(Res.get());
     }
   }
+  Block->Block = std::move(Stmts);
   return Block;
 }
 
-AsmStmtResult AsmParser::ParsePredicate() {
-  return true;
-}
+AsmStmtResult AsmParser::ParsePredicate() { return true; }
 
 AsmStmtResult AsmParser::ParseInstruction() {
   AsmStatement *Inst = Context.CreateStmt(AsmStatement::SK_Inst);
@@ -235,7 +236,7 @@ AsmStmtResult AsmParser::ParseUnGuardInstruction() {
       return true;
     Inst->Operands.push_back(Operand.get());
   } while (getTok().is(AsmToken::Comma));
-  
+
   if (getTok().isNot(AsmToken::EndOfStatement))
     return true;
   Lex(); // eat ';'
@@ -248,14 +249,14 @@ bool AsmParser::ParseInstructionFlags(InstAttr &Attr) {
   ptx::InstKind Opcode = ptx::FindInstructionKindFromName(getTok().getString());
   if (Opcode == ptx::Invalid)
     return true;
-  
+
   Attr.Opcode = Opcode;
   Lex(); // eat identifier
 
   while (getTok().is(AsmToken::DotIdentifier)) {
     if (getTok().isTypeName())
       Attr.Types.push_back(Context.getScalarTypeFromName(getTok().getString()));
-    
+
     /// TODO: Parse Other modifiers
     Lex(); // eat a 'dot identifier
   }
@@ -339,13 +340,13 @@ AsmStmtResult AsmParser::ParseInstructionPrimaryOperand() {
     auto ID = getTok();
     Lex(); // eat identifier
     if (AsmSymbol *S = getCurScope()->LookupSymbol(ID.getString()))
-        return Context.CreateVariableRefExpression(S);
+      return Context.CreateVariableRefExpression(S);
     return true;
   }
 
   if (getTok().is(AsmToken::LBrac))
     return ParseTuple();
-  
+
   return ParseConstantExpression();
 }
 
@@ -372,7 +373,7 @@ AsmStmtResult AsmParser::ParseInstructionOperand() {
   AsmStmtResult Operand = ParseInstructionUnaryOperand();
   if (Operand.isInvalid())
     return true;
-  
+
   /// TODO: Parse operand postfix here, e.g. var[Imm], [Imm], ...
   return Operand;
 }
@@ -382,11 +383,13 @@ AsmStmtResult AsmParser::ParseConstantExpression() {
   switch (Tok.getKind()) {
   case AsmToken::Float: {
     Lex();
-    return Context.CreateFloatConstant(Context.getScalarType(AsmType::TK_F32), Tok.getF32Val());
+    return Context.CreateFloatConstant(Context.getScalarType(AsmType::TK_F32),
+                                       Tok.getF32Val());
   }
   case AsmToken::Double: {
     Lex();
-    return Context.CreateFloatConstant(Context.getScalarType(AsmType::TK_F64), Tok.getF64Val());
+    return Context.CreateFloatConstant(Context.getScalarType(AsmType::TK_F64),
+                                       Tok.getF64Val());
   }
   default:
     break;
@@ -421,7 +424,8 @@ AsmStmtResult AsmParser::ParseLogicOrExpression() {
     AsmStmtResult RHS = ParseLogicAndExpression();
     if (RHS.isInvalid())
       return true;
-    LHS = Context.CreateBinaryOperator(AsmStatement::SK_Or, LHS.get(), RHS.get());
+    LHS =
+        Context.CreateBinaryOperator(AsmStatement::SK_Or, LHS.get(), RHS.get());
   }
   return LHS;
 }
@@ -435,7 +439,8 @@ AsmStmtResult AsmParser::ParseLogicAndExpression() {
     AsmStmtResult RHS = ParseInclusiveOrExpression();
     if (RHS.isInvalid())
       return true;
-    LHS = Context.CreateBinaryOperator(AsmStatement::SK_And, LHS.get(), RHS.get());
+    LHS = Context.CreateBinaryOperator(AsmStatement::SK_And, LHS.get(),
+                                       RHS.get());
   }
   return LHS;
 }
@@ -449,7 +454,8 @@ AsmStmtResult AsmParser::ParseInclusiveOrExpression() {
     AsmStmtResult RHS = ParseInclusiveOrExpression();
     if (RHS.isInvalid())
       return true;
-    LHS = Context.CreateBinaryOperator(AsmStatement::SK_BitOr, LHS.get(), RHS.get());
+    LHS = Context.CreateBinaryOperator(AsmStatement::SK_BitOr, LHS.get(),
+                                       RHS.get());
   }
   return LHS;
 }
@@ -463,8 +469,8 @@ AsmStmtResult AsmParser::ParseExclusiveOrExpression() {
     AsmStmtResult RHS = ParseAndExpression();
     if (RHS.isInvalid())
       return true;
-    LHS =
-        Context.CreateBinaryOperator(AsmStatement::SK_BitXor, LHS.get(), RHS.get());
+    LHS = Context.CreateBinaryOperator(AsmStatement::SK_BitXor, LHS.get(),
+                                       RHS.get());
   }
   return LHS;
 }
@@ -478,8 +484,8 @@ AsmStmtResult AsmParser::ParseAndExpression() {
     AsmStmtResult RHS = ParseEqualityExpression();
     if (RHS.isInvalid())
       return true;
-    LHS =
-        Context.CreateBinaryOperator(AsmStatement::SK_BitAnd, LHS.get(), RHS.get());
+    LHS = Context.CreateBinaryOperator(AsmStatement::SK_BitAnd, LHS.get(),
+                                       RHS.get());
   }
   return LHS;
 }
@@ -495,9 +501,11 @@ AsmStmtResult AsmParser::ParseEqualityExpression() {
     if (RHS.isInvalid())
       return true;
     if (Opcode == AsmToken::EqualEqual)
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_EQ, LHS.get(), RHS.get());
+      LHS = Context.CreateBinaryOperator(AsmStatement::SK_EQ, LHS.get(),
+                                         RHS.get());
     else
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_NE, LHS.get(), RHS.get());
+      LHS = Context.CreateBinaryOperator(AsmStatement::SK_NE, LHS.get(),
+                                         RHS.get());
     ;
   }
   return LHS;
@@ -516,16 +524,20 @@ AsmStmtResult AsmParser::ParseRelationExpression() {
       return true;
     switch (Opcode) {
     case AsmToken::Less:
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_LT, LHS.get(), RHS.get());
+      LHS = Context.CreateBinaryOperator(AsmStatement::SK_LT, LHS.get(),
+                                         RHS.get());
       break;
     case AsmToken::Greater:
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_GT, LHS.get(), RHS.get());
+      LHS = Context.CreateBinaryOperator(AsmStatement::SK_GT, LHS.get(),
+                                         RHS.get());
       break;
     case AsmToken::LessEqual:
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_LE, LHS.get(), RHS.get());
+      LHS = Context.CreateBinaryOperator(AsmStatement::SK_LE, LHS.get(),
+                                         RHS.get());
       break;
     case AsmToken::GreaterEqual:
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_GE, LHS.get(), RHS.get());
+      LHS = Context.CreateBinaryOperator(AsmStatement::SK_GE, LHS.get(),
+                                         RHS.get());
       break;
     default:
       assert(false && "Invalid relation operator kind");
@@ -545,9 +557,11 @@ AsmStmtResult AsmParser::ParseShiftExpression() {
     if (RHS.isInvalid())
       return true;
     if (Opcode == AsmToken::LessLess)
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_Shl, LHS.get(), RHS.get());
+      LHS = Context.CreateBinaryOperator(AsmStatement::SK_Shl, LHS.get(),
+                                         RHS.get());
     else
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_Shr, LHS.get(), RHS.get());
+      LHS = Context.CreateBinaryOperator(AsmStatement::SK_Shr, LHS.get(),
+                                         RHS.get());
     ;
   }
   return LHS;
@@ -564,9 +578,11 @@ AsmStmtResult AsmParser::ParseAdditiveExpression() {
     if (RHS.isInvalid())
       return true;
     if (Opcode == AsmToken::Plus)
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_Add, LHS.get(), RHS.get());
+      LHS = Context.CreateBinaryOperator(AsmStatement::SK_Add, LHS.get(),
+                                         RHS.get());
     else
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_Sub, LHS.get(), RHS.get());
+      LHS = Context.CreateBinaryOperator(AsmStatement::SK_Sub, LHS.get(),
+                                         RHS.get());
   }
   return LHS;
 }
@@ -583,13 +599,16 @@ AsmStmtResult AsmParser::ParseMultiplicativeExpression() {
       return true;
     switch (Opcode) {
     case AsmToken::Star:
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_Mul, LHS.get(), RHS.get());
+      LHS = Context.CreateBinaryOperator(AsmStatement::SK_Mul, LHS.get(),
+                                         RHS.get());
       break;
     case AsmToken::Slash:
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_Div, LHS.get(), RHS.get());
+      LHS = Context.CreateBinaryOperator(AsmStatement::SK_Div, LHS.get(),
+                                         RHS.get());
       break;
     case AsmToken::Percent:
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_Mod, LHS.get(), RHS.get());
+      LHS = Context.CreateBinaryOperator(AsmStatement::SK_Mod, LHS.get(),
+                                         RHS.get());
       break;
     default:
       assert(false && "Invalid multiplicative operator kind");
@@ -607,7 +626,8 @@ AsmStmtResult AsmParser::ParseCaseExpresion() {
     AsmStmtResult SubExpr = ParseUnaryExpression();
     if (SubExpr.isInvalid())
       return true;
-    AsmType *CastType = getContext().getScalarTypeFromName(TypeName.getString());
+    AsmType *CastType =
+        getContext().getScalarTypeFromName(TypeName.getString());
     return Context.CreateCastExpression(CastType, SubExpr.get());
   }
 
@@ -630,7 +650,8 @@ AsmStmtResult AsmParser::ParseUnaryExpression() {
     case AsmToken::Exclaim:
       return Context.CreateUnaryExpression(AsmStatement::SK_Not, SubExpr.get());
     case AsmToken::Tilde:
-      return Context.CreateUnaryExpression(AsmStatement::SK_BitNot, SubExpr.get());
+      return Context.CreateUnaryExpression(AsmStatement::SK_BitNot,
+                                           SubExpr.get());
     default:
       assert(false && "Invalid unary operator kind");
     }
@@ -639,7 +660,8 @@ AsmStmtResult AsmParser::ParseUnaryExpression() {
 }
 
 AsmStmtResult AsmParser::ParsePrimaryExpression() {
-  if (getTok().is(AsmToken::Identifier) && getTok().getString() == "WARP_SIZE") {
+  if (getTok().is(AsmToken::Identifier) &&
+      getTok().getString() == "WARP_SIZE") {
     auto *Symbol = getCurScope()->LookupSymbol(getTok().getString());
     return Context.CreateVariableRefExpression(Symbol);
   }
@@ -654,11 +676,14 @@ AsmStmtResult AsmParser::ParsePrimaryExpression() {
     return true;
   }
   case AsmToken::Integer:
-    return Context.CreateIntegerConstant(Context.getScalarType(AsmType::TK_S64), Tok.getIntVal());
+    return Context.CreateIntegerConstant(Context.getScalarType(AsmType::TK_S64),
+                                         Tok.getIntVal());
   case AsmToken::Unsigned:
-    return Context.CreateIntegerConstant(Context.getScalarType(AsmType::TK_U64), Tok.getUnsignedVal());
+    return Context.CreateIntegerConstant(Context.getScalarType(AsmType::TK_U64),
+                                         Tok.getUnsignedVal());
   case AsmToken::Double:
-    return Context.CreateFloatConstant(Context.getScalarType(AsmType::TK_F64), Tok.getF64Val());
+    return Context.CreateFloatConstant(Context.getScalarType(AsmType::TK_F64),
+                                       Tok.getF64Val());
   case AsmToken::LParen: {
     AsmStmtResult Expr = ParseConstantExpression();
     if (getTok().is(AsmToken::RParen))

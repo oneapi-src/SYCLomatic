@@ -16,36 +16,97 @@
 
 using namespace clang;
 using namespace clang::dpct;
+using llvm::StringMap;
 
-void actionOnGCCAsmStmt(const GCCAsmStmt *Asm) {
-  const auto &C = DpctGlobalInfo::getContext();
-  std::string S = Asm->generateAsmString(C);
-  unsigned DiagOffsets = 0;
-  SmallVector<GCCAsmStmt::AsmStringPiece> Pieces;
-  if (Asm->AnalyzeAsmString(Pieces, C, DiagOffsets)) {
-    llvm::errs() << llvm::raw_ostream::RED << "Invalid inline asm"
-                 << llvm::raw_ostream::RESET << "\n";
+namespace {
+
+class AsmStmtConsumer {
+  llvm::raw_ostream &OS;
+  StringMap<std::string> SymbolAlias;
+
+public:
+  AsmStmtConsumer(llvm::raw_ostream &OS) : OS(OS) {}
+
+  void AddSymbolAlias(StringRef Origin, StringRef Alias) {
+    SymbolAlias[Origin] = Alias;
+  }
+
+  bool HasSymbolAlias(StringRef Origin) const {
+    return SymbolAlias.find(Origin) != SymbolAlias.end();
+  }
+
+  StringRef GetSymbolAlias(StringRef Origin) { return SymbolAlias[Origin]; }
+
+  void HandleStmt(const AsmStatement *Stmt);
+  void EmitInst(const AsmStatement *Inst);
+  void EmitMov(const AsmStatement *Mov);
+};
+
+void AsmStmtConsumer::HandleStmt(const AsmStatement *Stmt) {
+  if (!Stmt)
     return;
+
+  switch (Stmt->Kind) {
+  case AsmStatement::SK_Block:
+    OS << "{\n\t";
+    for (const auto *S : Stmt->Block) {
+      HandleStmt(S);
+    }
+    OS << "}\n";
+    break;
+  case AsmStatement::SK_Inst:
+    if (Stmt->Pred) {
+      /// TODO: Generate predicate guard expr
+    }
+    if (Stmt->Body) {
+      return EmitInst(Stmt->Body);
+    }
+    break;
+  case AsmStatement::SK_Variable:
+    if (HasSymbolAlias(Stmt->Variable->Name))
+      OS << GetSymbolAlias(Stmt->Variable->Name);
+    else
+      OS << Stmt->Variable->Name;
+    break;
+  case AsmStatement::SK_Integer:
+    OS << Stmt->i64 << "ll";
+    break;
+  case AsmStatement::SK_Unsigned:
+    OS << Stmt->u64 << "ull";
+    break;
+  case AsmStatement::SK_Float:
+    OS << Stmt->f32 << "f";
+    break;
+  case AsmStatement::SK_Double:
+    OS << Stmt->f64;
+    break;
+  default:
+    break;
   }
-
-  AsmContext Context;
-  llvm::SourceMgr Mgr;
-  Mgr.AddNewSourceBuffer(llvm::MemoryBuffer::getMemBuffer(S), llvm::SMLoc());
-  AsmParser Parser(Context, Mgr);
-
-  unsigned OperandIdx = 0;
-
-  for (unsigned I = 0; I < Asm->getNumInputs(); ++I) {
-    Parser.AddBuiltinSymbol("$" + std::to_string(OperandIdx++) , nullptr);
-  }
-
-  for (unsigned I = 0; I < Asm->getNumOutputs(); ++I) {
-    Parser.AddBuiltinSymbol("$" + std::to_string(OperandIdx++) , nullptr);
-  }
-
-  auto Inst = Parser.ParseStatement();
-  std::cout << std::boolalpha << Inst.isInvalid() << std::endl;
 }
+
+void AsmStmtConsumer::EmitInst(const AsmStatement *Inst) {
+  if (!Inst)
+    return;
+  switch (Inst->InstructionAttr.Opcode) {
+  case ptx::InstKind::Mov:
+    EmitMov(Inst);
+    break;
+  default:
+    break;
+  }
+  OS << ";\n";
+}
+
+void AsmStmtConsumer::EmitMov(const AsmStatement *Inst) {
+  if (Inst->Operands.size() != 2)
+    return;
+  HandleStmt(Inst->Operands[0]);
+  OS << " = ";
+  HandleStmt(Inst->Operands[1]);
+}
+
+} // namespace
 
 void AsmRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   using namespace clang::ast_matchers;
@@ -149,8 +210,42 @@ std::string getAsmLop3Expr(const llvm::SmallVector<std::string, 5> &Operands) {
 
 void AsmRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto *AS = getNodeAsType<AsmStmt>(Result, "asm")) {
-    if (const auto *GCC = dyn_cast<GCCAsmStmt>(AS))
-      actionOnGCCAsmStmt(GCC);
+    if (const auto *Asm = dyn_cast<GCCAsmStmt>(AS)) {
+      const auto &C = DpctGlobalInfo::getContext();
+      std::string S = Asm->generateAsmString(C);
+
+      AsmContext Context;
+      std::string Replacement;
+      llvm::raw_string_ostream OS(Replacement);
+      AsmStmtConsumer Consumer(OS);
+      llvm::SourceMgr Mgr;
+      Mgr.AddNewSourceBuffer(llvm::MemoryBuffer::getMemBuffer(S),
+                             llvm::SMLoc());
+      AsmParser Parser(Context, Mgr);
+      unsigned OperandIdx = 0;
+      std::string AsmString;
+      for (unsigned I = 0; I < Asm->getNumInputs(); ++I) {
+        ExprAnalysis EA;
+        EA.analyze(Asm->getInputExpr(I));
+        std::string Placeholder = "$" + std::to_string(OperandIdx++);
+        Parser.AddBuiltinSymbol(Placeholder, nullptr);
+        Consumer.AddSymbolAlias(Placeholder, EA.getReplacedString());
+      }
+      for (unsigned I = 0; I < Asm->getNumOutputs(); ++I) {
+        ExprAnalysis EA;
+        EA.analyze(Asm->getOutputExpr(I));
+        std::string Placeholder = "$" + std::to_string(OperandIdx++);
+        Parser.AddBuiltinSymbol(Placeholder, nullptr);
+        Consumer.AddSymbolAlias(Placeholder, EA.getReplacedString());
+      }
+      auto Inst = Parser.ParseStatement();
+      if (Inst.isInvalid())
+        return;
+      Consumer.HandleStmt(Inst.get());
+      OS.flush();
+      emplaceTransformation(new ReplaceStmt(AS, Replacement));
+      return;
+    }
     auto AsmString = AS->generateAsmString(*Result.Context);
     auto TemplateString = StringRef(AsmString).substr(0, AsmString.find(';'));
     auto CurrIndex = TemplateString.find(' ');
