@@ -23,8 +23,8 @@
 namespace clang {
 namespace dpct {
 
-class BarrierFenceSpaceAnalyzer
-    : public clang::RecursiveASTVisitor<BarrierFenceSpaceAnalyzer> {
+class ReadWriteOrderAnalyzer
+    : public clang::RecursiveASTVisitor<ReadWriteOrderAnalyzer> {
 public:
   bool shouldVisitImplicitCode() const { return true; }
   bool shouldTraversePostOrder() const { return false; }
@@ -36,7 +36,7 @@ public:
     if (!Visit(Node))                                                          \
       return false;                                                            \
     if (!clang::RecursiveASTVisitor<                                           \
-            BarrierFenceSpaceAnalyzer>::Traverse##CLASS(Node))                 \
+            ReadWriteOrderAnalyzer>::Traverse##CLASS(Node))                 \
       return false;                                                            \
     PostVisit(Node);                                                           \
     return true;                                                               \
@@ -53,7 +53,7 @@ public:
 #undef VISIT_NODE
 
 public:
-  bool canSetLocalFenceSpace(const clang::CallExpr *CE);
+  bool analyze(const clang::CallExpr *CE);
 
 private:
   bool traverseFunction(const clang::FunctionDecl *FD);
@@ -92,6 +92,40 @@ private:
       CachedResults;
   static const std::unordered_set<std::string> AllowedDeviceFunctions;
 };
+
+class NewAnalyzer : public clang::RecursiveASTVisitor<NewAnalyzer> {
+public:
+  bool shouldVisitImplicitCode() const { return true; }
+  bool shouldTraversePostOrder() const { return false; }
+
+#define VISIT_NODE(CLASS)                                                      \
+  bool Visit(CLASS *Node);                                                     \
+  void PostVisit(CLASS *FS);                                                   \
+  bool Traverse##CLASS(CLASS *Node) {                                          \
+    if (!Visit(Node))                                                          \
+      return false;                                                            \
+    if (!clang::RecursiveASTVisitor<NewAnalyzer>::Traverse##CLASS(Node))       \
+      return false;                                                            \
+    PostVisit(Node);                                                           \
+    return true;                                                               \
+  }
+
+  VISIT_NODE(DeclRefExpr)
+#undef VISIT_NODE
+
+public:
+  bool analyze(const clang::CallExpr *CE);
+
+private:
+  bool HasGlobalDeviceVariable = false;
+  bool checkNewPattern(const CallExpr *CE, const FunctionDecl *FD);
+  void collectAlias(VarDecl *VD,
+                    std::unordered_set<VarDecl *> &NewNonconstPointerDecls);
+  std::unordered_map<DeclRefExpr *, ValueDecl *> DREDeclMap;
+  std::unordered_map<ValueDecl *, std::unordered_set<DeclRefExpr *>>
+      DeclDREsMap;
+};
+
 } // namespace dpct
 } // namespace clang
 

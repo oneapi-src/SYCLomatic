@@ -1908,7 +1908,7 @@ void AtomicFunctionRule::MigrateAtomicFunc(
 
   // Don't migrate user defined function
   if (auto *CalleeDecl = CE->getDirectCallee()) {
-    if (isUserDefinedFunction(CalleeDecl))
+    if (isUserDefinedDecl(CalleeDecl))
       return;
   } else {
     return;
@@ -11760,7 +11760,7 @@ void WarpFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
     return;
 
   if (auto *CalleeDecl = CE->getDirectCallee()) {
-    if (isUserDefinedFunction(CalleeDecl)) {
+    if (isUserDefinedDecl(CalleeDecl)) {
       return;
     }
   }
@@ -11997,8 +11997,9 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
   if (FuncName == "__syncthreads") {
-    BarrierFenceSpaceAnalyzer A;
-    if (A.canSetLocalFenceSpace(CE)) {
+    ReadWriteOrderAnalyzer RWOA;
+    NewAnalyzer NA;
+    if (RWOA.analyze(CE) || NA.analyze(CE)) {
       std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
                                 MapNames::getClNamespace() +
                                 "access::fence_space::local_space)";

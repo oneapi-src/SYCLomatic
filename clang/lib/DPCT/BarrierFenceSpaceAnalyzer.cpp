@@ -15,7 +15,7 @@
 
 using namespace llvm;
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::ForStmt *FS) {
+bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::ForStmt *FS) {
   Level Lvl;
   Lvl.CurrentLoc = CurrentLevel.CurrentLoc;
   Lvl.LevelBeginLoc = FS->getBeginLoc();
@@ -23,7 +23,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::ForStmt *FS) {
   CurrentLevel = Lvl;
   return true;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::ForStmt *FS) {
+void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::ForStmt *FS) {
   if (!CurrentLevel.SyncCallsVec.empty()) {
     CurrentLevel.SyncCallsVec.front().second.Predecessors.push_back(
         clang::SourceRange(CurrentLevel.CurrentLoc, FS->getEndLoc()));
@@ -37,7 +37,7 @@ void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::ForStmt *FS) {
   LevelStack.pop();
   return;
 }
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::CallExpr *CE) {
+bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::CallExpr *CE) {
   const clang::FunctionDecl *FuncDecl = CE->getDirectCallee();
   std::string FuncName;
   if (FuncDecl)
@@ -78,61 +78,61 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::CallExpr *CE) {
     if (auto FD = CE->getDirectCallee()) {
       std::string FuncName = FD->getNameInfo().getName().getAsString();
       if (!AllowedDeviceFunctions.count(FuncName) ||
-          isUserDefinedFunction(FD)) {
+          isUserDefinedDecl(FD)) {
         return false;
       }
     }
   }
   return true;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::CallExpr *) {}
+void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::CallExpr *) {}
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::DeclRefExpr *DRE) {
+bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::DeclRefExpr *DRE) {
   // Collect all DREs and its Decl
   DREDeclMap.insert(std::make_pair(DRE, DRE->getDecl()));
   return true;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::DeclRefExpr *) {}
+void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::DeclRefExpr *) {}
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::GotoStmt *) {
+bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::GotoStmt *) {
   // We will further refine it if meet real request.
   // By default, goto/label stmt is not supported.
   return false;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::GotoStmt *) {}
+void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::GotoStmt *) {}
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::LabelStmt *) {
+bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::LabelStmt *) {
   // We will further refine it if meet real request.
   // By default, goto/label stmt is not supported.
   return false;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::LabelStmt *) {}
+void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::LabelStmt *) {}
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::MemberExpr *ME) {
+bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::MemberExpr *ME) {
   if (ME->getType()->isPointerType() || ME->getType()->isArrayType()) {
     return false;
   }
   return true;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::MemberExpr *) {}
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
+void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::MemberExpr *) {}
+bool clang::dpct::ReadWriteOrderAnalyzer::Visit(
     clang::CXXDependentScopeMemberExpr *) {
   return false;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
+void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(
     clang::CXXDependentScopeMemberExpr *) {}
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
+bool clang::dpct::ReadWriteOrderAnalyzer::Visit(
     clang::CXXConstructExpr *CCE) {
   auto Ctor = CCE->getConstructor();
   std::string CtorName = Ctor->getParent()->getQualifiedNameAsString();
-  if (AllowedDeviceFunctions.count(CtorName) && !isUserDefinedFunction(Ctor))
+  if (AllowedDeviceFunctions.count(CtorName) && !isUserDefinedDecl(Ctor))
     return true;
   return false;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
+void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(
     clang::CXXConstructExpr *) {}
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::traverseFunction(
+bool clang::dpct::ReadWriteOrderAnalyzer::traverseFunction(
     const clang::FunctionDecl *FD) {
   CurrentLevel.CurrentLoc = FD->getBody()->getBeginLoc();
   CurrentLevel.LevelBeginLoc = FD->getBody()->getBeginLoc();
@@ -188,7 +188,7 @@ bool isPointerOperationSafe(const clang::Expr *Pointer) {
     if (auto FD = CE->getDirectCallee()) {
       std::string FuncName = FD->getNameInfo().getName().getAsString();
       if (FuncName == "atomicAdd" && (CE->getArg(0) == Pointer) &&
-          !isUserDefinedFunction(FD)) {
+          !isUserDefinedDecl(FD)) {
         return true;
       }
     }
@@ -196,7 +196,7 @@ bool isPointerOperationSafe(const clang::Expr *Pointer) {
   return false;
 }
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
+bool clang::dpct::ReadWriteOrderAnalyzer::analyze(
     const clang::CallExpr *CE) {
   if (CE->getBeginLoc().isMacroID() || CE->getEndLoc().isMacroID())
     return false;
@@ -327,14 +327,183 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
 }
 
 std::unordered_map<std::string, std::unordered_map<std::string, bool>>
-    clang::dpct::BarrierFenceSpaceAnalyzer::CachedResults;
+    clang::dpct::ReadWriteOrderAnalyzer::CachedResults;
 
 // Functions in this set should not create alias name for input pointer
 const std::unordered_set<std::string>
-    clang::dpct::BarrierFenceSpaceAnalyzer::AllowedDeviceFunctions = {
+    clang::dpct::ReadWriteOrderAnalyzer::AllowedDeviceFunctions = {
         "__popc",
         "atomicAdd",
         "__fetch_builtin_x",
         "__fetch_builtin_y",
         "__fetch_builtin_z",
         "uint4"};
+
+bool clang::dpct::NewAnalyzer::Visit(clang::DeclRefExpr *DRE) {
+  // Collect all DREs and its Decl
+  clang::VarDecl *VarD = dyn_cast_or_null<VarDecl>(DRE->getDecl());
+  clang::FieldDecl *FieldD = dyn_cast_or_null<FieldDecl>(DRE->getDecl());
+  clang::ValueDecl *VD = nullptr;
+  if (VarD) {
+    VD = VarD;
+  } else if (FieldD) {
+    VD = FieldD;
+  } else {
+    return true;
+  }
+  if (VD->hasAttr<clang::CUDADeviceAttr>() && isUserDefinedDecl(VD)) {
+    HasGlobalDeviceVariable = true;
+  }
+  DREDeclMap.insert(std::make_pair(DRE, VD));
+  auto I = DeclDREsMap.find(VD);
+  if (I == DeclDREsMap.end()) {
+    std::unordered_set<clang::DeclRefExpr *> Set;
+    Set.insert(DRE);
+    DeclDREsMap.insert(std::make_pair(VD, Set));
+  } else {
+    I->second.insert(DRE);
+  }
+  return true;
+}
+void clang::dpct::NewAnalyzer::PostVisit(clang::DeclRefExpr *) {}
+
+namespace {
+const clang::VarDecl *isAssignAlias(clang::DeclRefExpr *DRE) {
+  // check patterns (= can be += or -=) below:
+  // void foo (float *f) {
+  //   float* f2 = Expr contains 'f';
+  //   float* f3;
+  //   f3 = Expr contains 'f';
+  // }
+  if (const clang::VarDecl *VD =
+          clang::dpct::DpctGlobalInfo::findAncestor<clang::VarDecl>(DRE)) {
+    return VD;
+  }
+  const clang::BinaryOperator *BO =
+      clang::dpct::DpctGlobalInfo::findAncestor<clang::BinaryOperator>(DRE);
+  if (!BO)
+    return nullptr;
+
+  if (auto CE = dyn_cast<clang::CallExpr>(BO->getRHS())) {
+    if (auto FD = CE->getDirectCallee()) {
+      if (!isUserDefinedDecl(FD)) {
+        return nullptr;
+      }
+    }
+  }
+
+  if (clang::dpct::DpctGlobalInfo::isAncestor(BO->getRHS(), DRE) &&
+      (BO->getOpcode() == clang::BinaryOperatorKind::BO_AddAssign ||
+       BO->getOpcode() == clang::BinaryOperatorKind::BO_SubAssign ||
+       BO->getOpcode() == clang::BinaryOperatorKind::BO_Assign)) {
+    if (clang::DeclRefExpr *NewDRE =
+            dyn_cast_or_null<clang::DeclRefExpr>(BO->getLHS())) {
+      return dyn_cast_or_null<clang::VarDecl>(NewDRE->getDecl());
+    }
+  }
+
+  return nullptr;
+}
+} // namespace
+
+void clang::dpct::NewAnalyzer::collectAlias(
+    clang::VarDecl *VD,
+    std::unordered_set<clang::VarDecl *> &NewNonconstPointerDecls) {
+  auto I = DeclDREsMap.find(VD);
+  if (I == DeclDREsMap.end())
+    return;
+  for (auto const &DRE : I->second) {
+    if (const clang::VarDecl *Alias = isAssignAlias(DRE)) {
+      if (Alias->getType()->isPointerType()) {
+        if (!Alias->getType()->getPointeeType().isConstQualified()) {
+          NewNonconstPointerDecls.insert(const_cast<clang::VarDecl *>(Alias));
+        }
+      }
+    }
+  }
+}
+
+bool clang::dpct::NewAnalyzer::checkNewPattern(const clang::CallExpr *CE,
+                                               const clang::FunctionDecl *FD) {
+  // Collect all non-const pointers which point to fundamental type
+  std::unordered_set<clang::VarDecl *> NonconstPointerDecls;
+  if (!FD->hasAttr<clang::CUDAGlobalAttr>())
+    return false;
+  if (HasGlobalDeviceVariable)
+    return false;
+  for (auto &Param : FD->parameters()) {
+    if (!Param->getType()->isPointerType() &&
+        !Param->getType()->isFundamentalType()) {
+      return false;
+    }
+    if (Param->getType()->isPointerType()) {
+      if (!Param->getType()->getPointeeType()->isFundamentalType()) {
+        return false;
+      } else {
+        if (!Param->getType()->getPointeeType().isConstQualified()) {
+          NonconstPointerDecls.insert(Param);
+        }
+      }
+    }
+  }
+
+  // Check if pointers in NonconstPointerDecls have alias
+  // If alias is const, ignore this alias
+  // If alias if non-const, add this alias into NonconstPointerDecls
+  // Do this operation until no new alias found
+  std::unordered_set<clang::VarDecl *> NewNonconstPointerDecls;
+  std::size_t NonconstPointerDeclsSize = NonconstPointerDecls.size();
+  do {
+    NonconstPointerDeclsSize = NonconstPointerDecls.size();
+    NewNonconstPointerDecls.clear();
+    for (const auto VD : NonconstPointerDecls) {
+      collectAlias(VD, NewNonconstPointerDecls);
+    }
+    NonconstPointerDecls.insert(NewNonconstPointerDecls.begin(),
+                                NewNonconstPointerDecls.end());
+  } while (NonconstPointerDeclsSize != NonconstPointerDecls.size());
+  // Check if pointers in NonconstPointerDecls is passed to other functions
+  for (const auto VD : NonconstPointerDecls) {
+    auto I = DeclDREsMap.find(VD);
+    if (I == DeclDREsMap.end())
+      continue;
+    for (auto const &DRE : I->second) {
+      if (auto FuncCall =
+              clang::dpct::DpctGlobalInfo::findAncestor<clang::CallExpr>(DRE)) {
+        return false;
+      }
+    }
+  }
+
+  // If pointers in NonconstPointerDecls only used once, then we can use
+  // local_space
+  for (const auto VD : NonconstPointerDecls) {
+    auto I = DeclDREsMap.find(VD);
+    if (I == DeclDREsMap.end())
+      continue;
+    if (I->second.size() > 1) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool clang::dpct::NewAnalyzer::analyze(const clang::CallExpr *CE) {
+  if (CE->getBeginLoc().isMacroID() || CE->getEndLoc().isMacroID())
+    return false;
+  auto FD = dpct::DpctGlobalInfo::findAncestor<clang::FunctionDecl>(CE);
+  if (!FD)
+    return false;
+  if (!FD->hasAttr<clang::CUDAGlobalAttr>())
+    return false;
+  if (FD->getTemplateSpecializationKind() !=
+          TemplateSpecializationKind::TSK_Undeclared ||
+      FD->getDescribedFunctionTemplate()) {
+    return false;
+  }
+
+  this->TraverseDecl(const_cast<clang::FunctionDecl *>(FD));
+  return checkNewPattern(CE, FD);
+}
+

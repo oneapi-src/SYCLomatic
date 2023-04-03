@@ -88,11 +88,23 @@ __global__ void test2(float *ptr1, float *ptr2) {
 }
 
 // Unsupport label and goto stmt
-__global__ void test3() {
+__global__ void test3(float *f) {
+  int a;
+  int b;
+  f[a] = f[b];
+  goto label;
+  //CHECK:item_ct1.barrier();
+  __syncthreads();
+  a++;
+label:
+  b++;
+}
+
+__global__ void test3_1() {
   int a;
   int b;
   goto label;
-  //CHECK:item_ct1.barrier();
+  //CHECK:item_ct1.barrier(sycl::access::fence_space::local_space);
   __syncthreads();
   a++;
 label:
