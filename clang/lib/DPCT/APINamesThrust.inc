@@ -60,6 +60,11 @@ thrustFactory("thrust::replace",
               {{5,PolicyState::HasPolicy,2,"oneapi::dpl::replace", HelperFeatureEnum::no_feature_helper },
                {4,PolicyState::NoPolicy ,2,"oneapi::dpl::replace", HelperFeatureEnum::no_feature_helper }}),
 
+// thrust::replace_copy
+thrustFactory("thrust::replace_copy",
+              {{6,PolicyState::HasPolicy,3,"oneapi::dpl::replace_copy", HelperFeatureEnum::no_feature_helper },
+               {5,PolicyState::NoPolicy ,3,"oneapi::dpl::replace_copy", HelperFeatureEnum::no_feature_helper }}),
+
 // thrust::adjacent_difference
 thrustFactory("thrust::adjacent_difference",
               {{5,PolicyState::HasPolicy,3,"oneapi::dpl::adjacent_difference", HelperFeatureEnum::no_feature_helper },
