@@ -766,7 +766,7 @@ class dropout_desc {
   void generate(sycl::queue *q, std::int64_t required_state_size,
                 std::int64_t num, void *buffer) {
     sycl::event e_gen = oneapi::mkl::rng::generate(
-        oneapi::mkl::rng::bernoulli<std::int32_t>(_imp->_p),
+        oneapi::mkl::rng::bernoulli<std::int32_t>(1.f - _imp->_p),
         _imp->_rng_engine, num, (std::int32_t *)buffer);
     sycl::event e_save = q->submit([&](sycl::handler &cgh) {
       cgh.depends_on(e_gen);
