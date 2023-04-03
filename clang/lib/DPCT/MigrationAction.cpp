@@ -162,11 +162,7 @@ bool DpctToolAction::runInvocation(
     std::shared_ptr<CompilerInvocation> Invocation, FileManager *Files,
     std::shared_ptr<PCHContainerOperations> PCHContainerOps,
     DiagnosticConsumer *DiagConsumer) {
-<<<<<<< HEAD
   if (!Invocation)
-=======
-  if(!Invocation)
->>>>>>> SYCLomatic/SYCLomatic
     return false;
   if (canCacheMoreTranslateUnit()) {
     bool Success;

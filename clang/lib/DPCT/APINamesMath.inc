@@ -277,13 +277,6 @@ ENTRY_EMULATED("pow", MapNames::getClNamespace(false, true) + "pow<double>")
 // Emulated Version 2
 ENTRY_EMULATED("erfcx", MapNames::getClNamespace(false, true) + "erfc")
 ENTRY_EMULATED("erfcxf", MapNames::getClNamespace(false, true) + "erfc")
-<<<<<<< HEAD
-ENTRY_EMULATED("norm3d", MapNames::getClNamespace(false, true) + "fast_length")
-ENTRY_EMULATED("norm3df", MapNames::getClNamespace(false, true) + "fast_length")
-ENTRY_EMULATED("norm4d", MapNames::getClNamespace(false, true) + "fast_length")
-ENTRY_EMULATED("norm4df", MapNames::getClNamespace(false, true) + "fast_length")
-=======
->>>>>>> SYCLomatic/SYCLomatic
 ENTRY_EMULATED("rcbrt", MapNames::getClNamespace(false, true) + "cbrt")
 ENTRY_EMULATED("rcbrtf", MapNames::getClNamespace(false, true) + "cbrt")
 ENTRY_EMULATED("scalbln", MapNames::getClNamespace(false, true) + "exp2")
@@ -646,15 +639,11 @@ ENTRY_UNSUPPORTED("j1f")
 ENTRY_UNSUPPORTED("jnf")
 ENTRY_REWRITE("normcdff")
 ENTRY_REWRITE("normcdfinvf")
-<<<<<<< HEAD
-ENTRY_REWRITE("normf")
-=======
 ENTRY_REWRITE("norm3df")
 ENTRY_REWRITE("norm4df")
 ENTRY_REWRITE("normf")
 ENTRY_REWRITE("rnorm3df")
 ENTRY_REWRITE("rnorm4df")
->>>>>>> SYCLomatic/SYCLomatic
 ENTRY_REWRITE("rnormf")
 ENTRY_UNSUPPORTED("y0f")
 ENTRY_UNSUPPORTED("y1f")
@@ -669,11 +658,6 @@ ENTRY_UNSUPPORTED("j0")
 ENTRY_UNSUPPORTED("j1")
 ENTRY_UNSUPPORTED("jn")
 ENTRY_REWRITE("norm")
-<<<<<<< HEAD
-ENTRY_REWRITE("normcdf")
-ENTRY_REWRITE("normcdfinv")
-ENTRY_REWRITE("rnorm")
-=======
 ENTRY_REWRITE("norm3d")
 ENTRY_REWRITE("norm4d")
 ENTRY_REWRITE("normcdf")
@@ -681,7 +665,6 @@ ENTRY_REWRITE("normcdfinv")
 ENTRY_REWRITE("rnorm")
 ENTRY_REWRITE("rnorm3d")
 ENTRY_REWRITE("rnorm4d")
->>>>>>> SYCLomatic/SYCLomatic
 ENTRY_UNSUPPORTED("y0")
 ENTRY_UNSUPPORTED("y1")
 ENTRY_UNSUPPORTED("yn")

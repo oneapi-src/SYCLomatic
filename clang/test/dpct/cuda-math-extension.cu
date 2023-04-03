@@ -20,15 +20,6 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   d2 = normcdf(d0);
   // CHECK: d2 = sycl::ext::intel::math::cdfnorminv(d0);
   d2 = normcdfinv(d0);
-<<<<<<< HEAD
-  // CHECK: d2 = sycl::ext::intel::math::norm(i, (const double *)&d0);
-  d2 = norm(i, &d0);
-  // CHECK: d2 = sycl::ext::intel::math::norm((int)d1, (const double *)&d0);
-  d2 = norm(d1, &d0);
-  // CHECK: d2 = sycl::ext::intel::math::rnorm(i, (const double *)&d0);
-  d2 = rnorm(i, &d0);
-  // CHECK: d2 = sycl::ext::intel::math::rnorm((int)d1, (const double *)&d0);
-=======
   // CHECK: d2 = sycl::ext::intel::math::norm(i, &d0);
   d2 = norm(i, &d0);
   // CHECK: d2 = sycl::ext::intel::math::norm(d1, &d0);
@@ -36,7 +27,6 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::ext::intel::math::rnorm(i, &d0);
   d2 = rnorm(i, &d0);
   // CHECK: d2 = sycl::ext::intel::math::rnorm(d1, &d0);
->>>>>>> SYCLomatic/SYCLomatic
   d2 = rnorm(d1, &d0);
 }
 
@@ -62,15 +52,6 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = normcdfinvf(f0);
   // CHECK: f2 = sycl::ext::intel::math::cdfnorminv((float)i);
   f2 = normcdfinvf(i);
-<<<<<<< HEAD
-  // CHECK: f2 = sycl::ext::intel::math::norm(i, (const float *)&f0);
-  f2 = normf(i, &f0);
-  // CHECK: f2 = sycl::ext::intel::math::norm((int)f1, (const float *)&f0);
-  f2 = normf(f1, &f0);
-  // CHECK: f2 = sycl::ext::intel::math::rnorm(i, (const float *)&f0);
-  f2 = rnormf(i, &f0);
-  // CHECK: f2 = sycl::ext::intel::math::rnorm((int)f1, (const float *)&f0);
-=======
   // CHECK: f2 = sycl::ext::intel::math::norm(i, &f0);
   f2 = normf(i, &f0);
   // CHECK: f2 = sycl::ext::intel::math::norm(f1, &f0);
@@ -78,7 +59,6 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::ext::intel::math::rnorm(i, &f0);
   f2 = rnormf(i, &f0);
   // CHECK: f2 = sycl::ext::intel::math::rnorm(f1, &f0);
->>>>>>> SYCLomatic/SYCLomatic
   f2 = rnormf(f1, &f0);
 }
 

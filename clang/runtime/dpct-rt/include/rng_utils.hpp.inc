@@ -371,11 +371,7 @@ template <typename engine_t = oneapi::mkl::rng::philox4x32x10>
 class rng_generator : public rng_generator_base {
 public:
   /// Constructor of rng_generator.
-<<<<<<< HEAD
-  rng_generator() : _engine(creat_engine(_queue, _seed, _dimensions)) {}
-=======
   rng_generator() : _engine(create_engine(_queue, _seed, _dimensions)) {}
->>>>>>> SYCLomatic/SYCLomatic
 
   /// Set the seed of host rng_generator.
   /// \param seed The engine seed.
@@ -500,15 +496,9 @@ public:
   }
 
 private:
-<<<<<<< HEAD
-  static inline engine_t creat_engine(sycl::queue *queue,
-                                      const std::uint64_t seed,
-                                      const std::uint32_t dimensions) {
-=======
   static inline engine_t create_engine(sycl::queue *queue,
                                        const std::uint64_t seed,
                                        const std::uint32_t dimensions) {
->>>>>>> SYCLomatic/SYCLomatic
     return std::is_same_v<engine_t, oneapi::mkl::rng::sobol>
                ? engine_t(*queue, dimensions)
                : engine_t(*queue, seed);
