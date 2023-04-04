@@ -2670,10 +2670,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         TypeStr == "cuFloatComplex") {
       DpctGlobalInfo::getInstance().insertHeader(BeginLoc, HT_Complex);
     }
-    // Add '#include <oneapi/mkl/bfloat16.hpp>' directive to the file only once
-    if (TypeStr == "__nv_bfloat16") {
-      DpctGlobalInfo::getInstance().insertHeader(BeginLoc, HT_MKL_BFloat16);
-    }
     // Add '#include <dpct/lib_common_utils.hpp>' directive to the file only
     // once
     if (TypeStr == "libraryPropertyType" ||
