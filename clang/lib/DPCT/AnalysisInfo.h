@@ -105,6 +105,20 @@ struct TimeStubTypeInfo {
   std::string StrWithoutSB;
 };
 
+struct FreeHostInfo {
+  unsigned int TempVarIndex = 0;
+  unsigned int Length = 0;
+  unsigned int Offset = 0;
+  std::string FilePath;
+  std::string PtrRepl;
+};
+
+struct MallocHostInfo {
+  bool CanUseCLibraryMalloc = false;
+  std::vector<FreeHostInfo>
+    FreeHostInfos;
+};
+
 struct BuiltinVarInfo {
   BuiltinVarInfo(unsigned int Len, std::string Repl,
                  std::shared_ptr<DeviceFunctionInfo> DFI)
@@ -1403,21 +1417,7 @@ public:
     }
   }
 
-  void buildReplacements() {
-    // add PriorityRepl into ReplMap and execute related action, e.g.,
-    // request feature or emit warning.
-    for (auto &ReplInfo : PriorityReplInfoMap) {
-      for (auto &Repl : ReplInfo.second->Repls) {
-        addReplacement(Repl);
-      }
-      for (auto &Action : ReplInfo.second->RelatedAction) {
-        Action();
-      }
-    }
-
-    for (auto &File : FileMap)
-      File.second->buildReplacements();
-  }
+  void buildReplacements();
   std::set<std::string> &getProcessedFile() {
     return ProcessedFile;
   }
@@ -1957,7 +1957,10 @@ public:
   getMainSourceFileMap(){
     return MainSourceFileMap;
   };
-
+  static inline std::unordered_map<std::string, MallocHostInfo> &
+  getMallocHostInfoMap(){
+    return MallocHostInfoMap;
+  };
 private:
   DpctGlobalInfo();
 
@@ -2139,6 +2142,7 @@ private:
       RnnInputMap;
   static std::unordered_map<std::string, std::vector<std::string>>
       MainSourceFileMap;
+  static std::unordered_map<std::string, MallocHostInfo> MallocHostInfoMap;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.

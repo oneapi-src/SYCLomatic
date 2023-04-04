@@ -156,7 +156,8 @@ std::unordered_map<std::string,
     DpctGlobalInfo::RnnInputMap;
 std::unordered_map<std::string, std::vector<std::string>>
     DpctGlobalInfo::MainSourceFileMap;
-
+std::unordered_map<std::string, MallocHostInfo>
+    DpctGlobalInfo::MallocHostInfoMap;
 /// This variable saved the info of previous migration from the
 /// MainSourceFiles.yaml file. This variable is valid after
 /// canContinueMigration() is called.
@@ -322,6 +323,35 @@ DpctGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall) {
   }
 
   return KernelInfo;
+}
+
+void DpctGlobalInfo::buildReplacements() {
+  // add PriorityRepl into ReplMap and execute related action, e.g.,
+  // request feature or emit warning.
+  for (auto &ReplInfo : PriorityReplInfoMap) {
+    for (auto &Repl : ReplInfo.second->Repls) {
+      addReplacement(Repl);
+    }
+    for (auto &Action : ReplInfo.second->RelatedAction) {
+      Action();
+    }
+  }
+  for (auto &Element : MallocHostInfoMap) {
+    auto &Infos = Element.second.FreeHostInfos;
+    for(auto &Info : Infos) {
+      std::string Repl;
+      if (Element.second.CanUseCLibraryMalloc) {
+        Repl = "free(" + Info.PtrRepl + ")";
+      } else {
+        Repl = MapNames::getClNamespace() + "free(" + Info.PtrRepl +
+               ", {{NEEDREPLACEQ" + std::to_string(Info.TempVarIndex) + "}})";
+      }
+      addReplacement(std::make_shared<ExtReplacement>(
+          Info.FilePath, Info.Offset, Info.Length, Repl, nullptr));
+    }
+  }
+  for (auto &File : FileMap)
+    File.second->buildReplacements();
 }
 
 void DpctGlobalInfo::processCudaArchMacro(){

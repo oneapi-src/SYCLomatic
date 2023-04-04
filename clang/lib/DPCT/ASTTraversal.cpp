@@ -10573,12 +10573,37 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
   } else if (Name == "cudaFreeHost" || Name == "cuMemFreeHost") {
     if (USMLevel == UsmLevel::UL_Restricted) {
       ExprAnalysis EA;
-      EA.analyze(C->getArg(0));
-      std::ostringstream Repl;
+      EA.analyze(C);
+      unsigned int CELength = EA.getExprLength();
+      const Expr* PtrExpr = C->getArg(0)->IgnoreImplicitAsWritten();
+      EA.analyze(PtrExpr);
+      std::string PtrRepl = EA.getReplacedString();
       buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      Repl << MapNames::getClNamespace() + "free(" << EA.getReplacedString()
-           << ", {{NEEDREPLACEQ" + std::to_string(Index) + "}})";
-      emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
+      const Expr *AE = nullptr;
+      if (auto CSCE = dyn_cast<CStyleCastExpr>(PtrExpr)) {
+        AE = CSCE->getSubExpr()->IgnoreImplicitAsWritten();
+      } else {
+        AE = C->getArg(0)->IgnoreImplicitAsWritten();
+      }
+      if(auto DRE = dyn_cast<DeclRefExpr>(AE)) {
+        auto DeclLocInfo = DpctGlobalInfo::getLocInfo(DRE->getDecl()->getBeginLoc());
+        std::string Key = DeclLocInfo.first + std::to_string(DeclLocInfo.second);
+        auto CELocInfo = DpctGlobalInfo::getLocInfo(C->getBeginLoc());
+        auto &Map = DpctGlobalInfo::getMallocHostInfoMap();
+        FreeHostInfo Info;
+        Info.FilePath = CELocInfo.first;
+        Info.Offset = CELocInfo.second;
+        Info.Length = CELength;
+        Info.TempVarIndex = Index;
+        Info.PtrRepl = EA.getReplacedString();
+        Map[Key].FreeHostInfos.push_back(Info);
+      } else {
+        std::ostringstream Repl;
+        buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+        Repl << MapNames::getClNamespace() + "free(" << PtrRepl
+             << ", {{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+        emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
+      }
     } else {
       emplaceTransformation(new ReplaceCalleeName(C, "free"));
     }

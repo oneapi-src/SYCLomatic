@@ -72,6 +72,7 @@ void foo() {
   // CHECK-NEXT: h_A = (float *)sycl::malloc_host(sizeof(sycl::uchar4) - size, q_ct1);
   cudaHostAlloc((void **)&h_A, sizeof(uchar4) - size, cudaHostAllocDefault);
 
+  void *h_B = h_A;
   // CHECK: h_A = (float *)sycl::malloc_host(size, q_ct1);
   cudaMallocHost((void **)&h_A, size);
   // CHECK: errorCode = (h_A = (float *)sycl::malloc_host(size, q_ct1), 0);
