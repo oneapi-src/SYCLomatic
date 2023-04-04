@@ -434,8 +434,7 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(getDpctNamespace() +"ccl::comm_ptr",
                            HelperFeatureEnum::CclUtils_typedef_comm_ptr)},
       {"ncclRedOp_t", std::make_shared<TypeNameRule>("oneapi::ccl::reduction")},
-      {"ncclDataType_t", std::make_shared<TypeNameRule>(
-                                      getDpctNamespace() + "library_data_t")},
+      {"ncclDataType_t", std::make_shared<TypeNameRule>("oneapi::ccl::datatype")},
       {"cuda::std::tuple", std::make_shared<TypeNameRule>("std::tuple")},
       {"cuda::std::complex", std::make_shared<TypeNameRule>("std::complex")},
       {"cuda::std::array", std::make_shared<TypeNameRule>("std::array")},
@@ -1233,37 +1232,21 @@ void MapNames::setExplicitNamespaceMap() {
       {"ncclProd", std::make_shared<EnumNameRule>("oneapi::ccl::reduction::prod")},
       {"ncclMin", std::make_shared<EnumNameRule>("oneapi::ccl::reduction::min")},
       {"ncclMax", std::make_shared<EnumNameRule>("oneapi::ccl::reduction::max")},
-      {"ncclInt8", std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                                  "library_data_t::real_int8")},
-      {"ncclChar", std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                                  "library_data_t::real_int8")},
-      {"ncclUint8", std::make_shared<EnumNameRule>(
-                        getDpctNamespace() + "library_data_t::real_uint8")},
-      {"ncclInt32", std::make_shared<EnumNameRule>(
-                        getDpctNamespace() + "library_data_t::real_int32")},
-      {"ncclInt", std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                                 "library_data_t::real_int32")},
-      {"ncclUint32", std::make_shared<EnumNameRule>(
-                         getDpctNamespace() + "library_data_t::real_uint32")},
-      {"ncclInt64", std::make_shared<EnumNameRule>(
-                        getDpctNamespace() + "library_data_t::real_int64")},
-      {"ncclUint64", std::make_shared<EnumNameRule>(
-                         getDpctNamespace() + "library_data_t::real_uint64")},
-      {"ncclFloat16", std::make_shared<EnumNameRule>(
-                          getDpctNamespace() + "library_data_t::real_half")},
-      {"ncclHalf", std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                                  "library_data_t::real_half")},
-      {"ncclFloat32", std::make_shared<EnumNameRule>(
-                          getDpctNamespace() + "library_data_t::real_float")},
-      {"ncclFloat", std::make_shared<EnumNameRule>(
-                        getDpctNamespace() + "library_data_t::real_float")},
-      {"ncclFloat64", std::make_shared<EnumNameRule>(
-                          getDpctNamespace() + "library_data_t::real_double")},
-      {"ncclDouble", std::make_shared<EnumNameRule>(
-                         getDpctNamespace() + "library_data_t::real_double")},
-      {"ncclBfloat16",
-       std::make_shared<EnumNameRule>(getDpctNamespace() +
-                                      "library_data_t::real_bfloat16")},
+      {"ncclInt8", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int8")},
+      {"ncclChar", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int8")},
+      {"ncclUint8", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::uint8")},
+      {"ncclInt32", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int32")},
+      {"ncclInt", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int32")},
+      {"ncclUint32", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::uint32")},
+      {"ncclInt64", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int64")},
+      {"ncclUint64", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::uint64")},
+      {"ncclFloat16", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float16")},
+      {"ncclHalf", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float16")},
+      {"ncclFloat32", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float32")},
+      {"ncclFloat", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float32")},
+      {"ncclFloat64", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float64")},
+      {"ncclDouble", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float64")},
+      {"ncclBfloat16", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::bfloat16")},
       {"CUSOLVER_EIG_RANGE_ALL", std::make_shared<EnumNameRule>("oneapi::mkl::rangev::all")},
       {"CUSOLVER_EIG_RANGE_V", std::make_shared<EnumNameRule>("oneapi::mkl::rangev::values")},
       {"CUSOLVER_EIG_RANGE_I", std::make_shared<EnumNameRule>("oneapi::mkl::rangev::indices")},

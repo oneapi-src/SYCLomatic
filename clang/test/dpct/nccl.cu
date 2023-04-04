@@ -60,33 +60,33 @@ int main() {
     op = ncclMin;
     // CHECK: op = oneapi::ccl::reduction::max;
     op = ncclMax;
-    // CHECK: dpct::library_data_t datatype = dpct::library_data_t::real_int8;
+    // CHECK: oneapi::ccl::datatype datatype = oneapi::ccl::datatype::int8;
     ncclDataType_t datatype = ncclChar;
-    // CHECK: datatype = dpct::library_data_t::real_int8;
+    // CHECK: datatype = oneapi::ccl::datatype::int8;
     datatype = ncclChar;
-    // CHECK: datatype = dpct::library_data_t::real_uint8;
+    // CHECK: datatype = oneapi::ccl::datatype::uint8;
     datatype = ncclUint8;
-    // CHECK: datatype = dpct::library_data_t::real_int32;
+    // CHECK: datatype = oneapi::ccl::datatype::int32;
     datatype = ncclInt32;
-    // CHECK: datatype = dpct::library_data_t::real_int32;
+    // CHECK: datatype = oneapi::ccl::datatype::int32;
     datatype = ncclInt;
-    // CHECK: datatype = dpct::library_data_t::real_uint32;
+    // CHECK: datatype = oneapi::ccl::datatype::uint32;
     datatype = ncclUint32;
-    // CHECK: datatype = dpct::library_data_t::real_int64;
+    // CHECK: datatype = oneapi::ccl::datatype::int64;
     datatype = ncclInt64;
-    // CHECK: datatype = dpct::library_data_t::real_uint64;
+    // CHECK: datatype = oneapi::ccl::datatype::uint64;
     datatype = ncclUint64;
-    // CHECK: datatype = dpct::library_data_t::real_half;
+    // CHECK: datatype = oneapi::ccl::datatype::float16;
     datatype = ncclFloat16;
-    // CHECK: datatype = dpct::library_data_t::real_half;
+    // CHECK: datatype = oneapi::ccl::datatype::float16;
     datatype = ncclHalf;
-    // CHECK: datatype = dpct::library_data_t::real_float;
+    // CHECK: datatype = oneapi::ccl::datatype::float32;
     datatype = ncclFloat32;
-    // CHECK: datatype = dpct::library_data_t::real_float;
+    // CHECK: datatype = oneapi::ccl::datatype::float32;
     datatype = ncclFloat;
-    // CHECK: datatype = dpct::library_data_t::real_double;
+    // CHECK: datatype = oneapi::ccl::datatype::float64;
     datatype = ncclFloat64;
-    // CHECK: datatype = dpct::library_data_t::real_double;
+    // CHECK: datatype = oneapi::ccl::datatype::float64;
     datatype = ncclDouble;
     int peer;
     cudaStream_t stream;
@@ -110,7 +110,7 @@ int main() {
     // CHECK-NEXT: */
     ncclGroupEnd();
 
-    // CHECK: comm->allreduce(buff, recvbuff, count, dpct::library_data_t::real_int8, oneapi::ccl::reduction::sum, stream);
+    // CHECK: comm->allreduce(buff, recvbuff, count, oneapi::ccl::datatype::int8, oneapi::ccl::reduction::sum, stream);
     ncclAllReduce(buff, recvbuff, count, ncclChar, ncclSum, comm, stream);
 
     // CHECK:     /*
@@ -118,7 +118,7 @@ int main() {
     // CHECK-NEXT: */
     ncclAllReduce(buff, recvbuff, count, ncclChar, ncclAvg, comm, stream);
 
-    // CHECK: comm->reduce(buff, recvbuff, count, dpct::library_data_t::real_int8, oneapi::ccl::reduction::sum, rank, stream);
+    // CHECK: comm->reduce(buff, recvbuff, count, oneapi::ccl::datatype::int8, oneapi::ccl::reduction::sum, rank, stream);
     ncclReduce(buff, recvbuff, count, ncclChar, ncclSum, rank, comm, stream);
 
     // CHECK:     /*
@@ -127,10 +127,10 @@ int main() {
     ncclReduce(buff, recvbuff, count, ncclChar, ncclAvg, rank, comm, stream);
 
     
-    // CHECK: comm->broadcast(buff, recvbuff, count, dpct::library_data_t::real_int8, rank, stream);
+    // CHECK: comm->broadcast(buff, recvbuff, count, oneapi::ccl::datatype::int8, rank, stream);
     ncclBroadcast(buff, recvbuff, count, ncclChar, rank, comm, stream);
 
-    // CHECK: comm->reduce_scatter(buff, recvbuff, count, dpct::library_data_t::real_int8, oneapi::ccl::reduction::sum, stream);
+    // CHECK: comm->reduce_scatter(buff, recvbuff, count, oneapi::ccl::datatype::int8, oneapi::ccl::reduction::sum, stream);
     ncclReduceScatter(buff, recvbuff, count, ncclChar, ncclSum, comm, stream);
 
     // CHECK: /*

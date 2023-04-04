@@ -47,7 +47,6 @@
 // DPCT_LABEL_BEGIN|local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-#include "lib_common_utils.hpp"
 #include "device.hpp"
 // DPCT_LABEL_END
 
@@ -70,38 +69,6 @@ get_kvs(const oneapi::ccl::kvs::address_type &addr) {
                             std::shared_ptr<oneapi::ccl::kvs>, hash>
       kvs_map;
   return kvs_map[addr];
-}
-// DPCT_LABEL_END
-
-// DPCT_LABEL_BEGIN|ccl_datatype_convert|dpct::ccl::detail
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-/// Convert dpct::library_data_t to oneapi::ccl::datatype.
-inline oneapi::ccl::datatype to_ccl_datatype(dpct::library_data_t dt) {
-  switch (dt) {
-  case dpct::library_data_t::real_int8:
-    return oneapi::ccl::datatype::int8;
-  case dpct::library_data_t::real_uint8:
-    return oneapi::ccl::datatype::uint8;
-  case dpct::library_data_t::real_int32:
-    return oneapi::ccl::datatype::int32;
-  case dpct::library_data_t::real_uint32:
-    return oneapi::ccl::datatype::uint32;
-  case dpct::library_data_t::real_int64:
-    return oneapi::ccl::datatype::int64;
-  case dpct::library_data_t::real_half:
-    return oneapi::ccl::datatype::float16;
-  case dpct::library_data_t::real_float:
-    return oneapi::ccl::datatype::float32;
-  case dpct::library_data_t::real_double:
-    return oneapi::ccl::datatype::float64;
-  case dpct::library_data_t::real_bfloat16:
-    return oneapi::ccl::datatype::bfloat16;
-  default:
-    throw std::runtime_error("to_ccl_datatype: unsupported data type.");
-  }
 }
 // DPCT_LABEL_END
 
@@ -235,13 +202,12 @@ public:
   /// \param stream a sycl::queue ptr associated with the operation
   /// \return @ref void
   void allreduce(const void *sendbuff, void *recvbuff, size_t count,
-                 dpct::library_data_t dtype, oneapi::ccl::reduction rtype,
+                 oneapi::ccl::datatype dtype, oneapi::ccl::reduction rtype,
                  sycl::queue *stream) const {
     ccl_func_adapter(
         [=](const oneapi::ccl::stream &queue) {
-          return oneapi::ccl::allreduce(
-              sendbuff, recvbuff, count,
-              dpct::ccl::detail::to_ccl_datatype(dtype), rtype, _comm, queue);
+          return oneapi::ccl::allreduce(sendbuff, recvbuff, count, dtype, rtype,
+                                        _comm, queue);
         },
         stream);
   }
@@ -267,13 +233,12 @@ public:
   /// \param stream a sycl::queue ptr associated with the operation 
   /// \return @ref void
   void reduce(const void *sendbuff, void *recvbuff, size_t count,
-              dpct::library_data_t dtype, oneapi::ccl::reduction rtype,
+              oneapi::ccl::datatype dtype, oneapi::ccl::reduction rtype,
               int root, sycl::queue *stream) const {
     ccl_func_adapter(
         [=](const oneapi::ccl::stream &queue) {
-          return oneapi::ccl::reduce(sendbuff, recvbuff, count,
-                                     dpct::ccl::detail::to_ccl_datatype(dtype),
-                                     rtype, root, _comm, queue);
+          return oneapi::ccl::reduce(sendbuff, recvbuff, count, dtype, rtype,
+                                     root, _comm, queue);
         },
         stream);
   }
@@ -296,18 +261,19 @@ public:
   /// \param root the rank that broadcasts @c buf
   /// \param stream a sycl::queue ptr associated with the operation
   /// \return @ref void
-  void broadcast(void *sendbuff, void *recvbuff, size_t count, dpct::library_data_t dtype, int root,
+  void broadcast(void *sendbuff, void *recvbuff, size_t count,
+                 oneapi::ccl::datatype dtype, int root,
                  sycl::queue *stream) const {
     if (sendbuff != recvbuff) {
-      throw std::runtime_error("oneCCL broadcast only support in-place operation. " \
-                               "send_buf and recv_buf must be same.");
+      throw std::runtime_error(
+          "oneCCL broadcast only support in-place operation. "
+          "send_buf and recv_buf must be same.");
       return;
     }
     ccl_func_adapter(
         [=](const oneapi::ccl::stream &queue) {
-          return oneapi::ccl::broadcast(
-              recvbuff, count, dpct::ccl::detail::to_ccl_datatype(dtype), root,
-              _comm, queue);
+          return oneapi::ccl::broadcast(recvbuff, count, dtype, root, _comm,
+                                        queue);
         },
         stream);
   }
@@ -329,13 +295,12 @@ public:
   /// \param stream a sycl::queue ptr associated with the operation
   /// \return @ref void
   void reduce_scatter(const void *sendbuff, void *recvbuff, size_t recv_count,
-                      dpct::library_data_t dtype, oneapi::ccl::reduction rtype,
+                      oneapi::ccl::datatype dtype, oneapi::ccl::reduction rtype,
                       sycl::queue *stream) const {
     ccl_func_adapter(
         [=](const oneapi::ccl::stream &queue) {
-          return oneapi::ccl::reduce_scatter(
-              sendbuff, recvbuff, recv_count,
-              dpct::ccl::detail::to_ccl_datatype(dtype), rtype, _comm, queue);
+          return oneapi::ccl::reduce_scatter(sendbuff, recvbuff, recv_count,
+                                             dtype, rtype, _comm, queue);
         },
         stream);
   }
