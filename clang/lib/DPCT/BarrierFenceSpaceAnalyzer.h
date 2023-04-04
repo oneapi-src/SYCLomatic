@@ -35,14 +35,17 @@ public:
   bool Traverse##CLASS(CLASS *Node) {                                          \
     if (!Visit(Node))                                                          \
       return false;                                                            \
-    if (!clang::RecursiveASTVisitor<                                           \
-            ReadWriteOrderAnalyzer>::Traverse##CLASS(Node))                 \
+    if (!clang::RecursiveASTVisitor<ReadWriteOrderAnalyzer>::Traverse##CLASS(  \
+            Node))                                                             \
       return false;                                                            \
     PostVisit(Node);                                                           \
     return true;                                                               \
   }
 
   VISIT_NODE(ForStmt)
+  VISIT_NODE(DoStmt)
+  VISIT_NODE(WhileStmt)
+  VISIT_NODE(IfStmt)
   VISIT_NODE(CallExpr)
   VISIT_NODE(DeclRefExpr)
   VISIT_NODE(GotoStmt)
@@ -86,6 +89,8 @@ private:
   void setFalseForThisFunctionDecl() {
     CachedResults[FDLoc] = std::unordered_map<std::string, bool>();
   }
+  bool visitIterationNode(clang::Stmt *S);
+  void PostVisitIterationNode(clang::Stmt *S);
 
   /// (FD location, (Call location, result))
   static std::unordered_map<std::string, std::unordered_map<std::string, bool>>
@@ -93,7 +98,8 @@ private:
   static const std::unordered_set<std::string> AllowedDeviceFunctions;
 };
 
-class NewAnalyzer : public clang::RecursiveASTVisitor<NewAnalyzer> {
+class GlobalPointerReferenceCountAnalyzer
+    : public clang::RecursiveASTVisitor<GlobalPointerReferenceCountAnalyzer> {
 public:
   bool shouldVisitImplicitCode() const { return true; }
   bool shouldTraversePostOrder() const { return false; }
@@ -104,7 +110,8 @@ public:
   bool Traverse##CLASS(CLASS *Node) {                                          \
     if (!Visit(Node))                                                          \
       return false;                                                            \
-    if (!clang::RecursiveASTVisitor<NewAnalyzer>::Traverse##CLASS(Node))       \
+    if (!clang::RecursiveASTVisitor<                                           \
+            GlobalPointerReferenceCountAnalyzer>::Traverse##CLASS(Node))       \
       return false;                                                            \
     PostVisit(Node);                                                           \
     return true;                                                               \
@@ -118,7 +125,7 @@ public:
 
 private:
   bool HasGlobalDeviceVariable = false;
-  bool checkNewPattern(const CallExpr *CE, const FunctionDecl *FD);
+  bool countReference(const CallExpr *CE, const FunctionDecl *FD);
   void collectAlias(VarDecl *VD,
                     std::unordered_set<VarDecl *> &NewNonconstPointerDecls);
   std::unordered_map<DeclRefExpr *, ValueDecl *> DREDeclMap;

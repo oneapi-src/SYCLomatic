@@ -11998,8 +11998,8 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
   if (FuncName == "__syncthreads") {
     ReadWriteOrderAnalyzer RWOA;
-    NewAnalyzer NA;
-    if (RWOA.analyze(CE) || NA.analyze(CE)) {
+    GlobalPointerReferenceCountAnalyzer GPRCA;
+    if (RWOA.analyze(CE) || GPRCA.analyze(CE)) {
       std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
                                 MapNames::getClNamespace() +
                                 "access::fence_space::local_space)";

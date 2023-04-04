@@ -15,18 +15,19 @@
 
 using namespace llvm;
 
-bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::ForStmt *FS) {
+bool clang::dpct::ReadWriteOrderAnalyzer::visitIterationNode(clang::Stmt *S) {
   Level Lvl;
   Lvl.CurrentLoc = CurrentLevel.CurrentLoc;
-  Lvl.LevelBeginLoc = FS->getBeginLoc();
+  Lvl.LevelBeginLoc = S->getBeginLoc();
   LevelStack.push(CurrentLevel);
   CurrentLevel = Lvl;
   return true;
 }
-void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::ForStmt *FS) {
+void clang::dpct::ReadWriteOrderAnalyzer::PostVisitIterationNode(
+    clang::Stmt *S) {
   if (!CurrentLevel.SyncCallsVec.empty()) {
     CurrentLevel.SyncCallsVec.front().second.Predecessors.push_back(
-        clang::SourceRange(CurrentLevel.CurrentLoc, FS->getEndLoc()));
+        clang::SourceRange(CurrentLevel.CurrentLoc, S->getEndLoc()));
     CurrentLevel.SyncCallsVec.back().second.Successors.push_back(
         clang::SourceRange(CurrentLevel.LevelBeginLoc,
                            CurrentLevel.FirstSyncBeginLoc));
@@ -37,6 +38,33 @@ void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::ForStmt *FS) {
   LevelStack.pop();
   return;
 }
+
+bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::IfStmt *IS) {
+  // No special process, treat `then` block and `else` block as one block
+  return true;
+}
+void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::IfStmt *IS) {
+  // No special process, treat `then` block and `else` block as one block
+}
+
+bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::ForStmt *FS) {
+  return visitIterationNode(FS);
+}
+void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::ForStmt *FS) {
+  PostVisitIterationNode(FS);
+}
+bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::DoStmt *DS) {
+  return visitIterationNode(DS);
+}
+void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::DoStmt *DS) {
+  PostVisitIterationNode(DS);
+}
+bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::WhileStmt *WS) {
+  return visitIterationNode(WS);
+}
+void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::WhileStmt *WS) {
+  PostVisitIterationNode(WS);
+}
 bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::CallExpr *CE) {
   const clang::FunctionDecl *FuncDecl = CE->getDirectCallee();
   std::string FuncName;
@@ -44,10 +72,7 @@ bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::CallExpr *CE) {
     FuncName = FuncDecl->getNameInfo().getName().getAsString();
 
   if (FuncName == "__syncthreads") {
-    if (!clang::dpct::DpctGlobalInfo::findAncestor<IfStmt>(CE) &&
-        !clang::dpct::DpctGlobalInfo::findAncestor<DoStmt>(CE) &&
-        !clang::dpct::DpctGlobalInfo::findAncestor<WhileStmt>(CE) &&
-        !clang::dpct::DpctGlobalInfo::findAncestor<SwitchStmt>(CE)) {
+    if (!clang::dpct::DpctGlobalInfo::findAncestor<SwitchStmt>(CE)) {
       if (LevelStack.size() > 1) {
         // We will further refine it if meet real request.
         return false;
@@ -337,9 +362,12 @@ const std::unordered_set<std::string>
         "__fetch_builtin_x",
         "__fetch_builtin_y",
         "__fetch_builtin_z",
-        "uint4"};
+        "uint4",
+        "sqrtf",
+        "__expf"};
 
-bool clang::dpct::NewAnalyzer::Visit(clang::DeclRefExpr *DRE) {
+bool clang::dpct::GlobalPointerReferenceCountAnalyzer::Visit(
+    clang::DeclRefExpr *DRE) {
   // Collect all DREs and its Decl
   clang::VarDecl *VarD = dyn_cast_or_null<VarDecl>(DRE->getDecl());
   clang::FieldDecl *FieldD = dyn_cast_or_null<FieldDecl>(DRE->getDecl());
@@ -365,7 +393,8 @@ bool clang::dpct::NewAnalyzer::Visit(clang::DeclRefExpr *DRE) {
   }
   return true;
 }
-void clang::dpct::NewAnalyzer::PostVisit(clang::DeclRefExpr *) {}
+void clang::dpct::GlobalPointerReferenceCountAnalyzer::PostVisit(
+    clang::DeclRefExpr *) {}
 
 namespace {
 const clang::VarDecl *isAssignAlias(clang::DeclRefExpr *DRE) {
@@ -406,7 +435,7 @@ const clang::VarDecl *isAssignAlias(clang::DeclRefExpr *DRE) {
 }
 } // namespace
 
-void clang::dpct::NewAnalyzer::collectAlias(
+void clang::dpct::GlobalPointerReferenceCountAnalyzer::collectAlias(
     clang::VarDecl *VD,
     std::unordered_set<clang::VarDecl *> &NewNonconstPointerDecls) {
   auto I = DeclDREsMap.find(VD);
@@ -423,8 +452,8 @@ void clang::dpct::NewAnalyzer::collectAlias(
   }
 }
 
-bool clang::dpct::NewAnalyzer::checkNewPattern(const clang::CallExpr *CE,
-                                               const clang::FunctionDecl *FD) {
+bool clang::dpct::GlobalPointerReferenceCountAnalyzer::countReference(
+    const clang::CallExpr *CE, const clang::FunctionDecl *FD) {
   // Collect all non-const pointers which point to fundamental type
   std::unordered_set<clang::VarDecl *> NonconstPointerDecls;
   if (!FD->hasAttr<clang::CUDAGlobalAttr>())
@@ -489,7 +518,8 @@ bool clang::dpct::NewAnalyzer::checkNewPattern(const clang::CallExpr *CE,
   return true;
 }
 
-bool clang::dpct::NewAnalyzer::analyze(const clang::CallExpr *CE) {
+bool clang::dpct::GlobalPointerReferenceCountAnalyzer::analyze(
+    const clang::CallExpr *CE) {
   if (CE->getBeginLoc().isMacroID() || CE->getEndLoc().isMacroID())
     return false;
   auto FD = dpct::DpctGlobalInfo::findAncestor<clang::FunctionDecl>(CE);
@@ -504,6 +534,5 @@ bool clang::dpct::NewAnalyzer::analyze(const clang::CallExpr *CE) {
   }
 
   this->TraverseDecl(const_cast<clang::FunctionDecl *>(FD));
-  return checkNewPattern(CE, FD);
+  return countReference(CE, FD);
 }
-
