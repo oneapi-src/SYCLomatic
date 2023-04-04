@@ -210,6 +210,9 @@ UnwrappedLineParser::UnwrappedLineParser(
                        ? IG_Rejected
                        : IG_Inited),
       IncludeGuardToken(nullptr), FirstStartColumn(FirstStartColumn),
+#ifdef SYCLomatic_CUSTOMIZATION
+      SourceMgr(SourceMgr),
+#endif // SYCLomatic_CUSTOMIZATION
       Macros(Style.Macros, SourceMgr, Style, Allocator, IdentTable) {}
 
 void UnwrappedLineParser::reset() {
