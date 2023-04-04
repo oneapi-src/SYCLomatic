@@ -19,6 +19,7 @@
 #include <thrust/find.h>
 #include <thrust/mismatch.h>
 #include <thrust/replace.h>
+#include <thrust/reverse.h>
 
 // for cuda 12.0
 #include <thrust/iterator/constant_iterator.h>
@@ -656,3 +657,20 @@ void replace_copy_test() {
   thrust::replace_copy(data, data + N, result, 1, 99);
 }
 
+void reverse() {
+  const int N = 6;
+  int data[N] = {0, 1, 2, 3, 4, 5};
+
+//CHECK:  if (dpct::is_device_ptr(data)) {
+//CHECK-NEXT:    oneapi::dpl::reverse(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N));
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::reverse(oneapi::dpl::execution::seq, data, data + N);
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(data + N)) {
+//CHECK-NEXT:    oneapi::dpl::reverse(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N));
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::reverse(oneapi::dpl::execution::seq, data, data + N);
+//CHECK-NEXT:  };
+  thrust::reverse(thrust::host, data, data + N);
+  thrust::reverse(data, data + N);
+}

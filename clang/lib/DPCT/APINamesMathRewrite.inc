@@ -942,6 +942,13 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getDpctNamespace() + "unordered_compare_half2",
                      ARG(0), ARG(1), LITERAL("std::not_equal_to<>()"))))))
 
+// Bfloat16 Precision Conversion and Data Movement
+CALL_FACTORY_ENTRY("__bfloat162float", CALL("static_cast<float>", ARG(0)))
+
+CALL_FACTORY_ENTRY("__float2bfloat16",
+                   CALL(MapNames::getClNamespace() + "ext::oneapi::bfloat16",
+                        ARG(0)))
+
 // Single Precision Mathematical Functions
 MATH_API_REWRITER_DEVICE(
     "erfcinvf",
