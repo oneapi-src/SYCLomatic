@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/DnnlUtils/api_test26_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DnnlUtils/api_test26_out
 
-// CHECK: 32
+// CHECK: 34
 // TEST_FEATURE: DnnlUtils_rnn_mode
 // TEST_FEATURE: DnnlUtils_rnn_bias_mode
 // TEST_FEATURE: DnnlUtils_rnn_direction
@@ -177,7 +177,7 @@ int main() {
 
     e = cudnnRNNBackwardWeights_v8(
         handle,
-        rnnsDesc,
+        rnnDesc,
         CUDNN_WGRAD_MODE_ADD,
         seqlenarray,
         xDesc,

@@ -46,6 +46,7 @@
 // DPCT_CODE
 // DPCT_LABEL_END
 #include "memory.hpp"
+#include "util.hpp"
 
 namespace dpct {
 namespace detail {
@@ -60,6 +61,21 @@ template <typename T> inline auto get_memory(T *x) {
 #else
   return x;
 #endif
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|get_value|dpct::detail
+// DPCT_DEPENDENCY_BEGIN
+// Memory|dpct_memcpy_detail
+// Util|DataType
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T>
+inline typename DataType<T>::T2 get_value(const T *s, sycl::queue &q) {
+  using Ty = typename DataType<T>::T2;
+  Ty s_h;
+  detail::dpct_memcpy(q, (void *)&s_h, (void *)s, sizeof(T), automatic).wait();
+  return s_h;
 }
 // DPCT_LABEL_END
 }
@@ -137,6 +153,80 @@ enum class library_data_t : unsigned char {
   library_data_t_size
 };
 // DPCT_LABEL_END
+
+namespace detail {
+// DPCT_LABEL_BEGIN|get_type_combination_id_T|dpct::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|get_type_combination_id_Ts
+// LibCommonUtils|library_data_t
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename ArgT>
+inline constexpr std::uint64_t get_type_combination_id(ArgT Val) {
+  static_assert((unsigned char)library_data_t::library_data_t_size <=
+                    std::numeric_limits<unsigned char>::max() &&
+                "library_data_t size exceeds limit.");
+  static_assert(std::is_same_v<ArgT, library_data_t>, "Unsupported ArgT");
+  return (std::uint64_t)Val;
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|get_type_combination_id_Ts|dpct::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|get_type_combination_id_T
+// LibCommonUtils|library_data_t
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename FirstT, typename... RestT>
+inline constexpr std::uint64_t get_type_combination_id(FirstT FirstVal,
+                                                       RestT... RestVal) {
+  static_assert((std::uint8_t)library_data_t::library_data_t_size <=
+                    std::numeric_limits<unsigned char>::max() &&
+                "library_data_t size exceeds limit.");
+  static_assert(sizeof...(RestT) <= 8 && "Too many parameters");
+  static_assert(std::is_same_v<FirstT, library_data_t>, "Unsupported FirstT");
+  return get_type_combination_id(RestVal...) << 8 | ((std::uint64_t)FirstVal);
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|library_data_size|dpct::detail
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+inline constexpr std::size_t library_data_size[] = {
+    8 * sizeof(float),                    // real_float
+    8 * sizeof(std::complex<float>),      // complex_float
+    8 * sizeof(double),                   // real_double
+    8 * sizeof(std::complex<double>),     // complex_double
+    8 * sizeof(sycl::half),               // real_half
+    8 * sizeof(std::complex<sycl::half>), // complex_half
+    16,                                   // real_bfloat16
+    16 * 2,                               // complex_bfloat16
+    4,                                    // real_int4
+    4 * 2,                                // complex_int4
+    4,                                    // real_uint4
+    4 * 2,                                // complex_uint4
+    8,                                    // real_int8
+    8 * 2,                                // complex_int8
+    8,                                    // real_uint8
+    8 * 2,                                // complex_uint8
+    16,                                   // real_int16
+    16 * 2,                               // complex_int16
+    16,                                   // real_uint16
+    16 * 2,                               // complex_uint16
+    32,                                   // real_int32
+    32 * 2,                               // complex_int32
+    32,                                   // real_uint32
+    32 * 2,                               // complex_uint32
+    64,                                   // real_int64
+    64 * 2,                               // complex_int64
+    64,                                   // real_uint64
+    64 * 2,                               // complex_uint64
+    8,                                    // real_int8_4
+    8,                                    // real_int8_32
+    8                                     // real_uint8_4
+};
+// DPCT_LABEL_END
+} // namespace detail
 } // namespace dpct
 
 #endif // __DPCT_LIB_COMMON_UTILS_HPP__

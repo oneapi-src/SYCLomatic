@@ -1,4 +1,4 @@
-// UNSUPPORTED: -linux-
+// UNSUPPORTED: system-linux
 // RUN: cat %S/DemoCudaProj.vcxproj > %T/DemoCudaProj.vcxproj
 // RUN: cat %S/d_kernel.cu > %T/d_kernel.cu
 // RUN: cd %T

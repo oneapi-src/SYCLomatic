@@ -1,6 +1,9 @@
 // RUN: dpct --format-range=none -out-root %T/module_main %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/module_main/module_main.dp.cpp
 
+//CHECK: #include <dpct/dpct.hpp>
+
+#include "cuda.h"
 #include <string>
 int main(){
     //CHECK: dpct::kernel_library M;
@@ -28,9 +31,19 @@ int main(){
     //CHECK: F = dpct::get_kernel_function(M, FunctionName.c_str());
     cuModuleGetFunction(&F, M, FunctionName.c_str());
 
+
+    int    *argBuffer[3];
+    size_t  argBufferSize = sizeof(argBuffer);
+    //CHECK: void *extra[] = {((void *) 2), &argBufferSize,
+    //CHECK-NEXT: ((void *) 1), argBuffer,
+    //CHECK-NEXT: ((void *) 0)};
+    void   *extra[] = {CU_LAUNCH_PARAM_BUFFER_SIZE, &argBufferSize,
+                       CU_LAUNCH_PARAM_BUFFER_POINTER, argBuffer,
+                       CU_LAUNCH_PARAM_END};
+
     int sharedSize;
     CUstream s;
-    void **param, **extra;
+    void **param;
     //CHECK:  dpct::invoke_kernel_function(F, *s, sycl::range<3>(32, 16, 1), sycl::range<3>(64, 32, 4), sharedSize, param, extra);
     cuLaunchKernel(F, 1, 16, 32, 4, 32, 64, sharedSize, s, param, extra);
     //CHECK:  dpct::invoke_kernel_function(F, q_ct1, sycl::range<3>(32, 16, 1), sycl::range<3>(64, 32, 4), sharedSize, param, extra);

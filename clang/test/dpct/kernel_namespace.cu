@@ -97,7 +97,7 @@ void foo13() {
 template<class T>
 void foo14(){
   // CHECK: aaa::bbb::k5<T>();
-  aaa::bbb::k5<T>();
+  aaa::bbb::k5<T><<<1, 1>>>();
 }
 
 void foo15(){

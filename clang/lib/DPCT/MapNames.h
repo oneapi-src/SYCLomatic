@@ -354,10 +354,10 @@ public:
       SOLVERFuncReplInfoMap;
 
   static MapTy ITFName;
-  static const MapTy RandomEngineTypeMap;
+  static MapTy RandomEngineTypeMap;
   static const std::map<std::string, std::string> RandomGenerateFuncMap;
 
-  static const MapTy DeviceRandomGeneratorTypeMap;
+  static MapTy DeviceRandomGeneratorTypeMap;
 
   static const std::map<std::string, std::vector<unsigned int>>
       FFTPlanAPINeedParenIdxMap;

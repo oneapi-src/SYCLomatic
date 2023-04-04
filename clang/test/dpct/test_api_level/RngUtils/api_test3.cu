@@ -4,8 +4,11 @@
 // RUN: rm -rf %T/RngUtils/api_test3_out
 
 // CHECK: 32
+// TEST_FEATURE: RngUtils_random_engine_type
 // TEST_FEATURE: RngUtils_create_host_rng
 // TEST_FEATURE: RngUtils_typedef_host_rng_ptr
+
+#include "curand.h"
 
 int main() {
   curandGenerator_t rng;

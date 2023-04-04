@@ -11,6 +11,7 @@
 
 #include <sycl/sycl.hpp>
 #include <algorithm>
+#include <array>
 #include <cstring>
 #include <iostream>
 #include <mutex>
@@ -125,6 +126,8 @@ public:
   /// Returns the maximum bus width between device and memory in bits. If
   /// compiler does not support this API then returns default value 64 bits.
   unsigned int get_memory_bus_width() const { return _memory_bus_width; }
+  uint32_t get_device_id() const { return _device_id; }
+  std::array<unsigned char, 16> get_uuid() const { return _uuid; }
   // set interface
   void set_name(const char* name) {
     size_t length = strlen(name);
@@ -182,6 +185,12 @@ public:
   set_max_register_size_per_work_group(int max_register_size_per_work_group) {
     _max_register_size_per_work_group = max_register_size_per_work_group;
   }
+  void set_device_id(uint32_t device_id) {
+    _device_id = device_id;
+  }
+  void set_uuid(std::array<unsigned char, 16> uuid) {
+    _uuid = std::move(uuid);
+  }
 private:
   char _name[256];
   sycl::id<3> _max_work_item_sizes;
@@ -204,6 +213,8 @@ private:
   size_t _local_mem_size;
   size_t _max_nd_range_size[3];
   int _max_nd_range_size_i[3];
+  uint32_t _device_id;
+  std::array<unsigned char, 16> _uuid;
 };
 
 /// dpct device extension
@@ -331,6 +342,14 @@ public:
     if (this->has(sycl::aspect::ext_intel_memory_bus_width)) {
       prop.set_memory_bus_width(
           this->get_info<sycl::ext::intel::info::device::memory_bus_width>());
+    }
+    if (this->has(sycl::aspect::ext_intel_device_id)) {
+      prop.set_device_id(
+          this->get_info<sycl::ext::intel::info::device::device_id>());
+    }
+    if (this->has(sycl::aspect::ext_intel_device_info_uuid)) {
+      prop.set_uuid(
+          this->get_info<sycl::ext::intel::info::device::uuid>());
     }
 #elif defined(_MSC_VER) && !defined(__clang__)
 #pragma message("get_device_info: querying memory_clock_rate and \

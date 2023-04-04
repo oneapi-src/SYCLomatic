@@ -195,10 +195,16 @@ __global__ void kernel3() {
 
   //CHECK:oneapi::mkl::rng::device::skip_ahead(rng1.get_engine(), {0, 1 * (std::uint64_t(1) << 63)});
   //CHECK-NEXT:oneapi::mkl::rng::device::skip_ahead(rng2.get_engine(), {0, static_cast<std::uint64_t>(2 * 4)});
-  //CHECK-NEXT:oneapi::mkl::rng::device::skip_ahead(rng3.get_engine(), {0, static_cast<std::uint64_t>(3 * 8)});
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to skipahead_sequence was removed because this API is not supported for mcg59 engine.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to skipahead_sequence was removed because this API is not supported for mcg59 engine.
+  //CHECK-NEXT:*/
   skipahead_sequence(1, &rng1);
   skipahead_sequence(2, &rng2);
   skipahead_sequence(3, &rng3);
+  skipahead_sequence(3 + 3, &rng3);
 
   //CHECK:oneapi::mkl::rng::device::skip_ahead(rng1.get_engine(), {0, static_cast<std::uint64_t>(1 * 8)});
   skipahead_subsequence(1, &rng1);
@@ -209,13 +215,13 @@ __global__ void kernel3() {
 }
 
 __global__ void type_test() {
-  //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng1;
+  //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> rng1;
   curandStateXORWOW_t rng1;
-  //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng2;
+  //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> rng2;
   curandStateXORWOW rng2;
-  //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng3;
+  //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> rng3;
   curandState_t rng3;
-  //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng4;
+  //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> rng4;
   curandState rng4;
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng5;
   curandStatePhilox4_32_10_t rng5;
@@ -244,3 +250,18 @@ __global__ void kernel4() {
   skipahead_subsequence(2 + 3, &rng);
 }
 
+__global__ void kernel5() {
+  unsigned int u;
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1032:{{[0-9]+}}: A different random number generator is used. You may need to adjust the code.
+  //CHECK-NEXT: */
+  //CHECK-NEXT: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> rng1;
+  //CHECK-NEXT: /*
+  //CHECK-NEXT: DPCT1105:{{[0-9]+}}: The mcg59 random number generator is used. The subsequence argument "2" is ignored. You need to verify the migration.
+  //CHECK-NEXT: */
+  //CHECK-NEXT: rng1 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>(1, 3);
+  //CHECK-NEXT: u = rng1.generate<oneapi::mkl::rng::device::uniform_bits<std::uint32_t>, 1>();
+  curandStateXORWOW_t rng1;
+  curand_init(1, 2, 3, &rng1);
+  u = curand(&rng1);
+}

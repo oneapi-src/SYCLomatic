@@ -12,10 +12,80 @@
 namespace clang {
 namespace dpct {
 
+class CheckThrustArgType {
+  unsigned Idx;
+  std::string TypeName;
+
+public:
+  CheckThrustArgType(unsigned I, std::string Name) : Idx(I), TypeName(Name) {}
+  bool operator()(const CallExpr *C) {
+    std::string ArgType;
+    unsigned NumArgs = C->getNumArgs();
+    if (Idx < NumArgs) {
+      // template<typename T>
+      // void testfunc() {
+      //  thrust::host_vector<T> V(1);
+      //  thrust::stable_sort(V.begin(),V.end(),thrust::not2(thrust::greater_equal()));
+      // }
+      // void foo() {
+      //   testfunc<int>();
+      // }
+      // For the code above argument "V.begin()" has type
+      // "thrust::host_vector<T>" in AST.
+      if (auto Call = dyn_cast<CallExpr>(C->getArg(Idx))) {
+        if (auto CDSME =
+                dyn_cast<CXXDependentScopeMemberExpr>(Call->getCallee())) {
+          if (auto DRE = dyn_cast<DeclRefExpr>(CDSME->getBase())) {
+            ArgType = DRE->getType().getAsString();
+            if (ArgType.find("thrust::host_vector") != std::string::npos)
+              return false;
+          }
+        }
+      }
+
+      ArgType = C->getArg(Idx)
+                    ->getType()
+                    .getCanonicalType()
+                    .getUnqualifiedType()
+                    .getAsString();
+    }
+
+    // template <class T>
+    // void foo_host(){
+    //  ...
+    //  thrust::remove_copy_if(A.begin(), A.end(), R.begin(), pred);
+    // }
+    // For the code above argument "A.begin()" has type <dependent type> in AST,
+    // we follow currrent solution assuming it a device iterator.
+    if (ArgType == "<dependent type>")
+      return true;
+
+    // template <class T>
+    // void foo() {
+    //   greater_than_zero pred;
+    //   thrust::device_vector<T> A(4);
+    //   thrust::replace_if(A.begin(), A.end(), pred, 0);
+    // }
+    // For the code above argument "A.begin()" has type
+    // "thrust::device_vector<T>"" in AST.
+    if (ArgType.find("thrust::device_vector") != std::string::npos)
+      return true;
+
+    return ArgType.find(TypeName) != std::string::npos;
+  }
+};
+
 inline std::function<ThrustFunctor(const CallExpr *)>
 makeThrustFunctorArgCreator(unsigned Idx) {
   return [=](const CallExpr *C) -> ThrustFunctor {
     return ThrustFunctor(C->getArg(Idx));
+  };
+}
+
+std::function<bool(const CallExpr *)>
+checkEnableExtDPLAPI() {
+  return [=](const CallExpr *) -> bool {
+    return DpctGlobalInfo::useExtDPLAPI();
   };
 }
 
@@ -26,7 +96,7 @@ makeMappedThrustPolicyEnum(unsigned Idx) {
     PP.PrintCanonicalTypes = true;
     return QT.getUnqualifiedType().getAsString(PP);
   };
-  auto getMehtodName = [](const ValueDecl* VD) -> std::string {
+  auto getMehtodName = [](const ValueDecl *VD) -> std::string {
     if (!VD)
       return "";
     if (VD->getIdentifier()) {
@@ -53,8 +123,7 @@ makeMappedThrustPolicyEnum(unsigned Idx) {
               MTE->getSubExpr()->IgnoreImpCasts())) {
         auto BaseType = getBaseType(CMCE->getObjectType());
         auto MethodName = getMehtodName(CMCE->getMethodDecl());
-        if (BaseType == "thrust::cuda_cub::par_t" &&
-            MethodName == "on") {
+        if (BaseType == "thrust::cuda_cub::par_t" && MethodName == "on") {
           return "oneapi::dpl::execution::make_device_policy(" +
                  getDrefName(CMCE->getArg(0)) + ")";
         }
@@ -63,8 +132,7 @@ makeMappedThrustPolicyEnum(unsigned Idx) {
       if (auto ME = dyn_cast_or_null<MemberExpr>(CE->getCallee())) {
         auto BaseType = getBaseType(ME->getBase()->getType());
         auto MethodName = getMehtodName(ME->getMemberDecl());
-        if (BaseType == "thrust::cuda_cub::par_t" &&
-            MethodName == "on") {
+        if (BaseType == "thrust::cuda_cub::par_t" && MethodName == "on") {
           return "oneapi::dpl::execution::make_device_policy(" +
                  getDrefName(CE->getArg(0)) + ")";
         }
@@ -73,6 +141,185 @@ makeMappedThrustPolicyEnum(unsigned Idx) {
     return "oneapi::dpl::execution::make_device_policy(" + makeQueueStr()(C) +
            ")";
   };
+}
+
+enum class PolicyState : bool { HasPolicy = true, NoPolicy = false };
+
+struct ThrustOverload {
+  int argCnt;
+  PolicyState hasPolicy;
+  int ptrCnt;
+  std::string migratedFunc;
+  HelperFeatureEnum feature;
+};
+
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+thrustFactory(const std::string &thrustFunc,
+              std::vector<ThrustOverload> overloads);
+
+inline std::function<std::vector<const clang::Expr *>(const CallExpr *)>
+makeCallArgVectorCreator(unsigned idx, int number) {
+  return [=](const CallExpr *C) -> std::vector<const clang::Expr *> {
+    std::vector<const clang::Expr *> args{};
+
+    for (auto i = 0; i < number; i++)
+      args.push_back(C->getArg(idx + i));
+    return args;
+  };
+}
+
+inline auto makeTemplatedCallArgCreator(unsigned idx) {
+  return makeCallExprCreator(
+      TEMPLATED_CALLEE_WITH_ARGS(
+          MapNames::getDpctNamespace() + "device_pointer", getDerefedType(idx)),
+      ARG(idx));
+}
+
+inline std::function<std::vector<CallExprPrinter<
+    TemplatedNamePrinter<StringRef, std::vector<TemplateArgumentInfo>>,
+    const Expr *>>(const CallExpr *)>
+makeTemplatedCallArgVectorCreator(unsigned idx, int number) {
+  using callExprCreatorType = decltype(makeTemplatedCallArgCreator(idx));
+
+  std::vector<callExprCreatorType> callExprs{};
+
+  for (auto i = 0; i < number; i++) {
+    callExprs.push_back(makeTemplatedCallArgCreator(idx + i));
+  }
+
+  using eltType = std::invoke_result_t<callExprCreatorType, const CallExpr *>;
+
+  return [=, callExprs = std::move(callExprs)](
+             const CallExpr *C) -> std::vector<eltType> {
+    std::vector<eltType> args;
+    for (auto i = 0; i < number; i++)
+      args.push_back(callExprs[i](C));
+    return args;
+  };
+}
+
+auto createSequentialPolicyCallExprRewriterFactory(
+    const std::string &thrustFunc, const std::string &syclFunc, int argCnt,
+    PolicyState hasPolicy) {
+
+  int argStart = 0;
+
+  if (static_cast<bool>(hasPolicy)) {
+    // Skip policy argument
+    argCnt--;
+    argStart = 1;
+  }
+
+  return createCallExprRewriterFactory(
+      thrustFunc,
+      makeCallExprCreator(syclFunc, ARG("oneapi::dpl::execution::seq"),
+                          makeCallArgVectorCreator(argStart, argCnt)));
+}
+
+auto createMappedPolicyCallExprRewriterFactory(const std::string &thrustFunc,
+                                               const std::string &syclFunc,
+                                               int argCnt) {
+
+  // Skip policy argument
+  int argStart = 1;
+  argCnt--;
+
+  auto mappedPolicy = makeMappedThrustPolicyEnum(0);
+
+  return createCallExprRewriterFactory(
+      thrustFunc,
+      makeCallExprCreator(syclFunc, mappedPolicy,
+                          makeCallArgVectorCreator(argStart, argCnt)));
+}
+
+auto createDevicePolicyCallExprRewriterFactory(const std::string &thrustFunc,
+                                               const std::string &syclFunc,
+                                               int argCnt, int templatedCnt,
+                                               PolicyState hasPolicy) {
+
+  auto makeDevicePolicy = makeCallExprCreator(
+      "oneapi::dpl::execution::make_device_policy", QUEUESTR);
+
+  int argStart = 0;
+
+  if (static_cast<bool>(hasPolicy)) {
+    // Skip policy argument
+    argCnt--;
+    argStart = 1;
+  }
+
+  return createCallExprRewriterFactory(
+      thrustFunc, makeCallExprCreator(
+                      syclFunc, makeDevicePolicy,
+                      makeTemplatedCallArgVectorCreator(argStart, templatedCnt),
+                      makeCallArgVectorCreator(argStart + templatedCnt,
+                                               argCnt - templatedCnt)));
+}
+
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+thrustOverloadFactory(const std::string &thrustFunc,
+                      const ThrustOverload &overload) {
+  auto not_usm = createIfElseRewriterFactory(
+      thrustFunc,
+      createFeatureRequestFactory(
+          HelperFeatureEnum::Memory_is_device_ptr,
+          {thrustFunc,
+           createCallExprRewriterFactory(
+               thrustFunc,
+               makeCallExprCreator(
+                   MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))}),
+      createFeatureRequestFactory(
+          HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          {thrustFunc, createDevicePolicyCallExprRewriterFactory(
+                           thrustFunc, overload.migratedFunc, overload.argCnt,
+                           overload.ptrCnt, overload.hasPolicy)}),
+      {thrustFunc, createSequentialPolicyCallExprRewriterFactory(
+                       thrustFunc, overload.migratedFunc, overload.argCnt,
+                       overload.hasPolicy)},
+      0);
+
+  auto usm =
+    (static_cast<bool>(overload.hasPolicy)
+           ? std::pair{thrustFunc,
+                       createMappedPolicyCallExprRewriterFactory(
+                           thrustFunc, overload.migratedFunc, overload.argCnt)}
+           : createConditionalFactory(
+                 CheckThrustArgType(1, "thrust::device_ptr"),
+                 {thrustFunc, createDevicePolicyCallExprRewriterFactory(
+                                  thrustFunc, overload.migratedFunc,
+                                  overload.argCnt, 0, overload.hasPolicy)},
+                 {thrustFunc, createSequentialPolicyCallExprRewriterFactory(
+                                  thrustFunc, overload.migratedFunc,
+                                  overload.argCnt, overload.hasPolicy)}));
+
+  return createFeatureRequestFactory(
+      overload.feature,
+      createConditionalFactory(
+          makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+          {thrustFunc, not_usm}, std::move(usm)));
+}
+
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+thrustFactory(const std::string &thrustFunc,
+              std::vector<ThrustOverload> overloads) {
+
+  auto u =
+      std::pair{thrustFunc, createUnsupportRewriterFactory(
+                                thrustFunc, Diagnostics::OVERLOAD_UNSUPPORTED,
+                                makeCallArgCreator(thrustFunc))};
+
+  for (auto it = overloads.rbegin(); it != overloads.rend(); it++) {
+    u = (static_cast<bool>(it->hasPolicy)
+             ? createConditionalFactory(
+                   makeCheckAnd(CheckArgCount(it->argCnt), IsPolicyArgType(0)),
+                   thrustOverloadFactory(thrustFunc, *it), std::move(u))
+             : createConditionalFactory(
+                   makeCheckAnd(CheckArgCount(it->argCnt),
+                                makeCheckNot(IsPolicyArgType(0))),
+                   thrustOverloadFactory(thrustFunc, *it), std::move(u)));
+  }
+
+  return u;
 }
 
 #define THRUST_FUNCTOR(x) makeThrustFunctorArgCreator(x)

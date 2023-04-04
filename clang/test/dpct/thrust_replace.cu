@@ -151,10 +151,8 @@ int main(void) {
   thrust::replace_copy_if(                AH.begin(), AH.end(), SH.begin(), BH.begin(), pred, 0);
   thrust::replace_copy_if(                AD.begin(), AD.end(), SD.begin(), BD.begin(), pred, 0);
   thrust::replace_copy_if(                h_ptr,      h_ptr+4,  SH.begin(), BH.begin(), pred, 0);  
-#ifdef ADD_BUG
-  // This fails with nvcc
-  thrust::replace_copy_if(                d_ptr,      d_ptr+4,  SD.begin(), BD.begin(), pred, 0);
-#endif
+  // Overload not supported with thrust
+  // thrust::replace_copy_if(                d_ptr,      d_ptr+4,  SD.begin(), BD.begin(), pred, 0);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CHECK:oneapi::dpl::replace_copy_if(oneapi::dpl::execution::seq, AH.begin(), AH.end(), BH.begin(), pred, 0);

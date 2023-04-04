@@ -120,6 +120,8 @@ constant_iterator<_Tp> make_constant_iterator(_Tp __value) {
 // dereferenced arg_index_input_iterator
 template <typename _KeyTp, typename _ValueTp> class key_value_pair {
 public:
+  key_value_pair() = default;
+
   key_value_pair(const _KeyTp &_key, const _ValueTp &_value)
       : key(_key), value(_value) {}
 

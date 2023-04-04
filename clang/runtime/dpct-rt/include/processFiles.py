@@ -17,13 +17,14 @@ from enum import Enum
 
 cur_file_dir = os.path.dirname(os.path.realpath(__file__))
 content_files_list = ["atomic", "blas_utils", "device",
-                      "dpct", "dpl_utils", "image", "kernel", "memory", "util", "rng_utils", "lib_common_utils", 
+                      "dpct", "dpl_utils", "image", "kernel", "math", "memory", "util", "rng_utils", "lib_common_utils",
                       "dnnl_utils", "ccl_utils", "fft_utils", "lapack_utils", "sparse_utils"]
 dpl_extras_content_files_list = [
     "algorithm", "functional", "iterators", "memory", "numeric", "vector", "dpcpp_extensions"]
 
 content_files_name_list = ["Atomic", "BlasUtils", "Device",
-                           "Dpct", "DplUtils", "Image", "Kernel", "Memory", "Util", "RngUtils", "LibCommonUtils", 
+                           "Dpct", "DplUtils", "Image", "Kernel", "Math", "Memory", "Util", "RngUtils",
+                           "LibCommonUtils",
                            "DnnlUtils", "CclUtils", "FftUtils", "LapackUtils", "SparseUtils"]
 dpl_extras_content_files_name_list = [
     "Algorithm", "Functional", "Iterators", "Memory", "Numeric", "Vector", "DpcppExtensions"]
@@ -354,7 +355,7 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
 
 def check_files():
     file_handle = io.open(os.path.join(
-        input_files_dir, "HelperFileAndFeatureNames.inc"), "rb")
+        input_files_dir, "HelperFileNames.inc"), "rb")
     files_in_inc = []
     for line in file_handle:
         if (line.startswith(bytes("HELPERFILE(", 'utf-8'))):
@@ -379,17 +380,17 @@ def check_files():
     if (set_of_files_in_inc == set_of_files_in_current_dir):
         return True
 
-    print("Error: Files defined in HelperFileAndFeatureNames.inc and files in current folder are not same.")
-    print("Please update the HelperFileAndFeatureNames.inc file.\n")
+    print("Error: Files defined in HelperFileNames.inc and files in current folder are not same.")
+    print("Please update the HelperFileNames.inc file.\n")
 
     files_in_inc_but_not_in_dir = set_of_files_in_inc - set_of_files_in_current_dir
     if (len(files_in_inc_but_not_in_dir) != 0):
-        print("File(s) defined in HelperFileAndFeatureNames.inc but does not occur in the current folder:")
+        print("File(s) defined in HelperFileNames.inc but does not occur in the current folder:")
         print(files_in_inc_but_not_in_dir)
 
     files_in_dir_but_not_in_inc = set_of_files_in_current_dir - set_of_files_in_inc
     if (len(files_in_dir_but_not_in_inc) != 0):
-        print("File(s) occurs in the current folder but not defined in HelperFileAndFeatureNames.inc:")
+        print("File(s) occurs in the current folder but not defined in HelperFileNames.inc:")
         print(files_in_dir_but_not_in_inc)
 
     return False
@@ -478,7 +479,7 @@ def main():
         content_str = features_enum_file_handle.read()
         if (content_str != features_enum_str):
             features_enum_file_handle.seek(0)
-            features_enum_file_handle.truncate() 
+            features_enum_file_handle.truncate()
             features_enum_file_handle.write(features_enum_str)
     else:
         features_enum_file_handle = io.open(features_enum_file_name, "wb")

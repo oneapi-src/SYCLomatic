@@ -1948,22 +1948,65 @@ pi_result cuda_piDeviceGetInfo(pi_device device, pi_device_info param_name,
   }
 
   case PI_DEVICE_INFO_UUID: {
-    int driver_version = 0;
-    cuDriverGetVersion(&driver_version);
-    int major = driver_version / 1000;
-    int minor = driver_version % 1000 / 10;
     CUuuid uuid;
-    if ((major > 11) || (major == 11 && minor >= 4)) {
-      sycl::detail::pi::assertion(cuDeviceGetUuid_v2(&uuid, device->get()) ==
-                                  CUDA_SUCCESS);
-    } else {
-      sycl::detail::pi::assertion(cuDeviceGetUuid(&uuid, device->get()) ==
-                                  CUDA_SUCCESS);
-    }
+#if (CUDA_VERSION >= 11040)
+    sycl::detail::pi::assertion(cuDeviceGetUuid_v2(&uuid, device->get()) ==
+                                CUDA_SUCCESS);
+#else
+    sycl::detail::pi::assertion(cuDeviceGetUuid(&uuid, device->get()) ==
+                                CUDA_SUCCESS);
+#endif
     std::array<unsigned char, 16> name;
     std::copy(uuid.bytes, uuid.bytes + 16, name.begin());
     return getInfoArray(16, param_value_size, param_value, param_value_size_ret,
                         name.data());
+  }
+
+  case PI_DEVICE_INFO_MAX_MEM_BANDWIDTH: {
+    int major = 0;
+    sycl::detail::pi::assertion(
+        cuDeviceGetAttribute(&major,
+                             CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR,
+                             device->get()) == CUDA_SUCCESS);
+
+    int minor = 0;
+    sycl::detail::pi::assertion(
+        cuDeviceGetAttribute(&minor,
+                             CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR,
+                             device->get()) == CUDA_SUCCESS);
+
+    // Some specific devices seem to need special handling. See reference
+    // https://github.com/jeffhammond/HPCInfo/blob/master/cuda/gpu-detect.cu
+    bool is_xavier_agx = major == 7 && minor == 2;
+    bool is_orin_agx = major == 8 && minor == 7;
+
+    int memory_clock_khz = 0;
+    if (is_xavier_agx) {
+      memory_clock_khz = 2133000;
+    } else if (is_orin_agx) {
+      memory_clock_khz = 3200000;
+    } else {
+      sycl::detail::pi::assertion(
+          cuDeviceGetAttribute(&memory_clock_khz,
+                               CU_DEVICE_ATTRIBUTE_MEMORY_CLOCK_RATE,
+                               device->get()) == CUDA_SUCCESS);
+    }
+
+    int memory_bus_width = 0;
+    if (is_orin_agx) {
+      memory_bus_width = 256;
+    } else {
+      sycl::detail::pi::assertion(
+          cuDeviceGetAttribute(&memory_bus_width,
+                               CU_DEVICE_ATTRIBUTE_GLOBAL_MEMORY_BUS_WIDTH,
+                               device->get()) == CUDA_SUCCESS);
+    }
+
+    uint64_t memory_bandwidth =
+        uint64_t(memory_clock_khz) * memory_bus_width * 250;
+
+    return getInfo(param_value_size, param_value, param_value_size_ret,
+                   memory_bandwidth);
   }
 
     // TODO: Investigate if this information is available on CUDA.
@@ -1974,7 +2017,6 @@ pi_result cuda_piDeviceGetInfo(pi_device device, pi_device_info param_name,
   case PI_DEVICE_INFO_GPU_SUBSLICES_PER_SLICE:
   case PI_DEVICE_INFO_GPU_EU_COUNT_PER_SUBSLICE:
   case PI_DEVICE_INFO_GPU_HW_THREADS_PER_EU:
-  case PI_DEVICE_INFO_MAX_MEM_BANDWIDTH:
     return PI_ERROR_INVALID_VALUE;
 
   default:
@@ -2985,7 +3027,7 @@ pi_result cuda_piEnqueueKernelLaunch(
             return PI_ERROR_INVALID_WORK_GROUP_SIZE;
 
           if (local_work_size[dim] > maxThreadsPerBlock[dim])
-            return PI_ERROR_INVALID_WORK_ITEM_SIZE;
+            return PI_ERROR_INVALID_WORK_GROUP_SIZE;
           // Checks that local work sizes are a divisor of the global work sizes
           // which includes that the local work sizes are neither larger than
           // the global work sizes and not 0.
@@ -5507,6 +5549,10 @@ pi_result cuda_piextEnqueueDeviceGlobalVariableRead(
 }
 
 // This API is called by Sycl RT to notify the end of the plugin lifetime.
+// Windows: dynamically loaded plugins might have been unloaded already
+// when this is called. Sycl RT holds onto the PI plugin so it can be
+// called safely. But this is not transitive. If the PI plugin in turn
+// dynamically loaded a different DLL, that may have been unloaded. 
 // TODO: add a global variable lifetime management code here (see
 // pi_level_zero.cpp for reference) Currently this is just a NOOP.
 pi_result cuda_piTearDown(void *) {
@@ -5698,5 +5744,11 @@ pi_result piPluginInit(pi_plugin *PluginInit) {
 
   return PI_SUCCESS;
 }
+
+#ifdef _WIN32
+#define __SYCL_PLUGIN_DLL_NAME "pi_cuda.dll"
+#include "../common_win_pi_trace/common_win_pi_trace.hpp"
+#undef __SYCL_PLUGIN_DLL_NAME
+#endif
 
 } // extern "C"

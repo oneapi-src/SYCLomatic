@@ -34,9 +34,9 @@
 #include "clang/Format/Format.h"
 #include "clang/Frontend/CompilerInstance.h"
 
-std::optional<std::string> getReplacedName(const clang::NamedDecl *D);
+llvm::StringRef getReplacedName(const clang::NamedDecl *D);
 void setGetReplacedNamePtr(
-    std::optional<std::string> (*Ptr)(const clang::NamedDecl *D));
+    llvm::StringRef (*Ptr)(const clang::NamedDecl *D));
 
 namespace clang {
 namespace dpct {
@@ -1788,6 +1788,12 @@ public:
   static bool useUserDefineReductions() {
     return getUsingExperimental<ExperimentalFeatures::Exp_UserDefineReductions>();
   }
+  static bool useMaskedSubGroupFunction() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_MaskedSubGroupFunction>();
+  }
+  static bool useExtDPLAPI() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_DPLExperimentalAPI>();
+  }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
   }
@@ -2197,6 +2203,15 @@ public:
   // will follow as comments. If NeedSizeFold is false, original size expression
   // will be the size string.
   CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold = false);
+  CtTypeInfo(const VarDecl *D, bool NeedSizeFold = false)
+    : CtTypeInfo(D->getTypeSourceInfo()->getTypeLoc(), NeedSizeFold) {
+    if (D &&
+        D->getTypeSourceInfo()
+          ->getTypeLoc().getTypeLocClass()
+        == TypeLoc::IncompleteArray)
+      if (auto CAT = dyn_cast<ConstantArrayType>(D->getType()))
+        Range[0] = std::to_string(CAT->getSize().getZExtValue());
+  }
 
   inline const std::string &getBaseName() { return BaseName; }
 
@@ -2294,10 +2309,9 @@ private:
 class VarInfo {
 public:
   VarInfo(unsigned Offset, const std::string &FilePathIn,
-          const DeclaratorDecl *Var, bool NeedFoldSize = false)
+          const VarDecl *Var, bool NeedFoldSize = false)
       : FilePath(FilePathIn), Offset(Offset), Name(Var->getName()),
-        Ty(std::make_shared<CtTypeInfo>(Var->getTypeSourceInfo()->getTypeLoc(),
-                                        NeedFoldSize)) {}
+        Ty(std::make_shared<CtTypeInfo>(Var, NeedFoldSize)) {}
 
   inline const std::string &getFilePath() { return FilePath; }
   inline unsigned getOffset() { return Offset; }

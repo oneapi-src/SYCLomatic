@@ -6,6 +6,9 @@
 // CHECK: 18
 // TEST_FEATURE: Device_select_device
 // TEST_FEATURE: Device_get_current_device_id
+
+#include "cuda.h"
+
 int main() {
     CUdevice device;
     CUcontext ctx;

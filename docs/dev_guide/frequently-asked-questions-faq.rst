@@ -87,7 +87,8 @@ some compile commands may be skipped if the target objects are already available
 Use the following command to disable ccache before running the intercept-build command:
 
 .. code-block:: bash
-export CCACHE_DISABLE=1
+
+   export CCACHE_DISABLE=1
 
 **How do I use the migrated module file in the new project?**
 
@@ -343,3 +344,20 @@ is adjusted to avoid a bit shift that is greater than the type length:
        val = in[tid] << 32 - bit;
      ...
    }
+
+**How do I resolve missing include errors that occur when migrating my code?**
+
+Use the option ``--extra-arg=-v`` to prompt |tool_name| to use verbose
+output, which includes information about which paths the tool searches
+for includes.
+
+You can provide an additional path to look for includes in one of the following
+ways:
+
+* Use the ``--extra-arg="-I<extra include path>"`` option in your migration command
+  to specify an additional path for the tool to use when searching for includes
+  during migration.
+
+* If you are using a compilation database, add the ``-I<extra include path>``
+  option to the compile command in the database for the source files, to 
+  specify the include path.

@@ -1084,8 +1084,11 @@ inline std::shared_ptr<CallExprRewriterFactoryBase> createToStringExprRewriterFa
 }
 
 inline std::shared_ptr<CallExprRewriterFactoryBase>
-createRemoveAPIRewriterFactory(const std::string &SourceName) {
-  return std::make_shared<CallExprRewriterFactory<RemoveAPIRewriter>>(SourceName);
+createRemoveAPIRewriterFactory(const std::string &SourceName,
+                               std::string Message = "") {
+  return std::make_shared<
+      CallExprRewriterFactory<RemoveAPIRewriter, std::string>>(SourceName,
+                                                               Message);
 }
 
 /// Create AssignableRewriterFactory key-value pair with inner key-value.
@@ -1545,6 +1548,14 @@ public:
   }
 };
 
+class CheckIsMaskedSubGroupFunctionEnabled {
+public:
+  CheckIsMaskedSubGroupFunctionEnabled() {}
+  bool operator()(const CallExpr *C) {
+    return DpctGlobalInfo::useMaskedSubGroupFunction();
+  }
+};
+
 class CheckArgIsConstantIntWithValue {
   int value;
   int index;
@@ -1633,34 +1644,58 @@ template <class T> CheckNot<T> makeCheckNot(T Expr) {
   return CheckNot<T>(Expr);
 }
 
-class CompareArgType {
-  unsigned Idx1, Idx2;
+class IsPolicyArgType {
+  unsigned Idx;
 
 public:
-  CompareArgType(unsigned I1, unsigned I2) : Idx1(I1), Idx2(I2) {}
+  IsPolicyArgType(unsigned I) : Idx(I) {}
   bool operator()(const CallExpr *C) {
-    if (C->getNumArgs() > Idx1 && C->getNumArgs() > Idx2) {
-      if (!C->getDirectCallee())
-        return true;
-      if (!C->getDirectCallee()->getParamDecl(Idx1))
-        return true;
-      if (!C->getDirectCallee()->getParamDecl(Idx2))
-        return true;
-      std::string ArgType1 = C->getDirectCallee()
-                                 ->getParamDecl(Idx1)
-                                 ->getType()
-                                 .getCanonicalType()
-                                 .getUnqualifiedType()
-                                 .getAsString();
-      std::string ArgType2 = C->getDirectCallee()
-                                 ->getParamDecl(Idx2)
-                                 ->getType()
-                                 .getCanonicalType()
-                                 .getUnqualifiedType()
-                                 .getAsString();
-      return ArgType1 != ArgType2;
-    }
-    return true;
+    if (C->getNumArgs() <= Idx)
+      return false;
+
+    std::string ArgType = C->getArg(Idx)->getType().getCanonicalType().getUnqualifiedType().getAsString();
+
+    if (// Explicitly known policy types
+        // thrust::device
+        ArgType=="struct thrust::detail::execution_policy_base<struct thrust::cuda_cub::par_t>"             ||
+        ArgType=="struct thrust::cuda_cub::par_t"                                                           ||
+        // thrust::host
+        ArgType=="struct thrust::detail::execution_policy_base<struct thrust::system::cpp::detail::par_t>"  ||
+        ArgType=="struct thrust::system::cpp::detail::par_t"                                                ||
+        // thrust::seq
+        ArgType=="struct thrust::detail::execution_policy_base<struct thrust::detail::seq_t>"               ||
+        ArgType=="struct thrust::detail::seq_t"                                                             ||
+        // cudaStream_t stream;
+        // thrust::cuda::par.on(stream)
+        ArgType=="struct thrust::detail::execution_policy_base<struct thrust::cuda_cub::execute_on_stream>" ||
+        ArgType=="struct thrust::cuda_cub::execute_on_stream")
+      return true;
+
+    if (// Templated policy types.  If we see a templated type assume it is a policy if it is not the same type as the next argument type
+        // FIXME, this check is a hack.  It would be better if we analyzed the templated type rather than comparing it against the
+        // next argument.
+
+        (//template<typename ExecutionPolicy, typename Iterator1, typename Iterator2, typename Predicate, typename Iterator3>
+         //__global__ void copy_if_kernel(ExecutionPolicy exec, Iterator1 first, Iterator1 last, Iterator2 result1, Predicate pred, Iterator3 result2) {
+         //  *result2 = thrust::copy_if(exec, first, last, result1, pred);
+         //
+         // For the above code, exec will have type type-parameter-0-0
+         ArgType=="type-parameter-0-0" ||
+
+         //template <typename InputType, typename OutputType>
+         //void myfunction(const std::shared_ptr<const Container<InputType>> &inImageData,
+         //                int *dev_a, int *dev_b) {
+         //  thrust::transform(thrust::cuda::par.on(inImageData->getStream()), dev_a, dev_a + 10, dev_b, my_math());
+         //
+         // For the above code, thrust::cuda::par.on(inImageData->getStream()) will have type <dependent type>
+         ArgType=="<dependent type>") &&
+
+        (Idx+1) < C->getNumArgs() &&
+        C->getArg(Idx+0)->getType().getCanonicalType().getUnqualifiedType() !=
+        C->getArg(Idx+1)->getType().getCanonicalType().getUnqualifiedType())
+      return true;
+
+    return false;
   }
 };
 
@@ -1822,6 +1857,8 @@ public:
   {FuncName, createToStringExprRewriterFactory(FuncName, __VA_ARGS__)},
 #define REMOVE_API_FACTORY_ENTRY(FuncName)                                     \
   {FuncName, createRemoveAPIRewriterFactory(FuncName)},
+#define REMOVE_API_FACTORY_ENTRY_WITH_MSG(FuncName, Msg)                       \
+  {FuncName, createRemoveAPIRewriterFactory(FuncName, Msg)},
 #define CASE_FACTORY_ENTRY(...) \
   createCaseRewriterFactory(__VA_ARGS__),
 

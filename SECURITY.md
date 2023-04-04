@@ -1,5 +1,6 @@
-# Reporting LLVM Security Issues
+# Security Policy
+Intel is committed to rapidly addressing security vulnerabilities affecting our customers and providing clear guidance on the solution, impact, severity and mitigation.
 
-To report security issues in LLVM, please follow the steps outlined on the
-[LLVM Security Group](https://llvm.org/docs/Security.html#how-to-report-a-security-issue)
-page.
+## Reporting a Vulnerability
+Please report any security vulnerabilities in this project [utilizing the guidelines here](https://www.intel.com/content/www/us/en/security-center/vulnerability-handling-guidelines.html).
+

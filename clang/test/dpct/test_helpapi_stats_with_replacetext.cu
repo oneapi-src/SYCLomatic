@@ -1,4 +1,4 @@
-// UNSUPPORTED: -windows-
+// UNSUPPORTED: system-windows
 // RUN: mkdir %T/test_helpapi_stats_with_replacetext
 // RUN: cd %T/test_helpapi_stats_with_replacetext
 // RUN: dpct --format-range=none -out-root %T/test_helpapi_stats_with_replacetext %s --cuda-include-path="%cuda-path/include"  --report-type=stats -- -x cuda --cuda-host-only > stats.txt

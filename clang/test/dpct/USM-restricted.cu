@@ -1,5 +1,5 @@
 // FIXME
-// UNSUPPORTED: -windows-
+// UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none --usm-level=restricted -out-root %T/USM-restricted %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/USM-restricted/USM-restricted.dp.cpp %s
 
@@ -15,7 +15,7 @@
   int Error = CALL;                \
 } while (0)
 
-__constant__ float constData[1234567 * 4];
+__constant__ float constData[123 * 4];
 
 int foo_b(int a){
   return 0;
