@@ -265,8 +265,6 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("oneapi::dpl::equal_to")},
       {"thrust::less", std::make_shared<TypeNameRule>("oneapi::dpl::less")},
       {"thrust::negate", std::make_shared<TypeNameRule>("std::negate")},
-      {"thrust::identity",
-       std::make_shared<TypeNameRule>("oneapi::dpl::identity")},
       {"thrust::logical_or", std::make_shared<TypeNameRule>("std::logical_or")},
       {"thrust::divides", std::make_shared<TypeNameRule>("std::divides")},
       {"thrust::tuple", std::make_shared<TypeNameRule>("std::tuple")},

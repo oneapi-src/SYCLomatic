@@ -2009,7 +2009,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "curandStateXORWOW_t", "curandStateXORWOW",
               "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
               "curandStateMRG32k3a_t", "curandStateMRG32k3a", "thrust::minus",
-              "thrust::negate", "thrust::logical_or", "thrust::identity",
+              "thrust::negate", "thrust::logical_or", 
               "thrust::equal_to", "thrust::less", "cudaSharedMemConfig",
               "curandGenerator_t", "curandRngType_t", "cufftHandle",
               "cufftReal", "cufftDoubleReal", "cufftComplex",
@@ -2160,12 +2160,6 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
   insertHeaderForTypeRule(RealTypeNameStr, BeginLoc);
   if (!Replacement.empty()) {
     insertComplexHeader(BeginLoc, Replacement);
-    if (RealTypeNameStr == "thrust::identity") {
-      // For thrust::identity the template type argument must be
-      // removed as well for correct mapping to oneapi::dpl::identity
-      auto RAngleLoc = TSL.getRAngleLoc();
-      TyLen = SM->getCharacterData(RAngleLoc) - Start + 1;
-    }
     emplaceTransformation(
         new ReplaceText(BeginLoc, TyLen, std::move(Replacement)));
     return true;
@@ -2692,14 +2686,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         DpctGlobalInfo::getInstance().insertHeader(BeginLoc,
                                                    HT_DPCT_COMMON_Utils);
       }
-    }
-
-    if (TypeStr.rfind("identity", 0) == 0) {
-      emplaceTransformation(new ReplaceToken(
-          TL->getBeginLoc().getLocWithOffset(Lexer::MeasureTokenLength(
-              TL->getBeginLoc(), dpct::DpctGlobalInfo::getSourceManager(),
-              dpct::DpctGlobalInfo::getContext().getLangOpts())),
-          TL->getEndLoc(), ""));
     }
 
     const DeclaratorDecl *DD = nullptr;

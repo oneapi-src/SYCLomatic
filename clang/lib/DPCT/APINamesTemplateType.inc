@@ -164,3 +164,6 @@ TYPE_REWRITE_ENTRY(
         CheckTypeNameAndInVarDecl("cudaPos"),
         CTAD_TYPE_FACTORY(STR(MapNames::getClNamespace() + "id"), STR("3")),
         TYPE_FACTORY(STR(MapNames::getClNamespace() + "id"), STR("3"))))
+
+TYPE_REWRITE_ENTRY("thrust::identity",
+                   TYPE_FACTORY(STR("oneapi::dpl::identity")))
