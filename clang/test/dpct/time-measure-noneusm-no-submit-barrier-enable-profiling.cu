@@ -1,5 +1,6 @@
 // RUN: dpct --enable-profiling  --no-dpcpp-extensions=enqueued_barriers --format-range=none -usm-level=none -out-root %T/time-measure-noneusm-no-submit-barrier-enable-profiling %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/time-measure-noneusm-no-submit-barrier-enable-profiling/time-measure-noneusm-no-submit-barrier-enable-profiling.dp.cpp --match-full-lines %s
+// RUN: rm -rf %T/time-measure-noneusm-no-submit-barrier-enable-profiling/
 
 // CHECK:#define DPCT_PROFILING_ENABLED
 // CHECK-NEXT:#define DPCT_USM_LEVEL_NONE
