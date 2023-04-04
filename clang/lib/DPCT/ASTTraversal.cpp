@@ -9025,7 +9025,10 @@ void DeviceFunctionDeclRule::runRule(
   if (isLambda(FD) && !FuncInfo->isLambda()) {
     FuncInfo->setLambda();
   }
-
+  if (DpctGlobalInfo::isOptimizeMigration() && !FD->isInlined() &&
+                                !FuncInfo->IsAlwaysInlineDevFunc()) {
+    FuncInfo->setAlwaysInlineDevFunc();
+  }
   if (auto CE = getAssistNodeAsType<CallExpr>(Result, "callExpr")) {
     if (CE->getDirectCallee()) {
       if (CE->getDirectCallee()->isVirtualAsWritten())
