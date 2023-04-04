@@ -107,20 +107,9 @@ TokenAnalyzer::process(bool SkipAnnotation) {
                        IdentTable);
   ArrayRef<FormatToken *> Toks(Lex.lex());
   SmallVector<FormatToken *, 10> Tokens(Toks.begin(), Toks.end());
-<<<<<<< HEAD
-#ifdef SYCLomatic_CUSTOMIZATION
-  UnwrappedLineParser Parser(Style, Lex.getKeywords(),
-                             Env.getFirstStartColumn(), Tokens, *this,
-                             Env.getSourceManager());
-#else
-  UnwrappedLineParser Parser(Style, Lex.getKeywords(),
-                             Env.getFirstStartColumn(), Tokens, *this);
-#endif // SYCLomatic_CUSTOMIZATION
-=======
   UnwrappedLineParser Parser(Env.getSourceManager(), Style, Lex.getKeywords(),
                              Env.getFirstStartColumn(), Tokens, *this,
                              Allocator, IdentTable);
->>>>>>> origin/sycl
   Parser.parse();
   assert(UnwrappedLines.back().empty());
   unsigned Penalty = 0;

@@ -104,27 +104,12 @@ class FormatTokenSource;
 
 class UnwrappedLineParser {
 public:
-<<<<<<< HEAD
-#ifdef SYCLomatic_CUSTOMIZATION
-  UnwrappedLineParser(const FormatStyle &Style,
-                      const AdditionalKeywords &Keywords,
-                      unsigned FirstStartColumn, ArrayRef<FormatToken *> Tokens,
-                      UnwrappedLineConsumer &Callback,
-                      const SourceManager &SourceMgr);
-#else
-  UnwrappedLineParser(const FormatStyle &Style,
-                      const AdditionalKeywords &Keywords,
-                      unsigned FirstStartColumn, ArrayRef<FormatToken *> Tokens,
-                      UnwrappedLineConsumer &Callback);
-#endif // SYCLomatic_CUSTOMIZATION
-=======
   UnwrappedLineParser(SourceManager &SourceMgr, const FormatStyle &Style,
                       const AdditionalKeywords &Keywords,
                       unsigned FirstStartColumn, ArrayRef<FormatToken *> Tokens,
                       UnwrappedLineConsumer &Callback,
                       llvm::SpecificBumpPtrAllocator<FormatToken> &Allocator,
                       IdentifierTable &IdentTable);
->>>>>>> origin/sycl
 
   void parse();
 

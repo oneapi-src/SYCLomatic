@@ -89,13 +89,6 @@ Level Zero or CUDA) should be put to SYCLomatic E2E test suite following
 - For product changes which require modification in tests outside of the current repository
   (see [Test SYCLomatic toolchain](GetStartedGuide.md#test-SYCLomatic)).
   the commit message should contain the link to corresponding test PR.
-<<<<<<< HEAD
-=======
-  For example: KhronosGroup/SYCL-CTS#65. (see
-  [Autolinked references and URLs](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/autolinked-references-and-urls)
-  for more details). The same message should be present both in commit
-  message and in PR description.
->>>>>>> origin/sycl
 
 ### Review and acceptance testing
 

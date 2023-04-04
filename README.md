@@ -13,15 +13,10 @@
 
 SYCLomatic is a project to assist developers in migrating their existing code written in different programming languages to the SYCL\* C++ heterogeneous programming model. Final code editing and verification is a manual process done by the developer.
 
-<<<<<<< HEAD
 Use c2s command to make it as easy as possible to migrate existing CUDA codebases to SYCL, which is an industry standard. Once code is migrated to SYCL, it can be compiled and executed by any compiler that implements the SYCL specification as shown here:  https://www.khronos.org/sycl/
-=======
-[![oneAPI logo](https://spec.oneapi.io/oneapi-logo-white-scaled.jpg)](https://www.oneapi.io/)
->>>>>>> origin/sycl
 
 The SYCLomatic development branch is the SYCLomatic branch.
 
-<<<<<<< HEAD
 ## Releases
 
 Daily builds of the SYCLomatic branch on Linux and Windows* are available at
@@ -36,29 +31,6 @@ expected to be similar to the daily releases.
 
 ## Build from source code
 ### Prerequisites
-=======
-The DPC++ is a LLVM-based compiler project that implements compiler and runtime
-support for the SYCL\* language. The project is hosted in the
-[sycl](https://github.com/intel/llvm/tree/sycl) branch and is synced with the
-tip of the LLVM upstream main branch on a regular basis (revisions delay is
-usually not more than 1-2 weeks). DPC++ compiler takes everything from LLVM
-upstream as is, however some modules of LLVM might be not included in the
-default project build configuration. Additional modules can be enabled by
-modifying build framework settings.
-
-The DPC++ goal is to support the latest SYCL\* standard and work on that is in
-progress. DPC++ also implements a number of extensions to the SYCL\* standard,
-which can be found in the [sycl/doc/extensions](./sycl/doc/extensions)
-directory.
-
-The main purpose of this project is open source collaboration on the DPC++
-compiler implementation in LLVM across a variety of architectures, prototyping
-compiler and runtime library solutions, designing future extensions, and
-conducting experiments. As the implementation becomes more mature, we try to
-upstream as much DPC++ support to LLVM main branch as possible. See
-[SYCL upstreaming working group notes](https://github.com/intel/llvm/wiki/SYCL-upstreaming-working-group-meeting-notes)
-for more details.
->>>>>>> origin/sycl
 
 * `git` - [Download](https://git-scm.com/downloads)
 * `cmake` version 3.14 or later - [Download](http://www.cmake.org/download/)
@@ -79,16 +51,11 @@ create an environment variable with the same name.
 
 **Linux**:
 
-<<<<<<< HEAD
 ```bash
 export SYCLOMATIC_HOME=~/workspace
 export PATH_TO_C2S_INSTALL_FOLDER=~/workspace/c2s_install
 mkdir $SYCLOMATIC_HOME
 cd $SYCLOMATIC_HOME
-=======
-See available containers with pre-built/pre-installed DPC++ compiler at:
-[Containers](./sycl/doc/developer/DockerBKMs.md#sycl-containers-overview)
->>>>>>> origin/sycl
 
 git clone https://github.com/oneapi-src/SYCLomatic.git
 ```
@@ -189,40 +156,18 @@ After build the SYCLomatic, you can run the list test by:
 
 ninja check-clang-c2s
 
-<<<<<<< HEAD
-=======
-Daily builds of the sycl branch on Linux are available at
-[releases](https://github.com/intel/llvm/releases).
-A few times a year, we publish [Release Notes](./sycl/ReleaseNotes.md) to
-highlight all important changes made in the project: features implemented and
-issues addressed. The corresponding builds can be found using
-[search](https://github.com/intel/llvm/releases?q=oneAPI+DPC%2B%2B+Compiler&expanded=true)
-in daily releases. None of the branches in the project are stable or rigorously
-tested for production quality control, so the quality of these releases is
-expected to be similar to the daily releases.
->>>>>>> origin/sycl
 
 ### Run E2E test suite (Recommend for contributors)
 
-<<<<<<< HEAD
 Follow instructions from the link below to build and run tests:
 [README](https://github.com/oneapi-src/SYCLomatic-test)
-=======
-See [Get Started Guide](./sycl/doc/GetStartedGuide.md).
->>>>>>> origin/sycl
 
 ## Known Issues and Limitations
 
-<<<<<<< HEAD
 * SYCL\* 2020 support work is in progress.
 * 32-bit host/target is not supported.
-=======
-Submit an [issue](https://github.com/intel/llvm/issues) or initiate a 
-[discussion](https://github.com/intel/llvm/discussions).
->>>>>>> origin/sycl
 
 
-<<<<<<< HEAD
 ## Useful Links
 * More information about how to use SYCLomatic can be found in the SYCLomatic online document:
     * [Get Started](https://oneapi-src.github.io/SYCLomatic/get_started/index.html)
@@ -235,25 +180,14 @@ Submit an [issue](https://github.com/intel/llvm/issues) or initiate a
 * SYCL\* 2020 specification:
 [https://www.khronos.org/registry/SYCL/](https://www.khronos.org/registry/SYCL/)
 * More information on oneAPI and DPC++ is available at [https://www.oneapi.com/](https://www.oneapi.com/)
-=======
-See [ContributeToDPCPP](./sycl/doc/developer/ContributeToDPCPP.md).
->>>>>>> origin/sycl
 
 ## License
 
-<<<<<<< HEAD
 See [LICENSE](LICENSE) for details.
-=======
-See [openmp](/tree/openmp) branch.
->>>>>>> origin/sycl
 
 ## Contributing
 
-<<<<<<< HEAD
 See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
-=======
-See [LICENSE](./sycl/LICENSE.TXT) for details.
->>>>>>> origin/sycl
 
 ## Trademarks information
 Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries.<br>

@@ -196,37 +196,12 @@ private:
   unsigned OldLineLevel;
 };
 
-<<<<<<< HEAD
-#ifdef SYCLomatic_CUSTOMIZATION
-UnwrappedLineParser::UnwrappedLineParser(const FormatStyle &Style,
-                                         const AdditionalKeywords &Keywords,
-                                         unsigned FirstStartColumn,
-                                         ArrayRef<FormatToken *> Tokens,
-                                         UnwrappedLineConsumer &Callback,
-                                         const SourceManager &SourceMgr)
-    : Line(new UnwrappedLine), MustBreakBeforeNextToken(false),
-      CurrentLines(&Lines), Style(Style), Keywords(Keywords),
-      CommentPragmasRegex(Style.CommentPragmas), Tokens(nullptr),
-      Callback(Callback), AllTokens(Tokens), PPBranchLevel(-1),
-      IncludeGuard(Style.IndentPPDirectives == FormatStyle::PPDIS_None
-                       ? IG_Rejected
-                       : IG_Inited),
-      IncludeGuardToken(nullptr), FirstStartColumn(FirstStartColumn),
-      SourceMgr(SourceMgr) {}
-#else
-UnwrappedLineParser::UnwrappedLineParser(const FormatStyle &Style,
-                                         const AdditionalKeywords &Keywords,
-                                         unsigned FirstStartColumn,
-                                         ArrayRef<FormatToken *> Tokens,
-                                         UnwrappedLineConsumer &Callback)
-=======
 UnwrappedLineParser::UnwrappedLineParser(
     SourceManager &SourceMgr, const FormatStyle &Style,
     const AdditionalKeywords &Keywords, unsigned FirstStartColumn,
     ArrayRef<FormatToken *> Tokens, UnwrappedLineConsumer &Callback,
     llvm::SpecificBumpPtrAllocator<FormatToken> &Allocator,
     IdentifierTable &IdentTable)
->>>>>>> origin/sycl
     : Line(new UnwrappedLine), MustBreakBeforeNextToken(false),
       CurrentLines(&Lines), Style(Style), Keywords(Keywords),
       CommentPragmasRegex(Style.CommentPragmas), Tokens(nullptr),
@@ -234,13 +209,8 @@ UnwrappedLineParser::UnwrappedLineParser(
       IncludeGuard(Style.IndentPPDirectives == FormatStyle::PPDIS_None
                        ? IG_Rejected
                        : IG_Inited),
-<<<<<<< HEAD
-      IncludeGuardToken(nullptr), FirstStartColumn(FirstStartColumn) {}
-#endif // SYCLomatic_CUSTOMIZATION
-=======
       IncludeGuardToken(nullptr), FirstStartColumn(FirstStartColumn),
       Macros(Style.Macros, SourceMgr, Style, Allocator, IdentTable) {}
->>>>>>> origin/sycl
 
 void UnwrappedLineParser::reset() {
   PPBranchLevel = -1;
@@ -4367,12 +4337,6 @@ void UnwrappedLineParser::parseVerilogCaseLabel() {
   Line->Level = OrigLevel;
 }
 
-<<<<<<< HEAD
-#ifdef SYCLomatic_CUSTOMIZATION
-bool UnwrappedLineParser::addUnwrappedLine(LineLevel AdjustLevel,
-                                           bool MustAdd) {
-#else
-=======
 bool UnwrappedLineParser::containsExpansion(const UnwrappedLine &Line) const {
   for (const auto &N : Line.Tokens) {
     if (N.Tok->MacroCtx)
@@ -4384,7 +4348,10 @@ bool UnwrappedLineParser::containsExpansion(const UnwrappedLine &Line) const {
   return false;
 }
 
->>>>>>> origin/sycl
+#ifdef SYCLomatic_CUSTOMIZATION
+bool UnwrappedLineParser::addUnwrappedLine(LineLevel AdjustLevel,
+                                           bool MustAdd) {
+#else
 void UnwrappedLineParser::addUnwrappedLine(LineLevel AdjustLevel) {
 #endif // SYCLomatic_CUSTOMIZATION
   if (Line->Tokens.empty())

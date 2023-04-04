@@ -28,22 +28,12 @@ function(install_symlink name target outdir link_or_copy)
     set(LLVM_LINK_OR_COPY copy)
   endif()
   execute_process(
-<<<<<<< HEAD
     COMMAND "${CMAKE_COMMAND}" -E ${LLVM_LINK_OR_COPY} "${target}" "${name}"
     WORKING_DIRECTORY "${outdir}" ERROR_VARIABLE has_err)
 # SYCLomatic_CUSTOMIZATION else
   # execute_process(
-  #   COMMAND "${CMAKE_COMMAND}" -E create_symlink "${target}" "${name}"
-  #   WORKING_DIRECTORY "${outdir}" ERROR_VARIABLE has_err)
-  # if(CMAKE_HOST_WIN32 AND has_err)
-  #   execute_process(
-  #     COMMAND "${CMAKE_COMMAND}" -E copy "${target}" "${name}"
-  #     WORKING_DIRECTORY "${outdir}")
-  # endif()
+  #   COMMAND "${CMAKE_COMMAND}" -E ${link_or_copy} "${target}" "${name}"
+  #   WORKING_DIRECTORY "${outdir}")
 # SYCLomatic_CUSTOMIZATION end
-=======
-    COMMAND "${CMAKE_COMMAND}" -E ${link_or_copy} "${target}" "${name}"
-    WORKING_DIRECTORY "${outdir}")
->>>>>>> origin/sycl
 
 endfunction()
