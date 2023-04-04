@@ -163,43 +163,41 @@ __global__ void test9(S4 a) {
   __syncthreads();
 }
 
-extern __shared__ float cache[];
+extern __shared__ float extern_local_decl[];
 
-__global__ void test10(float *pdata, int k, int num) {
-  int tid = blockIdx.x * blockDim.x + threadIdx.x;
-  if (tid < num) {
-    float *pcache = cache;
-    pcache[tid] = 0;
-    if (tid < 123) {
+__global__ void test10(float *arg1, int arg2, int arg3) {
+  int var1 = blockIdx.x * blockDim.x + threadIdx.x;
+  if (var1 < arg3) {
+    float *var2 = extern_local_decl;
+    var2[var1] = 0;
+    if (var1 < 123) {
       float a = __expf(1.f);
-      pcache[tid] = a;
-      pdata[tid] = a;
+      var2[var1] = a;
+      arg1[var1] = a;
     }
     // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
-    // CHECK-NEXT: int half = num >> 1;
+    // CHECK-NEXT: int var3 = arg3 / 2;
     __syncthreads();
-    int half = num >> 1;
-    while (half != 0) {
-      if (tid < half) {
-        pcache[tid] += pcache[tid + half];
+    int var3 = arg3 / 2;
+    while (var3 != 0) {
+      if (var1 < var3) {
+        var2[var1] += var2[var1 + var3];
       }
-      // CHECK: half = half >> 1;
+      // CHECK: var3 = var3 / 2;
       // CHECK-NEXT: item_ct1.barrier(sycl::access::fence_space::local_space);
-      half = half >> 1;
+      var3 = var3 / 2;
       __syncthreads();
     }
-    float b = pcache[0] + 1.f;
-    if (tid < k) {
-      pdata[tid] /= b;
-      pdata[tid] = sqrtf(pdata[tid]);
+    float var4 = var2[0] + 1.f;
+    if (var1 < arg2) {
+      arg1[var1] /= var4;
+      arg1[var1] = sqrtf(arg1[var1]);
     }
   }
 // CHECK:   item_ct1.barrier(sycl::access::fence_space::local_space);
 // CHECK-NEXT: }
   __syncthreads();
 }
-
-
 
 __global__ void test11(float *a, float *b,
                               float *c, float *d,
