@@ -107,17 +107,17 @@ public:
   /// \param count the number of elements of type @c dtype in @c send_buf and @c recv_buf
   /// \param dtype the datatype of elements in @c send_buf and @c recv_buf
   /// \param rtype the type of the reduction operation to be applied
-  /// \param stream a sycl::queue ptr associated with the operation
+  /// \param queue_ptr a sycl::queue ptr associated with the operation
   /// \return @ref void
   void allreduce(const void *sendbuff, void *recvbuff, size_t count,
                  oneapi::ccl::datatype dtype, oneapi::ccl::reduction rtype,
-                 sycl::queue *stream) const {
+                 sycl::queue *queue_ptr) const {
     ccl_func_adapter(
-        [=](const oneapi::ccl::stream &queue) {
+        [=](const oneapi::ccl::stream &stream) {
           return oneapi::ccl::allreduce(sendbuff, recvbuff, count, dtype, rtype,
-                                        _comm, queue);
+                                        _comm, stream);
         },
-        stream);
+        queue_ptr);
   }
 
   /// \brief reduce is a collective communication operation that performs the
@@ -131,17 +131,17 @@ public:
   /// \param dtype the datatype of elements in @c send_buf and @c recv_buf 
   /// \param root the rank that gets the result of reduction 
   /// \param rtype the type of the reduction operation to be applied 
-  /// \param stream a sycl::queue ptr associated with the operation 
+  /// \param queue_ptr a sycl::queue ptr associated with the operation 
   /// \return @ref void
   void reduce(const void *sendbuff, void *recvbuff, size_t count,
               oneapi::ccl::datatype dtype, oneapi::ccl::reduction rtype,
-              int root, sycl::queue *stream) const {
+              int root, sycl::queue *queue_ptr) const {
     ccl_func_adapter(
-        [=](const oneapi::ccl::stream &queue) {
+        [=](const oneapi::ccl::stream &stream) {
           return oneapi::ccl::reduce(sendbuff, recvbuff, count, dtype, rtype,
-                                     root, _comm, queue);
+                                     root, _comm, stream);
         },
-        stream);
+        queue_ptr);
   }
 
   /// \brief broadcast is a collective communication operation that broadcasts data
@@ -153,11 +153,11 @@ public:
   /// \param count the number of elements of type @c dtype in @c buf 
   /// \param dtype thedatatype of elements in @c buf 
   /// \param root the rank that broadcasts @c buf
-  /// \param stream a sycl::queue ptr associated with the operation
+  /// \param queue_ptr a sycl::queue ptr associated with the operation
   /// \return @ref void
   void broadcast(void *sendbuff, void *recvbuff, size_t count,
                  oneapi::ccl::datatype dtype, int root,
-                 sycl::queue *stream) const {
+                 sycl::queue *queue_ptr) const {
     if (sendbuff != recvbuff) {
       throw std::runtime_error(
           "oneCCL broadcast only support in-place operation. "
@@ -165,11 +165,11 @@ public:
       return;
     }
     ccl_func_adapter(
-        [=](const oneapi::ccl::stream &queue) {
+        [=](const oneapi::ccl::stream &stream) {
           return oneapi::ccl::broadcast(recvbuff, count, dtype, root, _comm,
-                                        queue);
+                                        stream);
         },
-        stream);
+        queue_ptr);
   }
 
   /// \brief reduce_scatter is a collective communication operation that performs the global reduction operation
@@ -179,17 +179,17 @@ public:
   /// \param recv_count the number of elements of type @c dtype in receive block
   /// \param dtype the datatype of elements in @c send_buf and @c recv_buf
   /// \param rtype the type of the reduction operation to be applied
-  /// \param stream a sycl::queue ptr associated with the operation
+  /// \param queue_ptr a sycl::queue ptr associated with the operation
   /// \return @ref void
   void reduce_scatter(const void *sendbuff, void *recvbuff, size_t recv_count,
                       oneapi::ccl::datatype dtype, oneapi::ccl::reduction rtype,
-                      sycl::queue *stream) const {
+                      sycl::queue *queue_ptr) const {
     ccl_func_adapter(
-        [=](const oneapi::ccl::stream &queue) {
+        [=](const oneapi::ccl::stream &stream) {
           return oneapi::ccl::reduce_scatter(sendbuff, recvbuff, recv_count,
-                                             dtype, rtype, _comm, queue);
+                                             dtype, rtype, _comm, stream);
         },
-        stream);
+        queue_ptr);
   }
 
 private:
