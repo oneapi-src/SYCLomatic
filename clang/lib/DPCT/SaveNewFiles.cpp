@@ -456,7 +456,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       EC = fs::create_directories(path::parent_path(OutPath));
       if ((bool)EC) {
         std::string ErrMsg =
-            "[ERROR] Create file : " + std::string(OutPath.str()) +
+            "[ERROR] Create directory : " + path::parent_path(OutPath).str() +
             " fail: " + EC.message() + "\n";
         status = MigrationSaveOutFail;
         PrintMsg(ErrMsg);
@@ -659,7 +659,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       EC = fs::create_directories(path::parent_path(FilePath));
       if ((bool)EC) {
         std::string ErrMsg =
-            "[ERROR] Create file: " + std::string(FilePath.str()) +
+            "[ERROR] Create directory: " + path::parent_path(FilePath).str() +
             " fail: " + EC.message() + "\n";
         status = MigrationSaveOutFail;
         PrintMsg(ErrMsg);
