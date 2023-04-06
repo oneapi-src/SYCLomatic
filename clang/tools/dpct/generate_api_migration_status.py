@@ -164,7 +164,7 @@ def do_update(args):
     if os.path.exists(output_path) is False:
         warnings.warn("output path is not exist")
         return False
-    lib_names = ['Runtime_and_Driver', 'CUB', 'cuBLAS', 'cuDNN', 'cuFFT', 'cuGRAPH',
+    lib_names = ['Runtime_and_Driver', 'CUB', 'cuBLAS', 'cuDNN', 'cuFFT', 'nvGRAPH', "ASM",
                  'cuRAND', 'cuSOLVER', 'cuSPARSE', 'NCCL', 'nvJPEG', 'NVML', 'thrust']
     # lib file name = APINames_$(libname).inc
     for lib_name in lib_names:
