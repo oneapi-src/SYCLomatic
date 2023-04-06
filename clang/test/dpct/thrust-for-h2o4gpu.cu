@@ -133,13 +133,15 @@ void foo() {
   thrust::device_vector<int> *data[10];
   thrust::device_vector<int> d_new_potential_centroids(10);
   auto range = thrust::make_counting_iterator(0);
-
+  thrust::counting_iterator<int> last = range + 10;
   //CHECK: std::copy_if(oneapi::dpl::execution::seq, h_data.begin(), h_data.end(), h_result.begin(), is_even<int>());
   //CHECK-NEXT: std::copy_if(oneapi::dpl::execution::seq, h_data.begin(), h_data.end(), h_result.begin(), is_even<int>());
   //CHECK-NEXT: dpct::copy_if(oneapi::dpl::execution::make_device_policy(q_ct1), (*data[0]).begin(), (*data[0]).end(), range, d_new_potential_centroids.begin(), [=] (int idx) { return true; });
+  //CHECK-NEXT: dpct::copy_if(oneapi::dpl::execution::seq, range, last, (*data[0]).begin(), (*data[0]).end(), oneapi::dpl::identity());
   thrust::copy_if(h_data.begin(), h_data.end(), h_result.begin(), is_even<int>());
   thrust::copy_if(thrust::seq, h_data.begin(), h_data.end(), h_result.begin(), is_even<int>());
   thrust::copy_if((*data[0]).begin(), (*data[0]).end(), range, d_new_potential_centroids.begin(),[=] __device__(int idx) { return true; });
+  thrust::copy_if(range, last, (*data[0]).begin(), (*data[0]).end(), thrust::identity<int>());
 
   //CHECK: std::vector<dpct::device_vector<int>> d(10);
   //CHECK-NEXT: auto t = dpct::make_counting_iterator(0);

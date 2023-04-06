@@ -22,6 +22,9 @@
 #include <thrust/tabulate.h>
 #include <thrust/functional.h>
 #include <thrust/remove.h>
+#include <thrust/mismatch.h>
+#include <thrust/replace.h>
+#include <thrust/reverse.h>
 
 // for cuda 12.0
 #include <thrust/iterator/constant_iterator.h>
@@ -930,4 +933,128 @@ void remvoe_test() {
   thrust::remove(data, data + N, 1);
   thrust::remove(host_data.begin(), host_data.begin() + N, 1);
   thrust::remove(device_data.begin(), device_data.begin() + N, 1);
+}
+
+struct greater_than_four {
+  __host__ __device__ bool operator()(int x) const { return x > 4; }
+};
+
+void find_if_test() {
+  const int N = 4;
+  int data[4] = {0,5, 3, 7};
+  thrust::device_vector<int> device_data(data, data + N);
+  thrust::host_vector<int> host_data(data, data + N);
+
+  // CHECK:oneapi::dpl::find_if(oneapi::dpl::execution::seq, data, data+3, greater_than_four());
+  // CHECK-NEXT:oneapi::dpl::find_if(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end(), greater_than_four());
+  // CHECK-NEXT:oneapi::dpl::find_if(oneapi::dpl::execution::seq, host_data.begin(), host_data.end(), greater_than_four());
+  // CHECK-NEXT:oneapi::dpl::find_if(oneapi::dpl::execution::seq, data, data+3, greater_than_four());
+  // CHECK-NEXT:oneapi::dpl::find_if(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end(), greater_than_four());
+  // CHECK-NEXT:oneapi::dpl::find_if(oneapi::dpl::execution::seq, host_data.begin(), host_data.end(), greater_than_four());
+  thrust::find_if(data, data+3, greater_than_four());
+  thrust::find_if(device_data.begin(), device_data.end(),  greater_than_four());
+  thrust::find_if(host_data.begin(), host_data.end(),  greater_than_four());
+  thrust::find_if(thrust::host, data, data+3, greater_than_four());
+  thrust::find_if(thrust::device, device_data.begin(), device_data.end(),  greater_than_four());
+  thrust::find_if(thrust::host, host_data.begin(), host_data.end(),  greater_than_four());
+}
+
+void find_if_not_test() {
+  const int N = 4;
+  int data[4] = {0,5, 3, 7};
+  thrust::device_vector<int> device_data(data, data + N);
+  thrust::host_vector<int> host_data(data, data + N);
+
+  // CHECK:oneapi::dpl::find_if_not(oneapi::dpl::execution::seq, data, data+3, greater_than_four());
+  // CHECK-NEXT:oneapi::dpl::find_if_not(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end(), greater_than_four());
+  // CHECK-NEXT:oneapi::dpl::find_if_not(oneapi::dpl::execution::seq, host_data.begin(), host_data.end(), greater_than_four());
+  // CHECK-NEXT:oneapi::dpl::find_if_not(oneapi::dpl::execution::seq, data, data+3, greater_than_four());
+  // CHECK-NEXT:oneapi::dpl::find_if_not(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end(), greater_than_four());
+  // CHECK-NEXT:oneapi::dpl::find_if_not(oneapi::dpl::execution::seq, host_data.begin(), host_data.end(), greater_than_four());
+  thrust::find_if_not(data, data+3, greater_than_four());
+  thrust::find_if_not(device_data.begin(), device_data.end(),  greater_than_four());
+  thrust::find_if_not(host_data.begin(), host_data.end(),  greater_than_four());
+  thrust::find_if_not(thrust::host, data, data+3, greater_than_four());
+  thrust::find_if_not(thrust::device, device_data.begin(), device_data.end(),  greater_than_four());
+  thrust::find_if_not(thrust::host, host_data.begin(), host_data.end(),  greater_than_four());
+}
+
+void mismatch_test() {
+  const int N = 4;
+  int A[N] = {0, 5, 3, 7};
+  int B[N] = {0, 5, 8, 7};
+
+  thrust::host_vector<int> VA(A, A + N);
+  thrust::host_vector<int> VB(B, B + N);
+  thrust::device_vector<int> d_VA(A, A + N);
+  thrust::device_vector<int> d_VB(B, B + N);
+
+  // CHECK:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, VA.begin(), VA.end(), VB.begin());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, VA.begin(), VA.end(), VB.begin());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, VA.begin(), VA.end(), VB.begin(), oneapi::dpl::equal_to<int>());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, VA.begin(), VA.end(), VB.begin(), oneapi::dpl::equal_to<int>());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin(), oneapi::dpl::equal_to<int>());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin(), oneapi::dpl::equal_to<int>());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, A, A+N, B);
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, A, A+N, B);
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, A, A+N, B, oneapi::dpl::equal_to<int>());
+  // CHECK-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, A, A+N, B, oneapi::dpl::equal_to<int>());
+  thrust::mismatch(thrust::host, VA.begin(), VA.end(), VB.begin());
+  thrust::mismatch(VA.begin(), VA.end(), VB.begin());
+  thrust::mismatch(thrust::host, VA.begin(), VA.end(), VB.begin(), thrust::equal_to<int>());
+  thrust::mismatch(VA.begin(), VA.end(), VB.begin(), thrust::equal_to<int>());
+  thrust::mismatch(thrust::device, d_VA.begin(), d_VA.end(), d_VB.begin());
+  thrust::mismatch(d_VA.begin(), d_VA.end(), d_VB.begin());
+  thrust::mismatch(thrust::device, d_VA.begin(), d_VA.end(), d_VB.begin(), thrust::equal_to<int>());
+  thrust::mismatch( d_VA.begin(), d_VA.end(), d_VB.begin(), thrust::equal_to<int>());
+  thrust::mismatch(thrust::host, A, A+N, B);
+  thrust::mismatch( A, A+N, B);
+  thrust::mismatch(thrust::host, A, A+N, B, thrust::equal_to<int>());
+  thrust::mismatch( A, A+N, B, thrust::equal_to<int>());
+}
+
+void replace_copy_test() {
+  const int N = 4;
+  int data[] = {1, 2, 3, 1};
+  thrust::device_vector<int> d_data(data, data +N);
+  thrust::device_vector<int> d_result(4);
+  thrust::host_vector<int> h_data(data, data +N);
+  thrust::host_vector<int> h_result(4);
+  int result[N];
+
+  // CHECK:  oneapi::dpl::replace_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_data.begin(), d_data.end(), d_result.begin(), 1, 99);
+  // CHECK-NEXT:  oneapi::dpl::replace_copy(oneapi::dpl::execution::seq, h_data.begin(), h_data.end(), h_result.begin(), 1, 99);
+  // CHECK-NEXT:  oneapi::dpl::replace_copy(oneapi::dpl::execution::seq, data, data + N, result, 1, 99);
+  // CHECK-NEXT:  oneapi::dpl::replace_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_data.begin(), d_data.end(), d_result.begin(), 1, 99);
+  // CHECK-NEXT:  oneapi::dpl::replace_copy(oneapi::dpl::execution::seq, h_data.begin(), h_data.end(), h_result.begin(), 1, 99);
+  // CHECK-NEXT:  oneapi::dpl::replace_copy(oneapi::dpl::execution::seq, data, data + N, result, 1, 99);
+  thrust::replace_copy(thrust::device, d_data.begin(), d_data.end(), d_result.begin(), 1, 99);
+  thrust::replace_copy(thrust::host, h_data.begin(), h_data.end(), h_result.begin(), 1, 99);
+  thrust::replace_copy(thrust::host, data, data + N, result, 1, 99);
+  thrust::replace_copy(d_data.begin(), d_data.end(), d_result.begin(), 1, 99);
+  thrust::replace_copy(h_data.begin(), h_data.end(), h_result.begin(), 1, 99);
+  thrust::replace_copy(data, data + N, result, 1, 99);
+}
+
+
+void reverse() {
+  const int N = 6;
+  int data[N] = {0, 1, 2, 3, 4, 5};
+  thrust::device_vector<int> device_data(data, data + N);
+  thrust::host_vector<int> host_data(data, data + N);
+
+  // CHECK:  oneapi::dpl::reverse(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end());
+  // CHECK-NEXT:  oneapi::dpl::reverse(oneapi::dpl::execution::seq, host_data.begin(), host_data.end());
+  // CHECK-NEXT:  oneapi::dpl::reverse(oneapi::dpl::execution::seq, data, data + N);
+  // CHECK-NEXT:  oneapi::dpl::reverse(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end());
+  // CHECK-NEXT:  oneapi::dpl::reverse(oneapi::dpl::execution::seq, host_data.begin(), host_data.end());
+  // CHECK-NEXT:  oneapi::dpl::reverse(oneapi::dpl::execution::seq, data, data + N);
+  thrust::reverse(thrust::device, device_data.begin(), device_data.end());
+  thrust::reverse(thrust::host, host_data.begin(), host_data.end());
+  thrust::reverse(thrust::host, data, data + N);
+  thrust::reverse(device_data.begin(), device_data.end());
+  thrust::reverse(host_data.begin(), host_data.end());
+  thrust::reverse(data, data + N);
 }
