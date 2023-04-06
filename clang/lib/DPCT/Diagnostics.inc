@@ -231,3 +231,5 @@ DEF_WARNING(OVERLOAD_UNSUPPORTED, 1107, "Migration for this overload of %0 is no
 DEF_COMMENT(OVERLOAD_UNSUPPORTED, 1107, "Migration for this overload of {0} is not supported.")
 DEF_WARNING(EXPERIMENTAL_FEATURE, 1108, "'%0' was migrated with the experimental feature %0 which may not be supported by all compilers or runtimes. You may need to adjust the code.")
 DEF_COMMENT(EXPERIMENTAL_FEATURE, 1108, "'{0}' was migrated with the experimental feature {0} which may not be supported by all compilers or runtimes. You may need to adjust the code.")
+DEF_WARNING(DEVICE_UNSUPPORTED_CALL_FUNCTION, 1109, "%0 cannot be called in a SYCL kernel or by functions called by the kernel. You may need to adjust the code.")
+DEF_COMMENT(DEVICE_UNSUPPORTED_CALL_FUNCTION, 1109, "{0} cannot be called in a SYCL kernel or by functions called by the kernel. You may need to adjust the code.")

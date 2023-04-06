@@ -23,6 +23,8 @@
 #include <thrust/functional.h>
 #include <thrust/remove.h>
 #include <thrust/mismatch.h>
+#include <thrust/replace.h>
+#include <thrust/reverse.h>
 
 // for cuda 12.0
 #include <thrust/iterator/constant_iterator.h>
@@ -1011,4 +1013,48 @@ void mismatch_test() {
   thrust::mismatch( A, A+N, B);
   thrust::mismatch(thrust::host, A, A+N, B, thrust::equal_to<int>());
   thrust::mismatch( A, A+N, B, thrust::equal_to<int>());
+}
+
+void replace_copy_test() {
+  const int N = 4;
+  int data[] = {1, 2, 3, 1};
+  thrust::device_vector<int> d_data(data, data +N);
+  thrust::device_vector<int> d_result(4);
+  thrust::host_vector<int> h_data(data, data +N);
+  thrust::host_vector<int> h_result(4);
+  int result[N];
+
+  // CHECK:  oneapi::dpl::replace_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_data.begin(), d_data.end(), d_result.begin(), 1, 99);
+  // CHECK-NEXT:  oneapi::dpl::replace_copy(oneapi::dpl::execution::seq, h_data.begin(), h_data.end(), h_result.begin(), 1, 99);
+  // CHECK-NEXT:  oneapi::dpl::replace_copy(oneapi::dpl::execution::seq, data, data + N, result, 1, 99);
+  // CHECK-NEXT:  oneapi::dpl::replace_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_data.begin(), d_data.end(), d_result.begin(), 1, 99);
+  // CHECK-NEXT:  oneapi::dpl::replace_copy(oneapi::dpl::execution::seq, h_data.begin(), h_data.end(), h_result.begin(), 1, 99);
+  // CHECK-NEXT:  oneapi::dpl::replace_copy(oneapi::dpl::execution::seq, data, data + N, result, 1, 99);
+  thrust::replace_copy(thrust::device, d_data.begin(), d_data.end(), d_result.begin(), 1, 99);
+  thrust::replace_copy(thrust::host, h_data.begin(), h_data.end(), h_result.begin(), 1, 99);
+  thrust::replace_copy(thrust::host, data, data + N, result, 1, 99);
+  thrust::replace_copy(d_data.begin(), d_data.end(), d_result.begin(), 1, 99);
+  thrust::replace_copy(h_data.begin(), h_data.end(), h_result.begin(), 1, 99);
+  thrust::replace_copy(data, data + N, result, 1, 99);
+}
+
+
+void reverse() {
+  const int N = 6;
+  int data[N] = {0, 1, 2, 3, 4, 5};
+  thrust::device_vector<int> device_data(data, data + N);
+  thrust::host_vector<int> host_data(data, data + N);
+
+  // CHECK:  oneapi::dpl::reverse(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end());
+  // CHECK-NEXT:  oneapi::dpl::reverse(oneapi::dpl::execution::seq, host_data.begin(), host_data.end());
+  // CHECK-NEXT:  oneapi::dpl::reverse(oneapi::dpl::execution::seq, data, data + N);
+  // CHECK-NEXT:  oneapi::dpl::reverse(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end());
+  // CHECK-NEXT:  oneapi::dpl::reverse(oneapi::dpl::execution::seq, host_data.begin(), host_data.end());
+  // CHECK-NEXT:  oneapi::dpl::reverse(oneapi::dpl::execution::seq, data, data + N);
+  thrust::reverse(thrust::device, device_data.begin(), device_data.end());
+  thrust::reverse(thrust::host, host_data.begin(), host_data.end());
+  thrust::reverse(thrust::host, data, data + N);
+  thrust::reverse(device_data.begin(), device_data.end());
+  thrust::reverse(host_data.begin(), host_data.end());
+  thrust::reverse(data, data + N);
 }

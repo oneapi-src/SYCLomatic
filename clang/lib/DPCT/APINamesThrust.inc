@@ -45,6 +45,11 @@ thrustFactory("thrust::any_of",
               {{4,PolicyState::HasPolicy,2,"oneapi::dpl::any_of", HelperFeatureEnum::no_feature_helper },
                {3,PolicyState::NoPolicy ,2,"oneapi::dpl::any_of", HelperFeatureEnum::no_feature_helper }}),
 
+// thrust::reverse
+thrustFactory("thrust::reverse",
+              {{3,PolicyState::HasPolicy,2,"oneapi::dpl::reverse", HelperFeatureEnum::no_feature_helper },
+               {2,PolicyState::NoPolicy ,2,"oneapi::dpl::reverse", HelperFeatureEnum::no_feature_helper }}),
+
 // thrust::find_if
 thrustFactory("thrust::find_if",
               {{4,PolicyState::HasPolicy,2,"oneapi::dpl::find_if", HelperFeatureEnum::no_feature_helper },
@@ -59,6 +64,11 @@ thrustFactory("thrust::find_if_not",
 thrustFactory("thrust::replace",
               {{5,PolicyState::HasPolicy,2,"oneapi::dpl::replace", HelperFeatureEnum::no_feature_helper },
                {4,PolicyState::NoPolicy ,2,"oneapi::dpl::replace", HelperFeatureEnum::no_feature_helper }}),
+
+// thrust::replace_copy
+thrustFactory("thrust::replace_copy",
+              {{6,PolicyState::HasPolicy,3,"oneapi::dpl::replace_copy", HelperFeatureEnum::no_feature_helper },
+               {5,PolicyState::NoPolicy ,3,"oneapi::dpl::replace_copy", HelperFeatureEnum::no_feature_helper }}),
 
 // thrust::adjacent_difference
 thrustFactory("thrust::adjacent_difference",

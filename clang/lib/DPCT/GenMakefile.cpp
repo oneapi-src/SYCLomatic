@@ -264,8 +264,10 @@ static void getCompileInfo(
         }
 
         // SYCL support c++17 as default.
-        if (HasCudaSemantics && Val <= 17)
+        if (HasCudaSemantics && Val <= 17) {
+          NewOptions += "-std=c++17 ";
           continue;
+        }
 
         // Skip duplicate options.
         if (DuplicateDuplicateFilter.find(Option) !=

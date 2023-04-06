@@ -34,6 +34,8 @@
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/Path.h"
 #include "MemberExprRewriter.h"
+#include "clang/Analysis/CallGraph.h"
+#include "llvm/ADT/SCCIterator.h"
 
 #include <algorithm>
 #include <iostream>
@@ -2007,7 +2009,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "curandStateXORWOW_t", "curandStateXORWOW",
               "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
               "curandStateMRG32k3a_t", "curandStateMRG32k3a", "thrust::minus",
-              "thrust::negate", "thrust::logical_or", "thrust::identity",
+              "thrust::negate", "thrust::logical_or", 
               "thrust::equal_to", "thrust::less", "cudaSharedMemConfig",
               "curandGenerator_t", "curandRngType_t", "cufftHandle",
               "cufftReal", "cufftDoubleReal", "cufftComplex",
@@ -2158,12 +2160,6 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
   insertHeaderForTypeRule(RealTypeNameStr, BeginLoc);
   if (!Replacement.empty()) {
     insertComplexHeader(BeginLoc, Replacement);
-    if (RealTypeNameStr == "thrust::identity") {
-      // For thrust::identity the template type argument must be
-      // removed as well for correct mapping to oneapi::dpl::identity
-      auto RAngleLoc = TSL.getRAngleLoc();
-      TyLen = SM->getCharacterData(RAngleLoc) - Start + 1;
-    }
     emplaceTransformation(
         new ReplaceText(BeginLoc, TyLen, std::move(Replacement)));
     return true;
@@ -2674,10 +2670,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         TypeStr == "cuFloatComplex") {
       DpctGlobalInfo::getInstance().insertHeader(BeginLoc, HT_Complex);
     }
-    // Add '#include <oneapi/mkl/bfloat16.hpp>' directive to the file only once
-    if (TypeStr == "__nv_bfloat16") {
-      DpctGlobalInfo::getInstance().insertHeader(BeginLoc, HT_MKL_BFloat16);
-    }
     // Add '#include <dpct/lib_common_utils.hpp>' directive to the file only
     // once
     if (TypeStr == "libraryPropertyType" ||
@@ -2690,14 +2682,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         DpctGlobalInfo::getInstance().insertHeader(BeginLoc,
                                                    HT_DPCT_COMMON_Utils);
       }
-    }
-
-    if (TypeStr.rfind("identity", 0) == 0) {
-      emplaceTransformation(new ReplaceToken(
-          TL->getBeginLoc().getLocWithOffset(Lexer::MeasureTokenLength(
-              TL->getBeginLoc(), dpct::DpctGlobalInfo::getSourceManager(),
-              dpct::DpctGlobalInfo::getContext().getLangOpts())),
-          TL->getEndLoc(), ""));
     }
 
     const DeclaratorDecl *DD = nullptr;
@@ -8898,6 +8882,28 @@ void KernelCallRule::removeTrailingSemicolon(
 
 REGISTER_RULE(KernelCallRule, PassKind::PK_Analysis)
 
+
+bool isRecursiveDeviceFuncDecl(const FunctionDecl* FD) {
+  // Build call graph for FunctionDecl and look for cycles in call graph.
+  // Emit the warning message when the recursive call exists in kernel function.
+  if (!FD) return false;
+  CallGraph CG;
+  CG.addToCallGraph(const_cast<FunctionDecl *>(FD));
+  bool FDIsRecursive = false;
+  for (llvm::scc_iterator<CallGraph *> SCCI = llvm::scc_begin(&CG),
+                              SCCE = llvm::scc_end(&CG);
+                              SCCI != SCCE; ++SCCI) {
+    if (SCCI.hasCycle()) FDIsRecursive = true;
+  }
+  return FDIsRecursive;
+}
+
+bool isRecursiveDeviceCallExpr(const CallExpr* CE) {
+  if (isRecursiveDeviceFuncDecl(CE->getDirectCallee()))
+    return true;
+  return false;
+}
+
 // __device__ function call information collection
 void DeviceFunctionDeclRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto DeviceFunctionMatcher =
@@ -8976,6 +8982,16 @@ void DeviceFunctionDeclRule::runRule(
   if (FD->isVariadic()) {
     report(FD->getBeginLoc(), Warnings::DEVICE_VARIADIC_FUNCTION, false);
   }
+
+  if (FD->isVirtualAsWritten()) {
+    report(FD->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
+                              false, "Virtual functions");
+  }
+
+  if(isRecursiveDeviceFuncDecl(FD))
+    report(FD->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
+                            false, "Recursive functions");
+
   FuncInfo = DeviceFunctionDecl::LinkRedecls(FD);
   if (!FuncInfo)
     return;
@@ -8991,8 +9007,20 @@ void DeviceFunctionDeclRule::runRule(
   if (isLambda(FD) && !FuncInfo->isLambda()) {
     FuncInfo->setLambda();
   }
-
+  if (DpctGlobalInfo::isOptimizeMigration() && !FD->isInlined() &&
+                                !FuncInfo->IsAlwaysInlineDevFunc()) {
+    FuncInfo->setAlwaysInlineDevFunc();
+  }
   if (auto CE = getAssistNodeAsType<CallExpr>(Result, "callExpr")) {
+    if (CE->getDirectCallee()) {
+      if (CE->getDirectCallee()->isVirtualAsWritten())
+        report(CE->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
+                        false, "Virtual functions");
+    }
+
+    if (isRecursiveDeviceCallExpr(CE))
+      report(CE->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
+                                false, "Recursive functions");
     FuncInfo->addCallee(CE);
   } else if (CE = getAssistNodeAsType<CallExpr>(Result, "PrintfExpr")) {
     if (FD->hasAttr<CUDAHostAttr>()) {

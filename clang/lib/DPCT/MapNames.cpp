@@ -265,8 +265,6 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("oneapi::dpl::equal_to")},
       {"thrust::less", std::make_shared<TypeNameRule>("oneapi::dpl::less")},
       {"thrust::negate", std::make_shared<TypeNameRule>("std::negate")},
-      {"thrust::identity",
-       std::make_shared<TypeNameRule>("oneapi::dpl::identity")},
       {"thrust::logical_or", std::make_shared<TypeNameRule>("std::logical_or")},
       {"thrust::divides", std::make_shared<TypeNameRule>("std::divides")},
       {"thrust::tuple", std::make_shared<TypeNameRule>("std::tuple")},
@@ -419,8 +417,8 @@ void MapNames::setExplicitNamespaceMap() {
                        getDpctNamespace() + "image_wrapper_base_p",
                        HelperFeatureEnum::Image_image_wrapper_base_p_alias)},
       {"cudaDeviceAttr", std::make_shared<TypeNameRule>("int")},
-      {"__nv_bfloat16",
-       std::make_shared<TypeNameRule>("oneapi::mkl::bfloat16")},
+      {"__nv_bfloat16", std::make_shared<TypeNameRule>(
+                            getClNamespace() + "ext::oneapi::bfloat16")},
       {"libraryPropertyType_t",
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "version_field",
@@ -591,6 +589,10 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "dnnl::rnn_memory_format_tag",
            HelperFeatureEnum::DnnlUtils_rnn_memory_format_tag)},
+      {"cudnnDropoutDescriptor_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::dropout_desc",
+           HelperFeatureEnum::DnnlUtils_dropout_desc)},
   };
 
   // CuDNN Enum constants name mapping.
@@ -1301,7 +1303,7 @@ void MapNames::setExplicitNamespaceMap() {
 #include "APINames_NCCL.inc"
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"
-#include "APINames_cuGRAPH.inc"
+#include "APINames_nvGRAPH.inc"
 #include "APINames_cuRAND.inc"
 #include "APINames_cuSOLVER.inc"
 #include "APINames_cuSPARSE.inc"
@@ -4310,7 +4312,7 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #include "APINames_NVML.inc"
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"
-#include "APINames_cuGRAPH.inc"
+#include "APINames_nvGRAPH.inc"
 #include "APINames_cuRAND.inc"
 #include "APINames_cuSOLVER.inc"
 #include "APINames_cuSPARSE.inc"
