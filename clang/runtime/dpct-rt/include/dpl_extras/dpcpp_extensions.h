@@ -19,6 +19,16 @@
 #include "../dpct.hpp"
 
 namespace dpct {
+
+template <T>
+__dpct_inline__ 
+::std::enable_if_t<::std::is_unsigned_v<T>, T>
+bfe(T source, uint32_t bit_start,
+                    uint32_t num_bits) {
+  const T MASK = (1 << num_bits) - 1;
+  return (source >> bit_start) & MASK;
+}
+
 namespace group {
 
 namespace detail {
@@ -162,12 +172,6 @@ template <int N, int COUNT> struct log2<N, 0, COUNT> {
   enum { VALUE = (1 << (COUNT - 1) < N) ? COUNT : COUNT - 1 };
 };
 
-__dpct_inline__ uint32_t bfe(uint32_t source, uint32_t bit_start,
-                    uint32_t num_bits) {
-  const uint32_t MASK = (1 << num_bits) - 1;
-  return (source >> bit_start) & MASK;
-}
-
 template <int RADIX_BITS, bool DESCENDING = false> class radix_rank {
 public:
   static size_t get_local_memory_size(size_t group_threads) {
@@ -192,7 +196,7 @@ public:
 
 #pragma unroll
     for (int i = 0; i < VALUES_PER_THREAD; ++i) {
-      uint32_t digit = bfe(keys[i], current_bit, num_bits);
+      uint32_t digit = ::dpct::bfe(keys[i], current_bit, num_bits);
       uint32_t sub_counter = digit >> LOG_COUNTER_LANES;
       uint32_t counter_lane = digit & (COUNTER_LANES - 1);
 
