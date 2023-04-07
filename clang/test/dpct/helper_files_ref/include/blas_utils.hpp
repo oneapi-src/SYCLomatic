@@ -89,7 +89,7 @@ inline void nrm2_impl(sycl::queue &q, int n, const void *x, int incx,
 #ifndef __INTEL_MKL__
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
-#endif
+#else
 #ifdef DPCT_USM_LEVEL_NONE
   auto x_buffer = dpct::get_buffer<Tx>(x);
   auto r_buffer =
@@ -102,6 +102,7 @@ inline void nrm2_impl(sycl::queue &q, int n, const void *x, int incx,
   oneapi::mkl::blas::column_major::nrm2(q, n, reinterpret_cast<const Tx *>(x),
                                         incx, res_mem.get_ptr());
 #endif
+#endif
 }
 
 template <bool is_conjugate, class Txy, class Tr>
@@ -110,7 +111,7 @@ inline void dotuc_impl(sycl::queue &q, int n, const Txy *x, int incx,
 #ifndef __INTEL_MKL__
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
-#endif
+#else
 #ifdef DPCT_USM_LEVEL_NONE
   auto x_buffer = dpct::get_buffer<Txy>(x);
   auto y_buffer = dpct::get_buffer<Txy>(y);
@@ -138,6 +139,7 @@ inline void dotuc_impl(sycl::queue &q, int n, const Txy *x, int incx,
       oneapi::mkl::blas::column_major::dotu(q, n, x, incx, y, incy, res_mem.get_ptr());
   } else
     oneapi::mkl::blas::column_major::dot(q, n, x, incx, y, incy, res_mem.get_ptr());
+#endif
 #endif
 }
 
@@ -201,11 +203,12 @@ inline void scal_impl(sycl::queue &q, int n, const void *alpha, void *x,
 #ifndef __INTEL_MKL__
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
-#endif
+#else
   Te alpha_val = dpct::get_value(reinterpret_cast<const Te *>(alpha), q);
   auto data_x = get_memory(reinterpret_cast<Tx *>(x));
   oneapi::mkl::blas::column_major::scal(q, n, alpha_val,
                                         data_x, incx);
+#endif
 }
 
 template <class Txy, class Te>
@@ -214,13 +217,14 @@ inline void axpy_impl(sycl::queue &q, int n, const void *alpha, const void *x,
 #ifndef __INTEL_MKL__
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
-#endif
+#else
   Te alpha_val = dpct::get_value(reinterpret_cast<const Te *>(alpha), q);
   auto data_x = get_memory(reinterpret_cast<const Txy *>(x));
   auto data_y = get_memory(reinterpret_cast<Txy *>(y));
   oneapi::mkl::blas::column_major::axpy(q, n, alpha_val,
                                         data_x, incx,
                                         data_y, incy);
+#endif
 }
 
 template <class Txy, class Tc, class Ts>
@@ -229,7 +233,7 @@ inline void rot_impl(sycl::queue &q, int n, void *x, int incx, void *y,
 #ifndef __INTEL_MKL__
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
-#endif
+#else
   Tc c_value = dpct::get_value(reinterpret_cast<const Tc *>(c), q);
   Ts s_value = dpct::get_value(reinterpret_cast<const Ts *>(s), q);
   auto data_x = get_memory(reinterpret_cast<Txy *>(x));
@@ -237,6 +241,7 @@ inline void rot_impl(sycl::queue &q, int n, void *x, int incx, void *y,
   oneapi::mkl::blas::column_major::rot(q, n, data_x, incx,
                                        data_y, incy, c_value,
                                        s_value);
+#endif
 }
 
 template <class Ta, class Tb, class Tc, class Ts>
@@ -247,7 +252,7 @@ inline void gemm_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
 #ifndef __INTEL_MKL__
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
-#endif
+#else
   Ts alpha_value = dpct::get_value(reinterpret_cast<const Ts *>(alpha), q);
   Ts beta_value = dpct::get_value(reinterpret_cast<const Ts *>(beta), q);
   auto data_a = get_memory(reinterpret_cast<const Ta *>(a));
@@ -256,6 +261,7 @@ inline void gemm_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
   oneapi::mkl::blas::column_major::gemm(
       q, a_trans, b_trans, m, n, k, alpha_value, data_a, lda,
       data_b, ldb, beta_value, data_c, ldc);
+#endif
 }
 
 template <class Ta, class Tb, class Tc, class Ts>
@@ -267,7 +273,7 @@ inline void gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
 #ifndef __INTEL_MKL__
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
-#endif
+#else
   struct matrix_info_t {
     oneapi::mkl::transpose transpose_info[2];
     Ts value_info[2];
@@ -306,6 +312,7 @@ inline void gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
     cgh.depends_on(e);
     cgh.host_task([=] { std::free(matrix_info); });
   });
+#endif
 }
 
 template <class Ta, class Tb, class Tc, class Ts>
@@ -319,7 +326,7 @@ gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
 #ifndef __INTEL_MKL__
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
-#endif
+#else
   Ts alpha_value = dpct::get_value(reinterpret_cast<const Ts *>(alpha), q);
   Ts beta_value = dpct::get_value(reinterpret_cast<const Ts *>(beta), q);
   auto data_a = get_memory(reinterpret_cast<const Ta *>(a));
@@ -329,6 +336,7 @@ gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
       q, a_trans, b_trans, m, n, k, alpha_value, data_a, lda,
       stride_a, data_b, ldb, stride_b, beta_value,
       data_c, ldc, stride_c, batch_size);
+#endif
 }
 
 template <bool is_hermitian, class T, class Tbeta>
@@ -454,7 +462,7 @@ inline void getrfnp_batch_wrapper(sycl::queue &exec_queue, int n, T *a[],
 #ifndef __INTEL_MKL__
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
-#endif
+#else
   using Ty = typename DataType<T>::T2;
   // Set the info array value to 0
   detail::dpct_memset(exec_queue, info, 0, sizeof(int) * batch_size);
@@ -503,6 +511,7 @@ inline void getrfnp_batch_wrapper(sycl::queue &exec_queue, int n, T *a[],
     cgh.depends_on(events);
     cgh.host_task([=] { free(host_a); });
   });
+#endif
 }
 
 } // namespace detail

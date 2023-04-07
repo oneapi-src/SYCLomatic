@@ -67,7 +67,7 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
 #ifndef __INTEL_MKL__
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
-#endif
+#else
   using Ty = typename dpct::DataType<T>::T2;
   auto alpha_value =
       detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
@@ -119,6 +119,7 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
     cgh.depends_on(e);
     cgh.host_task([=] { delete sparse_matrix_handle; });
   });
+#endif
 }
 
 /// Computes a CSR format sparse matrix-dense matrix product.
@@ -149,7 +150,7 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
 #ifndef __INTEL_MKL__
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
-#endif
+#else
   using Ty = typename dpct::DataType<T>::T2;
   auto alpha_value =
       detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
@@ -189,6 +190,7 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
     cgh.depends_on(e);
     cgh.host_task([=] { delete sparse_matrix_handle; });
   });
+#endif
 }
 
 #ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.

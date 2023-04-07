@@ -414,10 +414,11 @@ public:
 #ifndef __INTEL_MKL__
     throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
                              "Interfaces Project does not support this API.");
-#endif
+#else
     static_assert(sizeof(unsigned int) == sizeof(std::uint32_t));
     generate<oneapi::mkl::rng::uniform_bits<std::uint32_t>>(
         (std::uint32_t *)output, n);
+#endif
   }
 
   /// Generate unsigned long long random number(s) with 'uniform_bits'
@@ -429,10 +430,11 @@ public:
 #ifndef __INTEL_MKL__
     throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
                              "Interfaces Project does not support this API.");
-#endif
+#else
     static_assert(sizeof(unsigned long long) == sizeof(std::uint64_t));
     generate<oneapi::mkl::rng::uniform_bits<std::uint64_t>>(
         (std::uint64_t *)output, n);
+#endif
   }
 
   /// Generate float random number(s) with 'lognormal' distribution.
@@ -504,11 +506,12 @@ public:
 #ifndef __INTEL_MKL__
     throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
                              "Interfaces Project does not support this API.");
-#endif
+#else
     if constexpr (std::is_same_v<engine_t, oneapi::mkl::rng::mt2203>)
       throw std::runtime_error("no skip_ahead method of mt2203 engine.");
     else
       oneapi::mkl::rng::skip_ahead(_engine, num_to_skip);
+#endif
   }
 
 private:
@@ -577,7 +580,7 @@ inline host_rng_ptr create_host_rng(const random_engine_type type) {
 #ifndef __INTEL_MKL__
     throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
                              "Interfaces Project does not support this API.");
-#endif
+#else
   case random_engine_type::mt2203:
     return std::make_shared<
         rng::host::detail::rng_generator<oneapi::mkl::rng::mt2203>>();
@@ -590,6 +593,7 @@ inline host_rng_ptr create_host_rng(const random_engine_type type) {
   case random_engine_type::mcg59:
     return std::make_shared<
         rng::host::detail::rng_generator<oneapi::mkl::rng::mcg59>>();
+#endif
   }
 }
 // DPCT_LABEL_END

@@ -682,7 +682,7 @@ template <typename T> struct getrfnp_impl {
     throw std::runtime_error(
         "The oneAPI Math Kernel Library (oneMKL) Interfaces "
         "Project does not support this API.");
-#endif
+#else
     std::int64_t a_stride = m * lda;
     auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
     auto device_ws_data =
@@ -690,6 +690,7 @@ template <typename T> struct getrfnp_impl {
     oneapi::mkl::lapack::getrfnp_batch(q, m, n, a_data, lda, a_stride, 1,
                                        device_ws_data, device_ws_size);
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+#endif
   }
 };
 // DPCT_LABEL_END
@@ -754,6 +755,11 @@ template <typename T> struct gesvd_conj_impl : public gesvd_impl<T> {
                   void *u, std::int64_t ldu, library_data_t vt_type, void *vt,
                   std::int64_t ldvt, void *device_ws,
                   std::size_t device_ws_size, int *info) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error(
+        "The oneAPI Math Kernel Library (oneMKL) Interfaces "
+        "Project does not support this API.");
+#else
     using base = gesvd_impl<T>;
     base::operator()(q, jobu, jobvt, m, n, a_type, a, lda, s_type, s, u_type, u,
                      ldu, vt_type, vt, ldvt, device_ws, device_ws_size, info);
@@ -761,6 +767,7 @@ template <typename T> struct gesvd_conj_impl : public gesvd_impl<T> {
     oneapi::mkl::blas::row_major::imatcopy(q, oneapi::mkl::transpose::conjtrans,
                                            n, n, T(1.0f), vt_data, ldvt, ldvt);
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+#endif
   }
 };
 // DPCT_LABEL_END
@@ -891,7 +898,7 @@ inline int getrf(sycl::queue &q, std::int64_t m, std::int64_t n,
 #ifndef __INTEL_MKL__
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
                            "Project does not support this API.");
-#endif
+#else
   std::size_t device_ws_size_in_element_number =
       detail::byte_to_element_number(device_ws_size, a_type);
   if (ipiv == nullptr) {
@@ -902,6 +909,7 @@ inline int getrf(sycl::queue &q, std::int64_t m, std::int64_t n,
   return detail::lapack_shim<detail::getrf_impl>(
       q, a_type, info, "getrf", q, m, n, a_type, a, lda, ipiv, device_ws,
       device_ws_size_in_element_number, info);
+#endif
 }
 // DPCT_LABEL_END
 
