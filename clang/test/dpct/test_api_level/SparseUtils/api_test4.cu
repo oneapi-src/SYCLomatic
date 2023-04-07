@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/SparseUtils/api_test4_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/SparseUtils/api_test4_out
 
-// CHECK: 2
+// CHECK: 1
 // TEST_FEATURE: SparseUtils_optimize_info
 
 #include "cusparse.h"

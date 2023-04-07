@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/SparseUtils/api_test5_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/SparseUtils/api_test5_out
 
-// CHECK: 6
+// CHECK: 2
 // TEST_FEATURE: SparseUtils_optimize_csrsv
 
 #include "cusparse.h"

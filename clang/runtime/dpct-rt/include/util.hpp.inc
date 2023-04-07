@@ -428,7 +428,7 @@ T select_from_sub_group(unsigned int member_mask,
   (void)remote_local_id;
   (void)logical_sub_group_size;
   (void)member_mask;
-  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+  std::runtime_error("DPCT: Masked version of select_from_sub_group not "
                         "supported on host device and none intel compiler.");
 #endif // __SYCL_DEVICE_ONLY__ && __INTEL_LLVM_COMPILER
 }
@@ -474,7 +474,7 @@ T shift_sub_group_left(unsigned int member_mask,
   (void)delta;
   (void)logical_sub_group_size;
   (void)member_mask;
-  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+  std::runtime_error("DPCT: Masked version of select_from_sub_group not "
                         "supported on host device and none intel compiler.");
 #endif // __SYCL_DEVICE_ONLY__ && __INTEL_LLVM_COMPILER
 }
@@ -520,7 +520,7 @@ T shift_sub_group_right(unsigned int member_mask,
   (void)delta;
   (void)logical_sub_group_size;
   (void)member_mask;
-  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+  std::runtime_error("DPCT: Masked version of select_from_sub_group not "
                         "supported on host device and none intel compiler.");
 #endif // __SYCL_DEVICE_ONLY && __INTEL_LLVM_COMPILER
 }
@@ -564,7 +564,7 @@ T permute_sub_group_by_xor(unsigned int member_mask,
   (void)mask;
   (void)logical_sub_group_size;
   (void)member_mask;
-  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+  std::runtime_error("DPCT: Masked version of select_from_sub_group not "
                         "supported on host device and none intel compiler.");
 #endif // __SYCL_DEVICE_ONLY__ && __INTEL_LLVM_COMPILER
 }

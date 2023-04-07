@@ -185,7 +185,7 @@ template <typename T>
 inline int potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
                        T *a[], int lda, int *info, int group_size) {
 #ifdef DPCT_USM_LEVEL_NONE
-  throw std::runtime_error("this API is unsupported when USM level is none");
+  throw dpct::exception("this API is unsupported when USM level is none");
 #else
   using Ty = typename DataType<T>::T2;
   struct matrix_info_t {
@@ -276,7 +276,7 @@ inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
                        int nrhs, T *a[], int lda, T *b[], int ldb, int *info,
                        int group_size) {
 #ifdef DPCT_USM_LEVEL_NONE
-  throw std::runtime_error("this API is unsupported when USM level is none");
+  throw dpct::exception("this API is unsupported when USM level is none");
 #else
   using Ty = typename DataType<T>::T2;
   struct matrix_info_t {
@@ -367,7 +367,7 @@ inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
               << "detail: " << e.detail() << std::endl;
     if (e.info() < std::numeric_limits<int>::min() ||
         e.info() > std::numeric_limits<int>::max()) {
-      throw std::runtime_error("e.info() exceeds the limit of int type");
+      throw dpct::exception("e.info() exceeds the limit of int type");
     }
     int info_val = static_cast<int>(e.info());
     if (info)
@@ -395,7 +395,7 @@ inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
       break;
     }
     default:
-      throw std::runtime_error("the data type is unsupported");
+      throw dpct::exception("the data type is unsupported");
     }
   } catch (oneapi::mkl::lapack::batch_error const &be) {
     try {
@@ -443,7 +443,7 @@ std::size_t byte_to_element_number(std::size_t size_in_byte,
       dpct::detail::library_data_size[static_cast<unsigned int>(element_type)] /
           8);
   if (dv.rem) {
-    throw std::runtime_error(
+    throw dpct::exception(
         "size_in_byte is not divisible by the size of element (in bytes)");
   }
   return dv.quot;
@@ -454,7 +454,7 @@ std::size_t element_number_to_byte(std::size_t size_in_element,
       dpct::detail::library_data_size[static_cast<unsigned int>(element_type)],
       8);
   if (dv.rem) {
-    throw std::runtime_error(
+    throw dpct::exception(
         "the size of element (in bits) is not divisible by 8");
   }
   return size_in_element * dv.quot;
@@ -471,7 +471,7 @@ inline oneapi::mkl::jobsvd char2jobsvd(signed char job) {
   case 'N':
     return oneapi::mkl::jobsvd::novec;
   default:
-    throw std::runtime_error("the job type is unsupported");
+    throw dpct::exception("the job type is unsupported");
   }
 }
 
@@ -865,7 +865,7 @@ inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
   } else if (jobz == oneapi::mkl::job::novec) {
     jobu = jobvt = oneapi::mkl::jobsvd::novec;
   } else {
-    throw std::runtime_error("the job type is unsupported");
+    throw dpct::exception("the job type is unsupported");
   }
   std::size_t device_ws_size_64;
   int ret = detail::lapack_shim<detail::gesvd_scratchpad_size_impl>(
@@ -961,7 +961,7 @@ inline int gesvd(sycl::queue &q, oneapi::mkl::job jobz, std::int64_t all_vec,
   } else if (jobz == oneapi::mkl::job::novec) {
     jobu = jobvt = oneapi::mkl::jobsvd::novec;
   } else {
-    throw std::runtime_error("the job type is unsupported");
+    throw dpct::exception("the job type is unsupported");
   }
 
   detail::lapack_shim<detail::gesvd_conj_impl>(

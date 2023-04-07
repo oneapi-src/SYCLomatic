@@ -129,7 +129,7 @@ static inline fs::path write_data_to_file(char const *const data, size_t size) {
 
   if (sizeof(size_t) >= sizeof(std::streamsize) &&
       size > (std::numeric_limits<std::streamsize>::max)())
-    throw std::runtime_error("data file too large");
+    throw dpct::exception("data file too large");
 
   // random number generator
   std::random_device dev;
@@ -139,7 +139,7 @@ static inline fs::path write_data_to_file(char const *const data, size_t size) {
   // find temporary directory
   auto tmp_dir = fs::temp_directory_path(ec);
   if (ec)
-    throw std::runtime_error("could not find temporary directory");
+    throw dpct::exception("could not find temporary directory");
 
   // create private directory
   std::stringstream directory;
@@ -155,12 +155,12 @@ static inline fs::path write_data_to_file(char const *const data, size_t size) {
     }
   }
   if (i == max_attempts)
-    throw std::runtime_error("could not create directory");
+    throw dpct::exception("could not create directory");
 
   // only allow owner permissions to private directory
   fs::permissions(directory_path, fs::perms::owner_all, ec);
   if (ec)
-    throw std::runtime_error("could not set directory permissions");
+    throw dpct::exception("could not set directory permissions");
 
   // random filename in private directory
   std::stringstream filename;
@@ -177,20 +177,20 @@ static inline fs::path write_data_to_file(char const *const data, size_t size) {
     // only allow program to write file
     fs::permissions(filepath, fs::perms::owner_write, ec);
     if (ec)
-      throw std::runtime_error("could not set permissions");
+      throw dpct::exception("could not set permissions");
 
     outfile.write(data, size);
     if (!outfile.good())
-      throw std::runtime_error("could not write data");
+      throw dpct::exception("could not write data");
     outfile.close();
 
     // only allow program to read/execute file
     fs::permissions(filepath, fs::perms::owner_read | fs::perms::owner_exec,
                     ec);
     if (ec)
-      throw std::runtime_error("could not set permissions");
+      throw dpct::exception("could not set permissions");
   } else
-    throw std::runtime_error("could not write data");
+    throw dpct::exception("could not write data");
 
   // check temporary file contents
   auto infile = std::ifstream(filepath, std::ios::in | std::ios::binary);
@@ -207,12 +207,12 @@ static inline fs::path write_data_to_file(char const *const data, size_t size) {
         mismatch = true;
     }
     if (cnt != size || mismatch)
-      throw std::runtime_error("file contents not written correctly");
+      throw dpct::exception("file contents not written correctly");
   } else
-    throw std::runtime_error("could not validate file");
+    throw dpct::exception("could not validate file");
 
   if (!filepath.is_absolute())
-    throw std::runtime_error("temporary filepath is not absolute");
+    throw dpct::exception("temporary filepath is not absolute");
 
   return filepath;
 }
@@ -259,7 +259,7 @@ static inline uint64_t get_lib_size(char const *const blob) {
   unsigned char const *const ublob =
       reinterpret_cast<unsigned char const *const>(blob);
   if (ublob[0] != 0x4d || ublob[1] != 0x5a) {
-    throw std::runtime_error("Blob is not a Windows DLL.");
+    throw dpct::exception("Blob is not a Windows DLL.");
   }
   uint32_t pe_header_offset = extract32(ublob + 0x3c);
 
@@ -270,13 +270,13 @@ static inline uint64_t get_lib_size(char const *const blob) {
   // signature
   uint32_t pe_signature = extract32(pe_header + 0);
   if (pe_signature != 0x00004550) {
-    throw std::runtime_error("PE-header signature is not 0x00004550");
+    throw dpct::exception("PE-header signature is not 0x00004550");
   }
 
   // machine
   uint16_t machine = extract16(pe_header + 4);
   if (machine != 0x8664) {
-    throw std::runtime_error("Only DLLs for x64 supported");
+    throw dpct::exception("Only DLLs for x64 supported");
   }
 
   // number of sections
@@ -288,7 +288,7 @@ static inline uint64_t get_lib_size(char const *const blob) {
   // magic
   uint16_t magic = extract16(pe_header + 24);
   if (magic != 0x10b && magic != 0x20b) {
-    throw std::runtime_error("MAGIC is not 0x010b or 0x020b");
+    throw dpct::exception("MAGIC is not 0x010b or 0x020b");
   }
 
   ///////////////////////////////////////////////////////////////////////
@@ -298,7 +298,7 @@ static inline uint64_t get_lib_size(char const *const blob) {
   unsigned char const *const tail_of_optional_header =
       pe_header + coff_header_size + sizeof_optional_header;
   if (extract64(tail_of_optional_header - 8) != 0) {
-    throw std::runtime_error("Optional header not zero-padded");
+    throw dpct::exception("Optional header not zero-padded");
   }
 
   ///////////////////////////////////////////////////////////////////////
@@ -313,13 +313,13 @@ static inline uint64_t get_lib_size(char const *const blob) {
   return sizeof_raw_data + pointer_to_raw_data;
 #else
   if (blob[0] != 0x7F || blob[1] != 'E' || blob[2] != 'L' || blob[3] != 'F')
-    throw std::runtime_error("Blob is not in ELF format");
+    throw dpct::exception("Blob is not in ELF format");
 
   if (blob[4] != 0x02)
-    throw std::runtime_error("Only 64-bit headers are supported");
+    throw dpct::exception("Only 64-bit headers are supported");
 
   if (blob[5] != 0x01)
-    throw std::runtime_error("Only little-endian headers are supported");
+    throw dpct::exception("Only little-endian headers are supported");
 
   unsigned char const *const ublob =
       reinterpret_cast<unsigned char const *const>(blob);
@@ -353,7 +353,7 @@ public:
     fs::permissions(path, fs::perms::owner_all);
     if (fs::remove_all(path.remove_filename(), ec) != 2 || ec)
       // one directory and one temporary file should have been deleted
-      throw std::runtime_error("Directory delete failed");
+      throw dpct::exception("Directory delete failed");
 
     lib_to_path.erase(library);
   }
@@ -390,7 +390,7 @@ static inline kernel_library load_dl_from_data(char const *const data,
   void *so = dlopen(filename.c_str(), RTLD_LAZY);
 #endif
   if (so == nullptr)
-    throw std::runtime_error("Failed to load kernel library");
+    throw dpct::exception("Failed to load kernel library");
 
 #ifdef _WIN32
   detail::path_lib_record::record_lib_path(filename, so);
@@ -400,7 +400,7 @@ static inline kernel_library load_dl_from_data(char const *const data,
   // Windows DLL cannot be deleted while in use
   if (fs::remove_all(filename.remove_filename(), ec) != 2 || ec)
     // one directory and one temporary file should have been deleted
-    throw std::runtime_error("Directory delete failed");
+    throw dpct::exception("Directory delete failed");
 #endif
 
   return so;
@@ -470,7 +470,7 @@ get_kernel_function(kernel_library &library, const std::string &name) {
       dlsym(library, (name + std::string("_wrapper")).c_str()));
 #endif
   if (fn == nullptr)
-    throw std::runtime_error("Failed to get function");
+    throw dpct::exception("Failed to get function");
   return fn;
 }
 
@@ -514,7 +514,7 @@ get_image_wrapper(dpct::kernel_library &library, const std::string &name) {
       dlsym(library, name.c_str()));
 #endif
   if (fn == nullptr)
-    throw std::runtime_error("Failed to get image");
+    throw dpct::exception("Failed to get image");
   return fn;
 }
 // DPCT_LABEL_END

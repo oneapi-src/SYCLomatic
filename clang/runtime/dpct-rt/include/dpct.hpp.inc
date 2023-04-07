@@ -51,6 +51,15 @@ template <class... Args> class dpct_kernel_name;
 template <int Arg> class dpct_kernel_scalar;
 // DPCT_LABEL_END
 
+namespace dpct {
+class exception: public sycl::exception {
+public:
+  exception(const std::string &Msg): sycl::exception(Msg) {}
+
+  exception(std::error_code ec, const std::string &Msg): sycl::exception(ec, Msg) {}
+};
+};
+
 // DPCT_LABEL_BEGIN|local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE

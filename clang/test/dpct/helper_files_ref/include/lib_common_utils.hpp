@@ -54,7 +54,7 @@ inline void mkl_get_version(version_field field, int *result) {
   } else if (version_field::patch == field) {
     *result = 0;
   } else {
-    throw std::runtime_error("unknown field");
+    throw dpct::exception("unknown field");
   }
 }
 

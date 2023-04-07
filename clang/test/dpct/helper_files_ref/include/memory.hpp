@@ -125,7 +125,7 @@ public:
       return nullptr;
     std::lock_guard<std::mutex> lock(m_mutex);
     if (next_free + size > mapped_address_space + mapped_region_size) {
-      throw std::runtime_error("dpct_malloc: out of memory for virtual memory pool");
+      throw dpct::exception("dpct_malloc: out of memory for virtual memory pool");
     }
     // Allocation
     sycl::range<1> r(size);
@@ -184,14 +184,14 @@ private:
     auto it = m_map.upper_bound((byte_t *)ptr);
     if (it == m_map.end()) {
       // Not a virtual pointer.
-      throw std::runtime_error("can not get buffer from non-virtual pointer");
+      throw dpct::exception("can not get buffer from non-virtual pointer");
     }
     const allocation &alloc = it->second;
     if (ptr < alloc.alloc_ptr) {
       // Out of bound.
       // This may happen if there's a gap between allocations due to alignment
       // or extra padding and pointer points to this gap.
-      throw std::runtime_error("invalid virtual pointer");
+      throw dpct::exception("invalid virtual pointer");
     }
     return it;
   }
@@ -346,7 +346,7 @@ static memcpy_direction deduce_memcpy_direction(sycl::queue &q, void *to_ptr,
         q, to_ptr))][static_cast<unsigned>(get_pointer_attribute(q, from_ptr))];
   }
   default:
-    throw std::runtime_error("dpct_memcpy: invalid direction value");
+    throw dpct::exception("dpct_memcpy: invalid direction value");
   }
 }
 
@@ -412,7 +412,7 @@ dpct_memcpy(sycl::queue &q, void *to_ptr, const void *from_ptr, size_t size,
     });
   }
   default:
-    throw std::runtime_error("dpct_memcpy: invalid direction value");
+    throw dpct::exception("dpct_memcpy: invalid direction value");
   }
 #else
   return q.memcpy(to_ptr, from_ptr, size, dep_events);
@@ -578,7 +578,7 @@ dpct_memcpy(sycl::queue &q, void *to_ptr, const void *from_ptr,
 #endif
   break;
   default:
-    throw std::runtime_error("dpct_memcpy: invalid direction value");
+    throw dpct::exception("dpct_memcpy: invalid direction value");
   }
   return event_list;
 }
@@ -697,7 +697,7 @@ static std::pair<buffer_t, size_t> get_buffer_and_offset(const void *ptr) {
     size_t offset = (byte_t *)ptr - alloc.alloc_ptr;
     return std::make_pair(alloc.buffer, offset);
   } else {
-    throw std::runtime_error(
+    throw dpct::exception(
         "NULL pointer argument in get_buffer_and_offset function is invalid");
   }
 }
@@ -756,7 +756,7 @@ get_access(const void *ptr, sycl::handler &cgh) {
     auto alloc = detail::mem_mgr::instance().translate_ptr(ptr);
     return alloc.buffer.get_access<accessMode>(cgh);
   } else {
-    throw std::runtime_error(
+    throw dpct::exception(
         "NULL pointer argument in get_access function is invalid");
   }
 }
@@ -1316,7 +1316,7 @@ public:
   void init(const void *ptr,
               sycl::queue &q = dpct::get_default_queue()) {
 #ifdef DPCT_USM_LEVEL_NONE
-    throw std::runtime_error(
+    throw dpct::exception(
           "dpct::pointer_attributes: only works for USM pointer.");
 #else
     memory_type = sycl::get_pointer_type(ptr, q.get_context());

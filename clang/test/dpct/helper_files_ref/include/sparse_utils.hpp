@@ -12,6 +12,7 @@
 #include "lib_common_utils.hpp"
 #include <oneapi/mkl.hpp>
 #include <sycl/sycl.hpp>
+#include "util.hpp"
 
 namespace dpct {
 namespace sparse {
@@ -105,7 +106,7 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
     break;
   }
   default:
-    throw std::runtime_error(
+    throw dpct::excpetion(
         "the spmv does not support matrix_info::matrix_type::he");
   }
 
@@ -170,7 +171,7 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
     break;
   }
   default:
-    throw std::runtime_error(
+    throw dpct::exception(
         "the csrmm does not support matrix_info::matrix_type::sy, "
         "matrix_info::matrix_type::tr amd matrix_info::matrix_type::he");
   }

@@ -17,6 +17,15 @@
 template <class... Args> class dpct_kernel_name;
 template <int Arg> class dpct_kernel_scalar;
 
+namespace dpct {
+class exception: public sycl::exception {
+public:
+  exception(const std::string &Msg): sycl::exception(Msg) {}
+
+  exception(std::error_code ec, const std::string &Msg): sycl::exception(ec, Msg) {}
+};
+};
+
 #include "atomic.hpp"
 #include "device.hpp"
 #include "image.hpp"

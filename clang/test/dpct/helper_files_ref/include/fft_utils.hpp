@@ -644,7 +644,7 @@ public:
         _desc_dr->set_workspace(data);
       }
     } else {
-      throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
+      throw dpct::exception(sycl::make_error_code(sycl::errc::invalid),
                             "invalid fft type");
     }
   }
@@ -847,7 +847,7 @@ private:
         }
       }
     } else {
-      throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
+      throw dpct::exception(sycl::make_error_code(sycl::errc::invalid),
                             "invalid fft type");
     }
   }
@@ -904,7 +904,7 @@ private:
                 _output_type == library_data_t::real_double)) {
       CONFIG_AND_COMMIT(_desc_dr, DOUBLE, REAL, double);
     } else {
-      throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
+      throw dpct::exception(sycl::make_error_code(sycl::errc::invalid),
                             "invalid fft type");
     }
 #undef CONFIG_AND_COMMIT

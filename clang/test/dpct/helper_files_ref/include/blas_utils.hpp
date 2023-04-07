@@ -183,7 +183,7 @@ inline void dotuc(sycl::queue &q, int n, const void *x,
     break;
   }
   default:
-    throw std::runtime_error("the combination of data type is unsupported");
+    throw dpct::exception("the combination of data type is unsupported");
   }
 }
 
@@ -965,7 +965,7 @@ inline void nrm2(sycl::queue &q, int n, const void *x, library_data_t x_type,
     break;
   }
   default:
-    throw std::runtime_error("the combination of data type is unsupported");
+    throw dpct::exception("the combination of data type is unsupported");
   }
 }
 
@@ -1044,7 +1044,7 @@ inline void scal(sycl::queue &q, int n, const void *alpha,
     break;
   }
   default:
-    throw std::runtime_error("the combination of data type is unsupported");
+    throw dpct::exception("the combination of data type is unsupported");
   }
 }
 
@@ -1095,7 +1095,7 @@ inline void axpy(sycl::queue &q, int n, const void *alpha,
     break;
   }
   default:
-    throw std::runtime_error("the combination of data type is unsupported");
+    throw dpct::exception("the combination of data type is unsupported");
   }
 }
 
@@ -1159,7 +1159,7 @@ inline void rot(sycl::queue &q, int n, void *x, library_data_t x_type,
     break;
   }
   default:
-    throw std::runtime_error("the combination of data type is unsupported");
+    throw dpct::exception("the combination of data type is unsupported");
   }
 }
 
@@ -1294,7 +1294,7 @@ inline void gemm(sycl::queue &q, oneapi::mkl::transpose a_trans,
     break;
   }
   default:
-    throw std::runtime_error("the combination of data type is unsupported");
+    throw dpct::exception("the combination of data type is unsupported");
   }
 }
 
@@ -1326,7 +1326,7 @@ inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
                        void *c[], library_data_t c_type, int ldc,
                        int batch_size, library_data_t scaling_type) {
 #ifdef DPCT_USM_LEVEL_NONE
-  throw std::runtime_error("this API is unsupported when USM level is none");
+  throw dpct::exception("this API is unsupported when USM level is none");
 #else
   bool matched = false;
   if (scaling_type == library_data_t::real_float &&
@@ -1444,7 +1444,7 @@ inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
     break;
   }
   default:
-    throw std::runtime_error("the combination of data type is unsupported");
+    throw dpct::exception("the combination of data type is unsupported");
   }
 #endif
 }
@@ -1593,7 +1593,7 @@ inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
     break;
   }
   default:
-    throw std::runtime_error("the combination of data type is unsupported");
+    throw dpct::exception("the combination of data type is unsupported");
   }
 }
 
@@ -1671,7 +1671,7 @@ inline void trsm_batch(sycl::queue &q, oneapi::mkl::side left_right,
                        int lda, void **b, library_data_t b_type, int ldb,
                        int batch_size, library_data_t scaling_type) {
 #ifdef DPCT_USM_LEVEL_NONE
-  throw std::runtime_error("this API is unsupported when USM level is none");
+  throw dpct::exception("this API is unsupported when USM level is none");
 #else
   std::uint64_t key =
       detail::get_type_combination_id(a_type, b_type, scaling_type);
@@ -1711,7 +1711,7 @@ inline void trsm_batch(sycl::queue &q, oneapi::mkl::side left_right,
     break;
   }
   default:
-    throw std::runtime_error("the combination of data type is unsupported");
+    throw dpct::exception("the combination of data type is unsupported");
   }
 #endif
 }

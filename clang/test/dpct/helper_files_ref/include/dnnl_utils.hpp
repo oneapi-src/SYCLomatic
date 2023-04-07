@@ -914,13 +914,13 @@ public:
   /// \param [in] q Pointer to the SYCL queue.
   void set_queue(sycl::queue *q) {
     if (!q) {
-      throw std::runtime_error("set_queue: pointer must not be nullptr.");
+      throw dpct::exception("set_queue: pointer must not be nullptr.");
     }
     if (!_eng) {
-      throw std::runtime_error("set_queue: current engine is invalid.");
+      throw dpct::exception("set_queue: current engine is invalid.");
     }
     if (q->get_context() != ::dnnl::sycl_interop::get_context(_eng)) {
-      throw std::runtime_error(
+      throw dpct::exception(
           "set_queue: queue is mismatch with current engine context.");
     }
     _q = q;
@@ -1914,7 +1914,7 @@ void dropout_desc::restore(engine_ext &engine, float p, void *state,
   if (state) {
     std::int64_t required_state_size = engine.get_dropout_state_size();
     if (state_size < required_state_size) {
-      throw std::runtime_error("restore: state_size less than required state size.");
+      throw dpct::exception("restore: state_size less than required state size.");
     }
     sycl::queue *q = engine.get_queue();
     _imp->_p = p;
@@ -1935,7 +1935,7 @@ void dropout_desc::set(engine_ext &engine, float p, void *state,
   if (state) {
     std::int64_t required_state_size = engine.get_dropout_state_size();
     if (state_size < required_state_size) {
-      throw std::runtime_error("set: no sufficient memory to save states.");
+      throw dpct::exception("set: no sufficient memory to save states.");
     }
     sycl::queue *q = engine.get_queue();
     _imp->_seed = seed;
@@ -1971,7 +1971,7 @@ memory_desc_ext::to_dnnl_data_type(dpct::library_data_t dt) {
   case dpct::library_data_t::real_uint8_4:
     return dnnl_dt::u8;
   default:
-    throw std::runtime_error("to_dnnl_data_type: unsupported data type.");
+    throw dpct::exception("to_dnnl_data_type: unsupported data type.");
   }
 }
 
@@ -2005,7 +2005,7 @@ memory_desc_ext::to_dpct_library_data_t(::dnnl::memory::data_type dt,
       return dpct_dt::real_uint8;
     }
   default:
-    throw std::runtime_error("to_dpct_library_data_t: unsupported data type "
+    throw dpct::exception("to_dpct_library_data_t: unsupported data type "
                              "dnnl::memory::data_type::undef.");
   }
 }
@@ -2070,7 +2070,7 @@ void memory_desc_ext::set(rnn_memory_format_tag tag, dpct::library_data_t dt,
     _desc = ::dnnl::memory::desc({t, n, c}, to_dnnl_data_type(dt),
                                  ::dnnl::memory::format_tag::ntc);
   } else {
-    throw std::runtime_error("set: unsupported memory format tag.");
+    throw dpct::exception("set: unsupported memory format tag.");
   }
 }
 
@@ -2251,7 +2251,7 @@ void engine_ext::transform_no_zero(const memory_desc_ext &desc, void *src, void 
     transform_no_zero_with_type<uint8_t>(_q, src, dst, element_num);
     break;
   default:
-    throw std::runtime_error("transform_no_zero: unsupported data type.");
+    throw dpct::exception("transform_no_zero: unsupported data type.");
   }
 }
 
@@ -2265,7 +2265,7 @@ engine_ext::get_group_weight_desc(int group_count,
   auto help_weight_desc = weight_desc.get_desc();
   int ndims = help_weight_desc.get_ndims();
   if (!help_weight_desc.get_inner_blks().empty()) {
-    throw std::runtime_error("get_group_weight_desc: group convolution with "
+    throw dpct::exception("get_group_weight_desc: group convolution with "
                              "blocked weight memory unimplemented.");
   }
   std::vector<int64_t> new_size;
@@ -2395,7 +2395,7 @@ void engine_ext::derive_batch_normalization_memory_desc(
   auto inner_blks = src_desc.get_desc().get_inner_blks();
   if (src_desc.get_desc().get_ndims() != 4 ||
       src_desc.get_desc().get_ndims() != 5) {
-    throw std::runtime_error("derive_batch_normalization_memory_desc: only 4d "
+    throw dpct::exception("derive_batch_normalization_memory_desc: only 4d "
                              "and 5d memory descriptor supported.");
   }
   std::vector<int64_t> dims = src_desc.get_dims();
@@ -3362,7 +3362,7 @@ sycl::event engine_ext::async_fill(const memory_desc_ext &src_desc, void *src,
   case ::dnnl::memory::data_type::u8:
     return fill_with_type<uint8_t>(_q, src, valuePtr, mem_size);
   default:
-    throw std::runtime_error("async_fill: unsupported data type.");
+    throw dpct::exception("async_fill: unsupported data type.");
   }
 }
 
@@ -3956,7 +3956,7 @@ sycl::event engine_ext::async_batch_normalization_forward_training(
   sycl::event e;
   if (has_post_op) {
     if(workspace_size < dst_desc.get_desc().get_size()) {
-      throw std::runtime_error("async_batch_normalization_forward_training_ex: "
+      throw dpct::exception("async_batch_normalization_forward_training_ex: "
         "no sufficient workspace.");
     }
     batch_normalization_forward_internal(
@@ -4028,7 +4028,7 @@ sycl::event engine_ext::async_batch_normalization_backward(
 
   if (ops != batch_normalization_ops::none &&
       workspace_size < dst_desc.get_desc().get_size()) {
-    throw std::runtime_error("async_batch_normalization_backward_ex: "
+    throw dpct::exception("async_batch_normalization_backward_ex: "
                              "no sufficient workspace.");
   }
   if (ops == batch_normalization_ops::add_activation) {
@@ -4390,7 +4390,7 @@ sycl::event engine_ext::async_dropout_forward(dropout_desc &desc,
                                               void *dst, void *workspace,
                                               size_t workspace_size) {
   if (workspace_size < src_desc.get_size()) {
-    throw std::runtime_error("async_dropout_forward: no sufficient workspace.");
+    throw dpct::exception("async_dropout_forward: no sufficient workspace.");
   }
   float p = desc.get_probability();
   if (p == 1.f) {

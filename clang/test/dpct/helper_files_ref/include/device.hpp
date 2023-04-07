@@ -515,7 +515,7 @@ public:
   device_ext &cpu_device() const {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
     if (_cpu_device == -1) {
-      throw std::runtime_error("no valid cpu device");
+      throw dpct::exception("no valid cpu device");
     } else {
       return *_devs[_cpu_device];
     }
@@ -584,7 +584,7 @@ private:
   }
   void check_id(unsigned int id) const {
     if (id >= _devs.size()) {
-      throw std::runtime_error("invalid device id");
+      throw dpct::exception("invalid device id");
     }
   }
   std::vector<std::shared_ptr<device_ext>> _devs;
