@@ -1305,6 +1305,7 @@ void MapNames::setExplicitNamespaceMap() {
 #include "APINames_cuSPARSE.inc"
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
+#include "APINames_wmma.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
   };
@@ -4284,6 +4285,7 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
 #include "APINames_cuDNN.inc"
+#include "APINames_wmma.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
 };
