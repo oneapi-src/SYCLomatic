@@ -130,34 +130,6 @@ public:
     return Str.slice(1, Str.size() - 1);
   }
 
-  /// Check if this token is a builtin identifier
-  /// .address_size   .explicitcluster  .maxnreg            .section
-  /// .alias          .extern           .maxntid            .shared
-  /// .align          .file             .minnctapersm       .sreg
-  /// .branchtargets  .func             .noreturn           .target
-  /// .callprototype  .global           .param              .tex
-  /// .calltargets    .loc              .pragma             .version
-  /// .common         .local            .reg                .visible
-  /// .const          .maxclusterrank   .reqnctapercluster  .weak
-  /// .entry          .maxnctapersm     .reqntid
-  bool isDirective() const;
-
-  /// Check if this token is a builtin identifier
-  /// %clock      %laneid       %lanemask_gt    %pm0, ..., %pm7
-  /// %clock64    %lanemask_eq  %nctaid         %smid
-  /// %ctaid      %lanemask_le  %ntid           %tid
-  /// %envreg<32> %lanemask_lt  %nsmid          %warpid
-  /// %gridid     %lanemask_ge  %nwarpid        WARP_SZ
-  bool isBuiltinIdentifier() const;
-
-  /// Check if this token is a 'Fundamental Type Specifiers'
-  /// Signed integer    .s8,  .s16,   .s32, .s64
-  /// Unsigned integer  .u8,  .u16,   .u32, .u64
-  /// Floating-point    .f16, .f16x2, .f32, .f64
-  /// Bits (untyped)    .b8,  .b16,   .b32, .b64
-  /// Predicate         .pred
-  bool isFundamentalTypeSpecifier() const;
-
   bool isStorageClass() const;
 
   bool isInstructionStorageClass() const;
@@ -208,7 +180,7 @@ public:
 
   void dump(raw_ostream &OS) const;
 };
-class AsmLexer {
+class PtxLexer {
   const char *TokStart = nullptr;
   const char *CurPtr = nullptr;
   StringRef CurBuf;
@@ -223,10 +195,10 @@ protected:
   AsmToken LexToken();
 
 public:
-  AsmLexer();
-  AsmLexer(const AsmLexer &) = delete;
-  AsmLexer &operator=(const AsmLexer &) = delete;
-  ~AsmLexer();
+  PtxLexer();
+  PtxLexer(const PtxLexer &) = delete;
+  PtxLexer &operator=(const PtxLexer &) = delete;
+  ~PtxLexer();
 
   void setBuffer(StringRef Buf, const char *Ptr = nullptr,
                  bool EndStatementAtEOF = true);

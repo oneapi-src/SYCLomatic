@@ -21,35 +21,35 @@ ptx::InstKind ptx::FindInstructionKindFromName(StringRef InstName) {
       .Default(ptx::Invalid);
 }
 
-AsmType *AsmContext::getScalarType(AsmType::TypeKind Kind) {
-  if (Kind < AsmType::TK_B8 || Kind > AsmType::TK_Pred)
-    return nullptr;
-  if (ScalarTypes.find(Kind) == ScalarTypes.end()) {
-    AsmType *Type = new (*this) AsmType;
-    Type->Kind = Kind;
-    ScalarTypes[Kind] = Type;
-    return Type;
-  }
-  return ScalarTypes[Kind];
-}
+// AsmType *AsmContext::getScalarType(AsmType::TypeKind Kind) {
+//   if (Kind < AsmType::TK_B8 || Kind > AsmType::TK_Pred)
+//     return nullptr;
+//   if (ScalarTypes.find(Kind) == ScalarTypes.end()) {
+//     AsmType *Type = new (*this) AsmType;
+//     Type->Kind = Kind;
+//     ScalarTypes[Kind] = Type;
+//     return Type;
+//   }
+//   return ScalarTypes[Kind];
+// }
 
-AsmType *AsmContext::getScalarTypeFromName(StringRef TypeName) {
-  if (TypeName == ".s32")
-    return getScalarType(AsmType::TK_S32);
-  if (TypeName == ".s64")
-    return getScalarType(AsmType::TK_S64);
-  if (TypeName == ".u32")
-    return getScalarType(AsmType::TK_U32);
-  if (TypeName == ".u64")
-    return getScalarType(AsmType::TK_U64);
-  if (TypeName == ".pred")
-    return getScalarType(AsmType::TK_Pred);
-  return nullptr;
-}
+// AsmType *AsmContext::getScalarTypeFromName(StringRef TypeName) {
+//   if (TypeName == ".s32")
+//     return getScalarType(AsmType::TK_S32);
+//   if (TypeName == ".s64")
+//     return getScalarType(AsmType::TK_S64);
+//   if (TypeName == ".u32")
+//     return getScalarType(AsmType::TK_U32);
+//   if (TypeName == ".u64")
+//     return getScalarType(AsmType::TK_U64);
+//   if (TypeName == ".pred")
+//     return getScalarType(AsmType::TK_Pred);
+//   return nullptr;
+// }
 
-AsmSymbol *AsmScope::LookupSymbol(StringRef Symbol) const {
+PtxDecl *PtxScope::LookupSymbol(StringRef Symbol) const {
   for (const auto &S : decls()) {
-    if (S->Name == Symbol)
+    if (S->getDeclName() == Symbol)
       return S;
   }
 
@@ -59,103 +59,107 @@ AsmSymbol *AsmScope::LookupSymbol(StringRef Symbol) const {
   return nullptr;
 }
 
-AsmStatement *AsmContext::CreateStmt(AsmStatement::StmtKind Kind) {
-  AsmStatement *Stmt = new (*this) AsmStatement(Kind);
-  return Stmt;
-}
+// AsmStatement *AsmContext::CreateStmt(AsmStatement::StmtKind Kind) {
+//   AsmStatement *Stmt = new (*this) AsmStatement(Kind);
+//   return Stmt;
+// }
 
-AsmStatement *AsmContext::CreateIntegerConstant(AsmType *Type, int64_t Val) {
-  AsmStatement *Const = CreateStmt(AsmStatement::SK_Integer);
-  Const->i64 = Val;
-  Const->Type = Type;
-  return Const;
-}
+// AsmStatement *AsmContext::CreateIntegerConstant(AsmType *Type, int64_t Val) {
+//   AsmStatement *Const = CreateStmt(AsmStatement::SK_Integer);
+//   Const->i64 = Val;
+//   Const->Type = Type;
+//   return Const;
+// }
 
-AsmStatement *AsmContext::CreateIntegerConstant(AsmType *Type, uint64_t Val) {
-  AsmStatement *Const = CreateStmt(AsmStatement::SK_Unsigned);
-  Const->u64 = Val;
-  Const->Type = Type;
-  return Const;
-}
+// AsmStatement *AsmContext::CreateIntegerConstant(AsmType *Type, uint64_t Val) {
+//   AsmStatement *Const = CreateStmt(AsmStatement::SK_Unsigned);
+//   Const->u64 = Val;
+//   Const->Type = Type;
+//   return Const;
+// }
 
-AsmStatement *AsmContext::CreateFloatConstant(AsmType *Type, float Val) {
-  AsmStatement *Fp = CreateStmt(AsmStatement::SK_Float);
-  Fp->f32 = Val;
-  Fp->Type = Type;
-  llvm::APFloat aaa(0.0);
-  return Fp;
-}
+// AsmStatement *AsmContext::CreateFloatConstant(AsmType *Type, float Val) {
+//   AsmStatement *Fp = CreateStmt(AsmStatement::SK_Float);
+//   Fp->f32 = Val;
+//   Fp->Type = Type;
+//   llvm::APFloat aaa(0.0);
+//   return Fp;
+// }
 
-AsmStatement *AsmContext::CreateFloatConstant(AsmType *Type, double Val) {
-  AsmStatement *Fp = CreateStmt(AsmStatement::SK_Double);
-  Fp->f64 = Val;
-  Fp->Type = Type;
-  return Fp;
-}
+// AsmStatement *AsmContext::CreateFloatConstant(AsmType *Type, double Val) {
+//   AsmStatement *Fp = CreateStmt(AsmStatement::SK_Double);
+//   Fp->f64 = Val;
+//   Fp->Type = Type;
+//   return Fp;
+// }
 
-AsmStatement *AsmContext::CreateConditionalExpression(AsmStatement *Cond,
-                                                      AsmStatement *Then,
-                                                      AsmStatement *Else) {
-  AsmStatement *S = CreateStmt(AsmStatement::SK_Cond);
-  S->Cond = Cond;
-  S->Then = Then;
-  S->Else = Else;
-  return S;
-}
+// AsmStatement *AsmContext::CreateConditionalExpression(AsmStatement *Cond,
+//                                                       AsmStatement *Then,
+//                                                       AsmStatement *Else) {
+//   AsmStatement *S = CreateStmt(AsmStatement::SK_Cond);
+//   S->Cond = Cond;
+//   S->Then = Then;
+//   S->Else = Else;
+//   return S;
+// }
 
-AsmStatement *AsmContext::CreateBinaryOperator(AsmStatement::StmtKind Opcode,
-                                               AsmStatement *LHS,
-                                               AsmStatement *RHS) {
-  AsmStatement *S = CreateStmt(Opcode);
-  S->LHS = LHS;
-  S->RHS = RHS;
-  return S;
-}
+// AsmStatement *AsmContext::CreateBinaryOperator(AsmStatement::StmtKind Opcode,
+//                                                AsmStatement *LHS,
+//                                                AsmStatement *RHS) {
+//   AsmStatement *S = CreateStmt(Opcode);
+//   S->LHS = LHS;
+//   S->RHS = RHS;
+//   return S;
+// }
 
-AsmStatement *AsmContext::CreateCastExpression(AsmType *Type,
-                                               AsmStatement *SubExpr) {
-  AsmStatement *S = CreateStmt(AsmStatement::SK_Cast);
-  S->Type = Type;
-  S->SubExpr = SubExpr;
-  return S;
-}
+// AsmStatement *AsmContext::CreateCastExpression(AsmType *Type,
+//                                                AsmStatement *SubExpr) {
+//   AsmStatement *S = CreateStmt(AsmStatement::SK_Cast);
+//   S->Type = Type;
+//   S->SubExpr = SubExpr;
+//   return S;
+// }
 
-AsmStatement *AsmContext::CreateUnaryExpression(AsmStatement::StmtKind Opcode,
-                                                AsmStatement *SubExpr) {
-  AsmStatement *S = CreateStmt(Opcode);
-  S->SubExpr = SubExpr;
-  return S;
-}
+// AsmStatement *AsmContext::CreateUnaryExpression(AsmStatement::StmtKind Opcode,
+//                                                 AsmStatement *SubExpr) {
+//   AsmStatement *S = CreateStmt(Opcode);
+//   S->SubExpr = SubExpr;
+//   return S;
+// }
 
-AsmStatement *AsmContext::CreateVariableRefExpression(AsmSymbol *Symbol) {
-  AsmStatement *S = CreateStmt(AsmStatement::SK_Variable);
-  S->Variable = Symbol;
-  return S;
-}
+// AsmStatement *AsmContext::CreateVariableRefExpression(AsmSymbol *Symbol) {
+//   AsmStatement *S = CreateStmt(AsmStatement::SK_Variable);
+//   S->Variable = Symbol;
+//   return S;
+// }
 
-AsmStatement *AsmContext::GetOrCreateSinkExpression() {
-  if (SinkExpression)
-    return SinkExpression;
-  return SinkExpression = CreateStmt(AsmStatement::SK_Sink);
-}
+// AsmStatement *AsmContext::GetOrCreateSinkExpression() {
+//   if (SinkExpression)
+//     return SinkExpression;
+//   return SinkExpression = CreateStmt(AsmStatement::SK_Sink);
+// }
 
-AsmSymbol *AsmContext::CreateSymbol(const std::string &Name, AsmType *Type,
-                                    bool IsVar) {
-  AsmSymbol *Sym = new (*this) AsmSymbol;
-  Sym->Name = Name;
-  Sym->Type = Type;
-  Sym->IsVariable = IsVar;
-  return Sym;
-}
+// AsmSymbol *AsmContext::CreateSymbol(const std::string &Name, AsmType *Type,
+//                                     bool IsVar) {
+//   AsmSymbol *Sym = new (*this) AsmSymbol;
+//   Sym->Name = Name;
+//   Sym->Type = Type;
+//   Sym->IsVariable = IsVar;
+//   return Sym;
+// }
 
-AsmParser::~AsmParser() { ExitScope(); }
+PtxType::~PtxType() = default;
+PtxDecl::~PtxDecl() = default;
+PtxStmt::~PtxStmt() = default;
 
-void AsmParser::AddBuiltinSymbol(const std::string &Name, AsmType *Type) {
+PtxParser::~PtxParser() { ExitScope(); }
+
+void PtxParser::AddBuiltinSymbol(const std::string &Name, AsmType *Type) {
   AsmSymbol *Sym = Context.CreateSymbol(Name, Type);
   getCurScope()->AddDecl(Sym);
 }
 
-const AsmToken &AsmParser::Lex() {
+const AsmToken &PtxParser::Lex() {
   if (Lexer.getTok().is(AsmToken::Error))
     return Lexer.getTok();
 
@@ -169,14 +173,14 @@ const AsmToken &AsmParser::Lex() {
   return *tok;
 }
 
-AsmStmtResult AsmParser::ParseStatement() {
+AsmStmtResult PtxParser::ParseStatement() {
   if (getTok().is(AsmToken::LBrac)) {
     return ParseCompoundStatement();
   }
   return ParseInstruction();
 }
 
-AsmStmtResult AsmParser::ParseCompoundStatement() {
+AsmStmtResult PtxParser::ParseCompoundStatement() {
   assert(getTok().is(AsmToken::LBrac));
   Lex(); // eat '{'
   AsmStatement *Block = Context.CreateStmt(AsmStatement::SK_Block);
@@ -201,9 +205,9 @@ AsmStmtResult AsmParser::ParseCompoundStatement() {
   return Block;
 }
 
-AsmStmtResult AsmParser::ParsePredicate() { return true; }
+AsmStmtResult PtxParser::ParsePredicate() { return true; }
 
-AsmStmtResult AsmParser::ParseInstruction() {
+AsmStmtResult PtxParser::ParseInstruction() {
   AsmStatement *Inst = Context.CreateStmt(AsmStatement::SK_Inst);
   if (getTok().is(AsmToken::At)) {
     AsmStmtResult PredExpr = ParsePredicate();
@@ -221,7 +225,7 @@ AsmStmtResult AsmParser::ParseInstruction() {
   return Inst;
 }
 
-AsmStmtResult AsmParser::ParseUnGuardInstruction() {
+AsmStmtResult PtxParser::ParseUnGuardInstruction() {
   if (getTok().isNot(AsmToken::Identifier))
     return true;
   AsmStatement *Inst = Context.CreateStmt(AsmStatement::SK_Inst);
@@ -243,7 +247,7 @@ AsmStmtResult AsmParser::ParseUnGuardInstruction() {
   return Inst;
 }
 
-bool AsmParser::ParseInstructionFlags(InstAttr &Attr) {
+bool PtxParser::ParseInstructionFlags(InstAttr &Attr) {
   if (getTok().isNot(AsmToken::Identifier))
     return true;
   ptx::InstKind Opcode = ptx::FindInstructionKindFromName(getTok().getString());
@@ -263,7 +267,7 @@ bool AsmParser::ParseInstructionFlags(InstAttr &Attr) {
   return false;
 }
 
-AsmStmtResult AsmParser::ParseTuple() {
+AsmStmtResult PtxParser::ParseTuple() {
   Lex(); // eat '{'
   AsmStmtResult Tuple = Context.CreateStmt(AsmStatement::SK_Tuple);
   do {
@@ -291,7 +295,7 @@ AsmStmtResult AsmParser::ParseTuple() {
   return Tuple;
 }
 
-AsmStmtResult AsmParser::ParseInstructionFirstOperand() {
+AsmStmtResult PtxParser::ParseInstructionFirstOperand() {
   AsmStmtResult FirstOp;
   switch (getTok().getKind()) {
   case AsmToken::Identifier:
@@ -335,7 +339,7 @@ AsmStmtResult AsmParser::ParseInstructionFirstOperand() {
   return FirstOp;
 }
 
-AsmStmtResult AsmParser::ParseInstructionPrimaryOperand() {
+AsmStmtResult PtxParser::ParseInstructionPrimaryOperand() {
   if (getTok().is(AsmToken::Identifier)) {
     auto ID = getTok();
     Lex(); // eat identifier
@@ -350,7 +354,7 @@ AsmStmtResult AsmParser::ParseInstructionPrimaryOperand() {
   return ParseConstantExpression();
 }
 
-AsmStmtResult AsmParser::ParseInstructionUnaryOperand() {
+AsmStmtResult PtxParser::ParseInstructionUnaryOperand() {
   AsmToken Tok = getTok();
   AsmStmtResult Operand = ParseInstructionPrimaryOperand();
   if (Operand.isInvalid())
@@ -369,7 +373,7 @@ AsmStmtResult AsmParser::ParseInstructionUnaryOperand() {
   return Operand;
 }
 
-AsmStmtResult AsmParser::ParseInstructionOperand() {
+AsmStmtResult PtxParser::ParseInstructionOperand() {
   AsmStmtResult Operand = ParseInstructionUnaryOperand();
   if (Operand.isInvalid())
     return true;
@@ -378,7 +382,7 @@ AsmStmtResult AsmParser::ParseInstructionOperand() {
   return Operand;
 }
 
-AsmStmtResult AsmParser::ParseConstantExpression() {
+AsmStmtResult PtxParser::ParseConstantExpression() {
   AsmToken Tok = getTok();
   switch (Tok.getKind()) {
   case AsmToken::Float: {
@@ -397,7 +401,7 @@ AsmStmtResult AsmParser::ParseConstantExpression() {
   return ParseConditionalExpression();
 }
 
-AsmStmtResult AsmParser::ParseConditionalExpression() {
+AsmStmtResult PtxParser::ParseConditionalExpression() {
   AsmStmtResult LogicOrExpr = ParseLogicOrExpression();
   if (LogicOrExpr.isInvalid())
     return true;
@@ -415,7 +419,7 @@ AsmStmtResult AsmParser::ParseConditionalExpression() {
   return LogicOrExpr;
 }
 
-AsmStmtResult AsmParser::ParseLogicOrExpression() {
+AsmStmtResult PtxParser::ParseLogicOrExpression() {
   AsmStmtResult LHS = ParseLogicAndExpression();
   if (LHS.isInvalid())
     return true;
@@ -430,7 +434,7 @@ AsmStmtResult AsmParser::ParseLogicOrExpression() {
   return LHS;
 }
 
-AsmStmtResult AsmParser::ParseLogicAndExpression() {
+AsmStmtResult PtxParser::ParseLogicAndExpression() {
   AsmStmtResult LHS = ParseInclusiveOrExpression();
   if (LHS.isInvalid())
     return true;
@@ -445,7 +449,7 @@ AsmStmtResult AsmParser::ParseLogicAndExpression() {
   return LHS;
 }
 
-AsmStmtResult AsmParser::ParseInclusiveOrExpression() {
+AsmStmtResult PtxParser::ParseInclusiveOrExpression() {
   AsmStmtResult LHS = ParseExclusiveOrExpression();
   if (LHS.isInvalid())
     return true;
@@ -460,7 +464,7 @@ AsmStmtResult AsmParser::ParseInclusiveOrExpression() {
   return LHS;
 }
 
-AsmStmtResult AsmParser::ParseExclusiveOrExpression() {
+AsmStmtResult PtxParser::ParseExclusiveOrExpression() {
   AsmStmtResult LHS = ParseAndExpression();
   if (LHS.isInvalid())
     return true;
@@ -475,7 +479,7 @@ AsmStmtResult AsmParser::ParseExclusiveOrExpression() {
   return LHS;
 }
 
-AsmStmtResult AsmParser::ParseAndExpression() {
+AsmStmtResult PtxParser::ParseAndExpression() {
   AsmStmtResult LHS = ParseEqualityExpression();
   if (LHS.isInvalid())
     return true;
@@ -490,7 +494,7 @@ AsmStmtResult AsmParser::ParseAndExpression() {
   return LHS;
 }
 
-AsmStmtResult AsmParser::ParseEqualityExpression() {
+AsmStmtResult PtxParser::ParseEqualityExpression() {
   AsmStmtResult LHS = ParseRelationExpression();
   if (LHS.isInvalid())
     return true;
@@ -511,7 +515,7 @@ AsmStmtResult AsmParser::ParseEqualityExpression() {
   return LHS;
 }
 
-AsmStmtResult AsmParser::ParseRelationExpression() {
+AsmStmtResult PtxParser::ParseRelationExpression() {
   AsmStmtResult LHS = ParseShiftExpression();
   if (LHS.isInvalid())
     return true;
@@ -546,7 +550,7 @@ AsmStmtResult AsmParser::ParseRelationExpression() {
   return LHS;
 }
 
-AsmStmtResult AsmParser::ParseShiftExpression() {
+AsmStmtResult PtxParser::ParseShiftExpression() {
   AsmStmtResult LHS = ParseAdditiveExpression();
   if (LHS.isInvalid())
     return true;
@@ -567,7 +571,7 @@ AsmStmtResult AsmParser::ParseShiftExpression() {
   return LHS;
 }
 
-AsmStmtResult AsmParser::ParseAdditiveExpression() {
+AsmStmtResult PtxParser::ParseAdditiveExpression() {
   AsmStmtResult LHS = ParseMultiplicativeExpression();
   if (LHS.isInvalid())
     return true;
@@ -587,14 +591,14 @@ AsmStmtResult AsmParser::ParseAdditiveExpression() {
   return LHS;
 }
 
-AsmStmtResult AsmParser::ParseMultiplicativeExpression() {
-  AsmStmtResult LHS = ParseCaseExpresion();
+AsmStmtResult PtxParser::ParseMultiplicativeExpression() {
+  AsmStmtResult LHS = ParseCastExpresion();
   if (LHS.isInvalid())
     return true;
   while (getTok().is(AsmToken::Star, AsmToken::Slash, AsmToken::Percent)) {
     auto Opcode = getTok().getKind();
     Lex(); // eat one of '*', '/' and '%'
-    AsmStmtResult RHS = ParseCaseExpresion();
+    AsmStmtResult RHS = ParseCastExpresion();
     if (RHS.isInvalid())
       return true;
     switch (Opcode) {
@@ -617,7 +621,7 @@ AsmStmtResult AsmParser::ParseMultiplicativeExpression() {
   return LHS;
 }
 
-AsmStmtResult AsmParser::ParseCaseExpresion() {
+AsmStmtResult PtxParser::ParseCastExpresion() {
   if (getTok().is(AsmToken::LParen) && Lexer.peekTok().isTypeName()) {
     Lex();                     // eat '('
     AsmToken TypeName = Lex(); // eat typename
@@ -634,12 +638,12 @@ AsmStmtResult AsmParser::ParseCaseExpresion() {
   return ParseUnaryExpression();
 }
 
-AsmStmtResult AsmParser::ParseUnaryExpression() {
+AsmStmtResult PtxParser::ParseUnaryExpression() {
   if (getTok().is(AsmToken::Plus, AsmToken::Minus, AsmToken::Exclaim,
                   AsmToken::Tilde)) {
     auto Opcode = getTok().getKind();
     Lex(); // eat unary operator
-    AsmStmtResult SubExpr = ParseCaseExpresion();
+    AsmStmtResult SubExpr = ParseCastExpresion();
     if (SubExpr.isInvalid())
       return true;
     switch (Opcode) {
@@ -659,7 +663,7 @@ AsmStmtResult AsmParser::ParseUnaryExpression() {
   return ParsePrimaryExpression();
 }
 
-AsmStmtResult AsmParser::ParsePrimaryExpression() {
+AsmStmtResult PtxParser::ParsePrimaryExpression() {
   if (getTok().is(AsmToken::Identifier) &&
       getTok().getString() == "WARP_SIZE") {
     auto *Symbol = getCurScope()->LookupSymbol(getTok().getString());

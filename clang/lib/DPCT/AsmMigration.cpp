@@ -9,8 +9,7 @@
 
 #include "AsmMigration.h"
 #include "AnalysisInfo.h"
-#include "AsmLexer.h"
-#include "AsmParser.h"
+#include "Asm/AsmParser.h"
 #include "CallExprRewriter.h"
 #include "MigrationRuleManager.h"
 
@@ -221,7 +220,7 @@ void AsmRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
       llvm::SourceMgr Mgr;
       Mgr.AddNewSourceBuffer(llvm::MemoryBuffer::getMemBuffer(S),
                              llvm::SMLoc());
-      AsmParser Parser(Context, Mgr);
+      PtxParser Parser(Context, Mgr);
       unsigned OperandIdx = 0;
       std::string AsmString;
       for (unsigned I = 0; I < Asm->getNumInputs(); ++I) {

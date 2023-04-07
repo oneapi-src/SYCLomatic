@@ -20,69 +20,6 @@ using llvm::isHexDigit;
 using llvm::SaveAndRestore;
 using llvm::StringSet;
 
-bool AsmToken::isDirective() const {
-  if (isNot(Identifier))
-    return false;
-  static StringSet<> Dectives{"address_size",
-                              "explicitcluster",
-                              "maxnreg",
-                              "section",
-                              "alias",
-                              "extern",
-                              "maxntid",
-                              "shared",
-                              "align",
-                              "file",
-                              "minnctapersm",
-                              "sreg",
-                              "branchtargets",
-                              "func",
-                              "noreturn",
-                              "target",
-                              "callprototype",
-                              "global",
-                              "param",
-                              "tex",
-                              "calltargets",
-                              "loc",
-                              "pragma",
-                              "version",
-                              "common",
-                              "local",
-                              "reg",
-                              "visible",
-                              "const",
-                              "maxclusterrank",
-                              "reqnctapercluster",
-                              "weak",
-                              "entry",
-                              "maxnctapersm",
-                              "reqntid"};
-  return Dectives.contains(getString());
-}
-
-bool AsmToken::isBuiltinIdentifier() const {
-  if (isNot(Identifier))
-    return false;
-  static StringSet<> BuiltinIdentifiers{
-      "cloc",        "laneid",      "lanemask_gt", "pm0",         "pm1",
-      "pm2",         "pm3",         "pm4",         "pm5",         "pm7",
-      "clock64",     "lanemask_eq", "nctaid",      "smid",        "ctaid",
-      "lanemask_le", "ntid",        "tid",         "envreg<32>",  "lanemask_lt",
-      "nsmid",       "warpid",      "gridid",      "lanemask_ge", "nwarpid",
-      "WARP_SZ"};
-  return BuiltinIdentifiers.contains(getString());
-}
-
-bool AsmToken::isFundamentalTypeSpecifier() const {
-  if (isNot(Identifier))
-    return false;
-  static StringSet<> Types{"s8",  "s16", "s32", "s64",   "u8",  "u16",
-                           "u32", "u64", "f16", "f16x2", "f32", "f64",
-                           "b8",  "b16", "b32", "b64",   "pred"};
-  return Types.contains(getString());
-}
-
 bool AsmToken::isStorageClass() const {
   return llvm::StringSwitch<bool>(getString())
       .Case(".reg", true)
@@ -285,14 +222,14 @@ void AsmToken::dump(raw_ostream &OS) const {
   OS << "\")";
 }
 
-AsmLexer::AsmLexer() {
+PtxLexer::PtxLexer() {
   TokStart = nullptr;
   CurTok.emplace_back(AsmToken::Space, StringRef());
 }
 
-AsmLexer::~AsmLexer() = default;
+PtxLexer::~PtxLexer() = default;
 
-void AsmLexer::setBuffer(StringRef Buf, const char *Ptr,
+void PtxLexer::setBuffer(StringRef Buf, const char *Ptr,
                          bool EndStatementAtEOF) {
   CurBuf = Buf;
 
@@ -305,7 +242,7 @@ void AsmLexer::setBuffer(StringRef Buf, const char *Ptr,
   this->EndStatementAtEOF = EndStatementAtEOF;
 }
 
-const AsmToken &AsmLexer::Lex() {
+const AsmToken &PtxLexer::Lex() {
   assert(!CurTok.empty());
   // Mark if we parsing out a EndOfStatement.
   IsAtStartOfStatement = CurTok.front().getKind() == AsmToken::EndOfStatement;
@@ -319,23 +256,23 @@ const AsmToken &AsmLexer::Lex() {
   return CurTok.front();
 }
 
-void AsmLexer::UnLex(AsmToken const &Token) {
+void PtxLexer::UnLex(AsmToken const &Token) {
   IsAtStartOfStatement = false;
   CurTok.insert(CurTok.begin(), Token);
 }
 
-AsmToken AsmLexer::ReturnError(const char *Loc, const std::string &Msg) {
+AsmToken PtxLexer::ReturnError(const char *Loc, const std::string &Msg) {
   llvm::errs() << llvm::raw_ostream::RED << Msg << llvm::raw_ostream::RESET << "\n";
   return AsmToken(AsmToken::Error, StringRef(Loc, CurPtr - Loc));
 }
 
-int AsmLexer::getNextChar() {
+int PtxLexer::getNextChar() {
   if (CurPtr == CurBuf.end())
     return EOF;
   return (unsigned char)*CurPtr++;
 }
 
-int AsmLexer::peekNextChar() {
+int PtxLexer::peekNextChar() {
   if (CurPtr == CurBuf.end())
     return EOF;
   return (unsigned char)*CurPtr;
@@ -359,7 +296,7 @@ static bool isIdentifierChar(char C) {
 // followsym:   [a-zA-Z0-9_$]
 // identifier:  [a-zA-Z]{followsym}* | {[_$%]{followsym}+
 // directive:   .identifier
-AsmToken AsmLexer::LexIdentifier() {
+AsmToken PtxLexer::LexIdentifier() {
   auto Kind = AsmToken::Identifier;
   if (CurPtr[-1] == '.')
     Kind = AsmToken::DotIdentifier;
@@ -375,7 +312,7 @@ AsmToken AsmLexer::LexIdentifier() {
 /// LexSlash: Slash: /
 ///           C-Style Comment: /* ... */
 ///           C-style Comment: // ...
-AsmToken AsmLexer::LexSlash() {
+AsmToken PtxLexer::LexSlash() {
 
   switch (*CurPtr) {
   case '*':
@@ -407,7 +344,7 @@ AsmToken AsmLexer::LexSlash() {
 
 /// LexLineComment: Comment: #[^\n]*
 ///                        : //[^\n]*
-AsmToken AsmLexer::LexLineComment() {
+AsmToken PtxLexer::LexLineComment() {
   // Mark This as an end of statement with a body of the
   // comment. While it would be nicer to leave this two tokens,
   // backwards compatability with TargetParsers makes keeping this in this form
@@ -463,7 +400,7 @@ static const char *findLastDigit(const char *CurPtr, unsigned DefaultRadix) {
   return CurPtr;
 }
 
-AsmToken AsmLexer::ConsumeIntegerSuffix(unsigned Radix) {
+AsmToken PtxLexer::ConsumeIntegerSuffix(unsigned Radix) {
   if (CurPtr[0] == 'U') {
     uint64_t Result;
     if (StringRef(TokStart, CurPtr - TokStart).getAsInteger(Radix, Result))
@@ -488,7 +425,7 @@ AsmToken AsmLexer::ConsumeIntegerSuffix(unsigned Radix) {
 /// octal literal:        0{octal digit}+U?
 /// binary literal:       0[bB]{bit}+U?
 /// decimal literal       {nonzero-digit}{digit}*U?
-AsmToken AsmLexer::LexDigit() {
+AsmToken PtxLexer::LexDigit() {
 
   if (*CurPtr == 'f' || *CurPtr == 'F') {
     ++CurPtr;
@@ -557,7 +494,7 @@ AsmToken AsmLexer::LexDigit() {
 }
 
 /// LexQuote: String: "..."
-AsmToken AsmLexer::LexQuote() {
+AsmToken PtxLexer::LexQuote() {
   int CurChar = getNextChar();
 
   // TODO: does gas allow multiline string constants?
@@ -576,7 +513,7 @@ AsmToken AsmLexer::LexQuote() {
   return AsmToken(AsmToken::String, StringRef(TokStart, CurPtr - TokStart));
 }
 
-StringRef AsmLexer::LexUntilEndOfStatement() {
+StringRef PtxLexer::LexUntilEndOfStatement() {
   TokStart = CurPtr;
 
   while (!isAtStartOfComment(CurPtr) &&     // Start of line comment.
@@ -587,7 +524,7 @@ StringRef AsmLexer::LexUntilEndOfStatement() {
   return StringRef(TokStart, CurPtr - TokStart);
 }
 
-StringRef AsmLexer::LexUntilEndOfLine() {
+StringRef PtxLexer::LexUntilEndOfLine() {
   TokStart = CurPtr;
 
   while (*CurPtr != '\n' && *CurPtr != '\r' && CurPtr != CurBuf.end()) {
@@ -596,7 +533,7 @@ StringRef AsmLexer::LexUntilEndOfLine() {
   return StringRef(TokStart, CurPtr - TokStart);
 }
 
-size_t AsmLexer::peekTokens(MutableArrayRef<AsmToken> Buf) {
+size_t PtxLexer::peekTokens(MutableArrayRef<AsmToken> Buf) {
   SaveAndRestore SavedTokenStart(TokStart);
   SaveAndRestore SavedCurPtr(CurPtr);
   SaveAndRestore SavedAtStartOfLine(IsAtStartOfLine);
@@ -618,7 +555,7 @@ size_t AsmLexer::peekTokens(MutableArrayRef<AsmToken> Buf) {
 
 static const char *getSeparatorString() { return ";"; }
 
-bool AsmLexer::isAtStartOfComment(const char *Ptr) {
+bool PtxLexer::isAtStartOfComment(const char *Ptr) {
 
   StringRef CommentString = "//";
 
@@ -632,11 +569,11 @@ bool AsmLexer::isAtStartOfComment(const char *Ptr) {
   return strncmp(Ptr, CommentString.data(), CommentString.size()) == 0;
 }
 
-bool AsmLexer::isAtStatementSeparator(const char *Ptr) {
+bool PtxLexer::isAtStatementSeparator(const char *Ptr) {
   return strncmp(Ptr, getSeparatorString(), strlen(getSeparatorString())) == 0;
 }
 
-AsmToken AsmLexer::LexToken() {
+AsmToken PtxLexer::LexToken() {
   TokStart = CurPtr;
   // This always consumes at least one character.
   int CurChar = getNextChar();
