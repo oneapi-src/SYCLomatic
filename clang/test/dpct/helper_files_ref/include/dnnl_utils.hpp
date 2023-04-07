@@ -26,6 +26,11 @@
 
 namespace dpct {
 namespace dnnl {
+/// Get concatenated library version as an integer.
+static inline size_t get_version() {
+  const ::dnnl::version_t *ver = ::dnnl::version();
+  return ver->major * 1000 + ver->minor * 100 + ver->patch;
+}
 class engine_ext;
 typedef oneapi::mkl::rng::philox4x32x10 rng_engine_t;
 /// An enum class representing memory layout. Used by
