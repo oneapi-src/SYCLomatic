@@ -38,6 +38,15 @@
 
 namespace dpct {
 namespace dnnl {
+// DPCT_LABEL_BEGIN|get_version|dpct::dnnl
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+/// Get concatenated library version as an integer.
+static inline size_t get_version() {
+  const ::dnnl::version_t *ver = ::dnnl::version();
+  return ver->major * 1000 + ver->minor * 100 + ver->patch;
+}
+// DPCT_LABEL_END
 class engine_ext;
 typedef oneapi::mkl::rng::philox4x32x10 rng_engine_t;
 // DPCT_LABEL_BEGIN|memory_format_tag|dpct::dnnl

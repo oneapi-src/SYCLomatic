@@ -179,7 +179,7 @@ void CuDNNAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cudnnCreateDropoutDescriptor", "cudnnSetDropoutDescriptor",
         "cudnnGetDropoutDescriptor", "cudnnDropoutGetReserveSpaceSize",
         "cudnnRestoreDropoutDescriptor", "cudnnDropoutForward", "cudnnDropoutBackward",
-        "cudnnDestroyDropoutDescriptor");
+        "cudnnDestroyDropoutDescriptor", "cudnnGetVersion");
   };
 
   MF.addMatcher(
