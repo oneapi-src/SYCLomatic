@@ -3,35 +3,25 @@
 // RUN: FileCheck --input-file %T/Math/api_test6_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Math/api_test6_out
 
-// CHECK: 12
-// TEST_FEATURE: Math_vectorized_abs
-// TEST_FEATURE: Math_vectorized_abs_diff
-// TEST_FEATURE: Math_vectorized_abs_sat
+// CHECK: 11
+// TEST_FEATURE: Math_abs
+// TEST_FEATURE: Math_abs_diff
+// TEST_FEATURE: Math_add_sat
+// TEST_FEATURE: Math_rhadd
+// TEST_FEATURE: Math_hadd
+// TEST_FEATURE: Math_max
+// TEST_FEATURE: Math_min
+// TEST_FEATURE: Math_sub_sat
 // TEST_FEATURE: Math_vectorized_binary
-// TEST_FEATURE: Math_vectorized_add_sat
-// TEST_FEATURE: Math_vectorized_avg_sat
-// TEST_FEATURE: Math_vectorized_hadd
 // TEST_FEATURE: Math_vectorized_unary
-// TEST_FEATURE: Math_vectorized_neg_sat
 // TEST_FEATURE: Math_vectorized_sum_abs_diff
-// TEST_FEATURE: Math_vectorized_set_compare
-// TEST_FEATURE: Math_vectorized_sub_sat
 
 __device__ void
 foo() {
   unsigned u, u2;
-  u = __vabs2(u);
   u = __vabsdiffs2(u, u2);
   u = __vabsss2(u);
-  u = __vcmpgtu2(u, u2);
-  u = __vaddss2(u, u2);
-  u = __vavgs2(u, u2);
-  u = __vhaddu2(u, u2);
-  u = __vneg2(u);
-  u = __vnegss2(u);
   u = __vsads2(u, u2);
-  u = __vseteq2(u, u2);
-  u = __vsubss2(u, u2);
 }
 
 int main() {
