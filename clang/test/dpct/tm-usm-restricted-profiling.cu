@@ -1,5 +1,5 @@
-// RUN: dpct --enable-profiling  --format-range=none -out-root %T/time-measure-usm-restricted-enable-profiling %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/time-measure-usm-restricted-enable-profiling/time-measure-usm-restricted-enable-profiling.dp.cpp --match-full-lines %s
+// RUN: dpct --enable-profiling  --format-range=none -out-root %T/tm-usm-restricted-profiling %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/tm-usm-restricted-profiling/tm-usm-restricted-profiling.dp.cpp --match-full-lines %s
 
 // CHECK:#define DPCT_PROFILING_ENABLED
 // CHECK-NEXT:#include <sycl/sycl.hpp>
