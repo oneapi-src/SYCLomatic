@@ -97,7 +97,7 @@ static void getCompileInfo(
           // Set the target name
           TargetName = Obj;
           IsTargetName = false;
-          Tool = "$(CC) -o"; // use 'icpx -fsycl' to link the target file in the
+          Tool = "$(CC) -fsycl -o"; // use 'icpx -fsycl' to link the target file in the
                              // generated Makefile.
         } else if (llvm::StringRef(Obj).endswith(".o")) {
           llvm::SmallString<512> FilePathAbs(Obj);
@@ -366,7 +366,7 @@ genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
   llvm::raw_string_ostream OS(Buf);
   std::string TargetName;
 
-  OS << "CC := icpx -fsycl\n\n";
+  OS << "CC := icpx\n\n";
   OS << "LD := $(CC)\n\n";
   OS << buildString(
       "#", DiagnosticsUtils::getMsgText(MakefileMsgs::GEN_MAKEFILE_LIB), "\n");
@@ -374,12 +374,11 @@ genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
 
   OS << buildString("FLAGS := \n\n");
 
-  OS << buildString("ifeq ($(shell which icpx),)\n");
-  OS << buildString("\t$(error ERROR - icpx compiler not found, Please install "
-                    "Intel® oneAPI DPC++/C++ Compiler)\n");
+  OS << buildString("ifeq ($(shell which $(CC)),)\n");
+  OS << buildString("    $(error ERROR - $(CC) compiler not found)\n");
   OS << buildString("endif\n\n");
 
-  OS << buildString("ROOT_DIR     := $(shell dirname $(shell which icpx))\n");
+  OS << buildString("ROOT_DIR     := $(shell dirname $(shell which $(CC)))\n");
   OS << buildString("INCLUDE_SYCL := $(ROOT_DIR)/../include\n");
   OS << buildString("INCLUDE_CL   := $(ROOT_DIR)/../include/sycl\n\n");
 
@@ -483,7 +482,7 @@ genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
         // Use 'icpx -fsycl' to compile the migrated SYCL file.
         std::string Compiler =
             llvm::StringRef((Entry.second)[Idx].Compiler).endswith("nvcc")
-                ? "$(CC)"
+                ? "$(CC) -fsycl"
                 : (Entry.second)[Idx].Compiler;
 
         OS << buildString("\t", Compiler, " -c ${", SrcStrName, "} -o ${",
@@ -517,7 +516,7 @@ genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
 
         std::string Compiler =
             llvm::StringRef((Entry.second)[Idx].Compiler).endswith("nvcc")
-                ? "$(CC)"
+                ? "$(CC) -fsycl"
                 : (Entry.second)[Idx].Compiler;
 
         OS << buildString("\t", Compiler, " -c ${", SrcStrName, "} -o ${",
