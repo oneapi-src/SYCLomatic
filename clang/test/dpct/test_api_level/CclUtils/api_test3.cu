@@ -8,14 +8,14 @@
 // TEST_FEATURE: CclUtils_get_kvs_detail
 // TEST_FEATURE: CclUtils_ccl_init_helper
 // TEST_FEATURE: CclUtils_typedef_comm_ptr
-// TEST_FEATURE: CclUtils_communicator_ext
-// TEST_FEATURE: CclUtils_communicator_ext_allreduce
+// TEST_FEATURE: CclUtils_communicator_wrapper
+// TEST_FEATURE: CclUtils_communicator_wrapper_allreduce
 // TEST_FEATURE: Device_get_default_context
-// TEST_FEATURE: CclUtils_communicator_ext_size
-// TEST_FEATURE: CclUtils_communicator_ext_rank
-// TEST_FEATURE: CclUtils_communicator_ext_reduce_scatter
-// TEST_FEATURE: CclUtils_communicator_ext_reduce
-// TEST_FEATURE: CclUtils_communicator_ext_broadcast
+// TEST_FEATURE: CclUtils_communicator_wrapper_size
+// TEST_FEATURE: CclUtils_communicator_wrapper_rank
+// TEST_FEATURE: CclUtils_communicator_wrapper_reduce_scatter
+// TEST_FEATURE: CclUtils_communicator_wrapper_reduce
+// TEST_FEATURE: CclUtils_communicator_wrapper_broadcast
 
 #include <nccl.h>
 

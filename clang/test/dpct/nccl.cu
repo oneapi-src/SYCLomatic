@@ -25,10 +25,10 @@ int main() {
     // CHECK: check((id = dpct::ccl::create_kvs_address(), 0));
     check(ncclGetUniqueId(&id));
 
-    // CHECK: comm = new dpct::ccl::communicator_ext(nranks, rank, id);
+    // CHECK: comm = new dpct::ccl::communicator_wrapper(nranks, rank, id);
     ncclCommInitRank(&comm, nranks, id, rank);
 
-    // CHECK: check((comm = new dpct::ccl::communicator_ext(nranks, rank, id), 0));    
+    // CHECK: check((comm = new dpct::ccl::communicator_wrapper(nranks, rank, id), 0));    
     check(ncclCommInitRank(&comm, nranks, id, rank));
 
     // CHECK: device = comm->size();

@@ -34,7 +34,7 @@ get_kvs(const oneapi::ccl::kvs::address_type &addr) {
   return kvs_map[addr];
 }
 
-/// helper class to make sure ccl::init() be called before other oneCCL API
+/// Help class to init ccl environment. 
 class ccl_init_helper {
 public:
   ccl_init_helper() { oneapi::ccl::init(); }
@@ -69,9 +69,9 @@ create_kvs(const oneapi::ccl::kvs::address_type &addr) {
 }
 
 /// dpct communicator extension
-class communicator_ext : public dpct::ccl::detail::ccl_init_helper {
+class communicator_wrapper : public dpct::ccl::detail::ccl_init_helper {
 public:
-  communicator_ext(
+  communicator_wrapper(
       int size, int rank, oneapi::ccl::kvs::address_type id,
       const oneapi::ccl::comm_attr &attr = oneapi::ccl::default_comm_attr)
       : _device_comm(oneapi::ccl::create_device(
@@ -79,9 +79,14 @@ public:
         _context_comm(oneapi::ccl::create_context(dpct::get_default_context())),
         _comm(oneapi::ccl::create_communicator(
             size, rank, _device_comm, _context_comm, dpct::ccl::create_kvs(id),
-            attr)) {}
+            attr)) {
+    _queue_init = false;
+    _ccl_stream_ptr = nullptr;
+  }
 
-  ~communicator_ext(){};
+  ~communicator_wrapper() {
+    delete _ccl_stream_ptr;
+  };
 
   /// Return the rank in a oneapi::ccl::communicator
   /// \returns The rank corresponding to communicator object
@@ -111,8 +116,8 @@ public:
   /// \return @ref void
   void allreduce(const void *sendbuff, void *recvbuff, size_t count,
                  oneapi::ccl::datatype dtype, oneapi::ccl::reduction rtype,
-                 sycl::queue *queue_ptr) const {
-    ccl_func_adapter(
+                 sycl::queue *queue_ptr) {
+    call_reuse_queue(
         [=](const oneapi::ccl::stream &stream) {
           return oneapi::ccl::allreduce(sendbuff, recvbuff, count, dtype, rtype,
                                         _comm, stream);
@@ -135,8 +140,8 @@ public:
   /// \return @ref void
   void reduce(const void *sendbuff, void *recvbuff, size_t count,
               oneapi::ccl::datatype dtype, oneapi::ccl::reduction rtype,
-              int root, sycl::queue *queue_ptr) const {
-    ccl_func_adapter(
+              int root, sycl::queue *queue_ptr) {
+    call_reuse_queue(
         [=](const oneapi::ccl::stream &stream) {
           return oneapi::ccl::reduce(sendbuff, recvbuff, count, dtype, rtype,
                                      root, _comm, stream);
@@ -157,14 +162,14 @@ public:
   /// \return @ref void
   void broadcast(void *sendbuff, void *recvbuff, size_t count,
                  oneapi::ccl::datatype dtype, int root,
-                 sycl::queue *queue_ptr) const {
+                 sycl::queue *queue_ptr) {
     if (sendbuff != recvbuff) {
       throw std::runtime_error(
           "oneCCL broadcast only support in-place operation. "
           "send_buf and recv_buf must be same.");
       return;
     }
-    ccl_func_adapter(
+    call_reuse_queue(
         [=](const oneapi::ccl::stream &stream) {
           return oneapi::ccl::broadcast(recvbuff, count, dtype, root, _comm,
                                         stream);
@@ -183,8 +188,8 @@ public:
   /// \return @ref void
   void reduce_scatter(const void *sendbuff, void *recvbuff, size_t recv_count,
                       oneapi::ccl::datatype dtype, oneapi::ccl::reduction rtype,
-                      sycl::queue *queue_ptr) const {
-    ccl_func_adapter(
+                      sycl::queue *queue_ptr) {
+    call_reuse_queue(
         [=](const oneapi::ccl::stream &stream) {
           return oneapi::ccl::reduce_scatter(sendbuff, recvbuff, recv_count,
                                              dtype, rtype, _comm, stream);
@@ -196,35 +201,52 @@ private:
   oneapi::ccl::device _device_comm;
   oneapi::ccl::context _context_comm;
   oneapi::ccl::communicator _comm;
+  sycl::queue _queue;
+  bool _queue_init;
+  oneapi::ccl::stream *_ccl_stream_ptr;
 
-  class ccl_func_adapter {
+  template <class Fn>
+  void call_reuse_queue(Fn func, sycl::queue *qptr) {
+    if (_queue_init && *qptr != _queue) {
+      call_func_async(func, qptr);
+    } else {
+      if(!_queue_init) {
+        _queue = *qptr;
+        _queue_init = true;
+        _ccl_stream_ptr = new oneapi::ccl::stream(oneapi::ccl::create_stream(_queue));
+      }
+      std::invoke(func, *_ccl_stream_ptr);
+    }
+  }
+
+  class call_func_async {
     sycl::queue *_q_ptr;
-    struct ccl_adapter_data {
-      oneapi::ccl::stream _ccl_stream;
-      oneapi::ccl::event _ccl_event;
+    struct call_async_impl {
+      oneapi::ccl::stream _ccl_stream_impl;
+      oneapi::ccl::event _ccl_event_impl;
       template <class Fn>
-      explicit ccl_adapter_data(Fn func, sycl::queue *qptr)
-          : _ccl_stream(oneapi::ccl::create_stream(*qptr)),
-            _ccl_event(std::invoke(func, _ccl_stream)) {}
+      explicit call_async_impl(Fn func, sycl::queue *qptr)
+          : _ccl_stream_impl(oneapi::ccl::create_stream(*qptr)),
+            _ccl_event_impl(std::invoke(func, _ccl_stream_impl)) {}
     };
-    ccl_adapter_data *_data;
+    call_async_impl *_imp;
 
   public:
     template <class Fn>
-    explicit ccl_func_adapter(Fn func, sycl::queue *qptr)
+    explicit call_func_async(Fn func, sycl::queue *qptr)
         : _q_ptr(qptr),
-          _data(new ccl_adapter_data(func, qptr)) {}
-    ~ccl_func_adapter() {
+          _imp(new call_async_impl(func, qptr)) {}
+    ~call_func_async() {
       _q_ptr->submit([&](sycl::handler &cgh)
                      { cgh.host_task([=]
                                      {
-        _data->_ccl_event.wait();
-        delete _data; }); });
+        _imp->_ccl_event_impl.wait();
+        delete _imp; }); });
     }
   };
 };
 
-typedef dpct::ccl::communicator_ext *comm_ptr;
+typedef dpct::ccl::communicator_wrapper *comm_ptr;
 
 } // namespace ccl
 } // namespace dpct
