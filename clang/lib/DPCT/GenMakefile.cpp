@@ -41,12 +41,7 @@ std::vector<std::pair<std::string /*original file name or linker entry*/,
 static void fillCompileCmds(
     std::map<std::string, std::vector<clang::tooling::CompilationInfo>>
         &CompileCmds,
-    std::string MigratedFileName, std::string CompileOptions,
-    std::string Compiler, std::string TargetName) {
-  clang::tooling::CompilationInfo CmpInfo;
-  CmpInfo.MigratedFileName = MigratedFileName;
-  CmpInfo.CompileOptions = CompileOptions;
-  CmpInfo.Compiler = Compiler;
+    clang::tooling::CompilationInfo &CmpInfo, std::string TargetName) {
   CompileCmds[TargetName].push_back(CmpInfo);
 }
 
@@ -163,6 +158,18 @@ static void getCompileInfo(
     bool IsIncludeWithWhitespace = false;
 
     const std::string Directory = Entry.second[0];
+
+    llvm::SmallString<512> RealPath;
+    llvm::sys::fs::real_path(FileName, RealPath, true);
+    if (!llvm::sys::path::is_absolute(FileName))
+      RealPath = Directory + "/" + FileName;
+    makeCanonical(RealPath);
+    bool HasCudaSemantics = false;
+    if (IncludeFileMap.count(std::string(RealPath.str())) &&
+        IncludeFileMap.at(std::string(RealPath.str()))) {
+      HasCudaSemantics = true;
+    }
+
     std::unordered_set<std::string> DuplicateDuplicateFilter;
     for (const auto &Option : Entry.second) {
 
@@ -250,19 +257,6 @@ static void getCompileInfo(
         auto Version = Option.substr(Idx, Option.length() - Idx);
         int Val = std::atoi(Version.c_str());
 
-        llvm::SmallString<512> RealPath;
-        llvm::sys::fs::real_path(FileName, RealPath, true);
-        if (!llvm::sys::path::is_absolute(FileName))
-          RealPath = Directory + "/" + FileName;
-        makeCanonical(RealPath);
-
-        bool HasCudaSemantics = false;
-
-        if (IncludeFileMap.count(std::string(RealPath.str())) &&
-            IncludeFileMap.at(std::string(RealPath.str()))) {
-          HasCudaSemantics = true;
-        }
-
         // SYCL support c++17 as default.
         if (HasCudaSemantics && Val <= 17) {
           NewOptions += "-std=c++17 ";
@@ -308,7 +302,16 @@ static void getCompileInfo(
     // header files for migrated code, the path of the helper header files
     // should be included.
     if (llvm::sys::fs::exists(OutRoot.str() + "/include")) {
-      NewOptions += " -I ./include ";
+      NewOptions += "-I ./include ";
+    }
+
+    // Add SYCL head file path to the including path in the generated Makefile
+    // for source files which originally has CUDA Semantics and compiled by
+    // non-nvcc compiler
+    if (HasCudaSemantics &&
+        !llvm::StringRef(Entry.second[1]).endswith("nvcc")) {
+      NewOptions += "-I $(INCLUDE_SYCL) ";
+      NewOptions += "-I $(INCLUDE_CL) ";
     }
 
     SmallString<512> OutDirectory = llvm::StringRef(FileName);
@@ -340,17 +343,15 @@ static void getCompileInfo(
       auto Iter = CmdsMap.find(Obj);
       if (Iter != CmdsMap.end()) {
         auto CmpInfo = Iter->second;
-        fillCompileCmds(CompileCmds, CmpInfo.MigratedFileName,
-                        CmpInfo.CompileOptions, CmpInfo.Compiler, Entry.first);
+        fillCompileCmds(CompileCmds, CmpInfo, Entry.first);
       }
     }
   }
 
   if (ObjsInLinkerCmdPerTarget.empty()) {
     for (const auto &Cmd : CmdsMap) {
-      fillCompileCmds(CompileCmds, Cmd.second.MigratedFileName,
-                      Cmd.second.CompileOptions, Cmd.second.Compiler,
-                      EmptyTarget);
+      auto CmpInfo = Cmd.second;
+      fillCompileCmds(CompileCmds, CmpInfo, EmptyTarget);
     }
   }
 }
@@ -372,6 +373,15 @@ genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
   OS << "LIB := \n\n";
 
   OS << buildString("FLAGS := \n\n");
+
+  OS << buildString("ifeq ($(shell which icpx),)\n");
+  OS << buildString("\t$(error ERROR - icpx compiler not found, Please install "
+                    "Intel® oneAPI DPC++/C++ Compiler)\n");
+  OS << buildString("endif\n\n");
+
+  OS << buildString("ROOT_DIR     := $(shell dirname $(shell which icpx))\n");
+  OS << buildString("INCLUDE_SYCL := $(ROOT_DIR)/../include\n");
+  OS << buildString("INCLUDE_CL   := $(ROOT_DIR)/../include/sycl\n\n");
 
   std::map<std::string, std::string> ObjsPerTarget;
 
