@@ -6,43 +6,12 @@ Before You Begin
 Samples
 -------
 
-|tool_name| comes with several sample projects so you can explore
-the tool and familiarize yourself with how it functions.
-
-.. include:: /_include_files/wip.rst
-
-.. list-table::
-   :widths: 30 70
-   :header-rows: 1
-
-   * - Sample Project
-     - Description
-   * - Vector Add DPCT
-
-       - ``vector_add.cu``
-     - The Vector Add DPCT sample demonstrates how to migrate a simple program
-       from CUDA\* to |dpcpp_long|. Vector Add provides an easy way to verify
-       that your development environment is setup correctly to use |tool_name|.
-   * - Folder Options DPCT
-
-       - ``main.cu``
-       - ``bar/util.cu``
-       - ``bar/util.h``
-     - The Folder Options DPCT sample provides an example of how to migrate more
-       complex projects and use ``dpct`` options.
-   * - Rodinia NW DPCT
-
-       - ``needle.cu``
-       - ``needle.h``
-       - ``needle_kernel.cu``
-     - The Rodinia NW DPCT project demonstrates how to migrate a Make/CMake\*
-       project from CUDA to |dpcpp_long| using |tool_name|.
-
-Review the README file provided with each sample for more detailed information
-on the purpose and usage of the sample project.
+Several sample projects for |tool_name| are available to explore the tool and
+familiarize yourself with how it functions.
 
 .. include:: /_include_files/access_samples.rst
 
+.. include:: /_include_files/samples.rst
 
 .. _emitted-warnings:
 

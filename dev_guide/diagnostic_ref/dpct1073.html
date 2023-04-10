@@ -668,23 +668,41 @@
      DPCT1100
     </a>
    </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1101.html">
+     DPCT1101
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1102.html">
+     DPCT1102
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1103.html">
+     DPCT1103
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1104.html">
+     DPCT1104
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1106.html">
+     DPCT1106
+    </a>
+   </li>
   </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../api-mapping-status.html">
+   CUDA API Migration Support Status
+  </a>
  </li>
  <li class="toctree-l1">
   <a class="reference internal" href="../frequently-asked-questions-faq.html">
    Frequently Asked Questions
-  </a>
- </li>
-</ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  Notices and Disclaimers
- </span>
-</p>
-<ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../../notices-and-disclaimers.html">
-   Notices and Disclaimers
   </a>
  </li>
 </ul>
@@ -924,10 +942,10 @@ title="Print to PDF"
               <div>
                 
   <div class="section" id="dpct1073">
-<span id="id-dpct1073"></span><h1>DPCT1073<a class="headerlink" href="#dpct1073" title="Permalink to this headline">#</a></h1>
+<span id="id1"></span><h1>DPCT1073<a class="headerlink" href="#dpct1073" title="Permalink to this headline">#</a></h1>
 <div class="section" id="message">
 <h2>Message<a class="headerlink" href="#message" title="Permalink to this headline">#</a></h2>
-<p id="msg-1073-start">The field values of parameter <code class="docutils literal notranslate"><span class="pre">{0}</span></code> could not be deduced, so the call was not
+<p id="msg-1073-start">The field values of parameter <code class="docutils literal notranslate"><span class="pre">&lt;parameter</span> <span class="pre">name&gt;</span></code> could not be deduced, so the call was not
 migrated. You need to update this code manually.</p>
 </div>
 <div class="section" id="detailed-help">
@@ -939,40 +957,34 @@ which is used in the migrated code.</p>
 <h2>Suggestions to Fix<a class="headerlink" href="#suggestions-to-fix" title="Permalink to this headline">#</a></h2>
 <p>Manually replace the non-migrated call with a DPC++ expression using the actual
 field values of the parameters.</p>
-<p>For example, this original code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="c1">// original code:</span>
-<span class="linenos">2</span>
-<span class="linenos">3</span><span class="n">CUDA_ARRAY_DESCRIPTOR</span><span class="w"> </span><span class="o">*</span><span class="n">desc_ptr</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">4</span><span class="n">CUDA_ARRAY_DESCRIPTOR</span><span class="w"> </span><span class="n">desc</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">5</span><span class="n">desc_ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">desc</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">6</span>
-<span class="linenos">7</span><span class="n">Cuarray</span><span class="w"> </span><span class="n">arr</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">8</span><span class="n">cuArrayCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">arr</span><span class="p">,</span><span class="w"> </span><span class="n">desc_ptr</span><span class="p">)</span><span class="w"></span>
+<p>For example, this original CUDA* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="n">CUDA_ARRAY_DESCRIPTOR</span><span class="w"> </span><span class="o">*</span><span class="n">desc_ptr</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">  </span><span class="n">CUDA_ARRAY_DESCRIPTOR</span><span class="w"> </span><span class="n">desc</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">  </span><span class="n">desc_ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">desc</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">4</span>
+<span class="linenos">5</span><span class="w">  </span><span class="n">Cuarray</span><span class="w"> </span><span class="n">arr</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">6</span><span class="w">  </span><span class="n">cuArrayCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">arr</span><span class="p">,</span><span class="w"> </span><span class="n">desc_ptr</span><span class="p">)</span><span class="w"></span>
 </pre></div>
 </div>
-<p>results in the following migrated DPC++ code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="c1">// migrated DPC++ code:</span>
-<span class="linenos"> 2</span>
-<span class="linenos"> 3</span><span class="n">CUDA_ARRAY_DESCRIPTOR</span><span class="w"> </span><span class="o">*</span><span class="n">desc_ptr</span><span class="p">;</span><span class="w"> </span><span class="c1">// line was not migrated and can be removed</span>
-<span class="linenos"> 4</span><span class="kt">size_t</span><span class="w"> </span><span class="n">desc_x_ct1</span><span class="p">,</span><span class="w"> </span><span class="n">desc_y_ct1</span><span class="p">;</span><span class="w"></span>
-<span class="linenos"> 5</span><span class="kt">unsigned</span><span class="w"> </span><span class="n">desc_channel_num_ct1</span><span class="p">;</span><span class="w"></span>
-<span class="linenos"> 6</span><span class="n">sycl</span><span class="o">::</span><span class="n">image_channel_type</span><span class="w"> </span><span class="n">desc_channel_type_ct1</span><span class="p">;</span><span class="w"></span>
-<span class="linenos"> 7</span><span class="n">desc_ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">desc</span><span class="p">;</span><span class="w"> </span><span class="c1">// line can be removed</span>
-<span class="linenos"> 8</span>
-<span class="linenos"> 9</span><span class="n">dpct</span><span class="o">::</span><span class="n">image_matrix_p</span><span class="w"> </span><span class="n">arr</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">10</span><span class="cm">/* DPCT1073 warning */</span><span class="w"></span>
-<span class="linenos">11</span><span class="n">cuArrayCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">arr</span><span class="p">,</span><span class="w"> </span><span class="n">desc_ptr</span><span class="p">)</span><span class="w"> </span><span class="c1">// line was not migrated and needs to be replaced</span>
+<p>results in the following migrated SYCL* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="n">CUDA_ARRAY_DESCRIPTOR</span><span class="w"> </span><span class="o">*</span><span class="n">desc_ptr</span><span class="p">;</span><span class="w"> </span><span class="c1">// line was not migrated and can be removed</span>
+<span class="linenos">2</span><span class="w">  </span><span class="kt">size_t</span><span class="w"> </span><span class="n">desc_x_ct1</span><span class="p">,</span><span class="w"> </span><span class="n">desc_y_ct1</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">  </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">desc_channel_num_ct1</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">4</span><span class="w">  </span><span class="n">sycl</span><span class="o">::</span><span class="n">image_channel_type</span><span class="w"> </span><span class="n">desc_channel_type_ct1</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">5</span><span class="w">  </span><span class="n">desc_ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">desc</span><span class="p">;</span><span class="w"> </span><span class="c1">// line can be removed</span>
+<span class="linenos">6</span>
+<span class="linenos">7</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">image_matrix_p</span><span class="w"> </span><span class="n">arr</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">8</span><span class="w">  </span><span class="cm">/* DPCT1073 warning */</span><span class="w"></span>
+<span class="linenos">9</span><span class="w">  </span><span class="n">cuArrayCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">arr</span><span class="p">,</span><span class="w"> </span><span class="n">desc_ptr</span><span class="p">)</span><span class="w"> </span><span class="c1">// line was not migrated and needs to be replaced</span>
 </pre></div>
 </div>
 <p>which is manually adjusted to:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="c1">// adjusted DPC++ code:</span>
-<span class="linenos">2</span>
-<span class="linenos">3</span><span class="kt">size_t</span><span class="w"> </span><span class="n">desc_x_ct1</span><span class="p">,</span><span class="w"> </span><span class="n">desc_y_ct1</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">4</span><span class="kt">unsigned</span><span class="w"> </span><span class="n">desc_channel_num_ct1</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">5</span><span class="n">sycl</span><span class="o">::</span><span class="n">image_channel_type</span><span class="w"> </span><span class="n">desc_channel_type_ct1</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">6</span>
-<span class="linenos">7</span><span class="n">dpct</span><span class="o">::</span><span class="n">image_matrix_p</span><span class="w"> </span><span class="n">arr</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">8</span><span class="n">arr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">dpct</span><span class="o">::</span><span class="n">image_matrix</span><span class="p">(</span><span class="n">desc_channel_typ_ct1</span><span class="p">,</span><span class="w"> </span><span class="n">desc_channel_num_ct1</span><span class="p">,</span><span class="w"> </span><span class="n">desc_x_ct1</span><span class="p">,</span><span class="w"> </span><span class="n">desc_y_ct1</span><span class="p">);</span><span class="w"></span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="kt">size_t</span><span class="w"> </span><span class="n">desc_x_ct1</span><span class="p">,</span><span class="w"> </span><span class="n">desc_y_ct1</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">  </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">desc_channel_num_ct1</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">  </span><span class="n">sycl</span><span class="o">::</span><span class="n">image_channel_type</span><span class="w"> </span><span class="n">desc_channel_type_ct1</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">4</span>
+<span class="linenos">5</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">image_matrix_p</span><span class="w"> </span><span class="n">arr</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">6</span><span class="w">  </span><span class="n">arr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">dpct</span><span class="o">::</span><span class="n">image_matrix</span><span class="p">(</span><span class="n">desc_channel_typ_ct1</span><span class="p">,</span><span class="w"> </span><span class="n">desc_channel_num_ct1</span><span class="p">,</span><span class="w"> </span><span class="n">desc_x_ct1</span><span class="p">,</span><span class="w"> </span><span class="n">desc_y_ct1</span><span class="p">);</span><span class="w"></span>
 </pre></div>
 </div>
 </div>
@@ -1007,11 +1019,9 @@ field values of the parameters.</p>
     <div class="footer-content row">
         <footer class="col footer"><p>
   
-    By Intel<br/>
-  
-      &copy; Copyright Intel Corporation.<br/>
+      &copy; Copyright Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc..<br/>
     <div class="extra_footer">
-      <p align="right"><a href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">Cookies</a></p>
+      <div>No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div>
     </div>
 </p>
         </footer>

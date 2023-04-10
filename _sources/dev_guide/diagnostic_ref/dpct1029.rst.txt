@@ -1,4 +1,4 @@
-.. _id_DPCT1029:
+.. _DPCT1029:
 
 DPCT1029
 ========
@@ -16,7 +16,7 @@ parameter(s) are set to 0.
 Detailed Help
 -------------
 
-SYCL currently does not support getting device resource limits. The output
+SYCL\* currently does not support getting device resource limits. The output
 parameter(s) are set to 0.
 
 Contact `Support <https://software.intel.com/content/www/us/en/develop/support.html>`_

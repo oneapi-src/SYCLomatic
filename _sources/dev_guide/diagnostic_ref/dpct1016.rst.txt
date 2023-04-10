@@ -1,4 +1,4 @@
-.. _id_DPCT1016:
+.. _DPCT1016:
 
 DPCT1016
 ========
@@ -26,9 +26,9 @@ did not occur, rewrite the code manually.
   code:
 
   .. code-block:: cpp
-     :linenos:
 
      dpct::dpct_memcpy((void*)(B), (void*)(A), lda*cols*elemSize, dpct::host_to_device); // For cublasGetMatrix, use dpct::device_to_host
+
 * Otherwise, you can copy the columns of the matrix or elements of the vector
   one by one.
 
@@ -37,19 +37,19 @@ did not occur, rewrite the code manually.
     .. code-block:: cpp
        :linenos:
 
-        auto A_backup = A;
-        auto B_backup = B;
-        A = A - lda;
-        B = B - ldb;
-        for (int c = 0; c < cols; ++c) {
-          A = A + lda;
-          B = B + ldb;
-          dpct::dpct_memcpy(
-              (void *)(B), (void *)(A), rows * elemSize,
-              dpct::host_to_device); // For cublasGetMatrix, use dpct::device_to_host
-        }
-        A = A_backup;
-        B = B_backup;
+         auto A_backup = A;
+         auto B_backup = B;
+         A = A - lda;
+         B = B - ldb;
+         for (int c = 0; c < cols; ++c) {
+           A = A + lda;
+           B = B + ldb;
+           dpct::dpct_memcpy(
+               (void *)(B), (void *)(A), rows * elemSize,
+               dpct::host_to_device); // For cublasGetMatrix, use dpct::device_to_host
+         }
+         A = A_backup;
+         B = B_backup;
 
 
 |tool_name| can migrate the ``cublasSetVector`` only when ``incx``
@@ -60,7 +60,6 @@ occur, rewrite the code manually.
   following code:
 
   .. code-block:: cpp
-     :linenos:
 
      dpct::dpct_memcpy((void*)(B), (void*)(A), n*incx*elemSize, dpct::host_to_device); // For cublasGetVector, use dpct::device_to_host
 
@@ -72,19 +71,19 @@ occur, rewrite the code manually.
     .. code-block:: cpp
        :linenos:
 
-        auto x_backup = x;
-        auto y_backup = y;
-        x = x - incx;
-        y = y - incy;
-        for (int c = 0; c < n; ++c) {
-          x = x + incx;
-          y = y + incy;
-          dpct::dpct_memcpy(
-              (void *)(y), (void *)(x), elemSize,
-              dpct::device_to_host); // for cublasSetVector, use dpct::host_to_device
-        }
-        x = x_backup;
-        y = y_backup;
+         auto x_backup = x;
+         auto y_backup = y;
+         x = x - incx;
+         y = y - incy;
+         for (int c = 0; c < n; ++c) {
+           x = x + incx;
+           y = y + incy;
+           dpct::dpct_memcpy(
+               (void *)(y), (void *)(x), elemSize,
+               dpct::device_to_host); // for cublasSetVector, use dpct::host_to_device
+         }
+         x = x_backup;
+         y = y_backup;
 
 
 Suggestions to Fix

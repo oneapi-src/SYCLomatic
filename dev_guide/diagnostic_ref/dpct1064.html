@@ -668,23 +668,41 @@
      DPCT1100
     </a>
    </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1101.html">
+     DPCT1101
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1102.html">
+     DPCT1102
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1103.html">
+     DPCT1103
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1104.html">
+     DPCT1104
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1106.html">
+     DPCT1106
+    </a>
+   </li>
   </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../api-mapping-status.html">
+   CUDA API Migration Support Status
+  </a>
  </li>
  <li class="toctree-l1">
   <a class="reference internal" href="../frequently-asked-questions-faq.html">
    Frequently Asked Questions
-  </a>
- </li>
-</ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  Notices and Disclaimers
- </span>
-</p>
-<ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../../notices-and-disclaimers.html">
-   Notices and Disclaimers
   </a>
  </li>
 </ul>
@@ -924,7 +942,7 @@ title="Print to PDF"
               <div>
                 
   <div class="section" id="dpct1064">
-<span id="id-dpct1064"></span><h1>DPCT1064<a class="headerlink" href="#dpct1064" title="Permalink to this headline">#</a></h1>
+<span id="id1"></span><h1>DPCT1064<a class="headerlink" href="#dpct1064" title="Permalink to this headline">#</a></h1>
 <div class="section" id="message">
 <h2>Message<a class="headerlink" href="#message" title="Permalink to this headline">#</a></h2>
 <p id="msg-1064-start">Migrated <em>&lt;function name&gt;</em> call is used in a macro definition and is not valid
@@ -938,9 +956,9 @@ SYCLomatic generates code that is valid for one of the calls
 of the macro, but may not be valid for all calls of this macro in the code.</p>
 <p>For example: The function <code class="docutils literal notranslate"><span class="pre">pow</span></code> can be migrated to <code class="docutils literal notranslate"><span class="pre">sycl::pow&lt;double&gt;</span></code> or
 <code class="docutils literal notranslate"><span class="pre">sycl::pown</span></code>, depending on the types of parameters passed through macro arguments.</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="cp">#define POW(B, E) pow(B, E)</span>
-<span class="linenos">2</span><span class="n">POW</span><span class="p">(</span><span class="mf">2.5</span><span class="p">,</span><span class="w"> </span><span class="mf">3.1</span><span class="p">);</span><span class="w">  </span><span class="c1">//should be migrated to sycl::pow&lt;double&gt;(2.5, 3.1)</span>
-<span class="linenos">3</span><span class="n">POW</span><span class="p">(</span><span class="mf">2.5</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">);</span><span class="w"> </span><span class="c1">//should be migrated to sycl::pown((float)2.5, 3)</span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="cp">#define POW(B, E) pow(B, E)</span>
+<span class="linenos">2</span><span class="w">  </span><span class="n">POW</span><span class="p">(</span><span class="mf">2.5</span><span class="p">,</span><span class="w"> </span><span class="mf">3.1</span><span class="p">);</span><span class="w">  </span><span class="c1">//should be migrated to sycl::pow&lt;double&gt;(2.5, 3.1)</span>
+<span class="linenos">3</span><span class="w">  </span><span class="n">POW</span><span class="p">(</span><span class="mf">2.5</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">);</span><span class="w"> </span><span class="c1">//should be migrated to sycl::pown((float)2.5, 3)</span>
 </pre></div>
 </div>
 </div>
@@ -979,11 +997,9 @@ of the macro, but may not be valid for all calls of this macro in the code.</p>
     <div class="footer-content row">
         <footer class="col footer"><p>
   
-    By Intel<br/>
-  
-      &copy; Copyright Intel Corporation.<br/>
+      &copy; Copyright Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc..<br/>
     <div class="extra_footer">
-      <p align="right"><a href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">Cookies</a></p>
+      <div>No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div>
     </div>
 </p>
         </footer>

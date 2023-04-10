@@ -1,4 +1,4 @@
-.. _id_DPCT1024:
+.. _DPCT1024:
 
 DPCT1024
 ========
@@ -21,7 +21,6 @@ This warning is generated in cases where in the original code, the CUDA\* API ca
 returns the error code, which is consumed by the program logic:
 
 .. code-block:: cpp
-   :linenos:
 
    handleError(cudaEventRecord(e));
 
@@ -31,7 +30,6 @@ not return the error code, 0 is used as an input to the program logic, consuming
 the error code:
 
 .. code-block:: cpp
-   :linenos:
 
    e_ct1 = clock(), handleError(0);
 

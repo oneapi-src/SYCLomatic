@@ -668,23 +668,41 @@
      DPCT1100
     </a>
    </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1101.html">
+     DPCT1101
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1102.html">
+     DPCT1102
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1103.html">
+     DPCT1103
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1104.html">
+     DPCT1104
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1106.html">
+     DPCT1106
+    </a>
+   </li>
   </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../api-mapping-status.html">
+   CUDA API Migration Support Status
+  </a>
  </li>
  <li class="toctree-l1">
   <a class="reference internal" href="../frequently-asked-questions-faq.html">
    Frequently Asked Questions
-  </a>
- </li>
-</ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  Notices and Disclaimers
- </span>
-</p>
-<ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../../notices-and-disclaimers.html">
-   Notices and Disclaimers
   </a>
  </li>
 </ul>
@@ -924,7 +942,7 @@ title="Print to PDF"
               <div>
                 
   <div class="section" id="dpct1085">
-<span id="id-dpct1085"></span><h1>DPCT1085<a class="headerlink" href="#dpct1085" title="Permalink to this headline">#</a></h1>
+<span id="id1"></span><h1>DPCT1085<a class="headerlink" href="#dpct1085" title="Permalink to this headline">#</a></h1>
 <div class="section" id="message">
 <h2>Message<a class="headerlink" href="#message" title="Permalink to this headline">#</a></h2>
 <p id="msg-1085-start">The function <em>&lt;function name&gt;</em> requires sub-group size to be <em>&lt;size&gt;</em>, while
@@ -936,46 +954,40 @@ size. You may need to adjust the code.</p>
 <p>Each kernel can only be decorated with one sub-group size. This warning is emitted
 when a kernel requires different sub-group sizes. Check if the sub-group size can
 be unified into one value, and if it cannot be unified, redesign the code logic.</p>
-<p>For example, this original code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="c1">// original code:</span>
-<span class="linenos"> 2</span>
-<span class="linenos"> 3</span><span class="n">_global_</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">kernel</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="linenos"> 4</span><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">Input</span><span class="p">,</span><span class="w"> </span><span class="n">Output1</span><span class="p">,</span><span class="w"> </span><span class="n">Output2</span><span class="p">,</span><span class="w"> </span><span class="n">Lane</span><span class="p">;</span><span class="w"></span>
-<span class="linenos"> 5</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
-<span class="linenos"> 6</span>
-<span class="linenos"> 7</span><span class="w">  </span><span class="c1">// original code logic</span>
-<span class="linenos"> 8</span><span class="w">  </span><span class="n">Output1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">__shfl</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span><span class="w"> </span><span class="n">Lane</span><span class="p">,</span><span class="w"> </span><span class="mi">32</span><span class="p">);</span><span class="w"></span>
-<span class="linenos"> 9</span><span class="w">  </span><span class="n">Output2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">__shfl_xor</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span><span class="w"> </span><span class="n">Lane</span><span class="p">,</span><span class="w"> </span><span class="mi">16</span><span class="p">);</span><span class="w"></span>
-<span class="linenos">10</span><span class="p">}</span><span class="w"></span>
+<p>For example, this original CUDA* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="n">_global_</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">kernel</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">Input</span><span class="p">,</span><span class="w"> </span><span class="n">Output1</span><span class="p">,</span><span class="w"> </span><span class="n">Output2</span><span class="p">,</span><span class="w"> </span><span class="n">Lane</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">    </span><span class="p">...</span><span class="w"></span>
+<span class="linenos">4</span>
+<span class="linenos">5</span><span class="w">    </span><span class="c1">// original code logic</span>
+<span class="linenos">6</span><span class="w">    </span><span class="n">Output1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">__shfl</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span><span class="w"> </span><span class="n">Lane</span><span class="p">,</span><span class="w"> </span><span class="mi">32</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">7</span><span class="w">    </span><span class="n">Output2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">__shfl_xor</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span><span class="w"> </span><span class="n">Lane</span><span class="p">,</span><span class="w"> </span><span class="mi">16</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">8</span><span class="w">  </span><span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
-<p>results in the following migrated SYCL code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="c1">// migrated SYCL code:</span>
-<span class="linenos"> 2</span>
-<span class="linenos"> 3</span><span class="kt">void</span><span class="w"> </span><span class="nf">kernel</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">WarpSize</span><span class="p">,</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">nd_item</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="linenos"> 4</span><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">Input</span><span class="p">,</span><span class="w"> </span><span class="n">Output1</span><span class="p">,</span><span class="w"> </span><span class="n">Output2</span><span class="p">,</span><span class="w"> </span><span class="n">Lane</span><span class="p">;</span><span class="w"></span>
-<span class="linenos"> 5</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
-<span class="linenos"> 6</span>
-<span class="linenos"> 7</span><span class="w">  </span><span class="c1">// original code logic</span>
-<span class="linenos"> 8</span><span class="w">  </span><span class="n">Output1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Item_ct1</span><span class="p">.</span><span class="n">get_sub_group</span><span class="p">().</span><span class="n">shuffle</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span><span class="w"> </span><span class="n">Lane</span><span class="p">,</span><span class="w"> </span><span class="mi">32</span><span class="p">);</span><span class="w"></span>
-<span class="linenos"> 9</span><span class="w">  </span><span class="cm">/* DPCT1085 */</span><span class="w"></span>
-<span class="linenos">10</span><span class="w">  </span><span class="n">Output2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Item_ct1</span><span class="p">.</span><span class="n">get_sub_group</span><span class="p">().</span><span class="n">shuffle_xor</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span><span class="w"> </span><span class="n">Lane</span><span class="p">,</span><span class="w"> </span><span class="mi">16</span><span class="p">);</span><span class="w"></span>
-<span class="linenos">11</span><span class="p">}</span><span class="w"></span>
+<p>results in the following migrated SYCL* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w">  </span><span class="kt">void</span><span class="w"> </span><span class="nf">kernel</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">WarpSize</span><span class="p">,</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">nd_item</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">2</span><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">Input</span><span class="p">,</span><span class="w"> </span><span class="n">Output1</span><span class="p">,</span><span class="w"> </span><span class="n">Output2</span><span class="p">,</span><span class="w"> </span><span class="n">Lane</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">3</span><span class="w">    </span><span class="p">...</span><span class="w"></span>
+<span class="linenos">4</span>
+<span class="linenos">5</span><span class="w">    </span><span class="c1">// original code logic</span>
+<span class="linenos">6</span><span class="w">    </span><span class="n">Output1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Item_ct1</span><span class="p">.</span><span class="n">get_sub_group</span><span class="p">().</span><span class="n">shuffle</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span><span class="w"> </span><span class="n">Lane</span><span class="p">,</span><span class="w"> </span><span class="mi">32</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">7</span><span class="w">    </span><span class="cm">/* DPCT1085 */</span><span class="w"></span>
+<span class="linenos">8</span><span class="w">    </span><span class="n">Output2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Item_ct1</span><span class="p">.</span><span class="n">get_sub_group</span><span class="p">().</span><span class="n">shuffle_xor</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span><span class="w"> </span><span class="n">Lane</span><span class="p">,</span><span class="w"> </span><span class="mi">16</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">9</span><span class="w">  </span><span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
 <p>which is manually adjusted to:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="c1">// adjusted SYCL code:</span>
-<span class="linenos"> 2</span>
-<span class="linenos"> 3</span><span class="kt">void</span><span class="w"> </span><span class="nf">kernel</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">WarpSize</span><span class="p">,</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">nd_item</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="linenos"> 4</span><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">Input</span><span class="p">,</span><span class="w"> </span><span class="n">Output</span><span class="p">,</span><span class="w"> </span><span class="n">SrcLane</span><span class="p">;</span><span class="w"></span>
-<span class="linenos"> 5</span><span class="w">  </span><span class="p">...</span><span class="w"></span>
-<span class="linenos"> 6</span>
-<span class="linenos"> 7</span><span class="w">  </span><span class="c1">// redesigned code logic</span>
-<span class="linenos"> 8</span><span class="w">  </span><span class="n">Output1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Item_ct1</span><span class="p">.</span><span class="n">get_sub_group</span><span class="p">().</span><span class="n">shuffle</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span><span class="w"> </span><span class="n">Lane</span><span class="p">,</span><span class="w"> </span><span class="mi">32</span><span class="p">);</span><span class="w"></span>
-<span class="linenos"> 9</span><span class="w">  </span><span class="cm">/* DPCT1085 */</span><span class="w"></span>
-<span class="linenos">10</span><span class="w">  </span><span class="c1">// redesign the code logic to unify sub-group size in the same kernel</span>
-<span class="linenos">11</span><span class="w">  </span><span class="n">Output2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Item_ct1</span><span class="p">.</span><span class="n">get_sub_group</span><span class="p">().</span><span class="n">shuffle_xor</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span><span class="w"> </span><span class="n">Lane</span><span class="p">,</span><span class="w"> </span><span class="mi">32</span><span class="p">);</span><span class="w"></span>
-<span class="linenos">12</span><span class="p">}</span><span class="w"></span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="w">  </span><span class="kt">void</span><span class="w"> </span><span class="nf">kernel</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">WarpSize</span><span class="p">,</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">nd_item</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 2</span><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">Input</span><span class="p">,</span><span class="w"> </span><span class="n">Output</span><span class="p">,</span><span class="w"> </span><span class="n">SrcLane</span><span class="p">;</span><span class="w"></span>
+<span class="linenos"> 3</span><span class="w">    </span><span class="p">...</span><span class="w"></span>
+<span class="linenos"> 4</span>
+<span class="linenos"> 5</span><span class="w">    </span><span class="c1">// redesigned code logic</span>
+<span class="linenos"> 6</span><span class="w">    </span><span class="n">Output1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Item_ct1</span><span class="p">.</span><span class="n">get_sub_group</span><span class="p">().</span><span class="n">shuffle</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span><span class="w"> </span><span class="n">Lane</span><span class="p">,</span><span class="w"> </span><span class="mi">32</span><span class="p">);</span><span class="w"></span>
+<span class="linenos"> 7</span><span class="w">    </span><span class="cm">/* DPCT1085 */</span><span class="w"></span>
+<span class="linenos"> 8</span><span class="w">    </span><span class="c1">// redesign the code logic to unify sub-group size in the same kernel</span>
+<span class="linenos"> 9</span><span class="w">    </span><span class="n">Output2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Item_ct1</span><span class="p">.</span><span class="n">get_sub_group</span><span class="p">().</span><span class="n">shuffle_xor</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span><span class="w"> </span><span class="n">Lane</span><span class="p">,</span><span class="w"> </span><span class="mi">32</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">10</span><span class="w">  </span><span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
 </div>
@@ -1014,11 +1026,9 @@ be unified into one value, and if it cannot be unified, redesign the code logic.
     <div class="footer-content row">
         <footer class="col footer"><p>
   
-    By Intel<br/>
-  
-      &copy; Copyright Intel Corporation.<br/>
+      &copy; Copyright Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc..<br/>
     <div class="extra_footer">
-      <p align="right"><a href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">Cookies</a></p>
+      <div>No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div>
     </div>
 </p>
         </footer>

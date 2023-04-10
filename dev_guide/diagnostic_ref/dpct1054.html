@@ -668,23 +668,41 @@
      DPCT1100
     </a>
    </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1101.html">
+     DPCT1101
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1102.html">
+     DPCT1102
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1103.html">
+     DPCT1103
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1104.html">
+     DPCT1104
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1106.html">
+     DPCT1106
+    </a>
+   </li>
   </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../api-mapping-status.html">
+   CUDA API Migration Support Status
+  </a>
  </li>
  <li class="toctree-l1">
   <a class="reference internal" href="../frequently-asked-questions-faq.html">
    Frequently Asked Questions
-  </a>
- </li>
-</ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  Notices and Disclaimers
- </span>
-</p>
-<ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../../notices-and-disclaimers.html">
-   Notices and Disclaimers
   </a>
  </li>
 </ul>
@@ -924,7 +942,7 @@ title="Print to PDF"
               <div>
                 
   <div class="section" id="dpct1054">
-<span id="id-dpct1054"></span><h1>DPCT1054<a class="headerlink" href="#dpct1054" title="Permalink to this headline">#</a></h1>
+<span id="id1"></span><h1>DPCT1054<a class="headerlink" href="#dpct1054" title="Permalink to this headline">#</a></h1>
 <div class="section" id="message">
 <h2>Message<a class="headerlink" href="#message" title="Permalink to this headline">#</a></h2>
 <p id="msg-1054-start">The type of variable <em>&lt;variable name&gt;</em> is declared in device function with the
@@ -945,48 +963,44 @@ in a device function.</p>
 <li><p>in the call side, when defining local accessor, the first template argument will
 be set to <code class="docutils literal notranslate"><span class="pre">uint8_t[sizeof(&lt;original</span> <span class="pre">type,</span> <span class="pre">for</span> <span class="pre">example</span> <span class="pre">&quot;type_ct1&quot;&gt;)]</span></code>.</p></li>
 </ul>
-<p>For example, this original code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="w"> </span><span class="c1">// original code:</span>
-<span class="linenos"> 2</span>
-<span class="linenos"> 3</span><span class="w"> </span><span class="c1">// header file</span>
-<span class="linenos"> 4</span><span class="w"> </span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">k</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="linenos"> 5</span><span class="w">   </span><span class="n">__shared__</span><span class="w"> </span><span class="k">union</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="linenos"> 6</span><span class="w">     </span><span class="n">T</span><span class="w"> </span><span class="n">t</span><span class="p">;</span><span class="w"></span>
-<span class="linenos"> 7</span><span class="w">     </span><span class="p">...</span><span class="w"></span>
-<span class="linenos"> 8</span><span class="w">   </span><span class="p">}</span><span class="w"> </span><span class="n">a</span><span class="p">;</span><span class="w"></span>
-<span class="linenos"> 9</span><span class="w">   </span><span class="p">...</span><span class="w"></span>
-<span class="linenos">10</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="linenos">11</span>
-<span class="linenos">12</span><span class="w"> </span><span class="c1">// source file</span>
-<span class="linenos">13</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">k</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;&lt;&lt;&lt;</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="o">&gt;&gt;&gt;</span><span class="p">();</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<p>For example, this original CUDA* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="w">  </span><span class="c1">// header file</span>
+<span class="linenos"> 2</span><span class="w">  </span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"> </span><span class="n">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">k</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 3</span><span class="w">    </span><span class="n">__shared__</span><span class="w"> </span><span class="k">union</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 4</span><span class="w">      </span><span class="n">T</span><span class="w"> </span><span class="n">t</span><span class="p">;</span><span class="w"></span>
+<span class="linenos"> 5</span><span class="w">      </span><span class="p">...</span><span class="w"></span>
+<span class="linenos"> 6</span><span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="n">a</span><span class="p">;</span><span class="w"></span>
+<span class="linenos"> 7</span><span class="w">    </span><span class="p">...</span><span class="w"></span>
+<span class="linenos"> 8</span><span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="linenos"> 9</span>
+<span class="linenos">10</span><span class="w">   </span><span class="c1">// source file</span>
+<span class="linenos">11</span><span class="w">   </span><span class="kt">void</span><span class="w"> </span><span class="n">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">k</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;&lt;&lt;&lt;</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="o">&gt;&gt;&gt;</span><span class="p">();</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
-<p>results in the following migrated DPC++ code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="w"> </span><span class="c1">// migrated DPC++ code:</span>
-<span class="linenos"> 2</span>
-<span class="linenos"> 3</span><span class="w"> </span><span class="c1">// header file</span>
-<span class="linenos"> 4</span><span class="w"> </span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">k</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">a_ct1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="linenos"> 5</span><span class="w">   </span><span class="k">union</span><span class="w"> </span><span class="nc">type_ct1</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="linenos"> 6</span><span class="w">     </span><span class="n">T</span><span class="w"> </span><span class="n">t</span><span class="p">;</span><span class="w"></span>
-<span class="linenos"> 7</span><span class="w">     </span><span class="p">...</span><span class="w"></span>
-<span class="linenos"> 8</span><span class="w">   </span><span class="p">};</span><span class="w"></span>
-<span class="linenos"> 9</span><span class="w">   </span><span class="n">type_ct1</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">type_ct1</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">a_ct1</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">10</span><span class="w">   </span><span class="p">...</span><span class="w"></span>
-<span class="linenos">11</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="linenos">12</span>
-<span class="linenos">13</span><span class="w"> </span><span class="c1">// source file</span>
-<span class="linenos">14</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="linenos">15</span><span class="w">   </span><span class="n">dpct</span><span class="o">::</span><span class="n">get_default_queue</span><span class="p">().</span><span class="n">submit</span><span class="p">([</span><span class="o">&amp;</span><span class="p">](</span><span class="n">sycl</span><span class="o">::</span><span class="n">handler</span><span class="w"> </span><span class="o">&amp;</span><span class="n">cgh</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="linenos">16</span><span class="w">     </span><span class="cm">/*</span>
-<span class="linenos">17</span><span class="cm">     DPCT1053:0: The type of variable a is declared in device function with the</span>
-<span class="linenos">18</span><span class="cm">     name type_ct1. Adjust the code to make the type_ct1 declaration visible at</span>
-<span class="linenos">19</span><span class="cm">     the accessor declaration point.</span>
-<span class="linenos">20</span><span class="cm">     */</span><span class="w"></span>
-<span class="linenos">21</span><span class="w">     </span><span class="n">sycl</span><span class="o">::</span><span class="n">accessor</span><span class="o">&lt;</span><span class="kt">uint8_t</span><span class="p">[</span><span class="k">sizeof</span><span class="p">(</span><span class="n">type_ct1</span><span class="p">)],</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">access</span><span class="o">::</span><span class="n">mode</span><span class="o">::</span><span class="n">read_write</span><span class="p">,</span><span class="w"></span>
-<span class="linenos">22</span><span class="w">                    </span><span class="n">sycl</span><span class="o">::</span><span class="n">access</span><span class="o">::</span><span class="n">target</span><span class="o">::</span><span class="n">local</span><span class="o">&gt;</span><span class="w"> </span><span class="n">a_ct1_acc_ct1</span><span class="p">(</span><span class="n">cgh</span><span class="p">);</span><span class="w"></span>
-<span class="linenos">23</span><span class="w">     </span><span class="p">...</span><span class="w"></span>
-<span class="linenos">24</span><span class="w">   </span><span class="p">});</span><span class="w"></span>
-<span class="linenos">25</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<p>results in the following migrated SYCL* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="w">  </span><span class="c1">// header file</span>
+<span class="linenos"> 2</span><span class="w">  </span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="k">typename</span><span class="w"> </span><span class="nc">T</span><span class="o">&gt;</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">k</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="o">*</span><span class="n">a_ct1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 3</span><span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="nc">type_ct1</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 4</span><span class="w">      </span><span class="n">T</span><span class="w"> </span><span class="n">t</span><span class="p">;</span><span class="w"></span>
+<span class="linenos"> 5</span><span class="w">      </span><span class="p">...</span><span class="w"></span>
+<span class="linenos"> 6</span><span class="w">    </span><span class="p">};</span><span class="w"></span>
+<span class="linenos"> 7</span><span class="w">    </span><span class="n">type_ct1</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">type_ct1</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">a_ct1</span><span class="p">;</span><span class="w"></span>
+<span class="linenos"> 8</span><span class="w">    </span><span class="p">...</span><span class="w"></span>
+<span class="linenos"> 9</span><span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="linenos">10</span>
+<span class="linenos">11</span><span class="w">  </span><span class="c1">// source file</span>
+<span class="linenos">12</span><span class="w">  </span><span class="kt">void</span><span class="w"> </span><span class="n">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">13</span><span class="w">    </span><span class="n">dpct</span><span class="o">::</span><span class="n">get_default_queue</span><span class="p">().</span><span class="n">submit</span><span class="p">([</span><span class="o">&amp;</span><span class="p">](</span><span class="n">sycl</span><span class="o">::</span><span class="n">handler</span><span class="w"> </span><span class="o">&amp;</span><span class="n">cgh</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">14</span><span class="w">      </span><span class="cm">/*</span>
+<span class="linenos">15</span><span class="cm">      DPCT1053:0: The type of variable a is declared in device function with the</span>
+<span class="linenos">16</span><span class="cm">      name type_ct1. Adjust the code to make the type_ct1 declaration visible at</span>
+<span class="linenos">17</span><span class="cm">      the accessor declaration point.</span>
+<span class="linenos">18</span><span class="cm">      */</span><span class="w"></span>
+<span class="linenos">19</span><span class="w">      </span><span class="n">sycl</span><span class="o">::</span><span class="n">accessor</span><span class="o">&lt;</span><span class="kt">uint8_t</span><span class="p">[</span><span class="k">sizeof</span><span class="p">(</span><span class="n">type_ct1</span><span class="p">)],</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">access</span><span class="o">::</span><span class="n">mode</span><span class="o">::</span><span class="n">read_write</span><span class="p">,</span><span class="w"></span>
+<span class="linenos">20</span><span class="w">                     </span><span class="n">sycl</span><span class="o">::</span><span class="n">access</span><span class="o">::</span><span class="n">target</span><span class="o">::</span><span class="n">local</span><span class="o">&gt;</span><span class="w"> </span><span class="n">a_ct1_acc_ct1</span><span class="p">(</span><span class="n">cgh</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">21</span><span class="w">      </span><span class="p">...</span><span class="w"></span>
+<span class="linenos">22</span><span class="w">    </span><span class="p">});</span><span class="w"></span>
+<span class="linenos">23</span><span class="w">  </span><span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
 </div>
@@ -1027,11 +1041,9 @@ original type.</p>
     <div class="footer-content row">
         <footer class="col footer"><p>
   
-    By Intel<br/>
-  
-      &copy; Copyright Intel Corporation.<br/>
+      &copy; Copyright Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc..<br/>
     <div class="extra_footer">
-      <p align="right"><a href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">Cookies</a></p>
+      <div>No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div>
     </div>
 </p>
         </footer>

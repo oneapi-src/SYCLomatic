@@ -1,4 +1,4 @@
-.. _id_DPCT1030:
+.. _DPCT1030:
 
 DPCT1030
 ========
@@ -16,7 +16,7 @@ You may need to rewrite the code.
 Detailed Help
 -------------
 
-IPC operations are currently not supported by SYCL.
+IPC operations are currently not supported by SYCL\*.
 
 Contact `Support <https://software.intel.com/content/www/us/en/develop/support.html>`_
 for help.

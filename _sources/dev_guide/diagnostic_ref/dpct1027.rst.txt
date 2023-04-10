@@ -1,4 +1,4 @@
-.. _id_DPCT1027:
+.. _DPCT1027:
 
 DPCT1027
 ========
@@ -16,7 +16,7 @@ Detailed Help
 -------------
 
 API calls from the original application, which do not have functionally compatible
-SYCL API calls are replaced with 0 if |tool_name| determines that
+SYCL\* API calls are replaced with 0 if |tool_name| determines that
 this call removal should not affect the program logic and at the same time the
 return value of that call is used for error handling.
 

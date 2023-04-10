@@ -13,8 +13,8 @@ Migrate a Project
    migrate-a-project/user-defined-migration-rules
 
 |tool_name| ports CUDA\* language kernels and library API calls to
-SYCL for the |dpcpp_compiler|. Typically, 90%-95% of CUDA code automatically
-migrates to SYCL\*. The tool inserts inline comments during migration to
+SYCL\* for the |dpcpp_compiler|. Typically, 90%-95% of CUDA code automatically
+migrates to SYCL. The tool inserts inline comments during migration to
 help you complete the remaining code migration.
 
 **CUDA‡ to SYCL‡ Code Migration & Development Workflow**

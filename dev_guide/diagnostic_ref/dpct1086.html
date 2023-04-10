@@ -668,23 +668,41 @@
      DPCT1100
     </a>
    </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1101.html">
+     DPCT1101
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1102.html">
+     DPCT1102
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1103.html">
+     DPCT1103
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1104.html">
+     DPCT1104
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct1106.html">
+     DPCT1106
+    </a>
+   </li>
   </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../api-mapping-status.html">
+   CUDA API Migration Support Status
+  </a>
  </li>
  <li class="toctree-l1">
   <a class="reference internal" href="../frequently-asked-questions-faq.html">
    Frequently Asked Questions
-  </a>
- </li>
-</ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  Notices and Disclaimers
- </span>
-</p>
-<ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../../notices-and-disclaimers.html">
-   Notices and Disclaimers
   </a>
  </li>
 </ul>
@@ -924,7 +942,7 @@ title="Print to PDF"
               <div>
                 
   <div class="section" id="dpct1086">
-<span id="id-dpct1086"></span><h1>DPCT1086<a class="headerlink" href="#dpct1086" title="Permalink to this headline">#</a></h1>
+<span id="id1"></span><h1>DPCT1086<a class="headerlink" href="#dpct1086" title="Permalink to this headline">#</a></h1>
 <div class="section" id="message">
 <h2>Message<a class="headerlink" href="#message" title="Permalink to this headline">#</a></h2>
 <p id="msg-1086-start"><code class="docutils literal notranslate"><span class="pre">__activemask()</span></code> is migrated to <code class="docutils literal notranslate"><span class="pre">0xffffffff</span></code>. You may need to adjust the code.</p>
@@ -935,56 +953,56 @@ title="Print to PDF"
 there is flow control in your code that will make the thread inactive, you need
 to rewrite the thread logic.</p>
 <p>For example, this original CUDA* code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="n">__device__</span><span class="w"> </span><span class="kr">inline</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">SHFL_SYNC</span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="n">mask</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">val</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">offset</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">warpSize</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="linenos"> 2</span><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">__shfl_down_sync</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span><span class="w"> </span><span class="n">val</span><span class="p">,</span><span class="w"> </span><span class="n">offset</span><span class="p">,</span><span class="w"> </span><span class="n">w</span><span class="p">);</span><span class="w"></span>
-<span class="linenos"> 3</span><span class="p">}</span><span class="w"></span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="w">  </span><span class="n">__device__</span><span class="w"> </span><span class="kr">inline</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">SHFL_SYNC</span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="n">mask</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">val</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">offset</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">warpSize</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 2</span><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">__shfl_down_sync</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span><span class="w"> </span><span class="n">val</span><span class="p">,</span><span class="w"> </span><span class="n">offset</span><span class="p">,</span><span class="w"> </span><span class="n">w</span><span class="p">);</span><span class="w"></span>
+<span class="linenos"> 3</span><span class="w">  </span><span class="p">}</span><span class="w"></span>
 <span class="linenos"> 4</span>
-<span class="linenos"> 5</span><span class="n">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">kernel</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">array</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="linenos"> 6</span><span class="w">  </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">tid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">threadIdx</span><span class="p">.</span><span class="n">x</span><span class="p">;</span><span class="w"></span>
-<span class="linenos"> 7</span><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">8</span><span class="p">)</span><span class="w"></span>
-<span class="linenos"> 8</span><span class="w">    </span><span class="k">return</span><span class="p">;</span><span class="w"></span>
-<span class="linenos"> 9</span><span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">mask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">__activemask</span><span class="p">();</span><span class="w"></span>
-<span class="linenos">10</span><span class="w">    </span><span class="n">array</span><span class="p">[</span><span class="n">tid</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SHFL_SYNC</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span><span class="w"> </span><span class="n">array</span><span class="p">[</span><span class="n">tid</span><span class="p">],</span><span class="w"> </span><span class="mi">4</span><span class="p">);</span><span class="w"></span>
-<span class="linenos">11</span><span class="p">}</span><span class="w"></span>
+<span class="linenos"> 5</span><span class="w">  </span><span class="n">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">kernel</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">array</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 6</span><span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">tid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">threadIdx</span><span class="p">.</span><span class="n">x</span><span class="p">;</span><span class="w"></span>
+<span class="linenos"> 7</span><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">8</span><span class="p">)</span><span class="w"></span>
+<span class="linenos"> 8</span><span class="w">      </span><span class="k">return</span><span class="p">;</span><span class="w"></span>
+<span class="linenos"> 9</span><span class="w">      </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">mask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">__activemask</span><span class="p">();</span><span class="w"></span>
+<span class="linenos">10</span><span class="w">      </span><span class="n">array</span><span class="p">[</span><span class="n">tid</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SHFL_SYNC</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span><span class="w"> </span><span class="n">array</span><span class="p">[</span><span class="n">tid</span><span class="p">],</span><span class="w"> </span><span class="mi">4</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">11</span><span class="w">  </span><span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
 <p>results in the following migrated SYCL code:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kr">inline</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">SHFL_SYNC</span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="n">mask</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">val</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">offset</span><span class="p">,</span><span class="w"></span>
-<span class="linenos"> 2</span><span class="w">                  </span><span class="n">sycl</span><span class="o">::</span><span class="n">nd_item</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="linenos"> 3</span><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">w</span><span class="p">)</span><span class="w"> </span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">.</span><span class="n">get_sub_group</span><span class="p">().</span><span class="n">get_local_range</span><span class="p">().</span><span class="n">get</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
-<span class="linenos"> 4</span><span class="w">  </span><span class="c1">// This call will wait for all work-items to arrive which will never happen since only work-items with tid &lt; 8 will encounter this call.</span>
-<span class="linenos"> 5</span><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">shift_group_left</span><span class="p">(</span><span class="n">item_ct1</span><span class="p">.</span><span class="n">get_sub_group</span><span class="p">(),</span><span class="w"> </span><span class="n">val</span><span class="p">,</span><span class="w"> </span><span class="n">offset</span><span class="p">);</span><span class="w"></span>
-<span class="linenos"> 6</span><span class="p">}</span><span class="w"></span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="w">  </span><span class="kr">inline</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">SHFL_SYNC</span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="n">mask</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">val</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">offset</span><span class="p">,</span><span class="w"></span>
+<span class="linenos"> 2</span><span class="w">                    </span><span class="n">sycl</span><span class="o">::</span><span class="n">nd_item</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 3</span><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">w</span><span class="p">)</span><span class="w"> </span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">.</span><span class="n">get_sub_group</span><span class="p">().</span><span class="n">get_local_range</span><span class="p">().</span><span class="n">get</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
+<span class="linenos"> 4</span><span class="w">    </span><span class="c1">// This call will wait for all work-items to arrive which will never happen since only work-items with tid &lt; 8 will encounter this call.</span>
+<span class="linenos"> 5</span><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">shift_group_left</span><span class="p">(</span><span class="n">item_ct1</span><span class="p">.</span><span class="n">get_sub_group</span><span class="p">(),</span><span class="w"> </span><span class="n">val</span><span class="p">,</span><span class="w"> </span><span class="n">offset</span><span class="p">);</span><span class="w"></span>
+<span class="linenos"> 6</span><span class="w">  </span><span class="p">}</span><span class="w"></span>
 <span class="linenos"> 7</span>
-<span class="linenos"> 8</span><span class="kt">void</span><span class="w"> </span><span class="nf">kernel</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">array</span><span class="p">,</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">nd_item</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="linenos"> 9</span><span class="w">  </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">tid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">.</span><span class="n">get_local_id</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span><span class="w"></span>
-<span class="linenos">10</span><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">8</span><span class="p">)</span><span class="w"></span>
-<span class="linenos">11</span><span class="w">    </span><span class="k">return</span><span class="p">;</span><span class="w"></span>
+<span class="linenos"> 8</span><span class="w">  </span><span class="kt">void</span><span class="w"> </span><span class="nf">kernel</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">array</span><span class="p">,</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">nd_item</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 9</span><span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">tid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">.</span><span class="n">get_local_id</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">10</span><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">8</span><span class="p">)</span><span class="w"></span>
+<span class="linenos">11</span><span class="w">      </span><span class="k">return</span><span class="p">;</span><span class="w"></span>
 <span class="linenos">12</span>
-<span class="linenos">13</span><span class="w">  </span><span class="cm">/*</span>
-<span class="linenos">14</span><span class="cm">  DPCT1086</span>
-<span class="linenos">15</span><span class="cm">  */</span><span class="w"></span>
-<span class="linenos">16</span><span class="w">  </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">mask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0xffffffff</span><span class="p">;</span><span class="w"></span>
-<span class="linenos">17</span><span class="w">  </span><span class="n">array</span><span class="p">[</span><span class="n">tid</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SHFL_SYNC</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span><span class="w"> </span><span class="n">array</span><span class="p">[</span><span class="n">tid</span><span class="p">],</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">);</span><span class="w"></span>
-<span class="linenos">18</span><span class="p">}</span><span class="w"></span>
+<span class="linenos">13</span><span class="w">    </span><span class="cm">/*</span>
+<span class="linenos">14</span><span class="cm">    DPCT1086</span>
+<span class="linenos">15</span><span class="cm">    */</span><span class="w"></span>
+<span class="linenos">16</span><span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">mask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0xffffffff</span><span class="p">;</span><span class="w"></span>
+<span class="linenos">17</span><span class="w">    </span><span class="n">array</span><span class="p">[</span><span class="n">tid</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SHFL_SYNC</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span><span class="w"> </span><span class="n">array</span><span class="p">[</span><span class="n">tid</span><span class="p">],</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">18</span><span class="w">  </span><span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
 <p>which is rewritten to:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="c1">// remove mask parameter, as it is not used</span>
-<span class="linenos"> 2</span><span class="kr">inline</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">SHFL_SYNC</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">val</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">offset</span><span class="p">,</span><span class="w"></span>
-<span class="linenos"> 3</span><span class="w">                  </span><span class="n">sycl</span><span class="o">::</span><span class="n">nd_item</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="linenos"> 4</span><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">w</span><span class="p">)</span><span class="w"> </span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">.</span><span class="n">get_sub_group</span><span class="p">().</span><span class="n">get_local_range</span><span class="p">().</span><span class="n">get</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
-<span class="linenos"> 5</span><span class="w">  </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">tid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">.</span><span class="n">get_local_id</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span><span class="w"></span>
-<span class="linenos"> 6</span><span class="w">  </span><span class="c1">// Use a temporary variable to save the result of sycl::shift_group_left() to make sure all work-items can encounter this call.</span>
-<span class="linenos"> 7</span><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">v_tmp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">shift_group_left</span><span class="p">(</span><span class="n">item_ct1</span><span class="p">.</span><span class="n">get_sub_group</span><span class="p">(),</span><span class="w"> </span><span class="n">val</span><span class="p">,</span><span class="w"> </span><span class="n">offset</span><span class="p">);</span><span class="w"></span>
-<span class="linenos"> 8</span><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">8</span><span class="p">)</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">v_tmp</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">val</span><span class="p">;</span><span class="w"></span>
-<span class="linenos"> 9</span><span class="p">}</span><span class="w"></span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="w">  </span><span class="c1">// remove mask parameter, as it is not used</span>
+<span class="linenos"> 2</span><span class="w">  </span><span class="kr">inline</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">SHFL_SYNC</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">val</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">offset</span><span class="p">,</span><span class="w"></span>
+<span class="linenos"> 3</span><span class="w">                    </span><span class="n">sycl</span><span class="o">::</span><span class="n">nd_item</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos"> 4</span><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">w</span><span class="p">)</span><span class="w"> </span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">.</span><span class="n">get_sub_group</span><span class="p">().</span><span class="n">get_local_range</span><span class="p">().</span><span class="n">get</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
+<span class="linenos"> 5</span><span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">tid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">.</span><span class="n">get_local_id</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span><span class="w"></span>
+<span class="linenos"> 6</span><span class="w">    </span><span class="c1">// Use a temporary variable to save the result of sycl::shift_group_left() to make sure all work-items can encounter this call.</span>
+<span class="linenos"> 7</span><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">v_tmp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">shift_group_left</span><span class="p">(</span><span class="n">item_ct1</span><span class="p">.</span><span class="n">get_sub_group</span><span class="p">(),</span><span class="w"> </span><span class="n">val</span><span class="p">,</span><span class="w"> </span><span class="n">offset</span><span class="p">);</span><span class="w"></span>
+<span class="linenos"> 8</span><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">8</span><span class="p">)</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">v_tmp</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">val</span><span class="p">;</span><span class="w"></span>
+<span class="linenos"> 9</span><span class="w">  </span><span class="p">}</span><span class="w"></span>
 <span class="linenos">10</span>
-<span class="linenos">11</span><span class="kt">void</span><span class="w"> </span><span class="nf">kernel</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">array</span><span class="p">,</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">nd_item</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="linenos">12</span><span class="w">  </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">tid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">.</span><span class="n">get_local_id</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span><span class="w"></span>
-<span class="linenos">13</span><span class="w">  </span><span class="c1">// remove mask parameter, as it is not used</span>
-<span class="linenos">14</span><span class="w">  </span><span class="n">array</span><span class="p">[</span><span class="n">tid</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SHFL_SYNC</span><span class="p">(</span><span class="n">array</span><span class="p">[</span><span class="n">tid</span><span class="p">],</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">);</span><span class="w"></span>
-<span class="linenos">15</span><span class="p">}</span><span class="w"></span>
+<span class="linenos">11</span><span class="w">  </span><span class="kt">void</span><span class="w"> </span><span class="nf">kernel</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">array</span><span class="p">,</span><span class="w"> </span><span class="n">sycl</span><span class="o">::</span><span class="n">nd_item</span><span class="o">&lt;</span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="linenos">12</span><span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">tid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">.</span><span class="n">get_local_id</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">13</span><span class="w">    </span><span class="c1">// remove mask parameter, as it is not used</span>
+<span class="linenos">14</span><span class="w">    </span><span class="n">array</span><span class="p">[</span><span class="n">tid</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SHFL_SYNC</span><span class="p">(</span><span class="n">array</span><span class="p">[</span><span class="n">tid</span><span class="p">],</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="n">item_ct1</span><span class="p">);</span><span class="w"></span>
+<span class="linenos">15</span><span class="w">  </span><span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
 </div>
@@ -1024,11 +1042,9 @@ used, redesign the thread logic.</p>
     <div class="footer-content row">
         <footer class="col footer"><p>
   
-    By Intel<br/>
-  
-      &copy; Copyright Intel Corporation.<br/>
+      &copy; Copyright Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc..<br/>
     <div class="extra_footer">
-      <p align="right"><a href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">Cookies</a></p>
+      <div>No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div>
     </div>
 </p>
         </footer>

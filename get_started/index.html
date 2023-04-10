@@ -668,23 +668,41 @@
      DPCT1100
     </a>
    </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../dev_guide/diagnostic_ref/dpct1101.html">
+     DPCT1101
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../dev_guide/diagnostic_ref/dpct1102.html">
+     DPCT1102
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../dev_guide/diagnostic_ref/dpct1103.html">
+     DPCT1103
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../dev_guide/diagnostic_ref/dpct1104.html">
+     DPCT1104
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../dev_guide/diagnostic_ref/dpct1106.html">
+     DPCT1106
+    </a>
+   </li>
   </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../dev_guide/api-mapping-status.html">
+   CUDA API Migration Support Status
+  </a>
  </li>
  <li class="toctree-l1">
   <a class="reference internal" href="../dev_guide/frequently-asked-questions-faq.html">
    Frequently Asked Questions
-  </a>
- </li>
-</ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  Notices and Disclaimers
- </span>
-</p>
-<ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../notices-and-disclaimers.html">
-   Notices and Disclaimers
   </a>
  </li>
 </ul>
@@ -868,13 +886,16 @@ title="Print to PDF"
   <a class="reference internal nav-link" href="#before-you-begin">
    Before You Begin
   </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#built-in-usage-information">
-     Built-in Usage Information
-    </a>
-   </li>
-  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#invoke-the-tool">
+   Invoke the Tool
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#specify-files-to-migrate">
+   Specify Files to Migrate
+  </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#emitted-warnings">
@@ -921,13 +942,16 @@ title="Print to PDF"
   <a class="reference internal nav-link" href="#before-you-begin">
    Before You Begin
   </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#built-in-usage-information">
-     Built-in Usage Information
-    </a>
-   </li>
-  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#invoke-the-tool">
+   Invoke the Tool
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#specify-files-to-migrate">
+   Specify Files to Migrate
+  </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#emitted-warnings">
@@ -998,6 +1022,9 @@ directory where the source code that needs to be migrated is located.</p>
 <p>Currently, SYCLomatic supports the migration of programs
 implemented with CUDA versions 8.0, 9.x, 10.x, and 11.0–11.6. The list of supported languages
 and versions may be extended in the future.</p>
+</div>
+<div class="section" id="invoke-the-tool">
+<h2>Invoke the Tool<a class="headerlink" href="#invoke-the-tool" title="Permalink to this headline">#</a></h2>
 <p>The general invocation syntax from the operating system shell is:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span> <span class="p">[</span><span class="o">&lt;</span><span class="n">source0</span><span class="o">&gt;...</span> <span class="o">&lt;</span><span class="n">sourceN</span><span class="o">&gt;</span><span class="p">]</span>
 </pre></div>
@@ -1006,8 +1033,6 @@ and versions may be extended in the future.</p>
 <p class="admonition-title">Note</p>
 <p><code class="docutils literal notranslate"><span class="pre">c2s</span></code> is an alias to the <code class="docutils literal notranslate"><span class="pre">dpct</span></code> command and may be used in it’s place.</p>
 </div>
-<div class="section" id="built-in-usage-information">
-<h3>Built-in Usage Information<a class="headerlink" href="#built-in-usage-information" title="Permalink to this headline">#</a></h3>
 <p>To see the list of SYCLomatic–specific options, use <code class="docutils literal notranslate"><span class="pre">--help</span></code>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="o">--</span><span class="n">help</span>
 </pre></div>
@@ -1017,6 +1042,31 @@ as the Clang option:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="o">--</span> <span class="o">-</span><span class="n">help</span>
 </pre></div>
 </div>
+</div>
+<div class="section" id="specify-files-to-migrate">
+<h2>Specify Files to Migrate<a class="headerlink" href="#specify-files-to-migrate" title="Permalink to this headline">#</a></h2>
+<p>If no directory or file is specified for migration, the tool will try to migrate
+source files found in the current directory. The default output directory is
+<code class="docutils literal notranslate"><span class="pre">dpct_output</span></code>. Use the <code class="docutils literal notranslate"><span class="pre">--out-root</span></code> option to specify an output directory.</p>
+<p>You can optionally provide file paths for source files that should be migrated.
+The paths can be found in the compilation database. The following examples show
+ways to specify a file or directory for migration.</p>
+<p>Migrate single source file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="n">source</span><span class="o">.</span><span class="n">cpp</span>
+</pre></div>
+</div>
+<p>Migrate all files available in compilation database:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="o">-</span><span class="n">p</span><span class="o">=&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">location</span> <span class="n">of</span> <span class="n">compilation</span> <span class="n">database</span> <span class="n">file</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>Migrate one file in compilation database:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="o">-</span><span class="n">p</span><span class="o">=&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">location</span> <span class="n">of</span> <span class="n">compilation</span> <span class="n">database</span> <span class="n">file</span><span class="o">&gt;</span> <span class="n">source</span><span class="o">.</span><span class="n">cpp</span>
+</pre></div>
+</div>
+<p>Migrate source files in the directory specified by the <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> option and
+place generated files in the directory specified by the <code class="docutils literal notranslate"><span class="pre">--out-root</span></code> option:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="o">--</span><span class="ow">in</span><span class="o">-</span><span class="n">root</span><span class="o">=</span><span class="n">foo</span> <span class="o">--</span><span class="n">out</span><span class="o">-</span><span class="n">root</span><span class="o">=</span><span class="n">bar</span>
+</pre></div>
 </div>
 </div>
 <div class="section" id="emitted-warnings">
@@ -1036,16 +1086,9 @@ in the output. For example:</p>
 </div>
 <div class="section" id="migrate-a-simple-test-project">
 <h2>Migrate a Simple Test Project<a class="headerlink" href="#migrate-a-simple-test-project" title="Permalink to this headline">#</a></h2>
-<p>SYCLomatic comes with several sample projects so you can explore
-the tool and familiarize yourself with how it functions.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The SYCLomatic project is the open source release of the Intel® DPC++
-Compatibility Tool and includes the same CUDA to SYCL functionality.</p>
-<p>Samples referenced in the open source documentation may not work as
-described, as they have not yet been tested with SYCLomatic. Testing and updating
-samples for SYCLomatic is a work in progress.</p>
-</div>
+<p>Several sample projects for SYCLomatic are available to explore the tool and
+familiarize yourself with how it functions.</p>
+<p>All samples are available on <a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/Migration">GitHub*</a>.</p>
 <table class="colwidths-given table">
 <colgroup>
 <col style="width: 30%" />
@@ -1057,63 +1100,76 @@ samples for SYCLomatic is a work in progress.</p>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Vector Add DPCT</p>
+<tr class="row-even"><td><p>Vector Add</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">vector_add.cu</span></code></p></li>
 </ul>
 </td>
-<td><p>The Vector Add DPCT sample demonstrates how to migrate a simple program
-from CUDA to SYCL. Vector Add provides an easy way to verify that your
+<td><p>The Vector Add sample demonstrates how to migrate a simple program
+from CUDA* to SYCL*. Vector Add provides an easy way to verify that your
 development environment is setup correctly to use SYCLomatic.</p></td>
 </tr>
-<tr class="row-odd"><td><p>Folder Options DPCT</p>
+<tr class="row-odd"><td><p>Folder Options</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">main.cu</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">bar/util.cu</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">bar/util.h</span></code></p></li>
 </ul>
 </td>
-<td><p>The Folder Options DPCT sample shows how to migrate more complex projects
+<td><p>The Folder Options sample shows how to migrate more complex projects
 and to use options.</p></td>
 </tr>
-<tr class="row-even"><td><p>Rodinia NW DPCT</p>
+<tr class="row-even"><td><p>Rodinia needleman-wunsch</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">needle.cu</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">needle.h</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">needle_kernel.cu</span></code></p></li>
 </ul>
 </td>
-<td><p>The Rodinia NW DPCT sample demonstrates how to migrate a Make/CMake
-project from CUDA to SYCL using SYCLomatic.</p></td>
+<td><p>The Rodinia needleman-wunsch sample demonstrates how to migrate a Make/CMake*
+project from CUDA to SYCL.</p></td>
 </tr>
 </tbody>
 </table>
 <p>Review the README file provided with each sample for more detailed information
 about the purpose and usage of the sample project.</p>
-<p>All samples are available on <a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/Migration">GitHub*</a>.</p>
 <div class="section" id="try-a-sample-project">
 <h3>Try a Sample Project<a class="headerlink" href="#try-a-sample-project" title="Permalink to this headline">#</a></h3>
-<p>Follow these steps to migrate the Vector Add DPCT sample project using
-SYCLomatic:</p>
+<p>The following steps show how to migrate the Vector Add sample using SYCLomatic:</p>
 <ol class="arabic">
-<li><p>Download the <code class="docutils literal notranslate"><span class="pre">vector_add.cu</span></code> sample.</p></li>
-<li><p>Run SYCLomatic from the sample root directory:</p>
+<li><p>Download the <a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/Migration/vector-add-dpct">Vector Add sample</a>.</p></li>
+<li><p>Navigate to the root of the Vector Add sample. The sample contains a single
+CUDA file, <code class="docutils literal notranslate"><span class="pre">vector_add.cu</span></code>, located in the <code class="docutils literal notranslate"><span class="pre">src</span></code> folder.</p></li>
+<li><p>From the root folder of the sample project, run SYCLomatic:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="o">--</span><span class="ow">in</span><span class="o">-</span><span class="n">root</span><span class="o">=.</span> <span class="n">src</span><span class="o">/</span><span class="n">vector_add</span><span class="o">.</span><span class="n">cu</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal notranslate"><span class="pre">vector_add.dp.cpp</span></code> file should appear in the <code class="docutils literal notranslate"><span class="pre">dpct_output</span></code>
-directory. The file is now a SYCL source file.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> option specifies the root location of the program sources
+that should be migrated. Only files and folders located within the
+<code class="docutils literal notranslate"><span class="pre">--in-root</span></code> directory will be considered for migration by the tool. Files
+located outside the <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> directory  will not be migrated, even if
+they are included by a source file located within the <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> directory.
+By default, the migrated files are created in a new folder named <code class="docutils literal notranslate"><span class="pre">dpct_output</span></code>.</p>
 </li>
-<li><p>Navigate to the new SYCL source file:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">dpct_output</span>
+<li><p>As a result of the migration command, you should see the new SYCL source file
+in the output folder:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>dpct_output
+└── src
+    └── vector_add.dp.cpp
 </pre></div>
 </div>
-<p>Verify the generated source code and fix any code that SYCLomatic
+<p>The relative paths of the migrated files are maintained.</p>
+</li>
+<li><p>Navigate to the new SYCL source file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">dpct_output</span><span class="o">/</span><span class="n">src</span>
+</pre></div>
+</div>
+<p>Verify the migrated source code and fix any code that SYCLomatic
 was unable to migrate. (The code used in this example is simple, so manual
-changes may not be needed). For the most accurate and detailed instructions
-on addressing warnings emitted from SYCLomatic, see the
-<strong>Addressing Warnings in Migrated Code</strong> section of the
-<a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/Migration">README files</a>.</p>
+changes may not be needed).</p>
+<p>For the most accurate and detailed instructions on addressing warnings emitted
+from SYCLomatic, see the <strong>Addressing Warnings in Migrated Code</strong> section of
+the <a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/Migration">README files</a>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>To compile the migrated sample, add <code class="docutils literal notranslate"><span class="pre">-I&lt;dpct_root_folder&gt;/include</span></code> to
@@ -1195,11 +1251,9 @@ of the SYCLomatic Developer Guide and Reference.</p>
     <div class="footer-content row">
         <footer class="col footer"><p>
   
-    By Intel<br/>
-  
-      &copy; Copyright Intel Corporation.<br/>
+      &copy; Copyright Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc..<br/>
     <div class="extra_footer">
-      <p align="right"><a href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">Cookies</a></p>
+      <div>No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div>
     </div>
 </p>
         </footer>

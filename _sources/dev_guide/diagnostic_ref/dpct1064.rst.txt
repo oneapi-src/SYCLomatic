@@ -1,4 +1,4 @@
-.. _id_DPCT1064:
+.. _DPCT1064:
 
 DPCT1064
 ========
@@ -27,9 +27,9 @@ For example: The function ``pow`` can be migrated to ``sycl::pow<double>`` or
 .. code-block:: cpp
    :linenos:
 
-   #define POW(B, E) pow(B, E)
-   POW(2.5, 3.1);  //should be migrated to sycl::pow<double>(2.5, 3.1)
-   POW(2.5, 3); //should be migrated to sycl::pown((float)2.5, 3)
+     #define POW(B, E) pow(B, E)
+     POW(2.5, 3.1);  //should be migrated to sycl::pow<double>(2.5, 3.1)
+     POW(2.5, 3); //should be migrated to sycl::pown((float)2.5, 3)
 
 Suggestions to Fix
 ------------------

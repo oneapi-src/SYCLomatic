@@ -20,20 +20,20 @@ This example shows incremental migration for a file ``sample1.cu`` that
 contains conditional compilation code. Content of ``sample1.cu``:
 
 .. code-block:: none
-  :linenos:
+   :linenos:
 
-	#ifndef MACRO_A
- 	... code path 1 ...
- 	#elif MACRO_A == 1
-	... code path 2 ...
-	#else
-	... code path 3 ...
-	#endif
+     #ifndef MACRO_A
+     ... code path 1 ...
+     #elif MACRO_A == 1
+     ... code path 2 ...
+     #else
+     ... code path 3 ...
+     #endif
 
-Incrementally migrate ``sample1.cu`` by executing the ``dpct`` command
-in the same working directory as the file:
+Use the following steps to incrementally migrate ``sample1.cu``.
 
-#. Generate ``sample1.dp.cpp``, which contains migrated code for code path 1:
+#. Generate ``sample1.dp.cpp``, which contains migrated code for code path 1.
+   From the same working directory as the file, run:
 
    .. code-block:: none
 
@@ -66,11 +66,11 @@ Content of header file ``sample_inc.h``:
 .. code-block:: none
    :linenos:
 
-	#ifdef MACRO_A
- 	... code path 1...
-	#else
-	... code path 2...
-	#endif
+     #ifdef MACRO_A
+     ... code path 1...
+     #else
+     ... code path 2...
+     #endif
 
 
 Content of source file ``sample2.cu``:
@@ -78,25 +78,24 @@ Content of source file ``sample2.cu``:
 .. code-block:: none
    :linenos:
 
-	#define MACRO_A
-	#include “sample_inc.h”
-	#undef MACRO_A
+     #define MACRO_A
+     #include “sample_inc.h”
+     #undef MACRO_A
 
 Content of source file ``sample3.cu``:
 
 .. code-block:: none
-   :linenos:
 
 	#include “sample_inc.h”
 
-Incrementally migrate the files by executing the ``dpct`` command in the same
-working directory as the files:
+Use the following steps to incrementally migrate the files.
 
 #. Generate ``sample2.dp.cpp`` and ``sample_inc.h``, which contains migrated
-   code for code path 1:
+   code for code path 1.
+
+   From the same working directory as the file, run:
 
    .. code-block:: none
-      :linenos:
 
       dpct sample2.cu --out-root=out
 
@@ -104,7 +103,6 @@ working directory as the files:
    code for code path 1 and code path 2:
 
    .. code-block:: none
-      :linenos:
 
       dpct sample3.cu --out-root=out
 

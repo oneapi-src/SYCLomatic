@@ -1,4 +1,4 @@
-.. _id_DPCT1007:
+.. _DPCT1007:
 
 DPCT1007
 ========
@@ -21,4 +21,4 @@ for help.
 Suggestions to Fix
 ------------------
 
-This kind of code requires manual migration to SYCL.
+This kind of code requires manual migration to SYCL\*.

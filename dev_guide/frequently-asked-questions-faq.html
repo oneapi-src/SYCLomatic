@@ -34,8 +34,7 @@
     <link rel="shortcut icon" href="../_static/favicons.png"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Notices and Disclaimers" href="../notices-and-disclaimers.html" />
-    <link rel="prev" title="DPCT1100" href="diagnostic_ref/dpct1100.html" />
+    <link rel="prev" title="CUDA API Migration Support Status" href="api-mapping-status.html" />
 <!-- all your analytics scripts go here -->
 
   </head>
@@ -668,23 +667,41 @@
      DPCT1100
     </a>
    </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1101.html">
+     DPCT1101
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1102.html">
+     DPCT1102
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1103.html">
+     DPCT1103
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1104.html">
+     DPCT1104
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1106.html">
+     DPCT1106
+    </a>
+   </li>
   </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="api-mapping-status.html">
+   CUDA API Migration Support Status
+  </a>
  </li>
  <li class="toctree-l1 current active">
   <a class="current reference internal" href="#">
    Frequently Asked Questions
-  </a>
- </li>
-</ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  Notices and Disclaimers
- </span>
-</p>
-<ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../notices-and-disclaimers.html">
-   Notices and Disclaimers
   </a>
  </li>
 </ul>
@@ -977,6 +994,13 @@ used to generate the compilation database. The content of the compilation
 database depends on the optional [target] parameter. If you need to get the
 list of files corresponding to default build target, do not specify the [target]
 parameter.</p>
+<p>Make sure to disable ccache (compiler cache) in your project before using intercept-build.
+If ccache is enabled, intercept-build cannot generate the complete compilation database as
+some compile commands may be skipped if the target objects are already available in the cache.
+Use the following command to disable ccache before running the intercept-build command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">CCACHE_DISABLE</span><span class="o">=</span><span class="m">1</span>
+</pre></div>
+</div>
 <p><strong>How do I use the migrated module file in the new project?</strong></p>
 <p><code class="docutils literal notranslate"><span class="pre">.cu</span></code> module files are compiled with the <code class="docutils literal notranslate"><span class="pre">-ptx</span></code> or <code class="docutils literal notranslate"><span class="pre">-cubin</span></code> options in the
 original project and dynamically loaded into other <code class="docutils literal notranslate"><span class="pre">*.cu</span></code> files with
@@ -1158,7 +1182,7 @@ code with the Intel® oneAPI DPC++/C++ Compiler?</strong></p>
 <p>Shifting bits where the shift is greater than the type length is undefined
 behavior for the Intel® oneAPI DPC++/C++ Compiler and may result in different behavior on
 different devices. Adjust your code to avoid this type of shift.</p>
-<p>For example, the migrated SYCL code:</p>
+<p>For example, the migrated SYCL* code:</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="c1">// migrated SYCL code</span>
 <span class="linenos">2</span>
 <span class="linenos">3</span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
@@ -1184,6 +1208,20 @@ different devices. Adjust your code to avoid this type of shift.</p>
 <span class="linenos">12</span><span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
+<p><strong>How do I resolve missing include errors that occur when migrating my code?</strong></p>
+<p>Use the option <code class="docutils literal notranslate"><span class="pre">--extra-arg=-v</span></code> to prompt SYCLomatic to use verbose
+output, which includes information about which paths the tool searches
+for includes.</p>
+<p>You can provide an additional path to look for includes in one of the following
+ways:</p>
+<ul class="simple">
+<li><p>Use the <code class="docutils literal notranslate"><span class="pre">--extra-arg=&quot;-I&lt;extra</span> <span class="pre">include</span> <span class="pre">path&gt;&quot;</span></code> option in your migration command
+to specify an additional path for the tool to use when searching for includes
+during migration.</p></li>
+<li><p>If you are using a compilation database, add the <code class="docutils literal notranslate"><span class="pre">-I&lt;extra</span> <span class="pre">include</span> <span class="pre">path&gt;</span></code>
+option to the compile command in the database for the source files, to
+specify the include path.</p></li>
+</ul>
 </div>
 </div>
 
@@ -1195,19 +1233,12 @@ different devices. Adjust your code to avoid this type of shift.</p>
                 
     <!-- Previous / next buttons -->
 <div class='prev-next-area'>
-    <a class='left-prev' id="prev-link" href="diagnostic_ref/dpct1100.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="api-mapping-status.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">DPCT1100</p>
+            <p class="prev-next-title">CUDA API Migration Support Status</p>
         </div>
-    </a>
-    <a class='right-next' id="next-link" href="../notices-and-disclaimers.html" title="next page">
-    <div class="prev-next-info">
-        <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Notices and Disclaimers</p>
-    </div>
-    <i class="fas fa-angle-right"></i>
     </a>
 </div>
             </footer>
@@ -1216,11 +1247,9 @@ different devices. Adjust your code to avoid this type of shift.</p>
     <div class="footer-content row">
         <footer class="col footer"><p>
   
-    By Intel<br/>
-  
-      &copy; Copyright Intel Corporation.<br/>
+      &copy; Copyright Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc..<br/>
     <div class="extra_footer">
-      <p align="right"><a href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">Cookies</a></p>
+      <div>No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div>
     </div>
 </p>
         </footer>

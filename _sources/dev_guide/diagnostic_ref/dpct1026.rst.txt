@@ -1,4 +1,4 @@
-.. _id_DPCT1026:
+.. _DPCT1026:
 
 DPCT1026
 ========
@@ -16,7 +16,7 @@ Detailed Help
 -------------
 
 API calls from the original application, which do not have functionally
-compatible SYCL API calls are removed if |tool_name| determines that it should
+compatible SYCL\* API calls are removed if |tool_name| determines that it should
 not affect the program logic.
 
 Possible reasons for removal:

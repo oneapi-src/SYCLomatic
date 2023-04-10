@@ -1,4 +1,4 @@
-.. _id_DPCT1056:
+.. _DPCT1056:
 
 DPCT1056
 ========
@@ -25,4 +25,4 @@ Suggestions to Fix
 If this variable is only used in host code, ignore this warning.
 
 If the variable is also used in device code, you need to migrate this code again
-with ``--extra-arg="-xcuda"`` passed to dpct to explicitly specify the code language.
+with ``--extra-arg="-xcuda"`` passed to the tool to explicitly specify the code language.
