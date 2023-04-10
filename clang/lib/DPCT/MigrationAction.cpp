@@ -138,7 +138,34 @@ DpctToolAction::DpctToolAction(llvm::raw_ostream &DS, ReplTy &Replacements,
   }
 }
 
+StringRef DpctToolAction::getStagingName(PassKind Pass) {
+  static std::string StaginName[static_cast<unsigned>(PassKind::PK_End)] = {
+      "Analyzing", "Migrating"};
+  return StaginName[static_cast<unsigned>(Pass)];
+}
+
+void DpctToolAction::printFileStaging(StringRef Staging, StringRef File) {
+  std::string Msg;
+  llvm::raw_string_ostream Out(Msg);
+  Out << Staging << ": " << File << "\n";
+  PrintMsg(Out.str(), false);
+}
+
 std::shared_ptr<TranslationUnitInfo> DpctToolAction::createTranslationUnitInfo(
+    std::shared_ptr<CompilerInvocation> Invocation, bool &Success) {
+  std::shared_ptr<TranslationUnitInfo> Ret;
+  printFileStaging("Parsing",
+           Invocation->getFrontendOpts().Inputs[0].getFile().str());
+  if (runWithCrashGuard(
+          [&]() { Ret = createTranslationUnitInfoImpl(Invocation, Success); },
+          "Error: dpct internal error. Parsing file \"" +
+              Invocation->getFrontendOpts().Inputs[0].getFile().str() +
+              "\" causing the error skipped. Migration continues.\n"))
+    return Ret;
+  return std::shared_ptr<TranslationUnitInfo>();
+}
+
+std::shared_ptr<TranslationUnitInfo> DpctToolAction::createTranslationUnitInfoImpl(
     std::shared_ptr<CompilerInvocation> Invocation, bool &Success) {
   auto DiagConsumer = new TextDiagnosticPrinter(
       DiagnosticStream, &Invocation->getDiagnosticOpts());
@@ -162,8 +189,9 @@ bool DpctToolAction::runInvocation(
     std::shared_ptr<CompilerInvocation> Invocation, FileManager *Files,
     std::shared_ptr<PCHContainerOperations> PCHContainerOps,
     DiagnosticConsumer *DiagConsumer) {
-  if(!Invocation)
+  if (!Invocation)
     return false;
+
   if (canCacheMoreTranslateUnit()) {
     bool Success;
     if (auto Info = createTranslationUnitInfo(Invocation, Success)) {
@@ -186,6 +214,7 @@ void DpctToolAction::traversTranslationUnit(PassKind Pass,
   DpctGlobalInfo::getInstance().setMainFile(Info.MainFile);
   MigrationRuleManager MRM(Pass, Transforms);
   Global.getProcessedFile().insert(Info.MainFile->getFilePath());
+  printFileStaging(getStagingName(Pass), Info.MainFile->getFilePath());
   MRM.matchAST(Context, MigrationRuleNames);
   for (const auto &I : Transforms) {
     auto Repl = I->getReplacement(Context);
@@ -226,19 +255,7 @@ void DpctToolAction::runPass(PassKind Pass) {
   }
 
   if (Pass == PassKind::PK_Analysis) {
-    int RetJmp = 0;
-    CHECKPOINT_ReplacementPostProcess_ENTRY(RetJmp);
-    if (RetJmp == 0) {
-      try {
-        Global.buildKernelInfo();
-      } catch (std::exception &) {
-        std::string FaultMsg = "Error: dpct internal error. dpct tries to "
-                               "recover and write the migration result.\n";
-        llvm::errs() << FaultMsg;
-      }
-    }
-
-    CHECKPOINT_ReplacementPostProcess_EXIT();
+    runWithCrashGuard([&]() { Global.buildKernelInfo(); }, PostProcessFaultMsg);
   }
 }
 
@@ -247,22 +264,18 @@ void DpctToolAction::runPasses() {
     runPass(Pass);
   }
 
-  int RetJmp = 0;
-  CHECKPOINT_ReplacementPostProcess_ENTRY(RetJmp);
-  if (RetJmp == 0) {
-    try {
-      Global.buildReplacements();
-      Global.postProcess();
-      Global.emplaceReplacements(Repls);
-    } catch (std::exception &) {
-      std::string FaultMsg = "Error: dpct internal error. dpct tries to "
-                             "recover and write the migration result.\n";
-      llvm::errs() << FaultMsg;
-    }
-  }
-
-  CHECKPOINT_ReplacementPostProcess_EXIT();
+  runWithCrashGuard(
+      [&]() {
+        Global.buildReplacements();
+        Global.postProcess();
+        Global.emplaceReplacements(Repls);
+      },
+      PostProcessFaultMsg);
 }
+
+const std::string DpctToolAction::PostProcessFaultMsg =
+    "Error: dpct internal error. dpct tries to recover and "
+    "write the migration result.\n";
 
 } // namespace dpct
 } // namespace clang

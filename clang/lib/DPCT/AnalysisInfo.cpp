@@ -3713,6 +3713,7 @@ void CtTypeInfo::setArrayInfo(const DependentSizedArrayTypeLoc &TL,
                               bool NeedSizeFold) {
   ContainSizeofType = containSizeOfType(TL.getSizeExpr());
   ExprAnalysis EA;
+  std::cout<<"Size Expr: " << TL.getSizeExpr()->getBeginLoc().printToString(DpctGlobalInfo::getSourceManager()) << std::endl;
   EA.analyze(TL.getSizeExpr());
   Range.emplace_back(EA.getTemplateDependentStringInfo());
   setTypeInfo(TL.getElementLoc(), NeedSizeFold);
