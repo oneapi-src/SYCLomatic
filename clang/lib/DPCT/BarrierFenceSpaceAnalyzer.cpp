@@ -453,7 +453,7 @@ void clang::dpct::GlobalPointerReferenceCountAnalyzer::collectAlias(
 }
 
 bool clang::dpct::GlobalPointerReferenceCountAnalyzer::countReference(
-    const clang::CallExpr *CE, const clang::FunctionDecl *FD) {
+    const clang::FunctionDecl *FD) {
   // Collect all non-const pointers which point to fundamental type
   std::unordered_set<clang::VarDecl *> NonconstPointerDecls;
   if (!FD->hasAttr<clang::CUDAGlobalAttr>())
@@ -533,6 +533,17 @@ bool clang::dpct::GlobalPointerReferenceCountAnalyzer::analyze(
     return false;
   }
 
+  std::string FDLocStr = getHashStrFromLoc(FD->getBeginLoc());
+  auto Iter = CachedResults.find(FDLocStr);
+  if (Iter != CachedResults.end()) {
+    return Iter->second;
+  }
+
   this->TraverseDecl(const_cast<clang::FunctionDecl *>(FD));
-  return countReference(CE, FD);
+  bool Result = countReference(FD);
+  CachedResults[FDLocStr] = Result;
+  return Result;
 }
+
+std::unordered_map<std::string, bool>
+    clang::dpct::GlobalPointerReferenceCountAnalyzer::CachedResults;

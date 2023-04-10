@@ -125,12 +125,13 @@ public:
 
 private:
   bool HasGlobalDeviceVariable = false;
-  bool countReference(const CallExpr *CE, const FunctionDecl *FD);
+  bool countReference(const FunctionDecl *FD);
   void collectAlias(VarDecl *VD,
                     std::unordered_set<VarDecl *> &NewNonconstPointerDecls);
   std::unordered_map<DeclRefExpr *, ValueDecl *> DREDeclMap;
   std::unordered_map<ValueDecl *, std::unordered_set<DeclRefExpr *>>
       DeclDREsMap;
+  static std::unordered_map<std::string, bool> CachedResults;
 };
 
 } // namespace dpct
