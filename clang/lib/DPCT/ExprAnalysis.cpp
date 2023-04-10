@@ -337,7 +337,7 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E, Source
   RewritePostfix = std::string(SM.getCharacterData(EndLocWithoutPostfix),
                                RewritePostfixLength);
 
-  auto DecompLoc = SM.getDecomposedLoc(BeginLoc);
+  auto DecompLoc = SM.getDecomposedLoc(BeginLocWithoutPrefix);
   FileId = DecompLoc.first;
   // The offset of Expr used in ExprAnalysis is related to SrcBegin not
   // FileBegin
@@ -1996,7 +1996,6 @@ std::string ArgumentAnalysis::getRewriteString() {
 
   StringReplacements SRs;
   SRs.init(std::move(OriginalStr));
-
   for (std::shared_ptr<ExtReplacement> SubRepl : SubExprRepl) {
     if (isInRange(RewriteRangeBegin, RewriteRangeEnd, SubRepl->getFilePath(),
                   SubRepl->getOffset()) &&
