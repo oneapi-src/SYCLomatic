@@ -26,7 +26,7 @@ namespace dpct {
 
 /// Returns true if E is one of the forms:
 /// (blockDim/blockIdx/threadIdx/gridDim).(x/y/z)
-inline bool isTargetPseudoObjectExpr(const Expr *E) {
+inline bool isTargetSpecialExpr(const Expr *E) {
   if (auto POE = dyn_cast<PseudoObjectExpr>(E->IgnoreImpCasts())) {
     auto RE = POE->getResultExpr();
     if (auto CE = dyn_cast<CallExpr>(RE)) {
@@ -126,12 +126,12 @@ public:
   DerefStreamExpr(const Expr *Expression) : E(Expression) {}
 };
 
-template <class SubExprT> class CastIfNeedExprPrinter {
+template <class SubExprT> class CastIfNotSameExprPrinter {
   std::string TypeInfo;
   SubExprT SubExpr;
 
 public:
-  CastIfNeedExprPrinter(std::string &&T, SubExprT &&S)
+  CastIfNotSameExprPrinter(std::string &&T, SubExprT &&S)
       : TypeInfo(std::forward<std::string>(T)),
         SubExpr(std::forward<SubExprT>(S)) {}
   template <class StreamT> void print(StreamT &Stream) const {
@@ -142,6 +142,23 @@ public:
       Stream << "(" << TypeInfo << ")";
     }
     dpct::print(Stream, SubExpr);
+  }
+};
+
+template <class ArgT>
+class CastIfSpecialExprPrinter {
+  ArgT Arg;
+
+public:
+  CastIfSpecialExprPrinter(ArgT &&A)
+      : Arg(std::forward<ArgT>(A)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    if (isTargetSpecialExpr(Arg)) {
+      clang::QualType ArgType = Arg->getType().getCanonicalType();
+      ArgType.removeLocalCVRQualifiers(clang::Qualifiers::CVRMask);
+      Stream << "(" << ArgType.getAsString() << ")";
+    }
+    dpct::print(Stream, Arg);
   }
 };
 
@@ -565,13 +582,20 @@ makeCastExprCreator(std::function<TypeInfoT(const CallExpr *)> TypeInfo,
 }
 
 template <class SubExprT>
-inline std::function<CastIfNeedExprPrinter<SubExprT>(const CallExpr *)>
-makeCastIfNeedExprCreator(std::function<std::string(const CallExpr *)> TypeInfo,
+inline std::function<CastIfNotSameExprPrinter<SubExprT>(const CallExpr *)>
+makeCastIfNotSameExprCreator(std::function<std::string(const CallExpr *)> TypeInfo,
                           std::function<SubExprT(const CallExpr *)> Sub) {
-  return PrinterCreator<CastIfNeedExprPrinter<SubExprT>,
+  return PrinterCreator<CastIfNotSameExprPrinter<SubExprT>,
                         std::function<std::string(const CallExpr *)>,
                         std::function<SubExprT(const CallExpr *)>>(TypeInfo,
                                                                    Sub);
+}
+
+template <class ArgT>
+inline std::function<CastIfSpecialExprPrinter<ArgT>(const CallExpr *)>
+makeCastIfSpecialExprCreator(std::function<ArgT(const CallExpr *)> Arg) {
+  return PrinterCreator<CastIfSpecialExprPrinter<ArgT>,
+                        std::function<ArgT(const CallExpr *)>>(Arg);
 }
 
 template <class SubExprT>
@@ -1797,7 +1821,8 @@ public:
 #define LAMBDA(...) makeLambdaCreator(__VA_ARGS__)
 #define CALL(...) makeCallExprCreator(__VA_ARGS__)
 #define CAST(T, S) makeCastExprCreator(T, S)
-#define CAST_IF_NEED(T, S) makeCastIfNeedExprCreator(T, S)
+#define CAST_IF_NOT_SAME(T, S) makeCastIfNotSameExprCreator(T, S)
+#define CAST_IF_SPECIAL(E) makeCastIfSpecialExprCreator(E)
 #define DOUBLE_POINTER_CONST_CAST(BASE_VALUE_TYPE, EXPR,                       \
                                   DOES_BASE_VALUE_NEED_CONST,                  \
                                   DOES_FIRST_LEVEL_POINTER_NEED_CONST)         \

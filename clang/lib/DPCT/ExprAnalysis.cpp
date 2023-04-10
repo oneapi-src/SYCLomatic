@@ -814,20 +814,17 @@ void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
   dispatch(Cast->getSubExprAsWritten());
 }
 
-bool isSpecialFunctions(const CallExpr *CE, const std::string &RefString) {
-  // Special process for std::min/std::max
+// nvcc can compile code which calls std::min/std::max (from standard c++
+// libarary) in device code with --expt-relaxed-constexpr. During migration,
+// clang will use functions in "lib/clang/17/include/cuda_wrappers/algorithm" as
+// declarations. We need to figure out those functions. Although they come from
+// install folder, we cannot touch them.
+bool isStdMinMaxFuncInDevice(const CallExpr *CE, const std::string &RefString) {
   auto FD = CE->getDirectCallee();
   if (FD) {
-    std::string Name = FD->getNameInfo().getName().getAsString();
-    auto FDFile = DpctGlobalInfo::getLocInfo(FD->getLocation()).first;
-    makeCanonical(FDFile);
-    llvm::SmallString<256> AlgoFile(DpctInstallPath);
-    llvm::sys::path::append(AlgoFile, "lib/clang", DPCT_VERSION_MAJOR,
-                            "include/cuda_wrappers/algorithm");
-
-    if ((Name == "min" || Name == "max") &&
-        isChildOrSamePath(AlgoFile.c_str(), FDFile) &&
-        isChildOrSamePath(FDFile, AlgoFile.c_str())) {
+    std::string QualName = FD->getQualifiedNameAsString();
+    if (FD->isConstexprSpecified() &&
+        (QualName == "std::min" || QualName == "std::max")) {
       auto ContextFD = getImmediateOuterFuncDecl(CE);
       if (ContextFD && !ContextFD->hasAttr<CUDADeviceAttr>() &&
           !ContextFD->hasAttr<CUDAGlobalAttr>()) {
@@ -846,7 +843,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   if (!CallExprRewriterFactoryBase::RewriterMap)
     return;
   auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(RefString);
-  if (!isSpecialFunctions(CE, RefString) &&
+  if (!isStdMinMaxFuncInDevice(CE, RefString) &&
       Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
     for (unsigned I = 0, E = CE->getNumArgs(); I != E; ++I) {
       if (isa<PackExpansionExpr>(CE->getArg(I))) {

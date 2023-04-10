@@ -959,7 +959,7 @@ MATH_API_REWRITER_DEVICE(
             CALL_FACTORY_ENTRY(
                 "erfcinvf",
                 CALL(MapNames::getClNamespace() + "ext::intel::math::erfcinv",
-                     CAST_IF_NEED(makeLiteral("float"), ARG(0))))),
+                     CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0))))),
         EMPTY_FACTORY_ENTRY("erfcinvf"), EMPTY_FACTORY_ENTRY("erfcinvf")))
 
 MATH_API_REWRITER_DEVICE(
@@ -971,7 +971,7 @@ MATH_API_REWRITER_DEVICE(
             CALL_FACTORY_ENTRY(
                 "erfinvf",
                 CALL(MapNames::getClNamespace() + "ext::intel::math::erfinv",
-                     CAST_IF_NEED(makeLiteral("float"), ARG(0))))),
+                     CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0))))),
         EMPTY_FACTORY_ENTRY("erfinvf"), EMPTY_FACTORY_ENTRY("erfinvf")))
 
 MATH_API_REWRITER_DEVICE(
@@ -983,13 +983,13 @@ MATH_API_REWRITER_DEVICE(
             CALL_FACTORY_ENTRY(
                 "normcdff",
                 CALL(MapNames::getClNamespace() + "ext::intel::math::cdfnorm",
-                     CAST_IF_NEED(makeLiteral("float"), ARG(0))))),
+                     CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0))))),
         EMPTY_FACTORY_ENTRY("normcdff"),
         BINARY_OP_FACTORY_ENTRY(
             "normcdff", BinaryOperatorKind::BO_Div,
             CALL(MapNames::getClNamespace() + "erfc",
                  BO(BinaryOperatorKind::BO_Div,
-                    CAST_IF_NEED(makeLiteral("float"), ARG(0)),
+                    CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0)),
                     makeLiteral("-" + MapNames::getClNamespace(false, true) +
                                 "sqrt(2.0)"))),
             makeLiteral("2"))))
@@ -1003,7 +1003,7 @@ MATH_API_REWRITER_DEVICE(
             CALL_FACTORY_ENTRY("normcdfinvf",
                                CALL(MapNames::getClNamespace() +
                                         "ext::intel::math::cdfnorminv",
-                                    CAST_IF_NEED(makeLiteral("float"),
+                                    CAST_IF_NOT_SAME(makeLiteral("float"),
                                                  ARG(0))))),
         EMPTY_FACTORY_ENTRY("normcdfinvf"), EMPTY_FACTORY_ENTRY("normcdfinvf")))
 
@@ -1105,7 +1105,7 @@ MATH_API_REWRITER_DEVICE(
             CALL_FACTORY_ENTRY(
                 "erfcinv",
                 CALL(MapNames::getClNamespace() + "ext::intel::math::erfcinv",
-                     CAST_IF_NEED(makeLiteral("double"), ARG(0))))),
+                     CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0))))),
         EMPTY_FACTORY_ENTRY("erfcinv"), EMPTY_FACTORY_ENTRY("erfcinv")))
 
 MATH_API_REWRITER_DEVICE(
@@ -1117,7 +1117,7 @@ MATH_API_REWRITER_DEVICE(
             CALL_FACTORY_ENTRY(
                 "erfinv",
                 CALL(MapNames::getClNamespace() + "ext::intel::math::erfinv",
-                     CAST_IF_NEED(makeLiteral("double"), ARG(0))))),
+                     CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0))))),
         EMPTY_FACTORY_ENTRY("erfinv"), EMPTY_FACTORY_ENTRY("erfinv")))
 
 MATH_API_REWRITER_DEVICE(
@@ -1169,13 +1169,13 @@ MATH_API_REWRITER_DEVICE(
             CALL_FACTORY_ENTRY(
                 "normcdf",
                 CALL(MapNames::getClNamespace() + "ext::intel::math::cdfnorm",
-                     CAST_IF_NEED(makeLiteral("double"), ARG(0))))),
+                     CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0))))),
         EMPTY_FACTORY_ENTRY("normcdf"),
         BINARY_OP_FACTORY_ENTRY(
             "normcdf", BinaryOperatorKind::BO_Div,
             CALL(MapNames::getClNamespace() + "erfc",
                  BO(BinaryOperatorKind::BO_Div,
-                    CAST_IF_NEED(makeLiteral("double"), ARG(0)),
+                    CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0)),
                     makeLiteral("-" + MapNames::getClNamespace(false, true) +
                                 "sqrt(2.0)"))),
             makeLiteral("2"))))
@@ -1189,7 +1189,7 @@ MATH_API_REWRITER_DEVICE(
             CALL_FACTORY_ENTRY("normcdfinv",
                                CALL(MapNames::getClNamespace() +
                                         "ext::intel::math::cdfnorminv",
-                                    CAST_IF_NEED(makeLiteral("double"),
+                                    CAST_IF_NOT_SAME(makeLiteral("double"),
                                                  ARG(0))))),
         EMPTY_FACTORY_ENTRY("normcdfinv"), EMPTY_FACTORY_ENTRY("normcdfinv")))
 
@@ -1279,7 +1279,7 @@ MATH_API_REWRITER_HOST_DEVICE(
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::Math_min_max,
             CALL_FACTORY_ENTRY("min", CALL(MapNames::getDpctNamespace() + "min",
-                                           ARG(0), ARG(1))))),
+                                           CAST_IF_SPECIAL(ARG(0)), CAST_IF_SPECIAL(ARG(1)))))),
     MATH_API_REWRITER_DEVICE(
         "min",
         MATH_API_DEVICE_NODES(
@@ -1287,7 +1287,7 @@ MATH_API_REWRITER_HOST_DEVICE(
                 HelperFeatureEnum::Math_min_max,
                 CALL_FACTORY_ENTRY("min",
                                    CALL(MapNames::getDpctNamespace() + "min",
-                                        ARG(0), ARG(1)))),
+                                        CAST_IF_SPECIAL(ARG(0)), CAST_IF_SPECIAL(ARG(1))))),
             EMPTY_FACTORY_ENTRY("min"), EMPTY_FACTORY_ENTRY("min"),
             EMPTY_FACTORY_ENTRY("min"))))
 
@@ -1298,7 +1298,7 @@ MATH_API_REWRITER_HOST_DEVICE(
             HelperFeatureEnum::Math_min_max,
             CALL_FACTORY_ENTRY("std::min",
                                CALL(MapNames::getDpctNamespace() + "min",
-                                    ARG(0), ARG(1))))),
+                                    CAST_IF_SPECIAL(ARG(0)), CAST_IF_SPECIAL(ARG(1)))))),
     MATH_API_REWRITER_DEVICE(
         "std::min",
         MATH_API_DEVICE_NODES(
@@ -1306,7 +1306,7 @@ MATH_API_REWRITER_HOST_DEVICE(
                 HelperFeatureEnum::Math_min_max,
                 CALL_FACTORY_ENTRY("std::min",
                                    CALL(MapNames::getDpctNamespace() + "min",
-                                        ARG(0), ARG(1)))),
+                                        CAST_IF_SPECIAL(ARG(0)), CAST_IF_SPECIAL(ARG(1))))),
             EMPTY_FACTORY_ENTRY("std::min"), EMPTY_FACTORY_ENTRY("std::min"),
             EMPTY_FACTORY_ENTRY("std::min"))))
 
@@ -1316,7 +1316,7 @@ MATH_API_REWRITER_HOST_DEVICE(
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::Math_min_max,
             CALL_FACTORY_ENTRY("max", CALL(MapNames::getDpctNamespace() + "max",
-                                           ARG(0), ARG(1))))),
+                                           CAST_IF_SPECIAL(ARG(0)), CAST_IF_SPECIAL(ARG(1)))))),
     MATH_API_REWRITER_DEVICE(
         "max",
         MATH_API_DEVICE_NODES(
@@ -1324,7 +1324,7 @@ MATH_API_REWRITER_HOST_DEVICE(
                 HelperFeatureEnum::Math_min_max,
                 CALL_FACTORY_ENTRY("max",
                                    CALL(MapNames::getDpctNamespace() + "max",
-                                        ARG(0), ARG(1)))),
+                                        CAST_IF_SPECIAL(ARG(0)), CAST_IF_SPECIAL(ARG(1))))),
             EMPTY_FACTORY_ENTRY("max"), EMPTY_FACTORY_ENTRY("max"),
             EMPTY_FACTORY_ENTRY("max"))))
 
@@ -1335,7 +1335,7 @@ MATH_API_REWRITER_HOST_DEVICE(
             HelperFeatureEnum::Math_min_max,
             CALL_FACTORY_ENTRY("std::max",
                                CALL(MapNames::getDpctNamespace() + "max",
-                                    ARG(0), ARG(1))))),
+                                    CAST_IF_SPECIAL(ARG(0)), CAST_IF_SPECIAL(ARG(1)))))),
     MATH_API_REWRITER_DEVICE(
         "std::max",
         MATH_API_DEVICE_NODES(
@@ -1343,9 +1343,10 @@ MATH_API_REWRITER_HOST_DEVICE(
                 HelperFeatureEnum::Math_min_max,
                 CALL_FACTORY_ENTRY("std::max",
                                    CALL(MapNames::getDpctNamespace() + "max",
-                                        ARG(0), ARG(1)))),
+                                        CAST_IF_SPECIAL(ARG(0)), CAST_IF_SPECIAL(ARG(1))))),
             EMPTY_FACTORY_ENTRY("std::max"), EMPTY_FACTORY_ENTRY("std::max"),
             EMPTY_FACTORY_ENTRY("std::max"))))
+
 MATH_API_REWRITER_DEVICE(
     "llmax",
     MATH_API_DEVICE_NODES(
@@ -2994,8 +2995,8 @@ MATH_API_REWRITER_DEVICE_OVERLOAD(
         MATH_API_DEVICE_NODES(
             CALL_FACTORY_ENTRY(
                 "__hadd", CALL(MapNames::getClNamespace(false, true) + "hadd",
-                               CAST_IF_NEED(LITERAL("int"), ARG(0)),
-                               CAST_IF_NEED(LITERAL("int"), ARG(1)))),
+                               CAST_IF_NOT_SAME(LITERAL("int"), ARG(0)),
+                               CAST_IF_NOT_SAME(LITERAL("int"), ARG(1)))),
             EMPTY_FACTORY_ENTRY("__hadd"), EMPTY_FACTORY_ENTRY("__hadd"),
             EMPTY_FACTORY_ENTRY("__hadd"))),
     MATH_API_REWRITER_DEVICE(

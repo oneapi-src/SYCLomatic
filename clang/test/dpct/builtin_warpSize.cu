@@ -18,7 +18,7 @@ __global__ void foo(){
 }
 
 // CHECK: void bar(const sycl::nd_item<3> &item_ct1){
-// CHECK-NEXT:   int a = dpct::max(item_ct1.get_sub_group().get_local_range().get(0), 0);
+// CHECK-NEXT:   int a = dpct::max((int)item_ct1.get_sub_group().get_local_range().get(0), 0);
 // CHECK-NEXT:   int warpSize = 1;
 // CHECK-NEXT:   int b = dpct::max(warpSize, 0);
 // CHECK-NEXT: }

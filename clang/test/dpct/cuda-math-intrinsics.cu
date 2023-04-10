@@ -2729,12 +2729,12 @@ __device__ void test_pow() {
 }
 
 __global__ void foobar(int i) {
-  // CHECK: dpct::max(i, item_ct1.get_local_id(2));
-  // CHECK-NEXT: dpct::max(i, item_ct1.get_local_id(1));
-  // CHECK-NEXT: dpct::max(i, item_ct1.get_local_id(0));
-  // CHECK-NEXT: dpct::max(item_ct1.get_local_id(2), i);
-  // CHECK-NEXT: dpct::max(item_ct1.get_local_id(1), i);
-  // CHECK-NEXT: dpct::max(item_ct1.get_local_id(0), i);
+  // CHECK: dpct::max(i, (unsigned int)item_ct1.get_local_id(2));
+  // CHECK-NEXT: dpct::max(i, (unsigned int)item_ct1.get_local_id(1));
+  // CHECK-NEXT: dpct::max(i, (unsigned int)item_ct1.get_local_id(0));
+  // CHECK-NEXT: dpct::max((unsigned int)item_ct1.get_local_id(2), i);
+  // CHECK-NEXT: dpct::max((unsigned int)item_ct1.get_local_id(1), i);
+  // CHECK-NEXT: dpct::max((unsigned int)item_ct1.get_local_id(0), i);
   max(i, threadIdx.x);
   max(i, threadIdx.y);
   max(i, threadIdx.z);
@@ -2742,12 +2742,12 @@ __global__ void foobar(int i) {
   max(threadIdx.y, i);
   max(threadIdx.z, i);
 
-  // CHECK: dpct::max(i, item_ct1.get_group(2));
-  // CHECK-NEXT: dpct::max(i, item_ct1.get_group(1));
-  // CHECK-NEXT: dpct::max(i, item_ct1.get_group(0));
-  // CHECK-NEXT: dpct::max(item_ct1.get_group(2), i);
-  // CHECK-NEXT: dpct::max(item_ct1.get_group(1), i);
-  // CHECK-NEXT: dpct::max(item_ct1.get_group(0), i);
+  // CHECK: dpct::max(i, (unsigned int)item_ct1.get_group(2));
+  // CHECK-NEXT: dpct::max(i, (unsigned int)item_ct1.get_group(1));
+  // CHECK-NEXT: dpct::max(i, (unsigned int)item_ct1.get_group(0));
+  // CHECK-NEXT: dpct::max((unsigned int)item_ct1.get_group(2), i);
+  // CHECK-NEXT: dpct::max((unsigned int)item_ct1.get_group(1), i);
+  // CHECK-NEXT: dpct::max((unsigned int)item_ct1.get_group(0), i);
   max(i, blockIdx.x);
   max(i, blockIdx.y);
   max(i, blockIdx.z);
@@ -2755,12 +2755,12 @@ __global__ void foobar(int i) {
   max(blockIdx.y, i);
   max(blockIdx.z, i);
 
-  // CHECK: dpct::max(i, item_ct1.get_local_range(2));
-  // CHECK-NEXT: dpct::max(i, item_ct1.get_local_range(1));
-  // CHECK-NEXT: dpct::max(i, item_ct1.get_local_range(0));
-  // CHECK-NEXT: dpct::max(item_ct1.get_local_range(2), i);
-  // CHECK-NEXT: dpct::max(item_ct1.get_local_range(1), i);
-  // CHECK-NEXT: dpct::max(item_ct1.get_local_range(0), i);
+  // CHECK: dpct::max(i, (unsigned int)item_ct1.get_local_range(2));
+  // CHECK-NEXT: dpct::max(i, (unsigned int)item_ct1.get_local_range(1));
+  // CHECK-NEXT: dpct::max(i, (unsigned int)item_ct1.get_local_range(0));
+  // CHECK-NEXT: dpct::max((unsigned int)item_ct1.get_local_range(2), i);
+  // CHECK-NEXT: dpct::max((unsigned int)item_ct1.get_local_range(1), i);
+  // CHECK-NEXT: dpct::max((unsigned int)item_ct1.get_local_range(0), i);
   max(i, blockDim.x);
   max(i, blockDim.y);
   max(i, blockDim.z);
@@ -2768,12 +2768,12 @@ __global__ void foobar(int i) {
   max(blockDim.y, i);
   max(blockDim.z, i);
 
-  // CHECK: dpct::min(i, item_ct1.get_local_id(2));
-  // CHECK-NEXT: dpct::min(i, item_ct1.get_local_id(1));
-  // CHECK-NEXT: dpct::min(i, item_ct1.get_local_id(0));
-  // CHECK-NEXT: dpct::min(item_ct1.get_local_id(2), i);
-  // CHECK-NEXT: dpct::min(item_ct1.get_local_id(1), i);
-  // CHECK-NEXT: dpct::min(item_ct1.get_local_id(0), i);
+  // CHECK: dpct::min(i, (unsigned int)item_ct1.get_local_id(2));
+  // CHECK-NEXT: dpct::min(i, (unsigned int)item_ct1.get_local_id(1));
+  // CHECK-NEXT: dpct::min(i, (unsigned int)item_ct1.get_local_id(0));
+  // CHECK-NEXT: dpct::min((unsigned int)item_ct1.get_local_id(2), i);
+  // CHECK-NEXT: dpct::min((unsigned int)item_ct1.get_local_id(1), i);
+  // CHECK-NEXT: dpct::min((unsigned int)item_ct1.get_local_id(0), i);
   min(i, threadIdx.x);
   min(i, threadIdx.y);
   min(i, threadIdx.z);
@@ -2781,12 +2781,12 @@ __global__ void foobar(int i) {
   min(threadIdx.y, i);
   min(threadIdx.z, i);
 
-  // CHECK: dpct::min(i, item_ct1.get_group(2));
-  // CHECK-NEXT: dpct::min(i, item_ct1.get_group(1));
-  // CHECK-NEXT: dpct::min(i, item_ct1.get_group(0));
-  // CHECK-NEXT: dpct::min(item_ct1.get_group(2), i);
-  // CHECK-NEXT: dpct::min(item_ct1.get_group(1), i);
-  // CHECK-NEXT: dpct::min(item_ct1.get_group(0), i);
+  // CHECK: dpct::min(i, (unsigned int)item_ct1.get_group(2));
+  // CHECK-NEXT: dpct::min(i, (unsigned int)item_ct1.get_group(1));
+  // CHECK-NEXT: dpct::min(i, (unsigned int)item_ct1.get_group(0));
+  // CHECK-NEXT: dpct::min((unsigned int)item_ct1.get_group(2), i);
+  // CHECK-NEXT: dpct::min((unsigned int)item_ct1.get_group(1), i);
+  // CHECK-NEXT: dpct::min((unsigned int)item_ct1.get_group(0), i);
   min(i, blockIdx.x);
   min(i, blockIdx.y);
   min(i, blockIdx.z);
@@ -2794,12 +2794,12 @@ __global__ void foobar(int i) {
   min(blockIdx.y, i);
   min(blockIdx.z, i);
 
-  // CHECK: dpct::min(i, item_ct1.get_local_range(2));
-  // CHECK-NEXT: dpct::min(i, item_ct1.get_local_range(1));
-  // CHECK-NEXT: dpct::min(i, item_ct1.get_local_range(0));
-  // CHECK-NEXT: dpct::min(item_ct1.get_local_range(2), i);
-  // CHECK-NEXT: dpct::min(item_ct1.get_local_range(1), i);
-  // CHECK-NEXT: dpct::min(item_ct1.get_local_range(0), i);
+  // CHECK: dpct::min(i, (unsigned int)item_ct1.get_local_range(2));
+  // CHECK-NEXT: dpct::min(i, (unsigned int)item_ct1.get_local_range(1));
+  // CHECK-NEXT: dpct::min(i, (unsigned int)item_ct1.get_local_range(0));
+  // CHECK-NEXT: dpct::min((unsigned int)item_ct1.get_local_range(2), i);
+  // CHECK-NEXT: dpct::min((unsigned int)item_ct1.get_local_range(1), i);
+  // CHECK-NEXT: dpct::min((unsigned int)item_ct1.get_local_range(0), i);
   min(i, blockDim.x);
   min(i, blockDim.y);
   min(i, blockDim.z);
