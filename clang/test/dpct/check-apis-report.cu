@@ -115,7 +115,8 @@ void bar(){
   typedef float  VolumeType;
   cudaExtent volumeSize = make_cudaExtent(SIZE_X, SIZE_Y, SIZE_Z);
   float d_volumeMem[100];
-  cudaMalloc((void**)&d_volumeMem[0], SIZE_X*SIZE_Y*SIZE_Z*sizeof(float));
+  float *d_mem;
+  cudaMalloc((void**)&d_mem, SIZE_X*SIZE_Y*SIZE_Z*sizeof(float));
 
   cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<VolumeType>();
   make_cudaPitchedPtr((void*)d_volumeMem, SIZE_X*sizeof(VolumeType), SIZE_X, SIZE_Y);
