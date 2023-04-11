@@ -24,7 +24,7 @@ namespace dpct {
 
 struct null_type {};
 
-template <T>
+template <typename T>
 __dpct_inline__ 
 ::std::enable_if_t<::std::is_unsigned_v<T>, T>
 bfe(T source, uint32_t bit_start,
