@@ -10,6 +10,8 @@ __global__ void kernel(){
 }
 
 int main(void) {
+
     kernel<<<1, 1>>>();
     return 0;
+
 }
