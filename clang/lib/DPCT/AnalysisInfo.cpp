@@ -53,7 +53,6 @@ std::string DpctGlobalInfo::RuleFile = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
 bool DpctGlobalInfo::IsIncMigration = true;
 unsigned int DpctGlobalInfo::AssumedNDRangeDim = 3;
-bool DpctGlobalInfo::GeneratingHeadersInOutRootFlag = false;
 HelperFilesCustomizationLevel DpctGlobalInfo::HelperFilesCustomizationLvl =
     HelperFilesCustomizationLevel::HFCL_None;
 std::string DpctGlobalInfo::CustomHelperFileName = "dpct";

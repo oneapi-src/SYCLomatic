@@ -17,6 +17,7 @@
 #include "Config.h"
 #include "CustomHelperFiles.h"
 #include "ExternalReplacement.h"
+#include "GenHelperFunction.h"
 #include "GenMakefile.h"
 #include "IncrementalMigrationUtility.h"
 #include "MigrationAction.h"
@@ -798,14 +799,18 @@ int runDPCT(int argc, const char **argv) {
   }
   ValidateInputDirectory(Tool, AnalysisScope);
 
-  if (GenHeadersInOutRoot.getNumOccurrences() &&
+  if (GenHelperFunction.getNumOccurrences() &&
       (UseCustomHelperFileLevel.getNumOccurrences() ||
        CustomHelperFileName.getNumOccurrences())) {
     ShowStatus(MigrationErrorConflictOptions,
-               "Option --gen-headers-in-out-root cannot be used with "
+               "Option --gen-helper-function cannot be used with "
                "--use-custom-helper or --custom-helper-name together");
     dpctExit(MigrationErrorConflictOptions);
   }
+  if (GenHelperFunction.getValue()) {
+    dpct::genHelperFunction(dpct::DpctGlobalInfo::getOutRoot());
+  }
+
   validateCustomHelperFileNameArg(UseCustomHelperFileLevel,
                                   CustomHelperFileName,
                                   dpct::DpctGlobalInfo::getOutRoot());
