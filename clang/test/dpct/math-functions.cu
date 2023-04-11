@@ -640,3 +640,24 @@ __global__ void foo4() {
   double d1, d2;
   d2 = foo3(d1);
 }
+
+struct A {};
+
+__device__ A min(A a, A b) { return a; }
+__device__ A max(A a, A b) { return a; }
+
+template <class T> __device__ T clamp(T x, T a, T b) {
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated min call is used in a macro/template definition and is not valid for all macro/template uses. Adjust the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated max call is used in a macro/template definition and is not valid for all macro/template uses. Adjust the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: return dpct::min(dpct::max(x, a), b);
+  return min(max(x, a), b);
+}
+
+__global__ void kernel_2() {
+  A a;
+  clamp(a, a, a);
+}

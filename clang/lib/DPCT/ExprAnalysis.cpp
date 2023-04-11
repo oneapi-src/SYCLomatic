@@ -863,6 +863,17 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
         auto ResultStr = Result.value();
         addReplacement(CE->getCallee(), ResultStr);
         Rewriter->Analyzer.applyAllSubExprRepl();
+        auto LocStr =
+            getCombinedStrFromLoc(SM.getSpellingLoc(CE->getBeginLoc()));
+        auto &FCIMMR =
+            dpct::DpctGlobalInfo::getFunctionCallInMacroMigrateRecord();
+        if (FCIMMR.find(LocStr) != FCIMMR.end() &&
+            FCIMMR.find(LocStr)->second.compare(ResultStr) &&
+            !isExprStraddle(CE)) {
+          Rewriter->report(
+              Diagnostics::CANNOT_UNIFY_FUNCTION_CALL_IN_MACRO_OR_TEMPLATE,
+              false, RefString);
+        }
       }
     } else {
       if (Result.has_value()) {
@@ -874,8 +885,9 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
         if (FCIMMR.find(LocStr) != FCIMMR.end() &&
             FCIMMR.find(LocStr)->second.compare(ResultStr) &&
             !isExprStraddle(CE)) {
-          Rewriter->report(Diagnostics::CANNOT_UNIFY_FUNCTION_CALL_IN_MACOR,
-                           false, RefString);
+          Rewriter->report(
+              Diagnostics::CANNOT_UNIFY_FUNCTION_CALL_IN_MACRO_OR_TEMPLATE,
+              false, RefString);
         }
         FCIMMR[LocStr] = ResultStr;
         // When migrating thrust API with usmnone and raw-ptr,
