@@ -32,6 +32,7 @@ bfe(T source, uint32_t bit_start,
   const T MASK = (1 << num_bits) - 1;
   return (source >> bit_start) & MASK;
 }
+
 namespace internal {
 
 template <class _ExecPolicy, class _T>

@@ -18,6 +18,7 @@
 
 #include "../dpct.hpp"
 #include "functional.h"
+
 namespace dpct {
 namespace group {
 namespace detail {
