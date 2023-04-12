@@ -15,25 +15,41 @@ void foo(__nv_bfloat16 *a) {
 
 // CHECK: void test_conversions_device() {
 // CHECK-NEXT:   float f, f_1, f_2;
+// CHECK-NEXT:   sycl::float2 f2, f2_1, f2_2;
 // CHECK-NEXT:   sycl::ext::oneapi::bfloat16 bf16, bf16_1, bf16_2;
+// CHECK-NEXT:   sycl::marray<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1, bf162_2;
+// CHECK-NEXT:   f2 = sycl::float2(bf162[0], bf162[1]);
 // CHECK-NEXT:   f = static_cast<float>(bf16);
+// CHECK-NEXT:   bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(f2[0], f2[1]);
 // CHECK-NEXT:   bf16 = sycl::ext::oneapi::bfloat16(f);
 __global__ void test_conversions_device() {
   float f, f_1, f_2;
+  float2 f2, f2_1, f2_2;
   __nv_bfloat16 bf16, bf16_1, bf16_2;
+  __nv_bfloat162 bf162, bf162_1, bf162_2;
+  f2 = __bfloat1622float2(bf162);
   f = __bfloat162float(bf16);
+  bf162 = __float22bfloat162_rn(f2);
   bf16 = __float2bfloat16(f);
 }
 
 // CHECK: void test_conversions() {
 // CHECK-NEXT:   float f, f_1, f_2;
+// CHECK-NEXT:   sycl::float2 f2, f2_1, f2_2;
 // CHECK-NEXT:   sycl::ext::oneapi::bfloat16 bf16, bf16_1, bf16_2;
+// CHECK-NEXT:   sycl::marray<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1, bf162_2;
+// CHECK-NEXT:   f2 = sycl::float2(bf162[0], bf162[1]);
 // CHECK-NEXT:   f = static_cast<float>(bf16);
+// CHECK-NEXT:   bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(f2[0], f2[1]);
 // CHECK-NEXT:   bf16 = sycl::ext::oneapi::bfloat16(f);
 void test_conversions() {
   float f, f_1, f_2;
+  float2 f2, f2_1, f2_2;
   __nv_bfloat16 bf16, bf16_1, bf16_2;
+  __nv_bfloat162 bf162, bf162_1, bf162_2;
+  f2 = __bfloat1622float2(bf162);
   f = __bfloat162float(bf16);
+  bf162 = __float22bfloat162_rn(f2);
   bf16 = __float2bfloat16(f);
 }
 

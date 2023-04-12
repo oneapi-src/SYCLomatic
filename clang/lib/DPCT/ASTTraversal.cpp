@@ -2018,7 +2018,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cufftType_t", "cufftType", "thrust::pair", "CUdeviceptr",
               "cudaDeviceAttr", "CUmodule", "CUjit_option", "CUfunction",
               "cudaMemcpyKind", "cudaComputeMode", "__nv_bfloat16",
-              "cooperative_groups::__v1::thread_block_tile",
+              "__nv_bfloat162", "cooperative_groups::__v1::thread_block_tile",
               "cooperative_groups::__v1::thread_block", "libraryPropertyType_t",
               "libraryPropertyType", "cudaDataType_t", "cudaDataType",
               "cublasComputeType_t", "cublasAtomicsMode_t", "CUmem_advise_enum",
@@ -3007,6 +3007,17 @@ void VectorTypeMemberAccessRule::renameMemberField(const MemberExpr *ME) {
     return emplaceTransformation(new ReplaceText(Begin, Length, ""));
   }
   std::string MemberName = ME->getMemberNameInfo().getAsString();
+  if (MapNames::VectorTypes2MArray.count(BaseTy) &&
+      MapNames::MArrayMemberNamesMap.count(MemberName)) {
+    auto Begin = ME->getOperatorLoc();
+    auto End =
+        Lexer::getLocForEndOfToken(SM.getSpellingLoc(ME->getMemberLoc()), 0, SM,
+                                   DpctGlobalInfo::getContext().getLangOpts());
+    auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
+    auto MArrayIdx = MapNames::MArrayMemberNamesMap.find(MemberName)->second;
+    return emplaceTransformation(
+        new ReplaceText(Begin, Length, std::move(MArrayIdx)));
+  }
   if (MapNames::replaceName(MapNames::MemberNamesMap, MemberName))
     emplaceTransformation(
         new RenameFieldInMemberExpr(ME, std::move(MemberName)));
