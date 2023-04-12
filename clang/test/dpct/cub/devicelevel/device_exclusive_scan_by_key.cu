@@ -13,7 +13,7 @@ size_t temp_storage_size;
 
 struct CustomEqual {
   template <typename T>
-  inline bool operator()(const T &lhs, const T &rhs) const {
+  __device__ __host__ inline bool operator()(const T &lhs, const T &rhs) const {
     return lhs == rhs;
   }
 } custom_eq;

@@ -233,7 +233,9 @@ void MapNames::setExplicitNamespaceMap() {
            HelperFeatureEnum::SparseUtils_matrix_info)},
       {"cusparseOperation_t",
        std::make_shared<TypeNameRule>("oneapi::mkl::transpose")},
-      {"cusparseSolveAnalysisInfo_t", std::make_shared<TypeNameRule>("int")},
+      {"cusparseSolveAnalysisInfo_t", std::make_shared<TypeNameRule>(
+           "std::shared_ptr<" + getDpctNamespace() + "sparse::optimize_info>",
+           HelperFeatureEnum::SparseUtils_optimize_info)},
       {"thrust::device_ptr",
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "device_pointer",
@@ -263,8 +265,6 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("oneapi::dpl::equal_to")},
       {"thrust::less", std::make_shared<TypeNameRule>("oneapi::dpl::less")},
       {"thrust::negate", std::make_shared<TypeNameRule>("std::negate")},
-      {"thrust::identity",
-       std::make_shared<TypeNameRule>("oneapi::dpl::identity")},
       {"thrust::logical_or", std::make_shared<TypeNameRule>("std::logical_or")},
       {"thrust::divides", std::make_shared<TypeNameRule>("std::divides")},
       {"thrust::tuple", std::make_shared<TypeNameRule>("std::tuple")},
@@ -417,8 +417,11 @@ void MapNames::setExplicitNamespaceMap() {
                        getDpctNamespace() + "image_wrapper_base_p",
                        HelperFeatureEnum::Image_image_wrapper_base_p_alias)},
       {"cudaDeviceAttr", std::make_shared<TypeNameRule>("int")},
-      {"__nv_bfloat16",
-       std::make_shared<TypeNameRule>("oneapi::mkl::bfloat16")},
+      {"__nv_bfloat16", std::make_shared<TypeNameRule>(
+                            getClNamespace() + "ext::oneapi::bfloat16")},
+      {"__nv_bfloat162", std::make_shared<TypeNameRule>(
+                             getClNamespace() + "marray<" + getClNamespace() +
+                             "ext::oneapi::bfloat16, 2>")},
       {"libraryPropertyType_t",
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "version_field",
@@ -589,6 +592,10 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "dnnl::rnn_memory_format_tag",
            HelperFeatureEnum::DnnlUtils_rnn_memory_format_tag)},
+      {"cudnnDropoutDescriptor_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::dropout_desc",
+           HelperFeatureEnum::DnnlUtils_dropout_desc)},
   };
 
   // CuDNN Enum constants name mapping.
@@ -1299,7 +1306,7 @@ void MapNames::setExplicitNamespaceMap() {
 #include "APINames_NCCL.inc"
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"
-#include "APINames_cuGRAPH.inc"
+#include "APINames_nvGRAPH.inc"
 #include "APINames_cuRAND.inc"
 #include "APINames_cuSOLVER.inc"
 #include "APINames_cuSPARSE.inc"
@@ -1768,13 +1775,42 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusolverDnXpotrf",
                            "cusolverDnPotrf",
                            "cusolverDnXpotrs",
-                           "cusolverDnPotrs"};
+                           "cusolverDnPotrs",
+                           "cusolverDnSgeqrf_bufferSize",
+                           "cusolverDnDgeqrf_bufferSize",
+                           "cusolverDnCgeqrf_bufferSize",
+                           "cusolverDnZgeqrf_bufferSize"};
 
-  SPARSEAPIWithRewriter = {"cusparseCreateMatDescr",  "cusparseDestroyMatDescr",
-                           "cusparseSetMatType",      "cusparseGetMatType",
-                           "cusparseSetMatIndexBase", "cusparseGetMatIndexBase",
-                           "cusparseSetMatDiagType",  "cusparseGetMatDiagType",
-                           "cusparseSetMatFillMode",  "cusparseGetMatFillMode"};
+  SPARSEAPIWithRewriter = {"cusparseCreateMatDescr",
+                           "cusparseDestroyMatDescr",
+                           "cusparseSetMatType",
+                           "cusparseGetMatType",
+                           "cusparseSetMatIndexBase",
+                           "cusparseGetMatIndexBase",
+                           "cusparseSetMatDiagType",
+                           "cusparseGetMatDiagType",
+                           "cusparseSetMatFillMode",
+                           "cusparseGetMatFillMode",
+                           "cusparseCreate",
+                           "cusparseDestroy",
+                           "cusparseSetStream",
+                           "cusparseGetStream",
+                           "cusparseGetPointerMode",
+                           "cusparseSetPointerMode",
+                           "cusparseCreateSolveAnalysisInfo",
+                           "cusparseDestroySolveAnalysisInfo",
+                           "cusparseScsrmv",
+                           "cusparseDcsrmv",
+                           "cusparseCcsrmv",
+                           "cusparseZcsrmv",
+                           "cusparseScsrsv_analysis",
+                           "cusparseDcsrsv_analysis",
+                           "cusparseCcsrsv_analysis",
+                           "cusparseZcsrsv_analysis",
+                           "cusparseScsrmm",
+                           "cusparseDcsrmm",
+                           "cusparseCcsrmm",
+                           "cusparseZcsrmm"};
 
   // This map now is only used to migrate using declaration
   MathFuncNameMap = {
@@ -1808,6 +1844,7 @@ void MapNames::setExplicitNamespaceMap() {
 
 // Supported vector types
 const MapNames::SetTy MapNames::SupportedVectorTypes{SUPPORTEDVECTORTYPENAMES};
+const MapNames::SetTy MapNames::VectorTypes2MArray{VECTORTYPE2MARRAYNAMES};
 
 const std::map<std::string, int> MapNames::VectorTypeMigratedTypeSizeMap{
     {"char1", 1},       {"char2", 2},       {"char3", 4},
@@ -4253,6 +4290,10 @@ const MapNames::MapTy MapNames::MemberNamesMap{
     {"x", "x()"}, {"y", "y()"}, {"z", "z()"}, {"w", "w()"},
     // ...
 };
+const MapNames::MapTy MapNames::MArrayMemberNamesMap{
+    {"x", "[0]"},
+    {"y", "[1]"},
+};
 
 const MapNames::SetTy MapNames::HostAllocSet{
     "cudaHostAllocDefault",         "cudaHostAllocMapped",
@@ -4277,7 +4318,7 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #include "APINames_NVML.inc"
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"
-#include "APINames_cuGRAPH.inc"
+#include "APINames_nvGRAPH.inc"
 #include "APINames_cuRAND.inc"
 #include "APINames_cuSOLVER.inc"
 #include "APINames_cuSPARSE.inc"

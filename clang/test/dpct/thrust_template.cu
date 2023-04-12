@@ -18,6 +18,7 @@
 #include <thrust/functional.h>
 #include <thrust/host_vector.h>
 #include <thrust/unique.h>
+#include <thrust/sort.h>
 
 // for cuda 12.0
 #include <thrust/execution_policy.h>
@@ -229,6 +230,9 @@ template <typename ELT_TYPE> void testfunc() {
 
   // CHECK: oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, V2.begin(), V2.end(), V2.begin());
   thrust::unique_copy(V2.begin(), V2.end(), V2.begin());
+
+  // CHECK:oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, V1.begin(), V1.end(), std::not2(std::greater_equal<int>()));
+  thrust::stable_sort(V1.begin(),V1.end(),thrust::not2(thrust::greater_equal<int>()));
 }
 
 int main() {

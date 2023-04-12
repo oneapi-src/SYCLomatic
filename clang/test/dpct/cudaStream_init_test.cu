@@ -3,6 +3,7 @@
 
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK: #include <dpct/dpct.hpp>
+#include "cuda.h"
 
 struct a{
   // CHECK: dpct::queue_ptr s9;
@@ -167,7 +168,7 @@ int main2(){
 
 
   // CHECK: dpct::queue_ptr legacy = &q_ct1;
-  CUsream legacy = CU_STREAM_LEGACY;
+  CUstream legacy = CU_STREAM_LEGACY;
   // CHECK: dpct::queue_ptr perThread = &q_ct1;
   CUstream perThread = CU_STREAM_PER_THREAD;
 

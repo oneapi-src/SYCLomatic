@@ -30,14 +30,14 @@ __global__ void memberAcc() {
 }
 
 // CHECK: void nonTypeTemplateReverse(int *d, int n, const sycl::nd_item<3> &[[ITEM:item_ct1]],
-// CHECK-NEXT: std::complex<int> *s) {
+// CHECK-NEXT: sycl::int2 *s) {
 // CHECK-NEXT:  // the size of s is dependent on parameter
 template <int ArraySize>
 __global__ void nonTypeTemplateReverse(int *d, int n) {
-  __shared__ std::complex<int> s[2*ArraySize*ArraySize]; // the size of s is dependent on parameter
+  __shared__ int2 s[2*ArraySize*ArraySize]; // the size of s is dependent on parameter
   int t = threadIdx.x;
   if (t < 64) {
-    s[t] = d[t];
+    s[t] = int2{d[t], 0};
   }
 }
 
@@ -181,7 +181,7 @@ int main(void) {
 
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     sycl::local_accessor<std::complex<int>, 1> s_acc_ct1(sycl::range<1>(2*SIZE*SIZE), cgh);
+  // CHECK-NEXT:     sycl::local_accessor<sycl::int2, 1> s_acc_ct1(sycl::range<1>(2*SIZE*SIZE), cgh);
   // CHECK-NEXT:     auto d_d_acc_ct0 = dpct::get_access(d_d, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class nonTypeTemplateReverse_{{[a-f0-9]+}}, dpct_kernel_scalar<SIZE>>>(

@@ -575,12 +575,6 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
 
   // CHECK: d2 = sycl::remquo(d0, d1, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
   d2 = remquo(d0, d1, &i);
-  // CHECK: d2 = sycl::remquo((double)i, (double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  d2 = remquo(i, i, &i);
-  // CHECK: d2 = sycl::remquo(d0, (double)i, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  d2 = remquo(d0, i, &i);
-  // CHECK: d2 = sycl::remquo((double)i, d1, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  d2 = remquo(i, d1, &i);
 
   // CHECK: d2 = sycl::rint(d0);
   d2 = rint(d0);
@@ -2415,6 +2409,196 @@ __global__ void testIntegerFunctions() {
   u = umin(u, u);
 }
 
+__global__ void kernelFuncSIMD() {
+  unsigned int u, u_1, u_2;
+  bool b;
+
+  // CHECK: u_2 = dpct::vectorized_unary<sycl::short2>(u, dpct::abs());
+  // CHECK-NEXT: u_2 = dpct::vectorized_unary<sycl::char4>(u, dpct::abs());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::short2>(u, u_1, dpct::abs_diff());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, u_1, dpct::abs_diff());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, dpct::abs_diff());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, dpct::abs_diff());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::short2>(u, 0, dpct::abs_diff());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, 0, dpct::abs_diff());
+  u_2 = __vabs2(u);
+  u_2 = __vabs4(u);
+  u_2 = __vabsdiffs2(u, u_1);
+  u_2 = __vabsdiffs4(u, u_1);
+  u_2 = __vabsdiffu2(u, u_1);
+  u_2 = __vabsdiffu4(u, u_1);
+  u_2 = __vabsss2(u);
+  u_2 = __vabsss4(u);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, std::plus<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, std::plus<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::short2>(u, u_1, dpct::add_sat());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, u_1, dpct::add_sat());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, dpct::add_sat());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, dpct::add_sat());
+  u_2 = __vadd2(u, u_1);
+  u_2 = __vadd4(u, u_1);
+  u_2 = __vaddss2(u, u_1);
+  u_2 = __vaddss4(u, u_1);
+  u_2 = __vaddus2(u, u_1);
+  u_2 = __vaddus4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2>(u, u_1, dpct::rhadd());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, u_1, dpct::rhadd());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, dpct::rhadd());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, dpct::rhadd());
+  u_2 = __vavgs2(u, u_1);
+  u_2 = __vavgs4(u, u_1);
+  u_2 = __vavgu2(u, u_1);
+  u_2 = __vavgu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, std::equal_to<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, std::equal_to<>());
+  u_2 = __vcmpeq2(u, u_1);
+  u_2 = __vcmpeq4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2>(u, u_1, std::greater_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, u_1, std::greater_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, std::greater_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, std::greater_equal<>());
+  u_2 = __vcmpges2(u, u_1);
+  u_2 = __vcmpges4(u, u_1);
+  u_2 = __vcmpgeu2(u, u_1);
+  u_2 = __vcmpgeu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2>(u, u_1, std::greater<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, u_1, std::greater<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, std::greater<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, std::greater<>());
+  u_2 = __vcmpgts2(u, u_1);
+  u_2 = __vcmpgts4(u, u_1);
+  u_2 = __vcmpgtu2(u, u_1);
+  u_2 = __vcmpgtu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2>(u, u_1, std::less_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, u_1, std::less_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, std::less_equal<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, std::less_equal<>());
+  u_2 = __vcmples2(u, u_1);
+  u_2 = __vcmples4(u, u_1);
+  u_2 = __vcmpleu2(u, u_1);
+  u_2 = __vcmpleu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2>(u, u_1, std::less<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, u_1, std::less<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, std::less<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, std::less<>());
+  u_2 = __vcmplts2(u, u_1);
+  u_2 = __vcmplts4(u, u_1);
+  u_2 = __vcmpltu2(u, u_1);
+  u_2 = __vcmpltu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, std::not_equal_to<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, std::not_equal_to<>());
+  u_2 = __vcmpne2(u, u_1);
+  u_2 = __vcmpne4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, dpct::hadd());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, dpct::hadd());
+  u_2 = __vhaddu2(u, u_1);
+  u_2 = __vhaddu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2>(u, u_1, dpct::max());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, u_1, dpct::max());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, dpct::max());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, dpct::max());
+  u_2 = __vmaxs2(u, u_1);
+  u_2 = __vmaxs4(u, u_1);
+  u_2 = __vmaxu2(u, u_1);
+  u_2 = __vmaxu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2>(u, u_1, dpct::min());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, u_1, dpct::min());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, dpct::min());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, dpct::min());
+  u_2 = __vmins2(u, u_1);
+  u_2 = __vmins4(u, u_1);
+  u_2 = __vminu2(u, u_1);
+  u_2 = __vminu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_unary<sycl::short2>(u, std::negate<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_unary<sycl::char4>(u, std::negate<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::short2>(0, u, dpct::sub_sat());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(0, u, dpct::sub_sat());
+  u_2 = __vneg2(u);
+  u_2 = __vneg4(u);
+  u_2 = __vnegss2(u);
+  u_2 = __vnegss4(u);
+
+  // CHECK: u_2 = dpct::vectorized_sum_abs_diff<sycl::short2>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_sum_abs_diff<sycl::char4>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_sum_abs_diff<sycl::ushort2>(u, u_1);
+  // CHECK-NEXT: u_2 = dpct::vectorized_sum_abs_diff<sycl::uchar4>(u, u_1);
+  u_2 = __vsads2(u, u_1);
+  u_2 = __vsads4(u, u_1);
+  u_2 = __vsadu2(u, u_1);
+  u_2 = __vsadu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, std::equal_to<unsigned short>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, std::equal_to<unsigned char>());
+  u_2 = __vseteq2(u, u_1);
+  u_2 = __vseteq4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2>(u, u_1, std::greater_equal<short>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, u_1, std::greater_equal<char>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, std::greater_equal<unsigned short>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, std::greater_equal<unsigned char>());
+  u_2 = __vsetges2(u, u_1);
+  u_2 = __vsetges4(u, u_1);
+  u_2 = __vsetgeu2(u, u_1);
+  u_2 = __vsetgeu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2>(u, u_1, std::greater<short>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, u_1, std::greater<char>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, std::greater<unsigned short>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, std::greater<unsigned char>());
+  u_2 = __vsetgts2(u, u_1);
+  u_2 = __vsetgts4(u, u_1);
+  u_2 = __vsetgtu2(u, u_1);
+  u_2 = __vsetgtu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2>(u, u_1, std::less_equal<short>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, u_1, std::less_equal<char>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, std::less_equal<unsigned short>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, std::less_equal<unsigned char>());
+  u_2 = __vsetles2(u, u_1);
+  u_2 = __vsetles4(u, u_1);
+  u_2 = __vsetleu2(u, u_1);
+  u_2 = __vsetleu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2>(u, u_1, std::less<short>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, u_1, std::less<char>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, std::less<unsigned short>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, std::less<unsigned char>());
+  u_2 = __vsetlts2(u, u_1);
+  u_2 = __vsetlts4(u, u_1);
+  u_2 = __vsetltu2(u, u_1);
+  u_2 = __vsetltu4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, std::not_equal_to<unsigned short>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, std::not_equal_to<unsigned char>());
+  u_2 = __vsetne2(u, u_1);
+  u_2 = __vsetne4(u, u_1);
+
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, std::minus<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, std::minus<>());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::short2>(u, u_1, dpct::sub_sat());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, u_1, dpct::sub_sat());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, dpct::sub_sat());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, dpct::sub_sat());
+  u_2 = __vsub2(u, u_1);
+  u_2 = __vsub4(u, u_1);
+  u_2 = __vsubss2(u, u_1);
+  u_2 = __vsubss4(u, u_1);
+  u_2 = __vsubus2(u, u_1);
+  u_2 = __vsubus4(u, u_1);
+}
+
 void testTypecasts() {
 
 }
@@ -2489,48 +2673,6 @@ __device__ int __host__ foo3(int i, int j) {
 // CHECK-NEXT: }
 __device__ float __host__ foo3(float f, float g) {
   return max(f, g) + min(f, g);
-}
-
-// CHECK:  int bar(short i, long j) {
-// CHECK-NEXT:   return std::max<long>(i, j) + std::min<long>(i, j);
-// CHECK-NEXT: }
-__host__ int bar(short i, long j) {
-  return max(i, j) + min(i, j);
-}
-
-// CHECK:  int bar(unsigned short i, unsigned long j) {
-// CHECK-NEXT:   return std::max<unsigned long>(i, j) + std::min<unsigned long>(i, j);
-// CHECK-NEXT: }
-__host__ int bar(unsigned short i, unsigned long j) {
-  return max(i, j) + min(i, j);
-}
-
-// CHECK:  int bar(unsigned short i, long j) {
-// CHECK-NEXT:   return max(i, j) + min(i, j);
-// CHECK-NEXT: }
-__host__ int bar(unsigned short i, long j) {
-  return max(i, j) + min(i, j);
-}
-
-// CHECK:  int bar(long i, unsigned short j) {
-// CHECK-NEXT:   return max(i, j) + min(i, j);
-// CHECK-NEXT: }
-__host__ int bar(long i, unsigned short j) {
-  return max(i, j) + min(i, j);
-}
-
-// CHECK:  int bar(short i, unsigned long j) {
-// CHECK-NEXT:   return std::max<unsigned long>(i, j) + std::min<unsigned long>(i, j);
-// CHECK-NEXT: }
-__host__ int bar(short i, unsigned long j) {
-  return max(i, j) + min(i, j);
-}
-
-// CHECK:  int bar(unsigned long i, short j) {
-// CHECK-NEXT:   return std::max<unsigned long>(i, j) + std::min<unsigned long>(i, j);
-// CHECK-NEXT: }
-__host__ int bar(unsigned long i, short j) {
-  return max(i, j) + min(i, j);
 }
 
 typedef int INT;
@@ -2693,17 +2835,14 @@ __host__ __device__ void do_migration4() {
   // CHECK: sycl::max(i, j);
   max(i, j);
 }
-int max(int i, int j) {
-  return i > j ? i : j;
-}
 namespace t {
 int max(int i, int j) {
   return i > j ? i : j;
 }
 }
-void no_migration() {
+void do_migration5() {
   int i, j;
-  // CHECK: max(i, j);
+  // CHECK: std::max(i, j);
   max(i, j);
 }
 void no_migration2() {
@@ -2716,16 +2855,16 @@ void no_migration3() {
   // CHECK: std::max(i, j);
   std::max(i, j);
 }
-__host__ void no_migration4() {
+__host__ void do_migration6() {
   int i, j;
-  // CHECK: max(i, j);
+  // CHECK: std::max(i, j);
   max(i, j);
 }
 
 void ns() {
   using namespace std;
   int i, j;
-  // CHECK: max(i, j);
+  // CHECK: std::max(i, j);
   max(i, j);
 }
 
@@ -2736,13 +2875,9 @@ void no_migration5() {
   //CHECK: std::max(i, i);
   //CHECK-NEXT: std::min(i, i);
   //CHECK-NEXT: std::fabs(f);
-  //CHECK-NEXT: std::frexpf(f, &i);
-  //CHECK-NEXT: std::modff(f, &f);
   //CHECK-NEXT: std::nearbyintf(f);
   //CHECK-NEXT: std::remquof(f, f, &i);
-  //CHECK-NEXT: std::acosf(f);
   //CHECK-NEXT: std::acoshf(f);
-  //CHECK-NEXT: std::asinf(f);
   //CHECK-NEXT: std::asinhf(f);
   //CHECK-NEXT: std::abs(f);
   //CHECK-NEXT: std::frexp(f, &i);
@@ -2756,13 +2891,9 @@ void no_migration5() {
   std::max(i, i);
   std::min(i, i);
   std::fabs(f);
-  std::frexpf(f, &i);
-  std::modff(f, &f);
   std::nearbyintf(f);
   std::remquof(f, f, &i);
-  std::acosf(f);
   std::acoshf(f);
-  std::asinf(f);
   std::asinhf(f);
   std::abs(f);
   std::frexp(f, &i);
@@ -2787,14 +2918,6 @@ __device__ void do_migration5() {
   //CHECK-NEXT: sycl::min(i, i);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexpf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modff call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, float>(&f));
-  //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::floor(f + 0.5);
@@ -2802,9 +2925,7 @@ __device__ void do_migration5() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::remquo(f, f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
-  //CHECK-NEXT: sycl::asin(f);
   //CHECK-NEXT: sycl::asinh(f);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
@@ -2830,13 +2951,9 @@ __device__ void do_migration5() {
   std::max(i, i);
   std::min(i, i);
   std::fabs(f);
-  std::frexpf(f, &i);
-  std::modff(f, &f);
   std::nearbyintf(f);
   std::remquof(f, f, &i);
-  std::acosf(f);
   std::acoshf(f);
-  std::asinf(f);
   std::asinhf(f);
   std::abs(f);
   std::frexp(f, &i);
@@ -2857,14 +2974,6 @@ __global__ void do_migration6() {
   //CHECK-NEXT: sycl::min(i, i);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexpf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modff call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, float>(&f));
-  //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::floor(f + 0.5);
@@ -2872,9 +2981,7 @@ __global__ void do_migration6() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::remquo(f, f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
-  //CHECK-NEXT: sycl::asin(f);
   //CHECK-NEXT: sycl::asinh(f);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
@@ -2900,13 +3007,9 @@ __global__ void do_migration6() {
   std::max(i, i);
   std::min(i, i);
   std::fabs(f);
-  std::frexpf(f, &i);
-  std::modff(f, &f);
   std::nearbyintf(f);
   std::remquof(f, f, &i);
-  std::acosf(f);
   std::acoshf(f);
-  std::asinf(f);
   std::asinhf(f);
   std::abs(f);
   std::frexp(f, &i);
@@ -2927,14 +3030,6 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: sycl::min(i, i);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexpf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::frexp(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::modf call is used instead of the modff call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: sycl::modf(f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, float>(&f));
-  //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::floor(f + 0.5);
@@ -2942,9 +3037,7 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::remquo(f, f, sycl::address_space_cast<sycl::access::address_space::private_space, sycl::access::decorated::yes, int>(&i));
-  //CHECK-NEXT: sycl::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
-  //CHECK-NEXT: sycl::asin(f);
   //CHECK-NEXT: sycl::asinh(f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
@@ -2969,13 +3062,9 @@ __device__ __host__ void do_migration7() {
   std::max(i, i);
   std::min(i, i);
   std::fabs(f);
-  std::frexpf(f, &i);
-  std::modff(f, &f);
   std::nearbyintf(f);
   std::remquof(f, f, &i);
-  std::acosf(f);
   std::acoshf(f);
-  std::asinf(f);
   std::asinhf(f);
   std::frexp(f, &i);
   std::modf(f, &f);
@@ -3217,24 +3306,6 @@ __global__ void k2() {
   __umulhi(u, u2);
   // CHECK: sycl::rhadd(u, u2);
   __urhadd(u, u2);
-
-  // CHECK: u = dpct::vectorized_max<sycl::char4>(u, u2);
-  u = __vmaxs4(u, u2);
-
-  // CHECK: u = dpct::vectorized_max<sycl::ushort2>(u, u2);
-  u = __vmaxu2(u, u2);
-
-  // CHECK: u = dpct::vectorized_min<sycl::ushort2>(u, u2);
-  u = __vminu2(u, u2);
-
-  // CHECK: u = dpct::vectorized_min<sycl::uchar4>(u, u2);
-  u = __vminu4(u, u2);
-
-  // CHECK: u = dpct::vectorized_isgreater<sycl::ushort2, unsigned>(u, u2);
-  u = __vcmpgtu2(u, u2);
-
-  // CHECK: u = dpct::vectorized_isgreater<sycl::uchar4, unsigned>(u, u2);
-  u = __vcmpgtu4(u, u2);
 
   double *a_d;
   // CHECK: /*

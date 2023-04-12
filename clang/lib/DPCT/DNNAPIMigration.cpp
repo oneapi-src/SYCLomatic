@@ -41,7 +41,7 @@ void CuDNNTypeRule::registerMatcher(MatchFinder &MF) {
               "cudnnConvolutionBwdFilterAlgo_t", "cudnnFilterDescriptor_t",
               "cudnnRNNMode_t", "cudnnRNNBiasMode_t", "cudnnDirectionMode_t",
               "cudnnRNNDescriptor_t", "cudnnForwardMode_t", "cudnnRNNDataDescriptor_t",
-              "cudnnRNNDataLayout_t"))))))
+              "cudnnRNNDataLayout_t", "cudnnDropoutDescriptor_t"))))))
           .bind("CuDNNType"),
       this);
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName("CUDNN_.*"))))
@@ -175,7 +175,11 @@ void CuDNNAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cudnnDestroyRNNDataDescriptor", "cudnnSetRNNDataDescriptor", "cudnnGetRNNDataDescriptor",
         "cudnnSetRNNDescriptor_v8", "cudnnGetRNNDescriptor_v8", "cudnnGetRNNWeightSpaceSize",
         "cudnnGetRNNTempSpaceSizes", "cudnnRNNForward", "cudnnRNNBackwardData_v8",
-        "cudnnRNNBackwardWeights_v8");
+        "cudnnRNNBackwardWeights_v8", "cudnnDropoutGetStatesSize",
+        "cudnnCreateDropoutDescriptor", "cudnnSetDropoutDescriptor",
+        "cudnnGetDropoutDescriptor", "cudnnDropoutGetReserveSpaceSize",
+        "cudnnRestoreDropoutDescriptor", "cudnnDropoutForward", "cudnnDropoutBackward",
+        "cudnnDestroyDropoutDescriptor", "cudnnGetVersion");
   };
 
   MF.addMatcher(

@@ -627,7 +627,11 @@ class DerefExpr {
     if (!AddrOfRemoved && !IgnoreDerefOp)
       Stream << "*";
 
-    printWithParens(Stream, EA, E);
+    if (NeedParens) {
+      printWithParens(Stream, EA, E);
+    } else {
+      dpct::print(Stream, EA, E);
+    }
   }
 
   template <class StreamT>
@@ -637,7 +641,11 @@ class DerefExpr {
       Stream << "*";
 
     AA.setCallSpelling(C);
-    printWithParens(Stream, AA, P);
+    if (NeedParens) {
+      printWithParens(Stream, AA, P);
+    } else {
+      dpct::print(Stream, AA, P);
+    }
   }
 
   DerefExpr() = default;

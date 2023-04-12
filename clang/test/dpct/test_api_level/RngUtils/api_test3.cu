@@ -8,6 +8,8 @@
 // TEST_FEATURE: RngUtils_create_host_rng
 // TEST_FEATURE: RngUtils_typedef_host_rng_ptr
 
+#include "curand.h"
+
 int main() {
   curandGenerator_t rng;
   curandCreateGeneratorHost(&rng, CURAND_RNG_PSEUDO_PHILOX4_32_10);

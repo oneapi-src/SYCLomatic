@@ -34,6 +34,7 @@
 // RUN: dpct -output-verbosity=detailed  -out-root %T/check_apis_report-windows %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only  2>&1  \
 // RUN: | FileCheck -check-prefix=FAKE-FILE-STDERR -allow-empty %s
 
+#include <cuda.h>
 #include <cuda_runtime.h>
 
 void checkError(cudaError_t err) {
