@@ -337,7 +337,7 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E, Source
   RewritePostfix = std::string(SM.getCharacterData(EndLocWithoutPostfix),
                                RewritePostfixLength);
 
-  auto DecompLoc = SM.getDecomposedLoc(BeginLoc);
+  auto DecompLoc = SM.getDecomposedLoc(BeginLocWithoutPrefix);
   FileId = DecompLoc.first;
   // The offset of Expr used in ExprAnalysis is related to SrcBegin not
   // FileBegin
@@ -766,6 +766,17 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       addReplacement(ME->getOperatorLoc(), ME->getEndLoc(), "");
     } else {
       std::string MemberName = ME->getMemberNameInfo().getAsString();
+      if (MapNames::VectorTypes2MArray.count(BaseType) &&
+          MapNames::MArrayMemberNamesMap.count(MemberName)) {
+        auto Begin = ME->getOperatorLoc();
+        auto End = Lexer::getLocForEndOfToken(
+            SM.getSpellingLoc(ME->getMemberLoc()), 0, SM,
+            DpctGlobalInfo::getContext().getLangOpts());
+        auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
+        auto MArrayIdx =
+            MapNames::MArrayMemberNamesMap.find(MemberName)->second;
+        return addReplacement(Begin, Length, std::move(MArrayIdx));
+      }
       if (MapNames::replaceName(MapNames::MemberNamesMap, MemberName)) {
         // Retrieve the correct location before addReplacement
         auto Loc =
@@ -1985,7 +1996,6 @@ std::string ArgumentAnalysis::getRewriteString() {
 
   StringReplacements SRs;
   SRs.init(std::move(OriginalStr));
-
   for (std::shared_ptr<ExtReplacement> SubRepl : SubExprRepl) {
     if (isInRange(RewriteRangeBegin, RewriteRangeEnd, SubRepl->getFilePath(),
                   SubRepl->getOffset()) &&
