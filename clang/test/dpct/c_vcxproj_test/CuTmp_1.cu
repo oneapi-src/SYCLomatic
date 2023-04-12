@@ -1,4 +1,4 @@
-// UNSUPPORTED: -linux-
+// UNSUPPORTED: system-linux
 // RUN: echo "empty command"
 
 #include "cuda_runtime.h"

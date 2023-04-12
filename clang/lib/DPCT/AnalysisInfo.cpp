@@ -23,7 +23,7 @@
 
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
 
-std::optional<std::string> getReplacedName(const clang::NamedDecl *D) {
+llvm::StringRef getReplacedName(const clang::NamedDecl *D) {
   auto Iter = MapNames::TypeNamesMap.find(D->getQualifiedNameAsString(false));
   if (Iter != MapNames::TypeNamesMap.end()) {
     auto Range = getDefinitionRange(D->getBeginLoc(), D->getEndLoc());
@@ -34,7 +34,7 @@ std::optional<std::string> getReplacedName(const clang::NamedDecl *D) {
     }
     return Iter->second->NewName;
   }
-  return std::nullopt;
+  return llvm::StringRef();
 }
 
 namespace clang {
@@ -2791,6 +2791,13 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
         std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl,
                                          nullptr));
   }
+
+  if (FuncInfo->IsAlwaysInlineDevFunc()) {
+    std::string StrRepl = "inline ";
+    DpctGlobalInfo::getInstance().addReplacement(
+      std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl, nullptr));
+  }
+
   for (auto &Obj : TextureObjectList) {
     if (Obj) {
       Obj->merge(FuncInfo->getTextureObject((Obj->getParamIdx())));

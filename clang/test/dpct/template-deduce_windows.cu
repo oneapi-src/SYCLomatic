@@ -1,4 +1,4 @@
-// UNSUPPORTED: -linux-
+// UNSUPPORTED: system-linux
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/template-deduce_windows %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fno-delayed-template-parsing
 // RUN: FileCheck %s --match-full-lines --input-file %T/template-deduce_windows/template-deduce_windows.dp.cpp
 

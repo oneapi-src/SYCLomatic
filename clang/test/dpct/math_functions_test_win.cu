@@ -1,9 +1,11 @@
-// UNSUPPORTED: -linux-
+// UNSUPPORTED: system-linux
 // RUN: dpct --format-range=none -out-root %T/math_functions_test_win %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/math_functions_test_win/math_functions_test_win.dp.cpp --match-full-lines %s
 
 #include <cuda.h>
+#include <cuda_runtime.h>
 #include <cmath>
+#include <limits>
 
 // CHECK: int test_signbit(float x) { return signbit(x); }
 int test_signbit(float x) { return signbit(x); }
@@ -73,12 +75,6 @@ float test_pow(float a, int b) { return pow(a, b); }
 
 // CHECK: double test_pow(double a, int b) { return pow(a, b); }
 double test_pow(double a, int b) { return pow(a, b); }
-
-// CHECK: float test_powif(float a, int b) { return powif(a, b); }
-float test_powif(float a, int b) { return powif(a, b); }
-
-// CHECK: double test_powi(double a, int b) { return powi(a, b); }
-double test_powi(double a, int b) { return powi(a, b); }
 
 // CHECK: float test_log(float in) { return log(in); }
 float test_log(float in) { return log(in); }
@@ -166,16 +162,6 @@ float test_atanh(float a) { return atanh(a); }
 
 // CHECK: float test_hypot(float a, float b) { return hypot(a, b); }
 float test_hypot(float a, float b) { return hypot(a, b); }
-
-// CHECK: float test_norm3d(float a, float b, float c) { return norm3d(a, b, c); }
-float test_norm3d(float a, float b, float c) { return norm3d(a, b, c); }
-
-// CHECK: float test_norm4d(float a, float b, float c, float d) {
-// CHECK:   return norm4d(a, b, c, d);
-// CHECK: }
-float test_norm4d(float a, float b, float c, float d) {
-  return norm4d(a, b, c, d);
-}
 
 // CHECK: float test_cbrt(float a) { return cbrt(a); }
 float test_cbrt(float a) { return cbrt(a); }
@@ -287,12 +273,6 @@ float test_y1(float a) { return y1(a); }
 // CHECK: float test_yn(int n, float a) { return yn(n, a); }
 float test_yn(int n, float a) { return yn(n, a); }
 
-// CHECK: float test_cyl_bessel_i0(float a) { return cyl_bessel_i0(a); }
-float test_cyl_bessel_i0(float a) { return cyl_bessel_i0(a); }
-
-// CHECK: float test_cyl_bessel_i1(float a) { return cyl_bessel_i1(a); }
-float test_cyl_bessel_i1(float a) { return cyl_bessel_i1(a); }
-
 // CHECK: float test_erfinv(float a) { return erfinv(a); }
 float test_erfinv(float a) { return erfinv(a); }
 
@@ -302,7 +282,7 @@ float test_erfcinv(float a) { return erfcinv(a); }
 // CHECK: float test_normcdfinv(float a) { return normcdfinv(a); }
 float test_normcdfinv(float a) { return normcdfinv(a); }
 
-// CHECK: float test_normcdf(float a) { return normcdf(a); }
+// CHECK: float test_normcdf(float a) { return sycl::erfc((double)a / -sycl::sqrt(2.0)) / 2; }
 float test_normcdf(float a) { return normcdf(a); }
 
 // CHECK: float test_erfcx(float a) { return erfcx(a); }

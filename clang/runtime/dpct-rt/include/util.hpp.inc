@@ -49,6 +49,25 @@
 // DPCT_CODE
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|spirv_builtin_function|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+// TODO: Remove these function definitions once they exist in the DPC++ compiler
+#if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
+template <typename T>
+__SYCL_CONVERGENT__ extern SYCL_EXTERNAL __SYCL_EXPORT __attribute__((noduplicate))
+T __spirv_GroupNonUniformShuffle(__spv::Scope::Flag, T, unsigned) noexcept;
+
+template <typename T>
+__SYCL_CONVERGENT__ extern SYCL_EXTERNAL __SYCL_EXPORT __attribute__((noduplicate))
+T __spirv_GroupNonUniformShuffleDown(__spv::Scope::Flag, T, unsigned) noexcept;
+
+template <typename T>
+__SYCL_CONVERGENT__ extern SYCL_EXTERNAL __SYCL_EXPORT __attribute__((noduplicate))
+T __spirv_GroupNonUniformShuffleUp(__spv::Scope::Flag, T, unsigned) noexcept;
+#endif
+// DPCT_LABEL_END
+
 namespace dpct {
 
 // DPCT_LABEL_BEGIN|err_types|dpct
@@ -188,143 +207,6 @@ inline double cast_ints_to_double(int high32, int low32) {
   sycl::int2 v0{low32, high32};
   auto v1 = v0.as<sycl::vec<double, 1>>();
   return v1;
-}
-// DPCT_LABEL_END
-
-// DPCT_LABEL_BEGIN|fast_length|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-/// Compute fast_length for variable-length array
-/// \param [in] a The array
-/// \param [in] len Length of the array
-/// \returns The computed fast_length
-inline float fast_length(const float *a, int len) {
-  switch (len) {
-  case 1:
-    return sycl::fast_length(a[0]);
-  case 2:
-    return sycl::fast_length(sycl::float2(a[0], a[1]));
-  case 3:
-    return sycl::fast_length(sycl::float3(a[0], a[1], a[2]));
-  case 4:
-    return sycl::fast_length(sycl::float4(a[0], a[1], a[2], a[3]));
-  case 0:
-    return 0;
-  default:
-    float f = 0;
-    for (int i = 0; i < len; ++i)
-      f += a[i] * a[i];
-    return sycl::sqrt(f);
-  }
-}
-// DPCT_LABEL_END
-
-// DPCT_LABEL_BEGIN|vectorized_max|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-/// Compute vectorized max for two values, with each value treated as a vector
-/// type \p S
-/// \param [in] S The type of the vector
-/// \param [in] T The type of the original values
-/// \param [in] a The first value
-/// \param [in] b The second value
-/// \returns The vectorized max of the two values
-template <typename S, typename T>
-inline T vectorized_max(T a, T b) {
-  sycl::vec<T, 1> v0{a}, v1{b};
-  auto v2 = v0.template as<S>();
-  auto v3 = v1.template as<S>();
-  v2 = sycl::max(v2, v3);
-  v0 = v2.template as<sycl::vec<T, 1>>();
-  return v0;
-}
-// DPCT_LABEL_END
-
-// DPCT_LABEL_BEGIN|vectorized_min|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-/// Compute vectorized min for two values, with each value treated as a vector
-/// type \p S
-/// \param [in] S The type of the vector
-/// \param [in] T The type of the original values
-/// \param [in] a The first value
-/// \param [in] b The second value
-/// \returns The vectorized min of the two values
-template <typename S, typename T>
-inline T vectorized_min(T a, T b) {
-  sycl::vec<T, 1> v0{a}, v1{b};
-  auto v2 = v0.template as<S>();
-  auto v3 = v1.template as<S>();
-  v2 = sycl::min(v2, v3);
-  v0 = v2.template as<sycl::vec<T, 1>>();
-  return v0;
-}
-// DPCT_LABEL_END
-
-// DPCT_LABEL_BEGIN|vectorized_isgreater_T|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-/// Compute vectorized isgreater for two values, with each value treated as a
-/// vector type \p S
-/// \param [in] S The type of the vector
-/// \param [in] T The type of the original values
-/// \param [in] a The first value
-/// \param [in] b The second value
-/// \returns The vectorized greater than of the two values
-template <typename S, typename T>
-inline T vectorized_isgreater(T a, T b) {
-  sycl::vec<T, 1> v0{a}, v1{b};
-  auto v2 = v0.template as<S>();
-  auto v3 = v1.template as<S>();
-  auto v4 = sycl::isgreater(v2, v3);
-  v0 = v4.template as<sycl::vec<T, 1>>();
-  return v0;
-}
-// DPCT_LABEL_END
-
-// DPCT_LABEL_BEGIN|vectorized_isgreater_unsigned|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-/// Compute vectorized isgreater for two unsigned int values, with each value
-/// treated as a vector of two unsigned short
-/// \param [in] a The first value
-/// \param [in] b The second value
-/// \returns The vectorized greater than of the two values
-template<>
-inline unsigned
-vectorized_isgreater<sycl::ushort2, unsigned>(unsigned a, unsigned b) {
-  sycl::vec<unsigned, 1> v0{a}, v1{b};
-  auto v2 = v0.template as<sycl::ushort2>();
-  auto v3 = v1.template as<sycl::ushort2>();
-  sycl::ushort2 v4;
-  v4[0] = v2[0] > v3[0] ? 0xffff : 0;
-  v4[1] = v2[1] > v3[1] ? 0xffff : 0;
-  v0 = v4.template as<sycl::vec<unsigned, 1>>();
-  return v0;
-}
-// DPCT_LABEL_END
-
-// DPCT_LABEL_BEGIN|vectorized_isgreater_uchar4|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-/// Compute vectorized isgreater for two unsigned int values, with each value
-/// treated as a vector of four unsigned char.
-/// \param [in] a The first value
-/// \param [in] b The second value
-/// \returns The vectorized greater than of the two values
-template<>
-inline unsigned
-vectorized_isgreater<sycl::uchar4, unsigned>(unsigned a, unsigned b) {
-  sycl::vec<unsigned, 1> v0{a}, v1{b};
-  auto v2 = v0.template as<sycl::uchar4>();
-  auto v3 = v1.template as<sycl::uchar4>();
-  sycl::uchar4 v4;
-  v4[0] = v2[0] > v3[0] ? 0xff : 0;
-  v4[1] = v2[1] > v3[1] ? 0xff : 0;
-  v4[2] = v2[2] > v3[2] ? 0xff : 0;
-  v4[3] = v2[3] > v3[3] ? 0xff : 0;
-  v0 = v4.template as<sycl::vec<unsigned, 1>>();
-  return v0;
 }
 // DPCT_LABEL_END
 
@@ -507,6 +389,187 @@ T permute_sub_group_by_xor(sycl::sub_group g, T x, unsigned int mask,
                                      : id);
 }
 // DPCT_LABEL_END
+
+namespace experimental {
+// DPCT_LABEL_BEGIN|select_from_sub_group_mask|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Util|spirv_builtin_function
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Masked version of select_from_sub_group. The parameter member_mask indicating
+/// the work-items participating the call. Whether the n-th bit is set to 1
+/// representing whether the work-item with id n is participating the call.
+/// All work-items named in member_mask must be executed with the same member_mask,
+/// or the result is undefined.
+/// \tparam T Input value type
+/// \param [in] member_mask Input mask
+/// \param [in] g Input sub_group
+/// \param [in] x Input value
+/// \param [in] remote_local_id Input source work item id
+/// \param [in] logical_sub_group_size Input logical sub_group size
+/// \returns The result
+template <typename T>
+T select_from_sub_group(unsigned int member_mask,
+                        sycl::sub_group g, T x, int remote_local_id,
+                        int logical_sub_group_size = 32) {
+  unsigned int start_index =
+      g.get_local_linear_id() / logical_sub_group_size * logical_sub_group_size;
+  unsigned logical_remote_id =
+      start_index + remote_local_id % logical_sub_group_size;
+#if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
+#if defined(__SPIR__)
+  return __spirv_GroupNonUniformShuffle(__spv::Scope::Subgroup, x, logical_remote_id);
+#else
+  #error "Masked version of select_from_sub_group only supports SPIR-V backends"
+#endif // __SPIR__
+#else
+  (void)g;
+  (void)x;
+  (void)remote_local_id;
+  (void)logical_sub_group_size;
+  (void)member_mask;
+  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+                        "supported on host device and none intel compiler.");
+#endif // __SYCL_DEVICE_ONLY__ && __INTEL_LLVM_COMPILER
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|shift_sub_group_left_mask|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Util|spirv_builtin_function
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Masked version of shift_sub_group_left. The parameter member_mask indicating
+/// the work-items participating the call. Whether the n-th bit is set to 1
+/// representing whether the work-item with id n is participating the call.
+/// All work-items named in member_mask must be executed with the same member_mask,
+/// or the result is undefined.
+/// \tparam T Input value type
+/// \param [in] member_mask Input mask
+/// \param [in] g Input sub_group
+/// \param [in] x Input value
+/// \param [in] delta Input delta
+/// \param [in] logical_sub_group_size Input logical sub_group size
+/// \returns The result
+template <typename T>
+T shift_sub_group_left(unsigned int member_mask,
+                       sycl::sub_group g, T x, unsigned int delta,
+                       int logical_sub_group_size = 32) {
+  unsigned int id = g.get_local_linear_id();
+  unsigned int end_index =
+      (id / logical_sub_group_size + 1) * logical_sub_group_size;
+#if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
+#if defined(__SPIR__)
+  T result = __spirv_GroupNonUniformShuffleDown(__spv::Scope::Subgroup, x, delta);
+  if ((id + delta) >= end_index) {
+    result = x;
+  }
+  return result;
+#else
+  #error "Masked version of shift_sub_group_left only supports SPIR-V backends"
+#endif // __SPIR__
+#else
+  (void)g;
+  (void)x;
+  (void)delta;
+  (void)logical_sub_group_size;
+  (void)member_mask;
+  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+                        "supported on host device and none intel compiler.");
+#endif // __SYCL_DEVICE_ONLY__ && __INTEL_LLVM_COMPILER
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|shift_sub_group_right_mask|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Util|spirv_builtin_function
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Masked version of shift_sub_group_right. The parameter member_mask indicating
+/// the work-items participating the call. Whether the n-th bit is set to 1
+/// representing whether the work-item with id n is participating the call.
+/// All work-items named in member_mask must be executed with the same member_mask,
+/// or the result is undefined.
+/// \tparam T Input value type
+/// \param [in] member_mask Input mask
+/// \param [in] g Input sub_group
+/// \param [in] x Input value
+/// \param [in] delta Input delta
+/// \param [in] logical_sub_group_size Input logical sub_group size
+/// \returns The result
+template <typename T>
+T shift_sub_group_right(unsigned int member_mask,
+                        sycl::sub_group g, T x, unsigned int delta,
+                        int logical_sub_group_size = 32) {
+  unsigned int id = g.get_local_linear_id();
+  unsigned int start_index =
+      id / logical_sub_group_size * logical_sub_group_size;
+#if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
+#if defined(__SPIR__)
+  T result = __spirv_GroupNonUniformShuffleUp(__spv::Scope::Subgroup, x, delta);
+  if ((id - start_index) < delta) {
+    result = x;
+  }
+  return result;
+#else
+  #error "Masked version of shift_sub_group_right only supports SPIR-V backends"
+#endif // __SPIR__
+#else
+  (void)g;
+  (void)x;
+  (void)delta;
+  (void)logical_sub_group_size;
+  (void)member_mask;
+  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+                        "supported on host device and none intel compiler.");
+#endif // __SYCL_DEVICE_ONLY && __INTEL_LLVM_COMPILER
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|permute_sub_group_by_xor_mask|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Util|spirv_builtin_function
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Masked version of permute_sub_group_by_xor. The parameter member_mask indicating
+/// the work-items participating the call. Whether the n-th bit is set to 1
+/// representing whether the work-item with id n is participating the call.
+/// All work-items named in member_mask must be executed with the same member_mask,
+/// or the result is undefined.
+/// \tparam T Input value type
+/// \param [in] member_mask Input mask
+/// \param [in] g Input sub_group
+/// \param [in] x Input value
+/// \param [in] mask Input mask
+/// \param [in] logical_sub_group_size Input logical sub_group size
+/// \returns The result
+template <typename T>
+T permute_sub_group_by_xor(unsigned int member_mask,
+                           sycl::sub_group g, T x, unsigned int mask,
+                           int logical_sub_group_size = 32) {
+  unsigned int id = g.get_local_linear_id();
+  unsigned int start_index =
+      id / logical_sub_group_size * logical_sub_group_size;
+  unsigned int target_offset = (id % logical_sub_group_size) ^ mask;
+  unsigned logical_remote_id = (target_offset < logical_sub_group_size) ? start_index + target_offset : id;
+#if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
+#if defined(__SPIR__)
+  return __spirv_GroupNonUniformShuffle(__spv::Scope::Subgroup, x, logical_remote_id);
+#else
+  #error "Masked version of permute_sub_group_by_xor only supports SPIR-V backends."
+#endif // __SPIR__
+#else
+  (void)g;
+  (void)x;
+  (void)mask;
+  (void)logical_sub_group_size;
+  (void)member_mask;
+  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group not "
+                        "supported on host device and none intel compiler.");
+#endif // __SYCL_DEVICE_ONLY__ && __INTEL_LLVM_COMPILER
+}
+// DPCT_LABEL_END
+} // namespace experimental
 
 // DPCT_LABEL_BEGIN|cmul|dpct
 // DPCT_DEPENDENCY_EMPTY

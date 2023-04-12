@@ -3,7 +3,6 @@
 #2. Use AddLLVM to modify the build and access config options
 #cmake_policy(SET CMP0057 NEW)
 #include(AddLLVM)
-
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/version.rc.in
   ${CMAKE_CURRENT_BINARY_DIR}/version.rc
@@ -71,11 +70,13 @@ function(add_sycl_rt_library LIB_NAME LIB_OBJ_NAME)
   endif()
 
   # win_proxy_loader
-  include_directories(${LLVM_EXTERNAL_SYCL_SOURCE_DIR}/win_proxy_loader)
-  if(WIN_DUPE)
-    target_link_libraries(${LIB_NAME} PUBLIC win_proxy_loaderd)
-  else()
-    target_link_libraries(${LIB_NAME} PUBLIC win_proxy_loader)
+  if (WIN32)
+    include_directories(${LLVM_EXTERNAL_SYCL_SOURCE_DIR}/win_proxy_loader)
+    if(WIN_DUPE)
+      target_link_libraries(${LIB_NAME} PUBLIC win_proxy_loaderd)
+    else()
+      target_link_libraries(${LIB_NAME} PUBLIC win_proxy_loader)
+    endif()
   endif()
 
   target_compile_definitions(${LIB_OBJ_NAME} PRIVATE __SYCL_INTERNAL_API )
@@ -164,10 +165,11 @@ set(SYCL_SOURCES
     "detail/context_impl.cpp"
     "detail/device_binary_image.cpp"
     "detail/device_filter.cpp"
+    "detail/host_pipe_map.cpp"
     "detail/device_global_map.cpp"
     "detail/device_global_map_entry.cpp"
     "detail/device_impl.cpp"
-    "detail/error_handling/enqueue_kernel.cpp"
+    "detail/error_handling/error_handling.cpp"
     "detail/event_impl.cpp"
     "detail/filter_selector_impl.cpp"
     "detail/fusion/fusion_wrapper.cpp"
@@ -182,6 +184,7 @@ set(SYCL_SOURCES
     "detail/kernel_impl.cpp"
     "detail/kernel_program_cache.cpp"
     "detail/memory_manager.cpp"
+    "detail/pipes.cpp"
     "detail/platform_impl.cpp"
     "detail/program_impl.cpp"
     "detail/program_manager/program_manager.cpp"

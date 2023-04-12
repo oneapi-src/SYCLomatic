@@ -337,7 +337,7 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E, Source
   RewritePostfix = std::string(SM.getCharacterData(EndLocWithoutPostfix),
                                RewritePostfixLength);
 
-  auto DecompLoc = SM.getDecomposedLoc(BeginLoc);
+  auto DecompLoc = SM.getDecomposedLoc(BeginLocWithoutPrefix);
   FileId = DecompLoc.first;
   // The offset of Expr used in ExprAnalysis is related to SrcBegin not
   // FileBegin
@@ -508,6 +508,7 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       REPLACE_ENUM(MapNames::BLASEnumsMap);
       REPLACE_ENUM(MapNames::FunctionAttrMap);
       REPLACE_ENUM(CuDNNTypeRule::CuDNNEnumNamesMap);
+      REPLACE_ENUM(MapNames::RandomEngineTypeMap);
       REPLACE_ENUM(MapNames::SOLVEREnumsMap);
       REPLACE_ENUM(MapNames::SPBLASEnumsMap);
 #undef REPLACE_ENUM
@@ -517,28 +518,6 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
         !DpctGlobalInfo::isInAnalysisScope(VD->getLocation())) {
       addReplacement(DRE, DpctGlobalInfo::getSubGroup(DRE) +
                               ".get_local_range().get(0)");
-    }
-  }
-}
-
-// Get replacement str and replacement length for thrust construct type.
-// If thrust construct type have mapping type in MapNames::TypeNamesMap, using
-// the mapping type, else just use "std::" to replace "thrust::".
-void ExprAnalysis::getThrustReplStrAndLength(const std::string &CtorClassName,
-                                             std::string &Replacement,
-                                             size_t &TypeLen) {
-  if (CtorClassName.find("thrust::") == 0) {
-    TypeLen = CtorClassName.find('<');
-    if (TypeLen == std::string::npos)
-      TypeLen = CtorClassName.size();
-
-    auto RealTypeNameStr = CtorClassName.substr(0, TypeLen);
-    Replacement =
-        MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
-    if (Replacement.empty()) {
-      static const size_t ThrustNamespaceLength = std::strlen("thrust::");
-      TypeLen = ThrustNamespaceLength;
-      Replacement = "std::";
     }
   }
 }
@@ -592,8 +571,9 @@ void ExprAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
 void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
   std::string TypeName = DpctGlobalInfo::getUnqualifiedTypeName(
       Temp->getType().getCanonicalType());
-  if (StringRef(TypeName).startswith("cub::") &&
-      CubTypeRule::CanMappingToSyclType(TypeName)) {
+  if ((StringRef(TypeName).startswith("cub::") &&
+       CubTypeRule::CanMappingToSyclType(TypeName)) ||
+      StringRef(TypeName).startswith("thrust::")) {
     analyzeType(Temp->getTypeSourceInfo()->getTypeLoc());
     return;
   }
@@ -602,23 +582,6 @@ void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
 }
 
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
-  std::string CtorClassName =
-      Ctor->getConstructor()->getParent()->getQualifiedNameAsString();
-  if (CtorClassName.find("thrust::") == 0) {
-    // Distinguish CXXTemporaryObjectExpr from other copy ctor before migrating
-    // the ctor. Ex. foo(thrust::minus<int>());
-    auto CXXTemporaryObjectExprMatcher = clang::ast_matchers::findAll(
-        clang::ast_matchers::cxxTemporaryObjectExpr().bind("CTOE"));
-    auto MatchedResults =
-        clang::ast_matchers::match(CXXTemporaryObjectExprMatcher, *Ctor,
-                                   clang::dpct::DpctGlobalInfo::getContext());
-    if (MatchedResults.size() > 0) {
-      std::string Replacement;
-      size_t TypeLen;
-      getThrustReplStrAndLength(CtorClassName, Replacement, TypeLen);
-      addReplacement(Ctor, TypeLen, Replacement);
-    }
-  }
 
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
     std::string ArgsString;
@@ -784,6 +747,17 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       addReplacement(ME->getOperatorLoc(), ME->getEndLoc(), "");
     } else {
       std::string MemberName = ME->getMemberNameInfo().getAsString();
+      if (MapNames::VectorTypes2MArray.count(BaseType) &&
+          MapNames::MArrayMemberNamesMap.count(MemberName)) {
+        auto Begin = ME->getOperatorLoc();
+        auto End = Lexer::getLocForEndOfToken(
+            SM.getSpellingLoc(ME->getMemberLoc()), 0, SM,
+            DpctGlobalInfo::getContext().getLangOpts());
+        auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
+        auto MArrayIdx =
+            MapNames::MArrayMemberNamesMap.find(MemberName)->second;
+        return addReplacement(Begin, Length, std::move(MArrayIdx));
+      }
       if (MapNames::replaceName(MapNames::MemberNamesMap, MemberName)) {
         // Retrieve the correct location before addReplacement
         auto Loc =
@@ -1093,6 +1067,10 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
   case TypeLoc::Decltype:
     analyzeDecltypeType(TYPELOC_CAST(DecltypeTypeLoc));
     break;
+  case TypeLoc::Enum: {
+    TyName = DpctGlobalInfo::getTypeName(TL.getType());
+    break;
+  }
   default:
     return;
   }
@@ -2003,7 +1981,6 @@ std::string ArgumentAnalysis::getRewriteString() {
 
   StringReplacements SRs;
   SRs.init(std::move(OriginalStr));
-
   for (std::shared_ptr<ExtReplacement> SubRepl : SubExprRepl) {
     if (isInRange(RewriteRangeBegin, RewriteRangeEnd, SubRepl->getFilePath(),
                   SubRepl->getOffset()) &&

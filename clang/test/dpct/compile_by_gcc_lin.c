@@ -1,4 +1,4 @@
-// UNSUPPORTED: -windows-
+// UNSUPPORTED: system-windows
 // RUN: mkdir %T/compile_by_gcc
 // RUN: cd %T/compile_by_gcc
 // RUN: cp %s %T/compile_by_gcc

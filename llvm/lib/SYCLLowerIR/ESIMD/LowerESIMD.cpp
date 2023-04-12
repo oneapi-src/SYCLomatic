@@ -22,7 +22,6 @@
 #include "llvm/ADT/DenseSet.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringSwitch.h"
-#include "llvm/ADT/Triple.h"
 #include "llvm/Demangle/Demangle.h"
 #include "llvm/Demangle/ItaniumDemangle.h"
 #include "llvm/GenXIntrinsics/GenXIntrinsics.h"
@@ -36,6 +35,7 @@
 #include "llvm/Pass.h"
 #include "llvm/Support/ModRef.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/TargetParser/Triple.h"
 
 #include <cctype>
 #include <cstring>
@@ -518,10 +518,18 @@ public:
          {"lsc.load.slm",
           {ai1(0), c8(lsc_subopcode::load), t8(1), t8(2), t16(3), t32(4), t8(5),
            t8(6), t8(7), c8(0), a(1), c32(0)}}},
+        {"lsc_load_merge_slm",
+         {"lsc.load.merge.slm",
+          {ai1(0), c8(lsc_subopcode::load), t8(1), t8(2), t16(3), t32(4), t8(5),
+           t8(6), t8(7), c8(0), a(1), c32(0), a(2)}}},
         {"lsc_load_bti",
          {"lsc.load.bti",
           {ai1(0), c8(lsc_subopcode::load), t8(1), t8(2), t16(3), t32(4), t8(5),
            t8(6), t8(7), c8(0), a(1), aSI(2)}}},
+        {"lsc_load_merge_bti",
+         {"lsc.load.merge.bti",
+          {ai1(0), c8(lsc_subopcode::load), t8(1), t8(2), t16(3), t32(4), t8(5),
+           t8(6), t8(7), c8(0), a(1), aSI(2), a(2)}}},
         {"lsc_load_stateless",
          {"lsc.load.stateless",
           {ai1(0), c8(lsc_subopcode::load), t8(1), t8(2), t16(3), t32(4), t8(5),
@@ -663,11 +671,21 @@ public:
          {"test.src.tmpl.arg", {t(0), t1(1), t8(2), t16(3), t32(4), c8(17)}}},
         {"slm_init", {"slm.init", {a(0)}}},
         {"bf_cvt", {"bf.cvt", {a(0)}}},
-        {"tf32_cvt", {"tf32.cvt", {a(0)}}}};
+        {"tf32_cvt", {"tf32.cvt", {a(0)}}},
+        {"addc", {"addc", {l(0)}}},
+        {"subb", {"subb", {l(0)}}},
+        {"bfn", {"bfn", {a(0), a(1), a(2), t(0)}}}};
   }
 
   const IntrinTable &getTable() { return Table; }
 };
+
+static bool isStructureReturningFunction(StringRef FunctionName) {
+  return llvm::StringSwitch<bool>(FunctionName)
+      .Case("addc", true)
+      .Case("subb", true)
+      .Default(false);
+}
 
 // The C++11 "magic static" idiom to lazily initialize the ESIMD intrinsic table
 static const IntrinTable &getIntrinTable() {
@@ -824,10 +842,10 @@ static std::string getESIMDIntrinSuffix(id::FunctionEncoding *FE,
       Suff = ".xor";
       break;
     case 0xb:
-      Suff = ".minsint";
+      Suff = ".imin";
       break;
     case 0xc:
-      Suff = ".maxsint";
+      Suff = ".imax";
       break;
     case 0x10:
       Suff = ".fmax";
@@ -1409,6 +1427,8 @@ static void translateESIMDIntrinsicCall(CallInst &CI) {
   SmallVector<Value *, 16> GenXArgs;
   createESIMDIntrinsicArgs(Desc, GenXArgs, CI, FE);
   Function *NewFDecl = nullptr;
+  bool DoesFunctionReturnStructure =
+      isStructureReturningFunction(Desc.GenXSpelling);
   if (Desc.GenXSpelling.rfind("test.src.", 0) == 0) {
     // Special case for testing purposes
     NewFDecl = createTestESIMDDeclaration(Desc, GenXArgs, CI);
@@ -1417,8 +1437,17 @@ static void translateESIMDIntrinsicCall(CallInst &CI) {
         GenXIntrinsic::getGenXIntrinsicPrefix() + Desc.GenXSpelling + Suffix);
 
     SmallVector<Type *, 16> GenXOverloadedTypes;
-    if (GenXIntrinsic::isOverloadedRet(ID))
-      GenXOverloadedTypes.push_back(CI.getType());
+    if (GenXIntrinsic::isOverloadedRet(ID)) {
+      if (DoesFunctionReturnStructure) {
+        // TODO implement more generic handling of returned structure
+        // current code assumes that returned code has 2 members of the
+        // same type as arguments.
+        GenXOverloadedTypes.push_back(GenXArgs[1]->getType());
+        GenXOverloadedTypes.push_back(GenXArgs[1]->getType());
+      } else {
+        GenXOverloadedTypes.push_back(CI.getType());
+      }
+    }
     for (unsigned i = 0; i < GenXArgs.size(); ++i)
       if (GenXIntrinsic::isOverloadedArg(ID, i))
         GenXOverloadedTypes.push_back(GenXArgs[i]->getType());
@@ -1432,6 +1461,17 @@ static void translateESIMDIntrinsicCall(CallInst &CI) {
       NewFDecl->getFnAttribute(llvm::Attribute::ReadNone).isValid();
   if (FixReadNone)
     NewFDecl->removeFnAttr(llvm::Attribute::ReadNone);
+  Instruction *NewInst = nullptr;
+  AddrSpaceCastInst *CastInstruction = nullptr;
+  if (DoesFunctionReturnStructure) {
+    llvm::esimd::assert_and_diag(
+        isa<AddrSpaceCastInst>(GenXArgs[0]),
+        "Unexpected instruction for returning a structure from a function.");
+    CastInstruction = static_cast<AddrSpaceCastInst *>(GenXArgs[0]);
+    // Remove 1st argument that is used to return the structure
+    GenXArgs.erase(GenXArgs.begin());
+  }
+
   CallInst *NewCI = IntrinsicInst::Create(
       NewFDecl, GenXArgs,
       NewFDecl->getReturnType()->isVoidTy() ? "" : CI.getName() + ".esimd",
@@ -1439,8 +1479,16 @@ static void translateESIMDIntrinsicCall(CallInst &CI) {
   if (FixReadNone)
     NewCI->setMemoryEffects(MemoryEffects::none());
   NewCI->setDebugLoc(CI.getDebugLoc());
+  if (DoesFunctionReturnStructure) {
+    IRBuilder<> Builder(&CI);
 
-  Instruction *NewInst = addCastInstIfNeeded(&CI, NewCI);
+    NewInst = Builder.CreateStore(
+        NewCI, Builder.CreateBitCast(CastInstruction->getPointerOperand(),
+                                     NewCI->getType()->getPointerTo()));
+  } else {
+    NewInst = addCastInstIfNeeded(&CI, NewCI);
+  }
+
   CI.replaceAllUsesWith(NewInst);
   CI.eraseFromParent();
 }
@@ -1574,7 +1622,7 @@ void generateKernelMetadata(Module &M) {
 // TODO: can we make the Module argument `const`?
 SmallPtrSet<Type *, 4> collectGenXVolatileTypes(Module &M) {
   SmallPtrSet<Type *, 4> GenXVolatileTypeSet;
-  for (auto &G : M.getGlobalList()) {
+  for (auto &G : M.globals()) {
     if (!G.hasAttribute("genx_volatile"))
       continue;
     auto GTy = dyn_cast<StructType>(G.getValueType());

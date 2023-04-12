@@ -1,5 +1,5 @@
 // FIXME
-// UNSUPPORTED: -windows-
+// UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none --usm-level=restricted -out-root %T/memory_management_restricted %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck --match-full-lines --input-file %T/memory_management_restricted/memory_management_restricted.dp.cpp %s
 
@@ -108,6 +108,12 @@ int main(){
     // CHECK-NEXT: */
     // CHECK-NEXT: MY_ERROR_CHECKER((dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100), 0));
     MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, deviceID, nullptr));
+
+    // CHECK: /*
+    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: MY_ERROR_CHECKER((dpct::cpu_device().default_queue().prefetch(a,100), 0));
+    MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, cudaCpuDeviceId, nullptr));
 
     //CHECK: stream_array[0]->memcpy(h_A, d_A, size2);
     cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, stream_array[0]);

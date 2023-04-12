@@ -34,6 +34,8 @@
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/Path.h"
 #include "MemberExprRewriter.h"
+#include "clang/Analysis/CallGraph.h"
+#include "llvm/ADT/SCCIterator.h"
 
 #include <algorithm>
 #include <iostream>
@@ -1051,7 +1053,7 @@ void IncludesCallbacks::InclusionDirective(
     if (FileName.compare(StringRef("cuda/std/tuple")) == 0) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Tuple);
     }
-    
+
   }
 
   if (!isChildPath(CudaPath, IncludePath) &&
@@ -1954,12 +1956,18 @@ void ZeroLengthArrayRule::runRule(
   if (!(CAT->getSize().isZero()))
     return;
 
-  // Check if the array is in device code
-  const clang::FunctionDecl *FD = DpctGlobalInfo::getParentFunction(TL);
-  if (!FD)
-    return;
-  if (!(FD->getAttr<CUDADeviceAttr>()) && !(FD->getAttr<CUDAGlobalAttr>()))
-    return;
+  const clang::FieldDecl *MemberVariable =
+      DpctGlobalInfo::findAncestor<clang::FieldDecl>(TL);
+  if (MemberVariable) {
+    report(TL->getBeginLoc(), Diagnostics::ZERO_LENGTH_ARRAY, false);
+  } else {
+    const clang::FunctionDecl *FD = DpctGlobalInfo::getParentFunction(TL);
+    if (FD) {
+      // Check if the array is in device code
+      if (!(FD->getAttr<CUDADeviceAttr>()) && !(FD->getAttr<CUDAGlobalAttr>()))
+        return;
+    }
+  }
 
   // Check if the array is a shared variable
   const VarDecl* VD = DpctGlobalInfo::findAncestor<VarDecl>(TL);
@@ -1974,54 +1982,48 @@ REGISTER_RULE(ZeroLengthArrayRule, PassKind::PK_Migration)
 void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       typeLoc(
-          loc(qualType(hasDeclaration(namedDecl(
-              hasAnyName(
-                  "cudaError", "curandStatus", "cublasStatus", "CUstream",
-                  "CUstream_st", "thrust::complex", "thrust::device_vector",
-                  "thrust::device_ptr", "thrust::device_reference",
-                  "thrust::host_vector", "cublasHandle_t",
-                  "CUevent_st", "__half", "half", "__half2", "half2",
-                  "cudaMemoryAdvise", "cudaError_enum", "cudaDeviceProp",
-                  "cudaPitchedPtr", "thrust::counting_iterator",
-                  "thrust::transform_iterator", "thrust::permutation_iterator",
-                  "thrust::iterator_difference", "cusolverDnHandle_t",
-                  "cusolverDnParams_t", "gesvdjInfo_t",
-                  "thrust::device_malloc_allocator", "thrust::divides",
-                  "thrust::tuple", "thrust::maximum", "thrust::multiplies",
-                  "thrust::plus", "cudaDataType_t", "cudaError_t", "CUresult",
-                  "CUdevice", "cudaEvent_t", "cublasStatus_t", "cuComplex",
-                  "cuFloatComplex", "cuDoubleComplex", "CUevent",
-                  "cublasFillMode_t", "cublasDiagType_t", "cublasSideMode_t",
-                  "cublasOperation_t", "cusolverStatus_t", "cusolverEigType_t",
-                  "cusolverEigMode_t", "curandStatus_t", "cudaStream_t",
-                  "cusparseStatus_t", "cusparseDiagType_t",
-                  "cusparseFillMode_t", "cusparseIndexBase_t",
-                  "cusparseMatrixType_t", "cusparseOperation_t",
-                  "cusparseMatDescr_t", "cusparseHandle_t", "CUcontext",
-                  "cublasPointerMode_t", "cusparsePointerMode_t",
-                  "cublasGemmAlgo_t", "cusparseSolveAnalysisInfo_t",
-                  "cudaDataType", "cublasDataType_t", "curandState_t",
-                  "curandState", "curandStateXORWOW_t", "curandStateXORWOW",
-                  "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
-                  "curandStateMRG32k3a_t", "curandStateMRG32k3a",
-                  "thrust::minus", "thrust::negate", "thrust::logical_or",
-                  "thrust::identity", "thrust::equal_to", "thrust::less",
-                  "cudaSharedMemConfig", "curandGenerator_t", "cufftHandle",
-                  "cufftReal", "cufftDoubleReal", "cufftComplex",
-                  "cufftDoubleComplex", "cufftResult_t", "cufftResult",
-                  "cufftType_t", "cufftType", "thrust::pair", "CUdeviceptr",
-                  "cudaDeviceAttr", "CUmodule", "CUjit_option",
-                  "CUfunction", "cudaMemcpyKind",
-                  "cudaComputeMode", "__nv_bfloat16",
-                  "cooperative_groups::__v1::thread_block_tile",
-                  "cooperative_groups::__v1::thread_block",
-                  "libraryPropertyType_t", "libraryPropertyType",
-                  "cudaDataType_t", "cudaDataType", "cublasComputeType_t",
-                  "cublasAtomicsMode_t", "CUmem_advise_enum", "CUmem_advise",
-                  "thrust::tuple_element", "thrust::tuple_size", "cublasMath_t",
-                  "cudaPointerAttributes", "thrust::zip_iterator",
-                  "cusolverEigRange_t", "cudaUUID_t")
-              )))))
+          loc(qualType(hasDeclaration(namedDecl(hasAnyName(
+              "cudaError", "curandStatus", "cublasStatus", "CUstream",
+              "CUstream_st", "thrust::complex", "thrust::device_vector",
+              "thrust::device_ptr", "thrust::device_reference",
+              "thrust::host_vector", "cublasHandle_t", "CUevent_st", "__half",
+              "half", "__half2", "half2", "cudaMemoryAdvise", "cudaError_enum",
+              "cudaDeviceProp", "cudaPitchedPtr", "thrust::counting_iterator",
+              "thrust::transform_iterator", "thrust::permutation_iterator",
+              "thrust::iterator_difference", "cusolverDnHandle_t",
+              "cusolverDnParams_t", "gesvdjInfo_t",
+              "thrust::device_malloc_allocator", "thrust::divides",
+              "thrust::tuple", "thrust::maximum", "thrust::multiplies",
+              "thrust::plus", "cudaDataType_t", "cudaError_t", "CUresult",
+              "CUdevice", "cudaEvent_t", "cublasStatus_t", "cuComplex",
+              "cuFloatComplex", "cuDoubleComplex", "CUevent",
+              "cublasFillMode_t", "cublasDiagType_t", "cublasSideMode_t",
+              "cublasOperation_t", "cusolverStatus_t", "cusolverEigType_t",
+              "cusolverEigMode_t", "curandStatus_t", "cudaStream_t",
+              "cusparseStatus_t", "cusparseDiagType_t", "cusparseFillMode_t",
+              "cusparseIndexBase_t", "cusparseMatrixType_t",
+              "cusparseOperation_t", "cusparseMatDescr_t", "cusparseHandle_t",
+              "CUcontext", "cublasPointerMode_t", "cusparsePointerMode_t",
+              "cublasGemmAlgo_t", "cusparseSolveAnalysisInfo_t", "cudaDataType",
+              "cublasDataType_t", "curandState_t", "curandState",
+              "curandStateXORWOW_t", "curandStateXORWOW",
+              "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
+              "curandStateMRG32k3a_t", "curandStateMRG32k3a", "thrust::minus",
+              "thrust::negate", "thrust::logical_or", 
+              "thrust::equal_to", "thrust::less", "cudaSharedMemConfig",
+              "curandGenerator_t", "curandRngType_t", "cufftHandle",
+              "cufftReal", "cufftDoubleReal", "cufftComplex",
+              "cufftDoubleComplex", "cufftResult_t", "cufftResult",
+              "cufftType_t", "cufftType", "thrust::pair", "CUdeviceptr",
+              "cudaDeviceAttr", "CUmodule", "CUjit_option", "CUfunction",
+              "cudaMemcpyKind", "cudaComputeMode", "__nv_bfloat16",
+              "__nv_bfloat162", "cooperative_groups::__v1::thread_block_tile",
+              "cooperative_groups::__v1::thread_block", "libraryPropertyType_t",
+              "libraryPropertyType", "cudaDataType_t", "cudaDataType",
+              "cublasComputeType_t", "cublasAtomicsMode_t", "CUmem_advise_enum",
+              "CUmem_advise", "thrust::tuple_element", "thrust::tuple_size",
+              "cublasMath_t", "cudaPointerAttributes", "thrust::zip_iterator",
+              "cusolverEigRange_t", "cudaUUID_t"))))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -2158,12 +2160,6 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
   insertHeaderForTypeRule(RealTypeNameStr, BeginLoc);
   if (!Replacement.empty()) {
     insertComplexHeader(BeginLoc, Replacement);
-    if (RealTypeNameStr == "thrust::identity") {
-      // For thrust::identity the template type argument must be
-      // removed as well for correct mapping to oneapi::dpl::identity
-      auto RAngleLoc = TSL.getRAngleLoc();
-      TyLen = SM->getCharacterData(RAngleLoc) - Start + 1;
-    }
     emplaceTransformation(
         new ReplaceText(BeginLoc, TyLen, std::move(Replacement)));
     return true;
@@ -2674,10 +2670,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         TypeStr == "cuFloatComplex") {
       DpctGlobalInfo::getInstance().insertHeader(BeginLoc, HT_Complex);
     }
-    // Add '#include <oneapi/mkl/bfloat16.hpp>' directive to the file only once
-    if (TypeStr == "__nv_bfloat16") {
-      DpctGlobalInfo::getInstance().insertHeader(BeginLoc, HT_MKL_BFloat16);
-    }
     // Add '#include <dpct/lib_common_utils.hpp>' directive to the file only
     // once
     if (TypeStr == "libraryPropertyType" ||
@@ -2690,14 +2682,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         DpctGlobalInfo::getInstance().insertHeader(BeginLoc,
                                                    HT_DPCT_COMMON_Utils);
       }
-    }
-
-    if (TypeStr.rfind("identity", 0) == 0) {
-      emplaceTransformation(new ReplaceToken(
-          TL->getBeginLoc().getLocWithOffset(Lexer::MeasureTokenLength(
-              TL->getBeginLoc(), dpct::DpctGlobalInfo::getSourceManager(),
-              dpct::DpctGlobalInfo::getContext().getLangOpts())),
-          TL->getEndLoc(), ""));
     }
 
     const DeclaratorDecl *DD = nullptr;
@@ -3022,6 +3006,17 @@ void VectorTypeMemberAccessRule::renameMemberField(const MemberExpr *ME) {
     return emplaceTransformation(new ReplaceText(Begin, Length, ""));
   }
   std::string MemberName = ME->getMemberNameInfo().getAsString();
+  if (MapNames::VectorTypes2MArray.count(BaseTy) &&
+      MapNames::MArrayMemberNamesMap.count(MemberName)) {
+    auto Begin = ME->getOperatorLoc();
+    auto End =
+        Lexer::getLocForEndOfToken(SM.getSpellingLoc(ME->getMemberLoc()), 0, SM,
+                                   DpctGlobalInfo::getContext().getLangOpts());
+    auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
+    auto MArrayIdx = MapNames::MArrayMemberNamesMap.find(MemberName)->second;
+    return emplaceTransformation(
+        new ReplaceText(Begin, Length, std::move(MArrayIdx)));
+  }
   if (MapNames::replaceName(MapNames::MemberNamesMap, MemberName))
     emplaceTransformation(
         new RenameFieldInMemberExpr(ME, std::move(MemberName)));
@@ -3967,12 +3962,14 @@ void BLASEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(BLASEnumsRule, PassKind::PK_Migration)
 
 // Rule for RANDOM enums.
-// Migrate RANDOM status values to corresponding int values
 void RandomEnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       declRefExpr(to(enumConstantDecl(matchesName("CURAND_STATUS.*"))))
           .bind("RANDOMStatusConstants"),
       this);
+  MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName("CURAND_RNG.*"))))
+                    .bind("RandomTypeEnum"),
+                this);
 }
 
 void RandomEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -3980,6 +3977,23 @@ void RandomEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
           getNodeAsType<DeclRefExpr>(Result, "RANDOMStatusConstants")) {
     auto *EC = cast<EnumConstantDecl>(DE->getDecl());
     emplaceTransformation(new ReplaceStmt(DE, toString(EC->getInitVal(), 10)));
+  }
+  if (const DeclRefExpr *DE =
+          getNodeAsType<DeclRefExpr>(Result, "RandomTypeEnum")) {
+    std::string EnumStr = DE->getNameInfo().getName().getAsString();
+    auto Search = MapNames::RandomEngineTypeMap.find(EnumStr);
+    if (Search == MapNames::RandomEngineTypeMap.end()) {
+      report(DE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, EnumStr);
+      return;
+    }
+    if (EnumStr == "CURAND_RNG_PSEUDO_XORWOW" ||
+        EnumStr == "CURAND_RNG_QUASI_SOBOL64" ||
+        EnumStr == "CURAND_RNG_QUASI_SCRAMBLED_SOBOL64") {
+      report(DE->getBeginLoc(), Diagnostics::DIFFERENT_GENERATOR, false);
+    } else if (EnumStr == "CURAND_RNG_QUASI_SCRAMBLED_SOBOL32") {
+      report(DE->getBeginLoc(), Diagnostics::DIFFERENT_BASIC_GENERATOR, false);
+    }
+    emplaceTransformation(new ReplaceStmt(DE, Search->second));
   }
 }
 
@@ -4111,22 +4125,19 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   if (!CE->getDirectCallee())
     return;
 
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  auto SL = SM.getExpansionLoc(CE->getBeginLoc());
-  std::string Key =
-      SM.getFilename(SL).str() + std::to_string(SM.getDecomposedLoc(SL).second);
-  DpctGlobalInfo::updateInitSuffixIndexInRule(
-      DpctGlobalInfo::getSuffixIndexInitValue(Key));
-
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
   StringRef FuncNameRef(FuncName);
-
-  LibraryMigrationFlags Flags;
-  LibraryMigrationStrings ReplaceStrs;
-  LibraryMigrationLocations Locations;
-  initVars(CE, nullptr, nullptr, Flags, ReplaceStrs, Locations);
-  Flags.IsAssigned = IsAssigned;
+  if (FuncNameRef.endswith("csrmv")) {
+    report(
+        DpctGlobalInfo::getSourceManager().getExpansionLoc(CE->getBeginLoc()),
+        Diagnostics::UNSUPPORT_MATRIX_TYPE, true,
+        "general/symmetric/triangular");
+  } else if (FuncNameRef.endswith("csrmm")) {
+    report(
+        DpctGlobalInfo::getSourceManager().getExpansionLoc(CE->getBeginLoc()),
+        Diagnostics::UNSUPPORT_MATRIX_TYPE, true, "general");
+  }
 
   if (MapNames::SPARSEAPIWithRewriter.find(FuncName) !=
       MapNames::SPARSEAPIWithRewriter.end()) {
@@ -4134,354 +4145,7 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
     return;
-  } else if (FuncName == "cusparseCreate" || FuncName == "cusparseDestroy" ||
-             FuncName == "cusparseSetStream" || FuncName == "cusparseGetStream") {
-    Flags.NeedUseLambda = false;
-    if (FuncName == "cusparseCreate") {
-      std::string LHS = getDrefName(CE->getArg(0));
-      if (isPlaceholderIdxDuplicated(CE))
-        return;
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
-      ReplaceStrs.Repl =
-          LHS + " = &{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
-    } else if (FuncName == "cusparseDestroy") {
-      dpct::ExprAnalysis EA(CE->getArg(0));
-      ReplaceStrs.Repl = EA.getReplacedString() + " = nullptr";
-    } else if (FuncName == "cusparseSetStream") {
-      dpct::ExprAnalysis EA0(CE->getArg(0));
-      dpct::ExprAnalysis EA1(CE->getArg(1));
-      ReplaceStrs.Repl =
-          EA0.getReplacedString() + " = " + EA1.getReplacedString();
-    } else if (FuncName == "cusparseGetStream") {
-      dpct::ExprAnalysis EA0(CE->getArg(0));
-      std::string LHS = getDrefName(CE->getArg(1));
-      ReplaceStrs.Repl = LHS + " = " + EA0.getReplacedString();
-    }
-  } else if (FuncName == "cusparseCreateMatDescr") {
-    Flags.NeedUseLambda = false;
-    std::string LHS = getDrefName(CE->getArg(0));
-    ReplaceStrs.Repl = LHS + " = oneapi::mkl::index_base::zero";
-  } else if (FuncName == "cusparseGetPointerMode" ||
-             FuncName == "cusparseSetPointerMode" ||
-             FuncName == "cusparseScsrsv_analysis" ||
-             FuncName == "cusparseDcsrsv_analysis" ||
-             FuncName == "cusparseCcsrsv_analysis" ||
-             FuncName == "cusparseZcsrsv_analysis" ||
-             FuncName == "cusparseCreateSolveAnalysisInfo" ||
-             FuncName == "cusparseDestroySolveAnalysisInfo") {
-    std::string Msg = "this call is redundant in SYCL.";
-    if (IsAssigned) {
-      report(Locations.PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED_0, false,
-             FuncName, Msg);
-      emplaceTransformation(new ReplaceStmt(CE, false, "0"));
-    } else {
-      report(Locations.PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED, false,
-             FuncName, Msg);
-      emplaceTransformation(new ReplaceStmt(CE, false, ""));
-    }
-    return;
-  } else if (FuncName == "cusparseScsrmv" || FuncName == "cusparseDcsrmv" ||
-             FuncName == "cusparseCcsrmv" || FuncName == "cusparseZcsrmv") {
-    std::string BufferType;
-    if (FuncName == "cusparseScsrmv")
-      BufferType = "float";
-    else if (FuncName == "cusparseDcsrmv")
-      BufferType = "double";
-    else if (FuncName == "cusparseCcsrmv")
-      BufferType = "std::complex<float>";
-    else
-      BufferType = "std::complex<double>";
-    int ArgNum = CE->getNumArgs();
-    std::vector<std::string> CallExprArguReplVec;
-    for (int i = 0; i < ArgNum; ++i) {
-      ExprAnalysis EA;
-      EA.analyze(CE->getArg(i));
-      CallExprArguReplVec.push_back(EA.getReplacedString());
-    }
-
-    std::string CSRValA, CSRRowPtrA, CSRColIndA, X, Y;
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-      auto ProcessBuffer = [&](const Expr *E, const std::string TypeStr) {
-        std::string Decl;
-        requestFeature(HelperFeatureEnum::Memory_get_buffer_T, E);
-        std::string BufferName =
-            getBufferNameAndDeclStr(E, TypeStr, ReplaceStrs.IndentStr, Decl);
-        ReplaceStrs.PrefixInsertStr = ReplaceStrs.PrefixInsertStr + Decl;
-        return BufferName;
-      };
-      CSRValA = ProcessBuffer(CE->getArg(7), BufferType);
-      CSRRowPtrA = ProcessBuffer(CE->getArg(8), "int");
-      CSRColIndA = ProcessBuffer(CE->getArg(9), "int");
-      X = ProcessBuffer(CE->getArg(10), BufferType);
-      Y = ProcessBuffer(CE->getArg(12), BufferType);
-    } else {
-      CSRValA = CallExprArguReplVec[7];
-      CSRRowPtrA = CallExprArguReplVec[8];
-      CSRColIndA = CallExprArguReplVec[9];
-      X = CallExprArguReplVec[10];
-      Y = CallExprArguReplVec[12];
-    }
-
-    std::string MatrixHandleName =
-        "mat_handle_ct" +
-        std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-    ReplaceStrs.PrefixInsertStr =
-        ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::matrix_handle_t " +
-        MatrixHandleName + ";" + getNL() + ReplaceStrs.IndentStr;
-    ReplaceStrs.PrefixInsertStr = ReplaceStrs.PrefixInsertStr +
-                                  "oneapi::mkl::sparse::init_matrix_handle(&" +
-                                  MatrixHandleName + ");" + getNL() +
-                                  ReplaceStrs.IndentStr;
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-      ReplaceStrs.PrefixInsertStr =
-          ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(*" +
-          CallExprArguReplVec[0] + ", " + MatrixHandleName + ", " +
-          CallExprArguReplVec[2] + ", " + CallExprArguReplVec[3] + ", " +
-          CallExprArguReplVec[6] + "->get_index_base(), " + CSRRowPtrA + ", " +
-          CSRColIndA + ", " + CSRValA + ");" + getNL() + ReplaceStrs.IndentStr;
-    } else {
-      if (FuncName == "cusparseScsrmv" || FuncName == "cusparseDcsrmv")
-        ReplaceStrs.PrefixInsertStr =
-            ReplaceStrs.PrefixInsertStr +
-            "oneapi::mkl::sparse::set_csr_data(*" + CallExprArguReplVec[0] +
-            ", " + MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
-            CallExprArguReplVec[3] + ", " + CallExprArguReplVec[6] +
-            "->get_index_base(), const_cast<int*>(" + CSRRowPtrA +
-            "), const_cast<int*>(" + CSRColIndA + "), const_cast<" +
-            BufferType + "*>(" + CSRValA + "));" + getNL() +
-            ReplaceStrs.IndentStr;
-      else
-        ReplaceStrs.PrefixInsertStr =
-            ReplaceStrs.PrefixInsertStr +
-            "oneapi::mkl::sparse::set_csr_data(*" + CallExprArguReplVec[0] +
-            ", " + MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
-            CallExprArguReplVec[3] + ", " + CallExprArguReplVec[6] +
-            "->get_index_base(), const_cast<int*>(" + CSRRowPtrA +
-            "), const_cast<int*>(" + CSRColIndA + "), (" + BufferType + "*)" +
-            CSRValA + ");" + getNL() + ReplaceStrs.IndentStr;
-    }
-    ReplaceStrs.SuffixInsertStr =
-        ReplaceStrs.SuffixInsertStr + getNL() + ReplaceStrs.IndentStr +
-        "oneapi::mkl::sparse::release_matrix_handle(*" +
-        CallExprArguReplVec[0] + ", &" + MatrixHandleName + ");";
-
-    std::string TransStr;
-    Expr::EvalResult ER;
-    if (CE->getArg(1)->EvaluateAsInt(ER, *Result.Context)) {
-      int64_t Value = ER.Val.getInt().getExtValue();
-      if (Value == 0) {
-        TransStr = "oneapi::mkl::transpose::nontrans";
-      } else if (Value == 1) {
-        TransStr = "oneapi::mkl::transpose::trans";
-      } else {
-        TransStr = "oneapi::mkl::transpose::conjtrans";
-      }
-    } else {
-      const CStyleCastExpr *CSCE = nullptr;
-      if (CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(1))) {
-        ExprAnalysis EA(CSCE->getSubExpr());
-        TransStr = MapNames::getDpctNamespace() + "get_transpose(" +
-                   EA.getReplacedString() + ")";
-        requestFeature(HelperFeatureEnum::BlasUtils_get_transpose, CE);
-
-      } else {
-        TransStr = CallExprArguReplVec[1];
-      }
-    }
-
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-      ReplaceStrs.Repl = "oneapi::mkl::sparse::gemv(*" +
-                         CallExprArguReplVec[0] + ", " + TransStr + ", " +
-                         getValueStr(CE->getArg(5), CallExprArguReplVec[5],
-                                     CallExprArguReplVec[0], BufferType) +
-                         ", " + MatrixHandleName + ", " + X + ", " +
-                         getValueStr(CE->getArg(11), CallExprArguReplVec[11],
-                                     CallExprArguReplVec[0], BufferType) +
-                         ", " + Y + ")";
-    } else {
-      if (FuncName == "cusparseScsrmv" || FuncName == "cusparseDcsrmv")
-        ReplaceStrs.Repl = "oneapi::mkl::sparse::gemv(*" +
-                           CallExprArguReplVec[0] + ", " + TransStr + ", " +
-                           getValueStr(CE->getArg(5), CallExprArguReplVec[5],
-                                       CallExprArguReplVec[0], BufferType) +
-                           ", " + MatrixHandleName + ", const_cast<" +
-                           BufferType + "*>(" + X + "), " +
-                           getValueStr(CE->getArg(11), CallExprArguReplVec[11],
-                                       CallExprArguReplVec[0], BufferType) +
-                           ", " + Y + ")";
-      else
-        ReplaceStrs.Repl = "oneapi::mkl::sparse::gemv(*" +
-                           CallExprArguReplVec[0] + ", " + TransStr + ", " +
-                           getValueStr(CE->getArg(5), CallExprArguReplVec[5],
-                                       CallExprArguReplVec[0], BufferType) +
-                           ", " + MatrixHandleName + ", (" + BufferType + "*)" +
-                           X + ", " +
-                           getValueStr(CE->getArg(11), CallExprArguReplVec[11],
-                                       CallExprArguReplVec[0], BufferType) +
-                           ", (" + BufferType + "*)" + Y + ")";
-    }
-  } else if (FuncName == "cusparseScsrmm" || FuncName == "cusparseDcsrmm" ||
-             FuncName == "cusparseCcsrmm" || FuncName == "cusparseZcsrmm") {
-    std::string BufferType;
-    if (FuncName == "cusparseScsrmm")
-      BufferType = "float";
-    else if (FuncName == "cusparseDcsrmm")
-      BufferType = "double";
-    else if (FuncName == "cusparseCcsrmm")
-      BufferType = "std::complex<float>";
-    else
-      BufferType = "std::complex<double>";
-    int ArgNum = CE->getNumArgs();
-    std::vector<std::string> CallExprArguReplVec;
-    for (int i = 0; i < ArgNum; ++i) {
-      ExprAnalysis EA;
-      EA.analyze(CE->getArg(i));
-      CallExprArguReplVec.push_back(EA.getReplacedString());
-    }
-
-    std::string CSRValA, CSRRowPtrA, CSRColIndA, B, C;
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-      auto ProcessBuffer = [&](const Expr *E, const std::string TypeStr) {
-        std::string Decl;
-        requestFeature(HelperFeatureEnum::Memory_get_buffer_T, E);
-        std::string BufferName =
-            getBufferNameAndDeclStr(E, TypeStr, ReplaceStrs.IndentStr, Decl);
-        ReplaceStrs.PrefixInsertStr = ReplaceStrs.PrefixInsertStr + Decl;
-        return BufferName;
-      };
-      CSRValA = ProcessBuffer(CE->getArg(8), BufferType);
-      CSRRowPtrA = ProcessBuffer(CE->getArg(9), "int");
-      CSRColIndA = ProcessBuffer(CE->getArg(10), "int");
-      B = ProcessBuffer(CE->getArg(11), BufferType);
-      C = ProcessBuffer(CE->getArg(14), BufferType);
-    } else {
-      CSRValA = CallExprArguReplVec[8];
-      CSRRowPtrA = CallExprArguReplVec[9];
-      CSRColIndA = CallExprArguReplVec[10];
-      B = CallExprArguReplVec[11];
-      C = CallExprArguReplVec[14];
-    }
-
-    std::string MatrixHandleName =
-        "mat_handle_ct" +
-        std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
-    ReplaceStrs.PrefixInsertStr =
-        ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::matrix_handle_t " +
-        MatrixHandleName + ";" + getNL() + ReplaceStrs.IndentStr;
-    ReplaceStrs.PrefixInsertStr = ReplaceStrs.PrefixInsertStr +
-                                  "oneapi::mkl::sparse::init_matrix_handle(&" +
-                                  MatrixHandleName + ");" + getNL() +
-                                  ReplaceStrs.IndentStr;
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-      ReplaceStrs.PrefixInsertStr =
-          ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(*" +
-          CallExprArguReplVec[0] + ", " + MatrixHandleName + ", " +
-          CallExprArguReplVec[2] + ", " + CallExprArguReplVec[4] + ", " +
-          CallExprArguReplVec[7] + "->get_index_base(), " + CSRRowPtrA + ", " +
-          CSRColIndA + ", " + CSRValA + ");" + getNL() + ReplaceStrs.IndentStr;
-    } else {
-      if (FuncName == "cusparseScsrmm" || FuncName == "cusparseDcsrmm")
-        ReplaceStrs.PrefixInsertStr =
-            ReplaceStrs.PrefixInsertStr +
-            "oneapi::mkl::sparse::set_csr_data(*" + CallExprArguReplVec[0] +
-            ", " + MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
-            CallExprArguReplVec[4] + ", " + CallExprArguReplVec[7] +
-            "->get_index_base(), const_cast<int*>(" + CSRRowPtrA +
-            "), const_cast<int*>(" + CSRColIndA + "), const_cast<" +
-            BufferType + "*>(" + CSRValA + "));" + getNL() +
-            ReplaceStrs.IndentStr;
-      else
-        ReplaceStrs.PrefixInsertStr =
-            ReplaceStrs.PrefixInsertStr +
-            "oneapi::mkl::sparse::set_csr_data(*" + CallExprArguReplVec[0] +
-            ", " + MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
-            CallExprArguReplVec[4] + ", " + CallExprArguReplVec[7] +
-            "->get_index_base(), const_cast<int*>(" + CSRRowPtrA +
-            "), const_cast<int*>(" + CSRColIndA + "), (" + BufferType + "*)" +
-            CSRValA + ");" + getNL() + ReplaceStrs.IndentStr;
-    }
-    ReplaceStrs.SuffixInsertStr =
-        ReplaceStrs.SuffixInsertStr + getNL() + ReplaceStrs.IndentStr +
-        "oneapi::mkl::sparse::release_matrix_handle(*" +
-        CallExprArguReplVec[0] + ", &" + MatrixHandleName + ");";
-
-    std::string TransStr;
-    Expr::EvalResult ER;
-    if (CE->getArg(1)->EvaluateAsInt(ER, *Result.Context)) {
-      int64_t Value = ER.Val.getInt().getExtValue();
-      if (Value == 0) {
-        TransStr = "oneapi::mkl::transpose::nontrans";
-      } else if (Value == 1) {
-        TransStr = "oneapi::mkl::transpose::trans";
-      } else {
-        TransStr = "oneapi::mkl::transpose::conjtrans";
-      }
-    } else {
-      const CStyleCastExpr *CSCE = nullptr;
-      if (CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(1))) {
-        ExprAnalysis EA(CSCE->getSubExpr());
-        TransStr = MapNames::getDpctNamespace() + "get_transpose(" +
-                   EA.getReplacedString() + ")";
-        requestFeature(HelperFeatureEnum::BlasUtils_get_transpose, CE);
-      } else {
-        TransStr = CallExprArguReplVec[1];
-      }
-    }
-
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-      ReplaceStrs.Repl =
-          "oneapi::mkl::sparse::gemm(*" + CallExprArguReplVec[0] +
-          ", oneapi::mkl::layout::row_major, " + TransStr +
-          ", oneapi::mkl::transpose::nontrans, " +
-          getValueStr(CE->getArg(6), CallExprArguReplVec[6],
-                      CallExprArguReplVec[0], BufferType) +
-          ", " + MatrixHandleName + ", " + B + ", " + CallExprArguReplVec[3] +
-          ", " + CallExprArguReplVec[12] + ", " +
-          getValueStr(CE->getArg(13), CallExprArguReplVec[13],
-                      CallExprArguReplVec[0], BufferType) +
-          ", " + C + ", " + CallExprArguReplVec[15] + ")";
-    } else {
-      if (FuncName == "cusparseScsrmm" || FuncName == "cusparseDcsrmm")
-        ReplaceStrs.Repl =
-            "oneapi::mkl::sparse::gemm(*" + CallExprArguReplVec[0] +
-            ", oneapi::mkl::layout::row_major, " + TransStr +
-            ", oneapi::mkl::transpose::nontrans, " +
-            getValueStr(CE->getArg(6), CallExprArguReplVec[6],
-                        CallExprArguReplVec[0], BufferType) +
-            ", " + MatrixHandleName + ", const_cast<" + BufferType + "*>(" + B +
-            "), " + CallExprArguReplVec[3] + ", " + CallExprArguReplVec[12] +
-            ", " +
-            getValueStr(CE->getArg(13), CallExprArguReplVec[13],
-                        CallExprArguReplVec[0], BufferType) +
-            ", " + C + ", " + CallExprArguReplVec[15] + ")";
-      else
-        ReplaceStrs.Repl =
-            "oneapi::mkl::sparse::gemm(*" + CallExprArguReplVec[0] +
-            ", oneapi::mkl::layout::row_major, " + TransStr +
-            ", oneapi::mkl::transpose::nontrans, " +
-            getValueStr(CE->getArg(6), CallExprArguReplVec[6],
-                        CallExprArguReplVec[0], BufferType) +
-            ", " + MatrixHandleName + ", (" + BufferType + "*)" + B + ", " +
-            CallExprArguReplVec[3] + ", " + CallExprArguReplVec[12] + ", " +
-            getValueStr(CE->getArg(13), CallExprArguReplVec[13],
-                        CallExprArguReplVec[0], BufferType) +
-            ", (" + BufferType + "*)" + C + ", " + CallExprArguReplVec[15] +
-            ")";
-    }
   }
-
-  if (FuncNameRef.endswith("csrmv") || FuncNameRef.endswith("csrmm")) {
-    if (Flags.NeedUseLambda && Flags.CanAvoidUsingLambda && !Flags.IsMacroArg) {
-      report(Locations.OuterInsertLoc, Diagnostics::UNSUPPORT_MATRIX_TYPE, true,
-             false);
-    } else {
-      report(Locations.PrefixInsertLoc, Diagnostics::UNSUPPORT_MATRIX_TYPE,
-             true, false);
-    }
-  }
-
-  addReplacementForLibraryAPI(Flags, ReplaceStrs, Locations, FuncName, CE);
 }
 
 REGISTER_RULE(SPBLASFunctionCallRule, PassKind::PK_Migration)
@@ -4559,26 +4223,6 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
   if (FuncName == "curandCreateGenerator" ||
       FuncName == "curandCreateGeneratorHost") {
-    std::string EnumStr = ExprAnalysis::ref(CE->getArg(1));
-    if (MapNames::RandomEngineTypeMap.find(EnumStr) ==
-        MapNames::RandomEngineTypeMap.end()) {
-      report(PrefixInsertLoc, Diagnostics::NOT_SUPPORTED_PARAMETER, false,
-             FuncName, "parameter " + EnumStr + " is unsupported");
-      return;
-    }
-
-    if (EnumStr == "CURAND_RNG_PSEUDO_XORWOW" ||
-        EnumStr == "CURAND_RNG_QUASI_SOBOL64" ||
-        EnumStr == "CURAND_RNG_QUASI_SCRAMBLED_SOBOL64") {
-      report(CE->getArg(1)->getBeginLoc(), Diagnostics::DIFFERENT_GENERATOR,
-             false);
-    } else if (EnumStr == "CURAND_RNG_QUASI_SCRAMBLED_SOBOL32") {
-      report(CE->getArg(1)->getBeginLoc(),
-             Diagnostics::DIFFERENT_BASIC_GENERATOR, false);
-    }
-
-    std::string EngineType =
-        MapNames::RandomEngineTypeMap.find(EnumStr)->second;
     const auto *const Arg0 = CE->getArg(0);
     requestFeature(HelperFeatureEnum::RngUtils_create_host_rng, CE);
     if (Arg0->getStmtClass() == Stmt::UnaryOperatorClass) {
@@ -4590,13 +4234,14 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         return emplaceTransformation(new ReplaceStmt(
             CE, false,
             buildString(ExprAnalysis::ref(SE), " = dpct::rng::create_host_rng(",
-                        EngineType, ")")));
+                        ExprAnalysis::ref(CE->getArg(1)), ")")));
       }
     }
-    return emplaceTransformation(new ReplaceStmt(
-        CE, false,
-        buildString("*(", ExprAnalysis::ref(CE->getArg(0)),
-                    ") = dpct::rng::create_host_rng(", EngineType, ")")));
+    return emplaceTransformation(
+        new ReplaceStmt(CE, false,
+                        buildString("*(", ExprAnalysis::ref(CE->getArg(0)),
+                                    ") = dpct::rng::create_host_rng(",
+                                    ExprAnalysis::ref(CE->getArg(1)), ")")));
   }
   if (FuncName == "curandDestroyGenerator") {
     return emplaceTransformation(new ReplaceStmt(
@@ -4743,28 +4388,32 @@ void DeviceRandomFunctionCallRule::runRule(
       FirstOffsetArg = "static_cast<std::uint64_t>(" + RNGOffset + ")";
     }
 
-    std::string Factor = "8";
-    if (GeneratorType == "dpct::rng::device::rng_generator<oneapi::"
-                         "mkl::rng::device::philox4x32x10<1>>" &&
-        (DRefArg3Type == "curandStatePhilox4_32_10_t" ||
-         DRefArg3Type == "curandStatePhilox4_32_10")) {
-      Factor = "4";
-    }
-
-    if (needExtraParens(CE->getArg(1))) {
-      RNGSubseq = "(" + RNGSubseq + ")";
-    }
-    if (IsRNGSubseqLiteral) {
-      SecondOffsetArg = RNGSubseq + " * " + Factor;
+    std::string ReplStr;
+    if (DRefArg3Type == "curandStateXORWOW") {
+      report(FuncNameBegin, Diagnostics::SUBSEQUENCE_IGNORED, false, RNGSubseq);
+      ReplStr = RNGStateName + " = " + GeneratorType + "(" + RNGSeed + ", " +
+                FirstOffsetArg + ")";
     } else {
-      SecondOffsetArg =
-          "static_cast<std::uint64_t>(" + RNGSubseq + " * " + Factor + ")";
+      std::string Factor = "8";
+      if (GeneratorType == "dpct::rng::device::rng_generator<oneapi::"
+                           "mkl::rng::device::philox4x32x10<1>>" &&
+          DRefArg3Type == "curandStatePhilox4_32_10") {
+        Factor = "4";
+      }
+
+      if (needExtraParens(CE->getArg(1))) {
+        RNGSubseq = "(" + RNGSubseq + ")";
+      }
+      if (IsRNGSubseqLiteral) {
+        SecondOffsetArg = RNGSubseq + " * " + Factor;
+      } else {
+        SecondOffsetArg =
+            "static_cast<std::uint64_t>(" + RNGSubseq + " * " + Factor + ")";
+      }
+
+      ReplStr = RNGStateName + " = " + GeneratorType + "(" + RNGSeed + ", {" +
+                FirstOffsetArg + ", " + SecondOffsetArg + "})";
     }
-
-    std::string ReplStr = RNGStateName + " = " + GeneratorType + "(" + RNGSeed +
-                          ", {" + FirstOffsetArg + ", " + SecondOffsetArg +
-                          "})";
-
     emplaceTransformation(
         new ReplaceText(FuncNameBegin, FuncCallLength, std::move(ReplStr)));
   } else if (FuncName == "skipahead" || FuncName == "skipahead_sequence" ||
@@ -9244,6 +8893,28 @@ void KernelCallRule::removeTrailingSemicolon(
 
 REGISTER_RULE(KernelCallRule, PassKind::PK_Analysis)
 
+
+bool isRecursiveDeviceFuncDecl(const FunctionDecl* FD) {
+  // Build call graph for FunctionDecl and look for cycles in call graph.
+  // Emit the warning message when the recursive call exists in kernel function.
+  if (!FD) return false;
+  CallGraph CG;
+  CG.addToCallGraph(const_cast<FunctionDecl *>(FD));
+  bool FDIsRecursive = false;
+  for (llvm::scc_iterator<CallGraph *> SCCI = llvm::scc_begin(&CG),
+                              SCCE = llvm::scc_end(&CG);
+                              SCCI != SCCE; ++SCCI) {
+    if (SCCI.hasCycle()) FDIsRecursive = true;
+  }
+  return FDIsRecursive;
+}
+
+bool isRecursiveDeviceCallExpr(const CallExpr* CE) {
+  if (isRecursiveDeviceFuncDecl(CE->getDirectCallee()))
+    return true;
+  return false;
+}
+
 // __device__ function call information collection
 void DeviceFunctionDeclRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto DeviceFunctionMatcher =
@@ -9322,6 +8993,16 @@ void DeviceFunctionDeclRule::runRule(
   if (FD->isVariadic()) {
     report(FD->getBeginLoc(), Warnings::DEVICE_VARIADIC_FUNCTION, false);
   }
+
+  if (FD->isVirtualAsWritten()) {
+    report(FD->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
+                              false, "Virtual functions");
+  }
+
+  if(isRecursiveDeviceFuncDecl(FD))
+    report(FD->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
+                            false, "Recursive functions");
+
   FuncInfo = DeviceFunctionDecl::LinkRedecls(FD);
   if (!FuncInfo)
     return;
@@ -9337,8 +9018,20 @@ void DeviceFunctionDeclRule::runRule(
   if (isLambda(FD) && !FuncInfo->isLambda()) {
     FuncInfo->setLambda();
   }
-
+  if (DpctGlobalInfo::isOptimizeMigration() && !FD->isInlined() &&
+                                !FuncInfo->IsAlwaysInlineDevFunc()) {
+    FuncInfo->setAlwaysInlineDevFunc();
+  }
   if (auto CE = getAssistNodeAsType<CallExpr>(Result, "callExpr")) {
+    if (CE->getDirectCallee()) {
+      if (CE->getDirectCallee()->isVirtualAsWritten())
+        report(CE->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
+                        false, "Virtual functions");
+    }
+
+    if (isRecursiveDeviceCallExpr(CE))
+      report(CE->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
+                                false, "Recursive functions");
     FuncInfo->addCallee(CE);
   } else if (CE = getAssistNodeAsType<CallExpr>(Result, "PrintfExpr")) {
     if (FD->hasAttr<CUDAHostAttr>()) {
@@ -10328,7 +10021,7 @@ void MemoryMigrationRule::mallocMigration(
     }
   } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost" ||
              Name == "cuMemHostAlloc" || Name == "cuMemAllocHost_v2" ||
-             Name == "cuMemAllocPitch_v2") {
+             Name == "cuMemAllocPitch_v2" || Name == "cudaMallocPitch") {
     ExprAnalysis EA(C);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
@@ -10397,7 +10090,7 @@ void MemoryMigrationRule::mallocMigration(
         report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       }
     }
-  } else if (Name == "cudaMallocPitch" || Name == "cudaMalloc3D") {
+  } else if (Name == "cudaMalloc3D") {
     std::ostringstream OS;
     std::string Type;
     if (IsAssigned)
@@ -10416,9 +10109,6 @@ void MemoryMigrationRule::mallocMigration(
     emplaceTransformation(removeArg(C, 0, *Result.SourceManager));
     std::ostringstream OS2;
     printDerefOp(OS2, C->getArg(1));
-    if (Name == "cudaMallocPitch") {
-      emplaceTransformation(new ReplaceStmt(C->getArg(1), OS2.str()));
-    }
     if (IsAssigned) {
       emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
@@ -11020,11 +10710,14 @@ void MemoryMigrationRule::prefetchMigration(
 
     // In clang "define NULL __null"
     if (StmtStrArg3 == "0" || StmtStrArg3 == "") {
+      const auto Prefix =
+          MapNames::getDpctNamespace() +
+          (StmtStrArg2 == "cudaCpuDeviceId"
+               ? +"cpu_device()"
+               : "dev_mgr::instance().get_device(" + StmtStrArg2 + ")");
       requestFeature(HelperFeatureEnum::Device_dev_mgr_get_device, C);
       requestFeature(HelperFeatureEnum::Device_device_ext_default_queue, C);
-      Replacement = MapNames::getDpctNamespace() +
-                    "dev_mgr::instance().get_device(" + StmtStrArg2 +
-                    ").default_queue().prefetch(" + StmtStrArg0 + "," +
+      Replacement = Prefix + ".default_queue().prefetch(" + StmtStrArg0 + "," +
                     StmtStrArg1 + ")";
     } else {
       if (SM->getCharacterData(C->getArg(3)->getBeginLoc()) -
@@ -12076,14 +11769,6 @@ void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
     std::string Name = FD->getNameInfo().getName().getAsString();
     if (Name == "__brev" || Name == "__brevll") {
       requestFeature(HelperFeatureEnum::Util_reverse_bits, CE);
-    } else if (Name == "__vmaxs4" || Name == "__vmaxu2") {
-      requestFeature(HelperFeatureEnum::Util_vectorized_max, CE);
-    } else if (Name == "__vminu2" || Name == "__vminu4") {
-      requestFeature(HelperFeatureEnum::Util_vectorized_min, CE);
-    } else if (Name == "__vcmpgtu2" || Name == "__vcmpgtu4") {
-      requestFeature(HelperFeatureEnum::Util_vectorized_isgreater_T, CE);
-      requestFeature(HelperFeatureEnum::Util_vectorized_isgreater_unsigned,
-                     CE);
     } else if (Name == "__byte_perm") {
       requestFeature(HelperFeatureEnum::Util_byte_level_permute, CE);
     } else if (Name == "__ffs" || Name == "__ffsll") {
@@ -15113,7 +14798,7 @@ void CudaExtentRule::runRule(
   // struct Foo { cudaExtent e; Foo() : e() {} }; -> struct Foo { sycl::range<3> e; Foo() : e{0, 0, 0} {} };
   if (const CXXConstructExpr *Ctor =
           getNodeAsType<CXXConstructExpr>(Result, "defaultCtor")) {
-    
+
     // Ignore implicit move/copy ctor
     if (Ctor->getNumArgs() != 0)
       return;
@@ -15121,7 +14806,7 @@ void CudaExtentRule::runRule(
     SourceRange SR = Ctor->getParenOrBraceRange();
     auto &SM = DpctGlobalInfo::getSourceManager();
     std::string Replacement = "{0, 0, 0}";
-    
+
     if (SR.isInvalid()) {
       auto CtorLoc = Ctor->getLocation().isMacroID()
                          ? SM.getSpellingLoc(Ctor->getLocation())

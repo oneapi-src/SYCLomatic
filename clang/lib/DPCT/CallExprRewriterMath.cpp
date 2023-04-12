@@ -653,12 +653,6 @@ std::optional<std::string> MathTypeCastRewriter::rewrite() {
     auto MigratedArg1 = getMigratedArgWithExtraParens(1);
     OS << MapNames::getClNamespace() + "half2{" << MigratedArg0 << "[1], "
        << MigratedArg1 << "[1]}";
-  } else if (FuncName == "__float2bfloat16") {
-    DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), HT_MKL_BFloat16);
-    OS << "oneapi::mkl::bfloat16(" << MigratedArg0 << ")";
-  } else if (FuncName == "__bfloat162float") {
-    DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), HT_MKL_BFloat16);
-    OS << "static_cast<float>(" << MigratedArg0 << ")";
   } else {
     //__half2short_rd and __half2float
     static SSMap TypeMap{{"ll", "long long"},
@@ -1054,27 +1048,9 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     OS << MapNames::getClNamespace(false, true) << "exp(" << MigratedArg0 << "*"
        << MigratedArg0 << ")*" << TargetCalleeName << "(" << MigratedArg0
        << ")";
-  } else if (FuncName == "norm3d" || FuncName == "norm3df") {
-    OS << TargetCalleeName << "(" << MapNames::getClNamespace() << "float3("
-       << MigratedArg0 << ", " << getMigratedArg(1) << ", " << getMigratedArg(2)
-       << "))";
-  } else if (FuncName == "norm4d" || FuncName == "norm4df") {
-    OS << TargetCalleeName << "(" << MapNames::getClNamespace() << "float4("
-       << MigratedArg0 << ", " << getMigratedArg(1) << ", " << getMigratedArg(2)
-       << ", " << getMigratedArg(3) << "))";
   } else if (FuncName == "rcbrt" || FuncName == "rcbrtf") {
     OS << MapNames::getClNamespace(false, true) << "native::recip((float)"
        << TargetCalleeName << "(" << getMigratedArg(0) << "))";
-  } else if (FuncName == "rnorm3d" || FuncName == "rnorm3df") {
-    OS << MapNames::getClNamespace(false, true) << "native::recip("
-       << TargetCalleeName << "(" << MapNames::getClNamespace() << "float3("
-       << MigratedArg0 << ", " << getMigratedArg(1) << ", " << getMigratedArg(2)
-       << ")))";
-  } else if (FuncName == "rnorm4d" || FuncName == "rnorm4df") {
-    OS << MapNames::getClNamespace(false, true) << "native::recip("
-       << TargetCalleeName << "(" << MapNames::getClNamespace() << "float4("
-       << MigratedArg0 << ", " << getMigratedArg(1) << ", " << getMigratedArg(2)
-       << ", " << getMigratedArg(3) << ")))";
   } else if (FuncName == "scalbln" || FuncName == "scalblnf" ||
              FuncName == "scalbn" || FuncName == "scalbnf") {
     OS << MigratedArg0 << "*(2<<" << getMigratedArg(1) << ")";
@@ -1094,9 +1070,9 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     OS << TargetCalleeName << "(" << MigratedArg0 << ", " << getMigratedArg(1)
        << ")"
        << "+" << getMigratedArg(2);
-  } else if (FuncName == "__drcp_rd" || 
+  } else if (FuncName == "__drcp_rd" ||
              FuncName == "__drcp_rn" ||
-             FuncName == "__drcp_ru" || 
+             FuncName == "__drcp_ru" ||
              FuncName == "__drcp_rz") {
     auto Arg0 = Call->getArg(0);
     auto T0 = Arg0->IgnoreCasts()->getType();
@@ -1116,41 +1092,6 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     } else {
       OS << TargetCalleeName;
       OS << "(" << MigratedArg0 << ")";
-    }
-  } else if (FuncName == "norm") {
-    Expr::EvalResult ER;
-    if (Call->getArg(0)->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
-      std::string MigratedArg1 = getMigratedArg(1);
-      int64_t Value = ER.Val.getInt().getExtValue();
-      switch (Value) {
-      case 0:
-        return std::string("0");
-      case 1:
-        OS << TargetCalleeName << "((float)" << MigratedArg1 << "[0])";
-        break;
-      case 2:
-        OS << TargetCalleeName << "(" << MapNames::getClNamespace() << "float2("
-           << MigratedArg1 << "[0], " << MigratedArg1 << "[1]))";
-        break;
-      case 3:
-        OS << TargetCalleeName << "(" << MapNames::getClNamespace() << "float3("
-           << MigratedArg1 << "[0], " << MigratedArg1 << "[1], " << MigratedArg1
-           << "[2]))";
-        break;
-      case 4:
-        OS << TargetCalleeName << "(" << MapNames::getClNamespace() << "float4("
-           << MigratedArg1 << "[0], " << MigratedArg1 << "[1], " << MigratedArg1
-           << "[2], " << MigratedArg1 << "[3]))";
-        break;
-      default:
-        requestFeature(HelperFeatureEnum::Util_fast_length, Call);
-        OS << MapNames::getDpctNamespace() << "fast_length("
-           << "(float *)" << getMigratedArg(1) << ", " << MigratedArg0 << ")";
-      }
-    } else {
-      requestFeature(HelperFeatureEnum::Util_fast_length, Call);
-      OS << MapNames::getDpctNamespace() << "fast_length("
-         << "(float *)" << getMigratedArg(1) << ", " << MigratedArg0 << ")";
     }
   } else if (FuncName == "__funnelshift_l" || FuncName == "__funnelshift_lc" ||
              FuncName == "__funnelshift_r" || FuncName == "__funnelshift_rc") {

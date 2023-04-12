@@ -152,8 +152,11 @@ int foo() {
   return 0;
 }
 
-//CHECK:void kernel(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *state) {
-//CHECK-NEXT:  *state = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(1111, {0, 2222 * 8});
+//CHECK:void kernel(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *state) {
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1105:{{[0-9]+}}: The mcg59 random number generator is used. The subsequence argument "2222" is ignored. You need to verify the migration.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  *state = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>(1111, 0);
 //CHECK-NEXT:  float rand = state->generate<oneapi::mkl::rng::device::uniform<float>, 1>();
 //CHECK-NEXT:}
 __global__ void kernel(curandState *state) {
@@ -189,7 +192,7 @@ struct TEST {
 
 // Test description:
 // This test covers the case when the type of the arg has alias.
-__device__ void foo() {
+__device__ void foo2() {
   unsigned long long seed;
   unsigned long long sequence;
   unsigned long long offset;

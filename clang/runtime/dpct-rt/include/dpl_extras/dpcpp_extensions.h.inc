@@ -24,6 +24,12 @@
 #endif
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|local_include_dependency|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+#include "../dpct.hpp"
+// DPCT_LABEL_END
+
 namespace dpct {
 namespace group {
 
@@ -80,7 +86,7 @@ constexpr auto __inclusive_scan_over_group(_Args... __args) {
 /// perform the scan.
 template <typename Item, typename T, class BinaryOperation,
           int VALUES_PER_THREAD>
-__attribute__((always_inline)) void
+__dpct_inline__ void
 exclusive_scan(const Item &item, T (&inputs)[VALUES_PER_THREAD],
                T (&outputs)[VALUES_PER_THREAD], T init,
                BinaryOperation binary_op) {
@@ -121,7 +127,7 @@ exclusive_scan(const Item &item, T (&inputs)[VALUES_PER_THREAD],
 /// in the work-items of the group. \returns exclusive scan of the first i
 /// work-items where item is the i-th work item.
 template <typename Item, typename T, class BinaryOperation>
-__attribute__((always_inline)) T
+__dpct_inline__ T
 exclusive_scan(const Item &item, T input, T init, BinaryOperation binary_op,
                T &group_aggregate) {
   T output = detail::__exclusive_scan_over_group(item.get_group(), input, init,
@@ -149,7 +155,7 @@ exclusive_scan(const Item &item, T input, T init, BinaryOperation binary_op,
 /// group.
 template <typename Item, typename T, class BinaryOperation,
           class GroupPrefixCallbackOperation>
-__attribute__((always_inline)) T
+__dpct_inline__ T
 exclusive_scan(const Item &item, T input, BinaryOperation binary_op,
                GroupPrefixCallbackOperation &prefix_callback_op) {
   T group_aggregate;
@@ -192,7 +198,7 @@ template <int N, int COUNT> struct log2<N, 0, COUNT> {
   enum { VALUE = (1 << (COUNT - 1) < N) ? COUNT : COUNT - 1 };
 };
 
-inline uint32_t bfe(uint32_t source, uint32_t bit_start,
+__dpct_inline__ uint32_t bfe(uint32_t source, uint32_t bit_start,
                     uint32_t num_bits) {
   const uint32_t MASK = (1 << num_bits) - 1;
   return (source >> bit_start) & MASK;
@@ -207,7 +213,7 @@ public:
   radix_rank(uint8_t *local_memory) : _local_memory(local_memory) {}
 
   template <typename Item, int VALUES_PER_THREAD>
-  __attribute__((always_inline)) void
+  __dpct_inline__ void
   rank_keys(const Item &item, uint32_t (&keys)[VALUES_PER_THREAD],
             int (&ranks)[VALUES_PER_THREAD], int current_bit, int num_bits) {
 
@@ -251,7 +257,7 @@ public:
 
 private:
   template <typename Item>
-  __attribute__((always_inline)) void reset_local_memory(const Item &item) {
+  __dpct_inline__ void reset_local_memory(const Item &item) {
     packed_counter_type *ptr =
         reinterpret_cast<packed_counter_type *>(_local_memory);
 
@@ -262,7 +268,7 @@ private:
   }
 
   template <typename Item>
-  __attribute__((always_inline)) packed_counter_type upsweep(const Item &item) {
+  __dpct_inline__ packed_counter_type upsweep(const Item &item) {
     packed_counter_type sum = 0;
     packed_counter_type *ptr =
         reinterpret_cast<packed_counter_type *>(_local_memory);
@@ -282,7 +288,7 @@ private:
   }
 
   template <typename Item>
-  __attribute__((always_inline)) void
+  __dpct_inline__ void
   exclusive_downsweep(const Item &item, packed_counter_type raking_partial) {
     packed_counter_type *ptr =
         reinterpret_cast<packed_counter_type *>(_local_memory);
@@ -303,7 +309,7 @@ private:
   }
 
   struct prefix_callback {
-    __attribute__((always_inline)) packed_counter_type
+    __dpct_inline__ packed_counter_type
     operator()(packed_counter_type block_aggregate) {
       packed_counter_type block_prefix = 0;
 
@@ -318,7 +324,7 @@ private:
   };
 
   template <typename Item>
-  __attribute__((always_inline)) void scan_counters(const Item &item) {
+  __dpct_inline__ void scan_counters(const Item &item) {
     packed_counter_type raking_partial = upsweep(item);
 
     prefix_callback callback;
@@ -347,36 +353,32 @@ private:
 // DPCT_CODE
 template <typename T, typename U> struct base_traits {
 
-  static __attribute__((always_inline)) U twiddle_in(U key) {
+  static __dpct_inline__ U twiddle_in(U key) {
     throw std::runtime_error("Not implemented");
   }
-  static __attribute__((always_inline)) U twiddle_out(U key) {
+  static __dpct_inline__ U twiddle_out(U key) {
     throw std::runtime_error("Not implemented");
   }
 };
 
 template <typename U> struct base_traits<uint32_t, U> {
-  static __attribute__((always_inline)) U twiddle_in(U key) { return key; }
-  static __attribute__((always_inline)) U twiddle_out(U key) { return key; }
+  static __dpct_inline__ U twiddle_in(U key) { return key; }
+  static __dpct_inline__ U twiddle_out(U key) { return key; }
 };
 
 template <typename U> struct base_traits<int, U> {
   static constexpr U HIGH_BIT = U(1) << ((sizeof(U) * 8) - 1);
-  static __attribute__((always_inline)) U twiddle_in(U key) {
-    return key ^ HIGH_BIT;
-  }
-  static __attribute__((always_inline)) U twiddle_out(U key) {
-    return key ^ HIGH_BIT;
-  }
+  static __dpct_inline__ U twiddle_in(U key) { return key ^ HIGH_BIT; }
+  static __dpct_inline__ U twiddle_out(U key) { return key ^ HIGH_BIT; }
 };
 
 template <typename U> struct base_traits<float, U> {
   static constexpr U HIGH_BIT = U(1) << ((sizeof(U) * 8) - 1);
-  static __attribute__((always_inline)) U twiddle_in(U key) {
+  static __dpct_inline__ U twiddle_in(U key) {
     U mask = (key & HIGH_BIT) ? U(-1) : HIGH_BIT;
     return key ^ mask;
   }
-  static __attribute__((always_inline)) U twiddle_out(U key) {
+  static __dpct_inline__ U twiddle_out(U key) {
     U mask = (key & HIGH_BIT) ? HIGH_BIT : U(-1);
     return key ^ mask;
   }
@@ -399,8 +401,7 @@ template <int N> struct power_of_two {
   enum { VALUE = ((N & (N - 1)) == 0) };
 };
 
-inline uint32_t shr_add(uint32_t x, uint32_t shift,
-                        uint32_t addend) {
+__dpct_inline__ uint32_t shr_add(uint32_t x, uint32_t shift, uint32_t addend) {
   return (x >> shift) + addend;
 }
 
@@ -424,7 +425,7 @@ public:
 
   /// Rearrange elements from rank order to blocked order
   template <typename Item>
-  __attribute__((always_inline)) void
+  __dpct_inline__ void
   scatter_to_blocked(Item item, T (&keys)[VALUES_PER_THREAD],
                      int (&ranks)[VALUES_PER_THREAD]) {
     T *buffer = reinterpret_cast<T *>(_local_memory);
@@ -484,7 +485,7 @@ public:
   radix_sort(uint8_t *local_memory) : _local_memory(local_memory) {}
 
   template <typename Item>
-  __attribute__((always_inline)) void
+  __dpct_inline__ void
   sort(const Item &item, T (&keys)[VALUES_PER_THREAD], int begin_bit = 0,
        int end_bit = 8 * sizeof(T)) {
 
@@ -542,7 +543,7 @@ private:
 /// perform the scan. \returns value of the reduction using binary_op
 template <typename Item, typename T, class BinaryOperation,
           int VALUES_PER_THREAD>
-__attribute__((always_inline)) T
+__dpct_inline__ T
 reduce(Item item, T (&inputs)[VALUES_PER_THREAD], BinaryOperation binary_op) {
   T result = inputs[0];
 
@@ -551,6 +552,32 @@ reduce(Item item, T (&inputs)[VALUES_PER_THREAD], BinaryOperation binary_op) {
     result = binary_op(result, inputs[i]);
   }
   return detail::__reduce_over_group(item.get_group(), result, binary_op);
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|reduce_over_partial_group|dpct::group
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasDpcppExtensions|group_reduce
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Perform a reduction on a limited number of the work items in a subgroup
+///
+/// \param item A work-item in a group.
+/// \param value value per work item which is to be reduced
+/// \param items_to_reduce num work items at the start of the subgroup to reduce
+/// \param binary_op functor that implements the binary operation used to
+/// perform the scan. \returns value of the reduction using binary_op
+template <typename Item, typename T, class BinaryOperation>
+__dpct_inline__
+typename ::std::enable_if_t<sycl::has_known_identity_v<BinaryOperation, T>, T>
+reduce_over_partial_group(const Item &item, const T &value,
+                          const ::std::uint16_t &items_to_reduce,
+                          BinaryOperation binary_op) {
+  T value_temp = (item.get_local_linear_id() < items_to_reduce)
+                     ? value
+                     : sycl::known_identity_v<BinaryOperation, T>;
+  return detail::__reduce_over_group(item.get_sub_group(), value_temp,
+                                     binary_op);
 }
 // DPCT_LABEL_END
 
@@ -572,7 +599,7 @@ reduce(Item item, T (&inputs)[VALUES_PER_THREAD], BinaryOperation binary_op) {
 /// work-items in the group.
 template <typename Item, typename T, class BinaryOperation,
           int VALUES_PER_THREAD>
-__attribute__((always_inline)) void
+__dpct_inline__ void
 inclusive_scan(const Item &item, T (&inputs)[VALUES_PER_THREAD],
                T (&outputs)[VALUES_PER_THREAD], BinaryOperation binary_op) {
   T result = inputs[0];
@@ -608,7 +635,7 @@ inclusive_scan(const Item &item, T (&inputs)[VALUES_PER_THREAD],
 /// in the work-items of the group. \returns inclusive scan of the input
 /// elements assigned to work-items in the group.
 template <typename Item, typename T, class BinaryOperation>
-__attribute__((always_inline)) T inclusive_scan(const Item &item, T input,
+__dpct_inline__ T inclusive_scan(const Item &item, T input,
                                                 BinaryOperation binary_op,
                                                 T &group_aggregate) {
   T output =
@@ -636,7 +663,7 @@ __attribute__((always_inline)) T inclusive_scan(const Item &item, T input,
 /// group.
 template <typename Item, typename T, class BinaryOperation,
           class GroupPrefixCallbackOperation>
-__attribute__((always_inline)) T
+__dpct_inline__ T
 inclusive_scan(const Item &item, T input, BinaryOperation binary_op,
                GroupPrefixCallbackOperation &prefix_callback_op) {
   T group_aggregate;

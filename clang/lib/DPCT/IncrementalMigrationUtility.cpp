@@ -277,6 +277,8 @@ bool printOptions(
         Str = Str + "local-memory-kernel-scope-allocation,";
       if (UValue & (1 << static_cast<unsigned>(ExperimentalFeatures::Exp_LogicalGroup)))
         Str = Str + "logical-group,";
+      if (UValue & (1 << static_cast<unsigned>(ExperimentalFeatures::Exp_MaskedSubGroupFunction)))
+        Str = Str + "masked_sub_group_function,";
 
       if (!Str.empty()) {
         Str = "--use-experimental-features=" + Str;

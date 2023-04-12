@@ -113,6 +113,12 @@ struct is_even_4 {
   }
 };
 
+struct my_math
+{
+//CHECK: int operator()(const int &r) const{ return r+1;}
+__host__ __device__ int operator()(const int &r) const{ return r+1;}
+};
+
 void foo() {
   //CHECK: copy_if_device(oneapi::dpl::execution::seq);
   copy_if_device(thrust::seq);
@@ -127,13 +133,15 @@ void foo() {
   thrust::device_vector<int> *data[10];
   thrust::device_vector<int> d_new_potential_centroids(10);
   auto range = thrust::make_counting_iterator(0);
-
+  thrust::counting_iterator<int> last = range + 10;
   //CHECK: std::copy_if(oneapi::dpl::execution::seq, h_data.begin(), h_data.end(), h_result.begin(), is_even<int>());
   //CHECK-NEXT: std::copy_if(oneapi::dpl::execution::seq, h_data.begin(), h_data.end(), h_result.begin(), is_even<int>());
   //CHECK-NEXT: dpct::copy_if(oneapi::dpl::execution::make_device_policy(q_ct1), (*data[0]).begin(), (*data[0]).end(), range, d_new_potential_centroids.begin(), [=] (int idx) { return true; });
+  //CHECK-NEXT: dpct::copy_if(oneapi::dpl::execution::seq, range, last, (*data[0]).begin(), (*data[0]).end(), oneapi::dpl::identity());
   thrust::copy_if(h_data.begin(), h_data.end(), h_result.begin(), is_even<int>());
   thrust::copy_if(thrust::seq, h_data.begin(), h_data.end(), h_result.begin(), is_even<int>());
   thrust::copy_if((*data[0]).begin(), (*data[0]).end(), range, d_new_potential_centroids.begin(),[=] __device__(int idx) { return true; });
+  thrust::copy_if(range, last, (*data[0]).begin(), (*data[0]).end(), thrust::identity<int>());
 
   //CHECK: std::vector<dpct::device_vector<int>> d(10);
   //CHECK-NEXT: auto t = dpct::make_counting_iterator(0);
@@ -315,12 +323,6 @@ void foo() {
  }
 
 {
-  struct my_math
-  {
-  //CHECK: int operator()(const int &r) const{ return r+1;}
-  __host__ __device__ int operator()(const int &r) const{ return r+1;}
-  };
-
   int *dev_a = NULL, *dev_b = NULL;
   cudaStream_t stream;
   my_math c;
@@ -583,10 +585,6 @@ public:
   FooType getStream() const { return m_Stream; }
 
   FooType m_Stream;
-};
-
-struct my_math {
-  __host__ __device__ int operator()(int &r) { return r + 1; }
 };
 
 template <typename InputType, typename OutputType>

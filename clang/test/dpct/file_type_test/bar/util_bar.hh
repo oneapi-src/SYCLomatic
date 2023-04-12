@@ -2,7 +2,7 @@
 
 // CHECK:SYCL_EXTERNAL HOST_DEVICE
 HOST_DEVICE
-void util_bar(void);
+void util_bar(void) {}
 HOST_DEVICE_END
 
 class FooQueue

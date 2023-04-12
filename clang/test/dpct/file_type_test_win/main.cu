@@ -1,4 +1,4 @@
-// UNSUPPORTED: -linux-
+// UNSUPPORTED: system-linux
 // RUN: echo "[" > %T/compile_commands.json
 // RUN: echo "    {" >> %T/compile_commands.json
 // RUN: echo "        \"command\": \"CudaCompile %S/main.cu\"," >> %T/compile_commands.json
