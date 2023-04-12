@@ -1957,6 +1957,18 @@ public:
   getMainSourceFileMap(){
     return MainSourceFileMap;
   };
+  static inline void addFP64Func(const FunctionDecl *Func) {
+    FP64Func.insert(Func);
+  }
+  static inline bool isFP64Func(const FunctionDecl *Func) {
+    return FP64Func.count(Func);
+  }
+  static inline void addFP16Func(const FunctionDecl *Func) {
+    FP16Func.insert(Func);
+  }
+  static inline bool isFP16Func(const FunctionDecl *Func) {
+    return FP16Func.count(Func);
+  }
 
 private:
   DpctGlobalInfo();
@@ -2139,6 +2151,8 @@ private:
       RnnInputMap;
   static std::unordered_map<std::string, std::vector<std::string>>
       MainSourceFileMap;
+  static std::unordered_set<const FunctionDecl *> FP64Func;
+  static std::unordered_set<const FunctionDecl *> FP16Func;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.
@@ -3928,6 +3942,8 @@ class KernelCallExpr : public CallFunctionExpr {
 public:
   bool IsInMacroDefine = false;
   bool NeedLambda = false;
+  bool NeedCheckBF64 = false;
+  bool NeedCheckBF16 = false;
 
 private:
   struct ArgInfo {

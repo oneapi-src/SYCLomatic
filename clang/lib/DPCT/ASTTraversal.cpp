@@ -8829,7 +8829,14 @@ void KernelCallRule::runRule(
     // Add kernel call to map,
     // will do code generation in Global.buildReplacements();
     if (!FD->isTemplateInstantiation()){
-      DpctGlobalInfo::getInstance().insertKernelCallExpr(KCall);
+      auto KCallInfo =
+          DpctGlobalInfo::getInstance().insertKernelCallExpr(KCall);
+      if (DpctGlobalInfo::isFP64Func(KCall->getDirectCallee())) {
+        KCallInfo->NeedCheckBF64 = true;
+      }
+      if (DpctGlobalInfo::isFP16Func(KCall->getDirectCallee())) {
+        KCallInfo->NeedCheckBF16 = true;
+      }
     }
     const CallExpr *Config = KCall->getConfig();
     if (Config) {
@@ -8838,6 +8845,12 @@ void KernelCallRule::runRule(
         if (containSizeOfType(SharedMemSize)) {
           auto KCallInfo =
               DpctGlobalInfo::getInstance().insertKernelCallExpr(KCall);
+          if (DpctGlobalInfo::isFP64Func(KCall->getDirectCallee())) {
+            KCallInfo->NeedCheckBF64 = true;
+          }
+          if (DpctGlobalInfo::isFP16Func(KCall->getDirectCallee())) {
+            KCallInfo->NeedCheckBF16 = true;
+          }
           KCallInfo->setEmitSizeofWarningFlag(true);
         } else {
           const Expr *ExprContainSizeofType = nullptr;
@@ -14991,3 +15004,24 @@ void CudaUuidRule::runRule(
 }
 
 REGISTER_RULE(CudaUuidRule, PassKind::PK_Analysis)
+
+void BFSupportRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(namedDecl(
+                            hasAnyName("__half", "half", "__half2", "half2",
+                                       "__nv_bfloat16", "__nv_bfloat162"))))))
+                    .bind("fp16"),
+                this);
+  MF.addMatcher(typeLoc(loc(asString("double"))).bind("fp64"), this);
+}
+
+void BFSupportRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (auto FP64TypeLoc = Result.Nodes.getNodeAs<TypeLoc>("fp64")) {
+    DpctGlobalInfo::addFP64Func(DpctGlobalInfo::getParentFunction(FP64TypeLoc));
+  }
+  if (auto FP16TypeLoc = Result.Nodes.getNodeAs<TypeLoc>("fp16")) {
+    DpctGlobalInfo::addFP16Func(DpctGlobalInfo::getParentFunction(FP16TypeLoc));
+  }
+}
+
+REGISTER_RULE(BFSupportRule, PassKind::PK_Analysis)

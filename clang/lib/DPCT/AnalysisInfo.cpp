@@ -156,6 +156,8 @@ std::unordered_map<std::string,
     DpctGlobalInfo::RnnInputMap;
 std::unordered_map<std::string, std::vector<std::string>>
     DpctGlobalInfo::MainSourceFileMap;
+std::unordered_set<const FunctionDecl *> DpctGlobalInfo::FP64Func;
+std::unordered_set<const FunctionDecl *> DpctGlobalInfo::FP16Func;
 
 /// This variable saved the info of previous migration from the
 /// MainSourceFiles.yaml file. This variable is valid after
@@ -1516,6 +1518,24 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
                                  RequiredSubGroupSize.Size);
       }
     }
+  }
+  Printer.indent();
+  if (NeedCheckBF64) {
+    Printer << "if (!" << ExecutionConfig.Stream << ".get_device().has("
+            << MapNames::getClNamespace() << "aspect::fp64))" << getNL();
+    Printer.indent();
+    Printer << "  throw "
+               "std::runtime_error(\"Not support double in this device\");"
+            << getNL();
+  }
+  Printer.indent();
+  if (NeedCheckBF16) {
+    Printer << "if (!" << ExecutionConfig.Stream << ".get_device().has("
+            << MapNames::getClNamespace() << "aspect::fp16))" << getNL();
+    Printer.indent();
+    Printer << "  throw "
+               "std::runtime_error(\"Not support half in this device\");"
+            << getNL();
   }
   Printer.indent();
   if (!SubGroupSizeWarning.empty()) {
