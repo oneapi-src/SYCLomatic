@@ -105,20 +105,6 @@ struct TimeStubTypeInfo {
   std::string StrWithoutSB;
 };
 
-struct FreeHostInfo {
-  unsigned int TempVarIndex = 0;
-  unsigned int Length = 0;
-  unsigned int Offset = 0;
-  std::string FilePath;
-  std::string PtrRepl;
-};
-
-struct MallocHostInfo {
-  bool CanUseCLibraryMalloc = false;
-  std::vector<FreeHostInfo>
-    FreeHostInfos;
-};
-
 struct BuiltinVarInfo {
   BuiltinVarInfo(unsigned int Len, std::string Repl,
                  std::shared_ptr<DeviceFunctionInfo> DFI)
@@ -1957,7 +1943,7 @@ public:
   getMainSourceFileMap(){
     return MainSourceFileMap;
   };
-  static inline std::unordered_map<std::string, MallocHostInfo> &
+  static inline std::unordered_map<std::string, bool> &
   getMallocHostInfoMap(){
     return MallocHostInfoMap;
   };
@@ -2142,7 +2128,7 @@ private:
       RnnInputMap;
   static std::unordered_map<std::string, std::vector<std::string>>
       MainSourceFileMap;
-  static std::unordered_map<std::string, MallocHostInfo> MallocHostInfoMap;
+  static std::unordered_map<std::string, bool> MallocHostInfoMap;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.

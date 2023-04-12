@@ -1458,13 +1458,12 @@ public:
   }
 };
 
-class CheckCanUseCLibraryMalloc {
+class CheckCanUseCLibraryMallocOrFree {
   unsigned AddrArgIdx;
-  unsigned SizeArgIdx;
-
+  bool isFree;
 public:
-  CheckCanUseCLibraryMalloc(unsigned AddrIdx, unsigned SizeIdx)
-      : AddrArgIdx(AddrIdx), SizeArgIdx(SizeIdx) {}
+  CheckCanUseCLibraryMallocOrFree(unsigned AddrIdx, bool isFree)
+      : AddrArgIdx(AddrIdx), isFree(isFree) {}
   bool operator()(const CallExpr *C) {
     if (!DpctGlobalInfo::isOptimizeMigration()) {
       return false;
@@ -1477,94 +1476,39 @@ public:
             AllocatedExpr->IgnoreImplicitAsWritten())) {
       AE = CSCE->getSubExpr()->IgnoreImplicitAsWritten();
     } else {
-      AE = AllocatedExpr;
+      AE = AllocatedExpr->IgnoreImplicitAsWritten();
     }
-    auto UO = dyn_cast<UnaryOperator>(AE);
-    if (!UO) {
-      return false;
+    const DeclRefExpr* DRE = nullptr;
+    if(isFree) {
+      DRE = dyn_cast<DeclRefExpr>(AE);
+    } else {
+      auto UO = dyn_cast<UnaryOperator>(AE);
+      if (!UO) {
+        return false;
+      }
+      DRE = dyn_cast<DeclRefExpr>(UO->getSubExpr());
     }
-    auto DRE = dyn_cast<DeclRefExpr>(UO->getSubExpr());
     if (!DRE) {
       return false;
     }
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    auto &CT = DpctGlobalInfo::getContext();
-    std::string PtrName = DRE->getNameInfo().getName().getAsString();
+    auto &CTX = DpctGlobalInfo::getContext();
     auto DREDecl = DRE->getDecl();
-    if (!DREDecl || CT.getParents(*DREDecl)[0].get<TranslationUnitDecl>() ||
+    if (!DREDecl || CTX.getParents(*DREDecl)[0].get<TranslationUnitDecl>() ||
         DREDecl->isCXXClassMember()) {
       return false;
     }
-    auto PtrScope = findImmediateBlock(DREDecl);
-    if (!PtrScope) {
-      return false;
-    }
-    auto PtrMatcher =
-        findAll(declRefExpr(to(varDecl(hasName(PtrName)))).bind("PtrVar"));
-    auto MatchResult = ast_matchers::match(PtrMatcher, *PtrScope, CT);
-    // For following 3 cases, it's safe to use malloc from c runtime library
-    for (auto &SubResult : MatchResult) {
-      bool HostAccess = false;
-      const DeclRefExpr *PtrDRE = SubResult.getNodeAs<DeclRefExpr>("PtrVar");
-      if (!PtrDRE) {
-        return false;
-      }
-      // Case 1: Array subscript expr and accessed as rvalue
-      if (auto Expr =
-                   DpctGlobalInfo::findAncestor<ArraySubscriptExpr>(PtrDRE)) {
-        auto RValueExpr = DpctGlobalInfo::findAncestor<ImplicitCastExpr>(Expr);
-        if (RValueExpr &&
-            (RValueExpr->getCastKind() == CastKind::CK_LValueToRValue)) {
-          HostAccess = true;
-        }
-      }
-      // Case 2: Dereference expr and accessed as rvalue
-      if (auto Expr =
-                   DpctGlobalInfo::findAncestor<UnaryOperator>(PtrDRE)) {
-        auto RValueExpr = DpctGlobalInfo::findAncestor<ImplicitCastExpr>(Expr);
-        if ((Expr->getOpcode() == UnaryOperatorKind::UO_Deref) && RValueExpr &&
-            (RValueExpr->getCastKind() == CastKind::CK_LValueToRValue)) {
-          HostAccess = true;
-        }
-      }
-      // Case 3: Host function in system header and some specific API
-      if (auto CE = DpctGlobalInfo::findAncestor<CallExpr>(PtrDRE)) {
-        auto CEDecl = CE->getDirectCallee();
-        if (!CEDecl) {
-          return false;
-        }
-        SourceLocation DeclLoc = SM.getExpansionLoc(CEDecl->getLocation());
-        std::string InFile = dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
-        if (dpct::DpctGlobalInfo::isInCudaPath(DeclLoc)) {
-          std::string FuncName = CEDecl->getNameAsString();
-          if (FuncName == "cudaFreeHost" || FuncName == "cudaMallocHost") {
-            HostAccess = true;
-          } else if (FuncName == "cudaMemcpy" ||
-                     FuncName == "cudaMemcpyAsync") {
-            if (auto Enum = dyn_cast<DeclRefExpr>(CE->getArg(2))) {
-              auto CpyKind = Enum->getNameInfo().getName().getAsString();
-              if (CpyKind == "cudaMemcpyHostToHost" ||
-                  (CpyKind == "cudaMemcpyHostToDevice" &&
-                   DpctGlobalInfo::isAncestor(CE->getArg(1), PtrDRE)) ||
-                  (CpyKind == "cudaMemcpyDeviceToHost" &&
-                   DpctGlobalInfo::isAncestor(CE->getArg(0), PtrDRE))) {
-                HostAccess = true;
-              }
-            }
-          }
-        } else if (SM.isInSystemHeader(DeclLoc)) {
-          HostAccess = true;
-        }
-      }
-      if (!HostAccess) {
-        return false;
-      }
-    }
     auto LocInfo = DpctGlobalInfo::getLocInfo(DREDecl->getBeginLoc());
     auto &Map = DpctGlobalInfo::getMallocHostInfoMap();
-    std::string Key = LocInfo.first + std::to_string(LocInfo.second);
-    Map[Key].CanUseCLibraryMalloc = true;
-    return true;
+    std::string Key = LocInfo.first + "_" + std::to_string(LocInfo.second);
+    if(Map.count(Key)){
+      return Map[Key];
+    }
+    if(isPointerHostAccessOnly(DREDecl)){
+      Map[Key] = true;
+      return true;
+    }
+    Map[Key] = false;
+    return false;
   }
 };
 

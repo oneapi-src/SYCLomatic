@@ -575,4 +575,5 @@ bool isLambda(const clang::FunctionDecl *FD);
 const clang::LambdaExpr *
 getImmediateOuterLambdaExpr(const clang::FunctionDecl *FuncDecl);
 bool typeIsPostfix(clang::QualType QT);
+bool isPointerHostAccessOnly(const clang::ValueDecl* VD);
 #endif // DPCT_UTILITY_H

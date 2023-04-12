@@ -76,7 +76,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     checkIsUSM(),
     CONDITIONAL_FACTORY_ENTRY(
-        CheckCanUseCLibraryMalloc(0, 1),
+        CheckCanUseCLibraryMallocOrFree(0, false),
         ASSIGN_FACTORY_ENTRY("cudaMallocHost",
                              DEREF(makeDerefArgCreatorWithCall(0)),
                              CAST(getDerefedType(0), CALL("malloc", ARG(1)))),

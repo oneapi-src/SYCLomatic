@@ -23,6 +23,7 @@
 #include "TextModification.h"
 #include "ThrustAPIMigration.h"
 #include "Utility.h"
+#include "CallExprRewriterCommon.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/Stmt.h"
 #include "clang/AST/TypeLoc.h"
@@ -10557,38 +10558,18 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
     }
   } else if (Name == "cudaFreeHost" || Name == "cuMemFreeHost") {
     if (USMLevel == UsmLevel::UL_Restricted) {
+      CheckCanUseCLibraryMallocOrFree Checker(0, true);
       ExprAnalysis EA;
-      EA.analyze(C);
-      unsigned int CELength = EA.getExprLength();
-      const Expr* PtrExpr = C->getArg(0)->IgnoreImplicitAsWritten();
-      EA.analyze(PtrExpr);
-      std::string PtrRepl = EA.getReplacedString();
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      const Expr *AE = nullptr;
-      if (auto CSCE = dyn_cast<CStyleCastExpr>(PtrExpr)) {
-        AE = CSCE->getSubExpr()->IgnoreImplicitAsWritten();
+      EA.analyze(C->getArg(0));
+      std::ostringstream Repl;
+      if(Checker(C)) {
+        Repl << "free(" << EA.getReplacedString() << ")";
       } else {
-        AE = C->getArg(0)->IgnoreImplicitAsWritten();
-      }
-      if(auto DRE = dyn_cast<DeclRefExpr>(AE)) {
-        auto DeclLocInfo = DpctGlobalInfo::getLocInfo(DRE->getDecl()->getBeginLoc());
-        std::string Key = DeclLocInfo.first + std::to_string(DeclLocInfo.second);
-        auto CELocInfo = DpctGlobalInfo::getLocInfo(C->getBeginLoc());
-        auto &Map = DpctGlobalInfo::getMallocHostInfoMap();
-        FreeHostInfo Info;
-        Info.FilePath = CELocInfo.first;
-        Info.Offset = CELocInfo.second;
-        Info.Length = CELength;
-        Info.TempVarIndex = Index;
-        Info.PtrRepl = EA.getReplacedString();
-        Map[Key].FreeHostInfos.push_back(Info);
-      } else {
-        std::ostringstream Repl;
         buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-        Repl << MapNames::getClNamespace() + "free(" << PtrRepl
-             << ", {{NEEDREPLACEQ" + std::to_string(Index) + "}})";
-        emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
+        Repl << MapNames::getClNamespace() + "free(" << EA.getReplacedString()
+           << ", {{NEEDREPLACEQ" + std::to_string(Index) + "}})";
       }
+      emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
       emplaceTransformation(new ReplaceCalleeName(C, "free"));
     }

@@ -156,7 +156,7 @@ std::unordered_map<std::string,
     DpctGlobalInfo::RnnInputMap;
 std::unordered_map<std::string, std::vector<std::string>>
     DpctGlobalInfo::MainSourceFileMap;
-std::unordered_map<std::string, MallocHostInfo>
+std::unordered_map<std::string, bool>
     DpctGlobalInfo::MallocHostInfoMap;
 /// This variable saved the info of previous migration from the
 /// MainSourceFiles.yaml file. This variable is valid after
@@ -334,20 +334,6 @@ void DpctGlobalInfo::buildReplacements() {
     }
     for (auto &Action : ReplInfo.second->RelatedAction) {
       Action();
-    }
-  }
-  for (auto &Element : MallocHostInfoMap) {
-    auto &Infos = Element.second.FreeHostInfos;
-    for(auto &Info : Infos) {
-      std::string Repl;
-      if (Element.second.CanUseCLibraryMalloc) {
-        Repl = "free(" + Info.PtrRepl + ")";
-      } else {
-        Repl = MapNames::getClNamespace() + "free(" + Info.PtrRepl +
-               ", {{NEEDREPLACEQ" + std::to_string(Info.TempVarIndex) + "}})";
-      }
-      addReplacement(std::make_shared<ExtReplacement>(
-          Info.FilePath, Info.Offset, Info.Length, Repl, nullptr));
     }
   }
   for (auto &File : FileMap)

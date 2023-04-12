@@ -4053,3 +4053,127 @@ bool typeIsPostfix(clang::QualType QT) {
     }
   }
 }
+bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
+  llvm::SmallVector<clang::ast_matchers::BoundNodes, 1U> MatchResult;
+  using namespace clang::ast_matchers;
+  auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
+  auto &CTX = clang::dpct::DpctGlobalInfo::getContext();
+  auto PtrName = VD->getName();
+  if (auto PVD = dyn_cast<ParmVarDecl>(VD)) {
+    auto PtrMatcher =
+        findAll(declRefExpr(to(parmVarDecl(hasName(PtrName)))).bind("PtrVar"));
+    auto PtrScope =
+        clang::dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(PVD);
+    if (auto Body = PtrScope->getBody()) {
+      MatchResult = ast_matchers::match(PtrMatcher, *Body, CTX);
+    }
+  } else {
+    auto PtrMatcher =
+        findAll(declRefExpr(to(varDecl(hasName(PtrName)))).bind("PtrVar"));
+    if (auto PtrScope = findImmediateBlock(VD)) {
+      MatchResult = ast_matchers::match(PtrMatcher, *PtrScope, CTX);
+    }
+  }
+  if (!MatchResult.size()) {
+    return false;
+  }
+  // For following 3 cases, it's safe to use malloc from c runtime library
+  for (auto &SubResult : MatchResult) {
+    bool HostAccess = false;
+    const DeclRefExpr *PtrDRE = SubResult.getNodeAs<DeclRefExpr>("PtrVar");
+    if (!PtrDRE) {
+      return false;
+    }
+    // Case 1: Array subscript expr and accessed as rvalue
+    if (auto E = dyn_cast_or_null<ArraySubscriptExpr>(
+            getNonImplicitCastParentStmt(PtrDRE))) {
+      auto RValueExpr = dyn_cast_or_null<ImplicitCastExpr>(getParentStmt(E));
+      if (RValueExpr &&
+          (RValueExpr->getCastKind() == CastKind::CK_LValueToRValue)) {
+        HostAccess = true;
+      }
+    }
+    // Case 2: Dereference expr and accessed as rvalue
+    if (auto E = dyn_cast_or_null<UnaryOperator>(
+            getNonImplicitCastParentStmt(PtrDRE))) {
+      auto RValueExpr = dyn_cast_or_null<ImplicitCastExpr>(getParentStmt(E));
+      if ((E->getOpcode() == UnaryOperatorKind::UO_Deref) && RValueExpr &&
+          (RValueExpr->getCastKind() == CastKind::CK_LValueToRValue)) {
+        HostAccess = true;
+      }
+    }
+
+    // Case 3: Host function in system header and some specific API
+    const CallExpr *CE = nullptr;
+    if (auto E =
+            dyn_cast_or_null<CallExpr>(getNonImplicitCastParentStmt(PtrDRE))) {
+      CE = E;
+    } else if (auto E = dyn_cast_or_null<UnaryOperator>(
+                   getNonImplicitCastParentStmt(PtrDRE))) {
+      if (auto CallE = dyn_cast_or_null<CallExpr>(getParentStmt(E))) {
+        CE = CallE;
+      } else if (auto ExprIgnoreCCast = dyn_cast_or_null<CStyleCastExpr>(
+                     getNonImplicitCastParentStmt(E))) {
+        if (auto CallE =
+                dyn_cast_or_null<CallExpr>(getParentStmt(ExprIgnoreCCast))) {
+          CE = CallE;
+        }
+      }
+    } else if (auto E = dyn_cast_or_null<CStyleCastExpr>(
+                   getNonImplicitCastParentStmt(PtrDRE))) {
+      if (auto CallE = dyn_cast_or_null<CallExpr>(getParentStmt(E))) {
+        CE = CallE;
+      }
+    }
+    if (CE) {
+      auto CEDecl = CE->getDirectCallee();
+      if (!CEDecl) {
+        return false;
+      }
+      auto FuncName = CEDecl->getName();
+      SourceLocation DeclLoc = SM.getExpansionLoc(CEDecl->getLocation());
+      std::string InFile = dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
+      if (dpct::DpctGlobalInfo::isInCudaPath(DeclLoc)) {
+        if (FuncName == "cudaFreeHost" || FuncName == "cudaMallocHost") {
+          HostAccess = true;
+        } else if (FuncName == "cudaMemcpy" || FuncName == "cudaMemcpyAsync") {
+          if (auto Enum = dyn_cast<DeclRefExpr>(CE->getArg(3))) {
+            auto CpyKind = Enum->getDecl()->getName();
+            if (CpyKind == "cudaMemcpyHostToHost" ||
+                (CpyKind == "cudaMemcpyHostToDevice" &&
+                 clang::dpct::DpctGlobalInfo::isAncestor(CE->getArg(1),
+                                                         PtrDRE)) ||
+                (CpyKind == "cudaMemcpyDeviceToHost" &&
+                 clang::dpct::DpctGlobalInfo::isAncestor(CE->getArg(0),
+                                                         PtrDRE))) {
+              HostAccess = true;
+            }
+          }
+        }
+      } else {
+        if (SM.isInSystemHeader(DeclLoc) &&
+            (FuncName == "memset" || FuncName == "memcpy" ||
+             FuncName == "printf")) {
+          HostAccess = true;
+        } else {
+          int ArgIndex = -1, ArgNums = CE->getNumArgs();
+          for (int index = 0; index < ArgNums; index++) {
+            if (clang::dpct::DpctGlobalInfo::isAncestor(CE->getArg(index),
+                                                        PtrDRE)) {
+              ArgIndex = index;
+              break;
+            }
+          }
+          if ((ArgIndex >= 0) &&
+              isPointerHostAccessOnly(CEDecl->getParamDecl(ArgIndex))) {
+            HostAccess = true;
+          }
+        }
+      }
+    }
+    if (!HostAccess) {
+      return false;
+    }
+  }
+  return true;
+}
