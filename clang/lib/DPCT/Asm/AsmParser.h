@@ -12,6 +12,7 @@
 #include "AsmLexer.h"
 #include "clang/Basic/LLVM.h"
 #include "clang/Sema/Ownership.h"
+#include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/DenseMap.h"
@@ -177,6 +178,41 @@ enum StorageClass {
   SC_Tex = 0x40
 };
 
+enum ComparisonOp {
+  CO_Eq,
+  CO_Ne,
+  CO_Lt,
+  CO_Le,
+  CO_Gt,
+  CO_Ge,
+  CO_Lo,
+  CO_Ls,
+  CO_Hi,
+  CO_Hs,
+  CO_Equ,
+  CO_Neu,
+  CO_Ltu,
+  CO_Leu,
+  CO_Gtu,
+  CO_Geu,
+  CO_Num,
+  CO_Nan
+};
+
+enum BooleanOp {
+  BO_And,
+  BO_Or,
+  BO_Xor
+};
+
+enum ArithmeticOp {
+  AO_Add,
+  AO_Min,
+  AO_Max,
+  AO_Maxabs,
+  AO_Popc
+};
+
 InstKind FindInstructionKindFromName(StringRef InstName);
 
 } // namespace ptx
@@ -217,7 +253,7 @@ public:
 
 class PtxFundamentalType : public PtxType {
 public:
-  enum TypeKind {
+  enum TypeKind : int {
     TK_B8,
     TK_B16,
     TK_B32,
@@ -250,14 +286,12 @@ public:
 
 private:
   TypeKind Kind;
-  size_t Size;
 
 public:
-  PtxFundamentalType(TypeKind Kind, size_t Size)
-      : PtxType(FundamentalClass), Kind(Kind), Size(Size) {}
+  PtxFundamentalType(TypeKind Kind)
+      : PtxType(FundamentalClass), Kind(Kind) {}
 
   TypeKind getKind() const { return Kind; }
-  size_t getSize() const { return Size; }
 
   static bool classof(const PtxType *T) {
     return T->getTypeClass() == FundamentalClass;
@@ -285,13 +319,16 @@ public:
 };
 
 class PtxTupleType : public PtxType {
-  SmallVector<const PtxType *, 4> ElementTypes;
+public:
+  typedef SmallVector<const PtxType *, 4> ElementList;
+private:
+  ElementList ElementTypes;
 
 public:
-  PtxTupleType(const SmallVector<const PtxType *, 4> &ElementTypes)
+  PtxTupleType(const ElementList &ElementTypes)
       : PtxType(TupleClass), ElementTypes(ElementTypes) {}
 
-  const SmallVector<const PtxType *, 4> &getElementTypes() const {
+  const ElementList &getElementTypes() const {
     return ElementTypes;
   }
 
@@ -342,8 +379,8 @@ public:
 class PtxVariableDecl : public PtxDecl {
 public:
   struct Attribute {
-    uint64_t Align;
-    bool IsShared;
+    std::optional<unsigned> Align;
+    unsigned StorageClass;
   };
 
 private:
@@ -351,10 +388,19 @@ private:
   Attribute Attr;
 
 public:
-  PtxVariableDecl(StringRef Name) : PtxDecl(VariableDeclClass, Name) {}
+  PtxVariableDecl(StringRef Name, const PtxType *Type)
+      : PtxDecl(VariableDeclClass, Name), Type(Type) {}
 
   const Attribute &getAttributes() const { return Attr; }
   const PtxType *getType() const { return Type; }
+
+  void setAlign(unsigned Align) {
+    Attr.Align = Align;
+  }
+
+  bool hasAlign() const {
+    return Attr.Align.has_value();
+  }
 
   static bool classof(const PtxDecl *T) {
     return T->getDeclClass() == VariableDeclClass;
@@ -418,39 +464,49 @@ public:
 class PtxInstruction : public PtxStmt {
 public:
   struct Attribute {
-    unsigned Opcode;
-    unsigned RoundMod;
-    unsigned SatMod;
-    unsigned SatfMod;
-    unsigned FtzMod;
-    unsigned AbsMod;
-    unsigned TypeMod;
-    unsigned AppxMod;
-    unsigned ClampMod;
-    unsigned SyncMod;
-    unsigned ShuffleMod;
-    unsigned Vector;
-    unsigned Comparison;
-    unsigned BooleanOp;
-    unsigned ArithmeticOp;
-    unsigned StorageClass;
+    unsigned RoundMod = 0;
+    unsigned SatMod = 0;
+    unsigned SatfMod = 0;
+    unsigned FtzMod = 0;
+    unsigned AbsMod = 0;
+    unsigned TypeMod = 0;
+    unsigned AppxMod = 0;
+    unsigned ClampMod = 0;
+    unsigned SyncMod = 0;
+    unsigned ShuffleMod = 0;
+    unsigned Vector = 0;
+    unsigned ComparisonOp = 0;
+    unsigned BooleanOp = 0;
+    unsigned ArithmeticOp = 0;
+    unsigned StorageClass = 0;
     SmallVector<PtxType *, 4> Types;
+
+    void setComparisonOp(ptx::ComparisonOp Op) {
+      ComparisonOp = Op;
+    }
+
+    void setBooleanOp(ptx::BooleanOp Op) {
+      BooleanOp = Op;
+    }
+
+    void setArithmeticOp(ptx::ArithmeticOp Op) {
+      ArithmeticOp = Op;
+    }
+
+    void setStorageClass(ptx::StorageClass SC) {
+      StorageClass = SC;
+    }
   };
 
-public:
+  using OperandList = SmallVector<const PtxExpr *, 4>;
+private:
   ptx::InstKind Op;
   Attribute Attr;
-  SmallVector<const PtxExpr *, 4> Operands;
-
-protected:
-  PtxInstruction(StmtClass SC, ptx::InstKind Op,
-                 const SmallVector<const PtxExpr *, 4> &Operands)
-      : PtxStmt(SC), Op(Op), Operands(Operands) {}
-
+  OperandList Operands;
+  const PtxExpr *PredOutput;
 public:
-  PtxInstruction(ptx::InstKind Op,
-                 const SmallVector<const PtxExpr *, 4> &Operands = {})
-      : PtxStmt(InstructionClass), Op(Op), Operands(Operands) {}
+  PtxInstruction(ptx::InstKind Op, const OperandList &Operands = {}, const PtxExpr *PredOut = nullptr)
+      : PtxStmt(InstructionClass), Op(Op), Operands(Operands), PredOutput(PredOut) {}
 
   ptx::InstKind getOpcode() const { return Op; }
 
@@ -462,23 +518,27 @@ public:
 
   void addOperand(const PtxExpr *Operand) { Operands.push_back(Operand); }
 
+  const PtxExpr *getPredOutput() const {
+    return PredOutput;
+  }
+
   static bool classof(const PtxStmt *S) {
-    return InstructionClass <= S->getStmtClass() &&
-           S->getStmtClass() <= GuardInstructionClass;
+    return InstructionClass <= S->getStmtClass();
   }
 };
 
-class PtxGuardInstruction : public PtxInstruction {
-  const PtxExpr *Pred;
+class PtxGuardInstruction : public PtxStmt {
   bool IsNeg;
-
+  const PtxExpr *Pred;
+  const PtxInstruction *Instruction;
 public:
-  PtxGuardInstruction(const PtxExpr *Pred, bool IsNeg, ptx::InstKind Op,
-                      const SmallVector<const PtxExpr *, 4> &Operands)
-      : PtxInstruction(GuardInstructionClass, Op, Operands), Pred(Pred),
-        IsNeg(IsNeg) {}
+  PtxGuardInstruction(bool IsNeg, const PtxExpr *Pred,
+                      const PtxInstruction *Inst)
+      : PtxStmt(GuardInstructionClass), IsNeg(IsNeg), Pred(Pred),
+        Instruction(Inst) {}
 
   const PtxExpr *getPred() const { return Pred; }
+  const PtxInstruction *getInstruction() const { return Instruction; }
   bool isNeg() const { return IsNeg; }
 
   static bool classof(const PtxStmt *S) {
@@ -487,10 +547,9 @@ public:
 };
 
 class PtxDeclStmt : public PtxStmt {
-  SmallVector<PtxDecl *> DeclGroup;
-
+  SmallVector<const PtxDecl *> DeclGroup;
 public:
-  PtxDeclStmt(SmallVector<AsmStmt *> Stmts) : PtxStmt(DeclStmtClass) {}
+  PtxDeclStmt(const SmallVector<const PtxDecl *> &Decls) : PtxStmt(DeclStmtClass), DeclGroup(Decls) {}
 
   static bool classof(const PtxStmt *S) {
     return S->getStmtClass() == DeclStmtClass;
@@ -507,6 +566,9 @@ protected:
       : PtxStmt(SC), Type(Type) {}
 
 public:
+
+  const PtxType *getType() const { return Type; }
+
   static bool classof(const PtxStmt *S) {
     return UnaryOperatorClass <= S->getStmtClass() &&
            S->getStmtClass() <= FloatingLiteralClass;
@@ -564,7 +626,10 @@ public:
 };
 
 class PtxTupleExpr : public PtxExpr {
-  SmallVector<const PtxExpr *, 4> Elements;
+public:
+  typedef SmallVector<const PtxExpr *, 4> ElementList;
+private:
+  ElementList Elements;
 
 public:
   PtxTupleExpr(const PtxTupleType *Type,
@@ -618,6 +683,7 @@ public:
 private:
   const PtxExpr *SubExpr;
   unsigned Op;
+public:
   PtxUnaryOperator(Opcode Op, const PtxExpr *Expr, const PtxType *Type)
       : PtxExpr(UnaryOperatorClass, Type), SubExpr(Expr), Op(Op) {}
 
@@ -677,6 +743,7 @@ private:
   Opcode Op;
   const PtxExpr *LHS;
   const PtxExpr *RHS;
+public:
   PtxBinaryOperator(Opcode Op, const PtxExpr *LHS, const PtxExpr *RHS,
                     const PtxType *Type)
       : PtxExpr(BinaryOperatorClass, Type), Op(Op), LHS(LHS), RHS(RHS) {}
@@ -712,19 +779,44 @@ public:
 
 class PtxContext {
   llvm::BumpPtrAllocator Allocator;
-  llvm::DenseMap<PtxFundamentalType::TypeKind, const PtxFundamentalType *>
+  llvm::DenseMap<int, PtxFundamentalType *>
       FundamentalTypes;
-
+  PtxAnyType *AnyType;
 public:
   void *allocate(unsigned Size, unsigned Align = 8) {
     return Allocator.Allocate(Size, Align);
   }
 
   void deallocate(void *Ptr) {}
+
+  PtxType *GetTypeFromConstraint(StringRef Constraint);
+  PtxFundamentalType *GetOrCreateFundamentalType(StringRef TypeName);
+  PtxFundamentalType *GetOrCreateFundamentalType(PtxFundamentalType::TypeKind Kind);
+  PtxAnyType *GetOrCreateAnyType();
+  PtxTupleType *CreateTupleType(const PtxTupleType::ElementList &ElementType);
+  PtxVectorType *CreateVectorType(PtxVectorType::TypeKind Kind, const PtxFundamentalType *Base);
+
+  PtxDeclStmt *CreateDeclStmt(const SmallVector<const PtxDecl *> &DeclGroup);
+  PtxVariableDecl *CreateVariableDecl(StringRef Name, const PtxType *Type);
+  PtxCompoundStmt *CreateCompoundStmt(const SmallVector<PtxStmt *> &Stmts);
+  PtxDeclRefExpr *CreateDeclRefExpr(const PtxVariableDecl *Var);
+  PtxTupleExpr *CreateTupleExpr(const PtxTupleType *Type, const PtxTupleExpr::ElementList &Elements);
+  PtxSinkExpr *CreateSinkExpr();
+  PtxInstruction *CreateInstruction(ptx::InstKind Op, const PtxInstruction::OperandList &Operands = {}, const PtxExpr *PredOut = nullptr);
+  PtxGuardInstruction *CreateGuardInstruction(bool isNeg, const PtxExpr *Pred, const PtxInstruction *Inst);
+
+  PtxUnaryOperator *CreateUnaryOperator(PtxUnaryOperator::Opcode Op, const PtxExpr *Operand);
+  PtxBinaryOperator *CreateBinaryOperator(PtxBinaryOperator::Opcode Op, const PtxExpr *LHS, const PtxExpr *RHS);
+  PtxConditionalOperator *CreateConditionalOperator(const PtxExpr *Cond, const PtxExpr *LHS, const PtxExpr *RHS);
+  PtxCastExpr *CreateCastExpression(const PtxFundamentalType *CastType, const PtxExpr *SubExpr);
+
+  PtxIntegerLiteral *CreateIntegerLiteral(const PtxType *Type, llvm::APInt Val);
+  PtxFloatingLiteral *CreateFloatLiteral(const PtxType *Type, llvm::APFloat Val);
+
 };
 
 class PtxScope {
-  using DeclSetTy = llvm::SmallPtrSet<PtxDecl *, 32>;
+  using DeclSetTy = llvm::SmallPtrSet<PtxVariableDecl *, 32>;
   PtxScope *AnyParent;
   DeclSetTy DeclsInScope;
   unsigned Depth;
@@ -743,320 +835,19 @@ public:
     return decl_range(DeclsInScope.begin(), DeclsInScope.end());
   }
 
-  void AddDecl(PtxDecl *D) { DeclsInScope.insert(D); }
+  void AddDecl(PtxVariableDecl *D) { DeclsInScope.insert(D); }
 
-  bool isDeclScope(const PtxDecl *D) const { return DeclsInScope.contains(D); }
+  bool isDeclScope(const PtxVariableDecl *D) const { return DeclsInScope.contains(D); }
 
   bool Contains(const PtxScope &rhs) const { return Depth < rhs.Depth; }
 
-  PtxDecl *LookupSymbol(StringRef Symbol) const;
+  PtxVariableDecl *LookupSymbol(StringRef Symbol) const;
 };
 
+using PtxTypeResult = clang::ActionResult<PtxType *>;
+using PtxDeclResult = clang::ActionResult<PtxDecl *>;
 using PtxStmtResult = clang::ActionResult<PtxStmt *>;
 using PtxExprResult = clang::ActionResult<PtxExpr *>;
-
-// struct AsmType;
-
-// struct AsmSymbol {
-//   std::string Name;
-//   AsmType *Type;
-//   bool IsVariable;
-// };
-
-// struct VarAttr {
-//   uint64_t Align;
-//   bool IsShared;
-// };
-
-// struct InstAttr {
-//   unsigned Opcode;
-//   unsigned RoundMod;
-//   unsigned SatMod;
-//   unsigned SatfMod;
-//   unsigned FtzMod;
-//   unsigned AbsMod;
-//   unsigned TypeMod;
-//   unsigned AppxMod;
-//   unsigned ClampMod;
-//   unsigned SyncMod;
-//   unsigned ShuffleMod;
-//   unsigned Vector;
-//   unsigned Comparison;
-//   unsigned BooleanOp;
-//   unsigned ArithmeticOp;
-//   unsigned StorageClass;
-//   SmallVector<AsmType *, 4> Types;
-// };
-
-// struct AsmStatement {
-//   enum StmtKind {
-//     SK_Add,
-//     SK_Sub,
-//     SK_Mul,
-//     SK_Div,
-//     SK_Mod,
-//     SK_BitAnd,
-//     SK_BitOr,
-//     SK_BitXor,
-//     SK_BitNot,
-//     SK_Shl,
-//     SK_Shr,
-//     SK_EQ,
-//     SK_NE,
-//     SK_LT,
-//     SK_GT,
-//     SK_LE,
-//     SK_GE,
-//     SK_Not,
-//     SK_And,
-//     SK_Or,
-//     SK_Neg,
-//     SK_Assign,
-//     SK_Cond,
-//     SK_Addr,
-//     SK_Deref,
-//     SK_Block,
-//     SK_Label,
-//     SK_ExprStmt,
-//     SK_StmtExpr,
-//     SK_Variable,
-//     SK_VLAPtr,
-//     SK_Integer,
-//     SK_Unsigned,
-//     SK_Float,
-//     SK_Double,
-//     SK_Cast,
-//     SK_Inst,
-//     SK_Sink,
-//     SK_Tuple,
-//   };
-
-//   StmtKind Kind;
-//   AsmStatement *Next;
-//   AsmType *Type;
-//   AsmStatement *LHS;
-//   AsmStatement *RHS;
-//   AsmStatement *SubExpr;
-//   AsmStatement *Pred;
-//   AsmStatement *PredOutput;
-//   AsmStatement *Cond;
-//   AsmStatement *Then;
-//   AsmStatement *Else;
-//   AsmStatement *Init;
-//   AsmStatement *Body;
-//   StringRef Label;
-//   AsmStatement *Bar;
-//   AsmSymbol *Variable;
-//   SmallPtrSet<AsmSymbol *, 32> DeclsInScope;
-
-//   union {
-//     uint64_t u64;
-//     int64_t i64;
-//     float f32;
-//     double f64;
-//   };
-
-//   InstAttr InstructionAttr;
-//   SmallVector<AsmStatement *, 4> Operands;
-//   SmallVector<AsmStatement *, 4> Tuple;
-//   SmallVector<AsmStatement *, 4> Block;
-
-//   AsmStatement(StmtKind K) : Kind(K) {}
-// };
-
-// struct AsmType {
-//   enum TypeKind {
-//     TK_B8,
-//     TK_B16,
-//     TK_B32,
-//     TK_B64,
-//     TK_B128,
-//     TK_S2,
-//     TK_S4,
-//     TK_S8,
-//     TK_S16,
-//     TK_S32,
-//     TK_S64,
-//     TK_U2,
-//     TK_U4,
-//     TK_U8,
-//     TK_U16,
-//     TK_U32,
-//     TK_U64,
-//     TK_F16,
-//     TK_F16x2,
-//     TK_F32,
-//     TK_F64,
-//     TK_E4m3,
-//     TK_E5m2,
-//     TK_E4m3x2,
-//     TK_E5m2x2,
-//     TK_Byte,
-//     TK_4Byte,
-//     TK_Pred,
-//     TK_V2,
-//     TK_V4,
-//     TK_Ptr,
-//     TK_Array,
-//     TK_VLA
-//   };
-
-//   TypeKind Kind;
-//   int Size;
-//   int Align;
-//   AsmType *Origin;
-//   AsmType *Base;
-//   AsmToken Name;
-//   size_t ArrayLength;
-//   bool IsFlexible;
-// };
-
-// using AsmStmtResult = ActionResult<dpct::AsmStatement *>;
-
-// class AsmContext {
-//   llvm::BumpPtrAllocator Allocator;
-//   std::map<AsmType::TypeKind, AsmType *> ScalarTypes;
-//   AsmStatement *SinkExpression;
-
-// public:
-//   void *allocate(unsigned Size, unsigned Align = 8) {
-//     return Allocator.Allocate(Size, Align);
-//   }
-
-//   void deallocate(void *Ptr) {}
-
-//   AsmType *getScalarType(AsmType::TypeKind Kind);
-//   AsmType *getScalarTypeFromName(StringRef TypeName);
-//   AsmType::TypeKind getScalarTypeKindFromName(StringRef TypeName);
-
-//   AsmType *PointTo(AsmType *Base);
-//   AsmType *ArrayOf(AsmType *Base, size_t Len);
-//   AsmType *VLAOf(AsmType *Base, AsmStatement *Expr);
-
-//   AsmSymbol *CreateSymbol(const std::string &Name, AsmType *Type,
-//                           bool IsVar = true);
-//   AsmStatement *CreateStmt(AsmStatement::StmtKind Kind);
-//   AsmStatement *CreateIntegerConstant(AsmType *Type, int64_t Val);
-//   AsmStatement *CreateIntegerConstant(AsmType *Type, uint64_t Val);
-//   AsmStatement *CreateFloatConstant(AsmType *Type, float Val);
-//   AsmStatement *CreateFloatConstant(AsmType *Type, double Val);
-//   AsmStatement *CreateConditionalExpression(AsmStatement *Cond,
-//                                             AsmStatement *Then,
-//                                             AsmStatement *Else);
-//   AsmStatement *CreateBinaryOperator(AsmStatement::StmtKind Opcode,
-//                                      AsmStatement *LHS, AsmStatement *RHS);
-//   AsmStatement *CreateUnaryExpression(AsmStatement::StmtKind Opcode,
-//                                       AsmStatement *SubExpr);
-//   AsmStatement *CreateCastExpression(AsmType *Type, AsmStatement *SubExpr);
-//   AsmStatement *CreateVariableRefExpression(AsmSymbol *Symbol);
-//   AsmStatement *GetOrCreateSinkExpression();
-// };
-
-// class AsmIdentifierInfo {
-//   friend class AsmIdentifierTable;
-//   unsigned TokenID;
-//   llvm::StringMapEntry<AsmIdentifierInfo *> *Entry = nullptr;
-
-//   AsmIdentifierInfo() : TokenID(AsmToken::Identifier) {}
-
-// public:
-//   AsmIdentifierInfo(const AsmIdentifierInfo &) = delete;
-//   AsmIdentifierInfo &operator=(const AsmIdentifierInfo &) = delete;
-//   AsmIdentifierInfo(AsmIdentifierInfo &&) = delete;
-//   AsmIdentifierInfo &operator=(AsmIdentifierInfo &&) = delete;
-
-//   const char *getNameStart() const { return Entry->getKeyData(); }
-//   unsigned getLength() const { return Entry->getKeyLength(); }
-//   StringRef getName() const { return StringRef(getNameStart(), getLength()); }
-
-//   template <std::size_t StrLen> bool isStr(const char (&Str)[StrLen]) const {
-//     return getLength() == StrLen - 1 &&
-//            memcmp(getNameStart(), Str, StrLen - 1) == 0;
-//   }
-
-//   bool isStr(llvm::StringRef Str) const {
-//     llvm::StringRef ThisStr(getNameStart(), getLength());
-//     return ThisStr == Str;
-//   }
-
-//   AsmToken::TokenKind getTokenID() const {
-//     return (AsmToken::TokenKind)TokenID;
-//   }
-// };
-
-// class AsmIdentifierTable {
-//   using HashTableTy =
-//       llvm::StringMap<AsmIdentifierInfo *, llvm::BumpPtrAllocator>;
-//   HashTableTy HashTable;
-
-// public:
-//   AsmIdentifierTable() = default;
-
-//   llvm::BumpPtrAllocator &getAllocator() { return HashTable.getAllocator(); }
-
-//   AsmIdentifierInfo &get(StringRef Name) {
-//     auto &Entry = *HashTable.try_emplace(Name, nullptr).first;
-
-//     AsmIdentifierInfo *&II = Entry.second;
-//     if (II)
-//       return *II;
-
-//     // Lookups failed, make a new IdentifierInfo.
-//     void *Mem = getAllocator().Allocate<AsmIdentifierInfo>();
-//     II = new (Mem) AsmIdentifierInfo();
-
-//     // Make sure getName() knows how to find the IdentifierInfo
-//     // contents.
-//     II->Entry = &Entry;
-
-//     return *II;
-//   }
-
-//   AsmIdentifierInfo &get(StringRef Name, AsmToken::TokenKind TokenCode) {
-//     AsmIdentifierInfo &II = get(Name);
-//     II.TokenID = TokenCode;
-//     assert(II.TokenID == (unsigned)TokenCode && "TokenCode too large");
-//     return II;
-//   }
-
-//   using iterator = HashTableTy::const_iterator;
-//   using const_iterator = HashTableTy::const_iterator;
-
-//   iterator begin() const { return HashTable.begin(); }
-//   iterator end() const { return HashTable.end(); }
-//   unsigned size() const { return HashTable.size(); }
-// };
-
-// class AsmScope {
-//   using DeclSetTy = llvm::SmallPtrSet<AsmSymbol *, 32>;
-//   AsmScope *AnyParent;
-//   DeclSetTy DeclsInScope;
-//   unsigned Depth;
-
-// public:
-//   AsmScope(AsmScope *Parent)
-//       : AnyParent(Parent), Depth(Parent ? Parent->Depth + 1 : 0) {}
-
-//   const AsmScope *getParent() const { return AnyParent; }
-//   AsmScope *getParent() { return AnyParent; }
-//   unsigned getDepth() const { return Depth; }
-
-//   using decl_range = llvm::iterator_range<DeclSetTy::iterator>;
-
-//   decl_range decls() const {
-//     return decl_range(DeclsInScope.begin(), DeclsInScope.end());
-//   }
-
-//   void AddDecl(AsmSymbol *D) { DeclsInScope.insert(D); }
-
-//   bool isDeclScope(const AsmSymbol *D) const {
-//     return DeclsInScope.contains(D);
-//   }
-
-//   bool Contains(const AsmScope &rhs) const { return Depth < rhs.Depth; }
-
-//   AsmSymbol *LookupSymbol(StringRef Symbol) const;
-// };
 
 class PtxParser {
 public:
@@ -1108,15 +899,16 @@ public:
   const AsmToken &getTok() const { return getLexer().getTok(); }
   const AsmToken &Lex();
 
-  void AddBuiltinSymbol(const std::string &Name, PtxType *Type);
+  PtxDeclResult AddBuiltinSymbol(StringRef Name, const PtxType *Type);
+  PtxDeclResult AddInlineAsmOperands(StringRef Name, StringRef Constraint);
 
   PtxScope *getCurScope() const { return CurScope; }
 
-  void EnterScope() { CurScope = new AsmScope(getCurScope()); }
+  void EnterScope() { CurScope = new PtxScope(getCurScope()); }
 
   void ExitScope() {
     assert(getCurScope());
-    AsmScope *OldScope = getCurScope();
+    PtxScope *OldScope = getCurScope();
     if (OldScope) {
       CurScope = OldScope->getParent();
       delete OldScope;
@@ -1125,61 +917,44 @@ public:
     }
   }
 
-  /// TODO: bool Parse();
   PtxStmtResult ParseStatement();
   PtxStmtResult ParseCompoundStatement();
-  PtxStmtResult ParseUnGuardInstruction();
+  PtxStmtResult ParseGuardInstruction();
   PtxStmtResult ParseInstruction();
   bool ParseInstructionFlags(PtxInstruction::Attribute &Attr);
 
   PtxExprResult ParseTuple();
-  AsmStmtResult ParseInstructionFirstOperand();
-  AsmStmtResult ParseInstructionOperand();
-  AsmStmtResult ParseInstructionPrimaryOperand();
-  AsmStmtResult ParseInstructionUnaryOperand();
-  AsmStmtResult ParseInstructionPostfixOperand();
+  PtxExprResult ParsePredOutput();
+  PtxExprResult ParseInstructionDestOperand();
+  PtxExprResult ParseInstructionSrcOperand();
+  PtxExprResult ParseInstructionPrimaryOperand();
+  PtxExprResult ParseInstructionUnaryOperand();
+  PtxExprResult ParseInstructionPostfixOperand();
 
-  AsmStmtResult ParseConstantExpression();
-  // bool ParseExpression();
-  AsmStmtResult ParsePrimaryExpression();
-  // bool ParseAssignExpression();
-  AsmStmtResult ParseConditionalExpression();
-  AsmStmtResult ParseLogicOrExpression();
-  AsmStmtResult ParseLogicAndExpression();
-  AsmStmtResult ParseInclusiveOrExpression();
-  AsmStmtResult ParseExclusiveOrExpression();
-  AsmStmtResult ParseAndExpression();
-  AsmStmtResult ParseEqualityExpression();
-  AsmStmtResult ParseRelationExpression();
-  AsmStmtResult ParseShiftExpression();
-  AsmStmtResult ParseAdditiveExpression();
-  AsmStmtResult ParseMultiplicativeExpression();
-  AsmStmtResult ParseCastExpresion();
-  AsmStmtResult ParseUnaryExpression();
-  // bool ParsePostfixExpression();
+  PtxStmtResult ParseDeclStmt();
+  PtxTypeResult ParseVarDeclspec(PtxVariableDecl::Attribute Attr);
+  PtxDeclResult ParseVariableDecl(const PtxType *Type);
+
+  /// Parse constant expression
+
+  PtxExprResult ParseConstantExpression();
+  PtxExprResult ParsePrimaryExpression();
+  PtxExprResult ParseConditionalExpression();
+  PtxExprResult ParseLogicOrExpression();
+  PtxExprResult ParseLogicAndExpression();
+  PtxExprResult ParseInclusiveOrExpression();
+  PtxExprResult ParseExclusiveOrExpression();
+  PtxExprResult ParseAndExpression();
+  PtxExprResult ParseEqualityExpression();
+  PtxExprResult ParseRelationExpression();
+  PtxExprResult ParseShiftExpression();
+  PtxExprResult ParseAdditiveExpression();
+  PtxExprResult ParseMultiplicativeExpression();
+  PtxExprResult ParseCastExpresion();
+  PtxExprResult ParseUnaryExpression();
 };
 
 } // namespace clang::dpct
-
-// inline void *operator new(size_t Bytes, clang::dpct::AsmContext &C,
-//                           size_t Alignment = 8) noexcept {
-//   return C.allocate(Bytes, Alignment);
-// }
-
-// inline void operator delete(void *Ptr, clang::dpct::AsmContext &C,
-//                             size_t) noexcept {
-//   C.deallocate(Ptr);
-// }
-
-// inline void *operator new[](size_t Bytes, clang::dpct::AsmContext &C,
-//                             size_t Alignment = 8) noexcept {
-//   return C.allocate(Bytes, Alignment);
-// }
-
-// inline void operator delete[](void *Ptr, clang::dpct::AsmContext &C) noexcept
-// {
-//   C.deallocate(Ptr);
-// }
 
 namespace llvm {
 

@@ -402,7 +402,7 @@ static const char *findLastDigit(const char *CurPtr, unsigned DefaultRadix) {
 
 AsmToken PtxLexer::ConsumeIntegerSuffix(unsigned Radix) {
   if (CurPtr[0] == 'U') {
-    uint64_t Result;
+    uint64_t Result = 0;
     if (StringRef(TokStart, CurPtr - TokStart).getAsInteger(Radix, Result))
       return ReturnError(TokStart, "invalid hexadecimal number");
 
@@ -411,7 +411,7 @@ AsmToken PtxLexer::ConsumeIntegerSuffix(unsigned Radix) {
                     Result);
   }
 
-  int64_t Result;
+  int64_t Result = 0;
   if (StringRef(TokStart, CurPtr - TokStart).getAsInteger(Radix, Result))
     return ReturnError(TokStart, "invalid hexadecimal number");
 
@@ -631,8 +631,7 @@ AsmToken PtxLexer::LexToken() {
   }
   case '\n':
     IsAtStartOfLine = true;
-    IsAtStartOfStatement = true;
-    return AsmToken(AsmToken::EndOfStatement, StringRef(TokStart, 1));
+    return LexToken();  // Ignore whitespace.
   case ':':
     return AsmToken(AsmToken::Colon, StringRef(TokStart, 1));
   case '+':
@@ -698,7 +697,7 @@ AsmToken PtxLexer::LexToken() {
   case '%': {
     // Check next token is NVPTX builtin identifier
     auto NextTok = peekTok();
-    if (NextTok.getString() != "WARP_SZ" && NextTok.isBuiltinIdentifier())
+    if (NextTok.is(AsmToken::Identifier) || NextTok.is(AsmToken::Integer))
       return LexIdentifier();
     return AsmToken(AsmToken::Percent, StringRef(TokStart, 1));
   }

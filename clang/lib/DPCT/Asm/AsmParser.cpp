@@ -7,6 +7,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "AsmParser.h"
+#include "Asm/AsmLexer.h"
+#include "clang/AST/Type.h"
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/ADT/StringSet.h"
 #include "llvm/Support/SaveAndRestore.h"
@@ -18,36 +22,11 @@ ptx::InstKind ptx::FindInstructionKindFromName(StringRef InstName) {
       .Case("cvt", ptx::Cvt)
       .Case("mov", ptx::Mov)
       .Case("bfe", ptx::Bfe)
+      .Case("setp", Setp)
       .Default(ptx::Invalid);
 }
 
-// AsmType *AsmContext::getScalarType(AsmType::TypeKind Kind) {
-//   if (Kind < AsmType::TK_B8 || Kind > AsmType::TK_Pred)
-//     return nullptr;
-//   if (ScalarTypes.find(Kind) == ScalarTypes.end()) {
-//     AsmType *Type = new (*this) AsmType;
-//     Type->Kind = Kind;
-//     ScalarTypes[Kind] = Type;
-//     return Type;
-//   }
-//   return ScalarTypes[Kind];
-// }
-
-// AsmType *AsmContext::getScalarTypeFromName(StringRef TypeName) {
-//   if (TypeName == ".s32")
-//     return getScalarType(AsmType::TK_S32);
-//   if (TypeName == ".s64")
-//     return getScalarType(AsmType::TK_S64);
-//   if (TypeName == ".u32")
-//     return getScalarType(AsmType::TK_U32);
-//   if (TypeName == ".u64")
-//     return getScalarType(AsmType::TK_U64);
-//   if (TypeName == ".pred")
-//     return getScalarType(AsmType::TK_Pred);
-//   return nullptr;
-// }
-
-PtxDecl *PtxScope::LookupSymbol(StringRef Symbol) const {
+PtxVariableDecl *PtxScope::LookupSymbol(StringRef Symbol) const {
   for (const auto &S : decls()) {
     if (S->getDeclName() == Symbol)
       return S;
@@ -59,94 +38,138 @@ PtxDecl *PtxScope::LookupSymbol(StringRef Symbol) const {
   return nullptr;
 }
 
-// AsmStatement *AsmContext::CreateStmt(AsmStatement::StmtKind Kind) {
-//   AsmStatement *Stmt = new (*this) AsmStatement(Kind);
-//   return Stmt;
-// }
+PtxFundamentalType *PtxContext::GetOrCreateFundamentalType(StringRef TypeName) {
+  if (TypeName == ".s32")
+    return GetOrCreateFundamentalType(PtxFundamentalType::TK_S32);
+  if (TypeName == ".s64")
+    return GetOrCreateFundamentalType(PtxFundamentalType::TK_S64);
+  if (TypeName == ".u32")
+    return GetOrCreateFundamentalType(PtxFundamentalType::TK_U32);
+  if (TypeName == ".u64")
+    return GetOrCreateFundamentalType(PtxFundamentalType::TK_U64);
+  if (TypeName == ".pred")
+    return GetOrCreateFundamentalType(PtxFundamentalType::TK_Pred);
+  return nullptr;
+}
 
-// AsmStatement *AsmContext::CreateIntegerConstant(AsmType *Type, int64_t Val) {
-//   AsmStatement *Const = CreateStmt(AsmStatement::SK_Integer);
-//   Const->i64 = Val;
-//   Const->Type = Type;
-//   return Const;
-// }
+PtxTupleType *
+PtxContext::CreateTupleType(const PtxTupleType::ElementList &ElementType) {
+  return ::new (*this) PtxTupleType(ElementType);
+}
 
-// AsmStatement *AsmContext::CreateIntegerConstant(AsmType *Type, uint64_t Val) {
-//   AsmStatement *Const = CreateStmt(AsmStatement::SK_Unsigned);
-//   Const->u64 = Val;
-//   Const->Type = Type;
-//   return Const;
-// }
+PtxAnyType *PtxContext::GetOrCreateAnyType() {
+  if (!AnyType)
+    AnyType = ::new (*this) PtxAnyType;
+  return AnyType;
+}
 
-// AsmStatement *AsmContext::CreateFloatConstant(AsmType *Type, float Val) {
-//   AsmStatement *Fp = CreateStmt(AsmStatement::SK_Float);
-//   Fp->f32 = Val;
-//   Fp->Type = Type;
-//   llvm::APFloat aaa(0.0);
-//   return Fp;
-// }
+PtxFundamentalType *
+PtxContext::GetOrCreateFundamentalType(PtxFundamentalType::TypeKind Kind) {
+  if (FundamentalTypes.contains(Kind))
+    return FundamentalTypes[Kind];
 
-// AsmStatement *AsmContext::CreateFloatConstant(AsmType *Type, double Val) {
-//   AsmStatement *Fp = CreateStmt(AsmStatement::SK_Double);
-//   Fp->f64 = Val;
-//   Fp->Type = Type;
-//   return Fp;
-// }
+  PtxFundamentalType *NewType = ::new (*this) PtxFundamentalType(Kind);
+  FundamentalTypes[Kind] = NewType;
+  return NewType;
+}
 
-// AsmStatement *AsmContext::CreateConditionalExpression(AsmStatement *Cond,
-//                                                       AsmStatement *Then,
-//                                                       AsmStatement *Else) {
-//   AsmStatement *S = CreateStmt(AsmStatement::SK_Cond);
-//   S->Cond = Cond;
-//   S->Then = Then;
-//   S->Else = Else;
-//   return S;
-// }
+PtxType *PtxContext::GetTypeFromConstraint(StringRef Constraint) {
+  if (Constraint.size() != 1)
+    return nullptr;
+  switch (Constraint[0]) {
+  case 'h':
+    return GetOrCreateFundamentalType(PtxFundamentalType::TK_U16);
+  case 'r':
+    return GetOrCreateFundamentalType(PtxFundamentalType::TK_U32);
+  case 'l':
+    return GetOrCreateFundamentalType(PtxFundamentalType::TK_U64);
+  case 'f':
+    return GetOrCreateFundamentalType(PtxFundamentalType::TK_F32);
+  case 'd':
+    return GetOrCreateFundamentalType(PtxFundamentalType::TK_F64);
+  default:
+    break;
+  }
+  return nullptr;
+}
 
-// AsmStatement *AsmContext::CreateBinaryOperator(AsmStatement::StmtKind Opcode,
-//                                                AsmStatement *LHS,
-//                                                AsmStatement *RHS) {
-//   AsmStatement *S = CreateStmt(Opcode);
-//   S->LHS = LHS;
-//   S->RHS = RHS;
-//   return S;
-// }
+PtxVectorType *PtxContext::CreateVectorType(PtxVectorType::TypeKind Kind, const PtxFundamentalType *Base) {
+  return  ::new (*this) PtxVectorType(Kind, Base);
+}
 
-// AsmStatement *AsmContext::CreateCastExpression(AsmType *Type,
-//                                                AsmStatement *SubExpr) {
-//   AsmStatement *S = CreateStmt(AsmStatement::SK_Cast);
-//   S->Type = Type;
-//   S->SubExpr = SubExpr;
-//   return S;
-// }
+PtxDeclStmt *PtxContext::CreateDeclStmt(const SmallVector<const PtxDecl *> &DeclGroup) {
+  return ::new (*this) PtxDeclStmt(DeclGroup);
+}
 
-// AsmStatement *AsmContext::CreateUnaryExpression(AsmStatement::StmtKind Opcode,
-//                                                 AsmStatement *SubExpr) {
-//   AsmStatement *S = CreateStmt(Opcode);
-//   S->SubExpr = SubExpr;
-//   return S;
-// }
+PtxVariableDecl *PtxContext::CreateVariableDecl(StringRef Name,
+                                                const PtxType *Type) {
+  return ::new (*this) PtxVariableDecl(Name, Type);
+}
 
-// AsmStatement *AsmContext::CreateVariableRefExpression(AsmSymbol *Symbol) {
-//   AsmStatement *S = CreateStmt(AsmStatement::SK_Variable);
-//   S->Variable = Symbol;
-//   return S;
-// }
+PtxCompoundStmt *
+PtxContext::CreateCompoundStmt(const SmallVector<PtxStmt *> &Stmts) {
+  return ::new (*this) PtxCompoundStmt(Stmts);
+}
 
-// AsmStatement *AsmContext::GetOrCreateSinkExpression() {
-//   if (SinkExpression)
-//     return SinkExpression;
-//   return SinkExpression = CreateStmt(AsmStatement::SK_Sink);
-// }
+PtxDeclRefExpr *PtxContext::CreateDeclRefExpr(const PtxVariableDecl *Var) {
+  return ::new (*this) PtxDeclRefExpr(Var);
+}
 
-// AsmSymbol *AsmContext::CreateSymbol(const std::string &Name, AsmType *Type,
-//                                     bool IsVar) {
-//   AsmSymbol *Sym = new (*this) AsmSymbol;
-//   Sym->Name = Name;
-//   Sym->Type = Type;
-//   Sym->IsVariable = IsVar;
-//   return Sym;
-// }
+PtxTupleExpr *
+PtxContext::CreateTupleExpr(const PtxTupleType *Type,
+                            const PtxTupleExpr::ElementList &Elements) {
+  return ::new (*this) PtxTupleExpr(Type, Elements);
+}
+
+PtxSinkExpr *PtxContext::CreateSinkExpr() {
+  return ::new (*this) PtxSinkExpr(GetOrCreateAnyType());
+}
+
+PtxInstruction *
+PtxContext::CreateInstruction(ptx::InstKind Op,
+                              const PtxInstruction::OperandList &Operands,
+                              const PtxExpr *PredOut) {
+  return ::new (*this) PtxInstruction(Op, Operands, PredOut);
+}
+
+PtxGuardInstruction *
+PtxContext::CreateGuardInstruction(bool isNeg, const PtxExpr *Pred,
+                                   const PtxInstruction *Inst) {
+  return ::new (*this) PtxGuardInstruction(isNeg, Pred, Inst);
+}
+
+PtxUnaryOperator *PtxContext::CreateUnaryOperator(PtxUnaryOperator::Opcode Op,
+                                                  const PtxExpr *Operand) {
+  return ::new (*this) PtxUnaryOperator(Op, Operand, Operand->getType());
+}
+
+PtxBinaryOperator *
+PtxContext::CreateBinaryOperator(PtxBinaryOperator::Opcode Op,
+                                 const PtxExpr *LHS, const PtxExpr *RHS) {
+  return ::new (*this) PtxBinaryOperator(Op, LHS, RHS, nullptr);
+}
+
+PtxConditionalOperator *
+PtxContext::CreateConditionalOperator(const PtxExpr *Cond, const PtxExpr *LHS,
+                                      const PtxExpr *RHS) {
+  return ::new (*this) PtxConditionalOperator(Cond, LHS, RHS, LHS->getType());
+}
+
+PtxCastExpr *
+PtxContext::CreateCastExpression(const PtxFundamentalType *CastType,
+                                 const PtxExpr *SubExpr) {
+  return ::new (*this) PtxCastExpr(CastType, SubExpr);
+}
+
+PtxIntegerLiteral *PtxContext::CreateIntegerLiteral(const PtxType *Type,
+                                                    llvm::APInt Val) {
+  return ::new (*this) PtxIntegerLiteral(Type, Val);
+}
+
+PtxFloatingLiteral *PtxContext::CreateFloatLiteral(const PtxType *Type,
+                                                   llvm::APFloat Val) {
+  return ::new (*this) PtxFloatingLiteral(Type, Val);
+}
 
 PtxType::~PtxType() = default;
 PtxDecl::~PtxDecl() = default;
@@ -154,9 +177,19 @@ PtxStmt::~PtxStmt() = default;
 
 PtxParser::~PtxParser() { ExitScope(); }
 
-void PtxParser::AddBuiltinSymbol(const std::string &Name, AsmType *Type) {
-  AsmSymbol *Sym = Context.CreateSymbol(Name, Type);
-  getCurScope()->AddDecl(Sym);
+PtxDeclResult PtxParser::AddBuiltinSymbol(StringRef Name, const PtxType *Type) {
+  PtxVariableDecl *D = getContext().CreateVariableDecl(Name, Type);
+  getCurScope()->AddDecl(D);
+  return D;
+}
+
+PtxDeclResult PtxParser::AddInlineAsmOperands(StringRef Name,
+                                              StringRef Constraint) {
+  PtxType *Type = getContext().GetTypeFromConstraint(Constraint);
+  if (!Type)
+    return true;
+
+  return getContext().CreateVariableDecl(Name, Type);
 }
 
 const AsmToken &PtxParser::Lex() {
@@ -173,93 +206,127 @@ const AsmToken &PtxParser::Lex() {
   return *tok;
 }
 
-AsmStmtResult PtxParser::ParseStatement() {
-  if (getTok().is(AsmToken::LBrac)) {
+PtxStmtResult PtxParser::ParseStatement() {
+  switch (getTok().getKind()) {
+  case AsmToken::LCurly:
     return ParseCompoundStatement();
+  case AsmToken::At:
+    return ParseGuardInstruction();
+  case AsmToken::DotIdentifier:
+    return ParseDeclStmt();
+  default:
+    break;
   }
   return ParseInstruction();
 }
 
-AsmStmtResult PtxParser::ParseCompoundStatement() {
-  assert(getTok().is(AsmToken::LBrac));
+PtxStmtResult PtxParser::ParseCompoundStatement() {
+  assert(getTok().is(AsmToken::LCurly));
   Lex(); // eat '{'
-  AsmStatement *Block = Context.CreateStmt(AsmStatement::SK_Block);
+
   ParseScope BlockScope(this);
 
-  SmallVector<AsmStatement *, 10> Stmts;
-  while (getTok().isNot(AsmToken::RBrac)) {
+  SmallVector<PtxStmt *> Stmts;
+  while (getTok().isNot(AsmToken::RCurly)) {
     if (getTok().isVarAttributes()) {
-      AsmStmtResult Res; /* = ParseDeclaration*/
-      if (Res.isUsable())
-        Stmts.push_back(Res.get());
-      else
-        return Res;
+      PtxStmtResult Res = ParseDeclStmt();
+      if (Res.isInvalid())
+        return true;
+      Stmts.push_back(Res.get());
     } else {
-      AsmStmtResult Res = ParseStatement();
+      PtxStmtResult Res = ParseStatement();
       if (Res.isInvalid())
         return Res;
       Stmts.push_back(Res.get());
     }
   }
-  Block->Block = std::move(Stmts);
-  return Block;
+  return getContext().CreateCompoundStmt(Stmts);
 }
 
-AsmStmtResult PtxParser::ParsePredicate() { return true; }
+PtxStmtResult PtxParser::ParseGuardInstruction() {
+  assert(getTok().is(AsmToken::At));
+  Lex(); // eat '@'
 
-AsmStmtResult PtxParser::ParseInstruction() {
-  AsmStatement *Inst = Context.CreateStmt(AsmStatement::SK_Inst);
-  if (getTok().is(AsmToken::At)) {
-    AsmStmtResult PredExpr = ParsePredicate();
-    if (PredExpr.isInvalid())
-      return true;
-    Inst->Pred = PredExpr.get();
+  bool isNeg = false;
+  if (getTok().is(AsmToken::Exclaim)) {
+    isNeg = true;
+    Lex(); // eat '!'
   }
 
-  AsmStmtResult UnGuardInst = ParseUnGuardInstruction();
-
-  if (UnGuardInst.isInvalid())
+  PtxExprResult Pred = ParsePrimaryExpression();
+  if (Pred.isInvalid())
     return true;
 
-  Inst->Body = UnGuardInst.get();
-  return Inst;
+  PtxStmtResult SubInst = ParseInstruction();
+  if (SubInst.isInvalid())
+    return true;
+
+  return getContext().CreateGuardInstruction(
+      isNeg, Pred.get(), (const PtxInstruction *)SubInst.get());
 }
 
-AsmStmtResult PtxParser::ParseUnGuardInstruction() {
+PtxStmtResult PtxParser::ParseInstruction() {
   if (getTok().isNot(AsmToken::Identifier))
     return true;
-  AsmStatement *Inst = Context.CreateStmt(AsmStatement::SK_Inst);
-  if (ParseInstructionFlags(Inst->InstructionAttr))
+
+  ptx::InstKind Opcode = ptx::FindInstructionKindFromName(getTok().getString());
+  if (Opcode == ptx::Invalid)
+    return true; // Parseing an invalid or unsupported instruction
+  
+  Lex(); // eat opcode
+
+  PtxInstruction::Attribute Attr;
+  if (ParseInstructionFlags(Attr))
+    return true; // Parsed an invalid instruction attributes
+
+  PtxExprResult DestOperand = ParseInstructionDestOperand();
+  if (DestOperand.isInvalid())
     return true;
 
-  do {
-    if (getTok().is(AsmToken::Comma))
-      Lex(); // eat ','
-    AsmStmtResult Operand = ParseInstructionOperand();
+  bool HasPredOutput = getTok().is(AsmToken::Pipe);
+  PtxExprResult PredOutput;
+
+  if (HasPredOutput) {
+    PredOutput = ParsePredOutput();
+    if (PredOutput.isInvalid())
+      return true;
+  }
+
+  PtxInstruction::OperandList Operands;
+  Operands.push_back(DestOperand.get());
+
+  while (getTok().is(AsmToken::Comma)) {
+    Lex(); // eat ','
+    PtxExprResult Operand = ParseInstructionSrcOperand();
     if (Operand.isInvalid())
       return true;
-    Inst->Operands.push_back(Operand.get());
-  } while (getTok().is(AsmToken::Comma));
+    Operands.push_back(Operand.get());
+  }
 
   if (getTok().isNot(AsmToken::EndOfStatement))
     return true;
   Lex(); // eat ';'
-  return Inst;
+
+  return getContext().CreateInstruction(
+      Opcode, Operands, HasPredOutput ? PredOutput.get() : nullptr);
 }
 
-bool PtxParser::ParseInstructionFlags(InstAttr &Attr) {
-  if (getTok().isNot(AsmToken::Identifier))
-    return true;
-  ptx::InstKind Opcode = ptx::FindInstructionKindFromName(getTok().getString());
-  if (Opcode == ptx::Invalid)
-    return true;
-
-  Attr.Opcode = Opcode;
-  Lex(); // eat identifier
-
+bool PtxParser::ParseInstructionFlags(PtxInstruction::Attribute &Attr) {
   while (getTok().is(AsmToken::DotIdentifier)) {
     if (getTok().isTypeName())
-      Attr.Types.push_back(Context.getScalarTypeFromName(getTok().getString()));
+      Attr.Types.push_back(
+          getContext().GetOrCreateFundamentalType(getTok().getString()));
+
+    if (getTok().getString() == ".eq")
+      Attr.setComparisonOp(ptx::CO_Eq);
+    if (getTok().getString() == ".ne")
+      Attr.setComparisonOp(ptx::CO_Ne);
+    if (getTok().getString() == ".lt")
+      Attr.setComparisonOp(ptx::CO_Le);
+    if (getTok().getString() == ".gt")
+      Attr.setComparisonOp(ptx::CO_Gt);
+    if (getTok().getString() == ".ge")
+      Attr.setComparisonOp(ptx::CO_Ge);
 
     /// TODO: Parse Other modifiers
     Lex(); // eat a 'dot identifier
@@ -267,45 +334,74 @@ bool PtxParser::ParseInstructionFlags(InstAttr &Attr) {
   return false;
 }
 
-AsmStmtResult PtxParser::ParseTuple() {
+PtxExprResult PtxParser::ParsePredOutput() {
+  assert(getTok().is(AsmToken::Pipe));
+  // Parse predicate output
+  Lex(); // eat '|'
+  switch (getTok().getKind()) {
+  case AsmToken::Identifier:
+    if (PtxVariableDecl *S = getCurScope()->LookupSymbol(getTok().getString()))
+      return getContext().CreateDeclRefExpr(S);
+    break;
+  case AsmToken::Sink:
+    return getContext().CreateSinkExpr();
+  default:
+    break;
+  }
+
+  // expect an identifier or '_'
+  return true;
+}
+
+PtxExprResult PtxParser::ParseTuple() {
   Lex(); // eat '{'
-  AsmStmtResult Tuple = Context.CreateStmt(AsmStatement::SK_Tuple);
+  PtxTupleExpr::ElementList List;
   do {
     if (getTok().is(AsmToken::Comma))
       Lex(); // eat ','
     switch (getTok().getKind()) {
     case AsmToken::Identifier:
-      if (AsmSymbol *S = getCurScope()->LookupSymbol(getTok().getString()))
-        Tuple.get()->Tuple.push_back(Context.CreateVariableRefExpression(S));
+      if (PtxVariableDecl *S =
+              getCurScope()->LookupSymbol(getTok().getString()))
+        List.push_back(getContext().CreateDeclRefExpr(S));
       else
         return true;
       break;
     case AsmToken::Sink:
-      Tuple.get()->Tuple.push_back(Context.GetOrCreateSinkExpression());
+      List.push_back(getContext().CreateSinkExpr());
       break;
     default:
       auto Const = ParseConstantExpression();
       if (Const.isInvalid())
         return true;
-      Tuple.get()->Tuple.push_back(Const.get());
+      List.push_back(Const.get());
     }
   } while (getTok().is(AsmToken::Comma));
   if (getTok().isNot(AsmToken::RBrac))
     return true;
-  return Tuple;
+
+  PtxTupleType::ElementList ElementTypes;
+  for (const auto *E : List) {
+    ElementTypes.push_back(E->getType());
+  }
+
+  return getContext().CreateTupleExpr(
+      getContext().CreateTupleType(ElementTypes), List);
 }
 
-AsmStmtResult PtxParser::ParseInstructionFirstOperand() {
-  AsmStmtResult FirstOp;
+PtxExprResult PtxParser::ParseInstructionDestOperand() {
+  PtxExprResult FirstOp;
   switch (getTok().getKind()) {
   case AsmToken::Identifier:
-    if (AsmSymbol *S = getCurScope()->LookupSymbol(getTok().getString()))
-      FirstOp = Context.CreateVariableRefExpression(S);
+    if (PtxVariableDecl *S = getCurScope()->LookupSymbol(getTok().getString()))
+      FirstOp = getContext().CreateDeclRefExpr(S);
     else
       return true;
+    Lex(); // eat identifier
     break;
   case AsmToken::Sink:
-    FirstOp = Context.GetOrCreateSinkExpression();
+    FirstOp = getContext().CreateSinkExpr();
+    Lex(); // eat '_'
     break;
   case AsmToken::LBrac:
     FirstOp = ParseTuple();
@@ -314,57 +410,37 @@ AsmStmtResult PtxParser::ParseInstructionFirstOperand() {
     return true;
   }
 
-  Lex(); // eat '_' or identifier
-
-  // Parse predicate output
-  if (getTok().is(AsmToken::Pipe)) {
-    Lex(); // eat '|'
-    switch (getTok().getKind()) {
-    case AsmToken::Identifier:
-      if (AsmSymbol *S = getCurScope()->LookupSymbol(getTok().getString()))
-        FirstOp.get()->PredOutput = Context.CreateVariableRefExpression(S);
-      else
-        return true;
-      break;
-    case AsmToken::Sink:
-      FirstOp.get()->PredOutput = Context.GetOrCreateSinkExpression();
-      break;
-    default:
-      // expect an identifier or '_'
-      return true;
-    }
-    Lex(); // eat identifier or '_'
-  }
-
   return FirstOp;
 }
 
-AsmStmtResult PtxParser::ParseInstructionPrimaryOperand() {
+PtxExprResult PtxParser::ParseInstructionPrimaryOperand() {
   if (getTok().is(AsmToken::Identifier)) {
     auto ID = getTok();
     Lex(); // eat identifier
-    if (AsmSymbol *S = getCurScope()->LookupSymbol(ID.getString()))
-      return Context.CreateVariableRefExpression(S);
+    if (PtxVariableDecl *S = getCurScope()->LookupSymbol(ID.getString()))
+      return getContext().CreateDeclRefExpr(S);
     return true;
   }
 
-  if (getTok().is(AsmToken::LBrac))
+  if (getTok().is(AsmToken::LCurly))
     return ParseTuple();
 
   return ParseConstantExpression();
 }
 
-AsmStmtResult PtxParser::ParseInstructionUnaryOperand() {
+PtxExprResult PtxParser::ParseInstructionUnaryOperand() {
   AsmToken Tok = getTok();
-  AsmStmtResult Operand = ParseInstructionPrimaryOperand();
+  PtxExprResult Operand = ParseInstructionPrimaryOperand();
   if (Operand.isInvalid())
     return true;
   if (Tok.is(AsmToken::Exclaim, AsmToken::Minus)) {
     switch (Tok.getKind()) {
     case AsmToken::Exclaim:
-      return Context.CreateUnaryExpression(AsmStatement::SK_Not, Operand.get());
+      return getContext().CreateUnaryOperator(PtxUnaryOperator::LNot,
+                                              Operand.get());
     case AsmToken::Minus:
-      return Context.CreateUnaryExpression(AsmStatement::SK_Neg, Operand.get());
+      return getContext().CreateUnaryOperator(PtxUnaryOperator::Minus,
+                                              Operand.get());
     default:
       break;
     }
@@ -373,8 +449,8 @@ AsmStmtResult PtxParser::ParseInstructionUnaryOperand() {
   return Operand;
 }
 
-AsmStmtResult PtxParser::ParseInstructionOperand() {
-  AsmStmtResult Operand = ParseInstructionUnaryOperand();
+PtxExprResult PtxParser::ParseInstructionSrcOperand() {
+  PtxExprResult Operand = ParseInstructionUnaryOperand();
   if (Operand.isInvalid())
     return true;
 
@@ -382,166 +458,238 @@ AsmStmtResult PtxParser::ParseInstructionOperand() {
   return Operand;
 }
 
-AsmStmtResult PtxParser::ParseConstantExpression() {
-  AsmToken Tok = getTok();
-  switch (Tok.getKind()) {
-  case AsmToken::Float: {
-    Lex();
-    return Context.CreateFloatConstant(Context.getScalarType(AsmType::TK_F32),
-                                       Tok.getF32Val());
+PtxStmtResult PtxParser::ParseDeclStmt() {
+  PtxVariableDecl::Attribute Attr;
+
+  PtxTypeResult Declspec = ParseVarDeclspec(Attr);
+  if (Declspec.isInvalid())
+    return true;
+
+  SmallVector<const PtxDecl *> DeclGroup;
+  bool FirstDecl = true;
+  while (getTok().isNot(AsmToken::EndOfStatement)) {
+    if (!FirstDecl && getTok().is(AsmToken::Comma))
+      return true;
+    
+    if (FirstDecl)
+      FirstDecl = false;
+    
+    PtxDeclResult D = ParseVariableDecl(Declspec.get());
+    if (D.isInvalid())
+      return true;
+    getCurScope()->AddDecl(dyn_cast<PtxVariableDecl>(D.get()));
+    DeclGroup.push_back(D.get());
   }
-  case AsmToken::Double: {
-    Lex();
-    return Context.CreateFloatConstant(Context.getScalarType(AsmType::TK_F64),
-                                       Tok.getF64Val());
+
+  Lex(); // eat ';'
+  return getContext().CreateDeclStmt(DeclGroup);
+}
+
+PtxTypeResult PtxParser::ParseVarDeclspec(PtxVariableDecl::Attribute Attr) {
+
+  if (!getTok().isStorageClass()) // unexpected dot identifier
+    return true;
+  
+  Lex(); // eat storage class
+
+  bool HasAlign = getTok().getString() == ".align";
+
+  if (HasAlign) {
+    Lex(); // eat '.align'
+    if (getTok().isNot(AsmToken::Integer))
+      return true; // expected an integer
+    Attr.Align = getTok().getIntVal();
+    Lex(); // eat integer
   }
-  default:
-    break;
+
+  bool IsV2 = false, IsV4 = false;
+  if (getTok().getString() == ".v2") {
+    IsV2 = true;
+    Lex(); // eat '.v2'
+  } else if (getTok().getString() == ".v4") {
+    IsV4 = true;
+    Lex(); // eat '.v4'
   }
+
+  PtxFundamentalType *BaseType = getContext().GetOrCreateFundamentalType(getTok().getString());
+  PtxType *VarType = BaseType;
+  if (IsV2) {
+    VarType = getContext().CreateVectorType(PtxVectorType::V2, BaseType);
+  } else if (IsV4) {
+    VarType = getContext().CreateVectorType(PtxVectorType::V4, BaseType);
+  }
+
+  Lex(); // eat a type name
+
+  return VarType;
+}
+
+PtxDeclResult PtxParser::ParseVariableDecl(const PtxType *Type) {
+  if (getTok().isNot(AsmToken::Identifier))
+    return true;  // expected an identifier
+  
+  StringRef VarName = getTok().getIdentifier();
+
+  Lex(); // eat identifier
+
+  // Parse Parameterized Variable Names
+  if (getTok().is(AsmToken::Less)) {
+    /// TODO: Parameterized Variable Names
+  }
+
+  // Parse array
+  if (getTok().is(AsmToken::LBrac)) {
+    /// TODO: Parse array
+  }
+
+  return getContext().CreateVariableDecl(VarName, Type);
+}
+
+PtxExprResult PtxParser::ParseConstantExpression() {
   return ParseConditionalExpression();
 }
 
-AsmStmtResult PtxParser::ParseConditionalExpression() {
-  AsmStmtResult LogicOrExpr = ParseLogicOrExpression();
+PtxExprResult PtxParser::ParseConditionalExpression() {
+  PtxExprResult LogicOrExpr = ParseLogicOrExpression();
   if (LogicOrExpr.isInvalid())
     return true;
   if (getTok().is(AsmToken::Question)) {
     Lex(); // eat '?'
-    AsmStmtResult Then = ParseConditionalExpression();
+    PtxExprResult Then = ParseConditionalExpression();
     if (Then.isInvalid() || getTok().isNot(AsmToken::Colon))
       return true;
-    AsmStmtResult Else = ParseConditionalExpression();
+    Lex(); // eat ':'
+    PtxExprResult Else = ParseConditionalExpression();
     if (Else.isInvalid())
       return true;
-    return Context.CreateConditionalExpression(LogicOrExpr.get(), Then.get(),
-                                               Else.get());
+    return getContext().CreateConditionalOperator(LogicOrExpr.get(), Then.get(),
+                                                  Else.get());
   }
   return LogicOrExpr;
 }
 
-AsmStmtResult PtxParser::ParseLogicOrExpression() {
-  AsmStmtResult LHS = ParseLogicAndExpression();
+PtxExprResult PtxParser::ParseLogicOrExpression() {
+  PtxExprResult LHS = ParseLogicAndExpression();
   if (LHS.isInvalid())
     return true;
   while (getTok().is(AsmToken::PipePipe)) {
     Lex(); // eat '||'
-    AsmStmtResult RHS = ParseLogicAndExpression();
+    PtxExprResult RHS = ParseLogicAndExpression();
     if (RHS.isInvalid())
       return true;
-    LHS =
-        Context.CreateBinaryOperator(AsmStatement::SK_Or, LHS.get(), RHS.get());
+    LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::LOr, LHS.get(),
+                                            RHS.get());
   }
   return LHS;
 }
 
-AsmStmtResult PtxParser::ParseLogicAndExpression() {
-  AsmStmtResult LHS = ParseInclusiveOrExpression();
+PtxExprResult PtxParser::ParseLogicAndExpression() {
+  PtxExprResult LHS = ParseInclusiveOrExpression();
   if (LHS.isInvalid())
     return true;
   while (getTok().is(AsmToken::AmpAmp)) {
     Lex(); // eat '&&'
-    AsmStmtResult RHS = ParseInclusiveOrExpression();
+    PtxExprResult RHS = ParseInclusiveOrExpression();
     if (RHS.isInvalid())
       return true;
-    LHS = Context.CreateBinaryOperator(AsmStatement::SK_And, LHS.get(),
-                                       RHS.get());
+    LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::LAnd, LHS.get(),
+                                            RHS.get());
   }
   return LHS;
 }
 
-AsmStmtResult PtxParser::ParseInclusiveOrExpression() {
-  AsmStmtResult LHS = ParseExclusiveOrExpression();
+PtxExprResult PtxParser::ParseInclusiveOrExpression() {
+  PtxExprResult LHS = ParseExclusiveOrExpression();
   if (LHS.isInvalid())
     return true;
   while (getTok().is(AsmToken::Pipe)) {
     Lex(); // eat '|'
-    AsmStmtResult RHS = ParseInclusiveOrExpression();
+    PtxExprResult RHS = ParseInclusiveOrExpression();
     if (RHS.isInvalid())
       return true;
-    LHS = Context.CreateBinaryOperator(AsmStatement::SK_BitOr, LHS.get(),
-                                       RHS.get());
+    LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::Or, LHS.get(),
+                                            RHS.get());
   }
   return LHS;
 }
 
-AsmStmtResult PtxParser::ParseExclusiveOrExpression() {
-  AsmStmtResult LHS = ParseAndExpression();
+PtxExprResult PtxParser::ParseExclusiveOrExpression() {
+  PtxExprResult LHS = ParseAndExpression();
   if (LHS.isInvalid())
     return true;
   while (getTok().is(AsmToken::Caret)) {
     Lex(); // eat '^'
-    AsmStmtResult RHS = ParseAndExpression();
+    PtxExprResult RHS = ParseAndExpression();
     if (RHS.isInvalid())
       return true;
-    LHS = Context.CreateBinaryOperator(AsmStatement::SK_BitXor, LHS.get(),
-                                       RHS.get());
+    LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::Xor, LHS.get(),
+                                            RHS.get());
   }
   return LHS;
 }
 
-AsmStmtResult PtxParser::ParseAndExpression() {
-  AsmStmtResult LHS = ParseEqualityExpression();
+PtxExprResult PtxParser::ParseAndExpression() {
+  PtxExprResult LHS = ParseEqualityExpression();
   if (LHS.isInvalid())
     return true;
   while (getTok().is(AsmToken::Amp)) {
     Lex(); // eat '&'
-    AsmStmtResult RHS = ParseEqualityExpression();
+    PtxExprResult RHS = ParseEqualityExpression();
     if (RHS.isInvalid())
       return true;
-    LHS = Context.CreateBinaryOperator(AsmStatement::SK_BitAnd, LHS.get(),
-                                       RHS.get());
+    LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::And, LHS.get(),
+                                            RHS.get());
   }
   return LHS;
 }
 
-AsmStmtResult PtxParser::ParseEqualityExpression() {
-  AsmStmtResult LHS = ParseRelationExpression();
+PtxExprResult PtxParser::ParseEqualityExpression() {
+  PtxExprResult LHS = ParseRelationExpression();
   if (LHS.isInvalid())
     return true;
   while (getTok().is(AsmToken::EqualEqual, AsmToken::ExclaimEqual)) {
     auto Opcode = getTok().getKind();
     Lex(); // eat '==' or '!='
-    AsmStmtResult RHS = ParseRelationExpression();
+    PtxExprResult RHS = ParseRelationExpression();
     if (RHS.isInvalid())
       return true;
     if (Opcode == AsmToken::EqualEqual)
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_EQ, LHS.get(),
-                                         RHS.get());
+      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::EQ, LHS.get(),
+                                              RHS.get());
     else
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_NE, LHS.get(),
-                                         RHS.get());
-    ;
+      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::NE, LHS.get(),
+                                              RHS.get());
   }
   return LHS;
 }
 
-AsmStmtResult PtxParser::ParseRelationExpression() {
-  AsmStmtResult LHS = ParseShiftExpression();
+PtxExprResult PtxParser::ParseRelationExpression() {
+  PtxExprResult LHS = ParseShiftExpression();
   if (LHS.isInvalid())
     return true;
   while (getTok().is(AsmToken::Less, AsmToken::Greater, AsmToken::LessEqual,
                      AsmToken::GreaterEqual)) {
     auto Opcode = getTok().getKind();
     Lex(); // eat one of '<', '>', '<=' and '>='
-    AsmStmtResult RHS = ParseRelationExpression();
+    PtxExprResult RHS = ParseRelationExpression();
     if (RHS.isInvalid())
       return true;
     switch (Opcode) {
     case AsmToken::Less:
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_LT, LHS.get(),
-                                         RHS.get());
+      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::LT, LHS.get(),
+                                              RHS.get());
       break;
     case AsmToken::Greater:
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_GT, LHS.get(),
-                                         RHS.get());
+      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::GT, LHS.get(),
+                                              RHS.get());
       break;
     case AsmToken::LessEqual:
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_LE, LHS.get(),
-                                         RHS.get());
+      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::LE, LHS.get(),
+                                              RHS.get());
       break;
     case AsmToken::GreaterEqual:
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_GE, LHS.get(),
-                                         RHS.get());
+      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::GE, LHS.get(),
+                                              RHS.get());
       break;
     default:
       assert(false && "Invalid relation operator kind");
@@ -550,69 +698,68 @@ AsmStmtResult PtxParser::ParseRelationExpression() {
   return LHS;
 }
 
-AsmStmtResult PtxParser::ParseShiftExpression() {
-  AsmStmtResult LHS = ParseAdditiveExpression();
+PtxExprResult PtxParser::ParseShiftExpression() {
+  PtxExprResult LHS = ParseAdditiveExpression();
   if (LHS.isInvalid())
     return true;
   while (getTok().is(AsmToken::LessLess, AsmToken::GreaterGreater)) {
     auto Opcode = getTok().getKind();
     Lex(); // eat '<<' or '>>'
-    AsmStmtResult RHS = ParseAdditiveExpression();
+    PtxExprResult RHS = ParseAdditiveExpression();
     if (RHS.isInvalid())
       return true;
     if (Opcode == AsmToken::LessLess)
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_Shl, LHS.get(),
-                                         RHS.get());
+      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::Shl, LHS.get(),
+                                              RHS.get());
     else
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_Shr, LHS.get(),
-                                         RHS.get());
-    ;
+      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::Shr, LHS.get(),
+                                              RHS.get());
   }
   return LHS;
 }
 
-AsmStmtResult PtxParser::ParseAdditiveExpression() {
-  AsmStmtResult LHS = ParseMultiplicativeExpression();
+PtxExprResult PtxParser::ParseAdditiveExpression() {
+  PtxExprResult LHS = ParseMultiplicativeExpression();
   if (LHS.isInvalid())
     return true;
   while (getTok().is(AsmToken::Plus, AsmToken::Minus)) {
     auto Opcode = getTok().getKind();
     Lex(); // eat '+' or '-'
-    AsmStmtResult RHS = ParseMultiplicativeExpression();
+    PtxExprResult RHS = ParseMultiplicativeExpression();
     if (RHS.isInvalid())
       return true;
     if (Opcode == AsmToken::Plus)
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_Add, LHS.get(),
-                                         RHS.get());
+      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::Add, LHS.get(),
+                                              RHS.get());
     else
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_Sub, LHS.get(),
-                                         RHS.get());
+      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::Sub, LHS.get(),
+                                              RHS.get());
   }
   return LHS;
 }
 
-AsmStmtResult PtxParser::ParseMultiplicativeExpression() {
-  AsmStmtResult LHS = ParseCastExpresion();
+PtxExprResult PtxParser::ParseMultiplicativeExpression() {
+  PtxExprResult LHS = ParseCastExpresion();
   if (LHS.isInvalid())
     return true;
   while (getTok().is(AsmToken::Star, AsmToken::Slash, AsmToken::Percent)) {
     auto Opcode = getTok().getKind();
     Lex(); // eat one of '*', '/' and '%'
-    AsmStmtResult RHS = ParseCastExpresion();
+    PtxExprResult RHS = ParseCastExpresion();
     if (RHS.isInvalid())
       return true;
     switch (Opcode) {
     case AsmToken::Star:
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_Mul, LHS.get(),
-                                         RHS.get());
+      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::Mul, LHS.get(),
+                                              RHS.get());
       break;
     case AsmToken::Slash:
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_Div, LHS.get(),
-                                         RHS.get());
+      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::Div, LHS.get(),
+                                              RHS.get());
       break;
     case AsmToken::Percent:
-      LHS = Context.CreateBinaryOperator(AsmStatement::SK_Mod, LHS.get(),
-                                         RHS.get());
+      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::Rem, LHS.get(),
+                                              RHS.get());
       break;
     default:
       assert(false && "Invalid multiplicative operator kind");
@@ -621,41 +768,43 @@ AsmStmtResult PtxParser::ParseMultiplicativeExpression() {
   return LHS;
 }
 
-AsmStmtResult PtxParser::ParseCastExpresion() {
+PtxExprResult PtxParser::ParseCastExpresion() {
   if (getTok().is(AsmToken::LParen) && Lexer.peekTok().isTypeName()) {
     Lex();                     // eat '('
     AsmToken TypeName = Lex(); // eat typename
     if (getTok().isNot(AsmToken::RParen))
       return true;
-    AsmStmtResult SubExpr = ParseUnaryExpression();
+    PtxExprResult SubExpr = ParseUnaryExpression();
     if (SubExpr.isInvalid())
       return true;
-    AsmType *CastType =
-        getContext().getScalarTypeFromName(TypeName.getString());
-    return Context.CreateCastExpression(CastType, SubExpr.get());
+    PtxFundamentalType *CastType =
+        getContext().GetOrCreateFundamentalType(TypeName.getString());
+    return getContext().CreateCastExpression(CastType, SubExpr.get());
   }
 
   return ParseUnaryExpression();
 }
 
-AsmStmtResult PtxParser::ParseUnaryExpression() {
+PtxExprResult PtxParser::ParseUnaryExpression() {
   if (getTok().is(AsmToken::Plus, AsmToken::Minus, AsmToken::Exclaim,
                   AsmToken::Tilde)) {
     auto Opcode = getTok().getKind();
     Lex(); // eat unary operator
-    AsmStmtResult SubExpr = ParseCastExpresion();
+    PtxExprResult SubExpr = ParseCastExpresion();
     if (SubExpr.isInvalid())
       return true;
     switch (Opcode) {
     case AsmToken::Plus:
       return SubExpr;
     case AsmToken::Minus:
-      return Context.CreateUnaryExpression(AsmStatement::SK_Neg, SubExpr.get());
+      return getContext().CreateUnaryOperator(PtxUnaryOperator::Minus,
+                                              SubExpr.get());
     case AsmToken::Exclaim:
-      return Context.CreateUnaryExpression(AsmStatement::SK_Not, SubExpr.get());
+      return getContext().CreateUnaryOperator(PtxUnaryOperator::LNot,
+                                              SubExpr.get());
     case AsmToken::Tilde:
-      return Context.CreateUnaryExpression(AsmStatement::SK_BitNot,
-                                           SubExpr.get());
+      return getContext().CreateUnaryOperator(PtxUnaryOperator::Not,
+                                              SubExpr.get());
     default:
       assert(false && "Invalid unary operator kind");
     }
@@ -663,34 +812,41 @@ AsmStmtResult PtxParser::ParseUnaryExpression() {
   return ParsePrimaryExpression();
 }
 
-AsmStmtResult PtxParser::ParsePrimaryExpression() {
+PtxExprResult PtxParser::ParsePrimaryExpression() {
   if (getTok().is(AsmToken::Identifier) &&
       getTok().getString() == "WARP_SIZE") {
     auto *Symbol = getCurScope()->LookupSymbol(getTok().getString());
-    return Context.CreateVariableRefExpression(Symbol);
+    return getContext().CreateDeclRefExpr(Symbol);
   }
 
   auto Tok = getTok();
   Lex();
   switch (Tok.getKind()) {
   case AsmToken::Identifier: {
-    auto *Symbol = getCurScope()->LookupSymbol(getTok().getString());
+    auto *Symbol = getCurScope()->LookupSymbol(Tok.getString());
     if (Symbol)
-      return Context.CreateVariableRefExpression(Symbol);
+      return getContext().CreateDeclRefExpr(Symbol);
     return true;
   }
   case AsmToken::Integer:
-    return Context.CreateIntegerConstant(Context.getScalarType(AsmType::TK_S64),
-                                         Tok.getIntVal());
+    return getContext().CreateIntegerLiteral(
+        getContext().GetOrCreateFundamentalType(PtxFundamentalType::TK_S64),
+        llvm::APInt(64, Tok.getIntVal(), true));
   case AsmToken::Unsigned:
-    return Context.CreateIntegerConstant(Context.getScalarType(AsmType::TK_U64),
-                                         Tok.getUnsignedVal());
+    return getContext().CreateIntegerLiteral(
+        getContext().GetOrCreateFundamentalType(PtxFundamentalType::TK_U64),
+        llvm::APInt(64, Tok.getUnsignedVal(), false));
+  case AsmToken::Float:
+    return getContext().CreateFloatLiteral(
+        getContext().GetOrCreateFundamentalType(PtxFundamentalType::TK_F32),
+        llvm::APFloat(Tok.getF32Val()));
   case AsmToken::Double:
-    return Context.CreateFloatConstant(Context.getScalarType(AsmType::TK_F64),
-                                       Tok.getF64Val());
+    return getContext().CreateFloatLiteral(
+        getContext().GetOrCreateFundamentalType(PtxFundamentalType::TK_F64),
+        llvm::APFloat(Tok.getF64Val()));
   case AsmToken::LParen: {
-    AsmStmtResult Expr = ParseConstantExpression();
-    if (getTok().is(AsmToken::RParen))
+    PtxExprResult Expr = ParseConstantExpression();
+    if (getTok().isNot(AsmToken::RParen))
       return true;
     Lex(); // eat ')'
     return Expr;
