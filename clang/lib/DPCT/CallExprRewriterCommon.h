@@ -682,6 +682,113 @@ inline std::function<std::string(const CallExpr *C)> getReplacedType(size_t Idx)
 // Get the derefed type name of an arg while getDereferencedExpr is get the
 // derefed expr.
 inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) {
+
+  std::function<clang::RecordDecl*(clang::QualType)>  getAsRecordDeclDPCT=[&](clang::QualType BaseType) {
+  BaseType = BaseType.getNonReferenceType();
+  if (auto *RD = BaseType->getAsRecordDecl()) {
+    if (const auto *CTSD =
+            llvm::dyn_cast<ClassTemplateSpecializationDecl>(RD)) {
+      // Template might not be instantiated yet, fall back to primary template
+      // in such cases.
+      if (CTSD->getTemplateSpecializationKind() == TSK_Undeclared)
+        RD = CTSD->getSpecializedTemplate()->getTemplatedDecl();
+    }
+    return RD;
+  }
+
+  if (const auto *TST = BaseType->getAs<clang::TemplateSpecializationType>()) {
+    if (const auto *TD = llvm::dyn_cast_or_null<clang::ClassTemplateDecl>(
+            TST->getTemplateName().getAsTemplateDecl())) {
+      return (clang::RecordDecl*)TD->getTemplatedDecl();
+    }
+  }
+
+  return (clang::RecordDecl*)nullptr;
+};
+
+  std::function<clang::QualType(const Expr *)>  getApproximateType=[&](const Expr *E)->clang::QualType {
+  if (E->getType().isNull())
+    return clang::QualType();
+  E = E->IgnoreParenImpCasts();
+  clang::QualType Unresolved = E->getType();
+  // We only resolve DependentTy, or undeduced autos (including auto* etc).
+  if (!Unresolved->isSpecificBuiltinType(BuiltinType::Dependent)) {
+    clang::AutoType *Auto = Unresolved->getContainedAutoType();
+    if (!Auto || !Auto->isUndeducedAutoType())
+      return Unresolved;
+  }
+  // A call: approximate-resolve callee to a function type, get its return type
+  if (const clang::CallExpr *CE = llvm::dyn_cast<CallExpr>(E)) {
+    clang::QualType Callee = getApproximateType(CE->getCallee());
+    if (Callee.isNull() ||
+        Callee->isSpecificPlaceholderType(clang::BuiltinType::BoundMember))
+      Callee = Expr::findBoundMemberType(CE->getCallee());
+    if (Callee.isNull())
+      return Unresolved;
+
+    if (const auto *FnTypePtr = Callee->getAs<clang::PointerType>()) {
+      Callee = FnTypePtr->getPointeeType();
+    } else if (const auto *BPT = Callee->getAs<clang::BlockPointerType>()) {
+      Callee = BPT->getPointeeType();
+    }
+    if (const clang::FunctionType *FnType = Callee->getAs<clang::FunctionType>())
+      return FnType->getReturnType().getNonReferenceType();
+
+    // Unresolved call: try to guess the return type.
+    if (const auto *OE = llvm::dyn_cast<clang::OverloadExpr>(CE->getCallee())) {
+      // If all candidates have the same approximate return type, use it.
+      // Discard references and const to allow more to be "the same".
+      // (In particular, if there's one candidate + ADL, resolve it).
+      const Type *Common = nullptr;
+      for (const auto *D : OE->decls()) {
+        clang::QualType ReturnType;
+        if (const auto *FD = llvm::dyn_cast<clang::FunctionDecl>(D))
+          ReturnType = FD->getReturnType();
+        else if (const auto *FTD = llvm::dyn_cast<clang::FunctionTemplateDecl>(D))
+          ReturnType = FTD->getTemplatedDecl()->getReturnType();
+        if (ReturnType.isNull())
+          continue;
+        const clang::Type *Candidate =
+            ReturnType.getNonReferenceType().getCanonicalType().getTypePtr();
+        if (Common && Common != Candidate)
+          return Unresolved; // Multiple candidates.
+        Common = Candidate;
+      }
+      if (Common != nullptr)
+        return QualType(Common, 0);
+    }
+  }
+  // A dependent member: approximate-resolve the base, then lookup.
+  if (const auto *CDSME = llvm::dyn_cast<CXXDependentScopeMemberExpr>(E)) {
+    QualType Base = CDSME->isImplicitAccess()
+                        ? CDSME->getBaseType()
+                        : getApproximateType(CDSME->getBase());
+    if (CDSME->isArrow() && !Base.isNull())
+      Base = Base->getPointeeType(); // could handle unique_ptr etc here?
+    auto *RD =
+        Base.isNull()
+            ? nullptr
+            : llvm::dyn_cast_or_null<CXXRecordDecl>(getAsRecordDeclDPCT(Base));
+    if (RD && RD->isCompleteDefinition()) {
+      // Look up member heuristically, including in bases.
+      for (const auto *Member : RD->lookupDependentName(
+               CDSME->getMember(), [](const NamedDecl *Member) {
+                 return llvm::isa<ValueDecl>(Member);
+               })) {
+        return llvm::cast<ValueDecl>(Member)->getType().getNonReferenceType();
+      }
+    }
+  }
+  // A reference to an `auto` variable: approximate-resolve its initializer.
+  if (const auto *DRE = llvm::dyn_cast<DeclRefExpr>(E)) {
+    if (const auto *VD = llvm::dyn_cast<VarDecl>(DRE->getDecl())) {
+      if (VD->hasInit())
+        return getApproximateType(VD->getInit());
+    }
+  }
+  return Unresolved;
+};
+
   return [=](const CallExpr *C) -> std::string {
     if (Idx >= C->getNumArgs())
       return "";
@@ -718,6 +825,11 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
     }
 
     std::string TypeStr = DpctGlobalInfo::getReplacedTypeName(DerefQT);
+    
+    if(TypeStr == "auto"){
+      TypeStr=DpctGlobalInfo::getReplacedTypeName(getApproximateType(C->getArg(Idx)));
+    }
+
     if (TypeStr == "<dependent type>") {
       if (NeedDeref) {
         return "typename std::remove_pointer<decltype(" +
