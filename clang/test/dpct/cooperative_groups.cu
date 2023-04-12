@@ -22,14 +22,23 @@ __device__ void foo() {
   // the type of cg::tiled_partition<32>(block)
   // is not cg::thread_block_tile<32>, it type is roughly like
   // cg::thread_block_tile<32, decltype(block)>.
-  const auto catile32 = cg::tiled_partition<32>(block);
-  auto atile32 = cg::tiled_partition<32>(block);
-  const cg::thread_block_tile<32> ctile32 = cg::tiled_partition<32>(block);
-  cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(block);
   
+  // CHECK: const auto catile32 = item_ct1.get_sub_group();
+  const auto catile32 = cg::tiled_partition<32>(block);
+  // CHECK: auto atile32 = item_ct1.get_sub_group(); 
+  auto atile32 = cg::tiled_partition<32>(block);
+  // CHECK: const sycl::sub_group ctile32 = item_ct1.get_sub_group(); 
+  const cg::thread_block_tile<32> ctile32 = cg::tiled_partition<32>(block);
+  // CHECK: sycl::sub_group tile32 = item_ct1.get_sub_group();
+  cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(block);
+
+  // const auto catile16 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16);
   const auto catile16 = cg::tiled_partition<16>(block);
+  // auto atile16 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16);
   auto atile16 = cg::tiled_partition<16>(block);
+  // const dpct::experimental::logical_group ctile16 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16);
   const cg::thread_block_tile<16> ctile16 = cg::tiled_partition<16>(block);
+  // dpct::experimental::logical_group tile16 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16);
   cg::thread_block_tile<16> tile16 = cg::tiled_partition<16>(block);
 
   const auto cgg = cg::this_grid();
