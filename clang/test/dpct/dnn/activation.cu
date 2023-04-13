@@ -149,7 +149,7 @@ void test1() {
 
     alpha = 2.f, beta = 0.f;
     cudaDeviceSynchronize();
-    auto s = cudnnActivationBackward(handle, desc, &alpha, outTensor, out, diffoutTensor, diffout, dataTensor, data, &beta, diffdataTensor, diffdata);
+    auto s = cudnnActivationBackward(handle, desc, (void *)(&alpha), outTensor, out, diffoutTensor, diffout, dataTensor, data, &beta, diffdataTensor, diffdata);
     cudaDeviceSynchronize();
 
     cudaMemcpy(host_diffdata.data(), diffdata, ele_num * sizeof(HT), cudaMemcpyDeviceToHost);

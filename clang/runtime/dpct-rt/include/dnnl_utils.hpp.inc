@@ -38,6 +38,15 @@
 
 namespace dpct {
 namespace dnnl {
+// DPCT_LABEL_BEGIN|get_version|dpct::dnnl
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+/// Get concatenated library version as an integer.
+static inline size_t get_version() {
+  const ::dnnl::version_t *ver = ::dnnl::version();
+  return ver->major * 1000 + ver->minor * 100 + ver->patch;
+}
+// DPCT_LABEL_END
 class engine_ext;
 typedef oneapi::mkl::rng::philox4x32x10 rng_engine_t;
 // DPCT_LABEL_BEGIN|memory_format_tag|dpct::dnnl
@@ -766,7 +775,7 @@ class dropout_desc {
   void generate(sycl::queue *q, std::int64_t required_state_size,
                 std::int64_t num, void *buffer) {
     sycl::event e_gen = oneapi::mkl::rng::generate(
-        oneapi::mkl::rng::bernoulli<std::int32_t>(_imp->_p),
+        oneapi::mkl::rng::bernoulli<std::int32_t>(1.f - _imp->_p),
         _imp->_rng_engine, num, (std::int32_t *)buffer);
     sycl::event e_save = q->submit([&](sycl::handler &cgh) {
       cgh.depends_on(e_gen);
@@ -792,7 +801,7 @@ public:
   }
   /// Setting a dropout descriptor with given parameters.
   /// \param [in] engine Engine of the dropout operation.
-  /// \param [in] p Success probability p of a trial.
+  /// \param [in] p Probability of value set to zero.
   /// \param [in] state Memory that store random generator state.
   /// \param [in] state_size Required size to store random generator state.
   /// \param [in] seed Seed to initialize conditions of the generator state.
@@ -800,7 +809,7 @@ public:
            unsigned long long seed);
   /// Getting parameters from a dropout descriptor.
   /// \param [in] engine Engine of the dropout operation.
-  /// \param [in] p Success probability p of a trial.
+  /// \param [in] p Probability of value set to zero.
   /// \param [in] state Memory that store random generator state.
   /// \param [in] seed Seed to initialize conditions of the generator state.
   void get(float *p, void **states, unsigned long long *seed) const noexcept {
@@ -808,12 +817,12 @@ public:
     *states = _imp->_state;
     *p = _imp->_p;
   }
-  /// Getting the success probability.
+  /// Getting the probability of value set to zero.
   /// \returns Probability.
   float get_probability() const noexcept { return _imp->_p; }
   /// Restoreing a dropout descriptor from stored state.
   /// \param [in] engine Engine of the dropout operation.
-  /// \param [in] p Success probability p of a trial.
+  /// \param [in] p Probability of value set to zero.
   /// \param [in] state Memory that store random generator state.
   /// \param [in] state_size Required size to store random generator state.
   /// \param [in] seed Seed to initialize conditions of the generator state.

@@ -94,7 +94,7 @@ ENTRY(cudnnGetTensor4dDescriptor, cudnnGetTensor4dDescriptor, true, NO_FLAG, P4,
 ENTRY(cudnnGetTensorNdDescriptor, cudnnGetTensorNdDescriptor, true, NO_FLAG, P4, "Successful")
 ENTRY(cudnnGetTensorSizeInBytes, cudnnGetTensorSizeInBytes, true, NO_FLAG, P4, "Successful")
 ENTRY(cudnnGetTensorTransformDescriptor, cudnnGetTensorTransformDescriptor, false, NO_FLAG, P4, "comment")
-ENTRY(cudnnGetVersion, cudnnGetVersion, false, NO_FLAG, P4, "comment")
+ENTRY(cudnnGetVersion, cudnnGetVersion, true, NO_FLAG, P4, "comment")
 ENTRY(cudnnInitTransformDest, cudnnInitTransformDest, false, NO_FLAG, P4, "comment")
 ENTRY(cudnnLRNCrossChannelForward, cudnnLRNCrossChannelForward, true, NO_FLAG, P4, "Successful")
 ENTRY(cudnnNormalizationForwardInference, cudnnNormalizationForwardInference, true, NO_FLAG, P4, "comment")

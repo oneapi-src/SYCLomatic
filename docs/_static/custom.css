@@ -46,3 +46,8 @@
       overflow: visible !important;
    }
 }
+
+.col .footer, #site-navigation div.navbar_extra_footer {
+    font-size: .7em;
+    text-align: left;
+}
