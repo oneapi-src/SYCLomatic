@@ -516,6 +516,17 @@ makeCallExprCreator(std::string Callee,
                                                                        Args...);
 }
 
+template < class BaseT, class ArgValueT>
+inline std::function<
+    ArraySubscriptExprPrinter<BaseT, ArgValueT>(const CallExpr *)>
+makeArraySubscriptExprCreator(std::function<BaseT(const CallExpr *)> E,
+                          std::function<ArgValueT(const CallExpr *)> I) {
+  return PrinterCreator<ArraySubscriptExprPrinter<BaseT, ArgValueT>,
+                        std::function<BaseT(const CallExpr *)>,
+                        std::function<ArgValueT(const CallExpr *)>>(std::move(E),
+                                                                  std::move(I));
+}
+
 inline std::function<std::string(const CallExpr *)>
 makeFuncNameFromDevAttrCreator(unsigned idx) {
   return [=](const CallExpr *CE) -> std::string {
@@ -1319,16 +1330,17 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
     const static std::string MemberName = "read";
     using ReaderPrinter = decltype(makeMemberCallCreator(
         std::declval<std::function<BaseT(const CallExpr *)>>(), false,
-        MemberName, makeCallArgCreator(Idx)...)(C));
+        MemberName, makeCallArgCreatorWithCall(Idx)...)(C));
     if (RetAssign) {
       return std::make_shared<PrinterRewriter<
           BinaryOperatorPrinter<BO_Assign, DerefExpr, ReaderPrinter>>>(
           C, Source, DerefExpr::create(C->getArg(0), C),
           ReaderPrinter(std::move(Base), false, MemberName,
-                        C->getArg(Idx + 1)...));
+                        std::make_pair(C, C->getArg(Idx + 1))...));
     }
     return std::make_shared<PrinterRewriter<ReaderPrinter>>(
-        C, Source, Base, false, MemberName, C->getArg(Idx)...);
+        C, Source, Base, false, MemberName,
+        std::make_pair(C, C->getArg(Idx))...);
   }
 
 public:
@@ -1375,7 +1387,8 @@ public:
       }
     }
 
-    return createRewriter(Call, RetAssign, Call->getArg(RetAssign & 0x01));
+    return createRewriter(Call, RetAssign,
+                          std::make_pair(Call, Call->getArg(RetAssign & 0x01)));
   }
 };
 
@@ -1820,6 +1833,7 @@ public:
 #define STATIC_MEMBER_EXPR(...) makeStaticMemberExprCreator(__VA_ARGS__)
 #define LAMBDA(...) makeLambdaCreator(__VA_ARGS__)
 #define CALL(...) makeCallExprCreator(__VA_ARGS__)
+#define ARRAY_SUBSCRIPT(e, i) makeArraySubscriptExprCreator(e, i)
 #define CAST(T, S) makeCastExprCreator(T, S)
 #define CAST_IF_NOT_SAME(T, S) makeCastIfNotSameExprCreator(T, S)
 #define CAST_IF_SPECIAL(E) makeCastIfSpecialExprCreator(E)

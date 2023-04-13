@@ -419,6 +419,9 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaDeviceAttr", std::make_shared<TypeNameRule>("int")},
       {"__nv_bfloat16", std::make_shared<TypeNameRule>(
                             getClNamespace() + "ext::oneapi::bfloat16")},
+      {"__nv_bfloat162", std::make_shared<TypeNameRule>(
+                             getClNamespace() + "marray<" + getClNamespace() +
+                             "ext::oneapi::bfloat16, 2>")},
       {"libraryPropertyType_t",
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "version_field",
@@ -1843,6 +1846,7 @@ void MapNames::setExplicitNamespaceMap() {
 
 // Supported vector types
 const MapNames::SetTy MapNames::SupportedVectorTypes{SUPPORTEDVECTORTYPENAMES};
+const MapNames::SetTy MapNames::VectorTypes2MArray{VECTORTYPE2MARRAYNAMES};
 
 const std::map<std::string, int> MapNames::VectorTypeMigratedTypeSizeMap{
     {"char1", 1},       {"char2", 2},       {"char3", 4},
@@ -4287,6 +4291,10 @@ const MapNames::MapTy MapNames::FunctionAttrMap{
 const MapNames::MapTy MapNames::MemberNamesMap{
     {"x", "x()"}, {"y", "y()"}, {"z", "z()"}, {"w", "w()"},
     // ...
+};
+const MapNames::MapTy MapNames::MArrayMemberNamesMap{
+    {"x", "[0]"},
+    {"y", "[1]"},
 };
 
 const MapNames::SetTy MapNames::HostAllocSet{
