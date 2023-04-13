@@ -20,7 +20,6 @@ double rmsval(size_t size, T *z) {
   return sqrt(rms);
 }
 
-
 void test1(){
     float *p;
 // CHECK: p = (float *)malloc(10);
@@ -97,6 +96,26 @@ void test8(){
     cudaFreeHost(p);
 }
 
+void test9(){
+    float *p, *q;
+    // CHECK: p = (float *)sycl::malloc_host(10, q_ct1);
+    cudaMallocHost((void **)&p, 10);
+    cudaMalloc(&q, 10);
+    memset(p, 0, 10);
+    cudaMemcpyAsync(q, p, 10, cudaMemcpyDeviceToDevice);
+    // CHECK: sycl::free(p, q_ct1);
+    cudaFreeHost(p);
+}
+
+void test10(){
+    float *p;
+    // CHECK: p = (float *)malloc(10);
+    cudaMallocHost(&p, 10);
+    printf("%d\n", p);
+    // CHECK: free((void *)p);
+    cudaFreeHost((void *)p);
+}
+
 int main(){
   test1();
   test2();
@@ -106,5 +125,7 @@ int main(){
   test6();
   test7();
   test8();
+  test9();
+  test10();
   return 0;
 }
