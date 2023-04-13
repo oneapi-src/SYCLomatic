@@ -12,6 +12,29 @@
 #include <sycl/sycl.hpp>
 
 namespace dpct {
+namespace detail {
+template <typename VecT, class BinaryOperation, class = void>
+class vectorized_binary {
+public:
+  inline VecT operator()(VecT a, VecT b, const BinaryOperation binary_op) {
+    VecT v4;
+    for (size_t i = 0; i < v4.size(); ++i) {
+      v4[i] = binary_op(a[i], b[i]);
+    }
+    return v4;
+  }
+};
+template <typename VecT, class BinaryOperation>
+class vectorized_binary<
+    VecT, BinaryOperation,
+    std::void_t<std::invoke_result_t<BinaryOperation, VecT, VecT>>> {
+public:
+  inline VecT operator()(VecT a, VecT b, const BinaryOperation binary_op) {
+    return binary_op(a, b).template as<VecT>();
+  }
+};
+} // namespace detail
+
 /// Compute fast_length for variable-length array
 /// \param [in] a The array
 /// \param [in] len Length of the array
@@ -141,98 +164,78 @@ inline sycl::half2 isnan(const sycl::half2 h) {
   return {sycl::isnan(h.x()), sycl::isnan(h.y())};
 }
 
-/// Compute vectorized absolute for a value, with the value treated as a vector
-/// type \p S.
-/// \tparam [in] S The type of the vector
-/// \tparam [in] T The type of the original values
-/// \param [in] a The input value
-/// \returns The vectorized absolute value of the input value
-template <typename S, typename T> inline T vectorized_abs(T a) {
-  sycl::vec<T, 1> v0{a};
-  auto v1 = v0.template as<S>();
-  auto v2 = sycl::abs(v1);
-  v0 = v2.template as<sycl::vec<T, 1>>();
-  return v0;
-}
+/// A sycl::abs wrapper functors.
+struct abs {
+  template <typename T> auto operator()(const T x) const {
+    return sycl::abs(x);
+  }
+};
 
-/// Compute vectorized absolute difference for two values, with each value
-/// treated as a vector type \p S.
-/// \tparam [in] S The type of the vector
-/// \tparam [in] T The type of the original values
-/// \param [in] a The first value
-/// \param [in] b The second value
-/// \returns The vectorized absolute difference of the two values
-template <typename S, typename T> inline T vectorized_abs_diff(T a, T b) {
-  sycl::vec<T, 1> v0{a}, v1{b};
-  auto v2 = v0.template as<S>();
-  auto v3 = v1.template as<S>();
-  auto v4 = sycl::abs_diff(v2, v3);
-  v0 = v4.template as<sycl::vec<T, 1>>();
-  return v0;
-}
+/// A sycl::abs_diff wrapper functors.
+struct abs_diff {
+  template <typename T> auto operator()(const T x, const T y) const {
+    return sycl::abs_diff(x, y);
+  }
+};
 
-/// Compute vectorized absolute for a value without modulo overflow, with the
-/// value treated as a vector type \p S.
-/// \tparam [in] S The type of the vector
-/// \tparam [in] T The type of the original values
-/// \param [in] a The input value
-/// \returns The vectorized absolute value of the input value
-template <typename S, typename T> inline T vectorized_abs_sat(T a) {
-  sycl::vec<T, 1> v0{a};
-  auto v1 = v0.template as<S>();
-  S v2(0);
-  auto v3 = sycl::abs_diff(v1, v2);
-  v0 = v3.template as<sycl::vec<T, 1>>();
-  return v0;
-}
+/// A sycl::add_sat wrapper functors.
+struct add_sat {
+  template <typename T> auto operator()(const T x, const T y) const {
+    return sycl::add_sat(x, y);
+  }
+};
+
+/// A sycl::rhadd wrapper functors.
+struct rhadd {
+  template <typename T> auto operator()(const T x, const T y) const {
+    return sycl::rhadd(x, y);
+  }
+};
+
+/// A sycl::hadd wrapper functors.
+struct hadd {
+  template <typename T> auto operator()(const T x, const T y) const {
+    return sycl::hadd(x, y);
+  }
+};
+
+/// A sycl::max wrapper functors.
+struct max {
+  template <typename T> auto operator()(const T x, const T y) const {
+    return sycl::max(x, y);
+  }
+};
+
+/// A sycl::min wrapper functors.
+struct min {
+  template <typename T> auto operator()(const T x, const T y) const {
+    return sycl::min(x, y);
+  }
+};
+
+/// A sycl::sub_sat wrapper functors.
+struct sub_sat {
+  template <typename T> auto operator()(const T x, const T y) const {
+    return sycl::sub_sat(x, y);
+  }
+};
 
 /// Compute vectorized binary operation value for two values, with each value
-/// treated as a vector type \p S.
-/// \tparam [in] S The type of the vector
-/// \tparam [in] T The type of the original values
+/// treated as a vector type \p VecT.
+/// \tparam [in] VecT The type of the vector
 /// \tparam [in] BinaryOperation The binary operation class
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \returns The vectorized binary operation value of the two values
-template <typename S, typename T, class BinaryOperation>
-inline T vectorized_binary(T a, T b, const BinaryOperation binary_op) {
-  sycl::vec<T, 1> v0{a}, v1{b};
-  auto v2 = v0.template as<S>();
-  auto v3 = v1.template as<S>();
-  auto v4 = binary_op(v2, v3);
-  v0 = v4.template as<sycl::vec<T, 1>>();
-  return v0;
-}
-
-/// Compute vectorized addition for two values without modulo overflow, with
-/// each value treated as a vector type \p S.
-/// \tparam [in] S The type of the vector
-/// \tparam [in] T The type of the original values
-/// \param [in] a The first value
-/// \param [in] b The second value
-/// \returns The vectorized addition of the two values
-template <typename S, typename T> inline T vectorized_add_sat(T a, T b) {
-  sycl::vec<T, 1> v0{a}, v1{b};
-  auto v2 = v0.template as<S>();
-  auto v3 = v1.template as<S>();
-  auto v4 = sycl::add_sat(v2, v3);
-  v0 = v4.template as<sycl::vec<T, 1>>();
-  return v0;
-}
-
-/// Compute vectorized average (a + b + 1) / 2 for two values without modulo
-/// overflow, with each value treated as a vector type \p S.
-/// \tparam [in] S The type of the vector
-/// \tparam [in] T The type of the original values
-/// \param [in] a The first value
-/// \param [in] b The second value
-/// \returns The vectorized average of the two values
-template <typename S, typename T> inline T vectorized_avg_sat(T a, T b) {
-  sycl::vec<T, 1> v0{a}, v1{b};
-  auto v2 = v0.template as<S>();
-  auto v3 = v1.template as<S>();
-  auto v4 = sycl::rhadd(v2, v3);
-  v0 = v4.template as<sycl::vec<T, 1>>();
+template <typename VecT, class BinaryOperation>
+inline unsigned vectorized_binary(unsigned a, unsigned b,
+                                  const BinaryOperation binary_op) {
+  sycl::vec<unsigned, 1> v0{a}, v1{b};
+  auto v2 = v0.as<VecT>();
+  auto v3 = v1.as<VecT>();
+  auto v4 =
+      detail::vectorized_binary<VecT, BinaryOperation>()(v2, v3, binary_op);
+  v0 = v4.template as<sycl::vec<unsigned, 1>>();
   return v0;
 }
 
@@ -243,28 +246,11 @@ template <typename S, typename T> inline T vectorized_avg_sat(T a, T b) {
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \returns The vectorized greater than of the two values
-template <typename S, typename T>
-[[deprecated]] inline T vectorized_isgreater(T a, T b) {
+template <typename S, typename T> inline T vectorized_isgreater(T a, T b) {
   sycl::vec<T, 1> v0{a}, v1{b};
   auto v2 = v0.template as<S>();
   auto v3 = v1.template as<S>();
   auto v4 = v2 > v3;
-  v0 = v4.template as<sycl::vec<T, 1>>();
-  return v0;
-}
-
-/// Compute vectorized average (a + b) / 2 for two values without modulo
-/// overflow, with each value treated as a vector type \p S.
-/// \tparam [in] S The type of the vector
-/// \tparam [in] T The type of the original values
-/// \param [in] a The first value
-/// \param [in] b The second value
-/// \returns The vectorized average of the two values
-template <typename S, typename T> inline T vectorized_hadd(T a, T b) {
-  sycl::vec<T, 1> v0{a}, v1{b};
-  auto v2 = v0.template as<S>();
-  auto v3 = v1.template as<S>();
-  auto v4 = sycl::hadd(v2, v3);
   v0 = v4.template as<sycl::vec<T, 1>>();
   return v0;
 }
@@ -302,89 +288,37 @@ template <typename S, typename T> inline T vectorized_min(T a, T b) {
 }
 
 /// Compute vectorized unary operation for a value, with the value treated as a
-/// vector type \p S.
-/// \tparam [in] S The type of the vector
-/// \tparam [in] T The type of the original values
+/// vector type \p VecT.
+/// \tparam [in] VecT The type of the vector
 /// \tparam [in] UnaryOperation The unary operation class
 /// \param [in] a The input value
 /// \returns The vectorized unary operation value of the input value
-template <typename S, typename T, class UnaryOperation>
-inline T vectorized_unary(T a, const UnaryOperation unary_op) {
-  sycl::vec<T, 1> v0{a};
-  auto v1 = v0.template as<S>();
+template <typename VecT, class UnaryOperation>
+inline unsigned vectorized_unary(unsigned a, const UnaryOperation unary_op) {
+  sycl::vec<unsigned, 1> v0{a};
+  auto v1 = v0.as<VecT>();
   auto v2 = unary_op(v1);
-  v0 = v2.template as<sycl::vec<T, 1>>();
-  return v0;
-}
-
-/// Compute vectorized negation for a value without modulo overflow, with the
-/// value treated as a vector type \p S.
-/// \tparam [in] S The type of the vector
-/// \tparam [in] T The type of the original values
-/// \param [in] a The input value
-/// \returns The vectorized negation of the input value
-template <typename S, typename T> inline T vectorized_neg_sat(T a) {
-  sycl::vec<T, 1> v0{a};
-  auto v1 = v0.template as<S>();
-  S v2(0);
-  auto v3 = sycl::sub_sat(v2, v1);
-  v0 = v3.template as<sycl::vec<T, 1>>();
+  v0 = v2.template as<sycl::vec<unsigned, 1>>();
   return v0;
 }
 
 /// Compute vectorized absolute difference for two values without modulo
-/// overflow, with each value treated as a vector type \p S.
-/// \tparam [in] S The type of the vector
-/// \tparam [in] T The type of the original values
+/// overflow, with each value treated as a vector type \p VecT.
+/// \tparam [in] VecT The type of the vector
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \returns The vectorized absolute difference of the two values
-template <typename S, typename T> inline T vectorized_sum_abs_diff(T a, T b) {
-  sycl::vec<T, 1> v0{a}, v1{b};
-  auto v2 = v0.template as<S>();
-  auto v3 = v1.template as<S>();
+template <typename VecT>
+inline unsigned vectorized_sum_abs_diff(unsigned a, unsigned b) {
+  sycl::vec<unsigned, 1> v0{a}, v1{b};
+  auto v2 = v0.as<VecT>();
+  auto v3 = v1.as<VecT>();
   auto v4 = sycl::abs_diff(v2, v3);
-  T sum = 0;
+  unsigned sum = 0;
   for (size_t i = 0; i < v4.size(); ++i) {
     sum += v4[i];
   }
   return sum;
-}
-
-/// Compute vectorized comparison for two values, with each value treated as a
-/// vector type \p S.
-/// \tparam [in] S The type of the vector
-/// \tparam [in] T The type of the original values
-/// \param [in] a The first value
-/// \param [in] b The second value
-/// \returns The vectorized comparison of the two values
-template <typename S, typename T, class BinaryOperation>
-inline T vectorized_set_compare(T a, T b, const BinaryOperation binary_op) {
-  sycl::vec<T, 1> v0{a}, v1{b};
-  auto v2 = v0.template as<S>();
-  auto v3 = v1.template as<S>();
-  S v4;
-  for (size_t i = 0; i < v4.size(); ++i) {
-    v4[i] = binary_op(v2[i], v3[i]);
-  }
-  v0 = v4.template as<sycl::vec<T, 1>>();
-  return v0;
-}
-
-/// Compute vectorized subtraction for two values without modulo overflow, with
-/// each value treated as a vector type \p S.
-/// \tparam [in] S The type of the vector
-/// \tparam [in] T The type of the original values
-/// \param [in] a The first value
-/// \param [in] b The second value
-/// \returns The vectorized subtraction of the two values
-template <typename S, typename T> inline T vectorized_sub_sat(T a, T b) {
-  sycl::vec<T, 1> v0{a}, v1{b};
-  auto v2 = v0.template as<S>();
-  auto v3 = v1.template as<S>();
-  auto v4 = sycl::sub_sat(v2, v3);
-  v0 = v4.template as<sycl::vec<T, 1>>();
-  return v0;
 }
 } // namespace dpct
 
