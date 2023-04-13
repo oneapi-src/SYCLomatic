@@ -1,9 +1,9 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
-// RUN: dpct --format-range=none -in-root %S -out-root %T/devicelevel/devicesegmentedreduce_user_define_reductions %S/devicesegmentedreduce_user_define_reductions.cu --use-experimental-features=user-defined-reductions --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/devicelevel/devicesegmentedreduce_user_define_reductions/devicesegmentedreduce_user_define_reductions.dp.cpp %s --check-prefixes=CHECK,CHECK-DPCT1092
-// RUN: FileCheck --input-file %T/devicelevel/devicesegmentedreduce_user_define_reductions/devicesegmentedreduce_user_define_reductions.dp.cpp %s --check-prefixes=CHECK,CHECK-DPCT1026
-// RUN: rm -rf %T/devicelevel/devicesegmentedreduce_user_define_reductions/
+// RUN: dpct --format-range=none -in-root %S -out-root %T/devicelevel/device_seg_user_def_reduce %S/device_seg_user_def_reduce.cu --use-experimental-features=user-defined-reductions --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/devicelevel/device_seg_user_def_reduce/device_seg_user_def_reduce.dp.cpp %s --check-prefixes=CHECK,CHECK-DPCT1092
+// RUN: FileCheck --input-file %T/devicelevel/device_seg_user_def_reduce/device_seg_user_def_reduce.dp.cpp %s --check-prefixes=CHECK,CHECK-DPCT1026
+// RUN: rm -rf %T/devicelevel/device_seg_user_def_reduce/
 
 #include <iostream>
 #include <vector>
