@@ -1,3 +1,4 @@
+#include "cuda_fp16.h"
 #include "mf-kernel.cuh"
 // RUN: echo pass
 
@@ -29,7 +30,11 @@ __global__ static void local_foo_2();
 __global__ void local_foo_2();
 __global__ void local_foo_2() { }
 
-
+__device__ void device_fp() {
+  double a = 0;
+  half b = 0;
+}
+__global__ void test_fp() { device_fp(); }
 
 // CHECK: static dpct::constant_memory<float, 0> A1_ct;
 // CHECK-NEXT: static dpct::constant_memory<float, 0> A2;

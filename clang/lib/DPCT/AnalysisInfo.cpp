@@ -156,8 +156,6 @@ std::unordered_map<std::string,
     DpctGlobalInfo::RnnInputMap;
 std::unordered_map<std::string, std::vector<std::string>>
     DpctGlobalInfo::MainSourceFileMap;
-std::unordered_set<const FunctionDecl *> DpctGlobalInfo::FP64Func;
-std::unordered_set<const FunctionDecl *> DpctGlobalInfo::FP16Func;
 
 /// This variable saved the info of previous migration from the
 /// MainSourceFiles.yaml file. This variable is valid after
@@ -1519,23 +1517,23 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
       }
     }
   }
-  Printer.indent();
-  if (NeedCheckBF64) {
-    Printer << "if (!" << ExecutionConfig.Stream << ".get_device().has("
-            << MapNames::getClNamespace() << "aspect::fp64))" << getNL();
+  if (getVarMap().hasBF64()) {
     Printer.indent();
-    Printer << "  throw "
-               "std::runtime_error(\"Not support double in this device\");"
-            << getNL();
+    Printer << "if (!";
+    printStreamBase(Printer);
+    Printer << "get_device().has(" << MapNames::getClNamespace()
+            << "aspect::fp64))" << getNL();
+    Printer.line("  throw std::runtime_error(\"'double' is not supported in "
+                 "this device\");");
   }
-  Printer.indent();
-  if (NeedCheckBF16) {
-    Printer << "if (!" << ExecutionConfig.Stream << ".get_device().has("
-            << MapNames::getClNamespace() << "aspect::fp16))" << getNL();
+  if (getVarMap().hasBF16()) {
     Printer.indent();
-    Printer << "  throw "
-               "std::runtime_error(\"Not support half in this device\");"
-            << getNL();
+    Printer << "if (!";
+    printStreamBase(Printer);
+    Printer << "get_device().has(" << MapNames::getClNamespace()
+            << "aspect::fp16))" << getNL();
+    Printer.line("  throw std::runtime_error(\"'half' is not supported in "
+                 "this device\");");
   }
   Printer.indent();
   if (!SubGroupSizeWarning.empty()) {
@@ -1549,15 +1547,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
   if (!getEvent().empty()) {
     Printer << "*" << getEvent() << " = ";
   }
-  if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&') {
-    Printer << "(" << ExecutionConfig.Stream << ")";
-  } else {
-    Printer << ExecutionConfig.Stream;
-  }
-  if (isQueuePtr())
-    Printer << "->";
-  else
-    Printer << ".";
+  printStreamBase(Printer);
   if (SubmitStmtsList.empty()) {
     printParallelFor(Printer, false);
   } else {
@@ -1689,6 +1679,18 @@ void KernelCallExpr::printKernel(KernelPrinter &Printer) {
                            : "")
                    << "(" << KernelArgs << ");";
   Printer.newLine();
+}
+
+void KernelCallExpr::printStreamBase(KernelPrinter &Printer) {
+  if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&') {
+    Printer << "(" << ExecutionConfig.Stream << ")";
+  } else {
+    Printer << ExecutionConfig.Stream;
+  }
+  if (isQueuePtr())
+    Printer << "->";
+  else
+    Printer << ".";
 }
 
 std::string KernelCallExpr::getReplacement() {

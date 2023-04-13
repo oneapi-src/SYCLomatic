@@ -1795,12 +1795,6 @@ TextModification *replaceText(SourceLocation Begin, SourceLocation End,
 
 TextModification *removeArg(const CallExpr *C, unsigned n,
                             const SourceManager &SM) ;
-
-class BFSupportRule : public NamedMigrationRule<BFSupportRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
 } // namespace dpct
 } // namespace clang
 #endif // DPCT_AST_TRAVERSAL_H
