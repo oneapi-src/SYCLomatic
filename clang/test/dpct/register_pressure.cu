@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/register_pressure %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --optimize-migration --format-range=none -out-root %T/register_pressure %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/register_pressure/register_pressure.dp.cpp
 #include<cuda_runtime.h>
 
