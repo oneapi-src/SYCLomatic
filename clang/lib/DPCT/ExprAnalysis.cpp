@@ -579,7 +579,7 @@ void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
   // For stmt "throw thrust::system_error(error, thrust::cuda_category(),
   // message);"
   // Here to generate replacement to migrate "thrust::system_error"
-  // to "std::system_error".
+  // to "std::system_error", then continue to analyze its arguments.
   if (TypeName == "thrust::system::system_error") {
     addReplacement(Temp->getTypeSourceInfo()->getTypeLoc().getBeginLoc(),
                    Temp->getTypeSourceInfo()->getTypeLoc().getBeginLoc(), Temp,
