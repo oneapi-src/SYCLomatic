@@ -575,9 +575,16 @@ void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
        CubTypeRule::CanMappingToSyclType(TypeName)) ||
       StringRef(TypeName).startswith("thrust::")) {
     analyzeType(Temp->getTypeSourceInfo()->getTypeLoc());
-    return;
   }
-
+  // For stmt "throw thrust::system_error(error, thrust::cuda_category(),
+  // message);"
+  // Here to generate replacement to migrate "thrust::system_error"
+  // to "std::system_error".
+  if (TypeName == "thrust::system::system_error") {
+    addReplacement(Temp->getTypeSourceInfo()->getTypeLoc().getBeginLoc(),
+                   Temp->getTypeSourceInfo()->getTypeLoc().getBeginLoc(), Temp,
+                   "std");
+  }
   analyzeExpr(static_cast<const CXXConstructExpr *>(Temp));
 }
 
