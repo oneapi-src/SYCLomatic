@@ -130,6 +130,8 @@ thrustFactory("thrust::unique_by_key_copy",
                {7,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"unique_copy", HelperFeatureEnum::DplExtrasAlgorithm_unique_copy},
                {6,PolicyState::NoPolicy, 5,MapNames::getDpctNamespace()+"unique_copy", HelperFeatureEnum::DplExtrasAlgorithm_unique_copy}}),
 
+
+// As the order of the last three parameters are changed in the mapping api, so just keep it.
 // thrust::transform_reduce
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgCount(5),
@@ -170,26 +172,11 @@ thrustFactory("thrust::stable_sort_by_key",
                {4,PolicyState::NoPolicy ,3,MapNames::getDpctNamespace() + "stable_sort", HelperFeatureEnum::DplExtrasAlgorithm_stable_sort},
                {3,PolicyState::NoPolicy ,3,MapNames::getDpctNamespace() + "stable_sort", HelperFeatureEnum::DplExtrasAlgorithm_stable_sort}}),
 
+
 // thrust::find
-CONDITIONAL_FACTORY_ENTRY(
-  CheckArgCount(4),
-  //Handling case: thrust::find(policy, device.begin(), device.end(), value);
-  CALL_FACTORY_ENTRY("thrust::find",
-                      CALL("oneapi::dpl::find",
-                            makeMappedThrustPolicyEnum(0),
-                            ARG(1), ARG(2), ARG(3))),
-  //Handling case: thrust::find(host.begin(), host.end(), value);
-  CONDITIONAL_FACTORY_ENTRY(
-    CheckThrustArgType(1, "thrust::device_ptr"),
-    CALL_FACTORY_ENTRY("thrust::find",
-                       CALL("oneapi::dpl::find",
-                            CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                            ARG(0), ARG(1), ARG(2))),
-    CALL_FACTORY_ENTRY("thrust::find",
-                       CALL("oneapi::dpl::find",
-                            ARG("oneapi::dpl::execution::seq"),
-                            ARG(0), ARG(1), ARG(2))))
-)
+thrustFactory("thrust::find",
+              {{4,PolicyState::HasPolicy,4,"oneapi::dpl::find", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy ,4,"oneapi::dpl::find", HelperFeatureEnum::no_feature_helper}}),
 
 // thrust::sort_by_key
 thrustFactory("thrust::sort_by_key",
