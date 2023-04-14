@@ -706,18 +706,6 @@
   </a>
  </li>
 </ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  Notices and Disclaimers
- </span>
-</p>
-<ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../notices-and-disclaimers.html">
-   Notices and Disclaimers
-  </a>
- </li>
-</ul>
 
     </div>
 </nav></div>
@@ -904,11 +892,6 @@ title="Print to PDF"
    Deprecated Command Line Options
   </a>
  </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#source-files">
-   Source Files
-  </a>
- </li>
 </ul>
 
     </nav>
@@ -938,11 +921,6 @@ title="Print to PDF"
    Deprecated Command Line Options
   </a>
  </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#source-files">
-   Source Files
-  </a>
- </li>
 </ul>
 
                         </nav>
@@ -955,8 +933,8 @@ title="Print to PDF"
                 
   <div class="section" id="command-line-options-reference">
 <span id="cmd-opt-ref"></span><h1>Command Line Options Reference<a class="headerlink" href="#command-line-options-reference" title="Permalink to this headline">#</a></h1>
-<p>This topic shows the command line options with a short description, current
-deprecated options, and information for working with source files.</p>
+<p>This topic shows the command line options, current deprecated options, and
+information for working with source files.</p>
 <div class="section" id="command-line-options">
 <h2>Command Line Options<a class="headerlink" href="#command-line-options" title="Permalink to this headline">#</a></h2>
 <p>The following table lists all current SYCLomatic command line options
@@ -972,63 +950,89 @@ in alphabetical order.</p>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--always-use-async-handler</span></code></p></td>
-<td><p>Use async exception handler when creating new <code class="docutils literal notranslate"><span class="pre">sycl::queue</span></code>
-with <code class="docutils literal notranslate"><span class="pre">dpct::create_queue</span></code> in addition to default
-<code class="docutils literal notranslate"><span class="pre">dpct::get_default_queue</span></code>. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--always-use-async-handler</span></code></p>
+</td>
+<td><p>Use async exception handler when creating new <code class="docutils literal notranslate"><span class="pre">sycl::queue</span></code> with
+<code class="docutils literal notranslate"><span class="pre">dpct::create_queue</span></code> in addition to default <code class="docutils literal notranslate"><span class="pre">dpct::get_default_queue</span></code>.
+Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p>
+</td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--analysis-scope-path=&lt;dir&gt;</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--analysis-scope-path=&lt;dir&gt;</span></code></p>
+</td>
 <td><p>The directory path for the analysis scope of the source tree that needs
-to be migrated. Default: the value of <code class="docutils literal notranslate"><span class="pre">--in-root</span></code>.</p></td>
+to be migrated. Default: the value of <code class="docutils literal notranslate"><span class="pre">--in-root</span></code>.</p>
+</td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--assume-nd-range-dim=&lt;value&gt;</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--assume-nd-range-dim=&lt;value&gt;</span></code></p>
+</td>
 <td><p>Provides a hint to the tool on the dimensionality of nd_range to use in
 generated code. The values are:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">=1</span></code>: Generate kernel code assuming 1D <code class="docutils literal notranslate"><span class="pre">nd_range</span></code> where possible,
-and 3D in other cases.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=1</span></code>: Generate kernel code assuming 1D <code class="docutils literal notranslate"><span class="pre">nd_range</span></code> where possible, and 3D
+in other cases.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">=3</span></code>: Generate kernel code assuming 3D <code class="docutils literal notranslate"><span class="pre">nd_range</span></code> (default).</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--build-script-file=&lt;file&gt;</span></code></p></td>
-<td><p>Specifies the name of generated makefile for migrated file(s). Default
-name: <code class="docutils literal notranslate"><span class="pre">Makefile.dpct</span></code>.</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--build-script-file=&lt;file&gt;</span></code></p>
+</td>
+<td><p>Specifies the name of generated makefile for migrated file(s). Default name:
+<code class="docutils literal notranslate"><span class="pre">Makefile.dpct</span></code>.</p>
+</td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--change-cuda-files-extension-only</span></code></p></td>
-<td><p>Limit extension change to <code class="docutils literal notranslate"><span class="pre">.cu</span></code> and <code class="docutils literal notranslate"><span class="pre">.cuh</span></code> files only. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--change-cuda-files-extension-only</span></code></p>
+</td>
+<td><p>Limit extension change to <code class="docutils literal notranslate"><span class="pre">.cu</span></code> and <code class="docutils literal notranslate"><span class="pre">.cuh</span></code> files only. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p>
+</td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--change-filename-extension=&lt;file&gt;</span></code></p></td>
-<td><p>DEPRECATED: A comma-separated list that specifies which extensions of migrated files will be changed.
-Default: <code class="docutils literal notranslate"><span class="pre">.cu</span></code>, <code class="docutils literal notranslate"><span class="pre">.cuh</span></code>, <code class="docutils literal notranslate"><span class="pre">.cpp</span></code>, <code class="docutils literal notranslate"><span class="pre">.cxx</span></code>, <code class="docutils literal notranslate"><span class="pre">.cc</span></code>, <code class="docutils literal notranslate"><span class="pre">.c</span></code>, <code class="docutils literal notranslate"><span class="pre">.C</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--change-filename-extension=&lt;file&gt;</span></code></p>
+</td>
+<td><p>DEPRECATED: A comma-separated list that specifies which extensions of migrated
+files will be changed. Default: <code class="docutils literal notranslate"><span class="pre">.cu</span></code>, <code class="docutils literal notranslate"><span class="pre">.cuh</span></code>, <code class="docutils literal notranslate"><span class="pre">.cpp</span></code>, <code class="docutils literal notranslate"><span class="pre">.cxx</span></code>, <code class="docutils literal notranslate"><span class="pre">.cc</span></code>,
+<code class="docutils literal notranslate"><span class="pre">.c</span></code>, <code class="docutils literal notranslate"><span class="pre">.C</span></code></p>
+</td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--check-unicode-security</span></code></p></td>
-<td><p>Enable detection and warnings about Unicode constructs that can be
-exploited by using bi-directional formatting codes and homoglyphs in
-identifiers. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--check-unicode-security</span></code></p>
+</td>
+<td><p>Enable detection and warnings about Unicode constructs that can be exploited by
+using bi-directional formatting codes and homoglyphs in identifiers. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p>
+</td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--comments</span></code></p></td>
-<td><p>Insert comments explaining the generated code. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--comments</span></code></p>
+</td>
+<td><p>Insert comments explaining the generated code. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p>
+</td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--cuda-include-path=&lt;dir&gt;</span></code></p></td>
-<td><p>The directory path of the CUDA* header files.</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--cuda-include-path=&lt;dir&gt;</span></code></p>
+</td>
+<td><p>The directory path of the CUDA* header files.</p>
+</td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--custom-helper-name=&lt;name&gt;</span></code></p></td>
-<td><p>DEPRECATED: Specifies the helper headers folder name and main helper
-header file name. Default: <code class="docutils literal notranslate"><span class="pre">dpct</span></code>.</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--custom-helper-name=&lt;name&gt;</span></code></p>
+</td>
+<td><p>DEPRECATED: Specifies the helper headers folder name and main helper header file
+name. Default: <code class="docutils literal notranslate"><span class="pre">dpct</span></code>.</p>
+</td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--enable-ctad</span></code></p></td>
-<td><p>Use a C++17 class template argument deduction (CTAD) in your generated code.</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--enable-ctad</span></code></p>
+</td>
+<td><p>Use a C++17 class template argument deduction (CTAD) in your generated code.</p>
+</td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--enable-profiling</span></code></p></td>
-<td><p>Enable SYCL* queue profiling in helper functions. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--enable-profiling</span></code></p>
+</td>
+<td><p>Enable SYCL* queue profiling in helper functions. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p>
+</td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--extra-arg=&lt;string&gt;</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--extra-arg=&lt;string&gt;</span></code></p>
+</td>
 <td><p>Additional argument to append to the migration command line, example:
 <code class="docutils literal notranslate"><span class="pre">--extra-arg=&quot;-I</span> <span class="pre">/path/to/header&quot;</span></code>. The options that can be passed this
-way can be found with the <code class="docutils literal notranslate"><span class="pre">dpct</span> <span class="pre">--</span> <span class="pre">-help</span></code> command.</p></td>
+way can be found with the <code class="docutils literal notranslate"><span class="pre">dpct</span> <span class="pre">--</span> <span class="pre">-help</span></code> command.</p>
+</td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--format-range=&lt;value&gt;</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--format-range=&lt;value&gt;</span></code></p>
+</td>
 <td><p>Sets the range of formatting.</p>
 <p>The values are:</p>
 <ul class="simple">
@@ -1038,7 +1042,8 @@ way can be found with the <code class="docutils literal notranslate"><span class
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--format-style=&lt;value&gt;</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--format-style=&lt;value&gt;</span></code></p>
+</td>
 <td><p>Sets the formatting style.</p>
 <p>The values are:</p>
 <ul class="simple">
@@ -1055,14 +1060,19 @@ way can be found with the <code class="docutils literal notranslate"><span class
 </div>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--gen-build-script</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--gen-build-script</span></code></p>
+</td>
 <td><p>Generates makefile for migrated file(s) in <code class="docutils literal notranslate"><span class="pre">-out-root</span></code> directory.
-Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p>
+</td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--help</span></code></p></td>
-<td><p>Provides a list of <code class="docutils literal notranslate"><span class="pre">dpct</span></code> specific options.</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--help</span></code></p>
+</td>
+<td><p>Provides a list of <code class="docutils literal notranslate"><span class="pre">dpct</span></code> specific options.</p>
+</td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--in-root=&lt;dir&gt;</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--in-root=&lt;dir&gt;</span></code></p>
+</td>
 <td><p>The directory path for the root of the source tree that needs to be migrated.
 Only files under this root are migrated. Default:</p>
 <ul class="simple">
@@ -1074,22 +1084,29 @@ Only files under this root are migrated. Default:</p>
 level) may be migrated. Any header file within the directory specified by
 <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> (at any nesting level) included by the source or header file,
 which is being migrated, is also migrated. Files from outside the <code class="docutils literal notranslate"><span class="pre">--in-root</span></code>
-directory are considered system files and they will not be migrated even
-if they are included by any of the program source files.</p>
+directory will not be migrated even if they are included by any of the program
+source files.</p>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--in-root-exclude=&lt;dir|file&gt;</span></code></p></td>
-<td><p>Excludes the specified directory or file from processing.</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--in-root-exclude=&lt;dir|file&gt;</span></code></p>
+</td>
+<td><p>Excludes the specified directory or file from processing.</p>
+</td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--keep-original-code</span></code></p></td>
-<td><p>Keeps the original code in the comments of generated SYCL files. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--keep-original-code</span></code></p>
+</td>
+<td><p>Keeps the original code in the comments of generated SYCL files. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p>
+</td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--no-cl-namespace-inline</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--no-cl-namespace-inline</span></code></p>
+</td>
 <td><p>DEPRECATED: Do not use <code class="docutils literal notranslate"><span class="pre">cl::</span></code> namespace inline. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>. This
 option will be ignored if the replacement option <code class="docutils literal notranslate"><span class="pre">--use-explicit-namespace</span></code>
-is used.</p></td>
+is used.</p>
+</td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--no-dpcpp-extensions=&lt;value&gt;</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--no-dpcpp-extensions=&lt;value&gt;</span></code></p>
+</td>
 <td><p>A comma-separated list of extensions not to be used in migrated code.
 By default, these extensions are used in migrated code.</p>
 <ul class="simple">
@@ -1099,19 +1116,26 @@ by the compiler and the backend.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--no-dry-pattern</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--no-dry-pattern</span></code></p>
+</td>
 <td><p>Do not use a Don’t Repeat Yourself (DRY) pattern when functions from the
-<code class="docutils literal notranslate"><span class="pre">dpct</span></code> namespace are inserted. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+<code class="docutils literal notranslate"><span class="pre">dpct</span></code> namespace are inserted. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p>
+</td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--no-incremental-migration</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--no-incremental-migration</span></code></p>
+</td>
 <td><p>Tells the tool to not perform an incremental migration. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>
-(incremental migration happens).</p></td>
+(incremental migration happens).</p>
+</td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--optimize-migration</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--optimize-migration</span></code></p>
+</td>
 <td><p>Generates SYCL code applying more aggressive assumptions that
-potentially may alter the semantics of your program. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+potentially may alter the semantics of your program. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p>
+</td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--out-root=&lt;dir&gt;</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--out-root=&lt;dir&gt;</span></code></p>
+</td>
 <td><p>The directory path for root of generated files. A directory is created if
 it does not exist. Default: <code class="docutils literal notranslate"><span class="pre">dpct_output</span></code>.</p>
 <p>The relative paths for the generated files are maintained, and the
@@ -1127,11 +1151,14 @@ extension is changed as follows:</p>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--output-file=&lt;file&gt;</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--output-file=&lt;file&gt;</span></code></p>
+</td>
 <td><p>Redirects the <code class="docutils literal notranslate"><span class="pre">stdout</span></code>/<code class="docutils literal notranslate"><span class="pre">stderr</span></code> output to <code class="docutils literal notranslate"><span class="pre">&lt;file&gt;</span></code> in the
-output directory specified by the <code class="docutils literal notranslate"><span class="pre">--out-root</span></code> option.</p></td>
+output directory specified by the <code class="docutils literal notranslate"><span class="pre">--out-root</span></code> option.</p>
+</td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--output-verbosity=&lt;value&gt;</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--output-verbosity=&lt;value&gt;</span></code></p>
+</td>
 <td><p>Sets the output verbosity level:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">=silent</span></code>: Only messages from clang.</p></li>
@@ -1142,12 +1169,15 @@ and crashes (default).</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-p=&lt;dir&gt;</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-p=&lt;dir&gt;</span></code></p>
+</td>
 <td><p>The directory path for the compilation database (<code class="docutils literal notranslate"><span class="pre">compile_commands.json</span></code>).
 When no path is specified, a search for <code class="docutils literal notranslate"><span class="pre">compile_commands.json</span></code> is
-attempted through all parent directories of the first input source file.</p></td>
+attempted through all parent directories of the first input source file.</p>
+</td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--process-all</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--process-all</span></code></p>
+</td>
 <td><p>Migrates or copies all files, except hidden, from the <code class="docutils literal notranslate"><span class="pre">--in-root</span></code>
 directory to the <code class="docutils literal notranslate"><span class="pre">--out-root</span></code> directory. The <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> option should
 be explicitly specified. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p>
@@ -1175,14 +1205,17 @@ database are migrated as standalone</p></li>
 <p><code class="docutils literal notranslate"><span class="pre">--process-all</span></code> is ignored if input files are provided on the command line.</p>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--report-file-prefix=&lt;prefix&gt;</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--report-file-prefix=&lt;prefix&gt;</span></code></p>
+</td>
 <td><p>Prefix for the report file names. The full file name will have a suffix
 derived from the <code class="docutils literal notranslate"><span class="pre">report-type</span></code> and an extension derived from the
 <code class="docutils literal notranslate"><span class="pre">report-format</span></code>. For example: <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;.apis.csv</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;.stats.log</span></code>.
 If this option is not specified, the report goes to <code class="docutils literal notranslate"><span class="pre">stdout</span></code>. The report
-files are created in the directory, specified by <code class="docutils literal notranslate"><span class="pre">-out-root</span></code>.</p></td>
+files are created in the directory, specified by <code class="docutils literal notranslate"><span class="pre">-out-root</span></code>.</p>
+</td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--report-format=&lt;value&gt;</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--report-format=&lt;value&gt;</span></code></p>
+</td>
 <td><p>Format of the reports:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">=csv</span></code>: The output is lines of comma-separated values. The report name
@@ -1192,10 +1225,13 @@ The report file name extension is <code class="docutils literal notranslate"><sp
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--report-only</span></code></p></td>
-<td><p>Only reports are generated. No SYCL code is generated. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--report-only</span></code></p>
+</td>
+<td><p>Only reports are generated. No SYCL code is generated. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p>
+</td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--report-type=&lt;value&gt;</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--report-type=&lt;value&gt;</span></code></p>
+</td>
 <td><p>Specifies the type of report. Values are:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">=apis</span></code>: Information about API signatures that need migration and the
@@ -1209,24 +1245,35 @@ The report file name has the <code class="docutils literal notranslate"><span cl
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--rule-file=&lt;file&gt;</span></code></p></td>
-<td><p>Specifies the rule file path that contains rules used for migration.</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--rule-file=&lt;file&gt;</span></code></p>
+</td>
+<td><p>Specifies the rule file path that contains rules used for migration.</p>
+</td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--stop-on-parse-err</span></code></p></td>
-<td><p>Stop migration and generation of reports if parsing errors happened. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--stop-on-parse-err</span></code></p>
+</td>
+<td><p>Stop migration and generation of reports if parsing errors happened. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p>
+</td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--suppress-warnings=&lt;value&gt;</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--suppress-warnings=&lt;value&gt;</span></code></p>
+</td>
 <td><p>A comma-separated list of migration warnings to suppress. Valid warning IDs
 range from 1000 to 1100. Hyphen-separated ranges are also allowed. For
-example: <code class="docutils literal notranslate"><span class="pre">-suppress-warnings=1000-1010,1011</span></code>.</p></td>
+example: <code class="docutils literal notranslate"><span class="pre">-suppress-warnings=1000-1010,1011</span></code>.</p>
+</td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--suppress-warnings-all</span></code></p></td>
-<td><p>Suppresses all migration warnings. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--suppress-warnings-all</span></code></p>
+</td>
+<td><p>Suppresses all migration warnings. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p>
+</td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--sycl-named-lambda</span></code></p></td>
-<td><p>Generates kernels with the kernel name. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--sycl-named-lambda</span></code></p>
+</td>
+<td><p>Generates kernels with the kernel name. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p>
+</td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--use-custom-helper=&lt;value&gt;</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--use-custom-helper=&lt;value&gt;</span></code></p>
+</td>
 <td><p>DEPRECATED: Customize the helper header files for migrated code. The values are:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">=none</span></code>: No customization (default).</p></li>
@@ -1239,22 +1286,23 @@ in the <code class="docutils literal notranslate"><span class="pre">--out-root</
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--use-dpcpp-extensions=&lt;value&gt;</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--use-dpcpp-extensions=&lt;value&gt;</span></code></p>
+</td>
 <td><p>A comma-separated list of extensions to be used in migrated code.
 By default, these extensions are not used in migrated code.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">=c_cxx_standard_library</span></code>: Use std functions from the libdevice library
-(provided by Intel® oneAPI DPC++/C++ Compiler) and C/C++ Standard Library
-to migrate functions which have no mapping in the SYCL standard.
-If this value is used together with <code class="docutils literal notranslate"><span class="pre">intel_device_math</span></code>, the <code class="docutils literal notranslate"><span class="pre">intel_device_math</span></code>
-functions take precedence.</p></li>
+(provided by Intel® oneAPI DPC++/C++ Compiler) and C/C++ Standard Library to migrate functions
+which have no mapping in the SYCL standard. If this value is used together with
+<code class="docutils literal notranslate"><span class="pre">intel_device_math</span></code>, the <code class="docutils literal notranslate"><span class="pre">intel_device_math</span></code> functions take precedence.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">=intel_device_math</span></code>: Use <code class="docutils literal notranslate"><span class="pre">sycl::ext::intel::math</span></code> functions from the libdevice
-library (provided by Intel® oneAPI DPC++/C++ Compiler) to migrate functions which
-have no mapping in the SYCL standard.</p></li>
+library (provided by Intel® oneAPI DPC++/C++ Compiler) to migrate functions which have no
+mapping in the SYCL standard.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--use-experimental-features=&lt;value&gt;</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--use-experimental-features=&lt;value&gt;</span></code></p>
+</td>
 <td><p>A comma-separated list of experimental features to be used in migrated code.
 By default, experimental features will not be used in migrated code.</p>
 <p>The values are:</p>
@@ -1271,24 +1319,25 @@ group synchronization during migration.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--use-explicit-namespace=&lt;value&gt;</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--use-explicit-namespace=&lt;value&gt;</span></code></p>
+</td>
 <td><p>Defines the namespaces to use explicitly in generated code. The value is
 a comma-separated list. Default: <code class="docutils literal notranslate"><span class="pre">dpct,</span> <span class="pre">sycl</span></code>.</p>
 <p>Possible values are:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">=none</span></code>: Generate code without namespaces. Cannot be used with other
-values.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">=cl</span></code>: DEPRECATED. Generate code with <code class="docutils literal notranslate"><span class="pre">cl::sycl::</span></code> namespace. Cannot
-be used with <code class="docutils literal notranslate"><span class="pre">sycl</span></code> or <code class="docutils literal notranslate"><span class="pre">sycl-math</span></code> values.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=none</span></code>: Generate code without namespaces. Cannot be used with other values.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=cl</span></code>: DEPRECATED. Generate code with <code class="docutils literal notranslate"><span class="pre">cl::sycl::</span></code> namespace. Cannot be
+used with <code class="docutils literal notranslate"><span class="pre">sycl</span></code> or <code class="docutils literal notranslate"><span class="pre">sycl-math</span></code> values.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">=dpct</span></code>: Generate code with <code class="docutils literal notranslate"><span class="pre">dpct::</span></code> namespace.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">=sycl</span></code>: Generate code with <code class="docutils literal notranslate"><span class="pre">sycl::</span></code> namespace. Cannot be
-used with <code class="docutils literal notranslate"><span class="pre">cl</span></code> or <code class="docutils literal notranslate"><span class="pre">sycl-math</span></code> values.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">=sycl-math</span></code>: Generate code with <code class="docutils literal notranslate"><span class="pre">sycl::</span></code> namespace, applied only
-for SYCL math functions. Cannot be used with <code class="docutils literal notranslate"><span class="pre">cl</span></code> or <code class="docutils literal notranslate"><span class="pre">sycl</span></code> values.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=sycl</span></code>: Generate code with <code class="docutils literal notranslate"><span class="pre">sycl::</span></code> namespace. Cannot be used with <code class="docutils literal notranslate"><span class="pre">cl</span></code>
+or <code class="docutils literal notranslate"><span class="pre">sycl-math</span></code> values.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=sycl-math</span></code>: Generate code with <code class="docutils literal notranslate"><span class="pre">sycl::</span></code> namespace, applied only for SYCL
+math functions. Cannot be used with <code class="docutils literal notranslate"><span class="pre">cl</span></code> or <code class="docutils literal notranslate"><span class="pre">sycl</span></code> values.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--usm-level=&lt;value&gt;</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--usm-level=&lt;value&gt;</span></code></p>
+</td>
 <td><p>Sets the Unified Shared Memory (USM) level to use in source code generation:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">=restricted</span></code>: Uses USM API for memory management migration. (default).</p></li>
@@ -1297,11 +1346,15 @@ for memory management migration.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--vcxprojfile=&lt;file&gt;</span></code></p></td>
-<td><p>The file path of <code class="docutils literal notranslate"><span class="pre">vcxproj</span></code>.</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--vcxprojfile=&lt;file&gt;</span></code></p>
+</td>
+<td><p>The file path of <code class="docutils literal notranslate"><span class="pre">vcxproj</span></code>.</p>
+</td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--version</span></code></p></td>
-<td><p>Shows the version of the tool.</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--version</span></code></p>
+</td>
+<td><p>Shows the version of the tool.</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -1318,40 +1371,38 @@ for memory management migration.</p></li>
 </div>
 <div class="section" id="deprecated-command-line-options">
 <h2>Deprecated Command Line Options<a class="headerlink" href="#deprecated-command-line-options" title="Permalink to this headline">#</a></h2>
-<p>The following table lists SYCLomatic command line options that are
-currently deprecated.</p>
+<p>The following table lists SYCLomatic command line options that are deprecated.</p>
 <table class="colwidths-given table">
 <colgroup>
 <col style="width: 50%" />
 <col style="width: 50%" />
 </colgroup>
 <thead>
-<tr class="row-odd"><th class="head"><p>Deprecated Options</p></th>
+<tr class="row-odd"><th class="head"><p>Deprecated Option</p></th>
 <th class="head"><p>Suggested Replacement</p></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--no-cl-namespace-inline</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">--use-explicit-namespace</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--change-filename-extension=&lt;file&gt;</span></code></p>
+</td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--change-cuda-files-extension-only</span></code></p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--custom-helper-name=&lt;name&gt;</span></code></p>
+</td>
+<td><p>No replacement</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--no-cl-namespace-inline</span></code></p>
+</td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--use-explicit-namespace=&lt;value&gt;</span></code></p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--use-custom-helper=&lt;value&gt;</span></code></p>
+</td>
+<td><p>No replacement</p></td>
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section" id="source-files">
-<h2>Source Files<a class="headerlink" href="#source-files" title="Permalink to this headline">#</a></h2>
-<p>To work with source files use <code class="docutils literal notranslate"><span class="pre">&lt;source0&gt;</span> <span class="pre">...</span></code> to create paths
-for your input source files. These paths can be found in the
-compilation database.</p>
-<p>Examples:</p>
-<ul class="simple">
-<li><p>Migrate single source file: <code class="docutils literal notranslate"><span class="pre">dpct</span> <span class="pre">source.cpp</span></code></p></li>
-<li><p>Migrate single source file with C++11 features:
-<code class="docutils literal notranslate"><span class="pre">dpct</span> <span class="pre">--extra-arg=&quot;-std=c++11&quot;</span> <span class="pre">source.cpp</span></code></p></li>
-<li><p>Migrate all files available in compilation database:
-<code class="docutils literal notranslate"><span class="pre">dpct</span> <span class="pre">-p=&lt;path</span> <span class="pre">to</span> <span class="pre">location</span> <span class="pre">of</span> <span class="pre">compilation</span> <span class="pre">database</span> <span class="pre">file&gt;</span></code></p></li>
-<li><p>Migrate one file in compilation database:
-<code class="docutils literal notranslate"><span class="pre">dpct</span> <span class="pre">-p=&lt;path</span> <span class="pre">to</span> <span class="pre">location</span> <span class="pre">of</span> <span class="pre">compilation</span> <span class="pre">database</span> <span class="pre">file&gt;</span> <span class="pre">source.cpp</span></code></p></li>
-</ul>
 </div>
 </div>
 
@@ -1384,9 +1435,10 @@ compilation database.</p>
     <div class="footer-content row">
         <footer class="col footer"><p>
   
-    By Intel<br/>
-  
-      &copy; Copyright Intel Corporation.<br/>
+      &copy; Copyright Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc..<br/>
+    <div class="extra_footer">
+      <div>No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div>
+    </div>
 </p>
         </footer>
     </div>

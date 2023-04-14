@@ -706,18 +706,6 @@
   </a>
  </li>
 </ul>
-<p aria-level="2" class="caption" role="heading">
- <span class="caption-text">
-  Notices and Disclaimers
- </span>
-</p>
-<ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="../notices-and-disclaimers.html">
-   Notices and Disclaimers
-  </a>
- </li>
-</ul>
 
     </div>
 </nav></div>
@@ -898,13 +886,16 @@ title="Print to PDF"
   <a class="reference internal nav-link" href="#before-you-begin">
    Before You Begin
   </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#built-in-usage-information">
-     Built-in Usage Information
-    </a>
-   </li>
-  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#invoke-the-tool">
+   Invoke the Tool
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#specify-files-to-migrate">
+   Specify Files to Migrate
+  </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#emitted-warnings">
@@ -951,13 +942,16 @@ title="Print to PDF"
   <a class="reference internal nav-link" href="#before-you-begin">
    Before You Begin
   </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#built-in-usage-information">
-     Built-in Usage Information
-    </a>
-   </li>
-  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#invoke-the-tool">
+   Invoke the Tool
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#specify-files-to-migrate">
+   Specify Files to Migrate
+  </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#emitted-warnings">
@@ -1028,6 +1022,9 @@ directory where the source code that needs to be migrated is located.</p>
 <p>Currently, SYCLomatic supports the migration of programs
 implemented with CUDA versions 8.0, 9.x, 10.x, and 11.0–11.6. The list of supported languages
 and versions may be extended in the future.</p>
+</div>
+<div class="section" id="invoke-the-tool">
+<h2>Invoke the Tool<a class="headerlink" href="#invoke-the-tool" title="Permalink to this headline">#</a></h2>
 <p>The general invocation syntax from the operating system shell is:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span> <span class="p">[</span><span class="o">&lt;</span><span class="n">source0</span><span class="o">&gt;...</span> <span class="o">&lt;</span><span class="n">sourceN</span><span class="o">&gt;</span><span class="p">]</span>
 </pre></div>
@@ -1036,8 +1033,6 @@ and versions may be extended in the future.</p>
 <p class="admonition-title">Note</p>
 <p><code class="docutils literal notranslate"><span class="pre">c2s</span></code> is an alias to the <code class="docutils literal notranslate"><span class="pre">dpct</span></code> command and may be used in it’s place.</p>
 </div>
-<div class="section" id="built-in-usage-information">
-<h3>Built-in Usage Information<a class="headerlink" href="#built-in-usage-information" title="Permalink to this headline">#</a></h3>
 <p>To see the list of SYCLomatic–specific options, use <code class="docutils literal notranslate"><span class="pre">--help</span></code>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="o">--</span><span class="n">help</span>
 </pre></div>
@@ -1047,6 +1042,31 @@ as the Clang option:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="o">--</span> <span class="o">-</span><span class="n">help</span>
 </pre></div>
 </div>
+</div>
+<div class="section" id="specify-files-to-migrate">
+<h2>Specify Files to Migrate<a class="headerlink" href="#specify-files-to-migrate" title="Permalink to this headline">#</a></h2>
+<p>If no directory or file is specified for migration, the tool will try to migrate
+source files found in the current directory. The default output directory is
+<code class="docutils literal notranslate"><span class="pre">dpct_output</span></code>. Use the <code class="docutils literal notranslate"><span class="pre">--out-root</span></code> option to specify an output directory.</p>
+<p>You can optionally provide file paths for source files that should be migrated.
+The paths can be found in the compilation database. The following examples show
+ways to specify a file or directory for migration.</p>
+<p>Migrate single source file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="n">source</span><span class="o">.</span><span class="n">cpp</span>
+</pre></div>
+</div>
+<p>Migrate all files available in compilation database:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="o">-</span><span class="n">p</span><span class="o">=&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">location</span> <span class="n">of</span> <span class="n">compilation</span> <span class="n">database</span> <span class="n">file</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>Migrate one file in compilation database:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="o">-</span><span class="n">p</span><span class="o">=&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">location</span> <span class="n">of</span> <span class="n">compilation</span> <span class="n">database</span> <span class="n">file</span><span class="o">&gt;</span> <span class="n">source</span><span class="o">.</span><span class="n">cpp</span>
+</pre></div>
+</div>
+<p>Migrate source files in the directory specified by the <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> option and
+place generated files in the directory specified by the <code class="docutils literal notranslate"><span class="pre">--out-root</span></code> option:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="o">--</span><span class="ow">in</span><span class="o">-</span><span class="n">root</span><span class="o">=</span><span class="n">foo</span> <span class="o">--</span><span class="n">out</span><span class="o">-</span><span class="n">root</span><span class="o">=</span><span class="n">bar</span>
+</pre></div>
 </div>
 </div>
 <div class="section" id="emitted-warnings">
@@ -1124,9 +1144,12 @@ CUDA file, <code class="docutils literal notranslate"><span class="pre">vector_a
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="o">--</span><span class="ow">in</span><span class="o">-</span><span class="n">root</span><span class="o">=.</span> <span class="n">src</span><span class="o">/</span><span class="n">vector_add</span><span class="o">.</span><span class="n">cu</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> option specifies the location of the CUDA file that needs
-migration. By default, the migrated files are created in a new folder named
-<code class="docutils literal notranslate"><span class="pre">dpct_output</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> option specifies the root location of the program sources
+that should be migrated. Only files and folders located within the
+<code class="docutils literal notranslate"><span class="pre">--in-root</span></code> directory will be considered for migration by the tool. Files
+located outside the <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> directory  will not be migrated, even if
+they are included by a source file located within the <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> directory.
+By default, the migrated files are created in a new folder named <code class="docutils literal notranslate"><span class="pre">dpct_output</span></code>.</p>
 </li>
 <li><p>As a result of the migration command, you should see the new SYCL source file
 in the output folder:</p>
@@ -1228,9 +1251,10 @@ of the SYCLomatic Developer Guide and Reference.</p>
     <div class="footer-content row">
         <footer class="col footer"><p>
   
-    By Intel<br/>
-  
-      &copy; Copyright Intel Corporation.<br/>
+      &copy; Copyright Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc..<br/>
+    <div class="extra_footer">
+      <div>No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div>
+    </div>
 </p>
         </footer>
     </div>
