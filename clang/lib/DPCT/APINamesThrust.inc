@@ -186,46 +186,12 @@ thrustFactory("thrust::sort_by_key",
                {3,PolicyState::NoPolicy ,3,MapNames::getDpctNamespace() + "sort", HelperFeatureEnum::DplExtrasAlgorithm_sort}}),
 
 // thrust::inner_product
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasNumeric_inner_product,
-CONDITIONAL_FACTORY_ENTRY(
-  CheckArgCount(5),
-  //Handling case: thrust::inner_product(policy, device.begin(), device.end(), device.begin(), init);
-  CALL_FACTORY_ENTRY("thrust::inner_product",
-                      CALL(MapNames::getDpctNamespace() + "inner_product",
-                            makeMappedThrustPolicyEnum(0),
-                            ARG(1), ARG(2), ARG(3), ARG(4))),
-  CONDITIONAL_FACTORY_ENTRY(
-    CheckArgCount(7),
-    //Handling case: thrust::inner_product(policy, device.begin(), device.end(), device.begin(), init, binary_op1, binary_op2);
-    CALL_FACTORY_ENTRY("thrust::inner_product",
-                      CALL(MapNames::getDpctNamespace() + "inner_product",
-                            makeMappedThrustPolicyEnum(0),
-                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))),
-    CONDITIONAL_FACTORY_ENTRY(
-      CheckArgCount(4),
-      //Handling case: thrust::inner_product(device.begin(), device.end(), device.begin(), init);
-      CONDITIONAL_FACTORY_ENTRY(
-        CheckThrustArgType(1, "thrust::device_ptr"),
-        CALL_FACTORY_ENTRY("thrust::inner_product",
-                       CALL(MapNames::getDpctNamespace() + "inner_product",
-                            CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                            ARG(0), ARG(1), ARG(2), ARG(3))),
-        CALL_FACTORY_ENTRY("thrust::inner_product",
-                       CALL(MapNames::getDpctNamespace() + "inner_product",
-                            ARG("oneapi::dpl::execution::seq"),
-                            ARG(0), ARG(1), ARG(2), ARG(3)))),
-      //Handling case: thrust::inner_product(device.begin(), device.end(), device.begin(), init, binary_op1, binary_op2);
-      CONDITIONAL_FACTORY_ENTRY(
-        CheckThrustArgType(1, "thrust::device_ptr"),
-        CALL_FACTORY_ENTRY("thrust::inner_product",
-                       CALL(MapNames::getDpctNamespace() + "inner_product",
-                            CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))),
-        CALL_FACTORY_ENTRY("thrust::inner_product",
-                       CALL(MapNames::getDpctNamespace() + "inner_product",
-                            ARG("oneapi::dpl::execution::seq"),
-                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))))))
-))
+thrustFactory("thrust::inner_product",
+              {{5,PolicyState::HasPolicy,3,MapNames::getDpctNamespace()+"inner_product", HelperFeatureEnum::DplExtrasNumeric_inner_product},
+               {4,PolicyState::NoPolicy, 3,MapNames::getDpctNamespace()+"inner_product", HelperFeatureEnum::DplExtrasNumeric_inner_product},
+               {7,PolicyState::HasPolicy,3,MapNames::getDpctNamespace()+"inner_product", HelperFeatureEnum::DplExtrasNumeric_inner_product},
+               {6,PolicyState::NoPolicy, 3,MapNames::getDpctNamespace()+"inner_product", HelperFeatureEnum::DplExtrasNumeric_inner_product}}),
+
 
 // thrust::reduce_by_key
 CONDITIONAL_FACTORY_ENTRY(
