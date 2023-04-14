@@ -252,6 +252,7 @@ public:
     return get_device_info().get_max_compute_units();
   }
 
+  /// Return the maximum clock frequency of this device in KHz.
   int get_max_clock_frequency() const {
     return get_device_info().get_max_clock_frequency();
   }
@@ -322,7 +323,7 @@ public:
         this->has(sycl::aspect::usm_host_allocations));
 
     prop.set_max_clock_frequency(
-        get_info<sycl::info::device::max_clock_frequency>());
+        get_info<sycl::info::device::max_clock_frequency>() * 1000);
 
     prop.set_max_compute_units(
         get_info<sycl::info::device::max_compute_units>());
