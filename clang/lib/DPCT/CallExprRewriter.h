@@ -1550,7 +1550,7 @@ public:
     if (TSA->get(Idx).getKind() != clang::TemplateArgument::ArgKind::Integral)
       return false;
     auto I = TSA->get(Idx).getAsIntegral();
-    if (I.getMinSignedBits() > 64)
+    if (I.getSignificantBits() > 64)
       return false;
     Val = I.getExtValue();
     return true;

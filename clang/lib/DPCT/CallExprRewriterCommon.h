@@ -1492,36 +1492,21 @@ public:
       AE = AllocatedExpr->IgnoreImplicitAsWritten();
     }
     const DeclRefExpr* DRE = nullptr;
-    if(isFree) {
+    if (isFree) {
       DRE = dyn_cast<DeclRefExpr>(AE);
-    } else {
-      auto UO = dyn_cast<UnaryOperator>(AE);
-      if (!UO) {
-        return false;
+    } else if (auto UO = dyn_cast<UnaryOperator>(AE)) {
+      if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
+        DRE = dyn_cast<DeclRefExpr>(UO->getSubExpr());
       }
-      DRE = dyn_cast<DeclRefExpr>(UO->getSubExpr());
     }
     if (!DRE) {
       return false;
     }
-    auto &CTX = DpctGlobalInfo::getContext();
     auto DREDecl = DRE->getDecl();
-    if (!DREDecl || CTX.getParents(*DREDecl)[0].get<TranslationUnitDecl>() ||
-        DREDecl->isCXXClassMember()) {
+    if(!DREDecl || !dyn_cast<FunctionDecl>(DREDecl->getDeclContext())){
       return false;
     }
-    auto LocInfo = DpctGlobalInfo::getLocInfo(DREDecl->getBeginLoc());
-    auto &Map = DpctGlobalInfo::getMallocHostInfoMap();
-    std::string Key = LocInfo.first + "_" + std::to_string(LocInfo.second);
-    if(Map.count(Key)){
-      return Map[Key];
-    }
-    if(isPointerHostAccessOnly(DREDecl)){
-      Map[Key] = true;
-      return true;
-    }
-    Map[Key] = false;
-    return false;
+    return isPointerHostAccessOnly(DREDecl);
   }
 };
 
