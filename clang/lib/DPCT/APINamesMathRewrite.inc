@@ -997,6 +997,46 @@ MATH_API_REWRITER_DEVICE(
                               Diagnostics::MATH_EMULATION_EXPRESSION,
                               std::string("__ldlu"), std::string("'*'"))))
 
+MATH_API_REWRITER_DEVICE(
+    "__stcg",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__stcg"), EMPTY_FACTORY_ENTRY("__stcg"),
+        EMPTY_FACTORY_ENTRY("__stcg"),
+        WARNING_FACTORY_ENTRY(
+            "__stcg", ASSIGN_FACTORY_ENTRY("__stcg", DEREF(ARG_WC(0)), ARG(1)),
+            Diagnostics::MATH_EMULATION_EXPRESSION, std::string("__stcg"),
+            std::string("'='"))))
+
+MATH_API_REWRITER_DEVICE(
+    "__stcs",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__stcs"), EMPTY_FACTORY_ENTRY("__stcs"),
+        EMPTY_FACTORY_ENTRY("__stcs"),
+        WARNING_FACTORY_ENTRY(
+            "__stcs", ASSIGN_FACTORY_ENTRY("__stcs", DEREF(ARG_WC(0)), ARG(1)),
+            Diagnostics::MATH_EMULATION_EXPRESSION, std::string("__stcs"),
+            std::string("'='"))))
+
+MATH_API_REWRITER_DEVICE(
+    "__stwb",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__stwb"), EMPTY_FACTORY_ENTRY("__stwb"),
+        EMPTY_FACTORY_ENTRY("__stwb"),
+        WARNING_FACTORY_ENTRY(
+            "__stwb", ASSIGN_FACTORY_ENTRY("__stwb", DEREF(ARG_WC(0)), ARG(1)),
+            Diagnostics::MATH_EMULATION_EXPRESSION, std::string("__stwb"),
+            std::string("'='"))))
+
+MATH_API_REWRITER_DEVICE(
+    "__stwt",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__stwt"), EMPTY_FACTORY_ENTRY("__stwt"),
+        EMPTY_FACTORY_ENTRY("__stwt"),
+        WARNING_FACTORY_ENTRY(
+            "__stwt", ASSIGN_FACTORY_ENTRY("__stwt", DEREF(ARG_WC(0)), ARG(1)),
+            Diagnostics::MATH_EMULATION_EXPRESSION, std::string("__stwt"),
+            std::string("'='"))))
+
 // Bfloat16 Precision Conversion and Data Movement
 CALL_FACTORY_ENTRY("__bfloat1622float2",
                    CALL(MapNames::getClNamespace() + "float2",
