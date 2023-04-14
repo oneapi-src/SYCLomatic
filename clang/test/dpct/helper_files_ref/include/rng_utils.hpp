@@ -427,8 +427,7 @@ public:
   /// \param num_to_skip The number of random numbers to be skipped.
   void skip_ahead(const std::uint64_t num_to_skip) {
 #ifndef __INTEL_MKL__
-    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
-                             "Interfaces Project does not support this API.");
+    oneapi::mkl::rng::skip_ahead(_engine, num_to_skip);
 #else
     if constexpr (std::is_same_v<engine_t, oneapi::mkl::rng::mt2203>)
       throw std::runtime_error("no skip_ahead method of mt2203 engine.");
