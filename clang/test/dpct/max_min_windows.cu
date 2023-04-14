@@ -8,10 +8,10 @@
 __global__ void test_max_min(void) {
   float a = 2.0, b = 3.0;
 
-  // CHECK: float c = dpct::max(a, b);
+  // CHECK: float c = dpct::dpct_max(a, b);
   float c = max(a, b);
 
-  // CHECK: float d = dpct::min(a, b);
+  // CHECK: float d = dpct::dpct_min(a, b);
   float d = min(a, b);
 }
 

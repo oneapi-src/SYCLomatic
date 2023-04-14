@@ -194,7 +194,7 @@ template<typename T>
 static void memsetCuda(T * d_mem, T v, int n)
 {
   // CHECK: sycl::range<3> dimBlock(1, 1, 256);
-  // CHECK: sycl::range<3> dimGrid_2(1, 1, dpct::max(2048, 3));
+  // CHECK: sycl::range<3> dimGrid_2(1, 1, dpct::dpct_max(2048, 3));
   // CHECK: sycl::range<3> dimGrid_1(1, 1, std::max(2048, 3));
   // CHECK: std::min(2048, getgriddim<int>(n, dimBlock[2]));
   // CHECK: sycl::range<3> dimGrid(1, 1, std::min(2048, getgriddim<int>(n, dimBlock[2])));

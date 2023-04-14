@@ -1839,8 +1839,8 @@ void MapNames::setExplicitNamespaceMap() {
 #undef ENTRY_REWRITE
   {"abs", MapNames::getClNamespace(false, true) + "abs"},
   {"saturate", MapNames::getClNamespace(false, true) + "clamp"},
-  {"max", MapNames::getDpctNamespace() + "max"},
-  {"min", MapNames::getDpctNamespace() + "min"},
+  {"max", MapNames::getDpctNamespace() + "dpct_max"},
+  {"min", MapNames::getDpctNamespace() + "dpct_min"},
   };
 }
 
