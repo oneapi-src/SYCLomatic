@@ -194,67 +194,14 @@ thrustFactory("thrust::inner_product",
 
 
 // thrust::reduce_by_key
-CONDITIONAL_FACTORY_ENTRY(
-  CheckArgCount(8),
-  //Handling case: thrust::reduce_by_key(policy, device.begin(), device.end(), device.begin(), device.end(), device.begin(), binary_pred, binary_op);
-  CALL_FACTORY_ENTRY("thrust::reduce_by_key",
-                      CALL("oneapi::dpl::reduce_by_segment",
-                            makeMappedThrustPolicyEnum(0),
-                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7))),
-  CONDITIONAL_FACTORY_ENTRY(
-    CheckArgCount(7),
-    CONDITIONAL_FACTORY_ENTRY(
-      IsPolicyArgType(0),
-      //Handling case: thrust::reduce_by_key(policy, device.begin(), device.end(), device.begin(), device.end(), device.begin(), binary_pred);
-      CALL_FACTORY_ENTRY("thrust::reduce_by_key",
-                      CALL("oneapi::dpl::reduce_by_segment",
-                            makeMappedThrustPolicyEnum(0),
-                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))),
-      //Handling case: thrust::reduce_by_key(device.begin(), device.end(), device.begin(), device.end(), device.begin(), binary_pred, binary_op);
-      CONDITIONAL_FACTORY_ENTRY(
-        CheckThrustArgType(1, "thrust::device_ptr"),
-        CALL_FACTORY_ENTRY("thrust::reduce_by_key",
-                       CALL("oneapi::dpl::reduce_by_segment",
-                            CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))),
-        CALL_FACTORY_ENTRY("thrust::reduce_by_key",
-                       CALL("oneapi::dpl::reduce_by_segment",
-                            ARG("oneapi::dpl::execution::seq"),
-                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))))
-    ),
-    CONDITIONAL_FACTORY_ENTRY(
-      CheckArgCount(6),
-      CONDITIONAL_FACTORY_ENTRY(
-        IsPolicyArgType(0),
-        //Handling case: thrust::reduce_by_key(policy, device.begin(), device.end(), device.begin(), device.end(), device.begin());
-        CALL_FACTORY_ENTRY("thrust::reduce_by_key",
-                        CALL("oneapi::dpl::reduce_by_segment",
-                              makeMappedThrustPolicyEnum(0),
-                              ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))),
-        //Handling case: thrust::reduce_by_key(device.begin(), device.end(), device.begin(), device.end(), device.begin(), binary_pred);
-        CONDITIONAL_FACTORY_ENTRY(
-          CheckThrustArgType(1, "thrust::device_ptr"),
-          CALL_FACTORY_ENTRY("thrust::reduce_by_key",
-                         CALL("oneapi::dpl::reduce_by_segment",
-                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                              ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))),
-          CALL_FACTORY_ENTRY("thrust::reduce_by_key",
-                         CALL("oneapi::dpl::reduce_by_segment",
-                              ARG("oneapi::dpl::execution::seq"),
-                              ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))))
-      ),
-      //Handling case: thrust::reduce_by_key(device.begin(), device.end(), device.begin(), device.end(), device.begin());
-      CONDITIONAL_FACTORY_ENTRY(
-        CheckThrustArgType(1, "thrust::device_ptr"),
-        CALL_FACTORY_ENTRY("thrust::reduce_by_key",
-                       CALL("oneapi::dpl::reduce_by_segment",
-                            CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))),
-        CALL_FACTORY_ENTRY("thrust::reduce_by_key",
-                       CALL("oneapi::dpl::reduce_by_segment",
-                            ARG("oneapi::dpl::execution::seq"),
-                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))))))
-)
+thrustFactory("thrust::reduce_by_key",
+              {{6,PolicyState::HasPolicy,5,"oneapi::dpl::reduce_by_segment", HelperFeatureEnum::no_feature_helper},
+               {5,PolicyState::NoPolicy, 5, "oneapi::dpl::reduce_by_segment", HelperFeatureEnum::no_feature_helper},
+               {7,PolicyState::HasPolicy,5,"oneapi::dpl::reduce_by_segment", HelperFeatureEnum::no_feature_helper},
+               {6,PolicyState::NoPolicy, 5, "oneapi::dpl::reduce_by_segment", HelperFeatureEnum::no_feature_helper},
+               {8,PolicyState::HasPolicy,5,"oneapi::dpl::reduce_by_segment", HelperFeatureEnum::no_feature_helper},
+               {7,PolicyState::NoPolicy, 5, "oneapi::dpl::reduce_by_segment", HelperFeatureEnum::no_feature_helper}}),
+
 
 // thrust::for_each
 CONDITIONAL_FACTORY_ENTRY(
