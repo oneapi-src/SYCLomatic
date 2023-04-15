@@ -49,7 +49,6 @@ public:
                     .getUnqualifiedType()
                     .getAsString();
     }
-
     // template <class T>
     // void foo_host(){
     //  ...
