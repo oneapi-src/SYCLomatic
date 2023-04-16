@@ -117,7 +117,7 @@ public:
   void allreduce(const void *sendbuff, void *recvbuff, size_t count,
                  oneapi::ccl::datatype dtype, oneapi::ccl::reduction rtype,
                  sycl::queue *queue_ptr) {
-    call_reuse_queue(
+    call_func_wrapper(
         [=](const oneapi::ccl::stream &stream) {
           return oneapi::ccl::allreduce(sendbuff, recvbuff, count, dtype, rtype,
                                         _comm, stream);
@@ -141,7 +141,7 @@ public:
   void reduce(const void *sendbuff, void *recvbuff, size_t count,
               oneapi::ccl::datatype dtype, oneapi::ccl::reduction rtype,
               int root, sycl::queue *queue_ptr) {
-    call_reuse_queue(
+    call_func_wrapper(
         [=](const oneapi::ccl::stream &stream) {
           return oneapi::ccl::reduce(sendbuff, recvbuff, count, dtype, rtype,
                                      root, _comm, stream);
@@ -169,7 +169,7 @@ public:
           "send_buf and recv_buf must be same.");
       return;
     }
-    call_reuse_queue(
+    call_func_wrapper(
         [=](const oneapi::ccl::stream &stream) {
           return oneapi::ccl::broadcast(recvbuff, count, dtype, root, _comm,
                                         stream);
@@ -189,7 +189,7 @@ public:
   void reduce_scatter(const void *sendbuff, void *recvbuff, size_t recv_count,
                       oneapi::ccl::datatype dtype, oneapi::ccl::reduction rtype,
                       sycl::queue *queue_ptr) {
-    call_reuse_queue(
+    call_func_wrapper(
         [=](const oneapi::ccl::stream &stream) {
           return oneapi::ccl::reduce_scatter(sendbuff, recvbuff, recv_count,
                                              dtype, rtype, _comm, stream);
@@ -206,7 +206,7 @@ private:
   oneapi::ccl::stream *_ccl_stream_ptr;
 
   template <class Fn>
-  void call_reuse_queue(Fn func, sycl::queue *qptr) {
+  void call_func_wrapper(Fn func, sycl::queue *qptr) {
     if (_queue_init && *qptr != _queue) {
       call_func_async(func, qptr);
     } else {
