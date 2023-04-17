@@ -12349,8 +12349,12 @@ void RecognizeAPINameRule::processMemberFuncCall(const CXXMemberCallExpr *MC) {
 
 void RecognizeAPINameRule::processFuncCall(const CallExpr *CE,
                                            bool HaveKeywordInAPIName) {
-  if (!dpct::DpctGlobalInfo::isInCudaPath(CE->getCalleeDecl()->getLocation()))
-    return;
+  if (!dpct::DpctGlobalInfo::isInCudaPath(CE->getCalleeDecl()->getLocation())){
+    if(!CE->getCalleeDecl()->getAsFunction()->getName().startswith("cudnn") &&
+       !CE->getCalleeDecl()->getAsFunction()->getName().startswith("nccl"))
+      return;
+  }
+    
   std::string Namespace;
   const NamedDecl *ND = dyn_cast<NamedDecl>(CE->getCalleeDecl());
   if (ND) {
