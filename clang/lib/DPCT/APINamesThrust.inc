@@ -536,121 +536,14 @@ thrustFactory("thrust::unique_copy",
                {5,PolicyState::HasPolicy,3,"oneapi::dpl::unique_copy", HelperFeatureEnum::no_feature_helper},
                {4,PolicyState::NoPolicy, 3,"oneapi::dpl::unique_copy", HelperFeatureEnum::no_feature_helper}}),
 
-
 // thrust::stable_sort
-CONDITIONAL_FACTORY_ENTRY(
-  CheckArgCount(4),
-  CONDITIONAL_FACTORY_ENTRY(
-    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
-    //Handling case: thrust::stable_sort(policy, ptr, ptr, comp);
-    IFELSE_FACTORY_ENTRY(
-      "thrust::stable_sort",
-      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
-        CALL_FACTORY_ENTRY("thrust::stable_sort", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
-      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
-        CALL_FACTORY_ENTRY("thrust::stable_sort",
-                          CALL("oneapi::dpl::stable_sort",
-                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
-                                ARG(3)))),
-      CALL_FACTORY_ENTRY("thrust::stable_sort",
-                        CALL("oneapi::dpl::stable_sort",
-                              ARG("oneapi::dpl::execution::seq"),
-                              ARG(1), ARG(2), ARG(3)))),
-    // Handling case: thrust::unique_by_key(thrust::device, d_values.begin(), d_output_keys.end(), d_output_values.begin(), comp);
-    CALL_FACTORY_ENTRY("thrust::stable_sort",
-                      CALL("oneapi::dpl::stable_sort",
-                            makeMappedThrustPolicyEnum(0),
-                            ARG(1), ARG(2), ARG(3)))
-  ),
-  CONDITIONAL_FACTORY_ENTRY(
-    CheckArgCount(2),
-    CONDITIONAL_FACTORY_ENTRY(
-      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
-      //Handling case: thrust::stable_sort(ptr, ptr);
-      IFELSE_FACTORY_ENTRY(
-        "thrust::stable_sort",
-        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
-          CALL_FACTORY_ENTRY("thrust::stable_sort", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
-        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
-          CALL_FACTORY_ENTRY("thrust::stable_sort",
-                            CALL("oneapi::dpl::stable_sort",
-                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1))))),
-        CALL_FACTORY_ENTRY("thrust::stable_sort",
-                          CALL("oneapi::dpl::stable_sort",
-                                ARG("oneapi::dpl::execution::seq"),
-                                ARG(0), ARG(1)))),
-      CONDITIONAL_FACTORY_ENTRY(
-        CheckThrustArgType(1, "thrust::device_ptr"),
-        // Handling case: thrust::stable_sort(h_keys.begin(), h_keys.end());
-        CALL_FACTORY_ENTRY("thrust::stable_sort",
-                            CALL("oneapi::dpl::stable_sort",
-                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                ARG(0), ARG(1))),
-        CALL_FACTORY_ENTRY("thrust::stable_sort",
-                            CALL("oneapi::dpl::stable_sort",
-                              ARG("oneapi::dpl::execution::seq"),
-                              ARG(0), ARG(1))))
-    ),
-    CONDITIONAL_FACTORY_ENTRY(
-      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
-      CONDITIONAL_FACTORY_ENTRY(
-        IsPolicyArgType(0),
-        //Handling case: thrust::stable_sort(policy, ptr, ptr);
-        IFELSE_FACTORY_ENTRY(
-          "thrust::stable_sort",
-          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
-            CALL_FACTORY_ENTRY("thrust::stable_sort", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
-          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
-            CALL_FACTORY_ENTRY("thrust::stable_sort",
-                              CALL("oneapi::dpl::stable_sort",
-                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2))))),
-          CALL_FACTORY_ENTRY("thrust::stable_sort",
-                            CALL("oneapi::dpl::stable_sort",
-                                  ARG("oneapi::dpl::execution::seq"),
-                                  ARG(1), ARG(2)))),
-        //Handling case: thrust::stable_sort(ptr, ptr, pred);
-        IFELSE_FACTORY_ENTRY(
-          "thrust::stable_sort",
-          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
-            CALL_FACTORY_ENTRY("thrust::stable_sort", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
-          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
-            CALL_FACTORY_ENTRY("thrust::stable_sort",
-                              CALL("oneapi::dpl::stable_sort",
-                                    CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
-                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
-                                    ARG(2)))),
-          CALL_FACTORY_ENTRY("thrust::stable_sort",
-                            CALL("oneapi::dpl::stable_sort",
-                                  ARG("oneapi::dpl::execution::seq"),
-                                  ARG(0), ARG(1), ARG(2))))),
-      CONDITIONAL_FACTORY_ENTRY(
-        IsPolicyArgType(0),
-        // Handling case: thrust::stable_sort(thrust::device, d_values.begin(), d_values.end());
-        CALL_FACTORY_ENTRY("thrust::stable_sort",
-                            CALL("oneapi::dpl::stable_sort",
-                                makeMappedThrustPolicyEnum(0),
-                                ARG(1), ARG(2))),
-        CONDITIONAL_FACTORY_ENTRY(
-          CheckThrustArgType(1, "thrust::device_ptr"),
-          // Handling case: thrust::stable_sort(d_values.begin(), d_values.end(), comp);
-          CALL_FACTORY_ENTRY("thrust::stable_sort",
-                              CALL("oneapi::dpl::stable_sort",
-                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                  ARG(0), ARG(1), ARG(2))),
-          CALL_FACTORY_ENTRY("thrust::stable_sort",
-                              CALL("oneapi::dpl::stable_sort",
-                                  ARG("oneapi::dpl::execution::seq"),
-                                  ARG(0), ARG(1), ARG(2)))))
-    )
-  )
-)
+thrustFactory("thrust::stable_sort",
+              {{3,PolicyState::HasPolicy,2,"oneapi::dpl::stable_sort", HelperFeatureEnum::no_feature_helper},
+               {2,PolicyState::NoPolicy, 2,"oneapi::dpl::stable_sort", HelperFeatureEnum::no_feature_helper},
+               {4,PolicyState::HasPolicy,2,"oneapi::dpl::stable_sort", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"oneapi::dpl::stable_sort", HelperFeatureEnum::no_feature_helper}}),
+
+
 
 
 // thrust::set_difference_by_key
