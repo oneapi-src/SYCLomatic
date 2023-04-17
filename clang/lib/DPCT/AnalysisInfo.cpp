@@ -3628,8 +3628,7 @@ bool MemVarMap::isSameAs(const MemVarMap& Other) const {
 
 CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold)
     : PointerLevel(0), IsTemplate(false) {
-  if(TL)
-    setTypeInfo(TL, NeedSizeFold);
+  setTypeInfo(TL, NeedSizeFold);
 }
 
 std::string CtTypeInfo::getRangeArgument(const std::string &MemSize,
