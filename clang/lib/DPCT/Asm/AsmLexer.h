@@ -22,7 +22,7 @@ namespace clang::dpct {
 
 using llvm::StringRef;
 
-class AsmToken {
+class PtxToken {
 public:
   enum TokenKind {
     // Markers
@@ -103,16 +103,16 @@ private:
     double f64;
   };
 public:
-  AsmToken() = default;
-  AsmToken(TokenKind Kind, StringRef Str)
+  PtxToken() = default;
+  PtxToken(TokenKind Kind, StringRef Str)
       : Kind(Kind), Str(Str), u64(0U) {}
-  AsmToken(TokenKind Kind, StringRef Str, int64_t I64)
+  PtxToken(TokenKind Kind, StringRef Str, int64_t I64)
       : Kind(Kind), Str(Str), i64(I64) {}
-  AsmToken(TokenKind Kind, StringRef Str, uint64_t U64)
+  PtxToken(TokenKind Kind, StringRef Str, uint64_t U64)
       : Kind(Kind), Str(Str), u64(U64) {}
-  AsmToken(TokenKind Kind, StringRef Str, float FpVal)
+  PtxToken(TokenKind Kind, StringRef Str, float FpVal)
       : Kind(Kind), Str(Str), f32(FpVal) {}
-  AsmToken(TokenKind Kind, StringRef Str, double FpVal)
+  PtxToken(TokenKind Kind, StringRef Str, double FpVal)
       : Kind(Kind), Str(Str), f64(FpVal) {}
 
   TokenKind getKind() const { return Kind; }
@@ -188,11 +188,11 @@ class PtxLexer {
   bool IsAtStartOfStatement = true;
   bool IsPeeking = false;
   bool EndStatementAtEOF = true;
-  SmallVector<AsmToken, 1> CurTok;
+  SmallVector<PtxToken, 1> CurTok;
 
 protected:
   /// LexToken - Read the next token and return its code.
-  AsmToken LexToken();
+  PtxToken LexToken();
 
 public:
   PtxLexer();
@@ -205,21 +205,21 @@ public:
 
   StringRef LexUntilEndOfStatement();
 
-  size_t peekTokens(MutableArrayRef<AsmToken> Buf);
+  size_t peekTokens(MutableArrayRef<PtxToken> Buf);
 
-  const AsmToken &Lex();
-  void UnLex(AsmToken const &Token);
+  const PtxToken &Lex();
+  void UnLex(PtxToken const &Token);
 
   bool isAtStartOfStatement() { return IsAtStartOfStatement; }
 
   /// Get the current (last) lexed token.
-  const AsmToken &getTok() const { return CurTok[0]; }
+  const PtxToken &getTok() const { return CurTok[0]; }
 
   /// Look ahead at the next token to be lexed.
-  const AsmToken peekTok() {
-    AsmToken Tok;
+  const PtxToken peekTok() {
+    PtxToken Tok;
 
-    MutableArrayRef<AsmToken> Buf(Tok);
+    MutableArrayRef<PtxToken> Buf(Tok);
     size_t ReadCount = peekTokens(Buf);
 
     assert(ReadCount == 1);
@@ -233,14 +233,14 @@ private:
   bool isAtStatementSeparator(const char *Ptr);
   int getNextChar();
   int peekNextChar();
-  AsmToken ConsumeIntegerSuffix(unsigned Radix);
-  AsmToken ReturnError(const char *Loc, const std::string &Msg);
+  PtxToken ConsumeIntegerSuffix();
+  PtxToken ReturnError(const char *Loc, const std::string &Msg);
 
-  AsmToken LexIdentifier();
-  AsmToken LexSlash();
-  AsmToken LexLineComment();
-  AsmToken LexDigit();
-  AsmToken LexQuote();
+  PtxToken LexIdentifier();
+  PtxToken LexSlash();
+  PtxToken LexLineComment();
+  PtxToken LexDigit();
+  PtxToken LexQuote();
 
   StringRef LexUntilEndOfLine();
 };

@@ -20,6 +20,38 @@ __global__ void gpu_ptx(int *d_ptr, int length) {
   }
 }
 
+// CHECK:void mov(float *output) {
+// CHECK-NEXT: unsigned p;
+// CHECK-NEXT: p = 123 * 123 + 456 * ((4 ^ 7) + 2 ^ 3) | 777 & 128 == 2 != 3 > 4 < 5 <= 3 >= 5 >> 1 << 2 && 1 || 7 && !0;
+// CHECK-NEXT: *output = p;
+// CHECK-NEXT:}
+__global__ void mov(float *output) {
+  unsigned p;
+  asm ("mov.s32 %0, 123 * 123U + 456 * ((4 ^7) + 2 ^ 3) | 777 & 128 == 2 != 3 > 4 < 5 <= 3 >= 5 >> 1 << 2 && 1 || 7 && !0;" : "=r"(p) );
+  *output = p;
+}
+
+// CHECK: int cond(int x) {
+// CHECK-NEXT: int y = 0;
+// CHECK-NEXT: {
+// CHECK-NEXT: bool p_ct;
+// CHECK-NEXT: p_ct = x == 34;
+// CHECK-NEXT: (p_ct && (y = 1));
+// CHECK-NEXT: }
+// CHECK-EMPTY:
+// CHECK-NEXT: return y;
+// CHECK-NEXT:}
+__device__ int cond(int x) {
+  int y = 0;
+  asm("{\n\t"
+      " .reg .pred %p;\n\t"
+      " setp.eq.s32 %p, %1, 34;\n\t" // x == 34?
+      " @%p mov.s32 %0, 1;\n\t"      // set y to 1 if true
+      "}"                            // conceptually y = (x==34)?1:y
+      : "+r"(y) : "r" (x));
+  return y;
+}
+
 int main(int argc, char **argv) {
   const int N = 1000;
   int *d_ptr;

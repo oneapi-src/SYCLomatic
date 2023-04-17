@@ -31,7 +31,10 @@ using llvm::SMLoc;
 using llvm::SMRange;
 using llvm::SourceMgr;
 
+/// ptx - Define PTX instruction opcodes and attributes
 namespace ptx {
+
+// InstKind - PTX opcode
 enum InstKind {
   Abs,
   Activemask,
@@ -199,19 +202,9 @@ enum ComparisonOp {
   CO_Nan
 };
 
-enum BooleanOp {
-  BO_And,
-  BO_Or,
-  BO_Xor
-};
+enum BooleanOp { BO_And, BO_Or, BO_Xor };
 
-enum ArithmeticOp {
-  AO_Add,
-  AO_Min,
-  AO_Max,
-  AO_Maxabs,
-  AO_Popc
-};
+enum ArithmeticOp { AO_Add, AO_Min, AO_Max, AO_Maxabs, AO_Popc };
 
 InstKind FindInstructionKindFromName(StringRef InstName);
 
@@ -288,8 +281,7 @@ private:
   TypeKind Kind;
 
 public:
-  PtxFundamentalType(TypeKind Kind)
-      : PtxType(FundamentalClass), Kind(Kind) {}
+  PtxFundamentalType(TypeKind Kind) : PtxType(FundamentalClass), Kind(Kind) {}
 
   TypeKind getKind() const { return Kind; }
 
@@ -321,6 +313,7 @@ public:
 class PtxTupleType : public PtxType {
 public:
   typedef SmallVector<const PtxType *, 4> ElementList;
+
 private:
   ElementList ElementTypes;
 
@@ -328,9 +321,7 @@ public:
   PtxTupleType(const ElementList &ElementTypes)
       : PtxType(TupleClass), ElementTypes(ElementTypes) {}
 
-  const ElementList &getElementTypes() const {
-    return ElementTypes;
-  }
+  const ElementList &getElementTypes() const { return ElementTypes; }
 
   const PtxType *getElementType(unsigned I) const { return ElementTypes[I]; }
 
@@ -358,7 +349,6 @@ public:
 private:
   DeclClass dClass;
   std::string Name;
-
 protected:
   PtxDecl(DeclClass DC, StringRef Name) : dClass(DC), Name(Name.str()) {}
 
@@ -366,6 +356,8 @@ public:
   virtual ~PtxDecl();
   DeclClass getDeclClass() const { return dClass; }
   StringRef getDeclName() const { return Name; }
+
+  void setDeclName(StringRef Name) { this->Name = Name; }
 
   void *operator new(size_t bytes) noexcept {
     llvm_unreachable("PtxDecl cannot be allocated with regular 'new'.");
@@ -394,13 +386,9 @@ public:
   const Attribute &getAttributes() const { return Attr; }
   const PtxType *getType() const { return Type; }
 
-  void setAlign(unsigned Align) {
-    Attr.Align = Align;
-  }
+  void setAlign(unsigned Align) { Attr.Align = Align; }
 
-  bool hasAlign() const {
-    return Attr.Align.has_value();
-  }
+  bool hasAlign() const { return Attr.Align.has_value(); }
 
   static bool classof(const PtxDecl *T) {
     return T->getDeclClass() == VariableDeclClass;
@@ -421,6 +409,7 @@ public:
     TupleExprClass,
     SinkExprClass,
     CastExprClass,
+    ParenExprClass,
     DeclRefExprClass,
     IntegerLiteralClass,
     FloatingLiteralClass,
@@ -481,32 +470,28 @@ public:
     unsigned StorageClass = 0;
     SmallVector<PtxType *, 4> Types;
 
-    void setComparisonOp(ptx::ComparisonOp Op) {
-      ComparisonOp = Op;
-    }
+    void setComparisonOp(ptx::ComparisonOp Op) { ComparisonOp = Op; }
 
-    void setBooleanOp(ptx::BooleanOp Op) {
-      BooleanOp = Op;
-    }
+    void setBooleanOp(ptx::BooleanOp Op) { BooleanOp = Op; }
 
-    void setArithmeticOp(ptx::ArithmeticOp Op) {
-      ArithmeticOp = Op;
-    }
+    void setArithmeticOp(ptx::ArithmeticOp Op) { ArithmeticOp = Op; }
 
-    void setStorageClass(ptx::StorageClass SC) {
-      StorageClass = SC;
-    }
+    void setStorageClass(ptx::StorageClass SC) { StorageClass = SC; }
   };
 
   using OperandList = SmallVector<const PtxExpr *, 4>;
+
 private:
   ptx::InstKind Op;
   Attribute Attr;
   OperandList Operands;
   const PtxExpr *PredOutput;
+
 public:
-  PtxInstruction(ptx::InstKind Op, const OperandList &Operands = {}, const PtxExpr *PredOut = nullptr)
-      : PtxStmt(InstructionClass), Op(Op), Operands(Operands), PredOutput(PredOut) {}
+  PtxInstruction(ptx::InstKind Op, const OperandList &Operands = {},
+                 const PtxExpr *PredOut = nullptr)
+      : PtxStmt(InstructionClass), Op(Op), Operands(Operands),
+        PredOutput(PredOut) {}
 
   ptx::InstKind getOpcode() const { return Op; }
 
@@ -516,11 +501,15 @@ public:
 
   const PtxExpr *getOperand(unsigned I) const { return Operands[I]; }
 
+  size_t getNumOperands() const { return Operands.size(); }
+
   void addOperand(const PtxExpr *Operand) { Operands.push_back(Operand); }
 
-  const PtxExpr *getPredOutput() const {
-    return PredOutput;
-  }
+  const PtxExpr *getPredOutput() const { return PredOutput; }
+
+  const Attribute &getAttributes() const { return Attr; }
+
+  void setAttributes(const Attribute &Attr) { this->Attr = Attr; } 
 
   static bool classof(const PtxStmt *S) {
     return InstructionClass <= S->getStmtClass();
@@ -531,6 +520,7 @@ class PtxGuardInstruction : public PtxStmt {
   bool IsNeg;
   const PtxExpr *Pred;
   const PtxInstruction *Instruction;
+
 public:
   PtxGuardInstruction(bool IsNeg, const PtxExpr *Pred,
                       const PtxInstruction *Inst)
@@ -547,9 +537,24 @@ public:
 };
 
 class PtxDeclStmt : public PtxStmt {
+  const PtxType *BaseType;
   SmallVector<const PtxDecl *> DeclGroup;
+
 public:
-  PtxDeclStmt(const SmallVector<const PtxDecl *> &Decls) : PtxStmt(DeclStmtClass), DeclGroup(Decls) {}
+  PtxDeclStmt(const PtxType *BaseType,
+              const SmallVector<const PtxDecl *> &Decls)
+      : PtxStmt(DeclStmtClass), BaseType(BaseType), DeclGroup(Decls) {}
+
+  using decl_range =
+      llvm::iterator_range<SmallVector<const PtxDecl *>::const_iterator>;
+
+  decl_range decls() const {
+    return decl_range(DeclGroup.begin(), DeclGroup.end());
+  }
+
+  const PtxType *getBaseType() const {
+    return BaseType;
+  }
 
   static bool classof(const PtxStmt *S) {
     return S->getStmtClass() == DeclStmtClass;
@@ -566,7 +571,6 @@ protected:
       : PtxStmt(SC), Type(Type) {}
 
 public:
-
   const PtxType *getType() const { return Type; }
 
   static bool classof(const PtxStmt *S) {
@@ -628,6 +632,7 @@ public:
 class PtxTupleExpr : public PtxExpr {
 public:
   typedef SmallVector<const PtxExpr *, 4> ElementList;
+
 private:
   ElementList Elements;
 
@@ -670,6 +675,19 @@ public:
   }
 };
 
+class PtxParenExpr : public PtxExpr {
+  const PtxExpr *SubExpr;
+public:
+  PtxParenExpr(const PtxExpr *SubExpr)
+      : PtxExpr(ParenExprClass, SubExpr->getType()), SubExpr(SubExpr) {}
+  
+  const PtxExpr *getSubExpr() const { return SubExpr; }
+
+  static bool classof(const PtxStmt *S) {
+    return S->getStmtClass() == ParenExprClass;
+  }
+};
+
 class PtxUnaryOperator : public PtxExpr {
 public:
   enum Opcode {
@@ -683,6 +701,7 @@ public:
 private:
   const PtxExpr *SubExpr;
   unsigned Op;
+
 public:
   PtxUnaryOperator(Opcode Op, const PtxExpr *Expr, const PtxType *Type)
       : PtxExpr(UnaryOperatorClass, Type), SubExpr(Expr), Op(Op) {}
@@ -743,13 +762,14 @@ private:
   Opcode Op;
   const PtxExpr *LHS;
   const PtxExpr *RHS;
+
 public:
   PtxBinaryOperator(Opcode Op, const PtxExpr *LHS, const PtxExpr *RHS,
                     const PtxType *Type)
       : PtxExpr(BinaryOperatorClass, Type), Op(Op), LHS(LHS), RHS(RHS) {}
 
 public:
-  Opcode getOpcode() const { return (Opcode)Op; }
+  Opcode getOpcode() const { return Op; }
   const PtxExpr *getLHS() const { return LHS; }
   const PtxExpr *getRHS() const { return RHS; }
 
@@ -772,16 +792,16 @@ public:
   const PtxExpr *getLHS() const { return LHS; }
   const PtxExpr *getRHS() const { return RHS; }
 
-  static bool classof(PtxStmt *S) {
+  static bool classof(const PtxStmt *S) {
     return S->getStmtClass() == ConditionalOperatorClass;
   }
 };
 
 class PtxContext {
   llvm::BumpPtrAllocator Allocator;
-  llvm::DenseMap<int, PtxFundamentalType *>
-      FundamentalTypes;
+  llvm::DenseMap<int, PtxFundamentalType *> FundamentalTypes;
   PtxAnyType *AnyType;
+
 public:
   void *allocate(unsigned Size, unsigned Align = 8) {
     return Allocator.Allocate(Size, Align);
@@ -791,28 +811,42 @@ public:
 
   PtxType *GetTypeFromConstraint(StringRef Constraint);
   PtxFundamentalType *GetOrCreateFundamentalType(StringRef TypeName);
-  PtxFundamentalType *GetOrCreateFundamentalType(PtxFundamentalType::TypeKind Kind);
+  PtxFundamentalType *
+  GetOrCreateFundamentalType(PtxFundamentalType::TypeKind Kind);
   PtxAnyType *GetOrCreateAnyType();
   PtxTupleType *CreateTupleType(const PtxTupleType::ElementList &ElementType);
-  PtxVectorType *CreateVectorType(PtxVectorType::TypeKind Kind, const PtxFundamentalType *Base);
+  PtxVectorType *CreateVectorType(PtxVectorType::TypeKind Kind,
+                                  const PtxFundamentalType *Base);
 
-  PtxDeclStmt *CreateDeclStmt(const SmallVector<const PtxDecl *> &DeclGroup);
+  PtxDeclStmt *CreateDeclStmt(const PtxType *BaseType,
+                              const SmallVector<const PtxDecl *> &DeclGroup);
   PtxVariableDecl *CreateVariableDecl(StringRef Name, const PtxType *Type);
   PtxCompoundStmt *CreateCompoundStmt(const SmallVector<PtxStmt *> &Stmts);
   PtxDeclRefExpr *CreateDeclRefExpr(const PtxVariableDecl *Var);
-  PtxTupleExpr *CreateTupleExpr(const PtxTupleType *Type, const PtxTupleExpr::ElementList &Elements);
+  PtxTupleExpr *CreateTupleExpr(const PtxTupleType *Type,
+                                const PtxTupleExpr::ElementList &Elements);
   PtxSinkExpr *CreateSinkExpr();
-  PtxInstruction *CreateInstruction(ptx::InstKind Op, const PtxInstruction::OperandList &Operands = {}, const PtxExpr *PredOut = nullptr);
-  PtxGuardInstruction *CreateGuardInstruction(bool isNeg, const PtxExpr *Pred, const PtxInstruction *Inst);
+  PtxInstruction *
+  CreateInstruction(ptx::InstKind Op,
+                    const PtxInstruction::OperandList &Operands = {},
+                    const PtxExpr *PredOut = nullptr);
+  PtxGuardInstruction *CreateGuardInstruction(bool isNeg, const PtxExpr *Pred,
+                                              const PtxInstruction *Inst);
 
-  PtxUnaryOperator *CreateUnaryOperator(PtxUnaryOperator::Opcode Op, const PtxExpr *Operand);
-  PtxBinaryOperator *CreateBinaryOperator(PtxBinaryOperator::Opcode Op, const PtxExpr *LHS, const PtxExpr *RHS);
-  PtxConditionalOperator *CreateConditionalOperator(const PtxExpr *Cond, const PtxExpr *LHS, const PtxExpr *RHS);
-  PtxCastExpr *CreateCastExpression(const PtxFundamentalType *CastType, const PtxExpr *SubExpr);
-
+  PtxUnaryOperator *CreateUnaryOperator(PtxUnaryOperator::Opcode Op,
+                                        const PtxExpr *Operand);
+  PtxBinaryOperator *CreateBinaryOperator(PtxBinaryOperator::Opcode Op,
+                                          const PtxExpr *LHS,
+                                          const PtxExpr *RHS);
+  PtxConditionalOperator *CreateConditionalOperator(const PtxExpr *Cond,
+                                                    const PtxExpr *LHS,
+                                                    const PtxExpr *RHS);
+  PtxCastExpr *CreateCastExpression(const PtxFundamentalType *CastType,
+                                    const PtxExpr *SubExpr);
+  PtxParenExpr *CreateParenExpression(const PtxExpr *SubExpr);
   PtxIntegerLiteral *CreateIntegerLiteral(const PtxType *Type, llvm::APInt Val);
-  PtxFloatingLiteral *CreateFloatLiteral(const PtxType *Type, llvm::APFloat Val);
-
+  PtxFloatingLiteral *CreateFloatLiteral(const PtxType *Type,
+                                         llvm::APFloat Val);
 };
 
 class PtxScope {
@@ -837,7 +871,9 @@ public:
 
   void AddDecl(PtxVariableDecl *D) { DeclsInScope.insert(D); }
 
-  bool isDeclScope(const PtxVariableDecl *D) const { return DeclsInScope.contains(D); }
+  bool isDeclScope(const PtxVariableDecl *D) const {
+    return DeclsInScope.contains(D);
+  }
 
   bool Contains(const PtxScope &rhs) const { return Depth < rhs.Depth; }
 
@@ -896,8 +932,8 @@ public:
     return const_cast<PtxParser *>(this)->getLexer();
   }
 
-  const AsmToken &getTok() const { return getLexer().getTok(); }
-  const AsmToken &Lex();
+  const PtxToken &getTok() const { return getLexer().getTok(); }
+  const PtxToken &Lex();
 
   PtxDeclResult AddBuiltinSymbol(StringRef Name, const PtxType *Type);
   PtxDeclResult AddInlineAsmOperands(StringRef Name, StringRef Constraint);
@@ -952,6 +988,19 @@ public:
   PtxExprResult ParseMultiplicativeExpression();
   PtxExprResult ParseCastExpresion();
   PtxExprResult ParseUnaryExpression();
+};
+
+class PtxASTConsumer {
+  PtxParser *Parser;
+
+public:
+  PtxASTConsumer(PtxParser *Parser) : Parser(Parser) {}
+  virtual ~PtxASTConsumer();
+
+  virtual bool HandleCompoundStmt(const PtxCompoundStmt *Stmt) = 0;
+  virtual bool HandleGuardInstruction(const PtxGuardInstruction *Inst) = 0;
+  virtual bool HandleInstruction(const PtxInstruction *Inst) = 0;
+  virtual bool HandleVariableDecl(const PtxVariableDecl *Var) = 0;
 };
 
 } // namespace clang::dpct

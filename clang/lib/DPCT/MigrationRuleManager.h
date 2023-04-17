@@ -66,8 +66,6 @@ template <class RuleTy> class RuleRegister {
 public:
   RuleRegister(const std::string &Name, std::initializer_list<PassKind> Kinds) {
     static std::shared_ptr<RuleFactory> F = std::make_shared<RuleFactory>();
-    if (Name == "AsmRule")
-      std::cout << "Registe " << Name << std::endl;
     for (auto Kind : Kinds)
       MigrationRuleManager::registerRule(Kind, Name, F);
   }
