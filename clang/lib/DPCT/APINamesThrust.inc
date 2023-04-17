@@ -417,8 +417,6 @@ CALL_FACTORY_ENTRY(
     "thrust::get",
     CALL(TEMPLATED_CALLEE("std::get", std::vector<size_t>(1, 0)), ARG(0)))
 
-
-
 // thrust::unique_by_key
 thrustFactory("thrust::unique_by_key",
               {{4,PolicyState::HasPolicy,3,MapNames::getDpctNamespace()+"unique", HelperFeatureEnum::DplExtrasAlgorithm_unique_copy},
@@ -510,232 +508,19 @@ CALL_FACTORY_ENTRY("thrust::proj", CALL("std::proj", ARG(0)))
 CALL_FACTORY_ENTRY("thrust::raw_reference_cast", CALL(MapNames::getDpctNamespace() + "get_raw_reference", ARG(0)))
 
 // thrust::minmax_element
-CONDITIONAL_FACTORY_ENTRY(
-  CheckArgCount(4),
-  CONDITIONAL_FACTORY_ENTRY(
-    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
-    //Handling case: thrust::minmax_element(policy, ptr, ptr, comp);
-    IFELSE_FACTORY_ENTRY(
-      "thrust::minmax_element",
-      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
-        CALL_FACTORY_ENTRY("thrust::minmax_element", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
-      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
-        CALL_FACTORY_ENTRY("thrust::minmax_element",
-                          CALL("oneapi::dpl::minmax_element",
-                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
-                                THRUST_FUNCTOR(3)))),
-      CALL_FACTORY_ENTRY("thrust::minmax_element",
-                        CALL("oneapi::dpl::minmax_element",
-                              ARG("oneapi::dpl::execution::seq"),
-                              ARG(1), ARG(2), THRUST_FUNCTOR(3)))),
-    // Handling case: thrust::unique_by_key(thrust::device, iterator, iterator, comp);
-    CALL_FACTORY_ENTRY("thrust::minmax_element",
-                      CALL("oneapi::dpl::minmax_element",
-                            makeMappedThrustPolicyEnum(0),
-                            ARG(1), ARG(2), THRUST_FUNCTOR(3)))
-  ),
-  CONDITIONAL_FACTORY_ENTRY(
-    CheckArgCount(2),
-    CONDITIONAL_FACTORY_ENTRY(
-      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
-      //Handling case: thrust::minmax_element(ptr, ptr);
-      IFELSE_FACTORY_ENTRY(
-        "thrust::minmax_element",
-        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
-          CALL_FACTORY_ENTRY("thrust::minmax_element", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
-        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
-          CALL_FACTORY_ENTRY("thrust::minmax_element",
-                            CALL("oneapi::dpl::minmax_element",
-                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1))))),
-        CALL_FACTORY_ENTRY("thrust::minmax_element",
-                          CALL("oneapi::dpl::minmax_element",
-                                ARG("oneapi::dpl::execution::seq"),
-                                ARG(0), ARG(1)))),
-      CONDITIONAL_FACTORY_ENTRY(
-        CheckThrustArgType(1, "thrust::device_ptr"),
-        // Handling case: thrust::minmax_element(iterator, iterator);
-        CALL_FACTORY_ENTRY("thrust::minmax_element",
-                            CALL("oneapi::dpl::minmax_element",
-                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                ARG(0), ARG(1))),
-        CALL_FACTORY_ENTRY("thrust::minmax_element",
-                            CALL("oneapi::dpl::minmax_element",
-                              ARG("oneapi::dpl::execution::seq"),
-                              ARG(0), ARG(1))))
-    ),
-    CONDITIONAL_FACTORY_ENTRY(
-      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
-      CONDITIONAL_FACTORY_ENTRY(
-        IsPolicyArgType(0),
-        //Handling case: thrust::minmax_element(policy, ptr, ptr);
-        IFELSE_FACTORY_ENTRY(
-          "thrust::minmax_element",
-          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
-            CALL_FACTORY_ENTRY("thrust::minmax_element", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
-          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
-            CALL_FACTORY_ENTRY("thrust::minmax_element",
-                              CALL("oneapi::dpl::minmax_element",
-                                    CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(2))))),
-          CALL_FACTORY_ENTRY("thrust::minmax_element",
-                            CALL("oneapi::dpl::minmax_element",
-                                  ARG("oneapi::dpl::execution::seq"),
-                                  ARG(1), ARG(2)))),
-        //Handling case: thrust::minmax_element(ptr, ptr, pred);
-        IFELSE_FACTORY_ENTRY(
-          "thrust::minmax_element",
-          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
-            CALL_FACTORY_ENTRY("thrust::minmax_element", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
-          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
-            CALL_FACTORY_ENTRY("thrust::minmax_element",
-                              CALL("oneapi::dpl::minmax_element",
-                                    CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
-                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
-                                    ARG(2)))),
-          CALL_FACTORY_ENTRY("thrust::minmax_element",
-                            CALL("oneapi::dpl::minmax_element",
-                                  ARG("oneapi::dpl::execution::seq"),
-                                  ARG(0), ARG(1), ARG(2))))),
-      CONDITIONAL_FACTORY_ENTRY(
-        IsPolicyArgType(0),
-        // Handling case: thrust::minmax_element(thrust::device, iterator, iterator);
-        CALL_FACTORY_ENTRY("thrust::minmax_element",
-                            CALL("oneapi::dpl::minmax_element",
-                                makeMappedThrustPolicyEnum(0),
-                                ARG(1), ARG(2))),
-        CONDITIONAL_FACTORY_ENTRY(
-          CheckThrustArgType(1, "thrust::device_ptr"),
-          // Handling case: thrust::minmax_element(iterator, iterator, comp);
-          CALL_FACTORY_ENTRY("thrust::minmax_element",
-                              CALL("oneapi::dpl::minmax_element",
-                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                  ARG(0), ARG(1), ARG(2))),
-          CALL_FACTORY_ENTRY("thrust::minmax_element",
-                              CALL("oneapi::dpl::minmax_element",
-                                  ARG("oneapi::dpl::execution::seq"),
-                                  ARG(0), ARG(1), THRUST_FUNCTOR(2)))))
-    )
-  )
-)
+thrustFactory("thrust::minmax_element",
+              {{3,PolicyState::HasPolicy,2,"oneapi::dpl::minmax_element", HelperFeatureEnum::no_feature_helper},
+               {2,PolicyState::NoPolicy, 2,"oneapi::dpl::minmax_element", HelperFeatureEnum::no_feature_helper},
+               {4,PolicyState::HasPolicy,2,"oneapi::dpl::minmax_element", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"oneapi::dpl::minmax_element", HelperFeatureEnum::no_feature_helper}}),
 
 // thrust::is_sorted
-CONDITIONAL_FACTORY_ENTRY(
-  CheckArgCount(4),
-  CONDITIONAL_FACTORY_ENTRY(
-    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
-    //Handling case: thrust::is_sorted(policy, ptr, ptr, comp);
-    IFELSE_FACTORY_ENTRY(
-      "thrust::is_sorted",
-      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
-        CALL_FACTORY_ENTRY("thrust::is_sorted", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
-      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
-        CALL_FACTORY_ENTRY("thrust::is_sorted",
-                          CALL("oneapi::dpl::is_sorted",
-                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
-                                ARG(3)))),
-      CALL_FACTORY_ENTRY("thrust::is_sorted",
-                        CALL("oneapi::dpl::is_sorted",
-                              ARG("oneapi::dpl::execution::seq"),
-                              ARG(1), ARG(2), ARG(3)))),
-    // Handling case: thrust::unique_by_key(thrust::device, iterator, iterator, comp);
-    CALL_FACTORY_ENTRY("thrust::is_sorted",
-                      CALL("oneapi::dpl::is_sorted",
-                            makeMappedThrustPolicyEnum(0),
-                            ARG(1), ARG(2), ARG(3)))
-  ),
-  CONDITIONAL_FACTORY_ENTRY(
-    CheckArgCount(2),
-    CONDITIONAL_FACTORY_ENTRY(
-      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
-      //Handling case: thrust::is_sorted(ptr, ptr);
-      IFELSE_FACTORY_ENTRY(
-        "thrust::is_sorted",
-        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
-          CALL_FACTORY_ENTRY("thrust::is_sorted", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
-        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
-          CALL_FACTORY_ENTRY("thrust::is_sorted",
-                            CALL("oneapi::dpl::is_sorted",
-                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1))))),
-        CALL_FACTORY_ENTRY("thrust::is_sorted",
-                          CALL("oneapi::dpl::is_sorted",
-                                ARG("oneapi::dpl::execution::seq"),
-                                ARG(0), ARG(1)))),
-      CONDITIONAL_FACTORY_ENTRY(
-        CheckThrustArgType(1, "thrust::device_ptr"),
-        // Handling case: thrust::is_sorted(iterator, iterator);
-        CALL_FACTORY_ENTRY("thrust::is_sorted",
-                            CALL("oneapi::dpl::is_sorted",
-                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                ARG(0), ARG(1))),
-        CALL_FACTORY_ENTRY("thrust::is_sorted",
-                            CALL("oneapi::dpl::is_sorted",
-                              ARG("oneapi::dpl::execution::seq"),
-                              ARG(0), ARG(1))))
-    ),
-    CONDITIONAL_FACTORY_ENTRY(
-      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
-      CONDITIONAL_FACTORY_ENTRY(
-        IsPolicyArgType(0),
-        //Handling case: thrust::is_sorted(policy, ptr, ptr);
-        IFELSE_FACTORY_ENTRY(
-          "thrust::is_sorted",
-          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
-            CALL_FACTORY_ENTRY("thrust::is_sorted", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
-          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
-            CALL_FACTORY_ENTRY("thrust::is_sorted",
-                              CALL("oneapi::dpl::is_sorted",
-                                    CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(2))))),
-          CALL_FACTORY_ENTRY("thrust::is_sorted",
-                            CALL("oneapi::dpl::is_sorted",
-                                  ARG("oneapi::dpl::execution::seq"),
-                                  ARG(1), ARG(2)))),
-        //Handling case: thrust::is_sorted(ptr, ptr, pred);
-        IFELSE_FACTORY_ENTRY(
-          "thrust::is_sorted",
-          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
-            CALL_FACTORY_ENTRY("thrust::is_sorted", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
-          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
-            CALL_FACTORY_ENTRY("thrust::is_sorted",
-                              CALL("oneapi::dpl::is_sorted",
-                                    CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
-                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
-                                    ARG(2)))),
-          CALL_FACTORY_ENTRY("thrust::is_sorted",
-                            CALL("oneapi::dpl::is_sorted",
-                                  ARG("oneapi::dpl::execution::seq"),
-                                  ARG(0), ARG(1), ARG(2))))),
-      CONDITIONAL_FACTORY_ENTRY(
-        IsPolicyArgType(0),
-        // Handling case: thrust::is_sorted(thrust::device, iterator, iterator);
-        CALL_FACTORY_ENTRY("thrust::is_sorted",
-                            CALL("oneapi::dpl::is_sorted",
-                                makeMappedThrustPolicyEnum(0),
-                                ARG(1), ARG(2))),
-        CONDITIONAL_FACTORY_ENTRY(
-          CheckThrustArgType(1, "thrust::device_ptr"),
-          // Handling case: thrust::is_sorted(d_values.begin(), iterator, comp);
-          CALL_FACTORY_ENTRY("thrust::is_sorted",
-                              CALL("oneapi::dpl::is_sorted",
-                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                  ARG(0), ARG(1), ARG(2))),
-          CALL_FACTORY_ENTRY("thrust::is_sorted",
-                              CALL("oneapi::dpl::is_sorted",
-                                  ARG("oneapi::dpl::execution::seq"),
-                                  ARG(0), ARG(1), ARG(2)))))
-    )
-  )
-)
+thrustFactory("thrust::is_sorted",
+              {{3,PolicyState::HasPolicy,2,"oneapi::dpl::is_sorted", HelperFeatureEnum::no_feature_helper},
+               {2,PolicyState::NoPolicy, 2,"oneapi::dpl::is_sorted", HelperFeatureEnum::no_feature_helper},
+               {4,PolicyState::HasPolicy,2,"oneapi::dpl::is_sorted", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"oneapi::dpl::is_sorted", HelperFeatureEnum::no_feature_helper}}),
+
 
 // thrust::partition
 CONDITIONAL_FACTORY_ENTRY(

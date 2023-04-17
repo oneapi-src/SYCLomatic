@@ -54,7 +54,7 @@ void minmax_element_test() {
 	int data[N] = { 1, 0, 2, 2, 1, 3 };
 
 //CHECK:  if (dpct::is_device_ptr(data)) {
-//CHECK-NEXT:    oneapi::dpl::minmax_element(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data + N));
+//CHECK-NEXT:     oneapi::dpl::minmax_element(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N));
 //CHECK-NEXT:  } else {
 //CHECK-NEXT:    oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data + N);
 //CHECK-NEXT:  };
@@ -92,7 +92,7 @@ void is_sorted_test() {
     thrust::greater<int> comp;
 
 //CHECK:    if (dpct::is_device_ptr(datas)) {
-//CHECK-NEXT:        oneapi::dpl::is_sorted(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(datas + N));
+//CHECK-NEXT:        oneapi::dpl::is_sorted(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(datas), dpct::device_pointer<int>(datas + N));
 //CHECK-NEXT:    } else {
 //CHECK-NEXT:        oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, datas, datas + N);
 //CHECK-NEXT:    };
