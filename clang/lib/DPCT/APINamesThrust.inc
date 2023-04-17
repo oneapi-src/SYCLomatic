@@ -336,90 +336,16 @@ thrustFactory("thrust::inclusive_scan_by_key",
 
 
 // thrust::exclusive_scan_by_key
-CONDITIONAL_FACTORY_ENTRY(
-  CheckArgCount(8),
-  //Handling case: thrust::exclusive_scan_by_key(policy, device.begin(), device.end(), device.begin(), result, init, binary_pred, binary_op);
-  CALL_FACTORY_ENTRY("thrust::exclusive_scan_by_key",
-                      CALL("oneapi::dpl::exclusive_scan_by_segment",
-                            makeMappedThrustPolicyEnum(0),
-                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7))),
-  CONDITIONAL_FACTORY_ENTRY(
-    CheckArgCount(7),
-    CONDITIONAL_FACTORY_ENTRY(
-      IsPolicyArgType(0),
-      //Handling case: thrust::exclusive_scan_by_key(policy, device.begin(), device.end(), device.begin(), result, init, binary_pred);
-      CALL_FACTORY_ENTRY("thrust::exclusive_scan_by_key",
-                      CALL("oneapi::dpl::exclusive_scan_by_segment",
-                            makeMappedThrustPolicyEnum(0),
-                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))),
-      //Handling case: thrust::exclusive_scan_by_key(device.begin(), device.end(), device.begin(), result, init, binary_pred, binary_op);
-      CONDITIONAL_FACTORY_ENTRY(
-        CheckThrustArgType(1, "thrust::device_ptr"),
-        CALL_FACTORY_ENTRY("thrust::exclusive_scan_by_key",
-                       CALL("oneapi::dpl::exclusive_scan_by_segment",
-                            CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))),
-        CALL_FACTORY_ENTRY("thrust::exclusive_scan_by_key",
-                       CALL("oneapi::dpl::exclusive_scan_by_segment",
-                            ARG("oneapi::dpl::execution::seq"),
-                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))))
-    ),
-    CONDITIONAL_FACTORY_ENTRY(
-        CheckArgCount(6),
-        CONDITIONAL_FACTORY_ENTRY(
-          IsPolicyArgType(0),
-          //Handling case: thrust::exclusive_scan_by_key(policy, device.begin(), device.end(), device.begin(), result, init);
-          CALL_FACTORY_ENTRY("thrust::exclusive_scan_by_key",
-                          CALL("oneapi::dpl::exclusive_scan_by_segment",
-                                makeMappedThrustPolicyEnum(0),
-                                ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))),
-          //Handling case: thrust::exclusive_scan_by_key(device.begin(), device.end(), device.begin(), result, init, binary_pred);
-          CONDITIONAL_FACTORY_ENTRY(
-            CheckThrustArgType(1, "thrust::device_ptr"),
-            CALL_FACTORY_ENTRY("thrust::exclusive_scan_by_key",
-                           CALL("oneapi::dpl::exclusive_scan_by_segment",
-                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))),
-            CALL_FACTORY_ENTRY("thrust::exclusive_scan_by_key",
-                           CALL("oneapi::dpl::exclusive_scan_by_segment",
-                                ARG("oneapi::dpl::execution::seq"),
-                                ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))))
-        ),
-        CONDITIONAL_FACTORY_ENTRY(
-          CheckArgCount(5),
-          CONDITIONAL_FACTORY_ENTRY(
-            IsPolicyArgType(0),
-            //Handling case: thrust::exclusive_scan_by_key(policy, device.begin(), device.end(), device.begin(), result);
-            CALL_FACTORY_ENTRY("thrust::exclusive_scan_by_key",
-                            CALL("oneapi::dpl::exclusive_scan_by_segment",
-                                  makeMappedThrustPolicyEnum(0),
-                                  ARG(1), ARG(2), ARG(3), ARG(4))),
-            //Handling case: thrust::exclusive_scan_by_key(device.begin(), device.end(), device.begin(), result, init);
-            CONDITIONAL_FACTORY_ENTRY(
-              CheckThrustArgType(1, "thrust::device_ptr"),
-              CALL_FACTORY_ENTRY("thrust::exclusive_scan_by_key",
-                             CALL("oneapi::dpl::exclusive_scan_by_segment",
-                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                  ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))),
-              CALL_FACTORY_ENTRY("thrust::exclusive_scan_by_key",
-                             CALL("oneapi::dpl::exclusive_scan_by_segment",
-                                  ARG("oneapi::dpl::execution::seq"),
-                                  ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))))
-          ),
-          //Handling case: thrust::exclusive_scan_by_key(device.begin(), device.end(), device.begin(), result);
-          CONDITIONAL_FACTORY_ENTRY(
-            CheckThrustArgType(1, "thrust::device_ptr"),
-            CALL_FACTORY_ENTRY("thrust::exclusive_scan_by_key",
-                           CALL("oneapi::dpl::exclusive_scan_by_segment",
-                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                ARG(0), ARG(1), ARG(2), ARG(3))),
-            CALL_FACTORY_ENTRY("thrust::exclusive_scan_by_key",
-                           CALL("oneapi::dpl::exclusive_scan_by_segment",
-                                ARG("oneapi::dpl::execution::seq"),
-                                ARG(0), ARG(1), ARG(2), ARG(3)))))
-        )
-    )
-)
+thrustFactory("thrust::exclusive_scan_by_key",
+              {{5,PolicyState::HasPolicy,4,"oneapi::dpl::exclusive_scan_by_segment", HelperFeatureEnum::no_feature_helper},
+               {4,PolicyState::NoPolicy, 4,"oneapi::dpl::exclusive_scan_by_segment", HelperFeatureEnum::no_feature_helper},
+               {6,PolicyState::HasPolicy,4,"oneapi::dpl::exclusive_scan_by_segment", HelperFeatureEnum::no_feature_helper},
+               {5,PolicyState::NoPolicy, 4,"oneapi::dpl::exclusive_scan_by_segment", HelperFeatureEnum::no_feature_helper},
+               {7,PolicyState::HasPolicy,4,"oneapi::dpl::exclusive_scan_by_segment", HelperFeatureEnum::no_feature_helper},
+               {6,PolicyState::NoPolicy, 4,"oneapi::dpl::exclusive_scan_by_segment", HelperFeatureEnum::no_feature_helper},
+               {8,PolicyState::HasPolicy,4,"oneapi::dpl::exclusive_scan_by_segment", HelperFeatureEnum::no_feature_helper},
+               {7,PolicyState::NoPolicy, 4,"oneapi::dpl::exclusive_scan_by_segment", HelperFeatureEnum::no_feature_helper}}),
+
 
 // thrust::make_reverse_iterator
 CALL_FACTORY_ENTRY("thrust::make_reverse_iterator",  CALL("oneapi::dpl::make_reverse_iterator",  ARG(0)))
