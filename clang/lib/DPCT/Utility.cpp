@@ -4066,12 +4066,17 @@ bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
   if(Map.count(Key)){
     return Map[Key];
   }
-  Map[Key] = false;
+  auto &Val = Map[Key];
+  Val = false;
   auto PtrName = VD->getName();
   auto PtrMatcher =
       findAll(declRefExpr(to(varDecl(hasName(PtrName)))).bind("PtrVar"));
   if(auto FD = dyn_cast<FunctionDecl>(VD->getDeclContext())) {
-    auto Body = FD->getDefinition()->getBody();
+    auto Def = FD->getDefinition();
+    if(!Def) {
+      return false;
+    }
+    auto Body = Def->getBody();
     MatchResult = ast_matchers::match(PtrMatcher, *Body, CTX);
   }
   if (!MatchResult.size()) {
@@ -4089,10 +4094,11 @@ bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
     } else if(PtrDRE->getDecl() != VD) {
       continue;
     }
-    const Stmt* S = getParentStmt(PtrDRE);
+    const Stmt* S = PtrDRE;
     const CallExpr *CE = nullptr;
     bool needFindParent = true;
     while(needFindParent) {
+      S = getParentStmt(S);
       switch(S->getStmtClass()) {
         case clang::Stmt::StmtClass::UnaryOperatorClass : {
           auto UO = dyn_cast<UnaryOperator>(S);
@@ -4131,9 +4137,6 @@ bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
         default : {
           return false;
         }
-      }
-      if(needFindParent) {
-        S = getParentStmt(S);
       }
     }
 
@@ -4186,5 +4189,5 @@ bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
       return false;
     }
   }
-  return (Map[Key] = true);
+  return (Val = true);
 }

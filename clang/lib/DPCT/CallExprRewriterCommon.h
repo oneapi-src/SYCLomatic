@@ -1503,7 +1503,7 @@ public:
       return false;
     }
     auto DREDecl = DRE->getDecl();
-    if(!DREDecl || !dyn_cast<FunctionDecl>(DREDecl->getDeclContext())){
+    if(!DREDecl || !isa_and_nonnull<FunctionDecl>(DREDecl->getDeclContext())){
       return false;
     }
     return isPointerHostAccessOnly(DREDecl);
