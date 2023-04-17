@@ -626,65 +626,13 @@ CONDITIONAL_FACTORY_ENTRY(
     )
 )
 
-// thrust::tabulate
-CONDITIONAL_FACTORY_ENTRY(
-  CheckArgCount(4),
-  CONDITIONAL_FACTORY_ENTRY(
-    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
-    //Handling case: thrust::tabulate(policy, ptr, ptr, val);
-    IFELSE_FACTORY_ENTRY(
-      "thrust::tabulate",
-      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
-        CALL_FACTORY_ENTRY("thrust::tabulate", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
-      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
-        CALL_FACTORY_ENTRY("thrust::tabulate",
-                          CALL(MapNames::getDpctNamespace() + "for_each_index",
-                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
-                                ARG(3)))),
-      CALL_FACTORY_ENTRY("thrust::tabulate",
-                        CALL(MapNames::getDpctNamespace() + "for_each_index",
-                              ARG("oneapi::dpl::execution::seq"),
-                              ARG(1), ARG(2), ARG(3)))),
-    // Handling case: thrust::unique_by_key(thrust::device, iterator, iterator, val);
-    CALL_FACTORY_ENTRY("thrust::tabulate",
-                      CALL(MapNames::getDpctNamespace() + "for_each_index",
-                            makeMappedThrustPolicyEnum(0),
-                            ARG(1), ARG(2), ARG(3)))
-  ),
 
-    CONDITIONAL_FACTORY_ENTRY(
-      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
-      //Handling case: thrust::tabulate(ptr, ptr, ptr, ptr);
-      IFELSE_FACTORY_ENTRY(
-        "thrust::tabulate",
-        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
-          CALL_FACTORY_ENTRY("thrust::tabulate", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
-        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
-          CALL_FACTORY_ENTRY("thrust::tabulate",
-                            CALL(MapNames::getDpctNamespace() + "for_each_index",
-                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
-                                  ARG(2)))),
-        CALL_FACTORY_ENTRY("thrust::tabulate",
-                          CALL(MapNames::getDpctNamespace() + "for_each_index",
-                                ARG("oneapi::dpl::execution::seq"),
-                                ARG(0), ARG(1), ARG(2)))),
-      CONDITIONAL_FACTORY_ENTRY(
-        CheckThrustArgType(1, "thrust::device_ptr"),
-        // Handling case: thrust::tabulate(iterator, iterator, iterator);
-        CALL_FACTORY_ENTRY("thrust::tabulate",
-                            CALL(MapNames::getDpctNamespace() + "for_each_index",
-                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                ARG(0), ARG(1), ARG(2))),
-        CALL_FACTORY_ENTRY("thrust::tabulate",
-                            CALL(MapNames::getDpctNamespace() + "for_each_index",
-                              ARG("oneapi::dpl::execution::seq"),
-                              ARG(0), ARG(1), ARG(2))))
-    )
-)
+// thrust::tabulate
+thrustFactory("thrust::tabulate",
+              {{4,PolicyState::HasPolicy,2,MapNames::getDpctNamespace() + "for_each_index", HelperFeatureEnum::DplExtrasAlgorithm_partition},
+               {3,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace() + "for_each_index", HelperFeatureEnum::DplExtrasAlgorithm_partition}}),
+
+
 
 // thrust::for_each_n
 CONDITIONAL_FACTORY_ENTRY(
