@@ -558,70 +558,10 @@ thrustFactory("thrust::set_difference",
                { 6,PolicyState::NoPolicy, 5,"oneapi::dpl::set_difference", HelperFeatureEnum::no_feature_helper}}),
 
 
-
-
 // thrust::remove_copy
-CONDITIONAL_FACTORY_ENTRY(
-  CheckArgCount(5),
-  CONDITIONAL_FACTORY_ENTRY(
-    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
-    //Handling case: thrust::remove_copy(policy, ptr, ptr, ptr, val);
-    IFELSE_FACTORY_ENTRY(
-      "thrust::remove_copy",
-      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
-        CALL_FACTORY_ENTRY("thrust::remove_copy", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
-      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
-        CALL_FACTORY_ENTRY("thrust::remove_copy",
-                          CALL("oneapi::dpl::remove_copy",
-                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
-                                ARG(4)))),
-      CALL_FACTORY_ENTRY("thrust::remove_copy",
-                        CALL("oneapi::dpl::remove_copy",
-                              ARG("oneapi::dpl::execution::seq"),
-                              ARG(1), ARG(2), ARG(3), ARG(4)))),
-    // Handling case: thrust::unique_by_key(thrust::device, iterator, iterator, iterator, val);
-    CALL_FACTORY_ENTRY("thrust::remove_copy",
-                      CALL("oneapi::dpl::remove_copy",
-                            makeMappedThrustPolicyEnum(0),
-                            ARG(1), ARG(2), ARG(3), ARG(4)))
-  ),
-
-    CONDITIONAL_FACTORY_ENTRY(
-      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
-      //Handling case: thrust::remove_copy(ptr, ptr, ptr, val);
-      IFELSE_FACTORY_ENTRY(
-        "thrust::remove_copy",
-        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
-          CALL_FACTORY_ENTRY("thrust::remove_copy", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
-        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
-          CALL_FACTORY_ENTRY("thrust::remove_copy",
-                            CALL("oneapi::dpl::remove_copy",
-                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
-                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
-                                  ARG(3)))),
-        CALL_FACTORY_ENTRY("thrust::remove_copy",
-                          CALL("oneapi::dpl::remove_copy",
-                                ARG("oneapi::dpl::execution::seq"),
-                                ARG(0), ARG(1), ARG(2), ARG(3)))),
-      CONDITIONAL_FACTORY_ENTRY(
-        CheckThrustArgType(1, "thrust::device_ptr"),
-        // Handling case: thrust::remove_copy(iterator, iterator, iterator, val);
-        CALL_FACTORY_ENTRY("thrust::remove_copy",
-                            CALL("oneapi::dpl::remove_copy",
-                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                ARG(0), ARG(1), ARG(2), ARG(3))),
-        CALL_FACTORY_ENTRY("thrust::remove_copy",
-                            CALL("oneapi::dpl::remove_copy",
-                              ARG("oneapi::dpl::execution::seq"),
-                              ARG(0), ARG(1), ARG(2), ARG(3))))
-    )
-)
-
+thrustFactory("thrust::remove_copy",
+              {{5,PolicyState::HasPolicy,3,"oneapi::dpl::remove_copy", HelperFeatureEnum::no_feature_helper},
+               {4,PolicyState::NoPolicy ,3,"oneapi::dpl::remove_copy", HelperFeatureEnum::no_feature_helper}}),
 
 
 // thrust::transform_exclusive_scan
