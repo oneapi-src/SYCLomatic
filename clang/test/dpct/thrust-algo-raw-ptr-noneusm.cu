@@ -278,7 +278,7 @@ void set_difference_test() {
   int ans[P]={0,4,6};
 
 //CHECK:  if (dpct::is_device_ptr(A)) {
-//CHECK-NEXT:    oneapi::dpl::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + N), dpct::device_pointer<int>(B), dpct::device_pointer<int>(B + M), C);
+//CHECK-NEXT:    oneapi::dpl::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + N), dpct::device_pointer<int>(B), dpct::device_pointer<int>(B + M), dpct::device_pointer<int>(C));
 //CHECK-NEXT:  } else {
 //CHECK-NEXT:    oneapi::dpl::set_difference(oneapi::dpl::execution::seq, A, A + N, B, B + M, C);
 //CHECK-NEXT:  };
