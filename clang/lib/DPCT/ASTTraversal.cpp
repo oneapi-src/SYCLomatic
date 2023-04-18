@@ -12349,9 +12349,12 @@ void RecognizeAPINameRule::processMemberFuncCall(const CXXMemberCallExpr *MC) {
 
 void RecognizeAPINameRule::processFuncCall(const CallExpr *CE,
                                            bool HaveKeywordInAPIName) {
-  if (!dpct::DpctGlobalInfo::isInCudaPath(CE->getCalleeDecl()->getLocation())){
-    if(!CE->getCalleeDecl()->getAsFunction()->getName().startswith("cudnn") &&
-       !CE->getCalleeDecl()->getAsFunction()->getName().startswith("nccl"))
+  if (!dpct::DpctGlobalInfo::isInCudaPath(CE->getCalleeDecl()->getLocation()) &&
+      !isChildOrSamePath(
+          DpctInstallPath,
+          dpct::DpctGlobalInfo::getLocInfo(CE->getCalleeDecl()).first)) {
+    if (!CE->getCalleeDecl()->getAsFunction()->getName().startswith("cudnn") &&
+        !CE->getCalleeDecl()->getAsFunction()->getName().startswith("nccl"))
       return;
   }
     
