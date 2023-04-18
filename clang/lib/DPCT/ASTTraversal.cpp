@@ -8941,6 +8941,9 @@ void DeviceFunctionDeclRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       functionDecl(anyOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)))
           .bind("deviceFuncDecl"),
       this);
+
+  MF.addMatcher(cxxNewExpr(hasAncestor(DeviceFunctionMatcher)).bind("CxxNew"),
+                this);
 }
 
 void DeviceFunctionDeclRule::runRule(
@@ -9052,6 +9055,11 @@ void DeviceFunctionDeclRule::runRule(
   } else if (auto Ctor =
                  getAssistNodeAsType<CXXConstructExpr>(Result, "CtorExpr")) {
     FuncInfo->addCallee(Ctor);
+  }
+
+  if (auto CXX = getAssistNodeAsType<CXXNewExpr>(Result, "CxxNew")) {
+      report(CXX->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
+                            false, "Memory storage allocation");
   }
 
   if (auto Var = getAssistNodeAsType<VarDecl>(Result, "varGrid")) {

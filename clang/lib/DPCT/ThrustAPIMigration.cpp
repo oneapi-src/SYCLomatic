@@ -89,7 +89,6 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
 
   auto ReplInfo =
       MapNames::ThrustFuncNamesMap.find(ThrustFuncNameWithNamespace);
-
   // For the API migration defined in APINamesThrust.inc
   if (ReplInfo == MapNames::ThrustFuncNamesMap.end()) {
     dpct::ExprAnalysis EA;
