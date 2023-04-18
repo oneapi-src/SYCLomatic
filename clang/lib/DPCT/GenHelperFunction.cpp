@@ -18,7 +18,6 @@
 namespace clang {
 namespace dpct {
 
-namespace {
 const std::string DpctAllContentStr =
 #include "clang/DPCT/dpct.all.inc"
     ;
@@ -117,32 +116,12 @@ void replaceEndOfLine(std::string &StrNeedProcess) {
 #endif
 }
 
+namespace {
 std::unordered_map<std::string, std::string> HelperFileNameMap{
-    {"Dpct", "dpct.hpp"},
-    {"Atomic", "atomic.hpp"},
-    {"BlasUtils", "blas_utils.hpp"},
-    {"DnnlUtils", "dnnl_utils.hpp"},
-    {"Device", "device.hpp"},
-    {"DplUtils", "dpl_utils.hpp"},
-    {"Image", "image.hpp"},
-    {"Kernel", "kernel.hpp"},
-    {"Math", "math.hpp"},
-    {"Memory", "memory.hpp"},
-    {"Util", "util.hpp"},
-    {"RngUtils", "rng_utils.hpp"},
-    {"LibCommonUtils", "lib_common_utils.hpp"},
-    {"CclUtils", "ccl_utils.hpp"},
-    {"SparseUtils", "sparse_utils.hpp"},
-    {"FftUtils", "fft_utils.hpp"},
-    {"LapackUtils", "lapack_utils.hpp"},
-    {"DplExtrasAlgorithm", "algorithm.h"},
-    {"DplExtrasFunctional", "functional.h"},
-    {"DplExtrasIterators", "iterators.h"},
-    {"DplExtrasMemory", "memory.h"},
-    {"DplExtrasNumeric", "numeric.h"},
-    {"DplExtrasVector", "vector.h"},
-    {"DplExtrasDpcppExtensions", "dpcpp_extensions.h"}};
-
+#define HELPERFILE(PATH, FILENAME, UNIQUE_ENUM) {#UNIQUE_ENUM, #FILENAME},
+#include "../../runtime/dpct-rt/include/HelperFileNames.inc"
+#undef HELPERFILE
+};
 } // namespace
 
 void genHelperFunction(const std::string &OutRoot) {

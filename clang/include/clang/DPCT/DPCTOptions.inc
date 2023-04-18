@@ -435,7 +435,7 @@ DPCT_NON_ENUM_OPTION(
     llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), GenHelperFunction, "gen-helper-function",
-        llvm::cl::desc("Generate all helper function files in the --out-root directory. Default: off."),
+        llvm::cl::desc("Generate helper function files in the --out-root directory. Default: off."),
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT
