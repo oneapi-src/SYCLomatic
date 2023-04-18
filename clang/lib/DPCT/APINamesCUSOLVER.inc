@@ -419,33 +419,25 @@ CALL_FACTORY_ENTRY(
     CALL(MapNames::getDpctNamespace() + "lapack::syheevx_scratchpad_size",
          DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4),
          ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"),
-         ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
-         ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"),
-         ARG(12), ARG(13)))
+         ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(13)))
 CALL_FACTORY_ENTRY(
     "cusolverDnDsyevdx_bufferSize",
     CALL(MapNames::getDpctNamespace() + "lapack::syheevx_scratchpad_size",
          DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4),
          ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"),
-         ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
-         ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"),
-         ARG(12), ARG(13)))
+         ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(13)))
 CALL_FACTORY_ENTRY(
     "cusolverDnCheevdx_bufferSize",
     CALL(MapNames::getDpctNamespace() + "lapack::syheevx_scratchpad_size",
          DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4),
          ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"),
-         ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
-         ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"),
-         ARG(12), ARG(13)))
+         ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(13)))
 CALL_FACTORY_ENTRY(
     "cusolverDnZheevdx_bufferSize",
     CALL(MapNames::getDpctNamespace() + "lapack::syheevx_scratchpad_size",
          DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4),
          ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"),
-         ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
-         ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"),
-         ARG(12), ARG(13)))
+         ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(13)))
 
 CALL_FACTORY_ENTRY(
     "cusolverDnSsyevdx",

@@ -823,22 +823,27 @@ template <typename T> struct potrs_impl {
 };
 // DPCT_LABEL_END
 
+template <typename T> struct value_type_trait {
+  using value_type = T;
+};
+template <typename T> struct value_type_trait<std::complex<T>> {
+  using value_type = T;
+};
+
 template <typename T> struct syheevx_scratchpad_size_impl {
   void operator()(sycl::queue &q, oneapi::mkl::compz jobz,
                   oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
-                  std::int64_t n, std::int64_t lda, void *vl, void *vu,
-                  std::int64_t il, std::int64_t iu, std::int64_t ldz,
+                  std::int64_t n, std::int64_t lda,
+                  typename value_type_trait<T>::value_type vl,
+                  typename value_type_trait<T>::value_type vu, std::int64_t il,
+                  std::int64_t iu, std::int64_t ldz,
                   std::size_t *device_ws_size) {
     if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
-      auto vl_value = *reinterpret_cast<T *>(vl);
-      auto vu_value = *reinterpret_cast<T *>(vu);
       *device_ws_size = oneapi::mkl::lapack::syevx_scratchpad_size<T>(
-          q, jobz, range, uplo, n, lda, vl_value, vu_value, il, iu, T(0), ldz);
+          q, jobz, range, uplo, n, lda, vl, vu, il, iu, T(0), ldz);
     } else {
-      auto vl_value = *reinterpret_cast<typename T::value_type *>(vl);
-      auto vu_value = *reinterpret_cast<typename T::value_type *>(vu);
       *device_ws_size = oneapi::mkl::lapack::heevx_scratchpad_size<T>(
-          q, jobz, range, uplo, n, lda, vl_value, vu_value, il, iu,
+          q, jobz, range, uplo, n, lda, vl, vu, il, iu,
           typename T::value_type(0), ldz);
     }
   }
@@ -848,7 +853,8 @@ template <typename T> struct syheevx_impl {
   void operator()(sycl::queue &q, oneapi::mkl::compz jobz,
                   oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
                   std::int64_t n, library_data_t a_type, void *a,
-                  std::int64_t lda, void *vl, void *vu, std::int64_t il,
+                  std::int64_t lda, typename value_type_trait<T>::value_type vl,
+                  typename value_type_trait<T>::value_type vu, std::int64_t il,
                   std::int64_t iu, std::int64_t *m, library_data_t w_type,
                   void *w, void *device_ws, std::size_t device_ws_size,
                   int *info) {
@@ -860,19 +866,15 @@ template <typename T> struct syheevx_impl {
     auto device_ws_data =
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
-      auto vl_value = *reinterpret_cast<T *>(vl);
-      auto vu_value = *reinterpret_cast<T *>(vu);
       auto w_data = dpct::detail::get_memory(reinterpret_cast<T *>(w));
-      oneapi::mkl::lapack::syevx(q, jobz, range, uplo, n, a_data, lda, vl_value,
-                                 vu_value, il, iu, T(0), m_device_data, w_data,
-                                 z_data, lda, device_ws_data, device_ws_size);
+      oneapi::mkl::lapack::syevx(q, jobz, range, uplo, n, a_data, lda, vl, vu,
+                                 il, iu, T(0), m_device_data, w_data, z_data,
+                                 lda, device_ws_data, device_ws_size);
     } else {
-      auto vl_value = *reinterpret_cast<typename T::value_type *>(vl);
-      auto vu_value = *reinterpret_cast<typename T::value_type *>(vu);
       auto w_data = dpct::detail::get_memory(
           reinterpret_cast<typename T::value_type *>(w));
-      oneapi::mkl::lapack::heevx(q, jobz, range, uplo, n, a_data, lda, vl_value,
-                                 vu_value, il, iu, typename T::value_type(0),
+      oneapi::mkl::lapack::heevx(q, jobz, range, uplo, n, a_data, lda, vl, vu,
+                                 il, iu, typename T::value_type(0),
                                  m_device_data, w_data, z_data, lda,
                                  device_ws_data, device_ws_size);
     }
@@ -1363,12 +1365,14 @@ inline int potrs(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
 }
 // DPCT_LABEL_END
 
-inline int syheevx_scratchpad_size(
-    sycl::queue &q, oneapi::mkl::job jobz, oneapi::mkl::rangev range,
-    oneapi::mkl::uplo uplo, std::int64_t n, library_data_t a_type,
-    std::int64_t lda, void *vl, void *vu, std::int64_t il,
-    std::int64_t iu,
-    std::size_t *device_ws_size, std::size_t *host_ws_size = nullptr) {
+template<typename T>
+inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
+                                   oneapi::mkl::rangev range,
+                                   oneapi::mkl::uplo uplo, std::int64_t n,
+                                   library_data_t a_type, std::int64_t lda,
+                                   T vl, T vu, std::int64_t il,
+                                   std::int64_t iu, std::size_t *device_ws_size,
+                                   std::size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
   oneapi::mkl::compz compz_jobz;
@@ -1388,10 +1392,28 @@ inline int syheevx_scratchpad_size(
   return ret;
 }
 
+template<typename T>
+inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
+                                   oneapi::mkl::rangev range,
+                                   oneapi::mkl::uplo uplo, int n,
+                                   library_data_t a_type, int lda, T vl,
+                                   T vu, int il, int iu,
+                                   int *device_ws_size,
+                                   int *host_ws_size = nullptr) {
+  if (host_ws_size)
+    *host_ws_size = 0;
+  std::size_t device_ws_size_size_t;
+  int ret = syheevx_scratchpad_size(q, jobz, range, uplo, n, a_type, lda, vl,
+                                    vu, il, iu, &device_ws_size_size_t);
+  *device_ws_size = (int)device_ws_size_size_t;
+  return ret;
+}
+
+template<typename T>
 inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
                    oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
                    std::int64_t n, library_data_t a_type, void *a,
-                   std::int64_t lda, void *vl, void *vu, std::int64_t il,
+                   std::int64_t lda, T vl, T vu, std::int64_t il,
                    std::int64_t iu, std::int64_t *m, library_data_t w_type,
                    void *w, void *device_ws, std::size_t device_ws_size,
                    int *info) {
@@ -1405,22 +1427,24 @@ inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
   } else {
     throw std::runtime_error("the job type is unsupported");
   }
-  return detail::lapack_shim<detail::syheevx_impl>(
+  int ret = detail::lapack_shim<detail::syheevx_impl>(
       q, a_type, info, "syevx/heevx", q, compz_jobz, range, uplo, n, a_type, a,
       lda, vl, vu, il, iu, m, w_type, w, device_ws,
       device_ws_size_in_element_number, info);
+  q.wait();
+  return ret;
 }
 
+template<typename T>
 inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
                    oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
-                   std::int64_t n, library_data_t a_type, void *a,
-                   std::int64_t lda, void *vl, void *vu, std::int64_t il,
-                   std::int64_t iu, int *m, library_data_t w_type, void *w,
+                   int n, library_data_t a_type, void *a,
+                   int lda, T vl, T vu, int il,
+                   int iu, int *m, library_data_t w_type, void *w,
                    void *device_ws, std::size_t device_ws_size, int *info) {
   std::int64_t m_64;
   int ret = syheevx(q, jobz, range, uplo, n, a_type, a, lda, vl, vu, il, iu,
-                    m_64, w_type, w, device_ws, device_ws_size, info);
-  q.wait();
+                    &m_64, w_type, w, device_ws, device_ws_size, info);
   *m = (int)m_64;
   return ret;
 }
