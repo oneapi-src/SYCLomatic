@@ -32,28 +32,28 @@ function parse_args() {
 }
 
 function run() {
-    output='{\"Value\": {\"Python3 is installed\": {\"Command\": \"which python3\",'
+    output='{"CheckResult": {"Python3 is installed": {"Command": "which python3",'
     if [[ -z $(which python3) ]]; then
-        output="${output}\\\"Value\\\": \\\"No\\\",\\\"RetVal\\\": \\\"FAIL\\\",\\\"Message\\\": \\\"The Intel(R) DPC++ Compatibility Tool requires the python3 to be installed.\\\"}}}"
+        output="${output}\"CheckResult\": \"No\",\"CheckStatus\": \"FAIL\",\"Message\": \"The Intel(R) DPC++ Compatibility Tool requires the python3 to be installed.\"}}}"
     else
-        output="${output}\\\"Value\\\": \\\"Yes\\\",\\\"RetVal\\\": \\\"PASS\\\"}}}"
+        output="${output}\"CheckResult\": \"Yes\",\"CheckStatus\": \"PASS\"}}}"
     fi
     echo -n ${output}
 
 }
 
 function get_metadata() {
-    echo '{"name": "dpcpp_ct_sys_check","type": "Data","tags": "sys_check","descr": "This check verifies if the environment is ready to use the Intel(R) DPC++ Compatibility Tool.","dataReq": "{}","merit": 0,"timeout": 1,"version": 1,"run": ""}'
+    echo '{"name": "dpcpp_ct_sys_check","type": "Data","groups": "sys_check","descr": "This check verifies if the environment is ready to use the Intel(R) DPC++ Compatibility Tool.","dataReq": "{}","merit": 0,"timeout": 1,"version": 2,"run": ""}'
 }
 
 function get_summary() {
-    echo -n '{"result": "'
+    echo -n '{"result": '
     run
-    echo '"}'
+    echo '}'
 }
 
 function get_api_version() {
-    echo "0.1"
+    echo "0.2"
 }
 
 parse_args $@
