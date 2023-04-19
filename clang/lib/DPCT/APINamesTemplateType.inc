@@ -167,3 +167,5 @@ TYPE_REWRITE_ENTRY(
 
 TYPE_REWRITE_ENTRY("thrust::identity",
                    TYPE_FACTORY(STR("oneapi::dpl::identity")))
+
+TYPE_REWRITE_ENTRY("thrust::null_type", TYPE_FACTORY(STR("dpct::null_type")))
