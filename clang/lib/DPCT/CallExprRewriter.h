@@ -651,6 +651,7 @@ class DerefExpr {
   DerefExpr() = default;
 
 public:
+  DerefExpr(const Expr *E, const CallExpr *C = nullptr);
   template <class StreamT>
   void printArg(StreamT &Stream, ArgumentAnalysis &A) const {
     print(Stream);
@@ -672,8 +673,6 @@ public:
       print(Stream, AA, false, ExprPair);
     }
   }
-
-  static DerefExpr create(const Expr *E, const CallExpr * C = nullptr);
 };
 
 template <class StreamT>
@@ -1275,6 +1274,15 @@ public:
                    const std::function<ArgValueT(const CallExpr *)> &ArgCreator)
       : PrinterRewriter<UnaryOperatorPrinter<UO, ArgValueT>> (
             C, Source, ArgCreator(C)) {}
+};
+
+template <class ArgValueT>
+class DerefExprRewriter : public PrinterRewriter<DerefExpr> {
+public:
+  DerefExprRewriter(
+      const CallExpr *C, StringRef Source,
+      const std::function<ArgValueT(const CallExpr *)> &ArgCreator)
+      : PrinterRewriter<DerefExpr>(C, Source, ArgCreator(C)) {}
 };
 
 class SubGroupPrinter {

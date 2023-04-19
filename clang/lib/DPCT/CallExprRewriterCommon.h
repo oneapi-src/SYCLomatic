@@ -105,14 +105,14 @@ public:
     if (isDefaultStream(E))
       printDefaultQueue(Stream);
     else
-      DerefExpr::create(E).printArg(Stream, A);
+      DerefExpr(E).printArg(Stream, A);
   }
   template <class StreamT> void printMemberBase(StreamT &Stream) const {
     if (isDefaultStream(E)) {
       printDefaultQueue(Stream);
       Stream << ".";
     } else {
-      DerefExpr::create(E).printMemberBase(Stream);
+      DerefExpr(E).printMemberBase(Stream);
     }
   }
 
@@ -120,7 +120,7 @@ public:
     if (isDefaultStream(E))
       printDefaultQueue(Stream);
     else
-      DerefExpr::create(E).print(Stream);
+      DerefExpr(E).print(Stream);
   }
 
   DerefStreamExpr(const Expr *Expression) : E(Expression) {}
@@ -209,7 +209,7 @@ makeDerefStreamExprCreator(unsigned Idx) {
 
 inline std::function<DerefExpr(const CallExpr *)> makeDerefExprCreator(unsigned Idx) {
   return [=](const CallExpr *C) -> DerefExpr {
-    return DerefExpr::create(C->getArg(Idx));
+    return DerefExpr(C->getArg(Idx));
   };
 }
 
@@ -217,7 +217,7 @@ inline std::function<DerefExpr(const CallExpr *)> makeDerefExprCreator(
     std::function<std::pair<const CallExpr *, const Expr *>(const CallExpr *)>
         F) {
   return [=](const CallExpr *C) -> DerefExpr {
-    return DerefExpr::create(F(C).second, F(C).first);
+    return DerefExpr(F(C).second, F(C).first);
   };
 }
 
@@ -1310,7 +1310,7 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
     if (RetAssign) {
       return std::make_shared<PrinterRewriter<
           BinaryOperatorPrinter<BO_Assign, DerefExpr, ReaderPrinter>>>(
-          C, Source, DerefExpr::create(C->getArg(0), C),
+          C, Source, DerefExpr(C->getArg(0), C),
           ReaderPrinter(std::move(Base), false, MemberName,
                         std::make_pair(C, C->getArg(Idx + 1))...));
     }
@@ -1388,6 +1388,17 @@ createUnsupportRewriterFactory(const std::string &Source, Diagnostics MsgID,
                                MsgArgs &&...Args) {
   return std::make_shared<UnsupportFunctionRewriterFactory<MsgArgs...>>(
       Source, MsgID, std::forward<MsgArgs>(Args)...);
+}
+
+template <class ArgT>
+inline std::shared_ptr<CallExprRewriterFactoryBase>
+createDerefExprRewriterFactory(
+    const std::string &SourceName,
+    std::function<ArgT(const CallExpr *)> &&ArgCreator) {
+  return std::make_shared<CallExprRewriterFactory<
+      DerefExprRewriter<ArgT>, std::function<ArgT(const CallExpr *)>>>(
+      SourceName,
+      std::forward<std::function<ArgT(const CallExpr *)>>(ArgCreator));
 }
 
 class CheckWarning1073 {
@@ -1875,5 +1886,7 @@ public:
   {FuncName, createRemoveAPIRewriterFactory(FuncName, Msg)},
 #define CASE_FACTORY_ENTRY(...) \
   createCaseRewriterFactory(__VA_ARGS__),
+#define DEREF_FACTORY_ENTRY(FuncName, E)                                       \
+  {FuncName, createDerefExprRewriterFactory(FuncName, E)},
 
 #endif // DPCT_CALL_EXPR_REWRITER_COMMON_H

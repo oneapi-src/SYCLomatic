@@ -942,6 +942,61 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getDpctNamespace() + "unordered_compare_half2",
                      ARG(0), ARG(1), LITERAL("std::not_equal_to<>()"))))))
 
+// Half Precision Conversion and Data Movement
+MATH_API_REWRITER_DEVICE(
+    "__ldca",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__ldca"), EMPTY_FACTORY_ENTRY("__ldca"),
+        EMPTY_FACTORY_ENTRY("__ldca"),
+        WARNING_FACTORY_ENTRY("__ldca", DEREF_FACTORY_ENTRY("__ldca", ARG(0)),
+                              Diagnostics::MATH_EMULATION_EXPRESSION,
+                              std::string("__ldca"), std::string("'*'"))))
+
+MATH_API_REWRITER_DEVICE(
+    "__ldcg",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__ldcg"), EMPTY_FACTORY_ENTRY("__ldcg"),
+        EMPTY_FACTORY_ENTRY("__ldcg"),
+        WARNING_FACTORY_ENTRY("__ldcg", DEREF_FACTORY_ENTRY("__ldcg", ARG(0)),
+                              Diagnostics::MATH_EMULATION_EXPRESSION,
+                              std::string("__ldcg"), std::string("'*'"))))
+
+MATH_API_REWRITER_DEVICE(
+    "__ldcs",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__ldcs"), EMPTY_FACTORY_ENTRY("__ldcs"),
+        EMPTY_FACTORY_ENTRY("__ldcs"),
+        WARNING_FACTORY_ENTRY("__ldcs", DEREF_FACTORY_ENTRY("__ldcs", ARG(0)),
+                              Diagnostics::MATH_EMULATION_EXPRESSION,
+                              std::string("__ldcs"), std::string("'*'"))))
+
+MATH_API_REWRITER_DEVICE(
+    "__ldcv",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__ldcv"), EMPTY_FACTORY_ENTRY("__ldcv"),
+        EMPTY_FACTORY_ENTRY("__ldcv"),
+        WARNING_FACTORY_ENTRY("__ldcv", DEREF_FACTORY_ENTRY("__ldcv", ARG(0)),
+                              Diagnostics::MATH_EMULATION_EXPRESSION,
+                              std::string("__ldcv"), std::string("'*'"))))
+
+MATH_API_REWRITER_DEVICE(
+    "__ldg",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__ldg"), EMPTY_FACTORY_ENTRY("__ldg"),
+        EMPTY_FACTORY_ENTRY("__ldg"),
+        WARNING_FACTORY_ENTRY("__ldg", DEREF_FACTORY_ENTRY("__ldg", ARG(0)),
+                              Diagnostics::MATH_EMULATION_EXPRESSION,
+                              std::string("__ldg"), std::string("'*'"))))
+
+MATH_API_REWRITER_DEVICE(
+    "__ldlu",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__ldlu"), EMPTY_FACTORY_ENTRY("__ldlu"),
+        EMPTY_FACTORY_ENTRY("__ldlu"),
+        WARNING_FACTORY_ENTRY("__ldlu", DEREF_FACTORY_ENTRY("__ldlu", ARG(0)),
+                              Diagnostics::MATH_EMULATION_EXPRESSION,
+                              std::string("__ldlu"), std::string("'*'"))))
+
 // Bfloat16 Precision Conversion and Data Movement
 CALL_FACTORY_ENTRY("__bfloat1622float2",
                    CALL(MapNames::getClNamespace() + "float2",
