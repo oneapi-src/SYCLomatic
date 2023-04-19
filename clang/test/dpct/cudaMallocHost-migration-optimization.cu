@@ -3,21 +3,18 @@
 #include <cuda_runtime.h>
 #include <stdio.h>
 
-void a(float *p){
-  int b = p[0];
+void foo(float *p){
+  int i = p[0];
 };
-void b(float p){
-    int b = p;
+void bar(float p){
+    int i = p;
 };
 
 template<typename T>
-double rmsval(size_t size, T *z) {
-  double rms = 0.0;
-  int i;
-  for (i = 0; i < size; i++) {
-    rms = rms + pow(z[i], 2);
-  }
-  return sqrt(rms);
+double process(size_t index, T *z) {
+  double result = 0.f;
+  result = pow(z[index], 2);
+  return sqrt(result);
 }
 
 void test1(){
@@ -32,7 +29,7 @@ void test2(){
     float *p;
 // CHECK: p = (float *)malloc(10);
     cudaMallocHost(&p, 10);
-    a(p);
+    foo(p);
 // CHECK: free(p);
     cudaFreeHost(p);
 }
@@ -50,8 +47,8 @@ void test4(){
     float *p;
 // CHECK: p = (float *)malloc(10);
     cudaMallocHost(&p, 10);
-    b(*p);
-    b(p[0]);
+    bar(*p);
+    bar(p[0]);
 // CHECK: free(p);
     cudaFreeHost(p);
 }
@@ -60,8 +57,8 @@ void test5(){
     float *p;
     // CHECK: p = (float *)malloc(10);
     cudaMallocHost(&p, 10);
-    rmsval<double>(1, (double *)p);
-    rmsval<float>(1, p);
+    process<double>(1, (double *)p);
+    process<float>(1, p);
     // CHECK: free(p);
     cudaFreeHost(p);
 }
@@ -79,7 +76,7 @@ void test7(){
     float *p;
     // CHECK: p = (float *)malloc(10);
     cudaMallocHost((void **)&p, 10);
-    printf("%d\n", rmsval<float>(1, p));
+    printf("%d\n", process<float>(1, p));
     // CHECK: free(p);
     cudaFreeHost(p);
 }
