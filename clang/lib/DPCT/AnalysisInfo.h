@@ -2204,13 +2204,17 @@ public:
   // will be the size string.
   CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold = false);
   CtTypeInfo(const VarDecl *D, bool NeedSizeFold = false)
-    : CtTypeInfo(D->getTypeSourceInfo()->getTypeLoc(), NeedSizeFold) {
-    if (D &&
-        D->getTypeSourceInfo()
-          ->getTypeLoc().getTypeLocClass()
-        == TypeLoc::IncompleteArray)
-      if (auto CAT = dyn_cast<ConstantArrayType>(D->getType()))
-        Range[0] = std::to_string(CAT->getSize().getZExtValue());
+      : PointerLevel(0), IsTemplate(false) {
+    if (D && D->getTypeSourceInfo()) {
+      auto TL = D->getTypeSourceInfo()->getTypeLoc();
+      setTypeInfo(TL, NeedSizeFold);
+      if (TL.getTypeLocClass() ==
+          TypeLoc::IncompleteArray) {
+        if (auto CAT = dyn_cast<ConstantArrayType>(D->getType())) {
+          Range[0] = std::to_string(CAT->getSize().getZExtValue());
+        }
+      }
+    }
   }
 
   inline const std::string &getBaseName() { return BaseName; }
