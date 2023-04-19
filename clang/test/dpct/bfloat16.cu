@@ -13,7 +13,7 @@ void foo(__nv_bfloat16 *a) {
   a[i] = (__nv_bfloat16)f;
 }
 
-// CHECK: void test_conversions_device() {
+// CHECK: void test_conversions_device(sycl::ext::oneapi::bfloat16 *deviceArrayBFloat16) {
 // CHECK-NEXT:   float f, f_1, f_2;
 // CHECK-NEXT:   sycl::float2 f2, f2_1, f2_2;
 // CHECK-NEXT:   sycl::ext::oneapi::bfloat16 bf16, bf16_1, bf16_2;
@@ -22,7 +22,7 @@ void foo(__nv_bfloat16 *a) {
 // CHECK-NEXT:   f = static_cast<float>(bf16);
 // CHECK-NEXT:   bf162 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(f2[0], f2[1]);
 // CHECK-NEXT:   bf16 = sycl::ext::oneapi::bfloat16(f);
-__global__ void test_conversions_device() {
+__global__ void test_conversions_device(__nv_bfloat16 *deviceArrayBFloat16) {
   float f, f_1, f_2;
   float2 f2, f2_1, f2_2;
   __nv_bfloat16 bf16, bf16_1, bf16_2;
@@ -31,6 +31,97 @@ __global__ void test_conversions_device() {
   f = __bfloat162float(bf16);
   bf162 = __float22bfloat162_rn(f2);
   bf16 = __float2bfloat16(f);
+
+  // CHECK:   /*
+  // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldca call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT:   */
+  // CHECK-NEXT:   bf16_2 = *deviceArrayBFloat16;
+  // CHECK-NEXT:   /*
+  // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldca call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT:   */
+  // CHECK-NEXT:   bf16_2 = bf16;
+  // CHECK-NEXT:   /*
+  // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldca call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT:   */
+  // CHECK-NEXT:   bf162_2 = bf162;
+  // CHECK-NEXT:   /*
+  // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldcg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT:   */
+  // CHECK-NEXT:   bf16_2 = *deviceArrayBFloat16;
+  // CHECK-NEXT:   /*
+  // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldcg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT:   */
+  // CHECK-NEXT:   bf16_2 = bf16;
+  // CHECK-NEXT:   /*
+  // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldcg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT:   */
+  // CHECK-NEXT:   bf162_2 = bf162;
+  // CHECK-NEXT:   /*
+  // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldcs call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT:   */
+  // CHECK-NEXT:   bf16_2 = *deviceArrayBFloat16;
+  // CHECK-NEXT:   /*
+  // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldcs call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT:   */
+  // CHECK-NEXT:   bf16_2 = bf16;
+  // CHECK-NEXT:   /*
+  // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldcs call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT:   */
+  // CHECK-NEXT:   bf162_2 = bf162;
+  // CHECK-NEXT:   /*
+  // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldcv call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT:   */
+  // CHECK-NEXT:   bf16_2 = *deviceArrayBFloat16;
+  // CHECK-NEXT:   /*
+  // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldcv call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT:   */
+  // CHECK-NEXT:   bf16_2 = bf16;
+  // CHECK-NEXT:   /*
+  // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldcv call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT:   */
+  // CHECK-NEXT:   bf162_2 = bf162;
+  // CHECK-NEXT:   /*
+  // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT:   */
+  // CHECK-NEXT:   bf16_2 = *deviceArrayBFloat16;
+  // CHECK-NEXT:   /*
+  // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT:   */
+  // CHECK-NEXT:   bf16_2 = bf16;
+  // CHECK-NEXT:   /*
+  // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT:   */
+  // CHECK-NEXT:   bf162_2 = bf162;
+  // CHECK-NEXT:   /*
+  // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldlu call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT:   */
+  // CHECK-NEXT:   bf16_2 = *deviceArrayBFloat16;
+  // CHECK-NEXT:   /*
+  // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldlu call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT:   */
+  // CHECK-NEXT:   bf16_2 = bf16;
+  // CHECK-NEXT:   /*
+  // CHECK-NEXT:   DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldlu call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT:   */
+  // CHECK-NEXT:   bf162_2 = bf162;
+  bf16_2 = __ldca(deviceArrayBFloat16);
+  bf16_2 = __ldca(&bf16);
+  bf162_2 = __ldca(&bf162);
+  bf16_2 = __ldcg(deviceArrayBFloat16);
+  bf16_2 = __ldcg(&bf16);
+  bf162_2 = __ldcg(&bf162);
+  bf16_2 = __ldcs(deviceArrayBFloat16);
+  bf16_2 = __ldcs(&bf16);
+  bf162_2 = __ldcs(&bf162);
+  bf16_2 = __ldcv(deviceArrayBFloat16);
+  bf16_2 = __ldcv(&bf16);
+  bf162_2 = __ldcv(&bf162);
+  bf16_2 = __ldg(deviceArrayBFloat16);
+  bf16_2 = __ldg(&bf16);
+  bf162_2 = __ldg(&bf162);
+  bf16_2 = __ldlu(deviceArrayBFloat16);
+  bf16_2 = __ldlu(&bf16);
+  bf162_2 = __ldlu(&bf162);
 }
 
 // CHECK: void test_conversions() {

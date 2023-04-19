@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/DplExtrasAlgorithm/api_test12_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasAlgorithm/api_test12_out
 
-// CHECK: 6
+// CHECK: 39
 // TEST_FEATURE: DplExtrasAlgorithm_transform_if
 
 #include <thrust/transform.h>
