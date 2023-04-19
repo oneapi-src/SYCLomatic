@@ -110,6 +110,10 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
            const std::shared_ptr<matrix_info> info, const T *val,
            const int *row_ptr, const int *col_ind, const T *x, const T *beta,
            T *y) {
+#ifndef __INTEL_MKL__
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
+                           "Project does not support this API.");
+#else
   using Ty = typename dpct::DataType<T>::T2;
   auto alpha_value =
       detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
@@ -161,6 +165,7 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
     cgh.depends_on(e);
     cgh.host_task([=] { delete sparse_matrix_handle; });
   });
+#endif
 }
 // DPCT_LABEL_END
 
@@ -197,6 +202,10 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
            const std::shared_ptr<matrix_info> info, const T *val,
            const int *row_ptr, const int *col_ind, const T *b, int ldb,
            const T *beta, T *c, int ldc) {
+#ifndef __INTEL_MKL__
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
+                           "Project does not support this API.");
+#else
   using Ty = typename dpct::DataType<T>::T2;
   auto alpha_value =
       detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
@@ -236,12 +245,14 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
     cgh.depends_on(e);
     cgh.host_task([=] { delete sparse_matrix_handle; });
   });
+#endif
 }
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|optimize_info|dpct::sparse
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
+#ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
 /// Saving the optimization information for solving a system of linear
 /// equations.
 class optimize_info {
@@ -267,6 +278,7 @@ private:
   oneapi::mkl::sparse::matrix_handle_t _matrix_handle = nullptr;
   std::vector<sycl::event> _deps;
 };
+#endif
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|optimize_csrsv|dpct::sparse
@@ -277,6 +289,7 @@ private:
 // LibCommonUtils|get_memory
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+#ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
 /// Performs internal optimizations for solving a system of linear equations for
 /// a CSR format sparse matrix.
 /// \param [in] queue The queue where the routine should be executed. It must
@@ -315,6 +328,7 @@ void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
   optimize_info->add_dependency(e);
 #endif
 }
+#endif
 // DPCT_LABEL_END
 
 } // namespace sparse

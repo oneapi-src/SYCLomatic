@@ -2430,11 +2430,13 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD) {
   auto SD = getAllDecls(DD);
 
   auto replaceInitParam = [&](const clang::Expr *replExpr) {
+    if (!replExpr)
+      return;
+
     if (auto type = DpctGlobalInfo::getUnqualifiedTypeName(replExpr->getType());
         !(type == "CUstream" || type == "cudaStream_t"))
       return;
-    if (!replExpr)
-      return;
+
     if (isDefaultStream(replExpr)) {
       int Index = getPlaceholderIdx(replExpr);
       if (Index == 0) {
@@ -4114,12 +4116,10 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
 }
 
 void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
-  bool IsAssigned = false;
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
   if (!CE) {
     if (!(CE = getNodeAsType<CallExpr>(Result, "FunctionCallUsed")))
       return;
-    IsAssigned = true;
   }
 
   if (!CE->getDirectCallee())
@@ -6730,7 +6730,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaIpcOpenEventHandle", "cudaIpcOpenMemHandle", "cudaSetDeviceFlags",
         "cudaDeviceCanAccessPeer", "cudaDeviceDisablePeerAccess",
         "cudaDeviceEnablePeerAccess", "cudaDriverGetVersion",
-        "cudaRuntimeGetVersion", "clock64", "__ldg",
+        "cudaRuntimeGetVersion", "clock64",
         "cudaFuncSetSharedMemConfig", "cuFuncSetCacheConfig",
         "cudaPointerGetAttributes", "cuCtxSetCacheConfig", "cuCtxSetLimit");
   };
@@ -7104,12 +7104,6 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaIpcCloseMemHandle") {
     report(CE->getBeginLoc(), Diagnostics::IPC_NOT_SUPPORTED, false,
            MapNames::ITFName.at(FuncName));
-  } else if (FuncName == "__ldg") {
-    std::ostringstream OS;
-    printDerefOp(OS, CE->getArg(0));
-    emplaceTransformation(new ReplaceStmt(CE, OS.str()));
-    report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false, FuncName,
-           "there is no corresponding API in SYCL.");
   } else {
     llvm::dbgs() << "[" << getName()
                  << "] Unexpected function name: " << FuncName;
@@ -10318,7 +10312,7 @@ void MemoryMigrationRule::arrayMigration(
       llvm::raw_string_ostream OS(Str);
       OS << ", " << MapNames::getDpctNamespace() << "automatic";
       OS << ", ";
-      DerefExpr::create(StreamExpr, C).print(OS);
+      DerefExpr(StreamExpr, C).print(OS);
       emplaceTransformation(replaceText(Begin, End, std::move(Str), SM));
     }
     requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_3d, C);
