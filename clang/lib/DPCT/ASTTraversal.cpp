@@ -4116,12 +4116,10 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
 }
 
 void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
-  bool IsAssigned = false;
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
   if (!CE) {
     if (!(CE = getNodeAsType<CallExpr>(Result, "FunctionCallUsed")))
       return;
-    IsAssigned = true;
   }
 
   if (!CE->getDirectCallee())
