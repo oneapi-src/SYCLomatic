@@ -408,6 +408,16 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     }
     return;
   }
+
+  if (MacroNameTok.getIdentifierInfo() &&
+      MacroNameTok.getIdentifierInfo()->getName() == "CUDART_VERSION") {
+    if (DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
+      auto Repl = std::make_shared<ReplaceText>(Range.getBegin(), 14,
+                                                "SYCL_LANGUAGE_VERSION");
+      insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
+    }
+    return;
+  }
   // CUFFT_FORWARD and CUFFT_INVERSE are migrated to integer literal in all
   // places except in cufftExec call.
   // CUFFT_FORWARD and CUFFT_INVERSE in cufftExec call are migrated with
