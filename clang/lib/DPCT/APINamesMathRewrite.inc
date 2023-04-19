@@ -1060,9 +1060,23 @@ MATH_API_REWRITER_DEVICE(
                 MapNames::getDpctNamespace() + "length"))))
 
 MATH_API_REWRITER_DEVICE(
+    "rcbrtf",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("rcbrtf"), EMPTY_FACTORY_ENTRY("rcbrtf"),
+        EMPTY_FACTORY_ENTRY("rcbrtf"),
+        WARNING_FACTORY_ENTRY(
+            "rcbrtf",
+            CALL_FACTORY_ENTRY(
+                "rcbrtf",
+                CALL(MapNames::getClNamespace(false, true) + "native::recip",
+                     CALL(MapNames::getClNamespace(false, true) + "cbrt<float>",
+                          ARG(0)))),
+            Diagnostics::MATH_EMULATION, std::string("rcbrtf"),
+            MapNames::getClNamespace(false, true) + "cbrt")))
+
+MATH_API_REWRITER_DEVICE(
     "rnorm3df",
     MATH_API_DEVICE_NODES(
-
         EMPTY_FACTORY_ENTRY("rnorm3df"), EMPTY_FACTORY_ENTRY("rnorm3df"),
         EMPTY_FACTORY_ENTRY("rnorm3df"),
         CALL_FACTORY_ENTRY(
@@ -1075,7 +1089,6 @@ MATH_API_REWRITER_DEVICE(
 MATH_API_REWRITER_DEVICE(
     "rnorm4df",
     MATH_API_DEVICE_NODES(
-
         EMPTY_FACTORY_ENTRY("rnorm4df"), EMPTY_FACTORY_ENTRY("rnorm4df"),
         EMPTY_FACTORY_ENTRY("rnorm4df"),
         CALL_FACTORY_ENTRY(
@@ -1204,6 +1217,20 @@ MATH_API_REWRITER_DEVICE(
                                     CAST_IF_NEED(makeLiteral("double"),
                                                  ARG(0))))),
         EMPTY_FACTORY_ENTRY("normcdfinv"), EMPTY_FACTORY_ENTRY("normcdfinv")))
+
+MATH_API_REWRITER_DEVICE(
+    "rcbrt",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("rcbrt"), EMPTY_FACTORY_ENTRY("rcbrt"),
+        EMPTY_FACTORY_ENTRY("rcbrt"),
+        WARNING_FACTORY_ENTRY(
+            "rcbrt",
+            BINARY_OP_FACTORY_ENTRY(
+                "rcbrt", BinaryOperatorKind::BO_Div, makeLiteral("1"),
+                CALL(MapNames::getClNamespace(false, true) + "cbrt<double>",
+                     ARG(0))),
+            Diagnostics::MATH_EMULATION, std::string("rcbrt"),
+            MapNames::getClNamespace(false, true) + "cbrt")))
 
 MATH_API_REWRITER_DEVICE(
     "rnorm",
