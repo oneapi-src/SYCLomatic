@@ -103,6 +103,67 @@ __global__ void kernelFuncHalf(__half *deviceArrayHalf) {
   h_2 = __ldlu(deviceArrayHalf);
   h_2 = __ldlu(&h);
   h2_2 = __ldlu(&h2);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1098:0: The '=' expression is used instead of the __stcg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: *(deviceArrayHalf + 1) = h;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:1: The '=' expression is used instead of the __stcg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: h_2 = h;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:2: The '=' expression is used instead of the __stcg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: h2_2 = h2;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:3: The '=' expression is used instead of the __stcs call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: *deviceArrayHalf = h;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:4: The '=' expression is used instead of the __stcs call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: h_2 = h;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:5: The '=' expression is used instead of the __stcs call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: h2_2 = h2;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:6: The '=' expression is used instead of the __stwb call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: *(deviceArrayHalf + 1) = h;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:7: The '=' expression is used instead of the __stwb call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: h_2 = h;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:8: The '=' expression is used instead of the __stwb call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: h2_2 = h2;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:9: The '=' expression is used instead of the __stwt call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: *deviceArrayHalf = h;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:10: The '=' expression is used instead of the __stwt call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: h_2 = h;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:11: The '=' expression is used instead of the __stwt call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: h2_2 = h2;
+  __stcg(deviceArrayHalf + 1, h);
+  __stcg(&h_2, h);
+  __stcg(&h2_2, h2);
+  __stcs(deviceArrayHalf, h);
+  __stcs(&h_2, h);
+  __stcs(&h2_2, h2);
+  __stwb(deviceArrayHalf + 1, h);
+  __stwb(&h_2, h);
+  __stwb(&h2_2, h2);
+  __stwt(deviceArrayHalf, h);
+  __stwt(&h_2, h);
+  __stwt(&h2_2, h2);
 }
 
 int main() { return 0; }

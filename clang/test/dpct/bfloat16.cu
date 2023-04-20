@@ -122,6 +122,67 @@ __global__ void test_conversions_device(__nv_bfloat16 *deviceArrayBFloat16) {
   bf16_2 = __ldlu(deviceArrayBFloat16);
   bf16_2 = __ldlu(&bf16);
   bf162_2 = __ldlu(&bf162);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1098:0: The '=' expression is used instead of the __stcg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: *(deviceArrayBFloat16 + 1) = bf16;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:1: The '=' expression is used instead of the __stcg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: bf16_2 = bf16;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:2: The '=' expression is used instead of the __stcg call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: bf162_2 = bf162;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:3: The '=' expression is used instead of the __stcs call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: *deviceArrayBFloat16 = bf16;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:4: The '=' expression is used instead of the __stcs call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: bf16_2 = bf16;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:5: The '=' expression is used instead of the __stcs call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: bf162_2 = bf162;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:6: The '=' expression is used instead of the __stwb call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: *(deviceArrayBFloat16 + 1) = bf16;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:7: The '=' expression is used instead of the __stwb call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: bf16_2 = bf16;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:8: The '=' expression is used instead of the __stwb call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: bf162_2 = bf162;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:9: The '=' expression is used instead of the __stwt call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: *deviceArrayBFloat16 = bf16;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:10: The '=' expression is used instead of the __stwt call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: bf16_2 = bf16;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1098:11: The '=' expression is used instead of the __stwt call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: bf162_2 = bf162;
+  __stcg(deviceArrayBFloat16 + 1, bf16);
+  __stcg(&bf16_2, bf16);
+  __stcg(&bf162_2, bf162);
+  __stcs(deviceArrayBFloat16, bf16);
+  __stcs(&bf16_2, bf16);
+  __stcs(&bf162_2, bf162);
+  __stwb(deviceArrayBFloat16 + 1, bf16);
+  __stwb(&bf16_2, bf16);
+  __stwb(&bf162_2, bf162);
+  __stwt(deviceArrayBFloat16, bf16);
+  __stwt(&bf16_2, bf16);
+  __stwt(&bf162_2, bf162);
 }
 
 // CHECK: void test_conversions() {
