@@ -39,6 +39,8 @@
 using namespace clang;
 
 #ifdef SYCLomatic_CUSTOMIZATION
+bool ContainCudaRTVersionMacro = false;
+std::vector<std::pair<SourceRange, bool>> ReplaceInfo;
 namespace clang {
 inline bool isInAnalysisScopeNull(SourceLocation) { return false; }
 inline unsigned int getRunRound() { return 0; }
@@ -226,6 +228,11 @@ static bool EvaluateDefined(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
       PP.Diag(beginLoc, diag::warn_defined_in_object_type_macro);
   }
 
+  if (II->getName() == "CUDART_VERSION" &&
+      IsInAnalysisScopeFunc(PeekTok.getLocation())) {
+    ReplaceInfo.push_back(
+        std::make_pair(Result.getRange(), !Result.Val.isZero()));
+  }
   // Invoke the 'defined' callback.
   if (PPCallbacks *Callbacks = PP.getPPCallbacks()) {
     Callbacks->Defined(macroToken, Macro,
@@ -260,6 +267,12 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
   }
 
   switch (PeekTok.getKind()) {
+  case tok::raw_identifier:
+    printf("PeekTok.getName():%s\n", PeekTok.getName());
+    if (std::string(PeekTok.getName()) == "CUDART_VERSION" &&
+        IsInAnalysisScopeFunc(PeekTok.getLocation())) {
+      ContainCudaRTVersionMacro = true;
+    }
   default:
     // If this token's spelling is a pp-identifier, check to see if it is
     // 'defined' or if it is a macro.  Note that we check here because many
@@ -320,6 +333,10 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
     bool NumberInvalid = false;
     StringRef Spelling = PP.getSpelling(PeekTok, IntegerBuffer,
                                               &NumberInvalid);
+    if (PeekTok.getIdentifierInfo()) {
+      printf("PeekTok.getIdentifierInfo()->getName():%s\n", PeekTok.getIdentifierInfo()->getName().str().c_str());
+    }
+    printf("Spelling:%s\n", Spelling.str().c_str());
     if (NumberInvalid)
       return true; // a diagnostic was already reported
 
@@ -543,6 +560,10 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
     // C99 6.5.3.3p5: The sign of the result is 'int', aka it is signed.
     Result.Val.setIsUnsigned(false);
     Result.setIdentifier(nullptr);
+    if (ContainCudaRTVersionMacro) {
+      ContainCudaRTVersionMacro = false;
+      ReplaceInfo.push_back(std::make_pair(Result.getRange(), !Result.Val.isZero()));
+    }
 
     if (DT.State == DefinedTracker::DefinedMacro)
       DT.State = DefinedTracker::NotDefinedMacro;
@@ -642,10 +663,16 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
       RHSIsLive = false;   // RHS of "0 && x" is dead.
     else if (Operator == tok::pipepipe && LHS.Val != 0)
       RHSIsLive = false;   // RHS of "1 || x" is dead.
-    else if (Operator == tok::question && LHS.Val == 0)
+    else if (Operator == tok::question && LHS.Val == 0) {
+      if (ContainCudaRTVersionMacro) {
+        ContainCudaRTVersionMacro = false;
+        ReplaceInfo.push_back(std::make_pair(LHS.getRange(), !LHS.Val.isZero()));
+      }
       RHSIsLive = false;   // RHS (x) of "0 ? x : y" is dead.
+    }
     else
       RHSIsLive = ValueLive;
+    RHSIsLive = ValueLive;
 
     // Consume the operator, remembering the operator's location for reporting.
     SourceLocation OpLoc = PeekTok.getLocation();
@@ -654,7 +681,11 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
     PPValue RHS(LHS.getBitWidth());
     // Parse the RHS of the operator.
     DefinedTracker DT;
+    bool LHSHasMacro = ContainCudaRTVersionMacro;
+    ContainCudaRTVersionMacro = false;
     if (EvaluateValue(RHS, PeekTok, DT, RHSIsLive, PP)) return true;
+    bool RHSHasMacro = ContainCudaRTVersionMacro;
+    ContainCudaRTVersionMacro = LHSHasMacro || RHSHasMacro;
     IncludedUndefinedIds = DT.IncludedUndefinedIds;
 
     // Remember the precedence of this operator and get the precedence of the
@@ -689,6 +720,8 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
       if (EvaluateDirectiveSubExpr(RHS, RHSPrec, PeekTok, RHSIsLive,
                                    IncludedUndefinedIds, PP))
         return true;
+      bool RHSHasMacro = ContainCudaRTVersionMacro;
+      ContainCudaRTVersionMacro = LHSHasMacro || RHSHasMacro;
       PeekPrec = getPrecedence(PeekTok.getKind());
     }
     assert(PeekPrec <= ThisPrec && "Recursion didn't work!");
@@ -821,10 +854,28 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
     case tok::ampamp:
       Res = (LHS.Val != 0 && RHS.Val != 0);
       Res.setIsUnsigned(false);  // C99 6.5.13p3, result is always int (signed)
+      ContainCudaRTVersionMacro = false;
+      if (LHSHasMacro) {
+        ReplaceInfo.push_back(
+            std::make_pair(LHS.getRange(), !LHS.Val.isZero()));
+      }
+      if (RHSHasMacro) {
+        ReplaceInfo.push_back(
+            std::make_pair(RHS.getRange(), !RHS.Val.isZero()));
+      }
       break;
     case tok::pipepipe:
       Res = (LHS.Val != 0 || RHS.Val != 0);
       Res.setIsUnsigned(false);  // C99 6.5.14p3, result is always int (signed)
+      ContainCudaRTVersionMacro = false;
+      if (LHSHasMacro) {
+        ReplaceInfo.push_back(
+            std::make_pair(LHS.getRange(), !LHS.Val.isZero()));
+      }
+      if (RHSHasMacro) {
+        ReplaceInfo.push_back(
+            std::make_pair(RHS.getRange(), !RHS.Val.isZero()));
+      }
       break;
     case tok::comma:
       // Comma is invalid in pp expressions in c89/c++ mode, but is valid in C99
@@ -915,6 +966,11 @@ Preprocessor::EvaluateDirectiveExpression(IdentifierInfo *&IfNDefMacro) {
   PPValue ResVal(BitWidth);
   DefinedTracker DT;
   SourceLocation ExprStartLoc = SourceMgr.getExpansionLoc(Tok.getLocation());
+  printf("Tok.getKind():%d\n", Tok.getKind());
+  printf("ExprStartLoc:%s\n", Tok.getLocation().printToString(getSourceManager()).c_str());
+  if (SourceMgr.getExpansionLoc(Tok.getLocation()).printToString(getSourceManager()) == "/home/zhiwei/testfolder/test.cu:19:5") {
+    printf("!!!!!!!!!\n");
+  }
   if (EvaluateValue(ResVal, Tok, DT, true, *this)) {
     // Parse error, skip the rest of the macro line.
     SourceRange ConditionRange = ExprStartLoc;

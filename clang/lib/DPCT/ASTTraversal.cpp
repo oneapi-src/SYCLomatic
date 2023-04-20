@@ -46,6 +46,9 @@
 #include <unordered_map>
 #include <utility>
 
+extern bool ContainCudaRTVersionMacro;
+extern std::vector<std::pair<clang::SourceRange, bool>> ReplaceInfo;
+
 using namespace clang;
 using namespace clang::ast_matchers;
 using namespace clang::dpct;
@@ -763,6 +766,15 @@ void IncludesCallbacks::If(SourceLocation Loc, SourceRange ConditionRange,
   if (!IsInAnalysisScope) {
     return;
   }
+
+  std::cout << "!!!!!!!!!!!!!!!!!" << std::endl;
+  std::cout << "ContainCudaRTVersionMacro:" << ContainCudaRTVersionMacro << std::endl;
+  for (auto I : ReplaceInfo) {
+    std::cout << "Begin:" << I.first.getBegin().printToString(SM) << std::endl;
+    std::cout << "End:" << I.first.getEnd().printToString(SM) << std::endl;
+  }
+
+
   ReplaceCuMacro(ConditionRange, IfType::IT_If, Loc, Loc);
 }
 void IncludesCallbacks::Elif(SourceLocation Loc, SourceRange ConditionRange,
