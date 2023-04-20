@@ -1,0 +1,25 @@
+.. _DPCT1109:
+
+DPCT1109
+========
+
+Message
+-------
+
+.. _msg-1109-start:
+
+*<Feature name>* cannot be called in a SYCL kernel or by functions
+called by the kernel. You may need to adjust the code.
+
+.. _msg-1109-end:
+
+Detailed Help
+-------------
+
+SYCL\* device functions can’t call virtual functions, recursive functions and memory allocation related functions.
+
+Suggestions to Fix
+------------------
+
+Rewrite code manually by removing the unsupported feature.
+
