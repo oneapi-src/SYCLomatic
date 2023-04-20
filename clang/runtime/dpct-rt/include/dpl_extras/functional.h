@@ -20,6 +20,8 @@
 #include <tuple>
 #include <utility>
 
+#include "../dpct.hpp"
+
 namespace dpct {
 
 struct null_type {};
