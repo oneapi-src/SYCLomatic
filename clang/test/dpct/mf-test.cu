@@ -60,10 +60,7 @@ void test() {
   // CHECK-NEXT:       });
   kernel_extern<<<1,1>>>();
 
-  // CHECK:   if (!q_ct1.get_device().has(sycl::aspect::fp64))
-  // CHECK-NEXT:     throw std::runtime_error("'double' is not supported in this device");
-  // CHECK-NEXT:   if (!q_ct1.get_device().has(sycl::aspect::fp16))
-  // CHECK-NEXT:     throw std::runtime_error("'half' is not supported in this device");
+  // CHECK:   dpct::capability_check(q_ct1.get_device(), {sycl::aspect::fp64, sycl::aspect::fp16});
   // CHECK-NEXT:   q_ct1.parallel_for<dpct_kernel_name<class test_fp_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:     sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
   // CHECK-NEXT:     [=](sycl::nd_item<3> item_ct1) {

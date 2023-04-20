@@ -1517,23 +1517,24 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
       }
     }
   }
+  llvm::SmallVector<std::string> AspectList;
   if (getVarMap().hasBF64()) {
-    Printer.indent();
-    Printer << "if (!";
-    printStreamBase(Printer);
-    Printer << "get_device().has(" << MapNames::getClNamespace()
-            << "aspect::fp64))" << getNL();
-    Printer.line("  throw std::runtime_error(\"'double' is not supported in "
-                 "this device\");");
+    AspectList.push_back(MapNames::getClNamespace() + "aspect::fp64");
   }
   if (getVarMap().hasBF16()) {
+    AspectList.push_back(MapNames::getClNamespace() + "aspect::fp16");
+  }
+  if (!AspectList.empty()) {
+    requestFeature(HelperFeatureEnum::Device_capability_check, getFilePath());
     Printer.indent();
-    Printer << "if (!";
+    Printer << MapNames::getDpctNamespace() << "capability_check(";
     printStreamBase(Printer);
-    Printer << "get_device().has(" << MapNames::getClNamespace()
-            << "aspect::fp16))" << getNL();
-    Printer.line("  throw std::runtime_error(\"'half' is not supported in "
-                 "this device\");");
+    Printer << "get_device(), {" << AspectList.front();
+    for (size_t i = 1; i < AspectList.size(); ++i) {
+      Printer << ", " << AspectList[i];
+    }
+    Printer << "});" << getNL();
+    ;
   }
   Printer.indent();
   if (!SubGroupSizeWarning.empty()) {

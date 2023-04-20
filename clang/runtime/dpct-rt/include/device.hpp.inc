@@ -1359,6 +1359,26 @@ static inline unsigned int get_device_id(const sycl::device &dev){
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|capability_check|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+inline void capability_check(const sycl::device &dev,
+                             const std::initializer_list<sycl::aspect> &props) {
+  static const std::unordered_map<sycl::aspect, std::string> ErrMap{
+      {sycl::aspect::fp64, "double"},
+      {sycl::aspect::fp16, "half"},
+  };
+  for (const auto &it : props) {
+    const auto find = ErrMap.find(it);
+    if (find == ErrMap.end())
+      throw std::runtime_error(
+          "'capability_check' cannot check this kind of aspect");
+    else if (!dev.has(it))
+      throw std::runtime_error("'" + find->second +
+                               "' is not supported in this device");
+  }
+}
+// DPCT_LABEL_END
 } // namespace dpct
 
 #endif // __DPCT_DEVICE_HPP__
