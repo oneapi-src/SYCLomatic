@@ -576,15 +576,6 @@ void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
       StringRef(TypeName).startswith("thrust::")) {
     analyzeType(Temp->getTypeSourceInfo()->getTypeLoc());
   }
-  // For stmt "throw thrust::system_error(error, thrust::cuda_category(),
-  // message);"
-  // Here to generate replacement to migrate "thrust::system_error"
-  // to "std::system_error", then continue to analyze its arguments.
-  if (TypeName == "thrust::system::system_error") {
-    addReplacement(Temp->getTypeSourceInfo()->getTypeLoc().getBeginLoc(),
-                   Temp->getTypeSourceInfo()->getTypeLoc().getBeginLoc(), Temp,
-                   "std");
-  }
   analyzeExpr(static_cast<const CXXConstructExpr *>(Temp));
 }
 
@@ -1036,6 +1027,7 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
         TYPELOC_CAST(TypedefTypeLoc).getTypedefNameDecl()->getName().str();
     break;
   case TypeLoc::Builtin:
+  case TypeLoc::Using:
   case TypeLoc::Record: {
     TyName = DpctGlobalInfo::getTypeName(TL.getType());
     auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TyName);

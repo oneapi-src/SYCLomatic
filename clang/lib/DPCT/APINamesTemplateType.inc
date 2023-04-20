@@ -125,6 +125,10 @@ TYPE_REWRITE_ENTRY(
     "thrust::logical_and",
     TYPE_FACTORY(STR("std::logical_and"), TEMPLATE_ARG(0)))
 
+//  thrust::system_error(
+TYPE_REWRITE_ENTRY("thrust::system::system_error",
+                   TYPE_FACTORY(STR("std::system_error")))
+
 // thrust::bit_and
 TYPE_REWRITE_ENTRY(
     "thrust::bit_and",
