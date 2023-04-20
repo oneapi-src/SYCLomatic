@@ -763,6 +763,8 @@ public:
 // Device|device_info_set_memory_clock_rate
 // Device|device_info_set_memory_bus_width
 // Device|device_info_set_max_register_size_per_work_group
+// Device|device_info_set_uuid
+// Device|device_info_set_device_id
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   void get_device_info(device_info &out) const {
