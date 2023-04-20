@@ -1365,13 +1365,13 @@ inline int potrs(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
 }
 // DPCT_LABEL_END
 
-template<typename T>
 inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
                                    oneapi::mkl::rangev range,
                                    oneapi::mkl::uplo uplo, std::int64_t n,
                                    library_data_t a_type, std::int64_t lda,
-                                   T vl, T vu, std::int64_t il,
-                                   std::int64_t iu, std::size_t *device_ws_size,
+                                   void *vl, void *vu, std::int64_t il,
+                                   std::int64_t iu, library_data_t w_type,
+                                   std::size_t *device_ws_size,
                                    std::size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
@@ -1389,23 +1389,6 @@ inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
       compz_jobz, range, uplo, n, lda, vl, vu, il, iu, lda,
       &device_ws_size_tmp);
   *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
-  return ret;
-}
-
-template<typename T>
-inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
-                                   oneapi::mkl::rangev range,
-                                   oneapi::mkl::uplo uplo, int n,
-                                   library_data_t a_type, int lda, T vl,
-                                   T vu, int il, int iu,
-                                   int *device_ws_size,
-                                   int *host_ws_size = nullptr) {
-  if (host_ws_size)
-    *host_ws_size = 0;
-  std::size_t device_ws_size_size_t;
-  int ret = syheevx_scratchpad_size(q, jobz, range, uplo, n, a_type, lda, vl,
-                                    vu, il, iu, &device_ws_size_size_t);
-  *device_ws_size = (int)device_ws_size_size_t;
   return ret;
 }
 
@@ -1435,19 +1418,50 @@ inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
   return ret;
 }
 
-template<typename T>
-inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
-                   oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
-                   int n, library_data_t a_type, void *a,
-                   int lda, T vl, T vu, int il,
-                   int iu, int *m, library_data_t w_type, void *w,
-                   void *device_ws, std::size_t device_ws_size, int *info) {
-  std::int64_t m_64;
-  int ret = syheevx(q, jobz, range, uplo, n, a_type, a, lda, vl, vu, il, iu,
-                    &m_64, w_type, w, device_ws, device_ws_size, info);
-  *m = (int)m_64;
-  return ret;
+template <typename T, typename ValueT>
+inline int syheevx_scratchpad_size(sycl::queue &handle, oneapi::mkl::job jobz,
+                                   oneapi::mkl::rangev range,
+                                   oneapi::mkl::uplo uplo, int n, const T *A,
+                                   int lda, ValueT vl, ValueT vu, int il,
+                                   int iu, int *h_meig, const ValueT *W,
+                                   int *lwork) {}
+
+template <typename T, typename ValueT>
+inline int syheevx(sycl::queue &handle, oneapi::mkl::job jobz,
+                   oneapi::mkl::rangev range, oneapi::mkl::uplo uplo, int n,
+                   T *A, int lda, ValueT vl, ValueT vu, int il, int iu,
+                   int *h_meig, ValueT *W, T *work, int lwork, int *devInfo) {
+
+                   }
+
+template <typename T, typename ValueT>
+inline int
+syhegvx_scratchpad_size(sycl::queue &handle, int itype, oneapi::mkl::job jobz,
+                        oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
+                        int n, const T *A, int lda, const T *B, int ldb,
+                        ValueT vl, ValueT vu, int il, int iu, int *h_meig,
+                        const ValueT *W, int *lwork) {
+  
 }
+
+template <typename T, typename ValueT>
+inline int syhegvx(sycl::queue &handle, int itype, oneapi::mkl::job jobz,
+                   oneapi::mkl::rangev range, oneapi::mkl::uplo uplo, int n,
+                   T *A, int lda, T *B, int ldb, ValueT vl, ValueT vu, int il,
+                   int iu, int *h_meig, ValueT *W, T *work, int lwork,
+                   int *devInfo) {}
+
+template <typename T, typename ValueT>
+inline int syhegvd_scratchpad_size(sycl::queue &handle, int itype,
+                                   oneapi::mkl::job jobz,
+                                   oneapi::mkl::uplo uplo, int n, const T *A,
+                                   int lda, const T *B, int ldb,
+                                   const ValueT *W, int *lwork) {}
+
+template <typename T, typename ValueT>
+inline int syhegvd(sycl::queue &handle, int itype, oneapi::mkl::job jobz,
+                   oneapi::mkl::uplo uplo, int n, T *A, int lda, T *B, int ldb,
+                   ValueT *W, T *work, int lwork, int *info) {}
 
 } // namespace lapack
 } // namespace dpct
