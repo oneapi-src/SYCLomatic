@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/DplExtrasNumeric/api_test1_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasNumeric/api_test1_out
 
-// CHECK: 3
+// CHECK: 36
 // TEST_FEATURE: DplExtrasNumeric_inner_product
 
 #include <thrust/inner_product.h>
