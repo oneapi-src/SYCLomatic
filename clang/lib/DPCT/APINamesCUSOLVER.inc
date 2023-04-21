@@ -461,3 +461,83 @@ CALL_FACTORY_ENTRY("cusolverDnZheevdx",
                         DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
                         ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
                         ARG(12), ARG(13), ARG(14), ARG(15)))
+
+CALL_FACTORY_ENTRY("cusolverDnSyevdx_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syheevx_scratchpad_size",
+                        DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                        ARG(8), ARG(9), ARG(10), ARG(11), ARG(12), ARG(14),
+                        ARG(17)))
+CALL_FACTORY_ENTRY("cusolverDnSyevdx",
+                   CALL(MapNames::getDpctNamespace() + "lapack::syheevx",
+                        DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                        ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(12),
+                        ARG(13), ARG(14), ARG(15), ARG(17), ARG(18), ARG(19)))
+
+CALL_FACTORY_ENTRY("cusolverDnXsyevdx_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syheevx_scratchpad_size",
+                        DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                        ARG(8), ARG(9), ARG(10), ARG(11), ARG(12), ARG(14),
+                        ARG(17), ARG(18)))
+CALL_FACTORY_ENTRY("cusolverDnXsyevdx",
+                   CALL(MapNames::getDpctNamespace() + "lapack::syheevx",
+                        DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                        ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(12),
+                        ARG(13), ARG(14), ARG(15), ARG(17), ARG(18), ARG(21)))
+
+CALL_FACTORY_ENTRY("cusolverDnSsygvdx_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syhegvx_scratchpad_size<float, float>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(7), ARG(9), ARG(10), ARG(11), ARG(12), ARG(13),
+                        ARG(16)))
+CALL_FACTORY_ENTRY("cusolverDnDsygvdx_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syhegvx_scratchpad_size<double, double>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(7), ARG(9), ARG(10), ARG(11), ARG(12), ARG(13),
+                        ARG(16)))
+CALL_FACTORY_ENTRY("cusolverDnChegvdx_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syhegvx_scratchpad_size<" +
+                            MapNames::getClNamespace() + "float2, float>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(7), ARG(9), ARG(10), ARG(11), ARG(12), ARG(13),
+                        ARG(16)))
+CALL_FACTORY_ENTRY("cusolverDnZhegvdx_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syhegvx_scratchpad_size<" +
+                            MapNames::getClNamespace() + "double2, double>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(7), ARG(9), ARG(10), ARG(11), ARG(12), ARG(13),
+                        ARG(16)))
+
+CALL_FACTORY_ENTRY("cusolverDnSsygvdx",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syhegvx<float, float>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
+                        ARG(12), ARG(13), ARG(14), ARG(15), ARG(16), ARG(17),
+                        ARG(18)))
+CALL_FACTORY_ENTRY("cusolverDnDsygvdx",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syhegvx<double, double>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
+                        ARG(12), ARG(13), ARG(14), ARG(15), ARG(16), ARG(17),
+                        ARG(18)))
+CALL_FACTORY_ENTRY("cusolverDnChegvdx",
+                   CALL(MapNames::getDpctNamespace() + "lapack::syhegvx<" +
+                            MapNames::getClNamespace() + "float2, float>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
+                        ARG(12), ARG(13), ARG(14), ARG(15), ARG(16), ARG(17),
+                        ARG(18)))
+CALL_FACTORY_ENTRY("cusolverDnZhegvdx",
+                   CALL(MapNames::getDpctNamespace() + "lapack::syhegvx<" +
+                            MapNames::getClNamespace() + "double2, double>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
+                        ARG(12), ARG(13), ARG(14), ARG(15), ARG(16), ARG(17),
+                        ARG(18)))
