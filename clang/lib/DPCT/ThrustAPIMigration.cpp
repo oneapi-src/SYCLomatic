@@ -34,6 +34,10 @@ void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(typedefDecl(isExpandedFromMacro("THRUST_STATIC_ASSERT"))
                     .bind("THRUST_STATIC_ASSERT"),
                 this);
+  MF.addMatcher(cxxTemporaryObjectExpr(
+                    hasType(namedDecl(hasName("thrust::system::system_error"))))
+                    .bind("THRUST_SYSTEM_ERROR"),
+                this);
 }
 
 void ThrustAPIRule::runRule(
@@ -49,6 +53,14 @@ void ThrustAPIRule::runRule(
     const SourceLocation BeginLoc = SM.getExpansionLoc(D->getBeginLoc());
     emplaceTransformation(new ReplaceText(
         BeginLoc, std::string("THRUST_STATIC_ASSERT").size(), "static_assert"));
+  } else if (const CXXTemporaryObjectExpr *CXXTempObj =
+                 getNodeAsType<CXXTemporaryObjectExpr>(Result,
+                                                       "THRUST_SYSTEM_ERROR")) {
+    dpct::ExprAnalysis EA;
+    EA.analyze(CXXTempObj);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
   }
 }
 

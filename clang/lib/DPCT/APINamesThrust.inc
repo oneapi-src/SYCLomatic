@@ -2756,3 +2756,6 @@ CONDITIONAL_FACTORY_ENTRY(
         CALL_FACTORY_ENTRY("thrust::copy_n",
                            CALL("std::copy_n", makeMappedThrustPolicyEnum(0),
                                 ARG(1), ARG(2), ARG(3)))))
+
+// thrust::cuda_category
+CALL_FACTORY_ENTRY("thrust::cuda_category", CALL("std::generic_category"))
