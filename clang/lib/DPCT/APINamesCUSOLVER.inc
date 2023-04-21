@@ -414,60 +414,50 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
     CALL("oneapi::mkl::lapack::geqrf_scratchpad_size<std::complex<double>>",
          DEREF(0), ARG(1), ARG(2), ARG(4))))
 
-CALL_FACTORY_ENTRY(
-    "cusolverDnSsyevdx_bufferSize",
-    CALL(MapNames::getDpctNamespace() + "lapack::syheevx_scratchpad_size",
-         DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4),
-         ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"),
-         ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(13)))
-CALL_FACTORY_ENTRY(
-    "cusolverDnDsyevdx_bufferSize",
-    CALL(MapNames::getDpctNamespace() + "lapack::syheevx_scratchpad_size",
-         DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4),
-         ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"),
-         ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(13)))
-CALL_FACTORY_ENTRY(
-    "cusolverDnCheevdx_bufferSize",
-    CALL(MapNames::getDpctNamespace() + "lapack::syheevx_scratchpad_size",
-         DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4),
-         ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"),
-         ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(13)))
-CALL_FACTORY_ENTRY(
-    "cusolverDnZheevdx_bufferSize",
-    CALL(MapNames::getDpctNamespace() + "lapack::syheevx_scratchpad_size",
-         DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4),
-         ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"),
-         ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(13)))
+CALL_FACTORY_ENTRY("cusolverDnSsyevdx_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syheevx_scratchpad_size<float, float>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(6),
+                        ARG(7), ARG(8), ARG(9), ARG(10), ARG(13)))
+CALL_FACTORY_ENTRY("cusolverDnDsyevdx_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syheevx_scratchpad_size<double, double>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(6),
+                        ARG(7), ARG(8), ARG(9), ARG(10), ARG(13)))
+CALL_FACTORY_ENTRY("cusolverDnCheevdx_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syheevx_scratchpad_size<" +
+                            MapNames::getClNamespace() + "float2, float>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(6),
+                        ARG(7), ARG(8), ARG(9), ARG(10), ARG(13)))
+CALL_FACTORY_ENTRY("cusolverDnZheevdx_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syheevx_scratchpad_size<" +
+                            MapNames::getClNamespace() + "double2, double>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(6),
+                        ARG(7), ARG(8), ARG(9), ARG(10), ARG(13)))
 
-CALL_FACTORY_ENTRY(
-    "cusolverDnSsyevdx",
-    CALL(MapNames::getDpctNamespace() + "lapack::syheevx", DEREF(0), ARG(1),
-         ARG(2), ARG(3), ARG(4),
-         ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"),
-         ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
-         ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"),
-         ARG(12), ARG(13), ARG(14), ARG(15)))
-CALL_FACTORY_ENTRY(
-    "cusolverDnDsyevdx",
-    CALL(MapNames::getDpctNamespace() + "lapack::syheevx", DEREF(0), ARG(1),
-         ARG(2), ARG(3), ARG(4),
-         ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"),
-         ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
-         ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"),
-         ARG(12), ARG(13), ARG(14), ARG(15)))
-CALL_FACTORY_ENTRY(
-    "cusolverDnCheevdx",
-    CALL(MapNames::getDpctNamespace() + "lapack::syheevx", DEREF(0), ARG(1),
-         ARG(2), ARG(3), ARG(4),
-         ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"),
-         ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
-         ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"),
-         ARG(12), ARG(13), ARG(14), ARG(15)))
-CALL_FACTORY_ENTRY(
-    "cusolverDnZheevdx",
-    CALL(MapNames::getDpctNamespace() + "lapack::syheevx", DEREF(0), ARG(1),
-         ARG(2), ARG(3), ARG(4),
-         ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"),
-         ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
-         ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"),
-         ARG(12), ARG(13), ARG(14), ARG(15)))
+CALL_FACTORY_ENTRY("cusolverDnSsyevdx",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syheevx<float, float>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
+                        ARG(12), ARG(13), ARG(14), ARG(15)))
+CALL_FACTORY_ENTRY("cusolverDnDsyevdx",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syheevx<double, double>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
+                        ARG(12), ARG(13), ARG(14), ARG(15)))
+CALL_FACTORY_ENTRY("cusolverDnCheevdx",
+                   CALL(MapNames::getDpctNamespace() + "lapack::syheevx<" +
+                            MapNames::getClNamespace() + "float2, float>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
+                        ARG(12), ARG(13), ARG(14), ARG(15)))
+CALL_FACTORY_ENTRY("cusolverDnZheevdx",
+                   CALL(MapNames::getDpctNamespace() + "lapack::syheevx<" +
+                            MapNames::getClNamespace() + "double2, double>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
+                        ARG(12), ARG(13), ARG(14), ARG(15)))
