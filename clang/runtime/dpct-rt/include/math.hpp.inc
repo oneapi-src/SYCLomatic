@@ -71,11 +71,8 @@ public:
 // DPCT_LABEL_BEGIN|detail_isnan|dpct::detail
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-template <typename T> bool isnan(const T a) {
-  if constexpr (std::is_same_v<T, sycl::ext::oneapi::bfloat16>)
-    return sycl::ext::oneapi::experimental::isnan(a);
-  return sycl::isnan(a);
-}
+template <typename T> bool isnan(const T a) { return sycl::isnan(a); }
+// TODO: Need add more specialization.
 // DPCT_LABEL_END
 } // namespace detail
 
@@ -181,10 +178,7 @@ inline bool unordered_compare(const T a, const T b,
 /// \param [in] binary_op functor that implements the binary operation
 /// \returns the comparison result
 template <typename T, class BinaryOperation>
-inline std::enable_if_t<
-    std::is_same_v<T, sycl::half2> ||
-        std::is_same_v<T, sycl::marray<sycl::ext::oneapi::bfloat16, 2>>,
-    bool>
+inline std::enable_if_t<T::size() == 2, bool>
 compare2_both(const T a, const T b, const BinaryOperation binary_op) {
   return compare(a[0], b[0], binary_op) && compare(a[1], b[1], binary_op);
 }
@@ -201,10 +195,7 @@ compare2_both(const T a, const T b, const BinaryOperation binary_op) {
 /// \param [in] binary_op functor that implements the binary operation
 /// \returns the comparison result
 template <typename T, class BinaryOperation>
-inline std::enable_if_t<
-    std::is_same_v<T, sycl::half2> ||
-        std::is_same_v<T, sycl::marray<sycl::ext::oneapi::bfloat16, 2>>,
-    bool>
+inline std::enable_if_t<T::size() == 2, bool>
 unordered_compare2_both(const T a, const T b, const BinaryOperation binary_op) {
   return unordered_compare(a[0], b[0], binary_op) &&
          unordered_compare(a[1], b[1], binary_op);
@@ -222,10 +213,7 @@ unordered_compare2_both(const T a, const T b, const BinaryOperation binary_op) {
 /// \param [in] binary_op functor that implements the binary operation
 /// \returns the comparison result
 template <typename T, class BinaryOperation>
-inline std::enable_if_t<
-    std::is_same_v<T, sycl::half2> ||
-        std::is_same_v<T, sycl::marray<sycl::ext::oneapi::bfloat16, 2>>,
-    T>
+inline std::enable_if_t<T::size() == 2, T>
 compare2(const T a, const T b, const BinaryOperation binary_op) {
   return {compare(a[0], b[0], binary_op), compare(a[1], b[1], binary_op)};
 }
@@ -242,10 +230,7 @@ compare2(const T a, const T b, const BinaryOperation binary_op) {
 /// \param [in] binary_op functor that implements the binary operation
 /// \returns the comparison result
 template <typename T, class BinaryOperation>
-inline std::enable_if_t<
-    std::is_same_v<T, sycl::half2> ||
-        std::is_same_v<T, sycl::marray<sycl::ext::oneapi::bfloat16, 2>>,
-    T>
+inline std::enable_if_t<T::size() == 2, T>
 unordered_compare2(const T a, const T b, const BinaryOperation binary_op) {
   return {unordered_compare(a[0], b[0], binary_op),
           unordered_compare(a[1], b[1], binary_op)};
@@ -261,11 +246,7 @@ unordered_compare2(const T a, const T b, const BinaryOperation binary_op) {
 /// \param [in] a The input value
 /// \returns the comparison result
 template <typename T>
-inline std::enable_if_t<
-    std::is_same_v<T, sycl::half2> ||
-        std::is_same_v<T, sycl::marray<sycl::ext::oneapi::bfloat16, 2>>,
-    T>
-isnan(const T a) {
+inline std::enable_if_t<T::size() == 2, T> isnan(const T a) {
   return {detail::isnan(a[0]), detail::isnan(a[1])};
 }
 // DPCT_LABEL_END
