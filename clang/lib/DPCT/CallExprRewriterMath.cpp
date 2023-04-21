@@ -1048,9 +1048,6 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     OS << MapNames::getClNamespace(false, true) << "exp(" << MigratedArg0 << "*"
        << MigratedArg0 << ")*" << TargetCalleeName << "(" << MigratedArg0
        << ")";
-  } else if (FuncName == "rcbrt" || FuncName == "rcbrtf") {
-    OS << MapNames::getClNamespace(false, true) << "native::recip((float)"
-       << TargetCalleeName << "(" << getMigratedArg(0) << "))";
   } else if (FuncName == "scalbln" || FuncName == "scalblnf" ||
              FuncName == "scalbn" || FuncName == "scalbnf") {
     OS << MigratedArg0 << "*(2<<" << getMigratedArg(1) << ")";

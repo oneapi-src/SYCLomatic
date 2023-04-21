@@ -113,6 +113,15 @@ thrustFactory("thrust::scatter",
               {{5,PolicyState::HasPolicy,4,MapNames::getDpctNamespace()+"scatter", HelperFeatureEnum::DplExtrasAlgorithm_scatter },
                {4,PolicyState::NoPolicy ,4,MapNames::getDpctNamespace()+"scatter", HelperFeatureEnum::DplExtrasAlgorithm_scatter }}),
 
+// thrust::transform_if
+thrustFactory("thrust::transform_if",
+              {{6,PolicyState::HasPolicy,3,MapNames::getDpctNamespace()+"transform_if", HelperFeatureEnum::DplExtrasAlgorithm_transform_if},
+               {5,PolicyState::NoPolicy,3,MapNames::getDpctNamespace()+"transform_if", HelperFeatureEnum::DplExtrasAlgorithm_transform_if},
+               {7,PolicyState::HasPolicy,4,MapNames::getDpctNamespace()+"transform_if", HelperFeatureEnum::DplExtrasAlgorithm_transform_if},
+               {6,PolicyState::NoPolicy,4,MapNames::getDpctNamespace()+"transform_if", HelperFeatureEnum::DplExtrasAlgorithm_transform_if},
+               {8,PolicyState::HasPolicy,4,MapNames::getDpctNamespace()+"transform_if", HelperFeatureEnum::DplExtrasAlgorithm_transform_if},
+               {7,PolicyState::NoPolicy,4,MapNames::getDpctNamespace()+"transform_if", HelperFeatureEnum::DplExtrasAlgorithm_transform_if}}),
+
 // thrust::unique_by_key_copy
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_unique_copy,
   CONDITIONAL_FACTORY_ENTRY(
