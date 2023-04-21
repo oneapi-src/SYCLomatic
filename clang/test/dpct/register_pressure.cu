@@ -3,7 +3,7 @@
 #include<cuda_runtime.h>
 
 // CHECK: /*
-// CHECK: DPCT1110:{{[0-9]+}}: The total local variable size in device function exceeds 128 bytes and may cause high register pressure. Consider replacing sub-group size with smaller value to reduce register pressure for better performance.
+// CHECK: DPCT1110:{{[0-9]+}}: The total declared local variable size in device function "kernel" exceeds 128 bytes and may cause high register pressure. Consider replacing sub-group size with smaller value to reduce register pressure for better performance.
 // CHECK: */
 __global__ void kernel(){
   int a[100];

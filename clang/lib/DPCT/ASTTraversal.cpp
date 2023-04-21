@@ -9014,28 +9014,24 @@ void DeviceFunctionDeclRule::runRule(
                                              Param->isReferenced());
       ParamCounter++;
     }
-    if(DpctGlobalInfo::isOptimizeMigration()) {
-      auto &SM = DpctGlobalInfo::getSourceManager();
-      auto &CTX = DpctGlobalInfo::getContext();
-      auto VarDeclMatcher = findAll(varDecl().bind("VarDecl"));
-      auto MatchResult = ast_matchers::match(VarDeclMatcher, *FD, CTX);
-      size_t LocalVariableSize = 0;
-      for (auto &SubResult : MatchResult) {
-        if(const VarDecl *VD = SubResult.getNodeAs<VarDecl>("VarDecl")){
-          if(VD->hasAttr<CUDASharedAttr>() || !VD->isLocalVarDecl() || isCubVar(VD)){
-            continue;
-          }
-          auto Size = CTX.getTypeSizeInCharsIfKnown(VD->getType());
-          if(Size.has_value()) {
-            LocalVariableSize += Size.value().getQuantity();
-          }
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    auto &CTX = DpctGlobalInfo::getContext();
+    size_t LocalVariableSize = 0;
+    for(auto D : FD->decls()){
+      if(auto VD = dyn_cast_or_null<VarDecl>(D)) {
+        if(VD->hasAttr<CUDASharedAttr>() || !VD->isLocalVarDecl() || isCubVar(VD)){
+          continue;
+        }
+        auto Size = CTX.getTypeSizeInCharsIfKnown(VD->getType());
+        if(Size.has_value()) {
+          LocalVariableSize += Size.value().getQuantity();
         }
       }
-      // For Xe-LP architecture, if the sub-group size is 32, then each work-item
-      // can use 128 * 32 Byte / 32 = 128 Byte registers.
-      if(LocalVariableSize > 128) {
-        report(SM.getExpansionLoc(FD->getBeginLoc()), Warnings::REGISTER_USAGE, false);
-      }
+    }
+    // For Xe-LP architecture, if the sub-group size is 32, then each work-item
+    // can use 128 * 32 Byte / 32 = 128 Byte registers.
+    if(LocalVariableSize > 128) {
+      report(SM.getExpansionLoc(FD->getBeginLoc()), Warnings::REGISTER_USAGE, false, FD->getName());
     }
   }
   if (isLambda(FD) && !FuncInfo->isLambda()) {
