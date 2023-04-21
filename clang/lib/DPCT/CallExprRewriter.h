@@ -648,8 +648,6 @@ class DerefExpr {
     }
   }
 
-  DerefExpr() = default;
-
 public:
   DerefExpr(const Expr *E, const CallExpr *C = nullptr);
   template <class StreamT>
