@@ -4186,6 +4186,8 @@ const MapNames::MapTy MapNames::MacrosMap{
     {"CUDART_VERSION", "SYCL_LANGUAGE_VERSION"},
     {"CUBLAS_V2_H_", "MKL_SYCL_HPP"},
     {"__CUDA__", "SYCL_LANGUAGE_VERSION"},
+    {"CUFFT_FORWARD", "-1"},
+    {"CUFFT_INVERSE", "1"},
     //...
 };
 

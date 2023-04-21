@@ -396,39 +396,11 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   if (!IsInAnalysisScope) {
     return;
   }
-
-  if (MacroNameTok.getIdentifierInfo() &&
-      MacroNameTok.getIdentifierInfo()->getName() == "__CUDA_ARCH__") {
-    if (DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
-      requestFeature(HelperFeatureEnum::Dpct_dpct_compatibility_temp,
-                     Range.getBegin());
-      auto Repl = std::make_shared<ReplaceText>(Range.getBegin(), 13,
-                                                "DPCT_COMPATIBILITY_TEMP");
-      insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
-    }
-    return;
-  }
-
-  if (MacroNameTok.getIdentifierInfo() &&
-      MacroNameTok.getIdentifierInfo()->getName() == "CUDART_VERSION") {
-    if (DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
-      auto Repl = std::make_shared<ReplaceText>(Range.getBegin(), 14,
-                                                "SYCL_LANGUAGE_VERSION");
-      insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
-    }
-    return;
-  }
-  // CUFFT_FORWARD and CUFFT_INVERSE are migrated to integer literal in all
-  // places except in cufftExec call.
-  // CUFFT_FORWARD and CUFFT_INVERSE in cufftExec call are migrated with
-  // FFTDirExpr and longer replacement will overlap shorter replacement, so the
-  // migration is expected.
-  else if (MacroNameTok.getIdentifierInfo() &&
-             MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_FORWARD") {
-    TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13, "-1"));
-  } else if (MacroNameTok.getIdentifierInfo() &&
-             MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_INVERSE") {
-    TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13, "1"));
+  
+  if (MacroNameTok.getIdentifierInfo() && MapNames::MacrosMap.find(
+      MacroNameTok.getIdentifierInfo()->getName().str()) != MapNames::MacrosMap.end()){
+    ReplaceCuMacro(MacroNameTok);
+    return ;
   }
 
   // For the un-specialized struct, there is no AST for the extern function
