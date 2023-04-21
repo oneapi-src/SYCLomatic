@@ -717,9 +717,11 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
       DerefQT = TE->getType();
     }
 
+    if(DerefQT->getTypeClass() == clang::Type::Auto){
+      DerefQT=DerefQT->getContainedAutoType()->getDeducedType();
+    }
     std::string TypeStr = DpctGlobalInfo::getReplacedTypeName(DerefQT);
-
-    if (TypeStr == "<dependent type>" || TypeStr == "auto") {
+    if (TypeStr == "<dependent type>" || DerefQT.isNull()) {
       if (NeedDeref) {
         return "typename std::remove_pointer<decltype(" +
                ExprAnalysis::ref(TE) + ")>::type";
