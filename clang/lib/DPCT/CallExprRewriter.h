@@ -1518,6 +1518,20 @@ public:
   }
 };
 
+class CheckMemberBaseType {
+  std::string TypeName;
+
+public:
+  CheckMemberBaseType(std::string Name)
+    : TypeName(std::move(Name)) {}
+  bool operator()(const CallExpr *C) {
+    std::string ArgType = getBaseTypeStr(C);
+    if (ArgType.empty())
+      return true;
+    return ArgType.find(TypeName) != std::string::npos;
+  }
+};
+
 class CheckEnumArgStr {
   unsigned Idx;
   std::string EnumArgValueStr;
