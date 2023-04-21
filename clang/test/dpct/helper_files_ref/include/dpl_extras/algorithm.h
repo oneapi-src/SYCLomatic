@@ -1675,6 +1675,30 @@ inline void reduce_argmin(_ExecutionPolicy &&policy, Iter1 input, Iter2 output,
   ::std::copy(::std::forward<_ExecutionPolicy>(policy), ret, ret + 1, output);
 }
 
+template <typename _ExecutionPolicy, typename Iter1, typename ValueLessComparable, typename StrictWeakOrdering>
+inline ::std::pair<Iter1, Iter1>
+equal_range(_ExecutionPolicy &&policy, Iter1 start, Iter1 end, const ValueLessComparable& value, StrictWeakOrdering comp)
+{
+  sycl::queue q = policy.queue();
+  ::std::int64_t *result_lower_upper = sycl::malloc_shared<std::int64_t>(2, q);
+  ValueLessComparable *value_ptr = sycl::malloc_device<ValueLessComparable>(1, q);
+  q.fill(value_ptr, value, 1).wait();
+  ::oneapi::dpl::lower_bound(policy, start, end, value_ptr, value_ptr+1, result_lower_upper, comp);
+  ::oneapi::dpl::upper_bound(::std::forward<_ExecutionPolicy>(policy), start, end, value_ptr, value_ptr+1, result_lower_upper+1, comp);
+  auto result = ::std::make_pair(start + *result_lower_upper, start + *(result_lower_upper+1));
+  sycl::free(result_lower_upper, q);
+  sycl::free(value_ptr, q);
+  return result;
+}
+
+template <typename _ExecutionPolicy, typename Iter1, typename ValueLessComparable>
+inline ::std::pair<Iter1, Iter1>
+equal_range(_ExecutionPolicy &&policy, Iter1 start, Iter1 end, const ValueLessComparable& value)
+{
+  return equal_range(::std::forward<_ExecutionPolicy>(policy), start, end, value, internal::__less());
+}
+
+
 } // end namespace dpct
 
 #endif
