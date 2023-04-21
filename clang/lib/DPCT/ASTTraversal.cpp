@@ -12349,18 +12349,19 @@ void RecognizeAPINameRule::processMemberFuncCall(const CXXMemberCallExpr *MC) {
 
 void RecognizeAPINameRule::processFuncCall(const CallExpr *CE,
                                            bool HaveKeywordInAPIName) {
-  if (!dpct::DpctGlobalInfo::isInCudaPath(CE->getCalleeDecl()->getLocation()) &&
-      !isChildOrSamePath(
-          DpctInstallPath,
-          dpct::DpctGlobalInfo::getLocInfo(CE->getCalleeDecl()).first)) {
-    if (!CE->getCalleeDecl()->getAsFunction()->getName().startswith("cudnn") &&
-        !CE->getCalleeDecl()->getAsFunction()->getName().startswith("nccl"))
-      return;
-  }
-    
   std::string Namespace;
   const NamedDecl *ND = dyn_cast<NamedDecl>(CE->getCalleeDecl());
   if (ND) {
+    if (!dpct::DpctGlobalInfo::isInCudaPath(ND->getLocation()) &&
+        !isChildOrSamePath(
+          DpctInstallPath,
+          dpct::DpctGlobalInfo::getLocInfo(ND).first)) {
+      if(auto FD = dyn_cast<clang::FunctionDecl>(ND)){
+        if (!FD->getName().startswith("cudnn") &&
+            !FD->getName().startswith("nccl"))
+          return;
+        }        
+    }
     const auto *NSD = dyn_cast<NamespaceDecl>(ND->getDeclContext());
     if (NSD && !NSD->isInlineNamespace()) {
       if (dyn_cast<NamespaceDecl>(NSD->getDeclContext())) {
