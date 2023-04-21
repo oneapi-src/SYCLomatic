@@ -63,7 +63,7 @@ void CuDNNTypeRule::runRule(const MatchFinder::MatchResult &Result) {
     if (const clang::ElaboratedType *ET =
             llvm::dyn_cast<clang::ElaboratedType>(TL->getType())) {
       if (const clang::TypedefType *TDT =
-              llvm::dyn_cast<clang::TypedefType>(ET->desugar())) {
+              llvm::dyn_cast<clang::TypedefType>(ET->getNamedType().getTypePtr())) {
         if (DpctGlobalInfo::isInRoot(TDT->getDecl()->getBeginLoc())) {
           return;
         }
