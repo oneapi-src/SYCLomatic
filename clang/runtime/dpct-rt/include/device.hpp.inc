@@ -1359,23 +1359,45 @@ static inline unsigned int get_device_id(const sycl::device &dev){
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|capability_check|dpct
+// DPCT_LABEL_BEGIN|has_capability_or_fail|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-inline void capability_check(const sycl::device &dev,
-                             const std::initializer_list<sycl::aspect> &props) {
-  static const std::unordered_map<sycl::aspect, std::string> ErrMap{
-      {sycl::aspect::fp64, "double"},
-      {sycl::aspect::fp16, "half"},
-  };
+inline void
+has_capability_or_fail(const sycl::device &dev,
+                       const std::initializer_list<sycl::aspect> &props) {
   for (const auto &it : props) {
-    const auto find = ErrMap.find(it);
-    if (find == ErrMap.end())
-      throw std::runtime_error(
-          "'capability_check' cannot check this kind of aspect");
-    else if (!dev.has(it))
-      throw std::runtime_error("'" + find->second +
+    if (dev.has(it))
+      continue;
+    switch (it) {
+    case sycl::aspect::fp64:
+      throw std::runtime_error("'double' is not supported in this device");
+      break;
+    case sycl::aspect::fp16:
+      throw std::runtime_error("'half' is not supported in this device");
+      break;
+    default:
+#define __SYCL_ASPECT(ASPECT, ID)                                              \
+  case sycl::aspect::ASPECT:                                                   \
+    return #ASPECT;
+#define __SYCL_ASPECT_DEPRECATED(ASPECT, ID, MESSAGE) __SYCL_ASPECT(ASPECT, ID)
+// We don't need "case aspect::usm_allocator" here because it will duplicate
+// "case aspect::usm_system_allocations", therefore leave this macro empty
+#define __SYCL_ASPECT_DEPRECATED_ALIAS(ASPECT, ID, MESSAGE)
+      auto getAspectNameStr = [](sycl::aspect AspectNum) -> std::string {
+        switch (AspectNum) {
+#include <sycl/info/aspects.def>
+#include <sycl/info/aspects_deprecated.def>
+        default:
+          return "unknown aspect";
+        }
+      };
+#undef __SYCL_ASPECT_DEPRECATED_ALIAS
+#undef __SYCL_ASPECT_DEPRECATED
+#undef __SYCL_ASPECT
+      throw std::runtime_error("'" + getAspectNameStr(it) +
                                "' is not supported in this device");
+    }
+    break;
   }
 }
 // DPCT_LABEL_END

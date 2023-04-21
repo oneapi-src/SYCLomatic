@@ -1525,9 +1525,10 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
     AspectList.push_back(MapNames::getClNamespace() + "aspect::fp16");
   }
   if (!AspectList.empty()) {
-    requestFeature(HelperFeatureEnum::Device_capability_check, getFilePath());
+    requestFeature(HelperFeatureEnum::Device_has_capability_or_fail,
+                   getFilePath());
     Printer.indent();
-    Printer << MapNames::getDpctNamespace() << "capability_check(";
+    Printer << MapNames::getDpctNamespace() << "has_capability_or_fail(";
     printStreamBase(Printer);
     Printer << "get_device(), {" << AspectList.front();
     for (size_t i = 1; i < AspectList.size(); ++i) {

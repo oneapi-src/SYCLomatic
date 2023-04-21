@@ -4,7 +4,7 @@
 // RUN: rm -rf %T/Device/api_test34_out
 
 // CHECK: 19
-// TEST_FEATURE: Device_capability_check
+// TEST_FEATURE: Device_has_capability_or_fail
 #include "cuda_fp16.h"
 
 __device__ void device_fp() {
