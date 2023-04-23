@@ -282,8 +282,8 @@ CONDITIONAL_FACTORY_ENTRY(
 thrustFactory("thrust::copy_if",
               {{5,PolicyState::HasPolicy,3,"std::copy_if", HelperFeatureEnum::no_feature_helper },
                {4,PolicyState::NoPolicy, 3,"std::copy_if", HelperFeatureEnum::no_feature_helper },
-               {6,PolicyState::HasPolicy,4,"std::copy_if", HelperFeatureEnum::no_feature_helper },
-               {5,PolicyState::NoPolicy ,4,"std::copy_if", HelperFeatureEnum::no_feature_helper }}),
+               {6,PolicyState::HasPolicy,4, MapNames::getDpctNamespace() + "copy_if", HelperFeatureEnum::DplExtrasAlgorithm_copy_if },
+               {5,PolicyState::NoPolicy ,4, MapNames::getDpctNamespace() + "copy_if", HelperFeatureEnum::DplExtrasAlgorithm_copy_if }}),
 
 // thrust::make_zip_iterator
 CALL_FACTORY_ENTRY("thrust::make_zip_iterator",  CALL("oneapi::dpl::make_zip_iterator",  ARG(0)))
