@@ -277,49 +277,13 @@ CONDITIONAL_FACTORY_ENTRY(
       ))
 )
 
+
 // thrust::copy_if
-CONDITIONAL_FACTORY_ENTRY(
-  CheckArgCount(6),
-  //Handling case: thrust::copy_if(policy, device.begin(), device.end(), device.end(), device.end(), f);
-  FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_copy_if,
-  CALL_FACTORY_ENTRY("thrust::copy_if",
-                      CALL(MapNames::getDpctNamespace() + "copy_if",
-                            makeMappedThrustPolicyEnum(0),
-                            ARG(1), ARG(2), ARG(3), ARG(4), THRUST_FUNCTOR(5)))),
-  CONDITIONAL_FACTORY_ENTRY(
-    CheckArgCount(4),
-    //Handling case: thrust::copy_if(host.begin(), host.end(), host.end(), f);
-    CONDITIONAL_FACTORY_ENTRY(
-      CheckThrustArgType(0, "thrust::device_ptr"),
-      CALL_FACTORY_ENTRY("thrust::copy_if",
-                         CALL("std::copy_if",
-                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                              ARG(0), ARG(1), ARG(2), THRUST_FUNCTOR(3))),
-      CALL_FACTORY_ENTRY("thrust::copy_if",
-                         CALL("std::copy_if",
-                              ARG("oneapi::dpl::execution::seq"),
-                              ARG(0), ARG(1), ARG(2), THRUST_FUNCTOR(3)))),
-      CONDITIONAL_FACTORY_ENTRY(
-        IsPolicyArgType(0),
-        //Handling case: thrust::copy_if(policy, device.begin(), device.end(), device.begin(), f);
-        CALL_FACTORY_ENTRY("thrust::copy_if",
-                        CALL("std::copy_if",
-                              makeMappedThrustPolicyEnum(0),
-                              ARG(1), ARG(2), ARG(3), THRUST_FUNCTOR(4))),
-        //Handling case: thrust::copy_if(device.begin(), device.end(), device.begin(), device.end(), f);
-        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_copy_if,
-        CONDITIONAL_FACTORY_ENTRY(
-          CheckThrustArgType(1, "thrust::device_ptr"),
-          CALL_FACTORY_ENTRY("thrust::copy_if",
-                         CALL(MapNames::getDpctNamespace() + "copy_if",
-                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                              ARG(0), ARG(1), ARG(2), ARG(3), THRUST_FUNCTOR(4))),
-          CALL_FACTORY_ENTRY("thrust::copy_if",
-                         CALL(MapNames::getDpctNamespace() + "copy_if",
-                              ARG("oneapi::dpl::execution::seq"),
-                              ARG(0), ARG(1), ARG(2), ARG(3), THRUST_FUNCTOR(4)))))
-      ))
-)
+thrustFactory("thrust::copy_if",
+              {{5,PolicyState::HasPolicy,3,"std::copy_if", HelperFeatureEnum::no_feature_helper },
+               {4,PolicyState::NoPolicy, 3,"std::copy_if", HelperFeatureEnum::no_feature_helper },
+               {6,PolicyState::HasPolicy,4,"std::copy_if", HelperFeatureEnum::no_feature_helper },
+               {5,PolicyState::NoPolicy ,4,"std::copy_if", HelperFeatureEnum::no_feature_helper }}),
 
 // thrust::make_zip_iterator
 CALL_FACTORY_ENTRY("thrust::make_zip_iterator",  CALL("oneapi::dpl::make_zip_iterator",  ARG(0)))
