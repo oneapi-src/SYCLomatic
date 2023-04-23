@@ -763,3 +763,16 @@ thrustFactory("thrust::equal_range",
                {3,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::DplExtrasAlgorithm_equal_range},
                {5,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::DplExtrasAlgorithm_equal_range},
                {4,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::DplExtrasAlgorithm_equal_range}}),
+// thrust::sequence
+thrustFactory("thrust::sequence",
+              {{4,PolicyState::HasPolicy,3,MapNames::getDpctNamespace()+"sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota},
+               {3,PolicyState::NoPolicy,3,MapNames::getDpctNamespace()+"sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota},
+               {5,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota},
+               {4,PolicyState::NoPolicy,2,MapNames::getDpctNamespace()+"sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota},
+               {6,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota},
+               {6,PolicyState::NoPolicy,6,MapNames::getDpctNamespace()+"sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota},
+               {7,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota},
+               {6,PolicyState::NoPolicy,5,MapNames::getDpctNamespace()+"sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota}}),
+
+
+
