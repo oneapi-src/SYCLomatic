@@ -3,24 +3,39 @@
 // RUN: FileCheck --input-file %T/Device/api_test25_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Device/api_test25_out
 
-// CHECK: 17
+// CHECK: 49
 // TEST_FEATURE: Device_device_info_get_global_mem_size
+// TEST_FEATURE: Device_device_info_set_global_mem_size
 // TEST_FEATURE: Device_device_info_get_integrated
+// TEST_FEATURE: Device_device_info_set_integrated
 // TEST_FEATURE: Device_device_info_get_local_mem_size
+// TEST_FEATURE: Device_device_info_set_local_mem_size
 // TEST_FEATURE: Device_device_info_get_major_version
+// TEST_FEATURE: Device_device_info_set_major_version
 // TEST_FEATURE: Device_device_info_get_max_clock_frequency
+// TEST_FEATURE: Device_device_info_set_max_clock_frequency
 // TEST_FEATURE: Device_device_info_get_max_compute_units
+// TEST_FEATURE: Device_device_info_set_max_compute_units
 // TEST_FEATURE: Device_device_info_get_max_nd_range_size
+// TEST_FEATURE: Device_device_info_set_max_nd_range_size
 // TEST_FEATURE: Device_device_info_get_max_sub_group_size
+// TEST_FEATURE: Device_device_info_set_max_sub_group_size
 // TEST_FEATURE: Device_device_info_get_max_work_group_size
+// TEST_FEATURE: Device_device_info_set_max_work_group_size
 // TEST_FEATURE: Device_device_info_get_max_work_items_per_compute_unit
+// TEST_FEATURE: Device_device_info_set_max_work_items_per_compute_unit
 // TEST_FEATURE: Device_device_info_get_name
+// TEST_FEATURE: Device_device_info_set_name
 // TEST_FEATURE: Device_device_info_get_max_work_item_sizes
+// TEST_FEATURE: Device_device_info_set_max_work_item_sizes
 // TEST_FEATURE: Device_device_info_get_memory_clock_rate
+// TEST_FEATURE: Device_device_info_set_memory_clock_rate
 // TEST_FEATURE: Device_device_info_get_memory_bus_width
+// TEST_FEATURE: Device_device_info_set_memory_bus_width
 
 int main() {
   cudaDeviceProp deviceProp;
+  cudaGetDeviceProperties(&deviceProp, 0);
   int a;
   a = deviceProp.totalGlobalMem;
   a = deviceProp.integrated;

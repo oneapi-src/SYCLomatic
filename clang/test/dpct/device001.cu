@@ -5,6 +5,32 @@
 
 #include <algorithm>
 #include <vector>
+#include <iostream>
+#include<sstream>
+
+
+class LogMessage : public std::ostringstream {
+ public:
+  LogMessage(const char* file, int line);
+  ~LogMessage();
+};
+
+
+class StderrLogMessage : public std::ostringstream {
+ public:
+  StderrLogMessage(const char* file, int line)
+    : log_(file, line) {}
+  ~StderrLogMessage();
+
+
+ private:
+  LogMessage log_;
+};
+
+
+
+#define CERR StderrLogMessage(__FILE__, __LINE__)
+
 int main(int argc, char **argv) {
 
   // CHECK: dpct::device_info deviceProp;
@@ -12,13 +38,9 @@ int main(int argc, char **argv) {
 
   // CHECK: std::array<unsigned char, 16> uuid = deviceProp.get_uuid();
   cudaUUID_t uuid = deviceProp.uuid;
-  // CHECK: deviceProp.set_uuid(uuid);
-  deviceProp.uuid=uuid;
 
   // CHECK: int device_id = deviceProp.get_device_id();
   int device_id = deviceProp.pciDeviceID;
-  // CHECK: deviceProp.set_device_id(device_id);
-  deviceProp.pciDeviceID=device_id;
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by the host to submit tasks. You may need to adjust this code.
@@ -45,23 +67,12 @@ int main(int argc, char **argv) {
   // CHECK: int maxThreadsPerMultiProcessor = deviceProp.get_max_work_items_per_compute_unit();
   int maxThreadsPerMultiProcessor = deviceProp.maxThreadsPerMultiProcessor;
 
-// CHECK:/*
-// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
-// CHECK-NEXT:*/
-// CHECK-NEXT:deviceProp.set_major_version(1);
-  deviceProp.major=1;
 
 // CHECK:/*
 // CHECK-NEXT:DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:int minor = deviceProp.get_minor_version();
   int minor = deviceProp.minor;
-
-// CHECK:/*
-// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
-// CHECK-NEXT:*/
-// CHECK-NEXT:deviceProp.set_minor_version(120);
-  deviceProp.minor=120;
 
   // CHECK:     char *name = deviceProp.get_name();
   char *name = deviceProp.name;
@@ -70,9 +81,6 @@ int main(int argc, char **argv) {
   int clock = deviceProp.clockRate;
   int xxxx = 10;
   int yyyy = 5;
-
-  // CHECK:  deviceProp.set_max_clock_frequency ( xxxx * 100 + yyyy);
-  deviceProp.clockRate = xxxx * 100 + yyyy;
 
   // CHECK: int count = deviceProp.get_max_compute_units();
   int count = deviceProp.multiProcessorCount;
@@ -275,4 +283,15 @@ __device__ void test5() {
     //CHECK:a = sycl::min(pDeviceProp->get_name()[0], 'A');
     a = std::min(pDeviceProp->name[0], 'A');
   }();
+}
+
+void showDeviceInfo(const cudaDeviceProp& deviceProp) const {
+  //CHECK: CERR << "GPU: " << deviceProp.get_name();
+  CERR << "GPU: " << deviceProp.name;
+  //CHECK: CERR << "GPU memory: " << deviceProp.get_global_mem_size() / std::pow(2.0f, 30) << " Gb";
+  CERR << "GPU memory: " << deviceProp.totalGlobalMem / std::pow(2.0f, 30) << " Gb";
+  //CHECK: CERR << "GPU clock frequency: " << deviceProp.get_max_clock_frequency() / 1e3f << " MHz";
+  CERR << "GPU clock frequency: " << deviceProp.clockRate / 1e3f << " MHz";
+  //CHECK:  CERR << "GPU compute capability: " << deviceProp.get_major_version() << "." << deviceProp.get_minor_version();
+  CERR << "GPU compute capability: " << deviceProp.major << "." << deviceProp.minor;
 }
