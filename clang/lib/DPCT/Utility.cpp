@@ -4191,3 +4191,15 @@ bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
   }
   return (Val = true);
 }
+
+std::string getBaseTypeRemoveTemplateArguments(const clang::MemberExpr* ME) {
+  auto QT = ME->getBase()->getType();
+  if (ME->isArrow())
+    QT = QT->getPointeeType();
+  const auto CT = QT.getCanonicalType();
+  if (const auto RT = dyn_cast<clang::RecordType>(CT.getTypePtr())) {
+    return RT->getDecl()->getQualifiedNameAsString();
+  } else {
+    return dpct::DpctGlobalInfo::getUnqualifiedTypeName(CT);
+  }
+}

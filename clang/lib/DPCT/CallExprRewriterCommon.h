@@ -1722,7 +1722,6 @@ public:
       return false;
 
     std::string ArgType = C->getArg(Idx)->getType().getCanonicalType().getUnqualifiedType().getAsString();
-
     if (// Explicitly known policy types
         // thrust::device
         ArgType=="struct thrust::detail::execution_policy_base<struct thrust::cuda_cub::par_t>"             ||
@@ -1736,7 +1735,17 @@ public:
         // cudaStream_t stream;
         // thrust::cuda::par.on(stream)
         ArgType=="struct thrust::detail::execution_policy_base<struct thrust::cuda_cub::execute_on_stream>" ||
-        ArgType=="struct thrust::cuda_cub::execute_on_stream")
+        ArgType=="struct thrust::cuda_cub::execute_on_stream"                                               ||
+        // class MyAlloctor {};
+        // template<typename T>
+        // void foo() {
+        //   cudaStream_t stream;
+        //   MyAlloctor thrust_allocator;
+        //   auto policy = thrust::cuda::par(thrust_allocator).on(stream);
+        //   ...
+        //  }
+        // Here ArgType for policy is "struct thrust::detail::execute_with_allocator<class MyAlloctor &, thrust::cuda_cub::execute_on_stream_base>"
+        ArgType.find("struct thrust::detail::execute_with_allocator") != std::string::npos)
       return true;
 
     if (// Templated policy types.  If we see a templated type assume it is a policy if it is not the same type as the next argument type
@@ -1806,7 +1815,7 @@ inline std::function<std::string(const CallExpr *)> MemberExprBase() {
     auto Base = ME->getBase()->IgnoreImpCasts();
     if (!Base)
       return "";
-    return getStmtSpelling(Base);
+    return ExprAnalysis::ref(Base);
   };
 }
 

@@ -2155,6 +2155,14 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
     return false;
 
   const std::string RealTypeNameStr(Start, TyLen);
+
+  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
+      RealTypeNameStr.find("device_malloc_allocator") != std::string::npos) {
+    report(BeginLoc, Diagnostics::KNOWN_UNSUPPORTED_TYPE, false,
+            RealTypeNameStr);
+    return true;
+  }
+
   requestHelperFeatureForTypeNames(RealTypeNameStr, BeginLoc);
   std::string Replacement =
       MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
@@ -11873,91 +11881,6 @@ void CooperativeGroupsFunctionRule::runRule(
     // thread_rank   1/1   1/1   0/1
     // size          1/1   0/0   0/1
     // shfl_down     1/1   0/0   0/0
-
-    // unsupported case 3, emit warning and return
-    if ((!CE->getNumArgs()) &&
-        CE->getCallee()->IgnoreImpCasts()->getStmtClass() ==
-            clang::Stmt::StmtClass::CallExprClass) {
-      return;
-    }
-
-    // unsupported case for shfl_down
-    if (FuncName == "shfl_down") {
-      // support thread_block_tile<1,2,4,8,16,32> in case 1
-      static const std::set<std::string> SupportedBaseType = {
-          "cooperative_groups::__v1::thread_block_tile<1>",
-          "cooperative_groups::__v1::thread_block_tile<2>",
-          "cooperative_groups::__v1::thread_block_tile<4>",
-          "cooperative_groups::__v1::thread_block_tile<8>",
-          "cooperative_groups::__v1::thread_block_tile<16>",
-          "cooperative_groups::__v1::thread_block_tile<32>"};
-      if (!SupportedBaseType.count(getBaseTypeStr(CE))) {
-        return;
-      }
-    }
-
-    // unsupported case for size
-    if (FuncName == "size") {
-      // support thread_block_tile<1,2,4,8,16,32> in case 1
-      static const std::set<std::string> SupportedBaseType = {
-          "cooperative_groups::__v1::thread_block_tile<1>",
-          "cooperative_groups::__v1::thread_block_tile<2>",
-          "cooperative_groups::__v1::thread_block_tile<4>",
-          "cooperative_groups::__v1::thread_block_tile<8>",
-          "cooperative_groups::__v1::thread_block_tile<16>",
-          "cooperative_groups::__v1::thread_block_tile<32>",
-          "cooperative_groups::__v1::thread_block"};
-      if (!SupportedBaseType.count(getBaseTypeStr(CE))) {
-        return;
-      }
-    }
-
-    // unsupported case for thread_rank
-    if (FuncName == "thread_rank") {
-      // support thread_block_tile<1,2,4,8,16,32> and thread_block in case 1 and 2
-      static const std::set<std::string> SupportedBaseType = {
-          "cooperative_groups::__v1::thread_block_tile<1>",
-          "cooperative_groups::__v1::thread_block_tile<2>",
-          "cooperative_groups::__v1::thread_block_tile<4>",
-          "cooperative_groups::__v1::thread_block_tile<8>",
-          "cooperative_groups::__v1::thread_block_tile<16>",
-          "cooperative_groups::__v1::thread_block_tile<32>",
-          "cooperative_groups::__v1::thread_block"};
-      static const std::set<std::string> SupportedArgType = {
-          "const class cooperative_groups::__v1::thread_block_tile<1> &",
-          "const class cooperative_groups::__v1::thread_block_tile<2> &",
-          "const class cooperative_groups::__v1::thread_block_tile<4> &",
-          "const class cooperative_groups::__v1::thread_block_tile<8> &",
-          "const class cooperative_groups::__v1::thread_block_tile<16> &",
-          "const class cooperative_groups::__v1::thread_block_tile<32> &",
-          "const class cooperative_groups::__v1::thread_block &"};
-
-      if ((!CE->getNumArgs() && !SupportedBaseType.count(getBaseTypeStr(CE))) ||
-          (CE->getNumArgs() && !SupportedArgType.count(getArgTypeStr(CE, 0)))) {
-        return;
-      }
-    }
-
-    // unsupported case for sync
-    if (FuncName == "sync") {
-      // support thread_block_tile<32>, thread_block, coalesced_group and
-      // grid_group in case 1 and 2
-      static const std::set<std::string> SupportedBaseType = {
-          "cooperative_groups::__v1::grid_group",
-          "cooperative_groups::__v1::coalesced_group",
-          "cooperative_groups::__v1::thread_block_tile<32>",
-          "cooperative_groups::__v1::thread_block"};
-      static const std::set<std::string> SupportedArgType = {
-          "const class cooperative_groups::__v1::grid_group &",
-          "const class cooperative_groups::__v1::coalesced_group &",
-          "const class cooperative_groups::__v1::thread_block_tile<32> &",
-          "const class cooperative_groups::__v1::thread_block &"};
-      if ((!CE->getNumArgs() && !SupportedBaseType.count(getBaseTypeStr(CE))) ||
-          (CE->getNumArgs() && !SupportedArgType.count(getArgTypeStr(CE, 0)))) {
-        return;
-      }
-    }
-
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
