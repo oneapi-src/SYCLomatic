@@ -4081,7 +4081,7 @@ private:
   void printSubmitLamda(KernelPrinter &Printer);
   void printParallelFor(KernelPrinter &Printer, bool IsInSubmit);
   void printKernel(KernelPrinter &Printer);
-  void printStreamBase(KernelPrinter &Printer);
+  std::string getStreamBase();
 
 public:
   KernelCallExpr(unsigned Offset, const std::string &FilePath,
@@ -4273,6 +4273,7 @@ private:
 
   class {
   public:
+    StmtList DevCapChkList;
     StmtList StreamList;
     StmtList SyncList;
     StmtList RangeList;
@@ -4287,6 +4288,7 @@ private:
     StmtList CommandGroupList;
 
     inline KernelPrinter &print(KernelPrinter &Printer) {
+      printList(Printer, DevCapChkList);
       printList(Printer, StreamList);
       printList(Printer, SyncList);
       printList(Printer, ExternList);
@@ -4305,11 +4307,11 @@ private:
     }
 
     bool empty() const noexcept {
-      return CommandGroupList.empty() && NdRangeList.empty() &&
-             AccessorList.empty() && PtrList.empty() && InitList.empty() &&
-             ExternList.empty() && MemoryList.empty() && RangeList.empty() &&
-             TextureList.empty() && SamplerList.empty() && StreamList.empty() &&
-             SyncList.empty();
+      return DevCapChkList.empty() && CommandGroupList.empty() &&
+             NdRangeList.empty() && AccessorList.empty() && PtrList.empty() &&
+             InitList.empty() && ExternList.empty() && MemoryList.empty() &&
+             RangeList.empty() && TextureList.empty() && SamplerList.empty() &&
+             StreamList.empty() && SyncList.empty();
     }
 
   private:

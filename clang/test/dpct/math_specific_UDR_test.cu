@@ -32,7 +32,6 @@ __global__ void kernelFunc(float *deviceArray) {
   
 }
 
-
 // CHECK: void testDouble() {
 // CHECK:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
 // CHECK:   sycl::queue &q_ct1 = dev_ct1.default_queue();
@@ -43,7 +42,10 @@ __global__ void kernelFunc(float *deviceArray) {
 // CHECK:   double *deviceArrayDouble;
 // CHECK:   deviceArrayDouble = (double *)sycl::malloc_device(bytes, q_ct1);
 // CHECK:   q_ct1.memcpy(deviceArrayDouble, hostArrayDouble, bytes);
-// CHECK:   q_ct1.parallel_for(
+// CHECK:   q_ct1.submit(
+// CHECK:    [&](sycl::handler &cgh) {
+// CHECK:     dpct::has_capability_or_fail(q_ct1.get_device(), {sycl::aspect::fp64});
+// CHECK:     cgh.parallel_for(
 // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK:       [=](sycl::nd_item<3> item_ct1) {
 // CHECK:         kernelFunc(deviceArrayDouble);

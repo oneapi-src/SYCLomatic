@@ -1593,15 +1593,16 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
   if (!AspectList.empty()) {
     requestFeature(HelperFeatureEnum::Device_has_capability_or_fail,
                    getFilePath());
-    Printer.indent();
-    Printer << MapNames::getDpctNamespace() << "has_capability_or_fail(";
-    printStreamBase(Printer);
-    Printer << "get_device(), {" << AspectList.front();
+    std::string Str;
+    llvm::raw_string_ostream OS(Str);
+    OS << MapNames::getDpctNamespace() << "has_capability_or_fail(";
+    OS << getStreamBase();
+    OS << "get_device(), {" << AspectList.front();
     for (size_t i = 1; i < AspectList.size(); ++i) {
-      Printer << ", " << AspectList[i];
+      OS << ", " << AspectList[i];
     }
-    Printer << "});" << getNL();
-    ;
+    OS << "});";
+    SubmitStmtsList.DevCapChkList.emplace_back(OS.str());
   }
   Printer.indent();
   if (!SubGroupSizeWarning.empty()) {
@@ -1615,7 +1616,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
   if (!getEvent().empty()) {
     Printer << "*" << getEvent() << " = ";
   }
-  printStreamBase(Printer);
+  Printer << getStreamBase();
   if (SubmitStmtsList.empty()) {
     printParallelFor(Printer, false);
   } else {
@@ -1749,16 +1750,19 @@ void KernelCallExpr::printKernel(KernelPrinter &Printer) {
   Printer.newLine();
 }
 
-void KernelCallExpr::printStreamBase(KernelPrinter &Printer) {
+std::string KernelCallExpr::getStreamBase() {
+  std::string Str;
+  llvm::raw_string_ostream OS(Str);
   if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&') {
-    Printer << "(" << ExecutionConfig.Stream << ")";
+    OS << "(" << ExecutionConfig.Stream << ")";
   } else {
-    Printer << ExecutionConfig.Stream;
+    OS << ExecutionConfig.Stream;
   }
   if (isQueuePtr())
-    Printer << "->";
+    OS << "->";
   else
-    Printer << ".";
+    OS << ".";
+  return OS.str();
 }
 
 std::string KernelCallExpr::getReplacement() {

@@ -1113,6 +1113,8 @@ template<class T1, class T2, int N> __global__ void foo31();
 #define FOO31(DIMS) foo31<unsigned int, float, DIMS><<<1,1>>>();
 
 //CHECK:   q_ct1.submit([&](sycl::handler &cgh) {
+//CHECK-NEXT:    dpct::has_capability_or_fail(q_ct1.get_device(), {sycl::aspect::fp64});
+//CHECK-EMPTY:
 //CHECK-NEXT:     /*
 //CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'BLOCK_PAIR / SIMD_SIZE' expression was replaced with a
 //CHECK-NEXT:     value. Modify the code to use the original expression, provided in

@@ -135,6 +135,8 @@ void foo() {
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     dpct::has_capability_or_fail(q_ct1.get_device(), {sycl::aspect::fp64});
+  // CHECK-EMPTY:
   // CHECK-NEXT:     sycl::local_accessor<int, 0> v1_acc_ct1(cgh);
   // CHECK-NEXT:     sycl::local_accessor<double, 0> v2_acc_ct1(cgh);
   // CHECK-EMPTY:
@@ -147,6 +149,8 @@ void foo() {
   k<<<16, 32>>>(1, 2.3);
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     dpct::has_capability_or_fail(q_ct1.get_device(), {sycl::aspect::fp64});
+  // CHECK-EMPTY:
   // CHECK-NEXT:     sycl::local_accessor<int, 0> v1_acc_ct1(cgh);
   // CHECK-NEXT:     sycl::local_accessor<double, 0> v2_acc_ct1(cgh);
   // CHECK-EMPTY:
@@ -159,6 +163,8 @@ void foo() {
   k<int><<<16, 32>>>(1, 2.3);
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     dpct::has_capability_or_fail(q_ct1.get_device(), {sycl::aspect::fp64});
+  // CHECK-EMPTY:
   // CHECK-NEXT:     sycl::local_accessor<int, 0> v1_acc_ct1(cgh);
   // CHECK-NEXT:     sycl::local_accessor<float, 0> v2_acc_ct1(cgh);
   // CHECK-EMPTY:
@@ -172,6 +178,8 @@ void foo() {
 
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     dpct::has_capability_or_fail(q_ct1.get_device(), {sycl::aspect::fp64});
+  // CHECK-EMPTY:
   // CHECK-NEXT:     sycl::local_accessor<T3, 0> v1_acc_ct1(cgh);
   // CHECK-NEXT:     sycl::local_accessor<double, 0> v2_acc_ct1(cgh);
   // CHECK-EMPTY:
@@ -184,6 +192,8 @@ void foo() {
   k<T3><<<16, 32>>>(1, 2.3);
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     dpct::has_capability_or_fail(q_ct1.get_device(), {sycl::aspect::fp64});
+  // CHECK-EMPTY:
   // CHECK-NEXT:     sycl::local_accessor<T3, 0> v1_acc_ct1(cgh);
   // CHECK-NEXT:     sycl::local_accessor<T4, 0> v2_acc_ct1(cgh);
   // CHECK-EMPTY:

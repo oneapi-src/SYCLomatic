@@ -378,15 +378,18 @@ void foo_test_4() {
   dim3 dimBlock;
   dim3 dimGrid;
 
-// CHECK:  /*
-// CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
-// CHECK-NEXT:  */
-// CHECK-NEXT:    dpct::has_capability_or_fail(dpct::get_default_queue().get_device(), {sycl::aspect::fp64});
-// CHECK-NEXT:    dpct::get_default_queue().parallel_for<dpct_kernel_name<class set_array_{{[a-z0-9]+}}>>(
-// CHECK-NEXT:                sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
-// CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:                    set_array(d_a, 2., N);
-// CHECK-NEXT:                });
+  // CHECK:  /*
+  // CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:    dpct::get_default_queue().submit(
+  // CHECK-NEXT:      [&](sycl::handler &cgh) {
+  // CHECK-NEXT:        dpct::has_capability_or_fail(dpct::get_default_queue().get_device(), {sycl::aspect::fp64});
+  // CHECK-EMPTY:
+  // CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class set_array_{{[a-z0-9]+}}>>(
+  // CHECK-NEXT:                sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
+  // CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:                    set_array(d_a, 2., N);
+  // CHECK-NEXT:                });
   set_array<<<dimGrid, dimBlock>>>(d_a, 2., N);
 
 // CHECK:  dpct::event_ptr start, stop;
@@ -395,39 +398,46 @@ void foo_test_4() {
   cudaEventCreate(&stop);
 
   for (k = 0; k < NTIMES; k++) {
-// CHECK:    *start = dpct::get_default_queue().ext_oneapi_submit_barrier();
-// CHECK-NEXT:    /*
-// CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
-// CHECK-NEXT:    */
-// CHECK-NEXT:        dpct::has_capability_or_fail(dpct::get_default_queue().get_device(), {sycl::aspect::fp64});
-// CHECK-NEXT:        dpct::get_default_queue().parallel_for<dpct_kernel_name<class STREAM_Copy_{{[a-z0-9]+}}>>(
-// CHECK-NEXT:                    sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
-// CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:                        STREAM_Copy(d_a, d_c, N);
-// CHECK-NEXT:                    });
-// CHECK-NEXT:    *stop = dpct::get_default_queue().ext_oneapi_submit_barrier();
-// CHECK-NEXT:stop->wait_and_throw();
-// CHECK-NEXT:    times[0][k] = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
+    // CHECK:    *start = dpct::get_default_queue().ext_oneapi_submit_barrier();
+    // CHECK-NEXT:    /*
+    // CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
+    // CHECK-NEXT:    */
+    // CHECK-NEXT:        dpct::get_default_queue().submit(
+    // CHECK-NEXT:          [&](sycl::handler &cgh) {
+    // CHECK-NEXT:            dpct::has_capability_or_fail(dpct::get_default_queue().get_device(), {sycl::aspect::fp64});
+    // CHECK-EMPTY:
+    // CHECK-NEXT:            cgh.parallel_for<dpct_kernel_name<class STREAM_Copy_{{[a-z0-9]+}}>>(
+    // CHECK-NEXT:                    sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
+    // CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:                        STREAM_Copy(d_a, d_c, N);
+    // CHECK-NEXT:                    });
+    // CHECK-NEXT:                  });
+    // CHECK-NEXT:    *stop = dpct::get_default_queue().ext_oneapi_submit_barrier();
+    // CHECK-NEXT:stop->wait_and_throw();
+    // CHECK-NEXT:    times[0][k] = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventRecord(start, 0);
     STREAM_Copy<<<dimGrid, dimBlock>>>(d_a, d_c, N);
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&times[0][k], start, stop);
 
-
-// CHECK:    *start = dpct::get_default_queue().ext_oneapi_submit_barrier();
-// CHECK-NEXT:    /*
-// CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
-// CHECK-NEXT:    */
-// CHECK-NEXT:        dpct::has_capability_or_fail(dpct::get_default_queue().get_device(), {sycl::aspect::fp64});
-// CHECK-NEXT:        dpct::get_default_queue().parallel_for<dpct_kernel_name<class STREAM_Copy_Optimized_{{[a-z0-9]+}}>>(
-// CHECK-NEXT:                    sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
-// CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:                        STREAM_Copy_Optimized(d_a, d_c, N);
-// CHECK-NEXT:                    });
-// CHECK-NEXT:    *stop = dpct::get_default_queue().ext_oneapi_submit_barrier();
-// CHECK-NEXT:    stop->wait_and_throw();
-// CHECK-NEXT:    times[1][k] = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
+    // CHECK:    *start = dpct::get_default_queue().ext_oneapi_submit_barrier();
+    // CHECK-NEXT:    /*
+    // CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
+    // CHECK-NEXT:    */
+    // CHECK-NEXT:        dpct::get_default_queue().submit(
+    // CHECK-NEXT:          [&](sycl::handler &cgh) {
+    // CHECK-NEXT:            dpct::has_capability_or_fail(dpct::get_default_queue().get_device(), {sycl::aspect::fp64});
+    // CHECK-EMPTY:
+    // CHECK-NEXT:            cgh.parallel_for<dpct_kernel_name<class STREAM_Copy_Optimized_{{[a-z0-9]+}}>>(
+    // CHECK-NEXT:                    sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
+    // CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:                        STREAM_Copy_Optimized(d_a, d_c, N);
+    // CHECK-NEXT:                    });
+    // CHECK-NEXT:                  });
+    // CHECK-NEXT:    *stop = dpct::get_default_queue().ext_oneapi_submit_barrier();
+    // CHECK-NEXT:    stop->wait_and_throw();
+    // CHECK-NEXT:    times[1][k] = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventRecord(start, 0);
     STREAM_Copy_Optimized<<<dimGrid, dimBlock>>>(d_a, d_c, N);
     cudaEventRecord(stop, 0);

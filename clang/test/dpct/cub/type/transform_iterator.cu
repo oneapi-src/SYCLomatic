@@ -50,8 +50,11 @@ void print_array(double *d) {
 // CHECK:for (int i = 0; i < N; ++i) h_in[i] = i;
 // CHECK:q_ct1.memcpy((void *)d_in, (void *)h_in, sizeof(double) * N).wait();
 // CHECK:oneapi::dpl::transform_iterator<double *, UserDefMul> iter(d_in, UserDefMul());
-// CHECK:q_ct1.parallel_for(
-// CHECK:sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+// CHECK:q_ct1.submit(
+// CHECK:[&](sycl::handler &cgh) {
+// CHECK:dpct::has_capability_or_fail(q_ct1.get_device(), {sycl::aspect::fp64});
+// CHECK:cgh.parallel_for(
+// CHECK:sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK:[=](sycl::nd_item<3> item_ct1) {
 // CHECK:compute(d_in, d_out);
 // CHECK:});
