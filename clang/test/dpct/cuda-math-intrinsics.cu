@@ -2152,7 +2152,10 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: */
   // CHECK-NEXT: f = dpct::length(&f, i);
   f = normf(i, &f);
-  // CHECK: f = sycl::native::recip((float)sycl::cbrt(f));
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::cbrt call is used instead of the rcbrtf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f = sycl::native::recip(sycl::cbrt<float>(f));
   f = rcbrtf(f);
   // CHECK: f = sycl::native::recip(sycl::length(sycl::float3(f, f, f)));
   f = rnorm3df(f, f, f);
@@ -2225,7 +2228,10 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdfinv is not supported.
   // CHECK-NEXT: */
   d = normcdfinv(d);
-  // CHECK: d = sycl::native::recip((float)sycl::cbrt(d));
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::cbrt call is used instead of the rcbrt call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: d = 1 / sycl::cbrt<double>(d);
   d = rcbrt(d);
   // CHECK: d = 1 / sycl::length(sycl::double3(d, d, d));
   d = rnorm3d(d, d, d);
@@ -3227,9 +3233,15 @@ __global__ void k2() {
   norm4d(d0, d1, d2, d3);
   // CHECK: sycl::length(sycl::float4(f0, f1, f2, f3));
   norm4df(f0, f1, f2, f3);
-  // CHECK: sycl::native::recip((float)sycl::cbrt(d0));
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::cbrt call is used instead of the rcbrt call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: 1 / sycl::cbrt<double>(d0);
   rcbrt(d0);
-  // CHECK: sycl::native::recip((float)sycl::cbrt(f0));
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::cbrt call is used instead of the rcbrtf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: sycl::native::recip(sycl::cbrt<float>(f0));
   rcbrtf(f0);
   // CHECK: 1 / sycl::length(sycl::double3(d0, d1, d2));
   rnorm3d(d0, d1, d2);

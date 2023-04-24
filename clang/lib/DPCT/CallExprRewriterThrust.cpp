@@ -49,7 +49,6 @@ public:
                     .getUnqualifiedType()
                     .getAsString();
     }
-
     // template <class T>
     // void foo_host(){
     //  ...
@@ -267,7 +266,8 @@ thrustOverloadFactory(const std::string &thrustFunc,
            createCallExprRewriterFactory(
                thrustFunc,
                makeCallExprCreator(
-                   MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))}),
+                   MapNames::getDpctNamespace() + "is_device_ptr",
+                   ARG(static_cast<bool>(overload.hasPolicy) ? 1 : 0)))}),
       createFeatureRequestFactory(
           HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
           {thrustFunc, createDevicePolicyCallExprRewriterFactory(

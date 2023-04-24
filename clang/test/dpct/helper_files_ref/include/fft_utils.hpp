@@ -32,6 +32,7 @@ enum fft_type : int {
   complex_double_to_complex_double,
 };
 
+#ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
 /// A class to perform FFT calculation.
 class fft_engine {
 public:
@@ -1241,6 +1242,7 @@ private:
 };
 
 using fft_engine_ptr = fft_engine *;
+#endif
 } // namespace fft
 } // namespace dpct
 
