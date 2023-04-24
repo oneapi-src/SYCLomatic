@@ -296,6 +296,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cusolverStatus_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverDnParams_t", std::make_shared<TypeNameRule>("int")},
       {"gesvdjInfo_t", std::make_shared<TypeNameRule>("int")},
+      {"syevjInfo_t", std::make_shared<TypeNameRule>("int")},
       {"cudaChannelFormatDesc",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "image_channel",
                                       HelperFeatureEnum::Image_image_channel)},
@@ -1807,7 +1808,10 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusolverDnXsyevdx",
                            "cusolverDnXsyevdx_bufferSize",
                            "cusolverDnSyevdx",
-                           "cusolverDnSyevdx_bufferSize"};
+                           "cusolverDnSyevdx_bufferSize",
+                           "cusolverDnCreateSyevjInfo",
+                           "cusolverDnDestroySyevjInfo"
+                           };
 
   SPARSEAPIWithRewriter = {"cusparseCreateMatDescr",
                            "cusparseDestroyMatDescr",

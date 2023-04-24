@@ -991,6 +991,44 @@ template <typename T> struct syhegvx_impl {
   }
 };
 
+template <typename T> struct syhegvd_scratchpad_size_impl {
+  void operator()(sycl::queue &q, std::int64_t itype, oneapi::mkl::job jobz,
+                  oneapi::mkl::uplo uplo, std::int64_t n, std::int64_t lda,
+                  std::int64_t ldb, std::size_t *device_ws_size) {
+    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
+      *device_ws_size = oneapi::mkl::lapack::sygvd_scratchpad_size<T>(
+          q, itype, jobz, uplo, n, lda, ldb);
+    } else {
+      *device_ws_size = oneapi::mkl::lapack::hegvd_scratchpad_size<T>(
+          q, itype, jobz, uplo, n, lda, ldb);
+    }
+  }
+};
+
+template <typename T> struct syhegvd_impl {
+  void operator()(sycl::queue &q, std::int64_t itype, oneapi::mkl::job jobz,
+                  oneapi::mkl::uplo uplo, std::int64_t n, void *a,
+                  std::int64_t lda, void *b, std::int64_t ldb, void *w,
+                  void *device_ws, std::size_t device_ws_size,
+                  int *info) {
+    auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
+    auto b_data = dpct::detail::get_memory(reinterpret_cast<T *>(b));
+    auto device_ws_data =
+        dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
+    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
+      auto w_data = dpct::detail::get_memory(reinterpret_cast<T *>(w));
+      oneapi::mkl::lapack::sygvd(q, itype, jobz, uplo, n, a_data, lda, b_data,
+                                 ldb, w_data, device_ws_data, device_ws_size);
+    } else {
+      auto w_data = dpct::detail::get_memory(
+          reinterpret_cast<typename T::value_type *>(w));
+      oneapi::mkl::lapack::hegvd(q, itype, jobz, uplo, n, a_data, lda, b_data,
+                                 ldb, w_data, device_ws_data, device_ws_size);
+    }
+    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+  }
+};
+
 } // namespace detail
 
 // DPCT_LABEL_BEGIN|getrf_scratchpad_size|dpct::lapack
@@ -1615,17 +1653,28 @@ inline int syhegvx(sycl::queue &q, int itype, oneapi::mkl::job jobz,
   return ret;
 }
 
-template <typename T, typename ValueT>
-inline int syhegvd_scratchpad_size(sycl::queue &handle, int itype,
+template <typename T>
+inline int syhegvd_scratchpad_size(sycl::queue &q, int itype,
                                    oneapi::mkl::job jobz,
-                                   oneapi::mkl::uplo uplo, int n, const T *a,
-                                   int lda, const T *b, int ldb,
-                                   const ValueT *w, int *device_ws_size) {}
+                                   oneapi::mkl::uplo uplo, int n, int lda,
+                                   int ldb, int *device_ws_size) {
+  std::size_t device_ws_size_tmp;
+  int ret = detail::lapack_shim<detail::syhegvd_scratchpad_size_impl>(
+      q, detail::get_library_data_t_from_type<T>(), nullptr,
+      "sygvd_scratchpad_size/hegvd_scratchpad_size", q, itype, jobz, uplo, n,
+      lda, ldb, &device_ws_size_tmp);
+  *device_ws_size = (int)device_ws_size_tmp;
+  return ret;
+}
 
 template <typename T, typename ValueT>
-inline int syhegvd(sycl::queue &handle, int itype, oneapi::mkl::job jobz,
+inline int syhegvd(sycl::queue &q, int itype, oneapi::mkl::job jobz,
                    oneapi::mkl::uplo uplo, int n, T *a, int lda, T *b, int ldb,
-                   ValueT *w, T *device_ws, int device_ws_size, int *info) {}
+                   ValueT *w, T *device_ws, int device_ws_size, int *info) {
+  return detail::lapack_shim<detail::syhegvd_impl>(
+      q, detail::get_library_data_t_from_type<T>(), info, "sygvd/hegvd", q,
+      itype, jobz, uplo, n, a, lda, b, ldb, w, device_ws, device_ws_size, info);
+}
 
 } // namespace lapack
 } // namespace dpct
