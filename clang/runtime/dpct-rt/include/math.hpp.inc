@@ -72,7 +72,7 @@ public:
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 template <typename T> bool isnan(const T a) { return sycl::isnan(a); }
-// TODO: Need add more specialization.
+// TODO: Need add more specialization such as bfloat16 version.
 // DPCT_LABEL_END
 } // namespace detail
 
@@ -141,11 +141,15 @@ template <typename T> inline T length(const T *a, const int len) {
 /// \param [in] binary_op functor that implements the binary operation
 /// \returns the comparison result
 template <typename T, class BinaryOperation>
-inline bool compare(const T a, const T b, const BinaryOperation binary_op) {
+inline std::enable_if_t<
+    std::is_same_v<std::invoke_result_t<BinaryOperation, T, T>, bool>, bool>
+compare(const T a, const T b, const BinaryOperation binary_op) {
   return binary_op(a, b);
 }
 template <typename T>
-inline bool compare(const T a, const T b, const std::not_equal_to<> binary_op) {
+inline std::enable_if_t<
+    std::is_same_v<std::invoke_result_t<std::not_equal_to<>, T, T>, bool>, bool>
+compare(const T a, const T b, const std::not_equal_to<> binary_op) {
   return !detail::isnan(a) && !detail::isnan(b) && a != b;
 }
 // DPCT_LABEL_END
@@ -161,42 +165,44 @@ inline bool compare(const T a, const T b, const std::not_equal_to<> binary_op) {
 /// \param [in] binary_op functor that implements the binary operation
 /// \returns the comparison result
 template <typename T, class BinaryOperation>
-inline bool unordered_compare(const T a, const T b,
-                              const BinaryOperation binary_op) {
+inline std::enable_if_t<
+    std::is_same_v<std::invoke_result_t<BinaryOperation, T, T>, bool>, bool>
+unordered_compare(const T a, const T b, const BinaryOperation binary_op) {
   return detail::isnan(a) || detail::isnan(b) || binary_op(a, b);
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|compare2_both|dpct
+// DPCT_LABEL_BEGIN|compare_both|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Math|compare
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Performs 2 element comparison and return a bool value.
+/// Performs 2 element comparison and return true if both results are true.
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] binary_op functor that implements the binary operation
 /// \returns the comparison result
 template <typename T, class BinaryOperation>
 inline std::enable_if_t<T::size() == 2, bool>
-compare2_both(const T a, const T b, const BinaryOperation binary_op) {
+compare_both(const T a, const T b, const BinaryOperation binary_op) {
   return compare(a[0], b[0], binary_op) && compare(a[1], b[1], binary_op);
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|unordered_compare2_both|dpct
+// DPCT_LABEL_BEGIN|unordered_compare_both|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Math|unordered_compare
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Performs 2 element unordered comparison and return a bool value.
+/// Performs 2 element unordered comparison and return true if both results are
+/// true.
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] binary_op functor that implements the binary operation
 /// \returns the comparison result
 template <typename T, class BinaryOperation>
 inline std::enable_if_t<T::size() == 2, bool>
-unordered_compare2_both(const T a, const T b, const BinaryOperation binary_op) {
+unordered_compare_both(const T a, const T b, const BinaryOperation binary_op) {
   return unordered_compare(a[0], b[0], binary_op) &&
          unordered_compare(a[1], b[1], binary_op);
 }
@@ -207,14 +213,14 @@ unordered_compare2_both(const T a, const T b, const BinaryOperation binary_op) {
 // Math|compare
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Performs 2 element comparison and return 2 element value.
+/// Performs 2 element comparison.
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] binary_op functor that implements the binary operation
 /// \returns the comparison result
 template <typename T, class BinaryOperation>
 inline std::enable_if_t<T::size() == 2, T>
-compare2(const T a, const T b, const BinaryOperation binary_op) {
+compare(const T a, const T b, const BinaryOperation binary_op) {
   return {compare(a[0], b[0], binary_op), compare(a[1], b[1], binary_op)};
 }
 // DPCT_LABEL_END
@@ -224,14 +230,14 @@ compare2(const T a, const T b, const BinaryOperation binary_op) {
 // Math|unordered_compare
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Performs 2 element unordered comparison and return a 2 element value.
+/// Performs 2 element unordered comparison.
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] binary_op functor that implements the binary operation
 /// \returns the comparison result
 template <typename T, class BinaryOperation>
 inline std::enable_if_t<T::size() == 2, T>
-unordered_compare2(const T a, const T b, const BinaryOperation binary_op) {
+unordered_compare(const T a, const T b, const BinaryOperation binary_op) {
   return {unordered_compare(a[0], b[0], binary_op),
           unordered_compare(a[1], b[1], binary_op)};
 }
@@ -242,7 +248,7 @@ unordered_compare2(const T a, const T b, const BinaryOperation binary_op) {
 // Math|detail_isnan
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Determine whether 2 element value is NaN and return a 2 element value.
+/// Determine whether 2 element value is NaN.
 /// \param [in] a The input value
 /// \returns the comparison result
 template <typename T>

@@ -525,9 +525,9 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hbeq2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_compare2_both,
+            HelperFeatureEnum::Math_compare_both,
             CALL_FACTORY_ENTRY("__hbeq2", CALL(MapNames::getDpctNamespace() +
-                                                   "compare2_both",
+                                                   "compare_both",
                                                ARG(0), ARG(1),
                                                LITERAL("std::equal_to<>()"))))))
 
@@ -542,10 +542,10 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hbequ2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare2_both,
+            HelperFeatureEnum::Math_unordered_compare_both,
             CALL_FACTORY_ENTRY(
                 "__hbequ2",
-                CALL(MapNames::getDpctNamespace() + "unordered_compare2_both",
+                CALL(MapNames::getDpctNamespace() + "unordered_compare_both",
                      ARG(0), ARG(1), LITERAL("std::equal_to<>()"))))))
 
 MATH_API_REWRITER_DEVICE(
@@ -559,10 +559,10 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hbge2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_compare2_both,
+            HelperFeatureEnum::Math_compare_both,
             CALL_FACTORY_ENTRY(
                 "__hbge2",
-                CALL(MapNames::getDpctNamespace() + "compare2_both", ARG(0),
+                CALL(MapNames::getDpctNamespace() + "compare_both", ARG(0),
                      ARG(1), LITERAL("std::greater_equal<>()"))))))
 
 MATH_API_REWRITER_DEVICE(
@@ -576,10 +576,10 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hbgeu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare2_both,
+            HelperFeatureEnum::Math_unordered_compare_both,
             CALL_FACTORY_ENTRY(
                 "__hbgeu2",
-                CALL(MapNames::getDpctNamespace() + "unordered_compare2_both",
+                CALL(MapNames::getDpctNamespace() + "unordered_compare_both",
                      ARG(0), ARG(1), LITERAL("std::greater_equal<>()"))))))
 
 MATH_API_REWRITER_DEVICE(
@@ -593,9 +593,9 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hbgt2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_compare2_both,
+            HelperFeatureEnum::Math_compare_both,
             CALL_FACTORY_ENTRY(
-                "__hbgt2", CALL(MapNames::getDpctNamespace() + "compare2_both",
+                "__hbgt2", CALL(MapNames::getDpctNamespace() + "compare_both",
                                 ARG(0), ARG(1), LITERAL("std::greater<>()"))))))
 
 MATH_API_REWRITER_DEVICE(
@@ -609,9 +609,9 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hbgtu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare2_both,
+            HelperFeatureEnum::Math_unordered_compare_both,
             CALL_FACTORY_ENTRY("__hbgtu2", CALL(MapNames::getDpctNamespace() +
-                                                    "unordered_compare2_both",
+                                                    "unordered_compare_both",
                                                 ARG(0), ARG(1),
                                                 LITERAL("std::greater<>()"))))))
 
@@ -626,10 +626,10 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hble2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_compare2_both,
+            HelperFeatureEnum::Math_compare_both,
             CALL_FACTORY_ENTRY(
                 "__hble2",
-                CALL(MapNames::getDpctNamespace() + "compare2_both", ARG(0),
+                CALL(MapNames::getDpctNamespace() + "compare_both", ARG(0),
                      ARG(1), LITERAL("std::less_equal<>()"))))))
 
 MATH_API_REWRITER_DEVICE(
@@ -643,10 +643,10 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hbleu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare2_both,
+            HelperFeatureEnum::Math_unordered_compare_both,
             CALL_FACTORY_ENTRY(
                 "__hbleu2",
-                CALL(MapNames::getDpctNamespace() + "unordered_compare2_both",
+                CALL(MapNames::getDpctNamespace() + "unordered_compare_both",
                      ARG(0), ARG(1), LITERAL("std::less_equal<>()"))))))
 
 MATH_API_REWRITER_DEVICE(
@@ -660,9 +660,9 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hblt2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_compare2_both,
+            HelperFeatureEnum::Math_compare_both,
             CALL_FACTORY_ENTRY(
-                "__hblt2", CALL(MapNames::getDpctNamespace() + "compare2_both",
+                "__hblt2", CALL(MapNames::getDpctNamespace() + "compare_both",
                                 ARG(0), ARG(1), LITERAL("std::less<>()"))))))
 
 MATH_API_REWRITER_DEVICE(
@@ -676,9 +676,9 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hbltu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare2_both,
+            HelperFeatureEnum::Math_unordered_compare_both,
             CALL_FACTORY_ENTRY("__hbltu2", CALL(MapNames::getDpctNamespace() +
-                                                    "unordered_compare2_both",
+                                                    "unordered_compare_both",
                                                 ARG(0), ARG(1),
                                                 LITERAL("std::less<>()"))))))
 
@@ -693,10 +693,10 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hbne2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_compare2_both,
+            HelperFeatureEnum::Math_compare_both,
             CALL_FACTORY_ENTRY(
                 "__hbne2",
-                CALL(MapNames::getDpctNamespace() + "compare2_both", ARG(0),
+                CALL(MapNames::getDpctNamespace() + "compare_both", ARG(0),
                      ARG(1), LITERAL("std::not_equal_to<>()"))))))
 
 MATH_API_REWRITER_DEVICE(
@@ -710,10 +710,10 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hbneu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare2_both,
+            HelperFeatureEnum::Math_unordered_compare_both,
             CALL_FACTORY_ENTRY(
                 "__hbneu2",
-                CALL(MapNames::getDpctNamespace() + "unordered_compare2_both",
+                CALL(MapNames::getDpctNamespace() + "unordered_compare_both",
                      ARG(0), ARG(1), LITERAL("std::not_equal_to<>()"))))))
 
 MATH_API_REWRITER_DEVICE(
@@ -729,8 +729,8 @@ MATH_API_REWRITER_DEVICE(
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::Math_compare2,
             CALL_FACTORY_ENTRY(
-                "__heq2", CALL(MapNames::getDpctNamespace() + "compare2", ARG(0),
-                               ARG(1), LITERAL("std::equal_to<>()"))))))
+                "__heq2", CALL(MapNames::getDpctNamespace() + "compare",
+                               ARG(0), ARG(1), LITERAL("std::equal_to<>()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__hequ2",
@@ -745,7 +745,7 @@ MATH_API_REWRITER_DEVICE(
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::Math_unordered_compare2,
             CALL_FACTORY_ENTRY("__hequ2", CALL(MapNames::getDpctNamespace() +
-                                                   "unordered_compare2",
+                                                   "unordered_compare",
                                                ARG(0), ARG(1),
                                                LITERAL("std::equal_to<>()"))))))
 
@@ -761,9 +761,10 @@ MATH_API_REWRITER_DEVICE(
         EMPTY_FACTORY_ENTRY("__hge2"),
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::Math_compare2,
-            CALL_FACTORY_ENTRY(
-                "__hge2", CALL(MapNames::getDpctNamespace() + "compare2", ARG(0),
-                               ARG(1), LITERAL("std::greater_equal<>()"))))))
+            CALL_FACTORY_ENTRY("__hge2",
+                               CALL(MapNames::getDpctNamespace() + "compare",
+                                    ARG(0), ARG(1),
+                                    LITERAL("std::greater_equal<>()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__hgeu2",
@@ -779,8 +780,8 @@ MATH_API_REWRITER_DEVICE(
             HelperFeatureEnum::Math_unordered_compare2,
             CALL_FACTORY_ENTRY(
                 "__hgeu2",
-                CALL(MapNames::getDpctNamespace() + "unordered_compare2", ARG(0),
-                     ARG(1), LITERAL("std::greater_equal<>()"))))))
+                CALL(MapNames::getDpctNamespace() + "unordered_compare",
+                     ARG(0), ARG(1), LITERAL("std::greater_equal<>()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__hgt2",
@@ -795,8 +796,8 @@ MATH_API_REWRITER_DEVICE(
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::Math_compare2,
             CALL_FACTORY_ENTRY(
-                "__hgt2", CALL(MapNames::getDpctNamespace() + "compare2", ARG(0),
-                               ARG(1), LITERAL("std::greater<>()"))))))
+                "__hgt2", CALL(MapNames::getDpctNamespace() + "compare",
+                               ARG(0), ARG(1), LITERAL("std::greater<>()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__hgtu2",
@@ -811,7 +812,7 @@ MATH_API_REWRITER_DEVICE(
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::Math_unordered_compare2,
             CALL_FACTORY_ENTRY("__hgtu2", CALL(MapNames::getDpctNamespace() +
-                                                   "unordered_compare2",
+                                                   "unordered_compare",
                                                ARG(0), ARG(1),
                                                LITERAL("std::greater<>()"))))))
 
@@ -844,9 +845,10 @@ MATH_API_REWRITER_DEVICE(
         EMPTY_FACTORY_ENTRY("__hle2"),
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::Math_compare2,
-            CALL_FACTORY_ENTRY(
-                "__hle2", CALL(MapNames::getDpctNamespace() + "compare2", ARG(0),
-                               ARG(1), LITERAL("std::less_equal<>()"))))))
+            CALL_FACTORY_ENTRY("__hle2",
+                               CALL(MapNames::getDpctNamespace() + "compare",
+                                    ARG(0), ARG(1),
+                                    LITERAL("std::less_equal<>()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__hleu2",
@@ -862,8 +864,8 @@ MATH_API_REWRITER_DEVICE(
             HelperFeatureEnum::Math_unordered_compare2,
             CALL_FACTORY_ENTRY(
                 "__hleu2",
-                CALL(MapNames::getDpctNamespace() + "unordered_compare2", ARG(0),
-                     ARG(1), LITERAL("std::less_equal<>()"))))))
+                CALL(MapNames::getDpctNamespace() + "unordered_compare",
+                     ARG(0), ARG(1), LITERAL("std::less_equal<>()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__hlt2",
@@ -878,8 +880,8 @@ MATH_API_REWRITER_DEVICE(
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::Math_compare2,
             CALL_FACTORY_ENTRY(
-                "__hlt2", CALL(MapNames::getDpctNamespace() + "compare2", ARG(0),
-                               ARG(1), LITERAL("std::less<>()"))))))
+                "__hlt2", CALL(MapNames::getDpctNamespace() + "compare",
+                               ARG(0), ARG(1), LITERAL("std::less<>()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__hltu2",
@@ -894,7 +896,7 @@ MATH_API_REWRITER_DEVICE(
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::Math_unordered_compare2,
             CALL_FACTORY_ENTRY("__hltu2", CALL(MapNames::getDpctNamespace() +
-                                                   "unordered_compare2",
+                                                   "unordered_compare",
                                                ARG(0), ARG(1),
                                                LITERAL("std::less<>()"))))))
 
@@ -910,9 +912,10 @@ MATH_API_REWRITER_DEVICE(
         EMPTY_FACTORY_ENTRY("__hne2"),
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::Math_compare2,
-            CALL_FACTORY_ENTRY(
-                "__hne2", CALL(MapNames::getDpctNamespace() + "compare2", ARG(0),
-                               ARG(1), LITERAL("std::not_equal_to<>()"))))))
+            CALL_FACTORY_ENTRY("__hne2",
+                               CALL(MapNames::getDpctNamespace() + "compare",
+                                    ARG(0), ARG(1),
+                                    LITERAL("std::not_equal_to<>()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__hneu2",
@@ -928,8 +931,8 @@ MATH_API_REWRITER_DEVICE(
             HelperFeatureEnum::Math_unordered_compare2,
             CALL_FACTORY_ENTRY(
                 "__hneu2",
-                CALL(MapNames::getDpctNamespace() + "unordered_compare2", ARG(0),
-                     ARG(1), LITERAL("std::not_equal_to<>()"))))))
+                CALL(MapNames::getDpctNamespace() + "unordered_compare",
+                     ARG(0), ARG(1), LITERAL("std::not_equal_to<>()"))))))
 
 // Half Precision Conversion and Data Movement
 MATH_API_REWRITER_DEVICE(

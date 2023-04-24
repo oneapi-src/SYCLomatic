@@ -6,8 +6,8 @@
 // CHECK: 9
 // TEST_FEATURE: Math_compare
 // TEST_FEATURE: Math_unordered_compare
-// TEST_FEATURE: Math_compare2_both
-// TEST_FEATURE: Math_unordered_compare2_both
+// TEST_FEATURE: Math_compare_both
+// TEST_FEATURE: Math_unordered_compare_both
 // TEST_FEATURE: Math_compare2
 // TEST_FEATURE: Math_unordered_compare2
 // TEST_FEATURE: Math_isnan
