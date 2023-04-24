@@ -790,3 +790,7 @@ thrustFactory("thrust::reduce",
                {5,PolicyState::HasPolicy,2,"std::reduce", HelperFeatureEnum::no_feature_helper},
                {4,PolicyState::NoPolicy, 2,"std::reduce", HelperFeatureEnum::no_feature_helper}}),
 
+// thrust::device_free
+CALL_FACTORY_ENTRY("thrust::device_free", CALL(MapNames::getDpctNamespace() + "free_device", ARG(0)))
+
+
