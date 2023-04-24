@@ -53,11 +53,7 @@ enum ProcessStatus {
   MigrationErrorInvalidRuleFilePath = -38,
   MigrationErrorCannotParseRuleFile = -39,
   MigrationErrorInvalidAnalysisScope = -40,
-<<<<<<< HEAD
-=======
-  MigrationErrorInvalidChangeFilenameExtension = -41,
   MigrationErrorConflictOptions = -42,
->>>>>>> upstream_syclomatic/SYCLomatic
 };
 
 namespace clang {
