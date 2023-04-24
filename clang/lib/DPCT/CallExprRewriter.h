@@ -648,8 +648,6 @@ class DerefExpr {
     }
   }
 
-  DerefExpr() = default;
-
 public:
   DerefExpr(const Expr *E, const CallExpr *C = nullptr);
   template <class StreamT>
@@ -1512,6 +1510,20 @@ public:
   CheckArgType(unsigned I, std::string Name) : Idx(I), TypeName(Name) {}
   bool operator()(const CallExpr *C) {
     std::string ArgType = getArgTypeStr(C, Idx);
+    if (ArgType.empty())
+      return true;
+    return ArgType.find(TypeName) != std::string::npos;
+  }
+};
+
+class CheckMemberBaseType {
+  std::string TypeName;
+
+public:
+  CheckMemberBaseType(std::string Name)
+    : TypeName(std::move(Name)) {}
+  bool operator()(const CallExpr *C) {
+    std::string ArgType = getBaseTypeStr(C);
     if (ArgType.empty())
       return true;
     return ArgType.find(TypeName) != std::string::npos;
