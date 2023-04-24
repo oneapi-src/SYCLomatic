@@ -1410,74 +1410,130 @@ MATH_API_REWRITER_HOST_DEVICE(
 MATH_API_REWRITER_HOST_DEVICE(
     MATH_API_REWRITER_HOST(
         "min",
-        FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_dpct_min_max,
-            CALL_FACTORY_ENTRY("min", CALL(MapNames::getDpctNamespace() + "dpct_min",
-                                           CAST_IF_SPECIAL(ARG(0)), CAST_IF_SPECIAL(ARG(1)))))),
+        CONDITIONAL_FACTORY_ENTRY(
+            math::UsingDpctMinMax,
+            FEATURE_REQUEST_FACTORY(
+                HelperFeatureEnum::Math_min_max,
+                CALL_FACTORY_ENTRY("min",
+                                   CALL(MapNames::getDpctNamespace() + "min",
+                                        CAST_IF_SPECIAL(ARG(0)),
+                                        CAST_IF_SPECIAL(ARG(1))))),
+            CALL_FACTORY_ENTRY("min", CALL(MapNames::getClNamespace() + "min",
+                                           CAST_IF_SPECIAL(ARG(0)),
+                                           CAST_IF_SPECIAL(ARG(1)))))),
     MATH_API_REWRITER_DEVICE(
         "min",
         MATH_API_DEVICE_NODES(
-            FEATURE_REQUEST_FACTORY(
-                HelperFeatureEnum::Math_dpct_min_max,
+            CONDITIONAL_FACTORY_ENTRY(
+                math::UsingDpctMinMax,
+                FEATURE_REQUEST_FACTORY(
+                    HelperFeatureEnum::Math_min_max,
+                    CALL_FACTORY_ENTRY(
+                        "min", CALL(MapNames::getDpctNamespace() + "min",
+                                    CAST_IF_SPECIAL(ARG(0)),
+                                    CAST_IF_SPECIAL(ARG(1))))),
                 CALL_FACTORY_ENTRY("min",
-                                   CALL(MapNames::getDpctNamespace() + "dpct_min",
-                                        CAST_IF_SPECIAL(ARG(0)), CAST_IF_SPECIAL(ARG(1))))),
+                                   CALL(MapNames::getClNamespace() + "min",
+                                        CAST_IF_SPECIAL(ARG(0)),
+                                        CAST_IF_SPECIAL(ARG(1))))),
             EMPTY_FACTORY_ENTRY("min"), EMPTY_FACTORY_ENTRY("min"),
             EMPTY_FACTORY_ENTRY("min"))))
 
 MATH_API_REWRITER_HOST_DEVICE(
     MATH_API_REWRITER_HOST(
         "std::min",
-        FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_dpct_min_max,
+        CONDITIONAL_FACTORY_ENTRY(
+            math::UsingDpctMinMax,
+            FEATURE_REQUEST_FACTORY(
+                HelperFeatureEnum::Math_min_max,
+                CALL_FACTORY_ENTRY("std::min",
+                                   CALL(MapNames::getDpctNamespace() + "min",
+                                        CAST_IF_SPECIAL(ARG(0)),
+                                        CAST_IF_SPECIAL(ARG(1))))),
             CALL_FACTORY_ENTRY("std::min",
-                               CALL(MapNames::getDpctNamespace() + "dpct_min",
-                                    CAST_IF_SPECIAL(ARG(0)), CAST_IF_SPECIAL(ARG(1)))))),
+                               CALL(MapNames::getClNamespace() + "min",
+                                    CAST_IF_SPECIAL(ARG(0)),
+                                    CAST_IF_SPECIAL(ARG(1)))))),
     MATH_API_REWRITER_DEVICE(
         "std::min",
         MATH_API_DEVICE_NODES(
-            FEATURE_REQUEST_FACTORY(
-                HelperFeatureEnum::Math_dpct_min_max,
+            CONDITIONAL_FACTORY_ENTRY(
+                math::UsingDpctMinMax,
+                FEATURE_REQUEST_FACTORY(
+                    HelperFeatureEnum::Math_min_max,
+                    CALL_FACTORY_ENTRY(
+                        "std::min", CALL(MapNames::getDpctNamespace() + "min",
+                                         CAST_IF_SPECIAL(ARG(0)),
+                                         CAST_IF_SPECIAL(ARG(1))))),
                 CALL_FACTORY_ENTRY("std::min",
-                                   CALL(MapNames::getDpctNamespace() + "dpct_min",
-                                        CAST_IF_SPECIAL(ARG(0)), CAST_IF_SPECIAL(ARG(1))))),
+                                   CALL(MapNames::getClNamespace() + "min",
+                                        CAST_IF_SPECIAL(ARG(0)),
+                                        CAST_IF_SPECIAL(ARG(1))))),
             EMPTY_FACTORY_ENTRY("std::min"), EMPTY_FACTORY_ENTRY("std::min"),
             EMPTY_FACTORY_ENTRY("std::min"))))
 
 MATH_API_REWRITER_HOST_DEVICE(
     MATH_API_REWRITER_HOST(
         "max",
-        FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_dpct_min_max,
-            CALL_FACTORY_ENTRY("max", CALL(MapNames::getDpctNamespace() + "dpct_max",
-                                           CAST_IF_SPECIAL(ARG(0)), CAST_IF_SPECIAL(ARG(1)))))),
+        CONDITIONAL_FACTORY_ENTRY(
+            math::UsingDpctMinMax,
+            FEATURE_REQUEST_FACTORY(
+                HelperFeatureEnum::Math_min_max,
+                CALL_FACTORY_ENTRY("max",
+                                   CALL(MapNames::getDpctNamespace() + "max",
+                                        CAST_IF_SPECIAL(ARG(0)),
+                                        CAST_IF_SPECIAL(ARG(1))))),
+            CALL_FACTORY_ENTRY("max", CALL(MapNames::getClNamespace() + "max",
+                                           CAST_IF_SPECIAL(ARG(0)),
+                                           CAST_IF_SPECIAL(ARG(1)))))),
     MATH_API_REWRITER_DEVICE(
         "max",
         MATH_API_DEVICE_NODES(
-            FEATURE_REQUEST_FACTORY(
-                HelperFeatureEnum::Math_dpct_min_max,
+            CONDITIONAL_FACTORY_ENTRY(
+                math::UsingDpctMinMax,
+                FEATURE_REQUEST_FACTORY(
+                    HelperFeatureEnum::Math_min_max,
+                    CALL_FACTORY_ENTRY(
+                        "max", CALL(MapNames::getDpctNamespace() + "max",
+                                    CAST_IF_SPECIAL(ARG(0)),
+                                    CAST_IF_SPECIAL(ARG(1))))),
                 CALL_FACTORY_ENTRY("max",
-                                   CALL(MapNames::getDpctNamespace() + "dpct_max",
-                                        CAST_IF_SPECIAL(ARG(0)), CAST_IF_SPECIAL(ARG(1))))),
+                                   CALL(MapNames::getClNamespace() + "max",
+                                        CAST_IF_SPECIAL(ARG(0)),
+                                        CAST_IF_SPECIAL(ARG(1))))),
             EMPTY_FACTORY_ENTRY("max"), EMPTY_FACTORY_ENTRY("max"),
             EMPTY_FACTORY_ENTRY("max"))))
 
 MATH_API_REWRITER_HOST_DEVICE(
     MATH_API_REWRITER_HOST(
         "std::max",
-        FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_dpct_min_max,
+        CONDITIONAL_FACTORY_ENTRY(
+            math::UsingDpctMinMax,
+            FEATURE_REQUEST_FACTORY(
+                HelperFeatureEnum::Math_min_max,
+                CALL_FACTORY_ENTRY("std::max",
+                                   CALL(MapNames::getDpctNamespace() + "max",
+                                        CAST_IF_SPECIAL(ARG(0)),
+                                        CAST_IF_SPECIAL(ARG(1))))),
             CALL_FACTORY_ENTRY("std::max",
-                               CALL(MapNames::getDpctNamespace() + "dpct_max",
-                                    CAST_IF_SPECIAL(ARG(0)), CAST_IF_SPECIAL(ARG(1)))))),
+                               CALL(MapNames::getClNamespace() + "max",
+                                    CAST_IF_SPECIAL(ARG(0)),
+                                    CAST_IF_SPECIAL(ARG(1)))))),
     MATH_API_REWRITER_DEVICE(
         "std::max",
         MATH_API_DEVICE_NODES(
-            FEATURE_REQUEST_FACTORY(
-                HelperFeatureEnum::Math_dpct_min_max,
+            CONDITIONAL_FACTORY_ENTRY(
+                math::UsingDpctMinMax,
+                FEATURE_REQUEST_FACTORY(
+                    HelperFeatureEnum::Math_min_max,
+                    CALL_FACTORY_ENTRY(
+                        "std::max", CALL(MapNames::getDpctNamespace() + "max",
+                                         CAST_IF_SPECIAL(ARG(0)),
+                                         CAST_IF_SPECIAL(ARG(1))))),
                 CALL_FACTORY_ENTRY("std::max",
-                                   CALL(MapNames::getDpctNamespace() + "dpct_max",
-                                        CAST_IF_SPECIAL(ARG(0)), CAST_IF_SPECIAL(ARG(1))))),
+                                   CALL(MapNames::getClNamespace() + "max",
+                                        CAST_IF_SPECIAL(ARG(0)),
+                                        CAST_IF_SPECIAL(ARG(1))))),
             EMPTY_FACTORY_ENTRY("std::max"), EMPTY_FACTORY_ENTRY("std::max"),
             EMPTY_FACTORY_ENTRY("std::max"))))
 

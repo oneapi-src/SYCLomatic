@@ -242,7 +242,7 @@ inline sycl::half2 isnan(const sycl::half2 h) {
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_min_max|dpct
+// DPCT_LABEL_BEGIN|min_max|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 #define DPCT_MATH_MIN_MAX_OVERLOAD_1(FUNC, IMPL_FUNC, TYPE, PROMOTED_TYPE)     \
@@ -257,28 +257,28 @@ inline sycl::half2 isnan(const sycl::half2 h) {
     return IMPL_FUNC(a, b);                                                    \
   }
 
-DPCT_MATH_MIN_MAX_OVERLOAD_1(dpct_min, sycl::fmin, float, double)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(dpct_min, sycl::fmin, float)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(dpct_min, sycl::fmin, double)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(dpct_min, sycl::min, std::int32_t, std::uint32_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(dpct_min, sycl::min, std::int64_t, std::uint64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(dpct_min, sycl::min, std::int32_t, std::uint64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(dpct_min, sycl::min, std::uint32_t, std::uint64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(dpct_min, sycl::min, std::int32_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(dpct_min, sycl::min, std::uint32_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(dpct_min, sycl::min, std::int64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(dpct_min, sycl::min, std::uint64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(dpct_max, sycl::fmax, float, double)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(dpct_max, sycl::fmax, float)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(dpct_max, sycl::fmax, double)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(dpct_max, sycl::max, std::int32_t, std::uint32_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(dpct_max, sycl::max, std::int64_t, std::uint64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(dpct_max, sycl::max, std::int32_t, std::uint64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(dpct_max, sycl::max, std::uint32_t, std::uint64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(dpct_max, sycl::max, std::int32_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(dpct_max, sycl::max, std::uint32_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(dpct_max, sycl::max, std::int64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(dpct_max, sycl::max, std::uint64_t)
+DPCT_MATH_MIN_MAX_OVERLOAD_1(min, sycl::fmin, float, double)
+DPCT_MATH_MIN_MAX_OVERLOAD_2(min, sycl::fmin, float)
+DPCT_MATH_MIN_MAX_OVERLOAD_2(min, sycl::fmin, double)
+DPCT_MATH_MIN_MAX_OVERLOAD_1(min, sycl::min, std::int32_t, std::uint32_t)
+DPCT_MATH_MIN_MAX_OVERLOAD_1(min, sycl::min, std::int64_t, std::uint64_t)
+DPCT_MATH_MIN_MAX_OVERLOAD_1(min, sycl::min, std::int32_t, std::uint64_t)
+DPCT_MATH_MIN_MAX_OVERLOAD_1(min, sycl::min, std::uint32_t, std::uint64_t)
+DPCT_MATH_MIN_MAX_OVERLOAD_2(min, sycl::min, std::int32_t)
+DPCT_MATH_MIN_MAX_OVERLOAD_2(min, sycl::min, std::uint32_t)
+DPCT_MATH_MIN_MAX_OVERLOAD_2(min, sycl::min, std::int64_t)
+DPCT_MATH_MIN_MAX_OVERLOAD_2(min, sycl::min, std::uint64_t)
+DPCT_MATH_MIN_MAX_OVERLOAD_1(max, sycl::fmax, float, double)
+DPCT_MATH_MIN_MAX_OVERLOAD_2(max, sycl::fmax, float)
+DPCT_MATH_MIN_MAX_OVERLOAD_2(max, sycl::fmax, double)
+DPCT_MATH_MIN_MAX_OVERLOAD_1(max, sycl::max, std::int32_t, std::uint32_t)
+DPCT_MATH_MIN_MAX_OVERLOAD_1(max, sycl::max, std::int64_t, std::uint64_t)
+DPCT_MATH_MIN_MAX_OVERLOAD_1(max, sycl::max, std::int32_t, std::uint64_t)
+DPCT_MATH_MIN_MAX_OVERLOAD_1(max, sycl::max, std::uint32_t, std::uint64_t)
+DPCT_MATH_MIN_MAX_OVERLOAD_2(max, sycl::max, std::int32_t)
+DPCT_MATH_MIN_MAX_OVERLOAD_2(max, sycl::max, std::uint32_t)
+DPCT_MATH_MIN_MAX_OVERLOAD_2(max, sycl::max, std::int64_t)
+DPCT_MATH_MIN_MAX_OVERLOAD_2(max, sycl::max, std::uint64_t)
 #undef DPCT_MATH_MIN_MAX_OVERLOAD_1
 #undef DPCT_MATH_MIN_MAX_OVERLOAD_2
 // DPCT_LABEL_END

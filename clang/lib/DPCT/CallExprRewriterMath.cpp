@@ -1046,6 +1046,14 @@ auto IsDirectCallerPureDevice = [](const CallExpr *C) -> bool {
 auto IsUnresolvedLookupExpr = [](const CallExpr *C) -> bool {
   return dyn_cast_or_null<UnresolvedLookupExpr>(C->getCallee());
 };
+auto UsingDpctMinMax = [](const CallExpr *C) -> bool {
+  if (IsUnresolvedLookupExpr(C))
+    return true;
+  if (C->getBeginLoc().isMacroID() || C->getEndLoc().isMacroID())
+    return true;
+  return C->getArg(0)->IgnoreImpCasts()->getType() !=
+         C->getArg(1)->IgnoreImpCasts()->getType();
+};
 }
 
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>

@@ -10,8 +10,8 @@
 
 // CHECK: void hello(const sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT:  int index = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
-// CHECK-NEXT:  int tmp = dpct::dpct_min((item_ct1.get_group(2)+1)*item_ct1.get_local_range(2)+item_ct1.get_local_id(2), dpct::dpct_max(index, 45));
-// CHECK-NEXT:  int num = dpct::dpct_max((item_ct1.get_group(2)+1)*item_ct1.get_local_range(2)+item_ct1.get_local_id(2), dpct::dpct_min(tmp, 45));
+// CHECK-NEXT:  int tmp = dpct::min((item_ct1.get_group(2)+1)*item_ct1.get_local_range(2)+item_ct1.get_local_id(2), sycl::max(index, 45));
+// CHECK-NEXT:  int num = dpct::max((item_ct1.get_group(2)+1)*item_ct1.get_local_range(2)+item_ct1.get_local_id(2), sycl::min(tmp, 45));
 // CHECK-NEXT:  sycl::log((double)(item_ct1.get_group(2) + item_ct1.get_local_range(2) + item_ct1.get_local_id(2)));
 // CHECK-NEXT:  sycl::log((double)(item_ct1.get_local_range(2) + item_ct1.get_local_range(1) + item_ct1.get_local_range(0)));
 // CHECK-NEXT:}
