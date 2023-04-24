@@ -781,3 +781,12 @@ thrustFactory("thrust::sort",
                { 4,PolicyState::HasPolicy,2,"oneapi::dpl::sort", HelperFeatureEnum::no_feature_helper},
                { 3,PolicyState::NoPolicy, 2,"oneapi::dpl::sort", HelperFeatureEnum::no_feature_helper}}),
 
+// thrust::reduce
+thrustFactory("thrust::reduce",
+              {{3,PolicyState::HasPolicy,2,"std::reduce", HelperFeatureEnum::no_feature_helper},
+               {2,PolicyState::NoPolicy, 2,"std::reduce", HelperFeatureEnum::no_feature_helper},
+               {4,PolicyState::HasPolicy,2,"std::reducet", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"std::reduce", HelperFeatureEnum::no_feature_helper},
+               {5,PolicyState::HasPolicy,2,"std::reduce", HelperFeatureEnum::no_feature_helper},
+               {4,PolicyState::NoPolicy, 2,"std::reduce", HelperFeatureEnum::no_feature_helper}}),
+
