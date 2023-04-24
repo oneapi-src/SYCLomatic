@@ -97,3 +97,18 @@ void foo3() {
   //CHECK-NEXT:*/
   cusolverDnDestroyGesvdjInfo(gesvdjinfo);
 }
+
+int foo4() {
+  //CHECK:int params;
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusolverDnCreateSyevjInfo was removed because this call is redundant in SYCL.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusolverDnDestroySyevjInfo was removed because this call is redundant in SYCL.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:return 0;
+  syevjInfo_t params;
+  cusolverDnCreateSyevjInfo(&params);
+  cusolverDnDestroySyevjInfo(params);
+  return 0;
+}
