@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/LapackUtils/api_test13_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/LapackUtils/api_test13_out
 
-// CHECK: 31
+// CHECK: 33
 // TEST_FEATURE: LapackUtils_potrf
 
 #include "cusolverDn.h"

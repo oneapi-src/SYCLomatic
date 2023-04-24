@@ -858,7 +858,6 @@ template <typename T> struct syhegvd_impl {
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
 };
-
 } // namespace detail
 
 /// Computes the size of workspace memory of getrf function.
@@ -1252,6 +1251,27 @@ inline int potrs(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
       a, lda, b_type, b, ldb, info);
 }
 
+/// Computes the size of workspace memory of syevx/heevx function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] vl If range == rangev::values, the lower bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] vu If range == rangev::values, the upper bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] il If range == rangev::indices, the indices of the smallest
+/// eigenvalue to be returned.
+/// \param [in] iu If range == rangev::indices, the indices of the largest
+/// eigenvalue to be returned.
+/// \param [in] w_type The data type of the eigenvalues.
+/// \param [out] device_ws_size The device workspace size in bytes.
+/// \param [out] host_ws_size The host workspace size in bytes. Currently the
+/// value is always zero.
 inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
                                    oneapi::mkl::rangev range,
                                    oneapi::mkl::uplo uplo, std::int64_t n,
@@ -1279,6 +1299,33 @@ inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
   return ret;
 }
 
+/// Computes selected eigenvalues and, optionally, eigenvectors of a
+/// symmetric/Hermitian matrix.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in, out] a The input matrix A. On exit, the lower or upper triangle is
+/// overwritten.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] vl If range == rangev::values, the lower bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] vu If range == rangev::values, the upper bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] il If range == rangev::indices, the indices of the smallest
+/// eigenvalue to be returned.
+/// \param [in] iu If range == rangev::indices, the indices of the largest
+/// eigenvalue to be returned.
+/// \param [out] m The total number of eigenvalues found.
+/// \param [in] w_type The data type of the eigenvalues.
+/// \param [out] w The eigenvalues of the matrix A in ascending order.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The workspace size in bytes.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
 inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
                    oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
                    std::int64_t n, library_data_t a_type, void *a,
@@ -1304,6 +1351,24 @@ inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
   return ret;
 }
 
+/// Computes the size of workspace memory of syevx/heevx function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] vl If range == rangev::values, the lower bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] vu If range == rangev::values, the upper bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] il If range == rangev::indices, the indices of the smallest
+/// eigenvalue to be returned.
+/// \param [in] iu If range == rangev::indices, the indices of the largest
+/// eigenvalue to be returned.
+/// \param [out] device_ws_size The device workspace size as a number of
+/// elements of type \tparam T.
 template <typename T, typename ValueT>
 inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
                                    oneapi::mkl::rangev range,
@@ -1327,6 +1392,32 @@ inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
   return ret;
 }
 
+/// Computes selected eigenvalues and, optionally, eigenvectors of a
+/// symmetric/Hermitian matrix.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in, out] a The input matrix A. On exit, the lower or upper triangle is
+/// overwritten.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] vl If range == rangev::values, the lower bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] vu If range == rangev::values, the upper bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] il If range == rangev::indices, the indices of the smallest
+/// eigenvalue to be returned.
+/// \param [in] iu If range == rangev::indices, the indices of the largest
+/// eigenvalue to be returned.
+/// \param [out] m The total number of eigenvalues found.
+/// \param [out] w The eigenvalues of the matrix A in ascending order.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The device workspace size as a number of
+/// elements of type \tparam T.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
 template <typename T, typename ValueT>
 inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
                    oneapi::mkl::rangev range, oneapi::mkl::uplo uplo, int n,
@@ -1352,6 +1443,26 @@ inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
   return ret;
 }
 
+/// Computes the size of workspace memory of sygvx/hegvx function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] itype Must be 1, 2 or 3.
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] ldb The leading dimension of the matrix B.
+/// \param [in] vl If range == rangev::values, the lower bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] vu If range == rangev::values, the upper bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] il If range == rangev::indices, the indices of the smallest
+/// eigenvalue to be returned.
+/// \param [in] iu If range == rangev::indices, the indices of the largest
+/// eigenvalue to be returned.
+/// \param [in] device_ws_size The device workspace size as a number of
+/// elements of type \tparam T.
 template <typename T, typename ValueT>
 inline int
 syhegvx_scratchpad_size(sycl::queue &q, int itype, oneapi::mkl::job jobz,
@@ -1375,6 +1486,35 @@ syhegvx_scratchpad_size(sycl::queue &q, int itype, oneapi::mkl::job jobz,
   return ret;
 }
 
+/// Computes selected eigenvalues and, optionally, eigenvectors of a real
+/// generalized symmetric/Hermitian definite eigenproblem.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] itype Must be 1, 2 or 3.
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in, out] a The input matrix A. On exit, the lower or upper triangle is
+/// overwritten.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in, out] b The input matrix B.
+/// \param [in] ldb The leading dimension of the matrix B.
+/// \param [in] vl If range == rangev::values, the lower bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] vu If range == rangev::values, the upper bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] il If range == rangev::indices, the indices of the smallest
+/// eigenvalue to be returned.
+/// \param [in] iu If range == rangev::indices, the indices of the largest
+/// eigenvalue to be returned.
+/// \param [out] m The total number of eigenvalues found.
+/// \param [out] w The eigenvalues of the matrix A in ascending order.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The device workspace size as a number of
+/// elements of type \tparam T.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
 template <typename T, typename ValueT>
 inline int syhegvx(sycl::queue &q, int itype, oneapi::mkl::job jobz,
                    oneapi::mkl::rangev range, oneapi::mkl::uplo uplo, int n,
@@ -1399,6 +1539,17 @@ inline int syhegvx(sycl::queue &q, int itype, oneapi::mkl::job jobz,
   return ret;
 }
 
+/// Computes the size of workspace memory of sygvd/hegvd function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] itype Must be 1, 2 or 3.
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] ldb The leading dimension of the matrix B.
+/// \param [in] device_ws_size The device workspace size as a number of
+/// elements of type \tparam T.
 template <typename T>
 inline int syhegvd_scratchpad_size(sycl::queue &q, int itype,
                                    oneapi::mkl::job jobz,
@@ -1413,6 +1564,24 @@ inline int syhegvd_scratchpad_size(sycl::queue &q, int itype,
   return ret;
 }
 
+/// Computes all eigenvalues and, optionally, eigenvectors of a real generalized
+/// symmetric/Hermitian definite eigenproblem using a divide and conquer method.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] itype Must be 1, 2 or 3.
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in, out] a The input matrix A. On exit, it is overwritten by eigenvectors.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in, out] b The input matrix B.
+/// \param [in] ldb The leading dimension of the matrix B.
+/// \param [out] w The eigenvalues of the matrix A in ascending order.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The device workspace size as a number of
+/// elements of type \tparam T.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
 template <typename T, typename ValueT>
 inline int syhegvd(sycl::queue &q, int itype, oneapi::mkl::job jobz,
                    oneapi::mkl::uplo uplo, int n, T *a, int lda, T *b, int ldb,
@@ -1421,7 +1590,6 @@ inline int syhegvd(sycl::queue &q, int itype, oneapi::mkl::job jobz,
       q, detail::get_library_data_t_from_type<T>(), info, "sygvd/hegvd", q,
       itype, jobz, uplo, n, a, lda, b, ldb, w, device_ws, device_ws_size, info);
 }
-
 } // namespace lapack
 } // namespace dpct
 

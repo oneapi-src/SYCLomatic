@@ -47,7 +47,6 @@
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 #include <oneapi/mkl.hpp>
-//#include <mkl_lapack.h>
 #include <sycl/sycl.hpp>
 // DPCT_LABEL_END
 
@@ -1098,6 +1097,7 @@ template <typename T> struct syhegvd_impl {
 // LibCommonUtils|library_data_t
 // LapackUtils|lapack_shim
 // LapackUtils|getrf_scratchpad_size_impl
+// LapackUtils|byte_to_from_element_number
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Computes the size of workspace memory of getrf function.
@@ -1131,6 +1131,7 @@ inline int getrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
 // LapackUtils|lapack_shim
 // LapackUtils|getrf_impl
 // LapackUtils|getrfnp_impl
+// LapackUtils|byte_to_from_element_number
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Computes the LU factorization of a general m-by-n matrix.
@@ -1204,6 +1205,7 @@ inline int getrs(sycl::queue &q, oneapi::mkl::transpose trans, std::int64_t n,
 // LibCommonUtils|library_data_t
 // LapackUtils|lapack_shim
 // LapackUtils|geqrf_scratchpad_size_impl
+// LapackUtils|byte_to_from_element_number
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Computes the size of workspace memory of geqrf function.
@@ -1236,6 +1238,7 @@ inline int geqrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
 // LibCommonUtils|library_data_t
 // LapackUtils|lapack_shim
 // LapackUtils|geqrf_impl
+// LapackUtils|byte_to_from_element_number
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Computes the QR factorization of a general m-by-n matrix.
@@ -1271,6 +1274,7 @@ inline int geqrf(sycl::queue &q, std::int64_t m, std::int64_t n,
 // LapackUtils|lapack_shim
 // LapackUtils|gesvd_scratchpad_size_impl
 // LapackUtils|char2jobsvd
+// LapackUtils|byte_to_from_element_number
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Computes the size of workspace memory of gesvd function.
@@ -1370,6 +1374,7 @@ inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
 // LapackUtils|gesvd_impl
 // LibCommonUtils|get_memory
 // LapackUtils|char2jobsvd
+// LapackUtils|byte_to_from_element_number
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Computes the size of workspace memory of gesvd function.
@@ -1473,6 +1478,7 @@ inline int gesvd(sycl::queue &q, oneapi::mkl::job jobz, std::int64_t all_vec,
 // LibCommonUtils|library_data_t
 // LapackUtils|lapack_shim
 // LapackUtils|potrf_scratchpad_size_impl
+// LapackUtils|byte_to_from_element_number
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Computes the size of workspace memory of potrf function.
@@ -1505,6 +1511,7 @@ inline int potrf_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
 // LibCommonUtils|library_data_t
 // LapackUtils|lapack_shim
 // LapackUtils|potrf_impl
+// LapackUtils|byte_to_from_element_number
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Computes the Cholesky factorization of a symmetric (Hermitian)
@@ -1568,6 +1575,35 @@ inline int potrs(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|syheevx_scratchpad_size|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LapackUtils|lapack_shim
+// LapackUtils|syheevx_scratchpad_size_impl
+// LapackUtils|byte_to_from_element_number
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Computes the size of workspace memory of syevx/heevx function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] vl If range == rangev::values, the lower bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] vu If range == rangev::values, the upper bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] il If range == rangev::indices, the indices of the smallest
+/// eigenvalue to be returned.
+/// \param [in] iu If range == rangev::indices, the indices of the largest
+/// eigenvalue to be returned.
+/// \param [in] w_type The data type of the eigenvalues.
+/// \param [out] device_ws_size The device workspace size in bytes.
+/// \param [out] host_ws_size The host workspace size in bytes. Currently the
+/// value is always zero.
 inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
                                    oneapi::mkl::rangev range,
                                    oneapi::mkl::uplo uplo, std::int64_t n,
@@ -1594,7 +1630,43 @@ inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
   *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
   return ret;
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|syheevx|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LapackUtils|lapack_shim
+// LapackUtils|syheevx_impl
+// LapackUtils|byte_to_from_element_number
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Computes selected eigenvalues and, optionally, eigenvectors of a
+/// symmetric/Hermitian matrix.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in, out] a The input matrix A. On exit, the lower or upper triangle is
+/// overwritten.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] vl If range == rangev::values, the lower bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] vu If range == rangev::values, the upper bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] il If range == rangev::indices, the indices of the smallest
+/// eigenvalue to be returned.
+/// \param [in] iu If range == rangev::indices, the indices of the largest
+/// eigenvalue to be returned.
+/// \param [out] m The total number of eigenvalues found.
+/// \param [in] w_type The data type of the eigenvalues.
+/// \param [out] w The eigenvalues of the matrix A in ascending order.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The workspace size in bytes.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
 inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
                    oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
                    std::int64_t n, library_data_t a_type, void *a,
@@ -1619,7 +1691,34 @@ inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
   q.wait();
   return ret;
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|syheevx_scratchpad_size_T|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LapackUtils|lapack_shim
+// LapackUtils|syheevx_scratchpad_size_impl
+// LapackUtils|byte_to_from_element_number
+// LapackUtils|get_library_data_t_from_type
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Computes the size of workspace memory of syevx/heevx function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] vl If range == rangev::values, the lower bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] vu If range == rangev::values, the upper bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] il If range == rangev::indices, the indices of the smallest
+/// eigenvalue to be returned.
+/// \param [in] iu If range == rangev::indices, the indices of the largest
+/// eigenvalue to be returned.
+/// \param [out] device_ws_size The device workspace size as a number of
+/// elements of type \tparam T.
 template <typename T, typename ValueT>
 inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
                                    oneapi::mkl::rangev range,
@@ -1642,7 +1741,41 @@ inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
   *device_ws_size = (int)device_ws_size_tmp;
   return ret;
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|syheevx_T|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LapackUtils|lapack_shim
+// LapackUtils|syheevx_impl
+// LapackUtils|get_library_data_t_from_type
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Computes selected eigenvalues and, optionally, eigenvectors of a
+/// symmetric/Hermitian matrix.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in, out] a The input matrix A. On exit, the lower or upper triangle is
+/// overwritten.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] vl If range == rangev::values, the lower bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] vu If range == rangev::values, the upper bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] il If range == rangev::indices, the indices of the smallest
+/// eigenvalue to be returned.
+/// \param [in] iu If range == rangev::indices, the indices of the largest
+/// eigenvalue to be returned.
+/// \param [out] m The total number of eigenvalues found.
+/// \param [out] w The eigenvalues of the matrix A in ascending order.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The device workspace size as a number of
+/// elements of type \tparam T.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
 template <typename T, typename ValueT>
 inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
                    oneapi::mkl::rangev range, oneapi::mkl::uplo uplo, int n,
@@ -1667,7 +1800,35 @@ inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
   *m = (int)m64;
   return ret;
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|syhegvx_scratchpad_size|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LapackUtils|lapack_shim
+// LapackUtils|syhegvx_scratchpad_size_impl
+// LapackUtils|get_library_data_t_from_type
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Computes the size of workspace memory of sygvx/hegvx function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] itype Must be 1, 2 or 3.
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] ldb The leading dimension of the matrix B.
+/// \param [in] vl If range == rangev::values, the lower bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] vu If range == rangev::values, the upper bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] il If range == rangev::indices, the indices of the smallest
+/// eigenvalue to be returned.
+/// \param [in] iu If range == rangev::indices, the indices of the largest
+/// eigenvalue to be returned.
+/// \param [in] device_ws_size The device workspace size as a number of
+/// elements of type \tparam T.
 template <typename T, typename ValueT>
 inline int
 syhegvx_scratchpad_size(sycl::queue &q, int itype, oneapi::mkl::job jobz,
@@ -1690,7 +1851,44 @@ syhegvx_scratchpad_size(sycl::queue &q, int itype, oneapi::mkl::job jobz,
   *device_ws_size = (int)device_ws_size_tmp;
   return ret;
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|syhegvx|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LapackUtils|lapack_shim
+// LapackUtils|syhegvx_impl
+// LapackUtils|get_library_data_t_from_type
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Computes selected eigenvalues and, optionally, eigenvectors of a real
+/// generalized symmetric/Hermitian definite eigenproblem.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] itype Must be 1, 2 or 3.
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in, out] a The input matrix A. On exit, the lower or upper triangle is
+/// overwritten.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in, out] b The input matrix B.
+/// \param [in] ldb The leading dimension of the matrix B.
+/// \param [in] vl If range == rangev::values, the lower bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] vu If range == rangev::values, the upper bound of the interval
+/// to be searched for eigenvalues
+/// \param [in] il If range == rangev::indices, the indices of the smallest
+/// eigenvalue to be returned.
+/// \param [in] iu If range == rangev::indices, the indices of the largest
+/// eigenvalue to be returned.
+/// \param [out] m The total number of eigenvalues found.
+/// \param [out] w The eigenvalues of the matrix A in ascending order.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The device workspace size as a number of
+/// elements of type \tparam T.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
 template <typename T, typename ValueT>
 inline int syhegvx(sycl::queue &q, int itype, oneapi::mkl::job jobz,
                    oneapi::mkl::rangev range, oneapi::mkl::uplo uplo, int n,
@@ -1714,7 +1912,26 @@ inline int syhegvx(sycl::queue &q, int itype, oneapi::mkl::job jobz,
   *m = (int)m64;
   return ret;
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|syhegvd_scratchpad_size|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LapackUtils|lapack_shim
+// LapackUtils|syhegvd_scratchpad_size_impl
+// LapackUtils|get_library_data_t_from_type
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Computes the size of workspace memory of sygvd/hegvd function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] itype Must be 1, 2 or 3.
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] ldb The leading dimension of the matrix B.
+/// \param [in] device_ws_size The device workspace size as a number of
+/// elements of type \tparam T.
 template <typename T>
 inline int syhegvd_scratchpad_size(sycl::queue &q, int itype,
                                    oneapi::mkl::job jobz,
@@ -1728,7 +1945,33 @@ inline int syhegvd_scratchpad_size(sycl::queue &q, int itype,
   *device_ws_size = (int)device_ws_size_tmp;
   return ret;
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|syhegvd|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LapackUtils|lapack_shim
+// LapackUtils|syhegvd_impl
+// LapackUtils|get_library_data_t_from_type
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Computes all eigenvalues and, optionally, eigenvectors of a real generalized
+/// symmetric/Hermitian definite eigenproblem using a divide and conquer method.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] itype Must be 1, 2 or 3.
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in, out] a The input matrix A. On exit, it is overwritten by eigenvectors.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in, out] b The input matrix B.
+/// \param [in] ldb The leading dimension of the matrix B.
+/// \param [out] w The eigenvalues of the matrix A in ascending order.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The device workspace size as a number of
+/// elements of type \tparam T.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
 template <typename T, typename ValueT>
 inline int syhegvd(sycl::queue &q, int itype, oneapi::mkl::job jobz,
                    oneapi::mkl::uplo uplo, int n, T *a, int lda, T *b, int ldb,
@@ -1737,7 +1980,7 @@ inline int syhegvd(sycl::queue &q, int itype, oneapi::mkl::job jobz,
       q, detail::get_library_data_t_from_type<T>(), info, "sygvd/hegvd", q,
       itype, jobz, uplo, n, a, lda, b, ldb, w, device_ws, device_ws_size, info);
 }
-
+// DPCT_LABEL_END
 } // namespace lapack
 } // namespace dpct
 
