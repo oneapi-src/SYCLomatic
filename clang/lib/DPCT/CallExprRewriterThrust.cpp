@@ -107,9 +107,47 @@ makeMappedThrustPolicyEnum(unsigned Idx) {
   return [=](const CallExpr *C) -> std::string {
     auto E = C->getArg(Idx);
     E = E->IgnoreImpCasts();
+
+    // To migrate "thrust::cuda::par.on" that appears in CE' first arg to
+    // "oneapi::dpl::execution::make_device_policy" in senario:
+    //   template<typename Itr>
+    // void foo(Itr Beg, Itr End){
+    //   cudaStream_t s1;
+    //   ...
+    //   thrust::sort(thrust::cuda::par.on(s1), Beg, End);
+    // }
+    const CallExpr *Call = nullptr;
+
+    if (const auto *ICE = dyn_cast<ImplicitCastExpr>(C->getArg(0))) {
+      if (const auto *MT =
+              dyn_cast<MaterializeTemporaryExpr>(ICE->getSubExpr())) {
+        if (auto SubICE = dyn_cast<ImplicitCastExpr>(MT->getSubExpr())) {
+          Call = dyn_cast<CXXMemberCallExpr>(SubICE->getSubExpr());
+        }
+      }
+    } else if (const auto *SubCE = dyn_cast<CallExpr>(C->getArg(0))) {
+      Call = SubCE;
+    } else {
+      Call = dyn_cast<CXXMemberCallExpr>(C->getArg(0));
+    }
+
+    if (Call) {
+      std::ostringstream OS;
+      if (const auto *ME = dyn_cast<MemberExpr>(Call->getCallee())) {
+        auto BaseName =
+            DpctGlobalInfo::getUnqualifiedTypeName(ME->getBase()->getType());
+        if (BaseName == "thrust::cuda_cub::par_t") {
+          OS << "oneapi::dpl::execution::make_device_policy(";
+          printDerefOp(OS, Call->getArg(0));
+          OS << ")";
+          return OS.str();
+        }
+      }
+    }
+
     if (auto DRE = dyn_cast<DeclRefExpr>(E)) {
       std::string EnumName = DRE->getNameInfo().getName().getAsString();
-      if (EnumName == "device") {
+      if (EnumName == "device" || EnumName == "par") {
         return "oneapi::dpl::execution::make_device_policy(" +
                makeQueueStr()(C) + ")";
       } else if (EnumName == "seq" || EnumName == "host") {
@@ -127,7 +165,7 @@ makeMappedThrustPolicyEnum(unsigned Idx) {
                  getDrefName(CMCE->getArg(0)) + ")";
         }
       }
-    } else if (auto CE = dyn_cast<CallExpr>(E)) {
+    } else if (auto CE = dyn_cast<CallExpr>(C)) {
       if (auto ME = dyn_cast_or_null<MemberExpr>(CE->getCallee())) {
         auto BaseType = getBaseType(ME->getBase()->getType());
         auto MethodName = getMehtodName(ME->getMemberDecl());

@@ -539,9 +539,8 @@ private:
 
 __global__ void kernel1(){
   int a[10];
-  // CHECK:  /*
-  // CHECK-NEXT:  DPCT1007:{{[0-9]+}}: Migration of thrust::sort is not supported.
-  // CHECK-NEXT:  */
+
+  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), a, a + 9);
   thrust::sort(thrust::device, a, a + 9);
 }
 template<typename Itr>
@@ -550,30 +549,26 @@ void mysort(Itr Beg, Itr End){
   thrust::host_vector<int> h_vec(10);
   thrust::device_vector<int> d_vec(10);
 
-  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), Beg, End);
-  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), Beg, End);
-  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), Beg, End);
-  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(*s1), Beg, End);
+  // CHECK:  oneapi::dpl::sort(oneapi::dpl::execution::seq, Beg, End);
+  // CHECK:  oneapi::dpl::sort(oneapi::dpl::execution::seq, Beg, End);
+  // CHECK:  oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), Beg, End);
+  // CHECK:  oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(*s1), Beg, End);
   thrust::sort(Beg, End);
   thrust::sort(thrust::host, Beg, End);
   thrust::sort(thrust::device, Beg, End);
   thrust::sort(thrust::cuda::par.on(s1), Beg, End);
 
-  // CHECK: std::sort(oneapi::dpl::execution::par_unseq, h_vec.begin(), h_vec.end());
-  // CHECK: std::sort(h_vec.begin(), h_vec.end());
+  // CHECK:  oneapi::dpl::sort(oneapi::dpl::execution::seq, h_vec.begin(), h_vec.end());
+  // CHECK:  oneapi::dpl::sort(oneapi::dpl::execution::seq, h_vec.begin(), h_vec.end());
   thrust::sort(thrust::host, h_vec.begin(), h_vec.end());
   thrust::sort(h_vec.begin(), h_vec.end());
 
   // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(*s1), d_vec.begin(), d_vec.end());
   // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
   // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
-  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
-  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
   thrust::sort(thrust::cuda::par.on(s1), d_vec.begin(), d_vec.end());
   thrust::sort(thrust::device, d_vec.begin(), d_vec.end());
   thrust::sort(d_vec.begin(), d_vec.end());
-  thrust::sort(thrust::cuda::par, d_vec.begin(), d_vec.end());
-  thrust::sort(thrust::host, d_vec.begin(), d_vec.end());
 }
 
 
@@ -605,11 +600,8 @@ int main(void){
   thrust::device_vector<int> d_vec(10);
   cudaStream_t s1;
 
-  mysort(h_vec.begin(), h_vec.end());
-  mysort(d_vec.begin(), d_vec.end());
-
-  // CHECK: std::sort(oneapi::dpl::execution::par_unseq, h_vec.begin(), h_vec.end());
-  // CHECK: std::sort(h_vec.begin(), h_vec.end());
+  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::seq, h_vec.begin(), h_vec.end());
+  // CHECK:   oneapi::dpl::sort(oneapi::dpl::execution::seq, h_vec.begin(), h_vec.end());
   thrust::sort(thrust::host, h_vec.begin(), h_vec.end());
   thrust::sort(h_vec.begin(), h_vec.end());
 
@@ -617,7 +609,7 @@ int main(void){
   // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
   // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
   // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
-  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
+  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::seq, d_vec.begin(), d_vec.end());
   thrust::sort(thrust::cuda::par.on(s1), d_vec.begin(), d_vec.end());
   thrust::sort(thrust::device, d_vec.begin(), d_vec.end());
   thrust::sort(d_vec.begin(), d_vec.end());

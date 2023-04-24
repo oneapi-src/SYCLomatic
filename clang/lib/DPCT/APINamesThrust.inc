@@ -766,13 +766,18 @@ thrustFactory("thrust::equal_range",
 // thrust::sequence
 thrustFactory("thrust::sequence",
               {{4,PolicyState::HasPolicy,3,MapNames::getDpctNamespace()+"sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota},
-               {3,PolicyState::NoPolicy,3,MapNames::getDpctNamespace()+"sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota},
+               {3,PolicyState::NoPolicy, 3,MapNames::getDpctNamespace()+"sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota},
                {5,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota},
-               {4,PolicyState::NoPolicy,2,MapNames::getDpctNamespace()+"sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota},
+               {4,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota},
                {6,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota},
-               {6,PolicyState::NoPolicy,6,MapNames::getDpctNamespace()+"sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota},
+               {6,PolicyState::NoPolicy, 6,MapNames::getDpctNamespace()+"sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota},
                {7,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota},
-               {6,PolicyState::NoPolicy,5,MapNames::getDpctNamespace()+"sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota}}),
+               {6,PolicyState::NoPolicy, 5,MapNames::getDpctNamespace()+"sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota}}),
 
-
+// thrust::sort
+thrustFactory("thrust::sort",
+              {{ 3,PolicyState::HasPolicy,2,"oneapi::dpl::sort", HelperFeatureEnum::no_feature_helper},
+               { 2,PolicyState::NoPolicy, 2,"oneapi::dpl::sort", HelperFeatureEnum::no_feature_helper},
+               { 4,PolicyState::HasPolicy,2,"oneapi::dpl::sort", HelperFeatureEnum::no_feature_helper},
+               { 3,PolicyState::NoPolicy, 2,"oneapi::dpl::sort", HelperFeatureEnum::no_feature_helper}}),
 

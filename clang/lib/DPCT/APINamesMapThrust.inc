@@ -19,7 +19,7 @@
 *   Expected in both host and device code
 *
 ****************************************************************************/
-ENTRY_HOST("thrust::sort", "oneapi::dpl::sort", "oneapi::dpl::execution::sycl")
+// ENTRY_HOST("thrust::sort", "oneapi::dpl::sort", "oneapi::dpl::execution::sycl")
 ENTRY_HOST("thrust::reduce", "std::reduce", "oneapi::dpl::execution::sycl")
 ENTRY_HOST("thrust::device_free", MapNames::getDpctNamespace() + "free_device", "")
 ENTRY_HOST("thrust::device_malloc", MapNames::getDpctNamespace() + "malloc_device", "")
