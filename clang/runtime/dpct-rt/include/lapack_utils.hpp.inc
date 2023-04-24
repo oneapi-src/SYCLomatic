@@ -824,13 +824,20 @@ template <typename T> struct potrs_impl {
 };
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|value_type_trait|dpct::lapack::detail
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 template <typename T> struct value_type_trait {
   using value_type = T;
 };
 template <typename T> struct value_type_trait<std::complex<T>> {
   using value_type = T;
 };
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|lamch_s|dpct::lapack::detail
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 template <typename T> auto lamch_s() {
   if constexpr (std::is_same_v<T, float>) {
     return slamch("S");
@@ -839,7 +846,14 @@ template <typename T> auto lamch_s() {
   }
   throw std::runtime_error("the type is unsupported");
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|syheevx_scratchpad_size_impl|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LapackUtils|value_type_trait
+// LapackUtils|lamch_s
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 template <typename T> struct syheevx_scratchpad_size_impl {
   void operator()(sycl::queue &q, oneapi::mkl::compz jobz,
                   oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
@@ -863,7 +877,13 @@ template <typename T> struct syheevx_scratchpad_size_impl {
     }
   }
 };
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|get_library_data_t_from_type|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 template <typename T> constexpr library_data_t get_library_data_t_from_type() {
   if constexpr (std::is_same_v<T, float>) {
     return library_data_t::real_float;
@@ -876,7 +896,19 @@ template <typename T> constexpr library_data_t get_library_data_t_from_type() {
   }
   throw std::runtime_error("the type is unsupported");
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|syheevx_impl|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LibCommonUtils|get_memory
+// LapackUtils|working_memory
+// LapackUtils|value_type_trait
+// LapackUtils|lamch_s
+// Memory|dpct_memset_detail
+// Memory|async_dpct_memcpy
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 template <typename T> struct syheevx_impl {
   void operator()(sycl::queue &q, oneapi::mkl::compz jobz,
                   oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
@@ -921,7 +953,14 @@ template <typename T> struct syheevx_impl {
     m_device.set_event(e);
   }
 };
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|syhegvx_scratchpad_size_impl|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LapackUtils|value_type_trait
+// LapackUtils|lamch_s
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 template <typename T> struct syhegvx_scratchpad_size_impl {
   void operator()(sycl::queue &q, std::int64_t itype, oneapi::mkl::compz jobz,
                   oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
@@ -945,7 +984,19 @@ template <typename T> struct syhegvx_scratchpad_size_impl {
     }
   }
 };
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|syhegvx_impl|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LibCommonUtils|get_memory
+// LapackUtils|working_memory
+// LapackUtils|value_type_trait
+// LapackUtils|lamch_s
+// Memory|dpct_memset_detail
+// Memory|async_dpct_memcpy
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 template <typename T> struct syhegvx_impl {
   void operator()(sycl::queue &q, std::int64_t itype, oneapi::mkl::compz jobz,
                   oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
@@ -990,7 +1041,11 @@ template <typename T> struct syhegvx_impl {
     m_device.set_event(e);
   }
 };
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|syhegvd_scratchpad_size_impl|dpct::lapack::detail
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 template <typename T> struct syhegvd_scratchpad_size_impl {
   void operator()(sycl::queue &q, std::int64_t itype, oneapi::mkl::job jobz,
                   oneapi::mkl::uplo uplo, std::int64_t n, std::int64_t lda,
@@ -1004,7 +1059,14 @@ template <typename T> struct syhegvd_scratchpad_size_impl {
     }
   }
 };
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|syhegvd_impl|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|get_memory
+// Memory|dpct_memset_detail
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 template <typename T> struct syhegvd_impl {
   void operator()(sycl::queue &q, std::int64_t itype, oneapi::mkl::job jobz,
                   oneapi::mkl::uplo uplo, std::int64_t n, void *a,
@@ -1028,7 +1090,7 @@ template <typename T> struct syhegvd_impl {
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
 };
-
+// DPCT_LABEL_END
 } // namespace detail
 
 // DPCT_LABEL_BEGIN|getrf_scratchpad_size|dpct::lapack
