@@ -4,7 +4,7 @@
 // RUN: FileCheck --input-file %T/Dpct/api_test2_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Dpct/api_test2_out
 
-// CHECK: 19
+// CHECK: 18
 
 // CHECK: template <class... Args> class dpct_kernel_name;
 // CHECK-NEXT: template <int Arg> class dpct_kernel_scalar;

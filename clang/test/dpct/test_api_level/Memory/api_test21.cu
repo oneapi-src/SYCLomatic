@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Memory/api_test21_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Memory/api_test21_out
 
-// CHECK: 46
+// CHECK: 45
 // TEST_FEATURE: Memory_device_memory_get_size
 
 static __device__ float d_A[1234567];

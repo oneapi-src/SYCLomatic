@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Image/api_test35_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Image/api_test35_out
 
-// CHECK: 48
+// CHECK: 47
 // usm version of 21
 // TEST_FEATURE: Image_image_matrix_to_pitched_data
 

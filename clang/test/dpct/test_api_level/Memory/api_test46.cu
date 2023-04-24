@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Memory/api_test46_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Memory/api_test46_out
 
-// CHECK: 21
+// CHECK: 20
 // TEST_FEATURE: Memory_usm_device_allocator_alias
 
 #include <thrust/device_allocator.h>

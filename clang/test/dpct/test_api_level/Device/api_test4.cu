@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Device/api_test4_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Device/api_test4_out
 
-// CHECK: 16
+// CHECK: 15
 // TEST_FEATURE: Device_get_device
 // TEST_FEATURE: Device_device_ext_default_queue
 

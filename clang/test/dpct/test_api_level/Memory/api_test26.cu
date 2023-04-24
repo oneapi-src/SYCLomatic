@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Memory/api_test26_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Memory/api_test26_out
 
-// CHECK: 49
+// CHECK: 48
 // TEST_FEATURE: Memory_device_memory_get_access
 // TEST_FEATURE: Memory_device_memory_init_q
 // TEST_FEATURE: Memory_dpct_accessor

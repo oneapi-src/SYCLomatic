@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Device/api_test9_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Device/api_test9_out
 
-// CHECK: 20
+// CHECK: 19
 // TEST_FEATURE: Device_device_ext_get_saved_queue
 
 #include "cublas.h"

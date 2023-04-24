@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Device/api_test15_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Device/api_test15_out
 
-// CHECK: 13
+// CHECK: 11
 // TEST_FEATURE: Device_dev_mgr_device_count
 
 #include "cuda.h"
