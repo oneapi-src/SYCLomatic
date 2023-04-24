@@ -979,6 +979,12 @@ std::optional<HeaderType> DpctFileInfo::findHeaderType(StringRef Header) {
 }
 
 void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
+  if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution ||
+      Type == HT_DPCT_DNNL_Utils) {
+    if (this != DpctGlobalInfo::getInstance().getMainFile().get())
+      DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
+          Type, FirstIncludeOffset);
+  }
   if (HeaderInsertedBitMap[Type])
     return;
   HeaderInsertedBitMap[Type] = true;
@@ -996,9 +1002,6 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
   case HT_DPL_Algorithm:
   case HT_DPL_Execution:
   case HT_DPCT_DNNL_Utils:
-    if (this != DpctGlobalInfo::getInstance().getMainFile().get())
-      DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
-          Type, FirstIncludeOffset);
     concatHeader(OS, getHeaderSpelling(Type));
     return insertHeader(OS.str(), FirstIncludeOffset,
                         InsertPosition::IP_AlwaysLeft);
