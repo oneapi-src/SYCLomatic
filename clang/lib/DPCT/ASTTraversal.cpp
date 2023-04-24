@@ -2154,6 +2154,14 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
     return false;
 
   const std::string RealTypeNameStr(Start, TyLen);
+
+  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
+      RealTypeNameStr.find("device_malloc_allocator") != std::string::npos) {
+    report(BeginLoc, Diagnostics::KNOWN_UNSUPPORTED_TYPE, false,
+            RealTypeNameStr);
+    return true;
+  }
+
   requestHelperFeatureForTypeNames(RealTypeNameStr, BeginLoc);
   std::string Replacement =
       MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
@@ -2430,11 +2438,13 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD) {
   auto SD = getAllDecls(DD);
 
   auto replaceInitParam = [&](const clang::Expr *replExpr) {
+    if (!replExpr)
+      return;
+
     if (auto type = DpctGlobalInfo::getUnqualifiedTypeName(replExpr->getType());
         !(type == "CUstream" || type == "cudaStream_t"))
       return;
-    if (!replExpr)
-      return;
+
     if (isDefaultStream(replExpr)) {
       int Index = getPlaceholderIdx(replExpr);
       if (Index == 0) {
@@ -4114,12 +4124,10 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
 }
 
 void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
-  bool IsAssigned = false;
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
   if (!CE) {
     if (!(CE = getNodeAsType<CallExpr>(Result, "FunctionCallUsed")))
       return;
-    IsAssigned = true;
   }
 
   if (!CE->getDirectCallee())
@@ -6743,7 +6751,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaIpcOpenEventHandle", "cudaIpcOpenMemHandle", "cudaSetDeviceFlags",
         "cudaDeviceCanAccessPeer", "cudaDeviceDisablePeerAccess",
         "cudaDeviceEnablePeerAccess", "cudaDriverGetVersion",
-        "cudaRuntimeGetVersion", "clock64", "__ldg",
+        "cudaRuntimeGetVersion", "clock64",
         "cudaFuncSetSharedMemConfig", "cuFuncSetCacheConfig",
         "cudaPointerGetAttributes", "cuCtxSetCacheConfig", "cuCtxSetLimit");
   };
@@ -7117,12 +7125,6 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaIpcCloseMemHandle") {
     report(CE->getBeginLoc(), Diagnostics::IPC_NOT_SUPPORTED, false,
            MapNames::ITFName.at(FuncName));
-  } else if (FuncName == "__ldg") {
-    std::ostringstream OS;
-    printDerefOp(OS, CE->getArg(0));
-    emplaceTransformation(new ReplaceStmt(CE, OS.str()));
-    report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false, FuncName,
-           "there is no corresponding API in SYCL.");
   } else {
     llvm::dbgs() << "[" << getName()
                  << "] Unexpected function name: " << FuncName;
@@ -8954,6 +8956,9 @@ void DeviceFunctionDeclRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       functionDecl(anyOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)))
           .bind("deviceFuncDecl"),
       this);
+
+  MF.addMatcher(cxxNewExpr(hasAncestor(DeviceFunctionMatcher)).bind("CxxNew"),
+                this);
 }
 
 void DeviceFunctionDeclRule::runRule(
@@ -9065,6 +9070,11 @@ void DeviceFunctionDeclRule::runRule(
   } else if (auto Ctor =
                  getAssistNodeAsType<CXXConstructExpr>(Result, "CtorExpr")) {
     FuncInfo->addCallee(Ctor);
+  }
+
+  if (auto CXX = getAssistNodeAsType<CXXNewExpr>(Result, "CxxNew")) {
+      report(CXX->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
+                            false, "Memory storage allocation");
   }
 
   if (auto Var = getAssistNodeAsType<VarDecl>(Result, "varGrid")) {
@@ -10323,7 +10333,7 @@ void MemoryMigrationRule::arrayMigration(
       llvm::raw_string_ostream OS(Str);
       OS << ", " << MapNames::getDpctNamespace() << "automatic";
       OS << ", ";
-      DerefExpr::create(StreamExpr, C).print(OS);
+      DerefExpr(StreamExpr, C).print(OS);
       emplaceTransformation(replaceText(Begin, End, std::move(Str), SM));
     }
     requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_3d, C);
@@ -11878,91 +11888,6 @@ void CooperativeGroupsFunctionRule::runRule(
     // thread_rank   1/1   1/1   0/1
     // size          1/1   0/0   0/1
     // shfl_down     1/1   0/0   0/0
-
-    // unsupported case 3, emit warning and return
-    if ((!CE->getNumArgs()) &&
-        CE->getCallee()->IgnoreImpCasts()->getStmtClass() ==
-            clang::Stmt::StmtClass::CallExprClass) {
-      return;
-    }
-
-    // unsupported case for shfl_down
-    if (FuncName == "shfl_down") {
-      // support thread_block_tile<1,2,4,8,16,32> in case 1
-      static const std::set<std::string> SupportedBaseType = {
-          "cooperative_groups::__v1::thread_block_tile<1>",
-          "cooperative_groups::__v1::thread_block_tile<2>",
-          "cooperative_groups::__v1::thread_block_tile<4>",
-          "cooperative_groups::__v1::thread_block_tile<8>",
-          "cooperative_groups::__v1::thread_block_tile<16>",
-          "cooperative_groups::__v1::thread_block_tile<32>"};
-      if (!SupportedBaseType.count(getBaseTypeStr(CE))) {
-        return;
-      }
-    }
-
-    // unsupported case for size
-    if (FuncName == "size") {
-      // support thread_block_tile<1,2,4,8,16,32> in case 1
-      static const std::set<std::string> SupportedBaseType = {
-          "cooperative_groups::__v1::thread_block_tile<1>",
-          "cooperative_groups::__v1::thread_block_tile<2>",
-          "cooperative_groups::__v1::thread_block_tile<4>",
-          "cooperative_groups::__v1::thread_block_tile<8>",
-          "cooperative_groups::__v1::thread_block_tile<16>",
-          "cooperative_groups::__v1::thread_block_tile<32>",
-          "cooperative_groups::__v1::thread_block"};
-      if (!SupportedBaseType.count(getBaseTypeStr(CE))) {
-        return;
-      }
-    }
-
-    // unsupported case for thread_rank
-    if (FuncName == "thread_rank") {
-      // support thread_block_tile<1,2,4,8,16,32> and thread_block in case 1 and 2
-      static const std::set<std::string> SupportedBaseType = {
-          "cooperative_groups::__v1::thread_block_tile<1>",
-          "cooperative_groups::__v1::thread_block_tile<2>",
-          "cooperative_groups::__v1::thread_block_tile<4>",
-          "cooperative_groups::__v1::thread_block_tile<8>",
-          "cooperative_groups::__v1::thread_block_tile<16>",
-          "cooperative_groups::__v1::thread_block_tile<32>",
-          "cooperative_groups::__v1::thread_block"};
-      static const std::set<std::string> SupportedArgType = {
-          "const class cooperative_groups::__v1::thread_block_tile<1> &",
-          "const class cooperative_groups::__v1::thread_block_tile<2> &",
-          "const class cooperative_groups::__v1::thread_block_tile<4> &",
-          "const class cooperative_groups::__v1::thread_block_tile<8> &",
-          "const class cooperative_groups::__v1::thread_block_tile<16> &",
-          "const class cooperative_groups::__v1::thread_block_tile<32> &",
-          "const class cooperative_groups::__v1::thread_block &"};
-
-      if ((!CE->getNumArgs() && !SupportedBaseType.count(getBaseTypeStr(CE))) ||
-          (CE->getNumArgs() && !SupportedArgType.count(getArgTypeStr(CE, 0)))) {
-        return;
-      }
-    }
-
-    // unsupported case for sync
-    if (FuncName == "sync") {
-      // support thread_block_tile<32>, thread_block, coalesced_group and
-      // grid_group in case 1 and 2
-      static const std::set<std::string> SupportedBaseType = {
-          "cooperative_groups::__v1::grid_group",
-          "cooperative_groups::__v1::coalesced_group",
-          "cooperative_groups::__v1::thread_block_tile<32>",
-          "cooperative_groups::__v1::thread_block"};
-      static const std::set<std::string> SupportedArgType = {
-          "const class cooperative_groups::__v1::grid_group &",
-          "const class cooperative_groups::__v1::coalesced_group &",
-          "const class cooperative_groups::__v1::thread_block_tile<32> &",
-          "const class cooperative_groups::__v1::thread_block &"};
-      if ((!CE->getNumArgs() && !SupportedBaseType.count(getBaseTypeStr(CE))) ||
-          (CE->getNumArgs() && !SupportedArgType.count(getArgTypeStr(CE, 0)))) {
-        return;
-      }
-    }
-
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();

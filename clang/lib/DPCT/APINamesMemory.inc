@@ -179,13 +179,13 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                              ))))
 
 // use makeCallArgCreatorWithCall instead of makeDerefArgCreatorWithCall to keep the cast information
-ASSIGNABLE_FACTORY(
-    ASSIGN_FACTORY_ENTRY("cudaHostGetDevicePointer", DEREF(makeCallArgCreatorWithCall(0)),
-                         CAST(ARG("char *"), ARG(1))))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaHostGetDevicePointer",
+                                        DEREF(makeCallArgCreatorWithCall(0)),
+                                        CAST(getDerefedType(0), ARG(1))))
 
-ASSIGNABLE_FACTORY(
-    ASSIGN_FACTORY_ENTRY("cuMemHostGetDevicePointer_v2", DEREF(makeCallArgCreatorWithCall(0)),
-                         CAST(ARG("char *"), ARG(1))))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuMemHostGetDevicePointer_v2",
+                                        DEREF(makeCallArgCreatorWithCall(0)),
+                                        CAST(getDerefedType(0), ARG(1))))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     checkIsUSM(),

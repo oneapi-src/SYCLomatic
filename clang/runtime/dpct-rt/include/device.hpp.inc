@@ -629,6 +629,7 @@ public:
 // Device|device_info_get_max_clock_frequency
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+  /// Return the maximum clock frequency of this device in KHz.
   int get_max_clock_frequency() const {
     return get_device_info().get_max_clock_frequency();
   }
@@ -762,6 +763,8 @@ public:
 // Device|device_info_set_memory_clock_rate
 // Device|device_info_set_memory_bus_width
 // Device|device_info_set_max_register_size_per_work_group
+// Device|device_info_set_uuid
+// Device|device_info_set_device_id
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   void get_device_info(device_info &out) const {
@@ -785,7 +788,7 @@ public:
         this->has(sycl::aspect::usm_host_allocations));
 
     prop.set_max_clock_frequency(
-        get_info<sycl::info::device::max_clock_frequency>());
+        get_info<sycl::info::device::max_clock_frequency>() * 1000);
 
     prop.set_max_compute_units(
         get_info<sycl::info::device::max_compute_units>());
