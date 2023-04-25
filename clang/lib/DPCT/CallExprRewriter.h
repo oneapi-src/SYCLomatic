@@ -1280,7 +1280,7 @@ public:
   DerefExprRewriter(
       const CallExpr *C, StringRef Source,
       const std::function<ArgValueT(const CallExpr *)> &ArgCreator)
-      : PrinterRewriter<DerefExpr>(C, Source, ArgCreator(C)) {}
+      : PrinterRewriter<dpct::DerefExpr>(C, Source, ArgCreator(C)) {}
 };
 
 class SubGroupPrinter {
