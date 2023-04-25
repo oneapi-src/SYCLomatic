@@ -1086,7 +1086,7 @@ MATH_API_REWRITER_DEVICE(
     MATH_API_DEVICE_NODES(
         CALL_FACTORY_ENTRY(
             "ldexpf", CALL(MapNames::getClNamespace(false, true) + "ldexp",
-                           CAST_IF_NEED(makeLiteral("float"), ARG(0)), ARG(1))),
+                           CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0)), ARG(1))),
         EMPTY_FACTORY_ENTRY("ldexpf"), EMPTY_FACTORY_ENTRY("ldexp"),
         EMPTY_FACTORY_ENTRY("ldexpf")))
 
@@ -1254,7 +1254,7 @@ MATH_API_REWRITER_DEVICE(
     MATH_API_DEVICE_NODES(
         CALL_FACTORY_ENTRY(
             "ldexp", CALL(MapNames::getClNamespace(false, true) + "ldexp",
-                          CAST_IF_NEED(makeLiteral("double"), ARG(0)), ARG(1))),
+                          CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0)), ARG(1))),
         EMPTY_FACTORY_ENTRY("ldexp"), EMPTY_FACTORY_ENTRY("ldexp"),
         EMPTY_FACTORY_ENTRY("ldexp")))
 
