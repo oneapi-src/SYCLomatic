@@ -2640,7 +2640,7 @@ __host__ int foo(int i, int j) {
 }
 
 // CHECK:  float foo(float f, float g) {
-// CHECK-NEXT:   return max(f, g) + min(f, g);
+// CHECK-NEXT:   return sycl::max(f, g) + sycl::min(f, g);
 // CHECK-NEXT: }
 __host__ float foo(float f, float g) {
   return max(f, g) + min(f, g);
@@ -2913,8 +2913,8 @@ __device__ void do_migration5() {
   float f;
   int i;
 
-  //CHECK: sycl::max(i, i);
-  //CHECK-NEXT: sycl::min(i, i);
+  //CHECK: std::max(i, i);
+  //CHECK-NEXT: std::min(i, i);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
@@ -2969,8 +2969,8 @@ __global__ void do_migration6() {
   float f;
   int i;
 
-  //CHECK: sycl::max(i, i);
-  //CHECK-NEXT: sycl::min(i, i);
+  //CHECK: std::max(i, i);
+  //CHECK-NEXT: std::min(i, i);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
@@ -3025,8 +3025,8 @@ __device__ __host__ void do_migration7() {
   float f;
   int i;
 
-  //CHECK: sycl::max(i, i);
-  //CHECK-NEXT: sycl::min(i, i);
+  //CHECK: std::max(i, i);
+  //CHECK-NEXT: std::min(i, i);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
@@ -3566,7 +3566,7 @@ __device__ void foo_lambda1()
   []()
   {
     int x = 16, y = 32;
-    // CHECK: int s = dpct::min(x, 10) + dpct::max(y, 64);
+    // CHECK: int s = std::min(x, 10) + std::max(y, 64);
     int s = std::min(x, 10) + std::max(y, 64);
   }();
 }
@@ -3576,7 +3576,7 @@ __device__ __host__ void foo_lambda2()
   []()
   {
     int x = 16, y = 32;
-    // CHECK: int s = dpct::min(x, 10) + dpct::max(y, 64);
+    // CHECK: int s = std::min(x, 10) + std::max(y, 64);
     int s = std::min(x, 10) + std::max(y, 64);
   }();
 }
@@ -3586,7 +3586,7 @@ __global__ void foo_lambda3()
   []()
   {
     int x = 16, y = 32;
-    // CHECK: int s = dpct::min(x, 10) + dpct::max(y, 64);
+    // CHECK: int s = std::min(x, 10) + std::max(y, 64);
     int s = std::min(x, 10) + std::max(y, 64);
   }();
 }
@@ -3596,9 +3596,9 @@ void foo_lambda4()
   []()
   {
     int num = 256;
-    // CHECK: auto x = sycl::min(num, 10);
+    // CHECK: auto x = std::min<long long>(num, 10);
     auto x = std::min<long long>(num, 10);
-    // CHECK: auto y = sycl::max(100.0f, num);
+    // CHECK: auto y = std::max<float>(100.0f, num);
     auto y = std::max<float>(100.0f, num);
   }();
 }
@@ -3608,9 +3608,9 @@ void foo_lambda5()
   auto foo = []()
   {
     int num = 256;
-    // CHECK: auto x = sycl::min(num, 10);
+    // CHECK: auto x = std::min<long long>(num, 10);
     auto x = std::min<long long>(num, 10);
-    // CHECK: auto y = sycl::max(100.0f, num);
+    // CHECK: auto y = std::max<float>(100.0f, num);
     auto y = std::max<float>(100.0f, num);
   };
   foo();
@@ -3623,9 +3623,9 @@ void foo_lambda6()
     []()
     {
       int num = 256;
-      // CHECK: auto x = sycl::min(num, 10);
+      // CHECK: auto x = std::min<long long>(num, 10);
       auto x = std::min<long long>(num, 10);
-      // CHECK: auto y = sycl::max(100.0f, num);
+      // CHECK: auto y = std::max<float>(100.0f, num);
       auto y = std::max<float>(100.0f, num);
     }();
   }();
@@ -3634,9 +3634,9 @@ void foo_lambda6()
 auto static_foo = []()
 {
   int num = 256;
-  // CHECK: auto x = dpct::min(num, 10);
+  // CHECK: auto x = std::min(num, 10);
   auto x = std::min(num, 10);
-  // CHECK: auto y = dpct::max(100, num);
+  // CHECK: auto y = std::max(100, num);
   auto y = std::max(100, num);
 };
 void foo_lambda7()

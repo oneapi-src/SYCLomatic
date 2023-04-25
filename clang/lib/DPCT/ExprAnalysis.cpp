@@ -804,27 +804,6 @@ void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
   dispatch(Cast->getSubExprAsWritten());
 }
 
-// nvcc can compile code which calls std::min/std::max (from standard c++
-// libarary) in device code with --expt-relaxed-constexpr. During migration,
-// clang will use functions in "lib/clang/17/include/cuda_wrappers/algorithm" as
-// declarations. We need to figure out those functions. Although they come from
-// install folder, we cannot touch them.
-bool isStdMinMaxFuncInDevice(const CallExpr *CE, const std::string &RefString) {
-  auto FD = CE->getDirectCallee();
-  if (FD) {
-    std::string QualName = FD->getQualifiedNameAsString();
-    if (FD->isConstexprSpecified() &&
-        (QualName == "std::min" || QualName == "std::max")) {
-      auto ContextFD = getImmediateOuterFuncDecl(CE);
-      if (ContextFD && !ContextFD->hasAttr<CUDADeviceAttr>() &&
-          !ContextFD->hasAttr<CUDAGlobalAttr>()) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 // Precondition: CE != nullptr
 void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   // To set the RefString
@@ -833,8 +812,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   if (!CallExprRewriterFactoryBase::RewriterMap)
     return;
   auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(RefString);
-  if (!isStdMinMaxFuncInDevice(CE, RefString) &&
-      Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
+  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
     for (unsigned I = 0, E = CE->getNumArgs(); I != E; ++I) {
       if (isa<PackExpansionExpr>(CE->getArg(I))) {
         return;

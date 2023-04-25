@@ -39,7 +39,7 @@ __global__ void func() {
   using T = float;
   T x;
   const T y(1.0f);
-  //CHECK: dpct::min(dpct::max(x + y, y), y);
+  //CHECK: std::min(std::max(x + y, y), y);
   std::min(std::max(x + y, y), y);
 }
 

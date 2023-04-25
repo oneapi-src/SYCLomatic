@@ -1441,39 +1441,6 @@ MATH_API_REWRITER_HOST_DEVICE(
 
 MATH_API_REWRITER_HOST_DEVICE(
     MATH_API_REWRITER_HOST(
-        "std::min",
-        CONDITIONAL_FACTORY_ENTRY(
-            math::UsingDpctMinMax,
-            FEATURE_REQUEST_FACTORY(
-                HelperFeatureEnum::Math_min_max,
-                CALL_FACTORY_ENTRY("std::min",
-                                   CALL(MapNames::getDpctNamespace() + "min",
-                                        CAST_IF_SPECIAL(ARG(0)),
-                                        CAST_IF_SPECIAL(ARG(1))))),
-            CALL_FACTORY_ENTRY("std::min",
-                               CALL(MapNames::getClNamespace() + "min",
-                                    CAST_IF_SPECIAL(ARG(0)),
-                                    CAST_IF_SPECIAL(ARG(1)))))),
-    MATH_API_REWRITER_DEVICE(
-        "std::min",
-        MATH_API_DEVICE_NODES(
-            CONDITIONAL_FACTORY_ENTRY(
-                math::UsingDpctMinMax,
-                FEATURE_REQUEST_FACTORY(
-                    HelperFeatureEnum::Math_min_max,
-                    CALL_FACTORY_ENTRY(
-                        "std::min", CALL(MapNames::getDpctNamespace() + "min",
-                                         CAST_IF_SPECIAL(ARG(0)),
-                                         CAST_IF_SPECIAL(ARG(1))))),
-                CALL_FACTORY_ENTRY("std::min",
-                                   CALL(MapNames::getClNamespace() + "min",
-                                        CAST_IF_SPECIAL(ARG(0)),
-                                        CAST_IF_SPECIAL(ARG(1))))),
-            EMPTY_FACTORY_ENTRY("std::min"), EMPTY_FACTORY_ENTRY("std::min"),
-            EMPTY_FACTORY_ENTRY("std::min"))))
-
-MATH_API_REWRITER_HOST_DEVICE(
-    MATH_API_REWRITER_HOST(
         "max",
         CONDITIONAL_FACTORY_ENTRY(
             math::UsingDpctMinMax,
@@ -1503,39 +1470,6 @@ MATH_API_REWRITER_HOST_DEVICE(
                                         CAST_IF_SPECIAL(ARG(1))))),
             EMPTY_FACTORY_ENTRY("max"), EMPTY_FACTORY_ENTRY("max"),
             EMPTY_FACTORY_ENTRY("max"))))
-
-MATH_API_REWRITER_HOST_DEVICE(
-    MATH_API_REWRITER_HOST(
-        "std::max",
-        CONDITIONAL_FACTORY_ENTRY(
-            math::UsingDpctMinMax,
-            FEATURE_REQUEST_FACTORY(
-                HelperFeatureEnum::Math_min_max,
-                CALL_FACTORY_ENTRY("std::max",
-                                   CALL(MapNames::getDpctNamespace() + "max",
-                                        CAST_IF_SPECIAL(ARG(0)),
-                                        CAST_IF_SPECIAL(ARG(1))))),
-            CALL_FACTORY_ENTRY("std::max",
-                               CALL(MapNames::getClNamespace() + "max",
-                                    CAST_IF_SPECIAL(ARG(0)),
-                                    CAST_IF_SPECIAL(ARG(1)))))),
-    MATH_API_REWRITER_DEVICE(
-        "std::max",
-        MATH_API_DEVICE_NODES(
-            CONDITIONAL_FACTORY_ENTRY(
-                math::UsingDpctMinMax,
-                FEATURE_REQUEST_FACTORY(
-                    HelperFeatureEnum::Math_min_max,
-                    CALL_FACTORY_ENTRY(
-                        "std::max", CALL(MapNames::getDpctNamespace() + "max",
-                                         CAST_IF_SPECIAL(ARG(0)),
-                                         CAST_IF_SPECIAL(ARG(1))))),
-                CALL_FACTORY_ENTRY("std::max",
-                                   CALL(MapNames::getClNamespace() + "max",
-                                        CAST_IF_SPECIAL(ARG(0)),
-                                        CAST_IF_SPECIAL(ARG(1))))),
-            EMPTY_FACTORY_ENTRY("std::max"), EMPTY_FACTORY_ENTRY("std::max"),
-            EMPTY_FACTORY_ENTRY("std::max"))))
 
 MATH_API_REWRITER_DEVICE(
     "llmax",
