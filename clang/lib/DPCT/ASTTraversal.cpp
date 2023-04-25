@@ -156,13 +156,13 @@ void IncludesCallbacks::insertCudaArchRepl(
   return;
 }
 
-void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
+bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
   bool IsInAnalysisScope = isInAnalysisScope(MacroNameTok.getLocation());
   if (!IsInAnalysisScope) {
-    return;
+    return false;
   }
   if (!MacroNameTok.getIdentifierInfo()) {
-    return;
+    return false;
   }
   std::string MacroName = MacroNameTok.getIdentifierInfo()->getName().str();
   auto Iter = MapNames::MacrosMap.find(MacroName);
@@ -175,14 +175,17 @@ void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
         requestFeature(HelperFeatureEnum::Dpct_dpct_compatibility_temp,
                        MacroNameTok.getLocation());
         insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
+        return true;
       }
-      return;
+      return false;
     }
     if (MacroName == "__CUDACC__" &&
         !MacroNameTok.getIdentifierInfo()->hasMacroDefinition())
-      return;
+      return false;
     TransformSet.emplace_back(Repl);
+    return true;
   }
+  return false;
 }
 
 void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
@@ -397,9 +400,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     return;
   }
   
-  if (MacroNameTok.getIdentifierInfo() && MapNames::MacrosMap.find(
-      MacroNameTok.getIdentifierInfo()->getName().str()) != MapNames::MacrosMap.end()){
-    ReplaceCuMacro(MacroNameTok);
+  if (ReplaceCuMacro(MacroNameTok)){
     return ;
   }
 
