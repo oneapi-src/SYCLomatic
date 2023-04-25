@@ -11908,6 +11908,10 @@ void CooperativeGroupsFunctionRule::runRule(
         }
       }
     }
+  } else if (FuncName == "reduce") {
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
   }
 }
 

@@ -4,6 +4,7 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/cooperative_groups/cooperative_groups.dp.cpp
 
 #include <cooperative_groups.h>
+#include <cooperative_groups/reduce.h>
 
 namespace cg = cooperative_groups;
 
@@ -199,4 +200,19 @@ __device__ void foo() {
   cg::tiled_partition<2>(block).shfl_down(1, 0);
   // CHECK: dpct::shift_sub_group_left(item_ct1.get_sub_group(), 1, 0, 1);
   cg::tiled_partition<1>(block).shfl_down(1, 0);
+}
+
+
+__device__ void testReduce(double *sdata, const cg::thread_block &cta) {
+  const unsigned int tid = cta.thread_rank();
+  cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(cta);
+
+  cg::reduce(tile32, sdata[tid], cg::plus<double>());  
+  cg::reduce(tile32, sdata[tid], cg::less<double>());  
+  cg::reduce(tile32, sdata[tid], cg::greater<double>());  
+  cg::reduce(tile32, sdata[tid], cg::bit_and<double>());  
+  cg::reduce(tile32, sdata[tid], cg::bit_xor<double>());
+  cg::reduce(tile32, sdata[tid], cg::bit_or<double>());
+  cg::sync(cta);
+
 }
