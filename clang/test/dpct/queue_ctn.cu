@@ -78,6 +78,12 @@ __global__ void kernel(float *a, float *b, float *c){
 }
 
 void bar7(){
+// CHECK: float *A, *B, *C;
+// CHECK: A = sycl::malloc_device<float>(100, q_ct1);
+// CHECK: B = sycl::malloc_device<float>(100, q_ct1);
+// CHECK: C = sycl::malloc_device<float>(100, q_ct1);
+// CHECK: q_ct1.memcpy(A, h_A, 100 * sizeof(float));
+// CHECK: q_ct1.memcpy(B, h_A, 100 * sizeof(float));
   float *A, *B, *C;
   cudaMalloc(&A, 100 * sizeof(float));
   cudaMalloc(&B, 100 * sizeof(float));
@@ -85,6 +91,7 @@ void bar7(){
   cudaMemcpy(A, h_A, 100 * sizeof(float), cudaMemcpyDeviceToHost);
   cudaMemcpy(B, h_A, 100 * sizeof(float), cudaMemcpyDeviceToHost);
   kernel<<<1, 100>>>(A, B, C);
+// CHECK: q_ct1.memcpy(h_A, C, 100 * sizeof(float)).wait();
   cudaMemcpy(h_A, C, 100 * sizeof(float), cudaMemcpyHostToDevice);
 }
 
