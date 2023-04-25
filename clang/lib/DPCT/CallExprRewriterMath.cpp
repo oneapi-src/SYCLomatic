@@ -1030,6 +1030,7 @@ auto IsPureDevice = makeCheckAnd(
     makeCheckAnd(IsDirectCalleeHasAttribute<CUDADeviceAttr>(),
                  makeCheckNot(IsDirectCalleeHasAttribute<CUDAHostAttr>())));
 
+
 auto IsDirectCallerPureDevice = [](const CallExpr *C) -> bool {
   auto ContextFD = getImmediateOuterFuncDecl(C);
   while (auto LE = getImmediateOuterLambdaExpr(ContextFD)) {
