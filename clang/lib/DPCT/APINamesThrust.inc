@@ -794,3 +794,8 @@ thrustFactory("thrust::reduce",
 CALL_FACTORY_ENTRY("thrust::device_free", CALL(MapNames::getDpctNamespace() + "free_device", ARG(0)))
 
 
+// thrust::device_malloc
+// CALL_FACTORY_ENTRY("thrust::device_malloc", CALL(MapNames::getDpctNamespace() + "device_malloc", ARG(0)))
+
+// thrust::raw_pointer_cast
+CALL_FACTORY_ENTRY("thrust::raw_pointer_cast", CALL(MapNames::getDpctNamespace() + "get_raw_pointer", ARG(0)))
