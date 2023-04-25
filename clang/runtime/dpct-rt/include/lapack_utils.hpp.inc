@@ -498,6 +498,9 @@ public:
   auto get_memory() {
     return dpct::detail::get_memory(reinterpret_cast<T *>(_ptr));
   }
+  auto get_ptr() {
+    return _ptr;
+  }
   void set_event(sycl::event e) { _e = e; }
   ~working_memory() {
     if (_ptr) {
@@ -955,9 +958,9 @@ template <typename T> struct syheevx_impl {
                                  w_data, z_data, lda, device_ws_data,
                                  device_ws_size);
     }
-    dpct::async_dpct_memcpy(a_data, z_data, n * lda * sizeof(T),
+    dpct::async_dpct_memcpy(a, z.get_ptr(), n * lda * sizeof(T),
                             memcpy_direction::device_to_device, q);
-    dpct::async_dpct_memcpy(m, m_device_data, sizeof(std::int64_t),
+    dpct::async_dpct_memcpy(m, m_device.get_ptr(), sizeof(std::int64_t),
                             memcpy_direction::device_to_host, q);
     sycl::event e = dpct::detail::dpct_memset(q, info, 0, sizeof(int));
     z.set_event(e);
@@ -1043,9 +1046,9 @@ template <typename T> struct syhegvx_impl {
                                  abstol, m_device_data, w_data, z_data, lda,
                                  device_ws_data, device_ws_size);
     }
-    dpct::async_dpct_memcpy(a_data, z_data, n * lda * sizeof(T),
+    dpct::async_dpct_memcpy(a, z.get_ptr(), n * lda * sizeof(T),
                             memcpy_direction::device_to_device, q);
-    dpct::async_dpct_memcpy(m, m_device_data, sizeof(std::int64_t),
+    dpct::async_dpct_memcpy(m, m_device.get_ptr(), sizeof(std::int64_t),
                             memcpy_direction::device_to_host, q);
     sycl::event e = dpct::detail::dpct_memset(q, info, 0, sizeof(int));
     z.set_event(e);
