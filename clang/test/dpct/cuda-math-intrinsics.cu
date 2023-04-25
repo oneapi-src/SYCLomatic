@@ -2509,19 +2509,19 @@ __global__ void kernelFuncSIMD() {
   u_2 = __vhaddu2(u, u_1);
   u_2 = __vhaddu4(u, u_1);
 
-  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2>(u, u_1, dpct::max());
-  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, u_1, dpct::max());
-  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, dpct::max());
-  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, dpct::max());
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2>(u, u_1, dpct::maximum());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, u_1, dpct::maximum());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, dpct::maximum());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, dpct::maximum());
   u_2 = __vmaxs2(u, u_1);
   u_2 = __vmaxs4(u, u_1);
   u_2 = __vmaxu2(u, u_1);
   u_2 = __vmaxu4(u, u_1);
 
-  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2>(u, u_1, dpct::min());
-  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, u_1, dpct::min());
-  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, dpct::min());
-  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, dpct::min());
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2>(u, u_1, dpct::minimum());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, u_1, dpct::minimum());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, dpct::minimum());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, dpct::minimum());
   u_2 = __vmins2(u, u_1);
   u_2 = __vmins4(u, u_1);
   u_2 = __vminu2(u, u_1);

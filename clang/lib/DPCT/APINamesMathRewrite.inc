@@ -2315,7 +2315,7 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
                          MapNames::getClNamespace() + "short2>",
                      ARG(0), ARG(1),
-                     LITERAL(MapNames::getDpctNamespace() + "max()"))))))
+                     LITERAL(MapNames::getDpctNamespace() + "maximum()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__vmaxs4",
@@ -2334,7 +2334,7 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
                          MapNames::getClNamespace() + "char4>",
                      ARG(0), ARG(1),
-                     LITERAL(MapNames::getDpctNamespace() + "max()"))))))
+                     LITERAL(MapNames::getDpctNamespace() + "maximum()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__vmaxu2",
@@ -2353,7 +2353,7 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
                          MapNames::getClNamespace() + "ushort2>",
                      ARG(0), ARG(1),
-                     LITERAL(MapNames::getDpctNamespace() + "max()"))))))
+                     LITERAL(MapNames::getDpctNamespace() + "maximum()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__vmaxu4",
@@ -2372,7 +2372,7 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
                          MapNames::getClNamespace() + "uchar4>",
                      ARG(0), ARG(1),
-                     LITERAL(MapNames::getDpctNamespace() + "max()"))))))
+                     LITERAL(MapNames::getDpctNamespace() + "maximum()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__vmins2",
@@ -2391,7 +2391,7 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
                          MapNames::getClNamespace() + "short2>",
                      ARG(0), ARG(1),
-                     LITERAL(MapNames::getDpctNamespace() + "min()"))))))
+                     LITERAL(MapNames::getDpctNamespace() + "minimum()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__vmins4",
@@ -2410,7 +2410,7 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
                          MapNames::getClNamespace() + "char4>",
                      ARG(0), ARG(1),
-                     LITERAL(MapNames::getDpctNamespace() + "min()"))))))
+                     LITERAL(MapNames::getDpctNamespace() + "minimum()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__vminu2",
@@ -2429,7 +2429,7 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
                          MapNames::getClNamespace() + "ushort2>",
                      ARG(0), ARG(1),
-                     LITERAL(MapNames::getDpctNamespace() + "min()"))))))
+                     LITERAL(MapNames::getDpctNamespace() + "minimum()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__vminu4",
@@ -2448,7 +2448,7 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
                          MapNames::getClNamespace() + "uchar4>",
                      ARG(0), ARG(1),
-                     LITERAL(MapNames::getDpctNamespace() + "min()"))))))
+                     LITERAL(MapNames::getDpctNamespace() + "minimum()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__vneg2",
