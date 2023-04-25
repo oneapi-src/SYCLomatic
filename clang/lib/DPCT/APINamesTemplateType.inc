@@ -125,6 +125,10 @@ TYPE_REWRITE_ENTRY(
     "thrust::logical_and",
     TYPE_FACTORY(STR("std::logical_and"), TEMPLATE_ARG(0)))
 
+//  thrust::system_error(
+TYPE_REWRITE_ENTRY("thrust::system::system_error",
+                   TYPE_FACTORY(STR("std::system_error")))
+
 // thrust::bit_and
 TYPE_REWRITE_ENTRY(
     "thrust::bit_and",
@@ -167,6 +171,8 @@ TYPE_REWRITE_ENTRY(
 
 TYPE_REWRITE_ENTRY("thrust::identity",
                    TYPE_FACTORY(STR("oneapi::dpl::identity")))
+
+TYPE_REWRITE_ENTRY("thrust::null_type", TYPE_FACTORY(STR("dpct::null_type")))
 
 TYPE_REWRITE_ENTRY("cooperative_groups::__v1::plus",
                    TYPE_FACTORY(STR(MapNames::getClNamespace() + "plus"),

@@ -576,9 +576,7 @@ void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
        StringRef(TypeName).startswith("thrust::") ||
        StringRef(TypeName).startswith("cooperative_groups::")) {
     analyzeType(Temp->getTypeSourceInfo()->getTypeLoc());
-    return;
   }
-
   analyzeExpr(static_cast<const CXXConstructExpr *>(Temp));
 }
 
@@ -1015,6 +1013,7 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
         TYPELOC_CAST(TypedefTypeLoc).getTypedefNameDecl()->getName().str();
     break;
   case TypeLoc::Builtin:
+  case TypeLoc::Using:
   case TypeLoc::Record: {
     TyName = DpctGlobalInfo::getTypeName(TL.getType());
     auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TyName);

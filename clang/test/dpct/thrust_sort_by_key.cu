@@ -32,12 +32,12 @@ int main(void) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CHECK:dpct::sort(oneapi::dpl::execution::seq, AH.begin(), AH.end(), BH.begin());
 // CHECK-NEXT:dpct::sort(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), BD.begin());
-// CHECK-NEXT:if (dpct::is_device_ptr(h_ptr + 4)) {
+// CHECK-NEXT:if (dpct::is_device_ptr(h_ptr)) {
 // CHECK-NEXT:  dpct::sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(h_ptr), dpct::device_pointer<int>(h_ptr + 4), dpct::device_pointer<>(BH.begin()));
 // CHECK-NEXT:} else {
 // CHECK-NEXT:  dpct::sort(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, BH.begin());
 // CHECK-NEXT:};
-// CHECK-NEXT:if (dpct::is_device_ptr(d_ptr + 4)) {
+// CHECK-NEXT:if (dpct::is_device_ptr(d_ptr)) {
 // CHECK-NEXT:  dpct::sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(d_ptr), dpct::device_pointer<int>(d_ptr + 4), dpct::device_pointer<>(BD.begin()));
 // CHECK-NEXT:} else {
 // CHECK-NEXT:  dpct::sort(oneapi::dpl::execution::seq, d_ptr, d_ptr + 4, BD.begin());
@@ -51,12 +51,12 @@ int main(void) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CHECK:dpct::sort(oneapi::dpl::execution::seq, AH.begin(), AH.end(), BH.begin(), std::greater<int>());
 // CHECK-NEXT:dpct::sort(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), BD.begin(), std::greater<int>());
-// CHECK-NEXT:if (dpct::is_device_ptr(h_ptr + 4)) {
+// CHECK-NEXT:if (dpct::is_device_ptr(h_ptr)) {
 // CHECK-NEXT:  dpct::sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(h_ptr), dpct::device_pointer<int>(h_ptr + 4), dpct::device_pointer<>(BH.begin()), std::greater<int>());
 // CHECK-NEXT:} else {
 // CHECK-NEXT:  dpct::sort(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, BH.begin(), std::greater<int>());
 // CHECK-NEXT:};
-// CHECK-NEXT:if (dpct::is_device_ptr(d_ptr + 4)) {
+// CHECK-NEXT:if (dpct::is_device_ptr(d_ptr)) {
 // CHECK-NEXT:  dpct::sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(d_ptr), dpct::device_pointer<int>(d_ptr + 4), dpct::device_pointer<>(BD.begin()), std::greater<int>());
 // CHECK-NEXT:} else {
 // CHECK-NEXT:  dpct::sort(oneapi::dpl::execution::seq, d_ptr, d_ptr + 4, BD.begin(), std::greater<int>());
