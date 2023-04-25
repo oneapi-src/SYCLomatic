@@ -12356,11 +12356,9 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE,
         !isChildOrSamePath(
           DpctInstallPath,
           dpct::DpctGlobalInfo::getLocInfo(ND).first)) {
-      if(auto FD = dyn_cast<clang::FunctionDecl>(ND)){
-        if (!FD->getName().startswith("cudnn") &&
-            !FD->getName().startswith("nccl"))
-          return;
-        }        
+      if (!ND->getName().startswith("cudnn") &&
+          !ND->getName().startswith("nccl"))
+        return;
     }
     const auto *NSD = dyn_cast<NamespaceDecl>(ND->getDeclContext());
     if (NSD && !NSD->isInlineNamespace()) {
