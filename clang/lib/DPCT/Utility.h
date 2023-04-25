@@ -575,4 +575,6 @@ bool isLambda(const clang::FunctionDecl *FD);
 const clang::LambdaExpr *
 getImmediateOuterLambdaExpr(const clang::FunctionDecl *FuncDecl);
 bool typeIsPostfix(clang::QualType QT);
+
+std::string getBaseTypeRemoveTemplateArguments(const clang::MemberExpr* ME);
 #endif // DPCT_UTILITY_H

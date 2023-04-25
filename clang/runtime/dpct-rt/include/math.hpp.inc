@@ -297,22 +297,22 @@ struct hadd {
 };
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|max|dpct
+// DPCT_LABEL_BEGIN|maximum|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 /// A sycl::max wrapper functors.
-struct max {
+struct maximum {
   template <typename T> auto operator()(const T x, const T y) const {
     return sycl::max(x, y);
   }
 };
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|min|dpct
+// DPCT_LABEL_BEGIN|minimum|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 /// A sycl::min wrapper functors.
-struct min {
+struct minimum {
   template <typename T> auto operator()(const T x, const T y) const {
     return sycl::min(x, y);
   }
@@ -337,8 +337,8 @@ struct sub_sat {
 // Math|add_sat
 // Math|rhadd
 // Math|hadd
-// Math|max
-// Math|min
+// Math|maximum
+// Math|minimum
 // Math|sub_sat
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
