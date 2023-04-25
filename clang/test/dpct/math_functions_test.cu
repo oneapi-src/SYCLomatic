@@ -294,7 +294,7 @@ double test_copysign(double a, float b) { return copysign(a, b); }
 // CHECK: double test_copysign(float a, double b) { return copysign(a, b); }
 double test_copysign(float a, double b) { return copysign(a, b); }
 
-// CHECK: unsigned int test_min(unsigned int a, unsigned int b) { return sycl::min(a, b); }
+// CHECK: unsigned int test_min(unsigned int a, unsigned int b) { return std::min(a, b); }
 unsigned int test_min(unsigned int a, unsigned int b) { return min(a, b); }
 
 // CHECK: unsigned int test_min(int a, unsigned int b) { return dpct::min(a, b); }
@@ -303,11 +303,11 @@ unsigned int test_min(int a, unsigned int b) { return min(a, b); }
 // CHECK: unsigned int test_min(unsigned int a, int b) { return dpct::min(a, b); }
 unsigned int test_min(unsigned int a, int b) { return min(a, b); }
 
-// CHECK: long int test_min(long int a, long int b) { return sycl::min(a, b); }
+// CHECK: long int test_min(long int a, long int b) { return std::min(a, b); }
 long int test_min(long int a, long int b) { return min(a, b); }
 
 // CHECK: unsigned long int test_min(unsigned long int a, unsigned long int b) {
-// CHECK:   return sycl::min(a, b);
+// CHECK:   return std::min(a, b);
 // CHECK: }
 unsigned long int test_min(unsigned long int a, unsigned long int b) {
   return min(a, b);
@@ -327,12 +327,12 @@ unsigned long int test_min(unsigned long int a, long int b) {
   return min(a, b);
 }
 
-// CHECK: long long int test_min(long long int a, long long int b) { return sycl::min(a, b); }
+// CHECK: long long int test_min(long long int a, long long int b) { return std::min(a, b); }
 long long int test_min(long long int a, long long int b) { return min(a, b); }
 
 // CHECK: unsigned long long int test_min(unsigned long long int a,
 // CHECK:                                 unsigned long long int b) {
-// CHECK:   return sycl::min(a, b);
+// CHECK:   return std::min(a, b);
 // CHECK: }
 unsigned long long int test_min(unsigned long long int a,
                                 unsigned long long int b) {
@@ -353,10 +353,10 @@ unsigned long long int test_min(unsigned long long int a, long long int b) {
   return min(a, b);
 }
 
-// CHECK: float test_min(float a, float b) { return sycl::min(a, b); }
+// CHECK: float test_min(float a, float b) { return std::min(a, b); }
 float test_min(float a, float b) { return min(a, b); }
 
-// CHECK: double test_min(double a, double b) { return sycl::min(a, b); }
+// CHECK: double test_min(double a, double b) { return std::min(a, b); }
 double test_min(double a, double b) { return min(a, b); }
 
 // CHECK: double test_min(float a, double b) { return dpct::min(a, b); }
@@ -365,7 +365,7 @@ double test_min(float a, double b) { return min(a, b); }
 // CHECK: double test_min(double a, float b) { return dpct::min(a, b); }
 double test_min(double a, float b) { return min(a, b); }
 
-// CHECK: unsigned int test_max(unsigned int a, unsigned int b) { return sycl::max(a, b); }
+// CHECK: unsigned int test_max(unsigned int a, unsigned int b) { return std::max(a, b); }
 unsigned int test_max(unsigned int a, unsigned int b) { return max(a, b); }
 
 // CHECK: unsigned int test_max(int a, unsigned int b) { return dpct::max(a, b); }
@@ -374,11 +374,11 @@ unsigned int test_max(int a, unsigned int b) { return max(a, b); }
 // CHECK: unsigned int test_max(unsigned int a, int b) { return dpct::max(a, b); }
 unsigned int test_max(unsigned int a, int b) { return max(a, b); }
 
-// CHECK: long int test_max(long int a, long int b) { return sycl::max(a, b); }
+// CHECK: long int test_max(long int a, long int b) { return std::max(a, b); }
 long int test_max(long int a, long int b) { return max(a, b); }
 
 // CHECK: unsigned long int test_max(unsigned long int a, unsigned long int b) {
-// CHECK:   return sycl::max(a, b);
+// CHECK:   return std::max(a, b);
 // CHECK: }
 unsigned long int test_max(unsigned long int a, unsigned long int b) {
   return max(a, b);
@@ -398,12 +398,12 @@ unsigned long int test_max(unsigned long int a, long int b) {
   return max(a, b);
 }
 
-// CHECK: long long int test_max(long long int a, long long int b) { return sycl::max(a, b); }
+// CHECK: long long int test_max(long long int a, long long int b) { return std::max(a, b); }
 long long int test_max(long long int a, long long int b) { return max(a, b); }
 
 // CHECK: unsigned long long int test_max(unsigned long long int a,
 // CHECK:                                 unsigned long long int b) {
-// CHECK:   return sycl::max(a, b);
+// CHECK:   return std::max(a, b);
 // CHECK: }
 unsigned long long int test_max(unsigned long long int a,
                                 unsigned long long int b) {
@@ -424,10 +424,10 @@ unsigned long long int test_max(unsigned long long int a, long long int b) {
   return max(a, b);
 }
 
-// CHECK: float test_max(float a, float b) { return sycl::max(a, b); }
+// CHECK: float test_max(float a, float b) { return std::max(a, b); }
 float test_max(float a, float b) { return max(a, b); }
 
-// CHECK: double test_max(double a, double b) { return sycl::max(a, b); }
+// CHECK: double test_max(double a, double b) { return std::max(a, b); }
 double test_max(double a, double b) { return max(a, b); }
 
 // CHECK: double test_max(float a, double b) { return dpct::max(a, b); }

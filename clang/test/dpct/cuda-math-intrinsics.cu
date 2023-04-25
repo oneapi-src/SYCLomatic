@@ -2633,7 +2633,7 @@ int main() {
 }
 
 // CHECK:  int foo(int i, int j) {
-// CHECK-NEXT:   return sycl::max(i, j) + sycl::min(i, j);
+// CHECK-NEXT:   return std::max(i, j) + std::min(i, j);
 // CHECK-NEXT: }
 __host__ int foo(int i, int j) {
   return max(i, j) + min(i, j);
@@ -2661,7 +2661,7 @@ __device__ float foo2(float f, float g) {
 }
 
 // CHECK:  int  foo3(int i, int j) {
-// CHECK-NEXT:   return sycl::max(i, j) + sycl::min(i, j);
+// CHECK-NEXT:   return std::max(i, j) + std::min(i, j);
 // CHECK-NEXT: }
 __device__ int __host__ foo3(int i, int j) {
   return max(i, j) + min(i, j);
@@ -2816,7 +2816,7 @@ __global__ void foobar(int i) {
 
 void do_migration() {
   int i, j;
-  // CHECK: sycl::max(i, j);
+  // CHECK: std::max(i, j);
   max(i, j);
 }
 __global__ void do_migration2() {
@@ -2831,7 +2831,7 @@ __device__ void do_migration3() {
 }
 __host__ __device__ void do_migration4() {
   int i, j;
-  // CHECK: sycl::max(i, j);
+  // CHECK: std::max(i, j);
   max(i, j);
 }
 namespace t {
@@ -2841,7 +2841,7 @@ int max(int i, int j) {
 }
 void do_migration5() {
   int i, j;
-  // CHECK: sycl::max(i, j);
+  // CHECK: std::max(i, j);
   max(i, j);
 }
 void no_migration2() {
@@ -2856,14 +2856,14 @@ void no_migration3() {
 }
 __host__ void do_migration6() {
   int i, j;
-  // CHECK: sycl::max(i, j);
+  // CHECK: std::max(i, j);
   max(i, j);
 }
 
 void ns() {
   using namespace std;
   int i, j;
-  // CHECK: sycl::max(i, j);
+  // CHECK: std::max(i, j);
   max(i, j);
 }
 

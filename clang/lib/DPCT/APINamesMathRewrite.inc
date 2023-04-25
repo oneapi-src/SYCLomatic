@@ -1418,8 +1418,7 @@ MATH_API_REWRITER_HOST_DEVICE(
                                    CALL(MapNames::getDpctNamespace() + "min",
                                         CAST_IF_SPECIAL(ARG(0)),
                                         CAST_IF_SPECIAL(ARG(1))))),
-            CALL_FACTORY_ENTRY("min", CALL(MapNames::getClNamespace() + "min",
-                                           CAST_IF_SPECIAL(ARG(0)),
+            CALL_FACTORY_ENTRY("min", CALL("std::min", CAST_IF_SPECIAL(ARG(0)),
                                            CAST_IF_SPECIAL(ARG(1)))))),
     MATH_API_REWRITER_DEVICE(
         "min",
@@ -1450,8 +1449,7 @@ MATH_API_REWRITER_HOST_DEVICE(
                                    CALL(MapNames::getDpctNamespace() + "max",
                                         CAST_IF_SPECIAL(ARG(0)),
                                         CAST_IF_SPECIAL(ARG(1))))),
-            CALL_FACTORY_ENTRY("max", CALL(MapNames::getClNamespace() + "max",
-                                           CAST_IF_SPECIAL(ARG(0)),
+            CALL_FACTORY_ENTRY("max", CALL("std::max", CAST_IF_SPECIAL(ARG(0)),
                                            CAST_IF_SPECIAL(ARG(1)))))),
     MATH_API_REWRITER_DEVICE(
         "max",
