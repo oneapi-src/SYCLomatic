@@ -1675,38 +1675,45 @@ inline void reduce_argmin(_ExecutionPolicy &&policy, Iter1 input, Iter2 output,
   ::std::copy(::std::forward<_ExecutionPolicy>(policy), ret, ret + 1, output);
 }
 
-template <typename _ExecutionPolicy, typename Iter1, typename ValueLessComparable, typename StrictWeakOrdering>
+template <typename _ExecutionPolicy, typename Iter1,
+          typename ValueLessComparable, typename StrictWeakOrdering>
 inline ::std::pair<Iter1, Iter1>
-equal_range(_ExecutionPolicy &&policy, Iter1 start, Iter1 end, const ValueLessComparable& value, StrictWeakOrdering comp)
-{
+equal_range(_ExecutionPolicy &&policy, Iter1 start, Iter1 end,
+            const ValueLessComparable &value, StrictWeakOrdering comp) {
 
   auto size = ::std::distance(start, end);
-  auto zip_start = oneapi::dpl::make_zip_iterator(start, dpct::make_counting_iterator(0));
+  auto zip_start =
+      oneapi::dpl::make_zip_iterator(start, dpct::make_counting_iterator(0));
   auto constant_value_iter = dpct::make_constant_iterator(value);
-  auto reduction = [=](auto a, auto b){
-    return oneapi::dpl::__internal::tuple<uint64_t, uint64_t>(::std::min(::std::get<0>(a), ::std::get<0>(b)), 
-                                                              ::std::max(::std::get<1>(a), ::std::get<1>(b)));
+  auto reduction = [=](const auto &a, const auto &b) {
+    return oneapi::dpl::__internal::tuple<uint64_t, uint64_t>(
+        ::std::min(::std::get<0>(a), ::std::get<0>(b)),
+        ::std::max(::std::get<1>(::std::forward<decltype(a)>(a)),
+                   ::std::get<1>(::std::forward<decltype(b)>(b))));
   };
-  auto trans = [=](auto a, auto b){
-    return ::oneapi::dpl::__internal::tuple<uint64_t,uint64_t>(comp(::std::get<0>(a), b) ? size : ::std::get<1>(a), 
-                                                               comp(b, ::std::get<0>(a)) ? 0 : ::std::get<1>(a)+1);
+  auto trans = [=](const auto &a, const auto &b) {
+    return ::oneapi::dpl::__internal::tuple<uint64_t, uint64_t>(
+        comp(::std::get<0>(a), b) ? size : ::std::get<1>(a),
+        comp(b, ::std::get<0>(a)) ? 0 : ::std::get<1>(a) + 1);
   };
 
-
-  auto result = oneapi::dpl::transform_reduce(::std::forward<_ExecutionPolicy>(policy), zip_start,
-                                zip_start + size, constant_value_iter,
-                                oneapi::dpl::__internal::tuple<uint64_t, uint64_t>(size, 0),
-                                reduction, trans);
-  return ::std::make_pair(start + ::std::get<0>(result), start + ::std::get<1>(result));
+  auto result = oneapi::dpl::transform_reduce(
+      ::std::forward<_ExecutionPolicy>(policy), zip_start, zip_start + size,
+      constant_value_iter,
+      oneapi::dpl::__internal::tuple<uint64_t, uint64_t>(size, 0), reduction,
+      trans);
+  return ::std::make_pair(start + ::std::get<0>(result),
+                          start + ::std::get<1>(result));
 }
 
-template <typename _ExecutionPolicy, typename Iter1, typename ValueLessComparable>
-inline ::std::pair<Iter1, Iter1>
-equal_range(_ExecutionPolicy &&policy, Iter1 start, Iter1 end, const ValueLessComparable& value)
-{
-  return equal_range(::std::forward<_ExecutionPolicy>(policy), start, end, value, internal::__less());
+template <typename _ExecutionPolicy, typename Iter1,
+          typename ValueLessComparable>
+inline ::std::pair<Iter1, Iter1> equal_range(_ExecutionPolicy &&policy,
+                                             Iter1 start, Iter1 end,
+                                             const ValueLessComparable &value) {
+  return equal_range(::std::forward<_ExecutionPolicy>(policy), start, end,
+                     value, internal::__less());
 }
-
 
 } // end namespace dpct
 
