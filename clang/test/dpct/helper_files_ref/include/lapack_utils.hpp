@@ -677,12 +677,17 @@ template <typename T> struct value_type_trait<std::complex<T>> {
 };
 
 template <typename T> auto lamch_s() {
+#ifndef __INTEL_MKL__
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
+                           "Project does not support this API.");
+#else
   if constexpr (std::is_same_v<T, float>) {
     return slamch("S");
   } else if constexpr (std::is_same_v<T, double>) {
     return dlamch("S");
   }
   throw std::runtime_error("the type is unsupported");
+#endif
 }
 
 template <typename T> struct syheevx_scratchpad_size_impl {
@@ -691,6 +696,11 @@ template <typename T> struct syheevx_scratchpad_size_impl {
                   std::int64_t n, std::int64_t lda, void *vl, void *vu,
                   std::int64_t il, std::int64_t iu,
                   std::size_t *device_ws_size) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error(
+        "The oneAPI Math Kernel Library (oneMKL) Interfaces "
+        "Project does not support this API.");
+#else
     auto vl_value =
         *reinterpret_cast<typename value_type_trait<T>::value_type *>(vl);
     auto vu_value =
@@ -706,6 +716,7 @@ template <typename T> struct syheevx_scratchpad_size_impl {
           q, jobz, range, uplo, n, lda, vl_value, vu_value, il, iu, abstol,
           lda);
     }
+#endif
   }
 };
 
@@ -730,6 +741,11 @@ template <typename T> struct syheevx_impl {
                   std::int64_t iu, std::int64_t *m, library_data_t w_type,
                   void *w, void *device_ws, std::size_t device_ws_size,
                   int *info) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error(
+        "The oneAPI Math Kernel Library (oneMKL) Interfaces "
+        "Project does not support this API.");
+#else
     working_memory<T> z(n * lda, q);
     working_memory<std::int64_t> m_device(1, q);
     auto z_data = z.get_memory();
@@ -764,6 +780,7 @@ template <typename T> struct syheevx_impl {
     sycl::event e = dpct::detail::dpct_memset(q, info, 0, sizeof(int));
     z.set_event(e);
     m_device.set_event(e);
+#endif
   }
 };
 
@@ -773,6 +790,11 @@ template <typename T> struct syhegvx_scratchpad_size_impl {
                   std::int64_t n, std::int64_t lda, std::int64_t ldb, void *vl,
                   void *vu, std::int64_t il, std::int64_t iu,
                   std::size_t *device_ws_size) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error(
+        "The oneAPI Math Kernel Library (oneMKL) Interfaces "
+        "Project does not support this API.");
+#else
     auto vl_value =
         *reinterpret_cast<typename value_type_trait<T>::value_type *>(vl);
     auto vu_value =
@@ -788,6 +810,7 @@ template <typename T> struct syhegvx_scratchpad_size_impl {
           q, itype, jobz, range, uplo, n, lda, ldb, vl_value, vu_value, il, iu,
           abstol, lda);
     }
+#endif
   }
 };
 
@@ -798,6 +821,11 @@ template <typename T> struct syhegvx_impl {
                   std::int64_t ldb, void *vl, void *vu, std::int64_t il,
                   std::int64_t iu, std::int64_t *m, void *w, void *device_ws,
                   std::size_t device_ws_size, int *info) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error(
+        "The oneAPI Math Kernel Library (oneMKL) Interfaces "
+        "Project does not support this API.");
+#else
     working_memory<T> z(n * lda, q);
     working_memory<std::int64_t> m_device(1, q);
     auto z_data = z.get_memory();
@@ -833,6 +861,7 @@ template <typename T> struct syhegvx_impl {
     sycl::event e = dpct::detail::dpct_memset(q, info, 0, sizeof(int));
     z.set_event(e);
     m_device.set_event(e);
+#endif
   }
 };
 
