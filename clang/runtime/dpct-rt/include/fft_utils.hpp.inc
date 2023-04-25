@@ -83,6 +83,7 @@ enum fft_type : int {
 // Device|get_default_queue
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+#ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
 /// A class to perform FFT calculation.
 class fft_engine {
 public:
@@ -1292,6 +1293,7 @@ private:
 };
 
 using fft_engine_ptr = fft_engine *;
+#endif
 // DPCT_LABEL_END
 } // namespace fft
 } // namespace dpct

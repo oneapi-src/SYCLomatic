@@ -1309,6 +1309,8 @@ namespace deprecated {
 template <typename T>
 using usm_host_allocator = detail::deprecated::usm_allocator<T, sycl::usm::alloc::host>;
 
+template <typename T>
+using usm_device_allocator = detail::deprecated::usm_allocator<T, sycl::usm::alloc::shared>;
 } // namespace deprecated
 
 class pointer_attributes {
