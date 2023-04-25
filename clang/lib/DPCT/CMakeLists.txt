@@ -169,6 +169,7 @@ add_clang_library(DPCT
   MigrationRuleManager.cpp
   MigrationAction.cpp
   ThrustAPIMigration.cpp
+  GenHelperFunction.cpp
 
   DEPENDS
   ClangDriverOptions

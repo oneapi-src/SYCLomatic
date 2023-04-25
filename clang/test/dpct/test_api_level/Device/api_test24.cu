@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Device/api_test24_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Device/api_test24_out
 
-// CHECK: 37
+// CHECK: 39
 // TEST_FEATURE: Device_device_ext_get_integrated
 
 int main() {

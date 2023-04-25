@@ -22,6 +22,7 @@
 // DASH-NEXT: --format-range=
 // DASH-NEXT: --format-style=
 // DASH-NEXT: --gen-build-script
+// DASH-NEXT: --gen-helper-function
 // DASH-NEXT: --help
 // DASH-NEXT: --in-root
 // DASH-NEXT: --in-root-exclude
