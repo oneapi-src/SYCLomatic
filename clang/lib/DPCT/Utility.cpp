@@ -3357,29 +3357,28 @@ bool analyzeMemcpyOrder(
       MemcpyOrderVec.emplace_back(
           CE, MemcpyOrderAnalysisNodeKind::MOANK_SpecialCallExpr);
     } else {
-      if (auto KCall = dyn_cast<CUDAKernelCallExpr>(CE)) {
+      const CUDAKernelCallExpr* KCall = dyn_cast<CUDAKernelCallExpr>(CE);
+      if(!KCall) {
+        KCall = dyn_cast_or_null<CUDAKernelCallExpr>(getParentStmt(CE));
+      }
+      if(KCall) {
         const CallExpr *Config = KCall->getConfig();
         if (Config) {
           // If kernel call uses default queue, it will not affect the memcpy
-          if (Config->getNumArgs() == 4) {
-            if (isDefaultStream(Config->getArg(3))) {
-              MemcpyOrderVec.emplace_back(
-                  CE, MemcpyOrderAnalysisNodeKind::MOANK_SpecialCallExpr);
-              continue;
+          if ((Config->getNumArgs() == 4) &&
+               isDefaultStream(Config->getArg(3))) {
+            for(auto Arg: KCall->arguments()) {
+              if (auto DRE = dyn_cast_or_null<DeclRefExpr>(
+                      Arg->IgnoreImplicitAsWritten())) {
+                if (DRE->getType()->isPointerType()) {
+                  ExcludeExprs.insert(DRE);
+                }
+              }
             }
-          } else {
             MemcpyOrderVec.emplace_back(
-                CE, MemcpyOrderAnalysisNodeKind::MOANK_SpecialCallExpr);
+                CE, MemcpyOrderAnalysisNodeKind::MOANK_KernelCallExpr);
             continue;
           }
-        }
-      } else if (auto KCall =
-                     dyn_cast_or_null<CUDAKernelCallExpr>(getParentStmt(CE))) {
-        if (CE == KCall->getConfig()) {
-          // Ignore the config CallExpr in kernel call.
-          MemcpyOrderVec.emplace_back(
-              CE, MemcpyOrderAnalysisNodeKind::MOANK_SpecialCallExpr);
-          continue;
         }
       }
       MemcpyOrderVec.emplace_back(
@@ -3591,7 +3590,8 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
       if (S.second == MemcpyOrderAnalysisNodeKind::MOANK_MemcpyInFlowControl) {
         return false;
       }
-      if (S.second == MemcpyOrderAnalysisNodeKind::MOANK_Memcpy) {
+      if (S.second == MemcpyOrderAnalysisNodeKind::MOANK_Memcpy ||
+          S.second == MemcpyOrderAnalysisNodeKind::MOANK_KernelCallExpr) {
         SourceLocation CurrentCallExprEndLoc =
             SM.getExpansionLoc(CE->getEndLoc());
 

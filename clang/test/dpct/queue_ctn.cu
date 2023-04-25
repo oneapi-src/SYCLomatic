@@ -72,6 +72,22 @@ void bar6() {
   cudaMemcpy(d_A, h_A, sizeof(double), cudaMemcpyDeviceToHost);
 }
 
+__global__ void kernel(float *a, float *b, float *c){
+  int i = threadIdx.x;
+  c[i] = a[i] + b[i];
+}
+
+void bar7(){
+  float *A, *B, *C;
+  cudaMalloc(&A, 100 * sizeof(float));
+  cudaMalloc(&B, 100 * sizeof(float));
+  cudaMalloc(&C, 100 * sizeof(float));
+  cudaMemcpy(A, h_A, 100 * sizeof(float), cudaMemcpyDeviceToHost);
+  cudaMemcpy(B, h_A, 100 * sizeof(float), cudaMemcpyDeviceToHost);
+  kernel<<<1, 100>>>(A, B, C);
+  cudaMemcpy(h_A, C, 100 * sizeof(float), cudaMemcpyHostToDevice);
+}
+
 void foo1() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();

@@ -551,6 +551,7 @@ enum class MemcpyOrderAnalysisNodeKind {
   MOANK_Memcpy = 0,
   MOANK_MemcpyInFlowControl,
   MOANK_OtherCallExpr,
+  MOANK_KernelCallExpr,
   MOANK_SpecialCallExpr
 };
 bool canOmitMemcpyWait(const clang::CallExpr *CE);
