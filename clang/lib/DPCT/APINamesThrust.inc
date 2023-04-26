@@ -852,3 +852,26 @@ thrustFactory("thrust::upper_bound",
                {5,PolicyState::NoPolicy, 5,"oneapi::dpl::upper_bound", HelperFeatureEnum::no_feature_helper},
                {7,PolicyState::HasPolicy,5,"oneapi::dpl::upper_bound", HelperFeatureEnum::no_feature_helper},
                {6,PolicyState::NoPolicy, 5,"oneapi::dpl::upper_bound", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::count
+thrustFactory("thrust::count",
+              {{4,PolicyState::HasPolicy,2,"std::count", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"std::count", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::generate
+thrustFactory("thrust::generate",
+              {{4,PolicyState::HasPolicy,2,"std::generate", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"std::generate", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::generate_n
+thrustFactory("thrust::generate_n",
+              {{4,PolicyState::HasPolicy,2,"std::generate_n", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"std::generate_n", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::merge
+thrustFactory("thrust::merge",
+              {{ 6,PolicyState::HasPolicy,5,"std::merge", HelperFeatureEnum::no_feature_helper},
+               { 5,PolicyState::NoPolicy, 5,"std::merge", HelperFeatureEnum::no_feature_helper},
+               { 7,PolicyState::HasPolicy,5,"std::merge", HelperFeatureEnum::no_feature_helper},
+               { 6,PolicyState::NoPolicy, 5,"std::merge", HelperFeatureEnum::no_feature_helper}}),
+

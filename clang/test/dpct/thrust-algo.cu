@@ -170,21 +170,21 @@ void k() {
   // count
   // CHECK: std::count(oneapi::dpl::execution::seq, v.begin(), v.end(), 23);
   thrust::count(thrust::seq, v.begin(), v.end(), 23);
-  // CHECK: std::count(oneapi::dpl::execution::make_device_policy(q_ct1), v.begin(), v.end(), 23);
+  // CHECK: std::count(oneapi::dpl::execution::seq, v.begin(), v.end(), 23);
   thrust::count(v.begin(), v.end(), 23);
 
 
   // generate
   // CHECK: std::generate(oneapi::dpl::execution::seq, v.begin(), v.end(), gen);
   thrust::generate(thrust::seq, v.begin(), v.end(), gen);
-  // CHECK: std::generate(oneapi::dpl::execution::make_device_policy(q_ct1), v.begin(), v.end(), gen);
+  // CHECK: std::generate(oneapi::dpl::execution::seq, v.begin(), v.end(), gen);
   thrust::generate(v.begin(), v.end(), gen);
 
 
   // generate_n
   // CHECK: std::generate_n(oneapi::dpl::execution::seq, v.begin(), 23, gen);
   thrust::generate_n(thrust::seq, v.begin(), 23, gen);
-  // CHECK: std::generate_n(oneapi::dpl::execution::make_device_policy(q_ct1), v.begin(), 23, gen);
+  // CHECK: std::generate_n(oneapi::dpl::execution::seq, v.begin(), 23, gen);
   thrust::generate_n(v.begin(), 23, gen);
 
 
@@ -192,12 +192,12 @@ void k() {
 
   // CHECK: std::merge(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), v2.end(), v3.begin());
   thrust::merge(thrust::seq, v.begin(), v.end(), v2.begin(), v2.end(), v3.begin());
-  // CHECK: std::merge(oneapi::dpl::execution::make_device_policy(q_ct1), v.begin(), v.end(), v2.begin(), v2.end(), v3.begin());
+  // CHECK: std::merge(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), v2.end(), v3.begin());
   thrust::merge(v.begin(), v.end(), v2.begin(), v2.end(), v3.begin());
 
   // CHECK: std::merge(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), v2.end(), v3.begin(), bp);
   thrust::merge(thrust::seq, v.begin(), v.end(), v2.begin(), v2.end(), v3.begin(), bp);
-  // CHECK: std::merge(oneapi::dpl::execution::make_device_policy(q_ct1), v.begin(), v.end(), v2.begin(), v2.end(), v3.begin(), bp);
+  // CHECK: std::merge(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), v2.end(), v3.begin(), bp);
   thrust::merge(v.begin(), v.end(), v2.begin(), v2.end(), v3.begin(), bp);
 }
 
