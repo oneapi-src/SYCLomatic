@@ -26,7 +26,7 @@ ENTRY_HOST("thrust::device_malloc", MapNames::getDpctNamespace() + "malloc_devic
 // ENTRY_BOTH("thrust::raw_pointer_cast", MapNames::getDpctNamespace() + "get_raw_pointer", "")
 ENTRY_BOTH("thrust::complex", "std::complex", "")
 ENTRY_BOTH("thrust::make_counting_iterator", MapNames::getDpctNamespace() + "make_counting_iterator", "")
-ENTRY_BOTH("thrust::count_if", "std::count_if", "oneapi::dpl::execution::sycl")
+// ENTRY_BOTH("thrust::count_if", "std::count_if", "oneapi::dpl::execution::sycl")
 ENTRY_BOTH("thrust::fill", "std::fill", "oneapi::dpl::execution::sycl")
 ENTRY_BOTH("thrust::fill_n", "std::fill_n", "oneapi::dpl::execution::sycl")
 ENTRY_BOTH("thrust::device_pointer_cast", MapNames::getDpctNamespace() + "get_device_pointer", "")

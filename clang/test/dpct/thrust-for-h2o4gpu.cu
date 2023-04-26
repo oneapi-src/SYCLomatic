@@ -146,7 +146,7 @@ void foo() {
   //CHECK: std::vector<dpct::device_vector<int>> d(10);
   //CHECK-NEXT: auto t = dpct::make_counting_iterator(0);
   //CHECK-NEXT: auto min_costs_ptr = dpct::get_raw_pointer(d[0].data());
-  //CHECK-NEXT: int pot_cent_num = std::count_if(oneapi::dpl::execution::make_device_policy(q_ct1), t, t + 10, [=] (int idx) { return true;});
+  //CHECK-NEXT: int pot_cent_num = std::count_if(oneapi::dpl::execution::seq, t, t + 10, [=] (int idx) { return true;});
   std::vector<thrust::device_vector<int>> d(10);
   auto t = thrust::make_counting_iterator(0);
   auto min_costs_ptr = thrust::raw_pointer_cast(d[0].data());

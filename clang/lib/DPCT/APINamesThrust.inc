@@ -799,3 +799,8 @@ CALL_FACTORY_ENTRY("thrust::device_free", CALL(MapNames::getDpctNamespace() + "f
 
 // thrust::raw_pointer_cast
 CALL_FACTORY_ENTRY("thrust::raw_pointer_cast", CALL(MapNames::getDpctNamespace() + "get_raw_pointer", ARG(0)))
+
+// thrust::count_if
+thrustFactory("thrust::count_if",
+              {{4,PolicyState::HasPolicy,2,"std::count_if", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"std::count_if", HelperFeatureEnum::no_feature_helper}}),
