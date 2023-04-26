@@ -466,6 +466,7 @@ private:
   void init_queues() {
     _q_in_order = create_in_order_queue_impl(true);
     _q_out_of_order = create_out_of_order_queue_impl(true);
+    _saved_queue = &default_queue();
   }
 
   sycl::queue *create_in_order_queue_impl(bool enable_exception_handler) {
