@@ -99,7 +99,7 @@ template <typename T>
 inline std::enable_if_t<
     std::is_same_v<std::invoke_result_t<std::not_equal_to<>, T, T>, bool>, bool>
 compare(const T a, const T b, const std::not_equal_to<> binary_op) {
-  return !detail::isnan(a) && !detail::isnan(b) && a != b;
+  return !detail::isnan(a) && !detail::isnan(b) && binary_op(a, b);
 }
 
 /// Performs unordered comparison.
