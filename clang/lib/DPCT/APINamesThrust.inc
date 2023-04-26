@@ -842,3 +842,13 @@ thrustFactory("thrust::lower_bound",
                {7,PolicyState::HasPolicy,5,"oneapi::dpl::lower_bound", HelperFeatureEnum::no_feature_helper},
                {6,PolicyState::NoPolicy, 5,"oneapi::dpl::lower_bound", HelperFeatureEnum::no_feature_helper}}),
 
+// thrust::upper_bound
+thrustFactory("thrust::upper_bound",
+              {{4,PolicyState::HasPolicy,2,"oneapi::dpl::upper_bound", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"oneapi::dpl::upper_bound", HelperFeatureEnum::no_feature_helper},
+               {5,PolicyState::HasPolicy,2,"oneapi::dpl::upper_bound", HelperFeatureEnum::no_feature_helper},
+               {4,PolicyState::NoPolicy, 2,"oneapi::dpl::upper_bound", HelperFeatureEnum::no_feature_helper},
+               {6,PolicyState::HasPolicy,5,"oneapi::dpl::upper_bound", HelperFeatureEnum::no_feature_helper},
+               {5,PolicyState::NoPolicy, 5,"oneapi::dpl::upper_bound", HelperFeatureEnum::no_feature_helper},
+               {7,PolicyState::HasPolicy,5,"oneapi::dpl::upper_bound", HelperFeatureEnum::no_feature_helper},
+               {6,PolicyState::NoPolicy, 5,"oneapi::dpl::upper_bound", HelperFeatureEnum::no_feature_helper}}),
