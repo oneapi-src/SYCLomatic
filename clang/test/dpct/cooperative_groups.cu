@@ -4,7 +4,6 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/cooperative_groups/cooperative_groups.dp.cpp
 
 #include <cooperative_groups.h>
-#include <cooperative_groups/reduce.h>
 
 namespace cg = cooperative_groups;
 
