@@ -251,7 +251,7 @@ void test17(void) {
   cub::DeviceSegmentedRadixSort::SortKeys(nullptr, temp_storage_size, d_keys_in, d_keys_out, n, num_segments, d_offsets, d_offsets + 1);
   cudaMalloc(&temp_storage, temp_storage_size);
   cub::DeviceSegmentedRadixSort::SortKeys(temp_storage, temp_storage_size, d_keys_in, d_keys_out, n, num_segments, d_offsets, d_offsets + 1);
-// CHECK: void test7(void)
+// CHECK: void test17(void)
 // CHECK-NOT: void *temp_storage;
 // CHECK-NOT: size_t temp_storage_size;
 // CHECK-NOT: cudaMalloc(&temp_storage, temp_storage_size);
@@ -381,7 +381,7 @@ void test26(void) {
   cub::DeviceSegmentedRadixSort::SortKeys(nullptr, temp_storage_size, d_keys, n, num_segments, d_offsets, d_offsets + 1, 1);
   cudaMalloc(&temp_storage, temp_storage_size);
   cub::DeviceSegmentedRadixSort::SortKeys(temp_storage, temp_storage_size, d_keys, n, num_segments, d_offsets, d_offsets + 1, 1);
-// CHECK: void test126(void)
+// CHECK: void test26(void)
 // CHECK-NOT: void *temp_storage;
 // CHECK-NOT: size_t temp_storage_size;
 // CHECK-NOT: cudaMalloc(&temp_storage, temp_storage_size);
