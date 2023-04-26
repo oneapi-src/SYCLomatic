@@ -21,11 +21,9 @@
 ****************************************************************************/
 ENTRY_HOST("thrust::device_malloc", MapNames::getDpctNamespace() + "malloc_device", "")
 ENTRY_BOTH("thrust::complex", "std::complex", "")
-ENTRY_BOTH("thrust::make_counting_iterator", MapNames::getDpctNamespace() + "make_counting_iterator", "")
 ENTRY_BOTH("thrust::device_pointer_cast", MapNames::getDpctNamespace() + "get_device_pointer", "")
 ENTRY_BOTH("thrust::max", "std::max", "")
 ENTRY_BOTH("thrust::min", "std::min", "")
-ENTRY_BOTH("thrust::make_constant_iterator", MapNames::getDpctNamespace() + "make_constant_iterator", "")
 ENTRY_BOTH("thrust::make_tuple", "std::make_tuple", "")
 ENTRY_BOTH("thrust::tie", "std::tie", "")
-//ENTRY_BOTH("thrust::make_discard_iterator", "oneapi::dpl::discard_iterator", "")
+ENTRY_BOTH("thrust::equal_range", "oneapi::dpl::equal_range", "oneapi::dpl::execution::sycl")

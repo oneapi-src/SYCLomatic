@@ -903,3 +903,9 @@ thrustFactory("thrust::min_element",
 
 // thrust::make_discard_iterator
 CALL_FACTORY_ENTRY("thrust::make_discard_iterator", CALL("oneapi::dpl::discard_iterator"))
+
+// thrust::make_constant_iterator
+CALL_FACTORY_ENTRY("thrust::make_constant_iterator", CALL(MapNames::getDpctNamespace() + "make_constant_iterator", ARG(0)))
+
+// thrust::make_counting_iterator
+CALL_FACTORY_ENTRY("thrust::make_counting_iterator", CALL(MapNames::getDpctNamespace() + "make_counting_iterator", ARG(0)))
