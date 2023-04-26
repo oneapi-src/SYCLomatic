@@ -164,42 +164,96 @@ inline sycl::half2 isnan(const sycl::half2 h) {
   return {sycl::isnan(h.x()), sycl::isnan(h.y())};
 }
 
-#define DPCT_MATH_MIN_MAX_OVERLOAD_1(FUNC, IMPL_FUNC, TYPE, PROMOTED_TYPE)     \
-  inline auto FUNC(const PROMOTED_TYPE a, const TYPE b) {                      \
-    return IMPL_FUNC(a, static_cast<PROMOTED_TYPE>(b));                        \
-  }                                                                            \
-  inline auto FUNC(const TYPE a, const PROMOTED_TYPE b) {                      \
-    return IMPL_FUNC(static_cast<PROMOTED_TYPE>(a), b);                        \
-  }
-#define DPCT_MATH_MIN_MAX_OVERLOAD_2(FUNC, IMPL_FUNC, TYPE)                    \
-  inline auto FUNC(const TYPE a, const TYPE b) {                               \
-    return IMPL_FUNC(a, b);                                                    \
-  }
-
-DPCT_MATH_MIN_MAX_OVERLOAD_1(min, sycl::fmin, float, double)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(min, sycl::fmin, float)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(min, sycl::fmin, double)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(min, sycl::min, std::int32_t, std::uint32_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(min, sycl::min, std::int64_t, std::uint64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(min, sycl::min, std::int32_t, std::uint64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(min, sycl::min, std::uint32_t, std::uint64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(min, sycl::min, std::int32_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(min, sycl::min, std::uint32_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(min, sycl::min, std::int64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(min, sycl::min, std::uint64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(max, sycl::fmax, float, double)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(max, sycl::fmax, float)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(max, sycl::fmax, double)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(max, sycl::max, std::int32_t, std::uint32_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(max, sycl::max, std::int64_t, std::uint64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(max, sycl::max, std::int32_t, std::uint64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_1(max, sycl::max, std::uint32_t, std::uint64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(max, sycl::max, std::int32_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(max, sycl::max, std::uint32_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(max, sycl::max, std::int64_t)
-DPCT_MATH_MIN_MAX_OVERLOAD_2(max, sycl::max, std::uint64_t)
-#undef DPCT_MATH_MIN_MAX_OVERLOAD_1
-#undef DPCT_MATH_MIN_MAX_OVERLOAD_2
+// min
+inline auto min(const double a, const float b) {
+  return sycl::fmin(a, static_cast<double>(b));
+}
+inline auto min(const float a, const double b) {
+  return sycl::fmin(static_cast<double>(a), b);
+}
+inline auto min(const float a, const float b) { return sycl::fmin(a, b); }
+inline auto min(const double a, const double b) { return sycl::fmin(a, b); }
+inline auto min(const std::uint32_t a, const std::int32_t b) {
+  return sycl::min(a, static_cast<std::uint32_t>(b));
+}
+inline auto min(const std::int32_t a, const std::uint32_t b) {
+  return sycl::min(static_cast<std::uint32_t>(a), b);
+}
+inline auto min(const std::int32_t a, const std::int32_t b) {
+  return sycl::min(a, b);
+}
+inline auto min(const std::uint32_t a, const std::uint32_t b) {
+  return sycl::min(a, b);
+}
+inline auto min(const std::uint64_t a, const std::int64_t b) {
+  return sycl::min(a, static_cast<std::uint64_t>(b));
+}
+inline auto min(const std::int64_t a, const std::uint64_t b) {
+  return sycl::min(static_cast<std::uint64_t>(a), b);
+}
+inline auto min(const std::int64_t a, const std::int64_t b) {
+  return sycl::min(a, b);
+}
+inline auto min(const std::uint64_t a, const std::uint64_t b) {
+  return sycl::min(a, b);
+}
+inline auto min(const std::uint64_t a, const std::int32_t b) {
+  return sycl::min(a, static_cast<std::uint64_t>(b));
+}
+inline auto min(const std::int32_t a, const std::uint64_t b) {
+  return sycl::min(static_cast<std::uint64_t>(a), b);
+}
+inline auto min(const std::uint64_t a, const std::uint32_t b) {
+  return sycl::min(a, static_cast<std::uint64_t>(b));
+}
+inline auto min(const std::uint32_t a, const std::uint64_t b) {
+  return sycl::min(static_cast<std::uint64_t>(a), b);
+}
+// max
+inline auto max(const double a, const float b) {
+  return sycl::fmax(a, static_cast<double>(b));
+}
+inline auto max(const float a, const double b) {
+  return sycl::fmax(static_cast<double>(a), b);
+}
+inline auto max(const float a, const float b) { return sycl::fmax(a, b); }
+inline auto max(const double a, const double b) { return sycl::fmax(a, b); }
+inline auto max(const std::uint32_t a, const std::int32_t b) {
+  return sycl::max(a, static_cast<std::uint32_t>(b));
+}
+inline auto max(const std::int32_t a, const std::uint32_t b) {
+  return sycl::max(static_cast<std::uint32_t>(a), b);
+}
+inline auto max(const std::int32_t a, const std::int32_t b) {
+  return sycl::max(a, b);
+}
+inline auto max(const std::uint32_t a, const std::uint32_t b) {
+  return sycl::max(a, b);
+}
+inline auto max(const std::uint64_t a, const std::int64_t b) {
+  return sycl::max(a, static_cast<std::uint64_t>(b));
+}
+inline auto max(const std::int64_t a, const std::uint64_t b) {
+  return sycl::max(static_cast<std::uint64_t>(a), b);
+}
+inline auto max(const std::int64_t a, const std::int64_t b) {
+  return sycl::max(a, b);
+}
+inline auto max(const std::uint64_t a, const std::uint64_t b) {
+  return sycl::max(a, b);
+}
+inline auto max(const std::uint64_t a, const std::int32_t b) {
+  return sycl::max(a, static_cast<std::uint64_t>(b));
+}
+inline auto max(const std::int32_t a, const std::uint64_t b) {
+  return sycl::max(static_cast<std::uint64_t>(a), b);
+}
+inline auto max(const std::uint64_t a, const std::uint32_t b) {
+  return sycl::max(a, static_cast<std::uint64_t>(b));
+}
+inline auto max(const std::uint32_t a, const std::uint64_t b) {
+  return sycl::max(static_cast<std::uint64_t>(a), b);
+}
 
 /// A sycl::abs wrapper functors.
 struct abs {
