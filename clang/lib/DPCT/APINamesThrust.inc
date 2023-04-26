@@ -820,3 +820,14 @@ thrustFactory("thrust::partition_point",
               {{4,PolicyState::HasPolicy,2,MapNames::getDpctNamespace() + "partition_point", HelperFeatureEnum::DplExtrasAlgorithm_partition_point},
                {3,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace() + "partition_point", HelperFeatureEnum::DplExtrasAlgorithm_partition_point}}),
 
+// thrust::binary_search
+thrustFactory("thrust::binary_search",
+              {{4,PolicyState::HasPolicy,2,"oneapi::dpl::binary_search", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"oneapi::dpl::binary_search", HelperFeatureEnum::no_feature_helper},
+               {5,PolicyState::HasPolicy,2,"oneapi::dpl::binary_search", HelperFeatureEnum::no_feature_helper},
+               {4,PolicyState::NoPolicy, 2,"oneapi::dpl::binary_search", HelperFeatureEnum::no_feature_helper},
+               {6,PolicyState::HasPolicy,5,"oneapi::dpl::binary_search", HelperFeatureEnum::no_feature_helper},
+               {5,PolicyState::NoPolicy, 5,"oneapi::dpl::binary_search", HelperFeatureEnum::no_feature_helper},
+               {7,PolicyState::HasPolicy,5,"oneapi::dpl::binary_search", HelperFeatureEnum::no_feature_helper},
+               {6,PolicyState::NoPolicy, 5,"oneapi::dpl::binary_search", HelperFeatureEnum::no_feature_helper}}),
+
