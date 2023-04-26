@@ -767,6 +767,18 @@ void IncludesCallbacks::If(SourceLocation Loc, SourceRange ConditionRange,
     return;
   }
 
+  SourceLocation SL = ConditionRange.getBegin();
+  while(SL<ConditionRange.getEnd()) {
+    const auto Tok2Ptr = Lexer::findNextToken(SL, SM, LangOptions());
+    if (!Tok2Ptr.has_value())
+      continue;
+    Token tok = Tok2Ptr.value();
+    std::cout << tok.getKind() << std::endl;
+    SL = tok.getEndLoc();
+  }
+
+
+
   std::cout << "!!!!!!!!!!!!!!!!!" << std::endl;
   std::cout << "ContainCudaRTVersionMacro:" << ContainCudaRTVersionMacro << std::endl;
   for (auto I : ReplaceInfo) {
