@@ -147,7 +147,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 ARG("oneapi::dpl::execution::seq"), ARG(0),
                                 ARG(1), ARG(3), ARG(4), ARG(2)))),
     CONDITIONAL_FACTORY_ENTRY(
-        CheckThrustArgType(0, "thrust::device"),
+        CheckThrustArgType(0, "thrust::device_ptr"),
         CALL_FACTORY_ENTRY(
             "thrust::transform_reduce",
             CALL("std::transform_reduce",
@@ -721,7 +721,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 ARG("oneapi::dpl::execution::seq"),
                                 ARG(0), ARG(1), ARG(2)))),
         CONDITIONAL_FACTORY_ENTRY(
-            CheckArgType(0, "thrust::device_ptr"),
+            CheckThrustArgType(0, "thrust::device_ptr"),
             // Handle case thrust::copy(dev_itr, N, dev_itr)
             CALL_FACTORY_ENTRY("thrust::copy_n",
                 CALL("std::copy_n",
@@ -804,3 +804,13 @@ CALL_FACTORY_ENTRY("thrust::raw_pointer_cast", CALL(MapNames::getDpctNamespace()
 thrustFactory("thrust::count_if",
               {{4,PolicyState::HasPolicy,2,"std::count_if", HelperFeatureEnum::no_feature_helper},
                {3,PolicyState::NoPolicy, 2,"std::count_if", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::fill
+thrustFactory("thrust::fill",
+              {{4,PolicyState::HasPolicy,2,"std::fill", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"std::fill", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::fill_n
+thrustFactory("thrust::fill_n",
+              {{4,PolicyState::HasPolicy,1,"std::fill_n", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 1,"std::fill_n", HelperFeatureEnum::no_feature_helper}}),
