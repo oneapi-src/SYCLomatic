@@ -10,3 +10,6 @@ __device__ void test_foo(void);
 // CHECK-NEXT: void local_foo_2();
 __global__ static void local_foo_2();
 __global__ void local_foo_2();
+
+__device__ void device_fp();
+__global__ void test_fp();
