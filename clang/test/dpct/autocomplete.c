@@ -11,6 +11,7 @@
 // DASH-NEXT: --analysis-scope-path
 // DASH-NEXT: --assume-nd-range-dim=
 // DASH-NEXT: --build-script-file
+// DASH-NEXT: --cdb-path
 // DASH-NEXT: --change-cuda-files-extension-only
 // DASH-NEXT: --change-filename-extension
 // DASH-NEXT: --check-unicode-security
