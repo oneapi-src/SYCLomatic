@@ -814,3 +814,9 @@ thrustFactory("thrust::fill",
 thrustFactory("thrust::fill_n",
               {{4,PolicyState::HasPolicy,1,"std::fill_n", HelperFeatureEnum::no_feature_helper},
                {3,PolicyState::NoPolicy, 1,"std::fill_n", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::partition_point
+thrustFactory("thrust::partition_point",
+              {{4,PolicyState::HasPolicy,2,MapNames::getDpctNamespace() + "partition_point", HelperFeatureEnum::DplExtrasAlgorithm_partition_point},
+               {3,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace() + "partition_point", HelperFeatureEnum::DplExtrasAlgorithm_partition_point}}),
+

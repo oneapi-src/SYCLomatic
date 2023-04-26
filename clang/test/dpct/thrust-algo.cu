@@ -112,7 +112,7 @@ void k() {
 
   // CHECK: dpct::partition_point(oneapi::dpl::execution::seq, v.begin(), v.end(), up);
   thrust::partition_point(thrust::seq, v.begin(), v.end(), up);
-  // CHECK: dpct::partition_point(oneapi::dpl::execution::make_device_policy(q_ct1), v.begin(), v.end(), up);
+  // CHECK: dpct::partition_point(oneapi::dpl::execution::seq, v.begin(), v.end(), up);
   thrust::partition_point(v.begin(), v.end(), up);
 
 
