@@ -111,7 +111,6 @@ llvm::Error CommonOptionsParser::init(
     int &argc, const char **argv, cl::OptionCategory &Category,
     llvm::cl::NumOccurrencesFlag OccurrencesFlag, const char *Overview) {
 #ifdef SYCLomatic_CUSTOMIZATION
-  bool IsCudaFile = false;
   int OriArgc = argc;
 #define DPCT_OPTIONS_IN_CLANG_TOOLING
 #define DPCT_OPT_TYPE(...) __VA_ARGS__
@@ -291,8 +290,6 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
           }
         }
       } else if (SourcePaths.size() == 1 && BuildPath.getValue().empty()) {
-        // need add -x cuda option for not using database
-        IsCudaFile = true;
         using namespace llvm::sys;
         SmallString<256> Name = StringRef(SourcePaths[0]);
         StringRef File, Path;
@@ -312,10 +309,6 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
            << "' or any parent directory.\n";
         DoPrintHandle(OS.str(), true);
       } else {
-        if (SourcePaths.size() >= 2 && BuildPath.getValue().empty()) {
-          // need add -x cuda option for not using database
-          IsCudaFile = true;
-        }
         if (!hasHelpOption(OriArgc, argv)) {
           std::string buf;
           llvm::raw_string_ostream OS(buf);
@@ -333,22 +326,6 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
           new FixedCompilationDatabase(".", std::vector<std::string>()));
     }
   }
-#ifdef SYCLomatic_CUSTOMIZATION
-  if (!SourcePathList.empty() &&
-              Compilations->getAllCompileCommands().size() != 0) {
-    for (auto &Path : SourcePathList) {
-      // Add the -x cuda for the case not in database.
-      if (Compilations->getCompileCommands(Path).empty()) {
-        IsCudaFile = true;
-        break;
-      }
-    }
-    if (IsCudaFile) {
-      Compilations = std::make_unique<ExpandedCompilationDatabase>(
-                                                      std::move(Compilations));
-    }
-  }
-#endif
   auto AdjustingCompilations =
       std::make_unique<ArgumentsAdjustingCompilations>(
           std::move(Compilations));
@@ -360,16 +337,10 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
 #ifdef SYCLomatic_CUSTOMIZATION
   for (auto &I : ArgsAfter) {
     if (I.size() > 2 && I.substr(0, 2) == "-x") {
-      IsCudaFile = false;
       Adjuster = combineAdjusters(
           std::move(Adjuster),
           getInsertArgumentAdjuster(I.c_str(), ArgumentInsertPosition::BEGIN));
     }
-  }
-  if (IsCudaFile) {
-    Adjuster = combineAdjusters(
-        std::move(Adjuster),
-        getInsertArgumentAdjuster("-xcuda", ArgumentInsertPosition::BEGIN));
   }
 #endif // SYCLomatic_CUSTOMIZATION
   AdjustingCompilations->appendArgumentsAdjuster(Adjuster);
