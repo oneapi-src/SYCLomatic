@@ -95,7 +95,6 @@ private:
   /// (FD location, (Call location, result))
   static std::unordered_map<std::string, std::unordered_map<std::string, bool>>
       CachedResults;
-  static const std::unordered_set<std::string> AllowedDeviceFunctions;
 };
 
 class GlobalPointerReferenceCountAnalyzer
@@ -118,20 +117,24 @@ public:
   }
 
   VISIT_NODE(DeclRefExpr)
+  VISIT_NODE(BinaryOperator)
+  VISIT_NODE(VarDecl)
 #undef VISIT_NODE
 
 public:
   bool analyze(const clang::CallExpr *CE);
 
 private:
+  struct VarInfo {
+    VarInfo(size_t ID) : ID(ID) {}
+    size_t ID = 0;
+    size_t ReferencedDRENumber = 0;
+  };
   bool HasGlobalDeviceVariable = false;
   bool countReference(const FunctionDecl *FD);
-  void collectAlias(VarDecl *VD,
-                    std::unordered_set<VarDecl *> &NewNonconstPointerDecls);
-  std::unordered_map<DeclRefExpr *, ValueDecl *> DREDeclMap;
-  std::unordered_map<ValueDecl *, std::unordered_set<DeclRefExpr *>>
-      DeclDREsMap;
   static std::unordered_map<std::string, bool> CachedResults;
+  std::stack<clang::VarDecl *> UnderVarDeclOrBinaryOP;
+  std::unordered_map<clang::VarDecl *, VarInfo> NonconstPointerDecls;
 };
 
 } // namespace dpct
