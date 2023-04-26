@@ -54,9 +54,9 @@ void foo_host(){
     thrust::logical_or<bool>();
 
     //algo
-    //CHECK: std::uninitialized_fill(h_input.begin(), h_input.end(), 10);
+    //CHECK: std::uninitialized_fill(oneapi::dpl::execution::seq, h_input.begin(), h_input.end(), 10);
     thrust::uninitialized_fill(h_input.begin(), h_input.end(), 10);
-    //CHECK: std::unique(h_input.begin(), h_input.end());
+    //CHECK: std::unique(oneapi::dpl::execution::seq, h_input.begin(), h_input.end());
     thrust::unique(h_input.begin(), h_input.end());
     //CHECK: std::exclusive_scan(oneapi::dpl::execution::seq, h_input.begin(), h_input.end(), h_output.begin(), 0);
     thrust::exclusive_scan(h_input.begin(), h_input.end(), h_output.begin());

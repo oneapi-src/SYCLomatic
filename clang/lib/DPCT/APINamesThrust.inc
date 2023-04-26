@@ -875,3 +875,16 @@ thrustFactory("thrust::merge",
                { 7,PolicyState::HasPolicy,5,"std::merge", HelperFeatureEnum::no_feature_helper},
                { 6,PolicyState::NoPolicy, 5,"std::merge", HelperFeatureEnum::no_feature_helper}}),
 
+// thrust::uninitialized_fill
+thrustFactory("thrust::uninitialized_fill",
+              {{4,PolicyState::HasPolicy,2,"std::uninitialized_fill", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"std::uninitialized_fill", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::unique
+thrustFactory("thrust::unique",
+              {{ 3,PolicyState::HasPolicy,2,"std::unique", HelperFeatureEnum::no_feature_helper},
+               { 2,PolicyState::NoPolicy, 2,"std::unique", HelperFeatureEnum::no_feature_helper},
+               { 4,PolicyState::HasPolicy,2,"std::unique", HelperFeatureEnum::no_feature_helper},
+               { 3,PolicyState::NoPolicy, 2,"std::unique", HelperFeatureEnum::no_feature_helper}}),
+
+
