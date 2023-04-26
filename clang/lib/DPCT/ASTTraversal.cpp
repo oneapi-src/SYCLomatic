@@ -8946,6 +8946,17 @@ void DeviceFunctionDeclRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
   MF.addMatcher(cxxNewExpr(hasAncestor(DeviceFunctionMatcher)).bind("CxxNew"),
                 this);
+
+  MF.addMatcher(typeLoc(hasAncestor(DeviceFunctionMatcher),
+                        loc(qualType(hasDeclaration(namedDecl(hasAnyName(
+                            "__half", "half", "__half2", "half2"))))))
+                    .bind("fp16"),
+                this);
+
+  MF.addMatcher(
+      typeLoc(hasAncestor(DeviceFunctionMatcher), loc(asString("double")))
+          .bind("fp64"),
+      this);
 }
 
 void DeviceFunctionDeclRule::runRule(
@@ -9112,6 +9123,12 @@ void DeviceFunctionDeclRule::runRule(
       // Remove statement "cg::grid_group grid = cg::this_grid();"
       emplaceTransformation(new ReplaceText(Begin, Length, ""));
     }
+  }
+  if (getAssistNodeAsType<TypeLoc>(Result, "fp64")) {
+    FuncInfo->setBF64();
+  }
+  if (getAssistNodeAsType<TypeLoc>(Result, "fp16")) {
+    FuncInfo->setBF16();
   }
 }
 
@@ -12288,6 +12305,14 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE,
   std::string Namespace;
   const NamedDecl *ND = dyn_cast<NamedDecl>(CE->getCalleeDecl());
   if (ND) {
+    if (!dpct::DpctGlobalInfo::isInCudaPath(ND->getLocation()) &&
+        !isChildOrSamePath(
+          DpctInstallPath,
+          dpct::DpctGlobalInfo::getLocInfo(ND).first)) {
+      if (!ND->getName().startswith("cudnn") &&
+          !ND->getName().startswith("nccl"))
+        return;
+    }
     const auto *NSD = dyn_cast<NamespaceDecl>(ND->getDeclContext());
     if (NSD && !NSD->isInlineNamespace()) {
       if (dyn_cast<NamespaceDecl>(NSD->getDeclContext())) {
