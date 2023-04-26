@@ -11917,6 +11917,7 @@ void CooperativeGroupsFunctionRule::runRule(
       }
     }
   } else if (FuncName == "reduce") {
+    RUW.NeedReport = false;
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();

@@ -80,7 +80,7 @@ CONDITIONAL_FACTORY_ENTRY(
     argHasThreadBlockTileType(0, 32),
         CALL_FACTORY_ENTRY("reduce", CALL(MapNames::getClNamespace() + "reduce_over_group",
                                     SUBGROUP, ARG(1), ARG(2))),
-      UNSUPPORT_FACTORY_ENTRY("reduce",
+        UNSUPPORT_FACTORY_ENTRY("reduce",
                                     Diagnostics::API_NOT_MIGRATED,
                                     ARG("reduce")))
 
