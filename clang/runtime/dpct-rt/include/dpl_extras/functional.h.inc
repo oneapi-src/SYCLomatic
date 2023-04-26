@@ -456,7 +456,7 @@ public:
     mask = ~OutKeyT(0); // all ones
     mask = mask >> (sizeof(OutKeyT) * 8 -
                     (end_bit - begin_bit));           // setup appropriate mask
-    flip_sign = 1UL << (sizeof(uint_type_t) * 8 - 1); // sign bit
+    flip_sign = uint_type_t(1) << (sizeof(uint_type_t) * 8 - 1); // sign bit
     flip_key = ~uint_type_t(0);                       // 0xF...F
   }
 
