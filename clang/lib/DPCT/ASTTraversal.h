@@ -413,6 +413,12 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+class MiscAPIRule : public NamedMigrationRule<MiscAPIRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
 /// Migration rule for types replacements in var. declarations.
 class TypeInDeclRule : public NamedMigrationRule<TypeInDeclRule> {
 public:

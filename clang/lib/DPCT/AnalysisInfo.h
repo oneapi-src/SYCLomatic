@@ -1794,6 +1794,9 @@ public:
   static bool useExtDPLAPI() {
     return getUsingExperimental<ExperimentalFeatures::Exp_DPLExperimentalAPI>();
   }
+  static bool useOccupancyCalculation() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_OccupancyCalculation>();
+  }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
   }

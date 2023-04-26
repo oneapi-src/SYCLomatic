@@ -121,6 +121,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
   initRewriterMapComplex();
   initRewriterMapDriver();
   initRewriterMapMemory();
+  initRewriterMapMisc();
   initRewriterMapNccl();
   initRewriterMapStream();
   initRewriterMapTexture();
