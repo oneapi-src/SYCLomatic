@@ -831,3 +831,14 @@ thrustFactory("thrust::binary_search",
                {7,PolicyState::HasPolicy,5,"oneapi::dpl::binary_search", HelperFeatureEnum::no_feature_helper},
                {6,PolicyState::NoPolicy, 5,"oneapi::dpl::binary_search", HelperFeatureEnum::no_feature_helper}}),
 
+// thrust::lower_bound
+thrustFactory("thrust::lower_bound",
+              {{4,PolicyState::HasPolicy,2,"oneapi::dpl::lower_bound", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"oneapi::dpl::lower_bound", HelperFeatureEnum::no_feature_helper},
+               {5,PolicyState::HasPolicy,2,"oneapi::dpl::lower_bound", HelperFeatureEnum::no_feature_helper},
+               {4,PolicyState::NoPolicy, 2,"oneapi::dpl::lower_bound", HelperFeatureEnum::no_feature_helper},
+               {6,PolicyState::HasPolicy,5,"oneapi::dpl::lower_bound", HelperFeatureEnum::no_feature_helper},
+               {5,PolicyState::NoPolicy, 5,"oneapi::dpl::lower_bound", HelperFeatureEnum::no_feature_helper},
+               {7,PolicyState::HasPolicy,5,"oneapi::dpl::lower_bound", HelperFeatureEnum::no_feature_helper},
+               {6,PolicyState::NoPolicy, 5,"oneapi::dpl::lower_bound", HelperFeatureEnum::no_feature_helper}}),
+
