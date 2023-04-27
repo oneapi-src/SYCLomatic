@@ -573,7 +573,8 @@ void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
       Temp->getType().getCanonicalType());
   if ((StringRef(TypeName).startswith("cub::") &&
        CubTypeRule::CanMappingToSyclType(TypeName)) ||
-      StringRef(TypeName).startswith("thrust::")) {
+       StringRef(TypeName).startswith("thrust::") ||
+       StringRef(TypeName).startswith("cooperative_groups::")) {
     analyzeType(Temp->getTypeSourceInfo()->getTypeLoc());
   }
   analyzeExpr(static_cast<const CXXConstructExpr *>(Temp));
@@ -1034,8 +1035,11 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
     }
   case TypeLoc::TemplateSpecialization: {
     llvm::raw_string_ostream OS(TyName);
+    TyName.clear();
     auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
-    TSTL.getTypePtr()->getTemplateName().print(OS, Context.getPrintingPolicy());
+    auto PP = Context.getPrintingPolicy();
+    PP.PrintCanonicalTypes = 1;
+    TSTL.getTypePtr()->getTemplateName().print(OS, PP, TemplateName::Qualified::Fully);
     if (!TypeLocRewriterFactoryBase::TypeLocRewriterMap)
       return;
     auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(OS.str());
