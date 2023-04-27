@@ -277,7 +277,6 @@ CONDITIONAL_FACTORY_ENTRY(
       ))
 )
 
-
 // thrust::copy_if
 thrustFactory("thrust::copy_if",
               {{5,PolicyState::HasPolicy,3,"std::copy_if", HelperFeatureEnum::no_feature_helper },
@@ -297,7 +296,6 @@ thrustFactory("thrust::inclusive_scan_by_key",
                {5,PolicyState::NoPolicy, 4,"oneapi::dpl::inclusive_scan_by_segment", HelperFeatureEnum::no_feature_helper},
                {7,PolicyState::HasPolicy,4,"oneapi::dpl::inclusive_scan_by_segment", HelperFeatureEnum::no_feature_helper},
                {6,PolicyState::NoPolicy, 4,"oneapi::dpl::inclusive_scan_by_segment", HelperFeatureEnum::no_feature_helper}}),
-
 
 // thrust::exclusive_scan_by_key
 thrustFactory("thrust::exclusive_scan_by_key",
