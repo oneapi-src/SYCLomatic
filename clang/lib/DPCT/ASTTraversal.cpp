@@ -3569,18 +3569,11 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
   if (Search == PropNamesMap.end()) {
     return;
   }
-  if (PropToGetFeatureMap.find(MemberName) != PropToGetFeatureMap.end()) {
-    // migrate to get_XXX() eg. "b=a.minor" to "b=a.get_minor_version()"
-    requestFeature(PropToGetFeatureMap.at(MemberName), ME);
-    std::string TmplArg = "";
-    if (MemberName == "maxGridSize" ||
-        MemberName == "maxThreadsDim") {
-      // Similar code in ExprAnalysis.cpp
-      TmplArg = "<int *>";
-    }
-    emplaceTransformation(new RenameFieldInMemberExpr(
-        ME, "get_" + Search->second + TmplArg + "()"));
-  }
+  
+  // migrate to get_XXX() eg. "b=a.minor" to "b=a.get_minor_version()"
+  auto Parents = Result.Context->getParents(*ME);
+  if (Parents.size() < 1)
+    return;
   if ((Search->second.compare(0, 13, "major_version") == 0) ||
       (Search->second.compare(0, 13, "minor_version") == 0)) {
     report(ME->getBeginLoc(), Comments::VERSION_COMMENT, false);
@@ -3588,6 +3581,37 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
   if (Search->second.compare(0, 10, "integrated") == 0) {
     report(ME->getBeginLoc(), Comments::NOT_SUPPORT_API_INTEGRATEDORNOT, false);
   }
+  std::string TmplArg = "";
+  if (MemberName == "maxGridSize" ||
+      MemberName == "maxThreadsDim") {
+    // Similar code in ExprAnalysis.cpp
+    TmplArg = "<int *>";
+  }
+  if (auto *BO = Parents[0].get<clang::BinaryOperator>()) {
+  // migrate to set_XXX() eg. "a.minor = 1" to "a.set_minor_version(1)"
+    if (BO->getOpcode() == clang::BO_Assign) {
+      requestFeature(PropToSetFeatureMap.at(MemberName), ME);
+      emplaceTransformation(
+          new RenameFieldInMemberExpr(ME, "set_" + Search->second));
+      emplaceTransformation(new ReplaceText(BO->getOperatorLoc(), 1, "("));
+      emplaceTransformation(new InsertAfterStmt(BO, ")"));
+      return ;
+    }
+  } else if (auto *OCE = Parents[0].get<clang::CXXOperatorCallExpr>()) {
+  // migrate to set_XXX() for types with an overloaded = operator
+    if (OCE->getOperator() == clang::OverloadedOperatorKind::OO_Equal) {
+      requestFeature(PropToSetFeatureMap.at(MemberName), ME);
+      emplaceTransformation(
+          new RenameFieldInMemberExpr(ME, "set_" + Search->second));
+      emplaceTransformation(new ReplaceText(OCE->getOperatorLoc(), 1, "("));
+      emplaceTransformation(new InsertAfterStmt(OCE, ")"));
+      return ;
+    }
+  }
+  requestFeature(PropToGetFeatureMap.at(MemberName), ME);
+  emplaceTransformation(new RenameFieldInMemberExpr(
+    ME, "get_" + Search->second + TmplArg + "()")); 
+  return ;
 }
 
 REGISTER_RULE(DeviceInfoVarRule, PassKind::PK_Migration)

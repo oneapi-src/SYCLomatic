@@ -38,9 +38,13 @@ int main(int argc, char **argv) {
 
   // CHECK: std::array<unsigned char, 16> uuid = deviceProp.get_uuid();
   cudaUUID_t uuid = deviceProp.uuid;
+  // CHECK: deviceProp.set_uuid(uuid);
+  deviceProp.uuid=uuid;
 
   // CHECK: int device_id = deviceProp.get_device_id();
   int device_id = deviceProp.pciDeviceID;
+  // CHECK: deviceProp.set_device_id(device_id);
+  deviceProp.pciDeviceID=device_id;
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by the host to submit tasks. You may need to adjust this code.
@@ -50,6 +54,12 @@ int main(int argc, char **argv) {
     return 0;
   }
 
+// CHECK:/*
+// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
+// CHECK-NEXT:*/
+// CHECK-NEXT:deviceProp.set_major_version(1);
+  deviceProp.major=1;
+  
 // CHECK:/*
 // CHECK-NEXT:DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
 // CHECK-NEXT:*/
@@ -67,6 +77,11 @@ int main(int argc, char **argv) {
   // CHECK: int maxThreadsPerMultiProcessor = deviceProp.get_max_work_items_per_compute_unit();
   int maxThreadsPerMultiProcessor = deviceProp.maxThreadsPerMultiProcessor;
 
+// CHECK:/*
+// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
+// CHECK-NEXT:*/
+// CHECK-NEXT:deviceProp.set_minor_version(120);
+  deviceProp.minor=120;
 
 // CHECK:/*
 // CHECK-NEXT:DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
@@ -81,6 +96,8 @@ int main(int argc, char **argv) {
   int clock = deviceProp.clockRate;
   int xxxx = 10;
   int yyyy = 5;
+  // CHECK:  deviceProp.set_max_clock_frequency ( xxxx * 100 + yyyy);
+  deviceProp.clockRate = xxxx * 100 + yyyy;
 
   // CHECK: int count = deviceProp.get_max_compute_units();
   int count = deviceProp.multiProcessorCount;
