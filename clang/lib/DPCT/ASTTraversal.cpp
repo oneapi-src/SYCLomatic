@@ -2154,6 +2154,14 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
     return false;
 
   const std::string RealTypeNameStr(Start, TyLen);
+
+  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
+      RealTypeNameStr.find("device_malloc_allocator") != std::string::npos) {
+    report(BeginLoc, Diagnostics::KNOWN_UNSUPPORTED_TYPE, false,
+            RealTypeNameStr);
+    return true;
+  }
+
   requestHelperFeatureForTypeNames(RealTypeNameStr, BeginLoc);
   std::string Replacement =
       MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
@@ -8938,6 +8946,17 @@ void DeviceFunctionDeclRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
   MF.addMatcher(cxxNewExpr(hasAncestor(DeviceFunctionMatcher)).bind("CxxNew"),
                 this);
+
+  MF.addMatcher(typeLoc(hasAncestor(DeviceFunctionMatcher),
+                        loc(qualType(hasDeclaration(namedDecl(hasAnyName(
+                            "__half", "half", "__half2", "half2"))))))
+                    .bind("fp16"),
+                this);
+
+  MF.addMatcher(
+      typeLoc(hasAncestor(DeviceFunctionMatcher), loc(asString("double")))
+          .bind("fp64"),
+      this);
 }
 
 void DeviceFunctionDeclRule::runRule(
@@ -9123,6 +9142,12 @@ void DeviceFunctionDeclRule::runRule(
       // Remove statement "cg::grid_group grid = cg::this_grid();"
       emplaceTransformation(new ReplaceText(Begin, Length, ""));
     }
+  }
+  if (getAssistNodeAsType<TypeLoc>(Result, "fp64")) {
+    FuncInfo->setBF64();
+  }
+  if (getAssistNodeAsType<TypeLoc>(Result, "fp16")) {
+    FuncInfo->setBF16();
   }
 }
 

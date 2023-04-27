@@ -575,9 +575,7 @@ void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
        CubTypeRule::CanMappingToSyclType(TypeName)) ||
       StringRef(TypeName).startswith("thrust::")) {
     analyzeType(Temp->getTypeSourceInfo()->getTypeLoc());
-    return;
   }
-
   analyzeExpr(static_cast<const CXXConstructExpr *>(Temp));
 }
 
@@ -1014,6 +1012,7 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
         TYPELOC_CAST(TypedefTypeLoc).getTypedefNameDecl()->getName().str();
     break;
   case TypeLoc::Builtin:
+  case TypeLoc::Using:
   case TypeLoc::Record: {
     TyName = DpctGlobalInfo::getTypeName(TL.getType());
     auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TyName);

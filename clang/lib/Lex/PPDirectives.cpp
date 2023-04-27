@@ -2648,7 +2648,7 @@ bool Preprocessor::ReadMacroParameterList(MacroInfo *MI, Token &Tok) {
   SmallVector<IdentifierInfo*, 32> Parameters;
 
   while (true) {
-    LexUnexpandedToken(Tok);
+    LexUnexpandedNonComment(Tok);
     switch (Tok.getKind()) {
     case tok::r_paren:
       // Found the end of the parameter list.
@@ -2669,7 +2669,7 @@ bool Preprocessor::ReadMacroParameterList(MacroInfo *MI, Token &Tok) {
       }
 
       // Lex the token after the identifier.
-      LexUnexpandedToken(Tok);
+      LexUnexpandedNonComment(Tok);
       if (Tok.isNot(tok::r_paren)) {
         Diag(Tok, diag::err_pp_missing_rparen_in_macro_def);
         return true;
@@ -2703,7 +2703,7 @@ bool Preprocessor::ReadMacroParameterList(MacroInfo *MI, Token &Tok) {
       Parameters.push_back(II);
 
       // Lex the token after the identifier.
-      LexUnexpandedToken(Tok);
+      LexUnexpandedNonComment(Tok);
 
       switch (Tok.getKind()) {
       default:          // #define X(A B
@@ -2719,7 +2719,7 @@ bool Preprocessor::ReadMacroParameterList(MacroInfo *MI, Token &Tok) {
         Diag(Tok, diag::ext_named_variadic_macro);
 
         // Lex the token after the identifier.
-        LexUnexpandedToken(Tok);
+        LexUnexpandedNonComment(Tok);
         if (Tok.isNot(tok::r_paren)) {
           Diag(Tok, diag::err_pp_missing_rparen_in_macro_def);
           return true;
