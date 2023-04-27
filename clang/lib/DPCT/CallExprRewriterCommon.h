@@ -699,20 +699,12 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
     QualType DerefQT;
     if (auto ArraySub = dyn_cast<ArraySubscriptExpr>(TE)) {
       // Handle cases like A[3] where A is an array or pointer
-      QualType BaseType = ArraySub->getBase()->getType();
-      if (BaseType->isArrayType()) {
-        if (auto Array = BaseType->getAsArrayTypeUnsafe()) {
-          DerefQT = Array->getElementType();
-        }
-      } else if (BaseType->isPointerType()) {
-        DerefQT = BaseType->getPointeeType();
-      }
+      DerefQT = DerefQualType(ArraySub->getBase()->getType());
     } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(TE)) {
       // Handle cases like A[3] where A is a vector with sepecfying type.
       DerefQT = COCE->getType().getCanonicalType();
     }
 
-    // All other cases
     if (DerefQT.isNull()) {
       DerefQT = TE->getType();
     }
