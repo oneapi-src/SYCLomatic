@@ -421,7 +421,7 @@ llvm::Expected<std::string> getAbsolutePath(llvm::vfs::FileSystem &FS,
     return llvm::errorCodeToError(EC);
   llvm::sys::path::native(AbsolutePath);
 #ifdef SYCLomatic_CUSTOMIZATION
-  llvm::sys::path::remove_dots(AbsolutePath, /*remove_dot_dot=*/true);
+  llvm::sys::path::remove_dots(AbsolutePath, true);
 #endif // SYCLomatic_CUSTOMIZATION
   return std::string(AbsolutePath.str());
 }
