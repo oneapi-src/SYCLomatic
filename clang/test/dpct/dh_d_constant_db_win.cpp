@@ -6,7 +6,7 @@
 // RUN: cat %S/constant_header.h > constant_header.h
 // RUN: echo "[" > compile_commands.json
 // RUN: echo "    {" >> compile_commands.json
-// RUN: echo "        \"command\": \"CudaCompile dh_d_constant_db_win.cpp\"," >> compile_commands.json
+// RUN: echo "        \"command\": \"CudaCompile dh_d_constant_db_win.cpp --x cu\"," >> compile_commands.json
 // RUN: echo "        \"directory\": \"%/T/dh_d_constant_db_win\"," >> compile_commands.json
 // RUN: echo "        \"file\": \"%/T/dh_d_constant_db_win/dh_d_constant_db_win.cpp\"" >> compile_commands.json
 // RUN: echo "    }," >> compile_commands.json

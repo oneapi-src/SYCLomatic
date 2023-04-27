@@ -11,12 +11,12 @@
 // RUN: echo "        \"file\": \"%/T/hdd_constant_db_win/hdd_constant_db_win.cpp\"" >> compile_commands.json
 // RUN: echo "    }," >> compile_commands.json
 // RUN: echo "    {" >> compile_commands.json
-// RUN: echo "        \"command\": \"CudaCompile hdd_constant_db_win.cpp\"," >> compile_commands.json
+// RUN: echo "        \"command\": \"CudaCompile hdd_constant_db_win.cpp --x cu\"," >> compile_commands.json
 // RUN: echo "        \"directory\": \"%/T/hdd_constant_db_win\"," >> compile_commands.json
 // RUN: echo "        \"file\": \"%/T/hdd_constant_db_win/hdd_constant_db_win.cpp\"" >> compile_commands.json
 // RUN: echo "    }," >> compile_commands.json
 // RUN: echo "    {" >> compile_commands.json
-// RUN: echo "        \"command\": \"CudaCompile hdd_constant_db_win.cpp\"," >> compile_commands.json
+// RUN: echo "        \"command\": \"CudaCompile hdd_constant_db_win.cpp --x cu\"," >> compile_commands.json
 // RUN: echo "        \"directory\": \"%/T/hdd_constant_db_win\"," >> compile_commands.json
 // RUN: echo "        \"file\": \"%/T/hdd_constant_db_win/hdd_constant_db_win.cpp\"" >> compile_commands.json
 // RUN: echo "    }" >> compile_commands.json

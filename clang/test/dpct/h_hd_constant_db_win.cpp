@@ -12,7 +12,7 @@
 // RUN: echo "        \"file\": \"%/T/h_hd_constant_db_win/h_hd_constant_db_win.cpp\"" >> compile_commands.json
 // RUN: echo "    }," >> compile_commands.json
 // RUN: echo "    {" >> compile_commands.json
-// RUN: echo "        \"command\": \"CudaCompile h_hd_constant_db_win.cpp\"," >> compile_commands.json
+// RUN: echo "        \"command\": \"CudaCompile h_hd_constant_db_win.cpp --x cu\"," >> compile_commands.json
 // RUN: echo "        \"directory\": \"%/T/h_hd_constant_db_win\"," >> compile_commands.json
 // RUN: echo "        \"file\": \"%/T/h_hd_constant_db_win/h_hd_constant_db_win.cpp\"" >> compile_commands.json
 // RUN: echo "    }" >> compile_commands.json

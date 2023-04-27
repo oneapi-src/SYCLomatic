@@ -7,7 +7,7 @@
 // RUN: dpct d_dh_constant_db_win.cpp --out-root=./out --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: echo "[" > compile_commands.json
 // RUN: echo "    {" >> compile_commands.json
-// RUN: echo "        \"command\": \"CudaCompile d_dh_constant_db_win.cpp\"," >> compile_commands.json
+// RUN: echo "        \"command\": \"CudaCompile d_dh_constant_db_win.cpp --x cu\"," >> compile_commands.json
 // RUN: echo "        \"directory\": \"%/T/d_dh_constant_db_win\"," >> compile_commands.json
 // RUN: echo "        \"file\": \"%/T/d_dh_constant_db_win/d_dh_constant_db_win.cpp\"" >> compile_commands.json
 // RUN: echo "    }," >> compile_commands.json

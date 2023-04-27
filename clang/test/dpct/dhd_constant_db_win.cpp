@@ -6,7 +6,7 @@
 // RUN: cat %S/constant_header.h > constant_header.h
 // RUN: echo "[" > compile_commands.json
 // RUN: echo "    {" >> compile_commands.json
-// RUN: echo "        \"command\": \"CudaCompile dhd_constant_db_win.cpp\"," >> compile_commands.json
+// RUN: echo "        \"command\": \"CudaCompile dhd_constant_db_win.cpp --x cu\"," >> compile_commands.json
 // RUN: echo "        \"directory\": \"%/T/dhd_constant_db_win\"," >> compile_commands.json
 // RUN: echo "        \"file\": \"%/T/dhd_constant_db_win/dhd_constant_db_win.cpp\"" >> compile_commands.json
 // RUN: echo "    }," >> compile_commands.json
@@ -16,7 +16,7 @@
 // RUN: echo "        \"file\": \"%/T/dhd_constant_db_win/dhd_constant_db_win.cpp\"" >> compile_commands.json
 // RUN: echo "    }," >> compile_commands.json
 // RUN: echo "    {" >> compile_commands.json
-// RUN: echo "        \"command\": \"CudaCompile dhd_constant_db_win.cpp\"," >> compile_commands.json
+// RUN: echo "        \"command\": \"CudaCompile dhd_constant_db_win.cpp --x cu\"," >> compile_commands.json
 // RUN: echo "        \"directory\": \"%/T/dhd_constant_db_win\"," >> compile_commands.json
 // RUN: echo "        \"file\": \"%/T/dhd_constant_db_win/dhd_constant_db_win.cpp\"" >> compile_commands.json
 // RUN: echo "    }" >> compile_commands.json
