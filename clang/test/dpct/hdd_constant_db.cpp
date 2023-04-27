@@ -11,12 +11,12 @@
 // RUN: echo "        \"file\": \"%/T/hdd_constant_db/hdd_constant_db.cpp\"" >> compile_commands.json
 // RUN: echo "    }," >> compile_commands.json
 // RUN: echo "    {" >> compile_commands.json
-// RUN: echo "        \"command\": \"nvcc hdd_constant_db.cpp\"," >> compile_commands.json
+// RUN: echo "        \"command\": \"nvcc hdd_constant_db.cpp --x cu\"," >> compile_commands.json
 // RUN: echo "        \"directory\": \"%/T/hdd_constant_db\"," >> compile_commands.json
 // RUN: echo "        \"file\": \"%/T/hdd_constant_db/hdd_constant_db.cpp\"" >> compile_commands.json
 // RUN: echo "    }," >> compile_commands.json
 // RUN: echo "    {" >> compile_commands.json
-// RUN: echo "        \"command\": \"nvcc hdd_constant_db.cpp\"," >> compile_commands.json
+// RUN: echo "        \"command\": \"nvcc hdd_constant_db.cpp --x cu\"," >> compile_commands.json
 // RUN: echo "        \"directory\": \"%/T/hdd_constant_db\"," >> compile_commands.json
 // RUN: echo "        \"file\": \"%/T/hdd_constant_db/hdd_constant_db.cpp\"" >> compile_commands.json
 // RUN: echo "    }" >> compile_commands.json

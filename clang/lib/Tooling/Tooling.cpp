@@ -420,6 +420,9 @@ llvm::Expected<std::string> getAbsolutePath(llvm::vfs::FileSystem &FS,
   if (auto EC = FS.makeAbsolute(AbsolutePath))
     return llvm::errorCodeToError(EC);
   llvm::sys::path::native(AbsolutePath);
+#ifdef SYCLomatic_CUSTOMIZATION
+  llvm::sys::path::remove_dots(AbsolutePath, /*remove_dot_dot=*/true);
+#endif // SYCLomatic_CUSTOMIZATION
   return std::string(AbsolutePath.str());
 }
 
@@ -836,13 +839,6 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
                                  BaseNameStr + "\"";
         return -30 /*MigrationErrorInconsistentFileInDatabase*/;
       }
-
-      for (size_t index = 0; index < SDKIncludePath.size(); index++) {
-        if (SDKIncludePath[index] == '\\') {
-          SDKIncludePath[index] = '/';
-        }
-      }
-      ArgumentsAdjuster CudaArgsAdjuster{ArgsAdjuster};
 #ifdef _WIN32
       // In Microsoft Visual Studio Project, CUDA file in <None> is not part of
       // the build project, So if "*.cu" files is found in <None> node, just
@@ -857,33 +853,50 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
         DoPrintHandle(Msg, false);
         return -1;
       }
-
-      if ((!CommandLine.empty() && CommandLine[0] == "CudaCompile") ||
-          (!CommandLine.empty() && CommandLine[0] == "CustomBuild" &&
-           llvm::sys::path::extension(File)==".cu")) {
-        CudaArgsAdjuster = combineAdjusters(
-            std::move(CudaArgsAdjuster),
-            getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
-        CudaArgsAdjuster = combineAdjusters(
-            std::move(CudaArgsAdjuster),
-            getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
-      }
-#else
-      if (!CommandLine.empty() && CommandLine[0].size() >= 4 &&
-          CommandLine[0].substr(CommandLine[0].size() - 4) == "nvcc") {
-        CudaArgsAdjuster = combineAdjusters(
-            std::move(CudaArgsAdjuster),
-            getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
-        CudaArgsAdjuster = combineAdjusters(
-            std::move(CudaArgsAdjuster),
-            getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
-      }
 #endif
+      ArgumentsAdjuster CudaArgsAdjuster{ArgsAdjuster};
+      for (size_t Index = 0; Index < CommandLine.size() - 1; Index++) {
+        if (CommandLine[Index] == "-x" || CommandLine[Index] == "--x") {
+          if (CommandLine[Index + 1] == "cu") {
+            CommandLine.erase(CommandLine.begin() + Index + 1);
+            CommandLine.erase(CommandLine.begin() + Index--);
+            CudaArgsAdjuster = combineAdjusters(
+                std::move(CudaArgsAdjuster),
+                getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
+            CudaArgsAdjuster = combineAdjusters(
+                std::move(CudaArgsAdjuster),
+                getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
+          } else if (CommandLine[Index + 1] == "c") {
+            CommandLine.erase(CommandLine.begin() + Index + 1);
+            CommandLine.erase(CommandLine.begin() + Index--);
+            CudaArgsAdjuster = combineAdjusters(
+                std::move(CudaArgsAdjuster),
+                getInsertArgumentAdjuster("c", ArgumentInsertPosition::BEGIN));
+            CudaArgsAdjuster = combineAdjusters(
+                std::move(CudaArgsAdjuster),
+                getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
+          } else if (CommandLine[Index + 1] == "c++") {
+            CommandLine.erase(CommandLine.begin() + Index + 1);
+            CommandLine.erase(CommandLine.begin() + Index--);
+            CudaArgsAdjuster = combineAdjusters(
+                std::move(CudaArgsAdjuster),
+                getInsertArgumentAdjuster("c++", ArgumentInsertPosition::BEGIN));
+            CudaArgsAdjuster = combineAdjusters(
+                std::move(CudaArgsAdjuster),
+                getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
+          }
+        }
+      }
+      if (CudaArgsAdjuster)
+        CommandLine = CudaArgsAdjuster(CommandLine, CompileCommand.Filename);
+      for (size_t index = 0; index < SDKIncludePath.size(); index++) {
+        if (SDKIncludePath[index] == '\\') {
+          SDKIncludePath[index] = '/';
+        }
+      }
       CommandLine = getInsertArgumentAdjuster(
           (std::string("-I") + SDKIncludePath).c_str(),
           ArgumentInsertPosition::BEGIN)(CommandLine, "");
-      if (CudaArgsAdjuster)
-        CommandLine = CudaArgsAdjuster(CommandLine, CompileCommand.Filename);
 
       assert(!CommandLine.empty());
 

@@ -7,7 +7,7 @@
 // RUN: dpct h_dh_constant_db.cpp --out-root=./out --cuda-include-path="%cuda-path/include" -- -x c --cuda-host-only
 // RUN: echo "[" > compile_commands.json
 // RUN: echo "    {" >> compile_commands.json
-// RUN: echo "        \"command\": \"nvcc h_dh_constant_db.cpp\"," >> compile_commands.json
+// RUN: echo "        \"command\": \"nvcc h_dh_constant_db.cpp --x cu\"," >> compile_commands.json
 // RUN: echo "        \"directory\": \"%/T/h_dh_constant_db\"," >> compile_commands.json
 // RUN: echo "        \"file\": \"%/T/h_dh_constant_db/h_dh_constant_db.cpp\"" >> compile_commands.json
 // RUN: echo "    }," >> compile_commands.json

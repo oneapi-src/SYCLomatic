@@ -12,7 +12,7 @@
 // RUN: echo "        \"file\": \"%/T/h_hd_constant_db/h_hd_constant_db.cpp\"" >> compile_commands.json
 // RUN: echo "    }," >> compile_commands.json
 // RUN: echo "    {" >> compile_commands.json
-// RUN: echo "        \"command\": \"nvcc h_hd_constant_db.cpp\"," >> compile_commands.json
+// RUN: echo "        \"command\": \"nvcc h_hd_constant_db.cpp --x cu\"," >> compile_commands.json
 // RUN: echo "        \"directory\": \"%/T/h_hd_constant_db\"," >> compile_commands.json
 // RUN: echo "        \"file\": \"%/T/h_hd_constant_db/h_hd_constant_db.cpp\"" >> compile_commands.json
 // RUN: echo "    }" >> compile_commands.json

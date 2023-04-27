@@ -6,7 +6,7 @@
 // RUN: cat %S/constant_header.h > constant_header.h
 // RUN: echo "[" > compile_commands.json
 // RUN: echo "    {" >> compile_commands.json
-// RUN: echo "        \"command\": \"nvcc dhh_constant_db.cpp\"," >> compile_commands.json
+// RUN: echo "        \"command\": \"nvcc dhh_constant_db.cpp --x cu\"," >> compile_commands.json
 // RUN: echo "        \"directory\": \"%/T/dhh_constant_db\"," >> compile_commands.json
 // RUN: echo "        \"file\": \"%/T/dhh_constant_db/dhh_constant_db.cpp\"" >> compile_commands.json
 // RUN: echo "    }," >> compile_commands.json

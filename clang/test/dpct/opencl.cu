@@ -1,19 +1,8 @@
-// ------ prepare test directory
-// RUN: cd %T
-// RUN: rm -rf opencl-build
-// RUN: mkdir  opencl-build
-// RUN: cd     opencl-build
-// RUN: cp %s opencl.cu
-//
 // ------ run dpct
-// RUN: dpct opencl.cu --cuda-include-path="%cuda-path/include"
+// RUN: dpct %s --out-root %T/opencl-build --cuda-include-path="%cuda-path/include"
 //
 // ------ ensure file inclusion of CL/opencl.h is kept
-// RUN: FileCheck --input-file dpct_output/opencl.dp.cpp --match-full-lines %s
-//
-// ------ cleanup test directory
-// RUN: cd ..
-// RUN: rm -rf ./opencl-build
+// RUN: FileCheck --input-file %T/opencl-build/opencl.dp.cpp --match-full-lines %s
 
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK: #include <dpct/dpct.hpp>

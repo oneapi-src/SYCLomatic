@@ -1,17 +1,17 @@
 // UNSUPPORTED: system-windows
 // RUN: echo "[" > %T/compile_commands.json
 // RUN: echo "    {" >> %T/compile_commands.json
-// RUN: echo "        \"command\": \"nvcc %S/main.cu\"," >> %T/compile_commands.json
+// RUN: echo "        \"command\": \"nvcc %S/main.cu --x cu\"," >> %T/compile_commands.json
 // RUN: echo "        \"directory\": \"%T\"," >> %T/compile_commands.json
 // RUN: echo "        \"file\": \"%S/main.cu\"" >> %T/compile_commands.json
 // RUN: echo "    }," >> %T/compile_commands.json
 // RUN: echo "    {" >> %T/compile_commands.json
-// RUN: echo "        \"command\": \"nvcc %S/bar/util_bar.cc\"," >> %T/compile_commands.json
+// RUN: echo "        \"command\": \"nvcc %S/bar/util_bar.cc --x cu\"," >> %T/compile_commands.json
 // RUN: echo "        \"directory\": \"%T\"," >> %T/compile_commands.json
 // RUN: echo "        \"file\": \"%S/bar/util_bar.cc\"" >> %T/compile_commands.json
 // RUN: echo "    }," >> %T/compile_commands.json
 // RUN: echo "    {" >> %T/compile_commands.json
-// RUN: echo "        \"command\": \"nvcc %S/bar/util.gpu\"," >> %T/compile_commands.json
+// RUN: echo "        \"command\": \"nvcc %S/bar/util.gpu --x cu\"," >> %T/compile_commands.json
 // RUN: echo "        \"directory\": \"%T\"," >> %T/compile_commands.json
 // RUN: echo "        \"file\": \"%S/bar/util.gpu\"" >> %T/compile_commands.json
 // RUN: echo "    }" >> %T/compile_commands.json
@@ -25,7 +25,7 @@
 // RUN: FileCheck %S/bar/macro_def.hh --match-full-lines --input-file %T/bar/macro_def.hh
 // RUN: FileCheck %S/bar/util_bar.cc --match-full-lines --input-file %T/bar/util_bar.cc.dp.cpp
 
-// RUN: dpct --format-range=none --cuda-include-path="%cuda-path/include" -in-root=%S -out-root=%T  -p=%T %S/main.gpu   --sycl-named-lambda
+// RUN: dpct --format-range=none --cuda-include-path="%cuda-path/include" -in-root=%S -out-root=%T  %S/main.gpu   --sycl-named-lambda --no-incremental-migration --extra-arg="-xcuda"
 // RUN: FileCheck %S/main.gpu --match-full-lines --input-file %T/main.gpu.dp.cpp
 
 #include <stdio.h>
