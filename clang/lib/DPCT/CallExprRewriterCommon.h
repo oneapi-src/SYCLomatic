@@ -1514,9 +1514,12 @@ public:
       return false;
     }
     auto DREDecl = DRE->getDecl();
-    if(!DREDecl || !isa_and_nonnull<FunctionDecl>(DREDecl->getDeclContext())){
+    if (!DREDecl || !isa_and_nonnull<FunctionDecl>(DREDecl->getDeclContext()) ||
+        !DREDecl->getType()->isPointerType()) {
       return false;
     }
+    // If the pointer is only accessed on host side, then it's safe to replace
+    // sycl::malloc_host with c library malloc.
     return isPointerHostAccessOnly(DREDecl);
   }
 };

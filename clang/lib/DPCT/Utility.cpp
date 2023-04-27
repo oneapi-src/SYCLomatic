@@ -4054,6 +4054,7 @@ bool typeIsPostfix(clang::QualType QT) {
   }
 }
 
+// Check if the given pointer is only accessed on host side.
 bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
   llvm::SmallVector<clang::ast_matchers::BoundNodes, 1U> MatchResult;
   using namespace clang::ast_matchers;
@@ -4076,16 +4077,19 @@ bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
     if(!Def) {
       return false;
     }
+    if(Def->hasAttr<CUDADeviceAttr>() || Def->hasAttr<CUDAGlobalAttr>()) {
+      return false;
+    }
     auto Body = Def->getBody();
     MatchResult = ast_matchers::match(PtrMatcher, *Body, CTX);
   }
   if (!MatchResult.size()) {
     return false;
   }
-  // For following 3 cases, it's safe to use malloc from c runtime library
-  // Case 1: Array subscript expr and accessed as rvalue
-  // Case 2: Dereference expr and accessed as rvalue
-  // Case 3: Host function in system header and some specific API
+  // For following 3 cases, the pointer is only accessed on host sied.
+  // Case 1: Used in pointer dereference expr and the expr value category is rvalue.
+  // Case 2: Used in array subscript expr and the expr value category is rvalue.
+  // Case 3: Used in some C and CUDA runtime functions, e.g., printf, cudaMemcpy.
   for (auto &SubResult : MatchResult) {
     bool HostAccess = false;
     const DeclRefExpr *PtrDRE = SubResult.getNodeAs<DeclRefExpr>("PtrVar");
@@ -4100,6 +4104,7 @@ bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
     while(needFindParent) {
       S = getParentStmt(S);
       switch(S->getStmtClass()) {
+        // Case 1
         case clang::Stmt::StmtClass::UnaryOperatorClass : {
           auto UO = dyn_cast<UnaryOperator>(S);
           auto OpCode = UO->getOpcode();
@@ -4110,6 +4115,7 @@ bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
           }
           LLVM_FALLTHROUGH;
         }
+        // Case 2
         case clang::Stmt::StmtClass::ArraySubscriptExprClass: {
           auto RValueExpr =
               dyn_cast_or_null<ImplicitCastExpr>(getParentStmt(S));
@@ -4139,7 +4145,7 @@ bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
         }
       }
     }
-
+    // Case 3
     if (CE) {
       auto CEDecl = CE->getDirectCallee();
       if (!CEDecl) {
