@@ -995,6 +995,12 @@ std::optional<HeaderType> DpctFileInfo::findHeaderType(StringRef Header) {
 }
 
 void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
+  if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution ||
+      Type == HT_DPCT_DNNL_Utils) {
+    if (this != DpctGlobalInfo::getInstance().getMainFile().get())
+      DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
+          Type, FirstIncludeOffset);
+  }
   if (HeaderInsertedBitMap[Type])
     return;
   HeaderInsertedBitMap[Type] = true;
@@ -1012,9 +1018,6 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
   case HT_DPL_Algorithm:
   case HT_DPL_Execution:
   case HT_DPCT_DNNL_Utils:
-    if (this != DpctGlobalInfo::getInstance().getMainFile().get())
-      DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
-          Type, FirstIncludeOffset);
     concatHeader(OS, getHeaderSpelling(Type));
     return insertHeader(OS.str(), FirstIncludeOffset,
                         InsertPosition::IP_AlwaysLeft);
@@ -1533,6 +1536,26 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
       }
     }
   }
+  llvm::SmallVector<std::string> AspectList;
+  if (getVarMap().hasBF64()) {
+    AspectList.push_back(MapNames::getClNamespace() + "aspect::fp64");
+  }
+  if (getVarMap().hasBF16()) {
+    AspectList.push_back(MapNames::getClNamespace() + "aspect::fp16");
+  }
+  if (!AspectList.empty()) {
+    requestFeature(HelperFeatureEnum::Device_has_capability_or_fail,
+                   getFilePath());
+    Printer.indent();
+    Printer << MapNames::getDpctNamespace() << "has_capability_or_fail(";
+    printStreamBase(Printer);
+    Printer << "get_device(), {" << AspectList.front();
+    for (size_t i = 1; i < AspectList.size(); ++i) {
+      Printer << ", " << AspectList[i];
+    }
+    Printer << "});" << getNL();
+    ;
+  }
   Printer.indent();
   if (!SubGroupSizeWarning.empty()) {
     Printer << "/*" << getNL();
@@ -1545,15 +1568,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
   if (!getEvent().empty()) {
     Printer << "*" << getEvent() << " = ";
   }
-  if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&') {
-    Printer << "(" << ExecutionConfig.Stream << ")";
-  } else {
-    Printer << ExecutionConfig.Stream;
-  }
-  if (isQueuePtr())
-    Printer << "->";
-  else
-    Printer << ".";
+  printStreamBase(Printer);
   if (SubmitStmtsList.empty()) {
     printParallelFor(Printer, false);
   } else {
@@ -1685,6 +1700,18 @@ void KernelCallExpr::printKernel(KernelPrinter &Printer) {
                            : "")
                    << "(" << KernelArgs << ");";
   Printer.newLine();
+}
+
+void KernelCallExpr::printStreamBase(KernelPrinter &Printer) {
+  if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&') {
+    Printer << "(" << ExecutionConfig.Stream << ")";
+  } else {
+    Printer << ExecutionConfig.Stream;
+  }
+  if (isQueuePtr())
+    Printer << "->";
+  else
+    Printer << ".";
 }
 
 std::string KernelCallExpr::getReplacement() {

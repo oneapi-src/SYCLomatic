@@ -310,8 +310,6 @@ std::string MathFuncNameRewriter::getNewFuncName() {
                     SourceCalleeName) != SingleFuctions.end()) {
         LangOptions LO;
         for (unsigned i = 0; i < Call->getNumArgs(); i++) {
-          if (SourceCalleeName == "ldexpf" && i == 1)
-            continue;
           auto Arg = Call->getArg(i);
           std::string ArgT =
               Arg->IgnoreImplicit()->getType().getCanonicalType().getAsString(
@@ -346,8 +344,6 @@ std::string MathFuncNameRewriter::getNewFuncName() {
                            SourceCalleeName) != DoubleFuctions.end()) {
         LangOptions LO;
         for (unsigned i = 0; i < Call->getNumArgs(); i++) {
-          if (SourceCalleeName == "ldexp" && i == 1)
-            continue;
           auto Arg = Call->getArg(i);
           std::string ArgT =
               Arg->IgnoreImplicit()->getType().getCanonicalType().getAsString(
