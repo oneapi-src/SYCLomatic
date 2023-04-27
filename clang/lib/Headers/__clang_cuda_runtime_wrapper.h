@@ -559,4 +559,15 @@ extern "C" unsigned __cudaPushCallConfiguration(dim3 gridDim, dim3 blockDim,
 #pragma pop_macro("__clang_major__")
 #endif // SYCLomatic_CUSTOMIZATION
 
+#if defined(SYCLomatic_CUSTOMIZATION)
+// Fixed the parsing error when source include <cooperative_groups/reduce.h>.
+#define __CUDA_INCLUDE_COMPILER_INTERNAL_HEADERS__
+# if CUDA_VERSION >= 11800
+#include <crt/sm_90_rt.h>
+#endif
+#if CUDA_VERSION >= 11000
+#include <crt/sm_80_rt.h>
+#endif
+#endif // SYCLomatic_CUSTOMIZATION
+
 #endif // __CLANG_CUDA_RUNTIME_WRAPPER_H__
