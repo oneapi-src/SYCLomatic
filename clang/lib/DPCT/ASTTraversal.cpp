@@ -11933,6 +11933,11 @@ void CooperativeGroupsFunctionRule::runRule(
         }
       }
     }
+  } else if (FuncName == "reduce") {
+    RUW.NeedReport = false;
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
   }
 }
 
@@ -12306,6 +12311,14 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE,
   std::string Namespace;
   const NamedDecl *ND = dyn_cast<NamedDecl>(CE->getCalleeDecl());
   if (ND) {
+    if (!dpct::DpctGlobalInfo::isInCudaPath(ND->getLocation()) &&
+        !isChildOrSamePath(
+          DpctInstallPath,
+          dpct::DpctGlobalInfo::getLocInfo(ND).first)) {
+      if (!ND->getName().startswith("cudnn") &&
+          !ND->getName().startswith("nccl"))
+        return;
+    }
     const auto *NSD = dyn_cast<NamespaceDecl>(ND->getDeclContext());
     if (NSD && !NSD->isInlineNamespace()) {
       if (dyn_cast<NamespaceDecl>(NSD->getDeclContext())) {
