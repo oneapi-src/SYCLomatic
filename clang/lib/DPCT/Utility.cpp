@@ -3315,8 +3315,8 @@ bool analyzeMemcpyOrder(
   std::set<const clang::Expr *> MemcpyCallExprs;
 
   // 1. Find all CallExprs in this scope. If there is any CallExpr
-  //    between two memcpy() API calls. The wait() must be added after
-  //    the previous memcpy() call.
+  //    between two memcpy() API calls(except the kernel call on default stream).
+  //    The wait() must be added after the previous memcpy() call.
   auto CallExprMatcher = clang::ast_matchers::findAll(
       clang::ast_matchers::callExpr().bind("CallExpr"));
   auto MatchedResults = clang::ast_matchers::match(
@@ -3364,7 +3364,10 @@ bool analyzeMemcpyOrder(
       if(KCall) {
         const CallExpr *Config = KCall->getConfig();
         if (Config) {
-          // If kernel call uses default queue, it will not affect the memcpy
+          // Record the pointer DRE used as argument of kernel call on default
+          // stream in ExcludeExprs. Because those pointers are accessed on device
+          // and on default stream, the q.memcpy before this kernel call don't
+          // need wait for those DREs.   
           if ((Config->getNumArgs() == 4) &&
                isDefaultStream(Config->getArg(3))) {
             for(auto Arg: KCall->arguments()) {
@@ -3398,8 +3401,8 @@ bool analyzeMemcpyOrder(
 
   // Find all DREs related with the first and the second arguments
   // of the memcpy APIs. If there is any related DRE between two
-  // memcpy calls, wait() must be added after the previous memcpy.
-  //
+  // memcpy calls(except the pointer DRE used as arguments of kernel
+  // call on default stream), wait() must be added after the previous memcpy.
   // The method to find all related DREs:
   // Find all memcpy APIs in this scope, insert the DREs in the first
   // and second arguments of those APIs into the DRE set.
