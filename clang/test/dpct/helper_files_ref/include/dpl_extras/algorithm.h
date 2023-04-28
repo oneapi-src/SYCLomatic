@@ -1713,6 +1713,7 @@ inline ::std::pair<Iter1, Iter1> equal_range(_ExecutionPolicy &&policy,
                                              const ValueLessComparable &value) {
   return equal_range(::std::forward<_ExecutionPolicy>(policy), start, end,
                      value, internal::__less());
+}
 
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t, 
           typename OffsetIteratorT>
