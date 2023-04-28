@@ -164,94 +164,100 @@ inline sycl::half2 isnan(const sycl::half2 h) {
   return {sycl::isnan(h.x()), sycl::isnan(h.y())};
 }
 
-// min
-inline auto min(const double a, const float b) {
+// min function overloads.
+// For floating-point types, `float` or `double` arguments are acceptable.
+// For integer types, `std::uint32_t`, `std::int32_t`, `std::uint64_t` or
+// `std::int64_t` type arguments are acceptable.
+inline double min(const double a, const float b) {
   return sycl::fmin(a, static_cast<double>(b));
 }
-inline auto min(const float a, const double b) {
+inline double min(const float a, const double b) {
   return sycl::fmin(static_cast<double>(a), b);
 }
-inline auto min(const float a, const float b) { return sycl::fmin(a, b); }
-inline auto min(const double a, const double b) { return sycl::fmin(a, b); }
-inline auto min(const std::uint32_t a, const std::int32_t b) {
+inline float min(const float a, const float b) { return sycl::fmin(a, b); }
+inline double min(const double a, const double b) { return sycl::fmin(a, b); }
+inline std::uint32_t min(const std::uint32_t a, const std::int32_t b) {
   return sycl::min(a, static_cast<std::uint32_t>(b));
 }
-inline auto min(const std::int32_t a, const std::uint32_t b) {
+inline std::uint32_t min(const std::int32_t a, const std::uint32_t b) {
   return sycl::min(static_cast<std::uint32_t>(a), b);
 }
-inline auto min(const std::int32_t a, const std::int32_t b) {
+inline std::int32_t min(const std::int32_t a, const std::int32_t b) {
   return sycl::min(a, b);
 }
-inline auto min(const std::uint32_t a, const std::uint32_t b) {
+inline std::uint32_t min(const std::uint32_t a, const std::uint32_t b) {
   return sycl::min(a, b);
 }
-inline auto min(const std::uint64_t a, const std::int64_t b) {
+inline std::uint64_t min(const std::uint64_t a, const std::int64_t b) {
   return sycl::min(a, static_cast<std::uint64_t>(b));
 }
-inline auto min(const std::int64_t a, const std::uint64_t b) {
+inline std::uint64_t min(const std::int64_t a, const std::uint64_t b) {
   return sycl::min(static_cast<std::uint64_t>(a), b);
 }
-inline auto min(const std::int64_t a, const std::int64_t b) {
+inline std::int64_t min(const std::int64_t a, const std::int64_t b) {
   return sycl::min(a, b);
 }
-inline auto min(const std::uint64_t a, const std::uint64_t b) {
+inline std::uint64_t min(const std::uint64_t a, const std::uint64_t b) {
   return sycl::min(a, b);
 }
-inline auto min(const std::uint64_t a, const std::int32_t b) {
+inline std::uint64_t min(const std::uint64_t a, const std::int32_t b) {
   return sycl::min(a, static_cast<std::uint64_t>(b));
 }
-inline auto min(const std::int32_t a, const std::uint64_t b) {
+inline std::uint64_t min(const std::int32_t a, const std::uint64_t b) {
   return sycl::min(static_cast<std::uint64_t>(a), b);
 }
-inline auto min(const std::uint64_t a, const std::uint32_t b) {
+inline std::uint64_t min(const std::uint64_t a, const std::uint32_t b) {
   return sycl::min(a, static_cast<std::uint64_t>(b));
 }
-inline auto min(const std::uint32_t a, const std::uint64_t b) {
+inline std::uint64_t min(const std::uint32_t a, const std::uint64_t b) {
   return sycl::min(static_cast<std::uint64_t>(a), b);
 }
-// max
-inline auto max(const double a, const float b) {
+// max function overloads.
+// For floating-point types, `float` or `double` arguments are acceptable.
+// For integer types, `std::uint32_t`, `std::int32_t`, `std::uint64_t` or
+// `std::int64_t` type arguments are acceptable.
+inline double max(const double a, const float b) {
   return sycl::fmax(a, static_cast<double>(b));
 }
-inline auto max(const float a, const double b) {
+inline double max(const float a, const double b) {
   return sycl::fmax(static_cast<double>(a), b);
 }
-inline auto max(const float a, const float b) { return sycl::fmax(a, b); }
-inline auto max(const double a, const double b) { return sycl::fmax(a, b); }
-inline auto max(const std::uint32_t a, const std::int32_t b) {
+inline float max(const float a, const float b) { return sycl::fmax(a, b); }
+inline double max(const double a, const double b) { return sycl::fmax(a, b); }
+inline std::uint32_t max(const std::uint32_t a, const std::int32_t b) {
   return sycl::max(a, static_cast<std::uint32_t>(b));
 }
-inline auto max(const std::int32_t a, const std::uint32_t b) {
+inline std::uint32_t max(const std::int32_t a, const std::uint32_t b) {
   return sycl::max(static_cast<std::uint32_t>(a), b);
 }
-inline auto max(const std::int32_t a, const std::int32_t b) {
+inline std::int32_t max(const std::int32_t a, const std::int32_t b) {
   return sycl::max(a, b);
 }
-inline auto max(const std::uint32_t a, const std::uint32_t b) {
+inline std::uint32_t max(const std::uint32_t a, const std::uint32_t b) {
   return sycl::max(a, b);
 }
-inline auto max(const std::uint64_t a, const std::int64_t b) {
+inline std::uint64_t max(const std::uint64_t a, const std::int64_t b) {
   return sycl::max(a, static_cast<std::uint64_t>(b));
 }
-inline auto max(const std::int64_t a, const std::uint64_t b) {
+inline std::uint64_t max(const std::int64_t a, const std::uint64_t b) {
   return sycl::max(static_cast<std::uint64_t>(a), b);
 }
-inline auto max(const std::int64_t a, const std::int64_t b) {
+inline std::int64_t max(const std::int64_t a, const std::int64_t b) {
   return sycl::max(a, b);
 }
-inline auto max(const std::uint64_t a, const std::uint64_t b) {
+inline std::uint64_t max(const std::uint64_t a, const std::uint64_t b) {
   return sycl::max(a, b);
 }
-inline auto max(const std::uint64_t a, const std::int32_t b) {
+inline std::uint64_t max(const std::uint64_t a, const std::int32_t b) {
   return sycl::max(a, static_cast<std::uint64_t>(b));
 }
-inline auto max(const std::int32_t a, const std::uint64_t b) {
+inline std::uint64_t max(const std::int32_t a, const std::uint64_t b) {
   return sycl::max(static_cast<std::uint64_t>(a), b);
 }
-inline auto max(const std::uint64_t a, const std::uint32_t b) {
+inline std::uint64_t max(const std::uint64_t a, const std::uint32_t b) {
   return sycl::max(a, static_cast<std::uint64_t>(b));
 }
-inline auto max(const std::uint32_t a, const std::uint64_t b) {
+inline std::uint64_t max(const std::uint32_t a, const std::uint64_t b) {
   return sycl::max(static_cast<std::uint64_t>(a), b);
 }
 
