@@ -57,6 +57,19 @@ void CuDNNTypeRule::runRule(const MatchFinder::MatchResult &Result) {
     auto TypeStr =
         DpctGlobalInfo::getTypeName(TL->getType().getUnqualifiedType());
 
+    // typedef void* cudnnHandle_t;
+    // cudnnHandle_t handle;
+    // for this case, cudnnHandle_t should not be migrated.
+    if (const clang::ElaboratedType *ET =
+            llvm::dyn_cast<clang::ElaboratedType>(TL->getType())) {
+      if (const clang::TypedefType *TDT =
+              llvm::dyn_cast<clang::TypedefType>(ET->getNamedType().getTypePtr())) {
+        if (DpctGlobalInfo::isInRoot(TDT->getDecl()->getBeginLoc())) {
+          return;
+        }
+      }
+    }
+
     if (!DpctGlobalInfo::isInAnalysisScope(SM->getSpellingLoc(TL->getBeginLoc()))) {
       return;
     }
@@ -179,7 +192,10 @@ void CuDNNAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cudnnCreateDropoutDescriptor", "cudnnSetDropoutDescriptor",
         "cudnnGetDropoutDescriptor", "cudnnDropoutGetReserveSpaceSize",
         "cudnnRestoreDropoutDescriptor", "cudnnDropoutForward", "cudnnDropoutBackward",
-        "cudnnDestroyDropoutDescriptor", "cudnnGetVersion");
+        "cudnnDestroyDropoutDescriptor", "cudnnGetVersion",
+        "cudnnGetConvolutionBackwardFilterAlgorithm",
+        "cudnnGetConvolutionBackwardDataAlgorithm",
+        "cudnnGetConvolutionForwardAlgorithm");
   };
 
   MF.addMatcher(

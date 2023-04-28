@@ -510,6 +510,7 @@ void foo_test_4() {
 // CHECK:  /*
 // CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:  */
+// CHECK-NEXT:    dpct::has_capability_or_fail(dpct::get_default_queue().get_device(), {sycl::aspect::fp64});
 // CHECK-NEXT:    dpct::get_default_queue().parallel_for<dpct_kernel_name<class set_array_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
 // CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
@@ -533,6 +534,7 @@ void foo_test_4() {
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:    */
+// CHECK-NEXT:        dpct::has_capability_or_fail(dpct::get_default_queue().get_device(), {sycl::aspect::fp64});
 // CHECK-NEXT:        dpct::get_default_queue().parallel_for<dpct_kernel_name<class STREAM_Copy_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                    sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
 // CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
@@ -559,6 +561,7 @@ void foo_test_4() {
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:    */
+// CHECK-NEXT:        dpct::has_capability_or_fail(dpct::get_default_queue().get_device(), {sycl::aspect::fp64});
 // CHECK-NEXT:        dpct::get_default_queue().parallel_for<dpct_kernel_name<class STREAM_Copy_Optimized_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                    sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
 // CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {

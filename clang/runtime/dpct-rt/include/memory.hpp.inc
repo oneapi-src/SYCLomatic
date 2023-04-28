@@ -1988,6 +1988,15 @@ template <typename T>
 using usm_host_allocator = detail::deprecated::usm_allocator<T, sycl::usm::alloc::host>;
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|usm_device_allocator_alias|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Memory|dpct_usm_allocator
+// Device|get_default_queue
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T>
+using usm_device_allocator = detail::deprecated::usm_allocator<T, sycl::usm::alloc::shared>;
+// DPCT_LABEL_END
 } // namespace deprecated
 
 // DPCT_LABEL_BEGIN|pointer_attributes|dpct

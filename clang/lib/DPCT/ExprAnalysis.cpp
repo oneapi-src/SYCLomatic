@@ -573,11 +573,10 @@ void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
       Temp->getType().getCanonicalType());
   if ((StringRef(TypeName).startswith("cub::") &&
        CubTypeRule::CanMappingToSyclType(TypeName)) ||
-      StringRef(TypeName).startswith("thrust::")) {
+       StringRef(TypeName).startswith("thrust::") ||
+       StringRef(TypeName).startswith("cooperative_groups::")) {
     analyzeType(Temp->getTypeSourceInfo()->getTypeLoc());
-    return;
   }
-
   analyzeExpr(static_cast<const CXXConstructExpr *>(Temp));
 }
 
@@ -620,26 +619,7 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
 }
 
 void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
-  const auto BaseType = [&]() {
-    auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
-    PP.PrintCanonicalTypes = true;
-
-    auto QT = ME->getBase()->getType();
-    if (QT->isPointerType())
-      QT = QT->getPointeeType();
-    QT = QT.getUnqualifiedType();
-    const auto *T = QT.getTypePtr();
-    if (const auto *ET = dyn_cast<ElaboratedType>(T))
-      T = ET->getNamedType().getTypePtr();
-    if (const auto *TST = dyn_cast<TemplateSpecializationType>(T)) {
-      std::string s;
-      llvm::raw_string_ostream OS(s);
-      TST->getTemplateName().print(OS, PP, TemplateName::Qualified::Fully);
-      return s;
-    } else {
-      return QT.getAsString(PP);
-    }
-  }();
+  const auto BaseType = getBaseTypeRemoveTemplateArguments(ME);
 
   std::string FieldName = "";
   if (ME->getMemberDecl()->getIdentifier()) {
@@ -788,8 +768,8 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   dispatch(ME->getBase());
   RefString.clear();
   RefString +=
-      DpctGlobalInfo::getTypeName(ME->getBase()->getType().getCanonicalType()) +
-      "." + ME->getMemberDecl()->getDeclName().getAsString();
+    BaseType +
+    "." + ME->getMemberDecl()->getDeclName().getAsString();
 }
 
 void ExprAnalysis::analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT) {
@@ -912,7 +892,11 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
 void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {
   auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
   PP.PrintCanonicalTypes = true;
-  auto BaseType = CMCE->getObjectType().getUnqualifiedType().getAsString(PP);
+  const auto ME = dyn_cast<MemberExpr>(CMCE->getCallee());
+  if (!ME)
+    return;
+
+  auto BaseType = getBaseTypeRemoveTemplateArguments(ME);
   if (StringRef(BaseType).startswith("cub::") ||
       StringRef(BaseType).startswith("cuda::std::")) {
     if (const auto *DRE = dyn_cast<DeclRefExpr>(CMCE->getImplicitObjectArgument())) {
@@ -1029,6 +1013,7 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
         TYPELOC_CAST(TypedefTypeLoc).getTypedefNameDecl()->getName().str();
     break;
   case TypeLoc::Builtin:
+  case TypeLoc::Using:
   case TypeLoc::Record: {
     TyName = DpctGlobalInfo::getTypeName(TL.getType());
     auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TyName);
@@ -1050,8 +1035,11 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
     }
   case TypeLoc::TemplateSpecialization: {
     llvm::raw_string_ostream OS(TyName);
+    TyName.clear();
     auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
-    TSTL.getTypePtr()->getTemplateName().print(OS, Context.getPrintingPolicy());
+    auto PP = Context.getPrintingPolicy();
+    PP.PrintCanonicalTypes = 1;
+    TSTL.getTypePtr()->getTemplateName().print(OS, PP, TemplateName::Qualified::Fully);
     if (!TypeLocRewriterFactoryBase::TypeLocRewriterMap)
       return;
     auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(OS.str());

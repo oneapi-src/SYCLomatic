@@ -942,6 +942,101 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getDpctNamespace() + "unordered_compare_half2",
                      ARG(0), ARG(1), LITERAL("std::not_equal_to<>()"))))))
 
+// Half Precision Conversion and Data Movement
+MATH_API_REWRITER_DEVICE(
+    "__ldca",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__ldca"), EMPTY_FACTORY_ENTRY("__ldca"),
+        EMPTY_FACTORY_ENTRY("__ldca"),
+        WARNING_FACTORY_ENTRY("__ldca", DEREF_FACTORY_ENTRY("__ldca", ARG(0)),
+                              Diagnostics::MATH_EMULATION_EXPRESSION,
+                              std::string("__ldca"), std::string("'*'"))))
+
+MATH_API_REWRITER_DEVICE(
+    "__ldcg",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__ldcg"), EMPTY_FACTORY_ENTRY("__ldcg"),
+        EMPTY_FACTORY_ENTRY("__ldcg"),
+        WARNING_FACTORY_ENTRY("__ldcg", DEREF_FACTORY_ENTRY("__ldcg", ARG(0)),
+                              Diagnostics::MATH_EMULATION_EXPRESSION,
+                              std::string("__ldcg"), std::string("'*'"))))
+
+MATH_API_REWRITER_DEVICE(
+    "__ldcs",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__ldcs"), EMPTY_FACTORY_ENTRY("__ldcs"),
+        EMPTY_FACTORY_ENTRY("__ldcs"),
+        WARNING_FACTORY_ENTRY("__ldcs", DEREF_FACTORY_ENTRY("__ldcs", ARG(0)),
+                              Diagnostics::MATH_EMULATION_EXPRESSION,
+                              std::string("__ldcs"), std::string("'*'"))))
+
+MATH_API_REWRITER_DEVICE(
+    "__ldcv",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__ldcv"), EMPTY_FACTORY_ENTRY("__ldcv"),
+        EMPTY_FACTORY_ENTRY("__ldcv"),
+        WARNING_FACTORY_ENTRY("__ldcv", DEREF_FACTORY_ENTRY("__ldcv", ARG(0)),
+                              Diagnostics::MATH_EMULATION_EXPRESSION,
+                              std::string("__ldcv"), std::string("'*'"))))
+
+MATH_API_REWRITER_DEVICE(
+    "__ldg",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__ldg"), EMPTY_FACTORY_ENTRY("__ldg"),
+        EMPTY_FACTORY_ENTRY("__ldg"),
+        WARNING_FACTORY_ENTRY("__ldg", DEREF_FACTORY_ENTRY("__ldg", ARG(0)),
+                              Diagnostics::MATH_EMULATION_EXPRESSION,
+                              std::string("__ldg"), std::string("'*'"))))
+
+MATH_API_REWRITER_DEVICE(
+    "__ldlu",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__ldlu"), EMPTY_FACTORY_ENTRY("__ldlu"),
+        EMPTY_FACTORY_ENTRY("__ldlu"),
+        WARNING_FACTORY_ENTRY("__ldlu", DEREF_FACTORY_ENTRY("__ldlu", ARG(0)),
+                              Diagnostics::MATH_EMULATION_EXPRESSION,
+                              std::string("__ldlu"), std::string("'*'"))))
+
+MATH_API_REWRITER_DEVICE(
+    "__stcg",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__stcg"), EMPTY_FACTORY_ENTRY("__stcg"),
+        EMPTY_FACTORY_ENTRY("__stcg"),
+        WARNING_FACTORY_ENTRY(
+            "__stcg", ASSIGN_FACTORY_ENTRY("__stcg", DEREF(ARG_WC(0)), ARG(1)),
+            Diagnostics::MATH_EMULATION_EXPRESSION, std::string("__stcg"),
+            std::string("'='"))))
+
+MATH_API_REWRITER_DEVICE(
+    "__stcs",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__stcs"), EMPTY_FACTORY_ENTRY("__stcs"),
+        EMPTY_FACTORY_ENTRY("__stcs"),
+        WARNING_FACTORY_ENTRY(
+            "__stcs", ASSIGN_FACTORY_ENTRY("__stcs", DEREF(ARG_WC(0)), ARG(1)),
+            Diagnostics::MATH_EMULATION_EXPRESSION, std::string("__stcs"),
+            std::string("'='"))))
+
+MATH_API_REWRITER_DEVICE(
+    "__stwb",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__stwb"), EMPTY_FACTORY_ENTRY("__stwb"),
+        EMPTY_FACTORY_ENTRY("__stwb"),
+        WARNING_FACTORY_ENTRY(
+            "__stwb", ASSIGN_FACTORY_ENTRY("__stwb", DEREF(ARG_WC(0)), ARG(1)),
+            Diagnostics::MATH_EMULATION_EXPRESSION, std::string("__stwb"),
+            std::string("'='"))))
+
+MATH_API_REWRITER_DEVICE(
+    "__stwt",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__stwt"), EMPTY_FACTORY_ENTRY("__stwt"),
+        EMPTY_FACTORY_ENTRY("__stwt"),
+        WARNING_FACTORY_ENTRY(
+            "__stwt", ASSIGN_FACTORY_ENTRY("__stwt", DEREF(ARG_WC(0)), ARG(1)),
+            Diagnostics::MATH_EMULATION_EXPRESSION, std::string("__stwt"),
+            std::string("'='"))))
+
 // Bfloat16 Precision Conversion and Data Movement
 CALL_FACTORY_ENTRY("__bfloat1622float2",
                    CALL(MapNames::getClNamespace() + "float2",
@@ -985,6 +1080,15 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getClNamespace() + "ext::intel::math::erfinv",
                      CAST_IF_NEED(makeLiteral("float"), ARG(0))))),
         EMPTY_FACTORY_ENTRY("erfinvf"), EMPTY_FACTORY_ENTRY("erfinvf")))
+
+MATH_API_REWRITER_DEVICE(
+    "ldexpf",
+    MATH_API_DEVICE_NODES(
+        CALL_FACTORY_ENTRY(
+            "ldexpf", CALL(MapNames::getClNamespace(false, true) + "ldexp",
+                           CAST_IF_NEED(makeLiteral("float"), ARG(0)), ARG(1))),
+        EMPTY_FACTORY_ENTRY("ldexpf"), EMPTY_FACTORY_ENTRY("ldexp"),
+        EMPTY_FACTORY_ENTRY("ldexpf")))
 
 MATH_API_REWRITER_DEVICE(
     "normcdff",
@@ -1144,6 +1248,15 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getClNamespace() + "ext::intel::math::erfinv",
                      CAST_IF_NEED(makeLiteral("double"), ARG(0))))),
         EMPTY_FACTORY_ENTRY("erfinv"), EMPTY_FACTORY_ENTRY("erfinv")))
+
+MATH_API_REWRITER_DEVICE(
+    "ldexp",
+    MATH_API_DEVICE_NODES(
+        CALL_FACTORY_ENTRY(
+            "ldexp", CALL(MapNames::getClNamespace(false, true) + "ldexp",
+                          CAST_IF_NEED(makeLiteral("double"), ARG(0)), ARG(1))),
+        EMPTY_FACTORY_ENTRY("ldexp"), EMPTY_FACTORY_ENTRY("ldexp"),
+        EMPTY_FACTORY_ENTRY("ldexp")))
 
 MATH_API_REWRITER_DEVICE(
     "norm",
@@ -2156,7 +2269,7 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
                          MapNames::getClNamespace() + "short2>",
                      ARG(0), ARG(1),
-                     LITERAL(MapNames::getDpctNamespace() + "max()"))))))
+                     LITERAL(MapNames::getDpctNamespace() + "maximum()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__vmaxs4",
@@ -2175,7 +2288,7 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
                          MapNames::getClNamespace() + "char4>",
                      ARG(0), ARG(1),
-                     LITERAL(MapNames::getDpctNamespace() + "max()"))))))
+                     LITERAL(MapNames::getDpctNamespace() + "maximum()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__vmaxu2",
@@ -2194,7 +2307,7 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
                          MapNames::getClNamespace() + "ushort2>",
                      ARG(0), ARG(1),
-                     LITERAL(MapNames::getDpctNamespace() + "max()"))))))
+                     LITERAL(MapNames::getDpctNamespace() + "maximum()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__vmaxu4",
@@ -2213,7 +2326,7 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
                          MapNames::getClNamespace() + "uchar4>",
                      ARG(0), ARG(1),
-                     LITERAL(MapNames::getDpctNamespace() + "max()"))))))
+                     LITERAL(MapNames::getDpctNamespace() + "maximum()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__vmins2",
@@ -2232,7 +2345,7 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
                          MapNames::getClNamespace() + "short2>",
                      ARG(0), ARG(1),
-                     LITERAL(MapNames::getDpctNamespace() + "min()"))))))
+                     LITERAL(MapNames::getDpctNamespace() + "minimum()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__vmins4",
@@ -2251,7 +2364,7 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
                          MapNames::getClNamespace() + "char4>",
                      ARG(0), ARG(1),
-                     LITERAL(MapNames::getDpctNamespace() + "min()"))))))
+                     LITERAL(MapNames::getDpctNamespace() + "minimum()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__vminu2",
@@ -2270,7 +2383,7 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
                          MapNames::getClNamespace() + "ushort2>",
                      ARG(0), ARG(1),
-                     LITERAL(MapNames::getDpctNamespace() + "min()"))))))
+                     LITERAL(MapNames::getDpctNamespace() + "minimum()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__vminu4",
@@ -2289,7 +2402,7 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
                          MapNames::getClNamespace() + "uchar4>",
                      ARG(0), ARG(1),
-                     LITERAL(MapNames::getDpctNamespace() + "min()"))))))
+                     LITERAL(MapNames::getDpctNamespace() + "minimum()"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__vneg2",

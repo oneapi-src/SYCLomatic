@@ -40,7 +40,9 @@
 // DPCT_CODE
 #include <sycl/sycl.hpp>
 #include <oneapi/mkl.hpp>
+#ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
 #include <oneapi/mkl/rng/device.hpp>
+#endif
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
@@ -51,6 +53,7 @@
 
 namespace dpct {
 namespace rng {
+#ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
 namespace device {
 // DPCT_LABEL_BEGIN|rng_generator|dpct::rng::device
 // DPCT_DEPENDENCY_BEGIN
@@ -265,6 +268,7 @@ private:
 // DPCT_LABEL_END
 
 } // namespace device
+#endif
 
 namespace host {
 namespace detail {
@@ -407,9 +411,14 @@ public:
   /// \param output The pointer of the first random number.
   /// \param n The number of random numbers.
   inline void generate_uniform_bits(unsigned int *output, std::int64_t n) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
+                             "Interfaces Project does not support this API.");
+#else
     static_assert(sizeof(unsigned int) == sizeof(std::uint32_t));
     generate<oneapi::mkl::rng::uniform_bits<std::uint32_t>>(
         (std::uint32_t *)output, n);
+#endif
   }
 
   /// Generate unsigned long long random number(s) with 'uniform_bits'
@@ -418,9 +427,14 @@ public:
   /// \param n The number of random numbers.
   inline void generate_uniform_bits(unsigned long long *output,
                                     std::int64_t n) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
+                             "Interfaces Project does not support this API.");
+#else
     static_assert(sizeof(unsigned long long) == sizeof(std::uint64_t));
     generate<oneapi::mkl::rng::uniform_bits<std::uint64_t>>(
         (std::uint64_t *)output, n);
+#endif
   }
 
   /// Generate float random number(s) with 'lognormal' distribution.
@@ -489,19 +503,27 @@ public:
   /// Skip ahead several random number(s).
   /// \param num_to_skip The number of random numbers to be skipped.
   void skip_ahead(const std::uint64_t num_to_skip) {
+#ifndef __INTEL_MKL__
+    oneapi::mkl::rng::skip_ahead(_engine, num_to_skip);
+#else
     if constexpr (std::is_same_v<engine_t, oneapi::mkl::rng::mt2203>)
       throw std::runtime_error("no skip_ahead method of mt2203 engine.");
     else
       oneapi::mkl::rng::skip_ahead(_engine, num_to_skip);
+#endif
   }
 
 private:
   static inline engine_t create_engine(sycl::queue *queue,
                                        const std::uint64_t seed,
                                        const std::uint32_t dimensions) {
+#ifdef __INTEL_MKL__
     return std::is_same_v<engine_t, oneapi::mkl::rng::sobol>
                ? engine_t(*queue, dimensions)
                : engine_t(*queue, seed);
+#else
+    return engine_t(*queue, seed);
+#endif
   }
 
   template <typename distr_t, typename buffer_t, class... distr_params_t>
@@ -554,6 +576,10 @@ inline host_rng_ptr create_host_rng(const random_engine_type type) {
   case random_engine_type::mrg32k3a:
     return std::make_shared<
         rng::host::detail::rng_generator<oneapi::mkl::rng::mrg32k3a>>();
+#ifndef __INTEL_MKL__
+    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
+                             "Interfaces Project does not support this API.");
+#else
   case random_engine_type::mt2203:
     return std::make_shared<
         rng::host::detail::rng_generator<oneapi::mkl::rng::mt2203>>();
@@ -566,6 +592,7 @@ inline host_rng_ptr create_host_rng(const random_engine_type type) {
   case random_engine_type::mcg59:
     return std::make_shared<
         rng::host::detail::rng_generator<oneapi::mkl::rng::mcg59>>();
+#endif
   }
 }
 // DPCT_LABEL_END
