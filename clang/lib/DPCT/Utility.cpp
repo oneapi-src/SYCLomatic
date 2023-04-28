@@ -4086,10 +4086,14 @@ bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
   if (!MatchResult.size()) {
     return false;
   }
-  // For following 3 cases, the pointer is only accessed on host sied.
-  // Case 1: Used in pointer dereference expr and the expr value category is rvalue.
-  // Case 2: Used in array subscript expr and the expr value category is rvalue.
-  // Case 3: Used in some C and CUDA runtime functions, e.g., printf, cudaMemcpy.
+  // Match all DeclRefExpr for given pointer, check if each DeclRefExpr is used in
+  // host access. If all DeclRefExpr is used in host access, then the pointer is
+  // only accessed on host side.
+  // If DeclRefExpr usage meets one or more of the following 3 conditions, it's used in
+  // host access.
+  // Condition 1: Used in pointer dereference expr and the expr value category is rvalue.
+  // Condition 2: Used in array subscript expr and the expr value category is rvalue.
+  // Condition 3: Used in some C and CUDA runtime functions, e.g., printf, cudaMemcpy.
   for (auto &SubResult : MatchResult) {
     bool HostAccess = false;
     const DeclRefExpr *PtrDRE = SubResult.getNodeAs<DeclRefExpr>("PtrVar");
@@ -4104,7 +4108,7 @@ bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
     while(needFindParent) {
       S = getParentStmt(S);
       switch(S->getStmtClass()) {
-        // Case 1
+        // Condition 1
         case clang::Stmt::StmtClass::UnaryOperatorClass : {
           auto UO = dyn_cast<UnaryOperator>(S);
           auto OpCode = UO->getOpcode();
@@ -4115,7 +4119,7 @@ bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
           }
           LLVM_FALLTHROUGH;
         }
-        // Case 2
+        // Condition 2
         case clang::Stmt::StmtClass::ArraySubscriptExprClass: {
           auto RValueExpr =
               dyn_cast_or_null<ImplicitCastExpr>(getParentStmt(S));
@@ -4145,7 +4149,7 @@ bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
         }
       }
     }
-    // Case 3
+    // Condition 3
     if (CE) {
       auto CEDecl = CE->getDirectCallee();
       if (!CEDecl) {
