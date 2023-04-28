@@ -1,7 +1,8 @@
 // UNSUPPORTED: system-linux
 // RUN: cat %S/DemoCudaProj.vcxproj > %T/DemoCudaProj.vcxproj
+// RUN: cat %s > %T/a_kernel.cu
 // RUN: cd %T
-// RUN: dpct --format-range=none  --vcxprojfile=%T/DemoCudaProj.vcxproj  -in-root=%S -out-root=%T  %s --cuda-include-path="%cuda-path/include"
+// RUN: dpct --format-range=none  --vcxprojfile=%T/DemoCudaProj.vcxproj  -in-root=%T -out-root=%T/out  a_kernel.cu --cuda-include-path="%cuda-path/include"
 
 // RUN: cat %S/check_compilation_ref.txt  >%T/check_compilation_db.txt
 // RUN: cat %T/compile_commands.json >> %T/check_compilation_db.txt
