@@ -165,16 +165,8 @@ makeMappedThrustPolicyEnum(unsigned Idx) {
                  getDrefName(CMCE->getArg(0)) + ")";
         }
       }
-    } else if (auto CE = dyn_cast<CallExpr>(C)) {
-      if (auto ME = dyn_cast_or_null<MemberExpr>(CE->getCallee())) {
-        auto BaseType = getBaseType(ME->getBase()->getType());
-        auto MethodName = getMehtodName(ME->getMemberDecl());
-        if (BaseType == "thrust::cuda_cub::par_t" && MethodName == "on") {
-          return "oneapi::dpl::execution::make_device_policy(" +
-                 getDrefName(CE->getArg(0)) + ")";
-        }
-      }
     }
+
     return "oneapi::dpl::execution::make_device_policy(" + makeQueueStr()(C) +
            ")";
   };
