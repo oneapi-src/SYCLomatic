@@ -1680,30 +1680,21 @@ template <typename _ExecutionPolicy, typename Iter1,
 inline ::std::pair<Iter1, Iter1>
 equal_range(_ExecutionPolicy &&policy, Iter1 start, Iter1 end,
             const ValueLessComparable &value, StrictWeakOrdering comp) {
-
-  auto size = ::std::distance(start, end);
-  auto zip_start =
-      oneapi::dpl::make_zip_iterator(start, dpct::make_counting_iterator(0));
-  auto constant_value_iter = dpct::make_constant_iterator(value);
-  auto reduction = [=](const auto &a, const auto &b) {
-    return oneapi::dpl::__internal::tuple<uint64_t, uint64_t>(
-        ::std::min(::std::get<0>(a), ::std::get<0>(b)),
-        ::std::max(::std::get<1>(::std::forward<decltype(a)>(a)),
-                   ::std::get<1>(::std::forward<decltype(b)>(b))));
-  };
-  auto trans = [=](const auto &a, const auto &b) {
-    return ::oneapi::dpl::__internal::tuple<uint64_t, uint64_t>(
-        comp(::std::get<0>(a), b) ? size : ::std::get<1>(a),
-        comp(b, ::std::get<0>(a)) ? 0 : ::std::get<1>(a) + 1);
-  };
-
-  auto result = oneapi::dpl::transform_reduce(
-      ::std::forward<_ExecutionPolicy>(policy), zip_start, zip_start + size,
-      constant_value_iter,
-      oneapi::dpl::__internal::tuple<uint64_t, uint64_t>(size, 0), reduction,
-      trans);
-  return ::std::make_pair(start + ::std::get<0>(result),
-                          start + ::std::get<1>(result));
+  sycl::queue q = policy.queue();
+  ::std::int64_t *result_lower_upper = sycl::malloc_shared<std::int64_t>(2, q);
+  ValueLessComparable *value_ptr =
+      sycl::malloc_device<ValueLessComparable>(1, q);
+  q.fill(value_ptr, value, 1).wait();
+  ::oneapi::dpl::lower_bound(policy, start, end, value_ptr, value_ptr + 1,
+                             result_lower_upper, comp);
+  ::oneapi::dpl::upper_bound(::std::forward<_ExecutionPolicy>(policy), start,
+                             end, value_ptr, value_ptr + 1,
+                             result_lower_upper + 1, comp);
+  auto result = ::std::make_pair(start + *result_lower_upper,
+                                 start + *(result_lower_upper + 1));
+  sycl::free(result_lower_upper, q);
+  sycl::free(value_ptr, q);
+  return result;
 }
 
 template <typename _ExecutionPolicy, typename Iter1,
