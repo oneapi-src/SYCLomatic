@@ -743,17 +743,14 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       return;
 
     auto Begin = ME->getOperatorLoc();
-    bool isPtr = false;
-    if (ME->isArrow()) {
-      isPtr = true;
-    }
+    bool isPtr = ME->isArrow();
     bool isImplicit = false;
-    if (Begin.isInvalid()) {
+    if (ME->isImplicitAccess()) {
       Begin = ME->getMemberLoc();
       isImplicit = true;
     }
     if (*BaseType.rbegin() == '1') {
-      if (isPtr && isImplicit) {
+      if (isImplicit) {
         // "x" is migrated to "*this".
         addReplacement(Begin, ME->getEndLoc(), "*this");
       } else if (isPtr) {
@@ -773,7 +770,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
         auto MArrayIdx =
             MapNames::MArrayMemberNamesMap.find(MemberName)->second;
         std::string RepStr = "";
-        if (isPtr && isImplicit) {
+        if (isImplicit) {
           RepStr += "(*this)";
         } else if (isPtr) {
           auto BaseBegin = ME->getBeginLoc();
