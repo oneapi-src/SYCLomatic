@@ -142,7 +142,6 @@ public:
   typedef _Tp value_type;
   typedef _Tp *pointer;
   // There is no storage behind the iterator, so we return a value instead of
-  //
   // reference.
   typedef const _Tp reference;
   typedef const _Tp const_reference;
@@ -432,6 +431,7 @@ template <typename IterT> struct io_iterator_pair {
 
   IterT iter[2];
 };
+// DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|make_transform_output_iterator|dpct
 // DPCT_DEPENDENCY_BEGIN

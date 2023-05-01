@@ -83,7 +83,6 @@ public:
   typedef _Tp value_type;
   typedef _Tp *pointer;
   // There is no storage behind the iterator, so we return a value instead of
-  //
   // reference.
   typedef const _Tp reference;
   typedef const _Tp const_reference;
