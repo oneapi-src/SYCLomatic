@@ -2030,20 +2030,19 @@ template <typename _ExecutionPolicy, typename Iter1,
 inline ::std::pair<Iter1, Iter1>
 equal_range(_ExecutionPolicy &&policy, Iter1 start, Iter1 end,
             const ValueLessComparable &value, StrictWeakOrdering comp) {
-  sycl::queue q = policy.queue();
-  ::std::int64_t *result_lower_upper = sycl::malloc_shared<std::int64_t>(2, q);
-  ValueLessComparable *value_ptr =
-      sycl::malloc_device<ValueLessComparable>(1, q);
-  q.fill(value_ptr, value, 1).wait();
-  ::oneapi::dpl::lower_bound(policy, start, end, value_ptr, value_ptr + 1,
-                             result_lower_upper, comp);
+  sycl::buffer<::std::int64_t, 1> result_lower_upper{sycl::range<1>(2)};
+  sycl::buffer<ValueLessComparable, 1> value_buf{sycl::range<1>(1)};
+  ::std::fill(policy, oneapi::dpl::begin(value_buf),
+              oneapi::dpl::end(value_buf), value);
+  ::oneapi::dpl::lower_bound(policy, start, end, oneapi::dpl::begin(value_buf),
+                             oneapi::dpl::end(value_buf),
+                             oneapi::dpl::begin(result_lower_upper), comp);
   ::oneapi::dpl::upper_bound(::std::forward<_ExecutionPolicy>(policy), start,
-                             end, value_ptr, value_ptr + 1,
-                             result_lower_upper + 1, comp);
-  auto result = ::std::make_pair(start + *result_lower_upper,
-                                 start + *(result_lower_upper + 1));
-  sycl::free(result_lower_upper, q);
-  sycl::free(value_ptr, q);
+                             end, oneapi::dpl::begin(value_buf),
+                             oneapi::dpl::end(value_buf),
+                             oneapi::dpl::begin(result_lower_upper) + 1, comp);
+  sycl::host_accessor result_acc(result_lower_upper);
+  auto result = ::std::make_pair(start + result_acc[0], start + result_acc[1]);
   return result;
 }
 
