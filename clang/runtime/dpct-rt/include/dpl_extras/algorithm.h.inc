@@ -2021,9 +2021,7 @@ inline void reduce_argmin(_ExecutionPolicy &&policy, Iter1 input, Iter2 output,
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|equal_range|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasIterators|make_constant_iterator
-// DPCT_DEPENDENCY_END
+// DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 template <typename _ExecutionPolicy, typename Iter1,
           typename ValueLessComparable, typename StrictWeakOrdering>
