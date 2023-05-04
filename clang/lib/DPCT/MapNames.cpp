@@ -4319,6 +4319,7 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #include "APINames_CUB.inc"
 #include "APINames_NCCL.inc"
 #include "APINames_NVML.inc"
+#include "APINames_NVTX.inc"
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"
 #include "APINames_nvGRAPH.inc"
