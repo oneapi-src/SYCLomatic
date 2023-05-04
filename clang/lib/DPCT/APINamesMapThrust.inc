@@ -40,7 +40,6 @@ ENTRY_BOTH("thrust::partition_point", MapNames::getDpctNamespace() + "partition_
 ENTRY_BOTH("thrust::binary_search", "oneapi::dpl::binary_search", "oneapi::dpl::execution::sycl")
 ENTRY_BOTH("thrust::lower_bound", "oneapi::dpl::lower_bound", "oneapi::dpl::execution::sycl")
 ENTRY_BOTH("thrust::upper_bound", "oneapi::dpl::upper_bound", "oneapi::dpl::execution::sycl")
-ENTRY_BOTH("thrust::equal_range", "oneapi::dpl::equal_range", "oneapi::dpl::execution::sycl")
 ENTRY_BOTH("thrust::count", "std::count", "oneapi::dpl::execution::sycl")
 ENTRY_BOTH("thrust::generate", "std::generate", "oneapi::dpl::execution::sycl")
 ENTRY_BOTH("thrust::generate_n", "std::generate_n", "oneapi::dpl::execution::sycl")
