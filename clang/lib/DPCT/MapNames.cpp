@@ -4219,6 +4219,8 @@ const MapNames::MapTy MapNames::MacrosMap{
     {"CUDART_VERSION", "SYCL_LANGUAGE_VERSION"},
     {"CUBLAS_V2_H_", "MKL_SYCL_HPP"},
     {"__CUDA__", "SYCL_LANGUAGE_VERSION"},
+    {"CUFFT_FORWARD", "-1"},
+    {"CUFFT_INVERSE", "1"},
     //...
 };
 
@@ -4460,4 +4462,4 @@ const std::vector<std::string> MemoryDataTypeRule::RemoveMember{
 
 const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "this_thread_block", "sync", "tiled_partition",
-    "thread_rank",       "size", "shfl_down"};
+    "thread_rank",       "size", "shfl_down", "reduce"};

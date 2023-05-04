@@ -156,13 +156,13 @@ void IncludesCallbacks::insertCudaArchRepl(
   return;
 }
 
-void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
+bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
   bool IsInAnalysisScope = isInAnalysisScope(MacroNameTok.getLocation());
   if (!IsInAnalysisScope) {
-    return;
+    return false;
   }
   if (!MacroNameTok.getIdentifierInfo()) {
-    return;
+    return false;
   }
   std::string MacroName = MacroNameTok.getIdentifierInfo()->getName().str();
   auto Iter = MapNames::MacrosMap.find(MacroName);
@@ -175,14 +175,17 @@ void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
         requestFeature(HelperFeatureEnum::Dpct_dpct_compatibility_temp,
                        MacroNameTok.getLocation());
         insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
+        return true;
       }
-      return;
+      return false;
     }
     if (MacroName == "__CUDACC__" &&
         !MacroNameTok.getIdentifierInfo()->hasMacroDefinition())
-      return;
+      return false;
     TransformSet.emplace_back(Repl);
+    return true;
   }
+  return false;
 }
 
 void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
@@ -396,29 +399,9 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   if (!IsInAnalysisScope) {
     return;
   }
-
-  if (MacroNameTok.getIdentifierInfo() &&
-      MacroNameTok.getIdentifierInfo()->getName() == "__CUDA_ARCH__") {
-    if (DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
-      requestFeature(HelperFeatureEnum::Dpct_dpct_compatibility_temp,
-                     Range.getBegin());
-      auto Repl = std::make_shared<ReplaceText>(Range.getBegin(), 13,
-                                                "DPCT_COMPATIBILITY_TEMP");
-      insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
-    }
-    return;
-  }
-  // CUFFT_FORWARD and CUFFT_INVERSE are migrated to integer literal in all
-  // places except in cufftExec call.
-  // CUFFT_FORWARD and CUFFT_INVERSE in cufftExec call are migrated with
-  // FFTDirExpr and longer replacement will overlap shorter replacement, so the
-  // migration is expected.
-  else if (MacroNameTok.getIdentifierInfo() &&
-             MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_FORWARD") {
-    TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13, "-1"));
-  } else if (MacroNameTok.getIdentifierInfo() &&
-             MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_INVERSE") {
-    TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13, "1"));
+  
+  if (ReplaceCuMacro(MacroNameTok)){
+    return ;
   }
 
   // For the un-specialized struct, there is no AST for the extern function
@@ -8959,6 +8942,17 @@ void DeviceFunctionDeclRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
   MF.addMatcher(cxxNewExpr(hasAncestor(DeviceFunctionMatcher)).bind("CxxNew"),
                 this);
+
+  MF.addMatcher(typeLoc(hasAncestor(DeviceFunctionMatcher),
+                        loc(qualType(hasDeclaration(namedDecl(hasAnyName(
+                            "__half", "half", "__half2", "half2"))))))
+                    .bind("fp16"),
+                this);
+
+  MF.addMatcher(
+      typeLoc(hasAncestor(DeviceFunctionMatcher), loc(asString("double")))
+          .bind("fp64"),
+      this);
 }
 
 void DeviceFunctionDeclRule::runRule(
@@ -9125,6 +9119,12 @@ void DeviceFunctionDeclRule::runRule(
       // Remove statement "cg::grid_group grid = cg::this_grid();"
       emplaceTransformation(new ReplaceText(Begin, Length, ""));
     }
+  }
+  if (getAssistNodeAsType<TypeLoc>(Result, "fp64")) {
+    FuncInfo->setBF64();
+  }
+  if (getAssistNodeAsType<TypeLoc>(Result, "fp16")) {
+    FuncInfo->setBF16();
   }
 }
 
@@ -11929,6 +11929,11 @@ void CooperativeGroupsFunctionRule::runRule(
         }
       }
     }
+  } else if (FuncName == "reduce") {
+    RUW.NeedReport = false;
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
   }
 }
 
@@ -12301,6 +12306,14 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE,
   std::string Namespace;
   const NamedDecl *ND = dyn_cast<NamedDecl>(CE->getCalleeDecl());
   if (ND) {
+    if (!dpct::DpctGlobalInfo::isInCudaPath(ND->getLocation()) &&
+        !isChildOrSamePath(
+          DpctInstallPath,
+          dpct::DpctGlobalInfo::getLocInfo(ND).first)) {
+      if (!ND->getName().startswith("cudnn") &&
+          !ND->getName().startswith("nccl"))
+        return;
+    }
     const auto *NSD = dyn_cast<NamespaceDecl>(ND->getDeclContext());
     if (NSD && !NSD->isInlineNamespace()) {
       if (dyn_cast<NamespaceDecl>(NSD->getDeclContext())) {
