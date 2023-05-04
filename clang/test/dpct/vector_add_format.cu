@@ -29,43 +29,43 @@ __global__ void VectorAddKernel(float* A, float* B, float* C)
 
 int main()
 {
-//     CHECK:    dpct::device_ext &dev_ct1 = dpct::get_current_device();
-//CHECK-NEXT:    sycl::queue &q_ct1 = dev_ct1.default_queue();
-    float *d_A, *d_B, *d_C;
+  //     CHECK:    auto dev_ct1 = sycl::device(sycl::default_selector_v);
+  // CHECK-NEXT:    auto q_ct1 = sycl::queue(
+  // CHECK-NEXT:        dev_ct1, sycl::property_list{sycl::property::queue::in_order()});
+  float *d_A, *d_B, *d_C;
 
-//     CHECK:    d_A = sycl::malloc_device<float>(VECTOR_SIZE, q_ct1);
-//CHECK-NEXT:    d_B = sycl::malloc_device<float>(VECTOR_SIZE, q_ct1);
-//CHECK-NEXT:    d_C = sycl::malloc_device<float>(VECTOR_SIZE, q_ct1);
-    cudaMalloc(&d_A, VECTOR_SIZE*sizeof(float));
-    cudaMalloc(&d_B, VECTOR_SIZE*sizeof(float));
-    cudaMalloc(&d_C, VECTOR_SIZE*sizeof(float));
+  //     CHECK:  d_A = sycl::malloc_device<float>(VECTOR_SIZE, q_ct1);
+  // CHECK-NEXT:  d_B = sycl::malloc_device<float>(VECTOR_SIZE, q_ct1);
+  // CHECK-NEXT:  d_C = sycl::malloc_device<float>(VECTOR_SIZE, q_ct1);
+  cudaMalloc(&d_A, VECTOR_SIZE * sizeof(float));
+  cudaMalloc(&d_B, VECTOR_SIZE * sizeof(float));
+  cudaMalloc(&d_C, VECTOR_SIZE * sizeof(float));
 
+  //     CHECK:  q_ct1.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, VECTOR_SIZE),
+  // CHECK-NEXT:                                       sycl::range<3>(1, 1, VECTOR_SIZE)),
+  // CHECK-NEXT:                     [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:                       VectorAddKernel(d_A, d_B, d_C, item_ct1);
+  // CHECK-NEXT:                     });
+  VectorAddKernel<<<1, VECTOR_SIZE>>>(d_A, d_B, d_C);
 
-//     CHECK:    q_ct1.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, VECTOR_SIZE),
-//CHECK-NEXT:                                         sycl::range<3>(1, 1, VECTOR_SIZE)),
-//CHECK-NEXT:                       [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:                           VectorAddKernel(d_A, d_B, d_C, item_ct1);
-//CHECK-NEXT:                       });
-    VectorAddKernel<<<1, VECTOR_SIZE>>>(d_A, d_B, d_C);
+  //     CHECK:  float Result[VECTOR_SIZE] = {};
+  // CHECK-NEXT:  q_ct1.memcpy(Result, d_C, VECTOR_SIZE * sizeof(float)).wait();
+  float Result[VECTOR_SIZE] = {};
+  cudaMemcpy(Result, d_C, VECTOR_SIZE * sizeof(float), cudaMemcpyDeviceToHost);
 
-//     CHECK:    float Result[VECTOR_SIZE] = { };
-//CHECK-NEXT:    q_ct1.memcpy(Result, d_C, VECTOR_SIZE * sizeof(float)).wait();
-    float Result[VECTOR_SIZE] = { };
-    cudaMemcpy(Result, d_C, VECTOR_SIZE*sizeof(float), cudaMemcpyDeviceToHost);
+  //     CHECK:  sycl::free(d_A, q_ct1);
+  // CHECK-NEXT:  sycl::free(d_B, q_ct1);
+  // CHECK-NEXT:  sycl::free(d_C, q_ct1);
+  cudaFree(d_A);
+  cudaFree(d_B);
+  cudaFree(d_C);
 
-//     CHECK:    sycl::free(d_A, q_ct1);
-//CHECK-NEXT:    sycl::free(d_B, q_ct1);
-//CHECK-NEXT:    sycl::free(d_C, q_ct1);
-    cudaFree(d_A);
-    cudaFree(d_B);
-    cudaFree(d_C);
-
-    for (int i = 0; i < VECTOR_SIZE; i++) {
-        if (i % 16 == 0) {
-            printf("\n");
-        }
-        printf("%f ", Result[i]);
+  for (int i = 0; i < VECTOR_SIZE; i++) {
+    if (i % 16 == 0) {
+      printf("\n");
     }
+    printf("%f ", Result[i]);
+  }
 
     return 0;
 }

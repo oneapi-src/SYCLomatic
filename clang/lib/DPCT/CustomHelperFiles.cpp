@@ -24,6 +24,12 @@ namespace clang {
 namespace dpct {
 
 void requestFeature(HelperFeatureEnum Feature, const std::string &UsedFile) {
+  static const std::unordered_set<HelperFeatureEnum> NotNeedDeviceExtSet{
+      HelperFeatureEnum::Memory_memcpy_direction,
+  };
+  if (NotNeedDeviceExtSet.count(Feature) == 0) {
+    DpctGlobalInfo::setNeedDpctDeviceExt();
+  }
   if (Feature == HelperFeatureEnum::no_feature_helper) {
     return;
   }
