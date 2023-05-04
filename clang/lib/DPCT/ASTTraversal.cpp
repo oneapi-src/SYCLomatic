@@ -156,13 +156,13 @@ void IncludesCallbacks::insertCudaArchRepl(
   return;
 }
 
-void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
+bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
   bool IsInAnalysisScope = isInAnalysisScope(MacroNameTok.getLocation());
   if (!IsInAnalysisScope) {
-    return;
+    return false;
   }
   if (!MacroNameTok.getIdentifierInfo()) {
-    return;
+    return false;
   }
   std::string MacroName = MacroNameTok.getIdentifierInfo()->getName().str();
   auto Iter = MapNames::MacrosMap.find(MacroName);
@@ -175,14 +175,17 @@ void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
         requestFeature(HelperFeatureEnum::Dpct_dpct_compatibility_temp,
                        MacroNameTok.getLocation());
         insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
+        return true;
       }
-      return;
+      return false;
     }
     if (MacroName == "__CUDACC__" &&
         !MacroNameTok.getIdentifierInfo()->hasMacroDefinition())
-      return;
+      return false;
     TransformSet.emplace_back(Repl);
+    return true;
   }
+  return false;
 }
 
 void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
@@ -396,29 +399,9 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   if (!IsInAnalysisScope) {
     return;
   }
-
-  if (MacroNameTok.getIdentifierInfo() &&
-      MacroNameTok.getIdentifierInfo()->getName() == "__CUDA_ARCH__") {
-    if (DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
-      requestFeature(HelperFeatureEnum::Dpct_dpct_compatibility_temp,
-                     Range.getBegin());
-      auto Repl = std::make_shared<ReplaceText>(Range.getBegin(), 13,
-                                                "DPCT_COMPATIBILITY_TEMP");
-      insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
-    }
-    return;
-  }
-  // CUFFT_FORWARD and CUFFT_INVERSE are migrated to integer literal in all
-  // places except in cufftExec call.
-  // CUFFT_FORWARD and CUFFT_INVERSE in cufftExec call are migrated with
-  // FFTDirExpr and longer replacement will overlap shorter replacement, so the
-  // migration is expected.
-  else if (MacroNameTok.getIdentifierInfo() &&
-             MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_FORWARD") {
-    TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13, "-1"));
-  } else if (MacroNameTok.getIdentifierInfo() &&
-             MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_INVERSE") {
-    TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13, "1"));
+  
+  if (ReplaceCuMacro(MacroNameTok)){
+    return ;
   }
 
   // For the un-specialized struct, there is no AST for the extern function
