@@ -78,6 +78,7 @@ bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::CallExpr *CE) {
       SCI.Predecessors.push_back(LoopRange.front());
       SCI.Successors.push_back(LoopRange.front());
     }
+    SyncCallsVec.push_back(std::make_pair(CE, SCI));
   } else {
     if (auto FD = CE->getDirectCallee()) {
       std::string FuncName = FD->getNameInfo().getName().getAsString();
