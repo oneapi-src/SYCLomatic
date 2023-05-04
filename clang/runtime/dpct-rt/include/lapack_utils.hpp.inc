@@ -60,7 +60,8 @@ namespace lapack {
 /// Computes all eigenvalues and, optionally, eigenvectors of a real generalized
 /// symmetric definite eigenproblem using a divide and conquer method.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] queue Device queue where calculations will be performed.
+/// \param [in] queue Device queue where calculations will be performed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] itype Must be 1 or 2 or 3. Specifies the problem type to be solved.
 /// \param [in] jobz Must be job::novec or job::vec.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
@@ -143,7 +144,8 @@ inline int sygvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
 /// generalized Hermitian positive-definite eigenproblem using a divide and
 /// conquer method.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] queue Device queue where calculations will be performed.
+/// \param [in] queue Device queue where calculations will be performed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] itype Must be 1 or 2 or 3. Specifies the problem type to be solved.
 /// \param [in] jobz Must be job::novec or job::vec.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
@@ -225,7 +227,8 @@ inline int hegvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
 /// Computes the Cholesky factorizations of a batch of symmetric (or Hermitian,
 /// for complex data) positive-definite matrices.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] queue Device queue where calculations will be performed.
+/// \param [in] queue Device queue where calculations will be performed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
 /// \param [in] n The order of the matrix A.
 /// \param [in,out] a Array of pointers to matrix A.
@@ -318,7 +321,8 @@ inline int potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
 /// Solves a batch of systems of linear equations with a Cholesky-factored
 /// symmetric (Hermitian) positive-definite coefficient matrices.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] queue Device queue where calculations will be performed.
+/// \param [in] queue Device queue where calculations will be performed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
 /// \param [in] n The order of the matrix A.
 /// \param [in] nrhs The number of right-hand sides.
@@ -573,8 +577,8 @@ inline oneapi::mkl::jobsvd char2jobsvd(signed char job) {
 template <typename T> struct getrf_scratchpad_size_impl {
   void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
                   library_data_t a_type, std::int64_t lda,
-                  std::size_t *device_ws_size) {
-    *device_ws_size =
+                  std::size_t &device_ws_size) {
+    device_ws_size =
         oneapi::mkl::lapack::getrf_scratchpad_size<T>(q, m, n, lda);
   }
 };
@@ -639,8 +643,8 @@ template <typename T> struct getrs_impl {
 template <typename T> struct geqrf_scratchpad_size_impl {
   void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
                   library_data_t a_type, std::int64_t lda,
-                  std::size_t *device_ws_size) {
-    *device_ws_size =
+                  std::size_t &device_ws_size) {
+    device_ws_size =
         oneapi::mkl::lapack::geqrf_scratchpad_size<T>(q, m, n, lda);
   }
 };
@@ -709,8 +713,8 @@ template <typename T> struct gesvd_scratchpad_size_impl {
                   library_data_t a_type, std::int64_t lda,
                   library_data_t u_type, std::int64_t ldu,
                   library_data_t vt_type, std::int64_t ldvt,
-                  std::size_t *device_ws_size) {
-    *device_ws_size = oneapi::mkl::lapack::gesvd_scratchpad_size<T>(
+                  std::size_t &device_ws_size) {
+    device_ws_size = oneapi::mkl::lapack::gesvd_scratchpad_size<T>(
         q, jobu, jobvt, m, n, lda, ldu, ldvt);
   }
 };
@@ -783,8 +787,8 @@ template <typename T> struct gesvd_conj_impl : public gesvd_impl<T> {
 template <typename T> struct potrf_scratchpad_size_impl {
   void operator()(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                   library_data_t a_type, std::int64_t lda,
-                  std::size_t *device_ws_size) {
-    *device_ws_size =
+                  std::size_t &device_ws_size) {
+    device_ws_size =
         oneapi::mkl::lapack::potrf_scratchpad_size<T>(q, uplo, n, lda);
   }
 };
@@ -878,7 +882,7 @@ template <typename T> struct syheevx_scratchpad_size_impl {
                   oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
                   std::int64_t n, std::int64_t lda, void *vl, void *vu,
                   std::int64_t il, std::int64_t iu,
-                  std::size_t *device_ws_size) {
+                  std::size_t &device_ws_size) {
 #ifndef __INTEL_MKL__
     throw std::runtime_error(
         "The oneAPI Math Kernel Library (oneMKL) Interfaces "
@@ -890,12 +894,12 @@ template <typename T> struct syheevx_scratchpad_size_impl {
         *reinterpret_cast<typename value_type_trait<T>::value_type *>(vu);
     if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
       auto abstol = 2 * lamch_s<T>();
-      *device_ws_size = oneapi::mkl::lapack::syevx_scratchpad_size<T>(
+      device_ws_size = oneapi::mkl::lapack::syevx_scratchpad_size<T>(
           q, jobz, range, uplo, n, lda, vl_value, vu_value, il, iu, abstol,
           lda);
     } else {
       auto abstol = 2 * lamch_s<typename T::value_type>();
-      *device_ws_size = oneapi::mkl::lapack::heevx_scratchpad_size<T>(
+      device_ws_size = oneapi::mkl::lapack::heevx_scratchpad_size<T>(
           q, jobz, range, uplo, n, lda, vl_value, vu_value, il, iu, abstol,
           lda);
     }
@@ -997,7 +1001,7 @@ template <typename T> struct syhegvx_scratchpad_size_impl {
                   oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
                   std::int64_t n, std::int64_t lda, std::int64_t ldb, void *vl,
                   void *vu, std::int64_t il, std::int64_t iu,
-                  std::size_t *device_ws_size) {
+                  std::size_t &device_ws_size) {
 #ifndef __INTEL_MKL__
     throw std::runtime_error(
         "The oneAPI Math Kernel Library (oneMKL) Interfaces "
@@ -1009,12 +1013,12 @@ template <typename T> struct syhegvx_scratchpad_size_impl {
         *reinterpret_cast<typename value_type_trait<T>::value_type *>(vu);
     if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
       auto abstol = 2 * lamch_s<T>();
-      *device_ws_size = oneapi::mkl::lapack::sygvx_scratchpad_size<T>(
+      device_ws_size = oneapi::mkl::lapack::sygvx_scratchpad_size<T>(
           q, itype, jobz, range, uplo, n, lda, ldb, vl_value, vu_value, il, iu,
           abstol, lda);
     } else {
       auto abstol = 2 * lamch_s<typename T::value_type>();
-      *device_ws_size = oneapi::mkl::lapack::hegvx_scratchpad_size<T>(
+      device_ws_size = oneapi::mkl::lapack::hegvx_scratchpad_size<T>(
           q, itype, jobz, range, uplo, n, lda, ldb, vl_value, vu_value, il, iu,
           abstol, lda);
     }
@@ -1092,12 +1096,12 @@ template <typename T> struct syhegvx_impl {
 template <typename T> struct syhegvd_scratchpad_size_impl {
   void operator()(sycl::queue &q, std::int64_t itype, oneapi::mkl::job jobz,
                   oneapi::mkl::uplo uplo, std::int64_t n, std::int64_t lda,
-                  std::int64_t ldb, std::size_t *device_ws_size) {
+                  std::int64_t ldb, std::size_t &device_ws_size) {
     if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
-      *device_ws_size = oneapi::mkl::lapack::sygvd_scratchpad_size<T>(
+      device_ws_size = oneapi::mkl::lapack::sygvd_scratchpad_size<T>(
           q, itype, jobz, uplo, n, lda, ldb);
     } else {
-      *device_ws_size = oneapi::mkl::lapack::hegvd_scratchpad_size<T>(
+      device_ws_size = oneapi::mkl::lapack::hegvd_scratchpad_size<T>(
           q, itype, jobz, uplo, n, lda, ldb);
     }
   }
@@ -1146,7 +1150,8 @@ template <typename T> struct syhegvd_impl {
 // DPCT_CODE
 /// Computes the size of workspace memory of getrf function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] q Device queue where computation will be performed.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] m The number of rows in the matrix A.
 /// \param [in] n The number of columns in the matrix A.
 /// \param [in] a_type The data type of the matrix A.
@@ -1163,7 +1168,7 @@ inline int getrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
   std::size_t device_ws_size_tmp;
   int ret = detail::lapack_shim<detail::getrf_scratchpad_size_impl>(
       q, a_type, nullptr, "getrf_scratchpad_size", q, m, n, a_type, lda,
-      &device_ws_size_tmp);
+      device_ws_size_tmp);
   *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
   return ret;
 }
@@ -1180,7 +1185,8 @@ inline int getrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
 // DPCT_CODE
 /// Computes the LU factorization of a general m-by-n matrix.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] q The queue where the routine should be executed.
+/// \param [in] q The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] m The number of rows in the matrix A.
 /// \param [in] n The number of columns in the matrix A.
 /// \param [in] a_type The data type of the matrix A.
@@ -1225,7 +1231,8 @@ inline int getrf(sycl::queue &q, std::int64_t m, std::int64_t n,
 /// Solves a system of linear equations with a LU-factored square coefficient
 /// matrix, with multiple right-hand sides.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] q The queue where the routine should be executed.
+/// \param [in] q The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] trans Indicates the form of the linear equation.
 /// \param [in] n The order of the matrix A and the number of rows in matrix B.
 /// \param [in] nrhs The number of right hand sides.
@@ -1259,7 +1266,8 @@ inline int getrs(sycl::queue &q, oneapi::mkl::transpose trans, std::int64_t n,
 // DPCT_CODE
 /// Computes the size of workspace memory of geqrf function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] q Device queue where computation will be performed.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] m The number of rows in the matrix A.
 /// \param [in] n The number of columns in the matrix A.
 /// \param [in] a_type The data type of the matrix A.
@@ -1276,7 +1284,7 @@ inline int geqrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
   std::size_t device_ws_size_tmp;
   int ret = detail::lapack_shim<detail::geqrf_scratchpad_size_impl>(
       q, a_type, nullptr, "geqrf_scratchpad_size", q, m, n, a_type, lda,
-      &device_ws_size_tmp);
+      device_ws_size_tmp);
   *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
   return ret;
 }
@@ -1292,7 +1300,8 @@ inline int geqrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
 // DPCT_CODE
 /// Computes the QR factorization of a general m-by-n matrix.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] q The queue where the routine should be executed.
+/// \param [in] q The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] m The number of rows in the matrix A.
 /// \param [in] n The number of columns in the matrix A.
 /// \param [in] a_type The data type of the matrix A.
@@ -1328,7 +1337,8 @@ inline int geqrf(sycl::queue &q, std::int64_t m, std::int64_t n,
 // DPCT_CODE
 /// Computes the size of workspace memory of gesvd function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] q Device queue where computation will be performed.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] jobu Must be 'A' (representing jobsvd::vectors), 'S'
 /// (representing jobsvd::somevec), 'O' (representing jobsvd::vectorsina) or 'N'
 /// (representing jobsvd::novec).
@@ -1360,14 +1370,15 @@ inline int gesvd_scratchpad_size(sycl::queue &q, signed char jobu,
   std::size_t device_ws_size_tmp;
   int ret = detail::lapack_shim<detail::gesvd_scratchpad_size_impl>(
       q, a_type, nullptr, "gesvd_scratchpad_size", q, jobu_enum, jobvt_enum, m,
-      n, a_type, lda, u_type, ldu, vt_type, ldvt, &device_ws_size_tmp);
+      n, a_type, lda, u_type, ldu, vt_type, ldvt, device_ws_size_tmp);
   *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
   return ret;
 }
 
 /// Computes the size of workspace memory of gesvd function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] q Device queue where computation will be performed.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] jobz Must be job::vec or job::novec
 /// \param [in] all_vec Only have effects when \param jobz is job::vec.If the
 /// value is zero, all m columns of U are returned in the matrix U, otherwise
@@ -1410,7 +1421,7 @@ inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
   std::size_t device_ws_size_64;
   int ret = detail::lapack_shim<detail::gesvd_scratchpad_size_impl>(
       q, a_type, nullptr, "gesvd_scratchpad_size", q, jobu, jobvt, m, n, a_type,
-      lda, u_type, ldu, vt_type, ldvt, &device_ws_size_64);
+      lda, u_type, ldu, vt_type, ldvt, device_ws_size_64);
   *device_ws_size = device_ws_size_64;
   return ret;
 }
@@ -1428,7 +1439,8 @@ inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
 // DPCT_CODE
 /// Computes the size of workspace memory of gesvd function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] q Device queue where computation will be performed.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] jobu Must be 'A' (representing jobsvd::vectors), 'S'
 /// (representing jobsvd::somevec), 'O' (representing jobsvd::vectorsina) or 'N'
 /// (representing jobsvd::novec).
@@ -1471,7 +1483,8 @@ inline int gesvd(sycl::queue &q, signed char jobu, signed char jobvt,
 
 /// Computes the size of workspace memory of gesvd function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] q Device queue where computation will be performed.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] jobz Must be job::vec or job::novec.
 /// \param [in] all_vec Only have effects when \param jobz is job::vec.If the
 /// value is zero, all m columns of U are returned in the matrix U, otherwise
@@ -1532,7 +1545,8 @@ inline int gesvd(sycl::queue &q, oneapi::mkl::job jobz, std::int64_t all_vec,
 // DPCT_CODE
 /// Computes the size of workspace memory of potrf function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] q Device queue where computation will be performed.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
 /// \param [in] n The number of columns in the matrix A.
 /// \param [in] a_type The data type of the matrix A.
@@ -1549,7 +1563,7 @@ inline int potrf_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
   std::size_t device_ws_size_tmp;
   int ret = detail::lapack_shim<detail::potrf_scratchpad_size_impl>(
       q, a_type, nullptr, "potrf_scratchpad_size", q, uplo, n, a_type, lda,
-      &device_ws_size_tmp);
+      device_ws_size_tmp);
   *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
   return ret;
 }
@@ -1566,7 +1580,8 @@ inline int potrf_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
 /// Computes the Cholesky factorization of a symmetric (Hermitian)
 /// positive-definite matrix.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] q The queue where the routine should be executed.
+/// \param [in] q The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
 /// \param [in] n The number of columns in the matrix A.
 /// \param [in] a_type The data type of the matrix A.
@@ -1598,7 +1613,8 @@ inline int potrf(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
 /// Solves a system of linear equations with a Cholesky-factored symmetric
 /// (Hermitian) positive-definite coefficient matrix.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] q The queue where the routine should be executed.
+/// \param [in] q The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
 /// \param [in] n The order of the matrix A and the number of rows in matrix B.
 /// \param [in] nrhs The number of right hand sides.
@@ -1634,7 +1650,8 @@ inline int potrs(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
 // DPCT_CODE
 /// Computes the size of workspace memory of syevx/heevx function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] q Device queue where computation will be performed.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] jobz Must be job::novec or job::vec.
 /// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
@@ -1675,7 +1692,7 @@ inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
   int ret = detail::lapack_shim<detail::syheevx_scratchpad_size_impl>(
       q, a_type, nullptr, "syevx_scratchpad_size/heevx_scratchpad_size", q,
       compz_jobz, range, uplo, n, lda, vl, vu, il, iu,
-      &device_ws_size_tmp);
+      device_ws_size_tmp);
   *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
   return ret;
 }
@@ -1692,7 +1709,8 @@ inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
 /// Computes selected eigenvalues and, optionally, eigenvectors of a
 /// symmetric/Hermitian matrix.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] q Device queue where computation will be performed.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] jobz Must be job::novec or job::vec.
 /// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
@@ -1752,7 +1770,8 @@ inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
 // DPCT_CODE
 /// Computes the size of workspace memory of syevx/heevx function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] q Device queue where computation will be performed.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] jobz Must be job::novec or job::vec.
 /// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
@@ -1786,7 +1805,7 @@ inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
   int ret = detail::lapack_shim<detail::syheevx_scratchpad_size_impl>(
       q, detail::get_library_data_t_from_type<T>(), nullptr,
       "syevx_scratchpad_size/heevx_scratchpad_size", q, compz_jobz, range, uplo,
-      n, lda, &vl, &vu, il, iu, &device_ws_size_tmp);
+      n, lda, &vl, &vu, il, iu, device_ws_size_tmp);
   *device_ws_size = (int)device_ws_size_tmp;
   return ret;
 }
@@ -1802,7 +1821,8 @@ inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
 /// Computes selected eigenvalues and, optionally, eigenvectors of a
 /// symmetric/Hermitian matrix.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] q Device queue where computation will be performed.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] jobz Must be job::novec or job::vec.
 /// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
@@ -1860,7 +1880,8 @@ inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
 // DPCT_CODE
 /// Computes the size of workspace memory of sygvx/hegvx function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] q Device queue where computation will be performed.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] itype Must be 1, 2 or 3.
 /// \param [in] jobz Must be job::novec or job::vec.
 /// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
@@ -1896,7 +1917,7 @@ syhegvx_scratchpad_size(sycl::queue &q, int itype, oneapi::mkl::job jobz,
   int ret = detail::lapack_shim<detail::syhegvx_scratchpad_size_impl>(
       q, detail::get_library_data_t_from_type<T>(), nullptr,
       "sygvx_scratchpad_size/hegvx_scratchpad_size", q, itype, compz_jobz,
-      range, uplo, n, lda, ldb, &vl, &vu, il, iu, &device_ws_size_tmp);
+      range, uplo, n, lda, ldb, &vl, &vu, il, iu, device_ws_size_tmp);
   *device_ws_size = (int)device_ws_size_tmp;
   return ret;
 }
@@ -1912,7 +1933,8 @@ syhegvx_scratchpad_size(sycl::queue &q, int itype, oneapi::mkl::job jobz,
 /// Computes selected eigenvalues and, optionally, eigenvectors of a real
 /// generalized symmetric/Hermitian definite eigenproblem.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] q Device queue where computation will be performed.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] itype Must be 1, 2 or 3.
 /// \param [in] jobz Must be job::novec or job::vec.
 /// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
@@ -1972,7 +1994,8 @@ inline int syhegvx(sycl::queue &q, int itype, oneapi::mkl::job jobz,
 // DPCT_CODE
 /// Computes the size of workspace memory of sygvd/hegvd function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] q Device queue where computation will be performed.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] itype Must be 1, 2 or 3.
 /// \param [in] jobz Must be job::novec or job::vec.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
@@ -1990,7 +2013,7 @@ inline int syhegvd_scratchpad_size(sycl::queue &q, int itype,
   int ret = detail::lapack_shim<detail::syhegvd_scratchpad_size_impl>(
       q, detail::get_library_data_t_from_type<T>(), nullptr,
       "sygvd_scratchpad_size/hegvd_scratchpad_size", q, itype, jobz, uplo, n,
-      lda, ldb, &device_ws_size_tmp);
+      lda, ldb, device_ws_size_tmp);
   *device_ws_size = (int)device_ws_size_tmp;
   return ret;
 }
@@ -2006,7 +2029,8 @@ inline int syhegvd_scratchpad_size(sycl::queue &q, int itype,
 /// Computes all eigenvalues and, optionally, eigenvectors of a real generalized
 /// symmetric/Hermitian definite eigenproblem using a divide and conquer method.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
-/// \param [in] q Device queue where computation will be performed.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode.
 /// \param [in] itype Must be 1, 2 or 3.
 /// \param [in] jobz Must be job::novec or job::vec.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.

@@ -481,8 +481,8 @@ inline oneapi::mkl::jobsvd char2jobsvd(signed char job) {
 template <typename T> struct getrf_scratchpad_size_impl {
   void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
                   library_data_t a_type, std::int64_t lda,
-                  std::size_t *device_ws_size) {
-    *device_ws_size =
+                  std::size_t &device_ws_size) {
+    device_ws_size =
         oneapi::mkl::lapack::getrf_scratchpad_size<T>(q, m, n, lda);
   }
 };
@@ -524,8 +524,8 @@ template <typename T> struct getrs_impl {
 template <typename T> struct geqrf_scratchpad_size_impl {
   void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
                   library_data_t a_type, std::int64_t lda,
-                  std::size_t *device_ws_size) {
-    *device_ws_size =
+                  std::size_t &device_ws_size) {
+    device_ws_size =
         oneapi::mkl::lapack::geqrf_scratchpad_size<T>(q, m, n, lda);
   }
 };
@@ -572,8 +572,8 @@ template <typename T> struct gesvd_scratchpad_size_impl {
                   library_data_t a_type, std::int64_t lda,
                   library_data_t u_type, std::int64_t ldu,
                   library_data_t vt_type, std::int64_t ldvt,
-                  std::size_t *device_ws_size) {
-    *device_ws_size = oneapi::mkl::lapack::gesvd_scratchpad_size<T>(
+                  std::size_t &device_ws_size) {
+    device_ws_size = oneapi::mkl::lapack::gesvd_scratchpad_size<T>(
         q, jobu, jobvt, m, n, lda, ldu, ldvt);
   }
 };
@@ -632,8 +632,8 @@ template <typename T> struct gesvd_conj_impl : public gesvd_impl<T> {
 template <typename T> struct potrf_scratchpad_size_impl {
   void operator()(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                   library_data_t a_type, std::int64_t lda,
-                  std::size_t *device_ws_size) {
-    *device_ws_size =
+                  std::size_t &device_ws_size) {
+    device_ws_size =
         oneapi::mkl::lapack::potrf_scratchpad_size<T>(q, uplo, n, lda);
   }
 };
@@ -695,7 +695,7 @@ template <typename T> struct syheevx_scratchpad_size_impl {
                   oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
                   std::int64_t n, std::int64_t lda, void *vl, void *vu,
                   std::int64_t il, std::int64_t iu,
-                  std::size_t *device_ws_size) {
+                  std::size_t &device_ws_size) {
 #ifndef __INTEL_MKL__
     throw std::runtime_error(
         "The oneAPI Math Kernel Library (oneMKL) Interfaces "
@@ -707,12 +707,12 @@ template <typename T> struct syheevx_scratchpad_size_impl {
         *reinterpret_cast<typename value_type_trait<T>::value_type *>(vu);
     if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
       auto abstol = 2 * lamch_s<T>();
-      *device_ws_size = oneapi::mkl::lapack::syevx_scratchpad_size<T>(
+      device_ws_size = oneapi::mkl::lapack::syevx_scratchpad_size<T>(
           q, jobz, range, uplo, n, lda, vl_value, vu_value, il, iu, abstol,
           lda);
     } else {
       auto abstol = 2 * lamch_s<typename T::value_type>();
-      *device_ws_size = oneapi::mkl::lapack::heevx_scratchpad_size<T>(
+      device_ws_size = oneapi::mkl::lapack::heevx_scratchpad_size<T>(
           q, jobz, range, uplo, n, lda, vl_value, vu_value, il, iu, abstol,
           lda);
     }
@@ -789,7 +789,7 @@ template <typename T> struct syhegvx_scratchpad_size_impl {
                   oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
                   std::int64_t n, std::int64_t lda, std::int64_t ldb, void *vl,
                   void *vu, std::int64_t il, std::int64_t iu,
-                  std::size_t *device_ws_size) {
+                  std::size_t &device_ws_size) {
 #ifndef __INTEL_MKL__
     throw std::runtime_error(
         "The oneAPI Math Kernel Library (oneMKL) Interfaces "
@@ -801,12 +801,12 @@ template <typename T> struct syhegvx_scratchpad_size_impl {
         *reinterpret_cast<typename value_type_trait<T>::value_type *>(vu);
     if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
       auto abstol = 2 * lamch_s<T>();
-      *device_ws_size = oneapi::mkl::lapack::sygvx_scratchpad_size<T>(
+      device_ws_size = oneapi::mkl::lapack::sygvx_scratchpad_size<T>(
           q, itype, jobz, range, uplo, n, lda, ldb, vl_value, vu_value, il, iu,
           abstol, lda);
     } else {
       auto abstol = 2 * lamch_s<typename T::value_type>();
-      *device_ws_size = oneapi::mkl::lapack::hegvx_scratchpad_size<T>(
+      device_ws_size = oneapi::mkl::lapack::hegvx_scratchpad_size<T>(
           q, itype, jobz, range, uplo, n, lda, ldb, vl_value, vu_value, il, iu,
           abstol, lda);
     }
@@ -868,12 +868,12 @@ template <typename T> struct syhegvx_impl {
 template <typename T> struct syhegvd_scratchpad_size_impl {
   void operator()(sycl::queue &q, std::int64_t itype, oneapi::mkl::job jobz,
                   oneapi::mkl::uplo uplo, std::int64_t n, std::int64_t lda,
-                  std::int64_t ldb, std::size_t *device_ws_size) {
+                  std::int64_t ldb, std::size_t &device_ws_size) {
     if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
-      *device_ws_size = oneapi::mkl::lapack::sygvd_scratchpad_size<T>(
+      device_ws_size = oneapi::mkl::lapack::sygvd_scratchpad_size<T>(
           q, itype, jobz, uplo, n, lda, ldb);
     } else {
-      *device_ws_size = oneapi::mkl::lapack::hegvd_scratchpad_size<T>(
+      device_ws_size = oneapi::mkl::lapack::hegvd_scratchpad_size<T>(
           q, itype, jobz, uplo, n, lda, ldb);
     }
   }
@@ -923,7 +923,7 @@ inline int getrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
   std::size_t device_ws_size_tmp;
   int ret = detail::lapack_shim<detail::getrf_scratchpad_size_impl>(
       q, a_type, nullptr, "getrf_scratchpad_size", q, m, n, a_type, lda,
-      &device_ws_size_tmp);
+      device_ws_size_tmp);
   *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
   return ret;
 }
@@ -1009,7 +1009,7 @@ inline int geqrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
   std::size_t device_ws_size_tmp;
   int ret = detail::lapack_shim<detail::geqrf_scratchpad_size_impl>(
       q, a_type, nullptr, "geqrf_scratchpad_size", q, m, n, a_type, lda,
-      &device_ws_size_tmp);
+      device_ws_size_tmp);
   *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
   return ret;
 }
@@ -1074,7 +1074,7 @@ inline int gesvd_scratchpad_size(sycl::queue &q, signed char jobu,
   std::size_t device_ws_size_tmp;
   int ret = detail::lapack_shim<detail::gesvd_scratchpad_size_impl>(
       q, a_type, nullptr, "gesvd_scratchpad_size", q, jobu_enum, jobvt_enum, m,
-      n, a_type, lda, u_type, ldu, vt_type, ldvt, &device_ws_size_tmp);
+      n, a_type, lda, u_type, ldu, vt_type, ldvt, device_ws_size_tmp);
   *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
   return ret;
 }
@@ -1124,7 +1124,7 @@ inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
   std::size_t device_ws_size_64;
   int ret = detail::lapack_shim<detail::gesvd_scratchpad_size_impl>(
       q, a_type, nullptr, "gesvd_scratchpad_size", q, jobu, jobvt, m, n, a_type,
-      lda, u_type, ldu, vt_type, ldvt, &device_ws_size_64);
+      lda, u_type, ldu, vt_type, ldvt, device_ws_size_64);
   *device_ws_size = device_ws_size_64;
   return ret;
 }
@@ -1243,7 +1243,7 @@ inline int potrf_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
   std::size_t device_ws_size_tmp;
   int ret = detail::lapack_shim<detail::potrf_scratchpad_size_impl>(
       q, a_type, nullptr, "potrf_scratchpad_size", q, uplo, n, a_type, lda,
-      &device_ws_size_tmp);
+      device_ws_size_tmp);
   *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
   return ret;
 }
@@ -1343,7 +1343,7 @@ inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
   int ret = detail::lapack_shim<detail::syheevx_scratchpad_size_impl>(
       q, a_type, nullptr, "syevx_scratchpad_size/heevx_scratchpad_size", q,
       compz_jobz, range, uplo, n, lda, vl, vu, il, iu,
-      &device_ws_size_tmp);
+      device_ws_size_tmp);
   *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
   return ret;
 }
@@ -1436,7 +1436,7 @@ inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
   int ret = detail::lapack_shim<detail::syheevx_scratchpad_size_impl>(
       q, detail::get_library_data_t_from_type<T>(), nullptr,
       "syevx_scratchpad_size/heevx_scratchpad_size", q, compz_jobz, range, uplo,
-      n, lda, &vl, &vu, il, iu, &device_ws_size_tmp);
+      n, lda, &vl, &vu, il, iu, device_ws_size_tmp);
   *device_ws_size = (int)device_ws_size_tmp;
   return ret;
 }
@@ -1530,7 +1530,7 @@ syhegvx_scratchpad_size(sycl::queue &q, int itype, oneapi::mkl::job jobz,
   int ret = detail::lapack_shim<detail::syhegvx_scratchpad_size_impl>(
       q, detail::get_library_data_t_from_type<T>(), nullptr,
       "sygvx_scratchpad_size/hegvx_scratchpad_size", q, itype, compz_jobz,
-      range, uplo, n, lda, ldb, &vl, &vu, il, iu, &device_ws_size_tmp);
+      range, uplo, n, lda, ldb, &vl, &vu, il, iu, device_ws_size_tmp);
   *device_ws_size = (int)device_ws_size_tmp;
   return ret;
 }
@@ -1608,7 +1608,7 @@ inline int syhegvd_scratchpad_size(sycl::queue &q, int itype,
   int ret = detail::lapack_shim<detail::syhegvd_scratchpad_size_impl>(
       q, detail::get_library_data_t_from_type<T>(), nullptr,
       "sygvd_scratchpad_size/hegvd_scratchpad_size", q, itype, jobz, uplo, n,
-      lda, ldb, &device_ws_size_tmp);
+      lda, ldb, device_ws_size_tmp);
   *device_ws_size = (int)device_ws_size_tmp;
   return ret;
 }
