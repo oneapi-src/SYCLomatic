@@ -67,6 +67,13 @@ public:
   }
 };
 // DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|detail_isnan|dpct::detail
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+template <typename T> bool isnan(const T a) { return sycl::isnan(a); }
+// TODO: Need add more specialization such as bfloat16 version.
+// DPCT_LABEL_END
 } // namespace detail
 
 // DPCT_LABEL_BEGIN|fast_length|dpct
@@ -123,122 +130,130 @@ template <typename T> inline T length(const T *a, const int len) {
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|compare_half|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_LABEL_BEGIN|compare|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Math|detail_isnan
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Performs half comparison.
+/// Performs comparison.
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] binary_op functor that implements the binary operation
 /// \returns the comparison result
-template <class BinaryOperation>
-inline bool compare_half(const sycl::half a, const sycl::half b,
-                         const BinaryOperation binary_op) {
+template <typename T, class BinaryOperation>
+inline std::enable_if_t<
+    std::is_same_v<std::invoke_result_t<BinaryOperation, T, T>, bool>, bool>
+compare(const T a, const T b, const BinaryOperation binary_op) {
   return binary_op(a, b);
 }
-inline bool compare_half(const sycl::half a, const sycl::half b,
-                         const std::not_equal_to<> binary_op) {
-  return !sycl::isnan(a) && !sycl::isnan(b) && a != b;
+template <typename T>
+inline std::enable_if_t<
+    std::is_same_v<std::invoke_result_t<std::not_equal_to<>, T, T>, bool>, bool>
+compare(const T a, const T b, const std::not_equal_to<> binary_op) {
+  return !detail::isnan(a) && !detail::isnan(b) && binary_op(a, b);
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|unordered_compare_half|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-/// Performs half unordered comparison.
-/// \param [in] a The first value
-/// \param [in] b The second value
-/// \param [in] binary_op functor that implements the binary operation
-/// \returns the comparison result
-template <class BinaryOperation>
-inline bool unordered_compare_half(const sycl::half a, const sycl::half b,
-                                   const BinaryOperation binary_op) {
-  return sycl::isnan(a) || sycl::isnan(b) || binary_op(a, b);
-}
-// DPCT_LABEL_END
-
-// DPCT_LABEL_BEGIN|compare_both_half2|dpct
+// DPCT_LABEL_BEGIN|unordered_compare|dpct
 // DPCT_DEPENDENCY_BEGIN
-// Math|compare_half
+// Math|detail_isnan
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Performs half2 comparison and return a bool value.
+/// Performs unordered comparison.
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] binary_op functor that implements the binary operation
 /// \returns the comparison result
-template <class BinaryOperation>
-inline bool compare_both_half2(const sycl::half2 a, const sycl::half2 b,
-                               const BinaryOperation binary_op) {
-  return compare_half(a.x(), b.x(), binary_op) &&
-         compare_half(a.y(), b.y(), binary_op);
+template <typename T, class BinaryOperation>
+inline std::enable_if_t<
+    std::is_same_v<std::invoke_result_t<BinaryOperation, T, T>, bool>, bool>
+unordered_compare(const T a, const T b, const BinaryOperation binary_op) {
+  return detail::isnan(a) || detail::isnan(b) || binary_op(a, b);
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|unordered_compare_both_half2|dpct
+// DPCT_LABEL_BEGIN|compare_both|dpct
 // DPCT_DEPENDENCY_BEGIN
-// Math|unordered_compare_half
+// Math|compare
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Performs half2 unordered comparison and return a bool value.
+/// Performs 2 element comparison and return true if both results are true.
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] binary_op functor that implements the binary operation
 /// \returns the comparison result
-template <class BinaryOperation>
-inline bool unordered_compare_both_half2(const sycl::half2 a,
-                                         const sycl::half2 b,
-                                         const BinaryOperation binary_op) {
-  return unordered_compare_half(a.x(), b.x(), binary_op) &&
-         unordered_compare_half(a.y(), b.y(), binary_op);
+template <typename T, class BinaryOperation>
+inline std::enable_if_t<T::size() == 2, bool>
+compare_both(const T a, const T b, const BinaryOperation binary_op) {
+  return compare(a[0], b[0], binary_op) && compare(a[1], b[1], binary_op);
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|compare_half2|dpct
+// DPCT_LABEL_BEGIN|unordered_compare_both|dpct
 // DPCT_DEPENDENCY_BEGIN
-// Math|compare_half
+// Math|unordered_compare
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Performs half2 comparison and return a half2 value.
+/// Performs 2 element unordered comparison and return true if both results are
+/// true.
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] binary_op functor that implements the binary operation
 /// \returns the comparison result
-template <class BinaryOperation>
-inline sycl::half2 compare_half2(const sycl::half2 a, const sycl::half2 b,
-                                 const BinaryOperation binary_op) {
-  return {compare_half(a.x(), b.x(), binary_op),
-          compare_half(a.y(), b.y(), binary_op)};
+template <typename T, class BinaryOperation>
+inline std::enable_if_t<T::size() == 2, bool>
+unordered_compare_both(const T a, const T b, const BinaryOperation binary_op) {
+  return unordered_compare(a[0], b[0], binary_op) &&
+         unordered_compare(a[1], b[1], binary_op);
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|unordered_compare_half2|dpct
+// DPCT_LABEL_BEGIN|compare2|dpct
 // DPCT_DEPENDENCY_BEGIN
-// Math|unordered_compare_half
+// Math|compare
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Performs half2 unordered comparison and return a half2 value.
+/// Performs 2 element comparison.
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] binary_op functor that implements the binary operation
 /// \returns the comparison result
-template <class BinaryOperation>
-inline sycl::half2 unordered_compare_half2(const sycl::half2 a,
-                                           const sycl::half2 b,
-                                           const BinaryOperation binary_op) {
-  return {unordered_compare_half(a.x(), b.x(), binary_op),
-          unordered_compare_half(a.y(), b.y(), binary_op)};
+template <typename T, class BinaryOperation>
+inline std::enable_if_t<T::size() == 2, T>
+compare(const T a, const T b, const BinaryOperation binary_op) {
+  return {compare(a[0], b[0], binary_op), compare(a[1], b[1], binary_op)};
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|unordered_compare2|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Math|unordered_compare
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Performs 2 element unordered comparison.
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] binary_op functor that implements the binary operation
+/// \returns the comparison result
+template <typename T, class BinaryOperation>
+inline std::enable_if_t<T::size() == 2, T>
+unordered_compare(const T a, const T b, const BinaryOperation binary_op) {
+  return {unordered_compare(a[0], b[0], binary_op),
+          unordered_compare(a[1], b[1], binary_op)};
 }
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|isnan|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// Math|detail_isnan
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Determine whether half2 is NaN and return a half2 value.
-/// \param [in] h The half value
+/// Determine whether 2 element value is NaN.
+/// \param [in] a The input value
 /// \returns the comparison result
-inline sycl::half2 isnan(const sycl::half2 h) {
-  return {sycl::isnan(h.x()), sycl::isnan(h.y())};
+template <typename T>
+inline std::enable_if_t<T::size() == 2, T> isnan(const T a) {
+  return {detail::isnan(a[0]), detail::isnan(a[1])};
 }
 // DPCT_LABEL_END
 
