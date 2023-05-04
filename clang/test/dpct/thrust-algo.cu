@@ -30,6 +30,7 @@
 #include <thrust/iterator/constant_iterator.h>
 #include <thrust/partition.h>
 
+
 void k() {
   std::vector<int> v, v2, v3, v4;
 
@@ -1057,4 +1058,36 @@ void reverse() {
   thrust::reverse(device_data.begin(), device_data.end());
   thrust::reverse(host_data.begin(), host_data.end());
   thrust::reverse(data, data + N);
+}
+
+void equal_range() {
+  int data[] = {0, 2, 5, 7, 8};
+  const int N = 5;
+  thrust::host_vector<int> host_vec(data, data + N);
+  thrust::device_vector<int> device_vec(data, data + N);
+
+  // CHECK:  dpct::equal_range(oneapi::dpl::execution::make_device_policy(q_ct1), device_vec.begin(), device_vec.end(), 0); 
+  // CHECK-NEXT:  dpct::equal_range(oneapi::dpl::execution::make_device_policy(q_ct1), device_vec.begin(), device_vec.end(), 0);
+  // CHECK-NEXT:  dpct::equal_range(oneapi::dpl::execution::make_device_policy(q_ct1), device_vec.begin(), device_vec.end(), 0, oneapi::dpl::less<int>());
+  // CHECK-NEXT:  dpct::equal_range(oneapi::dpl::execution::make_device_policy(q_ct1), device_vec.begin(), device_vec.end(), 0, oneapi::dpl::less<int>());
+  // CHECK-NEXT:  dpct::equal_range(oneapi::dpl::execution::seq, host_vec.begin(), host_vec.end(), 0); 
+  // CHECK-NEXT:  dpct::equal_range(oneapi::dpl::execution::seq, host_vec.begin(), host_vec.end(), 0);
+  // CHECK-NEXT:  dpct::equal_range(oneapi::dpl::execution::seq, host_vec.begin(), host_vec.end(), 0, oneapi::dpl::less<int>());
+  // CHECK-NEXT:  dpct::equal_range(oneapi::dpl::execution::seq, host_vec.begin(), host_vec.end(), 0, oneapi::dpl::less<int>());
+  // CHECK-NEXT:  dpct::equal_range(oneapi::dpl::execution::seq, data, data + N, 0); 
+  // CHECK-NEXT:  dpct::equal_range(oneapi::dpl::execution::seq, data, data + N, 0);
+  // CHECK-NEXT:  dpct::equal_range(oneapi::dpl::execution::seq, data, data + N, 0, oneapi::dpl::less<int>()); 
+  // CHECK-NEXT:  dpct::equal_range(oneapi::dpl::execution::seq, data, data + N, 0, oneapi::dpl::less<int>());
+  thrust::equal_range(thrust::device, device_vec.begin(), device_vec.end(), 0); 
+  thrust::equal_range(device_vec.begin(), device_vec.end(), 0);
+  thrust::equal_range(thrust::device, device_vec.begin(), device_vec.end(), 0,  thrust::less<int>());
+  thrust::equal_range(device_vec.begin(), device_vec.end(), 0,  thrust::less<int>());
+  thrust::equal_range(thrust::host, host_vec.begin(), host_vec.end(), 0); 
+  thrust::equal_range(host_vec.begin(), host_vec.end(), 0);
+  thrust::equal_range(thrust::host, host_vec.begin(), host_vec.end(), 0,  thrust::less<int>());
+  thrust::equal_range(host_vec.begin(), host_vec.end(), 0,  thrust::less<int>());
+  thrust::equal_range(thrust::host, data, data + N, 0); 
+  thrust::equal_range(data, data + N, 0);
+  thrust::equal_range(thrust::host, data, data + N, 0, thrust::less<int>()); 
+  thrust::equal_range(data, data + N, 0, thrust::less<int>());
 }

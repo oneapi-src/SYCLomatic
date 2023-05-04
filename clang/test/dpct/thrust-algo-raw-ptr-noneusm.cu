@@ -20,6 +20,7 @@
 #include <thrust/mismatch.h>
 #include <thrust/replace.h>
 #include <thrust/reverse.h>
+#include <thrust/binary_search.h>
 
 // for cuda 12.0
 #include <thrust/iterator/constant_iterator.h>
@@ -673,4 +674,34 @@ void reverse() {
 //CHECK-NEXT:  };
   thrust::reverse(thrust::host, data, data + N);
   thrust::reverse(data, data + N);
+}
+
+void equal_range() {
+  int data[] = {0, 2, 5, 7, 8};
+  const int N = 5;
+
+//CHECK:  if (dpct::is_device_ptr(data)) {
+//CHECK-NEXT:    dpct::equal_range(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), 0);
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    dpct::equal_range(oneapi::dpl::execution::seq, data, data + N, 0);
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(data)) {
+//CHECK-NEXT:    dpct::equal_range(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), 0);
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    dpct::equal_range(oneapi::dpl::execution::seq, data, data + N, 0);
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(data)) {
+//CHECK-NEXT:    dpct::equal_range(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), 0, oneapi::dpl::less<int>());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    dpct::equal_range(oneapi::dpl::execution::seq, data, data + N, 0, oneapi::dpl::less<int>());
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(data)) {
+//CHECK-NEXT:    dpct::equal_range(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), 0, oneapi::dpl::less<int>());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    dpct::equal_range(oneapi::dpl::execution::seq, data, data + N, 0, oneapi::dpl::less<int>());
+//CHECK-NEXT:  };
+  thrust::equal_range(thrust::host, data, data + N, 0); 
+  thrust::equal_range(data, data + N, 0);
+  thrust::equal_range(thrust::host, data, data + N, 0, thrust::less<int>()); 
+  thrust::equal_range(data, data + N, 0, thrust::less<int>());
 }
