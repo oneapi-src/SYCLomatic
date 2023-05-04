@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --out-root %T %s --cuda-include-path="%cuda-path/include" --in-root %S --extra-arg="-I . ,  -I %S/.."
+// RUN: dpct --format-range=none --out-root %T %s --cuda-include-path="%cuda-path/include" --in-root %S --extra-arg="-I  %S/.."
 // RUN: FileCheck --input-file %T/test.dp.cpp --match-full-lines %s
 
 #include "outer/macro_def.h"
