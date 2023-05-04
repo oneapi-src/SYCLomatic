@@ -888,17 +888,15 @@ template <typename T> struct syheevx_scratchpad_size_impl {
         "The oneAPI Math Kernel Library (oneMKL) Interfaces "
         "Project does not support this API.");
 #else
-    auto vl_value =
-        *reinterpret_cast<typename value_type_trait<T>::value_type *>(vl);
-    auto vu_value =
-        *reinterpret_cast<typename value_type_trait<T>::value_type *>(vu);
+    using value_t = typename value_type_trait<T>::value_type;
+    auto vl_value = *reinterpret_cast<value_t *>(vl);
+    auto vu_value = *reinterpret_cast<value_t *>(vu);
+    auto abstol = 2 * lamch_s<value_t>();
     if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
-      auto abstol = 2 * lamch_s<T>();
       device_ws_size = oneapi::mkl::lapack::syevx_scratchpad_size<T>(
           q, jobz, range, uplo, n, lda, vl_value, vu_value, il, iu, abstol,
           lda);
     } else {
-      auto abstol = 2 * lamch_s<typename T::value_type>();
       device_ws_size = oneapi::mkl::lapack::heevx_scratchpad_size<T>(
           q, jobz, range, uplo, n, lda, vl_value, vu_value, il, iu, abstol,
           lda);
@@ -951,6 +949,7 @@ template <typename T> struct syheevx_impl {
         "The oneAPI Math Kernel Library (oneMKL) Interfaces "
         "Project does not support this API.");
 #else
+    using value_t = typename value_type_trait<T>::value_type;
     working_memory<T> z(n * lda, q);
     working_memory<std::int64_t> m_device(1, q);
     auto z_data = z.get_memory();
@@ -958,21 +957,16 @@ template <typename T> struct syheevx_impl {
     auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
     auto device_ws_data =
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
-    auto vl_value =
-        *reinterpret_cast<typename value_type_trait<T>::value_type *>(vl);
-    auto vu_value =
-        *reinterpret_cast<typename value_type_trait<T>::value_type *>(vu);
+    auto vl_value = *reinterpret_cast<value_t *>(vl);
+    auto vu_value = *reinterpret_cast<value_t *>(vu);
+    auto w_data = dpct::detail::get_memory(reinterpret_cast<value_t *>(w));
+    auto abstol = 2 * lamch_s<value_t>();
     if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
-      auto w_data = dpct::detail::get_memory(reinterpret_cast<T *>(w));
-      auto abstol = 2 * lamch_s<T>();
       oneapi::mkl::lapack::syevx(q, jobz, range, uplo, n, a_data, lda, vl_value,
                                  vu_value, il, iu, abstol, m_device_data,
                                  w_data, z_data, lda, device_ws_data,
                                  device_ws_size);
     } else {
-      auto w_data = dpct::detail::get_memory(
-          reinterpret_cast<typename T::value_type *>(w));
-      auto abstol = 2 * lamch_s<typename T::value_type>();
       oneapi::mkl::lapack::heevx(q, jobz, range, uplo, n, a_data, lda, vl_value,
                                  vu_value, il, iu, abstol, m_device_data,
                                  w_data, z_data, lda, device_ws_data,
@@ -1007,17 +1001,15 @@ template <typename T> struct syhegvx_scratchpad_size_impl {
         "The oneAPI Math Kernel Library (oneMKL) Interfaces "
         "Project does not support this API.");
 #else
-    auto vl_value =
-        *reinterpret_cast<typename value_type_trait<T>::value_type *>(vl);
-    auto vu_value =
-        *reinterpret_cast<typename value_type_trait<T>::value_type *>(vu);
+    using value_t = typename value_type_trait<T>::value_type;
+    auto vl_value = *reinterpret_cast<value_t *>(vl);
+    auto vu_value = *reinterpret_cast<value_t *>(vu);
+    auto abstol = 2 * lamch_s<value_t>();
     if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
-      auto abstol = 2 * lamch_s<T>();
       device_ws_size = oneapi::mkl::lapack::sygvx_scratchpad_size<T>(
           q, itype, jobz, range, uplo, n, lda, ldb, vl_value, vu_value, il, iu,
           abstol, lda);
     } else {
-      auto abstol = 2 * lamch_s<typename T::value_type>();
       device_ws_size = oneapi::mkl::lapack::hegvx_scratchpad_size<T>(
           q, itype, jobz, range, uplo, n, lda, ldb, vl_value, vu_value, il, iu,
           abstol, lda);
@@ -1050,6 +1042,7 @@ template <typename T> struct syhegvx_impl {
         "The oneAPI Math Kernel Library (oneMKL) Interfaces "
         "Project does not support this API.");
 #else
+    using value_t = typename value_type_trait<T>::value_type;
     working_memory<T> z(n * lda, q);
     working_memory<std::int64_t> m_device(1, q);
     auto z_data = z.get_memory();
@@ -1058,21 +1051,16 @@ template <typename T> struct syhegvx_impl {
     auto b_data = dpct::detail::get_memory(reinterpret_cast<T *>(b));
     auto device_ws_data =
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
-    auto vl_value =
-        *reinterpret_cast<typename value_type_trait<T>::value_type *>(vl);
-    auto vu_value =
-        *reinterpret_cast<typename value_type_trait<T>::value_type *>(vu);
+    auto vl_value = *reinterpret_cast<value_t *>(vl);
+    auto vu_value = *reinterpret_cast<value_t *>(vu);
+    auto w_data = dpct::detail::get_memory(reinterpret_cast<value_t *>(w));
+    auto abstol = 2 * lamch_s<value_t>();
     if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
-      auto w_data = dpct::detail::get_memory(reinterpret_cast<T *>(w));
-      auto abstol = 2 * lamch_s<T>();
       oneapi::mkl::lapack::sygvx(q, itype, jobz, range, uplo, n, a_data, lda,
                                  b_data, ldb, vl_value, vu_value, il, iu,
                                  abstol, m_device_data, w_data, z_data, lda,
                                  device_ws_data, device_ws_size);
     } else {
-      auto w_data = dpct::detail::get_memory(
-          reinterpret_cast<typename T::value_type *>(w));
-      auto abstol = 2 * lamch_s<typename T::value_type>();
       oneapi::mkl::lapack::hegvx(q, itype, jobz, range, uplo, n, a_data, lda,
                                  b_data, ldb, vl_value, vu_value, il, iu,
                                  abstol, m_device_data, w_data, z_data, lda,
@@ -1120,23 +1108,41 @@ template <typename T> struct syhegvd_impl {
                   std::int64_t lda, void *b, std::int64_t ldb, void *w,
                   void *device_ws, std::size_t device_ws_size,
                   int *info) {
+    using value_t = typename value_type_trait<T>::value_type;
     auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
     auto b_data = dpct::detail::get_memory(reinterpret_cast<T *>(b));
     auto device_ws_data =
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
+    auto w_data = dpct::detail::get_memory(reinterpret_cast<value_t *>(w));
     if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
-      auto w_data = dpct::detail::get_memory(reinterpret_cast<T *>(w));
       oneapi::mkl::lapack::sygvd(q, itype, jobz, uplo, n, a_data, lda, b_data,
                                  ldb, w_data, device_ws_data, device_ws_size);
     } else {
-      auto w_data = dpct::detail::get_memory(
-          reinterpret_cast<typename T::value_type *>(w));
       oneapi::mkl::lapack::hegvd(q, itype, jobz, uplo, n, a_data, lda, b_data,
                                  ldb, w_data, device_ws_data, device_ws_size);
     }
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
 };
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|job2compz|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|get_memory
+// Memory|dpct_memset_detail
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+oneapi::mkl::compz job2compz(const oneapi::mkl::job &job) {
+  oneapi::mkl::compz ret;
+  if (job == oneapi::mkl::job::novec) {
+    ret = oneapi::mkl::compz::novectors;
+  } else if (job == oneapi::mkl::job::vec) {
+    ret = oneapi::mkl::compz::vectors;
+  } else {
+    throw std::runtime_error("the job type is unsupported");
+  }
+  return ret;
+}
 // DPCT_LABEL_END
 } // namespace detail
 
@@ -1646,6 +1652,7 @@ inline int potrs(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
 // LapackUtils|lapack_shim
 // LapackUtils|syheevx_scratchpad_size_impl
 // LapackUtils|byte_to_from_element_number
+// LapackUtils|job2compz
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Computes the size of workspace memory of syevx/heevx function.
@@ -1680,14 +1687,7 @@ inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
                                    std::size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
-  oneapi::mkl::compz compz_jobz;
-  if (jobz == oneapi::mkl::job::novec) {
-    compz_jobz = oneapi::mkl::compz::novectors;
-  } else if (jobz == oneapi::mkl::job::vec) {
-    compz_jobz = oneapi::mkl::compz::vectors;
-  } else {
-    throw std::runtime_error("the job type is unsupported");
-  }
+  oneapi::mkl::compz compz_jobz = detail::job2compz(jobz);
   std::size_t device_ws_size_tmp;
   int ret = detail::lapack_shim<detail::syheevx_scratchpad_size_impl>(
       q, a_type, nullptr, "syevx_scratchpad_size/heevx_scratchpad_size", q,
@@ -1704,6 +1704,7 @@ inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
 // LapackUtils|lapack_shim
 // LapackUtils|syheevx_impl
 // LapackUtils|byte_to_from_element_number
+// LapackUtils|job2compz
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Computes selected eigenvalues and, optionally, eigenvectors of a
@@ -1743,14 +1744,7 @@ inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
                    int *info) {
   std::size_t device_ws_size_in_element_number =
       detail::byte_to_element_number(device_ws_size, a_type);
-  oneapi::mkl::compz compz_jobz;
-  if (jobz == oneapi::mkl::job::novec) {
-    compz_jobz = oneapi::mkl::compz::novectors;
-  } else if (jobz == oneapi::mkl::job::vec) {
-    compz_jobz = oneapi::mkl::compz::vectors;
-  } else {
-    throw std::runtime_error("the job type is unsupported");
-  }
+  oneapi::mkl::compz compz_jobz = detail::job2compz(jobz);
   int ret = detail::lapack_shim<detail::syheevx_impl>(
       q, a_type, info, "syevx/heevx", q, compz_jobz, range, uplo, n, a_type, a,
       lda, vl, vu, il, iu, m, w_type, w, device_ws,
@@ -1766,6 +1760,7 @@ inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
 // LapackUtils|syheevx_scratchpad_size_impl
 // LapackUtils|byte_to_from_element_number
 // LapackUtils|get_library_data_t_from_type
+// LapackUtils|job2compz
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Computes the size of workspace memory of syevx/heevx function.
@@ -1793,14 +1788,7 @@ inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
                                    oneapi::mkl::uplo uplo, int n, int lda,
                                    ValueT vl, ValueT vu, int il, int iu,
                                    int *device_ws_size) {
-  oneapi::mkl::compz compz_jobz;
-  if (jobz == oneapi::mkl::job::novec) {
-    compz_jobz = oneapi::mkl::compz::novectors;
-  } else if (jobz == oneapi::mkl::job::vec) {
-    compz_jobz = oneapi::mkl::compz::vectors;
-  } else {
-    throw std::runtime_error("the job type is unsupported");
-  }
+  oneapi::mkl::compz compz_jobz = detail::job2compz(jobz);
   std::size_t device_ws_size_tmp;
   int ret = detail::lapack_shim<detail::syheevx_scratchpad_size_impl>(
       q, detail::get_library_data_t_from_type<T>(), nullptr,
@@ -1816,6 +1804,7 @@ inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
 // LapackUtils|lapack_shim
 // LapackUtils|syheevx_impl
 // LapackUtils|get_library_data_t_from_type
+// LapackUtils|job2compz
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Computes selected eigenvalues and, optionally, eigenvectors of a
@@ -1850,14 +1839,7 @@ inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
                    oneapi::mkl::rangev range, oneapi::mkl::uplo uplo, int n,
                    T *a, int lda, ValueT vl, ValueT vu, int il, int iu, int *m,
                    ValueT *w, T *device_ws, int device_ws_size, int *info) {
-  oneapi::mkl::compz compz_jobz;
-  if (jobz == oneapi::mkl::job::novec) {
-    compz_jobz = oneapi::mkl::compz::novectors;
-  } else if (jobz == oneapi::mkl::job::vec) {
-    compz_jobz = oneapi::mkl::compz::vectors;
-  } else {
-    throw std::runtime_error("the job type is unsupported");
-  }
+  oneapi::mkl::compz compz_jobz = detail::job2compz(jobz);
   std::int64_t m64;
   int ret = detail::lapack_shim<detail::syheevx_impl>(
       q, detail::get_library_data_t_from_type<T>(), info, "syevx/heevx", q,
@@ -1876,6 +1858,7 @@ inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
 // LapackUtils|lapack_shim
 // LapackUtils|syhegvx_scratchpad_size_impl
 // LapackUtils|get_library_data_t_from_type
+// LapackUtils|job2compz
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Computes the size of workspace memory of sygvx/hegvx function.
@@ -1905,14 +1888,7 @@ syhegvx_scratchpad_size(sycl::queue &q, int itype, oneapi::mkl::job jobz,
                         oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
                         int n, int lda, int ldb, ValueT vl, ValueT vu, int il,
                         int iu, int *device_ws_size) {
-  oneapi::mkl::compz compz_jobz;
-  if (jobz == oneapi::mkl::job::novec) {
-    compz_jobz = oneapi::mkl::compz::novectors;
-  } else if (jobz == oneapi::mkl::job::vec) {
-    compz_jobz = oneapi::mkl::compz::vectors;
-  } else {
-    throw std::runtime_error("the job type is unsupported");
-  }
+  oneapi::mkl::compz compz_jobz = detail::job2compz(jobz);
   std::size_t device_ws_size_tmp;
   int ret = detail::lapack_shim<detail::syhegvx_scratchpad_size_impl>(
       q, detail::get_library_data_t_from_type<T>(), nullptr,
@@ -1928,6 +1904,7 @@ syhegvx_scratchpad_size(sycl::queue &q, int itype, oneapi::mkl::job jobz,
 // LapackUtils|lapack_shim
 // LapackUtils|syhegvx_impl
 // LapackUtils|get_library_data_t_from_type
+// LapackUtils|job2compz
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Computes selected eigenvalues and, optionally, eigenvectors of a real
@@ -1966,14 +1943,7 @@ inline int syhegvx(sycl::queue &q, int itype, oneapi::mkl::job jobz,
                    T *a, int lda, T *b, int ldb, ValueT vl, ValueT vu, int il,
                    int iu, int *m, ValueT *w, T *device_ws, int device_ws_size,
                    int *info) {
-  oneapi::mkl::compz compz_jobz;
-  if (jobz == oneapi::mkl::job::novec) {
-    compz_jobz = oneapi::mkl::compz::novectors;
-  } else if (jobz == oneapi::mkl::job::vec) {
-    compz_jobz = oneapi::mkl::compz::vectors;
-  } else {
-    throw std::runtime_error("the job type is unsupported");
-  }
+  oneapi::mkl::compz compz_jobz = detail::job2compz(jobz);
   std::int64_t m64;
   int ret = detail::lapack_shim<detail::syhegvx_impl>(
       q, detail::get_library_data_t_from_type<T>(), info, "sygvx/hegvx", q,
