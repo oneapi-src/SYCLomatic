@@ -26,55 +26,41 @@ const std::unordered_set<std::string> AllowedDeviceFunctions = {
         "sqrtf",
         "__expf"};
 
-bool clang::dpct::ReadWriteOrderAnalyzer::visitIterationNode(clang::Stmt *S) {
-  Level Lvl;
-  Lvl.CurrentLoc = CurrentLevel.CurrentLoc;
-  Lvl.LevelBeginLoc = S->getBeginLoc();
-  LevelStack.push(CurrentLevel);
-  CurrentLevel = Lvl;
-  return true;
-}
-void clang::dpct::ReadWriteOrderAnalyzer::PostVisitIterationNode(
-    clang::Stmt *S) {
-  if (!CurrentLevel.SyncCallsVec.empty()) {
-    CurrentLevel.SyncCallsVec.front().second.Predecessors.push_back(
-        clang::SourceRange(CurrentLevel.CurrentLoc, S->getEndLoc()));
-    CurrentLevel.SyncCallsVec.back().second.Successors.push_back(
-        clang::SourceRange(CurrentLevel.LevelBeginLoc,
-                           CurrentLevel.FirstSyncBeginLoc));
-
-    LevelMap.insert(std::make_pair(LevelStack.size(), CurrentLevel));
-  }
-  CurrentLevel = LevelStack.top();
-  LevelStack.pop();
-  return;
-}
-
 bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::IfStmt *IS) {
-  // No special process, treat `then` block and `else` block as one block
+  // No special process, treat as one block
   return true;
 }
 void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::IfStmt *IS) {
-  // No special process, treat `then` block and `else` block as one block
+  // No special process, treat as one block
+}
+bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::SwitchStmt *SS) {
+  // No special process, treat as one block
+  return true;
+}
+void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::SwitchStmt *SS) {
+  // No special process, treat as one block
 }
 
 bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::ForStmt *FS) {
-  return visitIterationNode(FS);
+  LoopRange.push_back(FS->getSourceRange());
+  return true;
 }
 void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::ForStmt *FS) {
-  PostVisitIterationNode(FS);
+  LoopRange.pop_back();
 }
 bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::DoStmt *DS) {
-  return visitIterationNode(DS);
+  LoopRange.push_back(DS->getSourceRange());
+  return true;
 }
 void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::DoStmt *DS) {
-  PostVisitIterationNode(DS);
+  LoopRange.pop_back();
 }
 bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::WhileStmt *WS) {
-  return visitIterationNode(WS);
+  LoopRange.push_back(WS->getSourceRange());
+  return true;
 }
 void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::WhileStmt *WS) {
-  PostVisitIterationNode(WS);
+  LoopRange.pop_back();
 }
 bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::CallExpr *CE) {
   const clang::FunctionDecl *FuncDecl = CE->getDirectCallee();
@@ -83,32 +69,14 @@ bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::CallExpr *CE) {
     FuncName = FuncDecl->getNameInfo().getName().getAsString();
 
   if (FuncName == "__syncthreads") {
-    if (!clang::dpct::DpctGlobalInfo::findAncestor<SwitchStmt>(CE)) {
-      if (LevelStack.size() > 1) {
-        // We will further refine it if meet real request.
-        return false;
-      }
-
-      if (CurrentLevel.FirstSyncBeginLoc.isInvalid()) {
-        CurrentLevel.FirstSyncBeginLoc = CE->getBeginLoc();
-      }
-
-      clang::SourceRange Range(CurrentLevel.CurrentLoc, CE->getBeginLoc());
-      if (!CurrentLevel.SyncCallsVec.empty()) {
-        CurrentLevel.SyncCallsVec.back().second.Successors.push_back(Range);
-      }
-      CurrentLevel.SyncCallsVec.emplace_back(CE, SyncCallInfo({Range}, {}));
-
-      unsigned int LevelNum = LevelStack.size();
-      auto UpperBoundIter = LevelMap.upper_bound(LevelNum);
-      for (auto Iter = UpperBoundIter; Iter != LevelMap.end(); Iter++) {
-        Iter->second.SyncCallsVec.back().second.Successors.push_back(
-            clang::SourceRange(Iter->second.CurrentLoc, CE->getBeginLoc()));
-        LevelVec.push_back(Iter->second);
-      }
-      LevelMap.erase(UpperBoundIter, LevelMap.end());
-
-      CurrentLevel.CurrentLoc = CE->getEndLoc();
+    SyncCallInfo SCI;
+    SCI.Predecessors.push_back(
+        clang::SourceRange(FD->getBody()->getBeginLoc(), CE->getBeginLoc()));
+    SCI.Successors.push_back(
+        clang::SourceRange(CE->getEndLoc(), FD->getBody()->getEndLoc()));
+    if (!LoopRange.empty()) {
+      SCI.Predecessors.push_back(LoopRange.front());
+      SCI.Successors.push_back(LoopRange.front());
     }
   } else {
     if (auto FD = CE->getDirectCallee()) {
@@ -170,24 +138,9 @@ void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(
 
 bool clang::dpct::ReadWriteOrderAnalyzer::traverseFunction(
     const clang::FunctionDecl *FD) {
-  CurrentLevel.CurrentLoc = FD->getBody()->getBeginLoc();
-  CurrentLevel.LevelBeginLoc = FD->getBody()->getBeginLoc();
-
   if (!this->TraverseDecl(const_cast<clang::FunctionDecl *>(FD))) {
     return false;
   }
-
-  if (!CurrentLevel.SyncCallsVec.empty()) {
-    CurrentLevel.SyncCallsVec.back().second.Successors.push_back(
-        clang::SourceRange(CurrentLevel.CurrentLoc, FD->getEndLoc()));
-  }
-  for (auto &Iter : LevelMap) {
-    Iter.second.SyncCallsVec.back().second.Successors.push_back(
-        clang::SourceRange(Iter.second.CurrentLoc, FD->getEndLoc()));
-    LevelVec.push_back(Iter.second);
-  }
-  LevelMap.clear();
-  LevelVec.push_back(CurrentLevel);
   return true;
 }
 
@@ -260,6 +213,7 @@ bool clang::dpct::ReadWriteOrderAnalyzer::analyze(
     }
   }
 
+  this->FD = FD;
   // analyze this FD
   // Traverse AST, analysis the context info of kernel calling sycthreads()
   //   1. Find each syncthreads call's predecessor parts and successor parts.
@@ -332,21 +286,19 @@ bool clang::dpct::ReadWriteOrderAnalyzer::analyze(
   // if it meets:
   // For arbitrary input pointer of kernel, all DREs of this pointer are only
   // used in either predecessor parts or successor parts
-  for (auto &I : LevelVec) {
-    for (auto &SyncCall : I.SyncCallsVec) {
-      bool Result = true;
-      for (auto &Loc : DRELocs) {
-        if (containsMacro(Loc, SyncCall.second.Predecessors) ||
-            containsMacro(Loc, SyncCall.second.Successors) ||
-            (isInRanges(Loc, SyncCall.second.Predecessors) &&
-             isInRanges(Loc, SyncCall.second.Successors))) {
-          Result = false;
-          break;
-        }
+  for (auto &SyncCall : SyncCallsVec) {
+    bool Result = true;
+    for (auto &Loc : DRELocs) {
+      if (containsMacro(Loc, SyncCall.second.Predecessors) ||
+          containsMacro(Loc, SyncCall.second.Successors) ||
+          (isInRanges(Loc, SyncCall.second.Predecessors) &&
+           isInRanges(Loc, SyncCall.second.Successors))) {
+        Result = false;
+        break;
       }
-      CachedResults[FDLoc][getHashStrFromLoc(SyncCall.first->getBeginLoc())] =
-          Result;
     }
+    CachedResults[FDLoc][getHashStrFromLoc(SyncCall.first->getBeginLoc())] =
+        Result;
   }
 
   // find the result in the new map

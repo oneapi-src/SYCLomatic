@@ -45,6 +45,7 @@ public:
   VISIT_NODE(ForStmt)
   VISIT_NODE(DoStmt)
   VISIT_NODE(WhileStmt)
+  VISIT_NODE(SwitchStmt)
   VISIT_NODE(IfStmt)
   VISIT_NODE(CallExpr)
   VISIT_NODE(DeclRefExpr)
@@ -62,22 +63,16 @@ private:
   bool traverseFunction(const clang::FunctionDecl *FD);
   using Ranges = std::vector<clang::SourceRange>;
   struct SyncCallInfo {
+    SyncCallInfo() {}
     SyncCallInfo(Ranges Predecessors, Ranges Successors)
         : Predecessors(Predecessors), Successors(Successors){};
     Ranges Predecessors;
     Ranges Successors;
   };
-  struct Level {
-    clang::SourceLocation CurrentLoc;
-    clang::SourceLocation LevelBeginLoc;
-    clang::SourceLocation FirstSyncBeginLoc;
-    std::vector<std::pair<clang::CallExpr *, SyncCallInfo>> SyncCallsVec;
-  };
+  std::vector<std::pair<clang::CallExpr *, SyncCallInfo>> SyncCallsVec;
+  std::deque<clang::SourceRange> LoopRange;
+  const clang::FunctionDecl* FD;
 
-  Level CurrentLevel;
-  std::stack<Level> LevelStack;
-  std::multimap<unsigned int, Level> LevelMap;
-  std::vector<Level> LevelVec;
   std::unordered_map<clang::DeclRefExpr *, clang::ValueDecl *> DREDeclMap;
   std::string CELoc;
   std::string FDLoc;
@@ -89,8 +84,6 @@ private:
   void setFalseForThisFunctionDecl() {
     CachedResults[FDLoc] = std::unordered_map<std::string, bool>();
   }
-  bool visitIterationNode(clang::Stmt *S);
-  void PostVisitIterationNode(clang::Stmt *S);
 
   /// (FD location, (Call location, result))
   static std::unordered_map<std::string, std::unordered_map<std::string, bool>>
