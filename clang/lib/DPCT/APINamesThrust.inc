@@ -277,7 +277,6 @@ CONDITIONAL_FACTORY_ENTRY(
       ))
 )
 
-
 // thrust::copy_if
 thrustFactory("thrust::copy_if",
               {{5,PolicyState::HasPolicy,3,"std::copy_if", HelperFeatureEnum::no_feature_helper },
@@ -297,7 +296,6 @@ thrustFactory("thrust::inclusive_scan_by_key",
                {5,PolicyState::NoPolicy, 4,"oneapi::dpl::inclusive_scan_by_segment", HelperFeatureEnum::no_feature_helper},
                {7,PolicyState::HasPolicy,4,"oneapi::dpl::inclusive_scan_by_segment", HelperFeatureEnum::no_feature_helper},
                {6,PolicyState::NoPolicy, 4,"oneapi::dpl::inclusive_scan_by_segment", HelperFeatureEnum::no_feature_helper}}),
-
 
 // thrust::exclusive_scan_by_key
 thrustFactory("thrust::exclusive_scan_by_key",
@@ -758,3 +756,10 @@ CONDITIONAL_FACTORY_ENTRY(
 
 // thrust::cuda_category
 CALL_FACTORY_ENTRY("thrust::cuda_category", CALL("std::generic_category"))
+
+// thrust::equal_range
+thrustFactory("thrust::equal_range",
+              {{4,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::DplExtrasAlgorithm_equal_range},
+               {3,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::DplExtrasAlgorithm_equal_range},
+               {5,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::DplExtrasAlgorithm_equal_range},
+               {4,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::DplExtrasAlgorithm_equal_range}}),
