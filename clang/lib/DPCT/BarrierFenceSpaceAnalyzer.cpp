@@ -236,7 +236,7 @@ bool clang::dpct::ReadWriteOrderAnalyzer::analyze(
 
   // Check whether each input pointer of kernel is "safe" (no an alias name
   // used) or not. If it is not "safe", exit.
-  std::set<clang::SourceLocation> DRELocs;
+  std::map<clang::ValueDecl*, std::set<clang::SourceLocation>> DRELocs;
   for (auto &Iter : DREDeclMap) {
     if (auto VD = dyn_cast_or_null<VarDecl>(Iter.second)) {
       if (VD->hasAttr<clang::CUDADeviceAttr>() &&
@@ -254,7 +254,7 @@ bool clang::dpct::ReadWriteOrderAnalyzer::analyze(
         setFalseForThisFunctionDecl();
         return false; // avoid the alias of input pointers
       }
-      DRELocs.insert(Iter.first->getBeginLoc());
+      DRELocs[Iter.second].insert(Iter.first->getBeginLoc());
     }
   }
 
@@ -289,13 +289,34 @@ bool clang::dpct::ReadWriteOrderAnalyzer::analyze(
   // used in either predecessor parts or successor parts
   for (auto &SyncCall : SyncCallsVec) {
     bool Result = true;
-    for (auto &Loc : DRELocs) {
-      if (containsMacro(Loc, SyncCall.second.Predecessors) ||
-          containsMacro(Loc, SyncCall.second.Successors) ||
-          (isInRanges(Loc, SyncCall.second.Predecessors) &&
-           isInRanges(Loc, SyncCall.second.Successors))) {
-        Result = false;
-        break;
+    for (auto &Pair : DRELocs) {
+      std::optional<bool> DREInPredecessors;
+      for (auto &Loc : Pair.second) {
+        if (containsMacro(Loc, SyncCall.second.Predecessors) ||
+            containsMacro(Loc, SyncCall.second.Successors)) {
+          Result = false;
+          break;
+        }
+        if (isInRanges(Loc, SyncCall.second.Predecessors)) {
+          if (DREInPredecessors.has_value()) {
+            if (DREInPredecessors.value() != true) {
+              Result = false;
+              break;
+            }
+          } else {
+            DREInPredecessors = true;
+          }
+        }
+        if (isInRanges(Loc, SyncCall.second.Successors)) {
+          if (DREInPredecessors.has_value()) {
+            if (DREInPredecessors.value() != false) {
+              Result = false;
+              break;
+            }
+          } else {
+            DREInPredecessors = false;
+          }
+        }
       }
     }
     CachedResults[FDLoc][getHashStrFromLoc(SyncCall.first->getBeginLoc())] =
