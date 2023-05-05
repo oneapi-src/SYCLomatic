@@ -1129,7 +1129,7 @@ int KernelCallExpr::calculateOriginArgsSize() const {
   return Size;
 }
 
-// return 1 or 3
+// Return 1 or 3
 int analyzeGridBlockDim(const CUDAKernelCallExpr *KernelCall,
                         const Expr *ConfigArg) {
   if (!KernelCall)
@@ -1176,9 +1176,8 @@ int analyzeGridBlockDim(const CUDAKernelCallExpr *KernelCall,
         dyn_cast_or_null<CXXConstructExpr>(SubExpr->IgnoreImpCasts());
     if (!Dim3Ctor)
       return false;
-    if (Dim3Ctor->getNumArgs() == 1) {
+    if (Dim3Ctor->getNumArgs() == 1)
       return false;
-    }
     if (Dim3Ctor->getNumArgs() == 3) {
       Expr::EvalResult ER1, ER2;
       if (!Dim3Ctor->getArg(1)->isValueDependent() &&
@@ -1198,7 +1197,6 @@ int analyzeGridBlockDim(const CUDAKernelCallExpr *KernelCall,
   if (AnalyzeInplaceCtorOrTempObj(CCE)) {
     return 1;
   }
-  std::cout << "aaaaaaaaaaaaaaaaaaaaaaaaa" << std::endl;
 
   // Case 2. Use variable:
   // dim3 a(1, 2, 3);
@@ -1209,8 +1207,10 @@ int analyzeGridBlockDim(const CUDAKernelCallExpr *KernelCall,
   //     `-ImplicitCastExpr <col:7> 'const dim3':'const dim3' lvalue <NoOp>
   //       `-DeclRefExpr <col:7> 'dim3':'dim3' lvalue Var 0x55f084a39198 'a' 'dim3':'dim3'
   // clang-format on
-  CCE->dump();
-  const DeclRefExpr *DRE = dyn_cast_or_null<DeclRefExpr>(CCE->IgnoreImpCasts());
+  if (CCE->getNumArgs() < 1)
+    return 3;
+  const DeclRefExpr *DRE =
+      dyn_cast_or_null<DeclRefExpr>(CCE->getArg(0)->IgnoreImpCasts());
   if (!DRE)
     return 3;
   const VarDecl *VD = dyn_cast_or_null<VarDecl>(DRE->getDecl());
@@ -1219,9 +1219,39 @@ int analyzeGridBlockDim(const CUDAKernelCallExpr *KernelCall,
   // VD must be local variable and must have the same context with KernelCallExpr
   if (!VD->isLocalVarDecl())
     return 3;
-  std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
-  VD->getDeclContext()->dumpDeclContext();
+  const CompoundStmt *VDContext =
+      DpctGlobalInfo::findAncestor<CompoundStmt>(VD);
+  const CompoundStmt *KernelCallContext =
+      DpctGlobalInfo::findAncestor<CompoundStmt>(KernelCall);
+  if (!VDContext || !KernelCallContext || (VDContext != KernelCallContext))
+    return 3;
 
+  // VD's DRE should be only used once (as the config arg) in VDContext
+  auto DREMatcher =
+      ast_matchers::findAll(ast_matchers::declRefExpr().bind("DRE"));
+  auto MatchedResults =
+      ast_matchers::match(DREMatcher, *VDContext, DpctGlobalInfo::getContext());
+  size_t RefCount = 0;
+  for (const auto &Res : MatchedResults) {
+    const DeclRefExpr *RefExpr = Res.getNodeAs<DeclRefExpr>("DRE");
+    if (RefExpr->getDecl() == VD) {
+      RefCount++;
+    }
+  }
+  if (RefCount > 1)
+    return 3;
+
+  if (VD->getType().getCanonicalType().getAsString() != "struct dim3")
+    return 3;
+  if (!VD->hasInit())
+    return 1;
+  
+  const CXXConstructExpr* Init = dyn_cast<CXXConstructExpr>(VD->getInit());
+  if (!Init)
+    return 3;
+  if (Init->getNumArgs() == 3 && Init->getArg(1)->isDefaultArgument() &&
+      Init->getArg(2)->isDefaultArgument())
+    return 1;
   return 3;
 }
 
@@ -1239,10 +1269,12 @@ void KernelCallExpr::buildExecutionConfig(
     ExecutionConfig.Config[Idx] = A.getReplacedString();
     if (Idx == 0) {
       ExecutionConfig.GroupDirectRef = A.isDirectRef();
-      //std::cout << "Idx0 dim:" << analyzeGridBlockDim(dyn_cast<CUDAKernelCallExpr>(KernelCall), Arg) << std::endl;
+      ExecutionConfig.GroupDim =
+          analyzeGridBlockDim(dyn_cast<CUDAKernelCallExpr>(KernelCall), Arg);
     } else if (Idx == 1) {
       ExecutionConfig.LocalDirectRef = A.isDirectRef();
-      //std::cout << "Idx1 dim:" << analyzeGridBlockDim(dyn_cast<CUDAKernelCallExpr>(KernelCall), Arg) << std::endl;
+      ExecutionConfig.LocalDim =
+          analyzeGridBlockDim(dyn_cast<CUDAKernelCallExpr>(KernelCall), Arg);
       // Using another analysis because previous analysis may return directly
       // when in macro is true.
       // Here set the argument of KFA as false, so it will not return directly.
