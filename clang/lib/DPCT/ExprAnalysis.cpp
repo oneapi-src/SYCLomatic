@@ -234,7 +234,7 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
     auto Begin = getOffset(getExprLocation(BeginLoc));
     auto End = getOffsetAndLength(EndLoc);
     SrcBeginLoc = BeginLoc;
-
+    SrcBeginFilePath = dpct::DpctGlobalInfo::getLocInfo(SrcBeginLoc).first;
     // Avoid illegal range which will cause SIGABRT
     if (End.first + End.second < Begin) {
       return std::pair<size_t, size_t>(Begin, 0);
@@ -383,8 +383,8 @@ void StringReplacements::replaceString() {
   ReplMap.clear();
 }
 
-ExprAnalysis::ExprAnalysis(const Expr *Expression)
-    : Context(DpctGlobalInfo::getContext()),
+ExprAnalysis::ExprAnalysis(const Expr *Expression, ExprAnalysis *ParentEA)
+    : ParentExprAnalysis(ParentEA), Context(DpctGlobalInfo::getContext()),
       SM(DpctGlobalInfo::getSourceManager()) {
   analyze(Expression);
 }
@@ -864,7 +864,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
     }
 
     auto Rewriter = Itr->second->create(CE);
-    auto Result = Rewriter->rewrite();
+    auto Result = Rewriter->rewrite(this);
     BlockLevelFormatFlag = Rewriter->getBlockLevelFormatFlag();
 
     if (Rewriter->isNoRewrite()) {
@@ -1186,12 +1186,31 @@ void ExprAnalysis::analyzeTemplateArgument(const TemplateArgumentLoc &TAL) {
 }
 
 void ExprAnalysis::applyAllSubExprRepl() {
+  if (!ParentExprAnalysis) {
+    // No parent EA, add all Repls in SubExprRepl to DpctGlobalInfo
+    for (std::shared_ptr<ExtReplacement> Repl : SubExprRepl) {
+      if (BlockLevelFormatFlag)
+        Repl->setBlockLevelFormatFlag();
+
+      DpctGlobalInfo::getInstance().addReplacement(Repl);
+    }
+    return;
+  }
+  // Apply in-range repls in SubExprRepl
   for (std::shared_ptr<ExtReplacement> Repl : SubExprRepl) {
     if (BlockLevelFormatFlag)
       Repl->setBlockLevelFormatFlag();
-
-    DpctGlobalInfo::getInstance().addReplacement(Repl);
+    if (Repl->getFilePath() == SrcBeginFilePath &&
+        Repl->getOffset() >= SrcBegin &&
+        Repl->getOffset() + Repl->getLength() <= SrcBegin + SrcLength) {
+      ReplSet.addStringReplacement(Repl->getOffset(), Repl->getLength(),
+                                   Repl->getReplacementText().str());
+    }
   }
+  // Append local SubExprRepl to ParentExprAnalysis->SubExprRepl
+  ParentExprAnalysis->SubExprRepl.insert(ParentExprAnalysis->SubExprRepl.end(),
+                                         SubExprRepl.begin(),
+                                         SubExprRepl.end());
 }
 
 const std::string &ArgumentAnalysis::getDefaultArgument(const Expr *E) {

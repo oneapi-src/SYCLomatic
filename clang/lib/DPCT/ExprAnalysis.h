@@ -179,6 +179,7 @@ private:
 /// Analyze expression and generate its migrated string
 class ExprAnalysis {
 public:
+  ExprAnalysis *ParentExprAnalysis = nullptr;
   inline std::string getRewritePrefix() { return RewritePrefix; }
 
   inline std::string getRewritePostfix() { return RewritePostfix; }
@@ -188,7 +189,8 @@ public:
     return EA.getReplacedString();
   }
   ExprAnalysis() : ExprAnalysis(nullptr) {}
-  explicit ExprAnalysis(const Expr *Expression);
+  explicit ExprAnalysis(const Expr *Expression,
+                        ExprAnalysis *ParentEA = nullptr);
 
   // Start analysis of the expression passed in when init-ed.
   inline void analyze() {
@@ -663,6 +665,7 @@ private:
   const Expr *E;
   SourceLocation ExprBeginLoc;
   SourceLocation ExprEndLoc;
+  std::string SrcBeginFilePath;
   SourceLocation SrcBeginLoc;
   size_t SrcBegin;
   size_t SrcLength;

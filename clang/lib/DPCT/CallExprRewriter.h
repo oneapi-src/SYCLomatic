@@ -146,11 +146,13 @@ protected:
 
 public:
   ArgumentAnalysis Analyzer;
+  ExprAnalysis *ParentExprAnalysis = nullptr;
   virtual ~CallExprRewriter() {}
 
   /// This function should be overwritten to implement call expression
   /// rewriting.
-  virtual std::optional<std::string> rewrite() = 0;
+  virtual std::optional<std::string>
+  rewrite(ExprAnalysis *ParentEA = nullptr) = 0;
   // Emits a warning/error/note and/or comment depending on MsgID. For details
   // see Diagnostics.inc, Diagnostics.h and Diagnostics.cpp
   template <typename IDTy, typename... Ts>
@@ -276,7 +278,7 @@ public:
           .create(C);
   }
 
-  std::optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override {
     std::optional<std::string> &&Result = Inner->rewrite();
     if (Result.has_value() && IsAssigned)
       return "(" + Result.value() + ", 0)";
@@ -296,7 +298,7 @@ public:
       : CallExprRewriter(C, ""), Prefix(Prefix), Suffix(Suffix),
         Inner(InnerRewriter) {}
 
-  std::optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override {
     std::optional<std::string> &&Result = Inner->rewrite();
     if (Result.has_value())
       return Prefix + Result.value() + Suffix;
@@ -315,7 +317,7 @@ public:
       : CallExprRewriter(C, CalleeName), IsAssigned(isAssigned(C)),
         CalleeName(CalleeName), Message(Message) {}
 
-  std::optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override {
     std::string Msg =
         Message.empty() ? "this call is redundant in SYCL." : Message;
     if (IsAssigned) {
@@ -348,7 +350,7 @@ public:
     Indent = getIndent(getStmtExpansionSourceRange(C).getBegin(), SM);
   }
 
-  std::optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override {
     std::optional<std::string> &&PredStr = Pred->rewrite();
     std::optional<std::string> &&IfBlockStr = IfBlock->rewrite();
     std::optional<std::string> &&ElseBlockStr = ElseBlock->rewrite();
@@ -469,7 +471,7 @@ protected:
 public:
   virtual ~FuncCallExprRewriter() {}
 
-  virtual std::optional<std::string> rewrite() override;
+  virtual std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override;
 
   friend FuncCallExprRewriterFactory;
 
@@ -495,7 +497,7 @@ public:
     NoRewrite = true;
   }
 
-  std::optional<std::string> rewrite() override { return NewFuncName; }
+  std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override { return NewFuncName; }
 };
 
 struct ThrustFunctor {
@@ -506,8 +508,10 @@ struct ThrustFunctor {
 template <class StreamT, class T> void print(StreamT &Stream, const T &Val) {
   Val.print(Stream);
 }
-template <class StreamT> void print(StreamT &Stream, const Expr *E) {
-  ExprAnalysis EA;
+template <class StreamT>
+void print(StreamT &Stream, const Expr *E,
+           ExprAnalysis *ParentExprAnalysis = nullptr) {
+  ExprAnalysis EA(nullptr, ParentExprAnalysis);
   print(Stream, EA, E);
 }
 template <class StreamT> void print(StreamT &Stream, StringRef Str) {
@@ -560,8 +564,8 @@ void print(StreamT &Stream, ArgumentAnalysis &AA,
 
 template <class StreamT>
 void print(StreamT &Stream, ArgumentAnalysis &AA,
-           TypeLoc TL) {
-  ExprAnalysis EA;
+           TypeLoc TL, ExprAnalysis *ParentExprAnalysis) {
+  ExprAnalysis EA(nullptr, ParentExprAnalysis);
   EA.analyze(TL);
   Stream << EA.getReplacedString();
 }
@@ -580,8 +584,10 @@ void printWithParens(StreamT &Stream, ExprAnalysis &EA, const Expr *E) {
     Paren = std::make_unique<ParensPrinter<StreamT>>(Stream);
   print(Stream, EA, E);
 }
-template <class StreamT> void printWithParens(StreamT &Stream, const Expr *E) {
-  ExprAnalysis EA;
+template <class StreamT>
+void printWithParens(StreamT &Stream, const Expr *E,
+                     ExprAnalysis *ParentExprAnalysis = nullptr) {
+  ExprAnalysis EA(nullptr, ParentExprAnalysis);
   printWithParens(Stream, EA, E);
 }
 
@@ -985,7 +991,7 @@ public:
   DeleterCallExprRewriter(const CallExpr *C, StringRef Source,
                           std::function<ArgT(const CallExpr *)> ArgCreator)
       : CallExprRewriter(C, Source), Arg(ArgCreator(C)) {}
-  std::optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     OS << "delete ";
@@ -1001,7 +1007,7 @@ public:
   ToStringExprRewriter(const CallExpr *C, StringRef Source,
                        std::function<ArgT(const CallExpr *)> ArgCreator)
       : CallExprRewriter(C, Source), Arg(ArgCreator(C)) {}
-  std::optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     print(OS, Arg);
@@ -1144,7 +1150,7 @@ public:
   PrinterRewriter(const CallExpr *C, StringRef Source,
                   const std::function<ArgsT(const CallExpr *)> &...ArgCreators)
       : PrinterRewriter(C, Source, ArgCreators(C)...) {}
-  std::optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     Printer::print(OS);
@@ -1167,7 +1173,7 @@ public:
       const CallExpr *C, StringRef Source,
       const std::function<StmtPrinters(const CallExpr *)> &...PrinterCreators)
       : PrinterRewriter(C, Source, PrinterCreators(C)...) {}
-  std::optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     Base::print(OS);
@@ -1245,7 +1251,7 @@ public:
       const std::function<CallExprPrinter<CalleeT, ArgsT...>(const CallExpr *)>
           &PrinterFunctor)
       : CallExprRewriter(C, Source), Printer(PrinterFunctor(C)) {}
-  std::optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     Printer.print(OS);
@@ -1338,7 +1344,7 @@ public:
     report(MsgID, false, getMsgArg(Args, CE)...);
   }
 
-  std::optional<std::string> rewrite() override { return std::nullopt; }
+  std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override { return std::nullopt; }
 
   friend UnsupportFunctionRewriterFactory<MsgArgs...>;
 };
@@ -1364,7 +1370,7 @@ public:
     buildRewriterStr(Call, OS, OB);
     OS.flush();
   }
-  std::optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override {
     return ResultStr;
   }
 
@@ -1444,7 +1450,7 @@ class UserDefinedRewriterFactory : public CallExprRewriterFactoryBase {
     NullRewriter(const CallExpr *C, StringRef Name)
         : CallExprRewriter(C, Name) {}
 
-    std::optional<std::string> rewrite() override { return std::nullopt; }
+    std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override { return std::nullopt; }
   };
 
 public:
