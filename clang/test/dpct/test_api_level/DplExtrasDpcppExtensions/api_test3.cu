@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/DplExtrasDpcppExtensions/api_test3_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasDpcppExtensions/api_test3_out
 
-// CHECK: 4
+// CHECK: 5
 // TEST_FEATURE: DplExtrasDpcppExtensions_exclusive_scan
 
 
