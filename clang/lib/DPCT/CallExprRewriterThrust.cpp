@@ -309,12 +309,14 @@ thrustOverloadFactory(const std::string &thrustFunc,
       0);
 
   auto usm =
-    (static_cast<bool>(overload.hasPolicy)
+      (static_cast<bool>(overload.hasPolicy)
            ? std::pair{thrustFunc,
                        createMappedPolicyCallExprRewriterFactory(
                            thrustFunc, overload.migratedFunc, overload.argCnt)}
            : createConditionalFactory(
-                 CheckThrustArgType(static_cast<bool>(overload.hasPolicy) ? 1 : 0, "thrust::device_ptr"),
+                 CheckThrustArgType(static_cast<bool>(overload.hasPolicy) ? 1
+                                                                          : 0,
+                                    "thrust::device_ptr"),
                  {thrustFunc, createDevicePolicyCallExprRewriterFactory(
                                   thrustFunc, overload.migratedFunc,
                                   overload.argCnt, 0, overload.hasPolicy)},
