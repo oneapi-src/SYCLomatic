@@ -5,6 +5,7 @@
 
 #include "cuda_bf16.h"
 
+// CHECK: class C : public sycl::marray<sycl::ext::oneapi::bfloat16, 2> {
 class C : public __nv_bfloat162 {
   void f() {
     // CHECK: (*this)[0];

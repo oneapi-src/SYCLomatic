@@ -761,25 +761,18 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       addReplacement(ME->getOperatorLoc(), ME->getEndLoc(), "");
     } else {
       std::string MemberName = ME->getMemberNameInfo().getAsString();
+      const auto &MArrayIdx = MapNames::MArrayMemberNamesMap.find(MemberName);
       if (MapNames::VectorTypes2MArray.count(BaseType) &&
-          MapNames::MArrayMemberNamesMap.count(MemberName)) {
-        auto End = Lexer::getLocForEndOfToken(
-            SM.getSpellingLoc(ME->getMemberLoc()), 0, SM,
-            DpctGlobalInfo::getContext().getLangOpts());
-        auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
-        auto MArrayIdx =
-            MapNames::MArrayMemberNamesMap.find(MemberName)->second;
+          MArrayIdx != MapNames::MArrayMemberNamesMap.end()) {
         std::string RepStr = "";
         if (isImplicit) {
-          RepStr += "(*this)";
+          RepStr = "(*this)";
         } else if (isPtr) {
-          auto BaseBegin = ME->getBeginLoc();
-          addReplacement(BaseBegin, 0, "(*");
-          RepStr += ")";
+          addReplacement(ME->getBeginLoc(), 0, "(*");
+          RepStr = ")";
         }
-        return addReplacement(Begin, Length, RepStr + std::move(MArrayIdx));
-      }
-      if (MapNames::replaceName(MapNames::MemberNamesMap, MemberName)) {
+        addReplacement(Begin, ME->getEndLoc(), RepStr + MArrayIdx->second);
+      } else if (MapNames::replaceName(MapNames::MemberNamesMap, MemberName)) {
         std::string RepStr = "";
         const auto *MD = DpctGlobalInfo::findAncestor<CXXMethodDecl>(ME);
         if (MD && MD->isVolatile()) {
@@ -793,7 +786,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
           const SourceLocation Loc = SM.getExpansionLoc(ME->getBeginLoc());
           const std::string TypeName =
               BaseType->getPointeeType().getUnqualifiedType().getAsString();
-          if (ME->isImplicitAccess()) {
+          if (isImplicit) {
             const std::string VolatileCast =
                 "const_cast<" + TypeName + " *>(this)->";
             auto LocInfo = DpctGlobalInfo::getLocInfo(Loc);
