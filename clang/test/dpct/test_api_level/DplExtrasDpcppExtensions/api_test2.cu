@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/DplExtrasDpcppExtensions/api_test2_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasDpcppExtensions/api_test2_out
 
-// CHECK: 3
+// CHECK: 4
 // TEST_FEATURE: DplExtrasDpcppExtensions_reduce
 
 
