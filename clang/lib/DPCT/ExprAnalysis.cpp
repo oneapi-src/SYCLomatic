@@ -742,26 +742,70 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
     if (isTypeInAnalysisScope(ME->getBase()->getType().getTypePtr()))
       return;
 
+    auto Begin = ME->getOperatorLoc();
+    bool isPtr = ME->isArrow();
+    bool isImplicit = false;
+    if (ME->isImplicitAccess()) {
+      Begin = ME->getMemberLoc();
+      isImplicit = true;
+    }
     if (*BaseType.rbegin() == '1') {
+      if (isImplicit) {
+        // "x" is migrated to "*this".
+        addReplacement(Begin, ME->getEndLoc(), "*this");
+      } else if (isPtr) {
+        // "pf1->x" is migrated to "*pf1".
+        addReplacement(ME->getBeginLoc(), 0, "*");
+      }
+      // Delete the "->x".
       addReplacement(ME->getOperatorLoc(), ME->getEndLoc(), "");
     } else {
       std::string MemberName = ME->getMemberNameInfo().getAsString();
+      const auto &MArrayIdx = MapNames::MArrayMemberNamesMap.find(MemberName);
       if (MapNames::VectorTypes2MArray.count(BaseType) &&
-          MapNames::MArrayMemberNamesMap.count(MemberName)) {
-        auto Begin = ME->getOperatorLoc();
-        auto End = Lexer::getLocForEndOfToken(
-            SM.getSpellingLoc(ME->getMemberLoc()), 0, SM,
-            DpctGlobalInfo::getContext().getLangOpts());
-        auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
-        auto MArrayIdx =
-            MapNames::MArrayMemberNamesMap.find(MemberName)->second;
-        return addReplacement(Begin, Length, std::move(MArrayIdx));
-      }
-      if (MapNames::replaceName(MapNames::MemberNamesMap, MemberName)) {
-        // Retrieve the correct location before addReplacement
-        auto Loc =
-            getLocInRange(ME->getMemberLoc(), getStmtExpansionSourceRange(ME));
-        addReplacement(Loc, MemberName);
+          MArrayIdx != MapNames::MArrayMemberNamesMap.end()) {
+        std::string RepStr = "";
+        if (isImplicit) {
+          RepStr = "(*this)";
+        } else if (isPtr) {
+          addReplacement(ME->getBeginLoc(), 0, "(*");
+          RepStr = ")";
+        }
+        addReplacement(Begin, ME->getEndLoc(), RepStr + MArrayIdx->second);
+      } else if (MapNames::replaceName(MapNames::MemberNamesMap, MemberName)) {
+        std::string RepStr = "";
+        const auto *MD = DpctGlobalInfo::findAncestor<CXXMethodDecl>(ME);
+        if (MD && MD->isVolatile()) {
+          const auto BaseType =
+              ME->getBase()->getBestDynamicClassTypeExpr()->getType();
+          const bool BaseAndThisSameType =
+              BaseType->getCanonicalTypeUnqualified() ==
+              MD->getThisType()->getCanonicalTypeUnqualified();
+          const bool BaseIsVolatile =
+              BaseType->getPointeeType().isVolatileQualified();
+          const SourceLocation Loc = SM.getExpansionLoc(ME->getBeginLoc());
+          const std::string TypeName =
+              BaseType->getPointeeType().getUnqualifiedType().getAsString();
+          if (isImplicit) {
+            const std::string VolatileCast =
+                "const_cast<" + TypeName + " *>(this)->";
+            auto LocInfo = DpctGlobalInfo::getLocInfo(Loc);
+            DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
+                                     Diagnostics::VOLATILE_VECTOR_ACCESS, true,
+                                     false);
+            RepStr += VolatileCast;
+          } else if (BaseAndThisSameType && BaseIsVolatile) {
+            const std::string VolatileCast = "const_cast<" + TypeName + " *>(";
+            auto LocInfo = DpctGlobalInfo::getLocInfo(Loc);
+            DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
+                                     Diagnostics::VOLATILE_VECTOR_ACCESS, true,
+                                     false);
+            addReplacement(ME->getBase()->getBeginLoc(), 0, VolatileCast);
+            addReplacement(ME->getOperatorLoc(), 0, ")");
+          }
+        }
+        addReplacement(ME->getMemberLoc(), ME->getEndLoc(),
+                       RepStr + MemberName);
       }
     }
   }
