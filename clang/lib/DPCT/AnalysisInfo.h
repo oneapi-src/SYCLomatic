@@ -733,6 +733,8 @@ public:
           CurrentDeviceCounter(CurrentDeviceCounter) {}
     int DefaultQueueCounter = 0;
     int CurrentDeviceCounter = 0;
+    bool QueueVarInserted = false;
+    bool DeviceVarInserted = false;
   };
 
   static std::string removeSymlinks(clang::FileManager &FM,
@@ -4520,68 +4522,16 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
   auto Iter =
       DpctGlobalInfo::getTempVariableDeclCounterMap().find(KeyForDeclCounter);
   if (Iter != DpctGlobalInfo::getTempVariableDeclCounterMap().end()) {
-    unsigned int IndentLen = 2;
-    if (clang::dpct::DpctGlobalInfo::getGuessIndentWidthMatcherFlag())
-      IndentLen = clang::dpct::DpctGlobalInfo::getIndentWidth();
-    std::string IndentStr = std::string(IndentLen, ' ');
-
-    std::string DevDecl =
-        getNL() + IndentStr + MapNames::getDpctNamespace() +
-        "device_ext &dev_ct1 = " + MapNames::getDpctNamespace() +
-        "get_current_device();";
-    std::string QDecl = getNL() + IndentStr + MapNames::getClNamespace() +
-                        "queue &q_ct1 = dev_ct1.default_queue();";
     if (HFT == HelperFuncType::HFT_DefaultQueue) {
-      requestFeature(HelperFeatureEnum::Device_get_default_queue,
-                     HFInfo.DeclLocFile);
-      if (Iter->second.DefaultQueueCounter == 1) {
-        if (Iter->second.CurrentDeviceCounter <= 1) {
-          if (DpctGlobalInfo::getUsingDRYPattern() &&
-              !DpctGlobalInfo::getDeviceChangedFlag()) {
-            DpctGlobalInfo::getInstance().addReplacement(
-                std::make_shared<ExtReplacement>(HFInfo.DeclLocFile,
-                                                 HFInfo.DeclLocOffset, 0,
-                                                 DevDecl, nullptr));
-            requestFeature(HelperFeatureEnum::Device_get_current_device,
-                           HFInfo.DeclLocFile);
-          }
-        }
-        if (DpctGlobalInfo::getUsingDRYPattern() &&
-            !DpctGlobalInfo::getDeviceChangedFlag()) {
-          DpctGlobalInfo::getInstance().addReplacement(
-              std::make_shared<ExtReplacement>(
-                  HFInfo.DeclLocFile, HFInfo.DeclLocOffset, 0, QDecl, nullptr));
-          requestFeature(HelperFeatureEnum::Device_get_current_device,
-                         HFInfo.DeclLocFile);
-          requestFeature(HelperFeatureEnum::Device_device_ext_default_queue,
-                         HFInfo.DeclLocFile);
-        }
-      }
       Iter->second.DefaultQueueCounter = Iter->second.DefaultQueueCounter + 1;
     } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
-      requestFeature(HelperFeatureEnum::Device_get_current_device,
-                     HFInfo.DeclLocFile);
-      if (Iter->second.CurrentDeviceCounter == 1 &&
-          Iter->second.DefaultQueueCounter <= 1) {
-        if (DpctGlobalInfo::getUsingDRYPattern() &&
-            !DpctGlobalInfo::getDeviceChangedFlag()) {
-          DpctGlobalInfo::getInstance().addReplacement(
-              std::make_shared<ExtReplacement>(HFInfo.DeclLocFile,
-                                               HFInfo.DeclLocOffset, 0, DevDecl,
-                                               nullptr));
-        }
-      }
       Iter->second.CurrentDeviceCounter = Iter->second.CurrentDeviceCounter + 1;
     }
   } else {
     DpctGlobalInfo::TempVariableDeclCounter Counter(0, 0);
     if (HFT == HelperFuncType::HFT_DefaultQueue) {
-      requestFeature(HelperFeatureEnum::Device_get_default_queue,
-                     HFInfo.DeclLocFile);
       Counter.DefaultQueueCounter = Counter.DefaultQueueCounter + 1;
     } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
-      requestFeature(HelperFeatureEnum::Device_get_current_device,
-                     HFInfo.DeclLocFile);
       Counter.CurrentDeviceCounter = Counter.CurrentDeviceCounter + 1;
     }
     DpctGlobalInfo::getTempVariableDeclCounterMap().insert(
