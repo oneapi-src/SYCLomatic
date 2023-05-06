@@ -956,7 +956,8 @@ Use 64 bits as memory_bus_width default value."
 // DPCT_CODE
   sycl::queue *create_in_order_queue(bool enable_exception_handler = false) {
     std::lock_guard<mutex_type> lock(m_mutex);
-    return create_in_order_queue_impl(enable_exception_handler);
+    return create_queue_impl(enable_exception_handler,
+                             sycl::property::queue::in_order());
   }
 // DPCT_LABEL_END
 
@@ -968,7 +969,7 @@ Use 64 bits as memory_bus_width default value."
 // DPCT_CODE
   sycl::queue *create_out_of_order_queue(bool enable_exception_handler = false) {
     std::lock_guard<mutex_type> lock(m_mutex);
-    return create_out_of_order_queue_impl(enable_exception_handler);
+    return create_queue_impl(enable_exception_handler);
   }
 // DPCT_LABEL_END
 
@@ -1032,20 +1033,12 @@ private:
   }
 
   void init_queues() {
-    _q_in_order = create_in_order_queue_impl(true);
-    _q_out_of_order = create_out_of_order_queue_impl(true);
+    _q_in_order = create_queue_impl(true, sycl::property::queue::in_order());
+    _q_out_of_order = create_queue_impl(true);
     _saved_queue = &default_queue();
   }
 
-  sycl::queue *create_in_order_queue_impl(bool enable_exception_handler) {
-    return create_queue_impl(enable_exception_handler,
-                             sycl::property::queue::in_order());
-  }
-
-  sycl::queue *create_out_of_order_queue_impl(bool enable_exception_handler) {
-    return create_queue_impl(enable_exception_handler);
-  }
-
+  /// Caller should acquire resource \p m_mutex before calling this function.
   template <class... Properties>
   sycl::queue *create_queue_impl(bool enable_exception_handler,
                                  Properties... properties) {
@@ -1327,9 +1320,9 @@ private:
 // Device|device_ext_default_queue
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Util function to get the default queue (default out-of-ordered queue when
-/// USM-none is enabled, otherwise default in-ordered queue) of current device
-/// in dpct device manager.
+/// Util function to get the default queue of current selected device depends on
+/// the USM config. Return the default out-of-ordered queue when USM-none is
+/// enabled, otherwise return the default in-ordered queue.
 static inline sycl::queue &get_default_queue() {
   return dev_mgr::instance().current_device().default_queue();
 }
