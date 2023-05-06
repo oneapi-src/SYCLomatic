@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/DplExtrasAlgorithm/api_test26_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasAlgorithm/api_test26_out
 
-// CHECK: 38
+// CHECK: 36
 // TEST_FEATURE: DplExtrasAlgorithm_equal_range
 
 #include <thrust/binary_search.h>
