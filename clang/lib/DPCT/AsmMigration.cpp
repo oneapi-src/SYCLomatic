@@ -17,6 +17,7 @@
 #include "clang/AST/Stmt.h"
 #include "clang/Basic/TokenKinds.h"
 #include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/Sequence.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
@@ -27,6 +28,7 @@
 #include "llvm/Support/FormatVariadic.h"
 #include "llvm/Support/SaveAndRestore.h"
 #include "llvm/Support/raw_ostream.h"
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -742,15 +744,12 @@ void AsmRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
         return EA.getReplacedString();
       };
 
-      for (unsigned I = 0, E = AS->getNumOutputs(); I != E; ++I) {
-        Parser.AddInlineAsmOperands(getReplaceString(AS->getOutputExpr(I)),
-                                    AS->getOutputConstraint(I));
-      }
-
-      for (unsigned I = 0, E = AS->getNumInputs(); I != E; ++I) {
-        Parser.AddInlineAsmOperands(getReplaceString(AS->getInputExpr(I)),
-                                    AS->getInputConstraint(I));
-      }
+      auto addOperands = [&](const auto &E) -> void {
+        Parser.AddInlineAsmOperands(getReplaceString(E));
+      };
+      
+      llvm::for_each(AS->outputs(), addOperands);
+      llvm::for_each(AS->inputs(), addOperands);
 
       CodeGen.setNumIndent(1);
       CodeGen.setIndentUnit(getIndent(AS->getBeginLoc(), DpctGlobalInfo::getSourceManager()));
