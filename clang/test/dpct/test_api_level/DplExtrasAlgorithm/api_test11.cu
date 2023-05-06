@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/DplExtrasAlgorithm/api_test11_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasAlgorithm/api_test11_out
 
-// CHECK: 3
+// CHECK: 36
 // TEST_FEATURE: DplExtrasAlgorithm_partition_point
 
 #include <thrust/partition.h>

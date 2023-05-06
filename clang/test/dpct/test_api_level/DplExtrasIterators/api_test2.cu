@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/DplExtrasIterators/api_test2_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasIterators/api_test2_out
 
-// CHECK: 4
+// CHECK: 2
 // TEST_FEATURE: DplExtrasIterators_make_constant_iterator
 
 #include <thrust/iterator/constant_iterator.h>
