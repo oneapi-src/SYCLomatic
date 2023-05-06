@@ -675,6 +675,7 @@ protected:
       /*0xff*/ "1"};
 #undef EMPTY16
 #undef EMPTY4
+#undef EMPTY
     // clang-format off
     constexpr const char *SlowMap[8] = {
       /* 0x01*/ "(~{0} & ~{1} & ~{2})",
