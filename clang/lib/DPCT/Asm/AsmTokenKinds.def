@@ -1,0 +1,334 @@
+//===----------------------- AsmTokenKinds.def ------------------*- C++ -*-===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef TOK
+#define TOK(X)
+#endif
+#ifndef PUNCTUATOR
+#define PUNCTUATOR(X,Y) TOK(X)
+#endif
+#ifndef KEYWORD
+#define KEYWORD(X, Y) TOK(kw_ ## X)
+#endif
+#ifndef INSTRUCTION
+#define INSTRUCTION(X) TOK(op_ ## X)
+#endif
+#ifndef BUILTIN_TYPE
+#define BUILTIN_TYPE(X, Y) KEYWORD(X, Y)
+#endif
+#ifndef SUBWORD_TYPE
+#define SUBWORD_TYPE(X, Y) BUILTIN_TYPE(X, Y)
+#endif
+#ifndef PACKED_TYPE
+#define PACKED_TYPE(X, Y) BUILTIN_TYPE(X, Y)
+#endif
+#ifndef PACKED_INTEGER
+#define PACKED_INTEGER(X, Y) PACKED_TYPE(X, Y)
+#endif
+#ifndef PACKED_FLOAT
+#define PACKED_FLOAT(X, Y) PACKED_TYPE(X, Y)
+#endif
+#ifndef ALT_FLOAT_TYPE
+#define ALT_FLOAT_TYPE(X, Y) BUILTIN_TYPE(X, Y)
+#endif
+#ifndef VECTOR
+#define VECTOR(X, Y) KEYWORD(X, Y)
+#endif
+#ifndef STATE_SPACE
+#define STATE_SPACE(X, Y) KEYWORD(X, Y)
+#endif
+#ifndef ROUND_MOD
+#define ROUND_MOD(X, Y) KEYWORD(X, Y)
+#endif
+#ifndef SAT_MOD
+#define SAT_MOD(X, Y) KEYWORD(X, Y)
+#endif
+
+#ifndef CMP_OP
+#define CMP_OP(X, Y) KEYWORD(X, Y)
+#endif
+
+TOK(unknown)             // Not a token.
+TOK(eof)                 // End of file.
+
+TOK(comment)             // Comment (only in -E -C[C] mode)
+TOK(identifier)          // abcde123
+TOK(raw_identifier)      // Used only in raw lexing mode.
+
+TOK(numeric_constant)    // 0x123
+
+PUNCTUATOR(l_square,            "[")
+PUNCTUATOR(r_square,            "]")
+PUNCTUATOR(l_paren,             "(")
+PUNCTUATOR(r_paren,             ")")
+PUNCTUATOR(l_brace,             "{")
+PUNCTUATOR(r_brace,             "}")
+PUNCTUATOR(period,              ".")
+PUNCTUATOR(amp,                 "&")
+PUNCTUATOR(ampamp,              "&&")
+PUNCTUATOR(star,                "*")
+PUNCTUATOR(plus,                "+")
+PUNCTUATOR(plusplus,            "++")
+PUNCTUATOR(minus,               "-")
+PUNCTUATOR(arrow,               "->")
+PUNCTUATOR(minusminus,          "--")
+PUNCTUATOR(tilde,               "~")
+PUNCTUATOR(exclaim,             "!")
+PUNCTUATOR(exclaimequal,        "!=")
+PUNCTUATOR(slash,               "/")
+PUNCTUATOR(slashequal,          "/=")
+PUNCTUATOR(percent,             "%")
+PUNCTUATOR(percentequal,        "%=")
+PUNCTUATOR(less,                "<")
+PUNCTUATOR(lessless,            "<<")
+PUNCTUATOR(lessequal,           "<=")
+PUNCTUATOR(greater,             ">")
+PUNCTUATOR(greatergreater,      ">>")
+PUNCTUATOR(greaterequal,        ">=")
+PUNCTUATOR(caret,               "^")
+PUNCTUATOR(caretequal,          "^=")
+PUNCTUATOR(pipe,                "|")
+PUNCTUATOR(pipepipe,            "||")
+PUNCTUATOR(pipeequal,           "|=")
+PUNCTUATOR(question,            "?")
+PUNCTUATOR(colon,               ":")
+PUNCTUATOR(semi,                ";")
+PUNCTUATOR(equal,               "=")
+PUNCTUATOR(equalequal,          "==")
+PUNCTUATOR(comma,               ",")
+PUNCTUATOR(hash,                "#")
+PUNCTUATOR(at,                  "@")
+PUNCTUATOR(coloncolon,          "::")
+PUNCTUATOR(underscore,          "_")
+
+INSTRUCTION(abs)
+INSTRUCTION(activemask)
+INSTRUCTION(add)
+INSTRUCTION(addc)
+INSTRUCTION(alloca)
+INSTRUCTION(and)
+INSTRUCTION(applypriority)
+INSTRUCTION(atom)
+INSTRUCTION(bar)
+INSTRUCTION(barrier)
+INSTRUCTION(bfe)
+INSTRUCTION(bfi)
+INSTRUCTION(bfind)
+INSTRUCTION(bmsk)
+INSTRUCTION(bra)
+INSTRUCTION(brev)
+INSTRUCTION(brkpt)
+INSTRUCTION(brx)
+INSTRUCTION(call)
+INSTRUCTION(clz)
+INSTRUCTION(cnot)
+INSTRUCTION(copysign)
+INSTRUCTION(cos)
+INSTRUCTION(cp)
+INSTRUCTION(createpolicy)
+INSTRUCTION(cvt)
+INSTRUCTION(cvta)
+INSTRUCTION(discard)
+INSTRUCTION(div)
+INSTRUCTION(dp2a)
+INSTRUCTION(dp4a)
+INSTRUCTION(elect)
+INSTRUCTION(ex2)
+INSTRUCTION(exit)
+INSTRUCTION(fence)
+INSTRUCTION(fma)
+INSTRUCTION(fns)
+INSTRUCTION(getctarank)
+INSTRUCTION(griddepcontrol)
+INSTRUCTION(isspacep)
+INSTRUCTION(istypep)
+INSTRUCTION(ld)
+INSTRUCTION(ldmatrix)
+INSTRUCTION(ldu)
+INSTRUCTION(lg2)
+INSTRUCTION(lop3)
+INSTRUCTION(mad)
+INSTRUCTION(mad24)
+INSTRUCTION(madc)
+INSTRUCTION(mapa)
+INSTRUCTION(match)
+INSTRUCTION(max)
+INSTRUCTION(mbarrier)
+INSTRUCTION(membar)
+INSTRUCTION(min)
+INSTRUCTION(mma)
+INSTRUCTION(mov)
+INSTRUCTION(movmatrix)
+INSTRUCTION(mul)
+INSTRUCTION(mul24)
+INSTRUCTION(multimem)
+INSTRUCTION(nanosleep)
+INSTRUCTION(neg)
+INSTRUCTION(not)
+INSTRUCTION(or)
+INSTRUCTION(pmevent)
+INSTRUCTION(popc)
+INSTRUCTION(prefetch)
+INSTRUCTION(prefetchu)
+INSTRUCTION(prmt)
+INSTRUCTION(rcp)
+INSTRUCTION(red)
+INSTRUCTION(redux)
+INSTRUCTION(rem)
+INSTRUCTION(ret)
+INSTRUCTION(rsqrt)
+INSTRUCTION(sad)
+INSTRUCTION(selp)
+INSTRUCTION(set)
+INSTRUCTION(setmaxnreg)
+INSTRUCTION(setp)
+INSTRUCTION(shf)
+INSTRUCTION(shfl)
+INSTRUCTION(shl)
+INSTRUCTION(shr)
+INSTRUCTION(sin)
+INSTRUCTION(slct)
+INSTRUCTION(sqrt)
+INSTRUCTION(st)
+INSTRUCTION(stackrestore)
+INSTRUCTION(stacksave)
+INSTRUCTION(stmatrix)
+INSTRUCTION(sub)
+INSTRUCTION(subc)
+INSTRUCTION(suld)
+INSTRUCTION(suq)
+INSTRUCTION(sured)
+INSTRUCTION(sust)
+INSTRUCTION(szext)
+INSTRUCTION(tanh)
+INSTRUCTION(testp)
+INSTRUCTION(tex)
+INSTRUCTION(tld4)
+INSTRUCTION(trap)
+INSTRUCTION(txq)
+INSTRUCTION(vabsdiff)
+INSTRUCTION(vabsdiff2)
+INSTRUCTION(vabsdiff4)
+INSTRUCTION(vadd)
+INSTRUCTION(vadd2)
+INSTRUCTION(vadd4)
+INSTRUCTION(vavrg2)
+INSTRUCTION(vavrg4)
+INSTRUCTION(vmad)
+INSTRUCTION(vmax)
+INSTRUCTION(vmax2)
+INSTRUCTION(vmax4)
+INSTRUCTION(vmin)
+INSTRUCTION(vmin2)
+INSTRUCTION(vmin4)
+INSTRUCTION(vote)
+INSTRUCTION(vset)
+INSTRUCTION(vset2)
+INSTRUCTION(vset4)
+INSTRUCTION(vshl)
+INSTRUCTION(vshr)
+INSTRUCTION(vsub)
+INSTRUCTION(vsub2)
+INSTRUCTION(vsub4)
+INSTRUCTION(wgmma)
+INSTRUCTION(wmma)
+INSTRUCTION(xor)
+
+BUILTIN_TYPE(b8,      ".b8")
+BUILTIN_TYPE(b16,     ".b16")
+BUILTIN_TYPE(b32,     ".b32")
+BUILTIN_TYPE(b64,     ".b64")
+BUILTIN_TYPE(u8,      ".u8")
+BUILTIN_TYPE(u16,     ".u16")
+BUILTIN_TYPE(u32,     ".u32")
+BUILTIN_TYPE(u64,     ".u64")
+BUILTIN_TYPE(s8,      ".s8")
+BUILTIN_TYPE(s16,     ".s16")
+BUILTIN_TYPE(s32,     ".s32")
+BUILTIN_TYPE(s64,     ".s64")
+BUILTIN_TYPE(f16,     ".f16")
+BUILTIN_TYPE(f32,     ".f32")
+BUILTIN_TYPE(f64,     ".f64")
+BUILTIN_TYPE(byte,    ".byte")
+BUILTIN_TYPE(4byte,   ".4byte")
+BUILTIN_TYPE(pred,    ".pred")
+ALT_FLOAT_TYPE(bf16,  ".bf16")
+ALT_FLOAT_TYPE(e4m3,  ".e4m3")
+ALT_FLOAT_TYPE(e5m2,  ".e5m2")
+ALT_FLOAT_TYPE(tf32,  ".tf32")
+PACKED_FLOAT(f16x2,   ".f16x2")
+PACKED_FLOAT(bf16x2,  ".bf16x2")
+PACKED_FLOAT(e4m3x2,  ".e4m3x2")
+PACKED_FLOAT(e5m2x2,  ".e5m2x2")
+PACKED_INTEGER(s16x2, ".s16x2")
+PACKED_INTEGER(u16x2, ".u16x2")
+
+VECTOR(v2, ".v2")
+VECTOR(v4, ".v4")
+
+STATE_SPACE(reg,    ".reg")
+STATE_SPACE(sreg,   ".sreg")
+STATE_SPACE(const,  ".const")
+STATE_SPACE(global, ".global")
+STATE_SPACE(local,  ".local")
+STATE_SPACE(param,  ".param")
+STATE_SPACE(shared, ".shared")
+STATE_SPACE(tex,    ".tex")
+
+KEYWORD(align, ".align")
+KEYWORD(managed, ".managed")
+KEYWORD(unified, ".unified")
+KEYWORD(attribute, ".attribute")
+KEYWORD(func, ".func")
+
+ROUND_MOD(rn, ".rn")
+ROUND_MOD(rna, ".rna")
+ROUND_MOD(rz, ".rz")
+ROUND_MOD(rm, ".rm")
+ROUND_MOD(rp, ".rp")
+ROUND_MOD(rni, ".rni")
+ROUND_MOD(rzi, ".rzi")
+ROUND_MOD(rmi, ".rmi")
+ROUND_MOD(rpi, ".rpi")
+
+SAT_MOD(sat, ".sat")
+SAT_MOD(satfinite, ".satfinite")
+
+CMP_OP(eq, ".eq")
+CMP_OP(ne, ".ne")
+CMP_OP(lt, ".lt")
+CMP_OP(le, ".le")
+CMP_OP(gt, ".gt")
+CMP_OP(ge, ".ge")
+CMP_OP(lo, ".lo")
+CMP_OP(ls, ".ls")
+CMP_OP(hi, ".hi")
+CMP_OP(hs, ".hs")
+CMP_OP(equ, ".equ")
+CMP_OP(neu, ".neu")
+CMP_OP(ltu, ".ltu")
+CMP_OP(leu, ".leu")
+CMP_OP(gtu, ".gtu")
+CMP_OP(geu, ".geu")
+CMP_OP(num, ".num")
+CMP_OP(nan, ".nan")
+
+#undef SAT_MOD
+#undef ROUND_MOD
+#undef STATE_SPACE
+#undef VECTOR
+#undef ALT_FLOAT_TYPE
+#undef PACKED_FLOAT
+#undef PACKED_INTEGER
+#undef PACKED_TYPE
+#undef SUBWORD_TYPE
+#undef BUILTIN_TYPE
+#undef INSTRUCTION
+#undef KEYWORD
+#undef PUNCTUATOR
+#undef TOK

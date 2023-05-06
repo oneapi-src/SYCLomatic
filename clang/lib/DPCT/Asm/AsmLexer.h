@@ -9,240 +9,127 @@
 #ifndef CLANG_DPCT_ASM_LEXER_H
 #define CLANG_DPCT_ASM_LEXER_H
 
+#include "Asm/AsmIdentifierTable.h"
+#include "AsmToken.h"
+#include "clang/Basic/IdentifierTable.h"
 #include "clang/Basic/LLVM.h"
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/MemoryBufferRef.h"
 #include "llvm/Support/SMLoc.h"
 #include "llvm/Support/raw_ostream.h"
 
 namespace clang::dpct {
 
-using llvm::StringRef;
+/// DpctAsmLexer - This provides a simple interface that truns a text buffer into a
+/// stream of tokens. This provides no support for buffering, or buffering/seeking
+/// of tokens, only forward lexing is supported.
+class DpctAsmLexer {
 
-class PtxToken {
-public:
-  enum TokenKind {
-    // Markers
-    Eof,
-    Error,
+  // Start of the buffer.
+  const char *BufferStart = nullptr;
 
-    // String values.
-    Identifier,
-    DotIdentifier,
-    String,
+  // End of the buffer.
+  const char *BufferEnd = nullptr;
 
-    // Integer values.
-    Integer,
-    Unsigned,
+  // BufferPtr - Current pointer into the buffer.  This is the next character
+  // to be lexed.
+  const char *BufferPtr = nullptr;
 
-    // IEEE754 floating point values.
-    Float,
-    Double,
+  /// Mapping/lookup information for all identifiers in
+  /// the program, including program keywords.
+  mutable DpctAsmIdentifierTable Identifiers;
 
-    // Comments
-    Comment,
-    HashDirective,
-    // No-value.
-    EndOfStatement,
-    Sink,     // '_'
-    Question, // '?'
-    Colon,
-    Space,
-    Plus,
-    Minus,
-    Tilde,
-    Slash,     // '/'
-    BackSlash, // '\'
-    LParen,
-    RParen,
-    LBrac,
-    RBrac,
-    LCurly,
-    RCurly,
-    Star,
-    Dot,
-    Comma,
-    Dollar,
-    Equal,
-    EqualEqual,
+  /// Cached tokens state.
+  using CachedTokensTy = SmallVector<DpctAsmToken, 1>;
 
-    Pipe,
-    PipePipe,
-    Caret,
-    Amp,
-    AmpAmp,
-    Exclaim,
-    ExclaimEqual,
-    Percent,
-    Hash,
-    Less,
-    LessEqual,
-    LessLess,
-    LessGreater,
-    Greater,
-    GreaterEqual,
-    GreaterGreater,
-    At,
-    MinusGreater
-  };
+  /// Cached tokens are stored here when we do backtracking or
+  /// lookahead.
+  CachedTokensTy CachedTokens;
 
-private:
-  TokenKind Kind;
-
-  /// A reference to the entire token contents; this is always a pointer into
-  /// a memory buffer owned by the source manager.
-  StringRef Str;
-
-  union {
-    int64_t i64;
-    uint64_t u64;
-    float f32;
-    double f64;
-  };
-public:
-  PtxToken() = default;
-  PtxToken(TokenKind Kind, StringRef Str)
-      : Kind(Kind), Str(Str), u64(0U) {}
-  PtxToken(TokenKind Kind, StringRef Str, int64_t I64)
-      : Kind(Kind), Str(Str), i64(I64) {}
-  PtxToken(TokenKind Kind, StringRef Str, uint64_t U64)
-      : Kind(Kind), Str(Str), u64(U64) {}
-  PtxToken(TokenKind Kind, StringRef Str, float FpVal)
-      : Kind(Kind), Str(Str), f32(FpVal) {}
-  PtxToken(TokenKind Kind, StringRef Str, double FpVal)
-      : Kind(Kind), Str(Str), f64(FpVal) {}
-
-  TokenKind getKind() const { return Kind; }
-  bool is(TokenKind K) const { return Kind == K; }
-  bool isNot(TokenKind K) const { return Kind != K; }
-
-  template <typename K, typename... Ks>
-  bool is(K k, Ks... ks) const {
-    return is(k) || (is(ks) || ...);
-  }
-
-  /// Get the contents of a string token (without quotes).
-  StringRef getStringContents() const {
-    assert(Kind == String && "This token isn't a string!");
-    return Str.slice(1, Str.size() - 1);
-  }
-
-  bool isStorageClass() const;
-
-  bool isInstructionStorageClass() const;
-
-  bool isTypeName() const;
-
-  bool isVarAttributes() const;
-
-  /// Get the identifier string for the current token, which should be an
-  /// identifier or a string. This gets the portion of the string which should
-  /// be used as the identifier, e.g., it does not include the quotes on
-  /// strings.
-  StringRef getIdentifier() const {
-    if (Kind == Identifier)
-      return getString();
-    return getStringContents();
-  }
-
-  /// Get the string for the current token, this includes all characters (for
-  /// example, the quotes on strings) in the token.
+  /// The position of the cached token that should "lex" next.
   ///
-  /// The returned StringRef points into the source manager's memory buffer, and
-  /// is safe to store across calls to Lex().
-  StringRef getString() const { return Str; }
-
-  // FIXME: Don't compute this in advance, it makes every token larger, and is
-  // also not generally what we want (it is nicer for recovery etc. to lex 123br
-  // as a single token, then diagnose as an invalid number).
-  int64_t getIntVal() const {
-    assert(Kind == Integer && "This token isn't an integer!");
-    return i64;
-  }
-
-  uint64_t getUnsignedVal() const {
-    assert(Kind == Unsigned  && "This token isn't an integer!");
-    return u64;
-  }
-
-  float getF32Val() const {
-    assert(Kind == Float  && "This token isn't an integer!");
-    return f32;
-  }
-
-  double getF64Val() const {
-    assert(Kind == Double  && "This token isn't an integer!");
-    return f64;
-  }
-
-  void dump(raw_ostream &OS) const;
-};
-class PtxLexer {
-  const char *TokStart = nullptr;
-  const char *CurPtr = nullptr;
-  StringRef CurBuf;
-  bool IsAtStartOfLine = true;
-  bool IsAtStartOfStatement = true;
-  bool IsPeeking = false;
-  bool EndStatementAtEOF = true;
-  SmallVector<PtxToken, 1> CurTok;
-
-protected:
-  /// LexToken - Read the next token and return its code.
-  PtxToken LexToken();
+  /// If it points beyond the CachedTokens vector, it means that a normal
+  /// lex() should be invoked.
+  CachedTokensTy::size_type CachedLexPos = 0;
 
 public:
-  PtxLexer();
-  PtxLexer(const PtxLexer &) = delete;
-  PtxLexer &operator=(const PtxLexer &) = delete;
-  ~PtxLexer();
+  DpctAsmLexer(llvm::MemoryBufferRef Input);
+  DpctAsmLexer(const DpctAsmLexer &) = delete;
+  DpctAsmLexer &operator=(const DpctAsmLexer &) = delete;
+  ~DpctAsmLexer();
 
-  void setBuffer(StringRef Buf, const char *Ptr = nullptr,
-                 bool EndStatementAtEOF = true);
+  void setBuffer(StringRef Buf);
+  bool lex(DpctAsmToken &Result);
 
-  StringRef LexUntilEndOfStatement();
-
-  size_t peekTokens(MutableArrayRef<PtxToken> Buf);
-
-  const PtxToken &Lex();
-  void UnLex(PtxToken const &Token);
-
-  bool isAtStartOfStatement() { return IsAtStartOfStatement; }
-
-  /// Get the current (last) lexed token.
-  const PtxToken &getTok() const { return CurTok[0]; }
-
-  /// Look ahead at the next token to be lexed.
-  const PtxToken peekTok() {
-    PtxToken Tok;
-
-    MutableArrayRef<PtxToken> Buf(Tok);
-    size_t ReadCount = peekTokens(Buf);
-
-    assert(ReadCount == 1);
-    (void)ReadCount;
-
-    return Tok;
+  const DpctAsmToken &peekAhead(unsigned N) {
+    assert(CachedLexPos + N > CachedTokens.size() && "Confused caching.");
+    for (size_t C = CachedLexPos + N - CachedTokens.size(); C > 0; --C) {
+      CachedTokens.push_back(DpctAsmToken());
+      lex(CachedTokens.back());
+    }
+    return CachedTokens.back();
   }
 
+  const DpctAsmToken &lookAhead(unsigned N) {
+    if (CachedLexPos + N < CachedTokens.size())
+      return CachedTokens[CachedLexPos + N];
+    return peekAhead(N + 1);
+  }
+
+  DpctAsmIdentifierInfo *getIdentifierInfo(StringRef Name) const {
+    return &Identifiers.get(Name);
+  }
+
+  DpctAsmIdentifierTable &getIdentifiertable() {
+    return Identifiers;
+  }
+
+  const DpctAsmIdentifierTable &getIdentifiertable() const {
+    return Identifiers;
+  }
+
+  void cleanIdentifier(llvm::SmallVectorImpl<char> &Buf, StringRef Input) const;
+  DpctAsmIdentifierInfo *lookupIdentifierInfo(DpctAsmToken &Identifier) const;
+
 private:
-  bool isAtStartOfComment(const char *Ptr);
-  bool isAtStatementSeparator(const char *Ptr);
-  int getNextChar();
-  int peekNextChar();
-  PtxToken ConsumeIntegerSuffix();
-  PtxToken ReturnError(const char *Loc, const std::string &Msg);
+  /// FormTokenWithChars - When we lex a token, we have identified a span
+  /// starting at BufferPtr, going to TokEnd that forms the token.  This method
+  /// takes that range and assigns it to the token as its location and size.  In
+  /// addition, since tokens cannot overlap, this also updates BufferPtr to be
+  /// TokEnd.
+  void formTokenWithChars(DpctAsmToken &Result, const char *TokEnd,
+                          asmtok::TokenKind Kind) {
+    unsigned TokLen = TokEnd - BufferPtr;
+    Result.setLength(TokLen);
+    Result.setLocation(SMLoc::getFromPointer(BufferPtr));
+    Result.setKind(Kind);
+    BufferPtr = TokEnd;
+  }
 
-  PtxToken LexIdentifier();
-  PtxToken LexSlash();
-  PtxToken LexLineComment();
-  PtxToken LexDigit();
-  PtxToken LexQuote();
+  bool isHexLiteral(const char *Start) const;
 
-  StringRef LexUntilEndOfLine();
+  char getChar(const char *Ptr) const {
+    if (Ptr == BufferEnd)
+      return 0;
+    return *Ptr;
+  }
+
+  char getAndAdvanceChar(const char *&Ptr) const { return getChar(Ptr++); }
+
+  const char *consumeChar(const char *Ptr, unsigned Size = 1) const {
+    if (Ptr + Size >= BufferEnd)
+      return BufferEnd;
+    return Ptr + Size;
+  }
+
+  bool lexIdentifierContinue(DpctAsmToken &Result, const char *CurPtr);
+  bool lexNumericConstant(DpctAsmToken &Result, const char *CurPtr);
+  bool skipWhitespace(DpctAsmToken &Result, const char *CurPtr);
+  bool lexTokenInternal(DpctAsmToken &Result);
 };
 
 } // namespace clang::dpct

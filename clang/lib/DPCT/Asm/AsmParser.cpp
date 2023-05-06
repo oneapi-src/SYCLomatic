@@ -7,863 +7,1183 @@
 //===----------------------------------------------------------------------===//
 
 #include "AsmParser.h"
+#include "Asm/AsmIdentifierTable.h"
 #include "Asm/AsmLexer.h"
+#include "Asm/AsmToken.h"
+#include "Asm/AsmTokenKinds.h"
 #include "clang/AST/Type.h"
+#include "clang/Basic/CharInfo.h"
+#include "clang/Lex/LiteralSupport.h"
+#include "clang/Sema/Ownership.h"
 #include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/APInt.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringExtras.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/StringSet.h"
+#include "llvm/Support/Error.h"
+#include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/SaveAndRestore.h"
 #include "llvm/Support/raw_ostream.h"
+#include <cassert>
+#include <cstdint>
+#include <limits>
+#include <type_traits>
 
+using namespace llvm;
 using namespace clang::dpct;
 
-ptx::InstKind ptx::FindInstructionKindFromName(StringRef InstName) {
-  return llvm::StringSwitch<ptx::InstKind>(InstName)
-      .Case("cvt", ptx::Cvt)
-      .Case("mov", ptx::Mov)
-      .Case("lop3", ptx::Lop3)
-      .Case("setp", Setp)
-      .Default(ptx::Invalid);
+// clang-format off
+asmprec::Level getBinOpPrec(asmtok::TokenKind Kind) {
+  switch (Kind) {
+  default:                           return asmprec::Unknown;
+  case asmtok::question:             return asmprec::Conditional;
+  case asmtok::pipepipe:             return asmprec::LogicalOr;
+  case asmtok::ampamp:               return asmprec::LogicalAnd;
+  case asmtok::pipe:                 return asmprec::InclusiveOr;
+  case asmtok::caret:                return asmprec::ExclusiveOr;
+  case asmtok::amp:                  return asmprec::And;
+  case asmtok::exclaimequal:
+  case asmtok::equalequal:           return asmprec::Equality;
+  case asmtok::lessequal:
+  case asmtok::less:
+  case asmtok::greater:
+  case asmtok::greaterequal:         return asmprec::Relational;
+  case asmtok::greatergreater:
+  case asmtok::lessless:             return asmprec::Shift;
+  case asmtok::plus:
+  case asmtok::minus:                return asmprec::Additive;
+  case asmtok::percent:
+  case asmtok::slash:
+  case asmtok::star:                 return asmprec::Multiplicative;
+  }
 }
+// clang-format on
 
-PtxVariableDecl *PtxScope::LookupSymbol(StringRef Symbol) const {
+DpctAsmVariableDecl *DpctAsmScope::lookupDecl(DpctAsmIdentifierInfo *II) const {
+  if (!II)
+    return nullptr;
   for (const auto &S : decls()) {
-    if (S->getDeclName() == Symbol)
+    if (S->getDeclName() == II)
       return S;
   }
 
-  if (this->AnyParent) {
-    return this->AnyParent->LookupSymbol(Symbol);
+  if (hasParent()) {
+    return getParent()->lookupDecl(II);
   }
   return nullptr;
 }
 
-PtxFundamentalType *PtxContext::GetOrCreateFundamentalType(StringRef TypeName) {
-  if (TypeName == ".s32")
-    return GetOrCreateFundamentalType(PtxFundamentalType::TK_S32);
-  if (TypeName == ".s64")
-    return GetOrCreateFundamentalType(PtxFundamentalType::TK_S64);
-  if (TypeName == ".u32")
-    return GetOrCreateFundamentalType(PtxFundamentalType::TK_U32);
-  if (TypeName == ".u64")
-    return GetOrCreateFundamentalType(PtxFundamentalType::TK_U64);
-  if (TypeName == ".pred")
-    return GetOrCreateFundamentalType(PtxFundamentalType::TK_Pred);
-  if (TypeName == ".b32")
-    return GetOrCreateFundamentalType(PtxFundamentalType::TK_B32);
-  return nullptr;
-}
+DpctAsmBuiltinType *
+DpctAsmContext::getBuiltinType(DpctAsmBuiltinType::TypeKind Kind) {
+  if (AsmBuiltinTypes.contains(Kind))
+    return AsmBuiltinTypes[Kind];
 
-PtxTupleType *
-PtxContext::CreateTupleType(const PtxTupleType::ElementList &ElementType) {
-  return ::new (*this) PtxTupleType(ElementType);
-}
-
-PtxAnyType *PtxContext::GetOrCreateAnyType() {
-  if (!AnyType)
-    AnyType = ::new (*this) PtxAnyType;
-  return AnyType;
-}
-
-PtxFundamentalType *
-PtxContext::GetOrCreateFundamentalType(PtxFundamentalType::TypeKind Kind) {
-  if (FundamentalTypes.contains(Kind))
-    return FundamentalTypes[Kind];
-
-  PtxFundamentalType *NewType = ::new (*this) PtxFundamentalType(Kind);
-  FundamentalTypes[Kind] = NewType;
+  DpctAsmBuiltinType *NewType = ::new (*this) DpctAsmBuiltinType(Kind);
+  AsmBuiltinTypes[Kind] = NewType;
   return NewType;
 }
 
-PtxType *PtxContext::GetTypeFromConstraint(StringRef Constraint) {
-  if (Constraint.size() != 1)
-    return nullptr;
-  switch (Constraint[0]) {
-  case 'h':
-    return GetOrCreateFundamentalType(PtxFundamentalType::TK_U16);
-  case 'r':
-    return GetOrCreateFundamentalType(PtxFundamentalType::TK_U32);
-  case 'l':
-    return GetOrCreateFundamentalType(PtxFundamentalType::TK_U64);
-  case 'f':
-    return GetOrCreateFundamentalType(PtxFundamentalType::TK_F32);
-  case 'd':
-    return GetOrCreateFundamentalType(PtxFundamentalType::TK_F64);
+DpctAsmBuiltinType *
+DpctAsmContext::getBuiltinTypeFromTokenKind(asmtok::TokenKind Kind) {
+  switch (Kind) {
+#define BUILTIN_TYPE(X, Y)                                                     \
+  case asmtok::kw_##X:                                                         \
+    return getBuiltinType(DpctAsmBuiltinType::TK_##X);
+#include "AsmTokenKinds.def"
   default:
     break;
   }
   return nullptr;
 }
 
-PtxVectorType *PtxContext::CreateVectorType(PtxVectorType::TypeKind Kind, const PtxFundamentalType *Base) {
-  return  ::new (*this) PtxVectorType(Kind, Base);
+DpctAsmDiscardType *DpctAsmContext::getDiscardType() {
+  if (!DiscardType)
+    DiscardType = ::new (*this) DpctAsmDiscardType;
+  return DiscardType;
 }
 
-PtxDeclStmt *PtxContext::CreateDeclStmt(const PtxType *BaseType, const SmallVector<const PtxDecl *> &DeclGroup) {
-  return ::new (*this) PtxDeclStmt(BaseType, DeclGroup);
-}
-
-PtxVariableDecl *PtxContext::CreateVariableDecl(StringRef Name,
-                                                const PtxType *Type) {
-  return ::new (*this) PtxVariableDecl(Name, Type);
-}
-
-PtxCompoundStmt *
-PtxContext::CreateCompoundStmt(const SmallVector<PtxStmt *> &Stmts) {
-  return ::new (*this) PtxCompoundStmt(Stmts);
-}
-
-PtxDeclRefExpr *PtxContext::CreateDeclRefExpr(const PtxVariableDecl *Var) {
-  return ::new (*this) PtxDeclRefExpr(Var);
-}
-
-PtxTupleExpr *
-PtxContext::CreateTupleExpr(const PtxTupleType *Type,
-                            const PtxTupleExpr::ElementList &Elements) {
-  return ::new (*this) PtxTupleExpr(Type, Elements);
-}
-
-PtxSinkExpr *PtxContext::CreateSinkExpr() {
-  return ::new (*this) PtxSinkExpr(GetOrCreateAnyType());
-}
-
-PtxInstruction *
-PtxContext::CreateInstruction(ptx::InstKind Op,
-                              const PtxInstruction::OperandList &Operands,
-                              const PtxExpr *PredOut) {
-  return ::new (*this) PtxInstruction(Op, Operands, PredOut);
-}
-
-PtxGuardInstruction *
-PtxContext::CreateGuardInstruction(bool isNeg, const PtxExpr *Pred,
-                                   const PtxInstruction *Inst) {
-  return ::new (*this) PtxGuardInstruction(isNeg, Pred, Inst);
-}
-
-PtxUnaryOperator *PtxContext::CreateUnaryOperator(PtxUnaryOperator::Opcode Op,
-                                                  const PtxExpr *Operand) {
-  return ::new (*this) PtxUnaryOperator(Op, Operand, Operand->getType());
-}
-
-PtxBinaryOperator *
-PtxContext::CreateBinaryOperator(PtxBinaryOperator::Opcode Op,
-                                 const PtxExpr *LHS, const PtxExpr *RHS) {
-  return ::new (*this) PtxBinaryOperator(Op, LHS, RHS, nullptr);
-}
-
-PtxConditionalOperator *
-PtxContext::CreateConditionalOperator(const PtxExpr *Cond, const PtxExpr *LHS,
-                                      const PtxExpr *RHS) {
-  return ::new (*this) PtxConditionalOperator(Cond, LHS, RHS, LHS->getType());
-}
-
-PtxCastExpr *
-PtxContext::CreateCastExpression(const PtxFundamentalType *CastType,
-                                 const PtxExpr *SubExpr) {
-  return ::new (*this) PtxCastExpr(CastType, SubExpr);
-}
-
-PtxParenExpr *PtxContext::CreateParenExpression(const PtxExpr *SubExpr) {
-  return ::new (*this) PtxParenExpr(SubExpr);
-}
-
-PtxIntegerLiteral *PtxContext::CreateIntegerLiteral(const PtxType *Type,
-                                                    llvm::APInt Val) {
-  return ::new (*this) PtxIntegerLiteral(Type, Val);
-}
-
-PtxFloatingLiteral *PtxContext::CreateFloatLiteral(const PtxType *Type,
-                                                   llvm::APFloat Val) {
-  return ::new (*this) PtxFloatingLiteral(Type, Val);
-}
-
-PtxType::~PtxType() = default;
-PtxDecl::~PtxDecl() = default;
-PtxStmt::~PtxStmt() = default;
-
-PtxParser::~PtxParser() { ExitScope(); }
-
-PtxDeclResult PtxParser::AddBuiltinSymbol(StringRef Name, const PtxType *Type) {
-  PtxVariableDecl *D = getContext().CreateVariableDecl(Name, Type);
-  getCurScope()->AddDecl(D);
-  return D;
-}
-
-PtxDeclResult PtxParser::AddInlineAsmOperands(StringRef Name,
-                                              StringRef Constraint) {
-  PtxType *Type = getContext().GetTypeFromConstraint(Constraint);
-  if (!Type)
-    return true;
-
-  return getContext().CreateVariableDecl(Name, Type);
-}
-
-const PtxToken &PtxParser::Lex() {
-  if (Lexer.getTok().is(PtxToken::Error))
-    return Lexer.getTok();
-
-  const PtxToken *tok = &Lexer.Lex();
-
-  // Parse comments here to be deferred until end of next statement.
-  while (tok->is(PtxToken::Comment)) {
-    tok = &Lexer.Lex();
+DpctAsmBuiltinType *
+DpctAsmContext::getTypeFromConstraint(StringRef Constraint) {
+  if (Constraint.size() != 1) {
+    StringRef AllowedConstraint = "hrlfd";
+    Constraint = Constraint.drop_until(
+        [&](char C) -> bool { return AllowedConstraint.contains(C); });
+    if (Constraint.empty())
+      return nullptr;
   }
-
-  return *tok;
-}
-
-PtxStmtResult PtxParser::ParseStatement() {
-  switch (getTok().getKind()) {
-  case PtxToken::LCurly:
-    return ParseCompoundStatement();
-  case PtxToken::At:
-    return ParseGuardInstruction();
-  case PtxToken::DotIdentifier:
-    return ParseDeclStmt();
+  switch (Constraint[0]) {
+  case 'h':
+    return getBuiltinType(DpctAsmBuiltinType::TK_u16);
+  case 'r':
+    return getBuiltinType(DpctAsmBuiltinType::TK_u32);
+  case 'l':
+    return getBuiltinType(DpctAsmBuiltinType::TK_u64);
+  case 'f':
+    return getBuiltinType(DpctAsmBuiltinType::TK_f32);
+  case 'd':
+    return getBuiltinType(DpctAsmBuiltinType::TK_f64);
   default:
     break;
   }
-  return ParseInstruction();
+  return nullptr;
 }
 
-PtxStmtResult PtxParser::ParseCompoundStatement() {
-  assert(getTok().is(PtxToken::LCurly));
-  Lex(); // eat '{'
+DpctAsmType::~DpctAsmType() = default;
+DpctAsmDecl::~DpctAsmDecl() = default;
+DpctAsmStmt::~DpctAsmStmt() = default;
+
+DpctAsmDeclResult DpctAsmParser::AddInlineAsmOperands(StringRef Operand,
+                                                      StringRef Constraint) {
+  unsigned Index = Context.addInlineAsmOperand(Operand);
+  DpctAsmIdentifierInfo *II = Context.get(Index);
+  DpctAsmType *Type = Context.getTypeFromConstraint(Constraint);
+  if (!Type)
+    return AsmDeclError();
+
+  DpctAsmVariableDecl *VD = ::new (Context) DpctAsmVariableDecl(II, Type);
+  getCurScope()->addDecl(VD);
+  return VD;
+}
+
+bool DpctAsmParser::ExpectAndConsume(asmtok::TokenKind ExpectedTok) {
+  if (Tok.is(ExpectedTok)) {
+    ConsumeAnyToken();
+    return false;
+  }
+  return true;
+}
+
+DpctAsmStmtResult DpctAsmParser::ParseStatement() {
+  switch (Tok.getKind()) {
+  case asmtok::l_brace:
+    return ParseCompoundStatement();
+  case asmtok::at:
+    return ParseGuardInstruction();
+#define STATE_SPACE(X, Y)                                                      \
+  case asmtok::kw_##X:                                                         \
+    return ParseDeclarationStatement();
+#include "AsmTokenKinds.def"
+#define INSTRUCTION(X)                                                         \
+  case asmtok::op_##X:                                                         \
+    return ParseInstruction();
+#include "AsmTokenKinds.def"
+  default:
+    break;
+  }
+  return AsmStmtError();
+}
+
+DpctAsmStmtResult DpctAsmParser::ParseCompoundStatement() {
+  ConsumeBrace();
 
   ParseScope BlockScope(this);
 
-  SmallVector<PtxStmt *> Stmts;
-  while (getTok().isNot(PtxToken::RCurly)) {
-    if (getTok().isVarAttributes()) {
-      PtxStmtResult Res = ParseDeclStmt();
-      if (Res.isInvalid())
-        return true;
-      Stmts.push_back(Res.get());
-    } else {
-      PtxStmtResult Res = ParseStatement();
-      if (Res.isInvalid())
-        return Res;
-      Stmts.push_back(Res.get());
-    }
+  SmallVector<DpctAsmStmt *, 4> Stmts;
+  while (Tok.isNot(asmtok::r_brace) && Tok.isNot(asmtok::eof)) {
+    DpctAsmStmtResult Result = ParseStatement();
+    if (Result.isInvalid())
+      return AsmStmtError();
+    Stmts.push_back(Result.get());
   }
-  return getContext().CreateCompoundStmt(Stmts);
+
+  if (ExpectAndConsume(asmtok::r_brace))
+    return AsmStmtError();
+  return ::new (Context) DpctAsmCompoundStmt(Stmts);
 }
 
-PtxStmtResult PtxParser::ParseGuardInstruction() {
-  assert(getTok().is(PtxToken::At));
-  Lex(); // eat '@'
+DpctAsmStmtResult DpctAsmParser::ParseGuardInstruction() {
+  if (ExpectAndConsume(asmtok::at))
+    return AsmStmtError();
 
   bool isNeg = false;
-  if (getTok().is(PtxToken::Exclaim)) {
+  if (TryConsumeToken(asmtok::exclaim)) {
     isNeg = true;
-    Lex(); // eat '!'
   }
 
-  PtxExprResult Pred = ParsePrimaryExpression();
+  DpctAsmExprResult Pred = ParseExpression();
+
   if (Pred.isInvalid())
-    return true;
+    return AsmStmtError();
 
-  PtxStmtResult SubInst = ParseInstruction();
+  DpctAsmStmtResult SubInst = ParseInstruction();
   if (SubInst.isInvalid())
-    return true;
+    return AsmStmtError();
 
-  return getContext().CreateGuardInstruction(
-      isNeg, Pred.get(), (const PtxInstruction *)SubInst.get());
+  return ::new (Context) DpctAsmGuardInstruction(
+      isNeg, Pred.get(), SubInst.getAs<DpctAsmInstruction>());
 }
 
-PtxStmtResult PtxParser::ParseInstruction() {
-  if (getTok().isNot(PtxToken::Identifier))
-    return true;
+DpctAsmStmtResult DpctAsmParser::ParseInstruction() {
+  if (!Tok.getIdentifier() || !Tok.getIdentifier()->isInstruction())
+    return AsmStmtError();
 
-  ptx::InstKind Opcode = ptx::FindInstructionKindFromName(getTok().getString());
-  if (Opcode == ptx::Invalid)
-    return true; // Parseing an invalid or unsupported instruction
-  
-  Lex(); // eat opcode
+  DpctAsmIdentifierInfo *Opcode = Tok.getIdentifier();
+  ConsumeToken();
 
-  PtxInstruction::Attribute Attr;
-  if (ParseInstructionFlags(Attr))
-    return true; // Parsed an invalid instruction attributes
-
-  PtxExprResult DestOperand = ParseInstructionDestOperand();
-  if (DestOperand.isInvalid())
-    return true;
-
-  bool HasPredOutput = getTok().is(PtxToken::Pipe);
-  PtxExprResult PredOutput;
-
-  if (HasPredOutput) {
-    PredOutput = ParsePredOutput();
-    if (PredOutput.isInvalid())
-      return true;
+  SmallVector<DpctAsmType *, 4> Types;
+  SmallVector<DpctAsmIdentifierInfo *, 4> Attrs;
+  while (Tok.startOfDot()) {
+    if (Tok.getIdentifier()->isBuiltinType())
+      Types.push_back(Context.getBuiltinTypeFromTokenKind(Tok.getKind()));
+    else
+      Attrs.push_back(Tok.getIdentifier());
+    ConsumeToken(); // consume instruction attribute
   }
 
-  PtxInstruction::OperandList Operands;
-  Operands.push_back(DestOperand.get());
+  DpctAsmExprResult OutputOperand = ParseExpression();
+  if (OutputOperand.isInvalid())
+    return AsmStmtError();
 
-  while (getTok().is(PtxToken::Comma)) {
-    Lex(); // eat ','
-    PtxExprResult Operand = ParseInstructionSrcOperand();
+  bool HasPredOutput = TryConsumeToken(asmtok::pipe);
+  DpctAsmExprResult PredOutput;
+  if (HasPredOutput) {
+    PredOutput = ParseExpression();
+    if (PredOutput.isInvalid())
+      return AsmStmtError();
+  }
+
+  if (ExpectAndConsume(asmtok::comma))
+    return AsmStmtError();
+
+  SmallVector<DpctAsmExpr *, 4> InputOperands;
+
+  while (true) {
+    DpctAsmExprResult Operand = ParseExpression();
     if (Operand.isInvalid())
       return true;
-    Operands.push_back(Operand.get());
+    InputOperands.push_back(Operand.get());
+    if (!TryConsumeToken(asmtok::comma))
+      break;
   }
 
-  if (getTok().isNot(PtxToken::EndOfStatement))
-    return true;
-  Lex(); // eat ';'
+  if (ExpectAndConsume(asmtok::semi))
+    return AsmStmtError();
 
-  PtxInstruction *Inst = getContext().CreateInstruction(
-      Opcode, Operands, HasPredOutput ? PredOutput.get() : nullptr);
-  Inst->setAttributes(Attr);
-  return Inst;
+  if (HasPredOutput)
+    return ::new (Context)
+        DpctAsmInstruction(Opcode, Types, Attrs, OutputOperand.get(),
+                           InputOperands, PredOutput.get());
+  return ::new (Context) DpctAsmInstruction(Opcode, Types, Attrs,
+                                            OutputOperand.get(), InputOperands);
 }
 
-bool PtxParser::ParseInstructionFlags(PtxInstruction::Attribute &Attr) {
-  while (getTok().is(PtxToken::DotIdentifier)) {
-    if (getTok().isTypeName())
-      Attr.Types.push_back(
-          getContext().GetOrCreateFundamentalType(getTok().getString()));
+DpctAsmExprResult DpctAsmParser::ParseExpression() {
+  return ParseAssignmentExpression();
+}
 
-    if (getTok().getString() == ".eq")
-      Attr.setComparisonOp(ptx::CO_Eq);
-    if (getTok().getString() == ".ne")
-      Attr.setComparisonOp(ptx::CO_Ne);
-    if (getTok().getString() == ".lt")
-      Attr.setComparisonOp(ptx::CO_Le);
-    if (getTok().getString() == ".gt")
-      Attr.setComparisonOp(ptx::CO_Gt);
-    if (getTok().getString() == ".ge")
-      Attr.setComparisonOp(ptx::CO_Ge);
+DpctAsmExprResult DpctAsmParser::ParseAssignmentExpression() {
+  DpctAsmExprResult LHS = ParseCastExpression();
+  return ParseRHSOfBinaryExpression(LHS, asmprec::Assignment);
+}
 
-    /// TODO: Parse Other modifiers
-    Lex(); // eat a 'dot identifier
+DpctAsmExprResult
+DpctAsmParser::ParseRHSOfBinaryExpression(DpctAsmExprResult LHS,
+                                          asmprec::Level MinPrec) {
+  asmprec::Level NextTokPrec = getBinOpPrec(Tok.getKind());
+  while (true) {
+    if (NextTokPrec < MinPrec)
+      return LHS;
+
+    DpctAsmToken OpTok = Tok;
+    ConsumeToken();
+
+    // Special case handling for the ternary operator.
+    bool isCondOp = false;
+    DpctAsmExprResult TernaryMiddle(true);
+    if (NextTokPrec == asmprec::Conditional) {
+      isCondOp = true;
+      if (Tok.isNot(asmtok::colon)) {
+        TernaryMiddle = ParseExpression();
+        if (TernaryMiddle.isInvalid())
+          return AsmExprError();
+      } else {
+        return AsmExprError();
+      }
+
+      if (!TryConsumeToken(asmtok::colon)) {
+        return AsmExprError();
+      }
+    }
+
+    DpctAsmExprResult RHS = ParseCastExpression();
+    if (RHS.isInvalid())
+      return AsmExprError();
+
+    asmprec::Level ThisPrec = NextTokPrec;
+    NextTokPrec = getBinOpPrec(Tok.getKind());
+
+    bool isRightAssoc = ThisPrec == asmprec::Conditional;
+
+    if (ThisPrec < NextTokPrec || (ThisPrec == NextTokPrec && isRightAssoc)) {
+      RHS = ParseRHSOfBinaryExpression(
+          RHS, static_cast<asmprec::Level>(ThisPrec + !isRightAssoc));
+      if (RHS.isInvalid())
+        return AsmExprError();
+    }
+
+    NextTokPrec = getBinOpPrec(Tok.getKind());
+
+    if (isCondOp) {
+      LHS = ActOnConditionalOp(LHS.get(), TernaryMiddle.get(), RHS.get());
+    } else {
+      LHS = ActOnBinaryOp(OpTok.getKind(), LHS.get(), RHS.get());
+    }
+
+    if (LHS.isInvalid())
+      return AsmExprError();
   }
-  return false;
 }
 
-PtxExprResult PtxParser::ParsePredOutput() {
-  assert(getTok().is(PtxToken::Pipe));
-  // Parse predicate output
-  Lex(); // eat '|'
-  switch (getTok().getKind()) {
-  case PtxToken::Identifier:
-    if (PtxVariableDecl *S = getCurScope()->LookupSymbol(getTok().getString()))
-      return getContext().CreateDeclRefExpr(S);
+DpctAsmExprResult DpctAsmParser::ParseCastExpression() {
+  DpctAsmExprResult Res;
+  auto SavedKind = Tok.getKind();
+  switch (SavedKind) {
+  case asmtok::l_paren:
+    ConsumeParen();
+    if (Tok.isOneOf(asmtok::kw_s64, asmtok::kw_u64)) {
+      DpctAsmBuiltinType *CastTy =
+          Tok.is(asmtok::kw_s64) ? Context.getS64Type() : Context.getU64Type();
+      ConsumeParen();
+      DpctAsmExprResult SubExpr = ParseCastExpression();
+      if (SubExpr.isInvalid())
+        return AsmExprError();
+      Res = ActOnTypeCast(CastTy, SubExpr.get());
+    } else {
+      DpctAsmExprResult SubExpr = ParseExpression();
+      if (SubExpr.isInvalid())
+        return AsmExprError();
+      ConsumeParen();
+      Res = ActOnParenExpr(SubExpr.get());
+    }
     break;
-  case PtxToken::Sink:
-    return getContext().CreateSinkExpr();
+  case asmtok::l_square:
+    ConsumeBracket();
+    Res = ParseExpression();
+    if (Res.isInvalid())
+      return AsmExprError();
+    ConsumeBracket();
+    Res = ActOnAddressExpr(Res.get());
+    break;
+  case asmtok::l_brace: {
+    ConsumeBrace();
+    SmallVector<DpctAsmExpr *, 4> Tuple;
+    while (true) {
+      Res = ParseExpression();
+      if (Res.isInvalid())
+        return AsmExprError();
+      Tuple.push_back(Res.get());
+      if (Tok.isNot(asmtok::comma))
+        break;
+    }
+
+    if (!TryConsumeToken(asmtok::r_brace))
+      return AsmExprError();
+    Res = ActOnTupleExpr(Tuple);
+    break;
+  }
+  case asmtok::underscore:
+    Res = ActOnDiscardExpr();
+    break;
+  case asmtok::numeric_constant:
+    Res = ActOnNumericConstant(Tok);
+    ConsumeToken();
+    break;
+  case asmtok::identifier:
+    Res = ActOnIdExpr(Tok.getIdentifier());
+    ConsumeToken();
+    break;
+  case asmtok::plus:    // unary-expression: '+' cast-expression
+  case asmtok::minus:   // unary-expression: '-' cast-expression
+  case asmtok::tilde:   // unary-expression: '~' cast-expression
+  case asmtok::exclaim: // unary-expression: '!' cast-expression
+    ConsumeToken();
+    Res = ParseCastExpression();
+    if (Res.isInvalid())
+      return AsmExprError();
+    Res = ActOnUnaryOp(SavedKind, Res.get());
+    break;
   default:
     break;
   }
-
-  // expect an identifier or '_'
-  return true;
+  return Res;
 }
 
-PtxExprResult PtxParser::ParseTuple() {
-  Lex(); // eat '{'
-  PtxTupleExpr::ElementList List;
-  do {
-    if (getTok().is(PtxToken::Comma))
-      Lex(); // eat ','
-    switch (getTok().getKind()) {
-    case PtxToken::Identifier:
-      if (PtxVariableDecl *S =
-              getCurScope()->LookupSymbol(getTok().getString()))
-        List.push_back(getContext().CreateDeclRefExpr(S));
-      else
-        return true;
-      break;
-    case PtxToken::Sink:
-      List.push_back(getContext().CreateSinkExpr());
-      break;
+DpctAsmExprResult
+DpctAsmParser::ParsePostfixExpressionSuffix(DpctAsmExprResult LHS) {
+  while (true) {
+    switch (Tok.getKind()) {
     default:
-      auto Const = ParseConstantExpression();
-      if (Const.isInvalid())
-        return true;
-      List.push_back(Const.get());
+      return LHS;
+    case asmtok::l_square: {
+      ConsumeBracket();
+      DpctAsmExprResult Idx = ParseExpression();
+      if (Idx.isInvalid())
+        return AsmExprError();
+      ConsumeBracket();
     }
-  } while (getTok().is(PtxToken::Comma));
-  if (getTok().isNot(PtxToken::RBrac))
-    return true;
+    }
+  }
+}
 
-  PtxTupleType::ElementList ElementTypes;
-  for (const auto *E : List) {
+DpctAsmStmtResult DpctAsmParser::ParseDeclarationStatement() {
+  DpctAsmDeclarationSpecifier DeclSpec;
+  DpctAsmTypeResult Type = ParseDeclarationSpecifier(DeclSpec);
+  if (Type.isInvalid())
+    return AsmStmtError();
+
+  SmallVector<DpctAsmDecl *, 4> Decls;
+  while (true) {
+    DpctAsmDeclResult DeclRes = ParseDeclarator(DeclSpec);
+    if (DeclRes.isInvalid())
+      return AsmStmtError();
+    Decls.push_back(DeclRes.get());
+    if (!TryConsumeToken(asmtok::comma))
+      break;
+  }
+
+  if (!TryConsumeToken(asmtok::semi))
+    return AsmStmtError();
+  return ::new (Context) DpctAsmDeclStmt(DeclSpec.Type, Decls);
+}
+
+DpctAsmTypeResult DpctAsmParser::ParseDeclarationSpecifier(
+    DpctAsmDeclarationSpecifier &DeclSpec) {
+  // Only support register variable
+  DeclSpec.StateSpace = Tok.getKind();
+  switch (Tok.getKind()) {
+  case asmtok::kw_reg:
+  case asmtok::kw_sreg:
+    ConsumeToken();
+    break;
+  case asmtok::kw_const:
+  case asmtok::kw_global:
+  case asmtok::kw_local:
+  case asmtok::kw_shared:
+  case asmtok::kw_param:
+  case asmtok::kw_tex:
+  default:
+    return AsmTypeError();
+  }
+
+  if (TryConsumeToken(asmtok::kw_align)) {
+    DpctAsmExprResult AlignmentRes = ParseExpression();
+    if (AlignmentRes.isInvalid())
+      return AsmTypeError();
+    AlignmentRes = ActOnAlignment(AlignmentRes.get());
+    if (AlignmentRes.isInvalid())
+      return AsmTypeError();
+    DeclSpec.Alignment = cast<DpctAsmIntegerLiteral>(AlignmentRes.get());
+  }
+
+  if (Tok.isOneOf(asmtok::kw_v2, asmtok::kw_v4)) {
+    DeclSpec.VectorType = Tok.getKind();
+    ConsumeToken();
+  }
+
+  switch (Tok.getKind()) {
+#define BUILTIN_TYPE(X, Y)                                                     \
+  case asmtok::kw_##X:                                                         \
+    DeclSpec.BaseType = Context.getBuiltinType(DpctAsmBuiltinType::TK_##X);    \
+    ConsumeToken();                                                            \
+    break;
+#include "AsmTokenKinds.def"
+  default:
+    return AsmTypeError();
+  }
+
+  switch (DeclSpec.VectorType) {
+  case asmtok::unknown:
+    DeclSpec.Type = DeclSpec.BaseType;
+    break;
+  case asmtok::kw_v2:
+    DeclSpec.Type = ::new (Context)
+        DpctAsmVectorType(DpctAsmVectorType::TK_v2, DeclSpec.BaseType);
+    break;
+  case asmtok::kw_v4:
+    DeclSpec.Type = ::new (Context)
+        DpctAsmVectorType(DpctAsmVectorType::TK_v4, DeclSpec.BaseType);
+    break;
+  default:
+    llvm_unreachable("unexpected vector type");
+  }
+  return DeclSpec.Type;
+}
+
+DpctAsmDeclResult
+DpctAsmParser::ParseDeclarator(const DpctAsmDeclarationSpecifier &DeclSpec) {
+  if (Tok.isNot(asmtok::identifier))
+    return AsmDeclError();
+  auto *Name = Tok.getIdentifier();
+  ConsumeToken();
+  return ActOnVariableDecl(Name, DeclSpec.Type);
+}
+
+DpctAsmExprResult DpctAsmParser::ActOnDiscardExpr() {
+  return ::new (Context) DpctAsmDiscardExpr(Context.getDiscardType());
+}
+
+DpctAsmExprResult DpctAsmParser::ActOnAddressExpr(DpctAsmExpr *SubExpr) {
+  return ::new (Context) DpctAsmAddressExpr(Context.getF64Type(), SubExpr);
+}
+
+DpctAsmExprResult DpctAsmParser::ActOnIdExpr(DpctAsmIdentifierInfo *II) {
+  if (auto *D = getCurScope()->lookupDecl(II)) {
+    return ::new (Context) DpctAsmDeclRefExpr(D);
+  }
+  return AsmExprError();
+}
+
+DpctAsmExprResult DpctAsmParser::ActOnParenExpr(DpctAsmExpr *SubExpr) {
+  return ::new (Context) DpctAsmParenExpr(SubExpr);
+}
+
+DpctAsmExprResult DpctAsmParser::ActOnTupleExpr(ArrayRef<DpctAsmExpr *> Tuple) {
+  SmallVector<DpctAsmType *, 4> ElementTypes;
+  for (auto *E : Tuple) {
     ElementTypes.push_back(E->getType());
   }
-
-  return getContext().CreateTupleExpr(
-      getContext().CreateTupleType(ElementTypes), List);
+  DpctAsmTupleType *Type = ::new (Context) DpctAsmTupleType(ElementTypes);
+  return ::new (Context) DpctAsmTupleExpr(Type, Tuple);
 }
 
-PtxExprResult PtxParser::ParseInstructionDestOperand() {
-  PtxExprResult FirstOp;
-  switch (getTok().getKind()) {
-  case PtxToken::Identifier:
-    if (PtxVariableDecl *S = getCurScope()->LookupSymbol(getTok().getString()))
-      FirstOp = getContext().CreateDeclRefExpr(S);
-    else
-      return true;
-    Lex(); // eat identifier
+DpctAsmExprResult DpctAsmParser::ActOnTypeCast(DpctAsmBuiltinType *CastTy,
+                                               DpctAsmExpr *SubExpr) {
+  return ::new (Context) DpctAsmCastExpr(CastTy, SubExpr);
+}
+
+DpctAsmExprResult DpctAsmParser::ActOnUnaryOp(asmtok::TokenKind OpTok,
+                                              DpctAsmExpr *SubExpr) {
+  DpctAsmUnaryOperator::Opcode Opcode;
+  switch (OpTok) {
+  case asmtok::plus:
+    Opcode = DpctAsmUnaryOperator::Plus;
     break;
-  case PtxToken::Sink:
-    FirstOp = getContext().CreateSinkExpr();
-    Lex(); // eat '_'
+  case asmtok::minus:
+    Opcode = DpctAsmUnaryOperator::Minus;
     break;
-  case PtxToken::LBrac:
-    FirstOp = ParseTuple();
+  case asmtok::tilde:
+    Opcode = DpctAsmUnaryOperator::Not;
+    break;
+  case asmtok::exclaim:
+    Opcode = DpctAsmUnaryOperator::LNot;
     break;
   default:
-    return true;
+    llvm_unreachable("unexpected op token");
   }
 
-  return FirstOp;
+  return ::new (Context)
+      DpctAsmUnaryOperator(Opcode, SubExpr, SubExpr->getType());
 }
 
-PtxExprResult PtxParser::ParseInstructionPrimaryOperand() {
-  if (getTok().is(PtxToken::Identifier)) {
-    auto ID = getTok();
-    Lex(); // eat identifier
-    if (PtxVariableDecl *S = getCurScope()->LookupSymbol(ID.getString()))
-      return getContext().CreateDeclRefExpr(S);
-    return true;
+// clang-format off
+static DpctAsmBinaryOperator::Opcode ConvertTokenKindToBinaryOpcode(asmtok::TokenKind Kind) {
+  DpctAsmBinaryOperator::Opcode Opc;
+  switch (Kind) {
+  default: llvm_unreachable("Unknown binop!");
+  case asmtok::star:                 Opc = DpctAsmBinaryOperator::Mul; break;
+  case asmtok::slash:                Opc = DpctAsmBinaryOperator::Div; break;
+  case asmtok::percent:              Opc = DpctAsmBinaryOperator::Rem; break;
+  case asmtok::plus:                 Opc = DpctAsmBinaryOperator::Add; break;
+  case asmtok::minus:                Opc = DpctAsmBinaryOperator::Sub; break;
+  case asmtok::lessless:             Opc = DpctAsmBinaryOperator::Shl; break;
+  case asmtok::greatergreater:       Opc = DpctAsmBinaryOperator::Shr; break;
+  case asmtok::lessequal:            Opc = DpctAsmBinaryOperator::LE; break;
+  case asmtok::less:                 Opc = DpctAsmBinaryOperator::LT; break;
+  case asmtok::greaterequal:         Opc = DpctAsmBinaryOperator::GE; break;
+  case asmtok::greater:              Opc = DpctAsmBinaryOperator::GT; break;
+  case asmtok::exclaimequal:         Opc = DpctAsmBinaryOperator::NE; break;
+  case asmtok::equalequal:           Opc = DpctAsmBinaryOperator::EQ; break;
+  case asmtok::amp:                  Opc = DpctAsmBinaryOperator::And; break;
+  case asmtok::caret:                Opc = DpctAsmBinaryOperator::Xor; break;
+  case asmtok::pipe:                 Opc = DpctAsmBinaryOperator::Or; break;
+  case asmtok::ampamp:               Opc = DpctAsmBinaryOperator::LAnd; break;
+  case asmtok::pipepipe:             Opc = DpctAsmBinaryOperator::LOr; break;
+  case asmtok::equal:                Opc = DpctAsmBinaryOperator::Assign; break;
   }
+  return Opc;
+}
+// clang-format on
 
-  if (getTok().is(PtxToken::LCurly))
-    return ParseTuple();
-
-  return ParseConstantExpression();
+DpctAsmExprResult DpctAsmParser::ActOnBinaryOp(asmtok::TokenKind OpTok,
+                                               DpctAsmExpr *LHS,
+                                               DpctAsmExpr *RHS) {
+  DpctAsmBinaryOperator::Opcode Opcode = ConvertTokenKindToBinaryOpcode(OpTok);
+  /// TODO: Compute the type of binary operator
+  return ::new (Context)
+      DpctAsmBinaryOperator(Opcode, LHS, RHS, LHS->getType());
 }
 
-PtxExprResult PtxParser::ParseInstructionUnaryOperand() {
-  PtxToken Tok = getTok();
-  PtxExprResult Operand = ParseInstructionPrimaryOperand();
-  if (Operand.isInvalid())
-    return true;
-  if (Tok.is(PtxToken::Exclaim, PtxToken::Minus)) {
-    switch (Tok.getKind()) {
-    case PtxToken::Exclaim:
-      return getContext().CreateUnaryOperator(PtxUnaryOperator::LNot,
-                                              Operand.get());
-    case PtxToken::Minus:
-      return getContext().CreateUnaryOperator(PtxUnaryOperator::Minus,
-                                              Operand.get());
-    default:
-      break;
-    }
-    return true;
-  }
-  return Operand;
+DpctAsmExprResult DpctAsmParser::ActOnConditionalOp(DpctAsmExpr *Cond,
+                                                    DpctAsmExpr *LHS,
+                                                    DpctAsmExpr *RHS) {
+  /// TODO: Compute the type of conditional operator
+  return ::new (Context)
+      DpctAsmConditionalOperator(Cond, LHS, RHS, LHS->getType());
 }
 
-PtxExprResult PtxParser::ParseInstructionSrcOperand() {
-  PtxExprResult Operand = ParseInstructionUnaryOperand();
-  if (Operand.isInvalid())
-    return true;
+namespace {
+/// AsmNumericLiteralParser - This performs strict semantic analysis of the
+/// content of a ppnumber, classifying it as either integer, floating, or
+/// erroneous, determines the radix of the value and can convert it to a useful
+/// value.
+class AsmNumericLiteralParser {
+  const char *const ThisTokBegin;
+  const char *const ThisTokEnd;
+  const char *DigitsBegin, *SuffixBegin; // markers
+  const char *s;                         // cursor
 
-  /// TODO: Parse operand postfix here, e.g. var[Imm], [Imm], ...
-  return Operand;
-}
+  unsigned radix;
 
-PtxStmtResult PtxParser::ParseDeclStmt() {
-  PtxVariableDecl::Attribute Attr;
+  bool saw_exponent, saw_period;
 
-  PtxTypeResult Declspec = ParseVarDeclspec(Attr);
-  if (Declspec.isInvalid())
-    return true;
+public:
+  AsmNumericLiteralParser(StringRef TokSpelling);
+  bool hadError : 1;
+  bool isUnsigned : 1;
+  bool isFloat : 1;              // 1.0f
+  bool isExactMachineFloat : 1;  // 0[fF]{hexdigit}{8}
+  bool isExactMachineDouble : 1; // 0[dD]{hexdigit}{16}
 
-  SmallVector<const PtxDecl *> DeclGroup;
-  bool FirstDecl = true;
-  while (getTok().isNot(PtxToken::EndOfStatement)) {
-    if (!FirstDecl && getTok().is(PtxToken::Comma))
-      return true;
-    
-    if (FirstDecl)
-      FirstDecl = false;
-    
-    PtxDeclResult D = ParseVariableDecl(Declspec.get());
-    if (D.isInvalid())
-      return true;
-    getCurScope()->AddDecl(dyn_cast<PtxVariableDecl>(D.get()));
-    DeclGroup.push_back(D.get());
+  bool isIntegerLiteral() const {
+    return !saw_period && !saw_exponent && !isExactMachineFloat ||
+           isExactMachineDouble;
+  }
+  bool isFloatingLiteral() const {
+    return (saw_period || saw_exponent || isExactMachineFloat ||
+            isExactMachineDouble);
   }
 
-  Lex(); // eat ';'
-  return getContext().CreateDeclStmt(Declspec.get(), DeclGroup);
-}
+  unsigned getRadix() const { return radix; }
 
-PtxTypeResult PtxParser::ParseVarDeclspec(PtxVariableDecl::Attribute Attr) {
+  /// GetIntegerValue - Convert this numeric literal value to an APInt that
+  /// matches Val's input width.  If there is an overflow (i.e., if the unsigned
+  /// value read is larger than the APInt's bits will hold), set Val to the low
+  /// bits of the result and return true.  Otherwise, return false.
+  bool GetIntegerValue(llvm::APInt &Val);
 
-  if (!getTok().isStorageClass()) // unexpected dot identifier
-    return true;
-  
-  Lex(); // eat storage class
+  /// GetFloatValue - Convert this numeric literal to a floating value, using
+  /// the specified APFloat fltSemantics (specifying float, double, etc).
+  /// The optional bool isExact (passed-by-reference) has its value
+  /// set to true if the returned APFloat can represent the number in the
+  /// literal exactly, and false otherwise.
+  llvm::APFloat::opStatus GetFloatValue(llvm::APFloat &Result);
 
-  bool HasAlign = getTok().getString() == ".align";
-
-  if (HasAlign) {
-    Lex(); // eat '.align'
-    if (getTok().isNot(PtxToken::Integer))
-      return true; // expected an integer
-    Attr.Align = getTok().getIntVal();
-    Lex(); // eat integer
+  /// Get the digits that comprise the literal. This excludes any prefix or
+  /// suffix associated with the literal.
+  StringRef getLiteralDigits() const {
+    assert(!hadError && "cannot reliably get the literal digits with an error");
+    return StringRef(DigitsBegin, SuffixBegin - DigitsBegin);
   }
 
-  bool IsV2 = false, IsV4 = false;
-  if (getTok().getString() == ".v2") {
-    IsV2 = true;
-    Lex(); // eat '.v2'
-  } else if (getTok().getString() == ".v4") {
-    IsV4 = true;
-    Lex(); // eat '.v4'
+  /// Get the digits that comprise the literal. This excludes any prefix or
+  /// suffix associated with the literal.
+  StringRef getExactMachineFloatingHexLiteralDigits() const {
+    assert(!hadError && (isExactMachineFloat || isExactMachineDouble) &&
+           "cannot reliably get the literal digits with an error");
+    return StringRef(DigitsBegin, SuffixBegin - DigitsBegin);
   }
 
-  PtxFundamentalType *BaseType = getContext().GetOrCreateFundamentalType(getTok().getString());
-  PtxType *VarType = BaseType;
-  if (IsV2) {
-    VarType = getContext().CreateVectorType(PtxVectorType::V2, BaseType);
-  } else if (IsV4) {
-    VarType = getContext().CreateVectorType(PtxVectorType::V4, BaseType);
+private:
+  void ParseNumberStartingWithZero();
+  void ParseDecimalOrOctalCommon();
+
+  /// Determine whether the sequence of characters [Start, End) contains
+  /// any real digits (not digit separators).
+  bool containsDigits(const char *Start, const char *End) {
+    return Start != End && (Start + 1 != End);
   }
 
-  Lex(); // eat a type name
+  enum CheckSeparatorKind { CSK_BeforeDigits, CSK_AfterDigits };
 
-  return VarType;
-}
-
-PtxDeclResult PtxParser::ParseVariableDecl(const PtxType *Type) {
-  if (getTok().isNot(PtxToken::Identifier))
-    return true;  // expected an identifier
-  
-  StringRef VarName = getTok().getIdentifier();
-
-  Lex(); // eat identifier
-
-  // Parse Parameterized Variable Names
-  if (getTok().is(PtxToken::Less)) {
-    /// TODO: Parameterized Variable Names
+  /// SkipHexDigits - Read and skip over any hex digits, up to End.
+  /// Return a pointer to the first non-hex digit or End.
+  const char *SkipHexDigits(const char *ptr) {
+    while (ptr != ThisTokEnd && (isHexDigit(*ptr)))
+      ptr++;
+    return ptr;
   }
 
-  // Parse array
-  if (getTok().is(PtxToken::LBrac)) {
-    /// TODO: Parse array
+  /// SkipOctalDigits - Read and skip over any octal digits, up to End.
+  /// Return a pointer to the first non-hex digit or End.
+  const char *SkipOctalDigits(const char *ptr) {
+    while (ptr != ThisTokEnd && ((*ptr >= '0' && *ptr <= '7')))
+      ptr++;
+    return ptr;
   }
 
-  return getContext().CreateVariableDecl(VarName, Type);
-}
-
-PtxExprResult PtxParser::ParseConstantExpression() {
-  return ParseConditionalExpression();
-}
-
-PtxExprResult PtxParser::ParseConditionalExpression() {
-  PtxExprResult LogicOrExpr = ParseLogicOrExpression();
-  if (LogicOrExpr.isInvalid())
-    return true;
-  if (getTok().is(PtxToken::Question)) {
-    Lex(); // eat '?'
-    PtxExprResult Then = ParseConditionalExpression();
-    if (Then.isInvalid() || getTok().isNot(PtxToken::Colon))
-      return true;
-    Lex(); // eat ':'
-    PtxExprResult Else = ParseConditionalExpression();
-    if (Else.isInvalid())
-      return true;
-    return getContext().CreateConditionalOperator(LogicOrExpr.get(), Then.get(),
-                                                  Else.get());
+  /// SkipDigits - Read and skip over any digits, up to End.
+  /// Return a pointer to the first non-hex digit or End.
+  const char *SkipDigits(const char *ptr) {
+    while (ptr != ThisTokEnd && (isDigit(*ptr)))
+      ptr++;
+    return ptr;
   }
-  return LogicOrExpr;
-}
 
-PtxExprResult PtxParser::ParseLogicOrExpression() {
-  PtxExprResult LHS = ParseLogicAndExpression();
-  if (LHS.isInvalid())
-    return true;
-  while (getTok().is(PtxToken::PipePipe)) {
-    Lex(); // eat '||'
-    PtxExprResult RHS = ParseLogicAndExpression();
-    if (RHS.isInvalid())
-      return true;
-    LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::LOr, LHS.get(),
-                                            RHS.get());
+  /// SkipBinaryDigits - Read and skip over any binary digits, up to End.
+  /// Return a pointer to the first non-binary digit or End.
+  const char *SkipBinaryDigits(const char *ptr) {
+    while (ptr != ThisTokEnd && (*ptr == '0' || *ptr == '1'))
+      ptr++;
+    return ptr;
   }
-  return LHS;
-}
+};
 
-PtxExprResult PtxParser::ParseLogicAndExpression() {
-  PtxExprResult LHS = ParseInclusiveOrExpression();
-  if (LHS.isInvalid())
-    return true;
-  while (getTok().is(PtxToken::AmpAmp)) {
-    Lex(); // eat '&&'
-    PtxExprResult RHS = ParseInclusiveOrExpression();
-    if (RHS.isInvalid())
-      return true;
-    LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::LAnd, LHS.get(),
-                                            RHS.get());
+///       integer-constant: [C99 6.4.4.1]
+///         decimal-constant integer-suffix
+///         octal-constant integer-suffix
+///         hexadecimal-constant integer-suffix
+///         binary-literal integer-suffix [GNU, C++1y]
+///       user-defined-integer-literal: [C++11 lex.ext]
+///         decimal-literal ud-suffix
+///         octal-literal ud-suffix
+///         hexadecimal-literal ud-suffix
+///         binary-literal ud-suffix [GNU, C++1y]
+///       decimal-constant:
+///         nonzero-digit
+///         decimal-constant digit
+///       octal-constant:
+///         0
+///         octal-constant octal-digit
+///       hexadecimal-constant:
+///         hexadecimal-prefix hexadecimal-digit
+///         hexadecimal-constant hexadecimal-digit
+///       hexadecimal-prefix: one of
+///         0x 0X
+///       binary-literal:
+///         0b binary-digit
+///         0B binary-digit
+///         binary-literal binary-digit
+///       integer-suffix:
+///         unsigned-suffix [long-suffix]
+///         unsigned-suffix [long-long-suffix]
+///         long-suffix [unsigned-suffix]
+///         long-long-suffix [unsigned-sufix]
+///       nonzero-digit:
+///         1 2 3 4 5 6 7 8 9
+///       octal-digit:
+///         0 1 2 3 4 5 6 7
+///       hexadecimal-digit:
+///         0 1 2 3 4 5 6 7 8 9
+///         a b c d e f
+///         A B C D E F
+///       binary-digit:
+///         0
+///         1
+///       unsigned-suffix: one of
+///         u U
+///       long-suffix: one of
+///         l L
+///       long-long-suffix: one of
+///         ll LL
+///
+///       floating-constant: [C99 6.4.4.2]
+///         TODO: add rules...
+///
+AsmNumericLiteralParser::AsmNumericLiteralParser(StringRef TokSpelling)
+    : ThisTokBegin(TokSpelling.begin()), ThisTokEnd(TokSpelling.end()) {
+  s = DigitsBegin = ThisTokBegin;
+  saw_exponent = false;
+  saw_period = false;
+  isUnsigned = false;
+  isFloat = false;
+  hadError = false;
+
+  // This routine assumes that the range begin/end matches the regex for integer
+  // and FP constants (specifically, the 'pp-number' regex), and assumes that
+  // the byte at "*end" is both valid and not part of the regex.  Because of
+  // this, it doesn't have to check for 'overscan' in various places.
+  if (clang::isPreprocessingNumberBody(*ThisTokEnd)) {
+    hadError = true;
+    return;
   }
-  return LHS;
-}
 
-PtxExprResult PtxParser::ParseInclusiveOrExpression() {
-  PtxExprResult LHS = ParseExclusiveOrExpression();
-  if (LHS.isInvalid())
-    return true;
-  while (getTok().is(PtxToken::Pipe)) {
-    Lex(); // eat '|'
-    PtxExprResult RHS = ParseInclusiveOrExpression();
-    if (RHS.isInvalid())
-      return true;
-    LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::Or, LHS.get(),
-                                            RHS.get());
-  }
-  return LHS;
-}
-
-PtxExprResult PtxParser::ParseExclusiveOrExpression() {
-  PtxExprResult LHS = ParseAndExpression();
-  if (LHS.isInvalid())
-    return true;
-  while (getTok().is(PtxToken::Caret)) {
-    Lex(); // eat '^'
-    PtxExprResult RHS = ParseAndExpression();
-    if (RHS.isInvalid())
-      return true;
-    LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::Xor, LHS.get(),
-                                            RHS.get());
-  }
-  return LHS;
-}
-
-PtxExprResult PtxParser::ParseAndExpression() {
-  PtxExprResult LHS = ParseEqualityExpression();
-  if (LHS.isInvalid())
-    return true;
-  while (getTok().is(PtxToken::Amp)) {
-    Lex(); // eat '&'
-    PtxExprResult RHS = ParseEqualityExpression();
-    if (RHS.isInvalid())
-      return true;
-    LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::And, LHS.get(),
-                                            RHS.get());
-  }
-  return LHS;
-}
-
-PtxExprResult PtxParser::ParseEqualityExpression() {
-  PtxExprResult LHS = ParseRelationExpression();
-  if (LHS.isInvalid())
-    return true;
-  while (getTok().is(PtxToken::EqualEqual, PtxToken::ExclaimEqual)) {
-    auto Opcode = getTok().getKind();
-    Lex(); // eat '==' or '!='
-    PtxExprResult RHS = ParseRelationExpression();
-    if (RHS.isInvalid())
-      return true;
-    if (Opcode == PtxToken::EqualEqual)
-      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::EQ, LHS.get(),
-                                              RHS.get());
-    else
-      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::NE, LHS.get(),
-                                              RHS.get());
-  }
-  return LHS;
-}
-
-PtxExprResult PtxParser::ParseRelationExpression() {
-  PtxExprResult LHS = ParseShiftExpression();
-  if (LHS.isInvalid())
-    return true;
-  while (getTok().is(PtxToken::Less, PtxToken::Greater, PtxToken::LessEqual,
-                     PtxToken::GreaterEqual)) {
-    auto Opcode = getTok().getKind();
-    Lex(); // eat one of '<', '>', '<=' and '>='
-    PtxExprResult RHS = ParseRelationExpression();
-    if (RHS.isInvalid())
-      return true;
-    switch (Opcode) {
-    case PtxToken::Less:
-      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::LT, LHS.get(),
-                                              RHS.get());
-      break;
-    case PtxToken::Greater:
-      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::GT, LHS.get(),
-                                              RHS.get());
-      break;
-    case PtxToken::LessEqual:
-      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::LE, LHS.get(),
-                                              RHS.get());
-      break;
-    case PtxToken::GreaterEqual:
-      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::GE, LHS.get(),
-                                              RHS.get());
-      break;
-    default:
-      assert(false && "Invalid relation operator kind");
+  if (*s == '0') { // parse radix
+    ParseNumberStartingWithZero();
+    if (hadError)
+      return;
+  } else { // the first digit is non-zero
+    radix = 10;
+    s = SkipDigits(s);
+    if (s == ThisTokEnd) {
+      // Done.
+    } else {
+      ParseDecimalOrOctalCommon();
+      if (hadError)
+        return;
     }
   }
-  return LHS;
-}
 
-PtxExprResult PtxParser::ParseShiftExpression() {
-  PtxExprResult LHS = ParseAdditiveExpression();
-  if (LHS.isInvalid())
-    return true;
-  while (getTok().is(PtxToken::LessLess, PtxToken::GreaterGreater)) {
-    auto Opcode = getTok().getKind();
-    Lex(); // eat '<<' or '>>'
-    PtxExprResult RHS = ParseAdditiveExpression();
-    if (RHS.isInvalid())
-      return true;
-    if (Opcode == PtxToken::LessLess)
-      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::Shl, LHS.get(),
-                                              RHS.get());
-    else
-      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::Shr, LHS.get(),
-                                              RHS.get());
-  }
-  return LHS;
-}
+  SuffixBegin = s;
 
-PtxExprResult PtxParser::ParseAdditiveExpression() {
-  PtxExprResult LHS = ParseMultiplicativeExpression();
-  if (LHS.isInvalid())
-    return true;
-  while (getTok().is(PtxToken::Plus, PtxToken::Minus)) {
-    auto Opcode = getTok().getKind();
-    Lex(); // eat '+' or '-'
-    PtxExprResult RHS = ParseMultiplicativeExpression();
-    if (RHS.isInvalid())
-      return true;
-    if (Opcode == PtxToken::Plus)
-      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::Add, LHS.get(),
-                                              RHS.get());
-    else
-      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::Sub, LHS.get(),
-                                              RHS.get());
-  }
-  return LHS;
-}
+  bool isFPConstant = isFloatingLiteral();
 
-PtxExprResult PtxParser::ParseMultiplicativeExpression() {
-  PtxExprResult LHS = ParseCastExpresion();
-  if (LHS.isInvalid())
-    return true;
-  while (getTok().is(PtxToken::Star, PtxToken::Slash, PtxToken::Percent)) {
-    auto Opcode = getTok().getKind();
-    Lex(); // eat one of '*', '/' and '%'
-    PtxExprResult RHS = ParseCastExpresion();
-    if (RHS.isInvalid())
-      return true;
-    switch (Opcode) {
-    case PtxToken::Star:
-      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::Mul, LHS.get(),
-                                              RHS.get());
-      break;
-    case PtxToken::Slash:
-      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::Div, LHS.get(),
-                                              RHS.get());
-      break;
-    case PtxToken::Percent:
-      LHS = getContext().CreateBinaryOperator(PtxBinaryOperator::Rem, LHS.get(),
-                                              RHS.get());
-      break;
-    default:
-      assert(false && "Invalid multiplicative operator kind");
+  // Loop over all of the characters of the suffix.  If we see something bad,
+  // we break out of the loop.
+  for (; s != ThisTokEnd; ++s) {
+    switch (*s) {
+    case 'u':
+    case 'U':
+      if (isFPConstant)
+        break; // Error for floating constant.
+      if (isUnsigned)
+        break; // Cannot be repeated.
+      isUnsigned = true;
+      continue; // Success.
+    }
+
+    if (s != ThisTokEnd) {
+      hadError = true;
     }
   }
-  return LHS;
 }
 
-PtxExprResult PtxParser::ParseCastExpresion() {
-  if (getTok().is(PtxToken::LParen) && Lexer.peekTok().isTypeName()) {
-    Lex();                     // eat '('
-    PtxToken TypeName = Lex(); // eat typename
-    if (getTok().isNot(PtxToken::RParen))
-      return true;
-    PtxExprResult SubExpr = ParseUnaryExpression();
-    if (SubExpr.isInvalid())
-      return true;
-    PtxFundamentalType *CastType =
-        getContext().GetOrCreateFundamentalType(TypeName.getString());
-    return getContext().CreateCastExpression(CastType, SubExpr.get());
+/// ParseDecimalOrOctalCommon - This method is called for decimal or octal
+/// numbers. It issues an error for illegal digits, and handles floating point
+/// parsing. If it detects a floating point number, the radix is set to 10.
+void AsmNumericLiteralParser::ParseDecimalOrOctalCommon() {
+  assert((radix == 8 || radix == 10) && "Unexpected radix");
+
+  // If we have a hex digit other than 'e' (which denotes a FP exponent) then
+  // the code is using an incorrect base.
+  if (isHexDigit(*s) && *s != 'e' && *s != 'E') {
+    hadError = true;
+    return;
   }
 
-  return ParseUnaryExpression();
-}
-
-PtxExprResult PtxParser::ParseUnaryExpression() {
-  if (getTok().is(PtxToken::Plus, PtxToken::Minus, PtxToken::Exclaim,
-                  PtxToken::Tilde)) {
-    auto Opcode = getTok().getKind();
-    Lex(); // eat unary operator
-    PtxExprResult SubExpr = ParseCastExpresion();
-    if (SubExpr.isInvalid())
-      return true;
-    switch (Opcode) {
-    case PtxToken::Plus:
-      return SubExpr;
-    case PtxToken::Minus:
-      return getContext().CreateUnaryOperator(PtxUnaryOperator::Minus,
-                                              SubExpr.get());
-    case PtxToken::Exclaim:
-      return getContext().CreateUnaryOperator(PtxUnaryOperator::LNot,
-                                              SubExpr.get());
-    case PtxToken::Tilde:
-      return getContext().CreateUnaryOperator(PtxUnaryOperator::Not,
-                                              SubExpr.get());
-    default:
-      assert(false && "Invalid unary operator kind");
+  if (*s == '.') {
+    s++;
+    radix = 10;
+    saw_period = true;
+    s = SkipDigits(s); // Skip suffix.
+  }
+  if (*s == 'e' || *s == 'E') { // exponent
+    s++;
+    radix = 10;
+    saw_exponent = true;
+    if (s != ThisTokEnd && (*s == '+' || *s == '-'))
+      s++; // sign
+    const char *first_non_digit = SkipDigits(s);
+    if (containsDigits(s, first_non_digit)) {
+      s = first_non_digit;
+    } else {
+      if (!hadError) {
+        hadError = true;
+      }
+      return;
     }
   }
-  return ParsePrimaryExpression();
 }
 
-PtxExprResult PtxParser::ParsePrimaryExpression() {
-  if (getTok().is(PtxToken::Identifier) &&
-      getTok().getString() == "WARP_SIZE") {
-    auto *Symbol = getCurScope()->LookupSymbol(getTok().getString());
-    return getContext().CreateDeclRefExpr(Symbol);
+/// ParseNumberStartingWithZero - This method is called when the first character
+/// of the number is found to be a zero.  This means it is either an octal
+/// number (like '04') or a hex number ('0x123a') a binary number ('0b1010') or
+/// a floating point number (01239.123e4).  Eat the prefix, determining the
+/// radix etc.
+void AsmNumericLiteralParser::ParseNumberStartingWithZero() {
+  assert(s[0] == '0' && "Invalid method call");
+  s++;
+
+  int c1 = s[0];
+
+  // Handle a hex number like 0x1234.
+  if ((c1 == 'x' || c1 == 'X') && (isHexDigit(s[1]) || s[1] == '.')) {
+    s++;
+    assert(s < ThisTokEnd && "didn't maximally munch?");
+    radix = 16;
+    DigitsBegin = s;
+    s = SkipHexDigits(s);
+    bool HasSignificandDigits = containsDigits(DigitsBegin, s);
+    if (s == ThisTokEnd) {
+      // Done.
+    } else if (*s == '.') {
+      s++;
+      saw_period = true;
+      const char *floatDigitsBegin = s;
+      s = SkipHexDigits(s);
+      if (containsDigits(floatDigitsBegin, s))
+        HasSignificandDigits = true;
+    }
+
+    if (!HasSignificandDigits) {
+      hadError = true;
+      return;
+    }
+
+    // A binary exponent can appear with or with a '.'. If dotted, the
+    // binary exponent is required.
+    if (*s == 'p' || *s == 'P') {
+      s++;
+      saw_exponent = true;
+      if (s != ThisTokEnd && (*s == '+' || *s == '-'))
+        s++; // sign
+      const char *first_non_digit = SkipDigits(s);
+      if (!containsDigits(s, first_non_digit)) {
+        if (!hadError) {
+          hadError = true;
+        }
+        return;
+      }
+      s = first_non_digit;
+
+    } else if (saw_period) {
+      hadError = true;
+    }
+    return;
   }
 
-  auto Tok = getTok();
-  Lex();
-  switch (Tok.getKind()) {
-  case PtxToken::Identifier: {
-    auto *Symbol = getCurScope()->LookupSymbol(Tok.getString());
-    if (Symbol)
-      return getContext().CreateDeclRefExpr(Symbol);
-    return true;
+  // Handle the exact machine representation single-precision floating point
+  // constant.
+  if ((c1 == 'f' || c1 == 'F') && (isHexDigit(s[1]))) {
+    ++s;
+    DigitsBegin = s;
+    isExactMachineFloat = true;
+    s = SkipHexDigits(s);
+    if (s != ThisTokEnd || s - DigitsBegin != 8) {
+      hadError = true;
+    }
+    return;
   }
-  case PtxToken::Integer:
-    return getContext().CreateIntegerLiteral(
-        getContext().GetOrCreateFundamentalType(PtxFundamentalType::TK_S64),
-        llvm::APInt(64, Tok.getIntVal(), true));
-  case PtxToken::Unsigned:
-    return getContext().CreateIntegerLiteral(
-        getContext().GetOrCreateFundamentalType(PtxFundamentalType::TK_U64),
-        llvm::APInt(64, Tok.getUnsignedVal(), false));
-  case PtxToken::Float:
-    return getContext().CreateFloatLiteral(
-        getContext().GetOrCreateFundamentalType(PtxFundamentalType::TK_F32),
-        llvm::APFloat(Tok.getF32Val()));
-  case PtxToken::Double:
-    return getContext().CreateFloatLiteral(
-        getContext().GetOrCreateFundamentalType(PtxFundamentalType::TK_F64),
-        llvm::APFloat(Tok.getF64Val()));
-  case PtxToken::LParen: {
-    PtxExprResult Expr = ParseConstantExpression();
-    if (Expr.isInvalid())
-      return true;
-    if (getTok().isNot(PtxToken::RParen))
-      return true;
-    Lex(); // eat ')'
-    return getContext().CreateParenExpression(Expr.get());
+
+  // Handle the exact machine representation double-precision floating point
+  // constant.
+  if ((c1 == 'd' || c1 == 'D') && (isHexDigit(s[1]))) {
+    ++s;
+    DigitsBegin = s;
+    isExactMachineDouble = true;
+    s = SkipHexDigits(s);
+    if (s != ThisTokEnd || s - DigitsBegin != 16) {
+      hadError = true;
+    }
+    return;
   }
+
+  // Handle simple binary numbers 0b01010
+  if ((c1 == 'b' || c1 == 'B') && (s[1] == '0' || s[1] == '1')) {
+    ++s;
+    radix = 2;
+    DigitsBegin = s;
+    s = SkipBinaryDigits(s);
+    if (s == ThisTokEnd) {
+      // Done.
+    } else if (isHexDigit(*s)) {
+      hadError = true;
+    }
+    // Other suffixes will be diagnosed by the caller.
+    return;
+  }
+
+  // For now, the radix is set to 8. If we discover that we have a
+  // floating point constant, the radix will change to 10. Octal floating
+  // point constants are not permitted (only decimal and hexadecimal).
+  radix = 8;
+  const char *PossibleNewDigitStart = s;
+  s = SkipOctalDigits(s);
+  // When the value is 0 followed by a suffix (like 0wb), we want to leave 0
+  // as the start of the digits. So if skipping octal digits does not skip
+  // anything, we leave the digit start where it was.
+  if (s != PossibleNewDigitStart)
+    DigitsBegin = PossibleNewDigitStart;
+
+  if (s == ThisTokEnd)
+    return; // Done, simple octal number like 01234
+
+  // If we have some other non-octal digit that *is* a decimal digit, see if
+  // this is part of a floating point number like 094.123 or 09e1.
+  if (isDigit(*s)) {
+    const char *EndDecimal = SkipDigits(s);
+    if (EndDecimal[0] == '.' || EndDecimal[0] == 'e' || EndDecimal[0] == 'E') {
+      s = EndDecimal;
+      radix = 10;
+    }
+  }
+
+  ParseDecimalOrOctalCommon();
+}
+
+static bool alwaysFitsInto64Bits(unsigned Radix, unsigned NumDigits) {
+  switch (Radix) {
+  case 2:
+    return NumDigits <= 64;
+  case 8:
+    return NumDigits <= 64 / 3; // Digits are groups of 3 bits.
+  case 10:
+    return NumDigits <= 19; // floor(log10(2^64))
+  case 16:
+    return NumDigits <= 64 / 4; // Digits are groups of 4 bits.
   default:
-    break;
+    llvm_unreachable("impossible Radix");
   }
-  return true;
+}
+
+/// GetIntegerValue - Convert this numeric literal value to an APInt that
+/// matches Val's input width.  If there is an overflow, set Val to the low bits
+/// of the result and return true.  Otherwise, return false.
+bool AsmNumericLiteralParser::GetIntegerValue(llvm::APInt &Val) {
+  // Fast path: Compute a conservative bound on the maximum number of
+  // bits per digit in this radix. If we can't possibly overflow a
+  // uint64 based on that bound then do the simple conversion to
+  // integer. This avoids the expensive overflow checking below, and
+  // handles the common cases that matter (small decimal integers and
+  // hex/octal values which don't overflow).
+  const unsigned NumDigits = SuffixBegin - DigitsBegin;
+  if (alwaysFitsInto64Bits(radix, NumDigits)) {
+    uint64_t N = 0;
+    for (const char *Ptr = DigitsBegin; Ptr != SuffixBegin; ++Ptr)
+      N = N * radix + llvm::hexDigitValue(*Ptr);
+
+    // This will truncate the value to Val's input width. Simply check
+    // for overflow by comparing.
+    Val = N;
+    return Val.getZExtValue() != N;
+  }
+
+  Val = 0;
+  const char *Ptr = DigitsBegin;
+
+  llvm::APInt RadixVal(Val.getBitWidth(), radix);
+  llvm::APInt CharVal(Val.getBitWidth(), 0);
+  llvm::APInt OldVal = Val;
+
+  bool OverflowOccurred = false;
+  while (Ptr < SuffixBegin) {
+
+    unsigned C = llvm::hexDigitValue(*Ptr++);
+
+    // If this letter is out of bound for this radix, reject it.
+    assert(C < radix &&
+           "AsmNumericLiteralParser ctor should have rejected this");
+
+    CharVal = C;
+
+    // Add the digit to the value in the appropriate radix.  If adding in digits
+    // made the value smaller, then this overflowed.
+    OldVal = Val;
+
+    // Multiply by radix, did overflow occur on the multiply?
+    Val *= RadixVal;
+    OverflowOccurred |= Val.udiv(RadixVal) != OldVal;
+
+    // Add value, did overflow occur on the value?
+    //   (a + b) ult b  <=> overflow
+    Val += CharVal;
+    OverflowOccurred |= Val.ult(CharVal);
+  }
+  return OverflowOccurred;
+}
+
+template <class T> union ExactMachineFloatingConverter;
+
+template <> union ExactMachineFloatingConverter<float> {
+  uint32_t IntValue;
+  float FpValue;
+};
+
+template <> union ExactMachineFloatingConverter<double> {
+  uint64_t IntValue;
+  double FpValue;
+};
+
+llvm::APFloat::opStatus
+AsmNumericLiteralParser::GetFloatValue(llvm::APFloat &Result) {
+  using llvm::APFloat;
+
+  if (isExactMachineFloat) {
+    assert(getLiteralDigits().size() == 8 &&
+           "AsmNumericLiteralParser ctor should have rejected this");
+    ExactMachineFloatingConverter<float> Value;
+    if (getLiteralDigits().getAsInteger(16, Value.IntValue)) {
+      return APFloat::opInvalidOp;
+    }
+    Result = APFloat(Value.FpValue);
+    return APFloat::opOK;
+  }
+
+  if (isExactMachineDouble) {
+    assert(getLiteralDigits().size() == 16 &&
+           "AsmNumericLiteralParser ctor should have rejected this");
+    ExactMachineFloatingConverter<double> Value;
+    if (getLiteralDigits().getAsInteger(16, Value.IntValue)) {
+      return APFloat::opInvalidOp;
+    }
+    Result = APFloat(Value.FpValue);
+    return APFloat::opOK;
+  }
+
+  unsigned n = std::min(SuffixBegin - ThisTokBegin, ThisTokEnd - ThisTokBegin);
+
+  StringRef Str(ThisTokBegin, n);
+
+  auto StatusOrErr =
+      Result.convertFromString(Str, APFloat::rmNearestTiesToEven);
+  assert(StatusOrErr && "Invalid floating point representation");
+  return !errorToBool(StatusOrErr.takeError()) ? *StatusOrErr
+                                               : APFloat::opInvalidOp;
+}
+} // namespace
+
+DpctAsmExprResult DpctAsmParser::ActOnNumericConstant(const DpctAsmToken &Tok) {
+  assert(Tok.is(asmtok::numeric_constant) && Tok.getLength() >= 1);
+  StringRef LiteralData(Tok.getLiteralData(), Tok.getLength());
+  if (Tok.getLength() == 1 && isDigit(LiteralData[0])) {
+    DpctAsmBuiltinType *Type = Context.getS64Type();
+    llvm::APInt Val(64, LiteralData[0] - '0', true);
+    return ::new (Context) DpctAsmIntegerLiteral(Type, Val);
+  }
+
+  AsmNumericLiteralParser LiteralParser(LiteralData);
+  if (LiteralParser.hadError)
+    return AsmExprError();
+
+  if (LiteralParser.isFloatingLiteral()) {
+
+    if (LiteralParser.isExactMachineFloat) {
+      APFloat Float(APFloat::IEEEsingle());
+      auto Status = LiteralParser.GetFloatValue(Float);
+      if (Status != APFloat::opOK)
+        return AsmExprError();
+      return ::new (Context) DpctAsmExactMachineFloatingLiteral(
+          Context.getF32Type(), Float,
+          LiteralParser.getExactMachineFloatingHexLiteralDigits());
+    }
+
+    if (LiteralParser.isExactMachineDouble) {
+      APFloat Float(APFloat::IEEEdouble());
+      auto Status = LiteralParser.GetFloatValue(Float);
+      if (Status != APFloat::opOK)
+        return AsmExprError();
+      return ::new (Context) DpctAsmExactMachineFloatingLiteral(
+          Context.getF64Type(), Float,
+          LiteralParser.getExactMachineFloatingHexLiteralDigits());
+    }
+
+    APFloat Float(APFloat::IEEEdouble());
+    auto Status = LiteralParser.GetFloatValue(Float);
+    if (Status != APFloat::opOK)
+      return AsmExprError();
+    return ::new (Context) DpctAsmFloatingLiteral(Context.getF64Type(), Float);
+  }
+
+  APInt Int(64, 0);
+  if (LiteralParser.GetIntegerValue(Int))
+    return AsmExprError();
+
+  DpctAsmBuiltinType *IntType =
+      LiteralParser.isUnsigned ? Context.getU64Type() : Context.getS64Type();
+
+  return ::new (Context) DpctAsmIntegerLiteral(IntType, Int);
+}
+
+DpctAsmExprResult DpctAsmParser::ActOnAlignment(DpctAsmExpr *Alignment) {
+  if (auto *Int = dyn_cast<DpctAsmIntegerLiteral>(Alignment)) {
+    return Int;
+  }
+  return AsmExprError();
+}
+
+DpctAsmDeclResult DpctAsmParser::ActOnVariableDecl(DpctAsmIdentifierInfo *Name,
+                                                   DpctAsmType *Type) {
+  DpctAsmVariableDecl *D = ::new (Context) DpctAsmVariableDecl(Name, Type);
+  getCurScope()->addDecl(D);
+  return D;
 }
