@@ -56,13 +56,13 @@ void foo_host(){
     //algo
     //CHECK: std::uninitialized_fill(h_input.begin(), h_input.end(), 10);
     thrust::uninitialized_fill(h_input.begin(), h_input.end(), 10);
-    //CHECK: std::unique(h_input.begin(), h_input.end());
+    //CHECK: std::unique(oneapi::dpl::execution::seq, h_input.begin(), h_input.end());
     thrust::unique(h_input.begin(), h_input.end());
     //CHECK: std::exclusive_scan(oneapi::dpl::execution::seq, h_input.begin(), h_input.end(), h_output.begin(), 0);
     thrust::exclusive_scan(h_input.begin(), h_input.end(), h_output.begin());
-    //CHECK: std::max_element(h_input.begin(), h_input.end());
+    //CHECK: std::max_element(oneapi::dpl::execution::seq, h_input.begin(), h_input.end());
     thrust::max_element(h_input.begin(), h_input.end());
-    //CHECK: std::min_element(h_input.begin(), h_input.end());
+    //CHECK: std::min_element(oneapi::dpl::execution::seq, h_input.begin(), h_input.end());
     thrust::min_element(h_input.begin(), h_input.end());
 
     //CHECK: oneapi::dpl::discard_iterator();

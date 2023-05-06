@@ -1401,11 +1401,10 @@ sort_pairs_impl(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
   // a specialized iterator with a single
   // unchanging dummy key_t element
   using key_t_value_t = typename std::iterator_traits<key_t>::value_type;
-  auto temp_keys_out = sycl::malloc_device<key_t_value_t>(n, policy.queue());
+  sycl::buffer<key_t_value_t, 1> temp_keys_out{sycl::range<1>(n)};
   internal::sort_pairs_impl(std::forward<_ExecutionPolicy>(policy), keys_in,
-                            temp_keys_out, values_in, values_out, n, descending,
-                            begin_bit, end_bit);
-  sycl::free(temp_keys_out, policy.queue());
+                            oneapi::dpl::begin(temp_keys_out), values_in,
+                            values_out, n, descending, begin_bit, end_bit);
 }
 // DPCT_LABEL_END
 
@@ -1425,15 +1424,13 @@ inline void segmented_sort_pairs_by_parallel_sorts(
                   8) {
   using offset_type =
       typename ::std::iterator_traits<OffsetIteratorT>::value_type;
-  auto host_accessible_offset_starts =
-      sycl::malloc_shared<offset_type>(nsegments, policy.queue());
-  auto host_accessible_offset_ends =
-      sycl::malloc_shared<offset_type>(nsegments, policy.queue());
+  ::std::vector<offset_type> host_accessible_offset_starts(nsegments);
+  ::std::vector<offset_type> host_accessible_offset_ends(nsegments);
   // make offsets accessible on host
   ::std::copy(::std::forward<_ExecutionPolicy>(policy), begin_offsets,
-              begin_offsets + nsegments, host_accessible_offset_starts);
+              begin_offsets + nsegments, host_accessible_offset_starts.begin());
   ::std::copy(::std::forward<_ExecutionPolicy>(policy), end_offsets,
-              end_offsets + nsegments, host_accessible_offset_ends);
+              end_offsets + nsegments, host_accessible_offset_ends.begin());
 
   for (::std::uint64_t i = 0; i < nsegments; i++) {
     uint64_t segment_begin = host_accessible_offset_starts[i];
@@ -1447,8 +1444,6 @@ inline void segmented_sort_pairs_by_parallel_sorts(
                          end_bit);
     }
   }
-  sycl::free(host_accessible_offset_starts, policy.queue());
-  sycl::free(host_accessible_offset_ends, policy.queue());
 }
 // DPCT_LABEL_END
 
@@ -1467,15 +1462,13 @@ inline void segmented_sort_keys_by_parallel_sorts(
                   8) {
   using offset_type =
       typename ::std::iterator_traits<OffsetIteratorT>::value_type;
-  auto host_accessible_offset_starts =
-      sycl::malloc_shared<offset_type>(nsegments, policy.queue());
-  auto host_accessible_offset_ends =
-      sycl::malloc_shared<offset_type>(nsegments, policy.queue());
+  ::std::vector<offset_type> host_accessible_offset_starts(nsegments);
+  ::std::vector<offset_type> host_accessible_offset_ends(nsegments);
   // make offsets accessible on host
   ::std::copy(::std::forward<_ExecutionPolicy>(policy), begin_offsets,
-              begin_offsets + nsegments, host_accessible_offset_starts);
+              begin_offsets + nsegments, host_accessible_offset_starts.begin());
   ::std::copy(::std::forward<_ExecutionPolicy>(policy), end_offsets,
-              end_offsets + nsegments, host_accessible_offset_ends);
+              end_offsets + nsegments, host_accessible_offset_ends.begin());
 
   for (::std::uint64_t i = 0; i < nsegments; i++) {
     uint64_t segment_begin = host_accessible_offset_starts[i];
@@ -1488,8 +1481,6 @@ inline void segmented_sort_keys_by_parallel_sorts(
                          end_bit);
     }
   }
-  sycl::free(host_accessible_offset_starts, policy.queue());
-  sycl::free(host_accessible_offset_ends, policy.queue());
 }
 // DPCT_LABEL_END
 
@@ -1558,10 +1549,10 @@ inline void segmented_sort_keys_by_parallel_for_of_sorts(
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 template <typename _ExecutionPolicy, typename OffsetIteratorT>
-inline void mark_segments(_ExecutionPolicy &&policy,
-                          OffsetIteratorT begin_offsets,
-                          OffsetIteratorT end_offsets, int64_t n,
-                          int64_t nsegments, ::std::size_t *segments) {
+inline void
+mark_segments(_ExecutionPolicy &&policy, OffsetIteratorT begin_offsets,
+              OffsetIteratorT end_offsets, int64_t n, int64_t nsegments,
+              sycl::buffer<::std::size_t, 1> segments) {
 
   ::std::size_t work_group_size =
       policy.queue()
@@ -1579,12 +1570,13 @@ inline void mark_segments(_ExecutionPolicy &&policy,
     // coordinate to mark segments
     policy.queue()
         .submit([&](sycl::handler &h) {
+          auto segments_acc = segments.get_access<sycl::access_mode::write>(h);
           h.parallel_for(work_group_size, ([=](sycl::id<1> id) {
                            for (::std::size_t seg = 0; seg < nsegments; seg++) {
                              ::std::size_t i = begin_offsets[seg];
                              ::std::size_t end = end_offsets[seg];
                              while (i + id < end) {
-                               segments[i + id] = seg;
+                               segments_acc[i + id] = seg;
                                i += work_group_size;
                              }
                            }
@@ -1596,6 +1588,7 @@ inline void mark_segments(_ExecutionPolicy &&policy,
     // coordinate to mark segments
     policy.queue()
         .submit([&](sycl::handler &h) {
+          auto segments_acc = segments.get_access<sycl::access_mode::write>(h);
           h.parallel_for(
               sycl::nd_range<1>{work_group_size, work_group_size},
               ([=](sycl::nd_item<1> item) {
@@ -1610,7 +1603,7 @@ inline void mark_segments(_ExecutionPolicy &&policy,
                   ::std::size_t i = begin_offsets[sub_group_id];
                   ::std::size_t end = end_offsets[sub_group_id];
                   while (i + subgroup_local_id < end) {
-                    segments[i + subgroup_local_id] = sub_group_id;
+                    segments_acc[i + subgroup_local_id] = sub_group_id;
                     i += local_size;
                   }
                   sub_group_id += num_subgroups;
@@ -1623,10 +1616,11 @@ inline void mark_segments(_ExecutionPolicy &&policy,
     // work item to mark each segment
     policy.queue()
         .submit([&](sycl::handler &h) {
+          auto segments_acc = segments.get_access<sycl::access_mode::write>(h);
           h.parallel_for(nsegments, ([=](sycl::id<1> seg) {
                            for (::std::size_t i = begin_offsets[seg];
                                 i < end_offsets[seg]; i++) {
-                             segments[i] = seg;
+                             segments_acc[i] = seg;
                            }
                          }));
         })
@@ -1649,27 +1643,25 @@ inline void segmented_sort_keys_by_two_pair_sorts(
     OffsetIteratorT end_offsets, bool descending = false, int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
                   8) {
+  sycl::buffer<::std::size_t, 1> segments{sycl::range<1>(n)};
+  sycl::buffer<::std::size_t, 1> segments_sorted{sycl::range<1>(n)};
+
   using key_t_value_t = typename ::std::iterator_traits<key_t>::value_type;
-  ::std::size_t *segments =
-      sycl::malloc_device<::std::size_t>(n, policy.queue());
-  ::std::size_t *segments_sorted =
-      sycl::malloc_device<::std::size_t>(n, policy.queue());
-  auto keys_temp = sycl::malloc_device<key_t_value_t>(n, policy.queue());
+  sycl::buffer<key_t_value_t, 1> keys_temp{sycl::range<1>(n)};
 
   mark_segments(::std::forward<_ExecutionPolicy>(policy), begin_offsets, 
                 end_offsets, n, nsegments, segments);
 
   // Part 1: Sort by keys keeping track of which segment were in
-  dpct::sort_pairs(::std::forward<_ExecutionPolicy>(policy), keys_in, keys_temp,
-                   segments, segments_sorted, n, descending);
+  dpct::sort_pairs(::std::forward<_ExecutionPolicy>(policy), keys_in,
+                   oneapi::dpl::begin(keys_temp), oneapi::dpl::begin(segments),
+                   oneapi::dpl::begin(segments_sorted), n, descending);
 
   // Part 2: Sort the segments with a stable sort to get back sorted segments.
-  dpct::sort_pairs(::std::forward<_ExecutionPolicy>(policy), segments_sorted,
-                   segments, keys_temp, keys_out, n, false);
-
-  sycl::free(segments, policy.queue());
-  sycl::free(segments_sorted, policy.queue());
-  sycl::free(keys_temp, policy.queue());
+  dpct::sort_pairs(::std::forward<_ExecutionPolicy>(policy),
+                   oneapi::dpl::begin(segments_sorted),
+                   oneapi::dpl::begin(segments), oneapi::dpl::begin(keys_temp),
+                   keys_out, n, false);
 }
 // DPCT_LABEL_END
 
@@ -1688,35 +1680,35 @@ inline void segmented_sort_pairs_by_two_pair_sorts(
     bool descending = false, int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
                   8) {
+  sycl::buffer<::std::size_t, 1> segments{sycl::range<1>(n)};
+  sycl::buffer<::std::size_t, 1> segments_sorted{sycl::range<1>(n)};
+
   using key_t_value_t = typename ::std::iterator_traits<key_t>::value_type;
+  sycl::buffer<key_t_value_t, 1> keys_temp{sycl::range<1>(n)};
+
   using value_t_value_t = typename ::std::iterator_traits<value_t>::value_type;
-  ::std::size_t *segments =
-      sycl::malloc_device<::std::size_t>(n, policy.queue());
-  ::std::size_t *segments_sorted =
-      sycl::malloc_device<::std::size_t>(n, policy.queue());
-  auto keys_temp = sycl::malloc_device<key_t_value_t>(n, policy.queue());
-  auto values_temp = sycl::malloc_device<value_t_value_t>(n, policy.queue());
+  sycl::buffer<value_t_value_t, 1> values_temp{sycl::range<1>(n)};
 
   mark_segments(::std::forward<_ExecutionPolicy>(policy), begin_offsets, 
                 end_offsets, n, nsegments, segments);
 
-  auto zip_seg_vals = oneapi::dpl::make_zip_iterator(segments, values_in);
-  auto zip_seg_vals_out =
-      oneapi::dpl::make_zip_iterator(segments_sorted, values_temp);
+  auto zip_seg_vals =
+      oneapi::dpl::make_zip_iterator(oneapi::dpl::begin(segments), values_in);
+  auto zip_seg_vals_out = oneapi::dpl::make_zip_iterator(
+      oneapi::dpl::begin(segments_sorted), oneapi::dpl::begin(values_temp));
   // Part 1: Sort by keys keeping track of which segment were in
-  dpct::sort_pairs(::std::forward<_ExecutionPolicy>(policy), keys_in, keys_temp,
-                   zip_seg_vals, zip_seg_vals_out, n, descending);
+  dpct::sort_pairs(::std::forward<_ExecutionPolicy>(policy), keys_in,
+                   oneapi::dpl::begin(keys_temp), zip_seg_vals,
+                   zip_seg_vals_out, n, descending);
 
-  auto zip_keys_vals = oneapi::dpl::make_zip_iterator(keys_temp, values_temp);
+  auto zip_keys_vals = oneapi::dpl::make_zip_iterator(
+      oneapi::dpl::begin(keys_temp), oneapi::dpl::begin(values_temp));
   auto zip_keys_vals_out = oneapi::dpl::make_zip_iterator(keys_out, values_out);
   // Part 2: Sort the segments with a stable sort to get back sorted segments.
-  dpct::sort_pairs(::std::forward<_ExecutionPolicy>(policy), segments_sorted,
-                   segments, zip_keys_vals, zip_keys_vals_out, n, false);
-
-  sycl::free(segments, policy.queue());
-  sycl::free(segments_sorted, policy.queue());
-  sycl::free(keys_temp, policy.queue());
-  sycl::free(values_temp, policy.queue());
+  dpct::sort_pairs(::std::forward<_ExecutionPolicy>(policy),
+                   oneapi::dpl::begin(segments_sorted),
+                   oneapi::dpl::begin(segments), zip_keys_vals,
+                   zip_keys_vals_out, n, false);
 }
 // DPCT_LABEL_END
 
@@ -2021,39 +2013,27 @@ inline void reduce_argmin(_ExecutionPolicy &&policy, Iter1 input, Iter2 output,
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|equal_range|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasIterators|make_constant_iterator
-// DPCT_DEPENDENCY_END
+// DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 template <typename _ExecutionPolicy, typename Iter1,
           typename ValueLessComparable, typename StrictWeakOrdering>
 inline ::std::pair<Iter1, Iter1>
 equal_range(_ExecutionPolicy &&policy, Iter1 start, Iter1 end,
             const ValueLessComparable &value, StrictWeakOrdering comp) {
-
-  auto size = ::std::distance(start, end);
-  auto zip_start =
-      oneapi::dpl::make_zip_iterator(start, dpct::make_counting_iterator(0));
-  auto constant_value_iter = dpct::make_constant_iterator(value);
-  auto reduction = [=](const auto &a, const auto &b) {
-    return oneapi::dpl::__internal::tuple<uint64_t, uint64_t>(
-        ::std::min(::std::get<0>(a), ::std::get<0>(b)),
-        ::std::max(::std::get<1>(::std::forward<decltype(a)>(a)),
-                   ::std::get<1>(::std::forward<decltype(b)>(b))));
-  };
-  auto trans = [=](const auto &a, const auto &b) {
-    return ::oneapi::dpl::__internal::tuple<uint64_t, uint64_t>(
-        comp(::std::get<0>(a), b) ? size : ::std::get<1>(a),
-        comp(b, ::std::get<0>(a)) ? 0 : ::std::get<1>(a) + 1);
-  };
-
-  auto result = oneapi::dpl::transform_reduce(
-      ::std::forward<_ExecutionPolicy>(policy), zip_start, zip_start + size,
-      constant_value_iter,
-      oneapi::dpl::__internal::tuple<uint64_t, uint64_t>(size, 0), reduction,
-      trans);
-  return ::std::make_pair(start + ::std::get<0>(result),
-                          start + ::std::get<1>(result));
+  sycl::buffer<::std::int64_t, 1> result_lower_upper{sycl::range<1>(2)};
+  sycl::buffer<ValueLessComparable, 1> value_buf{sycl::range<1>(1)};
+  ::std::fill(policy, oneapi::dpl::begin(value_buf),
+              oneapi::dpl::end(value_buf), value);
+  ::oneapi::dpl::lower_bound(policy, start, end, oneapi::dpl::begin(value_buf),
+                             oneapi::dpl::end(value_buf),
+                             oneapi::dpl::begin(result_lower_upper), comp);
+  ::oneapi::dpl::upper_bound(::std::forward<_ExecutionPolicy>(policy), start,
+                             end, oneapi::dpl::begin(value_buf),
+                             oneapi::dpl::end(value_buf),
+                             oneapi::dpl::begin(result_lower_upper) + 1, comp);
+  sycl::host_accessor result_acc(result_lower_upper);
+  auto result = ::std::make_pair(start + result_acc[0], start + result_acc[1]);
+  return result;
 }
 
 template <typename _ExecutionPolicy, typename Iter1,
@@ -2063,6 +2043,80 @@ inline ::std::pair<Iter1, Iter1> equal_range(_ExecutionPolicy &&policy,
                                              const ValueLessComparable &value) {
   return equal_range(::std::forward<_ExecutionPolicy>(policy), start, end,
                      value, internal::__less());
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|segmented_reduce_argmin|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasIterators|arg_index_input_iterator
+// DplExtrasIterators|key_value_pair
+// DplExtrasVector|is_iterator
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename _ExecutionPolicy, typename key_t, typename key_out_t, 
+          typename OffsetIteratorT>
+inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value &&
+                          dpct::internal::is_iterator<key_out_t>::value>
+segmented_reduce_argmin(_ExecutionPolicy &&policy, key_t keys_in,
+                        key_out_t keys_out, ::std::int64_t n,
+                        ::std::int64_t nsegments, OffsetIteratorT begin_offsets,
+                        OffsetIteratorT end_offsets) {
+  policy.queue().submit([&](sycl::handler &cgh) {
+    cgh.parallel_for(nsegments, [=](sycl::id<1> i) {
+      ::std::int64_t segment_begin = begin_offsets[i];
+      ::std::int64_t segment_length =
+          ::std::min(n, (::std::int64_t)end_offsets[i]) - segment_begin;
+      if (segment_length <= 0) {
+        *(keys_out + i) = dpct::key_value_pair(
+            ptrdiff_t(1),
+            ::std::numeric_limits<
+                typename ::std::iterator_traits<key_t>::value_type>::max());
+      } else {
+        dpct::arg_index_input_iterator arg_index(keys_in + segment_begin);
+        *(keys_out + i) = *::std::min_element(
+            arg_index, arg_index + segment_length,
+            [](const auto &a, const auto &b) { return a.value < b.value; });
+      }
+    });
+  });
+  policy.queue().wait();
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|segmented_reduce_argmax|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasIterators|arg_index_input_iterator
+// DplExtrasIterators|key_value_pair
+// DplExtrasVector|is_iterator
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
+          typename OffsetIteratorT>
+inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value &&
+                          dpct::internal::is_iterator<key_out_t>::value>
+segmented_reduce_argmax(_ExecutionPolicy &&policy, key_t keys_in,
+                        key_out_t keys_out, ::std::int64_t n,
+                        ::std::int64_t nsegments, OffsetIteratorT begin_offsets,
+                        OffsetIteratorT end_offsets) {
+  policy.queue().submit([&](sycl::handler &cgh) {
+    cgh.parallel_for(nsegments, [=](sycl::id<1> i) {
+      ::std::int64_t segment_begin = begin_offsets[i];
+      ::std::int64_t segment_length =
+          ::std::min(n, (::std::int64_t)end_offsets[i]) - segment_begin;
+      if (segment_length <= 0) {
+        *(keys_out + i) = dpct::key_value_pair(
+            ptrdiff_t(1),
+            ::std::numeric_limits<
+                typename ::std::iterator_traits<key_t>::value_type>::lowest());
+      } else {
+        dpct::arg_index_input_iterator arg_index(keys_in + segment_begin);
+        *(keys_out + i) = *::std::max_element(
+            arg_index, arg_index + segment_length,
+            [](const auto &a, const auto &b) { return a.value < b.value; });
+      }
+    });
+  });
+  policy.queue().wait();
 }
 // DPCT_LABEL_END
 

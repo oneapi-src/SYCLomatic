@@ -5,12 +5,27 @@
 
 #include "cuda_bf16.h"
 
-// CHECK: void foo(sycl::ext::oneapi::bfloat16 *a) {
-void foo(__nv_bfloat16 *a) {
+// CHECK: class C : public sycl::marray<sycl::ext::oneapi::bfloat16, 2> {
+class C : public __nv_bfloat162 {
+  void f() {
+    // CHECK: (*this)[0];
+    // CHECK-NEXT: (*this)[1];
+    x;
+    y;
+  }
+};
+
+// CHECK: void foo(sycl::ext::oneapi::bfloat16 *a, sycl::marray<sycl::ext::oneapi::bfloat16, 2> *b) {
+void foo(__nv_bfloat16 *a, __nv_bfloat162 *b) {
   int i = 0;
   float f = 3.0f;
   // CHECK: a[i] = (sycl::ext::oneapi::bfloat16)f;
   a[i] = (__nv_bfloat16)f;
+
+  // CHECK: (*b)[0];
+  // CHECK-NEXT: (*b)[1];
+  b->x;
+  b->y;
 }
 
 // CHECK: void test_conversions_device(sycl::ext::oneapi::bfloat16 *deviceArrayBFloat16) {

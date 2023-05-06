@@ -86,15 +86,15 @@ int main() {
   cudaMalloc(&mapspkeyD, numsH*sizeof(int));
   cudaMalloc(&mapspvalD, numsH*sizeof(int));
 
-// CHECK:  device_pointer<int> mapsp1T(mapsp1D);
+  // CHECK:  device_pointer<int> mapsp1T(mapsp1D);
   thrust::device_ptr<int> mapsp1T(mapsp1D);
-// CHECK:  device_pointer<int> mapspkeyT(mapspkeyD);
+  // CHECK:  device_pointer<int> mapspkeyT(mapspkeyD);
   thrust::device_ptr<int> mapspkeyT(mapspkeyD);
-// CHECK:  device_pointer<int> mapspvalT(mapspvalD);
+  // CHECK:  device_pointer<int> mapspvalT(mapspvalD);
   thrust::device_ptr<int> mapspvalT(mapspvalD);
 
-// CHECK:  iota(oneapi::dpl::execution::make_device_policy<class Policy_{{[0-9a-f]+}}>(q_ct1), mapspvalT, mapspvalT + numsH);
+  // CHECK: iota(oneapi::dpl::execution::make_device_policy(q_ct1), mapspvalT, mapspvalT + numsH);
   thrust::sequence(mapspvalT, mapspvalT + numsH);
-// CHECK:  stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), mapspkeyT, mapspkeyT + numsH, mapspvalT);
+  // CHECK:  stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), mapspkeyT, mapspkeyT + numsH, mapspvalT);
   thrust::stable_sort_by_key(mapspkeyT, mapspkeyT + numsH, mapspvalT);
 }
