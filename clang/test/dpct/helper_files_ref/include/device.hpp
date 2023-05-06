@@ -430,12 +430,13 @@ Use 64 bits as memory_bus_width default value."
 
   sycl::queue *create_in_order_queue(bool enable_exception_handler = false) {
     std::lock_guard<mutex_type> lock(m_mutex);
-    return create_in_order_queue_impl(enable_exception_handler);
+    return create_queue_impl(enable_exception_handler,
+                             sycl::property::queue::in_order());
   }
 
   sycl::queue *create_out_of_order_queue(bool enable_exception_handler = false) {
     std::lock_guard<mutex_type> lock(m_mutex);
-    return create_out_of_order_queue_impl(enable_exception_handler);
+    return create_queue_impl(enable_exception_handler);
   }
 
   void destroy_queue(sycl::queue *&queue) {
@@ -464,20 +465,12 @@ private:
   }
 
   void init_queues() {
-    _q_in_order = create_in_order_queue_impl(true);
-    _q_out_of_order = create_out_of_order_queue_impl(true);
+    _q_in_order = create_queue_impl(true, sycl::property::queue::in_order());
+    _q_out_of_order = create_queue_impl(true);
     _saved_queue = &default_queue();
   }
 
-  sycl::queue *create_in_order_queue_impl(bool enable_exception_handler) {
-    return create_queue_impl(enable_exception_handler,
-                             sycl::property::queue::in_order());
-  }
-
-  sycl::queue *create_out_of_order_queue_impl(bool enable_exception_handler) {
-    return create_queue_impl(enable_exception_handler);
-  }
-
+  /// Caller should acquire resource \p m_mutex before calling this function.
   template <class... Properties>
   sycl::queue *create_queue_impl(bool enable_exception_handler,
                                  Properties... properties) {
@@ -627,9 +620,9 @@ private:
   int _cpu_device = -1;
 };
 
-/// Util function to get the default queue (default out-of-ordered queue when
-/// USM-none is enabled, otherwise default in-ordered queue) of current device
-/// in dpct device manager.
+/// Util function to get the default queue of current selected device depends on
+/// the USM config. Return the default out-of-ordered queue when USM-none is
+/// enabled, otherwise return the default in-ordered queue.
 static inline sycl::queue &get_default_queue() {
   return dev_mgr::instance().current_device().default_queue();
 }
@@ -682,6 +675,48 @@ static inline unsigned int get_device_id(const sycl::device &dev){
   return dev_mgr::instance().get_device_id(dev);
 }
 
+/// Util function to check whether a device supports some kinds of sycl::aspect.
+inline void
+has_capability_or_fail(const sycl::device &dev,
+                       const std::initializer_list<sycl::aspect> &props) {
+  for (const auto &it : props) {
+    if (dev.has(it))
+      continue;
+    switch (it) {
+    case sycl::aspect::fp64:
+      throw std::runtime_error("'double' is not supported in '" +
+                               dev.get_info<sycl::info::device::name>() +
+                               "' device");
+      break;
+    case sycl::aspect::fp16:
+      throw std::runtime_error("'half' is not supported in '" +
+                               dev.get_info<sycl::info::device::name>() +
+                               "' device");
+      break;
+    default:
+#define __SYCL_ASPECT(ASPECT, ID)                                              \
+  case sycl::aspect::ASPECT:                                                   \
+    return #ASPECT;
+#define __SYCL_ASPECT_DEPRECATED(ASPECT, ID, MESSAGE) __SYCL_ASPECT(ASPECT, ID)
+#define __SYCL_ASPECT_DEPRECATED_ALIAS(ASPECT, ID, MESSAGE)
+      auto getAspectNameStr = [](sycl::aspect AspectNum) -> std::string {
+        switch (AspectNum) {
+#include <sycl/info/aspects.def>
+#include <sycl/info/aspects_deprecated.def>
+        default:
+          return "unknown aspect";
+        }
+      };
+#undef __SYCL_ASPECT_DEPRECATED_ALIAS
+#undef __SYCL_ASPECT_DEPRECATED
+#undef __SYCL_ASPECT
+      throw std::runtime_error(
+          "'" + getAspectNameStr(it) + "' is not supported in '" +
+          dev.get_info<sycl::info::device::name>() + "' device");
+    }
+    break;
+  }
+}
 } // namespace dpct
 
 #endif // __DPCT_DEVICE_HPP__
