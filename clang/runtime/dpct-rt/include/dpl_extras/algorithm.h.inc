@@ -2013,39 +2013,27 @@ inline void reduce_argmin(_ExecutionPolicy &&policy, Iter1 input, Iter2 output,
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|equal_range|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasIterators|make_constant_iterator
-// DPCT_DEPENDENCY_END
+// DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 template <typename _ExecutionPolicy, typename Iter1,
           typename ValueLessComparable, typename StrictWeakOrdering>
 inline ::std::pair<Iter1, Iter1>
 equal_range(_ExecutionPolicy &&policy, Iter1 start, Iter1 end,
             const ValueLessComparable &value, StrictWeakOrdering comp) {
-
-  auto size = ::std::distance(start, end);
-  auto zip_start =
-      oneapi::dpl::make_zip_iterator(start, dpct::make_counting_iterator(0));
-  auto constant_value_iter = dpct::make_constant_iterator(value);
-  auto reduction = [=](const auto &a, const auto &b) {
-    return oneapi::dpl::__internal::tuple<uint64_t, uint64_t>(
-        ::std::min(::std::get<0>(a), ::std::get<0>(b)),
-        ::std::max(::std::get<1>(::std::forward<decltype(a)>(a)),
-                   ::std::get<1>(::std::forward<decltype(b)>(b))));
-  };
-  auto trans = [=](const auto &a, const auto &b) {
-    return ::oneapi::dpl::__internal::tuple<uint64_t, uint64_t>(
-        comp(::std::get<0>(a), b) ? size : ::std::get<1>(a),
-        comp(b, ::std::get<0>(a)) ? 0 : ::std::get<1>(a) + 1);
-  };
-
-  auto result = oneapi::dpl::transform_reduce(
-      ::std::forward<_ExecutionPolicy>(policy), zip_start, zip_start + size,
-      constant_value_iter,
-      oneapi::dpl::__internal::tuple<uint64_t, uint64_t>(size, 0), reduction,
-      trans);
-  return ::std::make_pair(start + ::std::get<0>(result),
-                          start + ::std::get<1>(result));
+  sycl::buffer<::std::int64_t, 1> result_lower_upper{sycl::range<1>(2)};
+  sycl::buffer<ValueLessComparable, 1> value_buf{sycl::range<1>(1)};
+  ::std::fill(policy, oneapi::dpl::begin(value_buf),
+              oneapi::dpl::end(value_buf), value);
+  ::oneapi::dpl::lower_bound(policy, start, end, oneapi::dpl::begin(value_buf),
+                             oneapi::dpl::end(value_buf),
+                             oneapi::dpl::begin(result_lower_upper), comp);
+  ::oneapi::dpl::upper_bound(::std::forward<_ExecutionPolicy>(policy), start,
+                             end, oneapi::dpl::begin(value_buf),
+                             oneapi::dpl::end(value_buf),
+                             oneapi::dpl::begin(result_lower_upper) + 1, comp);
+  sycl::host_accessor result_acc(result_lower_upper);
+  auto result = ::std::make_pair(start + result_acc[0], start + result_acc[1]);
+  return result;
 }
 
 template <typename _ExecutionPolicy, typename Iter1,
