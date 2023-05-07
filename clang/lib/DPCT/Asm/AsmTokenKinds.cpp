@@ -12,12 +12,11 @@
 using namespace clang;
 using namespace clang::dpct;
 
-static const char * const TokNames[] = {
+static const char *const TokNames[] = {
 #define TOK(X) #X,
-#define KEYWORD(X,Y) #X,
+#define KEYWORD(X, Y) #X,
 #include "AsmTokenKinds.def"
-  nullptr
-};
+    nullptr};
 
 const char *asmtok::getTokenName(asmtok::TokenKind Kind) {
   if (Kind < asmtok::NUM_TOKENS)
@@ -28,19 +27,24 @@ const char *asmtok::getTokenName(asmtok::TokenKind Kind) {
 
 const char *asmtok::getPunctuatorSpelling(asmtok::TokenKind Kind) {
   switch (Kind) {
-#define PUNCTUATOR(X,Y) case X: return Y;
+#define PUNCTUATOR(X, Y)                                                       \
+  case X:                                                                      \
+    return Y;
 #include "AsmTokenKinds.def"
-  default: break;
+  default:
+    break;
   }
   return nullptr;
 }
 
 const char *asmtok::getKeywordSpelling(asmtok::TokenKind Kind) {
   switch (Kind) {
-#define KEYWORD(X,Y) case kw_ ## X: return #X;
+#define KEYWORD(X, Y)                                                          \
+  case kw_##X:                                                                 \
+    return #X;
 #include "AsmTokenKinds.def"
-    default: break;
+  default:
+    break;
   }
   return nullptr;
 }
-

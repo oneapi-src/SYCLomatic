@@ -28,12 +28,12 @@ class DpctAsmToken {
   size_t Length;
   asmtok::TokenKind Kind;
   unsigned Flags;
-public:
 
+public:
   enum TokenFlags {
     NeedsCleaning = 0x01, // This identifier contains special characters.
     Placeholder = 0x02,   // This identifier is an inline asm placeholder.
-    StartOfDot = 0x04,    // This identifier is an dot identifier.    
+    StartOfDot = 0x04,    // This identifier is an dot identifier.
   };
 
   asmtok::TokenKind getKind() const { return Kind; }
@@ -62,8 +62,10 @@ public:
   DpctAsmIdentifierInfo *getIdentifier() const {
     assert(isNot(asmtok::raw_identifier) &&
            "getIdentifierInfo() on a tok::raw_identifier token!");
-    if (is(asmtok::numeric_constant)) return nullptr;
-    if (is(asmtok::eof)) return nullptr;
+    if (is(asmtok::numeric_constant))
+      return nullptr;
+    if (is(asmtok::eof))
+      return nullptr;
     return (DpctAsmIdentifierInfo *)PtrData;
   }
 
@@ -75,7 +77,7 @@ public:
   }
   void setRawIdentifierData(const char *Ptr) {
     assert(is(asmtok::raw_identifier));
-    PtrData = const_cast<char*>(Ptr);
+    PtrData = const_cast<char *>(Ptr);
   }
 
   const char *getLiteralData() const {
@@ -102,27 +104,19 @@ public:
   }
 
   /// Set the specified flag.
-  void setFlag(TokenFlags Flag) {
-    Flags |= Flag;
-  }
+  void setFlag(TokenFlags Flag) { Flags |= Flag; }
 
   /// Get the specified flag.
-  bool getFlag(TokenFlags Flag) const {
-    return (Flags & Flag) != 0;
-  }
+  bool getFlag(TokenFlags Flag) const { return (Flags & Flag) != 0; }
 
   /// Unset the specified flag.
-  void clearFlag(TokenFlags Flag) {
-    Flags &= ~Flag;
-  }
+  void clearFlag(TokenFlags Flag) { Flags &= ~Flag; }
 
   /// Return the internal represtation of the flags.
   ///
   /// This is only intended for low-level operations such as writing tokens to
   /// disk.
-  unsigned getFlags() const {
-    return Flags;
-  }
+  unsigned getFlags() const { return Flags; }
 
   /// Return true if this token has trigraphs or escaped newlines in it.
   bool needsCleaning() const { return getFlag(NeedsCleaning); }

@@ -24,9 +24,9 @@
 
 namespace clang::dpct {
 
-/// DpctAsmLexer - This provides a simple interface that truns a text buffer into a
-/// stream of tokens. This provides no support for buffering, or buffering/seeking
-/// of tokens, only forward lexing is supported.
+/// DpctAsmLexer - This provides a simple interface that truns a text buffer
+/// into a stream of tokens. This provides no support for buffering, or
+/// buffering/seeking of tokens, only forward lexing is supported.
 class DpctAsmLexer {
 
   // Start of the buffer.
@@ -84,9 +84,7 @@ public:
     return &Identifiers.get(Name);
   }
 
-  DpctAsmIdentifierTable &getIdentifiertable() {
-    return Identifiers;
-  }
+  DpctAsmIdentifierTable &getIdentifiertable() { return Identifiers; }
 
   const DpctAsmIdentifierTable &getIdentifiertable() const {
     return Identifiers;

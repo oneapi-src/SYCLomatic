@@ -9,8 +9,6 @@
 #ifndef CLANG_DPCT_ASM_TOKEN_KINDS_H
 #define CLANG_DPCT_ASM_TOKEN_KINDS_H
 
-#include "clang/Basic/LLVM.h"
-
 namespace clang::dpct {
 namespace asmtok {
 enum TokenKind : unsigned short {
@@ -32,11 +30,11 @@ const char *getTokenName(TokenKind Kind);
 /// and will not produce any alternative spellings (e.g., a
 /// digraph). For the actual spelling of a given Token, use
 /// Preprocessor::getSpelling().
-const char *getPunctuatorSpelling(TokenKind Kind) LLVM_READNONE;
+const char *getPunctuatorSpelling(TokenKind Kind);
 
 /// Determines the spelling of simple keyword and contextual keyword
 /// tokens like 'int' and 'dynamic_cast'. Returns NULL for other token kinds.
-const char *getKeywordSpelling(TokenKind Kind) LLVM_READNONE;
+const char *getKeywordSpelling(TokenKind Kind);
 
 } // namespace asmtok
 } // namespace clang::dpct

@@ -85,12 +85,12 @@ bool DpctAsmLexer::isHexLiteral(const char *Start) const {
 }
 
 bool DpctAsmLexer::lex(DpctAsmToken &Result) {
-  
+
   if (CachedLexPos < CachedTokens.size()) {
     Result = CachedTokens[CachedLexPos++];
     return true;
-  } 
-  
+  }
+
   if (!CachedTokens.empty()) {
     // All cached tokens were consumed.
     CachedTokens.clear();
@@ -230,7 +230,7 @@ LexNextToken:
       Kind = asmtok::amp;
     }
     break;
-   case '|':
+  case '|':
     Char = getChar(CurPtr);
     if (Char == '|') {
       Kind = asmtok::pipepipe;

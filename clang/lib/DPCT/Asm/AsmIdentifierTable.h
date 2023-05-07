@@ -10,6 +10,7 @@
 #define CLANG_DPCT_ASM_IDENTIFIER_TABLE_H
 
 #include "AsmTokenKinds.h"
+#include "clang/Basic/LLVM.h"
 #include "llvm/ADT/StringMap.h"
 #include "llvm/Support/Allocator.h"
 

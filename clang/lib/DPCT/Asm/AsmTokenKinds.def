@@ -6,6 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+// clang-format off
 #ifndef TOK
 #define TOK(X)
 #endif
@@ -332,3 +333,4 @@ CMP_OP(nan, ".nan")
 #undef KEYWORD
 #undef PUNCTUATOR
 #undef TOK
+// clang-format on

@@ -146,24 +146,28 @@ public:
 
 class DpctAsmArrayType : public DpctAsmType {
   DpctAsmType *ElementType;
+
 protected:
   DpctAsmArrayType(TypeClass TC, DpctAsmType *ElementType)
-    : DpctAsmType(TC), ElementType(ElementType) {}
+      : DpctAsmType(TC), ElementType(ElementType) {}
+
 public:
   const DpctAsmType *getElementType() const { return ElementType; }
 
   static bool classof(const DpctAsmType *T) {
-    return  T->getTypeClass() == ConstantArrayClass ||
-            T->getTypeClass() == IncompleteArrayClass;
+    return T->getTypeClass() == ConstantArrayClass ||
+           T->getTypeClass() == IncompleteArrayClass;
   }
 };
 
 class DpctAsmConstantArrayType : public DpctAsmArrayType {
   DpctAsmIntegerLiteral *Size;
+
 public:
-  DpctAsmConstantArrayType(DpctAsmType *ElementType, DpctAsmIntegerLiteral *Size)
-    : DpctAsmArrayType(ConstantArrayClass, ElementType), Size(Size) {}
-  
+  DpctAsmConstantArrayType(DpctAsmType *ElementType,
+                           DpctAsmIntegerLiteral *Size)
+      : DpctAsmArrayType(ConstantArrayClass, ElementType), Size(Size) {}
+
   const DpctAsmIntegerLiteral *getSize() const { return Size; }
 
   static bool classof(const DpctAsmType *T) {
@@ -174,8 +178,8 @@ public:
 class DpctAsmIncompleteArrayType : public DpctAsmArrayType {
 public:
   DpctAsmIncompleteArrayType(DpctAsmType *ElementType)
-    : DpctAsmArrayType(ConstantArrayClass, ElementType) {}
-  
+      : DpctAsmArrayType(ConstantArrayClass, ElementType) {}
+
   static bool classof(const DpctAsmType *T) {
     return T->getTypeClass() == ConstantArrayClass;
   }
@@ -339,8 +343,8 @@ public:
       : DpctAsmStmt(InstructionClass), Opcode(Op), Types(Types),
         Attributes(Attrs), OutputOperand(OutputOp), InputOperands(InputOps) {}
 
-  using type_range = llvm::iterator_range<
-      SmallVector<DpctAsmType *, 4>::const_iterator>;
+  using type_range =
+      llvm::iterator_range<SmallVector<DpctAsmType *, 4>::const_iterator>;
   using attribute_range = llvm::iterator_range<
       SmallVector<DpctAsmIdentifierInfo *, 4>::const_iterator>;
   using input_operand_range =
@@ -361,9 +365,7 @@ public:
   DpctAsmType *getType(unsigned I) { return Types[I]; }
   const DpctAsmType *getType(unsigned I) const { return Types[I]; }
 
-  type_range types() const {
-    return type_range(Types.begin(), Types.end());
-  }
+  type_range types() const { return type_range(Types.begin(), Types.end()); }
 
   attribute_range attrs() const {
     return attribute_range(Attributes.begin(), Attributes.end());
@@ -405,7 +407,7 @@ class DpctAsmDeclStmt : public DpctAsmStmt {
 public:
   DpctAsmDeclStmt(DpctAsmType *BaseType, ArrayRef<DpctAsmDecl *> Decls)
       : DpctAsmStmt(DeclStmtClass), BaseType(BaseType), DeclGroup(Decls) {}
-  
+
   unsigned getNumDecl() const { return DeclGroup.size(); }
   const DpctAsmDecl *getDecl(unsigned I) const { return DeclGroup[I]; }
 
@@ -466,9 +468,11 @@ public:
 
 class DpctAsmFloatingLiteral : public DpctAsmExpr {
   llvm::APFloat Value;
+
 protected:
   DpctAsmFloatingLiteral(StmtClass SC, DpctAsmType *Type, llvm::APFloat Value)
       : DpctAsmExpr(SC, Type), Value(Value) {}
+
 public:
   DpctAsmFloatingLiteral(DpctAsmType *Type, llvm::APFloat Value)
       : DpctAsmExpr(FloatingLiteralClass, Type), Value(Value) {}
@@ -677,7 +681,7 @@ private:
 
 public:
   DpctAsmBinaryOperator(Opcode Op, DpctAsmExpr *LHS, DpctAsmExpr *RHS,
-                    DpctAsmType *Type)
+                        DpctAsmType *Type)
       : DpctAsmExpr(BinaryOperatorClass, Type), Op(Op), LHS(LHS), RHS(RHS) {}
 
 public:
@@ -697,7 +701,7 @@ class DpctAsmConditionalOperator : public DpctAsmExpr {
 
 public:
   DpctAsmConditionalOperator(DpctAsmExpr *C, DpctAsmExpr *L, DpctAsmExpr *R,
-                         DpctAsmType *Type)
+                             DpctAsmType *Type)
       : DpctAsmExpr(ConditionalOperatorClass, Type), Cond(C), LHS(L), RHS(R) {}
 
   const DpctAsmExpr *getCond() const { return Cond; }
@@ -785,7 +789,7 @@ public:
 
 class DpctAsmScope {
   using DeclSetTy = SmallPtrSet<DpctAsmVariableDecl *, 32>;
-  DpctAsmScope  *Parent;
+  DpctAsmScope *Parent;
   DeclSetTy DeclsInScope;
   unsigned Depth;
 
@@ -904,9 +908,7 @@ public:
     ConsumeToken();
     EnterScope();
   }
-  ~DpctAsmParser() {
-    ExitScope();
-  }
+  ~DpctAsmParser() { ExitScope(); }
 
   SourceMgr &getSourceManager() { return SrcMgr; }
   DpctAsmLexer &getLexer() { return Lexer; }
@@ -929,8 +931,7 @@ public:
 
   /// isTokenSpecial - True if this token requires special consumption methods.
   bool isTokenSpecial() const {
-    return isTokenParen() || isTokenBracket() ||
-           isTokenBrace();
+    return isTokenParen() || isTokenBracket() || isTokenBrace();
   }
 
   /// ConsumeParen - This consume method keeps the paren count up-to-date.
@@ -940,7 +941,7 @@ public:
     if (Tok.getKind() == asmtok::l_paren)
       ++ParenCount;
     else if (ParenCount) {
-      --ParenCount;       // Don't let unbalanced )'s drive the count negative.
+      --ParenCount; // Don't let unbalanced )'s drive the count negative.
     }
     PrevTokLocation = Tok.getLocation();
     Lexer.lex(Tok);
@@ -954,7 +955,7 @@ public:
     if (Tok.getKind() == asmtok::l_square)
       ++BracketCount;
     else if (BracketCount) {
-      --BracketCount;     // Don't let unbalanced ]'s drive the count negative.
+      --BracketCount; // Don't let unbalanced ]'s drive the count negative.
     }
 
     PrevTokLocation = Tok.getLocation();
@@ -969,14 +970,13 @@ public:
     if (Tok.getKind() == asmtok::l_brace)
       ++BraceCount;
     else if (BraceCount) {
-      --BraceCount;     // Don't let unbalanced }'s drive the count negative.
+      --BraceCount; // Don't let unbalanced }'s drive the count negative.
     }
 
     PrevTokLocation = Tok.getLocation();
     Lexer.lex(Tok);
     return PrevTokLocation;
   }
-
 
   /// ConsumeToken - Consume the current 'peek token' and lex the next one.
   /// This does not work with special tokens: string literals, code completion,
@@ -1038,7 +1038,8 @@ public:
   /// to the semicolon, consumes that extra token.
   bool ExpectAndConsumeSemi();
 
-  DpctAsmDeclResult AddInlineAsmOperands(StringRef Operand, StringRef Constraint);
+  DpctAsmDeclResult AddInlineAsmOperands(StringRef Operand,
+                                         StringRef Constraint);
 
   DpctAsmScope *getCurScope() const { return CurScope; }
 
@@ -1076,27 +1077,33 @@ public:
   DpctAsmExprResult ParseCastExpression();
   DpctAsmExprResult ParseAssignmentExpression();
   DpctAsmExprResult ParseParenExpression(DpctAsmBuiltinType *&CastTy);
-  DpctAsmExprResult ParseRHSOfBinaryExpression(DpctAsmExprResult LHS, asmprec::Level MinPrec);
+  DpctAsmExprResult ParseRHSOfBinaryExpression(DpctAsmExprResult LHS,
+                                               asmprec::Level MinPrec);
   DpctAsmExprResult ParsePostfixExpressionSuffix(DpctAsmExprResult LHS);
 
   DpctAsmStmtResult ParseDeclarationStatement();
-  DpctAsmTypeResult ParseDeclarationSpecifier(DpctAsmDeclarationSpecifier &DeclSpec);
-  DpctAsmDeclResult ParseDeclarator(const DpctAsmDeclarationSpecifier &DeclSpec);
-  
+  DpctAsmTypeResult
+  ParseDeclarationSpecifier(DpctAsmDeclarationSpecifier &DeclSpec);
+  DpctAsmDeclResult
+  ParseDeclarator(const DpctAsmDeclarationSpecifier &DeclSpec);
 
   // Sema
-  DpctAsmExprResult ActOnTypeCast(DpctAsmBuiltinType *CastTy, DpctAsmExpr *SubExpr);
+  DpctAsmExprResult ActOnTypeCast(DpctAsmBuiltinType *CastTy,
+                                  DpctAsmExpr *SubExpr);
   DpctAsmExprResult ActOnAddressExpr(DpctAsmExpr *SubExpr);
   DpctAsmExprResult ActOnDiscardExpr();
   DpctAsmExprResult ActOnParenExpr(DpctAsmExpr *SubExpr);
   DpctAsmExprResult ActOnIdExpr(DpctAsmIdentifierInfo *II);
   DpctAsmExprResult ActOnTupleExpr(ArrayRef<DpctAsmExpr *> Tuple);
   DpctAsmExprResult ActOnUnaryOp(asmtok::TokenKind OpTok, DpctAsmExpr *SubExpr);
-  DpctAsmExprResult ActOnBinaryOp(asmtok::TokenKind OpTok, DpctAsmExpr *LHS, DpctAsmExpr *RHS);
-  DpctAsmExprResult ActOnConditionalOp(DpctAsmExpr *Cond, DpctAsmExpr *LHS, DpctAsmExpr *RHS);
+  DpctAsmExprResult ActOnBinaryOp(asmtok::TokenKind OpTok, DpctAsmExpr *LHS,
+                                  DpctAsmExpr *RHS);
+  DpctAsmExprResult ActOnConditionalOp(DpctAsmExpr *Cond, DpctAsmExpr *LHS,
+                                       DpctAsmExpr *RHS);
   DpctAsmExprResult ActOnNumericConstant(const DpctAsmToken &Tok);
   DpctAsmExprResult ActOnAlignment(DpctAsmExpr *Alignment);
-  DpctAsmDeclResult ActOnVariableDecl(DpctAsmIdentifierInfo *Name, DpctAsmType *Type);
+  DpctAsmDeclResult ActOnVariableDecl(DpctAsmIdentifierInfo *Name,
+                                      DpctAsmType *Type);
 };
 } // namespace clang::dpct
 
