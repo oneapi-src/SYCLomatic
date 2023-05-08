@@ -733,8 +733,6 @@ public:
           CurrentDeviceCounter(CurrentDeviceCounter) {}
     int DefaultQueueCounter = 0;
     int CurrentDeviceCounter = 0;
-    bool QueueVarInserted = false;
-    bool DeviceVarInserted = false;
   };
 
   static std::string removeSymlinks(clang::FileManager &FM,
@@ -1405,21 +1403,7 @@ public:
     }
   }
 
-  void buildReplacements() {
-    // add PriorityRepl into ReplMap and execute related action, e.g.,
-    // request feature or emit warning.
-    for (auto &ReplInfo : PriorityReplInfoMap) {
-      for (auto &Repl : ReplInfo.second->Repls) {
-        addReplacement(Repl);
-      }
-      for (auto &Action : ReplInfo.second->RelatedAction) {
-        Action();
-      }
-    }
-
-    for (auto &File : FileMap)
-      File.second->buildReplacements();
-  }
+  void buildReplacements();
   std::set<std::string> &getProcessedFile() {
     return ProcessedFile;
   }
