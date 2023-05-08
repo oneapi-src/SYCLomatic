@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/DplExtrasAlgorithm/api_test5_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasAlgorithm/api_test5_out
 
-// CHECK: 4
+// CHECK: 37
 // TEST_FEATURE: DplExtrasAlgorithm_iota
 
 #include <thrust/sequence.h>

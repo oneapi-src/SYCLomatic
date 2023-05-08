@@ -76,7 +76,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                             makeCallArgCreatorWithCall(2)))),
                 Diagnostics::EXPERIMENTAL_FEATURE,
                 ARG("__shfl_up_sync"),
-                ARG("masked shfl function"))),
+                ARG("masked sub_group function"))),
         SUBGROUPSIZE_FACTORY(
             UINT_MAX, MapNames::getDpctNamespace() + "experimental::shift_sub_group_right",
             WARNING_FACTORY_ENTRY(
@@ -93,7 +93,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                             makeCallArgCreatorWithCall(3)))),
                 Diagnostics::EXPERIMENTAL_FEATURE,
                 ARG("__shfl_up_sync"),
-                ARG("masked shfl function")))),
+                ARG("masked sub_group function")))),
     CONDITIONAL_FACTORY_ENTRY(
         CheckArgIsConstantIntWithValue(3, 32),
         SUBGROUPSIZE_FACTORY(
@@ -173,7 +173,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                             makeCallArgCreatorWithCall(2)))),
                 Diagnostics::EXPERIMENTAL_FEATURE,
                 ARG("__shfl_down_sync"),
-                ARG("masked shfl function"))),
+                ARG("masked sub_group function"))),
         SUBGROUPSIZE_FACTORY(
             UINT_MAX, MapNames::getDpctNamespace() + "experimental::shift_sub_group_left",
             WARNING_FACTORY_ENTRY(
@@ -190,7 +190,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                             makeCallArgCreatorWithCall(3)))),
                 Diagnostics::EXPERIMENTAL_FEATURE,
                 ARG("__shfl_down_sync"),
-                ARG("masked shfl function")))),
+                ARG("masked sub_group function")))),
     CONDITIONAL_FACTORY_ENTRY(
         CheckArgIsConstantIntWithValue(3, 32),
         SUBGROUPSIZE_FACTORY(
@@ -270,7 +270,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                             makeCallArgCreatorWithCall(2)))),
                 Diagnostics::EXPERIMENTAL_FEATURE,
                 ARG("__shfl_sync"),
-                ARG("masked shfl function"))),
+                ARG("masked sub_group function"))),
         SUBGROUPSIZE_FACTORY(
             UINT_MAX, MapNames::getDpctNamespace() + "experimental::select_from_sub_group",
             WARNING_FACTORY_ENTRY(
@@ -287,7 +287,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                             makeCallArgCreatorWithCall(3)))),
                 Diagnostics::EXPERIMENTAL_FEATURE,
                 ARG("__shfl_sync"),
-                ARG("masked shfl function")))),
+                ARG("masked sub_group function")))),
     CONDITIONAL_FACTORY_ENTRY(
         CheckArgIsConstantIntWithValue(3, 32),
         SUBGROUPSIZE_FACTORY(
@@ -367,7 +367,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                             makeCallArgCreatorWithCall(2)))),
                 Diagnostics::EXPERIMENTAL_FEATURE,
                 ARG("__shfl_xor_sync"),
-                ARG("masked shfl function"))),
+                ARG("masked sub_group function"))),
         SUBGROUPSIZE_FACTORY(
             UINT_MAX, MapNames::getDpctNamespace() + "experimental::permute_sub_group_by_xor",
             WARNING_FACTORY_ENTRY(
@@ -384,7 +384,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                             makeCallArgCreatorWithCall(3)))),
                 Diagnostics::EXPERIMENTAL_FEATURE,
                 ARG("__shfl_xor_sync"),
-                ARG("masked shfl function")))),
+                ARG("masked sub_group function")))),
     CONDITIONAL_FACTORY_ENTRY(
         CheckArgIsConstantIntWithValue(3, 32),
         SUBGROUPSIZE_FACTORY(

@@ -154,3 +154,22 @@ int2 b;
   a.x = 1;
   return a.x;
 }
+
+int foo2(){
+  int version;
+  //CHECK: int ret = (version = dpct::get_current_device().get_major_version(), 0);
+  int ret = cudaRuntimeGetVersion(&version);
+  int major = version / 1000;
+  int minor = (version - major * 1000) / 10;
+  int pl = version - major * 1000 - minor * 10;
+  //CHECK: if (version != SYCL_LANGUAGE_VERSION) {
+  //CHECK-NEXT:   major = SYCL_LANGUAGE_VERSION / 1000;
+  //CHECK-NEXT:   minor = (SYCL_LANGUAGE_VERSION - major * 1000) / 10;
+  //CHECK-NEXT:   pl = SYCL_LANGUAGE_VERSION - major * 1000 - minor * 10;
+  //CHECK-NEXT: }
+  if (version != CUDART_VERSION) {
+    major = CUDART_VERSION / 1000;
+    minor = (CUDART_VERSION - major * 1000) / 10;
+    pl = CUDART_VERSION - major * 1000 - minor * 10;
+  }
+}

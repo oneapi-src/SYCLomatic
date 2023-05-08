@@ -192,7 +192,10 @@ void CuDNNAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cudnnCreateDropoutDescriptor", "cudnnSetDropoutDescriptor",
         "cudnnGetDropoutDescriptor", "cudnnDropoutGetReserveSpaceSize",
         "cudnnRestoreDropoutDescriptor", "cudnnDropoutForward", "cudnnDropoutBackward",
-        "cudnnDestroyDropoutDescriptor", "cudnnGetVersion");
+        "cudnnDestroyDropoutDescriptor", "cudnnGetVersion",
+        "cudnnGetConvolutionBackwardFilterAlgorithm",
+        "cudnnGetConvolutionBackwardDataAlgorithm",
+        "cudnnGetConvolutionForwardAlgorithm");
   };
 
   MF.addMatcher(

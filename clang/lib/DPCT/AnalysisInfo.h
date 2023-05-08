@@ -2204,7 +2204,7 @@ public:
   // will be the size string.
   CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold = false);
   CtTypeInfo(const VarDecl *D, bool NeedSizeFold = false)
-      : PointerLevel(0), IsTemplate(false) {
+      : PointerLevel(0), IsReference(false), IsTemplate(false) {
     if (D && D->getTypeSourceInfo()) {
       auto TL = D->getTypeSourceInfo()->getTypeLoc();
       setTypeInfo(TL, NeedSizeFold);
