@@ -8,26 +8,25 @@
 // CHECK: 21
 // TEST_FEATURE: DplExtrasDpcppExtensions_segmented_reduce_ext
 
-
-#include <cuda_runtime.h>
 #include <cub/cub.cuh>
+#include <cuda_runtime.h>
 
 #define DATA_NUM 100
 
-bool test_reduce(){
-    int          num_segments = 10;
-    int          *device_offsets;
-    int          *device_in;
-    int          *device_out;
-    int          initial_value = INT_MAX;
-    void     *temp_storage = NULL;
-    size_t   temp_storage_size = 0;
-  
-    cub::DeviceSegmentedReduce::Reduce(temp_storage, temp_storage_size, device_in, device_out, num_segments, device_offsets, device_offsets + 1, cub::Min(), initial_value);
-  
-    cudaMalloc(&temp_storage, temp_storage_size);
-  
-    cub::DeviceSegmentedReduce::Reduce(temp_storage, temp_storage_size, device_in, device_out, num_segments, device_offsets, device_offsets + 1, cub::Min(), initial_value);
-  
-    return true;
+bool test_reduce() {
+  int num_segments = 10;
+  int *device_offsets;
+  int *device_in;
+  int *device_out;
+  int initial_value = INT_MAX;
+  void *temp_storage = NULL;
+  size_t temp_storage_size = 0;
+
+  cub::DeviceSegmentedReduce::Reduce(temp_storage, temp_storage_size, device_in, device_out, num_segments, device_offsets, device_offsets + 1, cub::Min(), initial_value);
+
+  cudaMalloc(&temp_storage, temp_storage_size);
+
+  cub::DeviceSegmentedReduce::Reduce(temp_storage, temp_storage_size, device_in, device_out, num_segments, device_offsets, device_offsets + 1, cub::Min(), initial_value);
+
+  return true;
 }
