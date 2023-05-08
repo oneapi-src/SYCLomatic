@@ -744,12 +744,13 @@ void AsmRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
         return EA.getReplacedString();
       };
 
-      auto addOperands = [&](const auto &E) -> void {
-        Parser.AddInlineAsmOperands(getReplaceString(E));
-      };
+      for (unsigned I = 0, E = AS->getNumOutputs(); I != E; ++I)
+        Parser.addInlineAsmOperands(getReplaceString(AS->getOutputExpr(I)),
+                                    AS->getOutputConstraint(I));
 
-      llvm::for_each(AS->outputs(), addOperands);
-      llvm::for_each(AS->inputs(), addOperands);
+      for (unsigned I = 0, E = AS->getNumInputs(); I != E; ++I)
+        Parser.addInlineAsmOperands(getReplaceString(AS->getInputExpr(I)),
+                                    AS->getInputConstraint(I));
 
       CodeGen.setNumIndent(1);
       CodeGen.setIndentUnit(
@@ -764,7 +765,6 @@ void AsmRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
 
         if (CodeGen.handleStatement(Inst.get())) {
           report(AS->getAsmLoc(), Diagnostics::DEVICE_ASM, true);
-          ;
           return;
         }
 

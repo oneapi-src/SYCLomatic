@@ -1038,7 +1038,7 @@ public:
   /// to the semicolon, consumes that extra token.
   bool ExpectAndConsumeSemi();
 
-  DpctAsmDeclResult AddInlineAsmOperands(StringRef Operand,
+  DpctAsmDeclResult addInlineAsmOperands(StringRef Operand,
                                          StringRef Constraint);
 
   DpctAsmScope *getCurScope() const { return CurScope; }

@@ -133,7 +133,7 @@ DpctAsmType::~DpctAsmType() = default;
 DpctAsmDecl::~DpctAsmDecl() = default;
 DpctAsmStmt::~DpctAsmStmt() = default;
 
-DpctAsmDeclResult DpctAsmParser::AddInlineAsmOperands(StringRef Operand,
+DpctAsmDeclResult DpctAsmParser::addInlineAsmOperands(StringRef Operand,
                                                       StringRef Constraint) {
   unsigned Index = Context.addInlineAsmOperand(Operand);
   DpctAsmIdentifierInfo *II = Context.get(Index);

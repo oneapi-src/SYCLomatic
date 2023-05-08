@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/asm %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/asm/asm.dp.cpp
+// clang-format off
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
@@ -98,4 +99,4 @@ int main(int argc, char **argv) {
   // CHECK-NOT: DPCT1053:{{[0-9]+}}: Migration of device assembly code is not supported.
   // CHECK: return 0;
 }
-
+// clang-format on
