@@ -80,12 +80,14 @@ inline const Expr *getDereferencedExpr(const Expr *E) {
   E = E->IgnoreImplicitAsWritten()->IgnoreParens();
   if (auto UO = dyn_cast<UnaryOperator>(E)) {
     if (UO->getOpcode() == clang::UO_AddrOf) {
-      return UO->getSubExpr()->IgnoreImplicitAsWritten();
+      return UO->getSubExpr()->IgnoreImplicitAsWritten()->IgnoreParens();
     }
   } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
     if (COCE->getOperator() == clang::OO_Amp && COCE->getNumArgs() == 1) {
-      return COCE->getArg(0)->IgnoreImplicitAsWritten();
+      return COCE->getArg(0)->IgnoreImplicitAsWritten()->IgnoreParens();
     }
+  } else if (auto ArraySub = dyn_cast<ArraySubscriptExpr>(E)) {
+    return ArraySub->getBase()->IgnoreImplicitAsWritten()->IgnoreParens();
   }
   return nullptr;
 }
@@ -694,23 +696,12 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
       NeedDeref = false;
       TE = DE;
     }
-    TE = TE->IgnoreParens();
-
-    QualType DerefQT;
-    if (auto ArraySub = dyn_cast<ArraySubscriptExpr>(TE)) {
-      // Handle cases like A[3] where A is an array or pointer
-      DerefQT = DerefQualType(ArraySub->getBase()->getType());
-    } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(TE)) {
-      // Handle cases like A[3] where A is a vector with sepecfying type.
+    QualType DerefQT = TE->getType();
+    if (auto COCE = dyn_cast<CXXOperatorCallExpr>(TE)) {
       DerefQT = COCE->getType().getCanonicalType();
     }
-
-    if (DerefQT.isNull()) {
-      DerefQT = TE->getType();
-    }
-
-    if(DerefQT->getTypeClass() == clang::Type::Auto){
-      DerefQT=DerefQT->getContainedAutoType()->getDeducedType();
+    if(const auto *AT = dyn_cast<AutoType>(DerefQT)){
+      DerefQT=AT->getDeducedType();
     }
     std::string TypeStr = DpctGlobalInfo::getReplacedTypeName(DerefQT);
     if (TypeStr == "<dependent type>" || DerefQT.isNull()) {
@@ -722,13 +713,11 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
                ExprAnalysis::ref(TE) + ")>::type";
       }
     }
-
     if (NeedDeref) {
       DerefQT = DerefQualType(DerefQT);
       if (DerefQT.isNull())
         return "";
     }
-
     return DpctGlobalInfo::getReplacedTypeName(DerefQT);
   };
 }
