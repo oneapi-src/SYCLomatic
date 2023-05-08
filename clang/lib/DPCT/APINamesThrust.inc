@@ -321,10 +321,10 @@ CONDITIONAL_FACTORY_ENTRY(
     CALL_FACTORY_ENTRY("thrust::exclusive_scan",
       CALL("std::exclusive_scan",
         CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-        ARG(0), ARG(1), ARG(2), makeAddTypeCastThrustToInitValue(2))),
+        ARG(0), ARG(1), ARG(2), makeAddTypeCastThrustToZero(2))),
     CALL_FACTORY_ENTRY("thrust::exclusive_scan",
       CALL("std::exclusive_scan",
-        ARG("oneapi::dpl::execution::seq"), ARG(0), ARG(1), ARG(2), makeAddTypeCastThrustToInitValue(2)))
+        ARG("oneapi::dpl::execution::seq"), ARG(0), ARG(1), ARG(2), makeAddTypeCastThrustToZero(2)))
   ),
   CONDITIONAL_FACTORY_ENTRY(
     CheckArgCount(4),
@@ -333,7 +333,7 @@ CONDITIONAL_FACTORY_ENTRY(
       // thrust::exclusive_scan(thrust::host, data, data + 6, data);
       CALL_FACTORY_ENTRY("thrust::exclusive_scan",
         CALL("std::exclusive_scan",
-          makeMappedThrustPolicyEnum(0), ARG(1), ARG(2), ARG(3), makeAddTypeCastThrustToInitValue(3))),
+          makeMappedThrustPolicyEnum(0), ARG(1), ARG(2), ARG(3), makeAddTypeCastThrustToZero(3))),
       // thrust::exclusive_scan(data, data + 6, data, 4);
       CONDITIONAL_FACTORY_ENTRY(
         CheckThrustArgType(1, "thrust::device_ptr"),

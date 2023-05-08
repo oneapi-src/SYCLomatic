@@ -89,7 +89,7 @@ checkEnableExtDPLAPI() {
 }
 
 inline std::function<std::string(const CallExpr *)>
-makeAddTypeCastThrustToInitValue(unsigned Idx) {
+makeAddTypeCastThrustToZero(unsigned Idx) {
   return [=](const CallExpr *C) -> std::string {
     return buildString("(decltype(", ExprAnalysis::ref(C->getArg(Idx)),
                        ")::value_type)0");
