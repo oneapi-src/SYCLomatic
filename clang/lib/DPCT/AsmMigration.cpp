@@ -422,7 +422,7 @@ bool SYCLGenBase::emitVectorType(const DpctAsmVectorType *T) {
 bool SYCLGenBase::emitDeclaration(const DpctAsmDecl *D) {
   switch (D->getDeclClass()) {
   case DpctAsmDecl::VariableDeclClass:
-    return emitVariableDeclaration(dyn_cast<DpctAsmVariableDecl>(D));    
+    return emitVariableDeclaration(dyn_cast<DpctAsmVariableDecl>(D));
   default:
     break;
   }

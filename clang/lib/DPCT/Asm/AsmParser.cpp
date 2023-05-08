@@ -75,7 +75,8 @@ DpctAsmVariableDecl *DpctAsmScope::lookupDecl(DpctAsmIdentifierInfo *II) const {
 }
 
 DpctAsmVariableDecl *
-DpctAsmScope::lookupParameterizedNameDecl(DpctAsmIdentifierInfo *II, unsigned &Idx) const {
+DpctAsmScope::lookupParameterizedNameDecl(DpctAsmIdentifierInfo *II,
+                                          unsigned &Idx) const {
   if (!II)
     return nullptr;
 
@@ -545,7 +546,7 @@ DpctAsmParser::ParseDeclarator(const DpctAsmDeclarationSpecifier &DeclSpec) {
   DpctAsmVariableDecl *Decl = VarRes.getAs<DpctAsmVariableDecl>();
 
   switch (Tok.getKind()) {
-  case asmtok::less: {    // Parameterized variable declaration
+  case asmtok::less: { // Parameterized variable declaration
     ConsumeToken();
     if (Tok.isNot(asmtok::numeric_constant))
       return AsmDeclError();
@@ -561,7 +562,7 @@ DpctAsmParser::ParseDeclarator(const DpctAsmDeclarationSpecifier &DeclSpec) {
       Decl->setNumParameterizedNames(Num);
       // Parameterized variable declaration dosen't support for arrays and init.
       return Decl;
-    }        
+    }
     return AsmDeclError();
   }
   case asmtok::l_square: { // Array declaration
@@ -572,7 +573,6 @@ DpctAsmParser::ParseDeclarator(const DpctAsmDeclarationSpecifier &DeclSpec) {
   }
 
   if (Tok.is(asmtok::equal)) {
-
   }
   return Decl;
 }
@@ -592,7 +592,8 @@ DpctAsmExprResult DpctAsmParser::ActOnIdExpr(DpctAsmIdentifierInfo *II) {
 
   unsigned ParameterizedNameIdx;
   // Maybe this identifier is a parameterized variable name
-  if (auto *D = getCurScope()->lookupParameterizedNameDecl(II, ParameterizedNameIdx)) {
+  if (auto *D = getCurScope()->lookupParameterizedNameDecl(
+          II, ParameterizedNameIdx)) {
     return ::new (Context) DpctAsmDeclRefExpr(D, ParameterizedNameIdx);
   }
 
@@ -608,9 +609,15 @@ DpctAsmExprResult DpctAsmParser::ActOnVectorExpr(ArrayRef<DpctAsmExpr *> Vec) {
   // Vector size must be 2, 4, or 8.
   DpctAsmVectorType::VecKind Kind;
   switch (Vec.size()) {
-  case 2: Kind = DpctAsmVectorType::TK_v2; break;
-  case 4: Kind = DpctAsmVectorType::TK_v4; break;
-  case 8: Kind = DpctAsmVectorType::TK_v8; break;
+  case 2:
+    Kind = DpctAsmVectorType::TK_v2;
+    break;
+  case 4:
+    Kind = DpctAsmVectorType::TK_v4;
+    break;
+  case 8:
+    Kind = DpctAsmVectorType::TK_v8;
+    break;
   default:
     return AsmExprError();
   }
@@ -623,13 +630,15 @@ DpctAsmExprResult DpctAsmParser::ActOnVectorExpr(ArrayRef<DpctAsmExpr *> Vec) {
         return AsmExprError();
       if (ElementType && ElementType->getKind() != T->getKind())
         return AsmExprError();
-      if (!ElementType) ElementType = T;
+      if (!ElementType)
+        ElementType = T;
     } else {
       return AsmExprError();
     }
   }
 
-  DpctAsmVectorType *Type = ::new (Context) DpctAsmVectorType(Kind, ElementType);
+  DpctAsmVectorType *Type =
+      ::new (Context) DpctAsmVectorType(Kind, ElementType);
   return ::new (Context) DpctAsmVectorExpr(Type, Vec);
 }
 
@@ -1244,8 +1253,8 @@ DpctAsmExprResult DpctAsmParser::ActOnNumericConstant(const DpctAsmToken &Tok) {
     auto Status = LiteralParser.GetFloatValue(Float);
     if (Status != APFloat::opOK)
       return AsmExprError();
-    return ::new (Context) DpctAsmFloatingLiteral(
-        Context.getF64Type(), Float, LiteralData);
+    return ::new (Context)
+        DpctAsmFloatingLiteral(Context.getF64Type(), Float, LiteralData);
   }
 
   APInt Int(64, 0, /*isSigned*/ true);
@@ -1260,8 +1269,7 @@ DpctAsmExprResult DpctAsmParser::ActOnNumericConstant(const DpctAsmToken &Tok) {
     Type = Context.getU64Type();
   }
 
-  return ::new (Context)
-      DpctAsmIntegerLiteral(Type, Int, LiteralData);
+  return ::new (Context) DpctAsmIntegerLiteral(Type, Int, LiteralData);
 }
 
 DpctAsmExprResult DpctAsmParser::ActOnAlignment(DpctAsmExpr *Alignment) {

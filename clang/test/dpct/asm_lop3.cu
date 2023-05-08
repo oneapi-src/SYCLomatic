@@ -1,6 +1,6 @@
 // RUN: dpct -out-root %T/asm_lop3 %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/asm_lop3/asm_lop3.dp.cpp
-
+// clang-format off
 #include <cstdint>
 
 // a^b^c
@@ -34,3 +34,4 @@ __device__  int hard(int a) {
   asm("lop3.b32 %0, %1, %2, 3, 0x1C;" : "=r"(d4) : "r"(a + B), "r"(B));
   return d4;
 }
+// clang-format on
