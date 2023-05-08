@@ -2022,7 +2022,7 @@ equal_range(_ExecutionPolicy &&policy, Iter1 start, Iter1 end,
             const ValueLessComparable &value, StrictWeakOrdering comp) {
   ::std::vector<::std::int64_t> res_lower(1);
   ::std::vector<::std::int64_t> res_upper(1);
-  ::std::vector<ValueLessComparable> value_vec(1);
+  ::std::vector<ValueLessComparable> value_vec(1, value);
   ::oneapi::dpl::lower_bound(policy, start, end, value_vec.begin(),
                              value_vec.end(), res_lower.begin(), comp);
   ::oneapi::dpl::upper_bound(::std::forward<_ExecutionPolicy>(policy), start,
