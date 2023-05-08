@@ -342,7 +342,6 @@ std::unordered_map<std::string, std::unordered_map<std::string, bool>>
 bool canBeTreatedAsPrivateMemoryAccess(int KernelDim,
                                        const clang::DeclRefExpr *DRE,
                                        const clang::FunctionDecl *FD) {
-  std::cout << "canBeTreatedAsPrivateMemoryAccess !!!!!!!!!!!!!" << std::endl;
   if (KernelDim != 1) {
     return false;
   }
@@ -385,7 +384,7 @@ bool canBeTreatedAsPrivateMemoryAccess(int KernelDim,
   if (!IdxVDContext || (IdxVDContext != FD))
     return false;
 
-  // VD's DRE should only be used in ArraySubscriptExpr's index
+  // VD's DRE should only be used as rvalue
   auto DREMatcher = clang::ast_matchers::findAll(
       clang::ast_matchers::declRefExpr().bind("DRE"));
   auto MatchedResults = clang::ast_matchers::match(
@@ -395,10 +394,10 @@ bool canBeTreatedAsPrivateMemoryAccess(int KernelDim,
     if (RefDRE->getDecl() != IdxVD) {
       continue;
     }
-    if (!IsParentArraySubscriptExpr(RefDRE)) {
-      std::cout << "????????" << RefDRE->getBeginLoc().printToString(clang::dpct::DpctGlobalInfo::getSourceManager()) << std::endl;
+    auto ICE = clang::dpct::DpctGlobalInfo::findParent<clang::ImplicitCastExpr>(
+        RefDRE);
+    if (!ICE || (ICE->getCastKind() != clang::CastKind::CK_LValueToRValue))
       return false;
-    }
   }
 
   // Check if Index variable match pattern: blockIdx.x * blockDim.x + threadIdx.x
@@ -410,14 +409,14 @@ bool canBeTreatedAsPrivateMemoryAccess(int KernelDim,
     if (!Node)
       return false;
     using namespace clang::ast_matchers;
-    auto BuiltinMatcher =
+    auto BuiltinMatcher = findAll(
         memberExpr(
             hasObjectExpression(opaqueValueExpr(hasSourceExpression(
                 declRefExpr(to(varDecl(hasAnyName("threadIdx", "blockDim",
-                                                  "blockIdx", "gridDim"))))
+                                                  "blockIdx"))))
                     .bind("declRefExpr")))),
             hasParent(implicitCastExpr(hasParent(callExpr().bind("callExpr")))))
-            .bind("memberExpr");
+            .bind("memberExpr"));
     auto MatchedResults =
         match(BuiltinMatcher, *Node, clang::dpct::DpctGlobalInfo::getContext());
     if (MatchedResults.size() != 1)
@@ -517,7 +516,7 @@ bool clang::dpct::GlobalPointerReferenceCountAnalyzer::Visit(
             clang::dpct::DpctGlobalInfo::findAncestor<clang::CallExpr>(DRE)) {
       if (auto FD = FuncCall->getDirectCallee()) {
         if (isUserDefinedDecl(FD) ||
-            AllowedDeviceFunctions.count(
+            !AllowedDeviceFunctions.count(
                 FD->getNameInfo().getName().getAsString())) {
           return false;
         }
@@ -537,9 +536,7 @@ bool clang::dpct::GlobalPointerReferenceCountAnalyzer::Visit(
       }
     }
 
-    bool res = canBeTreatedAsPrivateMemoryAccess(KernelDim, DRE, FD);
-    std::cout << "res:" << res << std::endl;
-    if (!res) {
+    if (!canBeTreatedAsPrivateMemoryAccess(KernelDim, DRE, FD)) {
       I->second.ReferencedDRENumber = I->second.ReferencedDRENumber + 1;
     }
   }
