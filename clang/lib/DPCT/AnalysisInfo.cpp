@@ -1165,11 +1165,13 @@ int analyzeGridBlockDim(const CUDAKernelCallExpr *KernelCall,
   // return true: dim is 1
   // return false: dim is 3 or cannot analyze
   auto AnalyzeInplaceCtorOrTempObj = [](const CXXConstructExpr *CCE) -> bool {
+    if (CCE->getNumArgs() == 0)
+      return false;
     const MaterializeTemporaryExpr *MTE =
-        dyn_cast_or_null<MaterializeTemporaryExpr>(CCE);
+        dyn_cast_or_null<MaterializeTemporaryExpr>(CCE->getArg(0));
     if (!MTE)
       return false;
-    const Expr *SubExpr = MTE->getSubExpr();
+    const Expr *SubExpr = MTE->getSubExpr()->IgnoreCasts();
     if (!SubExpr)
       return false;
     const CXXConstructExpr *Dim3Ctor =
@@ -1179,6 +1181,9 @@ int analyzeGridBlockDim(const CUDAKernelCallExpr *KernelCall,
     if (Dim3Ctor->getNumArgs() == 1)
       return false;
     if (Dim3Ctor->getNumArgs() == 3) {
+      if (Dim3Ctor->getArg(1)->isDefaultArgument() &&
+          Dim3Ctor->getArg(2)->isDefaultArgument())
+        return true;
       Expr::EvalResult ER1, ER2;
       if (!Dim3Ctor->getArg(1)->isValueDependent() &&
           Dim3Ctor->getArg(1)->EvaluateAsInt(ER1,
