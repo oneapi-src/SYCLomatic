@@ -733,6 +733,9 @@ public:
           CurrentDeviceCounter(CurrentDeviceCounter) {}
     int DefaultQueueCounter = 0;
     int CurrentDeviceCounter = 0;
+    std::string PlaceholderStr[3] = {
+        "", MapNames::getDpctNamespace() + "get_default_queue()",
+        MapNames::getDpctNamespace() + "get_current_device()"};
   };
 
   static std::string removeSymlinks(clang::FileManager &FM,
@@ -4503,23 +4506,22 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
   std::string KeyForDeclCounter =
       HFInfo.DeclLocFile + ":" + std::to_string(HFInfo.DeclLocOffset);
 
+  if (DpctGlobalInfo::getTempVariableDeclCounterMap().count(
+          KeyForDeclCounter) == 0) {
+    DpctGlobalInfo::getTempVariableDeclCounterMap().insert(
+        {KeyForDeclCounter, {}});
+  }
   auto Iter =
       DpctGlobalInfo::getTempVariableDeclCounterMap().find(KeyForDeclCounter);
-  if (Iter != DpctGlobalInfo::getTempVariableDeclCounterMap().end()) {
-    if (HFT == HelperFuncType::HFT_DefaultQueue) {
-      Iter->second.DefaultQueueCounter = Iter->second.DefaultQueueCounter + 1;
-    } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
-      Iter->second.CurrentDeviceCounter = Iter->second.CurrentDeviceCounter + 1;
-    }
-  } else {
-    DpctGlobalInfo::TempVariableDeclCounter Counter(0, 0);
-    if (HFT == HelperFuncType::HFT_DefaultQueue) {
-      Counter.DefaultQueueCounter = Counter.DefaultQueueCounter + 1;
-    } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
-      Counter.CurrentDeviceCounter = Counter.CurrentDeviceCounter + 1;
-    }
-    DpctGlobalInfo::getTempVariableDeclCounterMap().insert(
-        std::make_pair(KeyForDeclCounter, Counter));
+  switch (HFT) {
+  case HelperFuncType::HFT_DefaultQueue:
+    ++Iter->second.DefaultQueueCounter;
+    break;
+  case HelperFuncType::HFT_CurrentDevice:
+    ++Iter->second.CurrentDeviceCounter;
+    break;
+  default:
+    break;
   }
 }
 
