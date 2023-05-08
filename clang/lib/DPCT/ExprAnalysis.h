@@ -826,7 +826,7 @@ private:
   bool DoReverse = false;
   bool Reversed = false;
   bool DirectRef = false;
-  bool MustDim3 = false;
+  bool IsDim3Config = false;
   unsigned int ArgIndex = 0;
   bool NeedEmitWGSizeWarning = true;
   unsigned int SizeOfHighestDimension = 0;
@@ -840,7 +840,6 @@ private:
     return KCA.getReplacedString();
   }
   int64_t calculateWorkgroupSize(const CXXConstructExpr *Ctor);
-  bool isOneDimensionConfigArg(const CXXConstructExpr *Ctor);
 
 protected:
   void dispatch(const Stmt *Expression) override;

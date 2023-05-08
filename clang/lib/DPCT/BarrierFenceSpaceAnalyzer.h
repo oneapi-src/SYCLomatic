@@ -128,6 +128,8 @@ private:
   static std::unordered_map<std::string, bool> CachedResults;
   std::stack<clang::VarDecl *> UnderVarDeclOrBinaryOP;
   std::unordered_map<clang::VarDecl *, VarInfo> NonconstPointerDecls;
+  int KernelDim = 3; // 3 or 1
+  const clang::FunctionDecl *FD;
 };
 
 } // namespace dpct

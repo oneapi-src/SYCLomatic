@@ -1826,38 +1826,11 @@ void KernelConfigAnalysis::analyzeExpr(
   }
 }
 
-bool KernelConfigAnalysis::isOneDimensionConfigArg(
-    const CXXConstructExpr *Ctor) {
-  if (Ctor->getNumArgs() == 1) {
-    // E.g., copy constructor: dim3 a(1,2,3); k<<<dim3(a), 1>>>();
-    return false;
-  }
-
-  if (Ctor->getNumArgs() == 3) {
-    Expr::EvalResult ER1, ER2;
-    if (!Ctor->getArg(1)->isValueDependent() &&
-        Ctor->getArg(1)->EvaluateAsInt(ER1, DpctGlobalInfo::getContext()) &&
-        !Ctor->getArg(2)->isValueDependent() &&
-        Ctor->getArg(2)->EvaluateAsInt(ER2, DpctGlobalInfo::getContext())) {
-      if (ER1.Val.getInt().getZExtValue() == 1 &&
-          ER2.Val.getInt().getZExtValue() == 1)
-        return true;
-    }
-    return false;
-  }
-  return false;
-}
-
 void KernelConfigAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
     if (ArgIndex == 1) {
       if (calculateWorkgroupSize(Ctor) <= 256)
         NeedEmitWGSizeWarning = false;
-      if (IsTryToUseOneDimension)
-        Dim = isOneDimensionConfigArg(Ctor) ? 1 : 3;
-    } else if (ArgIndex == 0) {
-      if (IsTryToUseOneDimension)
-        Dim = isOneDimensionConfigArg(Ctor) ? 1 : 3;
     }
 
     std::string CtorString;
@@ -1925,7 +1898,7 @@ KernelConfigAnalysis::getCtorArgs(const CXXConstructExpr *Ctor) {
 void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
                                    bool ReverseIfNeed) {
   ArgIndex = Idx;
-  MustDim3 = ArgIndex < 2;
+  IsDim3Config = ArgIndex < 2;
 
   if (IsInMacroDefine && SM.isMacroArgExpansion(E->getBeginLoc())) {
     Reversed = false;
@@ -1949,10 +1922,9 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
           Stmt::MemberExprClass ||
       getTargetExpr()->IgnoreImpCasts()->getStmtClass() ==
           Stmt::IntegerLiteralClass) {
-    if (MustDim3 && getTargetExpr()->getType()->isIntegralType(
+    if (IsDim3Config && getTargetExpr()->getType()->isIntegralType(
                         DpctGlobalInfo::getContext())) {
       if (IsTryToUseOneDimension) {
-        Dim = 1;
         addReplacement(buildString(DpctGlobalInfo::getCtadClass(
                                        MapNames::getClNamespace() + "range", 1),
                                    "(", getReplacedString(), ")"));

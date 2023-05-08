@@ -1269,12 +1269,8 @@ void KernelCallExpr::buildExecutionConfig(
     ExecutionConfig.Config[Idx] = A.getReplacedString();
     if (Idx == 0) {
       ExecutionConfig.GroupDirectRef = A.isDirectRef();
-      ExecutionConfig.GroupDim =
-          analyzeGridBlockDim(dyn_cast<CUDAKernelCallExpr>(KernelCall), Arg);
     } else if (Idx == 1) {
       ExecutionConfig.LocalDirectRef = A.isDirectRef();
-      ExecutionConfig.LocalDim =
-          analyzeGridBlockDim(dyn_cast<CUDAKernelCallExpr>(KernelCall), Arg);
       // Using another analysis because previous analysis may return directly
       // when in macro is true.
       // Here set the argument of KFA as false, so it will not return directly.
@@ -1305,19 +1301,30 @@ void KernelCallExpr::buildExecutionConfig(
     ++Idx;
   }
 
-  if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+  {
     Idx = 0;
     for (auto Arg : ConfigArgs) {
       if (Idx > 1)
         break;
-      KernelConfigAnalysis AnalysisTry1D(IsInMacroDefine);
-      AnalysisTry1D.IsTryToUseOneDimension = true;
-      AnalysisTry1D.analyze(Arg, Idx, Idx < 2);
       if (Idx == 0) {
-        GridDim = AnalysisTry1D.Dim;
+        GridDim =
+            analyzeGridBlockDim(dyn_cast<CUDAKernelCallExpr>(KernelCall), Arg);
+        KernelConfigAnalysis AnalysisTry1D(IsInMacroDefine);
+        if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+          AnalysisTry1D.IsTryToUseOneDimension = true;
+        }
+        AnalysisTry1D.Dim = GridDim;
+        AnalysisTry1D.analyze(Arg, Idx, Idx < 2);
         ExecutionConfig.GroupSizeFor1D = AnalysisTry1D.getReplacedString();
       } else if (Idx == 1) {
-        BlockDim = AnalysisTry1D.Dim;
+        BlockDim =
+            analyzeGridBlockDim(dyn_cast<CUDAKernelCallExpr>(KernelCall), Arg);
+        KernelConfigAnalysis AnalysisTry1D(IsInMacroDefine);
+        if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+          AnalysisTry1D.IsTryToUseOneDimension = true;
+        }
+        AnalysisTry1D.Dim = BlockDim;
+        AnalysisTry1D.analyze(Arg, Idx, Idx < 2);
         ExecutionConfig.LocalSizeFor1D = AnalysisTry1D.getReplacedString();
       }
       ++Idx;

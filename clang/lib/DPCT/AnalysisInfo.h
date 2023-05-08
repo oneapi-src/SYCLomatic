@@ -4271,8 +4271,6 @@ private:
     std::string &SubGroupSize = Config[5];
     bool IsDefaultStream = false;
     bool IsQueuePtr = true;
-    int GroupDim = 3;
-    int LocalDim = 3;
   } ExecutionConfig;
 
   std::vector<ArgInfo> ArgsInfo;
