@@ -44,7 +44,7 @@ int main(void) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CHECK:dpct::gather_if(oneapi::dpl::execution::seq, AH.begin(), AH.end(), SH.begin(), BH.begin(), RH.begin(), pred);
 // CHECK-NEXT:dpct::gather_if(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), SD.begin(), BD.begin(), RD.begin(), pred);
-// CHECK-NEXT:if (dpct::is_device_ptr(h_ptr + 4)) {
+// CHECK-NEXT:if (dpct::is_device_ptr(h_ptr)) {
 // CHECK-NEXT:  dpct::gather_if(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(h_ptr), dpct::device_pointer<int>(h_ptr + 4), dpct::device_pointer<>(SH.begin()), dpct::device_pointer<>(BH.begin()), dpct::device_pointer<>(RH.begin()), pred);
 // CHECK-NEXT:} else {
 // CHECK-NEXT:  dpct::gather_if(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, SH.begin(), BH.begin(), RH.begin(), pred);

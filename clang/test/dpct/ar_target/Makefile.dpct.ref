@@ -1,8 +1,14 @@
-// CHECK:CC := icpx -fsycl
+// CHECK:CC := icpx
 // CHECK:LD := $(CC)
 // CHECK:#DPCT2001:0: You can link with more library by add them here.
 // CHECK:LIB := 
 // CHECK:FLAGS := 
+// CHECK:ifeq ($(shell which $(CC)),)
+// CHECK:    $(error ERROR - $(CC) compiler not found)
+// CHECK:endif
+// CHECK:ROOT_DIR     := $(shell dirname $(shell which $(CC)))
+// CHECK:INCLUDE_SYCL := $(ROOT_DIR)/../include
+// CHECK:INCLUDE_CL   := $(ROOT_DIR)/../include/sycl
 // CHECK:TARGET_0_SRC_0 = ./one.dp.cpp
 // CHECK:TARGET_0_OBJ_0 = ./one.dp.o
 // CHECK:TARGET_0_FLAG_0 = ${FLAGS}
@@ -26,15 +32,15 @@
 // CHECK:OBJS_1 :=  ${TARGET_1_OBJ_0} ${TARGET_1_OBJ_1} ${TARGET_1_OBJ_2}
 // CHECK:all: $(TARGET)
 // CHECK:$(TARGET_0): $(OBJS_0)
-// CHECK:	$(CC) -o $@ $^ $(LIB)
+// CHECK:	$(CC) -fsycl -o $@ $^ $(LIB) 
 // CHECK:$(TARGET_0_OBJ_0):$(TARGET_0_SRC_0)
-// CHECK:	$(CC) -c ${TARGET_0_SRC_0} -o ${TARGET_0_OBJ_0} $(TARGET_0_FLAG_0)
+// CHECK:	$(CC) -fsycl -c ${TARGET_0_SRC_0} -o ${TARGET_0_OBJ_0} $(TARGET_0_FLAG_0)
 // CHECK:$(TARGET_0_OBJ_1):$(TARGET_0_SRC_1)
 // CHECK:	c++ -c ${TARGET_0_SRC_1} -o ${TARGET_0_OBJ_1} $(TARGET_0_FLAG_1)
 // CHECK:$(TARGET_1): $(OBJS_1)
 // CHECK:	ar -r $@ $^ $(LIB) 
 // CHECK:$(TARGET_1_OBJ_0):$(TARGET_1_SRC_0)
-// CHECK:	$(CC) -c ${TARGET_1_SRC_0} -o ${TARGET_1_OBJ_0} $(TARGET_1_FLAG_0)
+// CHECK:	$(CC) -fsycl -c ${TARGET_1_SRC_0} -o ${TARGET_1_OBJ_0} $(TARGET_1_FLAG_0)
 // CHECK:$(TARGET_1_OBJ_1):$(TARGET_1_SRC_1)
 // CHECK:	c++ -c ${TARGET_1_SRC_1} -o ${TARGET_1_OBJ_1} $(TARGET_1_FLAG_1)
 // CHECK:$(TARGET_1_OBJ_2):$(TARGET_1_SRC_2)

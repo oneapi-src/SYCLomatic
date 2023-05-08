@@ -4,53 +4,55 @@
 //CHECK: #ifdef DPCT_COMPATIBILITY_TEMP
 //CHECK-NEXT: void hello(const sycl::stream &[[STREAM:stream_ct1]]) { [[STREAM]] << "foo"; }
 #ifdef __CUDA_ARCH__
-__global__ void hello() { printf("foo"); }
+__device__ void hello() { printf("foo"); }
 #else
-__global__ void hello() { printf("other"); }
+__device__ void hello() { printf("other"); }
 #endif
 
 //CHECK: #ifndef DPCT_COMPATIBILITY_TEMP
 #ifndef __NVCC__
-__global__ void hello2() { printf("hello2"); }
+__device__ void hello2() { printf("hello2"); }
 #endif
 //CHECK: #if defined(SYCL_LANGUAGE_VERSION)
 #if defined(__CUDACC__)
-__global__ void hello3() { printf("hello2"); }
+__device__ void hello3() { printf("hello2"); }
 #endif
 
 #if defined(xxx)
-__global__ void hello4() { printf("hello2"); }
+__device__ void hello4() { printf("hello2"); }
 //CHECK: #elif defined(DPCT_COMPATIBILITY_TEMP)
 //CHECK-NEXT: void hello4(const sycl::stream &[[STREAM]]) { [[STREAM]] << "hello2"; }
 #elif defined(__CUDA_ARCH__)
-__global__ void hello4() { printf("hello2"); }
+__device__ void hello4() { printf("hello2"); }
 #endif
 
 #if defined(xxx)
-__global__ void hello5() { printf("hello2"); }
+__device__ void hello5() { printf("hello2"); }
 //CHECK: #elif (DPCT_COMPATIBILITY_TEMP >= 400)
 //CHECK-NEXT: void hello5(const sycl::stream &[[STREAM]]) { [[STREAM]] << "hello2"; }
 #elif (__CUDA_ARCH__ >= 400)
-__global__ void hello5() { printf("hello2"); }
+__device__ void hello5() { printf("hello2"); }
 #endif
 
 //CHECK: #if defined(DPCT_COMPATIBILITY_TEMP)
 //CHECK-NEXT: void hello6(const sycl::stream &[[STREAM]]) { [[STREAM]] << "hello2"; }
 #if defined(__CUDA_ARCH__)
-__global__ void hello6() { printf("hello2"); }
+__device__ void hello6() { printf("hello2"); }
 #endif
 
 //CHECK: #ifndef DPCT_COMPATIBILITY_TEMP
-//CHECK-NEXT: __global__ void hello7() { printf("hello2"); }
+//CHECK-NEXT: __device__ void hello7() { printf("hello2"); }
 //CHECK-NEXT: #else
 //CHECK-NEXT: void hello7(const sycl::stream &[[STREAM]]) { [[STREAM]] << "hello2"; }
 #ifndef __CUDA_ARCH__
-__global__ void hello7() { printf("hello2"); }
+__device__ void hello7() { printf("hello2"); }
 #else
-__global__ void hello7() { printf("hello2"); }
+__device__ void hello7() { printf("hello2"); }
 #endif
 
-__global__ void test(){
+__global__ void hello8() {}
+
+__device__ void test(){
 //CHECK:#if (DPCT_COMPATIBILITY_TEMP >= 400) &&  (DPCT_COMPATIBILITY_TEMP >= 400)
 //CHECK-NEXT:[[STREAM]] << ">400, \n";
 //CHECK-NEXT:#elif (DPCT_COMPATIBILITY_TEMP >200)
@@ -70,25 +72,25 @@ printf("<200, \n");
 
 int main() {
 //CHECK: #if defined(DPCT_COMPATIBILITY_TEMP)
-//CHECK-NEXT:     q_ct1.submit(
+//CHECK-NEXT:     q_ct1.parallel_for(
 #if defined(__NVCC__)
-  hello<<<1,1>>>();
+  hello8<<<1,1>>>();
 #else
   hello();
 #endif
 
 //CHECK: #ifdef DPCT_COMPATIBILITY_TEMP
-//CHECK-NEXT:     q_ct1.submit(
+//CHECK-NEXT:     q_ct1.parallel_for(
   #ifdef __NVCC__
-  hello<<<1,1>>>();
+  hello8<<<1,1>>>();
 #else
   hello();
 #endif
 
 //CHECK: #if DPCT_COMPATIBILITY_TEMP
-//CHECK-NEXT:     q_ct1.submit(
+//CHECK-NEXT:     q_ct1.parallel_for(
   #if __NVCC__
-  hello<<<1,1>>>();
+  hello8<<<1,1>>>();
 #else
   hello();
 #endif
@@ -131,6 +133,9 @@ int foo(int num) {
 #else
   cudaThreadExit();
 #endif
+
+  return 0;
+
 }
 
 int foo1() {
@@ -146,4 +151,25 @@ int2 a;
 #ifndef CUDART_VERSION
 int2 b;
 #endif
+  a.x = 1;
+  return a.x;
+}
+
+int foo2(){
+  int version;
+  //CHECK: int ret = (version = dpct::get_current_device().get_major_version(), 0);
+  int ret = cudaRuntimeGetVersion(&version);
+  int major = version / 1000;
+  int minor = (version - major * 1000) / 10;
+  int pl = version - major * 1000 - minor * 10;
+  //CHECK: if (version != SYCL_LANGUAGE_VERSION) {
+  //CHECK-NEXT:   major = SYCL_LANGUAGE_VERSION / 1000;
+  //CHECK-NEXT:   minor = (SYCL_LANGUAGE_VERSION - major * 1000) / 10;
+  //CHECK-NEXT:   pl = SYCL_LANGUAGE_VERSION - major * 1000 - minor * 10;
+  //CHECK-NEXT: }
+  if (version != CUDART_VERSION) {
+    major = CUDART_VERSION / 1000;
+    minor = (CUDART_VERSION - major * 1000) / 10;
+    pl = CUDART_VERSION - major * 1000 - minor * 10;
+  }
 }

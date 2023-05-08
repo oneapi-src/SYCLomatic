@@ -629,6 +629,7 @@ public:
 // Device|device_info_get_max_clock_frequency
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+  /// Return the maximum clock frequency of this device in KHz.
   int get_max_clock_frequency() const {
     return get_device_info().get_max_clock_frequency();
   }
@@ -762,6 +763,8 @@ public:
 // Device|device_info_set_memory_clock_rate
 // Device|device_info_set_memory_bus_width
 // Device|device_info_set_max_register_size_per_work_group
+// Device|device_info_set_uuid
+// Device|device_info_set_device_id
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   void get_device_info(device_info &out) const {
@@ -785,7 +788,7 @@ public:
         this->has(sycl::aspect::usm_host_allocations));
 
     prop.set_max_clock_frequency(
-        get_info<sycl::info::device::max_clock_frequency>());
+        get_info<sycl::info::device::max_clock_frequency>() * 1000);
 
     prop.set_max_compute_units(
         get_info<sycl::info::device::max_compute_units>());
@@ -1358,6 +1361,52 @@ static inline unsigned int get_device_id(const sycl::device &dev){
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|has_capability_or_fail|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+/// Util function to check whether a device supports some kinds of sycl::aspect.
+inline void
+has_capability_or_fail(const sycl::device &dev,
+                       const std::initializer_list<sycl::aspect> &props) {
+  for (const auto &it : props) {
+    if (dev.has(it))
+      continue;
+    switch (it) {
+    case sycl::aspect::fp64:
+      throw std::runtime_error("'double' is not supported in '" +
+                               dev.get_info<sycl::info::device::name>() +
+                               "' device");
+      break;
+    case sycl::aspect::fp16:
+      throw std::runtime_error("'half' is not supported in '" +
+                               dev.get_info<sycl::info::device::name>() +
+                               "' device");
+      break;
+    default:
+#define __SYCL_ASPECT(ASPECT, ID)                                              \
+  case sycl::aspect::ASPECT:                                                   \
+    return #ASPECT;
+#define __SYCL_ASPECT_DEPRECATED(ASPECT, ID, MESSAGE) __SYCL_ASPECT(ASPECT, ID)
+#define __SYCL_ASPECT_DEPRECATED_ALIAS(ASPECT, ID, MESSAGE)
+      auto getAspectNameStr = [](sycl::aspect AspectNum) -> std::string {
+        switch (AspectNum) {
+#include <sycl/info/aspects.def>
+#include <sycl/info/aspects_deprecated.def>
+        default:
+          return "unknown aspect";
+        }
+      };
+#undef __SYCL_ASPECT_DEPRECATED_ALIAS
+#undef __SYCL_ASPECT_DEPRECATED
+#undef __SYCL_ASPECT
+      throw std::runtime_error(
+          "'" + getAspectNameStr(it) + "' is not supported in '" +
+          dev.get_info<sycl::info::device::name>() + "' device");
+    }
+    break;
+  }
+}
+// DPCT_LABEL_END
 } // namespace dpct
 
 #endif // __DPCT_DEVICE_HPP__

@@ -44,26 +44,23 @@ std::function<bool(const CallExpr *C)> hasManagedAttr(int Idx) {
   };
 }
 
-DerefExpr DerefExpr::create(const Expr *E, const CallExpr * C) {
-  DerefExpr D;
-  D.C = C;
+DerefExpr::DerefExpr(const Expr *E, const CallExpr *C) {
+  this->C = C;
   // If E is UnaryOperator or CXXOperatorCallExpr D.E will has value
-  D.E = getDereferencedExpr(E);
-  if (D.E) {
-    D.E = D.E->IgnoreParens();
-    D.AddrOfRemoved = true;
+  this->E = getDereferencedExpr(E);
+  if (this->E) {
+    this->E = this->E->IgnoreParens();
+    this->AddrOfRemoved = true;
   } else {
-    D.E = E;
+    this->E = E;
   }
 
-  D.NeedParens = needExtraParens(E);
-  if (const auto UO =
-          dyn_cast_or_null<UnaryOperator>(E->IgnoreImpCasts())) {
+  this->NeedParens = needExtraParens(E);
+  if (const auto UO = dyn_cast_or_null<UnaryOperator>(E->IgnoreImpCasts())) {
     if (UO->getOpcode() == UnaryOperatorKind::UO_Deref) {
-      D.NeedParens = false;
+      this->NeedParens = false;
     }
-  }  
-  return D;
+  }
 }
 
 std::string CallExprRewriter::getMigratedArg(unsigned Idx) {

@@ -43,6 +43,10 @@ enum class version_field : int {
 /// \param field The version information field (major, minor, update or patch).
 /// \param result The result value.
 inline void mkl_get_version(version_field field, int *result) {
+#ifndef __INTEL_MKL__
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
+                           "Project does not support this API.");
+#else
   MKLVersion version;
   mkl_get_version(&version);
   if (version_field::major == field) {
@@ -56,6 +60,7 @@ inline void mkl_get_version(version_field field, int *result) {
   } else {
     throw std::runtime_error("unknown field");
   }
+#endif
 }
 
 enum class library_data_t : unsigned char {

@@ -15,7 +15,6 @@ void test() {
   }
 }
 
-
 void test1() {
   int *tensor_mem_[3];
   size_t maxSize = 64;

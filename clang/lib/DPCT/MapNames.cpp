@@ -248,7 +248,8 @@ void MapNames::setExplicitNamespaceMap() {
            getDpctNamespace() + "device_vector",
            HelperFeatureEnum::DplExtrasVector_device_vector)},
       {"thrust::device_malloc_allocator",
-       std::make_shared<TypeNameRule>(getClNamespace() + "buffer_allocator")},
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "deprecated::usm_device_allocator",
+       HelperFeatureEnum::Memory_usm_device_allocator_alias)},
       {"thrust::maximum",
        std::make_shared<TypeNameRule>("oneapi::dpl::maximum")},
       {"thrust::multiplies", std::make_shared<TypeNameRule>("std::multiplies")},
@@ -434,8 +435,8 @@ void MapNames::setExplicitNamespaceMap() {
                            "oneapi::ccl::kvs::address_type",
                            HelperFeatureEnum::CclUtils_create_kvs_address)},
       {"ncclComm_t",
-       std::make_shared<TypeNameRule>("oneapi::ccl::communicator *",
-                                      HelperFeatureEnum::CclUtils_create_kvs)},
+       std::make_shared<TypeNameRule>(getDpctNamespace() +"ccl::comm_ptr",
+                           HelperFeatureEnum::CclUtils_typedef_comm_ptr)},
       {"ncclRedOp_t", std::make_shared<TypeNameRule>("oneapi::ccl::reduction")},
       {"ncclDataType_t", std::make_shared<TypeNameRule>("oneapi::ccl::datatype")},
       {"cuda::std::tuple", std::make_shared<TypeNameRule>("std::tuple")},
@@ -4186,6 +4187,8 @@ const MapNames::MapTy MapNames::MacrosMap{
     {"CUDART_VERSION", "SYCL_LANGUAGE_VERSION"},
     {"CUBLAS_V2_H_", "MKL_SYCL_HPP"},
     {"__CUDA__", "SYCL_LANGUAGE_VERSION"},
+    {"CUFFT_FORWARD", "-1"},
+    {"CUFFT_INVERSE", "1"},
     //...
 };
 
@@ -4427,4 +4430,4 @@ const std::vector<std::string> MemoryDataTypeRule::RemoveMember{
 
 const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "this_thread_block", "sync", "tiled_partition",
-    "thread_rank",       "size", "shfl_down"};
+    "thread_rank",       "size", "shfl_down", "reduce"};

@@ -41,7 +41,7 @@ int main(void) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CHECK:dpct::merge(oneapi::dpl::execution::seq, AH.begin(), AH.end(), BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin());
 // CHECK-NEXT:dpct::merge(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), BD.begin(), BD.end(), CD.begin(), DD.begin(), ED.begin(), FD.begin());
-// CHECK-NEXT:if (dpct::is_device_ptr(h_ptr + 4)) {
+// CHECK-NEXT:if (dpct::is_device_ptr(h_ptr)) {
 // CHECK-NEXT:  dpct::merge(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(h_ptr), dpct::device_pointer<int>(h_ptr + 4), dpct::device_pointer<>(BH.begin()), dpct::device_pointer<>(BH.end()), dpct::device_pointer<>(CH.begin()), dpct::device_pointer<>(DH.begin()), dpct::device_pointer<>(EH.begin()), dpct::device_pointer<>(FH.begin()));
 // CHECK-NEXT:} else {
 // CHECK-NEXT:  dpct::merge(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin());
@@ -56,7 +56,7 @@ int main(void) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CHECK:dpct::merge(oneapi::dpl::execution::seq, AH.begin(), AH.end(), BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin(), std::greater<int>());
 // CHECK-NEXT:dpct::merge(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), BD.begin(), BD.end(), CD.begin(), DD.begin(), ED.begin(), FD.begin(), std::greater<int>());
-// CHECK-NEXT:if (dpct::is_device_ptr(h_ptr + 4)) {
+// CHECK-NEXT:if (dpct::is_device_ptr(h_ptr)) {
 // CHECK-NEXT:  dpct::merge(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(h_ptr), dpct::device_pointer<int>(h_ptr + 4), dpct::device_pointer<>(BH.begin()), dpct::device_pointer<>(BH.end()), dpct::device_pointer<>(CH.begin()), dpct::device_pointer<>(DH.begin()), dpct::device_pointer<>(EH.begin()), dpct::device_pointer<>(FH.begin()), std::greater<int>());
 // CHECK-NEXT:} else {
 // CHECK-NEXT:  dpct::merge(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin(), std::greater<int>());

@@ -232,7 +232,7 @@ float test_exp10(float a) { return exp10(a); }
 // CHECK: float test_rsqrt(float a) { return sycl::rsqrt(a); }
 float test_rsqrt(float a) { return rsqrt(a); }
 
-// CHECK: float test_rcbrt(float a) { return rcbrt(a); }
+// CHECK: float test_rcbrt(float a) { return 1 / sycl::cbrt<double>(a); }
 float test_rcbrt(float a) { return rcbrt(a); }
 
 // CHECK: float test_sinpi(float a) { return sinpi(a); }

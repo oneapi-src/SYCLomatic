@@ -774,6 +774,10 @@ class dropout_desc {
 
   void generate(sycl::queue *q, std::int64_t required_state_size,
                 std::int64_t num, void *buffer) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
+                             "Interfaces Project does not support this API.");
+#else
     sycl::event e_gen = oneapi::mkl::rng::generate(
         oneapi::mkl::rng::bernoulli<std::int32_t>(1.f - _imp->_p),
         _imp->_rng_engine, num, (std::int32_t *)buffer);
@@ -786,6 +790,7 @@ class dropout_desc {
     });
     q->memcpy(_imp->_state, _imp->_host_state.data(), required_state_size,
               e_save);
+#endif
   }
 public:
   operator bool() const {
@@ -1010,6 +1015,10 @@ public:
   }
   /// Creating oneDNN engine.
   void create_engine() {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
+                             "Interfaces Project does not support this API.");
+#else
     _eng = ::dnnl::sycl_interop::make_engine(
         dpct::get_current_device(), dpct::get_current_device().get_context());
     _s = ::dnnl::sycl_interop::make_stream(
@@ -1017,6 +1026,7 @@ public:
     _q = &dpct::get_current_device().default_queue();
     auto rand_engine = rng_engine_t(*_q, 0);
     _random_engine_state_size = oneapi::mkl::rng::get_state_size(rand_engine);
+#endif
   }
   /// Setting the user's SYCL queue for an oneDNN engine.
   /// \param [in] q Pointer to the SYCL queue.
@@ -2311,6 +2321,10 @@ inline
 void dropout_desc::restore(engine_ext &engine, float p, void *state,
                                   size_t state_size, unsigned long long seed) {
   if (state) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
+                             "Interfaces Project does not support this API.");
+#else
     std::int64_t required_state_size = engine.get_dropout_state_size();
     if (state_size < required_state_size) {
       throw std::runtime_error("restore: state_size less than required state size.");
@@ -2324,6 +2338,7 @@ void dropout_desc::restore(engine_ext &engine, float p, void *state,
     _imp->_rng_engine =
         oneapi::mkl::rng::load_state<rng_engine_t>(
             *q, _imp->_host_state.data());
+#endif
   }
 }
 
@@ -2332,6 +2347,10 @@ void dropout_desc::set(engine_ext &engine, float p, void *state,
                               size_t state_size, unsigned long long seed) {
   _imp->_p = p;
   if (state) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
+                             "Interfaces Project does not support this API.");
+#else
     std::int64_t required_state_size = engine.get_dropout_state_size();
     if (state_size < required_state_size) {
       throw std::runtime_error("set: no sufficient memory to save states.");
@@ -2343,6 +2362,7 @@ void dropout_desc::set(engine_ext &engine, float p, void *state,
     _imp->_rng_engine = rng_engine_t(*q, seed);
     oneapi::mkl::rng::save_state(_imp->_rng_engine, _imp->_host_state.data());
     q->memcpy(_imp->_state, _imp->_host_state.data(), required_state_size).wait();
+#endif
   }
 }
 // DPCT_LABEL_END

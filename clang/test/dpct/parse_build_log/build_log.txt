@@ -1,4 +1,4 @@
 >>> GCC Version is greater or equal to 4.7.0 <<<
-/usr/local/cuda/bin/nvcc -ccbin g++ -I../../common/inc  -m64 -D__BAR__   --threads 0 --std=c++11 -gencode arch=compute_35,code=sm_35 -o bar.o -c bar.cu
+/usr/local/cuda/bin/nvcc -ccbin g++ -I../../common/inc -arch=all -arch all --gpu-architecture=all --gpu-architecture all -m64 -D__BAR__   --threads 0 --std=c++11 -gencode arch=compute_35,code=sm_35 -o bar.o -c bar.cu
 nvcc warning : The 'compute_35', 'compute_37', 'compute_50', 'sm_35', 'sm_37' and 'sm_50' architectures are deprecated, and may be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
 [4575/6765] /usr/bin/c++ -o foo.cpp.o -c foo.cpp

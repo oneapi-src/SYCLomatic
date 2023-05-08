@@ -12,6 +12,19 @@ env:
   TEST_TIMEOUT: 3600
 
 jobs:
+  lint:
+    runs-on: build
+    steps:
+    - name: 'PR commits + 1'
+      run: echo "PR_FETCH_DEPTH=$(( ${{ github.event.pull_request.commits }} + 1 ))" >> "${GITHUB_ENV}"
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        persist-credentials: false
+        fetch-depth: ${{ env.PR_FETCH_DEPTH }}
+    - name: Run clang-format
+      uses: ./devops/actions/clang-format
+
   linux-build-lit:
     name: linux-build-lit
     if: github.event.pull_request.draft == false

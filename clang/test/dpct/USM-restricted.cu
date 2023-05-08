@@ -372,18 +372,18 @@ void foo() {
   // CHECK: MY_SAFE_CALL((sycl::free(h_A, q_ct1), 0));
   MY_SAFE_CALL(cudaFreeHost(h_A));
 
-  // CHECK: *(void **)&d_A = (char *)h_A;
+  // CHECK: *(void **)&d_A = (float *)h_A;
   cudaHostGetDevicePointer((void **)&d_A, h_A, 0);
-  // CHECK: errorCode = (d_A = (char *)h_A, 0);
+  // CHECK: errorCode = (d_A = (float *)h_A, 0);
   errorCode = cudaHostGetDevicePointer(&d_A, h_A, 0);
-  // CHECK: MY_SAFE_CALL((d_A = (char *)h_A, 0));
+  // CHECK: MY_SAFE_CALL((d_A = (float *)h_A, 0));
   MY_SAFE_CALL(cudaHostGetDevicePointer(&d_A, h_A, 0));
 
-  // CHECK: *D_ptr = (char *)h_A;
+  // CHECK: *D_ptr = (dpct::device_ptr)h_A;
   cuMemHostGetDevicePointer(D_ptr, h_A, 0);
-  // CHECK: errorCode = (*D_ptr = (char *)h_A, 0);
+  // CHECK: errorCode = (*D_ptr = (dpct::device_ptr)h_A, 0);
   errorCode = cuMemHostGetDevicePointer(D_ptr, h_A, 0);
-  // CHECK: MY_SAFE_CALL((*D_ptr = (char *)h_A, 0));
+  // CHECK: MY_SAFE_CALL((*D_ptr = (dpct::device_ptr)h_A, 0));
   MY_SAFE_CALL(cuMemHostGetDevicePointer(D_ptr, h_A, 0));
 
   cudaHostRegister(h_A, size, 0);

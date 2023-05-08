@@ -2204,13 +2204,17 @@ public:
   // will be the size string.
   CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold = false);
   CtTypeInfo(const VarDecl *D, bool NeedSizeFold = false)
-    : CtTypeInfo(D->getTypeSourceInfo()->getTypeLoc(), NeedSizeFold) {
-    if (D &&
-        D->getTypeSourceInfo()
-          ->getTypeLoc().getTypeLocClass()
-        == TypeLoc::IncompleteArray)
-      if (auto CAT = dyn_cast<ConstantArrayType>(D->getType()))
-        Range[0] = std::to_string(CAT->getSize().getZExtValue());
+      : PointerLevel(0), IsReference(false), IsTemplate(false) {
+    if (D && D->getTypeSourceInfo()) {
+      auto TL = D->getTypeSourceInfo()->getTypeLoc();
+      setTypeInfo(TL, NeedSizeFold);
+      if (TL.getTypeLocClass() ==
+          TypeLoc::IncompleteArray) {
+        if (auto CAT = dyn_cast<ConstantArrayType>(D->getType())) {
+          Range[0] = std::to_string(CAT->getSize().getZExtValue());
+        }
+      }
+    }
   }
 
   inline const std::string &getBaseName() { return BaseName; }
@@ -3063,17 +3067,23 @@ private:
 // function and call expression.
 class MemVarMap {
 public:
-  MemVarMap() : HasItem(false), HasStream(false), HasSync(false) {}
+  MemVarMap()
+      : HasItem(false), HasStream(false), HasSync(false), HasBF64(false),
+        HasBF16(false) {}
   unsigned int Dim = 1;
   /// This member is only used to construct the union-find set.
   MemVarMap *Parent = this;
   bool hasItem() const { return HasItem; }
   bool hasStream() const { return HasStream; }
   bool hasSync() const { return HasSync; }
+  bool hasBF64() const { return HasBF64; }
+  bool hasBF16() const { return HasBF16; }
   bool hasExternShared() const { return !ExternVarMap.empty(); }
   inline void setItem(bool Has = true) { HasItem = Has; }
   inline void setStream(bool Has = true) { HasStream = Has; }
   inline void setSync(bool Has = true) { HasSync = Has; }
+  inline void setBF64(bool Has = true) { HasBF64 = Has; }
+  inline void setBF16(bool Has = true) { HasBF16 = Has; }
   inline void addTexture(std::shared_ptr<TextureInfo> Tex) {
     TextureMap.insert(std::make_pair(Tex->getOffset(), Tex));
   }
@@ -3090,6 +3100,8 @@ public:
     setItem(hasItem() || VarMap.hasItem());
     setStream(hasStream() || VarMap.hasStream());
     setSync(hasSync() || VarMap.hasSync());
+    setBF64(hasBF64() || VarMap.hasBF64());
+    setBF16(hasBF16() || VarMap.hasBF16());
     merge(LocalVarMap, VarMap.LocalVarMap, TemplateArgs);
     merge(GlobalVarMap, VarMap.GlobalVarMap, TemplateArgs);
     merge(ExternVarMap, VarMap.ExternVarMap, TemplateArgs);
@@ -3300,7 +3312,7 @@ private:
                                               int PreParams,
                                               int PostParams) const;
 
-  bool HasItem, HasStream, HasSync;
+  bool HasItem, HasStream, HasSync, HasBF64, HasBF16;
   MemVarInfoMap LocalVarMap;
   MemVarInfoMap GlobalVarMap;
   MemVarInfoMap ExternVarMap;
@@ -3756,6 +3768,8 @@ public:
   inline void setItem() { VarMap.setItem(); }
   inline void setStream() { VarMap.setStream(); }
   inline void setSync() { VarMap.setSync(); }
+  inline void setBF64() { VarMap.setBF64(); }
+  inline void setBF16() { VarMap.setBF16(); }
   inline void addTexture(std::shared_ptr<TextureInfo> Tex) {
     VarMap.addTexture(Tex);
   }
@@ -4074,6 +4088,7 @@ private:
   void printSubmitLamda(KernelPrinter &Printer);
   void printParallelFor(KernelPrinter &Printer, bool IsInSubmit);
   void printKernel(KernelPrinter &Printer);
+  void printStreamBase(KernelPrinter &Printer);
 
 public:
   KernelCallExpr(unsigned Offset, const std::string &FilePath,

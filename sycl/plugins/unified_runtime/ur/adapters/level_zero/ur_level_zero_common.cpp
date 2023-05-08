@@ -20,7 +20,7 @@ ur_result_t ze2urResult(ze_result_t ZeResult) {
   case ZE_RESULT_ERROR_NOT_AVAILABLE:
     return UR_RESULT_ERROR_INVALID_OPERATION;
   case ZE_RESULT_ERROR_UNINITIALIZED:
-    return UR_RESULT_ERROR_INVALID_PLATFORM;
+    return UR_RESULT_ERROR_UNINITIALIZED;
   case ZE_RESULT_ERROR_INVALID_ARGUMENT:
     return UR_RESULT_ERROR_INVALID_ARGUMENT;
   case ZE_RESULT_ERROR_INVALID_NULL_POINTER:
@@ -69,6 +69,8 @@ void urPrint(const char *Format, ...) {
   }
 }
 
+usm_settings::USMAllocatorConfig USMAllocatorConfigInstance;
+
 // This function will ensure compatibility with both Linux and Windows for
 // setting environment variables.
 bool setEnvVar(const char *name, const char *value) {
@@ -78,13 +80,14 @@ bool setEnvVar(const char *name, const char *value) {
   int Res = setenv(name, value, 1);
 #endif
   if (Res != 0) {
-    urPrint(
-        "Level Zero plugin was unable to set the environment variable: %s\n",
-        name);
+    urPrint("UR L0 Adapter was unable to set the environment variable: %s\n",
+            name);
     return false;
   }
   return true;
 }
+
+ZeUSMImportExtension ZeUSMImport;
 
 // This will count the calls to Level-Zero
 std::map<const char *, int> *ZeCallCount = nullptr;

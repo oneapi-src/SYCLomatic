@@ -103,15 +103,15 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
 
   // CHECK: b = h == h_1;
   b = __heq(h, h_1);
-  // CHECK: b = dpct::unordered_compare_half(h, h_1, std::equal_to<>());
+  // CHECK: b = dpct::unordered_compare(h, h_1, std::equal_to<>());
   b = __hequ(h, h_1);
   // CHECK: b = h >= h_1;
   b = __hge(h, h_1);
-  // CHECK: b = dpct::unordered_compare_half(h, h_1, std::greater_equal<>());
+  // CHECK: b = dpct::unordered_compare(h, h_1, std::greater_equal<>());
   b = __hgeu(h, h_1);
   // CHECK: b = h > h_1;
   b = __hgt(h, h_1);
-  // CHECK: b = dpct::unordered_compare_half(h, h_1, std::greater<>());
+  // CHECK: b = dpct::unordered_compare(h, h_1, std::greater<>());
   b = __hgtu(h, h_1);
   // CHECK: b = sycl::isinf(h);
   b = __hisinf(h);
@@ -119,68 +119,68 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   b = __hisnan(h);
   // CHECK: b = h <= h_1;
   b = __hle(h, h_1);
-  // CHECK: b = dpct::unordered_compare_half(h, h_1, std::less_equal<>());
+  // CHECK: b = dpct::unordered_compare(h, h_1, std::less_equal<>());
   b = __hleu(h, h_1);
   // CHECK: b = h < h_1;
   b = __hlt(h, h_1);
-  // CHECK: b = dpct::unordered_compare_half(h, h_1, std::less<>());
+  // CHECK: b = dpct::unordered_compare(h, h_1, std::less<>());
   b = __hltu(h, h_1);
-  // CHECK: b = dpct::compare_half(h, h_1, std::not_equal_to<>());
+  // CHECK: b = dpct::compare(h, h_1, std::not_equal_to<>());
   b = __hne(h, h_1);
-  // CHECK: b = dpct::unordered_compare_half(h, h_1, std::not_equal_to<>());
+  // CHECK: b = dpct::unordered_compare(h, h_1, std::not_equal_to<>());
   b = __hneu(h, h_1);
 
   // Half2 Comparison Functions
 
-  // CHECK: b = dpct::compare_both_half2(h2, h2_1, std::equal_to<>());
+  // CHECK: b = dpct::compare_both(h2, h2_1, std::equal_to<>());
   b = __hbeq2(h2, h2_1);
-  // CHECK: b = dpct::unordered_compare_both_half2(h2, h2_1, std::equal_to<>());
+  // CHECK: b = dpct::unordered_compare_both(h2, h2_1, std::equal_to<>());
   b = __hbequ2(h2, h2_1);
-  // CHECK: b = dpct::compare_both_half2(h2, h2_1, std::greater_equal<>());
+  // CHECK: b = dpct::compare_both(h2, h2_1, std::greater_equal<>());
   b = __hbge2(h2, h2_1);
-  // CHECK: b = dpct::unordered_compare_both_half2(h2, h2_1, std::greater_equal<>());
+  // CHECK: b = dpct::unordered_compare_both(h2, h2_1, std::greater_equal<>());
   b = __hbgeu2(h2, h2_1);
-  // CHECK: b = dpct::compare_both_half2(h2, h2_1, std::greater<>());
+  // CHECK: b = dpct::compare_both(h2, h2_1, std::greater<>());
   b = __hbgt2(h2, h2_1);
-  // CHECK: b = dpct::unordered_compare_both_half2(h2, h2_1, std::greater<>());
+  // CHECK: b = dpct::unordered_compare_both(h2, h2_1, std::greater<>());
   b = __hbgtu2(h2, h2_1);
-  // CHECK: b = dpct::compare_both_half2(h2, h2_1, std::less_equal<>());
+  // CHECK: b = dpct::compare_both(h2, h2_1, std::less_equal<>());
   b = __hble2(h2, h2_1);
-  // CHECK: b = dpct::unordered_compare_both_half2(h2, h2_1, std::less_equal<>());
+  // CHECK: b = dpct::unordered_compare_both(h2, h2_1, std::less_equal<>());
   b = __hbleu2(h2, h2_1);
-  // CHECK: b = dpct::compare_both_half2(h2, h2_1, std::less<>());
+  // CHECK: b = dpct::compare_both(h2, h2_1, std::less<>());
   b = __hblt2(h2, h2_1);
-  // CHECK: b = dpct::unordered_compare_both_half2(h2, h2_1, std::less<>());
+  // CHECK: b = dpct::unordered_compare_both(h2, h2_1, std::less<>());
   b = __hbltu2(h2, h2_1);
-  // CHECK: b = dpct::compare_both_half2(h2, h2_1, std::not_equal_to<>());
+  // CHECK: b = dpct::compare_both(h2, h2_1, std::not_equal_to<>());
   b = __hbne2(h2, h2_1);
-  // CHECK: b = dpct::unordered_compare_both_half2(h2, h2_1, std::not_equal_to<>());
+  // CHECK: b = dpct::unordered_compare_both(h2, h2_1, std::not_equal_to<>());
   b = __hbneu2(h2, h2_1);
-  // CHECK: h2_2 = dpct::compare_half2(h2, h2_1, std::equal_to<>());
+  // CHECK: h2_2 = dpct::compare(h2, h2_1, std::equal_to<>());
   h2_2 = __heq2(h2, h2_1);
-  // CHECK: h2_2 = dpct::unordered_compare_half2(h2, h2_1, std::equal_to<>());
+  // CHECK: h2_2 = dpct::unordered_compare(h2, h2_1, std::equal_to<>());
   h2_2 = __hequ2(h2, h2_1);
-  // CHECK: h2_2 = dpct::compare_half2(h2, h2_1, std::greater_equal<>());
+  // CHECK: h2_2 = dpct::compare(h2, h2_1, std::greater_equal<>());
   h2_2 = __hge2(h2, h2_1);
-  // CHECK: h2_2 = dpct::unordered_compare_half2(h2, h2_1, std::greater_equal<>());
+  // CHECK: h2_2 = dpct::unordered_compare(h2, h2_1, std::greater_equal<>());
   h2_2 = __hgeu2(h2, h2_1);
-  // CHECK: h2_2 = dpct::compare_half2(h2, h2_1, std::greater<>());
+  // CHECK: h2_2 = dpct::compare(h2, h2_1, std::greater<>());
   h2_2 = __hgt2(h2, h2_1);
-  // CHECK: h2_2 = dpct::unordered_compare_half2(h2, h2_1, std::greater<>());
+  // CHECK: h2_2 = dpct::unordered_compare(h2, h2_1, std::greater<>());
   h2_2 = __hgtu2(h2, h2_1);
   // CHECK: h2_2 = dpct::isnan(h2);
   h2_2 = __hisnan2(h2);
-  // CHECK: h2_2 = dpct::compare_half2(h2, h2_1, std::less_equal<>());
+  // CHECK: h2_2 = dpct::compare(h2, h2_1, std::less_equal<>());
   h2_2 = __hle2(h2, h2_1);
-  // CHECK: h2_2 = dpct::unordered_compare_half2(h2, h2_1, std::less_equal<>());
+  // CHECK: h2_2 = dpct::unordered_compare(h2, h2_1, std::less_equal<>());
   h2_2 = __hleu2(h2, h2_1);
-  // CHECK: h2_2 = dpct::compare_half2(h2, h2_1, std::less<>());
+  // CHECK: h2_2 = dpct::compare(h2, h2_1, std::less<>());
   h2_2 = __hlt2(h2, h2_1);
-  // CHECK: h2_2 = dpct::unordered_compare_half2(h2, h2_1, std::less<>());
+  // CHECK: h2_2 = dpct::unordered_compare(h2, h2_1, std::less<>());
   h2_2 = __hltu2(h2, h2_1);
-  // CHECK: h2_2 = dpct::compare_half2(h2, h2_1, std::not_equal_to<>());
+  // CHECK: h2_2 = dpct::compare(h2, h2_1, std::not_equal_to<>());
   h2_2 = __hne2(h2, h2_1);
-  // CHECK: h2_2 = dpct::unordered_compare_half2(h2, h2_1, std::not_equal_to<>());
+  // CHECK: h2_2 = dpct::unordered_compare(h2, h2_1, std::not_equal_to<>());
   h2_2 = __hneu2(h2, h2_1);
 
   // Half Math Functions
@@ -2152,7 +2152,10 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: */
   // CHECK-NEXT: f = dpct::length(&f, i);
   f = normf(i, &f);
-  // CHECK: f = sycl::native::recip((float)sycl::cbrt(f));
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::cbrt call is used instead of the rcbrtf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: f = sycl::native::recip(sycl::cbrt<float>(f));
   f = rcbrtf(f);
   // CHECK: f = sycl::native::recip(sycl::length(sycl::float3(f, f, f)));
   f = rnorm3df(f, f, f);
@@ -2225,7 +2228,10 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdfinv is not supported.
   // CHECK-NEXT: */
   d = normcdfinv(d);
-  // CHECK: d = sycl::native::recip((float)sycl::cbrt(d));
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::cbrt call is used instead of the rcbrt call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: d = 1 / sycl::cbrt<double>(d);
   d = rcbrt(d);
   // CHECK: d = 1 / sycl::length(sycl::double3(d, d, d));
   d = rnorm3d(d, d, d);
@@ -2503,19 +2509,19 @@ __global__ void kernelFuncSIMD() {
   u_2 = __vhaddu2(u, u_1);
   u_2 = __vhaddu4(u, u_1);
 
-  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2>(u, u_1, dpct::max());
-  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, u_1, dpct::max());
-  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, dpct::max());
-  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, dpct::max());
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2>(u, u_1, dpct::maximum());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, u_1, dpct::maximum());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, dpct::maximum());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, dpct::maximum());
   u_2 = __vmaxs2(u, u_1);
   u_2 = __vmaxs4(u, u_1);
   u_2 = __vmaxu2(u, u_1);
   u_2 = __vmaxu4(u, u_1);
 
-  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2>(u, u_1, dpct::min());
-  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, u_1, dpct::min());
-  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, dpct::min());
-  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, dpct::min());
+  // CHECK: u_2 = dpct::vectorized_binary<sycl::short2>(u, u_1, dpct::minimum());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::char4>(u, u_1, dpct::minimum());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::ushort2>(u, u_1, dpct::minimum());
+  // CHECK-NEXT: u_2 = dpct::vectorized_binary<sycl::uchar4>(u, u_1, dpct::minimum());
   u_2 = __vmins2(u, u_1);
   u_2 = __vmins4(u, u_1);
   u_2 = __vminu2(u, u_1);
@@ -3234,9 +3240,15 @@ __global__ void k2() {
   norm4d(d0, d1, d2, d3);
   // CHECK: sycl::length(sycl::float4(f0, f1, f2, f3));
   norm4df(f0, f1, f2, f3);
-  // CHECK: sycl::native::recip((float)sycl::cbrt(d0));
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::cbrt call is used instead of the rcbrt call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: 1 / sycl::cbrt<double>(d0);
   rcbrt(d0);
-  // CHECK: sycl::native::recip((float)sycl::cbrt(f0));
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::cbrt call is used instead of the rcbrtf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: sycl::native::recip(sycl::cbrt<float>(f0));
   rcbrtf(f0);
   // CHECK: 1 / sycl::length(sycl::double3(d0, d1, d2));
   rnorm3d(d0, d1, d2);
