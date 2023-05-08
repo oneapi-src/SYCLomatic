@@ -89,6 +89,22 @@ checkEnableExtDPLAPI() {
 }
 
 inline std::function<std::string(const CallExpr *)>
+makeAddTypeCastThrustToInitValue(unsigned Idx) {
+  return [=](const CallExpr *C) -> std::string {
+    return buildString("(decltype(", ExprAnalysis::ref(C->getArg(Idx)),
+                       ")::value_type)0");
+  };
+}
+
+inline std::function<std::string(const CallExpr *)>
+makeAddTypeCastToThrustArg(unsigned Idx) {
+  return [=](const CallExpr *C) -> std::string {
+    return buildString("(decltype(", ExprAnalysis::ref(C->getArg(Idx - 1)),
+                       ")::value_type)", ExprAnalysis::ref(C->getArg(Idx)));
+  };
+}
+
+inline std::function<std::string(const CallExpr *)>
 makeMappedThrustPolicyEnum(unsigned Idx) {
   auto getBaseType = [](QualType QT) -> std::string {
     auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
