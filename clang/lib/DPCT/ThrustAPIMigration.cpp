@@ -128,16 +128,6 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
       ArgT.find("execution_policy_base") != std::string::npos;
   bool PolicyProcessed = false;
 
-  if (ThrustFuncName == "sort") {
-    if (NumArgs == 4) {
-      hasExecutionPolicy = true;
-    } else if (NumArgs == 3) {
-      std::string FirstArgType = CE->getArg(0)->getType().getAsString();
-      std::string SecondArgType = CE->getArg(1)->getType().getAsString();
-      if (FirstArgType != SecondArgType)
-        hasExecutionPolicy = true;
-    }
-  }
   // To migrate "thrust::cuda::par.on" that appears in CE' first arg to
   // "oneapi::dpl::execution::make_device_policy".
   const CallExpr *Call = nullptr;
@@ -176,39 +166,10 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
   // migrated to oneapi::dpl APIs without a policy on the SYCL side
   if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
     if (FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) {
-      if (ThrustFuncName == "sort") {
-        report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-               "thrust::" + ThrustFuncName);
-        return;
-      } else if (hasExecutionPolicy) {
+      if (hasExecutionPolicy) {
         emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
       }
     }
-  }
-
-  if (ThrustFuncName == "binary_search" &&
-      (NumArgs <= 4 || (NumArgs == 5 && hasExecutionPolicy))) {
-    // Currently, we do not support migration of 4 of the 8 overloaded versions
-    // of thrust::binary_search.  The ones we do not support are the ones
-    // searching for a single value instead of a vector of values
-    //
-    // Supported parameter profiles:
-    // 1. (policy, firstIt, lastIt, valueFirstIt, valueLastIt, resultIt)
-    // 2. (firstIt, lastIt, valueFirstIt, valueLastIt, resultIt)
-    // 3. (policy, firstIt, lastIt, valueFirstIt, valueLastIt, resultIt, comp)
-    // 4. (firstIt, lastIt, valueFirstIt, valueLastIt, resultIt, comp)
-    //
-    // Not supported parameter profiles:
-    // 1. (policy, firstIt, lastIt, value)
-    // 2. (firstIt, lastIt, value)
-    // 3. (policy, firstIt, lastIt, value, comp)
-    // 4. (firstIt, lastIt, value, comp)
-    //
-    // The logic in the above if condition filters out the ones
-    // currently not supported and issues a warning
-    report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-           "thrust::" + ThrustFuncName);
-    return;
   }
 
   if (ULExpr) {
@@ -222,44 +183,6 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
       return;
     if (hasExecutionPolicy) {
       emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
-    }
-  } else if (ThrustFuncName == "sort") {
-
-    // Rule of thrust::sort migration
-    // #. thrust API
-    //   dpcpp API
-    // 1. thurst::sort(policy, h_vec.begin(), h_vec.end())
-    //   std::sort(oneapi::dpl::exection::par_unseq, h_vec.begin(), h_vec.end())
-    //
-    // 2. thrust::sort(h_vec.begin(), h_vec.end())
-    //   std::sort(h_vec.begin(), h_vec.end())
-    //
-    // 3. thrust::sort(policy, d_vec.begin(), d_vec.end())
-    //   oneapi::dpl::sort(make_device_policy(queue), d_vec.begin(),
-    //   d_vec.end())
-    //
-    // 4. thrust::sort(d_vec.begin(), d_vec.end())
-    //   oneapi::dpl::sort(make_device_policy(queue), d_vec.begin(),
-    //   d_vec.end())
-    //
-    // When thrust::sort inside template function and is a UnresolvedLookupExpr,
-    // we will map to oneapi::dpl::sort
-
-    auto IteratorArg = CE->getArg(1);
-    auto IteratorType = IteratorArg->getType().getAsString();
-    if (IteratorType.find("device_ptr") == std::string::npos) {
-      if (hasExecutionPolicy) {
-        emplaceTransformation(new ReplaceStmt(
-            CE->getArg(0), "oneapi::dpl::execution::par_unseq"));
-      }
-      emplaceTransformation(new ReplaceCalleeName(CE, std::move("std::sort")));
-      return;
-    } else {
-      emplaceTransformation(new ReplaceCalleeName(CE, std::move(NewName)));
-      if (PolicyProcessed) { 
-        return;
-      } else if (hasExecutionPolicy)
-        emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
     }
   } else {
     emplaceTransformation(new ReplaceCalleeName(CE, std::move(NewName)));

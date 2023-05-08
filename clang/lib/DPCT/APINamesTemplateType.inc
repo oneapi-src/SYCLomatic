@@ -173,3 +173,27 @@ TYPE_REWRITE_ENTRY("thrust::identity",
                    TYPE_FACTORY(STR("oneapi::dpl::identity")))
 
 TYPE_REWRITE_ENTRY("thrust::null_type", TYPE_FACTORY(STR("dpct::null_type")))
+
+TYPE_REWRITE_ENTRY("cooperative_groups::__v1::plus",
+                   TYPE_FACTORY(STR(MapNames::getClNamespace() + "plus"),
+                                TEMPLATE_ARG(0)))
+
+TYPE_REWRITE_ENTRY("cooperative_groups::__v1::less",
+                   TYPE_FACTORY(STR(MapNames::getClNamespace() + "minimum"),
+                                TEMPLATE_ARG(0)))
+
+TYPE_REWRITE_ENTRY("cooperative_groups::__v1::greater",
+                   TYPE_FACTORY(STR(MapNames::getClNamespace() + "maximum"),
+                                TEMPLATE_ARG(0)))
+
+TYPE_REWRITE_ENTRY("cooperative_groups::__v1::bit_and",
+                   TYPE_FACTORY(STR(MapNames::getClNamespace() + "bit_and"),
+                                TEMPLATE_ARG(0)))
+
+TYPE_REWRITE_ENTRY("cooperative_groups::__v1::bit_xor",
+                   TYPE_FACTORY(STR(MapNames::getClNamespace() + "bit_xor"),
+                                TEMPLATE_ARG(0)))
+
+TYPE_REWRITE_ENTRY("cooperative_groups::__v1::bit_or",
+                   TYPE_FACTORY(STR(MapNames::getClNamespace() + "bit_or"),
+                                TEMPLATE_ARG(0)))
