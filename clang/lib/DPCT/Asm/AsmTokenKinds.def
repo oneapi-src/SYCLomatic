@@ -271,6 +271,7 @@ PACKED_INTEGER(u16x2, ".u16x2")
 
 VECTOR(v2, ".v2")
 VECTOR(v4, ".v4")
+VECTOR(v8, ".v8")
 
 STATE_SPACE(reg,    ".reg")
 STATE_SPACE(sreg,   ".sreg")

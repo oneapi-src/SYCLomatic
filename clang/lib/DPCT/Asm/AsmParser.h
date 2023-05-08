@@ -56,7 +56,6 @@ class DpctAsmType {
 public:
   enum TypeClass {
     BuiltinClass,
-    TupleClass,
     ConstantArrayClass,
     IncompleteArrayClass,
     VectorClass,
@@ -74,12 +73,15 @@ public:
   TypeClass getTypeClass() const { return tClass; }
 
   void *operator new(size_t bytes) noexcept {
-    llvm_unreachable("PtxDecl cannot be allocated with regular 'new'.");
+    llvm_unreachable("DpctAsmType cannot be allocated with regular 'new'.");
   }
 
   void operator delete(void *data) noexcept {
-    llvm_unreachable("PtxDecl cannot be released with regular 'delete'.");
+    llvm_unreachable("DpctAsmType cannot be released with regular 'delete'.");
   }
+
+  bool isSignedInteger() const;
+  bool isUnsignedInteger() const;
 };
 
 class DpctAsmBuiltinType : public DpctAsmType {
@@ -123,20 +125,20 @@ public:
 
 class DpctAsmVectorType : public DpctAsmType {
 public:
-  enum TypeKind : uint8_t {
+  enum VecKind : uint8_t {
 #define VECTOR(X, Y) TK_##X,
 #include "AsmTokenKinds.def"
   };
 
 private:
-  TypeKind Kind;
+  VecKind Kind;
   DpctAsmBuiltinType *ElementType;
 
 public:
-  DpctAsmVectorType(TypeKind Kind, DpctAsmBuiltinType *ElementType)
+  DpctAsmVectorType(VecKind Kind, DpctAsmBuiltinType *ElementType)
       : DpctAsmType(VectorClass), Kind(Kind), ElementType(ElementType) {}
 
-  TypeKind getKind() const { return Kind; }
+  VecKind getKind() const { return Kind; }
   const DpctAsmBuiltinType *getElementType() const { return ElementType; }
 
   static bool classof(const DpctAsmType *T) {
@@ -185,22 +187,6 @@ public:
   }
 };
 
-class DpctAsmTupleType : public DpctAsmType {
-  SmallVector<DpctAsmType *, 4> ElementTypes;
-
-public:
-  DpctAsmTupleType(ArrayRef<DpctAsmType *> ElementTypes)
-      : DpctAsmType(TupleClass), ElementTypes(ElementTypes) {}
-
-  const DpctAsmType *getElementType(unsigned I) const {
-    return ElementTypes[I];
-  }
-
-  static bool classof(const DpctAsmType *T) {
-    return T->getTypeClass() == TupleClass;
-  }
-};
-
 class DpctAsmDiscardType : public DpctAsmType {
 public:
   DpctAsmDiscardType() : DpctAsmType(DiscardClass) {}
@@ -231,18 +217,21 @@ public:
   DpctAsmIdentifierInfo *getDeclName() const { return Name; }
 
   void *operator new(size_t bytes) noexcept {
-    llvm_unreachable("PtxDecl cannot be allocated with regular 'new'.");
+    llvm_unreachable("DpctAsmDecl cannot be allocated with regular 'new'.");
   }
 
   void operator delete(void *data) noexcept {
-    llvm_unreachable("PtxDecl cannot be released with regular 'delete'.");
+    llvm_unreachable("DpctAsmDecl cannot be released with regular 'delete'.");
   }
 };
 
 class DpctAsmVariableDecl : public DpctAsmDecl {
   DpctAsmIdentifierInfo *StorageClass;
   DpctAsmType *Type;
-  DpctAsmExpr *Align;
+  unsigned Align;
+  unsigned NumParameterizedNames = 0;
+  bool HasAlign;
+  bool IsParameterizedNameDecl = false;
 
 public:
   DpctAsmVariableDecl(DpctAsmIdentifierInfo *Name, DpctAsmType *Type)
@@ -253,7 +242,29 @@ public:
   DpctAsmType *getType() { return Type; }
   const DpctAsmType *getType() const { return Type; }
 
-  void setAlign(DpctAsmExpr *Align) { this->Align = Align; }
+  bool hasAlign() const { return HasAlign; }
+  void setAlign(unsigned Align) {
+    assert(!hasAlign() &&
+           "This variable declaration already have a specific alignment");
+    this->Align = Align;
+  }
+  unsigned getAlign() const {
+    assert(hasAlign() && "This variable dose not have any specific alignment");
+    return Align;
+  }
+
+  bool isParameterizedNameDecl() const { return IsParameterizedNameDecl; }
+  void setNumParameterizedNames(unsigned Num) {
+    assert(!isParameterizedNameDecl() &&
+           "This variable declaration already is a parameterized name");
+    IsParameterizedNameDecl = true;
+    NumParameterizedNames = Num;
+  }
+  unsigned getNumParameterizedNames() const {
+    assert(isParameterizedNameDecl() &&
+           "This variable declaration was not a parameterized name");
+    return NumParameterizedNames;
+  }
 
   static bool classof(const DpctAsmDecl *T) {
     return T->getDeclClass() == VariableDeclClass;
@@ -271,15 +282,14 @@ public:
     BinaryOperatorClass,
     ConditionalOperatorClass,
     ArraySubscriptExprClass,
-    TupleExprClass,
+    VectorExprClass,
     DiscardExprClass,
     AddressExprClass,
     CastExprClass,
     ParenExprClass,
     DeclRefExprClass,
     IntegerLiteralClass,
-    FloatingLiteralClass,
-    ExactMachineFloatingClass
+    FloatingLiteralClass
   };
 
   DpctAsmStmt(const DpctAsmStmt &) = delete;
@@ -287,11 +297,11 @@ public:
   virtual ~DpctAsmStmt();
 
   void *operator new(size_t bytes) noexcept {
-    llvm_unreachable("Stmts cannot be allocated with regular 'new'.");
+    llvm_unreachable("DpctAsmStmt cannot be allocated with regular 'new'.");
   }
 
   void operator delete(void *data) noexcept {
-    llvm_unreachable("Stmts cannot be released with regular 'delete'.");
+    llvm_unreachable("DpctAsmStmt cannot be released with regular 'delete'.");
   }
 
   StmtClass getStmtClass() const { return static_cast<StmtClass>(sClass); }
@@ -454,12 +464,16 @@ inline raw_ostream &operator<<(raw_ostream &OS, const DpctAsmExpr &E) {
 
 class DpctAsmIntegerLiteral : public DpctAsmExpr {
   llvm::APInt Value;
-
+  StringRef LiteralData;
 public:
-  DpctAsmIntegerLiteral(DpctAsmType *Type, llvm::APInt Value)
-      : DpctAsmExpr(IntegerLiteralClass, Type), Value(Value) {}
+  DpctAsmIntegerLiteral(DpctAsmType *Type, llvm::APInt Value, StringRef LiteralData)
+      : DpctAsmExpr(IntegerLiteralClass, Type), Value(Value), LiteralData(LiteralData) {}
 
   llvm::APInt getValue() const { return Value; }
+
+  StringRef getLiteral() const {
+    return LiteralData;
+  }
 
   static bool classof(const DpctAsmStmt *S) {
     return S->getStmtClass() == IntegerLiteralClass;
@@ -468,72 +482,69 @@ public:
 
 class DpctAsmFloatingLiteral : public DpctAsmExpr {
   llvm::APFloat Value;
-
-protected:
-  DpctAsmFloatingLiteral(StmtClass SC, DpctAsmType *Type, llvm::APFloat Value)
-      : DpctAsmExpr(SC, Type), Value(Value) {}
+  StringRef LiteralData;
+  bool IsExactMachineFloatingLiteral = false;
 
 public:
-  DpctAsmFloatingLiteral(DpctAsmType *Type, llvm::APFloat Value)
-      : DpctAsmExpr(FloatingLiteralClass, Type), Value(Value) {}
+  DpctAsmFloatingLiteral(DpctAsmType *Type, llvm::APFloat Value,
+                         StringRef LiteralData,
+                         bool IsExactMachineFloatingLiteral = false)
+      : DpctAsmExpr(FloatingLiteralClass, Type), Value(Value),
+        LiteralData(LiteralData),
+        IsExactMachineFloatingLiteral(IsExactMachineFloatingLiteral) {}
 
   llvm::APFloat getValue() const { return Value; }
 
-  static bool classof(const DpctAsmStmt *S) {
-    return S->getStmtClass() == FloatingLiteralClass ||
-           S->getStmtClass() == ExactMachineFloatingClass;
-  }
-};
-
-class DpctAsmExactMachineFloatingLiteral : public DpctAsmFloatingLiteral {
-  SmallString<16> HexLiteral;
-
-public:
-  DpctAsmExactMachineFloatingLiteral(DpctAsmType *Type, llvm::APFloat Value,
-                                     StringRef HexLiteral)
-      : DpctAsmFloatingLiteral(ExactMachineFloatingClass, Type, Value),
-        HexLiteral(HexLiteral) {
-    assert((HexLiteral.size() == 8 || HexLiteral.size() == 16) &&
-           "Hex literal length must be one of 8 or 16");
+  bool isExactMachineFloatingLiteral() const {
+    return IsExactMachineFloatingLiteral;
   }
 
-  const StringRef getHexLiteral() const { return HexLiteral; }
+  StringRef getLiteral() const {
+    return LiteralData;
+  }
 
   static bool classof(const DpctAsmStmt *S) {
-    return S->getStmtClass() == FloatingLiteralClass ||
-           S->getStmtClass() == ExactMachineFloatingClass;
+    return S->getStmtClass() == FloatingLiteralClass;
   }
 };
-
-/// TODO: DpctAsmArraySubscriptExpr
-// class DpctAsmArraySubscriptExpr : public DpctAsmExpr {
-//   DpctAsmExpr *LHS;
-//   DpctAsmExpr *RHS;
-// public:
-//   DpctAsmArraySubscriptExpr(DpctAsmExpr *LHS, DpctAsmExpr *RHS)
-//     : DpctAsmExpr(ArraySubscriptExpr)
-// };
 
 class DpctAsmDeclRefExpr : public DpctAsmExpr {
   DpctAsmDecl *Decl;
+  unsigned ParameterizedNameIndex = 0;
 
 public:
   DpctAsmDeclRefExpr(DpctAsmVariableDecl *D)
       : DpctAsmExpr(DeclRefExprClass, D->getType()), Decl(D) {}
 
+  DpctAsmDeclRefExpr(DpctAsmVariableDecl *D, unsigned Idx)
+      : DpctAsmExpr(DeclRefExprClass, D->getType()), Decl(D),
+        ParameterizedNameIndex(Idx) {}
+
   const DpctAsmDecl &getDecl() const { return *Decl; }
+
+  bool hasParameterizedName() const {
+    if (const auto *Var = dyn_cast<DpctAsmVariableDecl>(Decl))
+      return Var->isParameterizedNameDecl();
+    return false;
+  }
+
+  size_t getParameterizedNameIndex() const {
+    assert(hasParameterizedName() &&
+           "This declaration was not a Parameterized");
+    return ParameterizedNameIndex;
+  }
 
   static bool classof(const DpctAsmStmt *S) {
     return S->getStmtClass() == DeclRefExprClass;
   }
 };
 
-class DpctAsmTupleExpr : public DpctAsmExpr {
+class DpctAsmVectorExpr : public DpctAsmExpr {
   SmallVector<DpctAsmExpr *, 4> Elements;
 
 public:
-  DpctAsmTupleExpr(DpctAsmTupleType *Type, ArrayRef<DpctAsmExpr *> Elements)
-      : DpctAsmExpr(TupleExprClass, Type), Elements(Elements) {}
+  DpctAsmVectorExpr(DpctAsmVectorType *Type, ArrayRef<DpctAsmExpr *> Elements)
+      : DpctAsmExpr(VectorExprClass, Type), Elements(Elements) {}
 
   using element_range =
       llvm::iterator_range<SmallVector<DpctAsmExpr *, 4>::const_iterator>;
@@ -545,7 +556,7 @@ public:
   const DpctAsmExpr *getElement(unsigned I) const { return Elements[I]; }
 
   static bool classof(const DpctAsmStmt *S) {
-    return S->getStmtClass() == TupleExprClass;
+    return S->getStmtClass() == VectorExprClass;
   }
 };
 
@@ -789,13 +800,14 @@ public:
 
 class DpctAsmScope {
   using DeclSetTy = SmallPtrSet<DpctAsmVariableDecl *, 32>;
+  DpctAsmParser &Parser;
   DpctAsmScope *Parent;
   DeclSetTy DeclsInScope;
   unsigned Depth;
 
 public:
-  DpctAsmScope(DpctAsmScope *Parent)
-      : Parent(Parent), Depth(Parent ? Parent->Depth + 1 : 0) {}
+  DpctAsmScope(DpctAsmParser &Parser, DpctAsmScope *Parent)
+      : Parser(Parser), Parent(Parent), Depth(Parent ? Parent->Depth + 1 : 0) {}
 
   bool hasParent() const { return Parent; }
   const DpctAsmScope *getParent() const { return Parent; }
@@ -817,6 +829,8 @@ public:
   bool contains(const DpctAsmScope &rhs) const { return Depth < rhs.Depth; }
 
   DpctAsmVariableDecl *lookupDecl(DpctAsmIdentifierInfo *II) const;
+  DpctAsmVariableDecl *lookupParameterizedNameDecl(DpctAsmIdentifierInfo *II,
+                                                   unsigned &Idx) const;
 };
 
 using DpctAsmTypeResult = clang::ActionResult<DpctAsmType *>;
@@ -896,6 +910,12 @@ class DpctAsmParser {
     DpctAsmIntegerLiteral *Alignment = nullptr;
     DpctAsmBuiltinType *BaseType = nullptr;
     DpctAsmType *Type = nullptr;
+  };
+
+  struct DpctAsmDeclarator {
+    DpctAsmDeclarationSpecifier DeclSpec;
+
+    bool isParameterizedNames = false;
   };
 
 public:
@@ -1046,9 +1066,9 @@ public:
   void EnterScope() {
     if (NumCachedScopes) {
       DpctAsmScope *N = ScopeCache[--NumCachedScopes];
-      CurScope = new (N) DpctAsmScope(getCurScope());
+      CurScope = new (N) DpctAsmScope(*this, getCurScope());
     } else {
-      CurScope = new DpctAsmScope(getCurScope());
+      CurScope = new DpctAsmScope(*this, getCurScope());
     }
   }
 
@@ -1094,7 +1114,7 @@ public:
   DpctAsmExprResult ActOnDiscardExpr();
   DpctAsmExprResult ActOnParenExpr(DpctAsmExpr *SubExpr);
   DpctAsmExprResult ActOnIdExpr(DpctAsmIdentifierInfo *II);
-  DpctAsmExprResult ActOnTupleExpr(ArrayRef<DpctAsmExpr *> Tuple);
+  DpctAsmExprResult ActOnVectorExpr(ArrayRef<DpctAsmExpr *> Tuple);
   DpctAsmExprResult ActOnUnaryOp(asmtok::TokenKind OpTok, DpctAsmExpr *SubExpr);
   DpctAsmExprResult ActOnBinaryOp(asmtok::TokenKind OpTok, DpctAsmExpr *LHS,
                                   DpctAsmExpr *RHS);

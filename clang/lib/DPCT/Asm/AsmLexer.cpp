@@ -55,9 +55,6 @@ void DpctAsmLexer::cleanIdentifier(SmallVectorImpl<char> &Buf,
       break;
     }
   }
-  Buf.push_back('_');
-  Buf.push_back('c');
-  Buf.push_back('t');
 }
 
 DpctAsmIdentifierInfo *

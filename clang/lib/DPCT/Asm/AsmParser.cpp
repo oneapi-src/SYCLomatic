@@ -74,6 +74,27 @@ DpctAsmVariableDecl *DpctAsmScope::lookupDecl(DpctAsmIdentifierInfo *II) const {
   return nullptr;
 }
 
+DpctAsmVariableDecl *
+DpctAsmScope::lookupParameterizedNameDecl(DpctAsmIdentifierInfo *II, unsigned &Idx) const {
+  if (!II)
+    return nullptr;
+
+  StringRef Name = II->getName().take_while(isAlpha);
+  StringRef Count = II->getName().drop_until(isDigit);
+
+  if (Name.empty() || Count.empty() || Count.getAsInteger(10, Idx))
+    return nullptr;
+
+  DpctAsmIdentifierInfo *RealII = Parser.getLexer().getIdentifierInfo(Name);
+  if (!RealII)
+    return nullptr;
+
+  DpctAsmVariableDecl *D = lookupDecl(RealII);
+  if (D && D->isParameterizedNameDecl() && Idx < D->getNumParameterizedNames())
+    return D;
+  return nullptr;
+}
+
 DpctAsmBuiltinType *
 DpctAsmContext::getBuiltinType(DpctAsmBuiltinType::TypeKind Kind) {
   if (AsmBuiltinTypes.contains(Kind))
@@ -379,7 +400,7 @@ DpctAsmExprResult DpctAsmParser::ParseCastExpression() {
 
     if (!TryConsumeToken(asmtok::r_brace))
       return AsmExprError();
-    Res = ActOnTupleExpr(Tuple);
+    Res = ActOnVectorExpr(Tuple);
     break;
   }
   case asmtok::underscore:
@@ -516,7 +537,44 @@ DpctAsmParser::ParseDeclarator(const DpctAsmDeclarationSpecifier &DeclSpec) {
     return AsmDeclError();
   auto *Name = Tok.getIdentifier();
   ConsumeToken();
-  return ActOnVariableDecl(Name, DeclSpec.Type);
+
+  auto VarRes = ActOnVariableDecl(Name, DeclSpec.Type);
+  if (VarRes.isInvalid())
+    return AsmDeclError();
+
+  DpctAsmVariableDecl *Decl = VarRes.getAs<DpctAsmVariableDecl>();
+
+  switch (Tok.getKind()) {
+  case asmtok::less: {    // Parameterized variable declaration
+    ConsumeToken();
+    if (Tok.isNot(asmtok::numeric_constant))
+      return AsmDeclError();
+    DpctAsmExprResult NumRes = ActOnNumericConstant(Tok);
+    ConsumeToken();
+    if (ExpectAndConsume(asmtok::greater))
+      return AsmDeclError();
+
+    if (NumRes.isInvalid())
+      return AsmDeclError();
+    if (const auto *Int = dyn_cast<DpctAsmIntegerLiteral>(NumRes.get())) {
+      unsigned Num = Int->getValue().getZExtValue();
+      Decl->setNumParameterizedNames(Num);
+      // Parameterized variable declaration dosen't support for arrays and init.
+      return Decl;
+    }        
+    return AsmDeclError();
+  }
+  case asmtok::l_square: { // Array declaration
+    break;
+  }
+  default:
+    break;
+  }
+
+  if (Tok.is(asmtok::equal)) {
+
+  }
+  return Decl;
 }
 
 DpctAsmExprResult DpctAsmParser::ActOnDiscardExpr() {
@@ -531,6 +589,13 @@ DpctAsmExprResult DpctAsmParser::ActOnIdExpr(DpctAsmIdentifierInfo *II) {
   if (auto *D = getCurScope()->lookupDecl(II)) {
     return ::new (Context) DpctAsmDeclRefExpr(D);
   }
+
+  unsigned ParameterizedNameIdx;
+  // Maybe this identifier is a parameterized variable name
+  if (auto *D = getCurScope()->lookupParameterizedNameDecl(II, ParameterizedNameIdx)) {
+    return ::new (Context) DpctAsmDeclRefExpr(D, ParameterizedNameIdx);
+  }
+
   return AsmExprError();
 }
 
@@ -538,13 +603,34 @@ DpctAsmExprResult DpctAsmParser::ActOnParenExpr(DpctAsmExpr *SubExpr) {
   return ::new (Context) DpctAsmParenExpr(SubExpr);
 }
 
-DpctAsmExprResult DpctAsmParser::ActOnTupleExpr(ArrayRef<DpctAsmExpr *> Tuple) {
-  SmallVector<DpctAsmType *, 4> ElementTypes;
-  for (auto *E : Tuple) {
-    ElementTypes.push_back(E->getType());
+DpctAsmExprResult DpctAsmParser::ActOnVectorExpr(ArrayRef<DpctAsmExpr *> Vec) {
+
+  // Vector size must be 2, 4, or 8.
+  DpctAsmVectorType::VecKind Kind;
+  switch (Vec.size()) {
+  case 2: Kind = DpctAsmVectorType::TK_v2; break;
+  case 4: Kind = DpctAsmVectorType::TK_v4; break;
+  case 8: Kind = DpctAsmVectorType::TK_v8; break;
+  default:
+    return AsmExprError();
   }
-  DpctAsmTupleType *Type = ::new (Context) DpctAsmTupleType(ElementTypes);
-  return ::new (Context) DpctAsmTupleExpr(Type, Tuple);
+
+  DpctAsmBuiltinType *ElementType = nullptr;
+  // The type of each element must have the same non-predicate builtin type.
+  for (auto *E : Vec) {
+    if (auto *T = dyn_cast<DpctAsmBuiltinType>(E->getType())) {
+      if (T->getKind() == DpctAsmBuiltinType::TK_pred)
+        return AsmExprError();
+      if (ElementType && ElementType->getKind() != T->getKind())
+        return AsmExprError();
+      if (!ElementType) ElementType = T;
+    } else {
+      return AsmExprError();
+    }
+  }
+
+  DpctAsmVectorType *Type = ::new (Context) DpctAsmVectorType(Kind, ElementType);
+  return ::new (Context) DpctAsmVectorExpr(Type, Vec);
 }
 
 DpctAsmExprResult DpctAsmParser::ActOnTypeCast(DpctAsmBuiltinType *CastTy,
@@ -772,10 +858,6 @@ private:
 ///         1
 ///       unsigned-suffix: one of
 ///         u U
-///       long-suffix: one of
-///         l L
-///       long-long-suffix: one of
-///         ll LL
 ///
 ///       floating-constant: [C99 6.4.4.2]
 ///         TODO: add rules...
@@ -1128,7 +1210,7 @@ DpctAsmExprResult DpctAsmParser::ActOnNumericConstant(const DpctAsmToken &Tok) {
   if (Tok.getLength() == 1 && isDigit(LiteralData[0])) {
     DpctAsmBuiltinType *Type = Context.getS64Type();
     llvm::APInt Val(64, LiteralData[0] - '0', true);
-    return ::new (Context) DpctAsmIntegerLiteral(Type, Val);
+    return ::new (Context) DpctAsmIntegerLiteral(Type, Val, LiteralData);
   }
 
   AsmNumericLiteralParser LiteralParser(LiteralData);
@@ -1136,15 +1218,15 @@ DpctAsmExprResult DpctAsmParser::ActOnNumericConstant(const DpctAsmToken &Tok) {
     return AsmExprError();
 
   if (LiteralParser.isFloatingLiteral()) {
-
     if (LiteralParser.isExactMachineFloat) {
       APFloat Float(APFloat::IEEEsingle());
       auto Status = LiteralParser.GetFloatValue(Float);
       if (Status != APFloat::opOK)
         return AsmExprError();
-      return ::new (Context) DpctAsmExactMachineFloatingLiteral(
+      return ::new (Context) DpctAsmFloatingLiteral(
           Context.getF32Type(), Float,
-          LiteralParser.getExactMachineFloatingHexLiteralDigits());
+          LiteralParser.getExactMachineFloatingHexLiteralDigits(),
+          /*IsExactMachineFloatingLiteral*/ true);
     }
 
     if (LiteralParser.isExactMachineDouble) {
@@ -1152,26 +1234,34 @@ DpctAsmExprResult DpctAsmParser::ActOnNumericConstant(const DpctAsmToken &Tok) {
       auto Status = LiteralParser.GetFloatValue(Float);
       if (Status != APFloat::opOK)
         return AsmExprError();
-      return ::new (Context) DpctAsmExactMachineFloatingLiteral(
+      return ::new (Context) DpctAsmFloatingLiteral(
           Context.getF64Type(), Float,
-          LiteralParser.getExactMachineFloatingHexLiteralDigits());
+          LiteralParser.getExactMachineFloatingHexLiteralDigits(),
+          /*IsExactMachineFloatingLiteral*/ true);
     }
 
     APFloat Float(APFloat::IEEEdouble());
     auto Status = LiteralParser.GetFloatValue(Float);
     if (Status != APFloat::opOK)
       return AsmExprError();
-    return ::new (Context) DpctAsmFloatingLiteral(Context.getF64Type(), Float);
+    return ::new (Context) DpctAsmFloatingLiteral(
+        Context.getF64Type(), Float, LiteralData);
   }
 
-  APInt Int(64, 0);
-  if (LiteralParser.GetIntegerValue(Int))
-    return AsmExprError();
+  APInt Int(64, 0, /*isSigned*/ true);
+  DpctAsmBuiltinType *Type = Context.getS64Type();
+  if (LiteralParser.GetIntegerValue(Int)) {
+    // Overflow occurred, promote integer type to u64.
+    Int = APInt(64, 0);
+    if (LiteralParser.GetIntegerValue(Int)) {
+      // Integer too large
+      return AsmExprError();
+    }
+    Type = Context.getU64Type();
+  }
 
-  DpctAsmBuiltinType *IntType =
-      LiteralParser.isUnsigned ? Context.getU64Type() : Context.getS64Type();
-
-  return ::new (Context) DpctAsmIntegerLiteral(IntType, Int);
+  return ::new (Context)
+      DpctAsmIntegerLiteral(Type, Int, LiteralData);
 }
 
 DpctAsmExprResult DpctAsmParser::ActOnAlignment(DpctAsmExpr *Alignment) {

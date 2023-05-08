@@ -24,7 +24,7 @@ __global__ void gpu_ptx(int *d_ptr, int length) {
 // CHECK:void mov(float *output) {
 // CHECK-NEXT: unsigned p;
 // CHECK-NEXT: double d;
-// CHECK-NEXT: p = 123 * 123 + 456 * ((4 ^ 7) + 2 ^ 3) | 777 & 128 == 2 != 3 > 4 < 5 <= 3 >= 5 >> 1 << 2 && 1 || 7 && !0;
+// CHECK-NEXT: p = 123 * 123U + 456 * ((4 ^ 7) + 2 ^ 3) | 777 & 128 == 2 != 3 > 4 < 5 <= 3 >= 5 >> 1 << 2 && 1 || 7 && !0;
 // CHECK: (*output) = [](){union {uint32_t I; float F;}; I = 0x3f800000u; return F;}();
 // CHECK: (*output) = [](){union {uint32_t I; float F;}; I = 0x3f800000u; return F;}();
 // CHECK: d = [](){union {uint64_t I; double F;}; I = 0x40091EB851EB851Fu; return F;}();
@@ -45,9 +45,12 @@ __global__ void mov(float *output) {
 // CHECK: int cond(int x) {
 // CHECK-NEXT: int y = 0;
 // CHECK-NEXT: {
-// CHECK-NEXT: bool p_ct;
-// CHECK-NEXT: p_ct = x == 34;
-// CHECK-NEXT: if (p_ct) {
+// CHECK-NEXT: bool p;
+// CHECK-NEXT: uint32_t r[10];
+// CHECK-NEXT: r[1] = 0x3F;
+// CHECK-NEXT: r[2] = 2023;
+// CHECK-NEXT: p = x == 34;
+// CHECK-NEXT: if (p) {
 // CHECK-NEXT: y = 1;
 // CHECK-NEXT: }
 // CHECK-NEXT: }
@@ -58,9 +61,12 @@ __device__ int cond(int x) {
   int y = 0;
   asm("{\n\t"
       " .reg .pred %%p;\n\t"
+      " .reg .u32 %%r<10>;\n\t"
+      " mov.u32 %%r1, 0x3F;\n\t"
+      " mov.u32 %%r2, 2023;\n\t"
       " setp.eq.s32 %%p, %1, 34;\n\t" // x == 34?
       " @%%p mov.s32 %0, 1;\n\t"      // set y to 1 if true
-      "}"                            // conceptually y = (x==34)?1:y
+      "}"                             // conceptually y = (x==34)?1:y
       : "+r"(y) : "r" (x));
   return y;
 }

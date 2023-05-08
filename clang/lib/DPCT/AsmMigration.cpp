@@ -140,8 +140,6 @@ protected:
   bool emitDeclRefExpression(const DpctAsmDeclRefExpr *E);
   bool emitIntegerLiteral(const DpctAsmIntegerLiteral *I);
   bool emitFloatingLiteral(const DpctAsmFloatingLiteral *Fp);
-  bool
-  emitExactMachineFloatingLiteral(const DpctAsmExactMachineFloatingLiteral *Fp);
 
   // Instructions
 #define INSTRUCTION(X)                                                         \
@@ -175,9 +173,6 @@ bool SYCLGenBase::emitStatement(const DpctAsmStmt *S) {
     return emitIntegerLiteral(dyn_cast<DpctAsmIntegerLiteral>(S));
   case DpctAsmStmt::FloatingLiteralClass:
     return emitFloatingLiteral(dyn_cast<DpctAsmFloatingLiteral>(S));
-  case DpctAsmStmt::ExactMachineFloatingClass:
-    return emitExactMachineFloatingLiteral(
-        dyn_cast<DpctAsmExactMachineFloatingLiteral>(S));
   default:
     return true;
   }
@@ -332,39 +327,39 @@ bool SYCLGenBase::emitParenExpression(const DpctAsmParenExpr *E) {
 
 bool SYCLGenBase::emitDeclRefExpression(const DpctAsmDeclRefExpr *E) {
   OS() << E->getDecl().getDeclName()->getName();
+  if (E->hasParameterizedName()) {
+    OS() << '[' << E->getParameterizedNameIndex() << ']';
+  }
   return false;
 }
 
 bool SYCLGenBase::emitIntegerLiteral(const DpctAsmIntegerLiteral *I) {
-  OS() << I->getValue();
+  OS() << I->getLiteral();
   return false;
 }
 
 bool SYCLGenBase::emitFloatingLiteral(const DpctAsmFloatingLiteral *Fp) {
-  Fp->getValue().print(OS());
-  return false;
-}
-
-bool SYCLGenBase::emitExactMachineFloatingLiteral(
-    const DpctAsmExactMachineFloatingLiteral *Fp) {
-  // [](){union {unsigned I; float F;}; I = 0x3f800000u; return F;}()
-  constexpr char *Template =
-      "[](){{union {{{0} I; {1} F;}; I = 0x{2}u; return F;}()";
-  if (const auto *T = dyn_cast<DpctAsmBuiltinType>(Fp->getType())) {
-    switch (T->getKind()) {
-    case DpctAsmBuiltinType::TK_f32:
-      OS() << llvm::formatv(Template, "uint32_t", "float", Fp->getHexLiteral());
-      break;
-    case DpctAsmBuiltinType::TK_f64:
-      OS() << llvm::formatv(Template, "uint64_t", "double",
-                            Fp->getHexLiteral());
-      break;
-    default:
-      return true;
+  if (!Fp->isExactMachineFloatingLiteral()) {
+    OS() << Fp->getLiteral();
+  } else {
+    // [](){union {unsigned I; float F;}; I = 0x3f800000u; return F;}()
+    constexpr char *Template =
+        "[](){{union {{{0} I; {1} F;}; I = 0x{2}u; return F;}()";
+    if (const auto *T = dyn_cast<DpctAsmBuiltinType>(Fp->getType())) {
+      switch (T->getKind()) {
+      case DpctAsmBuiltinType::TK_f32:
+        OS() << llvm::formatv(Template, "uint32_t", "float", Fp->getLiteral());
+        break;
+      case DpctAsmBuiltinType::TK_f64:
+        OS() << llvm::formatv(Template, "uint64_t", "double", Fp->getLiteral());
+        break;
+      default:
+        return true;
+      }
+      return false;
     }
-    return false;
   }
-  return true;
+  return false;
 }
 
 bool SYCLGenBase::emitType(const DpctAsmType *T) {
@@ -427,7 +422,7 @@ bool SYCLGenBase::emitVectorType(const DpctAsmVectorType *T) {
 bool SYCLGenBase::emitDeclaration(const DpctAsmDecl *D) {
   switch (D->getDeclClass()) {
   case DpctAsmDecl::VariableDeclClass:
-    return emitVariableDeclaration(dyn_cast<DpctAsmVariableDecl>(D));
+    return emitVariableDeclaration(dyn_cast<DpctAsmVariableDecl>(D));    
   default:
     break;
   }
@@ -436,6 +431,8 @@ bool SYCLGenBase::emitDeclaration(const DpctAsmDecl *D) {
 
 bool SYCLGenBase::emitVariableDeclaration(const DpctAsmVariableDecl *D) {
   OS() << D->getDeclName()->getName();
+  if (D->isParameterizedNameDecl())
+    OS() << '[' << D->getNumParameterizedNames() << ']';
   return false;
 }
 
