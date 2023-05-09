@@ -321,10 +321,10 @@ CONDITIONAL_FACTORY_ENTRY(
     CALL_FACTORY_ENTRY("thrust::exclusive_scan",
       CALL("std::exclusive_scan",
         CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-        ARG(0), ARG(1), ARG(2), ARG("0"))),
+        ARG(0), ARG(1), ARG(2), makeAddTypeCastThrustToZero(2))),
     CALL_FACTORY_ENTRY("thrust::exclusive_scan",
       CALL("std::exclusive_scan",
-        ARG("oneapi::dpl::execution::seq"), ARG(0), ARG(1), ARG(2), ARG("0")))
+        ARG("oneapi::dpl::execution::seq"), ARG(0), ARG(1), ARG(2), makeAddTypeCastThrustToZero(2)))
   ),
   CONDITIONAL_FACTORY_ENTRY(
     CheckArgCount(4),
@@ -333,17 +333,17 @@ CONDITIONAL_FACTORY_ENTRY(
       // thrust::exclusive_scan(thrust::host, data, data + 6, data);
       CALL_FACTORY_ENTRY("thrust::exclusive_scan",
         CALL("std::exclusive_scan",
-          makeMappedThrustPolicyEnum(0), ARG(1), ARG(2), ARG(3), ARG("0"))),
+          makeMappedThrustPolicyEnum(0), ARG(1), ARG(2), ARG(3), makeAddTypeCastThrustToZero(3))),
       // thrust::exclusive_scan(data, data + 6, data, 4);
       CONDITIONAL_FACTORY_ENTRY(
         CheckThrustArgType(1, "thrust::device_ptr"),
         CALL_FACTORY_ENTRY("thrust::exclusive_scan",
           CALL("std::exclusive_scan",
             CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-            ARG(0), ARG(1), ARG(2), ARG(3))),
+            ARG(0), ARG(1), ARG(2), makeAddTypeCastToThrustArg(3))),
         CALL_FACTORY_ENTRY("thrust::exclusive_scan",
           CALL("std::exclusive_scan",
-            ARG("oneapi::dpl::execution::seq"), ARG(0), ARG(1), ARG(2), ARG(3)))
+            ARG("oneapi::dpl::execution::seq"), ARG(0), ARG(1), ARG(2), makeAddTypeCastToThrustArg(3)))
       )
     ),
     CONDITIONAL_FACTORY_ENTRY(
@@ -353,23 +353,23 @@ CONDITIONAL_FACTORY_ENTRY(
         // thrust::exclusive_scan(thrust::host, data, data + 6, data, 4);
         CALL_FACTORY_ENTRY("thrust::exclusive_scan",
           CALL("std::exclusive_scan",
-            makeMappedThrustPolicyEnum(0), ARG(1), ARG(2), ARG(3), ARG(4))),
+            makeMappedThrustPolicyEnum(0), ARG(1), ARG(2), ARG(3), makeAddTypeCastToThrustArg(4))),
         // thrust::exclusive_scan(data, data + 10, data, 1, binary_op);
         CONDITIONAL_FACTORY_ENTRY(
           CheckThrustArgType(1, "thrust::device_ptr"),
           CALL_FACTORY_ENTRY("thrust::exclusive_scan",
             CALL("std::exclusive_scan",
               CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-              ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))),
+              ARG(0), ARG(1), ARG(2), makeAddTypeCastToThrustArg(3), ARG(4))),
           CALL_FACTORY_ENTRY("thrust::exclusive_scan",
             CALL("std::exclusive_scan",
-              ARG("oneapi::dpl::execution::seq"), ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))
+              ARG("oneapi::dpl::execution::seq"), ARG(0), ARG(1), ARG(2), makeAddTypeCastToThrustArg(3), ARG(4)))
         )
       ),
       // thrust::exclusive_scan(thrust::host, data, data + 10, data, 1, binary_op);
       CALL_FACTORY_ENTRY("thrust::exclusive_scan",
         CALL("std::exclusive_scan",
-          makeMappedThrustPolicyEnum(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5)))
+          makeMappedThrustPolicyEnum(0), ARG(1), ARG(2), ARG(3), makeAddTypeCastToThrustArg(4), ARG(5)))
     )
   )
 )
