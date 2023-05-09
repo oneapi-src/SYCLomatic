@@ -235,7 +235,7 @@ __device__ void d10() {
 //CHECK-NEXT:  int a = item_ct1.get_local_id(0);
 //CHECK-NEXT:  double b = sycl::sqrt((double)(item_ct1.get_local_id(0)));
 //CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1064:{{[0-9]+}}: Migrated acos call is used in a macro/template definition and is not valid for all macro/template uses. Adjust the code.
+//CHECK-NEXT:  DPCT1064:{{[0-9]+}}: Migrated acos call is used in a macro/template definition and may not be valid for all macro/template uses. Adjust the code.
 //CHECK-NEXT:  */
 //CHECK-NEXT:  double c = sycl::atan2(sycl::acos((double)(item_ct1.get_local_id(0))), sycl::acos((double)(item_ct1.get_local_id(0))));
 //CHECK-NEXT:}

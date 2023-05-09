@@ -1048,8 +1048,11 @@ auto UsingDpctMinMax = [](const CallExpr *C) -> bool {
     return true;
   if (C->getBeginLoc().isMacroID() || C->getEndLoc().isMacroID())
     return true;
-  return C->getArg(0)->IgnoreImpCasts()->getType() !=
-         C->getArg(1)->IgnoreImpCasts()->getType();
+  QualType Arg0T = C->getArg(0)->IgnoreImpCasts()->getType();
+  QualType Arg1T = C->getArg(1)->IgnoreImpCasts()->getType();
+  Arg0T.removeLocalCVRQualifiers(Qualifiers::CVRMask);
+  Arg1T.removeLocalCVRQualifiers(Qualifiers::CVRMask);
+  return Arg0T != Arg1T;
 };
 }
 

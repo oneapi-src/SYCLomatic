@@ -648,10 +648,10 @@ __device__ A max(A a, A b) { return a; }
 
 template <class T> __device__ T clamp(T x, T a, T b) {
   // CHECK: /*
-  // CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated min call is used in a macro/template definition and is not valid for all macro/template uses. Adjust the code.
+  // CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated min call is used in a macro/template definition and may not be valid for all macro/template uses. Adjust the code.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated max call is used in a macro/template definition and is not valid for all macro/template uses. Adjust the code.
+  // CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated max call is used in a macro/template definition and may not be valid for all macro/template uses. Adjust the code.
   // CHECK-NEXT: */
   // CHECK-NEXT: return dpct::min(dpct::max(x, a), b);
   return min(max(x, a), b);
