@@ -278,7 +278,9 @@ public:
           .create(C);
   }
 
-  std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override {
+  std::optional<std::string>
+  rewrite(ExprAnalysis *ParentEA = nullptr) override {
+    printf("rewrite 283\n");
     std::optional<std::string> &&Result = Inner->rewrite();
     if (Result.has_value() && IsAssigned)
       return "(" + Result.value() + ", 0)";
@@ -299,6 +301,7 @@ public:
         Inner(InnerRewriter) {}
 
   std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override {
+    printf("rewrite 304\n");
     std::optional<std::string> &&Result = Inner->rewrite();
     if (Result.has_value())
       return Prefix + Result.value() + Suffix;
@@ -318,6 +321,7 @@ public:
         CalleeName(CalleeName), Message(Message) {}
 
   std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override {
+    printf("rewrite 324\n");
     std::string Msg =
         Message.empty() ? "this call is redundant in SYCL." : Message;
     if (IsAssigned) {
@@ -351,6 +355,7 @@ public:
   }
 
   std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override {
+    printf("rewrite 358\n");
     std::optional<std::string> &&PredStr = Pred->rewrite();
     std::optional<std::string> &&IfBlockStr = IfBlock->rewrite();
     std::optional<std::string> &&ElseBlockStr = ElseBlock->rewrite();
@@ -497,7 +502,11 @@ public:
     NoRewrite = true;
   }
 
-  std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override { return NewFuncName; }
+  std::optional<std::string>
+  rewrite(ExprAnalysis *ParentEA = nullptr) override {
+    printf("rewrite 507\n");
+    return NewFuncName;
+  }
 };
 
 struct ThrustFunctor {
@@ -505,57 +514,68 @@ struct ThrustFunctor {
   const clang::Expr *E;
 };
 
-template <class StreamT, class T> void print(StreamT &Stream, const T &Val) {
+template <class StreamT, class T> void print(StreamT &Stream, const T &Val, ExprAnalysis *ParentEA = nullptr) {
+  printf("518 %p\n", (const void*)ParentEA);
   Val.print(Stream);
 }
 template <class StreamT>
 void print(StreamT &Stream, const Expr *E,
-           ExprAnalysis *ParentExprAnalysis = nullptr) {
-  ExprAnalysis EA(nullptr, ParentExprAnalysis);
+           ExprAnalysis *ParentEA = nullptr) {
+  printf("524 %p\n", (const void*)ParentEA);
+  ExprAnalysis EA(nullptr, ParentEA);
   print(Stream, EA, E);
 }
-template <class StreamT> void print(StreamT &Stream, StringRef Str) {
+template <class StreamT> void print(StreamT &Stream, StringRef Str, ExprAnalysis *ParentEA = nullptr) {
+  printf("529 %p\n", (const void*)ParentEA);
   Stream << Str;
 }
 template <class StreamT>
 void print(StreamT &Stream,
-           const std::pair<std::string, const StringRef> &Pair) {
+           const std::pair<std::string, const StringRef> &Pair, ExprAnalysis *ParentEA = nullptr) {
+  printf("535 %p\n", (const void*)ParentEA);
   Stream << Pair.first << Pair.second;
 }
 template <class StreamT, class T>
-void print(StreamT &Stream, ExprAnalysis &EA, const T &Val) {
+void print(StreamT &Stream, ExprAnalysis &EA, const T &Val, ExprAnalysis *ParentEA = nullptr) {
+  printf("540 %p\n", (const void*)ParentEA);
   print(Stream, Val);
 }
-template <class StreamT> void print(StreamT &Stream, const std::string &Str) {
+template <class StreamT> void print(StreamT &Stream, const std::string &Str, ExprAnalysis *ParentEA = nullptr) {
+  printf("544 %p\n", (const void*)ParentEA);
   Stream << Str;
 }
 template <class StreamT>
-void print(StreamT &Stream, const TemplateArgumentInfo &Arg) {
+void print(StreamT &Stream, const TemplateArgumentInfo &Arg, ExprAnalysis *ParentEA = nullptr) {
+  printf("549 %p\n", (const void*)ParentEA);
   print(Stream, Arg.getString());
 }
 template <class StreamT>
-void print(StreamT &Stream, const ThrustFunctor &Functor) {
+void print(StreamT &Stream, const ThrustFunctor &Functor, ExprAnalysis *ParentEA = nullptr) {
+  printf("554 %p\n", (const void*)ParentEA);
   FunctorAnalysis FA;
   FA.analyze(Functor.E);
   Stream << FA.getRewritePrefix() << FA.getReplacedString()
          << FA.getRewritePostfix();
 }
 template <class StreamT>
-void print(StreamT &Stream, ExprAnalysis &EA, const Expr *E) {
+void print(StreamT &Stream, ExprAnalysis &EA, const Expr *E, ExprAnalysis *ParentEA = nullptr) {
+  printf("562 %p\n", (const void*)ParentEA);
   EA.analyze(E);
   Stream << EA.getRewritePrefix() << EA.getReplacedString()
          << EA.getRewritePostfix();
 }
 
 template <class StreamT>
-void print(StreamT &Stream, std::pair<const CallExpr *, const Expr *> P) {
+void print(StreamT &Stream, std::pair<const CallExpr *, const Expr *> P, ExprAnalysis *ParentEA = nullptr) {
+  printf("570 %p\n", (const void*)ParentEA);
   ArgumentAnalysis AA;
   print(Stream, AA, P);
 }
 
 template <class StreamT>
 void print(StreamT &Stream, ArgumentAnalysis &AA,
-           std::pair<const CallExpr *, const Expr *> P) {
+           std::pair<const CallExpr *, const Expr *> P, ExprAnalysis *ParentEA = nullptr) {
+  printf("578 %p\n", (const void*)ParentEA);
   AA.setCallSpelling(P.first);
   AA.analyze(P.second);
   Stream << AA.getRewritePrefix() << AA.getRewriteString()
@@ -564,14 +584,17 @@ void print(StreamT &Stream, ArgumentAnalysis &AA,
 
 template <class StreamT>
 void print(StreamT &Stream, ArgumentAnalysis &AA,
-           TypeLoc TL, ExprAnalysis *ParentExprAnalysis) {
-  ExprAnalysis EA(nullptr, ParentExprAnalysis);
+           TypeLoc TL, ExprAnalysis *ParentEA = nullptr) {
+  printf("588 %p\n", (const void*)ParentEA);
+  ExprAnalysis EA(nullptr, ParentEA);
   EA.analyze(TL);
   Stream << EA.getReplacedString();
 }
 
 template <class StreamT, class T1, class T2>
-void print(StreamT &Stream, ArgumentAnalysis &AA, std::pair<T1, T2> P) {
+void print(StreamT &Stream, ArgumentAnalysis &AA, std::pair<T1, T2> P,
+           ExprAnalysis *ParentEA = nullptr) {
+  printf("596 %p\n", (const void*)ParentEA);
   dpct::print(Stream, AA, P.first);
   dpct::print(Stream, AA, P.second);
 }
@@ -657,7 +680,7 @@ class DerefExpr {
 public:
   DerefExpr(const Expr *E, const CallExpr *C = nullptr);
   template <class StreamT>
-  void printArg(StreamT &Stream, ArgumentAnalysis &A) const {
+  void printArg(StreamT &Stream, ArgumentAnalysis &A, ExprAnalysis *ParentEA = nullptr) const {
     print(Stream);
   }
   template <class StreamT> void printMemberBase(StreamT &Stream) const {
@@ -713,62 +736,72 @@ template <bool HasPrefixArg> class ArgsPrinter<HasPrefixArg> {
   mutable ArgumentAnalysis A;
 
 public:
-  template <class StreamT> void print(StreamT &) const {}
+  template <class StreamT> void print(StreamT &, const ExprAnalysis *) const {}
   template <class StreamT>
-  void printArg(std::false_type, StreamT &Stream, const Expr *E) const {
+  void printArg(std::false_type, StreamT &Stream, const Expr *E, ExprAnalysis *ParentEA = nullptr) const {
+    printf("printArg 742 %p\n", (const void*)ParentEA);
     if(auto defaultArg = dyn_cast<CXXDefaultArgExpr>(E)){
       E = defaultArg->getExpr();
     }
-    dpct::print(Stream, A, E);
+    dpct::print(Stream, A, E, ParentEA);
   }
 
   template <class StreamT>
   void printArg(std::false_type, StreamT &Stream,
-                std::pair<const CallExpr *, const Expr *> P) const {
-    dpct::print(Stream, A, P);
+                std::pair<const CallExpr *, const Expr *> P, ExprAnalysis *ParentEA = nullptr) const {
+    printf("printArg 752 %p\n", (const void*)ParentEA);
+    dpct::print(Stream, A, P, ParentEA);
   }
 
   template <class StreamT>
   void printArg(std::false_type, StreamT &Stream,
-                TypeLoc TL) const {
-    dpct::print(Stream, A, TL);
+                TypeLoc TL, ExprAnalysis *ParentEA = nullptr) const {
+    printf("printArg 759 %p\n", (const void*)ParentEA);
+    dpct::print(Stream, A, TL, ParentEA);
   }
 
   template <class StreamT, class T1, class T2>
-  void printArg(std::false_type, StreamT &Stream, std::pair<T1, T2> P) const {
-    dpct::print(Stream, A, P);
+  void printArg(std::false_type, StreamT &Stream, std::pair<T1, T2> P, ExprAnalysis *ParentEA = nullptr) const {
+    printf("printArg 765 %p\n", (const void*)ParentEA);
+    dpct::print(Stream, A, P, ParentEA);
   }
 
   template <class StreamT>
-  void printArg(std::false_type, StreamT &Stream, DerefExpr Arg) const {
-    Arg.printArg(Stream, A);
+  void printArg(std::false_type, StreamT &Stream, DerefExpr Arg, ExprAnalysis *ParentEA = nullptr) const {
+    printf("printArg 771 %p\n", (const void*)ParentEA);
+    Arg.printArg(Stream, A, ParentEA);
   }
   template <class StreamT, class ArgT>
-  void printArg(std::false_type, StreamT &Stream, const ArgT &Arg) const {
-    dpct::print(Stream, Arg);
+  void printArg(std::false_type, StreamT &Stream, const ArgT &Arg,
+                ExprAnalysis *ParentEA = nullptr) const {
+    printf("printArg 777 %p\n", (const void*)ParentEA);
+    dpct::print(Stream, Arg, ParentEA);
   }
   template <class StreamT, class ArgT>
   void printArg(std::false_type, StreamT &Stream,
-                const std::vector<ArgT> &Vec) const {
+                const std::vector<ArgT> &Vec, ExprAnalysis *ParentEA = nullptr) const {
+    printf("printArg 783 %p\n", (const void*)ParentEA);
     if (Vec.empty())
       return;
     auto Itr = Vec.begin();
-    printArg(std::false_type(), Stream, *Itr);
+    printArg(std::false_type(), Stream, *Itr, ParentEA);
     while (++Itr != Vec.end()) {
-      printArg(std::true_type(), Stream, *Itr);
+      printArg(std::true_type(), Stream, *Itr, ParentEA);
     }
   }
   template <class StreamT, class ArgT>
   void printArg(std::true_type, StreamT &Stream,
-                const std::vector<ArgT> &Vec) const {
+                const std::vector<ArgT> &Vec, ExprAnalysis *ParentEA = nullptr) const {
+    printf("printArg 795 %p\n", (const void*)ParentEA);
     for (auto &Arg : Vec) {
-      printArg(std::true_type(), Stream, Arg);
+      printArg(std::true_type(), Stream, Arg, ParentEA);
     }
   }
   template <class StreamT, class ArgT>
-  void printArg(std::true_type, StreamT &Stream, ArgT &&Arg) const {
+  void printArg(std::true_type, StreamT &Stream, ArgT &&Arg, ExprAnalysis *ParentEA = nullptr) const {
+    printf("printArg 802 %p\n", (const void*)ParentEA);
     Stream << ", ";
-    printArg(std::false_type(), Stream, std::forward<ArgT>(Arg));
+    printArg(std::false_type(), Stream, std::forward<ArgT>(Arg), ParentEA);
   }
 
   ArgsPrinter() = default;
@@ -785,9 +818,11 @@ public:
   ArgsPrinter(InputFirstArgT &&FirstArg, InputRestArgsT &&...RestArgs)
       : Base(std::forward<InputRestArgsT>(RestArgs)...),
         First(std::forward<InputFirstArgT>(FirstArg)) {}
-  template <class StreamT> void print(StreamT &Stream) const {
-    Base::printArg(std::integral_constant<bool, HasPrefixArg>(), Stream, First);
-    Base::print(Stream);
+  template <class StreamT>
+  void print(StreamT &Stream, ExprAnalysis *ParentEA = nullptr) const {
+    Base::printArg(std::integral_constant<bool, HasPrefixArg>(), Stream, First,
+                   ParentEA);
+    Base::print(Stream, ParentEA);
   }
 };
 
@@ -815,15 +850,19 @@ void printBase(StreamT &Stream, const T &Val, bool IsArrow) {
 
 template <class CalleeT, class... CallArgsT> class CallExprPrinter {
   CalleeT Callee;
+public:
+  ExprAnalysis *ParentEA;
   ArgsPrinter<false, CallArgsT...> Args;
 
 public:
+  CallExprPrinter(const CalleeT &Callee, ExprAnalysis *PEA, CallArgsT &&...Args)
+      : Callee(Callee), ParentEA(PEA), Args(std::forward<CallArgsT>(Args)...) {}
   CallExprPrinter(const CalleeT &Callee, CallArgsT &&...Args)
       : Callee(Callee), Args(std::forward<CallArgsT>(Args)...) {}
   template <class StreamT> void print(StreamT &Stream) const {
     dpct::print(Stream, Callee);
     ParensPrinter<StreamT> Parens(Stream);
-    Args.print(Stream);
+    Args.print(Stream, ParentEA);
   }
 };
 
@@ -992,6 +1031,7 @@ public:
                           std::function<ArgT(const CallExpr *)> ArgCreator)
       : CallExprRewriter(C, Source), Arg(ArgCreator(C)) {}
   std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override {
+    printf("rewrite 1011\n");
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     OS << "delete ";
@@ -1008,6 +1048,7 @@ public:
                        std::function<ArgT(const CallExpr *)> ArgCreator)
       : CallExprRewriter(C, Source), Arg(ArgCreator(C)) {}
   std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override {
+    printf("rewrite 1028\n");
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     print(OS, Arg);
@@ -1151,6 +1192,7 @@ public:
                   const std::function<ArgsT(const CallExpr *)> &...ArgCreators)
       : PrinterRewriter(C, Source, ArgCreators(C)...) {}
   std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override {
+    printf("rewrite 1172\n");
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     Printer::print(OS);
@@ -1174,6 +1216,7 @@ public:
       const std::function<StmtPrinters(const CallExpr *)> &...PrinterCreators)
       : PrinterRewriter(C, Source, PrinterCreators(C)...) {}
   std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override {
+    printf("rewrite 1196\n");
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     Base::print(OS);
@@ -1252,6 +1295,9 @@ public:
           &PrinterFunctor)
       : CallExprRewriter(C, Source), Printer(PrinterFunctor(C)) {}
   std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override {
+    printf("rewrite 1275\n");
+    ParentExprAnalysis = ParentEA;
+    Printer.ParentEA = ParentEA;
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     Printer.print(OS);
@@ -1344,7 +1390,11 @@ public:
     report(MsgID, false, getMsgArg(Args, CE)...);
   }
 
-  std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override { return std::nullopt; }
+  std::optional<std::string>
+  rewrite(ExprAnalysis *ParentEA = nullptr) override {
+    printf("rewrite 1370\n");
+    return std::nullopt;
+  }
 
   friend UnsupportFunctionRewriterFactory<MsgArgs...>;
 };
@@ -1370,7 +1420,8 @@ public:
     buildRewriterStr(Call, OS, OB);
     OS.flush();
   }
-  std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override {
+  std::optional<std::string>
+  rewrite(ExprAnalysis *ParentEA = nullptr) override {
     return ResultStr;
   }
 
@@ -1450,7 +1501,11 @@ class UserDefinedRewriterFactory : public CallExprRewriterFactoryBase {
     NullRewriter(const CallExpr *C, StringRef Name)
         : CallExprRewriter(C, Name) {}
 
-    std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override { return std::nullopt; }
+    std::optional<std::string>
+    rewrite(ExprAnalysis *ParentEA = nullptr) override {
+      printf("rewrite 1481\n");
+      return std::nullopt;
+    }
   };
 
 public:

@@ -856,6 +856,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   if (!CallExprRewriterFactoryBase::RewriterMap)
     return;
   auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(RefString);
+  printf("RefString %s\n", RefString.c_str());
   if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
     for (unsigned I = 0, E = CE->getNumArgs(); I != E; ++I) {
       if (isa<PackExpansionExpr>(CE->getArg(I))) {
@@ -1194,6 +1195,7 @@ void ExprAnalysis::applyAllSubExprRepl() {
 
       DpctGlobalInfo::getInstance().addReplacement(Repl);
     }
+    printf("add to global repl\n");
     return;
   }
   // Apply in-range repls in SubExprRepl
@@ -1207,6 +1209,7 @@ void ExprAnalysis::applyAllSubExprRepl() {
                                    Repl->getReplacementText().str());
     }
   }
+  printf("Append to Parent\n");
   // Append local SubExprRepl to ParentExprAnalysis->SubExprRepl
   ParentExprAnalysis->SubExprRepl.insert(ParentExprAnalysis->SubExprRepl.end(),
                                          SubExprRepl.begin(),
