@@ -63,7 +63,7 @@ jobs:
           cmake \
             -G Ninja \
             -DLLVM_ENABLE_PROJECTS="clang"  \
-            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DLLVM_TARGETS_TO_BUILD="X86;NVPTX" \
             -DLLVM_ENABLE_TERMINFO=OFF  \
             -DLLVM_ENABLE_ASSERTIONS=ON \
@@ -95,6 +95,7 @@ jobs:
           steps.Echo-Build-Success.outputs.build_success == 'true'
         run: |
           cd c2s.src/build
+          export LLVM_SYMBOLIZER_PATH=${PWD}/bin/llvm-symbolizer
           ninja check-clang-c2s
 
       - name: Lit_CUDA8.0
@@ -102,6 +103,7 @@ jobs:
           steps.Echo-Build-Success.outputs.build_success == 'true'
         run: |
           cd c2s.src/build
+          export LLVM_SYMBOLIZER_PATH=${PWD}/bin/llvm-symbolizer
           rm -rf tools/clang/test/dpct
           CUDA_PATH=$CUDAROOT/cuda-8.0 ninja check-clang-c2s
 
@@ -110,6 +112,7 @@ jobs:
           steps.Echo-Build-Success.outputs.build_success == 'true'
         run: |
           cd c2s.src/build
+          export LLVM_SYMBOLIZER_PATH=${PWD}/bin/llvm-symbolizer
           rm -rf tools/clang/test/dpct
           CUDA_PATH=$CUDAROOT/cuda-9.2 ninja check-clang-c2s
 
@@ -118,6 +121,7 @@ jobs:
           steps.Echo-Build-Success.outputs.build_success == 'true'
         run: |
           cd c2s.src/build
+          export LLVM_SYMBOLIZER_PATH=${PWD}/bin/llvm-symbolizer
           rm -rf tools/clang/test/dpct
           CUDA_PATH=$CUDAROOT/cuda-10.2 ninja check-clang-c2s
 
@@ -126,6 +130,7 @@ jobs:
           steps.Echo-Build-Success.outputs.build_success == 'true'
         run: |
           cd c2s.src/build
+          export LLVM_SYMBOLIZER_PATH=${PWD}/bin/llvm-symbolizer
           rm -rf tools/clang/test/dpct
           CUDA_PATH=$CUDAROOT/cuda-11.8 ninja check-clang-c2s
 
