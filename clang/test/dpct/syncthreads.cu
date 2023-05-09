@@ -194,16 +194,16 @@ __global__ void test10(float *arg1, int arg2, int arg3) {
       arg1[var1] = sqrtf(arg1[var1]);
     }
   }
-// CHECK:   item_ct1.barrier(sycl::access::fence_space::local_space);
-// CHECK-NEXT: }
+  // CHECK:   item_ct1.barrier(sycl::access::fence_space::local_space);
+  // CHECK-NEXT: }
   __syncthreads();
 }
 
 __global__ void test11(float *a, float *b,
-                              float *c, float *d,
-                              int const e, float *f,
-                              float *g, float const h,
-                              int *i, size_t const j) {
+                       float *c, float *d,
+                       int const e, float *f,
+                       float *g, float const h,
+                       int *i, size_t const j) {
   int const eight = 8;
   const float *a_c = a;
   const float *b_c = b;
@@ -274,4 +274,3 @@ __global__ void test11(float *a, float *b,
     var4[8] = a_c[idx + var3];
   }
 }
-

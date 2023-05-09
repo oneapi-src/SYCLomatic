@@ -1967,7 +1967,7 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
       getTargetExpr()->IgnoreImpCasts()->getStmtClass() ==
           Stmt::IntegerLiteralClass) {
     if (IsDim3Config && getTargetExpr()->getType()->isIntegralType(
-                        DpctGlobalInfo::getContext())) {
+                            DpctGlobalInfo::getContext())) {
       if (IsTryToUseOneDimension) {
         addReplacement(buildString(DpctGlobalInfo::getCtadClass(
                                        MapNames::getClNamespace() + "range", 1),

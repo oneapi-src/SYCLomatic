@@ -17,14 +17,14 @@ using namespace llvm;
 
 // Functions in this set should not create alias name for input pointer
 const std::unordered_set<std::string> AllowedDeviceFunctions = {
-        "__popc",
-        "atomicAdd",
-        "__fetch_builtin_x",
-        "__fetch_builtin_y",
-        "__fetch_builtin_z",
-        "uint4",
-        "sqrtf",
-        "__expf"};
+    "__popc",
+    "atomicAdd",
+    "__fetch_builtin_x",
+    "__fetch_builtin_y",
+    "__fetch_builtin_z",
+    "uint4",
+    "sqrtf",
+    "__expf"};
 
 bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::IfStmt *IS) {
   // No special process, treat as one block
@@ -82,8 +82,7 @@ bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::CallExpr *CE) {
   } else {
     if (auto FD = CE->getDirectCallee()) {
       std::string FuncName = FD->getNameInfo().getName().getAsString();
-      if (!AllowedDeviceFunctions.count(FuncName) ||
-          isUserDefinedDecl(FD)) {
+      if (!AllowedDeviceFunctions.count(FuncName) || isUserDefinedDecl(FD)) {
         return false;
       }
     }
@@ -126,16 +125,15 @@ bool clang::dpct::ReadWriteOrderAnalyzer::Visit(
 }
 void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(
     clang::CXXDependentScopeMemberExpr *) {}
-bool clang::dpct::ReadWriteOrderAnalyzer::Visit(
-    clang::CXXConstructExpr *CCE) {
+bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::CXXConstructExpr *CCE) {
   auto Ctor = CCE->getConstructor();
   std::string CtorName = Ctor->getParent()->getQualifiedNameAsString();
   if (AllowedDeviceFunctions.count(CtorName) && !isUserDefinedDecl(Ctor))
     return true;
   return false;
 }
-void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(
-    clang::CXXConstructExpr *) {}
+void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::CXXConstructExpr *) {
+}
 
 bool clang::dpct::ReadWriteOrderAnalyzer::traverseFunction(
     const clang::FunctionDecl *FD) {
@@ -186,8 +184,7 @@ bool isPointerOperationSafe(const clang::Expr *Pointer) {
   return false;
 }
 
-bool clang::dpct::ReadWriteOrderAnalyzer::analyze(
-    const clang::CallExpr *CE) {
+bool clang::dpct::ReadWriteOrderAnalyzer::analyze(const clang::CallExpr *CE) {
   if (CE->getBeginLoc().isMacroID() || CE->getEndLoc().isMacroID())
     return false;
   auto FD = dpct::DpctGlobalInfo::findAncestor<clang::FunctionDecl>(CE);
@@ -236,7 +233,7 @@ bool clang::dpct::ReadWriteOrderAnalyzer::analyze(
 
   // Check whether each input pointer of kernel is "safe" (no an alias name
   // used) or not. If it is not "safe", exit.
-  std::map<clang::ValueDecl*, std::set<clang::SourceLocation>> DRELocs;
+  std::map<clang::ValueDecl *, std::set<clang::SourceLocation>> DRELocs;
   for (auto &Iter : DREDeclMap) {
     if (auto VD = dyn_cast_or_null<VarDecl>(Iter.second)) {
       if (VD->hasAttr<clang::CUDADeviceAttr>() &&
@@ -376,7 +373,7 @@ bool canBeTreatedAsPrivateMemoryAccess(int KernelDim,
     return false;
   const clang::VarDecl *IdxVD =
       dyn_cast_or_null<clang::VarDecl>(IdxDRE->getDecl());
-  
+
   if (!IdxVD->isLocalVarDecl())
     return false;
   const clang::FunctionDecl *IdxVDContext =
@@ -400,7 +397,8 @@ bool canBeTreatedAsPrivateMemoryAccess(int KernelDim,
       return false;
   }
 
-  // Check if Index variable match pattern: blockIdx.x * blockDim.x + threadIdx.x
+  // Check if Index variable match pattern: blockIdx.x * blockDim.x +
+  // threadIdx.x
   if (!IdxVD->hasInit())
     return false;
   auto IsIterationSpaceBuiltinVar =
@@ -437,12 +435,13 @@ bool canBeTreatedAsPrivateMemoryAccess(int KernelDim,
       return true;
     return false;
   };
-  const clang::Expr* InitExpr = IdxVD->getInit()->IgnoreImpCasts();
+  const clang::Expr *InitExpr = IdxVD->getInit()->IgnoreImpCasts();
   // Case 1: blockIdx.x * blockDim.x + threadIdx.x
   // Case 2: blockDim.x * blockIdx.x + threadIdx.x
   // Case 3: threadIdx.x + blockIdx.x * blockDim.x
   // Case 4: threadIdx.x + blockDim.x * blockIdx.x
-  const clang::BinaryOperator* BOAdd = dyn_cast<clang::BinaryOperator>(InitExpr);
+  const clang::BinaryOperator *BOAdd =
+      dyn_cast<clang::BinaryOperator>(InitExpr);
   if (!BOAdd || BOAdd->getOpcode() != clang::BinaryOperatorKind::BO_Add)
     return false;
   const clang::BinaryOperator *BOMul =

@@ -1221,7 +1221,8 @@ int analyzeGridBlockDim(const CUDAKernelCallExpr *KernelCall,
   const VarDecl *VD = dyn_cast_or_null<VarDecl>(DRE->getDecl());
   if (!VD)
     return 3;
-  // VD must be local variable and must have the same context with KernelCallExpr
+  // VD must be local variable and must have the same context with
+  // KernelCallExpr
   if (!VD->isLocalVarDecl())
     return 3;
   const CompoundStmt *VDContext =
@@ -1250,8 +1251,8 @@ int analyzeGridBlockDim(const CUDAKernelCallExpr *KernelCall,
     return 3;
   if (!VD->hasInit())
     return 1;
-  
-  const CXXConstructExpr* Init = dyn_cast<CXXConstructExpr>(VD->getInit());
+
+  const CXXConstructExpr *Init = dyn_cast<CXXConstructExpr>(VD->getInit());
   if (!Init)
     return 3;
   if (Init->getNumArgs() == 3 && Init->getArg(1)->isDefaultArgument() &&

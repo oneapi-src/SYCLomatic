@@ -71,7 +71,7 @@ private:
   };
   std::vector<std::pair<clang::CallExpr *, SyncCallInfo>> SyncCallsVec;
   std::deque<clang::SourceRange> LoopRange;
-  const clang::FunctionDecl* FD;
+  const clang::FunctionDecl *FD;
 
   std::unordered_map<clang::DeclRefExpr *, clang::ValueDecl *> DREDeclMap;
   std::string CELoc;
