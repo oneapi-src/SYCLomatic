@@ -25,14 +25,14 @@ __global__ void func() {
   // cast for arg1: arg1 is expr which require tranlation.
   int CHUNK_SIZE0 = 64;
   int numz0;
-  //CHECK: const int zlength0 = dpct::min(CHUNK_SIZE0, numz0 - item_ct1.get_group(2) * CHUNK_SIZE0);
+  //CHECK: const int zlength0 = dpct::min(CHUNK_SIZE0, (unsigned int)(numz0 - item_ct1.get_group(2) * CHUNK_SIZE0));
   const int zlength0 = min(CHUNK_SIZE0, numz0 - blockIdx.x * CHUNK_SIZE0);
 
   // case4: unsigned int min(arg0:unsigned int, arg1:unsigned int)
   // cast for arg1: arg1 is expr which require tranlation.
   unsigned int CHUNK_SIZE1 = 64;
   int numz1;
-  //CHECK: const int zlength1 = sycl::min(CHUNK_SIZE1, numz1 - item_ct1.get_group(2) * CHUNK_SIZE1);
+  //CHECK: const int zlength1 = sycl::min(CHUNK_SIZE1, (unsigned int)(numz1 - item_ct1.get_group(2) * CHUNK_SIZE1));
   const int zlength1 = min(CHUNK_SIZE1, numz1 - blockIdx.x * CHUNK_SIZE1);
 
   // case5: compare return type and argument tpye using canonical type to avoid unexpected type-cast

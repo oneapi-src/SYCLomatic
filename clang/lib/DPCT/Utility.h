@@ -577,4 +577,6 @@ getImmediateOuterLambdaExpr(const clang::FunctionDecl *FuncDecl);
 bool typeIsPostfix(clang::QualType QT);
 
 std::string getBaseTypeRemoveTemplateArguments(const clang::MemberExpr* ME);
+bool containIterationSpaceBuiltinVar(const clang::Stmt *Node);
+bool containBuiltinWarpSize(const clang::Stmt *Node);
 #endif // DPCT_UTILITY_H

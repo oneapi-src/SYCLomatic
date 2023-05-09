@@ -24,24 +24,11 @@
 namespace clang {
 namespace dpct {
 
-/// Returns true if E is one of the forms:
-/// (blockDim/blockIdx/threadIdx/gridDim).(x/y/z)
-inline bool isTargetSpecialExpr(const Expr *E) {
-  if (auto POE = dyn_cast<PseudoObjectExpr>(E->IgnoreImpCasts())) {
-    auto RE = POE->getResultExpr();
-    if (auto CE = dyn_cast<CallExpr>(RE)) {
-      auto FD = CE->getDirectCallee();
-      auto Name = FD->getNameAsString();
-      if (Name == "__fetch_builtin_x" || Name == "__fetch_builtin_y" ||
-          Name == "__fetch_builtin_z")
-        return true;
-    }
-  } else if (auto DRE = dyn_cast<DeclRefExpr>(E->IgnoreImpCasts())) {
-    auto VarDecl = DRE->getDecl();
-    if (VarDecl && (VarDecl->getNameAsString() == "warpSize")) {
-      return !DpctGlobalInfo::isInAnalysisScope(VarDecl->getLocation());
-    }
-  }
+/// Returns true if E contains one of the forms:
+/// (blockDim/blockIdx/threadIdx/gridDim).(x/y/z) or warpSize
+inline bool isContainTargetSpecialExpr(const Expr *E) {
+  if (containIterationSpaceBuiltinVar(E) || containBuiltinWarpSize(E))
+    return true;
   return false;
 }
 
@@ -153,10 +140,19 @@ public:
   CastIfSpecialExprPrinter(ArgT &&A)
       : Arg(std::forward<ArgT>(A)) {}
   template <class StreamT> void print(StreamT &Stream) const {
-    if (isTargetSpecialExpr(Arg)) {
+    if (isContainTargetSpecialExpr(Arg)) {
       clang::QualType ArgType = Arg->getType().getCanonicalType();
       ArgType.removeLocalCVRQualifiers(clang::Qualifiers::CVRMask);
       Stream << "(" << ArgType.getAsString() << ")";
+      if (!dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()) &&
+          !dyn_cast<IntegerLiteral>(Arg->IgnoreImpCasts()) &&
+          !dyn_cast<ParenExpr>(Arg->IgnoreImpCasts()) &&
+          !dyn_cast<PseudoObjectExpr>(Arg->IgnoreImpCasts())) {
+        Stream << "(";
+        dpct::print(Stream, Arg);
+        Stream << ")";
+        return;
+      }
     }
     dpct::print(Stream, Arg);
   }

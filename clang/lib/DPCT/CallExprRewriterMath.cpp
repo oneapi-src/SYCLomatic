@@ -245,7 +245,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
             // typical 64-bit systems). However, sycl::mul24 only takes 32-bit
             // integers, so it is necessary to convert the migrated type to
             // int or unsigned int.
-            if (isTargetSpecialExpr(Arg))
+            if (isContainTargetSpecialExpr(Arg))
               RewriteArgList[i] = "(" + ParamType + ")" + RewriteArgList[i];
           } else {
             auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
