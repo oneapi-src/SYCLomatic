@@ -2965,54 +2965,9 @@ void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
 }
 
 void VectorTypeMemberAccessRule::renameMemberField(const MemberExpr *ME) {
-  // To skip user-defined type.
-  if (!ME || isTypeInAnalysisScope(ME->getBase()->getType().getTypePtr()))
-    return;
-
-  auto BaseTy = ME->getBase()->getType().getAsString();
-  bool isPtr = false;
-  // when BaseTy == "struct int1 *", remove " *"
-  if (*(BaseTy.end() - 1) == '*') {
-    BaseTy = BaseTy.erase(BaseTy.size() - 2, 2);
-    isPtr = true;
-  }
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  if (*(BaseTy.end() - 1) == '1') {
-    auto Begin = ME->getOperatorLoc();
-    bool isImplicit = false;
-    if (Begin.isInvalid()) {
-      Begin = ME->getMemberLoc();
-      isImplicit = true;
-    }
-    Begin = SM.getSpellingLoc(Begin);
-    auto End =
-        Lexer::getLocForEndOfToken(SM.getSpellingLoc(ME->getMemberLoc()), 0, SM,
-                                   DpctGlobalInfo::getContext().getLangOpts());
-    auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
-    if (isPtr && isImplicit) {
-      return emplaceTransformation(new ReplaceText(Begin, Length, "*this"));
-    }
-    if (isPtr) {
-      auto BaseBegin = ME->getBeginLoc();
-      emplaceTransformation(new InsertText(BaseBegin, "*"));
-    }
-    return emplaceTransformation(new ReplaceText(Begin, Length, ""));
-  }
-  std::string MemberName = ME->getMemberNameInfo().getAsString();
-  if (MapNames::VectorTypes2MArray.count(BaseTy) &&
-      MapNames::MArrayMemberNamesMap.count(MemberName)) {
-    auto Begin = ME->getOperatorLoc();
-    auto End =
-        Lexer::getLocForEndOfToken(SM.getSpellingLoc(ME->getMemberLoc()), 0, SM,
-                                   DpctGlobalInfo::getContext().getLangOpts());
-    auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
-    auto MArrayIdx = MapNames::MArrayMemberNamesMap.find(MemberName)->second;
-    return emplaceTransformation(
-        new ReplaceText(Begin, Length, std::move(MArrayIdx)));
-  }
-  if (MapNames::replaceName(MapNames::MemberNamesMap, MemberName))
-    emplaceTransformation(
-        new RenameFieldInMemberExpr(ME, std::move(MemberName)));
+  ExprAnalysis EA(ME);
+  emplaceTransformation(EA.getReplacement());
+  EA.applyAllSubExprRepl();
 }
 
 void VectorTypeMemberAccessRule::runRule(
@@ -3027,34 +2982,6 @@ void VectorTypeMemberAccessRule::runRule(
   }
 
   if (auto ME = getNodeAsType<MemberExpr>(Result, "DerivedVecMemberExpr")) {
-    const auto *MD = DpctGlobalInfo::findAncestor<CXXMethodDecl>(ME);
-    if (MD && MD->isVolatile()) {
-      const auto BaseType =
-          ME->getBase()->getBestDynamicClassTypeExpr()->getType();
-      const bool BaseAndThisSameType =
-          BaseType->getCanonicalTypeUnqualified() ==
-          MD->getThisType()->getCanonicalTypeUnqualified();
-      const bool BaseIsVolatile =
-          BaseType->getPointeeType().isVolatileQualified();
-      const auto *SM = Result.SourceManager;
-      const SourceLocation Loc = SM->getExpansionLoc(ME->getBeginLoc());
-      const std::string TypeName =
-          BaseType->getPointeeType().getUnqualifiedType().getAsString();
-      if (ME->isImplicitAccess()) {
-        const std::string VolatileCast =
-            std::string("const_cast<") + TypeName + " *>(this)->";
-        report(Loc, Diagnostics::VOLATILE_VECTOR_ACCESS, false);
-        emplaceTransformation(
-            new InsertText(ME->getBeginLoc(), VolatileCast.c_str()));
-      } else if (BaseAndThisSameType && BaseIsVolatile) {
-        const std::string VolatileCast =
-            std::string("const_cast<") + TypeName + " *>(";
-        report(Loc, Diagnostics::VOLATILE_VECTOR_ACCESS, false);
-        emplaceTransformation(
-            new InsertText(ME->getBase()->getBeginLoc(), VolatileCast.c_str()));
-        emplaceTransformation(new InsertText(ME->getOperatorLoc(), ")"));
-      }
-    }
     renameMemberField(ME);
   }
 
@@ -3471,9 +3398,6 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
   const MemberExpr *ME = getNodeAsType<MemberExpr>(Result, "FieldVar");
   if (!ME)
     return;
-  auto Parents = Result.Context->getParents(*ME);
-  if (Parents.size() < 1)
-    return;
   auto MemberName = ME->getMemberNameInfo().getAsString();
 
   auto BaseType = ME->getBase()->getType();
@@ -3563,36 +3487,11 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
   if (Search == PropNamesMap.end()) {
     return;
   }
-  if (Parents[0].get<clang::ImplicitCastExpr>()) {
-    // migrate to get_XXX() eg. "b=a.minor" to "b=a.get_minor_version()"
-    requestFeature(PropToGetFeatureMap.at(MemberName), ME);
-    std::string TmplArg = "";
-    if (MemberName == "maxGridSize" ||
-        MemberName == "maxThreadsDim") {
-      // Similar code in ExprAnalysis.cpp
-      TmplArg = "<int *>";
-    }
-    emplaceTransformation(new RenameFieldInMemberExpr(
-        ME, "get_" + Search->second + TmplArg + "()"));
-  } else if (auto *BO = Parents[0].get<clang::BinaryOperator>()) {
-    // migrate to set_XXX() eg. "a.minor = 1" to "a.set_minor_version(1)"
-    if (BO->getOpcode() == clang::BO_Assign) {
-      requestFeature(PropToSetFeatureMap.at(MemberName), ME);
-      emplaceTransformation(
-          new RenameFieldInMemberExpr(ME, "set_" + Search->second));
-      emplaceTransformation(new ReplaceText(BO->getOperatorLoc(), 1, "("));
-      emplaceTransformation(new InsertAfterStmt(BO, ")"));
-    }
-  } else if (auto *OCE = Parents[0].get<clang::CXXOperatorCallExpr>()) {
-    // migrate to set_XXX() for types with an overloaded = operator
-    if (OCE->getOperator() == clang::OverloadedOperatorKind::OO_Equal) {
-      requestFeature(PropToSetFeatureMap.at(MemberName), ME);
-      emplaceTransformation(
-          new RenameFieldInMemberExpr(ME, "set_" + Search->second));
-      emplaceTransformation(new ReplaceText(OCE->getOperatorLoc(), 1, "("));
-      emplaceTransformation(new InsertAfterStmt(OCE, ")"));
-    }
-  }
+  
+  // migrate to get_XXX() eg. "b=a.minor" to "b=a.get_minor_version()"
+  auto Parents = Result.Context->getParents(*ME);
+  if (Parents.size() < 1)
+    return;
   if ((Search->second.compare(0, 13, "major_version") == 0) ||
       (Search->second.compare(0, 13, "minor_version") == 0)) {
     report(ME->getBeginLoc(), Comments::VERSION_COMMENT, false);
@@ -3600,6 +3499,37 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
   if (Search->second.compare(0, 10, "integrated") == 0) {
     report(ME->getBeginLoc(), Comments::NOT_SUPPORT_API_INTEGRATEDORNOT, false);
   }
+  std::string TmplArg = "";
+  if (MemberName == "maxGridSize" ||
+      MemberName == "maxThreadsDim") {
+    // Similar code in ExprAnalysis.cpp
+    TmplArg = "<int *>";
+  }
+  if (auto *BO = Parents[0].get<clang::BinaryOperator>()) {
+  // migrate to set_XXX() eg. "a.minor = 1" to "a.set_minor_version(1)"
+    if (BO->getOpcode() == clang::BO_Assign) {
+      requestFeature(PropToSetFeatureMap.at(MemberName), ME);
+      emplaceTransformation(
+          new RenameFieldInMemberExpr(ME, "set_" + Search->second));
+      emplaceTransformation(new ReplaceText(BO->getOperatorLoc(), 1, "("));
+      emplaceTransformation(new InsertAfterStmt(BO, ")"));
+      return ;
+    }
+  } else if (auto *OCE = Parents[0].get<clang::CXXOperatorCallExpr>()) {
+  // migrate to set_XXX() for types with an overloaded = operator
+    if (OCE->getOperator() == clang::OverloadedOperatorKind::OO_Equal) {
+      requestFeature(PropToSetFeatureMap.at(MemberName), ME);
+      emplaceTransformation(
+          new RenameFieldInMemberExpr(ME, "set_" + Search->second));
+      emplaceTransformation(new ReplaceText(OCE->getOperatorLoc(), 1, "("));
+      emplaceTransformation(new InsertAfterStmt(OCE, ")"));
+      return ;
+    }
+  }
+  requestFeature(PropToGetFeatureMap.at(MemberName), ME);
+  emplaceTransformation(new RenameFieldInMemberExpr(
+    ME, "get_" + Search->second + TmplArg + "()")); 
+  return ;
 }
 
 REGISTER_RULE(DeviceInfoVarRule, PassKind::PK_Migration)
@@ -9012,6 +8942,25 @@ void DeviceFunctionDeclRule::runRule(
       FuncInfo->setParameterReferencedStatus(ParamCounter,
                                              Param->isReferenced());
       ParamCounter++;
+    }
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    auto &CTX = DpctGlobalInfo::getContext();
+    size_t LocalVariableSize = 0;
+    for(auto D : FD->decls()){
+      if(auto VD = dyn_cast_or_null<VarDecl>(D)) {
+        if(VD->hasAttr<CUDASharedAttr>() || !VD->isLocalVarDecl() || isCubVar(VD)){
+          continue;
+        }
+        auto Size = CTX.getTypeSizeInCharsIfKnown(VD->getType());
+        if(Size.has_value()) {
+          LocalVariableSize += Size.value().getQuantity();
+        }
+      }
+    }
+    // For Xe-LP architecture, if the sub-group size is 32, then each work-item
+    // can use 128 * 32 Byte / 32 = 128 Byte registers.
+    if(LocalVariableSize > 128) {
+      report(SM.getExpansionLoc(FD->getBeginLoc()), Warnings::REGISTER_USAGE, false, FD->getName());
     }
   }
   if (isLambda(FD) && !FuncInfo->isLambda()) {
