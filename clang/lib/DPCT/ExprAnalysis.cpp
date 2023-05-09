@@ -1601,6 +1601,12 @@ void KernelArgumentAnalysis::analyzeExpr(
   } else {
     if (Arg->isArrow())
       IsRedeclareRequired = true;
+    if (auto TST = dyn_cast<TemplateSpecializationType>(
+            Arg->getBaseType().getDesugaredType(Context)))
+      if (auto CTD = dyn_cast<ClassTemplateDecl>(
+              TST->getTemplateName().getAsTemplateDecl()))
+        if (!CTD->getTemplatedDecl()->isTriviallyCopyable())
+          IsRedeclareRequired = true;
     KernelArgumentAnalysis::dispatch(Arg->getBase());
   }
 }
