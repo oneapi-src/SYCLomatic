@@ -14,6 +14,7 @@
 #include "CallExprRewriter.h"
 #include "Config.h"
 #include "DNNAPIMigration.h"
+#include "MemberExprRewriter.h"
 #include "TypeLocRewriters.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/Expr.h"
@@ -24,7 +25,6 @@
 #include "clang/AST/StmtGraphTraits.h"
 #include "clang/AST/StmtObjC.h"
 #include "clang/AST/StmtOpenMP.h"
-#include "MemberExprRewriter.h"
 
 extern std::string DpctInstallPath;
 namespace clang {

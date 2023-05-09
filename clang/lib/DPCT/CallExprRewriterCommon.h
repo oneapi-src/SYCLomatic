@@ -132,13 +132,11 @@ public:
   }
 };
 
-template <class ArgT>
-class CastIfSpecialExprPrinter {
+template <class ArgT> class CastIfSpecialExprPrinter {
   ArgT Arg;
 
 public:
-  CastIfSpecialExprPrinter(ArgT &&A)
-      : Arg(std::forward<ArgT>(A)) {}
+  CastIfSpecialExprPrinter(ArgT &&A) : Arg(std::forward<ArgT>(A)) {}
   template <class StreamT> void print(StreamT &Stream) const {
     if (isContainTargetSpecialExpr(Arg)) {
       clang::QualType ArgType = Arg->getType().getCanonicalType();
@@ -590,8 +588,9 @@ makeCastExprCreator(std::function<TypeInfoT(const CallExpr *)> TypeInfo,
 
 template <class SubExprT>
 inline std::function<CastIfNotSameExprPrinter<SubExprT>(const CallExpr *)>
-makeCastIfNotSameExprCreator(std::function<std::string(const CallExpr *)> TypeInfo,
-                          std::function<SubExprT(const CallExpr *)> Sub) {
+makeCastIfNotSameExprCreator(
+    std::function<std::string(const CallExpr *)> TypeInfo,
+    std::function<SubExprT(const CallExpr *)> Sub) {
   return PrinterCreator<CastIfNotSameExprPrinter<SubExprT>,
                         std::function<std::string(const CallExpr *)>,
                         std::function<SubExprT(const CallExpr *)>>(TypeInfo,
