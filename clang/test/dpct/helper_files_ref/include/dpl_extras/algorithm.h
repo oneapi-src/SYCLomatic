@@ -1712,11 +1712,11 @@ segmented_reduce_argmin(_ExecutionPolicy &&policy, key_t keys_in,
           ((::std::int64_t)end_offsets[i]) - segment_begin;
       if (segment_length <= 0) {
         *(keys_out + i) = dpct::key_value_pair(
-            ptrdiff_t(1),
-            ::std::numeric_limits<
-                typename ::std::iterator_traits<key_t>::value_type>::max());
+            1, ::std::numeric_limits<
+                   typename ::std::iterator_traits<key_t>::value_type>::max());
       } else {
-        dpct::arg_index_input_iterator arg_index(keys_in + segment_begin);
+        dpct::arg_index_input_iterator<decltype(keys_in), int> arg_index(
+            keys_in + segment_begin);
         *(keys_out + i) = *::std::min_element(
             arg_index, arg_index + segment_length,
             [](const auto &a, const auto &b) { return a.value < b.value; });
@@ -1741,11 +1741,12 @@ segmented_reduce_argmax(_ExecutionPolicy &&policy, key_t keys_in,
           ((::std::int64_t)end_offsets[i]) - segment_begin;
       if (segment_length <= 0) {
         *(keys_out + i) = dpct::key_value_pair(
-            ptrdiff_t(1),
+            1,
             ::std::numeric_limits<
                 typename ::std::iterator_traits<key_t>::value_type>::lowest());
       } else {
-        dpct::arg_index_input_iterator arg_index(keys_in + segment_begin);
+        dpct::arg_index_input_iterator<decltype(keys_in), int> arg_index(
+            keys_in + segment_begin);
         *(keys_out + i) = *::std::max_element(
             arg_index, arg_index + segment_length,
             [](const auto &a, const auto &b) { return a.value < b.value; });
