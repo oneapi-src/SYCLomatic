@@ -22,7 +22,8 @@ namespace lapack {
 /// symmetric definite eigenproblem using a divide and conquer method.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] queue Device queue where calculations will be performed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] itype Must be 1 or 2 or 3. Specifies the problem type to be solved.
 /// \param [in] jobz Must be job::novec or job::vec.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
@@ -99,7 +100,8 @@ inline int sygvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
 /// conquer method.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] queue Device queue where calculations will be performed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] itype Must be 1 or 2 or 3. Specifies the problem type to be solved.
 /// \param [in] jobz Must be job::novec or job::vec.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
@@ -176,7 +178,8 @@ inline int hegvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
 /// for complex data) positive-definite matrices.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] queue Device queue where calculations will be performed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
 /// \param [in] n The order of the matrix A.
 /// \param [in,out] a Array of pointers to matrix A.
@@ -264,7 +267,8 @@ inline int potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
 /// symmetric (Hermitian) positive-definite coefficient matrices.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] queue Device queue where calculations will be performed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
 /// \param [in] n The order of the matrix A.
 /// \param [in] nrhs The number of right-hand sides.
@@ -910,7 +914,8 @@ oneapi::mkl::compz job2compz(const oneapi::mkl::job &job) {
 /// Computes the size of workspace memory of getrf function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] m The number of rows in the matrix A.
 /// \param [in] n The number of columns in the matrix A.
 /// \param [in] a_type The data type of the matrix A.
@@ -935,7 +940,8 @@ inline int getrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
 /// Computes the LU factorization of a general m-by-n matrix.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q The queue where the routine should be executed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] m The number of rows in the matrix A.
 /// \param [in] n The number of columns in the matrix A.
 /// \param [in] a_type The data type of the matrix A.
@@ -973,7 +979,8 @@ inline int getrf(sycl::queue &q, std::int64_t m, std::int64_t n,
 /// matrix, with multiple right-hand sides.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q The queue where the routine should be executed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] trans Indicates the form of the linear equation.
 /// \param [in] n The order of the matrix A and the number of rows in matrix B.
 /// \param [in] nrhs The number of right hand sides.
@@ -999,7 +1006,8 @@ inline int getrs(sycl::queue &q, oneapi::mkl::transpose trans, std::int64_t n,
 /// Computes the size of workspace memory of geqrf function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] m The number of rows in the matrix A.
 /// \param [in] n The number of columns in the matrix A.
 /// \param [in] a_type The data type of the matrix A.
@@ -1024,7 +1032,8 @@ inline int geqrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
 /// Computes the QR factorization of a general m-by-n matrix.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q The queue where the routine should be executed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] m The number of rows in the matrix A.
 /// \param [in] n The number of columns in the matrix A.
 /// \param [in] a_type The data type of the matrix A.
@@ -1051,7 +1060,8 @@ inline int geqrf(sycl::queue &q, std::int64_t m, std::int64_t n,
 /// Computes the size of workspace memory of gesvd function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] jobu Must be 'A' (representing jobsvd::vectors), 'S'
 /// (representing jobsvd::somevec), 'O' (representing jobsvd::vectorsina) or 'N'
 /// (representing jobsvd::novec).
@@ -1091,7 +1101,8 @@ inline int gesvd_scratchpad_size(sycl::queue &q, signed char jobu,
 /// Computes the size of workspace memory of gesvd function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] jobz Must be job::vec or job::novec
 /// \param [in] all_vec Only have effects when \param jobz is job::vec.If the
 /// value is zero, all m columns of U are returned in the matrix U, otherwise
@@ -1142,7 +1153,8 @@ inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
 /// Computes the size of workspace memory of gesvd function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] jobu Must be 'A' (representing jobsvd::vectors), 'S'
 /// (representing jobsvd::somevec), 'O' (representing jobsvd::vectorsina) or 'N'
 /// (representing jobsvd::novec).
@@ -1186,7 +1198,8 @@ inline int gesvd(sycl::queue &q, signed char jobu, signed char jobvt,
 /// Computes the size of workspace memory of gesvd function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] jobz Must be job::vec or job::novec.
 /// \param [in] all_vec Only have effects when \param jobz is job::vec.If the
 /// value is zero, all m columns of U are returned in the matrix U, otherwise
@@ -1239,7 +1252,8 @@ inline int gesvd(sycl::queue &q, oneapi::mkl::job jobz, std::int64_t all_vec,
 /// Computes the size of workspace memory of potrf function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
 /// \param [in] n The number of columns in the matrix A.
 /// \param [in] a_type The data type of the matrix A.
@@ -1265,7 +1279,8 @@ inline int potrf_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
 /// positive-definite matrix.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q The queue where the routine should be executed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
 /// \param [in] n The number of columns in the matrix A.
 /// \param [in] a_type The data type of the matrix A.
@@ -1290,7 +1305,8 @@ inline int potrf(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
 /// (Hermitian) positive-definite coefficient matrix.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q The queue where the routine should be executed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
 /// \param [in] n The order of the matrix A and the number of rows in matrix B.
 /// \param [in] nrhs The number of right hand sides.
@@ -1318,7 +1334,8 @@ inline int potrs(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
 /// Computes the size of workspace memory of syevx/heevx function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] jobz Must be job::novec or job::vec.
 /// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
@@ -1361,7 +1378,8 @@ inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
 /// symmetric/Hermitian matrix.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] jobz Must be job::novec or job::vec.
 /// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
@@ -1406,7 +1424,8 @@ inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
 /// Computes the size of workspace memory of syevx/heevx function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] jobz Must be job::novec or job::vec.
 /// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
@@ -1442,7 +1461,8 @@ inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
 /// symmetric/Hermitian matrix.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] jobz Must be job::novec or job::vec.
 /// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
@@ -1486,7 +1506,8 @@ inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
 /// Computes the size of workspace memory of sygvx/hegvx function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] itype Must be 1, 2 or 3.
 /// \param [in] jobz Must be job::novec or job::vec.
 /// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
@@ -1524,7 +1545,8 @@ syhegvx_scratchpad_size(sycl::queue &q, int itype, oneapi::mkl::job jobz,
 /// generalized symmetric/Hermitian definite eigenproblem.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] itype Must be 1, 2 or 3.
 /// \param [in] jobz Must be job::novec or job::vec.
 /// \param [in] range Must be rangev::all, rangev::values or uplo::indices.
@@ -1570,7 +1592,8 @@ inline int syhegvx(sycl::queue &q, int itype, oneapi::mkl::job jobz,
 /// Computes the size of workspace memory of sygvd/hegvd function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] itype Must be 1, 2 or 3.
 /// \param [in] jobz Must be job::novec or job::vec.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
@@ -1597,7 +1620,8 @@ inline int syhegvd_scratchpad_size(sycl::queue &q, int itype,
 /// symmetric/Hermitian definite eigenproblem using a divide and conquer method.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
-/// have the in_order property when using the USM mode.
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
 /// \param [in] itype Must be 1, 2 or 3.
 /// \param [in] jobz Must be job::novec or job::vec.
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
