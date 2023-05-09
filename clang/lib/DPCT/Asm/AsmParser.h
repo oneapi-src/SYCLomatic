@@ -452,15 +452,7 @@ public:
     return UnaryOperatorClass <= S->getStmtClass() &&
            S->getStmtClass() <= FloatingLiteralClass;
   }
-
-  void print(raw_ostream &OS, bool InParens = false) const;
-  void dump() const;
 };
-
-inline raw_ostream &operator<<(raw_ostream &OS, const DpctAsmExpr &E) {
-  E.print(OS);
-  return OS;
-}
 
 class DpctAsmIntegerLiteral : public DpctAsmExpr {
   llvm::APInt Value;

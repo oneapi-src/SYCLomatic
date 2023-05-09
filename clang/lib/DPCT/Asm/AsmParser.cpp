@@ -335,7 +335,8 @@ DpctAsmParser::ParseRHSOfBinaryExpression(DpctAsmExprResult LHS,
     asmprec::Level ThisPrec = NextTokPrec;
     NextTokPrec = getBinOpPrec(Tok.getKind());
 
-    bool isRightAssoc = ThisPrec == asmprec::Conditional;
+    bool isRightAssoc =
+        ThisPrec == asmprec::Conditional || ThisPrec == asmprec::Assignment;
 
     if (ThisPrec < NextTokPrec || (ThisPrec == NextTokPrec && isRightAssoc)) {
       RHS = ParseRHSOfBinaryExpression(
