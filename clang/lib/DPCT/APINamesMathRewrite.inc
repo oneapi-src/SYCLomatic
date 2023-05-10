@@ -932,8 +932,7 @@ MATH_API_REWRITER_DEVICE(
                      ARG(1), LITERAL("std::not_equal_to<>()"))))))
 
 // Half Precision Conversion and Data Movement
-CALL_FACTORY_ENTRY("__high2float", CALL("static_cast<float>",
-                                        ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))))
+ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY("__high2float", ARG(0), LITERAL("1"))
 
 MATH_API_REWRITER_DEVICE(
     "__ldca",
@@ -989,8 +988,7 @@ MATH_API_REWRITER_DEVICE(
                               Diagnostics::MATH_EMULATION_EXPRESSION,
                               std::string("__ldlu"), std::string("'*'"))))
 
-CALL_FACTORY_ENTRY("__low2float", CALL("static_cast<float>",
-                                       ARRAY_SUBSCRIPT(ARG(0), LITERAL("0"))))
+ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY("__low2float", ARG(0), LITERAL("0"))
 
 MATH_API_REWRITER_DEVICE(
     "__stcg",

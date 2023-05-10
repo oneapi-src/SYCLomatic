@@ -1732,7 +1732,7 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: h2 = sycl::half2{h,h};
   h2 = __halves2half2(h, h);
 
-  // CHECK: f = static_cast<float>(h2[1]);
+  // CHECK: f = h2[1];
   f = __high2float(h2);
 
   // CHECK: h = h2[0];
@@ -1768,9 +1768,9 @@ __global__ void kernelFuncTypecasts() {
   // CHECK: h = sycl::vec<long long, 1>{ll}.convert<sycl::half, sycl::rounding_mode::rtz>()[0];
   h = __ll2half_rz(ll);
 
-  // CHECK: f = static_cast<float>(h2[0]);
+  // CHECK: f = h2[0];
   f = __low2float(h2);
-  // CHECK: f = static_cast<float>(*(&h2)[0]);
+  // CHECK: f = *(&h2)[0];
   f = __low2float(*(&h2));
 
   // CHECK: h = h2[1];
