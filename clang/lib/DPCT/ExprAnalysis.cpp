@@ -312,7 +312,7 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E, Source
   auto RewritePrefixLength = SM.getCharacterData(BeginLocWithoutPrefix) -
                              SM.getCharacterData(BeginLoc);
 
-  auto EndLocWithoutPostfix = EndLoc;
+  auto EndLocWithoutPostfix = SM.getExpansionLoc(EndLoc);
   EndLoc = SM.getExpansionLoc(getEndLocOfFollowingEmptyMacro(EndLoc));
   auto RewritePostfixLength =
       SM.getCharacterData(EndLoc) - SM.getCharacterData(EndLocWithoutPostfix);
