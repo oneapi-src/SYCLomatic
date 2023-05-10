@@ -1179,10 +1179,6 @@ auto IsPerf = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::isOptimizeMigration();
 };
 
-auto UseStdLibdevice = [](const CallExpr *C) -> bool {
-  return DpctGlobalInfo::useCAndCXXStandardLibrariesExt();
-};
-
 inline auto UseIntelDeviceMath = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useIntelDeviceMath();
 };
