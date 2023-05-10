@@ -6,11 +6,11 @@
 // CHECK: #include <dpct/dpct.hpp>
 #include "nvToolsExtCuda.h"
 
-int main(){
-  CUdevice* device;
-  cuDeviceGet(device,0);
+int main() {
+  CUdevice *device;
+  cuDeviceGet(device, 0);
   // CHECK:     /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of nvtxNameCuDeviceA is not supported.
   // CHECK-NEXT: */
-  nvtxNameCuDeviceA(*device,"nvtx_device");
+  nvtxNameCuDeviceA(*device, "nvtx_device");
 }
