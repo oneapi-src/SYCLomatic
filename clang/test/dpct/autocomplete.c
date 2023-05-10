@@ -14,6 +14,7 @@
 // DASH-NEXT: --change-cuda-files-extension-only
 // DASH-NEXT: --check-unicode-security
 // DASH-NEXT: --comments
+// DASH-NEXT: --compilation-database
 // DASH-NEXT: --cuda-include-path
 // DASH-NEXT: --custom-helper-name
 // DASH-NEXT: --enable-ctad

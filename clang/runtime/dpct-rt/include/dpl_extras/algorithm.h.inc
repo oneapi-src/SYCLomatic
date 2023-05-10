@@ -2020,19 +2020,15 @@ template <typename _ExecutionPolicy, typename Iter1,
 inline ::std::pair<Iter1, Iter1>
 equal_range(_ExecutionPolicy &&policy, Iter1 start, Iter1 end,
             const ValueLessComparable &value, StrictWeakOrdering comp) {
-  sycl::buffer<::std::int64_t, 1> result_lower_upper{sycl::range<1>(2)};
-  sycl::buffer<ValueLessComparable, 1> value_buf{sycl::range<1>(1)};
-  ::std::fill(policy, oneapi::dpl::begin(value_buf),
-              oneapi::dpl::end(value_buf), value);
-  ::oneapi::dpl::lower_bound(policy, start, end, oneapi::dpl::begin(value_buf),
-                             oneapi::dpl::end(value_buf),
-                             oneapi::dpl::begin(result_lower_upper), comp);
+  ::std::vector<::std::int64_t> res_lower(1);
+  ::std::vector<::std::int64_t> res_upper(1);
+  ::std::vector<ValueLessComparable> value_vec(1, value);
+  ::oneapi::dpl::lower_bound(policy, start, end, value_vec.begin(),
+                             value_vec.end(), res_lower.begin(), comp);
   ::oneapi::dpl::upper_bound(::std::forward<_ExecutionPolicy>(policy), start,
-                             end, oneapi::dpl::begin(value_buf),
-                             oneapi::dpl::end(value_buf),
-                             oneapi::dpl::begin(result_lower_upper) + 1, comp);
-  sycl::host_accessor result_acc(result_lower_upper);
-  auto result = ::std::make_pair(start + result_acc[0], start + result_acc[1]);
+                             end, value_vec.begin(), value_vec.end(),
+                             res_upper.begin(), comp);
+  auto result = ::std::make_pair(start + res_lower[0], start + res_upper[0]);
   return result;
 }
 
