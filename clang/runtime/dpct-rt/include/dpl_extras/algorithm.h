@@ -1657,19 +1657,18 @@ inline void reduce_argmin(Policy &&policy, Iter1 input, Iter2 output,
 }
 
 template <typename Policy, typename Iter1, typename ValueT, typename CompT>
-inline ::std::pair<Iter1, Iter1>
-equal_range(Policy &&policy, Iter1 start, Iter1 end, const ValueT &value,
-            CompT comp) {
+inline ::std::pair<Iter1, Iter1> equal_range(Policy &&policy, Iter1 start,
+                                             Iter1 end, const ValueT &value,
+                                             CompT comp) {
   ::std::vector<::std::int64_t> res_lower(1);
   ::std::vector<::std::int64_t> res_upper(1);
   ::std::vector<ValueT> value_vec(1, value);
   ::oneapi::dpl::lower_bound(policy, start, end, value_vec.begin(),
                              value_vec.end(), res_lower.begin(), comp);
-  ::oneapi::dpl::upper_bound(::std::forward<_ExecutionPolicy>(policy), start,
-                             end, value_vec.begin(), value_vec.end(),
+  ::oneapi::dpl::upper_bound(::std::forward<Policy>(policy), start, end,
+                             value_vec.begin(), value_vec.end(),
                              res_upper.begin(), comp);
-  auto result = ::std::make_pair(start + res_lower[0], start + res_upper[0]);
-=======
+  return ::std::make_pair(start + res_lower[0], start + res_upper[0]);
 }
 
 template <typename Policy, typename Iter1, typename ValueT>
