@@ -518,9 +518,8 @@ __global__ void foo8(){
   atomicAdd(&data[2], tid + 2););
 }
 
-//FIXME: The migration of the definition of macro MAX need to be fixed
 //CHECK: #define DFABS(x) (double)sycl::fabs((x))
-//CHECK-NEXT: #define MAX(x, y) dpct::max(a, sycl::sqrt(DFABS(b)))
+//CHECK-NEXT: #define MAX(x, y) dpct::max(x, y)
 //CHECK-NEXT: void foo9(){
 //CHECK-NEXT:   double a,b,c;
 //CHECK-NEXT:   MAX(a, sycl::sqrt(DFABS(b)));

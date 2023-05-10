@@ -138,6 +138,7 @@ template <class ArgT> class CastIfSpecialExprPrinter {
 public:
   CastIfSpecialExprPrinter(ArgT &&A) : Arg(std::forward<ArgT>(A)) {}
   template <class StreamT> void print(StreamT &Stream) const {
+    const CallExpr* CE = DpctGlobalInfo::findAncestor<CallExpr>(Arg);
     if (isContainTargetSpecialExpr(Arg)) {
       clang::QualType ArgType = Arg->getType().getCanonicalType();
       ArgType.removeLocalCVRQualifiers(clang::Qualifiers::CVRMask);
@@ -147,12 +148,18 @@ public:
           !dyn_cast<ParenExpr>(Arg->IgnoreImpCasts()) &&
           !dyn_cast<PseudoObjectExpr>(Arg->IgnoreImpCasts())) {
         Stream << "(";
-        dpct::print(Stream, Arg);
+        if (CE)
+          dpct::print(Stream, std::make_pair(CE, Arg));
+        else
+          dpct::print(Stream, Arg);
         Stream << ")";
         return;
       }
     }
-    dpct::print(Stream, Arg);
+    if (CE)
+      dpct::print(Stream, std::make_pair(CE, Arg));
+    else
+      dpct::print(Stream, Arg);
   }
 };
 
