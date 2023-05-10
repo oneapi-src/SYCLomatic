@@ -43,7 +43,6 @@
 #include "llvm/Support/Path.h"
 #include "llvm/Support/Program.h"
 #include "llvm/TargetParser/Host.h"
-#include "llvm/Support/Signals.h"
 
 #include <string>
 
@@ -550,13 +549,12 @@ void parseFormatStyle() {
 }
 
 int runDPCT(int argc, const char **argv) {
-  llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
   if (argc < 2) {
     std::cout << CtHelpHint;
     return MigrationErrorShowHelp;
   }
 #if defined(__linux__) || defined(_WIN32)
-  //InstallSignalHandle();
+  InstallSignalHandle();
 #endif
 
 #if defined(_WIN32)
