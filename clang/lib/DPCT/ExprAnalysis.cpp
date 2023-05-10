@@ -282,29 +282,36 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc, SourceLocation EndLoc,
 std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E, SourceLocation *Loc) {
   SourceLocation BeginLoc, EndLoc;
   size_t End = 0;
-
+  std::cout << "ExprAnalysis::getOffsetAndLength" << std::endl;
   if (IsInMacroDefine) {
+    std::cout << "aaaaaaaaaaaaaaaaaaaa" << std::endl;
     // If the expr is in macro define, and the CallSpellingBegin/End is set,
     // we can use the CallSpellingBegin/End to get a more precise range.
     if (CallSpellingBegin.isValid() && CallSpellingEnd.isValid()) {
+      std::cout << "bbbbbbbbbbbbbbbbbb" << std::endl;
       auto Range = getRangeInRange(E, CallSpellingBegin, CallSpellingEnd);
       auto DLBegin = SM.getDecomposedLoc(Range.first);
       auto DLEnd = SM.getDecomposedLoc(Range.second);
       if (DLBegin.first == DLEnd.first &&
           DLBegin.second <= DLEnd.second) {
+        std::cout << "ccccccccccccccccccc" << std::endl;
         BeginLoc = Range.first;
         EndLoc = Range.second;
         End = getOffset(EndLoc);
       }
+      std::cout << "ddddddddddddddd" << std::endl;
     }
+    std::cout << "eeeeeeeeeeeeeeeeee" << std::endl;
   } else {
     // If the Expr is FileID or is macro arg
     // e.g. CALL(expr)
+    std::cout << "fffffffffffffffffff" << std::endl;
     auto Range = getStmtExpansionSourceRange(E);
     BeginLoc = Range.getBegin();
     EndLoc = Range.getEnd();
     End = getOffset(EndLoc) + Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
   }
+  std::cout << "gggggggggggggggg" << std::endl;
 
   // Find the begin/end location include prefix and postfix
   // Set Prefix and Postfix strings
@@ -314,6 +321,8 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E, Source
                              SM.getCharacterData(BeginLoc);
 
   auto EndLocWithoutPostfix = EndLoc;
+  std::cout << "!!!!!!!!!!!! this->E->getBeginLoc().printToString(SM):" << this->E->getBeginLoc().printToString(SM) << std::endl;
+  std::cout << "!!!!!!!!!!!! EndLoc:" << EndLoc.printToString(SM) << std::endl;
   EndLoc = SM.getExpansionLoc(getEndLocOfFollowingEmptyMacro(EndLoc));
   auto RewritePostfixLength =
       SM.getCharacterData(EndLoc) - SM.getCharacterData(EndLocWithoutPostfix);
