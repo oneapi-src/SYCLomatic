@@ -1316,6 +1316,7 @@ void KernelCallExpr::buildExecutionConfig(
         GridDim =
             analyzeGridBlockDim(dyn_cast<CUDAKernelCallExpr>(KernelCall), Arg);
         KernelConfigAnalysis AnalysisTry1D(IsInMacroDefine);
+        AnalysisTry1D.setCallSpelling(KernelCall);
         if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
           AnalysisTry1D.IsTryToUseOneDimension = true;
         }
@@ -1326,6 +1327,7 @@ void KernelCallExpr::buildExecutionConfig(
         BlockDim =
             analyzeGridBlockDim(dyn_cast<CUDAKernelCallExpr>(KernelCall), Arg);
         KernelConfigAnalysis AnalysisTry1D(IsInMacroDefine);
+        AnalysisTry1D.setCallSpelling(KernelCall);
         if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
           AnalysisTry1D.IsTryToUseOneDimension = true;
         }
