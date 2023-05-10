@@ -287,6 +287,8 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E, Source
     std::cout << "aaaaaaaaaaaaaaaaaaaa" << std::endl;
     // If the expr is in macro define, and the CallSpellingBegin/End is set,
     // we can use the CallSpellingBegin/End to get a more precise range.
+    std::cout << "!!!!!!!!!!!! CallSpellingBegin.printToString(SM):" << CallSpellingBegin.printToString(SM) << std::endl;
+    std::cout << "!!!!!!!!!!!! CallSpellingEnd.printToString(SM):" << CallSpellingEnd.printToString(SM) << std::endl;
     if (CallSpellingBegin.isValid() && CallSpellingEnd.isValid()) {
       std::cout << "bbbbbbbbbbbbbbbbbb" << std::endl;
       auto Range = getRangeInRange(E, CallSpellingBegin, CallSpellingEnd);
