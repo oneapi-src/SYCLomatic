@@ -138,7 +138,7 @@ template <class ArgT> class CastIfSpecialExprPrinter {
 public:
   CastIfSpecialExprPrinter(ArgT &&A) : Arg(std::forward<ArgT>(A)) {}
   template <class StreamT> void print(StreamT &Stream) const {
-    const CallExpr* CE = DpctGlobalInfo::findAncestor<CallExpr>(Arg);
+    const CallExpr *CE = DpctGlobalInfo::findAncestor<CallExpr>(Arg);
     if (isContainTargetSpecialExpr(Arg)) {
       clang::QualType ArgType = Arg->getType().getCanonicalType();
       ArgType.removeLocalCVRQualifiers(clang::Qualifiers::CVRMask);
