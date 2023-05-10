@@ -979,7 +979,7 @@ inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value &&
                    dpct::internal::is_iterator<value_t>::value &&
                    dpct::internal::is_iterator<value_out_t>::value>
 sort_pairs(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
-    value_t values_in, value_out_t values_out, int64_t n,
+    value_t values_in, value_out_t values_out, ::std::int64_t n,
     bool descending = false, int begin_bit = 0,
            int end_bit =
                sizeof(typename ::std::iterator_traits<key_t>::value_type) * 8);
@@ -988,7 +988,7 @@ template <typename _ExecutionPolicy, typename key_t, typename key_out_t>
 inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value && 
                           dpct::internal::is_iterator<key_out_t>::value>
 sort_keys(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
-          int64_t n, bool descending = false, int begin_bit = 0,
+          ::std::int64_t n, bool descending = false, int begin_bit = 0,
           int end_bit =
               sizeof(typename ::std::iterator_traits<key_t>::value_type) * 8);
 
@@ -998,7 +998,7 @@ namespace internal {
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename transformed_key_t>
 inline void transform_and_sort(_ExecutionPolicy &&policy, key_t keys_in,
-                               key_out_t keys_out, int64_t n, bool descending,
+                               key_out_t keys_out, ::std::int64_t n, bool descending,
                                int begin_bit, int end_bit) {
   using key_t_value_t = typename std::iterator_traits<key_t>::value_type;
   auto trans_key =
@@ -1024,7 +1024,7 @@ inline void transform_and_sort(_ExecutionPolicy &&policy, key_t keys_in,
 
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t>
 inline void sort_only(_ExecutionPolicy &&policy, key_t keys_in,
-                      key_out_t keys_out, int64_t n, bool descending) {
+                      key_out_t keys_out, ::std::int64_t n, bool descending) {
   using key_t_value_t = typename ::std::iterator_traits<key_t>::value_type;
 
   if constexpr (::std::is_floating_point<key_t_value_t>::value) {
@@ -1067,7 +1067,7 @@ template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename transform_key_t, typename value_t, typename value_out_t>
 inline void transform_and_sort_pairs(_ExecutionPolicy &&policy, key_t keys_in,
                                      key_out_t keys_out, value_t values_in,
-                                     value_out_t values_out, int64_t n,
+                                     value_out_t values_out, ::std::int64_t n,
                                      bool descending, int begin_bit,
                                      int end_bit) {
   using key_t_value_t = typename std::iterator_traits<key_t>::value_type;
@@ -1100,7 +1100,7 @@ template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename value_t, typename value_out_t>
 inline void sort_only_pairs(_ExecutionPolicy &&policy, key_t keys_in,
                             key_out_t keys_out, value_t values_in,
-                            value_out_t values_out, int64_t n,
+                            value_out_t values_out, ::std::int64_t n,
                             bool descending) {
   using key_t_value_t = typename ::std::iterator_traits<key_t>::value_type;
   auto zip_input = oneapi::dpl::zip_iterator(keys_in, values_in);
@@ -1130,7 +1130,7 @@ template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename value_t, typename value_out_t>
 typename ::std::enable_if<!::std::is_null_pointer<key_out_t>::value>::type
 sort_pairs_impl(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
-                value_t values_in, value_out_t values_out, int64_t n,
+                value_t values_in, value_out_t values_out, ::std::int64_t n,
                 bool descending, int begin_bit, int end_bit) {
   using key_t_value_t = typename ::std::iterator_traits<key_t>::value_type;
 
@@ -1158,7 +1158,7 @@ sort_pairs_impl(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
     transform_and_sort_pairs_f.template operator()<uint32_t>(0);
   } else // if (num_bytes <= 8)
   {
-    transform_and_sort_pairs_f.template operator()<uint64_t>(0);
+    transform_and_sort_pairs_f.template operator()<::std::uint64_t>(0);
   }
 }
 
@@ -1167,7 +1167,7 @@ template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename value_t, typename value_out_t>
 typename ::std::enable_if<::std::is_null_pointer<key_out_t>::value>::type
 sort_pairs_impl(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
-                value_t values_in, value_out_t values_out, int64_t n,
+                value_t values_in, value_out_t values_out, ::std::int64_t n,
                 bool descending, int begin_bit, int end_bit) {
   // create temporary keys_out to discard, memory footprint could be improved by
   // a specialized iterator with a single
@@ -1183,7 +1183,7 @@ template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename value_t, typename value_out_t, typename OffsetIteratorT>
 inline void segmented_sort_pairs_by_parallel_sorts(
     _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
-    value_out_t values_in, value_t values_out, int64_t n, int64_t nsegments,
+    value_out_t values_in, value_t values_out, ::std::int64_t n, ::std::int64_t nsegments,
     OffsetIteratorT begin_offsets, OffsetIteratorT end_offsets,
     bool descending = false, int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
@@ -1199,9 +1199,9 @@ inline void segmented_sort_pairs_by_parallel_sorts(
               end_offsets + nsegments, host_accessible_offset_ends.begin());
 
   for (::std::uint64_t i = 0; i < nsegments; i++) {
-    uint64_t segment_begin = host_accessible_offset_starts[i];
-    uint64_t segment_end =
-        ::std::min(n, (int64_t)host_accessible_offset_ends[i]);
+    ::std::uint64_t segment_begin = host_accessible_offset_starts[i];
+    ::std::uint64_t segment_end =
+        ::std::min(n, (::std::int64_t)host_accessible_offset_ends[i]);
     if (segment_begin < segment_end) {
       ::dpct::sort_pairs(::std::forward<_ExecutionPolicy>(policy),
                          keys_in + segment_begin, keys_out + segment_begin,
@@ -1215,8 +1215,8 @@ inline void segmented_sort_pairs_by_parallel_sorts(
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename OffsetIteratorT>
 inline void segmented_sort_keys_by_parallel_sorts(
-    _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out, int64_t n,
-    int64_t nsegments, OffsetIteratorT begin_offsets,
+    _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out, ::std::int64_t n,
+    ::std::int64_t nsegments, OffsetIteratorT begin_offsets,
      OffsetIteratorT end_offsets, bool descending = false, int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
                   8) {
@@ -1231,9 +1231,9 @@ inline void segmented_sort_keys_by_parallel_sorts(
               end_offsets + nsegments, host_accessible_offset_ends.begin());
 
   for (::std::uint64_t i = 0; i < nsegments; i++) {
-    uint64_t segment_begin = host_accessible_offset_starts[i];
-    uint64_t segment_end =
-        ::std::min(n, (int64_t)host_accessible_offset_ends[i]);
+    ::std::uint64_t segment_begin = host_accessible_offset_starts[i];
+    ::std::uint64_t segment_end =
+        ::std::min(n, (::std::int64_t)host_accessible_offset_ends[i]);
     if (segment_begin < segment_end) {
       ::dpct::sort_keys(::std::forward<_ExecutionPolicy>(policy),
                          keys_in + segment_begin, keys_out + segment_begin,
@@ -1247,15 +1247,15 @@ template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename value_t, typename value_out_t, typename OffsetIteratorT>
 inline void segmented_sort_pairs_by_parallel_for_of_sorts(
     _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
-    value_t values_in, value_out_t values_out, int64_t n, int64_t nsegments,
+    value_t values_in, value_out_t values_out, ::std::int64_t n, ::std::int64_t nsegments,
     OffsetIteratorT begin_offsets, OffsetIteratorT end_offsets,
     bool descending = false, int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
                   8) {
   policy.queue().submit([&](sycl::handler &cgh) {
     cgh.parallel_for(nsegments, [=](sycl::id<1> i) {
-      uint64_t segment_begin = begin_offsets[i];
-      uint64_t segment_end = ::std::min(n, (int64_t)end_offsets[i]);
+      ::std::uint64_t segment_begin = begin_offsets[i];
+      ::std::uint64_t segment_end = ::std::min(n, (::std::int64_t)end_offsets[i]);
       if (segment_begin == segment_end) {
         return;
       }
@@ -1272,15 +1272,15 @@ inline void segmented_sort_pairs_by_parallel_for_of_sorts(
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename OffsetIteratorT>
 inline void segmented_sort_keys_by_parallel_for_of_sorts(
-    _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out, int64_t n,
-    int64_t nsegments, OffsetIteratorT begin_offsets,
+    _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out, ::std::int64_t n,
+    ::std::int64_t nsegments, OffsetIteratorT begin_offsets,
     OffsetIteratorT end_offsets, bool descending = false, int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
                   8) {
   policy.queue().submit([&](sycl::handler &cgh) {
     cgh.parallel_for(nsegments, [=](sycl::id<1> i) {
-      uint64_t segment_begin = begin_offsets[i];
-      uint64_t segment_end = ::std::min(n, (int64_t)end_offsets[i]);
+      ::std::uint64_t segment_begin = begin_offsets[i];
+      ::std::uint64_t segment_end = ::std::min(n, (::std::int64_t)end_offsets[i]);
       if (segment_begin == segment_end) {
         return;
       }
@@ -1295,7 +1295,7 @@ inline void segmented_sort_keys_by_parallel_for_of_sorts(
 template <typename _ExecutionPolicy, typename OffsetIteratorT>
 inline void
 mark_segments(_ExecutionPolicy &&policy, OffsetIteratorT begin_offsets,
-              OffsetIteratorT end_offsets, int64_t n, int64_t nsegments,
+              OffsetIteratorT end_offsets, ::std::int64_t n, ::std::int64_t nsegments,
               sycl::buffer<::std::size_t, 1> segments) {
 
   ::std::size_t work_group_size =
@@ -1375,8 +1375,8 @@ mark_segments(_ExecutionPolicy &&policy, OffsetIteratorT begin_offsets,
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename OffsetIteratorT>
 inline void segmented_sort_keys_by_two_pair_sorts(
-    _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out, int64_t n,
-    int64_t nsegments, OffsetIteratorT begin_offsets,
+    _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out, ::std::int64_t n,
+    ::std::int64_t nsegments, OffsetIteratorT begin_offsets,
     OffsetIteratorT end_offsets, bool descending = false, int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
                   8) {
@@ -1405,7 +1405,7 @@ template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename value_t, typename value_out_t, typename OffsetIteratorT>
 inline void segmented_sort_pairs_by_two_pair_sorts(
     _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
-    value_out_t values_in, value_t values_out, int64_t n, int64_t nsegments,
+    value_out_t values_in, value_t values_out, ::std::int64_t n, ::std::int64_t nsegments,
     OffsetIteratorT begin_offsets, OffsetIteratorT end_offsets,
     bool descending = false, int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
@@ -1450,7 +1450,7 @@ inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value &&
                         dpct::internal::is_iterator<value_t>::value &&
                         dpct::internal::is_iterator<value_out_t>::value>
 sort_pairs(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
-                value_t values_in, value_out_t values_out, int64_t n,
+                value_t values_in, value_out_t values_out, ::std::int64_t n,
                 bool descending, int begin_bit, int end_bit) {
   internal::sort_pairs_impl(std::forward<_ExecutionPolicy>(policy), keys_in,
                             keys_out, values_in, values_out, n, descending,
@@ -1460,7 +1460,7 @@ sort_pairs(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
 template <typename _ExecutionPolicy, typename key_t, typename value_t>
 inline void sort_pairs(
     _ExecutionPolicy &&policy, io_iterator_pair<key_t> &keys,
-    io_iterator_pair<value_t> &values, int64_t n, bool descending = false,
+    io_iterator_pair<value_t> &values, ::std::int64_t n, bool descending = false,
     bool do_swap_iters = false,
     int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
@@ -1478,7 +1478,7 @@ template <typename _ExecutionPolicy, typename key_t, typename key_out_t>
 inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value &&
                         dpct::internal::is_iterator<key_out_t>::value>
 sort_keys(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
-          int64_t n, bool descending, int begin_bit, int end_bit) {
+          ::std::int64_t n, bool descending, int begin_bit, int end_bit) {
   using key_t_value_t = typename ::std::iterator_traits<key_t>::value_type;
 
   int clipped_begin_bit = ::std::max(begin_bit, 0);
@@ -1504,13 +1504,13 @@ sort_keys(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
     transform_and_sort_f.template operator()<uint32_t>(0);
   } else // if (num_bytes <= 8)
   {
-    transform_and_sort_f.template operator()<uint64_t>(0);
+    transform_and_sort_f.template operator()<::std::uint64_t>(0);
   }
 }
 
 template <typename _ExecutionPolicy, typename key_t>
 inline void sort_keys(
-    _ExecutionPolicy &&policy, io_iterator_pair<key_t> &keys, int64_t n,
+    _ExecutionPolicy &&policy, io_iterator_pair<key_t> &keys, ::std::int64_t n,
     bool descending = false,
     bool do_swap_iters = false,
     int begin_bit = 0,
@@ -1527,8 +1527,8 @@ template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
 inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value &&
                           dpct::internal::is_iterator<key_out_t>::value>
 segmented_sort_keys(
-    _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out, int64_t n,
-    int64_t nsegments, OffsetIteratorT begin_offsets,
+    _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out, ::std::int64_t n,
+    ::std::int64_t nsegments, OffsetIteratorT begin_offsets,
     OffsetIteratorT end_offsets, bool descending = false, int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
                   8) {
@@ -1565,8 +1565,8 @@ segmented_sort_keys(
 
 template <typename _ExecutionPolicy, typename key_t, typename OffsetIteratorT>
 inline void segmented_sort_keys(
-    _ExecutionPolicy &&policy, io_iterator_pair<key_t> &keys, int64_t n,
-    int64_t nsegments, OffsetIteratorT begin_offsets,
+    _ExecutionPolicy &&policy, io_iterator_pair<key_t> &keys, ::std::int64_t n,
+    ::std::int64_t nsegments, OffsetIteratorT begin_offsets,
     OffsetIteratorT end_offsets, bool descending = false,
     bool do_swap_iters = false, int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
@@ -1587,7 +1587,7 @@ inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value &&
                           dpct::internal::is_iterator<value_out_t>::value>
 segmented_sort_pairs(
     _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
-    value_t values_in, value_out_t values_out, int64_t n, int64_t nsegments,
+    value_t values_in, value_out_t values_out, ::std::int64_t n, ::std::int64_t nsegments,
     OffsetIteratorT begin_offsets, OffsetIteratorT end_offsets,
     bool descending = false, int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
@@ -1630,7 +1630,7 @@ template <typename _ExecutionPolicy, typename key_t, typename value_t,
           typename OffsetIteratorT>
 inline void segmented_sort_pairs(
     _ExecutionPolicy &&policy, io_iterator_pair<key_t> &keys,
-    io_iterator_pair<value_t> &values, int64_t n, int64_t nsegments,
+    io_iterator_pair<value_t> &values, ::std::int64_t n, ::std::int64_t nsegments,
     OffsetIteratorT begin_offsets, OffsetIteratorT end_offsets,
     bool descending = false, bool do_swap_iters = false, int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
