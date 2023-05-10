@@ -56,8 +56,6 @@ class DpctAsmType {
 public:
   enum TypeClass {
     BuiltinClass,
-    ConstantArrayClass,
-    IncompleteArrayClass,
     VectorClass,
     DiscardClass
   };
@@ -143,47 +141,6 @@ public:
 
   static bool classof(const DpctAsmType *T) {
     return T->getTypeClass() == VectorClass;
-  }
-};
-
-class DpctAsmArrayType : public DpctAsmType {
-  DpctAsmType *ElementType;
-
-protected:
-  DpctAsmArrayType(TypeClass TC, DpctAsmType *ElementType)
-      : DpctAsmType(TC), ElementType(ElementType) {}
-
-public:
-  const DpctAsmType *getElementType() const { return ElementType; }
-
-  static bool classof(const DpctAsmType *T) {
-    return T->getTypeClass() == ConstantArrayClass ||
-           T->getTypeClass() == IncompleteArrayClass;
-  }
-};
-
-class DpctAsmConstantArrayType : public DpctAsmArrayType {
-  DpctAsmIntegerLiteral *Size;
-
-public:
-  DpctAsmConstantArrayType(DpctAsmType *ElementType,
-                           DpctAsmIntegerLiteral *Size)
-      : DpctAsmArrayType(ConstantArrayClass, ElementType), Size(Size) {}
-
-  const DpctAsmIntegerLiteral *getSize() const { return Size; }
-
-  static bool classof(const DpctAsmType *T) {
-    return T->getTypeClass() == ConstantArrayClass;
-  }
-};
-
-class DpctAsmIncompleteArrayType : public DpctAsmArrayType {
-public:
-  DpctAsmIncompleteArrayType(DpctAsmType *ElementType)
-      : DpctAsmArrayType(ConstantArrayClass, ElementType) {}
-
-  static bool classof(const DpctAsmType *T) {
-    return T->getTypeClass() == ConstantArrayClass;
   }
 };
 
@@ -281,7 +238,6 @@ public:
     UnaryOperatorClass,
     BinaryOperatorClass,
     ConditionalOperatorClass,
-    ArraySubscriptExprClass,
     VectorExprClass,
     DiscardExprClass,
     AddressExprClass,
@@ -457,15 +413,16 @@ public:
 class DpctAsmIntegerLiteral : public DpctAsmExpr {
   llvm::APInt Value;
   StringRef LiteralData;
+
 public:
-  DpctAsmIntegerLiteral(DpctAsmType *Type, llvm::APInt Value, StringRef LiteralData)
-      : DpctAsmExpr(IntegerLiteralClass, Type), Value(Value), LiteralData(LiteralData) {}
+  DpctAsmIntegerLiteral(DpctAsmType *Type, llvm::APInt Value,
+                        StringRef LiteralData)
+      : DpctAsmExpr(IntegerLiteralClass, Type), Value(Value),
+        LiteralData(LiteralData) {}
 
   llvm::APInt getValue() const { return Value; }
 
-  StringRef getLiteral() const {
-    return LiteralData;
-  }
+  StringRef getLiteral() const { return LiteralData; }
 
   static bool classof(const DpctAsmStmt *S) {
     return S->getStmtClass() == IntegerLiteralClass;
@@ -491,9 +448,7 @@ public:
     return IsExactMachineFloatingLiteral;
   }
 
-  StringRef getLiteral() const {
-    return LiteralData;
-  }
+  StringRef getLiteral() const { return LiteralData; }
 
   static bool classof(const DpctAsmStmt *S) {
     return S->getStmtClass() == FloatingLiteralClass;
@@ -1042,13 +997,6 @@ public:
   /// If the input is malformed, this emits the specified diagnostic and true is
   /// returned.
   bool ExpectAndConsume(asmtok::TokenKind ExpectedTok);
-
-  /// The parser expects a semicolon and, if present, will consume it.
-  ///
-  /// If the next token is not a semicolon, this emits the specified diagnostic,
-  /// or, if there's just some closing-delimiter noise (e.g., ')' or ']') prior
-  /// to the semicolon, consumes that extra token.
-  bool ExpectAndConsumeSemi();
 
   DpctAsmDeclResult addInlineAsmOperands(StringRef Operand,
                                          StringRef Constraint);

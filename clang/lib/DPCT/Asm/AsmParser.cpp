@@ -432,23 +432,6 @@ DpctAsmExprResult DpctAsmParser::ParseCastExpression() {
   return Res;
 }
 
-DpctAsmExprResult
-DpctAsmParser::ParsePostfixExpressionSuffix(DpctAsmExprResult LHS) {
-  while (true) {
-    switch (Tok.getKind()) {
-    default:
-      return LHS;
-    case asmtok::l_square: {
-      ConsumeBracket();
-      DpctAsmExprResult Idx = ParseExpression();
-      if (Idx.isInvalid())
-        return AsmExprError();
-      ConsumeBracket();
-    }
-    }
-  }
-}
-
 DpctAsmStmtResult DpctAsmParser::ParseDeclarationStatement() {
   DpctAsmDeclarationSpecifier DeclSpec;
   DpctAsmTypeResult Type = ParseDeclarationSpecifier(DeclSpec);
