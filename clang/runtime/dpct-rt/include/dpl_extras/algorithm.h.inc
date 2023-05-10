@@ -2053,22 +2053,21 @@ inline ::std::pair<Iter1, Iter1> equal_range(_ExecutionPolicy &&policy,
 // DplExtrasVector|is_iterator
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-template <typename Policy, typename KeyT, typename KeyOutT,
-          typename OffsetIteratorT>
-inline ::std::enable_if_t<dpct::internal::is_iterator<KeyT>::value &&
-                          dpct::internal::is_iterator<KeyOutT>::value>
-segmented_reduce_argmin(Policy &&policy, KeyT keys_in, KeyOutT keys_out,
-                        ::std::int64_t nsegments, OffsetIteratorT begin_offsets,
-                        OffsetIteratorT end_offsets) {
+template <typename Policy, typename Iter1, typename Iter2, typename Iter3>
+inline ::std::enable_if_t<dpct::internal::is_iterator<Iter1>::value &&
+                          dpct::internal::is_iterator<Iter2>::value>
+segmented_reduce_argmin(Policy &&policy, Iter1 keys_in, Iter2 keys_out,
+                        ::std::int64_t nsegments, Iter3 begin_offsets,
+                        Iter3 end_offsets) {
   policy.queue().submit([&](sycl::handler &cgh) {
     cgh.parallel_for(nsegments, [=](sycl::id<1> i) {
       if (end_offsets[i] <= begin_offsets[i]) {
         keys_out[i] = dpct::key_value_pair(
             1, ::std::numeric_limits<
-                   typename ::std::iterator_traits<KeyT>::value_type>::max());
+                   typename ::std::iterator_traits<Iter1>::value_type>::max());
       } else {
-        dpct::arg_index_input_iterator<KeyT, int> arg_index(keys_in +
-                                                            begin_offsets[i]);
+        dpct::arg_index_input_iterator<Iter1, int> arg_index(keys_in +
+                                                             begin_offsets[i]);
         keys_out[i] = *::std::min_element(
             arg_index, arg_index + +end_offsets[i] - begin_offsets[i],
             [](const auto &a, const auto &b) { return a.value < b.value; });
@@ -2086,23 +2085,22 @@ segmented_reduce_argmin(Policy &&policy, KeyT keys_in, KeyOutT keys_out,
 // DplExtrasVector|is_iterator
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-template <typename Policy, typename KeyT, typename KeyOutT,
-          typename OffsetIteratorT>
-inline ::std::enable_if_t<dpct::internal::is_iterator<KeyT>::value &&
-                          dpct::internal::is_iterator<KeyOutT>::value>
-segmented_reduce_argmax(Policy &&policy, KeyT keys_in, KeyOutT keys_out,
-                        ::std::int64_t nsegments, OffsetIteratorT begin_offsets,
-                        OffsetIteratorT end_offsets) {
+template <typename Policy, typename Iter1, typename Iter2, typename Iter3>
+inline ::std::enable_if_t<dpct::internal::is_iterator<Iter1>::value &&
+                          dpct::internal::is_iterator<Iter2>::value>
+segmented_reduce_argmax(Policy &&policy, Iter1 keys_in, Iter2 keys_out,
+                        ::std::int64_t nsegments, Iter3 begin_offsets,
+                        Iter3 end_offsets) {
   policy.queue().submit([&](sycl::handler &cgh) {
     cgh.parallel_for(nsegments, [=](sycl::id<1> i) {
       if (end_offsets[i] <= begin_offsets[i]) {
         keys_out[i] = dpct::key_value_pair(
             1,
             ::std::numeric_limits<
-                typename ::std::iterator_traits<KeyT>::value_type>::lowest());
+                typename ::std::iterator_traits<Iter1>::value_type>::lowest());
       } else {
-        dpct::arg_index_input_iterator<KeyT, int> arg_index(keys_in +
-                                                            begin_offsets[i]);
+        dpct::arg_index_input_iterator<Iter1, int> arg_index(keys_in +
+                                                             begin_offsets[i]);
         keys_out[i] = *::std::max_element(
             arg_index, arg_index + end_offsets[i] - begin_offsets[i],
             [](const auto &a, const auto &b) { return a.value < b.value; });
