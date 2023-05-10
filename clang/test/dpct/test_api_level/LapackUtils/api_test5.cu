@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/LapackUtils/api_test5_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/LapackUtils/api_test5_out
 
-// CHECK: 30
+// CHECK: 32
 // TEST_FEATURE: LapackUtils_getrf_scratchpad_size
 
 #include "cusolverDn.h"
