@@ -750,6 +750,7 @@ public:
   void printArg(std::false_type, StreamT &Stream,
                 std::pair<const CallExpr *, const Expr *> P, ExprAnalysis *ParentEA = nullptr) const {
     printf("printArg 752 %p\n", (const void*)ParentEA);
+    A.ParentExprAnalysis = ParentEA;
     dpct::print(Stream, A, P, ParentEA);
   }
 

@@ -11731,7 +11731,7 @@ void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
      CE = getNodeAsType<CallExpr>(Result, "unresolved");
    if (!CE)
      return;
-
+  printf("MathFunctionsRule------------\n");
   ExprAnalysis EA(CE);
   emplaceTransformation(EA.getReplacement());
   EA.applyAllSubExprRepl();

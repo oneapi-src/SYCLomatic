@@ -620,7 +620,7 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
 
 void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   const auto BaseType = getBaseTypeRemoveTemplateArguments(ME);
-
+  printf("EA ME %p\n", (const void*)ParentExprAnalysis);
   std::string FieldName = "";
   if (ME->getMemberDecl()->getIdentifier()) {
     FieldName = ME->getMemberDecl()->getName().str();
@@ -814,6 +814,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   RefString +=
     BaseType +
     "." + ME->getMemberDecl()->getDeclName().getAsString();
+  applyAllSubExprRepl();
 }
 
 void ExprAnalysis::analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT) {
@@ -914,6 +915,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
         }
         addReplacement(CE, ResultStr);
         Rewriter->Analyzer.applyAllSubExprRepl();
+        printf("!!End RefString %s\n", RefString.c_str());
         return;
       }
     }
@@ -1209,11 +1211,13 @@ void ExprAnalysis::applyAllSubExprRepl() {
                                    Repl->getReplacementText().str());
     }
   }
-  printf("Append to Parent\n");
+  printf("Append to Parent %d\n", SubExprRepl.size());
   // Append local SubExprRepl to ParentExprAnalysis->SubExprRepl
   ParentExprAnalysis->SubExprRepl.insert(ParentExprAnalysis->SubExprRepl.end(),
                                          SubExprRepl.begin(),
                                          SubExprRepl.end());
+  for(auto Repl:ParentExprAnalysis->SubExprRepl)
+    printf("subrepl: %s\n", Repl->toString().c_str());
 }
 
 const std::string &ArgumentAnalysis::getDefaultArgument(const Expr *E) {
