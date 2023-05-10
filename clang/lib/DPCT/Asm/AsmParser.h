@@ -54,11 +54,7 @@ class DpctAsmIntegerLiteral;
 
 class DpctAsmType {
 public:
-  enum TypeClass {
-    BuiltinClass,
-    VectorClass,
-    DiscardClass
-  };
+  enum TypeClass { BuiltinClass, VectorClass, DiscardClass };
 
 private:
   TypeClass tClass;
