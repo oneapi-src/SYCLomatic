@@ -97,9 +97,9 @@ const char *const CtHelpMessage =
     "Migrate single source file with C++11 features:\n\n"
     "  dpct --extra-arg=\"-std=c++11\" source.cpp\n\n"
     "Migrate all files available in compilation database:\n\n"
-    "  dpct -p=<path to location of compilation database file>\n\n"
+    "  dpct --compilation-database=<path to location of compilation database file>\n\n"
     "Migrate one file in compilation database:\n\n"
-    "  dpct -p=<path to location of compilation database file>  source.cpp\n\n"
+    "  dpct --compilation-database=<path to location of compilation database file>  source.cpp\n\n"
 #if defined(_WIN32)
     "Migrate all files available in vcxprojfile:\n\n"
     "  dpct --vcxprojfile=path/to/vcxprojfile.vcxproj\n"
