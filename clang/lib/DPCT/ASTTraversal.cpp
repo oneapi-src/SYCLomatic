@@ -4154,14 +4154,17 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
            SE->getStmtClass() == Stmt::MemberExprClass)) {
         return emplaceTransformation(new ReplaceStmt(
             CE, false,
-            buildString(ExprAnalysis::ref(SE), " = dpct::rng::create_host_rng(",
+            buildString(ExprAnalysis::ref(SE),
+                        " = " + MapNames::getDpctNamespace() +
+                            "rng::create_host_rng(",
                         ExprAnalysis::ref(CE->getArg(1)), ")")));
       }
     }
     return emplaceTransformation(
         new ReplaceStmt(CE, false,
                         buildString("*(", ExprAnalysis::ref(CE->getArg(0)),
-                                    ") = dpct::rng::create_host_rng(",
+                                    ") = " + MapNames::getDpctNamespace() +
+                                        "rng::create_host_rng(",
                                     ExprAnalysis::ref(CE->getArg(1)), ")")));
   }
   if (FuncName == "curandDestroyGenerator") {
@@ -4316,8 +4319,9 @@ void DeviceRandomFunctionCallRule::runRule(
                 FirstOffsetArg + ")";
     } else {
       std::string Factor = "8";
-      if (GeneratorType == "dpct::rng::device::rng_generator<oneapi::"
-                           "mkl::rng::device::philox4x32x10<1>>" &&
+      if (GeneratorType == MapNames::getDpctNamespace() +
+                               "rng::device::rng_generator<oneapi::"
+                               "mkl::rng::device::philox4x32x10<1>>" &&
           DRefArg3Type == "curandStatePhilox4_32_10") {
         Factor = "4";
       }
@@ -5641,7 +5645,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cublasGetVectorAsync") {
     if (HasDeviceAttr) {
       report(CE->getBeginLoc(), Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
-             MapNames::ITFName.at(FuncName), "dpct::matrix_mem_copy");
+             MapNames::ITFName.at(FuncName),
+             MapNames::getDpctNamespace() + "matrix_mem_copy");
       return;
     }
 
@@ -5710,7 +5715,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cublasGetMatrixAsync") {
     if (HasDeviceAttr) {
       report(CE->getBeginLoc(), Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
-             MapNames::ITFName.at(FuncName), "dpct::matrix_mem_copy");
+             MapNames::ITFName.at(FuncName),
+             MapNames::getDpctNamespace() + "matrix_mem_copy");
       return;
     }
 
@@ -6225,7 +6231,8 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
   if (HasDeviceAttr) {
     report(CE->getBeginLoc(), Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
-           MapNames::ITFName.at(FuncName), "dpct::dpct_memcpy");
+           MapNames::ITFName.at(FuncName),
+           MapNames::getDpctNamespace() + "dpct_memcpy");
     return;
   }
 
@@ -7611,7 +7618,8 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
         // --no-dpcpp-extensions.
         if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
 
-          Str = "dpct::get_current_device().queues_wait_and_throw();";
+          Str = MapNames::getDpctNamespace() +
+                "get_current_device().queues_wait_and_throw();";
           Str += getNL();
           Str += getIndent(IndentLoc, SM).str();
           std::string SubStr = "{{NEEDREPLACEQ" + std::to_string(Index) +
@@ -7621,7 +7629,8 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
 
           Str += getNL();
           Str += getIndent(IndentLoc, SM).str();
-          Str += "dpct::get_current_device().queues_wait_and_throw();";
+          Str += MapNames::getDpctNamespace() +
+                 "get_current_device().queues_wait_and_throw();";
           Str += getNL();
           Str += getIndent(IndentLoc, SM).str();
           Str += "return 0;";
@@ -7648,13 +7657,15 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
 
         if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
 
-          Str = "dpct::get_current_device().queues_wait_and_throw();";
+          Str = MapNames::getDpctNamespace() +
+                "get_current_device().queues_wait_and_throw();";
           Str += getNL();
           Str += getIndent(IndentLoc, SM).str();
           Str += StreamName + "->" + "single_task([=](){});";
           Str += getNL();
           Str += getIndent(IndentLoc, SM).str();
-          Str += "dpct::get_current_device().queues_wait_and_throw()";
+          Str += MapNames::getDpctNamespace() +
+                 "get_current_device().queues_wait_and_throw()";
 
           Str = "[](){" + Str + "}()";
           emplaceTransformation(new ReplaceStmt(CE, std::move(Str)));
@@ -7688,14 +7699,16 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
 
         if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
 
-          Str = "dpct::get_current_device().queues_wait_and_throw();";
+          Str = MapNames::getDpctNamespace() +
+                "get_current_device().queues_wait_and_throw();";
           Str += getNL();
           Str += getIndent(IndentLoc, SM).str();
           Str += "*" + ArgName + " = {{NEEDREPLACEQ" + std::to_string(Index) +
                  "}}.single_task([=](){});";
           Str += getNL();
           Str += getIndent(IndentLoc, SM).str();
-          Str += "dpct::get_current_device().queues_wait_and_throw()";
+          Str += MapNames::getDpctNamespace() +
+                 "get_current_device().queues_wait_and_throw()";
 
         } else {
           Str = "*" + ArgName + " = {{NEEDREPLACEQ" + std::to_string(Index) +
@@ -7716,14 +7729,16 @@ void EventAPICallRule::handleEventRecordWithProfilingEnabled(
 
         if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
 
-          Str = "dpct::get_current_device().queues_wait_and_throw();";
+          Str = MapNames::getDpctNamespace() +
+                "get_current_device().queues_wait_and_throw();";
           Str += getNL();
           Str += getIndent(IndentLoc, SM).str();
 
           Str += "*" + ArgName + " = " + StreamName + "->single_task([=](){});";
           Str += getNL();
           Str += getIndent(IndentLoc, SM).str();
-          Str += "dpct::get_current_device().queues_wait_and_throw()";
+          Str += MapNames::getDpctNamespace() +
+                 "get_current_device().queues_wait_and_throw()";
 
         } else {
           Str = "*" + ArgName + " = " + StreamName + "->single_task([=](){})";
@@ -10234,8 +10249,8 @@ void MemoryMigrationRule::memcpyMigration(
       if (!NameRef.compare("cudaMemcpy")) {
         handleAsync(C, 4, Result);
       } else {
-        emplaceTransformation(
-            new InsertAfterStmt(C->getArg(2), ", dpct::automatic"));
+        emplaceTransformation(new InsertAfterStmt(
+            C->getArg(2), ", " + MapNames::getDpctNamespace() + "automatic"));
         handleAsync(C, 3, Result);
       }
     }
