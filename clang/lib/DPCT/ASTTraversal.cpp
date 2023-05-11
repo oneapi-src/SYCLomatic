@@ -23,6 +23,7 @@
 #include "TextModification.h"
 #include "ThrustAPIMigration.h"
 #include "Utility.h"
+#include "CallExprRewriterCommon.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/Stmt.h"
 #include "clang/AST/TypeLoc.h"
@@ -1974,7 +1975,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cudaDeviceProp", "cudaPitchedPtr", "thrust::counting_iterator",
               "thrust::transform_iterator", "thrust::permutation_iterator",
               "thrust::iterator_difference", "cusolverDnHandle_t",
-              "cusolverDnParams_t", "gesvdjInfo_t",
+              "cusolverDnParams_t", "gesvdjInfo_t", "syevjInfo_t",
               "thrust::device_malloc_allocator", "thrust::divides",
               "thrust::tuple", "thrust::maximum", "thrust::multiplies",
               "thrust::plus", "cudaDataType_t", "cudaError_t", "CUresult",
@@ -1992,15 +1993,15 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "curandStateXORWOW_t", "curandStateXORWOW",
               "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
               "curandStateMRG32k3a_t", "curandStateMRG32k3a", "thrust::minus",
-              "thrust::negate", "thrust::logical_or", 
-              "thrust::equal_to", "thrust::less", "cudaSharedMemConfig",
-              "curandGenerator_t", "curandRngType_t", "cufftHandle",
-              "cufftReal", "cufftDoubleReal", "cufftComplex",
-              "cufftDoubleComplex", "cufftResult_t", "cufftResult",
-              "cufftType_t", "cufftType", "thrust::pair", "CUdeviceptr",
-              "cudaDeviceAttr", "CUmodule", "CUjit_option", "CUfunction",
-              "cudaMemcpyKind", "cudaComputeMode", "__nv_bfloat16",
-              "__nv_bfloat162", "cooperative_groups::__v1::thread_block_tile",
+              "thrust::negate", "thrust::logical_or", "thrust::equal_to",
+              "thrust::less", "cudaSharedMemConfig", "curandGenerator_t",
+              "curandRngType_t", "cufftHandle", "cufftReal", "cufftDoubleReal",
+              "cufftComplex", "cufftDoubleComplex", "cufftResult_t",
+              "cufftResult", "cufftType_t", "cufftType", "thrust::pair",
+              "CUdeviceptr", "cudaDeviceAttr", "CUmodule", "CUjit_option",
+              "CUfunction", "cudaMemcpyKind", "cudaComputeMode",
+              "__nv_bfloat16", "__nv_bfloat162",
+              "cooperative_groups::__v1::thread_block_tile",
               "cooperative_groups::__v1::thread_block", "libraryPropertyType_t",
               "libraryPropertyType", "cudaDataType_t", "cudaDataType",
               "cublasComputeType_t", "cublasAtomicsMode_t", "CUmem_advise_enum",
@@ -6091,12 +6092,11 @@ void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusolverDnCungtr", "cusolverDnZungtr", "cusolverDnSgesvd_bufferSize",
         "cusolverDnDgesvd_bufferSize", "cusolverDnCgesvd_bufferSize",
         "cusolverDnZgesvd_bufferSize", "cusolverDnSgesvd", "cusolverDnDgesvd",
-        "cusolverDnCgesvd", "cusolverDnZgesvd",
-        "cusolverDnSpotrfBatched", "cusolverDnDpotrfBatched",
-        "cusolverDnCpotrfBatched", "cusolverDnZpotrfBatched",
-        "cusolverDnSpotrsBatched", "cusolverDnDpotrsBatched",
-        "cusolverDnCpotrsBatched", "cusolverDnZpotrsBatched",
-        "cusolverDnSsygvd", "cusolverDnDsygvd",
+        "cusolverDnCgesvd", "cusolverDnZgesvd", "cusolverDnSpotrfBatched",
+        "cusolverDnDpotrfBatched", "cusolverDnCpotrfBatched",
+        "cusolverDnZpotrfBatched", "cusolverDnSpotrsBatched",
+        "cusolverDnDpotrsBatched", "cusolverDnCpotrsBatched",
+        "cusolverDnZpotrsBatched", "cusolverDnSsygvd", "cusolverDnDsygvd",
         "cusolverDnSsygvd_bufferSize", "cusolverDnDsygvd_bufferSize",
         "cusolverDnChegvd", "cusolverDnZhegvd", "cusolverDnChegvd_bufferSize",
         "cusolverDnZhegvd_bufferSize", "cusolverDnXgetrf",
@@ -6104,14 +6104,28 @@ void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusolverDnXgeqrf_bufferSize", "cusolverDnGetrf",
         "cusolverDnGetrf_bufferSize", "cusolverDnGetrs", "cusolverDnGeqrf",
         "cusolverDnGeqrf_bufferSize", "cusolverDnCreateGesvdjInfo",
-        "cusolverDnDestroyGesvdjInfo", "cusolverDnSgesvdj_bufferSize",
+        "cusolverDnDestroyGesvdjInfo", "cusolverDnCreateSyevjInfo",
+        "cusolverDnDestroySyevjInfo", "cusolverDnSgesvdj_bufferSize",
         "cusolverDnDgesvdj_bufferSize", "cusolverDnCgesvdj_bufferSize",
         "cusolverDnZgesvdj_bufferSize", "cusolverDnXgesvd_bufferSize",
         "cusolverDnGesvd_bufferSize", "cusolverDnSgesvdj", "cusolverDnDgesvdj",
         "cusolverDnCgesvdj", "cusolverDnZgesvdj", "cusolverDnXgesvd",
         "cusolverDnGesvd", "cusolverDnXpotrf_bufferSize",
         "cusolverDnPotrf_bufferSize", "cusolverDnXpotrf", "cusolverDnPotrf",
-        "cusolverDnXpotrs", "cusolverDnPotrs");
+        "cusolverDnXpotrs", "cusolverDnPotrs", "cusolverDnSsyevdx",
+        "cusolverDnDsyevdx", "cusolverDnSsyevdx_bufferSize",
+        "cusolverDnDsyevdx_bufferSize", "cusolverDnCheevdx",
+        "cusolverDnZheevdx", "cusolverDnCheevdx_bufferSize",
+        "cusolverDnZheevdx_bufferSize", "cusolverDnSsygvdx",
+        "cusolverDnDsygvdx", "cusolverDnSsygvdx_bufferSize",
+        "cusolverDnDsygvdx_bufferSize", "cusolverDnChegvdx",
+        "cusolverDnZhegvdx", "cusolverDnChegvdx_bufferSize",
+        "cusolverDnZhegvdx_bufferSize", "cusolverDnSsygvj", "cusolverDnDsygvj",
+        "cusolverDnSsygvj_bufferSize", "cusolverDnDsygvj_bufferSize",
+        "cusolverDnChegvj", "cusolverDnZhegvj", "cusolverDnChegvj_bufferSize",
+        "cusolverDnZhegvj_bufferSize", "cusolverDnXsyevdx",
+        "cusolverDnXsyevdx_bufferSize", "cusolverDnSyevdx",
+        "cusolverDnSyevdx_bufferSize");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
@@ -10527,12 +10541,17 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
     }
   } else if (Name == "cudaFreeHost" || Name == "cuMemFreeHost") {
     if (USMLevel == UsmLevel::UL_Restricted) {
+      CheckCanUseCLibraryMallocOrFree Checker(0, true);
       ExprAnalysis EA;
       EA.analyze(C->getArg(0));
       std::ostringstream Repl;
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      Repl << MapNames::getClNamespace() + "free(" << EA.getReplacedString()
+      if(Checker(C)) {
+        Repl << "free(" << EA.getReplacedString() << ")";
+      } else {
+        buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+        Repl << MapNames::getClNamespace() + "free(" << EA.getReplacedString()
            << ", {{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      }
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
       emplaceTransformation(new ReplaceCalleeName(C, "free"));

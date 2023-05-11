@@ -44,33 +44,33 @@ void k() {
 
   // exclusive_scan
 
-  // CHECK: std::exclusive_scan(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), 0);
-  // CHECK: std::exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), tv.begin(), tv.end(), tv2.begin(), 0);
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), (decltype(v2.begin())::value_type)0);
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), tv.begin(), tv.end(), tv2.begin(), (decltype(tv2.begin())::value_type)0);
   thrust::exclusive_scan(thrust::host, v.begin(), v.end(), v2.begin());
   thrust::exclusive_scan(thrust::device, tv.begin(), tv.end(), tv2.begin());
 
-  // CHECK: std::exclusive_scan(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), 0);
-  // CHECK: std::exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), tv.begin(), tv.end(), tv2.begin(), 0);
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), (decltype(v2.begin())::value_type)0);
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), tv.begin(), tv.end(), tv2.begin(), (decltype(tv2.begin())::value_type)0);
   thrust::exclusive_scan(v.begin(), v.end(), v2.begin());
   thrust::exclusive_scan(tv.begin(), tv.end(), tv2.begin());
 
-  // CHECK: std::exclusive_scan(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), 4);
-  // CHECK: std::exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), tv.begin(), tv.end(), tv2.begin(), 4);
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), (decltype(v2.begin())::value_type)4);
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), tv.begin(), tv.end(), tv2.begin(), (decltype(tv2.begin())::value_type)4);
   thrust::exclusive_scan(thrust::host, v.begin(), v.end(), v2.begin(), 4);
   thrust::exclusive_scan(thrust::device, tv.begin(), tv.end(), tv2.begin(), 4);
 
-  // CHECK: std::exclusive_scan(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), 4);
-  // CHECK: std::exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), tv.begin(), tv.end(), tv2.begin(), 4);
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), (decltype(v2.begin())::value_type)4);
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), tv.begin(), tv.end(), tv2.begin(), (decltype(tv2.begin())::value_type)4);
   thrust::exclusive_scan(v.begin(), v.end(), v2.begin(), 4);
   thrust::exclusive_scan(tv.begin(), tv.end(), tv2.begin(), 4);
 
-  // CHECK: std::exclusive_scan(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), 1, binary_op);
-  // CHECK: std::exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), tv.begin(), tv.end(), tv2.begin(), 1, binary_op);
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), (decltype(v2.begin())::value_type)1, binary_op);
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), tv.begin(), tv.end(), tv2.begin(), (decltype(tv2.begin())::value_type)1, binary_op);
   thrust::exclusive_scan(thrust::host, v.begin(), v.end(), v2.begin(), 1, binary_op);
   thrust::exclusive_scan(thrust::device, tv.begin(), tv.end(), tv2.begin(), 1, binary_op);
 
-  // CHECK: std::exclusive_scan(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), 1, binary_op);
-  // CHECK: std::exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), tv.begin(), tv.end(), tv2.begin(), 1, binary_op);
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), (decltype(v2.begin())::value_type)1, binary_op);
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), tv.begin(), tv.end(), tv2.begin(), (decltype(tv2.begin())::value_type)1, binary_op);
   thrust::exclusive_scan(v.begin(), v.end(), v2.begin(), 1, binary_op);
   thrust::exclusive_scan(tv.begin(), tv.end(), tv2.begin(), 1, binary_op);
 

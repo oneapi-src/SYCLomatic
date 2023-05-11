@@ -219,20 +219,17 @@ private:
 
 /// dpct device extension
 class device_ext : public sycl::device {
+  typedef std::mutex mutex_type;
+
 public:
   device_ext() : sycl::device(), _ctx(*this) {}
   ~device_ext() {
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
-    for (auto &task : _tasks) {
-      if (task.joinable())
-        task.join();
-    }
-    _tasks.clear();
-    _queues.clear();
+    std::lock_guard<mutex_type> lock(m_mutex);
+    clear_queues();
   }
-  device_ext(const sycl::device &base)
-      : sycl::device(base), _ctx(*this) {
-    _saved_queue = _default_queue = create_queue(true);
+  device_ext(const sycl::device &base) : sycl::device(base), _ctx(*this) {
+    std::lock_guard<mutex_type> lock(m_mutex);
+    init_queues();
   }
 
   int is_native_atomic_supported() { return 0; }
@@ -394,16 +391,25 @@ Use 64 bits as memory_bus_width default value."
   }
 
   void reset() {
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
-    _queues.clear();
-    // create new default queue.
-    _saved_queue = _default_queue = create_queue(true);
+    std::lock_guard<mutex_type> lock(m_mutex);
+    clear_queues();
+    init_queues();
   }
 
-  sycl::queue &default_queue() { return *_default_queue; }
+  sycl::queue &in_order_queue() { return *_q_in_order; }
+
+  sycl::queue &out_of_order_queue() { return *_q_out_of_order; }
+
+  sycl::queue &default_queue() {
+#ifdef DPCT_USM_LEVEL_NONE
+    return out_of_order_queue();
+#else
+    return in_order_queue();
+#endif // DPCT_USM_LEVEL_NONE
+  }
 
   void queues_wait_and_throw() {
-    std::unique_lock<std::recursive_mutex> lock(m_mutex);
+    std::unique_lock<mutex_type> lock(m_mutex);
     std::vector<std::shared_ptr<sycl::queue>> current_queues(
         _queues);
     lock.unlock();
@@ -413,20 +419,28 @@ Use 64 bits as memory_bus_width default value."
     // Guard the destruct of current_queues to make sure the ref count is safe.
     lock.lock();
   }
-  sycl::queue *create_queue(bool enable_exception_handler = false) {
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
-    sycl::async_handler eh = {};
-    if (enable_exception_handler) {
-      eh = exception_handler;
-    }
-    auto property = get_default_property_list_for_queue();
-    _queues.push_back(std::make_shared<sycl::queue>(
-        _ctx, *this, eh, property));
 
-    return _queues.back().get();
+  sycl::queue *create_queue(bool enable_exception_handler = false) {
+#ifdef DPCT_USM_LEVEL_NONE
+    return create_out_of_order_queue(enable_exception_handler);
+#else
+    return create_in_order_queue(enable_exception_handler);
+#endif // DPCT_USM_LEVEL_NONE
   }
+
+  sycl::queue *create_in_order_queue(bool enable_exception_handler = false) {
+    std::lock_guard<mutex_type> lock(m_mutex);
+    return create_queue_impl(enable_exception_handler,
+                             sycl::property::queue::in_order());
+  }
+
+  sycl::queue *create_out_of_order_queue(bool enable_exception_handler = false) {
+    std::lock_guard<mutex_type> lock(m_mutex);
+    return create_queue_impl(enable_exception_handler);
+  }
+
   void destroy_queue(sycl::queue *&queue) {
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+    std::lock_guard<mutex_type> lock(m_mutex);
     _queues.erase(std::remove_if(_queues.begin(), _queues.end(),
                                   [=](const std::shared_ptr<sycl::queue> &q) -> bool {
                                     return q.get() == queue;
@@ -435,37 +449,46 @@ Use 64 bits as memory_bus_width default value."
     queue = nullptr;
   }
   void set_saved_queue(sycl::queue* q) {
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+    std::lock_guard<mutex_type> lock(m_mutex);
     _saved_queue = q;
   }
-  sycl::queue* get_saved_queue() const {
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+  sycl::queue *get_saved_queue() const {
+    std::lock_guard<mutex_type> lock(m_mutex);
     return _saved_queue;
   }
   sycl::context get_context() const { return _ctx; }
 
 private:
-  sycl::property_list get_default_property_list_for_queue() const {
-#ifdef DPCT_PROFILING_ENABLED
-#ifdef DPCT_USM_LEVEL_NONE
-    auto property =
-        sycl::property_list{sycl::property::queue::enable_profiling()};
-#else
-    auto property =
-        sycl::property_list{sycl::property::queue::enable_profiling(),
-                            sycl::property::queue::in_order()};
-#endif
-#else
-#ifdef DPCT_USM_LEVEL_NONE
-    auto property =
-        sycl::property_list{};
-#else
-    auto property =
-        sycl::property_list{sycl::property::queue::in_order()};
-#endif
-#endif
-    return property;
+  void clear_queues() {
+    _queues.clear();
+    _q_in_order = _q_out_of_order = _saved_queue = nullptr;
   }
+
+  void init_queues() {
+    _q_in_order = create_queue_impl(true, sycl::property::queue::in_order());
+    _q_out_of_order = create_queue_impl(true);
+    _saved_queue = &default_queue();
+  }
+
+  /// Caller should acquire resource \p m_mutex before calling this function.
+  template <class... Properties>
+  sycl::queue *create_queue_impl(bool enable_exception_handler,
+                                 Properties... properties) {
+    sycl::async_handler eh = {};
+    if (enable_exception_handler) {
+      eh = exception_handler;
+    }
+    _queues.push_back(std::make_shared<sycl::queue>(
+        _ctx, *this, eh,
+        sycl::property_list(
+#ifdef DPCT_PROFILING_ENABLED
+            sycl::property::queue::enable_profiling(),
+#endif
+            properties...)));
+
+    return _queues.back().get();
+  }
+
   void get_version(int &major, int &minor) const {
     // Version string has the following format:
     // a. OpenCL<space><major.minor><space><vendor-specific-information>
@@ -487,12 +510,11 @@ private:
     i++;
     minor = std::stoi(&(ver[i]));
   }
-  sycl::queue *_default_queue;
+  sycl::queue *_q_in_order, *_q_out_of_order;
   sycl::queue *_saved_queue;
   sycl::context _ctx;
   std::vector<std::shared_ptr<sycl::queue>> _queues;
-  mutable std::recursive_mutex m_mutex;
-  std::vector<std::thread> _tasks;
+  mutable mutex_type m_mutex;
 };
 
 static inline unsigned int get_tid() {
@@ -598,10 +620,23 @@ private:
   int _cpu_device = -1;
 };
 
-/// Util function to get the default queue of current device in
-/// dpct device manager.
+/// Util function to get the default queue of current selected device depends on
+/// the USM config. Return the default out-of-ordered queue when USM-none is
+/// enabled, otherwise return the default in-ordered queue.
 static inline sycl::queue &get_default_queue() {
   return dev_mgr::instance().current_device().default_queue();
+}
+
+/// Util function to get the default in-ordered queue of current device in
+/// dpct device manager.
+static inline sycl::queue &get_in_order_queue() {
+  return dev_mgr::instance().current_device().in_order_queue();
+}
+
+/// Util function to get the default out-of-ordered queue of current device in
+/// dpct device manager.
+static inline sycl::queue &get_out_of_order_queue() {
+  return dev_mgr::instance().current_device().out_of_order_queue();
 }
 
 /// Util function to get the id of current device in

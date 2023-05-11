@@ -42,7 +42,7 @@ __global__ void kernelFunc(float *deviceArray) {
 // CHECK:   memset(hostArrayDouble, 0, bytes);
 // CHECK:   double *deviceArrayDouble;
 // CHECK:   deviceArrayDouble = (double *)sycl::malloc_device(bytes, q_ct1);
-// CHECK:   q_ct1.memcpy(deviceArrayDouble, hostArrayDouble, bytes).wait();
+// CHECK:   q_ct1.memcpy(deviceArrayDouble, hostArrayDouble, bytes);
 // CHECK:   q_ct1.parallel_for(
 // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK:       [=](sycl::nd_item<3> item_ct1) {
@@ -73,7 +73,7 @@ void testDouble() {
 // CHECK:   memset(hostArrayFloat, 0, bytes);
 // CHECK:   float *deviceArrayFloat;
 // CHECK:   deviceArrayFloat = (float *)sycl::malloc_device(bytes, q_ct1);
-// CHECK:   q_ct1.memcpy(deviceArrayFloat, hostArrayFloat, bytes).wait();
+// CHECK:   q_ct1.memcpy(deviceArrayFloat, hostArrayFloat, bytes);
 // CHECK:   q_ct1.parallel_for(
 // CHECK:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK:       [=](sycl::nd_item<3> item_ct1) {
