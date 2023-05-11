@@ -132,13 +132,13 @@ public:
   }
 };
 
-template <class ArgT> class CastIfSpecialExprPrinter {
-  ArgT Arg;
+class CastIfSpecialExpr {
+  const Expr *Arg;
+  const CallExpr *CE;
 
 public:
-  CastIfSpecialExprPrinter(ArgT &&A) : Arg(std::forward<ArgT>(A)) {}
+  CastIfSpecialExpr(const Expr *Arg, const CallExpr *CE) : Arg(Arg), CE(CE) {}
   template <class StreamT> void print(StreamT &Stream) const {
-    const CallExpr *CE = DpctGlobalInfo::findAncestor<CallExpr>(Arg);
     if (isContainTargetSpecialExpr(Arg)) {
       clang::QualType ArgType = Arg->getType().getCanonicalType();
       ArgType.removeLocalCVRQualifiers(clang::Qualifiers::CVRMask);
@@ -148,18 +148,12 @@ public:
           !dyn_cast<ParenExpr>(Arg->IgnoreImpCasts()) &&
           !dyn_cast<PseudoObjectExpr>(Arg->IgnoreImpCasts())) {
         Stream << "(";
-        if (CE)
-          dpct::print(Stream, std::make_pair(CE, Arg));
-        else
-          dpct::print(Stream, Arg);
+        dpct::print(Stream, std::make_pair(CE, Arg));
         Stream << ")";
         return;
       }
     }
-    if (CE)
-      dpct::print(Stream, std::make_pair(CE, Arg));
-    else
-      dpct::print(Stream, Arg);
+    dpct::print(Stream, std::make_pair(CE, Arg));
   }
 };
 
@@ -604,11 +598,11 @@ makeCastIfNotSameExprCreator(
                                                                    Sub);
 }
 
-template <class ArgT>
-inline std::function<CastIfSpecialExprPrinter<ArgT>(const CallExpr *)>
-makeCastIfSpecialExprCreator(std::function<ArgT(const CallExpr *)> Arg) {
-  return PrinterCreator<CastIfSpecialExprPrinter<ArgT>,
-                        std::function<ArgT(const CallExpr *)>>(Arg);
+inline std::function<CastIfSpecialExpr(const CallExpr *)>
+CastIfSpecialExprCreator(unsigned Idx) {
+  return [=](const CallExpr *C) -> CastIfSpecialExpr {
+    return CastIfSpecialExpr(C->getArg(Idx), C);
+  };
 }
 
 template <class SubExprT>
@@ -1860,7 +1854,7 @@ public:
 #define ARRAY_SUBSCRIPT(e, i) makeArraySubscriptExprCreator(e, i)
 #define CAST(T, S) makeCastExprCreator(T, S)
 #define CAST_IF_NOT_SAME(T, S) makeCastIfNotSameExprCreator(T, S)
-#define CAST_IF_SPECIAL(E) makeCastIfSpecialExprCreator(E)
+#define CAST_IF_SPECIAL(Idx) CastIfSpecialExprCreator(Idx)
 #define DOUBLE_POINTER_CONST_CAST(BASE_VALUE_TYPE, EXPR,                       \
                                   DOES_BASE_VALUE_NEED_CONST,                  \
                                   DOES_FIRST_LEVEL_POINTER_NEED_CONST)         \
