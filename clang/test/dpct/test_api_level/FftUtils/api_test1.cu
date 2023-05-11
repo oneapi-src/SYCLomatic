@@ -4,7 +4,7 @@
 // RUN: FileCheck --input-file %T/FftUtils/api_test1_out/api_test1.dp.cpp --match-full-lines %s -check-prefix=CODE
 // RUN: rm -rf %T/FftUtils/api_test1_out
 
-// FEATURE_NUMBER: 23
+// FEATURE_NUMBER: 22
 // TEST_FEATURE: FftUtils_fft_direction
 // TEST_FEATURE: FftUtils_non_local_include_dependency
 

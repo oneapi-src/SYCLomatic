@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Memory/api_test3_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Memory/api_test3_out
 
-// CHECK: 26
+// CHECK: 25
 // TEST_FEATURE: Memory_dpct_malloc_3d
 // TEST_FEATURE: Memory_dpct_malloc_2d
 

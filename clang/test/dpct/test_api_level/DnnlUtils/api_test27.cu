@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/DnnlUtils/api_test27_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DnnlUtils/api_test27_out
 
-// CHECK: 39
+// CHECK: 38
 // TEST_FEATURE: DnnlUtils_async_dropout_backward
 // TEST_FEATURE: DnnlUtils_async_dropout_forward
 // TEST_FEATURE: DnnlUtils_dropout_desc
