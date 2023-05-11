@@ -2051,11 +2051,14 @@ inline ::std::pair<Iter1, Iter1> equal_range(_ExecutionPolicy &&policy,
 // DplExtrasIterators|arg_index_input_iterator
 // DplExtrasIterators|key_value_pair
 // DplExtrasVector|is_iterator
+// DplExtrasFunctional|is_hetero_execution_policy
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3>
-inline ::std::enable_if_t<dpct::internal::is_iterator<Iter1>::value &&
-                          dpct::internal::is_iterator<Iter2>::value>
+inline ::std::enable_if_t<
+    dpct::internal::is_iterator<Iter1>::value &&
+    dpct::internal::is_iterator<Iter2>::value &&
+    internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value>
 segmented_reduce_argmin(Policy &&policy, Iter1 keys_in, Iter2 keys_out,
                         ::std::int64_t nsegments, Iter3 begin_offsets,
                         Iter3 end_offsets) {
@@ -2083,11 +2086,14 @@ segmented_reduce_argmin(Policy &&policy, Iter1 keys_in, Iter2 keys_out,
 // DplExtrasIterators|arg_index_input_iterator
 // DplExtrasIterators|key_value_pair
 // DplExtrasVector|is_iterator
+// DplExtrasFunctional|is_hetero_execution_policy
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3>
-inline ::std::enable_if_t<dpct::internal::is_iterator<Iter1>::value &&
-                          dpct::internal::is_iterator<Iter2>::value>
+inline ::std::enable_if_t<
+    dpct::internal::is_iterator<Iter1>::value &&
+    dpct::internal::is_iterator<Iter2>::value &&
+    internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value>
 segmented_reduce_argmax(Policy &&policy, Iter1 keys_in, Iter2 keys_out,
                         ::std::int64_t nsegments, Iter3 begin_offsets,
                         Iter3 end_offsets) {
