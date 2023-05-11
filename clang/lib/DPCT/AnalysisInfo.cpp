@@ -156,7 +156,8 @@ std::unordered_map<std::string,
     DpctGlobalInfo::RnnInputMap;
 std::unordered_map<std::string, std::vector<std::string>>
     DpctGlobalInfo::MainSourceFileMap;
-
+std::unordered_map<std::string, bool>
+    DpctGlobalInfo::MallocHostInfoMap;
 /// This variable saved the info of previous migration from the
 /// MainSourceFiles.yaml file. This variable is valid after
 /// canContinueMigration() is called.
@@ -322,6 +323,68 @@ DpctGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall) {
   }
 
   return KernelInfo;
+}
+
+void DpctGlobalInfo::buildReplacements() {
+  // add PriorityRepl into ReplMap and execute related action, e.g.,
+  // request feature or emit warning.
+  for (auto &ReplInfo : PriorityReplInfoMap) {
+    for (auto &Repl : ReplInfo.second->Repls) {
+      addReplacement(Repl);
+    }
+    for (auto &Action : ReplInfo.second->RelatedAction) {
+      Action();
+    }
+  }
+
+  for (auto &File : FileMap)
+    File.second->buildReplacements();
+
+  // All cases of replacing placeholders:
+  // dev_count  queue_count  dev_decl            queue_decl
+  // 0          1            /                   get_default_queue
+  // 1          0            get_current_device  /
+  // 1          1            get_current_device  get_default_queue
+  // 2          1            dev_ct1             get_default_queue
+  // 1          2            dev_ct1             q_ct1
+  // >=2        >=2          dev_ct1             q_ct1
+  if (!getDeviceChangedFlag() && getUsingDRYPattern()) {
+    for (auto &Counter : TempVariableDeclCounterMap) {
+      const auto ColonPos = Counter.first.find_last_of(':');
+      const auto DeclLocFile = Counter.first.substr(0, ColonPos);
+      const auto DeclLocOffset = std::stoi(Counter.first.substr(ColonPos + 1));
+      if (Counter.second.CurrentDeviceCounter > 0 ||
+          Counter.second.DefaultQueueCounter > 1)
+        requestFeature(HelperFeatureEnum::Device_get_current_device,
+                       DeclLocFile);
+      if (Counter.second.DefaultQueueCounter > 0)
+        requestFeature(HelperFeatureEnum::Device_get_default_queue,
+                       DeclLocFile);
+      if ((Counter.second.CurrentDeviceCounter > 1 ||
+           Counter.second.DefaultQueueCounter > 1)) {
+        unsigned int IndentLen = 2;
+        if (getGuessIndentWidthMatcherFlag())
+          IndentLen = getIndentWidth();
+        std::string IndentStr = std::string(IndentLen, ' ');
+        Counter.second.PlaceholderStr[2] = "dev_ct1";
+        std::string DevDecl =
+            getNL() + IndentStr + MapNames::getDpctNamespace() +
+            "device_ext &" + Counter.second.PlaceholderStr[2] + " = " +
+            MapNames::getDpctNamespace() + "get_current_device();";
+        getInstance().addReplacement(std::make_shared<ExtReplacement>(
+            DeclLocFile, DeclLocOffset, 0, DevDecl, nullptr));
+        if (Counter.second.DefaultQueueCounter > 1) {
+          Counter.second.PlaceholderStr[1] = "q_ct1";
+          std::string QDecl = getNL() + IndentStr + MapNames::getClNamespace() +
+                              "queue &" + Counter.second.PlaceholderStr[1] +
+                              " = " + Counter.second.PlaceholderStr[2] +
+                              ".default_queue();";
+          getInstance().addReplacement(std::make_shared<ExtReplacement>(
+              DeclLocFile, DeclLocOffset, 0, QDecl, nullptr));
+        }
+      }
+    }
+  }
 }
 
 void DpctGlobalInfo::processCudaArchMacro(){
@@ -979,6 +1042,12 @@ std::optional<HeaderType> DpctFileInfo::findHeaderType(StringRef Header) {
 }
 
 void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
+  if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution ||
+      Type == HT_DPCT_DNNL_Utils) {
+    if (this != DpctGlobalInfo::getInstance().getMainFile().get())
+      DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
+          Type, FirstIncludeOffset);
+  }
   if (HeaderInsertedBitMap[Type])
     return;
   HeaderInsertedBitMap[Type] = true;
@@ -996,9 +1065,6 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
   case HT_DPL_Algorithm:
   case HT_DPL_Execution:
   case HT_DPCT_DNNL_Utils:
-    if (this != DpctGlobalInfo::getInstance().getMainFile().get())
-      DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
-          Type, FirstIncludeOffset);
     concatHeader(OS, getHeaderSpelling(Type));
     return insertHeader(OS.str(), FirstIncludeOffset,
                         InsertPosition::IP_AlwaysLeft);
@@ -1517,6 +1583,26 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
       }
     }
   }
+  llvm::SmallVector<std::string> AspectList;
+  if (getVarMap().hasBF64()) {
+    AspectList.push_back(MapNames::getClNamespace() + "aspect::fp64");
+  }
+  if (getVarMap().hasBF16()) {
+    AspectList.push_back(MapNames::getClNamespace() + "aspect::fp16");
+  }
+  if (!AspectList.empty()) {
+    requestFeature(HelperFeatureEnum::Device_has_capability_or_fail,
+                   getFilePath());
+    Printer.indent();
+    Printer << MapNames::getDpctNamespace() << "has_capability_or_fail(";
+    printStreamBase(Printer);
+    Printer << "get_device(), {" << AspectList.front();
+    for (size_t i = 1; i < AspectList.size(); ++i) {
+      Printer << ", " << AspectList[i];
+    }
+    Printer << "});" << getNL();
+    ;
+  }
   Printer.indent();
   if (!SubGroupSizeWarning.empty()) {
     Printer << "/*" << getNL();
@@ -1529,15 +1615,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
   if (!getEvent().empty()) {
     Printer << "*" << getEvent() << " = ";
   }
-  if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&') {
-    Printer << "(" << ExecutionConfig.Stream << ")";
-  } else {
-    Printer << ExecutionConfig.Stream;
-  }
-  if (isQueuePtr())
-    Printer << "->";
-  else
-    Printer << ".";
+  printStreamBase(Printer);
   if (SubmitStmtsList.empty()) {
     printParallelFor(Printer, false);
   } else {
@@ -1669,6 +1747,18 @@ void KernelCallExpr::printKernel(KernelPrinter &Printer) {
                            : "")
                    << "(" << KernelArgs << ");";
   Printer.newLine();
+}
+
+void KernelCallExpr::printStreamBase(KernelPrinter &Printer) {
+  if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&') {
+    Printer << "(" << ExecutionConfig.Stream << ")";
+  } else {
+    Printer << ExecutionConfig.Stream;
+  }
+  if (isQueuePtr())
+    Printer << "->";
+  else
+    Printer << ".";
 }
 
 std::string KernelCallExpr::getReplacement() {
@@ -4166,31 +4256,8 @@ std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,
       return getDefaultString(HFT);
     }
 
-    // All cases of replacing placeholders:
-    // dev_count  queue_count  dev_decl            queue_decl
-    // 0          1            /                   get_default_queue
-    // 1          0            get_current_device  /
-    // 1          1            get_current_device  get_default_queue
-    // 2          1            dev_ct1             get_default_queue
-    // 1          2            dev_ct1             q_ct1
-    // >=2        >=2          dev_ct1             q_ct1
-    if (HFT == HelperFuncType::HFT_DefaultQueue) {
-      if (!HelperFuncReplInfoIter->second.IsLocationValid ||
-          TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1) {
-        return getDefaultString(HFT);
-      } else {
-        return "q_ct1";
-      }
-    } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
-      if (!HelperFuncReplInfoIter->second.IsLocationValid ||
-          (TempVariableDeclCounterIter->second.CurrentDeviceCounter <= 1 &&
-          TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1)) {
-        return getDefaultString(HFT);
-      } else {
-        return "dev_ct1";
-      }
-    }
-  
+    return TempVariableDeclCounterIter->second
+        .PlaceholderStr[static_cast<int>(HFT)];
   }
   return "";
 }

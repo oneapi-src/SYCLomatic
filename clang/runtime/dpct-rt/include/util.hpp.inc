@@ -391,7 +391,7 @@ T permute_sub_group_by_xor(sycl::sub_group g, T x, unsigned int mask,
 // DPCT_LABEL_END
 
 namespace experimental {
-// DPCT_LABEL_BEGIN|select_from_sub_group_mask|dpct
+// DPCT_LABEL_BEGIN|select_from_sub_group_mask|dpct::experimental
 // DPCT_DEPENDENCY_BEGIN
 // Util|spirv_builtin_function
 // DPCT_DEPENDENCY_END
@@ -434,7 +434,7 @@ T select_from_sub_group(unsigned int member_mask,
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|shift_sub_group_left_mask|dpct
+// DPCT_LABEL_BEGIN|shift_sub_group_left_mask|dpct::experimental
 // DPCT_DEPENDENCY_BEGIN
 // Util|spirv_builtin_function
 // DPCT_DEPENDENCY_END
@@ -480,7 +480,7 @@ T shift_sub_group_left(unsigned int member_mask,
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|shift_sub_group_right_mask|dpct
+// DPCT_LABEL_BEGIN|shift_sub_group_right_mask|dpct::experimental
 // DPCT_DEPENDENCY_BEGIN
 // Util|spirv_builtin_function
 // DPCT_DEPENDENCY_END
@@ -526,7 +526,7 @@ T shift_sub_group_right(unsigned int member_mask,
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|permute_sub_group_by_xor_mask|dpct
+// DPCT_LABEL_BEGIN|permute_sub_group_by_xor_mask|dpct::experimental
 // DPCT_DEPENDENCY_BEGIN
 // Util|spirv_builtin_function
 // DPCT_DEPENDENCY_END

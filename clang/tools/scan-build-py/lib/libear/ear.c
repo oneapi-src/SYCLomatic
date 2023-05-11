@@ -1432,7 +1432,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
       }
       if (olen == -1) {
         olen = strlen(ofilename);
-        if (olen >= PATH_MAX - 2) {
+        if (olen >= PATH_MAX - 3) {
           perror("bear: filename length too long.");
           exit(EXIT_FAILURE);
         }
@@ -1440,7 +1440,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
         ofilename[olen + 1] = 'o';
         ofilename[olen + 2] = '\0';
       } else {
-        if (olen > PATH_MAX - 2) {
+        if (olen > PATH_MAX - 3) {
           perror("bear: filename length too long.");
           exit(EXIT_FAILURE);
         }

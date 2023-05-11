@@ -125,6 +125,8 @@ std::unordered_map<std::string, std::string> HelperFileNameMap{
 } // namespace
 
 void genHelperFunction(const std::string &OutRoot) {
+  if (!llvm::sys::fs::is_directory(OutRoot))
+    llvm::sys::fs::create_directory(llvm::Twine(OutRoot));
   std::string ToPath = OutRoot + "/include";
   if (!llvm::sys::fs::is_directory(ToPath))
     llvm::sys::fs::create_directory(llvm::Twine(ToPath));

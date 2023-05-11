@@ -549,26 +549,23 @@ private:
 // DPCT_LABEL_BEGIN|device_ext|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Device|exception_handler
-// Device|device_ext_create_queue
+// Device|device_ext_1
 // Device|device_ext_2
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// dpct device extension
 class device_ext : public sycl::device {
+  typedef std::mutex mutex_type;
+
 public:
   device_ext() : sycl::device(), _ctx(*this) {}
   ~device_ext() {
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
-    for (auto &task : _tasks) {
-      if (task.joinable())
-        task.join();
-    }
-    _tasks.clear();
-    _queues.clear();
+    std::lock_guard<mutex_type> lock(m_mutex);
+    clear_queues();
   }
-  device_ext(const sycl::device &base)
-      : sycl::device(base), _ctx(*this) {
-    _saved_queue = _default_queue = create_queue(true);
+  device_ext(const sycl::device &base) : sycl::device(base), _ctx(*this) {
+    std::lock_guard<mutex_type> lock(m_mutex);
+    init_queues();
   }
 // DPCT_LABEL_END
 
@@ -871,24 +868,48 @@ Use 64 bits as memory_bus_width default value."
 // DPCT_PARENT_FEATURE|device_ext
 // DPCT_DEPENDENCY_BEGIN
 // Device|device_ext
-// Device|device_ext_create_queue
+// Device|device_ext_1
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   void reset() {
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
-    _queues.clear();
-    // create new default queue.
-    _saved_queue = _default_queue = create_queue(true);
+    std::lock_guard<mutex_type> lock(m_mutex);
+    clear_queues();
+    init_queues();
   }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|device_ext_default_queue|dpct
+// DPCT_LABEL_BEGIN|device_ext_inorder_queue|dpct
 // DPCT_PARENT_FEATURE|device_ext
 // DPCT_DEPENDENCY_BEGIN
 // Device|device_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  sycl::queue &default_queue() { return *_default_queue; }
+  sycl::queue &in_order_queue() { return *_q_in_order; }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|device_ext_outoforder_queue|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  sycl::queue &out_of_order_queue() { return *_q_out_of_order; }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|device_ext_default_queue|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext_inorder_queue
+// Device|device_ext_outoforder_queue|UsmNone
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  sycl::queue &default_queue() {
+#ifdef DPCT_USM_LEVEL_NONE
+    return out_of_order_queue();
+#else
+    return in_order_queue();
+#endif // DPCT_USM_LEVEL_NONE
+  }
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|device_ext_queues_wait_and_throw|dpct
@@ -898,7 +919,7 @@ Use 64 bits as memory_bus_width default value."
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   void queues_wait_and_throw() {
-    std::unique_lock<std::recursive_mutex> lock(m_mutex);
+    std::unique_lock<mutex_type> lock(m_mutex);
     std::vector<std::shared_ptr<sycl::queue>> current_queues(
         _queues);
     lock.unlock();
@@ -909,26 +930,49 @@ Use 64 bits as memory_bus_width default value."
     lock.lock();
   }
 // DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|device_ext_create_queue|dpct
 // DPCT_PARENT_FEATURE|device_ext
 // DPCT_DEPENDENCY_BEGIN
 // Device|device_ext
-// Device|device_ext_get_default_property_list_for_queue
+// Device|device_ext_create_inorder_queue
+// Device|device_ext_create_outoforder_queue|UsmNone
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   sycl::queue *create_queue(bool enable_exception_handler = false) {
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
-    sycl::async_handler eh = {};
-    if (enable_exception_handler) {
-      eh = exception_handler;
-    }
-    auto property = get_default_property_list_for_queue();
-    _queues.push_back(std::make_shared<sycl::queue>(
-        _ctx, *this, eh, property));
-
-    return _queues.back().get();
+#ifdef DPCT_USM_LEVEL_NONE
+    return create_out_of_order_queue(enable_exception_handler);
+#else
+    return create_in_order_queue(enable_exception_handler);
+#endif // DPCT_USM_LEVEL_NONE
   }
 // DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|device_ext_create_inorder_queue|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  sycl::queue *create_in_order_queue(bool enable_exception_handler = false) {
+    std::lock_guard<mutex_type> lock(m_mutex);
+    return create_queue_impl(enable_exception_handler,
+                             sycl::property::queue::in_order());
+  }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|device_ext_create_outoforder_queue|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  sycl::queue *create_out_of_order_queue(bool enable_exception_handler = false) {
+    std::lock_guard<mutex_type> lock(m_mutex);
+    return create_queue_impl(enable_exception_handler);
+  }
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|device_ext_destroy_queue|dpct
 // DPCT_PARENT_FEATURE|device_ext
 // DPCT_DEPENDENCY_BEGIN
@@ -936,7 +980,7 @@ Use 64 bits as memory_bus_width default value."
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   void destroy_queue(sycl::queue *&queue) {
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+    std::lock_guard<mutex_type> lock(m_mutex);
     _queues.erase(std::remove_if(_queues.begin(), _queues.end(),
                                   [=](const std::shared_ptr<sycl::queue> &q) -> bool {
                                     return q.get() == queue;
@@ -952,7 +996,7 @@ Use 64 bits as memory_bus_width default value."
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   void set_saved_queue(sycl::queue* q) {
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+    std::lock_guard<mutex_type> lock(m_mutex);
     _saved_queue = q;
   }
 // DPCT_LABEL_END
@@ -962,8 +1006,8 @@ Use 64 bits as memory_bus_width default value."
 // Device|device_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  sycl::queue* get_saved_queue() const {
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+  sycl::queue *get_saved_queue() const {
+    std::lock_guard<mutex_type> lock(m_mutex);
     return _saved_queue;
   }
 // DPCT_LABEL_END
@@ -983,35 +1027,37 @@ Use 64 bits as memory_bus_width default value."
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 private:
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|device_ext_get_default_property_list_for_queue|dpct
-// DPCT_PARENT_FEATURE|device_ext
-// DPCT_DEPENDENCY_BEGIN
-// Device|device_ext
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-  sycl::property_list get_default_property_list_for_queue() const {
+  void clear_queues() {
+    _queues.clear();
+    _q_in_order = _q_out_of_order = _saved_queue = nullptr;
+  }
+
+  void init_queues() {
+    _q_in_order = create_queue_impl(true, sycl::property::queue::in_order());
+    _q_out_of_order = create_queue_impl(true);
+    _saved_queue = &default_queue();
+  }
+
+  /// Caller should acquire resource \p m_mutex before calling this function.
+  template <class... Properties>
+  sycl::queue *create_queue_impl(bool enable_exception_handler,
+                                 Properties... properties) {
+    sycl::async_handler eh = {};
+    if (enable_exception_handler) {
+      eh = exception_handler;
+    }
+    _queues.push_back(std::make_shared<sycl::queue>(
+        _ctx, *this, eh,
+        sycl::property_list(
 #ifdef DPCT_PROFILING_ENABLED
-#ifdef DPCT_USM_LEVEL_NONE
-    auto property =
-        sycl::property_list{sycl::property::queue::enable_profiling()};
-#else
-    auto property =
-        sycl::property_list{sycl::property::queue::enable_profiling(),
-                            sycl::property::queue::in_order()};
+            sycl::property::queue::enable_profiling(),
 #endif
-#else
-#ifdef DPCT_USM_LEVEL_NONE
-    auto property =
-        sycl::property_list{};
-#else
-    auto property =
-        sycl::property_list{sycl::property::queue::in_order()};
-#endif
-#endif
-    return property;
+            properties...)));
+
+    return _queues.back().get();
   }
 // DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|device_ext_get_version|dpct
 // DPCT_PARENT_FEATURE|device_ext
 // DPCT_DEPENDENCY_BEGIN
@@ -1048,12 +1094,11 @@ private:
 // Device|device_ext_1
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  sycl::queue *_default_queue;
+  sycl::queue *_q_in_order, *_q_out_of_order;
   sycl::queue *_saved_queue;
   sycl::context _ctx;
   std::vector<std::shared_ptr<sycl::queue>> _queues;
-  mutable std::recursive_mutex m_mutex;
-  std::vector<std::thread> _tasks;
+  mutable mutex_type m_mutex;
 };
 // DPCT_LABEL_END
 
@@ -1275,10 +1320,37 @@ private:
 // Device|device_ext_default_queue
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Util function to get the default queue of current device in
-/// dpct device manager.
+/// Util function to get the default queue of current selected device depends on
+/// the USM config. Return the default out-of-ordered queue when USM-none is
+/// enabled, otherwise return the default in-ordered queue.
 static inline sycl::queue &get_default_queue() {
   return dev_mgr::instance().current_device().default_queue();
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|get_inorder_queue|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|dev_mgr_current_device
+// Device|device_ext_inorder_queue
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Util function to get the default in-ordered queue of current device in
+/// dpct device manager.
+static inline sycl::queue &get_in_order_queue() {
+  return dev_mgr::instance().current_device().in_order_queue();
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|get_outoforder_queue|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|dev_mgr_current_device
+// Device|device_ext_outoforder_queue
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Util function to get the default out-of-ordered queue of current device in
+/// dpct device manager.
+static inline sycl::queue &get_out_of_order_queue() {
+  return dev_mgr::instance().current_device().out_of_order_queue();
 }
 // DPCT_LABEL_END
 
@@ -1361,6 +1433,52 @@ static inline unsigned int get_device_id(const sycl::device &dev){
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|has_capability_or_fail|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+/// Util function to check whether a device supports some kinds of sycl::aspect.
+inline void
+has_capability_or_fail(const sycl::device &dev,
+                       const std::initializer_list<sycl::aspect> &props) {
+  for (const auto &it : props) {
+    if (dev.has(it))
+      continue;
+    switch (it) {
+    case sycl::aspect::fp64:
+      throw std::runtime_error("'double' is not supported in '" +
+                               dev.get_info<sycl::info::device::name>() +
+                               "' device");
+      break;
+    case sycl::aspect::fp16:
+      throw std::runtime_error("'half' is not supported in '" +
+                               dev.get_info<sycl::info::device::name>() +
+                               "' device");
+      break;
+    default:
+#define __SYCL_ASPECT(ASPECT, ID)                                              \
+  case sycl::aspect::ASPECT:                                                   \
+    return #ASPECT;
+#define __SYCL_ASPECT_DEPRECATED(ASPECT, ID, MESSAGE) __SYCL_ASPECT(ASPECT, ID)
+#define __SYCL_ASPECT_DEPRECATED_ALIAS(ASPECT, ID, MESSAGE)
+      auto getAspectNameStr = [](sycl::aspect AspectNum) -> std::string {
+        switch (AspectNum) {
+#include <sycl/info/aspects.def>
+#include <sycl/info/aspects_deprecated.def>
+        default:
+          return "unknown aspect";
+        }
+      };
+#undef __SYCL_ASPECT_DEPRECATED_ALIAS
+#undef __SYCL_ASPECT_DEPRECATED
+#undef __SYCL_ASPECT
+      throw std::runtime_error(
+          "'" + getAspectNameStr(it) + "' is not supported in '" +
+          dev.get_info<sycl::info::device::name>() + "' device");
+    }
+    break;
+  }
+}
+// DPCT_LABEL_END
 } // namespace dpct
 
 #endif // __DPCT_DEVICE_HPP__

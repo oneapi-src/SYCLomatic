@@ -15,18 +15,22 @@
 #endif
 
 #ifdef DPCT_OPTIONS_IN_CLANG_TOOLING
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), BuildPath, "p",
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), BuildPath, "compilation-database",
            llvm::cl::desc("The directory path for the compilation database (compile_commands.json). When no\n"
                "path is specified, a search for compile_commands.json is attempted through all\n"
-               "parent directories of the first input source file."),
+               "parent directories of the first input source file. Same as -p."),
            llvm::cl::value_desc("dir"), llvm::cl::cat(Category),
            llvm::cl::Optional, llvm::cl::sub(*llvm::cl::AllSubCommands))
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::alias), BuildPathAlias, "p",
+           llvm::cl::desc("Alias for --compilation-database."), llvm::cl::aliasopt(BuildPath),
+           llvm::cl::NotHidden)
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<std::string>), ArgsAfter, "extra-arg",
            llvm::cl::desc("Additional argument to append to the migration command line, example:\n"
               "--extra-arg=\"-I /path/to/header\". The options that can be passed this way can\n"
               "be found with the dpct -- -help command."),
            llvm::cl::value_desc("string"), llvm::cl::cat(Category),
-           llvm::cl::sub(*llvm::cl::AllSubCommands))
+           llvm::cl::sub(*llvm::cl::AllSubCommands),
+           llvm::cl::CommaSeparated)
 #ifdef _WIN32
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), VcxprojFile, "vcxprojfile",
            llvm::cl::desc("The file path of vcxproj."),
