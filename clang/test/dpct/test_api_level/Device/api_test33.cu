@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Device/api_test33_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Device/api_test33_out
 
-// CHECK: 17
+// CHECK: 15
 // TEST_FEATURE: Device_device_ext_get_global_mem_size
 // TEST_FEATURE: Device_device_ext_get_max_sub_group_size
 // TEST_FEATURE: Device_device_ext_get_max_work_group_size

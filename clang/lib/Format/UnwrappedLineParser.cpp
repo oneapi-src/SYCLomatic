@@ -1472,6 +1472,15 @@ void UnwrappedLineParser::parseStructuralElement(
       parseForOrWhileLoop(/*HasParens=*/false);
       return;
     }
+    if (FormatTok->isOneOf(Keywords.kw_foreach, Keywords.kw_repeat)) {
+      parseForOrWhileLoop();
+      return;
+    }
+    if (FormatTok->isOneOf(tok::kw_restrict, Keywords.kw_assert,
+                           Keywords.kw_assume, Keywords.kw_cover)) {
+      parseIfThenElse(IfKind, /*KeepBraces=*/false, /*IsVerilogAssert=*/true);
+      return;
+    }
 
     // Skip things that can exist before keywords like 'if' and 'case'.
     while (true) {
@@ -1563,6 +1572,7 @@ void UnwrappedLineParser::parseStructuralElement(
     }
     nextToken();
     if (FormatTok->is(tok::colon)) {
+      FormatTok->setFinalizedType(TT_CaseLabelColon);
       parseLabel();
       return;
     }
@@ -1969,7 +1979,7 @@ void UnwrappedLineParser::parseStructuralElement(
         }
       }
 
-      if (FormatTok->is(Keywords.kw_interface)) {
+      if (!Style.isCpp() && FormatTok->is(Keywords.kw_interface)) {
         if (parseStructLike())
           return;
         break;
@@ -2004,6 +2014,7 @@ void UnwrappedLineParser::parseStructuralElement(
         if (!Style.isVerilog() && FormatTok->is(tok::colon) &&
             !Line->MustBeDeclaration) {
           Line->Tokens.begin()->Tok->MustBreakBefore = true;
+          FormatTok->setFinalizedType(TT_GotoLabelColon);
           parseLabel(!Style.IndentGotoLabels);
           if (HasLabel)
             *HasLabel = true;
@@ -2712,9 +2723,28 @@ bool UnwrappedLineParser::isBlockBegin(const FormatToken &Tok) const {
 }
 
 FormatToken *UnwrappedLineParser::parseIfThenElse(IfStmtKind *IfKind,
-                                                  bool KeepBraces) {
-  assert(FormatTok->is(tok::kw_if) && "'if' expected");
+                                                  bool KeepBraces,
+                                                  bool IsVerilogAssert) {
+  assert((FormatTok->is(tok::kw_if) ||
+          (Style.isVerilog() &&
+           FormatTok->isOneOf(tok::kw_restrict, Keywords.kw_assert,
+                              Keywords.kw_assume, Keywords.kw_cover))) &&
+         "'if' expected");
   nextToken();
+
+  if (IsVerilogAssert) {
+    // Handle `assert #0` and `assert final`.
+    if (FormatTok->is(Keywords.kw_verilogHash)) {
+      nextToken();
+      if (FormatTok->is(tok::numeric_constant))
+        nextToken();
+    } else if (FormatTok->isOneOf(Keywords.kw_final, Keywords.kw_property,
+                                  Keywords.kw_sequence)) {
+      nextToken();
+    }
+  }
+
+  // Handle `if !consteval`.
   if (FormatTok->is(tok::exclaim))
     nextToken();
 
@@ -2725,10 +2755,18 @@ FormatToken *UnwrappedLineParser::parseIfThenElse(IfStmtKind *IfKind,
     KeepIfBraces = !Style.RemoveBracesLLVM || KeepBraces;
     if (FormatTok->isOneOf(tok::kw_constexpr, tok::identifier))
       nextToken();
-    if (FormatTok->is(tok::l_paren))
+    if (FormatTok->is(tok::l_paren)) {
+      FormatTok->setFinalizedType(TT_ConditionLParen);
       parseParens();
+    }
   }
   handleAttributes();
+  // The then action is optional in Verilog assert statements.
+  if (IsVerilogAssert && FormatTok->is(tok::semi)) {
+    nextToken();
+    addUnwrappedLine();
+    return nullptr;
+  }
 
   bool NeedsUnwrappedLine = false;
   keepAncestorBraces();
@@ -2752,6 +2790,8 @@ FormatToken *UnwrappedLineParser::parseIfThenElse(IfStmtKind *IfKind,
       addUnwrappedLine();
     else
       NeedsUnwrappedLine = true;
+  } else if (IsVerilogAssert && FormatTok->is(tok::kw_else)) {
+    addUnwrappedLine();
   } else {
     parseUnbracedBody();
   }
@@ -2794,7 +2834,7 @@ FormatToken *UnwrappedLineParser::parseIfThenElse(IfStmtKind *IfKind,
         markOptionalBraces(ElseLeftBrace);
       }
       addUnwrappedLine();
-    } else if (FormatTok->is(tok::kw_if)) {
+    } else if (!IsVerilogAssert && FormatTok->is(tok::kw_if)) {
       const FormatToken *Previous = Tokens->getPreviousToken();
       assert(Previous);
       const bool IsPrecededByComment = Previous->is(tok::comment);
@@ -3107,8 +3147,14 @@ void UnwrappedLineParser::parseForOrWhileLoop(bool HasParens) {
     nextToken();
   if (Style.isCpp() && FormatTok->is(tok::kw_co_await))
     nextToken();
-  if (HasParens && FormatTok->is(tok::l_paren))
+  if (HasParens && FormatTok->is(tok::l_paren)) {
+    // The type is only set for Verilog basically because we were afraid to
+    // change the existing behavior for loops. See the discussion on D121756 for
+    // details.
+    if (Style.isVerilog())
+      FormatTok->setFinalizedType(TT_ConditionLParen);
     parseParens();
+  }
   // Event control.
   if (Style.isVerilog())
     parseVerilogSensitivityList();
@@ -3183,7 +3229,11 @@ void UnwrappedLineParser::parseCaseLabel() {
   // FIXME: fix handling of complex expressions here.
   do {
     nextToken();
-  } while (!eof() && !FormatTok->is(tok::colon));
+    if (FormatTok->is(tok::colon)) {
+      FormatTok->setFinalizedType(TT_CaseLabelColon);
+      break;
+    }
+  } while (!eof());
   parseLabel();
 }
 

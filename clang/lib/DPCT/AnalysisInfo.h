@@ -1946,7 +1946,10 @@ public:
   getMainSourceFileMap(){
     return MainSourceFileMap;
   };
-
+  static inline std::unordered_map<std::string, bool> &
+  getMallocHostInfoMap(){
+    return MallocHostInfoMap;
+  };
 private:
   DpctGlobalInfo();
 
@@ -2128,6 +2131,7 @@ private:
       RnnInputMap;
   static std::unordered_map<std::string, std::vector<std::string>>
       MainSourceFileMap;
+  static std::unordered_map<std::string, bool> MallocHostInfoMap;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.
