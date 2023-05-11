@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/LapackUtils/api_test9_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/LapackUtils/api_test9_out
 
-// CHECK: 33
+// CHECK: 32
 // TEST_FEATURE: LapackUtils_geqrf
 
 #include "cusolverDn.h"

@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/DnnlUtils/api_test23_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DnnlUtils/api_test23_out
 
-// CHECK: 31
+// CHECK: 30
 // TEST_FEATURE: DnnlUtils_convolution_backward_weight
 // TEST_FEATURE: DnnlUtils_convolution_desc
 
