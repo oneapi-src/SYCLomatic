@@ -4279,23 +4279,8 @@ inline
 sycl::event engine_ext::async_convolution_backward_bias(
     float alpha, const memory_desc_ext &diff_dst_desc, void *diff_dst,
     float beta, const memory_desc_ext &diff_bias_desc, void *diff_bias) {
-  if (alpha == 0.f && beta == 1.f) {
-    return sycl::event();
-  }
-
-  ::dnnl::primitive_attr attr;
-  attr.set_fpmath_mode(desc.get_math_mode());
-
-  auto primitive = create_forward_primitive<::dnnl::reduction>(
-      ::dnnl::algorithm::reduction_sum, src_desc.get_desc(),
-      dst_desc.get_desc(), 1.f, 0.f, attr);
-
-  auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
-      {DNNL_ARG_SRC, ::dnnl::memory(diff_dst_desc.get_desc(), _eng, diff_dst)}};
-
-  return execute_primitive(
-      primitive, execution_args,
-      {{alpha, beta, DNNL_ARG_DST, diff_bias_desc, diff_bias}});
+  return async_reduction(reduction_op::sum, alpha, diff_dst_desc, diff_dst, beta,
+                   diff_bias_desc, diff_bias);
 }
 
 inline
