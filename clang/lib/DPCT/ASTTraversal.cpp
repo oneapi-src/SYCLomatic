@@ -1963,12 +1963,12 @@ void ZeroLengthArrayRule::runRule(
 REGISTER_RULE(ZeroLengthArrayRule, PassKind::PK_Migration)
 
 void MiscAPIRule::registerMatcher(MatchFinder &MF) {
- auto functionName = [&]() {
-    return hasAnyName(
-        "cudaOccupancyMaxActiveBlocksPerMultiprocessor");
+  auto functionName = [&]() {
+    return hasAnyName("cudaOccupancyMaxActiveBlocksPerMultiprocessor");
   };
- MF.addMatcher(
-     callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"), this);
+  MF.addMatcher(
+      callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),
+      this);
 }
 void MiscAPIRule::runRule(const MatchFinder::MatchResult &Result) {
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");

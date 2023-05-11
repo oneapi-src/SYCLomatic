@@ -20,7 +20,8 @@ auto UseOccupancyCalculation = [](const CallExpr *C) -> bool {
   {FuncName, std::make_shared<RewriterFactory>(FuncName, __VA_ARGS__)},
 #define UNSUPPORTED_FACTORY_ENTRY(FuncName, MsgID)                             \
   REWRITER_FACTORY_ENTRY(FuncName,                                             \
-      UnsupportFunctionRewriterFactory<std::string>, MsgID, FuncName)
+                         UnsupportFunctionRewriterFactory<std::string>, MsgID, \
+                         FuncName)
 #define ENTRY_UNSUPPORTED(SOURCEAPINAME, MSGID)                                \
   UNSUPPORTED_FACTORY_ENTRY(SOURCEAPINAME, MSGID)
 
