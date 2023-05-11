@@ -7,7 +7,7 @@ int main() {
   int num_blocks;
   int block_size = 128;
   size_t dynamic_shared_memory_size = 0 ;
-  // CHECK: dpct::experimental::sycl_occupancy_max_active_wg_per_xecore(&num_blocks, block_size, dynamic_shared_memory_size + dpct_placeholder /* static shared local memory size */);
+  // CHECK: dpct::experimental::calculate_max_active_wg_per_xecore(&num_blocks, block_size, dynamic_shared_memory_size + dpct_placeholder /* static shared local memory size */);
   cudaOccupancyMaxActiveBlocksPerMultiprocessor(&num_blocks, k, block_size, dynamic_shared_memory_size);
   return 0;
 }

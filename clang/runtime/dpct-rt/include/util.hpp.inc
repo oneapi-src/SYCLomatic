@@ -813,29 +813,38 @@ public:
 // DPCT_CODE
 };
 // DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|sycl_occupancy_max_active_wg_per_xecore|dpct::experimental
+// DPCT_LABEL_BEGIN|calculate_max_active_wg_per_xecore|dpct::experimental
 // DPCT_DEPENDENCY_BEGIN
 // Device|get_current_device
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Computes the active work-group number per Xe-Core when the occupancy is maximum.
-/// Ref to https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/GPU-Occupancy-Calculator
+/// Computes the active work-group number per Xe-Core when the occupancy is
+/// maximum. Ref to
+/// https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/GPU-Occupancy-Calculator
 /// \param [out] num_wg Active work-group number.
 /// \param [in] wg_size Work-group size.
 /// \param [in] slm_size Shared local memory size.
 /// \param [in] sg_size Sub-group size.
 /// \param [in] used_barrier Whether barrier is used.
 /// \param [in] used_large_grf Whether General Register File is used.
-/// \return Always return 0.
-inline int sycl_occupancy_max_active_wg_per_xecore(
-    int *num_wg, int wg_size, int slm_size = 0, int sg_size = 32,
-    bool used_barrier = false, bool used_large_grf = false) {
+/// \return If no error, returns 0.
+/// If \p wg_size exceeds the max work-group size, the max work-group size will
+/// be used instead of \p wg_size and returns -1.
+inline int calculate_max_active_wg_per_xecore(int *num_wg, int wg_size,
+                                              int slm_size = 0,
+                                              int sg_size = 32,
+                                              bool used_barrier = false,
+                                              bool used_large_grf = false) {
+  int ret = 0;
   const int slm_size_per_xe_core = 64 * 1024;
   const int max_barrier_registers = 32;
   dpct::device_ext &dev = dpct::get_current_device();
 
   size_t max_wg_size = dev.get_info<sycl::info::device::max_work_group_size>();
-  assert(wg_size <= max_wg_size && "Work-group size cannot exceed the limit.");
+  if (wg_size > max_wg_size) {
+    wg_size = max_wg_size;
+    ret = -1;
+  }
 
   int num_threads_ss = 56;
   int max_num_wg = 56;

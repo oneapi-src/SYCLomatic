@@ -4,7 +4,7 @@
 // RUN: rm -rf %T/Util/api_test30_out
 
 // CHECK: 18
-// TEST_FEATURE: Util_sycl_occupancy_max_active_wg_per_xecore
+// TEST_FEATURE: Util_calculate_max_active_wg_per_xecore
 
 __global__ void k() {}
 

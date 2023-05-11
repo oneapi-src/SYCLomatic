@@ -9,11 +9,11 @@
 CONDITIONAL_FACTORY_ENTRY(
     UseOccupancyCalculation,
     FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::Util_sycl_occupancy_max_active_wg_per_xecore,
+        HelperFeatureEnum::Util_calculate_max_active_wg_per_xecore,
         CALL_FACTORY_ENTRY(
             "cudaOccupancyMaxActiveBlocksPerMultiprocessor",
             CALL(MapNames::getDpctNamespace() +
-                     "experimental::sycl_occupancy_max_active_wg_per_xecore",
+                     "experimental::calculate_max_active_wg_per_xecore",
                  ARG(0), ARG(2),
                  BO(BinaryOperatorKind::BO_Add, ARG(3),
                     ARG("dpct_placeholder /* static shared local memory "
