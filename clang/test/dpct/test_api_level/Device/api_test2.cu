@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Device/api_test2_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Device/api_test2_out
 
-// CHECK: 15
+// CHECK: 14
 // TEST_FEATURE: Device_cpu_device
 
 int main() {

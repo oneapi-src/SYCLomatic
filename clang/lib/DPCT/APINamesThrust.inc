@@ -147,7 +147,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 ARG("oneapi::dpl::execution::seq"), ARG(0),
                                 ARG(1), ARG(3), ARG(4), ARG(2)))),
     CONDITIONAL_FACTORY_ENTRY(
-        CheckThrustArgType(0, "thrust::device"),
+        CheckThrustArgType(0, "thrust::device_ptr"),
         CALL_FACTORY_ENTRY(
             "thrust::transform_reduce",
             CALL("std::transform_reduce",
@@ -278,48 +278,11 @@ CONDITIONAL_FACTORY_ENTRY(
 )
 
 // thrust::copy_if
-CONDITIONAL_FACTORY_ENTRY(
-  CheckArgCount(6),
-  //Handling case: thrust::copy_if(policy, device.begin(), device.end(), device.end(), device.end(), f);
-  FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_copy_if,
-  CALL_FACTORY_ENTRY("thrust::copy_if",
-                      CALL(MapNames::getDpctNamespace() + "copy_if",
-                            makeMappedThrustPolicyEnum(0),
-                            ARG(1), ARG(2), ARG(3), ARG(4), THRUST_FUNCTOR(5)))),
-  CONDITIONAL_FACTORY_ENTRY(
-    CheckArgCount(4),
-    //Handling case: thrust::copy_if(host.begin(), host.end(), host.end(), f);
-    CONDITIONAL_FACTORY_ENTRY(
-      CheckThrustArgType(0, "thrust::device_ptr"),
-      CALL_FACTORY_ENTRY("thrust::copy_if",
-                         CALL("std::copy_if",
-                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                              ARG(0), ARG(1), ARG(2), THRUST_FUNCTOR(3))),
-      CALL_FACTORY_ENTRY("thrust::copy_if",
-                         CALL("std::copy_if",
-                              ARG("oneapi::dpl::execution::seq"),
-                              ARG(0), ARG(1), ARG(2), THRUST_FUNCTOR(3)))),
-      CONDITIONAL_FACTORY_ENTRY(
-        IsPolicyArgType(0),
-        //Handling case: thrust::copy_if(policy, device.begin(), device.end(), device.begin(), f);
-        CALL_FACTORY_ENTRY("thrust::copy_if",
-                        CALL("std::copy_if",
-                              makeMappedThrustPolicyEnum(0),
-                              ARG(1), ARG(2), ARG(3), THRUST_FUNCTOR(4))),
-        //Handling case: thrust::copy_if(device.begin(), device.end(), device.begin(), device.end(), f);
-        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_copy_if,
-        CONDITIONAL_FACTORY_ENTRY(
-          CheckThrustArgType(1, "thrust::device_ptr"),
-          CALL_FACTORY_ENTRY("thrust::copy_if",
-                         CALL(MapNames::getDpctNamespace() + "copy_if",
-                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                              ARG(0), ARG(1), ARG(2), ARG(3), THRUST_FUNCTOR(4))),
-          CALL_FACTORY_ENTRY("thrust::copy_if",
-                         CALL(MapNames::getDpctNamespace() + "copy_if",
-                              ARG("oneapi::dpl::execution::seq"),
-                              ARG(0), ARG(1), ARG(2), ARG(3), THRUST_FUNCTOR(4)))))
-      ))
-)
+thrustFactory("thrust::copy_if",
+              {{5,PolicyState::HasPolicy,3,"std::copy_if", HelperFeatureEnum::no_feature_helper },
+               {4,PolicyState::NoPolicy, 3,"std::copy_if", HelperFeatureEnum::no_feature_helper },
+               {6,PolicyState::HasPolicy,4, MapNames::getDpctNamespace() + "copy_if", HelperFeatureEnum::DplExtrasAlgorithm_copy_if },
+               {5,PolicyState::NoPolicy ,4, MapNames::getDpctNamespace() + "copy_if", HelperFeatureEnum::DplExtrasAlgorithm_copy_if }}),
 
 // thrust::make_zip_iterator
 CALL_FACTORY_ENTRY("thrust::make_zip_iterator",  CALL("oneapi::dpl::make_zip_iterator",  ARG(0)))
@@ -333,7 +296,6 @@ thrustFactory("thrust::inclusive_scan_by_key",
                {5,PolicyState::NoPolicy, 4,"oneapi::dpl::inclusive_scan_by_segment", HelperFeatureEnum::no_feature_helper},
                {7,PolicyState::HasPolicy,4,"oneapi::dpl::inclusive_scan_by_segment", HelperFeatureEnum::no_feature_helper},
                {6,PolicyState::NoPolicy, 4,"oneapi::dpl::inclusive_scan_by_segment", HelperFeatureEnum::no_feature_helper}}),
-
 
 // thrust::exclusive_scan_by_key
 thrustFactory("thrust::exclusive_scan_by_key",
@@ -359,10 +321,10 @@ CONDITIONAL_FACTORY_ENTRY(
     CALL_FACTORY_ENTRY("thrust::exclusive_scan",
       CALL("std::exclusive_scan",
         CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-        ARG(0), ARG(1), ARG(2), ARG("0"))),
+        ARG(0), ARG(1), ARG(2), makeAddTypeCastThrustToZero(2))),
     CALL_FACTORY_ENTRY("thrust::exclusive_scan",
       CALL("std::exclusive_scan",
-        ARG("oneapi::dpl::execution::seq"), ARG(0), ARG(1), ARG(2), ARG("0")))
+        ARG("oneapi::dpl::execution::seq"), ARG(0), ARG(1), ARG(2), makeAddTypeCastThrustToZero(2)))
   ),
   CONDITIONAL_FACTORY_ENTRY(
     CheckArgCount(4),
@@ -371,17 +333,17 @@ CONDITIONAL_FACTORY_ENTRY(
       // thrust::exclusive_scan(thrust::host, data, data + 6, data);
       CALL_FACTORY_ENTRY("thrust::exclusive_scan",
         CALL("std::exclusive_scan",
-          makeMappedThrustPolicyEnum(0), ARG(1), ARG(2), ARG(3), ARG("0"))),
+          makeMappedThrustPolicyEnum(0), ARG(1), ARG(2), ARG(3), makeAddTypeCastThrustToZero(3))),
       // thrust::exclusive_scan(data, data + 6, data, 4);
       CONDITIONAL_FACTORY_ENTRY(
         CheckThrustArgType(1, "thrust::device_ptr"),
         CALL_FACTORY_ENTRY("thrust::exclusive_scan",
           CALL("std::exclusive_scan",
             CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-            ARG(0), ARG(1), ARG(2), ARG(3))),
+            ARG(0), ARG(1), ARG(2), makeAddTypeCastToThrustArg(3))),
         CALL_FACTORY_ENTRY("thrust::exclusive_scan",
           CALL("std::exclusive_scan",
-            ARG("oneapi::dpl::execution::seq"), ARG(0), ARG(1), ARG(2), ARG(3)))
+            ARG("oneapi::dpl::execution::seq"), ARG(0), ARG(1), ARG(2), makeAddTypeCastToThrustArg(3)))
       )
     ),
     CONDITIONAL_FACTORY_ENTRY(
@@ -391,23 +353,23 @@ CONDITIONAL_FACTORY_ENTRY(
         // thrust::exclusive_scan(thrust::host, data, data + 6, data, 4);
         CALL_FACTORY_ENTRY("thrust::exclusive_scan",
           CALL("std::exclusive_scan",
-            makeMappedThrustPolicyEnum(0), ARG(1), ARG(2), ARG(3), ARG(4))),
+            makeMappedThrustPolicyEnum(0), ARG(1), ARG(2), ARG(3), makeAddTypeCastToThrustArg(4))),
         // thrust::exclusive_scan(data, data + 10, data, 1, binary_op);
         CONDITIONAL_FACTORY_ENTRY(
           CheckThrustArgType(1, "thrust::device_ptr"),
           CALL_FACTORY_ENTRY("thrust::exclusive_scan",
             CALL("std::exclusive_scan",
               CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-              ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))),
+              ARG(0), ARG(1), ARG(2), makeAddTypeCastToThrustArg(3), ARG(4))),
           CALL_FACTORY_ENTRY("thrust::exclusive_scan",
             CALL("std::exclusive_scan",
-              ARG("oneapi::dpl::execution::seq"), ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))
+              ARG("oneapi::dpl::execution::seq"), ARG(0), ARG(1), ARG(2), makeAddTypeCastToThrustArg(3), ARG(4)))
         )
       ),
       // thrust::exclusive_scan(thrust::host, data, data + 10, data, 1, binary_op);
       CALL_FACTORY_ENTRY("thrust::exclusive_scan",
         CALL("std::exclusive_scan",
-          makeMappedThrustPolicyEnum(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5)))
+          makeMappedThrustPolicyEnum(0), ARG(1), ARG(2), ARG(3), makeAddTypeCastToThrustArg(4), ARG(5)))
     )
   )
 )
@@ -759,7 +721,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 ARG("oneapi::dpl::execution::seq"),
                                 ARG(0), ARG(1), ARG(2)))),
         CONDITIONAL_FACTORY_ENTRY(
-            CheckArgType(0, "thrust::device_ptr"),
+            CheckThrustArgType(0, "thrust::device_ptr"),
             // Handle case thrust::copy(dev_itr, N, dev_itr)
             CALL_FACTORY_ENTRY("thrust::copy_n",
                 CALL("std::copy_n",
@@ -794,3 +756,154 @@ CONDITIONAL_FACTORY_ENTRY(
 
 // thrust::cuda_category
 CALL_FACTORY_ENTRY("thrust::cuda_category", CALL("std::generic_category"))
+
+// thrust::equal_range
+thrustFactory("thrust::equal_range",
+              {{4,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::DplExtrasAlgorithm_equal_range},
+               {3,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::DplExtrasAlgorithm_equal_range},
+               {5,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::DplExtrasAlgorithm_equal_range},
+               {4,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::DplExtrasAlgorithm_equal_range}}),
+// thrust::sequence
+thrustFactory("thrust::sequence",
+              {{3,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"iota", HelperFeatureEnum::DplExtrasAlgorithm_iota},
+               {2,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"iota", HelperFeatureEnum::DplExtrasAlgorithm_iota},
+               {4,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"iota", HelperFeatureEnum::DplExtrasAlgorithm_iota},
+               {3,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"iota", HelperFeatureEnum::DplExtrasAlgorithm_iota},
+               {5,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"iota", HelperFeatureEnum::DplExtrasAlgorithm_iota},
+               {6,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace()+"iota", HelperFeatureEnum::DplExtrasAlgorithm_iota}}),
+
+// thrust::sort
+thrustFactory("thrust::sort",
+              {{ 3,PolicyState::HasPolicy,2,"oneapi::dpl::sort", HelperFeatureEnum::no_feature_helper},
+               { 2,PolicyState::NoPolicy, 2,"oneapi::dpl::sort", HelperFeatureEnum::no_feature_helper},
+               { 4,PolicyState::HasPolicy,2,"oneapi::dpl::sort", HelperFeatureEnum::no_feature_helper},
+               { 3,PolicyState::NoPolicy, 2,"oneapi::dpl::sort", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::reduce
+thrustFactory("thrust::reduce",
+              {{3,PolicyState::HasPolicy,2,"std::reduce", HelperFeatureEnum::no_feature_helper},
+               {2,PolicyState::NoPolicy, 2,"std::reduce", HelperFeatureEnum::no_feature_helper},
+               {4,PolicyState::HasPolicy,2,"std::reducet", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"std::reduce", HelperFeatureEnum::no_feature_helper},
+               {5,PolicyState::HasPolicy,2,"std::reduce", HelperFeatureEnum::no_feature_helper},
+               {4,PolicyState::NoPolicy, 2,"std::reduce", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::device_free
+CALL_FACTORY_ENTRY("thrust::device_free", CALL(MapNames::getDpctNamespace() + "free_device", ARG(0)))
+
+
+// thrust::device_malloc
+// CALL_FACTORY_ENTRY("thrust::device_malloc", CALL(MapNames::getDpctNamespace() + "device_malloc", ARG(0)))
+
+// thrust::raw_pointer_cast
+CALL_FACTORY_ENTRY("thrust::raw_pointer_cast", CALL(MapNames::getDpctNamespace() + "get_raw_pointer", ARG(0)))
+
+// thrust::count_if
+thrustFactory("thrust::count_if",
+              {{4,PolicyState::HasPolicy,2,"std::count_if", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"std::count_if", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::fill
+thrustFactory("thrust::fill",
+              {{4,PolicyState::HasPolicy,2,"std::fill", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"std::fill", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::fill_n
+thrustFactory("thrust::fill_n",
+              {{4,PolicyState::HasPolicy,1,"std::fill_n", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 1,"std::fill_n", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::partition_point
+thrustFactory("thrust::partition_point",
+              {{4,PolicyState::HasPolicy,2,MapNames::getDpctNamespace() + "partition_point", HelperFeatureEnum::DplExtrasAlgorithm_partition_point},
+               {3,PolicyState::NoPolicy, 2,MapNames::getDpctNamespace() + "partition_point", HelperFeatureEnum::DplExtrasAlgorithm_partition_point}}),
+
+// thrust::binary_search
+thrustFactory("thrust::binary_search",
+              {{4,PolicyState::HasPolicy,2,"oneapi::dpl::binary_search", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"oneapi::dpl::binary_search", HelperFeatureEnum::no_feature_helper},
+               {5,PolicyState::HasPolicy,2,"oneapi::dpl::binary_search", HelperFeatureEnum::no_feature_helper},
+               {4,PolicyState::NoPolicy, 2,"oneapi::dpl::binary_search", HelperFeatureEnum::no_feature_helper},
+               {6,PolicyState::HasPolicy,5,"oneapi::dpl::binary_search", HelperFeatureEnum::no_feature_helper},
+               {5,PolicyState::NoPolicy, 5,"oneapi::dpl::binary_search", HelperFeatureEnum::no_feature_helper},
+               {7,PolicyState::HasPolicy,5,"oneapi::dpl::binary_search", HelperFeatureEnum::no_feature_helper},
+               {6,PolicyState::NoPolicy, 5,"oneapi::dpl::binary_search", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::lower_bound
+thrustFactory("thrust::lower_bound",
+              {{4,PolicyState::HasPolicy,2,"oneapi::dpl::lower_bound", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"oneapi::dpl::lower_bound", HelperFeatureEnum::no_feature_helper},
+               {5,PolicyState::HasPolicy,2,"oneapi::dpl::lower_bound", HelperFeatureEnum::no_feature_helper},
+               {4,PolicyState::NoPolicy, 2,"oneapi::dpl::lower_bound", HelperFeatureEnum::no_feature_helper},
+               {6,PolicyState::HasPolicy,5,"oneapi::dpl::lower_bound", HelperFeatureEnum::no_feature_helper},
+               {5,PolicyState::NoPolicy, 5,"oneapi::dpl::lower_bound", HelperFeatureEnum::no_feature_helper},
+               {7,PolicyState::HasPolicy,5,"oneapi::dpl::lower_bound", HelperFeatureEnum::no_feature_helper},
+               {6,PolicyState::NoPolicy, 5,"oneapi::dpl::lower_bound", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::upper_bound
+thrustFactory("thrust::upper_bound",
+              {{4,PolicyState::HasPolicy,2,"oneapi::dpl::upper_bound", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"oneapi::dpl::upper_bound", HelperFeatureEnum::no_feature_helper},
+               {5,PolicyState::HasPolicy,2,"oneapi::dpl::upper_bound", HelperFeatureEnum::no_feature_helper},
+               {4,PolicyState::NoPolicy, 2,"oneapi::dpl::upper_bound", HelperFeatureEnum::no_feature_helper},
+               {6,PolicyState::HasPolicy,5,"oneapi::dpl::upper_bound", HelperFeatureEnum::no_feature_helper},
+               {5,PolicyState::NoPolicy, 5,"oneapi::dpl::upper_bound", HelperFeatureEnum::no_feature_helper},
+               {7,PolicyState::HasPolicy,5,"oneapi::dpl::upper_bound", HelperFeatureEnum::no_feature_helper},
+               {6,PolicyState::NoPolicy, 5,"oneapi::dpl::upper_bound", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::count
+thrustFactory("thrust::count",
+              {{4,PolicyState::HasPolicy,2,"std::count", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"std::count", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::generate
+thrustFactory("thrust::generate",
+              {{4,PolicyState::HasPolicy,2,"std::generate", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"std::generate", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::generate_n
+thrustFactory("thrust::generate_n",
+              {{4,PolicyState::HasPolicy,2,"std::generate_n", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"std::generate_n", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::merge
+thrustFactory("thrust::merge",
+              {{ 6,PolicyState::HasPolicy,5,"std::merge", HelperFeatureEnum::no_feature_helper},
+               { 5,PolicyState::NoPolicy, 5,"std::merge", HelperFeatureEnum::no_feature_helper},
+               { 7,PolicyState::HasPolicy,5,"std::merge", HelperFeatureEnum::no_feature_helper},
+               { 6,PolicyState::NoPolicy, 5,"std::merge", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::uninitialized_fill
+// thrustFactory("thrust::uninitialized_fill",
+//               {{4,PolicyState::HasPolicy,2,"std::uninitialized_fill", HelperFeatureEnum::no_feature_helper},
+//                {3,PolicyState::NoPolicy, 2,"std::uninitialized_fill", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::unique
+thrustFactory("thrust::unique",
+              {{ 3,PolicyState::HasPolicy,2,"std::unique", HelperFeatureEnum::no_feature_helper},
+               { 2,PolicyState::NoPolicy, 2,"std::unique", HelperFeatureEnum::no_feature_helper},
+               { 4,PolicyState::HasPolicy,2,"std::unique", HelperFeatureEnum::no_feature_helper},
+               { 3,PolicyState::NoPolicy, 2,"std::unique", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::max_element
+thrustFactory("thrust::max_element",
+              {{ 3,PolicyState::HasPolicy,2,"std::max_element", HelperFeatureEnum::no_feature_helper},
+               { 2,PolicyState::NoPolicy, 2,"std::max_element", HelperFeatureEnum::no_feature_helper},
+               { 4,PolicyState::HasPolicy,2,"std::max_element", HelperFeatureEnum::no_feature_helper},
+               { 3,PolicyState::NoPolicy, 2,"std::max_element", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::min_element
+thrustFactory("thrust::min_element",
+              {{ 3,PolicyState::HasPolicy,2,"std::min_element", HelperFeatureEnum::no_feature_helper},
+               { 2,PolicyState::NoPolicy, 2,"std::min_element", HelperFeatureEnum::no_feature_helper},
+               { 4,PolicyState::HasPolicy,2,"std::min_element", HelperFeatureEnum::no_feature_helper},
+               { 3,PolicyState::NoPolicy, 2,"std::min_element", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::make_discard_iterator
+CALL_FACTORY_ENTRY("thrust::make_discard_iterator", CALL("oneapi::dpl::discard_iterator"))
+
+// thrust::make_constant_iterator
+CALL_FACTORY_ENTRY("thrust::make_constant_iterator", CALL(MapNames::getDpctNamespace() + "make_constant_iterator", ARG(0)))
+
+// thrust::make_counting_iterator
+CALL_FACTORY_ENTRY("thrust::make_counting_iterator", CALL(MapNames::getDpctNamespace() + "make_counting_iterator", ARG(0)))

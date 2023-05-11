@@ -69,6 +69,21 @@ CONDITIONAL_FACTORY_ENTRY(
                 UNSUPPORT_FACTORY_ENTRY("sync",
                                         Diagnostics::API_NOT_MIGRATED,
                                         ARG("sync"))))))
+
+/*
+   --- cg::reduce(group, val, op) ---
+
+   cg::reduce(cg::thread_block_tile<32>, val, op)
+   => sycl::reduce_over_group(item.get_sub_group(), val, op)
+*/
+CONDITIONAL_FACTORY_ENTRY(
+    argHasThreadBlockTileType(0, 32),
+        CALL_FACTORY_ENTRY("reduce", CALL(MapNames::getClNamespace() + "reduce_over_group",
+                                    SUBGROUP, ARG(1), ARG(2))),
+        UNSUPPORT_FACTORY_ENTRY("reduce",
+                                    Diagnostics::API_NOT_MIGRATED,
+                                    ARG("reduce")))
+
 /*
   --- cg::thread_rank(X) ---
   cg::thread_rank(cg::thread_block)

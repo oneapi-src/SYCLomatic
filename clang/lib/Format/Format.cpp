@@ -736,23 +736,23 @@ template <> struct MappingTraits<FormatStyle::TrailingCommentsAlignmentStyle> {
                         FormatStyle::TrailingCommentsAlignmentStyle &Value) {
     IO.enumCase(Value, "Leave",
                 FormatStyle::TrailingCommentsAlignmentStyle(
-                    {FormatStyle::TCAS_Leave, 1}));
+                    {FormatStyle::TCAS_Leave, 0}));
 
     IO.enumCase(Value, "Always",
                 FormatStyle::TrailingCommentsAlignmentStyle(
-                    {FormatStyle::TCAS_Always, 1}));
+                    {FormatStyle::TCAS_Always, 0}));
 
     IO.enumCase(Value, "Never",
                 FormatStyle::TrailingCommentsAlignmentStyle(
-                    {FormatStyle::TCAS_Never, 1}));
+                    {FormatStyle::TCAS_Never, 0}));
 
     // For backwards compatibility
     IO.enumCase(Value, "true",
                 FormatStyle::TrailingCommentsAlignmentStyle(
-                    {FormatStyle::TCAS_Always, 1}));
+                    {FormatStyle::TCAS_Always, 0}));
     IO.enumCase(Value, "false",
                 FormatStyle::TrailingCommentsAlignmentStyle(
-                    {FormatStyle::TCAS_Never, 1}));
+                    {FormatStyle::TCAS_Never, 0}));
   }
 
   static void mapping(IO &IO,
@@ -893,6 +893,8 @@ template <> struct MappingTraits<FormatStyle> {
     IO.mapOptional("BinPackArguments", Style.BinPackArguments);
     IO.mapOptional("BinPackParameters", Style.BinPackParameters);
     IO.mapOptional("BitFieldColonSpacing", Style.BitFieldColonSpacing);
+    IO.mapOptional("BracedInitializerIndentWidth",
+                   Style.BracedInitializerIndentWidth);
     IO.mapOptional("BraceWrapping", Style.BraceWrapping);
     IO.mapOptional("BreakAfterAttributes", Style.BreakAfterAttributes);
     IO.mapOptional("BreakAfterJavaFieldAnnotations",
@@ -1351,6 +1353,7 @@ FormatStyle getLLVMStyle(FormatStyle::LanguageKind Language) {
   LLVMStyle.BitFieldColonSpacing = FormatStyle::BFCS_Both;
   LLVMStyle.BinPackArguments = true;
   LLVMStyle.BinPackParameters = true;
+  LLVMStyle.BracedInitializerIndentWidth = std::nullopt;
   LLVMStyle.BraceWrapping = {/*AfterCaseLabel=*/false,
                              /*AfterClass=*/false,
                              /*AfterControlStatement=*/FormatStyle::BWACS_Never,
@@ -2820,7 +2823,7 @@ struct JavaImportDirective {
 // Determines whether 'Ranges' intersects with ('Start', 'End').
 static bool affectsRange(ArrayRef<tooling::Range> Ranges, unsigned Start,
                          unsigned End) {
-  for (auto Range : Ranges) {
+  for (const auto &Range : Ranges) {
     if (Range.getOffset() < End &&
         Range.getOffset() + Range.getLength() > Start) {
       return true;
@@ -3461,11 +3464,11 @@ reformat(const FormatStyle &Style, StringRef Code,
     tooling::Replacements Replaces =
         Formatter(*Env, Style, Status).process().first;
     // add a replacement to remove the "x = " from the result.
-    if (!Replaces.add(tooling::Replacement(FileName, 0, 4, ""))) {
-      // apply the reformatting changes and the removal of "x = ".
-      if (applyAllReplacements(Code, Replaces))
-        return {Replaces, 0};
-    }
+    Replaces = Replaces.merge(
+        tooling::Replacements(tooling::Replacement(FileName, 0, 4, "")));
+    // apply the reformatting changes and the removal of "x = ".
+    if (applyAllReplacements(Code, Replaces))
+      return {Replaces, 0};
     return {tooling::Replacements(), 0};
   }
 

@@ -3,13 +3,13 @@
 // RUN: FileCheck --input-file %T/Math/api_test9_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Math/api_test9_out
 
-// CHECK: 8
-// TEST_FEATURE: Math_compare_half
-// TEST_FEATURE: Math_unordered_compare_half
-// TEST_FEATURE: Math_compare_both_half2
-// TEST_FEATURE: Math_unordered_compare_both_half2
-// TEST_FEATURE: Math_compare_half2
-// TEST_FEATURE: Math_unordered_compare_half2
+// CHECK: 9
+// TEST_FEATURE: Math_compare
+// TEST_FEATURE: Math_unordered_compare
+// TEST_FEATURE: Math_compare_both
+// TEST_FEATURE: Math_unordered_compare_both
+// TEST_FEATURE: Math_compare2
+// TEST_FEATURE: Math_unordered_compare2
 // TEST_FEATURE: Math_isnan
 
 #include "cuda_fp16.h"
