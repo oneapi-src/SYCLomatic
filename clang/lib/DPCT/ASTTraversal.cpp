@@ -23,6 +23,7 @@
 #include "TextModification.h"
 #include "ThrustAPIMigration.h"
 #include "Utility.h"
+#include "CallExprRewriterCommon.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/Stmt.h"
 #include "clang/AST/TypeLoc.h"
@@ -10555,12 +10556,17 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
     }
   } else if (Name == "cudaFreeHost" || Name == "cuMemFreeHost") {
     if (USMLevel == UsmLevel::UL_Restricted) {
+      CheckCanUseCLibraryMallocOrFree Checker(0, true);
       ExprAnalysis EA;
       EA.analyze(C->getArg(0));
       std::ostringstream Repl;
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      Repl << MapNames::getClNamespace() + "free(" << EA.getReplacedString()
+      if(Checker(C)) {
+        Repl << "free(" << EA.getReplacedString() << ")";
+      } else {
+        buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+        Repl << MapNames::getClNamespace() + "free(" << EA.getReplacedString()
            << ", {{NEEDREPLACEQ" + std::to_string(Index) + "}})";
+      }
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
     } else {
       emplaceTransformation(new ReplaceCalleeName(C, "free"));

@@ -16,11 +16,16 @@
 #include "ExprAnalysis.h"
 #include "MapNames.h"
 #include "Utility.h"
+#include "ToolChains/Cuda.h"
+#include "clang/Driver/Driver.h"
+#include "clang/Driver/Options.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Expr.h"
 #include "clang/Basic/LangOptions.h"
+#include "clang/ASTMatchers/ASTMatchers.h"
 #include <cstdarg>
 
+using namespace clang::ast_matchers;
 namespace clang {
 namespace dpct {
 
@@ -1474,6 +1479,48 @@ public:
     }
 
     return false;
+  }
+};
+
+class CheckCanUseCLibraryMallocOrFree {
+  unsigned AddrArgIdx;
+  bool isFree;
+public:
+  CheckCanUseCLibraryMallocOrFree(unsigned AddrIdx, bool isFree)
+      : AddrArgIdx(AddrIdx), isFree(isFree) {}
+  bool operator()(const CallExpr *C) {
+    if (!DpctGlobalInfo::isOptimizeMigration()) {
+      return false;
+    }
+    if (C->getNumArgs() <= AddrArgIdx)
+      return false;
+    auto AllocatedExpr = C->getArg(AddrArgIdx);
+    const Expr *AE = nullptr;
+    if (auto CSCE = dyn_cast<CStyleCastExpr>(
+            AllocatedExpr->IgnoreImplicitAsWritten())) {
+      AE = CSCE->getSubExpr()->IgnoreImplicitAsWritten();
+    } else {
+      AE = AllocatedExpr->IgnoreImplicitAsWritten();
+    }
+    const DeclRefExpr* DRE = nullptr;
+    if (isFree) {
+      DRE = dyn_cast<DeclRefExpr>(AE);
+    } else if (auto UO = dyn_cast<UnaryOperator>(AE)) {
+      if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
+        DRE = dyn_cast<DeclRefExpr>(UO->getSubExpr());
+      }
+    }
+    if (!DRE) {
+      return false;
+    }
+    auto DREDecl = DRE->getDecl();
+    if (!DREDecl || !isa_and_nonnull<FunctionDecl>(DREDecl->getDeclContext()) ||
+        !DREDecl->getType()->isPointerType()) {
+      return false;
+    }
+    // If the pointer is only accessed on host side, then it's safe to replace
+    // sycl::malloc_host with c library malloc.
+    return isPointerHostAccessOnly(DREDecl);
   }
 };
 
