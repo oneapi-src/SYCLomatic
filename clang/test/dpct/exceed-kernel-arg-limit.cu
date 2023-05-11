@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <cuda_runtime.h>
-const int array_size = 33;
+const int array_size = 2;
 
 __constant__ int device1[array_size][array_size][array_size];
 __constant__ int device2[array_size][array_size][array_size];

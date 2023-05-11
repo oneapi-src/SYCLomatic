@@ -16,11 +16,16 @@
 #include "ExprAnalysis.h"
 #include "MapNames.h"
 #include "Utility.h"
+#include "ToolChains/Cuda.h"
+#include "clang/Driver/Driver.h"
+#include "clang/Driver/Options.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Expr.h"
 #include "clang/Basic/LangOptions.h"
+#include "clang/ASTMatchers/ASTMatchers.h"
 #include <cstdarg>
 
+using namespace clang::ast_matchers;
 namespace clang {
 namespace dpct {
 
@@ -105,14 +110,14 @@ public:
     if (isDefaultStream(E))
       printDefaultQueue(Stream);
     else
-      DerefExpr::create(E).printArg(Stream, A);
+      DerefExpr(E).printArg(Stream, A);
   }
   template <class StreamT> void printMemberBase(StreamT &Stream) const {
     if (isDefaultStream(E)) {
       printDefaultQueue(Stream);
       Stream << ".";
     } else {
-      DerefExpr::create(E).printMemberBase(Stream);
+      DerefExpr(E).printMemberBase(Stream);
     }
   }
 
@@ -120,7 +125,7 @@ public:
     if (isDefaultStream(E))
       printDefaultQueue(Stream);
     else
-      DerefExpr::create(E).print(Stream);
+      DerefExpr(E).print(Stream);
   }
 
   DerefStreamExpr(const Expr *Expression) : E(Expression) {}
@@ -209,7 +214,7 @@ makeDerefStreamExprCreator(unsigned Idx) {
 
 inline std::function<DerefExpr(const CallExpr *)> makeDerefExprCreator(unsigned Idx) {
   return [=](const CallExpr *C) -> DerefExpr {
-    return DerefExpr::create(C->getArg(Idx));
+    return DerefExpr(C->getArg(Idx));
   };
 }
 
@@ -217,7 +222,7 @@ inline std::function<DerefExpr(const CallExpr *)> makeDerefExprCreator(
     std::function<std::pair<const CallExpr *, const Expr *>(const CallExpr *)>
         F) {
   return [=](const CallExpr *C) -> DerefExpr {
-    return DerefExpr::create(F(C).second, F(C).first);
+    return DerefExpr(F(C).second, F(C).first);
   };
 }
 
@@ -249,7 +254,7 @@ makeCallArgCreatorWithCall(unsigned Idx) {
 }
 
 inline const Expr *removeCStyleCast(const Expr *E) {
-  if (auto CSCE = dyn_cast<ExplicitCastExpr>(E)) {
+  if (auto CSCE = dyn_cast<ExplicitCastExpr>(E->IgnoreImplicitAsWritten())) {
     return CSCE->getSubExpr()->IgnoreImplicitAsWritten();
   } else {
     return E;
@@ -497,6 +502,17 @@ makeCallExprCreator(std::string Callee,
   return PrinterCreator<CallExprPrinter<StringRef, CallArgsT...>, std::string,
                         std::function<CallArgsT(const CallExpr *)>...>(Callee,
                                                                        Args...);
+}
+
+template < class BaseT, class ArgValueT>
+inline std::function<
+    ArraySubscriptExprPrinter<BaseT, ArgValueT>(const CallExpr *)>
+makeArraySubscriptExprCreator(std::function<BaseT(const CallExpr *)> E,
+                          std::function<ArgValueT(const CallExpr *)> I) {
+  return PrinterCreator<ArraySubscriptExprPrinter<BaseT, ArgValueT>,
+                        std::function<BaseT(const CallExpr *)>,
+                        std::function<ArgValueT(const CallExpr *)>>(std::move(E),
+                                                                  std::move(I));
 }
 
 inline std::function<std::string(const CallExpr *)>
@@ -1295,16 +1311,17 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
     const static std::string MemberName = "read";
     using ReaderPrinter = decltype(makeMemberCallCreator(
         std::declval<std::function<BaseT(const CallExpr *)>>(), false,
-        MemberName, makeCallArgCreator(Idx)...)(C));
+        MemberName, makeCallArgCreatorWithCall(Idx)...)(C));
     if (RetAssign) {
       return std::make_shared<PrinterRewriter<
           BinaryOperatorPrinter<BO_Assign, DerefExpr, ReaderPrinter>>>(
-          C, Source, DerefExpr::create(C->getArg(0), C),
+          C, Source, DerefExpr(C->getArg(0), C),
           ReaderPrinter(std::move(Base), false, MemberName,
-                        C->getArg(Idx + 1)...));
+                        std::make_pair(C, C->getArg(Idx + 1))...));
     }
     return std::make_shared<PrinterRewriter<ReaderPrinter>>(
-        C, Source, Base, false, MemberName, C->getArg(Idx)...);
+        C, Source, Base, false, MemberName,
+        std::make_pair(C, C->getArg(Idx))...);
   }
 
 public:
@@ -1351,7 +1368,8 @@ public:
       }
     }
 
-    return createRewriter(Call, RetAssign, Call->getArg(RetAssign & 0x01));
+    return createRewriter(Call, RetAssign,
+                          std::make_pair(Call, Call->getArg(RetAssign & 0x01)));
   }
 };
 
@@ -1375,6 +1393,17 @@ createUnsupportRewriterFactory(const std::string &Source, Diagnostics MsgID,
                                MsgArgs &&...Args) {
   return std::make_shared<UnsupportFunctionRewriterFactory<MsgArgs...>>(
       Source, MsgID, std::forward<MsgArgs>(Args)...);
+}
+
+template <class ArgT>
+inline std::shared_ptr<CallExprRewriterFactoryBase>
+createDerefExprRewriterFactory(
+    const std::string &SourceName,
+    std::function<ArgT(const CallExpr *)> &&ArgCreator) {
+  return std::make_shared<CallExprRewriterFactory<
+      DerefExprRewriter<ArgT>, std::function<ArgT(const CallExpr *)>>>(
+      SourceName,
+      std::forward<std::function<ArgT(const CallExpr *)>>(ArgCreator));
 }
 
 class CheckWarning1073 {
@@ -1450,6 +1479,48 @@ public:
     }
 
     return false;
+  }
+};
+
+class CheckCanUseCLibraryMallocOrFree {
+  unsigned AddrArgIdx;
+  bool isFree;
+public:
+  CheckCanUseCLibraryMallocOrFree(unsigned AddrIdx, bool isFree)
+      : AddrArgIdx(AddrIdx), isFree(isFree) {}
+  bool operator()(const CallExpr *C) {
+    if (!DpctGlobalInfo::isOptimizeMigration()) {
+      return false;
+    }
+    if (C->getNumArgs() <= AddrArgIdx)
+      return false;
+    auto AllocatedExpr = C->getArg(AddrArgIdx);
+    const Expr *AE = nullptr;
+    if (auto CSCE = dyn_cast<CStyleCastExpr>(
+            AllocatedExpr->IgnoreImplicitAsWritten())) {
+      AE = CSCE->getSubExpr()->IgnoreImplicitAsWritten();
+    } else {
+      AE = AllocatedExpr->IgnoreImplicitAsWritten();
+    }
+    const DeclRefExpr* DRE = nullptr;
+    if (isFree) {
+      DRE = dyn_cast<DeclRefExpr>(AE);
+    } else if (auto UO = dyn_cast<UnaryOperator>(AE)) {
+      if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
+        DRE = dyn_cast<DeclRefExpr>(UO->getSubExpr());
+      }
+    }
+    if (!DRE) {
+      return false;
+    }
+    auto DREDecl = DRE->getDecl();
+    if (!DREDecl || !isa_and_nonnull<FunctionDecl>(DREDecl->getDeclContext()) ||
+        !DREDecl->getType()->isPointerType()) {
+      return false;
+    }
+    // If the pointer is only accessed on host side, then it's safe to replace
+    // sycl::malloc_host with c library malloc.
+    return isPointerHostAccessOnly(DREDecl);
   }
 };
 
@@ -1611,7 +1682,7 @@ template <class F, class S> class CheckAnd {
   S Sec;
 
 public:
-  CheckAnd(F Fir, S Sec) : Fir(Fir), Sec(Sec) {}
+  CheckAnd(const F &Fir, const S &Sec) : Fir(Fir), Sec(Sec) {}
   bool operator()(const CallExpr *C) { return Fir(C) && Sec(C); }
 };
 
@@ -1624,11 +1695,13 @@ public:
   bool operator()(const CallExpr *C) { return Fir(C) || Sec(C); }
 };
 
-template <class F, class S> CheckAnd<F, S> makeCheckAnd(F Fir, S Sec) {
+template <class F, class S>
+CheckAnd<F, S> makeCheckAnd(const F &Fir, const S &Sec) {
   return CheckAnd<F, S>(Fir, Sec);
 }
 
-template <class F, class S> CheckOr<F, S> makeCheckOr(const F &Fir, const S &Sec) {
+template <class F, class S>
+CheckOr<F, S> makeCheckOr(const F &Fir, const S &Sec) {
   return CheckOr<F, S>(Fir, Sec);
 }
 
@@ -1654,7 +1727,6 @@ public:
       return false;
 
     std::string ArgType = C->getArg(Idx)->getType().getCanonicalType().getUnqualifiedType().getAsString();
-
     if (// Explicitly known policy types
         // thrust::device
         ArgType=="struct thrust::detail::execution_policy_base<struct thrust::cuda_cub::par_t>"             ||
@@ -1668,7 +1740,17 @@ public:
         // cudaStream_t stream;
         // thrust::cuda::par.on(stream)
         ArgType=="struct thrust::detail::execution_policy_base<struct thrust::cuda_cub::execute_on_stream>" ||
-        ArgType=="struct thrust::cuda_cub::execute_on_stream")
+        ArgType=="struct thrust::cuda_cub::execute_on_stream"                                               ||
+        // class MyAlloctor {};
+        // template<typename T>
+        // void foo() {
+        //   cudaStream_t stream;
+        //   MyAlloctor thrust_allocator;
+        //   auto policy = thrust::cuda::par(thrust_allocator).on(stream);
+        //   ...
+        //  }
+        // Here ArgType for policy is "struct thrust::detail::execute_with_allocator<class MyAlloctor &, thrust::cuda_cub::execute_on_stream_base>"
+        ArgType.find("struct thrust::detail::execute_with_allocator") != std::string::npos)
       return true;
 
     if (// Templated policy types.  If we see a templated type assume it is a policy if it is not the same type as the next argument type
@@ -1738,7 +1820,7 @@ inline std::function<std::string(const CallExpr *)> MemberExprBase() {
     auto Base = ME->getBase()->IgnoreImpCasts();
     if (!Base)
       return "";
-    return getStmtSpelling(Base);
+    return ExprAnalysis::ref(Base);
   };
 }
 
@@ -1796,6 +1878,7 @@ public:
 #define STATIC_MEMBER_EXPR(...) makeStaticMemberExprCreator(__VA_ARGS__)
 #define LAMBDA(...) makeLambdaCreator(__VA_ARGS__)
 #define CALL(...) makeCallExprCreator(__VA_ARGS__)
+#define ARRAY_SUBSCRIPT(e, i) makeArraySubscriptExprCreator(e, i)
 #define CAST(T, S) makeCastExprCreator(T, S)
 #define CAST_IF_NEED(T, S) makeCastIfNeedExprCreator(T, S)
 #define DOUBLE_POINTER_CONST_CAST(BASE_VALUE_TYPE, EXPR,                       \
@@ -1861,5 +1944,7 @@ public:
   {FuncName, createRemoveAPIRewriterFactory(FuncName, Msg)},
 #define CASE_FACTORY_ENTRY(...) \
   createCaseRewriterFactory(__VA_ARGS__),
+#define DEREF_FACTORY_ENTRY(FuncName, E)                                       \
+  {FuncName, createDerefExprRewriterFactory(FuncName, E)},
 
 #endif // DPCT_CALL_EXPR_REWRITER_COMMON_H

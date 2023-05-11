@@ -9,6 +9,8 @@
 #ifndef DPCT_CUSTOM_HELPER_FILES_H
 #define DPCT_CUSTOM_HELPER_FILES_H
 
+#include "GenHelperFunction.h"
+
 #include "clang/AST/Decl.h"
 #include "clang/Tooling/Core/Replacement.h"
 
@@ -22,7 +24,7 @@ namespace clang {
 namespace dpct {
 
 enum class HelperFileEnum : unsigned int {
-#define HELPERFILE(PATH, UNIQUE_ENUM) UNIQUE_ENUM,
+#define HELPERFILE(PATH, FILENAME, UNIQUE_ENUM) UNIQUE_ENUM,
 #include "../../runtime/dpct-rt/include/HelperFileNames.inc"
 #undef HELPERFILE
   Unknown,
@@ -111,31 +113,6 @@ extern std::unordered_map<std::string, clang::dpct::HelperFileEnum>
     HelperFileIDMap;
 extern const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
     HelperFileHeaderGuardMacroMap;
-
-extern const std::string DpctAllContentStr;
-extern const std::string AtomicAllContentStr;
-extern const std::string BlasUtilsAllContentStr;
-extern const std::string DnnlUtilsAllContentStr;
-extern const std::string DeviceAllContentStr;
-extern const std::string DplUtilsAllContentStr;
-extern const std::string ImageAllContentStr;
-extern const std::string KernelAllContentStr;
-extern const std::string MathAllContentStr;
-extern const std::string MemoryAllContentStr;
-extern const std::string UtilAllContentStr;
-extern const std::string RngUtilsAllContentStr;
-extern const std::string LibCommonUtilsAllContentStr;
-extern const std::string CclUtilsAllContentStr;
-extern const std::string SparseUtilsAllContentStr;
-extern const std::string FftUtilsAllContentStr;
-extern const std::string LapackUtilsAllContentStr;
-extern const std::string DplExtrasAlgorithmAllContentStr;
-extern const std::string DplExtrasFunctionalAllContentStr;
-extern const std::string DplExtrasIteratorsAllContentStr;
-extern const std::string DplExtrasMemoryAllContentStr;
-extern const std::string DplExtrasNumericAllContentStr;
-extern const std::string DplExtrasVectorAllContentStr;
-extern const std::string DplExtrasDpcppExtensionsAllContentStr;
 
 extern const std::unordered_map<clang::dpct::HelperFeatureEnum,
                                 clang::dpct::HelperFeatureIDTy>

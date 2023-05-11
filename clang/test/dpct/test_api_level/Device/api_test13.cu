@@ -7,6 +7,8 @@
 // TEST_FEATURE: Device_device_info_get_global_mem_size
 // TEST_FEATURE: Device_get_current_device
 
+#include "cuda.h"
+
 int main() {
   size_t result1, result2;
   cuMemGetInfo(&result1, &result2);

@@ -34,7 +34,8 @@ const std::string StringLiteralUnsupported{"UNSUPPORTED"};
       "long4", "ulong4", "float1", "float2", "float3", "float4", "longlong1",  \
       "ulonglong1", "longlong2", "ulonglong2", "longlong3", "ulonglong3",      \
       "longlong4", "ulonglong4", "double1", "double2", "double3", "double4",   \
-      "__half2"
+      "__half2", "__nv_bfloat162"
+#define VECTORTYPE2MARRAYNAMES "__nv_bfloat162"
 
 /// Record mapping between names
 class MapNames {
@@ -311,6 +312,7 @@ public:
   using ThrustMapTy = std::map<std::string, ThrustFuncReplInfo>;
 
   static const SetTy SupportedVectorTypes;
+  static const SetTy VectorTypes2MArray;
   static const std::map<std::string, int> VectorTypeMigratedTypeSizeMap;
   static const std::map<clang::dpct::KernelArgType, int> KernelArgTypeSizeMap;
   static int getArrayTypeSize(const int Dim);
@@ -410,6 +412,7 @@ public:
   }
 
   static const MapNames::MapTy MemberNamesMap;
+  static const MapNames::MapTy MArrayMemberNamesMap;
   static const MapNames::MapTy FunctionAttrMap;
   static const MapNames::SetTy HostAllocSet;
   static MapNames::MapTy MathFuncNameMap;

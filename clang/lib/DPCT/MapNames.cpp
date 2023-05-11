@@ -104,14 +104,16 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUjit_option", std::make_shared<TypeNameRule>("int")},
       {"CUresult", std::make_shared<TypeNameRule>("int")},
       {"CUcontext", std::make_shared<TypeNameRule>("int")},
-      {"CUmodule", std::make_shared<TypeNameRule>(getDpctNamespace() + "kernel_library",
-                         HelperFeatureEnum::Kernel_kernel_library)},
+      {"CUmodule", std::make_shared<TypeNameRule>(
+                       getDpctNamespace() + "kernel_library",
+                       HelperFeatureEnum::Kernel_kernel_library)},
       {"CUfunction", std::make_shared<TypeNameRule>(
                          getDpctNamespace() + "kernel_function",
                          HelperFeatureEnum::Kernel_kernel_library)},
       {"cudaPointerAttributes",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "pointer_attributes",
-                                  HelperFeatureEnum::Memory_pointer_attributes)},
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "pointer_attributes",
+           HelperFeatureEnum::Memory_pointer_attributes)},
       {"dim3", std::make_shared<TypeNameRule>(getClNamespace() + "range<3>")},
       {"int2", std::make_shared<TypeNameRule>(getClNamespace() + "int2")},
       {"double2", std::make_shared<TypeNameRule>(getClNamespace() + "double2")},
@@ -121,16 +123,17 @@ void MapNames::setExplicitNamespaceMap() {
       {"half2", std::make_shared<TypeNameRule>(getClNamespace() + "half2")},
       {"cudaEvent_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "event_ptr")},
-      {"CUevent", std::make_shared<TypeNameRule>(getDpctNamespace() + "event_ptr")},
+      {"CUevent",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "event_ptr")},
       {"CUevent_st",
        std::make_shared<TypeNameRule>(getClNamespace() + "event")},
       {"CUfunc_cache", std::make_shared<TypeNameRule>("int")},
-      {"cudaStream_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "queue_ptr",
-                                  HelperFeatureEnum::Device_typedef_queue_ptr)},
-      {"CUstream",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "queue_ptr",
-                                  HelperFeatureEnum::Device_typedef_queue_ptr)},
+      {"cudaStream_t", std::make_shared<TypeNameRule>(
+                           getDpctNamespace() + "queue_ptr",
+                           HelperFeatureEnum::Device_typedef_queue_ptr)},
+      {"CUstream", std::make_shared<TypeNameRule>(
+                       getDpctNamespace() + "queue_ptr",
+                       HelperFeatureEnum::Device_typedef_queue_ptr)},
       {"CUstream_st",
        std::make_shared<TypeNameRule>(getClNamespace() + "queue")},
       {"char1", std::make_shared<TypeNameRule>("char")},
@@ -187,9 +190,9 @@ void MapNames::setExplicitNamespaceMap() {
       {"ushort2", std::make_shared<TypeNameRule>(getClNamespace() + "ushort2")},
       {"ushort3", std::make_shared<TypeNameRule>(getClNamespace() + "ushort3")},
       {"ushort4", std::make_shared<TypeNameRule>(getClNamespace() + "ushort4")},
-      {"cublasHandle_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "queue_ptr",
-       HelperFeatureEnum::Device_typedef_queue_ptr)},
+      {"cublasHandle_t", std::make_shared<TypeNameRule>(
+                             getDpctNamespace() + "queue_ptr",
+                             HelperFeatureEnum::Device_typedef_queue_ptr)},
       {"cublasStatus_t", std::make_shared<TypeNameRule>("int")},
       {"cublasStatus", std::make_shared<TypeNameRule>("int")},
       {"cublasGemmAlgo_t", std::make_shared<TypeNameRule>("int")},
@@ -228,25 +231,32 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("oneapi::mkl::diag")},
       {"cusparseIndexBase_t",
        std::make_shared<TypeNameRule>("oneapi::mkl::index_base")},
-      {"cusparseMatrixType_t", std::make_shared<TypeNameRule>(
+      {"cusparseMatrixType_t",
+       std::make_shared<TypeNameRule>(
            getDpctNamespace() + "sparse::matrix_info::matrix_type",
            HelperFeatureEnum::SparseUtils_matrix_info)},
       {"cusparseOperation_t",
        std::make_shared<TypeNameRule>("oneapi::mkl::transpose")},
-      {"cusparseSolveAnalysisInfo_t", std::make_shared<TypeNameRule>("int")},
+      {"cusparseSolveAnalysisInfo_t",
+       std::make_shared<TypeNameRule>(
+           "std::shared_ptr<" + getDpctNamespace() + "sparse::optimize_info>",
+           HelperFeatureEnum::SparseUtils_optimize_info)},
       {"thrust::device_ptr",
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "device_pointer",
            HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl)},
       {"thrust::device_reference",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "device_reference",
-				      HelperFeatureEnum::DplExtrasMemory_device_reference)},
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "device_reference",
+           HelperFeatureEnum::DplExtrasMemory_device_reference)},
       {"thrust::device_vector",
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "device_vector",
            HelperFeatureEnum::DplExtrasVector_device_vector)},
       {"thrust::device_malloc_allocator",
-       std::make_shared<TypeNameRule>(getClNamespace() + "buffer_allocator")},
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "deprecated::usm_device_allocator",
+           HelperFeatureEnum::Memory_usm_device_allocator_alias)},
       {"thrust::maximum",
        std::make_shared<TypeNameRule>("oneapi::dpl::maximum")},
       {"thrust::multiplies", std::make_shared<TypeNameRule>("std::multiplies")},
@@ -263,8 +273,6 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("oneapi::dpl::equal_to")},
       {"thrust::less", std::make_shared<TypeNameRule>("oneapi::dpl::less")},
       {"thrust::negate", std::make_shared<TypeNameRule>("std::negate")},
-      {"thrust::identity",
-       std::make_shared<TypeNameRule>("oneapi::dpl::identity")},
       {"thrust::logical_or", std::make_shared<TypeNameRule>("std::logical_or")},
       {"thrust::divides", std::make_shared<TypeNameRule>("std::divides")},
       {"thrust::tuple", std::make_shared<TypeNameRule>("std::tuple")},
@@ -281,11 +289,9 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("std::iterator_traits")},
       {"thrust::tuple_element",
        std::make_shared<TypeNameRule>("std::tuple_element")},
-       {"thrust::tuple_size",
-       std::make_shared<TypeNameRule>("std::tuple_size")},
-       {"thrust::swap",
-       std::make_shared<TypeNameRule>("std::swap")},
-       {"thrust::zip_iterator",
+      {"thrust::tuple_size", std::make_shared<TypeNameRule>("std::tuple_size")},
+      {"thrust::swap", std::make_shared<TypeNameRule>("std::swap")},
+      {"thrust::zip_iterator",
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "zip_iterator",
            HelperFeatureEnum::DplExtrasIterators_zip_iterator)},
@@ -296,6 +302,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cusolverStatus_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverDnParams_t", std::make_shared<TypeNameRule>("int")},
       {"gesvdjInfo_t", std::make_shared<TypeNameRule>("int")},
+      {"syevjInfo_t", std::make_shared<TypeNameRule>("int")},
       {"cudaChannelFormatDesc",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "image_channel",
                                       HelperFeatureEnum::Image_image_channel)},
@@ -331,15 +338,15 @@ void MapNames::setExplicitNamespaceMap() {
                               getDpctNamespace() + "rng::random_engine_type",
                               HelperFeatureEnum::RngUtils_random_engine_type)},
       {"curandRngType", std::make_shared<TypeNameRule>(
-                              getDpctNamespace() + "rng::random_engine_type",
-                              HelperFeatureEnum::RngUtils_random_engine_type)},
+                            getDpctNamespace() + "rng::random_engine_type",
+                            HelperFeatureEnum::RngUtils_random_engine_type)},
       {"curandStatus_t", std::make_shared<TypeNameRule>("int")},
       {"curandStatus", std::make_shared<TypeNameRule>("int")},
       {"cusparseStatus_t", std::make_shared<TypeNameRule>("int")},
       {"cusparseMatDescr_t",
        std::make_shared<TypeNameRule>(
-        "std::shared_ptr<" + getDpctNamespace() + "sparse::matrix_info>",
-        HelperFeatureEnum::SparseUtils_matrix_info)},
+           "std::shared_ptr<" + getDpctNamespace() + "sparse::matrix_info>",
+           HelperFeatureEnum::SparseUtils_matrix_info)},
       {"cusparseHandle_t",
        std::make_shared<TypeNameRule>(getClNamespace() + "queue*")},
       {"cudaMemoryAdvise", std::make_shared<TypeNameRule>("int")},
@@ -369,10 +376,9 @@ void MapNames::setExplicitNamespaceMap() {
       {"cufftType",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "fft::fft_type",
                                       HelperFeatureEnum::FftUtils_fft_type)},
-      {"cufftHandle",
-       std::make_shared<TypeNameRule>(getDpctNamespace() +
-                                          "fft::fft_engine_ptr",
-                                      HelperFeatureEnum::FftUtils_fft_engine)},
+      {"cufftHandle", std::make_shared<TypeNameRule>(
+                          getDpctNamespace() + "fft::fft_engine_ptr",
+                          HelperFeatureEnum::FftUtils_fft_engine)},
       {"CUdevice", std::make_shared<TypeNameRule>("int")},
       {"CUarray_st",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "image_matrix",
@@ -417,8 +423,11 @@ void MapNames::setExplicitNamespaceMap() {
                        getDpctNamespace() + "image_wrapper_base_p",
                        HelperFeatureEnum::Image_image_wrapper_base_p_alias)},
       {"cudaDeviceAttr", std::make_shared<TypeNameRule>("int")},
-      {"__nv_bfloat16",
-       std::make_shared<TypeNameRule>("oneapi::mkl::bfloat16")},
+      {"__nv_bfloat16", std::make_shared<TypeNameRule>(
+                            getClNamespace() + "ext::oneapi::bfloat16")},
+      {"__nv_bfloat162", std::make_shared<TypeNameRule>(
+                             getClNamespace() + "marray<" + getClNamespace() +
+                             "ext::oneapi::bfloat16, 2>")},
       {"libraryPropertyType_t",
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "version_field",
@@ -430,16 +439,19 @@ void MapNames::setExplicitNamespaceMap() {
       {"ncclUniqueId", std::make_shared<TypeNameRule>(
                            "oneapi::ccl::kvs::address_type",
                            HelperFeatureEnum::CclUtils_create_kvs_address)},
-      {"ncclComm_t",
-       std::make_shared<TypeNameRule>("oneapi::ccl::communicator *",
-                                      HelperFeatureEnum::CclUtils_create_kvs)},
+      {"ncclComm_t", std::make_shared<TypeNameRule>(
+                         getDpctNamespace() + "ccl::comm_ptr",
+                         HelperFeatureEnum::CclUtils_typedef_comm_ptr)},
       {"ncclRedOp_t", std::make_shared<TypeNameRule>("oneapi::ccl::reduction")},
-      {"ncclDataType_t", std::make_shared<TypeNameRule>("oneapi::ccl::datatype")},
+      {"ncclDataType_t",
+       std::make_shared<TypeNameRule>("oneapi::ccl::datatype")},
       {"cuda::std::tuple", std::make_shared<TypeNameRule>("std::tuple")},
       {"cuda::std::complex", std::make_shared<TypeNameRule>("std::complex")},
       {"cuda::std::array", std::make_shared<TypeNameRule>("std::array")},
-      {"cusolverEigRange_t", std::make_shared<TypeNameRule>("oneapi::mkl::rangev")},
-      {"cudaUUID_t", std::make_shared<TypeNameRule>("std::array<unsigned char, 16>")},
+      {"cusolverEigRange_t",
+       std::make_shared<TypeNameRule>("oneapi::mkl::rangev")},
+      {"cudaUUID_t",
+       std::make_shared<TypeNameRule>("std::array<unsigned char, 16>")},
       // ...
   };
 
@@ -589,6 +601,10 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "dnnl::rnn_memory_format_tag",
            HelperFeatureEnum::DnnlUtils_rnn_memory_format_tag)},
+      {"cudnnDropoutDescriptor_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::dropout_desc",
+           HelperFeatureEnum::DnnlUtils_dropout_desc)},
   };
 
   // CuDNN Enum constants name mapping.
@@ -1299,7 +1315,7 @@ void MapNames::setExplicitNamespaceMap() {
 #include "APINames_NCCL.inc"
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"
-#include "APINames_cuGRAPH.inc"
+#include "APINames_nvGRAPH.inc"
 #include "APINames_cuRAND.inc"
 #include "APINames_cuSOLVER.inc"
 #include "APINames_cuSPARSE.inc"
@@ -1769,13 +1785,72 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusolverDnXpotrf",
                            "cusolverDnPotrf",
                            "cusolverDnXpotrs",
-                           "cusolverDnPotrs"};
+                           "cusolverDnPotrs",
+                           "cusolverDnSgeqrf_bufferSize",
+                           "cusolverDnDgeqrf_bufferSize",
+                           "cusolverDnCgeqrf_bufferSize",
+                           "cusolverDnZgeqrf_bufferSize",
+                           "cusolverDnSsyevdx",
+                           "cusolverDnDsyevdx",
+                           "cusolverDnSsyevdx_bufferSize",
+                           "cusolverDnDsyevdx_bufferSize",
+                           "cusolverDnCheevdx",
+                           "cusolverDnZheevdx",
+                           "cusolverDnCheevdx_bufferSize",
+                           "cusolverDnZheevdx_bufferSize",
+                           "cusolverDnSsygvdx",
+                           "cusolverDnDsygvdx",
+                           "cusolverDnSsygvdx_bufferSize",
+                           "cusolverDnDsygvdx_bufferSize",
+                           "cusolverDnChegvdx",
+                           "cusolverDnZhegvdx",
+                           "cusolverDnChegvdx_bufferSize",
+                           "cusolverDnZhegvdx_bufferSize",
+                           "cusolverDnSsygvj",
+                           "cusolverDnDsygvj",
+                           "cusolverDnSsygvj_bufferSize",
+                           "cusolverDnDsygvj_bufferSize",
+                           "cusolverDnChegvj",
+                           "cusolverDnZhegvj",
+                           "cusolverDnChegvj_bufferSize",
+                           "cusolverDnZhegvj_bufferSize",
+                           "cusolverDnXsyevdx",
+                           "cusolverDnXsyevdx_bufferSize",
+                           "cusolverDnSyevdx",
+                           "cusolverDnSyevdx_bufferSize",
+                           "cusolverDnCreateSyevjInfo",
+                           "cusolverDnDestroySyevjInfo"};
 
-  SPARSEAPIWithRewriter = {"cusparseCreateMatDescr",  "cusparseDestroyMatDescr",
-                           "cusparseSetMatType",      "cusparseGetMatType",
-                           "cusparseSetMatIndexBase", "cusparseGetMatIndexBase",
-                           "cusparseSetMatDiagType",  "cusparseGetMatDiagType",
-                           "cusparseSetMatFillMode",  "cusparseGetMatFillMode"};
+  SPARSEAPIWithRewriter = {"cusparseCreateMatDescr",
+                           "cusparseDestroyMatDescr",
+                           "cusparseSetMatType",
+                           "cusparseGetMatType",
+                           "cusparseSetMatIndexBase",
+                           "cusparseGetMatIndexBase",
+                           "cusparseSetMatDiagType",
+                           "cusparseGetMatDiagType",
+                           "cusparseSetMatFillMode",
+                           "cusparseGetMatFillMode",
+                           "cusparseCreate",
+                           "cusparseDestroy",
+                           "cusparseSetStream",
+                           "cusparseGetStream",
+                           "cusparseGetPointerMode",
+                           "cusparseSetPointerMode",
+                           "cusparseCreateSolveAnalysisInfo",
+                           "cusparseDestroySolveAnalysisInfo",
+                           "cusparseScsrmv",
+                           "cusparseDcsrmv",
+                           "cusparseCcsrmv",
+                           "cusparseZcsrmv",
+                           "cusparseScsrsv_analysis",
+                           "cusparseDcsrsv_analysis",
+                           "cusparseCcsrsv_analysis",
+                           "cusparseZcsrsv_analysis",
+                           "cusparseScsrmm",
+                           "cusparseDcsrmm",
+                           "cusparseCcsrmm",
+                           "cusparseZcsrmm"};
 
   // This map now is only used to migrate using declaration
   MathFuncNameMap = {
@@ -1809,6 +1884,7 @@ void MapNames::setExplicitNamespaceMap() {
 
 // Supported vector types
 const MapNames::SetTy MapNames::SupportedVectorTypes{SUPPORTEDVECTORTYPENAMES};
+const MapNames::SetTy MapNames::VectorTypes2MArray{VECTORTYPE2MARRAYNAMES};
 
 const std::map<std::string, int> MapNames::VectorTypeMigratedTypeSizeMap{
     {"char1", 1},       {"char2", 2},       {"char3", 4},
@@ -4150,6 +4226,8 @@ const MapNames::MapTy MapNames::MacrosMap{
     {"CUDART_VERSION", "SYCL_LANGUAGE_VERSION"},
     {"CUBLAS_V2_H_", "MKL_SYCL_HPP"},
     {"__CUDA__", "SYCL_LANGUAGE_VERSION"},
+    {"CUFFT_FORWARD", "-1"},
+    {"CUFFT_INVERSE", "1"},
     //...
 };
 
@@ -4254,6 +4332,10 @@ const MapNames::MapTy MapNames::MemberNamesMap{
     {"x", "x()"}, {"y", "y()"}, {"z", "z()"}, {"w", "w()"},
     // ...
 };
+const MapNames::MapTy MapNames::MArrayMemberNamesMap{
+    {"x", "[0]"},
+    {"y", "[1]"},
+};
 
 const MapNames::SetTy MapNames::HostAllocSet{
     "cudaHostAllocDefault",         "cudaHostAllocMapped",
@@ -4278,7 +4360,7 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #include "APINames_NVML.inc"
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"
-#include "APINames_cuGRAPH.inc"
+#include "APINames_nvGRAPH.inc"
 #include "APINames_cuRAND.inc"
 #include "APINames_cuSOLVER.inc"
 #include "APINames_cuSPARSE.inc"
@@ -4388,4 +4470,4 @@ const std::vector<std::string> MemoryDataTypeRule::RemoveMember{
 
 const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "this_thread_block", "sync", "tiled_partition",
-    "thread_rank",       "size", "shfl_down"};
+    "thread_rank",       "size", "shfl_down", "reduce"};

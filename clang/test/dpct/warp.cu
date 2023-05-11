@@ -4,6 +4,7 @@
 // RUN: FileCheck --input-file %T/warp/warp.dp.cpp --match-full-lines %s
 
 #include "cuda.h"
+#include "cuda_runtime.h"
 
 #define FULL_MASK 23
 #define NUM_ELEMENTS 1024

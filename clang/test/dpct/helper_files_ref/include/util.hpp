@@ -134,95 +134,6 @@ inline double cast_ints_to_double(int high32, int low32) {
   return v1;
 }
 
-/// Compute vectorized max for two values, with each value treated as a vector
-/// type \p S
-/// \param [in] S The type of the vector
-/// \param [in] T The type of the original values
-/// \param [in] a The first value
-/// \param [in] b The second value
-/// \returns The vectorized max of the two values
-template <typename S, typename T>
-inline T vectorized_max(T a, T b) {
-  sycl::vec<T, 1> v0{a}, v1{b};
-  auto v2 = v0.template as<S>();
-  auto v3 = v1.template as<S>();
-  v2 = sycl::max(v2, v3);
-  v0 = v2.template as<sycl::vec<T, 1>>();
-  return v0;
-}
-
-/// Compute vectorized min for two values, with each value treated as a vector
-/// type \p S
-/// \param [in] S The type of the vector
-/// \param [in] T The type of the original values
-/// \param [in] a The first value
-/// \param [in] b The second value
-/// \returns The vectorized min of the two values
-template <typename S, typename T>
-inline T vectorized_min(T a, T b) {
-  sycl::vec<T, 1> v0{a}, v1{b};
-  auto v2 = v0.template as<S>();
-  auto v3 = v1.template as<S>();
-  v2 = sycl::min(v2, v3);
-  v0 = v2.template as<sycl::vec<T, 1>>();
-  return v0;
-}
-
-/// Compute vectorized isgreater for two values, with each value treated as a
-/// vector type \p S
-/// \param [in] S The type of the vector
-/// \param [in] T The type of the original values
-/// \param [in] a The first value
-/// \param [in] b The second value
-/// \returns The vectorized greater than of the two values
-template <typename S, typename T>
-inline T vectorized_isgreater(T a, T b) {
-  sycl::vec<T, 1> v0{a}, v1{b};
-  auto v2 = v0.template as<S>();
-  auto v3 = v1.template as<S>();
-  auto v4 = sycl::isgreater(v2, v3);
-  v0 = v4.template as<sycl::vec<T, 1>>();
-  return v0;
-}
-
-/// Compute vectorized isgreater for two unsigned int values, with each value
-/// treated as a vector of two unsigned short
-/// \param [in] a The first value
-/// \param [in] b The second value
-/// \returns The vectorized greater than of the two values
-template<>
-inline unsigned
-vectorized_isgreater<sycl::ushort2, unsigned>(unsigned a, unsigned b) {
-  sycl::vec<unsigned, 1> v0{a}, v1{b};
-  auto v2 = v0.template as<sycl::ushort2>();
-  auto v3 = v1.template as<sycl::ushort2>();
-  sycl::ushort2 v4;
-  v4[0] = v2[0] > v3[0] ? 0xffff : 0;
-  v4[1] = v2[1] > v3[1] ? 0xffff : 0;
-  v0 = v4.template as<sycl::vec<unsigned, 1>>();
-  return v0;
-}
-
-/// Compute vectorized isgreater for two unsigned int values, with each value
-/// treated as a vector of four unsigned char.
-/// \param [in] a The first value
-/// \param [in] b The second value
-/// \returns The vectorized greater than of the two values
-template<>
-inline unsigned
-vectorized_isgreater<sycl::uchar4, unsigned>(unsigned a, unsigned b) {
-  sycl::vec<unsigned, 1> v0{a}, v1{b};
-  auto v2 = v0.template as<sycl::uchar4>();
-  auto v3 = v1.template as<sycl::uchar4>();
-  sycl::uchar4 v4;
-  v4[0] = v2[0] > v3[0] ? 0xff : 0;
-  v4[1] = v2[1] > v3[1] ? 0xff : 0;
-  v4[2] = v2[2] > v3[2] ? 0xff : 0;
-  v4[3] = v2[3] > v3[3] ? 0xff : 0;
-  v0 = v4.template as<sycl::vec<unsigned, 1>>();
-  return v0;
-}
-
 /// Reverse the bit order of an unsigned integer
 /// \param [in] a Input unsigned integer value
 /// \returns Value of a with the bit order reversed
@@ -376,8 +287,8 @@ T permute_sub_group_by_xor(sycl::sub_group g, T x, unsigned int mask,
 }
 
 namespace experimental {
-/// Masked version of select_from_sub_group. The parameter member_mask indicating 
-/// the work-items participating the call. Whether the n-th bit is set to 1 
+/// Masked version of select_from_sub_group. The parameter member_mask indicating
+/// the work-items participating the call. Whether the n-th bit is set to 1
 /// representing whether the work-item with id n is participating the call.
 /// All work-items named in member_mask must be executed with the same member_mask,
 /// or the result is undefined.
@@ -399,10 +310,8 @@ T select_from_sub_group(unsigned int member_mask,
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
 #if defined(__SPIR__)
   return __spirv_GroupNonUniformShuffle(__spv::Scope::Subgroup, x, logical_remote_id);
-#elif defined(__NVPTX__)
-  return __nvvm_shfl_sync_idx_i32(member_mask, x, logical_remote_id, 0x1f);
 #else
-  #error "Masked version of select_from_sub_group only supports SPIR-V and NVPTX backends"
+  #error "Masked version of select_from_sub_group only supports SPIR-V backends"
 #endif // __SPIR__
 #else
   (void)g;
@@ -415,8 +324,8 @@ T select_from_sub_group(unsigned int member_mask,
 #endif // __SYCL_DEVICE_ONLY__ && __INTEL_LLVM_COMPILER
 }
 
-/// Masked version of shift_sub_group_left. The parameter member_mask indicating 
-/// the work-items participating the call. Whether the n-th bit is set to 1 
+/// Masked version of shift_sub_group_left. The parameter member_mask indicating
+/// the work-items participating the call. Whether the n-th bit is set to 1
 /// representing whether the work-item with id n is participating the call.
 /// All work-items named in member_mask must be executed with the same member_mask,
 /// or the result is undefined.
@@ -441,10 +350,8 @@ T shift_sub_group_left(unsigned int member_mask,
     result = x;
   }
   return result;
-#elif defined(__NVPTX__)
-  return __nvvm_shfl_sync_down_i32(member_mask, x, delta, 0x1f);
 #else
-  #error "Masked version of shift_sub_group_left only supports SPIR-V and NVPTX backends"
+  #error "Masked version of shift_sub_group_left only supports SPIR-V backends"
 #endif // __SPIR__
 #else
   (void)g;
@@ -457,8 +364,8 @@ T shift_sub_group_left(unsigned int member_mask,
 #endif // __SYCL_DEVICE_ONLY__ && __INTEL_LLVM_COMPILER
 }
 
-/// Masked version of shift_sub_group_right. The parameter member_mask indicating 
-/// the work-items participating the call. Whether the n-th bit is set to 1 
+/// Masked version of shift_sub_group_right. The parameter member_mask indicating
+/// the work-items participating the call. Whether the n-th bit is set to 1
 /// representing whether the work-item with id n is participating the call.
 /// All work-items named in member_mask must be executed with the same member_mask,
 /// or the result is undefined.
@@ -483,10 +390,8 @@ T shift_sub_group_right(unsigned int member_mask,
     result = x;
   }
   return result;
-#elif defined(__NVPTX__)
-  return __nvvm_shfl_sync_up_i32(member_mask, x, delta, 0);
 #else
-  #error "Masked version of shift_sub_group_right only supports SPIR-V and NVPTX backends"
+  #error "Masked version of shift_sub_group_right only supports SPIR-V backends"
 #endif // __SPIR__
 #else
   (void)g;
@@ -499,8 +404,8 @@ T shift_sub_group_right(unsigned int member_mask,
 #endif // __SYCL_DEVICE_ONLY && __INTEL_LLVM_COMPILER
 }
 
-/// Masked version of permute_sub_group_by_xor. The parameter member_mask indicating 
-/// the work-items participating the call. Whether the n-th bit is set to 1 
+/// Masked version of permute_sub_group_by_xor. The parameter member_mask indicating
+/// the work-items participating the call. Whether the n-th bit is set to 1
 /// representing whether the work-item with id n is participating the call.
 /// All work-items named in member_mask must be executed with the same member_mask,
 /// or the result is undefined.
@@ -523,10 +428,8 @@ T permute_sub_group_by_xor(unsigned int member_mask,
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
 #if defined(__SPIR__)
   return __spirv_GroupNonUniformShuffle(__spv::Scope::Subgroup, x, logical_remote_id);
-#elif defined(__NVPTX__)
-  return __nvvm_shfl_sync_idx_i32(member_mask, x, logical_remote_id, 0x1f);
 #else
-  #error "Masked version of select_from_sub_group only supports SPIR-V and NVPTX backends"
+  #error "Masked version of permute_sub_group_by_xor only supports SPIR-V backends."
 #endif // __SPIR__
 #else
   (void)g;

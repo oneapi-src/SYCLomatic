@@ -3,7 +3,9 @@
 // RUN: FileCheck --input-file %T/math_functions_test_win/math_functions_test_win.dp.cpp --match-full-lines %s
 
 #include <cuda.h>
+#include <cuda_runtime.h>
 #include <cmath>
+#include <limits>
 
 // CHECK: int test_signbit(float x) { return signbit(x); }
 int test_signbit(float x) { return signbit(x); }
@@ -73,12 +75,6 @@ float test_pow(float a, int b) { return pow(a, b); }
 
 // CHECK: double test_pow(double a, int b) { return pow(a, b); }
 double test_pow(double a, int b) { return pow(a, b); }
-
-// CHECK: float test_powif(float a, int b) { return powif(a, b); }
-float test_powif(float a, int b) { return powif(a, b); }
-
-// CHECK: double test_powi(double a, int b) { return powi(a, b); }
-double test_powi(double a, int b) { return powi(a, b); }
 
 // CHECK: float test_log(float in) { return log(in); }
 float test_log(float in) { return log(in); }
@@ -167,16 +163,6 @@ float test_atanh(float a) { return atanh(a); }
 // CHECK: float test_hypot(float a, float b) { return hypot(a, b); }
 float test_hypot(float a, float b) { return hypot(a, b); }
 
-// CHECK: float test_norm3d(float a, float b, float c) { return sycl::length(sycl::double3(a, b, c)); }
-float test_norm3d(float a, float b, float c) { return norm3d(a, b, c); }
-
-// CHECK: float test_norm4d(float a, float b, float c, float d) {
-// CHECK:   return sycl::length(sycl::double4(a, b, c, d));
-// CHECK: }
-float test_norm4d(float a, float b, float c, float d) {
-  return norm4d(a, b, c, d);
-}
-
 // CHECK: float test_cbrt(float a) { return cbrt(a); }
 float test_cbrt(float a) { return cbrt(a); }
 
@@ -246,7 +232,7 @@ float test_exp10(float a) { return exp10(a); }
 // CHECK: float test_rsqrt(float a) { return sycl::rsqrt(a); }
 float test_rsqrt(float a) { return rsqrt(a); }
 
-// CHECK: float test_rcbrt(float a) { return rcbrt(a); }
+// CHECK: float test_rcbrt(float a) { return 1 / sycl::cbrt<double>(a); }
 float test_rcbrt(float a) { return rcbrt(a); }
 
 // CHECK: float test_sinpi(float a) { return sinpi(a); }
@@ -286,12 +272,6 @@ float test_y1(float a) { return y1(a); }
 
 // CHECK: float test_yn(int n, float a) { return yn(n, a); }
 float test_yn(int n, float a) { return yn(n, a); }
-
-// CHECK: float test_cyl_bessel_i0(float a) { return cyl_bessel_i0(a); }
-float test_cyl_bessel_i0(float a) { return cyl_bessel_i0(a); }
-
-// CHECK: float test_cyl_bessel_i1(float a) { return cyl_bessel_i1(a); }
-float test_cyl_bessel_i1(float a) { return cyl_bessel_i1(a); }
 
 // CHECK: float test_erfinv(float a) { return erfinv(a); }
 float test_erfinv(float a) { return erfinv(a); }

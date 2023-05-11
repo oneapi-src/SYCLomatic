@@ -6,6 +6,8 @@
 // CHECK: 40
 // TEST_FEATURE: Device_device_ext_get_memory_info
 
+#include "cuda.h"
+
 int main() {
   size_t result1, result2;
   cuMemGetInfo(&result1, &result2);

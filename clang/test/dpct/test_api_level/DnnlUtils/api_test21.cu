@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/DnnlUtils/api_test21_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DnnlUtils/api_test21_out
 
-// CHECK: 52
+// CHECK: 51
 // TEST_FEATURE: DnnlUtils_convolution_forward
 // TEST_FEATURE: DnnlUtils_convolution_desc
 
@@ -46,6 +46,8 @@ int main() {
     cudnnConvolutionForward(handle, &alpha, dataTensor, data, filterTensor, filter, covdes, CUDNN_CONVOLUTION_FWD_ALGO_DIRECT, workspacesize, size, &beta, outTensor, out);
 
     cudaDeviceSynchronize();
+    std::vector<float> host_bias;
+    std::vector<float> host_out;
     cudaMemcpy(host_bias.data(), bias, sizeof(float) * on * oc * oh * ow, cudaMemcpyDeviceToHost);
     cudaMemcpy(host_out.data(), out, sizeof(float) * on * oc * oh * ow, cudaMemcpyDeviceToHost);
 

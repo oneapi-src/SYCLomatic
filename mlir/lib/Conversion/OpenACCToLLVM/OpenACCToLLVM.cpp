@@ -135,8 +135,18 @@ class LegalizeDataOpForLLVMTranslation : public ConvertOpToLLVMPattern<Op> {
       }
     }
 
-    builder.replaceOpWithNewOp<Op>(op, TypeRange(), convertedOperands,
-                                   op.getOperation()->getAttrs());
+    if constexpr (std::is_same_v<Op, acc::ParallelOp> ||
+                  std::is_same_v<Op, acc::DataOp>) {
+      auto newOp =
+          builder.create<Op>(op.getLoc(), TypeRange(), convertedOperands,
+                             op.getOperation()->getAttrs());
+      builder.inlineRegionBefore(op.getRegion(), newOp.getRegion(),
+                                 newOp.getRegion().end());
+      builder.eraseOp(op);
+    } else {
+      builder.replaceOpWithNewOp<Op>(op, TypeRange(), convertedOperands,
+                                     op.getOperation()->getAttrs());
+    }
 
     return success();
   }
@@ -167,7 +177,9 @@ void ConvertOpenACCToLLVMPass::runOnOperation() {
 
   // Convert to OpenACC operations with LLVM IR dialect
   RewritePatternSet patterns(context);
-  LLVMTypeConverter converter(context);
+  LowerToLLVMOptions options(context);
+  options.useOpaquePointers = useOpaquePointers;
+  LLVMTypeConverter converter(context, options);
   populateOpenACCToLLVMConversionPatterns(converter, patterns);
 
   ConversionTarget target(*context);

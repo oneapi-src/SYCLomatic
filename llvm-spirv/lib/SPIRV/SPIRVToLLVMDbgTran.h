@@ -70,7 +70,11 @@ public:
   template <typename T = MDNode>
   T *transDebugInst(const SPIRVExtInst *DebugInst) {
     assert((DebugInst->getExtSetKind() == SPIRVEIS_Debug ||
-            DebugInst->getExtSetKind() == SPIRVEIS_OpenCL_DebugInfo_100) &&
+            DebugInst->getExtSetKind() == SPIRVEIS_OpenCL_DebugInfo_100 ||
+            DebugInst->getExtSetKind() ==
+                SPIRVEIS_NonSemantic_Shader_DebugInfo_100 ||
+            DebugInst->getExtSetKind() ==
+                SPIRVEIS_NonSemantic_Shader_DebugInfo_200) &&
            "Unexpected extended instruction set");
     auto It = DebugInstCache.find(DebugInst);
     if (It != DebugInstCache.end())
@@ -99,7 +103,9 @@ private:
 
   MDNode *transDebugInlined(const SPIRVExtInst *Inst);
 
-  DICompileUnit *transCompileUnit(const SPIRVExtInst *DebugInst);
+  DICompileUnit *transCompilationUnit(const SPIRVExtInst *DebugInst,
+                                      const std::string CompilerVersion = "",
+                                      const std::string Flags = "");
 
   DIBasicType *transTypeBasic(const SPIRVExtInst *DebugInst);
 
@@ -108,20 +114,27 @@ private:
   DIType *transTypePointer(const SPIRVExtInst *DebugInst);
 
   DICompositeType *transTypeArray(const SPIRVExtInst *DebugInst);
+  DICompositeType *transTypeArrayOpenCL(const SPIRVExtInst *DebugInst);
+  DICompositeType *transTypeArrayNonSemantic(const SPIRVExtInst *DebugInst);
+  DICompositeType *transTypeArrayDynamic(const SPIRVExtInst *DebugInst);
 
   DICompositeType *transTypeVector(const SPIRVExtInst *DebugInst);
 
   DICompositeType *transTypeComposite(const SPIRVExtInst *DebugInst);
 
+  DISubrange *transTypeSubrange(const SPIRVExtInst *DebugInst);
+
+  DIStringType *transTypeString(const SPIRVExtInst *DebugInst);
+
   DINode *transTypeMember(const SPIRVExtInst *DebugInst);
 
   DINode *transTypeEnum(const SPIRVExtInst *DebugInst);
 
-  DINode *transTemplateParameter(const SPIRVExtInst *DebugInst);
-  DINode *transTemplateTemplateParameter(const SPIRVExtInst *DebugInst);
-  DINode *transTemplateParameterPack(const SPIRVExtInst *DebugInst);
+  DINode *transTypeTemplateParameter(const SPIRVExtInst *DebugInst);
+  DINode *transTypeTemplateTemplateParameter(const SPIRVExtInst *DebugInst);
+  DINode *transTypeTemplateParameterPack(const SPIRVExtInst *DebugInst);
 
-  MDNode *transTemplate(const SPIRVExtInst *DebugInst);
+  MDNode *transTypeTemplate(const SPIRVExtInst *DebugInst);
 
   DINode *transTypeFunction(const SPIRVExtInst *DebugInst);
 
@@ -130,9 +143,14 @@ private:
   DINode *transLexicalBlock(const SPIRVExtInst *DebugInst);
   DINode *transLexicalBlockDiscriminator(const SPIRVExtInst *DebugInst);
 
-  DINode *transFunction(const SPIRVExtInst *DebugInst);
+  DINode *transFunction(const SPIRVExtInst *DebugInst,
+                        bool IsMainSubprogram = false);
+  DINode *transFunctionDefinition(const SPIRVExtInst *DebugInst);
+  void transFunctionBody(DISubprogram *DIS, SPIRVId FuncId);
 
   DINode *transFunctionDecl(const SPIRVExtInst *DebugInst);
+
+  MDNode *transEntryPoint(const SPIRVExtInst *DebugInst);
 
   MDNode *transGlobalVariable(const SPIRVExtInst *DebugInst);
 
@@ -140,7 +158,7 @@ private:
 
   DINode *transTypedef(const SPIRVExtInst *DebugInst);
 
-  DINode *transInheritance(const SPIRVExtInst *DebugInst);
+  DINode *transTypeInheritance(const SPIRVExtInst *DebugInst);
 
   DINode *transImportedEntry(const SPIRVExtInst *DebugInst);
 
@@ -150,7 +168,7 @@ private:
 
   SPIRVModule *BM;
   Module *M;
-  DIBuilder Builder;
+  std::unordered_map<SPIRVId, std::unique_ptr<DIBuilder>> BuilderMap;
   SPIRVToLLVM *SPIRVReader;
   bool Enable;
   std::unordered_map<std::string, DIFile *> FileMap;
@@ -166,6 +184,8 @@ private:
   DIScope *getScope(const SPIRVEntry *ScopeInst);
   SPIRVExtInst *getDbgInst(const SPIRVId Id);
 
+  DIBuilder &getDIBuilder(const SPIRVExtInst *DebugInst);
+
   template <SPIRVWord OpCode> SPIRVExtInst *getDbgInst(const SPIRVId Id) {
     if (SPIRVExtInst *DI = getDbgInst(Id)) {
       if (DI->getExtOp() == OpCode) {
@@ -175,6 +195,9 @@ private:
     return nullptr;
   }
   const std::string &getString(const SPIRVId Id);
+  SPIRVWord getConstantValueOrLiteral(const std::vector<SPIRVWord> &,
+                                      const SPIRVWord,
+                                      const SPIRVExtInstSetKind);
   std::string findModuleProducer();
   std::optional<DIFile::ChecksumInfo<StringRef>> ParseChecksum(StringRef Text);
 };

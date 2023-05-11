@@ -77,7 +77,7 @@ void foo15(){
 //CHECK-NEXT:   CBTTA2(tex42, a42, tex42.get_channel());
 //CHECK-NEXT: }
 void foo19(){
-  static texture<float4, 2> tex42;
+  texture<float4, 2> tex42;
   cudaArray_t a42;
   CBTTA(tex42,a42);
   CBTTA2(tex42,a42,tex42.channelDesc);

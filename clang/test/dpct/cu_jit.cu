@@ -3,6 +3,7 @@
 // RUN: dpct --format-range=none --assume-nd-range-dim=1  -out-root %T/cu_jit %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --input-file %T/cu_jit/cu_jit.dp.cpp --match-full-lines %s
 
+#include "cuda.h"
 #define CU_JIT_NOT_A_CUDA_OPTION 1241
 
 int main() {

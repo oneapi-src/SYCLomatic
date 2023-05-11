@@ -2,9 +2,9 @@
 #define _UTIL_H
 #include <stdio.h>
 
-// CHECK:SYCL_EXTERNAL void kernel_util(int *a, int *b);
-__global__ void kernel_util(int *a, int *b);
+// CHECK:SYCL_EXTERNAL void kernel_util(int *a, int *b) {}
+__global__ void kernel_util(int *a, int *b) {}
 
-// CHECK:SYCL_EXTERNAL void foo_util();
-__host__ __device__ void foo_util(void);
+// CHECK:SYCL_EXTERNAL void foo_util() {}
+__host__ __device__ void foo_util(void) {}
 #endif

@@ -63,7 +63,7 @@ int main(){
   //CHECK-NEXT: host_ptr_A[1]= 8;
   //CHECK-NEXT: host_ptr_A[2]= 50;
   //CHECK-NEXT: host_ptr_A[3]= -395;
-  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_A + 10)) {
+  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_A)) {
   //CHECK-NEXT:   oneapi::dpl::replace_if(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<float>(host_ptr_A), dpct::device_pointer<float>(host_ptr_A + 10), pred, 0);
   //CHECK-NEXT: } else {
   //CHECK-NEXT:   oneapi::dpl::replace_if(oneapi::dpl::execution::seq, host_ptr_A, host_ptr_A + 10, pred, 0);
@@ -83,7 +83,7 @@ int main(){
   //CHECK-NEXT: host_ptr_A[1]= 8;
   //CHECK-NEXT: host_ptr_A[2]= 50;
   //CHECK-NEXT: host_ptr_A[3]= -395;
-  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_A + 10)) {
+  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_A)) {
   //CHECK-NEXT:   dpct::replace_if(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<float>(host_ptr_A), dpct::device_pointer<float>(host_ptr_A + 10), dpct::device_pointer<float>(host_ptr_S), pred, 0);
   //CHECK-NEXT: } else {
   //CHECK-NEXT:   dpct::replace_if(oneapi::dpl::execution::seq, host_ptr_A, host_ptr_A + 10, host_ptr_S, pred, 0);
@@ -151,7 +151,7 @@ int main(){
   //CHECK-NEXT: host_ptr_A[1]= 8;
   //CHECK-NEXT: host_ptr_A[2]= 50;
   //CHECK-NEXT: host_ptr_A[3]= -395;
-  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_A + 10)) {
+  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_A)) {
   //CHECK-NEXT:   oneapi::dpl::remove_if(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<float>(host_ptr_A), dpct::device_pointer<float>(host_ptr_A + 10), pred);
   //CHECK-NEXT: } else {
   //CHECK-NEXT:   oneapi::dpl::remove_if(oneapi::dpl::execution::seq, host_ptr_A, host_ptr_A + 10, pred);
@@ -226,7 +226,7 @@ int main(){
   //CHECK-NEXT: host_ptr_A[1]= 8;
   //CHECK-NEXT: host_ptr_A[2]= 50;
   //CHECK-NEXT: host_ptr_A[3]= -395;
-  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_A + 10)) {
+  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_A)) {
   //CHECK-NEXT:   oneapi::dpl::remove_copy_if(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<float>(host_ptr_A), dpct::device_pointer<float>(host_ptr_A + 10), dpct::device_pointer<float>(host_ptr_R), pred);
   //CHECK-NEXT: } else {
   //CHECK-NEXT:   oneapi::dpl::remove_copy_if(oneapi::dpl::execution::seq, host_ptr_A, host_ptr_A + 10, host_ptr_R, pred);
@@ -246,7 +246,7 @@ int main(){
   //CHECK-NEXT: host_ptr_A[1]= 8;
   //CHECK-NEXT: host_ptr_A[2]= 50;
   //CHECK-NEXT: host_ptr_A[3]= -395;
-  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_A + 10)) {
+  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_A)) {
   //CHECK-NEXT:   dpct::remove_copy_if(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<float>(host_ptr_A), dpct::device_pointer<float>(host_ptr_A + 10), dpct::device_pointer<float>(host_ptr_S), dpct::device_pointer<float>(host_ptr_R), pred);
   //CHECK-NEXT: } else {
   //CHECK-NEXT:   dpct::remove_copy_if(oneapi::dpl::execution::seq, host_ptr_A, host_ptr_A + 10, host_ptr_S, host_ptr_R, pred);
@@ -309,7 +309,7 @@ int main(){
   //CHECK-NEXT: host_ptr_A[1]= 8;
   //CHECK-NEXT: host_ptr_A[2]= 396;
   //CHECK-NEXT: host_ptr_A[3]= -395;
-  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_A + 10)) {
+  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_A)) {
   //CHECK-NEXT:   oneapi::dpl::inclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<float>(host_ptr_A), dpct::device_pointer<float>(host_ptr_A + 10), dpct::device_pointer<float>(host_ptr_R), std::plus<float>());
   //CHECK-NEXT: } else {
   //CHECK-NEXT:   oneapi::dpl::inclusive_scan(oneapi::dpl::execution::seq, host_ptr_A, host_ptr_A + 10, host_ptr_R, std::plus<float>());
@@ -329,7 +329,7 @@ int main(){
   //CHECK-NEXT: host_ptr_A[1]= 8;
   //CHECK-NEXT: host_ptr_A[2]= 396;
   //CHECK-NEXT: host_ptr_A[3]= -395;
-  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_A + 10)) {
+  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_A)) {
   //CHECK-NEXT:   oneapi::dpl::inclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<float>(host_ptr_A), dpct::device_pointer<float>(host_ptr_A + 10), dpct::device_pointer<float>(host_ptr_R));
   //CHECK-NEXT: } else {
   //CHECK-NEXT:   oneapi::dpl::inclusive_scan(oneapi::dpl::execution::seq, host_ptr_A, host_ptr_A + 10, host_ptr_R);
@@ -387,7 +387,7 @@ int main(){
   //CHECK-NEXT: host_ptr_A[1]= 8;
   //CHECK-NEXT: host_ptr_A[2]= 396;
   //CHECK-NEXT: host_ptr_A[3]= -395;
-  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_A + 10)) {
+  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_A)) {
   //CHECK-NEXT:   oneapi::dpl::adjacent_difference(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<float>(host_ptr_A), dpct::device_pointer<float>(host_ptr_A + 10), dpct::device_pointer<float>(host_ptr_R), std::minus<float>());
   //CHECK-NEXT: } else {
   //CHECK-NEXT:   oneapi::dpl::adjacent_difference(oneapi::dpl::execution::seq, host_ptr_A, host_ptr_A + 10, host_ptr_R, std::minus<float>());
@@ -407,7 +407,7 @@ int main(){
   //CHECK-NEXT: host_ptr_A[1]= 8;
   //CHECK-NEXT: host_ptr_A[2]= 396;
   //CHECK-NEXT: host_ptr_A[3]= -395;
-  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_A + 10)) {
+  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_A)) {
   //CHECK-NEXT:   oneapi::dpl::adjacent_difference(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<float>(host_ptr_A), dpct::device_pointer<float>(host_ptr_A + 10), dpct::device_pointer<float>(host_ptr_R));
   //CHECK-NEXT: } else {
   //CHECK-NEXT:   oneapi::dpl::adjacent_difference(oneapi::dpl::execution::seq, host_ptr_A, host_ptr_A + 10, host_ptr_R);
@@ -479,7 +479,7 @@ int main(){
   //CHECK-NEXT: host_ptr_A[1]= 8;
   //CHECK-NEXT: host_ptr_A[2]= 396;
   //CHECK-NEXT: host_ptr_A[3]= -395;
-  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_M + 4)) {
+  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_M)) {
   //CHECK-NEXT:   dpct::gather(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(host_ptr_M), dpct::device_pointer<int>(host_ptr_M + 4), dpct::device_pointer<float>(host_ptr_A), dpct::device_pointer<float>(host_ptr_R));
   //CHECK-NEXT: } else {
   //CHECK-NEXT:   dpct::gather(oneapi::dpl::execution::seq, host_ptr_M, host_ptr_M + 4, host_ptr_A, host_ptr_R);
@@ -550,7 +550,7 @@ int main(){
   //CHECK-NEXT: host_ptr_A[1]= 8;
   //CHECK-NEXT: host_ptr_A[2]= 396;
   //CHECK-NEXT: host_ptr_A[3]= 3;
-  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_A + 4)) {
+  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_A)) {
   //CHECK-NEXT:   dpct::scatter(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<float>(host_ptr_A), dpct::device_pointer<float>(host_ptr_A + 4), dpct::device_pointer<int>(host_ptr_M), dpct::device_pointer<float>(host_ptr_R));
   //CHECK-NEXT: } else {
   //CHECK-NEXT:   dpct::scatter(oneapi::dpl::execution::seq, host_ptr_A, host_ptr_A + 4, host_ptr_M, host_ptr_R);
@@ -617,7 +617,7 @@ int main(){
   //CHECK-NEXT: host_ptr_A[1]= 8;
   //CHECK-NEXT: host_ptr_A[2]= 396;
   //CHECK-NEXT: host_ptr_A[3]= -395;
-  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_K + 10)) {
+  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_K)) {
   //CHECK-NEXT:   dpct::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<float>(host_ptr_K), dpct::device_pointer<float>(host_ptr_K + 10), dpct::device_pointer<float>(host_ptr_A), dpct::device_pointer<float>(host_ptr_R), dpct::device_pointer<float>(host_ptr_S), pred2);
   //CHECK-NEXT: } else {
   //CHECK-NEXT:   dpct::unique_copy(oneapi::dpl::execution::seq, host_ptr_K, host_ptr_K + 10, host_ptr_A, host_ptr_R, host_ptr_S, pred2);
@@ -637,7 +637,7 @@ int main(){
   //CHECK-NEXT: host_ptr_A[1]= 8;
   //CHECK-NEXT: host_ptr_A[2]= 396;
   //CHECK-NEXT: host_ptr_A[3]= -395;
-  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_K + 10)) {
+  //CHECK-NEXT: if (dpct::is_device_ptr(host_ptr_K)) {
   //CHECK-NEXT:   dpct::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<float>(host_ptr_K), dpct::device_pointer<float>(host_ptr_K + 10), dpct::device_pointer<float>(host_ptr_A), dpct::device_pointer<float>(host_ptr_R), dpct::device_pointer<float>(host_ptr_S));
   //CHECK-NEXT: } else {
   //CHECK-NEXT:   dpct::unique_copy(oneapi::dpl::execution::seq, host_ptr_K, host_ptr_K + 10, host_ptr_A, host_ptr_R, host_ptr_S);
@@ -696,7 +696,7 @@ void foo()
   //CHECK-NEXT:  } else {
   //CHECK-NEXT:    dpct::stable_sort(oneapi::dpl::execution::seq, keys, keys + N, values);
   //CHECK-NEXT:  };
-  //CHECK-NEXT:  if (dpct::is_device_ptr(keys + N)) {
+  //CHECK-NEXT:  if (dpct::is_device_ptr(keys)) {
   //CHECK-NEXT:    dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(keys), dpct::device_pointer<int>(keys + N), dpct::device_pointer<char>(values));
   //CHECK-NEXT:  } else {
   //CHECK-NEXT:    dpct::stable_sort(oneapi::dpl::execution::seq, keys, keys + N, values);
@@ -706,7 +706,7 @@ void foo()
   //CHECK-NEXT:  } else {
   //CHECK-NEXT:    dpct::stable_sort(oneapi::dpl::execution::seq, keys, keys + N, values, std::greater<int>());
   //CHECK-NEXT:  };
-  //CHECK-NEXT:  if (dpct::is_device_ptr(keys + N)) {
+  //CHECK-NEXT:  if (dpct::is_device_ptr(keys)) {
   //CHECK-NEXT:    dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(keys), dpct::device_pointer<int>(keys + N), dpct::device_pointer<char>(values), std::greater<int>());
   //CHECK-NEXT:  } else {
   //CHECK-NEXT:    dpct::stable_sort(oneapi::dpl::execution::seq, keys, keys + N, values, std::greater<int>());
@@ -725,7 +725,7 @@ void foo()
   //CHECK-NEXT:  } else {
   //CHECK-NEXT:    dpct::unique(oneapi::dpl::execution::seq, A, A + N, B);
   //CHECK-NEXT:  };
-  //CHECK-NEXT:  if (dpct::is_device_ptr(A + N)) {
+  //CHECK-NEXT:  if (dpct::is_device_ptr(A)) {
   //CHECK-NEXT:    dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + N), dpct::device_pointer<int>(B));
   //CHECK-NEXT:  } else {
   //CHECK-NEXT:    dpct::unique(oneapi::dpl::execution::seq, A, A + N, B);
@@ -735,7 +735,7 @@ void foo()
   //CHECK-NEXT:  } else {
   //CHECK-NEXT:    dpct::unique(oneapi::dpl::execution::seq, A, A + N, B, binary_pred);
   //CHECK-NEXT:  };
-  //CHECK-NEXT:  if (dpct::is_device_ptr(A + N)) {
+  //CHECK-NEXT:  if (dpct::is_device_ptr(A)) {
   //CHECK-NEXT:    dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + N), dpct::device_pointer<int>(B), binary_pred);
   //CHECK-NEXT:  } else {
   //CHECK-NEXT:    dpct::unique(oneapi::dpl::execution::seq, A, A + N, B, binary_pred);

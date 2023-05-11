@@ -18,7 +18,7 @@ void bar(){
 size_t size = 1234567 * sizeof(float);
 float *h_A = (float *)malloc(size);
 float *d_A = NULL;
-__constant__ float constData[1234567 * 4];
+__constant__ float constData[123 * 4];
 cudaStream_t s;
 
 // CHECK: void foo1() {

@@ -299,6 +299,7 @@ template<class T, class charT> requires is-vector-bool-reference<T> // Since C++
 #include <__iterator/iterator_traits.h>
 #include <__iterator/reverse_iterator.h>
 #include <__iterator/wrap_iter.h>
+#include <__memory/addressof.h>
 #include <__memory/allocate_at_least.h>
 #include <__memory/pointer_traits.h>
 #include <__memory/swap_allocator.h>
@@ -307,18 +308,19 @@ template<class T, class charT> requires is-vector-bool-reference<T> // Since C++
 #include <__memory_resource/polymorphic_allocator.h>
 #include <__split_buffer>
 #include <__type_traits/is_allocator.h>
+#include <__type_traits/is_constructible.h>
+#include <__type_traits/is_nothrow_move_assignable.h>
 #include <__type_traits/noexcept_move_assign_container.h>
+#include <__type_traits/type_identity.h>
 #include <__utility/exception_guard.h>
 #include <__utility/forward.h>
 #include <__utility/move.h>
 #include <__utility/swap.h>
 #include <climits>
-#include <cstdlib>
 #include <cstring>
 #include <iosfwd> // for forward declaration of vector
 #include <limits>
 #include <stdexcept>
-#include <type_traits>
 #include <version>
 
 // standard-mandated includes
@@ -2107,7 +2109,7 @@ public:
 private:
   class __destroy_vector {
     public:
-      _LIBCPP_CONSTEXPR __destroy_vector(vector& __vec) : __vec_(__vec) {}
+      _LIBCPP_CONSTEXPR _LIBCPP_HIDE_FROM_ABI __destroy_vector(vector& __vec) : __vec_(__vec) {}
 
       _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI void operator()() {
         if (__vec_.__begin_ != nullptr)
@@ -2304,7 +2306,7 @@ public:
     _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX20
     void clear() _NOEXCEPT {__size_ = 0;}
 
-    _LIBCPP_CONSTEXPR_SINCE_CXX20 void swap(vector&)
+    _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX20 void swap(vector&)
 #if _LIBCPP_STD_VER >= 14
         _NOEXCEPT;
 #else
@@ -3325,7 +3327,7 @@ inline constexpr bool __format::__enable_insertable<vector<wchar_t>> = true;
 template <class _Tp, class CharT>
 // Since is-vector-bool-reference is only used once it's inlined here.
   requires same_as<typename _Tp::__container, vector<bool, typename _Tp::__container::allocator_type>>
-struct _LIBCPP_TEMPLATE_VIS _LIBCPP_AVAILABILITY_FORMAT formatter<_Tp, CharT> {
+struct _LIBCPP_TEMPLATE_VIS formatter<_Tp, CharT> {
 private:
   formatter<bool, CharT> __underlying_;
 
@@ -3359,6 +3361,8 @@ _LIBCPP_POP_MACROS
 #  include <algorithm>
 #  include <atomic>
 #  include <concepts>
+#  include <cstdlib>
+#  include <type_traits>
 #  include <typeinfo>
 #  include <utility>
 #endif

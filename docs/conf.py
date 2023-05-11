@@ -22,16 +22,14 @@ from docutils import nodes
 # -- Project information -----------------------------------------------------
 
 project = 'SYCLomatic'
-copyright = 'Intel Corporation'
-author = 'Intel'
-
+copyright = 'Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc.'
 
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx2dita']
+extensions = []
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -53,7 +51,8 @@ html_theme_options = {
     'path_to_docs': 'docs',
     'use_issues_button': True,
     'use_edit_page_button': True,
-    'repository_branch': 'SYCLomatic'
+    'repository_branch': 'SYCLomatic',
+    "extra_footer": "<div>No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div>"
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,

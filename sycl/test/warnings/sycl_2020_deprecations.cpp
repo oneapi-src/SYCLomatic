@@ -22,6 +22,8 @@ int main() {
   (void)Device.get();
   // expected-warning@+1 {{'has_extension' is deprecated: use device::has() function with aspects APIs instead}}
   (void)Device.has_extension("abc");
+  // expected-warning@+1{{'host' is deprecated: removed in SYCL 2020, 'host' device has been removed}}
+  (void)Device.has(sycl::aspect::host);
 
   cl_event ClEvent;
   // expected-error@+1 {{no matching constructor for initialization of 'sycl::event'}}
@@ -132,7 +134,7 @@ int main() {
   sycl::byte B;
   (void)B;
 
-  // expected-warning@+1{{'image_support' is deprecated: deprecated in SYCL 2020, use device::has(aspect::image) instead}}
+  // expected-warning@+1{{'image_support' is deprecated: deprecated in SYCL 2020, use device::has(aspect::ext_intel_legacy_image) to query for SYCL 1.2.1 image support}}
   using IS = sycl::info::device::image_support;
   // expected-warning@+1{{'max_constant_buffer_size' is deprecated: deprecated in SYCL 2020}}
   using MCBS = sycl::info::device::max_constant_buffer_size;

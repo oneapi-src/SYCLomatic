@@ -155,7 +155,7 @@ template<typename T>struct OldType{};
 __device__ void foo5(){ OldType<int> *cu_st;}
 
 
-__global__ foo5(){
+__global__ void foo6(){
 //CHECK: std::ceil(2.5);
   std::ceil(2.5);
 }

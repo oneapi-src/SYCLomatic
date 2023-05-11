@@ -16,11 +16,11 @@ cub::DoubleBuffer<int> value_buffers(d_values_in, d_values_out);
 cub::DoubleBuffer<int[2]> test;
 
 // CHECK: DPCT1082:{{.*}}: Migration of cub::DoubleBuffer<int (*)[2]> type is not supported.
-// CHECK: cub::DoubleBuffer<int (*)[2]> test;
-cub::DoubleBuffer<int (*)[2]> test;
+// CHECK: cub::DoubleBuffer<int (*)[2]> test_1;
+cub::DoubleBuffer<int (*)[2]> test_1;
 
-// CHECK: dpct::io_iterator_pair<int * *> test;
-cub::DoubleBuffer<int *> test;
+// CHECK: dpct::io_iterator_pair<int * *> test_2;
+cub::DoubleBuffer<int *> test_2;
 
 // CHECK: auto double_buffer(dpct::io_iterator_pair<int *> &buffers) {
 auto double_buffer(cub::DoubleBuffer<int> &buffers) {

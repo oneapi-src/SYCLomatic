@@ -78,6 +78,8 @@ const unsigned ktarg = 80;
 dim3 griddim = 2;
 dim3 threaddim = 32;
 
+class TestName;
+
 template<class T>
 void runTest() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
@@ -97,13 +99,13 @@ void runTest() {
   // CHECK-NEXT:     dpct::access_wrapper<const T *> karg1_acc_ct0((const T *)karg1, cgh);
   // CHECK-NEXT:     dpct::access_wrapper<const T *> karg2_acc_ct1(karg2, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, dpct_kernel_scalar<ktarg>, T>>(
+  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, TestName, dpct_kernel_scalar<ktarg>, T>>(
   // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         testKernelPtr<class TestName, ktarg, T>(karg1_acc_ct0.get_raw_pointer(), karg2_acc_ct1.get_raw_pointer(), item_ct1);
+  // CHECK-NEXT:         testKernelPtr<TestName, ktarg, T>(karg1_acc_ct0.get_raw_pointer(), karg2_acc_ct1.get_raw_pointer(), item_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
-  testKernelPtr<class TestName, ktarg, T><<<griddim, threaddim>>>((const T *)karg1, karg2);
+  testKernelPtr<TestName, ktarg, T><<<griddim, threaddim>>>((const T *)karg1, karg2);
 
   // CHECK:/*
   // CHECK-NEXT:DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
@@ -203,13 +205,13 @@ int main() {
   // CHECK-NEXT:     dpct::access_wrapper<const LA *> karg1_acc_ct0((const LA *)karg1, cgh);
   // CHECK-NEXT:     dpct::access_wrapper<const LA *> karg2_acc_ct1(karg2, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, class TestName, dpct_kernel_scalar<ktarg>, LA>>(
+  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}, TestName, dpct_kernel_scalar<ktarg>, LA>>(
   // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         testKernelPtr<class TestName, ktarg, LA>(karg1_acc_ct0.get_raw_pointer(), karg2_acc_ct1.get_raw_pointer(), item_ct1);
+  // CHECK-NEXT:         testKernelPtr<TestName, ktarg, LA>(karg1_acc_ct0.get_raw_pointer(), karg2_acc_ct1.get_raw_pointer(), item_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
-  testKernelPtr<class TestName, ktarg, LA><<<griddim, threaddim>>>((const LA *)karg1, karg2);
+  testKernelPtr<TestName, ktarg, LA><<<griddim, threaddim>>>((const LA *)karg1, karg2);
 
   LA karg1LA, karg2LA;
   int intvar = 20;
@@ -246,6 +248,7 @@ __global__ void convert_kernel(T b){
 // CHECK:template<typename T>
 // CHECK-NEXT:void convert(){
 // CHECK-NEXT:  T b;
+// CHECK-NEXT:  dpct::has_capability_or_fail(dpct::get_default_queue().get_device(), {sycl::aspect::fp64});
 // CHECK-NEXT:  dpct::get_default_queue().submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
 // CHECK-NEXT:      sycl::local_accessor<int, 1> aaa_acc_ct1(sycl::range<1>(0), cgh);

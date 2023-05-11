@@ -310,8 +310,6 @@ std::string MathFuncNameRewriter::getNewFuncName() {
                     SourceCalleeName) != SingleFuctions.end()) {
         LangOptions LO;
         for (unsigned i = 0; i < Call->getNumArgs(); i++) {
-          if (SourceCalleeName == "ldexpf" && i == 1)
-            continue;
           auto Arg = Call->getArg(i);
           std::string ArgT =
               Arg->IgnoreImplicit()->getType().getCanonicalType().getAsString(
@@ -346,8 +344,6 @@ std::string MathFuncNameRewriter::getNewFuncName() {
                            SourceCalleeName) != DoubleFuctions.end()) {
         LangOptions LO;
         for (unsigned i = 0; i < Call->getNumArgs(); i++) {
-          if (SourceCalleeName == "ldexp" && i == 1)
-            continue;
           auto Arg = Call->getArg(i);
           std::string ArgT =
               Arg->IgnoreImplicit()->getType().getCanonicalType().getAsString(
@@ -653,12 +649,6 @@ std::optional<std::string> MathTypeCastRewriter::rewrite() {
     auto MigratedArg1 = getMigratedArgWithExtraParens(1);
     OS << MapNames::getClNamespace() + "half2{" << MigratedArg0 << "[1], "
        << MigratedArg1 << "[1]}";
-  } else if (FuncName == "__float2bfloat16") {
-    DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), HT_MKL_BFloat16);
-    OS << "oneapi::mkl::bfloat16(" << MigratedArg0 << ")";
-  } else if (FuncName == "__bfloat162float") {
-    DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), HT_MKL_BFloat16);
-    OS << "static_cast<float>(" << MigratedArg0 << ")";
   } else {
     //__half2short_rd and __half2float
     static SSMap TypeMap{{"ll", "long long"},
@@ -1054,9 +1044,6 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     OS << MapNames::getClNamespace(false, true) << "exp(" << MigratedArg0 << "*"
        << MigratedArg0 << ")*" << TargetCalleeName << "(" << MigratedArg0
        << ")";
-  } else if (FuncName == "rcbrt" || FuncName == "rcbrtf") {
-    OS << MapNames::getClNamespace(false, true) << "native::recip((float)"
-       << TargetCalleeName << "(" << getMigratedArg(0) << "))";
   } else if (FuncName == "scalbln" || FuncName == "scalblnf" ||
              FuncName == "scalbn" || FuncName == "scalbnf") {
     OS << MigratedArg0 << "*(2<<" << getMigratedArg(1) << ")";

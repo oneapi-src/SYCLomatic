@@ -7,10 +7,10 @@
 int check(ncclResult_t);
 
 int main() {
-    int version, nranks, rank, device;
+    int version, nranks, rank, device, rank_rev;
     // CHECK: oneapi::ccl::kvs::address_type id;
     ncclUniqueId id;
-    // CHECK: oneapi::ccl::communicator * comm;
+    // CHECK: dpct::ccl::comm_ptr comm;
     ncclComm_t comm;
 
     // CHECK: version = dpct::ccl::get_version();
@@ -25,10 +25,10 @@ int main() {
     // CHECK: check((id = dpct::ccl::create_kvs_address(), 0));
     check(ncclGetUniqueId(&id));
 
-    // CHECK: comm = new oneapi::ccl::communicator(oneapi::ccl::create_communicator(nranks, rank, dpct::ccl::create_kvs(id)));
+    // CHECK: comm = new dpct::ccl::communicator_wrapper(nranks, rank, id);
     ncclCommInitRank(&comm, nranks, id, rank);
 
-    // CHECK: check((comm = new oneapi::ccl::communicator(oneapi::ccl::create_communicator(nranks, rank, dpct::ccl::create_kvs(id))), 0));    
+    // CHECK: check((comm = new dpct::ccl::communicator_wrapper(nranks, rank, id), 0));    
     check(ncclCommInitRank(&comm, nranks, id, rank));
 
     // CHECK: device = comm->size();
@@ -36,6 +36,18 @@ int main() {
 
     // CHECK: check((device = comm->size(), 0));
     check(ncclCommCount(comm, &device));
+
+    // CHECK: device = dpct::get_device_id(comm->get_device());
+    ncclCommCuDevice(comm, &device);
+
+    // CHECK: check((device = dpct::get_device_id(comm->get_device()), 0));
+    check(ncclCommCuDevice(comm, &device));
+
+    // CHECK: rank_rev = comm->rank();
+    ncclCommUserRank(comm, &rank_rev);
+
+    // CHECK: check((rank_rev = comm->rank(), 0));
+    check(ncclCommUserRank(comm, &rank_rev));
 
     void *buff;
     void * recvbuff;
@@ -76,34 +88,56 @@ int main() {
     datatype = ncclFloat64;
     // CHECK: datatype = oneapi::ccl::datatype::float64;
     datatype = ncclDouble;
-
     int peer;
     cudaStream_t stream;
     // CHECK:     /*
-    // CHECK-NEXT: DPCT1007:0: Migration of ncclGroupStart is not supported.
+    // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of ncclGroupStart is not supported.
     // CHECK-NEXT: */
     ncclGroupStart();
 
     // CHECK:     /*
-    // CHECK-NEXT: DPCT1007:1: Migration of ncclSend is not supported.
+    // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of ncclSend is not supported.
     // CHECK-NEXT: */
     ncclSend(buff, count, datatype, peer, comm, stream);
 
     // CHECK:     /*
-    // CHECK-NEXT: DPCT1007:2: Migration of ncclRecv is not supported.
+    // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of ncclRecv is not supported.
     // CHECK-NEXT: */
     ncclRecv(buff, count, datatype, peer, comm, stream);
 
     // CHECK:     /*
-    // CHECK-NEXT: DPCT1007:3: Migration of ncclGroupEnd is not supported.
+    // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of ncclGroupEnd is not supported.
     // CHECK-NEXT: */
     ncclGroupEnd();
 
-    // CHECK: oneapi::ccl::allreduce(buff, recvbuff, count, oneapi::ccl::datatype::int8, oneapi::ccl::reduction::sum, *comm, oneapi::ccl::create_stream(*stream));
+    // CHECK: comm->allreduce(buff, recvbuff, count, oneapi::ccl::datatype::int8, oneapi::ccl::reduction::sum, stream);
     ncclAllReduce(buff, recvbuff, count, ncclChar, ncclSum, comm, stream);
 
     // CHECK:     /*
-    // CHECK-NEXT: DPCT1067:4: The 'ncclAvg' parameter could not be migrated. You may need to update the code manually.
+    // CHECK-NEXT: DPCT1067:{{[0-9]+}}: The 'ncclAvg' parameter could not be migrated. You may need to update the code manually.
     // CHECK-NEXT: */
     ncclAllReduce(buff, recvbuff, count, ncclChar, ncclAvg, comm, stream);
+
+    // CHECK: comm->reduce(buff, recvbuff, count, oneapi::ccl::datatype::int8, oneapi::ccl::reduction::sum, rank, stream);
+    ncclReduce(buff, recvbuff, count, ncclChar, ncclSum, rank, comm, stream);
+
+    // CHECK:     /*
+    // CHECK-NEXT: DPCT1067:{{[0-9]+}}: The 'ncclAvg' parameter could not be migrated. You may need to update the code manually.
+    // CHECK-NEXT: */
+    ncclReduce(buff, recvbuff, count, ncclChar, ncclAvg, rank, comm, stream);
+
+    
+    // CHECK: comm->broadcast(buff, recvbuff, count, oneapi::ccl::datatype::int8, rank, stream);
+    ncclBroadcast(buff, recvbuff, count, ncclChar, rank, comm, stream);
+
+    // CHECK: comm->reduce_scatter(buff, recvbuff, count, oneapi::ccl::datatype::int8, oneapi::ccl::reduction::sum, stream);
+    ncclReduceScatter(buff, recvbuff, count, ncclChar, ncclSum, comm, stream);
+
+    // CHECK: /*
+    // CHECK-NEXT: DPCT1067:{{[0-9]+}}: The 'ncclAvg' parameter could not be migrated. You may need to update the code manually.
+    // CHECK-NEXT: */
+    ncclReduceScatter(buff, recvbuff, count, ncclChar, ncclAvg, comm, stream);
+
+    // CHECK: delete comm;
+    ncclCommDestroy(comm);
 }

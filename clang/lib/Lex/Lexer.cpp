@@ -2290,7 +2290,7 @@ void Lexer::codeCompleteIncludedFile(const char *PathStart,
     ++CompletionPoint;
     if (Next == (IsAngled ? '>' : '"'))
       break;
-    if (llvm::is_contained(SlashChars, Next))
+    if (SlashChars.contains(Next))
       break;
   }
 
@@ -4415,11 +4415,9 @@ HandleDirective:
   FormTokenWithChars(Result, CurPtr, tok::hash);
   PP->HandleDirective(Result);
 
-  if (PP->hadModuleLoaderFatalFailure()) {
+  if (PP->hadModuleLoaderFatalFailure())
     // With a fatal failure in the module loader, we abort parsing.
-    assert(Result.is(tok::eof) && "Preprocessor did not set tok:eof");
     return true;
-  }
 
   // We parsed the directive; lex a token with the new state.
   return false;
@@ -4536,6 +4534,7 @@ bool Lexer::LexDependencyDirectiveTokenWhileSkipping(Token &Result) {
     case pp_pragma_push_macro:
     case pp_pragma_pop_macro:
     case pp_pragma_include_alias:
+    case pp_pragma_system_header:
     case pp_include_next:
     case decl_at_import:
     case cxx_module_decl:

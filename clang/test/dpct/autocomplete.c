@@ -15,6 +15,7 @@
 // DASH-NEXT: --change-filename-extension
 // DASH-NEXT: --check-unicode-security
 // DASH-NEXT: --comments
+// DASH-NEXT: --compilation-database
 // DASH-NEXT: --cuda-include-path
 // DASH-NEXT: --custom-helper-name
 // DASH-NEXT: --enable-ctad
@@ -23,6 +24,7 @@
 // DASH-NEXT: --format-range=
 // DASH-NEXT: --format-style=
 // DASH-NEXT: --gen-build-script
+// DASH-NEXT: --gen-helper-function
 // DASH-NEXT: --help
 // DASH-NEXT: --in-root
 // DASH-NEXT: --in-root-exclude

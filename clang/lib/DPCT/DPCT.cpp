@@ -17,6 +17,7 @@
 #include "Config.h"
 #include "CustomHelperFiles.h"
 #include "ExternalReplacement.h"
+#include "GenHelperFunction.h"
 #include "GenMakefile.h"
 #include "IncrementalMigrationUtility.h"
 #include "MigrationAction.h"
@@ -38,10 +39,10 @@
 #include "clang/Tooling/Refactoring.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/Support/FileSystem.h"
-#include "llvm/Support/Host.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/Program.h"
+#include "llvm/TargetParser/Host.h"
 
 #include <string>
 
@@ -96,9 +97,9 @@ const char *const CtHelpMessage =
     "Migrate single source file with C++11 features:\n\n"
     "  dpct --extra-arg=\"-std=c++11\" source.cpp\n\n"
     "Migrate all files available in compilation database:\n\n"
-    "  dpct -p=<path to location of compilation database file>\n\n"
+    "  dpct --compilation-database=<path to location of compilation database file>\n\n"
     "Migrate one file in compilation database:\n\n"
-    "  dpct -p=<path to location of compilation database file>  source.cpp\n\n"
+    "  dpct --compilation-database=<path to location of compilation database file>  source.cpp\n\n"
 #if defined(_WIN32)
     "Migrate all files available in vcxprojfile:\n\n"
     "  dpct --vcxprojfile=path/to/vcxprojfile.vcxproj\n"
@@ -798,6 +799,18 @@ int runDPCT(int argc, const char **argv) {
   }
   ValidateInputDirectory(Tool, AnalysisScope);
 
+  if (GenHelperFunction.getNumOccurrences() &&
+      (UseCustomHelperFileLevel.getNumOccurrences() ||
+       CustomHelperFileName.getNumOccurrences())) {
+    ShowStatus(MigrationErrorConflictOptions,
+               "Option --gen-helper-function cannot be used with "
+               "--use-custom-helper or --custom-helper-name together");
+    dpctExit(MigrationErrorConflictOptions);
+  }
+  if (GenHelperFunction.getValue()) {
+    dpct::genHelperFunction(dpct::DpctGlobalInfo::getOutRoot());
+  }
+
   validateCustomHelperFileNameArg(UseCustomHelperFileLevel,
                                   CustomHelperFileName,
                                   dpct::DpctGlobalInfo::getOutRoot());
@@ -830,7 +843,8 @@ int runDPCT(int argc, const char **argv) {
       (SDKVersionMajor == 11 && SDKVersionMinor == 6) ||
       (SDKVersionMajor == 11 && SDKVersionMinor == 7) ||
       (SDKVersionMajor == 11 && SDKVersionMinor == 8) ||
-      (SDKVersionMajor == 12 && SDKVersionMinor == 0)) {
+      (SDKVersionMajor == 12 && SDKVersionMinor == 0) ||
+      (SDKVersionMajor == 12 && SDKVersionMinor == 1)) {
     Tool.appendArgumentsAdjuster(
         getInsertArgumentAdjuster("-fms-compatibility-version=19.21.27702.0",
                                   ArgumentInsertPosition::BEGIN));

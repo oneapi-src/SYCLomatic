@@ -11,7 +11,6 @@
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
 #include "MigrationRuleManager.h"
-
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/Expr.h"
@@ -77,13 +76,11 @@ REGISTER_RULE(CubIntrinsicRule, PassKind::PK_Analysis)
 void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto TargetTypeName = [&]() {
     return hasAnyName("cub::Sum", "cub::Max", "cub::Min", "cub::Equality",
-                      "cub::KeyValuePair",
-                      "cub::CountingInputIterator",
+                      "cub::KeyValuePair", "cub::CountingInputIterator",
                       "cub::TransformInputIterator",
                       "cub::ConstantInputIterator",
                       "cub::ArgIndexInputIterator",
-                      "cub::DiscardOutputIterator",
-                      "cub::DoubleBuffer");
+                      "cub::DiscardOutputIterator", "cub::DoubleBuffer");
   };
 
   MF.addMatcher(
@@ -109,7 +106,7 @@ bool CubTypeRule::CanMappingToSyclNativeBinaryOp(StringRef OpTypeName) {
 
 bool CubTypeRule::CanMappingToSyclType(StringRef OpTypeName) {
   return CanMappingToSyclNativeBinaryOp(OpTypeName) ||
-         OpTypeName == "cub::Equality" || 
+         OpTypeName == "cub::Equality" ||
 
          // Ignore template arguments, .e.g cub::KeyValuePair<int, int>
          OpTypeName.startswith("cub::KeyValuePair");
@@ -133,16 +130,18 @@ void CubDeviceLevelRule::runRule(
 void CubMemberCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
       cxxMemberCallExpr(
-              allOf(on(hasType(hasCanonicalType(qualType(hasDeclaration(
-                        namedDecl(hasName("cub::ArgIndexInputIterator"))))))),
-                    callee(cxxMethodDecl(hasName("normalize")))))
+          allOf(on(hasType(hasCanonicalType(qualType(hasDeclaration(
+                    namedDecl(hasName("cub::ArgIndexInputIterator"))))))),
+                callee(cxxMethodDecl(hasName("normalize")))))
           .bind("memberCall"),
       this);
 
   MF.addMatcher(
-      memberExpr(hasObjectExpression(hasType(hasCanonicalType(qualType(hasDeclaration(namedDecl(hasName("cub::DoubleBuffer"))))))),
-                    member(hasAnyName("Current", "Alternate", "d_buffers")))
-      .bind("memberExpr"),
+      memberExpr(
+          hasObjectExpression(hasType(hasCanonicalType(qualType(
+              hasDeclaration(namedDecl(hasName("cub::DoubleBuffer"))))))),
+          member(hasAnyName("Current", "Alternate", "d_buffers")))
+          .bind("memberExpr"),
       this);
 }
 
@@ -166,7 +165,8 @@ void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                 this);
 }
 
-void CubIntrinsicRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
+void CubIntrinsicRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
   if (const auto *CE = getNodeAsType<CallExpr>(Result, "IntrinsicCall")) {
     ExprAnalysis EA;
     EA.analyze(CE);
@@ -353,8 +353,8 @@ void removeVarDecl(const VarDecl *VD) {
       const auto &Mgr = DpctGlobalInfo::getSourceManager();
       const auto Range = DS->getSourceRange();
       const CharSourceRange CRange(Range, true);
-      auto Replacement = std::make_shared<ExtReplacement>(
-          Mgr, CRange, "", nullptr);
+      auto Replacement =
+          std::make_shared<ExtReplacement>(Mgr, CRange, "", nullptr);
       DpctGlobalInfo::getInstance().addReplacement(Replacement);
       return;
     }
@@ -1239,6 +1239,9 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
       break;
     }
     case 3: {
+      DpctGlobalInfo::getInstance().insertHeader(WarpMC->getBeginLoc(),
+                                                 HeaderType::HT_DPCT_DPL_Utils);
+      GroupOrWorkitem = DpctGlobalInfo::getItem(WarpMC, FD);
       ExprAnalysis ValidItemEA(WarpMC->getArg(2));
       OpRepl = getOpRepl(WarpMC->getArg(1));
       Repl = MapNames::getDpctNamespace() +
@@ -1269,7 +1272,6 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
            ", " + InEA.getReplacedString() + ", " + OpRepl + ")";
     emplaceTransformation(new ReplaceStmt(WarpMC, Repl));
   }
-
 
   if (auto FuncInfo = DeviceFunctionDecl::LinkRedecls(FD)) {
     FuncInfo->addSubGroupSizeRequest(WarpSize, WarpMC->getBeginLoc(),

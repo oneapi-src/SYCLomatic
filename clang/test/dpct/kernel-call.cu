@@ -6,7 +6,7 @@
 #include <vector>
 
 #define PAR
-//CHECK: void helloFromGPUDDefaultArgs(int i, int j
+//CHECK: inline void helloFromGPUDDefaultArgs(int i, int j
 //CHECK-NEXT: #ifdef PAR
 //CHECK-NEXT:   , int k
 //CHECK-NEXT: , const cl::sycl::nd_item<3> &item_ct1
@@ -27,13 +27,13 @@ blockDim.x + threadIdx.x;
 }
 
 
-//CHECK: void testKernel(int L, int M, const cl::sycl::nd_item<3> &item_ct1, int N);
+//CHECK: inline void testKernel(int L, int M, const cl::sycl::nd_item<3> &item_ct1, int N);
 __global__ void testKernel(int L, int M, int N);
 
-// CHECK: void testKernel(int L, int M, const cl::sycl::nd_item<3> &[[ITEMNAME:item_ct1]], int N = 0);
+// CHECK: inline void testKernel(int L, int M, const cl::sycl::nd_item<3> &[[ITEMNAME:item_ct1]], int N = 0);
 __global__ void testKernel(int L, int M, int N = 0);
 
-// CHECK: void testKernelPtr(const int *L, const int *M, int N,
+// CHECK: inline void testKernelPtr(const int *L, const int *M, int N,
 // CHECK-NEXT: const cl::sycl::nd_item<3> &[[ITEMNAME:item_ct1]]) {
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
   L[0];
@@ -43,7 +43,7 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 }
 
 
-// CHECK: // Test Launch Bounds
+// CHECK: inline // Test Launch Bounds
 // CHECK-NEXT: void testKernel(int L, int M, const cl::sycl::nd_item<3> &[[ITEMNAME:item_ct1]], int N) {
 __launch_bounds__(256, 512) // Test Launch Bounds
 __global__ void testKernel(int L, int M, int N) {
@@ -51,7 +51,7 @@ __global__ void testKernel(int L, int M, int N) {
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
 
-// CHECK: void helloFromGPU(int i, const cl::sycl::nd_item<3> &item_ct1) {
+// CHECK: inline void helloFromGPU(int i, const cl::sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT:     int a = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2) + item_ct1.get_group(2) +
 // CHECK-NEXT:     item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
 // CHECK-NEXT: }
@@ -60,7 +60,7 @@ __global__ void helloFromGPU(int i) {
           blockDim.x + threadIdx.x;
 }
 
-// CHECK: void helloFromGPU(const cl::sycl::nd_item<3> &item_ct1) {
+// CHECK: inline void helloFromGPU(const cl::sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT:     int a = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2) + item_ct1.get_group(2) +
 // CHECK-NEXT:     item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
 // CHECK-NEXT: }
@@ -69,7 +69,7 @@ __global__ void helloFromGPU(void) {
           blockDim.x + threadIdx.x;
 }
 
-// CHECK: void helloFromGPU2(const cl::sycl::nd_item<3> &item_ct1) {
+// CHECK: inline void helloFromGPU2(const cl::sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT:     int a = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2) + item_ct1.get_group(2) +
 // CHECK-NEXT:     item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
 // CHECK-NEXT: }
@@ -260,7 +260,7 @@ struct config {
   } c;
 };
 
-// CHECK: void foo_kernel(int a, int b, int c) {}
+// CHECK: inline void foo_kernel(int a, int b, int c) {}
 __global__ void foo_kernel(int a, int b, int c) {}
 
 class foo_class {
@@ -386,7 +386,7 @@ void run_foo4(dim3 c, dim3 d) {
 }
 
 //CHECK:dpct::shared_memory<float, 1> result(32);
-//CHECK-NEXT:void my_kernel(float* result, const cl::sycl::nd_item<3> &item_ct1,
+//CHECK-NEXT:inline void my_kernel(float* result, const cl::sycl::nd_item<3> &item_ct1,
 //CHECK-NEXT:               float *resultInGroup) {
 //CHECK-NEXT:  // __shared__ variable
 //CHECK-NEXT:  resultInGroup[item_ct1.get_local_id(2)] = item_ct1.get_group(2);
@@ -461,7 +461,7 @@ int run_foo7 () {
 
 //CHECK:dpct::shared_memory<float, 0> in;
 //CHECK-NEXT:dpct::shared_memory<float, 0> out;
-//CHECK-NEXT:void my_kernel2(float in, float *out, const cl::sycl::nd_item<3> &item_ct1) {
+//CHECK-NEXT:inline void my_kernel2(float in, float *out, const cl::sycl::nd_item<3> &item_ct1) {
 //CHECK-NEXT:  if (item_ct1.get_local_id(2) == 0) {
 //CHECK-NEXT:    memcpy(out, &in, sizeof(float));
 //CHECK-NEXT:  }
@@ -496,7 +496,7 @@ int run_foo8() {
   printf("%f ", out);
 }
 
-//CHECK: void deviceFoo(int i, int j, int k, const cl::sycl::nd_item<3> &item_ct1,
+//CHECK: inline void deviceFoo(int i, int j, int k, const cl::sycl::nd_item<3> &item_ct1,
 //CHECK-NEXT: int l = 0,
 //CHECK-NEXT: int m = 0, int n = 0){
 //CHECK-NEXT: int a = item_ct1.get_group(2);
@@ -508,14 +508,14 @@ __device__ void deviceFoo(int i, int j, int k,
 }
 
 
-//CHECK: void deviceFoo2(const cl::sycl::nd_item<3> &item_ct1, int i = 0, int j = 0){
+//CHECK: inline void deviceFoo2(const cl::sycl::nd_item<3> &item_ct1, int i = 0, int j = 0){
 //CHECK-NEXT:   int a = item_ct1.get_group(2);
 //CHECK-NEXT: }
 __device__ void deviceFoo2(int i = 0, int j = 0){
   int a = blockIdx.x;
 }
 
-//CHECK: void callDeviceFoo(const cl::sycl::nd_item<3> &item_ct1){
+//CHECK: inline void callDeviceFoo(const cl::sycl::nd_item<3> &item_ct1){
 //CHECK-NEXT:   deviceFoo(1,2,3, item_ct1,4,5,6);
 //CHECK-NEXT:   deviceFoo2(item_ct1, 1,2);
 //CHECK-NEXT: }
@@ -568,7 +568,7 @@ int run_foo9() {
   k<<<1,1>>>(vec[2].get_pointer());
 }
 
-//CHECK:void cuda_pme_forces_dev(float **afn_s) {
+//CHECK:inline void cuda_pme_forces_dev(float **afn_s) {
 //CHECK-NEXT:  // __shared__ variable
 //CHECK-NEXT:}
 //CHECK-NEXT:int run_foo10() {
@@ -620,7 +620,7 @@ struct test_class {
   }
 };
 
-// CHECK: void kernel_ctor(const cl::sycl::nd_item<3> &item_ct1, int *s1, float &s2,
+// CHECK: inline void kernel_ctor(const cl::sycl::nd_item<3> &item_ct1, int *s1, float &s2,
 // CHECK-NEXT: float &s3) {
 // CHECK-NEXT:   float *fa, *fb;
 // CHECK-NEXT:   int *la, *lb;
@@ -654,7 +654,7 @@ void test_ctor() {
 }
 
 //CHECK:template <typename T>
-//CHECK-NEXT:void k11(T a, uint8_t *temp_ct1, uint8_t *temp2_ct1){
+//CHECK-NEXT:inline void k11(T a, uint8_t *temp_ct1, uint8_t *temp2_ct1){
 //CHECK-NEXT:union  type_ct1{
 //CHECK-NEXT:    T up;
 //CHECK-NEXT:  };
@@ -699,7 +699,7 @@ void foo11() {
 }
 
 //CHECK:template <typename T>
-//CHECK-NEXT:void k12(T a, uint8_t *temp_ct1, uint8_t *temp2_ct1){
+//CHECK-NEXT:inline void k12(T a, uint8_t *temp_ct1, uint8_t *temp2_ct1){
 //CHECK-NEXT:  union UnionType {
 //CHECK-NEXT:    T up;
 //CHECK-NEXT:  };

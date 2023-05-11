@@ -44,3 +44,107 @@ FEATURE_REQUEST_FACTORY(
                               MapNames::getDpctNamespace() +
                               "sparse::matrix_info>")))
 REMOVE_API_FACTORY_ENTRY("cusparseDestroyMatDescr")
+
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseCreate", DEREF(0),
+                                        QUEUEPTRSTR))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseDestroy", ARG(0),
+                                        ARG("nullptr")))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseSetStream", ARG(0), ARG(1)))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseGetStream", DEREF(1), ARG(0)))
+REMOVE_API_FACTORY_ENTRY("cusparseGetPointerMode")
+REMOVE_API_FACTORY_ENTRY("cusparseSetPointerMode")
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_optimize_info,
+                        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                            "cusparseCreateSolveAnalysisInfo", DEREF(0),
+                            CALL("std::make_shared<" +
+                                 MapNames::getDpctNamespace() +
+                                 "sparse::optimize_info>"))))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_optimize_info,
+                        ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                            "cusparseDestroySolveAnalysisInfo", ARG(0), false,
+                            "reset")))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::SparseUtils_optimize_csrsv,
+    ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+        "cusparseScsrsv_analysis",
+        CALL(MapNames::getDpctNamespace() + "sparse::optimize_csrsv", DEREF(0),
+             ARG(1), ARG(2), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8)))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::SparseUtils_optimize_csrsv,
+    ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+        "cusparseDcsrsv_analysis",
+        CALL(MapNames::getDpctNamespace() + "sparse::optimize_csrsv", DEREF(0),
+             ARG(1), ARG(2), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8)))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::SparseUtils_optimize_csrsv,
+    ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+        "cusparseCcsrsv_analysis",
+        CALL(MapNames::getDpctNamespace() + "sparse::optimize_csrsv", DEREF(0),
+             ARG(1), ARG(2), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8)))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::SparseUtils_optimize_csrsv,
+    ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+        "cusparseZcsrsv_analysis",
+        CALL(MapNames::getDpctNamespace() + "sparse::optimize_csrsv", DEREF(0),
+             ARG(1), ARG(2), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8)))))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrmv,
+                        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+                            "cusparseScsrmv",
+                            CALL(MapNames::getDpctNamespace() + "sparse::csrmv",
+                                 DEREF(0), ARG(1), ARG(2), ARG(3), ARG(5),
+                                 ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
+                                 ARG(11), ARG(12)))))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrmv,
+                        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+                            "cusparseDcsrmv",
+                            CALL(MapNames::getDpctNamespace() + "sparse::csrmv",
+                                 DEREF(0), ARG(1), ARG(2), ARG(3), ARG(5),
+                                 ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
+                                 ARG(11), ARG(12)))))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrmv,
+                        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+                            "cusparseCcsrmv",
+                            CALL(MapNames::getDpctNamespace() + "sparse::csrmv",
+                                 DEREF(0), ARG(1), ARG(2), ARG(3), ARG(5),
+                                 ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
+                                 ARG(11), ARG(12)))))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrmv,
+                        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+                            "cusparseZcsrmv",
+                            CALL(MapNames::getDpctNamespace() + "sparse::csrmv",
+                                 DEREF(0), ARG(1), ARG(2), ARG(3), ARG(5),
+                                 ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
+                                 ARG(11), ARG(12)))))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrmm,
+                        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+                            "cusparseScsrmm",
+                            CALL(MapNames::getDpctNamespace() + "sparse::csrmm",
+                                 DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4),
+                                 ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
+                                 ARG(11), ARG(12), ARG(13), ARG(14), ARG(15)))))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrmm,
+                        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+                            "cusparseDcsrmm",
+                            CALL(MapNames::getDpctNamespace() + "sparse::csrmm",
+                                 DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4),
+                                 ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
+                                 ARG(11), ARG(12), ARG(13), ARG(14), ARG(15)))))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrmm,
+                        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+                            "cusparseCcsrmm",
+                            CALL(MapNames::getDpctNamespace() + "sparse::csrmm",
+                                 DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4),
+                                 ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
+                                 ARG(11), ARG(12), ARG(13), ARG(14), ARG(15)))))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrmm,
+                        ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+                            "cusparseZcsrmm",
+                            CALL(MapNames::getDpctNamespace() + "sparse::csrmm",
+                                 DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4),
+                                 ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
+                                 ARG(11), ARG(12), ARG(13), ARG(14), ARG(15)))))

@@ -44,6 +44,13 @@ static cl::opt<bool>
                          cl::desc("Enable unsafe double to float "
                                   "shrinking for math lib calls"));
 
+// Enable conversion of operator new calls with a MemProf hot or cold hint
+// to an operator new call that takes a hot/cold hint. Off by default since
+// not all allocators currently support this extension.
+static cl::opt<bool>
+    OptimizeHotColdNew("optimize-hot-cold-new", cl::Hidden, cl::init(false),
+                       cl::desc("Enable hot/cold operator new library calls"));
+
 //===----------------------------------------------------------------------===//
 // Helper Functions
 //===----------------------------------------------------------------------===//
@@ -1653,6 +1660,59 @@ Value *LibCallSimplifier::optimizeRealloc(CallInst *CI, IRBuilderBase &B) {
   return nullptr;
 }
 
+// When enabled, replace operator new() calls marked with a hot or cold memprof
+// attribute with an operator new() call that takes a __hot_cold_t parameter.
+// Currently this is supported by the open source version of tcmalloc, see:
+// https://github.com/google/tcmalloc/blob/master/tcmalloc/new_extension.h
+Value *LibCallSimplifier::optimizeNew(CallInst *CI, IRBuilderBase &B,
+                                      LibFunc &Func) {
+  if (!OptimizeHotColdNew)
+    return nullptr;
+
+  uint8_t HotCold;
+  if (CI->getAttributes().getFnAttr("memprof").getValueAsString() == "cold")
+    HotCold = 0; // Coldest setting.
+  else if (CI->getAttributes().getFnAttr("memprof").getValueAsString() == "hot")
+    HotCold = 255; // Hottest setting.
+  else
+    return nullptr;
+
+  switch (Func) {
+  case LibFunc_Znwm:
+    return emitHotColdNew(CI->getArgOperand(0), B, TLI,
+                          LibFunc_Znwm12__hot_cold_t, HotCold);
+  case LibFunc_Znam:
+    return emitHotColdNew(CI->getArgOperand(0), B, TLI,
+                          LibFunc_Znam12__hot_cold_t, HotCold);
+  case LibFunc_ZnwmRKSt9nothrow_t:
+    return emitHotColdNewNoThrow(CI->getArgOperand(0), CI->getArgOperand(1), B,
+                                 TLI, LibFunc_ZnwmRKSt9nothrow_t12__hot_cold_t,
+                                 HotCold);
+  case LibFunc_ZnamRKSt9nothrow_t:
+    return emitHotColdNewNoThrow(CI->getArgOperand(0), CI->getArgOperand(1), B,
+                                 TLI, LibFunc_ZnamRKSt9nothrow_t12__hot_cold_t,
+                                 HotCold);
+  case LibFunc_ZnwmSt11align_val_t:
+    return emitHotColdNewAligned(CI->getArgOperand(0), CI->getArgOperand(1), B,
+                                 TLI, LibFunc_ZnwmSt11align_val_t12__hot_cold_t,
+                                 HotCold);
+  case LibFunc_ZnamSt11align_val_t:
+    return emitHotColdNewAligned(CI->getArgOperand(0), CI->getArgOperand(1), B,
+                                 TLI, LibFunc_ZnamSt11align_val_t12__hot_cold_t,
+                                 HotCold);
+  case LibFunc_ZnwmSt11align_val_tRKSt9nothrow_t:
+    return emitHotColdNewAlignedNoThrow(
+        CI->getArgOperand(0), CI->getArgOperand(1), CI->getArgOperand(2), B,
+        TLI, LibFunc_ZnwmSt11align_val_tRKSt9nothrow_t12__hot_cold_t, HotCold);
+  case LibFunc_ZnamSt11align_val_tRKSt9nothrow_t:
+    return emitHotColdNewAlignedNoThrow(
+        CI->getArgOperand(0), CI->getArgOperand(1), CI->getArgOperand(2), B,
+        TLI, LibFunc_ZnamSt11align_val_tRKSt9nothrow_t12__hot_cold_t, HotCold);
+  default:
+    return nullptr;
+  }
+}
+
 //===----------------------------------------------------------------------===//
 // Math Library Optimizations
 //===----------------------------------------------------------------------===//
@@ -2588,7 +2648,7 @@ static bool insertSinCosCall(IRBuilderBase &B, Function *OrigCallee, Value *Arg,
   return true;
 }
 
-Value *LibCallSimplifier::optimizeSinCosPi(CallInst *CI, IRBuilderBase &B) {
+Value *LibCallSimplifier::optimizeSinCosPi(CallInst *CI, bool IsSin, IRBuilderBase &B) {
   // Make sure the prototype is as expected, otherwise the rest of the
   // function is probably invalid and likely to abort.
   if (!isTrigLibCall(CI))
@@ -2627,7 +2687,7 @@ Value *LibCallSimplifier::optimizeSinCosPi(CallInst *CI, IRBuilderBase &B) {
   replaceTrigInsts(CosCalls, Cos);
   replaceTrigInsts(SinCosCalls, SinCos);
 
-  return nullptr;
+  return IsSin ? Sin : Cos;
 }
 
 void LibCallSimplifier::classifyArgUse(
@@ -3448,6 +3508,15 @@ Value *LibCallSimplifier::optimizeStringMemoryLibCall(CallInst *CI,
       return optimizeWcslen(CI, Builder);
     case LibFunc_bcopy:
       return optimizeBCopy(CI, Builder);
+    case LibFunc_Znwm:
+    case LibFunc_ZnwmRKSt9nothrow_t:
+    case LibFunc_ZnwmSt11align_val_t:
+    case LibFunc_ZnwmSt11align_val_tRKSt9nothrow_t:
+    case LibFunc_Znam:
+    case LibFunc_ZnamRKSt9nothrow_t:
+    case LibFunc_ZnamSt11align_val_t:
+    case LibFunc_ZnamSt11align_val_tRKSt9nothrow_t:
+      return optimizeNew(CI, Builder, Func);
     default:
       break;
     }
@@ -3470,9 +3539,10 @@ Value *LibCallSimplifier::optimizeFloatingPointLibCall(CallInst *CI,
   switch (Func) {
   case LibFunc_sinpif:
   case LibFunc_sinpi:
+    return optimizeSinCosPi(CI, /*IsSin*/true, Builder);
   case LibFunc_cospif:
   case LibFunc_cospi:
-    return optimizeSinCosPi(CI, Builder);
+    return optimizeSinCosPi(CI, /*IsSin*/false, Builder);
   case LibFunc_powf:
   case LibFunc_pow:
   case LibFunc_powl:

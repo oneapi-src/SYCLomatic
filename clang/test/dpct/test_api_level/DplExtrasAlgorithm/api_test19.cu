@@ -5,15 +5,15 @@
 // RUN: FileCheck --input-file %T/DplExtrasAlgorithm/api_test19_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasAlgorithm/api_test19_out
 
-// CHECK: 2
+// CHECK: 35
 // TEST_FEATURE: DplExtrasAlgorithm_stable_partition
 
 #include <thrust/functional.h>
 #include <thrust/partition.h>
 #include <thrust/host_vector.h>
 
-template <typename T> struct is_even {
-  __host__ __device__ bool operator()(T x) const { return ((int)x % 2) == 0; }
+struct is_even {
+  __host__ __device__ bool operator()(int x) const { return ((int)x % 2) == 0; }
 };
 
 int main() {

@@ -14,6 +14,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "Loader.h"
+#include "Server.h"
 
 #include <hsa/hsa.h>
 #include <hsa/hsa_ext_amd.h>
@@ -30,7 +31,11 @@ constexpr const char *KERNEL_START = "_start.kd";
 struct kernel_args_t {
   int argc;
   void *argv;
+  void *envp;
   void *ret;
+  void *inbox;
+  void *outbox;
+  void *buffer;
 };
 
 /// Print the error code and exit if \p code indicates an error.
@@ -42,6 +47,11 @@ static void handle_error(hsa_status_t code) {
   if (hsa_status_string(code, &desc) != HSA_STATUS_SUCCESS)
     desc = "Unknown error";
   fprintf(stderr, "%s\n", desc);
+  exit(EXIT_FAILURE);
+}
+
+static void handle_error(const char *msg) {
+  fprintf(stderr, "%s\n", msg);
   exit(EXIT_FAILURE);
 }
 
@@ -135,7 +145,8 @@ hsa_status_t get_agent_memory_pool(hsa_agent_t agent,
   return iterate_agent_memory_pools(agent, cb);
 }
 
-int load(int argc, char **argv, void *image, size_t size) {
+int load(int argc, char **argv, char **envp, void *image, size_t size,
+         const LaunchParameters &params) {
   // Initialize the HSA runtime used to communicate with the device.
   if (hsa_status_t err = hsa_init())
     handle_error(err);
@@ -249,26 +260,23 @@ int load(int argc, char **argv, void *image, size_t size) {
 
   // Allocate fine-grained memory on the host to hold the pointer array for the
   // copied argv and allow the GPU agent to access it.
-  void *dev_argv;
-  if (hsa_status_t err =
-          hsa_amd_memory_pool_allocate(finegrained_pool, argc * sizeof(char *),
-                                       /*flags=*/0, &dev_argv))
-    handle_error(err);
-  hsa_amd_agents_allow_access(1, &dev_agent, nullptr, dev_argv);
-
-  // Copy each string in the argument vector to global memory on the device.
-  for (int i = 0; i < argc; ++i) {
-    size_t size = strlen(argv[i]) + 1;
-    void *dev_str;
+  auto allocator = [&](uint64_t size) -> void * {
+    void *dev_ptr = nullptr;
     if (hsa_status_t err = hsa_amd_memory_pool_allocate(finegrained_pool, size,
-                                                        /*flags=*/0, &dev_str))
+                                                        /*flags=*/0, &dev_ptr))
       handle_error(err);
-    hsa_amd_agents_allow_access(1, &dev_agent, nullptr, dev_str);
-    // Load the host memory buffer with the pointer values of the newly
-    // allocated strings.
-    std::memcpy(dev_str, argv[i], size);
-    static_cast<void **>(dev_argv)[i] = dev_str;
-  }
+    hsa_amd_agents_allow_access(1, &dev_agent, nullptr, dev_ptr);
+    return dev_ptr;
+  };
+  void *dev_argv = copy_argument_vector(argc, argv, allocator);
+  if (!dev_argv)
+    handle_error("Failed to allocate device argv");
+
+  // Allocate fine-grained memory on the host to hold the pointer array for the
+  // copied environment array and allow the GPU agent to access it.
+  void *dev_envp = copy_environment(envp, allocator);
+  if (!dev_envp)
+    handle_error("Failed to allocate device environment");
 
   // Allocate space for the return pointer and initialize it to zero.
   void *dev_ret;
@@ -278,13 +286,37 @@ int load(int argc, char **argv, void *image, size_t size) {
     handle_error(err);
   hsa_amd_memory_fill(dev_ret, 0, sizeof(int));
 
+  // Allocate finegrained memory for the RPC server and client to share.
+  void *server_inbox;
+  void *server_outbox;
+  void *buffer;
+  if (hsa_status_t err = hsa_amd_memory_pool_allocate(
+          finegrained_pool, sizeof(__llvm_libc::cpp::Atomic<int>),
+          /*flags=*/0, &server_inbox))
+    handle_error(err);
+  if (hsa_status_t err = hsa_amd_memory_pool_allocate(
+          finegrained_pool, sizeof(__llvm_libc::cpp::Atomic<int>),
+          /*flags=*/0, &server_outbox))
+    handle_error(err);
+  if (hsa_status_t err = hsa_amd_memory_pool_allocate(
+          finegrained_pool, sizeof(__llvm_libc::rpc::Buffer),
+          /*flags=*/0, &buffer))
+    handle_error(err);
+  hsa_amd_agents_allow_access(1, &dev_agent, nullptr, server_inbox);
+  hsa_amd_agents_allow_access(1, &dev_agent, nullptr, server_outbox);
+  hsa_amd_agents_allow_access(1, &dev_agent, nullptr, buffer);
+
   // Initialie all the arguments (explicit and implicit) to zero, then set the
   // explicit arguments to the values created above.
   std::memset(args, 0, args_size);
   kernel_args_t *kernel_args = reinterpret_cast<kernel_args_t *>(args);
   kernel_args->argc = argc;
   kernel_args->argv = dev_argv;
+  kernel_args->envp = dev_envp;
   kernel_args->ret = dev_ret;
+  kernel_args->inbox = server_outbox;
+  kernel_args->outbox = server_inbox;
+  kernel_args->buffer = buffer;
 
   // Obtain a packet from the queue.
   uint64_t packet_id = hsa_queue_add_write_index_relaxed(queue, 1);
@@ -299,13 +331,15 @@ int load(int argc, char **argv, void *image, size_t size) {
   // with one thread on the device, forcing the rest of the wavefront to be
   // masked off.
   std::memset(packet, 0, sizeof(hsa_kernel_dispatch_packet_t));
-  packet->setup = 1 << HSA_KERNEL_DISPATCH_PACKET_SETUP_DIMENSIONS;
-  packet->workgroup_size_x = 1;
-  packet->workgroup_size_y = 1;
-  packet->workgroup_size_z = 1;
-  packet->grid_size_x = 1;
-  packet->grid_size_y = 1;
-  packet->grid_size_z = 1;
+  packet->setup = (1 + (params.num_blocks_y * params.num_threads_y != 1) +
+                   (params.num_blocks_z * params.num_threads_z != 1))
+                  << HSA_KERNEL_DISPATCH_PACKET_SETUP_DIMENSIONS;
+  packet->workgroup_size_x = params.num_threads_x;
+  packet->workgroup_size_y = params.num_threads_y;
+  packet->workgroup_size_z = params.num_threads_z;
+  packet->grid_size_x = params.num_blocks_x * params.num_threads_x;
+  packet->grid_size_y = params.num_blocks_y * params.num_threads_y;
+  packet->grid_size_z = params.num_blocks_z * params.num_threads_z;
   packet->private_segment_size = private_size;
   packet->group_segment_size = group_size;
   packet->kernel_object = kernel;
@@ -315,6 +349,9 @@ int load(int argc, char **argv, void *image, size_t size) {
   if (hsa_status_t err =
           hsa_signal_create(1, 0, nullptr, &packet->completion_signal))
     handle_error(err);
+
+  // Initialize the RPC server's buffer for host-device communication.
+  server.reset(&lock, server_inbox, server_outbox, buffer);
 
   // Initialize the packet header and set the doorbell signal to begin execution
   // by the HSA runtime.
@@ -326,11 +363,12 @@ int load(int argc, char **argv, void *image, size_t size) {
                    __ATOMIC_RELEASE);
   hsa_signal_store_relaxed(queue->doorbell_signal, packet_id);
 
-  // Wait until the kernel has completed execution on the device.
-  while (hsa_signal_wait_scacquire(packet->completion_signal,
-                                   HSA_SIGNAL_CONDITION_EQ, 0, UINT64_MAX,
-                                   HSA_WAIT_STATE_ACTIVE) != 0)
-    ;
+  // Wait until the kernel has completed execution on the device. Periodically
+  // check the RPC client for work to be performed on the server.
+  while (hsa_signal_wait_scacquire(
+             packet->completion_signal, HSA_SIGNAL_CONDITION_EQ, 0,
+             /*timeout_hint=*/1024, HSA_WAIT_STATE_ACTIVE) != 0)
+    handle_server();
 
   // Create a memory signal and copy the return value back from the device into
   // a new buffer.
@@ -356,6 +394,22 @@ int load(int argc, char **argv, void *image, size_t size) {
 
   // Save the return value and perform basic clean-up.
   int ret = *static_cast<int *>(host_ret);
+
+  // Free the memory allocated for the device.
+  if (hsa_status_t err = hsa_amd_memory_pool_free(args))
+    handle_error(err);
+  if (hsa_status_t err = hsa_amd_memory_pool_free(dev_argv))
+    handle_error(err);
+  if (hsa_status_t err = hsa_amd_memory_pool_free(dev_ret))
+    handle_error(err);
+  if (hsa_status_t err = hsa_amd_memory_pool_free(server_inbox))
+    handle_error(err);
+  if (hsa_status_t err = hsa_amd_memory_pool_free(server_outbox))
+    handle_error(err);
+  if (hsa_status_t err = hsa_amd_memory_pool_free(buffer))
+    handle_error(err);
+  if (hsa_status_t err = hsa_amd_memory_pool_free(host_ret))
+    handle_error(err);
 
   if (hsa_status_t err = hsa_signal_destroy(memory_signal))
     handle_error(err);
