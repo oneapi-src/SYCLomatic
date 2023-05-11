@@ -3,10 +3,10 @@
 // RUN: FileCheck --input-file %T/DnnlUtils/api_test21_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DnnlUtils/api_test21_out
 
-// CHECK: 52
+// CHECK: 53
 // TEST_FEATURE: DnnlUtils_convolution_forward
 // TEST_FEATURE: DnnlUtils_convolution_desc
-
+// TEST_FEATURE: DnnlUtils_convolution_algorithm_info
 #include <cuda_runtime.h>
 #include <cudnn.h>
 #include <iostream>
@@ -41,6 +41,11 @@ int main() {
 
     int dimo[4];
     cudnnGetConvolutionNdForwardOutputDim(covdes, dataTensor, filterTensor, 4, dimo);
+
+    int returned_count = 1;
+    cudnnConvolutionFwdAlgoPerf_t perf_data;
+
+    cudnnFindConvolutionForwardAlgorithm(handle, dataTensor, filterTensor, covdes, outTensor, 1, &returned_count, &perf_data);
 
     float alpha = 1.0f, beta = 0.0f;
     cudnnConvolutionForward(handle, &alpha, dataTensor, data, filterTensor, filter, covdes, CUDNN_CONVOLUTION_FWD_ALGO_DIRECT, workspacesize, size, &beta, outTensor, out);
