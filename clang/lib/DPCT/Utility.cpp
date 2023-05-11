@@ -4057,6 +4057,154 @@ bool typeIsPostfix(clang::QualType QT) {
   }
 }
 
+// Check if the given pointer is only accessed on host side.
+bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
+  llvm::SmallVector<clang::ast_matchers::BoundNodes, 1U> MatchResult;
+  using namespace clang::ast_matchers;
+  auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
+  auto &CTX = clang::dpct::DpctGlobalInfo::getContext();
+  auto LocInfo =
+      dpct::DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(VD->getBeginLoc()));
+  auto &Map = dpct::DpctGlobalInfo::getMallocHostInfoMap();
+  std::string Key = LocInfo.first + "*" + std::to_string(LocInfo.second);
+  if(Map.count(Key)){
+    return Map[Key];
+  }
+  auto &Val = Map[Key];
+  Val = false;
+  auto PtrName = VD->getName();
+  auto PtrMatcher =
+      findAll(declRefExpr(to(varDecl(hasName(PtrName)))).bind("PtrVar"));
+  if(auto FD = dyn_cast<FunctionDecl>(VD->getDeclContext())) {
+    auto Def = FD->getDefinition();
+    if(!Def) {
+      return false;
+    }
+    if(Def->hasAttr<CUDADeviceAttr>() || Def->hasAttr<CUDAGlobalAttr>()) {
+      return false;
+    }
+    auto Body = Def->getBody();
+    MatchResult = ast_matchers::match(PtrMatcher, *Body, CTX);
+  }
+  if (!MatchResult.size()) {
+    return false;
+  }
+  // Match all DeclRefExpr for given pointer, check if each DeclRefExpr is used in
+  // host access. If all DeclRefExpr is used in host access, then the pointer is
+  // only accessed on host side.
+  // If DeclRefExpr usage meets one or more of the following 3 conditions, it's used in
+  // host access.
+  // Condition 1: Used in pointer dereference expr and the expr value category is rvalue.
+  // Condition 2: Used in array subscript expr and the expr value category is rvalue.
+  // Condition 3: Used in some C and CUDA runtime functions, e.g., printf, cudaMemcpy.
+  for (auto &SubResult : MatchResult) {
+    bool HostAccess = false;
+    const DeclRefExpr *PtrDRE = SubResult.getNodeAs<DeclRefExpr>("PtrVar");
+    if (!PtrDRE) {
+      return false;
+    } else if(PtrDRE->getDecl() != VD) {
+      continue;
+    }
+    const Stmt* S = PtrDRE;
+    const CallExpr *CE = nullptr;
+    bool needFindParent = true;
+    while(needFindParent) {
+      S = getParentStmt(S);
+      switch(S->getStmtClass()) {
+        // Condition 1
+        case clang::Stmt::StmtClass::UnaryOperatorClass : {
+          auto UO = dyn_cast<UnaryOperator>(S);
+          auto OpCode = UO->getOpcode();
+          if(OpCode == UnaryOperatorKind::UO_AddrOf) {
+            break;
+          } else if(OpCode != UnaryOperatorKind::UO_Deref) {
+            return false;
+          }
+          LLVM_FALLTHROUGH;
+        }
+        // Condition 2
+        case clang::Stmt::StmtClass::ArraySubscriptExprClass: {
+          auto RValueExpr =
+              dyn_cast_or_null<ImplicitCastExpr>(getParentStmt(S));
+          if (RValueExpr &&
+              (RValueExpr->getCastKind() == CastKind::CK_LValueToRValue)) {
+            HostAccess = true;
+          }
+          needFindParent =false;
+          break;
+        }
+        case clang::Stmt::StmtClass::CallExprClass:{
+          CE = dyn_cast<CallExpr>(S);
+          needFindParent =false;
+          break;
+        }
+        case clang::Stmt::StmtClass::ImplicitCastExprClass :
+        case clang::Stmt::StmtClass::ParenExprClass:
+        case clang::Stmt::StmtClass::CStyleCastExprClass:
+        case clang::Stmt::StmtClass::CXXConstCastExprClass:
+        case clang::Stmt::StmtClass::CXXStaticCastExprClass:
+        case clang::Stmt::StmtClass::CXXDynamicCastExprClass:
+        case clang::Stmt::StmtClass::CXXReinterpretCastExprClass:{
+          break;
+        }
+        default : {
+          return false;
+        }
+      }
+    }
+    // Condition 3
+    if (CE) {
+      auto CEDecl = CE->getDirectCallee();
+      if (!CEDecl) {
+        return false;
+      }
+      auto FuncName = CEDecl->getName();
+      SourceLocation CEDeclLoc = SM.getExpansionLoc(CEDecl->getLocation());
+      if (dpct::DpctGlobalInfo::isInCudaPath(CEDeclLoc)) {
+        if (FuncName == "cudaFreeHost" || FuncName == "cudaMallocHost") {
+          HostAccess = true;
+        } else if (FuncName == "cudaMemcpy" || FuncName == "cudaMemcpyAsync") {
+          if (auto Enum = dyn_cast<DeclRefExpr>(CE->getArg(3))) {
+            auto CpyKind = Enum->getDecl()->getName();
+            if (CpyKind == "cudaMemcpyHostToHost" ||
+                (CpyKind == "cudaMemcpyHostToDevice" &&
+                 clang::dpct::DpctGlobalInfo::isAncestor(CE->getArg(1),
+                                                         PtrDRE)) ||
+                (CpyKind == "cudaMemcpyDeviceToHost" &&
+                 clang::dpct::DpctGlobalInfo::isAncestor(CE->getArg(0),
+                                                         PtrDRE))) {
+              HostAccess = true;
+            }
+          }
+        }
+      } else {
+        if (SM.isInSystemHeader(CEDeclLoc) &&
+            (FuncName == "memset" || FuncName == "memcpy" ||
+             FuncName == "printf")) {
+          HostAccess = true;
+        } else {
+          int ArgIndex = -1, ArgNums = CE->getNumArgs();
+          for (int index = 0; index < ArgNums; index++) {
+            if (clang::dpct::DpctGlobalInfo::isAncestor(CE->getArg(index),
+                                                        PtrDRE)) {
+              ArgIndex = index;
+              break;
+            }
+          }
+          if ((ArgIndex >= 0) &&
+              isPointerHostAccessOnly(CEDecl->getParamDecl(ArgIndex))) {
+            HostAccess = true;
+          }
+        }
+      }
+    }
+    if (!HostAccess) {
+      return false;
+    }
+  }
+  return (Val = true);
+}
+
 std::string getBaseTypeRemoveTemplateArguments(const clang::MemberExpr* ME) {
   auto QT = ME->getBase()->getType();
   if (ME->isArrow())
