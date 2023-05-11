@@ -1713,7 +1713,7 @@ segmented_reduce_argmin(Policy &&policy, Iter1 keys_in, Iter2 keys_out,
         dpct::arg_index_input_iterator<Iter1, int> arg_index(keys_in +
                                                              begin_offsets[i]);
         keys_out[i] = *::std::min_element(
-            arg_index, arg_index + +end_offsets[i] - begin_offsets[i],
+            arg_index, arg_index + (end_offsets[i] - begin_offsets[i]),
             [](const auto &a, const auto &b) { return a.value < b.value; });
       }
     });
@@ -1738,7 +1738,7 @@ segmented_reduce_argmax(Policy &&policy, Iter1 keys_in, Iter2 keys_out,
         dpct::arg_index_input_iterator<Iter1, int> arg_index(keys_in +
                                                              begin_offsets[i]);
         keys_out[i] = *::std::max_element(
-            arg_index, arg_index + end_offsets[i] - begin_offsets[i],
+            arg_index, arg_index + (end_offsets[i] - begin_offsets[i]),
             [](const auto &a, const auto &b) { return a.value < b.value; });
       }
     });
