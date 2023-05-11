@@ -615,6 +615,18 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
     "cudnnGetConvolutionBackwardFilterWorkspaceSize", DEREF(ARG_WC(6)), ARG("0")))
 
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+    "cudnnGetConvolutionBackwardFilterAlgorithm", DEREF(ARG_WC(7)),
+    ARG("dnnl::algorithm::convolution_auto")))
+
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+    "cudnnGetConvolutionBackwardDataAlgorithm", DEREF(ARG_WC(7)),
+    ARG("dnnl::algorithm::convolution_auto")))
+
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+    "cudnnGetConvolutionForwardAlgorithm", DEREF(ARG_WC(7)),
+    ARG("dnnl::algorithm::convolution_auto")))
+
 // RNN Layer
 REMOVE_API_FACTORY_ENTRY("cudnnCreateRNNDescriptor")
 

@@ -413,3 +413,247 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
     "cusolverDnZgeqrf_bufferSize", DEREF(5),
     CALL("oneapi::mkl::lapack::geqrf_scratchpad_size<std::complex<double>>",
          DEREF(0), ARG(1), ARG(2), ARG(4))))
+
+// cusolverDn<T>syevdx_bufferSize, cusolverDn<T>heevdx_bufferSize
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syheevx_scratchpad_size_T,
+CALL_FACTORY_ENTRY("cusolverDnSsyevdx_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syheevx_scratchpad_size<float, float>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(6),
+                        ARG(7), ARG(8), ARG(9), ARG(10), ARG(13))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syheevx_scratchpad_size_T,
+CALL_FACTORY_ENTRY("cusolverDnDsyevdx_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syheevx_scratchpad_size<double, double>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(6),
+                        ARG(7), ARG(8), ARG(9), ARG(10), ARG(13))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syheevx_scratchpad_size_T,
+CALL_FACTORY_ENTRY("cusolverDnCheevdx_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syheevx_scratchpad_size<" +
+                            MapNames::getClNamespace() + "float2, float>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(6),
+                        ARG(7), ARG(8), ARG(9), ARG(10), ARG(13))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syheevx_scratchpad_size_T,
+CALL_FACTORY_ENTRY("cusolverDnZheevdx_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syheevx_scratchpad_size<" +
+                            MapNames::getClNamespace() + "double2, double>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(6),
+                        ARG(7), ARG(8), ARG(9), ARG(10), ARG(13))))
+
+// cusolverDn<T>syevdx, cusolverDn<T>heevdx
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syheevx_T,
+CALL_FACTORY_ENTRY("cusolverDnSsyevdx",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syheevx<float, float>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
+                        ARG(12), ARG(13), ARG(14), ARG(15))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syheevx_T,
+CALL_FACTORY_ENTRY("cusolverDnDsyevdx",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syheevx<double, double>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
+                        ARG(12), ARG(13), ARG(14), ARG(15))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syheevx_T,
+CALL_FACTORY_ENTRY("cusolverDnCheevdx",
+                   CALL(MapNames::getDpctNamespace() + "lapack::syheevx<" +
+                            MapNames::getClNamespace() + "float2, float>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
+                        ARG(12), ARG(13), ARG(14), ARG(15))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syheevx_T,
+CALL_FACTORY_ENTRY("cusolverDnZheevdx",
+                   CALL(MapNames::getDpctNamespace() + "lapack::syheevx<" +
+                            MapNames::getClNamespace() + "double2, double>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
+                        ARG(12), ARG(13), ARG(14), ARG(15))))
+
+// cusolverDnSyevdx_bufferSize
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syheevx_scratchpad_size,
+CALL_FACTORY_ENTRY("cusolverDnSyevdx_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syheevx_scratchpad_size",
+                        DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                        ARG(8), ARG(9), ARG(10), ARG(11), ARG(12), ARG(14),
+                        ARG(17))))
+// cusolverDnSyevdx
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syheevx,
+CALL_FACTORY_ENTRY("cusolverDnSyevdx",
+                   CALL(MapNames::getDpctNamespace() + "lapack::syheevx",
+                        DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                        ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(12),
+                        ARG(13), ARG(14), ARG(15), ARG(17), ARG(18), ARG(19))))
+// cusolverDnXsyevdx_bufferSize
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syheevx_scratchpad_size,
+CALL_FACTORY_ENTRY("cusolverDnXsyevdx_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syheevx_scratchpad_size",
+                        DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                        ARG(8), ARG(9), ARG(10), ARG(11), ARG(12), ARG(14),
+                        ARG(17), ARG(18))))
+// cusolverDnXsyevdx
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syheevx,
+CALL_FACTORY_ENTRY("cusolverDnXsyevdx",
+                   CALL(MapNames::getDpctNamespace() + "lapack::syheevx",
+                        DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                        ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(12),
+                        ARG(13), ARG(14), ARG(15), ARG(17), ARG(18), ARG(21))))
+
+// cusolverDn<T>sygvdx_bufferSize, cusolverDn<T>hegvdx_bufferSize
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syhegvx_scratchpad_size,
+CALL_FACTORY_ENTRY("cusolverDnSsygvdx_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syhegvx_scratchpad_size<float, float>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(7), ARG(9), ARG(10), ARG(11), ARG(12), ARG(13),
+                        ARG(16))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syhegvx_scratchpad_size,
+CALL_FACTORY_ENTRY("cusolverDnDsygvdx_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syhegvx_scratchpad_size<double, double>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(7), ARG(9), ARG(10), ARG(11), ARG(12), ARG(13),
+                        ARG(16))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syhegvx_scratchpad_size,
+CALL_FACTORY_ENTRY("cusolverDnChegvdx_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syhegvx_scratchpad_size<" +
+                            MapNames::getClNamespace() + "float2, float>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(7), ARG(9), ARG(10), ARG(11), ARG(12), ARG(13),
+                        ARG(16))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syhegvx_scratchpad_size,
+CALL_FACTORY_ENTRY("cusolverDnZhegvdx_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syhegvx_scratchpad_size<" +
+                            MapNames::getClNamespace() + "double2, double>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(7), ARG(9), ARG(10), ARG(11), ARG(12), ARG(13),
+                        ARG(16))))
+
+// cusolverDn<T>sygvdx, cusolverDn<T>hegvdx
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syhegvx,
+CALL_FACTORY_ENTRY("cusolverDnSsygvdx",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syhegvx<float, float>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
+                        ARG(12), ARG(13), ARG(14), ARG(15), ARG(16), ARG(17),
+                        ARG(18))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syhegvx,
+CALL_FACTORY_ENTRY("cusolverDnDsygvdx",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syhegvx<double, double>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
+                        ARG(12), ARG(13), ARG(14), ARG(15), ARG(16), ARG(17),
+                        ARG(18))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syhegvx,
+CALL_FACTORY_ENTRY("cusolverDnChegvdx",
+                   CALL(MapNames::getDpctNamespace() + "lapack::syhegvx<" +
+                            MapNames::getClNamespace() + "float2, float>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
+                        ARG(12), ARG(13), ARG(14), ARG(15), ARG(16), ARG(17),
+                        ARG(18))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syhegvx,
+CALL_FACTORY_ENTRY("cusolverDnZhegvdx",
+                   CALL(MapNames::getDpctNamespace() + "lapack::syhegvx<" +
+                            MapNames::getClNamespace() + "double2, double>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
+                        ARG(12), ARG(13), ARG(14), ARG(15), ARG(16), ARG(17),
+                        ARG(18))))
+
+// cusolverDn<T>sygvj_bufferSize, cusolverDn<T>hegvj_bufferSize
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syhegvd_scratchpad_size,
+CALL_FACTORY_ENTRY("cusolverDnSsygvj_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syhegvd_scratchpad_size<float>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(6),
+                        ARG(8), ARG(10))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syhegvd_scratchpad_size,
+CALL_FACTORY_ENTRY("cusolverDnDsygvj_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syhegvd_scratchpad_size<float>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(6),
+                        ARG(8), ARG(10))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syhegvd_scratchpad_size,
+CALL_FACTORY_ENTRY("cusolverDnChegvj_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syhegvd_scratchpad_size<" +
+                            MapNames::getClNamespace() + "float2>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(6),
+                        ARG(8), ARG(10))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syhegvd_scratchpad_size,
+CALL_FACTORY_ENTRY("cusolverDnZhegvj_bufferSize",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syhegvd_scratchpad_size<" +
+                            MapNames::getClNamespace() + "double2>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(6),
+                        ARG(8), ARG(10))))
+
+// cusolverDn<T>sygvj, cusolverDn<T>hegvj
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syhegvd,
+CALL_FACTORY_ENTRY("cusolverDnSsygvj",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syhegvd<float, float>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
+                        ARG(12))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syhegvd,
+CALL_FACTORY_ENTRY("cusolverDnDsygvj",
+                   CALL(MapNames::getDpctNamespace() +
+                            "lapack::syhegvd<double, double>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
+                        ARG(12))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syhegvd,
+CALL_FACTORY_ENTRY("cusolverDnChegvj",
+                   CALL(MapNames::getDpctNamespace() + "lapack::syhegvd<" +
+                            MapNames::getClNamespace() + "float2, float>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
+                        ARG(12))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_syhegvd,
+CALL_FACTORY_ENTRY("cusolverDnZhegvj",
+                   CALL(MapNames::getDpctNamespace() + "lapack::syhegvd<" +
+                            MapNames::getClNamespace() + "double2, double>",
+                        DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
+                        ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11),
+                        ARG(12))))
+
+REMOVE_API_FACTORY_ENTRY("cusolverDnCreateSyevjInfo")
+REMOVE_API_FACTORY_ENTRY("cusolverDnDestroySyevjInfo")

@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/DplExtrasAlgorithm/api_test4_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasAlgorithm/api_test4_out
 
-// CHECK: 5
+// CHECK: 37
 // TEST_FEATURE: DplExtrasAlgorithm_copy_if
 
 #include <thrust/copy.h>

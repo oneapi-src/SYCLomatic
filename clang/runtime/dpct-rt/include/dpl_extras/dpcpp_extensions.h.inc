@@ -72,6 +72,7 @@ constexpr auto __inclusive_scan_over_group(_Args... __args) {
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasDpcppExtensions|group_broadcast
 // DplExtrasDpcppExtensions|group_scan
+// Dpct|dpct_align_and_inline
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Perform an exclusive scan over the values of inputs from all work-items in
@@ -185,6 +186,7 @@ namespace detail {
 // DPCT_LABEL_BEGIN|radix_rank|dpct::group::detail
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasDpcppExtensions|exclusive_scan
+// Dpct|dpct_align_and_inline
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 typedef uint16_t digit_counter_type;
@@ -349,7 +351,9 @@ private:
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|traits|dpct::group::detail
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// Dpct|dpct_align_and_inline
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename T, typename U> struct base_traits {
 
@@ -393,7 +397,9 @@ template <> struct traits<float> : base_traits<float, uint32_t> {};
 } // namespace detail
 
 // DPCT_LABEL_BEGIN|exchange|dpct::group
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// Dpct|dpct_align_and_inline
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 namespace detail {
 
@@ -462,6 +468,7 @@ private:
 // DPCT_LABEL_BEGIN|radix_sort|dpct::group
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasDpcppExtensions|traits
+// Dpct|dpct_align_and_inline
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Implements radix sort to sort integer data elements assigned to all threads
@@ -532,6 +539,7 @@ private:
 // DPCT_LABEL_BEGIN|reduce|dpct::group
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasDpcppExtensions|group_reduce
+// Dpct|dpct_align_and_inline
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Perform a reduction of the data elements assigned to all threads in the
@@ -558,6 +566,7 @@ reduce(Item item, T (&inputs)[VALUES_PER_THREAD], BinaryOperation binary_op) {
 // DPCT_LABEL_BEGIN|reduce_over_partial_group|dpct::group
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasDpcppExtensions|group_reduce
+// Dpct|dpct_align_and_inline
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Perform a reduction on a limited number of the work items in a subgroup
@@ -585,6 +594,7 @@ reduce_over_partial_group(const Item &item, const T &value,
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasDpcppExtensions|group_broadcast
 // DplExtrasDpcppExtensions|group_scan
+// Dpct|dpct_align_and_inline
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Perform an inclusive scan over the values of inputs from all work-items in
