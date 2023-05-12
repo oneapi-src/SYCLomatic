@@ -4186,6 +4186,7 @@ private:
                                          getBegin() - LocInfo.Indent.length(),
                                          LocInfo.Indent.length(), "", nullptr));
   }
+  void addDevCapCheckStmt();
   void addAccessorDecl(MemVarInfo::VarScope Scope);
   void addAccessorDecl(std::shared_ptr<MemVarInfo> VI);
   void addStreamDecl() {
@@ -4273,7 +4274,6 @@ private:
 
   class {
   public:
-    StmtList DevCapChkList;
     StmtList StreamList;
     StmtList SyncList;
     StmtList RangeList;
@@ -4288,7 +4288,6 @@ private:
     StmtList CommandGroupList;
 
     inline KernelPrinter &print(KernelPrinter &Printer) {
-      printList(Printer, DevCapChkList);
       printList(Printer, StreamList);
       printList(Printer, SyncList);
       printList(Printer, ExternList);
@@ -4307,11 +4306,11 @@ private:
     }
 
     bool empty() const noexcept {
-      return DevCapChkList.empty() && CommandGroupList.empty() &&
-             NdRangeList.empty() && AccessorList.empty() && PtrList.empty() &&
-             InitList.empty() && ExternList.empty() && MemoryList.empty() &&
-             RangeList.empty() && TextureList.empty() && SamplerList.empty() &&
-             StreamList.empty() && SyncList.empty();
+      return CommandGroupList.empty() && NdRangeList.empty() &&
+             AccessorList.empty() && PtrList.empty() && InitList.empty() &&
+             ExternList.empty() && MemoryList.empty() && RangeList.empty() &&
+             TextureList.empty() && SamplerList.empty() && StreamList.empty() &&
+             SyncList.empty();
     }
 
   private:

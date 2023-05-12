@@ -1308,6 +1308,30 @@ void KernelCallExpr::buildNeedBracesInfo(const CallExpr *KernelCall) {
   }
 }
 
+void KernelCallExpr::addDevCapCheckStmt() {
+  llvm::SmallVector<std::string> AspectList;
+  if (getVarMap().hasBF64()) {
+    AspectList.push_back(MapNames::getClNamespace() + "aspect::fp64");
+  }
+  if (getVarMap().hasBF16()) {
+    AspectList.push_back(MapNames::getClNamespace() + "aspect::fp16");
+  }
+  if (!AspectList.empty()) {
+    requestFeature(HelperFeatureEnum::Device_has_capability_or_fail,
+                   getFilePath());
+    std::string Str;
+    llvm::raw_string_ostream OS(Str);
+    OS << MapNames::getDpctNamespace() << "has_capability_or_fail(";
+    OS << getStreamBase();
+    OS << "get_device(), {" << AspectList.front();
+    for (size_t i = 1; i < AspectList.size(); ++i) {
+      OS << ", " << AspectList[i];
+    }
+    OS << "});";
+    OuterStmts.emplace_back(OS.str());
+  }
+}
+
 void KernelCallExpr::addAccessorDecl() {
   auto &VM = getVarMap();
   if (VM.hasExternShared()) {
@@ -1583,27 +1607,6 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
       }
     }
   }
-  llvm::SmallVector<std::string> AspectList;
-  if (getVarMap().hasBF64()) {
-    AspectList.push_back(MapNames::getClNamespace() + "aspect::fp64");
-  }
-  if (getVarMap().hasBF16()) {
-    AspectList.push_back(MapNames::getClNamespace() + "aspect::fp16");
-  }
-  if (!AspectList.empty()) {
-    requestFeature(HelperFeatureEnum::Device_has_capability_or_fail,
-                   getFilePath());
-    std::string Str;
-    llvm::raw_string_ostream OS(Str);
-    OS << MapNames::getDpctNamespace() << "has_capability_or_fail(";
-    OS << getStreamBase();
-    OS << "get_device(), {" << AspectList.front();
-    for (size_t i = 1; i < AspectList.size(); ++i) {
-      OS << ", " << AspectList[i];
-    }
-    OS << "});";
-    SubmitStmtsList.DevCapChkList.emplace_back(OS.str());
-  }
   Printer.indent();
   if (!SubGroupSizeWarning.empty()) {
     Printer << "/*" << getNL();
@@ -1766,6 +1769,7 @@ std::string KernelCallExpr::getStreamBase() {
 }
 
 std::string KernelCallExpr::getReplacement() {
+  addDevCapCheckStmt();
   addAccessorDecl();
   addStreamDecl();
   buildKernelArgsStmt();

@@ -832,8 +832,6 @@ void run_foo15() {
   double *d;
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](cl::sycl::handler &cgh) {
-  //CHECK-NEXT:    dpct::has_capability_or_fail(q_ct1.get_device(), {cl::sycl::aspect::fp64});
-  //CHECK-EMPTY:
   //CHECK-NEXT:    dpct::access_wrapper<const float *> f_acc_ct0(f, cgh);
   //CHECK-NEXT:    dpct::access_wrapper<float *> f_acc_ct1(f, cgh);
   //CHECK-EMPTY:
@@ -846,8 +844,6 @@ void run_foo15() {
   my_kernel7<<<1,1>>>(f, f);
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](cl::sycl::handler &cgh) {
-  //CHECK-NEXT:    dpct::has_capability_or_fail(q_ct1.get_device(), {cl::sycl::aspect::fp64});
-  //CHECK-EMPTY:
   //CHECK-NEXT:    dpct::access_wrapper<const double *> d_acc_ct0(d, cgh);
   //CHECK-NEXT:    dpct::access_wrapper<double *> d_acc_ct1(d, cgh);
   //CHECK-EMPTY:

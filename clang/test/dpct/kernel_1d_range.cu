@@ -449,22 +449,14 @@ int main() {
   //CHECK-NEXT:      });
   k6<<<dim3(cc), 15>>>();
 
-  //CHECK:q_ct1.submit(
-  //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    dpct::has_capability_or_fail(q_ct1.get_device(), {sycl::aspect::fp64});
-  //CHECK-EMPTY:
-  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK:q_ct1.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        k7(item_ct1);
   //CHECK-NEXT:      });
   k7<<<1, 1>>>();
 
-  //CHECK:q_ct1.submit(
-  //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    dpct::has_capability_or_fail(q_ct1.get_device(), {sycl::aspect::fp64});
-  //CHECK-EMPTY:
-  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK:q_ct1.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        k8(item_ct1);

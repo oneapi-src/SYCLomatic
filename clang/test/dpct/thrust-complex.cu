@@ -98,21 +98,19 @@ int main() {
   thrust::complex<double> cd2 = static_cast<thrust::complex<double>>(*cdp);
 // CHECK:   bar(reinterpret_cast<std::complex<double> *>(cdp));
   bar(reinterpret_cast<thrust::complex<double> *>(cdp));
-  // CHECK:   q_ct1.submit(
-  // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::has_capability_or_fail(q_ct1.get_device(), {sycl::aspect::fp64});
-  // CHECK-EMPTY:
-  // CHECK-NEXT:       sycl::local_accessor<std::complex<sycl::double2>, 1> s_acc_ct1(sycl::range<1>(10), cgh);
-  // CHECK-EMPTY:
-  // CHECK-NEXT:       auto static_cast_thrust_complex_double_cdp_ct1 = static_cast<std::complex<double>>(*cdp);
-  // CHECK-NEXT:       auto thrust_raw_pointer_cast_dc_ptr_ct2 = dpct::get_raw_pointer(dc_ptr);
-  // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for(
-  // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 256), sycl::range<3>(1, 1, 256)),
-  // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           kernel(reinterpret_cast<std::complex<double> *>(cdp), static_cast_thrust_complex_double_cdp_ct1, thrust_raw_pointer_cast_dc_ptr_ct2, s_acc_ct1.get_pointer());
-  // CHECK-NEXT:         });
-  // CHECK-NEXT:     });
+// CHECK:   q_ct1.submit(
+// CHECK-NEXT:     [&](sycl::handler &cgh) {
+// CHECK-NEXT:       sycl::local_accessor<std::complex<sycl::double2>, 1> s_acc_ct1(sycl::range<1>(10), cgh);
+// CHECK-EMPTY:
+// CHECK-NEXT:       auto static_cast_thrust_complex_double_cdp_ct1 = static_cast<std::complex<double>>(*cdp);
+// CHECK-NEXT:       auto thrust_raw_pointer_cast_dc_ptr_ct2 = dpct::get_raw_pointer(dc_ptr);
+// CHECK-EMPTY:
+// CHECK-NEXT:       cgh.parallel_for(
+// CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 256), sycl::range<3>(1, 1, 256)),
+// CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:           kernel(reinterpret_cast<std::complex<double> *>(cdp), static_cast_thrust_complex_double_cdp_ct1, thrust_raw_pointer_cast_dc_ptr_ct2, s_acc_ct1.get_pointer());
+// CHECK-NEXT:         });
+// CHECK-NEXT:     });
   kernel<<<1, 256>>>(reinterpret_cast<thrust::complex<double> *>(cdp), static_cast<thrust::complex<double>>(*cdp), thrust::raw_pointer_cast(dc_ptr));
 
   int *d_i;

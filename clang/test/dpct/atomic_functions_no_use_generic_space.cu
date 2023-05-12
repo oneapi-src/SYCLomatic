@@ -102,8 +102,6 @@ void InvokeKernel() {
   cudaMemcpy(dev_ptr, host.get(), size, cudaMemcpyHostToDevice);
   // CHECK: dpct::get_default_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::has_capability_or_fail(dpct::get_default_queue().get_device(), {sycl::aspect::fp64});
-  // CHECK-EMPTY:
   // CHECK-NEXT:     dpct::access_wrapper<T *> dev_ptr_acc_ct0(dev_ptr, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class test_{{[a-f0-9]+}}, T>>(
