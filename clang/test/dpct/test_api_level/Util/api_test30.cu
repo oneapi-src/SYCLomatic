@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Util/api_test30_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Util/api_test30_out
 
-// CHECK: 18
+// CHECK: 16
 // TEST_FEATURE: Util_calculate_max_active_wg_per_xecore
 
 __global__ void k() {}
