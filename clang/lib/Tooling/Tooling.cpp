@@ -854,33 +854,20 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
         return -1;
       }
 #endif
+      static const std::unordered_map<std::string, std::string>
+          LanguageOptionMap = {{"cu", "cuda"}, {"c", "c"}, {"c++", "c++"}};
       ArgumentsAdjuster CudaArgsAdjuster{ArgsAdjuster};
       for (size_t Index = 0; Index < CommandLine.size() - 1; Index++) {
         if (CommandLine[Index] == "-x" || CommandLine[Index] == "--x") {
-          if (CommandLine[Index + 1] == "cu") {
+          const std::string OriginalLanguageOption = CommandLine[Index + 1];
+          if (LanguageOptionMap.count(OriginalLanguageOption)) {
             CommandLine.erase(CommandLine.begin() + Index + 1);
             CommandLine.erase(CommandLine.begin() + Index--);
             CudaArgsAdjuster = combineAdjusters(
                 std::move(CudaArgsAdjuster),
-                getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
-            CudaArgsAdjuster = combineAdjusters(
-                std::move(CudaArgsAdjuster),
-                getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
-          } else if (CommandLine[Index + 1] == "c") {
-            CommandLine.erase(CommandLine.begin() + Index + 1);
-            CommandLine.erase(CommandLine.begin() + Index--);
-            CudaArgsAdjuster = combineAdjusters(
-                std::move(CudaArgsAdjuster),
-                getInsertArgumentAdjuster("c", ArgumentInsertPosition::BEGIN));
-            CudaArgsAdjuster = combineAdjusters(
-                std::move(CudaArgsAdjuster),
-                getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
-          } else if (CommandLine[Index + 1] == "c++") {
-            CommandLine.erase(CommandLine.begin() + Index + 1);
-            CommandLine.erase(CommandLine.begin() + Index--);
-            CudaArgsAdjuster = combineAdjusters(
-                std::move(CudaArgsAdjuster),
-                getInsertArgumentAdjuster("c++", ArgumentInsertPosition::BEGIN));
+                getInsertArgumentAdjuster(
+                    LanguageOptionMap.at(OriginalLanguageOption).c_str(),
+                    ArgumentInsertPosition::BEGIN));
             CudaArgsAdjuster = combineAdjusters(
                 std::move(CudaArgsAdjuster),
                 getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));

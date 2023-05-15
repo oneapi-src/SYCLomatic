@@ -5,4 +5,3 @@
 // RUN: grep -w "analysis-scope-path" %T/inc_mig_diff_ana_path/log.txt
 
 float2 f2;
-

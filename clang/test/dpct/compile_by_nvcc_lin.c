@@ -15,7 +15,6 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/compile_by_nvcc/compile_by_nvcc_lin.c.dp.cpp
 // RUN: rm -rf %T/compile_by_nvcc
 
-
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 #include <cuda_runtime.h>
