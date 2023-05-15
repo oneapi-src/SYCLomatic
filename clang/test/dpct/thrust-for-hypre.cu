@@ -118,24 +118,31 @@ void foo_host(){
   thrust::remove_copy_if(thrust::seq, B.begin(), B.end(), S2.begin(), R2.begin(), pred);
   thrust::remove_copy_if(B.begin(), B.end(), S2.begin(), R2.begin(), pred);
 
-  //CHECK: oneapi::dpl::any_of(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), pred);
-  //CHECK-NEXT: oneapi::dpl::any_of(oneapi::dpl::execution::seq, B.begin(), B.end(), pred);
-  //CHECK-NEXT: oneapi::dpl::any_of(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), pred);
-  //CHECK-NEXT: oneapi::dpl::any_of(oneapi::dpl::execution::make_device_policy(q_ct1), B.begin(), B.end(), pred);
-  thrust::any_of(A.begin(), A.end(), pred);
-  thrust::any_of(B.begin(), B.end(), pred);
-  thrust::any_of(thrust::device, A.begin(), A.end(), pred);
-  thrust::any_of(thrust::device, B.begin(), B.end(), pred);
+  {
+    thrust::device_vector<int> A(4);
+    thrust::device_vector<int> B(4);
+    // CHECK:    oneapi::dpl::any_of(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), pred);
+    // CHECK-NEXT:    oneapi::dpl::any_of(oneapi::dpl::execution::make_device_policy(q_ct1), B.begin(), B.end(), pred);
+    // CHECK-NEXT:    oneapi::dpl::any_of(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), pred);
+    // CHECK-NEXT:    oneapi::dpl::any_of(oneapi::dpl::execution::make_device_policy(q_ct1), B.begin(), B.end(), pred);
+    thrust::any_of(A.begin(), A.end(), pred);
+    thrust::any_of(B.begin(), B.end(), pred);
+    thrust::any_of(thrust::device, A.begin(), A.end(), pred);
+    thrust::any_of(thrust::device, B.begin(), B.end(), pred);
+  }
 
-  //CHECK: oneapi::dpl::replace(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), 0, 399);
-  //CHECK-NEXT: oneapi::dpl::replace(oneapi::dpl::execution::seq, B.begin(), B.end(), 0, 399);
-  //CHECK-NEXT: oneapi::dpl::replace(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), 0, 399);
-  //CHECK-NEXT: oneapi::dpl::replace(oneapi::dpl::execution::make_device_policy(q_ct1), B.begin(), B.end(), 0, 399);
-  thrust::replace(A.begin(), A.end(), 0, 399);
-  thrust::replace(B.begin(), B.end(), 0, 399);
-  thrust::replace(thrust::device, A.begin(), A.end(), 0, 399);
-  thrust::replace(thrust::device, B.begin(), B.end(), 0, 399);
-
+  {
+    thrust::device_vector<int> A(4);
+    thrust::device_vector<int> B(4);
+    // CHECK:    oneapi::dpl::replace(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), 0, 399);
+    // CHECK-NEXT:    oneapi::dpl::replace(oneapi::dpl::execution::make_device_policy(q_ct1), B.begin(), B.end(), 0, 399);
+    // CHECK-NEXT:    oneapi::dpl::replace(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), 0, 399);
+    // CHECK-NEXT:    oneapi::dpl::replace(oneapi::dpl::execution::make_device_policy(q_ct1), B.begin(), B.end(), 0, 399);
+    thrust::replace(A.begin(), A.end(), 0, 399);
+    thrust::replace(B.begin(), B.end(), 0, 399);
+    thrust::replace(thrust::device, A.begin(), A.end(), 0, 399);
+    thrust::replace(thrust::device, B.begin(), B.end(), 0, 399);
+  }
   //CHECK: #define TM std::minus<int>()
   //CHECK-NEXT: oneapi::dpl::adjacent_difference(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), R.begin(), TM);
   //CHECK-NEXT: oneapi::dpl::adjacent_difference(oneapi::dpl::execution::seq, B.begin(), B.end(), R2.begin(), std::minus<int>());
