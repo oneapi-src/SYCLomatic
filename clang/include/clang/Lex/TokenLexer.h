@@ -54,8 +54,9 @@ class TokenLexer {
   unsigned NumTokens;
 
   /// This is the index of the next token that Lex will return.
+public:
   unsigned CurTokenIdx;
-
+private:
   /// The source location range where this macro was expanded.
   SourceLocation ExpandLocStart, ExpandLocEnd;
 

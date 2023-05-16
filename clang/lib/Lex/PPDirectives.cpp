@@ -717,7 +717,13 @@ void Preprocessor::SkipExcludedConditionalBlock(SourceLocation HashTokenLoc,
           assert(CurPPLexer->LexingRawMode && "We have to be skipping here!");
           CurPPLexer->LexingRawMode = false;
           IdentifierInfo *IfNDefMacro = nullptr;
+#ifdef SYCLomatic_CUSTOMIZATION
+          IsEvaluatingExpression = true;
           DirectiveEvalResult DER = EvaluateDirectiveExpression(IfNDefMacro);
+          IsEvaluatingExpression = false;
+#else
+          DirectiveEvalResult DER = EvaluateDirectiveExpression(IfNDefMacro);
+#endif // SYCLomatic_CUSTOMIZATION
           // Stop if Lexer became invalid after hitting code completion token.
           if (!CurPPLexer)
             return;
@@ -3326,7 +3332,13 @@ void Preprocessor::HandleIfDirective(Token &IfToken,
 
   // Parse and evaluate the conditional expression.
   IdentifierInfo *IfNDefMacro = nullptr;
+#ifdef SYCLomatic_CUSTOMIZATION
+  IsEvaluatingExpression = true;
   const DirectiveEvalResult DER = EvaluateDirectiveExpression(IfNDefMacro);
+  IsEvaluatingExpression = false;
+#else
+  const DirectiveEvalResult DER = EvaluateDirectiveExpression(IfNDefMacro);
+#endif
   const bool ConditionalTrue = DER.Conditional;
   // Lexer might become invalid if we hit code completion point while evaluating
   // expression.

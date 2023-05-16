@@ -47,8 +47,9 @@
 #include <unordered_map>
 #include <utility>
 
+extern bool ProcessingCudaRTVersionMacro;
 extern bool ContainCudaRTVersionMacro;
-extern std::vector<std::pair<clang::SourceRange, bool>> ReplaceInfo;
+extern std::pair<clang::SourceRange, bool> ReplaceInfo;
 
 using namespace clang;
 using namespace clang::ast_matchers;
@@ -751,25 +752,21 @@ void IncludesCallbacks::If(SourceLocation Loc, SourceRange ConditionRange,
     return;
   }
 
-  SourceLocation SL = ConditionRange.getBegin();
-  while(SL<ConditionRange.getEnd()) {
-    const auto Tok2Ptr = Lexer::findNextToken(SL, SM, LangOptions());
-    if (!Tok2Ptr.has_value())
-      continue;
-    Token tok = Tok2Ptr.value();
-    std::cout << tok.getKind() << std::endl;
-    SL = tok.getEndLoc();
-  }
-
-
-
   std::cout << "!!!!!!!!!!!!!!!!!" << std::endl;
-  std::cout << "ContainCudaRTVersionMacro:" << ContainCudaRTVersionMacro << std::endl;
-  for (auto I : ReplaceInfo) {
-    std::cout << "Begin:" << I.first.getBegin().printToString(SM) << std::endl;
-    std::cout << "End:" << I.first.getEnd().printToString(SM) << std::endl;
+  std::cout << "ContainCudaRTVersionMacro:" << ContainCudaRTVersionMacro
+            << std::endl;
+  if (ProcessingCudaRTVersionMacro) {
+    std::cout << "ConditionRange begin:"
+              << ConditionRange.getBegin().printToString(SM) << std::endl;
+    std::cout << "ConditionRange end:"
+              << ConditionRange.getEnd().printToString(SM) << std::endl;
+  } else {
+    for (auto I : ReplaceInfo) {
+      std::cout << "Begin:" << I.first.getBegin().printToString(SM)
+                << std::endl;
+      std::cout << "End:" << I.first.getEnd().printToString(SM) << std::endl;
+    }
   }
-
 
   ReplaceCuMacro(ConditionRange, IfType::IT_If, Loc, Loc);
 }
