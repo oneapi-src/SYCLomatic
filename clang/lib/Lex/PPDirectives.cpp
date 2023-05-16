@@ -3338,7 +3338,7 @@ void Preprocessor::HandleIfDirective(Token &IfToken,
   IsEvaluatingExpression = false;
 #else
   const DirectiveEvalResult DER = EvaluateDirectiveExpression(IfNDefMacro);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   const bool ConditionalTrue = DER.Conditional;
   // Lexer might become invalid if we hit code completion point while evaluating
   // expression.

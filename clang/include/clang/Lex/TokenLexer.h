@@ -62,7 +62,7 @@ private:
 #else
   /// This is the index of the next token that Lex will return.
   unsigned CurTokenIdx;
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
   /// The source location range where this macro was expanded.
   SourceLocation ExpandLocStart, ExpandLocEnd;
