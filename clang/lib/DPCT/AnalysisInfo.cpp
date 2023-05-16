@@ -1322,7 +1322,7 @@ void KernelCallExpr::addDevCapCheckStmt() {
     std::string Str;
     llvm::raw_string_ostream OS(Str);
     OS << MapNames::getDpctNamespace() << "has_capability_or_fail(";
-    OS << getStreamBase();
+    printStreamBase(OS);
     OS << "get_device(), {" << AspectList.front();
     for (size_t i = 1; i < AspectList.size(); ++i) {
       OS << ", " << AspectList[i];
@@ -1619,7 +1619,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
   if (!getEvent().empty()) {
     Printer << "*" << getEvent() << " = ";
   }
-  Printer << getStreamBase();
+  printStreamBase(Printer);
   if (SubmitStmtsList.empty()) {
     printParallelFor(Printer, false);
   } else {
@@ -1753,19 +1753,16 @@ void KernelCallExpr::printKernel(KernelPrinter &Printer) {
   Printer.newLine();
 }
 
-std::string KernelCallExpr::getStreamBase() {
-  std::string Str;
-  llvm::raw_string_ostream OS(Str);
+template <class T> void KernelCallExpr::printStreamBase(T &Printer) {
   if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&') {
-    OS << "(" << ExecutionConfig.Stream << ")";
+    Printer << "(" << ExecutionConfig.Stream << ")";
   } else {
-    OS << ExecutionConfig.Stream;
+    Printer << ExecutionConfig.Stream;
   }
   if (isQueuePtr())
-    OS << "->";
+    Printer << "->";
   else
-    OS << ".";
-  return OS.str();
+    Printer << ".";
 }
 
 std::string KernelCallExpr::getReplacement() {

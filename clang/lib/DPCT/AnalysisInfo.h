@@ -4081,7 +4081,7 @@ private:
   void printSubmitLamda(KernelPrinter &Printer);
   void printParallelFor(KernelPrinter &Printer, bool IsInSubmit);
   void printKernel(KernelPrinter &Printer);
-  std::string getStreamBase();
+  template <class T> void printStreamBase(T &Printer);
 
 public:
   KernelCallExpr(unsigned Offset, const std::string &FilePath,
