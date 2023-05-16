@@ -123,7 +123,7 @@ int main() {
 #endif
 
 int foo(int num) {
-//CHECK: #if SYCL_LANGUAGE_VERSION >= 4000
+//CHECK: #if (SYCL_LANGUAGE_VERSION >= 202001)
 //CHECK-NEXT: dpct::get_current_device().reset();
 //CHECK-NEXT: #else
 //CHECK-NEXT: cudaThreadExit();
