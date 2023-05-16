@@ -53,10 +53,17 @@ class TokenLexer {
   /// This is the length of the Tokens array.
   unsigned NumTokens;
 
-  /// This is the index of the next token that Lex will return.
+#ifdef SYCLomatic_CUSTOMIZATION
 public:
+  /// This is the index of the next token that Lex will return.
   unsigned CurTokenIdx;
+
 private:
+#else
+  /// This is the index of the next token that Lex will return.
+  unsigned CurTokenIdx;
+#endif
+
   /// The source location range where this macro was expanded.
   SourceLocation ExpandLocStart, ExpandLocEnd;
 

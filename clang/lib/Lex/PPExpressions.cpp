@@ -229,10 +229,12 @@ static bool EvaluateDefined(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
       PP.Diag(beginLoc, diag::warn_defined_in_object_type_macro);
   }
 
+#ifdef SYCLomatic_CUSTOMIZATION
   if (II->getName() == "CUDART_VERSION" &&
       IsInAnalysisScopeFunc(PeekTok.getLocation())) {
     ReplaceInfo = std::make_pair(Result.getRange(), !Result.Val.isZero());
   }
+#endif // SYCLomatic_CUSTOMIZATION
   // Invoke the 'defined' callback.
   if (PPCallbacks *Callbacks = PP.getPPCallbacks()) {
     Callbacks->Defined(macroToken, Macro,
@@ -267,6 +269,7 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
   }
 
   switch (PeekTok.getKind()) {
+#ifdef SYCLomatic_CUSTOMIZATION
   case tok::identifier:
     if (PeekTok.getIdentifierInfo()->getName().str() == "CUDART_VERSION" &&
         IsInAnalysisScopeFunc(PeekTok.getLocation())) {
@@ -274,6 +277,8 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
       ContainCudaRTVersionMacro = true;
       Result.Val = 11070;
     }
+    LLVM_FALLTHROUGH;
+#endif // SYCLomatic_CUSTOMIZATION
   default:
     // If this token's spelling is a pp-identifier, check to see if it is
     // 'defined' or if it is a macro.  Note that we check here because many
@@ -557,10 +562,12 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
     // C99 6.5.3.3p5: The sign of the result is 'int', aka it is signed.
     Result.Val.setIsUnsigned(false);
     Result.setIdentifier(nullptr);
+#ifdef SYCLomatic_CUSTOMIZATION
     if (ProcessingCudaRTVersionMacro) {
       ProcessingCudaRTVersionMacro = false;
       ReplaceInfo = std::make_pair(Result.getRange(), !Result.Val.isZero());
     }
+#endif // SYCLomatic_CUSTOMIZATION
 
     if (DT.State == DefinedTracker::DefinedMacro)
       DT.State = DefinedTracker::NotDefinedMacro;
@@ -660,16 +667,24 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
       RHSIsLive = false;   // RHS of "0 && x" is dead.
     else if (Operator == tok::pipepipe && LHS.Val != 0)
       RHSIsLive = false;   // RHS of "1 || x" is dead.
-    else if (Operator == tok::question && LHS.Val == 0) {
+    else if (Operator == tok::question && LHS.Val == 0)
+#ifdef SYCLomatic_CUSTOMIZATION
+    {
       if (ProcessingCudaRTVersionMacro) {
         ProcessingCudaRTVersionMacro = false;
         ReplaceInfo = std::make_pair(LHS.getRange(), !LHS.Val.isZero());
       }
-      RHSIsLive = false;   // RHS (x) of "0 ? x : y" is dead.
+      RHSIsLive = false; // RHS (x) of "0 ? x : y" is dead.
     }
+#else
+      RHSIsLive = false; // RHS (x) of "0 ? x : y" is dead.
+#endif // SYCLomatic_CUSTOMIZATION
     else
       RHSIsLive = ValueLive;
+#ifdef SYCLomatic_CUSTOMIZATION
+    // Disable short-circuiting
     RHSIsLive = ValueLive;
+#endif // SYCLomatic_CUSTOMIZATION
 
     // Consume the operator, remembering the operator's location for reporting.
     SourceLocation OpLoc = PeekTok.getLocation();
@@ -678,11 +693,15 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
     PPValue RHS(LHS.getBitWidth());
     // Parse the RHS of the operator.
     DefinedTracker DT;
+#ifdef SYCLomatic_CUSTOMIZATION
     bool LHSHasMacro = ProcessingCudaRTVersionMacro;
     ProcessingCudaRTVersionMacro = false;
+#endif // SYCLomatic_CUSTOMIZATION
     if (EvaluateValue(RHS, PeekTok, DT, RHSIsLive, PP)) return true;
+#ifdef SYCLomatic_CUSTOMIZATION
     bool RHSHasMacro = ProcessingCudaRTVersionMacro;
     ProcessingCudaRTVersionMacro = LHSHasMacro || RHSHasMacro;
+#endif // SYCLomatic_CUSTOMIZATION
     IncludedUndefinedIds = DT.IncludedUndefinedIds;
 
     // Remember the precedence of this operator and get the precedence of the
@@ -717,8 +736,10 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
       if (EvaluateDirectiveSubExpr(RHS, RHSPrec, PeekTok, RHSIsLive,
                                    IncludedUndefinedIds, PP))
         return true;
+#ifdef SYCLomatic_CUSTOMIZATION
       bool RHSHasMacro = ProcessingCudaRTVersionMacro;
       ProcessingCudaRTVersionMacro = LHSHasMacro || RHSHasMacro;
+#endif // SYCLomatic_CUSTOMIZATION
       PeekPrec = getPrecedence(PeekTok.getKind());
     }
     assert(PeekPrec <= ThisPrec && "Recursion didn't work!");
@@ -851,6 +872,7 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
     case tok::ampamp:
       Res = (LHS.Val != 0 && RHS.Val != 0);
       Res.setIsUnsigned(false);  // C99 6.5.13p3, result is always int (signed)
+#ifdef SYCLomatic_CUSTOMIZATION
       ProcessingCudaRTVersionMacro = false;
       if (LHSHasMacro) {
         ReplaceInfo = std::make_pair(LHS.getRange(), !LHS.Val.isZero());
@@ -858,10 +880,12 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
       if (RHSHasMacro) {
         ReplaceInfo = std::make_pair(RHS.getRange(), !RHS.Val.isZero());
       }
+#endif // SYCLomatic_CUSTOMIZATION
       break;
     case tok::pipepipe:
       Res = (LHS.Val != 0 || RHS.Val != 0);
       Res.setIsUnsigned(false);  // C99 6.5.14p3, result is always int (signed)
+#ifdef SYCLomatic_CUSTOMIZATION
       ProcessingCudaRTVersionMacro = false;
       if (LHSHasMacro) {
         ReplaceInfo = std::make_pair(LHS.getRange(), !LHS.Val.isZero());
@@ -869,6 +893,7 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
       if (RHSHasMacro) {
         ReplaceInfo = std::make_pair(RHS.getRange(), !RHS.Val.isZero());
       }
+#endif // SYCLomatic_CUSTOMIZATION
       break;
     case tok::comma:
       // Comma is invalid in pp expressions in c89/c++ mode, but is valid in C99
@@ -948,6 +973,7 @@ Preprocessor::EvaluateDirectiveExpression(IdentifierInfo *&IfNDefMacro) {
   // expression.
   bool DisableMacroExpansionAtStartOfDirective = DisableMacroExpansion;
   DisableMacroExpansion = false;
+
   // Peek ahead one token.
   Token Tok;
   LexNonComment(Tok);

@@ -752,21 +752,20 @@ void IncludesCallbacks::If(SourceLocation Loc, SourceRange ConditionRange,
     return;
   }
 
-  std::cout << "!!!!!!!!!!!!!!!!!" << std::endl;
-  std::cout << "ContainCudaRTVersionMacro:" << ContainCudaRTVersionMacro
-            << std::endl;
-  if (ProcessingCudaRTVersionMacro) {
-    std::cout << "ConditionRange begin:"
-              << ConditionRange.getBegin().printToString(SM) << std::endl;
-    std::cout << "ConditionRange end:"
-              << ConditionRange.getEnd().printToString(SM) << std::endl;
-  } else {
-    for (auto I : ReplaceInfo) {
-      std::cout << "Begin:" << I.first.getBegin().printToString(SM)
-                << std::endl;
-      std::cout << "End:" << I.first.getEnd().printToString(SM) << std::endl;
-    }
-  }
+  //std::cout << "!!!!!!!!!!!!!!!!!" << std::endl;
+  //std::cout << "ContainCudaRTVersionMacro:" << ContainCudaRTVersionMacro
+  //          << std::endl;
+  //if (ProcessingCudaRTVersionMacro) {
+  //  std::cout << "ConditionRange begin:"
+  //            << ConditionRange.getBegin().printToString(SM) << std::endl;
+  //  std::cout << "ConditionRange end:"
+  //            << ConditionRange.getEnd().printToString(SM) << std::endl;
+  //} else {
+  //  std::cout << "Begin:" << ReplaceInfo.first.getBegin().printToString(SM)
+  //            << std::endl;
+  //  std::cout << "End:" << ReplaceInfo.first.getEnd().printToString(SM)
+  //            << std::endl;
+  //}
 
   ReplaceCuMacro(ConditionRange, IfType::IT_If, Loc, Loc);
 }
