@@ -139,6 +139,7 @@ bool rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
   }
 
 #if defined(_WIN64)
+  std::string Filename = sys::path::filename(FilePath).str();
   std::string LocalFilePath = StringRef(FilePath).lower();
   std::string LocalInRoot =
       InRootAbsValid ? InRootAbs.str().lower() : InRoot.lower();
@@ -169,6 +170,12 @@ bool rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
                     path::begin(LocalInRoot));
   SmallString<512> NewFilePath = StringRef(LocalOutRoot);
   path::append(NewFilePath, PathDiff.first, path::end(LocalFilePath));
+
+#if defined(_WIN64)
+  sys::path::remove_filename(NewFilePath);
+  sys::path::append(NewFilePath, Filename);
+#endif
+
   FilePath = NewFilePath;
   return true;
 }
