@@ -1596,11 +1596,8 @@ void KernelArgumentAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
 
 void KernelArgumentAnalysis::analyzeExpr(
     const CXXDependentScopeMemberExpr *Arg) {
-  if (Arg->isImplicitAccess()) {
-    IsRedeclareRequired = true;
-  } else {
-    if (Arg->isArrow())
-      IsRedeclareRequired = true;
+  IsRedeclareRequired = true;
+  if (!Arg->isImplicitAccess()) {
     KernelArgumentAnalysis::dispatch(Arg->getBase());
   }
 }
