@@ -733,8 +733,10 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange,
           DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
         insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
         requestFeature(HelperFeatureEnum::Dpct_dpct_compatibility_temp, Begin);
-      } else if (MacroName == "CUDART_VERSION" &&
-          DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
+      } else if (MacroName == "CUDART_VERSION" && DpctGlobalInfo::getInstance()
+                                                      .getContext()
+                                                      .getLangOpts()
+                                                      .CUDA) {
         bool EnableBlock = false;
         if (ProcessingCudaRTVersionMacro) {
           EnableBlock = ConditionValue == ConditionValueKind::CVK_True;
