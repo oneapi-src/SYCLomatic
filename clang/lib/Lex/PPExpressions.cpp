@@ -685,7 +685,7 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
       RHSIsLive = false; // RHS (x) of "0 ? x : y" is dead.
     }
 #else
-      RHSIsLive = false; // RHS (x) of "0 ? x : y" is dead.
+      RHSIsLive = false;   // RHS (x) of "0 ? x : y" is dead.
 #endif // SYCLomatic_CUSTOMIZATION
     else
       RHSIsLive = ValueLive;
