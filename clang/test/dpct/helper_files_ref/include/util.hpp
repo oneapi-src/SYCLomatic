@@ -620,8 +620,8 @@ public:
     return _group_linear_range_in_parent;
   }
 };
-/// Computes the active work-group number per Xe-Core when the occupancy is
-/// maximum. Ref to
+
+/// Computes the max active work-group number per Xe-Core. Ref to
 /// https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/GPU-Occupancy-Calculator
 /// \param [out] num_wg Active work-group number.
 /// \param [in] wg_size Work-group size.
