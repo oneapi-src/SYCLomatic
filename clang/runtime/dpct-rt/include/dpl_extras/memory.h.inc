@@ -282,7 +282,8 @@ public:
 #endif
   device_pointer_base(const std::size_t count)
       : buffer(sycl::range<1>(count / sizeof(ValueType))), idx() {}
-  device_pointer_base() {}
+  // buffer has no default const we pass zero-range to create an empty buffer
+  device_pointer_base() : buffer(sycl::range<1>(0)) {}
   device_pointer_base(const device_pointer_base &in)
       : buffer(in.buffer), idx(in.idx) {}
   pointer get() const {
