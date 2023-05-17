@@ -16,7 +16,7 @@
 
 using namespace std;
 
-// CHECK: using sycl::max;
+// CHECK: using dpct::max;
 using ::max;
 
 // CHECK: static dpct::constant_memory<double, 0> d;
@@ -2632,13 +2632,6 @@ int main() {
   testTypecasts();
 }
 
-// Host max/min functions with integer parameters are in <algorithm> instead of <cmath>, so we need to
-// migrate them to std versions and do necessary casts.
-// The following migration is to make the resulted code compilable by dpcpp
-// rule1: in pure __host__ functions, math functions are migrated to std alternatives
-// rule2: math functions in __device__ or __global__ functions are always migrated to sycl alternatives
-// rule3: functions in std namespace always remain untouched
-
 // CHECK:  int foo(int i, int j) {
 // CHECK-NEXT:   return std::max(i, j) + std::min(i, j);
 // CHECK-NEXT: }
@@ -2647,7 +2640,7 @@ __host__ int foo(int i, int j) {
 }
 
 // CHECK:  float foo(float f, float g) {
-// CHECK-NEXT:   return fmaxf(f, g) + fminf(f, g);
+// CHECK-NEXT:   return sycl::max(f, g) + sycl::min(f, g);
 // CHECK-NEXT: }
 __host__ float foo(float f, float g) {
   return max(f, g) + min(f, g);
@@ -2668,7 +2661,7 @@ __device__ float foo2(float f, float g) {
 }
 
 // CHECK:  int  foo3(int i, int j) {
-// CHECK-NEXT:   return sycl::max(i, j) + sycl::min(i, j);
+// CHECK-NEXT:   return std::max(i, j) + std::min(i, j);
 // CHECK-NEXT: }
 __device__ int __host__ foo3(int i, int j) {
   return max(i, j) + min(i, j);
@@ -2687,28 +2680,28 @@ using int_t = int;
 using uint_t = unsigned;
 
 // CHECK: int foo(UINT i, INT j) {
-// CHECK-NEXT:   return std::max<UINT>(i, j) + std::min<UINT>(i, j);
+// CHECK-NEXT:   return dpct::max(i, j) + dpct::min(i, j);
 // CHECK-NEXT: }
 int foo(UINT i, INT j) {
   return max(i, j) + min(i, j);
 }
 
 // CHECK: int foo(INT i, UINT j) {
-// CHECK-NEXT:   return std::max<UINT>(i, j) + std::min<UINT>(i, j);
+// CHECK-NEXT:   return dpct::max(i, j) + dpct::min(i, j);
 // CHECK-NEXT: }
 int foo(INT i, UINT j) {
   return max(i, j) + min(i, j);
 }
 
 // CHECK: int bar(uint_t i, int_t j) {
-// CHECK-NEXT:   return std::max<uint_t>(i, j) + std::min<uint_t>(i, j);
+// CHECK-NEXT:   return dpct::max(i, j) + dpct::min(i, j);
 // CHECK-NEXT: }
 int bar(uint_t i, int_t j) {
   return max(i, j) + min(i, j);
 }
 
 // CHECK: int bar(int_t i, uint_t j) {
-// CHECK-NEXT:   return std::max<uint_t>(i, j) + std::min<uint_t>(i, j);
+// CHECK-NEXT:   return dpct::max(i, j) + dpct::min(i, j);
 // CHECK-NEXT: }
 int bar(int_t i, uint_t j) {
   return max(i, j) + min(i, j);
@@ -2742,12 +2735,12 @@ __device__ void test_pow() {
 }
 
 __global__ void foobar(int i) {
-  // CHECK: sycl::max((unsigned int)i, (unsigned int)item_ct1.get_local_id(2));
-  // CHECK-NEXT: sycl::max((unsigned int)i, (unsigned int)item_ct1.get_local_id(1));
-  // CHECK-NEXT: sycl::max((unsigned int)i, (unsigned int)item_ct1.get_local_id(0));
-  // CHECK-NEXT: sycl::max((unsigned int)item_ct1.get_local_id(2), (unsigned int)i);
-  // CHECK-NEXT: sycl::max((unsigned int)item_ct1.get_local_id(1), (unsigned int)i);
-  // CHECK-NEXT: sycl::max((unsigned int)item_ct1.get_local_id(0), (unsigned int)i);
+  // CHECK: dpct::max(i, (unsigned int)item_ct1.get_local_id(2));
+  // CHECK-NEXT: dpct::max(i, (unsigned int)item_ct1.get_local_id(1));
+  // CHECK-NEXT: dpct::max(i, (unsigned int)item_ct1.get_local_id(0));
+  // CHECK-NEXT: dpct::max((unsigned int)item_ct1.get_local_id(2), i);
+  // CHECK-NEXT: dpct::max((unsigned int)item_ct1.get_local_id(1), i);
+  // CHECK-NEXT: dpct::max((unsigned int)item_ct1.get_local_id(0), i);
   max(i, threadIdx.x);
   max(i, threadIdx.y);
   max(i, threadIdx.z);
@@ -2755,12 +2748,12 @@ __global__ void foobar(int i) {
   max(threadIdx.y, i);
   max(threadIdx.z, i);
 
-  // CHECK: sycl::max((unsigned int)i, (unsigned int)item_ct1.get_group(2));
-  // CHECK-NEXT: sycl::max((unsigned int)i, (unsigned int)item_ct1.get_group(1));
-  // CHECK-NEXT: sycl::max((unsigned int)i, (unsigned int)item_ct1.get_group(0));
-  // CHECK-NEXT: sycl::max((unsigned int)item_ct1.get_group(2), (unsigned int)i);
-  // CHECK-NEXT: sycl::max((unsigned int)item_ct1.get_group(1), (unsigned int)i);
-  // CHECK-NEXT: sycl::max((unsigned int)item_ct1.get_group(0), (unsigned int)i);
+  // CHECK: dpct::max(i, (unsigned int)item_ct1.get_group(2));
+  // CHECK-NEXT: dpct::max(i, (unsigned int)item_ct1.get_group(1));
+  // CHECK-NEXT: dpct::max(i, (unsigned int)item_ct1.get_group(0));
+  // CHECK-NEXT: dpct::max((unsigned int)item_ct1.get_group(2), i);
+  // CHECK-NEXT: dpct::max((unsigned int)item_ct1.get_group(1), i);
+  // CHECK-NEXT: dpct::max((unsigned int)item_ct1.get_group(0), i);
   max(i, blockIdx.x);
   max(i, blockIdx.y);
   max(i, blockIdx.z);
@@ -2768,12 +2761,12 @@ __global__ void foobar(int i) {
   max(blockIdx.y, i);
   max(blockIdx.z, i);
 
-  // CHECK: sycl::max((unsigned int)i, (unsigned int)item_ct1.get_local_range(2));
-  // CHECK-NEXT: sycl::max((unsigned int)i, (unsigned int)item_ct1.get_local_range(1));
-  // CHECK-NEXT: sycl::max((unsigned int)i, (unsigned int)item_ct1.get_local_range(0));
-  // CHECK-NEXT: sycl::max((unsigned int)item_ct1.get_local_range(2), (unsigned int)i);
-  // CHECK-NEXT: sycl::max((unsigned int)item_ct1.get_local_range(1), (unsigned int)i);
-  // CHECK-NEXT: sycl::max((unsigned int)item_ct1.get_local_range(0), (unsigned int)i);
+  // CHECK: dpct::max(i, (unsigned int)item_ct1.get_local_range(2));
+  // CHECK-NEXT: dpct::max(i, (unsigned int)item_ct1.get_local_range(1));
+  // CHECK-NEXT: dpct::max(i, (unsigned int)item_ct1.get_local_range(0));
+  // CHECK-NEXT: dpct::max((unsigned int)item_ct1.get_local_range(2), i);
+  // CHECK-NEXT: dpct::max((unsigned int)item_ct1.get_local_range(1), i);
+  // CHECK-NEXT: dpct::max((unsigned int)item_ct1.get_local_range(0), i);
   max(i, blockDim.x);
   max(i, blockDim.y);
   max(i, blockDim.z);
@@ -2781,12 +2774,12 @@ __global__ void foobar(int i) {
   max(blockDim.y, i);
   max(blockDim.z, i);
 
-  // CHECK: sycl::min((unsigned int)i, (unsigned int)item_ct1.get_local_id(2));
-  // CHECK-NEXT: sycl::min((unsigned int)i, (unsigned int)item_ct1.get_local_id(1));
-  // CHECK-NEXT: sycl::min((unsigned int)i, (unsigned int)item_ct1.get_local_id(0));
-  // CHECK-NEXT: sycl::min((unsigned int)item_ct1.get_local_id(2), (unsigned int)i);
-  // CHECK-NEXT: sycl::min((unsigned int)item_ct1.get_local_id(1), (unsigned int)i);
-  // CHECK-NEXT: sycl::min((unsigned int)item_ct1.get_local_id(0), (unsigned int)i);
+  // CHECK: dpct::min(i, (unsigned int)item_ct1.get_local_id(2));
+  // CHECK-NEXT: dpct::min(i, (unsigned int)item_ct1.get_local_id(1));
+  // CHECK-NEXT: dpct::min(i, (unsigned int)item_ct1.get_local_id(0));
+  // CHECK-NEXT: dpct::min((unsigned int)item_ct1.get_local_id(2), i);
+  // CHECK-NEXT: dpct::min((unsigned int)item_ct1.get_local_id(1), i);
+  // CHECK-NEXT: dpct::min((unsigned int)item_ct1.get_local_id(0), i);
   min(i, threadIdx.x);
   min(i, threadIdx.y);
   min(i, threadIdx.z);
@@ -2794,12 +2787,12 @@ __global__ void foobar(int i) {
   min(threadIdx.y, i);
   min(threadIdx.z, i);
 
-  // CHECK: sycl::min((unsigned int)i, (unsigned int)item_ct1.get_group(2));
-  // CHECK-NEXT: sycl::min((unsigned int)i, (unsigned int)item_ct1.get_group(1));
-  // CHECK-NEXT: sycl::min((unsigned int)i, (unsigned int)item_ct1.get_group(0));
-  // CHECK-NEXT: sycl::min((unsigned int)item_ct1.get_group(2), (unsigned int)i);
-  // CHECK-NEXT: sycl::min((unsigned int)item_ct1.get_group(1), (unsigned int)i);
-  // CHECK-NEXT: sycl::min((unsigned int)item_ct1.get_group(0), (unsigned int)i);
+  // CHECK: dpct::min(i, (unsigned int)item_ct1.get_group(2));
+  // CHECK-NEXT: dpct::min(i, (unsigned int)item_ct1.get_group(1));
+  // CHECK-NEXT: dpct::min(i, (unsigned int)item_ct1.get_group(0));
+  // CHECK-NEXT: dpct::min((unsigned int)item_ct1.get_group(2), i);
+  // CHECK-NEXT: dpct::min((unsigned int)item_ct1.get_group(1), i);
+  // CHECK-NEXT: dpct::min((unsigned int)item_ct1.get_group(0), i);
   min(i, blockIdx.x);
   min(i, blockIdx.y);
   min(i, blockIdx.z);
@@ -2807,12 +2800,12 @@ __global__ void foobar(int i) {
   min(blockIdx.y, i);
   min(blockIdx.z, i);
 
-  // CHECK: sycl::min((unsigned int)i, (unsigned int)item_ct1.get_local_range(2));
-  // CHECK-NEXT: sycl::min((unsigned int)i, (unsigned int)item_ct1.get_local_range(1));
-  // CHECK-NEXT: sycl::min((unsigned int)i, (unsigned int)item_ct1.get_local_range(0));
-  // CHECK-NEXT: sycl::min((unsigned int)item_ct1.get_local_range(2), (unsigned int)i);
-  // CHECK-NEXT: sycl::min((unsigned int)item_ct1.get_local_range(1), (unsigned int)i);
-  // CHECK-NEXT: sycl::min((unsigned int)item_ct1.get_local_range(0), (unsigned int)i);
+  // CHECK: dpct::min(i, (unsigned int)item_ct1.get_local_range(2));
+  // CHECK-NEXT: dpct::min(i, (unsigned int)item_ct1.get_local_range(1));
+  // CHECK-NEXT: dpct::min(i, (unsigned int)item_ct1.get_local_range(0));
+  // CHECK-NEXT: dpct::min((unsigned int)item_ct1.get_local_range(2), i);
+  // CHECK-NEXT: dpct::min((unsigned int)item_ct1.get_local_range(1), i);
+  // CHECK-NEXT: dpct::min((unsigned int)item_ct1.get_local_range(0), i);
   min(i, blockDim.x);
   min(i, blockDim.y);
   min(i, blockDim.z);
@@ -2838,7 +2831,7 @@ __device__ void do_migration3() {
 }
 __host__ __device__ void do_migration4() {
   int i, j;
-  // CHECK: sycl::max(i, j);
+  // CHECK: std::max(i, j);
   max(i, j);
 }
 namespace t {
@@ -2920,8 +2913,8 @@ __device__ void do_migration5() {
   float f;
   int i;
 
-  //CHECK: sycl::max(i, i);
-  //CHECK-NEXT: sycl::min(i, i);
+  //CHECK: std::max(i, i);
+  //CHECK-NEXT: std::min(i, i);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
@@ -2976,8 +2969,8 @@ __global__ void do_migration6() {
   float f;
   int i;
 
-  //CHECK: sycl::max(i, i);
-  //CHECK-NEXT: sycl::min(i, i);
+  //CHECK: std::max(i, i);
+  //CHECK-NEXT: std::min(i, i);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
@@ -3032,8 +3025,8 @@ __device__ __host__ void do_migration7() {
   float f;
   int i;
 
-  //CHECK: sycl::max(i, i);
-  //CHECK-NEXT: sycl::min(i, i);
+  //CHECK: std::max(i, i);
+  //CHECK-NEXT: std::min(i, i);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::floor call is used instead of the nearbyintf call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
@@ -3573,7 +3566,7 @@ __device__ void foo_lambda1()
   []()
   {
     int x = 16, y = 32;
-    // CHECK: int s = sycl::min(x, 10) + sycl::max(y, 64);
+    // CHECK: int s = std::min(x, 10) + std::max(y, 64);
     int s = std::min(x, 10) + std::max(y, 64);
   }();
 }
@@ -3583,7 +3576,7 @@ __device__ __host__ void foo_lambda2()
   []()
   {
     int x = 16, y = 32;
-    // CHECK: int s = sycl::min(x, 10) + sycl::max(y, 64);
+    // CHECK: int s = std::min(x, 10) + std::max(y, 64);
     int s = std::min(x, 10) + std::max(y, 64);
   }();
 }
@@ -3593,7 +3586,7 @@ __global__ void foo_lambda3()
   []()
   {
     int x = 16, y = 32;
-    // CHECK: int s = sycl::min(x, 10) + sycl::max(y, 64);
+    // CHECK: int s = std::min(x, 10) + std::max(y, 64);
     int s = std::min(x, 10) + std::max(y, 64);
   }();
 }
@@ -3641,9 +3634,9 @@ void foo_lambda6()
 auto static_foo = []()
 {
   int num = 256;
-  // CHECK: auto x = sycl::min(num, 10);
+  // CHECK: auto x = std::min(num, 10);
   auto x = std::min(num, 10);
-  // CHECK: auto y = sycl::max(100, num);
+  // CHECK: auto y = std::max(100, num);
   auto y = std::max(100, num);
 };
 void foo_lambda7()
