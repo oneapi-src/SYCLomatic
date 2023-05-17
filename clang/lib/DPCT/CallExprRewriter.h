@@ -272,15 +272,13 @@ public:
       : CallExprRewriter(C, ""), Inner(InnerRewriter),
         IsAssigned(isAssigned(C)) {
     if (IsAssigned)
-      CallExprRewriterFactory<UnsupportFunctionRewriter<>, Diagnostics>(
-          "", Diagnostics::NOERROR_RETURN_COMMA_OP)
-          .create(C);
+      requestFeature(HelperFeatureEnum::Dpct_dpct_check_error, C);
   }
 
   std::optional<std::string> rewrite() override {
     std::optional<std::string> &&Result = Inner->rewrite();
     if (Result.has_value() && IsAssigned)
-      return "(" + Result.value() + ", 0)";
+      return "DPCT_CHECK_ERROR(" + Result.value() + ")";
     return Result;
   }
 };

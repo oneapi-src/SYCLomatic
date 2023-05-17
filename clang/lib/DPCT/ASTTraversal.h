@@ -1105,8 +1105,8 @@ public:
       emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
                                             std::move(CallExprReplStr)));
       if (IsAssigned) {
-        insertAroundRange(FuncNameBegin, FuncCallEnd, "(", ", 0)");
-        report(PrefixInsertLoc, Diagnostics::NOERROR_RETURN_COMMA_OP, true);
+        insertAroundRange(FuncNameBegin, FuncCallEnd, "DPCT_CHECK_ERROR(", ")");
+        requestFeature(HelperFeatureEnum::Dpct_dpct_check_error, FuncNameBegin);
       }
     }
   }

@@ -41,6 +41,16 @@ template <int Arg> class dpct_kernel_scalar;
 
 #define DPCT_COMPATIBILITY_TEMP (600)
 
+#define DPCT_CHECK_ERROR(expr)                                                 \
+  []() {                                                                       \
+    try {                                                                      \
+      expr;                                                                    \
+      return 0;                                                                \
+    } catch (sycl::exception const &e) {                                       \
+      std::cerr << e.what << std::endl;                                        \
+    }                                                                          \
+  }()
+
 #define DPCT_PI_F (3.14159274101257f)
 #define DPCT_PI (3.141592653589793115998)
 

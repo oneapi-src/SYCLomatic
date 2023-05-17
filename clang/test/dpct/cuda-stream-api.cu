@@ -76,10 +76,7 @@ static void func()
   // CHECK-NEXT:         });
   kernelFunc<<<16, 32, 0>>>();
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: MY_ERROR_CHECKER((s1 = dev_ct1.create_queue(), 0));
+  // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(s1 = dev_ct1.create_queue()));
   MY_ERROR_CHECKER(cudaStreamCreate(&s1));
 
   // CHECK:   s0->parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
@@ -104,12 +101,9 @@ static void func()
     cudaStreamCreateWithFlags(&s2, cudaStreamDefault);
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag and priority options.
     // CHECK-NEXT: */
-    // CHECK-NEXT: MY_ERROR_CHECKER((*(s3) = dev_ct1.create_queue(), 0));
+    // CHECK-NEXT: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(*(s3) = dev_ct1.create_queue()));
     MY_ERROR_CHECKER(cudaStreamCreateWithFlags(s3, cudaStreamNonBlocking));
 
     // CHECK:   s2->parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
@@ -128,10 +122,7 @@ static void func()
 
     // CHECK: dev_ct1.destroy_queue(s2);
     cudaStreamDestroy(s2);
-    // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: MY_ERROR_CHECKER((dev_ct1.destroy_queue(*s3), 0));
+    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dev_ct1.destroy_queue(*s3)));
     MY_ERROR_CHECKER(cudaStreamDestroy(*s3));
   }
 
@@ -144,12 +135,9 @@ static void func()
       cudaStreamCreateWithPriority(&s4, cudaStreamDefault, 2);
 
       // CHECK: /*
-      // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-      // CHECK-NEXT: */
-      // CHECK-NEXT: /*
       // CHECK-NEXT: DPCT1025:{{[0-9]+}}: The SYCL queue is created ignoring the flag and priority options.
       // CHECK-NEXT: */
-      // CHECK-NEXT: MY_ERROR_CHECKER((s5 = dev_ct1.create_queue(), 0));
+      // CHECK-NEXT: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(s5 = dev_ct1.create_queue()));
       MY_ERROR_CHECKER(cudaStreamCreateWithPriority(&s5, cudaStreamNonBlocking, 3));
 
       // CHECK:   s4->parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
@@ -167,10 +155,7 @@ static void func()
 
       // CHECK: dev_ct1.destroy_queue(s4);
       cudaStreamDestroy(s4);
-      // CHECK: /*
-      // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-      // CHECK-NEXT: */
-      // CHECK-NEXT: MY_ERROR_CHECKER((dev_ct1.destroy_queue(s5), 0));
+      // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dev_ct1.destroy_queue(s5)));
       MY_ERROR_CHECKER(cudaStreamDestroy(s5));
     }
   }
@@ -185,29 +170,20 @@ static void func()
   // CHECK: /*
   // CHECK-NEXT: DPCT1014:{{[0-9]+}}: The flag and priority options are not supported for SYCL queues. The output parameter(s) are set to 0.
   // CHECK-NEXT: */
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: MY_ERROR_CHECKER((*(&priority_low) = 0, *(&priority_hi) = 0, 0));
+  // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(*(&priority_low) = 0, *(&priority_hi) = 0));
   MY_ERROR_CHECKER(cudaDeviceGetStreamPriorityRange(&priority_low, &priority_hi));
 
   int priority;
   // CHECK: /*
   // CHECK-NEXT: DPCT1014:{{[0-9]+}}: The flag and priority options are not supported for SYCL queues. The output parameter(s) are set to 0.
   // CHECK-NEXT: */
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: MY_ERROR_CHECKER((*(&priority) = 0, 0));
+  // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(*(&priority) = 0));
   MY_ERROR_CHECKER(cudaStreamGetPriority(s0, &priority));
 
   char str[256];
 
   unsigned int flags = 0;
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::err0 status = (std::async([&]() { s0->wait(); callback<char *>(s0, 0, str); }), 0);
+  // CHECK: dpct::err0 status = DPCT_CHECK_ERROR(std::async([&]() { s0->wait(); callback<char *>(s0, 0, str); }));
   // CHECK-NEXT: std::async([&]() { s1->wait(); callback<char*>(s1, 0, str); });
   cudaError_t status = cudaStreamAddCallback(s0, callback<char *>, str, flags);
   cudaStreamAddCallback(s1, callback<char*>, str, flags);
@@ -215,10 +191,7 @@ static void func()
   // CHECK: /*
   // CHECK-NEXT: DPCT1014:{{[0-9]+}}: The flag and priority options are not supported for SYCL queues. The output parameter(s) are set to 0.
   // CHECK-NEXT: */
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: MY_ERROR_CHECKER((*(&flags) = 0, 0));
+  // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(*(&flags) = 0));
   MY_ERROR_CHECKER(cudaStreamGetFlags(s0, &flags));
 
   // CHECK: /*
@@ -246,33 +219,21 @@ static void func()
   // CHECK-NEXT: MY_ERROR_CHECKER(0);
   MY_ERROR_CHECKER(cudaStreamQuery(s0));
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: MY_ERROR_CHECKER((s0->ext_oneapi_submit_barrier({*e}), 0));
+  // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(s0->ext_oneapi_submit_barrier({*e})));
   MY_ERROR_CHECKER(cudaStreamWaitEvent(s0, e, 0));
 
   // CHECK: s0->wait();
   cudaStreamSynchronize(s0);
-  // CHECK: MY_ERROR_CHECKER((s1->wait(), 0));
+  // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(s1->wait()));
   // CHECK-EMPTY:
   MY_ERROR_CHECKER(cudaStreamSynchronize(s1));
 
   // CHECK: q_ct1.wait();
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: MY_ERROR_CHECKER((q_ct1.wait(), 0));
+  // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(q_ct1.wait()));
   // CHECK-NEXT: q_ct1.wait();
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: MY_ERROR_CHECKER((q_ct1.wait(), 0));
+  // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(q_ct1.wait()));
   // CHECK-NEXT: q_ct1.wait();
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: MY_ERROR_CHECKER((q_ct1.wait(), 0));
+  // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(q_ct1.wait()));
   cudaStreamSynchronize(cudaStreamDefault);
   MY_ERROR_CHECKER(cudaStreamSynchronize(cudaStreamDefault));
   cudaStreamSynchronize(cudaStreamLegacy);
@@ -282,10 +243,7 @@ static void func()
 
   // CHECK: dev_ct1.destroy_queue(s0);
   cudaStreamDestroy(s0);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: MY_ERROR_CHECKER((dev_ct1.destroy_queue(s1), 0));
+  // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dev_ct1.destroy_queue(s1)));
   MY_ERROR_CHECKER(cudaStreamDestroy(s1));
 }
 
