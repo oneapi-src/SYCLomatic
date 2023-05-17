@@ -162,7 +162,6 @@ add_clang_library(DPCT
   DNNAPIMigration.cpp
   NCCLAPIMigration.cpp
   TypeLocRewriters.cpp
-  QueryApiMapping.cpp
   AutoComplete.cpp
   LIBCUAPIMigration.cpp
   CUBAPIMigration.cpp

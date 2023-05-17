@@ -53,4 +53,4 @@ ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY("cuda::std::array.at",MemberExprBase(), ARG(0)
 
 ENTRY_RENAMED("cuda::std::make_tuple", "std::make_tuple")
 
-CALL_FACTORY_ENTRY("cuda::std::get", CALL(TEMPLATED_CALLEE("std::get",{0}), ARG(0)))
+CALL_FACTORY_ENTRY("cuda::std::get", CALL(TEMPLATED_CALLEE("std::get", 0), ARG(0)))

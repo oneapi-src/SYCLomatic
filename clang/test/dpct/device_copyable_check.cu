@@ -9,6 +9,28 @@ public:
   ~CudaImage() {};
 };
 __global__ void ScaleDown(float *x, float y) { }
+
+template <typename T> struct S {
+  T *t;
+  S() {}
+  ~S() {}
+};
+template <typename T> __global__ void g(const T *t) {}
+
+template <typename T> void f(const S<T> &s) {
+  // CHECK:  dpct::get_default_queue().submit(
+  // CHECK-NEXT:    [&](sycl::handler &cgh) {
+  // CHECK-NEXT:      auto s_t_ct0 = s.t;
+  // CHECK-EMPTY:
+  // CHECK-NEXT:      cgh.parallel_for(
+  // CHECK-NEXT:          sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:          [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:            g(s_t_ct0);
+  // CHECK-NEXT:          });
+  // CHECK-NEXT:    });
+  g<<<1, 1>>>(s.t);
+}
+
 int main()
 {
   CudaImage res;
@@ -24,5 +46,6 @@ int main()
   // CHECK-NEXT:           });
   // CHECK-NEXT:     });
   ScaleDown<<<1, 1>>>(res.d_data, res.f_data);
+  f(S<float>());
   return 0;
 }
