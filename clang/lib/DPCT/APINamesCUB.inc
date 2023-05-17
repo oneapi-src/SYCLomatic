@@ -1966,9 +1966,9 @@ CALL_FACTORY_ENTRY("cub::IADD3",
                    CALL("",
                         BO(BinaryOperatorKind::BO_Add,
                            BO(BinaryOperatorKind::BO_Add,
-                              CAST_IF_NEED(LITERAL("unsigned int"), ARG(0)),
-                              CAST_IF_NEED(LITERAL("unsigned int"), ARG(1))),
-                           CAST_IF_NEED(LITERAL("unsigned int"), ARG(2)))))
+                              CAST_IF_NOT_SAME(LITERAL("unsigned int"), ARG(0)),
+                              CAST_IF_NOT_SAME(LITERAL("unsigned int"), ARG(1))),
+                           CAST_IF_NOT_SAME(LITERAL("unsigned int"), ARG(2)))))
 
 // cub::DeviceSegmentedSort::StableSortPairs
 CONDITIONAL_FACTORY_ENTRY(

@@ -1898,8 +1898,10 @@ void MapNames::setExplicitNamespaceMap() {
 #undef ENTRY_TYPECAST
 #undef ENTRY_UNSUPPORTED
 #undef ENTRY_REWRITE
-  {"abs", MapNames::getClNamespace(false, true) + "abs"},
-  {"saturate", MapNames::getClNamespace(false, true) + "clamp"},
+      {"abs", MapNames::getClNamespace(false, true) + "abs"},
+      {"saturate", MapNames::getClNamespace(false, true) + "clamp"},
+      {"max", MapNames::getDpctNamespace() + "max"},
+      {"min", MapNames::getDpctNamespace() + "min"},
   };
 }
 // clang-format on

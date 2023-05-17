@@ -518,9 +518,8 @@ __global__ void foo8(){
   atomicAdd(&data[2], tid + 2););
 }
 
-
 //CHECK: #define DFABS(x) (double)sycl::fabs((x))
-//CHECK-NEXT: #define MAX(x, y) sycl::max(x, y)
+//CHECK-NEXT: #define MAX(x, y) dpct::max(x, y)
 //CHECK-NEXT: void foo9(){
 //CHECK-NEXT:   double a,b,c;
 //CHECK-NEXT:   MAX(a, sycl::sqrt(DFABS(b)));
@@ -660,8 +659,8 @@ VECTOR_TYPE_DEF(int)
 //CHECK-NEXT: #define POW(x, y) sycl::pow<float>(x, y)
 //CHECK-NEXT: #define POW2(x, y) vx[id] * vx[id]
 //CHECK-NEXT: /*
-//CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated pow call is used in a macro definition and is not valid
-//CHECK-NEXT: for all macro uses. Adjust the code.
+//CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated pow call is used in a macro/template definition and may
+//CHECK-NEXT: not be valid for all macro/template uses. Adjust the code.
 //CHECK-NEXT: */
 //CHECK-NEXT: #define POW3(x, y) sycl::pow<double>(x, y)
 //CHECK: #define SQRT(x) sycl::sqrt(x)
