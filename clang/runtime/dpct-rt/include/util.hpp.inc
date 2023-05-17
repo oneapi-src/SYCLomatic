@@ -420,7 +420,8 @@ T select_from_sub_group(unsigned int member_mask,
 #if defined(__SPIR__)
   return __spirv_GroupNonUniformShuffle(__spv::Scope::Subgroup, x, logical_remote_id);
 #else
-  #error "Masked version of select_from_sub_group only supports SPIR-V backends"
+  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group "
+                        "only supports SPIR-V backends.");
 #endif // __SPIR__
 #else
   (void)g;
@@ -466,7 +467,8 @@ T shift_sub_group_left(unsigned int member_mask,
   }
   return result;
 #else
-  #error "Masked version of shift_sub_group_left only supports SPIR-V backends"
+  throw sycl::exception(sycl::errc::runtime, "Masked version of shift_sub_group_left "
+                        "only supports SPIR-V backends.");
 #endif // __SPIR__
 #else
   (void)g;
@@ -512,7 +514,8 @@ T shift_sub_group_right(unsigned int member_mask,
   }
   return result;
 #else
-  #error "Masked version of shift_sub_group_right only supports SPIR-V backends"
+  throw sycl::exception(sycl::errc::runtime, "Masked version of shift_sub_group_right "
+                        "only supports SPIR-V backends.");
 #endif // __SPIR__
 #else
   (void)g;
@@ -556,7 +559,8 @@ T permute_sub_group_by_xor(unsigned int member_mask,
 #if defined(__SPIR__)
   return __spirv_GroupNonUniformShuffle(__spv::Scope::Subgroup, x, logical_remote_id);
 #else
-  #error "Masked version of permute_sub_group_by_xor only supports SPIR-V backends."
+  throw sycl::exception(sycl::errc::runtime, "Masked version of permute_sub_group_by_xor "
+                        "only supports SPIR-V backends.");
 #endif // __SPIR__
 #else
   (void)g;
