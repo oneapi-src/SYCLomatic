@@ -411,12 +411,6 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), NoIncrementalMig
                    "Default: off (incremental migration happens)."),
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
-/*
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), QueryApiMapping, "query-api-mapping",
-        llvm::cl::desc("Outputs to stdout functionally compatible SYCL API mapping for CUDA API."),
-        llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
-*/
-
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), AnalysisScope, "analysis-scope-path",
         llvm::cl::desc("The directory path for the analysis scope of the source tree that "
              "needs to be migrated.\n"

@@ -213,13 +213,8 @@ ENTRY_RENAMED("__uint_as_float", MapNames::getClNamespace(false, true) + "bit_ca
 ENTRY_RENAMED("labs", MapNames::getClNamespace(false, true) + "abs")
 ENTRY_RENAMED("llabs", MapNames::getClNamespace(false, true) + "abs")
 
-// Device: sycl::max
-// Host:   int => max, float => fmaxf, double => fmax, long double => fmaxl
-ENTRY_RENAMED("max", MapNames::getClNamespace(false, true) + "max")
-
-// Device: sycl::min
-// Host:   int => min, float => fminf, double => fmin, long double => fminl
-ENTRY_RENAMED("min", MapNames::getClNamespace(false, true) + "min")
+ENTRY_REWRITE("max")
+ENTRY_REWRITE("min")
 
 // Integer Intrinsics
 ENTRY_RENAMED("__clz", MapNames::getClNamespace(false, true) + "clz")
@@ -393,7 +388,7 @@ ENTRY_TYPECAST("__half2ushort_rn")
 ENTRY_TYPECAST("__half2ushort_ru")
 ENTRY_TYPECAST("__half2ushort_rz")
 ENTRY_TYPECAST("__halves2half2")
-ENTRY_TYPECAST("__high2float")
+ENTRY_REWRITE("__high2float")
 ENTRY_TYPECAST("__high2half")
 ENTRY_TYPECAST("__high2half2")
 ENTRY_TYPECAST("__highs2half2")
@@ -411,7 +406,7 @@ ENTRY_TYPECAST("__ll2half_rd")
 ENTRY_TYPECAST("__ll2half_rn")
 ENTRY_TYPECAST("__ll2half_ru")
 ENTRY_TYPECAST("__ll2half_rz")
-ENTRY_TYPECAST("__low2float")
+ENTRY_REWRITE("__low2float")
 ENTRY_TYPECAST("__low2half")
 ENTRY_TYPECAST("__low2half2")
 ENTRY_TYPECAST("__lowhigh2highlow")
