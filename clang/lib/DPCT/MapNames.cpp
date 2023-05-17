@@ -57,6 +57,7 @@ std::unordered_set<std::string> MapNames::SOLVERAPIWithRewriter;
 std::unordered_set<std::string> MapNames::SPARSEAPIWithRewriter;
 MapNames::MapTy MapNames::SPBLASEnumsMap;
 
+// clang-format off
 void MapNames::setExplicitNamespaceMap() {
 
   auto NamespaceSet = DpctGlobalInfo::getExplicitNamespaceSet();
@@ -756,7 +757,6 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUDNN_RNN_DATA_LAYOUT_SEQ_MAJOR_PACKED",
        getDpctNamespace() + "dnnl::rnn_memory_format_tag::tnc"},
   };
-
   // CuDNN Enum constants name to helper feature mapping.
   CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap = {
       {"CUDNN_TENSOR_NCHW", HelperFeatureEnum::DnnlUtils_memory_format_tag},
@@ -831,7 +831,6 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUDNN_RNN_DATA_LAYOUT_SEQ_MAJOR_PACKED",
        HelperFeatureEnum::DnnlUtils_rnn_memory_format_tag},
   };
-
   // Enum constants name mapping.
   EnumConstantRule::EnumNamesMap = {
       // ...
@@ -862,8 +861,8 @@ void MapNames::setExplicitNamespaceMap() {
            "get_integrated",
            HelperFeatureEnum::Device_device_ext_get_integrated)},
       {"cudaDevAttrConcurrentManagedAccess",
-       std::make_shared<EnumNameRule>(
-           "get_info<sycl::info::device::usm_shared_allocations>")},
+      std::make_shared<EnumNameRule>(
+        "get_info<sycl::info::device::usm_shared_allocations>")},
       // enum Memcpy Kind
       {"cudaMemcpyHostToHost", std::make_shared<EnumNameRule>(
                                    getDpctNamespace() + "host_to_host",
@@ -884,9 +883,10 @@ void MapNames::setExplicitNamespaceMap() {
                                 getDpctNamespace() + "automatic",
                                 HelperFeatureEnum::Memory_memcpy_direction)},
       // enum cudaMemory Type
-      {"cudaMemoryTypeHost", std::make_shared<EnumNameRule>(
-                                 getClNamespace() + "usm::alloc::host",
-                                 HelperFeatureEnum::Memory_pointer_attributes)},
+      {"cudaMemoryTypeHost",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() + "usm::alloc::host",
+           HelperFeatureEnum::Memory_pointer_attributes)},
       {"cudaMemoryTypeDevice",
        std::make_shared<EnumNameRule>(
            getClNamespace() + "usm::alloc::device",
@@ -981,9 +981,8 @@ void MapNames::setExplicitNamespaceMap() {
            HelperFeatureEnum::Device_device_ext_get_max_sub_group_size)},
       {"CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK",
        std::make_shared<EnumNameRule>(
-           "get_max_register_size_per_work_group",
-           HelperFeatureEnum::
-               Device_device_ext_get_max_register_size_per_work_group)},
+        "get_max_register_size_per_work_group",
+        HelperFeatureEnum::Device_device_ext_get_max_register_size_per_work_group)},
       {"CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK",
        std::make_shared<EnumNameRule>(
            "get_max_work_group_size",
@@ -1013,28 +1012,33 @@ void MapNames::setExplicitNamespaceMap() {
            "is_native_atomic_supported",
            HelperFeatureEnum::Device_device_ext_is_native_atomic_supported)},
       {"CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X",
-       std::make_shared<EnumNameRule>(
-           "get_max_work_item_sizes",
-           HelperFeatureEnum::Device_device_info_get_max_work_item_sizes)},
+        std::make_shared<EnumNameRule>(
+          "get_max_work_item_sizes",
+          HelperFeatureEnum::Device_device_info_get_max_work_item_sizes)},
       {"CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y",
-       std::make_shared<EnumNameRule>(
-           "get_max_work_item_sizes",
-           HelperFeatureEnum::Device_device_info_get_max_work_item_sizes)},
+        std::make_shared<EnumNameRule>(
+          "get_max_work_item_sizes",
+          HelperFeatureEnum::Device_device_info_get_max_work_item_sizes)},
       {"CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z",
-       std::make_shared<EnumNameRule>(
-           "get_max_work_item_sizes",
-           HelperFeatureEnum::Device_device_info_get_max_work_item_sizes)},
-      {"CU_CTX_MAP_HOST", std::make_shared<EnumNameRule>("0")},
-      {"CU_CTX_SCHED_BLOCKING_SYNC", std::make_shared<EnumNameRule>("0")},
-      {"CU_CTX_SCHED_SPIN", std::make_shared<EnumNameRule>("0")},
-      {"CU_CTX_SCHED_SPIN", std::make_shared<EnumNameRule>("0")},
+        std::make_shared<EnumNameRule>(
+          "get_max_work_item_sizes",
+          HelperFeatureEnum::Device_device_info_get_max_work_item_sizes)},
+      {"CU_CTX_MAP_HOST",
+        std::make_shared<EnumNameRule>("0")},
+      {"CU_CTX_SCHED_BLOCKING_SYNC",
+        std::make_shared<EnumNameRule>("0")},
+      {"CU_CTX_SCHED_SPIN",
+        std::make_shared<EnumNameRule>("0")},
+      {"CU_CTX_SCHED_SPIN",
+        std::make_shared<EnumNameRule>("0")},
       {"CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK",
-       std::make_shared<EnumNameRule>(
-           "get_device_info().get_local_mem_size",
-           HelperFeatureEnum::Device_device_ext_get_device_info_return_info)},
+      std::make_shared<EnumNameRule>(
+          "get_device_info().get_local_mem_size",
+          HelperFeatureEnum::Device_device_ext_get_device_info_return_info)},
 
       // enum CUlimit
-      {"CU_LIMIT_PRINTF_FIFO_SIZE", std::make_shared<EnumNameRule>("INT_MAX")},
+      {"CU_LIMIT_PRINTF_FIFO_SIZE",
+       std::make_shared<EnumNameRule>("INT_MAX")},
 
       // enum CUarray_format
       {"CU_AD_FORMAT_UNSIGNED_INT8",
@@ -1201,29 +1205,21 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<EnumNameRule>(getDpctNamespace() +
                                       "library_data_t::real_int32")},
       {"cuda::thread_scope_system",
-       std::make_shared<EnumNameRule>(getClNamespace() +
-                                      "memory_scope::system")},
+       std::make_shared<EnumNameRule>(getClNamespace() + "memory_scope::system")},
       {"cuda::thread_scope_device",
-       std::make_shared<EnumNameRule>(getClNamespace() +
-                                      "memory_scope::device")},
+       std::make_shared<EnumNameRule>(getClNamespace() + "memory_scope::device")},
       {"cuda::thread_scope_block",
-       std::make_shared<EnumNameRule>(getClNamespace() +
-                                      "memory_scope::work_group")},
+       std::make_shared<EnumNameRule>(getClNamespace() + "memory_scope::work_group")},
       {"cuda::memory_order_relaxed",
-       std::make_shared<EnumNameRule>(getClNamespace() +
-                                      "memory_order::relaxed")},
+       std::make_shared<EnumNameRule>(getClNamespace() + "memory_order::relaxed")},
       {"cuda::memory_order_acq_rel",
-       std::make_shared<EnumNameRule>(getClNamespace() +
-                                      "memory_order::acq_rel")},
+       std::make_shared<EnumNameRule>(getClNamespace() + "memory_order::acq_rel")},
       {"cuda::memory_order_release",
-       std::make_shared<EnumNameRule>(getClNamespace() +
-                                      "memory_order::release")},
+       std::make_shared<EnumNameRule>(getClNamespace() + "memory_order::release")},
       {"cuda:::memory_order_acquire",
-       std::make_shared<EnumNameRule>(getClNamespace() +
-                                      "memory_order::acquire")},
+       std::make_shared<EnumNameRule>(getClNamespace() + "memory_order::acquire")},
       {"cuda::memory_order_seq_cst",
-       std::make_shared<EnumNameRule>(getClNamespace() +
-                                      "memory_order::seq_cst")},
+       std::make_shared<EnumNameRule>(getClNamespace() + "memory_order::seq_cst")},
       {"CUFFT_R2C",
        std::make_shared<EnumNameRule>(
            getDpctNamespace() + "fft::fft_type::real_float_to_complex_float",
@@ -1248,50 +1244,28 @@ void MapNames::setExplicitNamespaceMap() {
                         getDpctNamespace() +
                             "fft::fft_type::complex_double_to_complex_double",
                         HelperFeatureEnum::FftUtils_fft_type)},
-      {"ncclSum",
-       std::make_shared<EnumNameRule>("oneapi::ccl::reduction::sum")},
-      {"ncclProd",
-       std::make_shared<EnumNameRule>("oneapi::ccl::reduction::prod")},
-      {"ncclMin",
-       std::make_shared<EnumNameRule>("oneapi::ccl::reduction::min")},
-      {"ncclMax",
-       std::make_shared<EnumNameRule>("oneapi::ccl::reduction::max")},
-      {"ncclInt8",
-       std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int8")},
-      {"ncclChar",
-       std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int8")},
-      {"ncclUint8",
-       std::make_shared<EnumNameRule>("oneapi::ccl::datatype::uint8")},
-      {"ncclInt32",
-       std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int32")},
-      {"ncclInt",
-       std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int32")},
-      {"ncclUint32",
-       std::make_shared<EnumNameRule>("oneapi::ccl::datatype::uint32")},
-      {"ncclInt64",
-       std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int64")},
-      {"ncclUint64",
-       std::make_shared<EnumNameRule>("oneapi::ccl::datatype::uint64")},
-      {"ncclFloat16",
-       std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float16")},
-      {"ncclHalf",
-       std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float16")},
-      {"ncclFloat32",
-       std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float32")},
-      {"ncclFloat",
-       std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float32")},
-      {"ncclFloat64",
-       std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float64")},
-      {"ncclDouble",
-       std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float64")},
-      {"ncclBfloat16",
-       std::make_shared<EnumNameRule>("oneapi::ccl::datatype::bfloat16")},
-      {"CUSOLVER_EIG_RANGE_ALL",
-       std::make_shared<EnumNameRule>("oneapi::mkl::rangev::all")},
-      {"CUSOLVER_EIG_RANGE_V",
-       std::make_shared<EnumNameRule>("oneapi::mkl::rangev::values")},
-      {"CUSOLVER_EIG_RANGE_I",
-       std::make_shared<EnumNameRule>("oneapi::mkl::rangev::indices")},
+      {"ncclSum", std::make_shared<EnumNameRule>("oneapi::ccl::reduction::sum")},
+      {"ncclProd", std::make_shared<EnumNameRule>("oneapi::ccl::reduction::prod")},
+      {"ncclMin", std::make_shared<EnumNameRule>("oneapi::ccl::reduction::min")},
+      {"ncclMax", std::make_shared<EnumNameRule>("oneapi::ccl::reduction::max")},
+      {"ncclInt8", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int8")},
+      {"ncclChar", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int8")},
+      {"ncclUint8", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::uint8")},
+      {"ncclInt32", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int32")},
+      {"ncclInt", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int32")},
+      {"ncclUint32", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::uint32")},
+      {"ncclInt64", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int64")},
+      {"ncclUint64", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::uint64")},
+      {"ncclFloat16", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float16")},
+      {"ncclHalf", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float16")},
+      {"ncclFloat32", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float32")},
+      {"ncclFloat", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float32")},
+      {"ncclFloat64", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float64")},
+      {"ncclDouble", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float64")},
+      {"ncclBfloat16", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::bfloat16")},
+      {"CUSOLVER_EIG_RANGE_ALL", std::make_shared<EnumNameRule>("oneapi::mkl::rangev::all")},
+      {"CUSOLVER_EIG_RANGE_V", std::make_shared<EnumNameRule>("oneapi::mkl::rangev::values")},
+      {"CUSOLVER_EIG_RANGE_I", std::make_shared<EnumNameRule>("oneapi::mkl::rangev::indices")},
       // ...
   };
 
@@ -1928,6 +1902,7 @@ void MapNames::setExplicitNamespaceMap() {
   {"saturate", MapNames::getClNamespace(false, true) + "clamp"},
   };
 }
+// clang-format on
 
 // Supported vector types
 const MapNames::SetTy MapNames::SupportedVectorTypes{SUPPORTEDVECTORTYPENAMES};
