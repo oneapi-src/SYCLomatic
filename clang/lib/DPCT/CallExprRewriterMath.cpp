@@ -162,10 +162,7 @@ std::optional<std::string> MathFuncNameRewriter::rewrite() {
 ///    attribute are treated as device functions;
 /// 3) Functions whose calling functions are augmented with __device__
 ///    or __global__ attributes are treated as device functions;
-/// 4) std::min and std::max are treated as host functions if they are
-///    called by host functions or by local lambda expressions without
-//     explicit __host__ or __device__ attributes in host functions;
-/// 5) Other functions are treated as host functions.
+/// 4) Other functions are treated as host functions.
 ///    eg. "__host__ __device__ fabs()" falls in 5) if fabs is not called in
 ///    device or kernel
 std::string MathFuncNameRewriter::getNewFuncName() {
@@ -191,12 +188,6 @@ std::string MathFuncNameRewriter::getNewFuncName() {
     }
 
     auto ContextFD = getImmediateOuterFuncDecl(Call);
-    if (NamespaceStr == "std" &&
-        (SourceCalleeName == "min" || SourceCalleeName == "max")) {
-      while (auto LE = getImmediateOuterLambdaExpr(ContextFD)) {
-        ContextFD = getImmediateOuterFuncDecl(LE);
-      }
-    }
     if (NamespaceStr == "std" && ContextFD &&
         !ContextFD->hasAttr<CUDADeviceAttr>() &&
         !ContextFD->hasAttr<CUDAGlobalAttr>()) {
@@ -210,29 +201,6 @@ std::string MathFuncNameRewriter::getNewFuncName() {
         // further check the type of the args.
         if (!Call->getArg(0)->getType()->isIntegerType()) {
           NewFuncName = MapNames::getClNamespace(false, true) + "fabs";
-        }
-      }
-
-      if (SourceCalleeName == "min" || SourceCalleeName == "max") {
-        LangOptions LO;
-        std::string FT =
-            Call->getType().getCanonicalType().getAsString(PrintingPolicy(LO));
-        for (unsigned i = 0; i < Call->getNumArgs(); i++) {
-          auto Arg = Call->getArg(i);
-          auto ArgExprClass = Arg->getStmtClass();
-          if (isTargetPseudoObjectExpr(Arg)) {
-            RewriteArgList[i] = "(" + FT + ")" + RewriteArgList[i];
-          } else {
-            std::string ArgT = Arg->getType().getCanonicalType().getAsString(
-                PrintingPolicy(LO));
-            auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
-            if (ArgT != FT || ArgExprClass == Stmt::BinaryOperatorClass) {
-              if (DRE)
-                RewriteArgList[i] = "(" + FT + ")" + RewriteArgList[i];
-              else
-                RewriteArgList[i] = "(" + FT + ")(" + RewriteArgList[i] + ")";
-            }
-          }
         }
       }
 
@@ -277,7 +245,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
             // typical 64-bit systems). However, sycl::mul24 only takes 32-bit
             // integers, so it is necessary to convert the migrated type to
             // int or unsigned int.
-            if (isTargetPseudoObjectExpr(Arg))
+            if (isContainTargetSpecialExpr(Arg))
               RewriteArgList[i] = "(" + ParamType + ")" + RewriteArgList[i];
           } else {
             auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
@@ -398,160 +366,6 @@ std::string MathFuncNameRewriter::getNewFuncName() {
           } else if (K == BuiltinType::LongDouble) {
             NewFuncName = "f" + SourceCalleeName.str();
             NewFuncName += "l";
-          }
-        }
-      } else if (SourceCalleeName == "max" || SourceCalleeName == "min") {
-        if (Call->getNumArgs() != 2) {
-          return SourceCalleeName.str();
-        }
-        auto Arg0 = Call->getArg(0)->IgnoreImpCasts();
-        auto Arg1 = Call->getArg(1)->IgnoreImpCasts();
-        auto *BT0 = dyn_cast<BuiltinType>(Arg0->getType());
-        auto *BT1 = dyn_cast<BuiltinType>(Arg1->getType());
-        // Deal with cases where types of arguments are typedefs, e.g.,
-        // 1) typdef int INT;
-        // 2) using int_t = int;
-        const TypedefType *TT0 = nullptr, *TT1 = nullptr;
-        if (!BT0) {
-          TT0 = Arg0->getType()->getAs<TypedefType>();
-          if (TT0)
-            BT0 = dyn_cast<BuiltinType>(TT0->getCanonicalTypeUnqualified().getTypePtr());
-        }
-        if (!BT1) {
-          TT1 = Arg1->getType()->getAs<TypedefType>();
-          if (TT1)
-            BT1 = dyn_cast<BuiltinType>(TT1->getCanonicalTypeUnqualified().getTypePtr());
-        }
-        if (BT0 && BT1) {
-          auto K0 = BT0->getKind();
-          auto K1 = BT1->getKind();
-          if (K0 == BuiltinType::LongDouble || K1 == BuiltinType::LongDouble) {
-            NewFuncName = "f" + SourceCalleeName.str();
-            NewFuncName += "l";
-          } else if (K0 == BuiltinType::Double || K1 == BuiltinType::Double) {
-            NewFuncName = "f" + SourceCalleeName.str();
-          } else if (K0 == BuiltinType::Float || K1 == BuiltinType::Float) {
-            NewFuncName = "f" + SourceCalleeName.str();
-            NewFuncName += "f";
-          } else if (BT0->isInteger() && BT0->isInteger()) {
-            // Host max/min functions with integer parameters are in <algorithm>
-            // instead of <cmath>, so we need to migrate them to std versions
-            // and do necessary type conversions.
-            bool MigrateToStd = true;
-            std::string TypeName;
-            // Deal with integer types in this branch
-            PrintingPolicy PP{LangOptions()};
-            if (K0 == K1) {
-              // Nothing to do: no type conversion needed
-            } else if (BT0->isSignedInteger() && BT1->isSignedInteger()) {
-              // Only deal with short, int, long, and long long
-              if (K0 < BuiltinType::Short || K0 > BuiltinType::LongLong ||
-                  K1 < BuiltinType::Short || K1 > BuiltinType::LongLong)
-                return NewFuncName;
-              // Convert shorter types to longer types
-              if (K0 < K1) {
-                TypeName = BT1->getNameAsCString(PP);
-              } else {
-                TypeName = BT0->getNameAsCString(PP);
-              }
-            } else if (BT0->isUnsignedInteger() && BT1->isUnsignedInteger()) {
-              // Only deal with unsigned short, unsigned int, unsigned long,
-              // and unsigned long long
-              if (K0 < BuiltinType::UShort || K0 > BuiltinType::ULongLong ||
-                  K1 < BuiltinType::UShort || K1 > BuiltinType::ULongLong)
-                return NewFuncName;
-              // Convert shorter types to longer types
-              if (K0 < K1) {
-                TypeName = BT1->getNameAsCString(PP);
-              } else {
-                TypeName = BT0->getNameAsCString(PP);
-              }
-            } else {
-              // Convert signed types to unsigned types if the bit width of
-              // the signed is equal or smaller than that of the unsigned;
-              // otherwise, do not migrate them. Overflow is not considered.
-              const BuiltinType *UnsignedType;
-              const TypedefType *UnsignedTypedefType;
-              BuiltinType::Kind UnsignedKind = BuiltinType::Kind::Void;
-              BuiltinType::Kind SignedKind = BuiltinType::Kind::Void;
-              if (BT0->isSignedInteger() && BT1->isUnsignedInteger()) {
-                UnsignedType = BT1;
-                UnsignedTypedefType = TT1;
-                UnsignedKind = K1;
-                SignedKind = K0;
-              } else if (BT0->isUnsignedInteger() && BT1->isSignedInteger()) {
-                UnsignedType = BT0;
-                UnsignedTypedefType = TT0;
-                UnsignedKind = K0;
-                SignedKind = K1;
-              }
-              auto GetType = [=]() -> std::string {
-                std::string TypeName;
-                if (UnsignedTypedefType) {
-                  if (auto TND = UnsignedTypedefType->getDecl())
-                    TypeName = TND->getNameAsString();
-                  else
-                    TypeName = UnsignedType->getNameAsCString(PP);
-                } else {
-                  TypeName = UnsignedType->getNameAsCString(PP);
-                }
-                return TypeName;
-              };
-              switch (UnsignedKind) {
-              case BuiltinType::ULongLong:
-                switch (SignedKind) {
-                case BuiltinType::LongLong:
-                case BuiltinType::Long:
-                case BuiltinType::Int:
-                case BuiltinType::Short:
-                  TypeName = GetType();
-                  break;
-                default:
-                  MigrateToStd = false;
-                }
-                break;
-              case BuiltinType::ULong:
-                switch (SignedKind) {
-                case BuiltinType::Long:
-                case BuiltinType::Int:
-                case BuiltinType::Short:
-                  TypeName = GetType();
-                  break;
-                default:
-                  MigrateToStd = false;
-                }
-                break;
-              case BuiltinType::UInt:
-                switch (SignedKind) {
-                case BuiltinType::Int:
-                case BuiltinType::Short:
-                  TypeName = GetType();
-                  break;
-                default:
-                  MigrateToStd = false;
-                }
-                break;
-              case BuiltinType::UShort:
-                switch (SignedKind) {
-                case BuiltinType::Short:
-                  TypeName = GetType();
-                  break;
-                default:
-                  MigrateToStd = false;
-                }
-                break;
-              default:
-                MigrateToStd = false;
-              }
-            }
-
-            if (NamespaceStr.empty() && MigrateToStd) {
-              DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(),
-                                                         HT_Algorithm);
-              NewFuncName = "std::" + SourceCalleeName.str();
-              if (!TypeName.empty())
-                NewFuncName += "<" + TypeName + ">";
-            }
           }
         }
       }
@@ -1223,6 +1037,17 @@ auto IsDirectCallerPureDevice = [](const CallExpr *C) -> bool {
 };
 auto IsUnresolvedLookupExpr = [](const CallExpr *C) -> bool {
   return dyn_cast_or_null<UnresolvedLookupExpr>(C->getCallee());
+};
+auto UsingDpctMinMax = [](const CallExpr *C) -> bool {
+  if (IsUnresolvedLookupExpr(C))
+    return true;
+  if (C->getBeginLoc().isMacroID() || C->getEndLoc().isMacroID())
+    return true;
+  QualType Arg0T = C->getArg(0)->IgnoreImpCasts()->getType();
+  QualType Arg1T = C->getArg(1)->IgnoreImpCasts()->getType();
+  Arg0T.removeLocalCVRQualifiers(Qualifiers::CVRMask);
+  Arg1T.removeLocalCVRQualifiers(Qualifiers::CVRMask);
+  return Arg0T != Arg1T;
 };
 }
 

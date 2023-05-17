@@ -213,13 +213,8 @@ ENTRY_RENAMED("__uint_as_float", MapNames::getClNamespace(false, true) + "bit_ca
 ENTRY_RENAMED("labs", MapNames::getClNamespace(false, true) + "abs")
 ENTRY_RENAMED("llabs", MapNames::getClNamespace(false, true) + "abs")
 
-// Device: sycl::max
-// Host:   int => max, float => fmaxf, double => fmax, long double => fmaxl
-ENTRY_RENAMED("max", MapNames::getClNamespace(false, true) + "max")
-
-// Device: sycl::min
-// Host:   int => min, float => fminf, double => fmin, long double => fminl
-ENTRY_RENAMED("min", MapNames::getClNamespace(false, true) + "min")
+ENTRY_REWRITE("max")
+ENTRY_REWRITE("min")
 
 // Integer Intrinsics
 ENTRY_RENAMED("__clz", MapNames::getClNamespace(false, true) + "clz")

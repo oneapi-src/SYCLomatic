@@ -1026,6 +1026,10 @@ const internal::VariadicDynCastAllOfMatcher<Stmt, PredefinedExpr>
     predefinedExpr;
 const internal::VariadicDynCastAllOfMatcher<Stmt, DesignatedInitExpr>
     designatedInitExpr;
+#ifdef SYCLomatic_CUSTOMIZATION
+const internal::VariadicDynCastAllOfMatcher<Stmt, PseudoObjectExpr>
+    pseudoObjectExpr;
+#endif // SYCLomatic_CUSTOMIZATION
 const internal::VariadicOperatorMatcherFunc<
     2, std::numeric_limits<unsigned>::max()>
     eachOf = {internal::DynTypedMatcher::VO_EachOf};
