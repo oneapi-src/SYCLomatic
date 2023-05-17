@@ -173,3 +173,89 @@ int foo2(){
     pl = CUDART_VERSION - major * 1000 - minor * 10;
   }
 }
+
+//CHECK: void foo3() {
+//CHECK-NEXT: #if (SYCL_LANGUAGE_VERSION >= 202001)
+//CHECK-NEXT:   sycl::int2 a1;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if (SYCL_LANGUAGE_VERSION >= 202001)
+//CHECK-NEXT:   sycl::int2 a2;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #define AAA 1
+//CHECK-NEXT: #if (SYCL_LANGUAGE_VERSION >= 202001) && AAA
+//CHECK-NEXT:   sycl::int2 a3;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if (SYCL_LANGUAGE_VERSION < 202001) && AAA
+//CHECK-NEXT:   int2 a4;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if (SYCL_LANGUAGE_VERSION >= 202001) && AAA
+//CHECK-NEXT:   sycl::int2 a5;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: }
+void foo3() {
+#if defined CUDART_VERSION
+  int2 a1;
+#endif
+#if defined( CUDART_VERSION)
+  int2 a2;
+#endif
+#define AAA 1
+#if (CUDART_VERSION >= 4000) && AAA
+  int2 a3;
+#endif
+#if !CUDART_VERSION && AAA
+  int2 a4;
+#endif
+#if (CUDART_VERSION ? 1 : 0) && AAA
+  int2 a5;
+#endif
+}
+
+//CHECK: void foo4() {
+//CHECK-NEXT: #define BBB 0
+//CHECK-NEXT: #if BBB
+//CHECK-NEXT: #elif (SYCL_LANGUAGE_VERSION >= 202001)
+//CHECK-NEXT:   sycl::int2 a1;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if BBB
+//CHECK-NEXT: #elif (SYCL_LANGUAGE_VERSION >= 202001)
+//CHECK-NEXT:   sycl::int2 a2;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #define AAA 1
+//CHECK-NEXT: #if BBB
+//CHECK-NEXT: #elif (SYCL_LANGUAGE_VERSION >= 202001) && AAA
+//CHECK-NEXT:   sycl::int2 a3;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if BBB
+//CHECK-NEXT: #elif (SYCL_LANGUAGE_VERSION < 202001) && AAA
+//CHECK-NEXT:   int2 a4;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if BBB
+//CHECK-NEXT: #elif (SYCL_LANGUAGE_VERSION >= 202001) && AAA
+//CHECK-NEXT:   sycl::int2 a5;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: }
+void foo4() {
+#define BBB 0
+#if BBB
+#elif defined CUDART_VERSION
+  int2 a1;
+#endif
+#if BBB
+#elif defined( CUDART_VERSION)
+  int2 a2;
+#endif
+#define AAA 1
+#if BBB
+#elif (CUDART_VERSION >= 4000) && AAA
+  int2 a3;
+#endif
+#if BBB
+#elif !CUDART_VERSION && AAA
+  int2 a4;
+#endif
+#if BBB
+#elif (CUDART_VERSION ? 1 : 0) && AAA
+  int2 a5;
+#endif
+}
