@@ -438,8 +438,6 @@ std::optional<std::string> MathTypeCastRewriter::rewrite() {
     auto MigratedArg1 = getMigratedArg(1);
     OS << MapNames::getClNamespace() + "half2{" << MigratedArg0 << ","
        << MigratedArg1 << "}";
-  } else if (FuncName == "__high2float") {
-    OS << MigratedArg0 << "[0]";
   } else if (FuncName == "__high2half") {
     OS << MigratedArg0 << "[0]";
   } else if (FuncName == "__high2half2") {
@@ -449,8 +447,6 @@ std::optional<std::string> MathTypeCastRewriter::rewrite() {
     auto MigratedArg1 = getMigratedArgWithExtraParens(1);
     OS << MapNames::getClNamespace() + "half2{" << MigratedArg0 << "[0], "
        << MigratedArg1 << "[0]}";
-  } else if (FuncName == "__low2float") {
-    OS << MigratedArg0 << "[1]";
   } else if (FuncName == "__low2half") {
     OS << MigratedArg0 << "[1]";
   } else if (FuncName == "__low2half2") {
