@@ -2047,6 +2047,41 @@ inline int syhegvd(sycl::queue &q, int itype, oneapi::mkl::job jobz,
       q, detail::get_library_data_t_from_type<T>(), info, "sygvd/hegvd", q,
       itype, jobz, uplo, n, a, lda, b, ldb, w, device_ws, device_ws_size, info);
 }
+
+template <typename T, typename ValueT>
+inline int syheev_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
+                                  oneapi::mkl::uplo uplo, int n, T *a, int lda,
+                                  ValueT *w, T *device_ws,
+                                  int *device_ws_size) {}
+
+template <typename T, typename ValueT>
+inline int syheev(sycl::queue &q, oneapi::mkl::job jobz, oneapi::mkl::uplo uplo,
+                  int n, T *a, int lda, ValueT *w, T *device_ws,
+                  int device_ws_size, int *info) {}
+
+inline int syevd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
+                                 oneapi::mkl::uplo uplo, std::int64_t n,
+                                 library_data_t a_type, std::int64_t lda,
+                                 library_data_t w_type,
+                                 std::size_t *device_ws_size,
+                                 std::size_t *host_ws_size = nullptr) {}
+
+inline int syevd(sycl::queue &q, oneapi::mkl::job jobz, oneapi::mkl::uplo uplo,
+                 std::int64_t n, library_data_t a_type, void *a,
+                 std::int64_t lda, library_data_t w_type, void *w,
+                 void *device_ws, std::size_t device_ws_size, int *info) {}
+
+inline int trtri_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
+                                 oneapi::mkl::diag diag, std::int64_t n,
+                                 library_data_t a_type, std::int64_t lda,
+                                 std::size_t *device_ws_size,
+                                 std::size_t *host_ws_size = nullptr) {}
+
+inline int trtri(sycl::queue &q, oneapi::mkl::uplo uplo, oneapi::mkl::diag diag,
+                 std::int64_t n, library_data_t a_type, void *a,
+                 std::int64_t lda, void *device_ws, std::size_t device_ws_size,
+                 int *info) {}
+
 // DPCT_LABEL_END
 } // namespace lapack
 } // namespace dpct
