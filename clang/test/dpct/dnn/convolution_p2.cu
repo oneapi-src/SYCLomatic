@@ -92,7 +92,10 @@ int main() {
     if(cudnnFindConvolutionForwardAlgorithm(handle, dataTensor, filterTensor, covdes, outTensor, 1, &returned_count, &perf_data)) {
         std::cout << "error" << std::endl;
     }
-
+    // CHECK: if(perf_data.status) {
+    if(perf_data.status) {
+        exit(-1);
+    }
     float alpha = 1.0f, beta = 0.0f;
     // CHECK: handle.async_convolution_forward(covdes, perf_data.algo, alpha, dataTensor, data, filterTensor, filter, beta, outTensor, out);
     cudnnConvolutionForward(handle, &alpha, dataTensor, data, filterTensor, filter, covdes, perf_data.algo, workspacesize, size, &beta, outTensor, out);

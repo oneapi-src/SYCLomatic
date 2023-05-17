@@ -545,7 +545,7 @@ enum class binary_op { add, sub, mul, div, min, max, sqrt, neg };
 /// An struct representing convolution algorithm infomation.
 struct convolution_algorithm_info {
   ::dnnl::algorithm algo = ::dnnl::algorithm::convolution_auto;
-  dpct::err1 status = 0;
+  int status = 0;
 };
 // DPCT_LABEL_END
 
