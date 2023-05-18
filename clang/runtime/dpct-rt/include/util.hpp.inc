@@ -879,7 +879,7 @@ inline int calculate_max_active_wg_per_xecore(int *num_wg, int wg_size,
   // Calculate num_wg
   *num_wg = std::min(num_wg_slm, num_wg_threads);
   *num_wg = std::min(*num_wg, max_num_wg);
-  return 0;
+  return ret;
 }
 // DPCT_LABEL_END
 } // namespace experimental
