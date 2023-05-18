@@ -373,9 +373,7 @@ public:
   };
   // Replace a sub template arg
   inline void addReplacement(const Expr *E, unsigned TemplateIndex) {
-    SourceLocation SL;
-    auto LocInfo = getOffsetAndLength(E, &SL);
-    std::cout<<"Replacement: " << SL.printToString(SM) << std::endl;
+    auto LocInfo = getOffsetAndLength(E);
     addReplacement(LocInfo.first, LocInfo.second, std::move(TemplateIndex));
   }
   std::set<HelperFeatureEnum> getHelperFeatureSet() { return HelperFeatureSet; }

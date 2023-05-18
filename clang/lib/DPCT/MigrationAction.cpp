@@ -139,9 +139,9 @@ DpctToolAction::DpctToolAction(llvm::raw_ostream &DS, ReplTy &Replacements,
 }
 
 StringRef DpctToolAction::getStagingName(PassKind Pass) {
-  static std::string StaginName[static_cast<unsigned>(PassKind::PK_End)] = {
+  static std::string StageName[static_cast<unsigned>(PassKind::PK_End)] = {
       "Analyzing", "Migrating"};
-  return StaginName[static_cast<unsigned>(Pass)];
+  return StageName[static_cast<unsigned>(Pass)];
 }
 
 void DpctToolAction::printFileStaging(StringRef Staging, StringRef File) {

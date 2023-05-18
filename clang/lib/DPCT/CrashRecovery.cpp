@@ -58,6 +58,8 @@ class CrashGuard {
   std::string FaultMsg;
   CrashGuard *Before;
 
+  /// std::longjmp will jump to the recover pointer with the value.
+  /// The return value of setjmp when encount a signal.
   static constexpr int Recover = -1;
 
   static CrashGuard *Current;
