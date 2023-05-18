@@ -20,6 +20,6 @@ Detailed Help
 Suggestions to Fix
 ------------------
 
-This kind of code requires manual migration to |dpcpp|. Contact
-`Support <https://software.intel.com/content/www/us/en/develop/support.html>`_
-for help.
+This kind of code requires manual migration to |dpcpp|. 
+
+.. include:: support-msg.txt

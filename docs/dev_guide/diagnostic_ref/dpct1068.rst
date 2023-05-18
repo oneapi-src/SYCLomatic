@@ -26,6 +26,6 @@ Suggestions to Fix
 Replace the placeholder with the correct value and add the necessary ``set_value()``
 statements before ``commit()``.
 
-See the
-`descriptor<precision, domain>::set_value function <https://software.intel.com/content/www/us/en/develop/documentation/oneapi-mkl-dpcpp-developer-reference/top/fourier-transform-functions/descriptorprecision-domain-set-value.html>`_ for more information.
+Refer to the
+`descriptor<precision, domain>::set_value function <https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-dpcpp/current/descriptor-precision-domain-set-value.html>`_ for more information.
 

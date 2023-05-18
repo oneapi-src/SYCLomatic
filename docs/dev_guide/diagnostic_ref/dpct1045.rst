@@ -23,5 +23,5 @@ Suggestions to Fix
 
 If the matrix type used is:
 
-* Non-general: manually fix the code according to `sparse-blas-routines <https://software.intel.com/content/www/us/en/develop/documentation/oneapi-mkl-dpcpp-developer-reference/top/sparse-blas-routines.html>`_.
+* Non-general: manually fix the code according to `sparse-blas-routines <https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-dpcpp/current/sparse-blas-routines.html>`_.
 * General: ignore this warning.

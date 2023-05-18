@@ -15,8 +15,7 @@ Migration of *<API name>* is not supported.
 Detailed Help
 -------------
 
-Contact `Support <https://software.intel.com/content/www/us/en/develop/support.html>`_
-for help.
+.. include:: support-msg.txt
 
 Suggestions to Fix
 ------------------

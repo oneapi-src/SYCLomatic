@@ -24,5 +24,4 @@ Suggestions to Fix
 
 Review the code and adjust it.
 
-Contact `Support <https://software.intel.com/content/www/us/en/develop/support.html>`_
-for help.
+.. include:: support-msg.txt

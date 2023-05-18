@@ -17,10 +17,9 @@ Compatible SYCL code could not be generated.
 Detailed Help
 -------------
 
-Contact `Support <https://software.intel.com/content/www/us/en/develop/support.html>`_
-for help.
+.. include:: support-msg.txt
 
 Suggestions to Fix
 ------------------
 
-Report the issue to `Support <https://software.intel.com/content/www/us/en/develop/support.html>`_.
+.. include:: support-msg.txt
