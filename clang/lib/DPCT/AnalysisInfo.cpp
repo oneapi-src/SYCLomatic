@@ -922,9 +922,11 @@ void DpctFileInfo::buildReplacements() {
   for (auto &BuiltinVar : BuiltinVarInfoMap) {
     auto Ptr = MemVarMap::getHeadWithoutPathCompression(
         &(BuiltinVar.second.DFI->getVarMap()));
-    if (Ptr) {
+    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && Ptr) {
       unsigned int ID = (Ptr->Dim == 1) ? 0 : 2;
       BuiltinVar.second.buildInfo(FilePath, BuiltinVar.first, ID);
+    } else {
+      BuiltinVar.second.buildInfo(FilePath, BuiltinVar.first, 2);
     }
   }
 
@@ -4314,18 +4316,22 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   //    this_sub_group.
   switch (Method) {
   case 'R':
-    if (auto DFI = getCudaKernelDimDFI(Index)) {
-      auto Ptr = MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
-      if (Ptr && Ptr->Dim == 1) {
-        return "0";
+    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+      if (auto DFI = getCudaKernelDimDFI(Index)) {
+        auto Ptr = MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
+        if (Ptr && Ptr->Dim == 1) {
+          return "0";
+        }
       }
     }
     return "2";
   case 'G':
-    if (auto DFI = getCudaKernelDimDFI(Index)) {
-      auto Ptr = MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
-      if (Ptr && Ptr->Dim == 1) {
-        return "1";
+    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+      if (auto DFI = getCudaKernelDimDFI(Index)) {
+        auto Ptr = MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
+        if (Ptr && Ptr->Dim == 1) {
+          return "1";
+        }
       }
     }
     return "3";

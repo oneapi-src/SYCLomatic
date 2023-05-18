@@ -685,7 +685,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   auto ItemItr = NdItemMap.find(BaseType);
   if (ItemItr != NdItemMap.end()) {
     if (MapNames::replaceName(NdItemMemberMap, FieldName)) {
-      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+      {
         auto TargetExpr = getTargetExpr();
         auto FD = getImmediateOuterFuncDecl(TargetExpr);
         auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
@@ -701,9 +701,6 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
           addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
                                          ItemItr->second, "(", FieldName, ")"));
         }
-      } else {
-        addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
-                                       ItemItr->second, "(", FieldName, ")"));
       }
     }
   } else if (BaseType == "dim3") {

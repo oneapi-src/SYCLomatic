@@ -1309,7 +1309,7 @@ void IterationSpaceBuiltinRule::runRule(
       if (!DFI)
         return;
 
-      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+      {
         if (FieldName == "x") {
           DpctGlobalInfo::getInstance().insertBuiltinVarInfo(Begin, TyLen,
                                                              Replacement, DFI);
@@ -1322,15 +1322,6 @@ void IterationSpaceBuiltinRule::runRule(
           Dimension = 0;
           DFI->getVarMap().Dim = 3;
         } else
-          return;
-      } else {
-        if (FieldName == "x") {
-          Dimension = 2;
-        } else if (FieldName == "y")
-          Dimension = 1;
-        else if (FieldName == "z")
-          Dimension = 0;
-        else
           return;
       }
 
@@ -1378,7 +1369,7 @@ void IterationSpaceBuiltinRule::runRule(
     ValueDecl *Field = ME->getMemberDecl();
     StringRef FieldName = Field->getName();
     unsigned Dimension;
-    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+    {
       if (FieldName == "__fetch_builtin_x") {
         auto Range = getDefinitionRange(ME->getBeginLoc(), ME->getEndLoc());
         SourceLocation Begin = Range.getBegin();
@@ -1400,18 +1391,6 @@ void IterationSpaceBuiltinRule::runRule(
         Dimension = 0;
         DFI->getVarMap().Dim = 3;
       } else {
-        llvm::dbgs() << "[" << getName()
-                     << "] Unexpected field name: " << FieldName;
-        return;
-      }
-    } else {
-      if (FieldName == "__fetch_builtin_x")
-        Dimension = 2;
-      else if (FieldName == "__fetch_builtin_y")
-        Dimension = 1;
-      else if (FieldName == "__fetch_builtin_z")
-        Dimension = 0;
-      else {
         llvm::dbgs() << "[" << getName()
                      << "] Unexpected field name: " << FieldName;
         return;
@@ -2575,7 +2554,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
             End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
         if (End.isMacroID())
           return;
-        if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+        {
           auto FD = DpctGlobalInfo::getParentFunction(TL);
           if (!FD)
             return;
@@ -2586,10 +2565,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
               Begin, End.getRawEncoding() - Begin.getRawEncoding(),
               MapNames::getClNamespace() + "group<{{NEEDREPLACEG" +
                   std::to_string(Index) + "}}>"));
-        } else {
-          emplaceTransformation(new ReplaceText(
-              Begin, End.getRawEncoding() - Begin.getRawEncoding(),
-              MapNames::getClNamespace() + "group<3>"));
         }
         return;
       }

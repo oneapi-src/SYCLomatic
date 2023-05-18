@@ -1379,7 +1379,7 @@ public:
     for (auto &File : FileMap)
       File.second->buildKernelInfo();
 
-    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+    {
       // Construct a union-find set for all the instances of MemVarMap in
       // DeviceFunctionInfo. During the traversal of the call-graph, do union
       // operation if caller and callee both need item variable, then after the
