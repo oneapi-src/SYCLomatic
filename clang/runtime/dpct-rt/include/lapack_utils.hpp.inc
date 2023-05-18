@@ -1183,10 +1183,10 @@ template <typename T> struct syheev_impl {
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     auto w_data = dpct::detail::get_memory(reinterpret_cast<value_t *>(w));
     if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
-      oneapi::mkl::lapack::sygv(q, jobz, uplo, n, a_data, lda, w_data,
+      oneapi::mkl::lapack::syev(q, jobz, uplo, n, a_data, lda, w_data,
                                 device_ws_data, device_ws_size);
     } else {
-      oneapi::mkl::lapack::hegv(q, jobz, uplo, n, a_data, lda, w_data,
+      oneapi::mkl::lapack::heev(q, jobz, uplo, n, a_data, lda, w_data,
                                 device_ws_data, device_ws_size);
     }
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
@@ -2174,7 +2174,7 @@ inline int syhegvd(sycl::queue &q, int itype, oneapi::mkl::job jobz,
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|syheevd_scratchpad_size|dpct::lapack
+// DPCT_LABEL_BEGIN|syheev_scratchpad_size|dpct::lapack
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
 // LapackUtils|lapack_shim
@@ -2185,7 +2185,7 @@ inline int syhegvd(sycl::queue &q, int itype, oneapi::mkl::job jobz,
 template <typename T>
 inline int syheev_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
                                   oneapi::mkl::uplo uplo, int n, int lda,
-                                  T *device_ws, int *device_ws_size) {
+                                  int *device_ws_size) {
   std::size_t device_ws_size_tmp;
   int ret = detail::lapack_shim<detail::syheev_scratchpad_size_impl>(
       q, detail::get_library_data_t_from_type<T>(), nullptr,
@@ -2196,7 +2196,7 @@ inline int syheev_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|syheevd|dpct::lapack
+// DPCT_LABEL_BEGIN|syheev|dpct::lapack
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
 // LapackUtils|lapack_shim
