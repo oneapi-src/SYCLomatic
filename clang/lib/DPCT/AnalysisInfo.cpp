@@ -156,7 +156,8 @@ std::unordered_map<std::string,
     DpctGlobalInfo::RnnInputMap;
 std::unordered_map<std::string, std::vector<std::string>>
     DpctGlobalInfo::MainSourceFileMap;
-
+std::unordered_map<std::string, bool>
+    DpctGlobalInfo::MallocHostInfoMap;
 /// This variable saved the info of previous migration from the
 /// MainSourceFiles.yaml file. This variable is valid after
 /// canContinueMigration() is called.
@@ -322,6 +323,68 @@ DpctGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall) {
   }
 
   return KernelInfo;
+}
+
+void DpctGlobalInfo::buildReplacements() {
+  // add PriorityRepl into ReplMap and execute related action, e.g.,
+  // request feature or emit warning.
+  for (auto &ReplInfo : PriorityReplInfoMap) {
+    for (auto &Repl : ReplInfo.second->Repls) {
+      addReplacement(Repl);
+    }
+    for (auto &Action : ReplInfo.second->RelatedAction) {
+      Action();
+    }
+  }
+
+  for (auto &File : FileMap)
+    File.second->buildReplacements();
+
+  // All cases of replacing placeholders:
+  // dev_count  queue_count  dev_decl            queue_decl
+  // 0          1            /                   get_default_queue
+  // 1          0            get_current_device  /
+  // 1          1            get_current_device  get_default_queue
+  // 2          1            dev_ct1             get_default_queue
+  // 1          2            dev_ct1             q_ct1
+  // >=2        >=2          dev_ct1             q_ct1
+  if (!getDeviceChangedFlag() && getUsingDRYPattern()) {
+    for (auto &Counter : TempVariableDeclCounterMap) {
+      const auto ColonPos = Counter.first.find_last_of(':');
+      const auto DeclLocFile = Counter.first.substr(0, ColonPos);
+      const auto DeclLocOffset = std::stoi(Counter.first.substr(ColonPos + 1));
+      if (Counter.second.CurrentDeviceCounter > 0 ||
+          Counter.second.DefaultQueueCounter > 1)
+        requestFeature(HelperFeatureEnum::Device_get_current_device,
+                       DeclLocFile);
+      if (Counter.second.DefaultQueueCounter > 0)
+        requestFeature(HelperFeatureEnum::Device_get_default_queue,
+                       DeclLocFile);
+      if ((Counter.second.CurrentDeviceCounter > 1 ||
+           Counter.second.DefaultQueueCounter > 1)) {
+        unsigned int IndentLen = 2;
+        if (getGuessIndentWidthMatcherFlag())
+          IndentLen = getIndentWidth();
+        std::string IndentStr = std::string(IndentLen, ' ');
+        Counter.second.PlaceholderStr[2] = "dev_ct1";
+        std::string DevDecl =
+            getNL() + IndentStr + MapNames::getDpctNamespace() +
+            "device_ext &" + Counter.second.PlaceholderStr[2] + " = " +
+            MapNames::getDpctNamespace() + "get_current_device();";
+        getInstance().addReplacement(std::make_shared<ExtReplacement>(
+            DeclLocFile, DeclLocOffset, 0, DevDecl, nullptr));
+        if (Counter.second.DefaultQueueCounter > 1) {
+          Counter.second.PlaceholderStr[1] = "q_ct1";
+          std::string QDecl = getNL() + IndentStr + MapNames::getClNamespace() +
+                              "queue &" + Counter.second.PlaceholderStr[1] +
+                              " = " + Counter.second.PlaceholderStr[2] +
+                              ".default_queue();";
+          getInstance().addReplacement(std::make_shared<ExtReplacement>(
+              DeclLocFile, DeclLocOffset, 0, QDecl, nullptr));
+        }
+      }
+    }
+  }
 }
 
 void DpctGlobalInfo::processCudaArchMacro(){
@@ -4193,31 +4256,8 @@ std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,
       return getDefaultString(HFT);
     }
 
-    // All cases of replacing placeholders:
-    // dev_count  queue_count  dev_decl            queue_decl
-    // 0          1            /                   get_default_queue
-    // 1          0            get_current_device  /
-    // 1          1            get_current_device  get_default_queue
-    // 2          1            dev_ct1             get_default_queue
-    // 1          2            dev_ct1             q_ct1
-    // >=2        >=2          dev_ct1             q_ct1
-    if (HFT == HelperFuncType::HFT_DefaultQueue) {
-      if (!HelperFuncReplInfoIter->second.IsLocationValid ||
-          TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1) {
-        return getDefaultString(HFT);
-      } else {
-        return "q_ct1";
-      }
-    } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
-      if (!HelperFuncReplInfoIter->second.IsLocationValid ||
-          (TempVariableDeclCounterIter->second.CurrentDeviceCounter <= 1 &&
-          TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1)) {
-        return getDefaultString(HFT);
-      } else {
-        return "dev_ct1";
-      }
-    }
-  
+    return TempVariableDeclCounterIter->second
+        .PlaceholderStr[static_cast<int>(HFT)];
   }
   return "";
 }

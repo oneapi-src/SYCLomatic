@@ -16,32 +16,24 @@
 #include "ExprAnalysis.h"
 #include "MapNames.h"
 #include "Utility.h"
+#include "ToolChains/Cuda.h"
+#include "clang/Driver/Driver.h"
+#include "clang/Driver/Options.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Expr.h"
 #include "clang/Basic/LangOptions.h"
+#include "clang/ASTMatchers/ASTMatchers.h"
 #include <cstdarg>
 
+using namespace clang::ast_matchers;
 namespace clang {
 namespace dpct {
 
-/// Returns true if E is one of the forms:
-/// (blockDim/blockIdx/threadIdx/gridDim).(x/y/z)
-inline bool isTargetPseudoObjectExpr(const Expr *E) {
-  if (auto POE = dyn_cast<PseudoObjectExpr>(E->IgnoreImpCasts())) {
-    auto RE = POE->getResultExpr();
-    if (auto CE = dyn_cast<CallExpr>(RE)) {
-      auto FD = CE->getDirectCallee();
-      auto Name = FD->getNameAsString();
-      if (Name == "__fetch_builtin_x" || Name == "__fetch_builtin_y" ||
-          Name == "__fetch_builtin_z")
-        return true;
-    }
-  } else if (auto DRE = dyn_cast<DeclRefExpr>(E->IgnoreImpCasts())) {
-    auto VarDecl = DRE->getDecl();
-    if (VarDecl && (VarDecl->getNameAsString() == "warpSize")) {
-      return !DpctGlobalInfo::isInAnalysisScope(VarDecl->getLocation());
-    }
-  }
+/// Returns true if E contains one of the forms:
+/// (blockDim/blockIdx/threadIdx/gridDim).(x/y/z) or warpSize
+inline bool isContainTargetSpecialExpr(const Expr *E) {
+  if (containIterationSpaceBuiltinVar(E) || containBuiltinWarpSize(E))
+    return true;
   return false;
 }
 
@@ -126,12 +118,12 @@ public:
   DerefStreamExpr(const Expr *Expression) : E(Expression) {}
 };
 
-template <class SubExprT> class CastIfNeedExprPrinter {
+template <class SubExprT> class CastIfNotSameExprPrinter {
   std::string TypeInfo;
   SubExprT SubExpr;
 
 public:
-  CastIfNeedExprPrinter(std::string &&T, SubExprT &&S)
+  CastIfNotSameExprPrinter(std::string &&T, SubExprT &&S)
       : TypeInfo(std::forward<std::string>(T)),
         SubExpr(std::forward<SubExprT>(S)) {}
   template <class StreamT> void print(StreamT &Stream) const {
@@ -142,6 +134,31 @@ public:
       Stream << "(" << TypeInfo << ")";
     }
     dpct::print(Stream, SubExpr);
+  }
+};
+
+class CastIfSpecialExpr {
+  const Expr *Arg;
+  const CallExpr *CE;
+
+public:
+  CastIfSpecialExpr(const Expr *Arg, const CallExpr *CE) : Arg(Arg), CE(CE) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    if (isContainTargetSpecialExpr(Arg)) {
+      clang::QualType ArgType = Arg->getType().getCanonicalType();
+      ArgType.removeLocalCVRQualifiers(clang::Qualifiers::CVRMask);
+      Stream << "(" << ArgType.getAsString() << ")";
+      if (!dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()) &&
+          !dyn_cast<IntegerLiteral>(Arg->IgnoreImpCasts()) &&
+          !dyn_cast<ParenExpr>(Arg->IgnoreImpCasts()) &&
+          !dyn_cast<PseudoObjectExpr>(Arg->IgnoreImpCasts())) {
+        Stream << "(";
+        dpct::print(Stream, std::make_pair(CE, Arg));
+        Stream << ")";
+        return;
+      }
+    }
+    dpct::print(Stream, std::make_pair(CE, Arg));
   }
 };
 
@@ -576,13 +593,21 @@ makeCastExprCreator(std::function<TypeInfoT(const CallExpr *)> TypeInfo,
 }
 
 template <class SubExprT>
-inline std::function<CastIfNeedExprPrinter<SubExprT>(const CallExpr *)>
-makeCastIfNeedExprCreator(std::function<std::string(const CallExpr *)> TypeInfo,
-                          std::function<SubExprT(const CallExpr *)> Sub) {
-  return PrinterCreator<CastIfNeedExprPrinter<SubExprT>,
+inline std::function<CastIfNotSameExprPrinter<SubExprT>(const CallExpr *)>
+makeCastIfNotSameExprCreator(
+    std::function<std::string(const CallExpr *)> TypeInfo,
+    std::function<SubExprT(const CallExpr *)> Sub) {
+  return PrinterCreator<CastIfNotSameExprPrinter<SubExprT>,
                         std::function<std::string(const CallExpr *)>,
                         std::function<SubExprT(const CallExpr *)>>(TypeInfo,
                                                                    Sub);
+}
+
+inline std::function<CastIfSpecialExpr(const CallExpr *)>
+CastIfSpecialExprCreator(unsigned Idx) {
+  return [=](const CallExpr *C) -> CastIfSpecialExpr {
+    return CastIfSpecialExpr(C->getArg(Idx), C);
+  };
 }
 
 template <class SubExprT>
@@ -1477,6 +1502,48 @@ public:
   }
 };
 
+class CheckCanUseCLibraryMallocOrFree {
+  unsigned AddrArgIdx;
+  bool isFree;
+public:
+  CheckCanUseCLibraryMallocOrFree(unsigned AddrIdx, bool isFree)
+      : AddrArgIdx(AddrIdx), isFree(isFree) {}
+  bool operator()(const CallExpr *C) {
+    if (!DpctGlobalInfo::isOptimizeMigration()) {
+      return false;
+    }
+    if (C->getNumArgs() <= AddrArgIdx)
+      return false;
+    auto AllocatedExpr = C->getArg(AddrArgIdx);
+    const Expr *AE = nullptr;
+    if (auto CSCE = dyn_cast<CStyleCastExpr>(
+            AllocatedExpr->IgnoreImplicitAsWritten())) {
+      AE = CSCE->getSubExpr()->IgnoreImplicitAsWritten();
+    } else {
+      AE = AllocatedExpr->IgnoreImplicitAsWritten();
+    }
+    const DeclRefExpr* DRE = nullptr;
+    if (isFree) {
+      DRE = dyn_cast<DeclRefExpr>(AE);
+    } else if (auto UO = dyn_cast<UnaryOperator>(AE)) {
+      if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
+        DRE = dyn_cast<DeclRefExpr>(UO->getSubExpr());
+      }
+    }
+    if (!DRE) {
+      return false;
+    }
+    auto DREDecl = DRE->getDecl();
+    if (!DREDecl || !isa_and_nonnull<FunctionDecl>(DREDecl->getDeclContext()) ||
+        !DREDecl->getType()->isPointerType()) {
+      return false;
+    }
+    // If the pointer is only accessed on host side, then it's safe to replace
+    // sycl::malloc_host with c library malloc.
+    return isPointerHostAccessOnly(DREDecl);
+  }
+};
+
 template <typename Compare = std::equal_to<>> class CheckArgCount {
   unsigned Count;
   Compare Comp;
@@ -1833,7 +1900,8 @@ public:
 #define CALL(...) makeCallExprCreator(__VA_ARGS__)
 #define ARRAY_SUBSCRIPT(e, i) makeArraySubscriptExprCreator(e, i)
 #define CAST(T, S) makeCastExprCreator(T, S)
-#define CAST_IF_NEED(T, S) makeCastIfNeedExprCreator(T, S)
+#define CAST_IF_NOT_SAME(T, S) makeCastIfNotSameExprCreator(T, S)
+#define CAST_IF_SPECIAL(Idx) CastIfSpecialExprCreator(Idx)
 #define DOUBLE_POINTER_CONST_CAST(BASE_VALUE_TYPE, EXPR,                       \
                                   DOES_BASE_VALUE_NEED_CONST,                  \
                                   DOES_FIRST_LEVEL_POINTER_NEED_CONST)         \

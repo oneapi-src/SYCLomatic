@@ -6,6 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+// clang-format off
+
 TYPE_REWRITE_ENTRY(
     "cuda::atomic",
         TYPE_CONDITIONAL_FACTORY(
@@ -160,7 +162,7 @@ TYPE_REWRITE_ENTRY(
         CheckForPostfixDeclaratorType(0),
         WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE, TYPESTR),
         HEADER_INSERTION_FACTORY(HeaderType::HT_DPCT_DPL_Utils,
-        TYPE_FACTORY(STR("dpct::io_iterator_pair"), ADD_POINTER(TEMPLATE_ARG(0))))))
+        TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "io_iterator_pair"), ADD_POINTER(TEMPLATE_ARG(0))))))
 
 TYPE_REWRITE_ENTRY(
     "cudaPos",
@@ -172,7 +174,7 @@ TYPE_REWRITE_ENTRY(
 TYPE_REWRITE_ENTRY("thrust::identity",
                    TYPE_FACTORY(STR("oneapi::dpl::identity")))
 
-TYPE_REWRITE_ENTRY("thrust::null_type", TYPE_FACTORY(STR("dpct::null_type")))
+TYPE_REWRITE_ENTRY("thrust::null_type", TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "null_type")))
 
 TYPE_REWRITE_ENTRY("cooperative_groups::__v1::plus",
                    TYPE_FACTORY(STR(MapNames::getClNamespace() + "plus"),
@@ -197,3 +199,5 @@ TYPE_REWRITE_ENTRY("cooperative_groups::__v1::bit_xor",
 TYPE_REWRITE_ENTRY("cooperative_groups::__v1::bit_or",
                    TYPE_FACTORY(STR(MapNames::getClNamespace() + "bit_or"),
                                 TEMPLATE_ARG(0)))
+
+// clang-format on

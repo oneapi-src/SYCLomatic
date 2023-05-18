@@ -614,12 +614,12 @@ __device__ void foo_3() {
   // CHECK: sycl::range<3> d3 = {3, 2, 1}, *pd3 = &d3;
   dim3 d3 = {1, 2, 3}, *pd3 = &d3;
   int64_t m = 0;
-  // CHECK: m = sycl::min(m, int64_t((*pd3)[2]));
-  // CHECK-NEXT: m = sycl::min(m, int64_t((*pd3)[1]));
-  // CHECK-NEXT: m = sycl::min(m, int64_t((*pd3)[0]));
-  // CHECK-NEXT: m = sycl::min(m, int64_t(d3[2]));
-  // CHECK-NEXT: m = sycl::min(m, int64_t(d3[1]));
-  // CHECK-NEXT: m = sycl::min(m, int64_t(d3[0]));
+  // CHECK: m = std::min(m, int64_t((*pd3)[2]));
+  // CHECK-NEXT: m = std::min(m, int64_t((*pd3)[1]));
+  // CHECK-NEXT: m = std::min(m, int64_t((*pd3)[0]));
+  // CHECK-NEXT: m = std::min(m, int64_t(d3[2]));
+  // CHECK-NEXT: m = std::min(m, int64_t(d3[1]));
+  // CHECK-NEXT: m = std::min(m, int64_t(d3[0]));
   m = std::min(m, int64_t{pd3->x});
   m = std::min(m, int64_t{pd3->y});
   m = std::min(m, int64_t{pd3->z});

@@ -31,8 +31,8 @@ int main(int argc, char *argv[])
 
     // CHECK: std::transform(oneapi::dpl::execution::make_device_policy(q_ct1), dVec.begin(), dVec.end(), dpct::make_constant_iterator(2), dVec.begin(), std::multiplies<float>());
     thrust::transform(dVec.begin(), dVec.end(), thrust::make_constant_iterator(2), dVec.begin(), thrust::multiplies<float>());
-    // CHECK: std::transform(oneapi::dpl::execution::make_device_policy(q_ct1), dVec.begin(), dVec.end(), dpct::make_constant_iterator(2), dVec.begin(), std::modulus<float>());
-    thrust::transform(dVec.begin(), dVec.end(), thrust::make_constant_iterator(2), dVec.begin(), thrust::modulus<float>());
+    // CHECK: std::transform(oneapi::dpl::execution::make_device_policy(q_ct1), dVec.begin(), dVec.end(), dpct::make_constant_iterator(2), dVec.begin(), std::modulus<int>());
+    thrust::transform(dVec.begin(), dVec.end(), thrust::make_constant_iterator(2), dVec.begin(), thrust::modulus<int>());
     // CHECK: std::copy(oneapi::dpl::execution::make_device_policy(q_ct1), dVec.begin(), dVec.end(), hVec.begin());
     thrust::copy(dVec.begin(), dVec.end(), hVec.begin());
     // CHECK: std::copy(oneapi::dpl::execution::make_device_policy(q_ct1), dVec.begin(), dVec.end(), dVec.begin());

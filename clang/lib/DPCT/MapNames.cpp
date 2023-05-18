@@ -55,7 +55,9 @@ std::unordered_map<std::string, std::pair<std::string, std::string>>
 MapNames::MapTy MapNames::BLASComputingAPIWithRewriter;
 std::unordered_set<std::string> MapNames::SOLVERAPIWithRewriter;
 std::unordered_set<std::string> MapNames::SPARSEAPIWithRewriter;
+MapNames::MapTy MapNames::SPBLASEnumsMap;
 
+// clang-format off
 void MapNames::setExplicitNamespaceMap() {
 
   auto NamespaceSet = DpctGlobalInfo::getExplicitNamespaceSet();
@@ -755,7 +757,6 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUDNN_RNN_DATA_LAYOUT_SEQ_MAJOR_PACKED",
        getDpctNamespace() + "dnnl::rnn_memory_format_tag::tnc"},
   };
-
   // CuDNN Enum constants name to helper feature mapping.
   CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap = {
       {"CUDNN_TENSOR_NCHW", HelperFeatureEnum::DnnlUtils_memory_format_tag},
@@ -830,7 +831,6 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUDNN_RNN_DATA_LAYOUT_SEQ_MAJOR_PACKED",
        HelperFeatureEnum::DnnlUtils_rnn_memory_format_tag},
   };
-
   // Enum constants name mapping.
   EnumConstantRule::EnumNamesMap = {
       // ...
@@ -1267,6 +1267,28 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUSOLVER_EIG_RANGE_V", std::make_shared<EnumNameRule>("oneapi::mkl::rangev::values")},
       {"CUSOLVER_EIG_RANGE_I", std::make_shared<EnumNameRule>("oneapi::mkl::rangev::indices")},
       // ...
+  };
+
+  // spBLAS enums mapping
+  SPBLASEnumsMap = {
+      {"CUSPARSE_OPERATION_NON_TRANSPOSE", "oneapi::mkl::transpose::nontrans"},
+      {"CUSPARSE_OPERATION_TRANSPOSE", "oneapi::mkl::transpose::trans"},
+      {"CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE",
+       "oneapi::mkl::transpose::conjtrans"},
+      {"CUSPARSE_FILL_MODE_LOWER", "oneapi::mkl::uplo::lower"},
+      {"CUSPARSE_FILL_MODE_UPPER", "oneapi::mkl::uplo::upper"},
+      {"CUSPARSE_DIAG_TYPE_NON_UNIT", "oneapi::mkl::diag::nonunit"},
+      {"CUSPARSE_DIAG_TYPE_UNIT", "oneapi::mkl::diag::unit"},
+      {"CUSPARSE_INDEX_BASE_ZERO", "oneapi::mkl::index_base::zero"},
+      {"CUSPARSE_INDEX_BASE_ONE", "oneapi::mkl::index_base::one"},
+      {"CUSPARSE_MATRIX_TYPE_GENERAL",
+       getDpctNamespace() + "sparse::matrix_info::matrix_type::ge"},
+      {"CUSPARSE_MATRIX_TYPE_SYMMETRIC",
+       getDpctNamespace() + "sparse::matrix_info::matrix_type::sy"},
+      {"CUSPARSE_MATRIX_TYPE_HERMITIAN",
+       getDpctNamespace() + "sparse::matrix_info::matrix_type::he"},
+      {"CUSPARSE_MATRIX_TYPE_TRIANGULAR",
+       getDpctNamespace() + "sparse::matrix_info::matrix_type::tr"},
   };
 
   ClassFieldMap = {};
@@ -1876,10 +1898,13 @@ void MapNames::setExplicitNamespaceMap() {
 #undef ENTRY_TYPECAST
 #undef ENTRY_UNSUPPORTED
 #undef ENTRY_REWRITE
-  {"abs", MapNames::getClNamespace(false, true) + "abs"},
-  {"saturate", MapNames::getClNamespace(false, true) + "clamp"},
+      {"abs", MapNames::getClNamespace(false, true) + "abs"},
+      {"saturate", MapNames::getClNamespace(false, true) + "clamp"},
+      {"max", MapNames::getDpctNamespace() + "max"},
+      {"min", MapNames::getDpctNamespace() + "min"},
   };
 }
+// clang-format on
 
 // Supported vector types
 const MapNames::SetTy MapNames::SupportedVectorTypes{SUPPORTEDVECTORTYPENAMES};
@@ -1956,24 +1981,6 @@ const MapNames::MapTy MapNames::BLASEnumsMap{
     {"CUBLAS_FILL_MODE_UPPER", "oneapi::mkl::uplo::upper"},
     {"CUBLAS_DIAG_NON_UNIT", "oneapi::mkl::diag::nonunit"},
     {"CUBLAS_DIAG_UNIT", "oneapi::mkl::diag::unit"},
-};
-
-// spBLAS enums mapping
-const MapNames::MapTy MapNames::SPBLASEnumsMap{
-    {"CUSPARSE_OPERATION_NON_TRANSPOSE", "oneapi::mkl::transpose::nontrans"},
-    {"CUSPARSE_OPERATION_TRANSPOSE", "oneapi::mkl::transpose::trans"},
-    {"CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE",
-     "oneapi::mkl::transpose::conjtrans"},
-    {"CUSPARSE_FILL_MODE_LOWER", "oneapi::mkl::uplo::lower"},
-    {"CUSPARSE_FILL_MODE_UPPER", "oneapi::mkl::uplo::upper"},
-    {"CUSPARSE_DIAG_TYPE_NON_UNIT", "oneapi::mkl::diag::nonunit"},
-    {"CUSPARSE_DIAG_TYPE_UNIT", "oneapi::mkl::diag::unit"},
-    {"CUSPARSE_INDEX_BASE_ZERO", "oneapi::mkl::index_base::zero"},
-    {"CUSPARSE_INDEX_BASE_ONE", "oneapi::mkl::index_base::one"},
-    {"CUSPARSE_MATRIX_TYPE_GENERAL", "dpct::sparse::matrix_info::matrix_type::ge"},
-    {"CUSPARSE_MATRIX_TYPE_SYMMETRIC", "dpct::sparse::matrix_info::matrix_type::sy"},
-    {"CUSPARSE_MATRIX_TYPE_HERMITIAN", "dpct::sparse::matrix_info::matrix_type::he"},
-    {"CUSPARSE_MATRIX_TYPE_TRIANGULAR", "dpct::sparse::matrix_info::matrix_type::tr"},
 };
 
 // SOLVER enums mapping

@@ -551,6 +551,7 @@ enum class MemcpyOrderAnalysisNodeKind {
   MOANK_Memcpy = 0,
   MOANK_MemcpyInFlowControl,
   MOANK_OtherCallExpr,
+  MOANK_KernelCallExpr,
   MOANK_SpecialCallExpr
 };
 bool canOmitMemcpyWait(const clang::CallExpr *CE);
@@ -575,6 +576,8 @@ bool isLambda(const clang::FunctionDecl *FD);
 const clang::LambdaExpr *
 getImmediateOuterLambdaExpr(const clang::FunctionDecl *FuncDecl);
 bool typeIsPostfix(clang::QualType QT);
-
+bool isPointerHostAccessOnly(const clang::ValueDecl* VD);
 std::string getBaseTypeRemoveTemplateArguments(const clang::MemberExpr* ME);
+bool containIterationSpaceBuiltinVar(const clang::Stmt *Node);
+bool containBuiltinWarpSize(const clang::Stmt *Node);
 #endif // DPCT_UTILITY_H

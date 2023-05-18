@@ -23,7 +23,6 @@
 #include "MigrationAction.h"
 #include "MisleadingBidirectional.h"
 #include "Rules.h"
-#include "QueryApiMapping.h"
 #include "SaveNewFiles.h"
 #include "Statics.h"
 #include "Utility.h"
@@ -96,9 +95,9 @@ const char *const CtHelpMessage =
     "Migrate single source file with C++11 features:\n\n"
     "  dpct --extra-arg=\"-std=c++11\" source.cpp\n\n"
     "Migrate all files available in compilation database:\n\n"
-    "  dpct -p=<path to location of compilation database file>\n\n"
+    "  dpct --compilation-database=<path to location of compilation database file>\n\n"
     "Migrate one file in compilation database:\n\n"
-    "  dpct -p=<path to location of compilation database file>  source.cpp\n\n"
+    "  dpct --compilation-database=<path to location of compilation database file>  source.cpp\n\n"
 #if defined(_WIN32)
     "Migrate all files available in vcxprojfile:\n\n"
     "  dpct --vcxprojfile=path/to/vcxprojfile.vcxproj\n"
@@ -159,9 +158,6 @@ static llvm::cl::opt<std::string> Passes(
          "Only the specified passes are applied."),
     llvm::cl::value_desc("IterationSpaceBuiltinRule,..."), llvm::cl::cat(DPCTCat),
                llvm::cl::Hidden);
-static llvm::cl::opt<std::string> QueryApiMapping ("query-api-mapping",
-        llvm::cl::desc("Outputs to stdout functionally compatible SYCL API mapping for CUDA API."),
-        llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat), llvm::cl::Optional, llvm::cl::ReallyHidden);
 #ifdef DPCT_DEBUG_BUILD
 static llvm::cl::opt<std::string>
     DiagsContent("report-diags-content",
@@ -654,12 +650,6 @@ int runDPCT(int argc, const char **argv) {
   // just show -- --help information and then exit
   if (CommonOptionsParser::hasHelpOption(OriginalArgc, argv))
     dpctExit(MigrationSucceeded);
-
-  if (QueryApiMapping.getNumOccurrences()) {
-    ApiMappingEntry::initEntryMap();
-    ApiMappingEntry::printMappingDesc(llvm::outs(), QueryApiMapping);
-    dpctExit(MigrationSucceeded);
-  }
 
   auto ExtensionStr = ChangeExtension.getValue();
   ExtensionStr.erase(std::remove(ExtensionStr.begin(), ExtensionStr.end(), ' '),
