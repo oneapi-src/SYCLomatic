@@ -4206,7 +4206,11 @@ bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
 }
 
 std::string getBaseTypeRemoveTemplateArguments(const clang::MemberExpr* ME) {
-  auto QT = ME->getBase()->getType();
+  auto QT = ME->getBase()->IgnoreImpCasts()->getType();
+  if(const auto ice = dyn_cast<ImplicitCastExpr>(ME->getBase())) {
+    if (ice->getCastKind() == CastKind::CK_UncheckedDerivedToBase)
+      QT = ME->getBase()->getType();
+  }
   if (ME->isArrow())
     QT = QT->getPointeeType();
   const auto CT = QT.getCanonicalType();
