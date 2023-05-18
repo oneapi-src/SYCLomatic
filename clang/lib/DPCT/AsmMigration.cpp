@@ -103,7 +103,7 @@ protected:
 
   void switchOutStream(llvm::raw_ostream &NewOS) { Stream = &NewOS; }
 
-  bool tryEmitStatement(llvm::raw_ostream &TmpOS, const DpctAsmStmt *S) {
+  bool tryEmitStatement(llvm::raw_ostream &TmpOS, const InlineAsmStmt *S) {
     llvm::SaveAndRestore<llvm::raw_ostream *> OutStream(Stream);
     switchOutStream(TmpOS);
     if (emitStatement(S))
@@ -112,74 +112,74 @@ protected:
     return false;
   }
 
-  bool tryEmitStatement(std::string &Buffer, const DpctAsmStmt *S) {
+  bool tryEmitStatement(std::string &Buffer, const InlineAsmStmt *S) {
     llvm::raw_string_ostream TmpOS(Buffer);
     return tryEmitStatement(TmpOS, S);
   }
 
   // Types
-  bool emitType(const DpctAsmType *T);
-  bool emitBuiltinType(const DpctAsmBuiltinType *T);
-  bool emitVectorType(const DpctAsmVectorType *T);
+  bool emitType(const InlineAsmType *T);
+  bool emitBuiltinType(const InlineAsmBuiltinType *T);
+  bool emitVectorType(const InlineAsmVectorType *T);
 
   // Declarations
-  bool emitDeclaration(const DpctAsmDecl *D);
-  bool emitVariableDeclaration(const DpctAsmVariableDecl *D);
+  bool emitDeclaration(const InlineAsmDecl *D);
+  bool emitVariableDeclaration(const InlineAsmVariableDecl *D);
 
   // Statements && Expressions
-  bool emitStatement(const DpctAsmStmt *S);
-  bool emitCompoundStatement(const DpctAsmCompoundStmt *S);
-  bool emitDeclarationStatement(const DpctAsmDeclStmt *S);
-  bool emitInstruction(const DpctAsmInstruction *I);
-  bool emitGuardInstruction(const DpctAsmGuardInstruction *I);
-  bool emitUnaryOperator(const DpctAsmUnaryOperator *Op);
-  bool emitBinaryOperator(const DpctAsmBinaryOperator *Op);
-  bool emitConditionalOperator(const DpctAsmConditionalOperator *Op);
-  bool emitCastExpression(const DpctAsmCastExpr *E);
-  bool emitParenExpression(const DpctAsmParenExpr *E);
-  bool emitDeclRefExpression(const DpctAsmDeclRefExpr *E);
-  bool emitIntegerLiteral(const DpctAsmIntegerLiteral *I);
-  bool emitFloatingLiteral(const DpctAsmFloatingLiteral *Fp);
+  bool emitStatement(const InlineAsmStmt *S);
+  bool emitCompoundStatement(const InlineAsmCompoundStmt *S);
+  bool emitDeclarationStatement(const InlineAsmDeclStmt *S);
+  bool emitInstruction(const InlineAsmInstruction *I);
+  bool emitGuardInstruction(const InlineAsmConditionalInstruction *I);
+  bool emitUnaryOperator(const InlineAsmUnaryOperator *Op);
+  bool emitBinaryOperator(const InlineAsmBinaryOperator *Op);
+  bool emitConditionalOperator(const InlineAsmConditionalOperator *Op);
+  bool emitCastExpression(const InlineAsmCastExpr *E);
+  bool emitParenExpression(const InlineAsmParenExpr *E);
+  bool emitDeclRefExpression(const InlineAsmDeclRefExpr *E);
+  bool emitIntegerLiteral(const InlineAsmIntegerLiteral *I);
+  bool emitFloatingLiteral(const InlineAsmFloatingLiteral *Fp);
 
   // Instructions
 #define INSTRUCTION(X)                                                         \
-  virtual bool handle_##X(const DpctAsmInstruction *I) { return true; }
+  virtual bool handle_##X(const InlineAsmInstruction *I) { return true; }
 #include "Asm/AsmTokenKinds.def"
 };
 
-bool SYCLGenBase::emitStatement(const DpctAsmStmt *S) {
+bool SYCLGenBase::emitStatement(const InlineAsmStmt *S) {
   switch (S->getStmtClass()) {
-  case DpctAsmStmt::CompoundStmtClass:
-    return emitCompoundStatement(dyn_cast<DpctAsmCompoundStmt>(S));
-  case DpctAsmStmt::DeclStmtClass:
-    return emitDeclarationStatement(dyn_cast<DpctAsmDeclStmt>(S));
-  case DpctAsmStmt::InstructionClass:
-    return emitInstruction(dyn_cast<DpctAsmInstruction>(S));
-  case DpctAsmStmt::GuardInstructionClass:
-    return emitGuardInstruction(dyn_cast<DpctAsmGuardInstruction>(S));
-  case DpctAsmStmt::UnaryOperatorClass:
-    return emitUnaryOperator(dyn_cast<DpctAsmUnaryOperator>(S));
-  case DpctAsmStmt::BinaryOperatorClass:
-    return emitBinaryOperator(dyn_cast<DpctAsmBinaryOperator>(S));
-  case DpctAsmStmt::ConditionalOperatorClass:
-    return emitConditionalOperator(dyn_cast<DpctAsmConditionalOperator>(S));
-  case DpctAsmStmt::CastExprClass:
-    return emitCastExpression(dyn_cast<DpctAsmCastExpr>(S));
-  case DpctAsmStmt::ParenExprClass:
-    return emitParenExpression(dyn_cast<DpctAsmParenExpr>(S));
-  case DpctAsmStmt::DeclRefExprClass:
-    return emitDeclRefExpression(dyn_cast<DpctAsmDeclRefExpr>(S));
-  case DpctAsmStmt::IntegerLiteralClass:
-    return emitIntegerLiteral(dyn_cast<DpctAsmIntegerLiteral>(S));
-  case DpctAsmStmt::FloatingLiteralClass:
-    return emitFloatingLiteral(dyn_cast<DpctAsmFloatingLiteral>(S));
+  case InlineAsmStmt::CompoundStmtClass:
+    return emitCompoundStatement(dyn_cast<InlineAsmCompoundStmt>(S));
+  case InlineAsmStmt::DeclStmtClass:
+    return emitDeclarationStatement(dyn_cast<InlineAsmDeclStmt>(S));
+  case InlineAsmStmt::InstructionClass:
+    return emitInstruction(dyn_cast<InlineAsmInstruction>(S));
+  case InlineAsmStmt::ConditionalInstructionClass:
+    return emitGuardInstruction(dyn_cast<InlineAsmConditionalInstruction>(S));
+  case InlineAsmStmt::UnaryOperatorClass:
+    return emitUnaryOperator(dyn_cast<InlineAsmUnaryOperator>(S));
+  case InlineAsmStmt::BinaryOperatorClass:
+    return emitBinaryOperator(dyn_cast<InlineAsmBinaryOperator>(S));
+  case InlineAsmStmt::ConditionalOperatorClass:
+    return emitConditionalOperator(dyn_cast<InlineAsmConditionalOperator>(S));
+  case InlineAsmStmt::CastExprClass:
+    return emitCastExpression(dyn_cast<InlineAsmCastExpr>(S));
+  case InlineAsmStmt::ParenExprClass:
+    return emitParenExpression(dyn_cast<InlineAsmParenExpr>(S));
+  case InlineAsmStmt::DeclRefExprClass:
+    return emitDeclRefExpression(dyn_cast<InlineAsmDeclRefExpr>(S));
+  case InlineAsmStmt::IntegerLiteralClass:
+    return emitIntegerLiteral(dyn_cast<InlineAsmIntegerLiteral>(S));
+  case InlineAsmStmt::FloatingLiteralClass:
+    return emitFloatingLiteral(dyn_cast<InlineAsmFloatingLiteral>(S));
   default:
     return true;
   }
   return false;
 }
 
-bool SYCLGenBase::emitDeclarationStatement(const DpctAsmDeclStmt *S) {
+bool SYCLGenBase::emitDeclarationStatement(const InlineAsmDeclStmt *S) {
   if (S->getNumDecl() == 0)
     return true;
   if (emitType(S->getBaseType()))
@@ -196,7 +196,7 @@ bool SYCLGenBase::emitDeclarationStatement(const DpctAsmDeclStmt *S) {
   return false;
 }
 
-bool SYCLGenBase::emitCompoundStatement(const DpctAsmCompoundStmt *S) {
+bool SYCLGenBase::emitCompoundStatement(const InlineAsmCompoundStmt *S) {
   llvm::SaveAndRestore<bool> StoreEndl(EmitNewLine);
   llvm::SaveAndRestore<bool> StoreSemi(EmitSemi);
   EmitNewLine = true;
@@ -217,7 +217,7 @@ bool SYCLGenBase::emitCompoundStatement(const DpctAsmCompoundStmt *S) {
   return false;
 }
 
-bool SYCLGenBase::emitInstruction(const DpctAsmInstruction *I) {
+bool SYCLGenBase::emitInstruction(const InlineAsmInstruction *I) {
   switch (I->getOpcode()->getTokenID()) {
 #define INSTRUCTION(X)                                                         \
   case asmtok::op_##X:                                                         \
@@ -229,9 +229,10 @@ bool SYCLGenBase::emitInstruction(const DpctAsmInstruction *I) {
   return true;
 }
 
-bool SYCLGenBase::emitGuardInstruction(const DpctAsmGuardInstruction *I) {
+bool SYCLGenBase::emitGuardInstruction(
+    const InlineAsmConditionalInstruction *I) {
   OS() << "if (";
-  if (I->isNeg())
+  if (I->hasNot())
     OS() << "!";
   if (emitStatement(I->getPred()))
     return true;
@@ -246,13 +247,13 @@ bool SYCLGenBase::emitGuardInstruction(const DpctAsmGuardInstruction *I) {
   return false;
 }
 
-bool SYCLGenBase::emitUnaryOperator(const DpctAsmUnaryOperator *Op) {
+bool SYCLGenBase::emitUnaryOperator(const InlineAsmUnaryOperator *Op) {
   switch (Op->getOpcode()) {
     // clang-format off
-  case DpctAsmUnaryOperator::Plus:  OS() << "+"; break;
-  case DpctAsmUnaryOperator::Minus: OS() << "-"; break;
-  case DpctAsmUnaryOperator::Not:   OS() << "~"; break;
-  case DpctAsmUnaryOperator::LNot:  OS() << "!"; break;
+  case InlineAsmUnaryOperator::Plus:  OS() << "+"; break;
+  case InlineAsmUnaryOperator::Minus: OS() << "-"; break;
+  case InlineAsmUnaryOperator::Not:   OS() << "~"; break;
+  case InlineAsmUnaryOperator::LNot:  OS() << "!"; break;
     // clang-format on
   }
   if (emitStatement(Op->getSubExpr()))
@@ -260,31 +261,31 @@ bool SYCLGenBase::emitUnaryOperator(const DpctAsmUnaryOperator *Op) {
   return false;
 }
 
-bool SYCLGenBase::emitBinaryOperator(const DpctAsmBinaryOperator *Op) {
+bool SYCLGenBase::emitBinaryOperator(const InlineAsmBinaryOperator *Op) {
   if (emitStatement(Op->getLHS()))
     return true;
   OS() << " ";
   // clang-format off
     switch (Op->getOpcode()) {
-    case DpctAsmBinaryOperator::Mul:    OS() << "*";  break;
-    case DpctAsmBinaryOperator::Div:    OS() << "/";  break;
-    case DpctAsmBinaryOperator::Rem:    OS() << "%";  break;
-    case DpctAsmBinaryOperator::Add:    OS() << "+";  break;
-    case DpctAsmBinaryOperator::Sub:    OS() << "-";  break;
-    case DpctAsmBinaryOperator::Shl:    OS() << "<<"; break;
-    case DpctAsmBinaryOperator::Shr:    OS() << ">>"; break;
-    case DpctAsmBinaryOperator::LT:     OS() << "<";  break;
-    case DpctAsmBinaryOperator::GT:     OS() << ">";  break;
-    case DpctAsmBinaryOperator::LE:     OS() << "<="; break;
-    case DpctAsmBinaryOperator::GE:     OS() << ">="; break;
-    case DpctAsmBinaryOperator::EQ:     OS() << "=="; break;
-    case DpctAsmBinaryOperator::NE:     OS() << "!="; break;
-    case DpctAsmBinaryOperator::And:    OS() << "&";  break;
-    case DpctAsmBinaryOperator::Xor:    OS() << "^";  break;
-    case DpctAsmBinaryOperator::Or:     OS() << "|";  break;
-    case DpctAsmBinaryOperator::LAnd:   OS() << "&&"; break;
-    case DpctAsmBinaryOperator::LOr:    OS() << "||"; break;
-    case DpctAsmBinaryOperator::Assign: OS() << "=";  break;
+    case InlineAsmBinaryOperator::Mul:    OS() << "*";  break;
+    case InlineAsmBinaryOperator::Div:    OS() << "/";  break;
+    case InlineAsmBinaryOperator::Rem:    OS() << "%";  break;
+    case InlineAsmBinaryOperator::Add:    OS() << "+";  break;
+    case InlineAsmBinaryOperator::Sub:    OS() << "-";  break;
+    case InlineAsmBinaryOperator::Shl:    OS() << "<<"; break;
+    case InlineAsmBinaryOperator::Shr:    OS() << ">>"; break;
+    case InlineAsmBinaryOperator::LT:     OS() << "<";  break;
+    case InlineAsmBinaryOperator::GT:     OS() << ">";  break;
+    case InlineAsmBinaryOperator::LE:     OS() << "<="; break;
+    case InlineAsmBinaryOperator::GE:     OS() << ">="; break;
+    case InlineAsmBinaryOperator::EQ:     OS() << "=="; break;
+    case InlineAsmBinaryOperator::NE:     OS() << "!="; break;
+    case InlineAsmBinaryOperator::And:    OS() << "&";  break;
+    case InlineAsmBinaryOperator::Xor:    OS() << "^";  break;
+    case InlineAsmBinaryOperator::Or:     OS() << "|";  break;
+    case InlineAsmBinaryOperator::LAnd:   OS() << "&&"; break;
+    case InlineAsmBinaryOperator::LOr:    OS() << "||"; break;
+    case InlineAsmBinaryOperator::Assign: OS() << "=";  break;
     // clang-format on
   }
   OS() << " ";
@@ -294,7 +295,7 @@ bool SYCLGenBase::emitBinaryOperator(const DpctAsmBinaryOperator *Op) {
 }
 
 bool SYCLGenBase::emitConditionalOperator(
-    const DpctAsmConditionalOperator *Op) {
+    const InlineAsmConditionalOperator *Op) {
   if (emitStatement(Op->getCond()))
     return true;
   OS() << " ? ";
@@ -306,7 +307,7 @@ bool SYCLGenBase::emitConditionalOperator(
   return false;
 }
 
-bool SYCLGenBase::emitCastExpression(const DpctAsmCastExpr *E) {
+bool SYCLGenBase::emitCastExpression(const InlineAsmCastExpr *E) {
   OS() << "static_cast<";
   if (emitType(E->getType()))
     return true;
@@ -317,7 +318,7 @@ bool SYCLGenBase::emitCastExpression(const DpctAsmCastExpr *E) {
   return false;
 }
 
-bool SYCLGenBase::emitParenExpression(const DpctAsmParenExpr *E) {
+bool SYCLGenBase::emitParenExpression(const InlineAsmParenExpr *E) {
   OS() << "(";
   if (emitStatement(E->getSubExpr()))
     return true;
@@ -325,7 +326,7 @@ bool SYCLGenBase::emitParenExpression(const DpctAsmParenExpr *E) {
   return false;
 }
 
-bool SYCLGenBase::emitDeclRefExpression(const DpctAsmDeclRefExpr *E) {
+bool SYCLGenBase::emitDeclRefExpression(const InlineAsmDeclRefExpr *E) {
   OS() << E->getDecl().getDeclName()->getName();
   if (E->hasParameterizedName()) {
     OS() << '[' << E->getParameterizedNameIndex() << ']';
@@ -333,24 +334,24 @@ bool SYCLGenBase::emitDeclRefExpression(const DpctAsmDeclRefExpr *E) {
   return false;
 }
 
-bool SYCLGenBase::emitIntegerLiteral(const DpctAsmIntegerLiteral *I) {
+bool SYCLGenBase::emitIntegerLiteral(const InlineAsmIntegerLiteral *I) {
   OS() << I->getLiteral();
   return false;
 }
 
-bool SYCLGenBase::emitFloatingLiteral(const DpctAsmFloatingLiteral *Fp) {
+bool SYCLGenBase::emitFloatingLiteral(const InlineAsmFloatingLiteral *Fp) {
   if (!Fp->isExactMachineFloatingLiteral()) {
     OS() << Fp->getLiteral();
   } else {
     // [](){union {unsigned I; float F;}; I = 0x3f800000u; return F;}()
     constexpr char *Template =
         "[](){{union {{{0} I; {1} F;}; I = 0x{2}u; return F;}()";
-    if (const auto *T = dyn_cast<DpctAsmBuiltinType>(Fp->getType())) {
+    if (const auto *T = dyn_cast<InlineAsmBuiltinType>(Fp->getType())) {
       switch (T->getKind()) {
-      case DpctAsmBuiltinType::TK_f32:
+      case InlineAsmBuiltinType::TK_f32:
         OS() << llvm::formatv(Template, "uint32_t", "float", Fp->getLiteral());
         break;
-      case DpctAsmBuiltinType::TK_f64:
+      case InlineAsmBuiltinType::TK_f64:
         OS() << llvm::formatv(Template, "uint64_t", "double", Fp->getLiteral());
         break;
       default:
@@ -362,56 +363,56 @@ bool SYCLGenBase::emitFloatingLiteral(const DpctAsmFloatingLiteral *Fp) {
   return false;
 }
 
-bool SYCLGenBase::emitType(const DpctAsmType *T) {
+bool SYCLGenBase::emitType(const InlineAsmType *T) {
   switch (T->getTypeClass()) {
-  case DpctAsmType::BuiltinClass:
-    return emitBuiltinType(dyn_cast<DpctAsmBuiltinType>(T));
-  case DpctAsmType::VectorClass:
-    return emitVectorType(dyn_cast<DpctAsmVectorType>(T));
+  case InlineAsmType::BuiltinClass:
+    return emitBuiltinType(dyn_cast<InlineAsmBuiltinType>(T));
+  case InlineAsmType::VectorClass:
+    return emitVectorType(dyn_cast<InlineAsmVectorType>(T));
   default:
     break;
   }
   return true;
 }
 
-bool SYCLGenBase::emitBuiltinType(const DpctAsmBuiltinType *T) {
+bool SYCLGenBase::emitBuiltinType(const InlineAsmBuiltinType *T) {
   switch (T->getKind()) {
     // clang-format off
-  case DpctAsmBuiltinType::TK_b8:     OS() << "uint8_t"; break;
-  case DpctAsmBuiltinType::TK_b16:    OS() << "uint16_t"; break;
-  case DpctAsmBuiltinType::TK_b32:    OS() << "uint32_t"; break;
-  case DpctAsmBuiltinType::TK_b64:    OS() << "uint64_t"; break;
-  case DpctAsmBuiltinType::TK_u8:     OS() << "uint8_t"; break;
-  case DpctAsmBuiltinType::TK_u16:    OS() << "uint16_t"; break;
-  case DpctAsmBuiltinType::TK_u32:    OS() << "uint32_t"; break;
-  case DpctAsmBuiltinType::TK_u64:    OS() << "uint64_t"; break;
-  case DpctAsmBuiltinType::TK_s8:     OS() << "int8_t"; break;
-  case DpctAsmBuiltinType::TK_s16:    OS() << "int16_t"; break;
-  case DpctAsmBuiltinType::TK_s32:    OS() << "int32_t"; break;
-  case DpctAsmBuiltinType::TK_s64:    OS() << "int64_t"; break;
-  case DpctAsmBuiltinType::TK_f16:    OS() << "sycl::half"; break;
-  case DpctAsmBuiltinType::TK_f32:    OS() << "float"; break;
-  case DpctAsmBuiltinType::TK_f64:    OS() << "double"; break;
-  case DpctAsmBuiltinType::TK_byte:   OS() << "uint8_t"; break;
-  case DpctAsmBuiltinType::TK_4byte:  OS() << "uint32_t"; break;
-  case DpctAsmBuiltinType::TK_pred:   OS() << "bool"; break;
-  case DpctAsmBuiltinType::TK_bf16:
-  case DpctAsmBuiltinType::TK_e4m3:
-  case DpctAsmBuiltinType::TK_e5m2:
-  case DpctAsmBuiltinType::TK_tf32:
-  case DpctAsmBuiltinType::TK_f16x2:
-  case DpctAsmBuiltinType::TK_bf16x2:
-  case DpctAsmBuiltinType::TK_e4m3x2:
-  case DpctAsmBuiltinType::TK_e5m2x2:
-  case DpctAsmBuiltinType::TK_s16x2:
-  case DpctAsmBuiltinType::TK_u16x2:
+  case InlineAsmBuiltinType::TK_b8:     OS() << "uint8_t"; break;
+  case InlineAsmBuiltinType::TK_b16:    OS() << "uint16_t"; break;
+  case InlineAsmBuiltinType::TK_b32:    OS() << "uint32_t"; break;
+  case InlineAsmBuiltinType::TK_b64:    OS() << "uint64_t"; break;
+  case InlineAsmBuiltinType::TK_u8:     OS() << "uint8_t"; break;
+  case InlineAsmBuiltinType::TK_u16:    OS() << "uint16_t"; break;
+  case InlineAsmBuiltinType::TK_u32:    OS() << "uint32_t"; break;
+  case InlineAsmBuiltinType::TK_u64:    OS() << "uint64_t"; break;
+  case InlineAsmBuiltinType::TK_s8:     OS() << "int8_t"; break;
+  case InlineAsmBuiltinType::TK_s16:    OS() << "int16_t"; break;
+  case InlineAsmBuiltinType::TK_s32:    OS() << "int32_t"; break;
+  case InlineAsmBuiltinType::TK_s64:    OS() << "int64_t"; break;
+  case InlineAsmBuiltinType::TK_f16:    OS() << "sycl::half"; break;
+  case InlineAsmBuiltinType::TK_f32:    OS() << "float"; break;
+  case InlineAsmBuiltinType::TK_f64:    OS() << "double"; break;
+  case InlineAsmBuiltinType::TK_byte:   OS() << "uint8_t"; break;
+  case InlineAsmBuiltinType::TK_4byte:  OS() << "uint32_t"; break;
+  case InlineAsmBuiltinType::TK_pred:   OS() << "bool"; break;
+  case InlineAsmBuiltinType::TK_bf16:
+  case InlineAsmBuiltinType::TK_e4m3:
+  case InlineAsmBuiltinType::TK_e5m2:
+  case InlineAsmBuiltinType::TK_tf32:
+  case InlineAsmBuiltinType::TK_f16x2:
+  case InlineAsmBuiltinType::TK_bf16x2:
+  case InlineAsmBuiltinType::TK_e4m3x2:
+  case InlineAsmBuiltinType::TK_e5m2x2:
+  case InlineAsmBuiltinType::TK_s16x2:
+  case InlineAsmBuiltinType::TK_u16x2:
     // clang-format on
     return true;
   }
   return false;
 }
 
-bool SYCLGenBase::emitVectorType(const DpctAsmVectorType *T) {
+bool SYCLGenBase::emitVectorType(const InlineAsmVectorType *T) {
   OS() << "sycl::vec<";
   if (emitType(T->getElementType()))
     return true;
@@ -419,17 +420,17 @@ bool SYCLGenBase::emitVectorType(const DpctAsmVectorType *T) {
   return false;
 }
 
-bool SYCLGenBase::emitDeclaration(const DpctAsmDecl *D) {
+bool SYCLGenBase::emitDeclaration(const InlineAsmDecl *D) {
   switch (D->getDeclClass()) {
-  case DpctAsmDecl::VariableDeclClass:
-    return emitVariableDeclaration(dyn_cast<DpctAsmVariableDecl>(D));
+  case InlineAsmDecl::VariableDeclClass:
+    return emitVariableDeclaration(dyn_cast<InlineAsmVariableDecl>(D));
   default:
     break;
   }
   return true;
 }
 
-bool SYCLGenBase::emitVariableDeclaration(const DpctAsmVariableDecl *D) {
+bool SYCLGenBase::emitVariableDeclaration(const InlineAsmVariableDecl *D) {
   OS() << D->getDeclName()->getName();
   if (D->isParameterizedNameDecl())
     OS() << '[' << D->getNumParameterizedNames() << ']';
@@ -440,10 +441,10 @@ class SYCLGen : public SYCLGenBase {
 public:
   SYCLGen(llvm::raw_ostream &OS) : SYCLGenBase(OS) {}
 
-  bool handleStatement(const DpctAsmStmt *S) { return emitStatement(S); }
+  bool handleStatement(const InlineAsmStmt *S) { return emitStatement(S); }
 
 protected:
-  bool handle_mov(const DpctAsmInstruction *I) override {
+  bool handle_mov(const InlineAsmInstruction *I) override {
     if (I->getNumInputOperands() != 1)
       return true;
     if (emitStatement(I->getOutputOperand()))
@@ -455,11 +456,11 @@ protected:
     return false;
   }
 
-  bool handle_setp(const DpctAsmInstruction *I) override {
+  bool handle_setp(const InlineAsmInstruction *I) override {
     if (I->getNumInputOperands() != 2 && I->getNumTypes() == 1)
       return true;
 
-    auto *T = dyn_cast<DpctAsmBuiltinType>(I->getType(0));
+    auto *T = dyn_cast<InlineAsmBuiltinType>(I->getType(0));
     if (!T)
       return true;
 
@@ -613,11 +614,11 @@ protected:
     return false;
   }
 
-  bool handle_lop3(const DpctAsmInstruction *I) override {
+  bool handle_lop3(const InlineAsmInstruction *I) override {
     if (I->getNumInputOperands() != 4 || I->getNumTypes() != 1 ||
-        !isa<DpctAsmBuiltinType>(I->getType(0)) ||
-        dyn_cast<DpctAsmBuiltinType>(I->getType(0))->getKind() !=
-            DpctAsmBuiltinType::TK_b32)
+        !isa<InlineAsmBuiltinType>(I->getType(0)) ||
+        dyn_cast<InlineAsmBuiltinType>(I->getType(0))->getKind() !=
+            InlineAsmBuiltinType::TK_b32)
       return true;
 
     if (emitStatement(I->getOutputOperand()))
@@ -631,10 +632,10 @@ protected:
         return true;
     }
 
-    if (!isa<DpctAsmIntegerLiteral>(I->getInputOperand(3)))
+    if (!isa<InlineAsmIntegerLiteral>(I->getInputOperand(3)))
       return true;
 
-    unsigned Imm = dyn_cast<DpctAsmIntegerLiteral>(I->getInputOperand(3))
+    unsigned Imm = dyn_cast<InlineAsmIntegerLiteral>(I->getInputOperand(3))
                        ->getValue()
                        .getZExtValue();
 
@@ -722,14 +723,14 @@ void AsmRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
     if (const auto *Asm = dyn_cast<GCCAsmStmt>(AS)) {
       const auto &C = DpctGlobalInfo::getContext();
       std::string S = Asm->generateAsmString(C);
-      DpctAsmContext Context;
+      InlineAsmContext Context;
       std::string Replacement;
       llvm::raw_string_ostream OS(Replacement);
       llvm::SourceMgr Mgr;
       std::string Buffer = Asm->getAsmString()->getString().str();
       Mgr.AddNewSourceBuffer(llvm::MemoryBuffer::getMemBuffer(Buffer),
                              llvm::SMLoc());
-      DpctAsmParser Parser(Context, Mgr);
+      InlineAsmParser Parser(Context, Mgr);
       SYCLGen CodeGen(OS);
       std::string AsmString;
 

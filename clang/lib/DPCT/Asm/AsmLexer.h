@@ -24,10 +24,10 @@
 
 namespace clang::dpct {
 
-/// DpctAsmLexer - This provides a simple interface that truns a text buffer
+/// InlineAsmLexer - This provides a simple interface that truns a text buffer
 /// into a stream of tokens. This provides no support for buffering, or
 /// buffering/seeking of tokens, only forward lexing is supported.
-class DpctAsmLexer {
+class InlineAsmLexer {
 
   // Start of the buffer.
   const char *BufferStart = nullptr;
@@ -41,10 +41,10 @@ class DpctAsmLexer {
 
   /// Mapping/lookup information for all identifiers in
   /// the program, including program keywords.
-  mutable DpctAsmIdentifierTable Identifiers;
+  mutable InlineAsmIdentifierTable Identifiers;
 
   /// Cached tokens state.
-  using CachedTokensTy = SmallVector<DpctAsmToken, 1>;
+  using CachedTokensTy = SmallVector<InlineAsmToken, 1>;
 
   /// Cached tokens are stored here when we do backtracking or
   /// lookahead.
@@ -57,41 +57,42 @@ class DpctAsmLexer {
   CachedTokensTy::size_type CachedLexPos = 0;
 
 public:
-  DpctAsmLexer(llvm::MemoryBufferRef Input);
-  DpctAsmLexer(const DpctAsmLexer &) = delete;
-  DpctAsmLexer &operator=(const DpctAsmLexer &) = delete;
-  ~DpctAsmLexer();
+  InlineAsmLexer(llvm::MemoryBufferRef Input);
+  InlineAsmLexer(const InlineAsmLexer &) = delete;
+  InlineAsmLexer &operator=(const InlineAsmLexer &) = delete;
+  ~InlineAsmLexer();
 
   void setBuffer(StringRef Buf);
-  bool lex(DpctAsmToken &Result);
+  bool lex(InlineAsmToken &Result);
 
-  const DpctAsmToken &peekAhead(unsigned N) {
+  const InlineAsmToken &peekAhead(unsigned N) {
     assert(CachedLexPos + N > CachedTokens.size() && "Confused caching.");
     for (size_t C = CachedLexPos + N - CachedTokens.size(); C > 0; --C) {
-      CachedTokens.push_back(DpctAsmToken());
+      CachedTokens.push_back(InlineAsmToken());
       lex(CachedTokens.back());
     }
     return CachedTokens.back();
   }
 
-  const DpctAsmToken &lookAhead(unsigned N) {
+  const InlineAsmToken &lookAhead(unsigned N) {
     if (CachedLexPos + N < CachedTokens.size())
       return CachedTokens[CachedLexPos + N];
     return peekAhead(N + 1);
   }
 
-  DpctAsmIdentifierInfo *getIdentifierInfo(StringRef Name) const {
+  InlineAsmIdentifierInfo *getIdentifierInfo(StringRef Name) const {
     return &Identifiers.get(Name);
   }
 
-  DpctAsmIdentifierTable &getIdentifiertable() { return Identifiers; }
+  InlineAsmIdentifierTable &getIdentifiertable() { return Identifiers; }
 
-  const DpctAsmIdentifierTable &getIdentifiertable() const {
+  const InlineAsmIdentifierTable &getIdentifiertable() const {
     return Identifiers;
   }
 
   void cleanIdentifier(llvm::SmallVectorImpl<char> &Buf, StringRef Input) const;
-  DpctAsmIdentifierInfo *lookupIdentifierInfo(DpctAsmToken &Identifier) const;
+  InlineAsmIdentifierInfo *
+  lookupIdentifierInfo(InlineAsmToken &Identifier) const;
 
 private:
   /// FormTokenWithChars - When we lex a token, we have identified a span
@@ -99,7 +100,7 @@ private:
   /// takes that range and assigns it to the token as its location and size.  In
   /// addition, since tokens cannot overlap, this also updates BufferPtr to be
   /// TokEnd.
-  void formTokenWithChars(DpctAsmToken &Result, const char *TokEnd,
+  void formTokenWithChars(InlineAsmToken &Result, const char *TokEnd,
                           asmtok::TokenKind Kind) {
     unsigned TokLen = TokEnd - BufferPtr;
     Result.setLength(TokLen);
@@ -124,10 +125,10 @@ private:
     return Ptr + Size;
   }
 
-  bool lexIdentifierContinue(DpctAsmToken &Result, const char *CurPtr);
-  bool lexNumericConstant(DpctAsmToken &Result, const char *CurPtr);
-  bool skipWhitespace(DpctAsmToken &Result, const char *CurPtr);
-  bool lexTokenInternal(DpctAsmToken &Result);
+  bool lexIdentifierContinue(InlineAsmToken &Result, const char *CurPtr);
+  bool lexNumericConstant(InlineAsmToken &Result, const char *CurPtr);
+  bool skipWhitespace(InlineAsmToken &Result, const char *CurPtr);
+  bool lexTokenInternal(InlineAsmToken &Result);
 };
 
 } // namespace clang::dpct

@@ -21,6 +21,98 @@ __global__ void gpu_ptx(int *d_ptr, int length) {
   }
 }
 
+// CHECK: void setp() {
+// CHECK: float x = 1.0, y;
+// CHECK: uint32_t a, b;
+// CHECK: {
+// CHECK-NEXT: bool p[20], q[20];
+// CHECK-NEXT: float fp;
+// CHECK-NEXT: fp = [](){union {uint32_t I; float F;}; I = 0x3f800000u; return F;}();
+// CHECK-NEXT: p[1] = x == fp && !sycl::isnan(x) && !sycl::isnan(fp);
+// CHECK-NEXT: p[2] = x != fp && !sycl::isnan(x) && !sycl::isnan(fp);
+// CHECK-NEXT: p[3] = x < fp && !sycl::isnan(x) && !sycl::isnan(fp);
+// CHECK-NEXT: p[4] = x <= fp && !sycl::isnan(x) && !sycl::isnan(fp);
+// CHECK-NEXT: p[5] = x > fp && !sycl::isnan(x) && !sycl::isnan(fp);
+// CHECK-NEXT: p[6] = x >= fp && !sycl::isnan(x) && !sycl::isnan(fp);
+// CHECK-NEXT: p[7] = x == fp || sycl::isnan(x) || sycl::isnan(fp);
+// CHECK-NEXT: p[8] = x != fp || sycl::isnan(x) || sycl::isnan(fp);
+// CHECK-NEXT: p[9] = x < fp || sycl::isnan(x) || sycl::isnan(fp);
+// CHECK-NEXT: p[10] = x <= fp || sycl::isnan(x) || sycl::isnan(fp);
+// CHECK-NEXT: p[11] = x > fp || sycl::isnan(x) || sycl::isnan(fp);
+// CHECK-NEXT: p[12] = x >= fp || sycl::isnan(x) || sycl::isnan(fp);
+// CHECK-NEXT: p[13] = !sycl::isnan(x) && !sycl::isnan(fp);
+// CHECK-NEXT: p[14] = sycl::isnan(x) || sycl::isnan(fp);
+// CHECK-NEXT: p[1] = x == fp && !sycl::isnan(x) && !sycl::isnan(fp);
+// CHECK-NEXT: p[2] = x != fp && !sycl::isnan(x) && !sycl::isnan(fp);
+// CHECK-NEXT: p[3] = x < fp && !sycl::isnan(x) && !sycl::isnan(fp);
+// CHECK-NEXT: p[4] = x <= fp && !sycl::isnan(x) && !sycl::isnan(fp);
+// CHECK-NEXT: p[5] = x > fp && !sycl::isnan(x) && !sycl::isnan(fp);
+// CHECK-NEXT: p[6] = x >= fp && !sycl::isnan(x) && !sycl::isnan(fp);
+// CHECK-NEXT: p[7] = x == fp || sycl::isnan(x) || sycl::isnan(fp);
+// CHECK-NEXT: p[8] = x != fp || sycl::isnan(x) || sycl::isnan(fp);
+// CHECK-NEXT: p[9] = x < fp || sycl::isnan(x) || sycl::isnan(fp);
+// CHECK-NEXT: p[10] = x <= fp || sycl::isnan(x) || sycl::isnan(fp);
+// CHECK-NEXT: p[11] = x > fp || sycl::isnan(x) || sycl::isnan(fp);
+// CHECK-NEXT: p[12] = x >= fp || sycl::isnan(x) || sycl::isnan(fp);
+// CHECK-NEXT: p[13] = !sycl::isnan(x) && !sycl::isnan(fp);
+// CHECK-NEXT: p[14] = sycl::isnan(x) || sycl::isnan(fp);
+// CHECK-NEXT: q[1] = a == b;
+// CHECK-NEXT: q[2] = a != b;
+// CHECK-NEXT: q[3] = a < b;
+// CHECK-NEXT: q[4] = a <= b;
+// CHECK-NEXT: q[5] = a > b;
+// CHECK-NEXT: q[6] = a >= b;
+// CHECK-NEXT: if (p[0]) {
+// CHECK-NEXT:   y = fp;
+// CHECK-NEXT: }
+// CHECK: }
+// CHECK: }
+__device__ void setp() {
+  float x = 1.0, y;
+  uint32_t a, b;
+  asm("{\n\t"
+      " .reg .pred %%p<20>, %%q<20>;\n\t"
+      " .reg .f32 fp;\n\t"
+      " mov.f32 fp, 0F3f800000;\n\t"
+      " setp.eq.f32 %%p1, %1, fp;\n\t"
+      " setp.ne.f32 %%p2, %1, fp;\n\t"
+      " setp.lt.f32 %%p3, %1, fp;\n\t"
+      " setp.le.f32 %%p4, %1, fp;\n\t"
+      " setp.gt.f32 %%p5, %1, fp;\n\t"
+      " setp.ge.f32 %%p6, %1, fp;\n\t"
+      " setp.equ.f32 %%p7, %1, fp;\n\t"
+      " setp.neu.f32 %%p8, %1, fp;\n\t"
+      " setp.ltu.f32 %%p9, %1, fp;\n\t"
+      " setp.leu.f32 %%p10, %1, fp;\n\t"
+      " setp.gtu.f32 %%p11, %1, fp;\n\t"
+      " setp.geu.f32 %%p12, %1, fp;\n\t"
+      " setp.num.f32 %%p13, %1, fp;\n\t"
+      " setp.nan.f32 %%p14, %1, fp;\n\t"
+      " setp.eq.f64 %%p1, %1, fp;\n\t"
+      " setp.ne.f64 %%p2, %1, fp;\n\t"
+      " setp.lt.f64 %%p3, %1, fp;\n\t"
+      " setp.le.f64 %%p4, %1, fp;\n\t"
+      " setp.gt.f64 %%p5, %1, fp;\n\t"
+      " setp.ge.f64 %%p6, %1, fp;\n\t"
+      " setp.equ.f64 %%p7, %1, fp;\n\t"
+      " setp.neu.f64 %%p8, %1, fp;\n\t"
+      " setp.ltu.f64 %%p9, %1, fp;\n\t"
+      " setp.leu.f64 %%p10, %1, fp;\n\t"
+      " setp.gtu.f64 %%p11, %1, fp;\n\t"
+      " setp.geu.f64 %%p12, %1, fp;\n\t"
+      " setp.num.f64 %%p13, %1, fp;\n\t"
+      " setp.nan.f64 %%p14, %1, fp;\n\t"
+      " setp.eq.u32 %%q1, %2, %3;\n\t"
+      " setp.ne.s32 %%q2, %2, %3;\n\t"
+      " setp.lt.s32 %%q3, %2, %3;\n\t"
+      " setp.le.s32 %%q4, %2, %3;\n\t"
+      " setp.gt.s32 %%q5, %2, %3;\n\t"
+      " setp.ge.s32 %%q6, %2, %3;\n\t"
+      " @%%p mov.f32 %0, fp;\n\t"
+      "}"
+      : "=f"(y) : "f"(x), "r"(a), "r"(b));
+}
+
 // CHECK:void mov(float *output) {
 // CHECK-NEXT: unsigned p;
 // CHECK-NEXT: double d;

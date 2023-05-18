@@ -60,7 +60,8 @@ asmprec::Level getBinOpPrec(asmtok::TokenKind Kind) {
 }
 // clang-format on
 
-DpctAsmVariableDecl *DpctAsmScope::lookupDecl(DpctAsmIdentifierInfo *II) const {
+InlineAsmVariableDecl *
+InlineAsmScope::lookupDecl(InlineAsmIdentifierInfo *II) const {
   if (!II)
     return nullptr;
   for (const auto &S : decls()) {
@@ -74,9 +75,9 @@ DpctAsmVariableDecl *DpctAsmScope::lookupDecl(DpctAsmIdentifierInfo *II) const {
   return nullptr;
 }
 
-DpctAsmVariableDecl *
-DpctAsmScope::lookupParameterizedNameDecl(DpctAsmIdentifierInfo *II,
-                                          unsigned &Idx) const {
+InlineAsmVariableDecl *
+InlineAsmScope::lookupParameterizedNameDecl(InlineAsmIdentifierInfo *II,
+                                            unsigned &Idx) const {
   if (!II)
     return nullptr;
 
@@ -86,32 +87,32 @@ DpctAsmScope::lookupParameterizedNameDecl(DpctAsmIdentifierInfo *II,
   if (Name.empty() || Count.empty() || Count.getAsInteger(10, Idx))
     return nullptr;
 
-  DpctAsmIdentifierInfo *RealII = Parser.getLexer().getIdentifierInfo(Name);
+  InlineAsmIdentifierInfo *RealII = Parser.getLexer().getIdentifierInfo(Name);
   if (!RealII)
     return nullptr;
 
-  DpctAsmVariableDecl *D = lookupDecl(RealII);
+  InlineAsmVariableDecl *D = lookupDecl(RealII);
   if (D && D->isParameterizedNameDecl() && Idx < D->getNumParameterizedNames())
     return D;
   return nullptr;
 }
 
-DpctAsmBuiltinType *
-DpctAsmContext::getBuiltinType(DpctAsmBuiltinType::TypeKind Kind) {
+InlineAsmBuiltinType *
+InlineAsmContext::getBuiltinType(InlineAsmBuiltinType::TypeKind Kind) {
   if (AsmBuiltinTypes.contains(Kind))
     return AsmBuiltinTypes[Kind];
 
-  DpctAsmBuiltinType *NewType = ::new (*this) DpctAsmBuiltinType(Kind);
+  InlineAsmBuiltinType *NewType = ::new (*this) InlineAsmBuiltinType(Kind);
   AsmBuiltinTypes[Kind] = NewType;
   return NewType;
 }
 
-DpctAsmBuiltinType *
-DpctAsmContext::getBuiltinTypeFromTokenKind(asmtok::TokenKind Kind) {
+InlineAsmBuiltinType *
+InlineAsmContext::getBuiltinTypeFromTokenKind(asmtok::TokenKind Kind) {
   switch (Kind) {
 #define BUILTIN_TYPE(X, Y)                                                     \
   case asmtok::kw_##X:                                                         \
-    return getBuiltinType(DpctAsmBuiltinType::TK_##X);
+    return getBuiltinType(InlineAsmBuiltinType::TK_##X);
 #include "AsmTokenKinds.def"
   default:
     break;
@@ -119,14 +120,14 @@ DpctAsmContext::getBuiltinTypeFromTokenKind(asmtok::TokenKind Kind) {
   return nullptr;
 }
 
-DpctAsmDiscardType *DpctAsmContext::getDiscardType() {
+InlineAsmDiscardType *InlineAsmContext::getDiscardType() {
   if (!DiscardType)
-    DiscardType = ::new (*this) DpctAsmDiscardType;
+    DiscardType = ::new (*this) InlineAsmDiscardType;
   return DiscardType;
 }
 
-DpctAsmBuiltinType *
-DpctAsmContext::getTypeFromConstraint(StringRef Constraint) {
+InlineAsmBuiltinType *
+InlineAsmContext::getTypeFromConstraint(StringRef Constraint) {
   if (Constraint.size() != 1) {
     StringRef AllowedConstraint = "hrlfd";
     Constraint = Constraint.drop_until(
@@ -136,39 +137,39 @@ DpctAsmContext::getTypeFromConstraint(StringRef Constraint) {
   }
   switch (Constraint[0]) {
   case 'h':
-    return getBuiltinType(DpctAsmBuiltinType::TK_u16);
+    return getBuiltinType(InlineAsmBuiltinType::TK_u16);
   case 'r':
-    return getBuiltinType(DpctAsmBuiltinType::TK_u32);
+    return getBuiltinType(InlineAsmBuiltinType::TK_u32);
   case 'l':
-    return getBuiltinType(DpctAsmBuiltinType::TK_u64);
+    return getBuiltinType(InlineAsmBuiltinType::TK_u64);
   case 'f':
-    return getBuiltinType(DpctAsmBuiltinType::TK_f32);
+    return getBuiltinType(InlineAsmBuiltinType::TK_f32);
   case 'd':
-    return getBuiltinType(DpctAsmBuiltinType::TK_f64);
+    return getBuiltinType(InlineAsmBuiltinType::TK_f64);
   default:
     break;
   }
   return nullptr;
 }
 
-DpctAsmType::~DpctAsmType() = default;
-DpctAsmDecl::~DpctAsmDecl() = default;
-DpctAsmStmt::~DpctAsmStmt() = default;
+InlineAsmType::~InlineAsmType() = default;
+InlineAsmDecl::~InlineAsmDecl() = default;
+InlineAsmStmt::~InlineAsmStmt() = default;
 
-DpctAsmDeclResult DpctAsmParser::addInlineAsmOperands(StringRef Operand,
-                                                      StringRef Constraint) {
+InlineAsmDeclResult
+InlineAsmParser::addInlineAsmOperands(StringRef Operand, StringRef Constraint) {
   unsigned Index = Context.addInlineAsmOperand(Operand);
-  DpctAsmIdentifierInfo *II = Context.get(Index);
-  DpctAsmType *Type = Context.getTypeFromConstraint(Constraint);
+  InlineAsmIdentifierInfo *II = Context.get(Index);
+  InlineAsmType *Type = Context.getTypeFromConstraint(Constraint);
   if (!Type)
     return AsmDeclError();
 
-  DpctAsmVariableDecl *VD = ::new (Context) DpctAsmVariableDecl(II, Type);
+  InlineAsmVariableDecl *VD = ::new (Context) InlineAsmVariableDecl(II, Type);
   getCurScope()->addDecl(VD);
   return VD;
 }
 
-bool DpctAsmParser::ExpectAndConsume(asmtok::TokenKind ExpectedTok) {
+bool InlineAsmParser::ExpectAndConsume(asmtok::TokenKind ExpectedTok) {
   if (Tok.is(ExpectedTok)) {
     ConsumeAnyToken();
     return false;
@@ -176,12 +177,12 @@ bool DpctAsmParser::ExpectAndConsume(asmtok::TokenKind ExpectedTok) {
   return true;
 }
 
-DpctAsmStmtResult DpctAsmParser::ParseStatement() {
+InlineAsmStmtResult InlineAsmParser::ParseStatement() {
   switch (Tok.getKind()) {
   case asmtok::l_brace:
     return ParseCompoundStatement();
   case asmtok::at:
-    return ParseGuardInstruction();
+    return ParseConditionalInstruction();
 #define STATE_SPACE(X, Y)                                                      \
   case asmtok::kw_##X:                                                         \
     return ParseDeclarationStatement();
@@ -196,14 +197,14 @@ DpctAsmStmtResult DpctAsmParser::ParseStatement() {
   return AsmStmtError();
 }
 
-DpctAsmStmtResult DpctAsmParser::ParseCompoundStatement() {
+InlineAsmStmtResult InlineAsmParser::ParseCompoundStatement() {
   ConsumeBrace();
 
   ParseScope BlockScope(this);
 
-  SmallVector<DpctAsmStmt *, 4> Stmts;
+  SmallVector<InlineAsmStmt *, 4> Stmts;
   while (Tok.isNot(asmtok::r_brace) && Tok.isNot(asmtok::eof)) {
-    DpctAsmStmtResult Result = ParseStatement();
+    InlineAsmStmtResult Result = ParseStatement();
     if (Result.isInvalid())
       return AsmStmtError();
     Stmts.push_back(Result.get());
@@ -211,10 +212,10 @@ DpctAsmStmtResult DpctAsmParser::ParseCompoundStatement() {
 
   if (ExpectAndConsume(asmtok::r_brace))
     return AsmStmtError();
-  return ::new (Context) DpctAsmCompoundStmt(Stmts);
+  return ::new (Context) InlineAsmCompoundStmt(Stmts);
 }
 
-DpctAsmStmtResult DpctAsmParser::ParseGuardInstruction() {
+InlineAsmStmtResult InlineAsmParser::ParseConditionalInstruction() {
   if (ExpectAndConsume(asmtok::at))
     return AsmStmtError();
 
@@ -223,28 +224,28 @@ DpctAsmStmtResult DpctAsmParser::ParseGuardInstruction() {
     isNeg = true;
   }
 
-  DpctAsmExprResult Pred = ParseExpression();
+  InlineAsmExprResult Pred = ParseExpression();
 
   if (Pred.isInvalid())
     return AsmStmtError();
 
-  DpctAsmStmtResult SubInst = ParseInstruction();
+  InlineAsmStmtResult SubInst = ParseInstruction();
   if (SubInst.isInvalid())
     return AsmStmtError();
 
-  return ::new (Context) DpctAsmGuardInstruction(
-      isNeg, Pred.get(), SubInst.getAs<DpctAsmInstruction>());
+  return ::new (Context) InlineAsmConditionalInstruction(
+      isNeg, Pred.get(), SubInst.getAs<InlineAsmInstruction>());
 }
 
-DpctAsmStmtResult DpctAsmParser::ParseInstruction() {
+InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
   if (!Tok.getIdentifier() || !Tok.getIdentifier()->isInstruction())
     return AsmStmtError();
 
-  DpctAsmIdentifierInfo *Opcode = Tok.getIdentifier();
+  InlineAsmIdentifierInfo *Opcode = Tok.getIdentifier();
   ConsumeToken();
 
-  SmallVector<DpctAsmType *, 4> Types;
-  SmallVector<DpctAsmIdentifierInfo *, 4> Attrs;
+  SmallVector<InlineAsmType *, 4> Types;
+  SmallVector<InlineAsmIdentifierInfo *, 4> Attrs;
   while (Tok.startOfDot()) {
     if (Tok.getIdentifier()->isBuiltinType())
       Types.push_back(Context.getBuiltinTypeFromTokenKind(Tok.getKind()));
@@ -253,12 +254,12 @@ DpctAsmStmtResult DpctAsmParser::ParseInstruction() {
     ConsumeToken(); // consume instruction attribute
   }
 
-  DpctAsmExprResult OutputOperand = ParseExpression();
+  InlineAsmExprResult OutputOperand = ParseExpression();
   if (OutputOperand.isInvalid())
     return AsmStmtError();
 
   bool HasPredOutput = TryConsumeToken(asmtok::pipe);
-  DpctAsmExprResult PredOutput;
+  InlineAsmExprResult PredOutput;
   if (HasPredOutput) {
     PredOutput = ParseExpression();
     if (PredOutput.isInvalid())
@@ -268,10 +269,10 @@ DpctAsmStmtResult DpctAsmParser::ParseInstruction() {
   if (ExpectAndConsume(asmtok::comma))
     return AsmStmtError();
 
-  SmallVector<DpctAsmExpr *, 4> InputOperands;
+  SmallVector<InlineAsmExpr *, 4> InputOperands;
 
   while (true) {
-    DpctAsmExprResult Operand = ParseExpression();
+    InlineAsmExprResult Operand = ParseExpression();
     if (Operand.isInvalid())
       return true;
     InputOperands.push_back(Operand.get());
@@ -284,35 +285,35 @@ DpctAsmStmtResult DpctAsmParser::ParseInstruction() {
 
   if (HasPredOutput)
     return ::new (Context)
-        DpctAsmInstruction(Opcode, Types, Attrs, OutputOperand.get(),
-                           InputOperands, PredOutput.get());
-  return ::new (Context) DpctAsmInstruction(Opcode, Types, Attrs,
-                                            OutputOperand.get(), InputOperands);
+        InlineAsmInstruction(Opcode, Types, Attrs, OutputOperand.get(),
+                             InputOperands, PredOutput.get());
+  return ::new (Context) InlineAsmInstruction(
+      Opcode, Types, Attrs, OutputOperand.get(), InputOperands);
 }
 
-DpctAsmExprResult DpctAsmParser::ParseExpression() {
+InlineAsmExprResult InlineAsmParser::ParseExpression() {
   return ParseAssignmentExpression();
 }
 
-DpctAsmExprResult DpctAsmParser::ParseAssignmentExpression() {
-  DpctAsmExprResult LHS = ParseCastExpression();
+InlineAsmExprResult InlineAsmParser::ParseAssignmentExpression() {
+  InlineAsmExprResult LHS = ParseCastExpression();
   return ParseRHSOfBinaryExpression(LHS, asmprec::Assignment);
 }
 
-DpctAsmExprResult
-DpctAsmParser::ParseRHSOfBinaryExpression(DpctAsmExprResult LHS,
-                                          asmprec::Level MinPrec) {
+InlineAsmExprResult
+InlineAsmParser::ParseRHSOfBinaryExpression(InlineAsmExprResult LHS,
+                                            asmprec::Level MinPrec) {
   asmprec::Level NextTokPrec = getBinOpPrec(Tok.getKind());
   while (true) {
     if (NextTokPrec < MinPrec)
       return LHS;
 
-    DpctAsmToken OpTok = Tok;
+    InlineAsmToken OpTok = Tok;
     ConsumeToken();
 
     // Special case handling for the ternary operator.
     bool isCondOp = false;
-    DpctAsmExprResult TernaryMiddle(true);
+    InlineAsmExprResult TernaryMiddle(true);
     if (NextTokPrec == asmprec::Conditional) {
       isCondOp = true;
       if (Tok.isNot(asmtok::colon)) {
@@ -328,7 +329,7 @@ DpctAsmParser::ParseRHSOfBinaryExpression(DpctAsmExprResult LHS,
       }
     }
 
-    DpctAsmExprResult RHS = ParseCastExpression();
+    InlineAsmExprResult RHS = ParseCastExpression();
     if (RHS.isInvalid())
       return AsmExprError();
 
@@ -358,22 +359,22 @@ DpctAsmParser::ParseRHSOfBinaryExpression(DpctAsmExprResult LHS,
   }
 }
 
-DpctAsmExprResult DpctAsmParser::ParseCastExpression() {
-  DpctAsmExprResult Res;
+InlineAsmExprResult InlineAsmParser::ParseCastExpression() {
+  InlineAsmExprResult Res;
   auto SavedKind = Tok.getKind();
   switch (SavedKind) {
   case asmtok::l_paren:
     ConsumeParen();
     if (Tok.isOneOf(asmtok::kw_s64, asmtok::kw_u64)) {
-      DpctAsmBuiltinType *CastTy =
+      InlineAsmBuiltinType *CastTy =
           Tok.is(asmtok::kw_s64) ? Context.getS64Type() : Context.getU64Type();
       ConsumeParen();
-      DpctAsmExprResult SubExpr = ParseCastExpression();
+      InlineAsmExprResult SubExpr = ParseCastExpression();
       if (SubExpr.isInvalid())
         return AsmExprError();
       Res = ActOnTypeCast(CastTy, SubExpr.get());
     } else {
-      DpctAsmExprResult SubExpr = ParseExpression();
+      InlineAsmExprResult SubExpr = ParseExpression();
       if (SubExpr.isInvalid())
         return AsmExprError();
       ConsumeParen();
@@ -390,7 +391,7 @@ DpctAsmExprResult DpctAsmParser::ParseCastExpression() {
     break;
   case asmtok::l_brace: {
     ConsumeBrace();
-    SmallVector<DpctAsmExpr *, 4> Tuple;
+    SmallVector<InlineAsmExpr *, 4> Tuple;
     while (true) {
       Res = ParseExpression();
       if (Res.isInvalid())
@@ -432,15 +433,15 @@ DpctAsmExprResult DpctAsmParser::ParseCastExpression() {
   return Res;
 }
 
-DpctAsmStmtResult DpctAsmParser::ParseDeclarationStatement() {
-  DpctAsmDeclarationSpecifier DeclSpec;
-  DpctAsmTypeResult Type = ParseDeclarationSpecifier(DeclSpec);
+InlineAsmStmtResult InlineAsmParser::ParseDeclarationStatement() {
+  InlineAsmDeclarationSpecifier DeclSpec;
+  InlineAsmTypeResult Type = ParseDeclarationSpecifier(DeclSpec);
   if (Type.isInvalid())
     return AsmStmtError();
 
-  SmallVector<DpctAsmDecl *, 4> Decls;
+  SmallVector<InlineAsmDecl *, 4> Decls;
   while (true) {
-    DpctAsmDeclResult DeclRes = ParseDeclarator(DeclSpec);
+    InlineAsmDeclResult DeclRes = ParseDeclarator(DeclSpec);
     if (DeclRes.isInvalid())
       return AsmStmtError();
     Decls.push_back(DeclRes.get());
@@ -450,11 +451,11 @@ DpctAsmStmtResult DpctAsmParser::ParseDeclarationStatement() {
 
   if (!TryConsumeToken(asmtok::semi))
     return AsmStmtError();
-  return ::new (Context) DpctAsmDeclStmt(DeclSpec.Type, Decls);
+  return ::new (Context) InlineAsmDeclStmt(DeclSpec.Type, Decls);
 }
 
-DpctAsmTypeResult DpctAsmParser::ParseDeclarationSpecifier(
-    DpctAsmDeclarationSpecifier &DeclSpec) {
+InlineAsmTypeResult InlineAsmParser::ParseDeclarationSpecifier(
+    InlineAsmDeclarationSpecifier &DeclSpec) {
   // Only support register variable
   DeclSpec.StateSpace = Tok.getKind();
   switch (Tok.getKind()) {
@@ -473,24 +474,24 @@ DpctAsmTypeResult DpctAsmParser::ParseDeclarationSpecifier(
   }
 
   if (TryConsumeToken(asmtok::kw_align)) {
-    DpctAsmExprResult AlignmentRes = ParseExpression();
+    InlineAsmExprResult AlignmentRes = ParseExpression();
     if (AlignmentRes.isInvalid())
       return AsmTypeError();
     AlignmentRes = ActOnAlignment(AlignmentRes.get());
     if (AlignmentRes.isInvalid())
       return AsmTypeError();
-    DeclSpec.Alignment = cast<DpctAsmIntegerLiteral>(AlignmentRes.get());
+    DeclSpec.Alignment = cast<InlineAsmIntegerLiteral>(AlignmentRes.get());
   }
 
   if (Tok.isOneOf(asmtok::kw_v2, asmtok::kw_v4)) {
-    DeclSpec.VectorType = Tok.getKind();
+    DeclSpec.VectorTypeKind = Tok.getKind();
     ConsumeToken();
   }
 
   switch (Tok.getKind()) {
 #define BUILTIN_TYPE(X, Y)                                                     \
   case asmtok::kw_##X:                                                         \
-    DeclSpec.BaseType = Context.getBuiltinType(DpctAsmBuiltinType::TK_##X);    \
+    DeclSpec.BaseType = Context.getBuiltinType(InlineAsmBuiltinType::TK_##X);  \
     ConsumeToken();                                                            \
     break;
 #include "AsmTokenKinds.def"
@@ -498,17 +499,17 @@ DpctAsmTypeResult DpctAsmParser::ParseDeclarationSpecifier(
     return AsmTypeError();
   }
 
-  switch (DeclSpec.VectorType) {
+  switch (DeclSpec.VectorTypeKind) {
   case asmtok::unknown:
     DeclSpec.Type = DeclSpec.BaseType;
     break;
   case asmtok::kw_v2:
     DeclSpec.Type = ::new (Context)
-        DpctAsmVectorType(DpctAsmVectorType::TK_v2, DeclSpec.BaseType);
+        InlineAsmVectorType(InlineAsmVectorType::TK_v2, DeclSpec.BaseType);
     break;
   case asmtok::kw_v4:
     DeclSpec.Type = ::new (Context)
-        DpctAsmVectorType(DpctAsmVectorType::TK_v4, DeclSpec.BaseType);
+        InlineAsmVectorType(InlineAsmVectorType::TK_v4, DeclSpec.BaseType);
     break;
   default:
     llvm_unreachable("unexpected vector type");
@@ -516,8 +517,8 @@ DpctAsmTypeResult DpctAsmParser::ParseDeclarationSpecifier(
   return DeclSpec.Type;
 }
 
-DpctAsmDeclResult
-DpctAsmParser::ParseDeclarator(const DpctAsmDeclarationSpecifier &DeclSpec) {
+InlineAsmDeclResult InlineAsmParser::ParseDeclarator(
+    const InlineAsmDeclarationSpecifier &DeclSpec) {
   if (Tok.isNot(asmtok::identifier))
     return AsmDeclError();
   auto *Name = Tok.getIdentifier();
@@ -527,21 +528,21 @@ DpctAsmParser::ParseDeclarator(const DpctAsmDeclarationSpecifier &DeclSpec) {
   if (VarRes.isInvalid())
     return AsmDeclError();
 
-  DpctAsmVariableDecl *Decl = VarRes.getAs<DpctAsmVariableDecl>();
+  InlineAsmVariableDecl *Decl = VarRes.getAs<InlineAsmVariableDecl>();
 
   switch (Tok.getKind()) {
   case asmtok::less: { // Parameterized variable declaration
     ConsumeToken();
     if (Tok.isNot(asmtok::numeric_constant))
       return AsmDeclError();
-    DpctAsmExprResult NumRes = ActOnNumericConstant(Tok);
+    InlineAsmExprResult NumRes = ActOnNumericConstant(Tok);
     ConsumeToken();
     if (ExpectAndConsume(asmtok::greater))
       return AsmDeclError();
 
     if (NumRes.isInvalid())
       return AsmDeclError();
-    if (const auto *Int = dyn_cast<DpctAsmIntegerLiteral>(NumRes.get())) {
+    if (const auto *Int = dyn_cast<InlineAsmIntegerLiteral>(NumRes.get())) {
       unsigned Num = Int->getValue().getZExtValue();
       Decl->setNumParameterizedNames(Num);
       // Parameterized variable declaration dosen't support for arrays and init.
@@ -549,68 +550,70 @@ DpctAsmParser::ParseDeclarator(const DpctAsmDeclarationSpecifier &DeclSpec) {
     }
     return AsmDeclError();
   }
-  case asmtok::l_square: { // Array declaration
+  case asmtok::l_square:
+    /// FIXME: Support array declaration
     break;
-  }
   default:
     break;
   }
 
   if (Tok.is(asmtok::equal)) {
+    /// FIXME: Support assignment and initializer init.
   }
   return Decl;
 }
 
-DpctAsmExprResult DpctAsmParser::ActOnDiscardExpr() {
-  return ::new (Context) DpctAsmDiscardExpr(Context.getDiscardType());
+InlineAsmExprResult InlineAsmParser::ActOnDiscardExpr() {
+  return ::new (Context) InlineAsmDiscardExpr(Context.getDiscardType());
 }
 
-DpctAsmExprResult DpctAsmParser::ActOnAddressExpr(DpctAsmExpr *SubExpr) {
-  return ::new (Context) DpctAsmAddressExpr(Context.getF64Type(), SubExpr);
+InlineAsmExprResult InlineAsmParser::ActOnAddressExpr(InlineAsmExpr *SubExpr) {
+  return ::new (Context) InlineAsmAddressExpr(Context.getF64Type(), SubExpr);
 }
 
-DpctAsmExprResult DpctAsmParser::ActOnIdExpr(DpctAsmIdentifierInfo *II) {
+InlineAsmExprResult InlineAsmParser::ActOnIdExpr(InlineAsmIdentifierInfo *II) {
   if (auto *D = getCurScope()->lookupDecl(II)) {
-    return ::new (Context) DpctAsmDeclRefExpr(D);
+    return ::new (Context) InlineAsmDeclRefExpr(D);
   }
 
   unsigned ParameterizedNameIdx;
   // Maybe this identifier is a parameterized variable name
   if (auto *D = getCurScope()->lookupParameterizedNameDecl(
           II, ParameterizedNameIdx)) {
-    return ::new (Context) DpctAsmDeclRefExpr(D, ParameterizedNameIdx);
+    return ::new (Context) InlineAsmDeclRefExpr(D, ParameterizedNameIdx);
   }
 
   return AsmExprError();
 }
 
-DpctAsmExprResult DpctAsmParser::ActOnParenExpr(DpctAsmExpr *SubExpr) {
-  return ::new (Context) DpctAsmParenExpr(SubExpr);
+InlineAsmExprResult InlineAsmParser::ActOnParenExpr(InlineAsmExpr *SubExpr) {
+  return ::new (Context) InlineAsmParenExpr(SubExpr);
 }
 
-DpctAsmExprResult DpctAsmParser::ActOnVectorExpr(ArrayRef<DpctAsmExpr *> Vec) {
+InlineAsmExprResult
+InlineAsmParser::ActOnVectorExpr(ArrayRef<InlineAsmExpr *> Vec) {
 
   // Vector size must be 2, 4, or 8.
-  DpctAsmVectorType::VecKind Kind;
+  InlineAsmVectorType::VecKind Kind;
   switch (Vec.size()) {
   case 2:
-    Kind = DpctAsmVectorType::TK_v2;
+    Kind = InlineAsmVectorType::TK_v2;
     break;
   case 4:
-    Kind = DpctAsmVectorType::TK_v4;
+    Kind = InlineAsmVectorType::TK_v4;
     break;
   case 8:
-    Kind = DpctAsmVectorType::TK_v8;
+    Kind = InlineAsmVectorType::TK_v8;
     break;
   default:
     return AsmExprError();
   }
 
-  DpctAsmBuiltinType *ElementType = nullptr;
+  InlineAsmBuiltinType *ElementType = nullptr;
   // The type of each element must have the same non-predicate builtin type.
   for (auto *E : Vec) {
-    if (auto *T = dyn_cast<DpctAsmBuiltinType>(E->getType())) {
-      if (T->getKind() == DpctAsmBuiltinType::TK_pred)
+    if (auto *T = dyn_cast<InlineAsmBuiltinType>(E->getType())) {
+      if (T->getKind() == InlineAsmBuiltinType::TK_pred)
         return AsmExprError();
       if (ElementType && ElementType->getKind() != T->getKind())
         return AsmExprError();
@@ -621,84 +624,85 @@ DpctAsmExprResult DpctAsmParser::ActOnVectorExpr(ArrayRef<DpctAsmExpr *> Vec) {
     }
   }
 
-  DpctAsmVectorType *Type =
-      ::new (Context) DpctAsmVectorType(Kind, ElementType);
-  return ::new (Context) DpctAsmVectorExpr(Type, Vec);
+  InlineAsmVectorType *Type =
+      ::new (Context) InlineAsmVectorType(Kind, ElementType);
+  return ::new (Context) InlineAsmVectorExpr(Type, Vec);
 }
 
-DpctAsmExprResult DpctAsmParser::ActOnTypeCast(DpctAsmBuiltinType *CastTy,
-                                               DpctAsmExpr *SubExpr) {
-  return ::new (Context) DpctAsmCastExpr(CastTy, SubExpr);
+InlineAsmExprResult InlineAsmParser::ActOnTypeCast(InlineAsmBuiltinType *CastTy,
+                                                   InlineAsmExpr *SubExpr) {
+  return ::new (Context) InlineAsmCastExpr(CastTy, SubExpr);
 }
 
-DpctAsmExprResult DpctAsmParser::ActOnUnaryOp(asmtok::TokenKind OpTok,
-                                              DpctAsmExpr *SubExpr) {
-  DpctAsmUnaryOperator::Opcode Opcode;
+InlineAsmExprResult InlineAsmParser::ActOnUnaryOp(asmtok::TokenKind OpTok,
+                                                  InlineAsmExpr *SubExpr) {
+  InlineAsmUnaryOperator::Opcode Opcode;
   switch (OpTok) {
   case asmtok::plus:
-    Opcode = DpctAsmUnaryOperator::Plus;
+    Opcode = InlineAsmUnaryOperator::Plus;
     break;
   case asmtok::minus:
-    Opcode = DpctAsmUnaryOperator::Minus;
+    Opcode = InlineAsmUnaryOperator::Minus;
     break;
   case asmtok::tilde:
-    Opcode = DpctAsmUnaryOperator::Not;
+    Opcode = InlineAsmUnaryOperator::Not;
     break;
   case asmtok::exclaim:
-    Opcode = DpctAsmUnaryOperator::LNot;
+    Opcode = InlineAsmUnaryOperator::LNot;
     break;
   default:
     llvm_unreachable("unexpected op token");
   }
 
   return ::new (Context)
-      DpctAsmUnaryOperator(Opcode, SubExpr, SubExpr->getType());
+      InlineAsmUnaryOperator(Opcode, SubExpr, SubExpr->getType());
 }
 
 // clang-format off
-static DpctAsmBinaryOperator::Opcode ConvertTokenKindToBinaryOpcode(asmtok::TokenKind Kind) {
-  DpctAsmBinaryOperator::Opcode Opc;
+static InlineAsmBinaryOperator::Opcode ConvertTokenKindToBinaryOpcode(asmtok::TokenKind Kind) {
+  InlineAsmBinaryOperator::Opcode Opc;
   switch (Kind) {
   default: llvm_unreachable("Unknown binop!");
-  case asmtok::star:                 Opc = DpctAsmBinaryOperator::Mul; break;
-  case asmtok::slash:                Opc = DpctAsmBinaryOperator::Div; break;
-  case asmtok::percent:              Opc = DpctAsmBinaryOperator::Rem; break;
-  case asmtok::plus:                 Opc = DpctAsmBinaryOperator::Add; break;
-  case asmtok::minus:                Opc = DpctAsmBinaryOperator::Sub; break;
-  case asmtok::lessless:             Opc = DpctAsmBinaryOperator::Shl; break;
-  case asmtok::greatergreater:       Opc = DpctAsmBinaryOperator::Shr; break;
-  case asmtok::lessequal:            Opc = DpctAsmBinaryOperator::LE; break;
-  case asmtok::less:                 Opc = DpctAsmBinaryOperator::LT; break;
-  case asmtok::greaterequal:         Opc = DpctAsmBinaryOperator::GE; break;
-  case asmtok::greater:              Opc = DpctAsmBinaryOperator::GT; break;
-  case asmtok::exclaimequal:         Opc = DpctAsmBinaryOperator::NE; break;
-  case asmtok::equalequal:           Opc = DpctAsmBinaryOperator::EQ; break;
-  case asmtok::amp:                  Opc = DpctAsmBinaryOperator::And; break;
-  case asmtok::caret:                Opc = DpctAsmBinaryOperator::Xor; break;
-  case asmtok::pipe:                 Opc = DpctAsmBinaryOperator::Or; break;
-  case asmtok::ampamp:               Opc = DpctAsmBinaryOperator::LAnd; break;
-  case asmtok::pipepipe:             Opc = DpctAsmBinaryOperator::LOr; break;
-  case asmtok::equal:                Opc = DpctAsmBinaryOperator::Assign; break;
+  case asmtok::star:                 Opc = InlineAsmBinaryOperator::Mul; break;
+  case asmtok::slash:                Opc = InlineAsmBinaryOperator::Div; break;
+  case asmtok::percent:              Opc = InlineAsmBinaryOperator::Rem; break;
+  case asmtok::plus:                 Opc = InlineAsmBinaryOperator::Add; break;
+  case asmtok::minus:                Opc = InlineAsmBinaryOperator::Sub; break;
+  case asmtok::lessless:             Opc = InlineAsmBinaryOperator::Shl; break;
+  case asmtok::greatergreater:       Opc = InlineAsmBinaryOperator::Shr; break;
+  case asmtok::lessequal:            Opc = InlineAsmBinaryOperator::LE; break;
+  case asmtok::less:                 Opc = InlineAsmBinaryOperator::LT; break;
+  case asmtok::greaterequal:         Opc = InlineAsmBinaryOperator::GE; break;
+  case asmtok::greater:              Opc = InlineAsmBinaryOperator::GT; break;
+  case asmtok::exclaimequal:         Opc = InlineAsmBinaryOperator::NE; break;
+  case asmtok::equalequal:           Opc = InlineAsmBinaryOperator::EQ; break;
+  case asmtok::amp:                  Opc = InlineAsmBinaryOperator::And; break;
+  case asmtok::caret:                Opc = InlineAsmBinaryOperator::Xor; break;
+  case asmtok::pipe:                 Opc = InlineAsmBinaryOperator::Or; break;
+  case asmtok::ampamp:               Opc = InlineAsmBinaryOperator::LAnd; break;
+  case asmtok::pipepipe:             Opc = InlineAsmBinaryOperator::LOr; break;
+  case asmtok::equal:                Opc = InlineAsmBinaryOperator::Assign; break;
   }
   return Opc;
 }
 // clang-format on
 
-DpctAsmExprResult DpctAsmParser::ActOnBinaryOp(asmtok::TokenKind OpTok,
-                                               DpctAsmExpr *LHS,
-                                               DpctAsmExpr *RHS) {
-  DpctAsmBinaryOperator::Opcode Opcode = ConvertTokenKindToBinaryOpcode(OpTok);
+InlineAsmExprResult InlineAsmParser::ActOnBinaryOp(asmtok::TokenKind OpTok,
+                                                   InlineAsmExpr *LHS,
+                                                   InlineAsmExpr *RHS) {
+  InlineAsmBinaryOperator::Opcode Opcode =
+      ConvertTokenKindToBinaryOpcode(OpTok);
   /// TODO: Compute the type of binary operator
   return ::new (Context)
-      DpctAsmBinaryOperator(Opcode, LHS, RHS, LHS->getType());
+      InlineAsmBinaryOperator(Opcode, LHS, RHS, LHS->getType());
 }
 
-DpctAsmExprResult DpctAsmParser::ActOnConditionalOp(DpctAsmExpr *Cond,
-                                                    DpctAsmExpr *LHS,
-                                                    DpctAsmExpr *RHS) {
+InlineAsmExprResult InlineAsmParser::ActOnConditionalOp(InlineAsmExpr *Cond,
+                                                        InlineAsmExpr *LHS,
+                                                        InlineAsmExpr *RHS) {
   /// TODO: Compute the type of conditional operator
   return ::new (Context)
-      DpctAsmConditionalOperator(Cond, LHS, RHS, LHS->getType());
+      InlineAsmConditionalOperator(Cond, LHS, RHS, LHS->getType());
 }
 
 namespace {
@@ -1197,13 +1201,14 @@ AsmNumericLiteralParser::GetFloatValue(llvm::APFloat &Result) {
 }
 } // namespace
 
-DpctAsmExprResult DpctAsmParser::ActOnNumericConstant(const DpctAsmToken &Tok) {
+InlineAsmExprResult
+InlineAsmParser::ActOnNumericConstant(const InlineAsmToken &Tok) {
   assert(Tok.is(asmtok::numeric_constant) && Tok.getLength() >= 1);
   StringRef LiteralData(Tok.getLiteralData(), Tok.getLength());
   if (Tok.getLength() == 1 && isDigit(LiteralData[0])) {
-    DpctAsmBuiltinType *Type = Context.getS64Type();
+    InlineAsmBuiltinType *Type = Context.getS64Type();
     llvm::APInt Val(64, LiteralData[0] - '0', true);
-    return ::new (Context) DpctAsmIntegerLiteral(Type, Val, LiteralData);
+    return ::new (Context) InlineAsmIntegerLiteral(Type, Val, LiteralData);
   }
 
   AsmNumericLiteralParser LiteralParser(LiteralData);
@@ -1216,7 +1221,7 @@ DpctAsmExprResult DpctAsmParser::ActOnNumericConstant(const DpctAsmToken &Tok) {
       auto Status = LiteralParser.GetFloatValue(Float);
       if (Status != APFloat::opOK)
         return AsmExprError();
-      return ::new (Context) DpctAsmFloatingLiteral(
+      return ::new (Context) InlineAsmFloatingLiteral(
           Context.getF32Type(), Float,
           LiteralParser.getExactMachineFloatingHexLiteralDigits(),
           /*IsExactMachineFloatingLiteral*/ true);
@@ -1227,7 +1232,7 @@ DpctAsmExprResult DpctAsmParser::ActOnNumericConstant(const DpctAsmToken &Tok) {
       auto Status = LiteralParser.GetFloatValue(Float);
       if (Status != APFloat::opOK)
         return AsmExprError();
-      return ::new (Context) DpctAsmFloatingLiteral(
+      return ::new (Context) InlineAsmFloatingLiteral(
           Context.getF64Type(), Float,
           LiteralParser.getExactMachineFloatingHexLiteralDigits(),
           /*IsExactMachineFloatingLiteral*/ true);
@@ -1238,11 +1243,11 @@ DpctAsmExprResult DpctAsmParser::ActOnNumericConstant(const DpctAsmToken &Tok) {
     if (Status != APFloat::opOK)
       return AsmExprError();
     return ::new (Context)
-        DpctAsmFloatingLiteral(Context.getF64Type(), Float, LiteralData);
+        InlineAsmFloatingLiteral(Context.getF64Type(), Float, LiteralData);
   }
 
   APInt Int(64, 0, /*isSigned*/ true);
-  DpctAsmBuiltinType *Type = Context.getS64Type();
+  InlineAsmBuiltinType *Type = Context.getS64Type();
   if (LiteralParser.GetIntegerValue(Int)) {
     // Overflow occurred, promote integer type to u64.
     Int = APInt(64, 0);
@@ -1253,19 +1258,20 @@ DpctAsmExprResult DpctAsmParser::ActOnNumericConstant(const DpctAsmToken &Tok) {
     Type = Context.getU64Type();
   }
 
-  return ::new (Context) DpctAsmIntegerLiteral(Type, Int, LiteralData);
+  return ::new (Context) InlineAsmIntegerLiteral(Type, Int, LiteralData);
 }
 
-DpctAsmExprResult DpctAsmParser::ActOnAlignment(DpctAsmExpr *Alignment) {
-  if (auto *Int = dyn_cast<DpctAsmIntegerLiteral>(Alignment)) {
+InlineAsmExprResult InlineAsmParser::ActOnAlignment(InlineAsmExpr *Alignment) {
+  if (auto *Int = dyn_cast<InlineAsmIntegerLiteral>(Alignment)) {
     return Int;
   }
   return AsmExprError();
 }
 
-DpctAsmDeclResult DpctAsmParser::ActOnVariableDecl(DpctAsmIdentifierInfo *Name,
-                                                   DpctAsmType *Type) {
-  DpctAsmVariableDecl *D = ::new (Context) DpctAsmVariableDecl(Name, Type);
+InlineAsmDeclResult
+InlineAsmParser::ActOnVariableDecl(InlineAsmIdentifierInfo *Name,
+                                   InlineAsmType *Type) {
+  InlineAsmVariableDecl *D = ::new (Context) InlineAsmVariableDecl(Name, Type);
   getCurScope()->addDecl(D);
   return D;
 }

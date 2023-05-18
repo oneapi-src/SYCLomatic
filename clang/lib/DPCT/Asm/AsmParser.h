@@ -45,14 +45,16 @@ using llvm::SmallPtrSet;
 using llvm::SMLoc;
 using llvm::SourceMgr;
 
-class DpctAsmType;
-class DpctAsmDecl;
-class DpctAsmExpr;
-class DpctAsmStmt;
-class DpctAsmParser;
-class DpctAsmIntegerLiteral;
+class InlineAsmType;
+class InlineAsmDecl;
+class InlineAsmExpr;
+class InlineAsmStmt;
+class InlineAsmParser;
+class InlineAsmIntegerLiteral;
 
-class DpctAsmType {
+/// The base class of the type hierarchy.
+/// Types, once created, are immutable.
+class InlineAsmType {
 public:
   enum TypeClass { BuiltinClass, VectorClass, DiscardClass };
 
@@ -60,25 +62,26 @@ private:
   TypeClass tClass;
 
 protected:
-  DpctAsmType(TypeClass TC) : tClass(TC) {}
+  InlineAsmType(TypeClass TC) : tClass(TC) {}
 
 public:
-  virtual ~DpctAsmType();
+  virtual ~InlineAsmType();
   TypeClass getTypeClass() const { return tClass; }
 
   void *operator new(size_t bytes) noexcept {
-    llvm_unreachable("DpctAsmType cannot be allocated with regular 'new'.");
+    llvm_unreachable("InlineAsmType cannot be allocated with regular 'new'.");
   }
 
   void operator delete(void *data) noexcept {
-    llvm_unreachable("DpctAsmType cannot be released with regular 'delete'.");
+    llvm_unreachable("InlineAsmType cannot be released with regular 'delete'.");
   }
 
   bool isSignedInteger() const;
   bool isUnsignedInteger() const;
 };
 
-class DpctAsmBuiltinType : public DpctAsmType {
+/// This class is used for builtin types like 'u32'.
+class InlineAsmBuiltinType : public InlineAsmType {
 public:
   enum TypeKind : uint8_t {
 #define BUILTIN_TYPE(X, Y) TK_##X,
@@ -89,7 +92,8 @@ private:
   TypeKind Kind;
 
 public:
-  DpctAsmBuiltinType(TypeKind Kind) : DpctAsmType(BuiltinClass), Kind(Kind) {}
+  InlineAsmBuiltinType(TypeKind Kind)
+      : InlineAsmType(BuiltinClass), Kind(Kind) {}
 
   TypeKind getKind() const { return Kind; }
 
@@ -112,12 +116,13 @@ public:
            getKind() == TK_b64;
   }
 
-  static bool classof(const DpctAsmType *T) {
+  static bool classof(const InlineAsmType *T) {
     return T->getTypeClass() == BuiltinClass;
   }
 };
 
-class DpctAsmVectorType : public DpctAsmType {
+// This class is used for device asm vector types.
+class InlineAsmVectorType : public InlineAsmType {
 public:
   enum VecKind : uint8_t {
 #define VECTOR(X, Y) TK_##X,
@@ -126,74 +131,96 @@ public:
 
 private:
   VecKind Kind;
-  DpctAsmBuiltinType *ElementType;
+  InlineAsmBuiltinType *ElementType;
 
 public:
-  DpctAsmVectorType(VecKind Kind, DpctAsmBuiltinType *ElementType)
-      : DpctAsmType(VectorClass), Kind(Kind), ElementType(ElementType) {}
+  InlineAsmVectorType(VecKind Kind, InlineAsmBuiltinType *ElementType)
+      : InlineAsmType(VectorClass), Kind(Kind), ElementType(ElementType) {}
 
   VecKind getKind() const { return Kind; }
-  const DpctAsmBuiltinType *getElementType() const { return ElementType; }
+  const InlineAsmBuiltinType *getElementType() const { return ElementType; }
 
-  static bool classof(const DpctAsmType *T) {
+  static bool classof(const InlineAsmType *T) {
     return T->getTypeClass() == VectorClass;
   }
 };
 
-class DpctAsmDiscardType : public DpctAsmType {
+/// This class is used for device asm '_' expression.
+class InlineAsmDiscardType : public InlineAsmType {
 public:
-  DpctAsmDiscardType() : DpctAsmType(DiscardClass) {}
+  InlineAsmDiscardType() : InlineAsmType(DiscardClass) {}
 
-  static bool classof(const DpctAsmType *T) {
+  static bool classof(const InlineAsmType *T) {
     return T->getTypeClass() == DiscardClass;
   }
 };
 
-class DpctAsmDecl {
+/// This represents one declaration (or definition), e.g. a variable,
+/// label, etc.
+class InlineAsmDecl {
 public:
   enum DeclClass {
     VariableDeclClass,
+
+    /// FIXME: Label declaration do now support now.
     LabelDeclClass,
   };
 
 private:
   DeclClass dClass;
-  DpctAsmIdentifierInfo *Name;
+
+  /// The declaration identifier.
+  InlineAsmIdentifierInfo *Name;
 
 protected:
-  DpctAsmDecl(DeclClass DC, DpctAsmIdentifierInfo *Name)
+  InlineAsmDecl(DeclClass DC, InlineAsmIdentifierInfo *Name)
       : dClass(DC), Name(Name) {}
 
 public:
-  virtual ~DpctAsmDecl();
+  virtual ~InlineAsmDecl();
   DeclClass getDeclClass() const { return dClass; }
-  DpctAsmIdentifierInfo *getDeclName() const { return Name; }
+  InlineAsmIdentifierInfo *getDeclName() const { return Name; }
 
   void *operator new(size_t bytes) noexcept {
-    llvm_unreachable("DpctAsmDecl cannot be allocated with regular 'new'.");
+    llvm_unreachable("InlineAsmDecl cannot be allocated with regular 'new'.");
   }
 
   void operator delete(void *data) noexcept {
-    llvm_unreachable("DpctAsmDecl cannot be released with regular 'delete'.");
+    llvm_unreachable("InlineAsmDecl cannot be released with regular 'delete'.");
   }
 };
 
-class DpctAsmVariableDecl : public DpctAsmDecl {
-  DpctAsmIdentifierInfo *StorageClass;
-  DpctAsmType *Type;
+/// Represents a variable declaration.
+class InlineAsmVariableDecl : public InlineAsmDecl {
+
+  /// The state space of a variable, e.g. '.reg', '.global', '.local', etc.
+  InlineAsmIdentifierInfo *StorageClass;
+
+  /// The type of this variable.
+  InlineAsmType *Type;
+
+  /// Alignment of this variable, specificed by '.align' attribute.
   unsigned Align;
+
+  /// The num of parameterized names, e.g. %p<10>
   unsigned NumParameterizedNames = 0;
+
+  /// Has '.align' attribute in this variable declaration.
   bool HasAlign;
+
+  /// Has parameterized names in this variable declaration.
   bool IsParameterizedNameDecl = false;
 
 public:
-  DpctAsmVariableDecl(DpctAsmIdentifierInfo *Name, DpctAsmType *Type)
-      : DpctAsmDecl(VariableDeclClass, Name), Type(Type) {}
+  InlineAsmVariableDecl(InlineAsmIdentifierInfo *Name, InlineAsmType *Type)
+      : InlineAsmDecl(VariableDeclClass, Name), Type(Type) {}
 
-  const DpctAsmIdentifierInfo *getStorageClass() const { return StorageClass; }
+  const InlineAsmIdentifierInfo *getStorageClass() const {
+    return StorageClass;
+  }
 
-  DpctAsmType *getType() { return Type; }
-  const DpctAsmType *getType() const { return Type; }
+  InlineAsmType *getType() { return Type; }
+  const InlineAsmType *getType() const { return Type; }
 
   bool hasAlign() const { return HasAlign; }
   void setAlign(unsigned Align) {
@@ -219,18 +246,19 @@ public:
     return NumParameterizedNames;
   }
 
-  static bool classof(const DpctAsmDecl *T) {
+  static bool classof(const InlineAsmDecl *T) {
     return T->getDeclClass() == VariableDeclClass;
   }
 };
 
-class DpctAsmStmt {
+/// This represents one statement.
+class InlineAsmStmt {
 public:
   enum StmtClass {
     DeclStmtClass,
     CompoundStmtClass,
     InstructionClass,
-    GuardInstructionClass,
+    ConditionalInstructionClass,
     UnaryOperatorClass,
     BinaryOperatorClass,
     ConditionalOperatorClass,
@@ -244,16 +272,16 @@ public:
     FloatingLiteralClass
   };
 
-  DpctAsmStmt(const DpctAsmStmt &) = delete;
-  DpctAsmStmt &operator=(const DpctAsmStmt &) = delete;
-  virtual ~DpctAsmStmt();
+  InlineAsmStmt(const InlineAsmStmt &) = delete;
+  InlineAsmStmt &operator=(const InlineAsmStmt &) = delete;
+  virtual ~InlineAsmStmt();
 
   void *operator new(size_t bytes) noexcept {
-    llvm_unreachable("DpctAsmStmt cannot be allocated with regular 'new'.");
+    llvm_unreachable("InlineAsmStmt cannot be allocated with regular 'new'.");
   }
 
   void operator delete(void *data) noexcept {
-    llvm_unreachable("DpctAsmStmt cannot be released with regular 'delete'.");
+    llvm_unreachable("InlineAsmStmt cannot be released with regular 'delete'.");
   }
 
   StmtClass getStmtClass() const { return static_cast<StmtClass>(sClass); }
@@ -262,70 +290,84 @@ private:
   StmtClass sClass;
 
 protected:
-  DpctAsmStmt(StmtClass SC) : sClass(SC) {}
+  InlineAsmStmt(StmtClass SC) : sClass(SC) {}
 };
 
-class DpctAsmCompoundStmt : public DpctAsmStmt {
-  SmallVector<DpctAsmStmt *, 4> Stmts;
+/// This represents a group of statements like { stmt stmt }.
+class InlineAsmCompoundStmt : public InlineAsmStmt {
+  SmallVector<InlineAsmStmt *, 4> Stmts;
 
 public:
-  DpctAsmCompoundStmt(ArrayRef<DpctAsmStmt *> Stmts)
-      : DpctAsmStmt(CompoundStmtClass), Stmts(Stmts) {}
+  InlineAsmCompoundStmt(ArrayRef<InlineAsmStmt *> Stmts)
+      : InlineAsmStmt(CompoundStmtClass), Stmts(Stmts) {}
 
   using stmt_range =
-      llvm::iterator_range<SmallVector<DpctAsmStmt *, 4>::const_iterator>;
+      llvm::iterator_range<SmallVector<InlineAsmStmt *, 4>::const_iterator>;
 
   stmt_range stmts() const { return stmt_range(Stmts.begin(), Stmts.end()); }
 
-  static bool classof(const DpctAsmStmt *S) {
+  static bool classof(const InlineAsmStmt *S) {
     return S->getStmtClass() == CompoundStmtClass;
   }
 };
 
-class DpctAsmInstruction : public DpctAsmStmt {
-  DpctAsmIdentifierInfo *Opcode;
-  SmallVector<DpctAsmType *, 4> Types;
-  SmallVector<DpctAsmIdentifierInfo *, 4> Attributes;
-  DpctAsmExpr *OutputOperand;
-  SmallVector<DpctAsmExpr *, 4> InputOperands;
-  DpctAsmExpr *PredOutput = nullptr;
+/// This represents a device instruction.
+class InlineAsmInstruction : public InlineAsmStmt {
+
+  /// The opcode of instruction, must predefined in AsmTokenKinds.def
+  /// e.g. asmtok::op_mov, asmtok::op_setp, etc.
+  InlineAsmIdentifierInfo *Opcode;
+
+  /// The type attributes in this instruction.
+  /// e.g. instruction mov.s32 val, 123; has a type attribute 's32'.
+  SmallVector<InlineAsmType *, 4> Types;
+
+  /// This represents arrtibutes like: comparsion operator, rounding modifiers,
+  /// ... e.g. instruction setp.eq.s32 has a comparsion operator 'eq'.
+  SmallVector<InlineAsmIdentifierInfo *, 4> Attributes;
+  InlineAsmExpr *OutputOperand;
+  SmallVector<InlineAsmExpr *, 4> InputOperands;
+  InlineAsmExpr *PredOutput = nullptr;
 
 public:
-  DpctAsmInstruction(DpctAsmIdentifierInfo *Op, ArrayRef<DpctAsmType *> Types,
-                     ArrayRef<DpctAsmIdentifierInfo *> Attrs,
-                     DpctAsmExpr *OutputOp, ArrayRef<DpctAsmExpr *> InputOps,
-                     DpctAsmExpr *Pred)
-      : DpctAsmStmt(InstructionClass), Opcode(Op), Types(Types),
+  InlineAsmInstruction(InlineAsmIdentifierInfo *Op,
+                       ArrayRef<InlineAsmType *> Types,
+                       ArrayRef<InlineAsmIdentifierInfo *> Attrs,
+                       InlineAsmExpr *OutputOp,
+                       ArrayRef<InlineAsmExpr *> InputOps, InlineAsmExpr *Pred)
+      : InlineAsmStmt(InstructionClass), Opcode(Op), Types(Types),
         Attributes(Attrs), OutputOperand(OutputOp), InputOperands(InputOps),
         PredOutput(Pred) {}
 
-  DpctAsmInstruction(DpctAsmIdentifierInfo *Op, ArrayRef<DpctAsmType *> Types,
-                     ArrayRef<DpctAsmIdentifierInfo *> Attrs,
-                     DpctAsmExpr *OutputOp, ArrayRef<DpctAsmExpr *> InputOps)
-      : DpctAsmStmt(InstructionClass), Opcode(Op), Types(Types),
+  InlineAsmInstruction(InlineAsmIdentifierInfo *Op,
+                       ArrayRef<InlineAsmType *> Types,
+                       ArrayRef<InlineAsmIdentifierInfo *> Attrs,
+                       InlineAsmExpr *OutputOp,
+                       ArrayRef<InlineAsmExpr *> InputOps)
+      : InlineAsmStmt(InstructionClass), Opcode(Op), Types(Types),
         Attributes(Attrs), OutputOperand(OutputOp), InputOperands(InputOps) {}
 
   using type_range =
-      llvm::iterator_range<SmallVector<DpctAsmType *, 4>::const_iterator>;
+      llvm::iterator_range<SmallVector<InlineAsmType *, 4>::const_iterator>;
   using attribute_range = llvm::iterator_range<
-      SmallVector<DpctAsmIdentifierInfo *, 4>::const_iterator>;
+      SmallVector<InlineAsmIdentifierInfo *, 4>::const_iterator>;
   using input_operand_range =
-      llvm::iterator_range<SmallVector<DpctAsmExpr *, 4>::const_iterator>;
+      llvm::iterator_range<SmallVector<InlineAsmExpr *, 4>::const_iterator>;
 
-  DpctAsmIdentifierInfo *getOpcode() const { return Opcode; }
-  const DpctAsmIdentifierInfo *getAttribute(unsigned I) const {
+  InlineAsmIdentifierInfo *getOpcode() const { return Opcode; }
+  const InlineAsmIdentifierInfo *getAttribute(unsigned I) const {
     return Attributes[I];
   }
-  const DpctAsmExpr *getOutputOperand() const { return OutputOperand; }
-  const DpctAsmExpr *getPredOutputOperand() const { return PredOutput; }
-  const DpctAsmExpr *getInputOperand(unsigned I) const {
+  const InlineAsmExpr *getOutputOperand() const { return OutputOperand; }
+  const InlineAsmExpr *getPredOutputOperand() const { return PredOutput; }
+  const InlineAsmExpr *getInputOperand(unsigned I) const {
     return InputOperands[I];
   }
   size_t getNumInputOperands() const { return InputOperands.size(); }
 
   size_t getNumTypes() const { return Types.size(); }
-  DpctAsmType *getType(unsigned I) { return Types[I]; }
-  const DpctAsmType *getType(unsigned I) const { return Types[I]; }
+  InlineAsmType *getType(unsigned I) { return Types[I]; }
+  const InlineAsmType *getType(unsigned I) const { return Types[I]; }
 
   type_range types() const { return type_range(Types.begin(), Types.end()); }
 
@@ -337,104 +379,163 @@ public:
     return input_operand_range(InputOperands.begin(), InputOperands.end());
   }
 
-  static bool classof(const DpctAsmStmt *S) {
+  static bool classof(const InlineAsmStmt *S) {
     return InstructionClass <= S->getStmtClass();
   }
 };
 
-class DpctAsmGuardInstruction : public DpctAsmStmt {
-  bool IsNeg;
-  const DpctAsmExpr *Pred;
-  const DpctAsmInstruction *Instruction;
+/// This represents a device conditional instruction, e.g. instruction @%p
+/// mov.s32 %0, 1; has a guard predicate '%p'.
+class InlineAsmConditionalInstruction : public InlineAsmStmt {
+
+  /// !Pred
+  bool Not;
+
+  /// Guard predicate expression.
+  const InlineAsmExpr *Pred;
+
+  /// The sub instruction.
+  const InlineAsmInstruction *Instruction;
 
 public:
-  DpctAsmGuardInstruction(bool IsNeg, const DpctAsmExpr *Pred,
-                          const DpctAsmInstruction *Inst)
-      : DpctAsmStmt(GuardInstructionClass), IsNeg(IsNeg), Pred(Pred),
+  InlineAsmConditionalInstruction(bool IsNeg, const InlineAsmExpr *Pred,
+                                  const InlineAsmInstruction *Inst)
+      : InlineAsmStmt(ConditionalInstructionClass), Not(IsNeg), Pred(Pred),
         Instruction(Inst) {}
 
-  const DpctAsmExpr *getPred() const { return Pred; }
-  const DpctAsmInstruction *getInstruction() const { return Instruction; }
-  bool isNeg() const { return IsNeg; }
+  const InlineAsmExpr *getPred() const { return Pred; }
+  const InlineAsmInstruction *getInstruction() const { return Instruction; }
+  bool hasNot() const { return Not; }
 
-  static bool classof(const DpctAsmStmt *S) {
-    return S->getStmtClass() == GuardInstructionClass;
+  static bool classof(const InlineAsmStmt *S) {
+    return S->getStmtClass() == ConditionalInstructionClass;
   }
 };
 
-class DpctAsmDeclStmt : public DpctAsmStmt {
-  DpctAsmType *BaseType;
-  SmallVector<DpctAsmDecl *, 4> DeclGroup;
+/// Captures information about "declaration specifiers".
+struct InlineAsmDeclarationSpecifier {
+  /// The state space, e.g. '.reg', '.global', '.local', etc.
+  asmtok::TokenKind StateSpace = asmtok::unknown;
+
+  /// The vector type kind to specific the fixed vector size, e.g. '.v2', '.v4',
+  /// etc.
+  asmtok::TokenKind VectorTypeKind = asmtok::unknown;
+
+  /// The alignment specificed by '.align' attribute.
+  InlineAsmIntegerLiteral *Alignment = nullptr;
+
+  InlineAsmBuiltinType *BaseType = nullptr;
+
+  /// The type represented by declaration specifier
+  InlineAsmType *Type = nullptr;
+};
+
+/// Represents a variable declaration that came out of a declarator.
+struct InlineAsmDeclarator {
+  InlineAsmDeclarationSpecifier DeclSpec;
+  bool isParameterizedNames = false;
+};
+
+/// DeclStmt - Adaptor class for mixing declarations with statements and
+/// expressions. For example, CompoundStmt mixes statements, expressions
+/// and declarations (variables, types).
+class InlineAsmDeclStmt : public InlineAsmStmt {
+  InlineAsmType *BaseType;
+  SmallVector<InlineAsmDecl *, 4> DeclGroup;
 
 public:
-  DpctAsmDeclStmt(DpctAsmType *BaseType, ArrayRef<DpctAsmDecl *> Decls)
-      : DpctAsmStmt(DeclStmtClass), BaseType(BaseType), DeclGroup(Decls) {}
+  InlineAsmDeclStmt(InlineAsmType *BaseType, ArrayRef<InlineAsmDecl *> Decls)
+      : InlineAsmStmt(DeclStmtClass), BaseType(BaseType), DeclGroup(Decls) {}
 
   unsigned getNumDecl() const { return DeclGroup.size(); }
-  const DpctAsmDecl *getDecl(unsigned I) const { return DeclGroup[I]; }
+  const InlineAsmDecl *getDecl(unsigned I) const { return DeclGroup[I]; }
 
   using decl_range =
-      llvm::iterator_range<SmallVector<DpctAsmDecl *, 4>::const_iterator>;
+      llvm::iterator_range<SmallVector<InlineAsmDecl *, 4>::const_iterator>;
 
   decl_range decls() const {
     return decl_range(DeclGroup.begin(), DeclGroup.end());
   }
 
-  const DpctAsmType *getBaseType() const { return BaseType; }
+  const InlineAsmType *getBaseType() const { return BaseType; }
 
-  static bool classof(const DpctAsmStmt *S) {
+  static bool classof(const InlineAsmStmt *S) {
     return S->getStmtClass() == DeclStmtClass;
   }
 };
 
 /// Base class for the full range of assembler expressions which are
 /// needed for parsing.
-class DpctAsmExpr : public DpctAsmStmt {
-  DpctAsmType *Type;
+class InlineAsmExpr : public InlineAsmStmt {
+  InlineAsmType *Type;
 
 protected:
-  explicit DpctAsmExpr(StmtClass SC, DpctAsmType *Type)
-      : DpctAsmStmt(SC), Type(Type) {}
+  explicit InlineAsmExpr(StmtClass SC, InlineAsmType *Type)
+      : InlineAsmStmt(SC), Type(Type) {}
 
 public:
-  DpctAsmType *getType() { return Type; }
-  const DpctAsmType *getType() const { return Type; }
+  InlineAsmType *getType() { return Type; }
+  const InlineAsmType *getType() const { return Type; }
 
-  static bool classof(const DpctAsmStmt *S) {
+  static bool classof(const InlineAsmStmt *S) {
     return UnaryOperatorClass <= S->getStmtClass() &&
            S->getStmtClass() <= FloatingLiteralClass;
   }
 };
 
-class DpctAsmIntegerLiteral : public DpctAsmExpr {
+/// This represents a binary, octal, decimal, or hexadecimal integer.
+class InlineAsmIntegerLiteral : public InlineAsmExpr {
+  /// Used to store the integer value.
   llvm::APInt Value;
+
+  /// Used to store the user written integer literal.
+  /// It's useful in sycl code generator to print the original
+  /// literal.
   StringRef LiteralData;
 
 public:
-  DpctAsmIntegerLiteral(DpctAsmType *Type, llvm::APInt Value,
-                        StringRef LiteralData)
-      : DpctAsmExpr(IntegerLiteralClass, Type), Value(Value),
+  InlineAsmIntegerLiteral(InlineAsmType *Type, llvm::APInt Value,
+                          StringRef LiteralData)
+      : InlineAsmExpr(IntegerLiteralClass, Type), Value(Value),
         LiteralData(LiteralData) {}
 
   llvm::APInt getValue() const { return Value; }
 
   StringRef getLiteral() const { return LiteralData; }
 
-  static bool classof(const DpctAsmStmt *S) {
+  static bool classof(const InlineAsmStmt *S) {
     return S->getStmtClass() == IntegerLiteralClass;
   }
 };
 
-class DpctAsmFloatingLiteral : public DpctAsmExpr {
+/// This represents a floating point literal.
+class InlineAsmFloatingLiteral : public InlineAsmExpr {
+
+  /// Used to store the floating point value.
   llvm::APFloat Value;
+
+  /// Used to store the user written integer literal.
+  /// If this literal is an exact machine floating literal,
+  /// the LiteralData will not include 0[fFdD] prefix.
+  ///
+  /// It's useful in sycl code generator to print the original
+  /// literal.
   StringRef LiteralData;
+
+  /// An exact machine floating literal used to specify IEEE 754
+  /// double-precision floating point values, the constant begins with 0d or 0D
+  /// followed by 16 hex digits. To specify IEEE 754 single-precision floating
+  /// point values, the constant begins with 0f or 0F followed by 8 hex digits.
+  ///
+  /// 0[fF]{hexdigit}{8}      // single-precision floating point
+  /// 0[dD]{hexdigit}{16}     // double-precision floating point
   bool IsExactMachineFloatingLiteral = false;
 
 public:
-  DpctAsmFloatingLiteral(DpctAsmType *Type, llvm::APFloat Value,
-                         StringRef LiteralData,
-                         bool IsExactMachineFloatingLiteral = false)
-      : DpctAsmExpr(FloatingLiteralClass, Type), Value(Value),
+  InlineAsmFloatingLiteral(InlineAsmType *Type, llvm::APFloat Value,
+                           StringRef LiteralData,
+                           bool IsExactMachineFloatingLiteral = false)
+      : InlineAsmExpr(FloatingLiteralClass, Type), Value(Value),
         LiteralData(LiteralData),
         IsExactMachineFloatingLiteral(IsExactMachineFloatingLiteral) {}
 
@@ -446,27 +547,36 @@ public:
 
   StringRef getLiteral() const { return LiteralData; }
 
-  static bool classof(const DpctAsmStmt *S) {
+  static bool classof(const InlineAsmStmt *S) {
     return S->getStmtClass() == FloatingLiteralClass;
   }
 };
 
-class DpctAsmDeclRefExpr : public DpctAsmExpr {
-  DpctAsmDecl *Decl;
+/// This represents a reference to a declared variable, label, etc.
+class InlineAsmDeclRefExpr : public InlineAsmExpr {
+
+  /// The referenced declaration.
+  InlineAsmDecl *Decl;
+
+  /// Used to store the parameterized name variable index.
+  /// e.g.
+  /// .reg .s32 %p<10>;
+  /// mov.s32 %p0, 0; // %p0 has ParameterizedNameIndex equals to 0;
+  /// mov.s32 %p1, 1; // %p1 has ParameterizedNameIndex equals to 1;
   unsigned ParameterizedNameIndex = 0;
 
 public:
-  DpctAsmDeclRefExpr(DpctAsmVariableDecl *D)
-      : DpctAsmExpr(DeclRefExprClass, D->getType()), Decl(D) {}
+  InlineAsmDeclRefExpr(InlineAsmVariableDecl *D)
+      : InlineAsmExpr(DeclRefExprClass, D->getType()), Decl(D) {}
 
-  DpctAsmDeclRefExpr(DpctAsmVariableDecl *D, unsigned Idx)
-      : DpctAsmExpr(DeclRefExprClass, D->getType()), Decl(D),
+  InlineAsmDeclRefExpr(InlineAsmVariableDecl *D, unsigned Idx)
+      : InlineAsmExpr(DeclRefExprClass, D->getType()), Decl(D),
         ParameterizedNameIndex(Idx) {}
 
-  const DpctAsmDecl &getDecl() const { return *Decl; }
+  const InlineAsmDecl &getDecl() const { return *Decl; }
 
   bool hasParameterizedName() const {
-    if (const auto *Var = dyn_cast<DpctAsmVariableDecl>(Decl))
+    if (const auto *Var = dyn_cast<InlineAsmVariableDecl>(Decl))
       return Var->isParameterizedNameDecl();
     return false;
   }
@@ -477,85 +587,113 @@ public:
     return ParameterizedNameIndex;
   }
 
-  static bool classof(const DpctAsmStmt *S) {
+  static bool classof(const InlineAsmStmt *S) {
     return S->getStmtClass() == DeclRefExprClass;
   }
 };
 
-class DpctAsmVectorExpr : public DpctAsmExpr {
-  SmallVector<DpctAsmExpr *, 4> Elements;
+/// This represents a device asm vector expression.
+/// Usually has 2, 4 or 8 elements. e.g.
+///
+/// ld.global.v4.f32  {a,b,c,d}, [addr+16];
+/// mov.b64 {lo,hi}, %x;    // %x is a double; lo,hi are .u32
+/// mov.b32 %r1,{x,y,z,w};  // x,y,z,w have type .b8
+class InlineAsmVectorExpr : public InlineAsmExpr {
+  SmallVector<InlineAsmExpr *, 4> Elements;
 
 public:
-  DpctAsmVectorExpr(DpctAsmVectorType *Type, ArrayRef<DpctAsmExpr *> Elements)
-      : DpctAsmExpr(VectorExprClass, Type), Elements(Elements) {}
+  InlineAsmVectorExpr(InlineAsmVectorType *Type,
+                      ArrayRef<InlineAsmExpr *> Elements)
+      : InlineAsmExpr(VectorExprClass, Type), Elements(Elements) {}
 
   using element_range =
-      llvm::iterator_range<SmallVector<DpctAsmExpr *, 4>::const_iterator>;
+      llvm::iterator_range<SmallVector<InlineAsmExpr *, 4>::const_iterator>;
 
   element_range elements() const {
     return element_range(Elements.begin(), Elements.end());
   }
 
-  const DpctAsmExpr *getElement(unsigned I) const { return Elements[I]; }
+  const InlineAsmExpr *getElement(unsigned I) const { return Elements[I]; }
 
-  static bool classof(const DpctAsmStmt *S) {
+  static bool classof(const InlineAsmStmt *S) {
     return S->getStmtClass() == VectorExprClass;
   }
 };
 
-class DpctAsmDiscardExpr : public DpctAsmExpr {
+/// This represents a device asm discard expression '_'.
+/// e.g. mov.b64 {%r1, _}, %x; // %x is.b64, %r1 is .b32
+class InlineAsmDiscardExpr : public InlineAsmExpr {
 public:
-  DpctAsmDiscardExpr(DpctAsmDiscardType *Any)
-      : DpctAsmExpr(DiscardExprClass, Any) {}
+  InlineAsmDiscardExpr(InlineAsmDiscardType *Any)
+      : InlineAsmExpr(DiscardExprClass, Any) {}
 
-  static bool classof(const DpctAsmStmt *S) {
+  static bool classof(const InlineAsmStmt *S) {
     return S->getStmtClass() == DiscardExprClass;
   }
 };
 
-class DpctAsmAddressExpr : public DpctAsmExpr {
-  DpctAsmExpr *SubExpr;
+/// This represents a device asm memory operand(except array subscripts).
+/// FIXME: Memory operand is not supported now.
+/// [var] the name of an addressable variable var.
+///
+/// [reg] an integer or bit-size type register reg containing a byte address.
+///
+/// [reg+immOff] a sum of register reg containing a byte address plus a constant
+/// integer byte offset (signed, 32-bit).
+///
+/// [var+immOff] a sum of address of addressable variable var containing a byte
+/// address plus a constant integer byte offset (signed, 32-bit).
+///
+/// [immAddr] an immediate absolute byte address (unsigned, 32-bit).
+///
+/// (exclude) var[immOff] an array element as described in Arrays as Operands.
+class InlineAsmAddressExpr : public InlineAsmExpr {
+  InlineAsmExpr *SubExpr;
 
 public:
-  DpctAsmAddressExpr(DpctAsmBuiltinType *Type, DpctAsmExpr *SubExpr)
-      : DpctAsmExpr(AddressExprClass, Type), SubExpr(SubExpr) {}
+  InlineAsmAddressExpr(InlineAsmBuiltinType *Type, InlineAsmExpr *SubExpr)
+      : InlineAsmExpr(AddressExprClass, Type), SubExpr(SubExpr) {}
 
-  const DpctAsmExpr *getSubExpr() const { return SubExpr; }
+  const InlineAsmExpr *getSubExpr() const { return SubExpr; }
 
-  static bool classof(const DpctAsmStmt *S) {
+  static bool classof(const InlineAsmStmt *S) {
     return S->getStmtClass() == AddressExprClass;
   }
 };
 
-class DpctAsmCastExpr : public DpctAsmExpr {
-  const DpctAsmExpr *SubExpr;
+/// This represents a type cast expression.
+/// Only allowed cast to s64 or u64.
+class InlineAsmCastExpr : public InlineAsmExpr {
+  const InlineAsmExpr *SubExpr;
 
 public:
-  DpctAsmCastExpr(DpctAsmBuiltinType *Type, const DpctAsmExpr *Op)
-      : DpctAsmExpr(CastExprClass, Type), SubExpr(Op) {}
+  InlineAsmCastExpr(InlineAsmBuiltinType *Type, const InlineAsmExpr *Op)
+      : InlineAsmExpr(CastExprClass, Type), SubExpr(Op) {}
 
-  const DpctAsmExpr *getSubExpr() const { return SubExpr; }
+  const InlineAsmExpr *getSubExpr() const { return SubExpr; }
 
-  static bool classof(const DpctAsmStmt *S) {
+  static bool classof(const InlineAsmStmt *S) {
     return S->getStmtClass() == CastExprClass;
   }
 };
 
-class DpctAsmParenExpr : public DpctAsmExpr {
-  DpctAsmExpr *SubExpr;
+/// This represents a parentheses expression, ( expr ).
+class InlineAsmParenExpr : public InlineAsmExpr {
+  InlineAsmExpr *SubExpr;
 
 public:
-  DpctAsmParenExpr(DpctAsmExpr *SubExpr)
-      : DpctAsmExpr(ParenExprClass, SubExpr->getType()), SubExpr(SubExpr) {}
+  InlineAsmParenExpr(InlineAsmExpr *SubExpr)
+      : InlineAsmExpr(ParenExprClass, SubExpr->getType()), SubExpr(SubExpr) {}
 
-  const DpctAsmExpr *getSubExpr() const { return SubExpr; }
+  const InlineAsmExpr *getSubExpr() const { return SubExpr; }
 
-  static bool classof(const DpctAsmStmt *S) {
+  static bool classof(const InlineAsmStmt *S) {
     return S->getStmtClass() == ParenExprClass;
   }
 };
 
-class DpctAsmUnaryOperator : public DpctAsmExpr {
+/// UnaryOperator - This represents the unary-expressions.
+class InlineAsmUnaryOperator : public InlineAsmExpr {
 public:
   enum Opcode {
     // Unary arithmetic
@@ -567,23 +705,29 @@ public:
 
 private:
   Opcode Op;
-  DpctAsmExpr *SubExpr;
+  InlineAsmExpr *SubExpr;
 
 public:
-  DpctAsmUnaryOperator(Opcode Op, DpctAsmExpr *Expr, DpctAsmType *Type)
-      : DpctAsmExpr(UnaryOperatorClass, Type), Op(Op), SubExpr(Expr) {}
+  InlineAsmUnaryOperator(Opcode Op, InlineAsmExpr *Expr, InlineAsmType *Type)
+      : InlineAsmExpr(UnaryOperatorClass, Type), Op(Op), SubExpr(Expr) {}
 
 public:
   Opcode getOpcode() const { return (Opcode)Op; }
 
-  const DpctAsmExpr *getSubExpr() const { return SubExpr; }
+  const InlineAsmExpr *getSubExpr() const { return SubExpr; }
 
-  static bool classof(const DpctAsmStmt *S) {
+  static bool classof(const InlineAsmStmt *S) {
     return S->getStmtClass() == UnaryOperatorClass;
   }
 };
 
-class DpctAsmBinaryOperator : public DpctAsmExpr {
+/// A builtin binary operation expression such as "x + y" or "x <= y".
+///
+/// This expression node kind describes a builtin binary operation,
+/// such as "x + y" for integer values "x" and "y". The operands will
+/// already have been converted to appropriate types (e.g., by
+/// performing promotions or conversions).
+class InlineAsmBinaryOperator : public InlineAsmExpr {
 public:
   enum Opcode {
     // Multiplicative operators.
@@ -630,51 +774,66 @@ public:
 
 private:
   Opcode Op;
-  DpctAsmExpr *LHS;
-  DpctAsmExpr *RHS;
+  InlineAsmExpr *LHS;
+  InlineAsmExpr *RHS;
 
 public:
-  DpctAsmBinaryOperator(Opcode Op, DpctAsmExpr *LHS, DpctAsmExpr *RHS,
-                        DpctAsmType *Type)
-      : DpctAsmExpr(BinaryOperatorClass, Type), Op(Op), LHS(LHS), RHS(RHS) {}
+  InlineAsmBinaryOperator(Opcode Op, InlineAsmExpr *LHS, InlineAsmExpr *RHS,
+                          InlineAsmType *Type)
+      : InlineAsmExpr(BinaryOperatorClass, Type), Op(Op), LHS(LHS), RHS(RHS) {}
 
 public:
   Opcode getOpcode() const { return Op; }
-  const DpctAsmExpr *getLHS() const { return LHS; }
-  const DpctAsmExpr *getRHS() const { return RHS; }
+  const InlineAsmExpr *getLHS() const { return LHS; }
+  const InlineAsmExpr *getRHS() const { return RHS; }
 
-  static bool classof(const DpctAsmStmt *S) {
+  static bool classof(const InlineAsmStmt *S) {
     return S->getStmtClass() == BinaryOperatorClass;
   }
 };
 
-class DpctAsmConditionalOperator : public DpctAsmExpr {
-  DpctAsmExpr *Cond;
-  DpctAsmExpr *LHS;
-  DpctAsmExpr *RHS;
+/// ConditionalOperator - The ?: ternary operator.
+class InlineAsmConditionalOperator : public InlineAsmExpr {
+  InlineAsmExpr *Cond;
+  InlineAsmExpr *LHS;
+  InlineAsmExpr *RHS;
 
 public:
-  DpctAsmConditionalOperator(DpctAsmExpr *C, DpctAsmExpr *L, DpctAsmExpr *R,
-                             DpctAsmType *Type)
-      : DpctAsmExpr(ConditionalOperatorClass, Type), Cond(C), LHS(L), RHS(R) {}
+  InlineAsmConditionalOperator(InlineAsmExpr *C, InlineAsmExpr *L,
+                               InlineAsmExpr *R, InlineAsmType *Type)
+      : InlineAsmExpr(ConditionalOperatorClass, Type), Cond(C), LHS(L), RHS(R) {
+  }
 
-  const DpctAsmExpr *getCond() const { return Cond; }
-  const DpctAsmExpr *getLHS() const { return LHS; }
-  const DpctAsmExpr *getRHS() const { return RHS; }
+  const InlineAsmExpr *getCond() const { return Cond; }
+  const InlineAsmExpr *getLHS() const { return LHS; }
+  const InlineAsmExpr *getRHS() const { return RHS; }
 
-  static bool classof(const DpctAsmStmt *S) {
+  static bool classof(const InlineAsmStmt *S) {
     return S->getStmtClass() == ConditionalOperatorClass;
   }
 };
 
-class DpctAsmContext : public DpctAsmIdentifierInfoLookup {
+/// Holds long-lived AST nodes (such as types and decls) and predefined
+/// identifiers that can be referred to throughout the semantic analysis of a
+/// file.
+class InlineAsmContext : public InlineAsmIdentifierInfoLookup {
 
+  /// The allocator used to create AST objects.
   BumpPtrAllocator Allocator;
-  DpctAsmIdentifierTable AsmBuiltinIdTable;
-  SmallVector<DpctAsmIdentifierInfo *, 4> InlineAsmOperands;
-  llvm::DenseMap</*DpctAsmBuiltinType::TypeKind*/ int, DpctAsmBuiltinType *>
+
+  /// The identifier table used to store predefined identifiers.
+  InlineAsmIdentifierTable AsmBuiltinIdTable;
+
+  /// This references identifiers in the predefined identifier table and
+  /// provides the ability to index by subscript.
+  SmallVector<InlineAsmIdentifierInfo *, 4> InlineAsmOperands;
+
+  /// This map used to cache the builtin types.
+  llvm::DenseMap</*InlineAsmBuiltinType::TypeKind*/ int, InlineAsmBuiltinType *>
       AsmBuiltinTypes;
-  DpctAsmDiscardType *DiscardType;
+
+  /// This used to cache the discard type.
+  InlineAsmDiscardType *DiscardType;
 
 public:
   void *allocate(unsigned Size, unsigned Align = 8) {
@@ -683,17 +842,22 @@ public:
 
   void deallocate(void *Ptr) {}
 
+  /// Add predefined inline asm operand, e.g. %0
   unsigned addInlineAsmOperand(StringRef Name) {
-    DpctAsmIdentifierInfo &II = AsmBuiltinIdTable.get(Name);
+    InlineAsmIdentifierInfo &II = AsmBuiltinIdTable.get(Name);
     InlineAsmOperands.push_back(&II);
     return InlineAsmOperands.size() - 1;
   }
 
-  DpctAsmIdentifierInfo *get(StringRef Name) override {
+  /// Lookup predefined identifiers.
+  InlineAsmIdentifierInfo *get(StringRef Name) override {
+
+    // Predefined identifiers must start with '%', and the length must greater
+    // than 2 characters.
     if (Name.size() < 2 || Name[0] != '%')
       return nullptr;
 
-    // This identifier is an inline asm placeholder.
+    // This identifier is an inline asm placeholder, e.g. %0, %1, etc.
     if (isDigit(Name[1])) {
       unsigned Num;
       if (Name.drop_front().getAsInteger(10, Num) ||
@@ -712,49 +876,56 @@ public:
     return nullptr;
   }
 
-  DpctAsmIdentifierInfo *get(unsigned Index) {
+  InlineAsmIdentifierInfo *get(unsigned Index) {
     if (Index >= InlineAsmOperands.size())
       return nullptr;
     return InlineAsmOperands[Index];
   }
 
-  DpctAsmBuiltinType *getTypeFromConstraint(StringRef Constraint);
-  DpctAsmBuiltinType *getBuiltinType(StringRef TypeName);
-  DpctAsmBuiltinType *getBuiltinType(DpctAsmBuiltinType::TypeKind Kind);
-  DpctAsmBuiltinType *getBuiltinTypeFromTokenKind(asmtok::TokenKind Kind);
-  DpctAsmDiscardType *getDiscardType();
+  InlineAsmBuiltinType *getTypeFromConstraint(StringRef Constraint);
+  InlineAsmBuiltinType *getBuiltinType(StringRef TypeName);
+  InlineAsmBuiltinType *getBuiltinType(InlineAsmBuiltinType::TypeKind Kind);
+  InlineAsmBuiltinType *getBuiltinTypeFromTokenKind(asmtok::TokenKind Kind);
+  InlineAsmDiscardType *getDiscardType();
 
-  DpctAsmBuiltinType *getS64Type() {
-    return getBuiltinType(DpctAsmBuiltinType::TK_s64);
+  InlineAsmBuiltinType *getS64Type() {
+    return getBuiltinType(InlineAsmBuiltinType::TK_s64);
   }
 
-  DpctAsmBuiltinType *getU64Type() {
-    return getBuiltinType(DpctAsmBuiltinType::TK_u64);
+  InlineAsmBuiltinType *getU64Type() {
+    return getBuiltinType(InlineAsmBuiltinType::TK_u64);
   }
 
-  DpctAsmBuiltinType *getF32Type() {
-    return getBuiltinType(DpctAsmBuiltinType::TK_f32);
+  InlineAsmBuiltinType *getF32Type() {
+    return getBuiltinType(InlineAsmBuiltinType::TK_f32);
   }
 
-  DpctAsmBuiltinType *getF64Type() {
-    return getBuiltinType(DpctAsmBuiltinType::TK_f64);
+  InlineAsmBuiltinType *getF64Type() {
+    return getBuiltinType(InlineAsmBuiltinType::TK_f64);
   }
 };
 
-class DpctAsmScope {
-  using DeclSetTy = SmallPtrSet<DpctAsmVariableDecl *, 32>;
-  DpctAsmParser &Parser;
-  DpctAsmScope *Parent;
+/// Introduces a new scope for parsing.
+class InlineAsmScope {
+  using DeclSetTy = SmallPtrSet<InlineAsmVariableDecl *, 32>;
+  InlineAsmParser &Parser;
+
+  /// Parent scope.
+  InlineAsmScope *Parent;
+
+  // Declarations in this scope.
   DeclSetTy DeclsInScope;
+
+  // Used to represents the depth between the toplevel scope and current scope.
   unsigned Depth;
 
 public:
-  DpctAsmScope(DpctAsmParser &Parser, DpctAsmScope *Parent)
+  InlineAsmScope(InlineAsmParser &Parser, InlineAsmScope *Parent)
       : Parser(Parser), Parent(Parent), Depth(Parent ? Parent->Depth + 1 : 0) {}
 
   bool hasParent() const { return Parent; }
-  const DpctAsmScope *getParent() const { return Parent; }
-  DpctAsmScope *getParent() { return Parent; }
+  const InlineAsmScope *getParent() const { return Parent; }
+  InlineAsmScope *getParent() { return Parent; }
   unsigned getDepth() const { return Depth; }
 
   using decl_range = llvm::iterator_range<DeclSetTy::iterator>;
@@ -763,31 +934,39 @@ public:
     return decl_range(DeclsInScope.begin(), DeclsInScope.end());
   }
 
-  void addDecl(DpctAsmVariableDecl *D) { DeclsInScope.insert(D); }
+  void addDecl(InlineAsmVariableDecl *D) { DeclsInScope.insert(D); }
 
-  bool isDeclScope(const DpctAsmVariableDecl *D) const {
+  bool isDeclScope(const InlineAsmVariableDecl *D) const {
     return DeclsInScope.contains(D);
   }
 
-  bool contains(const DpctAsmScope &rhs) const { return Depth < rhs.Depth; }
+  bool contains(const InlineAsmScope &rhs) const { return Depth < rhs.Depth; }
 
-  DpctAsmVariableDecl *lookupDecl(DpctAsmIdentifierInfo *II) const;
-  DpctAsmVariableDecl *lookupParameterizedNameDecl(DpctAsmIdentifierInfo *II,
-                                                   unsigned &Idx) const;
+  /// Lookup a simple declaration in current scope and parent scopes.
+  InlineAsmVariableDecl *lookupDecl(InlineAsmIdentifierInfo *II) const;
+
+  /// Lookup a parameterized name declaration in current scope and parent
+  /// scopes.
+  InlineAsmVariableDecl *
+  lookupParameterizedNameDecl(InlineAsmIdentifierInfo *II, unsigned &Idx) const;
 };
 
-using DpctAsmTypeResult = clang::ActionResult<DpctAsmType *>;
-using DpctAsmDeclResult = clang::ActionResult<DpctAsmDecl *>;
-using DpctAsmStmtResult = clang::ActionResult<DpctAsmStmt *>;
-using DpctAsmExprResult = clang::ActionResult<DpctAsmExpr *>;
+using InlineAsmTypeResult = clang::ActionResult<InlineAsmType *>;
+using InlineAsmDeclResult = clang::ActionResult<InlineAsmDecl *>;
+using InlineAsmStmtResult = clang::ActionResult<InlineAsmStmt *>;
+using InlineAsmExprResult = clang::ActionResult<InlineAsmExpr *>;
 
-inline DpctAsmExprResult AsmExprError() { return DpctAsmExprResult(true); }
-inline DpctAsmStmtResult AsmStmtError() { return DpctAsmStmtResult(true); }
-inline DpctAsmTypeResult AsmTypeError() { return DpctAsmTypeResult(true); }
-inline DpctAsmDeclResult AsmDeclError() { return DpctAsmDeclResult(true); }
+inline InlineAsmExprResult AsmExprError() { return InlineAsmExprResult(true); }
+inline InlineAsmStmtResult AsmStmtError() { return InlineAsmStmtResult(true); }
+inline InlineAsmTypeResult AsmTypeError() { return InlineAsmTypeResult(true); }
+inline InlineAsmDeclResult AsmDeclError() { return InlineAsmDeclResult(true); }
 
 // clang-format off
 namespace asmprec {
+
+/// These are precedences for the binary/ternary operators in the C99 grammar.
+/// These have been named to relate with the C99 grammar productions.  Low
+/// precedences numbers bind more weakly than high numbers.
 enum Level {
   Unknown = 0,     // Not binary operator.
   Assignment,      // =
@@ -804,19 +983,21 @@ enum Level {
   Multiplicative   // *, /, %
 };
 
+/// Return the precedence of the specified binary operator token.
 asmprec::Level getBinOpPrec(asmtok::TokenKind Kind);
 } // namespace asmprec
 // clang-format on
 
-class DpctAsmParser {
-  DpctAsmLexer Lexer;
-  DpctAsmContext &Context;
+/// Parser - This implements a parser for the device asm language.
+class InlineAsmParser {
+  InlineAsmLexer Lexer;
+  InlineAsmContext &Context;
   SourceMgr &SrcMgr;
-  DpctAsmScope *CurScope;
+  InlineAsmScope *CurScope;
 
   /// Tok - The current token we are peeking ahead.  All parsing methods assume
   /// that this is valid.
-  DpctAsmToken Tok;
+  InlineAsmToken Tok;
 
   // PrevTokLocation - The location of the token we previously
   // consumed. This token is used for diagnostics where we expected to
@@ -831,15 +1012,15 @@ class DpctAsmParser {
   /// ScopeCache - Cache scopes to reduce malloc traffic.
   enum { ScopeCacheSize = 16 };
   unsigned NumCachedScopes = 0;
-  DpctAsmScope *ScopeCache[ScopeCacheSize];
+  InlineAsmScope *ScopeCache[ScopeCacheSize];
 
   class ParseScope {
-    DpctAsmParser *Self;
+    InlineAsmParser *Self;
     ParseScope(const ParseScope &) = delete;
     void operator=(const ParseScope &) = delete;
 
   public:
-    ParseScope(DpctAsmParser *Self) : Self(Self) { Self->EnterScope(); }
+    ParseScope(InlineAsmParser *Self) : Self(Self) { Self->EnterScope(); }
 
     ~ParseScope() {
       Self->ExitScope();
@@ -847,22 +1028,8 @@ class DpctAsmParser {
     }
   };
 
-  struct DpctAsmDeclarationSpecifier {
-    asmtok::TokenKind StateSpace = asmtok::unknown;
-    asmtok::TokenKind VectorType = asmtok::unknown;
-    DpctAsmIntegerLiteral *Alignment = nullptr;
-    DpctAsmBuiltinType *BaseType = nullptr;
-    DpctAsmType *Type = nullptr;
-  };
-
-  struct DpctAsmDeclarator {
-    DpctAsmDeclarationSpecifier DeclSpec;
-
-    bool isParameterizedNames = false;
-  };
-
 public:
-  DpctAsmParser(DpctAsmContext &Ctx, SourceMgr &Mgr)
+  InlineAsmParser(InlineAsmContext &Ctx, SourceMgr &Mgr)
       : Lexer(*Mgr.getMemoryBuffer(Mgr.getMainFileID())), Context(Ctx),
         SrcMgr(Mgr), CurScope(nullptr) {
     Lexer.getIdentifiertable().setExternalIdentifierLookup(&Context);
@@ -871,13 +1038,13 @@ public:
     ConsumeToken();
     EnterScope();
   }
-  ~DpctAsmParser() { ExitScope(); }
+  ~InlineAsmParser() { ExitScope(); }
 
   SourceMgr &getSourceManager() { return SrcMgr; }
-  DpctAsmLexer &getLexer() { return Lexer; }
-  DpctAsmContext &getContext() { return Context; }
+  InlineAsmLexer &getLexer() { return Lexer; }
+  InlineAsmContext &getContext() { return Context; }
 
-  const DpctAsmToken &getCurToken() const { return Tok; }
+  const InlineAsmToken &getCurToken() const { return Tok; }
 
   /// isTokenParen - Return true if the cur token is '(' or ')'.
   bool isTokenParen() const {
@@ -994,23 +1161,25 @@ public:
   /// returned.
   bool ExpectAndConsume(asmtok::TokenKind ExpectedTok);
 
-  DpctAsmDeclResult addInlineAsmOperands(StringRef Operand,
-                                         StringRef Constraint);
+  InlineAsmDeclResult addInlineAsmOperands(StringRef Operand,
+                                           StringRef Constraint);
 
-  DpctAsmScope *getCurScope() const { return CurScope; }
+  InlineAsmScope *getCurScope() const { return CurScope; }
 
+  /// EnterScope - Start a new scope.
   void EnterScope() {
     if (NumCachedScopes) {
-      DpctAsmScope *N = ScopeCache[--NumCachedScopes];
-      CurScope = new (N) DpctAsmScope(*this, getCurScope());
+      InlineAsmScope *N = ScopeCache[--NumCachedScopes];
+      CurScope = new (N) InlineAsmScope(*this, getCurScope());
     } else {
-      CurScope = new DpctAsmScope(*this, getCurScope());
+      CurScope = new InlineAsmScope(*this, getCurScope());
     }
   }
 
+  /// ExitScope - Pop a scope off the scope stack.
   void ExitScope() {
     assert(getCurScope());
-    DpctAsmScope *OldScope = getCurScope();
+    InlineAsmScope *OldScope = getCurScope();
     if (OldScope) {
       CurScope = OldScope->getParent();
       if (NumCachedScopes == ScopeCacheSize)
@@ -1022,75 +1191,263 @@ public:
     }
   }
 
+  /// Return true if current token is start of dot and is an instruction
+  /// attributes, e.g. types, comparsion operator, rounding modifier.
   bool isInstructionAttribute();
 
-  DpctAsmStmtResult ParseStatement();
-  DpctAsmStmtResult ParseCompoundStatement();
-  DpctAsmStmtResult ParseGuardInstruction();
-  DpctAsmStmtResult ParseInstruction();
+  /// statement:
+  ///     compound-statement
+  ///     declaration
+  ///     instruction
+  ///     condition-instruction
+  InlineAsmStmtResult ParseStatement();
 
-  DpctAsmExprResult ParseExpression();
-  DpctAsmExprResult ParseCastExpression();
-  DpctAsmExprResult ParseAssignmentExpression();
-  DpctAsmExprResult ParseParenExpression(DpctAsmBuiltinType *&CastTy);
-  DpctAsmExprResult ParseRHSOfBinaryExpression(DpctAsmExprResult LHS,
-                                               asmprec::Level MinPrec);
-  DpctAsmExprResult ParsePostfixExpressionSuffix(DpctAsmExprResult LHS);
+  /// compound-statement:
+  ///      { block-item-listopt }
+  ///  block-item-list:
+  ///          block-item
+  ///          block-item-list block-item
+  ///  block-item:
+  ///          statement
+  InlineAsmStmtResult ParseCompoundStatement();
 
-  DpctAsmStmtResult ParseDeclarationStatement();
-  DpctAsmTypeResult
-  ParseDeclarationSpecifier(DpctAsmDeclarationSpecifier &DeclSpec);
-  DpctAsmDeclResult
-  ParseDeclarator(const DpctAsmDeclarationSpecifier &DeclSpec);
+  /// conditional-instruction:
+  ///       @ expression instruction
+  ///       @ ! expression instruction
+  InlineAsmStmtResult ParseConditionalInstruction();
+
+  /// instruction:
+  ///       opcode attribute-list output-operand, input-operand-list ;
+  ///       opcode attribute-list output-operand | pred-output,
+  ///       input-operand-list ;
+  ///   attribute-list:
+  ///         attribute
+  ///         attribute-list attribute
+  ///   output-operand:
+  ///         expression
+  ///   input-operand:
+  ///         expression
+  ///   input-operand-list:
+  ///         input-operand
+  ///         input-operand-list , input-operand
+  ///   pred-output:
+  ///         expression
+  ///   opcode:
+  ///         mov setp cvt ...
+  InlineAsmStmtResult ParseInstruction();
+
+  /// multiplicative-expression:
+  ///   cast-expression
+  ///   multiplicative-expression '*' cast-expression
+  ///   multiplicative-expression '/' cast-expression
+  ///   multiplicative-expression '%' cast-expression
+  ///
+  /// additive-expression:
+  ///   multiplicative-expression
+  ///   additive-expression '+' multiplicative-expression
+  ///   additive-expression '-' multiplicative-expression
+  ///
+  /// shift-expression:
+  ///   additive-expression
+  ///   shift-expression '<<' additive-expression
+  ///   shift-expression '>>' additive-expression
+  ///
+  /// relational-expression:
+  ///   shift-expression
+  ///   relational-expression '<' shift-expression
+  ///   relational-expression '>' shift-expression
+  ///   relational-expression '<=' shift-expression
+  ///   relational-expression '>=' shift-expression
+  ///
+  /// equality-expression:
+  ///   relational-expression
+  ///   equality-expression '==' relational-expression
+  ///   equality-expression '!=' relational-expression
+  ///
+  /// AND-expression:
+  ///   equality-expression
+  ///   AND-expression '&' equality-expression
+  ///
+  /// exclusive-OR-expression:
+  ///   AND-expression
+  ///   exclusive-OR-expression '^' AND-expression
+  ///
+  /// inclusive-OR-expression:
+  ///   exclusive-OR-expression
+  ///   inclusive-OR-expression '|' exclusive-OR-expression
+  ///
+  /// logical-AND-expression:
+  ///   inclusive-OR-expression
+  ///   logical-AND-expression '&&' inclusive-OR-expression
+  ///
+  /// logical-OR-expression:
+  ///   logical-AND-expression
+  ///   logical-OR-expression '||' logical-AND-expression
+  ///
+  /// conditional-expression:
+  ///   logical-OR-expression
+  ///   logical-OR-expression '?' expression ':' conditional-expression
+  ///
+  /// assignment-expression:
+  ///   conditional-expression
+  ///   unary-expression assignment-operator assignment-expression
+  ///
+  /// assignment-operator:
+  ///   =
+  ///
+  /// expression:
+  ///   assignment-expression ...[opt]
+  InlineAsmExprResult ParseExpression();
+
+  /// Parse a cast-expression, unary-expression or primary-expression
+  /// cast-expression:
+  ///   unary-expression
+  ///   '(' type-name ')' cast-expression
+  ///
+  /// unary-expression:
+  ///   postfix-expression
+  ///   unary-operator cast-expression
+  ///
+  /// unary-operator: one of
+  ///   '+'  '-'  '~'  '!'
+  ///
+  /// primary-expression:
+  ///   identifier
+  ///   constant
+  ///   '(' expression ')'
+  ///
+  /// constant: [C99 6.4.4]
+  ///   integer-constant
+  ///   floating-constant
+  InlineAsmExprResult ParseCastExpression();
+  InlineAsmExprResult ParseAssignmentExpression();
+
+  /// primary-expression:
+  ///   '(' expression ')'
+  /// cast-expression:
+  ///   '(' type-name ')' cast-expression
+  InlineAsmExprResult ParseParenExpression(InlineAsmBuiltinType *&CastTy);
+
+  /// Parse a binary expression that starts with \p LHS and has a
+  /// precedence of at least \p MinPrec.
+  InlineAsmExprResult ParseRHSOfBinaryExpression(InlineAsmExprResult LHS,
+                                                 asmprec::Level MinPrec);
+
+  /// Once the leading part of a postfix-expression is parsed, this
+  /// method parses any suffixes that apply.
+  /// FIXME: Postfix expression is not supported now.
+  ///
+  /// postfix-expression:
+  ///   primary-expression
+  ///   postfix-expression '[' expression ']'
+  ///   postfix-expression '.' identifier
+  InlineAsmExprResult ParsePostfixExpressionSuffix(InlineAsmExprResult LHS);
+
+  /// FIXME: Assignment and initializer init are not supported now.
+  /// declaration:
+  ///       declaration-specifiers init-declarator-list[opt] ';'
+  ///
+  ///   init-declarator-list:
+  ///           init-declarator
+  ///           init-declarator-list , init-declarator
+  ///
+  ///   init-declarator:
+  ///           declarator
+  ///           declarator '=' initializer
+  ///           declarator initializer[opt]
+  ///
+  ///   initializer:
+  ///           braced-init-list
+  ///
+  ///   braced-init-list:
+  ///           { initializer-list }
+  ///
+  ///   initializer-list:
+  ///           constant-expression initializer
+  ///           initializer-list , constant-expression[opt] initializer
+  InlineAsmStmtResult ParseDeclarationStatement();
+
+  /// FIXME: Only support .reg state space now.
+  ///   declaration-specifiers:
+  ///           state-space-specifier declaration-specifiers[opt]
+  ///           vector-specifier declaration-specifiers[opt]
+  ///           type-specifier declaration-specifiers[opt]
+  ///           alignment-specifier integer-constant declaration-specifiers[opt]
+  ///   state-space-specifier: one of
+  ///           .reg .sreg .const .local .param .shared .tex
+  ///
+  ///   vector-specifier: one of
+  ///           .v2 .v4 .v8
+  ///
+  ///   type-specifier: one of
+  ///           .b8 .b16 .b32 .b64 .s8 .s16 .s32 .s64
+  ///           .u8 .u16 .u32 .u64 .f16 .f32 .f64
+  ///           ...
+  ///
+  ///   alignment-specifier:
+  ///           .align
+  InlineAsmTypeResult
+  ParseDeclarationSpecifier(InlineAsmDeclarationSpecifier &DeclSpec);
+
+  /// declarator:
+  ///   identifier
+  ///   declarator '[' constant-expression[opt] ']' FIXME: Array declaration is
+  ///   not supported.
+  InlineAsmDeclResult
+  ParseDeclarator(const InlineAsmDeclarationSpecifier &DeclSpec);
 
   // Sema
-  DpctAsmExprResult ActOnTypeCast(DpctAsmBuiltinType *CastTy,
-                                  DpctAsmExpr *SubExpr);
-  DpctAsmExprResult ActOnAddressExpr(DpctAsmExpr *SubExpr);
-  DpctAsmExprResult ActOnDiscardExpr();
-  DpctAsmExprResult ActOnParenExpr(DpctAsmExpr *SubExpr);
-  DpctAsmExprResult ActOnIdExpr(DpctAsmIdentifierInfo *II);
-  DpctAsmExprResult ActOnVectorExpr(ArrayRef<DpctAsmExpr *> Tuple);
-  DpctAsmExprResult ActOnUnaryOp(asmtok::TokenKind OpTok, DpctAsmExpr *SubExpr);
-  DpctAsmExprResult ActOnBinaryOp(asmtok::TokenKind OpTok, DpctAsmExpr *LHS,
-                                  DpctAsmExpr *RHS);
-  DpctAsmExprResult ActOnConditionalOp(DpctAsmExpr *Cond, DpctAsmExpr *LHS,
-                                       DpctAsmExpr *RHS);
-  DpctAsmExprResult ActOnNumericConstant(const DpctAsmToken &Tok);
-  DpctAsmExprResult ActOnAlignment(DpctAsmExpr *Alignment);
-  DpctAsmDeclResult ActOnVariableDecl(DpctAsmIdentifierInfo *Name,
-                                      DpctAsmType *Type);
+  InlineAsmExprResult ActOnTypeCast(InlineAsmBuiltinType *CastTy,
+                                    InlineAsmExpr *SubExpr);
+  InlineAsmExprResult ActOnAddressExpr(InlineAsmExpr *SubExpr);
+  InlineAsmExprResult ActOnDiscardExpr();
+  InlineAsmExprResult ActOnParenExpr(InlineAsmExpr *SubExpr);
+  InlineAsmExprResult ActOnIdExpr(InlineAsmIdentifierInfo *II);
+  InlineAsmExprResult ActOnVectorExpr(ArrayRef<InlineAsmExpr *> Tuple);
+  InlineAsmExprResult ActOnUnaryOp(asmtok::TokenKind OpTok,
+                                   InlineAsmExpr *SubExpr);
+  InlineAsmExprResult ActOnBinaryOp(asmtok::TokenKind OpTok, InlineAsmExpr *LHS,
+                                    InlineAsmExpr *RHS);
+  InlineAsmExprResult ActOnConditionalOp(InlineAsmExpr *Cond,
+                                         InlineAsmExpr *LHS,
+                                         InlineAsmExpr *RHS);
+  InlineAsmExprResult ActOnNumericConstant(const InlineAsmToken &Tok);
+  InlineAsmExprResult ActOnAlignment(InlineAsmExpr *Alignment);
+  InlineAsmDeclResult ActOnVariableDecl(InlineAsmIdentifierInfo *Name,
+                                        InlineAsmType *Type);
 };
 } // namespace clang::dpct
 
+/// Below template specification was used for llvm data structures and
+/// utilities.
 namespace llvm {
 
 template <typename T> struct PointerLikeTypeTraits;
-template <> struct PointerLikeTypeTraits<::clang::dpct::DpctAsmType *> {
+template <> struct PointerLikeTypeTraits<::clang::dpct::InlineAsmType *> {
   static inline void *getAsVoidPointer(::clang::Type *P) { return P; }
 
-  static inline ::clang::dpct::DpctAsmType *getFromVoidPointer(void *P) {
-    return static_cast<::clang::dpct::DpctAsmType *>(P);
+  static inline ::clang::dpct::InlineAsmType *getFromVoidPointer(void *P) {
+    return static_cast<::clang::dpct::InlineAsmType *>(P);
   }
 
   static constexpr int NumLowBitsAvailable = clang::TypeAlignmentInBits;
 };
 
-template <> struct PointerLikeTypeTraits<::clang::dpct::DpctAsmDecl *> {
+template <> struct PointerLikeTypeTraits<::clang::dpct::InlineAsmDecl *> {
   static inline void *getAsVoidPointer(::clang::ExtQuals *P) { return P; }
 
-  static inline ::clang::dpct::DpctAsmDecl *getFromVoidPointer(void *P) {
-    return static_cast<::clang::dpct::DpctAsmDecl *>(P);
+  static inline ::clang::dpct::InlineAsmDecl *getFromVoidPointer(void *P) {
+    return static_cast<::clang::dpct::InlineAsmDecl *>(P);
   }
 
   static constexpr int NumLowBitsAvailable = clang::TypeAlignmentInBits;
 };
 
-template <> struct PointerLikeTypeTraits<::clang::dpct::DpctAsmStmt *> {
+template <> struct PointerLikeTypeTraits<::clang::dpct::InlineAsmStmt *> {
   static inline void *getAsVoidPointer(::clang::ExtQuals *P) { return P; }
 
-  static inline ::clang::dpct::DpctAsmStmt *getFromVoidPointer(void *P) {
-    return static_cast<::clang::dpct::DpctAsmStmt *>(P);
+  static inline ::clang::dpct::InlineAsmStmt *getFromVoidPointer(void *P) {
+    return static_cast<::clang::dpct::InlineAsmStmt *>(P);
   }
 
   static constexpr int NumLowBitsAvailable = clang::TypeAlignmentInBits;
@@ -1098,23 +1455,23 @@ template <> struct PointerLikeTypeTraits<::clang::dpct::DpctAsmStmt *> {
 
 } // namespace llvm
 
-inline void *operator new(size_t Bytes, ::clang::dpct::DpctAsmContext &C,
+inline void *operator new(size_t Bytes, ::clang::dpct::InlineAsmContext &C,
                           size_t Alignment = 8) noexcept {
   return C.allocate(Bytes, Alignment);
 }
 
-inline void operator delete(void *Ptr, ::clang::dpct::DpctAsmContext &C,
+inline void operator delete(void *Ptr, ::clang::dpct::InlineAsmContext &C,
                             size_t) noexcept {
   C.deallocate(Ptr);
 }
 
-inline void *operator new[](size_t Bytes, ::clang::dpct::DpctAsmContext &C,
+inline void *operator new[](size_t Bytes, ::clang::dpct::InlineAsmContext &C,
                             size_t Alignment = 8) noexcept {
   return C.allocate(Bytes, Alignment);
 }
 
 inline void operator delete[](void *Ptr,
-                              ::clang::dpct::DpctAsmContext &C) noexcept {
+                              ::clang::dpct::InlineAsmContext &C) noexcept {
   C.deallocate(Ptr);
 }
 

@@ -10,10 +10,10 @@
 
 using namespace clang::dpct;
 
-DpctAsmIdentifierInfoLookup::~DpctAsmIdentifierInfoLookup() = default;
+InlineAsmIdentifierInfoLookup::~InlineAsmIdentifierInfoLookup() = default;
 
-DpctAsmIdentifierTable::DpctAsmIdentifierTable(
-    DpctAsmIdentifierInfoLookup *ExternalLookup)
+InlineAsmIdentifierTable::InlineAsmIdentifierTable(
+    InlineAsmIdentifierInfoLookup *ExternalLookup)
     : HashTable(128), // Start with space for 8K identifiers.
       ExternalLookup(ExternalLookup) {
   // Populate the identifier table with info about keywords for the current
@@ -21,13 +21,13 @@ DpctAsmIdentifierTable::DpctAsmIdentifierTable(
   AddKeywords();
 }
 
-void DpctAsmIdentifierTable::AddKeywords() {
+void InlineAsmIdentifierTable::AddKeywords() {
 #define KEYWORD(X, Y) (void)get(#X, asmtok::kw_##X);
 #define INSTRUCTION(X) (void)get(#X, asmtok::op_##X);
 #include "AsmTokenKinds.def"
 }
 
-bool DpctAsmIdentifierInfo::isInstruction() const {
+bool InlineAsmIdentifierInfo::isInstruction() const {
   switch (getTokenID()) {
 #define KEYWORD(X, Y)                                                          \
   case asmtok::kw_##X:                                                         \
@@ -42,7 +42,7 @@ bool DpctAsmIdentifierInfo::isInstruction() const {
   return false;
 }
 
-bool DpctAsmIdentifierInfo::isBuiltinType() const {
+bool InlineAsmIdentifierInfo::isBuiltinType() const {
   switch (getTokenID()) {
 #define BUILTIN_TYPE(X, Y)                                                     \
   case asmtok::kw_##X:                                                         \

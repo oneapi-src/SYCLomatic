@@ -16,21 +16,21 @@
 
 namespace clang::dpct {
 
-class DpctAsmIdentifierInfo {
-  friend class DpctAsmIdentifierTable;
+class InlineAsmIdentifierInfo {
+  friend class InlineAsmIdentifierTable;
 
   // Front-end token ID or tok::identifier.
   unsigned TokenID;
 
-  llvm::StringMapEntry<DpctAsmIdentifierInfo *> *Entry = nullptr;
+  llvm::StringMapEntry<InlineAsmIdentifierInfo *> *Entry = nullptr;
 
-  DpctAsmIdentifierInfo() : TokenID(asmtok::identifier) {}
+  InlineAsmIdentifierInfo() : TokenID(asmtok::identifier) {}
 
 public:
-  DpctAsmIdentifierInfo(const DpctAsmIdentifierInfo &) = delete;
-  DpctAsmIdentifierInfo &operator=(const DpctAsmIdentifierInfo &) = delete;
-  DpctAsmIdentifierInfo(DpctAsmIdentifierInfo &&) = delete;
-  DpctAsmIdentifierInfo &operator=(DpctAsmIdentifierInfo &&) = delete;
+  InlineAsmIdentifierInfo(const InlineAsmIdentifierInfo &) = delete;
+  InlineAsmIdentifierInfo &operator=(const InlineAsmIdentifierInfo &) = delete;
+  InlineAsmIdentifierInfo(InlineAsmIdentifierInfo &&) = delete;
+  InlineAsmIdentifierInfo &operator=(InlineAsmIdentifierInfo &&) = delete;
 
   /// Return true if this is the identifier for the specified string.
   ///
@@ -70,36 +70,36 @@ public:
   bool isBuiltinType() const;
 
   /// Provide less than operator for lexicographical sorting.
-  bool operator<(const DpctAsmIdentifierInfo &RHS) const {
+  bool operator<(const InlineAsmIdentifierInfo &RHS) const {
     return getName() < RHS.getName();
   }
 };
 
-class DpctAsmIdentifierInfoLookup {
+class InlineAsmIdentifierInfoLookup {
 public:
-  virtual ~DpctAsmIdentifierInfoLookup();
-  virtual DpctAsmIdentifierInfo *get(StringRef Name) = 0;
+  virtual ~InlineAsmIdentifierInfoLookup();
+  virtual InlineAsmIdentifierInfo *get(StringRef Name) = 0;
 };
 
-class DpctAsmIdentifierTable {
+class InlineAsmIdentifierTable {
   using HashTableTy =
-      llvm::StringMap<DpctAsmIdentifierInfo *, llvm::BumpPtrAllocator>;
+      llvm::StringMap<InlineAsmIdentifierInfo *, llvm::BumpPtrAllocator>;
   HashTableTy HashTable;
 
-  DpctAsmIdentifierInfoLookup *ExternalLookup;
+  InlineAsmIdentifierInfoLookup *ExternalLookup;
 
 public:
   /// Create the identifier table.
-  explicit DpctAsmIdentifierTable(
-      DpctAsmIdentifierInfoLookup *ExternalLookup = nullptr);
+  explicit InlineAsmIdentifierTable(
+      InlineAsmIdentifierInfoLookup *ExternalLookup = nullptr);
 
   /// Set the external identifier lookup mechanism.
-  void setExternalIdentifierLookup(DpctAsmIdentifierInfoLookup *IILookup) {
+  void setExternalIdentifierLookup(InlineAsmIdentifierInfoLookup *IILookup) {
     ExternalLookup = IILookup;
   }
 
   /// Retrieve the external identifier lookup object, if any.
-  DpctAsmIdentifierInfoLookup *getExternalIdentifierLookup() const {
+  InlineAsmIdentifierInfoLookup *getExternalIdentifierLookup() const {
     return ExternalLookup;
   }
 
@@ -107,10 +107,10 @@ public:
 
   /// Return the identifier token info for the specified named
   /// identifier.
-  DpctAsmIdentifierInfo &get(StringRef Name) {
+  InlineAsmIdentifierInfo &get(StringRef Name) {
     auto &Entry = *HashTable.try_emplace(Name, nullptr).first;
 
-    DpctAsmIdentifierInfo *&II = Entry.second;
+    InlineAsmIdentifierInfo *&II = Entry.second;
     if (II)
       return *II;
 
@@ -122,8 +122,8 @@ public:
     }
 
     // Lookups failed, make a new IdentifierInfo.
-    void *Mem = getAllocator().Allocate<DpctAsmIdentifierInfo>();
-    II = new (Mem) DpctAsmIdentifierInfo();
+    void *Mem = getAllocator().Allocate<InlineAsmIdentifierInfo>();
+    II = new (Mem) InlineAsmIdentifierInfo();
 
     // Make sure getName() knows how to find the IdentifierInfo
     // contents.
@@ -132,8 +132,8 @@ public:
     return *II;
   }
 
-  DpctAsmIdentifierInfo &get(StringRef Name, asmtok::TokenKind TokenCode) {
-    DpctAsmIdentifierInfo &II = get(Name);
+  InlineAsmIdentifierInfo &get(StringRef Name, asmtok::TokenKind TokenCode) {
+    InlineAsmIdentifierInfo &II = get(Name);
     II.TokenID = TokenCode;
     assert(II.TokenID == (unsigned)TokenCode && "TokenCode too large");
     return II;
@@ -160,28 +160,29 @@ namespace llvm {
 
 // Provide PointerLikeTypeTraits for IdentifierInfo pointers, which
 // are not guaranteed to be 8-byte aligned.
-template <> struct PointerLikeTypeTraits<clang::dpct::DpctAsmIdentifierInfo *> {
-  static void *getAsVoidPointer(clang::dpct::DpctAsmIdentifierInfo *P) {
+template <>
+struct PointerLikeTypeTraits<clang::dpct::InlineAsmIdentifierInfo *> {
+  static void *getAsVoidPointer(clang::dpct::InlineAsmIdentifierInfo *P) {
     return P;
   }
 
-  static clang::dpct::DpctAsmIdentifierInfo *getFromVoidPointer(void *P) {
-    return static_cast<clang::dpct::DpctAsmIdentifierInfo *>(P);
+  static clang::dpct::InlineAsmIdentifierInfo *getFromVoidPointer(void *P) {
+    return static_cast<clang::dpct::InlineAsmIdentifierInfo *>(P);
   }
 
   static constexpr int NumLowBitsAvailable = 1;
 };
 
 template <>
-struct PointerLikeTypeTraits<const clang::dpct::DpctAsmIdentifierInfo *> {
+struct PointerLikeTypeTraits<const clang::dpct::InlineAsmIdentifierInfo *> {
   static const void *
-  getAsVoidPointer(const clang::dpct::DpctAsmIdentifierInfo *P) {
+  getAsVoidPointer(const clang::dpct::InlineAsmIdentifierInfo *P) {
     return P;
   }
 
-  static const clang::dpct::DpctAsmIdentifierInfo *
+  static const clang::dpct::InlineAsmIdentifierInfo *
   getFromVoidPointer(const void *P) {
-    return static_cast<const clang::dpct::DpctAsmIdentifierInfo *>(P);
+    return static_cast<const clang::dpct::InlineAsmIdentifierInfo *>(P);
   }
 
   static constexpr int NumLowBitsAvailable = 1;

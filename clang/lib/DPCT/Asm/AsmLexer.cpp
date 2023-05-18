@@ -22,13 +22,13 @@
 
 using namespace clang::dpct;
 
-DpctAsmLexer::DpctAsmLexer(llvm::MemoryBufferRef Input)
+InlineAsmLexer::InlineAsmLexer(llvm::MemoryBufferRef Input)
     : BufferStart(Input.getBufferStart()), BufferEnd(Input.getBufferEnd()),
       BufferPtr(Input.getBufferStart()) {
   Identifiers.AddKeywords();
 }
 
-DpctAsmLexer::~DpctAsmLexer() = default;
+InlineAsmLexer::~InlineAsmLexer() = default;
 
 static inline bool isIdentifierStart(unsigned char C) {
   return clang::isAsciiIdentifierStart(C, /*AllowDollar*/ true) || C == '%';
@@ -38,8 +38,8 @@ static inline bool isIdentifierContinue(unsigned char C) {
   return clang::isAsciiIdentifierContinue(C, /*AllowDollar*/ true);
 }
 
-void DpctAsmLexer::cleanIdentifier(SmallVectorImpl<char> &Buf,
-                                   StringRef Input) const {
+void InlineAsmLexer::cleanIdentifier(SmallVectorImpl<char> &Buf,
+                                     StringRef Input) const {
   Buf.clear();
   Input = Input.drop_while([](char C) { return C == '%'; });
   for (char C : Input) {
@@ -57,10 +57,10 @@ void DpctAsmLexer::cleanIdentifier(SmallVectorImpl<char> &Buf,
   }
 }
 
-DpctAsmIdentifierInfo *
-DpctAsmLexer::lookupIdentifierInfo(DpctAsmToken &Identifier) const {
+InlineAsmIdentifierInfo *
+InlineAsmLexer::lookupIdentifierInfo(InlineAsmToken &Identifier) const {
   assert(!Identifier.getRawIdentifier().empty() && "No raw identifier data!");
-  DpctAsmIdentifierInfo *II;
+  InlineAsmIdentifierInfo *II;
   if (!Identifier.needsCleaning())
     II = getIdentifierInfo(Identifier.getRawIdentifier());
   else {
@@ -73,7 +73,7 @@ DpctAsmLexer::lookupIdentifierInfo(DpctAsmToken &Identifier) const {
   return II;
 }
 
-bool DpctAsmLexer::isHexLiteral(const char *Start) const {
+bool InlineAsmLexer::isHexLiteral(const char *Start) const {
   char C = getChar(Start);
   if (C != 0)
     return false;
@@ -81,7 +81,7 @@ bool DpctAsmLexer::isHexLiteral(const char *Start) const {
   return (C == 'x' || C == 'X');
 }
 
-bool DpctAsmLexer::lex(DpctAsmToken &Result) {
+bool InlineAsmLexer::lex(InlineAsmToken &Result) {
 
   if (CachedLexPos < CachedTokens.size()) {
     Result = CachedTokens[CachedLexPos++];
@@ -99,7 +99,7 @@ bool DpctAsmLexer::lex(DpctAsmToken &Result) {
   return lexTokenInternal(Result);
 }
 
-bool DpctAsmLexer::lexTokenInternal(DpctAsmToken &Result) {
+bool InlineAsmLexer::lexTokenInternal(InlineAsmToken &Result) {
 LexNextToken:
   assert(!Result.hasPtrData() && "Result has not been reset");
 
@@ -161,14 +161,14 @@ LexNextToken:
   case '%':
     Char = getChar(CurPtr);
     if (isDigit(Char)) {
-      Result.setFlag(DpctAsmToken::Placeholder);
+      Result.setFlag(InlineAsmToken::Placeholder);
       return lexIdentifierContinue(Result, CurPtr);
     }
     if (Char == '%') {
       Char = getAndAdvanceChar(CurPtr);
       if (isIdentifierStart(Char)) {
         if (Char == '%' || Char == '$')
-          Result.setFlag(DpctAsmToken::NeedsCleaning);
+          Result.setFlag(InlineAsmToken::NeedsCleaning);
         return lexIdentifierContinue(Result, CurPtr);
       }
       Kind = asmtok::percent;
@@ -210,7 +210,7 @@ LexNextToken:
   case '.':
     Char = getChar(CurPtr);
     if (isIdentifierStart(Char)) {
-      Result.setFlag(DpctAsmToken::StartOfDot);
+      Result.setFlag(InlineAsmToken::StartOfDot);
       return lexIdentifierContinue(Result, CurPtr);
     }
     if (isDigit(Char)) {
@@ -324,8 +324,8 @@ LexNextToken:
 // followsym:   [a-zA-Z0-9_$]
 // identifier:  [a-zA-Z]{followsym}* | {[_$%]{followsym}+
 // directive:   .identifier
-bool DpctAsmLexer::lexIdentifierContinue(DpctAsmToken &Result,
-                                         const char *CurPtr) {
+bool InlineAsmLexer::lexIdentifierContinue(InlineAsmToken &Result,
+                                           const char *CurPtr) {
   // Match [a-zA-Z0-9_$]*, we have already matched an identifier start.
   while (true) {
     char C = getChar(CurPtr);
@@ -339,7 +339,7 @@ bool DpctAsmLexer::lexIdentifierContinue(DpctAsmToken &Result,
       if (Result.isPlaceholder())
         break;
       if (!Result.needsCleaning() && (C == '$' || C == '%'))
-        Result.setFlag(DpctAsmToken::NeedsCleaning);
+        Result.setFlag(InlineAsmToken::NeedsCleaning);
       ++CurPtr;
       continue;
     }
@@ -354,7 +354,7 @@ bool DpctAsmLexer::lexIdentifierContinue(DpctAsmToken &Result,
   formTokenWithChars(Result, CurPtr, asmtok::raw_identifier);
   Result.setRawIdentifierData(IdStart);
 
-  DpctAsmIdentifierInfo *II = lookupIdentifierInfo(Result);
+  InlineAsmIdentifierInfo *II = lookupIdentifierInfo(Result);
 
   if (Result.isPlaceholder() && II->getName().starts_with("%")) {
     // error: Inline asm placeholder must be resolved in LookUpIdentifierInfo.
@@ -369,8 +369,8 @@ bool DpctAsmLexer::lexIdentifierContinue(DpctAsmToken &Result,
   return true;
 }
 
-bool DpctAsmLexer::lexNumericConstant(DpctAsmToken &Result,
-                                      const char *CurPtr) {
+bool InlineAsmLexer::lexNumericConstant(InlineAsmToken &Result,
+                                        const char *CurPtr) {
   char C = getChar(CurPtr);
   char PrevCh = 0;
   while (isPreprocessingNumberBody(C)) {

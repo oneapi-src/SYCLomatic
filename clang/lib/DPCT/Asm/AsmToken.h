@@ -22,7 +22,7 @@ namespace clang::dpct {
 
 using llvm::SMLoc;
 
-class DpctAsmToken {
+class InlineAsmToken {
   SMLoc Loc;
   void *PtrData;
   size_t Length;
@@ -59,17 +59,17 @@ public:
 
   bool hasPtrData() const { return PtrData != nullptr; }
 
-  DpctAsmIdentifierInfo *getIdentifier() const {
+  InlineAsmIdentifierInfo *getIdentifier() const {
     assert(isNot(asmtok::raw_identifier) &&
            "getIdentifierInfo() on a tok::raw_identifier token!");
     if (is(asmtok::numeric_constant))
       return nullptr;
     if (is(asmtok::eof))
       return nullptr;
-    return (DpctAsmIdentifierInfo *)PtrData;
+    return (InlineAsmIdentifierInfo *)PtrData;
   }
 
-  void setIdentifier(DpctAsmIdentifierInfo *II) { PtrData = (void *)II; }
+  void setIdentifier(InlineAsmIdentifierInfo *II) { PtrData = (void *)II; }
 
   StringRef getRawIdentifier() const {
     assert(is(asmtok::raw_identifier));
