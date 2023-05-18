@@ -624,6 +624,69 @@ public:
     return _group_linear_range_in_parent;
   }
 };
+
+/// Computes the max active work-group number per Xe-Core. Ref to
+/// https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/GPU-Occupancy-Calculator
+/// \param [out] num_wg Active work-group number.
+/// \param [in] wg_size Work-group size.
+/// \param [in] slm_size Shared local memory size.
+/// \param [in] sg_size Sub-group size.
+/// \param [in] used_barrier Whether barrier is used.
+/// \param [in] used_large_grf Whether General Register File is used.
+/// \return If no error, returns 0.
+/// If \p wg_size exceeds the max work-group size, the max work-group size will
+/// be used instead of \p wg_size and returns -1.
+inline int calculate_max_active_wg_per_xecore(int *num_wg, int wg_size,
+                                              int slm_size = 0,
+                                              int sg_size = 32,
+                                              bool used_barrier = false,
+                                              bool used_large_grf = false) {
+  int ret = 0;
+  const int slm_size_per_xe_core = 64 * 1024;
+  const int max_barrier_registers = 32;
+  dpct::device_ext &dev = dpct::get_current_device();
+
+  size_t max_wg_size = dev.get_info<sycl::info::device::max_work_group_size>();
+  if (wg_size > max_wg_size) {
+    wg_size = max_wg_size;
+    ret = -1;
+  }
+
+  int num_threads_ss = 56;
+  int max_num_wg = 56;
+  if (dev.has(sycl::aspect::ext_intel_gpu_eu_count_per_subslice) &&
+      dev.has(sycl::aspect::ext_intel_gpu_hw_threads_per_eu)) {
+    auto eu_count =
+        dev.get_info<sycl::info::device::ext_intel_gpu_eu_count_per_subslice>();
+    auto threads_count =
+        dev.get_info<sycl::info::device::ext_intel_gpu_hw_threads_per_eu>();
+    num_threads_ss = eu_count * threads_count;
+    max_num_wg = eu_count * threads_count;
+  }
+
+  if (used_barrier) {
+    max_num_wg = max_barrier_registers;
+  }
+
+  // Calculate num_wg_slm
+  int num_wg_slm = 0;
+  if (slm_size == 0) {
+    num_wg_slm = max_num_wg;
+  } else {
+    num_wg_slm = std::floor((float)slm_size_per_xe_core / slm_size);
+  }
+
+  // Calculate num_wg_threads
+  if (used_large_grf)
+    num_threads_ss = num_threads_ss / 2;
+  int num_threads = std::ceil((float)wg_size / sg_size);
+  int num_wg_threads = std::floor((float)num_threads_ss / num_threads);
+
+  // Calculate num_wg
+  *num_wg = std::min(num_wg_slm, num_wg_threads);
+  *num_wg = std::min(*num_wg, max_num_wg);
+  return ret;
+}
 } // namespace experimental
 
 /// If x <= 2, then return a pointer to the deafult queue;
