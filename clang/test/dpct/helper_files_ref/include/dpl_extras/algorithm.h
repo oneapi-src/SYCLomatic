@@ -1693,28 +1693,25 @@ inline ::std::pair<Iter1, Iter1> equal_range(_ExecutionPolicy &&policy,
                      value, internal::__less());
 }
 
-template <typename _ExecutionPolicy, typename key_t, typename key_out_t, 
-          typename OffsetIteratorT>
-inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value &&
-                          dpct::internal::is_iterator<key_out_t>::value>
-segmented_reduce_argmin(_ExecutionPolicy &&policy, key_t keys_in,
-                        key_out_t keys_out, ::std::int64_t n,
-                        ::std::int64_t nsegments, OffsetIteratorT begin_offsets,
-                        OffsetIteratorT end_offsets) {
+template <typename Policy, typename Iter1, typename Iter2, typename Iter3>
+inline ::std::enable_if_t<
+    dpct::internal::is_iterator<Iter1>::value &&
+    dpct::internal::is_iterator<Iter2>::value &&
+    internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value>
+segmented_reduce_argmin(Policy &&policy, Iter1 keys_in, Iter2 keys_out,
+                        ::std::int64_t nsegments, Iter3 begin_offsets,
+                        Iter3 end_offsets) {
   policy.queue().submit([&](sycl::handler &cgh) {
     cgh.parallel_for(nsegments, [=](sycl::id<1> i) {
-      ::std::int64_t segment_begin = begin_offsets[i];
-      ::std::int64_t segment_length =
-          ::std::min(n, (::std::int64_t)end_offsets[i]) - segment_begin;
-      if (segment_length <= 0) {
-        *(keys_out + i) = dpct::key_value_pair(
-            ptrdiff_t(1),
-            ::std::numeric_limits<
-                typename ::std::iterator_traits<key_t>::value_type>::max());
+      if (end_offsets[i] <= begin_offsets[i]) {
+        keys_out[i] = dpct::key_value_pair(
+            1, ::std::numeric_limits<
+                   typename ::std::iterator_traits<Iter1>::value_type>::max());
       } else {
-        dpct::arg_index_input_iterator arg_index(keys_in + segment_begin);
-        *(keys_out + i) = *::std::min_element(
-            arg_index, arg_index + segment_length,
+        dpct::arg_index_input_iterator<Iter1, int> arg_index(keys_in +
+                                                             begin_offsets[i]);
+        keys_out[i] = *::std::min_element(
+            arg_index, arg_index + (end_offsets[i] - begin_offsets[i]),
             [](const auto &a, const auto &b) { return a.value < b.value; });
       }
     });
@@ -1722,28 +1719,26 @@ segmented_reduce_argmin(_ExecutionPolicy &&policy, key_t keys_in,
   policy.queue().wait();
 }
 
-template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
-          typename OffsetIteratorT>
-inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value &&
-                          dpct::internal::is_iterator<key_out_t>::value>
-segmented_reduce_argmax(_ExecutionPolicy &&policy, key_t keys_in,
-                        key_out_t keys_out, ::std::int64_t n,
-                        ::std::int64_t nsegments, OffsetIteratorT begin_offsets,
-                        OffsetIteratorT end_offsets) {
+template <typename Policy, typename Iter1, typename Iter2, typename Iter3>
+inline ::std::enable_if_t<
+    dpct::internal::is_iterator<Iter1>::value &&
+    dpct::internal::is_iterator<Iter2>::value &&
+    internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value>
+segmented_reduce_argmax(Policy &&policy, Iter1 keys_in, Iter2 keys_out,
+                        ::std::int64_t nsegments, Iter3 begin_offsets,
+                        Iter3 end_offsets) {
   policy.queue().submit([&](sycl::handler &cgh) {
     cgh.parallel_for(nsegments, [=](sycl::id<1> i) {
-      ::std::int64_t segment_begin = begin_offsets[i];
-      ::std::int64_t segment_length =
-          ::std::min(n, (::std::int64_t)end_offsets[i]) - segment_begin;
-      if (segment_length <= 0) {
-        *(keys_out + i) = dpct::key_value_pair(
-            ptrdiff_t(1),
+      if (end_offsets[i] <= begin_offsets[i]) {
+        keys_out[i] = dpct::key_value_pair(
+            1,
             ::std::numeric_limits<
-                typename ::std::iterator_traits<key_t>::value_type>::lowest());
+                typename ::std::iterator_traits<Iter1>::value_type>::lowest());
       } else {
-        dpct::arg_index_input_iterator arg_index(keys_in + segment_begin);
-        *(keys_out + i) = *::std::max_element(
-            arg_index, arg_index + segment_length,
+        dpct::arg_index_input_iterator<Iter1, int> arg_index(keys_in +
+                                                             begin_offsets[i]);
+        keys_out[i] = *::std::max_element(
+            arg_index, arg_index + (end_offsets[i] - begin_offsets[i]),
             [](const auto &a, const auto &b) { return a.value < b.value; });
       }
     });
