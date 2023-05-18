@@ -1083,3 +1083,11 @@ void foo15() {
     cudaMallocHost(&buf[i], sizeof(TEST_STR));
   }
 }
+
+void foo16() {
+  std::vector<volatile TEST_STR *> buf;
+  for (int i = 0; i < 32; i++) {
+    //CHECK: (buf.front()) = (volatile TEST_STR *)sycl::malloc_host(sizeof(TEST_STR), dpct::get_default_queue());
+    cudaMallocHost(&buf.front(), sizeof(TEST_STR));
+  }
+}

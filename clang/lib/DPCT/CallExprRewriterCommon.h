@@ -697,77 +697,15 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
       TE = DE;
     }
     QualType DerefQT = TE->getType();
-    if (const auto *ET = dyn_cast<ElaboratedType>(DerefQT)) {
+    while (const auto *ET = dyn_cast<ElaboratedType>(DerefQT)) {
       DerefQT = ET->getNamedType();
-      if (const auto *TDT = dyn_cast<TypedefType>(DerefQT)){
-        std::function<void(clang::DeclContext *,llvm::raw_ostream &, clang::DeclarationName)> addQualifiers
-          = [&addQualifiers](clang::DeclContext *DC, llvm::raw_ostream &OS, 
-                             clang::DeclarationName NameInScope) {
-          clang::PrintingPolicy Policy =
-            clang::PrintingPolicy(DpctGlobalInfo::getContext().getLangOpts());
-          if (DC->isTranslationUnit())
-            return;
-          if (DC->isFunctionOrMethod())
-            return;
-          if (Policy.Callbacks && Policy.Callbacks->isScopeVisible(DC))
-            return;
-          
-          if (const auto *NS = dyn_cast<NamespaceDecl>(DC)) {
-            if (Policy.SuppressUnwrittenScope && NS->isAnonymousNamespace())
-              return addQualifiers(DC->getParent(), OS, NameInScope);
-            if (Policy.SuppressInlineNamespace && NS->isInline() && NameInScope &&
-                NS->isRedundantInlineQualifierFor(NameInScope))
-              return addQualifiers(DC->getParent(), OS, NameInScope);
-            addQualifiers(DC->getParent(), OS, NS->getDeclName());
-            if (NS->getIdentifier())
-              OS << NS->getName() << "::";
-            else
-              OS << "(anonymous namespace)::";
-          } else if (const auto *Spec = dyn_cast<ClassTemplateSpecializationDecl>(DC)) {
-            addQualifiers(DC->getParent(), OS, Spec->getDeclName());
-            OS << Spec->getIdentifier()->getName();
-            const TemplateArgumentList &TemplateArgs = Spec->getTemplateArgs();
-            printTemplateArgumentList(
-              OS, TemplateArgs.asArray(), Policy,
-              Spec->getSpecializedTemplate()->getTemplateParameters());
-            OS << "::";
-          } else if (const auto *Tag = dyn_cast<TagDecl>(DC)) {
-            addQualifiers(DC->getParent(), OS, Tag->getDeclName());
-            if (TypedefNameDecl *Typedef = Tag->getTypedefNameForAnonDecl())
-              OS << Typedef->getIdentifier()->getName() << "::";
-            else if (Tag->getIdentifier()) {
-              OS << Tag->getIdentifier()->getName();
-              const TemplateDecl *TD = Tag->getDescribedTemplate();
-              if (TD) {
-                const TemplateParameterList *TPL = TD->getTemplateParameters();
-                if (TPL && !TPL->asArray().empty()) {
-                  auto Array = TPL->asArray();
-                  OS << "<";
-                  std::string Params;
-                  for (auto &ND : Array) {
-                    Params = Params + ", " + ND->getName().str();
-                  }
-                  Params = Params.substr(2);
-                  OS << Params << ">";
-                }
-              }
-
-              OS << "::";
-            } else
-              return;
-          } else {
-            addQualifiers(DC->getParent(), OS, NameInScope);
-          }
-        };
-        TDT->dump();
-        auto* TDecl = TDT->getDecl();
-        std::string nameNeedRepl;
-        llvm::raw_string_ostream OS(nameNeedRepl);
-        addQualifiers(TDecl->getDeclContext(),OS, TDecl->getDeclName());
-        std::cout<<OS.str()<<'\n';
-        
+      if (const auto *TDT = dyn_cast<TypedefType>(DerefQT)) {
+        auto *TDecl = TDT->getDecl();
+        if (dpct::DpctGlobalInfo::isInCudaPath(TDecl->getLocation()))
+          break;
+        DerefQT = TDecl->getUnderlyingType();
       }
-    } 
+    }
     std::string TypeStr = DpctGlobalInfo::getReplacedTypeName(DerefQT);
     if (TypeStr == "<dependent type>" || TypeStr.empty()) {
       if (NeedDeref) {

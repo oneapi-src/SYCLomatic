@@ -1311,12 +1311,13 @@ public:
   /// \return The replaced type name string with qualifiers.
   static inline std::string getReplacedTypeName(QualType QT,
                                                 const ASTContext &Context) {
-    if (const auto *AT = dyn_cast<AutoType>(QT)) {
-      QT = AT->getDeducedType();
-      if(QT.isNull()) {
-        return "";
+    if (!QT.isNull())
+      if (const auto *AT = dyn_cast<AutoType>(QT.getTypePtr())) {
+        QT = AT->getDeducedType();
+        if(QT.isNull()) {
+          return "";
+        }
       }
-    }
     std::string MigratedTypeStr;
     setGetReplacedNamePtr(&getReplacedName);
     llvm::raw_string_ostream OS(MigratedTypeStr);
