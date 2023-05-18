@@ -863,10 +863,8 @@ public:
         "function call async_rnn_backward");
 
     if (DataFuncInfo.isAssigned) {
-      DataRepl << "(";
-      DiagnosticsUtils::report(DataFuncInfo.FilePath, DataFuncInfo.Offset,
-                               Diagnostics::NOERROR_RETURN_COMMA_OP, true,
-                               false);
+      DataRepl << "DPCT_CHECK_ERROR(";
+      requestFeature(HelperFeatureEnum::Dpct_dpct_check_error, DataFuncInfo.FilePath);
     }
     DataRepl << DataFuncInfo.FuncArgs[0] << ".async_rnn_backward("
              << DataFuncInfo.FuncArgs[1];
@@ -881,7 +879,7 @@ public:
       }
     }
     if (DataFuncInfo.isAssigned) {
-      DataRepl << "), 0)";
+      DataRepl << "))";
     } else {
       DataRepl << ")";
     }

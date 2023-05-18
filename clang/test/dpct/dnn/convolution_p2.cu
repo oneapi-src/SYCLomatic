@@ -88,7 +88,7 @@ int main() {
     // CHECK: returned_count = 1;
     cudnnFindConvolutionForwardAlgorithm(handle, dataTensor, filterTensor, covdes, outTensor, 1, &returned_count, &perf_data);
 
-    // CHECK: if ((perf_data.algo = dnnl::algorithm::convolution_auto, returned_count = 1, 0)) {
+    // CHECK: if (DPCT_CHECK_ERROR(perf_data.algo = dnnl::algorithm::convolution_auto, returned_count = 1)) {
     if(cudnnFindConvolutionForwardAlgorithm(handle, dataTensor, filterTensor, covdes, outTensor, 1, &returned_count, &perf_data)) {
         std::cout << "error" << std::endl;
     }

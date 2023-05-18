@@ -93,10 +93,7 @@ void test() {
     cudaMemcpy(out, host_out.data(), ele_num * sizeof(HT), cudaMemcpyHostToDevice);
 
     float alpha = 3.f, beta = 1.f;
-    // CHECK: /*
-    // CHECK: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK: */
-    // CHECK: auto s = (handle.async_sum(alpha, dataTensor, data, beta, outTensor, out), 0);
+    // CHECK: auto s = DPCT_CHECK_ERROR(handle.async_sum(alpha, dataTensor, data, beta, outTensor, out));
 
     auto s = cudnnAddTensor(handle, &alpha, dataTensor, data, &beta, outTensor, out);
 

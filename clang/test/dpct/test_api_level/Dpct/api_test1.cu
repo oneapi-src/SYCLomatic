@@ -3,12 +3,12 @@
 // RUN: FileCheck --input-file %T/Dpct/api_test1_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Dpct/api_test1_out
 
-// CHECK: 3
+// CHECK: 30
 
 // TEST_FEATURE: Dpct_non_local_include_dependency
 // TEST_FEATURE: Dpct_dpct_align_and_inline
 // TEST_FEATURE: Dpct_dpct_noinline
-
+// TEST_FEATURE: Dpct_dpct_check_error
 
 class __align__(8) T1 {
     unsigned int l, a;
@@ -16,7 +16,11 @@ class __align__(8) T1 {
 
 __forceinline__ void foo(){}
 
-__noinline__ void foo2(){}
+__noinline__ cudaError_t foo2(){
+  void **buffer;
+  size_t size;
+  return cudaMalloc(buffer, size);
+}
 
 int main() {
   return 0;

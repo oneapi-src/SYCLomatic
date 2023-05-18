@@ -104,13 +104,13 @@ int main(int argc, char **argv) {
   cuda_kernel_initRND<<<16,32>>>(1234, RandomStates);
   cuda_kernel_RNDnormalDitribution<<<16,32>>>(Image, RandomStates);
 
-  //CHECK: CHECK((dOut = sycl::malloc_device<int>(10, q_ct1), 0));
+  //CHECK: CHECK(DPCT_CHECK_ERROR(dOut = sycl::malloc_device<int>(10, q_ct1)));
   CHECK(cudaMalloc((void **)&dOut, sizeof(int) * 10));
-  //CHECK: CHECK((RandomStates = (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *)sycl::malloc_device(sizeof(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>) * 10 * 10, q_ct1), 0));
+  //CHECK: CHECK(DPCT_CHECK_ERROR(RandomStates = (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *)sycl::malloc_device(sizeof(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>) * 10 * 10, q_ct1)));
   CHECK(cudaMalloc((void **)&RandomStates, sizeof(curandState) * 10 * 10));
   //CHECK: sycl::range<3> grid(1, 1, 10);
   dim3 grid(10, 1);
-  //CHECK: CHECK((dOut = sycl::malloc_device<int>(grid[2], q_ct1), 0));
+  //CHECK: CHECK(DPCT_CHECK_ERROR(dOut = sycl::malloc_device<int>(grid[2], q_ct1)));
   CHECK(cudaMalloc((void **)&dOut, sizeof(int) * grid.x));
 
   return 0;

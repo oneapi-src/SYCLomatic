@@ -70,7 +70,7 @@ int main(){
   // CHECK: *((int *)pdevice) = 0;
   cuDeviceGet((CUdevice *)pdevice, 0);
 
-  // CHECK: MY_SAFE_CALL((device = 0, 0));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(device = 0));
   MY_SAFE_CALL(cuDeviceGet(&device, 0));
 
   // CHECK: /*
@@ -111,9 +111,6 @@ int main(){
   flags += CU_CTX_SCHED_BLOCKING_SYNC;
   // CHECK: flags += 0;
   flags += CU_CTX_SCHED_SPIN;
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
   if (cuCtxCreate(&context, flags, device) == CUDA_SUCCESS) {
     return 0;
   }
@@ -135,7 +132,7 @@ int main(){
   // CHECK: result1 = dpct::dev_mgr::instance().get_device(device).get_max_work_group_size();
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, device);
 
-  // CHECK: MY_SAFE_CALL((result1 = dpct::dev_mgr::instance().get_device(device).get_max_compute_units(), 0));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(result1 = dpct::dev_mgr::instance().get_device(device).get_max_compute_units()));
   MY_SAFE_CALL(cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, device));
 
   // CHECK: /*
@@ -161,13 +158,13 @@ int main(){
   // CHECK-NEXT: result1 = std::stoi(dpct::get_current_device().get_info<sycl::info::device::version>());
   cuDriverGetVersion(&result1);
 
-  // CHECK: MY_SAFE_CALL((result1 = dpct::dev_mgr::instance().device_count(), 0));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(result1 = dpct::dev_mgr::instance().device_count()));
   MY_SAFE_CALL(cuDeviceGetCount(&result1));
 
   // CHECK: result1 = dpct::dev_mgr::instance().device_count();
   cuDeviceGetCount(&result1);
 
-  // CHECK: MY_SAFE_CALL((result1 = dpct::dev_mgr::instance().device_count(), 0));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(result1 = dpct::dev_mgr::instance().device_count()));
   MY_SAFE_CALL(cuDeviceGetCount(&result1));
 
   char name[100];
@@ -175,7 +172,7 @@ int main(){
   // CHECK: memcpy(name, dpct::dev_mgr::instance().get_device(device).get_info<sycl::info::device::name>().c_str(), 90);
   cuDeviceGetName(name, 90, device);
 
-  // CHECK: MY_SAFE_CALL((memcpy(name, dpct::dev_mgr::instance().get_device(device).get_info<sycl::info::device::name>().c_str(), 90), 0));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(memcpy(name, dpct::dev_mgr::instance().get_device(device).get_info<sycl::info::device::name>().c_str(), 90)));
   MY_SAFE_CALL(cuDeviceGetName(name, 90, device));
   // CHECK: size = dpct::dev_mgr::instance().get_device(device).get_device_info().get_global_mem_size();
   cuDeviceTotalMem(&size, device);

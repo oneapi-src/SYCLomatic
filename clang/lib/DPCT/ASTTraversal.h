@@ -343,10 +343,9 @@ protected:
                           std::move(Strings.SuffixInsertStr), true);
       }
       if (Flags.IsAssigned) {
-        insertAroundRange(Locations.FuncNameBegin, Locations.FuncCallEnd, "(",
-                          ", 0)");
-        report(Locations.PrefixInsertLoc, Diagnostics::NOERROR_RETURN_COMMA_OP,
-               true);
+        insertAroundRange(Locations.FuncNameBegin, Locations.FuncCallEnd, "DPCT_CHECK_ERROR(",
+                          ")");
+        requestFeature(HelperFeatureEnum::Dpct_dpct_check_error, Locations.PrefixInsertLoc);
       }
 
       emplaceTransformation(new ReplaceStmt(CE, true, Strings.Repl));

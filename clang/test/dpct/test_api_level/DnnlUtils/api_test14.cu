@@ -4,7 +4,7 @@
 // RUN: rm -rf %T/DnnlUtils/api_test14_out
 
 
-// CHECK: 14
+// CHECK: 15
 // TEST_FEATURE: DnnlUtils_batch_normalization_forward_training
 // TEST_FEATURE: DnnlUtils_batch_normalization_mode
 // TEST_FEATURE: DnnlUtils_batch_normalization_ops

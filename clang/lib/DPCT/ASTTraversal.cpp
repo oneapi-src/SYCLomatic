@@ -11114,10 +11114,9 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         Name.compare("cuMemcpyDtoD_v2") &&
         Name.compare("cuMemHostUnregister") &&
         Name.compare("cuMemHostRegister_v2") &&
-        Name.compare("cudaHostGetFlags") &&
-        Name.compare("cuMemHostGetFlags") &&
-        Name.compare("cuMemcpy") &&
-        Name.compare("cuMemcpyAsync")) {
+        Name.compare("cudaHostGetFlags") && Name.compare("cuMemHostGetFlags") &&
+        Name.compare("cuMemcpy") && Name.compare("cuMemcpyAsync") &&
+        Name.compare("cuMemAllocPitch_v2")) {
       requestFeature(HelperFeatureEnum::Dpct_dpct_check_error, C);
       insertAroundStmt(C, "DPCT_CHECK_ERROR(", ")");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&
