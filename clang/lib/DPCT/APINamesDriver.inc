@@ -6,6 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+// clang-format off
+
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::Kernel_kernel_library,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
@@ -43,7 +45,7 @@ FEATURE_REQUEST_FACTORY(
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
     CALL_FACTORY_ENTRY("cuModuleUnload",
-                       CALL("dpct::unload_kernel_library", ARG(0)))))
+                       CALL(MapNames::getDpctNamespace() + "unload_kernel_library", ARG(0)))))
 
 #define RANGES_CTOR(RangeType, ...)                                            \
   CALL(DpctGlobalInfo::getCtadClass(                                           \
@@ -56,7 +58,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FAC
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
     CALL_FACTORY_ENTRY(
         "cuLaunchKernel",
-        CALL("dpct::invoke_kernel_function", ARG(0), STREAM(8),
+        CALL(MapNames::getDpctNamespace() + "invoke_kernel_function", ARG(0), STREAM(8),
              RANGE_CTOR(ARG(3), ARG(2), ARG(1)),
              RANGE_CTOR(ARG(6), ARG(5), ARG(4)), ARG(7), ARG(9), ARG(10)))))
 
@@ -158,3 +160,5 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                                      "dev_mgr::instance"),
                                 false, "get_device", ARG(2)),
                     false, makeFuncNameFromDevAttrCreator(1)))))
+
+// clang-format on
