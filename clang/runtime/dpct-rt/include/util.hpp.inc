@@ -396,11 +396,12 @@ namespace experimental {
 // Util|spirv_builtin_function
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Masked version of select_from_sub_group. The parameter member_mask indicating
-/// the work-items participating the call. Whether the n-th bit is set to 1
-/// representing whether the work-item with id n is participating the call.
-/// All work-items named in member_mask must be executed with the same member_mask,
-/// or the result is undefined.
+/// Masked version of select_from_sub_group, which execute masked sub_group
+/// operation. The parameter member_mask indicating the work-items participating
+/// the call. Whether the n-th bit is set to 1 representing whether the
+/// work-item with id n is participating the call. All work-items named in
+/// member_mask must be executed with the same member_mask, or the result is
+/// undefined.
 /// \tparam T Input value type
 /// \param [in] member_mask Input mask
 /// \param [in] g Input sub_group
@@ -440,11 +441,12 @@ T select_from_sub_group(unsigned int member_mask,
 // Util|spirv_builtin_function
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Masked version of shift_sub_group_left. The parameter member_mask indicating
-/// the work-items participating the call. Whether the n-th bit is set to 1
-/// representing whether the work-item with id n is participating the call.
-/// All work-items named in member_mask must be executed with the same member_mask,
-/// or the result is undefined.
+/// Masked version of shift_sub_group_left, which execute masked sub_group
+/// operation. The parameter member_mask indicating the work-items participating
+/// the call. Whether the n-th bit is set to 1 representing whether the
+/// work-item with id n is participating the call. All work-items named in
+/// member_mask must be executed with the same member_mask, or the result is
+/// undefined.
 /// \tparam T Input value type
 /// \param [in] member_mask Input mask
 /// \param [in] g Input sub_group
@@ -487,11 +489,12 @@ T shift_sub_group_left(unsigned int member_mask,
 // Util|spirv_builtin_function
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Masked version of shift_sub_group_right. The parameter member_mask indicating
-/// the work-items participating the call. Whether the n-th bit is set to 1
-/// representing whether the work-item with id n is participating the call.
-/// All work-items named in member_mask must be executed with the same member_mask,
-/// or the result is undefined.
+/// Masked version of shift_sub_group_right, which execute masked sub_group
+/// operation. The parameter member_mask indicating the work-items participating
+/// the call. Whether the n-th bit is set to 1 representing whether the
+/// work-item with id n is participating the call. All work-items named in
+/// member_mask must be executed with the same member_mask, or the result is
+/// undefined.
 /// \tparam T Input value type
 /// \param [in] member_mask Input mask
 /// \param [in] g Input sub_group
@@ -534,11 +537,12 @@ T shift_sub_group_right(unsigned int member_mask,
 // Util|spirv_builtin_function
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Masked version of permute_sub_group_by_xor. The parameter member_mask indicating
-/// the work-items participating the call. Whether the n-th bit is set to 1
-/// representing whether the work-item with id n is participating the call.
-/// All work-items named in member_mask must be executed with the same member_mask,
-/// or the result is undefined.
+/// Masked version of permute_sub_group_by_xor, which execute masked sub_group
+/// operation. The parameter member_mask indicating the work-items participating
+/// the call. Whether the n-th bit is set to 1 representing whether the
+/// work-item with id n is participating the call. All work-items named in
+/// member_mask must be executed with the same member_mask, or the result is
+/// undefined.
 /// \tparam T Input value type
 /// \param [in] member_mask Input mask
 /// \param [in] g Input sub_group
