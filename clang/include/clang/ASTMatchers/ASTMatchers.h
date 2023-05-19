@@ -2705,6 +2705,11 @@ extern const internal::VariadicDynCastAllOfMatcher<Stmt, PredefinedExpr>
 extern const internal::VariadicDynCastAllOfMatcher<Stmt, DesignatedInitExpr>
     designatedInitExpr;
 
+#ifdef SYCLomatic_CUSTOMIZATION
+extern const internal::VariadicDynCastAllOfMatcher<Stmt, PseudoObjectExpr>
+    pseudoObjectExpr;
+#endif // SYCLomatic_CUSTOMIZATION
+
 /// Matches designated initializer expressions that contain
 /// a specific number of designators.
 ///

@@ -1783,6 +1783,10 @@ public:
   static bool useExtDPLAPI() {
     return getUsingExperimental<ExperimentalFeatures::Exp_DPLExperimentalAPI>();
   }
+  static bool useOccupancyCalculation() {
+    return getUsingExperimental<
+        ExperimentalFeatures::Exp_OccupancyCalculation>();
+  }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
   }
@@ -4081,7 +4085,7 @@ private:
   void printSubmitLamda(KernelPrinter &Printer);
   void printParallelFor(KernelPrinter &Printer, bool IsInSubmit);
   void printKernel(KernelPrinter &Printer);
-  void printStreamBase(KernelPrinter &Printer);
+  template <class T> void printStreamBase(T &Printer);
 
 public:
   KernelCallExpr(unsigned Offset, const std::string &FilePath,
@@ -4186,6 +4190,7 @@ private:
                                          getBegin() - LocInfo.Indent.length(),
                                          LocInfo.Indent.length(), "", nullptr));
   }
+  void addDevCapCheckStmt();
   void addAccessorDecl(MemVarInfo::VarScope Scope);
   void addAccessorDecl(std::shared_ptr<MemVarInfo> VI);
   void addStreamDecl() {
@@ -4197,20 +4202,22 @@ private:
       if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
 
         OuterStmts.emplace_back(
-            buildString("dpct::global_memory<dpct::byte_t, 1> d_",
+            buildString(MapNames::getDpctNamespace(), "global_memory<",
+                        MapNames::getDpctNamespace(), "byte_t, 1> d_",
                         DpctGlobalInfo::getSyncName(), "(4);"));
 
         OuterStmts.emplace_back(
-            buildString("d_", DpctGlobalInfo::getSyncName(),
-                        ".init(dpct::get_default_queue());"));
+            buildString("d_", DpctGlobalInfo::getSyncName(), ".init(",
+                        MapNames::getDpctNamespace(), "get_default_queue());"));
 
-        SubmitStmtsList.SyncList.emplace_back(buildString(
-            "auto ", DpctGlobalInfo::getSyncName(), " = dpct::get_access(d_",
-            DpctGlobalInfo::getSyncName(), ".get_ptr(), cgh);"));
+        SubmitStmtsList.SyncList.emplace_back(
+            buildString("auto ", DpctGlobalInfo::getSyncName(), " = ",
+                        MapNames::getDpctNamespace(), "get_access(d_",
+                        DpctGlobalInfo::getSyncName(), ".get_ptr(), cgh);"));
 
-        OuterStmts.emplace_back(buildString("dpct::dpct_memset(d_",
-                                            DpctGlobalInfo::getSyncName(),
-                                            ".get_ptr(), 0, sizeof(int));\n"));
+        OuterStmts.emplace_back(buildString(
+            MapNames::getDpctNamespace(), "dpct_memset(d_",
+            DpctGlobalInfo::getSyncName(), ".get_ptr(), 0, sizeof(int));\n"));
 
         requestFeature(HelperFeatureEnum::Memory_dpct_memset, getFilePath());
         requestFeature(HelperFeatureEnum::Memory_get_access, getFilePath());
@@ -4222,17 +4229,17 @@ private:
 
       } else {
 
-        OuterStmts.emplace_back(
-            buildString("dpct::global_memory<unsigned int, 0> d_",
-                        DpctGlobalInfo::getSyncName(), "(0);"));
+        OuterStmts.emplace_back(buildString(
+            MapNames::getDpctNamespace(), "global_memory<unsigned int, 0> d_",
+            DpctGlobalInfo::getSyncName(), "(0);"));
         OuterStmts.emplace_back(
             buildString("unsigned *", DpctGlobalInfo::getSyncName(), " = d_",
-                        DpctGlobalInfo::getSyncName(),
-                        ".get_ptr(dpct::get_default_queue());"));
+                        DpctGlobalInfo::getSyncName(), ".get_ptr(",
+                        MapNames::getDpctNamespace(), "get_default_queue());"));
 
-        OuterStmts.emplace_back(buildString("dpct::get_default_queue().memset(",
-                                            DpctGlobalInfo::getSyncName(),
-                                            ", 0, sizeof(int)).wait();"));
+        OuterStmts.emplace_back(buildString(
+            MapNames::getDpctNamespace(), "get_default_queue().memset(",
+            DpctGlobalInfo::getSyncName(), ", 0, sizeof(int)).wait();"));
 
         requestFeature(HelperFeatureEnum::Memory_global_memory_alias,
                        getFilePath());

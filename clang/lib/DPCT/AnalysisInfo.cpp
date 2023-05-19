@@ -1308,6 +1308,30 @@ void KernelCallExpr::buildNeedBracesInfo(const CallExpr *KernelCall) {
   }
 }
 
+void KernelCallExpr::addDevCapCheckStmt() {
+  llvm::SmallVector<std::string> AspectList;
+  if (getVarMap().hasBF64()) {
+    AspectList.push_back(MapNames::getClNamespace() + "aspect::fp64");
+  }
+  if (getVarMap().hasBF16()) {
+    AspectList.push_back(MapNames::getClNamespace() + "aspect::fp16");
+  }
+  if (!AspectList.empty()) {
+    requestFeature(HelperFeatureEnum::Device_has_capability_or_fail,
+                   getFilePath());
+    std::string Str;
+    llvm::raw_string_ostream OS(Str);
+    OS << MapNames::getDpctNamespace() << "has_capability_or_fail(";
+    printStreamBase(OS);
+    OS << "get_device(), {" << AspectList.front();
+    for (size_t i = 1; i < AspectList.size(); ++i) {
+      OS << ", " << AspectList[i];
+    }
+    OS << "});";
+    OuterStmts.emplace_back(OS.str());
+  }
+}
+
 void KernelCallExpr::addAccessorDecl() {
   auto &VM = getVarMap();
   if (VM.hasExternShared()) {
@@ -1583,26 +1607,6 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
       }
     }
   }
-  llvm::SmallVector<std::string> AspectList;
-  if (getVarMap().hasBF64()) {
-    AspectList.push_back(MapNames::getClNamespace() + "aspect::fp64");
-  }
-  if (getVarMap().hasBF16()) {
-    AspectList.push_back(MapNames::getClNamespace() + "aspect::fp16");
-  }
-  if (!AspectList.empty()) {
-    requestFeature(HelperFeatureEnum::Device_has_capability_or_fail,
-                   getFilePath());
-    Printer.indent();
-    Printer << MapNames::getDpctNamespace() << "has_capability_or_fail(";
-    printStreamBase(Printer);
-    Printer << "get_device(), {" << AspectList.front();
-    for (size_t i = 1; i < AspectList.size(); ++i) {
-      Printer << ", " << AspectList[i];
-    }
-    Printer << "});" << getNL();
-    ;
-  }
   Printer.indent();
   if (!SubGroupSizeWarning.empty()) {
     Printer << "/*" << getNL();
@@ -1749,7 +1753,7 @@ void KernelCallExpr::printKernel(KernelPrinter &Printer) {
   Printer.newLine();
 }
 
-void KernelCallExpr::printStreamBase(KernelPrinter &Printer) {
+template <class T> void KernelCallExpr::printStreamBase(T &Printer) {
   if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&') {
     Printer << "(" << ExecutionConfig.Stream << ")";
   } else {
@@ -1762,6 +1766,7 @@ void KernelCallExpr::printStreamBase(KernelPrinter &Printer) {
 }
 
 std::string KernelCallExpr::getReplacement() {
+  addDevCapCheckStmt();
   addAccessorDecl();
   addStreamDecl();
   buildKernelArgsStmt();

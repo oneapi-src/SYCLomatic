@@ -259,45 +259,45 @@ __device__ void test5() {
   cudaDeviceProp *pDeviceProp = nullptr;
   [=]() {
     int a;
-    //CHECK:a = sycl::min((int)pDeviceProp->get_global_mem_size(), 1000);
+    //CHECK:a = std::min((int)pDeviceProp->get_global_mem_size(), 1000);
     a = std::min((int)pDeviceProp->totalGlobalMem, 1000);
     // CHECK:/*
     // CHECK-NEXT:DPCT1006:{{[0-9]+}}: SYCL does not provide a standard API to differentiate between integrated and discrete GPU devices.
     // CHECK-NEXT:*/
-    // CHECK-NEXT: a = sycl::min(pDeviceProp->get_integrated(), 1000);
+    // CHECK-NEXT: a = std::min(pDeviceProp->get_integrated(), 1000);
     a = std::min(pDeviceProp->integrated, 1000);
     // CHECK:/*
     // CHECK-NEXT:DPCT1019:{{[0-9]+}}: local_mem_size in SYCL is not a complete equivalent of sharedMemPerBlock in CUDA. You may need to adjust the code.
     // CHECK-NEXT:*/
-    // CHECK-NEXT:a = sycl::min((int)pDeviceProp->get_local_mem_size(), 1000);
+    // CHECK-NEXT:a = std::min((int)pDeviceProp->get_local_mem_size(), 1000);
     a = std::min((int)pDeviceProp->sharedMemPerBlock, 1000);
     // CHECK:/*
     // CHECK-NEXT:DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
     // CHECK-NEXT:*/
-    // CHECK-NEXT: a = sycl::min(pDeviceProp->get_major_version(), 1000);
+    // CHECK-NEXT: a = std::min(pDeviceProp->get_major_version(), 1000);
     a = std::min(pDeviceProp->major, 1000);
-    //CHECK:a = sycl::min(pDeviceProp->get_max_clock_frequency(), 1000);
+    //CHECK:a = std::min(pDeviceProp->get_max_clock_frequency(), 1000);
     a = std::min(pDeviceProp->clockRate, 1000);
-    //CHECK:a = sycl::min(pDeviceProp->get_max_compute_units(), 1000);
+    //CHECK:a = std::min(pDeviceProp->get_max_compute_units(), 1000);
     a = std::min(pDeviceProp->multiProcessorCount, 1000);
-    //CHECK:a = sycl::min(pDeviceProp->get_memory_clock_rate(), 1000);
+    //CHECK:a = std::min(pDeviceProp->get_memory_clock_rate(), 1000);
     a = std::min(pDeviceProp->memoryClockRate, 1000);
-    //CHECK:a = sycl::min(pDeviceProp->get_memory_bus_width(), 1000);
+    //CHECK:a = std::min(pDeviceProp->get_memory_bus_width(), 1000);
     a = std::min(pDeviceProp->memoryBusWidth, 1000);
-    //CHECK:a = sycl::min(pDeviceProp->get_max_sub_group_size(), 1000);
+    //CHECK:a = std::min(pDeviceProp->get_max_sub_group_size(), 1000);
     a = std::min(pDeviceProp->warpSize, 1000);
-    //CHECK:a = sycl::min(pDeviceProp->get_max_work_group_size(), 1000);
+    //CHECK:a = std::min(pDeviceProp->get_max_work_group_size(), 1000);
     a = std::min(pDeviceProp->maxThreadsPerBlock, 1000);
-    //CHECK:a = sycl::min(pDeviceProp->get_max_work_items_per_compute_unit(), 1000);
+    //CHECK:a = std::min(pDeviceProp->get_max_work_items_per_compute_unit(), 1000);
     a = std::min(pDeviceProp->maxThreadsPerMultiProcessor, 1000);
     // CHECK:/*
     // CHECK-NEXT:DPCT1022:{{[0-9]+}}: There is no exact match between the maxGridSize and the max_nd_range size. Verify the correctness of the code.
     // CHECK-NEXT:*/
-    // CHECK-NEXT: a = sycl::min(pDeviceProp->get_max_nd_range_size<int *>()[0], 1000);
+    // CHECK-NEXT: a = std::min(pDeviceProp->get_max_nd_range_size<int *>()[0], 1000);
     a = std::min(pDeviceProp->maxGridSize[0], 1000);
-    //CHECK:a = sycl::min(pDeviceProp->get_max_work_item_sizes<int *>()[0], 1000);
+    //CHECK:a = std::min(pDeviceProp->get_max_work_item_sizes<int *>()[0], 1000);
     a = std::min(pDeviceProp->maxThreadsDim[0], 1000);
-    //CHECK:a = sycl::min(pDeviceProp->get_name()[0], 'A');
+    //CHECK:a = std::min(pDeviceProp->get_name()[0], 'A');
     a = std::min(pDeviceProp->name[0], 'A');
   }();
 }
