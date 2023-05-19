@@ -382,6 +382,9 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
         false),
              DPCT_OPT_ENUM("dpl-experimental-api", int(ExperimentalFeatures::Exp_DPLExperimentalAPI),
         "Experimental extension that allows oneDPL experimental API.\n",
+        false),
+             DPCT_OPT_ENUM("occupancy-calculation", int(ExperimentalFeatures::Exp_OccupancyCalculation),
+        "Experimental helper function used to calculate occupancy.\n",
         false)
            ),
            llvm::cl::desc("Comma separated list of experimental features to be used in migrated "
@@ -410,12 +413,6 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), NoIncrementalMig
         llvm::cl::desc("Tells the tool to not perform an incremental migration.\n"
                    "Default: off (incremental migration happens)."),
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
-
-/*
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), QueryApiMapping, "query-api-mapping",
-        llvm::cl::desc("Outputs to stdout functionally compatible SYCL API mapping for CUDA API."),
-        llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
-*/
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), AnalysisScope, "analysis-scope-path",
         llvm::cl::desc("The directory path for the analysis scope of the source tree that "

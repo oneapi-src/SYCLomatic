@@ -4220,3 +4220,37 @@ std::string getBaseTypeRemoveTemplateArguments(const clang::MemberExpr* ME) {
     return dpct::DpctGlobalInfo::getUnqualifiedTypeName(CT);
   }
 }
+
+bool containIterationSpaceBuiltinVar(const clang::Stmt *Node) {
+  if (!Node)
+    return false;
+  using namespace clang::ast_matchers;
+  auto BuiltinMatcher = findAll(
+      memberExpr(hasObjectExpression(opaqueValueExpr(
+                     hasSourceExpression(declRefExpr(to(varDecl(hasAnyName(
+                         "threadIdx", "blockDim", "blockIdx", "gridDim"))))))),
+                 hasParent(implicitCastExpr(
+                     hasParent(callExpr(hasParent(pseudoObjectExpr()))))))
+          .bind("memberExpr"));
+  auto MatchedResults =
+      match(BuiltinMatcher, *Node, clang::dpct::DpctGlobalInfo::getContext());
+  return MatchedResults.size();
+}
+
+bool containBuiltinWarpSize(const clang::Stmt *Node) {
+  if (!Node)
+    return false;
+  using namespace clang::ast_matchers;
+  auto BuiltinMatcher =
+      findAll(declRefExpr(to(varDecl(hasName("warpSize")).bind("VD"))));
+  auto MatchedResults =
+      match(BuiltinMatcher, *Node, clang::dpct::DpctGlobalInfo::getContext());
+  for (const auto &Res : MatchedResults) {
+    const clang::VarDecl *VD = Res.getNodeAs<clang::VarDecl>("VD");
+    if (!VD)
+      continue;
+    if (!clang::dpct::DpctGlobalInfo::isInAnalysisScope(VD->getLocation()))
+      return true;
+  }
+  return false;
+}

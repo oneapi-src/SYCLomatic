@@ -131,7 +131,7 @@ ENTRY(cudaTriggerProgrammaticLaunchCompletion, cudaTriggerProgrammaticLaunchComp
 
 
 // occupancy calculation functions of runtime API
-ENTRY(cudaOccupancyMaxActiveBlocksPerMultiprocessor, cudaOccupancyMaxActiveBlocksPerMultiprocessor, false, NO_FLAG, P0, "comment")
+ENTRY(cudaOccupancyMaxActiveBlocksPerMultiprocessor, cudaOccupancyMaxActiveBlocksPerMultiprocessor, true, NO_FLAG, P0, "comment")
 ENTRY(cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags, cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags, false, NO_FLAG, P0, "comment")
 ENTRY(cudaOccupancyMaxActiveClusters, cudaOccupancyMaxActiveClusters, false, NO_FLAG, P4, "comment")
 ENTRY(cudaOccupancyMaxPotentialClusterSize, cudaOccupancyMaxPotentialClusterSize, false, NO_FLAG, P4, "comment")
