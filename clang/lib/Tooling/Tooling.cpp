@@ -230,8 +230,7 @@ static int processFilesWithCrashGuard(ClangTool *Tool, llvm::StringRef File,
 }
 
 } // namespace tooling
-} // namespace clang
-bool CurFileMeetErr=false;
+} // namespace 
 bool StopOnParseErrTooling=false;
 std::string InRootTooling;
 
@@ -702,8 +701,6 @@ static void injectResourceDir(CommandLineArguments &Args, const char *Argv0,
 // other values are ignored.
 int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
                      bool &FileSkipped, int &StaticSymbol, ToolAction *Action) {
-    //enter point for the file processing.
-    CurFileMeetErr= false;
     //clear error# counter
     CurFileParseErrCnt=0;
     CurFileSigErrCnt=0;

@@ -43,7 +43,6 @@ std::string getFormatSearchPath();
 }
 } // namespace clang
 
-extern int FatalErrorCnt;
 extern std::map<std::string, uint64_t> ErrorCnt;
 
 static bool formatFile(StringRef FileName,

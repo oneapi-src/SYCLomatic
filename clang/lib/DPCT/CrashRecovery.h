@@ -22,8 +22,4 @@ void initCrashRecovery();
 } // namespace dpct
 } // namespace clang
 
-extern int FatalErrorCnt;
-extern int FatalErrorASTCnt;
-extern bool CurFileMeetErr;
-
 #endif // DPCT_CRASHRECOVERY_H
