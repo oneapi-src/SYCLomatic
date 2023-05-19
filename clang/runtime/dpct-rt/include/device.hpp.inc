@@ -1192,6 +1192,7 @@ public:
     return DEFAULT_DEVICE_ID;
   }
 // DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|dev_mgr_select_device|dpct
 // DPCT_PARENT_FEATURE|dev_mgr
 // DPCT_DEPENDENCY_BEGIN
@@ -1230,6 +1231,21 @@ public:
       id++;
     }
     return id;
+  }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|dev_mgr_select_device_from_selector|dpct
+// DPCT_PARENT_FEATURE|dev_mgr
+// DPCT_DEPENDENCY_BEGIN
+// Device|dev_mgr_select_device
+// Device|dev_mgr_get_device_id
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  template <DeviceSelector>
+  void select_device(const DeviceSelector &selector = sycl::gpu_selector_v) {
+    sycl::device selected_device = sycl::device(selector);
+    unsigned int selected_device_id = get_device_id(selected_device);
+    select_device(selected_device_id);
   }
 // DPCT_LABEL_END
 

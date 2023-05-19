@@ -555,6 +555,7 @@ public:
       return it->second;
     return DEFAULT_DEVICE_ID;
   }
+
   void select_device(unsigned int id) {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
     check_id(id);
@@ -571,6 +572,13 @@ public:
       id++;
     }
     return id;
+  }
+
+  template <DeviceSelector>
+  void select_device(const DeviceSelector &selector = sycl::gpu_selector_v) {
+    sycl::device selected_device = sycl::device(selector);
+    unsigned int selected_device_id = get_device_id(selected_device);
+    select_device(selected_device_id);
   }
 
   /// Returns the instance of device manager singleton.
