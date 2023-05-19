@@ -1027,10 +1027,15 @@ void ExprAnalysis::analyzeExpr(const LambdaExpr *LE) {
 }
 
 void ExprAnalysis::analyzeExpr(const IfStmt *IS) {
-  dispatch(IS->getCond());
-  dispatch(IS->getThen());
-  // "else if" will also be handled here as another ifstmt
-  dispatch(IS->getElse());
+  if (IS->getCond())
+    dispatch(IS->getCond());
+
+  if (IS->getThen())
+    dispatch(IS->getThen());
+
+  if (IS->getElse())
+    // "else if" will also be handled here as another ifstmt
+    dispatch(IS->getElse());  
 }
 
 void ExprAnalysis::analyzeExpr(const DeclStmt *DS) {
