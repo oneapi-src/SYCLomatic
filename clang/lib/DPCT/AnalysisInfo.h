@@ -4085,7 +4085,7 @@ private:
   void printSubmitLamda(KernelPrinter &Printer);
   void printParallelFor(KernelPrinter &Printer, bool IsInSubmit);
   void printKernel(KernelPrinter &Printer);
-  void printStreamBase(KernelPrinter &Printer);
+  template <class T> void printStreamBase(T &Printer);
 
 public:
   KernelCallExpr(unsigned Offset, const std::string &FilePath,
@@ -4190,6 +4190,7 @@ private:
                                          getBegin() - LocInfo.Indent.length(),
                                          LocInfo.Indent.length(), "", nullptr));
   }
+  void addDevCapCheckStmt();
   void addAccessorDecl(MemVarInfo::VarScope Scope);
   void addAccessorDecl(std::shared_ptr<MemVarInfo> VI);
   void addStreamDecl() {
