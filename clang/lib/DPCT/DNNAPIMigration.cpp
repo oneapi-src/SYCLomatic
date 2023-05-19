@@ -41,7 +41,8 @@ void CuDNNTypeRule::registerMatcher(MatchFinder &MF) {
               "cudnnConvolutionBwdFilterAlgo_t", "cudnnFilterDescriptor_t",
               "cudnnRNNMode_t", "cudnnRNNBiasMode_t", "cudnnDirectionMode_t",
               "cudnnRNNDescriptor_t", "cudnnForwardMode_t", "cudnnRNNDataDescriptor_t",
-              "cudnnRNNDataLayout_t", "cudnnDropoutDescriptor_t"))))))
+              "cudnnRNNDataLayout_t", "cudnnDropoutDescriptor_t",
+              "cudnnMathType_t", "cudnnConvolutionFwdAlgoPerf_t"))))))
           .bind("CuDNNType"),
       this);
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName("CUDNN_.*"))))
@@ -195,7 +196,8 @@ void CuDNNAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cudnnDestroyDropoutDescriptor", "cudnnGetVersion",
         "cudnnGetConvolutionBackwardFilterAlgorithm",
         "cudnnGetConvolutionBackwardDataAlgorithm",
-        "cudnnGetConvolutionForwardAlgorithm");
+        "cudnnGetConvolutionForwardAlgorithm", "cudnnSetConvolutionMathType",
+        "cudnnFindConvolutionForwardAlgorithm");
   };
 
   MF.addMatcher(
