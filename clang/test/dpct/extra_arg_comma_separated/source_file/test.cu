@@ -4,8 +4,8 @@
 #include "../header/in_header.h"
 #include "../header2/out_header.h"
 int main() {
-  // CHECK: auto dev_ct1 = sycl::device(sycl::default_selector_v);
-  // CHECK-NEXT: auto q_ct1 = sycl::queue(dev_ct1, sycl::property_list{sycl::property::queue::in_order()});
+  // CHECK: sycl::device dev_ct1{};
+  // CHECK-NEXT: sycl::queue q_ct1(dev_ct1, sycl::property_list{sycl::property::queue::in_order()});
 
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT: sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),

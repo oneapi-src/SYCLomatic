@@ -4540,7 +4540,6 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
     break;
   case HelperFuncType::HFT_CurrentDevice:
     ++Iter->second.CurrentDeviceCounter;
-    DpctGlobalInfo::setNeedDpctDeviceExt();
     break;
   default:
     break;
