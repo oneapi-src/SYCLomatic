@@ -653,15 +653,6 @@ int runDPCT(int argc, const char **argv) {
   // just show -- --help information and then exit
   if (CommonOptionsParser::hasHelpOption(OriginalArgc, argv))
     dpctExit(MigrationSucceeded);
-<<<<<<< HEAD
-  /*
-  if (QueryApiMapping.getNumOccurrences()) {
-    ApiMappingEntry::initEntryMap();
-    ApiMappingEntry::printMappingDesc(llvm::outs(), QueryApiMapping);
-    dpctExit(MigrationSucceeded);
-  }
-  */
-=======
 
   auto ExtensionStr = ChangeExtension.getValue();
   ExtensionStr.erase(std::remove(ExtensionStr.begin(), ExtensionStr.end(), ' '),
@@ -681,7 +672,6 @@ int runDPCT(int argc, const char **argv) {
     }
     DpctGlobalInfo::addChangeExtensions(Extension);
   }
->>>>>>> SYCLomatic
 
   if (LimitChangeExtension) {
     DpctGlobalInfo::addChangeExtensions(".cu");
