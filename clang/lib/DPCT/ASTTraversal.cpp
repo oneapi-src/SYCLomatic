@@ -8986,6 +8986,9 @@ void DeviceFunctionDeclRule::runRule(
   if (isLambda(FD) && !FuncInfo->isLambda()) {
     FuncInfo->setLambda();
   }
+  if (FD->hasAttr<CUDAGlobalAttr>()) {
+    FuncInfo->setKernel();
+  }
   if (DpctGlobalInfo::isOptimizeMigration() && !FD->isInlined() &&
                                 !FuncInfo->IsAlwaysInlineDevFunc()) {
     FuncInfo->setAlwaysInlineDevFunc();
@@ -11940,19 +11943,9 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
   if (FuncName == "__syncthreads") {
-    ReadWriteOrderAnalyzer RWOA;
-    GlobalPointerReferenceCountAnalyzer GPRCA;
-    if (RWOA.analyze(CE) || GPRCA.analyze(CE)) {
-      std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
-                                MapNames::getClNamespace() +
-                                "access::fence_space::local_space)";
-      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
-    } else {
-      report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true,
-             "nd_item");
-      std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier()";
-      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
-    }
+    // Here we only do analysis, replacement will be generated in the migration
+    // pass.
+    DpctGlobalInfo::getItem(CE);
   } else if (FuncName == "this_thread_block") {
     if (auto P = getAncestorDeclStmt(CE)) {
       if (auto VD = dyn_cast<VarDecl>(*P->decl_begin())) {
@@ -12026,6 +12019,57 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(SyncThreadsRule, PassKind::PK_Analysis)
+
+void SyncThreadsMigrationRule::registerMatcher(MatchFinder &MF) {
+  auto SyncAPI = [&]() { return hasAnyName("__syncthreads"); };
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(SyncAPI())), parentStmt(),
+                     hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
+                                                    hasAttr(attr::CUDAGlobal)))
+                                     .bind("FuncDecl"))))
+          .bind("SyncFuncCall"),
+      this);
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(SyncAPI())), unless(parentStmt()),
+                     hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
+                                                    hasAttr(attr::CUDAGlobal)))
+                                     .bind("FuncDeclUsed"))))
+          .bind("SyncFuncCallUsed"),
+      this);
+}
+
+void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "SyncFuncCall");
+  const FunctionDecl *FD =
+      getAssistNodeAsType<FunctionDecl>(Result, "FuncDecl");
+  if (!CE) {
+    if (!(CE = getNodeAsType<CallExpr>(Result, "SyncFuncCallUsed")))
+      return;
+    FD = getAssistNodeAsType<FunctionDecl>(Result, "FuncDeclUsed");
+  }
+  if (!FD)
+    return;
+
+  std::string FuncName =
+      CE->getDirectCallee()->getNameInfo().getName().getAsString();
+  if (FuncName == "__syncthreads") {
+    ReadWriteOrderAnalyzer RWOA;
+    GlobalPointerReferenceCountAnalyzer GPRCA;
+    if (RWOA.analyze(CE) || GPRCA.analyze(CE)) {
+      std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
+                                MapNames::getClNamespace() +
+                                "access::fence_space::local_space)";
+      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+    } else {
+      report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true,
+             "nd_item");
+      std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier()";
+      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+    }
+  }
+}
+
+REGISTER_RULE(SyncThreadsMigrationRule, PassKind::PK_Migration)
 
 void KernelFunctionInfoRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(

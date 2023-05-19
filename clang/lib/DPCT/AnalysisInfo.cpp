@@ -683,6 +683,14 @@ void DpctFileInfo::setKernelCallDim() {
   for (auto &Kernel : KernelMap)
     Kernel.second->setKernelCallDim();
 }
+void DpctFileInfo::setKernelDim() {
+  for (auto &DeviceFunc : FuncMap) {
+    auto Info = DeviceFunc.second->getFuncInfo();
+    if (Info->isKernel() && !Info->isKernelInvoked()) {
+      Info->getVarMap().Dim = 3;
+    }
+  }
+}
 void DpctFileInfo::buildUnionFindSet() {
   for (auto &Kernel : KernelMap)
     Kernel.second->buildUnionFindSet();
@@ -2012,6 +2020,7 @@ KernelCallExpr::buildForWrapper(std::string FilePath, const FunctionDecl *FD,
 
 void KernelCallExpr::setKernelCallDim() {
   if (auto Ptr = getFuncInfo()) {
+    Ptr->setKernelInvoked();
     if (GridDim == 1 && BlockDim == 1) {
       if (auto HeadPtr = MemVarMap::getHead(&(Ptr->getVarMap()))) {
         Ptr->getVarMap().Dim = std::max((unsigned int)1, HeadPtr->Dim);
