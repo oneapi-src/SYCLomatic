@@ -4114,6 +4114,9 @@ bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
         // Condition 1
         case clang::Stmt::StmtClass::UnaryOperatorClass : {
           auto UO = dyn_cast<UnaryOperator>(S);
+          if (!UO) {
+            return false;
+          }
           auto OpCode = UO->getOpcode();
           if(OpCode == UnaryOperatorKind::UO_AddrOf) {
             break;
