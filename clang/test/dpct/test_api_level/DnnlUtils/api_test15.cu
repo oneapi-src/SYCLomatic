@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/DnnlUtils/api_test15_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DnnlUtils/api_test15_out
 
-// CHECK: 18
+// CHECK: 19
 // TEST_FEATURE: DnnlUtils_batch_normalization_forward_training_ex
 // TEST_FEATURE: DnnlUtils_batch_normalization_mode
 // TEST_FEATURE: DnnlUtils_batch_normalization_ops

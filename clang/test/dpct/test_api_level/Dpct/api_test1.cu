@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Dpct/api_test1_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Dpct/api_test1_out
 
-// CHECK: 30
+// CHECK: 31
 
 // TEST_FEATURE: Dpct_non_local_include_dependency
 // TEST_FEATURE: Dpct_dpct_align_and_inline

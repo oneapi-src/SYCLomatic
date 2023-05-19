@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/DnnlUtils/api_test11_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DnnlUtils/api_test11_out
 
-// CHECK: 15
+// CHECK: 16
 // TEST_FEATURE: DnnlUtils_binary
 // TEST_FEATURE: DnnlUtils_binary_op
 #include <cuda_runtime.h>
