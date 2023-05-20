@@ -47,7 +47,7 @@ enum dpct_error_code{
 };
 
 #define DPCT_CHECK_ERROR(expr)                                                 \
-  []() {                                                                       \
+  [&]() {                                                                      \
     try {                                                                      \
       expr;                                                                    \
       return dpct_success;                                                     \

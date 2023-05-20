@@ -106,7 +106,7 @@ enum dpct_error_code{
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 #define DPCT_CHECK_ERROR(expr)                                                 \
-  []() {                                                                       \
+  [&]() {                                                                      \
     try {                                                                      \
       expr;                                                                    \
       return dpct_success;                                                     \
