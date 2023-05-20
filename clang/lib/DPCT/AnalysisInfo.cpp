@@ -1382,36 +1382,34 @@ void KernelCallExpr::buildExecutionConfig(
     ++Idx;
   }
 
-  {
-    Idx = 0;
-    for (auto Arg : ConfigArgs) {
-      if (Idx > 1)
-        break;
-      if (Idx == 0) {
-        GridDim =
-            analyzeGridBlockDim(dyn_cast<CUDAKernelCallExpr>(KernelCall), Arg);
-        KernelConfigAnalysis AnalysisTry1D(IsInMacroDefine);
-        AnalysisTry1D.setCallSpelling(KernelCall);
-        if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
-          AnalysisTry1D.IsTryToUseOneDimension = true;
-        }
-        AnalysisTry1D.Dim = GridDim;
-        AnalysisTry1D.analyze(Arg, Idx, Idx < 2);
-        ExecutionConfig.GroupSizeFor1D = AnalysisTry1D.getReplacedString();
-      } else if (Idx == 1) {
-        BlockDim =
-            analyzeGridBlockDim(dyn_cast<CUDAKernelCallExpr>(KernelCall), Arg);
-        KernelConfigAnalysis AnalysisTry1D(IsInMacroDefine);
-        AnalysisTry1D.setCallSpelling(KernelCall);
-        if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
-          AnalysisTry1D.IsTryToUseOneDimension = true;
-        }
-        AnalysisTry1D.Dim = BlockDim;
-        AnalysisTry1D.analyze(Arg, Idx, Idx < 2);
-        ExecutionConfig.LocalSizeFor1D = AnalysisTry1D.getReplacedString();
+  Idx = 0;
+  for (auto Arg : ConfigArgs) {
+    if (Idx > 1)
+      break;
+    if (Idx == 0) {
+      GridDim =
+          analyzeGridBlockDim(dyn_cast<CUDAKernelCallExpr>(KernelCall), Arg);
+      KernelConfigAnalysis AnalysisTry1D(IsInMacroDefine);
+      AnalysisTry1D.setCallSpelling(KernelCall);
+      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+        AnalysisTry1D.IsTryToUseOneDimension = true;
       }
-      ++Idx;
+      AnalysisTry1D.Dim = GridDim;
+      AnalysisTry1D.analyze(Arg, Idx, Idx < 2);
+      ExecutionConfig.GroupSizeFor1D = AnalysisTry1D.getReplacedString();
+    } else if (Idx == 1) {
+      BlockDim =
+          analyzeGridBlockDim(dyn_cast<CUDAKernelCallExpr>(KernelCall), Arg);
+      KernelConfigAnalysis AnalysisTry1D(IsInMacroDefine);
+      AnalysisTry1D.setCallSpelling(KernelCall);
+      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+        AnalysisTry1D.IsTryToUseOneDimension = true;
+      }
+      AnalysisTry1D.Dim = BlockDim;
+      AnalysisTry1D.analyze(Arg, Idx, Idx < 2);
+      ExecutionConfig.LocalSizeFor1D = AnalysisTry1D.getReplacedString();
     }
+    ++Idx;
   }
 
   if (ExecutionConfig.Stream == "0") {

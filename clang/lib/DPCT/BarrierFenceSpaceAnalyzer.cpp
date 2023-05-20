@@ -408,12 +408,12 @@ bool canBeTreatedAsPrivateMemoryAccess(int KernelDim,
       return false;
     using namespace clang::ast_matchers;
     auto BuiltinMatcher = findAll(
-        memberExpr(
-            hasObjectExpression(opaqueValueExpr(hasSourceExpression(
-                declRefExpr(to(varDecl(hasAnyName("threadIdx", "blockDim",
-                                                  "blockIdx"))))
-                    .bind("declRefExpr")))),
-            hasParent(implicitCastExpr(hasParent(callExpr().bind("callExpr")))))
+        memberExpr(hasObjectExpression(opaqueValueExpr(hasSourceExpression(
+                       declRefExpr(to(varDecl(hasAnyName(
+                                       "threadIdx", "blockDim", "blockIdx"))))
+                           .bind("declRefExpr")))),
+                   hasParent(implicitCastExpr(
+                       hasParent(callExpr(hasParent(pseudoObjectExpr()))))))
             .bind("memberExpr"));
     auto MatchedResults =
         match(BuiltinMatcher, *Node, clang::dpct::DpctGlobalInfo::getContext());
@@ -421,13 +421,8 @@ bool canBeTreatedAsPrivateMemoryAccess(int KernelDim,
       return false;
     const auto Res = MatchedResults[0];
     auto ME = Res.getNodeAs<clang::MemberExpr>("memberExpr");
-    auto CE = Res.getNodeAs<clang::CallExpr>("callExpr");
     auto DRE = Res.getNodeAs<clang::DeclRefExpr>("declRefExpr");
-    if (!ME || !CE || !DRE)
-      return false;
-    auto POE =
-        clang::dpct::DpctGlobalInfo::findParent<clang::PseudoObjectExpr>(CE);
-    if (!POE || (POE != Node))
+    if (!ME || !DRE)
       return false;
     StringRef BuiltinName = DRE->getDecl()->getName();
     StringRef FieldName = ME->getMemberDecl()->getName();

@@ -545,6 +545,7 @@ void parseFormatStyle() {
 }
 
 int runDPCT(int argc, const char **argv) {
+
   if (argc < 2) {
     std::cout << CtHelpHint;
     return MigrationErrorShowHelp;
