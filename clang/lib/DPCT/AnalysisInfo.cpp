@@ -4327,7 +4327,8 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   case 'R':
     if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
       if (auto DFI = getCudaKernelDimDFI(Index)) {
-        auto Ptr = MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
+        auto Ptr =
+            MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
         if (Ptr && Ptr->Dim == 1) {
           return "0";
         }
@@ -4337,7 +4338,8 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   case 'G':
     if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
       if (auto DFI = getCudaKernelDimDFI(Index)) {
-        auto Ptr = MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
+        auto Ptr =
+            MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
         if (Ptr && Ptr->Dim == 1) {
           return "1";
         }

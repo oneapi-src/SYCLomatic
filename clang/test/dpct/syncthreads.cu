@@ -204,7 +204,7 @@ int query_block(const int x) {
 }
 
 void foo() {
-  float* f;
+  float *f;
   int a;
   int n = 128;
   dim3 block(n);
