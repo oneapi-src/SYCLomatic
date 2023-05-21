@@ -575,7 +575,8 @@ public:
   }
 
   template <class DeviceSelector>
-  void select_device(const DeviceSelector &selector = sycl::gpu_selector_v) {
+  void select_device_with_selector(
+      const DeviceSelector &selector = sycl::gpu_selector_v) {
     sycl::device selected_device = sycl::device(selector);
     unsigned int selected_device_id = get_device_id(selected_device);
     select_device(selected_device_id);

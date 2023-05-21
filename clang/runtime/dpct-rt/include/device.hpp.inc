@@ -1234,7 +1234,7 @@ public:
   }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dev_mgr_select_device_from_selector|dpct
+// DPCT_LABEL_BEGIN|dev_mgr_select_device_with_selector|dpct
 // DPCT_PARENT_FEATURE|dev_mgr
 // DPCT_DEPENDENCY_BEGIN
 // Device|dev_mgr_select_device
@@ -1242,7 +1242,8 @@ public:
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   template <class DeviceSelector>
-  void select_device(const DeviceSelector &selector = sycl::gpu_selector_v) {
+  void select_device_with_selector(
+      const DeviceSelector &selector = sycl::gpu_selector_v) {
     sycl::device selected_device = sycl::device(selector);
     unsigned int selected_device_id = get_device_id(selected_device);
     select_device(selected_device_id);
