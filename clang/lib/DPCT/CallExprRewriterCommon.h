@@ -720,8 +720,9 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
       DerefQT = DerefQualType(DerefQT);
       if (DerefQT.isNull())
         return "";
+      return DpctGlobalInfo::getReplacedTypeName(DerefQT);
     }
-    return DpctGlobalInfo::getReplacedTypeName(DerefQT);
+    return TypeStr;
   };
 }
 
