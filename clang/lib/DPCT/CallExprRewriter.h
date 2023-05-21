@@ -265,20 +265,26 @@ public:
 class AssignableRewriter : public CallExprRewriter {
   std::shared_ptr<CallExprRewriter> Inner;
   bool IsAssigned;
+  bool ExtraParen = false;
 
 public:
   AssignableRewriter(const CallExpr *C,
-                     std::shared_ptr<CallExprRewriter> InnerRewriter)
+                     std::shared_ptr<CallExprRewriter> InnerRewriter,
+                     bool EP = false)
       : CallExprRewriter(C, ""), Inner(InnerRewriter),
-        IsAssigned(isAssigned(C)) {
+        IsAssigned(isAssigned(C)), ExtraParen(EP) {
     if (IsAssigned)
       requestFeature(HelperFeatureEnum::Dpct_dpct_check_error, C);
   }
 
   std::optional<std::string> rewrite() override {
     std::optional<std::string> &&Result = Inner->rewrite();
-    if (Result.has_value() && IsAssigned)
+    if (Result.has_value() && IsAssigned) {
+      if (ExtraParen) {
+        return "DPCT_CHECK_ERROR((" + Result.value() + "))";
+      }
       return "DPCT_CHECK_ERROR(" + Result.value() + ")";
+    }
     return Result;
   }
 };
@@ -360,13 +366,15 @@ public:
 
 class AssignableRewriterFactory : public CallExprRewriterFactoryBase {
   std::shared_ptr<CallExprRewriterFactoryBase> Inner;
-
+  bool ExtraParen = false;
 public:
   AssignableRewriterFactory(
-      std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory)
-      : Inner(InnerFactory) {}
+      std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory,
+      bool EP = false)
+      : Inner(InnerFactory), ExtraParen(EP) {}
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
-    return std::make_shared<AssignableRewriter>(C, Inner->create(C));
+    return std::make_shared<AssignableRewriter>(C, Inner->create(C),
+                                                ExtraParen);
   }
 };
 

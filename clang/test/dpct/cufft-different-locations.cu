@@ -33,7 +33,7 @@ int main() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:int res1 = DPCT_CHECK_ERROR(plan1->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size));
   cufftResult res1 = cufftMakePlanMany(plan1, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);
-  //CHECK:int res2 = DPCT_CHECK_ERROR(plan1->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward));
+  //CHECK:int res2 = DPCT_CHECK_ERROR((plan1->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward)));
   cufftResult res2 = cufftExecZ2D(plan1, idata, odata);
 
   cufftHandle plan2;
@@ -45,7 +45,7 @@ int main() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:res1 = DPCT_CHECK_ERROR(plan2->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size));
   res1 = cufftMakePlanMany(plan2, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);
-  //CHECK:res2 = DPCT_CHECK_ERROR(plan2->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward));
+  //CHECK:res2 = DPCT_CHECK_ERROR((plan2->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward)));
   res2 = cufftExecZ2D(plan2, idata, odata);
 
   cufftHandle plan3;
@@ -57,7 +57,7 @@ int main() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:HANDLE_CUFFT_ERROR(DPCT_CHECK_ERROR(plan3->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size)));
   HANDLE_CUFFT_ERROR(cufftMakePlanMany(plan3, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size));
-  //CHECK:HANDLE_CUFFT_ERROR(DPCT_CHECK_ERROR(plan3->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward)));
+  //CHECK:HANDLE_CUFFT_ERROR(DPCT_CHECK_ERROR((plan3->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward))));
   HANDLE_CUFFT_ERROR(cufftExecZ2D(plan3, idata, odata));
 
   cufftHandle plan4;
@@ -80,8 +80,8 @@ int main() {
   if(cufftMakePlanMany(plan4, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size)) {
   } else if (cufftMakePlanMany(plan5, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size)) {
   }
-  //CHECK:if (DPCT_CHECK_ERROR(plan4->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward))) {
-  //CHECK-NEXT:} else if(DPCT_CHECK_ERROR(plan5->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward))) {
+  //CHECK:if (DPCT_CHECK_ERROR((plan4->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward)))) {
+  //CHECK-NEXT:} else if(DPCT_CHECK_ERROR((plan5->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward)))) {
   //CHECK-NEXT:}
   if (cufftExecZ2D(plan4, idata, odata)) {
   } else if(cufftExecZ2D(plan5, idata, odata)) {
@@ -98,7 +98,7 @@ int main() {
   //CHECK-NEXT:}
   if(cufftResult res = cufftMakePlanMany(plan6, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size)) {
   }
-  //CHECK:if(int res = DPCT_CHECK_ERROR(plan6->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward))) {
+  //CHECK:if(int res = DPCT_CHECK_ERROR((plan6->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward)))) {
   //CHECK-NEXT:}
   if(cufftResult res = cufftExecZ2D(plan6, idata, odata)) {
   }
@@ -131,7 +131,7 @@ int main() {
   for (;cufftMakePlanMany(plan8, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);) {
   }
 
-  //CHECK:for (;DPCT_CHECK_ERROR(plan8->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward));) {
+  //CHECK:for (;DPCT_CHECK_ERROR((plan8->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward)));) {
   //CHECK-NEXT:}
   for (;cufftExecZ2D(plan8, idata, odata);) {
   }
@@ -148,7 +148,7 @@ int main() {
   while (cufftMakePlanMany(plan9, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size) != 0) {
   }
 
-  //CHECK:while (DPCT_CHECK_ERROR(plan9->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward)) != 0) {
+  //CHECK:while (DPCT_CHECK_ERROR((plan9->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward))) != 0) {
   //CHECK-NEXT:}
   while (cufftExecZ2D(plan9, idata, odata) != 0) {
   }
@@ -165,7 +165,7 @@ int main() {
   do {
   } while (cufftMakePlanMany(plan10, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size));
   //CHECK:do {
-  //CHECK-NEXT:} while (DPCT_CHECK_ERROR(plan10->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward)));
+  //CHECK-NEXT:} while (DPCT_CHECK_ERROR((plan10->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward))));
   do {
   } while (cufftExecZ2D(plan10, idata, odata));
 
@@ -181,7 +181,7 @@ int main() {
   switch (int stat = cufftMakePlanMany(plan11, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size)){
   }
 
-  //CHECK:switch (int stat = DPCT_CHECK_ERROR(plan11->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward))){
+  //CHECK:switch (int stat = DPCT_CHECK_ERROR((plan11->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward)))){
   //CHECK-NEXT:}
   switch (int stat = cufftExecZ2D(plan11, idata, odata)){
   }
@@ -200,7 +200,7 @@ cufftResult foo1(cufftHandle plan) {
 }
 
 cufftResult foo2(cufftHandle plan) {
-  //CHECK:return DPCT_CHECK_ERROR(plan->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward));
+  //CHECK:return DPCT_CHECK_ERROR((plan->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward)));
   return cufftExecZ2D(plan, idata, odata);
 }
 

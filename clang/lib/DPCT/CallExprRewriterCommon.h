@@ -1137,6 +1137,24 @@ createAssignableFactory(
 }
 
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createAssignableFactoryWithExtraParen(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Input) {
+  return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
+      std::move(Input.first),
+      std::make_shared<AssignableRewriterFactory>(Input.second, true));
+}
+
+template <class T>
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createAssignableFactoryWithExtraParen(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Input,
+    T) {
+  return createAssignableFactoryWithExtraParen(std::move(Input));
+}
+
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
 createInsertAroundFactory(
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
         &&Input,
@@ -1869,6 +1887,8 @@ public:
 } // namespace clang
 
 #define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),
+#define ASSIGNABLE_FACTORY_WITH_PAREN(x)                                       \
+  createAssignableFactoryWithExtraParen(x 0),
 #define INSERT_AROUND_FACTORY(x, PREFIX, SUFFIX)                               \
   createInsertAroundFactory(x PREFIX, SUFFIX),
 #define FEATURE_REQUEST_FACTORY(FEATURE, x)                                    \
