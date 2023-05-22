@@ -4,7 +4,7 @@
 #include "../header/in_header.h"
 #include "../header2/out_header.h"
 int main() {
-  // CHECK: sycl::device dev_ct1{};
+  // CHECK: sycl::device dev_ct1;
   // CHECK-NEXT: sycl::queue q_ct1(dev_ct1, sycl::property_list{sycl::property::queue::in_order()});
 
   // CHECK: q_ct1.parallel_for(

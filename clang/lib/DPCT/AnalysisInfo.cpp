@@ -360,31 +360,29 @@ void DpctGlobalInfo::buildReplacements() {
     if (getGuessIndentWidthMatcherFlag())
       IndentLen = getIndentWidth();
     std::string IndentStr = std::string(IndentLen, ' ');
-    std::string DevDecl = getNL() + IndentStr;
-    std::string QDecl = getNL() + IndentStr;
-    std::string QDeclParam = "";
+    std::string DevDeclStr = getNL() + IndentStr;
+    llvm::raw_string_ostream DevDecl(DevDeclStr);
+    std::string QDeclStr =
+        getNL() + IndentStr + MapNames::getClNamespace() + "queue ";
+    llvm::raw_string_ostream QDecl(QDeclStr);
     if (NeedDpctHelpFunc) {
       DeviceFeatureEnum = HelperFeatureEnum::Device_get_current_device;
-      DevDecl += MapNames::getDpctNamespace() +
-                 "device_ext &dev_ct1 = " + MapNames::getDpctNamespace() +
-                 "get_current_device();";
+      DevDecl << MapNames::getDpctNamespace()
+              << "device_ext &dev_ct1 = " << MapNames::getDpctNamespace()
+              << "get_current_device();";
       QueueFeatureEnum = HelperFeatureEnum::Device_get_default_queue;
-      QDecl += MapNames::getClNamespace() +
-               "queue &q_ct1 = dev_ct1.default_queue();";
+      QDecl << "&q_ct1 = dev_ct1.default_queue();";
     } else {
-      DevDecl += MapNames::getClNamespace() + "device dev_ct1{};";
-      QDeclParam += "dev_ct1, " + MapNames::getClNamespace() + "property_list{";
+      DevDecl << MapNames::getClNamespace() + "device dev_ct1;";
+      // Now the UsmLevel must not be UL_None here.
+      QDecl << "q_ct1(dev_ct1, " << MapNames::getClNamespace()
+            << "property_list{" << MapNames::getClNamespace()
+            << "property::queue::in_order()";
       if (DpctGlobalInfo::getEnablepProfilingFlag()) {
-        QDeclParam +=
-            MapNames::getClNamespace() + "property::queue::enable_profiling()";
-        if (DpctGlobalInfo::getUsmLevel() != UsmLevel::UL_None)
-          QDeclParam += MapNames::getClNamespace() + ", ";
+        QDecl << ", " << MapNames::getClNamespace()
+              << "property::queue::enable_profiling()";
       }
-      if (DpctGlobalInfo::getUsmLevel() != UsmLevel::UL_None)
-        QDeclParam +=
-            MapNames::getClNamespace() + "property::queue::in_order()";
-      QDeclParam += "}";
-      QDecl += MapNames::getClNamespace() + "queue q_ct1(" + QDeclParam + ");";
+      QDecl << "});";
     }
 
     for (auto &Counter : TempVariableDeclCounterMap) {
@@ -400,16 +398,11 @@ void DpctGlobalInfo::buildReplacements() {
           Counter.second.DefaultQueueCounter > 1) {
         Counter.second.PlaceholderStr[2] = "dev_ct1";
         getInstance().addReplacement(std::make_shared<ExtReplacement>(
-            DeclLocFile, DeclLocOffset, 0, DevDecl, nullptr));
-        if (Counter.second.DefaultQueueCounter > 1) {
+            DeclLocFile, DeclLocOffset, 0, DevDecl.str(), nullptr));
+        if (Counter.second.DefaultQueueCounter > 1 || !NeedDpctHelpFunc) {
           Counter.second.PlaceholderStr[1] = "q_ct1";
           getInstance().addReplacement(std::make_shared<ExtReplacement>(
-              DeclLocFile, DeclLocOffset, 0, QDecl, nullptr));
-        } else {
-          if (!NeedDpctHelpFunc) {
-            Counter.second.PlaceholderStr[1] =
-                MapNames::getClNamespace() + "queue(" + QDeclParam + ")";
-          }
+              DeclLocFile, DeclLocOffset, 0, QDecl.str(), nullptr));
         }
       }
     }

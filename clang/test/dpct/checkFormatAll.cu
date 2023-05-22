@@ -29,7 +29,7 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 
 
      //CHECK:int main() {
-//CHECK-NEXT:  sycl::device dev_ct1{};
+//CHECK-NEXT:  sycl::device dev_ct1;
 //CHECK-NEXT:  sycl::queue q_ct1(dev_ct1,
 //CHECK-NEXT:                    sycl::property_list{sycl::property::queue::in_order()});
 //CHECK-NEXT:  sycl::range<3> griddim = sycl::range<3>(1, 1, 2);

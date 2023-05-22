@@ -29,7 +29,7 @@ __global__ void VectorAddKernel(float* A, float* B, float* C)
 
 int main()
 {
-  //      CHECK:    sycl::device dev_ct1{};
+  //      CHECK:    sycl::device dev_ct1;
   // CHECK-NEXT:    sycl::queue q_ct1(dev_ct1,
   // CHECK-NEXT:                      sycl::property_list{sycl::property::queue::in_order()});
   float *d_A, *d_B, *d_C;
