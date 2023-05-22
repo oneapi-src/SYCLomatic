@@ -123,7 +123,7 @@ int main() {
 #endif
 
 int foo(int num) {
-//CHECK: #if (SYCL_LANGUAGE_VERSION >= 202001)
+//CHECK: #if (SYCL_LANGUAGE_VERSION >= 202000)
 //CHECK-NEXT: dpct::get_current_device().reset();
 //CHECK-NEXT: #else
 //CHECK-NEXT: cudaThreadExit();
@@ -175,20 +175,20 @@ int foo2(){
 }
 
 //CHECK: void foo3() {
-//CHECK-NEXT: #if (SYCL_LANGUAGE_VERSION >= 202001)
+//CHECK-NEXT: #if defined(SYCL_LANGUAGE_VERSION)
 //CHECK-NEXT:   sycl::int2 a1;
 //CHECK-NEXT: #endif
-//CHECK-NEXT: #if (SYCL_LANGUAGE_VERSION >= 202001)
+//CHECK-NEXT: #if defined(SYCL_LANGUAGE_VERSION)
 //CHECK-NEXT:   sycl::int2 a2;
 //CHECK-NEXT: #endif
 //CHECK-NEXT: #define AAA 1
-//CHECK-NEXT: #if (SYCL_LANGUAGE_VERSION >= 202001) && AAA
+//CHECK-NEXT: #if (SYCL_LANGUAGE_VERSION >= 202000) && AAA
 //CHECK-NEXT:   sycl::int2 a3;
 //CHECK-NEXT: #endif
-//CHECK-NEXT: #if (SYCL_LANGUAGE_VERSION < 202001) && AAA
+//CHECK-NEXT: #if (SYCL_LANGUAGE_VERSION < 202000) && AAA
 //CHECK-NEXT:   int2 a4;
 //CHECK-NEXT: #endif
-//CHECK-NEXT: #if (SYCL_LANGUAGE_VERSION >= 202001) && AAA
+//CHECK-NEXT: #if (SYCL_LANGUAGE_VERSION >= 202000) && AAA
 //CHECK-NEXT:   sycl::int2 a5;
 //CHECK-NEXT: #endif
 //CHECK-NEXT: }
@@ -196,17 +196,17 @@ void foo3() {
 #if defined CUDART_VERSION
   int2 a1;
 #endif
-#if defined( CUDART_VERSION)
+#if defined(CUDART_VERSION)
   int2 a2;
 #endif
 #define AAA 1
 #if (CUDART_VERSION >= 4000) && AAA
   int2 a3;
 #endif
-#if !CUDART_VERSION && AAA
+#if !(CUDART_VERSION > 4000) && AAA
   int2 a4;
 #endif
-#if (CUDART_VERSION ? 1 : 0) && AAA
+#if (CUDART_VERSION > 4000 ? 1 : 0) && AAA
   int2 a5;
 #endif
 }
@@ -214,24 +214,24 @@ void foo3() {
 //CHECK: void foo4() {
 //CHECK-NEXT: #define BBB 0
 //CHECK-NEXT: #if BBB
-//CHECK-NEXT: #elif (SYCL_LANGUAGE_VERSION >= 202001)
+//CHECK-NEXT: #elif defined(SYCL_LANGUAGE_VERSION)
 //CHECK-NEXT:   sycl::int2 a1;
 //CHECK-NEXT: #endif
 //CHECK-NEXT: #if BBB
-//CHECK-NEXT: #elif (SYCL_LANGUAGE_VERSION >= 202001)
+//CHECK-NEXT: #elif defined(SYCL_LANGUAGE_VERSION)
 //CHECK-NEXT:   sycl::int2 a2;
 //CHECK-NEXT: #endif
 //CHECK-NEXT: #define AAA 1
 //CHECK-NEXT: #if BBB
-//CHECK-NEXT: #elif (SYCL_LANGUAGE_VERSION >= 202001) && AAA
+//CHECK-NEXT: #elif (SYCL_LANGUAGE_VERSION >= 202000) && AAA
 //CHECK-NEXT:   sycl::int2 a3;
 //CHECK-NEXT: #endif
 //CHECK-NEXT: #if BBB
-//CHECK-NEXT: #elif (SYCL_LANGUAGE_VERSION < 202001) && AAA
+//CHECK-NEXT: #elif (SYCL_LANGUAGE_VERSION < 202000) && AAA
 //CHECK-NEXT:   int2 a4;
 //CHECK-NEXT: #endif
 //CHECK-NEXT: #if BBB
-//CHECK-NEXT: #elif (SYCL_LANGUAGE_VERSION >= 202001) && AAA
+//CHECK-NEXT: #elif (SYCL_LANGUAGE_VERSION >= 202000) && AAA
 //CHECK-NEXT:   sycl::int2 a5;
 //CHECK-NEXT: #endif
 //CHECK-NEXT: }
@@ -242,7 +242,7 @@ void foo4() {
   int2 a1;
 #endif
 #if BBB
-#elif defined( CUDART_VERSION)
+#elif defined(CUDART_VERSION)
   int2 a2;
 #endif
 #define AAA 1
@@ -251,11 +251,11 @@ void foo4() {
   int2 a3;
 #endif
 #if BBB
-#elif !CUDART_VERSION && AAA
+#elif !(CUDART_VERSION > 4000) && AAA
   int2 a4;
 #endif
 #if BBB
-#elif (CUDART_VERSION ? 1 : 0) && AAA
+#elif (CUDART_VERSION > 4000 ? 1 : 0) && AAA
   int2 a5;
 #endif
 }

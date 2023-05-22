@@ -45,8 +45,9 @@ inline unsigned int getRunRound() { return 0; }
 std::function<bool(SourceLocation)> IsInAnalysisScopeFunc = isInAnalysisScopeNull;
 std::function<unsigned int()> GetRunRound = getRunRound;
 bool ProcessingCudaRTVersionMacro = false;
-bool ContainCudaRTVersionMacro = false;
-std::vector<std::pair<SourceRange, bool>> ReplaceInfo;
+std::vector<std::tuple<SourceRange /*range*/, bool /*evaluated value*/,
+                       bool /*is define expr*/>>
+    ReplaceInfo;
 llvm::APSInt CudaRTVersionValue;
 } // namespace clang
 #endif // SYCLomatic_CUSTOMIZATION
@@ -234,7 +235,7 @@ static bool EvaluateDefined(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
   if (II->getName() == "CUDART_VERSION" &&
       IsInAnalysisScopeFunc(PeekTok.getLocation())) {
     ReplaceInfo.push_back(
-        std::make_pair(Result.getRange(), !Result.Val.isZero()));
+        std::make_tuple(Result.getRange(), !Result.Val.isZero(), true));
   }
 #endif // SYCLomatic_CUSTOMIZATION
   // Invoke the 'defined' callback.
@@ -276,7 +277,6 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
     if (PeekTok.getIdentifierInfo()->getName().str() == "CUDART_VERSION" &&
         IsInAnalysisScopeFunc(PeekTok.getLocation())) {
       ProcessingCudaRTVersionMacro = true;
-      ContainCudaRTVersionMacro = true;
       Result.Val = CudaRTVersionValue;
       Result.setIdentifier(PeekTok.getIdentifierInfo());
       Result.setRange(PeekTok.getLocation());
@@ -572,7 +572,7 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
     if (ProcessingCudaRTVersionMacro) {
       ProcessingCudaRTVersionMacro = false;
       ReplaceInfo.push_back(
-          std::make_pair(Result.getRange(), !Result.Val.isZero()));
+          std::make_tuple(Result.getRange(), !Result.Val.isZero(), false));
     }
 #endif // SYCLomatic_CUSTOMIZATION
 
@@ -680,7 +680,7 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
       if (ProcessingCudaRTVersionMacro) {
         ProcessingCudaRTVersionMacro = false;
         ReplaceInfo.push_back(
-            std::make_pair(LHS.getRange(), !LHS.Val.isZero()));
+            std::make_tuple(LHS.getRange(), !LHS.Val.isZero(), false));
       }
       RHSIsLive = false; // RHS (x) of "0 ? x : y" is dead.
     }
@@ -884,11 +884,11 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
       ProcessingCudaRTVersionMacro = false;
       if (LHSHasMacro) {
         ReplaceInfo.push_back(
-            std::make_pair(LHS.getRange(), !LHS.Val.isZero()));
+            std::make_tuple(LHS.getRange(), !LHS.Val.isZero(), false));
       }
       if (RHSHasMacro) {
         ReplaceInfo.push_back(
-            std::make_pair(RHS.getRange(), !RHS.Val.isZero()));
+            std::make_tuple(RHS.getRange(), !RHS.Val.isZero(), false));
       }
 #endif // SYCLomatic_CUSTOMIZATION
       break;
@@ -899,11 +899,11 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
       ProcessingCudaRTVersionMacro = false;
       if (LHSHasMacro) {
         ReplaceInfo.push_back(
-            std::make_pair(LHS.getRange(), !LHS.Val.isZero()));
+            std::make_tuple(LHS.getRange(), !LHS.Val.isZero(), false));
       }
       if (RHSHasMacro) {
         ReplaceInfo.push_back(
-            std::make_pair(RHS.getRange(), !RHS.Val.isZero()));
+            std::make_tuple(RHS.getRange(), !RHS.Val.isZero(), false));
       }
 #endif // SYCLomatic_CUSTOMIZATION
       break;
@@ -976,6 +976,9 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
 /// to "!defined(X)" return X in IfNDefMacro.
 Preprocessor::DirectiveEvalResult
 Preprocessor::EvaluateDirectiveExpression(IdentifierInfo *&IfNDefMacro) {
+#ifdef SYCLomatic_CUSTOMIZATION
+  ProcessingCudaRTVersionMacro = false;
+#endif // SYCLomatic_CUSTOMIZATION
   SaveAndRestore PPDir(ParsingIfOrElifDirective, true);
   // Save the current state of 'DisableMacroExpansion' and reset it to false. If
   // 'DisableMacroExpansion' is true, then we must be in a macro argument list
