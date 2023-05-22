@@ -4372,15 +4372,16 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #include "APINames_CUB.inc"
 #include "APINames_NCCL.inc"
 #include "APINames_NVML.inc"
+#include "APINames_NVTX.inc"
 #include "APINames_cuBLAS.inc"
+#include "APINames_cuDNN.inc"
 #include "APINames_cuFFT.inc"
-#include "APINames_nvGRAPH.inc"
 #include "APINames_cuRAND.inc"
 #include "APINames_cuSOLVER.inc"
 #include "APINames_cuSPARSE.inc"
+#include "APINames_nvGRAPH.inc"
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
-#include "APINames_cuDNN.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
 };
