@@ -93,7 +93,7 @@ void test() {
     cudaMemcpy(out, host_out.data(), ele_num * sizeof(HT), cudaMemcpyHostToDevice);
 
     float alpha = 3.f, beta = 1.f;
-    // CHECK: auto s = DPCT_CHECK_ERROR(handle.async_sum(alpha, dataTensor, data, beta, outTensor, out));
+    // CHECK: auto s = CHECK_SYCL_ERROR(handle.async_sum(alpha, dataTensor, data, beta, outTensor, out));
 
     auto s = cudnnAddTensor(handle, &alpha, dataTensor, data, &beta, outTensor, out);
 

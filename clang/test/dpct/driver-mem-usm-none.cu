@@ -52,21 +52,21 @@ int main(){
     cuMemcpy(f_D, f_D2, size);
     // CHECK: CALL(dpct::dpct_memcpy(f_D, f_D2, size, dpct::automatic));
     CALL(cuMemcpy(f_D, f_D2, size));
-    // CHECK: r = DPCT_CHECK_ERROR(dpct::dpct_memcpy(f_D, f_D2, size, dpct::automatic));
+    // CHECK: r = CHECK_SYCL_ERROR(dpct::dpct_memcpy(f_D, f_D2, size, dpct::automatic));
     r = cuMemcpy(f_D, f_D2, size);
 
     // CHECK: dpct::async_dpct_memcpy(f_D, f_D2, size, dpct::automatic, *stream);
     cuMemcpyAsync(f_D, f_D2, size, stream);
     // CHECK: CALL(dpct::async_dpct_memcpy(f_D, f_D2, size, dpct::automatic, *stream));
     CALL(cuMemcpyAsync(f_D, f_D2, size, stream));
-    // CHECK: r = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(f_D, f_D2, size, dpct::automatic, *stream));
+    // CHECK: r = CHECK_SYCL_ERROR(dpct::async_dpct_memcpy(f_D, f_D2, size, dpct::automatic, *stream));
     r = cuMemcpyAsync(f_D, f_D2, size, stream);
 
     // CHECK: dpct::async_dpct_memcpy(f_D, f_D2, size, dpct::automatic);
     cuMemcpyAsync(f_D, f_D2, size, 0);
     // CHECK: CALL(dpct::async_dpct_memcpy(f_D, f_D2, size, dpct::automatic));
     CALL(cuMemcpyAsync(f_D, f_D2, size, 0));
-    // CHECK: r = DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(f_D, f_D2, size, dpct::automatic));
+    // CHECK: r = CHECK_SYCL_ERROR(dpct::async_dpct_memcpy(f_D, f_D2, size, dpct::automatic));
     r = cuMemcpyAsync(f_D, f_D2, size, 0);
 
     // CHECK: dpct::pitched_data cpy_from_data_ct1, cpy_to_data_ct1;
@@ -241,7 +241,7 @@ int main(){
 
     // CHECK: flags = 0;
     cuMemHostGetFlags(&flags, &host);
-    // CHECK: cuCheckError(DPCT_CHECK_ERROR(flags = 0));
+    // CHECK: cuCheckError(CHECK_SYCL_ERROR(flags = 0));
     cuCheckError(cuMemHostGetFlags(&flags, &host));
 
     // CHECK:  /*

@@ -75,7 +75,7 @@ int main() {
     cudaMemcpy(svar, host_svar.data(), sizeof(float) * save * sbn * sbc * sbh * sbw, cudaMemcpyHostToDevice);
 
     float alpha = 1.0f, beta = 0.f, eps = 1.f;
-    // CHECK: auto status = DPCT_CHECK_ERROR(handle.async_batch_normalization_forward_inference(dpct::dnnl::batch_normalization_mode::per_activation, eps, alpha, dataTensor, data, beta, outTensor, out, scalebiasTensor, scale, bias, smean, svar));
+    // CHECK: auto status = CHECK_SYCL_ERROR(handle.async_batch_normalization_forward_inference(dpct::dnnl::batch_normalization_mode::per_activation, eps, alpha, dataTensor, data, beta, outTensor, out, scalebiasTensor, scale, bias, smean, svar));
     auto status = cudnnBatchNormalizationForwardInference(
         handle,
         CUDNN_BATCHNORM_PER_ACTIVATION,

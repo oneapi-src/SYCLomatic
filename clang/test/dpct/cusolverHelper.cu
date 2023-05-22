@@ -39,13 +39,13 @@ int main(int argc, char *argv[])
     // CHECK: cusolverH = &q_ct1;
     cusolverDnCreate(&cusolverH);
 
-    // CHECK: status = DPCT_CHECK_ERROR(cusolverH = &q_ct1);
+    // CHECK: status = CHECK_SYCL_ERROR(cusolverH = &q_ct1);
     status = cusolverDnCreate(&cusolverH);
 
-    // CHECK: status = DPCT_CHECK_ERROR(cusolverH = &q_ct1);
+    // CHECK: status = CHECK_SYCL_ERROR(cusolverH = &q_ct1);
     status = MACRO_A(&cusolverH);
 
-    // CHECK: status = DPCT_CHECK_ERROR(cusolverH = nullptr);
+    // CHECK: status = CHECK_SYCL_ERROR(cusolverH = nullptr);
     status = cusolverDnDestroy(cusolverH);
 
     // CHECK: int a = sizeof(int);
@@ -54,8 +54,8 @@ int main(int argc, char *argv[])
     int b = sizeof(cusolverDnHandle_t);
 
     cudaStream_t stream;
-    // CHECK: status = DPCT_CHECK_ERROR(stream = cusolverH);
-    // CHECK: status = DPCT_CHECK_ERROR(cusolverH = stream);
+    // CHECK: status = CHECK_SYCL_ERROR(stream = cusolverH);
+    // CHECK: status = CHECK_SYCL_ERROR(cusolverH = stream);
     status = cusolverDnGetStream(cusolverH, &stream);
     status = cusolverDnSetStream(cusolverH, stream);
 }

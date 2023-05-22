@@ -10,7 +10,7 @@ int main(int argc, char **argv)
 {
 int deviceCount = 0;
 
-// CHECK: checkErrors(DPCT_CHECK_ERROR(deviceCount = dpct::dev_mgr::instance().device_count()));
+// CHECK: checkErrors(CHECK_SYCL_ERROR(deviceCount = dpct::dev_mgr::instance().device_count()));
 checkErrors(cudaGetDeviceCount(&deviceCount));
 
 int dev_id;
@@ -18,11 +18,11 @@ int dev_id;
 checkErrors(cudaGetDevice(&dev_id));
 
 cudaDeviceProp deviceProp;
-// CHECK:checkErrors(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(0).get_device_info(deviceProp)));
+// CHECK:checkErrors(CHECK_SYCL_ERROR(dpct::dev_mgr::instance().get_device(0).get_device_info(deviceProp)));
 checkErrors(cudaGetDeviceProperties(&deviceProp, 0));
 
 int atomicSupported;
-// CHECK: checkErrors(DPCT_CHECK_ERROR(atomicSupported = dpct::dev_mgr::instance().get_device(dev_id).is_native_atomic_supported()));
+// CHECK: checkErrors(CHECK_SYCL_ERROR(atomicSupported = dpct::dev_mgr::instance().get_device(dev_id).is_native_atomic_supported()));
 checkErrors(cudaDeviceGetAttribute(&atomicSupported, cudaDevAttrHostNativeAtomicSupported, dev_id));
 
 int device1 = 0;
@@ -50,7 +50,7 @@ checkErrors(cudaDeviceGetP2PAttribute(&atomicSupported, cudaDevP2PAttrNativeAtom
 // CHECK:/*
 // CHECK-NEXT:DPCT1093:{{[0-9]+}}: The "device2" device may be not the one intended for use. Adjust the selected device if needed.
 // CHECK-NEXT:*/
-// CHECK-NEXT:checkErrors(DPCT_CHECK_ERROR(dpct::select_device(device2)));
+// CHECK-NEXT:checkErrors(CHECK_SYCL_ERROR(dpct::select_device(device2)));
 checkErrors(cudaSetDevice(device2));
 
 return 0;
@@ -74,13 +74,13 @@ void get_version(void) {
     // CHECK:    /*
     // CHECK-NEXT:    DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
     // CHECK-NEXT:    */
-    // CHECK-NEXT:    dpct::err0 error_code_1 = DPCT_CHECK_ERROR(driverVersion = dpct::get_current_device().get_major_version());
+    // CHECK-NEXT:    dpct::err0 error_code_1 = CHECK_SYCL_ERROR(driverVersion = dpct::get_current_device().get_major_version());
     cudaError_t error_code_1 = cudaDriverGetVersion(&driverVersion);
 
     // CHECK:    /*
     // CHECK-NEXT:    DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
     // CHECK-NEXT:    */
-    // CHECK-NEXT:    dpct::err0 error_code_2 = DPCT_CHECK_ERROR(runtimeVersion = dpct::get_current_device().get_major_version());
+    // CHECK-NEXT:    dpct::err0 error_code_2 = CHECK_SYCL_ERROR(runtimeVersion = dpct::get_current_device().get_major_version());
     cudaError_t error_code_2 = cudaRuntimeGetVersion(&runtimeVersion);
 }
 

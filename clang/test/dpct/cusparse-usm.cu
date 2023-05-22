@@ -103,19 +103,19 @@ int foo(int aaaaa){
   //CHECK: /*
   //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general/symmetric/triangular sparse matrix type. You may need to adjust the code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: if(status = DPCT_CHECK_ERROR(dpct::sparse::csrmv(*handle, transA, m, n, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y))){}
+  //CHECK-NEXT: if(status = CHECK_SYCL_ERROR(dpct::sparse::csrmv(*handle, transA, m, n, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y))){}
   if(status = cusparseDcsrmv(handle, transA, m, n, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y)){}
 
   //CHECK: /*
   //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general/symmetric/triangular sparse matrix type. You may need to adjust the code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: for(status = DPCT_CHECK_ERROR(dpct::sparse::csrmv(*handle, transA, m, n, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y));;){}
+  //CHECK-NEXT: for(status = CHECK_SYCL_ERROR(dpct::sparse::csrmv(*handle, transA, m, n, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y));;){}
   for(status = cusparseDcsrmv(handle, transA, m, n, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y);;){}
 
   //CHECK: /*
   //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general/symmetric/triangular sparse matrix type. You may need to adjust the code.
   //CHECK-NEXT: */
-  //CHECK-NEXT: switch(status = DPCT_CHECK_ERROR(dpct::sparse::csrmv(*handle, transA, m, n, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y))){}
+  //CHECK-NEXT: switch(status = CHECK_SYCL_ERROR(dpct::sparse::csrmv(*handle, transA, m, n, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y))){}
   switch(status = cusparseDcsrmv(handle, transA, m, n, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y)){}
 
   //CHECK: std::shared_ptr<dpct::sparse::optimize_info> info;
@@ -142,7 +142,7 @@ int foo(int aaaaa){
 //CHECK-NEXT:   /*
 //CHECK-NEXT:   DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general/symmetric/triangular sparse matrix type. You may need to adjust the code.
 //CHECK-NEXT:   */
-//CHECK-NEXT:   return DPCT_CHECK_ERROR(dpct::sparse::csrmv(*handle, transA, m, n, &alpha, descrB, csrValA, csrRowPtrA, csrColIndA, x, &beta, y));
+//CHECK-NEXT:   return CHECK_SYCL_ERROR(dpct::sparse::csrmv(*handle, transA, m, n, &alpha, descrB, csrValA, csrRowPtrA, csrColIndA, x, &beta, y));
 //CHECK-NEXT: }
 int foo(cusparseMatDescr_t descrB){
   return cusparseDcsrmv(handle, transA, m, n, nnz, &alpha, descrB, csrValA, csrRowPtrA, csrColIndA, x, &beta, y);

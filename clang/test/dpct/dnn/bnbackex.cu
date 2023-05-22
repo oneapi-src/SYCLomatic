@@ -128,7 +128,7 @@ int main() {
     
     cudaMalloc(&workspace, workspace_size);
     cudaMalloc(&reservespace, reservespace_size);
-    // CHECK: auto status = DPCT_CHECK_ERROR(handle.async_batch_normalization_forward_training(dpct::dnnl::batch_normalization_mode::per_activation, dpct::dnnl::batch_normalization_ops::activation, ActivationDesc, eps, factor, alpha, dataTensor, data, beta, outTensor, out, outTensor, z, scalebiasTensor, scale, bias, rmean, rvar, smean, svar, reservespace_size, reservespace));
+    // CHECK: auto status = CHECK_SYCL_ERROR(handle.async_batch_normalization_forward_training(dpct::dnnl::batch_normalization_mode::per_activation, dpct::dnnl::batch_normalization_ops::activation, ActivationDesc, eps, factor, alpha, dataTensor, data, beta, outTensor, out, outTensor, z, scalebiasTensor, scale, bias, rmean, rvar, smean, svar, reservespace_size, reservespace));
     auto status = cudnnBatchNormalizationForwardTrainingEx(
         handle, 
         CUDNN_BATCHNORM_PER_ACTIVATION, 

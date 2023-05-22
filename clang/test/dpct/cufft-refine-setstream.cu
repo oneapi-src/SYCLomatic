@@ -28,8 +28,8 @@ void foo2() {
   cudaStream_t s;
 
   //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
-  //CHECK-NEXT:cufftCheck(DPCT_CHECK_ERROR(plan->set_queue(s)));
-  //CHECK-NEXT:cufftCheck(DPCT_CHECK_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
+  //CHECK-NEXT:cufftCheck(CHECK_SYCL_ERROR(plan->set_queue(s)));
+  //CHECK-NEXT:cufftCheck(CHECK_SYCL_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   cufftCheck(cufftSetStream(plan, s));
   cufftCheck(cufftExecR2C(plan, (float*)iodata, iodata));
@@ -53,8 +53,8 @@ void foo3() {
   cudaStream_t s;
 
   //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
-  //CHECK-NEXT:HANDLE_CUFFT_ERROR(DPCT_CHECK_ERROR(plan->set_queue(s)));
-  //CHECK-NEXT:HANDLE_CUFFT_ERROR(DPCT_CHECK_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
+  //CHECK-NEXT:HANDLE_CUFFT_ERROR(CHECK_SYCL_ERROR(plan->set_queue(s)));
+  //CHECK-NEXT:HANDLE_CUFFT_ERROR(CHECK_SYCL_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   HANDLE_CUFFT_ERROR(cufftSetStream(plan, s));
   HANDLE_CUFFT_ERROR(cufftExecR2C(plan, (float*)iodata, iodata));
@@ -68,8 +68,8 @@ void foo4() {
   cudaStream_t s;
 
   //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
-  //CHECK-NEXT:int err = DPCT_CHECK_ERROR(plan->set_queue(s));
-  //CHECK-NEXT:err = DPCT_CHECK_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward)));
+  //CHECK-NEXT:int err = CHECK_SYCL_ERROR(plan->set_queue(s));
+  //CHECK-NEXT:err = CHECK_SYCL_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward)));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   cufftResult err = cufftSetStream(plan, s);
   err = cufftExecR2C(plan, (float*)iodata, iodata);
@@ -88,8 +88,8 @@ void foo5() {
   cudaStream_t s;
 
   //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
-  //CHECK-NEXT:CUFFT_CHECK(DPCT_CHECK_ERROR(plan->set_queue(s)));
-  //CHECK-NEXT:CUFFT_CHECK(DPCT_CHECK_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
+  //CHECK-NEXT:CUFFT_CHECK(CHECK_SYCL_ERROR(plan->set_queue(s)));
+  //CHECK-NEXT:CUFFT_CHECK(CHECK_SYCL_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   CUFFT_CHECK(cufftSetStream(plan, s));
   CUFFT_CHECK(cufftExecR2C(plan, (float*)iodata, iodata));
@@ -106,8 +106,8 @@ void foo6() {
   cudaStream_t s;
 
   //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
-  //CHECK-NEXT:MY_ERROR_CHECKER(DPCT_CHECK_ERROR(plan->set_queue(s)));
-  //CHECK-NEXT:MY_ERROR_CHECKER(DPCT_CHECK_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
+  //CHECK-NEXT:MY_ERROR_CHECKER(CHECK_SYCL_ERROR(plan->set_queue(s)));
+  //CHECK-NEXT:MY_ERROR_CHECKER(CHECK_SYCL_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   MY_ERROR_CHECKER(cufftSetStream(plan, s));
   MY_ERROR_CHECKER(cufftExecR2C(plan, (float*)iodata, iodata));
@@ -128,8 +128,8 @@ void foo7() {
   cudaStream_t s;
 
   //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
-  //CHECK-NEXT:CHECK_CUFFT(DPCT_CHECK_ERROR(plan->set_queue(s)));
-  //CHECK-NEXT:CHECK_CUFFT(DPCT_CHECK_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
+  //CHECK-NEXT:CHECK_CUFFT(CHECK_SYCL_ERROR(plan->set_queue(s)));
+  //CHECK-NEXT:CHECK_CUFFT(CHECK_SYCL_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   CHECK_CUFFT(cufftSetStream(plan, s));
   CHECK_CUFFT(cufftExecR2C(plan, (float*)iodata, iodata));
@@ -148,8 +148,8 @@ void foo8() {
   cudaStream_t s;
 
   //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
-  //CHECK-NEXT:cufftCheck(DPCT_CHECK_ERROR(plan->set_queue(s)));
-  //CHECK-NEXT:cufftCheck(DPCT_CHECK_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
+  //CHECK-NEXT:cufftCheck(CHECK_SYCL_ERROR(plan->set_queue(s)));
+  //CHECK-NEXT:cufftCheck(CHECK_SYCL_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   cufftCheck(cufftSetStream(plan, s));
   cufftCheck(cufftExecR2C(plan, (float*)iodata, iodata));
@@ -162,11 +162,11 @@ void foo9() {
   cudaStream_t s1, s2;
 
   //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
-  //CHECK-NEXT:cufftCheck(DPCT_CHECK_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
-  //CHECK-NEXT:cufftCheck(DPCT_CHECK_ERROR(plan->set_queue(s1)));
-  //CHECK-NEXT:cufftCheck(DPCT_CHECK_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
-  //CHECK-NEXT:cufftCheck(DPCT_CHECK_ERROR(plan->set_queue(s2)));
-  //CHECK-NEXT:cufftCheck(DPCT_CHECK_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
+  //CHECK-NEXT:cufftCheck(CHECK_SYCL_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
+  //CHECK-NEXT:cufftCheck(CHECK_SYCL_ERROR(plan->set_queue(s1)));
+  //CHECK-NEXT:cufftCheck(CHECK_SYCL_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
+  //CHECK-NEXT:cufftCheck(CHECK_SYCL_ERROR(plan->set_queue(s2)));
+  //CHECK-NEXT:cufftCheck(CHECK_SYCL_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   cufftCheck(cufftExecR2C(plan, (float*)iodata, iodata));
   cufftCheck(cufftSetStream(plan, s1));
@@ -182,11 +182,11 @@ void foo10(bool flag) {
   cudaStream_t s;
 
   //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
-  //CHECK-NEXT:cufftCheck(DPCT_CHECK_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
+  //CHECK-NEXT:cufftCheck(CHECK_SYCL_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
   //CHECK-NEXT:if (flag) {
-  //CHECK-NEXT:  cufftCheck(DPCT_CHECK_ERROR(plan->set_queue(s)));
+  //CHECK-NEXT:  cufftCheck(CHECK_SYCL_ERROR(plan->set_queue(s)));
   //CHECK-NEXT:}
-  //CHECK-NEXT:cufftCheck(DPCT_CHECK_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
+  //CHECK-NEXT:cufftCheck(CHECK_SYCL_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   cufftCheck(cufftExecR2C(plan, (float*)iodata, iodata));
   if (flag) {

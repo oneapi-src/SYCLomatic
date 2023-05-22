@@ -91,28 +91,25 @@ template <int Arg> class dpct_kernel_scalar;
 #define DPCT_COMPATIBILITY_TEMP (600)
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_error_code|
+// DPCT_LABEL_BEGIN|sycl_error|
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-enum dpct_error_code{
-  dpct_success = 0,
-  dpct_unknown_error = -1
-};
+enum sycl_error { sycl_success = 0, sycl_default_error = 999 };
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_check_error|
+// DPCT_LABEL_BEGIN|check_sycl_error|
 // DPCT_DEPENDENCY_BEGIN
-// Dpct|dpct_error_code
+// Dpct|sycl_error
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-#define DPCT_CHECK_ERROR(expr)                                                 \
+#define CHECK_SYCL_ERROR(expr)                                                 \
   [&]() {                                                                      \
     try {                                                                      \
       expr;                                                                    \
-      return dpct_success;                                                     \
+      return sycl_success;                                                     \
     } catch (std::exception const &e) {                                        \
       std::cerr << e.what() << std::endl;                                      \
-      return dpct_unknown_error;                                               \
+      return sycl_default_error;                                               \
     }                                                                          \
   }()
 // DPCT_LABEL_END

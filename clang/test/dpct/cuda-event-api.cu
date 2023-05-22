@@ -57,8 +57,8 @@ int main(int argc, char* argv[]) {
   printf(">>>\n");
 
 
-  // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(start = new sycl::event()));
-  // CHECK: dpct::err0 et = DPCT_CHECK_ERROR(stop = new sycl::event());
+  // CHECK: MY_ERROR_CHECKER(CHECK_SYCL_ERROR(start = new sycl::event()));
+  // CHECK: dpct::err0 et = CHECK_SYCL_ERROR(stop = new sycl::event());
   MY_ERROR_CHECKER(cudaEventCreate(&start));
   cudaError_t et = cudaEventCreate(&stop);
 
@@ -99,7 +99,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT: DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT: */
   // CHECK-NEXT: start_ct1 = std::chrono::steady_clock::now();
-  // CHECK-NEXT: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
+  // CHECK-NEXT: MY_ERROR_CHECKER(CHECK_SYCL_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
   MY_ERROR_CHECKER(cudaEventRecord(start, 0));
 
   // CHECK: if (0)
@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:   DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT:   */
   // CHECK-NEXT:   start_ct1 = std::chrono::steady_clock::now();
-  // CHECK-NEXT:   MY_ERROR_CHECKER(DPCT_CHECK_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
+  // CHECK-NEXT:   MY_ERROR_CHECKER(CHECK_SYCL_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
   if (0)
     MY_ERROR_CHECKER(cudaEventRecord(start, 0));
 
@@ -141,7 +141,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT: DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT: */
   // CHECK-NEXT: stop_ct1 = std::chrono::steady_clock::now();
-  // CHECK-NEXT: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
+  // CHECK-NEXT: MY_ERROR_CHECKER(CHECK_SYCL_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
   MY_ERROR_CHECKER(cudaEventRecord(stop, 0));
 
   // CHECK: if (1)
@@ -152,7 +152,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:   DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT:   */
   // CHECK-NEXT:   stop_ct1 = std::chrono::steady_clock::now();
-  // CHECK-NEXT:   MY_ERROR_CHECKER(DPCT_CHECK_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
+  // CHECK-NEXT:   MY_ERROR_CHECKER(CHECK_SYCL_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
   if (1)
     MY_ERROR_CHECKER(cudaEventRecord(stop, 0));
 
@@ -177,7 +177,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT: DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT: */
   // CHECK-NEXT: stop_ct1 = std::chrono::steady_clock::now();
-  // CHECK-NEXT: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
+  // CHECK-NEXT: MY_ERROR_CHECKER(CHECK_SYCL_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
   MY_ERROR_CHECKER(cudaEventRecord(stop, 0));
 
   // CHECK: if (0)
@@ -188,7 +188,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:   DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT:   */
   // CHECK-NEXT:   start_ct1 = std::chrono::steady_clock::now();
-  // CHECK-NEXT:   MY_ERROR_CHECKER(DPCT_CHECK_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
+  // CHECK-NEXT:   MY_ERROR_CHECKER(CHECK_SYCL_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
   if (0)
     MY_ERROR_CHECKER(cudaEventRecord(start, 0));
 
@@ -212,7 +212,7 @@ int main(int argc, char* argv[]) {
   cudaEventSynchronize(stop);
   cudaEventElapsedTime(&elapsed_time, start, stop);
 
-  // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count()));
+  // CHECK: MY_ERROR_CHECKER(CHECK_SYCL_ERROR(elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count()));
   MY_ERROR_CHECKER(cudaEventElapsedTime(&elapsed_time, start, stop));
 
   // kernel call without sync
@@ -247,11 +247,11 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:   {
   // CHECK-NEXT:     dpct::err0 e;
   // CHECK-NEXT:     e = (int)stop->get_info<sycl::info::event::command_execution_status>();
-  // CHECK-NEXT:     e = DPCT_CHECK_ERROR(a = (int *)dpct::dpct_malloc(sizeof(int)));
+  // CHECK-NEXT:     e = CHECK_SYCL_ERROR(a = (int *)dpct::dpct_malloc(sizeof(int)));
   // CHECK-NEXT:   }
   // CHECK-NEXT:   dpct::err0 et1, et2;
   // CHECK-NEXT:   et1 = (int)stop->get_info<sycl::info::event::command_execution_status>();
-  // CHECK-NEXT:   et2 = DPCT_CHECK_ERROR(a = (int *)dpct::dpct_malloc(sizeof(int)));
+  // CHECK-NEXT:   et2 = CHECK_SYCL_ERROR(a = (int *)dpct::dpct_malloc(sizeof(int)));
   // CHECK-NEXT: }
 
   cudaError_t e = cudaEventQuery(stop);
@@ -285,7 +285,7 @@ int main(int argc, char* argv[]) {
 
   // CHECK: dev_ct1.queues_wait_and_throw();
   // CHECK-EMPTY:
-  // CHECK: et = DPCT_CHECK_ERROR(dpct::destroy_event(stop));
+  // CHECK: et = CHECK_SYCL_ERROR(dpct::destroy_event(stop));
   // CHECK-NEXT: }
   cudaDeviceSynchronize();
 
@@ -317,7 +317,7 @@ void foo() {
 
   cudaEventSynchronize(stop);
 
-  // CHECK: MY_CHECKER(DPCT_CHECK_ERROR(elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count()));
+  // CHECK: MY_CHECKER(CHECK_SYCL_ERROR(elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count()));
   MY_CHECKER(cudaEventElapsedTime(&elapsed_time, start, stop));
 
   cudaEventDestroy(start);
@@ -325,10 +325,10 @@ void foo() {
 
   {
     // CHECK: start_ct1 = std::chrono::steady_clock::now();
-    // CHECK-NEXT: dpct::err0 err = DPCT_CHECK_ERROR(*start = q_ct1.ext_oneapi_submit_barrier());
+    // CHECK-NEXT: dpct::err0 err = CHECK_SYCL_ERROR(*start = q_ct1.ext_oneapi_submit_barrier());
     cudaError_t err = cudaEventRecord(start, 0);
     // CHECK: stop_ct1 = std::chrono::steady_clock::now();
-    // CHECK-NEXT: err = DPCT_CHECK_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier());
+    // CHECK-NEXT: err = CHECK_SYCL_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier());
     err = cudaEventRecord(stop, 0);
     if (cudaSuccess != err) {
       printf("%s\n", cudaGetErrorString( err));
@@ -359,7 +359,7 @@ void bar() {
   fun(cudaEventRecord(stop, 0));
 
   cudaEventSynchronize(stop);
-  // CHECK: fun(DPCT_CHECK_ERROR(elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count()));
+  // CHECK: fun(CHECK_SYCL_ERROR(elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count()));
   fun(cudaEventElapsedTime(&elapsed_time, start, stop));
 
   cudaEventDestroy(start);
@@ -404,10 +404,10 @@ void foo2(Node *n) {
   {
     int errorCode;
     // CHECK: n->start_ct1 = std::chrono::steady_clock::now();
-    // CHECK: MY_CHECKER(DPCT_CHECK_ERROR(*n->start = q_ct1.ext_oneapi_submit_barrier()));
+    // CHECK: MY_CHECKER(CHECK_SYCL_ERROR(*n->start = q_ct1.ext_oneapi_submit_barrier()));
     MY_CHECKER(cudaEventRecord(n->start, 0));
     // CHECK: n->start_ct1 = std::chrono::steady_clock::now();
-    // CHECK: errorCode = DPCT_CHECK_ERROR(*n->start = q_ct1.ext_oneapi_submit_barrier());
+    // CHECK: errorCode = CHECK_SYCL_ERROR(*n->start = q_ct1.ext_oneapi_submit_barrier());
     errorCode = cudaEventRecord(n->start, 0);
   }
 
@@ -426,10 +426,10 @@ void foo2(Node *n) {
   {
     int errorCode;
     // CHECK: node.start_ct1 = std::chrono::steady_clock::now();
-    // CHECK: MY_CHECKER(DPCT_CHECK_ERROR(*node.start = q_ct1.ext_oneapi_submit_barrier()));
+    // CHECK: MY_CHECKER(CHECK_SYCL_ERROR(*node.start = q_ct1.ext_oneapi_submit_barrier()));
     MY_CHECKER(cudaEventRecord(node.start, 0));
     // CHECK: node.start_ct1 = std::chrono::steady_clock::now();
-    // CHECK: errorCode = DPCT_CHECK_ERROR(*node.start = q_ct1.ext_oneapi_submit_barrier());
+    // CHECK: errorCode = CHECK_SYCL_ERROR(*node.start = q_ct1.ext_oneapi_submit_barrier());
     errorCode = cudaEventRecord(node.start, 0);
   }
 

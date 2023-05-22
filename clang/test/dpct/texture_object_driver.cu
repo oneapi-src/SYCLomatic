@@ -147,22 +147,22 @@ int main() {
   // Test IsAssigned
   {
     int errorCode;
-    // CHECK: errorCode = DPCT_CHECK_ERROR(tex21 = dpct::create_image_wrapper(res21, texDesc21));
+    // CHECK: errorCode = CHECK_SYCL_ERROR(tex21 = dpct::create_image_wrapper(res21, texDesc21));
     errorCode = cuTexObjectCreate(&tex21, &res21, &texDesc21, NULL);
-    // CHECK: cudaCheck(DPCT_CHECK_ERROR(tex21 = dpct::create_image_wrapper(res21, texDesc21)));
+    // CHECK: cudaCheck(CHECK_SYCL_ERROR(tex21 = dpct::create_image_wrapper(res21, texDesc21)));
     cudaCheck(cuTexObjectCreate(&tex21, &res21, &texDesc21, NULL));
-    // CHECK: func(DPCT_CHECK_ERROR(tex21 = dpct::create_image_wrapper(res21, texDesc21)));
+    // CHECK: func(CHECK_SYCL_ERROR(tex21 = dpct::create_image_wrapper(res21, texDesc21)));
     func(cuTexObjectCreate(&tex21, &res21, &texDesc21, NULL));
-    // CHECK: funcT(DPCT_CHECK_ERROR(tex21 = dpct::create_image_wrapper(res21, texDesc21)));
+    // CHECK: funcT(CHECK_SYCL_ERROR(tex21 = dpct::create_image_wrapper(res21, texDesc21)));
     funcT(cuTexObjectCreate(&tex21, &res21, &texDesc21, NULL));
 
-    // CHECK: errorCode = DPCT_CHECK_ERROR(delete tex21);
+    // CHECK: errorCode = CHECK_SYCL_ERROR(delete tex21);
     errorCode = cuTexObjectDestroy(tex21);
-    // CHECK: cudaCheck(DPCT_CHECK_ERROR(delete tex21));
+    // CHECK: cudaCheck(CHECK_SYCL_ERROR(delete tex21));
     cudaCheck(cuTexObjectDestroy(tex21));
-    // CHECK: func(DPCT_CHECK_ERROR(delete tex21));
+    // CHECK: func(CHECK_SYCL_ERROR(delete tex21));
     func(cuTexObjectDestroy(tex21));
-    // CHECK: funcT(DPCT_CHECK_ERROR(delete tex21));
+    // CHECK: funcT(CHECK_SYCL_ERROR(delete tex21));
     funcT(cuTexObjectDestroy(tex21));
   }
 }

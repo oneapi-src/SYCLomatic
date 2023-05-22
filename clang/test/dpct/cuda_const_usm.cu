@@ -111,20 +111,20 @@ int main(int argc, char **argv) {
 
   // CHECK:   q_ct1.memcpy(const_ptr.get_ptr(), &d_int, sizeof(int *));
   cudaMemcpyToSymbol(const_ptr, &d_int, sizeof(int *));
-  // CHECK:   DPCT_CHECK_ERROR(q_ct1.memcpy(const_angle.get_ptr(), &h_array[0], sizeof(float) * 360));
+  // CHECK:   CHECK_SYCL_ERROR(q_ct1.memcpy(const_angle.get_ptr(), &h_array[0], sizeof(float) * 360));
   cudaMemcpyToSymbol(&const_angle[0], &h_array[0], sizeof(float) * 360);
 
-  // CHECK:   DPCT_CHECK_ERROR(q_ct1.memcpy(const_angle.get_ptr() + 3, &h_array[0], sizeof(float) * 357));
+  // CHECK:   CHECK_SYCL_ERROR(q_ct1.memcpy(const_angle.get_ptr() + 3, &h_array[0], sizeof(float) * 357));
   cudaMemcpyToSymbol(&const_angle[3], &h_array[0], sizeof(float) * 357);
 
-  // CHECK:  DPCT_CHECK_ERROR(q_ct1.memcpy(&h_array[0], const_angle.get_ptr() + 3, sizeof(float) * 357));
+  // CHECK:  CHECK_SYCL_ERROR(q_ct1.memcpy(&h_array[0], const_angle.get_ptr() + 3, sizeof(float) * 357));
   cudaMemcpyFromSymbol(&h_array[0], &const_angle[3], sizeof(float) * 357);
 
   #define NUM 3
-  // CHECK: DPCT_CHECK_ERROR(q_ct1.memcpy(const_angle.get_ptr() + 3+NUM, &h_array[0], sizeof(float) * 354));
+  // CHECK: CHECK_SYCL_ERROR(q_ct1.memcpy(const_angle.get_ptr() + 3+NUM, &h_array[0], sizeof(float) * 354));
   cudaMemcpyToSymbol(&const_angle[3+NUM], &h_array[0], sizeof(float) * 354);
 
-  // CHECK:  DPCT_CHECK_ERROR(q_ct1.memcpy(&h_array[0], const_angle.get_ptr() + 3+NUM, sizeof(float) * 354));
+  // CHECK:  CHECK_SYCL_ERROR(q_ct1.memcpy(&h_array[0], const_angle.get_ptr() + 3+NUM, sizeof(float) * 354));
   cudaMemcpyFromSymbol(&h_array[0], &const_angle[3+NUM], sizeof(float) * 354);
 
   // CHECK:   q_ct1.submit(
@@ -166,7 +166,7 @@ int main(int argc, char **argv) {
   }
 
   h_array[0] = 10.0f; // Just to test
-  // CHECK:  DPCT_CHECK_ERROR(q_ct1.memcpy(const_one.get_ptr(), &h_array[0], sizeof(float) * 1).wait());
+  // CHECK:  CHECK_SYCL_ERROR(q_ct1.memcpy(const_one.get_ptr(), &h_array[0], sizeof(float) * 1).wait());
   cudaMemcpyToSymbol(&const_one, &h_array[0], sizeof(float) * 1);
 
   cudaStream_t stream;

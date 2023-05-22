@@ -27,12 +27,12 @@ int main(){
 
   int side0 = 0; int side1 = 1; int fill0 = 0; int fill1 = 1;
   int trans0 = 0; int trans1 = 1; int trans2 = 2; int diag0 = 0; int diag1 = 1;
-  // CHECK: status = DPCT_CHECK_ERROR(dpct::trmm(*handle, (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, m, n, &alpha_S, A_S, lda, B_S, ldb, C_S, ldc));
+  // CHECK: status = CHECK_SYCL_ERROR(dpct::trmm(*handle, (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, m, n, &alpha_S, A_S, lda, B_S, ldb, C_S, ldc));
   // CHECK-NEXT: dpct::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, &alpha_S, A_S, lda, B_S, ldb, C_S, ldc);
   status = cublasStrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, m, n, &alpha_S, A_S, lda, B_S, ldb, C_S, ldc);
   cublasStrmm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, m, n, &alpha_S, A_S, lda, B_S, ldb, C_S, ldc);
 
-  // CHECK: status = DPCT_CHECK_ERROR(dpct::trmm(*handle, (oneapi::mkl::side)side1, fill1 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans1), (oneapi::mkl::diag)diag1, m, n, &alpha_D, A_D, lda, B_D, ldb, C_D, ldc));
+  // CHECK: status = CHECK_SYCL_ERROR(dpct::trmm(*handle, (oneapi::mkl::side)side1, fill1 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans1), (oneapi::mkl::diag)diag1, m, n, &alpha_D, A_D, lda, B_D, ldb, C_D, ldc));
   // CHECK-NEXT: dpct::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, &alpha_D, A_D, lda, B_D, ldb, C_D, ldc);
   status = cublasDtrmm(handle, (cublasSideMode_t)side1, (cublasFillMode_t)fill1, (cublasOperation_t)trans1, (cublasDiagType_t)diag1, m, n, &alpha_D, A_D, lda, B_D, ldb, C_D, ldc);
   cublasDtrmm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, m, n, &alpha_D, A_D, lda, B_D, ldb, C_D, ldc);
@@ -48,13 +48,13 @@ int main(){
   cuDoubleComplex alpha_Z = make_cuDoubleComplex(1.0,0.0);
 
 
-  // CHECK: status = DPCT_CHECK_ERROR(dpct::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::lower, dpct::get_transpose(trans2), oneapi::mkl::diag::nonunit, m, n, &alpha_C, A_C, lda, B_C, ldb, C_C, ldc));
+  // CHECK: status = CHECK_SYCL_ERROR(dpct::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::lower, dpct::get_transpose(trans2), oneapi::mkl::diag::nonunit, m, n, &alpha_C, A_C, lda, B_C, ldb, C_C, ldc));
   // CHECK-NEXT: dpct::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, &alpha_C, A_C, lda, B_C, ldb, C_C, ldc);
   status = cublasCtrmm(handle, (cublasSideMode_t)0, (cublasFillMode_t)0, (cublasOperation_t)trans2, (cublasDiagType_t)0, m, n, &alpha_C, A_C, lda, B_C, ldb, C_C, ldc);
   cublasCtrmm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, m, n, &alpha_C, A_C, lda, B_C, ldb, C_C, ldc);
 
 
-  // CHECK: status = DPCT_CHECK_ERROR(dpct::trmm(*handle, oneapi::mkl::side::right, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::conjtrans, oneapi::mkl::diag::unit, m, n, &alpha_Z, A_Z, lda, B_Z, ldb, C_Z, ldc));
+  // CHECK: status = CHECK_SYCL_ERROR(dpct::trmm(*handle, oneapi::mkl::side::right, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::conjtrans, oneapi::mkl::diag::unit, m, n, &alpha_Z, A_Z, lda, B_Z, ldb, C_Z, ldc));
   // CHECK-NEXT: dpct::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, &alpha_Z, A_Z, lda, B_Z, ldb, C_Z, ldc);
   status = cublasZtrmm(handle, (cublasSideMode_t)1, (cublasFillMode_t)1, (cublasOperation_t)2, (cublasDiagType_t)1, m, n, &alpha_Z, A_Z, lda, B_Z, ldb, C_Z, ldc);
   cublasZtrmm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, m, n, &alpha_Z, A_Z, lda, B_Z, ldb, C_Z, ldc);

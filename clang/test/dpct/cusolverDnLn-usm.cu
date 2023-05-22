@@ -71,10 +71,10 @@ int main(int argc, char *argv[])
 
     size_t b_size;
 
-    //CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::potrf(**cusolverH, uplo, n, (float*)&A_f, lda, (float*)&workspace_f, Lwork));
-    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::potrf(**cusolverH, uplo, n, (double*)&A_d, lda, (double*)&workspace_d, Lwork));
-    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::potrf(**cusolverH, uplo, n, (std::complex<float>*)&A_c, lda, (std::complex<float>*)&workspace_c, Lwork));
-    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::potrf(**cusolverH, uplo, n, (std::complex<double>*)&A_z, lda, (std::complex<double>*)&workspace_z, Lwork));
+    //CHECK: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::potrf(**cusolverH, uplo, n, (float*)&A_f, lda, (float*)&workspace_f, Lwork));
+    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::potrf(**cusolverH, uplo, n, (double*)&A_d, lda, (double*)&workspace_d, Lwork));
+    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::potrf(**cusolverH, uplo, n, (std::complex<float>*)&A_c, lda, (std::complex<float>*)&workspace_c, Lwork));
+    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::potrf(**cusolverH, uplo, n, (std::complex<double>*)&A_z, lda, (std::complex<double>*)&workspace_z, Lwork));
     status = cusolverDnSpotrf(*cusolverH, uplo, n, &A_f, lda, &workspace_f, Lwork, &devInfo);
     status = cusolverDnDpotrf(*cusolverH, uplo, n, &A_d, lda, &workspace_d, Lwork, &devInfo);
     status = cusolverDnCpotrf(*cusolverH, uplo, n, &A_c, lda, &workspace_c, Lwork, &devInfo);

@@ -274,16 +274,16 @@ public:
       : CallExprRewriter(C, ""), Inner(InnerRewriter),
         IsAssigned(isAssigned(C)), ExtraParen(EP) {
     if (IsAssigned)
-      requestFeature(HelperFeatureEnum::Dpct_dpct_check_error, C);
+      requestFeature(HelperFeatureEnum::Dpct_check_sycl_error, C);
   }
 
   std::optional<std::string> rewrite() override {
     std::optional<std::string> &&Result = Inner->rewrite();
     if (Result.has_value() && IsAssigned) {
       if (ExtraParen) {
-        return "DPCT_CHECK_ERROR((" + Result.value() + "))";
+        return "CHECK_SYCL_ERROR((" + Result.value() + "))";
       }
-      return "DPCT_CHECK_ERROR(" + Result.value() + ")";
+      return "CHECK_SYCL_ERROR(" + Result.value() + ")";
     }
     return Result;
   }

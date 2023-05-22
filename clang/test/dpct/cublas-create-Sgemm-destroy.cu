@@ -25,7 +25,7 @@ int foo2(cudaDataType DT) {
   // CHECK: int status;
   // CHECK-NEXT: dpct::queue_ptr handle;
   // CHECK-NEXT: handle = &q_ct1;
-  // CHECK: status = DPCT_CHECK_ERROR(handle = &q_ct1);
+  // CHECK: status = CHECK_SYCL_ERROR(handle = &q_ct1);
   // CHECK-NEXT: if (status != 0) {
   cublasStatus_t status;
   cublasHandle_t handle;
@@ -65,9 +65,9 @@ int foo2(cudaDataType DT) {
   // CHECK: dpct::queue_ptr stream1;
   // CHECK-NEXT: stream1 = dev_ct1.create_queue();
   // CHECK-NEXT: handle = stream1;
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(handle = stream1);
+  // CHECK-NEXT: status = CHECK_SYCL_ERROR(handle = stream1);
   // CHECK-NEXT: stream1 = handle;
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(stream1 = handle);
+  // CHECK-NEXT: status = CHECK_SYCL_ERROR(stream1 = handle);
   cudaStream_t stream1;
   cudaStreamCreate(&stream1);
   cublasSetStream(handle, stream1);
@@ -85,7 +85,7 @@ int foo2(cudaDataType DT) {
   int trans0 = 0;
   int trans1 = 1;
   int trans2 = 2;
-  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N));
+  // CHECK: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N));
   // CHECK: oneapi::mkl::blas::column_major::gemm(*handle, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, trans1==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans1, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
   status = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
   cublasSgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
@@ -94,7 +94,7 @@ int foo2(cudaDataType DT) {
   double *d_C_D = 0;
   double alpha_D = 1.0;
   double beta_D = 0.0;
-  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, alpha_D, d_A_D_buf_ct{{[0-9]+}}, N, d_B_D_buf_ct{{[0-9]+}}, N, beta_D, d_C_D_buf_ct{{[0-9]+}}, N));
+  // CHECK: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, alpha_D, d_A_D_buf_ct{{[0-9]+}}, N, d_B_D_buf_ct{{[0-9]+}}, N, beta_D, d_C_D_buf_ct{{[0-9]+}}, N));
   // CHECK: oneapi::mkl::blas::column_major::gemm(*handle, trans2==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans2, oneapi::mkl::transpose::conjtrans, N, N, N, alpha_D, d_A_D_buf_ct{{[0-9]+}}, N, d_B_D_buf_ct{{[0-9]+}}, N, beta_D, d_C_D_buf_ct{{[0-9]+}}, N);
   status = cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_D, d_A_D, N, d_B_D, N, &beta_D, d_C_D, N);
   cublasDgemm(handle, (cublasOperation_t)trans2, (cublasOperation_t)2, N, N, N, &alpha_D, d_A_D, N, d_B_D, N, &beta_D, d_C_D, N);
@@ -104,14 +104,14 @@ int foo2(cudaDataType DT) {
   __half *d_C_H = 0;
   __half alpha_H;
   __half beta_H;
-  // CHECK: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}}, N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N));
+  // CHECK: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}}, N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N));
   // CHECK: oneapi::mkl::blas::column_major::gemm(*handle, trans2==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans2, oneapi::mkl::transpose::conjtrans, N, N, N, alpha_H, d_A_H_buf_ct{{[0-9]+}}, N, d_B_H_buf_ct{{[0-9]+}}, N, beta_H, d_C_H_buf_ct{{[0-9]+}}, N);
   status = cublasHgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);
   cublasHgemm(handle, (cublasOperation_t)trans2, (cublasOperation_t)2, N, N, N, &alpha_H, d_A_H, N, d_B_H, N, &beta_H, d_C_H, N);
 
   void *alpha, *beta, *A, *B, *C;
 
-  // CHECK: status = DPCT_CHECK_ERROR(dpct::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, alpha, A, dpct::library_data_t::real_half, N, B, dpct::library_data_t::real_half, N, beta, C, dpct::library_data_t::real_half, N, dpct::library_data_t::real_half));
+  // CHECK: status = CHECK_SYCL_ERROR(dpct::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, alpha, A, dpct::library_data_t::real_half, N, B, dpct::library_data_t::real_half, N, beta, C, dpct::library_data_t::real_half, N, dpct::library_data_t::real_half));
   // CHECK-NEXT: dpct::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, alpha, A, dpct::library_data_t::real_half, N, B, dpct::library_data_t::real_half, N, beta, C, dpct::library_data_t::real_half, N, dpct::library_data_t::real_float);
   // CHECK-NEXT: dpct::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, alpha, A, dpct::library_data_t::real_half, N, B, dpct::library_data_t::real_half, N, beta, C, dpct::library_data_t::real_float, N, dpct::library_data_t::real_float);
   // CHECK-NEXT: dpct::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, alpha, A, dpct::library_data_t::real_float, N, B, dpct::library_data_t::real_float, N, beta, C, dpct::library_data_t::real_float, N, dpct::library_data_t::real_float);
@@ -166,7 +166,7 @@ int foo2(cudaDataType DT) {
   // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
   // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::trans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N));
+  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::trans, oneapi::mkl::transpose::trans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N));
   // CHECK-NEXT: }
   // CHECK-NEXT: beta_S = beta_S + 1;
   // CHECK-NEXT: }
@@ -198,7 +198,7 @@ int foo2(cudaDataType DT) {
   // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
   // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-  // CHECK-NEXT: foo(bar(DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N))));
+  // CHECK-NEXT: foo(bar(CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N))));
   foo(bar(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)));
 
 #define dA(i, j) *(d_A_S + (i) + (j) * N)
@@ -211,7 +211,7 @@ int foo2(cudaDataType DT) {
   cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, &dA(10, 20), N, d_B_S, N, &beta_S, d_C_S, N);
 #undef dA(i, j)
 
-  // CHECK: status = DPCT_CHECK_ERROR(handle = nullptr);
+  // CHECK: status = CHECK_SYCL_ERROR(handle = nullptr);
   // CHECK-NEXT: handle = nullptr;
   // CHECK-NEXT: return 0;
   status = cublasDestroy(handle);
@@ -221,7 +221,7 @@ int foo2(cudaDataType DT) {
 
 void foo3(cublasHandle_t handle) {
   int ver;
-  // CHECK: int err = DPCT_CHECK_ERROR(dpct::mkl_get_version(dpct::version_field::major, &ver));
+  // CHECK: int err = CHECK_SYCL_ERROR(dpct::mkl_get_version(dpct::version_field::major, &ver));
   int err = cublasGetVersion(handle, &ver);
 }
 

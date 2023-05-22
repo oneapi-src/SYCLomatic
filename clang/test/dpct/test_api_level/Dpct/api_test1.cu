@@ -8,7 +8,7 @@
 // TEST_FEATURE: Dpct_non_local_include_dependency
 // TEST_FEATURE: Dpct_dpct_align_and_inline
 // TEST_FEATURE: Dpct_dpct_noinline
-// TEST_FEATURE: Dpct_dpct_check_error
+// TEST_FEATURE: Dpct_check_sycl_error
 
 class __align__(8) T1 {
     unsigned int l, a;

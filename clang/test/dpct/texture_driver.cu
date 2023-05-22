@@ -64,27 +64,27 @@ int main() {
   {
     int errorCode;
 
-    // CHECK: errorCode = DPCT_CHECK_ERROR(a42 = new dpct::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1));
+    // CHECK: errorCode = CHECK_SYCL_ERROR(a42 = new dpct::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1));
     errorCode = cuArrayCreate(&a42, &float4Desc);
-    // CHECK: errorCode = DPCT_CHECK_ERROR(delete a42);
+    // CHECK: errorCode = CHECK_SYCL_ERROR(delete a42);
     errorCode = cuArrayDestroy(a42);
 
 
-    // CHECK: cudaCheck(DPCT_CHECK_ERROR(a42 = new dpct::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1)));
+    // CHECK: cudaCheck(CHECK_SYCL_ERROR(a42 = new dpct::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1)));
     cudaCheck(cuArrayCreate(&a42, &float4Desc));
-    // CHECK: cudaCheck(DPCT_CHECK_ERROR(delete a42));
+    // CHECK: cudaCheck(CHECK_SYCL_ERROR(delete a42));
     cudaCheck(cuArrayDestroy(a42));
 
 
-    // CHECK: func(DPCT_CHECK_ERROR(a42 = new dpct::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1)));
+    // CHECK: func(CHECK_SYCL_ERROR(a42 = new dpct::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1)));
     func(cuArrayCreate(&a42, &float4Desc));
-    // CHECK: func(DPCT_CHECK_ERROR(delete a42));
+    // CHECK: func(CHECK_SYCL_ERROR(delete a42));
     func(cuArrayDestroy(a42));
 
 
-    // CHECK: funcT(DPCT_CHECK_ERROR(a42 = new dpct::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1)));
+    // CHECK: funcT(CHECK_SYCL_ERROR(a42 = new dpct::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1)));
     funcT(cuArrayCreate(&a42, &float4Desc));
-    // CHECK: funcT(DPCT_CHECK_ERROR(delete a42));
+    // CHECK: funcT(CHECK_SYCL_ERROR(delete a42));
     funcT(cuArrayDestroy(a42));
   }
 }
@@ -135,10 +135,10 @@ void test_texref() {
 
   // CHECK: tex->set_channel_type(format);
   // CHECK-NEXT: tex->set_channel_num(4);
-  // CHECK-NEXT: err_code = DPCT_CHECK_ERROR(tex->set_channel_type(sycl::image_channel_type::fp32), tex->set_channel_num(chn_num));
-  // CHECK-NEXT: cudaCheck(DPCT_CHECK_ERROR(tex->set_channel_type(format), tex->set_channel_num(4)));
-  // CHECK-NEXT: func(DPCT_CHECK_ERROR(tex->set_channel_type(format), tex->set_channel_num(4)));
-  // CHECK-NEXT: funcT(DPCT_CHECK_ERROR(tex->set_channel_type(format), tex->set_channel_num(4)));
+  // CHECK-NEXT: err_code = CHECK_SYCL_ERROR(tex->set_channel_type(sycl::image_channel_type::fp32), tex->set_channel_num(chn_num));
+  // CHECK-NEXT: cudaCheck(CHECK_SYCL_ERROR(tex->set_channel_type(format), tex->set_channel_num(4)));
+  // CHECK-NEXT: func(CHECK_SYCL_ERROR(tex->set_channel_type(format), tex->set_channel_num(4)));
+  // CHECK-NEXT: funcT(CHECK_SYCL_ERROR(tex->set_channel_type(format), tex->set_channel_num(4)));
   cuTexRefSetFormat(tex, format, 4);
   err_code = cuTexRefSetFormat(tex, CU_AD_FORMAT_FLOAT, chn_num);
   cudaCheck(cuTexRefSetFormat(tex, format, 4));
@@ -152,10 +152,10 @@ void test_texref() {
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1074:{{[0-9]+}}: The SYCL Image class does not support some of the flags used in the original code. Unsupported flags were ignored. Data read from SYCL Image could not be normalized as specified in the original code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: err_code = DPCT_CHECK_ERROR(tex->set(sycl::coordinate_normalization_mode::normalized));
-  // CHECK-NEXT: cudaCheck(DPCT_CHECK_ERROR(tex->set(sycl::coordinate_normalization_mode::normalized)));
-  // CHECK-NEXT: func(DPCT_CHECK_ERROR(tex->set(sycl::coordinate_normalization_mode::normalized)));
-  // CHECK-NEXT: funcT(DPCT_CHECK_ERROR(tex->set(sycl::coordinate_normalization_mode::unnormalized)));
+  // CHECK-NEXT: err_code = CHECK_SYCL_ERROR(tex->set(sycl::coordinate_normalization_mode::normalized));
+  // CHECK-NEXT: cudaCheck(CHECK_SYCL_ERROR(tex->set(sycl::coordinate_normalization_mode::normalized)));
+  // CHECK-NEXT: func(CHECK_SYCL_ERROR(tex->set(sycl::coordinate_normalization_mode::normalized)));
+  // CHECK-NEXT: funcT(CHECK_SYCL_ERROR(tex->set(sycl::coordinate_normalization_mode::unnormalized)));
   cuTexRefSetFlags(tex, flags);
   err_code = cuTexRefSetFlags(tex, CU_TRSF_NORMALIZED_COORDINATES);
   cudaCheck(cuTexRefSetFlags(tex,  CU_TRSF_NORMALIZED_COORDINATES | CU_TRSF_READ_AS_INTEGER));
@@ -166,10 +166,10 @@ void test_texref() {
   cuTexRefGetFlags(&uflag, tex);
 
   // CHECK: tex->set(addr_mode);
-  // CHECK-NEXT: err_code = DPCT_CHECK_ERROR(tex->set(sycl::addressing_mode::clamp_to_edge));
-  // CHECK-NEXT: cudaCheck(DPCT_CHECK_ERROR(tex->set(addr_mode)));
-  // CHECK-NEXT: func(DPCT_CHECK_ERROR(tex->set(addr_mode)));
-  // CHECK-NEXT: funcT(DPCT_CHECK_ERROR(tex->set(addr_mode)));
+  // CHECK-NEXT: err_code = CHECK_SYCL_ERROR(tex->set(sycl::addressing_mode::clamp_to_edge));
+  // CHECK-NEXT: cudaCheck(CHECK_SYCL_ERROR(tex->set(addr_mode)));
+  // CHECK-NEXT: func(CHECK_SYCL_ERROR(tex->set(addr_mode)));
+  // CHECK-NEXT: funcT(CHECK_SYCL_ERROR(tex->set(addr_mode)));
   cuTexRefSetAddressMode(tex, 0, addr_mode);
   err_code = cuTexRefSetAddressMode(tex, 1, CU_TR_ADDRESS_MODE_CLAMP);
   cudaCheck(cuTexRefSetAddressMode(tex, 2, addr_mode));
@@ -180,10 +180,10 @@ void test_texref() {
   cuTexRefGetAddressMode(&addr_mode, tex, 0);
 
   // CHECK: tex->set(filter_mode);
-  // CHECK-NEXT: err_code = DPCT_CHECK_ERROR(tex->set(sycl::filtering_mode::linear));
-  // CHECK-NEXT: cudaCheck(DPCT_CHECK_ERROR(tex->set(filter_mode)));
-  // CHECK-NEXT: func(DPCT_CHECK_ERROR(tex->set(filter_mode)));
-  // CHECK-NEXT: funcT(DPCT_CHECK_ERROR(tex->set(filter_mode)));
+  // CHECK-NEXT: err_code = CHECK_SYCL_ERROR(tex->set(sycl::filtering_mode::linear));
+  // CHECK-NEXT: cudaCheck(CHECK_SYCL_ERROR(tex->set(filter_mode)));
+  // CHECK-NEXT: func(CHECK_SYCL_ERROR(tex->set(filter_mode)));
+  // CHECK-NEXT: funcT(CHECK_SYCL_ERROR(tex->set(filter_mode)));
   cuTexRefSetFilterMode(tex, filter_mode);
   err_code = cuTexRefSetFilterMode(tex, CU_TR_FILTER_MODE_LINEAR);
   cudaCheck(cuTexRefSetFilterMode(tex, filter_mode));
@@ -194,10 +194,10 @@ void test_texref() {
   cuTexRefGetFilterMode(&filter_mode, tex);
 
   // CHECK: tex->attach(dpct::image_data(arr));
-  // CHECK-NEXT: err_code = DPCT_CHECK_ERROR(tex->attach(dpct::image_data(arr)));
-  // CHECK-NEXT: cudaCheck(DPCT_CHECK_ERROR(tex->attach(dpct::image_data(arr))));
-  // CHECK-NEXT: func(DPCT_CHECK_ERROR(tex->attach(dpct::image_data(arr))));
-  // CHECK-NEXT: funcT(DPCT_CHECK_ERROR(tex->attach(dpct::image_data(arr))));
+  // CHECK-NEXT: err_code = CHECK_SYCL_ERROR(tex->attach(dpct::image_data(arr)));
+  // CHECK-NEXT: cudaCheck(CHECK_SYCL_ERROR(tex->attach(dpct::image_data(arr))));
+  // CHECK-NEXT: func(CHECK_SYCL_ERROR(tex->attach(dpct::image_data(arr))));
+  // CHECK-NEXT: funcT(CHECK_SYCL_ERROR(tex->attach(dpct::image_data(arr))));
   cuTexRefSetArray(tex, arr, CU_TRSA_OVERRIDE_FORMAT);
   err_code = cuTexRefSetArray(tex, arr, 0x01);
   cudaCheck(cuTexRefSetArray(tex, arr, CU_TRSA_OVERRIDE_FORMAT));

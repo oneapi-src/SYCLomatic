@@ -863,8 +863,8 @@ public:
         "function call async_rnn_backward");
 
     if (DataFuncInfo.isAssigned) {
-      DataRepl << "DPCT_CHECK_ERROR(";
-      requestFeature(HelperFeatureEnum::Dpct_dpct_check_error, DataFuncInfo.FilePath);
+      DataRepl << "CHECK_SYCL_ERROR(";
+      requestFeature(HelperFeatureEnum::Dpct_check_sycl_error, DataFuncInfo.FilePath);
     }
     DataRepl << DataFuncInfo.FuncArgs[0] << ".async_rnn_backward("
              << DataFuncInfo.FuncArgs[1];

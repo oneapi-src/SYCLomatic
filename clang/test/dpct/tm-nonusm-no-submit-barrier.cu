@@ -196,7 +196,7 @@ void foo_test_3() {
   cudaStream_t stream[NSTREAM];
 
   for (int i = 0; i < NSTREAM; ++i) {
-    // CHECK:    CHECK(DPCT_CHECK_ERROR(stream[i] = dev_ct1.create_queue()));
+    // CHECK:    CHECK(CHECK_SYCL_ERROR(stream[i] = dev_ct1.create_queue()));
     CHECK(cudaStreamCreate(&stream[i]));
   }
 
@@ -211,7 +211,7 @@ void foo_test_3() {
                           cudaMemcpyHostToDevice, stream[i]));
     sumArrays<<<grid, block, 0, stream[i]>>>(&d_A[ioffset], &d_B[ioffset],
                                              &d_C[ioffset], iElem);
-    //CHECK: CHECK(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(&gpuRef[ioffset], &d_C[ioffset], iBytes,
+    //CHECK: CHECK(CHECK_SYCL_ERROR(dpct::async_dpct_memcpy(&gpuRef[ioffset], &d_C[ioffset], iBytes,
     //CHECK-NEXT:    dpct::device_to_host, *(stream[i]))));
     CHECK(cudaMemcpyAsync(&gpuRef[ioffset], &d_C[ioffset], iBytes,
                           cudaMemcpyDeviceToHost, stream[i]));
@@ -238,7 +238,7 @@ void foo_usm() {
   cudaEvent_t start, stop;
   SAFE_CALL(cudaEventRecord(start, 0));
 
-  // CHECK:  SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(gpu_t, host_t, n * sizeof(int), dpct::host_to_device, *s1)));
+  // CHECK:  SAFE_CALL(CHECK_SYCL_ERROR(dpct::async_dpct_memcpy(gpu_t, host_t, n * sizeof(int), dpct::host_to_device, *s1)));
   SAFE_CALL(cudaMemcpyAsync(gpu_t, host_t, n * sizeof(int), cudaMemcpyHostToDevice, s1));
 
   // CHECK:  s1->wait();
@@ -446,8 +446,8 @@ int foo_test_4()
 // CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> start_ct1;
 // CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> stop_ct1;
 
-// CHECK:    CHECK(DPCT_CHECK_ERROR(start = new sycl::event()));
-// CHECK:    CHECK(DPCT_CHECK_ERROR(stop = new sycl::event()));
+// CHECK:    CHECK(CHECK_SYCL_ERROR(start = new sycl::event()));
+// CHECK:    CHECK(CHECK_SYCL_ERROR(stop = new sycl::event()));
     cudaEvent_t start, stop;
     CHECK(cudaEventCreate(&start));
     CHECK(cudaEventCreate(&stop));

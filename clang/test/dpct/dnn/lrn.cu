@@ -127,7 +127,7 @@ void test1() {
     // CHECK: /*
     // CHECK: DPCT1097:{{[0-9]+}}: The function "async_lrn_backward" may require the workspace used to save intermediate results from function "async_lrn_forward". By default, a workspace from engine_ext is selected according to the source data pointer, but this may be incorrect and cause a workspace data race. You may need to rewrite this code.
     // CHECK: */
-    // CHECK: auto s = DPCT_CHECK_ERROR(handle.async_lrn_backward(desc, alpha, outTensor, out, diffoutTensor, diffout, dataTensor, data, beta, diffdataTensor, diffdata));
+    // CHECK: auto s = CHECK_SYCL_ERROR(handle.async_lrn_backward(desc, alpha, outTensor, out, diffoutTensor, diffout, dataTensor, data, beta, diffdataTensor, diffdata));
     cudnnLRNDescriptor_t desc;
     cudnnCreateLRNDescriptor(&desc);
     cudnnSetLRNDescriptor(desc, local_size, lrn_alpha, lrn_beta, lrn_k);

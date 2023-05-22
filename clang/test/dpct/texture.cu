@@ -224,58 +224,58 @@ int main() {
   {
     cudaChannelFormatDesc desc42;
     int errorCode;
-    // CHECK: errorCode = DPCT_CHECK_ERROR(tex42.attach(a42, desc42));
+    // CHECK: errorCode = CHECK_SYCL_ERROR(tex42.attach(a42, desc42));
     errorCode = cudaBindTextureToArray(tex42, a42, desc42);
-    // CHECK: cudaCheck(DPCT_CHECK_ERROR(tex42.attach(a42, desc42)));
+    // CHECK: cudaCheck(CHECK_SYCL_ERROR(tex42.attach(a42, desc42)));
     cudaCheck(cudaBindTextureToArray(tex42, a42, desc42));
-    // CHECK: func(DPCT_CHECK_ERROR(tex42.attach(a42, desc42)));
+    // CHECK: func(CHECK_SYCL_ERROR(tex42.attach(a42, desc42)));
     func(cudaBindTextureToArray(tex42, a42, desc42));
-    // CHECK: funcT(DPCT_CHECK_ERROR(tex42.attach(a42, desc42)));
+    // CHECK: funcT(CHECK_SYCL_ERROR(tex42.attach(a42, desc42)));
     funcT(cudaBindTextureToArray(tex42, a42, desc42));
 
-    // CHECK: errorCode = DPCT_CHECK_ERROR(tex21.attach(d_data21, 32 * sizeof(sycl::uint2)));
+    // CHECK: errorCode = CHECK_SYCL_ERROR(tex21.attach(d_data21, 32 * sizeof(sycl::uint2)));
     errorCode = cudaBindTexture(0, tex21, d_data21, 32 * sizeof(uint2));
-    // CHECK: cudaCheck(DPCT_CHECK_ERROR(tex21.attach(d_data21, 32 * sizeof(sycl::uint2))));
+    // CHECK: cudaCheck(CHECK_SYCL_ERROR(tex21.attach(d_data21, 32 * sizeof(sycl::uint2))));
     cudaCheck(cudaBindTexture(0, tex21, d_data21, 32 * sizeof(uint2)));
-    // CHECK: func(DPCT_CHECK_ERROR(tex21.attach(d_data21, 32 * sizeof(sycl::uint2))));
+    // CHECK: func(CHECK_SYCL_ERROR(tex21.attach(d_data21, 32 * sizeof(sycl::uint2))));
     func(cudaBindTexture(0, tex21, d_data21, 32 * sizeof(uint2)));
-    // CHECK: funcT(DPCT_CHECK_ERROR(tex21.attach(d_data21, 32 * sizeof(sycl::uint2))));
+    // CHECK: funcT(CHECK_SYCL_ERROR(tex21.attach(d_data21, 32 * sizeof(sycl::uint2))));
     funcT(cudaBindTexture(0, tex21, d_data21, 32 * sizeof(uint2)));
 
-    // CHECK: errorCode = DPCT_CHECK_ERROR(tex42.detach());
+    // CHECK: errorCode = CHECK_SYCL_ERROR(tex42.detach());
     errorCode = cudaUnbindTexture(tex42);
-    // CHECK: cudaCheck(DPCT_CHECK_ERROR(tex42.detach()));
+    // CHECK: cudaCheck(CHECK_SYCL_ERROR(tex42.detach()));
     cudaCheck(cudaUnbindTexture(tex42));
-    // CHECK: func(DPCT_CHECK_ERROR(tex42.detach()));
+    // CHECK: func(CHECK_SYCL_ERROR(tex42.detach()));
     func(cudaUnbindTexture(tex42));
-    // CHECK: funcT(DPCT_CHECK_ERROR(tex42.detach()));
+    // CHECK: funcT(CHECK_SYCL_ERROR(tex42.detach()));
     funcT(cudaUnbindTexture(tex42));
 
-    // CHECK: errorCode = DPCT_CHECK_ERROR(tex42.detach());
+    // CHECK: errorCode = CHECK_SYCL_ERROR(tex42.detach());
     errorCode = cudaUnbindTexture(&tex42);
-    // CHECK: cudaCheck(DPCT_CHECK_ERROR(tex42.detach()));
+    // CHECK: cudaCheck(CHECK_SYCL_ERROR(tex42.detach()));
     cudaCheck(cudaUnbindTexture(&tex42));
-    // CHECK: func(DPCT_CHECK_ERROR(tex42.detach()));
+    // CHECK: func(CHECK_SYCL_ERROR(tex42.detach()));
     func(cudaUnbindTexture(&tex42));
-    // CHECK: funcT(DPCT_CHECK_ERROR(tex42.detach()));
+    // CHECK: funcT(CHECK_SYCL_ERROR(tex42.detach()));
     funcT(cudaUnbindTexture(&tex42));
 
-    // CHECK: errorCode = DPCT_CHECK_ERROR(delete a42);
+    // CHECK: errorCode = CHECK_SYCL_ERROR(delete a42);
     errorCode = cudaFreeArray(a42);
-    // CHECK: cudaCheck(DPCT_CHECK_ERROR(delete a42));
+    // CHECK: cudaCheck(CHECK_SYCL_ERROR(delete a42));
     cudaCheck(cudaFreeArray(a42));
-    // CHECK: func(DPCT_CHECK_ERROR(delete a42));
+    // CHECK: func(CHECK_SYCL_ERROR(delete a42));
     func(cudaFreeArray(a42));
-    // CHECK: funcT(DPCT_CHECK_ERROR(delete a42));
+    // CHECK: funcT(CHECK_SYCL_ERROR(delete a42));
     funcT(cudaFreeArray(a42));
 
-    // CHECK: errorCode = DPCT_CHECK_ERROR(a42 = new dpct::image_matrix(desc42, sycl::range<2>(32, 32)));
+    // CHECK: errorCode = CHECK_SYCL_ERROR(a42 = new dpct::image_matrix(desc42, sycl::range<2>(32, 32)));
     errorCode = cudaMallocArray(&a42, &desc42, 32, 32);
-    // CHECK: cudaCheck(DPCT_CHECK_ERROR(a42 = new dpct::image_matrix(desc42, sycl::range<2>(32, 32))));
+    // CHECK: cudaCheck(CHECK_SYCL_ERROR(a42 = new dpct::image_matrix(desc42, sycl::range<2>(32, 32))));
     cudaCheck(cudaMallocArray(&a42, &desc42, 32, 32));
-    // CHECK: func(DPCT_CHECK_ERROR(a42 = new dpct::image_matrix(desc42, sycl::range<2>(32, 32))));
+    // CHECK: func(CHECK_SYCL_ERROR(a42 = new dpct::image_matrix(desc42, sycl::range<2>(32, 32))));
     func(cudaMallocArray(&a42, &desc42, 32, 32));
-    // CHECK: funcT(DPCT_CHECK_ERROR(a42 = new dpct::image_matrix(desc42, sycl::range<2>(32, 32))));
+    // CHECK: funcT(CHECK_SYCL_ERROR(a42 = new dpct::image_matrix(desc42, sycl::range<2>(32, 32))));
     funcT(cudaMallocArray(&a42, &desc42, 32, 32));
   }
 }

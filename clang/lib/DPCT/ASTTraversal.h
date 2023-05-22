@@ -343,9 +343,9 @@ protected:
                           std::move(Strings.SuffixInsertStr), true);
       }
       if (Flags.IsAssigned) {
-        insertAroundRange(Locations.FuncNameBegin, Locations.FuncCallEnd, "DPCT_CHECK_ERROR(",
+        insertAroundRange(Locations.FuncNameBegin, Locations.FuncCallEnd, "CHECK_SYCL_ERROR(",
                           ")");
-        requestFeature(HelperFeatureEnum::Dpct_dpct_check_error, Locations.PrefixInsertLoc);
+        requestFeature(HelperFeatureEnum::Dpct_check_sycl_error, Locations.PrefixInsertLoc);
       }
 
       emplaceTransformation(new ReplaceStmt(CE, true, Strings.Repl));
@@ -1104,8 +1104,8 @@ public:
       emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
                                             std::move(CallExprReplStr)));
       if (IsAssigned) {
-        insertAroundRange(FuncNameBegin, FuncCallEnd, "DPCT_CHECK_ERROR(", ")");
-        requestFeature(HelperFeatureEnum::Dpct_dpct_check_error, FuncNameBegin);
+        insertAroundRange(FuncNameBegin, FuncCallEnd, "CHECK_SYCL_ERROR(", ")");
+        requestFeature(HelperFeatureEnum::Dpct_check_sycl_error, FuncNameBegin);
       }
     }
   }

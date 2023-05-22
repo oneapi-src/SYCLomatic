@@ -1047,7 +1047,7 @@ void foo() {
   cufftGetProperty(PATCH_LEVEL, &prop3);
 
   int ver;
-  // CHECK: int err = DPCT_CHECK_ERROR(dpct::mkl_get_version(dpct::version_field::major, &ver));
+  // CHECK: int err = CHECK_SYCL_ERROR(dpct::mkl_get_version(dpct::version_field::major, &ver));
   int err = cufftGetVersion(&ver);
 }
 

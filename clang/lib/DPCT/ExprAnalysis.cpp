@@ -1318,7 +1318,7 @@ void ManagedPointerAnalysis::RecursiveAnalyze() {
 void ManagedPointerAnalysis::buildCallExprRepl() {
   std::ostringstream OS;
   if (Assigned)
-    OS << "DPCT_CHECK_ERROR(";
+    OS << "CHECK_SYCL_ERROR(";
   auto E = FirstArg;
   bool NeedParen = false;
   if (NeedDerefOp) {
@@ -1362,7 +1362,7 @@ void ManagedPointerAnalysis::buildCallExprRepl() {
   if (Assigned) {
     OS << ")";
     auto LocInfo = DpctGlobalInfo::getLocInfo(Call);
-    requestFeature(HelperFeatureEnum::Dpct_dpct_check_error, Call);
+    requestFeature(HelperFeatureEnum::Dpct_check_sycl_error, Call);
   }
   addReplacement(Call->getBeginLoc(), Call->getEndLoc(), OS.str());
 }
