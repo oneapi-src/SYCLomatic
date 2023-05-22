@@ -62,6 +62,7 @@ std::string VcxprojFilePath;
 
 static std::string FormatSearchPath = "";
 std::string getFormatSearchPath() { return FormatSearchPath; }
+void emitDefaultLanguageWarningIfNecessary(const std::string &FileName);
 #ifdef _WIN32
 static FunPtrParserType FPtrParser = nullptr;
 
@@ -293,6 +294,7 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
       } else if (SourcePaths.size() == 1 && BuildPath.getValue().empty()) {
         // need add -x cuda option for not using database
         IsCudaFile = true;
+        emitDefaultLanguageWarningIfNecessary(SourcePaths[0]);
         using namespace llvm::sys;
         SmallString<256> Name = StringRef(SourcePaths[0]);
         StringRef File, Path;
@@ -315,6 +317,9 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
         if (SourcePaths.size() >= 2 && BuildPath.getValue().empty()) {
           // need add -x cuda option for not using database
           IsCudaFile = true;
+          for (const auto &SourcePath : SourcePaths) {
+            emitDefaultLanguageWarningIfNecessary(SourcePath);
+          }
         }
         if (!hasHelpOption(OriArgc, argv)) {
           std::string buf;
@@ -340,6 +345,7 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
       // Add the -x cuda for the case not in database.
       if (Compilations->getCompileCommands(Path).empty()) {
         IsCudaFile = true;
+        emitDefaultLanguageWarningIfNecessary(Path);
         break;
       }
     }

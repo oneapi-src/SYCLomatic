@@ -228,7 +228,16 @@ static int processFilesWithCrashGuard(ClangTool *Tool, llvm::StringRef File,
     return Ret;
   return ProcessingFilesCrash;
 }
-
+void emitDefaultLanguageWarningIfNecessary(const std::string &FileName) {
+  if (llvm::sys::path::extension(FileName) != ".cu" &&
+      llvm::sys::path::extension(FileName) != ".cuh") {
+    llvm::outs() << "Warning: " << FileName
+                 << " is treated as a CUDA file by "
+                    "default. Consider using -xc or -xc++ in option "
+                    "--extra-arg to treat it as a C file or C++ file."
+                 << "\n";
+  }
+}
 } // namespace tooling
 } // namespace 
 bool StopOnParseErrTooling=false;
@@ -859,6 +868,7 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
       if ((!CommandLine.empty() && CommandLine[0] == "CudaCompile") ||
           (!CommandLine.empty() && CommandLine[0] == "CustomBuild" &&
            llvm::sys::path::extension(File)==".cu")) {
+        emitDefaultLanguageWarningIfNecessary(CommandLine[0]);
         CudaArgsAdjuster = combineAdjusters(
             std::move(CudaArgsAdjuster),
             getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
@@ -869,6 +879,7 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
 #else
       if (!CommandLine.empty() && CommandLine[0].size() >= 4 &&
           CommandLine[0].substr(CommandLine[0].size() - 4) == "nvcc") {
+        emitDefaultLanguageWarningIfNecessary(CommandLine[0]);
         CudaArgsAdjuster = combineAdjusters(
             std::move(CudaArgsAdjuster),
             getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
