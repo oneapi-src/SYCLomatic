@@ -13,7 +13,7 @@
 #include "CallExprRewriter.h"
 #include "MemberExprRewriter.h"
 #include "TypeLocRewriters.h"
-#include "Checkpoint.h"
+#include "CrashRecovery.h"
 #include "Config.h"
 #include "CustomHelperFiles.h"
 #include "ExternalReplacement.h"
@@ -24,7 +24,6 @@
 #include "MisleadingBidirectional.h"
 #include "Rules.h"
 #include "SaveNewFiles.h"
-#include "SignalProcess.h"
 #include "Statics.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
@@ -188,12 +187,8 @@ std::unordered_map<std::string, bool> ChildOrSameCache;
 std::unordered_map<std::string, bool> ChildPathCache;
 std::unordered_map<std::string, llvm::SmallString<256>> RealPathCache;
 std::unordered_map<std::string, bool> IsDirectoryCache;
-int FatalErrorCnt = 0;
 extern bool StopOnParseErrTooling;
 extern std::string InRootTooling;
-JMP_BUF CPFileASTMaterEnter;
-JMP_BUF CPRepPostprocessEnter;
-JMP_BUF CPFormatCodeEnter;
 
 std::string getCudaInstallPath(int argc, const char **argv) {
   std::vector<const char *> Argv;
@@ -488,10 +483,13 @@ static void DumpOutputFile(void) {
   }
 }
 
-void PrintReportOnFault(std::string &FaultMsg) {
+void PrintReportOnFault(const std::string &FaultMsg) {
   PrintMsg(FaultMsg);
   saveApisReport();
   saveDiagsReport();
+
+  if (ReportFilePrefix == "stdcout")
+    return;
 
   std::string FileApis =
       OutRoot + "/" + ReportFilePrefix +
@@ -550,9 +548,7 @@ int runDPCT(int argc, const char **argv) {
     std::cout << CtHelpHint;
     return MigrationErrorShowHelp;
   }
-#if defined(__linux__) || defined(_WIN32)
-  InstallSignalHandle();
-#endif
+  clang::dpct::initCrashRecovery();
 
 #if defined(_WIN32)
   // To support wildcard "*" in source file name in windows.
