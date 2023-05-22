@@ -625,3 +625,21 @@ int main(void){
 
   return 0;
 }
+
+template <bool is_ture> void foo() {
+  cudaStream_t stream;
+  int index_count = 1;
+
+  // CHECK:  std::for_each(oneapi::dpl::execution::make_device_policy(*stream), oneapi::dpl::counting_iterator<size_t>(0), oneapi::dpl::counting_iterator<size_t>(index_count), [=] (size_t i) {
+  // CHECK-NEXT:      if /*constexpr*/ (is_true) {
+  // CHECK-NEXT:        i = 1;
+  // CHECK-NEXT:      }
+  // CHECK-NEXT:    });
+  thrust::for_each(
+      thrust::cuda::par.on(stream), thrust::counting_iterator<size_t>(0),
+      thrust::counting_iterator<size_t>(index_count), [=] __device__(size_t i) {
+        if /*constexpr*/ (is_true) {
+          i = 1;
+        }
+      });
+}
