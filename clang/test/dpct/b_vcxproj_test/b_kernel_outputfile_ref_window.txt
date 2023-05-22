@@ -1,4 +1,3 @@
 // CHECK:Parsing: {{(.+)}}.cu
 // CHECK:Analyzing: {{(.+)}}.cu
 // CHECK:Migrating: {{(.+)}}.cu
-// CHECK:Processing: {{(.+)}}.cu
