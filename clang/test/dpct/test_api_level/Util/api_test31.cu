@@ -13,7 +13,6 @@ namespace cg = cooperative_groups;
 
 __device__ void foo() {
 
-
   auto block = cg::this_thread_block();
   auto tile32 = cg::tiled_partition<32>(block);
   tile32.meta_group_rank();

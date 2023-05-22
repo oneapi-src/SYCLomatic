@@ -16,18 +16,11 @@ __device__ void foo() {
   // CHECK: auto block = item_ct1.get_group();
   auto block = cg::this_thread_block();
 
-  // thread_block_group is a template of two arguments,
-  // first argument is size, second is what type it was created from.
-  // the second argument has a default value of void, so
-  // the type of cg::tiled_partition<32>(block)
-  // is not cg::thread_block_tile<32>, it type is roughly like
-  // cg::thread_block_tile<32, decltype(block)>.
-  
   // CHECK: const auto catile32 = item_ct1.get_sub_group();
   const auto catile32 = cg::tiled_partition<32>(block);
-  // CHECK: auto atile32 = item_ct1.get_sub_group(); 
+  // CHECK: auto atile32 = item_ct1.get_sub_group();
   auto atile32 = cg::tiled_partition<32>(block);
-  // CHECK: const sycl::sub_group ctile32 = item_ct1.get_sub_group(); 
+  // CHECK: const sycl::sub_group ctile32 = item_ct1.get_sub_group();
   const cg::thread_block_tile<32> ctile32 = cg::tiled_partition<32>(block);
   // CHECK: sycl::sub_group tile32 = item_ct1.get_sub_group();
   cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(block);
@@ -43,11 +36,11 @@ __device__ void foo() {
 
   // X.meta_group_rank()
   // CHECK-COUNT-5: item_ct1.get_sub_group().get_group_linear_range();
- cg::tiled_partition<32>(block).meta_group_rank();
- catile32.meta_group_rank();
- atile32.meta_group_rank();
- ctile32.meta_group_rank();
- tile32.meta_group_rank();
+  cg::tiled_partition<32>(block).meta_group_rank();
+  catile32.meta_group_rank();
+  atile32.meta_group_rank();
+  ctile32.meta_group_rank();
+  tile32.meta_group_rank();
 
   // CHECK: dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16).get_group_linear_range();
   cg::tiled_partition<16>(block).meta_group_rank();

@@ -1706,18 +1706,16 @@ public:
   bool operator()(const CallExpr *C) { return Fir(C) && Sec(C); }
 };
 
-template <class F, class... Args>
-class CheckOr {
+template <class F, class... Args> class CheckOr {
   F Fir;
   CheckOr<Args...> Sec;
 
 public:
-  CheckOr(const F &Fir, const Args &... args) : Fir(Fir), Sec(args...) {}
+  CheckOr(const F &Fir, const Args &...args) : Fir(Fir), Sec(args...) {}
   bool operator()(const CallExpr *C) { return Fir(C) || Sec(C); }
 };
 
-template <class F>
-class CheckOr<F> {
+template <class F> class CheckOr<F> {
   F Fir;
 
 public:
@@ -1726,7 +1724,7 @@ public:
 };
 
 template <class F, class... Args>
-CheckOr<F, Args...> makeCheckOr(const F &Fir, const Args &... args) {
+CheckOr<F, Args...> makeCheckOr(const F &Fir, const Args &...args) {
   return CheckOr<F, Args...>(Fir, args...);
 }
 

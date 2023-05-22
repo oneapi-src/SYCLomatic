@@ -224,8 +224,6 @@ __device__ void foo() {
   // CHECK: dpct::shift_sub_group_right(item_ct1.get_sub_group(), 1, 0, 1);
   cg::tiled_partition<1>(block).shfl_up(1, 0);
 
-
-
   // X.shfl_xor()
   // CHECK-COUNT-5: sycl::permute_group_by_xor(item_ct1.get_sub_group(), 1, 0);
   cg::tiled_partition<32>(block).shfl_xor(1, 0);
