@@ -123,6 +123,7 @@ add_clang_library(DPCT
   CallExprRewriterComplex.cpp
   CallExprRewriterDriver.cpp
   CallExprRewriterMemory.cpp
+  CallExprRewriterMisc.cpp
   CallExprRewriterNccl.cpp
   CallExprRewriterStream.cpp
   CallExprRewriterTexture.cpp
@@ -161,7 +162,6 @@ add_clang_library(DPCT
   DNNAPIMigration.cpp
   NCCLAPIMigration.cpp
   TypeLocRewriters.cpp
-  QueryApiMapping.cpp
   AutoComplete.cpp
   LIBCUAPIMigration.cpp
   CUBAPIMigration.cpp
