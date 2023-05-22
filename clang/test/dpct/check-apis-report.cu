@@ -25,8 +25,8 @@
 // RUN: | FileCheck -check-prefix=NOMATCH-CHECK -allow-empty %s
 
 
-// FAKE-FILE-CHECK-NOT:Processing: {{(.+)/([^/]+)}}
-// FAKE-FILE-STDERR: Processing: {{(.+)/([^/]+)}}
+// FAKE-FILE-CHECK-NOT:Parsing: {{(.+)/([^/]+)}}
+// FAKE-FILE-STDERR: Parsing: {{(.+)/([^/]+)}}
 
 // RUN: dpct -output-verbosity=normal  -out-root %T/check-apis-report %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only  2>&1  \
 // RUN: | FileCheck -check-prefix=FAKE-FILE-CHECK -allow-empty %s
