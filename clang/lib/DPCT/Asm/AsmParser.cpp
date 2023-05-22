@@ -34,28 +34,28 @@ using namespace llvm;
 using namespace clang::dpct;
 
 // clang-format off
-asmprec::Level getBinOpPrec(asmtok::TokenKind Kind) {
+asm_precedence::Level getBinOpPrec(asmtok::TokenKind Kind) {
   switch (Kind) {
-  default:                           return asmprec::Unknown;
-  case asmtok::question:             return asmprec::Conditional;
-  case asmtok::pipepipe:             return asmprec::LogicalOr;
-  case asmtok::ampamp:               return asmprec::LogicalAnd;
-  case asmtok::pipe:                 return asmprec::InclusiveOr;
-  case asmtok::caret:                return asmprec::ExclusiveOr;
-  case asmtok::amp:                  return asmprec::And;
+  default:                           return asm_precedence::Unknown;
+  case asmtok::question:             return asm_precedence::Conditional;
+  case asmtok::pipepipe:             return asm_precedence::LogicalOr;
+  case asmtok::ampamp:               return asm_precedence::LogicalAnd;
+  case asmtok::pipe:                 return asm_precedence::InclusiveOr;
+  case asmtok::caret:                return asm_precedence::ExclusiveOr;
+  case asmtok::amp:                  return asm_precedence::And;
   case asmtok::exclaimequal:
-  case asmtok::equalequal:           return asmprec::Equality;
+  case asmtok::equalequal:           return asm_precedence::Equality;
   case asmtok::lessequal:
   case asmtok::less:
   case asmtok::greater:
-  case asmtok::greaterequal:         return asmprec::Relational;
+  case asmtok::greaterequal:         return asm_precedence::Relational;
   case asmtok::greatergreater:
-  case asmtok::lessless:             return asmprec::Shift;
+  case asmtok::lessless:             return asm_precedence::Shift;
   case asmtok::plus:
-  case asmtok::minus:                return asmprec::Additive;
+  case asmtok::minus:                return asm_precedence::Additive;
   case asmtok::percent:
   case asmtok::slash:
-  case asmtok::star:                 return asmprec::Multiplicative;
+  case asmtok::star:                 return asm_precedence::Multiplicative;
   }
 }
 // clang-format on
@@ -297,13 +297,13 @@ InlineAsmExprResult InlineAsmParser::ParseExpression() {
 
 InlineAsmExprResult InlineAsmParser::ParseAssignmentExpression() {
   InlineAsmExprResult LHS = ParseCastExpression();
-  return ParseRHSOfBinaryExpression(LHS, asmprec::Assignment);
+  return ParseRHSOfBinaryExpression(LHS, asm_precedence::Assignment);
 }
 
 InlineAsmExprResult
 InlineAsmParser::ParseRHSOfBinaryExpression(InlineAsmExprResult LHS,
-                                            asmprec::Level MinPrec) {
-  asmprec::Level NextTokPrec = getBinOpPrec(Tok.getKind());
+                                            asm_precedence::Level MinPrec) {
+  asm_precedence::Level NextTokPrec = getBinOpPrec(Tok.getKind());
   while (true) {
     if (NextTokPrec < MinPrec)
       return LHS;
@@ -314,7 +314,7 @@ InlineAsmParser::ParseRHSOfBinaryExpression(InlineAsmExprResult LHS,
     // Special case handling for the ternary operator.
     bool isCondOp = false;
     InlineAsmExprResult TernaryMiddle(true);
-    if (NextTokPrec == asmprec::Conditional) {
+    if (NextTokPrec == asm_precedence::Conditional) {
       isCondOp = true;
       if (Tok.isNot(asmtok::colon)) {
         TernaryMiddle = ParseExpression();
@@ -333,15 +333,15 @@ InlineAsmParser::ParseRHSOfBinaryExpression(InlineAsmExprResult LHS,
     if (RHS.isInvalid())
       return AsmExprError();
 
-    asmprec::Level ThisPrec = NextTokPrec;
+    asm_precedence::Level ThisPrec = NextTokPrec;
     NextTokPrec = getBinOpPrec(Tok.getKind());
 
     bool isRightAssoc =
-        ThisPrec == asmprec::Conditional || ThisPrec == asmprec::Assignment;
+        ThisPrec == asm_precedence::Conditional || ThisPrec == asm_precedence::Assignment;
 
     if (ThisPrec < NextTokPrec || (ThisPrec == NextTokPrec && isRightAssoc)) {
       RHS = ParseRHSOfBinaryExpression(
-          RHS, static_cast<asmprec::Level>(ThisPrec + !isRightAssoc));
+          RHS, static_cast<asm_precedence::Level>(ThisPrec + !isRightAssoc));
       if (RHS.isInvalid())
         return AsmExprError();
     }

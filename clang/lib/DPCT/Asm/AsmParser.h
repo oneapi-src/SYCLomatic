@@ -162,7 +162,7 @@ public:
   enum DeclClass {
     VariableDeclClass,
 
-    /// FIXME: Label declaration do now support now.
+    /// FIXME: Label declaration do not support now.
     LabelDeclClass,
   };
 
@@ -327,6 +327,9 @@ class InlineAsmInstruction : public InlineAsmStmt {
   SmallVector<InlineAsmIdentifierInfo *, 4> Attributes;
   InlineAsmExpr *OutputOperand;
   SmallVector<InlineAsmExpr *, 4> InputOperands;
+  
+  // Predicate output, e.g. given shfl.sync.up.b32  Ry|p, Rx, 0x1,  0x0, 0xffffffff;
+  // p is a predicate output.
   InlineAsmExpr *PredOutput = nullptr;
 
 public:
@@ -849,7 +852,11 @@ public:
     return InlineAsmOperands.size() - 1;
   }
 
-  /// Lookup predefined identifiers.
+  /// Lookup predefined identifiers. A predefined identifier must start with
+  /// '%', and the length must greater than 2. If the character after '%' are
+  /// all digits, e.g. '%1', then this identifier maybe a inline asm
+  /// placeholder, else the identifier maybe a device asm predefined identifier,
+  /// e.g. '%laneid'.
   InlineAsmIdentifierInfo *get(StringRef Name) override {
 
     // Predefined identifiers must start with '%', and the length must greater
@@ -876,6 +883,7 @@ public:
     return nullptr;
   }
 
+  /// Get the placeholder identifier, e.g. %1, %2, ..., etc.
   InlineAsmIdentifierInfo *get(unsigned Index) {
     if (Index >= InlineAsmOperands.size())
       return nullptr;
@@ -905,7 +913,8 @@ public:
   }
 };
 
-/// Introduces a new scope for parsing.
+/// Introduces a new scope for parsing when meet compound statement.
+/// e.g. { stmt stmt }
 class InlineAsmScope {
   using DeclSetTy = SmallPtrSet<InlineAsmVariableDecl *, 32>;
   InlineAsmParser &Parser;
@@ -962,7 +971,7 @@ inline InlineAsmTypeResult AsmTypeError() { return InlineAsmTypeResult(true); }
 inline InlineAsmDeclResult AsmDeclError() { return InlineAsmDeclResult(true); }
 
 // clang-format off
-namespace asmprec {
+namespace asm_precedence {
 
 /// These are precedences for the binary/ternary operators in the C99 grammar.
 /// These have been named to relate with the C99 grammar productions.  Low
@@ -984,8 +993,8 @@ enum Level {
 };
 
 /// Return the precedence of the specified binary operator token.
-asmprec::Level getBinOpPrec(asmtok::TokenKind Kind);
-} // namespace asmprec
+asm_precedence::Level getBinOpPrec(asmtok::TokenKind Kind);
+} // namespace asm_precedence
 // clang-format on
 
 /// Parser - This implements a parser for the device asm language.
@@ -1331,7 +1340,7 @@ public:
   /// Parse a binary expression that starts with \p LHS and has a
   /// precedence of at least \p MinPrec.
   InlineAsmExprResult ParseRHSOfBinaryExpression(InlineAsmExprResult LHS,
-                                                 asmprec::Level MinPrec);
+                                                 asm_precedence::Level MinPrec);
 
   /// Once the leading part of a postfix-expression is parsed, this
   /// method parses any suffixes that apply.

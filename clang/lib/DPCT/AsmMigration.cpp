@@ -41,8 +41,8 @@ using namespace clang::dpct;
 
 namespace {
 
+/// This is used to handle all the AST nodes (except specific instructions).
 class SYCLGenBase {
-  llvm::StringMap<std::string> NameAliasTable;
   llvm::raw_ostream *Stream;
   bool EmitNewLine = true;
   bool EmitSemi = true;
@@ -131,7 +131,7 @@ protected:
   bool emitCompoundStatement(const InlineAsmCompoundStmt *S);
   bool emitDeclarationStatement(const InlineAsmDeclStmt *S);
   bool emitInstruction(const InlineAsmInstruction *I);
-  bool emitGuardInstruction(const InlineAsmConditionalInstruction *I);
+  bool emitConditionalInstruction(const InlineAsmConditionalInstruction *I);
   bool emitUnaryOperator(const InlineAsmUnaryOperator *Op);
   bool emitBinaryOperator(const InlineAsmBinaryOperator *Op);
   bool emitConditionalOperator(const InlineAsmConditionalOperator *Op);
@@ -143,7 +143,7 @@ protected:
 
   // Instructions
 #define INSTRUCTION(X)                                                         \
-  virtual bool handle_##X(const InlineAsmInstruction *I) { return true; }
+  bool handle_##X(const InlineAsmInstruction *I) { return true; }
 #include "Asm/AsmTokenKinds.def"
 };
 
@@ -156,7 +156,7 @@ bool SYCLGenBase::emitStatement(const InlineAsmStmt *S) {
   case InlineAsmStmt::InstructionClass:
     return emitInstruction(dyn_cast<InlineAsmInstruction>(S));
   case InlineAsmStmt::ConditionalInstructionClass:
-    return emitGuardInstruction(dyn_cast<InlineAsmConditionalInstruction>(S));
+    return emitConditionalInstruction(dyn_cast<InlineAsmConditionalInstruction>(S));
   case InlineAsmStmt::UnaryOperatorClass:
     return emitUnaryOperator(dyn_cast<InlineAsmUnaryOperator>(S));
   case InlineAsmStmt::BinaryOperatorClass:
@@ -229,7 +229,7 @@ bool SYCLGenBase::emitInstruction(const InlineAsmInstruction *I) {
   return true;
 }
 
-bool SYCLGenBase::emitGuardInstruction(
+bool SYCLGenBase::emitConditionalInstruction(
     const InlineAsmConditionalInstruction *I) {
   OS() << "if (";
   if (I->hasNot())
@@ -437,6 +437,7 @@ bool SYCLGenBase::emitVariableDeclaration(const InlineAsmVariableDecl *D) {
   return false;
 }
 
+/// This used to handle the specific instruction.
 class SYCLGen : public SYCLGenBase {
 public:
   SYCLGen(llvm::raw_ostream &OS) : SYCLGenBase(OS) {}
@@ -444,7 +445,7 @@ public:
   bool handleStatement(const InlineAsmStmt *S) { return emitStatement(S); }
 
 protected:
-  bool handle_mov(const InlineAsmInstruction *I) override {
+  bool handle_mov(const InlineAsmInstruction *I) {
     if (I->getNumInputOperands() != 1)
       return true;
     if (emitStatement(I->getOutputOperand()))
@@ -456,7 +457,7 @@ protected:
     return false;
   }
 
-  bool handle_setp(const InlineAsmInstruction *I) override {
+  bool handle_setp(const InlineAsmInstruction *I) {
     if (I->getNumInputOperands() != 2 && I->getNumTypes() == 1)
       return true;
 
@@ -485,7 +486,7 @@ protected:
         if (T->isSignedInt() || T->isUnsignedInt() || T->isBitSize())
           Template = "{0} == {1}";
         else if (T->isFloating())
-          Template = "{0} == {1} && !sycl::isnan({0}) && !sycl::isnan({1})";
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && {0} == {1}";
         else
           return true;
         break;
@@ -493,7 +494,7 @@ protected:
         if (T->isSignedInt() || T->isUnsignedInt() || T->isBitSize())
           Template = "{0} != {1}";
         else if (T->isFloating())
-          Template = "{0} != {1} && !sycl::isnan({0}) && !sycl::isnan({1})";
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && {0} != {1}";
         else
           return true;
         break;
@@ -501,7 +502,7 @@ protected:
         if (T->isSignedInt())
           Template = "{0} < {1}";
         else if (T->isFloating())
-          Template = "{0} < {1} && !sycl::isnan({0}) && !sycl::isnan({1})";
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && {0} < {1}";
         else
           return true;
         break;
@@ -509,7 +510,7 @@ protected:
         if (T->isSignedInt())
           Template = "{0} <= {1}";
         else if (T->isFloating())
-          Template = "{0} <= {1} && !sycl::isnan({0}) && !sycl::isnan({1})";
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && {0} <= {1}";
         else
           return true;
         break;
@@ -517,7 +518,7 @@ protected:
         if (T->isSignedInt())
           Template = "{0} > {1}";
         else if (T->isFloating())
-          Template = "{0} > {1} && !sycl::isnan({0}) && !sycl::isnan({1})";
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && {0} > {1}";
         else
           return true;
         break;
@@ -525,7 +526,7 @@ protected:
         if (T->isSignedInt())
           Template = "{0} >= {1}";
         else if (T->isFloating())
-          Template = "{0} >= {1} && !sycl::isnan({0}) && !sycl::isnan({1})";
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && {0} >= {1}";
         else
           return true;
         break;
@@ -555,37 +556,37 @@ protected:
         break;
       case asmtok::kw_equ:
         if (T->isFloating())
-          Template = "{0} == {1} || sycl::isnan({0}) || sycl::isnan({1})";
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || {0} == {1}";
         else
           return true;
         break;
       case asmtok::kw_neu:
         if (T->isFloating())
-          Template = "{0} != {1} || sycl::isnan({0}) || sycl::isnan({1})";
+          Template = " sycl::isnan({0}) || sycl::isnan({1}) || {0} != {1}";
         else
           return true;
         break;
       case asmtok::kw_ltu:
         if (T->isFloating())
-          Template = "{0} < {1} || sycl::isnan({0}) || sycl::isnan({1})";
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || {0} < {1}";
         else
           return true;
         break;
       case asmtok::kw_leu:
         if (T->isFloating())
-          Template = "{0} <= {1} || sycl::isnan({0}) || sycl::isnan({1})";
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || {0} <= {1}";
         else
           return true;
         break;
       case asmtok::kw_gtu:
         if (T->isFloating())
-          Template = "{0} > {1} || sycl::isnan({0}) || sycl::isnan({1})";
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || {0} > {1}";
         else
           return true;
         break;
       case asmtok::kw_geu:
         if (T->isFloating())
-          Template = "{0} >= {1} || sycl::isnan({0}) || sycl::isnan({1})";
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || {0} >= {1}";
         else
           return true;
         break;
@@ -614,7 +615,7 @@ protected:
     return false;
   }
 
-  bool handle_lop3(const InlineAsmInstruction *I) override {
+  bool handle_lop3(const InlineAsmInstruction *I) {
     if (I->getNumInputOperands() != 4 || I->getNumTypes() != 1 ||
         !isa<InlineAsmBuiltinType>(I->getType(0)) ||
         dyn_cast<InlineAsmBuiltinType>(I->getType(0))->getKind() !=
