@@ -62,7 +62,9 @@ std::string VcxprojFilePath;
 
 static std::string FormatSearchPath = "";
 std::string getFormatSearchPath() { return FormatSearchPath; }
-void emitDefaultLanguageWarningIfNecessary(const std::string &FileName);
+extern bool SpecifyLanguageInOption;
+void emitDefaultLanguageWarningIfNecessary(const std::string &FileName,
+                                           bool SpecifyLanguageInOption);
 #ifdef _WIN32
 static FunPtrParserType FPtrParser = nullptr;
 
@@ -114,6 +116,7 @@ llvm::Error CommonOptionsParser::init(
 #ifdef SYCLomatic_CUSTOMIZATION
   bool IsCudaFile = false;
   int OriArgc = argc;
+  SpecifyLanguageInOption = false;
 #define DPCT_OPTIONS_IN_CLANG_TOOLING
 #define DPCT_OPT_TYPE(...) __VA_ARGS__
 #define DPCT_NON_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, ...)  \
@@ -179,6 +182,11 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
   DatabaseStatus ErrCode =
       CannotFindDatabase; // map to MigrationErrorCannotFindDatabase in DPCT
   IsPSpecified = BuildPath.getNumOccurrences();
+  for (auto &I : ArgsAfter) {
+    if (I.size() > 2 && I.substr(0, 2) == "-x") {
+      SpecifyLanguageInOption = true;
+    }
+  }
 #if _WIN32
   VcxprojFilePath = VcxprojFile;
   IsVcxprojfileSpecified = VcxprojFile.getNumOccurrences();
@@ -294,7 +302,8 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
       } else if (SourcePaths.size() == 1 && BuildPath.getValue().empty()) {
         // need add -x cuda option for not using database
         IsCudaFile = true;
-        emitDefaultLanguageWarningIfNecessary(SourcePaths[0]);
+        emitDefaultLanguageWarningIfNecessary(SourcePaths[0],
+                                              SpecifyLanguageInOption);
         using namespace llvm::sys;
         SmallString<256> Name = StringRef(SourcePaths[0]);
         StringRef File, Path;
@@ -318,7 +327,8 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
           // need add -x cuda option for not using database
           IsCudaFile = true;
           for (const auto &SourcePath : SourcePaths) {
-            emitDefaultLanguageWarningIfNecessary(SourcePath);
+            emitDefaultLanguageWarningIfNecessary(SourcePath,
+                                                  SpecifyLanguageInOption);
           }
         }
         if (!hasHelpOption(OriArgc, argv)) {
@@ -345,7 +355,7 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
       // Add the -x cuda for the case not in database.
       if (Compilations->getCompileCommands(Path).empty()) {
         IsCudaFile = true;
-        emitDefaultLanguageWarningIfNecessary(Path);
+        emitDefaultLanguageWarningIfNecessary(Path, SpecifyLanguageInOption);
         break;
       }
     }
