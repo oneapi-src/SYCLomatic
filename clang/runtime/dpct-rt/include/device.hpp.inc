@@ -1242,8 +1242,9 @@ public:
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   template <class DeviceSelector>
-  void select_device_with_selector(
-      const DeviceSelector &selector = sycl::gpu_selector_v) {
+  std::enable_if_t<
+      std::is_invokable_r_v<int, DeviceSelector, const sycl::device &>>
+  select_device(const DeviceSelector &selector = sycl::gpu_selector_v) {
     sycl::device selected_device = sycl::device(selector);
     unsigned int selected_device_id = get_device_id(selected_device);
     select_device(selected_device_id);
