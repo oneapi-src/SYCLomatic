@@ -1158,6 +1158,11 @@ template <typename T> struct syheev_scratchpad_size_impl {
   void operator()(sycl::queue &q, oneapi::mkl::compz jobz,
                   oneapi::mkl::uplo uplo, std::int64_t n, std::int64_t lda,
                   std::size_t &device_ws_size) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error(
+        "The oneAPI Math Kernel Library (oneMKL) Interfaces "
+        "Project does not support this API.");
+#else
     if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
       device_ws_size =
           oneapi::mkl::lapack::syev_scratchpad_size<T>(q, jobz, uplo, n, lda);
@@ -1165,6 +1170,7 @@ template <typename T> struct syheev_scratchpad_size_impl {
       device_ws_size =
           oneapi::mkl::lapack::heev_scratchpad_size<T>(q, jobz, uplo, n, lda);
     }
+#endif
   }
 };
 // DPCT_LABEL_END
@@ -1180,6 +1186,11 @@ template <typename T> struct syheev_impl {
                   oneapi::mkl::uplo uplo, std::int64_t n, void *a,
                   std::int64_t lda, void *w, void *device_ws,
                   std::size_t device_ws_size, int *info) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error(
+        "The oneAPI Math Kernel Library (oneMKL) Interfaces "
+        "Project does not support this API.");
+#else
     using value_t = typename value_type_trait<T>::value_type;
     auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
     auto device_ws_data =
@@ -1193,6 +1204,7 @@ template <typename T> struct syheev_impl {
                                 device_ws_data, device_ws_size);
     }
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+#endif
   }
 };
 // DPCT_LABEL_END
@@ -1250,8 +1262,14 @@ template <typename T> struct trtri_scratchpad_size_impl {
   void operator()(sycl::queue &q, oneapi::mkl::uplo uplo,
                   oneapi::mkl::diag diag, std::int64_t n, library_data_t a_type,
                   std::int64_t lda, std::size_t &device_ws_size) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error(
+        "The oneAPI Math Kernel Library (oneMKL) Interfaces "
+        "Project does not support this API.");
+#else
     device_ws_size =
         oneapi::mkl::lapack::trtri_scratchpad_size<T>(q, uplo, diag, n, lda);
+#endif
   }
 };
 // DPCT_LABEL_END
@@ -1267,12 +1285,18 @@ template <typename T> struct trtri_impl {
                   oneapi::mkl::diag diag, std::int64_t n, library_data_t a_type,
                   void *a, std::int64_t lda, void *device_ws,
                   std::size_t device_ws_size, int *info) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error(
+        "The oneAPI Math Kernel Library (oneMKL) Interfaces "
+        "Project does not support this API.");
+#else
     auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
     auto device_ws_data =
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     oneapi::mkl::lapack::trtri(q, uplo, diag, n, a_data, lda, device_ws_data,
                                device_ws_size);
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+#endif
   }
 };
 // DPCT_LABEL_END
@@ -2185,6 +2209,17 @@ inline int syhegvd(sycl::queue &q, int itype, oneapi::mkl::job jobz,
 // LapackUtils|byte_to_from_element_number
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+/// Computes the size of workspace memory of syev/heev function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] device_ws_size The device workspace size as a number of
+/// elements of type \tparam T.
 template <typename T>
 inline int syheev_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
                                   oneapi::mkl::uplo uplo, int n, int lda,
@@ -2208,6 +2243,24 @@ inline int syheev_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
 // LapackUtils|byte_to_from_element_number
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+/// Computes all eigenvalues and, optionally, eigenvectors of a real symmetric
+/// or Hermitian matrix.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in, out] a The input matrix A. On exit, it is overwritten by
+/// eigenvectors.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [out] w The eigenvalues of the matrix A in ascending order.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The device workspace size as a number of
+/// elements of type \tparam T.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
 template <typename T, typename ValueT>
 inline int syheev(sycl::queue &q, oneapi::mkl::job jobz, oneapi::mkl::uplo uplo,
                   int n, T *a, int lda, ValueT *w, T *device_ws,
@@ -2227,6 +2280,21 @@ inline int syheev(sycl::queue &q, oneapi::mkl::job jobz, oneapi::mkl::uplo uplo,
 // LapackUtils|byte_to_from_element_number
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+/// Computes the size of workspace memory of syevd/heevd function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] w_type The data type of the eigenvalues.
+/// \param [in] device_ws_size The device workspace size as a number of
+/// elements of type \tparam T.
+/// \param [out] host_ws_size The host workspace size in bytes. Currently the
+/// value is always zero.
 inline int syheevd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
                                    oneapi::mkl::uplo uplo, std::int64_t n,
                                    library_data_t a_type, std::int64_t lda,
@@ -2252,6 +2320,25 @@ inline int syheevd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
 // LapackUtils|byte_to_from_element_number
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+/// Computes all eigenvalues and, optionally, all eigenvectors of a real
+/// symmetric or Hermitian matrix using divide and conquer algorithm.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in, out] a The input matrix A. On exit, it is overwritten by
+/// eigenvectors.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] w_type The data type of the eigenvalues.
+/// \param [out] w The eigenvalues of the matrix A in ascending order.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The workspace size in bytes.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
 inline int syheevd(sycl::queue &q, oneapi::mkl::job jobz,
                    oneapi::mkl::uplo uplo, std::int64_t n,
                    library_data_t a_type, void *a, std::int64_t lda,
@@ -2273,6 +2360,20 @@ inline int syheevd(sycl::queue &q, oneapi::mkl::job jobz,
 // LapackUtils|byte_to_from_element_number
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+/// Computes the size of workspace memory of trtri function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] diag Must be diag::nonunit or diag::unit.
+/// \param [in] n The order of the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] device_ws_size The device workspace size as a number of
+/// elements of type \tparam T.
+/// \param [out] host_ws_size The host workspace size in bytes. Currently the
+/// value is always zero.
 inline int trtri_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
                                  oneapi::mkl::diag diag, std::int64_t n,
                                  library_data_t a_type, std::int64_t lda,
@@ -2297,6 +2398,22 @@ inline int trtri_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
 // LapackUtils|byte_to_from_element_number
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+/// Computes the inverse of a triangular matrix.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] diag Must be diag::nonunit or diag::unit.
+/// \param [in] n The order of the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in, out] a The input matrix A. On exit, it is overwritten by
+/// the inverse matrix of A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The workspace size in bytes.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
 inline int trtri(sycl::queue &q, oneapi::mkl::uplo uplo, oneapi::mkl::diag diag,
                  std::int64_t n, library_data_t a_type, void *a,
                  std::int64_t lda, void *device_ws, std::size_t device_ws_size,
