@@ -691,29 +691,29 @@ FEATURE_REQUEST_FACTORY(
 // cusolverDn<T>syevj, cusolverDn<T>heevj
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::LapackUtils_syheev,
-    CALL_FACTORY_ENTRY("cusolverDnSsygvj",
+    CALL_FACTORY_ENTRY("cusolverDnSsyevj",
                        CALL(MapNames::getDpctNamespace() +
-                                "lapack::syhegvd<float, float>",
+                                "lapack::syheev<float, float>",
                             DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
                             ARG(6), ARG(7), ARG(8), ARG(9))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::LapackUtils_syheev,
-    CALL_FACTORY_ENTRY("cusolverDnDsygvj",
+    CALL_FACTORY_ENTRY("cusolverDnDsyevj",
                        CALL(MapNames::getDpctNamespace() +
-                                "lapack::syhegvd<double, double>",
+                                "lapack::syheev<double, double>",
                             DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
                             ARG(6), ARG(7), ARG(8), ARG(9))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::LapackUtils_syheev,
-    CALL_FACTORY_ENTRY("cusolverDnChegvj",
-                       CALL(MapNames::getDpctNamespace() + "lapack::syhegvd<" +
+    CALL_FACTORY_ENTRY("cusolverDnCheevj",
+                       CALL(MapNames::getDpctNamespace() + "lapack::syheev<" +
                                 MapNames::getClNamespace() + "float2, float>",
                             DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
                             ARG(6), ARG(7), ARG(8), ARG(9))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::LapackUtils_syheev,
-    CALL_FACTORY_ENTRY("cusolverDnZhegvj",
-                       CALL(MapNames::getDpctNamespace() + "lapack::syhegvd<" +
+    CALL_FACTORY_ENTRY("cusolverDnZheevj",
+                       CALL(MapNames::getDpctNamespace() + "lapack::syheev<" +
                                 MapNames::getClNamespace() + "double2, double>",
                             DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
                             ARG(6), ARG(7), ARG(8), ARG(9))))
@@ -733,8 +733,7 @@ FEATURE_REQUEST_FACTORY(
     CALL_FACTORY_ENTRY("cusolverDnXsyevd",
                        CALL(MapNames::getDpctNamespace() + "lapack::syheevd",
                             DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                            ARG(7), ARG(8), ARG(9), ARG(11), ARG(12), ARG(13),
-                            ARG(14), ARG(15))))
+                            ARG(7), ARG(8), ARG(9), ARG(11), ARG(12), ARG(15))))
 
 // cusolverDnSyevd_bufferSize
 FEATURE_REQUEST_FACTORY(
@@ -767,6 +766,6 @@ FEATURE_REQUEST_FACTORY(
     CALL_FACTORY_ENTRY("cusolverDnXtrtri",
                        CALL(MapNames::getDpctNamespace() + "lapack::trtri",
                             DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
-                            ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11))))
+                            ARG(6), ARG(7), ARG(8), ARG(11))))
 
 // clang-format on

@@ -1150,11 +1150,13 @@ oneapi::mkl::compz job2compz(const oneapi::mkl::job &job) {
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|syheev_scratchpad_size_impl|dpct::lapack::detail
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// LapackUtils|value_type_trait
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename T> struct syheev_scratchpad_size_impl {
-  void operator()(sycl::queue &q, oneapi::mkl::job jobz, oneapi::mkl::uplo uplo,
-                  std::int64_t n, std::int64_t lda,
+  void operator()(sycl::queue &q, oneapi::mkl::compz jobz,
+                  oneapi::mkl::uplo uplo, std::int64_t n, std::int64_t lda,
                   std::size_t &device_ws_size) {
     if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
       device_ws_size =
@@ -1174,9 +1176,10 @@ template <typename T> struct syheev_scratchpad_size_impl {
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename T> struct syheev_impl {
-  void operator()(sycl::queue &q, oneapi::mkl::job jobz, oneapi::mkl::uplo uplo,
-                  std::int64_t n, void *a, std::int64_t lda, void *w,
-                  void *device_ws, std::size_t device_ws_size, int *info) {
+  void operator()(sycl::queue &q, oneapi::mkl::compz jobz,
+                  oneapi::mkl::uplo uplo, std::int64_t n, void *a,
+                  std::int64_t lda, void *w, void *device_ws,
+                  std::size_t device_ws_size, int *info) {
     using value_t = typename value_type_trait<T>::value_type;
     auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
     auto device_ws_data =
@@ -2186,10 +2189,11 @@ template <typename T>
 inline int syheev_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
                                   oneapi::mkl::uplo uplo, int n, int lda,
                                   int *device_ws_size) {
+  oneapi::mkl::compz compz_jobz = detail::job2compz(jobz);
   std::size_t device_ws_size_tmp;
   int ret = detail::lapack_shim<detail::syheev_scratchpad_size_impl>(
       q, detail::get_library_data_t_from_type<T>(), nullptr,
-      "syev_scratchpad_size/heev_scratchpad_size", q, jobz, uplo, n, lda,
+      "syev_scratchpad_size/heev_scratchpad_size", q, compz_jobz, uplo, n, lda,
       device_ws_size_tmp);
   *device_ws_size = (int)device_ws_size_tmp;
   return ret;
@@ -2208,9 +2212,10 @@ template <typename T, typename ValueT>
 inline int syheev(sycl::queue &q, oneapi::mkl::job jobz, oneapi::mkl::uplo uplo,
                   int n, T *a, int lda, ValueT *w, T *device_ws,
                   int device_ws_size, int *info) {
+  oneapi::mkl::compz compz_jobz = detail::job2compz(jobz);
   return detail::lapack_shim<detail::syheev_impl>(
-      q, detail::get_library_data_t_from_type<T>(), info, "syev/heev", q, jobz,
-      uplo, n, a, lda, w, device_ws, device_ws_size, info);
+      q, detail::get_library_data_t_from_type<T>(), info, "syev/heev", q,
+      compz_jobz, uplo, n, a, lda, w, device_ws, device_ws_size, info);
 }
 // DPCT_LABEL_END
 
@@ -2296,11 +2301,15 @@ inline int trtri(sycl::queue &q, oneapi::mkl::uplo uplo, oneapi::mkl::diag diag,
                  std::int64_t n, library_data_t a_type, void *a,
                  std::int64_t lda, void *device_ws, std::size_t device_ws_size,
                  int *info) {
+#ifdef DPCT_USM_LEVEL_NONE
+  throw std::runtime_error("this API is unsupported when USM level is none");
+#else
   std::size_t device_ws_size_in_element_number =
       detail::byte_to_element_number(device_ws_size, a_type);
   return detail::lapack_shim<detail::trtri_impl>(
       q, a_type, info, "trtri", q, uplo, diag, n, a_type, a, lda, device_ws,
       device_ws_size_in_element_number, info);
+#endif
 }
 // DPCT_LABEL_END
 } // namespace lapack
