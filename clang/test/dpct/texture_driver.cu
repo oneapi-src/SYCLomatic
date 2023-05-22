@@ -135,10 +135,10 @@ void test_texref() {
 
   // CHECK: tex->set_channel_type(format);
   // CHECK-NEXT: tex->set_channel_num(4);
-  // CHECK-NEXT: err_code = CHECK_SYCL_ERROR(tex->set_channel_type(sycl::image_channel_type::fp32), tex->set_channel_num(chn_num));
-  // CHECK-NEXT: cudaCheck(CHECK_SYCL_ERROR(tex->set_channel_type(format), tex->set_channel_num(4)));
-  // CHECK-NEXT: func(CHECK_SYCL_ERROR(tex->set_channel_type(format), tex->set_channel_num(4)));
-  // CHECK-NEXT: funcT(CHECK_SYCL_ERROR(tex->set_channel_type(format), tex->set_channel_num(4)));
+  // CHECK-NEXT: err_code = CHECK_SYCL_ERROR((tex->set_channel_type(sycl::image_channel_type::fp32), tex->set_channel_num(chn_num)));
+  // CHECK-NEXT: cudaCheck(CHECK_SYCL_ERROR((tex->set_channel_type(format), tex->set_channel_num(4))));
+  // CHECK-NEXT: func(CHECK_SYCL_ERROR((tex->set_channel_type(format), tex->set_channel_num(4))));
+  // CHECK-NEXT: funcT(CHECK_SYCL_ERROR((tex->set_channel_type(format), tex->set_channel_num(4))));
   cuTexRefSetFormat(tex, format, 4);
   err_code = cuTexRefSetFormat(tex, CU_AD_FORMAT_FLOAT, chn_num);
   cudaCheck(cuTexRefSetFormat(tex, format, 4));

@@ -910,7 +910,8 @@ createFactoryWithSubGroupSizeRequest(
 }
 
 template <class... StmtPrinters>
-inline std::shared_ptr<CallExprRewriterFactoryBase> createMultiStmtsRewriterFactory(
+inline std::shared_ptr<CallExprRewriterFactoryBase>
+createMultiStmtsRewriterFactory(
     const std::string &SourceName,
     std::function<StmtPrinters(const CallExpr *)> &&...Creators) {
   return std::make_shared<ConditionalRewriterFactory>(
@@ -919,7 +920,8 @@ inline std::shared_ptr<CallExprRewriterFactoryBase> createMultiStmtsRewriterFact
           std::make_shared<CallExprRewriterFactory<
               PrinterRewriter<CommaExprPrinter<StmtPrinters...>>,
               std::function<StmtPrinters(const CallExpr *)>...>>(SourceName,
-                                                                 Creators...)),
+                                                                 Creators...),
+          true),
       std::make_shared<CallExprRewriterFactory<
           PrinterRewriter<MultiStmtsPrinter<StmtPrinters...>>,
           std::function<StmtPrinters(const CallExpr *)>...>>(SourceName,
