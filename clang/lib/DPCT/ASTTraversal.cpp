@@ -1962,6 +1962,22 @@ void ZeroLengthArrayRule::runRule(
 }
 REGISTER_RULE(ZeroLengthArrayRule, PassKind::PK_Migration)
 
+void MiscAPIRule::registerMatcher(MatchFinder &MF) {
+  auto functionName = [&]() {
+    return hasAnyName("cudaOccupancyMaxActiveBlocksPerMultiprocessor");
+  };
+  MF.addMatcher(
+      callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),
+      this);
+}
+void MiscAPIRule::runRule(const MatchFinder::MatchResult &Result) {
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
+  ExprAnalysis EA(CE);
+  emplaceTransformation(EA.getReplacement());
+  EA.applyAllSubExprRepl();
+}
+REGISTER_RULE(MiscAPIRule, PassKind::PK_Migration)
+
 // Rule for types migration in var declarations and field declarations
 void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(

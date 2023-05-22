@@ -1783,6 +1783,10 @@ public:
   static bool useExtDPLAPI() {
     return getUsingExperimental<ExperimentalFeatures::Exp_DPLExperimentalAPI>();
   }
+  static bool useOccupancyCalculation() {
+    return getUsingExperimental<
+        ExperimentalFeatures::Exp_OccupancyCalculation>();
+  }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
   }
@@ -4081,7 +4085,7 @@ private:
   void printSubmitLamda(KernelPrinter &Printer);
   void printParallelFor(KernelPrinter &Printer, bool IsInSubmit);
   void printKernel(KernelPrinter &Printer);
-  void printStreamBase(KernelPrinter &Printer);
+  template <class T> void printStreamBase(T &Printer);
 
 public:
   KernelCallExpr(unsigned Offset, const std::string &FilePath,
@@ -4186,6 +4190,7 @@ private:
                                          getBegin() - LocInfo.Indent.length(),
                                          LocInfo.Indent.length(), "", nullptr));
   }
+  void addDevCapCheckStmt();
   void addAccessorDecl(MemVarInfo::VarScope Scope);
   void addAccessorDecl(std::shared_ptr<MemVarInfo> VI);
   void addStreamDecl() {
