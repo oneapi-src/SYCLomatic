@@ -823,10 +823,9 @@ public:
 // Device|get_current_device
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Computes the max active work-group number per Xe-Core. Ref to
+/// This function is used for occupancy calculation, it computes the max active
+/// work-group number per Xe-Core. Ref to
 /// https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/GPU-Occupancy-Calculator
-/// This function will be used in the migrated code if option
-/// --use-experimental-features=occupancy-calculation is specified.
 /// \param [out] num_wg Active work-group number.
 /// \param [in] wg_size Work-group size.
 /// \param [in] slm_size Shared local memory size.
