@@ -224,6 +224,9 @@ RegistryMaps::RegistryMaps() {
   REGISTER_MATCHER(dependentCoawaitExpr);
   REGISTER_MATCHER(dependentSizedArrayType);
   REGISTER_MATCHER(designatedInitExpr);
+#ifdef SYCLomatic_CUSTOMIZATION
+  REGISTER_MATCHER(pseudoObjectExpr);
+#endif // SYCLomatic_CUSTOMIZATION
   REGISTER_MATCHER(designatorCountIs);
   REGISTER_MATCHER(doStmt);
   REGISTER_MATCHER(eachOf);

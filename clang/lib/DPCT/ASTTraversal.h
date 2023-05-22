@@ -10,7 +10,7 @@
 #define DPCT_AST_TRAVERSAL_H
 
 #include "AnalysisInfo.h"
-#include "Checkpoint.h"
+#include "CrashRecovery.h"
 #include "Diagnostics.h"
 #include "FFTAPIMigration.h"
 #include "MapNames.h"
@@ -217,15 +217,9 @@ public:
                          std::string &&InsertText);
 
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override {
-    CHECKPOINT_ASTMATCHER_RUN_ENTRY();
-    try {
-      static_cast<T *>(this)->runRule(Result);
-    } catch (std::exception &) {
-      std::string FaultMsg =
-          "Error: dpct internal error. Migration rule causing the error "
-          "skipped. Migration continues.\n";
-      llvm::errs() << FaultMsg;
-    }
+    runWithCrashGuard([=]() { static_cast<T *>(this)->runRule(Result); },
+                      "Error: dpct internal error. Migration rule causing the "
+                      "error skipped. Migration continues.\n");
     return;
   }
 
@@ -408,6 +402,12 @@ private:
 
 class ZeroLengthArrayRule
     : public NamedMigrationRule<ZeroLengthArrayRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class MiscAPIRule : public NamedMigrationRule<MiscAPIRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);

@@ -12,7 +12,9 @@
 #include "AnalysisInfo.h"
 #include "CUBAPIMigration.h"
 #include "CallExprRewriter.h"
+#include "Config.h"
 #include "DNNAPIMigration.h"
+#include "MemberExprRewriter.h"
 #include "TypeLocRewriters.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/Expr.h"
@@ -23,7 +25,6 @@
 #include "clang/AST/StmtGraphTraits.h"
 #include "clang/AST/StmtObjC.h"
 #include "clang/AST/StmtOpenMP.h"
-#include "MemberExprRewriter.h"
 
 extern std::string DpctInstallPath;
 namespace clang {
@@ -875,6 +876,17 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
         auto ResultStr = Result.value();
         addReplacement(CE->getCallee(), ResultStr);
         Rewriter->Analyzer.applyAllSubExprRepl();
+        auto LocStr =
+            getCombinedStrFromLoc(SM.getSpellingLoc(CE->getBeginLoc()));
+        auto &FCIMMR =
+            dpct::DpctGlobalInfo::getFunctionCallInMacroMigrateRecord();
+        if (FCIMMR.find(LocStr) != FCIMMR.end() &&
+            FCIMMR.find(LocStr)->second.compare(ResultStr) &&
+            !isExprStraddle(CE)) {
+          Rewriter->report(
+              Diagnostics::CANNOT_UNIFY_FUNCTION_CALL_IN_MACRO_OR_TEMPLATE,
+              false, RefString);
+        }
       }
     } else {
       if (Result.has_value()) {
@@ -886,8 +898,9 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
         if (FCIMMR.find(LocStr) != FCIMMR.end() &&
             FCIMMR.find(LocStr)->second.compare(ResultStr) &&
             !isExprStraddle(CE)) {
-          Rewriter->report(Diagnostics::CANNOT_UNIFY_FUNCTION_CALL_IN_MACOR,
-                           false, RefString);
+          Rewriter->report(
+              Diagnostics::CANNOT_UNIFY_FUNCTION_CALL_IN_MACRO_OR_TEMPLATE,
+              false, RefString);
         }
         FCIMMR[LocStr] = ResultStr;
         // When migrating thrust API with usmnone and raw-ptr,
@@ -1014,10 +1027,15 @@ void ExprAnalysis::analyzeExpr(const LambdaExpr *LE) {
 }
 
 void ExprAnalysis::analyzeExpr(const IfStmt *IS) {
-  dispatch(IS->getCond());
-  dispatch(IS->getThen());
-  // "else if" will also be handled here as another ifstmt
-  dispatch(IS->getElse());
+  if (IS->getCond())
+    dispatch(IS->getCond());
+
+  if (IS->getThen())
+    dispatch(IS->getThen());
+
+  if (IS->getElse())
+    // "else if" will also be handled here as another ifstmt
+    dispatch(IS->getElse());  
 }
 
 void ExprAnalysis::analyzeExpr(const DeclStmt *DS) {
@@ -1596,11 +1614,8 @@ void KernelArgumentAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
 
 void KernelArgumentAnalysis::analyzeExpr(
     const CXXDependentScopeMemberExpr *Arg) {
-  if (Arg->isImplicitAccess()) {
-    IsRedeclareRequired = true;
-  } else {
-    if (Arg->isArrow())
-      IsRedeclareRequired = true;
+  IsRedeclareRequired = true;
+  if (!Arg->isImplicitAccess()) {
     KernelArgumentAnalysis::dispatch(Arg->getBase());
   }
 }

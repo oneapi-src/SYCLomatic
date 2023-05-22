@@ -110,7 +110,6 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
     return;
   }
 
-  const unsigned NumArgs = CE->getNumArgs();
   auto QT = CE->getArg(0)->getType();
   LangOptions LO;
   std::string ArgT = QT.getAsString(PrintingPolicy(LO));

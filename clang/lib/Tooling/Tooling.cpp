@@ -200,24 +200,37 @@ bool isExcludePath(const std::string &Path, bool IsRelative) {
   }
 }
 
+enum {
+  ProcessingFilesCrash = -1,
+};
+typedef bool (*CrashGuardFunc)(llvm::function_ref<void()>, std::string);
+bool processFilesWithCrashGuardDefault(llvm::function_ref<void()> Func,
+                                       std::string) {
+  Func();
+}
+
+CrashGuardFunc ProcessFilesWithCrashGuardPtr =
+    processFilesWithCrashGuardDefault;
+void setCrashGuardFunc(CrashGuardFunc Func) {
+  ProcessFilesWithCrashGuardPtr = Func;
+}
+static int processFilesWithCrashGuard(ClangTool *Tool, llvm::StringRef File,
+                                      bool &ProcessingFailed, bool &FileSkipped,
+                                      int &StaticSymbol, ToolAction *Action) {
+  int Ret;
+  if (ProcessFilesWithCrashGuardPtr(
+          [&]() {
+            Ret = Tool->processFiles(File, ProcessingFailed, FileSkipped,
+                                     StaticSymbol, Action);
+          },
+          "Error: dpct internal error. Current file \"" + File.str() +
+              "\" skipped. Migration continues.\n"))
+    return Ret;
+  return ProcessingFilesCrash;
+}
+
 } // namespace tooling
-} // namespace clang
-#if defined(__linux__)
-#define JMP_BUF sigjmp_buf
-#define SETJMP(x) sigsetjmp(x, 1)
-#define LONGJMP siglongjmp
-
-#else
-#define JMP_BUF   jmp_buf
-#define SETJMP(x)       _setjmp(x)
-#define LONGJMP      longjmp
-#endif
-
-
-JMP_BUF CPFileEnter;
-bool EnableErrorRecover=true;
-int CheckPointStage = 0 /*CHECKPOINT_UNKNOWN*/;
-bool CurFileMeetErr=false;
+} // namespace 
 bool StopOnParseErrTooling=false;
 std::string InRootTooling;
 
@@ -688,23 +701,9 @@ static void injectResourceDir(CommandLineArguments &Args, const char *Argv0,
 // other values are ignored.
 int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
                      bool &FileSkipped, int &StaticSymbol, ToolAction *Action) {
-    //enter point for the file processing.
-    CheckPointStage = 1 /*CHECKPOINT_PROCESSING_FILE*/;
-    CurFileMeetErr= false;
     //clear error# counter
     CurFileParseErrCnt=0;
     CurFileSigErrCnt=0;
-    int Ret=SETJMP(CPFileEnter);
-    if(File != "LinkerEntry") {
-      if(Ret == 0) {
-        const std::string Msg = "Processing: " + File.str()  +  "\n";
-        DoPrintHandle(Msg, false);
-      } else {
-        const std::string Msg = "Skipping: " + File.str()  +  "\n";
-        DoPrintHandle(Msg, false);
-        return -1;
-      }
-    }
     // Currently implementations of CompilationDatabase::getCompileCommands can
     // change the state of the file system (e.g.  prepare generated headers), so
     // this method needs to run right before we invoke the tool, as the next
@@ -712,7 +711,6 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
     //
     // FIXME: Make the compilation database interface more explicit about the
     // requirements to the order of invocation of its members.
-    try {
     std::vector<CompileCommand> CompileCommandsForFile =
         Compilations.getCompileCommands(File);
     if (CompileCommandsForFile.empty()) {
@@ -920,11 +918,6 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
     }
     //collect the errror counter info.
     ErrorCnt[File.str()] =(CurFileSigErrCnt<<32) | CurFileParseErrCnt;
-    } catch (std::exception &e) {
-      std::string FaultMsg =
-          "Error: dpct internal error. Current file skipped. Migration continues.\n";
-      llvm::errs() << FaultMsg;
-    }
     return 0;
 }
 #endif // SYCLomatic_CUSTOMIZATION
@@ -1093,17 +1086,17 @@ int ClangTool::run(ToolAction *Action) {
     DoFileProcessHandle(FilesNotProcessed);
     for (auto &Entry : FilesNotProcessed) {
       auto File = llvm::StringRef(Entry);
-      int Ret = processFiles(File, ProcessingFailed, FileSkipped, StaticSymbol,
-                              Action);
-      if (Ret == -1)
+
+      int Ret = processFilesWithCrashGuard(this, File, ProcessingFailed,
+                                           FileSkipped, StaticSymbol, Action);
+      if (Ret == ProcessingFilesCrash)
         continue;
-      else if (Ret < -1)
+      else if (Ret < 0)
         return Ret;
     }
   }
 
   // exit point for the file processing.
-  CheckPointStage = 0 /*CHECKPOINT_UNKNOWN*/;
 #endif // SYCLomatic_CUSTOMIZATION
   if (!InitialWorkingDir.empty()) {
     if (auto EC =

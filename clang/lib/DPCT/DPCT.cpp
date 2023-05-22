@@ -13,7 +13,7 @@
 #include "CallExprRewriter.h"
 #include "MemberExprRewriter.h"
 #include "TypeLocRewriters.h"
-#include "Checkpoint.h"
+#include "CrashRecovery.h"
 #include "Config.h"
 #include "CustomHelperFiles.h"
 #include "ExternalReplacement.h"
@@ -23,9 +23,7 @@
 #include "MigrationAction.h"
 #include "MisleadingBidirectional.h"
 #include "Rules.h"
-#include "QueryApiMapping.h"
 #include "SaveNewFiles.h"
-#include "SignalProcess.h"
 #include "Statics.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
@@ -160,9 +158,6 @@ static llvm::cl::opt<std::string> Passes(
          "Only the specified passes are applied."),
     llvm::cl::value_desc("IterationSpaceBuiltinRule,..."), llvm::cl::cat(DPCTCat),
                llvm::cl::Hidden);
-static llvm::cl::opt<std::string> QueryApiMapping ("query-api-mapping",
-        llvm::cl::desc("Outputs to stdout functionally compatible SYCL API mapping for CUDA API."),
-        llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat), llvm::cl::Optional, llvm::cl::ReallyHidden);
 #ifdef DPCT_DEBUG_BUILD
 static llvm::cl::opt<std::string>
     DiagsContent("report-diags-content",
@@ -192,12 +187,8 @@ std::unordered_map<std::string, bool> ChildOrSameCache;
 std::unordered_map<std::string, bool> ChildPathCache;
 std::unordered_map<std::string, llvm::SmallString<256>> RealPathCache;
 std::unordered_map<std::string, bool> IsDirectoryCache;
-int FatalErrorCnt = 0;
 extern bool StopOnParseErrTooling;
 extern std::string InRootTooling;
-JMP_BUF CPFileASTMaterEnter;
-JMP_BUF CPRepPostprocessEnter;
-JMP_BUF CPFormatCodeEnter;
 
 std::string getCudaInstallPath(int argc, const char **argv) {
   std::vector<const char *> Argv;
@@ -492,10 +483,13 @@ static void DumpOutputFile(void) {
   }
 }
 
-void PrintReportOnFault(std::string &FaultMsg) {
+void PrintReportOnFault(const std::string &FaultMsg) {
   PrintMsg(FaultMsg);
   saveApisReport();
   saveDiagsReport();
+
+  if (ReportFilePrefix == "stdcout")
+    return;
 
   std::string FileApis =
       OutRoot + "/" + ReportFilePrefix +
@@ -554,9 +548,7 @@ int runDPCT(int argc, const char **argv) {
     std::cout << CtHelpHint;
     return MigrationErrorShowHelp;
   }
-#if defined(__linux__) || defined(_WIN32)
-  InstallSignalHandle();
-#endif
+  clang::dpct::initCrashRecovery();
 
 #if defined(_WIN32)
   // To support wildcard "*" in source file name in windows.
@@ -657,12 +649,6 @@ int runDPCT(int argc, const char **argv) {
   // just show -- --help information and then exit
   if (CommonOptionsParser::hasHelpOption(OriginalArgc, argv))
     dpctExit(MigrationSucceeded);
-
-  if (QueryApiMapping.getNumOccurrences()) {
-    ApiMappingEntry::initEntryMap();
-    ApiMappingEntry::printMappingDesc(llvm::outs(), QueryApiMapping);
-    dpctExit(MigrationSucceeded);
-  }
 
   auto ExtensionStr = ChangeExtension.getValue();
   ExtensionStr.erase(std::remove(ExtensionStr.begin(), ExtensionStr.end(), ' '),
