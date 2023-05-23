@@ -1217,7 +1217,7 @@ inline void segmented_sort_pairs_by_parallel_sorts(
     if (segment_begin < segment_end) {
       ::dpct::sort_pairs(
           policy, keys_in + segment_begin, keys_out + segment_begin,
-                         values_in + segment_begin, values_out + segment_begin,
+          values_in + segment_begin, values_out + segment_begin,
           segment_end - segment_begin, descending, begin_bit, end_bit);
     }
   }
