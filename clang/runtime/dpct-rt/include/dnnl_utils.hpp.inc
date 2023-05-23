@@ -2333,6 +2333,7 @@ void dropout_desc::restore(engine_ext &engine, float p, void *state,
     throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
                              "Interfaces Project does not support this API.");
 #else
+  if (state) {
     std::int64_t required_state_size = engine.get_dropout_state_size();
     if (state_size < required_state_size) {
       throw std::runtime_error("restore: state_size less than required state size.");
@@ -2346,8 +2347,8 @@ void dropout_desc::restore(engine_ext &engine, float p, void *state,
     _imp->_rng_engine =
         oneapi::mkl::rng::load_state<rng_engine_t>(
             *q, _imp->_host_state.data());
-#endif
   }
+#endif
 }
 
 inline
@@ -2370,8 +2371,8 @@ void dropout_desc::set(engine_ext &engine, float p, void *state,
     _imp->_rng_engine = rng_engine_t(*q, seed);
     oneapi::mkl::rng::save_state(_imp->_rng_engine, _imp->_host_state.data());
     q->memcpy(_imp->_state, _imp->_host_state.data(), required_state_size).wait();
-#endif
   }
+#endif
 }
 // DPCT_LABEL_END
 
