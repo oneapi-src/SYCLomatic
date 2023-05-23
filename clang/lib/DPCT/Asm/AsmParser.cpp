@@ -99,7 +99,8 @@ InlineAsmScope::lookupParameterizedNameDecl(InlineAsmIdentifierInfo *II,
 
 InlineAsmBuiltinType *
 InlineAsmContext::getBuiltinType(InlineAsmBuiltinType::TypeKind Kind) {
-  if (AsmBuiltinTypes.contains(Kind))
+  assert(Kind > 0 && Kind < InlineAsmBuiltinType::NUM_TYPES && "Unknown Kind");
+  if (AsmBuiltinTypes[Kind])
     return AsmBuiltinTypes[Kind];
 
   InlineAsmBuiltinType *NewType = ::new (*this) InlineAsmBuiltinType(Kind);
@@ -169,14 +170,6 @@ InlineAsmParser::addInlineAsmOperands(StringRef Operand, StringRef Constraint) {
   return VD;
 }
 
-bool InlineAsmParser::ExpectAndConsume(asmtok::TokenKind ExpectedTok) {
-  if (Tok.is(ExpectedTok)) {
-    ConsumeAnyToken();
-    return false;
-  }
-  return true;
-}
-
 InlineAsmStmtResult InlineAsmParser::ParseStatement() {
   switch (Tok.getKind()) {
   case asmtok::l_brace:
@@ -198,7 +191,7 @@ InlineAsmStmtResult InlineAsmParser::ParseStatement() {
 }
 
 InlineAsmStmtResult InlineAsmParser::ParseCompoundStatement() {
-  ConsumeBrace();
+  ConsumeToken();
 
   ParseScope BlockScope(this);
 
@@ -210,13 +203,13 @@ InlineAsmStmtResult InlineAsmParser::ParseCompoundStatement() {
     Stmts.push_back(Result.get());
   }
 
-  if (ExpectAndConsume(asmtok::r_brace))
+  if (!TryConsumeToken(asmtok::r_brace))
     return AsmStmtError();
   return ::new (Context) InlineAsmCompoundStmt(Stmts);
 }
 
 InlineAsmStmtResult InlineAsmParser::ParseConditionalInstruction() {
-  if (ExpectAndConsume(asmtok::at))
+  if (!TryConsumeToken(asmtok::at))
     return AsmStmtError();
 
   bool isNeg = false;
@@ -266,7 +259,7 @@ InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
       return AsmStmtError();
   }
 
-  if (ExpectAndConsume(asmtok::comma))
+  if (!TryConsumeToken(asmtok::comma))
     return AsmStmtError();
 
   SmallVector<InlineAsmExpr *, 4> InputOperands;
@@ -274,13 +267,13 @@ InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
   while (true) {
     InlineAsmExprResult Operand = ParseExpression();
     if (Operand.isInvalid())
-      return true;
+      return AsmStmtError();
     InputOperands.push_back(Operand.get());
     if (!TryConsumeToken(asmtok::comma))
       break;
   }
 
-  if (ExpectAndConsume(asmtok::semi))
+  if (!TryConsumeToken(asmtok::semi))
     return AsmStmtError();
 
   if (HasPredOutput)
@@ -364,11 +357,12 @@ InlineAsmExprResult InlineAsmParser::ParseCastExpression() {
   auto SavedKind = Tok.getKind();
   switch (SavedKind) {
   case asmtok::l_paren:
-    ConsumeParen();
+    ConsumeToken();
     if (Tok.isOneOf(asmtok::kw_s64, asmtok::kw_u64)) {
       InlineAsmBuiltinType *CastTy =
           Tok.is(asmtok::kw_s64) ? Context.getS64Type() : Context.getU64Type();
-      ConsumeParen();
+      if (!TryConsumeToken(asmtok::r_paren))
+        return AsmExprError();
       InlineAsmExprResult SubExpr = ParseCastExpression();
       if (SubExpr.isInvalid())
         return AsmExprError();
@@ -377,20 +371,22 @@ InlineAsmExprResult InlineAsmParser::ParseCastExpression() {
       InlineAsmExprResult SubExpr = ParseExpression();
       if (SubExpr.isInvalid())
         return AsmExprError();
-      ConsumeParen();
+      if (!TryConsumeToken(asmtok::r_paren))
+        return AsmExprError();
       Res = ActOnParenExpr(SubExpr.get());
     }
     break;
   case asmtok::l_square:
-    ConsumeBracket();
+    ConsumeToken();
     Res = ParseExpression();
     if (Res.isInvalid())
       return AsmExprError();
-    ConsumeBracket();
+    if (!TryConsumeToken(asmtok::r_square))
+      return AsmExprError();
     Res = ActOnAddressExpr(Res.get());
     break;
   case asmtok::l_brace: {
-    ConsumeBrace();
+    ConsumeToken();
     SmallVector<InlineAsmExpr *, 4> Tuple;
     while (true) {
       Res = ParseExpression();
@@ -530,6 +526,10 @@ InlineAsmDeclResult InlineAsmParser::ParseDeclarator(
 
   InlineAsmVariableDecl *Decl = VarRes.getAs<InlineAsmVariableDecl>();
 
+  if (DeclSpec.Alignment) {
+    Decl->setAlign(DeclSpec.Alignment->getValue().getZExtValue());
+  }
+
   switch (Tok.getKind()) {
   case asmtok::less: { // Parameterized variable declaration
     ConsumeToken();
@@ -537,7 +537,7 @@ InlineAsmDeclResult InlineAsmParser::ParseDeclarator(
       return AsmDeclError();
     InlineAsmExprResult NumRes = ActOnNumericConstant(Tok);
     ConsumeToken();
-    if (ExpectAndConsume(asmtok::greater))
+    if (!TryConsumeToken(asmtok::greater))
       return AsmDeclError();
 
     if (NumRes.isInvalid())

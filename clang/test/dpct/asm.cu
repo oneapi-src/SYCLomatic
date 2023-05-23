@@ -22,50 +22,50 @@ __global__ void gpu_ptx(int *d_ptr, int length) {
 }
 
 // CHECK: void setp() {
-// CHECK: float x = 1.0, y;
-// CHECK: uint32_t a, b;
-// CHECK: {
-// CHECK-NEXT: bool p[20], q[20];
-// CHECK-NEXT: float fp;
-// CHECK-NEXT: fp = [](){union {uint32_t I; float F;}; I = 0x3f800000u; return F;}();
-// CHECK-NEXT: p[1] = x == fp && !sycl::isnan(x) && !sycl::isnan(fp);
-// CHECK-NEXT: p[2] = x != fp && !sycl::isnan(x) && !sycl::isnan(fp);
-// CHECK-NEXT: p[3] = x < fp && !sycl::isnan(x) && !sycl::isnan(fp);
-// CHECK-NEXT: p[4] = x <= fp && !sycl::isnan(x) && !sycl::isnan(fp);
-// CHECK-NEXT: p[5] = x > fp && !sycl::isnan(x) && !sycl::isnan(fp);
-// CHECK-NEXT: p[6] = x >= fp && !sycl::isnan(x) && !sycl::isnan(fp);
-// CHECK-NEXT: p[7] = x == fp || sycl::isnan(x) || sycl::isnan(fp);
-// CHECK-NEXT: p[8] = x != fp || sycl::isnan(x) || sycl::isnan(fp);
-// CHECK-NEXT: p[9] = x < fp || sycl::isnan(x) || sycl::isnan(fp);
-// CHECK-NEXT: p[10] = x <= fp || sycl::isnan(x) || sycl::isnan(fp);
-// CHECK-NEXT: p[11] = x > fp || sycl::isnan(x) || sycl::isnan(fp);
-// CHECK-NEXT: p[12] = x >= fp || sycl::isnan(x) || sycl::isnan(fp);
-// CHECK-NEXT: p[13] = !sycl::isnan(x) && !sycl::isnan(fp);
-// CHECK-NEXT: p[14] = sycl::isnan(x) || sycl::isnan(fp);
-// CHECK-NEXT: p[1] = x == fp && !sycl::isnan(x) && !sycl::isnan(fp);
-// CHECK-NEXT: p[2] = x != fp && !sycl::isnan(x) && !sycl::isnan(fp);
-// CHECK-NEXT: p[3] = x < fp && !sycl::isnan(x) && !sycl::isnan(fp);
-// CHECK-NEXT: p[4] = x <= fp && !sycl::isnan(x) && !sycl::isnan(fp);
-// CHECK-NEXT: p[5] = x > fp && !sycl::isnan(x) && !sycl::isnan(fp);
-// CHECK-NEXT: p[6] = x >= fp && !sycl::isnan(x) && !sycl::isnan(fp);
-// CHECK-NEXT: p[7] = x == fp || sycl::isnan(x) || sycl::isnan(fp);
-// CHECK-NEXT: p[8] = x != fp || sycl::isnan(x) || sycl::isnan(fp);
-// CHECK-NEXT: p[9] = x < fp || sycl::isnan(x) || sycl::isnan(fp);
-// CHECK-NEXT: p[10] = x <= fp || sycl::isnan(x) || sycl::isnan(fp);
-// CHECK-NEXT: p[11] = x > fp || sycl::isnan(x) || sycl::isnan(fp);
-// CHECK-NEXT: p[12] = x >= fp || sycl::isnan(x) || sycl::isnan(fp);
-// CHECK-NEXT: p[13] = !sycl::isnan(x) && !sycl::isnan(fp);
-// CHECK-NEXT: p[14] = sycl::isnan(x) || sycl::isnan(fp);
-// CHECK-NEXT: q[1] = a == b;
-// CHECK-NEXT: q[2] = a != b;
-// CHECK-NEXT: q[3] = a < b;
-// CHECK-NEXT: q[4] = a <= b;
-// CHECK-NEXT: q[5] = a > b;
-// CHECK-NEXT: q[6] = a >= b;
-// CHECK-NEXT: if (p[0]) {
-// CHECK-NEXT:   y = fp;
-// CHECK-NEXT: }
-// CHECK: }
+// CHECK:   float x = 1.0, y;
+// CHECK:   uint32_t a, b;
+// CHECK:   {
+// CHECK-NEXT:     bool p[20], q[20];
+// CHECK-NEXT:     float fp;
+// CHECK-NEXT:     fp = sycl::bit_cast<float>(uint32_t(0x3f800000U));
+// CHECK-NEXT:     p[1] = !sycl::isnan(x) && !sycl::isnan(fp) && x == fp;
+// CHECK-NEXT:     p[2] = !sycl::isnan(x) && !sycl::isnan(fp) && x != fp;
+// CHECK-NEXT:     p[3] = !sycl::isnan(x) && !sycl::isnan(fp) && x < fp;
+// CHECK-NEXT:     p[4] = !sycl::isnan(x) && !sycl::isnan(fp) && x <= fp;
+// CHECK-NEXT:     p[5] = !sycl::isnan(x) && !sycl::isnan(fp) && x > fp;
+// CHECK-NEXT:     p[6] = !sycl::isnan(x) && !sycl::isnan(fp) && x >= fp;
+// CHECK-NEXT:     p[7] = sycl::isnan(x) || sycl::isnan(fp) || x == fp;
+// CHECK-NEXT:     p[8] =  sycl::isnan(x) || sycl::isnan(fp) || x != fp;
+// CHECK-NEXT:     p[9] = sycl::isnan(x) || sycl::isnan(fp) || x < fp;
+// CHECK-NEXT:     p[10] = sycl::isnan(x) || sycl::isnan(fp) || x <= fp;
+// CHECK-NEXT:     p[11] = sycl::isnan(x) || sycl::isnan(fp) || x > fp;
+// CHECK-NEXT:     p[12] = sycl::isnan(x) || sycl::isnan(fp) || x >= fp;
+// CHECK-NEXT:     p[13] = !sycl::isnan(x) && !sycl::isnan(fp);
+// CHECK-NEXT:     p[14] = sycl::isnan(x) || sycl::isnan(fp);
+// CHECK-NEXT:     p[1] = !sycl::isnan(x) && !sycl::isnan(fp) && x == fp;
+// CHECK-NEXT:     p[2] = !sycl::isnan(x) && !sycl::isnan(fp) && x != fp;
+// CHECK-NEXT:     p[3] = !sycl::isnan(x) && !sycl::isnan(fp) && x < fp;
+// CHECK-NEXT:     p[4] = !sycl::isnan(x) && !sycl::isnan(fp) && x <= fp;
+// CHECK-NEXT:     p[5] = !sycl::isnan(x) && !sycl::isnan(fp) && x > fp;
+// CHECK-NEXT:     p[6] = !sycl::isnan(x) && !sycl::isnan(fp) && x >= fp;
+// CHECK-NEXT:     p[7] = sycl::isnan(x) || sycl::isnan(fp) || x == fp;
+// CHECK-NEXT:     p[8] =  sycl::isnan(x) || sycl::isnan(fp) || x != fp;
+// CHECK-NEXT:     p[9] = sycl::isnan(x) || sycl::isnan(fp) || x < fp;
+// CHECK-NEXT:     p[10] = sycl::isnan(x) || sycl::isnan(fp) || x <= fp;
+// CHECK-NEXT:     p[11] = sycl::isnan(x) || sycl::isnan(fp) || x > fp;
+// CHECK-NEXT:     p[12] = sycl::isnan(x) || sycl::isnan(fp) || x >= fp;
+// CHECK-NEXT:     p[13] = !sycl::isnan(x) && !sycl::isnan(fp);
+// CHECK-NEXT:     p[14] = sycl::isnan(x) || sycl::isnan(fp);
+// CHECK-NEXT:     q[1] = a == b;
+// CHECK-NEXT:     q[2] = a != b;
+// CHECK-NEXT:     q[3] = a < b;
+// CHECK-NEXT:     q[4] = a <= b;
+// CHECK-NEXT:     q[5] = a > b;
+// CHECK-NEXT:     q[6] = a >= b;
+// CHECK-NEXT:     if (p[0]) {
+// CHECK-NEXT:       y = fp;
+// CHECK-NEXT:     }
+// CHECK-NEXT:   }
 // CHECK: }
 __device__ void setp() {
   float x = 1.0, y;
@@ -117,10 +117,10 @@ __device__ void setp() {
 // CHECK-NEXT: unsigned p;
 // CHECK-NEXT: double d;
 // CHECK-NEXT: p = 123 * 123U + 456 * ((4 ^ 7) + 2 ^ 3) | 777 & 128 == 2 != 3 > 4 < 5 <= 3 >= 5 >> 1 << 2 && 1 || 7 && !0;
-// CHECK: (*output) = [](){union {uint32_t I; float F;}; I = 0x3f800000u; return F;}();
-// CHECK: (*output) = [](){union {uint32_t I; float F;}; I = 0x3f800000u; return F;}();
-// CHECK: d = [](){union {uint64_t I; double F;}; I = 0x40091EB851EB851Fu; return F;}();
-// CHECK: d = [](){union {uint64_t I; double F;}; I = 0x40091EB851EB851Fu; return F;}();
+// CHECK: (*output) = sycl::bit_cast<float>(uint32_t(0x3f800000U));
+// CHECK: (*output) = sycl::bit_cast<float>(uint32_t(0x3f800000U));
+// CHECK: d = sycl::bit_cast<double>(uint64_t(0x40091EB851EB851FULL));
+// CHECK: d = sycl::bit_cast<double>(uint64_t(0x40091EB851EB851FULL));
 // CHECK: *output = p;
 // CHECK-NEXT:}
 __global__ void mov(float *output) {
@@ -134,21 +134,33 @@ __global__ void mov(float *output) {
   *output = p;
 }
 
+// CHECK: void clean_specifial_character() {
+// CHECK:   {
+// CHECK-NEXT:     uint32_t p__d__p;
+// CHECK-NEXT:     p__d__p = 0x3F;
+// CHECK-NEXT:   }
+// CHECK: }
+__global__ void clean_specifial_character(void) {
+  asm("{\n\t"
+      " .reg .u32 %%p$p;\n\t"
+      " mov.u32 %%p$p, 0x3F;\n\t"
+      "}");
+}
+
 // CHECK: int cond(int x) {
-// CHECK-NEXT: int y = 0;
-// CHECK-NEXT: {
-// CHECK-NEXT: bool p;
-// CHECK-NEXT: uint32_t r[10];
-// CHECK-NEXT: r[1] = 0x3F;
-// CHECK-NEXT: r[2] = 2023;
-// CHECK-NEXT: p = x == 34;
-// CHECK-NEXT: if (p) {
-// CHECK-NEXT: y = 1;
-// CHECK-NEXT: }
-// CHECK-NEXT: }
-// CHECK-EMPTY:
-// CHECK-NEXT: return y;
-// CHECK-NEXT:}
+// CHECK:   int y = 0;
+// CHECK:   {
+// CHECK-NEXT:     bool p;
+// CHECK-NEXT:     uint32_t r[10];
+// CHECK-NEXT:     r[1] = 0x3F;
+// CHECK-NEXT:     r[2] = 2023;
+// CHECK-NEXT:     p = x == 34;
+// CHECK-NEXT:     if (p) {
+// CHECK-NEXT:       y = 1;
+// CHECK-NEXT:     }
+// CHECK-NEXT:   }
+// CHECK:   return y;
+// CHECK: }
 __device__ int cond(int x) {
   int y = 0;
   asm("{\n\t"

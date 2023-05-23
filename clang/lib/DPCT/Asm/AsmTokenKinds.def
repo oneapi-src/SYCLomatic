@@ -320,6 +320,7 @@ CMP_OP(geu, ".geu")
 CMP_OP(num, ".num")
 CMP_OP(nan, ".nan")
 
+#undef CMP_OP
 #undef SAT_MOD
 #undef ROUND_MOD
 #undef STATE_SPACE

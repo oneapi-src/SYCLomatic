@@ -20,11 +20,15 @@ class InlineAsmIdentifierInfo {
   friend class InlineAsmIdentifierTable;
 
   // Front-end token ID or tok::identifier.
-  unsigned TokenID;
+  unsigned TokenID : 16;
+  unsigned IsInstruction : 1;
+  unsigned IsBuiltinType : 1;
+  unsigned : 14;
 
   llvm::StringMapEntry<InlineAsmIdentifierInfo *> *Entry = nullptr;
 
-  InlineAsmIdentifierInfo() : TokenID(asmtok::identifier) {}
+  InlineAsmIdentifierInfo()
+      : TokenID(asmtok::identifier), IsInstruction(0), IsBuiltinType(0) {}
 
 public:
   InlineAsmIdentifierInfo(const InlineAsmIdentifierInfo &) = delete;
@@ -63,16 +67,10 @@ public:
     return static_cast<asmtok::TokenKind>(TokenID);
   }
 
-  /// Return true if this token is a keyword in asm.
-  bool isInstruction() const;
-
-  /// Return true if this token is a builtin type in asm.
-  bool isBuiltinType() const;
-
-  /// Provide less than operator for lexicographical sorting.
-  bool operator<(const InlineAsmIdentifierInfo &RHS) const {
-    return getName() < RHS.getName();
-  }
+  void setInstruction() { IsInstruction = true; }
+  void setBuiltinType() { IsBuiltinType = true; }
+  bool isInstruction() const { return IsInstruction; }
+  bool isBuiltinType() const { return IsBuiltinType; }
 };
 
 class InlineAsmIdentifierInfoLookup {
@@ -87,6 +85,9 @@ class InlineAsmIdentifierTable {
   HashTableTy HashTable;
 
   InlineAsmIdentifierInfoLookup *ExternalLookup;
+
+  /// Populate the identifier table with info about the asm keywords.
+  void AddKeywords();
 
 public:
   /// Create the identifier table.
@@ -140,7 +141,6 @@ public:
   }
 
   using iterator = HashTableTy::const_iterator;
-  using const_iterator = HashTableTy::const_iterator;
 
   iterator begin() const { return HashTable.begin(); }
   iterator end() const { return HashTable.end(); }
@@ -149,45 +149,8 @@ public:
   iterator find(StringRef Name) const { return HashTable.find(Name); }
 
   bool contains(StringRef Name) const { return HashTable.contains(Name); }
-
-  /// Populate the identifier table with info about the asm keywords.
-  void AddKeywords();
 };
 
 } // namespace clang::dpct
-
-namespace llvm {
-
-// Provide PointerLikeTypeTraits for IdentifierInfo pointers, which
-// are not guaranteed to be 8-byte aligned.
-template <>
-struct PointerLikeTypeTraits<clang::dpct::InlineAsmIdentifierInfo *> {
-  static void *getAsVoidPointer(clang::dpct::InlineAsmIdentifierInfo *P) {
-    return P;
-  }
-
-  static clang::dpct::InlineAsmIdentifierInfo *getFromVoidPointer(void *P) {
-    return static_cast<clang::dpct::InlineAsmIdentifierInfo *>(P);
-  }
-
-  static constexpr int NumLowBitsAvailable = 1;
-};
-
-template <>
-struct PointerLikeTypeTraits<const clang::dpct::InlineAsmIdentifierInfo *> {
-  static const void *
-  getAsVoidPointer(const clang::dpct::InlineAsmIdentifierInfo *P) {
-    return P;
-  }
-
-  static const clang::dpct::InlineAsmIdentifierInfo *
-  getFromVoidPointer(const void *P) {
-    return static_cast<const clang::dpct::InlineAsmIdentifierInfo *>(P);
-  }
-
-  static constexpr int NumLowBitsAvailable = 1;
-};
-
-} // namespace llvm
 
 #endif // CLANG_DPCT_ASM_IDENTIFIER_TABLE_H

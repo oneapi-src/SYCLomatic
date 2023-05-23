@@ -24,9 +24,7 @@ using namespace clang::dpct;
 
 InlineAsmLexer::InlineAsmLexer(llvm::MemoryBufferRef Input)
     : BufferStart(Input.getBufferStart()), BufferEnd(Input.getBufferEnd()),
-      BufferPtr(Input.getBufferStart()) {
-  Identifiers.AddKeywords();
-}
+      BufferPtr(Input.getBufferStart()) {}
 
 InlineAsmLexer::~InlineAsmLexer() = default;
 
@@ -38,17 +36,33 @@ static inline bool isIdentifierContinue(unsigned char C) {
   return clang::isAsciiIdentifierContinue(C, /*AllowDollar*/ true);
 }
 
+/// Clean the special character in identifier.
+/// Rule: delete leading '%' characters
+///       replace '$' with '__d__'
+///       replace '%' with '__p__'
+/// %r -> r
+/// %$r -> __d__r
+/// %r$ -> r__d__
+/// %r% -> r__p__
+/// %%r -> __p__r
 void InlineAsmLexer::cleanIdentifier(SmallVectorImpl<char> &Buf,
                                      StringRef Input) const {
   Buf.clear();
   Input = Input.drop_while([](char C) { return C == '%'; });
+  auto Push = [&Buf](char C) {
+    Buf.push_back('_');
+    Buf.push_back('_');
+    Buf.push_back(C);
+    Buf.push_back('_');
+    Buf.push_back('_');
+  };
   for (char C : Input) {
     switch (C) {
     case '$':
-      Buf.push_back('s');
+      Push('d');
       break;
     case '%':
-      Buf.push_back('p');
+      Push('p');
       break;
     default:
       Buf.push_back(C);
@@ -61,12 +75,14 @@ InlineAsmIdentifierInfo *
 InlineAsmLexer::lookupIdentifierInfo(InlineAsmToken &Identifier) const {
   assert(!Identifier.getRawIdentifier().empty() && "No raw identifier data!");
   InlineAsmIdentifierInfo *II;
-  if (!Identifier.needsCleaning())
-    II = getIdentifierInfo(Identifier.getRawIdentifier());
-  else {
+  StringRef Raw = Identifier.getRawIdentifier();
+  if (Identifier.needsCleaning() || Raw.contains("_ctd_") ||
+      Raw.contains("_ctp_")) {
     SmallString<64> IdentifierBuffer;
     cleanIdentifier(IdentifierBuffer, Identifier.getRawIdentifier());
     II = getIdentifierInfo(IdentifierBuffer);
+  } else {
+    II = getIdentifierInfo(Identifier.getRawIdentifier());
   }
   Identifier.setIdentifier(II);
   Identifier.setKind(II->getTokenID());
@@ -75,25 +91,13 @@ InlineAsmLexer::lookupIdentifierInfo(InlineAsmToken &Identifier) const {
 
 bool InlineAsmLexer::isHexLiteral(const char *Start) const {
   char C = getChar(Start);
-  if (C != 0)
+  if (C != '0')
     return false;
   C = getChar(Start + 1);
   return (C == 'x' || C == 'X');
 }
 
 bool InlineAsmLexer::lex(InlineAsmToken &Result) {
-
-  if (CachedLexPos < CachedTokens.size()) {
-    Result = CachedTokens[CachedLexPos++];
-    return true;
-  }
-
-  if (!CachedTokens.empty()) {
-    // All cached tokens were consumed.
-    CachedTokens.clear();
-    CachedLexPos = 0;
-  }
-
   Result.startToken();
   /// TODO: Set up misc whitespace flags
   return lexTokenInternal(Result);
@@ -122,17 +126,12 @@ LexNextToken:
   case 0: // Null.
     if (CurPtr - 1 == BufferEnd) {
       BufferPtr = CurPtr;
-      formTokenWithChars(Result, CurPtr, asmtok::eof);
-      return true;
+      Kind = asmtok::eof;
+      break;
     }
-    BufferPtr = CurPtr;
-    goto LexNextToken;
+    [[fallthrough]];
   case '\r':
   case '\n':
-  case ' ':
-  case '\t':
-  case '\f':
-  case '\v':
     BufferPtr = CurPtr;
     goto LexNextToken;
   // clang-format off
@@ -149,8 +148,10 @@ LexNextToken:
   case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n':
   case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u':
   case 'v': case 'w': case 'x': case 'y': case 'z':
-  case '$':
     // clang-format on
+    return lexIdentifierContinue(Result, CurPtr);
+  case '$':
+    Result.setFlag(InlineAsmToken::NeedsCleaning);
     return lexIdentifierContinue(Result, CurPtr);
   case '_':
     Char = getChar(CurPtr);
@@ -165,10 +166,10 @@ LexNextToken:
       return lexIdentifierContinue(Result, CurPtr);
     }
     if (Char == '%') {
-      Char = getAndAdvanceChar(CurPtr);
-      if (isIdentifierStart(Char)) {
-        if (Char == '%' || Char == '$')
-          Result.setFlag(InlineAsmToken::NeedsCleaning);
+      ++CurPtr;
+      Char = getChar(CurPtr);
+      if (isIdentifierContinue(Char)) {
+        Result.setFlag(InlineAsmToken::NeedsCleaning);
         return lexIdentifierContinue(Result, CurPtr);
       }
       Kind = asmtok::percent;
@@ -222,7 +223,7 @@ LexNextToken:
     Char = getChar(CurPtr);
     if (Char == '&') {
       Kind = asmtok::ampamp;
-      CurPtr = consumeChar(CurPtr);
+      CurPtr++;
     } else {
       Kind = asmtok::amp;
     }
@@ -231,7 +232,7 @@ LexNextToken:
     Char = getChar(CurPtr);
     if (Char == '|') {
       Kind = asmtok::pipepipe;
-      CurPtr = consumeChar(CurPtr);
+      CurPtr++;
     } else {
       Kind = asmtok::pipe;
     }
@@ -251,7 +252,7 @@ LexNextToken:
   case '!':
     if (getChar(CurPtr) == '=') {
       Kind = asmtok::exclaimequal;
-      CurPtr = consumeChar(CurPtr);
+      CurPtr++;
     } else {
       Kind = asmtok::exclaim;
     }
@@ -262,10 +263,10 @@ LexNextToken:
   case '<':
     Char = getChar(CurPtr);
     if (Char == '<') {
-      CurPtr = consumeChar(CurPtr);
+      CurPtr++;
       Kind = asmtok::lessless;
     } else if (Char == '=') {
-      CurPtr = consumeChar(CurPtr);
+      CurPtr++;
       Kind = asmtok::lessequal;
     } else {
       Kind = asmtok::less;
@@ -274,10 +275,10 @@ LexNextToken:
   case '>':
     Char = getChar(CurPtr);
     if (Char == '>') {
-      CurPtr = consumeChar(CurPtr);
+      CurPtr++;
       Kind = asmtok::greatergreater;
     } else if (Char == '=') {
-      CurPtr = consumeChar(CurPtr);
+      CurPtr++;
       Kind = asmtok::greaterequal;
     } else {
       Kind = asmtok::greater;
@@ -289,7 +290,7 @@ LexNextToken:
   case ':':
     Char = getChar(CurPtr);
     if (Char == ':') {
-      CurPtr = consumeChar(CurPtr);
+      CurPtr++;
       Kind = asmtok::coloncolon;
     } else {
       Kind = asmtok::colon;
@@ -298,7 +299,7 @@ LexNextToken:
   case '=':
     Char = getChar(CurPtr);
     if (Char == '=') {
-      CurPtr = consumeChar(CurPtr);
+      CurPtr++;
       Kind = asmtok::equalequal;
     } else {
       Kind = asmtok::equal;
@@ -317,7 +318,7 @@ LexNextToken:
     Kind = asmtok::unknown;
     break;
   }
-  formTokenWithChars(Result, CurPtr, Kind);
+  formToken(Result, CurPtr, Kind);
   return true;
 }
 
@@ -338,7 +339,7 @@ bool InlineAsmLexer::lexIdentifierContinue(InlineAsmToken &Result,
     if (isIdentifierContinue(C)) {
       if (Result.isPlaceholder())
         break;
-      if (!Result.needsCleaning() && (C == '$' || C == '%'))
+      if (C == '$' || C == '%')
         Result.setFlag(InlineAsmToken::NeedsCleaning);
       ++CurPtr;
       continue;
@@ -351,21 +352,10 @@ bool InlineAsmLexer::lexIdentifierContinue(InlineAsmToken &Result,
     ++BufferPtr; // Skip '.'
 
   const char *IdStart = BufferPtr;
-  formTokenWithChars(Result, CurPtr, asmtok::raw_identifier);
+  formToken(Result, CurPtr, asmtok::raw_identifier);
   Result.setRawIdentifierData(IdStart);
 
-  InlineAsmIdentifierInfo *II = lookupIdentifierInfo(Result);
-
-  if (Result.isPlaceholder() && II->getName().starts_with("%")) {
-    // error: Inline asm placeholder must be resolved in LookUpIdentifierInfo.
-    return false;
-  }
-
-  if (!Result.isPlaceholder() &&
-      (II->getName().contains('%') || II->getName().contains('$'))) {
-    // error: This identifier must be cleaned in LookUpIdentifierInfo.
-    return false;
-  }
+  (void)lookupIdentifierInfo(Result);
   return true;
 }
 
@@ -374,7 +364,7 @@ bool InlineAsmLexer::lexNumericConstant(InlineAsmToken &Result,
   char C = getChar(CurPtr);
   char PrevCh = 0;
   while (isPreprocessingNumberBody(C)) {
-    CurPtr = consumeChar(CurPtr);
+    CurPtr++;
     PrevCh = C;
     C = getChar(CurPtr);
   }
@@ -383,17 +373,17 @@ bool InlineAsmLexer::lexNumericConstant(InlineAsmToken &Result,
   if ((C == '-' || C == '+') && (PrevCh == 'E' || PrevCh == 'e')) {
     // If we are in Microsoft mode, don't continue if the constant is hex.
     // For example, MSVC will accept the following as 3 tokens: 0x1234567e+1
-    if (isHexLiteral(BufferPtr))
-      return lexNumericConstant(Result, consumeChar(CurPtr));
+    if (!isHexLiteral(BufferPtr))
+      return lexNumericConstant(Result, CurPtr++);
   }
 
   // If we have a hex FP constant, continue.
   if ((C == '-' || C == '+') && (PrevCh == 'P' || PrevCh == 'p')) {
-    return lexNumericConstant(Result, consumeChar(CurPtr));
+    return lexNumericConstant(Result, CurPtr++);
   }
 
   const char *TokStart = BufferPtr;
-  formTokenWithChars(Result, CurPtr, asmtok::numeric_constant);
+  formToken(Result, CurPtr, asmtok::numeric_constant);
   Result.setLiteralData(TokStart);
   return true;
 }

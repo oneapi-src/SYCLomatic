@@ -86,6 +86,7 @@ public:
   enum TypeKind : uint8_t {
 #define BUILTIN_TYPE(X, Y) TK_##X,
 #include "AsmTokenKinds.def"
+    NUM_TYPES
   };
 
 private:
@@ -831,9 +832,8 @@ class InlineAsmContext : public InlineAsmIdentifierInfoLookup {
   /// provides the ability to index by subscript.
   SmallVector<InlineAsmIdentifierInfo *, 4> InlineAsmOperands;
 
-  /// This map used to cache the builtin types.
-  llvm::DenseMap</*InlineAsmBuiltinType::TypeKind*/ int, InlineAsmBuiltinType *>
-      AsmBuiltinTypes;
+  /// This array used to cache the builtin types.
+  InlineAsmBuiltinType *AsmBuiltinTypes[InlineAsmBuiltinType::NUM_TYPES] = {0};
 
   /// This used to cache the discard type.
   InlineAsmDiscardType *DiscardType;
@@ -1008,16 +1008,6 @@ class InlineAsmParser {
   /// that this is valid.
   InlineAsmToken Tok;
 
-  // PrevTokLocation - The location of the token we previously
-  // consumed. This token is used for diagnostics where we expected to
-  // see a token following another token (e.g., the ';' at the end of
-  // a statement).
-  SMLoc PrevTokLocation;
-
-  unsigned short ParenCount = 0;
-  unsigned short BracketCount = 0;
-  unsigned short BraceCount = 0;
-
   /// ScopeCache - Cache scopes to reduce malloc traffic.
   enum { ScopeCacheSize = 16 };
   unsigned NumCachedScopes = 0;
@@ -1055,87 +1045,12 @@ public:
 
   const InlineAsmToken &getCurToken() const { return Tok; }
 
-  /// isTokenParen - Return true if the cur token is '(' or ')'.
-  bool isTokenParen() const {
-    return Tok.isOneOf(asmtok::l_paren, asmtok::r_paren);
-  }
-  /// isTokenBracket - Return true if the cur token is '[' or ']'.
-  bool isTokenBracket() const {
-    return Tok.isOneOf(asmtok::l_square, asmtok::r_square);
-  }
-  /// isTokenBrace - Return true if the cur token is '{' or '}'.
-  bool isTokenBrace() const {
-    return Tok.isOneOf(asmtok::l_brace, asmtok::r_brace);
-  }
-
-  /// isTokenSpecial - True if this token requires special consumption methods.
-  bool isTokenSpecial() const {
-    return isTokenParen() || isTokenBracket() || isTokenBrace();
-  }
-
-  /// ConsumeParen - This consume method keeps the paren count up-to-date.
-  ///
-  SMLoc ConsumeParen() {
-    assert(isTokenParen() && "wrong consume method");
-    if (Tok.getKind() == asmtok::l_paren)
-      ++ParenCount;
-    else if (ParenCount) {
-      --ParenCount; // Don't let unbalanced )'s drive the count negative.
-    }
-    PrevTokLocation = Tok.getLocation();
-    Lexer.lex(Tok);
-    return PrevTokLocation;
-  }
-
-  /// ConsumeBracket - This consume method keeps the bracket count up-to-date.
-  ///
-  SMLoc ConsumeBracket() {
-    assert(isTokenBracket() && "wrong consume method");
-    if (Tok.getKind() == asmtok::l_square)
-      ++BracketCount;
-    else if (BracketCount) {
-      --BracketCount; // Don't let unbalanced ]'s drive the count negative.
-    }
-
-    PrevTokLocation = Tok.getLocation();
-    Lexer.lex(Tok);
-    return PrevTokLocation;
-  }
-
-  /// ConsumeBrace - This consume method keeps the brace count up-to-date.
-  ///
-  SMLoc ConsumeBrace() {
-    assert(isTokenBrace() && "wrong consume method");
-    if (Tok.getKind() == asmtok::l_brace)
-      ++BraceCount;
-    else if (BraceCount) {
-      --BraceCount; // Don't let unbalanced }'s drive the count negative.
-    }
-
-    PrevTokLocation = Tok.getLocation();
-    Lexer.lex(Tok);
-    return PrevTokLocation;
-  }
-
   /// ConsumeToken - Consume the current 'peek token' and lex the next one.
-  /// This does not work with special tokens: string literals, code completion,
-  /// annotation tokens and balanced tokens must be handled using the specific
-  /// consume methods.
-  /// Returns the location of the consumed token.
-  SMLoc ConsumeToken() {
-    assert(!isTokenSpecial() &&
-           "Should consume special tokens with Consume*Token");
-    PrevTokLocation = Tok.getLocation();
-    Lexer.lex(Tok);
-    return PrevTokLocation;
-  }
+  void ConsumeToken() { Lexer.lex(Tok); }
 
   bool TryConsumeToken(asmtok::TokenKind Expected) {
     if (Tok.isNot(Expected))
       return false;
-    assert(!isTokenSpecial() &&
-           "Should consume special tokens with Consume*Token");
-    PrevTokLocation = Tok.getLocation();
     Lexer.lex(Tok);
     return true;
   }
@@ -1143,32 +1058,8 @@ public:
   bool TryConsumeToken(asmtok::TokenKind Expected, SMLoc &Loc) {
     if (!TryConsumeToken(Expected))
       return false;
-    Loc = PrevTokLocation;
     return true;
   }
-
-  /// ConsumeAnyToken - Dispatch to the right Consume* method based on the
-  /// current token type.  This should only be used in cases where the type of
-  /// the token really isn't known, e.g. in error recovery.
-  SMLoc ConsumeAnyToken() {
-    if (isTokenParen())
-      return ConsumeParen();
-    if (isTokenBracket())
-      return ConsumeBracket();
-    if (isTokenBrace())
-      return ConsumeBrace();
-    return ConsumeToken();
-  }
-
-  // ExpectAndConsume - The parser expects that 'ExpectedTok' is next in the
-  /// input.  If so, it is consumed and false is returned.
-  ///
-  /// If a trivial punctuator misspelling is encountered, a FixIt error
-  /// diagnostic is issued and false is returned after recovery.
-  ///
-  /// If the input is malformed, this emits the specified diagnostic and true is
-  /// returned.
-  bool ExpectAndConsume(asmtok::TokenKind ExpectedTok);
 
   InlineAsmDeclResult addInlineAsmOperands(StringRef Operand,
                                            StringRef Constraint);

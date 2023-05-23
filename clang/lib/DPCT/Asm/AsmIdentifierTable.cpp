@@ -1,4 +1,4 @@
-//===------------------ AsmIdentifierTable.cpp ------------------*- C++ -*-===//
+//===------------------ AsmIdentifierTable.cpp ------------------*- C++-*-===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -22,34 +22,8 @@ InlineAsmIdentifierTable::InlineAsmIdentifierTable(
 }
 
 void InlineAsmIdentifierTable::AddKeywords() {
-#define KEYWORD(X, Y) (void)get(#X, asmtok::kw_##X);
-#define INSTRUCTION(X) (void)get(#X, asmtok::op_##X);
+#define KEYWORD(X, Y) get(#X, asmtok::kw_##X);
+#define BUILTIN_TYPE(X, Y) get(#X, asmtok::kw_##X).setBuiltinType();
+#define INSTRUCTION(X) get(#X, asmtok::op_##X).setInstruction();
 #include "AsmTokenKinds.def"
-}
-
-bool InlineAsmIdentifierInfo::isInstruction() const {
-  switch (getTokenID()) {
-#define KEYWORD(X, Y)                                                          \
-  case asmtok::kw_##X:                                                         \
-    return true;
-#define INSTRUCTION(X)                                                         \
-  case asmtok::op_##X:                                                         \
-    return true;
-#include "AsmTokenKinds.def"
-  default:
-    break;
-  }
-  return false;
-}
-
-bool InlineAsmIdentifierInfo::isBuiltinType() const {
-  switch (getTokenID()) {
-#define BUILTIN_TYPE(X, Y)                                                     \
-  case asmtok::kw_##X:                                                         \
-    return true;
-#include "AsmTokenKinds.def"
-  default:
-    break;
-  }
-  return false;
 }

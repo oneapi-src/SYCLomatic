@@ -15,15 +15,11 @@
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/APSInt.h"
 #include "llvm/ADT/StringRef.h"
-#include "llvm/Support/SMLoc.h"
 #include <cstddef>
 
 namespace clang::dpct {
 
-using llvm::SMLoc;
-
 class InlineAsmToken {
-  SMLoc Loc;
   void *PtrData;
   size_t Length;
   asmtok::TokenKind Kind;
@@ -38,15 +34,8 @@ public:
 
   asmtok::TokenKind getKind() const { return Kind; }
   void setKind(asmtok::TokenKind K) { Kind = K; }
-
-  /// Return a source location identifier for the specified
-  /// offset in the current file.
-  SMLoc getLocation() const { return Loc; }
   unsigned getLength() const { return Length; }
-
-  void setLocation(SMLoc L) { Loc = L; }
   void setLength(unsigned Len) { Length = Len; }
-
   const char *getName() const { return asmtok::getTokenName(Kind); }
 
   void startToken() {
@@ -54,7 +43,6 @@ public:
     PtrData = nullptr;
     Length = 0;
     Flags = 0;
-    Loc = SMLoc();
   }
 
   bool hasPtrData() const { return PtrData != nullptr; }
