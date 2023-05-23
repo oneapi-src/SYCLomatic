@@ -672,7 +672,7 @@ public:
   /// \param [in] ptr Pointer to the workspace.
   void set_workspace(void *ptr) {
 #ifndef __INTEL_MKL__
-      return;
+    return;
 #else
     if (!_use_external_workspace) {
       return;
@@ -786,19 +786,22 @@ private:
 #ifdef __INTEL_MKL__
       if (_use_external_workspace) {
         if (_q->get_device().is_gpu()) {
-          _desc_sc->set_value(oneapi::mkl::dft::config_param::WORKSPACE,
-                              oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
+          _desc_sc->set_value(
+              oneapi::mkl::dft::config_param::WORKSPACE,
+              oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
         }
       }
       if (_is_estimate_call) {
         if (_q->get_device().is_gpu()) {
-          _desc_sc->get_value(oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,
-                              &_workspace_estimate_bytes);
+          _desc_sc->get_value(
+              oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,
+              &_workspace_estimate_bytes);
         }
       } else {
         _desc_sc->commit(*_q);
         if (_q->get_device().is_gpu()) {
-          _desc_sc->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES, &_workspace_bytes);
+          _desc_sc->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES,
+                              &_workspace_bytes);
         }
       }
 #else
@@ -839,19 +842,22 @@ private:
 #ifdef __INTEL_MKL__
       if (_use_external_workspace) {
         if (_q->get_device().is_gpu()) {
-          _desc_dc->set_value(oneapi::mkl::dft::config_param::WORKSPACE,
-                              oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
+          _desc_dc->set_value(
+              oneapi::mkl::dft::config_param::WORKSPACE,
+              oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
         }
       }
       if (_is_estimate_call) {
         if (_q->get_device().is_gpu()) {
-          _desc_dc->get_value(oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,
-                              &_workspace_estimate_bytes);
+          _desc_dc->get_value(
+              oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,
+              &_workspace_estimate_bytes);
         }
       } else {
         _desc_dc->commit(*_q);
         if (_q->get_device().is_gpu()) {
-          _desc_dc->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES, &_workspace_bytes);
+          _desc_dc->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES,
+                              &_workspace_bytes);
         }
       }
 #else
@@ -893,19 +899,22 @@ private:
 #ifdef __INTEL_MKL__
       if (_use_external_workspace) {
         if (_q->get_device().is_gpu()) {
-          _desc_sr->set_value(oneapi::mkl::dft::config_param::WORKSPACE,
-                              oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
+          _desc_sr->set_value(
+              oneapi::mkl::dft::config_param::WORKSPACE,
+              oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
         }
       }
       if (_is_estimate_call) {
         if (_q->get_device().is_gpu()) {
-          _desc_sr->get_value(oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,
-                              &_workspace_estimate_bytes);
+          _desc_sr->get_value(
+              oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,
+              &_workspace_estimate_bytes);
         }
       } else {
         _desc_sr->commit(*_q);
         if (_q->get_device().is_gpu()) {
-          _desc_sr->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES, &_workspace_bytes);
+          _desc_sr->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES,
+                              &_workspace_bytes);
         }
       }
 #else
@@ -947,19 +956,22 @@ private:
 #ifdef __INTEL_MKL__
       if (_use_external_workspace) {
         if (_q->get_device().is_gpu()) {
-          _desc_dr->set_value(oneapi::mkl::dft::config_param::WORKSPACE,
-                              oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
+          _desc_dr->set_value(
+              oneapi::mkl::dft::config_param::WORKSPACE,
+              oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
         }
       }
       if (_is_estimate_call) {
         if (_q->get_device().is_gpu()) {
-          _desc_dr->get_value(oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,
-                              &_workspace_estimate_bytes);
+          _desc_dr->get_value(
+              oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,
+              &_workspace_estimate_bytes);
         }
       } else {
         _desc_dr->commit(*_q);
         if (_q->get_device().is_gpu()) {
-          _desc_dr->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES, &_workspace_bytes);
+          _desc_dr->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES,
+                              &_workspace_bytes);
         }
       }
 #else
@@ -973,57 +985,58 @@ private:
 
   void config_and_commit_advanced() {
 #ifdef __INTEL_MKL__
-#define CONFIG_AND_COMMIT(DESC, PREC, DOM, TYPE)                                  \
-  {                                                                               \
-    DESC = std::make_shared<oneapi::mkl::dft::descriptor<                         \
-        oneapi::mkl::dft::precision::PREC, oneapi::mkl::dft::domain::DOM>>(       \
-        _n);                                                                      \
-    set_stride_advanced(DESC);                                                    \
-    DESC->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, _fwd_dist);     \
-    DESC->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, _bwd_dist);     \
-    DESC->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,         \
-                    _batch);                                                      \
-    if (_is_user_specified_dir_and_placement && _is_inplace)                      \
-      DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,                  \
-                      DFTI_CONFIG_VALUE::DFTI_INPLACE);                           \
-    else                                                                          \
-      DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,                  \
-                      DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);                       \
-    if (_use_external_workspace) {                                                \
-      DESC->set_value(oneapi::mkl::dft::config_param::WORKSPACE,                  \
-                      oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);        \
-    }                                                                             \
-    if (_is_estimate_call) {                                                      \
-      if (_q->get_device().is_gpu()) {                                            \
-        DESC->get_value(oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES, \
-                        &_workspace_estimate_bytes);                              \
-      }                                                                           \
-    } else {                                                                      \
-      DESC->commit(*_q);                                                          \
-      if (_is_estimate_call) {                                                    \
-        DESC->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES,          \
-                        &_workspace_bytes);                                       \
-      }                                                                           \
-    }                                                                             \
+#define CONFIG_AND_COMMIT(DESC, PREC, DOM, TYPE)                               \
+  {                                                                            \
+    DESC = std::make_shared<oneapi::mkl::dft::descriptor<                      \
+        oneapi::mkl::dft::precision::PREC, oneapi::mkl::dft::domain::DOM>>(    \
+        _n);                                                                   \
+    set_stride_advanced(DESC);                                                 \
+    DESC->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, _fwd_dist);  \
+    DESC->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, _bwd_dist);  \
+    DESC->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,      \
+                    _batch);                                                   \
+    if (_is_user_specified_dir_and_placement && _is_inplace)                   \
+      DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,               \
+                      DFTI_CONFIG_VALUE::DFTI_INPLACE);                        \
+    else                                                                       \
+      DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,               \
+                      DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);                    \
+    if (_use_external_workspace) {                                             \
+      DESC->set_value(oneapi::mkl::dft::config_param::WORKSPACE,               \
+                      oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);     \
+    }                                                                          \
+    if (_is_estimate_call) {                                                   \
+      if (_q->get_device().is_gpu()) {                                         \
+        DESC->get_value(                                                       \
+            oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,          \
+            &_workspace_estimate_bytes);                                       \
+      }                                                                        \
+    } else {                                                                   \
+      DESC->commit(*_q);                                                       \
+      if (_is_estimate_call) {                                                 \
+        DESC->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES,       \
+                        &_workspace_bytes);                                    \
+      }                                                                        \
+    }                                                                          \
   }
 #else
-#define CONFIG_AND_COMMIT(DESC, PREC, DOM, TYPE)                                  \
-  {                                                                               \
-    DESC = std::make_shared<oneapi::mkl::dft::descriptor<                         \
-        oneapi::mkl::dft::precision::PREC, oneapi::mkl::dft::domain::DOM>>(       \
-        _n);                                                                      \
-    set_stride_advanced(DESC);                                                    \
-    DESC->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, _fwd_dist);     \
-    DESC->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, _bwd_dist);     \
-    DESC->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,         \
-                    _batch);                                                      \
-    if (_is_user_specified_dir_and_placement && _is_inplace)                      \
-      DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,                  \
-                      oneapi::mkl::dft::config_value::INPLACE);                   \
-    else                                                                          \
-      DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,                  \
-                      oneapi::mkl::dft::config_value::NOT_INPLACE);               \
-      DESC->commit(*_q);                                                          \
+#define CONFIG_AND_COMMIT(DESC, PREC, DOM, TYPE)                               \
+  {                                                                            \
+    DESC = std::make_shared<oneapi::mkl::dft::descriptor<                      \
+        oneapi::mkl::dft::precision::PREC, oneapi::mkl::dft::domain::DOM>>(    \
+        _n);                                                                   \
+    set_stride_advanced(DESC);                                                 \
+    DESC->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, _fwd_dist);  \
+    DESC->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, _bwd_dist);  \
+    DESC->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,      \
+                    _batch);                                                   \
+    if (_is_user_specified_dir_and_placement && _is_inplace)                   \
+      DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,               \
+                      oneapi::mkl::dft::config_value::INPLACE);                \
+    else                                                                       \
+      DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,               \
+                      oneapi::mkl::dft::config_value::NOT_INPLACE);            \
+    DESC->commit(*_q);                                                         \
   }
 #endif
 
