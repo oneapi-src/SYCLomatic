@@ -207,6 +207,7 @@ typedef bool (*CrashGuardFunc)(llvm::function_ref<void()>, std::string);
 bool processFilesWithCrashGuardDefault(llvm::function_ref<void()> Func,
                                        std::string) {
   Func();
+  return true;
 }
 
 CrashGuardFunc ProcessFilesWithCrashGuardPtr =
