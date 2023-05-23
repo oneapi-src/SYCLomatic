@@ -236,7 +236,7 @@ void emitDefaultLanguageWarningIfNecessary(const std::string &FileName,
       llvm::sys::path::extension(FileName) != ".cuh") {
     llvm::outs() << "NOTE: Treat " << FileName
                  << " as CUDA file by default. Consider using option "
-                    "--extra-arg=-xc++ to treat it as C++ file."
+                    "--extra-arg=-xc++ to treat it as C++ file if necessary."
                  << "\n";
   }
 }
