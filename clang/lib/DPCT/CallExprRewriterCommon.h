@@ -913,7 +913,7 @@ template <class... StmtPrinters>
 inline std::shared_ptr<CallExprRewriterFactoryBase>
 createMultiStmtsRewriterFactory(
     const std::string &SourceName,
-    std::function<StmtPrinters(const CallExpr *)> &&...Creators) {
+    std::function<StmtPrinters(const CallExpr *)> &&... Creators) {
   return std::make_shared<ConditionalRewriterFactory>(
       isCallAssigned,
       std::make_shared<AssignableRewriterFactory>(

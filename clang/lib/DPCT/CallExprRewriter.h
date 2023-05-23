@@ -367,6 +367,7 @@ public:
 class AssignableRewriterFactory : public CallExprRewriterFactoryBase {
   std::shared_ptr<CallExprRewriterFactoryBase> Inner;
   bool ExtraParen = false;
+
 public:
   AssignableRewriterFactory(
       std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory,

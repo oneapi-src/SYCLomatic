@@ -864,7 +864,8 @@ public:
 
     if (DataFuncInfo.isAssigned) {
       DataRepl << "CHECK_SYCL_ERROR(";
-      requestFeature(HelperFeatureEnum::Dpct_check_sycl_error, DataFuncInfo.FilePath);
+      requestFeature(HelperFeatureEnum::Dpct_check_sycl_error,
+                     DataFuncInfo.FilePath);
     }
     DataRepl << DataFuncInfo.FuncArgs[0] << ".async_rnn_backward("
              << DataFuncInfo.FuncArgs[1];

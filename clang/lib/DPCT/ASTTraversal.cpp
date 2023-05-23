@@ -5645,8 +5645,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         SM->isMacroArgExpansion(CE->getEndLoc())) {
       if (IsAssigned) {
         requestFeature(HelperFeatureEnum::Dpct_check_sycl_error, CE);
-        emplaceTransformation(
-            new ReplaceText(SR.getBegin(), Len, "CHECK_SYCL_ERROR(" + Repl + ")"));
+        emplaceTransformation(new ReplaceText(
+            SR.getBegin(), Len, "CHECK_SYCL_ERROR(" + Repl + ")"));
       } else {
         emplaceTransformation(
             new ReplaceText(SR.getBegin(), Len, std::move(Repl)));
@@ -5654,7 +5654,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     } else {
       if (IsAssigned) {
         requestFeature(HelperFeatureEnum::Dpct_check_sycl_error, CE);
-        emplaceTransformation(new ReplaceStmt(CE, true, "CHECK_SYCL_ERROR(" + Repl + ")"));
+        emplaceTransformation(
+            new ReplaceStmt(CE, true, "CHECK_SYCL_ERROR(" + Repl + ")"));
       } else {
         emplaceTransformation(new ReplaceStmt(CE, true, Repl));
       }
@@ -6653,7 +6654,8 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
     if (IsAssigned) {
       requestFeature(HelperFeatureEnum::Dpct_check_sycl_error, CE);
-      emplaceTransformation(new ReplaceStmt(CE, true, "CHECK_SYCL_ERROR(" + Repl + ")"));
+      emplaceTransformation(
+          new ReplaceStmt(CE, true, "CHECK_SYCL_ERROR(" + Repl + ")"));
     } else {
       emplaceTransformation(new ReplaceStmt(CE, true, Repl));
     }
@@ -12126,9 +12128,9 @@ void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
     requestFeature(HelperFeatureEnum::Kernel_kernel_function_info, V);
   } else if (auto C = getNodeAsType<CallExpr>(Result, "call")) {
     requestFeature(HelperFeatureEnum::Kernel_get_kernel_function_info, C);
-    emplaceTransformation(
-        new ReplaceToken(C->getBeginLoc(), "CHECK_SYCL_ERROR(" + MapNames::getDpctNamespace() +
-                                               "get_kernel_function_info"));
+    emplaceTransformation(new ReplaceToken(
+        C->getBeginLoc(), "CHECK_SYCL_ERROR(" + MapNames::getDpctNamespace() +
+                              "get_kernel_function_info"));
     emplaceTransformation(new InsertAfterStmt(C, ")"));
     auto FuncArg = C->getArg(1);
     emplaceTransformation(new InsertBeforeStmt(FuncArg, "(const void *)"));

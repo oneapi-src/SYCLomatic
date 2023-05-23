@@ -343,9 +343,10 @@ protected:
                           std::move(Strings.SuffixInsertStr), true);
       }
       if (Flags.IsAssigned) {
-        insertAroundRange(Locations.FuncNameBegin, Locations.FuncCallEnd, "CHECK_SYCL_ERROR(",
-                          ")");
-        requestFeature(HelperFeatureEnum::Dpct_check_sycl_error, Locations.PrefixInsertLoc);
+        insertAroundRange(Locations.FuncNameBegin, Locations.FuncCallEnd,
+                          "CHECK_SYCL_ERROR(", ")");
+        requestFeature(HelperFeatureEnum::Dpct_check_sycl_error,
+                       Locations.PrefixInsertLoc);
       }
 
       emplaceTransformation(new ReplaceStmt(CE, true, Strings.Repl));
