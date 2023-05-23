@@ -866,7 +866,7 @@ public:
 class engine_ext {
   ::dnnl::engine _eng;
   ::dnnl::stream _s;
-  sycl::queue *_q;
+  sycl::queue *_q = nullptr;
   std::map<void *, ::dnnl::memory> workspace_map;
   std::int64_t _random_engine_state_size = -1;
   struct output_argument_info {
@@ -5025,8 +5025,14 @@ size_t engine_ext::get_dropout_state_size(){
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
                            "Interfaces Project does not support this API.");
 #else
+  sycl::queue q;
   if(_random_engine_state_size == -1) {
-    auto rand_engine = rng_engine_t(*_q, 0);
+    if(_q){
+      q = *_q;
+    } else {
+      q = dpct::get_current_device().default_queue();
+    }
+    auto rand_engine = rng_engine_t(q, 0);
     _random_engine_state_size = oneapi::mkl::rng::get_state_size(rand_engine);
   }
   return _random_engine_state_size;
