@@ -18,9 +18,12 @@ CONDITIONAL_FACTORY_ENTRY(
                          "experimental::calculate_max_active_wg_per_xecore",
                      ARG(0), ARG(2),
                      BO(BinaryOperatorKind::BO_Add, ARG(3),
-                        ARG("dpct_placeholder /* static shared local memory "
+                        ARG("dpct_placeholder /* total share local memory "
                             "size */"))))),
-        Diagnostics::MAX_ACTIVE_WG_ARGS, ARG(1)),
+        Diagnostics::MAX_ACTIVE_WG_ARGS,
+        ARG(MapNames::getDpctNamespace() +
+            "experimental::calculate_max_active_wg_per_xecore"),
+        ARG(1)),
     ENTRY_UNSUPPORTED("cudaOccupancyMaxActiveBlocksPerMultiprocessor",
                       Diagnostics::API_NOT_MIGRATED))
 
@@ -36,8 +39,11 @@ CONDITIONAL_FACTORY_ENTRY(
                          "experimental::calculate_max_active_wg_per_xecore",
                      ARG(0), ARG(2),
                      BO(BinaryOperatorKind::BO_Add, ARG(3),
-                        ARG("dpct_placeholder /* static shared local memory "
+                        ARG("dpct_placeholder /* total share local memory "
                             "size */"))))),
-        Diagnostics::MAX_ACTIVE_WG_ARGS, ARG(1)),
+        Diagnostics::MAX_ACTIVE_WG_ARGS,
+        ARG(MapNames::getDpctNamespace() +
+            "experimental::calculate_max_active_wg_per_xecore"),
+        ARG(1)),
     ENTRY_UNSUPPORTED("cuOccupancyMaxActiveBlocksPerMultiprocessor",
                       Diagnostics::API_NOT_MIGRATED))
