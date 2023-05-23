@@ -9505,6 +9505,11 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
     if (isCubVar(MemVar)) {
       return;
     }
+    CanonicalType = MemVar->getType().getCanonicalType().getAsString();
+    if (CanonicalType.find("block_tile_memory") != std::string::npos) {
+      emplaceTransformation(new ReplaceVarDecl(MemVar, ""));
+      return;
+    }
     auto Info = MemVarInfo::buildMemVarInfo(MemVar);
     if (!Info)
       return;
@@ -11863,7 +11868,7 @@ void CooperativeGroupsFunctionRule::runRule(
   ReportUnsupportedWarning RUW(CE->getBeginLoc(), FuncName, this);
 
   if (FuncName == "sync" || FuncName == "thread_rank" || FuncName == "size" ||
-      FuncName == "shfl_down") {
+      FuncName == "shfl_down" || FuncName == "reduce") {
     // There are 3 usages of cooperative groups APIs.
     // 1. cg::thread_block tb; tb.sync(); // member function
     // 2. cg::thread_block tb; cg::sync(tb); // free function
@@ -11879,9 +11884,6 @@ void CooperativeGroupsFunctionRule::runRule(
     EA.applyAllSubExprRepl();
     RUW.NeedReport = false;
   } else if (FuncName == "this_thread_block") {
-    if (CE->getNumArgs()) {
-      return;
-    }
     if (auto P = getAncestorDeclStmt(CE)) {
       if (auto VD = dyn_cast<VarDecl>(*P->decl_begin())) {
         emplaceTransformation(new ReplaceTypeInDecl(VD, "auto"));
@@ -11915,11 +11917,6 @@ void CooperativeGroupsFunctionRule::runRule(
         }
       }
     }
-  } else if (FuncName == "reduce") {
-    RUW.NeedReport = false;
-    ExprAnalysis EA(CE);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
   }
 }
 
