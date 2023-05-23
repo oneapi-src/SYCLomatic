@@ -83,7 +83,6 @@ enum fft_type : int {
 // Device|get_default_queue
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-#ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
 /// A class to perform FFT calculation.
 class fft_engine {
 public:
@@ -445,6 +444,7 @@ public:
   /// \param [in] engine Pointer returned from fft_engine::craete.
   static void destroy(fft_engine *engine) { delete engine; }
 
+#ifdef __INTEL_MKL__
   /// Estimates the workspace size for calculating n-D FFT.
   /// \param [in] dim Dimension number of the data.
   /// \param [in] n Pointer to an array containing each dimension's size.
@@ -581,6 +581,7 @@ public:
                    estimated_scratchpad_size, direction_and_placement);
     fft_engine::destroy(engine);
   }
+#endif
 
   /// Execute the FFT calculation.
   /// \param [in] input Pointer to the input data.
@@ -660,10 +661,19 @@ public:
   /// Setting whether to use external or internal workspace.
   /// \param [in] flag True means using internal workspace. False means using
   /// external workspace.
-  void use_internal_workspace(bool flag = true) { _use_external_workspace = !flag; }
+  void use_internal_workspace(bool flag = true) {
+#ifndef __INTEL_MKL__
+    _use_external_workspace = false;
+#else
+    _use_external_workspace = !flag;
+#endif
+  }
   /// Specify the external workspace.
   /// \param [in] ptr Pointer to the workspace.
   void set_workspace(void *ptr) {
+#ifndef __INTEL_MKL__
+      return;
+#else
     if (!_use_external_workspace) {
       return;
     }
@@ -699,6 +709,7 @@ public:
       throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
                             "invalid fft type");
     }
+#endif
   }
   /// Get the workspace size.
   /// \param [out] scratchpad_size Workspace size in bytes.
@@ -757,11 +768,22 @@ private:
       _desc_sc->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
                           _batch);
       if (_is_user_specified_dir_and_placement && _is_inplace)
+#ifdef __INTEL_MKL__
         _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_INPLACE);
+#else
+        _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                            oneapi::mkl::dft::config_value::INPLACE);
+#endif
       else
+#ifdef __INTEL_MKL__
         _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+#else
+        _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                            oneapi::mkl::dft::config_value::NOT_INPLACE);
+#endif
+#ifdef __INTEL_MKL__
       if (_use_external_workspace) {
         if (_q->get_device().is_gpu()) {
           _desc_sc->set_value(oneapi::mkl::dft::config_param::WORKSPACE,
@@ -779,6 +801,9 @@ private:
           _desc_sc->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES, &_workspace_bytes);
         }
       }
+#else
+      _desc_sc->commit(*_q);
+#endif
     } else if (_input_type == library_data_t::complex_double &&
                _output_type == library_data_t::complex_double) {
       _desc_dc = std::make_shared<
@@ -796,11 +821,22 @@ private:
       _desc_dc->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
                           _batch);
       if (_is_user_specified_dir_and_placement && _is_inplace)
+#ifdef __INTEL_MKL__
         _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_INPLACE);
+#else
+        _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                            oneapi::mkl::dft::config_value::INPLACE);
+#endif
       else
+#ifdef __INTEL_MKL__
         _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+#else
+        _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                            oneapi::mkl::dft::config_value::NOT_INPLACE);
+#endif
+#ifdef __INTEL_MKL__
       if (_use_external_workspace) {
         if (_q->get_device().is_gpu()) {
           _desc_dc->set_value(oneapi::mkl::dft::config_param::WORKSPACE,
@@ -818,6 +854,9 @@ private:
           _desc_dc->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES, &_workspace_bytes);
         }
       }
+#else
+      _desc_dc->commit(*_q);
+#endif
     } else if ((_input_type == library_data_t::real_float &&
                 _output_type == library_data_t::complex_float) ||
                (_input_type == library_data_t::complex_float &&
@@ -833,14 +872,25 @@ private:
       _desc_sr->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
                           _batch);
       if (_is_user_specified_dir_and_placement && _is_inplace) {
+#ifdef __INTEL_MKL__
         _desc_sr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_INPLACE);
+#else
+        _desc_sr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                            oneapi::mkl::dft::config_value::INPLACE);
+#endif
         set_stride_and_distance_basic<true>(_desc_sr);
       } else {
+#ifdef __INTEL_MKL__
         _desc_sr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+#else
+        _desc_sr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                            oneapi::mkl::dft::config_value::NOT_INPLACE);
+#endif
         set_stride_and_distance_basic<false>(_desc_sr);
       }
+#ifdef __INTEL_MKL__
       if (_use_external_workspace) {
         if (_q->get_device().is_gpu()) {
           _desc_sr->set_value(oneapi::mkl::dft::config_param::WORKSPACE,
@@ -858,6 +908,9 @@ private:
           _desc_sr->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES, &_workspace_bytes);
         }
       }
+#else
+      _desc_sr->commit(*_q);
+#endif
     } else if ((_input_type == library_data_t::real_double &&
                 _output_type == library_data_t::complex_double) ||
                (_input_type == library_data_t::complex_double &&
@@ -873,14 +926,25 @@ private:
       _desc_dr->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
                           _batch);
       if (_is_user_specified_dir_and_placement && _is_inplace) {
+#ifdef __INTEL_MKL__
         _desc_dr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_INPLACE);
+#else
+        _desc_dr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                            oneapi::mkl::dft::config_value::INPLACE);
+#endif
         set_stride_and_distance_basic<true>(_desc_dr);
       } else {
+#ifdef __INTEL_MKL__
         _desc_dr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+#else
+        _desc_dr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                            oneapi::mkl::dft::config_value::NOT_INPLACE);
+#endif
         set_stride_and_distance_basic<false>(_desc_dr);
       }
+#ifdef __INTEL_MKL__
       if (_use_external_workspace) {
         if (_q->get_device().is_gpu()) {
           _desc_dr->set_value(oneapi::mkl::dft::config_param::WORKSPACE,
@@ -898,6 +962,9 @@ private:
           _desc_dr->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES, &_workspace_bytes);
         }
       }
+#else
+      _desc_dr->commit(*_q);
+#endif
     } else {
       throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
                             "invalid fft type");
@@ -905,6 +972,7 @@ private:
   }
 
   void config_and_commit_advanced() {
+#ifdef __INTEL_MKL__
 #define CONFIG_AND_COMMIT(DESC, PREC, DOM, TYPE)                                  \
   {                                                                               \
     DESC = std::make_shared<oneapi::mkl::dft::descriptor<                         \
@@ -938,6 +1006,26 @@ private:
       }                                                                           \
     }                                                                             \
   }
+#else
+#define CONFIG_AND_COMMIT(DESC, PREC, DOM, TYPE)                                  \
+  {                                                                               \
+    DESC = std::make_shared<oneapi::mkl::dft::descriptor<                         \
+        oneapi::mkl::dft::precision::PREC, oneapi::mkl::dft::domain::DOM>>(       \
+        _n);                                                                      \
+    set_stride_advanced(DESC);                                                    \
+    DESC->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, _fwd_dist);     \
+    DESC->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, _bwd_dist);     \
+    DESC->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,         \
+                    _batch);                                                      \
+    if (_is_user_specified_dir_and_placement && _is_inplace)                      \
+      DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,                  \
+                      oneapi::mkl::dft::config_value::INPLACE);                   \
+    else                                                                          \
+      DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,                  \
+                      oneapi::mkl::dft::config_value::NOT_INPLACE);               \
+      DESC->commit(*_q);                                                          \
+  }
+#endif
 
     if (_input_type == library_data_t::complex_float &&
         _output_type == library_data_t::complex_float) {
@@ -1171,11 +1259,21 @@ private:
           if (is_this_compute_inplace != _is_inplace) {
             _is_inplace = is_this_compute_inplace;
             if (_is_inplace) {
+#ifdef __INTEL_MKL__
               _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                   DFTI_CONFIG_VALUE::DFTI_INPLACE);
+#else
+              _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                                  oneapi::mkl::dft::config_value::INPLACE);
+#endif
             } else {
+#ifdef __INTEL_MKL__
               _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                   DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+#else
+              _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                                  oneapi::mkl::dft::config_value::NOT_INPLACE);
+#endif
             }
           }
           _desc_sc->commit(*_q);
@@ -1187,11 +1285,21 @@ private:
           if (is_this_compute_inplace != _is_inplace) {
             _is_inplace = is_this_compute_inplace;
             if (_is_inplace) {
+#ifdef __INTEL_MKL__
               _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                   DFTI_CONFIG_VALUE::DFTI_INPLACE);
+#else
+              _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                                  oneapi::mkl::dft::config_value::INPLACE);
+#endif
             } else {
+#ifdef __INTEL_MKL__
               _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                   DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+#else
+              _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                                  oneapi::mkl::dft::config_value::NOT_INPLACE);
+#endif
             }
           }
           _desc_dc->commit(*_q);
@@ -1219,13 +1327,23 @@ private:
         if constexpr (Precision == oneapi::mkl::dft::precision::SINGLE) {
           _is_inplace = is_this_compute_inplace;
           if (_is_inplace) {
+#ifdef __INTEL_MKL__
             _desc_sr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                 DFTI_CONFIG_VALUE::DFTI_INPLACE);
+#else
+            _desc_sr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                                oneapi::mkl::dft::config_value::INPLACE);
+#endif
             if (_is_basic)
               set_stride_and_distance_basic<true>(_desc_sr);
           } else {
+#ifdef __INTEL_MKL__
             _desc_sr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                 DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+#else
+            _desc_sr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                                oneapi::mkl::dft::config_value::NOT_INPLACE);
+#endif
             if (_is_basic)
               set_stride_and_distance_basic<false>(_desc_sr);
           }
@@ -1233,13 +1351,23 @@ private:
         } else {
           _is_inplace = is_this_compute_inplace;
           if (_is_inplace) {
+#ifdef __INTEL_MKL__
             _desc_dr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                 DFTI_CONFIG_VALUE::DFTI_INPLACE);
+#else
+            _desc_dr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                                oneapi::mkl::dft::config_value::INPLACE);
+#endif
             if (_is_basic)
               set_stride_and_distance_basic<true>(_desc_dr);
           } else {
+#ifdef __INTEL_MKL__
             _desc_dr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                                 DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
+#else
+            _desc_dr->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
+                                oneapi::mkl::dft::config_value::NOT_INPLACE);
+#endif
             if (_is_basic)
               set_stride_and_distance_basic<false>(_desc_dr);
           }
@@ -1293,7 +1421,6 @@ private:
 };
 
 using fft_engine_ptr = fft_engine *;
-#endif
 // DPCT_LABEL_END
 } // namespace fft
 } // namespace dpct
