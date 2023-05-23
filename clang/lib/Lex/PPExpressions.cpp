@@ -563,11 +563,6 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
     SourceLocation Start = PeekTok.getLocation();
     PP.LexNonComment(PeekTok);
     if (EvaluateValue(Result, PeekTok, DT, ValueLive, PP)) return true;
-    Result.setBegin(Start);
-    Result.Val = !Result.Val;
-    // C99 6.5.3.3p5: The sign of the result is 'int', aka it is signed.
-    Result.Val.setIsUnsigned(false);
-    Result.setIdentifier(nullptr);
 #ifdef SYCLomatic_CUSTOMIZATION
     if (ProcessingCudaRTVersionMacro) {
       ProcessingCudaRTVersionMacro = false;
@@ -575,6 +570,11 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
           std::make_tuple(Result.getRange(), !Result.Val.isZero(), false));
     }
 #endif // SYCLomatic_CUSTOMIZATION
+    Result.setBegin(Start);
+    Result.Val = !Result.Val;
+    // C99 6.5.3.3p5: The sign of the result is 'int', aka it is signed.
+    Result.Val.setIsUnsigned(false);
+    Result.setIdentifier(nullptr);
 
     if (DT.State == DefinedTracker::DefinedMacro)
       DT.State = DefinedTracker::NotDefinedMacro;
@@ -675,18 +675,7 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
     else if (Operator == tok::pipepipe && LHS.Val != 0)
       RHSIsLive = false;   // RHS of "1 || x" is dead.
     else if (Operator == tok::question && LHS.Val == 0)
-#ifdef SYCLomatic_CUSTOMIZATION
-    {
-      if (ProcessingCudaRTVersionMacro) {
-        ProcessingCudaRTVersionMacro = false;
-        ReplaceInfo.push_back(
-            std::make_tuple(LHS.getRange(), !LHS.Val.isZero(), false));
-      }
-      RHSIsLive = false; // RHS (x) of "0 ? x : y" is dead.
-    }
-#else
       RHSIsLive = false;   // RHS (x) of "0 ? x : y" is dead.
-#endif // SYCLomatic_CUSTOMIZATION
     else
       RHSIsLive = ValueLive;
 #ifdef SYCLomatic_CUSTOMIZATION
@@ -916,6 +905,13 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
       Res = RHS.Val; // LHS = LHS,RHS -> RHS.
       break;
     case tok::question: {
+#ifdef SYCLomatic_CUSTOMIZATION
+      ProcessingCudaRTVersionMacro = false;
+      if (LHSHasMacro) {
+        ReplaceInfo.push_back(
+            std::make_tuple(LHS.getRange(), !LHS.Val.isZero(), false));
+      }
+#endif // SYCLomatic_CUSTOMIZATION
       // Parse the : part of the expression.
       if (PeekTok.isNot(tok::colon)) {
         PP.Diag(PeekTok.getLocation(), diag::err_expected)
