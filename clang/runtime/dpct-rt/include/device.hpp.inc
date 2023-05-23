@@ -1024,6 +1024,7 @@ Use 64 bits as memory_bus_width default value."
 // DPCT_PARENT_FEATURE|device_ext
 // DPCT_DEPENDENCY_BEGIN
 // Device|device_ext
+// Device|device_ext_default_queue
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 private:
