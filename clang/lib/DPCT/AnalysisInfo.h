@@ -1314,6 +1314,13 @@ public:
   /// \return The replaced type name string with qualifiers.
   static inline std::string getReplacedTypeName(QualType QT,
                                                 const ASTContext &Context) {
+    if (!QT.isNull())
+      if (const auto *AT = dyn_cast<AutoType>(QT.getTypePtr())) {
+        QT = AT->getDeducedType();
+        if(QT.isNull()) {
+          return "";
+        }
+      }
     std::string MigratedTypeStr;
     setGetReplacedNamePtr(&getReplacedName);
     llvm::raw_string_ostream OS(MigratedTypeStr);
@@ -4085,7 +4092,7 @@ private:
   void printSubmitLamda(KernelPrinter &Printer);
   void printParallelFor(KernelPrinter &Printer, bool IsInSubmit);
   void printKernel(KernelPrinter &Printer);
-  void printStreamBase(KernelPrinter &Printer);
+  template <class T> void printStreamBase(T &Printer);
 
 public:
   KernelCallExpr(unsigned Offset, const std::string &FilePath,
@@ -4190,6 +4197,7 @@ private:
                                          getBegin() - LocInfo.Indent.length(),
                                          LocInfo.Indent.length(), "", nullptr));
   }
+  void addDevCapCheckStmt();
   void addAccessorDecl(MemVarInfo::VarScope Scope);
   void addAccessorDecl(std::shared_ptr<MemVarInfo> VI);
   void addStreamDecl() {

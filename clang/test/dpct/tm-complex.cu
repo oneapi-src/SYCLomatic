@@ -220,26 +220,29 @@ void foo_test_1() {
   cudaEventCreate(&start);
   cudaEventCreate(&stop);
   CHECK_FOO(cudaEventRecord(start));
-// CHECK:    *stop = dpct::get_default_queue().parallel_for<dpct_kernel_name<class kernel_1_{{[a-z0-9]+}}>>(
-// CHECK-NEXT:                sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
-// CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:                    kernel_1();
-// CHECK-NEXT:                });
-// CHECK-NEXT:  /*
-// CHECK-NEXT:  DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-// CHECK-NEXT:  */
-// CHECK-NEXT:  /*
-// CHECK-NEXT:  DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
-// CHECK-NEXT:  */
-// CHECK-NEXT:  stop->wait();
-// CHECK-NEXT:  stop_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:  CHECK_FOO(0);
-// CHECK-NEXT:  MY_ERROR_CHECKER(0);
-// CHECK-NEXT:  MY_CHECKER(0);
-// CHECK-NEXT:  int ret;
-// CHECK-NEXT:  ret = (0);
-// CHECK-NEXT:  int a = (0);
-// CHECK-NEXT:  et = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
+  // CHECK:  {
+  // CHECK-NEXT:    dpct::has_capability_or_fail(dpct::get_default_queue().get_device(), {sycl::aspect::fp64});
+  // CHECK-NEXT:    *stop = dpct::get_default_queue().parallel_for<dpct_kernel_name<class kernel_1_{{[a-z0-9]+}}>>(
+  // CHECK-NEXT:                sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:                    kernel_1();
+  // CHECK-NEXT:                });
+  // CHECK-NEXT:  }
+  // CHECK-NEXT:  /*
+  // CHECK-NEXT:  DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  /*
+  // CHECK-NEXT:  DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  stop->wait();
+  // CHECK-NEXT:  stop_ct1 = std::chrono::steady_clock::now();
+  // CHECK-NEXT:  CHECK_FOO(0);
+  // CHECK-NEXT:  MY_ERROR_CHECKER(0);
+  // CHECK-NEXT:  MY_CHECKER(0);
+  // CHECK-NEXT:  int ret;
+  // CHECK-NEXT:  ret = (0);
+  // CHECK-NEXT:  int a = (0);
+  // CHECK-NEXT:  et = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
   kernel_1<<<1, 1>>>();
   CHECK_FOO(cudaEventRecord(stop));
   cudaEventSynchronize(stop);
@@ -507,15 +510,17 @@ void foo_test_4() {
   dim3 dimBlock;
   dim3 dimGrid;
 
-// CHECK:  /*
-// CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
-// CHECK-NEXT:  */
-// CHECK-NEXT:    dpct::has_capability_or_fail(dpct::get_default_queue().get_device(), {sycl::aspect::fp64});
-// CHECK-NEXT:    dpct::get_default_queue().parallel_for<dpct_kernel_name<class set_array_{{[a-z0-9]+}}>>(
-// CHECK-NEXT:                sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
-// CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:                    set_array(d_a, 2., N);
-// CHECK-NEXT:                });
+  // CHECK:  /*
+  // CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  {
+  // CHECK-NEXT:    dpct::has_capability_or_fail(dpct::get_default_queue().get_device(), {sycl::aspect::fp64});
+  // CHECK-NEXT:    dpct::get_default_queue().parallel_for<dpct_kernel_name<class set_array_{{[a-z0-9]+}}>>(
+  // CHECK-NEXT:                sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
+  // CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:                    set_array(d_a, 2., N);
+  // CHECK-NEXT:                });
+  // CHECK-NEXT:  }
   set_array<<<dimGrid, dimBlock>>>(d_a, 2., N);
 
 // CHECK:  dpct::event_ptr start, stop;
@@ -526,54 +531,58 @@ void foo_test_4() {
   cudaEventCreate(&stop);
 
   for (k = 0; k < NTIMES; k++) {
-// CHECK:    /*
-// CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-// CHECK-NEXT:    */
-// CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    *start = dpct::get_default_queue().ext_oneapi_submit_barrier();
-// CHECK-NEXT:    /*
-// CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
-// CHECK-NEXT:    */
-// CHECK-NEXT:        dpct::has_capability_or_fail(dpct::get_default_queue().get_device(), {sycl::aspect::fp64});
-// CHECK-NEXT:        dpct::get_default_queue().parallel_for<dpct_kernel_name<class STREAM_Copy_{{[a-z0-9]+}}>>(
-// CHECK-NEXT:                    sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
-// CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:                        STREAM_Copy(d_a, d_c, N);
-// CHECK-NEXT:                    });
-// CHECK-NEXT:    /*
-// CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-// CHECK-NEXT:    */
-// CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
-// CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    *stop = dpct::get_default_queue().ext_oneapi_submit_barrier();
-// CHECK-NEXT:    times[0][k] = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
+    // CHECK:    /*
+    // CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
+    // CHECK-NEXT:    */
+    // CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();
+    // CHECK-NEXT:    *start = dpct::get_default_queue().ext_oneapi_submit_barrier();
+    // CHECK-NEXT:    /*
+    // CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
+    // CHECK-NEXT:    */
+    // CHECK-NEXT:    {
+    // CHECK-NEXT:        dpct::has_capability_or_fail(dpct::get_default_queue().get_device(), {sycl::aspect::fp64});
+    // CHECK-NEXT:        dpct::get_default_queue().parallel_for<dpct_kernel_name<class STREAM_Copy_{{[a-z0-9]+}}>>(
+    // CHECK-NEXT:                    sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
+    // CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:                        STREAM_Copy(d_a, d_c, N);
+    // CHECK-NEXT:                    });
+    // CHECK-NEXT:    }
+    // CHECK-NEXT:    /*
+    // CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
+    // CHECK-NEXT:    */
+    // CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
+    // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
+    // CHECK-NEXT:    *stop = dpct::get_default_queue().ext_oneapi_submit_barrier();
+    // CHECK-NEXT:    times[0][k] = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
     cudaEventRecord(start, 0);
     STREAM_Copy<<<dimGrid, dimBlock>>>(d_a, d_c, N);
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&times[0][k], start, stop);
 
-// CHECK:    /*
-// CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-// CHECK-NEXT:    */
-// CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    *start = dpct::get_default_queue().ext_oneapi_submit_barrier();
-// CHECK-NEXT:    /*
-// CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
-// CHECK-NEXT:    */
-// CHECK-NEXT:        dpct::has_capability_or_fail(dpct::get_default_queue().get_device(), {sycl::aspect::fp64});
-// CHECK-NEXT:        dpct::get_default_queue().parallel_for<dpct_kernel_name<class STREAM_Copy_Optimized_{{[a-z0-9]+}}>>(
-// CHECK-NEXT:                    sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
-// CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:                        STREAM_Copy_Optimized(d_a, d_c, N);
-// CHECK-NEXT:                    });
-// CHECK-NEXT:    /*
-// CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-// CHECK-NEXT:    */
-// CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
-// CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    *stop = dpct::get_default_queue().ext_oneapi_submit_barrier();
-// CHECK-NEXT:    times[1][k] = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
+    // CHECK:    /*
+    // CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
+    // CHECK-NEXT:    */
+    // CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();
+    // CHECK-NEXT:    *start = dpct::get_default_queue().ext_oneapi_submit_barrier();
+    // CHECK-NEXT:    /*
+    // CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
+    // CHECK-NEXT:    */
+    // CHECK-NEXT:    {
+    // CHECK-NEXT:        dpct::has_capability_or_fail(dpct::get_default_queue().get_device(), {sycl::aspect::fp64});
+    // CHECK-NEXT:        dpct::get_default_queue().parallel_for<dpct_kernel_name<class STREAM_Copy_Optimized_{{[a-z0-9]+}}>>(
+    // CHECK-NEXT:                    sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
+    // CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
+    // CHECK-NEXT:                        STREAM_Copy_Optimized(d_a, d_c, N);
+    // CHECK-NEXT:                    });
+    // CHECK-NEXT:    }
+    // CHECK-NEXT:    /*
+    // CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
+    // CHECK-NEXT:    */
+    // CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
+    // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
+    // CHECK-NEXT:    *stop = dpct::get_default_queue().ext_oneapi_submit_barrier();
+    // CHECK-NEXT:    times[1][k] = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
     cudaEventRecord(start, 0);
     STREAM_Copy_Optimized<<<dimGrid, dimBlock>>>(d_a, d_c, N);
     cudaEventRecord(stop, 0);

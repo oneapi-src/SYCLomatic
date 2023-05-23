@@ -66,12 +66,20 @@ public:
   void runPasses();
 
 private:
+  void runPostprocess(const std::string& StaginMsg, llvm::function_ref<void()>);
   void runPass(PassKind Pass);
   void traversTranslationUnit(PassKind Pass, TranslationUnitInfo &Info);
 
   std::shared_ptr<TranslationUnitInfo>
+  createTranslationUnitInfoImpl(std::shared_ptr<CompilerInvocation> Invocation,
+                                bool &Success);
+  std::shared_ptr<TranslationUnitInfo>
   createTranslationUnitInfo(std::shared_ptr<CompilerInvocation> Invocation,
                             bool &Success);
+
+  void printFileStaging(StringRef Staging, StringRef FileName);
+
+  static StringRef getStagingName(PassKind Pass);
 
   struct InvocationOrTranslationUnit {
     std::shared_ptr<CompilerInvocation>CI;
@@ -88,6 +96,8 @@ private:
   std::vector<PassKind> Passes;
   std::vector<InvocationOrTranslationUnit> IOTUs;
   llvm::raw_ostream &DiagnosticStream;
+
+  static const std::string PostProcessFaultMsg;
 };
 
 } // namespace dpct

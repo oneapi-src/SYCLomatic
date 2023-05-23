@@ -381,7 +381,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
         "Experimental extension that allows masked sub_group call during migration.\n",
         false),
              DPCT_OPT_ENUM("dpl-experimental-api", int(ExperimentalFeatures::Exp_DPLExperimentalAPI),
-        "Experimental extension that allows oneDPL experimental API.\n",
+        "Experimental extension that allows use of experimental oneDPL APIs.\n",
         false),
              DPCT_OPT_ENUM("occupancy-calculation", int(ExperimentalFeatures::Exp_OccupancyCalculation),
         "Experimental helper function used to calculate occupancy.\n",

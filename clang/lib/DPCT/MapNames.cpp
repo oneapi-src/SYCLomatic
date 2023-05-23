@@ -582,6 +582,10 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("dnnl::algorithm")},
       {"cudnnConvolutionBwdFilterAlgo_t",
        std::make_shared<TypeNameRule>("dnnl::algorithm")},
+      {"cudnnConvolutionFwdAlgoPerf_t",
+        std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::convolution_algorithm_info",
+           HelperFeatureEnum::DnnlUtils_convolution_algorithm_info)},
       {"cudnnRNNMode_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::rnn_mode",
                                       HelperFeatureEnum::DnnlUtils_rnn_mode)},
@@ -756,6 +760,10 @@ void MapNames::setExplicitNamespaceMap() {
        "dnnl::prop_kind::forward_training"},
       {"CUDNN_RNN_DATA_LAYOUT_SEQ_MAJOR_PACKED",
        getDpctNamespace() + "dnnl::rnn_memory_format_tag::tnc"},
+      {"CUDNN_DEFAULT_MATH", "dnnl::fpmath_mode::strict"},
+      {"CUDNN_TENSOR_OP_MATH", "dnnl::fpmath_mode::strict"},
+      {"CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION", "dnnl::fpmath_mode::any"},
+      {"CUDNN_FMA_MATH", "dnnl::fpmath_mode::strict"},
   };
   // CuDNN Enum constants name to helper feature mapping.
   CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap = {
@@ -4364,15 +4372,16 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #include "APINames_CUB.inc"
 #include "APINames_NCCL.inc"
 #include "APINames_NVML.inc"
+#include "APINames_NVTX.inc"
 #include "APINames_cuBLAS.inc"
+#include "APINames_cuDNN.inc"
 #include "APINames_cuFFT.inc"
-#include "APINames_nvGRAPH.inc"
 #include "APINames_cuRAND.inc"
 #include "APINames_cuSOLVER.inc"
 #include "APINames_cuSPARSE.inc"
+#include "APINames_nvGRAPH.inc"
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
-#include "APINames_cuDNN.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
 };
