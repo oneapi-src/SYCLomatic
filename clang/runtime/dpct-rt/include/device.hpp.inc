@@ -1441,6 +1441,19 @@ static inline unsigned int select_device(unsigned int id) {
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|select_device_with_selector|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|dev_mgr_select_device_with_selector
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <class DeviceSelector>
+static inline std::enable_if_t<
+    std::is_invocable_r_v<int, DeviceSelector, const sycl::device &>>
+select_device(const DeviceSelector &selector = sycl::gpu_selector_v) {
+  dev_mgr::instance().select_device(selector);
+}
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|get_device_id|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Device|dev_mgr_get_device_id

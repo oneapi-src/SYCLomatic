@@ -681,6 +681,13 @@ static inline unsigned int select_device(unsigned int id) {
   return id;
 }
 
+template <class DeviceSelector>
+static inline std::enable_if_t<
+    std::is_invocable_r_v<int, DeviceSelector, const sycl::device &>>
+select_device(const DeviceSelector &selector = sycl::gpu_selector_v) {
+  dev_mgr::instance().select_device(selector);
+}
+
 static inline unsigned int get_device_id(const sycl::device &dev){
   return dev_mgr::instance().get_device_id(dev);
 }
