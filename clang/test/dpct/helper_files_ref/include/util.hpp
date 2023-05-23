@@ -630,7 +630,7 @@ public:
 /// https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/GPU-Occupancy-Calculator
 /// \param [out] num_wg Active work-group number.
 /// \param [in] wg_size Work-group size.
-/// \param [in] slm_size Shared local memory size.
+/// \param [in] slm_size Share local memory size.
 /// \param [in] sg_size Sub-group size.
 /// \param [in] used_barrier Whether barrier is used.
 /// \param [in] used_large_grf Whether large General Register File is used.
