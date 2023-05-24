@@ -207,7 +207,7 @@ class InlineAsmVariableDecl : public InlineAsmDecl {
   unsigned NumParameterizedNames = 0;
 
   /// Has '.align' attribute in this variable declaration.
-  bool HasAlign;
+  bool HasAlign = false;
 
   /// Has parameterized names in this variable declaration.
   bool IsParameterizedNameDecl = false;
@@ -1081,14 +1081,12 @@ public:
   void ExitScope() {
     assert(getCurScope());
     InlineAsmScope *OldScope = getCurScope();
-    if (OldScope) {
-      CurScope = OldScope->getParent();
-      if (NumCachedScopes == ScopeCacheSize)
-        delete OldScope;
-      else
-        ScopeCache[NumCachedScopes++] = OldScope;
+    CurScope = OldScope->getParent();
+    if (NumCachedScopes == ScopeCacheSize) {
+      delete OldScope;
     } else {
-      CurScope = nullptr;
+      OldScope->~InlineAsmScope();
+      ScopeCache[NumCachedScopes++] = OldScope;
     }
   }
 

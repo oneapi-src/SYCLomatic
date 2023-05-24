@@ -12,8 +12,14 @@ __global__ void gpu_ptx(int *d_ptr, int length) {
   for (int innerloops = 0; innerloops < 100000; innerloops++) {
     if (elemID < length) {
       unsigned int laneid;
+      unsigned int warpid;
       // CHECK: laneid = item_ct1.get_local_id();
       asm("mov.u32 %0, %%laneid;" : "=r"(laneid));
+
+      // CHECK: /*
+      // CHECK-NEXT: DPCT1053:{{.*}} Migration of device assembly code is not supported.
+      // CHECK-NEXT: */
+      asm("mov.u32 %0, %%warpid;" : "=r"(warpid));
       d_ptr[elemID] = laneid;
     }
   }
@@ -23,44 +29,44 @@ __global__ void gpu_ptx(int *d_ptr, int length) {
 // CHECK:   float x = 1.0, y;
 // CHECK:   uint32_t a, b;
 // CHECK:   {
-// CHECK-NEXT:     bool p[20], q[20];
+// CHECK-NEXT:     bool _p_p[20], _p_q[20];
 // CHECK-NEXT:     float fp;
 // CHECK-NEXT:     fp = sycl::bit_cast<float>(uint32_t(0x3f800000U));
-// CHECK-NEXT:     p[1] = !sycl::isnan(x) && !sycl::isnan(fp) && x == fp;
-// CHECK-NEXT:     p[2] = !sycl::isnan(x) && !sycl::isnan(fp) && x != fp;
-// CHECK-NEXT:     p[3] = !sycl::isnan(x) && !sycl::isnan(fp) && x < fp;
-// CHECK-NEXT:     p[4] = !sycl::isnan(x) && !sycl::isnan(fp) && x <= fp;
-// CHECK-NEXT:     p[5] = !sycl::isnan(x) && !sycl::isnan(fp) && x > fp;
-// CHECK-NEXT:     p[6] = !sycl::isnan(x) && !sycl::isnan(fp) && x >= fp;
-// CHECK-NEXT:     p[7] = sycl::isnan(x) || sycl::isnan(fp) || x == fp;
-// CHECK-NEXT:     p[8] =  sycl::isnan(x) || sycl::isnan(fp) || x != fp;
-// CHECK-NEXT:     p[9] = sycl::isnan(x) || sycl::isnan(fp) || x < fp;
-// CHECK-NEXT:     p[10] = sycl::isnan(x) || sycl::isnan(fp) || x <= fp;
-// CHECK-NEXT:     p[11] = sycl::isnan(x) || sycl::isnan(fp) || x > fp;
-// CHECK-NEXT:     p[12] = sycl::isnan(x) || sycl::isnan(fp) || x >= fp;
-// CHECK-NEXT:     p[13] = !sycl::isnan(x) && !sycl::isnan(fp);
-// CHECK-NEXT:     p[14] = sycl::isnan(x) || sycl::isnan(fp);
-// CHECK-NEXT:     p[1] = !sycl::isnan(x) && !sycl::isnan(fp) && x == fp;
-// CHECK-NEXT:     p[2] = !sycl::isnan(x) && !sycl::isnan(fp) && x != fp;
-// CHECK-NEXT:     p[3] = !sycl::isnan(x) && !sycl::isnan(fp) && x < fp;
-// CHECK-NEXT:     p[4] = !sycl::isnan(x) && !sycl::isnan(fp) && x <= fp;
-// CHECK-NEXT:     p[5] = !sycl::isnan(x) && !sycl::isnan(fp) && x > fp;
-// CHECK-NEXT:     p[6] = !sycl::isnan(x) && !sycl::isnan(fp) && x >= fp;
-// CHECK-NEXT:     p[7] = sycl::isnan(x) || sycl::isnan(fp) || x == fp;
-// CHECK-NEXT:     p[8] =  sycl::isnan(x) || sycl::isnan(fp) || x != fp;
-// CHECK-NEXT:     p[9] = sycl::isnan(x) || sycl::isnan(fp) || x < fp;
-// CHECK-NEXT:     p[10] = sycl::isnan(x) || sycl::isnan(fp) || x <= fp;
-// CHECK-NEXT:     p[11] = sycl::isnan(x) || sycl::isnan(fp) || x > fp;
-// CHECK-NEXT:     p[12] = sycl::isnan(x) || sycl::isnan(fp) || x >= fp;
-// CHECK-NEXT:     p[13] = !sycl::isnan(x) && !sycl::isnan(fp);
-// CHECK-NEXT:     p[14] = sycl::isnan(x) || sycl::isnan(fp);
-// CHECK-NEXT:     q[1] = a == b;
-// CHECK-NEXT:     q[2] = a != b;
-// CHECK-NEXT:     q[3] = a < b;
-// CHECK-NEXT:     q[4] = a <= b;
-// CHECK-NEXT:     q[5] = a > b;
-// CHECK-NEXT:     q[6] = a >= b;
-// CHECK-NEXT:     if (p[0]) {
+// CHECK-NEXT:     _p_p[1] = !sycl::isnan(x) && !sycl::isnan(fp) && x == fp;
+// CHECK-NEXT:     _p_p[2] = !sycl::isnan(x) && !sycl::isnan(fp) && x != fp;
+// CHECK-NEXT:     _p_p[3] = !sycl::isnan(x) && !sycl::isnan(fp) && x < fp;
+// CHECK-NEXT:     _p_p[4] = !sycl::isnan(x) && !sycl::isnan(fp) && x <= fp;
+// CHECK-NEXT:     _p_p[5] = !sycl::isnan(x) && !sycl::isnan(fp) && x > fp;
+// CHECK-NEXT:     _p_p[6] = !sycl::isnan(x) && !sycl::isnan(fp) && x >= fp;
+// CHECK-NEXT:     _p_p[7] = sycl::isnan(x) || sycl::isnan(fp) || x == fp;
+// CHECK-NEXT:     _p_p[8] =  sycl::isnan(x) || sycl::isnan(fp) || x != fp;
+// CHECK-NEXT:     _p_p[9] = sycl::isnan(x) || sycl::isnan(fp) || x < fp;
+// CHECK-NEXT:     _p_p[10] = sycl::isnan(x) || sycl::isnan(fp) || x <= fp;
+// CHECK-NEXT:     _p_p[11] = sycl::isnan(x) || sycl::isnan(fp) || x > fp;
+// CHECK-NEXT:     _p_p[12] = sycl::isnan(x) || sycl::isnan(fp) || x >= fp;
+// CHECK-NEXT:     _p_p[13] = !sycl::isnan(x) && !sycl::isnan(fp);
+// CHECK-NEXT:     _p_p[14] = sycl::isnan(x) || sycl::isnan(fp);
+// CHECK-NEXT:     _p_p[1] = !sycl::isnan(x) && !sycl::isnan(fp) && x == fp;
+// CHECK-NEXT:     _p_p[2] = !sycl::isnan(x) && !sycl::isnan(fp) && x != fp;
+// CHECK-NEXT:     _p_p[3] = !sycl::isnan(x) && !sycl::isnan(fp) && x < fp;
+// CHECK-NEXT:     _p_p[4] = !sycl::isnan(x) && !sycl::isnan(fp) && x <= fp;
+// CHECK-NEXT:     _p_p[5] = !sycl::isnan(x) && !sycl::isnan(fp) && x > fp;
+// CHECK-NEXT:     _p_p[6] = !sycl::isnan(x) && !sycl::isnan(fp) && x >= fp;
+// CHECK-NEXT:     _p_p[7] = sycl::isnan(x) || sycl::isnan(fp) || x == fp;
+// CHECK-NEXT:     _p_p[8] =  sycl::isnan(x) || sycl::isnan(fp) || x != fp;
+// CHECK-NEXT:     _p_p[9] = sycl::isnan(x) || sycl::isnan(fp) || x < fp;
+// CHECK-NEXT:     _p_p[10] = sycl::isnan(x) || sycl::isnan(fp) || x <= fp;
+// CHECK-NEXT:     _p_p[11] = sycl::isnan(x) || sycl::isnan(fp) || x > fp;
+// CHECK-NEXT:     _p_p[12] = sycl::isnan(x) || sycl::isnan(fp) || x >= fp;
+// CHECK-NEXT:     _p_p[13] = !sycl::isnan(x) && !sycl::isnan(fp);
+// CHECK-NEXT:     _p_p[14] = sycl::isnan(x) || sycl::isnan(fp);
+// CHECK-NEXT:     _p_q[1] = a == b;
+// CHECK-NEXT:     _p_q[2] = a != b;
+// CHECK-NEXT:     _p_q[3] = a < b;
+// CHECK-NEXT:     _p_q[4] = a <= b;
+// CHECK-NEXT:     _p_q[5] = a > b;
+// CHECK-NEXT:     _p_q[6] = a >= b;
+// CHECK-NEXT:     if (_p_p[0]) {
 // CHECK-NEXT:       y = fp;
 // CHECK-NEXT:     }
 // CHECK-NEXT:   }
@@ -134,8 +140,8 @@ __global__ void mov(float *output) {
 
 // CHECK: void clean_specifial_character() {
 // CHECK:   {
-// CHECK-NEXT:     uint32_t p_d_p, p_d___p_;
-// CHECK-NEXT:     p_d_p = 0x3F;
+// CHECK-NEXT:     uint32_t _p_p_d_p, p_d___p_;
+// CHECK-NEXT:     _p_p_d_p = 0x3F;
 // CHECK-NEXT:     p_d___p_ = 0x3F;
 // CHECK-NEXT:   }
 // CHECK: }
@@ -149,8 +155,8 @@ __global__ void clean_specifial_character(void) {
 
 // CHECK: void variable_alignas() {
 // CHECK:   {
-// CHECK-NEXT:     alignas(8) uint32_t p_d_p;
-// CHECK-NEXT:     p_d_p = 0x3F;
+// CHECK-NEXT:     alignas(8) uint32_t _p_p_d_p;
+// CHECK-NEXT:     _p_p_d_p = 0x3F;
 // CHECK-NEXT:   }
 // CHECK: }
 __global__ void variable_alignas(void) {
@@ -163,12 +169,12 @@ __global__ void variable_alignas(void) {
 // CHECK: int cond(int x) {
 // CHECK:   int y = 0;
 // CHECK:   {
-// CHECK-NEXT:     bool p;
-// CHECK-NEXT:     uint32_t r[10];
-// CHECK-NEXT:     r[1] = 0x3F;
-// CHECK-NEXT:     r[2] = 2023;
-// CHECK-NEXT:     p = x == 34;
-// CHECK-NEXT:     if (p) {
+// CHECK-NEXT:     bool _p_p;
+// CHECK-NEXT:     uint32_t _p_r[10];
+// CHECK-NEXT:     _p_r[1] = 0x3F;
+// CHECK-NEXT:     _p_r[2] = 2023;
+// CHECK-NEXT:     _p_p = x == 34;
+// CHECK-NEXT:     if (_p_p) {
 // CHECK-NEXT:       y = 1;
 // CHECK-NEXT:     }
 // CHECK-NEXT:   }

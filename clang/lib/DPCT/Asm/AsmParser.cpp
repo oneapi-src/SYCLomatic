@@ -82,7 +82,8 @@ InlineAsmScope::lookupParameterizedNameDecl(InlineAsmIdentifierInfo *II,
   if (!II)
     return nullptr;
 
-  StringRef Name = II->getName().take_while(isAlpha);
+  StringRef Name = II->getName().take_while(
+      [](char C) -> bool { return isAlpha(C) || C == '_'; });
   StringRef Count = II->getName().drop_until(isDigit);
 
   if (Name.empty() || Count.empty() || Count.getAsInteger(10, Idx))
@@ -514,7 +515,7 @@ InlineAsmTypeResult InlineAsmParser::ParseDeclarationSpecifier(
         InlineAsmVectorType(InlineAsmVectorType::TK_v4, DeclSpec.BaseType);
     break;
   default:
-    llvm_unreachable("unexpected vector type");
+    assert(0 && "unexpected vector type");
   }
   return DeclSpec.Type;
 }
@@ -657,7 +658,7 @@ InlineAsmExprResult InlineAsmParser::ActOnUnaryOp(asmtok::TokenKind OpTok,
     Opcode = InlineAsmUnaryOperator::LNot;
     break;
   default:
-    llvm_unreachable("unexpected op token");
+    assert(0 && "unexpected op token");
   }
 
   return ::new (Context)
@@ -668,7 +669,7 @@ InlineAsmExprResult InlineAsmParser::ActOnUnaryOp(asmtok::TokenKind OpTok,
 static InlineAsmBinaryOperator::Opcode ConvertTokenKindToBinaryOpcode(asmtok::TokenKind Kind) {
   InlineAsmBinaryOperator::Opcode Opc;
   switch (Kind) {
-  default: llvm_unreachable("Unknown binop!");
+  default: assert(0 && "Unknown binop!");
   case asmtok::star:                 Opc = InlineAsmBinaryOperator::Mul; break;
   case asmtok::slash:                Opc = InlineAsmBinaryOperator::Div; break;
   case asmtok::percent:              Opc = InlineAsmBinaryOperator::Rem; break;
@@ -1097,7 +1098,7 @@ static bool alwaysFitsInto64Bits(unsigned Radix, unsigned NumDigits) {
   case 16:
     return NumDigits <= 64 / 4; // Digits are groups of 4 bits.
   default:
-    llvm_unreachable("impossible Radix");
+    assert(0 && "impossible Radix");
   }
 }
 

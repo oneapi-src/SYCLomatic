@@ -37,21 +37,19 @@ static inline bool isIdentifierContinue(unsigned char C) {
 }
 
 /// Clean the special character in identifier.
-/// Rule: 1. delete leading '%' characters
-///       2. replace '$' with '_d_'
-///       3. replace '%' with '_p_'
-///       4. add a '_' character to escape '_d_' and '_p_'
-/// %r -> r
-/// %$r -> _d_r
-/// %r$ -> r_d_
-/// %r% -> r_p_
-/// %%r -> _p_r
-/// %r%_d_ -> r_p__d_
-/// %r_d_% => r__d__p_
+/// Rule: 1. replace '$' with '_d_'
+///       2. replace '%' with '_p_'
+///       3. add a '_' character to escape '_d_' and '_p_'
+/// %r -> _p_r
+/// %$r -> _p__d_r
+/// %r$ -> _p_r_d_
+/// %r% -> _p_r_p_
+/// %%r -> _p__p_r
+/// %r%_d_ -> _p_r_p__d_
+/// %r_d_% => _p_r__d__p_
 void InlineAsmLexer::cleanIdentifier(SmallVectorImpl<char> &Buf,
                                      StringRef Input) const {
   Buf.clear();
-  Input = Input.drop_while([](char C) { return C == '%'; });
   auto Push = [&Buf](char C) {
     Buf.push_back('_');
     Buf.push_back(C);
