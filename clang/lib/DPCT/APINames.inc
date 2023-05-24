@@ -131,7 +131,7 @@ ENTRY(cudaTriggerProgrammaticLaunchCompletion, cudaTriggerProgrammaticLaunchComp
 
 
 // occupancy calculation functions of runtime API
-ENTRY(cudaOccupancyMaxActiveBlocksPerMultiprocessor, cudaOccupancyMaxActiveBlocksPerMultiprocessor, true, NO_FLAG, P0, "comment")
+ENTRY(cudaOccupancyMaxActiveBlocksPerMultiprocessor, cudaOccupancyMaxActiveBlocksPerMultiprocessor, true, NO_FLAG, P0, "DPCT1111")
 ENTRY(cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags, cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags, false, NO_FLAG, P0, "comment")
 ENTRY(cudaOccupancyMaxActiveClusters, cudaOccupancyMaxActiveClusters, false, NO_FLAG, P4, "comment")
 ENTRY(cudaOccupancyMaxPotentialClusterSize, cudaOccupancyMaxPotentialClusterSize, false, NO_FLAG, P4, "comment")
@@ -1358,7 +1358,7 @@ ENTRY(cuModuleLoadData, cuModuleLoadData, true, NO_FLAG, P4, "DPCT1104")
 ENTRY(cuModuleLoadDataEx, cuModuleLoadDataEx, true, NO_FLAG, P4, "DPCT1104")
 ENTRY(cuModuleLoadFatBinary, cuModuleLoadFatBinary, false, NO_FLAG, P4, "comment")
 ENTRY(cuModuleUnload, cuModuleUnload, true, NO_FLAG, P4, "Successful")
-ENTRY(cuOccupancyMaxActiveBlocksPerMultiprocessor, cuOccupancyMaxActiveBlocksPerMultiprocessor, false, NO_FLAG, P4, "comment")
+ENTRY(cuOccupancyMaxActiveBlocksPerMultiprocessor, cuOccupancyMaxActiveBlocksPerMultiprocessor, true, NO_FLAG, P4, "DPCT1111")
 ENTRY(cuOccupancyMaxActiveBlocksPerMultiprocessorWithFlags, cuOccupancyMaxActiveBlocksPerMultiprocessorWithFlags, false, NO_FLAG, P4, "comment")
 ENTRY(cuOccupancyMaxPotentialBlockSize, cuOccupancyMaxPotentialBlockSize, false, NO_FLAG, P4, "comment")
 ENTRY(cuOccupancyMaxPotentialBlockSizeWithFlags, cuOccupancyMaxPotentialBlockSizeWithFlags, false, NO_FLAG, P4, "comment")
