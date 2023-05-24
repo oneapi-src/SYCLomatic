@@ -944,6 +944,8 @@ public:
   inline static void setUsmLevel(UsmLevel UL) { UsmLvl = UL; }
   inline static bool isIncMigration() { return IsIncMigration; }
   inline static void setIsIncMigration(bool Flag) { IsIncMigration = Flag; }
+  inline static bool needDpctDeviceExt() { return NeedDpctDeviceExt; }
+  inline static void setNeedDpctDeviceExt() { NeedDpctDeviceExt = true; }
   inline static unsigned int getAssumedNDRangeDim() {
     return AssumedNDRangeDim;
   }
@@ -2039,6 +2041,7 @@ private:
   static std::string CudaPath;
   static std::string RuleFile;
   static UsmLevel UsmLvl;
+  static bool NeedDpctDeviceExt;
   static bool IsIncMigration;
   static unsigned int AssumedNDRangeDim;
   static HelperFilesCustomizationLevel HelperFilesCustomizationLvl;
