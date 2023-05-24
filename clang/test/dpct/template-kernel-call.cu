@@ -244,10 +244,10 @@ __global__ void convert_kernel(T b){
   T a = blockDim.x * blockIdx.x + threadIdx.x;
 }
 
-
 // CHECK:template<typename T>
 // CHECK-NEXT:void convert(){
 // CHECK-NEXT:  T b;
+// CHECK-NEXT:  {
 // CHECK-NEXT:  dpct::has_capability_or_fail(dpct::get_default_queue().get_device(), {sycl::aspect::fp64});
 // CHECK-NEXT:  dpct::get_default_queue().submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
@@ -260,6 +260,7 @@ __global__ void convert_kernel(T b){
 // CHECK-NEXT:          convert_kernel(b, item_ct1, aaa_acc_ct1.get_pointer(), bbb_acc_ct1);
 // CHECK-NEXT:        });
 // CHECK-NEXT:    });
+// CHECK-NEXT:  }
 // CHECK-NEXT:}
 template<typename T>
 void convert(){

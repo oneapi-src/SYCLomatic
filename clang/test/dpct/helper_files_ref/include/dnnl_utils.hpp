@@ -470,13 +470,19 @@ enum class batch_normalization_ops { none, activation, add_activation };
 /// An enum class representing binary operations.
 enum class binary_op { add, sub, mul, div, min, max, sqrt, neg };
 
+/// An struct representing convolution algorithm infomation.
+struct convolution_algorithm_info {
+  ::dnnl::algorithm algo = ::dnnl::algorithm::convolution_auto;
+  int status = 0;
+};
+
 /// A class holding description for a convolution operation.
 class convolution_desc {
   std::vector<int64_t> _strides;
   std::vector<int64_t> _dilates;
   std::vector<int64_t> _paddings;
   int _group_count = 1;
-
+  ::dnnl::fpmath_mode _math_mode = ::dnnl::fpmath_mode::strict;
 public:
   /// Setting a group count to be used in the convolution.
   /// \param [in] group_count Value of group count.
@@ -484,6 +490,12 @@ public:
   /// Getting a group count specified in the given convolution descriptor.
   /// \returns Value of group count.
   int get_group_count() { return _group_count; }
+  /// Setting floating point math mode to be used in the convolution.
+  /// \param [in] math_mode Value of math_mode.
+  void set_math_mode(::dnnl::fpmath_mode math_mode) { _math_mode = math_mode; }
+  /// Getting floating point math mode specified in the given convolution descriptor.
+  /// \returns Value of math mode.
+  ::dnnl::fpmath_mode get_math_mode() { return _math_mode; }
   /// Setting a 2D convolution descriptor with given parameters.
   /// \param [in] padding_h Value of height of padding.
   /// \param [in] padding_w Value of width of padding.
@@ -742,9 +754,9 @@ public:
 class engine_ext {
   ::dnnl::engine _eng;
   ::dnnl::stream _s;
-  sycl::queue *_q;
+  sycl::queue *_q = nullptr;
   std::map<void *, ::dnnl::memory> workspace_map;
-  std::int64_t _random_engine_state_size;
+  std::int64_t _random_engine_state_size = -1;
   struct output_argument_info {
     float _alpha;
     float _beta;
@@ -907,18 +919,11 @@ public:
   }
   /// Creating oneDNN engine.
   void create_engine() {
-#ifndef __INTEL_MKL__
-    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
-                             "Interfaces Project does not support this API.");
-#else
     _eng = ::dnnl::sycl_interop::make_engine(
         dpct::get_current_device(), dpct::get_current_device().get_context());
     _s = ::dnnl::sycl_interop::make_stream(
         _eng, dpct::get_current_device().default_queue());
     _q = &dpct::get_current_device().default_queue();
-    auto rand_engine = rng_engine_t(*_q, 0);
-    _random_engine_state_size = oneapi::mkl::rng::get_state_size(rand_engine);
-#endif
   }
   /// Setting the user's SYCL queue for an oneDNN engine.
   /// \param [in] q Pointer to the SYCL queue.
@@ -1921,11 +1926,11 @@ public:
 inline
 void dropout_desc::restore(engine_ext &engine, float p, void *state,
                                   size_t state_size, unsigned long long seed) {
-  if (state) {
 #ifndef __INTEL_MKL__
     throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
                              "Interfaces Project does not support this API.");
 #else
+  if (state) {
     std::int64_t required_state_size = engine.get_dropout_state_size();
     if (state_size < required_state_size) {
       throw std::runtime_error("restore: state_size less than required state size.");
@@ -1939,19 +1944,19 @@ void dropout_desc::restore(engine_ext &engine, float p, void *state,
     _imp->_rng_engine =
         oneapi::mkl::rng::load_state<rng_engine_t>(
             *q, _imp->_host_state.data());
-#endif
   }
+#endif
 }
 
 inline
 void dropout_desc::set(engine_ext &engine, float p, void *state,
                               size_t state_size, unsigned long long seed) {
-  _imp->_p = p;
-  if (state) {
 #ifndef __INTEL_MKL__
     throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
                              "Interfaces Project does not support this API.");
 #else
+  _imp->_p = p;
+  if (state) {
     std::int64_t required_state_size = engine.get_dropout_state_size();
     if (state_size < required_state_size) {
       throw std::runtime_error("set: no sufficient memory to save states.");
@@ -1963,8 +1968,8 @@ void dropout_desc::set(engine_ext &engine, float p, void *state,
     _imp->_rng_engine = rng_engine_t(*q, seed);
     oneapi::mkl::rng::save_state(_imp->_rng_engine, _imp->_host_state.data());
     q->memcpy(_imp->_state, _imp->_host_state.data(), required_state_size).wait();
-#endif
   }
+#endif
 }
 
 inline
@@ -4122,10 +4127,13 @@ engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm 
   auto help_weight_desc =
       get_group_weight_desc(desc.get_group_count(), weight_desc);
 
+  ::dnnl::primitive_attr attr;
+  attr.set_fpmath_mode(desc.get_math_mode());
+
   auto primitive = create_forward_primitive<::dnnl::convolution_forward>(
       ::dnnl::prop_kind::forward_training, alg, src_desc.get_desc(),
       help_weight_desc, dst_desc.get_desc(), desc.get_stride(),
-      desc.get_dilate(), desc.get_padding(), desc.get_padding());
+      desc.get_dilate(), desc.get_padding(), desc.get_padding(), attr);
 
   auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
       {DNNL_ARG_SRC, {::dnnl::memory(src_desc.get_desc(), _eng, src)}},
@@ -4149,10 +4157,13 @@ sycl::event engine_ext::async_convolution_forward(
   ::dnnl::memory::desc help_bias_desc = {{channel_num},
                                          bias_desc.get_desc().get_data_type(),
                                          ::dnnl::memory::format_tag::a};
+  ::dnnl::primitive_attr attr;
+  attr.set_fpmath_mode(desc.get_math_mode());
+
   auto primitive = create_forward_primitive<::dnnl::convolution_forward>(
       ::dnnl::prop_kind::forward_training, alg, src_desc.get_desc(),
       help_weight_desc, help_bias_desc, dst_desc.get_desc(), desc.get_stride(),
-      desc.get_dilate(), desc.get_padding(), desc.get_padding());
+      desc.get_dilate(), desc.get_padding(), desc.get_padding(), attr);
 
   auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
       {DNNL_ARG_SRC, {::dnnl::memory(src_desc.get_desc(), _eng, src)}},
@@ -4189,18 +4200,22 @@ sycl::event engine_ext::async_convolution_backward_data(
   }
   auto help_weight_desc =
       get_group_weight_desc(desc.get_group_count(), weight_desc);
+
+  ::dnnl::primitive_attr attr;
+  attr.set_fpmath_mode(desc.get_math_mode());
+
   auto forward_primitive =
       create_primitive_desc<::dnnl::convolution_forward>(
           ::dnnl::prop_kind::forward_training,
           ::dnnl::algorithm::convolution_auto, diff_src_desc.get_desc(),
           help_weight_desc, diff_dst_desc.get_desc(), desc.get_stride(),
-          desc.get_dilate(), desc.get_padding(), desc.get_padding());
+          desc.get_dilate(), desc.get_padding(), desc.get_padding(), attr);
 
   auto primitive = create_backward_primitive<::dnnl::convolution_backward_data>(
       ::dnnl::algorithm::convolution_auto, diff_src_desc.get_desc(),
       help_weight_desc, diff_dst_desc.get_desc(), desc.get_stride(),
       desc.get_dilate(), desc.get_padding(), desc.get_padding(),
-      forward_primitive);
+      forward_primitive, attr);
 
   auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
       {DNNL_ARG_DIFF_DST,
@@ -4225,19 +4240,23 @@ sycl::event engine_ext::async_convolution_backward_weight(
   }
   auto help_diff_weight_desc =
       get_group_weight_desc(desc.get_group_count(), diff_weight_desc);
+
+  ::dnnl::primitive_attr attr;
+  attr.set_fpmath_mode(desc.get_math_mode());
+
   auto forward_primitive =
       create_primitive_desc<::dnnl::convolution_forward>(
           ::dnnl::prop_kind::forward_training,
           ::dnnl::algorithm::convolution_auto, src_desc.get_desc(),
           help_diff_weight_desc, diff_dst_desc.get_desc(), desc.get_stride(),
-          desc.get_dilate(), desc.get_padding(), desc.get_padding());
+          desc.get_dilate(), desc.get_padding(), desc.get_padding(), attr);
 
   auto primitive =
       create_backward_primitive<::dnnl::convolution_backward_weights>(
           ::dnnl::algorithm::convolution_auto, src_desc.get_desc(),
           help_diff_weight_desc, diff_dst_desc.get_desc(), desc.get_stride(),
           desc.get_dilate(), desc.get_padding(), desc.get_padding(),
-          forward_primitive);
+          forward_primitive, attr);
 
   auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
       {DNNL_ARG_SRC, {::dnnl::memory(src_desc.get_desc(), _eng, src)}},
@@ -4394,7 +4413,22 @@ sycl::event engine_ext::async_rnn_backward(
 
 inline
 size_t engine_ext::get_dropout_state_size(){
+#ifndef __INTEL_MKL__
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
+                           "Interfaces Project does not support this API.");
+#else
+  sycl::queue q;
+  if(_random_engine_state_size == -1) {
+    if(_q){
+      q = *_q;
+    } else {
+      q = dpct::get_current_device().default_queue();
+    }
+    auto rand_engine = rng_engine_t(q, 0);
+    _random_engine_state_size = oneapi::mkl::rng::get_state_size(rand_engine);
+  }
   return _random_engine_state_size;
+#endif
 }
 
 inline size_t

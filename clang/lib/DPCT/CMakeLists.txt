@@ -135,6 +135,7 @@ add_clang_library(DPCT
   CallExprRewriterEvent.cpp
   CallExprRewriterMath.cpp
   CallExprRewriterCG.cpp
+  CrashRecovery.cpp
   Diagnostics.cpp
   Error.cpp
   Statics.cpp
@@ -147,7 +148,6 @@ add_clang_library(DPCT
   Utility.cpp
   ValidateArguments.cpp
   ExternalReplacement.cpp
-  SignalProcess.cpp
   VcxprojParser.cpp
   LibraryAPIMigration.cpp
   CustomHelperFiles.cpp
