@@ -1964,8 +1964,10 @@ REGISTER_RULE(ZeroLengthArrayRule, PassKind::PK_Migration)
 
 void MiscAPIRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
-    return hasAnyName("cudaOccupancyMaxActiveBlocksPerMultiprocessor");
+    return hasAnyName("cudaOccupancyMaxActiveBlocksPerMultiprocessor",
+                      "cuOccupancyMaxActiveBlocksPerMultiprocessor");
   };
+
   MF.addMatcher(
       callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),
       this);
