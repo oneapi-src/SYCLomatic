@@ -54,6 +54,10 @@
 #define CMP_OP(X, Y) KEYWORD(X, Y)
 #endif
 
+#ifndef BUILTIN_ID
+#define BUILTIN_ID(X, Y, Z) TOK(bi_ ## X)
+#endif
+
 TOK(unknown)             // Not a token.
 TOK(eof)                 // End of file.
 
@@ -240,6 +244,8 @@ INSTRUCTION(wgmma)
 INSTRUCTION(wmma)
 INSTRUCTION(xor)
 
+BUILTIN_ID(laneid, "%laneid", s64)
+
 BUILTIN_TYPE(b8,      ".b8")
 BUILTIN_TYPE(b16,     ".b16")
 BUILTIN_TYPE(b32,     ".b32")
@@ -320,6 +326,7 @@ CMP_OP(geu, ".geu")
 CMP_OP(num, ".num")
 CMP_OP(nan, ".nan")
 
+#undef BUILTIN_ID
 #undef CMP_OP
 #undef SAT_MOD
 #undef ROUND_MOD

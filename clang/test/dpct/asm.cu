@@ -12,9 +12,7 @@ __global__ void gpu_ptx(int *d_ptr, int length) {
   for (int innerloops = 0; innerloops < 100000; innerloops++) {
     if (elemID < length) {
       unsigned int laneid;
-      // CHECK: /*
-      // CHECK-NEXT: DPCT1053:{{[0-9]+}}: Migration of device assembly code is not supported.
-      // CHECK-NEXT: */
+      // CHECK: laneid = item_ct1.get_local_id();
       asm("mov.u32 %0, %%laneid;" : "=r"(laneid));
       d_ptr[elemID] = laneid;
     }

@@ -1064,7 +1064,7 @@ public:
 
   InlineAsmDeclResult addInlineAsmOperands(StringRef Operand,
                                            StringRef Constraint);
-
+  void addBuiltinIdentifier();
   InlineAsmScope *getCurScope() const { return CurScope; }
 
   /// EnterScope - Start a new scope.

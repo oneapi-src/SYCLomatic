@@ -23,12 +23,13 @@ class InlineAsmIdentifierInfo {
   unsigned TokenID : 16;
   unsigned IsInstruction : 1;
   unsigned IsBuiltinType : 1;
-  unsigned : 14;
+  unsigned IsBuiltinID : 1;
+  unsigned : 13;
 
   llvm::StringMapEntry<InlineAsmIdentifierInfo *> *Entry = nullptr;
 
   InlineAsmIdentifierInfo()
-      : TokenID(asmtok::identifier), IsInstruction(0), IsBuiltinType(0) {}
+      : TokenID(asmtok::identifier), IsInstruction(0), IsBuiltinType(0), IsBuiltinID(0) {}
 
 public:
   InlineAsmIdentifierInfo(const InlineAsmIdentifierInfo &) = delete;
@@ -69,8 +70,10 @@ public:
 
   void setInstruction() { IsInstruction = true; }
   void setBuiltinType() { IsBuiltinType = true; }
+  void setBuiltinID() { IsBuiltinID = true; }
   bool isInstruction() const { return IsInstruction; }
   bool isBuiltinType() const { return IsBuiltinType; }
+  bool isBuiltinID() { return IsBuiltinID; }
 };
 
 class InlineAsmIdentifierInfoLookup {

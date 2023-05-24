@@ -84,8 +84,10 @@ InlineAsmLexer::lookupIdentifierInfo(InlineAsmToken &Identifier) const {
   assert(!Identifier.getRawIdentifier().empty() && "No raw identifier data!");
   InlineAsmIdentifierInfo *II;
   StringRef Raw = Identifier.getRawIdentifier();
-  if (Identifier.needsCleaning() || Raw.contains("_ctd_") ||
-      Raw.contains("_ctp_")) {
+  if (!getIdentifiertable().contains(
+          Raw) && // Maybe a builtin identifier, e.g. %laneid
+      (Identifier.needsCleaning() || Raw.contains("_d_") ||
+       Raw.contains("_p_"))) {
     SmallString<64> IdentifierBuffer;
     cleanIdentifier(IdentifierBuffer, Identifier.getRawIdentifier());
     II = getIdentifierInfo(IdentifierBuffer);
@@ -174,6 +176,7 @@ LexNextToken:
       return lexIdentifierContinue(Result, CurPtr);
     }
     if (Char == '%') {
+      BufferPtr = CurPtr;
       ++CurPtr;
       Char = getChar(CurPtr);
       if (isIdentifierContinue(Char)) {

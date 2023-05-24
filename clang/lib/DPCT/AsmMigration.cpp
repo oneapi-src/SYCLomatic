@@ -343,6 +343,16 @@ bool SYCLGenBase::emitParenExpression(const InlineAsmParenExpr *E) {
 }
 
 bool SYCLGenBase::emitDeclRefExpression(const InlineAsmDeclRefExpr *E) {
+  if (E->getDecl().getDeclName()->isBuiltinID()) {
+    switch (E->getDecl().getDeclName()->getTokenID()) {
+    case asmtok::bi_laneid:
+      OS() << getItemName() << ".get_local_id()";
+      break;
+    default:
+      return SYCLGenError();
+    }
+    return SYCLGenSuccess();
+  }
   OS() << E->getDecl().getDeclName()->getName();
   if (E->hasParameterizedName()) {
     OS() << '[' << E->getParameterizedNameIndex() << ']';
@@ -651,10 +661,8 @@ protected:
         dyn_cast<InlineAsmBuiltinType>(I->getType(0))->getKind() !=
             InlineAsmBuiltinType::TK_b32)
       return SYCLGenError();
-
     if (emitStatement(I->getOutputOperand()))
       return SYCLGenError();
-
     OS() << " = ";
 
     std::string Op[3];
@@ -665,7 +673,6 @@ protected:
 
     if (!isa<InlineAsmIntegerLiteral>(I->getInputOperand(3)))
       return SYCLGenError();
-
     unsigned Imm = dyn_cast<InlineAsmIntegerLiteral>(I->getInputOperand(3))
                        ->getValue()
                        .getZExtValue();
@@ -767,7 +774,7 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
       return "(" + EA.getReplacedString() + ")";
     return EA.getReplacedString();
   };
-
+  Parser.addBuiltinIdentifier();
   for (unsigned I = 0, E = GAS->getNumOutputs(); I != E; ++I)
     Parser.addInlineAsmOperands(getReplaceString(GAS->getOutputExpr(I)),
                                 GAS->getOutputConstraint(I));
@@ -812,6 +819,7 @@ void AsmRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
     if (const auto *GAS = dyn_cast<GCCAsmStmt>(AS)) {
       if (!runWithCrashGuard([&]() { doMigrateInternel(GAS); }, ""))
         report(AS->getAsmLoc(), Diagnostics::DEVICE_ASM, true);
+
       return;
     }
     report(AS->getAsmLoc(), Diagnostics::DEVICE_ASM, true);

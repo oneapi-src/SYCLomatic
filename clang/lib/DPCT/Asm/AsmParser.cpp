@@ -13,6 +13,7 @@
 #include "Asm/AsmTokenKinds.h"
 #include "clang/AST/Type.h"
 #include "clang/Basic/CharInfo.h"
+#include "clang/Basic/IdentifierTable.h"
 #include "clang/Lex/LiteralSupport.h"
 #include "clang/Sema/Ownership.h"
 #include "llvm/ADT/APFloat.h"
@@ -95,6 +96,14 @@ InlineAsmScope::lookupParameterizedNameDecl(InlineAsmIdentifierInfo *II,
   if (D && D->isParameterizedNameDecl() && Idx < D->getNumParameterizedNames())
     return D;
   return nullptr;
+}
+
+void InlineAsmParser::addBuiltinIdentifier() {
+#define BUILTIN_ID(X, Y, Z)                                                    \
+  getCurScope()->addDecl(::new (Context) InlineAsmVariableDecl(                \
+      getLexer().getIdentifierInfo(Y),                                         \
+      Context.getBuiltinTypeFromTokenKind(asmtok::kw_##Z)));
+#include "AsmTokenKinds.def"
 }
 
 InlineAsmBuiltinType *
@@ -259,18 +268,13 @@ InlineAsmStmtResult InlineAsmParser::ParseInstruction() {
       return AsmStmtError();
   }
 
-  if (!TryConsumeToken(asmtok::comma))
-    return AsmStmtError();
-
   SmallVector<InlineAsmExpr *, 4> InputOperands;
 
-  while (true) {
+  while (TryConsumeToken(asmtok::comma)) {
     InlineAsmExprResult Operand = ParseExpression();
     if (Operand.isInvalid())
       return AsmStmtError();
     InputOperands.push_back(Operand.get());
-    if (!TryConsumeToken(asmtok::comma))
-      break;
   }
 
   if (!TryConsumeToken(asmtok::semi))
@@ -410,6 +414,8 @@ InlineAsmExprResult InlineAsmParser::ParseCastExpression() {
     ConsumeToken();
     break;
   case asmtok::identifier:
+#define BUILTIN_ID(X, Y, Z) case asmtok::bi_##X:
+#include "AsmTokenKinds.def"
     Res = ActOnIdExpr(Tok.getIdentifier());
     ConsumeToken();
     break;
