@@ -234,10 +234,11 @@ void emitDefaultLanguageWarningIfNecessary(const std::string &FileName,
   if (!SpecifyLanguageInOption &&
       llvm::sys::path::extension(FileName) != ".cu" &&
       llvm::sys::path::extension(FileName) != ".cuh") {
-    llvm::outs() << "NOTE: Treat " << FileName
-                 << " as CUDA file by default. Consider using option "
-                    "--extra-arg=-xc++ to treat it as C++ file if necessary."
-                 << "\n";
+    llvm::outs()
+        << "NOTE: Treat " << FileName
+        << " as CUDA file by default. Consider using option "
+           "--extra-arg=-xc++ to re-migrate it as C++ file if necessary."
+        << "\n";
   }
 }
 } // namespace tooling
