@@ -305,8 +305,6 @@ CASE_FACTORY_ENTRY(
   => if UseLogicalGroup then
      MemberBase().get_group_linear_range()
 */
-
-
 CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(32),
          MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.meta_group_rank",

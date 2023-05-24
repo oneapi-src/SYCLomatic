@@ -25,15 +25,6 @@ __device__ void foo() {
   // CHECK: sycl::sub_group tile32 = item_ct1.get_sub_group();
   cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(block);
 
-  // const auto catile16 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16);
-  const auto catile16 = cg::tiled_partition<16>(block);
-  // auto atile16 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16);
-  auto atile16 = cg::tiled_partition<16>(block);
-  // const dpct::experimental::logical_group ctile16 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16);
-  const cg::thread_block_tile<16> ctile16 = cg::tiled_partition<16>(block);
-  // dpct::experimental::logical_group tile16 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16);
-  cg::thread_block_tile<16> tile16 = cg::tiled_partition<16>(block);
-
   // X.meta_group_rank()
   // CHECK-COUNT-5: item_ct1.get_sub_group().get_group_linear_range();
   cg::tiled_partition<32>(block).meta_group_rank();
@@ -42,10 +33,79 @@ __device__ void foo() {
   ctile32.meta_group_rank();
   tile32.meta_group_rank();
 
+  // CHECK: const auto catile16 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16);
+  const auto catile16 = cg::tiled_partition<16>(block);
+  // CHECK: auto atile16 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16);
+  auto atile16 = cg::tiled_partition<16>(block);
+  // CHECK: const dpct::experimental::logical_group ctile16 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16);
+  const cg::thread_block_tile<16> ctile16 = cg::tiled_partition<16>(block);
+  // CHECK: dpct::experimental::logical_group tile16 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16);
+  cg::thread_block_tile<16> tile16 = cg::tiled_partition<16>(block);
   // CHECK: dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16).get_group_linear_range();
   cg::tiled_partition<16>(block).meta_group_rank();
   // CHECK: catile16.get_group_linear_range();
   catile16.meta_group_rank();
   // CHECK: atile16.get_group_linear_range();
   atile16.meta_group_rank();
+
+  // CHECK: const auto catile8 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 8);
+  const auto catile8 = cg::tiled_partition<8>(block);
+  // CHECK: auto atile8 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 8);
+  auto atile8 = cg::tiled_partition<8>(block);
+  // CHECK: const dpct::experimental::logical_group ctile8 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 8);
+  const cg::thread_block_tile<8> ctile8 = cg::tiled_partition<8>(block);
+  // CHECK: dpct::experimental::logical_group tile8 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 8);
+  cg::thread_block_tile<8> tile8 = cg::tiled_partition<8>(block);
+  // CHECK: dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 8).get_group_linear_range();
+  cg::tiled_partition<8>(block).meta_group_rank();
+  // CHECK: catile8.get_group_linear_range();
+  catile8.meta_group_rank();
+  // CHECK: atile8.get_group_linear_range();
+  atile8.meta_group_rank();
+
+    // CHECK: const auto catile4 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 4);
+  const auto catile4 = cg::tiled_partition<4>(block);
+  // CHECK: auto atile4 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 4);
+  auto atile4 = cg::tiled_partition<4>(block);
+  // CHECK: const dpct::experimental::logical_group ctile4 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 4);
+  const cg::thread_block_tile<4> ctile4 = cg::tiled_partition<4>(block);
+  // CHECK: dpct::experimental::logical_group tile4 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 4);
+  cg::thread_block_tile<4> tile4 = cg::tiled_partition<4>(block);
+  // CHECK: dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 4).get_group_linear_range();
+  cg::tiled_partition<4>(block).meta_group_rank();
+  // CHECK: catile4.get_group_linear_range();
+  catile4.meta_group_rank();
+  // CHECK: atile4.get_group_linear_range();
+  atile4.meta_group_rank();
+
+    // CHECK: const auto catile2 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 2);
+  const auto catile2 = cg::tiled_partition<2>(block);
+  // CHECK: auto atile2 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 2);
+  auto atile2 = cg::tiled_partition<2>(block);
+  // CHECK: const dpct::experimental::logical_group ctile2 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 2);
+  const cg::thread_block_tile<2> ctile2 = cg::tiled_partition<2>(block);
+  // CHECK: dpct::experimental::logical_group tile2 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 2);
+  cg::thread_block_tile<2> tile2 = cg::tiled_partition<2>(block);
+  // CHECK: dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 2).get_group_linear_range();
+  cg::tiled_partition<2>(block).meta_group_rank();
+  // CHECK: catile2.get_group_linear_range();
+  catile2.meta_group_rank();
+  // CHECK: atile2.get_group_linear_range();
+  atile2.meta_group_rank();
+
+      // CHECK: const auto catile1 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 1);
+  const auto catile1 = cg::tiled_partition<1>(block);
+  // CHECK: auto atile1 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 1);
+  auto atile1 = cg::tiled_partition<1>(block);
+  // CHECK: const dpct::experimental::logical_group ctile1 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 1);
+  const cg::thread_block_tile<1> ctile1 = cg::tiled_partition<1>(block);
+  // CHECK: dpct::experimental::logical_group tile1 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 1);
+  cg::thread_block_tile<1> tile1 = cg::tiled_partition<1>(block);
+  // CHECK: dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 1).get_group_linear_range();
+  cg::tiled_partition<1>(block).meta_group_rank();
+  // CHECK: catile1.get_group_linear_range();
+  catile1.meta_group_rank();
+  // CHECK: atile1.get_group_linear_range();
+  atile1.meta_group_rank();
+
 }
