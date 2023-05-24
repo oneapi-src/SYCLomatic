@@ -207,6 +207,7 @@ typedef bool (*CrashGuardFunc)(llvm::function_ref<void()>, std::string);
 bool processFilesWithCrashGuardDefault(llvm::function_ref<void()> Func,
                                        std::string) {
   Func();
+  return true;
 }
 
 CrashGuardFunc ProcessFilesWithCrashGuardPtr =
@@ -228,7 +229,19 @@ static int processFilesWithCrashGuard(ClangTool *Tool, llvm::StringRef File,
     return Ret;
   return ProcessingFilesCrash;
 }
-
+bool SpecifyLanguageInOption = false;
+void emitDefaultLanguageWarningIfNecessary(const std::string &FileName,
+                                           bool SpecifyLanguageInOption) {
+  if (!SpecifyLanguageInOption &&
+      llvm::sys::path::extension(FileName) != ".cu" &&
+      llvm::sys::path::extension(FileName) != ".cuh") {
+    llvm::outs()
+        << "NOTE: Treat " << FileName
+        << " as CUDA file by default. Consider using option "
+           "--extra-arg=-xc++ to re-migrate it as C++ file if necessary."
+        << "\n";
+  }
+}
 } // namespace tooling
 } // namespace 
 bool StopOnParseErrTooling=false;
@@ -859,6 +872,8 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
       if ((!CommandLine.empty() && CommandLine[0] == "CudaCompile") ||
           (!CommandLine.empty() && CommandLine[0] == "CustomBuild" &&
            llvm::sys::path::extension(File)==".cu")) {
+        emitDefaultLanguageWarningIfNecessary(CommandLine[0],
+                                              SpecifyLanguageInOption);
         CudaArgsAdjuster = combineAdjusters(
             std::move(CudaArgsAdjuster),
             getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
@@ -869,6 +884,8 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
 #else
       if (!CommandLine.empty() && CommandLine[0].size() >= 4 &&
           CommandLine[0].substr(CommandLine[0].size() - 4) == "nvcc") {
+        emitDefaultLanguageWarningIfNecessary(CommandLine[0],
+                                              SpecifyLanguageInOption);
         CudaArgsAdjuster = combineAdjusters(
             std::move(CudaArgsAdjuster),
             getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
