@@ -328,9 +328,9 @@ class InlineAsmInstruction : public InlineAsmStmt {
   SmallVector<InlineAsmIdentifierInfo *, 4> Attributes;
   InlineAsmExpr *OutputOperand;
   SmallVector<InlineAsmExpr *, 4> InputOperands;
-  
-  // Predicate output, e.g. given shfl.sync.up.b32  Ry|p, Rx, 0x1,  0x0, 0xffffffff;
-  // p is a predicate output.
+
+  // Predicate output, e.g. given shfl.sync.up.b32  Ry|p, Rx, 0x1,  0x0,
+  // 0xffffffff; p is a predicate output.
   InlineAsmExpr *PredOutput = nullptr;
 
 public:
@@ -444,12 +444,13 @@ struct InlineAsmDeclarator {
 /// expressions. For example, CompoundStmt mixes statements, expressions
 /// and declarations (variables, types).
 class InlineAsmDeclStmt : public InlineAsmStmt {
-  InlineAsmType *BaseType;
+  InlineAsmDeclarationSpecifier DeclSpec;
   SmallVector<InlineAsmDecl *, 4> DeclGroup;
 
 public:
-  InlineAsmDeclStmt(InlineAsmType *BaseType, ArrayRef<InlineAsmDecl *> Decls)
-      : InlineAsmStmt(DeclStmtClass), BaseType(BaseType), DeclGroup(Decls) {}
+  InlineAsmDeclStmt(InlineAsmDeclarationSpecifier DS,
+                    ArrayRef<InlineAsmDecl *> Decls)
+      : InlineAsmStmt(DeclStmtClass), DeclSpec(DS), DeclGroup(Decls) {}
 
   unsigned getNumDecl() const { return DeclGroup.size(); }
   const InlineAsmDecl *getDecl(unsigned I) const { return DeclGroup[I]; }
@@ -461,7 +462,7 @@ public:
     return decl_range(DeclGroup.begin(), DeclGroup.end());
   }
 
-  const InlineAsmType *getBaseType() const { return BaseType; }
+  InlineAsmDeclarationSpecifier getDeclSpec() const { return DeclSpec; }
 
   static bool classof(const InlineAsmStmt *S) {
     return S->getStmtClass() == DeclStmtClass;

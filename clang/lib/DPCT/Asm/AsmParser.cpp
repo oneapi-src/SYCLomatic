@@ -329,8 +329,8 @@ InlineAsmParser::ParseRHSOfBinaryExpression(InlineAsmExprResult LHS,
     asm_precedence::Level ThisPrec = NextTokPrec;
     NextTokPrec = getBinOpPrec(Tok.getKind());
 
-    bool isRightAssoc =
-        ThisPrec == asm_precedence::Conditional || ThisPrec == asm_precedence::Assignment;
+    bool isRightAssoc = ThisPrec == asm_precedence::Conditional ||
+                        ThisPrec == asm_precedence::Assignment;
 
     if (ThisPrec < NextTokPrec || (ThisPrec == NextTokPrec && isRightAssoc)) {
       RHS = ParseRHSOfBinaryExpression(
@@ -447,7 +447,7 @@ InlineAsmStmtResult InlineAsmParser::ParseDeclarationStatement() {
 
   if (!TryConsumeToken(asmtok::semi))
     return AsmStmtError();
-  return ::new (Context) InlineAsmDeclStmt(DeclSpec.Type, Decls);
+  return ::new (Context) InlineAsmDeclStmt(DeclSpec, Decls);
 }
 
 InlineAsmTypeResult InlineAsmParser::ParseDeclarationSpecifier(

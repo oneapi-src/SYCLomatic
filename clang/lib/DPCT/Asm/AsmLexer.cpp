@@ -37,26 +37,30 @@ static inline bool isIdentifierContinue(unsigned char C) {
 }
 
 /// Clean the special character in identifier.
-/// Rule: delete leading '%' characters
-///       replace '$' with '__d__'
-///       replace '%' with '__p__'
+/// Rule: 1. delete leading '%' characters
+///       2. replace '$' with '_d_'
+///       3. replace '%' with '_p_'
+///       4. add a '_' character to escape '_d_' and '_p_'
 /// %r -> r
-/// %$r -> __d__r
-/// %r$ -> r__d__
-/// %r% -> r__p__
-/// %%r -> __p__r
+/// %$r -> _d_r
+/// %r$ -> r_d_
+/// %r% -> r_p_
+/// %%r -> _p_r
+/// %r%_d_ -> r_p__d_
+/// %r_d_% => r__d__p_
 void InlineAsmLexer::cleanIdentifier(SmallVectorImpl<char> &Buf,
                                      StringRef Input) const {
   Buf.clear();
   Input = Input.drop_while([](char C) { return C == '%'; });
   auto Push = [&Buf](char C) {
     Buf.push_back('_');
-    Buf.push_back('_');
     Buf.push_back(C);
     Buf.push_back('_');
-    Buf.push_back('_');
   };
-  for (char C : Input) {
+
+  for (const char *Ptr = Input.begin(); Ptr != Input.end(); ++Ptr) {
+    char C = *Ptr;
+    StringRef SubStr(Ptr, Input.end() - Ptr);
     switch (C) {
     case '$':
       Push('d');
@@ -64,6 +68,10 @@ void InlineAsmLexer::cleanIdentifier(SmallVectorImpl<char> &Buf,
     case '%':
       Push('p');
       break;
+    case '_':
+      if (SubStr.starts_with("_d_") || SubStr.starts_with("_p_"))
+        Buf.push_back('_');
+      [[fallthrough]];
     default:
       Buf.push_back(C);
       break;

@@ -136,13 +136,28 @@ __global__ void mov(float *output) {
 
 // CHECK: void clean_specifial_character() {
 // CHECK:   {
-// CHECK-NEXT:     uint32_t p__d__p;
-// CHECK-NEXT:     p__d__p = 0x3F;
+// CHECK-NEXT:     uint32_t p_d_p, p_d___p_;
+// CHECK-NEXT:     p_d_p = 0x3F;
+// CHECK-NEXT:     p_d___p_ = 0x3F;
 // CHECK-NEXT:   }
 // CHECK: }
 __global__ void clean_specifial_character(void) {
   asm("{\n\t"
-      " .reg .u32 %%p$p;\n\t"
+      " .reg .u32 %%p$p, p$_p_;\n\t"
+      " mov.u32 %%p$p, 0x3F;\n\t"
+      " mov.u32 p$_p_, 0x3F;\n\t"
+      "}");
+}
+
+// CHECK: void variable_alignas() {
+// CHECK:   {
+// CHECK-NEXT:     alignas(8) uint32_t p_d_p;
+// CHECK-NEXT:     p_d_p = 0x3F;
+// CHECK-NEXT:   }
+// CHECK: }
+__global__ void variable_alignas(void) {
+  asm("{\n\t"
+      " .reg .align 8 .u32 %%p$p;\n\t"
       " mov.u32 %%p$p, 0x3F;\n\t"
       "}");
 }

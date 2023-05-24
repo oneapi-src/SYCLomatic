@@ -10,12 +10,14 @@
 #include "AnalysisInfo.h"
 #include "Asm/AsmParser.h"
 #include "CallExprRewriter.h"
+#include "CrashRecovery.h"
 #include "MigrationRuleManager.h"
 #include "TextModification.h"
 #include "Utility.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/Stmt.h"
 #include "clang/Basic/TokenKinds.h"
+#include "clang/Parse/RAIIObjectsForParser.h"
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/Sequence.h"
@@ -35,11 +37,15 @@
 #include <iterator>
 #include <limits>
 #include <sstream>
+#include <stdexcept>
 
 using namespace clang;
 using namespace clang::dpct;
 
 namespace {
+
+inline bool SYCLGenError() { return true; }
+inline bool SYCLGenSuccess() { return false; }
 
 /// This is used to handle all the AST nodes (except specific instructions).
 class SYCLGenBase {
@@ -50,13 +56,33 @@ class SYCLGenBase {
   llvm::SmallString<4> IndentUnit{"  "};
   llvm::SmallString<16> Indent;
 
+  class BlockDelimiterGuard {
+    SYCLGenBase &CodeGen;
+
+  public:
+    BlockDelimiterGuard(SYCLGenBase &CG) : CodeGen(CG) {
+      CodeGen.OS() << "{";
+      CodeGen.endl();
+      CodeGen.incIndent();
+    }
+
+    ~BlockDelimiterGuard() {
+      CodeGen.decIndent();
+      CodeGen.indent();
+      CodeGen.OS() << "}";
+      CodeGen.endl();
+    }
+  };
+
 public:
-  SYCLGenBase(llvm::raw_ostream &OS) : Stream(&OS) { incIndent(); }
+  SYCLGenBase(llvm::raw_ostream &OS, StringRef IU = "")
+      : Stream(&OS), IndentUnit(IU) {
+    incIndent();
+  }
+
   virtual ~SYCLGenBase() { decIndent(); }
 
   unsigned getNumIndent() const { return NumIndent; }
-
-  void setNumIndent(unsigned Indent) { NumIndent = Indent; }
 
   void setIndentUnit(StringRef Unit) {
     if (!Unit.empty())
@@ -81,18 +107,22 @@ protected:
       Indent.append(IndentUnit);
   }
 
-  StringRef indent() { return Indent; }
+  void indent() { OS() << Indent; }
 
-  StringRef endl() const {
+  void endl() {
     if (EmitNewLine)
-      return getNL();
-    return "";
+      OS() << getNL();
   }
 
-  StringRef semi() const {
+  void semi() {
     if (EmitSemi)
-      return ";";
-    return "";
+      OS() << ";";
+  }
+
+  void endstmt() {
+    if (EmitSemi)
+      OS() << ";";
+    endl();
   }
 
   llvm::raw_ostream &OS() { return *Stream; }
@@ -103,9 +133,9 @@ protected:
     llvm::SaveAndRestore<llvm::raw_ostream *> OutStream(Stream);
     switchOutStream(TmpOS);
     if (emitStatement(S))
-      return true;
+      return SYCLGenError();
     TmpOS.flush();
-    return false;
+    return SYCLGenSuccess();
   }
 
   bool tryEmitStatement(std::string &Buffer, const InlineAsmStmt *S) {
@@ -139,7 +169,9 @@ protected:
 
   // Instructions
 #define INSTRUCTION(X)                                                         \
-  virtual bool handle_##X(const InlineAsmInstruction *I) { return true; }
+  virtual bool handle_##X(const InlineAsmInstruction *I) {                     \
+    return SYCLGenError();                                                     \
+  }
 #include "Asm/AsmTokenKinds.def"
 };
 
@@ -171,26 +203,31 @@ bool SYCLGenBase::emitStatement(const InlineAsmStmt *S) {
   case InlineAsmStmt::FloatingLiteralClass:
     return emitFloatingLiteral(dyn_cast<InlineAsmFloatingLiteral>(S));
   default:
-    return true;
+    return SYCLGenError();
   }
-  return false;
+  return SYCLGenSuccess();
 }
 
 bool SYCLGenBase::emitDeclarationStatement(const InlineAsmDeclStmt *S) {
   if (S->getNumDecl() == 0)
-    return true;
-  if (emitType(S->getBaseType()))
-    return true;
+    return SYCLGenError();
+  if (S->getDeclSpec().Alignment) {
+    OS() << "alignas(";
+    OS() << S->getDeclSpec().Alignment->getValue().getZExtValue();
+    OS() << ") ";
+  }
+  if (emitType(S->getDeclSpec().Type))
+    return SYCLGenError();
   OS() << " ";
   int NumCommas = S->getNumDecl() - 1;
   for (const auto *D : S->decls()) {
     if (emitDeclaration(D))
-      return true;
+      return SYCLGenError();
     if (NumCommas-- > 0)
       OS() << ", ";
   }
-  OS() << semi() << endl();
-  return false;
+  endstmt();
+  return SYCLGenSuccess();
 }
 
 bool SYCLGenBase::emitCompoundStatement(const InlineAsmCompoundStmt *S) {
@@ -198,16 +235,13 @@ bool SYCLGenBase::emitCompoundStatement(const InlineAsmCompoundStmt *S) {
   llvm::SaveAndRestore<bool> StoreSemi(EmitSemi);
   EmitNewLine = true;
   EmitSemi = true;
-  OS() << "{" << endl();
-  incIndent();
+  BlockDelimiterGuard Guard(*this);
   for (const auto *SubStmt : S->stmts()) {
-    OS() << indent();
+    indent();
     if (emitStatement(SubStmt))
-      return true;
+      return SYCLGenError();
   }
-  decIndent();
-  OS() << indent() << "}" << endl();
-  return false;
+  return SYCLGenSuccess();
 }
 
 bool SYCLGenBase::emitInstruction(const InlineAsmInstruction *I) {
@@ -219,7 +253,7 @@ bool SYCLGenBase::emitInstruction(const InlineAsmInstruction *I) {
   default:
     break;
   }
-  return true;
+  return SYCLGenError();
 }
 
 bool SYCLGenBase::emitConditionalInstruction(
@@ -228,16 +262,11 @@ bool SYCLGenBase::emitConditionalInstruction(
   if (I->hasNot())
     OS() << "!";
   if (emitStatement(I->getPred()))
-    return true;
-  OS() << ") {" << endl();
-  incIndent();
-  OS() << indent();
-  if (emitInstruction(I->getInstruction()))
-    return true;
-  decIndent();
-  OS() << indent() << "}";
-  OS() << endl();
-  return false;
+    return SYCLGenError();
+  OS() << ") ";
+  BlockDelimiterGuard Guard(*this);
+  indent();
+  return emitInstruction(I->getInstruction());
 }
 
 bool SYCLGenBase::emitUnaryOperator(const InlineAsmUnaryOperator *Op) {
@@ -249,14 +278,12 @@ bool SYCLGenBase::emitUnaryOperator(const InlineAsmUnaryOperator *Op) {
   case InlineAsmUnaryOperator::LNot:  OS() << "!"; break;
     // clang-format on
   }
-  if (emitStatement(Op->getSubExpr()))
-    return true;
-  return false;
+  return emitStatement(Op->getSubExpr());
 }
 
 bool SYCLGenBase::emitBinaryOperator(const InlineAsmBinaryOperator *Op) {
   if (emitStatement(Op->getLHS()))
-    return true;
+    return SYCLGenError();
   OS() << " ";
   // clang-format off
   switch (Op->getOpcode()) {
@@ -282,41 +309,37 @@ bool SYCLGenBase::emitBinaryOperator(const InlineAsmBinaryOperator *Op) {
   }
   // clang-format on
   OS() << " ";
-  if (emitStatement(Op->getRHS()))
-    return true;
-  return false;
+  return emitStatement(Op->getRHS());
 }
 
 bool SYCLGenBase::emitConditionalOperator(
     const InlineAsmConditionalOperator *Op) {
   if (emitStatement(Op->getCond()))
-    return true;
+    return SYCLGenError();
   OS() << " ? ";
   if (emitStatement(Op->getLHS()))
-    return true;
+    return SYCLGenError();
   OS() << " : ";
-  if (emitStatement(Op->getRHS()))
-    return true;
-  return false;
+  return emitStatement(Op->getRHS());
 }
 
 bool SYCLGenBase::emitCastExpression(const InlineAsmCastExpr *E) {
   OS() << "static_cast<";
   if (emitType(E->getType()))
-    return true;
+    return SYCLGenError();
   OS() << ">(";
   if (emitStatement(E->getSubExpr()))
-    return true;
+    return SYCLGenError();
   OS() << ")";
-  return false;
+  return SYCLGenSuccess();
 }
 
 bool SYCLGenBase::emitParenExpression(const InlineAsmParenExpr *E) {
   OS() << "(";
   if (emitStatement(E->getSubExpr()))
-    return true;
+    return SYCLGenError();
   OS() << ")";
-  return false;
+  return SYCLGenSuccess();
 }
 
 bool SYCLGenBase::emitDeclRefExpression(const InlineAsmDeclRefExpr *E) {
@@ -324,12 +347,12 @@ bool SYCLGenBase::emitDeclRefExpression(const InlineAsmDeclRefExpr *E) {
   if (E->hasParameterizedName()) {
     OS() << '[' << E->getParameterizedNameIndex() << ']';
   }
-  return false;
+  return SYCLGenSuccess();
 }
 
 bool SYCLGenBase::emitIntegerLiteral(const InlineAsmIntegerLiteral *I) {
   OS() << I->getLiteral();
-  return false;
+  return SYCLGenSuccess();
 }
 
 bool SYCLGenBase::emitFloatingLiteral(const InlineAsmFloatingLiteral *Fp) {
@@ -348,12 +371,12 @@ bool SYCLGenBase::emitFloatingLiteral(const InlineAsmFloatingLiteral *Fp) {
                               "ULL");
         break;
       default:
-        return true;
+        return SYCLGenError();
       }
-      return false;
+      return SYCLGenSuccess();
     }
   }
-  return false;
+  return SYCLGenSuccess();
 }
 
 bool SYCLGenBase::emitType(const InlineAsmType *T) {
@@ -365,7 +388,7 @@ bool SYCLGenBase::emitType(const InlineAsmType *T) {
   default:
     break;
   }
-  return true;
+  return SYCLGenError();
 }
 
 bool SYCLGenBase::emitBuiltinType(const InlineAsmBuiltinType *T) {
@@ -401,16 +424,16 @@ bool SYCLGenBase::emitBuiltinType(const InlineAsmBuiltinType *T) {
   case InlineAsmBuiltinType::TK_u16x2:
     [[fallthrough]];
   default:
-    return true;
+    return SYCLGenError();
   }
   // clang-format on
-  return false;
+  return SYCLGenSuccess();
 }
 
 bool SYCLGenBase::emitVectorType(const InlineAsmVectorType *T) {
   OS() << "sycl::vec<";
   if (emitType(T->getElementType()))
-    return true;
+    return SYCLGenError();
   OS() << ", ";
   switch (T->getKind()) {
   case InlineAsmVectorType::TK_v2:
@@ -424,7 +447,7 @@ bool SYCLGenBase::emitVectorType(const InlineAsmVectorType *T) {
     break;
   }
   OS() << ">";
-  return false;
+  return SYCLGenSuccess();
 }
 
 bool SYCLGenBase::emitDeclaration(const InlineAsmDecl *D) {
@@ -434,56 +457,56 @@ bool SYCLGenBase::emitDeclaration(const InlineAsmDecl *D) {
   default:
     break;
   }
-  return true;
+  return SYCLGenError();
 }
 
 bool SYCLGenBase::emitVariableDeclaration(const InlineAsmVariableDecl *D) {
   OS() << D->getDeclName()->getName();
   if (D->isParameterizedNameDecl())
     OS() << '[' << D->getNumParameterizedNames() << ']';
-  return false;
+  return SYCLGenSuccess();
 }
 
 /// This used to handle the specific instruction.
 class SYCLGen : public SYCLGenBase {
 public:
-  SYCLGen(llvm::raw_ostream &OS) : SYCLGenBase(OS) {}
+  SYCLGen(llvm::raw_ostream &OS, StringRef IU) : SYCLGenBase(OS, IU) {}
 
   bool handleStatement(const InlineAsmStmt *S) { return emitStatement(S); }
 
 protected:
   bool handle_mov(const InlineAsmInstruction *I) override {
     if (I->getNumInputOperands() != 1)
-      return true;
+      return SYCLGenError();
     if (emitStatement(I->getOutputOperand()))
-      return true;
+      return SYCLGenError();
     OS() << " = ";
     if (emitStatement(I->getInputOperand(0)))
-      return true;
-    OS() << semi() << endl();
-    return false;
+      return SYCLGenError();
+    endstmt();
+    return SYCLGenSuccess();
   }
 
   bool handle_setp(const InlineAsmInstruction *I) override {
     if (I->getNumInputOperands() != 2 && I->getNumTypes() == 1)
-      return true;
+      return SYCLGenError();
 
     auto *T = dyn_cast<InlineAsmBuiltinType>(I->getType(0));
     if (!T)
-      return true;
+      return SYCLGenError();
 
     if (emitStatement(I->getOutputOperand()))
-      return true;
+      return SYCLGenError();
 
     OS() << " = ";
 
     std::string Op1, Op2;
 
     if (tryEmitStatement(Op1, I->getInputOperand(0)))
-      return true;
+      return SYCLGenError();
 
     if (tryEmitStatement(Op2, I->getInputOperand(1)))
-      return true;
+      return SYCLGenError();
 
     const char *Template = nullptr;
 
@@ -495,7 +518,7 @@ protected:
         else if (T->isFloating())
           Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && {0} == {1}";
         else
-          return true;
+          return SYCLGenError();
         break;
       case asmtok::kw_ne:
         if (T->isSignedInt() || T->isUnsignedInt() || T->isBitSize())
@@ -503,7 +526,7 @@ protected:
         else if (T->isFloating())
           Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && {0} != {1}";
         else
-          return true;
+          return SYCLGenError();
         break;
       case asmtok::kw_lt:
         if (T->isSignedInt())
@@ -511,7 +534,7 @@ protected:
         else if (T->isFloating())
           Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && {0} < {1}";
         else
-          return true;
+          return SYCLGenError();
         break;
       case asmtok::kw_le:
         if (T->isSignedInt())
@@ -519,7 +542,7 @@ protected:
         else if (T->isFloating())
           Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && {0} <= {1}";
         else
-          return true;
+          return SYCLGenError();
         break;
       case asmtok::kw_gt:
         if (T->isSignedInt())
@@ -527,7 +550,7 @@ protected:
         else if (T->isFloating())
           Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && {0} > {1}";
         else
-          return true;
+          return SYCLGenError();
         break;
       case asmtok::kw_ge:
         if (T->isSignedInt())
@@ -535,79 +558,79 @@ protected:
         else if (T->isFloating())
           Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && {0} >= {1}";
         else
-          return true;
+          return SYCLGenError();
         break;
       case asmtok::kw_lo:
         if (T->isUnsignedInt())
           Template = "{0} < {1}";
         else
-          return true;
+          return SYCLGenError();
         break;
       case asmtok::kw_ls:
         if (T->isUnsignedInt())
           Template = "{0} <= {1}";
         else
-          return true;
+          return SYCLGenError();
         break;
       case asmtok::kw_hi:
         if (T->isUnsignedInt())
           Template = "{0} > {1}";
         else
-          return true;
+          return SYCLGenError();
         break;
       case asmtok::kw_hs:
         if (T->isUnsignedInt())
           Template = "{0} >= {1}";
         else
-          return true;
+          return SYCLGenError();
         break;
       case asmtok::kw_equ:
         if (T->isFloating())
           Template = "sycl::isnan({0}) || sycl::isnan({1}) || {0} == {1}";
         else
-          return true;
+          return SYCLGenError();
         break;
       case asmtok::kw_neu:
         if (T->isFloating())
           Template = " sycl::isnan({0}) || sycl::isnan({1}) || {0} != {1}";
         else
-          return true;
+          return SYCLGenError();
         break;
       case asmtok::kw_ltu:
         if (T->isFloating())
           Template = "sycl::isnan({0}) || sycl::isnan({1}) || {0} < {1}";
         else
-          return true;
+          return SYCLGenError();
         break;
       case asmtok::kw_leu:
         if (T->isFloating())
           Template = "sycl::isnan({0}) || sycl::isnan({1}) || {0} <= {1}";
         else
-          return true;
+          return SYCLGenError();
         break;
       case asmtok::kw_gtu:
         if (T->isFloating())
           Template = "sycl::isnan({0}) || sycl::isnan({1}) || {0} > {1}";
         else
-          return true;
+          return SYCLGenError();
         break;
       case asmtok::kw_geu:
         if (T->isFloating())
           Template = "sycl::isnan({0}) || sycl::isnan({1}) || {0} >= {1}";
         else
-          return true;
+          return SYCLGenError();
         break;
       case asmtok::kw_num:
         if (T->isFloating())
           Template = "!sycl::isnan({0}) && !sycl::isnan({1})";
         else
-          return true;
+          return SYCLGenError();
         break;
       case asmtok::kw_nan:
         if (T->isFloating())
           Template = "sycl::isnan({0}) || sycl::isnan({1})";
         else
-          return true;
+          return SYCLGenError();
         break;
       default:
         break;
@@ -615,11 +638,11 @@ protected:
     }
 
     if (!Template)
-      return true;
+      return SYCLGenError();
 
     OS() << llvm::formatv(Template, Op1, Op2);
-    OS() << semi() << endl();
-    return false;
+    endstmt();
+    return SYCLGenSuccess();
   }
 
   bool handle_lop3(const InlineAsmInstruction *I) override {
@@ -627,21 +650,21 @@ protected:
         !isa<InlineAsmBuiltinType>(I->getType(0)) ||
         dyn_cast<InlineAsmBuiltinType>(I->getType(0))->getKind() !=
             InlineAsmBuiltinType::TK_b32)
-      return true;
+      return SYCLGenError();
 
     if (emitStatement(I->getOutputOperand()))
-      return true;
+      return SYCLGenError();
 
     OS() << " = ";
 
     std::string Op[3];
     for (auto Idx : llvm::seq(0, 3)) {
       if (tryEmitStatement(Op[Idx], I->getInputOperand(Idx)))
-        return true;
+        return SYCLGenError();
     }
 
     if (!isa<InlineAsmIntegerLiteral>(I->getInputOperand(3)))
-      return true;
+      return SYCLGenError();
 
     unsigned Imm = dyn_cast<InlineAsmIntegerLiteral>(I->getInputOperand(3))
                        ->getValue()
@@ -711,8 +734,8 @@ protected:
       OS() << llvm::join(Templates, " | ");
     }
 
-    OS() << semi() << endl();
-    return false;
+    endstmt();
+    return SYCLGenSuccess();
   }
 };
 } // namespace
@@ -726,67 +749,69 @@ void AsmRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       this);
 }
 
+void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
+  const auto &C = DpctGlobalInfo::getContext();
+  std::string S = GAS->generateAsmString(C);
+  InlineAsmContext Context;
+  std::string Replacement;
+  llvm::raw_string_ostream OS(Replacement);
+  llvm::SourceMgr Mgr;
+  std::string Buffer = GAS->getAsmString()->getString().str();
+  Mgr.AddNewSourceBuffer(llvm::MemoryBuffer::getMemBuffer(Buffer),
+                         llvm::SMLoc());
+  InlineAsmParser Parser(Context, Mgr);
+  auto getReplaceString = [&](const Expr *E) {
+    ExprAnalysis EA;
+    EA.analyze(E);
+    if (needExtraParens(E))
+      return "(" + EA.getReplacedString() + ")";
+    return EA.getReplacedString();
+  };
+
+  for (unsigned I = 0, E = GAS->getNumOutputs(); I != E; ++I)
+    Parser.addInlineAsmOperands(getReplaceString(GAS->getOutputExpr(I)),
+                                GAS->getOutputConstraint(I));
+
+  for (unsigned I = 0, E = GAS->getNumInputs(); I != E; ++I)
+    Parser.addInlineAsmOperands(getReplaceString(GAS->getInputExpr(I)),
+                                GAS->getInputConstraint(I));
+
+  StringRef Indent =
+      getIndent(GAS->getBeginLoc(), DpctGlobalInfo::getSourceManager());
+
+  SYCLGen CodeGen(OS, Indent);
+
+  do {
+    auto Inst = Parser.ParseStatement();
+    if (Inst.isInvalid()) {
+      report(GAS->getAsmLoc(), Diagnostics::DEVICE_ASM, true);
+      return;
+    }
+
+    if (CodeGen.handleStatement(Inst.get())) {
+      report(GAS->getAsmLoc(), Diagnostics::DEVICE_ASM, true);
+      return;
+    }
+  } while (!Parser.getCurToken().is(asmtok::eof));
+
+  OS.flush();
+  auto *Repl = new ReplaceStmt(GAS, Replacement);
+  Repl->setBlockLevelFormatFlag();
+  emplaceTransformation(Repl);
+
+  auto Tok =
+      Lexer::findNextToken(GAS->getEndLoc(), DpctGlobalInfo::getSourceManager(),
+                           DpctGlobalInfo::getContext().getLangOpts());
+  if (Tok.has_value() && Tok->is(tok::semi))
+    emplaceTransformation(new ReplaceToken(Tok->getLocation(), ""));
+  return;
+}
+
 void AsmRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto *AS = getNodeAsType<AsmStmt>(Result, "asm")) {
-    if (const auto *Asm = dyn_cast<GCCAsmStmt>(AS)) {
-      const auto &C = DpctGlobalInfo::getContext();
-      std::string S = Asm->generateAsmString(C);
-      InlineAsmContext Context;
-      std::string Replacement;
-      llvm::raw_string_ostream OS(Replacement);
-      llvm::SourceMgr Mgr;
-      std::string Buffer = Asm->getAsmString()->getString().str();
-      Mgr.AddNewSourceBuffer(llvm::MemoryBuffer::getMemBuffer(Buffer),
-                             llvm::SMLoc());
-      InlineAsmParser Parser(Context, Mgr);
-      SYCLGen CodeGen(OS);
-      std::string AsmString;
-
-      auto getReplaceString = [&](const Expr *E) {
-        ExprAnalysis EA;
-        EA.analyze(E);
-        if (needExtraParens(E))
-          return "(" + EA.getReplacedString() + ")";
-        return EA.getReplacedString();
-      };
-
-      for (unsigned I = 0, E = AS->getNumOutputs(); I != E; ++I)
-        Parser.addInlineAsmOperands(getReplaceString(AS->getOutputExpr(I)),
-                                    AS->getOutputConstraint(I));
-
-      for (unsigned I = 0, E = AS->getNumInputs(); I != E; ++I)
-        Parser.addInlineAsmOperands(getReplaceString(AS->getInputExpr(I)),
-                                    AS->getInputConstraint(I));
-
-      try {
-        do {
-          auto Inst = Parser.ParseStatement();
-          if (Inst.isInvalid()) {
-            report(AS->getAsmLoc(), Diagnostics::DEVICE_ASM, true);
-            return;
-          }
-
-          if (CodeGen.handleStatement(Inst.get())) {
-            report(AS->getAsmLoc(), Diagnostics::DEVICE_ASM, true);
-            return;
-          }
-
-        } while (!Parser.getCurToken().is(asmtok::eof));
-      } catch (...) {
+    if (const auto *GAS = dyn_cast<GCCAsmStmt>(AS)) {
+      if (!runWithCrashGuard([&]() { doMigrateInternel(GAS); }, ""))
         report(AS->getAsmLoc(), Diagnostics::DEVICE_ASM, true);
-        return;
-      }
-
-      OS.flush();
-      auto *Repl = new ReplaceStmt(AS, Replacement);
-      Repl->setBlockLevelFormatFlag();
-      emplaceTransformation(Repl);
-
-      auto Tok = Lexer::findNextToken(
-          Asm->getEndLoc(), DpctGlobalInfo::getSourceManager(),
-          DpctGlobalInfo::getContext().getLangOpts());
-      if (Tok.has_value() && Tok->is(tok::semi))
-        emplaceTransformation(new ReplaceToken(Tok->getLocation(), ""));
       return;
     }
     report(AS->getAsmLoc(), Diagnostics::DEVICE_ASM, true);

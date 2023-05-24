@@ -19,6 +19,7 @@ class AsmRule : public NamedMigrationRule<AsmRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+  void doMigrateInternel(const GCCAsmStmt *GAS);
 };
 
 } // namespace dpct
