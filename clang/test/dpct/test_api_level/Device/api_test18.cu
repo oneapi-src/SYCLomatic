@@ -8,6 +8,8 @@
 
 __global__ void foo() {}
 
+void f() { foo<<<1, 1>>>(); }
+
 int main() {
   foo<<<1,1>>>();
   return 0;

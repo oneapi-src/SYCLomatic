@@ -235,3 +235,5 @@ DEF_WARNING(DEVICE_UNSUPPORTED_CALL_FUNCTION, 1109, "%0 cannot be called in SYCL
 DEF_COMMENT(DEVICE_UNSUPPORTED_CALL_FUNCTION, 1109, "{0} cannot be called in SYCL device code. You need to adjust the code.")
 DEF_WARNING(REGISTER_USAGE, 1110, "The total declared local variable size in device function \"%0\" exceeds 128 bytes and may cause high register pressure. Consult with your hardware vendor to find the total register size available and adjust the code or use smaller sub-group size to avoid high register pressure.")
 DEF_COMMENT(REGISTER_USAGE, 1110, "The total declared local variable size in device function \"{0}\" exceeds 128 bytes and may cause high register pressure. Consult with your hardware vendor to find the total register size available and adjust the code or use smaller sub-group size to avoid high register pressure.")
+DEF_WARNING(MAX_ACTIVE_WG_ARGS, 1111, "Please verify the input arguments of \"%0\" base on the target function \"%1\".")
+DEF_COMMENT(MAX_ACTIVE_WG_ARGS, 1111, "Please verify the input arguments of \"{0}\" base on the target function \"{1}\".")
