@@ -84,3 +84,6 @@ BINARY_OP_FACTORY_ENTRY("cuCaddf", BinaryOperatorKind::BO_Add,
 BINARY_OP_FACTORY_ENTRY("cuCsubf", BinaryOperatorKind::BO_Sub,
                         makeCallArgCreatorWithCall(0),
                         makeCallArgCreatorWithCall(1))
+
+MEMBER_CALL_FACTORY_ENTRY("cuComplexDoubleToFloat", ARG(0), false, "convert<float>")
+MEMBER_CALL_FACTORY_ENTRY("cuComplexFloatToDouble", ARG(0), false, "convert<double>")
