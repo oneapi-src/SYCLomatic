@@ -29,8 +29,9 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 
 
      //CHECK:int main() {
-//CHECK-NEXT:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
-//CHECK-NEXT:  sycl::queue &q_ct1 = dev_ct1.default_queue();
+//CHECK-NEXT:  sycl::device dev_ct1;
+//CHECK-NEXT:  sycl::queue q_ct1(dev_ct1,
+//CHECK-NEXT:                    sycl::property_list{sycl::property::queue::in_order()});
 //CHECK-NEXT:  sycl::range<3> griddim = sycl::range<3>(1, 1, 2);
 //CHECK-NEXT:  sycl::range<3> threaddim = sycl::range<3>(1, 1, 32);
 //CHECK-NEXT:  int *karg1, *karg2;

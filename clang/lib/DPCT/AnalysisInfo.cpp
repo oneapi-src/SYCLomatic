@@ -51,6 +51,7 @@ std::unordered_set<std::string> DpctGlobalInfo::ChangeExtensions = {};
 std::string DpctGlobalInfo::CudaPath = std::string();
 std::string DpctGlobalInfo::RuleFile = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
+bool DpctGlobalInfo::NeedDpctDeviceExt = false;
 bool DpctGlobalInfo::IsIncMigration = true;
 unsigned int DpctGlobalInfo::AssumedNDRangeDim = 3;
 HelperFilesCustomizationLevel DpctGlobalInfo::HelperFilesCustomizationLvl =
@@ -349,38 +350,59 @@ void DpctGlobalInfo::buildReplacements() {
   // 1          2            dev_ct1             q_ct1
   // >=2        >=2          dev_ct1             q_ct1
   if (!getDeviceChangedFlag() && getUsingDRYPattern()) {
+    bool NeedDpctHelpFunc = DpctGlobalInfo::needDpctDeviceExt() ||
+                            TempVariableDeclCounterMap.size() > 1 ||
+                            DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None;
+    HelperFeatureEnum DeviceFeatureEnum = HelperFeatureEnum::no_feature_helper;
+    HelperFeatureEnum QueueFeatureEnum = HelperFeatureEnum::no_feature_helper;
+
+    unsigned int IndentLen = 2;
+    if (getGuessIndentWidthMatcherFlag())
+      IndentLen = getIndentWidth();
+    std::string IndentStr = std::string(IndentLen, ' ');
+    std::string DevDeclStr = getNL() + IndentStr;
+    llvm::raw_string_ostream DevDecl(DevDeclStr);
+    std::string QDeclStr =
+        getNL() + IndentStr + MapNames::getClNamespace() + "queue ";
+    llvm::raw_string_ostream QDecl(QDeclStr);
+    if (NeedDpctHelpFunc) {
+      DeviceFeatureEnum = HelperFeatureEnum::Device_get_current_device;
+      DevDecl << MapNames::getDpctNamespace()
+              << "device_ext &dev_ct1 = " << MapNames::getDpctNamespace()
+              << "get_current_device();";
+      QueueFeatureEnum = HelperFeatureEnum::Device_get_default_queue;
+      QDecl << "&q_ct1 = dev_ct1.default_queue();";
+    } else {
+      DevDecl << MapNames::getClNamespace() + "device dev_ct1;";
+      // Now the UsmLevel must not be UL_None here.
+      QDecl << "q_ct1(dev_ct1, " << MapNames::getClNamespace()
+            << "property_list{" << MapNames::getClNamespace()
+            << "property::queue::in_order()";
+      if (DpctGlobalInfo::getEnablepProfilingFlag()) {
+        QDecl << ", " << MapNames::getClNamespace()
+              << "property::queue::enable_profiling()";
+      }
+      QDecl << "});";
+    }
+
     for (auto &Counter : TempVariableDeclCounterMap) {
       const auto ColonPos = Counter.first.find_last_of(':');
       const auto DeclLocFile = Counter.first.substr(0, ColonPos);
       const auto DeclLocOffset = std::stoi(Counter.first.substr(ColonPos + 1));
       if (Counter.second.CurrentDeviceCounter > 0 ||
           Counter.second.DefaultQueueCounter > 1)
-        requestFeature(HelperFeatureEnum::Device_get_current_device,
-                       DeclLocFile);
+        requestFeature(DeviceFeatureEnum, DeclLocFile);
       if (Counter.second.DefaultQueueCounter > 0)
-        requestFeature(HelperFeatureEnum::Device_get_default_queue,
-                       DeclLocFile);
-      if ((Counter.second.CurrentDeviceCounter > 1 ||
-           Counter.second.DefaultQueueCounter > 1)) {
-        unsigned int IndentLen = 2;
-        if (getGuessIndentWidthMatcherFlag())
-          IndentLen = getIndentWidth();
-        std::string IndentStr = std::string(IndentLen, ' ');
+        requestFeature(QueueFeatureEnum, DeclLocFile);
+      if (Counter.second.CurrentDeviceCounter > 1 ||
+          Counter.second.DefaultQueueCounter > 1) {
         Counter.second.PlaceholderStr[2] = "dev_ct1";
-        std::string DevDecl =
-            getNL() + IndentStr + MapNames::getDpctNamespace() +
-            "device_ext &" + Counter.second.PlaceholderStr[2] + " = " +
-            MapNames::getDpctNamespace() + "get_current_device();";
         getInstance().addReplacement(std::make_shared<ExtReplacement>(
-            DeclLocFile, DeclLocOffset, 0, DevDecl, nullptr));
-        if (Counter.second.DefaultQueueCounter > 1) {
+            DeclLocFile, DeclLocOffset, 0, DevDecl.str(), nullptr));
+        if (Counter.second.DefaultQueueCounter > 1 || !NeedDpctHelpFunc) {
           Counter.second.PlaceholderStr[1] = "q_ct1";
-          std::string QDecl = getNL() + IndentStr + MapNames::getClNamespace() +
-                              "queue &" + Counter.second.PlaceholderStr[1] +
-                              " = " + Counter.second.PlaceholderStr[2] +
-                              ".default_queue();";
           getInstance().addReplacement(std::make_shared<ExtReplacement>(
-              DeclLocFile, DeclLocOffset, 0, QDecl, nullptr));
+              DeclLocFile, DeclLocOffset, 0, QDecl.str(), nullptr));
         }
       }
     }
