@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Memory/api_test7_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Memory/api_test7_out
 
-// CHECK: 17
+// CHECK: 1
 // TEST_FEATURE: Memory_dpct_free
 
 int main() {
