@@ -260,6 +260,11 @@ int main() {
     auto a23 = COMPLEX_F_FIMAG(f1);
     r = r && check(a23, expect, index);
 
+    // CHECK: f1 = d1.convert<float>();
+    f1 = cuComplexDoubleToFloat(d1);
+    // CHECK: d1 = f1.convert<double>();
+    d1 = cuComplexFloatToDouble(f1);
+
     int *result = nullptr;
     cudaMallocManaged(&result, sizeof(int));
     *result = 0;

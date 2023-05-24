@@ -1964,8 +1964,10 @@ REGISTER_RULE(ZeroLengthArrayRule, PassKind::PK_Migration)
 
 void MiscAPIRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
-    return hasAnyName("cudaOccupancyMaxActiveBlocksPerMultiprocessor");
+    return hasAnyName("cudaOccupancyMaxActiveBlocksPerMultiprocessor",
+                      "cuOccupancyMaxActiveBlocksPerMultiprocessor");
   };
+
   MF.addMatcher(
       callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),
       this);
@@ -14699,7 +14701,8 @@ void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                       "cuCimagf", "cuCadd", "cuCsub", "cuCmul", "cuCdiv",
                       "cuCabs", "cuConj", "make_cuFloatComplex", "cuCaddf",
                       "cuCsubf", "cuCmulf", "cuCdivf", "cuCabsf", "cuConjf",
-                      "make_cuComplex", "__saturatef");
+                      "make_cuComplex", "__saturatef", "cuComplexDoubleToFloat",
+                      "cuComplexFloatToDouble");
   };
 
   MF.addMatcher(callExpr(callee(functionDecl(ComplexAPI()))).bind("call"),
