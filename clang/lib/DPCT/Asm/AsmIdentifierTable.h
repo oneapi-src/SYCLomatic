@@ -29,7 +29,8 @@ class InlineAsmIdentifierInfo {
   llvm::StringMapEntry<InlineAsmIdentifierInfo *> *Entry = nullptr;
 
   InlineAsmIdentifierInfo()
-      : TokenID(asmtok::identifier), IsInstruction(0), IsBuiltinType(0), IsBuiltinID(0) {}
+      : TokenID(asmtok::identifier), IsInstruction(0), IsBuiltinType(0),
+        IsBuiltinID(0) {}
 
 public:
   InlineAsmIdentifierInfo(const InlineAsmIdentifierInfo &) = delete;
