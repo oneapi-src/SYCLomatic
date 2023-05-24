@@ -11839,11 +11839,27 @@ void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(MathFunctionsRule, PassKind::PK_Migration)
 
 void WarpFunctionsRule::registerMatcher(MatchFinder &MF) {
-  std::vector<std::string> WarpFunctions = {
-      "__shfl_up_sync", "__shfl_down_sync", "__shfl_sync", "__shfl_up",
-      "__shfl_down",    "__shfl",           "__shfl_xor",  "__shfl_xor_sync",
-      "__all",          "__all_sync",       "__any",       "__any_sync",
-      "__ballot",       "__ballot_sync",    "__activemask"};
+  std::vector<std::string> WarpFunctions = {"__reduce_add_sync",
+                                            "__reduce_min_sync",
+                                            "__reduce_and_sync",
+                                            "__reduce_or_sync",
+                                            "__reduce_xor_sync",
+                                            "__reduce_max_sync",
+                                            "__shfl_up_sync",
+                                            "__shfl_down_sync",
+                                            "__shfl_sync",
+                                            "__shfl_up",
+                                            "__shfl_down",
+                                            "__shfl",
+                                            "__shfl_xor",
+                                            "__shfl_xor_sync",
+                                            "__all",
+                                            "__all_sync",
+                                            "__any",
+                                            "__any_sync",
+                                            "__ballot",
+                                            "__ballot_sync",
+                                            "__activemask"};
 
   MF.addMatcher(callExpr(callee(functionDecl(internal::Matcher<NamedDecl>(
                              new internal::HasNameMatcher(WarpFunctions)))),
