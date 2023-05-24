@@ -72,12 +72,14 @@ inline const Expr *getDereferencedExpr(const Expr *E) {
   E = E->IgnoreImplicitAsWritten()->IgnoreParens();
   if (auto UO = dyn_cast<UnaryOperator>(E)) {
     if (UO->getOpcode() == clang::UO_AddrOf) {
-      return UO->getSubExpr()->IgnoreImplicitAsWritten();
+      return UO->getSubExpr()->IgnoreImplicitAsWritten()->IgnoreParens();
     }
   } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(E)) {
     if (COCE->getOperator() == clang::OO_Amp && COCE->getNumArgs() == 1) {
-      return COCE->getArg(0)->IgnoreImplicitAsWritten();
+      return COCE->getArg(0)->IgnoreImplicitAsWritten()->IgnoreParens();
     }
+  } else if (auto ArraySub = dyn_cast<ArraySubscriptExpr>(E)) {
+    return ArraySub->getBase()->IgnoreImplicitAsWritten()->IgnoreParens();
   }
   return nullptr;
 }
@@ -719,31 +721,18 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
       NeedDeref = false;
       TE = DE;
     }
-    TE = TE->IgnoreParens();
-
-    QualType DerefQT;
-    if (auto ArraySub = dyn_cast<ArraySubscriptExpr>(TE)) {
-      // Handle cases like A[3] where A is an array or pointer
-      QualType BaseType = ArraySub->getBase()->getType();
-      if (BaseType->isArrayType()) {
-        if (auto Array = BaseType->getAsArrayTypeUnsafe()) {
-          DerefQT = Array->getElementType();
-        }
-      } else if (BaseType->isPointerType()) {
-        DerefQT = BaseType->getPointeeType();
+    QualType DerefQT = TE->getType();
+    while (const auto *ET = dyn_cast<ElaboratedType>(DerefQT)) {
+      DerefQT = ET->getNamedType();
+      if (const auto *TDT = dyn_cast<TypedefType>(DerefQT)) {
+        auto *TDecl = TDT->getDecl();
+        if (dpct::DpctGlobalInfo::isInCudaPath(TDecl->getLocation()))
+          break;
+        DerefQT = TDecl->getUnderlyingType();
       }
-    } else if (auto COCE = dyn_cast<CXXOperatorCallExpr>(TE)) {
-      // Handle cases like A[3] where A is a vector with sepecfying type.
-      DerefQT = COCE->getType().getCanonicalType();
     }
-
-    // All other cases
-    if (DerefQT.isNull()) {
-      DerefQT = TE->getType();
-    }
-
     std::string TypeStr = DpctGlobalInfo::getReplacedTypeName(DerefQT);
-    if (TypeStr == "<dependent type>") {
+    if (TypeStr == "<dependent type>" || TypeStr.empty()) {
       if (NeedDeref) {
         return "typename std::remove_pointer<decltype(" +
                ExprAnalysis::ref(TE) + ")>::type";
@@ -752,14 +741,13 @@ inline std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) 
                ExprAnalysis::ref(TE) + ")>::type";
       }
     }
-
     if (NeedDeref) {
       DerefQT = DerefQualType(DerefQT);
       if (DerefQT.isNull())
         return "";
+      return DpctGlobalInfo::getReplacedTypeName(DerefQT);
     }
-
-    return DpctGlobalInfo::getReplacedTypeName(DerefQT);
+    return TypeStr;
   };
 }
 

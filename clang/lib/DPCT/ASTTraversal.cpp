@@ -1964,8 +1964,10 @@ REGISTER_RULE(ZeroLengthArrayRule, PassKind::PK_Migration)
 
 void MiscAPIRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
-    return hasAnyName("cudaOccupancyMaxActiveBlocksPerMultiprocessor");
+    return hasAnyName("cudaOccupancyMaxActiveBlocksPerMultiprocessor",
+                      "cuOccupancyMaxActiveBlocksPerMultiprocessor");
   };
+
   MF.addMatcher(
       callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),
       this);
@@ -10164,15 +10166,6 @@ void MemoryMigrationRule::memcpyMigration(
   if (AsyncLoc != std::string::npos) {
     IsAsync = true;
     NameRef = NameRef.substr(0, AsyncLoc);
-    ReplaceStr = MapNames::getDpctNamespace() + "async_dpct_memcpy";
-    requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy, C);
-    requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_2d, C);
-    requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_3d, C);
-  } else {
-    ReplaceStr = MapNames::getDpctNamespace() + "dpct_memcpy";
-    requestFeature(HelperFeatureEnum::Memory_dpct_memcpy, C);
-    requestFeature(HelperFeatureEnum::Memory_dpct_memcpy_2d, C);
-    requestFeature(HelperFeatureEnum::Memory_dpct_memcpy_3d, C);
   }
   if (!NameRef.compare("cudaMemcpy2D")) {
     handleDirection(C, 6);
@@ -10270,6 +10263,20 @@ void MemoryMigrationRule::memcpyMigration(
             C->getArg(2), ", " + MapNames::getDpctNamespace() + "automatic"));
         handleAsync(C, 3, Result);
       }
+    }
+  }
+
+  if (ReplaceStr.empty()) {
+    if (IsAsync) {
+      ReplaceStr = MapNames::getDpctNamespace() + "async_dpct_memcpy";
+      requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy, C);
+      requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_2d, C);
+      requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_3d, C);
+    } else {
+      ReplaceStr = MapNames::getDpctNamespace() + "dpct_memcpy";
+      requestFeature(HelperFeatureEnum::Memory_dpct_memcpy, C);
+      requestFeature(HelperFeatureEnum::Memory_dpct_memcpy_2d, C);
+      requestFeature(HelperFeatureEnum::Memory_dpct_memcpy_3d, C);
     }
   }
 
@@ -14692,7 +14699,8 @@ void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                       "cuCimagf", "cuCadd", "cuCsub", "cuCmul", "cuCdiv",
                       "cuCabs", "cuConj", "make_cuFloatComplex", "cuCaddf",
                       "cuCsubf", "cuCmulf", "cuCdivf", "cuCabsf", "cuConjf",
-                      "make_cuComplex", "__saturatef");
+                      "make_cuComplex", "__saturatef", "cuComplexDoubleToFloat",
+                      "cuComplexFloatToDouble");
   };
 
   MF.addMatcher(callExpr(callee(functionDecl(ComplexAPI()))).bind("call"),
