@@ -301,20 +301,6 @@ struct hadd {
   }
 };
 
-/// A sycl::max wrapper functors.
-struct maximum {
-  template <typename T> auto operator()(const T x, const T y) const {
-    return sycl::max(x, y);
-  }
-};
-
-/// A sycl::min wrapper functors.
-struct minimum {
-  template <typename T> auto operator()(const T x, const T y) const {
-    return sycl::min(x, y);
-  }
-};
-
 /// A sycl::sub_sat wrapper functors.
 struct sub_sat {
   template <typename T> auto operator()(const T x, const T y) const {
