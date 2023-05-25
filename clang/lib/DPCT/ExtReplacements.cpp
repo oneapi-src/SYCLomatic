@@ -366,7 +366,8 @@ void ExtReplacements::postProcess() {
     while (std::regex_search(Begin, End, Result, RE)) {
       NewText.append(Result.prefix().first, Result.prefix().length());
       NewText += DpctGlobalInfo::getStringForRegexReplacement(
-          StringRef(Result[0].first, Result[0].length()));
+          StringRef(Result[0].first, Result[0].length()),
+          R.second->getFilePath().str());
       Begin = Result.suffix().first;
     }
     if (NewText.size()) {
