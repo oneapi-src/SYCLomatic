@@ -21,6 +21,7 @@
 #include <thrust/remove.h>
 #include <thrust/replace.h>
 #include <thrust/reverse.h>
+<<<<<<< HEAD
 #include <thrust/set_operations.h>
 #include <thrust/sort.h>
 #include <thrust/tabulate.h>
@@ -29,6 +30,10 @@
 
 // CHECK: #include <oneapi/dpl/memory>
 #include <thrust/uninitialized_copy.h>
+=======
+#include <thrust/device_malloc.h>
+#include <thrust/equal.h>
+>>>>>>> [SYCLomatic] Support migration of thrust::equal
 
 // for cuda 12.0
 #include <thrust/iterator/constant_iterator.h>
@@ -1205,4 +1210,53 @@ void uninitialized_copy_n() {
   thrust::uninitialized_copy_n(h_data, N, h_array);
   thrust::uninitialized_copy_n(thrust::device, d_input.begin(), N, d_array);
   thrust::uninitialized_copy_n(thrust::host, h_data, N, h_array);
+}
+
+struct compare_modulo_two {
+  __host__ __device__ bool operator()(int x, int y) const {
+    return (x % 2) == (y % 2);
+  }
+};
+
+
+void equal() {
+  const int N = 7;
+
+  int A1[N] = {3, 1, 4, 1, 5, 9, 3};
+  int A2[N] = {3, 1, 4, 2, 8, 5, 7};
+  int x[N] = {0, 2, 4, 6, 8, 10};
+  int y[N] = {1, 3, 5, 7, 9, 11};
+  thrust::host_vector<int> h_A1(A1, A1 + N);
+  thrust::host_vector<int> h_A2(A2, A2 + N);
+  thrust::host_vector<int> h_x(x, x + N);
+  thrust::host_vector<int> h_y(y, y + N);
+  thrust::device_vector<int> d_A1(A1, A1 + N);
+  thrust::device_vector<int> d_A2(A2, A2 + N);
+  thrust::device_vector<int> d_x(x, x + N);
+  thrust::device_vector<int> d_y(y, y + N);
+
+  // CHECK:  oneapi::dpl::equal(oneapi::dpl::execution::seq, A1, A1 + N, A2);
+  // CHECK-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::seq, A1, A1 + N, A2);
+  // CHECK-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::seq, x, x + N, y, compare_modulo_two());
+  // CHECK-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::seq, x, x + N, y, compare_modulo_two());
+  // CHECK-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::seq, h_A1.begin(), h_A1.end(), h_A2.begin());
+  // CHECK-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::seq, h_A1.begin(), h_A1.end(), h_A2.begin());
+  // CHECK-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::seq, h_x.begin(), h_x.end(), h_y.begin(), compare_modulo_two());
+  // CHECK-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::seq, h_x.begin(), h_x.end(), h_y.begin(), compare_modulo_two());
+  // CHECK-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(q_ct1), d_A1.begin(), d_A1.end(), d_A2.begin());
+  // CHECK-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(q_ct1), d_A1.begin(), d_A1.end(), d_A2.begin());
+  // CHECK-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(q_ct1), d_x.begin(), d_x.end(), d_y.begin(), compare_modulo_two());
+  // CHECK-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(q_ct1), d_x.begin(), d_x.end(), d_y.begin(), compare_modulo_two());
+  thrust::equal(thrust::host, A1, A1 + N, A2);
+  thrust::equal(A1, A1 + N, A2);
+  thrust::equal(x, x + N, y, compare_modulo_two());
+  thrust::equal(thrust::host, x, x + N, y, compare_modulo_two());
+  thrust::equal(thrust::host, h_A1.begin(), h_A1.end(), h_A2.begin());
+  thrust::equal(h_A1.begin(), h_A1.end(), h_A2.begin());
+  thrust::equal(h_x.begin(), h_x.end(), h_y.begin(), compare_modulo_two());
+  thrust::equal(thrust::host, h_x.begin(), h_x.end(), h_y.begin(), compare_modulo_two());
+  thrust::equal(thrust::device, d_A1.begin(), d_A1.end(), d_A2.begin());
+  thrust::equal(d_A1.begin(), d_A1.end(), d_A2.begin());
+  thrust::equal(d_x.begin(), d_x.end(), d_y.begin(), compare_modulo_two());
+  thrust::equal(thrust::device, d_x.begin(), d_x.end(), d_y.begin(), compare_modulo_two());
 }
