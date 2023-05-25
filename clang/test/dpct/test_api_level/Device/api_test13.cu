@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Device/api_test13_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Device/api_test13_out
 
-// CHECK: 39
+// CHECK: 42
 // TEST_FEATURE: Device_device_info_get_global_mem_size
 // TEST_FEATURE: Device_get_current_device
 
