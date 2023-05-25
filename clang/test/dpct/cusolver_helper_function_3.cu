@@ -756,3 +756,98 @@ void foo14() {
   cusolverDnXsyevdx(handle, params, CUSOLVER_EIG_MODE_VECTOR, CUSOLVER_EIG_RANGE_ALL, CUBLAS_FILL_MODE_UPPER, 2, CUDA_C_32F, a_c, 2, &vlvu_c, &vlvu_c, 0, 0, &h_meig_c, CUDA_R_32F, w_c, CUDA_C_32F, device_ws_c, lwork_c, host_ws_c, lwork_host_c, info);
   cusolverDnXsyevdx(handle, params, CUSOLVER_EIG_MODE_VECTOR, CUSOLVER_EIG_RANGE_ALL, CUBLAS_FILL_MODE_UPPER, 2, CUDA_C_64F, a_z, 2, &vlvu_z, &vlvu_z, 0, 0, &h_meig_z, CUDA_R_64F, w_z, CUDA_C_64F, device_ws_z, lwork_z, host_ws_z, lwork_host_z, info);
 }
+
+void foo15() {
+  float *a_s;
+  double *a_d;
+  float2 *a_c;
+  double2 *a_z;
+  float *w_s;
+  double *w_d;
+  float *w_c;
+  double *w_z;
+
+  cusolverDnHandle_t handle;
+  cusolverDnParams_t params;
+
+  size_t lwork_s;
+  size_t lwork_d;
+  size_t lwork_c;
+  size_t lwork_z;
+  size_t lwork_host_s;
+  size_t lwork_host_d;
+  size_t lwork_host_c;
+  size_t lwork_host_z;
+
+  //CHECK:dpct::lapack::syheevd_scratchpad_size(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, dpct::library_data_t::real_float, 2, dpct::library_data_t::real_float, &lwork_s, &lwork_host_s);
+  //CHECK-NEXT:dpct::lapack::syheevd_scratchpad_size(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, dpct::library_data_t::real_double, 2, dpct::library_data_t::real_double, &lwork_d, &lwork_host_d);
+  //CHECK-NEXT:dpct::lapack::syheevd_scratchpad_size(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, dpct::library_data_t::complex_float, 2, dpct::library_data_t::real_float, &lwork_c, &lwork_host_c);
+  //CHECK-NEXT:dpct::lapack::syheevd_scratchpad_size(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, dpct::library_data_t::complex_double, 2, dpct::library_data_t::real_double, &lwork_z, &lwork_host_z);
+  cusolverDnXsyevd_bufferSize(handle, params, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, CUDA_R_32F, a_s, 2, CUDA_R_32F, w_s, CUDA_R_32F, &lwork_s, &lwork_host_s);
+  cusolverDnXsyevd_bufferSize(handle, params, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, CUDA_R_64F, a_d, 2, CUDA_R_64F, w_d, CUDA_R_64F, &lwork_d, &lwork_host_d);
+  cusolverDnXsyevd_bufferSize(handle, params, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, CUDA_C_32F, a_c, 2, CUDA_R_32F, w_c, CUDA_C_32F, &lwork_c, &lwork_host_c);
+  cusolverDnXsyevd_bufferSize(handle, params, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, CUDA_C_64F, a_z, 2, CUDA_R_64F, w_z, CUDA_C_64F, &lwork_z, &lwork_host_z);
+
+  void *device_ws_s;
+  void *device_ws_d;
+  void *device_ws_c;
+  void *device_ws_z;
+  void *host_ws_s;
+  void *host_ws_d;
+  void *host_ws_c;
+  void *host_ws_z;
+
+  int *info;
+
+  //CHECK:dpct::lapack::syheevd(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, dpct::library_data_t::real_float, a_s, 2, dpct::library_data_t::real_float, w_s, device_ws_s, lwork_s, info);
+  //CHECK-NEXT:dpct::lapack::syheevd(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, dpct::library_data_t::real_double, a_d, 2, dpct::library_data_t::real_double, w_d, device_ws_d, lwork_d, info);
+  //CHECK-NEXT:dpct::lapack::syheevd(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, dpct::library_data_t::complex_float, a_c, 2, dpct::library_data_t::real_float, w_c, device_ws_c, lwork_c, info);
+  //CHECK-NEXT:dpct::lapack::syheevd(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, dpct::library_data_t::complex_double, a_z, 2, dpct::library_data_t::real_double, w_z, device_ws_z, lwork_z, info);
+  cusolverDnXsyevd(handle, params, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, CUDA_R_32F, a_s, 2, CUDA_R_32F, w_s, CUDA_R_32F, device_ws_s, lwork_s, host_ws_s, lwork_host_s, info);
+  cusolverDnXsyevd(handle, params, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, CUDA_R_64F, a_d, 2, CUDA_R_64F, w_d, CUDA_R_64F, device_ws_d, lwork_d, host_ws_d, lwork_host_d, info);
+  cusolverDnXsyevd(handle, params, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, CUDA_C_32F, a_c, 2, CUDA_R_32F, w_c, CUDA_C_32F, device_ws_c, lwork_c, host_ws_c, lwork_host_c, info);
+  cusolverDnXsyevd(handle, params, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, CUDA_C_64F, a_z, 2, CUDA_R_64F, w_z, CUDA_C_64F, device_ws_z, lwork_z, host_ws_z, lwork_host_z, info);
+}
+
+void foo16() {
+  float *a_s;
+  double *a_d;
+  float2 *a_c;
+  double2 *a_z;
+  float *w_s;
+  double *w_d;
+  float *w_c;
+  double *w_z;
+
+  cusolverDnHandle_t handle;
+  cusolverDnParams_t params;
+
+  size_t lwork_s;
+  size_t lwork_d;
+  size_t lwork_c;
+  size_t lwork_z;
+
+  //CHECK:dpct::lapack::syheevd_scratchpad_size(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, dpct::library_data_t::real_float, 2, dpct::library_data_t::real_float, &lwork_s);
+  //CHECK-NEXT:dpct::lapack::syheevd_scratchpad_size(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, dpct::library_data_t::real_double, 2, dpct::library_data_t::real_double, &lwork_d);
+  //CHECK-NEXT:dpct::lapack::syheevd_scratchpad_size(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, dpct::library_data_t::complex_float, 2, dpct::library_data_t::real_float, &lwork_c);
+  //CHECK-NEXT:dpct::lapack::syheevd_scratchpad_size(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, dpct::library_data_t::complex_double, 2, dpct::library_data_t::real_double, &lwork_z);
+  cusolverDnSyevd_bufferSize(handle, params, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, CUDA_R_32F, a_s, 2, CUDA_R_32F, w_s, CUDA_R_32F, &lwork_s);
+  cusolverDnSyevd_bufferSize(handle, params, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, CUDA_R_64F, a_d, 2, CUDA_R_64F, w_d, CUDA_R_64F, &lwork_d);
+  cusolverDnSyevd_bufferSize(handle, params, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, CUDA_C_32F, a_c, 2, CUDA_R_32F, w_c, CUDA_C_32F, &lwork_c);
+  cusolverDnSyevd_bufferSize(handle, params, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, CUDA_C_64F, a_z, 2, CUDA_R_64F, w_z, CUDA_C_64F, &lwork_z);
+
+  void* device_ws_s;
+  void* device_ws_d;
+  void* device_ws_c;
+  void* device_ws_z;
+
+  int *info;
+  //CHECK:dpct::lapack::syheevd(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, dpct::library_data_t::real_float, a_s, 2, dpct::library_data_t::real_float, w_s, device_ws_s, lwork_s, info);
+  //CHECK-NEXT:dpct::lapack::syheevd(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, dpct::library_data_t::real_double, a_d, 2, dpct::library_data_t::real_double, w_d, device_ws_d, lwork_d, info);
+  //CHECK-NEXT:dpct::lapack::syheevd(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, dpct::library_data_t::complex_float, a_c, 2, dpct::library_data_t::real_float, w_c, device_ws_c, lwork_c, info);
+  //CHECK-NEXT:dpct::lapack::syheevd(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, dpct::library_data_t::complex_double, a_z, 2, dpct::library_data_t::real_double, w_z, device_ws_z, lwork_z, info);
+  cusolverDnSyevd(handle, params, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, CUDA_R_32F, a_s, 2, CUDA_R_32F, w_s, CUDA_R_32F, device_ws_s, lwork_s, info);
+  cusolverDnSyevd(handle, params, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, CUDA_R_64F, a_d, 2, CUDA_R_64F, w_d, CUDA_R_64F, device_ws_d, lwork_d, info);
+  cusolverDnSyevd(handle, params, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, CUDA_C_32F, a_c, 2, CUDA_R_32F, w_c, CUDA_C_32F, device_ws_c, lwork_c, info);
+  cusolverDnSyevd(handle, params, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, CUDA_C_64F, a_z, 2, CUDA_R_64F, w_z, CUDA_C_64F, device_ws_z, lwork_z, info);
+}
