@@ -63,7 +63,7 @@ __device__ void foo() {
   // CHECK: atile8.get_group_linear_range();
   atile8.meta_group_rank();
 
-    // CHECK: const auto catile4 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 4);
+  // CHECK: const auto catile4 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 4);
   const auto catile4 = cg::tiled_partition<4>(block);
   // CHECK: auto atile4 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 4);
   auto atile4 = cg::tiled_partition<4>(block);
@@ -78,7 +78,7 @@ __device__ void foo() {
   // CHECK: atile4.get_group_linear_range();
   atile4.meta_group_rank();
 
-    // CHECK: const auto catile2 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 2);
+  // CHECK: const auto catile2 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 2);
   const auto catile2 = cg::tiled_partition<2>(block);
   // CHECK: auto atile2 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 2);
   auto atile2 = cg::tiled_partition<2>(block);
@@ -93,7 +93,7 @@ __device__ void foo() {
   // CHECK: atile2.get_group_linear_range();
   atile2.meta_group_rank();
 
-      // CHECK: const auto catile1 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 1);
+  // CHECK: const auto catile1 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 1);
   const auto catile1 = cg::tiled_partition<1>(block);
   // CHECK: auto atile1 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 1);
   auto atile1 = cg::tiled_partition<1>(block);
@@ -107,5 +107,4 @@ __device__ void foo() {
   catile1.meta_group_rank();
   // CHECK: atile1.get_group_linear_range();
   atile1.meta_group_rank();
-
 }
