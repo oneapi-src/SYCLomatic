@@ -980,3 +980,8 @@ CALL_FACTORY_ENTRY("thrust::make_counting_iterator", CALL(MapNames::getDpctNames
 thrustFactory("thrust::scatter_if",
               {{7,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"scatter_if", HelperFeatureEnum::DplExtrasAlgorithm_scatter_if},
                {6,PolicyState::NoPolicy, 5,MapNames::getDpctNamespace()+"scatter_if", HelperFeatureEnum::DplExtrasAlgorithm_scatter_if}}),
+// thrust::uninitialized_copy(
+thrustFactory("thrust::uninitialized_copy",
+              {{ 4,PolicyState::HasPolicy,3,"oneapi::dpl::uninitialized_copy", HelperFeatureEnum::no_feature_helper},
+               { 3,PolicyState::NoPolicy, 3,"oneapi::dpl::uninitialized_copy", HelperFeatureEnum::no_feature_helper}}),
+
