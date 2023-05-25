@@ -858,7 +858,7 @@ inline int calculate_max_active_wg_per_xecore(int *num_wg, int wg_size,
     auto eu_count =
         dev.get_info<sycl::info::device::ext_intel_gpu_eu_count_per_subslice>();
     auto threads_count =
-        dev.get_info<sycl::info::device::ext_intel_gpu_hw_threads_per_eu>();
+        dev.get_info<sycl::ext::intel::info::device::gpu_hw_threads_per_eu>();
     num_threads_ss = eu_count * threads_count;
     max_num_wg = eu_count * threads_count;
   }
