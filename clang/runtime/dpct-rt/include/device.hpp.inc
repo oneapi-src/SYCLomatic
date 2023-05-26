@@ -70,7 +70,7 @@ namespace dpct {
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 /// SYCL default exception handler
-auto exception_handler = [](sycl::exception_list exceptions) {
+inline auto exception_handler = [](sycl::exception_list exceptions) {
   for (std::exception_ptr const &e : exceptions) {
     try {
       std::rethrow_exception(e);
