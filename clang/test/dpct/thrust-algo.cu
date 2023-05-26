@@ -1087,8 +1087,8 @@ void transform_inclusive_scan() {
   int data[6] = {1, 0, 2, 2, 1, 3};
   thrust::negate<int> unary_op;
   thrust::plus<int> binary_op;
-  thrust::host_vector<int> h_vec_data(data, data+N);
-  thrust::device_vector<int> d_vec_data(data, data+N);
+  thrust::host_vector<int> h_vec_data(data, data + N);
+  thrust::device_vector<int> d_vec_data(data, data + N);
 
   // CHECK:  oneapi::dpl::transform_inclusive_scan(oneapi::dpl::execution::seq, data, data + N, data, binary_op, unary_op);
   // CHECK-NEXT:  oneapi::dpl::transform_inclusive_scan(oneapi::dpl::execution::seq, h_vec_data.begin(), h_vec_data.end(), h_vec_data.begin(), binary_op, unary_op);
@@ -1102,5 +1102,4 @@ void transform_inclusive_scan() {
   thrust::transform_inclusive_scan(thrust::host, data, data + N, data, unary_op, binary_op);
   thrust::transform_inclusive_scan(thrust::host, h_vec_data.begin(), h_vec_data.end(), h_vec_data.begin(), unary_op, binary_op);
   thrust::transform_inclusive_scan(thrust::device, d_vec_data.begin(), d_vec_data.end(), d_vec_data.begin(), unary_op, binary_op);
-
 }
