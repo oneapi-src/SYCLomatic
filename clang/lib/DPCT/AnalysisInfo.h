@@ -1142,7 +1142,7 @@ public:
     return Res;
   }
 
-  static std::string getStringForRegexReplacement(StringRef, std::string);
+  static std::string getStringForRegexReplacement(StringRef);
 
   inline static void setCodeFormatStyle(const clang::format::FormatStyle &Style) {
     CodeFormatStyle = Style;
