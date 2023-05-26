@@ -25,6 +25,9 @@
 #include <thrust/mismatch.h>
 #include <thrust/replace.h>
 #include <thrust/reverse.h>
+#include <thrust/device_malloc.h>
+// CHECK: #include <oneapi/dpl/memory>
+#include <thrust/uninitialized_copy.h>
 
 // for cuda 12.0
 #include <thrust/iterator/constant_iterator.h>
@@ -1168,4 +1171,28 @@ void scatter_if() {
   thrust::scatter_if(h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin());
   thrust::scatter_if(thrust::host, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin(), pred);
   thrust::scatter_if(h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin(), pred);
+}
+
+struct Int {
+  __host__ __device__ Int(int x) : val(x) {}
+  int val;
+};
+
+void uninitialized_copy() {
+  const int N = 137;
+  Int val(46);
+  thrust::device_ptr<Int> array = thrust::device_malloc<Int>(N);
+  thrust::device_vector<Int> d_input(N, val);
+  thrust::device_ptr<Int> d_array = thrust::device_malloc<Int>(N);
+  int data[N];
+  int array[N];
+
+  // CHECK:  oneapi::dpl::uninitialized_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_input.begin(), d_input.end(), d_array);
+  // CHECK-NEXT:  oneapi::dpl::uninitialized_copy(oneapi::dpl::execution::seq, data, data + N, array);
+  // CHECK-NEXT:  oneapi::dpl::uninitialized_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_input.begin(), d_input.end(), d_array);
+  // CHECK-NEXT:  oneapi::dpl::uninitialized_copy(oneapi::dpl::execution::seq, data, data + N, array);
+  thrust::uninitialized_copy(d_input.begin(), d_input.end(), d_array);
+  thrust::uninitialized_copy(data, data + N, array);
+  thrust::uninitialized_copy(thrust::device, d_input.begin(), d_input.end(), d_array);
+  thrust::uninitialized_copy(thrust::host, data, data + N, array);
 }

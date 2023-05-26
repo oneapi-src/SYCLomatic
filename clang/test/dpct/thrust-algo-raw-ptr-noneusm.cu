@@ -21,6 +21,9 @@
 #include <thrust/replace.h>
 #include <thrust/reverse.h>
 #include <thrust/binary_search.h>
+#include <thrust/device_malloc.h>
+// CHECK: #include <oneapi/dpl/memory>
+#include <thrust/uninitialized_copy.h>
 
 // for cuda 12.0
 #include <thrust/iterator/constant_iterator.h>
@@ -763,4 +766,28 @@ void scatter_if() {
   thrust::scatter_if(V, V + 8, M, S, D);
   thrust::scatter_if(thrust::host, V, V + 8, M, S, D, pred);
   thrust::scatter_if(V, V + 8, M, S, D, pred);
+}
+
+struct Int {
+  __host__ __device__ Int(int x) : val(x) {}
+  int val;
+};
+
+void uninitialized_copy() {
+  const int N = 137;
+  int data[N];
+  int array[N];
+
+  // CHECK:  if (dpct::is_device_ptr(data)) {
+  // CHECK-NEXT:    oneapi::dpl::uninitialized_copy(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), dpct::device_pointer<int>(array));
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::uninitialized_copy(oneapi::dpl::execution::seq, data, data + N, array);
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(data)) {
+  // CHECK-NEXT:    oneapi::dpl::uninitialized_copy(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), dpct::device_pointer<int>(array));
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::uninitialized_copy(oneapi::dpl::execution::seq, data, data + N, array);
+  // CHECK-NEXT:  };
+  thrust::uninitialized_copy(data, data + N, array);
+  thrust::uninitialized_copy(thrust::host, data, data + N, array);
 }
