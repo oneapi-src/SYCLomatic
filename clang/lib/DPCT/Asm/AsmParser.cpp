@@ -874,6 +874,8 @@ AsmNumericLiteralParser::AsmNumericLiteralParser(StringRef TokSpelling)
   isUnsigned = false;
   isFloat = false;
   hadError = false;
+  isExactMachineFloat = false;
+  isExactMachineDouble = false;
 
   // This routine assumes that the range begin/end matches the regex for integer
   // and FP constants (specifically, the 'pp-number' regex), and assumes that
@@ -917,11 +919,10 @@ AsmNumericLiteralParser::AsmNumericLiteralParser(StringRef TokSpelling)
       isUnsigned = true;
       continue; // Success.
     }
-
-    if (s != ThisTokEnd) {
-      hadError = true;
-    }
   }
+
+  if (s != ThisTokEnd)
+    hadError = true;
 }
 
 /// ParseDecimalOrOctalCommon - This method is called for decimal or octal
