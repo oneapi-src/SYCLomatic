@@ -26,3 +26,36 @@ Suggestions to Fix
 ------------------
 
 Verify the code correctness/performance.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __global__ void k(float *out, float *in) {
+     *out = normf(3, in);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void k(float *out, float *in) {
+     /*
+     DPCT1017:0: The dpct::length call is used instead of the normf call. These two
+     calls do not provide exactly the same functionality. Check the potential
+     precision and/or performance issues for the generated code.
+     */
+     *out = dpct::length(in, 3);
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   #include <sycl/ext/intel/math.hpp>
+   void k(float *out, float *in) {
+     *out = sycl::ext::intel::math::norm(3, in);
+   }

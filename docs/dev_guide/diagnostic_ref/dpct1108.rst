@@ -1,0 +1,82 @@
+.. _DPCT1108:
+
+DPCT1108
+========
+
+Message
+-------
+
+.. _msg-1108-start:
+
+<original API> was migrated with the experimental feature <feature name> which
+may not be supported by all compilers or runtimes. You may need to adjust the code.
+
+.. _msg-1108-end:
+
+Detailed Help
+-------------
+
+To support better migration, |tool_name| provides the `-use-experimental-features`
+option to apply experimental features during migration. <feature name> may not be
+supported by all SYCL compilers or runtimes. If the target SYCL compiler and
+runtime does not support <feature name>, you need to adjust the code and not use
+<feature name>.
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __global__ void kernel(){
+     int lane_id = threadIdx.x % 32;
+     int foo = 0, result = 0;
+     int mask = 0xf;
+     if(lane_id == 0) {
+       result = 10;
+     }
+     if(lane_id & mask) {
+       foo = __shfl_sync(mask, result, 0);
+     }
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel(const sycl::nd_item<3> &item_ct1){
+     int target = item_ct1.get_local_id(2) % 32;
+     int foo = 0, result = 0;
+     int mask = 0xf;
+     if(lane_id == 0) {
+       result = 10;
+     }
+     if(lane_id & mask) {
+       // CHECK: /*
+       // CHECK: DPCT1108:{{[0-9]+}}: ‘__shfl_sync’ was migrated with the experimental feature masked sub_group function which may not be supported by all compilers or runtimes. You may need to adjust the code.
+       // CHECK: */
+       foo = dpct::select_from_sub_group(mask, item_ct1.get_sub_group(), 10, 0);
+     }
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel(const sycl::nd_item<3> &item_ct1){
+     int target = item_ct1.get_local_id(2) % 32;
+     int foo = 0, result = 0;
+     int mask = 0xf;    if(lane_id == 0) {
+       result = 10;
+     }
+     // Don’t use experimental feature masked sub_group function
+     if(lane_id & mask) {
+       foo = dpct::select_from_sub_group(item_ct1.get_sub_group(), result, 0);
+     } else {
+       dpct::select_from_sub_group(item_ct1.get_sub_group(), result, 0);
+     }
+   }

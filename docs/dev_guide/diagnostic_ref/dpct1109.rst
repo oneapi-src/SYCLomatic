@@ -1,0 +1,70 @@
+.. _DPCT1109:
+
+DPCT1109
+========
+
+Message
+-------
+
+.. _msg-1109-start:
+
+<language feature> cannot be called in SYCL device code. You need to adjust the code.
+
+.. _msg-1109-end:
+
+Detailed Help
+-------------
+
+In SYCL device code, features like memory storage allocation, recursive function,
+and virtual function are not supported.  Rewrite the code to comply with the SYCL
+specification.
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __global__ void kernel_func(size_t size) {
+     int *data = new int[size];
+     *data = 1;
+   }
+
+   void foo() {
+     Kernel_func<<<1, 1>>>(size);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   /*
+   DPCT1109:0: Memory storage allocation cannot be called in  SYCL device code. You need to adjust the code.
+   */
+   void kernel_func(size_t size) {
+     int *data= new int[size];
+     *data = 1;
+   }
+   void foo() {
+     q.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), [=](sycl::nd_item<3> item_ct1) {kernel_func   (data, size); };)
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel_func(int *data, size_t size) {
+    *data = 1;
+   }
+
+   int *data= sycl::malloc_shared<int>(size, q); // Call the memory allocation function on the host code.
+   q.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), [=](sycl::nd_item<3> item_ct1) {
+     kernel_func(data, size);
+   };)
+
+
+

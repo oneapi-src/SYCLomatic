@@ -45,3 +45,45 @@ parameter and you observe performance issues, consider changing the values of
 If the ``incx`` parameter of the ``cublasSetVector`` equals the ``incy`` parameter,
 but is greater than 1 and you observe performance issues, consider changing the
 values of ``incx`` and ``incy``.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     const int element_num = 128;
+     const int h_inc = 128;
+     const int d_inc = 128;
+     cublasSetVector(element_num, sizeof(float), data, h_inc, d_data, d_inc);
+   }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     const int element_num = 128;
+     const int h_inc = 128;
+     const int d_inc = 128;
+     /*
+     DPCT1018:0: The cublasSetVector was migrated, but due to parameter h_inc
+     equals to parameter d_inc but greater than 1, the generated code performance
+     may be sub-optimal.
+     */
+     dpct::matrix_mem_copy((void *)d_data, (void *)data, d_inc, h_inc, 1,
+                           element_num, sizeof(float));
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     const int element_num = 128;
+     const int h_inc = 1;
+     const int d_inc = 1;
+     dpct::get_default_queue().memcpy(d_data, data, sizeof(float) * element_num).wait();
+   }
