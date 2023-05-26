@@ -27,6 +27,16 @@ void requestFeature(HelperFeatureEnum Feature, const std::string &UsedFile) {
   if (Feature == HelperFeatureEnum::no_feature_helper) {
     return;
   }
+  static const auto NotNeedDeviceExtMap = []() {
+    static bool NotNeedDeviceExtMap[static_cast<unsigned>(
+        HelperFeatureEnum::no_feature_helper)];
+    NotNeedDeviceExtMap[static_cast<int>(
+        HelperFeatureEnum::Memory_memcpy_direction)] = true;
+    return NotNeedDeviceExtMap;
+  }();
+  if (!NotNeedDeviceExtMap[static_cast<int>(Feature)]) {
+    DpctGlobalInfo::setNeedDpctDeviceExt();
+  }
   if (!HelperFeatureEnumPairMap.count(Feature)) {
 #ifdef DPCT_DEBUG_BUILD
     std::cout << "Unknown feature enum:" << (unsigned int)Feature << std::endl;

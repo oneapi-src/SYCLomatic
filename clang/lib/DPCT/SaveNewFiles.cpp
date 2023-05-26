@@ -8,7 +8,7 @@
 
 #include "SaveNewFiles.h"
 #include "AnalysisInfo.h"
-#include "Checkpoint.h"
+#include "CrashRecovery.h"
 #include "Diagnostics.h"
 #include "ExternalReplacement.h"
 #include "GenMakefile.h"
@@ -43,7 +43,6 @@ std::string getFormatSearchPath();
 }
 } // namespace clang
 
-extern int FatalErrorCnt;
 extern std::map<std::string, uint64_t> ErrorCnt;
 
 static bool formatFile(StringRef FileName,
@@ -139,6 +138,7 @@ bool rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
   }
 
 #if defined(_WIN64)
+  std::string Filename = sys::path::filename(FilePath).str();
   std::string LocalFilePath = StringRef(FilePath).lower();
   std::string LocalInRoot =
       InRootAbsValid ? InRootAbs.str().lower() : InRoot.lower();
@@ -169,6 +169,12 @@ bool rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
                     path::begin(LocalInRoot));
   SmallString<512> NewFilePath = StringRef(LocalOutRoot);
   path::append(NewFilePath, PathDiff.first, path::end(LocalFilePath));
+
+#if defined(_WIN64)
+  sys::path::remove_filename(NewFilePath);
+  sys::path::append(NewFilePath, Filename);
+#endif
+
   FilePath = NewFilePath;
   return true;
 }
@@ -576,54 +582,49 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
     PrintMsg(ReportMsg);
 
-    int RetJmp = 0;
-    CHECKPOINT_FORMATTING_CODE_ENTRY(RetJmp);
-    if (RetJmp == 0) {
-      try {
-        if (DpctGlobalInfo::getFormatRange() !=
-            clang::format::FormatRange::none) {
-          clang::format::setFormatRangeGetterHandler(
-              clang::dpct::DpctGlobalInfo::getFormatRange);
-          bool FormatResult = true;
-          for (const auto &Iter : FileRangesMap) {
-            clang::tooling::Replacements FormatChanges;
-            FormatResult = formatFile(Iter.first, Iter.second, FormatChanges) &&
-                           FormatResult;
+    runWithCrashGuard(
+        [&]() {
+          if (DpctGlobalInfo::getFormatRange() !=
+              clang::format::FormatRange::none) {
+            clang::format::setFormatRangeGetterHandler(
+                clang::dpct::DpctGlobalInfo::getFormatRange);
+            bool FormatResult = true;
+            for (const auto &Iter : FileRangesMap) {
+              clang::tooling::Replacements FormatChanges;
+              FormatResult =
+                  formatFile(Iter.first, Iter.second, FormatChanges) &&
+                  FormatResult;
 
-            // If range is "all", one file only need to be formatted once.
-            if (DpctGlobalInfo::getFormatRange() ==
-                clang::format::FormatRange::all)
-              continue;
+              // If range is "all", one file only need to be formatted once.
+              if (DpctGlobalInfo::getFormatRange() ==
+                  clang::format::FormatRange::all)
+                continue;
 
-            auto BlockLevelFormatIter =
-                FileBlockLevelFormatRangesMap.find(Iter.first);
-            if (BlockLevelFormatIter != FileBlockLevelFormatRangesMap.end()) {
-              clang::format::BlockLevelFormatFlag = true;
+              auto BlockLevelFormatIter =
+                  FileBlockLevelFormatRangesMap.find(Iter.first);
+              if (BlockLevelFormatIter != FileBlockLevelFormatRangesMap.end()) {
+                clang::format::BlockLevelFormatFlag = true;
 
-              std::vector<clang::tooling::Range>
-                  BlockLevelFormatRangeAfterFisrtFormat =
-                      calculateUpdatedRanges(FormatChanges,
-                                             BlockLevelFormatIter->second);
-              FormatResult = formatFile(BlockLevelFormatIter->first,
-                                        BlockLevelFormatRangeAfterFisrtFormat,
-                                        FormatChanges) &&
-                             FormatResult;
+                std::vector<clang::tooling::Range>
+                    BlockLevelFormatRangeAfterFisrtFormat =
+                        calculateUpdatedRanges(FormatChanges,
+                                               BlockLevelFormatIter->second);
+                FormatResult = formatFile(BlockLevelFormatIter->first,
+                                          BlockLevelFormatRangeAfterFisrtFormat,
+                                          FormatChanges) &&
+                               FormatResult;
 
-              clang::format::BlockLevelFormatFlag = false;
+                clang::format::BlockLevelFormatFlag = false;
+              }
+            }
+            if (!FormatResult) {
+              PrintMsg("[Warning] Error happened while formatting. Generating "
+                       "unformatted code.\n");
             }
           }
-          if (!FormatResult) {
-            PrintMsg("[Warning] Error happened while formatting. Generating "
-                     "unformatted code.\n");
-          }
-        }
-      } catch (std::exception &e) {
-        std::string FaultMsg = "Error: dpct internal error. Formatting of the "
-                               "code skipped. Migration continues.\n";
-        llvm::errs() << FaultMsg;
-      }
-    }
-    CHECKPOINT_FORMATTING_CODE_EXIT();
+        },
+        "Error: dpct internal error. Formatting of the code skipped. Migration "
+        "continues.\n");
   }
 
   // The necessary header files which have no replacements will be copied to

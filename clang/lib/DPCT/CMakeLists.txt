@@ -135,6 +135,7 @@ add_clang_library(DPCT
   CallExprRewriterEvent.cpp
   CallExprRewriterMath.cpp
   CallExprRewriterCG.cpp
+  CrashRecovery.cpp
   Diagnostics.cpp
   Error.cpp
   Statics.cpp
@@ -147,7 +148,6 @@ add_clang_library(DPCT
   Utility.cpp
   ValidateArguments.cpp
   ExternalReplacement.cpp
-  SignalProcess.cpp
   VcxprojParser.cpp
   LibraryAPIMigration.cpp
   CustomHelperFiles.cpp
@@ -163,6 +163,11 @@ add_clang_library(DPCT
   NCCLAPIMigration.cpp
   TypeLocRewriters.cpp
   AutoComplete.cpp
+  AsmMigration.cpp
+  Asm/AsmLexer.cpp
+  Asm/AsmParser.cpp
+  Asm/AsmIdentifierTable.cpp
+  Asm/AsmTokenKinds.cpp
   LIBCUAPIMigration.cpp
   CUBAPIMigration.cpp
   MemberExprRewriter.cpp

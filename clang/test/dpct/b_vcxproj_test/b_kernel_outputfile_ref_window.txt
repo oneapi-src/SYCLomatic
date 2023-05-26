@@ -1,4 +1,6 @@
-// CHECK:Processing: {{(.+)}}.cu
+// CHECK:Parsing: {{(.+)}}.cu
+// CHECK:Analyzing: {{(.+)}}.cu
+// CHECK:Migrating: {{(.+)}}.cu
 // CHECK:In file included from {{(.+)}}\b_vcxproj_test\b_kernel.cu:{{[0-9]+}}:
 // CHECK:{{(.+)}}\b_vcxproj_test\header.cuh:{{[0-9]+}}:{{[0-9]+}}: warning: DPCT1003:0: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK:        return cudaDeviceReset();

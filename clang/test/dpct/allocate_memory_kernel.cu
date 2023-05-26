@@ -16,7 +16,7 @@ template <typename T>
 class TestSeqContainer : public TestVirtualFunc<T> {
 public:
 // CHECK: /*
-// CHECK: DPCT1109:{{[0-9]+}}: Memory storage allocation cannot be called in a SYCL kernel or by functions called by the kernel. You may need to adjust the code.
+// CHECK: DPCT1109:{{[0-9]+}}: Memory storage allocation cannot be called in SYCL device code. You need to adjust the code.
 // CHECK: */
     __device__ TestSeqContainer(int size) : index_top(-1) { m_data = new T[size]; }
 
@@ -36,7 +36,7 @@ private:
 };
 __global__ void func(){
   // CHECK: /*
-// CHECK: DPCT1109:{{[0-9]+}}: Memory storage allocation cannot be called in a SYCL kernel or by functions called by the kernel. You may need to adjust the code.
+// CHECK: DPCT1109:{{[0-9]+}}: Memory storage allocation cannot be called in SYCL device code. You need to adjust the code.
 // CHECK: */
     auto seq = new TestSeqContainer<int>(10);
     seq->push(10);
