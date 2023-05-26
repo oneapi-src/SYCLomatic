@@ -67,6 +67,12 @@ in alphabetical order.
           :start-after: desc-comments:
           :end-before: end-comments:
    * - .. include:: /_include_files/options_def.rst
+          :start-after: opt-compilation-db:
+          :end-before: desc-compilation-db:
+     - .. include:: /_include_files/options_def.rst
+          :start-after: desc-compilation-db:
+          :end-before: end-compilation-db:
+   * - .. include:: /_include_files/options_def.rst
           :start-after: opt-cuda-include-path:
           :end-before: desc-cuda-include-path:
      - .. include:: /_include_files/options_def.rst
@@ -114,6 +120,12 @@ in alphabetical order.
      - .. include:: /_include_files/options_def.rst
           :start-after: desc-gen-build-script:
           :end-before: end-gen-build-script:
+   * - .. include:: /_include_files/options_def.rst
+          :start-after: opt-gen-helper-func:
+          :end-before: desc-gen-helper-func:
+     - .. include:: /_include_files/options_def.rst
+          :start-after: desc-gen-helper-func:
+          :end-before: end-gen-helper-func:
    * - .. include:: /_include_files/options_def.rst
           :start-after: opt-help:
           :end-before: desc-help:

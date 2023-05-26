@@ -417,17 +417,17 @@ Sets the output verbosity level:
 
 
 
+
 .. _opt-p:
 
-``-p=<dir>``
+-p
 
 .. _desc-p:
 
-The directory path for the compilation database (``compile_commands.json``).
-When no path is specified, a search for ``compile_commands.json`` is
-attempted through all parent directories of the first input source file.
+Alias for ``--compilation-database``.
 
 .. _end-p:
+
 
 
 
@@ -655,6 +655,13 @@ The values are:
   group work-items.
 - ``=nd_range_barrier``: Experimental helper function used to help cross
   group synchronization during migration.
+- ``=user-defined-reductions``: Experimental extension that allows user define
+  reductions.
+- ``=masked_sub_group_operation``: Experimental helper function used to execute
+  sub-group operation with mask.
+- ``=dpl-experimental-api``: Experimental extension that allows use of experimental
+  oneDPL APIs.
+- ``=occupancy-calculation``: Experimental helper function used to calculate occupancy.
 
 .. _end-use-experimental-features:
 
@@ -719,3 +726,30 @@ The file path of ``vcxproj``.
 Shows the version of the tool.
 
 .. _end-version:
+
+
+
+.. _opt-compilation-db:
+
+``--compilation-database=<dir>``
+
+.. _desc-compilation-db:
+
+The directory path for the compilation database (`compile_commands.json`). When no
+path is specified, a search for `compile_commands.json` is attempted through all
+parent directories of the first input source file. Same as ``-p``.
+
+.. _end-compilation-db:
+
+
+.. _opt-gen-helper-func:
+
+``--gen-helper-function``
+
+.. _desc-gen-helper-func:
+
+Generate helper function files in the ``--out-root`` directory. Default: ``off``.
+
+.. _end-gen-helper-func:
+
+
