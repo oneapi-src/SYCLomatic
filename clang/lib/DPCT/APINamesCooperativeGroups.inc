@@ -109,11 +109,10 @@ CONDITIONAL_FACTORY_ENTRY(
                 CONDITIONAL_FACTORY_ENTRY(
                     makeCheckOr(
                         argHasThreadBlockTileType(0, 16),
-                        makeCheckOr(
-                            makeCheckOr(argHasThreadBlockTileType(0, 8),
-                                        argHasThreadBlockTileType(0, 4)),
-                            makeCheckOr(argHasThreadBlockTileType(0, 2),
-                                        argHasThreadBlockTileType(0, 1)))),
+                        argHasThreadBlockTileType(0, 8),
+                        argHasThreadBlockTileType(0, 4),
+                        argHasThreadBlockTileType(0, 2),
+                        argHasThreadBlockTileType(0, 1)),
                     FEATURE_REQUEST_FACTORY(
                         HelperFeatureEnum::Util_logical_group_get_local_linear_id,
                         MEMBER_CALL_FACTORY_ENTRY("thread_rank",
@@ -213,13 +212,11 @@ CASE_FACTORY_ENTRY(
          MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.size",
                                    SUBGROUP, false, "get_local_linear_range")),
     CASE(makeCheckAnd(UseLogicalGroup, makeCheckOr(
-             baseHasThreadBlockTileType(16),
-             makeCheckOr(makeCheckOr(
-                             baseHasThreadBlockTileType(8),
-                             baseHasThreadBlockTileType(4)),
-                         makeCheckOr(
-                             baseHasThreadBlockTileType(2),
-                             baseHasThreadBlockTileType(1))))),
+                        baseHasThreadBlockTileType(16),
+                        baseHasThreadBlockTileType(8),
+                        baseHasThreadBlockTileType(4),
+                        baseHasThreadBlockTileType(2),
+                        baseHasThreadBlockTileType(1))),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::Util_logical_group_get_local_linear_range,
              MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.size",
@@ -233,13 +230,11 @@ CASE_FACTORY_ENTRY(
          MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.size",
                                    SUBGROUP, false, "get_local_linear_range")),
     CASE(makeCheckAnd(UseLogicalGroup, makeCheckOr(
-             baseHasThreadBlockTileType(16),
-             makeCheckOr(makeCheckOr(
-                             baseHasThreadBlockTileType(8),
-                             baseHasThreadBlockTileType(4)),
-                         makeCheckOr(
-                             baseHasThreadBlockTileType(2),
-                             baseHasThreadBlockTileType(1))))),
+                        baseHasThreadBlockTileType(16),
+                        baseHasThreadBlockTileType(8),
+                        baseHasThreadBlockTileType(4),
+                        baseHasThreadBlockTileType(2),
+                        baseHasThreadBlockTileType(1))),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::Util_logical_group_get_local_linear_range,
              MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.size",
@@ -269,13 +264,11 @@ CASE_FACTORY_ENTRY(
          MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.thread_rank",
                                    SUBGROUP, false, "get_local_linear_id")),
     CASE(makeCheckAnd(UseLogicalGroup, makeCheckOr(
-             baseHasThreadBlockTileType(16),
-             makeCheckOr(makeCheckOr(
-                             baseHasThreadBlockTileType(8),
-                             baseHasThreadBlockTileType(4)),
-                         makeCheckOr(
-                             baseHasThreadBlockTileType(2),
-                             baseHasThreadBlockTileType(1))))),
+                        baseHasThreadBlockTileType(16),
+                        baseHasThreadBlockTileType(8),
+                        baseHasThreadBlockTileType(4),
+                        baseHasThreadBlockTileType(2),
+                        baseHasThreadBlockTileType(1))),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::Util_logical_group_get_local_linear_id,
              MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.thread_rank",
@@ -290,13 +283,11 @@ CASE_FACTORY_ENTRY(
          MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.thread_rank",
                                    SUBGROUP, false, "get_local_linear_id")),
     CASE(makeCheckAnd(UseLogicalGroup, makeCheckOr(
-             baseHasThreadBlockTileType(16),
-             makeCheckOr(makeCheckOr(
-                             baseHasThreadBlockTileType(8),
-                             baseHasThreadBlockTileType(4)),
-                         makeCheckOr(
-                             baseHasThreadBlockTileType(2),
-                             baseHasThreadBlockTileType(1))))),
+                        baseHasThreadBlockTileType(16),
+                        baseHasThreadBlockTileType(8),
+                        baseHasThreadBlockTileType(4),
+                        baseHasThreadBlockTileType(2),
+                        baseHasThreadBlockTileType(1))),
          FEATURE_REQUEST_FACTORY(
              HelperFeatureEnum::Util_logical_group_get_local_linear_id,
              MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.thread_rank",
@@ -304,6 +295,52 @@ CASE_FACTORY_ENTRY(
     OTHERWISE(
         UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.thread_rank",
                                 Diagnostics::API_NOT_MIGRATED, ARG("thread_rank"))))
+
+/*
+  --- X.meta_group_rank() ---
+  cg::thread_block_tile<32>::meta_group_rank()
+  => item_ct1.get_sub_group().get_group_linear_range()
+
+  cg::thread_block_tile<N>::meta_group_rank() if n in {1,2,4,8,16}
+  => if UseLogicalGroup then
+     MemberBase().get_group_linear_range()
+*/
+CASE_FACTORY_ENTRY(
+    CASE(baseHasThreadBlockTileType(32),
+         MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.meta_group_rank",
+                                   SUBGROUP, false, "get_group_linear_range")),
+    CASE(makeCheckAnd(UseLogicalGroup, makeCheckOr(
+                            baseHasThreadBlockTileType(16),
+                            baseHasThreadBlockTileType(8),
+                            baseHasThreadBlockTileType(4),
+                            baseHasThreadBlockTileType(2),
+                            baseHasThreadBlockTileType(1))),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::Util_logical_group_get_group_linear_range,
+             MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.meta_group_rank",
+                                       MemberExprBase(), false, "get_group_linear_range"))),
+    OTHERWISE(
+        UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.meta_group_rank",
+                                Diagnostics::API_NOT_MIGRATED, ARG("meta_group_rank"))))
+
+CASE_FACTORY_ENTRY(
+    CASE(baseHasThreadBlockTileType(32),
+         MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__single_warp_thread_block_tile.meta_group_rank",
+                                   SUBGROUP, false, "get_group_linear_range")),
+    CASE(makeCheckAnd(UseLogicalGroup, makeCheckOr(
+                            baseHasThreadBlockTileType(16),
+                            baseHasThreadBlockTileType(8),
+                            baseHasThreadBlockTileType(4),
+                            baseHasThreadBlockTileType(2),
+                            baseHasThreadBlockTileType(1))),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::Util_logical_group_get_group_linear_range,
+             MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__single_warp_thread_block_tile.meta_group_rank",
+                                       MemberExprBase(), false, "get_group_linear_range"))),
+    OTHERWISE(
+        UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__single_warp_thread_block_tile.meta_group_rank",
+                                Diagnostics::API_NOT_MIGRATED, ARG("meta_group_rank"))))
+
 /*
   --- X.shfl_down() ---
   cg::thread_block_tile<32>::shfl_down(v, delta)
@@ -403,4 +440,204 @@ CASE_FACTORY_ENTRY(
     OTHERWISE(
          UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_down",
                                  Diagnostics::API_NOT_MIGRATED, ARG("shfl_down"))))
+
+/*
+  --- X.shfl_up() ---
+  cg::thread_block_tile<32>::shfl_up(v, delta)
+  => sycl::shift_group_right(item_ct1.get_sub_group(), v, delta)
+
+  cg::thread_block_tile<N>::shfl_up(v, delta) if N in {1,2,4,8,16}
+  => dpct::shift_sub_group_right(item_ct1.get_sub_group(), v, delta, N)
+*/
+// for cuda <= 10.2
+CASE_FACTORY_ENTRY(
+    CASE(baseHasThreadBlockTileType(32),
+         CALL_FACTORY_ENTRY(
+             "cooperative_groups::__v1::__thread_block_tile_base.shfl_up",
+             CALL(MapNames::getClNamespace() + "shift_group_right", SUBGROUP,
+                  ARG(0), ARG(1)))),
+    CASE(baseHasThreadBlockTileType(16),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::Util_shift_sub_group_right,
+             CALL_FACTORY_ENTRY(
+                 "cooperative_groups::__v1::__thread_block_tile_base.shfl_up",
+                 CALL(MapNames::getDpctNamespace() + "shift_sub_group_right",
+                      SUBGROUP, ARG(0), ARG(1), ARG("16"))))),
+    CASE(baseHasThreadBlockTileType(8),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::Util_shift_sub_group_right,
+             CALL_FACTORY_ENTRY(
+                 "cooperative_groups::__v1::__thread_block_tile_base.shfl_up",
+                 CALL(MapNames::getDpctNamespace() + "shift_sub_group_right",
+                      SUBGROUP, ARG(0), ARG(1), ARG("8"))))),
+    CASE(baseHasThreadBlockTileType(4),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::Util_shift_sub_group_right,
+             CALL_FACTORY_ENTRY(
+                 "cooperative_groups::__v1::__thread_block_tile_base.shfl_up",
+                 CALL(MapNames::getDpctNamespace() + "shift_sub_group_right",
+                      SUBGROUP, ARG(0), ARG(1), ARG("4"))))),
+    CASE(baseHasThreadBlockTileType(2),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::Util_shift_sub_group_right,
+             CALL_FACTORY_ENTRY(
+                 "cooperative_groups::__v1::__thread_block_tile_base.shfl_up",
+                 CALL(MapNames::getDpctNamespace() + "shift_sub_group_right",
+                      SUBGROUP, ARG(0), ARG(1), ARG("2"))))),
+    CASE(baseHasThreadBlockTileType(1),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::Util_shift_sub_group_right,
+             CALL_FACTORY_ENTRY(
+                 "cooperative_groups::__v1::__thread_block_tile_base.shfl_up",
+                 CALL(MapNames::getDpctNamespace() + "shift_sub_group_right",
+                      SUBGROUP, ARG(0), ARG(1), ARG("1"))))),
+    OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::__thread_block_tile_base.shfl_up",
+        Diagnostics::API_NOT_MIGRATED, ARG("shfl_up"))))
+
+// for cuda >= 11.0
+CASE_FACTORY_ENTRY(
+    CASE(baseHasThreadBlockTileType(32),
+         CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_up",
+                            CALL(MapNames::getClNamespace() +
+                                     "shift_group_right",
+                                 SUBGROUP, ARG(0), ARG(1)))),
+    CASE(baseHasThreadBlockTileType(16),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::Util_shift_sub_group_right,
+             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_up",
+                                CALL(MapNames::getDpctNamespace() +
+                                         "shift_sub_group_right",
+                                     SUBGROUP, ARG(0), ARG(1), ARG("16"))))),
+    CASE(baseHasThreadBlockTileType(8),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::Util_shift_sub_group_right,
+             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_up",
+                                CALL(MapNames::getDpctNamespace() +
+                                         "shift_sub_group_right",
+                                     SUBGROUP, ARG(0), ARG(1), ARG("8"))))),
+    CASE(baseHasThreadBlockTileType(4),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::Util_shift_sub_group_right,
+             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_up",
+                                CALL(MapNames::getDpctNamespace() +
+                                         "shift_sub_group_right",
+                                     SUBGROUP, ARG(0), ARG(1), ARG("4"))))),
+    CASE(baseHasThreadBlockTileType(2),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::Util_shift_sub_group_right,
+             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_up",
+                                CALL(MapNames::getDpctNamespace() +
+                                         "shift_sub_group_right",
+                                     SUBGROUP, ARG(0), ARG(1), ARG("2"))))),
+    CASE(baseHasThreadBlockTileType(1),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::Util_shift_sub_group_right,
+             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_up",
+                                CALL(MapNames::getDpctNamespace() +
+                                         "shift_sub_group_right",
+                                     SUBGROUP, ARG(0), ARG(1), ARG("1"))))),
+    OTHERWISE(UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_up",
+                                      Diagnostics::API_NOT_MIGRATED,
+                                      ARG("shfl_up"))))
+
+/*
+  --- X.shfl_xor() ---
+  cg::thread_block_tile<32>::shfl_xor(v, mask)
+  => sycl::permute_group_by_xor(item_ct1.get_sub_group(), v, mask)
+
+  cg::thread_block_tile<N>::shfl_xor(v, mask) if N in {1,2,4,8,16}
+  => dpct::permute_sub_group_by_xor(item_ct1.get_sub_group(), v, mask, N)
+*/
+// for cuda <= 10.2
+CASE_FACTORY_ENTRY(
+    CASE(baseHasThreadBlockTileType(32),
+         CALL_FACTORY_ENTRY(
+             "cooperative_groups::__v1::__thread_block_tile_base.shfl_xor",
+             CALL(MapNames::getClNamespace() + "permute_group_by_xor", SUBGROUP,
+                  ARG(0), ARG(1)))),
+    CASE(baseHasThreadBlockTileType(16),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::Util_permute_sub_group_by_xor,
+             CALL_FACTORY_ENTRY(
+                 "cooperative_groups::__v1::__thread_block_tile_base.shfl_xor",
+                 CALL(MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
+                      SUBGROUP, ARG(0), ARG(1), ARG("16"))))),
+    CASE(baseHasThreadBlockTileType(8),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::Util_permute_sub_group_by_xor,
+             CALL_FACTORY_ENTRY(
+                 "cooperative_groups::__v1::__thread_block_tile_base.shfl_xor",
+                 CALL(MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
+                      SUBGROUP, ARG(0), ARG(1), ARG("8"))))),
+    CASE(baseHasThreadBlockTileType(4),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::Util_permute_sub_group_by_xor,
+             CALL_FACTORY_ENTRY(
+                 "cooperative_groups::__v1::__thread_block_tile_base.shfl_xor",
+                 CALL(MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
+                      SUBGROUP, ARG(0), ARG(1), ARG("4"))))),
+    CASE(baseHasThreadBlockTileType(2),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::Util_permute_sub_group_by_xor,
+             CALL_FACTORY_ENTRY(
+                 "cooperative_groups::__v1::__thread_block_tile_base.shfl_xor",
+                 CALL(MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
+                      SUBGROUP, ARG(0), ARG(1), ARG("2"))))),
+    CASE(baseHasThreadBlockTileType(1),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::Util_permute_sub_group_by_xor,
+             CALL_FACTORY_ENTRY(
+                 "cooperative_groups::__v1::__thread_block_tile_base.shfl_xor",
+                 CALL(MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
+                      SUBGROUP, ARG(0), ARG(1), ARG("1"))))),
+    OTHERWISE(UNSUPPORT_FACTORY_ENTRY(
+        "cooperative_groups::__v1::__thread_block_tile_base.shfl_xor",
+        Diagnostics::API_NOT_MIGRATED, ARG("shfl_xor"))))
+
+// for cuda >= 11.0
+CASE_FACTORY_ENTRY(
+    CASE(baseHasThreadBlockTileType(32),
+         CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_xor",
+                            CALL(MapNames::getClNamespace() +
+                                     "permute_group_by_xor",
+                                 SUBGROUP, ARG(0), ARG(1)))),
+    CASE(baseHasThreadBlockTileType(16),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::Util_permute_sub_group_by_xor,
+             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_xor",
+                                CALL(MapNames::getDpctNamespace() +
+                                         "permute_sub_group_by_xor",
+                                     SUBGROUP, ARG(0), ARG(1), ARG("16"))))),
+    CASE(baseHasThreadBlockTileType(8),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::Util_permute_sub_group_by_xor,
+             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_xor",
+                                CALL(MapNames::getDpctNamespace() +
+                                         "permute_sub_group_by_xor",
+                                     SUBGROUP, ARG(0), ARG(1), ARG("8"))))),
+    CASE(baseHasThreadBlockTileType(4),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::Util_permute_sub_group_by_xor,
+             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_xor",
+                                CALL(MapNames::getDpctNamespace() +
+                                         "permute_sub_group_by_xor",
+                                     SUBGROUP, ARG(0), ARG(1), ARG("4"))))),
+    CASE(baseHasThreadBlockTileType(2),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::Util_permute_sub_group_by_xor,
+             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_xor",
+                                CALL(MapNames::getDpctNamespace() +
+                                         "permute_sub_group_by_xor",
+                                     SUBGROUP, ARG(0), ARG(1), ARG("2"))))),
+    CASE(baseHasThreadBlockTileType(1),
+         FEATURE_REQUEST_FACTORY(
+             HelperFeatureEnum::Util_permute_sub_group_by_xor,
+             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_xor",
+                                CALL(MapNames::getDpctNamespace() +
+                                         "permute_sub_group_by_xor",
+                                     SUBGROUP, ARG(0), ARG(1), ARG("1"))))),
+    OTHERWISE(UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_xor",
+                                      Diagnostics::API_NOT_MIGRATED,
+                                      ARG("shfl_xor"))))
 #endif

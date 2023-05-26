@@ -11871,7 +11871,8 @@ void CooperativeGroupsFunctionRule::runRule(
   ReportUnsupportedWarning RUW(CE->getBeginLoc(), FuncName, this);
 
   if (FuncName == "sync" || FuncName == "thread_rank" || FuncName == "size" ||
-      FuncName == "shfl_down") {
+      FuncName == "shfl_down" || FuncName == "shfl_up" ||
+      FuncName == "shfl_xor" || FuncName == "meta_group_rank") {
     // There are 3 usages of cooperative groups APIs.
     // 1. cg::thread_block tb; tb.sync(); // member function
     // 2. cg::thread_block tb; cg::sync(tb); // free function
@@ -11882,6 +11883,9 @@ void CooperativeGroupsFunctionRule::runRule(
     // thread_rank   1/1   1/1   0/1
     // size          1/1   0/0   0/1
     // shfl_down     1/1   0/0   0/0
+    // shfl_up       1/1   0/0   0/0
+    // shfl_xor      1/1   0/0   0/0
+    // meta_group_rank 1/1   0/0   0/0
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
