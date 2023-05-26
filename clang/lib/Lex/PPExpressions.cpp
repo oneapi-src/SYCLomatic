@@ -42,7 +42,8 @@ using namespace clang;
 namespace clang {
 inline bool isInAnalysisScopeNull(SourceLocation) { return false; }
 inline unsigned int getRunRound() { return 0; }
-std::function<bool(SourceLocation)> IsInAnalysisScopeFunc = isInAnalysisScopeNull;
+std::function<bool(SourceLocation)> IsInAnalysisScopeFunc =
+    isInAnalysisScopeNull;
 std::function<unsigned int()> GetRunRound = getRunRound;
 // The ProcessingCudaRTVersionMacro flag is marked as false when:
 // (1) start to process #if/#elif directives;
@@ -82,9 +83,13 @@ public:
 
   SourceRange getRange() const { return Range; }
 
-  void setRange(SourceLocation L) { Range.setBegin(L); Range.setEnd(L); }
+  void setRange(SourceLocation L) {
+    Range.setBegin(L);
+    Range.setEnd(L);
+  }
   void setRange(SourceLocation B, SourceLocation E) {
-    Range.setBegin(B); Range.setEnd(E);
+    Range.setBegin(B);
+    Range.setEnd(E);
   }
   void setBegin(SourceLocation L) { Range.setBegin(L); }
   void setEnd(SourceLocation L) { Range.setEnd(L); }
@@ -108,9 +113,9 @@ struct DefinedTracker {
   /// Each time a Value is evaluated, it returns information about whether the
   /// parsed value is of the form defined(X), !defined(X) or is something else.
   enum TrackerState {
-    DefinedMacro,        // defined(X)
-    NotDefinedMacro,     // !defined(X)
-    Unknown              // Something else.
+    DefinedMacro,    // defined(X)
+    NotDefinedMacro, // !defined(X)
+    Unknown          // Something else.
   } State;
   /// TheMacro - When the state is DefinedMacro or NotDefinedMacro, this
   /// indicates the macro that was checked.
@@ -167,6 +172,7 @@ static bool EvaluateDefined(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
       IsInAnalysisScopeFunc(PeekTok.getLocation()) && GetRunRound() == 0) {
     Result.Val = true;
   }
+  std::optional<Token> RightParen;
 #endif // SYCLomatic_CUSTOMIZATION
   // Save macro token for callback.
   Token macroToken(PeekTok);
@@ -176,6 +182,9 @@ static bool EvaluateDefined(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
     // Consume identifier.
     Result.setEnd(PeekTok.getLocation());
     PP.LexUnexpandedNonComment(PeekTok);
+#ifdef SYCLomatic_CUSTOMIZATION
+    RightParen = PeekTok;
+#endif // SYCLomatic_CUSTOMIZATION
 
     if (PeekTok.isNot(tok::r_paren)) {
       PP.Diag(PeekTok.getLocation(), diag::err_pp_expected_after)
@@ -240,8 +249,11 @@ static bool EvaluateDefined(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
 #ifdef SYCLomatic_CUSTOMIZATION
   if (II->getName() == "CUDART_VERSION" &&
       IsInAnalysisScopeFunc(PeekTok.getLocation())) {
-    ReplaceInfo.push_back(
-        std::make_tuple(Result.getRange(), !Result.Val.isZero(), true));
+    SourceRange SR = Result.getRange();
+    if (RightParen.has_value()) {
+      SR.setEnd(RightParen.value().getLocation());
+    }
+    ReplaceInfo.push_back(std::make_tuple(SR, !Result.Val.isZero(), true));
   }
 #endif // SYCLomatic_CUSTOMIZATION
   // Invoke the 'defined' callback.
@@ -324,13 +336,13 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
         }
         Result.Val = 0;
 #ifdef SYCLomatic_CUSTOMIZATION
-        // If macro name is '__CUDA_ARCH__' and is inside analysis-scope-path folder, handle
-        // it as defined '600'
+        // If macro name is '__CUDA_ARCH__' and is inside analysis-scope-path
+        // folder, handle it as defined '600'
         if (II->getName() == "__CUDA_ARCH__" &&
             IsInAnalysisScopeFunc(PeekTok.getLocation())) {
           Result.Val = 600;
         }
-#endif // SYCLomatic_CUSTOMIZATION
+#endif                                   // SYCLomatic_CUSTOMIZATION
         Result.Val.setIsUnsigned(false); // "0" is signed intmax_t 0.
         Result.setIdentifier(II);
         Result.setRange(PeekTok.getLocation());
@@ -349,8 +361,7 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
   case tok::numeric_constant: {
     SmallString<64> IntegerBuffer;
     bool NumberInvalid = false;
-    StringRef Spelling = PP.getSpelling(PeekTok, IntegerBuffer,
-                                              &NumberInvalid);
+    StringRef Spelling = PP.getSpelling(PeekTok, IntegerBuffer, &NumberInvalid);
     if (NumberInvalid)
       return true; // a diagnostic was already reported
 
@@ -368,14 +379,14 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
 
     // Complain about, and drop, any ud-suffix.
     if (Literal.hasUDSuffix())
-      PP.Diag(PeekTok, diag::err_pp_invalid_udl) << /*integer*/1;
+      PP.Diag(PeekTok, diag::err_pp_invalid_udl) << /*integer*/ 1;
 
     // 'long long' is a C99 or C++11 feature.
     if (!PP.getLangOpts().C99 && Literal.isLongLong) {
       if (PP.getLangOpts().CPlusPlus)
-        PP.Diag(PeekTok,
-             PP.getLangOpts().CPlusPlus11 ?
-             diag::warn_cxx98_compat_longlong : diag::ext_cxx11_longlong);
+        PP.Diag(PeekTok, PP.getLangOpts().CPlusPlus11
+                             ? diag::warn_cxx98_compat_longlong
+                             : diag::ext_cxx11_longlong);
       else
         PP.Diag(PeekTok, diag::ext_c99_longlong);
     }
@@ -426,14 +437,14 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
     PP.LexNonComment(PeekTok);
     return false;
   }
-  case tok::char_constant:          // 'x'
-  case tok::wide_char_constant:     // L'x'
-  case tok::utf8_char_constant:     // u8'x'
-  case tok::utf16_char_constant:    // u'x'
-  case tok::utf32_char_constant: {  // U'x'
+  case tok::char_constant:         // 'x'
+  case tok::wide_char_constant:    // L'x'
+  case tok::utf8_char_constant:    // u8'x'
+  case tok::utf16_char_constant:   // u'x'
+  case tok::utf32_char_constant: { // U'x'
     // Complain about, and drop, any ud-suffix.
     if (PeekTok.hasUDSuffix())
-      PP.Diag(PeekTok, diag::err_pp_invalid_udl) << /*character*/0;
+      PP.Diag(PeekTok, diag::err_pp_invalid_udl) << /*character*/ 0;
 
     SmallString<32> CharBuffer;
     bool CharInvalid = false;
@@ -444,7 +455,7 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
     CharLiteralParser Literal(ThisTok.begin(), ThisTok.end(),
                               PeekTok.getLocation(), PP, PeekTok.getKind());
     if (Literal.hadError())
-      return true;  // A diagnostic was already emitted.
+      return true; // A diagnostic was already emitted.
 
     // Character literals are always int or wchar_t, expand to intmax_t.
     const TargetInfo &TI = PP.getTargetInfo();
@@ -494,10 +505,11 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
   }
   case tok::l_paren: {
     SourceLocation Start = PeekTok.getLocation();
-    PP.LexNonComment(PeekTok);  // Eat the (.
+    PP.LexNonComment(PeekTok); // Eat the (.
     // Parse the value and if there are any binary operators involved, parse
     // them.
-    if (EvaluateValue(Result, PeekTok, DT, ValueLive, PP)) return true;
+    if (EvaluateValue(Result, PeekTok, DT, ValueLive, PP))
+      return true;
 
     // If this is a silly value like (X), which doesn't need parens, check for
     // !(defined X).
@@ -511,7 +523,7 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
 
       if (PeekTok.isNot(tok::r_paren)) {
         PP.Diag(PeekTok.getLocation(), diag::err_pp_expected_rparen)
-          << Result.getRange();
+            << Result.getRange();
         PP.Diag(Start, diag::note_matching) << tok::l_paren;
         return true;
       }
@@ -519,14 +531,15 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
     }
     Result.setRange(Start, PeekTok.getLocation());
     Result.setIdentifier(nullptr);
-    PP.LexNonComment(PeekTok);  // Eat the ).
+    PP.LexNonComment(PeekTok); // Eat the ).
     return false;
   }
   case tok::plus: {
     SourceLocation Start = PeekTok.getLocation();
     // Unary plus doesn't modify the value.
     PP.LexNonComment(PeekTok);
-    if (EvaluateValue(Result, PeekTok, DT, ValueLive, PP)) return true;
+    if (EvaluateValue(Result, PeekTok, DT, ValueLive, PP))
+      return true;
     Result.setBegin(Start);
     Result.setIdentifier(nullptr);
     return false;
@@ -534,7 +547,8 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
   case tok::minus: {
     SourceLocation Loc = PeekTok.getLocation();
     PP.LexNonComment(PeekTok);
-    if (EvaluateValue(Result, PeekTok, DT, ValueLive, PP)) return true;
+    if (EvaluateValue(Result, PeekTok, DT, ValueLive, PP))
+      return true;
     Result.setBegin(Loc);
     Result.setIdentifier(nullptr);
 
@@ -555,7 +569,8 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
   case tok::tilde: {
     SourceLocation Start = PeekTok.getLocation();
     PP.LexNonComment(PeekTok);
-    if (EvaluateValue(Result, PeekTok, DT, ValueLive, PP)) return true;
+    if (EvaluateValue(Result, PeekTok, DT, ValueLive, PP))
+      return true;
     Result.setBegin(Start);
     Result.setIdentifier(nullptr);
 
@@ -568,7 +583,8 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
   case tok::exclaim: {
     SourceLocation Start = PeekTok.getLocation();
     PP.LexNonComment(PeekTok);
-    if (EvaluateValue(Result, PeekTok, DT, ValueLive, PP)) return true;
+    if (EvaluateValue(Result, PeekTok, DT, ValueLive, PP))
+      return true;
 #ifdef SYCLomatic_CUSTOMIZATION
     if (ProcessingCudaRTVersionMacro) {
       ProcessingCudaRTVersionMacro = false;
@@ -597,7 +613,7 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
     PP.LexNonComment(PeekTok);
     return false;
 
-  // FIXME: Handle #assert
+    // FIXME: Handle #assert
   }
 }
 
@@ -608,30 +624,46 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
 ///    0 - 'eod' or ')'
 static unsigned getPrecedence(tok::TokenKind Kind) {
   switch (Kind) {
-  default: return ~0U;
+  default:
+    return ~0U;
   case tok::percent:
   case tok::slash:
-  case tok::star:                 return 14;
+  case tok::star:
+    return 14;
   case tok::plus:
-  case tok::minus:                return 13;
+  case tok::minus:
+    return 13;
   case tok::lessless:
-  case tok::greatergreater:       return 12;
+  case tok::greatergreater:
+    return 12;
   case tok::lessequal:
   case tok::less:
   case tok::greaterequal:
-  case tok::greater:              return 11;
+  case tok::greater:
+    return 11;
   case tok::exclaimequal:
-  case tok::equalequal:           return 10;
-  case tok::amp:                  return 9;
-  case tok::caret:                return 8;
-  case tok::pipe:                 return 7;
-  case tok::ampamp:               return 6;
-  case tok::pipepipe:             return 5;
-  case tok::question:             return 4;
-  case tok::comma:                return 3;
-  case tok::colon:                return 2;
-  case tok::r_paren:              return 0;// Lowest priority, end of expr.
-  case tok::eod:                  return 0;// Lowest priority, end of directive.
+  case tok::equalequal:
+    return 10;
+  case tok::amp:
+    return 9;
+  case tok::caret:
+    return 8;
+  case tok::pipe:
+    return 7;
+  case tok::ampamp:
+    return 6;
+  case tok::pipepipe:
+    return 5;
+  case tok::question:
+    return 4;
+  case tok::comma:
+    return 3;
+  case tok::colon:
+    return 2;
+  case tok::r_paren:
+    return 0; // Lowest priority, end of expr.
+  case tok::eod:
+    return 0; // Lowest priority, end of directive.
   }
 }
 
@@ -677,11 +709,11 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
     // expr dead.
     bool RHSIsLive;
     if (Operator == tok::ampamp && LHS.Val == 0)
-      RHSIsLive = false;   // RHS of "0 && x" is dead.
+      RHSIsLive = false; // RHS of "0 && x" is dead.
     else if (Operator == tok::pipepipe && LHS.Val != 0)
-      RHSIsLive = false;   // RHS of "1 || x" is dead.
+      RHSIsLive = false; // RHS of "1 || x" is dead.
     else if (Operator == tok::question && LHS.Val == 0)
-      RHSIsLive = false;   // RHS (x) of "0 ? x : y" is dead.
+      RHSIsLive = false; // RHS (x) of "0 ? x : y" is dead.
     else
       RHSIsLive = ValueLive;
 #ifdef SYCLomatic_CUSTOMIZATION
@@ -700,7 +732,8 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
     bool LHSHasMacro = ProcessingCudaRTVersionMacro;
     ProcessingCudaRTVersionMacro = false;
 #endif // SYCLomatic_CUSTOMIZATION
-    if (EvaluateValue(RHS, PeekTok, DT, RHSIsLive, PP)) return true;
+    if (EvaluateValue(RHS, PeekTok, DT, RHSIsLive, PP))
+      return true;
 #ifdef SYCLomatic_CUSTOMIZATION
     bool RHSHasMacro = ProcessingCudaRTVersionMacro;
     ProcessingCudaRTVersionMacro = LHSHasMacro || RHSHasMacro;
@@ -732,8 +765,8 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
     if (Operator == tok::question)
       // The RHS of "?" should be maximally consumed as an expression.
       RHSPrec = getPrecedence(tok::comma);
-    else  // All others should munch while higher precedence.
-      RHSPrec = ThisPrec+1;
+    else // All others should munch while higher precedence.
+      RHSPrec = ThisPrec + 1;
 
     if (PeekPrec >= RHSPrec) {
       if (EvaluateDirectiveSubExpr(RHS, RHSPrec, PeekTok, RHSIsLive,
@@ -764,15 +797,17 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
       // value was negative, warn about it.
       if (ValueLive && Res.isUnsigned()) {
         if (!LHS.isUnsigned() && LHS.Val.isNegative())
-          PP.Diag(OpLoc, diag::warn_pp_convert_to_positive) << 0
-            << toString(LHS.Val, 10, true) + " to " +
-               toString(LHS.Val, 10, false)
-            << LHS.getRange() << RHS.getRange();
+          PP.Diag(OpLoc, diag::warn_pp_convert_to_positive)
+              << 0
+              << toString(LHS.Val, 10, true) + " to " +
+                     toString(LHS.Val, 10, false)
+              << LHS.getRange() << RHS.getRange();
         if (!RHS.isUnsigned() && RHS.Val.isNegative())
-          PP.Diag(OpLoc, diag::warn_pp_convert_to_positive) << 1
-            << toString(RHS.Val, 10, true) + " to " +
-               toString(RHS.Val, 10, false)
-            << LHS.getRange() << RHS.getRange();
+          PP.Diag(OpLoc, diag::warn_pp_convert_to_positive)
+              << 1
+              << toString(RHS.Val, 10, true) + " to " +
+                     toString(RHS.Val, 10, false)
+              << LHS.getRange() << RHS.getRange();
       }
       LHS.Val.setIsUnsigned(Res.isUnsigned());
       RHS.Val.setIsUnsigned(Res.isUnsigned());
@@ -780,13 +815,14 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
 
     bool Overflow = false;
     switch (Operator) {
-    default: llvm_unreachable("Unknown operator token!");
+    default:
+      llvm_unreachable("Unknown operator token!");
     case tok::percent:
       if (RHS.Val != 0)
         Res = LHS.Val % RHS.Val;
       else if (ValueLive) {
         PP.Diag(OpLoc, diag::err_pp_remainder_by_zero)
-          << LHS.getRange() << RHS.getRange();
+            << LHS.getRange() << RHS.getRange();
         return true;
       }
       break;
@@ -798,7 +834,7 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
           Res = LHS.Val / RHS.Val;
       } else if (ValueLive) {
         PP.Diag(OpLoc, diag::err_pp_division_by_zero)
-          << LHS.getRange() << RHS.getRange();
+            << LHS.getRange() << RHS.getRange();
         return true;
       }
       break;
@@ -822,7 +858,7 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
       unsigned ShAmt = static_cast<unsigned>(RHS.Val.getLimitedValue());
       if (ShAmt >= LHS.getBitWidth()) {
         Overflow = true;
-        ShAmt = LHS.getBitWidth()-1;
+        ShAmt = LHS.getBitWidth() - 1;
       }
       Res = LHS.Val >> ShAmt;
       break;
@@ -841,27 +877,27 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
       break;
     case tok::lessequal:
       Res = LHS.Val <= RHS.Val;
-      Res.setIsUnsigned(false);  // C99 6.5.8p6, result is always int (signed)
+      Res.setIsUnsigned(false); // C99 6.5.8p6, result is always int (signed)
       break;
     case tok::less:
       Res = LHS.Val < RHS.Val;
-      Res.setIsUnsigned(false);  // C99 6.5.8p6, result is always int (signed)
+      Res.setIsUnsigned(false); // C99 6.5.8p6, result is always int (signed)
       break;
     case tok::greaterequal:
       Res = LHS.Val >= RHS.Val;
-      Res.setIsUnsigned(false);  // C99 6.5.8p6, result is always int (signed)
+      Res.setIsUnsigned(false); // C99 6.5.8p6, result is always int (signed)
       break;
     case tok::greater:
       Res = LHS.Val > RHS.Val;
-      Res.setIsUnsigned(false);  // C99 6.5.8p6, result is always int (signed)
+      Res.setIsUnsigned(false); // C99 6.5.8p6, result is always int (signed)
       break;
     case tok::exclaimequal:
       Res = LHS.Val != RHS.Val;
-      Res.setIsUnsigned(false);  // C99 6.5.9p3, result is always int (signed)
+      Res.setIsUnsigned(false); // C99 6.5.9p3, result is always int (signed)
       break;
     case tok::equalequal:
       Res = LHS.Val == RHS.Val;
-      Res.setIsUnsigned(false);  // C99 6.5.9p3, result is always int (signed)
+      Res.setIsUnsigned(false); // C99 6.5.9p3, result is always int (signed)
       break;
     case tok::amp:
       Res = LHS.Val & RHS.Val;
@@ -874,7 +910,7 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
       break;
     case tok::ampamp:
       Res = (LHS.Val != 0 && RHS.Val != 0);
-      Res.setIsUnsigned(false);  // C99 6.5.13p3, result is always int (signed)
+      Res.setIsUnsigned(false); // C99 6.5.13p3, result is always int (signed)
 #ifdef SYCLomatic_CUSTOMIZATION
       ProcessingCudaRTVersionMacro = false;
       if (LHSHasMacro) {
@@ -889,7 +925,7 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
       break;
     case tok::pipepipe:
       Res = (LHS.Val != 0 || RHS.Val != 0);
-      Res.setIsUnsigned(false);  // C99 6.5.14p3, result is always int (signed)
+      Res.setIsUnsigned(false); // C99 6.5.14p3, result is always int (signed)
 #ifdef SYCLomatic_CUSTOMIZATION
       ProcessingCudaRTVersionMacro = false;
       if (LHSHasMacro) {
@@ -907,7 +943,7 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
       // if not being evaluated.
       if (!PP.getLangOpts().C99 || ValueLive)
         PP.Diag(OpLoc, diag::ext_pp_comma_expr)
-          << LHS.getRange() << RHS.getRange();
+            << LHS.getRange() << RHS.getRange();
       Res = RHS.Val; // LHS = LHS,RHS -> RHS.
       break;
     case tok::question: {
@@ -937,9 +973,8 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
 
       // Parse anything after the : with the same precedence as ?.  We allow
       // things of equal precedence because ?: is right associative.
-      if (EvaluateDirectiveSubExpr(AfterColonVal, ThisPrec,
-                                   PeekTok, AfterColonLive,
-                                   IncludedUndefinedIds, PP))
+      if (EvaluateDirectiveSubExpr(AfterColonVal, ThisPrec, PeekTok,
+                                   AfterColonLive, IncludedUndefinedIds, PP))
         return true;
 
       // Now that we have the condition, the LHS and the RHS of the :, evaluate.
@@ -957,14 +992,14 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
     case tok::colon:
       // Don't allow :'s to float around without being part of ?: exprs.
       PP.Diag(OpLoc, diag::err_pp_colon_without_question)
-        << LHS.getRange() << RHS.getRange();
+          << LHS.getRange() << RHS.getRange();
       return true;
     }
 
     // If this operator is live and overflowed, report the issue.
     if (Overflow && ValueLive)
       PP.Diag(OpLoc, diag::warn_pp_expr_overflow)
-        << LHS.getRange() << RHS.getRange();
+          << LHS.getRange() << RHS.getRange();
 
     // Put the result back into 'LHS' for our next iteration.
     LHS.Val = Res;
@@ -1034,8 +1069,8 @@ Preprocessor::EvaluateDirectiveExpression(IdentifierInfo *&IfNDefMacro) {
 
   // Otherwise, we must have a binary operator (e.g. "#if 1 < 2"), so parse the
   // operator and the stuff after it.
-  if (EvaluateDirectiveSubExpr(ResVal, getPrecedence(tok::question),
-                               Tok, true, DT.IncludedUndefinedIds, *this)) {
+  if (EvaluateDirectiveSubExpr(ResVal, getPrecedence(tok::question), Tok, true,
+                               DT.IncludedUndefinedIds, *this)) {
     // Parse error, skip the rest of the macro line.
     if (Tok.isNot(tok::eod))
       DiscardUntilEndOfDirective();

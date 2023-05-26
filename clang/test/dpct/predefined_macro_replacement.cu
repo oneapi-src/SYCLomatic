@@ -175,10 +175,10 @@ int foo2(){
 }
 
 //CHECK: void foo3() {
-//CHECK-NEXT: #if defined(SYCL_LANGUAGE_VERSION)
+//CHECK-NEXT: #if defined(SYCL_LANGUAGE_VERSION) && (SYCL_LANGUAGE_VERSION >= 202000)
 //CHECK-NEXT:   sycl::int2 a1;
 //CHECK-NEXT: #endif
-//CHECK-NEXT: #if defined(SYCL_LANGUAGE_VERSION)
+//CHECK-NEXT: #if defined(SYCL_LANGUAGE_VERSION) && (SYCL_LANGUAGE_VERSION >= 202000)
 //CHECK-NEXT:   sycl::int2 a2;
 //CHECK-NEXT: #endif
 //CHECK-NEXT: #define AAA 1
@@ -193,10 +193,10 @@ int foo2(){
 //CHECK-NEXT: #endif
 //CHECK-NEXT: }
 void foo3() {
-#if defined CUDART_VERSION
+#if defined CUDART_VERSION && (CUDART_VERSION >= 4000)
   int2 a1;
 #endif
-#if defined(CUDART_VERSION)
+#if defined(CUDART_VERSION) && (CUDART_VERSION >= 4000)
   int2 a2;
 #endif
 #define AAA 1
@@ -214,11 +214,11 @@ void foo3() {
 //CHECK: void foo4() {
 //CHECK-NEXT: #define BBB 0
 //CHECK-NEXT: #if BBB
-//CHECK-NEXT: #elif defined(SYCL_LANGUAGE_VERSION)
+//CHECK-NEXT: #elif defined(SYCL_LANGUAGE_VERSION) && (SYCL_LANGUAGE_VERSION >= 202000)
 //CHECK-NEXT:   sycl::int2 a1;
 //CHECK-NEXT: #endif
 //CHECK-NEXT: #if BBB
-//CHECK-NEXT: #elif defined(SYCL_LANGUAGE_VERSION)
+//CHECK-NEXT: #elif defined(SYCL_LANGUAGE_VERSION) && (SYCL_LANGUAGE_VERSION >= 202000)
 //CHECK-NEXT:   sycl::int2 a2;
 //CHECK-NEXT: #endif
 //CHECK-NEXT: #define AAA 1
@@ -238,11 +238,11 @@ void foo3() {
 void foo4() {
 #define BBB 0
 #if BBB
-#elif defined CUDART_VERSION
+#elif defined CUDART_VERSION && (CUDART_VERSION >= 4000)
   int2 a1;
 #endif
 #if BBB
-#elif defined(CUDART_VERSION)
+#elif defined(CUDART_VERSION) && (CUDART_VERSION >= 4000)
   int2 a2;
 #endif
 #define AAA 1
