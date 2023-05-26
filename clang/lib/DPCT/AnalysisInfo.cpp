@@ -349,7 +349,6 @@ void DpctGlobalInfo::buildReplacements() {
   // 2          1            dev_ct1             get_default_queue
   // 1          2            dev_ct1             q_ct1
   // >=2        >=2          dev_ct1             q_ct1
-
   if (!getDeviceChangedFlag() && getUsingDRYPattern()) {
     bool NeedDpctHelpFunc = DpctGlobalInfo::needDpctDeviceExt() ||
                             TempVariableDeclCounterMap.size() > 1 ||
