@@ -378,7 +378,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
         "Experimental extension that allows user define reductions.\n",
         false),
              DPCT_OPT_ENUM("masked_sub_group_operation", int(ExperimentalFeatures::Exp_MaskedSubGroupFunction),
-        "Experimental helper function used to execute sub group operation with mask.\n",
+        "Experimental helper function used to execute sub-group operation with mask.\n",
         false),
              DPCT_OPT_ENUM("dpl-experimental-api", int(ExperimentalFeatures::Exp_DPLExperimentalAPI),
         "Experimental extension that allows oneDPL experimental API.\n",
