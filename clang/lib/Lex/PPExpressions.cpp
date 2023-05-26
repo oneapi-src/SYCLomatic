@@ -44,6 +44,12 @@ inline bool isInAnalysisScopeNull(SourceLocation) { return false; }
 inline unsigned int getRunRound() { return 0; }
 std::function<bool(SourceLocation)> IsInAnalysisScopeFunc = isInAnalysisScopeNull;
 std::function<unsigned int()> GetRunRound = getRunRound;
+// The ProcessingCudaRTVersionMacro flag is marked as false when:
+// (1) start to process #if/#elif directives;
+// (2) meet '?', '||', '&&' or '!' expressions;
+// (3) return to root node of the #if/#elif directives.
+// This flag is marked as true when CUDART_VERSION is lexed (except in define
+// expression).
 bool ProcessingCudaRTVersionMacro = false;
 std::vector<std::tuple<SourceRange /*range*/, bool /*evaluated value*/,
                        bool /*is define expr*/>>

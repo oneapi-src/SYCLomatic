@@ -9,9 +9,6 @@
 #ifndef LLVM_CLANG_BASIC_CUDA_H
 #define LLVM_CLANG_BASIC_CUDA_H
 
-#ifdef SYCLomatic_CUSTOMIZATION
-#include <string>
-#endif // SYCLomatic_CUSTOMIZATION
 namespace llvm {
 class StringRef;
 class Twine;
