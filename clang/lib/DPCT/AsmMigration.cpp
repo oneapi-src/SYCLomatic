@@ -346,7 +346,7 @@ bool SYCLGenBase::emitDeclRefExpression(const InlineAsmDeclRefExpr *E) {
   if (E->getDecl().getDeclName()->isBuiltinID()) {
     switch (E->getDecl().getDeclName()->getTokenID()) {
     case asmtok::bi_laneid:
-      OS() << getItemName() << ".get_local_id()";
+      OS() << getItemName() << ".get_local_linear_id()";
       break;
     default:
       return SYCLGenError();
