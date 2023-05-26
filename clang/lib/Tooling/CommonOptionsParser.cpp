@@ -370,6 +370,9 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
           std::move(Compilations));
   Adjuster =
       getInsertArgumentAdjuster(ArgsBefore, ArgumentInsertPosition::BEGIN);
+  Adjuster = combineAdjusters(
+      std::move(Adjuster),
+      getInsertArgumentAdjuster(ArgsAfter, ArgumentInsertPosition::END));
 #ifdef SYCLomatic_CUSTOMIZATION
   for (auto &I : ArgsAfter) {
     if (I.size() > 2 && I.substr(0, 2) == "-x") {
@@ -384,18 +387,7 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
         std::move(Adjuster),
         getInsertArgumentAdjuster("-xcuda", ArgumentInsertPosition::BEGIN));
   }
-  ArgsAfter.erase(std::remove_if(ArgsAfter.begin(), ArgsAfter.end(),
-                                 [](std::string I) {
-                                   if (I.size() > 2 && I.substr(0, 2) == "-x") {
-                                     return true;
-                                   }
-                                   return false;
-                                 }),
-                  ArgsAfter.end());
 #endif // SYCLomatic_CUSTOMIZATION
-  Adjuster = combineAdjusters(
-      std::move(Adjuster),
-      getInsertArgumentAdjuster(ArgsAfter, ArgumentInsertPosition::END));
   AdjustingCompilations->appendArgumentsAdjuster(Adjuster);
   Compilations = std::move(AdjustingCompilations);
   return llvm::Error::success();
