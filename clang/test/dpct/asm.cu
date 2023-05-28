@@ -13,7 +13,7 @@ __global__ void gpu_ptx(int *d_ptr, int length) {
     if (elemID < length) {
       unsigned int laneid;
       unsigned int warpid;
-      // CHECK: laneid = item_ct1.get_local_linear_id();
+      // CHECK: laneid = item_ct1.get_sub_group().get_local_linear_id();
       asm("mov.u32 %0, %%laneid;" : "=r"(laneid));
 
       // CHECK: /*
