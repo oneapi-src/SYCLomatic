@@ -718,9 +718,8 @@ void Preprocessor::SkipExcludedConditionalBlock(SourceLocation HashTokenLoc,
           CurPPLexer->LexingRawMode = false;
           IdentifierInfo *IfNDefMacro = nullptr;
 #ifdef SYCLomatic_CUSTOMIZATION
-          IsEvaluatingExpression = true;
-          DirectiveEvalResult DER = EvaluateDirectiveExpression(IfNDefMacro);
-          IsEvaluatingExpression = false;
+          DirectiveEvalResult DER =
+              EvaluateDirectiveExpressionWithGuard(IfNDefMacro);
 #else
           DirectiveEvalResult DER = EvaluateDirectiveExpression(IfNDefMacro);
 #endif // SYCLomatic_CUSTOMIZATION
@@ -3333,9 +3332,8 @@ void Preprocessor::HandleIfDirective(Token &IfToken,
   // Parse and evaluate the conditional expression.
   IdentifierInfo *IfNDefMacro = nullptr;
 #ifdef SYCLomatic_CUSTOMIZATION
-  IsEvaluatingExpression = true;
-  const DirectiveEvalResult DER = EvaluateDirectiveExpression(IfNDefMacro);
-  IsEvaluatingExpression = false;
+  const DirectiveEvalResult DER =
+      EvaluateDirectiveExpressionWithGuard(IfNDefMacro);
 #else
   const DirectiveEvalResult DER = EvaluateDirectiveExpression(IfNDefMacro);
 #endif // SYCLomatic_CUSTOMIZATION

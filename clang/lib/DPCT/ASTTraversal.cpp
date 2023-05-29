@@ -55,8 +55,7 @@ using namespace clang::tooling;
 
 namespace clang {
 extern bool ProcessingCudaRTVersionMacro;
-extern std::vector<std::tuple<SourceRange /*range*/, bool /*evaluated value*/,
-                              bool /*is define expr*/>>
+extern std::vector<std::pair<SourceRange /*range*/, bool /*evaluated value*/>>
     ReplaceInfo;
 } // namespace clang
 
@@ -755,28 +754,24 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange,
             Repl = std::make_shared<ReplaceInclude>(
                 InsertRange, "(SYCL_LANGUAGE_VERSION < 202000)");
           }
-          TransformSet.emplace_back(Repl);
-        } else {
+        } else if (!ReplaceInfo.empty()) {
           for (const auto Info : ReplaceInfo) {
-            EnableBlock = std::get<1>(Info);
-            SourceLocation NewEnd = std::get<0>(Info).getEnd().getLocWithOffset(
-                Lexer::MeasureTokenLength(
-                    std::get<0>(Info).getEnd(), SM,
+            EnableBlock = Info.second;
+            SourceLocation NewEnd =
+                Info.first.getEnd().getLocWithOffset(Lexer::MeasureTokenLength(
+                    Info.first.getEnd(), SM,
                     DpctGlobalInfo::getInstance().getContext().getLangOpts()));
             InsertRange = CharSourceRange(
-                SourceRange(std::get<0>(Info).getBegin(), NewEnd), false);
-            if (std::get<2>(Info)) {
-              Repl = std::make_shared<ReplaceInclude>(
-                  InsertRange, "defined(SYCL_LANGUAGE_VERSION)");
-            } else if (EnableBlock) {
+                SourceRange(Info.first.getBegin(), NewEnd), false);
+            if (EnableBlock) {
               Repl = std::make_shared<ReplaceInclude>(
                   InsertRange, "(SYCL_LANGUAGE_VERSION >= 202000)");
             } else {
               Repl = std::make_shared<ReplaceInclude>(
                   InsertRange, "(SYCL_LANGUAGE_VERSION < 202000)");
             }
-            TransformSet.emplace_back(Repl);
           }
+          ReplaceInfo.clear();
         }
         TransformSet.emplace_back(Repl);
       } else if ((MacroName != "__CUDACC__" ||
