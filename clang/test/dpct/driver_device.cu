@@ -70,7 +70,7 @@ int main(){
   // CHECK: *((int *)pdevice) = 0;
   cuDeviceGet((CUdevice *)pdevice, 0);
 
-  // CHECK: MY_SAFE_CALL(CHECK_SYCL_ERROR(device = 0));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(device = 0));
   MY_SAFE_CALL(cuDeviceGet(&device, 0));
 
   // CHECK: /*
@@ -132,7 +132,7 @@ int main(){
   // CHECK: result1 = dpct::dev_mgr::instance().get_device(device).get_max_work_group_size();
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, device);
 
-  // CHECK: MY_SAFE_CALL(CHECK_SYCL_ERROR(result1 = dpct::dev_mgr::instance().get_device(device).get_max_compute_units()));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(result1 = dpct::dev_mgr::instance().get_device(device).get_max_compute_units()));
   MY_SAFE_CALL(cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, device));
 
   // CHECK: /*
@@ -158,13 +158,13 @@ int main(){
   // CHECK-NEXT: result1 = std::stoi(dpct::get_current_device().get_info<sycl::info::device::version>());
   cuDriverGetVersion(&result1);
 
-  // CHECK: MY_SAFE_CALL(CHECK_SYCL_ERROR(result1 = dpct::dev_mgr::instance().device_count()));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(result1 = dpct::dev_mgr::instance().device_count()));
   MY_SAFE_CALL(cuDeviceGetCount(&result1));
 
   // CHECK: result1 = dpct::dev_mgr::instance().device_count();
   cuDeviceGetCount(&result1);
 
-  // CHECK: MY_SAFE_CALL(CHECK_SYCL_ERROR(result1 = dpct::dev_mgr::instance().device_count()));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(result1 = dpct::dev_mgr::instance().device_count()));
   MY_SAFE_CALL(cuDeviceGetCount(&result1));
 
   char name[100];
@@ -172,7 +172,7 @@ int main(){
   // CHECK: memcpy(name, dpct::dev_mgr::instance().get_device(device).get_info<sycl::info::device::name>().c_str(), 90);
   cuDeviceGetName(name, 90, device);
 
-  // CHECK: MY_SAFE_CALL(CHECK_SYCL_ERROR(memcpy(name, dpct::dev_mgr::instance().get_device(device).get_info<sycl::info::device::name>().c_str(), 90)));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(memcpy(name, dpct::dev_mgr::instance().get_device(device).get_info<sycl::info::device::name>().c_str(), 90)));
   MY_SAFE_CALL(cuDeviceGetName(name, 90, device));
   // CHECK: size = dpct::dev_mgr::instance().get_device(device).get_device_info().get_global_mem_size();
   cuDeviceTotalMem(&size, device);

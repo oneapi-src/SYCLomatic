@@ -56,7 +56,7 @@ int main() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
 
-  // CHECK: int status = CHECK_SYCL_ERROR(C_S = (float *)sycl::malloc_device((n)*(elemSize), q_ct1));
+  // CHECK: int status = DPCT_CHECK_ERROR(C_S = (float *)sycl::malloc_device((n)*(elemSize), q_ct1));
   // CHECK-NEXT: C_S = (float *)sycl::malloc_device((n)*(elemSize), q_ct1);
   cublasStatus status = cublasAlloc(n, elemSize, (void **)&C_S);
   cublasAlloc(n, elemSize, (void **)&C_S);
@@ -244,7 +244,7 @@ int foo(){
 
 void foo2() {
   int ver;
-  // CHECK: int err = CHECK_SYCL_ERROR(dpct::mkl_get_version(dpct::version_field::major, &ver));
+  // CHECK: int err = DPCT_CHECK_ERROR(dpct::mkl_get_version(dpct::version_field::major, &ver));
   int err = cublasGetVersion(&ver);
 }
 

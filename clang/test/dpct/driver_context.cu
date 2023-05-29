@@ -42,25 +42,25 @@ int main(){
   // CHECK-NEXT: */
   cuDevicePrimaryCtxRelease(device);
 
-  // CHECK: MY_SAFE_CALL(CHECK_SYCL_ERROR(ctx = dpct::select_device(device)));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(ctx = dpct::select_device(device)));
   MY_SAFE_CALL(cuCtxCreate(&ctx, CU_CTX_LMEM_RESIZE_TO_MAX, device));
 
   // CHECK: dpct::select_device(ctx);
   cuCtxSetCurrent(ctx);
 
-  // CHECK: MY_SAFE_CALL(CHECK_SYCL_ERROR(dpct::select_device(ctx)));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::select_device(ctx)));
   MY_SAFE_CALL(cuCtxSetCurrent(ctx));
 
   // CHECK: ctx2 = dpct::dev_mgr::instance().current_device_id();
   cuCtxGetCurrent(&ctx2);
 
-  // CHECK: MY_SAFE_CALL(CHECK_SYCL_ERROR(ctx2 = dpct::dev_mgr::instance().current_device_id()));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(ctx2 = dpct::dev_mgr::instance().current_device_id()));
   MY_SAFE_CALL(cuCtxGetCurrent(&ctx2));
 
   // CHECK: dpct::get_current_device().queues_wait_and_throw();
   cuCtxSynchronize();
 
-  // CHECK: MY_SAFE_CALL(CHECK_SYCL_ERROR(dpct::get_current_device().queues_wait_and_throw()));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::get_current_device().queues_wait_and_throw()));
   MY_SAFE_CALL(cuCtxSynchronize());
 
   // CHECK: /*

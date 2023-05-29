@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 
     //CHECK: {
     //CHECK-NEXT: std::int64_t lda_ct;
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::gebrd_scratchpad_size<float>(**cusolverH, m, n, lda_ct));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::gebrd_scratchpad_size<float>(**cusolverH, m, n, lda_ct));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: std::int64_t lda_ct;
@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: auto TAUQ_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&TAUQ_f);
     //CHECK-NEXT: auto TAUP_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&TAUP_f);
     //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&workspace_f);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::gebrd(**cusolverH, m, n, A_f_buf_ct{{[0-9]+}}, lda, D_f_buf_ct{{[0-9]+}}, E_f_buf_ct{{[0-9]+}}, TAUQ_f_buf_ct{{[0-9]+}}, TAUP_f_buf_ct{{[0-9]+}}, workspace_f_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::gebrd(**cusolverH, m, n, A_f_buf_ct{{[0-9]+}}, lda, D_f_buf_ct{{[0-9]+}}, E_f_buf_ct{{[0-9]+}}, TAUQ_f_buf_ct{{[0-9]+}}, TAUP_f_buf_ct{{[0-9]+}}, workspace_f_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
 
     //CHECK: {
     //CHECK-NEXT: std::int64_t lda_ct;
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::gebrd_scratchpad_size<double>(**cusolverH, m, n, lda_ct));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::gebrd_scratchpad_size<double>(**cusolverH, m, n, lda_ct));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: std::int64_t lda_ct;
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: auto TAUQ_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&TAUQ_d);
     //CHECK-NEXT: auto TAUP_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&TAUP_d);
     //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&workspace_d);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::gebrd(**cusolverH, m, n, A_d_buf_ct{{[0-9]+}}, lda, D_d_buf_ct{{[0-9]+}}, E_d_buf_ct{{[0-9]+}}, TAUQ_d_buf_ct{{[0-9]+}}, TAUP_d_buf_ct{{[0-9]+}}, workspace_d_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::gebrd(**cusolverH, m, n, A_d_buf_ct{{[0-9]+}}, lda, D_d_buf_ct{{[0-9]+}}, E_d_buf_ct{{[0-9]+}}, TAUQ_d_buf_ct{{[0-9]+}}, TAUP_d_buf_ct{{[0-9]+}}, workspace_d_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
 
     //CHECK: {
     //CHECK-NEXT: std::int64_t lda_ct;
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::gebrd_scratchpad_size<std::complex<float>>(**cusolverH, m, n, lda_ct));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::gebrd_scratchpad_size<std::complex<float>>(**cusolverH, m, n, lda_ct));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: std::int64_t lda_ct;
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: auto TAUQ_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&TAUQ_c);
     //CHECK-NEXT: auto TAUP_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&TAUP_c);
     //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&workspace_c);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::gebrd(**cusolverH, m, n, A_c_buf_ct{{[0-9]+}}, lda, D_f_buf_ct{{[0-9]+}}, E_f_buf_ct{{[0-9]+}}, TAUQ_c_buf_ct{{[0-9]+}}, TAUP_c_buf_ct{{[0-9]+}}, workspace_c_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::gebrd(**cusolverH, m, n, A_c_buf_ct{{[0-9]+}}, lda, D_f_buf_ct{{[0-9]+}}, E_f_buf_ct{{[0-9]+}}, TAUQ_c_buf_ct{{[0-9]+}}, TAUP_c_buf_ct{{[0-9]+}}, workspace_c_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
@@ -196,7 +196,7 @@ int main(int argc, char *argv[])
 
     //CHECK: {
     //CHECK-NEXT: std::int64_t lda_ct;
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::gebrd_scratchpad_size<std::complex<double>>(**cusolverH, m, n, lda_ct));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::gebrd_scratchpad_size<std::complex<double>>(**cusolverH, m, n, lda_ct));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: std::int64_t lda_ct;
@@ -209,7 +209,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: auto TAUQ_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&TAUQ_z);
     //CHECK-NEXT: auto TAUP_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&TAUP_z);
     //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&workspace_z);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::gebrd(**cusolverH, m, n, A_z_buf_ct{{[0-9]+}}, lda, D_d_buf_ct{{[0-9]+}}, E_d_buf_ct{{[0-9]+}}, TAUQ_z_buf_ct{{[0-9]+}}, TAUP_z_buf_ct{{[0-9]+}}, workspace_z_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::gebrd(**cusolverH, m, n, A_z_buf_ct{{[0-9]+}}, lda, D_d_buf_ct{{[0-9]+}}, E_d_buf_ct{{[0-9]+}}, TAUQ_z_buf_ct{{[0-9]+}}, TAUP_z_buf_ct{{[0-9]+}}, workspace_z_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
@@ -226,13 +226,13 @@ int main(int argc, char *argv[])
     cusolverDnZgebrd(*cusolverH, m, n, &A_z, lda, &D_d, &E_d, &TAUQ_z, &TAUP_z, &workspace_z, Lwork, &devInfo);
 
 
-    //CHECK: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::orgbr_scratchpad_size<float>(**cusolverH, (oneapi::mkl::generate)side, m, n, k, lda));
+    //CHECK: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::orgbr_scratchpad_size<float>(**cusolverH, (oneapi::mkl::generate)side, m, n, k, lda));
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::orgbr_scratchpad_size<float>(**cusolverH, (oneapi::mkl::generate)side, m, n, k, lda);
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
     //CHECK-NEXT: auto TAU_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&TAU_f);
     //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&workspace_f);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::orgbr(**cusolverH, (oneapi::mkl::generate)side, m, n, k, A_f_buf_ct{{[0-9]+}}, lda, TAU_f_buf_ct{{[0-9]+}}, workspace_f_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::orgbr(**cusolverH, (oneapi::mkl::generate)side, m, n, k, A_f_buf_ct{{[0-9]+}}, lda, TAU_f_buf_ct{{[0-9]+}}, workspace_f_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
@@ -246,13 +246,13 @@ int main(int argc, char *argv[])
     cusolverDnSorgbr(*cusolverH, side, m, n, k, &A_f, lda, &TAU_f, &workspace_f, Lwork, &devInfo);
 
 
-    //CHECK: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::orgbr_scratchpad_size<double>(**cusolverH, (oneapi::mkl::generate)side, m, n, k, lda));
+    //CHECK: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::orgbr_scratchpad_size<double>(**cusolverH, (oneapi::mkl::generate)side, m, n, k, lda));
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::orgbr_scratchpad_size<double>(**cusolverH, (oneapi::mkl::generate)side, m, n, k, lda);
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
     //CHECK-NEXT: auto TAU_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&TAU_d);
     //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&workspace_d);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::orgbr(**cusolverH, (oneapi::mkl::generate)side, m, n, k, A_d_buf_ct{{[0-9]+}}, lda, TAU_d_buf_ct{{[0-9]+}}, workspace_d_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::orgbr(**cusolverH, (oneapi::mkl::generate)side, m, n, k, A_d_buf_ct{{[0-9]+}}, lda, TAU_d_buf_ct{{[0-9]+}}, workspace_d_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
@@ -265,13 +265,13 @@ int main(int argc, char *argv[])
     status = cusolverDnDorgbr(*cusolverH, side, m, n, k, &A_d, lda, &TAU_d, &workspace_d, Lwork, &devInfo);
     cusolverDnDorgbr(*cusolverH, side, m, n, k, &A_d, lda, &TAU_d, &workspace_d, Lwork, &devInfo);
 
-    //CHECK: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::ungbr_scratchpad_size<std::complex<float>>(**cusolverH, (oneapi::mkl::generate)side, m, n, k, lda));
+    //CHECK: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::ungbr_scratchpad_size<std::complex<float>>(**cusolverH, (oneapi::mkl::generate)side, m, n, k, lda));
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::ungbr_scratchpad_size<std::complex<float>>(**cusolverH, (oneapi::mkl::generate)side, m, n, k, lda);
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
     //CHECK-NEXT: auto TAU_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&TAU_c);
     //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&workspace_c);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::ungbr(**cusolverH, (oneapi::mkl::generate)side, m, n, k, A_c_buf_ct{{[0-9]+}}, lda, TAU_c_buf_ct{{[0-9]+}}, workspace_c_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::ungbr(**cusolverH, (oneapi::mkl::generate)side, m, n, k, A_c_buf_ct{{[0-9]+}}, lda, TAU_c_buf_ct{{[0-9]+}}, workspace_c_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
@@ -284,13 +284,13 @@ int main(int argc, char *argv[])
     status = cusolverDnCungbr(*cusolverH, side, m, n, k, &A_c, lda, &TAU_c, &workspace_c, Lwork, &devInfo);
     cusolverDnCungbr(*cusolverH, side, m, n, k, &A_c, lda, &TAU_c, &workspace_c, Lwork, &devInfo);
 
-    //CHECK: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::ungbr_scratchpad_size<std::complex<double>>(**cusolverH, (oneapi::mkl::generate)side, m, n, k, lda));
+    //CHECK: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::ungbr_scratchpad_size<std::complex<double>>(**cusolverH, (oneapi::mkl::generate)side, m, n, k, lda));
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::ungbr_scratchpad_size<std::complex<double>>(**cusolverH, (oneapi::mkl::generate)side, m, n, k, lda);
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
     //CHECK-NEXT: auto TAU_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&TAU_z);
     //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&workspace_z);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::ungbr(**cusolverH, (oneapi::mkl::generate)side, m, n, k, A_z_buf_ct{{[0-9]+}}, lda, TAU_z_buf_ct{{[0-9]+}}, workspace_z_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::ungbr(**cusolverH, (oneapi::mkl::generate)side, m, n, k, A_z_buf_ct{{[0-9]+}}, lda, TAU_z_buf_ct{{[0-9]+}}, workspace_z_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
@@ -304,7 +304,7 @@ int main(int argc, char *argv[])
     cusolverDnZungbr(*cusolverH, side, m, n, k, &A_z, lda, &TAU_z, &workspace_z, Lwork, &devInfo);
 
 
-    //CHECK: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::sytrd_scratchpad_size<float>(**cusolverH, uplo, n, lda));
+    //CHECK: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::sytrd_scratchpad_size<float>(**cusolverH, uplo, n, lda));
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::sytrd_scratchpad_size<float>(**cusolverH, uplo, n, lda);
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
@@ -312,7 +312,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: auto E_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&E_f);
     //CHECK-NEXT: auto TAU_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&TAU_f);
     //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&workspace_f);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::sytrd(**cusolverH, uplo, n, A_f_buf_ct{{[0-9]+}}, lda, D_f_buf_ct{{[0-9]+}}, E_f_buf_ct{{[0-9]+}}, TAU_f_buf_ct{{[0-9]+}}, workspace_f_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::sytrd(**cusolverH, uplo, n, A_f_buf_ct{{[0-9]+}}, lda, D_f_buf_ct{{[0-9]+}}, E_f_buf_ct{{[0-9]+}}, TAU_f_buf_ct{{[0-9]+}}, workspace_f_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
@@ -327,7 +327,7 @@ int main(int argc, char *argv[])
     status = cusolverDnSsytrd(*cusolverH, uplo, n, &A_f, lda, &D_f, &E_f, &TAU_f, &workspace_f, Lwork, &devInfo);
     cusolverDnSsytrd(*cusolverH, uplo, n, &A_f, lda, &D_f, &E_f, &TAU_f, &workspace_f, Lwork, &devInfo);
 
-    //CHECK: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::sytrd_scratchpad_size<double>(**cusolverH, uplo, n, lda));
+    //CHECK: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::sytrd_scratchpad_size<double>(**cusolverH, uplo, n, lda));
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::sytrd_scratchpad_size<double>(**cusolverH, uplo, n, lda);
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
@@ -335,7 +335,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: auto E_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&E_d);
     //CHECK-NEXT: auto TAU_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&TAU_d);
     //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&workspace_d);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::sytrd(**cusolverH, uplo, n, A_d_buf_ct{{[0-9]+}}, lda, D_d_buf_ct{{[0-9]+}}, E_d_buf_ct{{[0-9]+}}, TAU_d_buf_ct{{[0-9]+}}, workspace_d_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::sytrd(**cusolverH, uplo, n, A_d_buf_ct{{[0-9]+}}, lda, D_d_buf_ct{{[0-9]+}}, E_d_buf_ct{{[0-9]+}}, TAU_d_buf_ct{{[0-9]+}}, workspace_d_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
@@ -350,7 +350,7 @@ int main(int argc, char *argv[])
     status = cusolverDnDsytrd(*cusolverH, uplo, n, &A_d, lda, &D_d, &E_d, &TAU_d, &workspace_d, Lwork, &devInfo);
     cusolverDnDsytrd(*cusolverH, uplo, n, &A_d, lda, &D_d, &E_d, &TAU_d, &workspace_d, Lwork, &devInfo);
 
-    //CHECK: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::hetrd_scratchpad_size<std::complex<float>>(**cusolverH, uplo, n, lda));
+    //CHECK: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::hetrd_scratchpad_size<std::complex<float>>(**cusolverH, uplo, n, lda));
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::hetrd_scratchpad_size<std::complex<float>>(**cusolverH, uplo, n, lda);
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
@@ -358,7 +358,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: auto E_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&E_f);
     //CHECK-NEXT: auto TAU_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&TAU_c);
     //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&workspace_c);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::hetrd(**cusolverH, uplo, n, A_c_buf_ct{{[0-9]+}}, lda, D_f_buf_ct{{[0-9]+}}, E_f_buf_ct{{[0-9]+}}, TAU_c_buf_ct{{[0-9]+}}, workspace_c_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::hetrd(**cusolverH, uplo, n, A_c_buf_ct{{[0-9]+}}, lda, D_f_buf_ct{{[0-9]+}}, E_f_buf_ct{{[0-9]+}}, TAU_c_buf_ct{{[0-9]+}}, workspace_c_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
@@ -373,7 +373,7 @@ int main(int argc, char *argv[])
     status = cusolverDnChetrd(*cusolverH, uplo, n, &A_c, lda, &D_f, &E_f, &TAU_c, &workspace_c, Lwork, &devInfo);
     cusolverDnChetrd(*cusolverH, uplo, n, &A_c, lda, &D_f, &E_f, &TAU_c, &workspace_c, Lwork, &devInfo);
 
-    //CHECK: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::hetrd_scratchpad_size<std::complex<double>>(**cusolverH, uplo, n, lda));
+    //CHECK: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::hetrd_scratchpad_size<std::complex<double>>(**cusolverH, uplo, n, lda));
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::hetrd_scratchpad_size<std::complex<double>>(**cusolverH, uplo, n, lda);
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
@@ -381,7 +381,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: auto E_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&E_d);
     //CHECK-NEXT: auto TAU_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&TAU_z);
     //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&workspace_z);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::hetrd(**cusolverH, uplo, n, A_z_buf_ct{{[0-9]+}}, lda, D_d_buf_ct{{[0-9]+}}, E_d_buf_ct{{[0-9]+}}, TAU_z_buf_ct{{[0-9]+}}, workspace_z_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::hetrd(**cusolverH, uplo, n, A_z_buf_ct{{[0-9]+}}, lda, D_d_buf_ct{{[0-9]+}}, E_d_buf_ct{{[0-9]+}}, TAU_z_buf_ct{{[0-9]+}}, workspace_z_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
@@ -396,14 +396,14 @@ int main(int argc, char *argv[])
     status = cusolverDnZhetrd(*cusolverH, uplo, n, &A_z, lda, &D_d, &E_d, &TAU_z, &workspace_z, Lwork, &devInfo);
     cusolverDnZhetrd(*cusolverH, uplo, n, &A_z, lda, &D_d, &E_d, &TAU_z, &workspace_z, Lwork, &devInfo);
 
-    //CHECK: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::ormtr_scratchpad_size<float>(**cusolverH, side, uplo, trans, m, n, lda, ldb));
+    //CHECK: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::ormtr_scratchpad_size<float>(**cusolverH, side, uplo, trans, m, n, lda, ldb));
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::ormtr_scratchpad_size<float>(**cusolverH, side, uplo, trans, m, n, lda, ldb);
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
     //CHECK-NEXT: auto TAU_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&TAU_f);
     //CHECK-NEXT: auto B_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&B_f);
     //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&workspace_f);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::ormtr(**cusolverH, side, uplo, trans, m, n, A_f_buf_ct{{[0-9]+}}, lda, TAU_f_buf_ct{{[0-9]+}}, B_f_buf_ct{{[0-9]+}}, ldb, workspace_f_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::ormtr(**cusolverH, side, uplo, trans, m, n, A_f_buf_ct{{[0-9]+}}, lda, TAU_f_buf_ct{{[0-9]+}}, B_f_buf_ct{{[0-9]+}}, ldb, workspace_f_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
@@ -417,14 +417,14 @@ int main(int argc, char *argv[])
     status = cusolverDnSormtr(*cusolverH, side, uplo, trans, m, n, &A_f, lda, &TAU_f, &B_f, ldb, &workspace_f, Lwork, &devInfo);
     cusolverDnSormtr(*cusolverH, side, uplo, trans, m, n, &A_f, lda, &TAU_f, &B_f, ldb, &workspace_f, Lwork, &devInfo);
 
-    //CHECK: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::ormtr_scratchpad_size<double>(**cusolverH, side, uplo, trans, m, n, lda, ldb));
+    //CHECK: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::ormtr_scratchpad_size<double>(**cusolverH, side, uplo, trans, m, n, lda, ldb));
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::ormtr_scratchpad_size<double>(**cusolverH, side, uplo, trans, m, n, lda, ldb);
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
     //CHECK-NEXT: auto TAU_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&TAU_d);
     //CHECK-NEXT: auto B_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&B_d);
     //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&workspace_d);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::ormtr(**cusolverH, side, uplo, trans, m, n, A_d_buf_ct{{[0-9]+}}, lda, TAU_d_buf_ct{{[0-9]+}}, B_d_buf_ct{{[0-9]+}}, ldb, workspace_d_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::ormtr(**cusolverH, side, uplo, trans, m, n, A_d_buf_ct{{[0-9]+}}, lda, TAU_d_buf_ct{{[0-9]+}}, B_d_buf_ct{{[0-9]+}}, ldb, workspace_d_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
@@ -438,14 +438,14 @@ int main(int argc, char *argv[])
     status = cusolverDnDormtr(*cusolverH, side, uplo, trans, m, n, &A_d, lda, &TAU_d, &B_d, ldb, &workspace_d, Lwork, &devInfo);
     cusolverDnDormtr(*cusolverH, side, uplo, trans, m, n, &A_d, lda, &TAU_d, &B_d, ldb, &workspace_d, Lwork, &devInfo);
 
-    //CHECK: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::unmtr_scratchpad_size<std::complex<float>>(**cusolverH, side, uplo, trans, m, n, lda, ldb));
+    //CHECK: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::unmtr_scratchpad_size<std::complex<float>>(**cusolverH, side, uplo, trans, m, n, lda, ldb));
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::unmtr_scratchpad_size<std::complex<float>>(**cusolverH, side, uplo, trans, m, n, lda, ldb);
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
     //CHECK-NEXT: auto TAU_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&TAU_c);
     //CHECK-NEXT: auto B_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&B_c);
     //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&workspace_c);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::unmtr(**cusolverH, side, uplo, trans, m, n, A_c_buf_ct{{[0-9]+}}, lda, TAU_c_buf_ct{{[0-9]+}}, B_c_buf_ct{{[0-9]+}}, ldb, workspace_c_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::unmtr(**cusolverH, side, uplo, trans, m, n, A_c_buf_ct{{[0-9]+}}, lda, TAU_c_buf_ct{{[0-9]+}}, B_c_buf_ct{{[0-9]+}}, ldb, workspace_c_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
@@ -459,14 +459,14 @@ int main(int argc, char *argv[])
     status = cusolverDnCunmtr(*cusolverH, side, uplo, trans, m, n, &A_c, lda, &TAU_c, &B_c, ldb, &workspace_c, Lwork, &devInfo);
     cusolverDnCunmtr(*cusolverH, side, uplo, trans, m, n, &A_c, lda, &TAU_c, &B_c, ldb, &workspace_c, Lwork, &devInfo);
 
-    //CHECK: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::unmtr_scratchpad_size<std::complex<double>>(**cusolverH, side, uplo, trans, m, n, lda, ldb));
+    //CHECK: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::unmtr_scratchpad_size<std::complex<double>>(**cusolverH, side, uplo, trans, m, n, lda, ldb));
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::unmtr_scratchpad_size<std::complex<double>>(**cusolverH, side, uplo, trans, m, n, lda, ldb);
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
     //CHECK-NEXT: auto TAU_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&TAU_z);
     //CHECK-NEXT: auto B_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&B_z);
     //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&workspace_z);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::unmtr(**cusolverH, side, uplo, trans, m, n, A_z_buf_ct{{[0-9]+}}, lda, TAU_z_buf_ct{{[0-9]+}}, B_z_buf_ct{{[0-9]+}}, ldb, workspace_z_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::unmtr(**cusolverH, side, uplo, trans, m, n, A_z_buf_ct{{[0-9]+}}, lda, TAU_z_buf_ct{{[0-9]+}}, B_z_buf_ct{{[0-9]+}}, ldb, workspace_z_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
@@ -480,13 +480,13 @@ int main(int argc, char *argv[])
     status = cusolverDnZunmtr(*cusolverH, side, uplo, trans, m, n, &A_z, lda, &TAU_z, &B_z, ldb, &workspace_z, Lwork, &devInfo);
     cusolverDnZunmtr(*cusolverH, side, uplo, trans, m, n, &A_z, lda, &TAU_z, &B_z, ldb, &workspace_z, Lwork, &devInfo);
 
-    //CHECK: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::orgtr_scratchpad_size<float>(**cusolverH, uplo, n, lda));
+    //CHECK: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::orgtr_scratchpad_size<float>(**cusolverH, uplo, n, lda));
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::orgtr_scratchpad_size<float>(**cusolverH, uplo, n, lda);
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
     //CHECK-NEXT: auto TAU_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&TAU_f);
     //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&workspace_f);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::orgtr(**cusolverH, uplo, n, A_f_buf_ct{{[0-9]+}}, lda, TAU_f_buf_ct{{[0-9]+}}, workspace_f_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::orgtr(**cusolverH, uplo, n, A_f_buf_ct{{[0-9]+}}, lda, TAU_f_buf_ct{{[0-9]+}}, workspace_f_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
@@ -499,13 +499,13 @@ int main(int argc, char *argv[])
     status = cusolverDnSorgtr(*cusolverH, uplo, n, &A_f, lda, &TAU_f, &workspace_f, Lwork, &devInfo);
     cusolverDnSorgtr(*cusolverH, uplo, n, &A_f, lda, &TAU_f, &workspace_f, Lwork, &devInfo);
 
-    //CHECK: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::orgtr_scratchpad_size<double>(**cusolverH, uplo, n, lda));
+    //CHECK: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::orgtr_scratchpad_size<double>(**cusolverH, uplo, n, lda));
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::orgtr_scratchpad_size<double>(**cusolverH, uplo, n, lda);
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
     //CHECK-NEXT: auto TAU_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&TAU_d);
     //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&workspace_d);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::orgtr(**cusolverH, uplo, n, A_d_buf_ct{{[0-9]+}}, lda, TAU_d_buf_ct{{[0-9]+}}, workspace_d_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::orgtr(**cusolverH, uplo, n, A_d_buf_ct{{[0-9]+}}, lda, TAU_d_buf_ct{{[0-9]+}}, workspace_d_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
@@ -518,13 +518,13 @@ int main(int argc, char *argv[])
     status = cusolverDnDorgtr(*cusolverH, uplo, n, &A_d, lda, &TAU_d, &workspace_d, Lwork, &devInfo);
     cusolverDnDorgtr(*cusolverH, uplo, n, &A_d, lda, &TAU_d, &workspace_d, Lwork, &devInfo);
 
-    //CHECK: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::ungtr_scratchpad_size<std::complex<float>>(**cusolverH, uplo, n, lda));
+    //CHECK: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::ungtr_scratchpad_size<std::complex<float>>(**cusolverH, uplo, n, lda));
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::ungtr_scratchpad_size<std::complex<float>>(**cusolverH, uplo, n, lda);
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
     //CHECK-NEXT: auto TAU_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&TAU_c);
     //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&workspace_c);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::ungtr(**cusolverH, uplo, n, A_c_buf_ct{{[0-9]+}}, lda, TAU_c_buf_ct{{[0-9]+}}, workspace_c_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::ungtr(**cusolverH, uplo, n, A_c_buf_ct{{[0-9]+}}, lda, TAU_c_buf_ct{{[0-9]+}}, workspace_c_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
@@ -537,13 +537,13 @@ int main(int argc, char *argv[])
     status = cusolverDnCungtr(*cusolverH, uplo, n, &A_c, lda, &TAU_c, &workspace_c, Lwork, &devInfo);
     cusolverDnCungtr(*cusolverH, uplo, n, &A_c, lda, &TAU_c, &workspace_c, Lwork, &devInfo);
 
-    //CHECK: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::ungtr_scratchpad_size<std::complex<double>>(**cusolverH, uplo, n, lda));
+    //CHECK: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::ungtr_scratchpad_size<std::complex<double>>(**cusolverH, uplo, n, lda));
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::ungtr_scratchpad_size<std::complex<double>>(**cusolverH, uplo, n, lda);
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
     //CHECK-NEXT: auto TAU_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&TAU_z);
     //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&workspace_z);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::ungtr(**cusolverH, uplo, n, A_z_buf_ct{{[0-9]+}}, lda, TAU_z_buf_ct{{[0-9]+}}, workspace_z_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::ungtr(**cusolverH, uplo, n, A_z_buf_ct{{[0-9]+}}, lda, TAU_z_buf_ct{{[0-9]+}}, workspace_z_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
@@ -560,7 +560,7 @@ int main(int argc, char *argv[])
     //CHECK: {
     //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobu;
     //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobvt;
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::gesvd_scratchpad_size<float>(**cusolverH, job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::gesvd_scratchpad_size<float>(**cusolverH, job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobu;
@@ -573,7 +573,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: auto U_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&U_f);
     //CHECK-NEXT: auto VT_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&VT_f);
     //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&workspace_f);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::jobsvd)jobu, (oneapi::mkl::jobsvd)jobvt, m, n, A_f_buf_ct{{[0-9]+}}, lda, S_f_buf_ct{{[0-9]+}}, U_f_buf_ct{{[0-9]+}}, ldu, VT_f_buf_ct{{[0-9]+}}, ldvt, workspace_f_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::jobsvd)jobu, (oneapi::mkl::jobsvd)jobvt, m, n, A_f_buf_ct{{[0-9]+}}, lda, S_f_buf_ct{{[0-9]+}}, U_f_buf_ct{{[0-9]+}}, ldu, VT_f_buf_ct{{[0-9]+}}, ldvt, workspace_f_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
@@ -591,7 +591,7 @@ int main(int argc, char *argv[])
     //CHECK: {
     //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobu;
     //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobvt;
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::gesvd_scratchpad_size<double>(**cusolverH, job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::gesvd_scratchpad_size<double>(**cusolverH, job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobu;
@@ -604,7 +604,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: auto U_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&U_d);
     //CHECK-NEXT: auto VT_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&VT_d);
     //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&workspace_d);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::jobsvd)jobu, (oneapi::mkl::jobsvd)jobvt, m, n, A_d_buf_ct{{[0-9]+}}, lda, S_d_buf_ct{{[0-9]+}}, U_d_buf_ct{{[0-9]+}}, ldu, VT_d_buf_ct{{[0-9]+}}, ldvt, workspace_d_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::jobsvd)jobu, (oneapi::mkl::jobsvd)jobvt, m, n, A_d_buf_ct{{[0-9]+}}, lda, S_d_buf_ct{{[0-9]+}}, U_d_buf_ct{{[0-9]+}}, ldu, VT_d_buf_ct{{[0-9]+}}, ldvt, workspace_d_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
@@ -622,7 +622,7 @@ int main(int argc, char *argv[])
     //CHECK: {
     //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobu;
     //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobvt;
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::gesvd_scratchpad_size<std::complex<float>>(**cusolverH, job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::gesvd_scratchpad_size<std::complex<float>>(**cusolverH, job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobu;
@@ -635,7 +635,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: auto U_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&U_c);
     //CHECK-NEXT: auto VT_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&VT_c);
     //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&workspace_c);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::jobsvd)jobu, (oneapi::mkl::jobsvd)jobvt, m, n, A_c_buf_ct{{[0-9]+}}, lda, S_f_buf_ct{{[0-9]+}}, U_c_buf_ct{{[0-9]+}}, ldu, VT_c_buf_ct{{[0-9]+}}, ldvt, workspace_c_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::jobsvd)jobu, (oneapi::mkl::jobsvd)jobvt, m, n, A_c_buf_ct{{[0-9]+}}, lda, S_f_buf_ct{{[0-9]+}}, U_c_buf_ct{{[0-9]+}}, ldu, VT_c_buf_ct{{[0-9]+}}, ldvt, workspace_c_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
@@ -653,7 +653,7 @@ int main(int argc, char *argv[])
     //CHECK: {
     //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobu;
     //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobvt;
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::gesvd_scratchpad_size<std::complex<double>>(**cusolverH, job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::gesvd_scratchpad_size<std::complex<double>>(**cusolverH, job_ct_mkl_jobu, job_ct_mkl_jobvt, m, n, m, m, n));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: oneapi::mkl::jobsvd job_ct_mkl_jobu;
@@ -666,7 +666,7 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: auto U_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&U_z);
     //CHECK-NEXT: auto VT_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&VT_z);
     //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&workspace_z);
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::jobsvd)jobu, (oneapi::mkl::jobsvd)jobvt, m, n, A_z_buf_ct{{[0-9]+}}, lda, S_d_buf_ct{{[0-9]+}}, U_z_buf_ct{{[0-9]+}}, ldu, VT_z_buf_ct{{[0-9]+}}, ldvt, workspace_z_buf_ct{{[0-9]+}}, Lwork));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::lapack::gesvd (**cusolverH, (oneapi::mkl::jobsvd)jobu, (oneapi::mkl::jobsvd)jobvt, m, n, A_z_buf_ct{{[0-9]+}}, lda, S_d_buf_ct{{[0-9]+}}, U_z_buf_ct{{[0-9]+}}, ldu, VT_z_buf_ct{{[0-9]+}}, ldvt, workspace_z_buf_ct{{[0-9]+}}, Lwork));
     //CHECK-NEXT: }
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);

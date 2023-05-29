@@ -21,7 +21,7 @@ int main() {
 
 #define LDA_MARCO 100
   const int ConstLda = 100;
-  // CHECK: status = CHECK_SYCL_ERROR(dpct::matrix_mem_copy((void*)d_A, (void*)A, 100, LDA_MARCO, 100, colsA, sizeof(A[0])));
+  // CHECK: status = DPCT_CHECK_ERROR(dpct::matrix_mem_copy((void*)d_A, (void*)A, 100, LDA_MARCO, 100, colsA, sizeof(A[0])));
   status = cublasSetMatrix(100, colsA, sizeof(A[0]), A, LDA_MARCO, d_A, 100);
 
   // CHECK: dpct::matrix_mem_copy((void*)d_A, (void*)A, 100, ConstLda, 100, colsA, sizeof(A[0]));
@@ -55,7 +55,7 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1018:{{[0-9]+}}: The cublasSetMatrix was migrated, but due to parameter 99 is smaller than parameter 100, the generated code performance may be sub-optimal.
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(dpct::matrix_mem_copy((void*)d_A, (void*)A, 100, 100, 99, colsA, sizeof(A[0])));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(dpct::matrix_mem_copy((void*)d_A, (void*)A, 100, 100, 99, colsA, sizeof(A[0])));
   status = cublasSetMatrix(99, colsA, sizeof(A[0]), A, 100, d_A, 100);
 
   const int ConstLdaNE = lda;
@@ -85,12 +85,12 @@ int main() {
   // CHECK-NEXT: dpct::matrix_mem_copy((void*)d_A, (void*)A, ConstExprLdb, foo(ConstExprLda), 100, colsA, sizeof(A[0]));
   cublasGetMatrix(100, colsA, sizeof(A[0]), A, foo(ConstExprLda), d_A, ConstExprLdb);
 
-  // CHECK: status = CHECK_SYCL_ERROR(dpct::matrix_mem_copy((void*)d_A, (void*)A, 100, 100, 100, colsA, sizeof(A[0]), dpct::automatic, *stream, true));
+  // CHECK: status = DPCT_CHECK_ERROR(dpct::matrix_mem_copy((void*)d_A, (void*)A, 100, 100, 100, colsA, sizeof(A[0]), dpct::automatic, *stream, true));
   // CHECK-NEXT: dpct::matrix_mem_copy((void*)d_A, (void*)A, 100, 100, 100, colsA, sizeof(A[0]), dpct::automatic, *stream, true);
   status = cublasSetMatrixAsync(100, colsA, sizeof(A[0]), A, 100, d_A, 100, stream);
   cublasSetMatrixAsync(100, colsA, sizeof(A[0]), A, 100, d_A, 100, stream);
 
-  // CHECK: status = CHECK_SYCL_ERROR(dpct::matrix_mem_copy((void*)d_A, (void*)A, 100, 100, 100, colsA, sizeof(A[0]), dpct::automatic, *stream, true));
+  // CHECK: status = DPCT_CHECK_ERROR(dpct::matrix_mem_copy((void*)d_A, (void*)A, 100, 100, 100, colsA, sizeof(A[0]), dpct::automatic, *stream, true));
   // CHECK-NEXT: dpct::matrix_mem_copy((void*)d_A, (void*)A, 100, 100, 100, colsA, sizeof(A[0]), dpct::automatic, *stream, true);
   status = cublasGetMatrixAsync(100, colsA, sizeof(A[0]), A, 100, d_A, 100, stream);
   cublasGetMatrixAsync(100, colsA, sizeof(A[0]), A, 100, d_A, 100, stream);

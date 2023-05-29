@@ -198,7 +198,7 @@ void foo_test_3() {
   cudaStream_t stream[NSTREAM];
 
   for (int i = 0; i < NSTREAM; ++i) {
-    // CHECK:    CHECK(CHECK_SYCL_ERROR(stream[i] = dev_ct1.create_queue()));
+    // CHECK:    CHECK(DPCT_CHECK_ERROR(stream[i] = dev_ct1.create_queue()));
     CHECK(cudaStreamCreate(&stream[i]));
   }
 
@@ -213,7 +213,7 @@ void foo_test_3() {
                           cudaMemcpyHostToDevice, stream[i]));
     sumArrays<<<grid, block, 0, stream[i]>>>(&d_A[ioffset], &d_B[ioffset],
                                              &d_C[ioffset], iElem);
-    //CHECK: CHECK(CHECK_SYCL_ERROR(dpct::async_dpct_memcpy(&gpuRef[ioffset], &d_C[ioffset], iBytes,
+    //CHECK: CHECK(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(&gpuRef[ioffset], &d_C[ioffset], iBytes,
     //CHECK-NEXT:    dpct::device_to_host, *(stream[i]))));
     CHECK(cudaMemcpyAsync(&gpuRef[ioffset], &d_C[ioffset], iBytes,
                           cudaMemcpyDeviceToHost, stream[i]));
@@ -227,7 +227,7 @@ void foo_test_3() {
   // CHECK-NEXT:  */
   // CHECK: dpct::get_current_device().queues_wait_and_throw();
   // CHECK-NEXT: stop_ct1 = std::chrono::steady_clock::now();
-  // CHECK-NEXT: CHECK(CHECK_SYCL_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
+  // CHECK-NEXT: CHECK(DPCT_CHECK_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
   // CHECK-NEXT: CHECK(0);
   }
   CHECK(cudaEventRecord(stop, 0));
@@ -247,7 +247,7 @@ void foo_usm() {
   cudaEvent_t start, stop;
   SAFE_CALL(cudaEventRecord(start, 0));
 
-  // CHECK:  SAFE_CALL(CHECK_SYCL_ERROR(dpct::async_dpct_memcpy(gpu_t, host_t, n * sizeof(int), dpct::host_to_device, *s1)));
+  // CHECK:  SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(gpu_t, host_t, n * sizeof(int), dpct::host_to_device, *s1)));
   SAFE_CALL(cudaMemcpyAsync(gpu_t, host_t, n * sizeof(int), cudaMemcpyHostToDevice, s1));
 
   // CHECK:  s1->wait();
@@ -473,7 +473,7 @@ int foo_test_4()
 // CHECK-NEXT:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:    */
 // CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    CHECK(CHECK_SYCL_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
+// CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
 // record start event
     CHECK(cudaEventRecord(start, 0));
 
@@ -493,7 +493,7 @@ int foo_test_4()
         foo_kernel_4<<<grid, block, 0, streams[i]>>>();
 
 // CHECK:        kernelEvent_ct1_i = std::chrono::steady_clock::now();
-// CHECK-NEXT:        CHECK(CHECK_SYCL_ERROR(*kernelEvent[i] = streams[i]->ext_oneapi_submit_barrier()));
+// CHECK-NEXT:        CHECK(DPCT_CHECK_ERROR(*kernelEvent[i] = streams[i]->ext_oneapi_submit_barrier()));
 // CHECK-NEXT:        streams[n_streams - 1]->ext_oneapi_submit_barrier({*kernelEvent[i]});
         CHECK(cudaEventRecord(kernelEvent[i], streams[i]));
         cudaStreamWaitEvent(streams[n_streams - 1], kernelEvent[i], 0);
@@ -501,7 +501,7 @@ int foo_test_4()
 
 // CHECK:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    CHECK(CHECK_SYCL_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
+// CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
 // CHECK-NEXT:    CHECK(0);
     CHECK(cudaEventRecord(stop, 0));
     CHECK(cudaEventSynchronize(stop));
@@ -749,8 +749,8 @@ void foo_test_2184() {
   // CHECK: dpct::event_ptr stop, start;
   // CHECK-NEXT:  std::chrono::time_point<std::chrono::steady_clock> start_ct1;
   // CHECK-NEXT:  std::chrono::time_point<std::chrono::steady_clock> stop_ct1;
-  // CHECK:  CHECK(CHECK_SYCL_ERROR(start = new sycl::event()));
-  // CHECK:  CHECK(CHECK_SYCL_ERROR(stop = new sycl::event()));
+  // CHECK:  CHECK(DPCT_CHECK_ERROR(start = new sycl::event()));
+  // CHECK:  CHECK(DPCT_CHECK_ERROR(stop = new sycl::event()));
   cudaEvent_t stop, start;
   CHECK(cudaEventCreate(&start));
   CHECK(cudaEventCreate(&stop));
@@ -799,7 +799,7 @@ template <class T, class vecT> void foo_test_2131() {
     }
     // CHECK: dpct::get_current_device().queues_wait_and_throw();
     // CHECK-NEXT: stop_ct1 = std::chrono::steady_clock::now();
-    // CHECK-NEXT: SAFE_CALL(CHECK_SYCL_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
+    // CHECK-NEXT: SAFE_CALL(DPCT_CHECK_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
     // CHECK-NEXT: SAFE_CALL(0);
     // CHECK-NEXT: totalScanTime = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
     SAFE_CALL(cudaEventRecord(stop, 0));
@@ -809,7 +809,7 @@ template <class T, class vecT> void foo_test_2131() {
 }
 
 // CHECK:void EventRecord( dpct::event_ptr hEvent, dpct::queue_ptr hStream) {
-// CHECK-NEXT:   int result = CHECK_SYCL_ERROR(*hEvent = hStream->ext_oneapi_submit_barrier());
+// CHECK-NEXT:   int result = DPCT_CHECK_ERROR(*hEvent = hStream->ext_oneapi_submit_barrier());
 // CHECK-NEXT:}
 void EventRecord( cudaEvent_t hEvent, cudaStream_t hStream) {
    CUresult result = cuEventRecord( hEvent, hStream);

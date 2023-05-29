@@ -157,7 +157,7 @@ int2 b;
 
 int foo2(){
   int version;
-  //CHECK: int ret = CHECK_SYCL_ERROR(version = dpct::get_current_device().get_major_version());
+  //CHECK: int ret = DPCT_CHECK_ERROR(version = dpct::get_current_device().get_major_version());
   int ret = cudaRuntimeGetVersion(&version);
   int major = version / 1000;
   int minor = (version - major * 1000) / 10;

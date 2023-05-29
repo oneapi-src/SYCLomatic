@@ -48,12 +48,12 @@ int main() {
   int fill1 = 1;
 
 
-  //CHECK: status = CHECK_SYCL_ERROR(dpct::syrk(*handle, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), n, k, &alpha_s, A_s, lda, B_s, ldb, &beta_s, C_s, ldc));
+  //CHECK: status = DPCT_CHECK_ERROR(dpct::syrk(*handle, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), n, k, &alpha_s, A_s, lda, B_s, ldb, &beta_s, C_s, ldc));
   //CHECK-NEXT: dpct::syrk(*handle, fill1 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans1), n, k, &alpha_s, A_s, lda, B_s, ldb, &beta_s, C_s, ldc);
   status = cublasSsyrkx(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, n, k, &alpha_s, A_s, lda, B_s, ldb, &beta_s, C_s, ldc);
   cublasSsyrkx(handle, (cublasFillMode_t)fill1, (cublasOperation_t)trans1, n, k, &alpha_s, A_s, lda, B_s, ldb, &beta_s, C_s, ldc);
 
-  //CHECK: status = CHECK_SYCL_ERROR(dpct::syrk(*handle, oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, n, k, &alpha_d, A_d, lda, B_d, ldb, &beta_d, C_d, ldc));
+  //CHECK: status = DPCT_CHECK_ERROR(dpct::syrk(*handle, oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, n, k, &alpha_d, A_d, lda, B_d, ldb, &beta_d, C_d, ldc));
   //CHECK-NEXT: dpct::syrk(*handle, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::trans, n, k, &alpha_d, A_d, lda, B_d, ldb, &beta_d, C_d, ldc);
   status = cublasDsyrkx(handle, (cublasFillMode_t)0, (cublasOperation_t)0, n, k, &alpha_d, A_d, lda, B_d, ldb, &beta_d, C_d, ldc);
   cublasDsyrkx(handle, (cublasFillMode_t)1, (cublasOperation_t)1, n, k, &alpha_d, A_d, lda, B_d, ldb, &beta_d, C_d, ldc);

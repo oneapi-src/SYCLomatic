@@ -40,10 +40,10 @@ int main(int argc, char *argv[])
     int Lwork = 0;
     int devInfo = 0;
 
-    //CHECK: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<float>(**cusolverH, uplo, n, lda));
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<double>(**cusolverH, uplo, n, lda));
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<std::complex<float>>(**cusolverH, uplo, n, lda));
-    //CHECK-NEXT: status = CHECK_SYCL_ERROR(*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<std::complex<double>>(**cusolverH, uplo, n, lda));
+    //CHECK: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<float>(**cusolverH, uplo, n, lda));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<double>(**cusolverH, uplo, n, lda));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<std::complex<float>>(**cusolverH, uplo, n, lda));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<std::complex<double>>(**cusolverH, uplo, n, lda));
     status = cusolverDnSpotri_bufferSize(*cusolverH, uplo, n, &A_f, lda, &Lwork);
     status = cusolverDnDpotri_bufferSize(*cusolverH, uplo, n, &A_d, lda, &Lwork);
     status = cusolverDnCpotri_bufferSize(*cusolverH, uplo, n, &A_c, lda, &Lwork);

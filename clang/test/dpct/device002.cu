@@ -13,7 +13,7 @@ int main(int argc, char **argv)
 {
 int devID = atoi(argv[1]);
 cudaDeviceProp cdp;
-// CHECK: dpct::err0 error_code = CHECK_SYCL_ERROR(dpct::dev_mgr::instance().get_device(devID).get_device_info(cdp));
+// CHECK: dpct::err0 error_code = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(devID).get_device_info(cdp));
 cudaError_t error_code = cudaGetDeviceProperties(&cdp, devID);
 
 if (error_code == cudaSuccess) {
@@ -99,7 +99,7 @@ cudaDeviceGetAttribute(&val, attr5, dev_id);
 
 // CHECK: attr5 = 86;
 // CHECK-NEXT: attr6 = attr5;
-// CHECK-NEXT: checkError(CHECK_SYCL_ERROR(val = dpct::dev_mgr::instance().get_device(dev_id).is_native_atomic_supported()));
+// CHECK-NEXT: checkError(DPCT_CHECK_ERROR(val = dpct::dev_mgr::instance().get_device(dev_id).is_native_atomic_supported()));
 attr5 = cudaDevAttrHostNativeAtomicSupported;
 attr6 = attr5;
 checkError(cudaDeviceGetAttribute(&val, attr5, dev_id));
@@ -114,19 +114,19 @@ int computeMode = -1, minor = 0;
 // CHECK: /*
 // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by the host to submit tasks. You may need to adjust this code.
 // CHECK-NEXT: */
-// CHECK-NEXT: checkError(CHECK_SYCL_ERROR(computeMode = 1));
+// CHECK-NEXT: checkError(DPCT_CHECK_ERROR(computeMode = 1));
 checkError(cudaDeviceGetAttribute(&computeMode, cudaDevAttrComputeMode, dev_id));
-// CHECK: checkError(CHECK_SYCL_ERROR(minor = dpct::dev_mgr::instance().get_device(dev_id).get_minor_version()));
+// CHECK: checkError(DPCT_CHECK_ERROR(minor = dpct::dev_mgr::instance().get_device(dev_id).get_minor_version()));
 checkError(cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, dev_id));
 
 int multiProcessorCount = 0, clockRate = 0;
-// CHECK: checkError(CHECK_SYCL_ERROR(multiProcessorCount = dpct::dev_mgr::instance().get_device(dev_id).get_max_compute_units()));
+// CHECK: checkError(DPCT_CHECK_ERROR(multiProcessorCount = dpct::dev_mgr::instance().get_device(dev_id).get_max_compute_units()));
 checkError(cudaDeviceGetAttribute(&multiProcessorCount, cudaDevAttrMultiProcessorCount, dev_id));
-// CHECK: checkError(CHECK_SYCL_ERROR(clockRate = dpct::dev_mgr::instance().get_device(dev_id).get_max_clock_frequency()));
+// CHECK: checkError(DPCT_CHECK_ERROR(clockRate = dpct::dev_mgr::instance().get_device(dev_id).get_max_clock_frequency()));
 checkError(cudaDeviceGetAttribute(&clockRate, cudaDevAttrClockRate, dev_id));
 
 int integrated = -1;
-// CHECK: checkError(CHECK_SYCL_ERROR(integrated = dpct::dev_mgr::instance().get_device(dev_id).get_integrated()));
+// CHECK: checkError(DPCT_CHECK_ERROR(integrated = dpct::dev_mgr::instance().get_device(dev_id).get_integrated()));
 checkError(cudaDeviceGetAttribute(&integrated, cudaDevAttrIntegrated, dev_id));
 
 int device1 = 0;
@@ -163,16 +163,16 @@ cudaDeviceGetPCIBusId(pciBusId, 80, 0);
 // CHECK: dpct::get_current_device().reset();
 cudaDeviceReset();
 
-// CHECK:error_code = CHECK_SYCL_ERROR(dpct::get_current_device().reset());
+// CHECK:error_code = DPCT_CHECK_ERROR(dpct::get_current_device().reset());
 error_code = cudaDeviceReset();
 
 // CHECK: dpct::get_current_device().reset();
 cudaThreadExit();
 
-// CHECK:error_code = CHECK_SYCL_ERROR(dpct::get_current_device().reset());
+// CHECK:error_code = DPCT_CHECK_ERROR(dpct::get_current_device().reset());
 error_code = cudaThreadExit();
 
-// CHECK:error_code = CHECK_SYCL_ERROR(dpct::select_device(device2));
+// CHECK:error_code = DPCT_CHECK_ERROR(dpct::select_device(device2));
 error_code = cudaSetDevice(device2);
 // CHECK:/*
 // CHECK-NEXT:DPCT1093:{{[0-9]+}}: The "device2" device may be not the one intended for use. Adjust the selected device if needed.
@@ -181,9 +181,9 @@ error_code = cudaSetDevice(device2);
 cudaSetDevice(device2);
 
 // CHECK:dpct::get_current_device().queues_wait_and_throw();
-// CHECK-NEXT:dpct::err0 err = CHECK_SYCL_ERROR(dpct::get_current_device().queues_wait_and_throw());
-// CHECK-NEXT:checkError(CHECK_SYCL_ERROR(dpct::get_current_device().queues_wait_and_throw()));
-// CHECK-NEXT:return CHECK_SYCL_ERROR(dpct::get_current_device().queues_wait_and_throw());
+// CHECK-NEXT:dpct::err0 err = DPCT_CHECK_ERROR(dpct::get_current_device().queues_wait_and_throw());
+// CHECK-NEXT:checkError(DPCT_CHECK_ERROR(dpct::get_current_device().queues_wait_and_throw()));
+// CHECK-NEXT:return DPCT_CHECK_ERROR(dpct::get_current_device().queues_wait_and_throw());
 cudaDeviceSynchronize();
 cudaError_t err = cudaDeviceSynchronize();
 checkError(cudaDeviceSynchronize());

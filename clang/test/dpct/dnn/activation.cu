@@ -136,7 +136,7 @@ void test1() {
 
     // CHECK: alpha = 2.f, beta = 0.f;
     // CHECK: dpct::get_current_device().queues_wait_and_throw();
-    // CHECK: auto s = CHECK_SYCL_ERROR(handle.async_activation_backward(desc, alpha, outTensor, out, diffoutTensor, diffout, dataTensor, data, beta, diffdataTensor, diffdata));
+    // CHECK: auto s = DPCT_CHECK_ERROR(handle.async_activation_backward(desc, alpha, outTensor, out, diffoutTensor, diffout, dataTensor, data, beta, diffdataTensor, diffdata));
     cudnnActivationDescriptor_t desc;
     cudnnCreateActivationDescriptor(&desc);
     cudnnSetActivationDescriptor(desc, CUDNN_ACTIVATION_SIGMOID, CUDNN_PROPAGATE_NAN, 0.f);

@@ -95,7 +95,7 @@ void test() {
 
 
     float alpha = 3.f, beta = 1.f;
-    //CHECK: auto s = CHECK_SYCL_ERROR(handle.async_reorder(alpha, dataTensor, data, beta, outTensor, out));
+    //CHECK: auto s = DPCT_CHECK_ERROR(handle.async_reorder(alpha, dataTensor, data, beta, outTensor, out));
     auto s = cudnnTransformTensor(handle, &alpha, dataTensor, data, &beta, outTensor, out);
 
     cudaMemcpy(host_out.data(), out, ele_num * sizeof(HT), cudaMemcpyDeviceToHost);

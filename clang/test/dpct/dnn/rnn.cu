@@ -62,7 +62,7 @@ int main() {
 
     cudnnSetTensorNdDescriptor(hDesc, CUDNN_DATA_FLOAT, 3, hDim, hStride);
     cudnnSetTensorNdDescriptor(cDesc, CUDNN_DATA_FLOAT, 3, cDim, cStride);
-// CHECK: auto p = CHECK_SYCL_ERROR(rnnDesc.set(dpct::dnnl::rnn_mode::vanilla_relu, dpct::dnnl::rnn_bias_mode::single, dir == 1 ? dpct::dnnl::rnn_direction::unidirectional : dpct::dnnl::rnn_direction::bidirectional, dpct::library_data_t::real_float, inputSize, hidenSize, projectSize, layerSize));
+// CHECK: auto p = DPCT_CHECK_ERROR(rnnDesc.set(dpct::dnnl::rnn_mode::vanilla_relu, dpct::dnnl::rnn_bias_mode::single, dir == 1 ? dpct::dnnl::rnn_direction::unidirectional : dpct::dnnl::rnn_direction::bidirectional, dpct::library_data_t::real_float, inputSize, hidenSize, projectSize, layerSize));
     auto p = cudnnSetRNNDescriptor_v8(rnnDesc,
         CUDNN_RNN_ALGO_STANDARD,
         CUDNN_RNN_RELU,
@@ -84,7 +84,7 @@ int main() {
     seqLenArray[0] = maxSeqLength;
     seqLenArray[1] = maxSeqLength;
     seqLenArray[2] = maxSeqLength;
-// CHECK: p = CHECK_SYCL_ERROR(xDesc.set(dpct::dnnl::rnn_memory_format_tag::tnc, dpct::library_data_t::real_float, xDim[0], xDim[1], xDim[2]));
+// CHECK: p = DPCT_CHECK_ERROR(xDesc.set(dpct::dnnl::rnn_memory_format_tag::tnc, dpct::library_data_t::real_float, xDim[0], xDim[1], xDim[2]));
     p = cudnnSetRNNDataDescriptor(xDesc, 
         CUDNN_DATA_FLOAT, 
         CUDNN_RNN_DATA_LAYOUT_SEQ_MAJOR_PACKED,
@@ -94,7 +94,7 @@ int main() {
         seqLenArray, // seqLengthArray
         NULL
     );
-// CHECK: p = CHECK_SYCL_ERROR(yDesc.set(dpct::dnnl::rnn_memory_format_tag::tnc, dpct::library_data_t::real_float, yDim[0], yDim[1], yDim[2]));
+// CHECK: p = DPCT_CHECK_ERROR(yDesc.set(dpct::dnnl::rnn_memory_format_tag::tnc, dpct::library_data_t::real_float, yDim[0], yDim[1], yDim[2]));
     p = cudnnSetRNNDataDescriptor(yDesc,
         CUDNN_DATA_FLOAT,
         CUDNN_RNN_DATA_LAYOUT_SEQ_MAJOR_PACKED,
@@ -121,7 +121,7 @@ int main() {
     float *dxData, *dyData, *dhxData, *dhyData, *dcxData, *dcyData, *dweightsData;
     cudnnWgradMode_t WGMode = CUDNN_WGRAD_MODE_ADD;
     int *seqlenarray;
-    // CHECK: auto e = CHECK_SYCL_ERROR(handle.async_rnn_forward(rnnDesc, dnnl::prop_kind::forward_training, xDesc, xData, yDesc, yData, hDesc, hxData, hyData, cDesc, cxData, cyData, weightsSpaceSize, weightsData, workSpaceSize, workSpaceData, reserveSpaceSize, reserveSpaceData));
+    // CHECK: auto e = DPCT_CHECK_ERROR(handle.async_rnn_forward(rnnDesc, dnnl::prop_kind::forward_training, xDesc, xData, yDesc, yData, hDesc, hxData, hyData, cDesc, cxData, cyData, weightsSpaceSize, weightsData, workSpaceSize, workSpaceData, reserveSpaceSize, reserveSpaceData));
     auto e = cudnnRNNForward(
         handle, 
         rnnDesc, 
@@ -144,7 +144,7 @@ int main() {
         reserveSpaceSize, 
         reserveSpaceData
     );
-// CHECK: e = CHECK_SYCL_ERROR(handle.async_rnn_backward(rnnDesc, yDesc, yData, dyData, xDesc, xData, dxData, hDesc, hxData, dhyData, dhxData, cDesc, cxData, dcyData, dcxData, weightsSpaceSize, weightsData, dweightsData, workSpaceSize, workSpaceData, reserveSpaceSize, reserveSpaceData));
+// CHECK: e = DPCT_CHECK_ERROR(handle.async_rnn_backward(rnnDesc, yDesc, yData, dyData, xDesc, xData, dxData, hDesc, hxData, dhyData, dhxData, cDesc, cxData, dcyData, dcxData, weightsSpaceSize, weightsData, dweightsData, workSpaceSize, workSpaceData, reserveSpaceSize, reserveSpaceData));
     e = cudnnRNNBackwardData_v8(
         handle,
         rnnDesc,

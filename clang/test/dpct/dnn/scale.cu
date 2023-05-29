@@ -86,7 +86,7 @@ void test() {
     cudaMemcpy(data, host_data.data(), ele_num * sizeof(HT), cudaMemcpyHostToDevice);
 
     float alpha = 3.f;
-    // CHECK: auto s = CHECK_SYCL_ERROR(handle.async_scale(alpha, dataTensor, data));
+    // CHECK: auto s = DPCT_CHECK_ERROR(handle.async_scale(alpha, dataTensor, data));
     auto s = cudnnScaleTensor(handle, dataTensor, data, &alpha);
 
     cudaMemcpy(host_data.data(), data, ele_num * sizeof(HT), cudaMemcpyDeviceToHost);

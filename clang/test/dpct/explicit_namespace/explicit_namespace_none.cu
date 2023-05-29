@@ -58,7 +58,7 @@ __global__ void kernel2(float *out) {
 
 // CHECK:void test_assignment() try {
 // CHECK-NEXT:  err0 err;
-// CHECK-NEXT:  if (err = CHECK_SYCL_ERROR(*0 = (void *)malloc_device(0, get_default_queue()))) {
+// CHECK-NEXT:  if (err = DPCT_CHECK_ERROR(*0 = (void *)malloc_device(0, get_default_queue()))) {
 // CHECK-NEXT:    printf("error!\n");
 // CHECK-NEXT:  }
 // CHECK-NEXT:}

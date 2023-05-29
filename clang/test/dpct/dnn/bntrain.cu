@@ -77,7 +77,7 @@ int main() {
 
     float alpha = 1.f, beta = 0.f, eps = 1.f;
     double factor = 0.1f;
-    // CHECK: auto status = CHECK_SYCL_ERROR(handle.async_batch_normalization_forward_training(dpct::dnnl::batch_normalization_mode::per_activation, eps, factor, alpha, dataTensor, data, beta, outTensor, out, scalebiasTensor, scale, bias, rmean, rvar, smean, svar));
+    // CHECK: auto status = DPCT_CHECK_ERROR(handle.async_batch_normalization_forward_training(dpct::dnnl::batch_normalization_mode::per_activation, eps, factor, alpha, dataTensor, data, beta, outTensor, out, scalebiasTensor, scale, bias, rmean, rvar, smean, svar));
     auto status = cudnnBatchNormalizationForwardTraining(
         handle,
         CUDNN_BATCHNORM_PER_ACTIVATION,

@@ -29,13 +29,13 @@ int main(){
   //CHECK:rng->generate_uniform(d_data, 100 * 100);
   curandGenerateUniform(rng, d_data, 100*100);
 
-  //CHECK:s1 = CHECK_SYCL_ERROR(rng->generate_uniform(d_data, 100 * 100));
+  //CHECK:s1 = DPCT_CHECK_ERROR(rng->generate_uniform(d_data, 100 * 100));
   s1 = curandGenerateUniform(rng, d_data, 100*100);
 
-  //CHECK:s1 = CHECK_SYCL_ERROR(rng->generate_lognormal(d_data, 100 * 100, 123, 456));
+  //CHECK:s1 = DPCT_CHECK_ERROR(rng->generate_lognormal(d_data, 100 * 100, 123, 456));
   s1 = curandGenerateLogNormal(rng, d_data, 100*100, 123, 456);
 
-  //CHECK:s1 = CHECK_SYCL_ERROR(rng->generate_gaussian(d_data, 100 * 100, 123, 456));
+  //CHECK:s1 = DPCT_CHECK_ERROR(rng->generate_gaussian(d_data, 100 * 100, 123, 456));
   s1 = curandGenerateNormal(rng, d_data, 100*100, 123, 456);
 
   double* d_data_d;
@@ -47,21 +47,21 @@ int main(){
   curandGenerateNormalDouble(rng, d_data_d, 100*100, 123, 456);
 
   unsigned int* d_data_ui;
-  //CHECK:s1 = CHECK_SYCL_ERROR(rng->generate_uniform_bits(d_data_ui, 100 * 100));
+  //CHECK:s1 = DPCT_CHECK_ERROR(rng->generate_uniform_bits(d_data_ui, 100 * 100));
   s1 = curandGenerate(rng, d_data_ui, 100*100);
 
-  //CHECK:s1 = CHECK_SYCL_ERROR(rng->generate_poisson(d_data_ui, 100 * 100, 123.456));
+  //CHECK:s1 = DPCT_CHECK_ERROR(rng->generate_poisson(d_data_ui, 100 * 100, 123.456));
   s1 = curandGeneratePoisson(rng, d_data_ui, 100*100, 123.456);
 
   unsigned long long* d_data_ull;
   //CHECK:rng->generate_uniform_bits(d_data_ull, 100 * 100);
   curandGenerateLongLong(rng, d_data_ull, 100*100);
 
-  //CHECK: if (s1 = CHECK_SYCL_ERROR(
+  //CHECK: if (s1 = DPCT_CHECK_ERROR(
   //CHECK-NEXT:   rng->generate_uniform_bits(d_data_ull, 100 * 100))) {}
   if(s1 = curandGenerateLongLong(rng, d_data_ull, 100*100)){}
 
-  //CHECK:if (CHECK_SYCL_ERROR(rng->generate_uniform_bits(d_data_ull, 100 * 100))) {}
+  //CHECK:if (DPCT_CHECK_ERROR(rng->generate_uniform_bits(d_data_ull, 100 * 100))) {}
   if(curandGenerateLongLong(rng, d_data_ull, 100*100)){}
 
   //CHECK:dpct::rng::host_rng_ptr rng2;
@@ -74,12 +74,12 @@ int main(){
   curandGenerateUniform(rng2, d_data, 100*100);
 
   //CHECK:rng->skip_ahead(100);
-  //CHECK-NEXT:s1 = CHECK_SYCL_ERROR(rng2->skip_ahead(200));
+  //CHECK-NEXT:s1 = DPCT_CHECK_ERROR(rng2->skip_ahead(200));
   curandSetGeneratorOffset(rng, 100);
   s1 = curandSetGeneratorOffset(rng2, 200);
 
   //CHECK:rng.reset();
-  //CHECK-NEXT:s1 = CHECK_SYCL_ERROR(rng.reset());
+  //CHECK-NEXT:s1 = DPCT_CHECK_ERROR(rng.reset());
   curandDestroyGenerator(rng);
   s1 = curandDestroyGenerator(rng);
 }
@@ -154,12 +154,12 @@ void curandErrCheck_(curandStatus_t stat, const char *file, int line) {
 void bar3(){
 //CHECK:dpct::rng::host_rng_ptr rng;
 //CHECK-NEXT:curandErrCheck(
-//CHECK-NEXT:    CHECK_SYCL_ERROR(rng = dpct::rng::create_host_rng(
+//CHECK-NEXT:    DPCT_CHECK_ERROR(rng = dpct::rng::create_host_rng(
 //CHECK-NEXT:                         dpct::rng::random_engine_type::philox4x32x10)));
-//CHECK-NEXT:curandErrCheck(CHECK_SYCL_ERROR(rng->set_seed(1337ull)));
+//CHECK-NEXT:curandErrCheck(DPCT_CHECK_ERROR(rng->set_seed(1337ull)));
 //CHECK-NEXT:float *d_data;
-//CHECK-NEXT:curandErrCheck(CHECK_SYCL_ERROR(rng->generate_uniform(d_data, 100 * 100)));
-//CHECK-NEXT:curandErrCheck(CHECK_SYCL_ERROR(rng.reset()));
+//CHECK-NEXT:curandErrCheck(DPCT_CHECK_ERROR(rng->generate_uniform(d_data, 100 * 100)));
+//CHECK-NEXT:curandErrCheck(DPCT_CHECK_ERROR(rng.reset()));
   curandGenerator_t rng;
   curandErrCheck(curandCreateGenerator(&rng, CURAND_RNG_PSEUDO_PHILOX4_32_10));
   curandErrCheck(curandSetPseudoRandomGeneratorSeed(rng, 1337ull));
@@ -196,7 +196,7 @@ void bar5(){
 //CHECK-NEXT:  dpct::rng::host_rng_ptr rng2;
 //CHECK-NEXT:  rng2 = dpct::rng::create_host_rng(dpct::rng::random_engine_type::sobol);
 //CHECK-NEXT:  rng2->set_dimensions(1111);
-//CHECK:  return CHECK_SYCL_ERROR(rng2->generate_uniform(d_data, 100 * 100));
+//CHECK:  return DPCT_CHECK_ERROR(rng2->generate_uniform(d_data, 100 * 100));
 //CHECK-NEXT:}
 int bar6(){
   float *d_data;

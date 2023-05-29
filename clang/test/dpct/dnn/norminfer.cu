@@ -88,7 +88,7 @@ int main() {
     cudnnActivationDescriptor_t ActivationDesc;
     cudnnCreateActivationDescriptor(&ActivationDesc);
     cudnnSetActivationDescriptor(ActivationDesc, CUDNN_ACTIVATION_RELU, CUDNN_PROPAGATE_NAN, 0.0f);
-    // CHECK: auto status = CHECK_SYCL_ERROR(handle.async_batch_normalization_forward_inference(dpct::dnnl::batch_normalization_mode::per_activation, dpct::dnnl::batch_normalization_ops::none, ActivationDesc, eps, alpha, dataTensor, data, beta, outTensor, out, dataTensor, z, scalebiasTensor, scale, bias, scalebiasTensor, smean, svar));
+    // CHECK: auto status = DPCT_CHECK_ERROR(handle.async_batch_normalization_forward_inference(dpct::dnnl::batch_normalization_mode::per_activation, dpct::dnnl::batch_normalization_ops::none, ActivationDesc, eps, alpha, dataTensor, data, beta, outTensor, out, dataTensor, z, scalebiasTensor, scale, bias, scalebiasTensor, smean, svar));
     auto status = cudnnNormalizationForwardInference(
         handle, 
         CUDNN_NORM_PER_ACTIVATION,

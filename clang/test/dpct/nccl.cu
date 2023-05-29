@@ -16,37 +16,37 @@ int main() {
     // CHECK: version = dpct::ccl::get_version();
     ncclGetVersion(&version);
 
-    // CHECK: check(CHECK_SYCL_ERROR(version = dpct::ccl::get_version()));
+    // CHECK: check(DPCT_CHECK_ERROR(version = dpct::ccl::get_version()));
     check(ncclGetVersion(&version));
 
     // CHECK: id = dpct::ccl::create_kvs_address();
     ncclGetUniqueId(&id);
 
-    // CHECK: check(CHECK_SYCL_ERROR(id = dpct::ccl::create_kvs_address()));
+    // CHECK: check(DPCT_CHECK_ERROR(id = dpct::ccl::create_kvs_address()));
     check(ncclGetUniqueId(&id));
 
     // CHECK: comm = new dpct::ccl::communicator_wrapper(nranks, rank, id);
     ncclCommInitRank(&comm, nranks, id, rank);
 
-    // CHECK: check(CHECK_SYCL_ERROR(comm = new dpct::ccl::communicator_wrapper(nranks, rank, id)));    
+    // CHECK: check(DPCT_CHECK_ERROR(comm = new dpct::ccl::communicator_wrapper(nranks, rank, id)));    
     check(ncclCommInitRank(&comm, nranks, id, rank));
 
     // CHECK: device = comm->size();
     ncclCommCount(comm, &device);
 
-    // CHECK: check(CHECK_SYCL_ERROR(device = comm->size()));
+    // CHECK: check(DPCT_CHECK_ERROR(device = comm->size()));
     check(ncclCommCount(comm, &device));
 
     // CHECK: device = dpct::get_device_id(comm->get_device());
     ncclCommCuDevice(comm, &device);
 
-    // CHECK: check(CHECK_SYCL_ERROR(device = dpct::get_device_id(comm->get_device())));
+    // CHECK: check(DPCT_CHECK_ERROR(device = dpct::get_device_id(comm->get_device())));
     check(ncclCommCuDevice(comm, &device));
 
     // CHECK: rank_rev = comm->rank();
     ncclCommUserRank(comm, &rank_rev);
 
-    // CHECK: check(CHECK_SYCL_ERROR(rank_rev = comm->rank()));
+    // CHECK: check(DPCT_CHECK_ERROR(rank_rev = comm->rank()));
     check(ncclCommUserRank(comm, &rank_rev));
 
     void *buff;

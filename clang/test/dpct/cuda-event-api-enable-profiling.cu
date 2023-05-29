@@ -59,8 +59,8 @@ int main(int argc, char* argv[]) {
   printf(">>>\n");
 
 
-// CHECK: MY_ERROR_CHECKER(CHECK_SYCL_ERROR(start = new sycl::event()));
-// CHECK: dpct::err0 et = CHECK_SYCL_ERROR(stop = new sycl::event());
+// CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(start = new sycl::event()));
+// CHECK: dpct::err0 et = DPCT_CHECK_ERROR(stop = new sycl::event());
   MY_ERROR_CHECKER(cudaEventCreate(&start));
   cudaError_t et = cudaEventCreate(&stop);
 
@@ -88,14 +88,14 @@ int main(int argc, char* argv[]) {
 // CHECK: *start = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(start, 0);
 
-// CHECK: MY_ERROR_CHECKER(CHECK_SYCL_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
+// CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
   MY_ERROR_CHECKER(cudaEventRecord(start, 0));
 
 // CHECK: if (0)
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   MY_ERROR_CHECKER(CHECK_SYCL_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
+// CHECK-NEXT:   MY_ERROR_CHECKER(DPCT_CHECK_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
   if (0)
     MY_ERROR_CHECKER(cudaEventRecord(start, 0));
 
@@ -116,11 +116,11 @@ int main(int argc, char* argv[]) {
 // CHECK:   *stop = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(stop, 0);
 
-// CHECK: MY_ERROR_CHECKER(CHECK_SYCL_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
+// CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
   MY_ERROR_CHECKER(cudaEventRecord(stop, 0));
 
 
-// CHECK:   MY_ERROR_CHECKER(CHECK_SYCL_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
+// CHECK:   MY_ERROR_CHECKER(DPCT_CHECK_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
   if (1)
     MY_ERROR_CHECKER(cudaEventRecord(stop, 0));
 
@@ -138,18 +138,18 @@ int main(int argc, char* argv[]) {
 // CHECK: /*
 // CHECK-NEXT: DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT: */
-// CHECK-NEXT: MY_ERROR_CHECKER(CHECK_SYCL_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
+// CHECK-NEXT: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
   MY_ERROR_CHECKER(cudaEventRecord(stop, 0));
 
 // CHECK: if (0)
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   MY_ERROR_CHECKER(CHECK_SYCL_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
+// CHECK-NEXT:   MY_ERROR_CHECKER(DPCT_CHECK_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
   if (0)
     MY_ERROR_CHECKER(cudaEventRecord(start, 0));
 
-// CHECK:  MY_ERROR_CHECKER(CHECK_SYCL_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
+// CHECK:  MY_ERROR_CHECKER(DPCT_CHECK_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
   MY_ERROR_CHECKER(cudaEventRecord(start));
 
   // kernel call without sync
@@ -169,7 +169,7 @@ int main(int argc, char* argv[]) {
   cudaEventSynchronize(stop);
   cudaEventElapsedTime(&elapsed_time, start, stop);
 
-// CHECK: MY_ERROR_CHECKER(CHECK_SYCL_ERROR(elapsed_time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f));
+// CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(elapsed_time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f));
   MY_ERROR_CHECKER(cudaEventElapsedTime(&elapsed_time, start, stop));
 
 }
@@ -186,24 +186,24 @@ void foo() {
 
   int blocks = 32, threads = 32;
 
-// CHECK:  MY_CHECKER(CHECK_SYCL_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
+// CHECK:  MY_CHECKER(DPCT_CHECK_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
   MY_CHECKER(cudaEventRecord(start, 0));
   kernelFunc<<<blocks,threads>>>();
-// CHECK: MY_CHECKER(CHECK_SYCL_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
+// CHECK: MY_CHECKER(DPCT_CHECK_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
   MY_CHECKER(cudaEventRecord(stop, 0));
 
   cudaEventSynchronize(stop);
 
-// CHECK: MY_CHECKER(CHECK_SYCL_ERROR(elapsed_time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f));
+// CHECK: MY_CHECKER(DPCT_CHECK_ERROR(elapsed_time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f));
   MY_CHECKER(cudaEventElapsedTime(&elapsed_time, start, stop));
 
   cudaEventDestroy(start);
   cudaEventDestroy(stop);
 
   {
-  // CHECK: dpct::err0 err = CHECK_SYCL_ERROR(*start = q_ct1.ext_oneapi_submit_barrier());
+  // CHECK: dpct::err0 err = DPCT_CHECK_ERROR(*start = q_ct1.ext_oneapi_submit_barrier());
     cudaError_t err = cudaEventRecord(start, 0);
-  // CHECK: err = CHECK_SYCL_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier());
+  // CHECK: err = DPCT_CHECK_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier());
     err = cudaEventRecord(stop, 0);
     if (cudaSuccess != err) {
       printf("%s\n", cudaGetErrorString( err));
@@ -225,14 +225,14 @@ void bar() {
 
   int blocks = 32, threads = 32;
 
-// CHECK: fun(CHECK_SYCL_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
+// CHECK: fun(DPCT_CHECK_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
   fun(cudaEventRecord(start, 0));
   kernelFunc<<<blocks,threads>>>();
-// CHECK: fun(CHECK_SYCL_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
+// CHECK: fun(DPCT_CHECK_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
   fun(cudaEventRecord(stop, 0));
 
   cudaEventSynchronize(stop);
-// CHECK: fun(CHECK_SYCL_ERROR(elapsed_time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f));
+// CHECK: fun(DPCT_CHECK_ERROR(elapsed_time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f));
   fun(cudaEventElapsedTime(&elapsed_time, start, stop));
 
   cudaEventDestroy(start);
@@ -268,9 +268,9 @@ void foo2(Node *n) {
   cudaEventElapsedTime(&elapsed_time, n->start, n->end);
   {
     int errorCode;
-  // CHECK: MY_CHECKER(CHECK_SYCL_ERROR(*n->start = q_ct1.ext_oneapi_submit_barrier()));
+  // CHECK: MY_CHECKER(DPCT_CHECK_ERROR(*n->start = q_ct1.ext_oneapi_submit_barrier()));
     MY_CHECKER(cudaEventRecord(n->start, 0));
-  // CHECK: errorCode = CHECK_SYCL_ERROR(*n->start = q_ct1.ext_oneapi_submit_barrier());
+  // CHECK: errorCode = DPCT_CHECK_ERROR(*n->start = q_ct1.ext_oneapi_submit_barrier());
     errorCode = cudaEventRecord(n->start, 0);
   }
 
@@ -288,9 +288,9 @@ void foo2(Node *n) {
   cudaEventElapsedTime(&elapsed_time, node.start, node.end);
   {
     int errorCode;
-  // CHECK: MY_CHECKER(CHECK_SYCL_ERROR(*node.start = q_ct1.ext_oneapi_submit_barrier()));
+  // CHECK: MY_CHECKER(DPCT_CHECK_ERROR(*node.start = q_ct1.ext_oneapi_submit_barrier()));
     MY_CHECKER(cudaEventRecord(node.start, 0));
-  // CHECK: errorCode = CHECK_SYCL_ERROR(*node.start = q_ct1.ext_oneapi_submit_barrier());
+  // CHECK: errorCode = DPCT_CHECK_ERROR(*node.start = q_ct1.ext_oneapi_submit_barrier());
     errorCode = cudaEventRecord(node.start, 0);
   }
 

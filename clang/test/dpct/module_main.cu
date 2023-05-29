@@ -59,7 +59,7 @@ int main(){
     //CHECK: dpct::unload_kernel_library(M);
     cuModuleUnload(M);
 
-    //CHECK: if (CHECK_SYCL_ERROR(dpct::unload_kernel_library(M))==0) {
+    //CHECK: if (DPCT_CHECK_ERROR(dpct::unload_kernel_library(M))==0) {
     if (cuModuleUnload(M)==0) {
       printf("unload failed\n");
     }

@@ -46,7 +46,7 @@ int main() {
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
   // CHECK-NEXT: }
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::iamax(*handle, n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}}));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::iamax(*handle, n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}}));
   // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
   // CHECK-NEXT: }
   // CHECK-NEXT: {
@@ -73,7 +73,7 @@ int main() {
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
   // CHECK-NEXT: }
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::iamax(*handle, n, x_D_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}}));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::iamax(*handle, n, x_D_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}}));
   // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
   // CHECK-NEXT: }
   // CHECK-NEXT: {
@@ -101,7 +101,7 @@ int main() {
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
   // CHECK-NEXT: }
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::iamin(*handle, n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}}));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::iamin(*handle, n, x_S_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}}));
   // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
   // CHECK-NEXT: }
   // CHECK-NEXT: {
@@ -128,7 +128,7 @@ int main() {
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
   // CHECK-NEXT: }
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::iamin(*handle, n, x_D_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}}));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::iamin(*handle, n, x_D_buf_ct{{[0-9]+}}, incx, res_temp_buf_ct{{[0-9]+}}));
   // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
   // CHECK-NEXT: }
   // CHECK-NEXT: {
@@ -155,7 +155,7 @@ int main() {
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} = sycl::buffer<float>(result_S, sycl::range<1>(1));
   // CHECK-NEXT: }
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::asum(*handle, n, x_S_buf_ct{{[0-9]+}}, incx, result_S_buf_ct{{[0-9]+}}));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::asum(*handle, n, x_S_buf_ct{{[0-9]+}}, incx, result_S_buf_ct{{[0-9]+}}));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
@@ -178,7 +178,7 @@ int main() {
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} = sycl::buffer<double>(result_D, sycl::range<1>(1));
   // CHECK-NEXT: }
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::asum(*handle, n, x_D_buf_ct{{[0-9]+}}, incx, result_D_buf_ct{{[0-9]+}}));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::asum(*handle, n, x_D_buf_ct{{[0-9]+}}, incx, result_D_buf_ct{{[0-9]+}}));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
@@ -197,7 +197,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::axpy(*handle, n, alpha_S, x_S_buf_ct{{[0-9]+}}, incx, result_S_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::axpy(*handle, n, alpha_S, x_S_buf_ct{{[0-9]+}}, incx, result_S_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
@@ -210,7 +210,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::axpy(*handle, n, alpha_D, x_D_buf_ct{{[0-9]+}}, incx, result_D_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::axpy(*handle, n, alpha_D, x_D_buf_ct{{[0-9]+}}, incx, result_D_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
@@ -224,7 +224,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::copy(*handle, n, x_S_buf_ct{{[0-9]+}}, incx, result_S_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::copy(*handle, n, x_S_buf_ct{{[0-9]+}}, incx, result_S_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
@@ -237,7 +237,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::copy(*handle, n, x_D_buf_ct{{[0-9]+}}, incx, result_D_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::copy(*handle, n, x_D_buf_ct{{[0-9]+}}, incx, result_D_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
@@ -257,7 +257,7 @@ int main() {
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} =  sycl::buffer<float>(result_S, sycl::range<1>(1));
   // CHECK-NEXT: }
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::dot(*handle, n, x_S_buf_ct{{[0-9]+}}, incx, y_S_buf_ct{{[0-9]+}}, incy, result_S_buf_ct{{[0-9]+}}));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::dot(*handle, n, x_S_buf_ct{{[0-9]+}}, incx, y_S_buf_ct{{[0-9]+}}, incy, result_S_buf_ct{{[0-9]+}}));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
@@ -282,7 +282,7 @@ int main() {
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} =  sycl::buffer<double>(result_D, sycl::range<1>(1));
   // CHECK-NEXT: }
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::dot(*handle, n, x_D_buf_ct{{[0-9]+}}, incx, y_D_buf_ct{{[0-9]+}}, incy, result_D_buf_ct{{[0-9]+}}));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::dot(*handle, n, x_D_buf_ct{{[0-9]+}}, incx, y_D_buf_ct{{[0-9]+}}, incy, result_D_buf_ct{{[0-9]+}}));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
@@ -307,7 +307,7 @@ int main() {
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_S_buf_ct{{[0-9]+}} = sycl::buffer<float>(result_S, sycl::range<1>(1));
   // CHECK-NEXT: }
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::nrm2(*handle, n, x_S_buf_ct{{[0-9]+}}, incx, result_S_buf_ct{{[0-9]+}}));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::nrm2(*handle, n, x_S_buf_ct{{[0-9]+}}, incx, result_S_buf_ct{{[0-9]+}}));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
@@ -330,7 +330,7 @@ int main() {
   // CHECK-NEXT: } else {
   // CHECK-NEXT:   result_D_buf_ct{{[0-9]+}} = sycl::buffer<double>(result_D, sycl::range<1>(1));
   // CHECK-NEXT: }
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::nrm2(*handle, n, x_D_buf_ct{{[0-9]+}}, incx, result_D_buf_ct{{[0-9]+}}));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::nrm2(*handle, n, x_D_buf_ct{{[0-9]+}}, incx, result_D_buf_ct{{[0-9]+}}));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
@@ -353,7 +353,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
   // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::rot(*handle, n, x_f_buf_ct{{[0-9]+}}, incx, y_f_buf_ct{{[0-9]+}}, incy, dpct::get_value(x_S, *handle), dpct::get_value(y_S, *handle)));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rot(*handle, n, x_f_buf_ct{{[0-9]+}}, incx, y_f_buf_ct{{[0-9]+}}, incy, dpct::get_value(x_S, *handle), dpct::get_value(y_S, *handle)));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
@@ -366,7 +366,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
   // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::rot(*handle, n, x_d_buf_ct{{[0-9]+}}, incx, y_d_buf_ct{{[0-9]+}}, incy, dpct::get_value(x_D, *handle), dpct::get_value(y_D, *handle)));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rot(*handle, n, x_d_buf_ct{{[0-9]+}}, incx, y_d_buf_ct{{[0-9]+}}, incy, dpct::get_value(x_D, *handle), dpct::get_value(y_D, *handle)));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
@@ -393,7 +393,7 @@ int main() {
   // CHECK-NEXT:   x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(x_f, sycl::range<1>(1));
   // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(1));
   // CHECK-NEXT: }
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::rotg(*handle, x_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}, x_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rotg(*handle, x_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}, x_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
@@ -432,7 +432,7 @@ int main() {
   // CHECK-NEXT:   x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(x_d, sycl::range<1>(1));
   // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(1));
   // CHECK-NEXT: }
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::rotg(*handle, x_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}, x_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rotg(*handle, x_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}, x_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
@@ -460,7 +460,7 @@ int main() {
   // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
   // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::rotm(*handle, n, x_f_buf_ct{{[0-9]+}}, incx, y_f_buf_ct{{[0-9]+}}, incy, x_S_buf_ct{{[0-9]+}}));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rotm(*handle, n, x_f_buf_ct{{[0-9]+}}, incx, y_f_buf_ct{{[0-9]+}}, incy, x_S_buf_ct{{[0-9]+}}));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
@@ -475,7 +475,7 @@ int main() {
   // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
   // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::rotm(*handle, n, x_d_buf_ct{{[0-9]+}}, incx, y_d_buf_ct{{[0-9]+}}, incy, x_D_buf_ct{{[0-9]+}}));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rotm(*handle, n, x_d_buf_ct{{[0-9]+}}, incx, y_d_buf_ct{{[0-9]+}}, incy, x_D_buf_ct{{[0-9]+}}));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
@@ -503,7 +503,7 @@ int main() {
   // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(1));
   // CHECK-NEXT:   y_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(y_f, sycl::range<1>(5));
   // CHECK-NEXT: }
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::rotmg(*handle, x_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}, dpct::get_value(x_S, *handle), y_f_buf_ct{{[0-9]+}}));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rotmg(*handle, x_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}, y_f_buf_ct{{[0-9]+}}, dpct::get_value(x_S, *handle), y_f_buf_ct{{[0-9]+}}));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = sycl::buffer<float>(sycl::range<1>(1));
@@ -542,7 +542,7 @@ int main() {
   // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(1));
   // CHECK-NEXT:   y_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(y_d, sycl::range<1>(5));
   // CHECK-NEXT: }
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::rotmg(*handle, x_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}, dpct::get_value(x_D, *handle), y_d_buf_ct{{[0-9]+}}));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::rotmg(*handle, x_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}, y_d_buf_ct{{[0-9]+}}, dpct::get_value(x_D, *handle), y_d_buf_ct{{[0-9]+}}));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = sycl::buffer<double>(sycl::range<1>(1));
@@ -568,7 +568,7 @@ int main() {
   //cublas<t>scal
   // CHECK: {
   // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::scal(*handle, n, alpha_S, x_f_buf_ct{{[0-9]+}}, incx));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::scal(*handle, n, alpha_S, x_f_buf_ct{{[0-9]+}}, incx));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
@@ -579,7 +579,7 @@ int main() {
 
   // CHECK: {
   // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::scal(*handle, n, alpha_D, x_d_buf_ct{{[0-9]+}}, incx));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::scal(*handle, n, alpha_D, x_d_buf_ct{{[0-9]+}}, incx));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
@@ -592,7 +592,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
   // CHECK-NEXT: auto y_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_f);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::swap(*handle, n, x_f_buf_ct{{[0-9]+}}, incx, y_f_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::swap(*handle, n, x_f_buf_ct{{[0-9]+}}, incx, y_f_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_f);
@@ -605,7 +605,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
   // CHECK-NEXT: auto y_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_d);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::swap(*handle, n, x_d_buf_ct{{[0-9]+}}, incx, y_d_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::swap(*handle, n, x_d_buf_ct{{[0-9]+}}, incx, y_d_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_d);
@@ -624,7 +624,7 @@ int main() {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::gbmv(*handle, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, m, n, m, n, alpha_S, x_S_buf_ct{{[0-9]+}}, lda, y_S_buf_ct{{[0-9]+}}, incx, beta_S, result_S_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gbmv(*handle, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, m, n, m, n, alpha_S, x_S_buf_ct{{[0-9]+}}, lda, y_S_buf_ct{{[0-9]+}}, incx, beta_S, result_S_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
@@ -639,7 +639,7 @@ int main() {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::gbmv(*handle, trans1==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans1, m, n, m, n, alpha_D, x_D_buf_ct{{[0-9]+}}, lda, y_D_buf_ct{{[0-9]+}}, incx, beta_D, result_D_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gbmv(*handle, trans1==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans1, m, n, m, n, alpha_D, x_D_buf_ct{{[0-9]+}}, lda, y_D_buf_ct{{[0-9]+}}, incx, beta_D, result_D_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
@@ -655,7 +655,7 @@ int main() {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::gemv(*handle, trans2==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans2, m, n, alpha_S, x_S_buf_ct{{[0-9]+}}, lda, y_S_buf_ct{{[0-9]+}}, incx, beta_S, result_S_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemv(*handle, trans2==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans2, m, n, alpha_S, x_S_buf_ct{{[0-9]+}}, lda, y_S_buf_ct{{[0-9]+}}, incx, beta_S, result_S_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
@@ -670,7 +670,7 @@ int main() {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::gemv(*handle, oneapi::mkl::transpose::nontrans, m, n, alpha_D, x_D_buf_ct{{[0-9]+}}, lda, y_D_buf_ct{{[0-9]+}}, incx, beta_D, result_D_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemv(*handle, oneapi::mkl::transpose::nontrans, m, n, alpha_D, x_D_buf_ct{{[0-9]+}}, lda, y_D_buf_ct{{[0-9]+}}, incx, beta_D, result_D_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
@@ -686,7 +686,7 @@ int main() {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::ger(*handle, m, n, alpha_S, x_S_buf_ct{{[0-9]+}}, incx, y_S_buf_ct{{[0-9]+}}, incy, result_S_buf_ct{{[0-9]+}}, lda));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::ger(*handle, m, n, alpha_S, x_S_buf_ct{{[0-9]+}}, incx, y_S_buf_ct{{[0-9]+}}, incy, result_S_buf_ct{{[0-9]+}}, lda));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
@@ -701,7 +701,7 @@ int main() {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::ger(*handle, m, n, alpha_D, x_D_buf_ct{{[0-9]+}}, incx, y_D_buf_ct{{[0-9]+}}, incy, result_D_buf_ct{{[0-9]+}}, lda));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::ger(*handle, m, n, alpha_D, x_D_buf_ct{{[0-9]+}}, incx, y_D_buf_ct{{[0-9]+}}, incy, result_D_buf_ct{{[0-9]+}}, lda));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
@@ -719,7 +719,7 @@ int main() {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::sbmv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, m, n, alpha_S, x_S_buf_ct{{[0-9]+}}, lda, y_S_buf_ct{{[0-9]+}}, incx, beta_S, result_S_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::sbmv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, m, n, alpha_S, x_S_buf_ct{{[0-9]+}}, lda, y_S_buf_ct{{[0-9]+}}, incx, beta_S, result_S_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
@@ -734,7 +734,7 @@ int main() {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::sbmv(*handle, fill1==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, m, n, alpha_D, x_D_buf_ct{{[0-9]+}}, lda, y_D_buf_ct{{[0-9]+}}, incx, beta_D, result_D_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::sbmv(*handle, fill1==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, m, n, alpha_D, x_D_buf_ct{{[0-9]+}}, lda, y_D_buf_ct{{[0-9]+}}, incx, beta_D, result_D_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
@@ -750,7 +750,7 @@ int main() {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::spmv(*handle, oneapi::mkl::uplo::lower, n, alpha_S, x_S_buf_ct{{[0-9]+}}, y_S_buf_ct{{[0-9]+}}, incx, beta_S, result_S_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::spmv(*handle, oneapi::mkl::uplo::lower, n, alpha_S, x_S_buf_ct{{[0-9]+}}, y_S_buf_ct{{[0-9]+}}, incx, beta_S, result_S_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
@@ -765,7 +765,7 @@ int main() {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::spmv(*handle, oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, y_D_buf_ct{{[0-9]+}}, incx, beta_D, result_D_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::spmv(*handle, oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, y_D_buf_ct{{[0-9]+}}, incx, beta_D, result_D_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
@@ -780,7 +780,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::spr(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_S, x_S_buf_ct{{[0-9]+}}, incx, result_S_buf_ct{{[0-9]+}}));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::spr(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_S, x_S_buf_ct{{[0-9]+}}, incx, result_S_buf_ct{{[0-9]+}}));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
@@ -793,7 +793,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::spr(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, incx, result_D_buf_ct{{[0-9]+}}));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::spr(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, incx, result_D_buf_ct{{[0-9]+}}));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
@@ -808,7 +808,7 @@ int main() {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::spr2(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_S, x_S_buf_ct{{[0-9]+}}, incx, y_S_buf_ct{{[0-9]+}}, incy, result_S_buf_ct{{[0-9]+}}));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::spr2(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_S, x_S_buf_ct{{[0-9]+}}, incx, y_S_buf_ct{{[0-9]+}}, incy, result_S_buf_ct{{[0-9]+}}));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
@@ -823,7 +823,7 @@ int main() {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::spr2(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, incx, y_D_buf_ct{{[0-9]+}}, incy, result_D_buf_ct{{[0-9]+}}));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::spr2(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, incx, y_D_buf_ct{{[0-9]+}}, incy, result_D_buf_ct{{[0-9]+}}));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
@@ -839,7 +839,7 @@ int main() {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::symv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_S, x_S_buf_ct{{[0-9]+}}, lda, y_S_buf_ct{{[0-9]+}}, incx, beta_S, result_S_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::symv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_S, x_S_buf_ct{{[0-9]+}}, lda, y_S_buf_ct{{[0-9]+}}, incx, beta_S, result_S_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
@@ -854,7 +854,7 @@ int main() {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::symv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, lda, y_D_buf_ct{{[0-9]+}}, incx, beta_D, result_D_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::symv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, lda, y_D_buf_ct{{[0-9]+}}, incx, beta_D, result_D_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
@@ -869,7 +869,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::syr(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_S, x_S_buf_ct{{[0-9]+}}, incx, result_S_buf_ct{{[0-9]+}}, lda));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syr(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_S, x_S_buf_ct{{[0-9]+}}, incx, result_S_buf_ct{{[0-9]+}}, lda));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
@@ -882,7 +882,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::syr(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, incx, result_D_buf_ct{{[0-9]+}}, lda));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syr(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, incx, result_D_buf_ct{{[0-9]+}}, lda));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
@@ -897,7 +897,7 @@ int main() {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto y_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::syr2(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_S, x_S_buf_ct{{[0-9]+}}, incx, y_S_buf_ct{{[0-9]+}}, incy, result_S_buf_ct{{[0-9]+}}, lda));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syr2(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_S, x_S_buf_ct{{[0-9]+}}, incx, y_S_buf_ct{{[0-9]+}}, incy, result_S_buf_ct{{[0-9]+}}, lda));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
@@ -912,7 +912,7 @@ int main() {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto y_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(y_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::syr2(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, incx, y_D_buf_ct{{[0-9]+}}, incy, result_D_buf_ct{{[0-9]+}}, lda));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syr2(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, n, alpha_D, x_D_buf_ct{{[0-9]+}}, incx, y_D_buf_ct{{[0-9]+}}, incy, result_D_buf_ct{{[0-9]+}}, lda));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
@@ -929,7 +929,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::tbmv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, oneapi::mkl::transpose::trans, (oneapi::mkl::diag)diag0, n, n, x_S_buf_ct{{[0-9]+}}, lda, result_S_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::tbmv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, oneapi::mkl::transpose::trans, (oneapi::mkl::diag)diag0, n, n, x_S_buf_ct{{[0-9]+}}, lda, result_S_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
@@ -942,7 +942,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::tbmv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, oneapi::mkl::transpose::conjtrans, (oneapi::mkl::diag)diag1, n, n, x_D_buf_ct{{[0-9]+}}, lda, result_D_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::tbmv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, oneapi::mkl::transpose::conjtrans, (oneapi::mkl::diag)diag1, n, n, x_D_buf_ct{{[0-9]+}}, lda, result_D_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
@@ -956,7 +956,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::tbsv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, oneapi::mkl::diag::nonunit, n, n, x_S_buf_ct{{[0-9]+}}, lda, result_S_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::tbsv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, oneapi::mkl::diag::nonunit, n, n, x_S_buf_ct{{[0-9]+}}, lda, result_S_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
@@ -969,7 +969,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::tbsv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, oneapi::mkl::diag::unit, n, n, x_D_buf_ct{{[0-9]+}}, lda, result_D_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::tbsv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, oneapi::mkl::diag::unit, n, n, x_D_buf_ct{{[0-9]+}}, lda, result_D_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
@@ -983,7 +983,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::tpmv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, n, x_S_buf_ct{{[0-9]+}}, result_S_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::tpmv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, n, x_S_buf_ct{{[0-9]+}}, result_S_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
@@ -996,7 +996,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::tpmv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, n, x_D_buf_ct{{[0-9]+}}, result_D_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::tpmv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, n, x_D_buf_ct{{[0-9]+}}, result_D_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
@@ -1010,7 +1010,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::tpsv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, n, x_S_buf_ct{{[0-9]+}}, result_S_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::tpsv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, n, x_S_buf_ct{{[0-9]+}}, result_S_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
@@ -1023,7 +1023,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::tpsv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, n, x_D_buf_ct{{[0-9]+}}, result_D_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::tpsv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, n, x_D_buf_ct{{[0-9]+}}, result_D_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
@@ -1037,7 +1037,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::trmv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, n, x_S_buf_ct{{[0-9]+}}, lda, result_S_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::trmv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, n, x_S_buf_ct{{[0-9]+}}, lda, result_S_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
@@ -1050,7 +1050,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::trmv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, n, x_D_buf_ct{{[0-9]+}}, lda, result_D_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::trmv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, n, x_D_buf_ct{{[0-9]+}}, lda, result_D_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
@@ -1064,7 +1064,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
   // CHECK-NEXT: auto result_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(result_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::trsv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, n, x_S_buf_ct{{[0-9]+}}, lda, result_S_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::trsv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, n, x_S_buf_ct{{[0-9]+}}, lda, result_S_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x_S);
@@ -1077,7 +1077,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
   // CHECK-NEXT: auto result_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(result_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::trsv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, n, x_D_buf_ct{{[0-9]+}}, lda, result_D_buf_ct{{[0-9]+}}, incy));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::trsv(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, n, x_D_buf_ct{{[0-9]+}}, lda, result_D_buf_ct{{[0-9]+}}, incy));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto x_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(x_D);
@@ -1095,7 +1095,7 @@ int main() {
   // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);
   // CHECK-NEXT: auto B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(B_S);
   // CHECK-NEXT: auto C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(C_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::gemm_batch(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::trans, n, n, n, alpha_S, A_S_buf_ct{{[0-9]+}}, n, 16, B_S_buf_ct{{[0-9]+}}, n, 16, beta_S, C_S_buf_ct{{[0-9]+}}, n, 16, 10));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm_batch(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::trans, n, n, n, alpha_S, A_S_buf_ct{{[0-9]+}}, n, 16, B_S_buf_ct{{[0-9]+}}, n, 16, beta_S, C_S_buf_ct{{[0-9]+}}, n, 16, 10));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);
@@ -1110,7 +1110,7 @@ int main() {
   // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
   // CHECK-NEXT: auto B_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(B_D);
   // CHECK-NEXT: auto C_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(C_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::gemm_batch(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, n, n, n, alpha_D, A_D_buf_ct{{[0-9]+}}, n, 16, B_D_buf_ct{{[0-9]+}}, n, 16, beta_D, C_D_buf_ct{{[0-9]+}}, n, 16, 10));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::gemm_batch(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, n, n, n, alpha_D, A_D_buf_ct{{[0-9]+}}, n, 16, B_D_buf_ct{{[0-9]+}}, n, 16, beta_D, C_D_buf_ct{{[0-9]+}}, n, 16, 10));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
@@ -1168,7 +1168,7 @@ int main() {
   // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);
   // CHECK-NEXT: auto B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(B_S);
   // CHECK-NEXT: auto C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(C_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::symm(*handle, (oneapi::mkl::side)side0, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, m, n, alpha_S, A_S_buf_ct{{[0-9]+}}, lda, B_S_buf_ct{{[0-9]+}}, ldb, beta_S, C_S_buf_ct{{[0-9]+}}, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::symm(*handle, (oneapi::mkl::side)side0, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, m, n, alpha_S, A_S_buf_ct{{[0-9]+}}, lda, B_S_buf_ct{{[0-9]+}}, ldb, beta_S, C_S_buf_ct{{[0-9]+}}, ldc));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);
@@ -1183,7 +1183,7 @@ int main() {
   // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
   // CHECK-NEXT: auto B_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(B_D);
   // CHECK-NEXT: auto C_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(C_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::symm(*handle, (oneapi::mkl::side)side1, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, m, n, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, B_D_buf_ct{{[0-9]+}}, ldb, beta_D, C_D_buf_ct{{[0-9]+}}, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::symm(*handle, (oneapi::mkl::side)side1, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, m, n, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, B_D_buf_ct{{[0-9]+}}, ldb, beta_D, C_D_buf_ct{{[0-9]+}}, ldc));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
@@ -1198,7 +1198,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);
   // CHECK-NEXT: auto C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(C_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::syrk(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, n, k, alpha_S, A_S_buf_ct{{[0-9]+}}, lda, beta_S, C_S_buf_ct{{[0-9]+}}, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syrk(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, n, k, alpha_S, A_S_buf_ct{{[0-9]+}}, lda, beta_S, C_S_buf_ct{{[0-9]+}}, ldc));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);
@@ -1211,7 +1211,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
   // CHECK-NEXT: auto C_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(C_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::syrk(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, n, k, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, beta_D, C_D_buf_ct{{[0-9]+}}, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syrk(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, n, k, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, beta_D, C_D_buf_ct{{[0-9]+}}, ldc));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
@@ -1226,7 +1226,7 @@ int main() {
   // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);
   // CHECK-NEXT: auto B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(B_S);
   // CHECK-NEXT: auto C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(C_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::syr2k(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, n, k, alpha_S, A_S_buf_ct{{[0-9]+}}, lda, B_S_buf_ct{{[0-9]+}}, ldb, beta_S, C_S_buf_ct{{[0-9]+}}, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syr2k(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, n, k, alpha_S, A_S_buf_ct{{[0-9]+}}, lda, B_S_buf_ct{{[0-9]+}}, ldb, beta_S, C_S_buf_ct{{[0-9]+}}, ldc));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);
@@ -1241,7 +1241,7 @@ int main() {
   // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
   // CHECK-NEXT: auto B_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(B_D);
   // CHECK-NEXT: auto C_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(C_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::syr2k(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, n, k, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, B_D_buf_ct{{[0-9]+}}, ldb, beta_D, C_D_buf_ct{{[0-9]+}}, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::syr2k(*handle, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, n, k, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, B_D_buf_ct{{[0-9]+}}, ldb, beta_D, C_D_buf_ct{{[0-9]+}}, ldc));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
@@ -1256,7 +1256,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);
   // CHECK-NEXT: auto C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(C_S);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::trsm(*handle, oneapi::mkl::side::left, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, m, n, alpha_S, A_S_buf_ct{{[0-9]+}}, lda, C_S_buf_ct{{[0-9]+}}, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::trsm(*handle, oneapi::mkl::side::left, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, m, n, alpha_S, A_S_buf_ct{{[0-9]+}}, lda, C_S_buf_ct{{[0-9]+}}, ldc));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);
@@ -1269,7 +1269,7 @@ int main() {
   // CHECK: {
   // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
   // CHECK-NEXT: auto C_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(C_D);
-  // CHECK-NEXT: status = CHECK_SYCL_ERROR(oneapi::mkl::blas::column_major::trsm(*handle, oneapi::mkl::side::right, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, m, n, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, C_D_buf_ct{{[0-9]+}}, ldc));
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(oneapi::mkl::blas::column_major::trsm(*handle, oneapi::mkl::side::right, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, m, n, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, C_D_buf_ct{{[0-9]+}}, ldc));
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);

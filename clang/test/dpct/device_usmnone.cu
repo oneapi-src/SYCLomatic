@@ -5,6 +5,6 @@
 int main() {
 int concurrentManagedAccess = 0;
 int p_gpuDevice = 0;
-// CHECK: int error = CHECK_SYCL_ERROR(concurrentManagedAccess = false);
+// CHECK: int error = DPCT_CHECK_ERROR(concurrentManagedAccess = false);
 int error = cudaDeviceGetAttribute(&concurrentManagedAccess,  cudaDevAttrConcurrentManagedAccess,  p_gpuDevice);
 }

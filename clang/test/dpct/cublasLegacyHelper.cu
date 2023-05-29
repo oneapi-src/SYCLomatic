@@ -24,7 +24,7 @@ void cublasErrCheck_(cublasStatus_t stat, const char *file, int line) {
 
 #define MACRO_B(status) (status)
 
-// CHECK: #define MACRO_C(pointer) status = CHECK_SYCL_ERROR(dpct::dpct_free(pointer))
+// CHECK: #define MACRO_C(pointer) status = DPCT_CHECK_ERROR(dpct::dpct_free(pointer))
 #define MACRO_C(pointer) status = cublasFree(pointer)
 
 void foo2(cublasStatus){}
@@ -83,7 +83,7 @@ int main() {
   // CHECK: dpct::queue_ptr stream1;
   // CHECK-NEXT: stream1 = dev_ct1.create_queue();
   // CHECK-NEXT: dev_ct1.set_saved_queue(stream1);
-  // CHECK-NEXT: cublasErrCheck(CHECK_SYCL_ERROR(dev_ct1.set_saved_queue(stream1)));
+  // CHECK-NEXT: cublasErrCheck(DPCT_CHECK_ERROR(dev_ct1.set_saved_queue(stream1)));
   cudaStream_t stream1;
   cudaStreamCreate(&stream1);
   cublasSetKernelStream(stream1);
@@ -93,23 +93,23 @@ int main() {
   int n = 10;
   int elemSize = 4;
 
-  // CHECK: status = CHECK_SYCL_ERROR(d_A = (float *)dpct::dpct_malloc((n)*(elemSize)));
+  // CHECK: status = DPCT_CHECK_ERROR(d_A = (float *)dpct::dpct_malloc((n)*(elemSize)));
   // CHECK-NEXT: d_A = (float *)dpct::dpct_malloc((n)*(elemSize));
   status = cublasAlloc(n, elemSize, (void **)&d_A);
   cublasAlloc(n, elemSize, (void **)&d_A);
 
-  // CHECK: foo2(CHECK_SYCL_ERROR(d_A = (float *)dpct::dpct_malloc((n)*(elemSize))));
+  // CHECK: foo2(DPCT_CHECK_ERROR(d_A = (float *)dpct::dpct_malloc((n)*(elemSize))));
   foo2(cublasAlloc(n, elemSize, (void **)&d_A));
 
-  // CHECK: status = CHECK_SYCL_ERROR(dpct::dpct_free(d_A));
+  // CHECK: status = DPCT_CHECK_ERROR(dpct::dpct_free(d_A));
   // CHECK-NEXT: dpct::dpct_free(d_A);
   status = cublasFree(d_A);
   cublasFree(d_A);
 
-  // CHECK: foo2(CHECK_SYCL_ERROR(dpct::dpct_free(d_A)));
+  // CHECK: foo2(DPCT_CHECK_ERROR(dpct::dpct_free(d_A)));
   foo2(cublasFree(d_A));
 
-  // CHECK: MACRO_B(CHECK_SYCL_ERROR(dpct::dpct_free(d_A)));
+  // CHECK: MACRO_B(DPCT_CHECK_ERROR(dpct::dpct_free(d_A)));
   MACRO_B(cublasFree(d_A));
 
   // CHECK: /*

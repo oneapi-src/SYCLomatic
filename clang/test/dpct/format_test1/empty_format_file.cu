@@ -14,7 +14,7 @@ float *d_A = NULL;
 
      //CHECK:void foo1() try {
 //CHECK-NEXT:  for(;;)
-//CHECK-NEXT:    int a = CHECK_SYCL_ERROR(dpct::get_default_queue()
+//CHECK-NEXT:    int a = DPCT_CHECK_ERROR(dpct::get_default_queue()
 //CHECK-NEXT:                                 .memcpy(d_A, h_A, sizeof(double) * SIZE * SIZE)
 //CHECK-NEXT:                                 .wait());
 //CHECK-NEXT:}
