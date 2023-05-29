@@ -8,10 +8,6 @@
 namespace cg = cooperative_groups;
 
 __global__ void foo1() {
-//CHECK:/*
-//CHECK-NEXT:DPCT1082:{{[0-9]+}}: Migration of cg::experimental::block_tile_memory<1, 1> type is not supported.
-//CHECK-NEXT:*/
-//CHECK:cg::experimental::block_tile_memory<1, 1> mem;
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of this_thread_block is not supported.
 //CHECK-NEXT:*/
