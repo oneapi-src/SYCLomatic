@@ -165,7 +165,6 @@ static bool EvaluateDefined(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
       IsInAnalysisScopeFunc(PeekTok.getLocation()) && GetRunRound() == 0) {
     Result.Val = true;
   }
-  std::optional<Token> RightParen;
 #endif // SYCLomatic_CUSTOMIZATION
   // Save macro token for callback.
   Token macroToken(PeekTok);
@@ -175,9 +174,6 @@ static bool EvaluateDefined(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
     // Consume identifier.
     Result.setEnd(PeekTok.getLocation());
     PP.LexUnexpandedNonComment(PeekTok);
-#ifdef SYCLomatic_CUSTOMIZATION
-    RightParen = PeekTok;
-#endif // SYCLomatic_CUSTOMIZATION
 
     if (PeekTok.isNot(tok::r_paren)) {
       PP.Diag(PeekTok.getLocation(), diag::err_pp_expected_after)
