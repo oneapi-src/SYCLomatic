@@ -263,7 +263,7 @@ inline unsigned int byte_level_permute(unsigned int a, unsigned int b,
 /// \returns The position
 template <typename T> inline int ffs(T a) {
   static_assert(std::is_integral<T>::value, "integer required");
-  return (sycl::ext::intel::ctz(a) + 1) % (sizeof(T) * 8 + 1);
+  return (sycl::ctz(a) + 1) % (sizeof(T) * 8 + 1);
 }
 // DPCT_LABEL_END
 
