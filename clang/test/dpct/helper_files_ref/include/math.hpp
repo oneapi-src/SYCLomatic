@@ -149,6 +149,19 @@ compare(const T a, const T b, const BinaryOperation binary_op) {
   return {compare(a[0], b[0], binary_op), compare(a[1], b[1], binary_op)};
 }
 
+/// Performs 2 element comparison and return an unsigned int.
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] binary_op functor that implements the binary operation
+/// \returns the comparison result
+template <typename T, class BinaryOperation>
+inline unsigned compare_mask(const sycl::vec<T, 2> a, const sycl::vec<T, 2> b,
+                             const BinaryOperation binary_op) {
+  return sycl::vec<short, 2>(-compare(a[0], b[0], binary_op),
+                             -compare(a[1], b[1], binary_op))
+      .as<sycl::vec<unsigned, 1>>();
+}
+
 /// Performs 2 element unordered comparison.
 /// \param [in] a The first value
 /// \param [in] b The second value
@@ -159,6 +172,20 @@ inline std::enable_if_t<T::size() == 2, T>
 unordered_compare(const T a, const T b, const BinaryOperation binary_op) {
   return {unordered_compare(a[0], b[0], binary_op),
           unordered_compare(a[1], b[1], binary_op)};
+}
+
+/// Performs 2 element unordered comparison and return an unsigned int.
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] binary_op functor that implements the binary operation
+/// \returns the comparison result
+template <typename T, class BinaryOperation>
+inline unsigned unordered_compare_mask(const sycl::vec<T, 2> a,
+                                       const sycl::vec<T, 2> b,
+                                       const BinaryOperation binary_op) {
+  return sycl::vec<short, 2>(-unordered_compare(a[0], b[0], binary_op),
+                             -unordered_compare(a[1], b[1], binary_op))
+      .as<sycl::vec<unsigned, 1>>();
 }
 
 /// Determine whether 2 element value is NaN.
@@ -264,6 +291,70 @@ inline std::uint64_t max(const std::uint64_t a, const std::uint32_t b) {
 }
 inline std::uint64_t max(const std::uint32_t a, const std::uint64_t b) {
   return sycl::max(static_cast<std::uint64_t>(a), b);
+}
+
+/// Performs relu saturation.
+/// \param [in] a The input value
+/// \returns the relu saturation result
+template <typename T> inline T relu(const T a) {
+  if (!detail::isnan(a) && a < 0.f)
+    return 0.f;
+  return a;
+}
+template <class T> inline sycl::vec<T, 2> relu(const sycl::vec<T, 2> a) {
+  sycl::vec<T, 2> ret = a;
+  if (!detail::isnan(ret[0]) && ret[0] < 0.f)
+    ret[0] = 0.f;
+  if (!detail::isnan(ret[1]) && ret[1] < 0.f)
+    ret[1] = 0.f;
+  return ret;
+}
+
+/// Performs complex number multiply addition.
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] b The third value
+/// \returns the operation result
+template <typename T>
+inline sycl::vec<T, 2> complex_mul_add(const sycl::vec<T, 2> a,
+                                       const sycl::vec<T, 2> b,
+                                       const sycl::vec<T, 2> c) {
+  return sycl::vec<T, 2>{a[0] * b[0] - a[1] * b[1] + c[0],
+                         a[0] * b[1] + a[1] * b[0] + c[1]};
+}
+
+/// Performs 2 element comparison and return the bigger one. If either of inputs
+/// is NaN, then return NaN.
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \returns the bigger value
+template <typename T> inline T fmax_nan(const T a, const T b) {
+  if (detail::isnan(a) || detail::isnan(b))
+    return NAN;
+  else
+    return sycl::fmax(a, b);
+}
+template <typename T>
+inline sycl::vec<T, 2> fmax_nan(const sycl::vec<T, 2> a,
+                                const sycl::vec<T, 2> b) {
+  return {fmax_nan(a[0], b[0]), fmax_nan(a[1], b[1])};
+}
+
+/// Performs 2 element comparison and return the smaller one. If either of
+/// inputs is NaN, then return NaN.
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \returns the smaller value
+template <typename T> inline T fmin_nan(const T a, const T b) {
+  if (detail::isnan(a) || detail::isnan(b))
+    return NAN;
+  else
+    return sycl::fmin(a, b);
+}
+template <typename T>
+inline sycl::vec<T, 2> fmin_nan(const sycl::vec<T, 2> a,
+                                const sycl::vec<T, 2> b) {
+  return {fmin_nan(a[0], b[0]), fmin_nan(a[1], b[1])};
 }
 
 /// A sycl::abs wrapper functors.

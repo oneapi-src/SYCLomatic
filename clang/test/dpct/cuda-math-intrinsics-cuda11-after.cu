@@ -10,9 +10,58 @@ using namespace std;
 __global__ void kernelFuncHalf(__half *deviceArrayHalf) {
   __half h, h_1, h_2;
   __half2 h2, h2_1, h2_2;
+  double d;
+
+  // Half Arithmetic Functions
+
+  //  CHECK: h_2 = h + h_1;
+  h_2 = __hadd_rn(h, h_1);
+  // CHECK: h_2 = dpct::relu(sycl::fma(h, h_1, h_2));
+  h_2 = __hfma_relu(h, h_1, h_2);
+  // CHECK: h_2 = h * h_1;
+  h_2 = __hmul_rn(h, h_1);
+  // CHECK: h_2 = h - h_1;
+  h_2 = __hsub_rn(h, h_1);
+
+  // Half2 Arithmetic Functions
+
+  // CHECK: h2_2 = h2 + h2_1;
+  h2_2 = __hadd2_rn(h2, h2_1);
+  // CHECK: h2_2 = dpct::complex_mul_add(h2, h2_1, h2_2);
+  h2_2 = __hcmadd(h2, h2_1, h2_2);
+  // CHECK: h2_2 = dpct::relu(sycl::fma(h2, h2_1, h2_2));
+  h2_2 = __hfma2_relu(h2, h2_1, h2_2);
+  // CHECK: h2_2 = h2 * h2_1;
+  h2_2 = __hmul2_rn(h2, h2_1);
+  // CHECK: h2_2 = h2 - h2_1;
+  h2_2 = __hsub2_rn(h2, h2_1);
+
+  // Half Comparison Functions
+
+  // CHECK: h2_2 = sycl::fmax(h, h_1);
+  h2_2 = __hmax(h, h_1);
+  // CHECK: h2_2 = dpct::fmax_nan(h, h_1);
+  h2_2 = __hmax_nan(h, h_1);
+  // CHECK: h2_2 = sycl::fmin(h, h_1);
+  h2_2 = __hmin(h, h_1);
+  // CHECK: h2_2 = dpct::fmin_nan(h, h_1);
+  h2_2 = __hmin_nan(h, h_1);
+
+  // Half2 Comparison Functions
+
+  // CHECK: h2_2 = sycl::half2(sycl::fmax(h2[0], h2_1[0]), sycl::fmax(h2[1], h2_1[1]));
+  h2_2 = __hmax2(h2, h2_1);
+  // CHECK: h2_2 = dpct::fmax_nan(h2, h2_1);
+  h2_2 = __hmax2_nan(h2, h2_1);
+  // CHECK: h2_2 = sycl::half2(sycl::fmin(h2[0], h2_1[0]), sycl::fmax(h2[1], h2_1[1]));
+  h2_2 = __hmin2(h2, h2_1);
+  // CHECK: h2_2 = dpct::fmin_nan(h2, h2_1);
+  h2_2 = __hmin2_nan(h2, h2_1);
 
   // Half Precision Conversion and Data Movement
 
+  // CHECK: h_2 = sycl::half(d);
+  h_2 = __double2half(d);
   // CHECK: /*
   // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The '*' expression is used instead of the __ldca call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
   // CHECK-NEXT: */
