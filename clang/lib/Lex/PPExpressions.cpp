@@ -526,7 +526,7 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
     }
     Result.setRange(Start, PeekTok.getLocation());
     Result.setIdentifier(nullptr);
-    PP.LexNonComment(PeekTok); // Eat the ).
+    PP.LexNonComment(PeekTok);  // Eat the ).
     return false;
   }
   case tok::plus: {
@@ -562,8 +562,7 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
   case tok::tilde: {
     SourceLocation Start = PeekTok.getLocation();
     PP.LexNonComment(PeekTok);
-    if (EvaluateValue(Result, PeekTok, DT, ValueLive, PP))
-      return true;
+    if (EvaluateValue(Result, PeekTok, DT, ValueLive, PP)) return true;
     Result.setBegin(Start);
     Result.setIdentifier(nullptr);
 
@@ -685,11 +684,11 @@ static bool EvaluateDirectiveSubExpr(PPValue &LHS, unsigned MinPrec,
     // expr dead.
     bool RHSIsLive;
     if (Operator == tok::ampamp && LHS.Val == 0)
-      RHSIsLive = false;  // RHS of "0 && x" is dead.
+      RHSIsLive = false;   // RHS of "0 && x" is dead.
     else if (Operator == tok::pipepipe && LHS.Val != 0)
-      RHSIsLive = false;  // RHS of "1 || x" is dead.
+      RHSIsLive = false;   // RHS of "1 || x" is dead.
     else if (Operator == tok::question && LHS.Val == 0)
-      RHSIsLive = false;  // RHS (x) of "0 ? x : y" is dead.
+      RHSIsLive = false;   // RHS (x) of "0 ? x : y" is dead.
     else
       RHSIsLive = ValueLive;
 #ifdef SYCLomatic_CUSTOMIZATION
