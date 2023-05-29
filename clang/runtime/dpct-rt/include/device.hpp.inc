@@ -70,7 +70,7 @@ namespace dpct {
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 /// SYCL default exception handler
-auto exception_handler = [](sycl::exception_list exceptions) {
+inline auto exception_handler = [](sycl::exception_list exceptions) {
   for (std::exception_ptr const &e : exceptions) {
     try {
       std::rethrow_exception(e);
@@ -1024,6 +1024,7 @@ Use 64 bits as memory_bus_width default value."
 // DPCT_PARENT_FEATURE|device_ext
 // DPCT_DEPENDENCY_BEGIN
 // Device|device_ext
+// Device|device_ext_default_queue
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 private:
@@ -1192,6 +1193,7 @@ public:
     return DEFAULT_DEVICE_ID;
   }
 // DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|dev_mgr_select_device|dpct
 // DPCT_PARENT_FEATURE|dev_mgr
 // DPCT_DEPENDENCY_BEGIN
@@ -1230,6 +1232,23 @@ public:
       id++;
     }
     return id;
+  }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|dev_mgr_select_device_with_selector|dpct
+// DPCT_PARENT_FEATURE|dev_mgr
+// DPCT_DEPENDENCY_BEGIN
+// Device|dev_mgr_select_device
+// Device|dev_mgr_get_device_id
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  template <class DeviceSelector>
+  std::enable_if_t<
+      std::is_invocable_r_v<int, DeviceSelector, const sycl::device &>>
+  select_device(const DeviceSelector &selector = sycl::gpu_selector_v) {
+    sycl::device selected_device = sycl::device(selector);
+    unsigned int selected_device_id = get_device_id(selected_device);
+    select_device(selected_device_id);
   }
 // DPCT_LABEL_END
 
@@ -1420,6 +1439,19 @@ static inline device_ext &cpu_device() {
 static inline unsigned int select_device(unsigned int id) {
   dev_mgr::instance().select_device(id);
   return id;
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|select_device_with_selector|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|dev_mgr_select_device_with_selector
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <class DeviceSelector>
+static inline std::enable_if_t<
+    std::is_invocable_r_v<int, DeviceSelector, const sycl::device &>>
+select_device(const DeviceSelector &selector = sycl::gpu_selector_v) {
+  dev_mgr::instance().select_device(selector);
 }
 // DPCT_LABEL_END
 

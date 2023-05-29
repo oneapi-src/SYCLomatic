@@ -8,17 +8,19 @@
 
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
+#include "AsmMigration.h"
 #include "BarrierFenceSpaceAnalyzer.h"
 #include "CallExprRewriter.h"
 #include "CustomHelperFiles.h"
+#include "DNNAPIMigration.h"
 #include "ExprAnalysis.h"
 #include "FFTAPIMigration.h"
 #include "Homoglyph.h"
+#include "LIBCUAPIMigration.h"
+#include "MemberExprRewriter.h"
 #include "MigrationRuleManager.h"
 #include "MisleadingBidirectional.h"
-#include "DNNAPIMigration.h"
 #include "NCCLAPIMigration.h"
-#include "LIBCUAPIMigration.h"
 #include "SaveNewFiles.h"
 #include "TextModification.h"
 #include "ThrustAPIMigration.h"
@@ -29,14 +31,13 @@
 #include "clang/AST/TypeLoc.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Analysis/AnalysisDeclContext.h"
+#include "clang/Analysis/CallGraph.h"
 #include "clang/Basic/CharInfo.h"
 #include "clang/Tooling/Tooling.h"
+#include "llvm/ADT/SCCIterator.h"
 #include "llvm/ADT/StringSet.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/Path.h"
-#include "MemberExprRewriter.h"
-#include "clang/Analysis/CallGraph.h"
-#include "llvm/ADT/SCCIterator.h"
 
 #include <algorithm>
 #include <iostream>
@@ -1964,8 +1965,10 @@ REGISTER_RULE(ZeroLengthArrayRule, PassKind::PK_Migration)
 
 void MiscAPIRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
-    return hasAnyName("cudaOccupancyMaxActiveBlocksPerMultiprocessor");
+    return hasAnyName("cudaOccupancyMaxActiveBlocksPerMultiprocessor",
+                      "cuOccupancyMaxActiveBlocksPerMultiprocessor");
   };
+
   MF.addMatcher(
       callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),
       this);
@@ -10169,15 +10172,6 @@ void MemoryMigrationRule::memcpyMigration(
   if (AsyncLoc != std::string::npos) {
     IsAsync = true;
     NameRef = NameRef.substr(0, AsyncLoc);
-    ReplaceStr = MapNames::getDpctNamespace() + "async_dpct_memcpy";
-    requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy, C);
-    requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_2d, C);
-    requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_3d, C);
-  } else {
-    ReplaceStr = MapNames::getDpctNamespace() + "dpct_memcpy";
-    requestFeature(HelperFeatureEnum::Memory_dpct_memcpy, C);
-    requestFeature(HelperFeatureEnum::Memory_dpct_memcpy_2d, C);
-    requestFeature(HelperFeatureEnum::Memory_dpct_memcpy_3d, C);
   }
   if (!NameRef.compare("cudaMemcpy2D")) {
     handleDirection(C, 6);
@@ -10275,6 +10269,20 @@ void MemoryMigrationRule::memcpyMigration(
             C->getArg(2), ", " + MapNames::getDpctNamespace() + "automatic"));
         handleAsync(C, 3, Result);
       }
+    }
+  }
+
+  if (ReplaceStr.empty()) {
+    if (IsAsync) {
+      ReplaceStr = MapNames::getDpctNamespace() + "async_dpct_memcpy";
+      requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy, C);
+      requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_2d, C);
+      requestFeature(HelperFeatureEnum::Memory_async_dpct_memcpy_3d, C);
+    } else {
+      ReplaceStr = MapNames::getDpctNamespace() + "dpct_memcpy";
+      requestFeature(HelperFeatureEnum::Memory_dpct_memcpy, C);
+      requestFeature(HelperFeatureEnum::Memory_dpct_memcpy_2d, C);
+      requestFeature(HelperFeatureEnum::Memory_dpct_memcpy_3d, C);
     }
   }
 
@@ -11868,7 +11876,9 @@ void CooperativeGroupsFunctionRule::runRule(
   ReportUnsupportedWarning RUW(CE->getBeginLoc(), FuncName, this);
 
   if (FuncName == "sync" || FuncName == "thread_rank" || FuncName == "size" ||
-      FuncName == "shfl_down" || FuncName == "reduce") {
+      FuncName == "shfl_down" || FuncName == "shfl_up" ||
+      FuncName == "shfl_xor" || FuncName == "meta_group_rank" ||
+      FuncName == "reduce") {
     // There are 3 usages of cooperative groups APIs.
     // 1. cg::thread_block tb; tb.sync(); // member function
     // 2. cg::thread_block tb; cg::sync(tb); // free function
@@ -11879,6 +11889,9 @@ void CooperativeGroupsFunctionRule::runRule(
     // thread_rank   1/1   1/1   0/1
     // size          1/1   0/0   0/1
     // shfl_down     1/1   0/0   0/0
+    // shfl_up       1/1   0/0   0/0
+    // shfl_xor      1/1   0/0   0/0
+    // meta_group_rank 1/1   0/0   0/0
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
@@ -13882,163 +13895,7 @@ void RemoveBaseClassRule::runRule(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(RemoveBaseClassRule, PassKind::PK_Migration)
-
-void AsmRule::registerMatcher(ast_matchers::MatchFinder &MF) {
-  MF.addMatcher(
-      asmStmt(hasAncestor(functionDecl(
-                  anyOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)))))
-          .bind("asm"),
-      this);
-}
-
-bool canAsmLop3ExprFast(std::ostringstream &OS, const std::string &a,
-                        const std::string &b, const std::string &c,
-                        const std::uint8_t imm) {
-#define EMPTY4 "", "", "", ""
-#define EMPTY16 EMPTY4, EMPTY4, EMPTY4, EMPTY4
-  static const std::string FastMap[256] = {
-      /*0x00*/ "0",
-      // clang-format off
-      EMPTY16, EMPTY4, EMPTY4, "",
-      /*0x1a*/ "(@a & @b | @c) ^ @a",
-      "", "", "",
-      /*0x1e*/ "@a ^ (@b | @c)",
-      EMPTY4, EMPTY4, EMPTY4, "", "",
-      /*0x2d*/ "~@a ^ (~@b & @c)",
-      EMPTY16, "", "",
-      /*0x40*/ "@a & @b & ~@c",
-      EMPTY16, EMPTY16, EMPTY16, EMPTY4, "", "", "",
-      /*0x78*/ "@a ^ (@b & @c)",
-      EMPTY4, "", "", "",
-      /*0x80*/ "@a & @b & @c",
-      EMPTY16, EMPTY4, "",
-      /*0x96*/ "@a ^ @b ^ @c",
-      EMPTY16, EMPTY4, EMPTY4, EMPTY4, "",
-      /*0xb4*/ "@a ^ (@b & ~@c)",
-      "", "", "",
-      /*0xb8*/ "(@a ^ (@b & (@c ^ @a)))",
-      EMPTY16, EMPTY4, EMPTY4, "",
-      /*0xd2*/ "@a ^ (~@b & @c)",
-      EMPTY16, EMPTY4, "",
-      /*0xe8*/ "((@a & (@b | @c)) | (@b & @c))",
-      "",
-      /*0xea*/ "(@a & @b) | @c",
-      EMPTY16, "", "", "",
-      // clang-format on
-      /*0xfe*/ "@a | @b | @c",
-      /*0xff*/ "1"};
-#undef EMPTY16
-#undef EMPTY4
-  const StringRef Expr = FastMap[imm];
-  if (Expr.empty()) {
-    return false;
-  }
-  OS << " ";
-  const StringRef ReplaceMap[3] = {a, b, c};
-  std::string::size_type Pre = 0;
-  auto Pos = Expr.find('@');
-  while (Pos != std::string::npos) {
-    OS << Expr.substr(Pre, Pos - Pre).str();
-    OS << ReplaceMap[Expr[Pos + 1] - 'a'].str();
-    Pre = Pos + 2;
-    Pos = Expr.find('@', Pre);
-  }
-  OS << Expr.substr(Pre).str();
-  return true;
-}
-
-std::string getAsmLop3Expr(const llvm::SmallVector<std::string, 5> &Operands) {
-  if (Operands.size() != 5) {
-    return "";
-  }
-  const auto &d = Operands[0];
-  const auto &a = Operands[1];
-  const auto &b = Operands[2];
-  const auto &c = Operands[3];
-  auto imm = std::stoi(Operands[4], 0, 16);
-  assert(imm >= 0 && imm <= UINT8_MAX);
-  std::ostringstream OS;
-  OS << d << " =";
-  if (canAsmLop3ExprFast(OS, a, b, c, imm)) {
-    return OS.str();
-  }
-  if (imm & 0x01)
-    OS << " (~" << a << " & ~" << b << " & ~" << c << ") |";
-  if (imm & 0x02)
-    OS << " (~" << a << " & ~" << b << " & " << c << ") |";
-  if (imm & 0x04)
-    OS << " (~" << a << " & " << b << " & ~" << c << ") |";
-  if (imm & 0x08)
-    OS << " (~" << a << " & " << b << " & " << c << ") |";
-  if (imm & 0x10)
-    OS << " (" << a << " & ~" << b << " & ~" << c << ") |";
-  if (imm & 0x20)
-    OS << " (" << a << " & ~" << b << " & " << c << ") |";
-  if (imm & 0x40)
-    OS << " (" << a << " & " << b << " & ~" << c << ") |";
-  if (imm & 0x80)
-    OS << " (" << a << " & " << b << " & " << c << ") |";
-  auto ret = OS.str();
-  return ret.replace(ret.length() - 2, 2, "");
-}
-
-void AsmRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
-  if (auto AS = getNodeAsType<AsmStmt>(Result, "asm")) {
-    auto AsmString = AS->generateAsmString(*Result.Context);
-    auto TemplateString = StringRef(AsmString).substr(0, AsmString.find(';'));
-    auto CurrIndex = TemplateString.find(' ');
-    auto OpCode = TemplateString.substr(0, CurrIndex);
-    if (OpCode == "lop3.b32") {
-      // ASM instruction pattern: lop3.b32 d, a, b, c, immLut;
-      llvm::SmallVector<std::string, 4> Args;
-      for (const auto *const it : AS->children()) {
-        ExprAnalysis EA;
-        EA.analyze(cast<Expr>(it));
-        if (isa<IntegerLiteral>(it) || isa<DeclRefExpr>(it) ||
-            isa<ImplicitCastExpr>(it)) {
-          Args.push_back(EA.getReplacedString());
-        } else {
-          Args.push_back("(" + EA.getReplacedString() + ")");
-        }
-      }
-      llvm::SmallVector<std::string, 5> Operands;
-      auto PreIndex = CurrIndex;
-      CurrIndex = TemplateString.find(",", PreIndex);
-      // Clang will generate the ASM instruction into a string like this:
-      // Cuda code: asm("lop3.b32 %0, %1*%1, %1, 3, 0x1A;" : "=r"(b) : "r"(a));
-      // TemplateString: "lop3.b32 $0, $1*$1,$ 1, 3, 0x1A"
-      while (PreIndex != StringRef::npos) {
-        auto TempStr =
-            TemplateString.substr(PreIndex + 1, CurrIndex - PreIndex - 1).str();
-        // Replace all args, example: the "$1*$1" will be replace by "(a*a)".
-        if (TempStr.find('$') != TempStr.length() - 2 && Operands.size() != 4) {
-          // When the operands only contain a register, or is the last imm, not
-          // need add the paren.
-          TempStr = "(" + TempStr + ")";
-        }
-        auto ArgIndex = TempStr.find('$');
-        while (ArgIndex != std::string::npos) {
-          // The PTX Instructions has mostly 4 parameters, so just use the char
-          // after '$'.
-          auto ArgNo = TempStr[ArgIndex + 1] - '0';
-          TempStr.replace(ArgIndex, 2, Args[ArgNo]);
-          ArgIndex = TempStr.find('$');
-        }
-        Operands.push_back(std::move(TempStr));
-        PreIndex = CurrIndex;
-        CurrIndex = TemplateString.find(",", PreIndex + 1);
-      }
-      auto Replacement = getAsmLop3Expr(Operands);
-      if (!Replacement.empty()) {
-        return emplaceTransformation(new ReplaceStmt(AS, Replacement));
-      }
-    }
-    report(AS->getAsmLoc(), Diagnostics::DEVICE_ASM, true);
-  }
-  return;
-}
-
-REGISTER_RULE(AsmRule, PassKind::PK_Migration)
+REGISTER_RULE(AsmRule, PassKind::PK_Analysis)
 
 // Rule for FFT function calls.
 void FFTFunctionCallRule::registerMatcher(MatchFinder &MF) {
@@ -14689,7 +14546,8 @@ void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                       "cuCimagf", "cuCadd", "cuCsub", "cuCmul", "cuCdiv",
                       "cuCabs", "cuConj", "make_cuFloatComplex", "cuCaddf",
                       "cuCsubf", "cuCmulf", "cuCdivf", "cuCabsf", "cuConjf",
-                      "make_cuComplex", "__saturatef");
+                      "make_cuComplex", "__saturatef", "cuComplexDoubleToFloat",
+                      "cuComplexFloatToDouble");
   };
 
   MF.addMatcher(callExpr(callee(functionDecl(ComplexAPI()))).bind("call"),
