@@ -70,7 +70,7 @@ namespace dpct {
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 /// SYCL default exception handler
-auto exception_handler = [](sycl::exception_list exceptions) {
+inline auto exception_handler = [](sycl::exception_list exceptions) {
   for (std::exception_ptr const &e : exceptions) {
     try {
       std::rethrow_exception(e);
@@ -1024,6 +1024,7 @@ Use 64 bits as memory_bus_width default value."
 // DPCT_PARENT_FEATURE|device_ext
 // DPCT_DEPENDENCY_BEGIN
 // Device|device_ext
+// Device|device_ext_default_queue
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 private:

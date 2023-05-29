@@ -467,7 +467,8 @@ CALL_FACTORY_ENTRY("thrust::conj", CALL("std::conj", ARG(0)))
 CALL_FACTORY_ENTRY("thrust::proj", CALL("std::proj", ARG(0)))
 
 // thrust::raw_reference_cast
-CALL_FACTORY_ENTRY("thrust::raw_reference_cast", CALL(MapNames::getDpctNamespace() + "get_raw_reference", ARG(0)))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_get_raw_reference,
+CALL_FACTORY_ENTRY("thrust::raw_reference_cast", CALL(MapNames::getDpctNamespace() + "get_raw_reference", ARG(0))))
 
 // thrust::minmax_element
 thrustFactory("thrust::minmax_element",
@@ -585,6 +586,69 @@ CONDITIONAL_FACTORY_ENTRY(
                             CALL("oneapi::dpl::transform_exclusive_scan",
                               ARG("oneapi::dpl::execution::seq"),
                               ARG(0), ARG(1), ARG(2), ARG(4), ARG(5), ARG(3))))
+    )
+)
+
+
+// thrust::transform_inclusive_scan
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(6),
+  CONDITIONAL_FACTORY_ENTRY(
+    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+    //Handling case: thrust::transform_inclusive_scan(policy, ptr, ptr, ptr, unary_op, binary_op);
+    IFELSE_FACTORY_ENTRY(
+      "thrust::transform_inclusive_scan",
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+        CALL_FACTORY_ENTRY("thrust::transform_inclusive_scan", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+        CALL_FACTORY_ENTRY("thrust::transform_inclusive_scan",
+                          CALL("oneapi::dpl::transform_inclusive_scan",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                ARG(5), ARG(4)))),
+      CALL_FACTORY_ENTRY("thrust::transform_inclusive_scan",
+                        CALL("oneapi::dpl::transform_inclusive_scan",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), ARG(3), ARG(5), ARG(4)))),
+    // Handling case: thrust::unique_by_key(thrust::device, iterator, iterator, iterator, unary_op, binary_op);
+    CALL_FACTORY_ENTRY("thrust::transform_inclusive_scan",
+                      CALL("oneapi::dpl::transform_inclusive_scan",
+                            makeMappedThrustPolicyEnum(0),
+                            ARG(1), ARG(2), ARG(3), ARG(5), ARG(4)))
+  ),
+
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      //Handling case: thrust::transform_inclusive_scan(ptr, ptr, ptr, unary_op, binary_op);
+      IFELSE_FACTORY_ENTRY(
+        "thrust::transform_inclusive_scan",
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+          CALL_FACTORY_ENTRY("thrust::transform_inclusive_scan", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(0)))),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          CALL_FACTORY_ENTRY("thrust::transform_inclusive_scan",
+                            CALL("oneapi::dpl::transform_inclusive_scan",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                  ARG(4), ARG(3)))),
+        CALL_FACTORY_ENTRY("thrust::transform_inclusive_scan",
+                          CALL("oneapi::dpl::transform_inclusive_scan",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), ARG(2), ARG(4), ARG(3)))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckThrustArgType(1, "thrust::device_ptr"),
+        // Handling case: thrust::transform_inclusive_scan(iterator, iterator, iterator, unary_op, binary_op);
+        CALL_FACTORY_ENTRY("thrust::transform_inclusive_scan",
+                            CALL("oneapi::dpl::transform_inclusive_scan",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                ARG(0), ARG(1), ARG(2), ARG(4), ARG(3))),
+        CALL_FACTORY_ENTRY("thrust::transform_inclusive_scan",
+                            CALL("oneapi::dpl::transform_inclusive_scan",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), ARG(2), ARG(4), ARG(3))))
     )
 )
 
@@ -789,14 +853,16 @@ thrustFactory("thrust::reduce",
                {4,PolicyState::NoPolicy, 2,"std::reduce", HelperFeatureEnum::no_feature_helper}}),
 
 // thrust::device_free
-CALL_FACTORY_ENTRY("thrust::device_free", CALL(MapNames::getDpctNamespace() + "free_device", ARG(0)))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_free_device,
+CALL_FACTORY_ENTRY("thrust::device_free", CALL(MapNames::getDpctNamespace() + "free_device", ARG(0))))
 
 
 // thrust::device_malloc
 // CALL_FACTORY_ENTRY("thrust::device_malloc", CALL(MapNames::getDpctNamespace() + "device_malloc", ARG(0)))
 
 // thrust::raw_pointer_cast
-CALL_FACTORY_ENTRY("thrust::raw_pointer_cast", CALL(MapNames::getDpctNamespace() + "get_raw_pointer", ARG(0)))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_get_raw_pointer,
+CALL_FACTORY_ENTRY("thrust::raw_pointer_cast", CALL(MapNames::getDpctNamespace() + "get_raw_pointer", ARG(0))))
 
 // thrust::count_if
 thrustFactory("thrust::count_if",
@@ -903,7 +969,9 @@ thrustFactory("thrust::min_element",
 CALL_FACTORY_ENTRY("thrust::make_discard_iterator", CALL("oneapi::dpl::discard_iterator"))
 
 // thrust::make_constant_iterator
-CALL_FACTORY_ENTRY("thrust::make_constant_iterator", CALL(MapNames::getDpctNamespace() + "make_constant_iterator", ARG(0)))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasIterators_make_constant_iterator,
+CALL_FACTORY_ENTRY("thrust::make_constant_iterator", CALL(MapNames::getDpctNamespace() + "make_constant_iterator", ARG(0))))
 
 // thrust::make_counting_iterator
-CALL_FACTORY_ENTRY("thrust::make_counting_iterator", CALL(MapNames::getDpctNamespace() + "make_counting_iterator", ARG(0)))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasIterators_make_counting_iterator,
+CALL_FACTORY_ENTRY("thrust::make_counting_iterator", CALL(MapNames::getDpctNamespace() + "make_counting_iterator", ARG(0))))

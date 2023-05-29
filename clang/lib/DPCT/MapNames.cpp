@@ -124,7 +124,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"half", std::make_shared<TypeNameRule>(getClNamespace() + "half")},
       {"half2", std::make_shared<TypeNameRule>(getClNamespace() + "half2")},
       {"cudaEvent_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "event_ptr")},
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "event_ptr",
+       HelperFeatureEnum::Device_typedef_event_ptr)},
       {"CUevent",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "event_ptr")},
       {"CUevent_st",
@@ -4483,5 +4484,13 @@ const std::vector<std::string> MemoryDataTypeRule::RemoveMember{
     "dstLOD", "srcLOD", "dstMemoryType", "srcMemoryType"};
 
 const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
-    "this_thread_block", "sync", "tiled_partition",
-    "thread_rank",       "size", "shfl_down", "reduce"};
+    "this_thread_block",
+    "sync",
+    "tiled_partition",
+    "thread_rank",
+    "size",
+    "shfl_down",
+    "reduce",
+    "shfl_up",
+    "shfl_xor",
+    "meta_group_rank"};
