@@ -539,9 +539,8 @@ public:
   void attach(const void *data, size_t x, size_t y, size_t pitch,
               image_channel channel) {
     detach();
-    image_wrapper_base::set_data(image_data(const_cast<void *>(data),
-                                            x * channel.get_total_size(), y,
-                                            pitch, channel));
+    image_wrapper_base::set_data(
+        image_data(const_cast<void *>(data), x, y, pitch, channel));
   }
   /// Detach data.
   virtual void detach() {}
@@ -646,6 +645,7 @@ template <class T, int dimensions, bool IsImageArray = false> class image_wrappe
       return;
     }
     auto ptr = data.get_data_ptr();
+    auto channel = data.get_channel();
 
     if (detail::get_pointer_attribute(q, ptr) == detail::pointer_access_attribute::device_only) {
 #ifdef DPCT_USM_LEVEL_NONE
@@ -655,14 +655,13 @@ template <class T, int dimensions, bool IsImageArray = false> class image_wrappe
 #else
       auto sz = data.get_x();
       if (data.get_data_type() == image_data_type::pitch)
-        sz *= data.get_y();
+        sz *= channel.get_total_size() * data.get_y();
       _host_buffer.resize(sz);
       q.memcpy(_host_buffer.data(), ptr, sz).wait();
       ptr = _host_buffer.data();
 #endif
     }
 
-    auto channel = data.get_channel();
     if constexpr (dimensions == 1) {
       assert(data.get_data_type() == image_data_type::linear);
       _image = new sycl::image<1>(
@@ -670,11 +669,10 @@ template <class T, int dimensions, bool IsImageArray = false> class image_wrappe
         sycl::range<1>(data.get_x() / channel.get_total_size()));
     } else if constexpr (dimensions == 2) {
       assert(data.get_data_type() == image_data_type::pitch);
-      _image = new sycl::image<2>(
-        ptr, channel.get_channel_order(), channel.get_channel_type(),
-        sycl::range<2>(data.get_x() / channel.get_total_size(),
-                           data.get_y()),
-        sycl::range<1>(data.get_pitch()));
+      _image = new sycl::image<2>(ptr, channel.get_channel_order(),
+                                  channel.get_channel_type(),
+                                  sycl::range<2>(data.get_x(), data.get_y()),
+                                  sycl::range<1>(data.get_pitch()));
     } else {
       throw std::runtime_error("3D image only support matrix data");
     }
