@@ -4,28 +4,29 @@
 // RUN: FileCheck --input-file %T/thrust-algo/thrust-algo.dp.cpp --match-full-lines %s
 #include <vector>
 
+#include <thrust/binary_search.h>
 #include <thrust/copy.h>
+#include <thrust/device_malloc.h>
 #include <thrust/device_vector.h>
 #include <thrust/execution_policy.h>
+#include <thrust/extrema.h>
+#include <thrust/find.h>
+#include <thrust/functional.h>
+#include <thrust/gather.h>
+#include <thrust/host_vector.h>
+#include <thrust/inner_product.h>
+#include <thrust/mismatch.h>
 #include <thrust/random.h>
 #include <thrust/reduce.h>
-#include <thrust/inner_product.h>
-#include <thrust/extrema.h>
-#include <thrust/gather.h>
-#include <thrust/binary_search.h>
-#include <thrust/unique.h>
-#include <thrust/find.h>
-#include <thrust/sort.h>
-#include <thrust/host_vector.h>
-#include <thrust/transform_scan.h>
-#include <thrust/set_operations.h>
-#include <thrust/tabulate.h>
-#include <thrust/functional.h>
 #include <thrust/remove.h>
-#include <thrust/mismatch.h>
 #include <thrust/replace.h>
 #include <thrust/reverse.h>
-#include <thrust/device_malloc.h>
+#include <thrust/set_operations.h>
+#include <thrust/sort.h>
+#include <thrust/tabulate.h>
+#include <thrust/transform_scan.h>
+#include <thrust/unique.h>
+
 // CHECK: #include <oneapi/dpl/memory>
 #include <thrust/uninitialized_copy.h>
 
@@ -33,8 +34,11 @@
 #include <thrust/iterator/constant_iterator.h>
 #include <thrust/partition.h>
 
+<<<<<<< HEAD
 #include <thrust/scatter.h>
 
+=======
+>>>>>>> Fix clang-format test failure
 void k() {
   std::vector<int> v, v2, v3, v4;
 

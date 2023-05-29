@@ -3,25 +3,24 @@
 // RUN: dpct --usm-level=none -out-root %T/thrust-algo-raw-ptr-noneusm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17 -fsized-deallocation
 // RUN: FileCheck --input-file %T/thrust-algo-raw-ptr-noneusm/thrust-algo-raw-ptr-noneusm.dp.cpp --match-full-lines %s
 
-
 #include <stdio.h>
-#include <thrust/device_vector.h>
-#include <thrust/host_vector.h>
-#include <thrust/unique.h>
-#include <thrust/extrema.h>
-#include <thrust/execution_policy.h>
-#include <thrust/sort.h>
-#include <thrust/transform_scan.h>
-#include <thrust/set_operations.h>
-#include <thrust/tabulate.h>
-#include <thrust/functional.h>
-#include <thrust/remove.h>
-#include <thrust/find.h>
-#include <thrust/mismatch.h>
-#include <thrust/replace.h>
-#include <thrust/reverse.h>
 #include <thrust/binary_search.h>
 #include <thrust/device_malloc.h>
+#include <thrust/device_vector.h>
+#include <thrust/execution_policy.h>
+#include <thrust/extrema.h>
+#include <thrust/find.h>
+#include <thrust/functional.h>
+#include <thrust/host_vector.h>
+#include <thrust/mismatch.h>
+#include <thrust/remove.h>
+#include <thrust/replace.h>
+#include <thrust/reverse.h>
+#include <thrust/set_operations.h>
+#include <thrust/sort.h>
+#include <thrust/tabulate.h>
+#include <thrust/transform_scan.h>
+#include <thrust/unique.h>
 // CHECK: #include <oneapi/dpl/memory>
 #include <thrust/uninitialized_copy.h>
 
