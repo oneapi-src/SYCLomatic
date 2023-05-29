@@ -94,7 +94,9 @@ template <int Arg> class dpct_kernel_scalar;
 // DPCT_LABEL_BEGIN|error_code|
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
+namespace dpct{
 enum error_code { success = 0, default_error = 999 };
+}
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|check_error_code|
@@ -106,10 +108,10 @@ enum error_code { success = 0, default_error = 999 };
   [&]() {                                                                      \
     try {                                                                      \
       expr;                                                                    \
-      return success;                                                          \
+      return dpct::success;                                                    \
     } catch (std::exception const &e) {                                        \
       std::cerr << e.what() << std::endl;                                      \
-      return default_error;                                                    \
+      return dpct::default_error;                                              \
     }                                                                          \
   }()
 // DPCT_LABEL_END

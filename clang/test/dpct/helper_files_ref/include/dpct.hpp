@@ -41,16 +41,18 @@ template <int Arg> class dpct_kernel_scalar;
 
 #define DPCT_COMPATIBILITY_TEMP (600)
 
+namespace dpct{
 enum error_code { success = 0, default_error = 999 };
+}
 
 #define DPCT_CHECK_ERROR(expr)                                                 \
   [&]() {                                                                      \
     try {                                                                      \
       expr;                                                                    \
-      return success;                                                          \
+      return dpct::success;                                                    \
     } catch (std::exception const &e) {                                        \
       std::cerr << e.what() << std::endl;                                      \
-      return default_error;                                                    \
+      return dpct::default_error;                                              \
     }                                                                          \
   }()
 
