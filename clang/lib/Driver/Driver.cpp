@@ -3049,11 +3049,13 @@ void Driver::BuildInputs(const ToolChain &TC, DerivedArgList &Args,
 
   // Warn -x after last input file has no effect
   if (!IsCLMode()) {
+#ifndef SYCLomatic_CUSTOMIZATION
     Arg *LastXArg = Args.getLastArgNoClaim(options::OPT_x);
     Arg *LastInputArg = Args.getLastArgNoClaim(options::OPT_INPUT);
     if (LastXArg && LastInputArg &&
         LastInputArg->getIndex() < LastXArg->getIndex())
       Diag(clang::diag::warn_drv_unused_x) << LastXArg->getValue();
+#endif // SYCLomatic_CUSTOMIZATION
   } else {
     // In CL mode suggest /TC or /TP since -x doesn't make sense if passed via
     // /clang:.
