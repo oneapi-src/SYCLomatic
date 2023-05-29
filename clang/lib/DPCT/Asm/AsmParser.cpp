@@ -919,6 +919,7 @@ AsmNumericLiteralParser::AsmNumericLiteralParser(StringRef TokSpelling)
       isUnsigned = true;
       continue; // Success.
     }
+    break;
   }
 
   if (s != ThisTokEnd)
