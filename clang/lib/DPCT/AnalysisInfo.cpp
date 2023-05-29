@@ -3616,8 +3616,6 @@ std::string MemVarInfo::getSyclAccessorType() {
     OS << MapNames::getClNamespace() << "access::target::";
     switch (getAttr()) {
     case VarAttrKind::Constant:
-      OS << "constant_buffer";
-      break;
     case VarAttrKind::Device:
     case VarAttrKind::Managed:
       OS << "device";
