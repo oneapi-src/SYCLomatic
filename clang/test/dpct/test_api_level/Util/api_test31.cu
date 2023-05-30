@@ -6,7 +6,7 @@
 // RUN: rm -rf %T/Util/api_test31_out
 
 // CHECK: 1
-// TEST_FEATURE: Util_logical_group_get_group_linear_range
+// TEST_FEATURE: Util_logical_group_get_group_linear_id
 
 #include <cooperative_groups.h>
 namespace cg = cooperative_groups;
