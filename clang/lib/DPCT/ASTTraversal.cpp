@@ -13826,6 +13826,9 @@ void NamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
         Repl += ";";
       }
       emplaceTransformation(new ReplaceText(Beg, Len, std::move(Repl)));
+      if (UD->getNameAsString() == "max" || UD->getNameAsString() == "min") {
+        requestFeature(HelperFeatureEnum::Math_min_max, Beg);
+      }
     }
   }
 }
