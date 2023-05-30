@@ -299,16 +299,16 @@ CASE_FACTORY_ENTRY(
 /*
   --- X.meta_group_rank() ---
   cg::thread_block_tile<32>::meta_group_rank()
-  => item_ct1.get_sub_group().get_group_linear_range()
+  => item_ct1.get_sub_group().get_group_linear_id()
 
   cg::thread_block_tile<N>::meta_group_rank() if n in {1,2,4,8,16}
   => if UseLogicalGroup then
-     MemberBase().get_group_linear_range()
+     MemberBase().get_group_linear_id()
 */
 CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(32),
          MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.meta_group_rank",
-                                   SUBGROUP, false, "get_group_linear_range")),
+                                   SUBGROUP, false, "get_group_linear_id")),
     CASE(makeCheckAnd(UseLogicalGroup, makeCheckOr(
                             baseHasThreadBlockTileType(16),
                             baseHasThreadBlockTileType(8),
@@ -316,9 +316,9 @@ CASE_FACTORY_ENTRY(
                             baseHasThreadBlockTileType(2),
                             baseHasThreadBlockTileType(1))),
          FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_logical_group_get_group_linear_range,
+             HelperFeatureEnum::Util_logical_group_get_group_linear_id,
              MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.meta_group_rank",
-                                       MemberExprBase(), false, "get_group_linear_range"))),
+                                       MemberExprBase(), false, "get_group_linear_id"))),
     OTHERWISE(
         UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.meta_group_rank",
                                 Diagnostics::API_NOT_MIGRATED, ARG("meta_group_rank"))))
@@ -326,7 +326,7 @@ CASE_FACTORY_ENTRY(
 CASE_FACTORY_ENTRY(
     CASE(baseHasThreadBlockTileType(32),
          MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__single_warp_thread_block_tile.meta_group_rank",
-                                   SUBGROUP, false, "get_group_linear_range")),
+                                   SUBGROUP, false, "get_group_linear_id")),
     CASE(makeCheckAnd(UseLogicalGroup, makeCheckOr(
                             baseHasThreadBlockTileType(16),
                             baseHasThreadBlockTileType(8),
@@ -334,9 +334,9 @@ CASE_FACTORY_ENTRY(
                             baseHasThreadBlockTileType(2),
                             baseHasThreadBlockTileType(1))),
          FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_logical_group_get_group_linear_range,
+             HelperFeatureEnum::Util_logical_group_get_group_linear_id,
              MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__single_warp_thread_block_tile.meta_group_rank",
-                                       MemberExprBase(), false, "get_group_linear_range"))),
+                                       MemberExprBase(), false, "get_group_linear_id"))),
     OTHERWISE(
         UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__single_warp_thread_block_tile.meta_group_rank",
                                 Diagnostics::API_NOT_MIGRATED, ARG("meta_group_rank"))))
