@@ -790,3 +790,22 @@ void uninitialized_copy() {
   thrust::uninitialized_copy(data, data + N, array);
   thrust::uninitialized_copy(thrust::host, data, data + N, array);
 }
+
+void uninitialized_copy_n() {
+  const int N = 137;
+  int data[N];
+  int array[N];
+
+  // CHECK:  if (dpct::is_device_ptr(data)) {
+  // CHECK-NEXT:    oneapi::dpl::uninitialized_copy_n(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), N, dpct::device_pointer<int>(array));
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::uninitialized_copy_n(oneapi::dpl::execution::seq, data, N, array);
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(data)) {
+  // CHECK-NEXT:    oneapi::dpl::uninitialized_copy_n(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), N, dpct::device_pointer<int>(array));
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::uninitialized_copy_n(oneapi::dpl::execution::seq, data, N, array);
+  // CHECK-NEXT:  };
+  thrust::uninitialized_copy_n(data, N, array);
+  thrust::uninitialized_copy_n(thrust::host, data, N, array);
+}

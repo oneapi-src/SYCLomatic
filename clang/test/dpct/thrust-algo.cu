@@ -1200,3 +1200,22 @@ void uninitialized_copy() {
   thrust::uninitialized_copy(thrust::device, d_input.begin(), d_input.end(), d_array);
   thrust::uninitialized_copy(thrust::host, data, data + N, array);
 }
+
+void uninitialized_copy_n() {
+  const int N = 137;
+  Int val(46);
+  thrust::device_ptr<Int> array = thrust::device_malloc<Int>(N);
+  thrust::device_vector<Int> d_input(N, val);
+  thrust::device_ptr<Int> d_array = thrust::device_malloc<Int>(N);
+  int data[N];
+  int array[N];
+
+  // CHECK:  oneapi::dpl::uninitialized_copy_n(oneapi::dpl::execution::make_device_policy(q_ct1), d_input.begin(), N, d_array);
+  // CHECK-NEXT:  oneapi::dpl::uninitialized_copy_n(oneapi::dpl::execution::seq, data, N, array);
+  // CHECK-NEXT:  oneapi::dpl::uninitialized_copy_n(oneapi::dpl::execution::make_device_policy(q_ct1), d_input.begin(), N, d_array);
+  // CHECK-NEXT:  oneapi::dpl::uninitialized_copy_n(oneapi::dpl::execution::seq, data, N, array);
+  thrust::uninitialized_copy_n(d_input.begin(), N, d_array);
+  thrust::uninitialized_copy_n(data, N, array);
+  thrust::uninitialized_copy_n(thrust::device, d_input.begin(), N, d_array);
+  thrust::uninitialized_copy_n(thrust::host, data, N, array);
+}

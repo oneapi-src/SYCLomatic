@@ -177,7 +177,7 @@ ENTRY(thrust::transform_if, thrust::transform_if, true, NO_FLAG, P4, "Successful
 ENTRY(thrust::transform_inclusive_scan, thrust::transform_inclusive_scan, true, NO_FLAG, P4, "comment")
 ENTRY(thrust::transform_reduce, thrust::transform_reduce, true, NO_FLAG, P4, "Successful")
 ENTRY(thrust::uninitialized_copy, thrust::uninitialized_copy, true, NO_FLAG, P4, "comment")
-ENTRY(thrust::uninitialized_copy_n, thrust::uninitialized_copy_n, false, NO_FLAG, P4, "comment")
+ENTRY(thrust::uninitialized_copy_n, thrust::uninitialized_copy_n, true, NO_FLAG, P4, "comment")
 ENTRY(thrust::uninitialized_fill, thrust::uninitialized_fill, true, NO_FLAG, P4, "Successful")
 ENTRY(thrust::uninitialized_fill_n, thrust::uninitialized_fill_n, false, NO_FLAG, P4, "comment")
 ENTRY(thrust::unique, thrust::unique, true, NO_FLAG, P4, "Successful")
