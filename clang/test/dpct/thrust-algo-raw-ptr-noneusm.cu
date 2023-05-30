@@ -705,3 +705,23 @@ void equal_range() {
   thrust::equal_range(thrust::host, data, data + N, 0, thrust::less<int>()); 
   thrust::equal_range(data, data + N, 0, thrust::less<int>());
 }
+
+void transform_inclusive_scan() {
+  const int N = 6;
+  int data[6] = {1, 0, 2, 2, 1, 3};
+  thrust::negate<int> unary_op;
+  thrust::plus<int> binary_op;
+
+  // CHECK:  if (dpct::is_device_ptr(data)) {
+  // CHECK-NEXT:    oneapi::dpl::transform_inclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), dpct::device_pointer<int>(data), binary_op, unary_op);
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::transform_inclusive_scan(oneapi::dpl::execution::seq, data, data + N, data, binary_op, unary_op);
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(data)) {
+  // CHECK-NEXT:    oneapi::dpl::transform_inclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), dpct::device_pointer<int>(data), binary_op, unary_op);
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::transform_inclusive_scan(oneapi::dpl::execution::seq, data, data + N, data, binary_op, unary_op);
+  // CHECK-NEXT:  };
+  thrust::transform_inclusive_scan(data, data + N, data, unary_op, binary_op);
+  thrust::transform_inclusive_scan(thrust::host, data, data + N, data, unary_op, binary_op);
+}

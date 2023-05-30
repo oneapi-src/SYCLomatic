@@ -123,7 +123,7 @@ int main() {
 #endif
 
 int foo(int num) {
-//CHECK: #if SYCL_LANGUAGE_VERSION >= 4000
+//CHECK: #if (SYCL_LANGUAGE_VERSION >= 202000)
 //CHECK-NEXT: dpct::get_current_device().reset();
 //CHECK-NEXT: #else
 //CHECK-NEXT: cudaThreadExit();
@@ -173,3 +173,136 @@ int foo2(){
     pl = CUDART_VERSION - major * 1000 - minor * 10;
   }
 }
+
+#define AAAA 1
+//CHECK: void foo3() {
+//CHECK-NEXT: #if defined SYCL_LANGUAGE_VERSION && (SYCL_LANGUAGE_VERSION >= 202000)
+//CHECK-NEXT:   sycl::int2 a1;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if defined(SYCL_LANGUAGE_VERSION) && (SYCL_LANGUAGE_VERSION >= 202000)
+//CHECK-NEXT:   sycl::int2 a2;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if (SYCL_LANGUAGE_VERSION >= 202000) && AAAA
+//CHECK-NEXT:   sycl::int2 a3;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if !(SYCL_LANGUAGE_VERSION >= 202000) && AAAA
+//CHECK-NEXT:   int2 a4;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if ((SYCL_LANGUAGE_VERSION >= 202000) ? 1 : 0) && AAAA
+//CHECK-NEXT:   sycl::int2 a5;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: }
+void foo3() {
+#if defined CUDART_VERSION && (CUDART_VERSION >= 4000)
+  int2 a1;
+#endif
+#if defined(CUDART_VERSION) && (CUDART_VERSION >= 4000)
+  int2 a2;
+#endif
+#if (CUDART_VERSION >= 4000) && AAAA
+  int2 a3;
+#endif
+#if !(CUDART_VERSION > 4000) && AAAA
+  int2 a4;
+#endif
+#if (CUDART_VERSION > 4000 ? 1 : 0) && AAAA
+  int2 a5;
+#endif
+}
+
+//CHECK: void foo4() {
+//CHECK-NEXT: #define BBBB 0
+//CHECK-NEXT: #if BBBB
+//CHECK-NEXT: #elif defined SYCL_LANGUAGE_VERSION && (SYCL_LANGUAGE_VERSION >= 202000)
+//CHECK-NEXT:   sycl::int2 a1;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if BBBB
+//CHECK-NEXT: #elif defined(SYCL_LANGUAGE_VERSION) && (SYCL_LANGUAGE_VERSION >= 202000)
+//CHECK-NEXT:   sycl::int2 a2;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if BBBB
+//CHECK-NEXT: #elif (SYCL_LANGUAGE_VERSION >= 202000) && AAAA
+//CHECK-NEXT:   sycl::int2 a3;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if BBBB
+//CHECK-NEXT: #elif !(SYCL_LANGUAGE_VERSION >= 202000) && AAAA
+//CHECK-NEXT:   int2 a4;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if BBBB
+//CHECK-NEXT: #elif ((SYCL_LANGUAGE_VERSION >= 202000) ? 1 : 0) && AAAA
+//CHECK-NEXT:   sycl::int2 a5;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: }
+void foo4() {
+#define BBBB 0
+#if BBBB
+#elif defined CUDART_VERSION && (CUDART_VERSION >= 4000)
+  int2 a1;
+#endif
+#if BBBB
+#elif defined(CUDART_VERSION) && (CUDART_VERSION >= 4000)
+  int2 a2;
+#endif
+#if BBBB
+#elif (CUDART_VERSION >= 4000) && AAAA
+  int2 a3;
+#endif
+#if BBBB
+#elif !(CUDART_VERSION > 4000) && AAAA
+  int2 a4;
+#endif
+#if BBBB
+#elif (CUDART_VERSION > 4000 ? 1 : 0) && AAAA
+  int2 a5;
+#endif
+}
+#undef BBBB
+
+//CHECK: void foo5() {
+//CHECK-NEXT: #define CCCC 1
+//CHECK-NEXT: #if CCCC
+//CHECK-NEXT: #elif defined SYCL_LANGUAGE_VERSION && (SYCL_LANGUAGE_VERSION >= 4000)
+//CHECK-NEXT:   int2 a1;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if CCCC
+//CHECK-NEXT: #elif defined(SYCL_LANGUAGE_VERSION) && (SYCL_LANGUAGE_VERSION >= 4000)
+//CHECK-NEXT:   int2 a2;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if CCCC
+//CHECK-NEXT: #elif (SYCL_LANGUAGE_VERSION >= 4000) && AAAA
+//CHECK-NEXT:   int2 a3;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if CCCC
+//CHECK-NEXT: #elif !(SYCL_LANGUAGE_VERSION > 4000) && AAAA
+//CHECK-NEXT:   int2 a4;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if CCCC
+//CHECK-NEXT: #elif (SYCL_LANGUAGE_VERSION > 4000 ? 1 : 0) && AAAA
+//CHECK-NEXT:   int2 a5;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: }
+void foo5() {
+#define CCCC 1
+#if CCCC
+#elif defined CUDART_VERSION && (CUDART_VERSION >= 4000)
+  int2 a1;
+#endif
+#if CCCC
+#elif defined(CUDART_VERSION) && (CUDART_VERSION >= 4000)
+  int2 a2;
+#endif
+#if CCCC
+#elif (CUDART_VERSION >= 4000) && AAAA
+  int2 a3;
+#endif
+#if CCCC
+#elif !(CUDART_VERSION > 4000) && AAAA
+  int2 a4;
+#endif
+#if CCCC
+#elif (CUDART_VERSION > 4000 ? 1 : 0) && AAAA
+  int2 a5;
+#endif
+}
+#undef CCCC
+#undef AAAA

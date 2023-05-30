@@ -54,6 +54,16 @@ const char *CudaVersionToString(CudaVersion V) {
   return CudaVersionToString(CudaVersion::UNKNOWN);
 }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+unsigned int CudaVersionToValue(CudaVersion V) {
+  for (auto *I = CudaNameVersionMap; I->Version != CudaVersion::UNKNOWN; ++I)
+    if (I->Version == V) {
+      return I->TVersion.getMajor() * 1000 +
+             I->TVersion.getMinor().value() * 10;
+    }
+  return 0;
+}
+#endif // SYCLomatic_CUSTOMIZATION
 CudaVersion CudaStringToVersion(const llvm::Twine &S) {
   std::string VS = S.str();
   for (auto *I = CudaNameVersionMap; I->Version != CudaVersion::UNKNOWN; ++I)

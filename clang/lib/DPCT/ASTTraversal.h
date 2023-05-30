@@ -61,7 +61,8 @@ public:
               const MacroDefinition &MD) override;
   // TODO: implement one of this for each source language.
   bool ReplaceCuMacro(const Token &MacroNameTok);
-  void ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
+  void ReplaceCuMacro(SourceRange ConditionRange,
+                      ConditionValueKind ConditionValue, IfType IT,
                       SourceLocation IfLoc, SourceLocation ElifLoc);
   void Defined(const Token &MacroNameTok, const MacroDefinition &MD,
                SourceRange Range) override;
@@ -1744,12 +1745,6 @@ public:
 };
 
 class FFTFunctionCallRule : public NamedMigrationRule<FFTFunctionCallRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
-class AsmRule : public NamedMigrationRule<AsmRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
