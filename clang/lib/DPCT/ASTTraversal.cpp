@@ -53,6 +53,12 @@ using namespace clang::ast_matchers;
 using namespace clang::dpct;
 using namespace clang::tooling;
 
+namespace clang {
+extern bool ProcessingCudaRTVersionMacro;
+extern std::vector<std::pair<SourceRange /*range*/, bool /*evaluated value*/>>
+    ReplaceInfo;
+} // namespace clang
+
 extern std::string CudaPath;
 extern std::string DpctInstallPath; // Installation directory for this tool
 extern llvm::cl::opt<UsmLevel> USMLevel;
@@ -635,8 +641,9 @@ void IncludesCallbacks::Endif(SourceLocation Loc, SourceLocation IfLoc) {
     }
   }
 }
-void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
-                                       SourceLocation IfLoc,
+void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange,
+                                       ConditionValueKind ConditionValue,
+                                       IfType IT, SourceLocation IfLoc,
                                        SourceLocation ElifLoc) {
   auto Begin = SM.getExpansionLoc(ConditionRange.getBegin());
   auto End = SM.getExpansionLoc(ConditionRange.getEnd());
@@ -727,6 +734,46 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
           DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
         insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
         requestFeature(HelperFeatureEnum::Dpct_dpct_compatibility_temp, Begin);
+      } else if (MacroName == "CUDART_VERSION" && DpctGlobalInfo::getInstance()
+                                                      .getContext()
+                                                      .getLangOpts()
+                                                      .CUDA) {
+        bool EnableBlock = false;
+        if (ProcessingCudaRTVersionMacro) {
+          EnableBlock = ConditionValue == ConditionValueKind::CVK_True;
+          SourceLocation NewEnd = ConditionRange.getEnd().getLocWithOffset(
+              Lexer::MeasureTokenLength(
+                  ConditionRange.getEnd(), SM,
+                  DpctGlobalInfo::getInstance().getContext().getLangOpts()));
+          InsertRange = CharSourceRange(
+              SourceRange(ConditionRange.getBegin(), NewEnd), false);
+          if (EnableBlock) {
+            Repl = std::make_shared<ReplaceInclude>(
+                InsertRange, "(SYCL_LANGUAGE_VERSION >= 202000)");
+          } else {
+            Repl = std::make_shared<ReplaceInclude>(
+                InsertRange, "(SYCL_LANGUAGE_VERSION < 202000)");
+          }
+        } else if (!ReplaceInfo.empty()) {
+          for (const auto Info : ReplaceInfo) {
+            EnableBlock = Info.second;
+            SourceLocation NewEnd =
+                Info.first.getEnd().getLocWithOffset(Lexer::MeasureTokenLength(
+                    Info.first.getEnd(), SM,
+                    DpctGlobalInfo::getInstance().getContext().getLangOpts()));
+            InsertRange = CharSourceRange(
+                SourceRange(Info.first.getBegin(), NewEnd), false);
+            if (EnableBlock) {
+              Repl = std::make_shared<ReplaceInclude>(
+                  InsertRange, "(SYCL_LANGUAGE_VERSION >= 202000)");
+            } else {
+              Repl = std::make_shared<ReplaceInclude>(
+                  InsertRange, "(SYCL_LANGUAGE_VERSION < 202000)");
+            }
+          }
+          ReplaceInfo.clear();
+        }
+        TransformSet.emplace_back(Repl);
       } else if ((MacroName != "__CUDACC__" ||
                   DpctGlobalInfo::getMacroDefines().count(MacroName)) &&
                  MacroName != "__CUDA_ARCH__") {
@@ -748,7 +795,7 @@ void IncludesCallbacks::If(SourceLocation Loc, SourceRange ConditionRange,
   if (!IsInAnalysisScope) {
     return;
   }
-  ReplaceCuMacro(ConditionRange, IfType::IT_If, Loc, Loc);
+  ReplaceCuMacro(ConditionRange, ConditionValue, IfType::IT_If, Loc, Loc);
 }
 void IncludesCallbacks::Elif(SourceLocation Loc, SourceRange ConditionRange,
                              ConditionValueKind ConditionValue,
@@ -759,7 +806,7 @@ void IncludesCallbacks::Elif(SourceLocation Loc, SourceRange ConditionRange,
     return;
   }
 
-  ReplaceCuMacro(ConditionRange, IfType::IT_Elif, IfLoc, Loc);
+  ReplaceCuMacro(ConditionRange, ConditionValue, IfType::IT_Elif, IfLoc, Loc);
 }
 bool IncludesCallbacks::ShouldEnter(StringRef FileName, bool IsAngled) {
 #ifdef _WIN32

@@ -825,6 +825,12 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
 
   // If this is a macro to be expanded, do it.
   if (MacroDefinition MD = getMacroDefinition(&II)) {
+#ifdef SYCLomatic_CUSTOMIZATION
+    if (IsEvaluatingExpression && II.getName().str() == "CUDART_VERSION" &&
+        IsInAnalysisScopeFunc(Identifier.getLocation())) {
+      return true;
+    }
+#endif // SYCLomatic_CUSTOMIZATION
     auto *MI = MD.getMacroInfo();
     assert(MI && "macro definition with no macro info?");
     if (!DisableMacroExpansion) {
