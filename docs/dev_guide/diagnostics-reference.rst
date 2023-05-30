@@ -170,7 +170,9 @@ messages, detailed help, and suggestion to fix your errors.
           :start-after: msg-1035-start:
           :end-before: msg-1035-end:
    * - :ref:`DPCT1036`
-     - .. include:: diagnostic_ref/dpct1036.rst
+     - DEPRECATED.
+
+       .. include:: diagnostic_ref/dpct1036.rst
           :start-after: msg-1036-start:
           :end-before: msg-1036-end:
    * - :ref:`DPCT1037`
@@ -290,7 +292,9 @@ messages, detailed help, and suggestion to fix your errors.
           :start-after: msg-1065-start:
           :end-before: msg-1065-end:
    * - :ref:`DPCT1066`
-     - .. include:: diagnostic_ref/dpct1066.rst
+     - DEPRECATED.
+
+       .. include:: diagnostic_ref/dpct1066.rst
           :start-after: msg-1066-start:
           :end-before: msg-1066-end:
    * - :ref:`DPCT1067`
@@ -298,7 +302,9 @@ messages, detailed help, and suggestion to fix your errors.
           :start-after: msg-1067-start:
           :end-before: msg-1067-end:
    * - :ref:`DPCT1068`
-     - .. include:: diagnostic_ref/dpct1068.rst
+     - DEPRECATED.
+
+       .. include:: diagnostic_ref/dpct1068.rst
           :start-after: msg-1068-start:
           :end-before: msg-1068-end:
    * - :ref:`DPCT1069`
@@ -346,7 +352,9 @@ messages, detailed help, and suggestion to fix your errors.
           :start-after: msg-1078-start:
           :end-before: msg-1078-end:
    * - :ref:`DPCT1079`
-     - .. include:: diagnostic_ref/dpct1079.rst
+     - DEPRECATED.
+
+       .. include:: diagnostic_ref/dpct1079.rst
           :start-after: msg-1079-start:
           :end-before: msg-1079-end:
    * - :ref:`DPCT1080`

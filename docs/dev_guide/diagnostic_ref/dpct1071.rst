@@ -3,7 +3,7 @@
 DPCT1071
 ========
 
-.. include:: deprecated-msg.txt
+.. include:: deprecated-msg-0.txt
 
 Message
 -------
