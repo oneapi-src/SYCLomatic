@@ -75,7 +75,7 @@ struct If
 // CHECK: template <typename T>
 // CHECK-NEXT: struct foo_1
 // CHECK-NEXT: {
-// CHECK-NEXT:     typedef typename If<bar<sycl::vec<std::int64_t, 2>>::temp, int,int>::t3 Word;
+// CHECK-NEXT:     typedef typename If<bar<sycl::long2>::temp, int,int>::t3 Word;
 // CHECK-NEXT: };
 template <typename T>
 struct foo_1
@@ -87,7 +87,7 @@ struct foo_1
 // CHECK-NEXT: struct foo_2
 // CHECK-NEXT: {
 // CHECK-NEXT:     typedef typename If<bar<
-// CHECK-NEXT:     sycl::vec<std::int64_t, 2>>::temp, int,int>::t3 Word;
+// CHECK-NEXT:     sycl::long2>::temp, int,int>::t3 Word;
 // CHECK-NEXT: };
 template <typename T>
 struct foo_2

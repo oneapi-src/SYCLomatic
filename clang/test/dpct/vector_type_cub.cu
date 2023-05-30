@@ -402,38 +402,38 @@ __global__ void test_make_longlong1() {
 }
 
 __device__ longlong2 operator+(longlong2 a, longlong2 b) {
-  // CHECK: return sycl::vec<std::int64_t, 2>(a.x() + b.x(), a.y() + b.y());
+  // CHECK: return sycl::long2(a.x() + b.x(), a.y() + b.y());
   return make_longlong2(a.x + b.x, a.y + b.y);
 }
 
 __global__ void test_make_longlong2() {
   typedef cub::BlockReduce<longlong2, 128> BlockReduce;
   __shared__ typename BlockReduce::TempStorage smem_storage;
-  // CHECK: sycl::vec<std::int64_t, 2> res = sycl::reduce_over_group({{.+}}, sycl::vec<std::int64_t, 2>(1., 2.), {{.+}});
+  // CHECK: sycl::long2 res = sycl::reduce_over_group({{.+}}, sycl::long2(1., 2.), {{.+}});
   longlong2 res = BlockReduce(smem_storage).Sum(make_longlong2(1., 2.));
 }
 
 __device__ longlong3 operator+(longlong3 a, longlong3 b) {
-  // CHECK: return sycl::vec<std::int64_t, 3>(a.x() + b.x(), a.y() + b.y(), a.z() + b.z());
+  // CHECK: return sycl::long3(a.x() + b.x(), a.y() + b.y(), a.z() + b.z());
   return make_longlong3(a.x + b.x, a.y + b.y, a.z + b.z);
 }
 
 __global__ void test_make_longlong3() {
   typedef cub::BlockReduce<longlong3, 128> BlockReduce;
   __shared__ typename BlockReduce::TempStorage smem_storage;
-  // CHECK: sycl::vec<std::int64_t, 3> res = sycl::reduce_over_group({{.+}}, sycl::vec<std::int64_t, 3>(1., 2., 3.), {{.+}});
+  // CHECK: sycl::long3 res = sycl::reduce_over_group({{.+}}, sycl::long3(1., 2., 3.), {{.+}});
   longlong3 res = BlockReduce(smem_storage).Sum(make_longlong3(1., 2., 3.));
 }
 
 __device__ longlong4 operator+(longlong4 a, longlong4 b) {
-  // CHECK: return sycl::vec<std::int64_t, 4>(a.x() + b.x(), a.y() + b.y(), a.z() + b.z(), a.w() + b.w());
+  // CHECK: return sycl::long4(a.x() + b.x(), a.y() + b.y(), a.z() + b.z(), a.w() + b.w());
   return make_longlong4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
 }
 
 __global__ void test_make_longlong4() {
   typedef cub::BlockReduce<longlong4, 128> BlockReduce;
   __shared__ typename BlockReduce::TempStorage smem_storage;
-  // CHECK: sycl::vec<std::int64_t, 4> res = sycl::reduce_over_group({{.+}}, sycl::vec<std::int64_t, 4>(1., 2., 3., 4.), {{.+}});
+  // CHECK: sycl::long4 res = sycl::reduce_over_group({{.+}}, sycl::long4(1., 2., 3., 4.), {{.+}});
   longlong4 res = BlockReduce(smem_storage).Sum(make_longlong4(1., 2., 3., 4.));
 }
 
@@ -450,38 +450,38 @@ __global__ void test_make_ulonglong1() {
 }
 
 __device__ ulonglong2 operator+(ulonglong2 a, ulonglong2 b) {
-  // CHECK: return sycl::vec<std::uint64_t, 2>(a.x() + b.x(), a.y() + b.y());
+  // CHECK: return sycl::ulong2(a.x() + b.x(), a.y() + b.y());
   return make_ulonglong2(a.x + b.x, a.y + b.y);
 }
 
 __global__ void test_make_ulonglong2() {
   typedef cub::BlockReduce<ulonglong2, 128> BlockReduce;
   __shared__ typename BlockReduce::TempStorage smem_storage;
-  // CHECK: sycl::vec<std::uint64_t, 2> res = sycl::reduce_over_group({{.+}}, sycl::vec<std::uint64_t, 2>(1., 2.), {{.+}});
+  // CHECK: sycl::ulong2 res = sycl::reduce_over_group({{.+}}, sycl::ulong2(1., 2.), {{.+}});
   ulonglong2 res = BlockReduce(smem_storage).Sum(make_ulonglong2(1., 2.));
 }
 
 __device__ ulonglong3 operator+(ulonglong3 a, ulonglong3 b) {
-  // CHECK: return sycl::vec<std::uint64_t, 3>(a.x() + b.x(), a.y() + b.y(), a.z() + b.z());
+  // CHECK: return sycl::ulong3(a.x() + b.x(), a.y() + b.y(), a.z() + b.z());
   return make_ulonglong3(a.x + b.x, a.y + b.y, a.z + b.z);
 }
 
 __global__ void test_make_ulonglong3() {
   typedef cub::BlockReduce<ulonglong3, 128> BlockReduce;
   __shared__ typename BlockReduce::TempStorage smem_storage;
-  // CHECK: sycl::vec<std::uint64_t, 3> res = sycl::reduce_over_group({{.+}}, sycl::vec<std::uint64_t, 3>(1., 2., 3.), {{.+}});
+  // CHECK: sycl::ulong3 res = sycl::reduce_over_group({{.+}}, sycl::ulong3(1., 2., 3.), {{.+}});
   ulonglong3 res = BlockReduce(smem_storage).Sum(make_ulonglong3(1., 2., 3.));
 }
 
 __device__ ulonglong4 operator+(ulonglong4 a, ulonglong4 b) {
-  // CHECK: return sycl::vec<std::uint64_t, 4>(a.x() + b.x(), a.y() + b.y(), a.z() + b.z(), a.w() + b.w());
+  // CHECK: return sycl::ulong4(a.x() + b.x(), a.y() + b.y(), a.z() + b.z(), a.w() + b.w());
   return make_ulonglong4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
 }
 
 __global__ void test_make_ulonglong4() {
   typedef cub::BlockReduce<ulonglong4, 128> BlockReduce;
   __shared__ typename BlockReduce::TempStorage smem_storage;
-  // CHECK: sycl::vec<std::uint64_t, 4> res = sycl::reduce_over_group({{.+}}, sycl::vec<std::uint64_t, 4>(1., 2., 3., 4.), {{.+}});
+  // CHECK: sycl::ulong4 res = sycl::reduce_over_group({{.+}}, sycl::ulong4(1., 2., 3., 4.), {{.+}});
   ulonglong4 res = BlockReduce(smem_storage).Sum(make_ulonglong4(1., 2., 3., 4.));
 }
 

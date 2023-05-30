@@ -431,10 +431,10 @@ ulonglong1 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::vec<std::int64_t, 2> var1;
-// CHECK-NEXT: sycl::vec<std::int64_t, 2> *var2;
-// CHECK-NEXT: sycl::vec<std::int64_t, 2> &var3 = var1;
-// CHECK-NEXT: sycl::vec<std::int64_t, 2> &&var4 = std::move(var1);
+// CHECK: sycl::long2 var1;
+// CHECK-NEXT: sycl::long2 *var2;
+// CHECK-NEXT: sycl::long2 &var3 = var1;
+// CHECK-NEXT: sycl::long2 &&var4 = std::move(var1);
 longlong2 var1;
 longlong2 *var2;
 longlong2 &var3 = var1;
@@ -442,10 +442,10 @@ longlong2 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::vec<std::uint64_t, 2> var1;
-// CHECK-NEXT: sycl::vec<std::uint64_t, 2> *var2;
-// CHECK-NEXT: sycl::vec<std::uint64_t, 2> &var3 = var1;
-// CHECK-NEXT: sycl::vec<std::uint64_t, 2> &&var4 = std::move(var1);
+// CHECK: sycl::ulong2 var1;
+// CHECK-NEXT: sycl::ulong2 *var2;
+// CHECK-NEXT: sycl::ulong2 &var3 = var1;
+// CHECK-NEXT: sycl::ulong2 &&var4 = std::move(var1);
 ulonglong2 var1;
 ulonglong2 *var2;
 ulonglong2 &var3 = var1;
@@ -453,10 +453,10 @@ ulonglong2 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::vec<std::int64_t, 3> var1;
-// CHECK-NEXT: sycl::vec<std::int64_t, 3> *var2;
-// CHECK-NEXT: sycl::vec<std::int64_t, 3> &var3 = var1;
-// CHECK-NEXT: sycl::vec<std::int64_t, 3> &&var4 = std::move(var1);
+// CHECK: sycl::long3 var1;
+// CHECK-NEXT: sycl::long3 *var2;
+// CHECK-NEXT: sycl::long3 &var3 = var1;
+// CHECK-NEXT: sycl::long3 &&var4 = std::move(var1);
 longlong3 var1;
 longlong3 *var2;
 longlong3 &var3 = var1;
@@ -464,10 +464,10 @@ longlong3 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::vec<std::uint64_t, 3> var1;
-// CHECK-NEXT: sycl::vec<std::uint64_t, 3> *var2;
-// CHECK-NEXT: sycl::vec<std::uint64_t, 3> &var3 = var1;
-// CHECK-NEXT: sycl::vec<std::uint64_t, 3> &&var4 = std::move(var1);
+// CHECK: sycl::ulong3 var1;
+// CHECK-NEXT: sycl::ulong3 *var2;
+// CHECK-NEXT: sycl::ulong3 &var3 = var1;
+// CHECK-NEXT: sycl::ulong3 &&var4 = std::move(var1);
 ulonglong3 var1;
 ulonglong3 *var2;
 ulonglong3 &var3 = var1;
@@ -475,10 +475,10 @@ ulonglong3 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::vec<std::int64_t, 4> var1;
-// CHECK-NEXT: sycl::vec<std::int64_t, 4> *var2;
-// CHECK-NEXT: sycl::vec<std::int64_t, 4> &var3 = var1;
-// CHECK-NEXT: sycl::vec<std::int64_t, 4> &&var4 = std::move(var1);
+// CHECK: sycl::long4 var1;
+// CHECK-NEXT: sycl::long4 *var2;
+// CHECK-NEXT: sycl::long4 &var3 = var1;
+// CHECK-NEXT: sycl::long4 &&var4 = std::move(var1);
 longlong4 var1;
 longlong4 *var2;
 longlong4 &var3 = var1;
@@ -486,10 +486,10 @@ longlong4 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::vec<std::uint64_t, 4> var1;
-// CHECK-NEXT: sycl::vec<std::uint64_t, 4> *var2;
-// CHECK-NEXT: sycl::vec<std::uint64_t, 4> &var3 = var1;
-// CHECK-NEXT: sycl::vec<std::uint64_t, 4> &&var4 = std::move(var1);
+// CHECK: sycl::ulong4 var1;
+// CHECK-NEXT: sycl::ulong4 *var2;
+// CHECK-NEXT: sycl::ulong4 &var3 = var1;
+// CHECK-NEXT: sycl::ulong4 &&var4 = std::move(var1);
 ulonglong4 var1;
 ulonglong4 *var2;
 ulonglong4 &var3 = var1;
@@ -809,43 +809,43 @@ void case_2(void) {
 }
 
 {
-// CHECK:  new sycl::vec<std::int64_t, 2>();
-// CHECK-NEXT:  new sycl::vec<std::int64_t, 2> *();
+// CHECK:  new sycl::long2();
+// CHECK-NEXT:  new sycl::long2 *();
   new longlong2();
   new longlong2 *();
 }
 
 {
-// CHECK:  new sycl::vec<std::uint64_t, 2>();
-// CHECK-NEXT:  new sycl::vec<std::uint64_t, 2> *();
+// CHECK:  new sycl::ulong2();
+// CHECK-NEXT:  new sycl::ulong2 *();
   new ulonglong2();
   new ulonglong2 *();
 }
 
 {
-// CHECK:  new sycl::vec<std::int64_t, 3>();
-// CHECK-NEXT:  new sycl::vec<std::int64_t, 3> *();
+// CHECK:  new sycl::long3();
+// CHECK-NEXT:  new sycl::long3 *();
   new longlong3();
   new longlong3 *();
 }
 
 {
-// CHECK:  new sycl::vec<std::uint64_t, 3>();
-// CHECK-NEXT:  new sycl::vec<std::uint64_t, 3> *();
+// CHECK:  new sycl::ulong3();
+// CHECK-NEXT:  new sycl::ulong3 *();
   new ulonglong3();
   new ulonglong3 *();
 }
 
 {
-// CHECK:  new sycl::vec<std::int64_t, 4>();
-// CHECK-NEXT:  new sycl::vec<std::int64_t, 4> *();
+// CHECK:  new sycl::long4();
+// CHECK-NEXT:  new sycl::long4 *();
   new longlong4();
   new longlong4 *();
 }
 
 {
-// CHECK:  new sycl::vec<std::uint64_t, 4>();
-// CHECK-NEXT:  new sycl::vec<std::uint64_t, 4> *();
+// CHECK:  new sycl::ulong4();
+// CHECK-NEXT:  new sycl::ulong4 *();
   new ulonglong4();
   new ulonglong4 *();
 }
@@ -1147,44 +1147,44 @@ ulonglong1 foo111();
 ulonglong1 *foo112();
 ulonglong1 &foo113();
 
-// CHECK: sycl::vec<std::int64_t, 2> foo114();
-// CHECK-NEXT: sycl::vec<std::int64_t, 2> *foo115();
-// CHECK-NEXT: sycl::vec<std::int64_t, 2> &foo116();
+// CHECK: sycl::long2 foo114();
+// CHECK-NEXT: sycl::long2 *foo115();
+// CHECK-NEXT: sycl::long2 &foo116();
 longlong2 foo114();
 longlong2 *foo115();
 longlong2 &foo116();
 
-// CHECK: sycl::vec<std::uint64_t, 2> foo117();
-// CHECK-NEXT: sycl::vec<std::uint64_t, 2> *foo118();
-// CHECK-NEXT: sycl::vec<std::uint64_t, 2> &foo119();
+// CHECK: sycl::ulong2 foo117();
+// CHECK-NEXT: sycl::ulong2 *foo118();
+// CHECK-NEXT: sycl::ulong2 &foo119();
 ulonglong2 foo117();
 ulonglong2 *foo118();
 ulonglong2 &foo119();
 
-// CHECK: sycl::vec<std::int64_t, 3> foo120();
-// CHECK-NEXT: sycl::vec<std::int64_t, 3> *foo121();
-// CHECK-NEXT: sycl::vec<std::int64_t, 3> &foo122();
+// CHECK: sycl::long3 foo120();
+// CHECK-NEXT: sycl::long3 *foo121();
+// CHECK-NEXT: sycl::long3 &foo122();
 longlong3 foo120();
 longlong3 *foo121();
 longlong3 &foo122();
 
-// CHECK: sycl::vec<std::uint64_t, 3> foo123();
-// CHECK-NEXT: sycl::vec<std::uint64_t, 3> *foo124();
-// CHECK-NEXT: sycl::vec<std::uint64_t, 3> &foo125();
+// CHECK: sycl::ulong3 foo123();
+// CHECK-NEXT: sycl::ulong3 *foo124();
+// CHECK-NEXT: sycl::ulong3 &foo125();
 ulonglong3 foo123();
 ulonglong3 *foo124();
 ulonglong3 &foo125();
 
-// CHECK: sycl::vec<std::int64_t, 4> foo126();
-// CHECK-NEXT: sycl::vec<std::int64_t, 4> *foo127();
-// CHECK-NEXT: sycl::vec<std::int64_t, 4> &foo128();
+// CHECK: sycl::long4 foo126();
+// CHECK-NEXT: sycl::long4 *foo127();
+// CHECK-NEXT: sycl::long4 &foo128();
 longlong4 foo126();
 longlong4 *foo127();
 longlong4 &foo128();
 
-// CHECK: sycl::vec<std::uint64_t, 4> foo129();
-// CHECK-NEXT: sycl::vec<std::uint64_t, 4> *foo130();
-// CHECK-NEXT: sycl::vec<std::uint64_t, 4> &foo131();
+// CHECK: sycl::ulong4 foo129();
+// CHECK-NEXT: sycl::ulong4 *foo130();
+// CHECK-NEXT: sycl::ulong4 &foo131();
 ulonglong4 foo129();
 ulonglong4 *foo130();
 ulonglong4 &foo131();
@@ -1562,55 +1562,55 @@ template <> struct S<ulonglong1 *> {};
 template <> struct S<ulonglong1 &> {};
 template <> struct S<ulonglong1 &&> {};
 
-// CHECK: template <> struct S<sycl::vec<std::int64_t, 2>> {};
-// CHECK-NEXT: template <> struct S<sycl::vec<std::int64_t, 2> *> {};
-// CHECK-NEXT: template <> struct S<sycl::vec<std::int64_t, 2> &> {};
-// CHECK-NEXT: template <> struct S<sycl::vec<std::int64_t, 2> &&> {};
+// CHECK: template <> struct S<sycl::long2> {};
+// CHECK-NEXT: template <> struct S<sycl::long2 *> {};
+// CHECK-NEXT: template <> struct S<sycl::long2 &> {};
+// CHECK-NEXT: template <> struct S<sycl::long2 &&> {};
 template <> struct S<longlong2> {};
 template <> struct S<longlong2 *> {};
 template <> struct S<longlong2 &> {};
 template <> struct S<longlong2 &&> {};
 
-// CHECK: template <> struct S<sycl::vec<std::uint64_t, 2>> {};
-// CHECK-NEXT: template <> struct S<sycl::vec<std::uint64_t, 2> *> {};
-// CHECK-NEXT: template <> struct S<sycl::vec<std::uint64_t, 2> &> {};
-// CHECK-NEXT: template <> struct S<sycl::vec<std::uint64_t, 2> &&> {};
+// CHECK: template <> struct S<sycl::ulong2> {};
+// CHECK-NEXT: template <> struct S<sycl::ulong2 *> {};
+// CHECK-NEXT: template <> struct S<sycl::ulong2 &> {};
+// CHECK-NEXT: template <> struct S<sycl::ulong2 &&> {};
 template <> struct S<ulonglong2> {};
 template <> struct S<ulonglong2 *> {};
 template <> struct S<ulonglong2 &> {};
 template <> struct S<ulonglong2 &&> {};
 
-// CHECK: template <> struct S<sycl::vec<std::int64_t, 3>> {};
-// CHECK-NEXT: template <> struct S<sycl::vec<std::int64_t, 3> *> {};
-// CHECK-NEXT: template <> struct S<sycl::vec<std::int64_t, 3> &> {};
-// CHECK-NEXT: template <> struct S<sycl::vec<std::int64_t, 3> &&> {};
+// CHECK: template <> struct S<sycl::long3> {};
+// CHECK-NEXT: template <> struct S<sycl::long3 *> {};
+// CHECK-NEXT: template <> struct S<sycl::long3 &> {};
+// CHECK-NEXT: template <> struct S<sycl::long3 &&> {};
 template <> struct S<longlong3> {};
 template <> struct S<longlong3 *> {};
 template <> struct S<longlong3 &> {};
 template <> struct S<longlong3 &&> {};
 
-// CHECK: template <> struct S<sycl::vec<std::uint64_t, 3>> {};
-// CHECK-NEXT: template <> struct S<sycl::vec<std::uint64_t, 3> *> {};
-// CHECK-NEXT: template <> struct S<sycl::vec<std::uint64_t, 3> &> {};
-// CHECK-NEXT: template <> struct S<sycl::vec<std::uint64_t, 3> &&> {};
+// CHECK: template <> struct S<sycl::ulong3> {};
+// CHECK-NEXT: template <> struct S<sycl::ulong3 *> {};
+// CHECK-NEXT: template <> struct S<sycl::ulong3 &> {};
+// CHECK-NEXT: template <> struct S<sycl::ulong3 &&> {};
 template <> struct S<ulonglong3> {};
 template <> struct S<ulonglong3 *> {};
 template <> struct S<ulonglong3 &> {};
 template <> struct S<ulonglong3 &&> {};
 
-// CHECK: template <> struct S<sycl::vec<std::int64_t, 4>> {};
-// CHECK-NEXT: template <> struct S<sycl::vec<std::int64_t, 4> *> {};
-// CHECK-NEXT: template <> struct S<sycl::vec<std::int64_t, 4> &> {};
-// CHECK-NEXT: template <> struct S<sycl::vec<std::int64_t, 4> &&> {};
+// CHECK: template <> struct S<sycl::long4> {};
+// CHECK-NEXT: template <> struct S<sycl::long4 *> {};
+// CHECK-NEXT: template <> struct S<sycl::long4 &> {};
+// CHECK-NEXT: template <> struct S<sycl::long4 &&> {};
 template <> struct S<longlong4> {};
 template <> struct S<longlong4 *> {};
 template <> struct S<longlong4 &> {};
 template <> struct S<longlong4 &&> {};
 
-// CHECK: template <> struct S<sycl::vec<std::uint64_t, 4>> {};
-// CHECK-NEXT: template <> struct S<sycl::vec<std::uint64_t, 4> *> {};
-// CHECK-NEXT: template <> struct S<sycl::vec<std::uint64_t, 4> &> {};
-// CHECK-NEXT: template <> struct S<sycl::vec<std::uint64_t, 4> &&> {};
+// CHECK: template <> struct S<sycl::ulong4> {};
+// CHECK-NEXT: template <> struct S<sycl::ulong4 *> {};
+// CHECK-NEXT: template <> struct S<sycl::ulong4 &> {};
+// CHECK-NEXT: template <> struct S<sycl::ulong4 &&> {};
 template <> struct S<ulonglong4> {};
 template <> struct S<ulonglong4 *> {};
 template <> struct S<ulonglong4 &> {};
@@ -1999,55 +1999,55 @@ template_foo<ulonglong1 *>();
 template_foo<ulonglong1 &>();
 template_foo<ulonglong1 &&>();
 
-// CHECK: template_foo<sycl::vec<std::int64_t, 2>>();
-// CHECK-NEXT: template_foo<sycl::vec<std::int64_t, 2> *>();
-// CHECK-NEXT: template_foo<sycl::vec<std::int64_t, 2> &>();
-// CHECK-NEXT: template_foo<sycl::vec<std::int64_t, 2> &&>();
+// CHECK: template_foo<sycl::long2>();
+// CHECK-NEXT: template_foo<sycl::long2 *>();
+// CHECK-NEXT: template_foo<sycl::long2 &>();
+// CHECK-NEXT: template_foo<sycl::long2 &&>();
 template_foo<longlong2>();
 template_foo<longlong2 *>();
 template_foo<longlong2 &>();
 template_foo<longlong2 &&>();
 
-// CHECK: template_foo<sycl::vec<std::uint64_t, 2>>();
-// CHECK-NEXT: template_foo<sycl::vec<std::uint64_t, 2> *>();
-// CHECK-NEXT: template_foo<sycl::vec<std::uint64_t, 2> &>();
-// CHECK-NEXT: template_foo<sycl::vec<std::uint64_t, 2> &&>();
+// CHECK: template_foo<sycl::ulong2>();
+// CHECK-NEXT: template_foo<sycl::ulong2 *>();
+// CHECK-NEXT: template_foo<sycl::ulong2 &>();
+// CHECK-NEXT: template_foo<sycl::ulong2 &&>();
 template_foo<ulonglong2>();
 template_foo<ulonglong2 *>();
 template_foo<ulonglong2 &>();
 template_foo<ulonglong2 &&>();
 
-// CHECK: template_foo<sycl::vec<std::int64_t, 3>>();
-// CHECK-NEXT: template_foo<sycl::vec<std::int64_t, 3> *>();
-// CHECK-NEXT: template_foo<sycl::vec<std::int64_t, 3> &>();
-// CHECK-NEXT: template_foo<sycl::vec<std::int64_t, 3> &&>();
+// CHECK: template_foo<sycl::long3>();
+// CHECK-NEXT: template_foo<sycl::long3 *>();
+// CHECK-NEXT: template_foo<sycl::long3 &>();
+// CHECK-NEXT: template_foo<sycl::long3 &&>();
 template_foo<longlong3>();
 template_foo<longlong3 *>();
 template_foo<longlong3 &>();
 template_foo<longlong3 &&>();
 
-// CHECK: template_foo<sycl::vec<std::uint64_t, 3>>();
-// CHECK-NEXT: template_foo<sycl::vec<std::uint64_t, 3> *>();
-// CHECK-NEXT: template_foo<sycl::vec<std::uint64_t, 3> &>();
-// CHECK-NEXT: template_foo<sycl::vec<std::uint64_t, 3> &&>();
+// CHECK: template_foo<sycl::ulong3>();
+// CHECK-NEXT: template_foo<sycl::ulong3 *>();
+// CHECK-NEXT: template_foo<sycl::ulong3 &>();
+// CHECK-NEXT: template_foo<sycl::ulong3 &&>();
 template_foo<ulonglong3>();
 template_foo<ulonglong3 *>();
 template_foo<ulonglong3 &>();
 template_foo<ulonglong3 &&>();
 
-// CHECK: template_foo<sycl::vec<std::int64_t, 4>>();
-// CHECK-NEXT: template_foo<sycl::vec<std::int64_t, 4> *>();
-// CHECK-NEXT: template_foo<sycl::vec<std::int64_t, 4> &>();
-// CHECK-NEXT: template_foo<sycl::vec<std::int64_t, 4> &&>();
+// CHECK: template_foo<sycl::long4>();
+// CHECK-NEXT: template_foo<sycl::long4 *>();
+// CHECK-NEXT: template_foo<sycl::long4 &>();
+// CHECK-NEXT: template_foo<sycl::long4 &&>();
 template_foo<longlong4>();
 template_foo<longlong4 *>();
 template_foo<longlong4 &>();
 template_foo<longlong4 &&>();
 
-// CHECK: template_foo<sycl::vec<std::uint64_t, 4>>();
-// CHECK-NEXT: template_foo<sycl::vec<std::uint64_t, 4> *>();
-// CHECK-NEXT: template_foo<sycl::vec<std::uint64_t, 4> &>();
-// CHECK-NEXT: template_foo<sycl::vec<std::uint64_t, 4> &&>();
+// CHECK: template_foo<sycl::ulong4>();
+// CHECK-NEXT: template_foo<sycl::ulong4 *>();
+// CHECK-NEXT: template_foo<sycl::ulong4 &>();
+// CHECK-NEXT: template_foo<sycl::ulong4 &&>();
 template_foo<ulonglong4>();
 template_foo<ulonglong4 *>();
 template_foo<ulonglong4 &>();
@@ -2435,55 +2435,55 @@ using UT149 = ulonglong1 *;
 using UT150 = ulonglong1 &;
 using UT151 = ulonglong1 &&;
 
-// CHECK: using UT152 = sycl::vec<std::int64_t, 2>;
-// CHECK-NEXT: using UT153 = sycl::vec<std::int64_t, 2> *;
-// CHECK-NEXT: using UT154 = sycl::vec<std::int64_t, 2> &;
-// CHECK-NEXT: using UT155 = sycl::vec<std::int64_t, 2> &&;
+// CHECK: using UT152 = sycl::long2;
+// CHECK-NEXT: using UT153 = sycl::long2 *;
+// CHECK-NEXT: using UT154 = sycl::long2 &;
+// CHECK-NEXT: using UT155 = sycl::long2 &&;
 using UT152 = longlong2;
 using UT153 = longlong2 *;
 using UT154 = longlong2 &;
 using UT155 = longlong2 &&;
 
-// CHECK: using UT156 = sycl::vec<std::uint64_t, 2>;
-// CHECK-NEXT: using UT157 = sycl::vec<std::uint64_t, 2> *;
-// CHECK-NEXT: using UT158 = sycl::vec<std::uint64_t, 2> &;
-// CHECK-NEXT: using UT159 = sycl::vec<std::uint64_t, 2> &&;
+// CHECK: using UT156 = sycl::ulong2;
+// CHECK-NEXT: using UT157 = sycl::ulong2 *;
+// CHECK-NEXT: using UT158 = sycl::ulong2 &;
+// CHECK-NEXT: using UT159 = sycl::ulong2 &&;
 using UT156 = ulonglong2;
 using UT157 = ulonglong2 *;
 using UT158 = ulonglong2 &;
 using UT159 = ulonglong2 &&;
 
-// CHECK: using UT160 = sycl::vec<std::int64_t, 3>;
-// CHECK-NEXT: using UT161 = sycl::vec<std::int64_t, 3> *;
-// CHECK-NEXT: using UT162 = sycl::vec<std::int64_t, 3> &;
-// CHECK-NEXT: using UT163 = sycl::vec<std::int64_t, 3> &&;
+// CHECK: using UT160 = sycl::long3;
+// CHECK-NEXT: using UT161 = sycl::long3 *;
+// CHECK-NEXT: using UT162 = sycl::long3 &;
+// CHECK-NEXT: using UT163 = sycl::long3 &&;
 using UT160 = longlong3;
 using UT161 = longlong3 *;
 using UT162 = longlong3 &;
 using UT163 = longlong3 &&;
 
-// CHECK: using UT164 = sycl::vec<std::uint64_t, 3>;
-// CHECK-NEXT: using UT165 = sycl::vec<std::uint64_t, 3> *;
-// CHECK-NEXT: using UT166 = sycl::vec<std::uint64_t, 3> &;
-// CHECK-NEXT: using UT167 = sycl::vec<std::uint64_t, 3> &&;
+// CHECK: using UT164 = sycl::ulong3;
+// CHECK-NEXT: using UT165 = sycl::ulong3 *;
+// CHECK-NEXT: using UT166 = sycl::ulong3 &;
+// CHECK-NEXT: using UT167 = sycl::ulong3 &&;
 using UT164 = ulonglong3;
 using UT165 = ulonglong3 *;
 using UT166 = ulonglong3 &;
 using UT167 = ulonglong3 &&;
 
-// CHECK: using UT168 = sycl::vec<std::int64_t, 4>;
-// CHECK-NEXT: using UT169 = sycl::vec<std::int64_t, 4> *;
-// CHECK-NEXT: using UT170 = sycl::vec<std::int64_t, 4> &;
-// CHECK-NEXT: using UT171 = sycl::vec<std::int64_t, 4> &&;
+// CHECK: using UT168 = sycl::long4;
+// CHECK-NEXT: using UT169 = sycl::long4 *;
+// CHECK-NEXT: using UT170 = sycl::long4 &;
+// CHECK-NEXT: using UT171 = sycl::long4 &&;
 using UT168 = longlong4;
 using UT169 = longlong4 *;
 using UT170 = longlong4 &;
 using UT171 = longlong4 &&;
 
-// CHECK: using UT172 = sycl::vec<std::uint64_t, 4>;
-// CHECK-NEXT: using UT173 = sycl::vec<std::uint64_t, 4> *;
-// CHECK-NEXT: using UT174 = sycl::vec<std::uint64_t, 4> &;
-// CHECK-NEXT: using UT175 = sycl::vec<std::uint64_t, 4> &&;
+// CHECK: using UT172 = sycl::ulong4;
+// CHECK-NEXT: using UT173 = sycl::ulong4 *;
+// CHECK-NEXT: using UT174 = sycl::ulong4 &;
+// CHECK-NEXT: using UT175 = sycl::ulong4 &&;
 using UT172 = ulonglong4;
 using UT173 = ulonglong4 *;
 using UT174 = ulonglong4 &;
@@ -2870,55 +2870,55 @@ typedef ulonglong1* T149;
 typedef ulonglong1& T150;
 typedef ulonglong1&& T151;
 
-// CHECK: typedef sycl::vec<std::int64_t, 2> T152;
-// CHECK-NEXT: typedef sycl::vec<std::int64_t, 2>* T153;
-// CHECK-NEXT: typedef sycl::vec<std::int64_t, 2>& T154;
-// CHECK-NEXT: typedef sycl::vec<std::int64_t, 2>&& T155;
+// CHECK: typedef sycl::long2 T152;
+// CHECK-NEXT: typedef sycl::long2* T153;
+// CHECK-NEXT: typedef sycl::long2& T154;
+// CHECK-NEXT: typedef sycl::long2&& T155;
 typedef longlong2 T152;
 typedef longlong2* T153;
 typedef longlong2& T154;
 typedef longlong2&& T155;
 
-// CHECK: typedef sycl::vec<std::uint64_t, 2> T156;
-// CHECK-NEXT: typedef sycl::vec<std::uint64_t, 2>* T157;
-// CHECK-NEXT: typedef sycl::vec<std::uint64_t, 2>& T158;
-// CHECK-NEXT: typedef sycl::vec<std::uint64_t, 2>&& T159;
+// CHECK: typedef sycl::ulong2 T156;
+// CHECK-NEXT: typedef sycl::ulong2* T157;
+// CHECK-NEXT: typedef sycl::ulong2& T158;
+// CHECK-NEXT: typedef sycl::ulong2&& T159;
 typedef ulonglong2 T156;
 typedef ulonglong2* T157;
 typedef ulonglong2& T158;
 typedef ulonglong2&& T159;
 
-// CHECK: typedef sycl::vec<std::int64_t, 3> T160;
-// CHECK-NEXT: typedef sycl::vec<std::int64_t, 3>* T161;
-// CHECK-NEXT: typedef sycl::vec<std::int64_t, 3>& T162;
-// CHECK-NEXT: typedef sycl::vec<std::int64_t, 3>&& T163;
+// CHECK: typedef sycl::long3 T160;
+// CHECK-NEXT: typedef sycl::long3* T161;
+// CHECK-NEXT: typedef sycl::long3& T162;
+// CHECK-NEXT: typedef sycl::long3&& T163;
 typedef longlong3 T160;
 typedef longlong3* T161;
 typedef longlong3& T162;
 typedef longlong3&& T163;
 
-// CHECK: typedef sycl::vec<std::uint64_t, 3> T164;
-// CHECK-NEXT: typedef sycl::vec<std::uint64_t, 3>* T165;
-// CHECK-NEXT: typedef sycl::vec<std::uint64_t, 3>& T166;
-// CHECK-NEXT: typedef sycl::vec<std::uint64_t, 3>&& T167;
+// CHECK: typedef sycl::ulong3 T164;
+// CHECK-NEXT: typedef sycl::ulong3* T165;
+// CHECK-NEXT: typedef sycl::ulong3& T166;
+// CHECK-NEXT: typedef sycl::ulong3&& T167;
 typedef ulonglong3 T164;
 typedef ulonglong3* T165;
 typedef ulonglong3& T166;
 typedef ulonglong3&& T167;
 
-// CHECK: typedef sycl::vec<std::int64_t, 4> T168;
-// CHECK-NEXT: typedef sycl::vec<std::int64_t, 4>* T169;
-// CHECK-NEXT: typedef sycl::vec<std::int64_t, 4>& T170;
-// CHECK-NEXT: typedef sycl::vec<std::int64_t, 4>&& T171;
+// CHECK: typedef sycl::long4 T168;
+// CHECK-NEXT: typedef sycl::long4* T169;
+// CHECK-NEXT: typedef sycl::long4& T170;
+// CHECK-NEXT: typedef sycl::long4&& T171;
 typedef longlong4 T168;
 typedef longlong4* T169;
 typedef longlong4& T170;
 typedef longlong4&& T171;
 
-// CHECK: typedef sycl::vec<std::uint64_t, 4> T172;
-// CHECK-NEXT: typedef sycl::vec<std::uint64_t, 4>* T173;
-// CHECK-NEXT: typedef sycl::vec<std::uint64_t, 4>& T174;
-// CHECK-NEXT: typedef sycl::vec<std::uint64_t, 4>&& T175;
+// CHECK: typedef sycl::ulong4 T172;
+// CHECK-NEXT: typedef sycl::ulong4* T173;
+// CHECK-NEXT: typedef sycl::ulong4& T174;
+// CHECK-NEXT: typedef sycl::ulong4&& T175;
 typedef ulonglong4 T172;
 typedef ulonglong4* T173;
 typedef ulonglong4& T174;
@@ -3726,10 +3726,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_152 sycl::vec<std::int64_t, 2>
-// CHECK-NEXT: #define T8_153 sycl::vec<std::int64_t, 2> *
-// CHECK-NEXT: #define T8_154 sycl::vec<std::int64_t, 2> &
-// CHECK-NEXT: #define T8_155 sycl::vec<std::int64_t, 2> &&
+// CHECK: #define T8_152 sycl::long2
+// CHECK-NEXT: #define T8_153 sycl::long2 *
+// CHECK-NEXT: #define T8_154 sycl::long2 &
+// CHECK-NEXT: #define T8_155 sycl::long2 &&
 // CHECK-NEXT:     T8_152 a1;
 // CHECK-NEXT:     T8_153 a2;
 // CHECK-NEXT:     T8_154 a3=a1;
@@ -3746,10 +3746,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_156 sycl::vec<std::uint64_t, 2>
-// CHECK-NEXT: #define T8_157 sycl::vec<std::uint64_t, 2> *
-// CHECK-NEXT: #define T8_158 sycl::vec<std::uint64_t, 2> &
-// CHECK-NEXT: #define T8_159 sycl::vec<std::uint64_t, 2> &&
+// CHECK: #define T8_156 sycl::ulong2
+// CHECK-NEXT: #define T8_157 sycl::ulong2 *
+// CHECK-NEXT: #define T8_158 sycl::ulong2 &
+// CHECK-NEXT: #define T8_159 sycl::ulong2 &&
 // CHECK-NEXT:     T8_156 a1;
 // CHECK-NEXT:     T8_157 a2;
 // CHECK-NEXT:     T8_158 a3=a1;
@@ -3766,10 +3766,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_160 sycl::vec<std::int64_t, 3>
-// CHECK-NEXT: #define T8_161 sycl::vec<std::int64_t, 3> *
-// CHECK-NEXT: #define T8_162 sycl::vec<std::int64_t, 3> &
-// CHECK-NEXT: #define T8_163 sycl::vec<std::int64_t, 3> &&
+// CHECK: #define T8_160 sycl::long3
+// CHECK-NEXT: #define T8_161 sycl::long3 *
+// CHECK-NEXT: #define T8_162 sycl::long3 &
+// CHECK-NEXT: #define T8_163 sycl::long3 &&
 // CHECK-NEXT:     T8_160 a1;
 // CHECK-NEXT:     T8_161 a2;
 // CHECK-NEXT:     T8_162 a3=a1;
@@ -3786,10 +3786,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_164 sycl::vec<std::uint64_t, 3>
-// CHECK-NEXT: #define T8_165 sycl::vec<std::uint64_t, 3> *
-// CHECK-NEXT: #define T8_166 sycl::vec<std::uint64_t, 3> &
-// CHECK-NEXT: #define T8_167 sycl::vec<std::uint64_t, 3> &&
+// CHECK: #define T8_164 sycl::ulong3
+// CHECK-NEXT: #define T8_165 sycl::ulong3 *
+// CHECK-NEXT: #define T8_166 sycl::ulong3 &
+// CHECK-NEXT: #define T8_167 sycl::ulong3 &&
 // CHECK-NEXT:     T8_164 a1;
 // CHECK-NEXT:     T8_165 a2;
 // CHECK-NEXT:     T8_166 a3=a1;
@@ -3806,10 +3806,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_168 sycl::vec<std::int64_t, 4>
-// CHECK-NEXT: #define T8_169 sycl::vec<std::int64_t, 4> *
-// CHECK-NEXT: #define T8_170 sycl::vec<std::int64_t, 4> &
-// CHECK-NEXT: #define T8_171 sycl::vec<std::int64_t, 4> &&
+// CHECK: #define T8_168 sycl::long4
+// CHECK-NEXT: #define T8_169 sycl::long4 *
+// CHECK-NEXT: #define T8_170 sycl::long4 &
+// CHECK-NEXT: #define T8_171 sycl::long4 &&
 // CHECK-NEXT:     T8_168 a1;
 // CHECK-NEXT:     T8_169 a2;
 // CHECK-NEXT:     T8_170 a3=a1;
@@ -3826,10 +3826,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_172 sycl::vec<std::uint64_t, 4>
-// CHECK-NEXT: #define T8_173 sycl::vec<std::uint64_t, 4> *
-// CHECK-NEXT: #define T8_174 sycl::vec<std::uint64_t, 4> &
-// CHECK-NEXT: #define T8_175 sycl::vec<std::uint64_t, 4> &&
+// CHECK: #define T8_172 sycl::ulong4
+// CHECK-NEXT: #define T8_173 sycl::ulong4 *
+// CHECK-NEXT: #define T8_174 sycl::ulong4 &
+// CHECK-NEXT: #define T8_175 sycl::ulong4 &&
 // CHECK-NEXT:     T8_172 a1;
 // CHECK-NEXT:     T8_173 a2;
 // CHECK-NEXT:     T8_174 a3=a1;
@@ -4276,55 +4276,55 @@ template <> void foo2(ulonglong1){}
 template <> void foo3(ulonglong1){}
 template <> void foo4(ulonglong1){}
 
-// CHECK: template <> void foo1(sycl::vec<std::int64_t, 2>){}
-// CHECK-NEXT: template <> void foo2(sycl::vec<std::int64_t, 2>){}
-// CHECK-NEXT: template <> void foo3(sycl::vec<std::int64_t, 2>){}
-// CHECK-NEXT: template <> void foo4(sycl::vec<std::int64_t, 2>){}
+// CHECK: template <> void foo1(sycl::long2){}
+// CHECK-NEXT: template <> void foo2(sycl::long2){}
+// CHECK-NEXT: template <> void foo3(sycl::long2){}
+// CHECK-NEXT: template <> void foo4(sycl::long2){}
 template <> void foo1(longlong2){}
 template <> void foo2(longlong2){}
 template <> void foo3(longlong2){}
 template <> void foo4(longlong2){}
 
-// CHECK: template <> void foo1(sycl::vec<std::uint64_t, 2>){}
-// CHECK-NEXT: template <> void foo2(sycl::vec<std::uint64_t, 2>){}
-// CHECK-NEXT: template <> void foo3(sycl::vec<std::uint64_t, 2>){}
-// CHECK-NEXT: template <> void foo4(sycl::vec<std::uint64_t, 2>){}
+// CHECK: template <> void foo1(sycl::ulong2){}
+// CHECK-NEXT: template <> void foo2(sycl::ulong2){}
+// CHECK-NEXT: template <> void foo3(sycl::ulong2){}
+// CHECK-NEXT: template <> void foo4(sycl::ulong2){}
 template <> void foo1(ulonglong2){}
 template <> void foo2(ulonglong2){}
 template <> void foo3(ulonglong2){}
 template <> void foo4(ulonglong2){}
 
-// CHECK: template <> void foo1(sycl::vec<std::int64_t, 3>){}
-// CHECK-NEXT: template <> void foo2(sycl::vec<std::int64_t, 3>){}
-// CHECK-NEXT: template <> void foo3(sycl::vec<std::int64_t, 3>){}
-// CHECK-NEXT: template <> void foo4(sycl::vec<std::int64_t, 3>){}
+// CHECK: template <> void foo1(sycl::long3){}
+// CHECK-NEXT: template <> void foo2(sycl::long3){}
+// CHECK-NEXT: template <> void foo3(sycl::long3){}
+// CHECK-NEXT: template <> void foo4(sycl::long3){}
 template <> void foo1(longlong3){}
 template <> void foo2(longlong3){}
 template <> void foo3(longlong3){}
 template <> void foo4(longlong3){}
 
-// CHECK: template <> void foo1(sycl::vec<std::uint64_t, 3>){}
-// CHECK-NEXT: template <> void foo2(sycl::vec<std::uint64_t, 3>){}
-// CHECK-NEXT: template <> void foo3(sycl::vec<std::uint64_t, 3>){}
-// CHECK-NEXT: template <> void foo4(sycl::vec<std::uint64_t, 3>){}
+// CHECK: template <> void foo1(sycl::ulong3){}
+// CHECK-NEXT: template <> void foo2(sycl::ulong3){}
+// CHECK-NEXT: template <> void foo3(sycl::ulong3){}
+// CHECK-NEXT: template <> void foo4(sycl::ulong3){}
 template <> void foo1(ulonglong3){}
 template <> void foo2(ulonglong3){}
 template <> void foo3(ulonglong3){}
 template <> void foo4(ulonglong3){}
 
-// CHECK: template <> void foo1(sycl::vec<std::int64_t, 4>){}
-// CHECK-NEXT: template <> void foo2(sycl::vec<std::int64_t, 4>){}
-// CHECK-NEXT: template <> void foo3(sycl::vec<std::int64_t, 4>){}
-// CHECK-NEXT: template <> void foo4(sycl::vec<std::int64_t, 4>){}
+// CHECK: template <> void foo1(sycl::long4){}
+// CHECK-NEXT: template <> void foo2(sycl::long4){}
+// CHECK-NEXT: template <> void foo3(sycl::long4){}
+// CHECK-NEXT: template <> void foo4(sycl::long4){}
 template <> void foo1(longlong4){}
 template <> void foo2(longlong4){}
 template <> void foo3(longlong4){}
 template <> void foo4(longlong4){}
 
-// CHECK: template <> void foo1(sycl::vec<std::uint64_t, 4>){}
-// CHECK-NEXT: template <> void foo2(sycl::vec<std::uint64_t, 4>){}
-// CHECK-NEXT: template <> void foo3(sycl::vec<std::uint64_t, 4>){}
-// CHECK-NEXT: template <> void foo4(sycl::vec<std::uint64_t, 4>){}
+// CHECK: template <> void foo1(sycl::ulong4){}
+// CHECK-NEXT: template <> void foo2(sycl::ulong4){}
+// CHECK-NEXT: template <> void foo3(sycl::ulong4){}
+// CHECK-NEXT: template <> void foo4(sycl::ulong4){}
 template <> void foo1(ulonglong4){}
 template <> void foo2(ulonglong4){}
 template <> void foo3(ulonglong4){}
