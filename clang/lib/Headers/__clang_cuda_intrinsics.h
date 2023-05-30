@@ -514,6 +514,8 @@ __device__ inline cuuint32_t __nvvm_get_smem_pointer(void *__ptr) {
 }
 } // extern "C"
 
+#if 0 // SYCLomatic_CUSTOMIZATION
+
 #if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 800
 __device__ inline unsigned __reduce_add_sync(unsigned __mask,
                                              unsigned __value) {
@@ -576,6 +578,8 @@ __nv_associate_access_property(const void *__ptr, unsigned long long __prop) {
   return (void*)__ptr;
 }
 #endif // !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 800
+
+#endif
 
 #endif // CUDA_VERSION >= 11000
 
