@@ -9,8 +9,6 @@
 #include "CallExprRewriter.h"
 #include "CallExprRewriterCommon.h"
 
-extern std::string DpctInstallPath; // Installation directory for this tool
-
 namespace clang {
 namespace dpct {
 
@@ -960,23 +958,6 @@ std::optional<std::string> MathBinaryOperatorRewriter::rewrite() {
   REWRITER_FACTORY_ENTRY(FuncName, UnsupportFunctionRewriterFactory<>, MsgID)
 
 namespace math {
-class IsDefinedInCUDA {
-public:
-  IsDefinedInCUDA() {}
-  bool operator()(const CallExpr *C) {
-    auto FD = C->getDirectCallee();
-    if (!FD)
-      return false;
-    SourceLocation DeclLoc =
-        dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(FD->getLocation());
-    std::string DeclLocFilePath =
-        dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
-    makeCanonical(DeclLocFilePath);
-    return (isChildPath(dpct::DpctGlobalInfo::getCudaPath(), DeclLocFilePath) ||
-            isChildPath(DpctInstallPath, DeclLocFilePath));
-  }
-};
-
 bool useStdLibdevice() {
   return DpctGlobalInfo::useCAndCXXStandardLibrariesExt();
 }
