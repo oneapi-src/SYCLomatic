@@ -9,23 +9,6 @@ import unittest
 
 class CompilerTest(unittest.TestCase):
     def test_is_compiler_call(self):
-<<<<<<< HEAD
-        self.assertIsNotNone(sut.compiler_language(['clang']))
-        self.assertIsNotNone(sut.compiler_language(['clang-3.6']))
-        self.assertIsNotNone(sut.compiler_language(['clang++']))
-        self.assertIsNotNone(sut.compiler_language(['clang++-3.5.1']))
-        self.assertIsNotNone(sut.compiler_language(['cc']))
-        self.assertIsNotNone(sut.compiler_language(['c++']))
-        self.assertIsNotNone(sut.compiler_language(['gcc']))
-        self.assertIsNotNone(sut.compiler_language(['g++']))
-        self.assertIsNotNone(sut.compiler_language(['/usr/local/bin/gcc']))
-        self.assertIsNotNone(sut.compiler_language(['/usr/local/bin/g++']))
-        self.assertIsNotNone(sut.compiler_language(['/usr/local/bin/clang']))
-        self.assertIsNotNone(sut.compiler_language(['nvcc']))
-        self.assertIsNotNone(sut.compiler_language(['/usr/local/cuda/bin/nvcc']))
-        self.assertIsNotNone(
-            sut.compiler_language(['armv7_neno-linux-gnueabi-g++']))
-=======
         self.assertIsNotNone(sut.compiler_language(["clang"]))
         self.assertIsNotNone(sut.compiler_language(["clang-3.6"]))
         self.assertIsNotNone(sut.compiler_language(["clang++"]))
@@ -37,8 +20,9 @@ class CompilerTest(unittest.TestCase):
         self.assertIsNotNone(sut.compiler_language(["/usr/local/bin/gcc"]))
         self.assertIsNotNone(sut.compiler_language(["/usr/local/bin/g++"]))
         self.assertIsNotNone(sut.compiler_language(["/usr/local/bin/clang"]))
+        self.assertIsNotNone(sut.compiler_language(["nvcc"]))
+        self.assertIsNotNone(sut.compiler_language(["/usr/local/cuda/bin/nvcc"]))
         self.assertIsNotNone(sut.compiler_language(["armv7_neno-linux-gnueabi-g++"]))
->>>>>>> upstream/sycl
 
         self.assertIsNone(sut.compiler_language([]))
         self.assertIsNone(sut.compiler_language([""]))
@@ -67,11 +51,19 @@ class SplitTest(unittest.TestCase):
 
     def test_detect_cuda_from_compiler_name(self):
         def test(cmd):
+            result = sut.split_command([cmd, "-c", "src.cu"])
+            self.assertIsNotNone(result, "wrong input for test")
+            return result.compiler == "cuda"
+
+        self.assertTrue(test("nvcc'))
+
+    def test_detect_cuda_from_compiler_name(self):
+        def test(cmd):
             result = sut.split_command([cmd, '-c', 'src.cu'])
             self.assertIsNotNone(result, "wrong input for test")
-            return result.compiler == 'cuda'
+            return result.compiler == "cuda"
 
-        self.assertTrue(test('nvcc'))
+        self.assertTrue(test("nvcc"))
 
     def test_action(self):
         self.assertIsNotNone(sut.split_command(["clang", "source.c"]))
@@ -89,33 +81,6 @@ class SplitTest(unittest.TestCase):
         def test(expected, cmd):
             self.assertEqual(expected, sut.split_command(cmd).files)
 
-<<<<<<< HEAD
-        test(['src.c'], ['clang', 'src.c'])
-        test(['src.c'], ['clang', '-c', 'src.c'])
-        test(['src.C'], ['clang', '-x', 'c', 'src.C'])
-        test(['src.cpp'], ['clang++', '-c', 'src.cpp'])
-        test(['s1.c', 's2.c'], ['clang', '-c', 's1.c', 's2.c'])
-        test(['s1.c', 's2.c'], ['cc', 's1.c', 's2.c', '-ldep', '-o', 'a.out'])
-        test(['src.c'], ['clang', '-c', '-I', './include', 'src.c'])
-        test(['src.c'], ['clang', '-c', '-I', '/opt/me/include', 'src.c'])
-        test(['src.c'], ['clang', '-c', '-D', 'config=file.c', 'src.c'])
-        test(['src.cu'], ['nvcc', 'src.cu'])
-        test(['src.cu'], ['nvcc', '-c', 'src.cu'])
-        test(['src.cu'], ['nvcc', '-c', '-I', './include', 'src.cu'])
-
-        self.assertIsNone(
-            sut.split_command(['cc', 'this.o', 'that.o', '-o', 'a.out']))
-        self.assertIsNone(
-            sut.split_command(['cc', 'this.o', '-lthat', '-o', 'a.out']))
-        self.assertIsNotNone(
-            sut.split_command(['nvcc', 'this.o', 'that.o', '-o', 'a.out']))
-
-    def test_filter_flags(self):
-        def test(expected, flags):
-            command = ['clang', '-c', 'src.c'] + flags
-            print("command: ", command)
-            print("return ", sut.split_command(command).flags)
-=======
         test(["src.c"], ["clang", "src.c"])
         test(["src.c"], ["clang", "-c", "src.c"])
         test(["src.C"], ["clang", "-x", "c", "src.C"])
@@ -125,14 +90,20 @@ class SplitTest(unittest.TestCase):
         test(["src.c"], ["clang", "-c", "-I", "./include", "src.c"])
         test(["src.c"], ["clang", "-c", "-I", "/opt/me/include", "src.c"])
         test(["src.c"], ["clang", "-c", "-D", "config=file.c", "src.c"])
+        test(["src.cu"], ["nvcc", "src.cu"])
+        test(["src.cu"], ["nvcc", "-c", "src.cu"])
+        test(["src.cu"], ["nvcc", "-c", "-I", "./include", "src.cu"])
 
         self.assertIsNone(sut.split_command(["cc", "this.o", "that.o", "-o", "a.out"]))
         self.assertIsNone(sut.split_command(["cc", "this.o", "-lthat", "-o", "a.out"]))
+        self.assertIsNotNone(
+            sut.split_command(["nvcc", "this.o", "that.o", "-o", "a.out"]))
 
     def test_filter_flags(self):
         def test(expected, flags):
             command = ["clang", "-c", "src.c"] + flags
->>>>>>> upstream/sycl
+            print("command: ", command)
+            print("return ", sut.split_command(command).flags)
             self.assertEqual(expected, sut.split_command(command).flags)
 
         def same(expected):
@@ -148,76 +119,53 @@ class SplitTest(unittest.TestCase):
         same(["-Wall", "-Wno-unused", "-g", "-funroll-loops"])
 
         filtered([])
-<<<<<<< HEAD
-        filtered(['-lclien', '-L/opt/me/lib', '-L', '/opt/you/lib'])
-        filtered(['-static'])
-        filtered(['-MD', '-MT', 'something'])
-        filtered(['-MMD', '-MF', 'something'])
-        filtered(['-gencode','something'])
-        filtered(['-ccbin','something'])
-        filtered(['-ptx'])
-        filtered(['-cuda'])
-        filtered(['-Xcompiler'])
-        filtered(['-cubin'])
-        filtered(['-fatbin'])
-        filtered(['-gpu'])
-        filtered(['-dc'])
-        filtered(['-dw'])
-        filtered(['-dlink'])
-        filtered(['-link'])
-        filtered(['-lib'])
-        filtered(['-run'])
-        filtered(['-Xarchive'])
-        filtered(['-Xptxas'])
-        filtered(['-Xnvlink'])
-        filtered(['-noprof'])
-        filtered(['-dryrun'])
-        filtered(['-keep'])
-        filtered(['-keep-dir'])
-        filtered(['-clean'])
-        filtered(['-code','something'])
-        filtered(['-rdc','something'])
-        filtered(['-e','something'])
-        filtered(['-maxrregcount','something'])
-        filtered(['-use_fast_math'])
-        filtered(['-ftz','something'])
-        filtered(['-prec-div','something'])
-        filtered(['-prec-sqrt','something'])
-        filtered(['-fmad','something'])
-        filtered(['-default-stream','something'])
-        filtered(['-keep-device-functions'])
-        filtered(['-src-in-ptx'])
-        filtered(['-restrict'])
-        filtered(['-Wno-deprecated-gpu-targets'])
-        filtered(['-res-usage'])
-        filtered(['-V'])
-        filtered(['-optf'])
-=======
         filtered(["-lclien", "-L/opt/me/lib", "-L", "/opt/you/lib"])
         filtered(["-static"])
         filtered(["-MD", "-MT", "something"])
         filtered(["-MMD", "-MF", "something"])
->>>>>>> upstream/sycl
+        filtered(["-gencode","something"])
+        filtered(["-ccbin","something"])
+        filtered(["-ptx"])
+        filtered(["-cuda"])
+        filtered(["-Xcompiler"])
+        filtered(["-cubin"])
+        filtered(["-fatbin"])
+        filtered(["-gpu"])
+        filtered(["-dc"])
+        filtered(["-dw"])
+        filtered(["-dlink"])
+        filtered(["-link"])
+        filtered(["-lib"])
+        filtered(["-run"])
+        filtered(["-Xarchive"])
+        filtered(["-Xptxas"])
+        filtered(["-Xnvlink"])
+        filtered(["-noprof"])
+        filtered(["-dryrun"])
+        filtered(["-keep"])
+        filtered(["-keep-dir"])
+        filtered(["-clean"])
+        filtered(["-code","something"])
+        filtered(["-rdc","something"])
+        filtered(["-e","something"])
+        filtered(["-maxrregcount","something"])
+        filtered(["-use_fast_math"])
+        filtered(["-ftz","something"])
+        filtered(["-prec-div","something"])
+        filtered(["-prec-sqrt","something"])
+        filtered(["-fmad","something"])
+        filtered(["-default-stream","something"])
+        filtered(["-keep-device-functions"])
+        filtered(["-src-in-ptx"])
+        filtered(["-restrict"])
+        filtered(["-Wno-deprecated-gpu-targets"])
+        filtered(["-res-usage"])
+        filtered(["-V"])
+        filtered(["-optf"])
 
 
 class SourceClassifierTest(unittest.TestCase):
     def test_sources(self):
-<<<<<<< HEAD
-        self.assertIsNone(sut.classify_source('file.o'))
-        self.assertIsNone(sut.classify_source('file.exe'))
-        self.assertIsNone(sut.classify_source('/path/file.o'))
-        self.assertIsNone(sut.classify_source('clang'))
-
-        self.assertEqual('c', sut.classify_source('file.c'))
-        self.assertEqual('c', sut.classify_source('./file.c'))
-        self.assertEqual('c', sut.classify_source('/path/file.c'))
-        self.assertEqual('c++', sut.classify_source('file.c', False))
-        self.assertEqual('c++', sut.classify_source('./file.c', False))
-        self.assertEqual('c++', sut.classify_source('/path/file.c', False))
-        self.assertEqual('cuda', sut.classify_source('file.cu'))
-        self.assertEqual('cuda', sut.classify_source('./file.cu'))
-        self.assertEqual('cuda', sut.classify_source('/path/file.cu'))
-=======
         self.assertIsNone(sut.classify_source("file.o"))
         self.assertIsNone(sut.classify_source("file.exe"))
         self.assertIsNone(sut.classify_source("/path/file.o"))
@@ -229,4 +177,6 @@ class SourceClassifierTest(unittest.TestCase):
         self.assertEqual("c++", sut.classify_source("file.c", False))
         self.assertEqual("c++", sut.classify_source("./file.c", False))
         self.assertEqual("c++", sut.classify_source("/path/file.c", False))
->>>>>>> upstream/sycl
+        self.assertEqual("cuda", sut.classify_source("file.cu"))
+        self.assertEqual("cuda", sut.classify_source("./file.cu"))
+        self.assertEqual("cuda", sut.classify_source("/path/file.cu"))

@@ -46,13 +46,8 @@ def parse_args_for_intercept_build():
     logging.debug("Raw arguments %s", sys.argv)
 
     # short validation logic
-<<<<<<< HEAD
     if not args.build and not args.parse_build_log:
-        parser.error(message='Please specify build command, or specify build log file to be parsed.')
-=======
-    if not args.build:
-        parser.error(message="missing build command")
->>>>>>> upstream/sycl
+        parser.error(message="Please specify build command, or specify build log file to be parsed.")
 
     logging.debug("Parsed arguments: %s", args)
     return args
@@ -141,19 +136,11 @@ def validate_args_for_analyze(parser, args, from_build_command):
     elif args.help_checkers:
         print_active_checkers(get_checkers(args.clang, args.plugins))
         parser.exit(status=0)
-<<<<<<< HEAD
     elif from_build_command and not args.build and not args.parse_build_log and not args.work_directory:
-        parser.error(message='Please specify build command, or specify build log file to be parsed')
-    elif not from_build_command and not os.path.exists(args.cdb):
-        parser.error(message='compilation database is missing')
- 
-=======
-    elif from_build_command and not args.build:
-        parser.error(message="missing build command")
+        parser.error(message="Please specify build command, or specify build log file to be parsed")
     elif not from_build_command and not os.path.exists(args.cdb):
         parser.error(message="compilation database is missing")
-
->>>>>>> upstream/sycl
+ 
     # If the user wants CTU mode
     if (
         not from_build_command
@@ -520,60 +507,51 @@ def parser_add_cdb(parser):
 
 def parser_build_log(parser):
     parser.add_argument(
-        '--parse-build-log',
-        metavar='<file>',
+        "--parse-build-log",
+        metavar="<file>",
         help="""Specifies the file path of the build log.""")
 
 def parser_work_directory(parser):
     parser.add_argument(
-        '--work-directory',
-        metavar='<path>',
+        "--work-directory",
+        metavar="<path>",
         default=argparse.SUPPRESS,
         help="""Specifies the working directory of the command that generates the build log specified by option --parse-build-log.
                  (default: the directory of build log file specified by option --parse-build-log)""")
 
 def parser_add_linker_entry(parser):
     parser.add_argument(
-        '--linker-entry',
-        action='count',
+        "--linker-entry",
+        action="count",
         default=1,
         help="""Generate linker entry in compilation database
         if '--linker-entry' option is present.""")
 
 def parser_add_no_linker_entry(parser):
     parser.add_argument(
-        '--no-linker-entry',
-        action='count',
+        "--no-linker-entry",
+        action="count",
         default=0,
         help="""Do not generate linker entry in compilation database
         if '--no-linker-entry' option is present.""")
 
 def parser_add_prefer_wrapper(parser):
     parser.add_argument(
-<<<<<<< HEAD
-        '--override-compiler',
-        action='store_true',
+        "--override-compiler",
+        action="store_true",
 # SYCLomatic_CUSTOMIZATION begin
         #help="""Always resort to the compiler wrapper even when better
         #intercept methods are available.""",
         help=argparse.SUPPRESS)
 # SYCLomatic_CUSTOMIZATION end
-=======
-        "--override-compiler",
-        action="store_true",
-        help="""Always resort to the compiler wrapper even when better
-        intercept methods are available.""",
-    )
->>>>>>> upstream/sycl
 
 
 def parser_add_compilers(parser):
     parser.add_argument(
-<<<<<<< HEAD
-        '--use-cc',
-        metavar='<path>',
-        dest='cc',
-        default=os.getenv('CC', 'cc'),
+        "--use-cc",
+        metavar="<path>",
+        dest="cc",
+        default=os.getenv("CC", "cc"),
 # SYCLomatic_CUSTOMIZATION begin
         #help="""When '%(prog)s' analyzes a project by interposing a compiler
         #wrapper, which executes a real compiler for compilation and do other
@@ -587,37 +565,14 @@ def parser_add_compilers(parser):
         help=argparse.SUPPRESS)
 # SYCLomatic_CUSTOMIZATION end
     parser.add_argument(
-        '--use-c++',
-        metavar='<path>',
-        dest='cxx',
-        default=os.getenv('CXX', 'c++'),
-# SYCLomatic_CUSTOMIZATION begin
-        #help="""This is the same as "--use-cc" but for C++ code.""")
-        help=argparse.SUPPRESS)
-# SYCLomatic_CUSTOMIZATION end
-=======
-        "--use-cc",
-        metavar="<path>",
-        dest="cc",
-        default=os.getenv("CC", "cc"),
-        help="""When '%(prog)s' analyzes a project by interposing a compiler
-        wrapper, which executes a real compiler for compilation and do other
-        tasks (record the compiler invocation). Because of this interposing,
-        '%(prog)s' does not know what compiler your project normally uses.
-        Instead, it simply overrides the CC environment variable, and guesses
-        your default compiler.
-
-        If you need '%(prog)s' to use a specific compiler for *compilation*
-        then you can use this option to specify a path to that compiler.""",
-    )
-    parser.add_argument(
         "--use-c++",
         metavar="<path>",
         dest="cxx",
         default=os.getenv("CXX", "c++"),
-        help="""This is the same as "--use-cc" but for C++ code.""",
-    )
->>>>>>> upstream/sycl
+# SYCLomatic_CUSTOMIZATION begin
+        #help="""This is the same as "--use-cc" but for C++ code.""",
+        help=argparse.SUPPRESS)
+# SYCLomatic_CUSTOMIZATION end
 
 
 class AppendCommaSeparated(argparse.Action):

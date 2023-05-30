@@ -759,15 +759,6 @@ def filter_debug_flags(opts, continuation=dispatch_ctu):
 
 @require(["language", "compiler", "file", "flags"])
 def language_check(opts, continuation=filter_debug_flags):
-<<<<<<< HEAD
-    """ Find out the language from command line parameters or file name
-    extension. The decision also influenced by the compiler invocation. """
-
-    accepted = frozenset({
-        'c', 'c++', 'cuda', 'objective-c', 'objective-c++', 'c-cpp-output',
-        'c++-cpp-output', 'objective-c-cpp-output'
-    })
-=======
     """Find out the language from command line parameters or file name
     extension. The decision also influenced by the compiler invocation."""
 
@@ -775,6 +766,7 @@ def language_check(opts, continuation=filter_debug_flags):
         {
             "c",
             "c++",
+            "cuda",
             "objective-c",
             "objective-c++",
             "c-cpp-output",
@@ -782,7 +774,6 @@ def language_check(opts, continuation=filter_debug_flags):
             "objective-c-cpp-output",
         }
     )
->>>>>>> upstream/sycl
 
     # language can be given as a parameter...
     language = opts.pop("language")
@@ -862,17 +853,10 @@ def classify_parameters(command):
     language (-x) and architecture (-arch) flags for future processing."""
 
     result = {
-<<<<<<< HEAD
-        'flags': [],  # the filtered compiler flags
-        'arch_list': [],  # list of architecture flags
-        'language': None,  # compilation language, None, if not specified
-        'compiler': compiler_language(command)  # 'c', 'c++', or 'cuda'
-=======
         "flags": [],  # the filtered compiler flags
         "arch_list": [],  # list of architecture flags
         "language": None,  # compilation language, None, if not specified
-        "compiler": compiler_language(command),  # 'c' or 'c++'
->>>>>>> upstream/sycl
+        "compiler": compiler_language(command),  # 'c', 'c++', or 'cuda'
     }
 
     # iterate on the compile options

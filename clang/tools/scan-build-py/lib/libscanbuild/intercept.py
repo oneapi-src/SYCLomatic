@@ -47,20 +47,13 @@ GS = chr(0x1D)
 RS = chr(0x1E)
 US = chr(0x1F)
 
-<<<<<<< HEAD
 # This global set variable is used to record all the preprocess output files
 preproess_output_files = set()
 
-COMPILER_WRAPPER_CC = 'intercept-cc'
-COMPILER_WRAPPER_CXX = 'intercept-c++'
-TRACE_FILE_EXTENSION = '.cmd'  # same as in ear.c
-WRAPPER_ONLY_PLATFORMS = frozenset({'win32', 'cygwin'})
-=======
 COMPILER_WRAPPER_CC = "intercept-cc"
 COMPILER_WRAPPER_CXX = "intercept-c++"
 TRACE_FILE_EXTENSION = ".cmd"  # same as in ear.c
 WRAPPER_ONLY_PLATFORMS = frozenset({"win32", "cygwin"})
->>>>>>> upstream/sycl
 
 
 @command_entry_point
@@ -111,30 +104,29 @@ def capture(args):
             previous = iter([])
         # filter out duplicate entries from both
         duplicate = duplicate_check(entry_hash)
-<<<<<<< HEAD
         entries = []
         for entry in itertools.chain(previous, current):
             # add linker entry information into compilation database
-            if  (not ('file' in entry)) and (args.no_linker_entry == 0):
+            if  (not ("file" in entry)) and (args.no_linker_entry == 0):
                 entries.append(entry)
-            elif 'file' in entry and os.path.exists(entry['file']) and not duplicate(entry):
+            elif "file" in entry and os.path.exists(entry["file"]) and not duplicate(entry):
                 entries.append(entry)
 
         entries.reverse()
         entries_post = []
         occur_set = set()
         for entry in entries:
-            if not ('file' in entry):
-                key = entry['directory'] + entry['command']
+            if not ("file" in entry):
+                key = entry["directory"] + entry["command"]
                 if key not in occur_set:
                     occur_set.add(key)
                     entries_post.append(entry)
-            elif entry['file'] not in preproess_output_files:
-                if "-o" in entry['command']:
-                    outfile = get_outfile(entry['command'])
-                    key = entry['file'] + entry['directory'] + outfile
+            elif entry["file"] not in preproess_output_files:
+                if "-o" in entry["command"]:
+                    outfile = get_outfile(entry["command"])
+                    key = entry["file"] + entry["directory"] + outfile
                 else:
-                    key = entry['file'] + entry['directory']
+                    key = entry["file"] + entry["directory"]
                 if key not in occur_set:
                     occur_set.add(key)
                     entries_post.append(entry)
@@ -142,11 +134,11 @@ def capture(args):
         entries_post.reverse()
         return entries_post
 
-    with TemporaryDirectory(prefix='intercept-') as tmp_dir:
+    with TemporaryDirectory(prefix="intercept-") as tmp_dir:
         exit_code = 0
         entries = []
         if args.parse_build_log:
-            if hasattr(args, 'work_directory'):
+            if hasattr(args, "work_directory"):
                 work_directory = args.work_directory
             else:
                 work_directory = os.path.dirname(os.path.abspath(args.parse_build_log))
@@ -159,35 +151,14 @@ def capture(args):
             # read the intercepted exec calls
             exec_traces = itertools.chain.from_iterable(
                 parse_exec_trace(os.path.join(tmp_dir, filename))
-                for filename in sorted(glob.iglob(os.path.join(tmp_dir, '*.cmd'))))
-            # do post processing
+                for filename in sorted(glob.iglob(os.path.join(tmp_dir, "*.cmd")))
+            )
+        # do post processing
             entries = post_processing(exec_traces)
 
         # dump the compilation database
-        with open(args.cdb, 'w+') as handle:
-            json.dump(entries, handle, sort_keys=True, indent=4)
-=======
-        return (
-            entry
-            for entry in itertools.chain(previous, current)
-            if os.path.exists(entry["file"]) and not duplicate(entry)
-        )
-
-    with TemporaryDirectory(prefix="intercept-") as tmp_dir:
-        # run the build command
-        environment = setup_environment(args, tmp_dir)
-        exit_code = run_build(args.build, env=environment)
-        # read the intercepted exec calls
-        exec_traces = itertools.chain.from_iterable(
-            parse_exec_trace(os.path.join(tmp_dir, filename))
-            for filename in sorted(glob.iglob(os.path.join(tmp_dir, "*.cmd")))
-        )
-        # do post processing
-        entries = post_processing(exec_traces)
-        # dump the compilation database
         with open(args.cdb, "w+") as handle:
-            json.dump(list(entries), handle, sort_keys=True, indent=4)
->>>>>>> upstream/sycl
+            json.dump(entries, handle, sort_keys=True, indent=4)
         return exit_code
 
 
@@ -299,14 +270,8 @@ def format_entry(exec_trace):
         fullname = name if os.path.isabs(name) else os.path.join(cwd, name)
         return os.path.normpath(fullname)
 
-<<<<<<< HEAD
-    logging.debug('format this command: %s', exec_trace['command'])
-    compilation = split_command(exec_trace['command'])
-
-=======
     logging.debug("format this command: %s", exec_trace["command"])
     compilation = split_command(exec_trace["command"])
->>>>>>> upstream/sycl
     if compilation:
         compiler = {
             'c' : 'cc',
@@ -331,14 +296,8 @@ def format_entry(exec_trace):
             preproess_output_files.add(file_path)
 
         for source in compilation.files:
-<<<<<<< HEAD
-            command = [compiler, '-c'] + compilation.flags + [source]
-            logging.debug('formated as: %s', command)
-=======
-            compiler = "c++" if compilation.compiler == "c++" else "cc"
             command = [compiler, "-c"] + compilation.flags + [source]
             logging.debug("formated as: %s", command)
->>>>>>> upstream/sycl
             yield {
                 "directory": exec_trace["directory"],
                 "command": encode(command),

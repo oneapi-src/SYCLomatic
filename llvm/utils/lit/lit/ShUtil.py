@@ -126,15 +126,10 @@ class ShLexer:
                 c = self.eat()
                 if c == '"':  #
                     str += '"'
-<<<<<<< HEAD
 # SYCLomatic_CUSTOMIZATION begin
-                #elif c == '\\':
-                #    str += '\\'
+                #elif c == "\\":
+                #    str += "\\"
 # SYCLomatic_CUSTOMIZATION end
-=======
-                elif c == "\\":
-                    str += "\\"
->>>>>>> upstream/sycl
                 else:
                     str += "\\" + c
             else:

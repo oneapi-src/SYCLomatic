@@ -86,11 +86,7 @@ def get_active_checkers(clang, plugins):
         ]
 
     result = set()
-<<<<<<< HEAD
-    for language in ['c', 'c++', 'cuda', 'objective-c', 'objective-c++']:
-=======
-    for language in ["c", "c++", "objective-c", "objective-c++"]:
->>>>>>> upstream/sycl
+    for language in ["c", "c++", "cuda", "objective-c", "objective-c++"]:
         result.update(get_active_checkers_for(language))
     return frozenset(result)
 
