@@ -646,6 +646,8 @@ By default, experimental features will not be used in migrated code.
 
 The values are:
 
+- ``=dpl-experimental-api``: Experimental extension that allows use of experimental
+  oneDPL APIs.
 - ``=free-function-queries``: Experimental extension that allows getting
   ``id``, ``item``, ``nd_item``, ``group``, and ``sub_group`` instances
   globally.
@@ -653,15 +655,13 @@ The values are:
   allows allocation of local memory objects at the kernel functor scope.
 - ``=logical-group``: Experimental helper function used to logically
   group work-items.
-- ``=nd_range_barrier``: Experimental helper function used to help cross
-  group synchronization during migration.
-- ``=user-defined-reductions``: Experimental extension that allows user define
-  reductions.
 - ``=masked_sub_group_operation``: Experimental helper function used to execute
   sub-group operation with mask.
-- ``=dpl-experimental-api``: Experimental extension that allows use of experimental
-  oneDPL APIs.
+- ``=nd_range_barrier``: Experimental helper function used to help cross
+  group synchronization during migration.
 - ``=occupancy-calculation``: Experimental helper function used to calculate occupancy.
+- ``=user-defined-reductions``: Experimental extension that allows user-defined
+  reductions.
 
 .. _end-use-experimental-features:
 
@@ -748,7 +748,7 @@ parent directories of the first input source file. Same as ``-p``.
 
 .. _desc-gen-helper-func:
 
-Generate helper function files in the ``--out-root`` directory. Default: ``off``.
+Generates helper function files in the ``--out-root`` directory. Default: ``off``.
 
 .. _end-gen-helper-func:
 
