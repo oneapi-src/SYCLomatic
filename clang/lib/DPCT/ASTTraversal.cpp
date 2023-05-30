@@ -11801,8 +11801,7 @@ void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
   } else {
     NeedInsertCmath = true;
   }
-  if (NeedInsertCmath && DpctGlobalInfo::getContext().getLangOpts().LangStd ==
-                             LangStandard::Kind::lang_cuda) {
+  if (NeedInsertCmath) {
     DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), HT_Math);
   }
 }
