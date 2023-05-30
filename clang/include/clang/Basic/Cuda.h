@@ -51,6 +51,9 @@ enum class CudaVersion {
   NEW = 10000,  // Too new. Issue a warning, but allow using it.
 };
 const char *CudaVersionToString(CudaVersion V);
+#ifdef SYCLomatic_CUSTOMIZATION
+unsigned int CudaVersionToValue(CudaVersion V);
+#endif // SYCLomatic_CUSTOMIZATION
 // Input is "Major.Minor"
 CudaVersion CudaStringToVersion(const llvm::Twine &S);
 
