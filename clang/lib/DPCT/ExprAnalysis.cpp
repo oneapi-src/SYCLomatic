@@ -634,7 +634,6 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       auto Rewriter = Itr->second->create(ME);
       auto Result = Rewriter->rewrite();
       if (Result.has_value()) {
-        auto ResultStr = Result.value();
         addReplacement(ME->getBeginLoc(), ME->getEndLoc(), Result.value());
       }
       return;

@@ -413,7 +413,6 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       CompileCmdsPerTarget[Entry.first] = Entry.second;
   }
 
-  bool AppliedAll = true;
   std::vector<clang::tooling::Replacement> MainSrcFilesRepls;
   std::vector<std::pair<std::string, std::string>> MainSrcFilesDigest;
 
@@ -530,8 +529,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       FileBlockLevelFormatRangesMap.insert(
           std::make_pair(OutPath.str().str(), BlockLevelFormatRanges));
 
-      AppliedAll =
-          tooling::applyAllReplacements(Entry.second, Rewrite) || AppliedAll;
+      tooling::applyAllReplacements(Entry.second, Rewrite);
       Rewrite
           .getEditBuffer(Sources.getOrCreateFileID(
               Tool.getFiles().getFile(Entry.first).get(),
@@ -696,11 +694,6 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
   saveUpdatedMigrationDataIntoYAML(MainSrcFilesRepls, MainSrcFilesDigest,
                                    YamlFile, SrcFile, MainSrcFileMap);
-
-  if (!AppliedAll) {
-    llvm::errs() << "Skipped some replacements.\n";
-    status = MigrationSkipped;
-  }
 
   processallOptionAction(InRoot, OutRoot);
 
