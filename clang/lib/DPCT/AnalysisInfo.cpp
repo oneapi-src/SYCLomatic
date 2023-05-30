@@ -732,12 +732,11 @@ void DpctFileInfo::buildUnionFindSetForUncalledFunc() {
 }
 
 void DpctFileInfo::buildKernelInfo() {
-  for (auto &Kernel : KernelMap) {
+  for (auto &Kernel : KernelMap)
     Kernel.second->buildInfo();
-  }
 
-  for (auto &D : FuncMap) {
-    if (auto I = D.second->getFuncInfo())
+  for (auto &D : FuncMap){
+    if(auto I = D.second->getFuncInfo())
       I->buildInfo();
   }
 }
@@ -951,9 +950,8 @@ void DpctFileInfo::buildReplacements() {
     addReplacement(R);
   }
 
-  for (auto &Kernel : KernelMap) {
+  for (auto &Kernel : KernelMap)
     Kernel.second->addReplacements();
-  }
 
   for (auto &BuiltinVar : BuiltinVarInfoMap) {
     auto Ptr = MemVarMap::getHeadWithoutPathCompression(

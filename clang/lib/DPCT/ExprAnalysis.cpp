@@ -685,22 +685,20 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   auto ItemItr = NdItemMap.find(BaseType);
   if (ItemItr != NdItemMap.end()) {
     if (MapNames::replaceName(NdItemMemberMap, FieldName)) {
-      {
-        auto TargetExpr = getTargetExpr();
-        auto FD = getImmediateOuterFuncDecl(TargetExpr);
-        auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
-        if (ME->getMemberDecl()->getName().str() == "__fetch_builtin_x") {
-          auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
-          DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
-          addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
-                                         ItemItr->second, "({{NEEDREPLACER",
-                                         std::to_string(Index), "}})"));
-          DpctGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
-        } else {
-          DFI->getVarMap().Dim = 3;
-          addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
-                                         ItemItr->second, "(", FieldName, ")"));
-        }
+      auto TargetExpr = getTargetExpr();
+      auto FD = getImmediateOuterFuncDecl(TargetExpr);
+      auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
+      if (ME->getMemberDecl()->getName().str() == "__fetch_builtin_x") {
+        auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
+        DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
+        addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
+                                       ItemItr->second, "({{NEEDREPLACER",
+                                       std::to_string(Index), "}})"));
+        DpctGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
+      } else {
+        DFI->getVarMap().Dim = 3;
+        addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
+                                       ItemItr->second, "(", FieldName, ")"));
       }
     }
   } else if (BaseType == "dim3") {
