@@ -71,6 +71,7 @@ using namespace clang::tooling;
 using namespace llvm::cl;
 
 namespace clang {
+extern llvm::APSInt CudaRTVersionValue;
 namespace tooling {
 std::string getFormatSearchPath();
 extern std::string ClangToolOutputMessage;
@@ -219,6 +220,10 @@ std::string getCudaInstallPath(int argc, const char **argv) {
       Driver, llvm::Triple(Driver.getTargetTriple()), ParsedArgs);
 
   std::string Path = CudaIncludeDetector.getInstallPath().str();
+  uint64_t CudaRTVersionValueUint64 =
+      clang::CudaVersionToValue(CudaIncludeDetector.version());
+  CudaRTVersionValue =
+      llvm::APSInt(llvm::APInt(64, CudaRTVersionValueUint64, false), true);
 
   if (!CudaIncludePath.empty()) {
     if (!CudaIncludeDetector.isIncludePathValid()) {

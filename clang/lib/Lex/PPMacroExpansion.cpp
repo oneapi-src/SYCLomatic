@@ -58,9 +58,11 @@
 #include <utility>
 
 using namespace clang;
+#ifdef SYCLomatic_CUSTOMIZATION
 namespace clang {
   extern std::function<unsigned int()> GetRunRound;
 }
+#endif // SYCLomatic_CUSTOMIZATION
 MacroDirective *
 Preprocessor::getLocalMacroDirectiveHistory(const IdentifierInfo *II) const {
   if (!II->hadMacroDefinition())
