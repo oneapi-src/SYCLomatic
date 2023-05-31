@@ -49,12 +49,13 @@ inline bool SYCLGenSuccess() { return false; }
 
 /// This is used to handle all the AST nodes (except specific instructions).
 class SYCLGenBase {
-  llvm::raw_ostream *Stream;
+  bool IsInMacroDef = false;
   bool EmitNewLine = true;
   bool EmitSemi = true;
   unsigned NumIndent = 0;
   llvm::SmallString<4> IndentUnit{"  "};
   llvm::SmallString<16> Indent;
+  llvm::raw_ostream *Stream;
 
   class BlockDelimiterGuard {
     SYCLGenBase &CodeGen;
@@ -75,12 +76,9 @@ class SYCLGenBase {
   };
 
 public:
-  SYCLGenBase(llvm::raw_ostream &OS, StringRef IU = "")
-      : Stream(&OS), IndentUnit(IU) {
-    incIndent();
-  }
+  SYCLGenBase(llvm::raw_ostream &OS) : Stream(&OS) {}
 
-  virtual ~SYCLGenBase() { decIndent(); }
+  virtual ~SYCLGenBase() = default;
 
   unsigned getNumIndent() const { return NumIndent; }
 
@@ -89,7 +87,9 @@ public:
       IndentUnit = Unit;
   }
 
-protected:
+  void setInMacroDefine() { IsInMacroDef = true; }
+  bool isInMacroDefine() const { return IsInMacroDef; }
+
   void decIndent(unsigned Num = 1) {
     if (NumIndent >= Num) {
       NumIndent -= Num;
@@ -107,11 +107,13 @@ protected:
       Indent.append(IndentUnit);
   }
 
+protected:
   void indent() { OS() << Indent; }
 
   void endl() {
-    if (EmitNewLine)
-      OS() << getNL();
+    if (EmitNewLine) {
+      OS() << (isInMacroDefine() ? "\\" : "") << getNL();
+    }
   }
 
   void semi() {
@@ -369,7 +371,7 @@ bool SYCLGenBase::emitFloatingLiteral(const InlineAsmFloatingLiteral *Fp) {
   if (!Fp->isExactMachineFloatingLiteral()) {
     OS() << Fp->getLiteral();
   } else {
-    constexpr char *Template = "sycl::bit_cast<{0}>({1}(0x{2}{3}))";
+    const char *Template = "sycl::bit_cast<{0}>({1}(0x{2}{3}))";
     if (const auto *T = dyn_cast<InlineAsmBuiltinType>(Fp->getType())) {
       switch (T->getKind()) {
       case InlineAsmBuiltinType::TK_f32:
@@ -480,7 +482,7 @@ bool SYCLGenBase::emitVariableDeclaration(const InlineAsmVariableDecl *D) {
 /// This used to handle the specific instruction.
 class SYCLGen : public SYCLGenBase {
 public:
-  SYCLGen(llvm::raw_ostream &OS, StringRef IU) : SYCLGenBase(OS, IU) {}
+  SYCLGen(llvm::raw_ostream &OS) : SYCLGenBase(OS) {}
 
   bool handleStatement(const InlineAsmStmt *S) { return emitStatement(S); }
 
@@ -760,19 +762,36 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
   const auto &C = DpctGlobalInfo::getContext();
   std::string S = GAS->generateAsmString(C);
   InlineAsmContext Context;
-  std::string Replacement;
-  llvm::raw_string_ostream OS(Replacement);
   llvm::SourceMgr Mgr;
   std::string Buffer = GAS->getAsmString()->getString().str();
   Mgr.AddNewSourceBuffer(llvm::MemoryBuffer::getMemBuffer(Buffer),
                          llvm::SMLoc());
   InlineAsmParser Parser(Context, Mgr);
+  std::string ReplaceString;
+  llvm::raw_string_ostream OS(ReplaceString);
+  SYCLGen CodeGen(OS);
+  StringRef Indent =
+      getIndent(GAS->getBeginLoc(), DpctGlobalInfo::getSourceManager());
+
+  CodeGen.setIndentUnit(Indent);
+  CodeGen.incIndent();
+  auto ASRange =
+      getDefinitionRange(GAS->getBeginLoc(), GAS->getEndLoc());
+  auto It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+      getCombinedStrFromLoc(ASRange.getEnd()));
+  if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+    CodeGen.setInMacroDefine();
+  }
+
   auto getReplaceString = [&](const Expr *E) {
-    ExprAnalysis EA;
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    ArgumentAnalysis EA(CodeGen.isInMacroDefine());
+    EA.setCallSpelling(SM.getSpellingLoc(GAS->getBeginLoc()),
+                       SM.getSpellingLoc(GAS->getEndLoc()));
     EA.analyze(E);
     if (needExtraParens(E))
-      return "(" + EA.getReplacedString() + ")";
-    return EA.getReplacedString();
+      return "(" + EA.getRewriteString() + ")";
+    return EA.getRewriteString();
   };
   Parser.addBuiltinIdentifier();
   for (unsigned I = 0, E = GAS->getNumOutputs(); I != E; ++I)
@@ -782,11 +801,6 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
   for (unsigned I = 0, E = GAS->getNumInputs(); I != E; ++I)
     Parser.addInlineAsmOperands(getReplaceString(GAS->getInputExpr(I)),
                                 GAS->getInputConstraint(I));
-
-  StringRef Indent =
-      getIndent(GAS->getBeginLoc(), DpctGlobalInfo::getSourceManager());
-
-  SYCLGen CodeGen(OS, Indent);
 
   do {
     auto Inst = Parser.ParseStatement();
@@ -801,16 +815,26 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
     }
   } while (!Parser.getCurToken().is(asmtok::eof));
 
-  OS.flush();
-  auto *Repl = new ReplaceStmt(GAS, Replacement);
+  StringRef Ref = ReplaceString;
+  if (CodeGen.isInMacroDefine()) {
+    if (Ref.ends_with("\\\n")) {
+      ReplaceString.erase(ReplaceString.end() - 2);
+    } else if (Ref.ends_with("\\\r\n")) {
+      ReplaceString.erase(ReplaceString.end() - 3);
+    }
+  }
+
+  auto *Repl = new ReplaceStmt(GAS, std::move(ReplaceString));
   Repl->setBlockLevelFormatFlag();
   emplaceTransformation(Repl);
 
-  auto Tok =
-      Lexer::findNextToken(GAS->getEndLoc(), DpctGlobalInfo::getSourceManager(),
-                           DpctGlobalInfo::getContext().getLangOpts());
-  if (Tok.has_value() && Tok->is(tok::semi))
-    emplaceTransformation(new ReplaceToken(Tok->getLocation(), ""));
+  if (!CodeGen.isInMacroDefine()) {
+    auto Tok =
+        Lexer::findNextToken(GAS->getEndLoc(), DpctGlobalInfo::getSourceManager(),
+                            DpctGlobalInfo::getContext().getLangOpts());
+    if (Tok.has_value() && Tok->is(tok::semi))
+      emplaceTransformation(new ReplaceToken(Tok->getLocation(), ""));
+  }
   return;
 }
 

@@ -357,9 +357,6 @@ bool InlineAsmLexer::lexIdentifierContinue(InlineAsmToken &Result,
     break;
   }
 
-  if (Result.startOfDot())
-    ++BufferPtr; // Skip '.'
-
   const char *IdStart = BufferPtr;
   formToken(Result, CurPtr, asmtok::raw_identifier);
   Result.setRawIdentifierData(IdStart);

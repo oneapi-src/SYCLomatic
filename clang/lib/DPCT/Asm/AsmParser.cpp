@@ -906,20 +906,11 @@ AsmNumericLiteralParser::AsmNumericLiteralParser(StringRef TokSpelling)
 
   bool isFPConstant = isFloatingLiteral();
 
-  // Loop over all of the characters of the suffix.  If we see something bad,
-  // we break out of the loop.
-  for (; s != ThisTokEnd; ++s) {
-    switch (*s) {
-    case 'u':
-    case 'U':
-      if (isFPConstant)
-        break; // Error for floating constant.
-      if (isUnsigned)
-        break; // Cannot be repeated.
-      isUnsigned = true;
-      continue; // Success.
-    }
-    break;
+  if (*s == 'U') {
+    if (isFPConstant) 
+      hadError = true; // Error for floating constant.
+    isUnsigned = true;
+    ++s;
   }
 
   if (s != ThisTokEnd)
@@ -1249,7 +1240,8 @@ InlineAsmParser::ActOnNumericConstant(const InlineAsmToken &Tok) {
 
     APFloat Float(APFloat::IEEEdouble());
     auto Status = LiteralParser.GetFloatValue(Float);
-    if (Status != APFloat::opOK)
+    if ((Status & APFloat::opOverflow) ||
+        ((Status & APFloat::opUnderflow) && Float.isZero()))
       return AsmExprError();
     return ::new (Context)
         InlineAsmFloatingLiteral(Context.getF64Type(), Float, LiteralData);
