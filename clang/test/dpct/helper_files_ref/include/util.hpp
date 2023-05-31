@@ -176,7 +176,7 @@ inline unsigned int byte_level_permute(unsigned int a, unsigned int b,
 /// \returns The position
 template <typename T> inline int ffs(T a) {
   static_assert(std::is_integral<T>::value, "integer required");
-  return (sycl::ext::intel::ctz(a) + 1) % (sizeof(T) * 8 + 1);
+  return (sycl::ctz(a) + 1) % (sizeof(T) * 8 + 1);
 }
 
 /// select_from_sub_group allows work-items to obtain a copy of a value held by
@@ -287,11 +287,12 @@ T permute_sub_group_by_xor(sycl::sub_group g, T x, unsigned int mask,
 }
 
 namespace experimental {
-/// Masked version of select_from_sub_group. The parameter member_mask indicating
-/// the work-items participating the call. Whether the n-th bit is set to 1
-/// representing whether the work-item with id n is participating the call.
-/// All work-items named in member_mask must be executed with the same member_mask,
-/// or the result is undefined.
+/// Masked version of select_from_sub_group, which execute masked sub_group
+/// operation. The parameter member_mask indicating the work-items participating
+/// the call. Whether the n-th bit is set to 1 representing whether the
+/// work-item with id n is participating the call. All work-items named in
+/// member_mask must be executed with the same member_mask, or the result is
+/// undefined.
 /// \tparam T Input value type
 /// \param [in] member_mask Input mask
 /// \param [in] g Input sub_group
@@ -325,11 +326,12 @@ T select_from_sub_group(unsigned int member_mask,
 #endif // __SYCL_DEVICE_ONLY__ && __INTEL_LLVM_COMPILER
 }
 
-/// Masked version of shift_sub_group_left. The parameter member_mask indicating
-/// the work-items participating the call. Whether the n-th bit is set to 1
-/// representing whether the work-item with id n is participating the call.
-/// All work-items named in member_mask must be executed with the same member_mask,
-/// or the result is undefined.
+/// Masked version of shift_sub_group_left, which execute masked sub_group
+/// operation. The parameter member_mask indicating the work-items participating
+/// the call. Whether the n-th bit is set to 1 representing whether the
+/// work-item with id n is participating the call. All work-items named in
+/// member_mask must be executed with the same member_mask, or the result is
+/// undefined.
 /// \tparam T Input value type
 /// \param [in] member_mask Input mask
 /// \param [in] g Input sub_group
@@ -366,11 +368,12 @@ T shift_sub_group_left(unsigned int member_mask,
 #endif // __SYCL_DEVICE_ONLY__ && __INTEL_LLVM_COMPILER
 }
 
-/// Masked version of shift_sub_group_right. The parameter member_mask indicating
-/// the work-items participating the call. Whether the n-th bit is set to 1
-/// representing whether the work-item with id n is participating the call.
-/// All work-items named in member_mask must be executed with the same member_mask,
-/// or the result is undefined.
+/// Masked version of shift_sub_group_right, which execute masked sub_group
+/// operation. The parameter member_mask indicating the work-items participating
+/// the call. Whether the n-th bit is set to 1 representing whether the
+/// work-item with id n is participating the call. All work-items named in
+/// member_mask must be executed with the same member_mask, or the result is
+/// undefined.
 /// \tparam T Input value type
 /// \param [in] member_mask Input mask
 /// \param [in] g Input sub_group
@@ -407,11 +410,12 @@ T shift_sub_group_right(unsigned int member_mask,
 #endif // __SYCL_DEVICE_ONLY && __INTEL_LLVM_COMPILER
 }
 
-/// Masked version of permute_sub_group_by_xor. The parameter member_mask indicating
-/// the work-items participating the call. Whether the n-th bit is set to 1
-/// representing whether the work-item with id n is participating the call.
-/// All work-items named in member_mask must be executed with the same member_mask,
-/// or the result is undefined.
+/// Masked version of permute_sub_group_by_xor, which execute masked sub_group
+/// operation. The parameter member_mask indicating the work-items participating
+/// the call. Whether the n-th bit is set to 1 representing whether the
+/// work-item with id n is participating the call. All work-items named in
+/// member_mask must be executed with the same member_mask, or the result is
+/// undefined.
 /// \tparam T Input value type
 /// \param [in] member_mask Input mask
 /// \param [in] g Input sub_group
@@ -660,7 +664,7 @@ inline int calculate_max_active_wg_per_xecore(int *num_wg, int wg_size,
     auto eu_count =
         dev.get_info<sycl::info::device::ext_intel_gpu_eu_count_per_subslice>();
     auto threads_count =
-        dev.get_info<sycl::info::device::ext_intel_gpu_hw_threads_per_eu>();
+        dev.get_info<sycl::ext::intel::info::device::gpu_hw_threads_per_eu>();
     num_threads_ss = eu_count * threads_count;
     max_num_wg = eu_count * threads_count;
   }
