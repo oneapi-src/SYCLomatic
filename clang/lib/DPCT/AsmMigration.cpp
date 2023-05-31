@@ -775,13 +775,8 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
 
   CodeGen.setIndentUnit(Indent);
   CodeGen.incIndent();
-  auto ASRange =
-      getDefinitionRange(GAS->getBeginLoc(), GAS->getEndLoc());
-  auto It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-      getCombinedStrFromLoc(ASRange.getEnd()));
-  if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+  if (isInMacroDefinition(GAS->getBeginLoc(), GAS->getEndLoc()))
     CodeGen.setInMacroDefine();
-  }
 
   auto getReplaceString = [&](const Expr *E) {
     auto &SM = DpctGlobalInfo::getSourceManager();
@@ -828,12 +823,12 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
   Repl->setBlockLevelFormatFlag();
   emplaceTransformation(Repl);
 
-  if (!CodeGen.isInMacroDefine()) {
-    auto Tok =
-        Lexer::findNextToken(GAS->getEndLoc(), DpctGlobalInfo::getSourceManager(),
-                            DpctGlobalInfo::getContext().getLangOpts());
-    if (Tok.has_value() && Tok->is(tok::semi))
-      emplaceTransformation(new ReplaceToken(Tok->getLocation(), ""));
+  auto Tok =
+      Lexer::findNextToken(GAS->getEndLoc(), DpctGlobalInfo::getSourceManager(),
+                           DpctGlobalInfo::getContext().getLangOpts());
+  if (Tok.has_value() && Tok->is(tok::semi) &&
+      isInMacroDefinition(Tok->getLocation(), Tok->getLocation())) {
+    emplaceTransformation(new ReplaceToken(Tok->getLocation(), ""));
   }
   return;
 }
