@@ -176,7 +176,7 @@ inline unsigned int byte_level_permute(unsigned int a, unsigned int b,
 /// \returns The position
 template <typename T> inline int ffs(T a) {
   static_assert(std::is_integral<T>::value, "integer required");
-  return (sycl::ext::intel::ctz(a) + 1) % (sizeof(T) * 8 + 1);
+  return (sycl::ctz(a) + 1) % (sizeof(T) * 8 + 1);
 }
 
 /// select_from_sub_group allows work-items to obtain a copy of a value held by
@@ -660,7 +660,7 @@ inline int calculate_max_active_wg_per_xecore(int *num_wg, int wg_size,
     auto eu_count =
         dev.get_info<sycl::info::device::ext_intel_gpu_eu_count_per_subslice>();
     auto threads_count =
-        dev.get_info<sycl::info::device::ext_intel_gpu_hw_threads_per_eu>();
+        dev.get_info<sycl::ext::intel::info::device::gpu_hw_threads_per_eu>();
     num_threads_ss = eu_count * threads_count;
     max_num_wg = eu_count * threads_count;
   }
