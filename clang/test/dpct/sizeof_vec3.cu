@@ -609,7 +609,7 @@ __global__ void longlong3_shared_kernel() {
 
 // CHECK: void longlong3_noshared_kernel() {
 // CHECK: DPCT1083:{{[0-9]+}}: The size of longlong3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
-// CHECK: int a[sizeof(sycl::longlong3)];
+// CHECK: int a[sizeof(sycl::long3)];
 // CHECK: }
 __global__ void longlong3_noshared_kernel() {
   int a[sizeof(longlong3)];
@@ -621,11 +621,11 @@ __global__ void longlong3_noshared_kernel() {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::longlong3) * 3), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::long3) * 3), cgh);
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::longlong3)), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::long3)), cgh);
 // CHECK-NEXT: sycl::local_accessor<int, 1> c_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK: });
 // CHECK: }
@@ -679,7 +679,7 @@ __global__ void ulonglong3_shared_kernel() {
 
 // CHECK: void ulonglong3_noshared_kernel() {
 // CHECK: DPCT1083:{{[0-9]+}}:  The size of ulonglong3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
-// CHECK: int a[sizeof(sycl::ulonglong3)];
+// CHECK: int a[sizeof(sycl::ulong3)];
 // CHECK: }
 __global__ void ulonglong3_noshared_kernel() {
   int a[sizeof(ulonglong3)];
@@ -691,11 +691,11 @@ __global__ void ulonglong3_noshared_kernel() {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::ulonglong3) * 3), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(sizeof(sycl::ulong3) * 3), cgh);
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::ulonglong3)), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(sizeof(sycl::ulong3)), cgh);
 // CHECK-NEXT: sycl::local_accessor<int, 1> c_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK: });
 // CHECK: }
