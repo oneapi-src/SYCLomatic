@@ -79,9 +79,9 @@ cub::DeviceRadixSort::SortKeysDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceReduce::Reduce,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceReduce::Sum,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceReduce::Min,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cub::DeviceReduce::ArgMin,NO,
+cub::DeviceReduce::ArgMin,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceReduce::Max,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cub::DeviceReduce::ArgMax,NO,
+cub::DeviceReduce::ArgMax,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceReduce::ReduceByKey,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceRunLengthEncode::Encode,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceRunLengthEncode::NonTrivialRuns,NO,
@@ -100,20 +100,20 @@ cub::DeviceSelect::UniqueByKey,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSpmv::CsrMV,NO,
 cub::DeviceSegmentedRadixSort::SortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSegmentedRadixSort::SortPairsDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
-cub::DeviceSegmentedRadixSort::SortKeys,NO,
-cub::DeviceSegmentedRadixSort::SortKeysDescending,NO,
+cub::DeviceSegmentedRadixSort::SortKeys,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSegmentedRadixSort::SortKeysDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSegmentedReduce::Reduce,YES,:ref:`DPCT1026` / :ref:`DPCT1027` / :ref:`DPCT1091` / :ref:`DPCT1092`
 cub::DeviceSegmentedReduce::Sum,YES,:ref:`DPCT1026` / :ref:`DPCT1027` / :ref:`DPCT1092`
 cub::DeviceSegmentedReduce::Min,YES,:ref:`DPCT1026` / :ref:`DPCT1027` / :ref:`DPCT1092`
 cub::DeviceSegmentedReduce::ArgMin,NO,
 cub::DeviceSegmentedReduce::Max,YES,:ref:`DPCT1026` / :ref:`DPCT1027` / :ref:`DPCT1092`
 cub::DeviceSegmentedReduce::ArgMax,NO,
-cub::DeviceSegmentedSort::SortKeys,NO,
-cub::DeviceSegmentedSort::SortKeysDescending,NO,
+cub::DeviceSegmentedSort::SortKeys,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSegmentedSort::SortKeysDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSegmentedSort::StableSortKeys,NO,
 cub::DeviceSegmentedSort::StableSortKeysDescending,NO,
-cub::DeviceSegmentedSort::SortPairs,NO,
-cub::DeviceSegmentedSort::SortPairsDescending,NO,
+cub::DeviceSegmentedSort::SortPairs,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
+cub::DeviceSegmentedSort::SortPairsDescending,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 cub::DeviceSegmentedSort::StableSortPairs,NO,
 cub::DeviceSegmentedSort::StableSortPairsDescending,NO,
 cub::ThreadLoad,YES,
@@ -130,7 +130,7 @@ cub::SHR_ADD,NO,
 cub::SHL_ADD,NO,
 cub::BFE,NO,
 cub::BFI,NO,
-cub::IADD3,NO,
+cub::IADD3,YES,
 cub::PRMT,NO,
 cub::ThreadExit,NO,
 cub::ThreadTrap,NO,
