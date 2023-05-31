@@ -3649,6 +3649,13 @@ void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
     OS << "cgh)";
     OS << ";";
     StmtWithWarning AccDecl(OS.str());
+    if (getType()->containsTemplateDependentMacro()) {
+      DiagnosticsUtils::report(getFilePath(), getOffset(),
+        Diagnostics::MACRO_USED_IN_SIZE_EXPR, false, false);
+      AccDecl.Warnings.push_back(
+        DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
+          Diagnostics::MACRO_USED_IN_SIZE_EXPR));
+    }
     for (const auto &OriginExpr : getType()->getArraySizeOriginExprs()) {
       DiagnosticsUtils::report(getFilePath(), getOffset(),
                                Diagnostics::MACRO_EXPR_REPLACED, false, false,
@@ -3808,6 +3815,9 @@ void CtTypeInfo::setArrayInfo(const DependentSizedArrayTypeLoc &TL,
   ContainSizeofType = containSizeOfType(TL.getSizeExpr());
   ExprAnalysis EA;
   EA.analyze(TL.getSizeExpr());
+  auto TDSI = EA.getTemplateDependentStringInfo();
+  if (TDSI->containsTemplateDependentMacro())
+    TemplateDependentMacro = true;
   Range.emplace_back(EA.getTemplateDependentStringInfo());
   setTypeInfo(TL.getElementLoc(), NeedSizeFold);
 }
