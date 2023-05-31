@@ -781,7 +781,7 @@ private:
   /// Determine whether the sequence of characters [Start, End) contains
   /// any real digits (not digit separators).
   bool containsDigits(const char *Start, const char *End) {
-    return Start != End && (Start + 1 != End);
+    return Start != End;
   }
 
   enum CheckSeparatorKind { CSK_BeforeDigits, CSK_AfterDigits };
