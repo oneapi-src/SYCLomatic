@@ -116,6 +116,17 @@ __global__ void InclusiveSumKernel(int* data) {
   data[threadid] = output;
 }
 
+template <int THREADS_PER_BLOCK>
+__global__ void SomeKernel(int *data) {
+   typedef cub::BlockScan<int, 4> BlockScan;
+  __shared__ typename BlockScan::TempStorage temp1;
+  int threadid = threadIdx.x;
+  int input = data[threadid];
+  int output = 0;
+  BlockScan(temp1).InclusiveSum(input, output);
+  data[threadid] = output;
+}
+
 int main() {
   int* dev_data = nullptr;
 
@@ -164,6 +175,8 @@ int main() {
   InclusiveSumKernel<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
   verify_data(dev_data, TotalThread);
+
+  SomeKernel<4><<<GridSize, BlockSize>>>(dev_data);
 
   return 0;
 }
