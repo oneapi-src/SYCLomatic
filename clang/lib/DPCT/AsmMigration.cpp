@@ -780,13 +780,13 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
 
   auto getReplaceString = [&](const Expr *E) {
     auto &SM = DpctGlobalInfo::getSourceManager();
-    ArgumentAnalysis EA(CodeGen.isInMacroDefine());
-    EA.setCallSpelling(SM.getSpellingLoc(GAS->getBeginLoc()),
+    ArgumentAnalysis AA(CodeGen.isInMacroDefine());
+    AA.setCallSpelling(SM.getSpellingLoc(GAS->getBeginLoc()),
                        SM.getSpellingLoc(GAS->getEndLoc()));
-    EA.analyze(E);
+    AA.analyze(E);
     if (needExtraParens(E))
-      return "(" + EA.getRewriteString() + ")";
-    return EA.getRewriteString();
+      return "(" + AA.getRewriteString() + ")";
+    return AA.getRewriteString();
   };
   Parser.addBuiltinIdentifier();
   for (unsigned I = 0, E = GAS->getNumOutputs(); I != E; ++I)
