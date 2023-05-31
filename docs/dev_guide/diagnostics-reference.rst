@@ -37,7 +37,7 @@ messages, detailed help, and suggestion to fix your errors.
           :start-after: msg-1003-start:
           :end-before: msg-1003-end:
    * - :ref:`DPCT1004`
-     - DEPRECATED.
+     - REMOVED.
 
        .. include:: diagnostic_ref/dpct1004.rst
           :start-after: msg-1004-start:
@@ -88,7 +88,7 @@ messages, detailed help, and suggestion to fix your errors.
           :start-after: msg-1015-start:
           :end-before: msg-1015-end:
    * - :ref:`DPCT1016`
-     - DEPRECATED.
+     - REMOVED.
 
        .. include:: diagnostic_ref/dpct1016.rst
           :start-after: msg-1016-start:
@@ -170,7 +170,7 @@ messages, detailed help, and suggestion to fix your errors.
           :start-after: msg-1035-start:
           :end-before: msg-1035-end:
    * - :ref:`DPCT1036`
-     - DEPRECATED.
+     - REMOVED.
 
        .. include:: diagnostic_ref/dpct1036.rst
           :start-after: msg-1036-start:
@@ -292,7 +292,7 @@ messages, detailed help, and suggestion to fix your errors.
           :start-after: msg-1065-start:
           :end-before: msg-1065-end:
    * - :ref:`DPCT1066`
-     - DEPRECATED.
+     - REMOVED.
 
        .. include:: diagnostic_ref/dpct1066.rst
           :start-after: msg-1066-start:
@@ -302,7 +302,7 @@ messages, detailed help, and suggestion to fix your errors.
           :start-after: msg-1067-start:
           :end-before: msg-1067-end:
    * - :ref:`DPCT1068`
-     - DEPRECATED.
+     - REMOVED.
 
        .. include:: diagnostic_ref/dpct1068.rst
           :start-after: msg-1068-start:
@@ -316,7 +316,7 @@ messages, detailed help, and suggestion to fix your errors.
           :start-after: msg-1070-start:
           :end-before: msg-1070-end:
    * - :ref:`DPCT1071`
-     - DEPRECATED.
+     - REMOVED.
 
        .. include:: diagnostic_ref/dpct1071.rst
           :start-after: msg-1071-start:
@@ -334,7 +334,7 @@ messages, detailed help, and suggestion to fix your errors.
           :start-after: msg-1074-start:
           :end-before: msg-1074-end:
    * - :ref:`DPCT1075`
-     - DEPRECATED.
+     - REMOVED.
 
        .. include:: diagnostic_ref/dpct1075.rst
           :start-after: msg-1075-start:
@@ -352,7 +352,7 @@ messages, detailed help, and suggestion to fix your errors.
           :start-after: msg-1078-start:
           :end-before: msg-1078-end:
    * - :ref:`DPCT1079`
-     - DEPRECATED.
+     - REMOVED.
 
        .. include:: diagnostic_ref/dpct1079.rst
           :start-after: msg-1079-start:
