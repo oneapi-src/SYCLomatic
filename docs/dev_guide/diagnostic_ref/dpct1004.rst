@@ -3,7 +3,7 @@
 DPCT1004
 ========
 
-.. include:: deprecated-msg-0.txt
+.. include:: /_include_files/deprecated-msg-0.txt
 
 Message
 -------
@@ -17,9 +17,9 @@ Compatible SYCL code could not be generated.
 Detailed Help
 -------------
 
-.. include:: support-msg.txt
+.. include:: /_include_files/support-msg.txt
 
 Suggestions to Fix
 ------------------
 
-.. include:: support-msg.txt
+.. include:: /_include_files/support-msg.txt

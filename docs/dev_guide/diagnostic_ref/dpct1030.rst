@@ -18,7 +18,7 @@ Detailed Help
 
 IPC operations are currently not supported by SYCL\*.
 
-.. include:: support-msg.txt
+.. include:: /_include_files/support-msg.txt
 
 Suggestions to Fix
 ------------------

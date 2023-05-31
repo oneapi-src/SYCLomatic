@@ -24,4 +24,4 @@ Suggestions to Fix
 If the matrix type in used is:
 
 * Supported by the routine: ignore this warning.
-* Not supported by the routine: manually fix the code according to `sparse-blas-routines <https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-dpcpp/2023-1/sparse-blas-routines.html>`_.
+* Not supported by the routine: manually fix the code according to `sparse-blas-routines <https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-dpcpp/current/sparse-blas-routines.html>`_.

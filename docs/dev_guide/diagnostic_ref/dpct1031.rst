@@ -19,7 +19,7 @@ Detailed Help
 SYCL\* currently does not support memory access across peer devices. The output
 parameter(s) are set to 0.
 
-.. include:: support-msg.txt
+.. include:: /_include_files/support-msg.txt
 
 Suggestions to Fix
 ------------------

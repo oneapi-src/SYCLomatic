@@ -15,9 +15,9 @@ Migration for this overload of <API Name> is not supported.
 Detailed Help
 -------------
 
-.. include:: support-msg.txt
+.. include:: /_include_files/support-msg.txt
 
 Suggestions to Fix
 ------------------
 
-.. include:: support-msg.txt
+.. include:: /_include_files/support-msg.txt

@@ -22,4 +22,4 @@ Suggestions to Fix
 
 This kind of code requires manual migration to |dpcpp|. 
 
-.. include:: support-msg.txt
+.. include:: /_include_files/support-msg.txt
