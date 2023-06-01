@@ -216,7 +216,7 @@ __device__ int cond(int x) {
 // CHECK-NEXT: p[7] = p[6];\
 // CHECK-NEXT: p[8] = p[7];\
 // CHECK-NEXT: p[9] = p[8];\
-// CHECK-NEXT: V = p[8];\
+// CHECK-NEXT: V = p[9];\
 // CHECK-NEXT: }
 // CHECK: int x = 34;
 // CHECK-NEXT: int y = 0;
@@ -249,13 +249,10 @@ __global__ void declaration(int *ec) {
       " mov.u32 p7, p6;\n\t"        \
       " mov.u32 p8, p7;\n\t"        \
       " mov.u32 p9, p8;\n\t"        \
-      " mov.u32 %0, p8;\n\t"        \
+      " mov.u32 %0, p9;\n\t"        \
       "}"                           \
       : "=r"(V))
 
-  // This variable was used to test compound statement in inline asm,
-  // if the '{...}' was not correctly emitted, then, it will cause 
-  // variable redefinition.
   int x = 34;
   int y = 0;
   COND(x, y);
