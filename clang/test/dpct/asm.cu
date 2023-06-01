@@ -2,7 +2,6 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/asm/asm.dp.cpp
 // clang-format off
 #include "cuda_runtime.h"
-#include "device_launch_parameters.h"
 
 #include <stdio.h>
 
@@ -32,32 +31,32 @@ __global__ void gpu_ptx(int *d_ptr, int length) {
 // CHECK-NEXT:     bool _p_p[20], _p_q[20];
 // CHECK-NEXT:     float fp;
 // CHECK-NEXT:     fp = sycl::bit_cast<float>(uint32_t(0x3f800000U));
-// CHECK-NEXT:     _p_p[1] = !sycl::isnan(x) && !sycl::isnan(fp) && x == fp;
-// CHECK-NEXT:     _p_p[2] = !sycl::isnan(x) && !sycl::isnan(fp) && x != fp;
-// CHECK-NEXT:     _p_p[3] = !sycl::isnan(x) && !sycl::isnan(fp) && x < fp;
-// CHECK-NEXT:     _p_p[4] = !sycl::isnan(x) && !sycl::isnan(fp) && x <= fp;
-// CHECK-NEXT:     _p_p[5] = !sycl::isnan(x) && !sycl::isnan(fp) && x > fp;
-// CHECK-NEXT:     _p_p[6] = !sycl::isnan(x) && !sycl::isnan(fp) && x >= fp;
-// CHECK-NEXT:     _p_p[7] = sycl::isnan(x) || sycl::isnan(fp) || x == fp;
-// CHECK-NEXT:     _p_p[8] =  sycl::isnan(x) || sycl::isnan(fp) || x != fp;
-// CHECK-NEXT:     _p_p[9] = sycl::isnan(x) || sycl::isnan(fp) || x < fp;
-// CHECK-NEXT:     _p_p[10] = sycl::isnan(x) || sycl::isnan(fp) || x <= fp;
-// CHECK-NEXT:     _p_p[11] = sycl::isnan(x) || sycl::isnan(fp) || x > fp;
-// CHECK-NEXT:     _p_p[12] = sycl::isnan(x) || sycl::isnan(fp) || x >= fp;
+// CHECK-NEXT:     _p_p[1] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::isequal<float>(x, fp);
+// CHECK-NEXT:     _p_p[2] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::isnotequal<float>(x, fp);
+// CHECK-NEXT:     _p_p[3] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::isless<float>(x, fp);
+// CHECK-NEXT:     _p_p[4] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::islessequal<float>(x, fp);
+// CHECK-NEXT:     _p_p[5] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::isgreater<float>(x, fp);
+// CHECK-NEXT:     _p_p[6] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::isgreaterequal<float>(x, fp);
+// CHECK-NEXT:     _p_p[7] = sycl::isnan(x) || sycl::isnan(fp) || sycl::isequal<float>(x, fp);
+// CHECK-NEXT:     _p_p[8] = sycl::isnan(x) || sycl::isnan(fp) || sycl::isnotequal<float>(x, fp);
+// CHECK-NEXT:     _p_p[9] = sycl::isnan(x) || sycl::isnan(fp) || sycl::isless<float>(x, fp);
+// CHECK-NEXT:     _p_p[10] = sycl::isnan(x) || sycl::isnan(fp) || sycl::islessequal<float>(x, fp);
+// CHECK-NEXT:     _p_p[11] = sycl::isnan(x) || sycl::isnan(fp) || sycl::isgreater<float>(x, fp);
+// CHECK-NEXT:     _p_p[12] = sycl::isnan(x) || sycl::isnan(fp) || sycl::isgreaterequal<float>(x, fp);
 // CHECK-NEXT:     _p_p[13] = !sycl::isnan(x) && !sycl::isnan(fp);
 // CHECK-NEXT:     _p_p[14] = sycl::isnan(x) || sycl::isnan(fp);
-// CHECK-NEXT:     _p_p[1] = !sycl::isnan(x) && !sycl::isnan(fp) && x == fp;
-// CHECK-NEXT:     _p_p[2] = !sycl::isnan(x) && !sycl::isnan(fp) && x != fp;
-// CHECK-NEXT:     _p_p[3] = !sycl::isnan(x) && !sycl::isnan(fp) && x < fp;
-// CHECK-NEXT:     _p_p[4] = !sycl::isnan(x) && !sycl::isnan(fp) && x <= fp;
-// CHECK-NEXT:     _p_p[5] = !sycl::isnan(x) && !sycl::isnan(fp) && x > fp;
-// CHECK-NEXT:     _p_p[6] = !sycl::isnan(x) && !sycl::isnan(fp) && x >= fp;
-// CHECK-NEXT:     _p_p[7] = sycl::isnan(x) || sycl::isnan(fp) || x == fp;
-// CHECK-NEXT:     _p_p[8] =  sycl::isnan(x) || sycl::isnan(fp) || x != fp;
-// CHECK-NEXT:     _p_p[9] = sycl::isnan(x) || sycl::isnan(fp) || x < fp;
-// CHECK-NEXT:     _p_p[10] = sycl::isnan(x) || sycl::isnan(fp) || x <= fp;
-// CHECK-NEXT:     _p_p[11] = sycl::isnan(x) || sycl::isnan(fp) || x > fp;
-// CHECK-NEXT:     _p_p[12] = sycl::isnan(x) || sycl::isnan(fp) || x >= fp;
+// CHECK-NEXT:     _p_p[1] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::isequal<double>(x, fp);
+// CHECK-NEXT:     _p_p[2] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::isnotequal<double>(x, fp);
+// CHECK-NEXT:     _p_p[3] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::isless<double>(x, fp);
+// CHECK-NEXT:     _p_p[4] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::islessequal<double>(x, fp);
+// CHECK-NEXT:     _p_p[5] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::isgreater<double>(x, fp);
+// CHECK-NEXT:     _p_p[6] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::isgreaterequal<double>(x, fp);
+// CHECK-NEXT:     _p_p[7] = sycl::isnan(x) || sycl::isnan(fp) || sycl::isequal<double>(x, fp);
+// CHECK-NEXT:     _p_p[8] = sycl::isnan(x) || sycl::isnan(fp) || sycl::isnotequal<double>(x, fp);
+// CHECK-NEXT:     _p_p[9] = sycl::isnan(x) || sycl::isnan(fp) || sycl::isless<double>(x, fp);
+// CHECK-NEXT:     _p_p[10] = sycl::isnan(x) || sycl::isnan(fp) || sycl::islessequal<double>(x, fp);
+// CHECK-NEXT:     _p_p[11] = sycl::isnan(x) || sycl::isnan(fp) || sycl::isgreater<double>(x, fp);
+// CHECK-NEXT:     _p_p[12] = sycl::isnan(x) || sycl::isnan(fp) || sycl::isgreaterequal<double>(x, fp);
 // CHECK-NEXT:     _p_p[13] = !sycl::isnan(x) && !sycl::isnan(fp);
 // CHECK-NEXT:     _p_p[14] = sycl::isnan(x) || sycl::isnan(fp);
 // CHECK-NEXT:     _p_q[1] = a == b;

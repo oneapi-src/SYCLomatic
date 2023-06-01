@@ -55,6 +55,7 @@ class SYCLGenBase {
   unsigned NumIndent = 0;
   llvm::SmallString<4> IndentUnit{"  "};
   llvm::SmallString<16> Indent;
+  llvm::SmallString<4> NewLine;
   llvm::raw_ostream *Stream;
 
   class BlockDelimiterGuard {
@@ -112,7 +113,12 @@ protected:
 
   void endl() {
     if (EmitNewLine) {
-      OS() << (isInMacroDefine() ? "\\" : "") << getNL();
+      if (NewLine.empty()) {
+        if (isInMacroDefine())
+          NewLine.append("\\");
+        NewLine.append(getNL());
+      }
+      OS() << NewLine;
     }
   }
 
@@ -527,48 +533,60 @@ protected:
       case asmtok::kw_eq:
         if (T->isSignedInt() || T->isUnsignedInt() || T->isBitSize())
           Template = "{0} == {1}";
-        else if (T->isFloating())
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && {0} == {1}";
+        else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::isequal<float>({0}, {1})";
+        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::isequal<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
       case asmtok::kw_ne:
         if (T->isSignedInt() || T->isUnsignedInt() || T->isBitSize())
           Template = "{0} != {1}";
-        else if (T->isFloating())
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && {0} != {1}";
+         else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::isnotequal<float>({0}, {1})";
+        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::isnotequal<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
       case asmtok::kw_lt:
         if (T->isSignedInt())
           Template = "{0} < {1}";
-        else if (T->isFloating())
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && {0} < {1}";
+        else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::isless<float>({0}, {1})";
+        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::isless<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
       case asmtok::kw_le:
         if (T->isSignedInt())
           Template = "{0} <= {1}";
-        else if (T->isFloating())
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && {0} <= {1}";
+        else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::islessequal<float>({0}, {1})";
+        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::islessequal<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
       case asmtok::kw_gt:
         if (T->isSignedInt())
           Template = "{0} > {1}";
-        else if (T->isFloating())
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && {0} > {1}";
+        else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::isgreater<float>({0}, {1})";
+        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::isgreater<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
       case asmtok::kw_ge:
         if (T->isSignedInt())
           Template = "{0} >= {1}";
-        else if (T->isFloating())
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && {0} >= {1}";
+        else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::isgreaterequal<float>({0}, {1})";
+        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::isgreaterequal<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
@@ -597,38 +615,50 @@ protected:
           return SYCLGenError();
         break;
       case asmtok::kw_equ:
-        if (T->isFloating())
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || {0} == {1}";
+        if (T->getKind() == InlineAsmBuiltinType::TK_f32)
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::isequal<float>({0}, {1})";
+        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::isequal<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
       case asmtok::kw_neu:
-        if (T->isFloating())
-          Template = " sycl::isnan({0}) || sycl::isnan({1}) || {0} != {1}";
+        if (T->getKind() == InlineAsmBuiltinType::TK_f32)
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::isnotequal<float>({0}, {1})";
+        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::isnotequal<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
       case asmtok::kw_ltu:
-        if (T->isFloating())
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || {0} < {1}";
+        if (T->getKind() == InlineAsmBuiltinType::TK_f32)
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::isless<float>({0}, {1})";
+        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::isless<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
       case asmtok::kw_leu:
-        if (T->isFloating())
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || {0} <= {1}";
+        if (T->getKind() == InlineAsmBuiltinType::TK_f32)
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::islessequal<float>({0}, {1})";
+        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::islessequal<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
       case asmtok::kw_gtu:
-        if (T->isFloating())
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || {0} > {1}";
+         if (T->getKind() == InlineAsmBuiltinType::TK_f32)
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::isgreater<float>({0}, {1})";
+        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::isgreater<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
       case asmtok::kw_geu:
-        if (T->isFloating())
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || {0} >= {1}";
+         if (T->getKind() == InlineAsmBuiltinType::TK_f32)
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::isgreaterequal<float>({0}, {1})";
+        else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::isgreaterequal<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
@@ -710,9 +740,10 @@ protected:
       EMPTY,
       /*0xea*/ "({0} & {1}) | {2}",
       EMPTY16, EMPTY, EMPTY, EMPTY,
-        // clang-format on
-        /*0xfe*/ "{0} | {1} | {2}",
-        /*0xff*/ "1"};
+      /*0xfe*/ "{0} | {1} | {2}",
+      /*0xff*/ "uint32_t(-1)"};
+      // clang-format on
+
 #undef EMPTY16
 #undef EMPTY4
 #undef EMPTY
@@ -760,6 +791,7 @@ void AsmRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
 void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
   const auto &C = DpctGlobalInfo::getContext();
+  auto &SM = DpctGlobalInfo::getSourceManager();
   std::string S = GAS->generateAsmString(C);
   InlineAsmContext Context;
   llvm::SourceMgr Mgr;
@@ -779,7 +811,7 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
     CodeGen.setInMacroDefine();
 
   auto getReplaceString = [&](const Expr *E) {
-    auto &SM = DpctGlobalInfo::getSourceManager();
+    
     ArgumentAnalysis AA(CodeGen.isInMacroDefine());
     AA.setCallSpelling(SM.getSpellingLoc(GAS->getBeginLoc()),
                        SM.getSpellingLoc(GAS->getEndLoc()));
@@ -823,11 +855,11 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
   Repl->setBlockLevelFormatFlag();
   emplaceTransformation(Repl);
 
-  auto Tok =
-      Lexer::findNextToken(GAS->getEndLoc(), DpctGlobalInfo::getSourceManager(),
-                           DpctGlobalInfo::getContext().getLangOpts());
+  auto Tok = Lexer::findNextToken(GAS->getEndLoc(), SM, C.getLangOpts());
+
   if (Tok.has_value() && Tok->is(tok::semi) &&
-      isInMacroDefinition(Tok->getLocation(), Tok->getLocation())) {
+      (!CodeGen.isInMacroDefine() ||
+       isInMacroDefinition(Tok->getLocation(), Tok->getEndLoc()))) {
     emplaceTransformation(new ReplaceToken(Tok->getLocation(), ""));
   }
   return;
