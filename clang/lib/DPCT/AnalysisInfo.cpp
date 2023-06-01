@@ -51,6 +51,7 @@ std::unordered_set<std::string> DpctGlobalInfo::ChangeExtensions = {};
 std::string DpctGlobalInfo::CudaPath = std::string();
 std::string DpctGlobalInfo::RuleFile = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
+bool DpctGlobalInfo::NeedDpctDeviceExt = false;
 bool DpctGlobalInfo::IsIncMigration = true;
 unsigned int DpctGlobalInfo::AssumedNDRangeDim = 3;
 HelperFilesCustomizationLevel DpctGlobalInfo::HelperFilesCustomizationLvl =
@@ -156,7 +157,8 @@ std::unordered_map<std::string,
     DpctGlobalInfo::RnnInputMap;
 std::unordered_map<std::string, std::vector<std::string>>
     DpctGlobalInfo::MainSourceFileMap;
-
+std::unordered_map<std::string, bool>
+    DpctGlobalInfo::MallocHostInfoMap;
 /// This variable saved the info of previous migration from the
 /// MainSourceFiles.yaml file. This variable is valid after
 /// canContinueMigration() is called.
@@ -322,6 +324,95 @@ DpctGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall) {
   }
 
   return KernelInfo;
+}
+
+void DpctGlobalInfo::buildReplacements() {
+  // add PriorityRepl into ReplMap and execute related action, e.g.,
+  // request feature or emit warning.
+  for (auto &ReplInfo : PriorityReplInfoMap) {
+    for (auto &Repl : ReplInfo.second->Repls) {
+      addReplacement(Repl);
+    }
+    for (auto &Action : ReplInfo.second->RelatedAction) {
+      Action();
+    }
+  }
+
+  for (auto &File : FileMap)
+    File.second->buildReplacements();
+
+  // All cases of replacing placeholders:
+  // dev_count  queue_count  dev_decl            queue_decl
+  // 0          1            /                   get_default_queue
+  // 1          0            get_current_device  /
+  // 1          1            get_current_device  get_default_queue
+  // 2          1            dev_ct1             get_default_queue
+  // 1          2            dev_ct1             q_ct1
+  // >=2        >=2          dev_ct1             q_ct1
+  if (!getDeviceChangedFlag() && getUsingDRYPattern()) {
+    bool NeedDpctHelpFunc = DpctGlobalInfo::needDpctDeviceExt() ||
+                            TempVariableDeclCounterMap.size() > 1 ||
+                            DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None;
+    HelperFeatureEnum DeviceFeatureEnum =
+        HelperFeatureEnum::Device_get_current_device;
+    HelperFeatureEnum QueueFeatureEnum =
+        HelperFeatureEnum::Device_get_default_queue;
+
+    unsigned int IndentLen = 2;
+    if (getGuessIndentWidthMatcherFlag())
+      IndentLen = getIndentWidth();
+    std::string IndentStr = std::string(IndentLen, ' ');
+    std::string DevDeclStr = getNL() + IndentStr;
+    llvm::raw_string_ostream DevDecl(DevDeclStr);
+    std::string QDeclStr =
+        getNL() + IndentStr + MapNames::getClNamespace() + "queue ";
+    llvm::raw_string_ostream QDecl(QDeclStr);
+    if (NeedDpctHelpFunc) {
+      DevDecl << MapNames::getDpctNamespace()
+              << "device_ext &dev_ct1 = " << MapNames::getDpctNamespace()
+              << "get_current_device();";
+      QDecl << "&q_ct1 = dev_ct1.default_queue();";
+    } else {
+      DevDecl << MapNames::getClNamespace() + "device dev_ct1;";
+      // Now the UsmLevel must not be UL_None here.
+      QDecl << "q_ct1(dev_ct1, " << MapNames::getClNamespace()
+            << "property_list{" << MapNames::getClNamespace()
+            << "property::queue::in_order()";
+      if (DpctGlobalInfo::getEnablepProfilingFlag()) {
+        QDecl << ", " << MapNames::getClNamespace()
+              << "property::queue::enable_profiling()";
+      }
+      QDecl << "});";
+    }
+
+    for (auto &Counter : TempVariableDeclCounterMap) {
+      const auto ColonPos = Counter.first.find_last_of(':');
+      const auto DeclLocFile = Counter.first.substr(0, ColonPos);
+      const auto DeclLocOffset = std::stoi(Counter.first.substr(ColonPos + 1));
+      if (Counter.second.CurrentDeviceCounter > 1 ||
+          Counter.second.DefaultQueueCounter > 1) {
+        Counter.second.PlaceholderStr[2] = "dev_ct1";
+        getInstance().addReplacement(std::make_shared<ExtReplacement>(
+            DeclLocFile, DeclLocOffset, 0, DevDecl.str(), nullptr));
+        if (!NeedDpctHelpFunc) {
+          DeviceFeatureEnum = HelperFeatureEnum::no_feature_helper;
+        }
+        if (Counter.second.DefaultQueueCounter > 1 || !NeedDpctHelpFunc) {
+          Counter.second.PlaceholderStr[1] = "q_ct1";
+          getInstance().addReplacement(std::make_shared<ExtReplacement>(
+              DeclLocFile, DeclLocOffset, 0, QDecl.str(), nullptr));
+          if (!NeedDpctHelpFunc) {
+            DeviceFeatureEnum = HelperFeatureEnum::no_feature_helper;
+          }
+        }
+      }
+      if (Counter.second.CurrentDeviceCounter > 0 ||
+          Counter.second.DefaultQueueCounter > 1)
+        requestFeature(DeviceFeatureEnum, DeclLocFile);
+      if (Counter.second.DefaultQueueCounter > 0)
+        requestFeature(QueueFeatureEnum, DeclLocFile);
+    }
+  }
 }
 
 void DpctGlobalInfo::processCudaArchMacro(){
@@ -979,6 +1070,12 @@ std::optional<HeaderType> DpctFileInfo::findHeaderType(StringRef Header) {
 }
 
 void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
+  if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution ||
+      Type == HT_DPCT_DNNL_Utils) {
+    if (this != DpctGlobalInfo::getInstance().getMainFile().get())
+      DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
+          Type, FirstIncludeOffset);
+  }
   if (HeaderInsertedBitMap[Type])
     return;
   HeaderInsertedBitMap[Type] = true;
@@ -996,9 +1093,6 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
   case HT_DPL_Algorithm:
   case HT_DPL_Execution:
   case HT_DPCT_DNNL_Utils:
-    if (this != DpctGlobalInfo::getInstance().getMainFile().get())
-      DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
-          Type, FirstIncludeOffset);
     concatHeader(OS, getHeaderSpelling(Type));
     return insertHeader(OS.str(), FirstIncludeOffset,
                         InsertPosition::IP_AlwaysLeft);
@@ -1239,6 +1333,30 @@ void KernelCallExpr::buildNeedBracesInfo(const CallExpr *KernelCall) {
     } else {
       return;
     }
+  }
+}
+
+void KernelCallExpr::addDevCapCheckStmt() {
+  llvm::SmallVector<std::string> AspectList;
+  if (getVarMap().hasBF64()) {
+    AspectList.push_back(MapNames::getClNamespace() + "aspect::fp64");
+  }
+  if (getVarMap().hasBF16()) {
+    AspectList.push_back(MapNames::getClNamespace() + "aspect::fp16");
+  }
+  if (!AspectList.empty()) {
+    requestFeature(HelperFeatureEnum::Device_has_capability_or_fail,
+                   getFilePath());
+    std::string Str;
+    llvm::raw_string_ostream OS(Str);
+    OS << MapNames::getDpctNamespace() << "has_capability_or_fail(";
+    printStreamBase(OS);
+    OS << "get_device(), {" << AspectList.front();
+    for (size_t i = 1; i < AspectList.size(); ++i) {
+      OS << ", " << AspectList[i];
+    }
+    OS << "});";
+    OuterStmts.emplace_back(OS.str());
   }
 }
 
@@ -1529,15 +1647,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
   if (!getEvent().empty()) {
     Printer << "*" << getEvent() << " = ";
   }
-  if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&') {
-    Printer << "(" << ExecutionConfig.Stream << ")";
-  } else {
-    Printer << ExecutionConfig.Stream;
-  }
-  if (isQueuePtr())
-    Printer << "->";
-  else
-    Printer << ".";
+  printStreamBase(Printer);
   if (SubmitStmtsList.empty()) {
     printParallelFor(Printer, false);
   } else {
@@ -1671,7 +1781,20 @@ void KernelCallExpr::printKernel(KernelPrinter &Printer) {
   Printer.newLine();
 }
 
+template <class T> void KernelCallExpr::printStreamBase(T &Printer) {
+  if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&') {
+    Printer << "(" << ExecutionConfig.Stream << ")";
+  } else {
+    Printer << ExecutionConfig.Stream;
+  }
+  if (isQueuePtr())
+    Printer << "->";
+  else
+    Printer << ".";
+}
+
 std::string KernelCallExpr::getReplacement() {
+  addDevCapCheckStmt();
   addAccessorDecl();
   addStreamDecl();
   buildKernelArgsStmt();
@@ -2791,6 +2914,13 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
         std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl,
                                          nullptr));
   }
+
+  if (FuncInfo->IsAlwaysInlineDevFunc()) {
+    std::string StrRepl = "inline ";
+    DpctGlobalInfo::getInstance().addReplacement(
+      std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl, nullptr));
+  }
+
   for (auto &Obj : TextureObjectList) {
     if (Obj) {
       Obj->merge(FuncInfo->getTextureObject((Obj->getParamIdx())));
@@ -3492,8 +3622,6 @@ std::string MemVarInfo::getSyclAccessorType() {
     OS << MapNames::getClNamespace() << "access::target::";
     switch (getAttr()) {
     case VarAttrKind::Constant:
-      OS << "constant_buffer";
-      break;
     case VarAttrKind::Device:
     case VarAttrKind::Managed:
       OS << "device";
@@ -4145,8 +4273,9 @@ std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,
     auto HelperFuncReplInfoIter =
         DpctGlobalInfo::getHelperFuncReplInfoMap().find(Index);
     if (HelperFuncReplInfoIter ==
-        DpctGlobalInfo::getHelperFuncReplInfoMap().end())
+        DpctGlobalInfo::getHelperFuncReplInfoMap().end()) {
       return getDefaultString(HFT);
+    }
 
     std::string CounterKey =
         HelperFuncReplInfoIter->second.DeclLocFile + ":" +
@@ -4159,31 +4288,8 @@ std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,
       return getDefaultString(HFT);
     }
 
-    // All cases of replacing placeholders:
-    // dev_count  queue_count  dev_decl            queue_decl
-    // 0          1            /                   get_default_queue
-    // 1          0            get_current_device  /
-    // 1          1            get_current_device  get_default_queue
-    // 2          1            dev_ct1             get_default_queue
-    // 1          2            dev_ct1             q_ct1
-    // >=2        >=2          dev_ct1             q_ct1
-    if (HFT == HelperFuncType::HFT_DefaultQueue) {
-      if (!HelperFuncReplInfoIter->second.IsLocationValid ||
-          TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1) {
-        return getDefaultString(HFT);
-      } else {
-        return "q_ct1";
-      }
-    } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
-      if (!HelperFuncReplInfoIter->second.IsLocationValid ||
-          (TempVariableDeclCounterIter->second.CurrentDeviceCounter <= 1 &&
-          TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1)) {
-        return getDefaultString(HFT);
-      } else {
-        return "dev_ct1";
-      }
-    }
-  
+    return TempVariableDeclCounterIter->second
+        .PlaceholderStr[static_cast<int>(HFT)];
   }
   return "";
 }

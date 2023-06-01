@@ -3,6 +3,9 @@
 // RUN: dpct --format-range=none -in-root %S -out-root %T/warplevel/warpreduce %S/warpreduce.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/warplevel/warpreduce/warpreduce.dp.cpp --match-full-lines %s
 
+// CHECK: #include <oneapi/dpl/execution>
+// CHECK: #include <oneapi/dpl/algorithm>
+// CHECK: #include <dpct/dpl_utils.hpp>
 #include <iostream>
 #include <vector>
 
@@ -69,7 +72,7 @@ __global__ void ReduceKernel(int* data) {
 //CHECK:  int threadid = item_ct1.get_local_id(2);
 //CHECK:  int input = data[threadid];
 //CHECK:  int output = 0;
-//CHECK:  output = dpct::group::reduce_over_partial_group(item_ct1.get_sub_group(), input, valid_items, sycl::plus<>());
+//CHECK:  output = dpct::group::reduce_over_partial_group(item_ct1, input, valid_items, sycl::plus<>());
 //CHECK:  data[threadid] = output;
 //CHECK:}
 __global__ void ReduceKernel2(int* data, int valid_items) {

@@ -386,8 +386,6 @@ private:
   size_t getOffset(SourceLocation Loc) {
     return SM.getFileOffset(Loc) - SrcBegin;
   }
-  void getThrustReplStrAndLength(const std::string &CtorClassName,
-                                 std::string &Replacement, size_t &TypeLen);
 protected:
   void analyzeArgument(const Expr *E) {
     switch (E->getStmtClass()) {

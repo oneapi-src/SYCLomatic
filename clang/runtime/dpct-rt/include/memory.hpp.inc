@@ -387,8 +387,7 @@ template <class T, memory_region Memory, size_t Dimension> class accessor;
 template <memory_region Memory, class T = byte_t> class memory_traits {
 public:
   static constexpr sycl::access::target target =
-      (Memory == constant) ? sycl::access::target::constant_buffer
-                           : sycl::access::target::device;
+      sycl::access::target::device;
   static constexpr sycl::access_mode mode =
       (Memory == constant) ? sycl::access_mode::read
                            : sycl::access_mode::read_write;
@@ -1128,7 +1127,7 @@ static inline void *dpct_malloc(T num_bytes,
 template <typename T> static inline T *get_host_ptr(const void *ptr) {
   auto BufferOffset = get_buffer_and_offset(ptr);
   auto host_ptr =
-      BufferOffset.first.get_access<sycl::access_mode::read_write>()
+      BufferOffset.first.get_host_access()
           .get_pointer();
   return (T *)(host_ptr + BufferOffset.second);
 }
@@ -1988,6 +1987,15 @@ template <typename T>
 using usm_host_allocator = detail::deprecated::usm_allocator<T, sycl::usm::alloc::host>;
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|usm_device_allocator_alias|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Memory|dpct_usm_allocator
+// Device|get_default_queue
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T>
+using usm_device_allocator = detail::deprecated::usm_allocator<T, sycl::usm::alloc::shared>;
+// DPCT_LABEL_END
 } // namespace deprecated
 
 // DPCT_LABEL_BEGIN|pointer_attributes|dpct

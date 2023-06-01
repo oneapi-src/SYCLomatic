@@ -240,7 +240,7 @@ bool printOptions(
         Opts.emplace_back("--no-use-generic-space");
     }
     if (Key == clang::dpct::OPTION_CompilationsDir && Specified) {
-      Opts.emplace_back("-p=\"" + Value + "\"");
+      Opts.emplace_back("--compilation-database=\"" + Value + "\"");
     }
 #ifdef _WIN32
     if (Key == clang::dpct::OPTION_VcxprojFile && Specified) {
@@ -278,7 +278,7 @@ bool printOptions(
       if (UValue & (1 << static_cast<unsigned>(ExperimentalFeatures::Exp_LogicalGroup)))
         Str = Str + "logical-group,";
       if (UValue & (1 << static_cast<unsigned>(ExperimentalFeatures::Exp_MaskedSubGroupFunction)))
-        Str = Str + "masked_sub_group_function,";
+        Str = Str + "masked_sub_group_operation,";
 
       if (!Str.empty()) {
         Str = "--use-experimental-features=" + Str;

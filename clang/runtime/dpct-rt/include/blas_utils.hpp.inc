@@ -56,8 +56,7 @@ namespace dpct {
 
 // DPCT_LABEL_BEGIN|get_value|dpct
 // DPCT_DEPENDENCY_BEGIN
-// Memory|dpct_memcpy_detail
-// Util|DataType
+// LibCommonUtils|get_value
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Get the value of \p s.
@@ -65,11 +64,8 @@ namespace dpct {
 /// \param [in] p The pointer points the data.
 /// \param [in] q The queue where the memory copy should be executed.
 template <typename T>
-inline typename DataType<T>::T2 get_value(const T *s, sycl::queue &q) {
-  using Ty = typename DataType<T>::T2;
-  Ty s_h;
-  detail::dpct_memcpy(q, (void *)&s_h, (void *)s, sizeof(T), automatic).wait();
-  return s_h;
+inline auto get_value(const T *s, sycl::queue &q) {
+  return detail::get_value(s, q);
 }
 // DPCT_LABEL_END
 
@@ -90,36 +86,6 @@ inline void mem_free(sycl::queue *exec_queue,
 // DPCT_CODE
 inline int stride_for(int num_elems, int mem_align_in_elems) {
   return ((num_elems - 1) / mem_align_in_elems + 1) * mem_align_in_elems;
-}
-// DPCT_LABEL_END
-
-// DPCT_LABEL_BEGIN|get_type_combination_id_T|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// BlasUtils|get_type_combination_id_Ts
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-template <typename ArgT> inline constexpr std::uint64_t get_type_combination_id(ArgT Val) {
-  static_assert((unsigned char)library_data_t::library_data_t_size <=
-                    std::numeric_limits<unsigned char>::max() &&
-                "library_data_t size exceeds limit.");
-  static_assert(std::is_same_v<ArgT, library_data_t>, "Unsupported ArgT");
-  return (std::uint64_t)Val;
-}
-// DPCT_LABEL_END
-
-// DPCT_LABEL_BEGIN|get_type_combination_id_Ts|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// BlasUtils|get_type_combination_id_T
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-template <typename FirstT, typename... RestT>
-inline constexpr std::uint64_t get_type_combination_id(FirstT FirstVal, RestT... RestVal) {
-  static_assert((std::uint8_t)library_data_t::library_data_t_size <=
-                    std::numeric_limits<unsigned char>::max() &&
-                "library_data_t size exceeds limit.");
-  static_assert(sizeof...(RestT) <= 8 && "Too many parameters");
-  static_assert(std::is_same_v<FirstT, library_data_t>, "Unsupported FirstT");
-  return get_type_combination_id(RestVal...) << 8 | ((std::uint64_t)FirstVal);
 }
 // DPCT_LABEL_END
 
@@ -181,6 +147,10 @@ public:
 template <typename Tx, typename Tr>
 inline void nrm2_impl(sycl::queue &q, int n, const void *x, int incx,
                          void *result) {
+#ifndef __INTEL_MKL__
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
+                           "Project does not support this API.");
+#else
 #ifdef DPCT_USM_LEVEL_NONE
   auto x_buffer = dpct::get_buffer<Tx>(x);
   auto r_buffer =
@@ -192,6 +162,7 @@ inline void nrm2_impl(sycl::queue &q, int n, const void *x, int incx,
   working_memory<Tr> res_mem(reinterpret_cast<Tr *>(result), q);
   oneapi::mkl::blas::column_major::nrm2(q, n, reinterpret_cast<const Tx *>(x),
                                         incx, res_mem.get_ptr());
+#endif
 #endif
 }
 // DPCT_LABEL_END
@@ -206,6 +177,10 @@ inline void nrm2_impl(sycl::queue &q, int n, const void *x, int incx,
 template <bool is_conjugate, class Txy, class Tr>
 inline void dotuc_impl(sycl::queue &q, int n, const Txy *x, int incx,
                           const Txy *y, int incy, Tr *result) {
+#ifndef __INTEL_MKL__
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
+                           "Project does not support this API.");
+#else
 #ifdef DPCT_USM_LEVEL_NONE
   auto x_buffer = dpct::get_buffer<Txy>(x);
   auto y_buffer = dpct::get_buffer<Txy>(y);
@@ -234,13 +209,14 @@ inline void dotuc_impl(sycl::queue &q, int n, const Txy *x, int incx,
   } else
     oneapi::mkl::blas::column_major::dot(q, n, x, incx, y, incy, res_mem.get_ptr());
 #endif
+#endif
 }
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|dotuc|dpct::detail
 // DPCT_DEPENDENCY_BEGIN
 // BlasUtils|dotuc_impl
-// BlasUtils|get_type_combination_id_Ts
+// LibCommonUtils|get_type_combination_id_Ts
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <bool is_conjugate>
@@ -307,10 +283,15 @@ inline void dotuc(sycl::queue &q, int n, const void *x,
 template <class Tx, class Te>
 inline void scal_impl(sycl::queue &q, int n, const void *alpha, void *x,
                          int incx) {
+#ifndef __INTEL_MKL__
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
+                           "Project does not support this API.");
+#else
   Te alpha_val = dpct::get_value(reinterpret_cast<const Te *>(alpha), q);
   auto data_x = get_memory(reinterpret_cast<Tx *>(x));
   oneapi::mkl::blas::column_major::scal(q, n, alpha_val,
                                         data_x, incx);
+#endif
 }
 // DPCT_LABEL_END
 
@@ -323,12 +304,17 @@ inline void scal_impl(sycl::queue &q, int n, const void *alpha, void *x,
 template <class Txy, class Te>
 inline void axpy_impl(sycl::queue &q, int n, const void *alpha, const void *x,
                         int incx, void *y, int incy) {
+#ifndef __INTEL_MKL__
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
+                           "Project does not support this API.");
+#else
   Te alpha_val = dpct::get_value(reinterpret_cast<const Te *>(alpha), q);
   auto data_x = get_memory(reinterpret_cast<const Txy *>(x));
   auto data_y = get_memory(reinterpret_cast<Txy *>(y));
   oneapi::mkl::blas::column_major::axpy(q, n, alpha_val,
                                         data_x, incx,
                                         data_y, incy);
+#endif
 }
 // DPCT_LABEL_END
 
@@ -341,6 +327,10 @@ inline void axpy_impl(sycl::queue &q, int n, const void *alpha, const void *x,
 template <class Txy, class Tc, class Ts>
 inline void rot_impl(sycl::queue &q, int n, void *x, int incx, void *y,
                         int incy, const void *c, const void *s) {
+#ifndef __INTEL_MKL__
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
+                           "Project does not support this API.");
+#else
   Tc c_value = dpct::get_value(reinterpret_cast<const Tc *>(c), q);
   Ts s_value = dpct::get_value(reinterpret_cast<const Ts *>(s), q);
   auto data_x = get_memory(reinterpret_cast<Txy *>(x));
@@ -348,6 +338,7 @@ inline void rot_impl(sycl::queue &q, int n, void *x, int incx, void *y,
   oneapi::mkl::blas::column_major::rot(q, n, data_x, incx,
                                        data_y, incy, c_value,
                                        s_value);
+#endif
 }
 // DPCT_LABEL_END
 
@@ -362,6 +353,10 @@ inline void gemm_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
                          oneapi::mkl::transpose b_trans, int m, int n, int k,
                          const void *alpha, const void *a, int lda, const void *b,
                          int ldb, const void *beta, void *c, int ldc) {
+#ifndef __INTEL_MKL__
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
+                           "Project does not support this API.");
+#else
   Ts alpha_value = dpct::get_value(reinterpret_cast<const Ts *>(alpha), q);
   Ts beta_value = dpct::get_value(reinterpret_cast<const Ts *>(beta), q);
   auto data_a = get_memory(reinterpret_cast<const Ta *>(a));
@@ -370,6 +365,7 @@ inline void gemm_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
   oneapi::mkl::blas::column_major::gemm(
       q, a_trans, b_trans, m, n, k, alpha_value, data_a, lda,
       data_b, ldb, beta_value, data_c, ldc);
+#endif
 }
 // DPCT_LABEL_END
 
@@ -384,6 +380,10 @@ inline void gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
                             const void *alpha, const void **a, int lda,
                             const void **b, int ldb, const void *beta, void **c,
                             int ldc, int batch_size) {
+#ifndef __INTEL_MKL__
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
+                           "Project does not support this API.");
+#else
   struct matrix_info_t {
     oneapi::mkl::transpose transpose_info[2];
     Ts value_info[2];
@@ -422,6 +422,7 @@ inline void gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
     cgh.depends_on(e);
     cgh.host_task([=] { std::free(matrix_info); });
   });
+#endif
 }
 // DPCT_LABEL_END
 
@@ -439,6 +440,10 @@ gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
                     long long int stride_a, const void *b, int ldb,
                     long long int stride_b, const void *beta, void *c,
                     int ldc, long long int stride_c, int batch_size) {
+#ifndef __INTEL_MKL__
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
+                           "Project does not support this API.");
+#else
   Ts alpha_value = dpct::get_value(reinterpret_cast<const Ts *>(alpha), q);
   Ts beta_value = dpct::get_value(reinterpret_cast<const Ts *>(beta), q);
   auto data_a = get_memory(reinterpret_cast<const Ta *>(a));
@@ -448,6 +453,7 @@ gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
       q, a_trans, b_trans, m, n, k, alpha_value, data_a, lda,
       stride_a, data_b, ldb, stride_b, beta_value,
       data_c, ldc, stride_c, batch_size);
+#endif
 }
 // DPCT_LABEL_END
 
@@ -600,6 +606,10 @@ trsm_batch_impl(sycl::queue &q, oneapi::mkl::side left_right,
 template <typename T>
 inline void getrfnp_batch_wrapper(sycl::queue &exec_queue, int n, T *a[],
                                   int lda, int *info, int batch_size) {
+#ifndef __INTEL_MKL__
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
+                           "Project does not support this API.");
+#else
   using Ty = typename DataType<T>::T2;
   // Set the info array value to 0
   detail::dpct_memset(exec_queue, info, 0, sizeof(int) * batch_size);
@@ -648,6 +658,7 @@ inline void getrfnp_batch_wrapper(sycl::queue &exec_queue, int n, T *a[],
     cgh.depends_on(events);
     cgh.host_task([=] { free(host_a); });
   });
+#endif
 }
 // DPCT_LABEL_END
 
@@ -1164,7 +1175,7 @@ inline void geqrf_batch_wrapper(sycl::queue exec_queue, int m, int n,
 // DPCT_LABEL_BEGIN|nrm2|dpct
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// BlasUtils|get_type_combination_id_Ts
+// LibCommonUtils|get_type_combination_id_Ts
 // BlasUtils|nrm2_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
@@ -1267,7 +1278,7 @@ inline void dotc(sycl::queue &q, int n, const void *x, library_data_t x_type,
 // DPCT_LABEL_BEGIN|scal|dpct
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// BlasUtils|get_type_combination_id_Ts
+// LibCommonUtils|get_type_combination_id_Ts
 // BlasUtils|scal_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
@@ -1318,7 +1329,7 @@ inline void scal(sycl::queue &q, int n, const void *alpha,
 // DPCT_LABEL_BEGIN|axpy|dpct
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// BlasUtils|get_type_combination_id_Ts
+// LibCommonUtils|get_type_combination_id_Ts
 // BlasUtils|axpy_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
@@ -1377,7 +1388,7 @@ inline void axpy(sycl::queue &q, int n, const void *alpha,
 // DPCT_LABEL_BEGIN|rot|dpct
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// BlasUtils|get_type_combination_id_Ts
+// LibCommonUtils|get_type_combination_id_Ts
 // BlasUtils|rot_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
@@ -1449,7 +1460,7 @@ inline void rot(sycl::queue &q, int n, void *x, library_data_t x_type,
 // DPCT_LABEL_BEGIN|gemm|dpct
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// BlasUtils|get_type_combination_id_Ts
+// LibCommonUtils|get_type_combination_id_Ts
 // BlasUtils|gemm_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
@@ -1592,7 +1603,7 @@ inline void gemm(sycl::queue &q, oneapi::mkl::transpose a_trans,
 // DPCT_LABEL_BEGIN|gemm_batch|dpct
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// BlasUtils|get_type_combination_id_Ts
+// LibCommonUtils|get_type_combination_id_Ts
 // BlasUtils|gemm_batch_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
@@ -1751,7 +1762,7 @@ inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
 // DPCT_LABEL_BEGIN|gemm_batch_stride|dpct
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// BlasUtils|get_type_combination_id_Ts
+// LibCommonUtils|get_type_combination_id_Ts
 // BlasUtils|gemm_batch_impl_stride
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
@@ -1967,7 +1978,7 @@ inline void herk(sycl::queue &q, oneapi::mkl::uplo uplo,
 // DPCT_LABEL_BEGIN|trsm_batch|dpct
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// BlasUtils|get_type_combination_id_Ts
+// LibCommonUtils|get_type_combination_id_Ts
 // BlasUtils|trsm_batch_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE

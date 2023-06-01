@@ -54,6 +54,16 @@ const char *CudaVersionToString(CudaVersion V) {
   return CudaVersionToString(CudaVersion::UNKNOWN);
 }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+unsigned int CudaVersionToValue(CudaVersion V) {
+  for (auto *I = CudaNameVersionMap; I->Version != CudaVersion::UNKNOWN; ++I)
+    if (I->Version == V) {
+      return I->TVersion.getMajor() * 1000 +
+             I->TVersion.getMinor().value() * 10;
+    }
+  return 0;
+}
+#endif // SYCLomatic_CUSTOMIZATION
 CudaVersion CudaStringToVersion(const llvm::Twine &S) {
   std::string VS = S.str();
   for (auto *I = CudaNameVersionMap; I->Version != CudaVersion::UNKNOWN; ++I)
@@ -118,6 +128,8 @@ static const CudaArchToStringMap arch_names[] = {
     GFX(90a),  // gfx90a
     GFX(90c),  // gfx90c
     GFX(940),  // gfx940
+    GFX(941),  // gfx941
+    GFX(942),  // gfx942
     GFX(1010), // gfx1010
     GFX(1011), // gfx1011
     GFX(1012), // gfx1012

@@ -13,18 +13,17 @@
 #include "CallExprRewriter.h"
 #include "MemberExprRewriter.h"
 #include "TypeLocRewriters.h"
-#include "Checkpoint.h"
+#include "CrashRecovery.h"
 #include "Config.h"
 #include "CustomHelperFiles.h"
 #include "ExternalReplacement.h"
+#include "GenHelperFunction.h"
 #include "GenMakefile.h"
 #include "IncrementalMigrationUtility.h"
 #include "MigrationAction.h"
 #include "MisleadingBidirectional.h"
 #include "Rules.h"
-#include "QueryApiMapping.h"
 #include "SaveNewFiles.h"
-#include "SignalProcess.h"
 #include "Statics.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
@@ -38,10 +37,10 @@
 #include "clang/Tooling/Refactoring.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/Support/FileSystem.h"
-#include "llvm/Support/Host.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/Program.h"
+#include "llvm/TargetParser/Host.h"
 
 #include <string>
 
@@ -72,6 +71,7 @@ using namespace clang::tooling;
 using namespace llvm::cl;
 
 namespace clang {
+extern llvm::APSInt CudaRTVersionValue;
 namespace tooling {
 std::string getFormatSearchPath();
 extern std::string ClangToolOutputMessage;
@@ -96,9 +96,9 @@ const char *const CtHelpMessage =
     "Migrate single source file with C++11 features:\n\n"
     "  dpct --extra-arg=\"-std=c++11\" source.cpp\n\n"
     "Migrate all files available in compilation database:\n\n"
-    "  dpct -p=<path to location of compilation database file>\n\n"
+    "  dpct --compilation-database=<path to location of compilation database file>\n\n"
     "Migrate one file in compilation database:\n\n"
-    "  dpct -p=<path to location of compilation database file>  source.cpp\n\n"
+    "  dpct --compilation-database=<path to location of compilation database file>  source.cpp\n\n"
 #if defined(_WIN32)
     "Migrate all files available in vcxprojfile:\n\n"
     "  dpct --vcxprojfile=path/to/vcxprojfile.vcxproj\n"
@@ -159,9 +159,6 @@ static llvm::cl::opt<std::string> Passes(
          "Only the specified passes are applied."),
     llvm::cl::value_desc("IterationSpaceBuiltinRule,..."), llvm::cl::cat(DPCTCat),
                llvm::cl::Hidden);
-static llvm::cl::opt<std::string> QueryApiMapping ("query-api-mapping",
-        llvm::cl::desc("Outputs to stdout functionally compatible SYCL API mapping for CUDA API."),
-        llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat), llvm::cl::Optional, llvm::cl::ReallyHidden);
 #ifdef DPCT_DEBUG_BUILD
 static llvm::cl::opt<std::string>
     DiagsContent("report-diags-content",
@@ -191,12 +188,8 @@ std::unordered_map<std::string, bool> ChildOrSameCache;
 std::unordered_map<std::string, bool> ChildPathCache;
 std::unordered_map<std::string, llvm::SmallString<256>> RealPathCache;
 std::unordered_map<std::string, bool> IsDirectoryCache;
-int FatalErrorCnt = 0;
 extern bool StopOnParseErrTooling;
 extern std::string InRootTooling;
-JMP_BUF CPFileASTMaterEnter;
-JMP_BUF CPRepPostprocessEnter;
-JMP_BUF CPFormatCodeEnter;
 
 std::string getCudaInstallPath(int argc, const char **argv) {
   std::vector<const char *> Argv;
@@ -227,6 +220,10 @@ std::string getCudaInstallPath(int argc, const char **argv) {
       Driver, llvm::Triple(Driver.getTargetTriple()), ParsedArgs);
 
   std::string Path = CudaIncludeDetector.getInstallPath().str();
+  uint64_t CudaRTVersionValueUint64 =
+      clang::CudaVersionToValue(CudaIncludeDetector.version());
+  CudaRTVersionValue =
+      llvm::APSInt(llvm::APInt(64, CudaRTVersionValueUint64, false), true);
 
   if (!CudaIncludePath.empty()) {
     if (!CudaIncludeDetector.isIncludePathValid()) {
@@ -491,10 +488,13 @@ static void DumpOutputFile(void) {
   }
 }
 
-void PrintReportOnFault(std::string &FaultMsg) {
+void PrintReportOnFault(const std::string &FaultMsg) {
   PrintMsg(FaultMsg);
   saveApisReport();
   saveDiagsReport();
+
+  if (ReportFilePrefix == "stdcout")
+    return;
 
   std::string FileApis =
       OutRoot + "/" + ReportFilePrefix +
@@ -553,9 +553,7 @@ int runDPCT(int argc, const char **argv) {
     std::cout << CtHelpHint;
     return MigrationErrorShowHelp;
   }
-#if defined(__linux__) || defined(_WIN32)
-  InstallSignalHandle();
-#endif
+  clang::dpct::initCrashRecovery();
 
 #if defined(_WIN32)
   // To support wildcard "*" in source file name in windows.
@@ -656,12 +654,6 @@ int runDPCT(int argc, const char **argv) {
   // just show -- --help information and then exit
   if (CommonOptionsParser::hasHelpOption(OriginalArgc, argv))
     dpctExit(MigrationSucceeded);
-
-  if (QueryApiMapping.getNumOccurrences()) {
-    ApiMappingEntry::initEntryMap();
-    ApiMappingEntry::printMappingDesc(llvm::outs(), QueryApiMapping);
-    dpctExit(MigrationSucceeded);
-  }
 
   auto ExtensionStr = ChangeExtension.getValue();
   ExtensionStr.erase(std::remove(ExtensionStr.begin(), ExtensionStr.end(), ' '),
@@ -798,6 +790,18 @@ int runDPCT(int argc, const char **argv) {
   }
   ValidateInputDirectory(Tool, AnalysisScope);
 
+  if (GenHelperFunction.getNumOccurrences() &&
+      (UseCustomHelperFileLevel.getNumOccurrences() ||
+       CustomHelperFileName.getNumOccurrences())) {
+    ShowStatus(MigrationErrorConflictOptions,
+               "Option --gen-helper-function cannot be used with "
+               "--use-custom-helper or --custom-helper-name together");
+    dpctExit(MigrationErrorConflictOptions);
+  }
+  if (GenHelperFunction.getValue()) {
+    dpct::genHelperFunction(dpct::DpctGlobalInfo::getOutRoot());
+  }
+
   validateCustomHelperFileNameArg(UseCustomHelperFileLevel,
                                   CustomHelperFileName,
                                   dpct::DpctGlobalInfo::getOutRoot());
@@ -830,7 +834,8 @@ int runDPCT(int argc, const char **argv) {
       (SDKVersionMajor == 11 && SDKVersionMinor == 6) ||
       (SDKVersionMajor == 11 && SDKVersionMinor == 7) ||
       (SDKVersionMajor == 11 && SDKVersionMinor == 8) ||
-      (SDKVersionMajor == 12 && SDKVersionMinor == 0)) {
+      (SDKVersionMajor == 12 && SDKVersionMinor == 0) ||
+      (SDKVersionMajor == 12 && SDKVersionMinor == 1)) {
     Tool.appendArgumentsAdjuster(
         getInsertArgumentAdjuster("-fms-compatibility-version=19.21.27702.0",
                                   ArgumentInsertPosition::BEGIN));

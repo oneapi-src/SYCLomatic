@@ -7,6 +7,11 @@
 //===-----------------------------------------------------------------===//
 
 // Base API
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_get_version,
+                        CALL_FACTORY_ENTRY("cudnnGetVersion",
+                                           CALL(MapNames::getDpctNamespace() +
+                                                "dnnl::get_version")))
+
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_engine_ext,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnCreate", DEREF(ARG_WC(0)), false,
@@ -610,6 +615,34 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
     "cudnnGetConvolutionBackwardFilterWorkspaceSize", DEREF(ARG_WC(6)), ARG("0")))
 
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+    "cudnnGetConvolutionBackwardFilterAlgorithm", DEREF(ARG_WC(7)),
+    ARG("dnnl::algorithm::convolution_auto")))
+
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+    "cudnnGetConvolutionBackwardDataAlgorithm", DEREF(ARG_WC(7)),
+    ARG("dnnl::algorithm::convolution_auto")))
+
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+    "cudnnGetConvolutionForwardAlgorithm", DEREF(ARG_WC(7)),
+    ARG("dnnl::algorithm::convolution_auto")))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_convolution_desc,
+                        ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                            "cudnnSetConvolutionMathType", ARG_WC(0), false,
+                            "set_math_mode", ARG_WC(1))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::DnnlUtils_convolution_algorithm_info,
+    MULTI_STMTS_FACTORY_ENTRY(
+        "cudnnFindConvolutionForwardAlgorithm",
+        BO(BinaryOperatorKind::BO_Assign,
+                             MEMBER_EXPR(DEREF(ARG_WC(7)), false,
+                                         LITERAL("algo")),
+                             ARG("dnnl::algorithm::convolution_auto")),
+        BO(BinaryOperatorKind::BO_Assign,
+                             DEREF(ARG_WC(6)), ARG("1"))))
+
 // RNN Layer
 REMOVE_API_FACTORY_ENTRY("cudnnCreateRNNDescriptor")
 
@@ -679,3 +712,54 @@ FEATURE_REQUEST_FACTORY(
         ARG_WC(2), ARG_WC(4), ARG_WC(5), ARG_WC(6), ARG_WC(7), ARG_WC(8),
         ARG_WC(9), ARG_WC(10), ARG_WC(11), ARG_WC(12), ARG_WC(13), ARG_WC(14),
         ARG_WC(15), ARG_WC(16), ARG_WC(17), ARG_WC(18), ARG_WC(19))))
+
+// Dropout Layer
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_dropout_desc,
+                        ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                            "cudnnCreateDropoutDescriptor", DEREF(ARG_WC(0)), false,
+                            "init")))
+
+REMOVE_API_FACTORY_ENTRY("cudnnDestroyDropoutDescriptor")
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_dropout_desc,
+                        ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                            "cudnnSetDropoutDescriptor", ARG_WC(0), false,
+                            "set", ARG_WC(1), ARG_WC(2), ARG_WC(3), ARG_WC(4),
+                            ARG_WC(5))))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_dropout_desc,
+                        ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                            "cudnnGetDropoutDescriptor", ARG_WC(0), false,
+                            "get", ARG_WC(2), ARG_WC(3), ARG_WC(4))))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_dropout_desc,
+                        ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                            "cudnnRestoreDropoutDescriptor", ARG_WC(0), false,
+                            "restore", ARG_WC(1), ARG_WC(2), ARG_WC(3),
+                            ARG_WC(4), ARG_WC(5))))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_get_dropout_state_size,
+                        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                            "cudnnDropoutGetStatesSize", DEREF(ARG_WC(1)),
+                            MEMBER_CALL(ARG_WC(0), false, "get_dropout_state_size"))))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_get_dropout_workspace_size,
+                        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                            "cudnnDropoutGetReserveSpaceSize", DEREF(ARG_WC(1)),
+                            CALL(MapNames::getDpctNamespace() +
+                            "dnnl::engine_ext::get_dropout_workspace_size",
+                            ARG_WC(0)))))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_async_dropout_forward,
+                        ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                            "cudnnDropoutForward", ARG_WC(0), false,
+                            "async_dropout_forward", ARG_WC(1), ARG_WC(2),
+                            ARG_WC(3), ARG_WC(4), ARG_WC(5), ARG_WC(6),
+                            ARG_WC(7))))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_async_dropout_backward,
+                        ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                            "cudnnDropoutBackward", ARG_WC(0), false,
+                            "async_dropout_backward", ARG_WC(1), ARG_WC(2),
+                            ARG_WC(3), ARG_WC(4), ARG_WC(5), ARG_WC(6),
+                            ARG_WC(7))))

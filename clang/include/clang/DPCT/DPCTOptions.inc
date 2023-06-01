@@ -15,18 +15,22 @@
 #endif
 
 #ifdef DPCT_OPTIONS_IN_CLANG_TOOLING
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), BuildPath, "p",
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), BuildPath, "compilation-database",
            llvm::cl::desc("The directory path for the compilation database (compile_commands.json). When no\n"
                "path is specified, a search for compile_commands.json is attempted through all\n"
-               "parent directories of the first input source file."),
+               "parent directories of the first input source file. Same as -p."),
            llvm::cl::value_desc("dir"), llvm::cl::cat(Category),
            llvm::cl::Optional, llvm::cl::sub(*llvm::cl::AllSubCommands))
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::alias), BuildPathAlias, "p",
+           llvm::cl::desc("Alias for --compilation-database."), llvm::cl::aliasopt(BuildPath),
+           llvm::cl::NotHidden)
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<std::string>), ArgsAfter, "extra-arg",
            llvm::cl::desc("Additional argument to append to the migration command line, example:\n"
               "--extra-arg=\"-I /path/to/header\". The options that can be passed this way can\n"
               "be found with the dpct -- -help command."),
            llvm::cl::value_desc("string"), llvm::cl::cat(Category),
-           llvm::cl::sub(*llvm::cl::AllSubCommands))
+           llvm::cl::sub(*llvm::cl::AllSubCommands),
+           llvm::cl::CommaSeparated)
 #ifdef _WIN32
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), VcxprojFile, "vcxprojfile",
            llvm::cl::desc("The file path of vcxproj."),
@@ -373,11 +377,14 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
              DPCT_OPT_ENUM("user-defined-reductions", int(ExperimentalFeatures::Exp_UserDefineReductions),
         "Experimental extension that allows user define reductions.\n",
         false),
-             DPCT_OPT_ENUM("masked_sub_group_function", int(ExperimentalFeatures::Exp_MaskedSubGroupFunction),
-        "Experimental extension that allows masked sub_group call during migration.\n",
+             DPCT_OPT_ENUM("masked_sub_group_operation", int(ExperimentalFeatures::Exp_MaskedSubGroupFunction),
+        "Experimental helper function used to execute sub-group operation with mask.\n",
         false),
              DPCT_OPT_ENUM("dpl-experimental-api", int(ExperimentalFeatures::Exp_DPLExperimentalAPI),
-        "Experimental extension that allows oneDPL experimental API.\n",
+        "Experimental extension that allows use of experimental oneDPL APIs.\n",
+        false),
+             DPCT_OPT_ENUM("occupancy-calculation", int(ExperimentalFeatures::Exp_OccupancyCalculation),
+        "Experimental helper function used to calculate occupancy.\n",
         false)
            ),
            llvm::cl::desc("Comma separated list of experimental features to be used in migrated "
@@ -407,12 +414,6 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), NoIncrementalMig
                    "Default: off (incremental migration happens)."),
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
-/*
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), QueryApiMapping, "query-api-mapping",
-        llvm::cl::desc("Outputs to stdout functionally compatible SYCL API mapping for CUDA API."),
-        llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
-*/
-
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), AnalysisScope, "analysis-scope-path",
         llvm::cl::desc("The directory path for the analysis scope of the source tree that "
              "needs to be migrated.\n"
@@ -433,5 +434,9 @@ DPCT_NON_ENUM_OPTION(
     llvm::cl::desc(
         "Limit extension change to .cu and .cuh files only. Default: off."),
     llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), GenHelperFunction, "gen-helper-function",
+        llvm::cl::desc("Generate helper function files in the --out-root directory. Default: off."),
+        llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT

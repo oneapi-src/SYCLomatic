@@ -460,8 +460,8 @@ int main(int argc, char *argv[])
     //CHECK: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
-    //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::geqrf_scratchpad_size<float>(**cusolverH, m, n, lda), 0);
-    //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::geqrf_scratchpad_size<float>(**cusolverH, m, n, lda);
+    //CHECK-NEXT: status = (Lwork = oneapi::mkl::lapack::geqrf_scratchpad_size<float>(**cusolverH, m, n, lda), 0);
+    //CHECK-NEXT: Lwork = oneapi::mkl::lapack::geqrf_scratchpad_size<float>(**cusolverH, m, n, lda);
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
     //CHECK-NEXT: auto TAU_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&TAU_f);
@@ -485,8 +485,8 @@ int main(int argc, char *argv[])
     //CHECK: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
-    //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::geqrf_scratchpad_size<double>(**cusolverH, m, n, lda), 0);
-    //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::geqrf_scratchpad_size<double>(**cusolverH, m, n, lda);
+    //CHECK-NEXT: status = (Lwork = oneapi::mkl::lapack::geqrf_scratchpad_size<double>(**cusolverH, m, n, lda), 0);
+    //CHECK-NEXT: Lwork = oneapi::mkl::lapack::geqrf_scratchpad_size<double>(**cusolverH, m, n, lda);
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
     //CHECK-NEXT: auto TAU_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&TAU_d);
@@ -510,8 +510,8 @@ int main(int argc, char *argv[])
     //CHECK: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
-    //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::geqrf_scratchpad_size<std::complex<float>>(**cusolverH, m, n, lda), 0);
-    //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::geqrf_scratchpad_size<std::complex<float>>(**cusolverH, m, n, lda);
+    //CHECK-NEXT: status = (Lwork = oneapi::mkl::lapack::geqrf_scratchpad_size<std::complex<float>>(**cusolverH, m, n, lda), 0);
+    //CHECK-NEXT: Lwork = oneapi::mkl::lapack::geqrf_scratchpad_size<std::complex<float>>(**cusolverH, m, n, lda);
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
     //CHECK-NEXT: auto TAU_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&TAU_c);
@@ -535,8 +535,8 @@ int main(int argc, char *argv[])
     //CHECK: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
-    //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::geqrf_scratchpad_size<std::complex<double>>(**cusolverH, m, n, lda), 0);
-    //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::geqrf_scratchpad_size<std::complex<double>>(**cusolverH, m, n, lda);
+    //CHECK-NEXT: status = (Lwork = oneapi::mkl::lapack::geqrf_scratchpad_size<std::complex<double>>(**cusolverH, m, n, lda), 0);
+    //CHECK-NEXT: Lwork = oneapi::mkl::lapack::geqrf_scratchpad_size<std::complex<double>>(**cusolverH, m, n, lda);
     //CHECK-NEXT: {
     //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
     //CHECK-NEXT: auto TAU_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&TAU_z);

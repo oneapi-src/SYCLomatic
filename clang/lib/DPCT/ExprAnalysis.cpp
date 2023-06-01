@@ -12,7 +12,9 @@
 #include "AnalysisInfo.h"
 #include "CUBAPIMigration.h"
 #include "CallExprRewriter.h"
+#include "Config.h"
 #include "DNNAPIMigration.h"
+#include "MemberExprRewriter.h"
 #include "TypeLocRewriters.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/Expr.h"
@@ -23,7 +25,6 @@
 #include "clang/AST/StmtGraphTraits.h"
 #include "clang/AST/StmtObjC.h"
 #include "clang/AST/StmtOpenMP.h"
-#include "MemberExprRewriter.h"
 
 extern std::string DpctInstallPath;
 namespace clang {
@@ -337,7 +338,7 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E, Source
   RewritePostfix = std::string(SM.getCharacterData(EndLocWithoutPostfix),
                                RewritePostfixLength);
 
-  auto DecompLoc = SM.getDecomposedLoc(BeginLoc);
+  auto DecompLoc = SM.getDecomposedLoc(BeginLocWithoutPrefix);
   FileId = DecompLoc.first;
   // The offset of Expr used in ExprAnalysis is related to SrcBegin not
   // FileBegin
@@ -522,28 +523,6 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   }
 }
 
-// Get replacement str and replacement length for thrust construct type.
-// If thrust construct type have mapping type in MapNames::TypeNamesMap, using
-// the mapping type, else just use "std::" to replace "thrust::".
-void ExprAnalysis::getThrustReplStrAndLength(const std::string &CtorClassName,
-                                             std::string &Replacement,
-                                             size_t &TypeLen) {
-  if (CtorClassName.find("thrust::") == 0) {
-    TypeLen = CtorClassName.find('<');
-    if (TypeLen == std::string::npos)
-      TypeLen = CtorClassName.size();
-
-    auto RealTypeNameStr = CtorClassName.substr(0, TypeLen);
-    Replacement =
-        MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
-    if (Replacement.empty()) {
-      static const size_t ThrustNamespaceLength = std::strlen("thrust::");
-      TypeLen = ThrustNamespaceLength;
-      Replacement = "std::";
-    }
-  }
-}
-
 void ExprAnalysis::analyzeExpr(const ConstantExpr *CE) {
   dispatch(CE->getSubExpr());
 }
@@ -593,33 +572,16 @@ void ExprAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
 void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
   std::string TypeName = DpctGlobalInfo::getUnqualifiedTypeName(
       Temp->getType().getCanonicalType());
-  if (StringRef(TypeName).startswith("cub::") &&
-      CubTypeRule::CanMappingToSyclType(TypeName)) {
+  if ((StringRef(TypeName).startswith("cub::") &&
+       CubTypeRule::CanMappingToSyclType(TypeName)) ||
+       StringRef(TypeName).startswith("thrust::") ||
+       StringRef(TypeName).startswith("cooperative_groups::")) {
     analyzeType(Temp->getTypeSourceInfo()->getTypeLoc());
-    return;
   }
-
   analyzeExpr(static_cast<const CXXConstructExpr *>(Temp));
 }
 
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
-  std::string CtorClassName =
-      Ctor->getConstructor()->getParent()->getQualifiedNameAsString();
-  if (CtorClassName.find("thrust::") == 0) {
-    // Distinguish CXXTemporaryObjectExpr from other copy ctor before migrating
-    // the ctor. Ex. foo(thrust::minus<int>());
-    auto CXXTemporaryObjectExprMatcher = clang::ast_matchers::findAll(
-        clang::ast_matchers::cxxTemporaryObjectExpr().bind("CTOE"));
-    auto MatchedResults =
-        clang::ast_matchers::match(CXXTemporaryObjectExprMatcher, *Ctor,
-                                   clang::dpct::DpctGlobalInfo::getContext());
-    if (MatchedResults.size() > 0) {
-      std::string Replacement;
-      size_t TypeLen;
-      getThrustReplStrAndLength(CtorClassName, Replacement, TypeLen);
-      addReplacement(Ctor, TypeLen, Replacement);
-    }
-  }
 
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
     std::string ArgsString;
@@ -658,26 +620,7 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
 }
 
 void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
-  const auto BaseType = [&]() {
-    auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
-    PP.PrintCanonicalTypes = true;
-
-    auto QT = ME->getBase()->getType();
-    if (QT->isPointerType())
-      QT = QT->getPointeeType();
-    QT = QT.getUnqualifiedType();
-    const auto *T = QT.getTypePtr();
-    if (const auto *ET = dyn_cast<ElaboratedType>(T))
-      T = ET->getNamedType().getTypePtr();
-    if (const auto *TST = dyn_cast<TemplateSpecializationType>(T)) {
-      std::string s;
-      llvm::raw_string_ostream OS(s);
-      TST->getTemplateName().print(OS, PP, TemplateName::Qualified::Fully);
-      return s;
-    } else {
-      return QT.getAsString(PP);
-    }
-  }();
+  const auto BaseType = getBaseTypeRemoveTemplateArguments(ME);
 
   std::string FieldName = "";
   if (ME->getMemberDecl()->getIdentifier()) {
@@ -691,7 +634,6 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       auto Rewriter = Itr->second->create(ME);
       auto Result = Rewriter->rewrite();
       if (Result.has_value()) {
-        auto ResultStr = Result.value();
         addReplacement(ME->getBeginLoc(), ME->getEndLoc(), Result.value());
       }
       return;
@@ -800,23 +742,78 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
     if (isTypeInAnalysisScope(ME->getBase()->getType().getTypePtr()))
       return;
 
+    auto Begin = ME->getOperatorLoc();
+    bool isPtr = ME->isArrow();
+    bool isImplicit = false;
+    if (ME->isImplicitAccess()) {
+      Begin = ME->getMemberLoc();
+      isImplicit = true;
+    }
     if (*BaseType.rbegin() == '1') {
+      if (isImplicit) {
+        // "x" is migrated to "*this".
+        addReplacement(Begin, ME->getEndLoc(), "*this");
+      } else if (isPtr) {
+        // "pf1->x" is migrated to "*pf1".
+        addReplacement(ME->getBeginLoc(), 0, "*");
+      }
+      // Delete the "->x".
       addReplacement(ME->getOperatorLoc(), ME->getEndLoc(), "");
     } else {
       std::string MemberName = ME->getMemberNameInfo().getAsString();
-      if (MapNames::replaceName(MapNames::MemberNamesMap, MemberName)) {
-        // Retrieve the correct location before addReplacement
-        auto Loc =
-            getLocInRange(ME->getMemberLoc(), getStmtExpansionSourceRange(ME));
-        addReplacement(Loc, MemberName);
+      const auto &MArrayIdx = MapNames::MArrayMemberNamesMap.find(MemberName);
+      if (MapNames::VectorTypes2MArray.count(BaseType) &&
+          MArrayIdx != MapNames::MArrayMemberNamesMap.end()) {
+        std::string RepStr = "";
+        if (isImplicit) {
+          RepStr = "(*this)";
+        } else if (isPtr) {
+          addReplacement(ME->getBeginLoc(), 0, "(*");
+          RepStr = ")";
+        }
+        addReplacement(Begin, ME->getEndLoc(), RepStr + MArrayIdx->second);
+      } else if (MapNames::replaceName(MapNames::MemberNamesMap, MemberName)) {
+        std::string RepStr = "";
+        const auto *MD = DpctGlobalInfo::findAncestor<CXXMethodDecl>(ME);
+        if (MD && MD->isVolatile()) {
+          const auto BaseType =
+              ME->getBase()->getBestDynamicClassTypeExpr()->getType();
+          const bool BaseAndThisSameType =
+              BaseType->getCanonicalTypeUnqualified() ==
+              MD->getThisType()->getCanonicalTypeUnqualified();
+          const bool BaseIsVolatile =
+              BaseType->getPointeeType().isVolatileQualified();
+          const SourceLocation Loc = SM.getExpansionLoc(ME->getBeginLoc());
+          const std::string TypeName =
+              BaseType->getPointeeType().getUnqualifiedType().getAsString();
+          if (isImplicit) {
+            const std::string VolatileCast =
+                "const_cast<" + TypeName + " *>(this)->";
+            auto LocInfo = DpctGlobalInfo::getLocInfo(Loc);
+            DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
+                                     Diagnostics::VOLATILE_VECTOR_ACCESS, true,
+                                     false);
+            RepStr += VolatileCast;
+          } else if (BaseAndThisSameType && BaseIsVolatile) {
+            const std::string VolatileCast = "const_cast<" + TypeName + " *>(";
+            auto LocInfo = DpctGlobalInfo::getLocInfo(Loc);
+            DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
+                                     Diagnostics::VOLATILE_VECTOR_ACCESS, true,
+                                     false);
+            addReplacement(ME->getBase()->getBeginLoc(), 0, VolatileCast);
+            addReplacement(ME->getOperatorLoc(), 0, ")");
+          }
+        }
+        addReplacement(ME->getMemberLoc(), ME->getEndLoc(),
+                       RepStr + MemberName);
       }
     }
   }
   dispatch(ME->getBase());
   RefString.clear();
   RefString +=
-      DpctGlobalInfo::getTypeName(ME->getBase()->getType().getCanonicalType()) +
-      "." + ME->getMemberDecl()->getDeclName().getAsString();
+    BaseType +
+    "." + ME->getMemberDecl()->getDeclName().getAsString();
 }
 
 void ExprAnalysis::analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT) {
@@ -878,6 +875,17 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
         auto ResultStr = Result.value();
         addReplacement(CE->getCallee(), ResultStr);
         Rewriter->Analyzer.applyAllSubExprRepl();
+        auto LocStr =
+            getCombinedStrFromLoc(SM.getSpellingLoc(CE->getBeginLoc()));
+        auto &FCIMMR =
+            dpct::DpctGlobalInfo::getFunctionCallInMacroMigrateRecord();
+        if (FCIMMR.find(LocStr) != FCIMMR.end() &&
+            FCIMMR.find(LocStr)->second.compare(ResultStr) &&
+            !isExprStraddle(CE)) {
+          Rewriter->report(
+              Diagnostics::CANNOT_UNIFY_FUNCTION_CALL_IN_MACRO_OR_TEMPLATE,
+              false, RefString);
+        }
       }
     } else {
       if (Result.has_value()) {
@@ -889,8 +897,9 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
         if (FCIMMR.find(LocStr) != FCIMMR.end() &&
             FCIMMR.find(LocStr)->second.compare(ResultStr) &&
             !isExprStraddle(CE)) {
-          Rewriter->report(Diagnostics::CANNOT_UNIFY_FUNCTION_CALL_IN_MACOR,
-                           false, RefString);
+          Rewriter->report(
+              Diagnostics::CANNOT_UNIFY_FUNCTION_CALL_IN_MACRO_OR_TEMPLATE,
+              false, RefString);
         }
         FCIMMR[LocStr] = ResultStr;
         // When migrating thrust API with usmnone and raw-ptr,
@@ -939,7 +948,11 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
 void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {
   auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
   PP.PrintCanonicalTypes = true;
-  auto BaseType = CMCE->getObjectType().getUnqualifiedType().getAsString(PP);
+  const auto ME = dyn_cast<MemberExpr>(CMCE->getCallee());
+  if (!ME)
+    return;
+
+  auto BaseType = getBaseTypeRemoveTemplateArguments(ME);
   if (StringRef(BaseType).startswith("cub::") ||
       StringRef(BaseType).startswith("cuda::std::")) {
     if (const auto *DRE = dyn_cast<DeclRefExpr>(CMCE->getImplicitObjectArgument())) {
@@ -1013,10 +1026,15 @@ void ExprAnalysis::analyzeExpr(const LambdaExpr *LE) {
 }
 
 void ExprAnalysis::analyzeExpr(const IfStmt *IS) {
-  dispatch(IS->getCond());
-  dispatch(IS->getThen());
-  // "else if" will also be handled here as another ifstmt
-  dispatch(IS->getElse());
+  if (IS->getCond())
+    dispatch(IS->getCond());
+
+  if (IS->getThen())
+    dispatch(IS->getThen());
+
+  if (IS->getElse())
+    // "else if" will also be handled here as another ifstmt
+    dispatch(IS->getElse());  
 }
 
 void ExprAnalysis::analyzeExpr(const DeclStmt *DS) {
@@ -1056,6 +1074,7 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
         TYPELOC_CAST(TypedefTypeLoc).getTypedefNameDecl()->getName().str();
     break;
   case TypeLoc::Builtin:
+  case TypeLoc::Using:
   case TypeLoc::Record: {
     TyName = DpctGlobalInfo::getTypeName(TL.getType());
     auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TyName);
@@ -1077,8 +1096,11 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
     }
   case TypeLoc::TemplateSpecialization: {
     llvm::raw_string_ostream OS(TyName);
+    TyName.clear();
     auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
-    TSTL.getTypePtr()->getTemplateName().print(OS, Context.getPrintingPolicy());
+    auto PP = Context.getPrintingPolicy();
+    PP.PrintCanonicalTypes = 1;
+    TSTL.getTypePtr()->getTemplateName().print(OS, PP, TemplateName::Qualified::Fully);
     if (!TypeLocRewriterFactoryBase::TypeLocRewriterMap)
       return;
     auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(OS.str());
@@ -1591,11 +1613,8 @@ void KernelArgumentAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
 
 void KernelArgumentAnalysis::analyzeExpr(
     const CXXDependentScopeMemberExpr *Arg) {
-  if (Arg->isImplicitAccess()) {
-    IsRedeclareRequired = true;
-  } else {
-    if (Arg->isArrow())
-      IsRedeclareRequired = true;
+  IsRedeclareRequired = true;
+  if (!Arg->isImplicitAccess()) {
     KernelArgumentAnalysis::dispatch(Arg->getBase());
   }
 }
@@ -2023,7 +2042,6 @@ std::string ArgumentAnalysis::getRewriteString() {
 
   StringReplacements SRs;
   SRs.init(std::move(OriginalStr));
-
   for (std::shared_ptr<ExtReplacement> SubRepl : SubExprRepl) {
     if (isInRange(RewriteRangeBegin, RewriteRangeEnd, SubRepl->getFilePath(),
                   SubRepl->getOffset()) &&

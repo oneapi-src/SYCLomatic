@@ -10,7 +10,7 @@
 #define DPCT_AST_TRAVERSAL_H
 
 #include "AnalysisInfo.h"
-#include "Checkpoint.h"
+#include "CrashRecovery.h"
 #include "Diagnostics.h"
 #include "FFTAPIMigration.h"
 #include "MapNames.h"
@@ -60,8 +60,9 @@ public:
   void Ifndef(SourceLocation Loc, const Token &MacroNameTok,
               const MacroDefinition &MD) override;
   // TODO: implement one of this for each source language.
-  void ReplaceCuMacro(const Token &MacroNameTok);
-  void ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
+  bool ReplaceCuMacro(const Token &MacroNameTok);
+  void ReplaceCuMacro(SourceRange ConditionRange,
+                      ConditionValueKind ConditionValue, IfType IT,
                       SourceLocation IfLoc, SourceLocation ElifLoc);
   void Defined(const Token &MacroNameTok, const MacroDefinition &MD,
                SourceRange Range) override;
@@ -217,15 +218,9 @@ public:
                          std::string &&InsertText);
 
   void run(const ast_matchers::MatchFinder::MatchResult &Result) override {
-    CHECKPOINT_ASTMATCHER_RUN_ENTRY();
-    try {
-      static_cast<T *>(this)->runRule(Result);
-    } catch (std::exception &) {
-      std::string FaultMsg =
-          "Error: dpct internal error. Migration rule causing the error "
-          "skipped. Migration continues.\n";
-      llvm::errs() << FaultMsg;
-    }
+    runWithCrashGuard([=]() { static_cast<T *>(this)->runRule(Result); },
+                      "Error: dpct internal error. Migration rule causing the "
+                      "error skipped. Migration continues.\n");
     return;
   }
 
@@ -408,6 +403,12 @@ private:
 
 class ZeroLengthArrayRule
     : public NamedMigrationRule<ZeroLengthArrayRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class MiscAPIRule : public NamedMigrationRule<MiscAPIRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
@@ -1744,12 +1745,6 @@ public:
 };
 
 class FFTFunctionCallRule : public NamedMigrationRule<FFTFunctionCallRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
-class AsmRule : public NamedMigrationRule<AsmRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);

@@ -3,17 +3,19 @@
 // RUN: FileCheck --input-file %T/Device/api_test6_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Device/api_test6_out
 
-// CHECK: 35
+// CHECK: 40
 // TEST_FEATURE: Device_device_ext_get_device_info_return_info
 // TEST_FEATURE: Device_device_info_get_device_id
 // TEST_FEATURE: Device_device_info_set_device_id
 // TEST_FEATURE: Device_device_info_get_uuid
 // TEST_FEATURE: Device_device_info_set_uuid
+// TEST_FEATURE: Device_device_info_get_name
+// TEST_FEATURE: Device_device_info_set_name
 
 int main() {
   cudaDeviceProp deviceProp;
   cudaGetDeviceProperties(&deviceProp, 0);
-  deviceProp.uuid;
   deviceProp.pciDeviceID;
+  deviceProp.name;
   return 0;
 }

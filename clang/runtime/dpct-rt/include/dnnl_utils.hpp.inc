@@ -19,6 +19,8 @@
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
 #include <oneapi/dpl/numeric>
+#include <oneapi/mkl.hpp>
+#include <oneapi/mkl/rng/device.hpp>
 #include <sycl/sycl.hpp>
 #include <oneapi/dnnl/dnnl.hpp>
 #include <oneapi/dnnl/dnnl_sycl.hpp>
@@ -36,6 +38,17 @@
 
 namespace dpct {
 namespace dnnl {
+// DPCT_LABEL_BEGIN|get_version|dpct::dnnl
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+/// Get concatenated library version as an integer.
+static inline size_t get_version() {
+  const ::dnnl::version_t *ver = ::dnnl::version();
+  return ver->major * 1000 + ver->minor * 100 + ver->patch;
+}
+// DPCT_LABEL_END
+class engine_ext;
+typedef oneapi::mkl::rng::philox4x32x10 rng_engine_t;
 // DPCT_LABEL_BEGIN|memory_format_tag|dpct::dnnl
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
@@ -515,7 +528,7 @@ enum class batch_normalization_mode { per_activation, spatial };
 // DPCT_LABEL_BEGIN|batch_normalization_ops|dpct::dnnl
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-// An enum class representing batch normalization operations.
+/// An enum class representing batch normalization operations.
 enum class batch_normalization_ops { none, activation, add_activation };
 // DPCT_LABEL_END
 
@@ -524,6 +537,16 @@ enum class batch_normalization_ops { none, activation, add_activation };
 // DPCT_CODE
 /// An enum class representing binary operations.
 enum class binary_op { add, sub, mul, div, min, max, sqrt, neg };
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|convolution_algorithm_info|dpct::dnnl
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+/// An struct representing convolution algorithm infomation.
+struct convolution_algorithm_info {
+  ::dnnl::algorithm algo = ::dnnl::algorithm::convolution_auto;
+  int status = 0;
+};
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|convolution_desc|dpct::dnnl
@@ -535,7 +558,7 @@ class convolution_desc {
   std::vector<int64_t> _dilates;
   std::vector<int64_t> _paddings;
   int _group_count = 1;
-
+  ::dnnl::fpmath_mode _math_mode = ::dnnl::fpmath_mode::strict;
 public:
   /// Setting a group count to be used in the convolution.
   /// \param [in] group_count Value of group count.
@@ -543,6 +566,12 @@ public:
   /// Getting a group count specified in the given convolution descriptor.
   /// \returns Value of group count.
   int get_group_count() { return _group_count; }
+  /// Setting floating point math mode to be used in the convolution.
+  /// \param [in] math_mode Value of math_mode.
+  void set_math_mode(::dnnl::fpmath_mode math_mode) { _math_mode = math_mode; }
+  /// Getting floating point math mode specified in the given convolution descriptor.
+  /// \returns Value of math mode.
+  ::dnnl::fpmath_mode get_math_mode() { return _math_mode; }
   /// Setting a 2D convolution descriptor with given parameters.
   /// \param [in] padding_h Value of height of padding.
   /// \param [in] padding_w Value of width of padding.
@@ -742,6 +771,88 @@ public:
 };
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|dropout_desc|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|dropout_desc_def
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// A class holding description for a Dropout operation.
+class dropout_desc {
+  struct dropout_desc_imp {
+    float _p = 0.5f;
+    unsigned long long _seed = 1;
+    void *_state = nullptr;
+    std::vector<std::uint8_t> _host_state;
+    rng_engine_t _rng_engine;
+    dropout_desc_imp() : _rng_engine(dpct::get_default_queue(), 1) {}
+  };
+  std::shared_ptr<dropout_desc_imp> _imp;
+
+  void generate(sycl::queue *q, std::int64_t required_state_size,
+                std::int64_t num, void *buffer) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
+                             "Interfaces Project does not support this API.");
+#else
+    sycl::event e_gen = oneapi::mkl::rng::generate(
+        oneapi::mkl::rng::bernoulli<std::int32_t>(1.f - _imp->_p),
+        _imp->_rng_engine, num, (std::int32_t *)buffer);
+    sycl::event e_save = q->submit([&](sycl::handler &cgh) {
+      cgh.depends_on(e_gen);
+      cgh.host_task([=] {
+        oneapi::mkl::rng::save_state(_imp->_rng_engine,
+                                     _imp->_host_state.data());
+      });
+    });
+    q->memcpy(_imp->_state, _imp->_host_state.data(), required_state_size,
+              e_save);
+#endif
+  }
+public:
+  operator bool() const {
+    return bool(_imp);
+  }
+  dropout_desc &operator=(std::nullptr_t) {
+    _imp.reset();
+    return *this;
+  }
+  /// Initializing a dropout descriptor.
+  void init(){
+    _imp = std::make_shared<dropout_desc_imp>();
+  }
+  /// Setting a dropout descriptor with given parameters.
+  /// \param [in] engine Engine of the dropout operation.
+  /// \param [in] p Probability of value set to zero.
+  /// \param [in] state Memory that store random generator state.
+  /// \param [in] state_size Required size to store random generator state.
+  /// \param [in] seed Seed to initialize conditions of the generator state.
+  void set(engine_ext &engine, float p, void *state, size_t state_size,
+           unsigned long long seed);
+  /// Getting parameters from a dropout descriptor.
+  /// \param [in] engine Engine of the dropout operation.
+  /// \param [in] p Probability of value set to zero.
+  /// \param [in] state Memory that store random generator state.
+  /// \param [in] seed Seed to initialize conditions of the generator state.
+  void get(float *p, void **states, unsigned long long *seed) const noexcept {
+    *seed = _imp->_seed;
+    *states = _imp->_state;
+    *p = _imp->_p;
+  }
+  /// Getting the probability of value set to zero.
+  /// \returns Probability.
+  float get_probability() const noexcept { return _imp->_p; }
+  /// Restoreing a dropout descriptor from stored state.
+  /// \param [in] engine Engine of the dropout operation.
+  /// \param [in] p Probability of value set to zero.
+  /// \param [in] state Memory that store random generator state.
+  /// \param [in] state_size Required size to store random generator state.
+  /// \param [in] seed Seed to initialize conditions of the generator state.
+  void restore(engine_ext &engine, float p, void *state, size_t state_size,
+               unsigned long long seed);
+  friend class engine_ext;
+};
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|engine_ext|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext_1
@@ -755,9 +866,9 @@ public:
 class engine_ext {
   ::dnnl::engine _eng;
   ::dnnl::stream _s;
-  sycl::queue *_q;
+  sycl::queue *_q = nullptr;
   std::map<void *, ::dnnl::memory> workspace_map;
-
+  std::int64_t _random_engine_state_size = -1;
   struct output_argument_info {
     float _alpha;
     float _beta;
@@ -909,6 +1020,15 @@ class engine_ext {
                              int *direction_num, int *gate_num);
 public:
   engine_ext() {}
+  operator bool() const {
+    return bool(_eng) && bool(_s) && bool(_q);
+  }
+  engine_ext &operator=(std::nullptr_t) {
+    _eng.reset(nullptr);
+    _s.reset(nullptr);
+    _q = nullptr;
+    return *this;
+  }
   /// Creating oneDNN engine.
   void create_engine() {
     _eng = ::dnnl::sycl_interop::make_engine(
@@ -2129,22 +2249,131 @@ public:
       size_t workspace_size, void *workspace);
 // DPCT_LABEL_END
 
-  operator bool() const {
-    return bool(_eng) && bool(_s) && bool(_q);
-  }
+// DPCT_LABEL_BEGIN|get_dropout_state_size_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DnnlUtils|dropout_desc
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Getting the required state size for specified dropout operation.
+  /// \param [in] src_desc Source memory descriptor.
+  /// \returns Required size of state.
+  size_t get_dropout_state_size();
+// DPCT_LABEL_END
 
-  engine_ext &operator=(std::nullptr_t) {
-    _eng.reset(nullptr);
-    _s.reset(nullptr);
-    _q = nullptr;
-    return *this;
-  }
+// DPCT_LABEL_BEGIN|get_dropout_workspace_size_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Getting the required workspace size for dropout operation.
+  /// \param [in] src_desc Source memory descriptor.
+  /// \returns Required size of workspace.
+  static size_t get_dropout_workspace_size(const memory_desc_ext &src_desc);
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|async_dropout_forward_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DnnlUtils|dropout_desc
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Computing a specified dropout function value asynchronously.
+  /// \param [in] desc Dropout descriptor.
+  /// \param [in] src_desc Source memory descriptor.
+  /// \param [in] src Pointer to source data.
+  /// \param [in] dst_desc Destination memory descriptor.
+  /// \param [out] dst Pointer to destination data.
+  /// \param [in] workspace Pointer to workspace data.
+  /// \param [in] workspace_size Size of workspace memory.
+  /// \returns An event representing the dropout forward operations.
+  sycl::event async_dropout_forward(dropout_desc &desc,
+                                    const memory_desc_ext &src_desc, void *src,
+                                    const memory_desc_ext &dst_desc, void *dst,
+                                    void *workspace, size_t workspace_size);
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|async_dropout_backward_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DnnlUtils|dropout_desc
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Computing the gradient of a specified dropout function asynchronously.
+  /// \param [in] desc Dropout descriptor.
+  /// \param [in] diff_dst_desc Differential destination memory descriptor.
+  /// \param [in] diff_dst Pointer to differential destination data.
+  /// \param [in] diff_src_desc Differential source memory descriptor.
+  /// \param [out] diff_src Pointer to differential source data.
+  /// \param [in] workspace Pointer to workspace data.
+  /// \param [in] workspace_size Size of workspace memory.
+  /// \returns An event representing the dropout backward operations.
+  sycl::event async_dropout_backward(dropout_desc &desc,
+                                     const memory_desc_ext &diff_dst_desc,
+                                     void *diff_dst,
+                                     const memory_desc_ext &diff_src_desc,
+                                     void *diff_src, void *workspace,
+                                     size_t workspace_size);
+// DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|engine_ext_1|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 };
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|dropout_desc_def|dpct::dnnl
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+inline
+void dropout_desc::restore(engine_ext &engine, float p, void *state,
+                                  size_t state_size, unsigned long long seed) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
+                             "Interfaces Project does not support this API.");
+#else
+  if (state) {
+    std::int64_t required_state_size = engine.get_dropout_state_size();
+    if (state_size < required_state_size) {
+      throw std::runtime_error("restore: state_size less than required state size.");
+    }
+    sycl::queue *q = engine.get_queue();
+    _imp->_p = p;
+    _imp->_seed = seed;
+    _imp->_state = state;
+    _imp->_host_state = std::vector<std::uint8_t>(required_state_size);
+    q->memcpy(_imp->_host_state.data(), _imp->_state, required_state_size).wait();
+    _imp->_rng_engine =
+        oneapi::mkl::rng::load_state<rng_engine_t>(
+            *q, _imp->_host_state.data());
+  }
+#endif
+}
+
+inline
+void dropout_desc::set(engine_ext &engine, float p, void *state,
+                              size_t state_size, unsigned long long seed) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
+                             "Interfaces Project does not support this API.");
+#else
+  _imp->_p = p;
+  if (state) {
+    std::int64_t required_state_size = engine.get_dropout_state_size();
+    if (state_size < required_state_size) {
+      throw std::runtime_error("set: no sufficient memory to save states.");
+    }
+    sycl::queue *q = engine.get_queue();
+    _imp->_seed = seed;
+    _imp->_state = state;
+    _imp->_host_state = std::vector<std::uint8_t>(required_state_size);
+    _imp->_rng_engine = rng_engine_t(*q, seed);
+    oneapi::mkl::rng::save_state(_imp->_rng_engine, _imp->_host_state.data());
+    q->memcpy(_imp->_state, _imp->_host_state.data(), required_state_size).wait();
+  }
+#endif
+}
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|memory_desc_ext_def|dpct::dnnl
@@ -4453,10 +4682,13 @@ engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm 
   auto help_weight_desc =
       get_group_weight_desc(desc.get_group_count(), weight_desc);
 
+  ::dnnl::primitive_attr attr;
+  attr.set_fpmath_mode(desc.get_math_mode());
+
   auto primitive = create_forward_primitive<::dnnl::convolution_forward>(
       ::dnnl::prop_kind::forward_training, alg, src_desc.get_desc(),
       help_weight_desc, dst_desc.get_desc(), desc.get_stride(),
-      desc.get_dilate(), desc.get_padding(), desc.get_padding());
+      desc.get_dilate(), desc.get_padding(), desc.get_padding(), attr);
 
   auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
       {DNNL_ARG_SRC, {::dnnl::memory(src_desc.get_desc(), _eng, src)}},
@@ -4486,10 +4718,13 @@ sycl::event engine_ext::async_convolution_forward(
   ::dnnl::memory::desc help_bias_desc = {{channel_num},
                                          bias_desc.get_desc().get_data_type(),
                                          ::dnnl::memory::format_tag::a};
+  ::dnnl::primitive_attr attr;
+  attr.set_fpmath_mode(desc.get_math_mode());
+
   auto primitive = create_forward_primitive<::dnnl::convolution_forward>(
       ::dnnl::prop_kind::forward_training, alg, src_desc.get_desc(),
       help_weight_desc, help_bias_desc, dst_desc.get_desc(), desc.get_stride(),
-      desc.get_dilate(), desc.get_padding(), desc.get_padding());
+      desc.get_dilate(), desc.get_padding(), desc.get_padding(), attr);
 
   auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
       {DNNL_ARG_SRC, {::dnnl::memory(src_desc.get_desc(), _eng, src)}},
@@ -4532,18 +4767,22 @@ sycl::event engine_ext::async_convolution_backward_data(
   }
   auto help_weight_desc =
       get_group_weight_desc(desc.get_group_count(), weight_desc);
+
+  ::dnnl::primitive_attr attr;
+  attr.set_fpmath_mode(desc.get_math_mode());
+
   auto forward_primitive =
       create_primitive_desc<::dnnl::convolution_forward>(
           ::dnnl::prop_kind::forward_training,
           ::dnnl::algorithm::convolution_auto, diff_src_desc.get_desc(),
           help_weight_desc, diff_dst_desc.get_desc(), desc.get_stride(),
-          desc.get_dilate(), desc.get_padding(), desc.get_padding());
+          desc.get_dilate(), desc.get_padding(), desc.get_padding(), attr);
 
   auto primitive = create_backward_primitive<::dnnl::convolution_backward_data>(
       ::dnnl::algorithm::convolution_auto, diff_src_desc.get_desc(),
       help_weight_desc, diff_dst_desc.get_desc(), desc.get_stride(),
       desc.get_dilate(), desc.get_padding(), desc.get_padding(),
-      forward_primitive);
+      forward_primitive, attr);
 
   auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
       {DNNL_ARG_DIFF_DST,
@@ -4574,19 +4813,23 @@ sycl::event engine_ext::async_convolution_backward_weight(
   }
   auto help_diff_weight_desc =
       get_group_weight_desc(desc.get_group_count(), diff_weight_desc);
+
+  ::dnnl::primitive_attr attr;
+  attr.set_fpmath_mode(desc.get_math_mode());
+
   auto forward_primitive =
       create_primitive_desc<::dnnl::convolution_forward>(
           ::dnnl::prop_kind::forward_training,
           ::dnnl::algorithm::convolution_auto, src_desc.get_desc(),
           help_diff_weight_desc, diff_dst_desc.get_desc(), desc.get_stride(),
-          desc.get_dilate(), desc.get_padding(), desc.get_padding());
+          desc.get_dilate(), desc.get_padding(), desc.get_padding(), attr);
 
   auto primitive =
       create_backward_primitive<::dnnl::convolution_backward_weights>(
           ::dnnl::algorithm::convolution_auto, src_desc.get_desc(),
           help_diff_weight_desc, diff_dst_desc.get_desc(), desc.get_stride(),
           desc.get_dilate(), desc.get_padding(), desc.get_padding(),
-          forward_primitive);
+          forward_primitive, attr);
 
   auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
       {DNNL_ARG_SRC, {::dnnl::memory(src_desc.get_desc(), _eng, src)}},
@@ -4769,6 +5012,137 @@ sycl::event engine_ext::async_rnn_backward(
     });
   }
   return e;
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|get_dropout_state_size|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|get_dropout_state_size_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+inline
+size_t engine_ext::get_dropout_state_size(){
+#ifndef __INTEL_MKL__
+  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
+                           "Interfaces Project does not support this API.");
+#else
+  sycl::queue q;
+  if(_random_engine_state_size == -1) {
+    if(_q){
+      q = *_q;
+    } else {
+      q = dpct::get_current_device().default_queue();
+    }
+    auto rand_engine = rng_engine_t(q, 0);
+    _random_engine_state_size = oneapi::mkl::rng::get_state_size(rand_engine);
+  }
+  return _random_engine_state_size;
+#endif
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|get_dropout_workspace_size|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|get_dropout_workspace_size_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+inline size_t
+engine_ext::get_dropout_workspace_size(const memory_desc_ext &src_desc) {
+  return src_desc.get_size();
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|async_dropout_forward|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|async_dropout_forward_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+inline
+sycl::event engine_ext::async_dropout_forward(dropout_desc &desc,
+                                              const memory_desc_ext &src_desc,
+                                              void *src,
+                                              const memory_desc_ext &dst_desc,
+                                              void *dst, void *workspace,
+                                              size_t workspace_size) {
+  if (workspace_size < src_desc.get_size()) {
+    throw std::runtime_error("async_dropout_forward: no sufficient workspace.");
+  }
+  float p = desc.get_probability();
+  if (p == 1.f) {
+    return _q->memset(dst, 0, dst_desc.get_size());
+  } else if (p == 0.f) {
+    return async_reorder(1.f, src_desc, src, 0.f, dst_desc, dst);
+  }
+
+  float scale_factor = 1.f / (1.f - p);
+  void *cache = workspace;
+
+  memory_desc_ext rng_data_desc(
+      ::dnnl::memory::desc(src_desc.get_dims(), ::dnnl::memory::data_type::s32,
+                           src_desc.get_strides()));
+  if (src_desc.get_desc().get_data_type() != ::dnnl::memory::data_type::s32) {
+    cache = allocate(rng_data_desc);
+  }
+
+  desc.generate(_q, _random_engine_state_size, rng_data_desc.get_element_num(),
+                (std::int32_t *)cache);
+
+  if (cache == workspace) {
+    async_scale(scale_factor, src_desc, workspace);
+  } else {
+    async_reorder(scale_factor, rng_data_desc, cache, 0.f, src_desc, workspace);
+  }
+
+  auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
+      {DNNL_ARG_SRC_0, ::dnnl::memory(src_desc.get_desc(), _eng, src)},
+      {DNNL_ARG_SRC_1, ::dnnl::memory(src_desc.get_desc(), _eng, workspace)},
+      {DNNL_ARG_DST, ::dnnl::memory(dst_desc.get_desc(), _eng, dst)}};
+
+  auto primitive = create_forward_primitive<::dnnl::binary>(
+      ::dnnl::algorithm::binary_mul, src_desc.get_desc(), src_desc.get_desc(),
+      dst_desc.get_desc());
+
+  auto e = execute_primitive(primitive, execution_args, {});
+
+  if (cache != workspace) {
+    _q->submit([&](sycl::handler &cgh) {
+      cgh.depends_on(e);
+      cgh.host_task([=] { sycl::free(cache, *_q); });
+    });
+  }
+  return e;
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|async_dropout_backward|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|async_dropout_backward_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+inline
+sycl::event engine_ext::async_dropout_backward(
+    dropout_desc &desc, const memory_desc_ext &diff_dst_desc,
+    void *diff_dst, const memory_desc_ext &diff_src_desc, void *diff_src,
+    void *workspace, size_t workspace_size) {
+  float p = desc.get_probability();
+  if (p == 1.f) {
+    return _q->memset(diff_src, 0, diff_src_desc.get_size());
+  } else if (p == 0.f) {
+    return async_reorder(1.f, diff_dst_desc, diff_dst, 0.f, diff_src_desc,
+                         diff_src);
+  }
+  auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
+      {DNNL_ARG_SRC_0,
+       ::dnnl::memory(diff_dst_desc.get_desc(), _eng, diff_dst)},
+      {DNNL_ARG_SRC_1,
+       ::dnnl::memory(diff_dst_desc.get_desc(), _eng, workspace)},
+      {DNNL_ARG_DST, ::dnnl::memory(diff_src_desc.get_desc(), _eng, diff_src)}};
+
+  auto primitive = create_forward_primitive<::dnnl::binary>(
+      ::dnnl::algorithm::binary_mul, diff_dst_desc.get_desc(),
+      diff_dst_desc.get_desc(), diff_src_desc.get_desc());
+
+  return execute_primitive(primitive, execution_args, {});
 }
 // DPCT_LABEL_END
 } // namespace dnnl

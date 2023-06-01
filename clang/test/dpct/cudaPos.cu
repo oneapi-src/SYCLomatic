@@ -79,9 +79,6 @@ int main() {
   // CHECK: sycl::id<3> k = sycl::id<3>(f);
   cudaPos k = cudaPos(f);
 
-  // CHECK: sycl::id<3> l = sycl::id<3>({1, 2, 3});
-  cudaPos l = cudaPos({1, 2, 3});
-
   // CHECK: sycl::id<3> m((sycl::id<3>{0, 0, 0}));
   cudaPos m((cudaPos()));
 

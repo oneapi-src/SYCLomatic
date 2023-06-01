@@ -8,12 +8,15 @@
 // RUN: dpct -out-root %T/macro_test_output macro_test.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/macro_test_output/macro_test.dp.cpp --match-full-lines macro_test.cu
 // RUN: FileCheck --input-file %T/macro_test_output/macro_test.h --match-full-lines macro_test.h
+#include "cuda.h"
 #include <math.h>
 #include <iostream>
 #include <cmath>
 #include <iomanip>
 #include <limits>
 #include <algorithm>
+#include <cusolverDn.h>
+#include <stdexcept>
 
 #include <stdio.h>
 
@@ -390,8 +393,8 @@ FF
 {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
-  __shared__ int ljd[0];
-  __shared__ double la[8][0];
+  __shared__ int ljd[1];
+  __shared__ double la[8][1];
 }
 
 // CHECK: CCCCC(int *a)
@@ -401,8 +404,8 @@ CCCCC(int *a)
 {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
-  __shared__ int ljd[0];
-  __shared__ double la[8][0];
+  __shared__ int ljd[1];
+  __shared__ double la[8][1];
 }
 
 
@@ -413,8 +416,8 @@ CCCC(CCC)
 {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
-  __shared__ int ljd[0];
-  __shared__ double la[8][0];
+  __shared__ int ljd[1];
+  __shared__ double la[8][1];
 }
 
 // CHECK: #define FFF void foo(AAA, BBB, float *sp_lj, float *sp_coul, int *ljd, sycl::local_accessor<double, 2> la)
@@ -427,8 +430,8 @@ FFF
 {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
-  __shared__ int ljd[0];
-  __shared__ double la[8][0];
+  __shared__ int ljd[1];
+  __shared__ double la[8][1];
 
 }
 
@@ -444,8 +447,8 @@ FFFFF(pos, q)
 {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
-  __shared__ int ljd[0];
-  __shared__ double la[8][0];
+  __shared__ int ljd[1];
+  __shared__ double la[8][1];
   const int tid = threadIdx.x;
 }
 
@@ -461,8 +464,8 @@ FFFFFF(pos, q)
 {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
-  __shared__ int ljd[0];
-  __shared__ double la[8][0];
+  __shared__ int ljd[1];
+  __shared__ double la[8][1];
   const int tid = threadIdx.x;
 }
 
@@ -474,8 +477,8 @@ __device__ void foo6(AAA, BBB)
 {
    __shared__ float sp_lj[4];
    __shared__ float sp_coul[4];
-   __shared__ int ljd[0];
-   __shared__ double la[8][0];
+   __shared__ int ljd[1];
+   __shared__ double la[8][1];
 }
 
 
@@ -500,7 +503,7 @@ __global__ void foo7() {
 //CHECK-NEXT:   double* data;
 //CHECK-NEXT:   unsigned long long int tid;
 //CHECK-NEXT:   SLOW(dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(
-//CHECK-NEXT:            &data[0], tid);
+//CHECK-NEXT:            &data[1], tid);
 //CHECK-NEXT:        dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(
 //CHECK-NEXT:            &data[1], tid + 1);
 //CHECK-NEXT:        dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(
@@ -510,14 +513,13 @@ __global__ void foo8(){
 #define SLOW(X) X
   double* data;
   unsigned long long int tid;
-  SLOW(atomicAdd(&data[0], tid);
+  SLOW(atomicAdd(&data[1], tid);
   atomicAdd(&data[1], tid + 1);
   atomicAdd(&data[2], tid + 2););
 }
 
-
 //CHECK: #define DFABS(x) (double)sycl::fabs((x))
-//CHECK-NEXT: #define MAX(x, y) sycl::max(x, y)
+//CHECK-NEXT: #define MAX(x, y) dpct::max(x, y)
 //CHECK-NEXT: void foo9(){
 //CHECK-NEXT:   double a,b,c;
 //CHECK-NEXT:   MAX(a, sycl::sqrt(DFABS(b)));
@@ -657,8 +659,8 @@ VECTOR_TYPE_DEF(int)
 //CHECK-NEXT: #define POW(x, y) sycl::pow<float>(x, y)
 //CHECK-NEXT: #define POW2(x, y) vx[id] * vx[id]
 //CHECK-NEXT: /*
-//CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated pow call is used in a macro definition and is not valid
-//CHECK-NEXT: for all macro uses. Adjust the code.
+//CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated pow call is used in a macro/template definition and may
+//CHECK-NEXT: not be valid for all macro/template uses. Adjust the code.
 //CHECK-NEXT: */
 //CHECK-NEXT: #define POW3(x, y) sycl::pow<double>(x, y)
 //CHECK: #define SQRT(x) sycl::sqrt(x)
@@ -919,7 +921,7 @@ void foo20() {
 //CHECK: /*
 //CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for
 //CHECK-NEXT: dpct::select_from_sub_group. You can specify
-//CHECK-NEXT: "--use-experimental-features=masked_sub_group_function" to use the dpct
+//CHECK-NEXT: "--use-experimental-features=masked_sub_group_operation" to use the dpct
 //CHECK-NEXT: experimental helper function to migrate __shfl_sync.
 //CHECK-NEXT: */
 //CHECK-NEXT: #define CALLSHFLSYNC(x)                                                        \
@@ -1109,7 +1111,9 @@ template<class T1, class T2, int N> __global__ void foo31();
 
 #define FOO31(DIMS) foo31<unsigned int, float, DIMS><<<1,1>>>();
 
-//CHECK:   q_ct1.submit([&](sycl::handler &cgh) {
+//CHECK: {
+//CHECK-NEXT:   dpct::has_capability_or_fail(q_ct1.get_device(), {sycl::aspect::fp64});
+//CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {
 //CHECK-NEXT:     /*
 //CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'BLOCK_PAIR / SIMD_SIZE' expression was replaced with a
 //CHECK-NEXT:     value. Modify the code to use the original expression, provided in
@@ -1124,6 +1128,7 @@ template<class T1, class T2, int N> __global__ void foo31();
 //CHECK-NEXT:           foo29(red_acc_acc_ct1);
 //CHECK-NEXT:         });
 //CHECK-NEXT:   });
+//CHECK-NEXT:   }
 //CHECK-NEXT:   FOO31(1)
 //CHECK-NEXT: }
 void foo30(){
@@ -1248,3 +1253,26 @@ void foo34() {
   }
 
 ReturnErrorFunction
+
+#define CUSOLVER_CHECK(err)                                                    \
+  do {                                                                         \
+    cusolverStatus_t err_ = (err);                                             \
+    if (err_ != CUSOLVER_STATUS_SUCCESS) {                                     \
+      printf("cusolver error %d at %s:%d\n", err_, __FILE__, __LINE__);        \
+      throw std::runtime_error("cusolver error");                              \
+    }                                                                          \
+  } while (0)
+
+void foo35() {
+  cusolverDnHandle_t handle;
+  const int m = 3;
+  double *d_A;
+  const int lda = m;
+  int lwork = 0;
+  //CHECK:   CUSOLVER_CHECK((lwork = oneapi::mkl::lapack::geqrf_scratchpad_size<double>(
+  //CHECK-NEXT:  *handle, m, m, lda),
+  //CHECK-NEXT:  0));
+  CUSOLVER_CHECK(cusolverDnDgeqrf_bufferSize(handle, m, m, d_A, lda, &lwork));
+}
+
+#undef CUSOLVER_CHECK

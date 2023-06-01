@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Device/api_test21_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Device/api_test21_out
 
-// CHECK: 15
+// CHECK: 16
 // TEST_FEATURE: Device_device_ext_is_native_atomic_supported
 
 int main() {

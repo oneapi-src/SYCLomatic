@@ -193,11 +193,6 @@ class Preprocessor {
   LangOptions::FPEvalMethodKind CurrentFPEvalMethod =
       LangOptions::FPEvalMethodKind::FEM_UnsetOnCommandLine;
 
-  // Keeps the value of the last evaluation method before a
-  // `pragma float_control (precise,off) is applied.
-  LangOptions::FPEvalMethodKind LastFPEvalMethod =
-      LangOptions::FPEvalMethodKind::FEM_UnsetOnCommandLine;
-
   // The most recent pragma location where the floating point evaluation
   // method was modified. This is used to determine whether the
   // 'pragma clang fp eval_method' was used whithin the current scope.
@@ -504,7 +499,7 @@ private:
     };
 
   public:
-    ModuleDeclSeq() : State(NotAModuleDecl) {}
+    ModuleDeclSeq() = default;
 
     void handleExport() {
       if (State == NotAModuleDecl)
@@ -591,7 +586,7 @@ private:
     }
 
   private:
-    ModuleDeclState State;
+    ModuleDeclState State = NotAModuleDecl;
     std::string Name;
   };
 
@@ -734,7 +729,7 @@ private:
   /// Only one of CurLexer, or CurTokenLexer will be non-null.
   std::unique_ptr<Lexer> CurLexer;
 
-  /// The current top of the stack what we're lexing from
+  /// The current top of the stack that we're lexing from
   /// if not expanding a macro.
   ///
   /// This is an alias for CurLexer.
@@ -2335,14 +2330,6 @@ public:
     return LastFPEvalPragmaLocation;
   }
 
-  LangOptions::FPEvalMethodKind getLastFPEvalMethod() const {
-    return LastFPEvalMethod;
-  }
-
-  void setLastFPEvalMethod(LangOptions::FPEvalMethodKind Val) {
-    LastFPEvalMethod = Val;
-  }
-
   void setCurrentFPEvalMethod(SourceLocation PragmaLoc,
                               LangOptions::FPEvalMethodKind Val) {
     assert(Val != LangOptions::FEM_UnsetOnCommandLine &&
@@ -2542,6 +2529,15 @@ private:
   ///
   /// If the expression is equivalent to "!defined(X)" return X in IfNDefMacro.
   DirectiveEvalResult EvaluateDirectiveExpression(IdentifierInfo *&IfNDefMacro);
+#ifdef SYCLomatic_CUSTOMIZATION
+  DirectiveEvalResult
+  EvaluateDirectiveExpressionWithGuard(IdentifierInfo *&IfNDefMacro) {
+    IsEvaluatingExpression = true;
+    DirectiveEvalResult Ret = EvaluateDirectiveExpression(IfNDefMacro);
+    IsEvaluatingExpression = false;
+    return Ret;
+  }
+#endif // SYCLomatic_CUSTOMIZATION
 
   /// Process a '__has_include("path")' expression.
   ///
@@ -2855,6 +2851,11 @@ public:
                                       const LangOptions &LangOpts,
                                       const TargetInfo &TI);
 
+  static void processPathToFileName(SmallVectorImpl<char> &FileName,
+                                    const PresumedLoc &PLoc,
+                                    const LangOptions &LangOpts,
+                                    const TargetInfo &TI);
+
 private:
   void emitMacroDeprecationWarning(const Token &Identifier) const;
   void emitRestrictExpansionWarning(const Token &Identifier) const;
@@ -2863,7 +2864,7 @@ private:
   /// This boolean state keeps track if the current scanned token (by this PP)
   /// is in an "-Wunsafe-buffer-usage" opt-out region. Assuming PP scans a
   /// translation unit in a linear order.
-  bool InSafeBufferOptOutRegion = 0;
+  bool InSafeBufferOptOutRegion = false;
 
   /// Hold the start location of the current "-Wunsafe-buffer-usage" opt-out
   /// region if PP is currently in such a region.  Hold undefined value
@@ -2875,6 +2876,9 @@ private:
   // locations.  A region is "open" if its' start and end locations are
   // identical.
   SmallVector<std::pair<SourceLocation, SourceLocation>, 8> SafeBufferOptOutMap;
+#ifdef SYCLomatic_CUSTOMIZATION
+  bool IsEvaluatingExpression = false;
+#endif // SYCLomatic_CUSTOMIZATION
 
 public:
   /// \return true iff the given `Loc` is in a "-Wunsafe-buffer-usage" opt-out

@@ -6,6 +6,8 @@
 // CHECK: 3
 // TEST_FEATURE: Kernel_kernel_functor
 
+#include "cuda.h"
+
 int main() {
   CUfunction F;
   return 0;

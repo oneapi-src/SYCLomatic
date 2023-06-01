@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Device/api_test5_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Device/api_test5_out
 
-// CHECK: 19
+// CHECK: 20
 // TEST_FEATURE: Device_device_ext_destroy_queue
 
 int main() {

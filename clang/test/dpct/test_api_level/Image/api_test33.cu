@@ -15,6 +15,8 @@
 // TEST_FEATURE: Image_image_data_set_y
 // TEST_FEATURE: Image_image_data_set_channel
 
+#include "cuda.h"
+
 int main() {
   float* a;
   CUDA_RESOURCE_DESC res42;

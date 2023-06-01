@@ -41,7 +41,8 @@ void CuDNNTypeRule::registerMatcher(MatchFinder &MF) {
               "cudnnConvolutionBwdFilterAlgo_t", "cudnnFilterDescriptor_t",
               "cudnnRNNMode_t", "cudnnRNNBiasMode_t", "cudnnDirectionMode_t",
               "cudnnRNNDescriptor_t", "cudnnForwardMode_t", "cudnnRNNDataDescriptor_t",
-              "cudnnRNNDataLayout_t"))))))
+              "cudnnRNNDataLayout_t", "cudnnDropoutDescriptor_t",
+              "cudnnMathType_t", "cudnnConvolutionFwdAlgoPerf_t"))))))
           .bind("CuDNNType"),
       this);
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName("CUDNN_.*"))))
@@ -56,6 +57,19 @@ void CuDNNTypeRule::runRule(const MatchFinder::MatchResult &Result) {
 
     auto TypeStr =
         DpctGlobalInfo::getTypeName(TL->getType().getUnqualifiedType());
+
+    // typedef void* cudnnHandle_t;
+    // cudnnHandle_t handle;
+    // for this case, cudnnHandle_t should not be migrated.
+    if (const clang::ElaboratedType *ET =
+            llvm::dyn_cast<clang::ElaboratedType>(TL->getType())) {
+      if (const clang::TypedefType *TDT =
+              llvm::dyn_cast<clang::TypedefType>(ET->getNamedType().getTypePtr())) {
+        if (DpctGlobalInfo::isInRoot(TDT->getDecl()->getBeginLoc())) {
+          return;
+        }
+      }
+    }
 
     if (!DpctGlobalInfo::isInAnalysisScope(SM->getSpellingLoc(TL->getBeginLoc()))) {
       return;
@@ -175,7 +189,15 @@ void CuDNNAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cudnnDestroyRNNDataDescriptor", "cudnnSetRNNDataDescriptor", "cudnnGetRNNDataDescriptor",
         "cudnnSetRNNDescriptor_v8", "cudnnGetRNNDescriptor_v8", "cudnnGetRNNWeightSpaceSize",
         "cudnnGetRNNTempSpaceSizes", "cudnnRNNForward", "cudnnRNNBackwardData_v8",
-        "cudnnRNNBackwardWeights_v8");
+        "cudnnRNNBackwardWeights_v8", "cudnnDropoutGetStatesSize",
+        "cudnnCreateDropoutDescriptor", "cudnnSetDropoutDescriptor",
+        "cudnnGetDropoutDescriptor", "cudnnDropoutGetReserveSpaceSize",
+        "cudnnRestoreDropoutDescriptor", "cudnnDropoutForward", "cudnnDropoutBackward",
+        "cudnnDestroyDropoutDescriptor", "cudnnGetVersion",
+        "cudnnGetConvolutionBackwardFilterAlgorithm",
+        "cudnnGetConvolutionBackwardDataAlgorithm",
+        "cudnnGetConvolutionForwardAlgorithm", "cudnnSetConvolutionMathType",
+        "cudnnFindConvolutionForwardAlgorithm");
   };
 
   MF.addMatcher(

@@ -3,7 +3,9 @@
 // RUN: FileCheck --input-file %T/math_functions_test/math_functions_test.dp.cpp --match-full-lines %s
 
 #include <cuda.h>
+#include <cuda_runtime.h>
 #include <cmath>
+#include <limits>
 
 // CHECK: int test_signbit(float x) { return signbit(x); }
 int test_signbit(float x) { return signbit(x); }
@@ -68,17 +70,11 @@ float test_sqrt(float in) { return sqrt(in); }
 // CHECK: float test_pow(float a, float b) { return pow(a, b); }
 float test_pow(float a, float b) { return pow(a, b); }
 
-// CHECK: float test_pow(float a, int b) { return sycl::pown(a, b); } 
+// CHECK: float test_pow(float a, int b) { return sycl::pown(a, b); }
 float test_pow(float a, int b) { return pow(a, b); }
 
 // CHECK: double test_pow(double a, int b) { return sycl::pown(a, b); }
 double test_pow(double a, int b) { return pow(a, b); }
-
-// CHECK: float test_powif(float a, int b) { return powif(a, b); }
-float test_powif(float a, int b) { return powif(a, b); }
-
-// CHECK: double test_powi(double a, int b) { return powi(a, b); }
-double test_powi(double a, int b) { return powi(a, b); }
 
 // CHECK: float test_log(float in) { return log(in); }
 float test_log(float in) { return log(in); }
@@ -167,16 +163,6 @@ float test_atanh(float a) { return atanh(a); }
 // CHECK: float test_hypot(float a, float b) { return hypot(a, b); }
 float test_hypot(float a, float b) { return hypot(a, b); }
 
-// CHECK: float test_norm3d(float a, float b, float c) { return sycl::length(sycl::double3(a, b, c)); }
-float test_norm3d(float a, float b, float c) { return norm3d(a, b, c); }
-
-// CHECK: float test_norm4d(float a, float b, float c, float d) {
-// CHECK:   return sycl::length(sycl::double4(a, b, c, d));
-// CHECK: }
-float test_norm4d(float a, float b, float c, float d) {
-  return norm4d(a, b, c, d);
-}
-
 // CHECK: float test_cbrt(float a) { return cbrt(a); }
 float test_cbrt(float a) { return cbrt(a); }
 
@@ -246,7 +232,7 @@ float test_exp10(float a) { return exp10(a); }
 // CHECK: float test_rsqrt(float a) { return sycl::rsqrt(a); }
 float test_rsqrt(float a) { return rsqrt(a); }
 
-// CHECK: float test_rcbrt(float a) { return rcbrt(a); }
+// CHECK: float test_rcbrt(float a) { return 1 / sycl::cbrt<double>(a); }
 float test_rcbrt(float a) { return rcbrt(a); }
 
 // CHECK: float test_sinpi(float a) { return sinpi(a); }
@@ -287,12 +273,6 @@ float test_y1(float a) { return y1(a); }
 // CHECK: float test_yn(int n, float a) { return yn(n, a); }
 float test_yn(int n, float a) { return yn(n, a); }
 
-// CHECK: float test_cyl_bessel_i0(float a) { return cyl_bessel_i0(a); }
-float test_cyl_bessel_i0(float a) { return cyl_bessel_i0(a); }
-
-// CHECK: float test_cyl_bessel_i1(float a) { return cyl_bessel_i1(a); }
-float test_cyl_bessel_i1(float a) { return cyl_bessel_i1(a); }
-
 // CHECK: float test_erfinv(float a) { return erfinv(a); }
 float test_erfinv(float a) { return erfinv(a); }
 
@@ -317,10 +297,10 @@ double test_copysign(float a, double b) { return copysign(a, b); }
 // CHECK: unsigned int test_min(unsigned int a, unsigned int b) { return std::min(a, b); }
 unsigned int test_min(unsigned int a, unsigned int b) { return min(a, b); }
 
-// CHECK: unsigned int test_min(int a, unsigned int b) { return std::min<unsigned int>(a, b); }
+// CHECK: unsigned int test_min(int a, unsigned int b) { return dpct::min(a, b); }
 unsigned int test_min(int a, unsigned int b) { return min(a, b); }
 
-// CHECK: unsigned int test_min(unsigned int a, int b) { return std::min<unsigned int>(a, b); }
+// CHECK: unsigned int test_min(unsigned int a, int b) { return dpct::min(a, b); }
 unsigned int test_min(unsigned int a, int b) { return min(a, b); }
 
 // CHECK: long int test_min(long int a, long int b) { return std::min(a, b); }
@@ -334,14 +314,14 @@ unsigned long int test_min(unsigned long int a, unsigned long int b) {
 }
 
 // CHECK: unsigned long int test_min(long int a, unsigned long int b) {
-// CHECK:   return std::min<unsigned long>(a, b);
+// CHECK:   return dpct::min(a, b);
 // CHECK: }
 unsigned long int test_min(long int a, unsigned long int b) {
   return min(a, b);
 }
 
 // CHECK: unsigned long int test_min(unsigned long int a, long int b) {
-// CHECK:   return std::min<unsigned long>(a, b);
+// CHECK:   return dpct::min(a, b);
 // CHECK: }
 unsigned long int test_min(unsigned long int a, long int b) {
   return min(a, b);
@@ -360,38 +340,38 @@ unsigned long long int test_min(unsigned long long int a,
 }
 
 // CHECK: unsigned long long int test_min(long long int a, unsigned long long int b) {
-// CHECK:   return std::min<unsigned long long>(a, b);
+// CHECK:   return dpct::min(a, b);
 // CHECK: }
 unsigned long long int test_min(long long int a, unsigned long long int b) {
   return min(a, b);
 }
 
 // CHECK: unsigned long long int test_min(unsigned long long int a, long long int b) {
-// CHECK:   return std::min<unsigned long long>(a, b);
+// CHECK:   return dpct::min(a, b);
 // CHECK: }
 unsigned long long int test_min(unsigned long long int a, long long int b) {
   return min(a, b);
 }
 
-// CHECK: float test_min(float a, float b) { return fminf(a, b); }
+// CHECK: float test_min(float a, float b) { return std::min(a, b); }
 float test_min(float a, float b) { return min(a, b); }
 
-// CHECK: double test_min(double a, double b) { return fmin(a, b); }
+// CHECK: double test_min(double a, double b) { return std::min(a, b); }
 double test_min(double a, double b) { return min(a, b); }
 
-// CHECK: double test_min(float a, double b) { return fmin(a, b); }
+// CHECK: double test_min(float a, double b) { return dpct::min(a, b); }
 double test_min(float a, double b) { return min(a, b); }
 
-// CHECK: double test_min(double a, float b) { return fmin(a, b); }
+// CHECK: double test_min(double a, float b) { return dpct::min(a, b); }
 double test_min(double a, float b) { return min(a, b); }
 
 // CHECK: unsigned int test_max(unsigned int a, unsigned int b) { return std::max(a, b); }
 unsigned int test_max(unsigned int a, unsigned int b) { return max(a, b); }
 
-// CHECK: unsigned int test_max(int a, unsigned int b) { return std::max<unsigned int>(a, b); }
+// CHECK: unsigned int test_max(int a, unsigned int b) { return dpct::max(a, b); }
 unsigned int test_max(int a, unsigned int b) { return max(a, b); }
 
-// CHECK: unsigned int test_max(unsigned int a, int b) { return std::max<unsigned int>(a, b); }
+// CHECK: unsigned int test_max(unsigned int a, int b) { return dpct::max(a, b); }
 unsigned int test_max(unsigned int a, int b) { return max(a, b); }
 
 // CHECK: long int test_max(long int a, long int b) { return std::max(a, b); }
@@ -405,14 +385,14 @@ unsigned long int test_max(unsigned long int a, unsigned long int b) {
 }
 
 // CHECK: unsigned long int test_max(long int a, unsigned long int b) {
-// CHECK:   return std::max<unsigned long>(a, b);
+// CHECK:   return dpct::max(a, b);
 // CHECK: }
 unsigned long int test_max(long int a, unsigned long int b) {
   return max(a, b);
 }
 
 // CHECK: unsigned long int test_max(unsigned long int a, long int b) {
-// CHECK:   return std::max<unsigned long>(a, b);
+// CHECK:   return dpct::max(a, b);
 // CHECK: }
 unsigned long int test_max(unsigned long int a, long int b) {
   return max(a, b);
@@ -431,29 +411,29 @@ unsigned long long int test_max(unsigned long long int a,
 }
 
 // CHECK: unsigned long long int test_max(long long int a, unsigned long long int b) {
-// CHECK:   return std::max<unsigned long long>(a, b);
+// CHECK:   return dpct::max(a, b);
 // CHECK: }
 unsigned long long int test_max(long long int a, unsigned long long int b) {
   return max(a, b);
 }
 
 // CHECK: unsigned long long int test_max(unsigned long long int a, long long int b) {
-// CHECK:   return std::max<unsigned long long>(a, b);
+// CHECK:   return dpct::max(a, b);
 // CHECK: }
 unsigned long long int test_max(unsigned long long int a, long long int b) {
   return max(a, b);
 }
 
-// CHECK: float test_max(float a, float b) { return fmaxf(a, b); }
+// CHECK: float test_max(float a, float b) { return std::max(a, b); }
 float test_max(float a, float b) { return max(a, b); }
 
-// CHECK: double test_max(double a, double b) { return fmax(a, b); }
+// CHECK: double test_max(double a, double b) { return std::max(a, b); }
 double test_max(double a, double b) { return max(a, b); }
 
-// CHECK: double test_max(float a, double b) { return fmax(a, b); }
+// CHECK: double test_max(float a, double b) { return dpct::max(a, b); }
 double test_max(float a, double b) { return max(a, b); }
 
-// CHECK: double test_max(double a, float b) { return fmax(a, b); }
+// CHECK: double test_max(double a, float b) { return dpct::max(a, b); }
 double test_max(double a, float b) { return max(a, b); }
 
 // max/min() without argments bellow are differnt with max(a,b)/min(a,b).

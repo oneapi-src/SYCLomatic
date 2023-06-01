@@ -3315,8 +3315,8 @@ bool analyzeMemcpyOrder(
   std::set<const clang::Expr *> MemcpyCallExprs;
 
   // 1. Find all CallExprs in this scope. If there is any CallExpr
-  //    between two memcpy() API calls. The wait() must be added after
-  //    the previous memcpy() call.
+  //    between two memcpy() API calls(except the kernel call on default stream).
+  //    The wait() must be added after the previous memcpy() call.
   auto CallExprMatcher = clang::ast_matchers::findAll(
       clang::ast_matchers::callExpr().bind("CallExpr"));
   auto MatchedResults = clang::ast_matchers::match(
@@ -3357,29 +3357,31 @@ bool analyzeMemcpyOrder(
       MemcpyOrderVec.emplace_back(
           CE, MemcpyOrderAnalysisNodeKind::MOANK_SpecialCallExpr);
     } else {
-      if (auto KCall = dyn_cast<CUDAKernelCallExpr>(CE)) {
+      const CUDAKernelCallExpr* KCall = dyn_cast<CUDAKernelCallExpr>(CE);
+      if(!KCall) {
+        KCall = dyn_cast_or_null<CUDAKernelCallExpr>(getParentStmt(CE));
+      }
+      if(KCall) {
         const CallExpr *Config = KCall->getConfig();
         if (Config) {
-          // If kernel call uses default queue, it will not affect the memcpy
-          if (Config->getNumArgs() == 4) {
-            if (isDefaultStream(Config->getArg(3))) {
-              MemcpyOrderVec.emplace_back(
-                  CE, MemcpyOrderAnalysisNodeKind::MOANK_SpecialCallExpr);
-              continue;
+          // Record the pointer DRE used as argument of kernel call on default
+          // stream in ExcludeExprs. Because those pointers are accessed on device
+          // and on default stream, the q.memcpy before this kernel call don't
+          // need wait for those DREs.   
+          if ((Config->getNumArgs() == 4) &&
+               isDefaultStream(Config->getArg(3))) {
+            for(auto Arg: KCall->arguments()) {
+              if (auto DRE = dyn_cast_or_null<DeclRefExpr>(
+                      Arg->IgnoreImplicitAsWritten())) {
+                if (DRE->getType()->isPointerType()) {
+                  ExcludeExprs.insert(DRE);
+                }
+              }
             }
-          } else {
             MemcpyOrderVec.emplace_back(
-                CE, MemcpyOrderAnalysisNodeKind::MOANK_SpecialCallExpr);
+                CE, MemcpyOrderAnalysisNodeKind::MOANK_KernelCallExpr);
             continue;
           }
-        }
-      } else if (auto KCall =
-                     dyn_cast_or_null<CUDAKernelCallExpr>(getParentStmt(CE))) {
-        if (CE == KCall->getConfig()) {
-          // Ignore the config CallExpr in kernel call.
-          MemcpyOrderVec.emplace_back(
-              CE, MemcpyOrderAnalysisNodeKind::MOANK_SpecialCallExpr);
-          continue;
         }
       }
       MemcpyOrderVec.emplace_back(
@@ -3399,8 +3401,8 @@ bool analyzeMemcpyOrder(
 
   // Find all DREs related with the first and the second arguments
   // of the memcpy APIs. If there is any related DRE between two
-  // memcpy calls, wait() must be added after the previous memcpy.
-  //
+  // memcpy calls(except the pointer DRE used as arguments of kernel
+  // call on default stream), wait() must be added after the previous memcpy.
   // The method to find all related DREs:
   // Find all memcpy APIs in this scope, insert the DREs in the first
   // and second arguments of those APIs into the DRE set.
@@ -3591,7 +3593,8 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
       if (S.second == MemcpyOrderAnalysisNodeKind::MOANK_MemcpyInFlowControl) {
         return false;
       }
-      if (S.second == MemcpyOrderAnalysisNodeKind::MOANK_Memcpy) {
+      if (S.second == MemcpyOrderAnalysisNodeKind::MOANK_Memcpy ||
+          S.second == MemcpyOrderAnalysisNodeKind::MOANK_KernelCallExpr) {
         SourceLocation CurrentCallExprEndLoc =
             SM.getExpansionLoc(CE->getEndLoc());
 
@@ -4052,4 +4055,205 @@ bool typeIsPostfix(clang::QualType QT) {
       return true;
     }
   }
+}
+
+// Check if the given pointer is only accessed on host side.
+bool isPointerHostAccessOnly(const clang::ValueDecl *VD) {
+  llvm::SmallVector<clang::ast_matchers::BoundNodes, 1U> MatchResult;
+  using namespace clang::ast_matchers;
+  auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
+  auto &CTX = clang::dpct::DpctGlobalInfo::getContext();
+  auto LocInfo =
+      dpct::DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(VD->getBeginLoc()));
+  auto &Map = dpct::DpctGlobalInfo::getMallocHostInfoMap();
+  std::string Key = LocInfo.first + "*" + std::to_string(LocInfo.second);
+  if(Map.count(Key)){
+    return Map[Key];
+  }
+  auto &Val = Map[Key];
+  Val = false;
+  auto PtrName = VD->getName();
+  auto PtrMatcher =
+      findAll(declRefExpr(to(varDecl(hasName(PtrName)))).bind("PtrVar"));
+  if(auto FD = dyn_cast<FunctionDecl>(VD->getDeclContext())) {
+    auto Def = FD->getDefinition();
+    if(!Def) {
+      return false;
+    }
+    if(Def->hasAttr<CUDADeviceAttr>() || Def->hasAttr<CUDAGlobalAttr>()) {
+      return false;
+    }
+    auto Body = Def->getBody();
+    MatchResult = ast_matchers::match(PtrMatcher, *Body, CTX);
+  }
+  if (!MatchResult.size()) {
+    return false;
+  }
+  // Match all DeclRefExpr for given pointer, check if each DeclRefExpr is used in
+  // host access. If all DeclRefExpr is used in host access, then the pointer is
+  // only accessed on host side.
+  // If DeclRefExpr usage meets one or more of the following 3 conditions, it's used in
+  // host access.
+  // Condition 1: Used in pointer dereference expr and the expr value category is rvalue.
+  // Condition 2: Used in array subscript expr and the expr value category is rvalue.
+  // Condition 3: Used in some C and CUDA runtime functions, e.g., printf, cudaMemcpy.
+  for (auto &SubResult : MatchResult) {
+    bool HostAccess = false;
+    const DeclRefExpr *PtrDRE = SubResult.getNodeAs<DeclRefExpr>("PtrVar");
+    if (!PtrDRE) {
+      return false;
+    } else if(PtrDRE->getDecl() != VD) {
+      continue;
+    }
+    const Stmt* S = PtrDRE;
+    const CallExpr *CE = nullptr;
+    bool needFindParent = true;
+    while(needFindParent) {
+      S = getParentStmt(S);
+      switch(S->getStmtClass()) {
+        // Condition 1
+        case clang::Stmt::StmtClass::UnaryOperatorClass : {
+          auto UO = dyn_cast<UnaryOperator>(S);
+          if (!UO) {
+            return false;
+          }
+          auto OpCode = UO->getOpcode();
+          if(OpCode == UnaryOperatorKind::UO_AddrOf) {
+            break;
+          } else if(OpCode != UnaryOperatorKind::UO_Deref) {
+            return false;
+          }
+          LLVM_FALLTHROUGH;
+        }
+        // Condition 2
+        case clang::Stmt::StmtClass::ArraySubscriptExprClass: {
+          auto RValueExpr =
+              dyn_cast_or_null<ImplicitCastExpr>(getParentStmt(S));
+          if (RValueExpr &&
+              (RValueExpr->getCastKind() == CastKind::CK_LValueToRValue)) {
+            HostAccess = true;
+          }
+          needFindParent =false;
+          break;
+        }
+        case clang::Stmt::StmtClass::CallExprClass:{
+          CE = dyn_cast<CallExpr>(S);
+          needFindParent =false;
+          break;
+        }
+        case clang::Stmt::StmtClass::ImplicitCastExprClass :
+        case clang::Stmt::StmtClass::ParenExprClass:
+        case clang::Stmt::StmtClass::CStyleCastExprClass:
+        case clang::Stmt::StmtClass::CXXConstCastExprClass:
+        case clang::Stmt::StmtClass::CXXStaticCastExprClass:
+        case clang::Stmt::StmtClass::CXXDynamicCastExprClass:
+        case clang::Stmt::StmtClass::CXXReinterpretCastExprClass:{
+          break;
+        }
+        default : {
+          return false;
+        }
+      }
+    }
+    // Condition 3
+    if (CE) {
+      auto CEDecl = CE->getDirectCallee();
+      if (!CEDecl) {
+        return false;
+      }
+      auto FuncName = CEDecl->getName();
+      SourceLocation CEDeclLoc = SM.getExpansionLoc(CEDecl->getLocation());
+      if (dpct::DpctGlobalInfo::isInCudaPath(CEDeclLoc)) {
+        if (FuncName == "cudaFreeHost" || FuncName == "cudaMallocHost") {
+          HostAccess = true;
+        } else if (FuncName == "cudaMemcpy" || FuncName == "cudaMemcpyAsync") {
+          if (auto Enum = dyn_cast<DeclRefExpr>(CE->getArg(3))) {
+            auto CpyKind = Enum->getDecl()->getName();
+            if (CpyKind == "cudaMemcpyHostToHost" ||
+                (CpyKind == "cudaMemcpyHostToDevice" &&
+                 clang::dpct::DpctGlobalInfo::isAncestor(CE->getArg(1),
+                                                         PtrDRE)) ||
+                (CpyKind == "cudaMemcpyDeviceToHost" &&
+                 clang::dpct::DpctGlobalInfo::isAncestor(CE->getArg(0),
+                                                         PtrDRE))) {
+              HostAccess = true;
+            }
+          }
+        }
+      } else {
+        if (SM.isInSystemHeader(CEDeclLoc) &&
+            (FuncName == "memset" || FuncName == "memcpy" ||
+             FuncName == "printf")) {
+          HostAccess = true;
+        } else {
+          int ArgIndex = -1, ArgNums = CE->getNumArgs();
+          for (int index = 0; index < ArgNums; index++) {
+            if (clang::dpct::DpctGlobalInfo::isAncestor(CE->getArg(index),
+                                                        PtrDRE)) {
+              ArgIndex = index;
+              break;
+            }
+          }
+          if ((ArgIndex >= 0) &&
+              isPointerHostAccessOnly(CEDecl->getParamDecl(ArgIndex))) {
+            HostAccess = true;
+          }
+        }
+      }
+    }
+    if (!HostAccess) {
+      return false;
+    }
+  }
+  return (Val = true);
+}
+
+std::string getBaseTypeRemoveTemplateArguments(const clang::MemberExpr *ME) {
+  auto QT = ME->getBase()->IgnoreImpCasts()->getType();
+  if (const auto ice = dyn_cast<ImplicitCastExpr>(ME->getBase())) {
+    if (ice->getCastKind() == CastKind::CK_UncheckedDerivedToBase)
+      QT = ME->getBase()->getType();
+  }
+  if (ME->isArrow())
+    QT = QT->getPointeeType();
+  const auto CT = QT.getCanonicalType();
+  if (const auto RT = dyn_cast<clang::RecordType>(CT.getTypePtr())) {
+    return RT->getDecl()->getQualifiedNameAsString();
+  } else {
+    return dpct::DpctGlobalInfo::getUnqualifiedTypeName(CT);
+  }
+}
+
+bool containIterationSpaceBuiltinVar(const clang::Stmt *Node) {
+  if (!Node)
+    return false;
+  using namespace clang::ast_matchers;
+  auto BuiltinMatcher = findAll(
+      memberExpr(hasObjectExpression(opaqueValueExpr(
+                     hasSourceExpression(declRefExpr(to(varDecl(hasAnyName(
+                         "threadIdx", "blockDim", "blockIdx", "gridDim"))))))),
+                 hasParent(implicitCastExpr(
+                     hasParent(callExpr(hasParent(pseudoObjectExpr()))))))
+          .bind("memberExpr"));
+  auto MatchedResults =
+      match(BuiltinMatcher, *Node, clang::dpct::DpctGlobalInfo::getContext());
+  return MatchedResults.size();
+}
+
+bool containBuiltinWarpSize(const clang::Stmt *Node) {
+  if (!Node)
+    return false;
+  using namespace clang::ast_matchers;
+  auto BuiltinMatcher =
+      findAll(declRefExpr(to(varDecl(hasName("warpSize")).bind("VD"))));
+  auto MatchedResults =
+      match(BuiltinMatcher, *Node, clang::dpct::DpctGlobalInfo::getContext());
+  for (const auto &Res : MatchedResults) {
+    const clang::VarDecl *VD = Res.getNodeAs<clang::VarDecl>("VD");
+    if (!VD)
+      continue;
+    if (!clang::dpct::DpctGlobalInfo::isInAnalysisScope(VD->getLocation()))
+      return true;
+  }
+  return false;
 }

@@ -3,10 +3,12 @@
 // RUN: FileCheck --input-file %T/Device/api_test1_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Device/api_test1_out
 
-// CHECK: 17
+// CHECK: 18
 // TEST_FEATURE: Device_dev_mgr_get_device
 // TEST_FEATURE: Device_device_ext_get_major_version
 // TEST_FEATURE: Device_device_ext_get_minor_version
+
+#include "cuda.h"
 
 int main() {
   int result1, result2;

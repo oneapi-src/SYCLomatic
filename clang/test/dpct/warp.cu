@@ -4,6 +4,7 @@
 // RUN: FileCheck --input-file %T/warp/warp.dp.cpp --match-full-lines %s
 
 #include "cuda.h"
+#include "cuda_runtime.h"
 
 #define FULL_MASK 23
 #define NUM_ELEMENTS 1024
@@ -67,7 +68,7 @@ __global__ void kernel8() {
   int val;
   int srcLane;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::select_from_sub_group. You can specify "--use-experimental-features=masked_sub_group_function" to use the dpct experimental helper function to migrate __shfl_sync.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::select_from_sub_group. You can specify "--use-experimental-features=masked_sub_group_operation" to use the dpct experimental helper function to migrate __shfl_sync.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1096:{{[0-9]+}}: The right-most dimension of the work-group used in the SYCL kernel that calls this function may be less than "32". The function "dpct::select_from_sub_group" may return an unexpected result on the CPU device. Modify the size of the work-group to ensure that the value of the right-most dimension is a multiple of "32".
@@ -81,7 +82,7 @@ __global__ void kernel9() {
   int val;
   int srcLane;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::select_from_sub_group. You can specify "--use-experimental-features=masked_sub_group_function" to use the dpct experimental helper function to migrate __shfl_sync.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::select_from_sub_group. You can specify "--use-experimental-features=masked_sub_group_operation" to use the dpct experimental helper function to migrate __shfl_sync.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1096:{{[0-9]+}}: The right-most dimension of the work-group used in the SYCL kernel that calls this function may be less than "32". The function "dpct::select_from_sub_group" may return an unexpected result on the CPU device. Modify the size of the work-group to ensure that the value of the right-most dimension is a multiple of "32".
@@ -102,7 +103,7 @@ __global__ void kernel11() {
   int val;
   unsigned delta;
   // CHECK: /*
-  // CHECK-NEXT:DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::shift_sub_group_right. You can specify "--use-experimental-features=masked_sub_group_function" to use the dpct experimental helper function to migrate __shfl_up_sync.
+  // CHECK-NEXT:DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::shift_sub_group_right. You can specify "--use-experimental-features=masked_sub_group_operation" to use the dpct experimental helper function to migrate __shfl_up_sync.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::shift_sub_group_right(item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
   __shfl_up_sync(mask, val, delta);
@@ -113,7 +114,7 @@ __global__ void kernel12() {
   int val;
   unsigned delta;
   // CHECK: /*
-  // CHECK-NEXT:DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::shift_sub_group_right. You can specify "--use-experimental-features=masked_sub_group_function" to use the dpct experimental helper function to migrate __shfl_up_sync.
+  // CHECK-NEXT:DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::shift_sub_group_right. You can specify "--use-experimental-features=masked_sub_group_operation" to use the dpct experimental helper function to migrate __shfl_up_sync.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::shift_sub_group_right(item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
   __shfl_up_sync(mask, val, delta, warpSize);
@@ -131,7 +132,7 @@ __global__ void kernel14() {
   int val;
   unsigned delta;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::shift_sub_group_left. You can specify "--use-experimental-features=masked_sub_group_function" to use the dpct experimental helper function to migrate __shfl_down_sync.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::shift_sub_group_left. You can specify "--use-experimental-features=masked_sub_group_operation" to use the dpct experimental helper function to migrate __shfl_down_sync.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::shift_sub_group_left(item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
   __shfl_down_sync(mask, val, delta);
@@ -142,7 +143,7 @@ __global__ void kernel15() {
   int val;
   unsigned delta;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::shift_sub_group_left. You can specify "--use-experimental-features=masked_sub_group_function" to use the dpct experimental helper function to migrate __shfl_down_sync.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::shift_sub_group_left. You can specify "--use-experimental-features=masked_sub_group_operation" to use the dpct experimental helper function to migrate __shfl_down_sync.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::shift_sub_group_left(item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
   __shfl_down_sync(mask, val, delta, warpSize);
@@ -160,7 +161,7 @@ __global__ void kernel17() {
   int val;
   int laneMask;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::permute_sub_group_by_xor. You can specify "--use-experimental-features=masked_sub_group_function" to use the dpct experimental helper function to migrate __shfl_xor_sync.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::permute_sub_group_by_xor. You can specify "--use-experimental-features=masked_sub_group_operation" to use the dpct experimental helper function to migrate __shfl_xor_sync.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask);
   __shfl_xor_sync(mask, val, laneMask);
@@ -171,7 +172,7 @@ __global__ void kernel18() {
   int val;
   int laneMask;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::permute_sub_group_by_xor. You can specify "--use-experimental-features=masked_sub_group_function" to use the dpct experimental helper function to migrate __shfl_xor_sync.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::permute_sub_group_by_xor. You can specify "--use-experimental-features=masked_sub_group_operation" to use the dpct experimental helper function to migrate __shfl_xor_sync.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask);
   __shfl_xor_sync(mask, val, laneMask, warpSize);
@@ -216,7 +217,7 @@ __global__ void kernel24() {
   int val;
   int srcLane;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::select_from_sub_group. You can specify "--use-experimental-features=masked_sub_group_function" to use the dpct experimental helper function to migrate __shfl_sync.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::select_from_sub_group. You can specify "--use-experimental-features=masked_sub_group_operation" to use the dpct experimental helper function to migrate __shfl_sync.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane, 16);
   __shfl_sync(mask, val, srcLane, 16);
@@ -234,7 +235,7 @@ __global__ void kernel26() {
   int val;
   unsigned delta;
   // CHECK: /*
-  // CHECK-NEXT:DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::shift_sub_group_right. You can specify "--use-experimental-features=masked_sub_group_function" to use the dpct experimental helper function to migrate __shfl_up_sync.
+  // CHECK-NEXT:DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::shift_sub_group_right. You can specify "--use-experimental-features=masked_sub_group_operation" to use the dpct experimental helper function to migrate __shfl_up_sync.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::shift_sub_group_right(item_{{[0-9a-z]+}}.get_sub_group(), val, delta, 16);
   __shfl_up_sync(mask, val, delta, 16);
@@ -252,7 +253,7 @@ __global__ void kernel28() {
   int val;
   unsigned delta;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::shift_sub_group_left. You can specify "--use-experimental-features=masked_sub_group_function" to use the dpct experimental helper function to migrate __shfl_down_sync.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::shift_sub_group_left. You can specify "--use-experimental-features=masked_sub_group_operation" to use the dpct experimental helper function to migrate __shfl_down_sync.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::shift_sub_group_left(item_{{[0-9a-z]+}}.get_sub_group(), val, delta, 16);
   __shfl_down_sync(mask, val, delta, 16);
@@ -270,7 +271,7 @@ __global__ void kernel30() {
   int val;
   int laneMask;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::permute_sub_group_by_xor. You can specify "--use-experimental-features=masked_sub_group_function" to use the dpct experimental helper function to migrate __shfl_xor_sync.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::permute_sub_group_by_xor. You can specify "--use-experimental-features=masked_sub_group_operation" to use the dpct experimental helper function to migrate __shfl_xor_sync.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask, 16);
   __shfl_xor_sync(mask, val, laneMask, 16);
@@ -283,7 +284,7 @@ __global__ void kernel31() {
   // CHECK: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane, 16);
   __shfl(val, srcLane, 16);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::shift_sub_group_left. You can specify "--use-experimental-features=masked_sub_group_function" to use the dpct experimental helper function to migrate __shfl_down_sync.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::shift_sub_group_left. You can specify "--use-experimental-features=masked_sub_group_operation" to use the dpct experimental helper function to migrate __shfl_down_sync.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::shift_sub_group_left(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
   __shfl_down_sync(mask, val, srcLane, 32);
@@ -295,7 +296,7 @@ __global__ void kernel32() {
   int laneMask;
   int warpSize;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::permute_sub_group_by_xor. You can specify "--use-experimental-features=masked_sub_group_function" to use the dpct experimental helper function to migrate __shfl_xor_sync.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::permute_sub_group_by_xor. You can specify "--use-experimental-features=masked_sub_group_operation" to use the dpct experimental helper function to migrate __shfl_xor_sync.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask, warpSize);
   __shfl_xor_sync(mask, val, laneMask, warpSize);
@@ -307,7 +308,7 @@ __global__ void kernel33() {
   int laneMask;
   int WS;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::permute_sub_group_by_xor. You can specify "--use-experimental-features=masked_sub_group_function" to use the dpct experimental helper function to migrate __shfl_xor_sync.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for dpct::permute_sub_group_by_xor. You can specify "--use-experimental-features=masked_sub_group_operation" to use the dpct experimental helper function to migrate __shfl_xor_sync.
   // CHECK-NEXT: */
   // CHECK-NEXT: dpct::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask, WS);
   __shfl_xor_sync(mask, val, laneMask, WS);

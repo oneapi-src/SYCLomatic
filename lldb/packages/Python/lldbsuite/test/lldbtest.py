@@ -560,7 +560,6 @@ class Base(unittest2.TestCase):
         if traceAlways:
             print("Change dir to:", full_dir, file=sys.stderr)
         os.chdir(full_dir)
-        lldb.SBReproducer.SetWorkingDirectory(full_dir)
 
         # Set platform context.
         cls.platformContext = lldbplatformutil.createPlatformContext()
@@ -1252,6 +1251,13 @@ class Base(unittest2.TestCase):
         if self.getArchitecture() == "arm64e":
             return True
         return self.isAArch64() and "paca" in self.getCPUInfo()
+
+    def isAArch64Windows(self):
+        """Returns true if the architecture is AArch64 and platform windows."""
+        if self.getPlatform() == 'windows':
+            arch = self.getArchitecture().lower()
+            return arch in ["aarch64", "arm64", "arm64e"]
+        return False
 
     def getArchitecture(self):
         """Returns the architecture in effect the test suite is running with."""

@@ -708,6 +708,20 @@ void TypePrinter::printVectorBefore(const VectorType *T, raw_ostream &OS) {
     // Multiply by 8 for the number of bits.
     OS << ") * 8))) ";
     printBefore(T->getElementType(), OS);
+    break;
+  case VectorType::RVVFixedLengthDataVector:
+    // FIXME: We prefer to print the size directly here, but have no way
+    // to get the size of the type.
+    OS << "__attribute__((__riscv_rvv_vector_bits__(";
+
+    OS << T->getNumElements();
+
+    OS << " * sizeof(";
+    print(T->getElementType(), OS, StringRef());
+    // Multiply by 8 for the number of bits.
+    OS << ") * 8))) ";
+    printBefore(T->getElementType(), OS);
+    break;
   }
 }
 
@@ -773,6 +787,21 @@ void TypePrinter::printDependentVectorBefore(
     }
     OS << "))) ";
     printBefore(T->getElementType(), OS);
+    break;
+  case VectorType::RVVFixedLengthDataVector:
+    // FIXME: We prefer to print the size directly here, but have no way
+    // to get the size of the type.
+    OS << "__attribute__((__riscv_rvv_vector_bits__(";
+    if (T->getSizeExpr()) {
+      T->getSizeExpr()->printPretty(OS, nullptr, Policy);
+      OS << " * sizeof(";
+      print(T->getElementType(), OS, StringRef());
+      // Multiply by 8 for the number of bits.
+      OS << ") * 8";
+    }
+    OS << "))) ";
+    printBefore(T->getElementType(), OS);
+    break;
   }
 }
 
@@ -1419,11 +1448,20 @@ void TypePrinter::printTag(TagDecl *D, raw_ostream &OS) {
       if (PLoc.isValid()) {
         OS << " at ";
         StringRef File = PLoc.getFilename();
+        llvm::SmallString<1024> WrittenFile(File);
         if (auto *Callbacks = Policy.Callbacks)
-          OS << Callbacks->remapPath(File);
-        else
-          OS << File;
-        OS << ':' << PLoc.getLine() << ':' << PLoc.getColumn();
+          WrittenFile = Callbacks->remapPath(File);
+        // Fix inconsistent path separator created by
+        // clang::DirectoryLookup::LookupFile when the file path is relative
+        // path.
+        llvm::sys::path::Style Style =
+            llvm::sys::path::is_absolute(WrittenFile)
+                ? llvm::sys::path::Style::native
+                : (Policy.MSVCFormatting
+                       ? llvm::sys::path::Style::windows_backslash
+                       : llvm::sys::path::Style::posix);
+        llvm::sys::path::native(WrittenFile, Style);
+        OS << WrittenFile << ':' << PLoc.getLine() << ':' << PLoc.getColumn();
       }
     }
 
@@ -1747,6 +1785,9 @@ void TypePrinter::printAttributedBefore(const AttributedType *T,
     spaceBeforePlaceHolder(OS);
   }
 
+  if (T->isWebAssemblyFuncrefSpec())
+    OS << "__funcref";
+
   // Print nullability type specifiers.
   if (T->getImmediateNullability()) {
     if (T->getAttrKind() == attr::TypeNonNull)
@@ -1780,8 +1821,8 @@ void TypePrinter::printAttributedAfter(const AttributedType *T,
 
   // Some attributes are printed as qualifiers before the type, so we have
   // nothing left to do.
-  if (T->getAttrKind() == attr::ObjCKindOf ||
-      T->isMSTypeSpec() || T->getImmediateNullability())
+  if (T->getAttrKind() == attr::ObjCKindOf || T->isMSTypeSpec() ||
+      T->getImmediateNullability() || T->isWebAssemblyFuncrefSpec())
     return;
 
   // Don't print the inert __unsafe_unretained attribute at all.
@@ -1857,6 +1898,7 @@ void TypePrinter::printAttributedAfter(const AttributedType *T,
   case attr::AddressSpace:
   case attr::CmseNSCall:
   case attr::AnnotateType:
+  case attr::WebAssemblyFuncref:
     llvm_unreachable("This attribute should have been handled already");
 
   case attr::NSReturnsRetained:
@@ -1914,7 +1956,7 @@ void TypePrinter::printAttributedAfter(const AttributedType *T,
 void TypePrinter::printBTFTagAttributedBefore(const BTFTagAttributedType *T,
                                               raw_ostream &OS) {
   printBefore(T->getWrappedType(), OS);
-  OS << " btf_type_tag(" << T->getAttr()->getBTFTypeTag() << ")";
+  OS << " __attribute__((btf_type_tag(\"" << T->getAttr()->getBTFTypeTag() << "\")))";
 }
 
 void TypePrinter::printBTFTagAttributedAfter(const BTFTagAttributedType *T,
@@ -2359,6 +2401,8 @@ std::string Qualifiers::getAddrSpaceAsString(LangAS AS) {
     return "__uptr __ptr32";
   case LangAS::ptr64:
     return "__ptr64";
+  case LangAS::wasm_funcref:
+    return "__funcref";
   case LangAS::hlsl_groupshared:
     return "groupshared";
   default:

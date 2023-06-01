@@ -19,6 +19,8 @@
 // WORK_AROUND_TEST_FEATURE: Image_image_wrapper_base_get_channel_num
 // WORK_AROUND_TEST_FEATURE: Image_image_wrapper_base_get_channel_type
 
+#include "cuda.h"
+
 static texture<float4, 2> tex42;
 
 void foo(cudaTextureAddressMode,

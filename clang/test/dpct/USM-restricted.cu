@@ -15,7 +15,7 @@
   int Error = CALL;                \
 } while (0)
 
-__constant__ float constData[1234567 * 4];
+__constant__ float constData[123 * 4];
 
 int foo_b(int a){
   return 0;
@@ -72,6 +72,7 @@ void foo() {
   // CHECK-NEXT: h_A = (float *)sycl::malloc_host(sizeof(sycl::uchar4) - size, q_ct1);
   cudaHostAlloc((void **)&h_A, sizeof(uchar4) - size, cudaHostAllocDefault);
 
+  void *h_B = h_A;
   // CHECK: h_A = (float *)sycl::malloc_host(size, q_ct1);
   cudaMallocHost((void **)&h_A, size);
   // CHECK: errorCode = (h_A = (float *)sycl::malloc_host(size, q_ct1), 0);
@@ -372,18 +373,18 @@ void foo() {
   // CHECK: MY_SAFE_CALL((sycl::free(h_A, q_ct1), 0));
   MY_SAFE_CALL(cudaFreeHost(h_A));
 
-  // CHECK: *(void **)&d_A = (char *)h_A;
+  // CHECK: *(void **)&d_A = (float *)h_A;
   cudaHostGetDevicePointer((void **)&d_A, h_A, 0);
-  // CHECK: errorCode = (d_A = (char *)h_A, 0);
+  // CHECK: errorCode = (d_A = (float *)h_A, 0);
   errorCode = cudaHostGetDevicePointer(&d_A, h_A, 0);
-  // CHECK: MY_SAFE_CALL((d_A = (char *)h_A, 0));
+  // CHECK: MY_SAFE_CALL((d_A = (float *)h_A, 0));
   MY_SAFE_CALL(cudaHostGetDevicePointer(&d_A, h_A, 0));
 
-  // CHECK: *D_ptr = (char *)h_A;
+  // CHECK: *D_ptr = (dpct::device_ptr)h_A;
   cuMemHostGetDevicePointer(D_ptr, h_A, 0);
-  // CHECK: errorCode = (*D_ptr = (char *)h_A, 0);
+  // CHECK: errorCode = (*D_ptr = (dpct::device_ptr)h_A, 0);
   errorCode = cuMemHostGetDevicePointer(D_ptr, h_A, 0);
-  // CHECK: MY_SAFE_CALL((*D_ptr = (char *)h_A, 0));
+  // CHECK: MY_SAFE_CALL((*D_ptr = (dpct::device_ptr)h_A, 0));
   MY_SAFE_CALL(cuMemHostGetDevicePointer(D_ptr, h_A, 0));
 
   cudaHostRegister(h_A, size, 0);
@@ -1081,5 +1082,13 @@ void foo15() {
   for (int i = 0; i < 32; i++) {
     //CHECK: buf[i] = (volatile TEST_STR *)sycl::malloc_host(sizeof(TEST_STR), dpct::get_default_queue());
     cudaMallocHost(&buf[i], sizeof(TEST_STR));
+  }
+}
+
+void foo16() {
+  std::vector<volatile TEST_STR *> buf;
+  for (int i = 0; i < 32; i++) {
+    //CHECK: (buf.front()) = (volatile TEST_STR *)sycl::malloc_host(sizeof(TEST_STR), dpct::get_default_queue());
+    cudaMallocHost(&buf.front(), sizeof(TEST_STR));
   }
 }

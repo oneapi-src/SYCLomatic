@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Kernel/api_test2_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Kernel/api_test2_out
 
-// CHECK: 18
+// CHECK: 19
 // TEST_FEATURE: Kernel_get_kernel_function_info
 
 __global__ void foo() {}

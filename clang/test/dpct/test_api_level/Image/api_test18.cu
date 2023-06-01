@@ -7,6 +7,8 @@
 // TEST_FEATURE: Image_image_wrapper_base_set_channel_type
 // TEST_FEATURE: Image_image_wrapper_base_set_channel_num
 
+#include "cuda.h"
+
 int main() {
   CUtexref tex;
   CUarray_format format;

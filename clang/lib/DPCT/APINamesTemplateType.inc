@@ -6,6 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+// clang-format off
+
 TYPE_REWRITE_ENTRY(
     "cuda::atomic",
         TYPE_CONDITIONAL_FACTORY(
@@ -125,6 +127,10 @@ TYPE_REWRITE_ENTRY(
     "thrust::logical_and",
     TYPE_FACTORY(STR("std::logical_and"), TEMPLATE_ARG(0)))
 
+//  thrust::system_error(
+TYPE_REWRITE_ENTRY("thrust::system::system_error",
+                   TYPE_FACTORY(STR("std::system_error")))
+
 // thrust::bit_and
 TYPE_REWRITE_ENTRY(
     "thrust::bit_and",
@@ -156,7 +162,7 @@ TYPE_REWRITE_ENTRY(
         CheckForPostfixDeclaratorType(0),
         WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE, TYPESTR),
         HEADER_INSERTION_FACTORY(HeaderType::HT_DPCT_DPL_Utils,
-        TYPE_FACTORY(STR("dpct::io_iterator_pair"), ADD_POINTER(TEMPLATE_ARG(0))))))
+        TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "io_iterator_pair"), ADD_POINTER(TEMPLATE_ARG(0))))))
 
 TYPE_REWRITE_ENTRY(
     "cudaPos",
@@ -164,3 +170,34 @@ TYPE_REWRITE_ENTRY(
         CheckTypeNameAndInVarDecl("cudaPos"),
         CTAD_TYPE_FACTORY(STR(MapNames::getClNamespace() + "id"), STR("3")),
         TYPE_FACTORY(STR(MapNames::getClNamespace() + "id"), STR("3"))))
+
+TYPE_REWRITE_ENTRY("thrust::identity",
+                   TYPE_FACTORY(STR("oneapi::dpl::identity")))
+
+TYPE_REWRITE_ENTRY("thrust::null_type", TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "null_type")))
+
+TYPE_REWRITE_ENTRY("cooperative_groups::__v1::plus",
+                   TYPE_FACTORY(STR(MapNames::getClNamespace() + "plus"),
+                                TEMPLATE_ARG(0)))
+
+TYPE_REWRITE_ENTRY("cooperative_groups::__v1::less",
+                   TYPE_FACTORY(STR(MapNames::getClNamespace() + "minimum"),
+                                TEMPLATE_ARG(0)))
+
+TYPE_REWRITE_ENTRY("cooperative_groups::__v1::greater",
+                   TYPE_FACTORY(STR(MapNames::getClNamespace() + "maximum"),
+                                TEMPLATE_ARG(0)))
+
+TYPE_REWRITE_ENTRY("cooperative_groups::__v1::bit_and",
+                   TYPE_FACTORY(STR(MapNames::getClNamespace() + "bit_and"),
+                                TEMPLATE_ARG(0)))
+
+TYPE_REWRITE_ENTRY("cooperative_groups::__v1::bit_xor",
+                   TYPE_FACTORY(STR(MapNames::getClNamespace() + "bit_xor"),
+                                TEMPLATE_ARG(0)))
+
+TYPE_REWRITE_ENTRY("cooperative_groups::__v1::bit_or",
+                   TYPE_FACTORY(STR(MapNames::getClNamespace() + "bit_or"),
+                                TEMPLATE_ARG(0)))
+
+// clang-format on

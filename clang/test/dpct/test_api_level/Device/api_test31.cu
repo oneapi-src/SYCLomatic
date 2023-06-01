@@ -3,8 +3,10 @@
 // RUN: FileCheck --input-file %T/Device/api_test31_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Device/api_test31_out
 
-// CHECK: 40
+// CHECK: 43
 // TEST_FEATURE: Device_device_ext_get_memory_info
+
+#include "cuda.h"
 
 int main() {
   size_t result1, result2;

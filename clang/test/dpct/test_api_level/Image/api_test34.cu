@@ -13,6 +13,8 @@
 // TEST_FEATURE: Image_image_data_get_y
 // TEST_FEATURE: Image_image_data_get_channel
 
+#include "cuda.h"
+
 int main() {
   CUDA_RESOURCE_DESC res42;
   CUresourcetype a = res42.resType;

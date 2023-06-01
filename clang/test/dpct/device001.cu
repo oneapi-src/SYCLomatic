@@ -5,6 +5,32 @@
 
 #include <algorithm>
 #include <vector>
+#include <iostream>
+#include<sstream>
+
+
+class LogMessage : public std::ostringstream {
+ public:
+  LogMessage(const char* file, int line);
+  ~LogMessage();
+};
+
+
+class StderrLogMessage : public std::ostringstream {
+ public:
+  StderrLogMessage(const char* file, int line)
+    : log_(file, line) {}
+  ~StderrLogMessage();
+
+
+ private:
+  LogMessage log_;
+};
+
+
+
+#define CERR StderrLogMessage(__FILE__, __LINE__)
+
 int main(int argc, char **argv) {
 
   // CHECK: dpct::device_info deviceProp;
@@ -31,6 +57,12 @@ int main(int argc, char **argv) {
 // CHECK:/*
 // CHECK-NEXT:DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
 // CHECK-NEXT:*/
+// CHECK-NEXT:deviceProp.set_major_version(1);
+  deviceProp.major=1;
+  
+// CHECK:/*
+// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
+// CHECK-NEXT:*/
 // CHECK-NEXT:int major = deviceProp.get_major_version();
   int major = deviceProp.major;
 // CHECK:/*
@@ -48,20 +80,14 @@ int main(int argc, char **argv) {
 // CHECK:/*
 // CHECK-NEXT:DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
 // CHECK-NEXT:*/
-// CHECK-NEXT:deviceProp.set_major_version(1);
-  deviceProp.major=1;
+// CHECK-NEXT:deviceProp.set_minor_version(120);
+  deviceProp.minor=120;
 
 // CHECK:/*
 // CHECK-NEXT:DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
 // CHECK-NEXT:*/
 // CHECK-NEXT:int minor = deviceProp.get_minor_version();
   int minor = deviceProp.minor;
-
-// CHECK:/*
-// CHECK-NEXT:DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
-// CHECK-NEXT:*/
-// CHECK-NEXT:deviceProp.set_minor_version(120);
-  deviceProp.minor=120;
 
   // CHECK:     char *name = deviceProp.get_name();
   char *name = deviceProp.name;
@@ -70,7 +96,6 @@ int main(int argc, char **argv) {
   int clock = deviceProp.clockRate;
   int xxxx = 10;
   int yyyy = 5;
-
   // CHECK:  deviceProp.set_max_clock_frequency ( xxxx * 100 + yyyy);
   deviceProp.clockRate = xxxx * 100 + yyyy;
 
@@ -234,45 +259,56 @@ __device__ void test5() {
   cudaDeviceProp *pDeviceProp = nullptr;
   [=]() {
     int a;
-    //CHECK:a = sycl::min((int)pDeviceProp->get_global_mem_size(), 1000);
+    //CHECK:a = std::min((int)pDeviceProp->get_global_mem_size(), 1000);
     a = std::min((int)pDeviceProp->totalGlobalMem, 1000);
     // CHECK:/*
     // CHECK-NEXT:DPCT1006:{{[0-9]+}}: SYCL does not provide a standard API to differentiate between integrated and discrete GPU devices.
     // CHECK-NEXT:*/
-    // CHECK-NEXT: a = sycl::min(pDeviceProp->get_integrated(), 1000);
+    // CHECK-NEXT: a = std::min(pDeviceProp->get_integrated(), 1000);
     a = std::min(pDeviceProp->integrated, 1000);
     // CHECK:/*
     // CHECK-NEXT:DPCT1019:{{[0-9]+}}: local_mem_size in SYCL is not a complete equivalent of sharedMemPerBlock in CUDA. You may need to adjust the code.
     // CHECK-NEXT:*/
-    // CHECK-NEXT:a = sycl::min((int)pDeviceProp->get_local_mem_size(), 1000);
+    // CHECK-NEXT:a = std::min((int)pDeviceProp->get_local_mem_size(), 1000);
     a = std::min((int)pDeviceProp->sharedMemPerBlock, 1000);
     // CHECK:/*
     // CHECK-NEXT:DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
     // CHECK-NEXT:*/
-    // CHECK-NEXT: a = sycl::min(pDeviceProp->get_major_version(), 1000);
+    // CHECK-NEXT: a = std::min(pDeviceProp->get_major_version(), 1000);
     a = std::min(pDeviceProp->major, 1000);
-    //CHECK:a = sycl::min(pDeviceProp->get_max_clock_frequency(), 1000);
+    //CHECK:a = std::min(pDeviceProp->get_max_clock_frequency(), 1000);
     a = std::min(pDeviceProp->clockRate, 1000);
-    //CHECK:a = sycl::min(pDeviceProp->get_max_compute_units(), 1000);
+    //CHECK:a = std::min(pDeviceProp->get_max_compute_units(), 1000);
     a = std::min(pDeviceProp->multiProcessorCount, 1000);
-    //CHECK:a = sycl::min(pDeviceProp->get_memory_clock_rate(), 1000);
+    //CHECK:a = std::min(pDeviceProp->get_memory_clock_rate(), 1000);
     a = std::min(pDeviceProp->memoryClockRate, 1000);
-    //CHECK:a = sycl::min(pDeviceProp->get_memory_bus_width(), 1000);
+    //CHECK:a = std::min(pDeviceProp->get_memory_bus_width(), 1000);
     a = std::min(pDeviceProp->memoryBusWidth, 1000);
-    //CHECK:a = sycl::min(pDeviceProp->get_max_sub_group_size(), 1000);
+    //CHECK:a = std::min(pDeviceProp->get_max_sub_group_size(), 1000);
     a = std::min(pDeviceProp->warpSize, 1000);
-    //CHECK:a = sycl::min(pDeviceProp->get_max_work_group_size(), 1000);
+    //CHECK:a = std::min(pDeviceProp->get_max_work_group_size(), 1000);
     a = std::min(pDeviceProp->maxThreadsPerBlock, 1000);
-    //CHECK:a = sycl::min(pDeviceProp->get_max_work_items_per_compute_unit(), 1000);
+    //CHECK:a = std::min(pDeviceProp->get_max_work_items_per_compute_unit(), 1000);
     a = std::min(pDeviceProp->maxThreadsPerMultiProcessor, 1000);
     // CHECK:/*
     // CHECK-NEXT:DPCT1022:{{[0-9]+}}: There is no exact match between the maxGridSize and the max_nd_range size. Verify the correctness of the code.
     // CHECK-NEXT:*/
-    // CHECK-NEXT: a = sycl::min(pDeviceProp->get_max_nd_range_size<int *>()[0], 1000);
+    // CHECK-NEXT: a = std::min(pDeviceProp->get_max_nd_range_size<int *>()[0], 1000);
     a = std::min(pDeviceProp->maxGridSize[0], 1000);
-    //CHECK:a = sycl::min(pDeviceProp->get_max_work_item_sizes<int *>()[0], 1000);
+    //CHECK:a = std::min(pDeviceProp->get_max_work_item_sizes<int *>()[0], 1000);
     a = std::min(pDeviceProp->maxThreadsDim[0], 1000);
-    //CHECK:a = sycl::min(pDeviceProp->get_name()[0], 'A');
+    //CHECK:a = std::min(pDeviceProp->get_name()[0], 'A');
     a = std::min(pDeviceProp->name[0], 'A');
   }();
+}
+
+void showDeviceInfo(const cudaDeviceProp& deviceProp) const {
+  //CHECK: CERR << "GPU: " << deviceProp.get_name();
+  CERR << "GPU: " << deviceProp.name;
+  //CHECK: CERR << "GPU memory: " << deviceProp.get_global_mem_size() / std::pow(2.0f, 30) << " Gb";
+  CERR << "GPU memory: " << deviceProp.totalGlobalMem / std::pow(2.0f, 30) << " Gb";
+  //CHECK: CERR << "GPU clock frequency: " << deviceProp.get_max_clock_frequency() / 1e3f << " MHz";
+  CERR << "GPU clock frequency: " << deviceProp.clockRate / 1e3f << " MHz";
+  //CHECK:  CERR << "GPU compute capability: " << deviceProp.get_major_version() << "." << deviceProp.get_minor_version();
+  CERR << "GPU compute capability: " << deviceProp.major << "." << deviceProp.minor;
 }

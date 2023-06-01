@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/DnnlUtils/api_test8_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DnnlUtils/api_test8_out
 
-// CHECK: 53
+// CHECK: 37
 
 #include <cuda_runtime.h>
 #include <cudnn.h>

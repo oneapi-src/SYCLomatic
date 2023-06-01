@@ -34,12 +34,19 @@ static texture<uint2, 1> tex21;
 // TODO-CHECK: dpct::image<int, 3> tex13;
 // static texture<int, 3> tex13;
 
+// CHECK: #define FETCH(datai, tex, idx) datai[0] = tex.read(idx - 1)
+#define FETCH(datai, tex, idx) datai[0] = tex1Dfetch(tex, idx - 1)
+
 // CHECK: void device01(dpct::image_accessor_ext<sycl::uint2, 1> tex21) {
 // CHECK-NEXT: sycl::uint2 u21 = tex21.read(1.0f);
 // CHECK-NEXT: sycl::uint2 u21_fetch = tex21.read(1);
+// CHECK-NEXT: float data[3][3];
+// CHECK-NEXT: FETCH(data[0], tex21, 2);
 __device__ void device01() {
   uint2 u21 = tex1D(tex21, 1.0f);
   uint2 u21_fetch = tex1Dfetch(tex21, 1);
+  float data[3][3];
+  FETCH(data[0], tex21, 2);
 }
 
 // CHECK: void kernel(dpct::image_accessor_ext<sycl::float4, 2> tex42,
