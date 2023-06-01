@@ -8,10 +8,6 @@
 namespace cg = cooperative_groups;
 #define BlockSize 64
 
-// __device__ void test_parm(cg::block_tile_memory<BlockSize> scratch) {
-//   auto cta = cg::this_thread_block(scratch);
-// }
-
 // CHECK: void test() {
 // CHECK: auto cta = sycl::ext::oneapi::experimental::this_group<3>();
 // CHECK-NEXT: sycl::sub_group tile = sycl::ext::oneapi::experimental::this_sub_group();
@@ -19,9 +15,6 @@ __global__ void test() {
   __shared__ cg::block_tile_memory<BlockSize> scratch;
   auto cta = cg::this_thread_block(scratch);
   cg::thread_block_tile<32> tile = cg::tiled_partition<32>(cta);
-  //  unsigned int ctaSteps = tile.meta_group_size();
-
-  // test_parm(scratch);
 }
 
 int main() {
