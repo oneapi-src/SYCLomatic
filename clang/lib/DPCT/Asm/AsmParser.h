@@ -201,7 +201,7 @@ class InlineAsmVariableDecl : public InlineAsmDecl {
   InlineAsmType *Type;
 
   /// Alignment of this variable, specificed by '.align' attribute.
-  unsigned Align;
+  unsigned Align = 0;
 
   /// The num of parameterized names, e.g. %p<10>
   unsigned NumParameterizedNames = 0;
@@ -837,7 +837,7 @@ class InlineAsmContext : public InlineAsmIdentifierInfoLookup {
   InlineAsmBuiltinType *AsmBuiltinTypes[InlineAsmBuiltinType::NUM_TYPES] = {0};
 
   /// This used to cache the discard type.
-  InlineAsmDiscardType *DiscardType;
+  InlineAsmDiscardType *DiscardType = nullptr;
 
 public:
   void *allocate(unsigned Size, unsigned Align = 8) {
@@ -1038,6 +1038,8 @@ public:
     ConsumeToken();
     EnterScope();
   }
+  InlineAsmParser(const InlineAsmParser &) = delete;
+  void operator=(const InlineAsmParser &) = delete;
   ~InlineAsmParser() { ExitScope(); }
 
   SourceMgr &getSourceManager() { return SrcMgr; }

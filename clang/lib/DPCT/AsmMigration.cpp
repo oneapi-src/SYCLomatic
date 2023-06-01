@@ -205,7 +205,6 @@ bool SYCLGenBase::emitStatement(const InlineAsmStmt *S) {
   default:
     return SYCLGenError();
   }
-  return SYCLGenSuccess();
 }
 
 bool SYCLGenBase::emitDeclarationStatement(const InlineAsmDeclStmt *S) {
