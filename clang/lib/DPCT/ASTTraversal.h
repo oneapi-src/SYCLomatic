@@ -1619,13 +1619,6 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
-class SyncThreadsMigrationRule
-    : public NamedMigrationRule<SyncThreadsMigrationRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
 /// Migrate Function Attributes to Sycl kernel info, defined in
 /// runtime headers.
 class KernelFunctionInfoRule

@@ -26,43 +26,43 @@ const std::unordered_set<std::string> AllowedDeviceFunctions = {
     "sqrtf",
     "__expf"};
 
-bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::IfStmt *IS) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::IfStmt *IS) {
   // No special process, treat as one block
   return true;
 }
-void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::IfStmt *IS) {
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::IfStmt *IS) {
   // No special process, treat as one block
 }
-bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::SwitchStmt *SS) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::SwitchStmt *SS) {
   // No special process, treat as one block
   return true;
 }
-void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::SwitchStmt *SS) {
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::SwitchStmt *SS) {
   // No special process, treat as one block
 }
 
-bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::ForStmt *FS) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::ForStmt *FS) {
   LoopRange.push_back(FS->getSourceRange());
   return true;
 }
-void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::ForStmt *FS) {
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::ForStmt *FS) {
   LoopRange.pop_back();
 }
-bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::DoStmt *DS) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::DoStmt *DS) {
   LoopRange.push_back(DS->getSourceRange());
   return true;
 }
-void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::DoStmt *DS) {
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::DoStmt *DS) {
   LoopRange.pop_back();
 }
-bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::WhileStmt *WS) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::WhileStmt *WS) {
   LoopRange.push_back(WS->getSourceRange());
   return true;
 }
-void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::WhileStmt *WS) {
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::WhileStmt *WS) {
   LoopRange.pop_back();
 }
-bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::CallExpr *CE) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::CallExpr *CE) {
   const clang::FunctionDecl *FuncDecl = CE->getDirectCallee();
   std::string FuncName;
   if (FuncDecl)
@@ -89,53 +89,53 @@ bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::CallExpr *CE) {
   }
   return true;
 }
-void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::CallExpr *) {}
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::CallExpr *) {}
 
-bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::DeclRefExpr *DRE) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::DeclRefExpr *DRE) {
   // Collect all DREs and its Decl
   DREDeclMap.insert(std::make_pair(DRE, DRE->getDecl()));
   return true;
 }
-void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::DeclRefExpr *) {}
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::DeclRefExpr *) {}
 
-bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::GotoStmt *) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::GotoStmt *) {
   // We will further refine it if meet real request.
   // By default, goto/label stmt is not supported.
   return false;
 }
-void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::GotoStmt *) {}
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::GotoStmt *) {}
 
-bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::LabelStmt *) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::LabelStmt *) {
   // We will further refine it if meet real request.
   // By default, goto/label stmt is not supported.
   return false;
 }
-void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::LabelStmt *) {}
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::LabelStmt *) {}
 
-bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::MemberExpr *ME) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::MemberExpr *ME) {
   if (ME->getType()->isPointerType() || ME->getType()->isArrayType()) {
     return false;
   }
   return true;
 }
-void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::MemberExpr *) {}
-bool clang::dpct::ReadWriteOrderAnalyzer::Visit(
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::MemberExpr *) {}
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
     clang::CXXDependentScopeMemberExpr *) {
   return false;
 }
-void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
     clang::CXXDependentScopeMemberExpr *) {}
-bool clang::dpct::ReadWriteOrderAnalyzer::Visit(clang::CXXConstructExpr *CCE) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::CXXConstructExpr *CCE) {
   auto Ctor = CCE->getConstructor();
   std::string CtorName = Ctor->getParent()->getQualifiedNameAsString();
   if (AllowedDeviceFunctions.count(CtorName) && !isUserDefinedDecl(Ctor))
     return true;
   return false;
 }
-void clang::dpct::ReadWriteOrderAnalyzer::PostVisit(clang::CXXConstructExpr *) {
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::CXXConstructExpr *) {
 }
 
-bool clang::dpct::ReadWriteOrderAnalyzer::traverseFunction(
+bool clang::dpct::BarrierFenceSpaceAnalyzer::traverseFunction(
     const clang::FunctionDecl *FD) {
   if (!this->TraverseDecl(const_cast<clang::FunctionDecl *>(FD))) {
     return false;
@@ -184,7 +184,7 @@ bool isPointerOperationSafe(const clang::Expr *Pointer) {
   return false;
 }
 
-bool clang::dpct::ReadWriteOrderAnalyzer::analyze(const clang::CallExpr *CE) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(const clang::CallExpr *CE) {
   if (CE->getBeginLoc().isMacroID() || CE->getEndLoc().isMacroID())
     return false;
   auto FD = dpct::DpctGlobalInfo::findAncestor<clang::FunctionDecl>(CE);
@@ -334,7 +334,7 @@ bool clang::dpct::ReadWriteOrderAnalyzer::analyze(const clang::CallExpr *CE) {
 }
 
 std::unordered_map<std::string, std::unordered_map<std::string, bool>>
-    clang::dpct::ReadWriteOrderAnalyzer::CachedResults;
+    clang::dpct::BarrierFenceSpaceAnalyzer::CachedResults;
 
 bool canBeTreatedAsPrivateMemoryAccess(int KernelDim,
                                        const clang::DeclRefExpr *DRE,
@@ -490,183 +490,3 @@ bool canBeTreatedAsPrivateMemoryAccess(int KernelDim,
   }
   return false;
 }
-
-bool clang::dpct::GlobalPointerReferenceCountAnalyzer::Visit(
-    clang::DeclRefExpr *DRE) {
-  clang::VarDecl *VD = dyn_cast_or_null<VarDecl>(DRE->getDecl());
-  if (!VD) {
-    return true;
-  }
-  if ((VD->hasAttr<clang::CUDADeviceAttr>() ||
-       VD->hasAttr<clang::HIPManagedAttr>()) &&
-      isUserDefinedDecl(VD)) {
-    HasGlobalDeviceVariable = true;
-  }
-
-  auto I = NonconstPointerDecls.find(VD);
-  if (I != NonconstPointerDecls.end()) {
-    // Check if pointers in NonconstPointerDecls is passed to other functions
-    if (auto FuncCall =
-            clang::dpct::DpctGlobalInfo::findAncestor<clang::CallExpr>(DRE)) {
-      if (auto FD = FuncCall->getDirectCallee()) {
-        if (isUserDefinedDecl(FD) ||
-            !AllowedDeviceFunctions.count(
-                FD->getNameInfo().getName().getAsString())) {
-          return false;
-        }
-      }
-    }
-    if (!UnderVarDeclOrBinaryOP.empty() && UnderVarDeclOrBinaryOP.top()) {
-      if (UnderVarDeclOrBinaryOP.top()->getType()->isPointerType()) {
-        if (!UnderVarDeclOrBinaryOP.top()
-                 ->getType()
-                 ->getPointeeType()
-                 .isConstQualified()) {
-          VarInfo VI(I->second.ID);
-          NonconstPointerDecls.insert(
-              std::make_pair(UnderVarDeclOrBinaryOP.top(), VI));
-          return true;
-        }
-      }
-    }
-
-    if (!canBeTreatedAsPrivateMemoryAccess(KernelDim, DRE, FD)) {
-      I->second.ReferencedDRENumber = I->second.ReferencedDRENumber + 1;
-    }
-  }
-  return true;
-}
-void clang::dpct::GlobalPointerReferenceCountAnalyzer::PostVisit(
-    clang::DeclRefExpr *) {}
-
-bool clang::dpct::GlobalPointerReferenceCountAnalyzer::Visit(
-    clang::BinaryOperator *BO) {
-  if (BO->getOpcode() == clang::BinaryOperatorKind::BO_AddAssign ||
-      BO->getOpcode() == clang::BinaryOperatorKind::BO_SubAssign ||
-      BO->getOpcode() == clang::BinaryOperatorKind::BO_Assign) {
-    if (clang::DeclRefExpr *NewDRE =
-            dyn_cast_or_null<clang::DeclRefExpr>(BO->getLHS())) {
-      if (clang::VarDecl *NewVD =
-              dyn_cast_or_null<clang::VarDecl>(NewDRE->getDecl())) {
-        UnderVarDeclOrBinaryOP.push(NewVD);
-        return true;
-      }
-    }
-  }
-  if (UnderVarDeclOrBinaryOP.empty()) {
-    UnderVarDeclOrBinaryOP.push(nullptr);
-  } else {
-    UnderVarDeclOrBinaryOP.push(UnderVarDeclOrBinaryOP.top());
-  }
-  return true;
-}
-void clang::dpct::GlobalPointerReferenceCountAnalyzer::PostVisit(
-    clang::BinaryOperator *) {
-  UnderVarDeclOrBinaryOP.pop();
-}
-
-bool clang::dpct::GlobalPointerReferenceCountAnalyzer::Visit(
-    clang::VarDecl *VD) {
-  if (VD->hasInit()) {
-    UnderVarDeclOrBinaryOP.push(VD);
-    return true;
-  }
-  if (UnderVarDeclOrBinaryOP.empty()) {
-    UnderVarDeclOrBinaryOP.push(nullptr);
-  } else {
-    UnderVarDeclOrBinaryOP.push(UnderVarDeclOrBinaryOP.top());
-  }
-  return true;
-}
-void clang::dpct::GlobalPointerReferenceCountAnalyzer::PostVisit(
-    clang::VarDecl *) {
-  UnderVarDeclOrBinaryOP.pop();
-}
-
-bool clang::dpct::GlobalPointerReferenceCountAnalyzer::countReference(
-    const clang::FunctionDecl *FD) {
-  // Collect all non-const pointers which point to fundamental type
-  for (auto &Param : FD->parameters()) {
-    if (Param->getType()->isPointerType()) {
-      if (!Param->getType()->getPointeeType()->isFundamentalType()) {
-        return false;
-      } else {
-        if (!Param->getType()->getPointeeType().isConstQualified()) {
-          NonconstPointerDecls.insert(
-              std::make_pair(Param, VarInfo(NonconstPointerDecls.size())));
-        }
-      }
-    } else {
-      if (!Param->getType()->isFundamentalType()) {
-        return false;
-      }
-    }
-  }
-
-  if (!(this->TraverseDecl(const_cast<clang::FunctionDecl *>(FD)))) {
-    return false;
-  }
-  if (HasGlobalDeviceVariable)
-    return false;
-
-  // If pointers in NonconstPointerDecls only used once, then we can use
-  // local_space
-  for (const auto OuterI : NonconstPointerDecls) {
-    size_t Count = 0;
-    size_t ID = OuterI.second.ID;
-    for (const auto InnerI : NonconstPointerDecls) {
-      if (InnerI.second.ID == ID) {
-        Count = Count + InnerI.second.ReferencedDRENumber;
-      }
-    }
-    if (Count > 1)
-      return false;
-  }
-
-  return true;
-}
-
-bool clang::dpct::GlobalPointerReferenceCountAnalyzer::analyze(
-    const clang::CallExpr *CE) {
-  if (CE->getBeginLoc().isMacroID() || CE->getEndLoc().isMacroID())
-    return false;
-  auto FD = dpct::DpctGlobalInfo::findAncestor<clang::FunctionDecl>(CE);
-  if (!FD)
-    return false;
-  if (!FD->hasAttr<clang::CUDAGlobalAttr>())
-    return false;
-  if (FD->getTemplateSpecializationKind() !=
-          TemplateSpecializationKind::TSK_Undeclared ||
-      FD->getDescribedFunctionTemplate()) {
-    return false;
-  }
-
-  this->FD = FD;
-  auto QueryKernelDim = [](const clang::FunctionDecl *FD) -> int {
-    const auto DFD = DpctGlobalInfo::getInstance().findDeviceFunctionDecl(FD);
-    if (!DFD)
-      return 3;
-    const auto FuncInfo = DFD->getFuncInfo();
-    if (!FuncInfo)
-      return 3;
-    const auto MVM =
-        MemVarMap::getHeadWithoutPathCompression(&(FuncInfo->getVarMap()));
-    if (!MVM)
-      return 3;
-    return MVM->Dim;
-  };
-  KernelDim = QueryKernelDim(FD);
-
-  std::string FDLocStr = getHashStrFromLoc(FD->getBeginLoc());
-  auto Iter = CachedResults.find(FDLocStr);
-  if (Iter != CachedResults.end()) {
-    return Iter->second;
-  }
-
-  bool Result = countReference(FD);
-  CachedResults[FDLocStr] = Result;
-  return Result;
-}
-
-std::unordered_map<std::string, bool>
-    clang::dpct::GlobalPointerReferenceCountAnalyzer::CachedResults;

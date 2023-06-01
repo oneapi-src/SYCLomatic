@@ -685,18 +685,23 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   auto ItemItr = NdItemMap.find(BaseType);
   if (ItemItr != NdItemMap.end()) {
     if (MapNames::replaceName(NdItemMemberMap, FieldName)) {
-      auto TargetExpr = getTargetExpr();
-      auto FD = getImmediateOuterFuncDecl(TargetExpr);
-      auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
-      if (ME->getMemberDecl()->getName().str() == "__fetch_builtin_x") {
-        auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
-        DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
-        addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
-                                       ItemItr->second, "({{NEEDREPLACER",
-                                       std::to_string(Index), "}})"));
-        DpctGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
+      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+        auto TargetExpr = getTargetExpr();
+        auto FD = getImmediateOuterFuncDecl(TargetExpr);
+        auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
+        if (ME->getMemberDecl()->getName().str() == "__fetch_builtin_x") {
+          auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
+          DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
+          addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
+                                         ItemItr->second, "({{NEEDREPLACER",
+                                         std::to_string(Index), "}})"));
+          DpctGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
+        } else {
+          DFI->getVarMap().Dim = 3;
+          addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
+                                         ItemItr->second, "(", FieldName, ")"));
+        }
       } else {
-        DFI->getVarMap().Dim = 3;
         addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
                                        ItemItr->second, "(", FieldName, ")"));
       }
@@ -1879,11 +1884,38 @@ void KernelConfigAnalysis::analyzeExpr(
   }
 }
 
+bool KernelConfigAnalysis::isOneDimensionConfigArg(
+    const CXXConstructExpr *Ctor) {
+  if (Ctor->getNumArgs() == 1) {
+    // E.g., copy constructor: dim3 a(1,2,3); k<<<dim3(a), 1>>>();
+    return false;
+  }
+
+  if (Ctor->getNumArgs() == 3) {
+    Expr::EvalResult ER1, ER2;
+    if (!Ctor->getArg(1)->isValueDependent() &&
+        Ctor->getArg(1)->EvaluateAsInt(ER1, DpctGlobalInfo::getContext()) &&
+        !Ctor->getArg(2)->isValueDependent() &&
+        Ctor->getArg(2)->EvaluateAsInt(ER2, DpctGlobalInfo::getContext())) {
+      if (ER1.Val.getInt().getZExtValue() == 1 &&
+          ER2.Val.getInt().getZExtValue() == 1)
+        return true;
+    }
+    return false;
+  }
+  return false;
+}
+
 void KernelConfigAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
     if (ArgIndex == 1) {
       if (calculateWorkgroupSize(Ctor) <= 256)
         NeedEmitWGSizeWarning = false;
+      if (IsTryToUseOneDimension)
+        Dim = isOneDimensionConfigArg(Ctor) ? 1 : 3;
+    } else if (ArgIndex == 0) {
+      if (IsTryToUseOneDimension)
+        Dim = isOneDimensionConfigArg(Ctor) ? 1 : 3;
     }
 
     std::string CtorString;
@@ -1978,6 +2010,7 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
     if (IsDim3Config && getTargetExpr()->getType()->isIntegralType(
                             DpctGlobalInfo::getContext())) {
       if (IsTryToUseOneDimension) {
+        Dim = 1;
         addReplacement(buildString(DpctGlobalInfo::getCtadClass(
                                        MapNames::getClNamespace() + "range", 1),
                                    "(", getReplacedString(), ")"));

@@ -1310,19 +1310,30 @@ void IterationSpaceBuiltinRule::runRule(
       if (!DFI)
         return;
 
-      if (FieldName == "x") {
-        DpctGlobalInfo::getInstance().insertBuiltinVarInfo(Begin, TyLen,
-                                                           Replacement, DFI);
-        DpctGlobalInfo::updateSpellingLocDFIMaps(DRE->getBeginLoc(), DFI);
-        return;
-      } else if (FieldName == "y") {
-        Dimension = 1;
-        DFI->getVarMap().Dim = 3;
-      } else if (FieldName == "z") {
-        Dimension = 0;
-        DFI->getVarMap().Dim = 3;
-      } else
-        return;
+      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+        if (FieldName == "x") {
+          DpctGlobalInfo::getInstance().insertBuiltinVarInfo(Begin, TyLen,
+                                                             Replacement, DFI);
+          DpctGlobalInfo::updateSpellingLocDFIMaps(DRE->getBeginLoc(), DFI);
+          return;
+        } else if (FieldName == "y") {
+          Dimension = 1;
+          DFI->getVarMap().Dim = 3;
+        } else if (FieldName == "z") {
+          Dimension = 0;
+          DFI->getVarMap().Dim = 3;
+        } else
+          return;
+      } else {
+        if (FieldName == "x") {
+          Dimension = 2;
+        } else if (FieldName == "y")
+          Dimension = 1;
+        else if (FieldName == "z")
+          Dimension = 0;
+        else
+          return;
+      }
 
       Replacement += std::to_string(Dimension);
       Replacement += ")";
@@ -1368,30 +1379,44 @@ void IterationSpaceBuiltinRule::runRule(
     ValueDecl *Field = ME->getMemberDecl();
     StringRef FieldName = Field->getName();
     unsigned Dimension;
-    if (FieldName == "__fetch_builtin_x") {
-      auto Range = getDefinitionRange(ME->getBeginLoc(), ME->getEndLoc());
-      SourceLocation Begin = Range.getBegin();
-      SourceLocation End = Range.getEnd();
+    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+      if (FieldName == "__fetch_builtin_x") {
+        auto Range = getDefinitionRange(ME->getBeginLoc(), ME->getEndLoc());
+        SourceLocation Begin = Range.getBegin();
+        SourceLocation End = Range.getEnd();
 
-      End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-          End, SM, DpctGlobalInfo::getContext().getLangOpts()));
+        End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+            End, SM, DpctGlobalInfo::getContext().getLangOpts()));
 
-      unsigned int Len =
-          SM.getDecomposedLoc(End).second - SM.getDecomposedLoc(Begin).second;
-      DpctGlobalInfo::getInstance().insertBuiltinVarInfo(Begin, Len,
-                                                         Replacement, DFI);
-      DpctGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
-      return;
-    } else if (FieldName == "__fetch_builtin_y") {
-      Dimension = 1;
-      DFI->getVarMap().Dim = 3;
-    } else if (FieldName == "__fetch_builtin_z") {
-      Dimension = 0;
-      DFI->getVarMap().Dim = 3;
+        unsigned int Len =
+            SM.getDecomposedLoc(End).second - SM.getDecomposedLoc(Begin).second;
+        DpctGlobalInfo::getInstance().insertBuiltinVarInfo(Begin, Len,
+                                                           Replacement, DFI);
+        DpctGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
+        return;
+      } else if (FieldName == "__fetch_builtin_y") {
+        Dimension = 1;
+        DFI->getVarMap().Dim = 3;
+      } else if (FieldName == "__fetch_builtin_z") {
+        Dimension = 0;
+        DFI->getVarMap().Dim = 3;
+      } else {
+        llvm::dbgs() << "[" << getName()
+                     << "] Unexpected field name: " << FieldName;
+        return;
+      }
     } else {
-      llvm::dbgs() << "[" << getName()
-                   << "] Unexpected field name: " << FieldName;
-      return;
+      if (FieldName == "__fetch_builtin_x")
+        Dimension = 2;
+      else if (FieldName == "__fetch_builtin_y")
+        Dimension = 1;
+      else if (FieldName == "__fetch_builtin_z")
+        Dimension = 0;
+      else {
+        llvm::dbgs() << "[" << getName()
+                     << "] Unexpected field name: " << FieldName;
+        return;
+      }
     }
 
     Replacement += std::to_string(Dimension);
@@ -2553,16 +2578,22 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
             End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
         if (End.isMacroID())
           return;
-        auto FD = DpctGlobalInfo::getParentFunction(TL);
-        if (!FD)
-          return;
-        auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
-        auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
-        DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
-        emplaceTransformation(new ReplaceText(
-            Begin, End.getRawEncoding() - Begin.getRawEncoding(),
-            MapNames::getClNamespace() + "group<{{NEEDREPLACEG" +
-                std::to_string(Index) + "}}>"));
+        if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+          auto FD = DpctGlobalInfo::getParentFunction(TL);
+          if (!FD)
+            return;
+          auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
+          auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
+          DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
+          emplaceTransformation(new ReplaceText(
+              Begin, End.getRawEncoding() - Begin.getRawEncoding(),
+              MapNames::getClNamespace() + "group<{{NEEDREPLACEG" +
+                  std::to_string(Index) + "}}>"));
+        } else {
+          emplaceTransformation(new ReplaceText(
+              Begin, End.getRawEncoding() - Begin.getRawEncoding(),
+              MapNames::getClNamespace() + "group<3>"));
+        }
         return;
       }
     }
@@ -11949,9 +11980,18 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
   if (FuncName == "__syncthreads") {
-    // Here we only do analysis, replacement will be generated in the migration
-    // pass.
-    DpctGlobalInfo::getItem(CE);
+    BarrierFenceSpaceAnalyzer A;
+    if (A.canSetLocalFenceSpace(CE)) {
+      std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
+                                MapNames::getClNamespace() +
+                                "access::fence_space::local_space)";
+      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+    } else {
+      report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true,
+             "nd_item");
+      std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier()";
+      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+    }
   } else if (FuncName == "this_thread_block") {
     if (auto P = getAncestorDeclStmt(CE)) {
       if (auto VD = dyn_cast<VarDecl>(*P->decl_begin())) {
@@ -12025,57 +12065,6 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(SyncThreadsRule, PassKind::PK_Analysis)
-
-void SyncThreadsMigrationRule::registerMatcher(MatchFinder &MF) {
-  auto SyncAPI = [&]() { return hasAnyName("__syncthreads"); };
-  MF.addMatcher(
-      callExpr(allOf(callee(functionDecl(SyncAPI())), parentStmt(),
-                     hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
-                                                    hasAttr(attr::CUDAGlobal)))
-                                     .bind("FuncDecl"))))
-          .bind("SyncFuncCall"),
-      this);
-  MF.addMatcher(
-      callExpr(allOf(callee(functionDecl(SyncAPI())), unless(parentStmt()),
-                     hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
-                                                    hasAttr(attr::CUDAGlobal)))
-                                     .bind("FuncDeclUsed"))))
-          .bind("SyncFuncCallUsed"),
-      this);
-}
-
-void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
-  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "SyncFuncCall");
-  const FunctionDecl *FD =
-      getAssistNodeAsType<FunctionDecl>(Result, "FuncDecl");
-  if (!CE) {
-    if (!(CE = getNodeAsType<CallExpr>(Result, "SyncFuncCallUsed")))
-      return;
-    FD = getAssistNodeAsType<FunctionDecl>(Result, "FuncDeclUsed");
-  }
-  if (!FD)
-    return;
-
-  std::string FuncName =
-      CE->getDirectCallee()->getNameInfo().getName().getAsString();
-  if (FuncName == "__syncthreads") {
-    ReadWriteOrderAnalyzer RWOA;
-    GlobalPointerReferenceCountAnalyzer GPRCA;
-    if (RWOA.analyze(CE) || GPRCA.analyze(CE)) {
-      std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
-                                MapNames::getClNamespace() +
-                                "access::fence_space::local_space)";
-      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
-    } else {
-      report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true,
-             "nd_item");
-      std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier()";
-      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
-    }
-  }
-}
-
-REGISTER_RULE(SyncThreadsMigrationRule, PassKind::PK_Migration)
 
 void KernelFunctionInfoRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(

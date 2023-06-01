@@ -23,8 +23,8 @@
 namespace clang {
 namespace dpct {
 
-class ReadWriteOrderAnalyzer
-    : public clang::RecursiveASTVisitor<ReadWriteOrderAnalyzer> {
+class BarrierFenceSpaceAnalyzer
+    : public clang::RecursiveASTVisitor<BarrierFenceSpaceAnalyzer> {
 public:
   bool shouldVisitImplicitCode() const { return true; }
   bool shouldTraversePostOrder() const { return false; }
@@ -35,7 +35,7 @@ public:
   bool Traverse##CLASS(CLASS *Node) {                                          \
     if (!Visit(Node))                                                          \
       return false;                                                            \
-    if (!clang::RecursiveASTVisitor<ReadWriteOrderAnalyzer>::Traverse##CLASS(  \
+    if (!clang::RecursiveASTVisitor<BarrierFenceSpaceAnalyzer>::Traverse##CLASS(  \
             Node))                                                             \
       return false;                                                            \
     PostVisit(Node);                                                           \
@@ -57,7 +57,7 @@ public:
 #undef VISIT_NODE
 
 public:
-  bool analyze(const clang::CallExpr *CE);
+  bool canSetLocalFenceSpace(const clang::CallExpr *CE);
 
 private:
   bool traverseFunction(const clang::FunctionDecl *FD);
@@ -88,48 +88,6 @@ private:
   /// (FD location, (Call location, result))
   static std::unordered_map<std::string, std::unordered_map<std::string, bool>>
       CachedResults;
-};
-
-class GlobalPointerReferenceCountAnalyzer
-    : public clang::RecursiveASTVisitor<GlobalPointerReferenceCountAnalyzer> {
-public:
-  bool shouldVisitImplicitCode() const { return true; }
-  bool shouldTraversePostOrder() const { return false; }
-
-#define VISIT_NODE(CLASS)                                                      \
-  bool Visit(CLASS *Node);                                                     \
-  void PostVisit(CLASS *FS);                                                   \
-  bool Traverse##CLASS(CLASS *Node) {                                          \
-    if (!Visit(Node))                                                          \
-      return false;                                                            \
-    if (!clang::RecursiveASTVisitor<                                           \
-            GlobalPointerReferenceCountAnalyzer>::Traverse##CLASS(Node))       \
-      return false;                                                            \
-    PostVisit(Node);                                                           \
-    return true;                                                               \
-  }
-
-  VISIT_NODE(DeclRefExpr)
-  VISIT_NODE(BinaryOperator)
-  VISIT_NODE(VarDecl)
-#undef VISIT_NODE
-
-public:
-  bool analyze(const clang::CallExpr *CE);
-
-private:
-  struct VarInfo {
-    VarInfo(size_t ID) : ID(ID) {}
-    size_t ID = 0;
-    size_t ReferencedDRENumber = 0;
-  };
-  bool HasGlobalDeviceVariable = false;
-  bool countReference(const FunctionDecl *FD);
-  static std::unordered_map<std::string, bool> CachedResults;
-  std::stack<clang::VarDecl *> UnderVarDeclOrBinaryOP;
-  std::unordered_map<clang::VarDecl *, VarInfo> NonconstPointerDecls;
-  int KernelDim = 3; // 3 or 1
-  const clang::FunctionDecl *FD;
 };
 
 } // namespace dpct

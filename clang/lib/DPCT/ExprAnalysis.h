@@ -840,6 +840,7 @@ private:
     return KCA.getReplacedString();
   }
   int64_t calculateWorkgroupSize(const CXXConstructExpr *Ctor);
+  bool isOneDimensionConfigArg(const CXXConstructExpr *Ctor);
 
 protected:
   void dispatch(const Stmt *Expression) override;

@@ -88,23 +88,11 @@ __global__ void test2(float *ptr1, float *ptr2) {
 }
 
 // Unsupport label and goto stmt
-__global__ void test3(float *f) {
+__global__ void test3() {
   int a;
   int b;
-  f[a] = f[b];
   goto label;
   //CHECK:item_ct1.barrier();
-  __syncthreads();
-  a++;
-label:
-  b++;
-}
-
-__global__ void test3_1() {
-  int a;
-  int b;
-  goto label;
-  //CHECK:item_ct1.barrier(sycl::access::fence_space::local_space);
   __syncthreads();
   a++;
 label:
@@ -161,129 +149,4 @@ __global__ void test9(S4 a) {
   S4 b(a);
   // CHECK:item_ct1.barrier();
   __syncthreads();
-}
-
-extern __shared__ float extern_local_decl[];
-
-__global__ void test10(float *arg1_ptr, int arg2_scalar, int arg3_scalar) {
-  int var1 = blockIdx.x * blockDim.x + threadIdx.x;
-  if (var1 < arg3_scalar) {
-    float *var2 = extern_local_decl;
-    var2[var1] = 0;
-    if (var1 < 123) {
-      float a = __expf(1.f);
-      var2[var1] = a;
-      arg1_ptr[var1] = a;
-    }
-    // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
-    // CHECK-NEXT: int var3 = arg3_scalar / 2;
-    __syncthreads();
-    int var3 = arg3_scalar / 2;
-    while (var3 != 0) {
-      if (var1 < var3) {
-        var2[var1] += var2[var1 + var3];
-      }
-      // CHECK: var3 = var3 / 2;
-      // CHECK-NEXT: item_ct1.barrier(sycl::access::fence_space::local_space);
-      var3 = var3 / 2;
-      __syncthreads();
-    }
-    float var4 = var2[0] + 1.f;
-    if (var1 < arg2_scalar) {
-      arg1_ptr[var1] /= var4;
-      arg1_ptr[var1] = sqrtf(arg1_ptr[var1]);
-    }
-  }
-  // CHECK:   item_ct1.barrier(sycl::access::fence_space::local_space);
-  // CHECK-NEXT: }
-  __syncthreads();
-}
-
-int query_block(const int x) {
-  return x;
-}
-
-void foo() {
-  float *f;
-  int a;
-  int n = 128;
-  dim3 block(n);
-  dim3 grid(query_block(n));
-  test10<<<grid, block>>>(f, a, a);
-}
-
-__global__ void test11(float *a_ptr, float *b_ptr,
-                       float *c_ptr, float *d_ptr,
-                       int const e_scalar, float *f_ptr,
-                       float *g_ptr, float const h_scalar,
-                       int *i_ptr, size_t const j_scalar) {
-  int const eight = 8;
-  const float *a_c_ptr = a_ptr;
-  const float *b_c_ptr = b_ptr;
-  float *nc_c_ptr = c_ptr;
-  const float *d_c_ptr = d_ptr;
-  const float *f_c_ptr = f_ptr;
-  const float *g_c_ptr = g_ptr;
-  const float h_c_scalar = h_scalar;
-  const int *i_c_ptr = i_ptr;
-  const int e_c_scalar = e_scalar;
-  const int zero = 0;
-
-  __shared__ float local[123];
-  int idx_x = blockDim.x * blockIdx.x + threadIdx.x;
-  int idx_y = blockDim.y * blockIdx.y + threadIdx.y;
-
-  int idx = idx_x + eight + (idx_y * e_c_scalar + eight) * j_scalar;
-  size_t local_idx_x = threadIdx.x;
-
-  size_t var0 = (local_idx_x + eight);
-  float var1[321];
-  float var2[123];
-  int var3 = i_c_ptr[321 - 123];
-  float var4[321 + 123];
-  float var5[321];
-  for (unsigned int iter = 0; iter <= 321; iter++) {
-    var4[iter] = a_c_ptr[idx + j_scalar * iter];
-  }
-  for (unsigned int iter = 1; iter <= 321; iter++) {
-    var5[iter - 1] = a_c_ptr[idx - j_scalar * iter];
-    var1[iter - 1] = f_c_ptr[iter - 1];
-    var2[iter - 1] = g_c_ptr[iter - 1];
-  }
-  bool var6 = false;
-  if (local_idx_x < 123)
-    var6 = true;
-  const unsigned int var7 = blockDim.x;
-  for (int i = 0; i < e_c_scalar; i++) {
-    local[var0] = var4[0];
-    if (var6) {
-      local[var0 - 123] = a_c_ptr[idx - 123];
-      local[var0 + var7] = a_c_ptr[idx + var7];
-    }
-    // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
-    // CHECK-NEXT: float var8 = 0;
-    __syncthreads();
-    float var8 = 0;
-    var8 = fmaf(local[var0], h_c_scalar, var8);
-    for (int iter = 1; iter <= 8; iter++) {
-      var8 = fmaf(local[var0 - iter], var1[iter - 1], var8);
-      var8 = fmaf(local[var0 + iter], var1[iter - 1], var8);
-    }
-    for (int iter = 1; iter <= 123; iter++) {
-      var8 = fmaf(var4[iter], var2[iter - 1], var8);
-      var8 = fmaf(var5[iter - 1], var2[iter - 1], var8);
-    }
-    var8 = fmaf(d_c_ptr[idx], var8, -b_c_ptr[idx]);
-    var8 = fmaf(2.0f, local[var0], var8);
-    nc_c_ptr[idx] = var8;
-    idx += j_scalar;
-    for (unsigned int iter = 321 - 123; iter > 0; iter--) {
-      var5[iter] = var5[iter - 1];
-    }
-    var5[0] = var4[0];
-    for (unsigned int iter = 0; iter < 321; iter++) {
-      var4[iter] = var4[iter + 1];
-    }
-    var4[8] = a_c_ptr[idx + var3];
-  }
 }
