@@ -835,7 +835,6 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
     CodeGen.setInMacroDefine();
 
   auto getReplaceString = [&](const Expr *E) {
-    
     ArgumentAnalysis AA(CodeGen.isInMacroDefine());
     AA.setCallSpelling(SM.getSpellingLoc(GAS->getBeginLoc()),
                        SM.getSpellingLoc(GAS->getEndLoc()));

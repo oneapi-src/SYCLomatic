@@ -907,7 +907,7 @@ AsmNumericLiteralParser::AsmNumericLiteralParser(StringRef TokSpelling)
   bool isFPConstant = isFloatingLiteral();
 
   if (*s == 'U') {
-    if (isFPConstant) 
+    if (isFPConstant)
       hadError = true; // Error for floating constant.
     isUnsigned = true;
     ++s;
