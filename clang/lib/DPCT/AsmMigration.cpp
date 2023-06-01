@@ -534,19 +534,23 @@ protected:
         if (T->isSignedInt() || T->isUnsignedInt() || T->isBitSize())
           Template = "{0} == {1}";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::isequal<float>({0}, {1})";
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
+                     "sycl::isequal<float>({0}, {1})";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::isequal<double>({0}, {1})";
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
+                     "sycl::isequal<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
       case asmtok::kw_ne:
         if (T->isSignedInt() || T->isUnsignedInt() || T->isBitSize())
           Template = "{0} != {1}";
-         else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::isnotequal<float>({0}, {1})";
+        else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
+                     "sycl::isnotequal<float>({0}, {1})";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::isnotequal<double>({0}, {1})";
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
+                     "sycl::isnotequal<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
@@ -554,9 +558,11 @@ protected:
         if (T->isSignedInt())
           Template = "{0} < {1}";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::isless<float>({0}, {1})";
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
+                     "sycl::isless<float>({0}, {1})";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::isless<double>({0}, {1})";
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
+                     "sycl::isless<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
@@ -564,9 +570,11 @@ protected:
         if (T->isSignedInt())
           Template = "{0} <= {1}";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::islessequal<float>({0}, {1})";
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
+                     "sycl::islessequal<float>({0}, {1})";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::islessequal<double>({0}, {1})";
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
+                     "sycl::islessequal<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
@@ -574,9 +582,11 @@ protected:
         if (T->isSignedInt())
           Template = "{0} > {1}";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::isgreater<float>({0}, {1})";
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
+                     "sycl::isgreater<float>({0}, {1})";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::isgreater<double>({0}, {1})";
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
+                     "sycl::isgreater<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
@@ -584,9 +594,11 @@ protected:
         if (T->isSignedInt())
           Template = "{0} >= {1}";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::isgreaterequal<float>({0}, {1})";
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
+                     "sycl::isgreaterequal<float>({0}, {1})";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && sycl::isgreaterequal<double>({0}, {1})";
+          Template = "!sycl::isnan({0}) && !sycl::isnan({1}) && "
+                     "sycl::isgreaterequal<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
@@ -616,49 +628,61 @@ protected:
         break;
       case asmtok::kw_equ:
         if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::isequal<float>({0}, {1})";
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
+                     "sycl::isequal<float>({0}, {1})";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::isequal<double>({0}, {1})";
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
+                     "sycl::isequal<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
       case asmtok::kw_neu:
         if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::isnotequal<float>({0}, {1})";
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
+                     "sycl::isnotequal<float>({0}, {1})";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::isnotequal<double>({0}, {1})";
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
+                     "sycl::isnotequal<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
       case asmtok::kw_ltu:
         if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::isless<float>({0}, {1})";
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
+                     "sycl::isless<float>({0}, {1})";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::isless<double>({0}, {1})";
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
+                     "sycl::isless<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
       case asmtok::kw_leu:
         if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::islessequal<float>({0}, {1})";
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
+                     "sycl::islessequal<float>({0}, {1})";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::islessequal<double>({0}, {1})";
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
+                     "sycl::islessequal<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
       case asmtok::kw_gtu:
-         if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::isgreater<float>({0}, {1})";
+        if (T->getKind() == InlineAsmBuiltinType::TK_f32)
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
+                     "sycl::isgreater<float>({0}, {1})";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::isgreater<double>({0}, {1})";
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
+                     "sycl::isgreater<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
       case asmtok::kw_geu:
-         if (T->getKind() == InlineAsmBuiltinType::TK_f32)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::isgreaterequal<float>({0}, {1})";
+        if (T->getKind() == InlineAsmBuiltinType::TK_f32)
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
+                     "sycl::isgreaterequal<float>({0}, {1})";
         else if (T->getKind() == InlineAsmBuiltinType::TK_f64)
-          Template = "sycl::isnan({0}) || sycl::isnan({1}) || sycl::isgreaterequal<double>({0}, {1})";
+          Template = "sycl::isnan({0}) || sycl::isnan({1}) || "
+                     "sycl::isgreaterequal<double>({0}, {1})";
         else
           return SYCLGenError();
         break;
@@ -742,7 +766,7 @@ protected:
       EMPTY16, EMPTY, EMPTY, EMPTY,
       /*0xfe*/ "{0} | {1} | {2}",
       /*0xff*/ "uint32_t(-1)"};
-      // clang-format on
+    // clang-format on
 
 #undef EMPTY16
 #undef EMPTY4
