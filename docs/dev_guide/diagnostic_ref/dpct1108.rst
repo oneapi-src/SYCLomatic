@@ -70,12 +70,14 @@ which is rewritten to:
    void kernel(const sycl::nd_item<3> &item_ct1){
      int target = item_ct1.get_local_id(2) % 32;
      int foo = 0, result = 0;
-     int mask = 0xf;    if(lane_id == 0) {
+     int mask = 0xf;
+     if(lane_id == 0) {
        result = 10;
      }
      // Don’t use experimental feature masked sub_group function
+     int foo_tmp = dpct::select_from_sub_group(item_ct1.get_sub_group(), result, 0);
      if(lane_id & mask) {
-       foo = dpct::select_from_sub_group(item_ct1.get_sub_group(), result, 0);
+       foo=foo_tmp;
      } else {
        dpct::select_from_sub_group(item_ct1.get_sub_group(), result, 0);
      }
