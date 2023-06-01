@@ -684,11 +684,19 @@ void CubRule::processCubDeclStmt(const DeclStmt *DS) {
 void CubRule::processCubTypeDef(const TypedefDecl *TD) {
   auto CanonicalType = TD->getUnderlyingType().getCanonicalType();
   std::string CanonicalTypeStr = CanonicalType.getAsString();
-  std::string TypeName = TD->getNameAsString();
-  if (isTypeInAnalysisScope(CanonicalType.getTypePtr()) ||
-      CanonicalTypeStr.find("class cub::") != 0) {
+  if (isTypeInAnalysisScope(CanonicalType.getTypePtr()))
+    return;
+  
+  if (maybeDependentCubType(TD->getTypeSourceInfo())) {
+    emplaceTransformation(new ReplaceDecl(TD, ""));
     return;
   }
+
+  if (CanonicalTypeStr.find("class cub::") != 0) {
+    return;
+  }
+
+  std::string TypeName = TD->getNameAsString();
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto MyMatcher = compoundStmt(forEachDescendant(
