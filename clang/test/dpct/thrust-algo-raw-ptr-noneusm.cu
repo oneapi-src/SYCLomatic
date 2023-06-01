@@ -16,6 +16,7 @@
 #include <thrust/remove.h>
 #include <thrust/replace.h>
 #include <thrust/reverse.h>
+<<<<<<< HEAD
 #include <thrust/set_operations.h>
 #include <thrust/sort.h>
 #include <thrust/tabulate.h>
@@ -23,6 +24,11 @@
 #include <thrust/unique.h>
 // CHECK: #include <oneapi/dpl/memory>
 #include <thrust/uninitialized_copy.h>
+=======
+#include <thrust/binary_search.h>
+#include <thrust/device_malloc.h>
+#include <thrust/equal.h>
+>>>>>>> Add lit test check
 
 // for cuda 12.0
 #include <thrust/iterator/constant_iterator.h>
@@ -807,6 +813,26 @@ void equal() {
   int x[N] = {0, 2, 4, 6, 8, 10};
   int y[N] = {1, 3, 5, 7, 9, 11};
 
+  // CHECK:  if (dpct::is_device_ptr(A1)) {
+  // CHECK-NEXT:    oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A1), dpct::device_pointer<int>(A1 + N), dpct::device_pointer<int>(A2));
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::equal(oneapi::dpl::execution::seq, A1, A1 + N, A2);
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(A1)) {
+  // CHECK-NEXT:    oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A1), dpct::device_pointer<int>(A1 + N), dpct::device_pointer<int>(A2));
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::equal(oneapi::dpl::execution::seq, A1, A1 + N, A2);
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(x)) {
+  // CHECK-NEXT:    oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(x), dpct::device_pointer<int>(x + N), dpct::device_pointer<int>(y), compare_modulo_two());
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::equal(oneapi::dpl::execution::seq, x, x + N, y, compare_modulo_two());
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(x)) {
+  // CHECK-NEXT:    oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(x), dpct::device_pointer<int>(x + N), dpct::device_pointer<int>(y), compare_modulo_two());
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::equal(oneapi::dpl::execution::seq, x, x + N, y, compare_modulo_two());
+  // CHECK-NEXT:  };
   thrust::equal(thrust::host, A1, A1 + N, A2);
   thrust::equal(A1, A1 + N, A2);
   thrust::equal(x, x + N, y, compare_modulo_two());

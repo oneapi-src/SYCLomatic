@@ -351,7 +351,6 @@ public:
     auto &SM = dpct::DpctGlobalInfo::getSourceManager();
     NL = getNL(getStmtExpansionSourceRange(C).getBegin(), SM);
     Indent = getIndent(getStmtExpansionSourceRange(C).getBegin(), SM);
-    printf("###### [%s]\n", C->getBeginLoc().printToString(SM).data());
   }
 
   std::optional<std::string> rewrite() override {
