@@ -121,8 +121,8 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::CXXConstructExpr *CCE)
     return true;
   return false;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::CXXConstructExpr *) {
-}
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
+    clang::CXXConstructExpr *) {}
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::traverseFunction(
     const clang::FunctionDecl *FD) {
@@ -173,7 +173,8 @@ bool isPointerOperationSafe(const clang::Expr *Pointer) {
   return false;
 }
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(const clang::CallExpr *CE) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
+    const clang::CallExpr *CE) {
   if (CE->getBeginLoc().isMacroID() || CE->getEndLoc().isMacroID())
     return false;
   auto FD = dpct::DpctGlobalInfo::findAncestor<clang::FunctionDecl>(CE);
