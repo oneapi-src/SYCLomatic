@@ -1,9 +1,7 @@
 // REQUIRES: aspect-queue_profiling
-// RUN: %clangxx -fsycl -fsycl-targets=%sycl_triple %s -o %t.out
+// RUN: %{build} -o %t.out
 //
-// RUN: %CPU_RUN_PLACEHOLDER %t.out
-// RUN: %GPU_RUN_PLACEHOLDER %t.out
-// RUN: %ACC_RUN_PLACEHOLDER %t.out
+// RUN: %{run} %t.out
 //==------------------- event_profiling_info.cpp ---------------------------==//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -14,6 +12,9 @@
 
 // Flaky with CUDA and HIP (https://github.com/intel/llvm/issues/6495).
 // UNSUPPORTED: cuda, hip
+
+// Fails there.
+// UNSUPPORTED: opencl && gpu && gpu-intel-pvc
 
 #include <cassert>
 #include <iostream>

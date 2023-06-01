@@ -31,9 +31,9 @@ if (NOT TARGET LLVMGenXIntrinsics)
   if (NOT DEFINED LLVMGenXIntrinsics_SOURCE_DIR)
     set(LLVMGenXIntrinsics_GIT_REPO https://github.com/intel/vc-intrinsics.git)
     # Author: "Victor Mustya" <victor.mustya@intel.com>
-    # Date: Tue, 25 Apr 2023 15:13:02 +0000
-    # Use target extension types for SPIR-V opaque arguments
-    set(LLVMGenXIntrinsics_GIT_TAG 2c39bf09756c3afd6ce77c7aa104e4a6e025405d)
+    # Date: Mon, 15 May 2023 23:44:14 +0000
+    # Mark new lsc_load_merge intrinsics as LSC ones
+    set(LLVMGenXIntrinsics_GIT_TAG fe92a377338258b725cfbd0a1bd49a9cf5e2864c)
 
     if (INTEL_CUSTOMIZATION)
       # for xmain builds the LLVMGenXIntrinsics_GIT_REPO is constructed from
@@ -119,7 +119,6 @@ add_llvm_component_library(LLVMSYCLLowerIR
   ESIMD/LowerESIMDSlmReservation.cpp
   HostPipes.cpp
   LowerInvokeSimd.cpp
-  LowerKernelProps.cpp
   LowerWGLocalMemory.cpp
   LowerWGScope.cpp
   MutatePrintfAddrspace.cpp
@@ -152,6 +151,7 @@ add_llvm_component_library(LLVMSYCLLowerIR
   Analysis
   Core
   Support
+  ipo
   )
 
 target_include_directories(LLVMSYCLLowerIR
