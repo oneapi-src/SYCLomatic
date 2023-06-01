@@ -35,8 +35,8 @@ public:
   bool Traverse##CLASS(CLASS *Node) {                                          \
     if (!Visit(Node))                                                          \
       return false;                                                            \
-    if (!clang::RecursiveASTVisitor<BarrierFenceSpaceAnalyzer>::Traverse##CLASS(  \
-            Node))                                                             \
+    if (!clang::RecursiveASTVisitor<                                           \
+            BarrierFenceSpaceAnalyzer>::Traverse##CLASS(Node))                 \
       return false;                                                            \
     PostVisit(Node);                                                           \
     return true;                                                               \
@@ -88,8 +88,8 @@ private:
   /// (FD location, (Call location, result))
   static std::unordered_map<std::string, std::unordered_map<std::string, bool>>
       CachedResults;
+  static const std::unordered_set<std::string> AllowedDeviceFunctions;
 };
-
 } // namespace dpct
 } // namespace clang
 

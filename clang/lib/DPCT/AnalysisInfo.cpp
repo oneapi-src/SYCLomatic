@@ -956,11 +956,9 @@ void DpctFileInfo::buildReplacements() {
   for (auto &BuiltinVar : BuiltinVarInfoMap) {
     auto Ptr = MemVarMap::getHeadWithoutPathCompression(
         &(BuiltinVar.second.DFI->getVarMap()));
-    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && Ptr) {
+    if (Ptr) {
       unsigned int ID = (Ptr->Dim == 1) ? 0 : 2;
       BuiltinVar.second.buildInfo(FilePath, BuiltinVar.first, ID);
-    } else {
-      BuiltinVar.second.buildInfo(FilePath, BuiltinVar.first, 2);
     }
   }
 

@@ -15,17 +15,6 @@
 
 using namespace llvm;
 
-// Functions in this set should not create alias name for input pointer
-const std::unordered_set<std::string> AllowedDeviceFunctions = {
-    "__popc",
-    "atomicAdd",
-    "__fetch_builtin_x",
-    "__fetch_builtin_y",
-    "__fetch_builtin_z",
-    "uint4",
-    "sqrtf",
-    "__expf"};
-
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::IfStmt *IS) {
   // No special process, treat as one block
   return true;
@@ -336,157 +325,12 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(const clang::
 std::unordered_map<std::string, std::unordered_map<std::string, bool>>
     clang::dpct::BarrierFenceSpaceAnalyzer::CachedResults;
 
-bool canBeTreatedAsPrivateMemoryAccess(int KernelDim,
-                                       const clang::DeclRefExpr *DRE,
-                                       const clang::FunctionDecl *FD) {
-  if (KernelDim != 1) {
-    return false;
-  }
-  // Check if this DRE(Ptr) matches pattern: Ptr[Idx]
-  // clang-format off
-  //    ArraySubscriptExpr <col:7, col:16> 'float' lvalue
-  //    |-ImplicitCastExpr <col:7> 'float *' <LValueToRValue>
-  //    | `-DeclRefExpr <col:7> 'float *' lvalue ParmVar 0x555a6c216d68 'Ptr' 'float *'
-  //    `-ImplicitCastExpr <col:12> 'int' <LValueToRValue>
-  //      `-DeclRefExpr <col:12> 'int' lvalue Var 0x555a6c217078 'Idx' 'int'
-  // clang-format on
-  auto IsParentArraySubscriptExpr =
-      [](const clang::DeclRefExpr *Node) -> const clang::ArraySubscriptExpr * {
-    auto ICE =
-        clang::dpct::DpctGlobalInfo::findParent<clang::ImplicitCastExpr>(Node);
-    if (!ICE || (ICE->getCastKind() != clang::CastKind::CK_LValueToRValue))
-      return nullptr;
-    auto ASE =
-        clang::dpct::DpctGlobalInfo::findParent<clang::ArraySubscriptExpr>(ICE);
-    if (!ASE)
-      return nullptr;
-    return ASE;
-  };
-  const clang::ArraySubscriptExpr *ASE = IsParentArraySubscriptExpr(DRE);
-  if (!ASE)
-    return false;
-
-  // IdxVD must be local variable and must be defined in this function
-  const clang::DeclRefExpr *IdxDRE =
-      dyn_cast_or_null<clang::DeclRefExpr>(ASE->getIdx()->IgnoreImpCasts());
-  if (!IdxDRE)
-    return false;
-  const clang::VarDecl *IdxVD =
-      dyn_cast_or_null<clang::VarDecl>(IdxDRE->getDecl());
-
-  if (!IdxVD->isLocalVarDecl())
-    return false;
-  const clang::FunctionDecl *IdxVDContext =
-      clang::dpct::DpctGlobalInfo::findAncestor<clang::FunctionDecl>(IdxVD);
-  if (!IdxVDContext || (IdxVDContext != FD))
-    return false;
-
-  // VD's DRE should only be used as rvalue
-  auto DREMatcher = clang::ast_matchers::findAll(
-      clang::ast_matchers::declRefExpr().bind("DRE"));
-  auto MatchedResults = clang::ast_matchers::match(
-      DREMatcher, *(FD->getBody()), clang::dpct::DpctGlobalInfo::getContext());
-  for (const auto &Res : MatchedResults) {
-    const clang::DeclRefExpr *RefDRE = Res.getNodeAs<clang::DeclRefExpr>("DRE");
-    if (RefDRE->getDecl() != IdxVD) {
-      continue;
-    }
-    auto ICE = clang::dpct::DpctGlobalInfo::findParent<clang::ImplicitCastExpr>(
-        RefDRE);
-    if (!ICE || (ICE->getCastKind() != clang::CastKind::CK_LValueToRValue))
-      return false;
-  }
-
-  // Check if Index variable match pattern: blockIdx.x * blockDim.x +
-  // threadIdx.x
-  if (!IdxVD->hasInit())
-    return false;
-  auto IsIterationSpaceBuiltinVar =
-      [](const clang::PseudoObjectExpr *Node, const std::string &BuiltinNameRef,
-         const std::string &FieldNameRef) -> bool {
-    if (!Node)
-      return false;
-    using namespace clang::ast_matchers;
-    auto BuiltinMatcher = findAll(
-        memberExpr(hasObjectExpression(opaqueValueExpr(hasSourceExpression(
-                       declRefExpr(to(varDecl(hasAnyName(
-                                       "threadIdx", "blockDim", "blockIdx"))))
-                           .bind("declRefExpr")))),
-                   hasParent(implicitCastExpr(
-                       hasParent(callExpr(hasParent(pseudoObjectExpr()))))))
-            .bind("memberExpr"));
-    auto MatchedResults =
-        match(BuiltinMatcher, *Node, clang::dpct::DpctGlobalInfo::getContext());
-    if (MatchedResults.size() != 1)
-      return false;
-    const auto Res = MatchedResults[0];
-    auto ME = Res.getNodeAs<clang::MemberExpr>("memberExpr");
-    auto DRE = Res.getNodeAs<clang::DeclRefExpr>("declRefExpr");
-    if (!ME || !DRE)
-      return false;
-    StringRef BuiltinName = DRE->getDecl()->getName();
-    StringRef FieldName = ME->getMemberDecl()->getName();
-    if (BuiltinName == BuiltinNameRef && FieldName == FieldNameRef)
-      return true;
-    return false;
-  };
-  const clang::Expr *InitExpr = IdxVD->getInit()->IgnoreImpCasts();
-  // Case 1: blockIdx.x * blockDim.x + threadIdx.x
-  // Case 2: blockDim.x * blockIdx.x + threadIdx.x
-  // Case 3: threadIdx.x + blockIdx.x * blockDim.x
-  // Case 4: threadIdx.x + blockDim.x * blockIdx.x
-  const clang::BinaryOperator *BOAdd =
-      dyn_cast<clang::BinaryOperator>(InitExpr);
-  if (!BOAdd || BOAdd->getOpcode() != clang::BinaryOperatorKind::BO_Add)
-    return false;
-  const clang::BinaryOperator *BOMul =
-      dyn_cast<clang::BinaryOperator>(BOAdd->getLHS());
-  if (BOMul && IsIterationSpaceBuiltinVar(
-                   dyn_cast<clang::PseudoObjectExpr>(BOAdd->getRHS()),
-                   "threadIdx", "__fetch_builtin_x")) {
-    if (IsIterationSpaceBuiltinVar(
-            dyn_cast<clang::PseudoObjectExpr>(BOMul->getLHS()), "blockIdx",
-            "__fetch_builtin_x") &&
-        IsIterationSpaceBuiltinVar(
-            dyn_cast<clang::PseudoObjectExpr>(BOMul->getRHS()), "blockDim",
-            "__fetch_builtin_x")) {
-      // Case 1
-      return true;
-    }
-    if (IsIterationSpaceBuiltinVar(
-            dyn_cast<clang::PseudoObjectExpr>(BOMul->getRHS()), "blockIdx",
-            "__fetch_builtin_x") &&
-        IsIterationSpaceBuiltinVar(
-            dyn_cast<clang::PseudoObjectExpr>(BOMul->getLHS()), "blockDim",
-            "__fetch_builtin_x")) {
-      // Case 2
-      return true;
-    }
-    return false;
-  }
-  BOMul = dyn_cast<clang::BinaryOperator>(BOAdd->getRHS());
-  if (BOMul && IsIterationSpaceBuiltinVar(
-                   dyn_cast<clang::PseudoObjectExpr>(BOAdd->getLHS()),
-                   "threadIdx", "__fetch_builtin_x")) {
-    if (IsIterationSpaceBuiltinVar(
-            dyn_cast<clang::PseudoObjectExpr>(BOMul->getLHS()), "blockIdx",
-            "__fetch_builtin_x") &&
-        IsIterationSpaceBuiltinVar(
-            dyn_cast<clang::PseudoObjectExpr>(BOMul->getRHS()), "blockDim",
-            "__fetch_builtin_x")) {
-      // Case 3
-      return true;
-    }
-    if (IsIterationSpaceBuiltinVar(
-            dyn_cast<clang::PseudoObjectExpr>(BOMul->getRHS()), "blockIdx",
-            "__fetch_builtin_x") &&
-        IsIterationSpaceBuiltinVar(
-            dyn_cast<clang::PseudoObjectExpr>(BOMul->getLHS()), "blockDim",
-            "__fetch_builtin_x")) {
-      // Case 4
-      return true;
-    }
-    return false;
-  }
-  return false;
-}
+// Functions in this set should not create alias name for input pointer
+const std::unordered_set<std::string>
+    clang::dpct::BarrierFenceSpaceAnalyzer::AllowedDeviceFunctions = {
+        "__popc",
+        "atomicAdd",
+        "__fetch_builtin_x",
+        "__fetch_builtin_y",
+        "__fetch_builtin_z",
+        "uint4"};
