@@ -8,6 +8,7 @@
 
 #include "CallExprRewriter.h"
 #include "CallExprRewriterCommon.h"
+#include "Config.h"
 
 extern std::string DpctInstallPath; // Installation directory for this tool
 
@@ -972,6 +973,22 @@ public:
     std::string DeclLocFilePath =
         dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
     makeCanonical(DeclLocFilePath);
+
+    // clang hacked the declarations of std::min/std::max
+    // In original code, the declaration should be in standard lib,
+    // but clang need to add device version overload, so it hacked the
+    // resolution by adding a special attribute.
+    // So we need treat function which is declared in this file as it
+    // is from standard lib.
+    SmallString<512> HackedCudaWrapperFile = StringRef(DpctInstallPath);
+    path::append(HackedCudaWrapperFile, Twine("lib"), Twine("clang"),
+                 Twine(CLANG_VERSION_MAJOR_STRING), Twine("include"));
+    path::append(HackedCudaWrapperFile, Twine("cuda_wrappers"),
+                 Twine("algorithm"));
+    if (HackedCudaWrapperFile.str().str() == DeclLocFilePath) {
+      return false;
+    }
+
     return (isChildPath(dpct::DpctGlobalInfo::getCudaPath(), DeclLocFilePath) ||
             isChildPath(DpctInstallPath, DeclLocFilePath));
   }

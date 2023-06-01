@@ -37,17 +37,17 @@ __device__ float4 fun() {
 #else
 #define USING(FUNC) using std::FUNC;
 #endif
-// CHECK: using sycl::abs;
+// CHECK: USING(abs)
 USING(abs)
 
 __global__ void kernel() {
-  // CHECK: using sycl::abs;
+  // CHECK: USING(abs)
   USING(abs)
 }
 
 void host() {
 #define USE_STD
-// CHECK: using sycl::abs;
+// CHECK: USING(abs)
   USING(abs)
 #undef USE_STD
 }
