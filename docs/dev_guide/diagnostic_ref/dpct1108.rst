@@ -78,7 +78,5 @@ which is rewritten to:
      int foo_tmp = dpct::select_from_sub_group(item_ct1.get_sub_group(), result, 0);
      if(lane_id & mask) {
        foo=foo_tmp;
-     } else {
-       dpct::select_from_sub_group(item_ct1.get_sub_group(), result, 0);
      }
    }
