@@ -23,9 +23,9 @@ InlineAsmIdentifierTable::InlineAsmIdentifierTable(
 }
 
 void InlineAsmIdentifierTable::AddKeywords() {
-#define KEYWORD(X, Y) get(#X, asmtok::kw_##X);
+#define KEYWORD(X, Y) get(Y, asmtok::kw_##X);
 #define BUILTIN_ID(X, Y, Z) get(Y, asmtok::bi_##X).setBuiltinID();
-#define BUILTIN_TYPE(X, Y) get(#X, asmtok::kw_##X).setBuiltinType();
+#define BUILTIN_TYPE(X, Y) get(Y, asmtok::kw_##X).setBuiltinType();
 #define INSTRUCTION(X) get(#X, asmtok::op_##X).setInstruction();
 #include "AsmTokenKinds.def"
 }
