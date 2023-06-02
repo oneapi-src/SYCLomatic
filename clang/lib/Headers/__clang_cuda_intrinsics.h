@@ -545,6 +545,29 @@ __device__ inline unsigned __reduce_xor_sync(unsigned __mask,
   return __nvvm_redux_sync_xor(__mask, __value);
 }
 
+#if defined(SYCLomatic_CUSTOMIZATION)
+// Fixed the parsing error when source include <cooperative_groups/reduce.h>.
+__device__ inline dim3 __clusterGridDimInClusters();
+
+__device__ inline dim3 __clusterIdx();
+
+__device__ inline unsigned __clusterDimIsSpecified();
+
+__device__ inline void __cluster_barrier_arrive();
+
+__device__ inline unsigned __cluster_query_shared_rank(const void *ptr);
+
+__device__ inline dim3 __clusterRelativeBlockIdx();
+
+__device__ inline unsigned __clusterRelativeBlockRank();
+
+__device__ inline dim3 __clusterDim();
+
+__device__ inline unsigned __clusterSizeInBlocks();
+
+__device__ inline void __cluster_barrier_wait();
+#endif
+
 __device__ inline void __nv_memcpy_async_shared_global_4(void *__dst,
                                                          const void *__src,
                                                          unsigned __src_size) {
