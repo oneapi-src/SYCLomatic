@@ -1083,3 +1083,17 @@ thrustFactory("thrust::set_intersection",
                { 7,PolicyState::HasPolicy,5,"oneapi::dpl::set_intersection", HelperFeatureEnum::no_feature_helper},
                { 6,PolicyState::NoPolicy, 5,"oneapi::dpl::set_intersection", HelperFeatureEnum::no_feature_helper}}),
 
+
+// thrust::set_symmetric_difference
+thrustFactory("thrust::set_symmetric_difference",
+              {{ 6,PolicyState::HasPolicy,5,"oneapi::dpl::set_symmetric_difference", HelperFeatureEnum::no_feature_helper},
+               { 5,PolicyState::NoPolicy, 5,"oneapi::dpl::set_symmetric_difference", HelperFeatureEnum::no_feature_helper},
+               { 7,PolicyState::HasPolicy,5,"oneapi::dpl::set_symmetric_difference", HelperFeatureEnum::no_feature_helper},
+               { 6,PolicyState::NoPolicy, 5,"oneapi::dpl::set_symmetric_difference", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::set_symmetric_difference_by_key
+thrustFactory("thrust::set_symmetric_difference_by_key",
+              {{ 9, PolicyState::HasPolicy,8, MapNames::getDpctNamespace() + "set_symmetric_difference", HelperFeatureEnum::device_ext},
+               { 8, PolicyState::NoPolicy, 8, MapNames::getDpctNamespace() + "set_symmetric_difference", HelperFeatureEnum::device_ext},
+               { 10,PolicyState::HasPolicy,8, MapNames::getDpctNamespace() + "set_symmetric_difference", HelperFeatureEnum::device_ext},
+               { 9, PolicyState::NoPolicy, 8, MapNames::getDpctNamespace() + "set_symmetric_difference", HelperFeatureEnum::device_ext}}),
