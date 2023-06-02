@@ -67,15 +67,12 @@ which is rewritten to:
 .. code-block:: cpp
    :linenos:
 
-   int main() {
-     dpct::device_info deviceProp;
-     dpct::dev_mgr::instance().get_device(0).get_device_info(deviceProp);
-     // User is using LEVEL_ZERO GPU backend, its major version is 1.
-     // Since SYCL supports sycl::select_from_group, change "3" => "1"
-     if (deviceProp.get_major_version() >= 1) {
-       // Invoke kernel using sycl::select_from_group
-       ...
-     }
-     return 0;
-   }
+    int main() {
+      // sycl::select_from_group is supported in SYCL 2020.
+      if (SYCL_LANGUAGE_VERSION >= 202000) {
+        // Invoke kernel using sycl::select_from_group
+        ...
+      }
+      return 0;
+    }
 
