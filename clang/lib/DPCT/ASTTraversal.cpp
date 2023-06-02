@@ -2467,21 +2467,6 @@ bool TypeInDeclRule::replaceTransformIterator(SourceManager *SM,
   return true;
 }
 
-bool TypeInDeclRule::isCapturedByLambda(const TypeLoc *TL) {
-  const FieldDecl *FD = DpctGlobalInfo::findAncestor<FieldDecl>(TL);
-  if (!FD)
-    return false;
-  const LambdaExpr *LE = DpctGlobalInfo::findAncestor<LambdaExpr>(TL);
-  if (!LE)
-    return false;
-  for (const auto &D : LE->getLambdaClass()->decls()) {
-    const FieldDecl *FieldDeclItem = dyn_cast<FieldDecl>(D);
-    if (FieldDeclItem && (FieldDeclItem == FD))
-      return true;
-  }
-  return false;
-}
-
 void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD) {
   auto SD = getAllDecls(DD);
 
@@ -2539,7 +2524,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
     }
 
-    if(isTypeLocInLambdaCapture(TL))
+    if(isCapturedByLambda(TL))
       return;
 
     auto TypeStr =
@@ -2567,9 +2552,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
                          SM->getSpellingLoc(TL->getBeginLoc()))) {
       return;
     }
-
-    if (isCapturedByLambda(TL))
-      return;
 
     auto Range = getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc());
     auto BeginLoc = Range.getBegin();
@@ -13300,7 +13282,7 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
       replaceTextureMember(ME, *Result.Context, *Result.SourceManager);
     }
   } else if (auto TL = getNodeAsType<TypeLoc>(Result, "texType")) {
-    if (isTypeLocInLambdaCapture(TL))
+    if (isCapturedByLambda(TL))
       return;
     const std::string &ReplType = MapNames::findReplacedName(
         MapNames::TypeNamesMap,

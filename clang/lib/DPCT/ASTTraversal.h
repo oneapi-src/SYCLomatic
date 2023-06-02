@@ -448,7 +448,6 @@ private:
                                    const TypeLoc *TL);
   bool replaceTransformIterator(SourceManager *SM, LangOptions &LOpts,
                                 const TypeLoc *TL);
-  bool isCapturedByLambda(const TypeLoc *TL);
 };
 
 class TemplateSpecializationTypeLocRule

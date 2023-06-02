@@ -580,5 +580,5 @@ bool isPointerHostAccessOnly(const clang::ValueDecl* VD);
 std::string getBaseTypeRemoveTemplateArguments(const clang::MemberExpr* ME);
 bool containIterationSpaceBuiltinVar(const clang::Stmt *Node);
 bool containBuiltinWarpSize(const clang::Stmt *Node);
-bool isTypeLocInLambdaCapture(const clang::TypeLoc *TL);
+bool isCapturedByLambda(const clang::TypeLoc *TL);
 #endif // DPCT_UTILITY_H

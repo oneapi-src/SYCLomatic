@@ -4258,18 +4258,18 @@ bool containBuiltinWarpSize(const clang::Stmt *Node) {
   return false;
 }
 
-bool isTypeLocInLambdaCapture(const clang::TypeLoc *TL) {
+bool isCapturedByLambda(const clang::TypeLoc *TL) {
   using namespace dpct;
-  if (auto LVRTL =
-          DpctGlobalInfo::findParent<clang::LValueReferenceTypeLoc>(TL)) {
-    if (auto ParentFD = DpctGlobalInfo::findParent<clang::FieldDecl>(LVRTL)) {
-      if (auto ParentRD =
-              DpctGlobalInfo::findParent<clang::CXXRecordDecl>(ParentFD)) {
-        if (DpctGlobalInfo::findParent<clang::LambdaExpr>(ParentRD)) {
-          return true;
-        }
-      }
-    }
+  const FieldDecl *FD = DpctGlobalInfo::findAncestor<clang::FieldDecl>(TL);
+  if (!FD)
+    return false;
+  const LambdaExpr *LE = DpctGlobalInfo::findAncestor<clang::LambdaExpr>(TL);
+  if (!LE)
+    return false;
+  for (const auto &D : LE->getLambdaClass()->decls()) {
+    const FieldDecl *FieldDeclItem = dyn_cast<clang::FieldDecl>(D);
+    if (FieldDeclItem && (FieldDeclItem == FD))
+      return true;
   }
   return false;
 }
