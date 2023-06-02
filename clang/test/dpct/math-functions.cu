@@ -47,7 +47,7 @@ __global__ void kernel() {
 
 void host() {
 #define USE_STD
-// CHECK: USING(abs)
+  // CHECK: USING(abs)
   USING(abs)
 #undef USE_STD
 }

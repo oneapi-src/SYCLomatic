@@ -14,10 +14,9 @@ using std::max;
 
 void foo(size_t len) {
   size_t maxlen = 0;
-  // CHECK: maxlen = max(maxlen, len);
   maxlen = max(maxlen, len);
 }
-}
+} // namespace aaa
 
 namespace bbb {
 // CHECK: // AAA
@@ -29,10 +28,9 @@ using ::std::max;
 
 void foo(size_t len) {
   size_t maxlen = 0;
-  // CHECK: maxlen = max(maxlen, len);
   maxlen = max(maxlen, len);
 }
-}
+} // namespace bbb
 
 namespace ccc {
 // CHECK: // AAA
@@ -47,4 +45,4 @@ void foo(size_t len) {
   // CHECK: maxlen = std::max(maxlen, len);
   maxlen = max(maxlen, len);
 }
-}
+} // namespace ccc
