@@ -1039,7 +1039,7 @@ public:
     EnterScope();
   }
   InlineAsmParser(const InlineAsmParser &) = delete;
-  void operator=(const InlineAsmParser &) = delete;
+  InlineAsmParser &operator=(const InlineAsmParser &) = delete;
   ~InlineAsmParser() { ExitScope(); }
 
   SourceMgr &getSourceManager() { return SrcMgr; }
