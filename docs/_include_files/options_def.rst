@@ -655,7 +655,7 @@ The values are:
   allows allocation of local memory objects at the kernel functor scope.
 - ``=logical-group``: Experimental helper function used to logically
   group work-items.
-- ``=masked_sub_group_operation``: Experimental helper function used to execute
+- ``=masked-sub-group-operation``: Experimental helper function used to execute
   sub-group operation with mask.
 - ``=nd_range_barrier``: Experimental helper function used to help cross
   group synchronization during migration.
