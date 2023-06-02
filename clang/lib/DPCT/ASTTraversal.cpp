@@ -2170,7 +2170,6 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
       }
 
       requestHelperFeatureForTypeNames(RealTypeNameStr, ETBeginLoc);
-
       std::string Replacement =
           MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
       insertHeaderForTypeRule(RealTypeNameStr, ETBeginLoc);
@@ -2351,7 +2350,6 @@ bool TypeInDeclRule::replaceTransformIterator(SourceManager *SM,
     else
       return Name;
   };
-
   // Get the mapped typename, if one exists.  If not return the input
   auto mapName = [&](std::string Name) -> std::string {
     std::string NameToMap = Name;
@@ -2540,6 +2538,9 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         TL->getBeginLoc().isInvalid()) {
       return;
     }
+
+    if(isTypeLocInLambdaCapture(TL))
+      return;
 
     auto TypeStr =
         DpctGlobalInfo::getTypeName(TL->getType().getUnqualifiedType());
@@ -2885,7 +2886,6 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
         emplaceTransformation(new InsertText(Loc, "{}"));
       }
     }
-
     bool NeedRemoveVolatile = true;
     Token Tok;
     auto LOpts = Result.Context->getLangOpts();
@@ -3348,7 +3348,6 @@ void ReplaceDim3CtorRule::runRule(const MatchFinder::MatchResult &Result) {
     auto LOpts = Result.Context->getLangOpts();
     Lexer::getRawToken(BeginLoc, Tok, *SM, LOpts, true);
     if (Tok.isAnyIdentifier()) {
-
       if (TL->getType()->isElaboratedTypeSpecifier()) {
         // To handle case like "struct cudaExtent extent;"
         auto ETC = TL->getUnqualifiedLoc().getAs<ElaboratedTypeLoc>();
@@ -13301,6 +13300,8 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
       replaceTextureMember(ME, *Result.Context, *Result.SourceManager);
     }
   } else if (auto TL = getNodeAsType<TypeLoc>(Result, "texType")) {
+    if (isTypeLocInLambdaCapture(TL))
+      return;
     const std::string &ReplType = MapNames::findReplacedName(
         MapNames::TypeNamesMap,
         DpctGlobalInfo::getUnqualifiedTypeName(TL->getType(), *Result.Context));

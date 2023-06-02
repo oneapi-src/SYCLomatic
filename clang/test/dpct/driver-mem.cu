@@ -20,6 +20,18 @@ int main(){
     cuMemHostAlloc((void **)&f_A, size, CU_MEMHOSTALLOC_DEVICEMAP);
 
 
+    CUdeviceptr p1;
+    [&p1]() {
+        //CHECK:p1 = 0;
+        p1 = 0;
+    }();
+
+    CUdeviceptr p2;
+    [&]() {
+        //CHECK:p2 = 0;
+        p2 = 0;
+    }();
+
     // CHECK: dpct::device_ptr f_D = 0;
     CUdeviceptr f_D = 0;
     // CHECK: dpct::device_ptr f_D2 = 0;

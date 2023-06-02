@@ -4257,3 +4257,19 @@ bool containBuiltinWarpSize(const clang::Stmt *Node) {
   }
   return false;
 }
+
+bool isTypeLocInLambdaCapture(const clang::TypeLoc *TL) {
+  using namespace dpct;
+  if (auto LVRTL =
+          DpctGlobalInfo::findParent<clang::LValueReferenceTypeLoc>(TL)) {
+    if (auto ParentFD = DpctGlobalInfo::findParent<clang::FieldDecl>(LVRTL)) {
+      if (auto ParentRD =
+              DpctGlobalInfo::findParent<clang::CXXRecordDecl>(ParentFD)) {
+        if (DpctGlobalInfo::findParent<clang::LambdaExpr>(ParentRD)) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
