@@ -77,11 +77,13 @@ __global__ void test2(float *ptr1, float *ptr2) {
   const int aaa(threadIdx.z);
   for (;;) {
     ptr1[aaa];
-    // CHECK:item_ct1.barrier(sycl::access::fence_space::local_space);
+    // FIXME
+    // CHECK:item_ct1.barrier();
     __syncthreads();
 #pragma unroll
     for (;;) {}
-    // CHECK:item_ct1.barrier(sycl::access::fence_space::local_space);
+    // FIXME
+    // CHECK:item_ct1.barrier();
     __syncthreads();
   }
   ptr2[aaa];

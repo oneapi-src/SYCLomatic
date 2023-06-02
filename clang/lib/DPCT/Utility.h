@@ -564,7 +564,7 @@ void findAllVarRef(const clang::DeclRefExpr *DRE,
                    bool IsGlobalScopeAllowed = false);
 bool isExprUsed(const clang::Expr *E, bool &Result);
 const std::string &getItemName();
-bool isUserDefinedFunction(const clang::ValueDecl *VD);
+bool isUserDefinedDecl(const clang::ValueDecl *VD);
 void insertHeaderForTypeRule(std::string, clang::SourceLocation);
 std::string getRemovedAPIWarningMessage(std::string FuncName);
 std::string getBaseTypeStr(const clang::CallExpr *CE);

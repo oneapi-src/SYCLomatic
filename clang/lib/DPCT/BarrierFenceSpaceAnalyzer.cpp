@@ -15,27 +15,41 @@
 
 using namespace llvm;
 
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::IfStmt *IS) {
+  // No special process, treat as one block
+  return true;
+}
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::IfStmt *IS) {
+  // No special process, treat as one block
+}
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::SwitchStmt *SS) {
+  // No special process, treat as one block
+  return true;
+}
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::SwitchStmt *SS) {
+  // No special process, treat as one block
+}
+
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::ForStmt *FS) {
-  Level Lvl;
-  Lvl.CurrentLoc = CurrentLevel.CurrentLoc;
-  Lvl.LevelBeginLoc = FS->getBeginLoc();
-  LevelStack.push(CurrentLevel);
-  CurrentLevel = Lvl;
+  LoopRange.push_back(FS->getSourceRange());
   return true;
 }
 void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::ForStmt *FS) {
-  if (!CurrentLevel.SyncCallsVec.empty()) {
-    CurrentLevel.SyncCallsVec.front().second.Predecessors.push_back(
-        clang::SourceRange(CurrentLevel.CurrentLoc, FS->getEndLoc()));
-    CurrentLevel.SyncCallsVec.back().second.Successors.push_back(
-        clang::SourceRange(CurrentLevel.LevelBeginLoc,
-                           CurrentLevel.FirstSyncBeginLoc));
-
-    LevelMap.insert(std::make_pair(LevelStack.size(), CurrentLevel));
-  }
-  CurrentLevel = LevelStack.top();
-  LevelStack.pop();
-  return;
+  LoopRange.pop_back();
+}
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::DoStmt *DS) {
+  LoopRange.push_back(DS->getSourceRange());
+  return true;
+}
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::DoStmt *DS) {
+  LoopRange.pop_back();
+}
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::WhileStmt *WS) {
+  LoopRange.push_back(WS->getSourceRange());
+  return true;
+}
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::WhileStmt *WS) {
+  LoopRange.pop_back();
 }
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::CallExpr *CE) {
   const clang::FunctionDecl *FuncDecl = CE->getDirectCallee();
@@ -44,41 +58,20 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::CallExpr *CE) {
     FuncName = FuncDecl->getNameInfo().getName().getAsString();
 
   if (FuncName == "__syncthreads") {
-    if (!clang::dpct::DpctGlobalInfo::findAncestor<IfStmt>(CE) &&
-        !clang::dpct::DpctGlobalInfo::findAncestor<DoStmt>(CE) &&
-        !clang::dpct::DpctGlobalInfo::findAncestor<WhileStmt>(CE) &&
-        !clang::dpct::DpctGlobalInfo::findAncestor<SwitchStmt>(CE)) {
-      if (LevelStack.size() > 1) {
-        // We will further refine it if meet real request.
-        return false;
-      }
-
-      if (CurrentLevel.FirstSyncBeginLoc.isInvalid()) {
-        CurrentLevel.FirstSyncBeginLoc = CE->getBeginLoc();
-      }
-
-      clang::SourceRange Range(CurrentLevel.CurrentLoc, CE->getBeginLoc());
-      if (!CurrentLevel.SyncCallsVec.empty()) {
-        CurrentLevel.SyncCallsVec.back().second.Successors.push_back(Range);
-      }
-      CurrentLevel.SyncCallsVec.emplace_back(CE, SyncCallInfo({Range}, {}));
-
-      unsigned int LevelNum = LevelStack.size();
-      auto UpperBoundIter = LevelMap.upper_bound(LevelNum);
-      for (auto Iter = UpperBoundIter; Iter != LevelMap.end(); Iter++) {
-        Iter->second.SyncCallsVec.back().second.Successors.push_back(
-            clang::SourceRange(Iter->second.CurrentLoc, CE->getBeginLoc()));
-        LevelVec.push_back(Iter->second);
-      }
-      LevelMap.erase(UpperBoundIter, LevelMap.end());
-
-      CurrentLevel.CurrentLoc = CE->getEndLoc();
+    SyncCallInfo SCI;
+    SCI.Predecessors.push_back(
+        clang::SourceRange(FD->getBody()->getBeginLoc(), CE->getBeginLoc()));
+    SCI.Successors.push_back(
+        clang::SourceRange(CE->getEndLoc(), FD->getBody()->getEndLoc()));
+    if (!LoopRange.empty()) {
+      SCI.Predecessors.push_back(LoopRange.front());
+      SCI.Successors.push_back(LoopRange.front());
     }
+    SyncCallsVec.push_back(std::make_pair(CE, SCI));
   } else {
     if (auto FD = CE->getDirectCallee()) {
       std::string FuncName = FD->getNameInfo().getName().getAsString();
-      if (!AllowedDeviceFunctions.count(FuncName) ||
-          isUserDefinedFunction(FD)) {
+      if (!AllowedDeviceFunctions.count(FuncName) || isUserDefinedDecl(FD)) {
         return false;
       }
     }
@@ -121,11 +114,10 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
 }
 void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
     clang::CXXDependentScopeMemberExpr *) {}
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
-    clang::CXXConstructExpr *CCE) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::CXXConstructExpr *CCE) {
   auto Ctor = CCE->getConstructor();
   std::string CtorName = Ctor->getParent()->getQualifiedNameAsString();
-  if (AllowedDeviceFunctions.count(CtorName) && !isUserDefinedFunction(Ctor))
+  if (AllowedDeviceFunctions.count(CtorName) && !isUserDefinedDecl(Ctor))
     return true;
   return false;
 }
@@ -134,24 +126,9 @@ void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::traverseFunction(
     const clang::FunctionDecl *FD) {
-  CurrentLevel.CurrentLoc = FD->getBody()->getBeginLoc();
-  CurrentLevel.LevelBeginLoc = FD->getBody()->getBeginLoc();
-
   if (!this->TraverseDecl(const_cast<clang::FunctionDecl *>(FD))) {
     return false;
   }
-
-  if (!CurrentLevel.SyncCallsVec.empty()) {
-    CurrentLevel.SyncCallsVec.back().second.Successors.push_back(
-        clang::SourceRange(CurrentLevel.CurrentLoc, FD->getEndLoc()));
-  }
-  for (auto &Iter : LevelMap) {
-    Iter.second.SyncCallsVec.back().second.Successors.push_back(
-        clang::SourceRange(Iter.second.CurrentLoc, FD->getEndLoc()));
-    LevelVec.push_back(Iter.second);
-  }
-  LevelMap.clear();
-  LevelVec.push_back(CurrentLevel);
   return true;
 }
 
@@ -188,7 +165,7 @@ bool isPointerOperationSafe(const clang::Expr *Pointer) {
     if (auto FD = CE->getDirectCallee()) {
       std::string FuncName = FD->getNameInfo().getName().getAsString();
       if (FuncName == "atomicAdd" && (CE->getArg(0) == Pointer) &&
-          !isUserDefinedFunction(FD)) {
+          !isUserDefinedDecl(FD)) {
         return true;
       }
     }
@@ -224,6 +201,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     }
   }
 
+  this->FD = FD;
   // analyze this FD
   // Traverse AST, analysis the context info of kernel calling sycthreads()
   //   1. Find each syncthreads call's predecessor parts and successor parts.
@@ -245,7 +223,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
 
   // Check whether each input pointer of kernel is "safe" (no an alias name
   // used) or not. If it is not "safe", exit.
-  std::set<clang::SourceLocation> DRELocs;
+  std::map<clang::ValueDecl *, std::set<clang::SourceLocation>> DRELocs;
   for (auto &Iter : DREDeclMap) {
     if (auto VD = dyn_cast_or_null<VarDecl>(Iter.second)) {
       if (VD->hasAttr<clang::CUDADeviceAttr>() &&
@@ -263,7 +241,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
         setFalseForThisFunctionDecl();
         return false; // avoid the alias of input pointers
       }
-      DRELocs.insert(Iter.first->getBeginLoc());
+      DRELocs[Iter.second].insert(Iter.first->getBeginLoc());
     }
   }
 
@@ -296,21 +274,40 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
   // if it meets:
   // For arbitrary input pointer of kernel, all DREs of this pointer are only
   // used in either predecessor parts or successor parts
-  for (auto &I : LevelVec) {
-    for (auto &SyncCall : I.SyncCallsVec) {
-      bool Result = true;
-      for (auto &Loc : DRELocs) {
+  for (auto &SyncCall : SyncCallsVec) {
+    bool Result = true;
+    for (auto &Pair : DRELocs) {
+      std::optional<bool> DREInPredecessors;
+      for (auto &Loc : Pair.second) {
         if (containsMacro(Loc, SyncCall.second.Predecessors) ||
-            containsMacro(Loc, SyncCall.second.Successors) ||
-            (isInRanges(Loc, SyncCall.second.Predecessors) &&
-             isInRanges(Loc, SyncCall.second.Successors))) {
+            containsMacro(Loc, SyncCall.second.Successors)) {
           Result = false;
           break;
         }
+        if (isInRanges(Loc, SyncCall.second.Predecessors)) {
+          if (DREInPredecessors.has_value()) {
+            if (DREInPredecessors.value() != true) {
+              Result = false;
+              break;
+            }
+          } else {
+            DREInPredecessors = true;
+          }
+        }
+        if (isInRanges(Loc, SyncCall.second.Successors)) {
+          if (DREInPredecessors.has_value()) {
+            if (DREInPredecessors.value() != false) {
+              Result = false;
+              break;
+            }
+          } else {
+            DREInPredecessors = false;
+          }
+        }
       }
-      CachedResults[FDLoc][getHashStrFromLoc(SyncCall.first->getBeginLoc())] =
-          Result;
     }
+    CachedResults[FDLoc][getHashStrFromLoc(SyncCall.first->getBeginLoc())] =
+        Result;
   }
 
   // find the result in the new map

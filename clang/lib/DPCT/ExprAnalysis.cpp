@@ -314,7 +314,7 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E, Source
   auto RewritePrefixLength = SM.getCharacterData(BeginLocWithoutPrefix) -
                              SM.getCharacterData(BeginLoc);
 
-  auto EndLocWithoutPostfix = EndLoc;
+  auto EndLocWithoutPostfix = SM.getExpansionLoc(EndLoc);
   EndLoc = SM.getExpansionLoc(getEndLocOfFollowingEmptyMacro(EndLoc));
   auto RewritePostfixLength =
       SM.getCharacterData(EndLoc) - SM.getCharacterData(EndLocWithoutPostfix);
@@ -1983,7 +1983,7 @@ KernelConfigAnalysis::getCtorArgs(const CXXConstructExpr *Ctor) {
 void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
                                    bool ReverseIfNeed) {
   ArgIndex = Idx;
-  MustDim3 = ArgIndex < 2;
+  IsDim3Config = ArgIndex < 2;
 
   if (IsInMacroDefine && SM.isMacroArgExpansion(E->getBeginLoc())) {
     Reversed = false;
@@ -2007,8 +2007,8 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
           Stmt::MemberExprClass ||
       getTargetExpr()->IgnoreImpCasts()->getStmtClass() ==
           Stmt::IntegerLiteralClass) {
-    if (MustDim3 && getTargetExpr()->getType()->isIntegralType(
-                        DpctGlobalInfo::getContext())) {
+    if (IsDim3Config && getTargetExpr()->getType()->isIntegralType(
+                            DpctGlobalInfo::getContext())) {
       if (IsTryToUseOneDimension) {
         Dim = 1;
         addReplacement(buildString(DpctGlobalInfo::getCtadClass(

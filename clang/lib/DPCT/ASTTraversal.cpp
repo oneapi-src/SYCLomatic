@@ -1942,7 +1942,7 @@ void AtomicFunctionRule::MigrateAtomicFunc(
 
   // Don't migrate user defined function
   if (auto *CalleeDecl = CE->getDirectCallee()) {
-    if (isUserDefinedFunction(CalleeDecl))
+    if (isUserDefinedDecl(CalleeDecl))
       return;
   } else {
     return;
@@ -9061,6 +9061,9 @@ void DeviceFunctionDeclRule::runRule(
   if (isLambda(FD) && !FuncInfo->isLambda()) {
     FuncInfo->setLambda();
   }
+  if (FD->hasAttr<CUDAGlobalAttr>()) {
+    FuncInfo->setKernel();
+  }
   if (DpctGlobalInfo::isOptimizeMigration() && !FD->isInlined() &&
                                 !FuncInfo->IsAlwaysInlineDevFunc()) {
     FuncInfo->setAlwaysInlineDevFunc();
@@ -11863,7 +11866,7 @@ void WarpFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
     return;
 
   if (auto *CalleeDecl = CE->getDirectCallee()) {
-    if (isUserDefinedFunction(CalleeDecl)) {
+    if (isUserDefinedDecl(CalleeDecl)) {
       return;
     }
   }
