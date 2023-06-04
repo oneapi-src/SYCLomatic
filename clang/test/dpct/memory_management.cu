@@ -1108,6 +1108,20 @@ void foobar() {
   // CHECK-NEXT: errorCode = (flags = 0, 0);
   errorCode = cudaHostGetFlags(&flags, &host);
 
+  /*
+  DPCT1082:{{[0-9]+}}: Migration of CUmemGenericAllocationHandle type is not supported.
+  */
+  CUmemGenericAllocationHandle a;
+  /*
+  DPCT1082:{{[0-9]+}}: Migration of CUmemAllocationProp type is not supported.
+  */
+  CUmemAllocationProp b;
+  /*
+  DPCT1082:{{[0-9]+}}: Migration of CUmemAccessDesc type is not supported.
+  */
+  CUmemAccessDesc c;
+
+
   int *devPtr;
 
   CUdeviceptr devicePtr;
