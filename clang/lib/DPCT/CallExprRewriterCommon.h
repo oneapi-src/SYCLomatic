@@ -10,6 +10,7 @@
 #define DPCT_CALL_EXPR_REWRITER_COMMON_H
 
 #include "CallExprRewriter.h"
+#include "Config.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "BLASAPIMigration.h"
