@@ -13883,6 +13883,23 @@ void NamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
         Repl += ";";
       }
       emplaceTransformation(new ReplaceText(Beg, Len, std::move(Repl)));
+    } else if (MapNames::MathFuncImpledWithNewRewriter.count(
+                   UD->getNameAsString()) &&
+               UD->getBeginLoc().isFileID() && UD->getEndLoc().isFileID()) {
+      const NestedNameSpecifier *Qualifier = UD->getQualifier();
+      if (UD->getCanonicalDecl()) {
+        Qualifier = UD->getCanonicalDecl()->getQualifier();
+      }
+      if (Qualifier && Qualifier->getKind() ==
+                           clang::NestedNameSpecifier::SpecifierKind::Global) {
+        auto NextTok = Lexer::findNextToken(
+            End, SM, DpctGlobalInfo::getContext().getLangOpts());
+        if (NextTok.has_value() && NextTok.value().is(tok::semi)) {
+          Len = SM.getFileOffset(NextTok.value().getLocation()) -
+                SM.getFileOffset(Beg) + 1;
+        }
+        emplaceTransformation(new ReplaceText(Beg, Len, ""));
+      }
     }
   }
 }
