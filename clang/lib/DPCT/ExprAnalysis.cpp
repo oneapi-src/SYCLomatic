@@ -1572,35 +1572,6 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
   }
 }
 
-int64_t
-KernelConfigAnalysis::calculateWorkgroupSize(const CXXConstructExpr *Ctor) {
-  int64_t Size = 1;
-  auto Num = Ctor->getNumArgs();
-  for (size_t i = 0; i < Num; ++i) {
-    if (Ctor->getArg(i)->isDefaultArgument()) {
-      if (i == 0) {
-        SizeOfHighestDimension = 1;
-      }
-      return Size;
-    }
-
-    Expr::EvalResult ER;
-    if (!Ctor->getArg(i)->isValueDependent() &&
-        Ctor->getArg(i)->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
-      int64_t Value = ER.Val.getInt().getExtValue();
-      if (i == 0) {
-        SizeOfHighestDimension = Value;
-      }
-      Size = Size * Value;
-    } else {
-      // Not all args can be evaluated, so return a value larger than 256 to
-      // emit warning.
-      return 265 + 1;
-    }
-  }
-  return Size;
-}
-
 void KernelArgumentAnalysis::analyzeExpr(const MaterializeTemporaryExpr *MTE) {
   KernelArgumentAnalysis::dispatch(MTE->getSubExpr());
 }
@@ -1860,122 +1831,176 @@ void KernelConfigAnalysis::dispatch(const Stmt *Expression) {
   switch (Expression->getStmtClass()) {
     ANALYZE_EXPR(CXXConstructExpr)
     ANALYZE_EXPR(CXXTemporaryObjectExpr)
-    ANALYZE_EXPR(CXXDependentScopeMemberExpr)
+    ANALYZE_EXPR(CXXUnresolvedConstructExpr)
+    ANALYZE_EXPR(CStyleCastExpr)
+    ANALYZE_EXPR(CXXFunctionalCastExpr)
+    ANALYZE_EXPR(CXXStaticCastExpr)
   default:
     return ArgumentAnalysis::dispatch(Expression);
   }
 }
 
-void KernelConfigAnalysis::analyzeExpr(
-    const CXXDependentScopeMemberExpr *CDSME) {
-  if (ArgIndex == 1) {
-    NeedEmitWGSizeWarning = true;
+template <class T, class ArgIter>
+void KernelConfigAnalysis::handleDim3Args(const T *Ctor, ArgIter ArgBegin,
+                                          ArgIter ArgEnd) {
+  struct ScopeExit {
+    ScopeExit(KernelConfigAnalysis *Analysis)
+        : KCA(Analysis), Size(KCA->ArgIndex == 1 ? 1 : 0) {
+      KCA->Dim = 1;
+    }
+    ~ScopeExit() {
+      if (!KCA->IsTryToUseOneDimension || KCA->Dim != 1)
+        KCA->Dim = 3;
+      KCA->Dim3Args.resize(KCA->Dim, "1");
+      if (Size <= 256)
+        KCA->NeedEmitWGSizeWarning = false;
+    }
+    void multiplySize(int64_t In) { Size *= In; }
+
+  private:
+    KernelConfigAnalysis *KCA;
+    int64_t Size;
+  };
+  ScopeExit Scope(this);
+
+  auto FirstArg = *ArgBegin;
+  if (FirstArg->isDefaultArgument()) {
+    SizeOfHighestDimension = 1;
+    return;
   }
 
-  if (ArgIndex < 2) {
-    std::string CDSMEString;
-    llvm::raw_string_ostream OS(CDSMEString);
-    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range", 3);
-    OS << "(1, 1, " << ExprAnalysis::ref(CDSME) << ")";
-    OS.flush();
-    addReplacement(CDSME, CDSMEString);
+  ArgumentAnalysis AA(IsInMacroDefine);
+  AA.setCallSpelling(CallSpellingBegin, CallSpellingEnd);
+  Expr::EvalResult ER;
+
+  /// Assume member of dim3 cannot be zero in kernel configuration. So return 0
+  /// as failure.
+  auto Evaluator =
+      [&, &Context = DpctGlobalInfo::getContext()](const Expr *E) -> int64_t {
+    if (!E->isValueDependent() && E->EvaluateAsInt(ER, Context)) {
+      auto Value = ER.Val.getInt().getExtValue();
+      Scope.multiplySize(Value);
+      return Value;
+    }
+    /// Can not evaluate the arg, emit warning anyway.
+    Scope.multiplySize(512);
+    return 0;
+  };
+  auto ArgAppender = [&](const Expr *Arg) {
+    AA.analyze(Arg);
+    Dim3Args.push_back(AA.getReplacedString());
+  };
+
+  ArgAppender(FirstArg);
+  SizeOfHighestDimension = Evaluator(FirstArg);
+
+  while(++ArgBegin != ArgEnd) {
+    auto Arg = *ArgBegin;
+    if (Arg->isDefaultArgument()) {
+      return;
+    }
+    ArgAppender(Arg);
+    if (Evaluator(Arg) != 1)
+      ++Dim;
   }
 }
 
-bool KernelConfigAnalysis::isOneDimensionConfigArg(
-    const CXXConstructExpr *Ctor) {
-  if (Ctor->getNumArgs() == 1) {
-    // E.g., copy constructor: dim3 a(1,2,3); k<<<dim3(a), 1>>>();
-    return false;
-  }
+StringRef getRangeName() {
+  static const std::string Range = MapNames::getClNamespace() + "range";
+  return Range;
+}
 
-  if (Ctor->getNumArgs() == 3) {
-    Expr::EvalResult ER1, ER2;
-    if (!Ctor->getArg(1)->isValueDependent() &&
-        Ctor->getArg(1)->EvaluateAsInt(ER1, DpctGlobalInfo::getContext()) &&
-        !Ctor->getArg(2)->isValueDependent() &&
-        Ctor->getArg(2)->EvaluateAsInt(ER2, DpctGlobalInfo::getContext())) {
-      if (ER1.Val.getInt().getZExtValue() == 1 &&
-          ER2.Val.getInt().getZExtValue() == 1)
-        return true;
+template <class T, class ArgIter>
+void KernelConfigAnalysis::handleDim3Ctor(const T *Ctor, SourceRange Parens,
+                                          ArgIter ArgBegin, ArgIter ArgEnd) {
+  handleDim3Args(Ctor, ArgBegin, ArgEnd);
+
+  std::string CtorString;
+  llvm::raw_string_ostream OS(CtorString);
+
+  auto PrintArgs = [&](auto Begin, auto End) {
+    auto Iter = Begin;
+    if (Iter == End)
+      return;
+    OS << *Iter;
+    while (++Iter != End)
+      OS << ", " << *Iter;
+  };
+
+  if (Parens.isInvalid()) {
+    // Special handling for implicit ctor. Need print class name explicitly.
+    DpctGlobalInfo::printCtadClass(OS, getRangeName(), Dim);
+    Parens = Ctor->getSourceRange();
+
+    if (isOuterMostMacro(Ctor)) {
+      // #define GET_BLOCKS(a) a
+      // foo_kernel<<<GET_BLOCKS(1), 2, 0>>>();
+      // Result if using SM.getExpansionRange:
+      //   sycl::range<3>(1, 1, GET_BLOCKS(1)) in kernel
+      // Result if using addReplacement(E):
+      //   #define GET_BLOCKS(a) sycl::range<3>(1, 1, a)
+      //   GET_BLOCKS(1) in kernel
+      Parens = SourceRange(SM.getExpansionRange(Parens.getBegin()).getBegin(),
+                           SM.getExpansionRange(Parens.getEnd()).getEnd());
     }
-    return false;
   }
-  return false;
+  auto Range = getRangeInRange(Parens, CallSpellingBegin, CallSpellingEnd, false);
+  OS << '(';
+  if (DoReverse && Dim3Args.size() == 3) {
+    Reversed = true;
+    PrintArgs(Dim3Args.rbegin(), Dim3Args.rend());
+  } else {
+    PrintArgs(Dim3Args.begin(), Dim3Args.end());
+  }
+  OS << ')';
+  OS.flush();
+  addReplacement(Range.first, Range.second, std::move(CtorString));
 }
 
 void KernelConfigAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
-    if (ArgIndex == 1) {
-      if (calculateWorkgroupSize(Ctor) <= 256)
-        NeedEmitWGSizeWarning = false;
-      if (IsTryToUseOneDimension)
-        Dim = isOneDimensionConfigArg(Ctor) ? 1 : 3;
-    } else if (ArgIndex == 0) {
-      if (IsTryToUseOneDimension)
-        Dim = isOneDimensionConfigArg(Ctor) ? 1 : 3;
-    }
-
-    std::string CtorString;
-    llvm::raw_string_ostream OS(CtorString);
-    if (IsTryToUseOneDimension && Dim == 1) {
-      DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range",
-                                     1)
-          << "(";
-      auto Args = getCtorArgs(Ctor);
-      if (Ctor->getNumArgs() > 0) {
-        OS << Args[0] << ", ";
-      } else {
-        llvm_unreachable("Ctor of the kernel config hasn't any argument!");
-      }
+    if (Ctor->getNumArgs() == 1) {
+      Dim = 3;
+      dispatch(Ctor->getArg(0));
     } else {
-      DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range",
-                                     3)
-          << "(";
-      auto Args = getCtorArgs(Ctor);
-      if (DoReverse && Ctor->getNumArgs() == 3) {
-        Reversed = true;
-        int Index = Args.size();
-        while (Index)
-          OS << Args[--Index] << ", ";
-      } else {
-        for (auto &A : Args)
-          OS << A << ", ";
-      }
+      handleDim3Ctor(Ctor, Ctor->getParenOrBraceRange(), Ctor->arg_begin(),
+                     Ctor->arg_end());
     }
-
-    OS.flush();
-    // Special handling for implicit ctor.
-    // #define GET_BLOCKS(a) a
-    // foo_kernel<<<GET_BLOCKS(1), 2, 0>>>();
-    // Result if using SM.getExpansionRange:
-    //   sycl::range<3>(1, 1, GET_BLOCKS(1)) in kernel
-    // Result if using addReplacement(E):
-    //   #define GET_BLOCKS(a) sycl::range<3>(1, 1, a)
-    //   GET_BLOCKS(1) in kernel
-    if (Ctor->getParenOrBraceRange().isInvalid() && isOuterMostMacro(Ctor)) {
-      return addReplacement(
-          SM.getExpansionRange(Ctor->getBeginLoc()).getBegin(),
-          SM.getExpansionRange(Ctor->getEndLoc()).getEnd(),
-          CtorString.replace(CtorString.length() - 2, 2, ")"));
-    }
-
-    auto Range =
-        getRangeInRange(Ctor, CallSpellingBegin, CallSpellingEnd, false);
-    return addReplacement(Range.first, Range.second,
-                          CtorString.replace(CtorString.length() - 2, 2, ")"));
+    return;
   }
   return ArgumentAnalysis::analyzeExpr(Ctor);
 }
 
-std::vector<std::string>
-KernelConfigAnalysis::getCtorArgs(const CXXConstructExpr *Ctor) {
-  std::vector<std::string> Args;
-  ArgumentAnalysis A(IsInMacroDefine);
-  A.setCallSpelling(CallSpellingBegin, CallSpellingEnd);
-  for (auto Arg : Ctor->arguments())
-    Args.emplace_back(getCtorArg(A, Arg));
-  return Args;
+void KernelConfigAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
+  if (DpctGlobalInfo::getTypeName(Ctor->getTypeAsWritten()) == "dim3") {
+    handleDim3Ctor(Ctor, SourceRange(Ctor->getBeginLoc(), Ctor->getEndLoc()),
+                   Ctor->arg_begin(), Ctor->arg_end());
+    return;
+  }
+  return ArgumentAnalysis::analyzeExpr(Ctor);
+}
+
+void KernelConfigAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
+  if (DpctGlobalInfo::getTypeName(Cast->getTypeAsWritten()) == "dim3") {
+    dispatch(Cast->getSubExpr());
+    if (auto TSI = Cast->getTypeInfoAsWritten())
+      addReplacement(TSI->getTypeLoc().getSourceRange(), Cast,
+                     DpctGlobalInfo::getCtadClass(getRangeName(), Dim));
+    return;
+  }
+  return ArgumentAnalysis::analyzeExpr(Cast);
+}
+
+void KernelConfigAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Ctor) {
+  if (auto TSI = Ctor->getTypeSourceInfo()) {
+    if (DpctGlobalInfo::getTypeName(TSI->getType()) == "dim3") {
+      analyzeExpr(static_cast<const CXXConstructExpr *>(Ctor));
+      addReplacement(TSI->getTypeLoc().getSourceRange(), Ctor,
+                     DpctGlobalInfo::getCtadClass(getRangeName(), Dim));
+      return;
+    }
+  }
+  return ArgumentAnalysis::analyzeExpr(Ctor);
 }
 
 void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
@@ -1997,33 +2022,15 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
     addReplacement("0");
     return;
   }
-  ArgumentAnalysis::analyze(E);
-
-  if (getTargetExpr()->IgnoreImplicit()->getStmtClass() ==
-          Stmt::DeclRefExprClass ||
-      getTargetExpr()->IgnoreImpCasts()->getStmtClass() ==
-          Stmt::MemberExprClass ||
-      getTargetExpr()->IgnoreImpCasts()->getStmtClass() ==
-          Stmt::IntegerLiteralClass) {
-    if (MustDim3 && getTargetExpr()->getType()->isIntegralType(
-                        DpctGlobalInfo::getContext())) {
-      if (IsTryToUseOneDimension) {
-        Dim = 1;
-        addReplacement(buildString(DpctGlobalInfo::getCtadClass(
-                                       MapNames::getClNamespace() + "range", 1),
-                                   "(", getReplacedString(), ")"));
-      } else {
-        addReplacement(buildString(DpctGlobalInfo::getCtadClass(
-                                       MapNames::getClNamespace() + "range", 3),
-                                   "(1, 1, ", getReplacedString(), ")"));
-      }
-
-      Reversed = true;
-      return;
-    }
-
+  if (MustDim3 && !isa<CXXConstructExpr>(E) &&
+      (E->getType()->isIntegralType(DpctGlobalInfo::getContext()) ||
+       E->getType()->isDependentType())) {
+    initExpression(E);
+    handleDim3Ctor(E, SourceRange(), &E, &E + 1);
     DirectRef = true;
+    return;
   }
+  ArgumentAnalysis::analyze(E);
 }
 
 std::string ArgumentAnalysis::getRewriteString() {

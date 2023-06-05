@@ -832,15 +832,15 @@ private:
   unsigned int SizeOfHighestDimension = 0;
 
   void analyzeExpr(const CXXConstructExpr *Ctor);
-  void analyzeExpr(const CXXDependentScopeMemberExpr *CDSME);
+  void analyzeExpr(const CXXUnresolvedConstructExpr *Ctor);
+  void analyzeExpr(const CXXTemporaryObjectExpr *Ctor);
+  void analyzeExpr(const ExplicitCastExpr *Cast);
 
-  std::vector<std::string> getCtorArgs(const CXXConstructExpr *Ctor);
-  inline std::string getCtorArg(ArgumentAnalysis &KCA, const Expr *Arg) {
-    KCA.analyze(Arg);
-    return KCA.getReplacedString();
-  }
-  int64_t calculateWorkgroupSize(const CXXConstructExpr *Ctor);
-  bool isOneDimensionConfigArg(const CXXConstructExpr *Ctor);
+  template <class T, class ArgIter>
+  void handleDim3Ctor(const T *, SourceRange Parens, ArgIter ArgBegin,
+                      ArgIter ArgEnd);
+  template <class T, class ArgIter>
+  void handleDim3Args(const T *Ctor, ArgIter ArgBegin, ArgIter ArgEnd);
 
 protected:
   void dispatch(const Stmt *Expression) override;
@@ -856,6 +856,7 @@ public:
   unsigned int getSizeOfHighestDimension() { return SizeOfHighestDimension; }
   unsigned int Dim = 3;
   bool IsTryToUseOneDimension = false;
+  SmallVector<std::string, 3> Dim3Args;
 };
 
 class FunctorAnalysis : public ArgumentAnalysis {
