@@ -277,6 +277,9 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
   for (auto &SyncCall : SyncCallsVec) {
     bool Result = true;
     for (auto &Pair : DRELocs) {
+      if (Pair.second.size() == 1) {
+        continue;
+      }
       std::optional<bool> DREInPredecessors;
       for (auto &Loc : Pair.second) {
         if (containsMacro(Loc, SyncCall.second.Predecessors) ||
