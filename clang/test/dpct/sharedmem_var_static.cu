@@ -205,9 +205,6 @@ template <int A> __global__ void fook() {
 
 template <int SZ>
 void fooh() {
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1112:{{[0-9]+}}: The size expression contains a macro with template parameter(s) which may not be correctly migrated. You may need to adjust the code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(SIZE), cgh);
+  // CHECK: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(SIZE), cgh);
   fook<SZ><<<1, 1>>>();
 }
