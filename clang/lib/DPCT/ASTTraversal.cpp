@@ -11834,6 +11834,10 @@ void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
   EA.applyAllSubExprRepl();
 
   auto FD = CE->getDirectCallee();
+  // For CUDA file, nvcc can include math header files implicitly.
+  // So we need add the cmath header file if the API is not from SDK
+  // header.
+  bool NeedInsertCmath = false;
   if (FD) {
     std::string Name = FD->getNameInfo().getName().getAsString();
     if (Name == "__brev" || Name == "__brevll") {
@@ -11843,6 +11847,14 @@ void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
     } else if (Name == "__ffs" || Name == "__ffsll") {
       requestFeature(HelperFeatureEnum::Util_ffs, CE);
     }
+    if (!math::IsDefinedInCUDA()(CE)) {
+      NeedInsertCmath = true;
+    }
+  } else {
+    NeedInsertCmath = true;
+  }
+  if (NeedInsertCmath) {
+    DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), HT_Math);
   }
 }
 

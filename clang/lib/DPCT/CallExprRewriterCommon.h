@@ -25,6 +25,8 @@
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include <cstdarg>
 
+extern std::string DpctInstallPath; // Installation directory for this tool
+
 using namespace clang::ast_matchers;
 namespace clang {
 namespace dpct {
@@ -1865,6 +1867,25 @@ public:
   }
 };
 
+namespace math {
+class IsDefinedInCUDA {
+public:
+  IsDefinedInCUDA() {}
+  bool operator()(const CallExpr *C) {
+    auto FD = C->getDirectCallee();
+    if (!FD)
+      return false;
+    SourceLocation DeclLoc =
+        dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
+            FD->getLocation());
+    std::string DeclLocFilePath =
+        dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
+    makeCanonical(DeclLocFilePath);
+    return (isChildPath(dpct::DpctGlobalInfo::getCudaPath(), DeclLocFilePath) ||
+            isChildPath(DpctInstallPath, DeclLocFilePath));
+  }
+};
+} // namespace math
 } // namespace dpct
 } // namespace clang
 
