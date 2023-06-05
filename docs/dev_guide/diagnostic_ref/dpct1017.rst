@@ -57,5 +57,9 @@ which is rewritten to:
 
    #include <sycl/ext/intel/math.hpp>
    void k(float *out, float *in) {
-     *out = sycl::ext::intel::math::norm(3, in);
+     /*
+     If the extension API sycl::ext::intel::math::norm is available, the following
+     line can alternately be migrated to *out = sycl::ext::intel::math::norm(3, in);
+     */
+     *out = dpct::length(in, 3);
    }

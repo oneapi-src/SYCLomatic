@@ -83,7 +83,11 @@ which is rewritten to:
 
    void foo() {
      const int element_num = 128;
+
+     //Save the data in d_data continuously and change h_inc and d_inc from 128 to 1.
      const int h_inc = 1;
      const int d_inc = 1;
+
+     // Now there is no padding between each element, so memcpy can be used directly.
      dpct::get_default_queue().memcpy(d_data, data, sizeof(float) * element_num).wait();
    }

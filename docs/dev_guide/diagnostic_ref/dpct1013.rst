@@ -62,6 +62,7 @@ which is rewritten to:
    void foo(double *res) {
      double a = 1.00001;
      double b = 100000000000000000;
-     *res = sycl::nextafter(a + b, (double)INFINITY);
+     *res = a + b; // For precision, use: *res = sycl::nextafter(a + b, (double)INFINITY);
+     
    }
 

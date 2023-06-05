@@ -76,5 +76,8 @@ which is rewritten to:
 
    int main{
      ...
+     /*
+      Reduce sub_group size to make more registers available for each work-item, which may help to avoid high register pressure.
+     */
      q.parallel_for(sycl::range(100), [=](sycl::nd_item<3> item) [[intel::reqd_sub_group_size(16)]] { Kernel(); });
    }
