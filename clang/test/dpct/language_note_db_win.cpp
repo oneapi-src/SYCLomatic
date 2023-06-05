@@ -19,4 +19,4 @@
 // CODE: sycl::float2 f2;
 float2 f2;
 
-// LOG: NOTE: {{(.+)}}/language_note_db_win.cpp is treated as a CUDA file by default. Use the --extra-arg=-xc++ option to treat {{(.+)}}/language_note_db_win.cpp as a C++ file if needed.
+// LOG: NOTE: {{(.+)}}\language_note_db_win.cpp is treated as a CUDA file by default. Use the --extra-arg=-xc++ option to treat {{(.+)}}\language_note_db_win.cpp as a C++ file if needed.
