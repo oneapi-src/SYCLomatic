@@ -94,7 +94,7 @@ void test_stream() {
   // CHECK: std::async([&]() {hStream->wait(); callback<char>(hStream, 0, data); });
   cuStreamAddCallback(hStream, callback<char>, data, flag);
 
-  // CHECK: int result = (std::async([&]() {hStream->wait(); callback<char>(hStream, 0, data); }), 0);
+  // CHECK: int result = DPCT_CHECK_ERROR(std::async([&]() {hStream->wait(); callback<char>(hStream, 0, data); }));
   CUresult result = cuStreamAddCallback(hStream, callback<char>, data, flag);
 
   //CHECK: /*

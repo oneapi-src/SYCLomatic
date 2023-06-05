@@ -95,7 +95,7 @@ int main(){
   // CHECK: my_synchronize(&q_ct1);
   my_synchronize(0);
 
-  // CHECK: (q_ct1.wait(), 0), my_synchronize(&q_ct1);
+  // CHECK: DPCT_CHECK_ERROR(q_ct1.wait()), my_synchronize(&q_ct1);
   cudaStreamSynchronize(0), my_synchronize(0);
 
   // CHECK: [](dpct::queue_ptr) {}(&q_ct1);
@@ -154,7 +154,7 @@ int main2(){
   // CHECK: my_synchronize1(&q_ct1);
   my_synchronize1(0);
 
-  // CHECK: (q_ct1.wait(), 0), my_synchronize1(&q_ct1);
+  // CHECK: DPCT_CHECK_ERROR(q_ct1.wait()), my_synchronize1(&q_ct1);
   cuStreamSynchronize(0), my_synchronize1(0);
 
   // CHECK: [](dpct::queue_ptr) {}(&q_ct1);

@@ -146,10 +146,7 @@ void test1() {
     // CHECK: /*
     // CHECK: DPCT1097:{{[0-9]+}}: The function "async_pooling_backward" may require the workspace used to save intermediate results from function "async_pooling_forward". By default, a workspace from engine_ext is selected according to the source data pointer, but this may be incorrect and cause a workspace data race. You may need to rewrite this code.
     // CHECK: */
-    // CHECK: /*
-    // CHECK: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK: */
-    // CHECK: auto s = (handle.async_pooling_backward(desc, alpha, outTensor, out, diffoutTensor, diffout, dataTensor, data, beta, diffdataTensor, diffdata), 0);
+    // CHECK: auto s = DPCT_CHECK_ERROR(handle.async_pooling_backward(desc, alpha, outTensor, out, diffoutTensor, diffout, dataTensor, data, beta, diffdataTensor, diffdata));
 
     cudnnPoolingForward(handle, desc, &alpha, dataTensor, data, &beta, outTensor, out);
     cudaMemcpy(host_out.data(), out, ele_num2 * sizeof(HT), cudaMemcpyDeviceToHost);

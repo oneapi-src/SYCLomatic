@@ -1318,7 +1318,7 @@ void ManagedPointerAnalysis::RecursiveAnalyze() {
 void ManagedPointerAnalysis::buildCallExprRepl() {
   std::ostringstream OS;
   if (Assigned)
-    OS << "(";
+    OS << "DPCT_CHECK_ERROR(";
   auto E = FirstArg;
   bool NeedParen = false;
   if (NeedDerefOp) {
@@ -1360,11 +1360,9 @@ void ManagedPointerAnalysis::buildCallExprRepl() {
   ArgEA.analyze();
   OS << ArgEA.getReplacedString() << ")";
   if (Assigned) {
-    OS << ", 0)";
+    OS << ")";
     auto LocInfo = DpctGlobalInfo::getLocInfo(Call);
-    DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
-                             Diagnostics::NOERROR_RETURN_COMMA_OP, false,
-                             false);
+    requestFeature(HelperFeatureEnum::Dpct_check_error_code, Call);
   }
   addReplacement(Call->getBeginLoc(), Call->getEndLoc(), OS.str());
 }
