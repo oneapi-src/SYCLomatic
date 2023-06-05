@@ -349,7 +349,7 @@ void DpctGlobalInfo::buildReplacements() {
   // 2          1            dev_ct1             get_default_queue
   // 1          2            dev_ct1             q_ct1
   // >=2        >=2          dev_ct1             q_ct1
-  if (!getDeviceChangedFlag() && getUsingDRYPattern()) {
+  if (getUsingDRYPattern()) {
     bool NeedDpctHelpFunc = DpctGlobalInfo::needDpctDeviceExt() ||
                             TempVariableDeclCounterMap.size() > 1 ||
                             DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None;
@@ -389,20 +389,19 @@ void DpctGlobalInfo::buildReplacements() {
       const auto ColonPos = Counter.first.find_last_of(':');
       const auto DeclLocFile = Counter.first.substr(0, ColonPos);
       const auto DeclLocOffset = std::stoi(Counter.first.substr(ColonPos + 1));
-      if (Counter.second.CurrentDeviceCounter > 1 ||
-          Counter.second.DefaultQueueCounter > 1) {
-        Counter.second.PlaceholderStr[2] = "dev_ct1";
-        getInstance().addReplacement(std::make_shared<ExtReplacement>(
-            DeclLocFile, DeclLocOffset, 0, DevDecl.str(), nullptr));
-        if (!NeedDpctHelpFunc) {
-          DeviceFeatureEnum = HelperFeatureEnum::no_feature_helper;
-        }
-        if (Counter.second.DefaultQueueCounter > 1 || !NeedDpctHelpFunc) {
-          Counter.second.PlaceholderStr[1] = "q_ct1";
+      if (!getDeviceChangedFlag()) {
+        if (Counter.second.CurrentDeviceCounter > 1 ||
+            Counter.second.DefaultQueueCounter > 1) {
+          Counter.second.PlaceholderStr[2] = "dev_ct1";
           getInstance().addReplacement(std::make_shared<ExtReplacement>(
-              DeclLocFile, DeclLocOffset, 0, QDecl.str(), nullptr));
+              DeclLocFile, DeclLocOffset, 0, DevDecl.str(), nullptr));
           if (!NeedDpctHelpFunc) {
             DeviceFeatureEnum = HelperFeatureEnum::no_feature_helper;
+          }
+          if (Counter.second.DefaultQueueCounter > 1 || !NeedDpctHelpFunc) {
+            Counter.second.PlaceholderStr[1] = "q_ct1";
+            getInstance().addReplacement(std::make_shared<ExtReplacement>(
+                DeclLocFile, DeclLocOffset, 0, QDecl.str(), nullptr));
           }
         }
       }
