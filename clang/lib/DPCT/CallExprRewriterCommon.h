@@ -9,21 +9,21 @@
 #ifndef DPCT_CALL_EXPR_REWRITER_COMMON_H
 #define DPCT_CALL_EXPR_REWRITER_COMMON_H
 
-#include "CallExprRewriter.h"
-#include "Config.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "BLASAPIMigration.h"
+#include "CallExprRewriter.h"
+#include "Config.h"
 #include "ExprAnalysis.h"
 #include "MapNames.h"
 #include "Utility.h"
 #include "ToolChains/Cuda.h"
-#include "clang/Driver/Driver.h"
-#include "clang/Driver/Options.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Expr.h"
-#include "clang/Basic/LangOptions.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
+#include "clang/Basic/LangOptions.h"
+#include "clang/Driver/Driver.h"
+#include "clang/Driver/Options.h"
 #include <cstdarg>
 
 extern std::string DpctInstallPath; // Installation directory for this tool
@@ -1877,7 +1877,8 @@ public:
     if (!FD)
       return false;
     SourceLocation DeclLoc =
-        dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(FD->getLocation());
+        dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
+            FD->getLocation());
     std::string DeclLocFilePath =
         dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
     makeCanonical(DeclLocFilePath);
