@@ -1202,6 +1202,9 @@ public:
 // Device|get_tid
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+/// Select device with a device ID.
+/// \param [in] id The id of the device which can
+/// be obtained through get_device_id(const sycl::device).
   void select_device(unsigned int id) {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
     check_id(id);

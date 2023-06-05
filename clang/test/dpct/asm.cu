@@ -2,7 +2,6 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/asm/asm.dp.cpp
 // clang-format off
 #include "cuda_runtime.h"
-#include "device_launch_parameters.h"
 
 #include <stdio.h>
 
@@ -32,32 +31,32 @@ __global__ void gpu_ptx(int *d_ptr, int length) {
 // CHECK-NEXT:     bool _p_p[20], _p_q[20];
 // CHECK-NEXT:     float fp;
 // CHECK-NEXT:     fp = sycl::bit_cast<float>(uint32_t(0x3f800000U));
-// CHECK-NEXT:     _p_p[1] = !sycl::isnan(x) && !sycl::isnan(fp) && x == fp;
-// CHECK-NEXT:     _p_p[2] = !sycl::isnan(x) && !sycl::isnan(fp) && x != fp;
-// CHECK-NEXT:     _p_p[3] = !sycl::isnan(x) && !sycl::isnan(fp) && x < fp;
-// CHECK-NEXT:     _p_p[4] = !sycl::isnan(x) && !sycl::isnan(fp) && x <= fp;
-// CHECK-NEXT:     _p_p[5] = !sycl::isnan(x) && !sycl::isnan(fp) && x > fp;
-// CHECK-NEXT:     _p_p[6] = !sycl::isnan(x) && !sycl::isnan(fp) && x >= fp;
-// CHECK-NEXT:     _p_p[7] = sycl::isnan(x) || sycl::isnan(fp) || x == fp;
-// CHECK-NEXT:     _p_p[8] =  sycl::isnan(x) || sycl::isnan(fp) || x != fp;
-// CHECK-NEXT:     _p_p[9] = sycl::isnan(x) || sycl::isnan(fp) || x < fp;
-// CHECK-NEXT:     _p_p[10] = sycl::isnan(x) || sycl::isnan(fp) || x <= fp;
-// CHECK-NEXT:     _p_p[11] = sycl::isnan(x) || sycl::isnan(fp) || x > fp;
-// CHECK-NEXT:     _p_p[12] = sycl::isnan(x) || sycl::isnan(fp) || x >= fp;
+// CHECK-NEXT:     _p_p[1] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::isequal<float>(x, fp);
+// CHECK-NEXT:     _p_p[2] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::isnotequal<float>(x, fp);
+// CHECK-NEXT:     _p_p[3] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::isless<float>(x, fp);
+// CHECK-NEXT:     _p_p[4] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::islessequal<float>(x, fp);
+// CHECK-NEXT:     _p_p[5] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::isgreater<float>(x, fp);
+// CHECK-NEXT:     _p_p[6] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::isgreaterequal<float>(x, fp);
+// CHECK-NEXT:     _p_p[7] = sycl::isnan(x) || sycl::isnan(fp) || sycl::isequal<float>(x, fp);
+// CHECK-NEXT:     _p_p[8] = sycl::isnan(x) || sycl::isnan(fp) || sycl::isnotequal<float>(x, fp);
+// CHECK-NEXT:     _p_p[9] = sycl::isnan(x) || sycl::isnan(fp) || sycl::isless<float>(x, fp);
+// CHECK-NEXT:     _p_p[10] = sycl::isnan(x) || sycl::isnan(fp) || sycl::islessequal<float>(x, fp);
+// CHECK-NEXT:     _p_p[11] = sycl::isnan(x) || sycl::isnan(fp) || sycl::isgreater<float>(x, fp);
+// CHECK-NEXT:     _p_p[12] = sycl::isnan(x) || sycl::isnan(fp) || sycl::isgreaterequal<float>(x, fp);
 // CHECK-NEXT:     _p_p[13] = !sycl::isnan(x) && !sycl::isnan(fp);
 // CHECK-NEXT:     _p_p[14] = sycl::isnan(x) || sycl::isnan(fp);
-// CHECK-NEXT:     _p_p[1] = !sycl::isnan(x) && !sycl::isnan(fp) && x == fp;
-// CHECK-NEXT:     _p_p[2] = !sycl::isnan(x) && !sycl::isnan(fp) && x != fp;
-// CHECK-NEXT:     _p_p[3] = !sycl::isnan(x) && !sycl::isnan(fp) && x < fp;
-// CHECK-NEXT:     _p_p[4] = !sycl::isnan(x) && !sycl::isnan(fp) && x <= fp;
-// CHECK-NEXT:     _p_p[5] = !sycl::isnan(x) && !sycl::isnan(fp) && x > fp;
-// CHECK-NEXT:     _p_p[6] = !sycl::isnan(x) && !sycl::isnan(fp) && x >= fp;
-// CHECK-NEXT:     _p_p[7] = sycl::isnan(x) || sycl::isnan(fp) || x == fp;
-// CHECK-NEXT:     _p_p[8] =  sycl::isnan(x) || sycl::isnan(fp) || x != fp;
-// CHECK-NEXT:     _p_p[9] = sycl::isnan(x) || sycl::isnan(fp) || x < fp;
-// CHECK-NEXT:     _p_p[10] = sycl::isnan(x) || sycl::isnan(fp) || x <= fp;
-// CHECK-NEXT:     _p_p[11] = sycl::isnan(x) || sycl::isnan(fp) || x > fp;
-// CHECK-NEXT:     _p_p[12] = sycl::isnan(x) || sycl::isnan(fp) || x >= fp;
+// CHECK-NEXT:     _p_p[1] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::isequal<double>(x, fp);
+// CHECK-NEXT:     _p_p[2] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::isnotequal<double>(x, fp);
+// CHECK-NEXT:     _p_p[3] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::isless<double>(x, fp);
+// CHECK-NEXT:     _p_p[4] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::islessequal<double>(x, fp);
+// CHECK-NEXT:     _p_p[5] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::isgreater<double>(x, fp);
+// CHECK-NEXT:     _p_p[6] = !sycl::isnan(x) && !sycl::isnan(fp) && sycl::isgreaterequal<double>(x, fp);
+// CHECK-NEXT:     _p_p[7] = sycl::isnan(x) || sycl::isnan(fp) || sycl::isequal<double>(x, fp);
+// CHECK-NEXT:     _p_p[8] = sycl::isnan(x) || sycl::isnan(fp) || sycl::isnotequal<double>(x, fp);
+// CHECK-NEXT:     _p_p[9] = sycl::isnan(x) || sycl::isnan(fp) || sycl::isless<double>(x, fp);
+// CHECK-NEXT:     _p_p[10] = sycl::isnan(x) || sycl::isnan(fp) || sycl::islessequal<double>(x, fp);
+// CHECK-NEXT:     _p_p[11] = sycl::isnan(x) || sycl::isnan(fp) || sycl::isgreater<double>(x, fp);
+// CHECK-NEXT:     _p_p[12] = sycl::isnan(x) || sycl::isnan(fp) || sycl::isgreaterequal<double>(x, fp);
 // CHECK-NEXT:     _p_p[13] = !sycl::isnan(x) && !sycl::isnan(fp);
 // CHECK-NEXT:     _p_p[14] = sycl::isnan(x) || sycl::isnan(fp);
 // CHECK-NEXT:     _p_q[1] = a == b;
@@ -117,25 +116,26 @@ __device__ void setp() {
       : "=f"(y) : "f"(x), "r"(a), "r"(b));
 }
 
-// CHECK:void mov(float *output) {
+// CHECK:void mov() {
 // CHECK-NEXT: unsigned p;
 // CHECK-NEXT: double d;
-// CHECK-NEXT: p = 123 * 123U + 456 * ((4 ^ 7) + 2 ^ 3) | 777 & 128 == 2 != 3 > 4 < 5 <= 3 >= 5 >> 1 << 2 && 1 || 7 && !0;
-// CHECK: (*output) = sycl::bit_cast<float>(uint32_t(0x3f800000U));
-// CHECK: (*output) = sycl::bit_cast<float>(uint32_t(0x3f800000U));
+// CHECK-NEXT: float f;
+// CHECK-NEXT: p = 123 * 123U + 456 * ((4 ^ 7) + 2 ^ 3) | 777 & 128U == 2 != 3 > 4 < 5 <= 3 >= 5 >> 1 << 2 && 1 || 7 && !0;
+// CHECK: f = sycl::bit_cast<float>(uint32_t(0x3f800000U));
+// CHECK: f = sycl::bit_cast<float>(uint32_t(0x3f800000U));
 // CHECK: d = sycl::bit_cast<double>(uint64_t(0x40091EB851EB851FULL));
 // CHECK: d = sycl::bit_cast<double>(uint64_t(0x40091EB851EB851FULL));
-// CHECK: *output = p;
-// CHECK-NEXT:}
-__global__ void mov(float *output) {
+// CHECK: }
+__global__ void mov() {
   unsigned p;
   double d;
-  asm ("mov.s32 %0, 123 * 123U + 456 * ((4 ^7) + 2 ^ 3) | 777 & 128 == 2 != 3 > 4 < 5 <= 3 >= 5 >> 1 << 2 && 1 || 7 && !0;" : "=r"(p) );
-  asm ("mov.s32 %0, 0F3f800000;" : "=r"(*output));
-  asm ("mov.s32 %0, 0f3f800000;" : "=r"(*output));
-  asm ("mov.s32 %0, 0D40091EB851EB851F;" : "=r"(d));
-  asm ("mov.s32 %0, 0d40091EB851EB851F;" : "=r"(d));
-  *output = p;
+  float f;
+  asm ("mov.s32 %0, 123 * 123U + 456 * ((4 ^7) + 2 ^ 3) | 777 & 128U == 2 != 3 > 4 < 5 <= 3 >= 5 >> 1 << 2 && 1 || 7 && !0;" : "=r"(p) );
+  asm ("mov.f32 %0, 0F3f800000;" : "=f"(f));
+  asm ("mov.f32 %0, 0f3f800000;" : "=f"(f));
+  asm ("mov.f64 %0, 0D40091EB851EB851F;" : "=d"(d));
+  asm ("mov.f64 %0, 0d40091EB851EB851F;" : "=d"(d));
+  return;
 }
 
 // CHECK: void clean_specifial_character() {
@@ -192,6 +192,91 @@ __device__ int cond(int x) {
       "}"                             // conceptually y = (x==34)?1:y
       : "+r"(y) : "r" (x));
   return y;
+}
+
+// CHECK: void declaration(int *ec) {
+// CHECK: #define COND(X, Y) \
+// CHECK-NEXT: {\
+// CHECK-NEXT: bool p;\
+// CHECK-NEXT: p = X == 34;\
+// CHECK-NEXT: if (p) {\
+// CHECK-NEXT: Y = 1;\
+// CHECK-NEXT: }\
+// CHECK-NEXT: }
+// CHECK: #define ARR(V) \
+// CHECK-NEXT: {\
+// CHECK-NEXT: uint32_t p[10];\
+// CHECK-NEXT: p[0] = 2013;\
+// CHECK-NEXT: p[1] = p[0];\
+// CHECK-NEXT: p[2] = p[1];\
+// CHECK-NEXT: p[3] = p[2];\
+// CHECK-NEXT: p[4] = p[3];\
+// CHECK-NEXT: p[5] = p[4];\
+// CHECK-NEXT: p[6] = p[5];\
+// CHECK-NEXT: p[7] = p[6];\
+// CHECK-NEXT: p[8] = p[7];\
+// CHECK-NEXT: p[9] = p[8];\
+// CHECK-NEXT: V = p[9];\
+// CHECK-NEXT: }
+// CHECK: int x = 34;
+// CHECK-NEXT: int y = 0;
+// CHECK-NEXT: COND(x, y);
+// CHECK: x = 33;
+// CHECK-NEXT: y = 0;
+// CHECK-NEXT: COND(x, y);
+// CHECK: x = 0;
+// CHECK-NEXT: ARR(x);
+// CHECK: }
+__global__ void declaration(int *ec) {
+#define COND(X, Y)                  \
+  asm("{\n\t"                       \
+      " .reg .pred p;\n\t"          \
+      " setp.eq.s32 p, %1, 34;\n\t" \
+      " @p mov.s32 %0, 1;\n\t"      \
+      "}"                           \
+      : "+r"(Y) : "r" (X))
+
+#define ARR(V)                      \
+  asm("{\n\t"                       \
+      " .reg .u32 p<10>;\n\t"       \
+      " mov.u32 p0, 2013;\n\t"      \
+      " mov.u32 p1, p0;\n\t"        \
+      " mov.u32 p2, p1;\n\t"        \
+      " mov.u32 p3, p2;\n\t"        \
+      " mov.u32 p4, p3;\n\t"        \
+      " mov.u32 p5, p4;\n\t"        \
+      " mov.u32 p6, p5;\n\t"        \
+      " mov.u32 p7, p6;\n\t"        \
+      " mov.u32 p8, p7;\n\t"        \
+      " mov.u32 p9, p8;\n\t"        \
+      " mov.u32 %0, p9;\n\t"        \
+      "}"                           \
+      : "=r"(V))
+
+  int x = 34;
+  int y = 0;
+  COND(x, y);
+  if (y != 1) {
+    *ec = 1;
+    return;
+  }
+
+  x = 33;
+  y = 0;
+  COND(x, y);
+  if (y == 1) {
+    *ec = 2;
+    return;
+  }
+
+  x = 0;
+  ARR(x);
+  if (x != 2013) {
+    *ec = 3;
+    return;
+  }
+
+  *ec = 0;
 }
 
 int main(int argc, char **argv) {

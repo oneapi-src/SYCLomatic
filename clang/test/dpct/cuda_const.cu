@@ -76,7 +76,7 @@ __global__ void simple_kernel(float *d_array) {
 __device__ __constant__ float const_one;
 
 // CHECK:void simple_kernel_one(float *d_array, const sycl::nd_item<3> &[[ITEM:item_ct1]],
-// CHECK-NEXT:                  sycl::accessor<float, 2, sycl::access_mode::read, sycl::access::target::constant_buffer> const_float,
+// CHECK-NEXT:                  sycl::accessor<float, 2, sycl::access_mode::read, sycl::access::target::device> const_float,
 // CHECK-NEXT:                  float const_one) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range(2) + [[ITEM]].get_local_id(2);

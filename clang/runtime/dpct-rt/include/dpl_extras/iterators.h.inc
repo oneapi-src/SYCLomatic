@@ -51,7 +51,7 @@ namespace dpct {
 
 namespace internal {
 
-// DPCT_LABEL_BEGIN|transform_output_ref_wrapper|dpct
+// DPCT_LABEL_BEGIN|transform_output_ref_wrapper|dpct::internal
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 // Wrapper class returned from a dereferenced transform_iterator which was
@@ -89,7 +89,7 @@ public:
 };
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|_Unary_Out|dpct
+// DPCT_LABEL_BEGIN|_Unary_Out|dpct::internal
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasIterators|transform_output_ref_wrapper
 // DPCT_DEPENDENCY_END
