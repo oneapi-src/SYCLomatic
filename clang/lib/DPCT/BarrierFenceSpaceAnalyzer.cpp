@@ -114,7 +114,8 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
 }
 void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
     clang::CXXDependentScopeMemberExpr *) {}
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::CXXConstructExpr *CCE) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
+    clang::CXXConstructExpr *CCE) {
   auto Ctor = CCE->getConstructor();
   std::string CtorName = Ctor->getParent()->getQualifiedNameAsString();
   if (AllowedDeviceFunctions.count(CtorName) && !isUserDefinedDecl(Ctor))
