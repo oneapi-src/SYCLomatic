@@ -1055,10 +1055,6 @@ bool CompilerInstance::ExecuteAction(FrontendAction &Act) {
     }
   }
 
-#ifdef SYCLomatic_CUSTOMIZATION
-// don't show the message "3 errors generated during parsing".
-// it's duplicate with dpct summary in command line msg.
-#else
   if (getDiagnosticOpts().ShowCarets) {
     // We can have multiple diagnostics sharing one diagnostic client.
     // Get the total number of warnings/errors from the client.
@@ -1091,7 +1087,6 @@ bool CompilerInstance::ExecuteAction(FrontendAction &Act) {
     }
     llvm::PrintStatistics(OS);
   }
-#endif // SYCLomatic_CUSTOMIZATION
   StringRef StatsFile = getFrontendOpts().StatsFile;
   if (!StatsFile.empty()) {
     llvm::sys::fs::OpenFlags FileFlags = llvm::sys::fs::OF_TextWithCRLF;
