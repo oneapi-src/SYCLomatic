@@ -338,3 +338,36 @@ The following table lists |tool_name| command line options that are deprecated.
      - No replacement
 
      
+intercept-build Options
+-----------------------
+
+The following table lists all current `intercept-build` tool command line options
+in alphabetical order.
+
+.. list-table::
+   :widths: 30 70
+   :header-rows: 1
+
+   * - Option
+     - Description
+   * - `--append`
+     - Extend existing compilation database with new entries. Duplicate entries are
+       detected and not present in the final output. The output is not continuously
+       updated; it's done when the build command finished. Default: disabled.
+   * - `--cdb <file>`
+     - The JSON compilation database. Default name: `compile_commands.json`.
+   * - `--linker-entry`
+     - Generate linker entry in compilation database if the `--linker-entry` option
+       is present. Default: enabled.
+   * - `--no-linker-entry`
+     - Do not generate linker entry in compilation database if the `--no-linker-entry`
+       option is present. Default: disabled.
+   * - `--parse-build-log <file>`
+     - Specifies the file path of the build log.
+   * - `--verbose`, `-v`
+     - Enable verbose output from `intercept-build`. A second, third, and fourth
+       flag increases verbosity.
+   * - `--work-directory <path>`
+     - Specifies the working directory of the command that generates the build log
+       specified by option `-parse-build-log`. Default: the directory of build log
+       file specified by option `-parse-build-log`.

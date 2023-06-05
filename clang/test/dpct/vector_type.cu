@@ -1517,31 +1517,31 @@ int main_longlong1() {
   return 0;
 }
 
-// CHECK: void func3_longlong2(sycl::longlong2 a, sycl::longlong2 b, sycl::longlong2 c) {
+// CHECK: void func3_longlong2(sycl::long2 a, sycl::long2 b, sycl::long2 c) {
 void func3_longlong2(longlong2 a, longlong2 b, longlong2 c) {
 }
-// CHECK: void func_longlong2(sycl::longlong2 a) {
+// CHECK: void func_longlong2(sycl::long2 a) {
 void func_longlong2(longlong2 a) {
 }
-// CHECK: void kernel_longlong2(sycl::longlong2 *a, sycl::longlong2 *b) {
+// CHECK: void kernel_longlong2(sycl::long2 *a, sycl::long2 *b) {
 __global__ void kernel_longlong2(longlong2 *a, longlong2 *b) {
 }
 
 int main_longlong2() {
   // range default constructor does the right thing.
-  // CHECK: sycl::longlong2 longlong2_a;
+  // CHECK: sycl::long2 longlong2_a;
   longlong2 longlong2_a;
-  // CHECK: sycl::longlong2 longlong2_b = sycl::longlong2(1, 2);
+  // CHECK: sycl::long2 longlong2_b = sycl::long2(1, 2);
   longlong2 longlong2_b = make_longlong2(1, 2);
-  // CHECK: sycl::longlong2 longlong2_c = sycl::longlong2(longlong2_b);
+  // CHECK: sycl::long2 longlong2_c = sycl::long2(longlong2_b);
   longlong2 longlong2_c = longlong2(longlong2_b);
-  // CHECK: sycl::longlong2 longlong2_d(longlong2_c);
+  // CHECK: sycl::long2 longlong2_d(longlong2_c);
   longlong2 longlong2_d(longlong2_c);
-  // CHECK: func3_longlong2(longlong2_b, sycl::longlong2(longlong2_b), (sycl::longlong2)longlong2_b);
+  // CHECK: func3_longlong2(longlong2_b, sycl::long2(longlong2_b), (sycl::long2)longlong2_b);
   func3_longlong2(longlong2_b, longlong2(longlong2_b), (longlong2)longlong2_b);
-  // CHECK: sycl::longlong2 *longlong2_e;
+  // CHECK: sycl::long2 *longlong2_e;
   longlong2 *longlong2_e;
-  // CHECK: sycl::longlong2 *longlong2_f;
+  // CHECK: sycl::long2 *longlong2_f;
   longlong2 *longlong2_f;
   // CHECK: long long longlong2_g = longlong2_c.x();
   long long longlong2_g = longlong2_c.x;
@@ -1549,21 +1549,21 @@ int main_longlong2() {
   longlong2_a.x = longlong2_d.x;
   // CHECK: if (longlong2_b.x() == longlong2_d.x()) {}
   if (longlong2_b.x == longlong2_d.x) {}
-  // CHECK: sycl::longlong2 longlong2_h[16];
+  // CHECK: sycl::long2 longlong2_h[16];
   longlong2 longlong2_h[16];
-  // CHECK: sycl::longlong2 longlong2_i[32];
+  // CHECK: sycl::long2 longlong2_i[32];
   longlong2 longlong2_i[32];
   // CHECK: if (longlong2_h[12].x() == longlong2_i[12].x()) {}
   if (longlong2_h[12].x == longlong2_i[12].x) {}
-  // CHECK: longlong2_f = (sycl::longlong2 *)longlong2_i;
+  // CHECK: longlong2_f = (sycl::long2 *)longlong2_i;
   longlong2_f = (longlong2 *)longlong2_i;
-  // CHECK: longlong2_a = (sycl::longlong2)longlong2_c;
+  // CHECK: longlong2_a = (sycl::long2)longlong2_c;
   longlong2_a = (longlong2)longlong2_c;
-  // CHECK: longlong2_b = sycl::longlong2(longlong2_b);
+  // CHECK: longlong2_b = sycl::long2(longlong2_b);
   longlong2_b = longlong2(longlong2_b);
-  // CHECK: sycl::longlong2 longlong2_j, longlong2_k, longlong2_l, longlong2_m[16], *longlong2_n[32];
+  // CHECK: sycl::long2 longlong2_j, longlong2_k, longlong2_l, longlong2_m[16], *longlong2_n[32];
   longlong2 longlong2_j, longlong2_k, longlong2_l, longlong2_m[16], *longlong2_n[32];
-  // CHECK: int longlong2_o = sizeof(sycl::longlong2);
+  // CHECK: int longlong2_o = sizeof(sycl::long2);
   int longlong2_o = sizeof(longlong2);
   // CHECK: int long long_p = sizeof(long long);
   int long long_p = sizeof(long long);
@@ -1572,8 +1572,8 @@ int main_longlong2() {
   int *longlong2_cast;
   // CHECK: dpct::get_default_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::longlong2 *> longlong2_e_acc_ct0(longlong2_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::longlong2 *> longlong2_cast_acc_ct1((sycl::longlong2 *)longlong2_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<sycl::long2 *> longlong2_e_acc_ct0(longlong2_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<sycl::long2 *> longlong2_cast_acc_ct1((sycl::long2 *)longlong2_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_longlong2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -1582,38 +1582,38 @@ int main_longlong2() {
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   kernel_longlong2<<<1,1>>>(longlong2_e, (longlong2 *)longlong2_cast);
-  // CHECK: sycl::longlong2 longlong2_r = (sycl::longlong2){1,1};
-  // CHECK-NEXT: auto longlong2_s = (sycl::longlong2){1,1};
+  // CHECK: sycl::long2 longlong2_r = (sycl::long2){1,1};
+  // CHECK-NEXT: auto longlong2_s = (sycl::long2){1,1};
   longlong2 longlong2_r = (longlong2){1,1};
   auto longlong2_s = (longlong2){1,1};
   return 0;
 }
 
-// CHECK: void func3_longlong3(sycl::longlong3 a, sycl::longlong3 b, sycl::longlong3 c) {
+// CHECK: void func3_longlong3(sycl::long3 a, sycl::long3 b, sycl::long3 c) {
 void func3_longlong3(longlong3 a, longlong3 b, longlong3 c) {
 }
-// CHECK: void func_longlong3(sycl::longlong3 a) {
+// CHECK: void func_longlong3(sycl::long3 a) {
 void func_longlong3(longlong3 a) {
 }
-// CHECK: void kernel_longlong3(sycl::longlong3 *a, sycl::longlong3 *b) {
+// CHECK: void kernel_longlong3(sycl::long3 *a, sycl::long3 *b) {
 __global__ void kernel_longlong3(longlong3 *a, longlong3 *b) {
 }
 
 int main_longlong3() {
   // range default constructor does the right thing.
-  // CHECK: sycl::longlong3 longlong3_a;
+  // CHECK: sycl::long3 longlong3_a;
   longlong3 longlong3_a;
-  // CHECK: sycl::longlong3 longlong3_b = sycl::longlong3(1, 2, 3);
+  // CHECK: sycl::long3 longlong3_b = sycl::long3(1, 2, 3);
   longlong3 longlong3_b = make_longlong3(1, 2, 3);
-  // CHECK: sycl::longlong3 longlong3_c = sycl::longlong3(longlong3_b);
+  // CHECK: sycl::long3 longlong3_c = sycl::long3(longlong3_b);
   longlong3 longlong3_c = longlong3(longlong3_b);
-  // CHECK: sycl::longlong3 longlong3_d(longlong3_c);
+  // CHECK: sycl::long3 longlong3_d(longlong3_c);
   longlong3 longlong3_d(longlong3_c);
-  // CHECK: func3_longlong3(longlong3_b, sycl::longlong3(longlong3_b), (sycl::longlong3)longlong3_b);
+  // CHECK: func3_longlong3(longlong3_b, sycl::long3(longlong3_b), (sycl::long3)longlong3_b);
   func3_longlong3(longlong3_b, longlong3(longlong3_b), (longlong3)longlong3_b);
-  // CHECK: sycl::longlong3 *longlong3_e;
+  // CHECK: sycl::long3 *longlong3_e;
   longlong3 *longlong3_e;
-  // CHECK: sycl::longlong3 *longlong3_f;
+  // CHECK: sycl::long3 *longlong3_f;
   longlong3 *longlong3_f;
   // CHECK: long long longlong3_g = longlong3_c.x();
   long long longlong3_g = longlong3_c.x;
@@ -1621,21 +1621,21 @@ int main_longlong3() {
   longlong3_a.x = longlong3_d.x;
   // CHECK: if (longlong3_b.x() == longlong3_d.x()) {}
   if (longlong3_b.x == longlong3_d.x) {}
-  // CHECK: sycl::longlong3 longlong3_h[16];
+  // CHECK: sycl::long3 longlong3_h[16];
   longlong3 longlong3_h[16];
-  // CHECK: sycl::longlong3 longlong3_i[32];
+  // CHECK: sycl::long3 longlong3_i[32];
   longlong3 longlong3_i[32];
   // CHECK: if (longlong3_h[12].x() == longlong3_i[12].x()) {}
   if (longlong3_h[12].x == longlong3_i[12].x) {}
-  // CHECK: longlong3_f = (sycl::longlong3 *)longlong3_i;
+  // CHECK: longlong3_f = (sycl::long3 *)longlong3_i;
   longlong3_f = (longlong3 *)longlong3_i;
-  // CHECK: longlong3_a = (sycl::longlong3)longlong3_c;
+  // CHECK: longlong3_a = (sycl::long3)longlong3_c;
   longlong3_a = (longlong3)longlong3_c;
-  // CHECK: longlong3_b = sycl::longlong3(longlong3_b);
+  // CHECK: longlong3_b = sycl::long3(longlong3_b);
   longlong3_b = longlong3(longlong3_b);
-  // CHECK: sycl::longlong3 longlong3_j, longlong3_k, longlong3_l, longlong3_m[16], *longlong3_n[32];
+  // CHECK: sycl::long3 longlong3_j, longlong3_k, longlong3_l, longlong3_m[16], *longlong3_n[32];
   longlong3 longlong3_j, longlong3_k, longlong3_l, longlong3_m[16], *longlong3_n[32];
-  // CHECK: int longlong3_o = sizeof(sycl::longlong3);
+  // CHECK: int longlong3_o = sizeof(sycl::long3);
   int longlong3_o = sizeof(longlong3);
   // CHECK: int long long_p = sizeof(long long);
   int long long_p = sizeof(long long);
@@ -1644,8 +1644,8 @@ int main_longlong3() {
   int *longlong3_cast;
   // CHECK: dpct::get_default_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::longlong3 *> longlong3_e_acc_ct0(longlong3_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::longlong3 *> longlong3_cast_acc_ct1((sycl::longlong3 *)longlong3_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<sycl::long3 *> longlong3_e_acc_ct0(longlong3_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<sycl::long3 *> longlong3_cast_acc_ct1((sycl::long3 *)longlong3_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_longlong3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -1654,38 +1654,38 @@ int main_longlong3() {
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   kernel_longlong3<<<1,1>>>(longlong3_e, (longlong3 *)longlong3_cast);
-  // CHECK: sycl::longlong3 longlong3_r = (sycl::longlong3){1,1,1};
-  // CHECK-NEXT: auto longlong3_s = (sycl::longlong3){1,1,1};
+  // CHECK: sycl::long3 longlong3_r = (sycl::long3){1,1,1};
+  // CHECK-NEXT: auto longlong3_s = (sycl::long3){1,1,1};
   longlong3 longlong3_r = (longlong3){1,1,1};
   auto longlong3_s = (longlong3){1,1,1};
   return 0;
 }
 
-// CHECK: void func3_longlong4(sycl::longlong4 a, sycl::longlong4 b, sycl::longlong4 c) {
+// CHECK: void func3_longlong4(sycl::long4 a, sycl::long4 b, sycl::long4 c) {
 void func3_longlong4(longlong4 a, longlong4 b, longlong4 c) {
 }
-// CHECK: void func_longlong4(sycl::longlong4 a) {
+// CHECK: void func_longlong4(sycl::long4 a) {
 void func_longlong4(longlong4 a) {
 }
-// CHECK: void kernel_longlong4(sycl::longlong4 *a, sycl::longlong4 *b) {
+// CHECK: void kernel_longlong4(sycl::long4 *a, sycl::long4 *b) {
 __global__ void kernel_longlong4(longlong4 *a, longlong4 *b) {
 }
 
 int main_longlong4() {
   // range default constructor does the right thing.
-  // CHECK: sycl::longlong4 longlong4_a;
+  // CHECK: sycl::long4 longlong4_a;
   longlong4 longlong4_a;
-  // CHECK: sycl::longlong4 longlong4_b = sycl::longlong4(1, 2, 3, 4);
+  // CHECK: sycl::long4 longlong4_b = sycl::long4(1, 2, 3, 4);
   longlong4 longlong4_b = make_longlong4(1, 2, 3, 4);
-  // CHECK: sycl::longlong4 longlong4_c = sycl::longlong4(longlong4_b);
+  // CHECK: sycl::long4 longlong4_c = sycl::long4(longlong4_b);
   longlong4 longlong4_c = longlong4(longlong4_b);
-  // CHECK: sycl::longlong4 longlong4_d(longlong4_c);
+  // CHECK: sycl::long4 longlong4_d(longlong4_c);
   longlong4 longlong4_d(longlong4_c);
-  // CHECK: func3_longlong4(longlong4_b, sycl::longlong4(longlong4_b), (sycl::longlong4)longlong4_b);
+  // CHECK: func3_longlong4(longlong4_b, sycl::long4(longlong4_b), (sycl::long4)longlong4_b);
   func3_longlong4(longlong4_b, longlong4(longlong4_b), (longlong4)longlong4_b);
-  // CHECK: sycl::longlong4 *longlong4_e;
+  // CHECK: sycl::long4 *longlong4_e;
   longlong4 *longlong4_e;
-  // CHECK: sycl::longlong4 *longlong4_f;
+  // CHECK: sycl::long4 *longlong4_f;
   longlong4 *longlong4_f;
   // CHECK: long long longlong4_g = longlong4_c.x();
   long long longlong4_g = longlong4_c.x;
@@ -1693,21 +1693,21 @@ int main_longlong4() {
   longlong4_a.x = longlong4_d.x;
   // CHECK: if (longlong4_b.x() == longlong4_d.x()) {}
   if (longlong4_b.x == longlong4_d.x) {}
-  // CHECK: sycl::longlong4 longlong4_h[16];
+  // CHECK: sycl::long4 longlong4_h[16];
   longlong4 longlong4_h[16];
-  // CHECK: sycl::longlong4 longlong4_i[32];
+  // CHECK: sycl::long4 longlong4_i[32];
   longlong4 longlong4_i[32];
   // CHECK: if (longlong4_h[12].x() == longlong4_i[12].x()) {}
   if (longlong4_h[12].x == longlong4_i[12].x) {}
-  // CHECK: longlong4_f = (sycl::longlong4 *)longlong4_i;
+  // CHECK: longlong4_f = (sycl::long4 *)longlong4_i;
   longlong4_f = (longlong4 *)longlong4_i;
-  // CHECK: longlong4_a = (sycl::longlong4)longlong4_c;
+  // CHECK: longlong4_a = (sycl::long4)longlong4_c;
   longlong4_a = (longlong4)longlong4_c;
-  // CHECK: longlong4_b = sycl::longlong4(longlong4_b);
+  // CHECK: longlong4_b = sycl::long4(longlong4_b);
   longlong4_b = longlong4(longlong4_b);
-  // CHECK: sycl::longlong4 longlong4_j, longlong4_k, longlong4_l, longlong4_m[16], *longlong4_n[32];
+  // CHECK: sycl::long4 longlong4_j, longlong4_k, longlong4_l, longlong4_m[16], *longlong4_n[32];
   longlong4 longlong4_j, longlong4_k, longlong4_l, longlong4_m[16], *longlong4_n[32];
-  // CHECK: int longlong4_o = sizeof(sycl::longlong4);
+  // CHECK: int longlong4_o = sizeof(sycl::long4);
   int longlong4_o = sizeof(longlong4);
   // CHECK: int long long_p = sizeof(long long);
   int long long_p = sizeof(long long);
@@ -1716,8 +1716,8 @@ int main_longlong4() {
   int *longlong4_cast;
   // CHECK: dpct::get_default_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::longlong4 *> longlong4_e_acc_ct0(longlong4_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::longlong4 *> longlong4_cast_acc_ct1((sycl::longlong4 *)longlong4_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<sycl::long4 *> longlong4_e_acc_ct0(longlong4_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<sycl::long4 *> longlong4_cast_acc_ct1((sycl::long4 *)longlong4_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_longlong4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -1726,8 +1726,8 @@ int main_longlong4() {
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   kernel_longlong4<<<1,1>>>(longlong4_e, (longlong4 *)longlong4_cast);
-  // CHECK: sycl::longlong4 longlong4_r = (sycl::longlong4){1,1,1,1};
-  // CHECK-NEXT: auto longlong4_s = (sycl::longlong4){1,1,1,1};
+  // CHECK: sycl::long4 longlong4_r = (sycl::long4){1,1,1,1};
+  // CHECK-NEXT: auto longlong4_s = (sycl::long4){1,1,1,1};
   longlong4 longlong4_r = (longlong4){1,1,1,1};
   auto longlong4_s = (longlong4){1,1,1,1};
   return 0;
@@ -2957,31 +2957,31 @@ int main_ulonglong1() {
   return 0;
 }
 
-// CHECK: void func3_ulonglong2(sycl::ulonglong2 a, sycl::ulonglong2 b, sycl::ulonglong2 c) {
+// CHECK: void func3_ulonglong2(sycl::ulong2 a, sycl::ulong2 b, sycl::ulong2 c) {
 void func3_ulonglong2(ulonglong2 a, ulonglong2 b, ulonglong2 c) {
 }
-// CHECK: void func_ulonglong2(sycl::ulonglong2 a) {
+// CHECK: void func_ulonglong2(sycl::ulong2 a) {
 void func_ulonglong2(ulonglong2 a) {
 }
-// CHECK: void kernel_ulonglong2(sycl::ulonglong2 *a, sycl::ulonglong2 *b) {
+// CHECK: void kernel_ulonglong2(sycl::ulong2 *a, sycl::ulong2 *b) {
 __global__ void kernel_ulonglong2(ulonglong2 *a, ulonglong2 *b) {
 }
 
 int main_ulonglong2() {
   // range default constructor does the right thing.
-  // CHECK: sycl::ulonglong2 ulonglong2_a;
+  // CHECK: sycl::ulong2 ulonglong2_a;
   ulonglong2 ulonglong2_a;
-  // CHECK: sycl::ulonglong2 ulonglong2_b = sycl::ulonglong2(1, 2);
+  // CHECK: sycl::ulong2 ulonglong2_b = sycl::ulong2(1, 2);
   ulonglong2 ulonglong2_b = make_ulonglong2(1, 2);
-  // CHECK: sycl::ulonglong2 ulonglong2_c = sycl::ulonglong2(ulonglong2_b);
+  // CHECK: sycl::ulong2 ulonglong2_c = sycl::ulong2(ulonglong2_b);
   ulonglong2 ulonglong2_c = ulonglong2(ulonglong2_b);
-  // CHECK: sycl::ulonglong2 ulonglong2_d(ulonglong2_c);
+  // CHECK: sycl::ulong2 ulonglong2_d(ulonglong2_c);
   ulonglong2 ulonglong2_d(ulonglong2_c);
-  // CHECK: func3_ulonglong2(ulonglong2_b, sycl::ulonglong2(ulonglong2_b), (sycl::ulonglong2)ulonglong2_b);
+  // CHECK: func3_ulonglong2(ulonglong2_b, sycl::ulong2(ulonglong2_b), (sycl::ulong2)ulonglong2_b);
   func3_ulonglong2(ulonglong2_b, ulonglong2(ulonglong2_b), (ulonglong2)ulonglong2_b);
-  // CHECK: sycl::ulonglong2 *ulonglong2_e;
+  // CHECK: sycl::ulong2 *ulonglong2_e;
   ulonglong2 *ulonglong2_e;
-  // CHECK: sycl::ulonglong2 *ulonglong2_f;
+  // CHECK: sycl::ulong2 *ulonglong2_f;
   ulonglong2 *ulonglong2_f;
   // CHECK: unsigned long long ulonglong2_g = ulonglong2_c.x();
   unsigned long long ulonglong2_g = ulonglong2_c.x;
@@ -2989,21 +2989,21 @@ int main_ulonglong2() {
   ulonglong2_a.x = ulonglong2_d.x;
   // CHECK: if (ulonglong2_b.x() == ulonglong2_d.x()) {}
   if (ulonglong2_b.x == ulonglong2_d.x) {}
-  // CHECK: sycl::ulonglong2 ulonglong2_h[16];
+  // CHECK: sycl::ulong2 ulonglong2_h[16];
   ulonglong2 ulonglong2_h[16];
-  // CHECK: sycl::ulonglong2 ulonglong2_i[32];
+  // CHECK: sycl::ulong2 ulonglong2_i[32];
   ulonglong2 ulonglong2_i[32];
   // CHECK: if (ulonglong2_h[12].x() == ulonglong2_i[12].x()) {}
   if (ulonglong2_h[12].x == ulonglong2_i[12].x) {}
-  // CHECK: ulonglong2_f = (sycl::ulonglong2 *)ulonglong2_i;
+  // CHECK: ulonglong2_f = (sycl::ulong2 *)ulonglong2_i;
   ulonglong2_f = (ulonglong2 *)ulonglong2_i;
-  // CHECK: ulonglong2_a = (sycl::ulonglong2)ulonglong2_c;
+  // CHECK: ulonglong2_a = (sycl::ulong2)ulonglong2_c;
   ulonglong2_a = (ulonglong2)ulonglong2_c;
-  // CHECK: ulonglong2_b = sycl::ulonglong2(ulonglong2_b);
+  // CHECK: ulonglong2_b = sycl::ulong2(ulonglong2_b);
   ulonglong2_b = ulonglong2(ulonglong2_b);
-  // CHECK: sycl::ulonglong2 ulonglong2_j, ulonglong2_k, ulonglong2_l, ulonglong2_m[16], *ulonglong2_n[32];
+  // CHECK: sycl::ulong2 ulonglong2_j, ulonglong2_k, ulonglong2_l, ulonglong2_m[16], *ulonglong2_n[32];
   ulonglong2 ulonglong2_j, ulonglong2_k, ulonglong2_l, ulonglong2_m[16], *ulonglong2_n[32];
-  // CHECK: int ulonglong2_o = sizeof(sycl::ulonglong2);
+  // CHECK: int ulonglong2_o = sizeof(sycl::ulong2);
   int ulonglong2_o = sizeof(ulonglong2);
   // CHECK: int unsigned long long_p = sizeof(unsigned long long);
   int unsigned long long_p = sizeof(unsigned long long);
@@ -3012,8 +3012,8 @@ int main_ulonglong2() {
   int *ulonglong2_cast;
   // CHECK: dpct::get_default_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulonglong2 *> ulonglong2_e_acc_ct0(ulonglong2_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulonglong2 *> ulonglong2_cast_acc_ct1((sycl::ulonglong2 *)ulonglong2_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulong2 *> ulonglong2_e_acc_ct0(ulonglong2_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulong2 *> ulonglong2_cast_acc_ct1((sycl::ulong2 *)ulonglong2_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -3022,38 +3022,38 @@ int main_ulonglong2() {
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   kernel_ulonglong2<<<1,1>>>(ulonglong2_e, (ulonglong2 *)ulonglong2_cast);
-  // CHECK: sycl::ulonglong2 ulonglong2_r = (sycl::ulonglong2){1,1};
-  // CHECK-NEXT: auto ulonglong2_s = (sycl::ulonglong2){1,1};
+  // CHECK: sycl::ulong2 ulonglong2_r = (sycl::ulong2){1,1};
+  // CHECK-NEXT: auto ulonglong2_s = (sycl::ulong2){1,1};
   ulonglong2 ulonglong2_r = (ulonglong2){1,1};
   auto ulonglong2_s = (ulonglong2){1,1};
   return 0;
 }
 
-// CHECK: void func3_ulonglong3(sycl::ulonglong3 a, sycl::ulonglong3 b, sycl::ulonglong3 c) {
+// CHECK: void func3_ulonglong3(sycl::ulong3 a, sycl::ulong3 b, sycl::ulong3 c) {
 void func3_ulonglong3(ulonglong3 a, ulonglong3 b, ulonglong3 c) {
 }
-// CHECK: void func_ulonglong3(sycl::ulonglong3 a) {
+// CHECK: void func_ulonglong3(sycl::ulong3 a) {
 void func_ulonglong3(ulonglong3 a) {
 }
-// CHECK: void kernel_ulonglong3(sycl::ulonglong3 *a, sycl::ulonglong3 *b) {
+// CHECK: void kernel_ulonglong3(sycl::ulong3 *a, sycl::ulong3 *b) {
 __global__ void kernel_ulonglong3(ulonglong3 *a, ulonglong3 *b) {
 }
 
 int main_ulonglong3() {
   // range default constructor does the right thing.
-  // CHECK: sycl::ulonglong3 ulonglong3_a;
+  // CHECK: sycl::ulong3 ulonglong3_a;
   ulonglong3 ulonglong3_a;
-  // CHECK: sycl::ulonglong3 ulonglong3_b = sycl::ulonglong3(1, 2, 3);
+  // CHECK: sycl::ulong3 ulonglong3_b = sycl::ulong3(1, 2, 3);
   ulonglong3 ulonglong3_b = make_ulonglong3(1, 2, 3);
-  // CHECK: sycl::ulonglong3 ulonglong3_c = sycl::ulonglong3(ulonglong3_b);
+  // CHECK: sycl::ulong3 ulonglong3_c = sycl::ulong3(ulonglong3_b);
   ulonglong3 ulonglong3_c = ulonglong3(ulonglong3_b);
-  // CHECK: sycl::ulonglong3 ulonglong3_d(ulonglong3_c);
+  // CHECK: sycl::ulong3 ulonglong3_d(ulonglong3_c);
   ulonglong3 ulonglong3_d(ulonglong3_c);
-  // CHECK: func3_ulonglong3(ulonglong3_b, sycl::ulonglong3(ulonglong3_b), (sycl::ulonglong3)ulonglong3_b);
+  // CHECK: func3_ulonglong3(ulonglong3_b, sycl::ulong3(ulonglong3_b), (sycl::ulong3)ulonglong3_b);
   func3_ulonglong3(ulonglong3_b, ulonglong3(ulonglong3_b), (ulonglong3)ulonglong3_b);
-  // CHECK: sycl::ulonglong3 *ulonglong3_e;
+  // CHECK: sycl::ulong3 *ulonglong3_e;
   ulonglong3 *ulonglong3_e;
-  // CHECK: sycl::ulonglong3 *ulonglong3_f;
+  // CHECK: sycl::ulong3 *ulonglong3_f;
   ulonglong3 *ulonglong3_f;
   // CHECK: unsigned long long ulonglong3_g = ulonglong3_c.x();
   unsigned long long ulonglong3_g = ulonglong3_c.x;
@@ -3061,21 +3061,21 @@ int main_ulonglong3() {
   ulonglong3_a.x = ulonglong3_d.x;
   // CHECK: if (ulonglong3_b.x() == ulonglong3_d.x()) {}
   if (ulonglong3_b.x == ulonglong3_d.x) {}
-  // CHECK: sycl::ulonglong3 ulonglong3_h[16];
+  // CHECK: sycl::ulong3 ulonglong3_h[16];
   ulonglong3 ulonglong3_h[16];
-  // CHECK: sycl::ulonglong3 ulonglong3_i[32];
+  // CHECK: sycl::ulong3 ulonglong3_i[32];
   ulonglong3 ulonglong3_i[32];
   // CHECK: if (ulonglong3_h[12].x() == ulonglong3_i[12].x()) {}
   if (ulonglong3_h[12].x == ulonglong3_i[12].x) {}
-  // CHECK: ulonglong3_f = (sycl::ulonglong3 *)ulonglong3_i;
+  // CHECK: ulonglong3_f = (sycl::ulong3 *)ulonglong3_i;
   ulonglong3_f = (ulonglong3 *)ulonglong3_i;
-  // CHECK: ulonglong3_a = (sycl::ulonglong3)ulonglong3_c;
+  // CHECK: ulonglong3_a = (sycl::ulong3)ulonglong3_c;
   ulonglong3_a = (ulonglong3)ulonglong3_c;
-  // CHECK: ulonglong3_b = sycl::ulonglong3(ulonglong3_b);
+  // CHECK: ulonglong3_b = sycl::ulong3(ulonglong3_b);
   ulonglong3_b = ulonglong3(ulonglong3_b);
-  // CHECK: sycl::ulonglong3 ulonglong3_j, ulonglong3_k, ulonglong3_l, ulonglong3_m[16], *ulonglong3_n[32];
+  // CHECK: sycl::ulong3 ulonglong3_j, ulonglong3_k, ulonglong3_l, ulonglong3_m[16], *ulonglong3_n[32];
   ulonglong3 ulonglong3_j, ulonglong3_k, ulonglong3_l, ulonglong3_m[16], *ulonglong3_n[32];
-  // CHECK: int ulonglong3_o = sizeof(sycl::ulonglong3);
+  // CHECK: int ulonglong3_o = sizeof(sycl::ulong3);
   int ulonglong3_o = sizeof(ulonglong3);
   // CHECK: int unsigned long long_p = sizeof(unsigned long long);
   int unsigned long long_p = sizeof(unsigned long long);
@@ -3084,8 +3084,8 @@ int main_ulonglong3() {
   int *ulonglong3_cast;
   // CHECK: dpct::get_default_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulonglong3 *> ulonglong3_e_acc_ct0(ulonglong3_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulonglong3 *> ulonglong3_cast_acc_ct1((sycl::ulonglong3 *)ulonglong3_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulong3 *> ulonglong3_e_acc_ct0(ulonglong3_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulong3 *> ulonglong3_cast_acc_ct1((sycl::ulong3 *)ulonglong3_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong3_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -3094,38 +3094,38 @@ int main_ulonglong3() {
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   kernel_ulonglong3<<<1,1>>>(ulonglong3_e, (ulonglong3 *)ulonglong3_cast);
-  // CHECK: sycl::ulonglong3 ulonglong3_r = (sycl::ulonglong3){1,1,1};
-  // CHECK-NEXT: auto ulonglong3_s = (sycl::ulonglong3){1,1,1};
+  // CHECK: sycl::ulong3 ulonglong3_r = (sycl::ulong3){1,1,1};
+  // CHECK-NEXT: auto ulonglong3_s = (sycl::ulong3){1,1,1};
   ulonglong3 ulonglong3_r = (ulonglong3){1,1,1};
   auto ulonglong3_s = (ulonglong3){1,1,1};
   return 0;
 }
 
-// CHECK: void func3_ulonglong4(sycl::ulonglong4 a, sycl::ulonglong4 b, sycl::ulonglong4 c) {
+// CHECK: void func3_ulonglong4(sycl::ulong4 a, sycl::ulong4 b, sycl::ulong4 c) {
 void func3_ulonglong4(ulonglong4 a, ulonglong4 b, ulonglong4 c) {
 }
-// CHECK: void func_ulonglong4(sycl::ulonglong4 a) {
+// CHECK: void func_ulonglong4(sycl::ulong4 a) {
 void func_ulonglong4(ulonglong4 a) {
 }
-// CHECK: void kernel_ulonglong4(sycl::ulonglong4 *a, sycl::ulonglong4 *b) {
+// CHECK: void kernel_ulonglong4(sycl::ulong4 *a, sycl::ulong4 *b) {
 __global__ void kernel_ulonglong4(ulonglong4 *a, ulonglong4 *b) {
 }
 
 int main_ulonglong4() {
   // range default constructor does the right thing.
-  // CHECK: sycl::ulonglong4 ulonglong4_a;
+  // CHECK: sycl::ulong4 ulonglong4_a;
   ulonglong4 ulonglong4_a;
-  // CHECK: sycl::ulonglong4 ulonglong4_b = sycl::ulonglong4(1, 2, 3, 4);
+  // CHECK: sycl::ulong4 ulonglong4_b = sycl::ulong4(1, 2, 3, 4);
   ulonglong4 ulonglong4_b = make_ulonglong4(1, 2, 3, 4);
-  // CHECK: sycl::ulonglong4 ulonglong4_c = sycl::ulonglong4(ulonglong4_b);
+  // CHECK: sycl::ulong4 ulonglong4_c = sycl::ulong4(ulonglong4_b);
   ulonglong4 ulonglong4_c = ulonglong4(ulonglong4_b);
-  // CHECK: sycl::ulonglong4 ulonglong4_d(ulonglong4_c);
+  // CHECK: sycl::ulong4 ulonglong4_d(ulonglong4_c);
   ulonglong4 ulonglong4_d(ulonglong4_c);
-  // CHECK: func3_ulonglong4(ulonglong4_b, sycl::ulonglong4(ulonglong4_b), (sycl::ulonglong4)ulonglong4_b);
+  // CHECK: func3_ulonglong4(ulonglong4_b, sycl::ulong4(ulonglong4_b), (sycl::ulong4)ulonglong4_b);
   func3_ulonglong4(ulonglong4_b, ulonglong4(ulonglong4_b), (ulonglong4)ulonglong4_b);
-  // CHECK: sycl::ulonglong4 *ulonglong4_e;
+  // CHECK: sycl::ulong4 *ulonglong4_e;
   ulonglong4 *ulonglong4_e;
-  // CHECK: sycl::ulonglong4 *ulonglong4_f;
+  // CHECK: sycl::ulong4 *ulonglong4_f;
   ulonglong4 *ulonglong4_f;
   // CHECK: unsigned long long ulonglong4_g = ulonglong4_c.x();
   unsigned long long ulonglong4_g = ulonglong4_c.x;
@@ -3133,21 +3133,21 @@ int main_ulonglong4() {
   ulonglong4_a.x = ulonglong4_d.x;
   // CHECK: if (ulonglong4_b.x() == ulonglong4_d.x()) {}
   if (ulonglong4_b.x == ulonglong4_d.x) {}
-  // CHECK: sycl::ulonglong4 ulonglong4_h[16];
+  // CHECK: sycl::ulong4 ulonglong4_h[16];
   ulonglong4 ulonglong4_h[16];
-  // CHECK: sycl::ulonglong4 ulonglong4_i[32];
+  // CHECK: sycl::ulong4 ulonglong4_i[32];
   ulonglong4 ulonglong4_i[32];
   // CHECK: if (ulonglong4_h[12].x() == ulonglong4_i[12].x()) {}
   if (ulonglong4_h[12].x == ulonglong4_i[12].x) {}
-  // CHECK: ulonglong4_f = (sycl::ulonglong4 *)ulonglong4_i;
+  // CHECK: ulonglong4_f = (sycl::ulong4 *)ulonglong4_i;
   ulonglong4_f = (ulonglong4 *)ulonglong4_i;
-  // CHECK: ulonglong4_a = (sycl::ulonglong4)ulonglong4_c;
+  // CHECK: ulonglong4_a = (sycl::ulong4)ulonglong4_c;
   ulonglong4_a = (ulonglong4)ulonglong4_c;
-  // CHECK: ulonglong4_b = sycl::ulonglong4(ulonglong4_b);
+  // CHECK: ulonglong4_b = sycl::ulong4(ulonglong4_b);
   ulonglong4_b = ulonglong4(ulonglong4_b);
-  // CHECK: sycl::ulonglong4 ulonglong4_j, ulonglong4_k, ulonglong4_l, ulonglong4_m[16], *ulonglong4_n[32];
+  // CHECK: sycl::ulong4 ulonglong4_j, ulonglong4_k, ulonglong4_l, ulonglong4_m[16], *ulonglong4_n[32];
   ulonglong4 ulonglong4_j, ulonglong4_k, ulonglong4_l, ulonglong4_m[16], *ulonglong4_n[32];
-  // CHECK: int ulonglong4_o = sizeof(sycl::ulonglong4);
+  // CHECK: int ulonglong4_o = sizeof(sycl::ulong4);
   int ulonglong4_o = sizeof(ulonglong4);
   // CHECK: int unsigned long long_p = sizeof(unsigned long long);
   int unsigned long long_p = sizeof(unsigned long long);
@@ -3156,8 +3156,8 @@ int main_ulonglong4() {
   int *ulonglong4_cast;
   // CHECK: dpct::get_default_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulonglong4 *> ulonglong4_e_acc_ct0(ulonglong4_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulonglong4 *> ulonglong4_cast_acc_ct1((sycl::ulonglong4 *)ulonglong4_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulong4 *> ulonglong4_e_acc_ct0(ulonglong4_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<sycl::ulong4 *> ulonglong4_cast_acc_ct1((sycl::ulong4 *)ulonglong4_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong4_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -3166,8 +3166,8 @@ int main_ulonglong4() {
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   kernel_ulonglong4<<<1,1>>>(ulonglong4_e, (ulonglong4 *)ulonglong4_cast);
-  // CHECK: sycl::ulonglong4 ulonglong4_r = (sycl::ulonglong4){1,1,1,1};
-  // CHECK-NEXT: auto ulonglong4_s = (sycl::ulonglong4){1,1,1,1};
+  // CHECK: sycl::ulong4 ulonglong4_r = (sycl::ulong4){1,1,1,1};
+  // CHECK-NEXT: auto ulonglong4_s = (sycl::ulong4){1,1,1,1};
   ulonglong4 ulonglong4_r = (ulonglong4){1,1,1,1};
   auto ulonglong4_s = (ulonglong4){1,1,1,1};
   return 0;
@@ -3567,18 +3567,18 @@ std::vector<float3> foo_float3(std::vector<float3> a);
 std::vector<float4> foo_float4(std::vector<float4> a);
 
 // CHECK: std::vector<const int64_t> const foo_longlong1(std::vector<const int64_t> a);
-// CHECK-NEXT: std::vector<sycl::longlong2> foo_longlong2(std::vector<sycl::longlong2> a);
-// CHECK-NEXT: std::vector<sycl::longlong3> foo_longlong3(std::vector<sycl::longlong3> a);
-// CHECK-NEXT: std::vector<sycl::longlong4> foo_longlong4(std::vector<sycl::longlong4> a);
+// CHECK-NEXT: std::vector<sycl::long2> foo_longlong2(std::vector<sycl::long2> a);
+// CHECK-NEXT: std::vector<sycl::long3> foo_longlong3(std::vector<sycl::long3> a);
+// CHECK-NEXT: std::vector<sycl::long4> foo_longlong4(std::vector<sycl::long4> a);
 std::vector<const longlong1> const foo_longlong1(std::vector<const longlong1> a);
 std::vector<longlong2> foo_longlong2(std::vector<longlong2> a);
 std::vector<longlong3> foo_longlong3(std::vector<longlong3> a);
 std::vector<longlong4> foo_longlong4(std::vector<longlong4> a);
 
 // CHECK: std::vector<const uint64_t> const foo_ulonglong1(std::vector<const uint64_t> a);
-// CHECK-NEXT: std::vector<sycl::ulonglong2> foo_ulonglong2(std::vector<sycl::ulonglong2> a);
-// CHECK-NEXT: std::vector<sycl::ulonglong3> foo_ulonglong3(std::vector<sycl::ulonglong3> a);
-// CHECK-NEXT: std::vector<sycl::ulonglong4> foo_ulonglong4(std::vector<sycl::ulonglong4> a);
+// CHECK-NEXT: std::vector<sycl::ulong2> foo_ulonglong2(std::vector<sycl::ulong2> a);
+// CHECK-NEXT: std::vector<sycl::ulong3> foo_ulonglong3(std::vector<sycl::ulong3> a);
+// CHECK-NEXT: std::vector<sycl::ulong4> foo_ulonglong4(std::vector<sycl::ulong4> a);
 std::vector<const ulonglong1> const foo_ulonglong1(std::vector<const ulonglong1> a);
 std::vector<ulonglong2> foo_ulonglong2(std::vector<ulonglong2> a);
 std::vector<ulonglong3> foo_ulonglong3(std::vector<ulonglong3> a);
@@ -3604,8 +3604,8 @@ void bar(){
   // CHECK-NEXT: std::vector<sycl::long2> *bar_long2 = (std::vector<sycl::long2>*) a;
   // CHECK-NEXT: std::vector<sycl::ulong2> *bar_ulong2 = (std::vector<sycl::ulong2>*) a;
   // CHECK-NEXT: std::vector<sycl::float2> *bar_float2 = (std::vector<sycl::float2>*) a;
-  // CHECK-NEXT: std::vector<sycl::longlong2> *bar_longlong2 = (std::vector<sycl::longlong2>*) a;
-  // CHECK-NEXT: std::vector<sycl::ulonglong2> *bar_ulonglong2 = (std::vector<sycl::ulonglong2>*) a;
+  // CHECK-NEXT: std::vector<sycl::long2> *bar_longlong2 = (std::vector<sycl::long2>*) a;
+  // CHECK-NEXT: std::vector<sycl::ulong2> *bar_ulonglong2 = (std::vector<sycl::ulong2>*) a;
   // CHECK-NEXT: std::vector<sycl::double2> *bar_double2 = (std::vector<sycl::double2>*) a;
   std::vector<char2> *bar_char2 = (std::vector<char2>*) a;
   std::vector<uchar2> *bar_uchar2 = (std::vector<uchar2>*) a;
@@ -3630,8 +3630,8 @@ void bar(){
 // CHECK-NEXT: #define vlong2_ptr std::vector<sycl::long2>*
 // CHECK-NEXT: #define vulong2_ptr std::vector<sycl::ulong2>*
 // CHECK-NEXT: #define vfloat2_ptr std::vector<sycl::float2>*
-// CHECK-NEXT: #define vlonglong2_ptr std::vector<sycl::longlong2>*
-// CHECK-NEXT: #define vulonglong2_ptr std::vector<sycl::ulonglong2>*
+// CHECK-NEXT: #define vlonglong2_ptr std::vector<sycl::long2>*
+// CHECK-NEXT: #define vulonglong2_ptr std::vector<sycl::ulong2>*
 // CHECK-NEXT: #define vdouble2_ptr std::vector<sycl::double2>*
 // CHECK-NEXT:   bar_char2 = (vchar2_ptr) a;
 // CHECK-NEXT:    bar_uchar2 = (vuchar2_ptr) a;

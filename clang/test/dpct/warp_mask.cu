@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none -out-root %T/warp_mask %s --use-experimental-features=masked_sub_group_function --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/warp_mask %s --use-experimental-features=masked-sub-group-operation --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/warp_mask/warp_mask.dp.cpp --match-full-lines %s
 
 #include "cuda.h"

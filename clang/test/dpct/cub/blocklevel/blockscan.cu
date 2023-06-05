@@ -116,6 +116,27 @@ __global__ void InclusiveSumKernel(int* data) {
   data[threadid] = output;
 }
 
+// CHECK: template <int THREADS_PER_BLOCK>
+// CHECK: void SomeKernel(int *data,
+// CHECK：                const sycl::nd_item<3> &item_ct1) {
+// CHECK-NOT: typedef cub::BlockScan<int, THREADS_PER_BLOCK> BlockScan; 
+// CHECK:  int threadid = item_ct1.get_local_id(2);
+// CHECK:  int input = data[threadid];
+// CHECK:  int output = 0;
+// CHECK:  output = sycl::inclusive_scan_over_group(item_ct1.get_group(), input, sycl::plus<>());
+// CHECK:  data[threadid] = output;
+// CHECK:}
+template <int THREADS_PER_BLOCK>
+__global__ void SomeKernel(int *data) {
+   typedef cub::BlockScan<int, THREADS_PER_BLOCK> BlockScan;
+  __shared__ typename BlockScan::TempStorage temp1;
+  int threadid = threadIdx.x;
+  int input = data[threadid];
+  int output = 0;
+  BlockScan(temp1).InclusiveSum(input, output);
+  data[threadid] = output;
+}
+
 int main() {
   int* dev_data = nullptr;
 
@@ -164,6 +185,13 @@ int main() {
   InclusiveSumKernel<<<GridSize, BlockSize>>>(dev_data);
   cudaDeviceSynchronize();
   verify_data(dev_data, TotalThread);
+
+// CHECK: q_ct1.parallel_for(
+// CHECK-NEXT: sycl::nd_range<3>(GridSize * BlockSize, BlockSize), 
+// CHECK-NEXT: [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT: SomeKernel<4>(dev_data, item_ct1);
+// CHECK-NEXT: });
+  SomeKernel<4><<<GridSize, BlockSize>>>(dev_data);
 
   return 0;
 }

@@ -3710,16 +3710,55 @@ bool checkIfContainSizeofTypeRecursively(
   return false;
 }
 
+bool maybeDependentCubType(const clang::TypeSourceInfo *TInfo) {
+  QualType CanType = TInfo->getType().getCanonicalType();
+  auto *CanTyPtr = CanType.split().Ty;
+
+  // template <int THREADS_PER_BLOCK>
+  //  __global__ void Kernel() {
+  //  1.  typedef cub::BlockScan<int, THREADS_PER_BLOCK> BlockScan;
+  //  2.  __shared__ typename BlockScan::TempStorage temp1;
+  //  }
+
+  // Handle 1
+  auto isCubRecordType = [&](const Type *T) -> bool {
+    if (auto *SpecType = dyn_cast<TemplateSpecializationType>(T)) {
+      auto *TemplateDecl = SpecType->getTemplateName().getAsTemplateDecl();
+      auto *Ctx = TemplateDecl->getDeclContext();
+      if (auto *CubNS = dyn_cast<NamespaceDecl>(Ctx)) {
+        return CubNS->getCanonicalDecl()->getName() == "cub";
+      }
+    }
+    return false;
+  };
+
+  // Handle 2
+  if (const auto *DNT = dyn_cast<DependentNameType>(CanTyPtr)) {
+    auto *QNNS = DNT->getQualifier();
+    // *::TempStorage must be a type.
+    if (QNNS->getKind() == NestedNameSpecifier::TypeSpec) {
+      auto *QNNSType = QNNS->getAsType();
+      return isCubRecordType(QNNSType);
+    }
+  }
+
+  return isCubRecordType(CanTyPtr);
+}
+
 bool isCubVar(const VarDecl *VD) {
-  std::string CanonicalType = VD->getType().getCanonicalType().getAsString();
+  QualType CanType = VD->getType().getCanonicalType();
+  std::string CanonicalTypeStr = CanType.getAsString();
   // 1.process non-template case
   if (!isTypeInAnalysisScope(VD->getType().getCanonicalType().getTypePtr()) &&
-      (CanonicalType.find("struct cub::") == 0 ||
-       CanonicalType.find("class cub::") == 0)) {
+      (CanonicalTypeStr.find("struct cub::") == 0 ||
+       CanonicalTypeStr.find("class cub::") == 0)) {
     return true;
   }
   // 2.process template cases
-  if (CanonicalType.find("::TempStorage") != std::string::npos) {
+  if (CanonicalTypeStr.find("::TempStorage") != std::string::npos) {
+    if (maybeDependentCubType(VD->getTypeSourceInfo()))
+      return true;
+
     std::string TypeParameterName;
     auto findTypeParameterName = [&](DependentNameTypeLoc DNT) {
       std::string Name;

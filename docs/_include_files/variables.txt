@@ -5,7 +5,7 @@
 
 .. |dpcpp_long| replace:: Data Parallel C++ (DPC++)
 
-.. |cuda_versions| replace:: 8.0, 9.x, 10.x, and 11.0–11.6
+.. |cuda_versions| replace:: 8.0, 9.x, 10.x, 11.x, and 12.0-12.1
 
 .. |oneDPL_long| replace:: Intel® oneAPI DPC++ Library (oneDPL)
 

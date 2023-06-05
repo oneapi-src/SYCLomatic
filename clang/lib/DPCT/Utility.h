@@ -558,6 +558,7 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE);
 bool checkIfContainSizeofTypeRecursively(
     const clang::Expr *E, const clang::Expr *&ExprContainSizeofType);
 bool containSizeOfType(const clang::Expr *E);
+bool maybeDependentCubType(const clang::TypeSourceInfo *TInfo);
 bool isCubVar(const clang::VarDecl *VD);
 void findAllVarRef(const clang::DeclRefExpr *DRE,
                    std::vector<const clang::DeclRefExpr *> &RefMatchResult,
