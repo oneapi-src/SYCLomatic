@@ -59,10 +59,7 @@ int main(){
     //CHECK: dpct::unload_kernel_library(M);
     cuModuleUnload(M);
 
-    //CHECK: /*
-    //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    //CHECK-NEXT: */
-    //CHECK-NEXT: if ((dpct::unload_kernel_library(M), 0)==0) {
+    //CHECK: if (DPCT_CHECK_ERROR(dpct::unload_kernel_library(M))==0) {
     if (cuModuleUnload(M)==0) {
       printf("unload failed\n");
     }

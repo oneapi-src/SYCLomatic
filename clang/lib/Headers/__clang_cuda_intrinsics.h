@@ -514,8 +514,6 @@ __device__ inline cuuint32_t __nvvm_get_smem_pointer(void *__ptr) {
 }
 } // extern "C"
 
-#if 0 // SYCLomatic_CUSTOMIZATION
-
 #if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 800
 __device__ inline unsigned __reduce_add_sync(unsigned __mask,
                                              unsigned __value) {
@@ -546,6 +544,29 @@ __device__ inline unsigned __reduce_xor_sync(unsigned __mask,
                                              unsigned __value) {
   return __nvvm_redux_sync_xor(__mask, __value);
 }
+
+#if defined(SYCLomatic_CUSTOMIZATION)
+// Fixed the parsing error when source include <cooperative_groups/reduce.h>.
+__device__ inline dim3 __clusterGridDimInClusters();
+
+__device__ inline dim3 __clusterIdx();
+
+__device__ inline unsigned __clusterDimIsSpecified();
+
+__device__ inline void __cluster_barrier_arrive();
+
+__device__ inline unsigned __cluster_query_shared_rank(const void *ptr);
+
+__device__ inline dim3 __clusterRelativeBlockIdx();
+
+__device__ inline unsigned __clusterRelativeBlockRank();
+
+__device__ inline dim3 __clusterDim();
+
+__device__ inline unsigned __clusterSizeInBlocks();
+
+__device__ inline void __cluster_barrier_wait();
+#endif
 
 __device__ inline void __nv_memcpy_async_shared_global_4(void *__dst,
                                                          const void *__src,
@@ -578,8 +599,6 @@ __nv_associate_access_property(const void *__ptr, unsigned long long __prop) {
   return (void*)__ptr;
 }
 #endif // !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 800
-
-#endif
 
 #endif // CUDA_VERSION >= 11000
 

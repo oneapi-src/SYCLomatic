@@ -396,7 +396,7 @@ namespace experimental {
 // Util|spirv_builtin_function
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Masked version of select_from_sub_group, which execute masked sub_group
+/// Masked version of select_from_sub_group, which execute masked sub-group
 /// operation. The parameter member_mask indicating the work-items participating
 /// the call. Whether the n-th bit is set to 1 representing whether the
 /// work-item with id n is participating the call. All work-items named in
@@ -441,7 +441,7 @@ T select_from_sub_group(unsigned int member_mask,
 // Util|spirv_builtin_function
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Masked version of shift_sub_group_left, which execute masked sub_group
+/// Masked version of shift_sub_group_left, which execute masked sub-group
 /// operation. The parameter member_mask indicating the work-items participating
 /// the call. Whether the n-th bit is set to 1 representing whether the
 /// work-item with id n is participating the call. All work-items named in
@@ -489,7 +489,7 @@ T shift_sub_group_left(unsigned int member_mask,
 // Util|spirv_builtin_function
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Masked version of shift_sub_group_right, which execute masked sub_group
+/// Masked version of shift_sub_group_right, which execute masked sub-group
 /// operation. The parameter member_mask indicating the work-items participating
 /// the call. Whether the n-th bit is set to 1 representing whether the
 /// work-item with id n is participating the call. All work-items named in
@@ -537,7 +537,7 @@ T shift_sub_group_right(unsigned int member_mask,
 // Util|spirv_builtin_function
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Masked version of permute_sub_group_by_xor, which execute masked sub_group
+/// Masked version of permute_sub_group_by_xor, which execute masked sub-group
 /// operation. The parameter member_mask indicating the work-items participating
 /// the call. Whether the n-th bit is set to 1 representing whether the
 /// work-item with id n is participating the call. All work-items named in

@@ -25,6 +25,8 @@
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include <cstdarg>
 
+extern std::string DpctInstallPath; // Installation directory for this tool
+
 using namespace clang::ast_matchers;
 namespace clang {
 namespace dpct {
@@ -910,16 +912,18 @@ createFactoryWithSubGroupSizeRequest(
 }
 
 template <class... StmtPrinters>
-inline std::shared_ptr<CallExprRewriterFactoryBase> createMultiStmtsRewriterFactory(
+inline std::shared_ptr<CallExprRewriterFactoryBase>
+createMultiStmtsRewriterFactory(
     const std::string &SourceName,
-    std::function<StmtPrinters(const CallExpr *)> &&...Creators) {
+    std::function<StmtPrinters(const CallExpr *)> &&... Creators) {
   return std::make_shared<ConditionalRewriterFactory>(
       isCallAssigned,
       std::make_shared<AssignableRewriterFactory>(
           std::make_shared<CallExprRewriterFactory<
               PrinterRewriter<CommaExprPrinter<StmtPrinters...>>,
               std::function<StmtPrinters(const CallExpr *)>...>>(SourceName,
-                                                                 Creators...)),
+                                                                 Creators...),
+          true),
       std::make_shared<CallExprRewriterFactory<
           PrinterRewriter<MultiStmtsPrinter<StmtPrinters...>>,
           std::function<StmtPrinters(const CallExpr *)>...>>(SourceName,
@@ -1134,6 +1138,24 @@ createAssignableFactory(
         &&Input,
     T) {
   return createAssignableFactory(std::move(Input));
+}
+
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createAssignableFactoryWithExtraParen(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Input) {
+  return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
+      std::move(Input.first),
+      std::make_shared<AssignableRewriterFactory>(Input.second, true));
+}
+
+template <class T>
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createAssignableFactoryWithExtraParen(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Input,
+    T) {
+  return createAssignableFactoryWithExtraParen(std::move(Input));
 }
 
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
@@ -1865,10 +1887,31 @@ public:
   }
 };
 
+namespace math {
+class IsDefinedInCUDA {
+public:
+  IsDefinedInCUDA() {}
+  bool operator()(const CallExpr *C) {
+    auto FD = C->getDirectCallee();
+    if (!FD)
+      return false;
+    SourceLocation DeclLoc =
+        dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
+            FD->getLocation());
+    std::string DeclLocFilePath =
+        dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
+    makeCanonical(DeclLocFilePath);
+    return (isChildPath(dpct::DpctGlobalInfo::getCudaPath(), DeclLocFilePath) ||
+            isChildPath(DpctInstallPath, DeclLocFilePath));
+  }
+};
+} // namespace math
 } // namespace dpct
 } // namespace clang
 
 #define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),
+#define ASSIGNABLE_FACTORY_WITH_PAREN(x)                                       \
+  createAssignableFactoryWithExtraParen(x 0),
 #define INSERT_AROUND_FACTORY(x, PREFIX, SUFFIX)                               \
   createInsertAroundFactory(x PREFIX, SUFFIX),
 #define FEATURE_REQUEST_FACTORY(FEATURE, x)                                    \

@@ -160,14 +160,8 @@ void foo5() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // CHECK: q_ct1.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE );
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: int Err = (q_ct1.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ), 0);
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: Err = (q_ct1.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait(), 0);
+  // CHECK-NEXT: int Err = DPCT_CHECK_ERROR(q_ct1.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ));
+  // CHECK-NEXT: Err = DPCT_CHECK_ERROR(q_ct1.memcpy( d_A, h_A, sizeof(double)*SIZE*SIZE ).wait());
   cudaMemcpy( d_A, h_A, sizeof(double)*SIZE*SIZE, cudaMemcpyDeviceToHost );
   int Err = cudaMemcpy( d_A, h_A, sizeof(double)*SIZE*SIZE, cudaMemcpyDeviceToHost );
   Err = cudaMemcpy( d_A, h_A, sizeof(double)*SIZE*SIZE, cudaMemcpyDeviceToHost );

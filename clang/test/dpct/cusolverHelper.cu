@@ -39,22 +39,13 @@ int main(int argc, char *argv[])
     // CHECK: cusolverH = &q_ct1;
     cusolverDnCreate(&cusolverH);
 
-    // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: status = (cusolverH = &q_ct1, 0);
+    // CHECK: status = DPCT_CHECK_ERROR(cusolverH = &q_ct1);
     status = cusolverDnCreate(&cusolverH);
 
-    // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: status = (cusolverH = &q_ct1, 0);
+    // CHECK: status = DPCT_CHECK_ERROR(cusolverH = &q_ct1);
     status = MACRO_A(&cusolverH);
 
-    // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: status = (cusolverH = nullptr, 0);
+    // CHECK: status = DPCT_CHECK_ERROR(cusolverH = nullptr);
     status = cusolverDnDestroy(cusolverH);
 
     // CHECK: int a = sizeof(int);
@@ -63,8 +54,8 @@ int main(int argc, char *argv[])
     int b = sizeof(cusolverDnHandle_t);
 
     cudaStream_t stream;
-    // CHECK: status = (stream = cusolverH, 0);
-    // CHECK: status = (cusolverH = stream, 0);
+    // CHECK: status = DPCT_CHECK_ERROR(stream = cusolverH);
+    // CHECK: status = DPCT_CHECK_ERROR(cusolverH = stream);
     status = cusolverDnGetStream(cusolverH, &stream);
     status = cusolverDnSetStream(cusolverH, stream);
 }

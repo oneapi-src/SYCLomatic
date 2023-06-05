@@ -86,10 +86,7 @@ void test() {
     cudaMemcpy(data, host_data.data(), ele_num * sizeof(HT), cudaMemcpyHostToDevice);
 
     float alpha = 3.f;
-    // CHECK: /*
-    // CHECK: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK: */
-    // CHECK: auto s = (handle.async_scale(alpha, dataTensor, data), 0);
+    // CHECK: auto s = DPCT_CHECK_ERROR(handle.async_scale(alpha, dataTensor, data));
     auto s = cudnnScaleTensor(handle, dataTensor, data, &alpha);
 
     cudaMemcpy(host_data.data(), data, ele_num * sizeof(HT), cudaMemcpyDeviceToHost);
