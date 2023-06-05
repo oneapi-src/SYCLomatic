@@ -40,22 +40,10 @@ int main(int argc, char *argv[])
     int Lwork = 0;
     int devInfo = 0;
 
-    //CHECK: /*
-    //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    //CHECK-NEXT: */
-    //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<float>(**cusolverH, uplo, n, lda), 0);
-    //CHECK-NEXT: /*
-    //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    //CHECK-NEXT: */
-    //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<double>(**cusolverH, uplo, n, lda), 0);
-    //CHECK-NEXT: /*
-    //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    //CHECK-NEXT: */
-    //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<std::complex<float>>(**cusolverH, uplo, n, lda), 0);
-    //CHECK-NEXT: /*
-    //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    //CHECK-NEXT: */
-    //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<std::complex<double>>(**cusolverH, uplo, n, lda), 0);
+    //CHECK: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<float>(**cusolverH, uplo, n, lda));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<double>(**cusolverH, uplo, n, lda));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<std::complex<float>>(**cusolverH, uplo, n, lda));
+    //CHECK-NEXT: status = DPCT_CHECK_ERROR(*(&Lwork) = oneapi::mkl::lapack::potri_scratchpad_size<std::complex<double>>(**cusolverH, uplo, n, lda));
     status = cusolverDnSpotri_bufferSize(*cusolverH, uplo, n, &A_f, lda, &Lwork);
     status = cusolverDnDpotri_bufferSize(*cusolverH, uplo, n, &A_d, lda, &Lwork);
     status = cusolverDnCpotri_bufferSize(*cusolverH, uplo, n, &A_c, lda, &Lwork);

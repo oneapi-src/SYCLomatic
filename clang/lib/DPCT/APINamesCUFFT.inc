@@ -82,25 +82,25 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     CALL_FACTORY_ENTRY("cufftDestroy",
                        CALL(MapNames::getDpctNamespace() + "fft::fft_engine::destroy", ARG(0)))))
 
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+ASSIGNABLE_FACTORY_WITH_PAREN(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::FftUtils_fft_engine,
     MEMBER_CALL_FACTORY_ENTRY("cufftExecR2C", ARG(0), true, "compute<float, " + MapNames::getClNamespace() + "float2>", ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "fft::fft_direction::forward"))))
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+ASSIGNABLE_FACTORY_WITH_PAREN(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::FftUtils_fft_engine,
     MEMBER_CALL_FACTORY_ENTRY("cufftExecC2R", ARG(0), true, "compute<" + MapNames::getClNamespace() + "float2, float>", ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "fft::fft_direction::backward"))))
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+ASSIGNABLE_FACTORY_WITH_PAREN(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::FftUtils_fft_engine,
     MEMBER_CALL_FACTORY_ENTRY("cufftExecD2Z", ARG(0), true, "compute<double, " + MapNames::getClNamespace() + "double2>", ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "fft::fft_direction::forward"))))
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+ASSIGNABLE_FACTORY_WITH_PAREN(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::FftUtils_fft_engine,
     MEMBER_CALL_FACTORY_ENTRY("cufftExecZ2D", ARG(0), true, "compute<" + MapNames::getClNamespace() + "double2, double>", ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "fft::fft_direction::backward"))))
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+ASSIGNABLE_FACTORY_WITH_PAREN(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::FftUtils_fft_engine,
     MEMBER_CALL_FACTORY_ENTRY("cufftExecC2C", ARG(0), true, "compute<" + MapNames::getClNamespace() + "float2, " + MapNames::getClNamespace() + "float2>", ARG(1), ARG(2), makeFFTDirExprCallArgCreator(3))))
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+ASSIGNABLE_FACTORY_WITH_PAREN(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::FftUtils_fft_engine,
     MEMBER_CALL_FACTORY_ENTRY("cufftExecZ2Z", ARG(0), true, "compute<" + MapNames::getClNamespace() + "double2, " + MapNames::getClNamespace() + "double2>", ARG(1), ARG(2), makeFFTDirExprCallArgCreator(3))))
-ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+ASSIGNABLE_FACTORY_WITH_PAREN(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::FftUtils_fft_engine,
     MEMBER_CALL_FACTORY_ENTRY("cufftXtExec", ARG(0), true, "compute<void, void>", ARG(1), ARG(2), makeFFTDirExprCallArgCreator(3))))
 

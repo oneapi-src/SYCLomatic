@@ -97,7 +97,7 @@ int main() {
 // CHECK:     */
 // CHECK:     dpct::dnnl::batch_normalization_mode m = dpct::dnnl::batch_normalization_mode::spatial;
     cudnnBatchNormMode_t m = CUDNN_BATCHNORM_SPATIAL_PERSISTENT;
-// CHECK: auto status = (handle.async_batch_normalization_forward_training(m, eps, factor, alpha, dataTensor, data, beta, outTensor, out, scalebiasTensor, scale, bias, rmean, rvar, smean, svar), 0);
+// CHECK: auto status = DPCT_CHECK_ERROR(handle.async_batch_normalization_forward_training(m, eps, factor, alpha, dataTensor, data, beta, outTensor, out, scalebiasTensor, scale, bias, rmean, rvar, smean, svar));
     auto status = cudnnBatchNormalizationForwardTraining(
         handle,
         m,
@@ -116,7 +116,7 @@ int main() {
         eps,
         smean,
         svar);
-// CHECK: status = (handle.async_batch_normalization_backward(dpct::dnnl::batch_normalization_mode::per_activation, eps, alpha, dataTensor, data, outTensor, diffout, beta, dataTensor, diffdata, alpha, scalebiasTensor, scale, beta, diffscale, diffbias, smean, svar), 0);
+// CHECK: status = DPCT_CHECK_ERROR(handle.async_batch_normalization_backward(dpct::dnnl::batch_normalization_mode::per_activation, eps, alpha, dataTensor, data, outTensor, diffout, beta, dataTensor, diffdata, alpha, scalebiasTensor, scale, beta, diffscale, diffbias, smean, svar));
     status = cudnnBatchNormalizationBackward(
         handle,
         CUDNN_BATCHNORM_PER_ACTIVATION,
