@@ -2900,7 +2900,7 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
         SrcAPIStaticsMap[TypeStr]++;
         emplaceTransformation(new ReplaceToken(BeginLoc, std::move(Str)));
       }
-      if (*(TypeStr.end() - 1) == '1') {
+      if (TypeStr.back() == '1') {
         NeedRemoveVolatile = false;
       }
     }
@@ -2909,7 +2909,7 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
       std::string TypeStr = TL->getType().getUnqualifiedType().getAsString();
       auto Begin = SM->getImmediateExpansionRange(TL->getBeginLoc()).getBegin();
       auto End = SM->getImmediateExpansionRange(TL->getEndLoc()).getEnd();
-      if (*(TypeStr.end() - 1) == '1') {
+      if (TypeStr.back() == '1') {
         // Make (Begin, End) be the range of "##1"
         Begin = SM->getSpellingLoc(Begin);
         End = SM->getSpellingLoc(End);
