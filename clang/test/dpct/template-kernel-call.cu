@@ -525,3 +525,16 @@ __global__ void test_fooclass1() {
   foo_class1<float, 10> b;
   b.foo();
 }
+
+__global__ void test_kernel();
+
+template<class T>
+void test_host() {
+  std::vector<T> vec;
+  dpct::get_default_queue().parallel_for<dpct_kernel_name<class test_kernel_b84ef6>>(
+  // CHECK:  sycl::nd_range<3>(sycl::range<3>(1, 1, vec.size()), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:  [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:    test_kernel();
+  // CHECK-NEXT:  });
+  test_kernel<<<vec.size(), 1>>>();
+}
