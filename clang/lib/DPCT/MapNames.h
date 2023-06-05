@@ -416,6 +416,7 @@ public:
   static const MapNames::MapTy FunctionAttrMap;
   static const MapNames::SetTy HostAllocSet;
   static MapNames::MapTy MathFuncNameMap;
+  static std::unordered_set<std::string> MathFuncImpledWithNewRewriter;
 
   static std::unordered_map<std::string, std::string> AtomicFuncNamesMap;
 

@@ -16,8 +16,12 @@
 
 using namespace std;
 
-// CHECK: using dpct::max;
+// CHECK: // AAA
+// CHECK-EMPTY:
+// CHECK-NEXT: // BBB
+// AAA
 using ::max;
+// BBB
 
 // CHECK: static dpct::constant_memory<double, 0> d;
 // CHECK-NEXT: static dpct::constant_memory<double, 0> d2;

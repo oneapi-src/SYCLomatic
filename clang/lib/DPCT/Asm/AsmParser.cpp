@@ -781,7 +781,7 @@ private:
   /// Determine whether the sequence of characters [Start, End) contains
   /// any real digits (not digit separators).
   bool containsDigits(const char *Start, const char *End) {
-    return Start != End && (Start + 1 != End);
+    return Start != End;
   }
 
   enum CheckSeparatorKind { CSK_BeforeDigits, CSK_AfterDigits };
@@ -874,6 +874,8 @@ AsmNumericLiteralParser::AsmNumericLiteralParser(StringRef TokSpelling)
   isUnsigned = false;
   isFloat = false;
   hadError = false;
+  isExactMachineFloat = false;
+  isExactMachineDouble = false;
 
   // This routine assumes that the range begin/end matches the regex for integer
   // and FP constants (specifically, the 'pp-number' regex), and assumes that
@@ -904,24 +906,15 @@ AsmNumericLiteralParser::AsmNumericLiteralParser(StringRef TokSpelling)
 
   bool isFPConstant = isFloatingLiteral();
 
-  // Loop over all of the characters of the suffix.  If we see something bad,
-  // we break out of the loop.
-  for (; s != ThisTokEnd; ++s) {
-    switch (*s) {
-    case 'u':
-    case 'U':
-      if (isFPConstant)
-        break; // Error for floating constant.
-      if (isUnsigned)
-        break; // Cannot be repeated.
-      isUnsigned = true;
-      continue; // Success.
-    }
-
-    if (s != ThisTokEnd) {
-      hadError = true;
-    }
+  if (*s == 'U') {
+    if (isFPConstant)
+      hadError = true; // Error for floating constant.
+    isUnsigned = true;
+    ++s;
   }
+
+  if (s != ThisTokEnd)
+    hadError = true;
 }
 
 /// ParseDecimalOrOctalCommon - This method is called for decimal or octal
@@ -1247,7 +1240,8 @@ InlineAsmParser::ActOnNumericConstant(const InlineAsmToken &Tok) {
 
     APFloat Float(APFloat::IEEEdouble());
     auto Status = LiteralParser.GetFloatValue(Float);
-    if (Status != APFloat::opOK)
+    if ((Status & APFloat::opOverflow) ||
+        ((Status & APFloat::opUnderflow) && Float.isZero()))
       return AsmExprError();
     return ::new (Context)
         InlineAsmFloatingLiteral(Context.getF64Type(), Float, LiteralData);
