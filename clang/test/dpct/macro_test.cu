@@ -1269,9 +1269,9 @@ void foo35() {
   double *d_A;
   const int lda = m;
   int lwork = 0;
-  //CHECK:   CUSOLVER_CHECK((lwork = oneapi::mkl::lapack::geqrf_scratchpad_size<double>(
-  //CHECK-NEXT:  *handle, m, m, lda),
-  //CHECK-NEXT:  0));
+  //CHECK: CUSOLVER_CHECK(DPCT_CHECK_ERROR(
+  //CHECK-NEXT:   lwork = oneapi::mkl::lapack::geqrf_scratchpad_size<double>(*handle, m, m,
+  //CHECK-NEXT:                                                              lda)));
   CUSOLVER_CHECK(cusolverDnDgeqrf_bufferSize(handle, m, m, d_A, lda, &lwork));
 }
 

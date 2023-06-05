@@ -343,10 +343,10 @@ protected:
                           std::move(Strings.SuffixInsertStr), true);
       }
       if (Flags.IsAssigned) {
-        insertAroundRange(Locations.FuncNameBegin, Locations.FuncCallEnd, "(",
-                          ", 0)");
-        report(Locations.PrefixInsertLoc, Diagnostics::NOERROR_RETURN_COMMA_OP,
-               true);
+        insertAroundRange(Locations.FuncNameBegin, Locations.FuncCallEnd,
+                          "DPCT_CHECK_ERROR(", ")");
+        requestFeature(HelperFeatureEnum::Dpct_check_error_code,
+                       Locations.PrefixInsertLoc);
       }
 
       emplaceTransformation(new ReplaceStmt(CE, true, Strings.Repl));
@@ -448,7 +448,6 @@ private:
                                    const TypeLoc *TL);
   bool replaceTransformIterator(SourceManager *SM, LangOptions &LOpts,
                                 const TypeLoc *TL);
-  bool isCapturedByLambda(const TypeLoc *TL);
 };
 
 class TemplateSpecializationTypeLocRule
@@ -1105,8 +1104,8 @@ public:
       emplaceTransformation(new ReplaceText(FuncNameBegin, FuncCallLength,
                                             std::move(CallExprReplStr)));
       if (IsAssigned) {
-        insertAroundRange(FuncNameBegin, FuncCallEnd, "(", ", 0)");
-        report(PrefixInsertLoc, Diagnostics::NOERROR_RETURN_COMMA_OP, true);
+        insertAroundRange(FuncNameBegin, FuncCallEnd, "DPCT_CHECK_ERROR(", ")");
+        requestFeature(HelperFeatureEnum::Dpct_check_error_code, FuncNameBegin);
       }
     }
   }

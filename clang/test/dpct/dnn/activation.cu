@@ -136,10 +136,7 @@ void test1() {
 
     // CHECK: alpha = 2.f, beta = 0.f;
     // CHECK: dpct::get_current_device().queues_wait_and_throw();
-    // CHECK: /*
-    // CHECK: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK: */
-    // CHECK: auto s = (handle.async_activation_backward(desc, alpha, outTensor, out, diffoutTensor, diffout, dataTensor, data, beta, diffdataTensor, diffdata), 0);
+    // CHECK: auto s = DPCT_CHECK_ERROR(handle.async_activation_backward(desc, alpha, outTensor, out, diffoutTensor, diffout, dataTensor, data, beta, diffdataTensor, diffdata));
     cudnnActivationDescriptor_t desc;
     cudnnCreateActivationDescriptor(&desc);
     cudnnSetActivationDescriptor(desc, CUDNN_ACTIVATION_SIGMOID, CUDNN_PROPAGATE_NAN, 0.f);

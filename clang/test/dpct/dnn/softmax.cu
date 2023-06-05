@@ -108,10 +108,7 @@ void test1() {
     // CHECK: dpct::get_default_queue().memcpy(host_out.data(), out, ele_num * sizeof(HT)).wait();
     // CHECK: alpha = 2.f, beta = 0.f;
     // CHECK: dpct::get_current_device().queues_wait_and_throw();
-    // CHECK: /*
-    // CHECK: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK: */
-    // CHECK: auto s = (handle.async_softmax_backward(dpct::dnnl::softmax_algorithm::normal, dpct::dnnl::softmax_mode::channel, alpha, outTensor, out, diffoutTensor, diffout, beta, diffdataTensor, diffdata), 0);
+    // CHECK: auto s = DPCT_CHECK_ERROR(handle.async_softmax_backward(dpct::dnnl::softmax_algorithm::normal, dpct::dnnl::softmax_mode::channel, alpha, outTensor, out, diffoutTensor, diffout, beta, diffdataTensor, diffdata));
 
     cudnnSoftmaxForward(handle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_CHANNEL, &alpha, dataTensor, data, &beta, outTensor, out);
     cudaMemcpy(host_out.data(), out, ele_num * sizeof(HT), cudaMemcpyDeviceToHost);

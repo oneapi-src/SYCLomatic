@@ -142,18 +142,12 @@ int main() {
   float *deviceOutputData = NULL;
 
   // CHECK: /* DPCT_ORIG   MY_CHECKER(cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float)));*/
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
   MY_CHECKER(cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float)));
 
   // copy result from device to host
   float *h_odata = NULL;
   float *d_odata = NULL;
   // CHECK: /* DPCT_ORIG   MY_ERROR_CHECKER(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));*/
-  // CHECK-NEXT:/*
-  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT:*/
   MY_ERROR_CHECKER(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));
 
   // CHECK: /*
@@ -168,9 +162,6 @@ int main() {
   cudaThreadGetCacheConfig(NULL);cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float));
 
   // CHECK: /* DPCT_ORIG   cudaEventCreate(NULL);MY_ERROR_CHECKER(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));MY_ERROR_CHECKER(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));*/
-  // CHECK-NEXT:  /*
-  // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT:  */
   cudaEventCreate(NULL);MY_ERROR_CHECKER(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));MY_ERROR_CHECKER(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));
 }
 
