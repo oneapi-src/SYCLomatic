@@ -1,5 +1,9 @@
-CUDA to SYCL Term Mapping Quick Reference
-=========================================
+CUDA* to SYCL* Term Mapping Quick Reference
+===========================================
+
+This quick reference maps common CUDA* terms to SYCL* terms, to help start the
+migration process.
+
 
 Architecture Terminology Mapping
 --------------------------------
@@ -34,7 +38,7 @@ Execution Model Mapping
    * - Block
      - Work-group
    * - Grid
-     - Nd-range
+     - ND-range
 
 Memory Model Mapping
 --------------------
@@ -116,17 +120,17 @@ Kernel Execution Configures Mapping
    * - ``dim3``
      - ``sycl::range<3>``
    * - ``Kernel<<<gridDim, blockDim>>>(…)``
-     - #. Member function parallel_for of class sycl::queue:
+     - #. Member function ``parallel_for`` of class ``sycl::queue``:
 
           .. code-block::
 
                sycl::queue q;
-               q.parallel_for(sycl::nd_range<3>(girdDim * blockDim, blockDim), 
+               q.parallel_for(sycl::nd_range<3>(girdDim * blockDim, blockDim),
                [=](sycl::nd_item<3> item){
                  kernel(…);
                });
 
-       #. Member function submit of class sycl::queue:
+       #. Member function ``submit`` of class ``sycl::queue``:
 
           .. code-block::
 
