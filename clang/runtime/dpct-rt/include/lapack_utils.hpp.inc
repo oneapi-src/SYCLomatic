@@ -1155,7 +1155,7 @@ oneapi::mkl::compz job2compz(const oneapi::mkl::job &job) {
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename T> struct syheev_scratchpad_size_impl {
-  void operator()(sycl::queue &q, oneapi::mkl::job jobz,
+  void operator()(sycl::queue &q, oneapi::mkl::compz jobz,
                   oneapi::mkl::uplo uplo, std::int64_t n, std::int64_t lda,
                   std::size_t &device_ws_size) {
 #ifndef __INTEL_MKL__
@@ -1182,7 +1182,7 @@ template <typename T> struct syheev_scratchpad_size_impl {
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename T> struct syheev_impl {
-  void operator()(sycl::queue &q, oneapi::mkl::job jobz,
+  void operator()(sycl::queue &q, oneapi::mkl::compz jobz,
                   oneapi::mkl::uplo uplo, std::int64_t n, void *a,
                   std::int64_t lda, void *w, void *device_ws,
                   std::size_t device_ws_size, int *info) {
@@ -2207,6 +2207,7 @@ inline int syhegvd(sycl::queue &q, int itype, oneapi::mkl::job jobz,
 // LapackUtils|lapack_shim
 // LapackUtils|syheevd_scratchpad_size_impl
 // LapackUtils|byte_to_from_element_number
+// LapackUtils|job2compz
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Computes the size of workspace memory of syev/heev function.
@@ -2225,9 +2226,10 @@ inline int syheev_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
                                   oneapi::mkl::uplo uplo, int n, int lda,
                                   int *device_ws_size) {
   std::size_t device_ws_size_tmp;
+  oneapi::mkl::compz compz_jobz = detail::job2compz(jobz);
   int ret = detail::lapack_shim<detail::syheev_scratchpad_size_impl>(
       q, detail::get_library_data_t_from_type<T>(), nullptr,
-      "syev_scratchpad_size/heev_scratchpad_size", q, jobz, uplo, n, lda,
+      "syev_scratchpad_size/heev_scratchpad_size", q, compz_jobz, uplo, n, lda,
       device_ws_size_tmp);
   *device_ws_size = (int)device_ws_size_tmp;
   return ret;
@@ -2240,6 +2242,7 @@ inline int syheev_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
 // LapackUtils|lapack_shim
 // LapackUtils|syheevd_impl
 // LapackUtils|byte_to_from_element_number
+// LapackUtils|job2compz
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Computes all eigenvalues and, optionally, eigenvectors of a real symmetric
@@ -2264,9 +2267,10 @@ template <typename T, typename ValueT>
 inline int syheev(sycl::queue &q, oneapi::mkl::job jobz, oneapi::mkl::uplo uplo,
                   int n, T *a, int lda, ValueT *w, T *device_ws,
                   int device_ws_size, int *info) {
+  oneapi::mkl::compz compz_jobz = detail::job2compz(jobz);
   return detail::lapack_shim<detail::syheev_impl>(
       q, detail::get_library_data_t_from_type<T>(), info, "syev/heev", q,
-      jobz, uplo, n, a, lda, w, device_ws, device_ws_size, info);
+      compz_jobz, uplo, n, a, lda, w, device_ws, device_ws_size, info);
 }
 // DPCT_LABEL_END
 
