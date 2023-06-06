@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/DnnlUtils/api_test26_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DnnlUtils/api_test26_out
 
-// CHECK: 34
+// CHECK: 36
 // TEST_FEATURE: DnnlUtils_rnn_mode
 // TEST_FEATURE: DnnlUtils_rnn_bias_mode
 // TEST_FEATURE: DnnlUtils_rnn_direction

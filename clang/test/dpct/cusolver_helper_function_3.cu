@@ -21,10 +21,7 @@ void foo1() {
   int64_t* tau_z;
 
   //CHECK:sycl::queue* handle;
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:status = (handle = &dpct::get_default_queue(), 0);
+  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_default_queue());
   cusolverDnHandle_t handle;
   status = cusolverDnCreate(&handle);
 
@@ -78,10 +75,7 @@ void foo1() {
   //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnDestroyParams was replaced with 0 because this call is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:status = 0;
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:status = (handle = nullptr, 0);
+  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = nullptr);
   status = cusolverDnDestroyParams(params);
   status = cusolverDnDestroy(handle);
 }
@@ -99,10 +93,7 @@ void foo2() {
   int64_t* tau_z;
 
   //CHECK:sycl::queue* handle;
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:status = (handle = &dpct::get_default_queue(), 0);
+  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_default_queue());
   cusolverDnHandle_t handle;
   status = cusolverDnCreate(&handle);
 
@@ -156,10 +147,7 @@ void foo2() {
   //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnDestroyParams was replaced with 0 because this call is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:status = 0;
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:status = (handle = nullptr, 0);
+  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = nullptr);
   status = cusolverDnDestroyParams(params);
   status = cusolverDnDestroy(handle);
 }
@@ -177,10 +165,7 @@ void foo3() {
   int64_t* ipiv_z;
 
   //CHECK:sycl::queue* handle;
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:status = (handle = &dpct::get_default_queue(), 0);
+  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_default_queue());
   cusolverDnHandle_t handle;
   status = cusolverDnCreate(&handle);
 
@@ -246,10 +231,7 @@ void foo3() {
   //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnDestroyParams was replaced with 0 because this call is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:status = 0;
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:status = (handle = nullptr, 0);
+  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = nullptr);
   status = cusolverDnDestroyParams(params);
   status = cusolverDnDestroy(handle);
 }
@@ -267,10 +249,7 @@ void foo4() {
   int64_t* ipiv_z;
 
   //CHECK:sycl::queue* handle;
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:status = (handle = &dpct::get_default_queue(), 0);
+  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_default_queue());
   cusolverDnHandle_t handle;
   status = cusolverDnCreate(&handle);
 
@@ -332,10 +311,7 @@ void foo4() {
   //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnDestroyParams was replaced with 0 because this call is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:status = 0;
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:status = (handle = nullptr, 0);
+  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = nullptr);
   status = cusolverDnDestroyParams(params);
   status = cusolverDnDestroy(handle);
 }
@@ -357,10 +333,7 @@ void foo5() {
   double2* b_z;
 
   //CHECK:sycl::queue* handle;
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:status = (handle = &dpct::get_default_queue(), 0);
+  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_default_queue());
   cusolverDnHandle_t handle;
   status = cusolverDnCreate(&handle);
 
@@ -387,10 +360,7 @@ void foo5() {
   //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnDestroyParams was replaced with 0 because this call is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:status = 0;
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:status = (handle = nullptr, 0);
+  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = nullptr);
   status = cusolverDnDestroyParams(params);
   status = cusolverDnDestroy(handle);
 }
@@ -412,10 +382,7 @@ void foo6() {
   double2* b_z;
 
   //CHECK:sycl::queue* handle;
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:status = (handle = &dpct::get_default_queue(), 0);
+  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_default_queue());
   cusolverDnHandle_t handle;
   status = cusolverDnCreate(&handle);
 
@@ -442,10 +409,7 @@ void foo6() {
   //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to cusolverDnDestroyParams was replaced with 0 because this call is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:status = 0;
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:status = (handle = nullptr, 0);
+  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = nullptr);
   status = cusolverDnDestroyParams(params);
   status = cusolverDnDestroy(handle);
 }

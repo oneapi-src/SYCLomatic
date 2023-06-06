@@ -27,3 +27,58 @@ Suggestions to Fix
 ------------------
 
 Verify the code correctness.
+
+For example, this original CUDA code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     cudaDeviceProp prop;
+     cudaGetDeviceProperties(&prop, 0);
+     if (prop.sharedMemPerBlock >= threshold) {
+       // submit the task
+       Code piece A
+     } else {
+       // change the block size or block number
+       Code piece B
+     }
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     dpct::device_info prop;
+     dpct::dev_mgr::instance().get_device(0).get_device_info(prop);
+     /*
+     DPCT1019:0: local_mem_size in SYCL is not a complete equivalent of
+     sharedMemPerBlock in CUDA. You may need to adjust the code.
+     */
+     if (prop.get_local_mem_size() >= threshold) {
+       // submit the task
+       Code piece A
+     } else {
+       // change the block size or block number
+       Code piece B
+     }
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     dpct::device_info prop;
+     dpct::dev_mgr::instance().get_device(0).get_device_info(prop);
+     if (prop.get_local_mem_size() >= threshold) {
+       // submit the task
+       Code piece A
+     } else {
+       // change the block size or block number
+       Code piece B
+     }
+   }

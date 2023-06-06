@@ -16,17 +16,11 @@ float *d_A = NULL;
 
      //CHECK:void foo1() try {
 //CHECK-NEXT:  for(;;)
-//CHECK-NEXT:    /*
-//CHECK-NEXT:    DPCT1003:0: Migrated API does not return error
-//CHECK-NEXT:    code. (*, 0) is inserted. You may need to
-//CHECK-NEXT:    rewrite this code.
-//CHECK-NEXT:    */
-//CHECK-NEXT:    int a =
-//CHECK-NEXT:        (dpct::get_default_queue()
-//CHECK-NEXT:             .memcpy(d_A, h_A,
-//CHECK-NEXT:                     sizeof(double) * SIZE * SIZE)
-//CHECK-NEXT:             .wait(),
-//CHECK-NEXT:         0);
+//CHECK-NEXT:    int a = DPCT_CHECK_ERROR(
+//CHECK-NEXT:        dpct::get_default_queue()
+//CHECK-NEXT:            .memcpy(d_A, h_A,
+//CHECK-NEXT:                    sizeof(double) * SIZE * SIZE)
+//CHECK-NEXT:            .wait());
 //CHECK-NEXT:}
 //CHECK-NEXT:catch (sycl::exception const &exc) {
 //CHECK-NEXT:  std::cerr << exc.what()

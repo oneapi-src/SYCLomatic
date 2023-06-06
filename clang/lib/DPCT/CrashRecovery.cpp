@@ -69,10 +69,20 @@ class CrashGuard {
     std::longjmp(RecoverPointer, Recover);
   }
 
+  static void unblockSignal(int Signal) {
+#ifdef _WIN32
+    std::signal(Signal, signalHandle);
+#else
+    sigset_t SigMask;
+    sigemptyset(&SigMask);
+    sigaddset(&SigMask, Signal);
+    sigprocmask(SIG_UNBLOCK, &SigMask, nullptr);
+#endif
+  }
+
 public:
   CrashGuard(llvm::function_ref<void(void)> App, std::string Fault)
       : Application(App), FaultMsg(std::move(Fault)) {
-    std::signal(SIGSEGV, signalHandle);
     Before = Current;
     Current = this;
   }
@@ -91,6 +101,7 @@ public:
   }
 
   static void signalHandle(int Signal) {
+    unblockSignal(Signal);
     switch (Signal) {
     case SIGSEGV:
       if (Current)

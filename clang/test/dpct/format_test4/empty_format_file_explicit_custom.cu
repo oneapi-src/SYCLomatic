@@ -14,14 +14,9 @@ float *d_A = NULL;
 
      //CHECK:void foo1() try {
 //CHECK-NEXT:  for(;;)
-//CHECK-NEXT:    /*
-//CHECK-NEXT:    DPCT1003:0: Migrated API does not return error code. (*, 0) is inserted. You
-//CHECK-NEXT:    may need to rewrite this code.
-//CHECK-NEXT:    */
-//CHECK-NEXT:    int a = (dpct::get_default_queue()
-//CHECK-NEXT:                 .memcpy(d_A, h_A, sizeof(double) * SIZE * SIZE)
-//CHECK-NEXT:                 .wait(),
-//CHECK-NEXT:             0);
+//CHECK-NEXT:    int a = DPCT_CHECK_ERROR(dpct::get_default_queue()
+//CHECK-NEXT:                                 .memcpy(d_A, h_A, sizeof(double) * SIZE * SIZE)
+//CHECK-NEXT:                                 .wait());
 //CHECK-NEXT:}
 //CHECK-NEXT:catch (sycl::exception const &exc) {
 //CHECK-NEXT:  std::cerr << exc.what() << "Exception caught at file:" << __FILE__

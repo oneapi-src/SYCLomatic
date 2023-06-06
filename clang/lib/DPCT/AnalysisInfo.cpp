@@ -711,6 +711,14 @@ void DpctFileInfo::setKernelCallDim() {
   for (auto &Kernel : KernelMap)
     Kernel.second->setKernelCallDim();
 }
+void DpctFileInfo::setKernelDim() {
+  for (auto &DeviceFunc : FuncMap) {
+    auto Info = DeviceFunc.second->getFuncInfo();
+    if (Info->isKernel() && !Info->isKernelInvoked()) {
+      Info->getVarMap().Dim = 3;
+    }
+  }
+}
 void DpctFileInfo::buildUnionFindSet() {
   for (auto &Kernel : KernelMap)
     Kernel.second->buildUnionFindSet();
@@ -863,10 +871,9 @@ public:
         "function call async_rnn_backward");
 
     if (DataFuncInfo.isAssigned) {
-      DataRepl << "(";
-      DiagnosticsUtils::report(DataFuncInfo.FilePath, DataFuncInfo.Offset,
-                               Diagnostics::NOERROR_RETURN_COMMA_OP, true,
-                               false);
+      DataRepl << "DPCT_CHECK_ERROR(";
+      requestFeature(HelperFeatureEnum::Dpct_check_error_code,
+                     DataFuncInfo.FilePath);
     }
     DataRepl << DataFuncInfo.FuncArgs[0] << ".async_rnn_backward("
              << DataFuncInfo.FuncArgs[1];
@@ -881,7 +888,7 @@ public:
       }
     }
     if (DataFuncInfo.isAssigned) {
-      DataRepl << "), 0)";
+      DataRepl << "))";
     } else {
       DataRepl << ")";
     }
@@ -1896,6 +1903,7 @@ KernelCallExpr::buildForWrapper(std::string FilePath, const FunctionDecl *FD,
 
 void KernelCallExpr::setKernelCallDim() {
   if (auto Ptr = getFuncInfo()) {
+    Ptr->setKernelInvoked();
     if (GridDim == 1 && BlockDim == 1) {
       if (auto HeadPtr = MemVarMap::getHead(&(Ptr->getVarMap()))) {
         Ptr->getVarMap().Dim = std::max((unsigned int)1, HeadPtr->Dim);

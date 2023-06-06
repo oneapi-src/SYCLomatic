@@ -631,3 +631,10 @@ int foo6() {
   global6<<<dim3(1,2,3),1>>>();
   return 0;
 }
+
+//CHECK:void global7(const sycl::nd_item<3> &item_ct1) {
+//CHECK-NEXT:  unsigned int tid = item_ct1.get_local_id(2);
+//CHECK-NEXT:}
+__global__ void global7() {
+  unsigned int tid = threadIdx.x;
+}

@@ -3973,7 +3973,7 @@ std::string getRemovedAPIWarningMessage(std::string FuncName) {
     return "";
 }
 
-bool isUserDefinedFunction(const clang::ValueDecl *VD) {
+bool isUserDefinedDecl(const clang::ValueDecl *VD) {
   std::string InFile = dpct::DpctGlobalInfo::getLocInfo(VD).first;
   bool InInstallPath = isChildOrSamePath(DpctInstallPath, InFile);
   bool InCudaPath = dpct::DpctGlobalInfo::isInCudaPath(VD->getLocation());
@@ -4292,6 +4292,22 @@ bool containBuiltinWarpSize(const clang::Stmt *Node) {
     if (!VD)
       continue;
     if (!clang::dpct::DpctGlobalInfo::isInAnalysisScope(VD->getLocation()))
+      return true;
+  }
+  return false;
+}
+
+bool isCapturedByLambda(const clang::TypeLoc *TL) {
+  using namespace dpct;
+  const FieldDecl *FD = DpctGlobalInfo::findAncestor<clang::FieldDecl>(TL);
+  if (!FD)
+    return false;
+  const LambdaExpr *LE = DpctGlobalInfo::findAncestor<clang::LambdaExpr>(TL);
+  if (!LE)
+    return false;
+  for (const auto &D : LE->getLambdaClass()->decls()) {
+    const FieldDecl *FieldDeclItem = dyn_cast<clang::FieldDecl>(D);
+    if (FieldDeclItem && (FieldDeclItem == FD))
       return true;
   }
   return false;

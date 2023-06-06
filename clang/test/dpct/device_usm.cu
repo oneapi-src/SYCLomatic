@@ -5,6 +5,6 @@
 int main() {
 int concurrentManagedAccess = 0;
 int p_gpuDevice = 0;
-// CHECK: int error = (concurrentManagedAccess = dpct::dev_mgr::instance().get_device(p_gpuDevice).get_info<sycl::info::device::usm_shared_allocations>(), 0);
+// CHECK: int error = DPCT_CHECK_ERROR(concurrentManagedAccess = dpct::dev_mgr::instance().get_device(p_gpuDevice).get_info<sycl::info::device::usm_shared_allocations>());
 int error = cudaDeviceGetAttribute(&concurrentManagedAccess,  cudaDevAttrConcurrentManagedAccess,  p_gpuDevice);
 }
