@@ -375,6 +375,7 @@ public:
   // Build kernel and device function declaration replacements and store them.
   void buildReplacements();
   void setKernelCallDim();
+  void setKernelDim();
   void buildUnionFindSet();
   void buildUnionFindSetForUncalledFunc();
   void buildKernelInfo();
@@ -1409,6 +1410,8 @@ public:
       for (auto &File : FileMap)
         File.second->setKernelCallDim();
       for (auto &File : FileMap)
+        File.second->setKernelDim();
+      for (auto &File : FileMap)
         File.second->buildUnionFindSet();
       for (auto &File : FileMap)
         File.second->buildUnionFindSetForUncalledFunc();
@@ -2253,6 +2256,8 @@ public:
   inline bool containSizeofType() { return ContainSizeofType; }
   inline std::vector<std::string> getArraySizeOriginExprs() { return ArraySizeOriginExprs; }
 
+  bool containsTemplateDependentMacro() const { return TemplateDependentMacro; }
+
 private:
   // For ConstantArrayType, size in generated code is folded as an integer.
   // If \p NeedSizeFold is true, original size expression will be appended as
@@ -2309,6 +2314,7 @@ private:
   unsigned PointerLevel;
   bool IsReference;
   bool IsTemplate;
+  bool TemplateDependentMacro = false;
 
   std::shared_ptr<TemplateDependentStringInfo> TDSI;
   std::set<HelperFeatureEnum> HelperFeatureSet;
@@ -3796,6 +3802,12 @@ public:
   inline bool isLambda() { return IsLambda; }
   inline void setLambda() { IsLambda = true; }
 
+  inline bool isKernel() { return IsKernel; }
+  inline void setKernel() { IsKernel = true; }
+
+  inline bool isKernelInvoked() { return IsKernelInvoked; }
+  inline void setKernelInvoked() { IsKernelInvoked = true; }
+
   inline std::string
   getExtraParameters(const std::string &Path,
                      FormatInfo FormatInformation = FormatInfo()) {
@@ -3876,6 +3888,8 @@ private:
   std::vector<ParameterProps> ParametersProps;
   std::string FunctionName;
   bool IsLambda;
+  bool IsKernel = false;
+  bool IsKernelInvoked = false;
 };
 
 class KernelPrinter {
