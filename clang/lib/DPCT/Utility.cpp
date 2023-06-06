@@ -3973,7 +3973,7 @@ std::string getRemovedAPIWarningMessage(std::string FuncName) {
     return "";
 }
 
-bool isUserDefinedFunction(const clang::ValueDecl *VD) {
+bool isUserDefinedDecl(const clang::ValueDecl *VD) {
   std::string InFile = dpct::DpctGlobalInfo::getLocInfo(VD).first;
   bool InInstallPath = isChildOrSamePath(DpctInstallPath, InFile);
   bool InCudaPath = dpct::DpctGlobalInfo::isInCudaPath(VD->getLocation());
