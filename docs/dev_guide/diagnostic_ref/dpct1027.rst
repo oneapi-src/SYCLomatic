@@ -38,3 +38,95 @@ Suggestions to Fix
 ------------------
 
 Verify the code correctness.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     int err = 0;
+     cudaLimit limit;
+     cudaStream_t stream;
+     unsigned int flags;
+     cudaSharedMemConfig config;
+   
+     err = cudaDeviceSetLimit(limit, 0);
+     err = cudaStreamAttachMemAsync(stream, nullptr);
+     err = cudaStreamQuery(stream);
+     err = cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
+     err = cudaDeviceSetSharedMemConfig(config);
+     err = cudaDeviceSetCacheConfig(cudaFuncCachePreferNone);
+     err = cuMemHostRegister(ptr, count, flags);
+     err = cudaSetDeviceFlags(flags);
+     err = cudaDeviceEnablePeerAccess(peer_device, flags);
+     err = cuInit(0);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() try {
+     int err = 0;
+     cudaLimit limit;
+     dpct::queue_ptr stream;
+     unsigned int flags;
+     int config;
+   
+     /*
+     DPCT1027:0: The call to cudaDeviceSetLimit was replaced with 0 because SYCL
+     currently does not support setting resource limits on devices.
+     */
+     err = 0;
+     /*
+     DPCT1027:1: The call to cudaStreamAttachMemAsync was replaced with 0 because
+     SYCL currently does not support associating USM with a specific queue.
+     */
+     err = 0;
+     /*
+     DPCT1027:2: The call to cudaStreamQuery was replaced with 0 because SYCL
+     currently does not support query operations on queues.
+     */
+     err = 0;
+     /*
+     DPCT1027:3: The call to cudaDeviceSetSharedMemConfig was replaced with 0
+     because SYCL currently does not support configuring shared memory on devices.
+     */
+     err = 0;
+     /*
+     DPCT1027:4: The call to cudaDeviceSetCacheConfig was replaced with 0 because
+     SYCL currently does not support setting cache config on devices.
+     */
+     err = 0;
+     /*
+     DPCT1027:5: The call to cudaSetDeviceFlags was replaced with 0 because SYCL
+     currently does not support setting flags for devices.
+     */
+     err = 0;
+     /*
+     DPCT1027:6: The call to cuInit was replaced with 0 because this call is
+     redundant in SYCL.
+     */
+     err = 0;
+   }
+   catch (sycl::exception const &exc) {
+     std::cerr << exc.what() << "Exception caught at file:" << __FILE__
+               << ", line:" << __LINE__ << std::endl;
+     std::exit(1);
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     int err = 0;
+     cudaLimit limit;
+     dpct::queue_ptr stream;
+     unsigned int flags;
+     int config;
+   }
+
