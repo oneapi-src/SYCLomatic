@@ -8,12 +8,10 @@
 // CHECK: 2
 // TEST_FEATURE: DplExtrasAlgorithm_scatter_if
 
-#include <thrust/execution_policy.h>
-#include <thrust/scatter.h>
 #include <thrust/device_vector.h>
 #include <thrust/execution_policy.h>
 #include <thrust/host_vector.h>
-
+#include <thrust/scatter.h>
 
 void test_1() {
   const int N = 8;

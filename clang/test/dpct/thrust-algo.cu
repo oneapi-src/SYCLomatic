@@ -32,8 +32,6 @@
 
 #include <thrust/scatter.h>
 
-
-
 void k() {
   std::vector<int> v, v2, v3, v4;
 
@@ -203,7 +201,6 @@ void k() {
   // CHECK: std::merge(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), v2.end(), v3.begin(), bp);
   thrust::merge(v.begin(), v.end(), v2.begin(), v2.end(), v3.begin(), bp);
 }
-
 
 void foo(cudaStream_t stream) {
   //CHECK:std::vector<int> h;

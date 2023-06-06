@@ -727,7 +727,6 @@ void transform_inclusive_scan() {
   thrust::transform_inclusive_scan(thrust::host, data, data + N, data, unary_op, binary_op);
 }
 
-
 struct is_even_scatter_if {
   __host__ __device__ bool operator()(int x) const { return (x % 2) == 0; }
 };
