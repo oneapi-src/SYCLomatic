@@ -3816,6 +3816,9 @@ void CtTypeInfo::setArrayInfo(const DependentSizedArrayTypeLoc &TL,
   ContainSizeofType = containSizeOfType(TL.getSizeExpr());
   ExprAnalysis EA;
   EA.analyze(TL.getSizeExpr());
+  auto TDSI = EA.getTemplateDependentStringInfo();
+  if (TDSI->containsTemplateDependentMacro())
+    TemplateDependentMacro = true;
   Range.emplace_back(EA.getTemplateDependentStringInfo());
   setTypeInfo(TL.getElementLoc(), NeedSizeFold);
 }
