@@ -826,7 +826,7 @@ private:
   bool DoReverse = false;
   bool Reversed = false;
   bool DirectRef = false;
-  bool MustDim3 = false;
+  bool IsDim3Config = false;
   unsigned int ArgIndex = 0;
   bool NeedEmitWGSizeWarning = true;
   unsigned int SizeOfHighestDimension = 0;

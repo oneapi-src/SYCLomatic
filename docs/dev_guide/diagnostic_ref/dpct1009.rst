@@ -27,3 +27,46 @@ Suggestions to Fix
 ------------------
 
 You may need to rewrite this code.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     float *f;
+     cudaError_t err = cudaMalloc(&f, 4);
+     printf("%s\n", cudaGetErrorString(err));
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo()
+     float *f;
+     int err = (f = (float *)sycl::malloc_device(4, dpct::get_default_queue()), 0);
+     /*
+     DPCT1009:1: SYCL uses exceptions to report errors and does not use the error
+     codes. The original code was commented out and a warning string was inserted.
+     You need to rewrite this code.
+     */
+     printf("%s\n",
+            "cudaGetErrorString is not supported" /*cudaGetErrorString(err)*/);
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     float *f;
+     try {
+       f = (float *)sycl::malloc_device(4, dpct::get_default_queue())
+     } catch (sycl::exception const &e) {
+       std::cerr << e.what() << std::endl;
+     }
+   }
+

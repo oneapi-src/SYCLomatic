@@ -27,5 +27,4 @@ Suggestions to Fix
 
 Review the logic and adjust it manually.
 
-Contact `Support <https://software.intel.com/content/www/us/en/develop/support.html>`_
-for help.
+.. include:: /_include_files/support-msg.txt
