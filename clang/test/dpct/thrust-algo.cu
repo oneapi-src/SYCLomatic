@@ -30,6 +30,9 @@
 #include <thrust/iterator/constant_iterator.h>
 #include <thrust/partition.h>
 
+#include <thrust/scatter.h>
+
+
 
 void k() {
   std::vector<int> v, v2, v3, v4;
@@ -1102,4 +1105,70 @@ void transform_inclusive_scan() {
   thrust::transform_inclusive_scan(thrust::host, data, data + N, data, unary_op, binary_op);
   thrust::transform_inclusive_scan(thrust::host, h_vec_data.begin(), h_vec_data.end(), h_vec_data.begin(), unary_op, binary_op);
   thrust::transform_inclusive_scan(thrust::device, d_vec_data.begin(), d_vec_data.end(), d_vec_data.begin(), unary_op, binary_op);
+}
+
+struct is_even_scatter_if {
+  __host__ __device__ bool operator()(int x) const { return (x % 2) == 0; }
+};
+
+void scatter_if() {
+
+  const int N = 8;
+
+  int V[N] = {10, 20, 30, 40, 50, 60, 70, 80};
+  int M[N] = {0, 5, 1, 6, 2, 7, 3, 4};
+  int S[N] = {1, 0, 1, 0, 1, 0, 1, 0};
+  int D[N] = {0, 0, 0, 0, 0, 0, 0, 0};
+  is_even_scatter_if pred;
+  thrust::device_vector<int> d_V(V, V + N);
+  thrust::device_vector<int> d_M(M, M + N);
+  thrust::device_vector<int> d_S(S, S + N);
+  thrust::device_vector<int> d_D(N);
+  thrust::host_vector<int> h_V(V, V + N);
+  thrust::host_vector<int> h_M(M, M + N);
+  thrust::host_vector<int> h_S(S, S + N);
+  thrust::host_vector<int> h_D(N);
+
+  // CHECK:  /*
+  // CHECK-NEXT:  DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::scatter_if is not supported.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  thrust::scatter_if(oneapi::dpl::execution::seq, V, V + 8, M, S, D);
+  // CHECK-NEXT:  /*
+  // CHECK-NEXT:  DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::scatter_if is not supported.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  thrust::scatter_if(V, V + 8, M, S, D);
+  // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::seq, V, V + 8, M, S, D, pred);
+  // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::seq, V, V + 8, M, S, D, pred);
+  // CHECK-NEXT:  /*
+  // CHECK-NEXT:  DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::scatter_if is not supported.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  thrust::scatter_if(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin());
+  // CHECK-NEXT:  /*
+  // CHECK-NEXT:  DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::scatter_if is not supported.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  thrust::scatter_if(d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin());
+  // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin(), pred);
+  // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin(), pred);
+  // CHECK-NEXT:  /*
+  // CHECK-NEXT:  DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::scatter_if is not supported.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  thrust::scatter_if(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin());
+  // CHECK-NEXT:  /*
+  // CHECK-NEXT:  DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::scatter_if is not supported.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  thrust::scatter_if(h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(),  h_D.begin());
+  // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin(), pred);
+  // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin(), pred);
+  thrust::scatter_if(thrust::host, V, V + 8, M, S, D);
+  thrust::scatter_if(V, V + 8, M, S, D);
+  thrust::scatter_if(thrust::host, V, V + 8, M, S, D, pred);
+  thrust::scatter_if(V, V + 8, M, S, D, pred);
+  thrust::scatter_if(thrust::device, d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin());
+  thrust::scatter_if(d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin());
+  thrust::scatter_if(thrust::device, d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin(), pred);
+  thrust::scatter_if(d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin(), pred);
+  thrust::scatter_if(thrust::host, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin());
+  thrust::scatter_if(h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin());
+  thrust::scatter_if(thrust::host, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin(), pred);
+  thrust::scatter_if(h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin(), pred);
 }

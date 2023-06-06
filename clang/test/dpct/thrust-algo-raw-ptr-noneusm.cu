@@ -25,6 +25,7 @@
 // for cuda 12.0
 #include <thrust/iterator/constant_iterator.h>
 #include <thrust/partition.h>
+#include <thrust/scatter.h>
 
 struct key_value
 	{
@@ -724,4 +725,43 @@ void transform_inclusive_scan() {
   // CHECK-NEXT:  };
   thrust::transform_inclusive_scan(data, data + N, data, unary_op, binary_op);
   thrust::transform_inclusive_scan(thrust::host, data, data + N, data, unary_op, binary_op);
+}
+
+
+struct is_even_scatter_if {
+  __host__ __device__ bool operator()(int x) const { return (x % 2) == 0; }
+};
+
+void scatter_if() {
+
+  const int N = 8;
+
+  int V[N] = {10, 20, 30, 40, 50, 60, 70, 80};
+  int M[N] = {0, 5, 1, 6, 2, 7, 3, 4};
+  int S[N] = {1, 0, 1, 0, 1, 0, 1, 0};
+  int D[N] = {0, 0, 0, 0, 0, 0, 0, 0};
+  is_even_scatter_if pred;
+
+  // CHECK:  /*
+  // CHECK-NEXT:  DPCT1107:0: Migration for this overload of thrust::scatter_if is not supported.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  thrust::scatter_if(oneapi::dpl::execution::seq, V, V + 8, M, S, D);
+  // CHECK-NEXT:  /*
+  // CHECK-NEXT:  DPCT1107:1: Migration for this overload of thrust::scatter_if is not supported.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  thrust::scatter_if(V, V + 8, M, S, D);
+  // CHECK-NEXT:  if (dpct::is_device_ptr(V)) {
+  // CHECK-NEXT:    dpct::scatter_if(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(V), dpct::device_pointer<int>(V + 8), dpct::device_pointer<int>(M), dpct::device_pointer<int>(S), dpct::device_pointer<int>(D), pred);
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    dpct::scatter_if(oneapi::dpl::execution::seq, V, V + 8, M, S, D, pred);
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(V)) {
+  // CHECK-NEXT:    dpct::scatter_if(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(V), dpct::device_pointer<int>(V + 8), dpct::device_pointer<int>(M), dpct::device_pointer<int>(S), dpct::device_pointer<int>(D), pred);
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    dpct::scatter_if(oneapi::dpl::execution::seq, V, V + 8, M, S, D, pred);
+  // CHECK-NEXT:  };
+  thrust::scatter_if(thrust::host, V, V + 8, M, S, D);
+  thrust::scatter_if(V, V + 8, M, S, D);
+  thrust::scatter_if(thrust::host, V, V + 8, M, S, D, pred);
+  thrust::scatter_if(V, V + 8, M, S, D, pred);
 }
