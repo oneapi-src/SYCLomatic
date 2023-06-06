@@ -47,8 +47,14 @@ TemplateDependentStringInfo::TemplateDependentStringInfo(
     const std::map<size_t, std::shared_ptr<TemplateDependentReplacement>>
         &InTDRs)
     : SourceStr(SrcStr) {
-  for (const auto &TDR : InTDRs)
+  for (const auto &TDR : InTDRs){
+    if (TDR.second->getOffset() > SourceStr.size() ||
+        TDR.second->getOffset() + TDR.second->getLength() > SourceStr.size()) {
+      ContainsTemplateDependentMacro = true;
+      continue;
+    }
     TDRs.emplace_back(TDR.second->alterSource(SourceStr));
+  }
 }
 
 std::shared_ptr<TemplateDependentStringInfo>

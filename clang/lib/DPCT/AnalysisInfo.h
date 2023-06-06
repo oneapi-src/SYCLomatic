@@ -2256,6 +2256,8 @@ public:
   inline bool containSizeofType() { return ContainSizeofType; }
   inline std::vector<std::string> getArraySizeOriginExprs() { return ArraySizeOriginExprs; }
 
+  bool containsTemplateDependentMacro() const { return TemplateDependentMacro; }
+
 private:
   // For ConstantArrayType, size in generated code is folded as an integer.
   // If \p NeedSizeFold is true, original size expression will be appended as
@@ -2312,6 +2314,7 @@ private:
   unsigned PointerLevel;
   bool IsReference;
   bool IsTemplate;
+  bool TemplateDependentMacro = false;
 
   std::shared_ptr<TemplateDependentStringInfo> TDSI;
   std::set<HelperFeatureEnum> HelperFeatureSet;

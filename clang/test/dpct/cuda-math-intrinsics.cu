@@ -2644,7 +2644,7 @@ __host__ int foo(int i, int j) {
 }
 
 // CHECK:  float foo(float f, float g) {
-// CHECK-NEXT:   return sycl::max(f, g) + sycl::min(f, g);
+// CHECK-NEXT:   return max(f, g) + min(f, g);
 // CHECK-NEXT: }
 __host__ float foo(float f, float g) {
   return max(f, g) + min(f, g);
@@ -2672,7 +2672,7 @@ __device__ int __host__ foo3(int i, int j) {
 }
 
 // CHECK:  float  foo3(float f, float g) {
-// CHECK-NEXT:   return sycl::max(f, g) + sycl::min(f, g);
+// CHECK-NEXT:   return max(f, g) + min(f, g);
 // CHECK-NEXT: }
 __device__ float __host__ foo3(float f, float g) {
   return max(f, g) + min(f, g);

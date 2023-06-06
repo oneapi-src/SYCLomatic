@@ -699,7 +699,7 @@ template <typename T> auto lamch_s() {
 }
 
 template <typename T> struct syheevx_scratchpad_size_impl {
-  void operator()(sycl::queue &q, oneapi::mkl::job jobz,
+  void operator()(sycl::queue &q, oneapi::mkl::compz jobz,
                   oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
                   std::int64_t n, std::int64_t lda, void *vl, void *vu,
                   std::int64_t il, std::int64_t iu,
@@ -740,7 +740,7 @@ template <typename T> constexpr library_data_t get_library_data_t_from_type() {
 }
 
 template <typename T> struct syheevx_impl {
-  void operator()(sycl::queue &q, oneapi::mkl::job jobz,
+  void operator()(sycl::queue &q, oneapi::mkl::compz jobz,
                   oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
                   std::int64_t n, library_data_t a_type, void *a,
                   std::int64_t lda, void *vl, void *vu, std::int64_t il,
@@ -787,7 +787,7 @@ template <typename T> struct syheevx_impl {
 };
 
 template <typename T> struct syhegvx_scratchpad_size_impl {
-  void operator()(sycl::queue &q, std::int64_t itype, oneapi::mkl::job jobz,
+  void operator()(sycl::queue &q, std::int64_t itype, oneapi::mkl::compz jobz,
                   oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
                   std::int64_t n, std::int64_t lda, std::int64_t ldb, void *vl,
                   void *vu, std::int64_t il, std::int64_t iu,
@@ -815,7 +815,7 @@ template <typename T> struct syhegvx_scratchpad_size_impl {
 };
 
 template <typename T> struct syhegvx_impl {
-  void operator()(sycl::queue &q, std::int64_t itype, oneapi::mkl::job jobz,
+  void operator()(sycl::queue &q, std::int64_t itype, oneapi::mkl::compz jobz,
                   oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
                   std::int64_t n, void *a, std::int64_t lda, void *b,
                   std::int64_t ldb, void *vl, void *vu, std::int64_t il,
@@ -1481,10 +1481,11 @@ inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
                                    std::size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
+  oneapi::mkl::compz compz_jobz = detail::job2compz(jobz);
   std::size_t device_ws_size_tmp;
   int ret = detail::lapack_shim<detail::syheevx_scratchpad_size_impl>(
       q, a_type, nullptr, "syevx_scratchpad_size/heevx_scratchpad_size", q,
-      jobz, range, uplo, n, lda, vl, vu, il, iu,
+      compz_jobz, range, uplo, n, lda, vl, vu, il, iu,
       device_ws_size_tmp);
   *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
   return ret;
@@ -1528,8 +1529,9 @@ inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
                    int *info) {
   std::size_t device_ws_size_in_element_number =
       detail::byte_to_element_number(device_ws_size, a_type);
+  oneapi::mkl::compz compz_jobz = detail::job2compz(jobz);
   int ret = detail::lapack_shim<detail::syheevx_impl>(
-      q, a_type, info, "syevx/heevx", q, jobz, range, uplo, n, a_type, a,
+      q, a_type, info, "syevx/heevx", q, compz_jobz, range, uplo, n, a_type, a,
       lda, vl, vu, il, iu, m, w_type, w, device_ws,
       device_ws_size_in_element_number, info);
   q.wait();
@@ -1562,10 +1564,11 @@ inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
                                    oneapi::mkl::uplo uplo, int n, int lda,
                                    ValueT vl, ValueT vu, int il, int iu,
                                    int *device_ws_size) {
+  oneapi::mkl::compz compz_jobz = detail::job2compz(jobz);
   std::size_t device_ws_size_tmp;
   int ret = detail::lapack_shim<detail::syheevx_scratchpad_size_impl>(
       q, detail::get_library_data_t_from_type<T>(), nullptr,
-      "syevx_scratchpad_size/heevx_scratchpad_size", q, jobz, range, uplo,
+      "syevx_scratchpad_size/heevx_scratchpad_size", q, compz_jobz, range, uplo,
       n, lda, &vl, &vu, il, iu, device_ws_size_tmp);
   *device_ws_size = (int)device_ws_size_tmp;
   return ret;
@@ -1604,10 +1607,11 @@ inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
                    oneapi::mkl::rangev range, oneapi::mkl::uplo uplo, int n,
                    T *a, int lda, ValueT vl, ValueT vu, int il, int iu, int *m,
                    ValueT *w, T *device_ws, int device_ws_size, int *info) {
+  oneapi::mkl::compz compz_jobz = detail::job2compz(jobz);
   std::int64_t m64;
   int ret = detail::lapack_shim<detail::syheevx_impl>(
       q, detail::get_library_data_t_from_type<T>(), info, "syevx/heevx", q,
-      jobz, range, uplo, n, detail::get_library_data_t_from_type<T>(), a,
+      compz_jobz, range, uplo, n, detail::get_library_data_t_from_type<T>(), a,
       lda, &vl, &vu, il, iu, &m64,
       detail::get_library_data_t_from_type<ValueT>(), w, device_ws,
       device_ws_size, info);
@@ -1644,10 +1648,11 @@ syhegvx_scratchpad_size(sycl::queue &q, int itype, oneapi::mkl::job jobz,
                         oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
                         int n, int lda, int ldb, ValueT vl, ValueT vu, int il,
                         int iu, int *device_ws_size) {
+  oneapi::mkl::compz compz_jobz = detail::job2compz(jobz);
   std::size_t device_ws_size_tmp;
   int ret = detail::lapack_shim<detail::syhegvx_scratchpad_size_impl>(
       q, detail::get_library_data_t_from_type<T>(), nullptr,
-      "sygvx_scratchpad_size/hegvx_scratchpad_size", q, itype, jobz,
+      "sygvx_scratchpad_size/hegvx_scratchpad_size", q, itype, compz_jobz,
       range, uplo, n, lda, ldb, &vl, &vu, il, iu, device_ws_size_tmp);
   *device_ws_size = (int)device_ws_size_tmp;
   return ret;
@@ -1690,10 +1695,11 @@ inline int syhegvx(sycl::queue &q, int itype, oneapi::mkl::job jobz,
                    T *a, int lda, T *b, int ldb, ValueT vl, ValueT vu, int il,
                    int iu, int *m, ValueT *w, T *device_ws, int device_ws_size,
                    int *info) {
+  oneapi::mkl::compz compz_jobz = detail::job2compz(jobz);
   std::int64_t m64;
   int ret = detail::lapack_shim<detail::syhegvx_impl>(
       q, detail::get_library_data_t_from_type<T>(), info, "sygvx/hegvx", q,
-      itype, jobz, range, uplo, n, a, lda, b, ldb, &vl, &vu, il, iu, &m64,
+      itype, compz_jobz, range, uplo, n, a, lda, b, ldb, &vl, &vu, il, iu, &m64,
       w, device_ws, device_ws_size, info);
   q.wait();
   *m = (int)m64;
