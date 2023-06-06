@@ -3,6 +3,8 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/template-kernel-call %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck --input-file %T/template-kernel-call/template-kernel-call.dp.cpp --match-full-lines %s
 
+#include <vector>
+
 void printf(const char *format, unsigned char data);
 
 __global__ void kernel(int a, int b){
@@ -531,8 +533,8 @@ __global__ void test_kernel();
 template<class T>
 void test_host() {
   std::vector<T> vec;
-  dpct::get_default_queue().parallel_for<dpct_kernel_name<class test_kernel_b84ef6>>(
-  // CHECK:  sycl::nd_range<3>(sycl::range<3>(1, 1, vec.size()), sycl::range<3>(1, 1, 1)),
+  // CHECK:  dpct::get_default_queue().parallel_for<dpct_kernel_name<class test_kernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:  sycl::nd_range<3>(sycl::range<3>(1, 1, vec.size()), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:  [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:    test_kernel();
   // CHECK-NEXT:  });
