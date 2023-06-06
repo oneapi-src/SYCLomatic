@@ -21,4 +21,4 @@ Detailed Help
 Suggestions to Fix
 ------------------
 
-See :ref:`DPCT1000`.
+Refer to :ref:`DPCT1000`.
