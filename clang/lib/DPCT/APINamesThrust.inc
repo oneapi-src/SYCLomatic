@@ -1067,3 +1067,12 @@ thrustFactory("thrust::none_of",
 thrustFactory("thrust::is_partitioned",
               {{4,PolicyState::HasPolicy,2,"oneapi::dpl::is_partitioned", HelperFeatureEnum::no_feature_helper},
                {3,PolicyState::NoPolicy, 2,"oneapi::dpl::is_partitioned", HelperFeatureEnum::no_feature_helper}}),
+
+
+// thrust::is_sorted_until
+thrustFactory("thrust::is_sorted_until",
+              {{ 3,PolicyState::HasPolicy,2,"oneapi::dpl::is_sorted", HelperFeatureEnum::no_feature_helper},
+               { 2,PolicyState::NoPolicy, 2,"oneapi::dpl::is_sorted", HelperFeatureEnum::no_feature_helper},
+               { 4,PolicyState::HasPolicy,2,"oneapi::dpl::is_sorted", HelperFeatureEnum::no_feature_helper},
+               { 3,PolicyState::NoPolicy, 2,"oneapi::dpl::is_sorted", HelperFeatureEnum::no_feature_helper}}),
+
