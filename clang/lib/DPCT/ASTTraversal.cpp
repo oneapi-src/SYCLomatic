@@ -8004,7 +8004,7 @@ void EventAPICallRule::handleEventElapsedTime(bool IsAssigned) {
         << StmtStrArg2 << " - " << StmtStrArg1 << ").count()";
     if (IsAssigned) {
       std::ostringstream Temp;
-      Temp << "DPCT_CHECK_ERROR(" << Repl.str() << ")";
+      Temp << "DPCT_CHECK_ERROR((" << Repl.str() << "))";
       Repl = std::move(Temp);
       requestFeature(HelperFeatureEnum::Dpct_check_error_code, TimeElapsedCE);
     }
