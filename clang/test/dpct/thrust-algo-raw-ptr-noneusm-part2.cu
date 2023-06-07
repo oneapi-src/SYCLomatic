@@ -45,3 +45,37 @@ void set_symmetric_difference() {
   thrust::set_symmetric_difference(thrust::host, A1, A1 + 5, A2, A2 + 5, result, Compare());
   thrust::set_symmetric_difference(A1, A1 + 5, A2, A2 + 5, result, Compare());
 }
+
+void set_symmetric_difference_by_key() {
+  int A_keys[7] = {0, 1, 2, 2, 4, 6, 7};
+  int A_vals[7] = {0, 0, 0, 0, 0, 0, 0};
+  int B_keys[5] = {1, 1, 2, 5, 8};
+  int B_vals[5] = {1, 1, 1, 1, 1};
+  int keys_result[8];
+  int vals_result[8];
+
+  // CHECK:  if (dpct::is_device_ptr(A_keys)) {
+  // CHECK-NEXT:    dpct::set_symmetric_difference(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A_keys), dpct::device_pointer<int>(A_keys + 7), dpct::device_pointer<int>(B_keys), dpct::device_pointer<int>(B_keys + 5), dpct::device_pointer<int>(A_vals), dpct::device_pointer<int>(B_vals), dpct::device_pointer<int>(keys_result), dpct::device_pointer<int>(vals_result));
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    dpct::set_symmetric_difference(oneapi::dpl::execution::seq, A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result);
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(A_keys)) {
+  // CHECK-NEXT:    dpct::set_symmetric_difference(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A_keys), dpct::device_pointer<int>(A_keys + 7), dpct::device_pointer<int>(B_keys), dpct::device_pointer<int>(B_keys + 5), dpct::device_pointer<int>(A_vals), dpct::device_pointer<int>(B_vals), dpct::device_pointer<int>(keys_result), dpct::device_pointer<int>(vals_result));
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    dpct::set_symmetric_difference(oneapi::dpl::execution::seq, A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result);
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(A_keys)) {
+  // CHECK-NEXT:    dpct::set_symmetric_difference(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A_keys), dpct::device_pointer<int>(A_keys + 7), dpct::device_pointer<int>(B_keys), dpct::device_pointer<int>(B_keys + 5), dpct::device_pointer<int>(A_vals), dpct::device_pointer<int>(B_vals), dpct::device_pointer<int>(keys_result), dpct::device_pointer<int>(vals_result), Compare());
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    dpct::set_symmetric_difference(oneapi::dpl::execution::seq, A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result, Compare());
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(A_keys)) {
+  // CHECK-NEXT:    dpct::set_symmetric_difference(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A_keys), dpct::device_pointer<int>(A_keys + 7), dpct::device_pointer<int>(B_keys), dpct::device_pointer<int>(B_keys + 5), dpct::device_pointer<int>(A_vals), dpct::device_pointer<int>(B_vals), dpct::device_pointer<int>(keys_result), dpct::device_pointer<int>(vals_result), Compare());
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    dpct::set_symmetric_difference(oneapi::dpl::execution::seq, A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result, Compare());
+  // CHECK-NEXT:  };
+  thrust::set_symmetric_difference_by_key(thrust::host, A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result);
+  thrust::set_symmetric_difference_by_key(A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result);
+  thrust::set_symmetric_difference_by_key(thrust::host, A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result, Compare());
+  thrust::set_symmetric_difference_by_key(A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result, Compare());
+}
