@@ -44,12 +44,12 @@ int main(void) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CHECK:oneapi::dpl::replace_if(oneapi::dpl::execution::seq, AH.begin(), AH.end(), pred, 0);
 // CHECK-NEXT:oneapi::dpl::replace_if(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), pred, 0);
-// CHECK-NEXT:if (dpct::is_device_ptr(h_ptr + 4)) {
+// CHECK-NEXT:if (dpct::is_device_ptr(h_ptr)) {
 // CHECK-NEXT:  oneapi::dpl::replace_if(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(h_ptr), dpct::device_pointer<int>(h_ptr + 4), pred, 0);
 // CHECK-NEXT:} else {
 // CHECK-NEXT:  oneapi::dpl::replace_if(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, pred, 0);
 // CHECK-NEXT:};
-// CHECK-NEXT:if (dpct::is_device_ptr(d_ptr + 4)) {
+// CHECK-NEXT:if (dpct::is_device_ptr(d_ptr)) {
 // CHECK-NEXT:  oneapi::dpl::replace_if(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(d_ptr), dpct::device_pointer<int>(d_ptr + 4), pred, 0);
 // CHECK-NEXT:} else {
 // CHECK-NEXT:  oneapi::dpl::replace_if(oneapi::dpl::execution::seq, d_ptr, d_ptr + 4, pred, 0);
@@ -63,12 +63,12 @@ int main(void) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CHECK:dpct::replace_if(oneapi::dpl::execution::seq, AH.begin(), AH.end(), SH.begin(), pred, 0);
 // CHECK-NEXT:dpct::replace_if(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), SD.begin(), pred, 0);
-// CHECK-NEXT:if (dpct::is_device_ptr(h_ptr + 4)) {
+// CHECK-NEXT:if (dpct::is_device_ptr(h_ptr)) {
 // CHECK-NEXT:  dpct::replace_if(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(h_ptr), dpct::device_pointer<int>(h_ptr + 4), dpct::device_pointer<>(SH.begin()), pred, 0);
 // CHECK-NEXT:} else {
 // CHECK-NEXT:  dpct::replace_if(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, SH.begin(), pred, 0);
 // CHECK-NEXT:};
-// CHECK-NEXT:if (dpct::is_device_ptr(d_ptr + 4)) {
+// CHECK-NEXT:if (dpct::is_device_ptr(d_ptr)) {
 // CHECK-NEXT:  dpct::replace_if(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(d_ptr), dpct::device_pointer<int>(d_ptr + 4), dpct::device_pointer<>(SD.begin()), pred, 0);
 // CHECK-NEXT:} else {
 // CHECK-NEXT:  dpct::replace_if(oneapi::dpl::execution::seq, d_ptr, d_ptr + 4, SD.begin(), pred, 0);
@@ -123,12 +123,12 @@ int main(void) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CHECK:oneapi::dpl::replace_copy_if(oneapi::dpl::execution::seq, AH.begin(), AH.end(), BH.begin(), pred, 0);
 // CHECK-NEXT:oneapi::dpl::replace_copy_if(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), BD.begin(), pred, 0);
-// CHECK-NEXT:if (dpct::is_device_ptr(h_ptr + 4)) {
+// CHECK-NEXT:if (dpct::is_device_ptr(h_ptr)) {
 // CHECK-NEXT:  oneapi::dpl::replace_copy_if(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(h_ptr), dpct::device_pointer<int>(h_ptr + 4), dpct::device_pointer<>(BH.begin()), pred, 0);
 // CHECK-NEXT:} else {
 // CHECK-NEXT:  oneapi::dpl::replace_copy_if(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, BH.begin(), pred, 0);
 // CHECK-NEXT:};
-// CHECK-NEXT:if (dpct::is_device_ptr(d_ptr + 4)) {
+// CHECK-NEXT:if (dpct::is_device_ptr(d_ptr)) {
 // CHECK-NEXT:  oneapi::dpl::replace_copy_if(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(d_ptr), dpct::device_pointer<int>(d_ptr + 4), dpct::device_pointer<>(BD.begin()), pred, 0);
 // CHECK-NEXT:} else {
 // CHECK-NEXT:  oneapi::dpl::replace_copy_if(oneapi::dpl::execution::seq, d_ptr, d_ptr + 4, BD.begin(), pred, 0);
@@ -142,7 +142,7 @@ int main(void) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CHECK:dpct::replace_copy_if(oneapi::dpl::execution::seq, AH.begin(), AH.end(), SH.begin(), BH.begin(), pred, 0);
 // CHECK-NEXT:dpct::replace_copy_if(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), SD.begin(), BD.begin(), pred, 0);
-// CHECK-NEXT:if (dpct::is_device_ptr(h_ptr + 4)) {
+// CHECK-NEXT:if (dpct::is_device_ptr(h_ptr)) {
 // CHECK-NEXT:  dpct::replace_copy_if(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(h_ptr), dpct::device_pointer<int>(h_ptr + 4), dpct::device_pointer<>(SH.begin()), dpct::device_pointer<>(BH.begin()), pred, 0);
 // CHECK-NEXT:} else {
 // CHECK-NEXT:  dpct::replace_copy_if(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, SH.begin(), BH.begin(), pred, 0);

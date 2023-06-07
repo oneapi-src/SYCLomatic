@@ -58,10 +58,7 @@ __global__ void kernel2(float *out) {
 
 // CHECK:void test_assignment() try {
 // CHECK-NEXT:  err0 err;
-// CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-// CHECK-NEXT:*/
-// CHECK-NEXT:  if (err = (*0 = (void *)malloc_device(0, get_default_queue()), 0)) {
+// CHECK-NEXT:  if (err = DPCT_CHECK_ERROR(*0 = (void *)malloc_device(0, get_default_queue()))) {
 // CHECK-NEXT:    printf("error!\n");
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
@@ -86,15 +83,15 @@ int main() {
   cudaMalloc(&mapspkeyD, numsH*sizeof(int));
   cudaMalloc(&mapspvalD, numsH*sizeof(int));
 
-// CHECK:  device_pointer<int> mapsp1T(mapsp1D);
+  // CHECK:  device_pointer<int> mapsp1T(mapsp1D);
   thrust::device_ptr<int> mapsp1T(mapsp1D);
-// CHECK:  device_pointer<int> mapspkeyT(mapspkeyD);
+  // CHECK:  device_pointer<int> mapspkeyT(mapspkeyD);
   thrust::device_ptr<int> mapspkeyT(mapspkeyD);
-// CHECK:  device_pointer<int> mapspvalT(mapspvalD);
+  // CHECK:  device_pointer<int> mapspvalT(mapspvalD);
   thrust::device_ptr<int> mapspvalT(mapspvalD);
 
-// CHECK:  iota(oneapi::dpl::execution::make_device_policy<class Policy_{{[0-9a-f]+}}>(q_ct1), mapspvalT, mapspvalT + numsH);
+  // CHECK: iota(oneapi::dpl::execution::make_device_policy(q_ct1), mapspvalT, mapspvalT + numsH);
   thrust::sequence(mapspvalT, mapspvalT + numsH);
-// CHECK:  stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), mapspkeyT, mapspkeyT + numsH, mapspvalT);
+  // CHECK:  stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), mapspkeyT, mapspkeyT + numsH, mapspvalT);
   thrust::stable_sort_by_key(mapspkeyT, mapspkeyT + numsH, mapspvalT);
 }

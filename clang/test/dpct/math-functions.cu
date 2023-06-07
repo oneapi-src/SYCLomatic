@@ -37,17 +37,17 @@ __device__ float4 fun() {
 #else
 #define USING(FUNC) using std::FUNC;
 #endif
-// CHECK: using sycl::abs;
+// CHECK: USING(abs)
 USING(abs)
 
 __global__ void kernel() {
-  // CHECK: using sycl::abs;
+  // CHECK: USING(abs)
   USING(abs)
 }
 
 void host() {
 #define USE_STD
-// CHECK: using sycl::abs;
+  // CHECK: USING(abs)
   USING(abs)
 #undef USE_STD
 }
@@ -92,10 +92,10 @@ int main() {
     DECLARE2I
     DECLARE2LD
 
-    // CHECK: f_b = fmaxf(f_a, f_b);
+    // CHECK: f_b = std::max(f_a, f_b);
     f_b = max(f_a, f_b);
 
-    // CHECK: d_b = fmax(d_a, d_b);
+    // CHECK: d_b = std::max(d_a, d_b);
     d_b = max(d_a, d_b);
 
     // CHECK: u_b = std::max(u_a, u_b);
@@ -116,10 +116,10 @@ int main() {
     DECLARE2I
     DECLARE2LD
 
-    // CHECK: f_b = fminf(f_a, f_b);
+    // CHECK: f_b = std::min(f_a, f_b);
     f_b = min(f_a, f_b);
 
-    // CHECK: d_b = fmin(d_a, d_b);
+    // CHECK: d_b = std::min(d_a, d_b);
     d_b = min(d_a, d_b);
 
     // CHECK: u_b = std::min(u_a, u_b);
@@ -639,4 +639,25 @@ __device__ T foo3(T a) {
 __global__ void foo4() {
   double d1, d2;
   d2 = foo3(d1);
+}
+
+struct A {};
+
+__device__ A min(A a, A b) { return a; }
+__device__ A max(A a, A b) { return a; }
+
+template <class T> __device__ T clamp(T x, T a, T b) {
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated min call is used in a macro/template definition and may not be valid for all macro/template uses. Adjust the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated max call is used in a macro/template definition and may not be valid for all macro/template uses. Adjust the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: return dpct::min(dpct::max(x, a), b);
+  return min(max(x, a), b);
+}
+
+__global__ void kernel_2() {
+  A a;
+  clamp(a, a, a);
 }

@@ -43,6 +43,7 @@
 #include "llvm/Option/OptTable.h"
 #include "llvm/Option/Option.h"
 #include "llvm/Support/Casting.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/FileSystem.h"
@@ -199,24 +200,50 @@ bool isExcludePath(const std::string &Path, bool IsRelative) {
   }
 }
 
+enum {
+  ProcessingFilesCrash = -1,
+};
+typedef bool (*CrashGuardFunc)(llvm::function_ref<void()>, std::string);
+bool processFilesWithCrashGuardDefault(llvm::function_ref<void()> Func,
+                                       std::string) {
+  Func();
+  return true;
+}
+
+CrashGuardFunc ProcessFilesWithCrashGuardPtr =
+    processFilesWithCrashGuardDefault;
+void setCrashGuardFunc(CrashGuardFunc Func) {
+  ProcessFilesWithCrashGuardPtr = Func;
+}
+static int processFilesWithCrashGuard(ClangTool *Tool, llvm::StringRef File,
+                                      bool &ProcessingFailed, bool &FileSkipped,
+                                      int &StaticSymbol, ToolAction *Action) {
+  int Ret;
+  if (ProcessFilesWithCrashGuardPtr(
+          [&]() {
+            Ret = Tool->processFiles(File, ProcessingFailed, FileSkipped,
+                                     StaticSymbol, Action);
+          },
+          "Error: dpct internal error. Current file \"" + File.str() +
+              "\" skipped. Migration continues.\n"))
+    return Ret;
+  return ProcessingFilesCrash;
+}
+bool SpecifyLanguageInOption = false;
+void emitDefaultLanguageWarningIfNecessary(const std::string &FileName,
+                                           bool SpecifyLanguageInOption) {
+  if (!SpecifyLanguageInOption &&
+      llvm::sys::path::extension(FileName) != ".cu" &&
+      llvm::sys::path::extension(FileName) != ".cuh") {
+    llvm::outs() << "NOTE: " << FileName
+                 << " is treated as a CUDA file by default. Use the "
+                    "--extra-arg=-xc++ option to treat "
+                 << FileName << " as a C++ file if needed."
+                 << "\n";
+  }
+}
 } // namespace tooling
-} // namespace clang
-#if defined(__linux__)
-#define JMP_BUF sigjmp_buf
-#define SETJMP(x) sigsetjmp(x, 1)
-#define LONGJMP siglongjmp
-
-#else
-#define JMP_BUF   jmp_buf
-#define SETJMP(x)       _setjmp(x)
-#define LONGJMP      longjmp
-#endif
-
-
-JMP_BUF CPFileEnter;
-bool EnableErrorRecover=true;
-int CheckPointStage = 0 /*CHECKPOINT_UNKNOWN*/;
-bool CurFileMeetErr=false;
+} // namespace 
 bool StopOnParseErrTooling=false;
 std::string InRootTooling;
 
@@ -463,6 +490,31 @@ void addTargetAndModeForProgramName(std::vector<std::string> &CommandLine,
   }
 }
 
+void addExpandedResponseFiles(std::vector<std::string> &CommandLine,
+                              llvm::StringRef WorkingDir,
+                              llvm::cl::TokenizerCallback Tokenizer,
+                              llvm::vfs::FileSystem &FS) {
+  bool SeenRSPFile = false;
+  llvm::SmallVector<const char *, 20> Argv;
+  Argv.reserve(CommandLine.size());
+  for (auto &Arg : CommandLine) {
+    Argv.push_back(Arg.c_str());
+    if (!Arg.empty())
+      SeenRSPFile |= Arg.front() == '@';
+  }
+  if (!SeenRSPFile)
+    return;
+  llvm::BumpPtrAllocator Alloc;
+  llvm::cl::ExpansionContext ECtx(Alloc, Tokenizer);
+  llvm::Error Err =
+      ECtx.setVFS(&FS).setCurrentDir(WorkingDir).expandResponseFiles(Argv);
+  if (Err)
+    llvm::errs() << Err;
+  // Don't assign directly, Argv aliases CommandLine.
+  std::vector<std::string> ExpandedArgv(Argv.begin(), Argv.end());
+  CommandLine = std::move(ExpandedArgv);
+}
+
 } // namespace tooling
 } // namespace clang
 
@@ -662,23 +714,9 @@ static void injectResourceDir(CommandLineArguments &Args, const char *Argv0,
 // other values are ignored.
 int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
                      bool &FileSkipped, int &StaticSymbol, ToolAction *Action) {
-    //enter point for the file processing.
-    CheckPointStage = 1 /*CHECKPOINT_PROCESSING_FILE*/;
-    CurFileMeetErr= false;
     //clear error# counter
     CurFileParseErrCnt=0;
     CurFileSigErrCnt=0;
-    int Ret=SETJMP(CPFileEnter);
-    if(File != "LinkerEntry") {
-      if(Ret == 0) {
-        const std::string Msg = "Processing: " + File.str()  +  "\n";
-        DoPrintHandle(Msg, false);
-      } else {
-        const std::string Msg = "Skipping: " + File.str()  +  "\n";
-        DoPrintHandle(Msg, false);
-        return -1;
-      }
-    }
     // Currently implementations of CompilationDatabase::getCompileCommands can
     // change the state of the file system (e.g.  prepare generated headers), so
     // this method needs to run right before we invoke the tool, as the next
@@ -686,7 +724,6 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
     //
     // FIXME: Make the compilation database interface more explicit about the
     // requirements to the order of invocation of its members.
-    try {
     std::vector<CompileCommand> CompileCommandsForFile =
         Compilations.getCompileCommands(File);
     if (CompileCommandsForFile.empty()) {
@@ -835,6 +872,8 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
       if ((!CommandLine.empty() && CommandLine[0] == "CudaCompile") ||
           (!CommandLine.empty() && CommandLine[0] == "CustomBuild" &&
            llvm::sys::path::extension(File)==".cu")) {
+        emitDefaultLanguageWarningIfNecessary(File.str(),
+                                              SpecifyLanguageInOption);
         CudaArgsAdjuster = combineAdjusters(
             std::move(CudaArgsAdjuster),
             getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
@@ -845,6 +884,8 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
 #else
       if (!CommandLine.empty() && CommandLine[0].size() >= 4 &&
           CommandLine[0].substr(CommandLine[0].size() - 4) == "nvcc") {
+        emitDefaultLanguageWarningIfNecessary(File.str(),
+                                              SpecifyLanguageInOption);
         CudaArgsAdjuster = combineAdjusters(
             std::move(CudaArgsAdjuster),
             getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
@@ -894,11 +935,6 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
     }
     //collect the errror counter info.
     ErrorCnt[File.str()] =(CurFileSigErrCnt<<32) | CurFileParseErrCnt;
-    } catch (std::exception &e) {
-      std::string FaultMsg =
-          "Error: dpct internal error. Current file skipped. Migration continues.\n";
-      llvm::errs() << FaultMsg;
-    }
     return 0;
 }
 #endif // SYCLomatic_CUSTOMIZATION
@@ -1067,17 +1103,17 @@ int ClangTool::run(ToolAction *Action) {
     DoFileProcessHandle(FilesNotProcessed);
     for (auto &Entry : FilesNotProcessed) {
       auto File = llvm::StringRef(Entry);
-      int Ret = processFiles(File, ProcessingFailed, FileSkipped, StaticSymbol,
-                              Action);
-      if (Ret == -1)
+
+      int Ret = processFilesWithCrashGuard(this, File, ProcessingFailed,
+                                           FileSkipped, StaticSymbol, Action);
+      if (Ret == ProcessingFilesCrash)
         continue;
-      else if (Ret < -1)
+      else if (Ret < 0)
         return Ret;
     }
   }
 
   // exit point for the file processing.
-  CheckPointStage = 0 /*CHECKPOINT_UNKNOWN*/;
 #endif // SYCLomatic_CUSTOMIZATION
   if (!InitialWorkingDir.empty()) {
     if (auto EC =

@@ -60,7 +60,7 @@ private:
 
 void RegistryMaps::registerMatcher(
     StringRef MatcherName, std::unique_ptr<MatcherDescriptor> Callback) {
-  assert(Constructors.find(MatcherName) == Constructors.end());
+  assert(!Constructors.contains(MatcherName));
   Constructors[MatcherName] = std::move(Callback);
 }
 
@@ -175,6 +175,7 @@ RegistryMaps::RegistryMaps() {
   REGISTER_MATCHER(containsDeclaration);
   REGISTER_MATCHER(continueStmt);
   REGISTER_MATCHER(coreturnStmt);
+  REGISTER_MATCHER(coroutineBodyStmt);
   REGISTER_MATCHER(coyieldExpr);
   REGISTER_MATCHER(cudaKernelCallExpr);
   REGISTER_MATCHER(cxxBaseSpecifier);
@@ -223,6 +224,9 @@ RegistryMaps::RegistryMaps() {
   REGISTER_MATCHER(dependentCoawaitExpr);
   REGISTER_MATCHER(dependentSizedArrayType);
   REGISTER_MATCHER(designatedInitExpr);
+#ifdef SYCLomatic_CUSTOMIZATION
+  REGISTER_MATCHER(pseudoObjectExpr);
+#endif // SYCLomatic_CUSTOMIZATION
   REGISTER_MATCHER(designatorCountIs);
   REGISTER_MATCHER(doStmt);
   REGISTER_MATCHER(eachOf);

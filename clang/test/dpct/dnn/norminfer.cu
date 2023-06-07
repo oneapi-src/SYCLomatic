@@ -1,3 +1,5 @@
+// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct -in-root %S -out-root %T/norminfer %S/norminfer.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/norminfer/norminfer.dp.cpp --match-full-lines %s
 #include <cuda_runtime.h>
@@ -86,7 +88,7 @@ int main() {
     cudnnActivationDescriptor_t ActivationDesc;
     cudnnCreateActivationDescriptor(&ActivationDesc);
     cudnnSetActivationDescriptor(ActivationDesc, CUDNN_ACTIVATION_RELU, CUDNN_PROPAGATE_NAN, 0.0f);
-    // CHECK: auto status = (handle.async_batch_normalization_forward_inference(dpct::dnnl::batch_normalization_mode::per_activation, dpct::dnnl::batch_normalization_ops::none, ActivationDesc, eps, alpha, dataTensor, data, beta, outTensor, out, dataTensor, z, scalebiasTensor, scale, bias, scalebiasTensor, smean, svar), 0);
+    // CHECK: auto status = DPCT_CHECK_ERROR(handle.async_batch_normalization_forward_inference(dpct::dnnl::batch_normalization_mode::per_activation, dpct::dnnl::batch_normalization_ops::none, ActivationDesc, eps, alpha, dataTensor, data, beta, outTensor, out, dataTensor, z, scalebiasTensor, scale, bias, scalebiasTensor, smean, svar));
     auto status = cudnnNormalizationForwardInference(
         handle, 
         CUDNN_NORM_PER_ACTIVATION,

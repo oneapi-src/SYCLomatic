@@ -393,6 +393,13 @@ void darwin::Linker::AddLinkArgs(Compilation &C, const ArgList &Args,
     }
   }
 
+  if (Args.hasArg(options::OPT_mkernel) ||
+      Args.hasArg(options::OPT_fapple_kext) ||
+      Args.hasArg(options::OPT_ffreestanding)) {
+    CmdArgs.push_back("-mllvm");
+    CmdArgs.push_back("-disable-atexit-based-global-dtor-lowering");
+  }
+
   Args.AddLastArg(CmdArgs, options::OPT_prebind);
   Args.AddLastArg(CmdArgs, options::OPT_noprebind);
   Args.AddLastArg(CmdArgs, options::OPT_nofixprebinding);
@@ -1426,24 +1433,42 @@ void DarwinClang::AddLinkRuntimeLibArgs(const ArgList &Args,
 
   const SanitizerArgs &Sanitize = getSanitizerArgs(Args);
 
-  if (!Sanitize.needsSharedRt() && Sanitize.needsUbsanRt()) {
-    getDriver().Diag(diag::err_drv_unsupported_static_ubsan_darwin);
-    return;
+  if (!Sanitize.needsSharedRt()) {
+    const char *sanitizer = nullptr;
+    if (Sanitize.needsUbsanRt()) {
+      sanitizer = "UndefinedBehaviorSanitizer";
+    } else if (Sanitize.needsAsanRt()) {
+      sanitizer = "AddressSanitizer";
+    } else if (Sanitize.needsTsanRt()) {
+      sanitizer = "ThreadSanitizer";
+    }
+    if (sanitizer) {
+      getDriver().Diag(diag::err_drv_unsupported_static_sanitizer_darwin)
+          << sanitizer;
+      return;
+    }
   }
 
   if (Sanitize.linkRuntimes()) {
-    if (Sanitize.needsAsanRt())
+    if (Sanitize.needsAsanRt()) {
+      assert(Sanitize.needsSharedRt() &&
+             "Static sanitizer runtimes not supported");
       AddLinkSanitizerLibArgs(Args, CmdArgs, "asan");
+    }
     if (Sanitize.needsLsanRt())
       AddLinkSanitizerLibArgs(Args, CmdArgs, "lsan");
     if (Sanitize.needsUbsanRt()) {
-      assert(Sanitize.needsSharedRt() && "Static sanitizer runtimes not supported");
-      AddLinkSanitizerLibArgs(Args, CmdArgs,
-                              Sanitize.requiresMinimalRuntime() ? "ubsan_minimal"
-                                                                : "ubsan");
+      assert(Sanitize.needsSharedRt() &&
+             "Static sanitizer runtimes not supported");
+      AddLinkSanitizerLibArgs(
+          Args, CmdArgs,
+          Sanitize.requiresMinimalRuntime() ? "ubsan_minimal" : "ubsan");
     }
-    if (Sanitize.needsTsanRt())
+    if (Sanitize.needsTsanRt()) {
+      assert(Sanitize.needsSharedRt() &&
+             "Static sanitizer runtimes not supported");
       AddLinkSanitizerLibArgs(Args, CmdArgs, "tsan");
+    }
     if (Sanitize.needsFuzzer() && !Args.hasArg(options::OPT_dynamiclib)) {
       AddLinkSanitizerLibArgs(Args, CmdArgs, "fuzzer", /*shared=*/false);
 
@@ -2457,17 +2482,6 @@ void DarwinClang::AddClangCXXStdlibIncludeArgs(
     switch (arch) {
     default: break;
 
-    case llvm::Triple::ppc:
-    case llvm::Triple::ppc64:
-      IsBaseFound = AddGnuCPlusPlusIncludePaths(DriverArgs, CC1Args, UsrIncludeCxx,
-                                                "4.2.1",
-                                                "powerpc-apple-darwin10",
-                                                arch == llvm::Triple::ppc64 ? "ppc64" : "");
-      IsBaseFound |= AddGnuCPlusPlusIncludePaths(DriverArgs, CC1Args, UsrIncludeCxx,
-                                                "4.0.0", "powerpc-apple-darwin10",
-                                                 arch == llvm::Triple::ppc64 ? "ppc64" : "");
-      break;
-
     case llvm::Triple::x86:
     case llvm::Triple::x86_64:
       IsBaseFound = AddGnuCPlusPlusIncludePaths(DriverArgs, CC1Args, UsrIncludeCxx,
@@ -2927,8 +2941,10 @@ ToolChain::UnwindTableLevel MachO::getDefaultUnwindTableLevel(const ArgList &Arg
       (GetExceptionModel(Args) != llvm::ExceptionHandling::SjLj &&
        Args.hasFlag(options::OPT_fexceptions, options::OPT_fno_exceptions,
                     true)))
-    return getArch() == llvm::Triple::aarch64 ? UnwindTableLevel::Synchronous
-                                              : UnwindTableLevel::Asynchronous;
+    return (getArch() == llvm::Triple::aarch64 ||
+            getArch() == llvm::Triple::aarch64_32)
+               ? UnwindTableLevel::Synchronous
+               : UnwindTableLevel::Asynchronous;
 
   return UnwindTableLevel::None;
 }
@@ -3255,7 +3271,6 @@ SanitizerMask Darwin::getSupportedSanitizers() const {
   Res |= SanitizerKind::Leak;
   Res |= SanitizerKind::Fuzzer;
   Res |= SanitizerKind::FuzzerNoLink;
-  Res |= SanitizerKind::Function;
   Res |= SanitizerKind::ObjCCast;
 
   // Prior to 10.9, macOS shipped a version of the C++ standard library without

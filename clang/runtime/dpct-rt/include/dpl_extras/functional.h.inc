@@ -248,7 +248,7 @@ template <typename Compare = class internal::__less> struct compare_key_fun {
   }
 
 private:
-  Compare comp;
+  mutable Compare comp;
 };
 // DPCT_LABEL_END
 
@@ -268,7 +268,7 @@ template <typename Predicate> struct predicate_key_fun {
   }
 
 private:
-  Predicate pred;
+  mutable Predicate pred;
 };
 // DPCT_LABEL_END
 
@@ -286,7 +286,7 @@ template <typename Predicate> struct negate_predicate_key_fun {
   }
 
 private:
-  Predicate pred;
+  mutable Predicate pred;
 };
 // DPCT_LABEL_END
 
@@ -320,7 +320,7 @@ template <typename Predicate> struct unique_fun {
   }
 
 private:
-  Predicate pred;
+  mutable Predicate pred;
 };
 // DPCT_LABEL_END
 
@@ -340,7 +340,7 @@ public:
   }
 
 private:
-  Predicate pred;
+  mutable Predicate pred;
   const T new_value;
 };
 // DPCT_LABEL_END
@@ -360,8 +360,8 @@ struct transform_if_fun {
   }
 
 private:
-  Predicate pred;
-  Operator op;
+  mutable Predicate pred;
+  mutable Operator op;
 };
 // DPCT_LABEL_END
 
@@ -380,8 +380,8 @@ struct transform_if_unary_zip_mask_fun {
   }
 
 private:
-  Predicate pred;
-  Operator op;
+  mutable Predicate pred;
+  mutable Operator op;
 };
 // DPCT_LABEL_END
 
@@ -401,8 +401,8 @@ public:
   }
 
 private:
-  Predicate pred;
-  BinaryOperation op;
+  mutable Predicate pred;
+  mutable BinaryOperation op;
 };
 // DPCT_LABEL_END
 
@@ -456,7 +456,7 @@ public:
     mask = ~OutKeyT(0); // all ones
     mask = mask >> (sizeof(OutKeyT) * 8 -
                     (end_bit - begin_bit));           // setup appropriate mask
-    flip_sign = 1UL << (sizeof(uint_type_t) * 8 - 1); // sign bit
+    flip_sign = uint_type_t(1) << (sizeof(uint_type_t) * 8 - 1); // sign bit
     flip_key = ~uint_type_t(0);                       // 0xF...F
   }
 

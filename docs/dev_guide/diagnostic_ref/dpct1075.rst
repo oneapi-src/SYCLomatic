@@ -3,7 +3,7 @@
 DPCT1075
 ========
 
-.. include:: deprecated-msg.txt
+.. include:: /_include_files/deprecated-msg-0.txt
 
 Message
 -------
@@ -70,5 +70,5 @@ Check that ``oneapi::mkl::dft::descriptor::commit()`` calls were generated
 correctly and are using the correct queue parameter. Fix the code if needed by
 adding missing commit calls and adjusting queue parameters.
 
-See the
-`descriptor<precision, domain>::commit function <https://software.intel.com/content/www/us/en/develop/documentation/oneapi-mkl-dpcpp-developer-reference/top/fourier-transform-functions/descriptorprecision-domain-commit.html>`_ for more information.
+Refer to the
+`descriptor<precision, domain>::commit function <https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-dpcpp/current/descriptor-precision-domain-commit.html>`_ for more information.

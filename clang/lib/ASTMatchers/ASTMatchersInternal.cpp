@@ -951,6 +951,8 @@ const internal::VariadicDynCastAllOfMatcher<Stmt, SwitchCase> switchCase;
 const internal::VariadicDynCastAllOfMatcher<Stmt, CaseStmt> caseStmt;
 const internal::VariadicDynCastAllOfMatcher<Stmt, DefaultStmt> defaultStmt;
 const internal::VariadicDynCastAllOfMatcher<Stmt, CompoundStmt> compoundStmt;
+const internal::VariadicDynCastAllOfMatcher<Stmt, CoroutineBodyStmt>
+    coroutineBodyStmt;
 const internal::VariadicDynCastAllOfMatcher<Stmt, CXXCatchStmt> cxxCatchStmt;
 const internal::VariadicDynCastAllOfMatcher<Stmt, CXXTryStmt> cxxTryStmt;
 const internal::VariadicDynCastAllOfMatcher<Stmt, CXXThrowExpr> cxxThrowExpr;
@@ -1024,6 +1026,10 @@ const internal::VariadicDynCastAllOfMatcher<Stmt, PredefinedExpr>
     predefinedExpr;
 const internal::VariadicDynCastAllOfMatcher<Stmt, DesignatedInitExpr>
     designatedInitExpr;
+#ifdef SYCLomatic_CUSTOMIZATION
+const internal::VariadicDynCastAllOfMatcher<Stmt, PseudoObjectExpr>
+    pseudoObjectExpr;
+#endif // SYCLomatic_CUSTOMIZATION
 const internal::VariadicOperatorMatcherFunc<
     2, std::numeric_limits<unsigned>::max()>
     eachOf = {internal::DynTypedMatcher::VO_EachOf};

@@ -39,14 +39,8 @@ int main() {
 
     // CHECK: dpct::queue_ptr stream1;
     // CHECK-NEXT: stream1 = dpct::get_current_device().create_queue();
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: cublasErrCheck((handle = stream1, 0));
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: cublasErrCheck((stream1 = handle, 0));
+    // CHECK-NEXT: cublasErrCheck(DPCT_CHECK_ERROR(handle = stream1));
+    // CHECK-NEXT: cublasErrCheck(DPCT_CHECK_ERROR(stream1 = handle));
     cudaStream_t stream1;
     cudaStreamCreate(&stream1);
     cublasErrCheck(cublasSetStream(handle, stream1));
@@ -84,17 +78,11 @@ int main() {
     cublasErrCheck(cublasIsamax(handle, N, x_S, N, result));
 
 
-    //CHECK: /*
-    //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    //CHECK-NEXT: */
-    //CHECK-NEXT: cublasErrCheck((dpct::syrk(*handle, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans1), N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N), 0));
+    //CHECK: cublasErrCheck(DPCT_CHECK_ERROR(dpct::syrk(*handle, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans1), N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)));
     cublasErrCheck(cublasSsyrkx(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans1, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N));
 
 
-    //CHECK: /*
-    //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    //CHECK-NEXT: */
-    //CHECK-NEXT: cublasErrCheck((dpct::trmm(*handle, (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N), 0));
+    //CHECK: cublasErrCheck(DPCT_CHECK_ERROR(dpct::trmm(*handle, (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N)));
     cublasErrCheck(cublasStrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N));
 
 
@@ -140,41 +128,23 @@ int main() {
     // CHECK-NEXT:}());
     cublasErrCheck(cublasIcamax(handle, N, x_C, N, result));
 
-    // CHECK: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
-    // CHECK-NEXT: cublasErrCheck((dpct::trmm(*handle, (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, N, N, &alpha_C, d_A_C, N, d_B_C, N, d_C_C, N), 0));
+    // CHECK: cublasErrCheck(DPCT_CHECK_ERROR(dpct::trmm(*handle, (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, N, N, &alpha_C, d_A_C, N, d_B_C, N, d_C_C, N)));
     cublasErrCheck(cublasCtrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_C, d_A_C, N, d_B_C, N, d_C_C, N));
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of PivotArray in the dpct::getrf_batch_wrapper is different from the cublasSgetrfBatched. You may need to check the migrated code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: /*
-    // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT: */
-    // CHECK-NEXT:cublasErrCheck((dpct::getrf_batch_wrapper(*handle, N, Aarray_S, N, PivotArray, infoArray, batchSize), 0));
+    // CHECK-NEXT:cublasErrCheck(DPCT_CHECK_ERROR(dpct::getrf_batch_wrapper(*handle, N, Aarray_S, N, PivotArray, infoArray, batchSize)));
     cublasErrCheck(cublasSgetrfBatched(handle, N, Aarray_S, N, PivotArray, infoArray, batchSize));
 
 
 
     float * __restrict__ d_data;
     //CHECK:dpct::rng::host_rng_ptr rng;
-    //CHECK-NEXT:/*
-    //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    //CHECK-NEXT:*/
-    //CHECK-NEXT:curandErrCheck((rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::mcg59), 0));
-    //CHECK-NEXT:/*
-    //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    //CHECK-NEXT:*/
-    //CHECK-NEXT:curandErrCheck((rng->set_seed(1337ull), 0));
-    //CHECK-NEXT:/*
-    //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    //CHECK-NEXT:*/
-    //CHECK-NEXT:curandErrCheck((rng->generate_uniform(d_data, (100 + 1) * (200) * 4), 0));
-    //CHECK-NEXT:/*
-    //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    //CHECK-NEXT:*/
-    //CHECK-NEXT:curandErrCheck((rng.reset(), 0));
+    //CHECK-NEXT:curandErrCheck(DPCT_CHECK_ERROR(rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::mcg59)));
+    //CHECK-NEXT:curandErrCheck(DPCT_CHECK_ERROR(rng->set_seed(1337ull)));
+    //CHECK-NEXT:curandErrCheck(DPCT_CHECK_ERROR(rng->generate_uniform(d_data, (100 + 1) * (200) * 4)));
+    //CHECK-NEXT:curandErrCheck(DPCT_CHECK_ERROR(rng.reset()));
     curandGenerator_t rng;
     curandErrCheck(curandCreateGenerator(&rng, CURAND_RNG_PSEUDO_DEFAULT));
     curandErrCheck(curandSetPseudoRandomGeneratorSeed(rng, 1337ull));

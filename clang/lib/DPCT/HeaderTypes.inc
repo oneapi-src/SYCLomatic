@@ -54,7 +54,6 @@ ONEDPL_HEADER(Async, "<oneapi/dpl/async>")
 
 MKL_HEADER(Mkl, "<oneapi/mkl.hpp>")
 MKL_HEADER(RNG, "<oneapi/mkl/rng/device.hpp>")
-MKL_HEADER(BFloat16, "<oneapi/mkl/bfloat16.hpp>")
 
 DPCT_HEADER(Dpct,  "<" + getCustomMainHelperFileName() + "/" + getCustomMainHelperFileName() + ".hpp>")
 DPCT_HEADER(DPL_Utils, "<dpct/dpl_utils.hpp>")

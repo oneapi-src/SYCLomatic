@@ -263,7 +263,7 @@ inline unsigned int byte_level_permute(unsigned int a, unsigned int b,
 /// \returns The position
 template <typename T> inline int ffs(T a) {
   static_assert(std::is_integral<T>::value, "integer required");
-  return (sycl::ext::intel::ctz(a) + 1) % (sizeof(T) * 8 + 1);
+  return (sycl::ctz(a) + 1) % (sizeof(T) * 8 + 1);
 }
 // DPCT_LABEL_END
 
@@ -391,16 +391,17 @@ T permute_sub_group_by_xor(sycl::sub_group g, T x, unsigned int mask,
 // DPCT_LABEL_END
 
 namespace experimental {
-// DPCT_LABEL_BEGIN|select_from_sub_group_mask|dpct
+// DPCT_LABEL_BEGIN|select_from_sub_group_mask|dpct::experimental
 // DPCT_DEPENDENCY_BEGIN
 // Util|spirv_builtin_function
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Masked version of select_from_sub_group. The parameter member_mask indicating
-/// the work-items participating the call. Whether the n-th bit is set to 1
-/// representing whether the work-item with id n is participating the call.
-/// All work-items named in member_mask must be executed with the same member_mask,
-/// or the result is undefined.
+/// Masked version of select_from_sub_group, which execute masked sub-group
+/// operation. The parameter member_mask indicating the work-items participating
+/// the call. Whether the n-th bit is set to 1 representing whether the
+/// work-item with id n is participating the call. All work-items named in
+/// member_mask must be executed with the same member_mask, or the result is
+/// undefined.
 /// \tparam T Input value type
 /// \param [in] member_mask Input mask
 /// \param [in] g Input sub_group
@@ -420,7 +421,8 @@ T select_from_sub_group(unsigned int member_mask,
 #if defined(__SPIR__)
   return __spirv_GroupNonUniformShuffle(__spv::Scope::Subgroup, x, logical_remote_id);
 #else
-  #error "Masked version of select_from_sub_group only supports SPIR-V backends"
+  throw sycl::exception(sycl::errc::runtime, "Masked version of select_from_sub_group "
+                        "only supports SPIR-V backends.");
 #endif // __SPIR__
 #else
   (void)g;
@@ -434,16 +436,17 @@ T select_from_sub_group(unsigned int member_mask,
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|shift_sub_group_left_mask|dpct
+// DPCT_LABEL_BEGIN|shift_sub_group_left_mask|dpct::experimental
 // DPCT_DEPENDENCY_BEGIN
 // Util|spirv_builtin_function
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Masked version of shift_sub_group_left. The parameter member_mask indicating
-/// the work-items participating the call. Whether the n-th bit is set to 1
-/// representing whether the work-item with id n is participating the call.
-/// All work-items named in member_mask must be executed with the same member_mask,
-/// or the result is undefined.
+/// Masked version of shift_sub_group_left, which execute masked sub-group
+/// operation. The parameter member_mask indicating the work-items participating
+/// the call. Whether the n-th bit is set to 1 representing whether the
+/// work-item with id n is participating the call. All work-items named in
+/// member_mask must be executed with the same member_mask, or the result is
+/// undefined.
 /// \tparam T Input value type
 /// \param [in] member_mask Input mask
 /// \param [in] g Input sub_group
@@ -466,7 +469,8 @@ T shift_sub_group_left(unsigned int member_mask,
   }
   return result;
 #else
-  #error "Masked version of shift_sub_group_left only supports SPIR-V backends"
+  throw sycl::exception(sycl::errc::runtime, "Masked version of shift_sub_group_left "
+                        "only supports SPIR-V backends.");
 #endif // __SPIR__
 #else
   (void)g;
@@ -480,16 +484,17 @@ T shift_sub_group_left(unsigned int member_mask,
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|shift_sub_group_right_mask|dpct
+// DPCT_LABEL_BEGIN|shift_sub_group_right_mask|dpct::experimental
 // DPCT_DEPENDENCY_BEGIN
 // Util|spirv_builtin_function
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Masked version of shift_sub_group_right. The parameter member_mask indicating
-/// the work-items participating the call. Whether the n-th bit is set to 1
-/// representing whether the work-item with id n is participating the call.
-/// All work-items named in member_mask must be executed with the same member_mask,
-/// or the result is undefined.
+/// Masked version of shift_sub_group_right, which execute masked sub-group
+/// operation. The parameter member_mask indicating the work-items participating
+/// the call. Whether the n-th bit is set to 1 representing whether the
+/// work-item with id n is participating the call. All work-items named in
+/// member_mask must be executed with the same member_mask, or the result is
+/// undefined.
 /// \tparam T Input value type
 /// \param [in] member_mask Input mask
 /// \param [in] g Input sub_group
@@ -512,7 +517,8 @@ T shift_sub_group_right(unsigned int member_mask,
   }
   return result;
 #else
-  #error "Masked version of shift_sub_group_right only supports SPIR-V backends"
+  throw sycl::exception(sycl::errc::runtime, "Masked version of shift_sub_group_right "
+                        "only supports SPIR-V backends.");
 #endif // __SPIR__
 #else
   (void)g;
@@ -526,16 +532,17 @@ T shift_sub_group_right(unsigned int member_mask,
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|permute_sub_group_by_xor_mask|dpct
+// DPCT_LABEL_BEGIN|permute_sub_group_by_xor_mask|dpct::experimental
 // DPCT_DEPENDENCY_BEGIN
 // Util|spirv_builtin_function
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Masked version of permute_sub_group_by_xor. The parameter member_mask indicating
-/// the work-items participating the call. Whether the n-th bit is set to 1
-/// representing whether the work-item with id n is participating the call.
-/// All work-items named in member_mask must be executed with the same member_mask,
-/// or the result is undefined.
+/// Masked version of permute_sub_group_by_xor, which execute masked sub-group
+/// operation. The parameter member_mask indicating the work-items participating
+/// the call. Whether the n-th bit is set to 1 representing whether the
+/// work-item with id n is participating the call. All work-items named in
+/// member_mask must be executed with the same member_mask, or the result is
+/// undefined.
 /// \tparam T Input value type
 /// \param [in] member_mask Input mask
 /// \param [in] g Input sub_group
@@ -556,7 +563,8 @@ T permute_sub_group_by_xor(unsigned int member_mask,
 #if defined(__SPIR__)
   return __spirv_GroupNonUniformShuffle(__spv::Scope::Subgroup, x, logical_remote_id);
 #else
-  #error "Masked version of permute_sub_group_by_xor only supports SPIR-V backends."
+  throw sycl::exception(sycl::errc::runtime, "Masked version of permute_sub_group_by_xor "
+                        "only supports SPIR-V backends.");
 #endif // __SPIR__
 #else
   (void)g;
@@ -812,6 +820,76 @@ public:
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 };
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|calculate_max_active_wg_per_xecore|dpct::experimental
+// DPCT_DEPENDENCY_BEGIN
+// Device|get_current_device
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// This function is used for occupancy calculation, it computes the max active
+/// work-group number per Xe-Core. Ref to
+/// https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/GPU-Occupancy-Calculator
+/// \param [out] num_wg Active work-group number.
+/// \param [in] wg_size Work-group size.
+/// \param [in] slm_size Share local memory size.
+/// \param [in] sg_size Sub-group size.
+/// \param [in] used_barrier Whether barrier is used.
+/// \param [in] used_large_grf Whether large General Register File is used.
+/// \return If no error, returns 0.
+/// If \p wg_size exceeds the max work-group size, the max work-group size will
+/// be used instead of \p wg_size and returns -1.
+inline int calculate_max_active_wg_per_xecore(int *num_wg, int wg_size,
+                                              int slm_size = 0,
+                                              int sg_size = 32,
+                                              bool used_barrier = false,
+                                              bool used_large_grf = false) {
+  int ret = 0;
+  const int slm_size_per_xe_core = 64 * 1024;
+  const int max_barrier_registers = 32;
+  dpct::device_ext &dev = dpct::get_current_device();
+
+  size_t max_wg_size = dev.get_info<sycl::info::device::max_work_group_size>();
+  if (wg_size > max_wg_size) {
+    wg_size = max_wg_size;
+    ret = -1;
+  }
+
+  int num_threads_ss = 56;
+  int max_num_wg = 56;
+  if (dev.has(sycl::aspect::ext_intel_gpu_eu_count_per_subslice) &&
+      dev.has(sycl::aspect::ext_intel_gpu_hw_threads_per_eu)) {
+    auto eu_count =
+        dev.get_info<sycl::info::device::ext_intel_gpu_eu_count_per_subslice>();
+    auto threads_count =
+        dev.get_info<sycl::ext::intel::info::device::gpu_hw_threads_per_eu>();
+    num_threads_ss = eu_count * threads_count;
+    max_num_wg = eu_count * threads_count;
+  }
+
+  if (used_barrier) {
+    max_num_wg = max_barrier_registers;
+  }
+
+  // Calculate num_wg_slm
+  int num_wg_slm = 0;
+  if (slm_size == 0) {
+    num_wg_slm = max_num_wg;
+  } else {
+    num_wg_slm = std::floor((float)slm_size_per_xe_core / slm_size);
+  }
+
+  // Calculate num_wg_threads
+  if (used_large_grf)
+    num_threads_ss = num_threads_ss / 2;
+  int num_threads = std::ceil((float)wg_size / sg_size);
+  int num_wg_threads = std::floor((float)num_threads_ss / num_threads);
+
+  // Calculate num_wg
+  *num_wg = std::min(num_wg_slm, num_wg_threads);
+  *num_wg = std::min(*num_wg, max_num_wg);
+  return ret;
+}
 // DPCT_LABEL_END
 } // namespace experimental
 

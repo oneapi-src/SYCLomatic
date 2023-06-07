@@ -167,7 +167,7 @@ template <typename Compare = class internal::__less> struct compare_key_fun {
   }
 
 private:
-  Compare comp;
+  mutable Compare comp;
 };
 
 // Functor evaluates second element of tied sequence with predicate.
@@ -183,7 +183,7 @@ template <typename Predicate> struct predicate_key_fun {
   }
 
 private:
-  Predicate pred;
+  mutable Predicate pred;
 };
 
 // Used by: remove_if
@@ -197,7 +197,7 @@ template <typename Predicate> struct negate_predicate_key_fun {
   }
 
 private:
-  Predicate pred;
+  mutable Predicate pred;
 };
 
 template <typename T> struct sequence_fun {
@@ -223,7 +223,7 @@ template <typename Predicate> struct unique_fun {
   }
 
 private:
-  Predicate pred;
+  mutable Predicate pred;
 };
 
 // Lambda: [pred, &new_value](Ref1 a, Ref2 s) {return pred(s) ? new_value : a;
@@ -239,7 +239,7 @@ public:
   }
 
 private:
-  Predicate pred;
+  mutable Predicate pred;
   const T new_value;
 };
 
@@ -255,8 +255,8 @@ struct transform_if_fun {
   }
 
 private:
-  Predicate pred;
-  Operator op;
+  mutable Predicate pred;
+  mutable Operator op;
 };
 
 //[pred, op](Ref1 a, Ref2 s) { return pred(s) ? op(a) : a; });
@@ -271,8 +271,8 @@ struct transform_if_unary_zip_mask_fun {
   }
 
 private:
-  Predicate pred;
-  Operator op;
+  mutable Predicate pred;
+  mutable Operator op;
 };
 
 template <typename T, typename Predicate, typename BinaryOperation>
@@ -288,8 +288,8 @@ public:
   }
 
 private:
-  Predicate pred;
-  BinaryOperation op;
+  mutable Predicate pred;
+  mutable BinaryOperation op;
 };
 
 // This following code is similar to a section of code in
@@ -327,7 +327,7 @@ public:
     mask = ~OutKeyT(0); // all ones
     mask = mask >> (sizeof(OutKeyT) * 8 -
                     (end_bit - begin_bit));           // setup appropriate mask
-    flip_sign = 1UL << (sizeof(uint_type_t) * 8 - 1); // sign bit
+    flip_sign = uint_type_t(1) << (sizeof(uint_type_t) * 8 - 1); // sign bit
     flip_key = ~uint_type_t(0);                       // 0xF...F
   }
 

@@ -133,18 +133,20 @@ void foo() {
   thrust::device_vector<int> *data[10];
   thrust::device_vector<int> d_new_potential_centroids(10);
   auto range = thrust::make_counting_iterator(0);
-
+  thrust::counting_iterator<int> last = range + 10;
   //CHECK: std::copy_if(oneapi::dpl::execution::seq, h_data.begin(), h_data.end(), h_result.begin(), is_even<int>());
   //CHECK-NEXT: std::copy_if(oneapi::dpl::execution::seq, h_data.begin(), h_data.end(), h_result.begin(), is_even<int>());
   //CHECK-NEXT: dpct::copy_if(oneapi::dpl::execution::make_device_policy(q_ct1), (*data[0]).begin(), (*data[0]).end(), range, d_new_potential_centroids.begin(), [=] (int idx) { return true; });
+  //CHECK-NEXT: dpct::copy_if(oneapi::dpl::execution::seq, range, last, (*data[0]).begin(), (*data[0]).end(), oneapi::dpl::identity());
   thrust::copy_if(h_data.begin(), h_data.end(), h_result.begin(), is_even<int>());
   thrust::copy_if(thrust::seq, h_data.begin(), h_data.end(), h_result.begin(), is_even<int>());
   thrust::copy_if((*data[0]).begin(), (*data[0]).end(), range, d_new_potential_centroids.begin(),[=] __device__(int idx) { return true; });
+  thrust::copy_if(range, last, (*data[0]).begin(), (*data[0]).end(), thrust::identity<int>());
 
   //CHECK: std::vector<dpct::device_vector<int>> d(10);
   //CHECK-NEXT: auto t = dpct::make_counting_iterator(0);
   //CHECK-NEXT: auto min_costs_ptr = dpct::get_raw_pointer(d[0].data());
-  //CHECK-NEXT: int pot_cent_num = std::count_if(oneapi::dpl::execution::make_device_policy(q_ct1), t, t + 10, [=] (int idx) { return true;});
+  //CHECK-NEXT: int pot_cent_num = std::count_if(oneapi::dpl::execution::seq, t, t + 10, [=] (int idx) { return true;});
   std::vector<thrust::device_vector<int>> d(10);
   auto t = thrust::make_counting_iterator(0);
   auto min_costs_ptr = thrust::raw_pointer_cast(d[0].data());
@@ -537,9 +539,8 @@ private:
 
 __global__ void kernel1(){
   int a[10];
-  // CHECK:  /*
-  // CHECK-NEXT:  DPCT1007:{{[0-9]+}}: Migration of thrust::sort is not supported.
-  // CHECK-NEXT:  */
+
+  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), a, a + 9);
   thrust::sort(thrust::device, a, a + 9);
 }
 template<typename Itr>
@@ -548,30 +549,26 @@ void mysort(Itr Beg, Itr End){
   thrust::host_vector<int> h_vec(10);
   thrust::device_vector<int> d_vec(10);
 
-  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), Beg, End);
-  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), Beg, End);
-  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), Beg, End);
-  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(*s1), Beg, End);
+  // CHECK:  oneapi::dpl::sort(oneapi::dpl::execution::seq, Beg, End);
+  // CHECK:  oneapi::dpl::sort(oneapi::dpl::execution::seq, Beg, End);
+  // CHECK:  oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), Beg, End);
+  // CHECK:  oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(*s1), Beg, End);
   thrust::sort(Beg, End);
   thrust::sort(thrust::host, Beg, End);
   thrust::sort(thrust::device, Beg, End);
   thrust::sort(thrust::cuda::par.on(s1), Beg, End);
 
-  // CHECK: std::sort(oneapi::dpl::execution::par_unseq, h_vec.begin(), h_vec.end());
-  // CHECK: std::sort(h_vec.begin(), h_vec.end());
+  // CHECK:  oneapi::dpl::sort(oneapi::dpl::execution::seq, h_vec.begin(), h_vec.end());
+  // CHECK:  oneapi::dpl::sort(oneapi::dpl::execution::seq, h_vec.begin(), h_vec.end());
   thrust::sort(thrust::host, h_vec.begin(), h_vec.end());
   thrust::sort(h_vec.begin(), h_vec.end());
 
   // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(*s1), d_vec.begin(), d_vec.end());
   // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
   // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
-  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
-  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
   thrust::sort(thrust::cuda::par.on(s1), d_vec.begin(), d_vec.end());
   thrust::sort(thrust::device, d_vec.begin(), d_vec.end());
   thrust::sort(d_vec.begin(), d_vec.end());
-  thrust::sort(thrust::cuda::par, d_vec.begin(), d_vec.end());
-  thrust::sort(thrust::host, d_vec.begin(), d_vec.end());
 }
 
 
@@ -603,11 +600,8 @@ int main(void){
   thrust::device_vector<int> d_vec(10);
   cudaStream_t s1;
 
-  mysort(h_vec.begin(), h_vec.end());
-  mysort(d_vec.begin(), d_vec.end());
-
-  // CHECK: std::sort(oneapi::dpl::execution::par_unseq, h_vec.begin(), h_vec.end());
-  // CHECK: std::sort(h_vec.begin(), h_vec.end());
+  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::seq, h_vec.begin(), h_vec.end());
+  // CHECK:   oneapi::dpl::sort(oneapi::dpl::execution::seq, h_vec.begin(), h_vec.end());
   thrust::sort(thrust::host, h_vec.begin(), h_vec.end());
   thrust::sort(h_vec.begin(), h_vec.end());
 
@@ -615,7 +609,7 @@ int main(void){
   // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
   // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
   // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
-  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec.begin(), d_vec.end());
+  // CHECK: oneapi::dpl::sort(oneapi::dpl::execution::seq, d_vec.begin(), d_vec.end());
   thrust::sort(thrust::cuda::par.on(s1), d_vec.begin(), d_vec.end());
   thrust::sort(thrust::device, d_vec.begin(), d_vec.end());
   thrust::sort(d_vec.begin(), d_vec.end());
@@ -630,4 +624,22 @@ int main(void){
   auto c = thrust::make_pair(1, 2);
 
   return 0;
+}
+
+template <bool is_ture> void foo() {
+  cudaStream_t stream;
+  int index_count = 1;
+
+  // CHECK:  std::for_each(oneapi::dpl::execution::make_device_policy(*stream), oneapi::dpl::counting_iterator<size_t>(0), oneapi::dpl::counting_iterator<size_t>(index_count), [=] (size_t i) {
+  // CHECK-NEXT:      if /*constexpr*/ (is_true) {
+  // CHECK-NEXT:        i = 1;
+  // CHECK-NEXT:      }
+  // CHECK-NEXT:    });
+  thrust::for_each(
+      thrust::cuda::par.on(stream), thrust::counting_iterator<size_t>(0),
+      thrust::counting_iterator<size_t>(index_count), [=] __device__(size_t i) {
+        if /*constexpr*/ (is_true) {
+          i = 1;
+        }
+      });
 }

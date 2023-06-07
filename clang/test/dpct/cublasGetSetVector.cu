@@ -20,18 +20,12 @@ int main() {
   // CHECK: dpct::queue_ptr stream;
   cudaStream_t stream;
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::matrix_mem_copy((void*)h_C, (void*)d_C, 1, 1, 1, N, sizeof(h_C[0])), 0);
+  // CHECK: status = DPCT_CHECK_ERROR(dpct::matrix_mem_copy((void*)h_C, (void*)d_C, 1, 1, 1, N, sizeof(h_C[0])));
   status = cublasGetVector(N, sizeof(h_C[0]), d_C, 1, h_C, 1);
 
 #define INCX_MARCO 1
   const int ConstIncy = 1;
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::matrix_mem_copy((void*)d_A, (void*)h_A, ConstIncy, INCX_MARCO, 1, N, sizeof(h_A[0])), 0);
+  // CHECK: status = DPCT_CHECK_ERROR(dpct::matrix_mem_copy((void*)d_A, (void*)h_A, ConstIncy, INCX_MARCO, 1, N, sizeof(h_A[0])));
   status = cublasSetVector(N, sizeof(h_A[0]), h_A, INCX_MARCO, d_A, ConstIncy);
 
   // CHECK: dpct::matrix_mem_copy((void*)h_C, (void*)d_C, 1, 1, 1, N, sizeof(h_C[0]));
@@ -50,20 +44,14 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1018:{{[0-9]+}}: The cublasSetVector was migrated, but due to parameter 1 does not equal to parameter INCY_MARCO, the generated code performance may be sub-optimal.
   // CHECK-NEXT: */
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::matrix_mem_copy((void*)d_A, (void*)h_A, INCY_MARCO, 1, 1, N, sizeof(h_A[0])), 0);
+  // CHECK: status = DPCT_CHECK_ERROR(dpct::matrix_mem_copy((void*)d_A, (void*)h_A, INCY_MARCO, 1, 1, N, sizeof(h_A[0])));
   status = cublasSetVector(N, sizeof(h_A[0]), h_A, 1, d_A, INCY_MARCO);
 
   const int ConstIncx = 2;
   // CHECK: /*
   // CHECK-NEXT: DPCT1018:{{[0-9]+}}: The cublasSetVector was migrated, but due to parameter ConstIncx equals to parameter INCY_MARCO but greater than 1, the generated code performance may be sub-optimal.
   // CHECK-NEXT: */
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::matrix_mem_copy((void*)d_A, (void*)h_A, INCY_MARCO, ConstIncx, 1, N, sizeof(h_A[0])), 0);
+  // CHECK: status = DPCT_CHECK_ERROR(dpct::matrix_mem_copy((void*)d_A, (void*)h_A, INCY_MARCO, ConstIncx, 1, N, sizeof(h_A[0])));
   status = cublasSetVector(N, sizeof(h_A[0]), h_A, ConstIncx, d_A, INCY_MARCO);
 
   int incx = 1;
@@ -72,10 +60,7 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1018:{{[0-9]+}}: The cublasSetVector was migrated, but due to parameter(s) incx and/or incy could not be evaluated, the generated code performance may be sub-optimal.
   // CHECK-NEXT: */
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::matrix_mem_copy((void*)d_A, (void*)h_A, incy, incx, 1, N, sizeof(h_A[0])), 0);
+  // CHECK: status = DPCT_CHECK_ERROR(dpct::matrix_mem_copy((void*)d_A, (void*)h_A, incy, incx, 1, N, sizeof(h_A[0])));
   status = cublasSetVector(N, sizeof(h_A[0]), h_A, incx, d_A, incy);
 
   const int ConstIncxNE = incx;
@@ -83,10 +68,7 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1018:{{[0-9]+}}: The cublasSetVector was migrated, but due to parameter(s) ConstIncxNE and/or ConstIncyNE could not be evaluated, the generated code performance may be sub-optimal.
   // CHECK-NEXT: */
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::matrix_mem_copy((void*)d_A, (void*)h_A, ConstIncyNE, ConstIncxNE, 1, N, sizeof(h_A[0])), 0);
+  // CHECK: status = DPCT_CHECK_ERROR(dpct::matrix_mem_copy((void*)d_A, (void*)h_A, ConstIncyNE, ConstIncxNE, 1, N, sizeof(h_A[0])));
   status = cublasSetVector(N, sizeof(h_A[0]), h_A, ConstIncxNE, d_A, ConstIncyNE);
 
   const int ConstIncxT = 1;
@@ -108,18 +90,12 @@ int main() {
   // CHECK-NEXT: dpct::matrix_mem_copy((void*)d_A, (void*)h_A, ConstExprIncy, foo(ConstExprIncx), 1, N, sizeof(h_A[0]));
   cublasGetVector(N, sizeof(h_A[0]), h_A, foo(ConstExprIncx), d_A, ConstExprIncy);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::matrix_mem_copy((void*)h_C, (void*)d_C, 1, 1, 1, N, sizeof(h_C[0]), dpct::automatic, *stream, true), 0);
+  // CHECK: status = DPCT_CHECK_ERROR(dpct::matrix_mem_copy((void*)h_C, (void*)d_C, 1, 1, 1, N, sizeof(h_C[0]), dpct::automatic, *stream, true));
   // CHECK-NEXT: dpct::matrix_mem_copy((void*)h_C, (void*)d_C, 1, 1, 1, N, sizeof(h_C[0]), dpct::automatic, *stream, true);
   status = cublasGetVectorAsync(N, sizeof(h_C[0]), d_C, 1, h_C, 1, stream);
   cublasGetVectorAsync(N, sizeof(h_C[0]), d_C, 1, h_C, 1, stream);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::matrix_mem_copy((void*)h_C, (void*)d_C, 1, 1, 1, N, sizeof(h_C[0]), dpct::automatic, *stream, true), 0);
+  // CHECK: status = DPCT_CHECK_ERROR(dpct::matrix_mem_copy((void*)h_C, (void*)d_C, 1, 1, 1, N, sizeof(h_C[0]), dpct::automatic, *stream, true));
   // CHECK-NEXT: dpct::matrix_mem_copy((void*)h_C, (void*)d_C, 1, 1, 1, N, sizeof(h_C[0]), dpct::automatic, *stream, true);
   status = cublasSetVectorAsync(N, sizeof(h_C[0]), d_C, 1, h_C, 1, stream);
   cublasSetVectorAsync(N, sizeof(h_C[0]), d_C, 1, h_C, 1, stream);

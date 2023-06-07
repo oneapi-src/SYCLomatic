@@ -1,0 +1,96 @@
+.. _DPCT1111:
+
+DPCT1111
+========
+
+Message
+-------
+
+.. _msg-1111-start:
+
+Please verify the input arguments of <migrated API> base on the target function <kernel function name>.
+
+.. _msg-1111-end:
+
+Detailed Help
+-------------
+
+|tool_name| cannot deduce some arguments from a function pointer or CUfunction
+variable. You need verify the argument value manually.
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   extern __shared__ float a[];
+   __global__ void kernel() {
+     __shared__ int b[10];
+     __syncthreads();
+   }
+
+   void foo() {
+     int numBlocks;
+     cudaOccupancyMaxActiveBlocksPerMultiprocessor(&numBlocks, kernel, 128,
+                                                   sizeof(float) * 20);
+     kernel<<<1, 128>>>();
+   }
+
+results in the following migrated SYCL* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel(const sycl::nd_item<3> &item_ct1, int *b) {
+
+     item_ct1.barrier(sycl::access::fence_space::local_space);
+   }
+
+   void foo() {
+     int numBlocks;
+     /*
+     DPCT1111:0: Please verify the input arguments of
+     dpct::experimental::calculate_max_active_wg_per_xecore base on the target
+     function "kernel".
+     */
+     dpct::experimental::calculate_max_active_wg_per_xecore(
+         &numBlocks, 128,
+         sizeof(float) * 20 +
+             dpct_placeholder /* total shared local memory size */);
+     dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+       sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(10), cgh);
+
+       cgh.parallel_for(
+           sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
+           [=](sycl::nd_item<3> item_ct1) {
+             kernel(item_ct1, b_acc_ct1.get_pointer());
+           });
+     });
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel(const sycl::nd_item<3> &item_ct1, int *b) {
+     item_ct1.barrier(sycl::access::fence_space::local_space);
+   }
+
+   void foo() {
+     int numBlocks;
+     dpct::experimental::calculate_max_active_wg_per_xecore(
+         &numBlocks, 128, sizeof(float) * 20 + sizeof(int) * 10, 32, true, false);
+     dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+       sycl::local_accessor<int, 1> b_acc_ct1(sycl::range<1>(10), cgh);
+
+       cgh.parallel_for(
+           sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
+           [=](sycl::nd_item<3> item_ct1) [[intel::reqd_sub_group_size(32)]] {
+             kernel(item_ct1, b_acc_ct1.get_pointer());
+           });
+     });
+   }

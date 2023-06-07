@@ -235,7 +235,7 @@ __device__ void d10() {
 //CHECK-NEXT:  int a = item_ct1.get_local_id(0);
 //CHECK-NEXT:  double b = sycl::sqrt((double)(item_ct1.get_local_id(0)));
 //CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1064:{{[0-9]+}}: Migrated acos call is used in a macro definition and is not valid for all macro uses. Adjust the code.
+//CHECK-NEXT:  DPCT1064:{{[0-9]+}}: Migrated acos call is used in a macro/template definition and may not be valid for all macro/template uses. Adjust the code.
 //CHECK-NEXT:  */
 //CHECK-NEXT:  double c = sycl::atan2(sycl::acos((double)(item_ct1.get_local_id(0))), sycl::acos((double)(item_ct1.get_local_id(0))));
 //CHECK-NEXT:}
@@ -630,4 +630,11 @@ int foo6() {
   //CHECK-NEXT:      });
   global6<<<dim3(1,2,3),1>>>();
   return 0;
+}
+
+//CHECK:void global7(const sycl::nd_item<3> &item_ct1) {
+//CHECK-NEXT:  unsigned int tid = item_ct1.get_local_id(2);
+//CHECK-NEXT:}
+__global__ void global7() {
+  unsigned int tid = threadIdx.x;
 }

@@ -89,6 +89,7 @@ class TemplateDependentStringInfo {
   std::string SourceStr;
   std::vector<std::shared_ptr<TemplateDependentReplacement>> TDRs;
   bool IsDependOnWrittenArgument = false;
+  bool ContainsTemplateDependentMacro = false;
   std::set<HelperFeatureEnum> HelperFeatureSet;
 
 public:
@@ -116,6 +117,7 @@ public:
   void setHelperFeatureSet(std::set<HelperFeatureEnum> Set) {
     HelperFeatureSet = Set;
   }
+  bool containsTemplateDependentMacro() const { return ContainsTemplateDependentMacro; }
 };
 
 /// Store an expr source string which may need replaced and its replacements
@@ -386,8 +388,6 @@ private:
   size_t getOffset(SourceLocation Loc) {
     return SM.getFileOffset(Loc) - SrcBegin;
   }
-  void getThrustReplStrAndLength(const std::string &CtorClassName,
-                                 std::string &Replacement, size_t &TypeLen);
 protected:
   void analyzeArgument(const Expr *E) {
     switch (E->getStmtClass()) {
@@ -828,7 +828,7 @@ private:
   bool DoReverse = false;
   bool Reversed = false;
   bool DirectRef = false;
-  bool MustDim3 = false;
+  bool IsDim3Config = false;
   unsigned int ArgIndex = 0;
   bool NeedEmitWGSizeWarning = true;
   unsigned int SizeOfHighestDimension = 0;

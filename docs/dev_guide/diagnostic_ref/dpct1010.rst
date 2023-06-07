@@ -25,4 +25,64 @@ Suggestions to Fix
 
 You may need to rewrite this code.
 
+For example, this original CUDA\* code:
 
+.. code-block:: cpp
+   :linenos:
+
+   __global__ void kernel() {
+     ...
+   }
+   
+   void foo() {
+     kernel<<<1, 1>>>();
+     cudaDeviceSynchronize();
+     cudaError_t err = cudaGetLastError();
+     printf("%d\n", err);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel() {
+     ...
+   }
+   
+   void foo() {
+     dpct::get_default_queue().parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+         [=](sycl::nd_item<3> item_ct1) {
+           kernel();
+         });
+     dpct::get_current_device().queues_wait_and_throw();
+     /*
+     DPCT1010:0: SYCL uses exceptions to report errors and does not use the error
+     codes. The call was replaced with 0. You need to rewrite this code.
+     */
+     int err = 0;
+     printf("%d\n", err);
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel() {
+     ...
+   }
+   
+   void foo() {
+     try {
+       dpct::get_default_queue().parallel_for(
+           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+           [=](sycl::nd_item<3> item_ct1) {
+             kernel();
+           });
+       dpct::get_current_device().queues_wait_and_throw();
+     } catch (sycl::exception const &e) {
+       std::cerr << e.what() << std::endl;
+     }
+   }

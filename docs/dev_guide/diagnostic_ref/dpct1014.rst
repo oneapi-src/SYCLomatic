@@ -24,3 +24,42 @@ Suggestions to Fix
 ------------------
 
 Review the logic and adjust it.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(cudaStream_t old_stream, cudaStream_t *new_stream) {
+     unsigned int flag;
+     cudaStreamGetFlags(old_stream, &flag);
+     cudaStreamCreateWithFlags(new_stream, flag);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(sycl::queue *old_stream, sycl::queue **new_stream) {
+     unsigned int flag;
+     /*
+     DPCT1014:0: The flag and priority options are not supported for SYCL queues.
+     The output parameter(s) are set to 0.
+     */
+     *(&flag) = 0;
+     /*
+     DPCT1025:1: The SYCL queue is created ignoring the flag and priority options.
+     */
+     *(new_stream) = dpct::get_current_device().create_queue();
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(sycl::queue *old_stream, sycl::queue **new_stream) {
+     *(new_stream) = dpct::get_current_device().create_queue();
+   }
+

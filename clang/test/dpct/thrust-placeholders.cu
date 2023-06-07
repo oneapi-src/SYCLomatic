@@ -11,6 +11,7 @@
 #include <thrust/memory.h>
 #include <thrust/transform.h>
 #include <thrust/functional.h>
+#include <thrust/tuple.h>
 #include <cuda_runtime.h>
 
 // CHECK: // COMMENT_A
@@ -33,6 +34,11 @@ __global__ void kernel(float *src, float *dst) {
 // CHECK:   auto tmp2 = [=](auto _1,auto _2){return _1 + sycl::log((float)(2.0)) + _2;};
   auto tmp2 = _1 + logf(2.0) + thrust::placeholders::_2;
 }
+
+// CHECK: template <typename T1, typename T2 = dpct::null_type>
+// CHECK-NEXT:void print_tuple(const std::tuple<T1, T2> &t) {}
+template <typename T1, typename T2 = thrust::null_type>
+void print_tuple(const thrust::tuple<T1, T2> &t) {}
 
 int main() {
   float x[] = {1.0f, 2.0f, 3.0f, 4.0f};

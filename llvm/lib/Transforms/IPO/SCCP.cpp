@@ -13,14 +13,13 @@
 #include "llvm/Transforms/IPO/SCCP.h"
 #include "llvm/ADT/SetVector.h"
 #include "llvm/Analysis/AssumptionCache.h"
-#include "llvm/Analysis/LoopInfo.h"
+#include "llvm/Analysis/BlockFrequencyInfo.h"
 #include "llvm/Analysis/PostDominators.h"
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/Analysis/ValueLattice.h"
 #include "llvm/Analysis/ValueLatticeUtils.h"
 #include "llvm/Analysis/ValueTracking.h"
-#include "llvm/InitializePasses.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/Support/CommandLine.h"
@@ -42,8 +41,8 @@ STATISTIC(NumDeadBlocks , "Number of basic blocks unreachable");
 STATISTIC(NumInstReplaced,
           "Number of instructions replaced with (simpler) instruction");
 
-static cl::opt<unsigned> FuncSpecializationMaxIters(
-    "func-specialization-max-iters", cl::init(1), cl::Hidden, cl::desc(
+static cl::opt<unsigned> FuncSpecMaxIters(
+    "funcspec-max-iters", cl::init(1), cl::Hidden, cl::desc(
     "The maximum number of iterations function specialization is run"));
 
 static void findReturnsToZap(Function &F,
@@ -108,13 +107,15 @@ static void findReturnsToZap(Function &F,
 
 static bool runIPSCCP(
     Module &M, const DataLayout &DL, FunctionAnalysisManager *FAM,
+    std::function<BlockFrequencyInfo &(Function &)> GetBFI,
     std::function<const TargetLibraryInfo &(Function &)> GetTLI,
     std::function<TargetTransformInfo &(Function &)> GetTTI,
     std::function<AssumptionCache &(Function &)> GetAC,
     function_ref<AnalysisResultsForFn(Function &)> getAnalysis,
     bool IsFuncSpecEnabled) {
   SCCPSolver Solver(DL, GetTLI, M.getContext());
-  FunctionSpecializer Specializer(Solver, M, FAM, GetTLI, GetTTI, GetAC);
+  FunctionSpecializer Specializer(Solver, M, FAM, GetBFI, GetTLI, GetTTI,
+                                  GetAC);
 
   // Loop over all functions, marking arguments to those with their addresses
   // taken or that are external as overdefined.
@@ -158,7 +159,7 @@ static bool runIPSCCP(
 
   if (IsFuncSpecEnabled) {
     unsigned Iters = 0;
-    while (Iters++ < FuncSpecializationMaxIters && Specializer.run());
+    while (Iters++ < FuncSpecMaxIters && Specializer.run());
   }
 
   // Iterate over all of the instructions in the module, replacing them with
@@ -292,13 +293,6 @@ static bool runIPSCCP(
         if (!CB || CB->getCalledFunction() != F)
           continue;
 
-        // Limit to cases where the return value is guaranteed to be neither
-        // poison nor undef. Poison will be outside any range and currently
-        // values outside of the specified range cause immediate undefined
-        // behavior.
-        if (!isGuaranteedNotToBeUndefOrPoison(CB, nullptr, CB))
-          continue;
-
         // Do not touch existing metadata for now.
         // TODO: We should be able to take the intersection of the existing
         // metadata and the inferred range.
@@ -338,9 +332,14 @@ static bool runIPSCCP(
 
   // Remove the returned attribute for zapped functions and the
   // corresponding call sites.
+  // Also remove any attributes that convert an undef return value into
+  // immediate undefined behavior
+  AttributeMask UBImplyingAttributes =
+      AttributeFuncs::getUBImplyingAttributes();
   for (Function *F : FuncZappedReturn) {
     for (Argument &A : F->args())
       F->removeParamAttr(A.getArgNo(), Attribute::Returned);
+    F->removeRetAttrs(UBImplyingAttributes);
     for (Use &U : F->uses()) {
       CallBase *CB = dyn_cast<CallBase>(U.getUser());
       if (!CB) {
@@ -354,6 +353,7 @@ static bool runIPSCCP(
 
       for (Use &Arg : CB->args())
         CB->removeParamAttr(CB->getArgOperandNo(&Arg), Attribute::Returned);
+      CB->removeRetAttrs(UBImplyingAttributes);
     }
   }
 
@@ -368,8 +368,8 @@ static bool runIPSCCP(
     while (!GV->use_empty()) {
       StoreInst *SI = cast<StoreInst>(GV->user_back());
       SI->eraseFromParent();
-      MadeChanges = true;
     }
+    MadeChanges = true;
     M.eraseGlobalVariable(GV);
     ++NumGlobalConst;
   }
@@ -383,21 +383,23 @@ PreservedAnalyses IPSCCPPass::run(Module &M, ModuleAnalysisManager &AM) {
   auto GetTLI = [&FAM](Function &F) -> const TargetLibraryInfo & {
     return FAM.getResult<TargetLibraryAnalysis>(F);
   };
+  auto GetBFI = [&](Function &F) -> BlockFrequencyInfo & {
+    return FAM.getResult<BlockFrequencyAnalysis>(F);
+  };
   auto GetTTI = [&FAM](Function &F) -> TargetTransformInfo & {
     return FAM.getResult<TargetIRAnalysis>(F);
   };
   auto GetAC = [&FAM](Function &F) -> AssumptionCache & {
     return FAM.getResult<AssumptionAnalysis>(F);
   };
-  auto getAnalysis = [&FAM, this](Function &F) -> AnalysisResultsForFn {
+  auto getAnalysis = [&FAM](Function &F) -> AnalysisResultsForFn {
     DominatorTree &DT = FAM.getResult<DominatorTreeAnalysis>(F);
     return {
         std::make_unique<PredicateInfo>(F, DT, FAM.getResult<AssumptionAnalysis>(F)),
-        &DT, FAM.getCachedResult<PostDominatorTreeAnalysis>(F),
-        isFuncSpecEnabled() ? &FAM.getResult<LoopAnalysis>(F) : nullptr };
+        &DT, FAM.getCachedResult<PostDominatorTreeAnalysis>(F) };
   };
 
-  if (!runIPSCCP(M, DL, &FAM, GetTLI, GetTTI, GetAC, getAnalysis,
+  if (!runIPSCCP(M, DL, &FAM, GetBFI, GetTLI, GetTTI, GetAC, getAnalysis,
                  isFuncSpecEnabled()))
     return PreservedAnalyses::all();
 

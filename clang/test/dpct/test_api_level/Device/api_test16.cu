@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Device/api_test16_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Device/api_test16_out
 
-// CHECK: 16
+// CHECK: 17
 // TEST_FEATURE: Device_dev_mgr_select_device
 
 int main() {

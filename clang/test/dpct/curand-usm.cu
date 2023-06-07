@@ -25,22 +25,13 @@ int main(){
   curandGenerateUniform(rng, d_data, 100*100);
 
 
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (rng->generate_uniform(d_data, 100*100), 0);
+  //CHECK:s1 = DPCT_CHECK_ERROR(rng->generate_uniform(d_data, 100*100));
   s1 = curandGenerateUniform(rng, d_data, 100*100);
 
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (rng->generate_lognormal(d_data, 100*100, 123, 456), 0);
+  //CHECK:s1 = DPCT_CHECK_ERROR(rng->generate_lognormal(d_data, 100*100, 123, 456));
   s1 = curandGenerateLogNormal(rng, d_data, 100*100, 123, 456);
 
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (rng->generate_gaussian(d_data, 100*100, 123, 456), 0);
+  //CHECK:s1 = DPCT_CHECK_ERROR(rng->generate_gaussian(d_data, 100*100, 123, 456));
   s1 = curandGenerateNormal(rng, d_data, 100*100, 123, 456);
 
   double* d_data_d;
@@ -52,32 +43,20 @@ int main(){
   curandGenerateNormalDouble(rng, d_data_d, 100*100, 123, 456);
 
   unsigned int* d_data_ui;
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (rng->generate_uniform_bits(d_data_ui, 100*100), 0);
+  //CHECK:s1 = DPCT_CHECK_ERROR(rng->generate_uniform_bits(d_data_ui, 100*100));
   s1 = curandGenerate(rng, d_data_ui, 100*100);
 
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (rng->generate_poisson(d_data_ui, 100*100, 123.456), 0);
+  //CHECK:s1 = DPCT_CHECK_ERROR(rng->generate_poisson(d_data_ui, 100*100, 123.456));
   s1 = curandGeneratePoisson(rng, d_data_ui, 100*100, 123.456);
 
   unsigned long long* d_data_ull;
   //CHECK:rng->generate_uniform_bits(d_data_ull, 100*100);
   curandGenerateLongLong(rng, d_data_ull, 100*100);
 
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:if(s1 = (rng->generate_uniform_bits(d_data_ull, 100*100), 0)){}
+  //CHECK:if(s1 = DPCT_CHECK_ERROR(rng->generate_uniform_bits(d_data_ull, 100*100))){}
   if(s1 = curandGenerateLongLong(rng, d_data_ull, 100*100)){}
 
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:if((rng->generate_uniform_bits(d_data_ull, 100*100), 0)){}
+  //CHECK:if(DPCT_CHECK_ERROR(rng->generate_uniform_bits(d_data_ull, 100*100))){}
   if(curandGenerateLongLong(rng, d_data_ull, 100*100)){}
 
   //CHECK:dpct::rng::host_rng_ptr rng2;
@@ -97,18 +76,12 @@ int main(){
 #undef N
 
   //CHECK:rng->skip_ahead(100);
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (rng2->skip_ahead(200), 0);
+  //CHECK:s1 = DPCT_CHECK_ERROR(rng2->skip_ahead(200));
   curandSetGeneratorOffset(rng, 100);
   s1 = curandSetGeneratorOffset(rng2, 200);
 
   //CHECK:rng.reset();
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:s1 = (rng.reset(), 0);
+  //CHECK-NEXT:s1 = DPCT_CHECK_ERROR(rng.reset());
   curandDestroyGenerator(rng);
   s1 = curandDestroyGenerator(rng);
 
@@ -215,23 +188,11 @@ void curandErrCheck_(curandStatus_t stat, const char *file, int line) {
 
 void bar3(){
 //CHECK:dpct::rng::host_rng_ptr rng;
-//CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-//CHECK-NEXT:*/
-//CHECK-NEXT:curandErrCheck((rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::philox4x32x10), 0));
-//CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-//CHECK-NEXT:*/
-//CHECK-NEXT:curandErrCheck((rng->set_seed(1337ull), 0));
+//CHECK-NEXT:curandErrCheck(DPCT_CHECK_ERROR(rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::philox4x32x10)));
+//CHECK-NEXT:curandErrCheck(DPCT_CHECK_ERROR(rng->set_seed(1337ull)));
 //CHECK-NEXT:float *d_data;
-//CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-//CHECK-NEXT:*/
-//CHECK-NEXT:curandErrCheck((rng->generate_uniform(d_data, 100*100), 0));
-//CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-//CHECK-NEXT:*/
-//CHECK-NEXT:curandErrCheck((rng.reset(), 0));
+//CHECK-NEXT:curandErrCheck(DPCT_CHECK_ERROR(rng->generate_uniform(d_data, 100*100)));
+//CHECK-NEXT:curandErrCheck(DPCT_CHECK_ERROR(rng.reset()));
   curandGenerator_t rng;
   curandErrCheck(curandCreateGenerator(&rng, CURAND_RNG_PSEUDO_PHILOX4_32_10));
   curandErrCheck(curandSetPseudoRandomGeneratorSeed(rng, 1337ull));
@@ -257,10 +218,7 @@ void bar4(){
 //CHECK-NEXT:  dpct::rng::host_rng_ptr rng2;
 //CHECK-NEXT:  rng2 = dpct::rng::create_host_rng(dpct::rng::random_engine_type::sobol);
 //CHECK-NEXT:  rng2->set_dimensions(1111);
-//CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-//CHECK-NEXT:  */
-//CHECK-NEXT:  return (rng2->generate_uniform(d_data, 100*100), 0);
+//CHECK-NEXT:  return DPCT_CHECK_ERROR(rng2->generate_uniform(d_data, 100*100));
 //CHECK-NEXT:}
 int bar5(){
   float *d_data;

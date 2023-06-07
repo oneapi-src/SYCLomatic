@@ -23,7 +23,7 @@ thrust::complex<T> foo(thrust::complex<T> cp) {
 
 void bar(thrust::complex<double> *p);
 
-// CHECK: void kernel(std::complex<double> *p, std::complex<double> c, std::complex<double> *d,
+// CHECK: inline void kernel(std::complex<double> *p, std::complex<double> c, std::complex<double> *d,
 // CHECK-NEXT:  std::complex<sycl::double2> *s) {
 __global__ void kernel(thrust::complex<double> *p, thrust::complex<double> c, thrust::complex<double> *d) {
   p[0];
@@ -31,7 +31,7 @@ __global__ void kernel(thrust::complex<double> *p, thrust::complex<double> c, th
   __shared__ thrust::complex<struct double2> s[10];
 }
 
-// CHECK: void template_kernel(T *, std::complex<T> *s) {
+// CHECK: inline void template_kernel(T *, std::complex<T> *s) {
 template<class T>
 __global__ void template_kernel(T *) {
   __shared__ thrust::complex<T> s[10];

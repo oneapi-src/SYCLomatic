@@ -57,6 +57,7 @@ private:
   static void initRewriterMapComplex();
   static void initRewriterMapDriver();
   static void initRewriterMapMemory();
+  static void initRewriterMapMisc();
   static void initRewriterMapNccl();
   static void initRewriterMapStream();
   static void initRewriterMapTexture();
@@ -264,22 +265,26 @@ public:
 class AssignableRewriter : public CallExprRewriter {
   std::shared_ptr<CallExprRewriter> Inner;
   bool IsAssigned;
+  bool ExtraParen = false;
 
 public:
   AssignableRewriter(const CallExpr *C,
-                     std::shared_ptr<CallExprRewriter> InnerRewriter)
+                     std::shared_ptr<CallExprRewriter> InnerRewriter,
+                     bool EP = false)
       : CallExprRewriter(C, ""), Inner(InnerRewriter),
-        IsAssigned(isAssigned(C)) {
+        IsAssigned(isAssigned(C)), ExtraParen(EP) {
     if (IsAssigned)
-      CallExprRewriterFactory<UnsupportFunctionRewriter<>, Diagnostics>(
-          "", Diagnostics::NOERROR_RETURN_COMMA_OP)
-          .create(C);
+      requestFeature(HelperFeatureEnum::Dpct_check_error_code, C);
   }
 
   std::optional<std::string> rewrite() override {
     std::optional<std::string> &&Result = Inner->rewrite();
-    if (Result.has_value() && IsAssigned)
-      return "(" + Result.value() + ", 0)";
+    if (Result.has_value() && IsAssigned) {
+      if (ExtraParen) {
+        return "DPCT_CHECK_ERROR((" + Result.value() + "))";
+      }
+      return "DPCT_CHECK_ERROR(" + Result.value() + ")";
+    }
     return Result;
   }
 };
@@ -361,13 +366,16 @@ public:
 
 class AssignableRewriterFactory : public CallExprRewriterFactoryBase {
   std::shared_ptr<CallExprRewriterFactoryBase> Inner;
+  bool ExtraParen = false;
 
 public:
   AssignableRewriterFactory(
-      std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory)
-      : Inner(InnerFactory) {}
+      std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory,
+      bool EP = false)
+      : Inner(InnerFactory), ExtraParen(EP) {}
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
-    return std::make_shared<AssignableRewriter>(C, Inner->create(C));
+    return std::make_shared<AssignableRewriter>(C, Inner->create(C),
+                                                ExtraParen);
   }
 };
 
@@ -648,9 +656,8 @@ class DerefExpr {
     }
   }
 
-  DerefExpr() = default;
-
 public:
+  DerefExpr(const Expr *E, const CallExpr *C = nullptr);
   template <class StreamT>
   void printArg(StreamT &Stream, ArgumentAnalysis &A) const {
     print(Stream);
@@ -672,8 +679,6 @@ public:
       print(Stream, AA, false, ExprPair);
     }
   }
-
-  static DerefExpr create(const Expr *E, const CallExpr * C = nullptr);
 };
 
 template <class StreamT>
@@ -1277,6 +1282,15 @@ public:
             C, Source, ArgCreator(C)) {}
 };
 
+template <class ArgValueT>
+class DerefExprRewriter : public PrinterRewriter<DerefExpr> {
+public:
+  DerefExprRewriter(
+      const CallExpr *C, StringRef Source,
+      const std::function<ArgValueT(const CallExpr *)> &ArgCreator)
+      : PrinterRewriter<dpct::DerefExpr>(C, Source, ArgCreator(C)) {}
+};
+
 class SubGroupPrinter {
   const CallExpr *Call;
 public:
@@ -1510,6 +1524,20 @@ public:
   }
 };
 
+class CheckMemberBaseType {
+  std::string TypeName;
+
+public:
+  CheckMemberBaseType(std::string Name)
+    : TypeName(std::move(Name)) {}
+  bool operator()(const CallExpr *C) {
+    std::string ArgType = getBaseTypeStr(C);
+    if (ArgType.empty())
+      return true;
+    return ArgType.find(TypeName) != std::string::npos;
+  }
+};
+
 class CheckEnumArgStr {
   unsigned Idx;
   std::string EnumArgValueStr;
@@ -1550,7 +1578,7 @@ public:
     if (TSA->get(Idx).getKind() != clang::TemplateArgument::ArgKind::Integral)
       return false;
     auto I = TSA->get(Idx).getAsIntegral();
-    if (I.getMinSignedBits() > 64)
+    if (I.getSignificantBits() > 64)
       return false;
     Val = I.getExtValue();
     return true;

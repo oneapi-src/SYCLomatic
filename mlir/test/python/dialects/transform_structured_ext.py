@@ -4,6 +4,7 @@ from mlir.ir import *
 from mlir.dialects import transform
 from mlir.dialects import pdl
 from mlir.dialects.transform import structured
+from mlir.dialects.transform import pdl as transform_pdl
 
 
 def run(f):
@@ -84,7 +85,7 @@ def testPad():
   # CHECK-DAG: padding_values = [4.200000e+01 : f32]
   # CHECK-DAG: padding_dimensions = [1]
   # CHECK-DAG: transpose_paddings = {{\[}}[1, 0]]
-  # (hoist_paddings and pack_paddings have default values)
+  # (pack_paddings has default values)
 
 @run
 def testScalarize():
@@ -151,13 +152,13 @@ def testTileZero():
 
 @run
 def testTileDynamic():
-  with_pdl = transform.WithPDLPatternsOp(pdl.OperationType.get())
+  with_pdl = transform_pdl.WithPDLPatternsOp(pdl.OperationType.get())
   with InsertionPoint(with_pdl.body):
     sequence = transform.SequenceOp(transform.FailurePropagationMode.PROPAGATE, [],
                                     with_pdl.bodyTarget)
     with InsertionPoint(sequence.body):
-      m1 = transform.PDLMatchOp(pdl.OperationType.get(), sequence.bodyTarget, "first")
-      m2 = transform.PDLMatchOp(pdl.OperationType.get(), sequence.bodyTarget, "second")
+      m1 = transform_pdl.PDLMatchOp(pdl.OperationType.get(), sequence.bodyTarget, "first")
+      m2 = transform_pdl.PDLMatchOp(pdl.OperationType.get(), sequence.bodyTarget, "second")
       structured.TileOp(sequence.bodyTarget,
                         sizes=[m1, 3, m2, 0])
       transform.YieldOp()

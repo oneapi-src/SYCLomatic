@@ -8,11 +8,11 @@ public:
 
     __device__ TestVirtual() {}
 // CHECK: /*
-// CHECK-NEXT: DPCT1109:{{[0-9]+}}: Virtual functions cannot be called in a SYCL kernel or by functions called by the kernel. You may need to adjust the code.
+// CHECK-NEXT: DPCT1109:{{[0-9]+}}: Virtual functions cannot be called in SYCL device code. You need to adjust the code.
 // CHECK-NEXT: */
     __device__ virtual ~TestVirtual() {}
 // CHECK: /*
-// CHECK-NEXT: DPCT1109:{{[0-9]+}}: Virtual functions cannot be called in a SYCL kernel or by functions called by the kernel. You may need to adjust the code.
+// CHECK-NEXT: DPCT1109:{{[0-9]+}}: Virtual functions cannot be called in SYCL device code. You need to adjust the code.
 // CHECK-NEXT: */
     __device__ virtual void push(const T &&e)= 0; 
 };
@@ -25,8 +25,8 @@ public:
         if (m_data) delete []m_data;
     }
     // CHECK: /*
-    // CHECK-NEXT: DPCT1109:{{[0-9]+}}: Virtual functions cannot be called in a SYCL kernel or by functions called by the kernel. You may need to adjust the code.
-    // CHECK-NEXT: */
+    // CHECK: DPCT1109:{{[0-9]+}}: Virtual functions cannot be called in SYCL device code. You need to adjust the code.
+    // CHECK: */
     __device__ virtual void push(const T &&e) {
         if (m_data) {
            int idx = atomicAdd(&this->index_top, 1);
@@ -42,8 +42,8 @@ __global__ void func(){
     
     auto seq = new TestSeqContainer<int>(10);
     // CHECK: /*
-    // CHECK-NEXT: DPCT1109:{{[0-9]+}}: Virtual functions cannot be called in a SYCL kernel or by functions called by the kernel. You may need to adjust the code.
-    // CHECK-NEXT: */
+    // CHECK: DPCT1109:{{[0-9]+}}: Virtual functions cannot be called in SYCL device code. You need to adjust the code.
+    // CHECK: */
     seq->push(10);
     delete seq;
 }

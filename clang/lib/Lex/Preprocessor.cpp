@@ -214,11 +214,6 @@ void Preprocessor::Initialize(const TargetInfo &Target,
   else
     // Set initial value of __FLT_EVAL_METHOD__ from the command line.
     setCurrentFPEvalMethod(SourceLocation(), getLangOpts().getFPEvalMethod());
-  // When `-ffast-math` option is enabled, it triggers several driver math
-  // options to be enabled. Among those, only one the following two modes
-  // affect the eval-method:  reciprocal or reassociate.
-  if (getLangOpts().AllowFPReassoc || getLangOpts().AllowRecip)
-    setCurrentFPEvalMethod(SourceLocation(), LangOptions::FEM_Indeterminable);
 }
 
 void Preprocessor::InitializeForModelFile() {
@@ -830,6 +825,12 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
 
   // If this is a macro to be expanded, do it.
   if (MacroDefinition MD = getMacroDefinition(&II)) {
+#ifdef SYCLomatic_CUSTOMIZATION
+    if (IsEvaluatingExpression && II.getName().str() == "CUDART_VERSION" &&
+        IsInAnalysisScopeFunc(Identifier.getLocation())) {
+      return true;
+    }
+#endif // SYCLomatic_CUSTOMIZATION
     auto *MI = MD.getMacroInfo();
     assert(MI && "macro definition with no macro info?");
     if (!DisableMacroExpansion) {

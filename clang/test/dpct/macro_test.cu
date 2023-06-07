@@ -518,9 +518,8 @@ __global__ void foo8(){
   atomicAdd(&data[2], tid + 2););
 }
 
-
 //CHECK: #define DFABS(x) (double)sycl::fabs((x))
-//CHECK-NEXT: #define MAX(x, y) sycl::max(x, y)
+//CHECK-NEXT: #define MAX(x, y) dpct::max(x, y)
 //CHECK-NEXT: void foo9(){
 //CHECK-NEXT:   double a,b,c;
 //CHECK-NEXT:   MAX(a, sycl::sqrt(DFABS(b)));
@@ -660,8 +659,8 @@ VECTOR_TYPE_DEF(int)
 //CHECK-NEXT: #define POW(x, y) sycl::pow<float>(x, y)
 //CHECK-NEXT: #define POW2(x, y) vx[id] * vx[id]
 //CHECK-NEXT: /*
-//CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated pow call is used in a macro definition and is not valid
-//CHECK-NEXT: for all macro uses. Adjust the code.
+//CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated pow call is used in a macro/template definition and may
+//CHECK-NEXT: not be valid for all macro/template uses. Adjust the code.
 //CHECK-NEXT: */
 //CHECK-NEXT: #define POW3(x, y) sycl::pow<double>(x, y)
 //CHECK: #define SQRT(x) sycl::sqrt(x)
@@ -922,7 +921,7 @@ void foo20() {
 //CHECK: /*
 //CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for
 //CHECK-NEXT: dpct::select_from_sub_group. You can specify
-//CHECK-NEXT: "--use-experimental-features=masked_sub_group_function" to use the dpct
+//CHECK-NEXT: "--use-experimental-features=masked-sub-group-operation" to use the dpct
 //CHECK-NEXT: experimental helper function to migrate __shfl_sync.
 //CHECK-NEXT: */
 //CHECK-NEXT: #define CALLSHFLSYNC(x)                                                        \
@@ -1112,7 +1111,9 @@ template<class T1, class T2, int N> __global__ void foo31();
 
 #define FOO31(DIMS) foo31<unsigned int, float, DIMS><<<1,1>>>();
 
-//CHECK:   q_ct1.submit([&](sycl::handler &cgh) {
+//CHECK: {
+//CHECK-NEXT:   dpct::has_capability_or_fail(q_ct1.get_device(), {sycl::aspect::fp64});
+//CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {
 //CHECK-NEXT:     /*
 //CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'BLOCK_PAIR / SIMD_SIZE' expression was replaced with a
 //CHECK-NEXT:     value. Modify the code to use the original expression, provided in
@@ -1127,6 +1128,7 @@ template<class T1, class T2, int N> __global__ void foo31();
 //CHECK-NEXT:           foo29(red_acc_acc_ct1);
 //CHECK-NEXT:         });
 //CHECK-NEXT:   });
+//CHECK-NEXT:   }
 //CHECK-NEXT:   FOO31(1)
 //CHECK-NEXT: }
 void foo30(){
@@ -1267,9 +1269,9 @@ void foo35() {
   double *d_A;
   const int lda = m;
   int lwork = 0;
-  //CHECK:   CUSOLVER_CHECK((lwork = oneapi::mkl::lapack::geqrf_scratchpad_size<double>(
-  //CHECK-NEXT:  *handle, m, m, lda),
-  //CHECK-NEXT:  0));
+  //CHECK: CUSOLVER_CHECK(DPCT_CHECK_ERROR(
+  //CHECK-NEXT:   lwork = oneapi::mkl::lapack::geqrf_scratchpad_size<double>(*handle, m, m,
+  //CHECK-NEXT:                                                              lda)));
   CUSOLVER_CHECK(cusolverDnDgeqrf_bufferSize(handle, m, m, d_A, lda, &lwork));
 }
 

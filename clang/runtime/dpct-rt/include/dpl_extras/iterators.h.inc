@@ -49,6 +49,67 @@
 
 namespace dpct {
 
+namespace internal {
+
+// DPCT_LABEL_BEGIN|transform_output_ref_wrapper|dpct::internal
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+// Wrapper class returned from a dereferenced transform_iterator which was
+// created using
+//  make_transform_output_iterator(). Used to apply the supplied transform
+//  function when writing into an object of this class.
+//
+// Example:
+// int a[] = {0, 1, 2, 3, 4};
+// int* p = a;
+// auto f = [](auto v) {return v*v;};
+// auto tr_out = dpct::make_transform_output_iterator(p+1, f);
+// auto wrap = *tr_out;         // wrap is a transform_output_ref_wrapper
+// std::cout<<*(p+1)<<std::endl;  // '1'
+// wrap = 2;                    // apply function, store 2*2=4
+// std::cout<<*(p+1)<<std::endl;  // '4'
+template <typename T, typename _UnaryFunc> class transform_output_ref_wrapper {
+private:
+  T __my_reference_;
+  _UnaryFunc __my_unary_func_;
+
+public:
+  template <typename U>
+  transform_output_ref_wrapper(U &&__reference, _UnaryFunc __unary_func)
+      : __my_reference_(std::forward<U>(__reference)),
+        __my_unary_func_(__unary_func) {}
+
+  // When writing to an object of this type, apply the supplied unary function,
+  // then write to the wrapped reference
+  template <typename UnaryInputType>
+  transform_output_ref_wrapper &operator=(const UnaryInputType &e) {
+    __my_reference_ = __my_unary_func_(e);
+    return *this;
+  }
+};
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|_Unary_Out|dpct::internal
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasIterators|transform_output_ref_wrapper
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+// Unary functor to create a transform_output_reference_wrapper when a
+// transform_iterator is dereferenced, so that a
+// the supplied unary function may be applied on write, resulting in a
+// transform_output_iterator
+template <typename _UnaryFunc> struct _Unary_Out {
+  _Unary_Out(_UnaryFunc __f_) : __f(__f_) {}
+  _UnaryFunc __f;
+  template <typename T> auto operator()(T &&val) const {
+    return transform_output_ref_wrapper<T, _UnaryFunc>(std::forward<T>(val),
+                                                       __f);
+  }
+};
+// DPCT_LABEL_END
+
+} // end namespace internal
+
 // DPCT_LABEL_BEGIN|using_std_advance|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
@@ -370,6 +431,18 @@ template <typename IterT> struct io_iterator_pair {
 
   IterT iter[2];
 };
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|make_transform_output_iterator|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasIterators|_Unary_Out
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename _Iter, typename _UnaryFunc>
+auto make_transform_output_iterator(_Iter __it, _UnaryFunc __unary_func) {
+  return oneapi::dpl::transform_iterator(
+      __it, internal::_Unary_Out<_UnaryFunc>(__unary_func));
+}
 // DPCT_LABEL_END
 
 } // end namespace dpct

@@ -7,12 +7,12 @@
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Dialect/Transform/IR/TransformDialect.h"
-#include "mlir/Dialect/PDL/IR/PDL.h"
-#include "mlir/Dialect/PDLInterp/IR/PDLInterp.h"
+#include "mlir/Analysis/CallGraph.h"
 #include "mlir/Dialect/Transform/IR/TransformInterfaces.h"
 #include "mlir/Dialect/Transform/IR/TransformOps.h"
 #include "mlir/Dialect/Transform/IR/TransformTypes.h"
 #include "mlir/IR/DialectImplementation.h"
+#include "llvm/ADT/SCCIterator.h"
 
 using namespace mlir;
 
@@ -49,18 +49,6 @@ void transform::detail::checkImplementsTransformHandleTypeInterface(
 }
 #endif // NDEBUG
 
-namespace {
-struct PDLOperationTypeTransformHandleTypeInterfaceImpl
-    : public transform::TransformHandleTypeInterface::ExternalModel<
-          PDLOperationTypeTransformHandleTypeInterfaceImpl,
-          pdl::OperationType> {
-  DiagnosedSilenceableFailure
-  checkPayload(Type type, Location loc, ArrayRef<Operation *> payload) const {
-    return DiagnosedSilenceableFailure::success();
-  }
-};
-} // namespace
-
 void transform::TransformDialect::initialize() {
   // Using the checked versions to enable the same assertions as for the ops
   // from extensions.
@@ -69,21 +57,6 @@ void transform::TransformDialect::initialize() {
 #include "mlir/Dialect/Transform/IR/TransformOps.cpp.inc"
       >();
   initializeTypes();
-
-  pdl::OperationType::attachInterface<
-      PDLOperationTypeTransformHandleTypeInterfaceImpl>(*getContext());
-}
-
-void transform::TransformDialect::mergeInPDLMatchHooks(
-    llvm::StringMap<PDLConstraintFunction> &&constraintFns) {
-  // Steal the constraint functions from the given map.
-  for (auto &it : constraintFns)
-    pdlMatchHooks.registerConstraintFunction(it.getKey(), std::move(it.second));
-}
-
-const llvm::StringMap<PDLConstraintFunction> &
-transform::TransformDialect::getPDLConstraintHooks() const {
-  return pdlMatchHooks.getConstraintFunctions();
 }
 
 Type transform::TransformDialect::parseType(DialectAsmParser &parser) const {
@@ -128,4 +101,59 @@ void transform::TransformDialect::reportDuplicateOpRegistration(
   llvm::report_fatal_error(StringRef(buffer));
 }
 
-#include "mlir/Dialect/Transform/IR/TransformDialectEnums.cpp.inc"
+LogicalResult transform::TransformDialect::verifyOperationAttribute(
+    Operation *op, NamedAttribute attribute) {
+  if (attribute.getName().getValue() == kWithNamedSequenceAttrName) {
+    if (!op->hasTrait<OpTrait::SymbolTable>()) {
+      return emitError(op->getLoc()) << attribute.getName()
+                                     << " attribute can only be attached to "
+                                        "operations with symbol tables";
+    }
+
+    const mlir::CallGraph callgraph(op);
+    for (auto scc = llvm::scc_begin(&callgraph); !scc.isAtEnd(); ++scc) {
+      if (!scc.hasCycle())
+        continue;
+
+      // Need to check this here additionally because this verification may run
+      // before we check the nested operations.
+      if ((*scc->begin())->isExternal())
+        return op->emitOpError() << "contains a call to an external operation, "
+                                    "which is not allowed";
+
+      Operation *first = (*scc->begin())->getCallableRegion()->getParentOp();
+      InFlightDiagnostic diag = emitError(first->getLoc())
+                                << "recursion not allowed in named sequences";
+      for (auto it = std::next(scc->begin()); it != scc->end(); ++it) {
+        // Need to check this here additionally because this verification may
+        // run before we check the nested operations.
+        if ((*it)->isExternal()) {
+          return op->emitOpError() << "contains a call to an external "
+                                      "operation, which is not allowed";
+        }
+
+        Operation *current = (*it)->getCallableRegion()->getParentOp();
+        diag.attachNote(current->getLoc()) << "operation on recursion stack";
+      }
+      return diag;
+    }
+    return success();
+  }
+  if (attribute.getName().getValue() == kTargetTagAttrName) {
+    if (!llvm::isa<StringAttr>(attribute.getValue())) {
+      return op->emitError()
+             << attribute.getName() << " attribute must be a string";
+    }
+    return success();
+  }
+  if (attribute.getName().getValue() == kArgConsumedAttrName ||
+      attribute.getName().getValue() == kArgReadOnlyAttrName) {
+    if (!llvm::isa<UnitAttr>(attribute.getValue())) {
+      return op->emitError()
+             << attribute.getName() << " must be a unit attribute";
+    }
+    return success();
+  }
+  return emitError(op->getLoc())
+         << "unknown attribute: " << attribute.getName();
+}

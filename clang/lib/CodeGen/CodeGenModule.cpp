@@ -188,8 +188,9 @@ CodeGenModule::CodeGenModule(ASTContext &C,
 
   // If debug info or coverage generation is enabled, create the CGDebugInfo
   // object.
-  if (CodeGenOpts.getDebugInfo() != codegenoptions::NoDebugInfo ||
-      CodeGenOpts.EmitGcovArcs || CodeGenOpts.EmitGcovNotes)
+  if (CodeGenOpts.getDebugInfo() != llvm::codegenoptions::NoDebugInfo ||
+      CodeGenOpts.CoverageNotesFile.size() ||
+      CodeGenOpts.CoverageDataFile.size())
     DebugInfo.reset(new CGDebugInfo(*this));
 
   Block.GlobalUniqueCount = 0;
@@ -356,10 +357,11 @@ static const llvm::GlobalValue *getAliasedGlobal(const llvm::GlobalValue *GV) {
   return FinalGV;
 }
 
-static bool checkAliasedGlobal(DiagnosticsEngine &Diags,
-                               SourceLocation Location, bool IsIFunc,
-                               const llvm::GlobalValue *Alias,
-                               const llvm::GlobalValue *&GV) {
+static bool checkAliasedGlobal(
+    DiagnosticsEngine &Diags, SourceLocation Location, bool IsIFunc,
+    const llvm::GlobalValue *Alias, const llvm::GlobalValue *&GV,
+    const llvm::MapVector<GlobalDecl, StringRef> &MangledDeclNames,
+    SourceRange AliasRange) {
   GV = getAliasedGlobal(Alias);
   if (!GV) {
     Diags.Report(Location, diag::err_cyclic_alias) << IsIFunc;
@@ -368,6 +370,22 @@ static bool checkAliasedGlobal(DiagnosticsEngine &Diags,
 
   if (GV->isDeclaration()) {
     Diags.Report(Location, diag::err_alias_to_undefined) << IsIFunc << IsIFunc;
+    Diags.Report(Location, diag::note_alias_requires_mangled_name)
+        << IsIFunc << IsIFunc;
+    // Provide a note if the given function is not found and exists as a
+    // mangled name.
+    for (const auto &[Decl, Name] : MangledDeclNames) {
+      if (const auto *ND = dyn_cast<NamedDecl>(Decl.getDecl())) {
+        if (ND->getName() == GV->getName()) {
+          Diags.Report(Location, diag::note_alias_mangled_name_alternative)
+              << Name
+              << FixItHint::CreateReplacement(
+                     AliasRange,
+                     (Twine(IsIFunc ? "ifunc" : "alias") + "(\"" + Name + "\")")
+                         .str());
+        }
+      }
+    }
     return false;
   }
 
@@ -399,16 +417,19 @@ void CodeGenModule::checkAliases() {
   for (const GlobalDecl &GD : Aliases) {
     const auto *D = cast<ValueDecl>(GD.getDecl());
     SourceLocation Location;
+    SourceRange Range;
     bool IsIFunc = D->hasAttr<IFuncAttr>();
-    if (const Attr *A = D->getDefiningAttr())
+    if (const Attr *A = D->getDefiningAttr()) {
       Location = A->getLocation();
-    else
+      Range = A->getRange();
+    } else
       llvm_unreachable("Not an alias or ifunc?");
 
     StringRef MangledName = getMangledName(GD);
     llvm::GlobalValue *Alias = GetGlobalValue(MangledName);
     const llvm::GlobalValue *GV = nullptr;
-    if (!checkAliasedGlobal(Diags, Location, IsIFunc, Alias, GV)) {
+    if (!checkAliasedGlobal(Diags, Location, IsIFunc, Alias, GV,
+                            MangledDeclNames, Range)) {
       Error = true;
       continue;
     }
@@ -551,7 +572,7 @@ static llvm::MDNode *getAspectEnumValueMD(ASTContext &ASTContext,
 }
 
 void CodeGenModule::Release() {
-  Module *Primary = getContext().getNamedModuleForCodeGen();
+  Module *Primary = getContext().getCurrentNamedModule();
   if (CXX20ModuleInits && Primary && !Primary->isHeaderLikeModule())
     EmitModuleInitializers(Primary);
   EmitDeferred();
@@ -570,6 +591,8 @@ void CodeGenModule::Release() {
     GlobalTopLevelStmtBlockInFlight = {nullptr, nullptr};
   }
 
+  // Module implementations are initialized the same way as a regular TU that
+  // imports one or more modules.
   if (CXX20ModuleInits && Primary && Primary->isInterfaceOrPartition())
     EmitCXXModuleInitFunc(Primary);
   else
@@ -980,6 +1003,12 @@ void CodeGenModule::Release() {
 
   if (CodeGenOpts.NoPLT)
     getModule().setRtLibUseGOT();
+  if (getTriple().isOSBinFormatELF() &&
+      CodeGenOpts.DirectAccessExternalData !=
+          getModule().getDirectAccessExternalData()) {
+    getModule().setDirectAccessExternalData(
+        CodeGenOpts.DirectAccessExternalData);
+  }
   if (CodeGenOpts.UnwindTables)
     getModule().setUwtable(llvm::UWTableKind(CodeGenOpts.UnwindTables));
 
@@ -1000,7 +1029,8 @@ void CodeGenModule::Release() {
   if (getCodeGenOpts().EmitDeclMetadata)
     EmitDeclMetadata();
 
-  if (getCodeGenOpts().EmitGcovArcs || getCodeGenOpts().EmitGcovNotes)
+  if (getCodeGenOpts().CoverageNotesFile.size() ||
+      getCodeGenOpts().CoverageDataFile.size())
     EmitCoverageFile();
 
   if (CGDebugInfo *DI = getModuleDebugInfo())
@@ -1063,7 +1093,7 @@ void CodeGenModule::EmitOpenCLMetadata() {
 }
 
 void CodeGenModule::EmitBackendOptionsMetadata(
-    const CodeGenOptions CodeGenOpts) {
+    const CodeGenOptions &CodeGenOpts) {
   if (getTriple().isRISCV()) {
     getModule().addModuleFlag(llvm::Module::Min, "SmallDataLimit",
                               CodeGenOpts.SmallDataLimit);
@@ -1433,8 +1463,13 @@ static void AppendTargetVersionMangling(const CodeGenModule &CGM,
   if (Attr->isDefaultVersion())
     return;
   Out << "._";
+  const TargetInfo &TI = CGM.getTarget();
   llvm::SmallVector<StringRef, 8> Feats;
   Attr->getFeatures(Feats);
+  llvm::stable_sort(Feats, [&TI](const StringRef FeatL, const StringRef FeatR) {
+    return TI.multiVersionSortPriority(FeatL) <
+           TI.multiVersionSortPriority(FeatR);
+  });
   for (const auto &Feat : Feats) {
     Out << 'M';
     Out << Feat;
@@ -1486,13 +1521,19 @@ static void AppendTargetClonesMangling(const CodeGenModule &CGM,
                                        const TargetClonesAttr *Attr,
                                        unsigned VersionIndex,
                                        raw_ostream &Out) {
-  if (CGM.getTarget().getTriple().isAArch64()) {
+  const TargetInfo &TI = CGM.getTarget();
+  if (TI.getTriple().isAArch64()) {
     StringRef FeatureStr = Attr->getFeatureStr(VersionIndex);
     if (FeatureStr == "default")
       return;
     Out << "._";
     SmallVector<StringRef, 8> Features;
     FeatureStr.split(Features, "+");
+    llvm::stable_sort(Features,
+                      [&TI](const StringRef FeatL, const StringRef FeatR) {
+                        return TI.multiVersionSortPriority(FeatL) <
+                               TI.multiVersionSortPriority(FeatR);
+                      });
     for (auto &Feat : Features) {
       Out << 'M';
       Out << Feat;
@@ -3447,7 +3488,7 @@ bool CodeGenModule::MayBeEmittedEagerly(const ValueDecl *Global) {
   // codegen for global variables, because they may be marked as threadprivate.
   if (LangOpts.OpenMP && LangOpts.OpenMPUseTLS &&
       getContext().getTargetInfo().isTLSSupported() && isa<VarDecl>(Global) &&
-      !isTypeConstant(Global->getType(), false) &&
+      !isTypeConstant(Global->getType(), false, false) &&
       !OMPDeclareTargetDeclAttr::isDeclareTargetDeclaration(Global))
     return false;
 
@@ -3555,9 +3596,13 @@ ConstantAddress CodeGenModule::GetAddrOfTemplateParamObject(
     return ConstantAddress::invalid();
   }
 
-  auto *GV = new llvm::GlobalVariable(
-      getModule(), Init->getType(),
-      /*isConstant=*/true, llvm::GlobalValue::LinkOnceODRLinkage, Init, Name);
+  llvm::GlobalValue::LinkageTypes Linkage =
+      isExternallyVisible(TPO->getLinkageAndVisibility().getLinkage())
+          ? llvm::GlobalValue::LinkOnceODRLinkage
+          : llvm::GlobalValue::InternalLinkage;
+  auto *GV = new llvm::GlobalVariable(getModule(), Init->getType(),
+                                      /*isConstant=*/true, Linkage, Init, Name);
+  setGVProperties(GV, TPO);
   if (supportsCOMDAT())
     GV->setComdat(TheModule.getOrInsertComdat(GV->getName()));
   Emitter.finalize(GV);
@@ -4725,8 +4770,9 @@ CodeGenModule::CreateRuntimeFunction(llvm::FunctionType *FTy, StringRef Name,
 ///
 /// If ExcludeCtor is true, the duration when the object's constructor runs
 /// will not be considered. The caller will need to verify that the object is
-/// not written to during its construction.
-bool CodeGenModule::isTypeConstant(QualType Ty, bool ExcludeCtor) {
+/// not written to during its construction. ExcludeDtor works similarly.
+bool CodeGenModule::isTypeConstant(QualType Ty, bool ExcludeCtor,
+                                   bool ExcludeDtor) {
   if (!Ty.isConstant(Context) && !Ty->isReferenceType())
     return false;
 
@@ -4734,7 +4780,7 @@ bool CodeGenModule::isTypeConstant(QualType Ty, bool ExcludeCtor) {
     if (const CXXRecordDecl *Record
           = Context.getBaseElementType(Ty)->getAsCXXRecordDecl())
       return ExcludeCtor && !Record->hasMutableFields() &&
-             Record->hasTrivialDestructor();
+             (Record->hasTrivialDestructor() || ExcludeDtor);
   }
 
   return true;
@@ -4870,7 +4916,7 @@ CodeGenModule::GetOrCreateLLVMGlobal(StringRef MangledName, llvm::Type *Ty,
 
     // FIXME: This code is overly simple and should be merged with other global
     // handling.
-    GV->setConstant(isTypeConstant(D->getType(), false));
+    GV->setConstant(isTypeConstant(D->getType(), false, false));
 
     GV->setAlignment(getContext().getDeclAlign(D).getAsAlign());
 
@@ -5587,7 +5633,7 @@ void CodeGenModule::EmitGlobalVarDefinition(const VarDecl *D,
 
   // If it is safe to mark the global 'constant', do so now.
   GV->setConstant(!NeedsGlobalCtor && !NeedsGlobalDtor &&
-                  isTypeConstant(D->getType(), true));
+                  isTypeConstant(D->getType(), true, true));
 
   // If it is in a read-only section, mark it 'constant'.
   if (const SectionAttr *SA = D->getAttr<SectionAttr>()) {
@@ -6671,7 +6717,8 @@ ConstantAddress CodeGenModule::GetAddrOfGlobalTemporary(
     emitter.emplace(*this);
     InitialValue = emitter->emitForInitializer(*Value, AddrSpace,
                                                MaterializedType);
-    Constant = isTypeConstant(MaterializedType, /*ExcludeCtor*/Value);
+    Constant = isTypeConstant(MaterializedType, /*ExcludeCtor*/ Value,
+                              /*ExcludeDtor*/ false);
     Type = InitialValue->getType();
   } else {
     // No initializer, the initialization will be provided when we
@@ -7116,16 +7163,14 @@ void CodeGenModule::EmitTopLevelDecl(Decl *D) {
         EmitTopLevelDecl(D);
 
       // Visit the submodules of this module.
-      for (clang::Module::submodule_iterator Sub = Mod->submodule_begin(),
-                                             SubEnd = Mod->submodule_end();
-           Sub != SubEnd; ++Sub) {
+      for (auto *Submodule : Mod->submodules()) {
         // Skip explicit children; they need to be explicitly imported to emit
         // the initializers.
-        if ((*Sub)->IsExplicit)
+        if (Submodule->IsExplicit)
           continue;
 
-        if (Visited.insert(*Sub).second)
-          Stack.push_back(*Sub);
+        if (Visited.insert(Submodule).second)
+          Stack.push_back(Submodule);
       }
     }
     break;
@@ -7474,10 +7519,6 @@ void CodeGenModule::EmitCommandLineMetadata() {
 }
 
 void CodeGenModule::EmitCoverageFile() {
-  if (getCodeGenOpts().CoverageDataFile.empty() &&
-      getCodeGenOpts().CoverageNotesFile.empty())
-    return;
-
   llvm::NamedMDNode *CUNode = TheModule.getNamedMetadata("llvm.dbg.cu");
   if (!CUNode)
     return;
@@ -7812,7 +7853,6 @@ void CodeGenModule::moveLazyEmissionStates(CodeGenModule *NewBuilder) {
          "Newly created module should not have manglings");
   NewBuilder->Manglings = std::move(Manglings);
 
-  assert(WeakRefReferences.empty() && "Not all WeakRefRefs have been applied");
   NewBuilder->WeakRefReferences = std::move(WeakRefReferences);
 
   NewBuilder->TBAA = std::move(TBAA);

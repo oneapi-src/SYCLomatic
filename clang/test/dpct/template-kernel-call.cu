@@ -244,10 +244,11 @@ __global__ void convert_kernel(T b){
   T a = blockDim.x * blockIdx.x + threadIdx.x;
 }
 
-
 // CHECK:template<typename T>
 // CHECK-NEXT:void convert(){
 // CHECK-NEXT:  T b;
+// CHECK-NEXT:  {
+// CHECK-NEXT:  dpct::has_capability_or_fail(dpct::get_default_queue().get_device(), {sycl::aspect::fp64});
 // CHECK-NEXT:  dpct::get_default_queue().submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
 // CHECK-NEXT:      sycl::local_accessor<int, 1> aaa_acc_ct1(sycl::range<1>(0), cgh);
@@ -259,6 +260,7 @@ __global__ void convert_kernel(T b){
 // CHECK-NEXT:          convert_kernel(b, item_ct1, aaa_acc_ct1.get_pointer(), bbb_acc_ct1);
 // CHECK-NEXT:        });
 // CHECK-NEXT:    });
+// CHECK-NEXT:  }
 // CHECK-NEXT:}
 template<typename T>
 void convert(){
@@ -291,11 +293,16 @@ __global__ void my_kernel(T *A) {
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:  */
-// CHECK-NEXT:  ptr.s->parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, T>>(
+// CHECK-NEXT:  ptr.s->submit(
+// CHECK-NEXT:    [&](sycl::handler &cgh) {
+// CHECK-NEXT:      auto ptr_dPtr_ct0 = ptr.dPtr;
+// CHECK-EMPTY:
+// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, T>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 8) * sycl::range<3>(1, 1, block_size), sycl::range<3>(1, 1, block_size)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:          my_kernel<T>(ptr.dPtr);
+// CHECK-NEXT:          my_kernel<T>(ptr_dPtr_ct0);
 // CHECK-NEXT:        });
+// CHECK-NEXT:    });
 // CHECK-NEXT:}
 template <typename T>
 static void multiply(int block_size, Image<T> &ptr, T value) {
@@ -307,11 +314,16 @@ static void multiply(int block_size, Image<T> &ptr, T value) {
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:  */
-// CHECK-NEXT:  ptr.s->parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, dpct_placeholder/*Fix the type mannually*/>>(
+// CHECK-NEXT:  ptr.s->submit(
+// CHECK-NEXT:    [&](sycl::handler &cgh) {
+// CHECK-NEXT:      auto ptr_dPtr_ct0 = ptr.dPtr;
+// CHECK-EMPTY:
+// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, dpct_placeholder/*Fix the type mannually*/>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 8) * sycl::range<3>(1, 1, size), sycl::range<3>(1, 1, size)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:          my_kernel(ptr.dPtr);
+// CHECK-NEXT:          my_kernel(ptr_dPtr_ct0);
 // CHECK-NEXT:        });
+// CHECK-NEXT:    });
 // CHECK-NEXT:}
 template <typename T, int size>
 void foo1(Image<T> &ptr, T value) {
@@ -323,11 +335,16 @@ void foo1(Image<T> &ptr, T value) {
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:  */
-// CHECK-NEXT:  ptr.s->parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, dpct_placeholder/*Fix the type mannually*/>>(
+// CHECK-NEXT:  ptr.s->submit(
+// CHECK-NEXT:    [&](sycl::handler &cgh) {
+// CHECK-NEXT:      auto ptr_dPtr_ct0 = ptr.dPtr;
+// CHECK-EMPTY:
+// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, dpct_placeholder/*Fix the type mannually*/>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 8) * sycl::range<3>(2, size, 1), sycl::range<3>(2, size, 1)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:          my_kernel(ptr.dPtr);
+// CHECK-NEXT:          my_kernel(ptr_dPtr_ct0);
 // CHECK-NEXT:        });
+// CHECK-NEXT:    });
 // CHECK-NEXT:}
 template <typename T, int size>
 void foo2(Image<T> &ptr, T value) {

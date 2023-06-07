@@ -28,7 +28,7 @@ curandSetStream,YES,
 curandMakeMTGP32KernelState,NO,
 curand,YES,
 curand4,YES,
-curand_init,YES,:ref:`DPCT1028`
+curand_init,YES,:ref:`DPCT1028` / :ref:`DPCT1105`
 curand_log_normal,YES,
 curand_log_normal2,YES,
 curand_log_normal2_double,YES,
@@ -46,7 +46,7 @@ curand_uniform2_double,YES,
 curand_uniform4,YES,
 curand_uniform_double,YES,
 skipahead,YES,
-skipahead_sequence,YES,
+skipahead_sequence,YES,:ref:`DPCT1026` / :ref:`DPCT1027`
 skipahead_subsequence,YES,
 curand_uniform4_double,YES,
 curand_normal4_double,YES,
