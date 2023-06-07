@@ -1052,3 +1052,8 @@ thrustFactory("thrust::equal",
                { 3,PolicyState::NoPolicy, 3,"oneapi::dpl::equal", HelperFeatureEnum::no_feature_helper},
                { 5,PolicyState::HasPolicy,3,"oneapi::dpl::equal", HelperFeatureEnum::no_feature_helper},
                { 4,PolicyState::NoPolicy, 3,"oneapi::dpl::equal", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::all_of
+thrustFactory("thrust::all_of",
+              {{4,PolicyState::HasPolicy,2,"oneapi::dpl::all_of", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"oneapi::dpl::all_of", HelperFeatureEnum::no_feature_helper}}),
