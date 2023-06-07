@@ -21,4 +21,3 @@ Use |tool_name| to help port CUDA\* language kernels and library API calls to |d
    dev_guide/api-mapping-status
    dev_guide/frequently-asked-questions-faq
 
-

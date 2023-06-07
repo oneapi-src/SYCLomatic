@@ -2,14 +2,32 @@
 Frequently Asked Questions
 ==========================
 
-This page contains the most frequently asked questions about |tool_name|.
+**General Information**
 
+* `How do I migrate source files that use C++11 or newer standard features on Linux\* and Windows\*?`_
+* `How do I migrate files on Windows when using a CMake project?`_
+* `How is the migrated code formatted?`_
+* `Why does the compilation database not contain all source files in the project?`_
+* `How do I use the migrated module file in the new project?`_
+* `Is the memory space allocated by sycl::malloc_device, sycl::malloc_host, and dpct::dpct_malloc initialized?`_
+* `How do I migrate CUDA\* source code that contains CUB library implementation source code?`_
+
+**Troubleshooting Migration**
+
+* `How do I fix an error such as "error: unknown type name" when I migrate files with "dpct --in-root=srcdir --out-root=dstdir \*.cu"?`_
+* `How do I fix a parsing error such as "no member named 'max' in namespace 'std'" or "no member named 'min' in namespace 'std'" when migrating code on Windows?`_
+* `How do I fix a compilation error such as "error: dlopen not declared" when I compile code on a Windows machine, that was originally migrated on Linux?`_
+* `Why didn't the "atomic\*" APIs get migrated?`_
+* `Why did my migration fail with "error: restrict requires a pointer or reference"?`_
+* `How do I resolve incorrect runtime behavior for dpct::dev_mgr and dpct:mem_mgr in a library project that is loaded more than once in another application?`_
+* `Why do I get "warning: shift count >= width of type" when I compile migrated code with the Intel® oneAPI DPC++/C++ Compiler?`_
+* `How do I resolve missing include errors that occur when migrating my code?`_
 
 General Information
 -------------------
 
-**How do I migrate source files that are using C++11 or newer C++ standard features
-on Linux\* and Windows\*?**
+How do I migrate source files that use C++11 or newer standard features on Linux\* and Windows\*?
+*************************************************************************************************
 
 On Linux, the default C++ standard for |tool_name|'s
 parser is C++98, with some C++11 features
@@ -27,9 +45,8 @@ parser is C++14. If you want to enable C++17
 features in |tool_name|, you need to add
 the option ``--extra-arg="-std=c++17"`` to the command line.
 
-
-
-**How do I migrate files on Windows when using a CMake project?**
+How do I migrate files on Windows when using a CMake project?
+*************************************************************
 
 For a CMake project on a Windows OS, you can use CMake to generate
 Microsoft Visual Studio\* project files (``vcxproj`` files). Then choose one of
@@ -41,7 +58,8 @@ the following options:
 -  Migrate the entire project in Microsoft Visual Studio
    with an |tool_name| Microsoft Visual Studio plugin.
 
-**How is the migrated code formatted?**
+How is the migrated code formatted?
+***********************************
 
 |tool_name| provides two options to control the format of
 migrated code: ``--format-range`` and ``--format-style`` .
@@ -72,8 +90,8 @@ one of the following:
    with the same ``.clang-format`` file for migration.
 
 
-**Why does the compilation database (compile_commands.json) not contain all
-source file(s) in the project?**
+Why does the compilation database not contain all source files in the project?
+******************************************************************************
 
 In the project build folder, the command ``intercept-build make [target]`` is
 used to generate the compilation database. The content of the compilation
@@ -90,7 +108,8 @@ Use the following command to disable ccache before running the intercept-build c
 
    export CCACHE_DISABLE=1
 
-**How do I use the migrated module file in the new project?**
+How do I use the migrated module file in the new project?
+*********************************************************
 
 ``.cu`` module files are compiled with the ``-ptx`` or ``-cubin`` options in the
 original project and dynamically loaded into other ``*.cu`` files with
@@ -106,7 +125,8 @@ library with a dynamic library API appropriate to your platform. For example:
 - In Linux, load a dynamic library (``.so``) using ``dlopen()``
 - In Windows, load a dynamic library (``.dll``) using ``LoadLibraryA()``
 
-**Is the memory space allocated by sycl::malloc_device, sycl::malloc_host, and dpct::dpct_malloc initialized?**
+Is the memory space allocated by sycl::malloc_device, sycl::malloc_host, and dpct::dpct_malloc initialized?
+***********************************************************************************************************
 
 The memory allocated by ``sycl::malloc_device``, ``sycl::malloc_host``, and
 ``dpct::dpct_malloc`` is not initialized. If your program explicitly or
@@ -134,20 +154,19 @@ is adjusted to initialize the newly allocated memory to 0 before use:
    dpct::get_default_queue().memset(0, size).wait();
    device_mem[0] += somevalue;
 
-**How do I migrate CUDA* source code that contains CUB library implementation
-source code?**
+How do I migrate CUDA\* source code that contains CUB library implementation source code?
+*****************************************************************************************
 
 If you migrate the CUB library implementation code directly, you may not get the
 expected results. Instead, exclude CUB library implementation source code from
 your migration by adding ``--in-root-exclude=<path to CUB library source code>``
 to your migration command.
 
+Troubleshooting Migration
+-------------------------
 
-Troubleshooting
----------------
-
-**How do I fix an error such as "error: unknown type name" when I migrate files
-with "dpct --in-root=srcdir --out-root=dstdir *.cu"?**
+How do I fix an error such as "error: unknown type name" when I migrate files with "dpct --in-root=srcdir --out-root=dstdir \*.cu"?
+***********************************************************************************************************************************
 
 The problem may be caused by files in the ``*.cu`` list, which can
 be used as header files (included with an ``#include`` statement)
@@ -168,8 +187,8 @@ below to migrate your content:
    within the ``in-root`` folder:
    ``dpct --in-root= srcdir --out-root=dstdir sample.cu``
 
-**How do I fix a parsing error such as "no member named 'max' in namespace 'std'"
-or "no member named 'min' in namespace 'std'" when migrating code on Windows?**
+How do I fix a parsing error such as "no member named 'max' in namespace 'std'" or "no member named 'min' in namespace 'std'" when migrating code on Windows?
+***************************************************************************************************************************************************************
 
 Use one of the following methods to resolve the error:
 
@@ -179,8 +198,8 @@ Use one of the following methods to resolve the error:
   ``WinDef.h``
 
 
-**How do I fix a compilation error such as "error: dlopen not declared" when I
-compile code on a Windows machine, that was originally migrated on Linux?**
+How do I fix a compilation error such as "error: dlopen not declared" when I compile code on a Windows machine, that was originally migrated on Linux?
+********************************************************************************************************************************************************
 
 When |tool_name| generates the source code, it uses dynamic loading
 APIs specific to the OS on which |tool_name| is running.
@@ -193,7 +212,8 @@ need to compile the generated code on, migrate the project again with the
 |tool_name| on the target OS or fix the code manually.
 
 
-**Why didn't the "atomic*" APIs get migrated?**
+Why didn't the "atomic\*" APIs get migrated?
+********************************************
 
 |tool_name| may assume that the "atomic\*" APIs are user-defined
 APIs, in which case they are not migrated.
@@ -209,7 +229,8 @@ To make sure "atomic\*" APIs are migrated, don't use ``-I*`` to specify the CUDA
 include path with the ``dpct`` migration command. Instead, use only
 ``--cuda-include-path`` to specify the CUDA include path.
 
-**Why did my migration fail with "error: restrict requires a pointer or reference"?**
+Why did my migration fail with "error: restrict requires a pointer or reference"?
+*********************************************************************************
 
 The C++ standard does not support the restrict qualifier and the C standard
 supports the restrict qualifier only on pointers to an object type.
@@ -218,8 +239,8 @@ Based on these language standards |tool_name| emits the parsing error.
 
 You may need to adjust the source code.
 
-**How do I resolve incorrect runtime behavior for dpct::dev_mgr and dpct:mem_mgr
-in a library project that is loaded more than once in another application?**
+How do I resolve incorrect runtime behavior for dpct::dev_mgr and dpct:mem_mgr in a library project that is loaded more than once in another application?
+***********************************************************************************************************************************************************
 
 ``dpct::dev_mgr`` and ``dpct::mem_mgr`` are singleton classes in the
 |tool_name| helper functions. When the helper function headers are used
@@ -306,8 +327,8 @@ After performing the update steps, all the libraries and applications will share
 the same instance of the device manager ``dpct::dev_mgr`` and the memory manager
 ``dpct::mem_mgr`` in |tool_name| helper functions.
 
-**Why do I get "warning: shift count >= width of type" when I compile migrated
-code with the Intel® oneAPI DPC++/C++ Compiler?**
+Why do I get "warning: shift count >= width of type" when I compile migrated code with the Intel® oneAPI DPC++/C++ Compiler?
+****************************************************************************************************************************
 
 Shifting bits where the shift is greater than the type length is undefined
 behavior for the |dpcpp_compiler| and may result in different behavior on
@@ -345,7 +366,8 @@ is adjusted to avoid a bit shift that is greater than the type length:
      ...
    }
 
-**How do I resolve missing include errors that occur when migrating my code?**
+How do I resolve missing include errors that occur when migrating my code?
+**************************************************************************
 
 Use the option ``--extra-arg=-v`` to prompt |tool_name| to use verbose
 output, which includes information about which paths the tool searches
