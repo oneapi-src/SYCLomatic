@@ -624,7 +624,7 @@ A comma-separated list of extensions to be used in migrated code.
 By default, these extensions are not used in migrated code.
 
 - ``=c_cxx_standard_library``: Use std functions from the libdevice library
-  (provided by |dpcpp_compiler|) and C/C++ Standard Library to migrate functions
+  (provided by |dpcpp_compiler|_) and C/C++ Standard Library to migrate functions
   which have no mapping in the SYCL standard. If this value is used together with
   ``intel_device_math``, the ``intel_device_math`` functions take precedence.
 - ``=intel_device_math``: Use ``sycl::ext::intel::math`` functions from the libdevice

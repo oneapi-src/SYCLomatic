@@ -1,7 +1,7 @@
 |tool_name| Documentation
 =========================
 
-Use |tool_name| to help port CUDA\* language kernels and library API calls to |dpcpp_long| code.
+Use |tool_name| to help port CUDA\* language kernels and library API calls to |dpcpp_long|_ code.
 
 .. toctree::
    :maxdepth: 1
