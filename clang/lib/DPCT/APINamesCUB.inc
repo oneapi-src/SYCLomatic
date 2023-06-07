@@ -2072,6 +2072,12 @@ CALL_FACTORY_ENTRY("cub::IADD3",
                               CAST_IF_NOT_SAME(LITERAL("unsigned int"), ARG(1))),
                            CAST_IF_NOT_SAME(LITERAL("unsigned int"), ARG(2)))))
 
+// cub::LaneId
+MEMBER_CALL_FACTORY_ENTRY("cub::LaneId", MEMBER_CALL(NDITEM, false, LITERAL("get_sub_group")), false, "get_local_linear_id")
+
+// cub::WarpId
+MEMBER_CALL_FACTORY_ENTRY("cub::WarpId", MEMBER_CALL(NDITEM, false, LITERAL("get_sub_group")), false, "get_group_linear_id")
+
 // cub::DeviceSegmentedSort::StableSortPairs
 CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),
