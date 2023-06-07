@@ -23,7 +23,7 @@ Detailed Help
 
 The engine types are migrated to the following supported generators, respectively:
 
-* Philox4x32x10 generator
+* MCG59 generator
 * Basic Sobol generator
 * Basic Sobol generator
 
