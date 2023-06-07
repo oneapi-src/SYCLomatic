@@ -1942,7 +1942,7 @@ void AtomicFunctionRule::MigrateAtomicFunc(
 
   // Don't migrate user defined function
   if (auto *CalleeDecl = CE->getDirectCallee()) {
-    if (isUserDefinedFunction(CalleeDecl))
+    if (isUserDefinedDecl(CalleeDecl))
       return;
   } else {
     return;
@@ -7997,7 +7997,7 @@ void EventAPICallRule::handleEventElapsedTime(bool IsAssigned) {
         << StmtStrArg2 << " - " << StmtStrArg1 << ").count()";
     if (IsAssigned) {
       std::ostringstream Temp;
-      Temp << "DPCT_CHECK_ERROR(" << Repl.str() << ")";
+      Temp << "DPCT_CHECK_ERROR((" << Repl.str() << "))";
       Repl = std::move(Temp);
       requestFeature(HelperFeatureEnum::Dpct_check_error_code, TimeElapsedCE);
     }
@@ -9038,6 +9038,9 @@ void DeviceFunctionDeclRule::runRule(
   }
   if (isLambda(FD) && !FuncInfo->isLambda()) {
     FuncInfo->setLambda();
+  }
+  if (FD->hasAttr<CUDAGlobalAttr>()) {
+    FuncInfo->setKernel();
   }
   if (DpctGlobalInfo::isOptimizeMigration() && !FD->isInlined() &&
                                 !FuncInfo->IsAlwaysInlineDevFunc()) {
@@ -11855,7 +11858,7 @@ void WarpFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
     return;
 
   if (auto *CalleeDecl = CE->getDirectCallee()) {
-    if (isUserDefinedFunction(CalleeDecl)) {
+    if (isUserDefinedDecl(CalleeDecl)) {
       return;
     }
   }

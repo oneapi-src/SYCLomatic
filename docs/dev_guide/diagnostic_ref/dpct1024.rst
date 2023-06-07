@@ -41,3 +41,47 @@ Suggestions to Fix
 ------------------
 
 Verify the code correctness.
+
+For example, this original CUDA code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     cudaEvent_t e;
+     ...
+     handleError(cudaEventRecord(e));
+     ...
+   }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     dpct::event_ptr e;
+     std::chrono::time_point<std::chrono::steady_clock> e_ct1;
+     ...
+     /*
+     DPCT1024:1: The original code returned the error code that was further
+     consumed by the program logic. This original code was replaced with 0. You may
+     need to rewrite the program logic consuming the error code.
+     */
+     e_ct1 = std::chrono::steady_clock::now();
+     handleError(0);
+     ...
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     dpct::event_ptr e;
+     std::chrono::time_point<std::chrono::steady_clock> e_ct1;
+     ...
+     e_ct1 = std::chrono::steady_clock::now();
+     ...
+   }

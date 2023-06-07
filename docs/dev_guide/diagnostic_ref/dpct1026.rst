@@ -37,3 +37,96 @@ Suggestions to Fix
 ------------------
 
 Verify the code correctness.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __device__ void bar(int *a) {
+     __ldg(a);
+   }
+   
+   void foo() {
+     cudaLimit limit;
+     cudaStream_t stream;
+     unsigned int flags;
+     cudaSharedMemConfig config;
+   
+     cudaDeviceSetLimit(limit, 0);
+     cudaStreamAttachMemAsync(stream, nullptr);
+     cudaStreamQuery(stream);
+     cudaDeviceSetSharedMemConfig(config);
+     cudaDeviceSetCacheConfig(cudaFuncCachePreferNone);
+     cudaSetDeviceFlags(flags);
+     cuInit(0);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void bar(int *a) {
+     /*
+     DPCT1026:0: The call to __ldg was removed because there is no corresponding
+     API in SYCL.
+     */
+     *a;
+   }
+   
+   void foo() {
+     cudaLimit limit;
+     dpct::queue_ptr stream;
+     unsigned int flags;
+     int config;
+   
+     /*
+     DPCT1026:1: The call to cudaDeviceSetLimit was removed because SYCL currently
+     does not support setting resource limits on devices.
+     */
+     /*
+     DPCT1026:2: The call to cudaStreamAttachMemAsync was removed because SYCL
+     currently does not support associating USM with a specific queue.
+     */
+     /*
+     DPCT1026:3: The call to cudaStreamQuery was removed because SYCL currently
+     does not support query operations on queues.
+     */
+     /*
+     DPCT1026:4: The call to cudaDeviceSetSharedMemConfig was removed because SYCL
+     currently does not support configuring shared memory on devices.
+     */
+     /*
+     DPCT1026:5: The call to cudaDeviceSetCacheConfig was removed because SYCL
+     currently does not support setting cache config on devices.
+     */
+     /*
+     DPCT1026:6: The call to cudaSetDeviceFlags was removed because SYCL currently
+     does not support setting flags for devices.
+     */
+     /*
+     DPCT1026:7: The call to cuInit was removed because this call is redundant in
+     SYCL.
+     */
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void bar(int *a) {
+     *a;
+   }
+   
+   void foo() {
+     cudaLimit limit;
+     dpct::queue_ptr stream;
+     unsigned int flags;
+     size_t count;
+     float *ptr;
+     
+     int config;
+   }
+

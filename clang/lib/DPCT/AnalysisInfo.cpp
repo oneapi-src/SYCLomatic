@@ -349,46 +349,45 @@ void DpctGlobalInfo::buildReplacements() {
   // 2          1            dev_ct1             get_default_queue
   // 1          2            dev_ct1             q_ct1
   // >=2        >=2          dev_ct1             q_ct1
-  if (!getDeviceChangedFlag() && getUsingDRYPattern()) {
-    bool NeedDpctHelpFunc = DpctGlobalInfo::needDpctDeviceExt() ||
-                            TempVariableDeclCounterMap.size() > 1 ||
-                            DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None;
-    HelperFeatureEnum DeviceFeatureEnum =
-        HelperFeatureEnum::Device_get_current_device;
-    HelperFeatureEnum QueueFeatureEnum =
-        HelperFeatureEnum::Device_get_default_queue;
+  bool NeedDpctHelpFunc = DpctGlobalInfo::needDpctDeviceExt() ||
+                          TempVariableDeclCounterMap.size() > 1 ||
+                          DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None;
+  HelperFeatureEnum DeviceFeatureEnum =
+      HelperFeatureEnum::Device_get_current_device;
+  HelperFeatureEnum QueueFeatureEnum =
+      HelperFeatureEnum::Device_get_default_queue;
 
-    unsigned int IndentLen = 2;
-    if (getGuessIndentWidthMatcherFlag())
-      IndentLen = getIndentWidth();
-    std::string IndentStr = std::string(IndentLen, ' ');
-    std::string DevDeclStr = getNL() + IndentStr;
-    llvm::raw_string_ostream DevDecl(DevDeclStr);
-    std::string QDeclStr =
-        getNL() + IndentStr + MapNames::getClNamespace() + "queue ";
-    llvm::raw_string_ostream QDecl(QDeclStr);
-    if (NeedDpctHelpFunc) {
-      DevDecl << MapNames::getDpctNamespace()
-              << "device_ext &dev_ct1 = " << MapNames::getDpctNamespace()
-              << "get_current_device();";
-      QDecl << "&q_ct1 = dev_ct1.default_queue();";
-    } else {
-      DevDecl << MapNames::getClNamespace() + "device dev_ct1;";
-      // Now the UsmLevel must not be UL_None here.
-      QDecl << "q_ct1(dev_ct1, " << MapNames::getClNamespace()
-            << "property_list{" << MapNames::getClNamespace()
-            << "property::queue::in_order()";
-      if (DpctGlobalInfo::getEnablepProfilingFlag()) {
-        QDecl << ", " << MapNames::getClNamespace()
-              << "property::queue::enable_profiling()";
-      }
-      QDecl << "});";
+  unsigned int IndentLen = 2;
+  if (getGuessIndentWidthMatcherFlag())
+    IndentLen = getIndentWidth();
+  std::string IndentStr = std::string(IndentLen, ' ');
+  std::string DevDeclStr = getNL() + IndentStr;
+  llvm::raw_string_ostream DevDecl(DevDeclStr);
+  std::string QDeclStr =
+      getNL() + IndentStr + MapNames::getClNamespace() + "queue ";
+  llvm::raw_string_ostream QDecl(QDeclStr);
+  if (NeedDpctHelpFunc) {
+    DevDecl << MapNames::getDpctNamespace()
+            << "device_ext &dev_ct1 = " << MapNames::getDpctNamespace()
+            << "get_current_device();";
+    QDecl << "&q_ct1 = dev_ct1.default_queue();";
+  } else {
+    DevDecl << MapNames::getClNamespace() + "device dev_ct1;";
+    // Now the UsmLevel must not be UL_None here.
+    QDecl << "q_ct1(dev_ct1, " << MapNames::getClNamespace() << "property_list{"
+          << MapNames::getClNamespace() << "property::queue::in_order()";
+    if (DpctGlobalInfo::getEnablepProfilingFlag()) {
+      QDecl << ", " << MapNames::getClNamespace()
+            << "property::queue::enable_profiling()";
     }
+    QDecl << "});";
+  }
 
-    for (auto &Counter : TempVariableDeclCounterMap) {
-      const auto ColonPos = Counter.first.find_last_of(':');
-      const auto DeclLocFile = Counter.first.substr(0, ColonPos);
-      const auto DeclLocOffset = std::stoi(Counter.first.substr(ColonPos + 1));
+  for (auto &Counter : TempVariableDeclCounterMap) {
+    const auto ColonPos = Counter.first.find_last_of(':');
+    const auto DeclLocFile = Counter.first.substr(0, ColonPos);
+    const auto DeclLocOffset = std::stoi(Counter.first.substr(ColonPos + 1));
+    if (!getDeviceChangedFlag() && getUsingDRYPattern()) {
       if (Counter.second.CurrentDeviceCounter > 1 ||
           Counter.second.DefaultQueueCounter > 1) {
         Counter.second.PlaceholderStr[2] = "dev_ct1";
@@ -401,17 +400,14 @@ void DpctGlobalInfo::buildReplacements() {
           Counter.second.PlaceholderStr[1] = "q_ct1";
           getInstance().addReplacement(std::make_shared<ExtReplacement>(
               DeclLocFile, DeclLocOffset, 0, QDecl.str(), nullptr));
-          if (!NeedDpctHelpFunc) {
-            DeviceFeatureEnum = HelperFeatureEnum::no_feature_helper;
-          }
         }
       }
-      if (Counter.second.CurrentDeviceCounter > 0 ||
-          Counter.second.DefaultQueueCounter > 1)
-        requestFeature(DeviceFeatureEnum, DeclLocFile);
-      if (Counter.second.DefaultQueueCounter > 0)
-        requestFeature(QueueFeatureEnum, DeclLocFile);
     }
+    if (Counter.second.CurrentDeviceCounter > 0 ||
+        Counter.second.DefaultQueueCounter > 1)
+      requestFeature(DeviceFeatureEnum, DeclLocFile);
+    if (Counter.second.DefaultQueueCounter > 0)
+      requestFeature(QueueFeatureEnum, DeclLocFile);
   }
 }
 
@@ -710,6 +706,14 @@ void DpctFileInfo::buildLinesInfo() {
 void DpctFileInfo::setKernelCallDim() {
   for (auto &Kernel : KernelMap)
     Kernel.second->setKernelCallDim();
+}
+void DpctFileInfo::setKernelDim() {
+  for (auto &DeviceFunc : FuncMap) {
+    auto Info = DeviceFunc.second->getFuncInfo();
+    if (Info->isKernel() && !Info->isKernelInvoked()) {
+      Info->getVarMap().Dim = 3;
+    }
+  }
 }
 void DpctFileInfo::buildUnionFindSet() {
   for (auto &Kernel : KernelMap)
@@ -1895,6 +1899,7 @@ KernelCallExpr::buildForWrapper(std::string FilePath, const FunctionDecl *FD,
 
 void KernelCallExpr::setKernelCallDim() {
   if (auto Ptr = getFuncInfo()) {
+    Ptr->setKernelInvoked();
     if (GridDim == 1 && BlockDim == 1) {
       if (auto HeadPtr = MemVarMap::getHead(&(Ptr->getVarMap()))) {
         Ptr->getVarMap().Dim = std::max((unsigned int)1, HeadPtr->Dim);
@@ -3807,6 +3812,9 @@ void CtTypeInfo::setArrayInfo(const DependentSizedArrayTypeLoc &TL,
   ContainSizeofType = containSizeOfType(TL.getSizeExpr());
   ExprAnalysis EA;
   EA.analyze(TL.getSizeExpr());
+  auto TDSI = EA.getTemplateDependentStringInfo();
+  if (TDSI->containsTemplateDependentMacro())
+    TemplateDependentMacro = true;
   Range.emplace_back(EA.getTemplateDependentStringInfo());
   setTypeInfo(TL.getElementLoc(), NeedSizeFold);
 }

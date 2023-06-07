@@ -1,18 +1,16 @@
-.. _DPCT1004:
+.. _DPCT1107:
 
-DPCT1004
+DPCT1107
 ========
-
-.. include:: /_include_files/deprecated-msg-0.txt
 
 Message
 -------
 
-.. _msg-1004-start:
+.. _msg-1107-start:
 
-Compatible SYCL code could not be generated.
+Migration for this overload of <API Name> is not supported.
 
-.. _msg-1004-end:
+.. _msg-1107-end:
 
 Detailed Help
 -------------

@@ -25,5 +25,99 @@ Suggestions to Fix
 
 Review the logic and adjust it as needed.
 
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __global__ void kernel() {
+     ...
+   }
+   
+   void foo() {
+     cudaEvent_t start;
+     cudaEvent_t end;
+     cudaEventCreate(&start);
+     cudaEventCreate(&end);
+     cudaEventRecord(start);
+     kernel<<<1, 1>>>();
+     cudaEventRecord(end, 0);
+     cudaEventSynchronize(end);
+     float time;
+     cudaEventElapsedTime(&time, start, end);
+   }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel() {
+     ...
+   }
+   
+   void foo() {
+     dpct::device_ext &dev_ct1 = dpct::get_current_device();
+     sycl::queue &q_ct1 = dev_ct1.default_queue();
+     dpct::event_ptr start;
+     std::chrono::time_point<std::chrono::steady_clock> start_ct1;
+     dpct::event_ptr end;
+     std::chrono::time_point<std::chrono::steady_clock> end_ct1;
+     start = new sycl::event();
+     end = new sycl::event();
+     /*
+     DPCT1012:0: Detected kernel execution time measurement pattern and generated
+     an initial code for time measurements in SYCL. You can change the way time is
+     measured depending on your goals.
+     */
+     start_ct1 = std::chrono::steady_clock::now();
+     *end = q_ct1.parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+         [=](sycl::nd_item<3> item_ct1) {
+           kernel();
+         });
+     /*
+     DPCT1012:1: Detected kernel execution time measurement pattern and generated
+     an initial code for time measurements in SYCL. You can change the way time is
+     measured depending on your goals.
+     */
+     end->wait();
+     end_ct1 = std::chrono::steady_clock::now();
+     float time;
+     time = std::chrono::duration<float, std::milli>(end_ct1 - start_ct1).count();
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   // User can add `--enable-profiling` option to migrate the code
+   void kernel() {
+     ...
+   }
+   
+   void foo() {
+     dpct::device_ext &dev_ct1 = dpct::get_current_device();
+     sycl::queue &q_ct1 = dev_ct1.default_queue();
+     dpct::event_ptr start;
+     dpct::event_ptr end;
+     start = new sycl::event();
+     end = new sycl::event();
+     *start = q_ct1.ext_oneapi_submit_barrier();
+     q_ct1.parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+         [=](sycl::nd_item<3> item_ct1) {
+           kernel();
+         });
+     *end = q_ct1.ext_oneapi_submit_barrier();
+     end->wait_and_throw();
+     float time;
+     time =
+         (end->get_profiling_info<sycl::info::event_profiling::command_end>() -
+          start
+              ->get_profiling_info<sycl::info::event_profiling::command_start>()) /
+         1000000.0f;
+   }
 
 

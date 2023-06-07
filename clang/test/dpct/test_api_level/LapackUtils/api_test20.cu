@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/LapackUtils/api_test20_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/LapackUtils/api_test20_out
 
-// CHECK: 37
+// CHECK: 38
 // TEST_FEATURE: LapackUtils_syhegvx
 
 #include "cusolverDn.h"
