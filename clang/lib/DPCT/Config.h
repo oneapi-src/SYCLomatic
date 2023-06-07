@@ -9,10 +9,10 @@
 #ifndef DPCT_CONFIG_H
 #define DPCT_CONFIG_H
 
-// Keep the code to avoid pull down conflict
-#if 0
 #include "clang/Basic/Version.inc"
 
+// Keep the code to avoid pull down conflict
+#if 0
 #define STRINGIFY_(NUM) #NUM
 #define STRINGIFY(NUM) STRINGIFY_(NUM)
 
