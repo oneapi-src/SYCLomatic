@@ -9,6 +9,7 @@
 #include <thrust/host_vector.h>
 #include <thrust/logical.h>
 #include <thrust/partition.h>
+#include <thrust/sort.h>
 
 void all_of() {
 
@@ -74,4 +75,39 @@ void is_partitioned() {
   result = thrust::is_partitioned(h_A.begin(), h_A.end(), is_even());
   result = thrust::is_partitioned(thrust::device, d_A.begin(), d_A.end(), is_even());
   result = thrust::is_partitioned(d_A.begin(), d_A.end(), is_even());
+}
+
+void is_sorted_until() {
+  int A[8] = {0, 1, 2, 3, 0, 1, 2, 3};
+  thrust::host_vector<int> h_A(A, A + 8);
+  thrust::device_vector<int> d_A(A, A + 8);
+  thrust::greater<int> comp;
+  int *B;
+  thrust::host_vector<int>::iterator h_end;
+  thrust::device_vector<int>::iterator d_end;
+
+  // CHECK:B = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::seq, A, A + 8);
+  // CHECK-NEXT:B = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::seq, A, A + 8);
+  // CHECK-NEXT:B = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::seq, A, A + 8, comp);
+  // CHECK-NEXT:B = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::seq, A, A + 8, comp);
+  // CHECK-NEXT:h_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::seq, h_A.begin(), h_A.end());
+  // CHECK-NEXT:h_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::seq, h_A.begin(), h_A.end());
+  // CHECK-NEXT:h_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::seq, h_A.begin(), h_A.end(), comp);
+  // CHECK-NEXT:h_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::seq, h_A.begin(), h_A.end(), comp);
+  // CHECK-NEXT:d_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.end());
+  // CHECK-NEXT:d_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.end());
+  // CHECK-NEXT:d_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.end(), comp);
+  // CHECK-NEXT:d_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.end(), comp);
+  B = thrust::is_sorted_until(thrust::host, A, A + 8);
+  B = thrust::is_sorted_until(A, A + 8);
+  B = thrust::is_sorted_until(thrust::host, A, A + 8, comp);
+  B = thrust::is_sorted_until(A, A + 8, comp);
+  h_end = thrust::is_sorted_until(thrust::host, h_A.begin(), h_A.end());
+  h_end = thrust::is_sorted_until(h_A.begin(), h_A.end());
+  h_end = thrust::is_sorted_until(thrust::host, h_A.begin(), h_A.end(), comp);
+  h_end = thrust::is_sorted_until(h_A.begin(), h_A.end(), comp);
+  d_end = thrust::is_sorted_until(thrust::device, d_A.begin(), d_A.end());
+  d_end = thrust::is_sorted_until(d_A.begin(), d_A.end());
+  d_end = thrust::is_sorted_until(thrust::device, d_A.begin(), d_A.end(), comp);
+  d_end = thrust::is_sorted_until(d_A.begin(), d_A.end(), comp);
 }

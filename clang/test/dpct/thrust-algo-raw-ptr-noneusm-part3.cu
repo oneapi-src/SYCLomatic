@@ -8,6 +8,8 @@
 #include <thrust/functional.h>
 #include <thrust/host_vector.h>
 #include <thrust/logical.h>
+#include <thrust/partition.h>
+#include <thrust/sort.h>
 
 void all_of() {
 
@@ -67,4 +69,35 @@ void is_partitioned() {
   // CHECK-NEXT:   };
   thrust::is_partitioned(thrust::host, A, A + 10, is_even());
   thrust::is_partitioned(A, A + 10, is_even());
+}
+
+void is_sorted_until() {
+  int A[8] = {0, 1, 2, 3, 0, 1, 2, 3};
+  int *B;
+  thrust::greater<int> comp;
+
+  // CHECK:  if (dpct::is_device_ptr(A)) {
+  // CHECK-NEXT:    oneapi::dpl::is_sorted_until(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + 8));
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::is_sorted_until(oneapi::dpl::execution::seq, A, A + 8);
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(A)) {
+  // CHECK-NEXT:    oneapi::dpl::is_sorted_until(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + 8));
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::is_sorted_until(oneapi::dpl::execution::seq, A, A + 8);
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(A)) {
+  // CHECK-NEXT:    oneapi::dpl::is_sorted_until(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + 8), comp);
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::is_sorted_until(oneapi::dpl::execution::seq, A, A + 8, comp);
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(A)) {
+  // CHECK-NEXT:    oneapi::dpl::is_sorted_until(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + 8), comp);
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::is_sorted_until(oneapi::dpl::execution::seq, A, A + 8, comp);
+  // CHECK-NEXT:  };
+  thrust::is_sorted_until(thrust::host, A, A + 8);
+  thrust::is_sorted_until(A, A + 8);
+  thrust::is_sorted_until(thrust::host, A, A + 8, comp);
+  thrust::is_sorted_until(A, A + 8, comp);
 }
