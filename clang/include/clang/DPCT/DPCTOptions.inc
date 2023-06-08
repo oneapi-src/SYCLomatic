@@ -432,4 +432,10 @@ DPCT_NON_ENUM_OPTION(
         "Query functionally compatible SYCL API to migrate CUDA API."),
     llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 
+DPCT_NON_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<bool>), UsePureSycl, "use-pure-sycl",
+    llvm::cl::desc(
+        "Generates pure SYCL code to get queue and device. Default: off."),
+    llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT

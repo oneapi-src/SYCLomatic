@@ -50,6 +50,7 @@
 // DASH-NEXT: --use-dpcpp-extensions=
 // DASH-NEXT: --use-experimental-features=
 // DASH-NEXT: --use-explicit-namespace=
+// DASH-NEXT: --use-pure-sycl
 // DASH-NEXT: --usm-level=
 // DASH-NEXT: --version
 // DASH-NEXT: -p

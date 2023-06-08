@@ -6704,13 +6704,21 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       requestFeature(HelperFeatureEnum::device_ext);
     }
     std::string ResultVarName = getDrefName(CE->getArg(0));
-    emplaceTransformation(
-        new ReplaceStmt(CE->getCallee(), Prefix + MapNames::getDpctNamespace() +
-                                             "dev_mgr::instance().get_device"));
-    emplaceTransformation(new RemoveArg(CE, 0));
-    emplaceTransformation(new InsertAfterStmt(
-        CE, ".get_device_info(" + ResultVarName + ")" + Suffix));
-    requestFeature(HelperFeatureEnum::device_ext);
+    if (DpctGlobalInfo::isUsePureSycl()) {
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      emplaceTransformation(new ReplaceStmt(
+          CE, Prefix + MapNames::getDpctNamespace() +
+                  "get_device_info({{NEEDREPLACED" + std::to_string(Index) +
+                  "}}, " + ResultVarName + ")"));
+    } else {
+      emplaceTransformation(new ReplaceStmt(
+          CE->getCallee(), Prefix + MapNames::getDpctNamespace() +
+                               "dev_mgr::instance().get_device"));
+      emplaceTransformation(new RemoveArg(CE, 0));
+      emplaceTransformation(new InsertAfterStmt(
+          CE, ".get_device_info(" + ResultVarName + ")" + Suffix));
+      requestFeature(HelperFeatureEnum::device_ext);
+    }
   } else if (FuncName == "cudaDriverGetVersion" ||
              FuncName == "cudaRuntimeGetVersion") {
     if (IsAssigned) {
@@ -6820,9 +6828,15 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
     buildTempVariableMap(Index, CE, HelperFuncType::HFT_CurrentDevice);
-    std::string ReplStr =
-        "{{NEEDREPLACED" + std::to_string(Index) + "}}.queues_wait_and_throw()";
-    requestFeature(HelperFeatureEnum::device_ext);
+    std::string ReplStr;
+    if (DpctGlobalInfo::isUsePureSycl()) {
+      ReplStr =
+          "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.wait_and_throw()";
+    } else {
+      ReplStr = "{{NEEDREPLACED" + std::to_string(Index) +
+                "}}.queues_wait_and_throw()";
+      requestFeature(HelperFeatureEnum::device_ext);
+    }
     if (IsAssigned) {
       ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
       requestFeature(HelperFeatureEnum::device_ext);
