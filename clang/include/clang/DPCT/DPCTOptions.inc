@@ -253,29 +253,6 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), EnableComments, 
            llvm::cl::desc("Insert comments explaining the generated code. Default: off."),
            llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
-DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<HelperFilesCustomizationLevel>), UseCustomHelperFileLevel, "use-custom-helper",
-           DPCT_OPTION_VALUES(
-             DPCT_OPT_ENUM("none", int(HelperFilesCustomizationLevel::HFCL_None),
-            "No customization (default).", false),
-             DPCT_OPT_ENUM("file", int(HelperFilesCustomizationLevel::HFCL_File),
-            "Limit helper header files to only the necessary files for the migrated code and\n"
-            "place them in the --out-root directory.", false),
-             DPCT_OPT_ENUM("api", int(HelperFilesCustomizationLevel::HFCL_API),
-            "Limit helper header files to only the necessary APIs for the migrated code and\n"
-            "place them in the --out-root directory.", false),
-             DPCT_OPT_ENUM("all", int(HelperFilesCustomizationLevel::HFCL_All),
-            "Generate a complete set of helper header files and place them in the --out-root\n"
-            "directory.", false)
-           ),
-           llvm::cl::desc("DEPRECATED: Customize the helper header files for migrated code. The values are:\n"),
-           llvm::cl::init(HelperFilesCustomizationLevel::HFCL_None), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
-           llvm::cl::Optional)
-
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), CustomHelperFileName, "custom-helper-name",
-        llvm::cl::desc("DEPRECATED: Specifies the helper headers folder name and main helper header file name.\n"
-        "Default: dpct."),
-        llvm::cl::init("dpct"), llvm::cl::value_desc("name"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
-
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), AsyncHandler, "always-use-async-handler",
         llvm::cl::desc("Use async exception handler when creating new sycl::queue "
                    "with dpct::create_queue\nin addition to default "

@@ -46,15 +46,11 @@ enum ProcessStatus {
   MigrationErrorCudaVersionUnsupported = -31,
   MigrationErrorSupportedCudaVersionNotAvailable = -32,
   MigrationErrorInvalidExplicitNamespace = -33,
-  MigrationErrorCustomHelperFileNameContainInvalidChar = -34,
-  MigrationErrorCustomHelperFileNameTooLong = -35,
-  MigrationErrorCustomHelperFileNamePathTooLong = -36,
   MigrationErrorDifferentOptSet = -37,
   MigrationErrorInvalidRuleFilePath = -38,
   MigrationErrorCannotParseRuleFile = -39,
   MigrationErrorInvalidAnalysisScope = -40,
   MigrationErrorInvalidChangeFilenameExtension = -41,
-  MigrationErrorConflictOptions = -42,
 };
 
 namespace clang {

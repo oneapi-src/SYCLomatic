@@ -790,21 +790,9 @@ int runDPCT(int argc, const char **argv) {
   }
   ValidateInputDirectory(Tool, AnalysisScope);
 
-  if (GenHelperFunction.getNumOccurrences() &&
-      (UseCustomHelperFileLevel.getNumOccurrences() ||
-       CustomHelperFileName.getNumOccurrences())) {
-    ShowStatus(MigrationErrorConflictOptions,
-               "Option --gen-helper-function cannot be used with "
-               "--use-custom-helper or --custom-helper-name together");
-    dpctExit(MigrationErrorConflictOptions);
-  }
   if (GenHelperFunction.getValue()) {
     dpct::genHelperFunction(dpct::DpctGlobalInfo::getOutRoot());
   }
-
-  validateCustomHelperFileNameArg(UseCustomHelperFileLevel,
-                                  CustomHelperFileName,
-                                  dpct::DpctGlobalInfo::getOutRoot());
 
   Tool.appendArgumentsAdjuster(
       getInsertArgumentAdjuster("-nocudalib", ArgumentInsertPosition::BEGIN));
@@ -859,18 +847,11 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);
   DpctGlobalInfo::setUsmLevel(USMLevel);
   DpctGlobalInfo::setIsIncMigration(!NoIncrementalMigration);
-  DpctGlobalInfo::setHelperFilesCustomizationLevel(UseCustomHelperFileLevel);
-  if (UseCustomHelperFileLevel.getNumOccurrences()) {
-    clang::dpct::PrintMsg("Note: Option --use-custom-helper is deprecated and "
-                          "may be removed in the future.\n");
-  }
+  DpctGlobalInfo::setHelperFilesCustomizationLevel(
+      HelperFilesCustomizationLevel::HFCL_None);
   DpctGlobalInfo::setCheckUnicodeSecurityFlag(CheckUnicodeSecurityFlag);
   DpctGlobalInfo::setEnablepProfilingFlag(EnablepProfilingFlag);
-  DpctGlobalInfo::setCustomHelperFileName(CustomHelperFileName);
-  if (CustomHelperFileName.getNumOccurrences()) {
-    clang::dpct::PrintMsg("Note: Option --custom-helper-name is deprecated and "
-                          "may be removed in the future.\n");
-  }
+  DpctGlobalInfo::setCustomHelperFileName("dpct");
   HelperFileNameMap[HelperFileEnum::Dpct] =
       DpctGlobalInfo::getCustomHelperFileName() + ".hpp";
   DpctGlobalInfo::setFormatRange(FormatRng);
@@ -940,7 +921,7 @@ int runDPCT(int argc, const char **argv) {
                      EnableComments.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_CustomHelperFileName,
                      DpctGlobalInfo::getCustomHelperFileName(),
-                     CustomHelperFileName.getNumOccurrences());
+                     0);
     setValueToOptMap(clang::dpct::OPTION_CtadEnabled,
                      DpctGlobalInfo::isCtadEnabled(),
                      EnableCTAD.getNumOccurrences());

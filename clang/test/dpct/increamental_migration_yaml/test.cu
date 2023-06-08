@@ -1,10 +1,10 @@
-// RUN: dpct --format-range=none --out-root %T/increamental_migration_yaml/out %s --use-custom-helper=api --custom-helper-name=test --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -DAAA
-// RUN: dpct --format-range=none --out-root %T/increamental_migration_yaml/out %s --use-custom-helper=api --custom-helper-name=test --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none --out-root %T/increamental_migration_yaml/out %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -DAAA
+// RUN: dpct --format-range=none --out-root %T/increamental_migration_yaml/out %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/increamental_migration_yaml/out/MainSourceFiles.yaml --match-full-lines %s
 // RUN: rm -rf %T/increamental_migration_yaml/out
 
 //     CHECK:FeatureMap:
-//CHECK-NEXT:  test.hpp:
+//CHECK-NEXT:  dpct.hpp:
 //CHECK-NEXT:    dpct_align_and_inline:
 //CHECK-NEXT:      IsCalled:        true
 //CHECK-NEXT:      CallerSrcFiles:

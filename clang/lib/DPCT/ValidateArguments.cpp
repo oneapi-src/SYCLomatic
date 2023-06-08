@@ -238,36 +238,3 @@ bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
 
   return Success;
 }
-
-void validateCustomHelperFileNameArg(HelperFilesCustomizationLevel Level,
-                                     std::string &Name,
-                                     const std::string &OutRoot) {
-  if ((Level == HelperFilesCustomizationLevel::HFCL_None) && (Name != "dpct")) {
-    clang::dpct::PrintMsg("Warning: Ignored \"--custom-helper-name\", since "
-                          "\"--use-custom-helper\" is not specified or "
-                          "has \"none\" value.\n");
-    Name = "dpct";
-    return;
-  }
-
-  std::string FileName = Name + ".hpp";
-  if (FileName.size() >= MAX_NAME_LEN) {
-    clang::dpct::ShowStatus(MigrationErrorCustomHelperFileNameTooLong);
-    dpctExit(MigrationErrorCustomHelperFileNameTooLong);
-  }
-
-  std::string FilePath = OutRoot + "/include/" + Name + "/" + FileName;
-  if (FilePath.size() >= MAX_PATH_LEN) {
-    clang::dpct::ShowStatus(MigrationErrorCustomHelperFileNamePathTooLong,
-                            FilePath);
-    dpctExit(MigrationErrorCustomHelperFileNamePathTooLong);
-  }
-
-  for (size_t Idx = 0, End = Name.size(); Idx < End; Idx++) {
-    if ((!isdigit(Name[Idx])) && (!isalpha(Name[Idx])) && (Name[Idx] != '_')) {
-      clang::dpct::ShowStatus(
-          MigrationErrorCustomHelperFileNameContainInvalidChar);
-      dpctExit(MigrationErrorCustomHelperFileNameContainInvalidChar);
-    }
-  }
-}
