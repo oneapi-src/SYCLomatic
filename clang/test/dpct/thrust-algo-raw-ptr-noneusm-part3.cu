@@ -27,3 +27,21 @@ void all_of() {
   thrust::all_of(thrust::host, A, A + 2, thrust::identity<bool>());
   thrust::all_of(A, A + 2, thrust::identity<bool>());
 }
+
+void none_of() {
+  bool A[3] = {true, true, false};
+  bool result;
+
+  // CHECK:  if (dpct::is_device_ptr(A)) {
+  // CHECK-NEXT:    oneapi::dpl::none_of(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<bool>(A), dpct::device_pointer<bool>(A + 2), oneapi::dpl::identity());
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::none_of(oneapi::dpl::execution::seq, A, A + 2, oneapi::dpl::identity());
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(A)) {
+  // CHECK-NEXT:    oneapi::dpl::none_of(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<bool>(A), dpct::device_pointer<bool>(A + 2), oneapi::dpl::identity());
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::none_of(oneapi::dpl::execution::seq, A, A + 2, oneapi::dpl::identity());
+  // CHECK-NEXT:  };
+  thrust::none_of(thrust::host, A, A + 2, thrust::identity<bool>());
+  thrust::none_of(A, A + 2, thrust::identity<bool>());
+}
