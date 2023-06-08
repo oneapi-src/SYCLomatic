@@ -1669,7 +1669,8 @@ inline void reduce_argmin(_ExecutionPolicy &&policy, Iter1 input, Iter2 output,
 
 template <typename _ExecutionPolicy, typename Iter1,
           typename ValueLessComparable, typename StrictWeakOrdering>
-inline ::std::pair<Iter1, Iter1>
+inline 
+dpct::internal::enable_if_execution_policy<_ExecutionPolicy, ::std::pair<Iter1,Iter1>>
 equal_range(_ExecutionPolicy &&policy, Iter1 start, Iter1 end,
             const ValueLessComparable &value, StrictWeakOrdering comp) {
   ::std::vector<::std::int64_t> res_lower(1);
@@ -1686,12 +1687,40 @@ equal_range(_ExecutionPolicy &&policy, Iter1 start, Iter1 end,
 
 template <typename _ExecutionPolicy, typename Iter1,
           typename ValueLessComparable>
-inline ::std::pair<Iter1, Iter1> equal_range(_ExecutionPolicy &&policy,
+inline
+dpct::internal::enable_if_execution_policy<_ExecutionPolicy, ::std::pair<Iter1,Iter1>>
+equal_range(_ExecutionPolicy &&policy,
                                              Iter1 start, Iter1 end,
                                              const ValueLessComparable &value) {
   return equal_range(::std::forward<_ExecutionPolicy>(policy), start, end,
                      value, internal::__less());
 }
+
+template <typename _T, typename Size, typename ValueLessComparable, typename StrictWeakOrdering>
+inline std::enable_if_t<std::is_pointer_v<_T>, ::std::pair<_T, _T>>
+equal_range(_T start, Size size, const ValueLessComparable& value, StrictWeakOrdering comp)
+{
+    if (dpct::is_device_ptr(start)) {
+      using value_type = typename std::iterator_traits<_T>::value_type;
+      auto dev_start = dpct::device_pointer<value_type>(start);
+      auto dev_end = dpct::device_pointer<value_type>(start) + size;
+      auto range =  dpct::equal_range(oneapi::dpl::execution::make_device_policy(get_default_queue()),
+                dev_start, dev_end, value, comp);
+      return ::std::pair<_T, _T>(start + (range.first - dev_start), start + (range.second - dev_start));
+    } else {
+      return dpct::equal_range(oneapi::dpl::execution::seq, start,
+                start + size, value, comp);
+    }
+}
+
+template <typename _T, typename Size, typename ValueLessComparable>
+inline
+std::enable_if_t<std::is_pointer_v<_T>, ::std::pair<_T, _T>>
+equal_range(_T start, Size size, const ValueLessComparable& value)
+{
+  return dpct::equal_range(start, size, value, internal::__less());
+}
+
 
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3>
 inline ::std::enable_if_t<
