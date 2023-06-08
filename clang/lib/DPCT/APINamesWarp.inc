@@ -111,7 +111,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 Diagnostics::MASK_UNSUPPORTED,
                 ARG(MapNames::getDpctNamespace() + "shift_sub_group_right." + 
                 " You can specify \"--use-experimental-features=masked-sub-group-operation\""
-                " to use the dpct experimental helper function to migrate __shfl_up_sync"))),
+                " to use the experimental helper function to migrate __shfl_up_sync"))),
         SUBGROUPSIZE_FACTORY(
             UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_right",
             WARNING_FACTORY_ENTRY(
@@ -128,7 +128,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 Diagnostics::MASK_UNSUPPORTED,
                 ARG(MapNames::getDpctNamespace() + "shift_sub_group_right." + 
                 " You can specify \"--use-experimental-features=masked-sub-group-operation\""
-                " to use the dpct experimental helper function to migrate __shfl_up_sync")))))
+                " to use the experimental helper function to migrate __shfl_up_sync")))))
 
 // __shfl_up
 CONDITIONAL_FACTORY_ENTRY(
@@ -208,7 +208,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 Diagnostics::MASK_UNSUPPORTED,
                 ARG(MapNames::getDpctNamespace() + "shift_sub_group_left." + 
                 " You can specify \"--use-experimental-features=masked-sub-group-operation\""
-                " to use the dpct experimental helper function to migrate __shfl_down_sync"))),
+                " to use the experimental helper function to migrate __shfl_down_sync"))),
         SUBGROUPSIZE_FACTORY(
             UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_left",
             WARNING_FACTORY_ENTRY(
@@ -225,7 +225,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 Diagnostics::MASK_UNSUPPORTED,
                 ARG(MapNames::getDpctNamespace() + "shift_sub_group_left." + 
                 " You can specify \"--use-experimental-features=masked-sub-group-operation\""
-                " to use the dpct experimental helper function to migrate __shfl_down_sync")))))
+                " to use the experimental helper function to migrate __shfl_down_sync")))))
 
 // __shfl_down
 CONDITIONAL_FACTORY_ENTRY(
@@ -305,7 +305,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 Diagnostics::MASK_UNSUPPORTED,
                 ARG(MapNames::getDpctNamespace() + "select_from_sub_group." + 
                 " You can specify \"--use-experimental-features=masked-sub-group-operation\""
-                " to use the dpct experimental helper function to migrate __shfl_sync"))),
+                " to use the experimental helper function to migrate __shfl_sync"))),
         SUBGROUPSIZE_FACTORY(
             UINT_MAX, MapNames::getDpctNamespace() + "select_from_sub_group",
             WARNING_FACTORY_ENTRY(
@@ -322,7 +322,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 Diagnostics::MASK_UNSUPPORTED,
                 ARG(MapNames::getDpctNamespace() + "select_from_sub_group." + 
                 " You can specify \"--use-experimental-features=masked-sub-group-operation\""
-                " to use the dpct experimental helper function to migrate __shfl_sync")))))
+                " to use the experimental helper function to migrate __shfl_sync")))))
 
 // __shfl
 CONDITIONAL_FACTORY_ENTRY(
@@ -402,7 +402,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 Diagnostics::MASK_UNSUPPORTED,
                 ARG(MapNames::getDpctNamespace() + "permute_sub_group_by_xor." + 
                 " You can specify \"--use-experimental-features=masked-sub-group-operation\""
-                " to use the dpct experimental helper function to migrate __shfl_xor_sync"))),
+                " to use the experimental helper function to migrate __shfl_xor_sync"))),
         SUBGROUPSIZE_FACTORY(
             UINT_MAX, MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
             WARNING_FACTORY_ENTRY(
@@ -419,7 +419,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 Diagnostics::MASK_UNSUPPORTED,
                 ARG(MapNames::getDpctNamespace() + "permute_sub_group_by_xor." + 
                 " You can specify \"--use-experimental-features=masked-sub-group-operation\""
-                " to use the dpct experimental helper function to migrate __shfl_xor_sync")))))
+                " to use the experimental helper function to migrate __shfl_xor_sync")))))
 
 // __shfl_xor
 CONDITIONAL_FACTORY_ENTRY(

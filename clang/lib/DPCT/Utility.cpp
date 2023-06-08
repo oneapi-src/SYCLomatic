@@ -3593,8 +3593,7 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
       if (S.second == MemcpyOrderAnalysisNodeKind::MOANK_MemcpyInFlowControl) {
         return false;
       }
-      if (S.second == MemcpyOrderAnalysisNodeKind::MOANK_Memcpy ||
-          S.second == MemcpyOrderAnalysisNodeKind::MOANK_KernelCallExpr) {
+      if (S.second == MemcpyOrderAnalysisNodeKind::MOANK_Memcpy) {
         SourceLocation CurrentCallExprEndLoc =
             SM.getExpansionLoc(CE->getEndLoc());
 
