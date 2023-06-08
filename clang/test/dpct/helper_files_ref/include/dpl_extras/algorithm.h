@@ -1696,21 +1696,17 @@ equal_range(_ExecutionPolicy &&policy,
                      value, internal::__less());
 }
 
+#ifdef DPCT_USM_LEVEL_NONE
+
 template <typename _T, typename Size, typename ValueLessComparable, typename StrictWeakOrdering>
 inline std::enable_if_t<std::is_pointer_v<_T>, ::std::pair<_T, _T>>
 equal_range(_T start, Size size, const ValueLessComparable& value, StrictWeakOrdering comp)
 {
-    if (dpct::is_device_ptr(start)) {
-      using value_type = typename std::iterator_traits<_T>::value_type;
-      auto dev_start = dpct::device_pointer<value_type>(start);
-      auto dev_end = dpct::device_pointer<value_type>(start) + size;
-      auto range =  dpct::equal_range(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-                dev_start, dev_end, value, comp);
-      return ::std::pair<_T, _T>(start + (range.first - dev_start), start + (range.second - dev_start));
-    } else {
-      return dpct::equal_range(oneapi::dpl::execution::seq, start,
-                start + size, value, comp);
-    }
+    return dpct::internal::check_device_ptr_and_launch(
+        oneapi::dpl::execution::seq, oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+        start, size, 
+        [](auto policy, auto start, auto end, auto value, auto comp){return dpct::equal_range(policy, start, end, value, comp);}, 
+        5, comp);
 }
 
 template <typename _T, typename Size, typename ValueLessComparable>
@@ -1721,6 +1717,8 @@ equal_range(_T start, Size size, const ValueLessComparable& value)
   return dpct::equal_range(start, size, value, internal::__less());
 }
 
+
+#endif //#DPCT_USM_LEVEL_NONE
 
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3>
 inline ::std::enable_if_t<

@@ -292,6 +292,27 @@ private:
   mutable BinaryOperation op;
 };
 
+#ifdef DPCT_USM_LEVEL_NONE
+
+template <typename _ExecutionPolicyHost, typename _ExecutionPolicyDevice,
+          typename _T, typename Size, typename _Func, typename... _Args>
+inline
+std::enable_if_t<std::is_pointer_v<_T>, ::std::pair<_T, _T>>
+check_device_ptr_and_launch(_ExecutionPolicyHost&& host_policy, _ExecutionPolicyDevice&& dev_policy, _T start,
+                       Size size, _Func func, _Args... args)
+{
+    if (dpct::is_device_ptr(start)) {
+      using value_type = typename std::iterator_traits<_T>::value_type;
+      auto dev_start = dpct::device_pointer<value_type>(start);
+      auto dev_end = dpct::device_pointer<value_type>(start) + size;
+      auto ret = func(std::forward<_ExecutionPolicyDevice>(dev_policy), dev_start, dev_end, args...);
+      return ::std::pair<_T, _T>(start + (ret.first - dev_start), start + (ret.second - dev_start));
+    } else {
+      return func(std::forward<_ExecutionPolicyHost>(host_policy), start, start + size, args...);
+    }
+}
+#endif //DPCT_USM_LEVEL_NONE
+
 // This following code is similar to a section of code in
 // oneDPL/include/oneapi/dpl/pstl/hetero/dpcpp/parallel_backend_sycl_radix_sort.h
 // It has a similar approach, and could be consolidated.
