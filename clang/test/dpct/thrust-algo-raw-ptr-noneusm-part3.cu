@@ -45,3 +45,26 @@ void none_of() {
   thrust::none_of(thrust::host, A, A + 2, thrust::identity<bool>());
   thrust::none_of(A, A + 2, thrust::identity<bool>());
 }
+
+struct is_even {
+  __host__ __device__ bool operator()(const int &x) const { return (x % 2) == 0; }
+};
+
+void is_partitioned() {
+
+  int A[] = {2, 4, 6, 8, 10, 1, 3, 5, 7, 9};
+  bool result;
+
+  // CHECK:   if (dpct::is_device_ptr(A)) {
+  // CHECK-NEXT:     oneapi::dpl::is_partitioned(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + 10), is_even());
+  // CHECK-NEXT:   } else {
+  // CHECK-NEXT:     oneapi::dpl::is_partitioned(oneapi::dpl::execution::seq, A, A + 10, is_even());
+  // CHECK-NEXT:   };
+  // CHECK-NEXT:   if (dpct::is_device_ptr(A)) {
+  // CHECK-NEXT:     oneapi::dpl::is_partitioned(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + 10), is_even());
+  // CHECK-NEXT:   } else {
+  // CHECK-NEXT:     oneapi::dpl::is_partitioned(oneapi::dpl::execution::seq, A, A + 10, is_even());
+  // CHECK-NEXT:   };
+  thrust::is_partitioned(thrust::host, A, A + 10, is_even());
+  thrust::is_partitioned(A, A + 10, is_even());
+}

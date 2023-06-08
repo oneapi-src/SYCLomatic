@@ -8,6 +8,7 @@
 #include <thrust/functional.h>
 #include <thrust/host_vector.h>
 #include <thrust/logical.h>
+#include <thrust/partition.h>
 
 void all_of() {
 
@@ -48,4 +49,29 @@ void none_of() {
   result = thrust::none_of(h_A.begin(), h_A.begin() + 2, thrust::identity<bool>());
   result = thrust::none_of(thrust::device, d_A.begin(), d_A.begin() + 2, thrust::identity<bool>());
   result = thrust::none_of(d_A.begin(), d_A.begin() + 2, thrust::identity<bool>());
+}
+
+struct is_even {
+  __host__ __device__ bool operator()(const int &x) const { return (x % 2) == 0; }
+};
+
+void is_partitioned() {
+
+  int A[] = {2, 4, 6, 8, 10, 1, 3, 5, 7, 9};
+  bool result;
+  thrust::host_vector<int> h_A(A, A + 10);
+  thrust::device_vector<int> d_A(A, A + 10);
+
+  // CHECK:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::seq, A, A + 10, is_even());
+  // CHECK-NEXT:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::seq, A, A + 10, is_even());
+  // CHECK-NEXT:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::seq, h_A.begin(), h_A.end(), is_even());
+  // CHECK-NEXT:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::seq, h_A.begin(), h_A.end(), is_even());
+  // CHECK-NEXT:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.end(), is_even());
+  // CHECK-NEXT:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.end(), is_even());
+  result = thrust::is_partitioned(thrust::host, A, A + 10, is_even());
+  result = thrust::is_partitioned(A, A + 10, is_even());
+  result = thrust::is_partitioned(thrust::host, h_A.begin(), h_A.end(), is_even());
+  result = thrust::is_partitioned(h_A.begin(), h_A.end(), is_even());
+  result = thrust::is_partitioned(thrust::device, d_A.begin(), d_A.end(), is_even());
+  result = thrust::is_partitioned(d_A.begin(), d_A.end(), is_even());
 }
