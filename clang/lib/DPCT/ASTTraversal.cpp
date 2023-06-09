@@ -729,7 +729,7 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange,
       SourceLocation IE = IB.getLocWithOffset(MacroName.length());
       CharSourceRange InsertRange(SourceRange(IB, IE), false);
       auto Repl = std::make_shared<ReplaceInclude>(
-          InsertRange, std::move(ReplacedMacroName));
+          InsertRange, ReplacedMacroName);
       if (MacroName == "__CUDA_ARCH__" &&
           DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
         insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
@@ -755,7 +755,7 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange,
                 InsertRange, "(SYCL_LANGUAGE_VERSION < 202000)");
           }
         } else if (!ReplaceInfo.empty()) {
-          for (const auto Info : ReplaceInfo) {
+          for (const auto &Info : ReplaceInfo) {
             EnableBlock = Info.second;
             SourceLocation NewEnd =
                 Info.first.getEnd().getLocWithOffset(Lexer::MeasureTokenLength(
