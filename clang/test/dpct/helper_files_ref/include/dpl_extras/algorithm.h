@@ -1767,8 +1767,214 @@ std::pair<Ptr3, Ptr4> unique_copy(Ptr1 keys_first, Size size, Ptr2 values_first,
       std::equal_to<typename std::iterator_traits<Ptr1>::value_type>());
 }
 
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Ptr5, typename Ptr6, typename Comp>
+std::pair<Ptr5, Ptr6>
+merge(Ptr1 keys_first1, Size size1, Ptr2 keys_first2,
+      Size size2, Ptr3 values_first1, Ptr4 values_first2,
+      Ptr5 keys_result, Ptr6 values_result, Comp comp)
 {
-  return dpct::unique_copy(keys_first, size, values_first, keys_result, values_result, std::equal_to<typename std::iterator_traits<Ptr1>::value_type>());
+    return dpct::internal::check_device_ptr_and_launch(
+      oneapi::dpl::execution::seq,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      keys_first1, size1, keys_first2, size2, values_first1, values_first2, keys_result, values_result,
+      [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2, Ptr3 start3,
+         Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
+        return dpct::merge(policy, start1, end1, start2, end2, start3, start4, start5, 
+                                 start6, comp);
+      }, comp);
+}
+
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Ptr5, typename Ptr6>
+std::pair<Ptr5, Ptr6>
+merge(Ptr1 keys_first1, Size size1, Ptr2 keys_first2,
+      Size size2, Ptr3 values_first1, Ptr4 values_first2,
+      Ptr5 keys_result, Ptr6 values_result)
+{
+  return dpct::merge(keys_first1, size1, keys_first2, size2, values_first1, values_first2, keys_result, values_result, dpct::internal::__less());
+}
+
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,
+          typename Ptr5, typename Comp>
+std::pair<Ptr4, Ptr5>
+set_intersection(Ptr1 keys_first1, Size size1,
+                 Ptr2 keys_first2, Size size2, Ptr3 values_first1,
+                 Ptr4 keys_result, Ptr5 values_result, Comp comp)
+{
+    return dpct::internal::check_device_ptr_and_launch(
+      oneapi::dpl::execution::seq,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      keys_first1, size1, keys_first2, size2, values_first1, keys_result, values_result,
+      [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2, Ptr3 start3,
+         Ptr4 start4, Ptr5 start5, Comp comp) {
+        return dpct::set_intersection(policy, start1, end1, start2, end2, start3, start4, start5,
+                                 comp);
+      }, comp);
+
+}
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,
+          typename Ptr5>
+std::pair<Ptr4, Ptr5>
+set_intersection(Ptr1 keys_first1, Size size1,
+                 Ptr2 keys_first2, Size size2, Ptr3 values_first1,
+                 Ptr4 keys_result, Ptr5 values_result)
+{
+  return dpct::set_intersection(keys_first1, size1,
+                 keys_first2, size2, values_first1,
+                 keys_result, values_result, dpct::internal::__less());
+}
+
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,
+          typename Ptr5, typename Ptr6, typename Comp>
+std::pair<Ptr5, Ptr6>
+set_symmetric_difference(Ptr1 keys_first1, Size size1,
+                         Ptr2 keys_first2, Size size2,
+                         Ptr3 values_first1, Ptr4 values_first2,
+                         Ptr5 keys_result, Ptr6 values_result, Comp comp)
+{
+    return dpct::internal::check_device_ptr_and_launch(
+      oneapi::dpl::execution::seq,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      keys_first1, size1, keys_first2, size2, values_first1, values_first2, keys_result, values_result,
+      [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2, Ptr3 start3,
+         Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
+        return dpct::set_symmetric_difference(policy, start1, end1, start2, end2, start3, start4, start5, 
+                                 start6, comp);
+      }, comp);
+}
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,
+          typename Ptr5, typename Ptr6>
+std::pair<Ptr5, Ptr6>
+set_symmetric_difference(Ptr1 keys_first1, Size size1,
+                         Ptr2 keys_first2, Size size2,
+                         Ptr3 values_first1, Ptr4 values_first2,
+                         Ptr5 keys_result, Ptr6 values_result)
+{
+    return dpct::set_symmetric_difference(keys_first1, size1,
+                 keys_first2, size2, values_first1, values_first2,
+                 keys_result, values_result, dpct::internal::__less());
+}
+
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,
+          typename Ptr5, typename Ptr6, typename Comp>
+std::pair<Ptr5, Ptr6> set_difference(Ptr1 keys_first1, Size size1, Ptr2 keys_first2,
+                                       Size size2, Ptr3 values_first1,
+                                       Ptr4 values_first2, Ptr5 keys_result,
+                                       Ptr6 values_result, Comp comp)
+{
+    return dpct::internal::check_device_ptr_and_launch(
+      oneapi::dpl::execution::seq,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      keys_first1, size1, keys_first2, size2, values_first1, values_first2, keys_result, values_result,
+      [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2, Ptr3 start3,
+         Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
+        return dpct::set_difference(policy, start1, end1, start2, end2, start3, start4, start5, 
+                                 start6, comp);
+      }, comp);
+}
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,
+          typename Ptr5, typename Ptr6>
+std::pair<Ptr5, Ptr6>
+set_difference(Ptr1 keys_first1, Size size1,
+               Ptr2 keys_first2, Size size2, Ptr3 values_first1,
+               Ptr4 values_first2, Ptr5 keys_result, Ptr6 values_result)
+{
+   return dpct::set_difference(keys_first1, size1,
+          keys_first2, size2, values_first1,
+          values_first2, keys_result, values_result, dpct::internal::__less()); 
+}
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,
+          typename Ptr5, typename Ptr6, typename Comp>
+std::pair<Ptr5, Ptr6>
+set_union(Ptr1 keys_first1, Size size1,
+          Ptr2 keys_first2, Size size2, Ptr3 values_first1,
+          Ptr4 values_first2, Ptr5 keys_result, Ptr6 values_result,
+          Comp comp)
+{
+    return dpct::internal::check_device_ptr_and_launch(
+      oneapi::dpl::execution::seq,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      keys_first1, size1, keys_first2, size2, values_first1, values_first2, keys_result, values_result,
+      [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2, Ptr3 start3,
+         Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
+        return dpct::set_union(policy, start1, end1, start2, end2, start3, start4, start5, 
+                                 start6, comp);
+      }, comp);
+}
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,
+          typename Ptr5, typename Ptr6>
+std::pair<Ptr5, Ptr6>
+set_union(Ptr1 keys_first1, Size size,
+          Ptr2 keys_first2, Size size2, Ptr3 values_first1,
+          Ptr4 values_first2, Ptr5 keys_result, Ptr6 values_result)
+{
+  return dpct::set_union(keys_first1, size,
+          keys_first2, size2, values_first1,
+          values_first2, keys_result, values_result, dpct::internal::__less());
+}
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Pred>
+std::pair<Ptr3, Ptr4>
+stable_partition_copy(Ptr1 first, Size size, Ptr2 mask,
+                      Ptr3 out_true, Ptr4 out_false, Pred p)
+{
+  return dpct::internal::check_device_ptr_and_launch(
+      oneapi::dpl::execution::seq,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      first, size, mask, out_true, out_false,
+      [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
+         Ptr4 start4, Pred pred) {
+        return dpct::stable_partition_copy(policy, start1, end1, start2, start3, start4,
+                                 pred);
+      },
+      p);
+
+}
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Pred>
+std::pair<Ptr2, Ptr3>
+stable_partition_copy(Ptr1 first, Size size, Ptr2 out_true,
+                      Ptr3 out_false, Pred p)
+{
+  return dpct::internal::check_device_ptr_and_launch(
+      oneapi::dpl::execution::seq,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      first, size, out_true, out_false,
+      [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
+         Pred pred) {
+        return dpct::stable_partition_copy(policy, start1, end1, start2, start3,
+                                 pred);
+      },
+      p);
+}
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Pred>
+std::pair<Ptr3, Ptr4>
+partition_copy(Ptr1 first, Size size, Ptr2 mask,
+               Ptr3 out_true, Ptr4 out_false, Pred p)
+{
+  return dpct::internal::check_device_ptr_and_launch(
+      oneapi::dpl::execution::seq,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      first, size, mask, out_true, out_false,
+      [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
+         Ptr4 start4, Pred pred) {
+        return dpct::partition_copy(policy, start1, end1, start2, start3, start4,
+                                 pred);
+      },
+      p);
 }
 
 #endif // #DPCT_USM_LEVEL_NONE
