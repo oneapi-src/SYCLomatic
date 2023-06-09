@@ -728,8 +728,8 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange,
       SourceLocation IB = Begin.getLocWithOffset(Found);
       SourceLocation IE = IB.getLocWithOffset(MacroName.length());
       CharSourceRange InsertRange(SourceRange(IB, IE), false);
-      auto Repl = std::make_shared<ReplaceInclude>(
-          InsertRange, ReplacedMacroName);
+      auto Repl =
+          std::make_shared<ReplaceInclude>(InsertRange, ReplacedMacroName);
       if (MacroName == "__CUDA_ARCH__" &&
           DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
         insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
