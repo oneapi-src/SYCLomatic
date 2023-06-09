@@ -1779,16 +1779,18 @@ std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
 merge(Ptr1 keys_first1, Size size1, Ptr2 keys_first2,
       Size size2, Ptr3 values_first1, Ptr4 values_first2,
       Ptr5 keys_result, Ptr6 values_result, Comp comp)
-{
+{ 
     return dpct::internal::check_device_ptr_and_launch(
       oneapi::dpl::execution::seq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-      comp, keys_first1, size1, keys_first2, size2, 
+      comp, size1, size2, 
       [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2, Ptr3 start3,
          Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
         return dpct::merge(policy, start1, end1, start2, end2, start3, start4, start5, 
                                  start6, comp);
-      }, keys_result, values_result, values_first1, values_first2);
+      }, 
+      keys_result, values_result, //return base
+      keys_first1, keys_first2, values_first1, values_first2, keys_result, values_result); //all ptrs
 }
 
 
@@ -1817,12 +1819,14 @@ set_intersection(Ptr1 keys_first1, Size size1,
     return dpct::internal::check_device_ptr_and_launch(
       oneapi::dpl::execution::seq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-      comp, keys_first1, size1, keys_first2, size2,
+      comp, size1, size2,
       [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2, Ptr3 start3,
          Ptr4 start4, Ptr5 start5, Comp comp) {
         return dpct::set_intersection(policy, start1, end1, start2, end2, start3, start4, start5,
                                  comp);
-      }, keys_result, values_result, values_first1);
+      }, 
+      keys_result, values_result,
+      keys_first1, keys_first2, values_first1, keys_result, values_result);
 
 }
 
@@ -1854,12 +1858,13 @@ set_symmetric_difference(Ptr1 keys_first1, Size size1,
     return dpct::internal::check_device_ptr_and_launch(
       oneapi::dpl::execution::seq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-      comp, keys_first1, size1, keys_first2, size2,
+      comp, size1, size2,
       [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2, Ptr3 start3,
          Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
         return dpct::set_symmetric_difference(policy, start1, end1, start2, end2, start3, start4, start5, 
                                  start6);
-      }, keys_result, values_result,values_first1, values_first2);
+      }, keys_result, values_result,
+      keys_first1, keys_first2, values_first1, values_first2, keys_result, values_result);
 }
 
 template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,
@@ -1892,12 +1897,13 @@ set_difference(Ptr1 keys_first1, Size size1, Ptr2 keys_first2,
     return dpct::internal::check_device_ptr_and_launch(
       oneapi::dpl::execution::seq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-      comp, keys_first1, size1, keys_first2, size2,
+      comp, size1, size2,
       [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2, Ptr3 start3,
          Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
         return dpct::set_difference(policy, start1, end1, start2, end2, start3, start4, start5, 
                                  start6, comp);
-      },  keys_result, values_result,values_first1, values_first2);
+      },  keys_result, values_result,
+      keys_first1, keys_first2, values_first1, values_first2, keys_result, values_result);
 }
 
 template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,
@@ -1927,12 +1933,13 @@ set_union(Ptr1 keys_first1, Size size1,
     return dpct::internal::check_device_ptr_and_launch(
       oneapi::dpl::execution::seq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-      comp, keys_first1, size1, keys_first2, size2, 
+      comp, size1, size2, 
       [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2, Ptr3 start3,
          Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
         return dpct::set_union(policy, start1, end1, start2, end2, start3, start4, start5, 
                                  start6, comp);
-      }, keys_result, values_result, values_first1, values_first2);
+      }, keys_result, values_result,
+      keys_first1, keys_first2, values_first1, values_first2, keys_result, values_result);
 }
 
 template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,

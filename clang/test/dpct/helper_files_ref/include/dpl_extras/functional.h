@@ -302,31 +302,30 @@ make_device_pointer_from_pointer(T t)
 }
 
 template <typename _ExecutionPolicyHost, typename _ExecutionPolicyDevice, 
-          typename Oper, typename Ptr1, typename Size, typename Ptr2,  
+          typename Oper, typename Ptr1, typename Ptr2,  
           typename _Func, typename RetPtr1, typename RetPtr2, typename... MiddlePtrs>
 inline std::enable_if_t<
     std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> && std::is_pointer_v<RetPtr1> && std::is_pointer_v<RetPtr2>,
     ::std::pair<RetPtr1, RetPtr2>>
 check_device_ptr_and_launch(_ExecutionPolicyHost &&host_policy,
-                            _ExecutionPolicyDevice &&dev_policy, Oper op, Ptr1 start1,
-                            Size size1, Ptr2 start2, Size size2, _Func func, RetPtr1 ret1, RetPtr2 ret2, 
+                            _ExecutionPolicyDevice &&dev_policy, Oper op, std::size_t size1, std::size_t size2, _Func func,
+                            RetPtr1 ret_base1, RetPtr2 ret_base2,
+                            Ptr1 start1, Ptr2 start2,  
                             MiddlePtrs... middle_ptrs) {
   if (dpct::is_device_ptr(start1)) {
-    auto dev_ret1 = dpct::device_pointer<typename std::iterator_traits<RetPtr1>::value_type>(ret1);
-    auto dev_ret2 = dpct::device_pointer<typename std::iterator_traits<RetPtr2>::value_type>(ret2);
     
     auto ret = func(std::forward<_ExecutionPolicyDevice>(dev_policy),
-                    dpct::device_pointer<typename std::iterator_traits<Ptr1>::value_type>(start1),
-                    dpct::device_pointer<typename std::iterator_traits<Ptr1>::value_type>(start1) + size1,
-                    dpct::device_pointer<typename std::iterator_traits<Ptr2>::value_type>(start2),
-                    dpct::device_pointer<typename std::iterator_traits<Ptr2>::value_type>(start2) + size2,
+                    dpct::internal::make_device_pointer_from_pointer(start1),
+                    dpct::internal::make_device_pointer_from_pointer(start1) + size1,
+                    dpct::internal::make_device_pointer_from_pointer(start2),
+                    dpct::internal::make_device_pointer_from_pointer(start2) + size2,
                     dpct::internal::make_device_pointer_from_pointer(middle_ptrs)...,
-                    dev_ret1, dev_ret2, op);
-    return ::std::pair<RetPtr1, RetPtr2>(ret1 + (ret.first - dev_ret1),
-                                     ret2 + (ret.second - dev_ret2));
+                     op);
+    return ::std::pair<RetPtr1, RetPtr2>(ret_base1 + (ret.first - dpct::internal::make_device_pointer_from_pointer(ret_base1)),
+                                     ret_base2 + (ret.second - dpct::internal::make_device_pointer_from_pointer(ret_base2)));
   } else {
     return func(std::forward<_ExecutionPolicyHost>(host_policy), start1,
-                start1 + size1, start2, start2 + size2, middle_ptrs..., ret1, ret2, op);
+                start1 + size1, start2, start2 + size2, middle_ptrs..., op);
   }
 }
 
