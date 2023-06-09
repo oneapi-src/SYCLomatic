@@ -1698,61 +1698,80 @@ equal_range(_ExecutionPolicy &&policy,
 
 #ifdef DPCT_USM_LEVEL_NONE
 
-template <typename Ptr1, typename Size, typename ValueLessComparable, typename StrictWeakOrdering>
+template <typename Ptr1, typename Size, typename ValueLessComparable,
+          typename StrictWeakOrdering>
 inline std::enable_if_t<std::is_pointer_v<Ptr1>, ::std::pair<Ptr1, Ptr1>>
-equal_range(Ptr1 start, Size size, const ValueLessComparable& value, StrictWeakOrdering comp)
-{
-    return dpct::internal::check_device_ptr_and_launch(
-        oneapi::dpl::execution::seq, oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-        start, size, 
-        [](auto policy, Ptr1 start, Ptr1 end, const ValueLessComparable& value, StrictWeakOrdering comp){return dpct::equal_range(policy, start, end, value, comp);}, 
-        value, comp);
+equal_range(Ptr1 start, Size size, const ValueLessComparable &value,
+            StrictWeakOrdering comp) {
+  return dpct::internal::check_device_ptr_and_launch(
+      oneapi::dpl::execution::seq,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      start, size,
+      [](auto policy, Ptr1 start, Ptr1 end, const ValueLessComparable &value,
+         StrictWeakOrdering comp) {
+        return dpct::equal_range(policy, start, end, value, comp);
+      },
+      value, comp);
 }
 
 template <typename _T, typename Size, typename ValueLessComparable>
-inline
-std::enable_if_t<std::is_pointer_v<_T>, ::std::pair<_T, _T>>
-equal_range(_T start, Size size, const ValueLessComparable& value)
-{
+inline std::enable_if_t<std::is_pointer_v<_T>, ::std::pair<_T, _T>>
+equal_range(_T start, Size size, const ValueLessComparable &value) {
   return dpct::equal_range(start, size, value, internal::__less());
 }
 
 template <typename Ptr1, typename Size, typename Ptr2, typename BinaryPred>
-std::pair<Ptr1, Ptr2> unique(Ptr1 start1, Size size, Ptr2 start2, BinaryPred binary_pred)
-{
-    return dpct::internal::check_device_ptr_and_launch(
-        oneapi::dpl::execution::seq, oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-        start1, size, start2,
-        [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, BinaryPred binary_pred){return dpct::unique(policy, start1, end1, start2, binary_pred);},
-        binary_pred);
+std::pair<Ptr1, Ptr2> unique(Ptr1 start1, Size size, Ptr2 start2,
+                             BinaryPred binary_pred) {
+  return dpct::internal::check_device_ptr_and_launch(
+      oneapi::dpl::execution::seq,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      start1, size, start2,
+      [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2,
+         BinaryPred binary_pred) {
+        return dpct::unique(policy, start1, end1, start2, binary_pred);
+      },
+      binary_pred);
 }
 
 template <typename Ptr1, typename Size, typename Ptr2>
-std::pair<Ptr1, Ptr2> unique(Ptr1 start1, Size size, Ptr2 start2) 
-{
-  return dpct::unique(start1, size, start2, std::equal_to<typename std::iterator_traits<Ptr1>::value_type>());
+std::pair<Ptr1, Ptr2> unique(Ptr1 start1, Size size, Ptr2 start2) {
+  return dpct::unique(
+      start1, size, start2,
+      std::equal_to<typename std::iterator_traits<Ptr1>::value_type>());
 }
 
-template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,
-          typename BinaryPred>
-std::pair<Ptr3, Ptr4> unique_copy(Ptr1 keys_first, Size size,  Ptr2 values_first,
-                                    Ptr3 keys_result, Ptr4 values_result,
-                                    BinaryPred binary_pred) 
-{
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename BinaryPred>
+std::pair<Ptr3, Ptr4> unique_copy(Ptr1 keys_first, Size size, Ptr2 values_first,
+                                  Ptr3 keys_result, Ptr4 values_result,
+                                  BinaryPred binary_pred) {
   return dpct::internal::check_device_ptr_and_launch(
-    oneapi::dpl::execution::seq, oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-    keys_first, size, values_first, keys_result, values_result,
-    [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3, Ptr4 start4, BinaryPred binary_pred){return dpct::unique_copy(policy, start1, end1, start2, start3, start4, binary_pred);},
-    binary_pred);
+      oneapi::dpl::execution::seq,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      keys_first, size, values_first, keys_result, values_result,
+      [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
+         Ptr4 start4, BinaryPred binary_pred) {
+        return dpct::unique_copy(policy, start1, end1, start2, start3, start4,
+                                 binary_pred);
+      },
+      binary_pred);
 }
 
-template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4>
-std::pair<Ptr3, Ptr4> unique_copy(Ptr1 keys_first, Size size, Ptr2 values_first, Ptr3 keys_result, Ptr4 values_result)
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4>
+std::pair<Ptr3, Ptr4> unique_copy(Ptr1 keys_first, Size size, Ptr2 values_first,
+                                  Ptr3 keys_result, Ptr4 values_result) {
+  return dpct::unique_copy(
+      keys_first, size, values_first, keys_result, values_result,
+      std::equal_to<typename std::iterator_traits<Ptr1>::value_type>());
+}
+
 {
   return dpct::unique_copy(keys_first, size, values_first, keys_result, values_result, std::equal_to<typename std::iterator_traits<Ptr1>::value_type>());
 }
 
-#endif //#DPCT_USM_LEVEL_NONE
+#endif // #DPCT_USM_LEVEL_NONE
 
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3>
 inline ::std::enable_if_t<
