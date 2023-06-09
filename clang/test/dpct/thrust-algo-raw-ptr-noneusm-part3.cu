@@ -10,6 +10,7 @@
 #include <thrust/logical.h>
 #include <thrust/partition.h>
 #include <thrust/sort.h>
+#include <thrust/set_operations.h>
 
 void all_of() {
 
@@ -100,4 +101,36 @@ void is_sorted_until() {
   thrust::is_sorted_until(A, A + 8);
   thrust::is_sorted_until(thrust::host, A, A + 8, comp);
   thrust::is_sorted_until(A, A + 8, comp);
+}
+
+void set_intersection() {
+  int A1[6] = {1, 3, 5, 7, 9, 11};
+  int A2[7] = {1, 1, 2, 3, 5, 8, 13};
+  int result[3];
+  int *result_end;
+
+  // CHECK:  if (dpct::is_device_ptr(A1)) {
+  // CHECK-NEXT:    oneapi::dpl::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A1), dpct::device_pointer<int>(A1 + 6), dpct::device_pointer<int>(A2), dpct::device_pointer<int>(A2 + 7), dpct::device_pointer<int>(result));
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::set_intersection(oneapi::dpl::execution::seq, A1, A1 + 6, A2, A2 + 7, result);
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(A1)) {
+  // CHECK-NEXT:    oneapi::dpl::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A1), dpct::device_pointer<int>(A1 + 6), dpct::device_pointer<int>(A2), dpct::device_pointer<int>(A2 + 7), dpct::device_pointer<int>(result));
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::set_intersection(oneapi::dpl::execution::seq, A1, A1 + 6, A2, A2 + 7, result);
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(A1)) {
+  // CHECK-NEXT:    oneapi::dpl::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A1), dpct::device_pointer<int>(A1 + 6), dpct::device_pointer<int>(A2), dpct::device_pointer<int>(A2 + 7), dpct::device_pointer<int>(result), std::greater<int>());
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::set_intersection(oneapi::dpl::execution::seq, A1, A1 + 6, A2, A2 + 7, result, std::greater<int>());
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(A1)) {
+  // CHECK-NEXT:    oneapi::dpl::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A1), dpct::device_pointer<int>(A1 + 6), dpct::device_pointer<int>(A2), dpct::device_pointer<int>(A2 + 7), dpct::device_pointer<int>(result), std::greater<int>());
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::set_intersection(oneapi::dpl::execution::seq, A1, A1 + 6, A2, A2 + 7, result, std::greater<int>());
+  // CHECK-NEXT:  };
+  thrust::set_intersection(thrust::host, A1, A1 + 6, A2, A2 + 7, result);
+  thrust::set_intersection(A1, A1 + 6, A2, A2 + 7, result);
+  thrust::set_intersection(thrust::host, A1, A1 + 6, A2, A2 + 7, result, thrust::greater<int>());
+  thrust::set_intersection(A1, A1 + 6, A2, A2 + 7, result, thrust::greater<int>());
 }

@@ -10,6 +10,8 @@
 #include <thrust/logical.h>
 #include <thrust/partition.h>
 #include <thrust/sort.h>
+#include <thrust/set_operations.h>
+
 
 void all_of() {
 
@@ -110,4 +112,33 @@ void is_sorted_until() {
   d_end = thrust::is_sorted_until(d_A.begin(), d_A.end());
   d_end = thrust::is_sorted_until(thrust::device, d_A.begin(), d_A.end(), comp);
   d_end = thrust::is_sorted_until(d_A.begin(), d_A.end(), comp);
+}
+
+void set_intersection() {
+  int A1[6] = {1, 3, 5, 7, 9, 11};
+  int A2[7] = {1, 1, 2, 3, 5, 8, 13};
+  int result[3];
+  int *result_end;
+  thrust::device_vector<int> d_A1(A1, A1 + 6);
+  thrust::device_vector<int> d_A2(A2, A2 + 7);
+  thrust::device_vector<int> d_result(3);
+  thrust::device_vector<int>::iterator d_end;
+  thrust::host_vector<int> h_A1(A1, A1 + 6);
+  thrust::host_vector<int> h_A2(A2, A2 + 7);
+  thrust::host_vector<int> h_result(3);
+  thrust::host_vector<int>::iterator h_end;
+
+  result_end = thrust::set_intersection(thrust::host, A1, A1 + 6, A2, A2 + 7, result);
+  result_end = thrust::set_intersection(A1, A1 + 6, A2, A2 + 7, result);
+  result_end = thrust::set_intersection(thrust::host, A1, A1 + 6, A2, A2 + 7, result, thrust::greater<int>());
+  result_end = thrust::set_intersection(A1, A1 + 6, A2, A2 + 7, result, thrust::greater<int>());
+
+  d_end = thrust::set_intersection(thrust::device, d_A1.begin(), d_A1.end(), d_A2.begin(), d_A2.end(), d_result.begin());
+  d_end = thrust::set_intersection(d_A1.begin(), d_A1.end(), d_A2.begin(), d_A2.end(), d_result.begin());
+  d_end = thrust::set_intersection(thrust::device, d_A1.begin(), d_A1.end(), d_A2.begin(), d_A2.end(), d_result.begin(), thrust::greater<int>());
+  d_end = thrust::set_intersection(d_A1.begin(), d_A1.end(), d_A2.begin(), d_A2.end(), d_result.begin(), thrust::greater<int>());
+  h_end = thrust::set_intersection(thrust::host, h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin());
+  h_end = thrust::set_intersection(h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin());
+  h_end = thrust::set_intersection(thrust::host, h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin(), thrust::greater<int>());
+  h_end = thrust::set_intersection(h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin(), thrust::greater<int>());
 }
