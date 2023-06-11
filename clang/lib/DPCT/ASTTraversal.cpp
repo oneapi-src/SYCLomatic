@@ -6177,14 +6177,13 @@ void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusolverDnChegvj", "cusolverDnZhegvj", "cusolverDnChegvj_bufferSize",
         "cusolverDnZhegvj_bufferSize", "cusolverDnXsyevdx",
         "cusolverDnXsyevdx_bufferSize", "cusolverDnSyevdx",
-        "cusolverDnSyevdx_bufferSize",
-        "cusolverDnSsyevj", "cusolverDnDsyevj",
+        "cusolverDnSyevdx_bufferSize", "cusolverDnSsyevj", "cusolverDnDsyevj",
         "cusolverDnSsyevj_bufferSize", "cusolverDnDsyevj_bufferSize",
-        "cusolverDnCheevj", "cusolverDnZheevj",
-        "cusolverDnCheevj_bufferSize", "cusolverDnZheevj_bufferSize",
-        "cusolverDnXsyevd", "cusolverDnXsyevd_bufferSize",
-        "cusolverDnSyevd", "cusolverDnSyevd_bufferSize",
-        "cusolverDnXtrtri", "cusolverDnXtrtri_bufferSize");
+        "cusolverDnCheevj", "cusolverDnZheevj", "cusolverDnCheevj_bufferSize",
+        "cusolverDnZheevj_bufferSize", "cusolverDnXsyevd",
+        "cusolverDnXsyevd_bufferSize", "cusolverDnSyevd",
+        "cusolverDnSyevd_bufferSize", "cusolverDnXtrtri",
+        "cusolverDnXtrtri_bufferSize");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),

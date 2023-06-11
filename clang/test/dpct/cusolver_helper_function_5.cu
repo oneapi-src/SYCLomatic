@@ -34,14 +34,14 @@ int foo1() {
   cusolverDnXtrtri_bufferSize(handle, CUBLAS_FILL_MODE_UPPER, CUBLAS_DIAG_NON_UNIT, 2, CUDA_C_32F, a_c, 2, &lwork_c, &lwork_host_c);
   cusolverDnXtrtri_bufferSize(handle, CUBLAS_FILL_MODE_UPPER, CUBLAS_DIAG_NON_UNIT, 2, CUDA_C_64F, a_z, 2, &lwork_z, &lwork_host_z);
 
-  void* device_ws_s;
-  void* device_ws_d;
-  void* device_ws_c;
-  void* device_ws_z;
-  void* host_ws_s;
-  void* host_ws_d;
-  void* host_ws_c;
-  void* host_ws_z;
+  void *device_ws_s;
+  void *device_ws_d;
+  void *device_ws_c;
+  void *device_ws_z;
+  void *host_ws_s;
+  void *host_ws_d;
+  void *host_ws_c;
+  void *host_ws_z;
 
   int *info;
 

@@ -800,10 +800,10 @@ void foo16() {
   cusolverDnSyevd_bufferSize(handle, params, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, CUDA_C_32F, a_c, 2, CUDA_R_32F, w_c, CUDA_C_32F, &lwork_c);
   cusolverDnSyevd_bufferSize(handle, params, CUSOLVER_EIG_MODE_VECTOR, CUBLAS_FILL_MODE_UPPER, 2, CUDA_C_64F, a_z, 2, CUDA_R_64F, w_z, CUDA_C_64F, &lwork_z);
 
-  void* device_ws_s;
-  void* device_ws_d;
-  void* device_ws_c;
-  void* device_ws_z;
+  void *device_ws_s;
+  void *device_ws_d;
+  void *device_ws_c;
+  void *device_ws_z;
 
   int *info;
   //CHECK:dpct::lapack::syheevd(*handle, oneapi::mkl::job::vec, oneapi::mkl::uplo::upper, 2, dpct::library_data_t::real_float, a_s, 2, dpct::library_data_t::real_float, w_s, device_ws_s, lwork_s, info);
