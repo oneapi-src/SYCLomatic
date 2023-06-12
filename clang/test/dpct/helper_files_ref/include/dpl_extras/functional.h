@@ -304,20 +304,20 @@ make_device_pointer_from_pointer(T t)
 template<typename... Args>
 inline constexpr bool __are_all_pointer_v= (... && std::is_pointer_v<Args>);
 
-template <typename _ExecutionPolicyHost, typename _ExecutionPolicyDevice, 
+template <typename ExecutionPolicyHost, typename ExecutionPolicyDevice, 
           typename Oper, typename Ptr1, typename Ptr2,  
-          typename _Func, typename RetPtr1, typename RetPtr2, typename... MiddlePtrs>
+          typename Func, typename RetPtr1, typename RetPtr2, typename... MiddlePtrs>
 inline std::enable_if_t<
     std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> && std::is_pointer_v<RetPtr1> && std::is_pointer_v<RetPtr2> && dpct::internal::__are_all_pointer_v<MiddlePtrs...>,
     ::std::pair<RetPtr1, RetPtr2>>
-check_device_ptr_and_launch(_ExecutionPolicyHost &&host_policy,
-                            _ExecutionPolicyDevice &&dev_policy, Oper op, std::size_t size1, std::size_t size2, _Func func,
+check_device_ptr_and_launch(ExecutionPolicyHost &&host_policy,
+                            ExecutionPolicyDevice &&dev_policy, Oper op, std::size_t size1, std::size_t size2, Func func,
                             RetPtr1 ret_base1, RetPtr2 ret_base2,
                             Ptr1 start1, Ptr2 start2,  
                             MiddlePtrs... middle_ptrs) {
   if (dpct::is_device_ptr(start1)) {
     
-    auto ret = func(std::forward<_ExecutionPolicyDevice>(dev_policy),
+    auto ret = func(std::forward<ExecutionPolicyDevice>(dev_policy),
                     dpct::internal::make_device_pointer_from_pointer(start1),
                     dpct::internal::make_device_pointer_from_pointer(start1) + size1,
                     dpct::internal::make_device_pointer_from_pointer(start2),
@@ -327,114 +327,114 @@ check_device_ptr_and_launch(_ExecutionPolicyHost &&host_policy,
     return ::std::pair<RetPtr1, RetPtr2>(ret_base1 + (ret.first - dpct::internal::make_device_pointer_from_pointer(ret_base1)),
                                      ret_base2 + (ret.second - dpct::internal::make_device_pointer_from_pointer(ret_base2)));
   } else {
-    return func(std::forward<_ExecutionPolicyHost>(host_policy), start1,
+    return func(std::forward<ExecutionPolicyHost>(host_policy), start1,
                 start1 + size1, start2, start2 + size2, middle_ptrs..., op);
   }
 }
 
 
-template <typename _ExecutionPolicyHost, typename _ExecutionPolicyDevice,
-          typename _Ptr1, typename Size, typename _Ptr2, typename _Ptr3,
-          typename _Ptr4, typename _Func, typename... _Args>
-inline std::enable_if_t<std::is_pointer_v<_Ptr1> && std::is_pointer_v<_Ptr2> &&
-                            std::is_pointer_v<_Ptr3> &&
-                            std::is_pointer_v<_Ptr4>,
-                        ::std::pair<_Ptr3, _Ptr4>>
-check_device_ptr_and_launch(_ExecutionPolicyHost &&host_policy,
-                            _ExecutionPolicyDevice &&dev_policy, _Ptr1 start1,
-                            Size size, _Ptr2 start2, _Ptr3 start3, _Ptr4 start4,
-                            _Func func, _Args... args) {
+template <typename ExecutionPolicyHost, typename ExecutionPolicyDevice,
+          typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Func, typename... _Args>
+inline std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
+                            std::is_pointer_v<Ptr3> &&
+                            std::is_pointer_v<Ptr4>,
+                        ::std::pair<Ptr3, Ptr4>>
+check_device_ptr_and_launch(ExecutionPolicyHost &&host_policy,
+                            ExecutionPolicyDevice &&dev_policy, Ptr1 start1,
+                            Size size, Ptr2 start2, Ptr3 start3, Ptr4 start4,
+                            Func func, _Args... args) {
   if (dpct::is_device_ptr(start1)) {
-    using value_type1 = typename std::iterator_traits<_Ptr1>::value_type;
-    using value_type2 = typename std::iterator_traits<_Ptr2>::value_type;
-    using value_type3 = typename std::iterator_traits<_Ptr3>::value_type;
-    using value_type4 = typename std::iterator_traits<_Ptr4>::value_type;
+    using value_type1 = typename std::iterator_traits<Ptr1>::value_type;
+    using value_type2 = typename std::iterator_traits<Ptr2>::value_type;
+    using value_type3 = typename std::iterator_traits<Ptr3>::value_type;
+    using value_type4 = typename std::iterator_traits<Ptr4>::value_type;
     auto dev_start1 = dpct::device_pointer<value_type1>(start1);
     auto dev_end1 = dpct::device_pointer<value_type1>(start1) + size;
     auto dev_start2 = dpct::device_pointer<value_type2>(start2);
     auto dev_start3 = dpct::device_pointer<value_type3>(start3);
     auto dev_start4 = dpct::device_pointer<value_type4>(start4);
     auto ret =
-        func(std::forward<_ExecutionPolicyDevice>(dev_policy), dev_start1,
+        func(std::forward<ExecutionPolicyDevice>(dev_policy), dev_start1,
              dev_end1, dev_start2, dev_start3, dev_start4, args...);
-    return ::std::pair<_Ptr3, _Ptr4>(start3 + (ret.first - dev_start3),
+    return ::std::pair<Ptr3, Ptr4>(start3 + (ret.first - dev_start3),
                                      start4 + (ret.second - dev_start4));
   } else {
-    return func(std::forward<_ExecutionPolicyHost>(host_policy), start1,
+    return func(std::forward<ExecutionPolicyHost>(host_policy), start1,
                 start1 + size, start2, start3, start4, args...);
   }
 }
 
-template <typename _ExecutionPolicyHost, typename _ExecutionPolicyDevice,
-          typename _Ptr1, typename Size, typename _Ptr2, typename _Ptr3,
-          typename _Func, typename... _Args>
-inline std::enable_if_t<std::is_pointer_v<_Ptr1> && std::is_pointer_v<_Ptr2> &&
-                            std::is_pointer_v<_Ptr3> ,
-                        ::std::pair<_Ptr2, _Ptr3>>
-check_device_ptr_and_launch(_ExecutionPolicyHost &&host_policy,
-                            _ExecutionPolicyDevice &&dev_policy, _Ptr1 start1,
-                            Size size, _Ptr2 start2, _Ptr3 start3,
-                            _Func func, _Args... args) {
+template <typename ExecutionPolicyHost, typename ExecutionPolicyDevice,
+          typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Func, typename... _Args>
+inline std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
+                            std::is_pointer_v<Ptr3> ,
+                        ::std::pair<Ptr2, Ptr3>>
+check_device_ptr_and_launch(ExecutionPolicyHost &&host_policy,
+                            ExecutionPolicyDevice &&dev_policy, Ptr1 start1,
+                            Size size, Ptr2 start2, Ptr3 start3,
+                            Func func, _Args... args) {
   if (dpct::is_device_ptr(start1)) {
-    using value_type1 = typename std::iterator_traits<_Ptr1>::value_type;
-    using value_type2 = typename std::iterator_traits<_Ptr2>::value_type;
-    using value_type3 = typename std::iterator_traits<_Ptr3>::value_type;
+    using value_type1 = typename std::iterator_traits<Ptr1>::value_type;
+    using value_type2 = typename std::iterator_traits<Ptr2>::value_type;
+    using value_type3 = typename std::iterator_traits<Ptr3>::value_type;
     auto dev_start1 = dpct::device_pointer<value_type1>(start1);
     auto dev_end1 = dpct::device_pointer<value_type1>(start1) + size;
     auto dev_start2 = dpct::device_pointer<value_type2>(start2);
     auto dev_start3 = dpct::device_pointer<value_type3>(start3);
     auto ret =
-        func(std::forward<_ExecutionPolicyDevice>(dev_policy), dev_start1,
+        func(std::forward<ExecutionPolicyDevice>(dev_policy), dev_start1,
              dev_end1, dev_start2, dev_start3, args...);
-    return ::std::pair<_Ptr2, _Ptr3>(start2 + (ret.first - dev_start2),
+    return ::std::pair<Ptr2, Ptr3>(start2 + (ret.first - dev_start2),
                                      start3 + (ret.second - dev_start3));
   } else {
-    return func(std::forward<_ExecutionPolicyHost>(host_policy), start1,
+    return func(std::forward<ExecutionPolicyHost>(host_policy), start1,
                 start1 + size, start2, start3, args...);
   }
 }
 
-template <typename _ExecutionPolicyHost, typename _ExecutionPolicyDevice,
-          typename _Ptr1, typename Size, typename _Ptr2, typename _Func,
+template <typename ExecutionPolicyHost, typename ExecutionPolicyDevice,
+          typename Ptr1, typename Size, typename Ptr2, typename Func,
           typename... _Args>
-inline std::enable_if_t<std::is_pointer_v<_Ptr1> && std::is_pointer_v<_Ptr2>,
-                        ::std::pair<_Ptr1, _Ptr2>>
-check_device_ptr_and_launch(_ExecutionPolicyHost &&host_policy,
-                            _ExecutionPolicyDevice &&dev_policy, _Ptr1 start1,
-                            Size size, _Ptr2 start2, _Func func,
+inline std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2>,
+                        ::std::pair<Ptr1, Ptr2>>
+check_device_ptr_and_launch(ExecutionPolicyHost &&host_policy,
+                            ExecutionPolicyDevice &&dev_policy, Ptr1 start1,
+                            Size size, Ptr2 start2, Func func,
                             _Args... args) {
   if (dpct::is_device_ptr(start1)) {
-    using value_type1 = typename std::iterator_traits<_Ptr1>::value_type;
-    using value_type2 = typename std::iterator_traits<_Ptr2>::value_type;
+    using value_type1 = typename std::iterator_traits<Ptr1>::value_type;
+    using value_type2 = typename std::iterator_traits<Ptr2>::value_type;
     auto dev_start1 = dpct::device_pointer<value_type1>(start1);
     auto dev_end1 = dpct::device_pointer<value_type1>(start1) + size;
     auto dev_start2 = dpct::device_pointer<value_type2>(start2);
-    auto ret = func(std::forward<_ExecutionPolicyDevice>(dev_policy),
+    auto ret = func(std::forward<ExecutionPolicyDevice>(dev_policy),
                     dev_start1, dev_end1, dev_start2, args...);
-    return ::std::pair<_Ptr1, _Ptr2>(start1 + (ret.first - dev_start1),
+    return ::std::pair<Ptr1, Ptr2>(start1 + (ret.first - dev_start1),
                                      start2 + (ret.second - dev_start2));
   } else {
-    return func(std::forward<_ExecutionPolicyHost>(host_policy), start1,
+    return func(std::forward<ExecutionPolicyHost>(host_policy), start1,
                 start1 + size, start2, args...);
   }
 }
 
-template <typename _ExecutionPolicyHost, typename _ExecutionPolicyDevice,
-          typename _PtrT, typename Size, typename _Func, typename... _Args>
-inline std::enable_if_t<std::is_pointer_v<_PtrT>, ::std::pair<_PtrT, _PtrT>>
-check_device_ptr_and_launch(_ExecutionPolicyHost &&host_policy,
-                            _ExecutionPolicyDevice &&dev_policy, _PtrT start,
-                            Size size, _Func func, _Args... args) {
+template <typename ExecutionPolicyHost, typename ExecutionPolicyDevice,
+          typename PtrT, typename Size, typename Func, typename... _Args>
+inline std::enable_if_t<std::is_pointer_v<PtrT>, ::std::pair<PtrT, PtrT>>
+check_device_ptr_and_launch(ExecutionPolicyHost &&host_policy,
+                            ExecutionPolicyDevice &&dev_policy, PtrT start,
+                            Size size, Func func, _Args... args) {
   if (dpct::is_device_ptr(start)) {
-    using value_type = typename std::iterator_traits<_PtrT>::value_type;
+    using value_type = typename std::iterator_traits<PtrT>::value_type;
     auto dev_start = dpct::device_pointer<value_type>(start);
     auto dev_end = dpct::device_pointer<value_type>(start) + size;
-    auto ret = func(std::forward<_ExecutionPolicyDevice>(dev_policy), dev_start,
+    auto ret = func(std::forward<ExecutionPolicyDevice>(dev_policy), dev_start,
                     dev_end, args...);
-    return ::std::pair<_PtrT, _PtrT>(start + (ret.first - dev_start),
+    return ::std::pair<PtrT, PtrT>(start + (ret.first - dev_start),
                                      start + (ret.second - dev_start));
   } else {
-    return func(std::forward<_ExecutionPolicyHost>(host_policy), start,
+    return func(std::forward<ExecutionPolicyHost>(host_policy), start,
                 start + size, args...);
   }
 }
