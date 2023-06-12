@@ -1703,15 +1703,17 @@ template <typename Ptr1, typename Size, typename ValueLessComparable,
 inline std::enable_if_t<std::is_pointer_v<Ptr1>, ::std::pair<Ptr1, Ptr1>>
 equal_range(Ptr1 start, Size size, const ValueLessComparable &value,
             StrictWeakOrdering comp) {
-  return dpct::internal::check_device_ptr_and_launch(
+  return dpct::internal::check_device_ptr_and_launch_w_value(
       oneapi::dpl::execution::seq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-      start, size,
+      value, comp, size,
       [](auto policy, Ptr1 start, Ptr1 end, const ValueLessComparable &value,
          StrictWeakOrdering comp) {
         return dpct::equal_range(policy, start, end, value, comp);
       },
-      value, comp);
+      start, start, //return base
+      start //all ptrs
+      );
 }
 
 template <typename _T, typename Size, typename ValueLessComparable>
@@ -1727,12 +1729,14 @@ unique(Ptr1 start1, Size size, Ptr2 start2,
   return dpct::internal::check_device_ptr_and_launch(
       oneapi::dpl::execution::seq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-      start1, size, start2,
+      binary_pred, size,
       [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2,
          BinaryPred binary_pred) {
         return dpct::unique(policy, start1, end1, start2, binary_pred);
       },
-      binary_pred);
+      start1, start2, //return base
+      start1, start2 //all ptrs
+      );
 }
 
 template <typename Ptr1, typename Size, typename Ptr2>
@@ -1751,13 +1755,15 @@ std::pair<Ptr3, Ptr4> unique_copy(Ptr1 keys_first, Size size, Ptr2 values_first,
   return dpct::internal::check_device_ptr_and_launch(
       oneapi::dpl::execution::seq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-      keys_first, size, values_first, keys_result, values_result,
+      binary_pred, size,
       [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
          Ptr4 start4, BinaryPred binary_pred) {
         return dpct::unique_copy(policy, start1, end1, start2, start3, start4,
                                  binary_pred);
       },
-      binary_pred);
+      keys_result, values_result, //return base
+      keys_first, values_first, keys_result, values_result //all ptrs
+      );
 }
 
 template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
@@ -1825,8 +1831,9 @@ set_intersection(Ptr1 keys_first1, Size size1,
         return dpct::set_intersection(policy, start1, end1, start2, end2, start3, start4, start5,
                                  comp);
       }, 
-      keys_result, values_result,
-      keys_first1, keys_first2, values_first1, keys_result, values_result);
+      keys_result, values_result, //return base
+      keys_first1, keys_first2, values_first1, keys_result, values_result //all ptrs
+      );
 
 }
 
@@ -1863,8 +1870,10 @@ set_symmetric_difference(Ptr1 keys_first1, Size size1,
          Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
         return dpct::set_symmetric_difference(policy, start1, end1, start2, end2, start3, start4, start5, 
                                  start6);
-      }, keys_result, values_result,
-      keys_first1, keys_first2, values_first1, values_first2, keys_result, values_result);
+      }, 
+      keys_result, values_result, //return base
+      keys_first1, keys_first2, values_first1, values_first2, keys_result, values_result // all ptrs
+      );
 }
 
 template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,
@@ -1902,8 +1911,10 @@ set_difference(Ptr1 keys_first1, Size size1, Ptr2 keys_first2,
          Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
         return dpct::set_difference(policy, start1, end1, start2, end2, start3, start4, start5, 
                                  start6, comp);
-      },  keys_result, values_result,
-      keys_first1, keys_first2, values_first1, values_first2, keys_result, values_result);
+      },
+      keys_result, values_result, //return base
+      keys_first1, keys_first2, values_first1, values_first2, keys_result, values_result //all ptrs
+      ); 
 }
 
 template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,
@@ -1938,8 +1949,10 @@ set_union(Ptr1 keys_first1, Size size1,
          Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
         return dpct::set_union(policy, start1, end1, start2, end2, start3, start4, start5, 
                                  start6, comp);
-      }, keys_result, values_result,
-      keys_first1, keys_first2, values_first1, values_first2, keys_result, values_result);
+      }, 
+      keys_result, values_result, //return base
+      keys_first1, keys_first2, values_first1, values_first2, keys_result, values_result //all ptrs
+      );
 }
 
 template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,
@@ -1966,13 +1979,15 @@ stable_partition_copy(Ptr1 first, Size size, Ptr2 mask,
   return dpct::internal::check_device_ptr_and_launch(
       oneapi::dpl::execution::seq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-      first, size, mask, out_true, out_false,
+      p, size,
       [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
          Ptr4 start4, Pred pred) {
         return dpct::stable_partition_copy(policy, start1, end1, start2, start3, start4,
                                  pred);
       },
-      p);
+      out_true, out_false, //return base
+      first, mask, out_true, out_false //all ptrs
+      );
 
 }
 template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
@@ -1985,13 +2000,15 @@ stable_partition_copy(Ptr1 first, Size size, Ptr2 out_true,
   return dpct::internal::check_device_ptr_and_launch(
       oneapi::dpl::execution::seq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-      first, size, out_true, out_false,
+      p, size,
       [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
          Pred pred) {
         return dpct::stable_partition_copy(policy, start1, end1, start2, start3,
                                  pred);
       },
-      p);
+      out_true, out_false, //return base
+      first, out_true, out_false // all ptrs
+      );
 }
 
 template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
@@ -2004,13 +2021,15 @@ partition_copy(Ptr1 first, Size size, Ptr2 mask,
   return dpct::internal::check_device_ptr_and_launch(
       oneapi::dpl::execution::seq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-      first, size, mask, out_true, out_false,
+      p, size,
       [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
          Ptr4 start4, Pred pred) {
         return dpct::partition_copy(policy, start1, end1, start2, start3, start4,
                                  pred);
       },
-      p);
+      out_true, out_false, //return base
+      first, mask, out_true, out_false // all ptrs
+      );
 }
 
 #endif // #DPCT_USM_LEVEL_NONE
