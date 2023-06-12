@@ -17,7 +17,7 @@ non-GPU devices.
 Detailed Help
 -------------
 
-The FFT of |mkl| can use either an internal workspace or external workspace during
+The FFT of |mkl_long|_ can use either an internal workspace or external workspace during
 computation. The internal workspace mode is supported on all devices, while the
 external workspace mode is currently only supported on GPU devices.
 

@@ -310,7 +310,7 @@ the same instance of the device manager ``dpct::dev_mgr`` and the memory manager
 code with the Intel® oneAPI DPC++/C++ Compiler?**
 
 Shifting bits where the shift is greater than the type length is undefined
-behavior for the |dpcpp_compiler| and may result in different behavior on
+behavior for the |dpcpp_compiler|_ and may result in different behavior on
 different devices. Adjust your code to avoid this type of shift.
 
 For example, the migrated SYCL\* code:

@@ -281,7 +281,7 @@ Algorithm Helper Functions
 **************************
 
 The algorithm helper functions are available in the ``dpl_extras/algorithm.h``
-header file. Algorithm helper functions are wrappers around |oneDPL_long| algorithm
+header file. Algorithm helper functions are wrappers around |oneDPL_long|_ algorithm
 functions.
 
 **Mask-predicated Algorithm Functions**
