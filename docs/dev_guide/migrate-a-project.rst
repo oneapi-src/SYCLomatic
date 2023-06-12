@@ -15,7 +15,7 @@ Migrate a Project
 
 
 |tool_name| ports CUDA\* language kernels and library API calls to
-SYCL\* for the |dpcpp_compiler|. Typically, 90%-95% of CUDA code automatically
+SYCL\* for the |dpcpp_compiler|_. Typically, 90%-95% of CUDA code automatically
 migrates to SYCL. The tool inserts inline comments during migration to
 help you complete the remaining code migration.
 
@@ -52,5 +52,5 @@ help you complete the remaining code migration.
 #. **Build the project with the Intel® oneAPI DPC++/C++ Compiler**
 
    Make sure your newly migrated project compiles successfully with the
-   |dpcpp_compiler|.
+   |dpcpp_compiler|_.
 
