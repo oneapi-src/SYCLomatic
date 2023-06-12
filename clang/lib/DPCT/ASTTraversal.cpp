@@ -12121,11 +12121,18 @@ void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
         V, MapNames::getDpctNamespace() + "kernel_function_info"));
     requestFeature(HelperFeatureEnum::Kernel_kernel_function_info, V);
   } else if (auto C = getNodeAsType<CallExpr>(Result, "call")) {
-    requestFeature(HelperFeatureEnum::Kernel_get_kernel_function_info, C);
-    emplaceTransformation(new ReplaceToken(
+    if (isAssigned(C)) {
+      requestFeature(HelperFeatureEnum::Dpct_check_error_code, C);
+      emplaceTransformation(new ReplaceToken(
         C->getBeginLoc(), "DPCT_CHECK_ERROR(" + MapNames::getDpctNamespace() +
                               "get_kernel_function_info"));
-    emplaceTransformation(new InsertAfterStmt(C, ")"));
+      emplaceTransformation(new InsertAfterStmt(C, ")"));
+    } else {
+       emplaceTransformation(new ReplaceToken(
+        C->getBeginLoc(), MapNames::getDpctNamespace() +
+                              "get_kernel_function_info"));
+    }
+    requestFeature(HelperFeatureEnum::Kernel_get_kernel_function_info, C);
     auto FuncArg = C->getArg(1);
     emplaceTransformation(new InsertBeforeStmt(FuncArg, "(const void *)"));
   } else if (auto C = getNodeAsType<CallExpr>(Result, "callFuncGetAttribute")) {
