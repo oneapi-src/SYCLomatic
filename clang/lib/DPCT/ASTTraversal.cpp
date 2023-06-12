@@ -12124,13 +12124,13 @@ void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
     if (isAssigned(C)) {
       requestFeature(HelperFeatureEnum::Dpct_check_error_code, C);
       emplaceTransformation(new ReplaceToken(
-        C->getBeginLoc(), "DPCT_CHECK_ERROR(" + MapNames::getDpctNamespace() +
-                              "get_kernel_function_info"));
+          C->getBeginLoc(), "DPCT_CHECK_ERROR(" + MapNames::getDpctNamespace() +
+                                "get_kernel_function_info"));
       emplaceTransformation(new InsertAfterStmt(C, ")"));
     } else {
-       emplaceTransformation(new ReplaceToken(
-        C->getBeginLoc(), MapNames::getDpctNamespace() +
-                              "get_kernel_function_info"));
+      emplaceTransformation(
+          new ReplaceToken(C->getBeginLoc(), MapNames::getDpctNamespace() +
+                                                 "get_kernel_function_info"));
     }
     requestFeature(HelperFeatureEnum::Kernel_get_kernel_function_info, C);
     auto FuncArg = C->getArg(1);
