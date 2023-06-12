@@ -19,6 +19,8 @@
 #include <oneapi/dnnl/dnnl_sycl.hpp>
 #include <unordered_map>
 #include <algorithm>
+#include <functional>
+#include <list>
 
 #include "memory.hpp"
 #include "device.hpp"
@@ -750,13 +752,108 @@ public:
   friend class engine_ext;
 };
 
+namespace detail{
+struct primitive_key_type{
+  std::string name;
+  ::dnnl::prop_kind p_kind;
+  ::dnnl::algorithm alg;
+  ::dnnl::fpmath_mode math_mode;
+  std::vector<::dnnl::memory::desc> mems;
+  std::vector<float> params_1;
+  std::vector<std::vector<int64_t>> params_2;
+  bool operator==(const primitive_key_type& other) const {
+    if(mems.size() != other.mems.size()) {
+      return false;
+    }
+    bool result = true;
+    for(int i = 0; i < mems.size(); i++) {
+      result = result && (mems[i].get_data_type() == other.mems[i].get_data_type()) &&
+        (mems[i].get_dims() == other.mems[i].get_dims());
+      if(!result)  {
+        return false;
+      }
+    }
+    return result && (name == other.name) && (p_kind == other.p_kind) &&
+      (alg == other.alg) && (math_mode == other.math_mode) && (params_1 == other.params_1) && 
+      (params_2 == other.params_2);
+  }
+};
+struct primitive_key_hasher{
+  std::size_t operator()(const primitive_key_type& key) const{
+    std::hash<std::string> string_hasher;
+    std::hash<int> int_hasher;
+    std::hash<float> float_hasher;
+    std::size_t result = 0;
+    result ^= string_hasher(key.name) + 0x9e3779b9 + (result << 3);
+    result ^= int_hasher((int)key.p_kind);
+    result ^= int_hasher((int)key.alg);
+    result ^= int_hasher((int)key.math_mode);
+    for(auto &mem : key.mems) {
+      result ^= int_hasher((int)mem.get_data_type());
+      for(auto &dim: mem.get_dims()) {
+        result ^= int_hasher((int)dim);
+      }
+    }
+    for(auto &param : key.params_1) {
+      result ^= float_hasher(param);
+    }
+    for(auto &param : key.params_2) {
+      for(auto &e : param) {
+        result ^= float_hasher(e);
+      }
+    }
+    return result;
+  }
+};
+class primitive_cache {
+public:
+  void* get(primitive_key_type& key) {
+    auto it = cache.find(key);
+    if (it == cache.end()) {
+      return nullptr;
+    }
+    touch(it);
+    return it->second.first;
+  }
+  void put(primitive_key_type& key, void *value) {
+    auto it = cache.find(key);
+    if (it != cache.end()){
+      touch(it);
+    } else {
+      if (cache.size() == _capacity) {
+        auto last_primitive = cache.find(usage.back());
+        std::string name = key.name;
+        if(name == "convolution_forward") {
+          delete static_cast<::dnnl::convolution_forward*>(last_primitive->second.first);
+        } else {
+          throw std::runtime_error("Unknow primitive type.");
+        }
+        cache.erase(usage.back());
+        usage.pop_back();
+      }
+      usage.push_front(key);
+      cache[key] = { value, usage.begin() };
+    }
+  }
+private:
+  typedef std::list<primitive_key_type> usage_list_type;
+  typedef std::unordered_map<primitive_key_type,
+    std::pair<void*, usage_list_type::iterator>,
+    primitive_key_hasher> cache_type;
+  int _capacity = 128;
+  usage_list_type usage;
+  cache_type cache;
+  void touch(cache_type::iterator it) {
+    primitive_key_type key = it->first;
+    usage.erase(it->second.second);
+    usage.push_front(key);
+    it->second.second = usage.begin();
+  }
+};
+} // namespace detail
+
 /// A class holding the oneDNN engine.
 class engine_ext {
-  ::dnnl::engine _eng;
-  ::dnnl::stream _s;
-  sycl::queue *_q = nullptr;
-  std::map<void *, ::dnnl::memory> workspace_map;
-  std::int64_t _random_engine_state_size = -1;
   struct output_argument_info {
     float _alpha;
     float _beta;
@@ -770,7 +867,12 @@ class engine_ext {
                          void *data)
         : _alpha(alpha), _beta(beta), _name(0), _desc(desc), _data(data) {}
   };
-
+  ::dnnl::engine _eng;
+  ::dnnl::stream _s;
+  sycl::queue *_q = nullptr;
+  std::map<void *, ::dnnl::memory> workspace_map;
+  std::int64_t _random_engine_state_size = -1;
+  detail::primitive_cache _primitive_cache;
   ::dnnl::memory &get_workspace(void *key) { return workspace_map[key]; }
   void insert_workspace(void *key, ::dnnl::memory workspace) {
     workspace_map[key] = workspace;
@@ -805,6 +907,22 @@ class engine_ext {
   bn_reorder_memory_to_channel_major_format(bool is_input, ::dnnl::memory::desc &desc,
                                      void *src, void **cache,
                                      std::vector<void *> &caches);
+  ::dnnl::memory::desc
+  transfer_memory_desc_to_format_tag_any(const ::dnnl::memory::desc &desc){
+    return ::dnnl::memory::desc(desc.get_dims(), desc.get_data_type(),
+                                ::dnnl::memory::format_tag::any);
+  }
+  void reorder_memory_desc_to_optimal(::dnnl::memory::desc &from_desc,
+                                      void *&from,
+                                      ::dnnl::memory::desc &to_desc,
+                                      void *&to,
+                                      std::vector<void *> &caches){
+    if(from_desc != to_desc) {
+      to = allocate(to_desc);
+      caches.push_back(to);
+      async_reorder(1.f, from_desc, from, 0.f, to_desc, to); 
+    }
+  }
   template <typename primitive_type, typename... args_type>
   primitive_type *create_forward_primitive(args_type &&...args);
 
@@ -842,7 +960,19 @@ class engine_ext {
       int seq_length, int batch_size, int src_c, int dst_c, int layer_size,
       int direction_num, int hidden_size, int gate_num, int projection_size,
       std::vector<void *> &data, std::vector<int> &offset, int iter_num);
-
+  void async_free(sycl::queue *q, sycl::event e, std::vector<void *> 
+                  device_ptrs = {}) {
+    q->submit([&](sycl::handler &cgh) {
+      cgh.depends_on(e);
+      cgh.host_task([=] {
+        for (auto ptr : device_ptrs) {
+          if(ptr){
+            sycl::free(ptr, *_q);
+          }
+        }
+      });
+    });
+  };
   template <typename primitive_type, typename args_type>
   void async_free(sycl::queue *q, sycl::event e, primitive_type *primitive,
                   args_type *args, std::vector<void *> device_ptrs = {}) {
@@ -869,7 +999,8 @@ class engine_ext {
   sycl::event
   execute_primitive(primitive_type *primitive, args_type *args,
                     const std::vector<output_argument_info> &extra_args,
-                    const std::vector<void *> &device_ptrs = {});
+                    const std::vector<void *> &device_ptrs = {},
+                    bool preserve_primitive = false);
   template <typename primitive_type, typename args_type>
   sycl::event
   execute_primitive(primitive_type *primitive, args_type *args,
@@ -2457,7 +2588,7 @@ template <typename primitive_type, typename args_type>
 sycl::event engine_ext::execute_primitive(
     primitive_type *primitive, args_type *args,
     const std::vector<output_argument_info> &output_args,
-    const std::vector<void *> &device_ptrs) {
+    const std::vector<void *> &device_ptrs, bool preserve_primitive) {
   std::vector<void *> caches;
   int output_arg_num = output_args.size();
   for (int i = 0; i < output_arg_num; i++) {
@@ -2489,6 +2620,9 @@ sycl::event engine_ext::execute_primitive(
     }
   }
   caches.insert(caches.end(), device_ptrs.begin(), device_ptrs.end());
+  if(preserve_primitive) {
+    primitive = nullptr;
+  }
   async_free(_q, e, primitive, args, caches);
   return e;
 }
@@ -4130,16 +4264,54 @@ engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm 
   ::dnnl::primitive_attr attr;
   attr.set_fpmath_mode(desc.get_math_mode());
 
-  auto primitive = create_forward_primitive<::dnnl::convolution_forward>(
-      ::dnnl::prop_kind::forward_training, alg, src_desc.get_desc(),
-      help_weight_desc, dst_desc.get_desc(), desc.get_stride(),
-      desc.get_dilate(), desc.get_padding(), desc.get_padding(), attr);
+  auto origin_src_md = src_desc.get_desc();
+  auto origin_dst_md = dst_desc.get_desc();
+  auto origin_weight_md = help_weight_desc;
 
+  auto src_md = transfer_memory_desc_to_format_tag_any(origin_src_md);
+  auto dst_md = transfer_memory_desc_to_format_tag_any(origin_dst_md);
+  auto weight_md = transfer_memory_desc_to_format_tag_any(origin_weight_md);
+
+  detail::primitive_key_type key = {
+      "convolution_forward", ::dnnl::prop_kind::forward_training, alg,
+      desc.get_math_mode(), {src_md, weight_md, dst_md}, {},
+      {desc.get_dilate(), desc.get_padding(), desc.get_padding()}
+  };
+  ::dnnl::convolution_forward* primitive = 
+    (::dnnl::convolution_forward*)_primitive_cache.get(key);
+  if(!primitive) {
+    primitive = create_forward_primitive<::dnnl::convolution_forward>(
+      ::dnnl::prop_kind::forward_training, alg, src_md,
+      weight_md, dst_md, desc.get_stride(),
+      desc.get_dilate(), desc.get_padding(), desc.get_padding(), attr);
+    _primitive_cache.put(key, primitive);
+  }
+  ::dnnl::convolution_forward::primitive_desc pd =
+    ::dnnl::convolution_forward::primitive_desc(
+      const_cast<dnnl_primitive_desc_t>(primitive->get_primitive_desc()));
+  auto optimal_src_md = pd.src_desc();
+  auto optimal_dst_md = pd.dst_desc();
+  auto optimal_weight_md = pd.weights_desc();
+
+  void *optimal_src = src, *optimal_dst = dst, *optimal_weight = weight;
+  std::vector<void *> input_caches, output_caches;
+  reorder_memory_desc_to_optimal(origin_src_md, src, optimal_src_md, optimal_src,
+                                 input_caches);
+  reorder_memory_desc_to_optimal(origin_weight_md, weight, optimal_weight_md, optimal_weight,
+                                 input_caches);
+  reorder_memory_desc_to_optimal(origin_dst_md, dst, optimal_dst_md, optimal_dst,
+                                 output_caches);
   auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
-      {DNNL_ARG_SRC, {::dnnl::memory(src_desc.get_desc(), _eng, src)}},
-      {DNNL_ARG_WEIGHTS, {::dnnl::memory(help_weight_desc, _eng, weight)}}};
-  return execute_primitive(primitive, execution_args,
-                           {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
+      {DNNL_ARG_SRC, {::dnnl::memory(optimal_src_md, _eng, optimal_src)}},
+      {DNNL_ARG_WEIGHTS, {::dnnl::memory(optimal_weight_md, _eng, optimal_weight)}}};
+  auto e = execute_primitive(primitive, execution_args,
+                           {{alpha, beta, DNNL_ARG_DST, optimal_dst_md, optimal_dst}},
+                           input_caches, true);
+  if(origin_dst_md != optimal_dst_md){
+    e = async_reorder(1.f, optimal_dst_md, optimal_dst, 0.f, origin_dst_md, dst);
+  }
+  async_free(_q, e, output_caches);
+  return e;
 }
 
 inline
