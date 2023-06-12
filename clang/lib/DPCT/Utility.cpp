@@ -2651,8 +2651,8 @@ findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(const CallExpr *CE) {
           break;
         const Expr *Cond = DS->getCond();
         Expr::EvalResult ER;
-        if (Cond->EvaluateAsInt(ER, dpct::DpctGlobalInfo::getContext()) &&
-            !Cond->isTypeDependent() && !Cond->isValueDependent()) {
+        if (!Cond->isTypeDependent() && !Cond->isValueDependent() &&
+            Cond->EvaluateAsInt(ER, dpct::DpctGlobalInfo::getContext())) {
           int64_t Value = ER.Val.getInt().getExtValue();
           // If the Cond is 0, it means this Do-stmt just execute once
           if (Value != 0) {
@@ -3224,8 +3224,8 @@ getAncestorFlowControl(const clang::Stmt *S,
       } else if (StmtClass == Stmt::StmtClass::DoStmtClass) {
         const Expr *CondExpr = dyn_cast<DoStmt>(Parent)->getCond();
         Expr::EvalResult ER;
-        if (CondExpr->EvaluateAsInt(ER, Context) &&
-            !CondExpr->isValueDependent()) {
+        if (!CondExpr->isValueDependent() &&
+            CondExpr->EvaluateAsInt(ER, Context)) {
           int64_t Value = ER.Val.getInt().getExtValue();
           if (Value != 0) {
             return Parent;
