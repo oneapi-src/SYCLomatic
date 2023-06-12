@@ -301,11 +301,14 @@ make_device_pointer_from_pointer(T t)
   return dpct::device_pointer<typename std::iterator_traits<T>::value_type>(t);
 }
 
+template<typename... Args>
+inline constexpr bool __are_all_pointer_v= (... && std::is_pointer_v<Args>);
+
 template <typename _ExecutionPolicyHost, typename _ExecutionPolicyDevice, 
           typename Oper, typename Ptr1, typename Ptr2,  
           typename _Func, typename RetPtr1, typename RetPtr2, typename... MiddlePtrs>
 inline std::enable_if_t<
-    std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> && std::is_pointer_v<RetPtr1> && std::is_pointer_v<RetPtr2>,
+    std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> && std::is_pointer_v<RetPtr1> && std::is_pointer_v<RetPtr2> && dpct::internal::__are_all_pointer_v<MiddlePtrs...>,
     ::std::pair<RetPtr1, RetPtr2>>
 check_device_ptr_and_launch(_ExecutionPolicyHost &&host_policy,
                             _ExecutionPolicyDevice &&dev_policy, Oper op, std::size_t size1, std::size_t size2, _Func func,
