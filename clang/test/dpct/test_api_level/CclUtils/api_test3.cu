@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/CclUtils/apt_test3_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/CclUtils/apt_test3_out
 
-// CHECK: 34
+// CHECK: 35
 // TEST_FEATURE: CclUtils_create_kvs
 // TEST_FEATURE: CclUtils_get_kvs_detail
 // TEST_FEATURE: CclUtils_ccl_init_helper
@@ -14,6 +14,7 @@
 // TEST_FEATURE: CclUtils_communicator_wrapper_size
 // TEST_FEATURE: CclUtils_communicator_wrapper_rank
 // TEST_FEATURE: CclUtils_communicator_wrapper_reduce_scatter
+// TEST_FEATURE: CclUtils_communicator_ext_allgather
 // TEST_FEATURE: CclUtils_communicator_wrapper_reduce
 // TEST_FEATURE: CclUtils_communicator_wrapper_broadcast
 
@@ -33,6 +34,7 @@ int main() {
   ncclCommCount(Comm, &size);
   ncclCommUserRank(Comm, &Rank);
   ncclReduceScatter(buff, recvbuff, count, ncclChar, ncclSum, comm, stream);
+  ncclAllGather(buff, recvbuff, count, ncclChar, comm, stream);
   ncclBroadcast(buff, recvbuff, count, ncclChar, rank, comm, stream);
   ncclReduce(buff, recvbuff, count, ncclChar, ncclSum, rank, comm, stream);
   return 0;

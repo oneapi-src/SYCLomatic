@@ -307,6 +307,35 @@ public:
   }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|communicator_ext_allgather|dpct::ccl
+// DPCT_DEPENDENCY_BEGIN
+// CclUtils|communicator_wrapper
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// \brief allgather is a collective communication operation that collects data
+  ///        from all the ranks within a communicator into a single buffer.
+  ///        Different ranks may contribute segments of different sizes.
+  ///        The resulting data in the output buffer must be the same for each rank.
+  /// \param send_buf the buffer with @c count elements of @c dtype that stores local data to be reduced
+  /// \param recv_buf [out] the buffer to store reduced result, must have the same dimension as @c send_buf
+  /// \param send_count the number of elements of type @c dtype in @c send_buf
+  /// \param dtype the datatype of elements in @c send_buf and @c recv_buf
+  /// \param queue_ptr a sycl::queue ptr associated with the operation
+  /// \return @ref void
+  void allgather(const void *sendbuff, void *recvbuff,
+                               size_t send_count, oneapi::ccl::datatype dtype,
+                               sycl::queue *queue_ptr) {
+    call_func_wrapper(
+        [=](const oneapi::ccl::stream &stream) {
+          std::vector<size_t> tmp(_comm.size());
+          tmp[_comm.rank()] = send_count;
+          return oneapi::ccl::allgatherv(sendbuff, send_count, recvbuff, tmp,
+                                         dtype, _comm, stream);
+        },
+        queue_ptr);
+  };
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|communicator_wrapper_2|dpct::ccl
 // DPCT_DEPENDENCY_BEGIN
 // CclUtils|communicator_wrapper
