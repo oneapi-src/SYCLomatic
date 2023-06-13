@@ -323,12 +323,11 @@ public:
   /// \param queue_ptr a sycl::queue ptr associated with the operation
   /// \return @ref void
   void allgather(const void *sendbuff, void *recvbuff,
-                               size_t send_count, oneapi::ccl::datatype dtype,
-                               sycl::queue *queue_ptr) {
+                 size_t send_count, oneapi::ccl::datatype dtype,
+                 sycl::queue *queue_ptr) {
     call_func_wrapper(
         [=](const oneapi::ccl::stream &stream) {
-          std::vector<size_t> tmp(_comm.size());
-          tmp[_comm.rank()] = send_count;
+          std::vector<size_t> tmp(_comm.size(), send_count);
           return oneapi::ccl::allgatherv(sendbuff, send_count, recvbuff, tmp,
                                          dtype, _comm, stream);
         },
