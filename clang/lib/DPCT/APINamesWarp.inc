@@ -59,50 +59,74 @@ SUBGROUPSIZE_FACTORY(
 // __reduce_add_sync
 SUBGROUPSIZE_FACTORY(
     UINT_MAX, MapNames::getClNamespace() + "reduce_over_group",
-    CALL_FACTORY_ENTRY("__reduce_add_sync",
-                       CALL(MapNames::getClNamespace() + "reduce_over_group",
-                            SUBGROUP, ARG(1),
-                            LITERAL(MapNames::getClNamespace() + "plus<>()"))))
+    WARNING_FACTORY_ENTRY(
+        "__reduce_add_sync",
+        CALL_FACTORY_ENTRY(
+            "__reduce_add_sync",
+            CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
+                 ARG(1), LITERAL(MapNames::getClNamespace() + "plus<>()"))),
+        Diagnostics::MASK_UNSUPPORTED,
+        ARG(MapNames::getClNamespace() + "reduce_over_group")))
 
 // __reduce_min_sync
 SUBGROUPSIZE_FACTORY(
     UINT_MAX, MapNames::getClNamespace() + "reduce_over_group",
-    CALL_FACTORY_ENTRY("__reduce_min_sync",
-                       CALL(MapNames::getClNamespace() + "reduce_over_group",
-                            SUBGROUP, ARG(1),
-                            LITERAL(MapNames::getClNamespace() + "minimum()"))))
+    WARNING_FACTORY_ENTRY(
+        "__reduce_min_sync",
+        CALL_FACTORY_ENTRY(
+            "__reduce_min_sync",
+            CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
+                 ARG(1), LITERAL(MapNames::getClNamespace() + "minimum()"))),
+        Diagnostics::MASK_UNSUPPORTED,
+        ARG(MapNames::getClNamespace() + "reduce_over_group")))
 
 // __reduce_max_sync
 SUBGROUPSIZE_FACTORY(
     UINT_MAX, MapNames::getClNamespace() + "reduce_over_group",
-    CALL_FACTORY_ENTRY("__reduce_max_sync",
-                       CALL(MapNames::getClNamespace() + "reduce_over_group",
-                            SUBGROUP, ARG(1),
-                            LITERAL(MapNames::getClNamespace() + "maximum()"))))
+    WARNING_FACTORY_ENTRY(
+        "__reduce_max_sync",
+        CALL_FACTORY_ENTRY(
+            "__reduce_max_sync",
+            CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
+                 ARG(1), LITERAL(MapNames::getClNamespace() + "maximum()"))),
+        Diagnostics::MASK_UNSUPPORTED,
+        ARG(MapNames::getClNamespace() + "reduce_over_group")))
 
 // __reduce_and_sync
 SUBGROUPSIZE_FACTORY(
     UINT_MAX, MapNames::getClNamespace() + "reduce_over_group",
-    CALL_FACTORY_ENTRY(
+    WARNING_FACTORY_ENTRY(
         "__reduce_and_sync",
-        CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP, ARG(1),
-             LITERAL(MapNames::getClNamespace() + "bit_and<>()"))))
+        CALL_FACTORY_ENTRY(
+            "__reduce_and_sync",
+            CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
+                 ARG(1), LITERAL(MapNames::getClNamespace() + "bit_and<>()"))),
+        Diagnostics::MASK_UNSUPPORTED,
+        ARG(MapNames::getClNamespace() + "reduce_over_group")))
 
 // __reduce_or_sync
 SUBGROUPSIZE_FACTORY(
     UINT_MAX, MapNames::getClNamespace() + "reduce_over_group",
-    CALL_FACTORY_ENTRY(
+    WARNING_FACTORY_ENTRY(
         "__reduce_or_sync",
-        CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP, ARG(1),
-             LITERAL(MapNames::getClNamespace() + "bit_or<>()"))))
+        CALL_FACTORY_ENTRY(
+            "__reduce_or_sync",
+            CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
+                 ARG(1), LITERAL(MapNames::getClNamespace() + "bit_or<>()"))),
+        Diagnostics::MASK_UNSUPPORTED,
+        ARG(MapNames::getClNamespace() + "reduce_over_group")))
 
 // __reduce_xor_sync
 SUBGROUPSIZE_FACTORY(
     UINT_MAX, MapNames::getClNamespace() + "reduce_over_group",
-    CALL_FACTORY_ENTRY(
+    WARNING_FACTORY_ENTRY(
         "__reduce_xor_sync",
-        CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP, ARG(1),
-             LITERAL(MapNames::getClNamespace() + "bit_xor<>()"))))
+        CALL_FACTORY_ENTRY(
+            "__reduce_xor_sync",
+            CALL(MapNames::getClNamespace() + "reduce_over_group", SUBGROUP,
+                 ARG(1), LITERAL(MapNames::getClNamespace() + "bit_xor<>()"))),
+        Diagnostics::MASK_UNSUPPORTED,
+        ARG(MapNames::getClNamespace() + "reduce_over_group")))
 
 // __shfl_up_sync
 CONDITIONAL_FACTORY_ENTRY(

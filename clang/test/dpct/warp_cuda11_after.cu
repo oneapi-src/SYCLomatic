@@ -9,42 +9,60 @@
 __global__ void reduce_add_sync() {
   unsigned mask;
   int val;
-  // CHECK: sycl::reduce_over_group(item_ct1.get_sub_group(), val, sycl::plus<>());
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for sycl::reduce_over_group.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: sycl::reduce_over_group(item_ct1.get_sub_group(), val, sycl::plus<>());
   __reduce_add_sync(mask, val);
 }
 
 __global__ void reduce_min_sync() {
   unsigned mask;
   int val;
-  // CHECK: sycl::reduce_over_group(item_ct1.get_sub_group(), val, sycl::minimum());
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for sycl::reduce_over_group.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: sycl::reduce_over_group(item_ct1.get_sub_group(), val, sycl::minimum());
   __reduce_min_sync(mask, val);
 }
 
 __global__ void reduce_max_sync() {
   unsigned mask;
   int val;
-  // CHECK: sycl::reduce_over_group(item_ct1.get_sub_group(), val, sycl::maximum());
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for sycl::reduce_over_group.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: sycl::reduce_over_group(item_ct1.get_sub_group(), val, sycl::maximum());
   __reduce_max_sync(mask, val);
 }
 
 __global__ void reduce_and_sync() {
   unsigned mask;
   int val;
-  // CHECK: sycl::reduce_over_group(item_ct1.get_sub_group(), val, sycl::bit_and<>());
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for sycl::reduce_over_group.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: sycl::reduce_over_group(item_ct1.get_sub_group(), val, sycl::bit_and<>());
   __reduce_and_sync(mask, val);
 }
 
 __global__ void reduce_or_sync() {
   unsigned mask;
   int val;
-  // CHECK: sycl::reduce_over_group(item_ct1.get_sub_group(), val, sycl::bit_or<>());
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for sycl::reduce_over_group.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: sycl::reduce_over_group(item_ct1.get_sub_group(), val, sycl::bit_or<>());
   __reduce_or_sync(mask, val);
 }
 
 __global__ void reduce_xor_sync() {
   unsigned mask;
   int val;
-  // CHECK: sycl::reduce_over_group(item_ct1.get_sub_group(), val, sycl::bit_xor<>());
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for sycl::reduce_over_group.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: sycl::reduce_over_group(item_ct1.get_sub_group(), val, sycl::bit_xor<>());
   __reduce_xor_sync(mask, val);
 }
 
