@@ -975,3 +975,8 @@ CALL_FACTORY_ENTRY("thrust::make_constant_iterator", CALL(MapNames::getDpctNames
 // thrust::make_counting_iterator
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasIterators_make_counting_iterator,
 CALL_FACTORY_ENTRY("thrust::make_counting_iterator", CALL(MapNames::getDpctNamespace() + "make_counting_iterator", ARG(0))))
+
+// thrust::scatter_if
+thrustFactory("thrust::scatter_if",
+              {{7,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"scatter_if", HelperFeatureEnum::DplExtrasAlgorithm_scatter_if},
+               {6,PolicyState::NoPolicy, 5,MapNames::getDpctNamespace()+"scatter_if", HelperFeatureEnum::DplExtrasAlgorithm_scatter_if}}),
