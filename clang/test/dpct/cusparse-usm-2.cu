@@ -81,6 +81,10 @@ int foo(int aaaaa){
   //CHECK-NEXT: handle = nullptr;
   cusparseDestroyMatDescr(descrA);
   cusparseDestroy(handle);
+
+  int version;
+  //CHECK: dpct::mkl_get_version(dpct::version_field::major, &version);
+  cusparseGetProperty(MAJOR_VERSION, &version);
 }
 
 
