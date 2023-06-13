@@ -10,10 +10,7 @@ int main(int argc, char **argv)
 {
 int deviceCount = 0;
 
-// CHECK:/*
-// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-// CHECK-NEXT:*/
-// CHECK-NEXT: checkErrors((deviceCount = dpct::dev_mgr::instance().device_count(), 0));
+// CHECK: checkErrors(DPCT_CHECK_ERROR(deviceCount = dpct::dev_mgr::instance().device_count()));
 checkErrors(cudaGetDeviceCount(&deviceCount));
 
 int dev_id;
@@ -21,14 +18,11 @@ int dev_id;
 checkErrors(cudaGetDevice(&dev_id));
 
 cudaDeviceProp deviceProp;
-// CHECK:/*
-// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-// CHECK-NEXT:*/
-// CHECK-NEXT:checkErrors((dpct::dev_mgr::instance().get_device(0).get_device_info(deviceProp), 0));
+// CHECK:checkErrors(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(0).get_device_info(deviceProp)));
 checkErrors(cudaGetDeviceProperties(&deviceProp, 0));
 
 int atomicSupported;
-// CHECK: checkErrors((atomicSupported = dpct::dev_mgr::instance().get_device(dev_id).is_native_atomic_supported(), 0));
+// CHECK: checkErrors(DPCT_CHECK_ERROR(atomicSupported = dpct::dev_mgr::instance().get_device(dev_id).is_native_atomic_supported()));
 checkErrors(cudaDeviceGetAttribute(&atomicSupported, cudaDevAttrHostNativeAtomicSupported, dev_id));
 
 int device1 = 0;
@@ -56,10 +50,7 @@ checkErrors(cudaDeviceGetP2PAttribute(&atomicSupported, cudaDevP2PAttrNativeAtom
 // CHECK:/*
 // CHECK-NEXT:DPCT1093:{{[0-9]+}}: The "device2" device may be not the one intended for use. Adjust the selected device if needed.
 // CHECK-NEXT:*/
-// CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-// CHECK-NEXT:*/
-// CHECK-NEXT:checkErrors((dpct::select_device(device2), 0));
+// CHECK-NEXT:checkErrors(DPCT_CHECK_ERROR(dpct::select_device(device2)));
 checkErrors(cudaSetDevice(device2));
 
 return 0;
@@ -81,21 +72,15 @@ void get_version(void) {
     cudaRuntimeGetVersion(&runtimeVersion);
 
     // CHECK:    /*
-    // CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT:    */
-    // CHECK-NEXT:    /*
     // CHECK-NEXT:    DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
     // CHECK-NEXT:    */
-    // CHECK-NEXT:    dpct::err0 error_code_1 = (driverVersion = dpct::get_current_device().get_major_version(), 0);
+    // CHECK-NEXT:    dpct::err0 error_code_1 = DPCT_CHECK_ERROR(driverVersion = dpct::get_current_device().get_major_version());
     cudaError_t error_code_1 = cudaDriverGetVersion(&driverVersion);
 
     // CHECK:    /*
-    // CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-    // CHECK-NEXT:    */
-    // CHECK-NEXT:    /*
     // CHECK-NEXT:    DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
     // CHECK-NEXT:    */
-    // CHECK-NEXT:    dpct::err0 error_code_2 = (runtimeVersion = dpct::get_current_device().get_major_version(), 0);
+    // CHECK-NEXT:    dpct::err0 error_code_2 = DPCT_CHECK_ERROR(runtimeVersion = dpct::get_current_device().get_major_version());
     cudaError_t error_code_2 = cudaRuntimeGetVersion(&runtimeVersion);
 }
 

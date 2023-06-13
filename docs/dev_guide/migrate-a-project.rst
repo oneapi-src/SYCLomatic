@@ -11,9 +11,11 @@ Migrate a Project
    migrate-a-project/migrate-a-project-on-windows
    migrate-a-project/incremental-migration
    migrate-a-project/user-defined-migration-rules
+   migrate-a-project/generate-compilation-db
+
 
 |tool_name| ports CUDA\* language kernels and library API calls to
-SYCL\* for the |dpcpp_compiler|. Typically, 90%-95% of CUDA code automatically
+SYCL\* for the |dpcpp_compiler|_. Typically, 90%-95% of CUDA code automatically
 migrates to SYCL. The tool inserts inline comments during migration to
 help you complete the remaining code migration.
 
@@ -37,8 +39,8 @@ help you complete the remaining code migration.
    migrate all files at once or to migrate files one-by-one.
 
    For complex projects, you can utilize the Microsoft Visual Studio\* project
-   file or Make/Cmake file to build a compilation database, used to migrate the
-   complete project.
+   file or Make/Cmake file to build a :ref:`compilation database <gen_comp_db>`,
+   used to migrate the complete project.
 
 #. **Review converted code**
 
@@ -50,5 +52,5 @@ help you complete the remaining code migration.
 #. **Build the project with the Intel® oneAPI DPC++/C++ Compiler**
 
    Make sure your newly migrated project compiles successfully with the
-   |dpcpp_compiler|.
+   |dpcpp_compiler|_.
 

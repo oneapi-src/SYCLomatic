@@ -149,7 +149,7 @@ void foo_test_2() {
     kernel<<<grid, block>>>(d_a, value);
     CHECK(cudaMemcpyAsync(h_a, d_a, nbytes, cudaMemcpyDeviceToHost));
 
-    // CHECK:    CHECK((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
+    // CHECK:    CHECK(DPCT_CHECK_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
     CHECK(cudaEventRecord(stop));
 
     // have CPU do some work while waiting for stage 1 to finish
@@ -200,11 +200,11 @@ void foo_test_3() {
   cudaStream_t stream[NSTREAM];
 
   for (int i = 0; i < NSTREAM; ++i) {
-    // CHECK:    CHECK((stream[i] = dev_ct1.create_queue(), 0));
+    // CHECK:    CHECK(DPCT_CHECK_ERROR(stream[i] = dev_ct1.create_queue()));
     CHECK(cudaStreamCreate(&stream[i]));
   }
 
-// CHECK:  CHECK((*start = q_ct1.ext_oneapi_submit_barrier(), 0));
+// CHECK:  CHECK(DPCT_CHECK_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
   CHECK(cudaEventRecord(start, 0));
 
   // initiate all work on the device asynchronously in depth-first order
@@ -216,8 +216,8 @@ void foo_test_3() {
                           cudaMemcpyHostToDevice, stream[i]));
     sumArrays<<<grid, block, 0, stream[i]>>>(&d_A[ioffset], &d_B[ioffset],
                                              &d_C[ioffset], iElem);
-    // CHECK:    CHECK((dpct::async_dpct_memcpy(&gpuRef[ioffset], &d_C[ioffset], iBytes,
-    // CHECK-NEXT:                          dpct::device_to_host, *(stream[i])), 0));
+    //CHECK: CHECK(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(&gpuRef[ioffset], &d_C[ioffset], iBytes,
+    //CHECK-NEXT:    dpct::device_to_host, *(stream[i]))));
     CHECK(cudaMemcpyAsync(&gpuRef[ioffset], &d_C[ioffset], iBytes,
                           cudaMemcpyDeviceToHost, stream[i]));
   }
@@ -225,16 +225,10 @@ void foo_test_3() {
   // CHECK:  /*
   // CHECK-NEXT:  DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT:  */
-  // CHECK-NEXT:  CHECK((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
-  // CHECK-NEXT:  /*
-  // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT:  */
-  // CHECK-NEXT:  CHECK((stop->wait_and_throw(), 0));
+  // CHECK-NEXT:  CHECK(DPCT_CHECK_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
+  // CHECK-NEXT:  CHECK(DPCT_CHECK_ERROR(stop->wait_and_throw()));
   // CHECK-NEXT:  float execution_time;
-  // CHECK-NEXT:  /*
-  // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT:  */
-  // CHECK-NEXT:  CHECK((execution_time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f, 0));  
+  // CHECK-NEXT:  CHECK(DPCT_CHECK_ERROR(execution_time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f));  
     CHECK(cudaEventRecord(stop, 0));
     CHECK(cudaEventSynchronize(stop));
     float execution_time;
@@ -251,16 +245,14 @@ void foo_usm() {
   int *gpu_t, *host_t, n = 10;
   cudaEvent_t start, stop;
 
-// CHECK: SAFE_CALL((*start = q_ct1.ext_oneapi_submit_barrier(), 0));
+// CHECK: SAFE_CALL(DPCT_CHECK_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
   SAFE_CALL(cudaEventRecord(start, 0));
 
-  // CHECK:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT:  */
-  // CHECK:  SAFE_CALL((dpct::async_dpct_memcpy(gpu_t, host_t, n * sizeof(int), dpct::host_to_device, *s1), 0));
+  // CHECK:  SAFE_CALL(DPCT_CHECK_ERROR(dpct::async_dpct_memcpy(gpu_t, host_t, n * sizeof(int), dpct::host_to_device, *s1)));
   SAFE_CALL(cudaMemcpyAsync(gpu_t, host_t, n * sizeof(int), cudaMemcpyHostToDevice, s1));
 
-  // CHECK:  SAFE_CALL((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
-  // CHECK:  SAFE_CALL((stop->wait_and_throw(), 0));
+  // CHECK:  SAFE_CALL(DPCT_CHECK_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
+  // CHECK:  SAFE_CALL(DPCT_CHECK_ERROR(stop->wait_and_throw()));
   // CHECK:  float Time = 0.0f;
   // CHECK:  Time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
   SAFE_CALL(cudaEventRecord(stop, 0));
@@ -466,7 +458,7 @@ int foo_test_4()
 
 // CHECK:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    CHECK((*start = q_ct1.ext_oneapi_submit_barrier(), 0));
+// CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
 // record start event
     CHECK(cudaEventRecord(start, 0));
 
@@ -485,15 +477,15 @@ int foo_test_4()
         foo_kernel_3<<<grid, block, 0, streams[i]>>>();
         foo_kernel_4<<<grid, block, 0, streams[i]>>>();
 
-// CHECK:        CHECK((*kernelEvent[i] = streams[i]->ext_oneapi_submit_barrier(), 0));
+// CHECK:        CHECK(DPCT_CHECK_ERROR(*kernelEvent[i] = streams[i]->ext_oneapi_submit_barrier()));
 // CHECK-NEXT:        streams[n_streams - 1]->ext_oneapi_submit_barrier({*kernelEvent[i]});
         CHECK(cudaEventRecord(kernelEvent[i], streams[i]));
         cudaStreamWaitEvent(streams[n_streams - 1], kernelEvent[i], 0);
     }
 
 
-// CHECK:    CHECK((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
-// CHECK:    CHECK((stop->wait_and_throw(), 0));
+// CHECK:    CHECK(DPCT_CHECK_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
+// CHECK:    CHECK(DPCT_CHECK_ERROR(stop->wait_and_throw()));
     CHECK(cudaEventRecord(stop, 0));
     CHECK(cudaEventSynchronize(stop));
     CHECK(cudaEventElapsedTime(&elapsed_time, start, stop));
@@ -537,7 +529,7 @@ void RunTest()
     {
         float totalScanTime = 0.0f;
 
-// CHECK:         SAFE_CALL((*start = q_ct1.ext_oneapi_submit_barrier(), 0));
+// CHECK:         SAFE_CALL(DPCT_CHECK_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
         SAFE_CALL(cudaEventRecord(start, 0));
         for (int j = 0; j < iters; j++)
         {
@@ -732,19 +724,19 @@ void foo_test_2184() {
   float *d_a = 0;
 
   // CHECK: dpct::event_ptr stop, start;
-  // CHECK:  CHECK((start = new sycl::event(), 0));
-  // CHECK:  CHECK((stop = new sycl::event(), 0));
+  // CHECK:  CHECK(DPCT_CHECK_ERROR(start = new sycl::event()));
+  // CHECK:  CHECK(DPCT_CHECK_ERROR(stop = new sycl::event()));
   cudaEvent_t stop, start;
   CHECK(cudaEventCreate(&start));
   CHECK(cudaEventCreate(&stop));
 
-  // CHECK:  CHECK((*start = q_ct1.ext_oneapi_submit_barrier(), 0));
+  // CHECK:  CHECK(DPCT_CHECK_ERROR(*start = q_ct1.ext_oneapi_submit_barrier()));
   CHECK(cudaEventRecord(start));
   CHECK(cudaMemcpyAsync(d_a, h_a, nbytes, cudaMemcpyHostToDevice));
   kernel_test_2184<<<1, 1>>>();
   CHECK(cudaMemcpyAsync(h_a, d_a, nbytes, cudaMemcpyDeviceToHost));
 
-  // CHECK:  CHECK((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
+  // CHECK:  CHECK(DPCT_CHECK_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
   CHECK(cudaEventRecord(stop));
 
   unsigned long int counter = 0;
@@ -778,8 +770,8 @@ template <class T, class vecT> void foo_test_2131() {
     }
 
 
-    // CHECK:    SAFE_CALL((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
-    // CHECK:    SAFE_CALL((stop->wait_and_throw(), 0));
+    // CHECK:    SAFE_CALL(DPCT_CHECK_ERROR(*stop = q_ct1.ext_oneapi_submit_barrier()));
+    // CHECK:    SAFE_CALL(DPCT_CHECK_ERROR(stop->wait_and_throw()));
     // CHECK:    totalScanTime = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     SAFE_CALL(cudaEventRecord(stop, 0));
     SAFE_CALL(cudaEventSynchronize(stop));

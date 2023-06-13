@@ -417,17 +417,17 @@ Sets the output verbosity level:
 
 
 
+
 .. _opt-p:
 
-``-p=<dir>``
+-p
 
 .. _desc-p:
 
-The directory path for the compilation database (``compile_commands.json``).
-When no path is specified, a search for ``compile_commands.json`` is
-attempted through all parent directories of the first input source file.
+Alias for ``--compilation-database``.
 
 .. _end-p:
+
 
 
 
@@ -624,7 +624,7 @@ A comma-separated list of extensions to be used in migrated code.
 By default, these extensions are not used in migrated code.
 
 - ``=c_cxx_standard_library``: Use std functions from the libdevice library
-  (provided by |dpcpp_compiler|) and C/C++ Standard Library to migrate functions
+  (provided by |dpcpp_compiler|_) and C/C++ Standard Library to migrate functions
   which have no mapping in the SYCL standard. If this value is used together with
   ``intel_device_math``, the ``intel_device_math`` functions take precedence.
 - ``=intel_device_math``: Use ``sycl::ext::intel::math`` functions from the libdevice
@@ -646,6 +646,8 @@ By default, experimental features will not be used in migrated code.
 
 The values are:
 
+- ``=dpl-experimental-api``: Experimental extension that allows use of experimental
+  oneDPL APIs.
 - ``=free-function-queries``: Experimental extension that allows getting
   ``id``, ``item``, ``nd_item``, ``group``, and ``sub_group`` instances
   globally.
@@ -653,8 +655,13 @@ The values are:
   allows allocation of local memory objects at the kernel functor scope.
 - ``=logical-group``: Experimental helper function used to logically
   group work-items.
+- ``=masked-sub-group-operation``: Experimental helper function used to execute
+  sub-group operation with mask.
 - ``=nd_range_barrier``: Experimental helper function used to help cross
   group synchronization during migration.
+- ``=occupancy-calculation``: Experimental helper function used to calculate occupancy.
+- ``=user-defined-reductions``: Experimental extension that allows user-defined
+  reductions.
 
 .. _end-use-experimental-features:
 
@@ -719,3 +726,69 @@ The file path of ``vcxproj``.
 Shows the version of the tool.
 
 .. _end-version:
+
+
+
+.. _opt-compilation-db:
+
+``--compilation-database=<dir>``
+
+.. _desc-compilation-db:
+
+The directory path for the compilation database (`compile_commands.json`). When no
+path is specified, a search for `compile_commands.json` is attempted through all
+parent directories of the first input source file. Same as ``-p``.
+
+.. _end-compilation-db:
+
+
+.. _opt-gen-helper-func:
+
+``--gen-helper-function``
+
+.. _desc-gen-helper-func:
+
+Generates helper function files in the ``--out-root`` directory. Default: ``off``.
+
+.. _end-gen-helper-func:
+
+
+
+
+.. _opt-intercept-build-block:
+
+intercept-build Options
+-----------------------
+
+The following table lists all current `intercept-build` tool command line options
+in alphabetical order.
+
+.. list-table::
+   :widths: 30 70
+   :header-rows: 1
+
+   * - Option
+     - Description
+   * - `--append`
+     - Extend existing compilation database with new entries. Duplicate entries are
+       detected and not present in the final output. The output is not continuously
+       updated; it's done when the build command finished. Default: disabled.
+   * - `--cdb <file>`
+     - The JSON compilation database. Default name: `compile_commands.json`.
+   * - `--linker-entry`
+     - Generate linker entry in compilation database if the `--linker-entry` option
+       is present. Default: enabled.
+   * - `--no-linker-entry`
+     - Do not generate linker entry in compilation database if the `--no-linker-entry`
+       option is present. Default: disabled.
+   * - `--parse-build-log <file>`
+     - Specifies the file path of the build log.
+   * - `--verbose`, `-v`
+     - Enable verbose output from `intercept-build`. A second, third, and fourth
+       flag increases verbosity.
+   * - `--work-directory <path>`
+     - Specifies the working directory of the command that generates the build log
+       specified by option `-parse-build-log`. Default: the directory of build log
+       file specified by option `-parse-build-log`.
+
+.. _end-intercept-build-block:

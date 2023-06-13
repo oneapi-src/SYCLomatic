@@ -28,3 +28,105 @@ Suggestions to Fix
 Redesign the code to use the host-side API, which submits this call to the SYCL
 queue automatically.
 
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __global__ void kernel(float *d_data) {
+     int tid = threadIdx.x;
+     d_data[tid + 1] = tid;
+   
+     __syncthreads();
+   
+     if (tid == 0) {
+       cublasHandle_t handle;
+       cublasCreate(&handle);
+       cublasSasum(handle, 128, d_data + 1, 1, d_data)
+       cublasDestroy(handle);
+     }
+   }
+   
+   void foo() {
+     float *d_data;
+     cudaMalloc((void **)&d_data, sizeof(float) * (1 + 128));
+     kernel<<<1, 128>>>(d_data);
+   
+     float data;
+     cudaMemcpy(data, d_data, sizeof(float), cudaMemcpyDeviceToHost);
+     cudaFree(d_data);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel(float *d_data, sycl::nd_item<3> item_ct1) {
+     int tid = item_ct1.get_local_id(2);
+     d_data[tid + 1] = tid;
+   
+     item_ct1.barrier();
+   
+     if (tid == 0) {
+       /*
+       DPCT1021:2: Migration of cublasHandle_t in __global__ or __device__ function
+       is not supported. You may need to redesign the code.
+       */
+       cublasHandle_t handle;
+       handle = &dpct::get_default_queue();
+       /*
+       DPCT1020:1: Migration of cublasSasum, if it is called from __global__ or
+       __device__ function, is not supported. You may need to redesign the code to
+       use the host-side oneapi::mkl::blas::column_major::asum instead, which submits
+       this call to the SYCL queue automatically.
+       */
+       cublasSasum(handle, 128, d_data + 1, 1, d_data);
+       handle = nullptr;
+     }
+   }
+   
+   void foo() {
+     dpct::device_ext &dev_ct1 = dpct::get_current_device();
+     sycl::queue &q_ct1 = dev_ct1.default_queue();
+     float *d_data;
+     d_data = sycl::malloc_device<float>((1 + 128), q_ct1);
+     q_ct1.parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
+         [=](sycl::nd_item<3> item_ct1) {
+           kernel(d_data, item_ct1);
+         });
+   
+     float data;
+     q_ct1.memcpy(&data, d_data, sizeof(float)).wait();
+     sycl::free(d_data, q_ct1);
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel(float *d_data, sycl::nd_item<3> item_ct1) {
+     int tid = item_ct1.get_local_id(2);
+     d_data[tid + 1] = tid;
+   }
+   
+   void foo() {
+     dpct::device_ext &dev_ct1 = dpct::get_current_device();
+     sycl::queue &q_ct1 = dev_ct1.default_queue();
+     float *d_data;
+     d_data = sycl::malloc_device<float>((1 + 128), q_ct1);
+     q_ct1.parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
+         [=](sycl::nd_item<3> item_ct1) {
+           kernel(d_data, item_ct1);
+         });
+     oneapi::mkl::blas::column_major::asum(q_ct1, 128, d_data + 1, 1, d_data);
+   
+     float data;
+     q_ct1.memcpy(&data, d_data, sizeof(float)).wait();
+     sycl::free(d_data, q_ct1);
+   }
+
+

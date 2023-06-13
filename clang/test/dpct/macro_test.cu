@@ -921,8 +921,8 @@ void foo20() {
 //CHECK: /*
 //CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for
 //CHECK-NEXT: dpct::select_from_sub_group. You can specify
-//CHECK-NEXT: "--use-experimental-features=masked_sub_group_operation" to use the dpct
-//CHECK-NEXT: experimental helper function to migrate __shfl_sync.
+//CHECK-NEXT: "--use-experimental-features=masked-sub-group-operation" to use the experimental
+//CHECK-NEXT: helper function to migrate __shfl_sync.
 //CHECK-NEXT: */
 //CHECK-NEXT: #define CALLSHFLSYNC(x)                                                        \
 //CHECK-NEXT: dpct::select_from_sub_group(item_ct1.get_sub_group(), x, 3 ^ 1);
@@ -1269,9 +1269,9 @@ void foo35() {
   double *d_A;
   const int lda = m;
   int lwork = 0;
-  //CHECK:   CUSOLVER_CHECK((lwork = oneapi::mkl::lapack::geqrf_scratchpad_size<double>(
-  //CHECK-NEXT:  *handle, m, m, lda),
-  //CHECK-NEXT:  0));
+  //CHECK: CUSOLVER_CHECK(DPCT_CHECK_ERROR(
+  //CHECK-NEXT:   lwork = oneapi::mkl::lapack::geqrf_scratchpad_size<double>(*handle, m, m,
+  //CHECK-NEXT:                                                              lda)));
   CUSOLVER_CHECK(cusolverDnDgeqrf_bufferSize(handle, m, m, d_A, lda, &lwork));
 }
 

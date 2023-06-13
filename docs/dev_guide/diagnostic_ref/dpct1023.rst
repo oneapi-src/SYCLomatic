@@ -8,7 +8,7 @@ Message
 
 .. _msg-1023-start:
 
-The SYCL sub-group does not support mask options for *<api name>*.
+The SYCL sub-group does not support mask options for *<API name>*. *<Suggested fix>*.
 
 .. _msg-1023-end:
 

@@ -558,13 +558,14 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE);
 bool checkIfContainSizeofTypeRecursively(
     const clang::Expr *E, const clang::Expr *&ExprContainSizeofType);
 bool containSizeOfType(const clang::Expr *E);
+bool maybeDependentCubType(const clang::TypeSourceInfo *TInfo);
 bool isCubVar(const clang::VarDecl *VD);
 void findAllVarRef(const clang::DeclRefExpr *DRE,
                    std::vector<const clang::DeclRefExpr *> &RefMatchResult,
                    bool IsGlobalScopeAllowed = false);
 bool isExprUsed(const clang::Expr *E, bool &Result);
 const std::string &getItemName();
-bool isUserDefinedFunction(const clang::ValueDecl *VD);
+bool isUserDefinedDecl(const clang::ValueDecl *VD);
 void insertHeaderForTypeRule(std::string, clang::SourceLocation);
 std::string getRemovedAPIWarningMessage(std::string FuncName);
 std::string getBaseTypeStr(const clang::CallExpr *CE);
@@ -580,4 +581,5 @@ bool isPointerHostAccessOnly(const clang::ValueDecl* VD);
 std::string getBaseTypeRemoveTemplateArguments(const clang::MemberExpr* ME);
 bool containIterationSpaceBuiltinVar(const clang::Stmt *Node);
 bool containBuiltinWarpSize(const clang::Stmt *Node);
+bool isCapturedByLambda(const clang::TypeLoc *TL);
 #endif // DPCT_UTILITY_H

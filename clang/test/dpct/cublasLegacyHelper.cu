@@ -24,10 +24,7 @@ void cublasErrCheck_(cublasStatus_t stat, const char *file, int line) {
 
 #define MACRO_B(status) (status)
 
-// CHECK: /*
-// CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-// CHECK-NEXT: */
-// CHECK-NEXT: #define MACRO_C(pointer) status = (dpct::dpct_free(pointer), 0)
+// CHECK: #define MACRO_C(pointer) status = DPCT_CHECK_ERROR(dpct::dpct_free(pointer))
 #define MACRO_C(pointer) status = cublasFree(pointer)
 
 void foo2(cublasStatus){}
@@ -86,10 +83,7 @@ int main() {
   // CHECK: dpct::queue_ptr stream1;
   // CHECK-NEXT: stream1 = dev_ct1.create_queue();
   // CHECK-NEXT: dev_ct1.set_saved_queue(stream1);
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: cublasErrCheck((dev_ct1.set_saved_queue(stream1), 0));
+  // CHECK-NEXT: cublasErrCheck(DPCT_CHECK_ERROR(dev_ct1.set_saved_queue(stream1)));
   cudaStream_t stream1;
   cudaStreamCreate(&stream1);
   cublasSetKernelStream(stream1);
@@ -99,38 +93,23 @@ int main() {
   int n = 10;
   int elemSize = 4;
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  //CHECK-NEXT: */
-  // CHECK-NEXT: status = (d_A = (float *)dpct::dpct_malloc((n)*(elemSize)), 0);
+  // CHECK: status = DPCT_CHECK_ERROR(d_A = (float *)dpct::dpct_malloc((n)*(elemSize)));
   // CHECK-NEXT: d_A = (float *)dpct::dpct_malloc((n)*(elemSize));
   status = cublasAlloc(n, elemSize, (void **)&d_A);
   cublasAlloc(n, elemSize, (void **)&d_A);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: foo2((d_A = (float *)dpct::dpct_malloc((n)*(elemSize)), 0));
+  // CHECK: foo2(DPCT_CHECK_ERROR(d_A = (float *)dpct::dpct_malloc((n)*(elemSize))));
   foo2(cublasAlloc(n, elemSize, (void **)&d_A));
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: status = (dpct::dpct_free(d_A), 0);
+  // CHECK: status = DPCT_CHECK_ERROR(dpct::dpct_free(d_A));
   // CHECK-NEXT: dpct::dpct_free(d_A);
   status = cublasFree(d_A);
   cublasFree(d_A);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: foo2((dpct::dpct_free(d_A), 0));
+  // CHECK: foo2(DPCT_CHECK_ERROR(dpct::dpct_free(d_A)));
   foo2(cublasFree(d_A));
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: MACRO_B((dpct::dpct_free(d_A), 0));
+  // CHECK: MACRO_B(DPCT_CHECK_ERROR(dpct::dpct_free(d_A)));
   MACRO_B(cublasFree(d_A));
 
   // CHECK: /*

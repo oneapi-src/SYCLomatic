@@ -41,21 +41,15 @@ functions and macros in more detail.
 Macros
 ------
 
-There are three macros used to control the behavior of the helper
-functions: ``DPCT_USM_LEVEL_NONE``, ``DPCT_NAMED_LAMBDA`` and
-``DPCT_COMPATIBILITY_TEMP``.
-
-.. note::
-
-   Do not manually define these macros. They are automatically defined by
-   |tool_name| according to the  options specified in the
-   ``dpct`` command line.
-
-|
+The following table lists the macros used to control the behavior of the helper
+functions:
 
 .. list-table::
    :widths: 50 50
+   :header-rows: 1
 
+   * - Macro
+     - Description
    * - ``DPCT_USM_LEVEL_NONE``
      - If the ``--usm-level=none`` option of |tool_name| is used, then
        ``DPCT_USM_LEVEL_NONE`` is defined before DPCT namespace helper header
@@ -76,6 +70,12 @@ functions: ``DPCT_USM_LEVEL_NONE``, ``DPCT_NAMED_LAMBDA`` and
        You can replace this macro in the generated code or change the value of
        ``DPCT_COMPATIBILITY_TEMP`` according to your needs.
 
+.. note::
+
+   Do not manually define these macros. They are automatically defined by
+   |tool_name| according to the  options specified in the
+   ``dpct`` command line.
+
 Atomic Helper Functions
 -----------------------
 
@@ -86,16 +86,16 @@ SYCL atomic operations.
 Device Helper Functions
 -----------------------
 
-The device helper functions are available in the ``device.hpp`` header file. There
-are three classes defined: ``device_info``, ``device_ext`` and ``dev_mgr``. Find
-more details in the ``device.hpp`` file.
+The device helper functions are available in the ``device.hpp`` header file.
+
+The following classes are defined in the ``device.hpp`` header file:
 
 .. list-table::
    :widths: 50 50
    :header-rows: 1
 
-   * - Device Helper Function Classes
-     -
+   * - Class
+     - Description
    * - ``device_info``
      - ``device_info`` is used to present information enumerated by SYCL device
        information descriptors.
@@ -112,12 +112,16 @@ more details in the ``device.hpp`` file.
        default device selector. Display the current device using ``current_device()``,
        and change the current device using ``select_device()``.
 
+Find more details in the ``device.hpp`` file.
+
+The following table lists the device helper functions:
+
 .. list-table::
    :widths: 50 50
    :header-rows: 1
 
-   * - Helper Functions
-     -
+   * - Function
+     - Description
    * - ``get_current_device()``
      - Returns the current device in the device manager.
    * - ``get_default_queue()``
@@ -135,12 +139,14 @@ more details in the ``device.hpp`` file.
 Memory Helper Functions
 -----------------------
 
+The following table lists SYCL buffer-based memory model helper functions:
+
 .. list-table::
    :widths: 50 50
    :header-rows: 1
 
-   * - SYCL Buffer-Based Memory Model Helper Functions
-     -
+   * - Function
+     - Description
    * - Device Memory Manager (``mem_mgr`` )
      - Device memory manager is a singleton, intended to assist with migration
        of memory API calls if a SYCL buffer-based memory model is used. It provides
@@ -150,12 +156,15 @@ Memory Helper Functions
        virtual memory space. You can change virtual memory space as required by
        changing the value of ``mapped_region_size`` in the ``memory.hpp`` file.
 
+The following table lists helper functions to get the SYCL buffer from host virtual
+address:
+
 .. list-table::
    :widths: 50 50
    :header-rows: 1
 
-   * - Helper Functions to Get SYCL Buffer From the Host Virtual Address
-     -
+   * - Function
+     - Description
    * - ``get_buffer_and_offset(const void *ptr)``
      - Where ``ptr``\ is the host virtual address. This function returns the
        ``cl::sycl::buffer`` bound to the host virtual address, and the offset of
@@ -169,9 +178,8 @@ Memory Helper Functions
 
 General memory helper functions are used to assist the migration
 of memory API calls, like memory allocation, memory copy, and
-memory set, for both USM and buffer-based memory model. The helper
-functions are listed below. Find more details in the
-``memory.hpp`` file.
+memory set, for both USM and buffer-based memory model. The following helper
+functions are available:
 
 * ``dpct_malloc()``
 * ``dpct_free()``
@@ -179,6 +187,8 @@ functions are listed below. Find more details in the
 * ``async_dpct_memcpy()``
 * ``dpct_memset()``
 * ``async_dpct_memset()``
+
+Find more details in the ``memory.hpp`` file.
 
 **Helper Functions Assisting Migration of Device Memory
 Variables**
@@ -189,7 +199,10 @@ the following template classes:
 
 .. list-table::
    :widths: 50 50
+   :header-rows: 1
 
+   * - Function
+     - Description
    * - ``global_memory``
      - Represents a SYCL global memory variable.
    * - ``constant_memory``
@@ -198,12 +211,14 @@ the following template classes:
      - Represents memory that can be accessed by host and device, in the same
        way as SYCL USM shared memory.
 
+The following table lists main member functions of memory classes:
+
 .. list-table::
    :widths: 50 50
    :header-rows: 1
 
-   * - Main Member Functions of Memory Classes
-     -
+   * - Function
+     - Description
    * - ``get_prt()``
      - Returns memory pointer of the memory object. It is a virtual pointer when
        buffer-based memory model is used, and it is a device pointer when a USM
@@ -238,30 +253,33 @@ texture API. Find more details on image helper functions in the ``image.hpp`` fi
 
 .. list-table::
    :widths: 50 50
+   :header-rows: 1
 
-   * - template class ``image_wrapper``
+   * - Wrapper
+     - Description
+   * - Template class ``image_wrapper``
      - The wrapper of ``cl::sycl::image``. It provides methods to attach/detach
        1D/2D/3D data to/from ``cl::sycl::image`` and method ``get_access()`` to
        return the SYCL image accessor.
-   * - class ``image_accessor_ext``
+   * - Class ``image_accessor_ext``
      - Wraps SYCL sampler and SYCL image accessor together. Provides the ``read()``
        method to read data from the accessor.
-   * - class ``image_data``
+   * - Class ``image_data``
      - Represents the data used to create a ``cl::sycl::image`` object. Supports
        the following data types:
 
-       -  matrix for 2D or 3D matrix data (see ``image_matrix`` class)
-       -  linear for 1D linear array
-       -  pitch for pitched 2D or 3D memory data (``pitched_data`` class)
-   * - class ``image_matrix``
+       -  Matrix for 2D or 3D matrix data (see ``image_matrix`` class)
+       -  Linear for 1D linear array
+       -  Pitch for pitched 2D or 3D memory data (``pitched_data`` class)
+   * - Class ``image_matrix``
      - Represents 2D/3D matrix data for an image. It contains the image channel
        information, dimensions, size of each dimension, and the raw data pointer.
-   * - class ``pitched_data``
+   * - Class ``pitched_data``
      - Represents the 2D/3D pitched data for an image.
-   * - struct\ ``image_channel``
+   * - Struct ``image_channel``
      - Keeps image channel information; including order, data width, and type
        information.
-   * - class ``image_info``
+   * - Class ``image_info``
      - Image sampling information; including addressing mode, filtering mode, and
        normalization mode.
    * - ``image_wrapper`` operations API: ``create_image_wrapper()``
@@ -281,7 +299,7 @@ Algorithm Helper Functions
 **************************
 
 The algorithm helper functions are available in the ``dpl_extras/algorithm.h``
-header file. Algorithm helper functions are wrappers around |oneDPL_long| algorithm
+header file. Algorithm helper functions are wrappers around |oneDPL_long|_ algorithm
 functions.
 
 **Mask-predicated Algorithm Functions**
@@ -334,7 +352,10 @@ file are:
 
 .. list-table::
    :widths: 50 50
+   :header-rows: 1
 
+   * - Function
+     - Description
    * - ``partition_point``
      - Implementation of the C++ standard library algorithm that accepts an
        execution policy, enabling parallel execution.
@@ -360,13 +381,14 @@ Memory Helper Functions
 The ``dpl_extras/memory.h`` header file provides classes and functions for working
 with device memory.
 
+The following table lists memory helper classes:
 
 .. list-table::
    :widths: 50 50
    :header-rows: 1
 
-   * - Memory Helper Function Classes
-     -
+   * - Class
+     - Description
    * - ``device_pointer``
      - Pointer type that points to memory stored on a device.
    * - ``device_iterator``
@@ -378,12 +400,14 @@ with device memory.
 The ``device_vector`` implementation that uses the ``device_iterator`` and
 ``device_reference`` classes is defined in ``dpl_extras/vector.h``.
 
+The following table list memory helper functions:
+
 .. list-table::
    :widths: 50 50
    :header-rows: 1
 
-   * - Memory Helper Functions
-     -
+   * - Function
+     - Description
    * - ``malloc_device``
      - Allocates memory for use on a device.
    * - ``free_device``
@@ -398,12 +422,17 @@ The ``device_vector`` implementation that uses the ``device_iterator`` and
    * - ``get_raw_pointer``
      - Returns a raw pointer from a ``device_pointer`` instance.
 
-Additional oneAPI DPC++ Library Specific Utility Header Files
-*************************************************************
+oneAPI DPC++ Library Specific Utility Header Files
+**************************************************
+
+The following table lists utility header files specific to the oneAPI DPC++ Library:
 
 .. list-table::
    :widths: 50 50
+   :header-rows: 1
 
+   * - Header File
+     - Description
    * - ``functional.h``
      - Contains the implementation of the function objects used in the definitions
        of the algorithm functions described above.
@@ -417,9 +446,14 @@ Additional oneAPI DPC++ Library Specific Utility Header Files
 Utility Helper Functions
 ------------------------
 
+The following table lists header files that define utility functions:
+
 .. list-table::
    :widths: 50 50
+   :header-rows: 1
 
+   * - Header File
+     - Description
    * - ``util.hpp``
      - Common utility helper functions.
    * - ``blas_utils.hpp``

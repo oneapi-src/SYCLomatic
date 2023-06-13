@@ -13,10 +13,7 @@ int main(int argc, char **argv)
 {
 int devID = atoi(argv[1]);
 cudaDeviceProp cdp;
-// CHECK:/*
-// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-// CHECK-NEXT:*/
-// CHECK-NEXT: dpct::err0 error_code = (dpct::dev_mgr::instance().get_device(devID).get_device_info(cdp), 0);
+// CHECK: dpct::err0 error_code = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(devID).get_device_info(cdp));
 cudaError_t error_code = cudaGetDeviceProperties(&cdp, devID);
 
 if (error_code == cudaSuccess) {
@@ -102,7 +99,7 @@ cudaDeviceGetAttribute(&val, attr5, dev_id);
 
 // CHECK: attr5 = 86;
 // CHECK-NEXT: attr6 = attr5;
-// CHECK-NEXT: checkError((val = dpct::dev_mgr::instance().get_device(dev_id).is_native_atomic_supported(), 0));
+// CHECK-NEXT: checkError(DPCT_CHECK_ERROR(val = dpct::dev_mgr::instance().get_device(dev_id).is_native_atomic_supported()));
 attr5 = cudaDevAttrHostNativeAtomicSupported;
 attr6 = attr5;
 checkError(cudaDeviceGetAttribute(&val, attr5, dev_id));
@@ -117,19 +114,19 @@ int computeMode = -1, minor = 0;
 // CHECK: /*
 // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by the host to submit tasks. You may need to adjust this code.
 // CHECK-NEXT: */
-// CHECK-NEXT: checkError((computeMode = 1, 0));
+// CHECK-NEXT: checkError(DPCT_CHECK_ERROR(computeMode = 1));
 checkError(cudaDeviceGetAttribute(&computeMode, cudaDevAttrComputeMode, dev_id));
-// CHECK: checkError((minor = dpct::dev_mgr::instance().get_device(dev_id).get_minor_version(), 0));
+// CHECK: checkError(DPCT_CHECK_ERROR(minor = dpct::dev_mgr::instance().get_device(dev_id).get_minor_version()));
 checkError(cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, dev_id));
 
 int multiProcessorCount = 0, clockRate = 0;
-// CHECK: checkError((multiProcessorCount = dpct::dev_mgr::instance().get_device(dev_id).get_max_compute_units(), 0));
+// CHECK: checkError(DPCT_CHECK_ERROR(multiProcessorCount = dpct::dev_mgr::instance().get_device(dev_id).get_max_compute_units()));
 checkError(cudaDeviceGetAttribute(&multiProcessorCount, cudaDevAttrMultiProcessorCount, dev_id));
-// CHECK: checkError((clockRate = dpct::dev_mgr::instance().get_device(dev_id).get_max_clock_frequency(), 0));
+// CHECK: checkError(DPCT_CHECK_ERROR(clockRate = dpct::dev_mgr::instance().get_device(dev_id).get_max_clock_frequency()));
 checkError(cudaDeviceGetAttribute(&clockRate, cudaDevAttrClockRate, dev_id));
 
 int integrated = -1;
-// CHECK: checkError((integrated = dpct::dev_mgr::instance().get_device(dev_id).get_integrated(), 0));
+// CHECK: checkError(DPCT_CHECK_ERROR(integrated = dpct::dev_mgr::instance().get_device(dev_id).get_integrated()));
 checkError(cudaDeviceGetAttribute(&integrated, cudaDevAttrIntegrated, dev_id));
 
 int device1 = 0;
@@ -166,28 +163,16 @@ cudaDeviceGetPCIBusId(pciBusId, 80, 0);
 // CHECK: dpct::get_current_device().reset();
 cudaDeviceReset();
 
-// CHECK:/*
-// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-// CHECK-NEXT:*/
-// CHECK-NEXT:error_code = (dpct::get_current_device().reset(), 0);
+// CHECK:error_code = DPCT_CHECK_ERROR(dpct::get_current_device().reset());
 error_code = cudaDeviceReset();
 
 // CHECK: dpct::get_current_device().reset();
 cudaThreadExit();
 
-// CHECK:/*
-// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-// CHECK-NEXT:*/
-// CHECK-NEXT:error_code = (dpct::get_current_device().reset(), 0);
+// CHECK:error_code = DPCT_CHECK_ERROR(dpct::get_current_device().reset());
 error_code = cudaThreadExit();
 
-// CHECK:/*
-// CHECK-NEXT:DPCT1093:{{[0-9]+}}: The "device2" device may be not the one intended for use. Adjust the selected device if needed.
-// CHECK-NEXT:*/
-// CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-// CHECK-NEXT:*/
-// CHECK-NEXT:error_code = (dpct::select_device(device2), 0);
+// CHECK:error_code = DPCT_CHECK_ERROR(dpct::select_device(device2));
 error_code = cudaSetDevice(device2);
 // CHECK:/*
 // CHECK-NEXT:DPCT1093:{{[0-9]+}}: The "device2" device may be not the one intended for use. Adjust the selected device if needed.
@@ -196,18 +181,9 @@ error_code = cudaSetDevice(device2);
 cudaSetDevice(device2);
 
 // CHECK:dpct::get_current_device().queues_wait_and_throw();
-// CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-// CHECK-NEXT:*/
-// CHECK-NEXT:dpct::err0 err = (dpct::get_current_device().queues_wait_and_throw(), 0);
-// CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-// CHECK-NEXT:*/
-// CHECK-NEXT:checkError((dpct::get_current_device().queues_wait_and_throw(), 0));
-// CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-// CHECK-NEXT:*/
-// CHECK-NEXT:return (dpct::get_current_device().queues_wait_and_throw(), 0);
+// CHECK-NEXT:dpct::err0 err = DPCT_CHECK_ERROR(dpct::get_current_device().queues_wait_and_throw());
+// CHECK-NEXT:checkError(DPCT_CHECK_ERROR(dpct::get_current_device().queues_wait_and_throw()));
+// CHECK-NEXT:return DPCT_CHECK_ERROR(dpct::get_current_device().queues_wait_and_throw());
 cudaDeviceSynchronize();
 cudaError_t err = cudaDeviceSynchronize();
 checkError(cudaDeviceSynchronize());

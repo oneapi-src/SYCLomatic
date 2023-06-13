@@ -45,6 +45,7 @@ MapNames::ThrustMapTy MapNames::ThrustFuncNamesMap;
 std::map<std::string /*Original API*/, HelperFeatureEnum>
     MapNames::ThrustFuncNamesHelperFeaturesMap;
 MapNames::MapTy MapNames::MathFuncNameMap;
+std::unordered_set<std::string> MapNames::MathFuncImpledWithNewRewriter;
 std::unordered_map<std::string, std::string> MapNames::AtomicFuncNamesMap;
 MapNames::MapTy MapNames::ITFName;
 std::map<std::string, MapNames::BLASFuncReplInfo> MapNames::BLASFuncReplInfoMap;
@@ -1883,7 +1884,7 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusparseCcsrmm",
                            "cusparseZcsrmm"};
 
-  // This map now is only used to migrate using declaration
+  // Below set and map are only used to migrate using declaration
   MathFuncNameMap = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
   {SOURCEAPINAME, TARGETAPINAME},
@@ -1908,10 +1909,27 @@ void MapNames::setExplicitNamespaceMap() {
 #undef ENTRY_TYPECAST
 #undef ENTRY_UNSUPPORTED
 #undef ENTRY_REWRITE
-      {"abs", MapNames::getClNamespace(false, true) + "abs"},
-      {"saturate", MapNames::getClNamespace(false, true) + "clamp"},
-      {"max", MapNames::getDpctNamespace() + "max"},
-      {"min", MapNames::getDpctNamespace() + "min"},
+  };
+  MathFuncImpledWithNewRewriter = {
+#define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_RENAMED_DOUBLE(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_EMULATED(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_OPERATOR(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_TYPECAST(SOURCEAPINAME)
+#define ENTRY_UNSUPPORTED(SOURCEAPINAME)
+#define ENTRY_REWRITE(APINAME) APINAME,
+#include "APINamesMath.inc"
+#undef ENTRY_RENAMED
+#undef ENTRY_RENAMED_NO_REWRITE
+#undef ENTRY_RENAMED_SINGLE
+#undef ENTRY_RENAMED_DOUBLE
+#undef ENTRY_EMULATED
+#undef ENTRY_OPERATOR
+#undef ENTRY_TYPECAST
+#undef ENTRY_UNSUPPORTED
+#undef ENTRY_REWRITE
   };
 }
 // clang-format on
@@ -4495,4 +4513,5 @@ const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "reduce",
     "shfl_up",
     "shfl_xor",
-    "meta_group_rank"};
+    "meta_group_rank",
+    "block_tile_memory"};

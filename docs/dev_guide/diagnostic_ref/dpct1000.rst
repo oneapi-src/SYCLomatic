@@ -22,7 +22,7 @@ The CUDA\* API returns error codes that are consumed by the program logic. SYCL\
 uses exceptions to report errors and does not return the error code.
 
 When the error handling logic in the original code is simple (for example, a
-print error message and exit), the code is removed in the resulting |dpcpp_long|
+print error message and exit), the code is removed in the resulting |dpcpp_long|_
 application. The expectation is that SYCL throws an exception, which is handled
 with the printing of an exception message and exiting (the exception handler is
 generated automatically by |tool_name|).
@@ -33,3 +33,59 @@ Suggestions to Fix
 
 Review the error handling ``if-`` statement and try to rewrite it to use an
 exception handler instead.
+
+For example, this original CUDA code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void check_err(cudaError_t err, float **f) {
+     if (err != cudaSuccess) {
+      log_error();
+     }
+   }
+
+   void foo() {
+     float *f;
+     cudaError_t err = cudaMalloc(&f, 4);
+     check_err(err, &f);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void check_err(int err, float **f) {
+     /*
+     DPCT1000:1: Error handling if-stmt was detected but could not be rewritten.
+     */
+     if (err != 0) {
+       /*
+       DPCT1001:0: The statement could not be removed.
+       */
+       log_error();
+     }
+   }
+
+   void foo()
+     float *f;
+     ...
+     int err = (f = (float *)sycl::malloc_device(4, dpct::get_default_queue()), 0);
+     check_err(err, &f);
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo()
+     float *f;
+     try {
+      f = (float *)sycl::malloc_device(4, dpct::get_default_queue());
+     } catch (sycl::exception const &e) {
+       log_error();
+     }
+   }
+

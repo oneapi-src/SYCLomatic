@@ -293,8 +293,8 @@ int foo_test_2()
 // CHECK:    dpct::event_ptr start, stop;
 // CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> start_ct1;
 // CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> stop_ct1;
-// CHECK:    CHECK((start = new sycl::event(), 0));
-// CHECK:    CHECK((stop = new sycl::event(), 0));
+// CHECK:    CHECK(DPCT_CHECK_ERROR(start = new sycl::event()));
+// CHECK:    CHECK(DPCT_CHECK_ERROR(stop = new sycl::event()));
     cudaEvent_t start, stop;
     CHECK(cudaEventCreate(&start));
     CHECK(cudaEventCreate(&stop));
@@ -313,7 +313,7 @@ int foo_test_2()
 // CHECK-NEXT:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:    */
 // CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    CHECK((*start = dpct::get_default_queue().ext_oneapi_submit_barrier(), 0));
+// CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(*start = dpct::get_default_queue().ext_oneapi_submit_barrier()));
     CHECK(cudaEventRecord(start, 0));
 
     // dispatch job with depth first ordering
@@ -367,7 +367,7 @@ int foo_test_2()
 // CHECK-NEXT:        DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:        */
 // CHECK-NEXT:        kernelEvent_ct1_i = std::chrono::steady_clock::now();
-// CHECK-NEXT:        CHECK((*kernelEvent[i] = streams[i]->ext_oneapi_submit_barrier(), 0));
+// CHECK-NEXT:        CHECK(DPCT_CHECK_ERROR(*kernelEvent[i] = streams[i]->ext_oneapi_submit_barrier()));
 // CHECK-NEXT:        streams[n_streams - 1]->ext_oneapi_submit_barrier({*kernelEvent[i]});
         CHECK(cudaEventRecord(kernelEvent[i], streams[i]));
         cudaStreamWaitEvent(streams[n_streams - 1], kernelEvent[i], 0);
@@ -381,12 +381,9 @@ int foo_test_2()
 // CHECK-NEXT:    */
 // CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    CHECK((*stop = dpct::get_default_queue().ext_oneapi_submit_barrier(), 0));
+// CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(*stop = dpct::get_default_queue().ext_oneapi_submit_barrier()));
 // CHECK-NEXT:    CHECK(0);
-// CHECK-NEXT:    /*
-// CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-// CHECK-NEXT:    */
-// CHECK-NEXT:    CHECK((elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count(), 0));
+// CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR((elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count())));
     CHECK(cudaEventRecord(stop, 0));
     CHECK(cudaEventSynchronize(stop));
     CHECK(cudaEventElapsedTime(&elapsed_time, start, stop));
@@ -404,21 +401,12 @@ void foo_test_3()
     float value = 10.0f;
 
     float *h_a = 0;
-// CHECK:    /*
-// CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-// CHECK-NEXT:    */
-// CHECK-NEXT:    CHECK((h_a = (float *)sycl::malloc_host(nbytes, dpct::get_default_queue()), 0));
+// CHECK:    CHECK(DPCT_CHECK_ERROR(h_a = (float *)sycl::malloc_host(nbytes, dpct::get_default_queue())));
     CHECK(cudaMallocHost((void **)&h_a, nbytes));
 
     float *d_a = 0;
-// CHECK:    /*
-// CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-// CHECK-NEXT:    */
-// CHECK-NEXT:    CHECK((d_a = (float *)sycl::malloc_device(nbytes, dpct::get_default_queue()), 0));
-// CHECK-NEXT:    /*
-// CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-// CHECK-NEXT:    */
-// CHECK-NEXT:    CHECK((dpct::get_default_queue().memset(d_a, 255, nbytes).wait(), 0));
+// CHECK:    CHECK(DPCT_CHECK_ERROR(d_a = (float *)sycl::malloc_device(nbytes, dpct::get_default_queue())));
+// CHECK:    CHECK(DPCT_CHECK_ERROR(dpct::get_default_queue().memset(d_a, 255, nbytes).wait()));
     CHECK(cudaMalloc((void **)&d_a, nbytes));
     CHECK(cudaMemset(d_a, 255, nbytes));
 
@@ -431,15 +419,12 @@ void foo_test_3()
 // CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> stop_ct1;
 // CHECK:    sycl::event stop_q_ct1_1;
 // CHECK-NEXT:    sycl::event stop_q_ct1_2;
-// CHECK:    CHECK((stop = new sycl::event(), 0));
+// CHECK:    CHECK(DPCT_CHECK_ERROR(stop = new sycl::event()));
     cudaEvent_t stop;
     CHECK(cudaEventCreate(&stop));
 
     // asynchronously issue work to the GPU (all to stream 0)
-// CHECK:    /*
-// CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-// CHECK-NEXT:    */
-// CHECK-NEXT:    CHECK((stop_q_ct1_1 = dpct::get_default_queue().memcpy(d_a, h_a, nbytes), 0));
+// CHECK:    CHECK(DPCT_CHECK_ERROR(stop_q_ct1_1 = dpct::get_default_queue().memcpy(d_a, h_a, nbytes)));
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:    */
@@ -448,13 +433,10 @@ void foo_test_3()
 // CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                    kernel(d_a, value);
 // CHECK-NEXT:                });
-// CHECK-NEXT:    /*
-// CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-// CHECK-NEXT:    */
-// CHECK-NEXT:    CHECK((stop_q_ct1_2 = dpct::get_default_queue().memcpy(h_a, d_a, nbytes), 0));
-// CHECK-NEXT:    /*
-// CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-// CHECK-NEXT:    */
+// CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(stop_q_ct1_2 = dpct::get_default_queue().memcpy(h_a, d_a, nbytes)));
+//CHECK-NEXT:     /*
+//CHECK-NEXT:     DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
+//CHECK-NEXT:     */
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:    */
@@ -478,15 +460,9 @@ void foo_test_3()
 
     // release resources
 
-// CHECK:    CHECK((dpct::destroy_event(stop), 0));
-// CHECK-NEXT:    /*
-// CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-// CHECK-NEXT:    */
-// CHECK-NEXT:    CHECK((sycl::free(h_a, dpct::get_default_queue()), 0));
-// CHECK-NEXT:    /*
-// CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-// CHECK-NEXT:    */
-// CHECK-NEXT:    CHECK((sycl::free(d_a, dpct::get_default_queue()), 0));
+// CHECK:    CHECK(DPCT_CHECK_ERROR(dpct::destroy_event(stop)));
+// CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(sycl::free(h_a, dpct::get_default_queue())));
+// CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(sycl::free(d_a, dpct::get_default_queue())));
     CHECK(cudaEventDestroy(stop));
     CHECK(cudaFreeHost(h_a));
     CHECK(cudaFree(d_a));
@@ -604,8 +580,8 @@ void foo_test_2184() {
   // CHECK: dpct::event_ptr stop, start;
   // CHECK-NEXT:  std::chrono::time_point<std::chrono::steady_clock> start_ct1;
   // CHECK-NEXT:  std::chrono::time_point<std::chrono::steady_clock> stop_ct1;
-  // CHECK:  CHECK((start = new sycl::event(), 0));
-  // CHECK:  CHECK((stop = new sycl::event(), 0));
+  // CHECK:  CHECK(DPCT_CHECK_ERROR(start = new sycl::event()));
+  // CHECK:  CHECK(DPCT_CHECK_ERROR(stop = new sycl::event()));
   cudaEvent_t stop, start;
   CHECK(cudaEventCreate(&start));
   CHECK(cudaEventCreate(&stop));

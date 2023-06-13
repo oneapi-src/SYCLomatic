@@ -28,3 +28,53 @@ Suggestions to Fix
 ------------------
 
 You may need to rewrite this code.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __host__ __device__ double2 &operator+=(double2 &a, const double2 &b) {
+     a.x += b.x;
+     a.y += b.y;
+     return a;
+   }
+   
+   void foo(double2 &a, double2 &b) {
+     a += b;
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   /*
+   DPCT1011:0: The tool detected overloaded operators for built-in vector types,
+   which may conflict with the SYCL 2020 standard operators (see 4.14.2.1 Vec
+   interface). The tool inserted a namespace to avoid the conflict. Use SYCL 2020
+   standard operators instead.
+   */
+   namespace dpct_operator_overloading {
+   
+   sycl::double2 &operator+=(sycl::double2 &a, const sycl::double2 &b) {
+     a.x() += b.x();
+     a.y() += b.y();
+     return a;
+   }
+   } // namespace dpct_operator_overloading
+   
+   void foo(sycl::double2 &a, sycl::double2 &b) {
+     dpct_operator_overloading::operator+=(a, b);
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(sycl::double2 &a, sycl::double2 &b) {
+     // In this case, the user-defined overloading of `+=` has been supported by sycl::double2, so we can use the operator `+=` directly.  
+     a += b;
+   }
+
