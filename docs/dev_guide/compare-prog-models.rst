@@ -29,10 +29,10 @@ The following table shows CUDA and SYCL equivalencies for defining kernel functi
 
    * - CUDA
      - SYCL
-   * - ``__global__ void foo_kernel()``
-     - ``{}	void foo_kernel() {}``
-   * - ``__device__ void foo_device()``
-     - ``{}	void foo_device() {}``
+   * - ``__global__ void foo_kernel() {}``
+     - ``void foo_kernel() {}``
+   * - ``__device__ void foo_device() {}``
+     - ``void foo_device() {}``
    * - ``__host__ void foo_host() {}``
      - ``void foo_host() {}``
    * - ``__host__ __device__ void foo_host_device() {}``
@@ -267,11 +267,11 @@ For example:
             foo<<<1, 1>>>();
           }
 
+     - .. code-block::
+
           void foo(int *shm) {
            shm[0] = 2;
           }
-
-     - .. code-block::
 
           int main() {
             sycl::queue q;
@@ -304,9 +304,8 @@ example:
           void foo() {
             int *mem1, *mem2;
 
-
             cudaMalloc(&mem1, 10);
-            cudaMallocManaged(*mem2, 10);
+            cudaMallocManaged(&mem2, 10);
           }
      - .. code-block::
 
@@ -323,7 +322,7 @@ can be used to declare a variable resident in global memory and unified memory.
 There is no direct equivalence in SYCL, but you can implement similar functionality
 with helper classes. A reference implementation for ``dpct::global_memory``,
 ``dpct::constant_memory``, and ``dpct::shared_memory`` is provided in the
-`SYCLomatic project <https://github.com/oneapi-src/SYCLomatic>`_.
+`SYCLomatic project <https://github.com/oneapi-src/SYCLomatic/blob/4893685d6f2f1c6126a1962be65dfa7688bb4162/clang/runtime/dpct-rt/include/memory.hpp.inc#L1953>`_.
 
 CUDA Device API Mapping
 -----------------------
@@ -413,7 +412,7 @@ following table:
 For the sync version of CUDA warp intrinsic functions, a mask is passed that
 specifies the threads participating in the call. The equivalent SYCL API does not
 support mask directly. Refer to the reference implementation of mask version APIs
-in the `SYCLomatic project <https://github.com/oneapi-src/SYCLomatic>`_.
+in the `SYCLomatic project <https://github.com/oneapi-src/SYCLomatic/blob/4893685d6f2f1c6126a1962be65dfa7688bb4162/clang/runtime/dpct-rt/include/util.hpp.inc#L413>`__.
 
 The following table shows the original CUDA code for a warp vote example, migrated to SYCL:
 
@@ -458,7 +457,7 @@ CUDA warp shuffle functions can be mapped to the following SYCL group algorithms
 
 CUDA shuffle functions support operate on a subset threads of warp. The equivalent
 SYCL API does not support operations on a subset of sub_group directly. Refer to
-the helper implementation in the `SYCLomatic project <https://github.com/oneapi-src/SYCLomatic>`_.
+the helper implementation in the `SYCLomatic project <https://github.com/oneapi-src/SYCLomatic>`__.
 
 The following table shows the original CUDA code for a warp shuffle example, migrated to SYCL:
 
@@ -532,7 +531,6 @@ migrated to SYCL:
           for(auto &device : devices) {
             sycl::queue q(device);
             auto sub_group_sizes = device.get_info<sycl::info::device::sub_group_sizes>();
-
             ...
             q.parallel_for(sycl::nd_range<3>(size_1 * size_2, size_2), [=](sycl::nd_item<3> item){
               kernel(item);
@@ -560,7 +558,7 @@ functions as follows:
    * - ``cudaStreamSynchronize()``
      - ``sycl::queue.wait()``
    * - ``cudaStreamWaitEvent()``
-     - ``sycl::queue. ext_oneapi_submit_barrier()``
+     - ``sycl::queue.ext_oneapi_submit_barrier()``
 
 The following table shows the original CUDA code for a stream management example,
 migrated to SYCL:

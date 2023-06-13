@@ -119,15 +119,14 @@ Kernel Execution Configures Mapping
      - SYCL
    * - ``dim3``
      - ``sycl::range<3>``
-   * - ``Kernel<<<gridDim, blockDim>>>(…)``
+   * - ``Kernel<<<gridDim, blockDim>>>(...)``
      - #. Member function ``parallel_for`` of class ``sycl::queue``:
 
           .. code-block::
 
                sycl::queue q;
-               q.parallel_for(sycl::nd_range<3>(girdDim * blockDim, blockDim),
-               [=](sycl::nd_item<3> item){
-                 kernel(…);
+               q.parallel_for(sycl::nd_range<3>(girdDim * blockDim, blockDim), [=](sycl::nd_item<3> item){
+                 kernel(...);
                });
 
        #. Member function ``submit`` of class ``sycl::queue``:
@@ -135,13 +134,11 @@ Kernel Execution Configures Mapping
           .. code-block::
 
                sycl::queue q;
-               q.submit(
-                 [&](sycl::handler &cgh){
-               cgh.parallel_for(sycl::nd_range<3>(gridDim * blockDim, blockDim), [=](sycl::nd_item<3> item){
-                 kernel(…);
+               q.submit([&](sycl::handler &cgh){
+                 cgh.parallel_for(sycl::nd_range<3>(gridDim * blockDim, blockDim), [=](sycl::nd_item<3> item){
+                   kernel(...);
+                 });
                });
-                 }
-               );
 
 Built-In Execution Space Index Mapping
 --------------------------------------
