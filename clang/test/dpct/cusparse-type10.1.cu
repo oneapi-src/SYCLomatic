@@ -12,5 +12,16 @@ int main(){
   //CHECK-NEXT: a6 = 10;
   cusparseStatus_t a6;
   a6 = CUSPARSE_STATUS_NOT_SUPPORTED;
+
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:printf("Error string: %s", "cusparseGetErrorString is not supported"/*cusparseGetErrorString(status)*/);
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:printf("Error name: %s", "cusparseGetErrorName is not supported"/*cusparseGetErrorName(status)*/);
+  printf("Error string: %s", cusparseGetErrorString(status));
+  printf("Error name: %s", cusparseGetErrorName(status));
 }
 

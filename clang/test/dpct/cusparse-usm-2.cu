@@ -86,16 +86,5 @@ int foo(int aaaaa){
   //CHECK: dpct::mkl_get_version(dpct::version_field::major, &version);
   cusparseGetProperty(MAJOR_VERSION, &version);
 
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:printf("Error string: %s", "cusparseGetErrorString is not supported"/*cusparseGetErrorString(status)*/);
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:printf("Error name: %s", "cusparseGetErrorName is not supported"/*cusparseGetErrorName(status)*/);
-  printf("Error string: %s", cusparseGetErrorString(status));
-  printf("Error name: %s", cusparseGetErrorName(status));
-
   return 0;
 }
