@@ -865,61 +865,70 @@ public:
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 namespace detail{
+
+enum primitive_kind {
+  reorder,
+  sum,
+  binary,
+  reduction,
+  convolution_forward,
+  convolution_backward,
+  activation_forward,
+  activation_backward,
+  lrn_forward,
+  lrn_backward,
+  pooling_forward,
+  pooling_backward,
+  batch_normalization_forward,
+  batch_normalization_backward,
+  softmax_forward,
+  softmax_backward
+};
+
+
 struct primitive_key_type{
-  std::string name;
-  ::dnnl::prop_kind p_kind;
-  ::dnnl::algorithm alg;
-  ::dnnl::fpmath_mode math_mode;
-  std::vector<::dnnl::memory::desc> mems;
-  std::vector<float> params_1;
-  std::vector<std::vector<int64_t>> params_2;
+  // bits 0-3 : pritive_kind
+  // bits 4-7 : prop_kind
+  // bits 8-11 : algorithm
+  // bits 12-15 : math_mode
+  // bits 16-19 : mem1 data_type
+  // ...
+  // bits 60-63 : mem8 data_type
+  std::uint64_t params = 0;
+  float alpha = 0;
+  float beta = 0;
+  std::vector<int64_t> mem_dims = {};
   bool operator==(const primitive_key_type& other) const {
-    if(mems.size() != other.mems.size()) {
+    if((params != other.params) || (alpha != other.alpha) || (beta != other.beta)
+       || (mem_dims.size() != other.mem_dims.size())) {
       return false;
     }
-    bool result = true;
-    for(int i = 0; i < mems.size(); i++) {
-      result = result && (mems[i].get_data_type() == other.mems[i].get_data_type()) &&
-        (mems[i].get_dims() == other.mems[i].get_dims());
-      if(!result)  {
+    unsigned dim_num = mem_dims.size();
+    for(int i = 0; i < dim_num; i++) {
+      if(mem_dims[i] != other.mem_dims[i])  {
         return false;
       }
     }
-    return result && (name == other.name) && (p_kind == other.p_kind) &&
-      (alg == other.alg) && (math_mode == other.math_mode) && (params_1 == other.params_1) && 
-      (params_2 == other.params_2);
+    return true;
   }
 };
 struct primitive_key_hasher{
   std::size_t operator()(const primitive_key_type& key) const{
-    std::hash<std::string> string_hasher;
-    std::hash<int> int_hasher;
+    std::hash<unsigned long> int_hasher;
     std::hash<float> float_hasher;
     std::size_t result = 0;
-    result ^= string_hasher(key.name) + 0x9e3779b9 + (result << 3);
-    result ^= int_hasher((int)key.p_kind);
-    result ^= int_hasher((int)key.alg);
-    result ^= int_hasher((int)key.math_mode);
-    for(auto &mem : key.mems) {
-      result ^= int_hasher((int)mem.get_data_type());
-      for(auto &dim: mem.get_dims()) {
-        result ^= int_hasher((int)dim);
-      }
-    }
-    for(auto &param : key.params_1) {
-      result ^= float_hasher(param);
-    }
-    for(auto &param : key.params_2) {
-      for(auto &e : param) {
-        result ^= float_hasher(e);
-      }
+    result ^= int_hasher(key.params) + 0x9e3779b9;
+    result ^= float_hasher(key.alpha);
+    result ^= float_hasher(key.beta);
+    for(auto &dim : key.mem_dims) {
+      result ^= int_hasher((unsigned long)dim);
     }
     return result;
   }
 };
 class primitive_cache {
 public:
-  void* get(primitive_key_type& key) {
+  void* get(const primitive_key_type& key) {
     auto it = cache.find(key);
     if (it == cache.end()) {
       return nullptr;
@@ -927,18 +936,18 @@ public:
     touch(it);
     return it->second.first;
   }
-  void put(primitive_key_type& key, void *value) {
+  void put(const primitive_key_type& key, void *value) {
     auto it = cache.find(key);
     if (it != cache.end()){
       touch(it);
     } else {
       if (cache.size() == _capacity) {
         auto last_primitive = cache.find(usage.back());
-        std::string name = key.name;
-        if(name == "convolution_forward") {
+        if((detail::primitive_kind)(key.params & 0xf) == 
+           detail::primitive_kind::convolution_forward) {
           delete static_cast<::dnnl::convolution_forward*>(last_primitive->second.first);
         } else {
-          throw std::runtime_error("Unknow primitive type.");
+          throw std::runtime_error("Unknow primitive kind.");
         }
         cache.erase(usage.back());
         usage.pop_back();
@@ -956,6 +965,9 @@ private:
   usage_list_type usage;
   cache_type cache;
   void touch(cache_type::iterator it) {
+    if(it->second.second == usage.begin()) {
+      return;
+    }
     primitive_key_type key = it->first;
     usage.erase(it->second.second);
     usage.push_front(key);
@@ -4826,24 +4838,38 @@ engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm 
   auto src_md = transfer_memory_desc_to_format_tag_any(origin_src_md);
   auto dst_md = transfer_memory_desc_to_format_tag_any(origin_dst_md);
   auto weight_md = transfer_memory_desc_to_format_tag_any(origin_weight_md);
+  
+  auto &dilate = desc.get_dilate();
+  auto &padding = desc.get_padding();
+  auto &stride = desc.get_stride();
 
-  detail::primitive_key_type key = {
-      "convolution_forward", ::dnnl::prop_kind::forward_training, alg,
-      desc.get_math_mode(), {src_md, weight_md, dst_md}, {},
-      {desc.get_dilate(), desc.get_padding(), desc.get_padding()}
-  };
+  detail::primitive_key_type key;
+  key.params = (std::uint64_t)detail::primitive_kind::convolution_forward +
+               ((std::uint64_t)::dnnl::prop_kind::forward_training << 4) +
+               ((std::uint64_t)alg << 8) +
+               ((std::uint64_t)desc.get_math_mode() << 12) +
+               ((std::uint64_t)src_md.get_data_type() << 16) +
+               ((std::uint64_t)weight_md.get_data_type() << 20) +
+               ((std::uint64_t)dst_md.get_data_type() << 24);
+
+  key.mem_dims.insert(key.mem_dims.end(), dilate.begin(), dilate.end());
+  key.mem_dims.insert(key.mem_dims.end(), padding.begin(), padding.end());
+  key.mem_dims.insert(key.mem_dims.end(), stride.begin(), stride.end());
+
   ::dnnl::convolution_forward* primitive = 
     (::dnnl::convolution_forward*)_primitive_cache.get(key);
+
   if(!primitive) {
     primitive = create_forward_primitive<::dnnl::convolution_forward>(
       ::dnnl::prop_kind::forward_training, alg, src_md,
-      weight_md, dst_md, desc.get_stride(),
-      desc.get_dilate(), desc.get_padding(), desc.get_padding(), attr);
+      weight_md, dst_md, stride, dilate, padding, padding, attr);
     _primitive_cache.put(key, primitive);
   }
+
   ::dnnl::convolution_forward::primitive_desc pd =
     ::dnnl::convolution_forward::primitive_desc(
       const_cast<dnnl_primitive_desc_t>(primitive->get_primitive_desc()));
+
   auto optimal_src_md = pd.src_desc();
   auto optimal_dst_md = pd.dst_desc();
   auto optimal_weight_md = pd.weights_desc();
