@@ -1669,8 +1669,8 @@ inline void reduce_argmin(_ExecutionPolicy &&policy, Iter1 input, Iter2 output,
 
 template <typename _ExecutionPolicy, typename Iter1,
           typename ValueLessComparable, typename StrictWeakOrdering>
-inline 
-dpct::internal::enable_if_execution_policy<_ExecutionPolicy, ::std::pair<Iter1,Iter1>>
+inline dpct::internal::enable_if_execution_policy<_ExecutionPolicy,
+                                                  ::std::pair<Iter1, Iter1>>
 equal_range(_ExecutionPolicy &&policy, Iter1 start, Iter1 end,
             const ValueLessComparable &value, StrictWeakOrdering comp) {
   ::std::vector<::std::int64_t> res_lower(1);
@@ -1687,11 +1687,10 @@ equal_range(_ExecutionPolicy &&policy, Iter1 start, Iter1 end,
 
 template <typename _ExecutionPolicy, typename Iter1,
           typename ValueLessComparable>
-inline
-dpct::internal::enable_if_execution_policy<_ExecutionPolicy, ::std::pair<Iter1,Iter1>>
-equal_range(_ExecutionPolicy &&policy,
-                                             Iter1 start, Iter1 end,
-                                             const ValueLessComparable &value) {
+inline dpct::internal::enable_if_execution_policy<_ExecutionPolicy,
+                                                  ::std::pair<Iter1, Iter1>>
+equal_range(_ExecutionPolicy &&policy, Iter1 start, Iter1 end,
+            const ValueLessComparable &value) {
   return equal_range(::std::forward<_ExecutionPolicy>(policy), start, end,
                      value, internal::__less());
 }
@@ -1711,9 +1710,9 @@ equal_range(Ptr1 start, Size size, const ValueLessComparable &value,
          StrictWeakOrdering comp) {
         return dpct::equal_range(policy, start, end, value, comp);
       },
-      start, start, //return base
-      start //all ptrs
-      );
+      start, start, // return base
+      start         // all ptrs
+  );
 }
 
 template <typename _T, typename Size, typename ValueLessComparable>
@@ -1723,9 +1722,9 @@ equal_range(_T start, Size size, const ValueLessComparable &value) {
 }
 
 template <typename Ptr1, typename Size, typename Ptr2, typename BinaryPred>
-std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2>, std::pair<Ptr1, Ptr2>>
-unique(Ptr1 start1, Size size, Ptr2 start2,
-                             BinaryPred binary_pred) {
+std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2>,
+                 std::pair<Ptr1, Ptr2>>
+unique(Ptr1 start1, Size size, Ptr2 start2, BinaryPred binary_pred) {
   return dpct::internal::check_device_ptr_and_launch(
       oneapi::dpl::execution::seq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
@@ -1734,14 +1733,15 @@ unique(Ptr1 start1, Size size, Ptr2 start2,
          BinaryPred binary_pred) {
         return dpct::unique(policy, start1, end1, start2, binary_pred);
       },
-      start1, start2, //return base
-      start1, start2 //all ptrs
-      );
+      start1, start2, // return base
+      start1, start2  // all ptrs
+  );
 }
 
 template <typename Ptr1, typename Size, typename Ptr2>
-std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2>,std::pair<Ptr1, Ptr2>>
-                  unique(Ptr1 start1, Size size, Ptr2 start2) {
+std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2>,
+                 std::pair<Ptr1, Ptr2>>
+unique(Ptr1 start1, Size size, Ptr2 start2) {
   return dpct::unique(
       start1, size, start2,
       std::equal_to<typename std::iterator_traits<Ptr1>::value_type>());
@@ -1761,17 +1761,18 @@ std::pair<Ptr3, Ptr4> unique_copy(Ptr1 keys_first, Size size, Ptr2 values_first,
         return dpct::unique_copy(policy, start1, end1, start2, start3, start4,
                                  binary_pred);
       },
-      keys_result, values_result, //return base
-      keys_first, values_first, keys_result, values_result //all ptrs
-      );
+      keys_result, values_result,                          // return base
+      keys_first, values_first, keys_result, values_result // all ptrs
+  );
 }
 
 template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
           typename Ptr4>
 std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
-                 std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4>, std::pair<Ptr3, Ptr4>>
-unique_copy(Ptr1 keys_first, Size size, Ptr2 values_first,
-                                  Ptr3 keys_result, Ptr4 values_result) {
+                     std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4>,
+                 std::pair<Ptr3, Ptr4>>
+unique_copy(Ptr1 keys_first, Size size, Ptr2 values_first, Ptr3 keys_result,
+            Ptr4 values_result) {
   return dpct::unique_copy(
       keys_first, size, values_first, keys_result, values_result,
       std::equal_to<typename std::iterator_traits<Ptr1>::value_type>());
@@ -1780,256 +1781,251 @@ unique_copy(Ptr1 keys_first, Size size, Ptr2 values_first,
 template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
           typename Ptr4, typename Ptr5, typename Ptr6, typename Comp>
 std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
-                 std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4> &&
-                 std::is_pointer_v<Ptr5> && std::is_pointer_v<Ptr6>,std::pair<Ptr5, Ptr6>>
-merge(Ptr1 keys_first1, Size size1, Ptr2 keys_first2,
-      Size size2, Ptr3 values_first1, Ptr4 values_first2,
-      Ptr5 keys_result, Ptr6 values_result, Comp comp)
-{ 
-    return dpct::internal::check_device_ptr_and_launch(
+                     std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4> &&
+                     std::is_pointer_v<Ptr5> && std::is_pointer_v<Ptr6>,
+                 std::pair<Ptr5, Ptr6>>
+merge(Ptr1 keys_first1, Size size1, Ptr2 keys_first2, Size size2,
+      Ptr3 values_first1, Ptr4 values_first2, Ptr5 keys_result,
+      Ptr6 values_result, Comp comp) {
+  return dpct::internal::check_device_ptr_and_launch(
       oneapi::dpl::execution::seq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-      comp, size1, size2, 
-      [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2, Ptr3 start3,
-         Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
-        return dpct::merge(policy, start1, end1, start2, end2, start3, start4, start5, 
-                                 start6, comp);
-      }, 
-      keys_result, values_result, //return base
-      keys_first1, keys_first2, values_first1, values_first2, keys_result, values_result); //all ptrs
+      comp, size1, size2,
+      [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2,
+         Ptr3 start3, Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
+        return dpct::merge(policy, start1, end1, start2, end2, start3, start4,
+                           start5, start6, comp);
+      },
+      keys_result, values_result, // return base
+      keys_first1, keys_first2, values_first1, values_first2, keys_result,
+      values_result); // all ptrs
 }
-
 
 template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
           typename Ptr4, typename Ptr5, typename Ptr6>
 std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
-                 std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4> &&
-                 std::is_pointer_v<Ptr5> && std::is_pointer_v<Ptr6>,std::pair<Ptr5, Ptr6>>
-merge(Ptr1 keys_first1, Size size1, Ptr2 keys_first2,
-      Size size2, Ptr3 values_first1, Ptr4 values_first2,
-      Ptr5 keys_result, Ptr6 values_result)
-{
-  return dpct::merge(keys_first1, size1, keys_first2, size2, values_first1, values_first2, keys_result, values_result, dpct::internal::__less());
-}
-
-
-template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,
-          typename Ptr5, typename Comp>
-std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
-                 std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4> &&
-                 std::is_pointer_v<Ptr5>,std::pair<Ptr4, Ptr5>>
-set_intersection(Ptr1 keys_first1, Size size1,
-                 Ptr2 keys_first2, Size size2, Ptr3 values_first1,
-                 Ptr4 keys_result, Ptr5 values_result, Comp comp)
-{
-    return dpct::internal::check_device_ptr_and_launch(
-      oneapi::dpl::execution::seq,
-      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-      comp, size1, size2,
-      [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2, Ptr3 start3,
-         Ptr4 start4, Ptr5 start5, Comp comp) {
-        return dpct::set_intersection(policy, start1, end1, start2, end2, start3, start4, start5,
-                                 comp);
-      }, 
-      keys_result, values_result, //return base
-      keys_first1, keys_first2, values_first1, keys_result, values_result //all ptrs
-      );
-
-}
-
-template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,
-          typename Ptr5>
-std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
-                 std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4> &&
-                 std::is_pointer_v<Ptr5>,std::pair<Ptr4, Ptr5>>
-set_intersection(Ptr1 keys_first1, Size size1,
-                 Ptr2 keys_first2, Size size2, Ptr3 values_first1,
-                 Ptr4 keys_result, Ptr5 values_result)
-{
-  return dpct::set_intersection(keys_first1, size1,
-                 keys_first2, size2, values_first1,
-                 keys_result, values_result, dpct::internal::__less());
-}
-
-
-template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,
-          typename Ptr5, typename Ptr6, typename Comp>
-std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
-                 std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4> &&
-                 std::is_pointer_v<Ptr5> && std::is_pointer_v<Ptr6> ,std::pair<Ptr5, Ptr6>>
-set_symmetric_difference(Ptr1 keys_first1, Size size1,
-                         Ptr2 keys_first2, Size size2,
-                         Ptr3 values_first1, Ptr4 values_first2,
-                         Ptr5 keys_result, Ptr6 values_result, Comp comp)
-{
-    return dpct::internal::check_device_ptr_and_launch(
-      oneapi::dpl::execution::seq,
-      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-      comp, size1, size2,
-      [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2, Ptr3 start3,
-         Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
-        return dpct::set_symmetric_difference(policy, start1, end1, start2, end2, start3, start4, start5, 
-                                 start6);
-      }, 
-      keys_result, values_result, //return base
-      keys_first1, keys_first2, values_first1, values_first2, keys_result, values_result // all ptrs
-      );
-}
-
-template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,
-          typename Ptr5, typename Ptr6>
-std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
-                 std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4> &&
-                 std::is_pointer_v<Ptr5> && std::is_pointer_v<Ptr6>, std::pair<Ptr5, Ptr6>>
-set_symmetric_difference(Ptr1 keys_first1, Size size1,
-                         Ptr2 keys_first2, Size size2,
-                         Ptr3 values_first1, Ptr4 values_first2,
-                         Ptr5 keys_result, Ptr6 values_result)
-{
-    return dpct::set_symmetric_difference(keys_first1, size1,
-                 keys_first2, size2, values_first1, values_first2,
-                 keys_result, values_result, dpct::internal::__less());
-}
-
-
-template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,
-          typename Ptr5, typename Ptr6, typename Comp>
-std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
-                 std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4> &&
-                 std::is_pointer_v<Ptr5> && std::is_pointer_v<Ptr6>, 
+                     std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4> &&
+                     std::is_pointer_v<Ptr5> && std::is_pointer_v<Ptr6>,
                  std::pair<Ptr5, Ptr6>>
-set_difference(Ptr1 keys_first1, Size size1, Ptr2 keys_first2,
-                                       Size size2, Ptr3 values_first1,
-                                       Ptr4 values_first2, Ptr5 keys_result,
-                                       Ptr6 values_result, Comp comp)
-{
-    return dpct::internal::check_device_ptr_and_launch(
+merge(Ptr1 keys_first1, Size size1, Ptr2 keys_first2, Size size2,
+      Ptr3 values_first1, Ptr4 values_first2, Ptr5 keys_result,
+      Ptr6 values_result) {
+  return dpct::merge(keys_first1, size1, keys_first2, size2, values_first1,
+                     values_first2, keys_result, values_result,
+                     dpct::internal::__less());
+}
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Ptr5, typename Comp>
+std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
+                     std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4> &&
+                     std::is_pointer_v<Ptr5>,
+                 std::pair<Ptr4, Ptr5>>
+set_intersection(Ptr1 keys_first1, Size size1, Ptr2 keys_first2, Size size2,
+                 Ptr3 values_first1, Ptr4 keys_result, Ptr5 values_result,
+                 Comp comp) {
+  return dpct::internal::check_device_ptr_and_launch(
       oneapi::dpl::execution::seq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
       comp, size1, size2,
-      [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2, Ptr3 start3,
-         Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
-        return dpct::set_difference(policy, start1, end1, start2, end2, start3, start4, start5, 
-                                 start6, comp);
+      [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2,
+         Ptr3 start3, Ptr4 start4, Ptr5 start5, Comp comp) {
+        return dpct::set_intersection(policy, start1, end1, start2, end2,
+                                      start3, start4, start5, comp);
       },
-      keys_result, values_result, //return base
-      keys_first1, keys_first2, values_first1, values_first2, keys_result, values_result //all ptrs
-      ); 
+      keys_result, values_result, // return base
+      keys_first1, keys_first2, values_first1, keys_result,
+      values_result // all ptrs
+  );
 }
 
-template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,
-          typename Ptr5, typename Ptr6>
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Ptr5>
 std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
-                 std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4> &&
-                 std::is_pointer_v<Ptr5> && std::is_pointer_v<Ptr6>, std::pair<Ptr5, Ptr6>>
-set_difference(Ptr1 keys_first1, Size size1,
-               Ptr2 keys_first2, Size size2, Ptr3 values_first1,
-               Ptr4 values_first2, Ptr5 keys_result, Ptr6 values_result)
-{
-   return dpct::set_difference(keys_first1, size1,
-          keys_first2, size2, values_first1,
-          values_first2, keys_result, values_result, dpct::internal::__less()); 
+                     std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4> &&
+                     std::is_pointer_v<Ptr5>,
+                 std::pair<Ptr4, Ptr5>>
+set_intersection(Ptr1 keys_first1, Size size1, Ptr2 keys_first2, Size size2,
+                 Ptr3 values_first1, Ptr4 keys_result, Ptr5 values_result) {
+  return dpct::set_intersection(keys_first1, size1, keys_first2, size2,
+                                values_first1, keys_result, values_result,
+                                dpct::internal::__less());
 }
 
-template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,
-          typename Ptr5, typename Ptr6, typename Comp>
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Ptr5, typename Ptr6, typename Comp>
 std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
-                 std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4> &&
-                 std::is_pointer_v<Ptr5> && std::is_pointer_v<Ptr6>, std::pair<Ptr5, Ptr6>>
-set_union(Ptr1 keys_first1, Size size1,
-          Ptr2 keys_first2, Size size2, Ptr3 values_first1,
-          Ptr4 values_first2, Ptr5 keys_result, Ptr6 values_result,
-          Comp comp)
-{
-    return dpct::internal::check_device_ptr_and_launch(
+                     std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4> &&
+                     std::is_pointer_v<Ptr5> && std::is_pointer_v<Ptr6>,
+                 std::pair<Ptr5, Ptr6>>
+set_symmetric_difference(Ptr1 keys_first1, Size size1, Ptr2 keys_first2,
+                         Size size2, Ptr3 values_first1, Ptr4 values_first2,
+                         Ptr5 keys_result, Ptr6 values_result, Comp comp) {
+  return dpct::internal::check_device_ptr_and_launch(
       oneapi::dpl::execution::seq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-      comp, size1, size2, 
-      [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2, Ptr3 start3,
-         Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
-        return dpct::set_union(policy, start1, end1, start2, end2, start3, start4, start5, 
-                                 start6, comp);
-      }, 
-      keys_result, values_result, //return base
-      keys_first1, keys_first2, values_first1, values_first2, keys_result, values_result //all ptrs
-      );
+      comp, size1, size2,
+      [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2,
+         Ptr3 start3, Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
+        return dpct::set_symmetric_difference(
+            policy, start1, end1, start2, end2, start3, start4, start5, start6);
+      },
+      keys_result, values_result, // return base
+      keys_first1, keys_first2, values_first1, values_first2, keys_result,
+      values_result // all ptrs
+  );
 }
 
-template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3, typename Ptr4,
-          typename Ptr5, typename Ptr6>
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Ptr5, typename Ptr6>
 std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
-                 std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4> &&
-                 std::is_pointer_v<Ptr5> && std::is_pointer_v<Ptr6>, std::pair<Ptr5, Ptr6>>
-set_union(Ptr1 keys_first1, Size size,
-          Ptr2 keys_first2, Size size2, Ptr3 values_first1,
-          Ptr4 values_first2, Ptr5 keys_result, Ptr6 values_result)
-{
-  return dpct::set_union(keys_first1, size,
-          keys_first2, size2, values_first1,
-          values_first2, keys_result, values_result, dpct::internal::__less());
+                     std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4> &&
+                     std::is_pointer_v<Ptr5> && std::is_pointer_v<Ptr6>,
+                 std::pair<Ptr5, Ptr6>>
+set_symmetric_difference(Ptr1 keys_first1, Size size1, Ptr2 keys_first2,
+                         Size size2, Ptr3 values_first1, Ptr4 values_first2,
+                         Ptr5 keys_result, Ptr6 values_result) {
+  return dpct::set_symmetric_difference(
+      keys_first1, size1, keys_first2, size2, values_first1, values_first2,
+      keys_result, values_result, dpct::internal::__less());
+}
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Ptr5, typename Ptr6, typename Comp>
+std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
+                     std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4> &&
+                     std::is_pointer_v<Ptr5> && std::is_pointer_v<Ptr6>,
+                 std::pair<Ptr5, Ptr6>>
+set_difference(Ptr1 keys_first1, Size size1, Ptr2 keys_first2, Size size2,
+               Ptr3 values_first1, Ptr4 values_first2, Ptr5 keys_result,
+               Ptr6 values_result, Comp comp) {
+  return dpct::internal::check_device_ptr_and_launch(
+      oneapi::dpl::execution::seq,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      comp, size1, size2,
+      [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2,
+         Ptr3 start3, Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
+        return dpct::set_difference(policy, start1, end1, start2, end2, start3,
+                                    start4, start5, start6, comp);
+      },
+      keys_result, values_result, // return base
+      keys_first1, keys_first2, values_first1, values_first2, keys_result,
+      values_result // all ptrs
+  );
+}
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Ptr5, typename Ptr6>
+std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
+                     std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4> &&
+                     std::is_pointer_v<Ptr5> && std::is_pointer_v<Ptr6>,
+                 std::pair<Ptr5, Ptr6>>
+set_difference(Ptr1 keys_first1, Size size1, Ptr2 keys_first2, Size size2,
+               Ptr3 values_first1, Ptr4 values_first2, Ptr5 keys_result,
+               Ptr6 values_result) {
+  return dpct::set_difference(keys_first1, size1, keys_first2, size2,
+                              values_first1, values_first2, keys_result,
+                              values_result, dpct::internal::__less());
+}
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Ptr5, typename Ptr6, typename Comp>
+std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
+                     std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4> &&
+                     std::is_pointer_v<Ptr5> && std::is_pointer_v<Ptr6>,
+                 std::pair<Ptr5, Ptr6>>
+set_union(Ptr1 keys_first1, Size size1, Ptr2 keys_first2, Size size2,
+          Ptr3 values_first1, Ptr4 values_first2, Ptr5 keys_result,
+          Ptr6 values_result, Comp comp) {
+  return dpct::internal::check_device_ptr_and_launch(
+      oneapi::dpl::execution::seq,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      comp, size1, size2,
+      [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2,
+         Ptr3 start3, Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
+        return dpct::set_union(policy, start1, end1, start2, end2, start3,
+                               start4, start5, start6, comp);
+      },
+      keys_result, values_result, // return base
+      keys_first1, keys_first2, values_first1, values_first2, keys_result,
+      values_result // all ptrs
+  );
+}
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Ptr5, typename Ptr6>
+std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
+                     std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4> &&
+                     std::is_pointer_v<Ptr5> && std::is_pointer_v<Ptr6>,
+                 std::pair<Ptr5, Ptr6>>
+set_union(Ptr1 keys_first1, Size size, Ptr2 keys_first2, Size size2,
+          Ptr3 values_first1, Ptr4 values_first2, Ptr5 keys_result,
+          Ptr6 values_result) {
+  return dpct::set_union(keys_first1, size, keys_first2, size2, values_first1,
+                         values_first2, keys_result, values_result,
+                         dpct::internal::__less());
 }
 
 template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
           typename Ptr4, typename Pred>
 std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
-                 std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4>, std::pair<Ptr3, Ptr4>>
-stable_partition_copy(Ptr1 first, Size size, Ptr2 mask,
-                      Ptr3 out_true, Ptr4 out_false, Pred p)
-{
+                     std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4>,
+                 std::pair<Ptr3, Ptr4>>
+stable_partition_copy(Ptr1 first, Size size, Ptr2 mask, Ptr3 out_true,
+                      Ptr4 out_false, Pred p) {
   return dpct::internal::check_device_ptr_and_launch(
       oneapi::dpl::execution::seq,
-      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-      p, size,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), p,
+      size,
       [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
          Ptr4 start4, Pred pred) {
-        return dpct::stable_partition_copy(policy, start1, end1, start2, start3, start4,
-                                 pred);
+        return dpct::stable_partition_copy(policy, start1, end1, start2, start3,
+                                           start4, pred);
       },
-      out_true, out_false, //return base
-      first, mask, out_true, out_false //all ptrs
-      );
-
+      out_true, out_false,             // return base
+      first, mask, out_true, out_false // all ptrs
+  );
 }
 template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
           typename Pred>
 std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
-                 std::is_pointer_v<Ptr3>, std::pair<Ptr2, Ptr3>>
-stable_partition_copy(Ptr1 first, Size size, Ptr2 out_true,
-                      Ptr3 out_false, Pred p)
-{
+                     std::is_pointer_v<Ptr3>,
+                 std::pair<Ptr2, Ptr3>>
+stable_partition_copy(Ptr1 first, Size size, Ptr2 out_true, Ptr3 out_false,
+                      Pred p) {
   return dpct::internal::check_device_ptr_and_launch(
       oneapi::dpl::execution::seq,
-      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-      p, size,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), p,
+      size,
       [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
          Pred pred) {
         return dpct::stable_partition_copy(policy, start1, end1, start2, start3,
-                                 pred);
+                                           pred);
       },
-      out_true, out_false, //return base
+      out_true, out_false,       // return base
       first, out_true, out_false // all ptrs
-      );
+  );
 }
 
 template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
           typename Ptr4, typename Pred>
 std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
-                 std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4>,std::pair<Ptr3, Ptr4>>
-partition_copy(Ptr1 first, Size size, Ptr2 mask,
-               Ptr3 out_true, Ptr4 out_false, Pred p)
-{
+                     std::is_pointer_v<Ptr3> && std::is_pointer_v<Ptr4>,
+                 std::pair<Ptr3, Ptr4>>
+partition_copy(Ptr1 first, Size size, Ptr2 mask, Ptr3 out_true, Ptr4 out_false,
+               Pred p) {
   return dpct::internal::check_device_ptr_and_launch(
       oneapi::dpl::execution::seq,
-      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-      p, size,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), p,
+      size,
       [](auto policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
          Ptr4 start4, Pred pred) {
-        return dpct::partition_copy(policy, start1, end1, start2, start3, start4,
-                                 pred);
+        return dpct::partition_copy(policy, start1, end1, start2, start3,
+                                    start4, pred);
       },
-      out_true, out_false, //return base
+      out_true, out_false,             // return base
       first, mask, out_true, out_false // all ptrs
-      );
+  );
 }
 
 #endif // #DPCT_USM_LEVEL_NONE
