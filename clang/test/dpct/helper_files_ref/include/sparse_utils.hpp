@@ -438,8 +438,8 @@ private:
         detail::get_memory(reinterpret_cast<VALUE_TYPE *>(_value));            \
     oneapi::mkl::sparse::set_csr_data(get_default_queue(), _matrix_handle,     \
                                       _row_num, _col_num, _base, data_row_ptr, \
-                                      data_col_ind, data_value)                \
-        .wait();                                                               \
+                                      data_col_ind, data_value);               \
+    get_default_queue().wait();                                                \
   } while (0)
     std::uint64_t key = detail::get_type_combination_id(
         _row_ptr_type, _col_ind_type, _value_type);
