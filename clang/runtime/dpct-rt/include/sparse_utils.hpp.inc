@@ -609,7 +609,7 @@ void spmv(sycl::queue queue, oneapi::mkl::transpose trans, const void *alpha,
   } while (0)
 
   switch (compute_type) {
-  case library_data_t::real_int32: {
+  case library_data_t::real_float: {
     SPMV(float);
     break;
   }

@@ -1,7 +1,7 @@
-// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0
+// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1
-// RUN: dpct --format-range=none --out-root %T/cusparse-type10 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/cusparse-type10/cusparse-type10.1.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --out-root %T/cusparse-type102 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/cusparse-type102/cusparse-type102.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cusparse_v2.h>
 #include <cuda_runtime.h>
@@ -23,5 +23,18 @@ int main(){
   //CHECK-NEXT:printf("Error name: %s", "cusparseGetErrorName is not supported"/*cusparseGetErrorName(status)*/);
   printf("Error string: %s", cusparseGetErrorString(status));
   printf("Error name: %s", cusparseGetErrorName(status));
+
+  //CHECK:dpct::library_data_t b1 = dpct::library_data_t::real_uint16;
+  //CHECK-NEXT:b1 = dpct::library_data_t::real_int32;
+  //CHECK-NEXT:b1 = dpct::library_data_t::real_int64;
+  //CHECK-NEXT:oneapi::mkl::layout b2 = oneapi::mkl::layout::col_major;
+  //CHECK-NEXT:b2 = oneapi::mkl::layout::row_major;
+  cusparseIndexType_t b1 = CUSPARSE_INDEX_16U;
+  b1 = CUSPARSE_INDEX_32I;
+  b1 = CUSPARSE_INDEX_64I;
+  cusparseOrder_t b2 = CUSPARSE_ORDER_COL;
+  b2 = CUSPARSE_ORDER_ROW;
+
+  return 0;
 }
 

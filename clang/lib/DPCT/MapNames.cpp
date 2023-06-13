@@ -1324,6 +1324,14 @@ void MapNames::setExplicitNamespaceMap() {
        getDpctNamespace() + "sparse::matrix_attribute::uplo"},
       {"CUSPARSE_SPMAT_DIAG_TYPE",
        getDpctNamespace() + "sparse::matrix_attribute::diag"},
+      {"CUSPARSE_INDEX_16U",
+       getDpctNamespace() + "library_data_t::real_uint16"},
+      {"CUSPARSE_INDEX_32I",
+       getDpctNamespace() + "library_data_t::real_int32"},
+      {"CUSPARSE_INDEX_64I",
+       getDpctNamespace() + "library_data_t::real_int64"},
+      {"CUSPARSE_ORDER_COL", "oneapi::mkl::layout::col_major"},
+      {"CUSPARSE_ORDER_ROW", "oneapi::mkl::layout::row_major"},
   };
 
   ClassFieldMap = {};
