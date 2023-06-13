@@ -633,9 +633,9 @@ void spmv(sycl::queue queue, oneapi::mkl::transpose trans, const void *alpha,
 
 void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
           oneapi::mkl::transpose trans_b, const void *alpha,
-          std::shared_ptr<sparse_matrix_desc> a,
-          std::shared_ptr<dense_matrix_desc> b, const void *beta,
-          std::shared_ptr<dense_matrix_desc> c, library_data_t compute_type) {
+          sparse_matrix_desc_t a, std::shared_ptr<dense_matrix_desc> b,
+          const void *beta, std::shared_ptr<dense_matrix_desc> c,
+          library_data_t compute_type) {
   if (b->_layout != c->_layout)
     throw std::runtime_error("the layout of b and c are different");
 #define SPMM(Ty)                                                               \

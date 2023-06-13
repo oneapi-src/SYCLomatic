@@ -236,3 +236,17 @@ ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseConstDnVecGetValues", DEREF(1),
                                         MEMBER_EXPR(DEREF(0), false,
                                                     LITERAL("_value"))))
+
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseSpMM_bufferSize", DEREF(10),
+                                        LITERAL("0")))
+REMOVE_API_FACTORY_ENTRY("cusparseSpMM_preprocess")
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseSpMM",
+    CALL(MapNames::getDpctNamespace() + "sparse::spmm", DEREF(0), ARG(1),
+         ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8))))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseSpMV_bufferSize", DEREF(9),
+                                        LITERAL("0")))
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseSpMV",
+    CALL(MapNames::getDpctNamespace() + "sparse::spmv", DEREF(0), ARG(1),
+         ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7))))

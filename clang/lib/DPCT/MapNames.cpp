@@ -475,6 +475,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cusparseSpMatDescr_t",
        std::make_shared<TypeNameRule>(
         getDpctNamespace() + "sparse::sparse_matrix_desc_t")},
+      {"cusparseSpMMAlg_t", std::make_shared<TypeNameRule>("int")},
+      {"cusparseSpMVAlg_t", std::make_shared<TypeNameRule>("int")},
       // ...
   };
 
@@ -1931,7 +1933,12 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusparseSpMatSetAttribute",
                            "cusparseCreateConstDnVec",
                            "cusparseConstDnVecGet",
-                           "cusparseConstDnVecGetValues"};
+                           "cusparseConstDnVecGetValues",
+                           "cusparseSpMM",
+                           "cusparseSpMM_bufferSize",
+                           "cusparseSpMV",
+                           "cusparseSpMV_bufferSize",
+                           "cusparseSpMM_preprocess"};
 
   // Below set and map are only used to migrate using declaration
   MathFuncNameMap = {
