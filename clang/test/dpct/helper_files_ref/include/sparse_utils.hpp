@@ -262,6 +262,356 @@ void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
 }
 #endif
 
+struct dense_vector_desc {
+  dense_vector_desc(std::int64_t ele_num, void *value,
+                    library_data_t value_type)
+      : _ele_num(ele_num), _value(value), _value_type(value_type) {}
+  void get_desc(std::int64_t *ele_num, const void **value,
+                library_data_t *value_type) {
+    *ele_num = _ele_num;
+    *value = _value;
+    *value_type = _value_type;
+  }
+  void get_desc(std::int64_t *ele_num, void **value,
+                library_data_t *value_type) {
+    get_desc(ele_num, const_cast<const void **>(value), value_type);
+  }
+  std::int64_t _ele_num;
+  void *_value;
+  library_data_t _value_type;
+};
+
+struct dense_matrix_desc {
+  dense_matrix_desc(std::int64_t row_num, std::int64_t col_num,
+                    std::int64_t leading_dim, void *value,
+                    library_data_t value_type, oneapi::mkl::layout layout)
+      : _row_num(row_num), _col_num(col_num), _leading_dim(leading_dim),
+        _value(value), _value_type(value_type), _layout(layout) {}
+  void get_desc(std::int64_t *row_num, std::int64_t *col_num,
+                std::int64_t *leading_dim, void **value,
+                library_data_t *value_type, oneapi::mkl::layout *layout) {
+    *row_num = _row_num;
+    *col_num = _col_num;
+    *leading_dim = _leading_dim;
+    *value = _value;
+    *value_type = _value_type;
+    *layout = _layout;
+  }
+  std::int64_t _row_num;
+  std::int64_t _col_num;
+  std::int64_t _leading_dim;
+  void *_value;
+  library_data_t _value_type;
+  oneapi::mkl::layout _layout;
+};
+
+enum matrix_format : int {
+  csr = 1,
+};
+
+enum matrix_attribute : int { uplo = 0, diag };
+
+class sparse_matrix_desc;
+
+using sparse_matrix_desc_t = sparse_matrix_desc *;
+
+class sparse_matrix_desc {
+public:
+  static void create_csr(sparse_matrix_desc_t *desc, std::int64_t row_num,
+                         std::int64_t col_num, std::int64_t nnz, void *row_ptr,
+                         void *col_ind, void *value,
+                         library_data_t row_ptr_type,
+                         library_data_t col_ind_type,
+                         oneapi::mkl::index_base base,
+                         library_data_t value_type) {
+    *desc =
+        new sparse_matrix_desc(row_num, col_num, nnz, row_ptr, col_ind, value,
+                               row_ptr_type, col_ind_type, base, value_type);
+    (*desc)->_format = matrix_format::csr;
+  }
+  static void destroy(sparse_matrix_desc_t desc) {
+    desc->~sparse_matrix_desc();
+  }
+
+  /// Add dependency for the destructor.
+  /// \param [in] e The event which the destructor depends on.
+  void add_dependency(sycl::event e) { _deps.push_back(e); }
+  /// Get the internal saved matrix handle.
+  /// \return Returns the matrix handle.
+  oneapi::mkl::sparse::matrix_handle_t get_matrix_handle() const noexcept {
+    return _matrix_handle;
+  }
+  void get_desc(int64_t *row_num, int64_t *col_num, int64_t *nnz,
+                void **row_ptr, void **col_ind, void **value,
+                library_data_t *row_ptr_type, library_data_t *col_ind_type,
+                oneapi::mkl::index_base *base,
+                library_data_t *value_type) const noexcept {
+    *row_num = _row_num;
+    *col_num = _col_num;
+    *nnz = _nnz;
+    *row_ptr = _row_ptr;
+    *col_ind = _col_ind;
+    *value = _value;
+    *row_ptr_type = _row_ptr_type;
+    *col_ind_type = _col_ind_type;
+    *base = _base;
+    *value_type = _value_type;
+  }
+  void get_format(matrix_format *format) const noexcept { *format = _format; }
+  void get_base(oneapi::mkl::index_base *base) const noexcept { *base = _base; }
+  void get_value(void **value) const noexcept { *value = _value; }
+  void set_value(void *value) { _value = value; }
+  void get_size(int64_t *row_num, int64_t *col_num,
+                int64_t *nnz) const noexcept {
+    *row_num = _row_num;
+    *col_num = _col_num;
+    *nnz = _nnz;
+  }
+  void set_attribute(matrix_attribute attribute, const void *data,
+                     size_t data_size) {
+    if (attribute == matrix_attribute::diag) {
+      const oneapi::mkl::diag *diag_ptr =
+          reinterpret_cast<const oneapi::mkl::diag *>(data);
+      if (*diag_ptr == oneapi::mkl::diag::unit) {
+        _diag = oneapi::mkl::diag::unit;
+      } else if (*diag_ptr == oneapi::mkl::diag::nonunit) {
+        _diag = oneapi::mkl::diag::nonunit;
+      } else {
+        throw std::runtime_error("unsupported diag value");
+      }
+    } else if (attribute == matrix_attribute::uplo) {
+      const oneapi::mkl::uplo *uplo_ptr =
+          reinterpret_cast<const oneapi::mkl::uplo *>(data);
+      if (*uplo_ptr == oneapi::mkl::uplo::upper) {
+        _uplo = oneapi::mkl::uplo::upper;
+      } else if (*uplo_ptr == oneapi::mkl::uplo::lower) {
+        _uplo = oneapi::mkl::uplo::lower;
+      } else {
+        throw std::runtime_error("unsupported uplo value");
+      }
+    } else {
+      throw std::runtime_error("unsupported attribute");
+    }
+  }
+  void get_attribute(matrix_attribute attribute, void *data, size_t data_size) {
+    if (attribute == matrix_attribute::diag) {
+      oneapi::mkl::diag *diag_ptr = reinterpret_cast<oneapi::mkl::diag *>(data);
+      if (_diag.has_value()) {
+        *diag_ptr = _diag.value();
+      } else {
+        *diag_ptr = oneapi::mkl::diag::nonunit;
+      }
+    } else if (attribute == matrix_attribute::uplo) {
+      oneapi::mkl::uplo *uplo_ptr = reinterpret_cast<oneapi::mkl::uplo *>(data);
+      if (_uplo.has_value()) {
+        *uplo_ptr = _uplo.value();
+      } else {
+        *uplo_ptr = oneapi::mkl::uplo::lower;
+      }
+    } else {
+      throw std::runtime_error("unsupported attribute");
+    }
+  }
+  void set_pointers(void *row_ptr, void *col_ind, void *value) {
+    _row_ptr = row_ptr;
+    _col_ind = col_ind;
+    _value = value;
+  }
+
+private:
+  sparse_matrix_desc(std::int64_t row_num, std::int64_t col_num,
+                     std::int64_t nnz, void *row_ptr, void *col_ind,
+                     void *value, library_data_t row_ptr_type,
+                     library_data_t col_ind_type, oneapi::mkl::index_base base,
+                     library_data_t value_type)
+      : _row_num(row_num), _col_num(col_num), _nnz(nnz), _row_ptr(row_ptr),
+        _col_ind(col_ind), _value(value), _row_ptr_type(row_ptr_type),
+        _col_ind_type(col_ind_type), _base(base), _value_type(value_type) {
+    oneapi::mkl::sparse::init_matrix_handle(&_matrix_handle);
+#define SET_DATA(INDEX_TYPE, VALUE_TYPE)                                       \
+  do {                                                                         \
+    auto data_row_ptr =                                                        \
+        detail::get_memory(reinterpret_cast<INDEX_TYPE *>(_row_ptr));          \
+    auto data_col_ind =                                                        \
+        detail::get_memory(reinterpret_cast<INDEX_TYPE *>(_col_ind));          \
+    auto data_value =                                                          \
+        detail::get_memory(reinterpret_cast<VALUE_TYPE *>(_value));            \
+    oneapi::mkl::sparse::set_csr_data(get_default_queue(), _matrix_handle,     \
+                                      _row_num, _col_num, _base, data_row_ptr, \
+                                      data_col_ind, data_value)                \
+        .wait();                                                               \
+  } while (0)
+    std::uint64_t key = detail::get_type_combination_id(
+        _row_ptr_type, _col_ind_type, _value_type);
+    switch (key) {
+    case detail::get_type_combination_id(library_data_t::real_int32,
+                                         library_data_t::real_int32,
+                                         library_data_t::real_float): {
+      SET_DATA(std::int32_t, float);
+      break;
+    }
+    case detail::get_type_combination_id(library_data_t::real_int32,
+                                         library_data_t::real_int32,
+                                         library_data_t::real_double): {
+      SET_DATA(std::int32_t, double);
+      break;
+    }
+    case detail::get_type_combination_id(library_data_t::real_int32,
+                                         library_data_t::real_int32,
+                                         library_data_t::complex_float): {
+      SET_DATA(std::int32_t, std::complex<float>);
+      break;
+    }
+    case detail::get_type_combination_id(library_data_t::real_int32,
+                                         library_data_t::real_int32,
+                                         library_data_t::complex_double): {
+      SET_DATA(std::int32_t, std::complex<double>);
+      break;
+    }
+    case detail::get_type_combination_id(library_data_t::real_int64,
+                                         library_data_t::real_int64,
+                                         library_data_t::real_float): {
+      SET_DATA(std::int64_t, float);
+      break;
+    }
+    case detail::get_type_combination_id(library_data_t::real_int64,
+                                         library_data_t::real_int64,
+                                         library_data_t::real_double): {
+      SET_DATA(std::int64_t, double);
+      break;
+    }
+    case detail::get_type_combination_id(library_data_t::real_int64,
+                                         library_data_t::real_int64,
+                                         library_data_t::complex_float): {
+      SET_DATA(std::int64_t, std::complex<float>);
+      break;
+    }
+    case detail::get_type_combination_id(library_data_t::real_int64,
+                                         library_data_t::real_int64,
+                                         library_data_t::complex_double): {
+      SET_DATA(std::int64_t, std::complex<double>);
+      break;
+    }
+    default:
+      throw std::runtime_error("the combination of data type is unsupported");
+    }
+#undef SET_DATA
+  }
+  /// Destructor
+  ~sparse_matrix_desc() {
+    oneapi::mkl::sparse::release_matrix_handle(get_default_queue(),
+                                               &_matrix_handle, _deps)
+        .wait();
+  }
+
+  std::int64_t _row_num;
+  std::int64_t _col_num;
+  std::int64_t _nnz;
+  void *_row_ptr;
+  void *_col_ind;
+  void *_value;
+  library_data_t _row_ptr_type;
+  library_data_t _col_ind_type;
+  oneapi::mkl::index_base _base;
+  library_data_t _value_type;
+  oneapi::mkl::sparse::matrix_handle_t _matrix_handle = nullptr;
+  std::vector<sycl::event> _deps;
+  matrix_format _format;
+  std::optional<oneapi::mkl::diag> _diag;
+  std::optional<oneapi::mkl::uplo> _uplo;
+};
+
+void spmv(sycl::queue queue, oneapi::mkl::transpose trans, const void *alpha,
+          sparse_matrix_desc_t a, std::shared_ptr<dense_vector_desc> x,
+          const void *beta, std::shared_ptr<dense_vector_desc> y,
+          library_data_t compute_type) {
+#define SPMV(Ty)                                                               \
+  do {                                                                         \
+    auto alpha_value =                                                         \
+        detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);         \
+    auto beta_value =                                                          \
+        detail::get_value(reinterpret_cast<const Ty *>(beta), queue);          \
+    oneapi::mkl::sparse::optimize_gemv(queue, trans, a->get_matrix_handle());  \
+    auto data_x = detail::get_memory(reinterpret_cast<Ty *>(x->_value));       \
+    auto data_y = detail::get_memory(reinterpret_cast<Ty *>(y->_value));       \
+    oneapi::mkl::sparse::gemv(queue, trans, alpha_value,                       \
+                              a->get_matrix_handle(), data_x, beta_value,      \
+                              data_y);                                         \
+  } while (0)
+
+  switch (compute_type) {
+  case library_data_t::real_int32: {
+    SPMV(float);
+    break;
+  }
+  case library_data_t::real_double: {
+    SPMV(double);
+    break;
+  }
+  case library_data_t::complex_float: {
+    SPMV(std::complex<float>);
+    break;
+  }
+  case library_data_t::complex_double: {
+    SPMV(std::complex<double>);
+    break;
+  }
+  default:
+    throw std::runtime_error("the combination of data type is unsupported");
+  }
+#undef SPMV
+}
+
+void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
+          oneapi::mkl::transpose trans_b, const void *alpha,
+          std::shared_ptr<sparse_matrix_desc> a,
+          std::shared_ptr<dense_matrix_desc> b, const void *beta,
+          std::shared_ptr<dense_matrix_desc> c, library_data_t compute_type) {
+  if (b->_layout != c->_layout)
+    throw std::runtime_error("the layout of b and c are different");
+#define SPMM(Ty)                                                               \
+  do {                                                                         \
+    auto alpha_value =                                                         \
+        detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);         \
+    auto beta_value =                                                          \
+        detail::get_value(reinterpret_cast<const Ty *>(beta), queue);          \
+    auto data_b = detail::get_memory(reinterpret_cast<Ty *>(b->_value));       \
+    auto data_c = detail::get_memory(reinterpret_cast<Ty *>(c->_value));       \
+    if (b->_layout == oneapi::mkl::layout::row_major)                          \
+      oneapi::mkl::sparse::gemm(                                               \
+          queue, oneapi::mkl::layout::row_major, trans_a, trans_b,             \
+          alpha_value, a->get_matrix_handle(), data_b, b->_col_num,            \
+          b->_leading_dim, beta_value, data_c, c->_leading_dim);               \
+    else                                                                       \
+      oneapi::mkl::sparse::gemm(                                               \
+          queue, oneapi::mkl::layout::col_major, trans_a, trans_b,             \
+          alpha_value, a->get_matrix_handle(), data_b, b->_col_num,            \
+          b->_leading_dim, beta_value, data_c, c->_leading_dim);               \
+  } while (0)
+
+  switch (compute_type) {
+  case library_data_t::real_int32: {
+    SPMM(float);
+    break;
+  }
+  case library_data_t::real_double: {
+    SPMM(double);
+    break;
+  }
+  case library_data_t::complex_float: {
+    SPMM(std::complex<float>);
+    break;
+  }
+  case library_data_t::complex_double: {
+    SPMM(std::complex<double>);
+    break;
+  }
+  default:
+    throw std::runtime_error("the combination of data type is unsupported");
+  }
+#undef SPMM
+}
+
 } // namespace sparse
 } // namespace dpct
 

@@ -343,9 +343,7 @@ struct dense_vector_desc {
   }
   void get_desc(std::int64_t *ele_num, void **value,
                 library_data_t *value_type) {
-    *ele_num = _ele_num;
-    *value = _value;
-    *value_type = _value_type;
+    get_desc(ele_num, const_cast<const void **>(value), value_type);
   }
   std::int64_t _ele_num;
   void *_value;
