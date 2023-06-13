@@ -90,9 +90,6 @@ class InlineAsmIdentifierTable {
 
   InlineAsmIdentifierInfoLookup *ExternalLookup;
 
-  /// Populate the identifier table with info about the asm keywords.
-  void AddKeywords();
-
 public:
   /// Create the identifier table.
   explicit InlineAsmIdentifierTable(
@@ -153,6 +150,9 @@ public:
   iterator find(StringRef Name) const { return HashTable.find(Name); }
 
   bool contains(StringRef Name) const { return HashTable.contains(Name); }
+
+  /// Populate the identifier table with info about the asm keywords.
+  void AddKeywords();
 };
 
 } // namespace clang::dpct
