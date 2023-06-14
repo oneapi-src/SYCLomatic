@@ -51,6 +51,7 @@ ONEDPL_HEADER(Algorithm, "<oneapi/dpl/algorithm>")
 ONEDPL_HEADER(Execution, "<oneapi/dpl/execution>")
 ONEDPL_HEADER(Iterator, "<oneapi/dpl/iterator>")
 ONEDPL_HEADER(Async, "<oneapi/dpl/async>")
+ONEDPL_HEADER(Memory, "<oneapi/dpl/memory>")
 
 MKL_HEADER(Mkl, "<oneapi/mkl.hpp>")
 MKL_HEADER(RNG, "<oneapi/mkl/rng/device.hpp>")
