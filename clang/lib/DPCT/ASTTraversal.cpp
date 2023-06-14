@@ -3985,8 +3985,9 @@ void SPBLASEnumsRule::registerMatcher(MatchFinder &MF) {
       this);
   MF.addMatcher(
       declRefExpr(to(enumConstantDecl(matchesName(
-                      "(CUSPARSE_OPERATION.*)|(CUSPARSE_FILL_MODE.*)|(CUSPARSE_"
-                      "DIAG_TYPE.*)|(CUSPARSE_INDEX_BASE.*)|(CUSPARSE_MATRIX_TYPE.*)"))))
+                      "(CUSPARSE_OPERATION_.*)|(CUSPARSE_FILL_MODE_.*)|("
+                      "CUSPARSE_DIAG_TYPE_.*)|(CUSPARSE_INDEX_.*)|(CUSPARSE_"
+                      "MATRIX_TYPE_.*)|(CUSPARSE_ORDER_.*)"))))
           .bind("SPBLASNamedValueConstants"),
       this);
 }

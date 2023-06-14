@@ -16,13 +16,13 @@ int main(){
   //CHECK:/*
   //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:printf("Error string: %s", "cusparseGetErrorString is not supported"/*cusparseGetErrorString(status)*/);
+  //CHECK-NEXT:printf("Error string: %s", "cusparseGetErrorString is not supported"/*cusparseGetErrorString(a6)*/);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:printf("Error name: %s", "cusparseGetErrorName is not supported"/*cusparseGetErrorName(status)*/);
-  printf("Error string: %s", cusparseGetErrorString(status));
-  printf("Error name: %s", cusparseGetErrorName(status));
+  //CHECK-NEXT:printf("Error name: %s", "cusparseGetErrorName is not supported"/*cusparseGetErrorName(a6)*/);
+  printf("Error string: %s", cusparseGetErrorString(a6));
+  printf("Error name: %s", cusparseGetErrorName(a6));
 
   //CHECK:dpct::library_data_t b1 = dpct::library_data_t::real_uint16;
   //CHECK-NEXT:b1 = dpct::library_data_t::real_int32;
