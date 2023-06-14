@@ -1075,6 +1075,15 @@ MATH_API_REWRITER_DEVICE(
         EMPTY_FACTORY_ENTRY("erfinvf"), EMPTY_FACTORY_ENTRY("erfinvf")))
 
 MATH_API_REWRITER_DEVICE(
+    "expf",
+    MATH_API_DEVICE_NODES(
+        CALL_FACTORY_ENTRY(
+            "expf", CALL(MapNames::getClNamespace(false, true) + "native::exp",
+                         CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0)))),
+        EMPTY_FACTORY_ENTRY("expf"), EMPTY_FACTORY_ENTRY("expf"),
+        EMPTY_FACTORY_ENTRY("expf")))
+
+MATH_API_REWRITER_DEVICE(
     "ldexpf",
     MATH_API_DEVICE_NODES(
         CALL_FACTORY_ENTRY(
@@ -1535,6 +1544,17 @@ MATH_API_REWRITER_DEVICE(
                                         ARG(0), ARG(1))),
         EMPTY_FACTORY_ENTRY("umin"), EMPTY_FACTORY_ENTRY("umin"),
         EMPTY_FACTORY_ENTRY("umin")))
+
+// Single Precision Intrinsics
+MATH_API_REWRITER_DEVICE(
+    "__expf",
+    MATH_API_DEVICE_NODES(
+        CALL_FACTORY_ENTRY(
+            "__expf",
+            CALL(MapNames::getClNamespace(false, true) + "native::exp",
+                 CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0)))),
+        EMPTY_FACTORY_ENTRY("__expf"), EMPTY_FACTORY_ENTRY("__expf"),
+        EMPTY_FACTORY_ENTRY("__expf")))
 
 // SIMD Intrinsics
 MATH_API_REWRITER_DEVICE(
