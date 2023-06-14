@@ -413,12 +413,42 @@ public:
     }
   }
   void set_pointers(void *row_ptr, void *col_ind, void *value) {
+    // Assume the new data is different from the old data
+    optimizd_matrix_info.reset();
     _row_ptr = row_ptr;
     _col_ind = col_ind;
     _value = value;
   }
 
 private:
+  enum class routine_name { gemv, trmv, trsv };
+  std::optional<std::tuple<routine_name, oneapi::mkl::transpose,
+                           std::optional<oneapi::mkl::uplo>,
+                           std::optional<oneapi::mkl::diag>>>
+      optimizd_matrix_info;
+  bool is_optimized(routine_name name, oneapi::mkl::transpose trans,
+                    std::optional<oneapi::mkl::uplo> uplo,
+                    std::optional<oneapi::mkl::diag> diag) {
+    if (!optimizd_matrix_info.has_value())
+      return false;
+    if (name != std::get<0>(optimizd_matrix_info.value()))
+      return false;
+    if (trans != std::get<1>(optimizd_matrix_info.value()))
+      return false;
+    if (name == routine_name::gemv)
+      return true;
+    if (uplo.value() != std::get<2>(optimizd_matrix_info.value()).value())
+      return false;
+    if (diag.value() != std::get<3>(optimizd_matrix_info.value()).value())
+      return false;
+    return true;
+  }
+  void set_optimized_info(routine_name name, oneapi::mkl::transpose trans,
+                          std::optional<oneapi::mkl::uplo> uplo,
+                          std::optional<oneapi::mkl::diag> diag) {
+    optimizd_matrix_info = std::make_tuple(name, trans, uplo, diag);
+  }
+
   sparse_matrix_desc(std::int64_t row_num, std::int64_t col_num,
                      std::int64_t nnz, void *row_ptr, void *col_ind,
                      void *value, library_data_t row_ptr_type,
@@ -517,8 +547,14 @@ private:
   oneapi::mkl::sparse::matrix_handle_t _matrix_handle = nullptr;
   std::vector<sycl::event> _deps;
   matrix_format _format;
-  std::optional<oneapi::mkl::diag> _diag;
   std::optional<oneapi::mkl::uplo> _uplo;
+  std::optional<oneapi::mkl::diag> _diag;
+
+  friend void spmv(sycl::queue queue, oneapi::mkl::transpose trans,
+                   const void *alpha, sparse_matrix_desc_t a,
+                   std::shared_ptr<dense_vector_desc> x, const void *beta,
+                   std::shared_ptr<dense_vector_desc> y,
+                   library_data_t compute_type);
 };
 
 void spmv(sycl::queue queue, oneapi::mkl::transpose trans, const void *alpha,
@@ -531,12 +567,32 @@ void spmv(sycl::queue queue, oneapi::mkl::transpose trans, const void *alpha,
         detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);         \
     auto beta_value =                                                          \
         detail::get_value(reinterpret_cast<const Ty *>(beta), queue);          \
-    oneapi::mkl::sparse::optimize_gemv(queue, trans, a->get_matrix_handle());  \
     auto data_x = detail::get_memory(reinterpret_cast<Ty *>(x->_value));       \
     auto data_y = detail::get_memory(reinterpret_cast<Ty *>(y->_value));       \
-    oneapi::mkl::sparse::gemv(queue, trans, alpha_value,                       \
-                              a->get_matrix_handle(), data_x, beta_value,      \
-                              data_y);                                         \
+    if (a->_diag.has_value() && a->_uplo.has_value()) {                        \
+      if (!a->is_optimized(sparse_matrix_desc::routine_name::trmv, trans,      \
+                           a->_uplo.value(), a->_diag.value())) {              \
+        oneapi::mkl::sparse::optimize_trmv(queue, a->_uplo.value(), trans,     \
+                                           a->_diag.value(),                   \
+                                           a->get_matrix_handle());            \
+        a->set_optimized_info(sparse_matrix_desc::routine_name::trmv, trans,   \
+                              a->_uplo.value(), a->_diag.value());             \
+      }                                                                        \
+      oneapi::mkl::sparse::trmv(                                               \
+          queue, a->_uplo.value(), trans, a->_diag.value(), alpha_value,       \
+          a->get_matrix_handle(), data_x, beta_value, data_y);                 \
+    } else {                                                                   \
+      if (!a->is_optimized(sparse_matrix_desc::routine_name::gemv, trans,      \
+                           std::nullopt, std::nullopt)) {                      \
+        oneapi::mkl::sparse::optimize_gemv(queue, trans,                       \
+                                           a->get_matrix_handle());            \
+        a->set_optimized_info(sparse_matrix_desc::routine_name::gemv, trans,   \
+                              std::nullopt, std::nullopt);                     \
+      }                                                                        \
+      oneapi::mkl::sparse::gemv(queue, trans, alpha_value,                     \
+                                a->get_matrix_handle(), data_x, beta_value,    \
+                                data_y);                                       \
+    }                                                                          \
   } while (0)
 
   switch (compute_type) {
