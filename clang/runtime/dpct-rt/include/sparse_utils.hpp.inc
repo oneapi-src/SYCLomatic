@@ -236,7 +236,7 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
   default:
     throw std::runtime_error(
         "the csrmm does not support matrix_info::matrix_type::sy, "
-        "matrix_info::matrix_type::tr amd matrix_info::matrix_type::he");
+        "matrix_info::matrix_type::tr and matrix_info::matrix_type::he");
   }
 
   sycl::event e =
