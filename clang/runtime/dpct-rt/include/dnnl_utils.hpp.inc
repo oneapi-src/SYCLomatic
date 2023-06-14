@@ -900,14 +900,8 @@ struct primitive_key_type{
   std::vector<int64_t> mem_dims = {};
   bool operator==(const primitive_key_type& other) const {
     if((params != other.params) || (alpha != other.alpha) || (beta != other.beta)
-       || (mem_dims.size() != other.mem_dims.size())) {
+       || (mem_dims != other.mem_dims)) {
       return false;
-    }
-    unsigned dim_num = mem_dims.size();
-    for(int i = 0; i < dim_num; i++) {
-      if(mem_dims[i] != other.mem_dims[i])  {
-        return false;
-      }
     }
     return true;
   }
