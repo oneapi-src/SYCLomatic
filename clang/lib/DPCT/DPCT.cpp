@@ -920,8 +920,7 @@ int runDPCT(int argc, const char **argv) {
                      DpctGlobalInfo::isCommentsEnabled(),
                      EnableComments.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_CustomHelperFileName,
-                     DpctGlobalInfo::getCustomHelperFileName(),
-                     0);
+                     DpctGlobalInfo::getCustomHelperFileName(), 0);
     setValueToOptMap(clang::dpct::OPTION_CtadEnabled,
                      DpctGlobalInfo::isCtadEnabled(),
                      EnableCTAD.getNumOccurrences());
