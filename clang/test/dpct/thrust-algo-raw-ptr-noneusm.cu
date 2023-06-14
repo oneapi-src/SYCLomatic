@@ -16,19 +16,14 @@
 #include <thrust/remove.h>
 #include <thrust/replace.h>
 #include <thrust/reverse.h>
-<<<<<<< HEAD
 #include <thrust/set_operations.h>
 #include <thrust/sort.h>
 #include <thrust/tabulate.h>
 #include <thrust/transform_scan.h>
 #include <thrust/unique.h>
 // CHECK: #include <oneapi/dpl/memory>
-#include <thrust/uninitialized_copy.h>
-=======
-#include <thrust/binary_search.h>
-#include <thrust/device_malloc.h>
 #include <thrust/equal.h>
->>>>>>> Add lit test check
+#include <thrust/uninitialized_copy.h>
 
 // for cuda 12.0
 #include <thrust/iterator/constant_iterator.h>
@@ -799,6 +794,8 @@ void uninitialized_copy_n() {
   // CHECK-NEXT:  };
   thrust::uninitialized_copy_n(data, N, array);
   thrust::uninitialized_copy_n(thrust::host, data, N, array);
+}
+
 struct compare_modulo_two {
   __host__ __device__ bool operator()(int x, int y) const {
     return (x % 2) == (y % 2);

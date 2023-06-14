@@ -21,7 +21,6 @@
 #include <thrust/remove.h>
 #include <thrust/replace.h>
 #include <thrust/reverse.h>
-<<<<<<< HEAD
 #include <thrust/set_operations.h>
 #include <thrust/sort.h>
 #include <thrust/tabulate.h>
@@ -29,21 +28,14 @@
 #include <thrust/unique.h>
 
 // CHECK: #include <oneapi/dpl/memory>
-#include <thrust/uninitialized_copy.h>
-=======
-#include <thrust/device_malloc.h>
 #include <thrust/equal.h>
->>>>>>> [SYCLomatic] Support migration of thrust::equal
+#include <thrust/uninitialized_copy.h>
 
 // for cuda 12.0
 #include <thrust/iterator/constant_iterator.h>
 #include <thrust/partition.h>
-
-<<<<<<< HEAD
 #include <thrust/scatter.h>
 
-=======
->>>>>>> Fix clang-format test failure
 void k() {
   std::vector<int> v, v2, v3, v4;
 
@@ -1217,7 +1209,6 @@ struct compare_modulo_two {
     return (x % 2) == (y % 2);
   }
 };
-
 
 void equal() {
   const int N = 7;
