@@ -69,6 +69,7 @@ private:
   static void initRewriterMapEvent();
   static void initRewriterMapMath();
   static void initRewriterMapCooperativeGroups();
+  static void initRewriterMapWmma();
   static void initMethodRewriterMapCUB();
   static void initMethodRewriterMapCooperativeGroups();
   static void initMethodRewriterMapLIBCU();

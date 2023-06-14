@@ -90,6 +90,23 @@ public:
   }
 };
 
+inline std::function<bool(const TypeLoc TL)> checkTemplateArgSpelling(size_t index,
+                                                        std::string str) {
+  return [=](const TypeLoc TL) -> bool {
+    if(const auto &TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
+      return getStmtSpelling(TSTL.getArgLoc(index).getSourceExpression()) == str;
+    } else {
+      return false;
+    }
+  };
+}
+
+std::function<bool(const TypeLoc)> checkEnableJointMatrixForType() {
+  return [=](const TypeLoc) -> bool {
+    return DpctGlobalInfo::useExtJointMatrix();
+  };
+}
+
 // Print a templated type. Pass a STR("") as a template argument for types with
 // no template argument e.g. MyType<>
 template <class TypeNameT, class... TemplateArgsT>
