@@ -1706,9 +1706,10 @@ equal_range(Ptr1 start, Size size, const ValueLessComparable &value,
       oneapi::dpl::execution::par_unseq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
       value, comp, size,
-      [](auto&& policy, Ptr1 start, Ptr1 end, const ValueLessComparable &value,
+      [](auto &&policy, Ptr1 start, Ptr1 end, const ValueLessComparable &value,
          StrictWeakOrdering comp) {
-        return dpct::equal_range(std::forward<decltype(policy)>(policy), start, end, value, comp);
+        return dpct::equal_range(std::forward<decltype(policy)>(policy), start,
+                                 end, value, comp);
       },
       start, start, // return base
       start         // all ptrs
@@ -1729,9 +1730,10 @@ unique(Ptr1 start1, Size size, Ptr2 start2, BinaryPred binary_pred) {
       oneapi::dpl::execution::par_unseq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
       binary_pred, size,
-      [](auto&& policy, Ptr1 start1, Ptr1 end1, Ptr2 start2,
+      [](auto &&policy, Ptr1 start1, Ptr1 end1, Ptr2 start2,
          BinaryPred binary_pred) {
-        return dpct::unique(std::forward<decltype(policy)>(policy), start1, end1, start2, binary_pred);
+        return dpct::unique(std::forward<decltype(policy)>(policy), start1,
+                            end1, start2, binary_pred);
       },
       start1, start2, // return base
       start1, start2  // all ptrs
@@ -1756,10 +1758,10 @@ std::pair<Ptr3, Ptr4> unique_copy(Ptr1 keys_first, Size size, Ptr2 values_first,
       oneapi::dpl::execution::par_unseq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
       binary_pred, size,
-      [](auto&& policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
+      [](auto &&policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
          Ptr4 start4, BinaryPred binary_pred) {
-        return dpct::unique_copy(std::forward<decltype(policy)>(policy), start1, end1, start2, start3, start4,
-                                 binary_pred);
+        return dpct::unique_copy(std::forward<decltype(policy)>(policy), start1,
+                                 end1, start2, start3, start4, binary_pred);
       },
       keys_result, values_result,                          // return base
       keys_first, values_first, keys_result, values_result // all ptrs
@@ -1791,10 +1793,10 @@ merge(Ptr1 keys_first1, Size size1, Ptr2 keys_first2, Size size2,
       oneapi::dpl::execution::par_unseq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
       comp, size1, size2,
-      [](auto&& policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2,
+      [](auto &&policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2,
          Ptr3 start3, Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
-        return dpct::merge(std::forward<decltype(policy)>(policy), start1, end1, start2, end2, start3, start4,
-                           start5, start6, comp);
+        return dpct::merge(std::forward<decltype(policy)>(policy), start1, end1,
+                           start2, end2, start3, start4, start5, start6, comp);
       },
       keys_result, values_result, // return base
       keys_first1, keys_first2, values_first1, values_first2, keys_result,
@@ -1828,10 +1830,11 @@ set_intersection(Ptr1 keys_first1, Size size1, Ptr2 keys_first2, Size size2,
       oneapi::dpl::execution::par,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
       comp, size1, size2,
-      [](auto&& policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2,
+      [](auto &&policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2,
          Ptr3 start3, Ptr4 start4, Ptr5 start5, Comp comp) {
-        return dpct::set_intersection(std::forward<decltype(policy)>(policy), start1, end1, start2, end2,
-                                      start3, start4, start5, comp);
+        return dpct::set_intersection(std::forward<decltype(policy)>(policy),
+                                      start1, end1, start2, end2, start3,
+                                      start4, start5, comp);
       },
       keys_result, values_result, // return base
       keys_first1, keys_first2, values_first1, keys_result,
@@ -1865,10 +1868,11 @@ set_symmetric_difference(Ptr1 keys_first1, Size size1, Ptr2 keys_first2,
       oneapi::dpl::execution::par,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
       comp, size1, size2,
-      [](auto&& policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2,
+      [](auto &&policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2,
          Ptr3 start3, Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
         return dpct::set_symmetric_difference(
-            std::forward<decltype(policy)>(policy), start1, end1, start2, end2, start3, start4, start5, start6);
+            std::forward<decltype(policy)>(policy), start1, end1, start2, end2,
+            start3, start4, start5, start6);
       },
       keys_result, values_result, // return base
       keys_first1, keys_first2, values_first1, values_first2, keys_result,
@@ -1903,10 +1907,11 @@ set_difference(Ptr1 keys_first1, Size size1, Ptr2 keys_first2, Size size2,
       oneapi::dpl::execution::par_unseq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
       comp, size1, size2,
-      [](auto&& policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2,
+      [](auto &&policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2,
          Ptr3 start3, Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
-        return dpct::set_difference(std::forward<decltype(policy)>(policy), start1, end1, start2, end2, start3,
-                                    start4, start5, start6, comp);
+        return dpct::set_difference(std::forward<decltype(policy)>(policy),
+                                    start1, end1, start2, end2, start3, start4,
+                                    start5, start6, comp);
       },
       keys_result, values_result, // return base
       keys_first1, keys_first2, values_first1, values_first2, keys_result,
@@ -1943,8 +1948,9 @@ set_union(Ptr1 keys_first1, Size size1, Ptr2 keys_first2, Size size2,
       comp, size1, size2,
       [](auto &&policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2,
          Ptr3 start3, Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
-        return dpct::set_union(std::forward<decltype(policy)>(policy), start1, end1, start2, end2, start3,
-                               start4, start5, start6, comp);
+        return dpct::set_union(std::forward<decltype(policy)>(policy), start1,
+                               end1, start2, end2, start3, start4, start5,
+                               start6, comp);
       },
       keys_result, values_result, // return base
       keys_first1, keys_first2, values_first1, values_first2, keys_result,
@@ -1977,10 +1983,11 @@ stable_partition_copy(Ptr1 first, Size size, Ptr2 mask, Ptr3 out_true,
       oneapi::dpl::execution::par_unseq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), p,
       size,
-      [](auto&& policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
+      [](auto &&policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
          Ptr4 start4, Pred pred) {
-        return dpct::stable_partition_copy(std::forward<decltype(policy)>(policy), start1, end1, start2, start3,
-                                           start4, pred);
+        return dpct::stable_partition_copy(
+            std::forward<decltype(policy)>(policy), start1, end1, start2,
+            start3, start4, pred);
       },
       out_true, out_false,             // return base
       first, mask, out_true, out_false // all ptrs
@@ -1997,10 +2004,11 @@ stable_partition_copy(Ptr1 first, Size size, Ptr2 out_true, Ptr3 out_false,
       oneapi::dpl::execution::par_unseq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), p,
       size,
-      [](auto&& policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
+      [](auto &&policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
          Pred pred) {
-        return dpct::stable_partition_copy(std::forward<decltype(policy)>(policy), start1, end1, start2, start3,
-                                           pred);
+        return dpct::stable_partition_copy(
+            std::forward<decltype(policy)>(policy), start1, end1, start2,
+            start3, pred);
       },
       out_true, out_false,       // return base
       first, out_true, out_false // all ptrs
@@ -2018,10 +2026,10 @@ partition_copy(Ptr1 first, Size size, Ptr2 mask, Ptr3 out_true, Ptr4 out_false,
       oneapi::dpl::execution::par_unseq,
       oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), p,
       size,
-      [](auto&& policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
+      [](auto &&policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
          Ptr4 start4, Pred pred) {
-        return dpct::partition_copy(std::forward<decltype(policy)>(policy), start1, end1, start2, start3,
-                                    start4, pred);
+        return dpct::partition_copy(std::forward<decltype(policy)>(policy),
+                                    start1, end1, start2, start3, start4, pred);
       },
       out_true, out_false,             // return base
       first, mask, out_true, out_false // all ptrs
