@@ -11,5 +11,5 @@ CONDITIONAL_FACTORY_ENTRY(
         CALL_FACTORY_ENTRY("nvcuda::wmma::fill_fragment",
                            CALL(MapNames::getClNamespace() +
                                 "ext::oneapi::experimental::matrix::joint_matrix_fill",
-                                ARG(0), ARG(1))),
+                                SUBGROUP, ARG(0), ARG(1))),
         ENTRY_UNSUPPORTED("nvcuda::wmma::fill_fragment", Diagnostics::API_NOT_MIGRATED))

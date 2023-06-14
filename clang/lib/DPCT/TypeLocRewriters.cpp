@@ -90,14 +90,31 @@ public:
   }
 };
 
-inline std::function<bool(const TypeLoc TL)> checkTemplateArgSpelling(size_t index,
-                                                        std::string str) {
+inline std::function<bool(const TypeLoc TL)>
+checkTemplateArgSpelling(size_t index, std::string str) {
   return [=](const TypeLoc TL) -> bool {
-    if(const auto &TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
-      return getStmtSpelling(TSTL.getArgLoc(index).getSourceExpression()) == str;
-    } else {
-      return false;
+    if (const auto &TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
+      if (const TemplateSpecializationType *TST =
+              dyn_cast<TemplateSpecializationType>(TSTL.getTypePtr())) {
+        if (TSTL.getNumArgs() > 0) {
+          const TemplateArgument &arg = TST->template_arguments()[index];
+          if (arg.getKind() == TemplateArgument::ArgKind::Type) {
+            const QualType &type = arg.getAsType();
+            return type.getAsString() == str;
+          } else if (arg.getKind() == TemplateArgument::ArgKind::Declaration) {
+            const ValueDecl *decl = arg.getAsDecl();
+            return decl->getNameAsString() == str;
+          } else if (arg.getKind() == TemplateArgument::ArgKind::Integral) {
+            const llvm::APSInt &value = arg.getAsIntegral();
+            return std::to_string(value.getExtValue()) == str;
+          } else if (arg.getKind() == TemplateArgument::ArgKind::Expression) {
+            const Expr *expr = arg.getAsExpr();
+            return getStmtSpelling(expr) == str;
+          }
+        }
+      }
     }
+    return false;
   };
 }
 

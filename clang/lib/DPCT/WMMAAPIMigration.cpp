@@ -1,10 +1,10 @@
-//===--------------- WMMAAPIMigration.cpp -----------------------------------===//
+//===--------------- WMMAAPIMigration.cpp -----------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-//===-----------------------------------------------------------------------===//
+//===------------------------------------------------------------------===//
 
 #include "WMMAAPIMigration.h"
 
@@ -15,16 +15,15 @@ using namespace clang::dpct;
 using namespace clang::ast_matchers;
 
 void clang::dpct::WMMARule::registerMatcher(ast_matchers::MatchFinder &MF) {
-  MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(namedDecl(
-                            hasAnyName("nvcuda::wmma::fragment", "nvcuda::wmma::matrix_a",
-                                       "nvcuda::wmma::matrix_b", "nvcuda::wmma::row_major",
-                                       "nvcuda::wmma::col_major", 
-                                       "nvcuda::wmma::accumulator"))))))
-                    .bind("type"),
-                this);
   MF.addMatcher(
-      callExpr(callee(functionDecl(hasAnyName(
-                   "nvcuda::wmma::fill_fragment"))))
+      typeLoc(loc(qualType(hasDeclaration(namedDecl(hasAnyName(
+                  "nvcuda::wmma::fragment", "nvcuda::wmma::matrix_a",
+                  "nvcuda::wmma::matrix_b", "nvcuda::wmma::row_major",
+                  "nvcuda::wmma::col_major", "nvcuda::wmma::accumulator"))))))
+          .bind("type"),
+      this);
+  MF.addMatcher(
+      callExpr(callee(functionDecl(hasAnyName("nvcuda::wmma::fill_fragment"))))
           .bind("call"),
       this);
 }
@@ -34,11 +33,8 @@ void clang::dpct::WMMARule::runRule(
   ExprAnalysis EA;
   if (auto TL = getNodeAsType<TypeLoc>(Result, "type")) {
     EA.analyze(*TL);
-  // } else if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call")) {
-  //   EA.analyze(CE);
-  // } else if (const DeclRefExpr *DRE =
-  //                getNodeAsType<DeclRefExpr>(Result, "enum")) {
-  //   EA.analyze(DRE);
+  } else if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call")) {
+    EA.analyze(CE);
   } else {
     return;
   }
