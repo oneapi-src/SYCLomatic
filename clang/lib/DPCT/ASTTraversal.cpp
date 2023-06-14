@@ -1120,6 +1120,9 @@ void IncludesCallbacks::InclusionDirective(
   if (FileName.find("thrust/") != std::string::npos) {
     if (FileName.compare(StringRef("thrust/complex.h")) == 0) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Complex);
+    } else if (FileName.compare(StringRef("thrust/uninitialized_copy.h")) ==
+               0) {
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Memory);
     } else {
       if(FileName.compare(StringRef("thrust/functional.h")) == 0)
         DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Functional);
