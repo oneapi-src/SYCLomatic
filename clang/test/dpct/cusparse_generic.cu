@@ -1,5 +1,5 @@
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.4, v10.1, v10.2
-// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.4, v10.1, v10.2, v11.0, v11.1, v11.2
+// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2, cuda-11.0, cuda-11.1, cuda-11.2
 // RUN: dpct --format-range=none --out-root %T/cusparse_generic %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --input-file %T/cusparse_generic/cusparse_generic.dp.cpp --match-full-lines %s
 

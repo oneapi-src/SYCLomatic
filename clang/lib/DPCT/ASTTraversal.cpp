@@ -2076,10 +2076,11 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasComputeType_t", "cublasAtomicsMode_t", "CUmem_advise_enum",
               "CUmem_advise", "thrust::tuple_element", "thrust::tuple_size",
               "cublasMath_t", "cudaPointerAttributes", "thrust::zip_iterator",
-              "cusolverEigRange_t", "cudaUUID_t",
-              "cusparseIndexType_t", "cusparseFormat_t", "cusparseDnMatDescr_t",
-              "cusparseOrder_t", "cusparseDnVecDescr_t", "cusparseConstDnVecDescr_t",
-              "cusparseSpMatDescr_t", "cusparseSpMMAlg_t", "cusparseSpMVAlg_t"))))))
+              "cusolverEigRange_t", "cudaUUID_t", "cusparseIndexType_t",
+              "cusparseFormat_t", "cusparseDnMatDescr_t", "cusparseOrder_t",
+              "cusparseDnVecDescr_t", "cusparseConstDnVecDescr_t",
+              "cusparseSpMatDescr_t", "cusparseSpMMAlg_t",
+              "cusparseSpMVAlg_t"))))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -4092,8 +4093,9 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseCsrSetPointers", "cusparseSpMatGetSize",
         "cusparseSpMatGetAttribute", "cusparseSpMatSetAttribute",
         "cusparseCreateConstDnVec", "cusparseConstDnVecGet",
-        "cusparseConstDnVecGetValues", "cusparseSpMM", "cusparseSpMM_bufferSize",
-        "cusparseSpMV", "cusparseSpMV_bufferSize", "cusparseSpMM_preprocess");
+        "cusparseConstDnVecGetValues", "cusparseSpMM",
+        "cusparseSpMM_bufferSize", "cusparseSpMV", "cusparseSpMV_bufferSize",
+        "cusparseSpMM_preprocess");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))

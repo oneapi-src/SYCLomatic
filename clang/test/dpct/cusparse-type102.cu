@@ -3,11 +3,11 @@
 // RUN: dpct --format-range=none --out-root %T/cusparse-type102 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cusparse-type102/cusparse-type102.dp.cpp --match-full-lines %s
 #include <cstdio>
-#include <cusparse_v2.h>
 #include <cuda_runtime.h>
+#include <cusparse_v2.h>
 
 // CUSPARSE_STATUS_NOT_SUPPORTED is available since v10.2.
-int main(){
+int main() {
   //CHECK: int a6;
   //CHECK-NEXT: a6 = 10;
   cusparseStatus_t a6;
@@ -37,4 +37,3 @@ int main(){
 
   return 0;
 }
-
