@@ -331,6 +331,7 @@ void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
 #endif
 // DPCT_LABEL_END
 
+/// Structure for describe a dense vector
 struct dense_vector_desc {
   dense_vector_desc(std::int64_t ele_num, void *value,
                     library_data_t value_type)
@@ -350,6 +351,7 @@ struct dense_vector_desc {
   library_data_t _value_type;
 };
 
+/// Structure for describe a dense matrix
 struct dense_matrix_desc {
   dense_matrix_desc(std::int64_t row_num, std::int64_t col_num,
                     std::int64_t leading_dim, void *value,
@@ -374,18 +376,35 @@ struct dense_matrix_desc {
   oneapi::mkl::layout _layout;
 };
 
+
+/// Sparse matrix data format
 enum matrix_format : int {
   csr = 1,
 };
 
+/// Sparse matrix attribute
 enum matrix_attribute : int { uplo = 0, diag };
 
 class sparse_matrix_desc;
 
 using sparse_matrix_desc_t = sparse_matrix_desc *;
 
+/// Structure for describe a sparse matrix
 class sparse_matrix_desc {
 public:
+  /// Create a CSR sparse matrix descriptor
+  /// \param [out] desc The descriptor to be created
+  /// \param [in] row_num Number of rows of the sparse matrix.
+  /// \param [in] col_num Number of colums of the sparse matrix.
+  /// \param [in] nnz Non-zero elements in the sparse matrix.
+  /// \param [in] row_ptr An array of length \p row_num + 1.
+  /// \param [in] col_ind An array containing the column indices in index-based
+  /// numbering.
+  /// \param [in] value An array containing the non-zero elements of the sparse matrix.
+  /// \param [in] row_ptr_type Data type of the \p row_ptr .
+  /// \param [in] col_ind_type Data type of the \p col_ind .
+  /// \param [in] base Indicates how input arrays are indexed.
+  /// \param [in] value_type Data type of the \p value .
   static void create_csr(sparse_matrix_desc_t *desc, std::int64_t row_num,
                          std::int64_t col_num, std::int64_t nnz, void *row_ptr,
                          void *col_ind, void *value,
@@ -398,18 +417,32 @@ public:
                                row_ptr_type, col_ind_type, base, value_type);
     (*desc)->_format = matrix_format::csr;
   }
+  /// Destroy a sparse matrix descriptor
+  /// \param [in] desc The descriptor to be destroyed
   static void destroy(sparse_matrix_desc_t desc) {
     desc->~sparse_matrix_desc();
   }
 
-  /// Add dependency for the destructor.
-  /// \param [in] e The event which the destructor depends on.
+  /// Add dependency for the destroy method.
+  /// \param [in] e The event which the destroy method depends on.
   void add_dependency(sycl::event e) { _deps.push_back(e); }
   /// Get the internal saved matrix handle.
   /// \return Returns the matrix handle.
   oneapi::mkl::sparse::matrix_handle_t get_matrix_handle() const noexcept {
     return _matrix_handle;
   }
+  /// Get the values saved in the descriptor
+  /// \param [out] row_num Number of rows of the sparse matrix.
+  /// \param [out] col_num Number of colums of the sparse matrix.
+  /// \param [out] nnz Non-zero elements in the sparse matrix.
+  /// \param [out] row_ptr An array of length \p row_num + 1.
+  /// \param [out] col_ind An array containing the column indices in index-based
+  /// numbering.
+  /// \param [out] value An array containing the non-zero elements of the sparse matrix.
+  /// \param [out] row_ptr_type Data type of the \p row_ptr .
+  /// \param [out] col_ind_type Data type of the \p col_ind .
+  /// \param [out] base Indicates how input arrays are indexed.
+  /// \param [out] value_type Data type of the \p value .
   void get_desc(int64_t *row_num, int64_t *col_num, int64_t *nnz,
                 void **row_ptr, void **col_ind, void **value,
                 library_data_t *row_ptr_type, library_data_t *col_ind_type,
@@ -426,16 +459,32 @@ public:
     *base = _base;
     *value_type = _value_type;
   }
+  /// Get the sparse matrix data format of this descriptor
+  /// \param [out] format The matrix data format result
   void get_format(matrix_format *format) const noexcept { *format = _format; }
+  /// Get the index base of this descriptor
+  /// \param [out] base The index base result
   void get_base(oneapi::mkl::index_base *base) const noexcept { *base = _base; }
+  /// Get the value pointer of this descriptor
+  /// \param [out] value The value pointer result
   void get_value(void **value) const noexcept { *value = _value; }
+  /// Set the value pointer of this descriptor
+  /// \param [in] value The input value pointer
   void set_value(void *value) { _value = value; }
+  /// Get the size of the sparse matrix
+  /// \param [out] row_num Number of rows of the sparse matrix.
+  /// \param [out] col_num Number of colums of the sparse matrix.
+  /// \param [out] nnz Non-zero elements in the sparse matrix.
   void get_size(int64_t *row_num, int64_t *col_num,
                 int64_t *nnz) const noexcept {
     *row_num = _row_num;
     *col_num = _col_num;
     *nnz = _nnz;
   }
+  /// Set the sparse matrix attribute
+  /// \param [in] attribute The attribute type
+  /// \param [in] data The attribute value
+  /// \param [in] data_size The data size of the attribute value
   void set_attribute(matrix_attribute attribute, const void *data,
                      size_t data_size) {
     if (attribute == matrix_attribute::diag) {
@@ -462,6 +511,10 @@ public:
       throw std::runtime_error("unsupported attribute");
     }
   }
+  /// Get the sparse matrix attribute
+  /// \param [out] attribute The attribute type
+  /// \param [out] data The attribute value
+  /// \param [out] data_size The data size of the attribute value
   void get_attribute(matrix_attribute attribute, void *data, size_t data_size) {
     if (attribute == matrix_attribute::diag) {
       oneapi::mkl::diag *diag_ptr = reinterpret_cast<oneapi::mkl::diag *>(data);
@@ -481,6 +534,11 @@ public:
       throw std::runtime_error("unsupported attribute");
     }
   }
+  /// Set the pointers for describing the sparse matrix
+  /// \param [in] row_ptr An array of length \p row_num + 1.
+  /// \param [in] col_ind An array containing the column indices in index-based
+  /// numbering.
+  /// \param [in] value An array containing the non-zero elements of the sparse matrix.
   void set_pointers(void *row_ptr, void *col_ind, void *value) {
     // Assume the new data is different from the old data
     optimizd_matrix_info.reset();
@@ -626,10 +684,20 @@ private:
                    library_data_t compute_type);
 };
 
+/// Computes a sparse matrix-dense vector product: y = alpha * op(a) * x + beta * y.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans Specifies operation on input matrix.
+/// \param [in] alpha Specifies the scalar alpha.
+/// \param [in] a Specifies the sparse matrix a.
+/// \param [in] x Specifies the dense vector x.
+/// \param [in] beta Specifies the scalar beta.
+/// \param [in, out] y Specifies the dense vector y.
+/// \param [in] data_type Specifies the data type of \param a, \param x and \param y .
 void spmv(sycl::queue queue, oneapi::mkl::transpose trans, const void *alpha,
           sparse_matrix_desc_t a, std::shared_ptr<dense_vector_desc> x,
           const void *beta, std::shared_ptr<dense_vector_desc> y,
-          library_data_t compute_type) {
+          library_data_t data_type) {
 #ifdef DPCT_USM_LEVEL_NONE
 #define TRMV_STMT                                                              \
   oneapi::mkl::sparse::trmv(queue, a->_uplo.value(), trans, a->_diag.value(),  \
@@ -681,7 +749,7 @@ void spmv(sycl::queue queue, oneapi::mkl::transpose trans, const void *alpha,
     }                                                                          \
   } while (0)
 
-  switch (compute_type) {
+  switch (data_type) {
   case library_data_t::real_float: {
     SPMV(float);
     break;
@@ -706,11 +774,22 @@ void spmv(sycl::queue queue, oneapi::mkl::transpose trans, const void *alpha,
 #undef GEMV_STMT
 }
 
+/// Computes a sparse matrix-dense matrix product: c = alpha * op(a) * op(b) + beta * c.
+/// \param [in] queue The queue where the routine should be executed. It must
+/// have the in_order property when using the USM mode.
+/// \param [in] trans_a Specifies operation on input matrix a.
+/// \param [in] trans_b Specifies operation on input matrix b.
+/// \param [in] alpha Specifies the scalar alpha.
+/// \param [in] a Specifies the sparse matrix a.
+/// \param [in] b Specifies the dense matrix b.
+/// \param [in] beta Specifies the scalar beta.
+/// \param [in, out] c Specifies the dense matrix c.
+/// \param [in] data_type Specifies the data type of \param a, \param b and \param c .
 void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
           oneapi::mkl::transpose trans_b, const void *alpha,
           sparse_matrix_desc_t a, std::shared_ptr<dense_matrix_desc> b,
           const void *beta, std::shared_ptr<dense_matrix_desc> c,
-          library_data_t compute_type) {
+          library_data_t data_type) {
   if (b->_layout != c->_layout)
     throw std::runtime_error("the layout of b and c are different");
 
@@ -740,7 +819,7 @@ void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
     GEMM_STMT                                                                  \
   } while (0)
 
-  switch (compute_type) {
+  switch (data_type) {
   case library_data_t::real_float: {
     SPMM(float);
     break;
