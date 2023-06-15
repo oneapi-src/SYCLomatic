@@ -720,12 +720,12 @@ namespace {
 class AsmNumericLiteralParser {
   const char *const ThisTokBegin;
   const char *const ThisTokEnd;
-  const char *DigitsBegin, *SuffixBegin; // markers
-  const char *s;                         // cursor
+  const char *DigitsBegin = nullptr, *SuffixBegin = nullptr; // markers
+  const char *s = nullptr;                                   // cursor
 
   unsigned radix = 0;
 
-  bool saw_exponent, saw_period;
+  bool saw_exponent = false, saw_period = false;
 
 public:
   AsmNumericLiteralParser(StringRef TokSpelling);
