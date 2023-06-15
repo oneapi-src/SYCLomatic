@@ -2198,5 +2198,31 @@ CONDITIONAL_FACTORY_ENTRY(
                               QUEUESTR),
                          ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7),
                          LITERAL("true"), LITERAL("true"))))))))))
+// cub::SyncStream
+CONDITIONAL_FACTORY_ENTRY(CheckArgIsDefaultCudaStream(0),
+                          MEMBER_CALL_FACTORY_ENTRY("cub::SyncStream", QUEUESTR,
+                                                    false, "wait"),
+                          MEMBER_CALL_FACTORY_ENTRY("cub::SyncStream", ARG(0),
+                                                    true, "wait"))
+// cub::DeviceCount
+MEMBER_CALL_FACTORY_ENTRY("cub::DeviceCount",
+                          CALL(MapNames::getDpctNamespace() +
+                               "dev_mgr::instance"),
+                          false, "device_count")
+// cub::DeviceCountUncached
+MEMBER_CALL_FACTORY_ENTRY("cub::DeviceCountUncached",
+                          CALL(MapNames::getDpctNamespace() +
+                               "dev_mgr::instance"),
+                          false, "device_count")
+// cub::DeviceCountCachedValue
+MEMBER_CALL_FACTORY_ENTRY("cub::DeviceCountCachedValue",
+                          CALL(MapNames::getDpctNamespace() +
+                               "dev_mgr::instance"),
+                          false, "device_count")
+// cub::CurrentDevice
+MEMBER_CALL_FACTORY_ENTRY("cub::CurrentDevice",
+                          CALL(MapNames::getDpctNamespace() +
+                               "dev_mgr::instance"),
+                          false, "current_device_id")
 
 // clang-format on
