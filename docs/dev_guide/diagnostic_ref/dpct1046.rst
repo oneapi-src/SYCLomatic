@@ -31,3 +31,59 @@ Suggestions to Fix
 Please refer to the `gemm topic <https://www.intel.com/content/www/us/en/develop/documentation/oneapi-mkl-dpcpp-developer-reference/top/blas-routines/blas-level-3-routines/gemm.html>`_
 of the Intel® oneAPI Math Kernel Library (oneMKL) - Data Parallel C++ Developer
 Reference for supported data types to fix the code manually.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+    void foo() {
+      cublasHandle_t handle;
+      float alpha, beta;
+      float *a;
+      float *b;
+      float *c;
+      cudaDataType_t type = CUDA_R_32F;
+      cublasSgemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, 2, 2, 2, &alpha, a, type, 2,
+                    b, type, 2, &beta, c, type, 2);
+    }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+    void foo() {
+      dpct::queue_ptr handle;
+      float alpha, beta;
+      float *a;
+      float *b;
+      float *c;
+      dpct::library_data_t type = dpct::library_data_t::real_float;
+      /*
+      DPCT1046:0: The cublasSgemmEx was not migrated because not all values of
+      parameters could be evaluated in migration. You need to adjust the code.
+      */
+      cublasSgemmEx(handle, oneapi::mkl::transpose::conjtrans,
+                    oneapi::mkl::transpose::conjtrans, 2, 2, 2, &alpha, a, type, 2,
+                    b, type, 2, &beta, c, type, 2);
+    }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+    void foo() {
+      dpct::queue_ptr handle;
+      float alpha, beta;
+      float *a;
+      float *b;
+      float *c;
+      dpct::library_data_t type = dpct::library_data_t::real_float;
+      oneapi::mkl::blas::column_major::gemm(
+          *handle, oneapi::mkl::transpose::conjtrans,
+          oneapi::mkl::transpose::conjtrans, 2, 2, 2, alpha, (float *)a, 2,
+          (float *)b, 2, beta, (float *)c, 2);
+    }
+

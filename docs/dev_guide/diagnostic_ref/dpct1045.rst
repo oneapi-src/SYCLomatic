@@ -25,3 +25,52 @@ If the matrix type in used is:
 
 * Supported by the routine: ignore this warning.
 * Not supported by the routine: manually fix the code according to `sparse-blas-routines <https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-dpcpp/current/sparse-blas-routines.html>`_.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+    void test_cusparseTcsrmm(cusparseHandle_t handle, cusparseMatDescr_t descrA,
+                             float alpha, float beta, float *a_val, int *a_row_ptr,
+                             int *a_col_ind, float *b, float *c) {
+      cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_SYMMETRIC);
+      cusparseScsrmm(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 4, 2, 5, 9, &alpha,
+                     descrA, a_val, a_row_ptr, a_col_ind, &beta, 5, b, c, 4);
+    }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+    void test_cusparseTcsrmm(sycl::queue *handle,
+                             std::shared_ptr<dpct::sparse::matrix_info> descrA,
+                             float alpha, float beta, float *a_val, int *a_row_ptr,
+                             int *a_col_ind, float *b, float *c) {
+      descrA->set_matrix_type(dpct::sparse::matrix_info::matrix_type::sy);
+      /*
+      DPCT1045:0: Migration is only supported for this API for the general sparse
+      matrix type. You may need to adjust the code.
+      */
+      dpct::sparse::csrmm(*handle, oneapi::mkl::transpose::nontrans, 4, 2, 5,
+                          &alpha, descrA, a_val, a_row_ptr, a_col_ind, &beta, 5, b,
+                          c, 4);
+    }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+    void test_cusparseTcsrmm(sycl::queue *handle,
+                             std::shared_ptr<dpct::sparse::matrix_info> descrA,
+                             float alpha, float beta, float *a_val, int *a_row_ptr,
+                             int *a_col_ind, float *b, float *c) {
+      // Update the data in matrix A from an upper(lower) matrix to a general matrix
+      descrA->set_matrix_type(dpct::sparse::matrix_info::matrix_type::ge);
+      dpct::sparse::csrmm(*handle, oneapi::mkl::transpose::nontrans, 4, 2, 5,
+                          &alpha, descrA, a_val, a_row_ptr, a_col_ind, &beta, 5, b,
+                          c, 4);
+    }
+
