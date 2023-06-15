@@ -59,9 +59,9 @@ void test(void) {
   }
 
   {
-    // CHECK:    oneapi::dpl::uniform_int_distribution<int> dist(-5, 10);
-    // CHECK-NEXT:    oneapi::dpl::normal_distribution<float> dist(1.0f, 2.0f);
-    thrust::uniform_int_distribution<int> dist(-5, 10);
-    thrust::normal_distribution<float> dist(1.0f, 2.0f);
+    // CHECK:    oneapi::dpl::uniform_int_distribution<int> dist1(-5, 10);
+    // CHECK-NEXT:    oneapi::dpl::normal_distribution<float> dist2(1.0f, 2.0f);
+    thrust::uniform_int_distribution<int> dist1(-5, 10);
+    thrust::normal_distribution<float> dist2(1.0f, 2.0f);
   }
 }

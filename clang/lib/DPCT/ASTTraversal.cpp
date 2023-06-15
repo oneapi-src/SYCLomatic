@@ -14638,14 +14638,12 @@ void TemplateSpecializationTypeLocRule::registerMatcher(
                       "thrust::random::uniform_int_distribution");
   };
 
-  MF.addMatcher(typeLoc(
-                    loc(qualType(hasDeclaration(namedDecl(TargetTypeName())))))
-                    .bind("loc"),
-                this);
+  MF.addMatcher(
+      typeLoc(loc(qualType(hasDeclaration(namedDecl(TargetTypeName())))))
+          .bind("loc"),
+      this);
 
-  MF.addMatcher(declRefExpr()
-                    .bind("declRefExpr"),
-                this);
+  MF.addMatcher(declRefExpr().bind("declRefExpr"), this);
 }
 
 void TemplateSpecializationTypeLocRule::runRule(
