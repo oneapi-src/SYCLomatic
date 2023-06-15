@@ -292,6 +292,9 @@ private:
   mutable BinaryOperation op;
 };
 
+template <typename... T>
+constexpr inline bool all_are_pointer_v = (... & std::is_pointer_v<T>);
+
 #ifdef DPCT_USM_LEVEL_NONE
 
 template <typename T>
@@ -310,10 +313,8 @@ VirtPtr to_virtual_pointer_space(InitialPtr in_ptr, VirtPtr virt_base) {
 template <typename ExecutionPolicyHost, typename ExecutionPolicyDevice,
           typename Oper, typename Func, typename RetPtr1, typename RetPtr2,
           typename Ptr1, typename Ptr2, typename... MiddlePtrs>
-inline std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2> &&
-                            std::is_pointer_v<RetPtr1> &&
-                            std::is_pointer_v<RetPtr2> &&
-                            (... && std::is_pointer_v<MiddlePtrs>),
+inline std::enable_if_t<dpct::internal::all_are_pointer_v<
+                            Ptr1, Ptr2, RetPtr1, RetPtr2, MiddlePtrs...>,
                         ::std::pair<RetPtr1, RetPtr2>>
 check_device_ptr_and_launch(ExecutionPolicyHost &&host_policy,
                             ExecutionPolicyDevice &&dev_policy, Oper op,
@@ -345,10 +346,9 @@ check_device_ptr_and_launch(ExecutionPolicyHost &&host_policy,
 template <typename ExecutionPolicyHost, typename ExecutionPolicyDevice,
           typename Oper, typename Func, typename RetPtr1, typename RetPtr2,
           typename Ptr1, typename... MiddlePtrs>
-inline std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<RetPtr1> &&
-                            std::is_pointer_v<RetPtr2> &&
-                            (... && std::is_pointer_v<MiddlePtrs>),
-                        ::std::pair<RetPtr1, RetPtr2>>
+inline std::enable_if_t<
+    dpct::internal::all_are_pointer_v<Ptr1, RetPtr1, RetPtr2, MiddlePtrs...>,
+    ::std::pair<RetPtr1, RetPtr2>>
 check_device_ptr_and_launch(ExecutionPolicyHost &&host_policy,
                             ExecutionPolicyDevice &&dev_policy, Oper op,
                             std::size_t size, Func func, RetPtr1 ret_base1,
@@ -374,10 +374,9 @@ check_device_ptr_and_launch(ExecutionPolicyHost &&host_policy,
 template <typename ExecutionPolicyHost, typename ExecutionPolicyDevice,
           typename ValueType, typename Oper, typename Func, typename RetPtr1,
           typename RetPtr2, typename Ptr1, typename... MiddlePtrs>
-inline std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<RetPtr1> &&
-                            std::is_pointer_v<RetPtr2> &&
-                            (... && std::is_pointer_v<MiddlePtrs>),
-                        ::std::pair<RetPtr1, RetPtr2>>
+inline std::enable_if_t<
+    dpct::internal::all_are_pointer_v<Ptr1, RetPtr1, RetPtr2, MiddlePtrs...>,
+    ::std::pair<RetPtr1, RetPtr2>>
 check_device_ptr_and_launch_w_value(ExecutionPolicyHost &&host_policy,
                                     ExecutionPolicyDevice &&dev_policy,
                                     ValueType value, Oper op, std::size_t size,
