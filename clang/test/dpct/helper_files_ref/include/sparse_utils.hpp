@@ -561,6 +561,27 @@ void spmv(sycl::queue queue, oneapi::mkl::transpose trans, const void *alpha,
           sparse_matrix_desc_t a, std::shared_ptr<dense_vector_desc> x,
           const void *beta, std::shared_ptr<dense_vector_desc> y,
           library_data_t compute_type) {
+#ifdef DPCT_USM_LEVEL_NONE
+#define TRMV_STMT                                                              \
+  oneapi::mkl::sparse::trmv(queue, a->_uplo.value(), trans, a->_diag.value(),  \
+                            alpha_value, a->get_matrix_handle(), data_x,       \
+                            beta_value, data_y);
+#define GEMV_STMT                                                              \
+  oneapi::mkl::sparse::gemv(queue, trans, alpha_value, a->get_matrix_handle(), \
+                            data_x, beta_value, data_y);
+#else
+#define TRMV_STMT                                                              \
+  sycl::event e = oneapi::mkl::sparse::trmv(                                   \
+      queue, a->_uplo.value(), trans, a->_diag.value(), alpha_value,           \
+      a->get_matrix_handle(), data_x, beta_value, data_y);                     \
+  a->add_dependency(e);
+#define GEMV_STMT                                                              \
+  sycl::event e = oneapi::mkl::sparse::gemv(queue, trans, alpha_value,         \
+                                            a->get_matrix_handle(), data_x,    \
+                                            beta_value, data_y);               \
+  a->add_dependency(e);
+#endif
+
 #define SPMV(Ty)                                                               \
   do {                                                                         \
     auto alpha_value =                                                         \
@@ -578,9 +599,7 @@ void spmv(sycl::queue queue, oneapi::mkl::transpose trans, const void *alpha,
         a->set_optimized_info(sparse_matrix_desc::routine_name::trmv, trans,   \
                               a->_uplo.value(), a->_diag.value());             \
       }                                                                        \
-      oneapi::mkl::sparse::trmv(                                               \
-          queue, a->_uplo.value(), trans, a->_diag.value(), alpha_value,       \
-          a->get_matrix_handle(), data_x, beta_value, data_y);                 \
+      TRMV_STMT                                                                \
     } else {                                                                   \
       if (!a->is_optimized(sparse_matrix_desc::routine_name::gemv, trans,      \
                            std::nullopt, std::nullopt)) {                      \
@@ -589,9 +608,7 @@ void spmv(sycl::queue queue, oneapi::mkl::transpose trans, const void *alpha,
         a->set_optimized_info(sparse_matrix_desc::routine_name::gemv, trans,   \
                               std::nullopt, std::nullopt);                     \
       }                                                                        \
-      oneapi::mkl::sparse::gemv(queue, trans, alpha_value,                     \
-                                a->get_matrix_handle(), data_x, beta_value,    \
-                                data_y);                                       \
+      GEMV_STMT                                                                \
     }                                                                          \
   } while (0)
 
@@ -616,6 +633,8 @@ void spmv(sycl::queue queue, oneapi::mkl::transpose trans, const void *alpha,
     throw std::runtime_error("the combination of data type is unsupported");
   }
 #undef SPMV
+#undef TRMV_STMT
+#undef GEMV_STMT
 }
 
 void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
@@ -625,6 +644,22 @@ void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
           library_data_t compute_type) {
   if (b->_layout != c->_layout)
     throw std::runtime_error("the layout of b and c are different");
+
+#ifdef DPCT_USM_LEVEL_NONE
+#define GEMM_STMT                                                              \
+  oneapi::mkl::sparse::gemm(queue, b->_layout, trans_a, trans_b, alpha_value,  \
+                            a->get_matrix_handle(), data_b, b->_col_num,       \
+                            b->_leading_dim, beta_value, data_c,               \
+                            c->_leading_dim);
+#else
+#define GEMM_STMT                                                              \
+  sycl::event e = oneapi::mkl::sparse::gemm(                                   \
+      queue, b->_layout, trans_a, trans_b, alpha_value,                        \
+      a->get_matrix_handle(), data_b, b->_col_num, b->_leading_dim,            \
+      beta_value, data_c, c->_leading_dim);                                    \
+  a->add_dependency(e);
+#endif
+
 #define SPMM(Ty)                                                               \
   do {                                                                         \
     auto alpha_value =                                                         \
@@ -633,16 +668,7 @@ void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
         detail::get_value(reinterpret_cast<const Ty *>(beta), queue);          \
     auto data_b = detail::get_memory(reinterpret_cast<Ty *>(b->_value));       \
     auto data_c = detail::get_memory(reinterpret_cast<Ty *>(c->_value));       \
-    if (b->_layout == oneapi::mkl::layout::row_major)                          \
-      oneapi::mkl::sparse::gemm(                                               \
-          queue, oneapi::mkl::layout::row_major, trans_a, trans_b,             \
-          alpha_value, a->get_matrix_handle(), data_b, b->_col_num,            \
-          b->_leading_dim, beta_value, data_c, c->_leading_dim);               \
-    else                                                                       \
-      oneapi::mkl::sparse::gemm(                                               \
-          queue, oneapi::mkl::layout::col_major, trans_a, trans_b,             \
-          alpha_value, a->get_matrix_handle(), data_b, b->_col_num,            \
-          b->_leading_dim, beta_value, data_c, c->_leading_dim);               \
+    GEMM_STMT                                                                  \
   } while (0)
 
   switch (compute_type) {
@@ -666,6 +692,7 @@ void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
     throw std::runtime_error("the combination of data type is unsupported");
   }
 #undef SPMM
+#undef GEMM_STMT
 }
 
 } // namespace sparse
