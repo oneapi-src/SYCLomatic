@@ -90,6 +90,11 @@ TYPE_REWRITE_ENTRY("cub::Max",
 
 TYPE_REWRITE_ENTRY("cub::Equality", TYPE_FACTORY(STR("std::equal_to"), STR("")))
 
+TYPE_REWRITE_ENTRY(
+    "cub::NullType",
+    HEADER_INSERTION_FACTORY(HeaderType::HT_DPCT_DPL_Utils,
+                             TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "null_type"))))
+
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DplExtrasIterators_key_value_pair,
     TYPE_REWRITE_ENTRY("cub::KeyValuePair",
