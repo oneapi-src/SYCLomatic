@@ -296,20 +296,23 @@ template <typename... T>
 constexpr inline bool all_are_pointer_v = (... & std::is_pointer_v<T>);
 
 #ifdef DPCT_USM_LEVEL_NONE
-
 template <typename T>
 dpct::device_pointer<typename std::iterator_traits<T>::value_type>
 make_device_pointer_from_virtual_pointer(T t) {
   return dpct::device_pointer<typename std::iterator_traits<T>::value_type>(t);
 }
+#endif // DPCT_USM_LEVEL_NONE
 
+#ifdef DPCT_USM_LEVEL_NONE
 template <typename InitialPtr, typename VirtPtr>
 VirtPtr to_virtual_pointer_space(InitialPtr in_ptr, VirtPtr virt_base) {
   return virt_base +
          (in_ptr -
           dpct::internal::make_device_pointer_from_virtual_pointer(virt_base));
 }
+#endif // DPCT_USM_LEVEL_NONE
 
+#ifdef DPCT_USM_LEVEL_NONE
 template <typename ExecutionPolicyHost, typename ExecutionPolicyDevice,
           typename Oper, typename Func, typename RetPtr1, typename RetPtr2,
           typename Ptr1, typename Ptr2, typename... MiddlePtrs>
@@ -399,7 +402,6 @@ check_device_ptr_and_launch_w_value(ExecutionPolicyHost &&host_policy,
                 start1 + size, middle_ptrs..., value, op);
   }
 }
-
 #endif // DPCT_USM_LEVEL_NONE
 
 // This following code is similar to a section of code in
