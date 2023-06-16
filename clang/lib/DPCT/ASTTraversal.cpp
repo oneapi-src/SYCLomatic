@@ -1123,6 +1123,8 @@ void IncludesCallbacks::InclusionDirective(
     } else if (FileName.compare(StringRef("thrust/uninitialized_copy.h")) ==
                0) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Memory);
+    } else if (FileName.compare(StringRef("thrust/random.h")) == 0) {
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Random);
     } else {
       if(FileName.compare(StringRef("thrust/functional.h")) == 0)
         DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Functional);
@@ -14664,17 +14666,37 @@ void TemplateSpecializationTypeLocRule::registerMatcher(
     ast_matchers::MatchFinder &MF) {
   auto TargetTypeName = [&]() {
     return hasAnyName("thrust::not_equal_to", "thrust::constant_iterator",
-                      "thrust::system::cuda::experimental::pinned_allocator");
+                      "thrust::system::cuda::experimental::pinned_allocator",
+                      "thrust::random::default_random_engine",
+                      "thrust::random::uniform_real_distribution",
+                      "thrust::random::normal_distribution",
+                      "thrust::random::linear_congruential_engine",
+                      "thrust::random::uniform_int_distribution");
   };
 
-  MF.addMatcher(typeLoc(
-                    loc(qualType(hasDeclaration(namedDecl(TargetTypeName())))))
-                    .bind("loc"),
-                this);
+  MF.addMatcher(
+      typeLoc(loc(qualType(hasDeclaration(namedDecl(TargetTypeName())))))
+          .bind("loc"),
+      this);
+
+  MF.addMatcher(declRefExpr().bind("declRefExpr"), this);
 }
 
 void TemplateSpecializationTypeLocRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
+
+  const DeclRefExpr *DRE = getNodeAsType<DeclRefExpr>(Result, "declRefExpr");
+  if (DRE) {
+    std::string TypeName = DpctGlobalInfo::getTypeName(DRE->getType());
+    std::string Name = DRE->getNameInfo().getName().getAsString();
+    if (TypeName.find("thrust::random::linear_congruential_engine") !=
+            std::string::npos &&
+        Name == "max") {
+      emplaceTransformation(
+          new ReplaceStmt(DRE, "oneapi::dpl::default_engine::max()"));
+    }
+  }
+
   if (auto TL = getNodeAsType<TypeLoc>(Result, "loc")) {
     ExprAnalysis EA;
     EA.analyze(*TL);
