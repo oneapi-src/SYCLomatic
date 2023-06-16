@@ -159,7 +159,8 @@ void CubMemberCallRule::runRule(
 
 void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(callExpr(callee(functionDecl(allOf(
-                             hasAnyName("IADD3", "SHR_ADD", "SHL_ADD"),
+                             hasAnyName("IADD3", "SHR_ADD", "SHL_ADD", "LaneId",
+                                        "WarpId"),
                              hasDeclContext(namespaceDecl(hasName("cub")))))))
                     .bind("IntrinsicCall"),
                 this);
