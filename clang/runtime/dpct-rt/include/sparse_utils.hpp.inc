@@ -694,10 +694,11 @@ private:
 /// \param [in] beta Specifies the scalar beta.
 /// \param [in, out] y Specifies the dense vector y.
 /// \param [in] data_type Specifies the data type of \param a, \param x and \param y .
-void spmv(sycl::queue queue, oneapi::mkl::transpose trans, const void *alpha,
-          sparse_matrix_desc_t a, std::shared_ptr<dense_vector_desc> x,
-          const void *beta, std::shared_ptr<dense_vector_desc> y,
-          library_data_t data_type) {
+inline void spmv(sycl::queue queue, oneapi::mkl::transpose trans,
+                 const void *alpha, sparse_matrix_desc_t a,
+                 std::shared_ptr<dense_vector_desc> x, const void *beta,
+                 std::shared_ptr<dense_vector_desc> y,
+                 library_data_t data_type) {
 #ifdef DPCT_USM_LEVEL_NONE
 #define TRMV_STMT                                                              \
   oneapi::mkl::sparse::trmv(queue, a->_uplo.value(), trans, a->_diag.value(),  \
@@ -785,11 +786,11 @@ void spmv(sycl::queue queue, oneapi::mkl::transpose trans, const void *alpha,
 /// \param [in] beta Specifies the scalar beta.
 /// \param [in, out] c Specifies the dense matrix c.
 /// \param [in] data_type Specifies the data type of \param a, \param b and \param c .
-void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
-          oneapi::mkl::transpose trans_b, const void *alpha,
-          sparse_matrix_desc_t a, std::shared_ptr<dense_matrix_desc> b,
-          const void *beta, std::shared_ptr<dense_matrix_desc> c,
-          library_data_t data_type) {
+inline void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
+                 oneapi::mkl::transpose trans_b, const void *alpha,
+                 sparse_matrix_desc_t a, std::shared_ptr<dense_matrix_desc> b,
+                 const void *beta, std::shared_ptr<dense_matrix_desc> c,
+                 library_data_t data_type) {
   if (b->_layout != c->_layout)
     throw std::runtime_error("the layout of b and c are different");
 
