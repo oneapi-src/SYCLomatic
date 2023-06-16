@@ -200,6 +200,18 @@ TYPE_REWRITE_ENTRY("cooperative_groups::__v1::bit_or",
                    TYPE_FACTORY(STR(MapNames::getClNamespace() + "bit_or"),
                                 TEMPLATE_ARG(0)))
 
+TYPE_REWRITE_ENTRY("thrust::random::default_random_engine",
+                   TYPE_FACTORY(STR("oneapi::dpl::default_engine")))
+
+TYPE_REWRITE_ENTRY("thrust::random::uniform_real_distribution",
+                   TYPE_FACTORY(STR("oneapi::dpl::uniform_real_distribution"), TEMPLATE_ARG(0)))
+
+TYPE_REWRITE_ENTRY("thrust::random::normal_distribution",
+                   TYPE_FACTORY(STR("oneapi::dpl::normal_distribution"), TEMPLATE_ARG(0)))
+
+TYPE_REWRITE_ENTRY("thrust::random::uniform_int_distribution",
+                   TYPE_FACTORY(STR("oneapi::dpl::uniform_int_distribution"), TEMPLATE_ARG(0)))
+
 TYPE_REWRITE_ENTRY("nvcuda::wmma::matrix_a",
     TYPE_CONDITIONAL_FACTORY(
         checkEnableJointMatrixForType(),

@@ -723,7 +723,7 @@ class AsmNumericLiteralParser {
   const char *DigitsBegin, *SuffixBegin; // markers
   const char *s;                         // cursor
 
-  unsigned radix;
+  unsigned radix = 0;
 
   bool saw_exponent, saw_period;
 
