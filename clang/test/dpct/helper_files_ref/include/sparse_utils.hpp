@@ -320,6 +320,7 @@ class sparse_matrix_desc;
 
 using sparse_matrix_desc_t = sparse_matrix_desc *;
 
+#ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
 /// Structure for describe a sparse matrix
 class sparse_matrix_desc {
 public:
@@ -614,7 +615,9 @@ private:
                    std::shared_ptr<dense_vector_desc> y,
                    library_data_t compute_type);
 };
+#endif
 
+#ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
 /// Computes a sparse matrix-dense vector product: y = alpha * op(a) * x + beta * y.
 /// \param [in] queue The queue where the routine should be executed. It must
 /// have the in_order property when using the USM mode.
@@ -705,7 +708,9 @@ inline void spmv(sycl::queue queue, oneapi::mkl::transpose trans,
 #undef TRMV_STMT
 #undef GEMV_STMT
 }
+#endif
 
+#ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
 /// Computes a sparse matrix-dense matrix product: c = alpha * op(a) * op(b) + beta * c.
 /// \param [in] queue The queue where the routine should be executed. It must
 /// have the in_order property when using the USM mode.
@@ -774,7 +779,7 @@ inline void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
 #undef SPMM
 #undef GEMM_STMT
 }
-
+#endif
 } // namespace sparse
 } // namespace dpct
 
