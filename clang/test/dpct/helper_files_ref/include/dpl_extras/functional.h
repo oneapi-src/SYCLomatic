@@ -373,7 +373,9 @@ check_device_ptr_and_launch(ExecutionPolicyHost &&host_policy,
                 start1 + size, middle_ptrs..., op);
   }
 }
+#endif // DPCT_USM_LEVEL_NONE
 
+#ifdef DPCT_USM_LEVEL_NONE
 template <typename ExecutionPolicyHost, typename ExecutionPolicyDevice,
           typename ValueType, typename Oper, typename Func, typename RetPtr1,
           typename RetPtr2, typename Ptr1, typename... MiddlePtrs>
