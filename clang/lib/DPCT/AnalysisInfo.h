@@ -4007,6 +4007,10 @@ private:
         else
           ArgSize =
               MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Default);
+        if (!QT.getTypePtr()->isDependentType()) {
+          TypeString = DpctGlobalInfo::getReplacedTypeName(
+              QT.getDesugaredType(DpctGlobalInfo::getContext()));
+        }
       }
       if (IsRedeclareRequired || IsPointer || BASE->IsInMacroDefine) {
         IdString = getTempNameForExpr(Arg, false, true, BASE->IsInMacroDefine,

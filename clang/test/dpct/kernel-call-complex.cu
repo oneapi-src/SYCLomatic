@@ -89,8 +89,8 @@ void foo() {
 
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto pointers_ct0 = pointers[0];
-  // CHECK-NEXT:       auto pointers_ct1 = pointers[1];
+  // CHECK-NEXT:       int *pointers_ct0 = pointers[0];
+  // CHECK-NEXT:       int *pointers_ct1 = pointers[1];
   // CHECK-EMPTY:
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class k2_{{[a-z0-9]+}}>>(
   // CHECK-NEXT:             sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),

@@ -145,7 +145,7 @@ void runTest() {
   // CHECK-NEXT:*/
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto ktarg_ct2 = ktarg;
+  // CHECK-NEXT:       unsigned int ktarg_ct2 = ktarg;
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, T>>(
   // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
@@ -163,7 +163,7 @@ void runTest() {
   // CHECK-NEXT:*/
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto ktarg_ct2 = ktarg;
+  // CHECK-NEXT:       unsigned int ktarg_ct2 = ktarg;
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, TestTemplate<T>>>(
   // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
@@ -178,7 +178,7 @@ void runTest() {
   // CHECK-NEXT:*/
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto ktarg_ct2 = ktarg;
+  // CHECK-NEXT:       unsigned int ktarg_ct2 = ktarg;
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, TT>>(
   // CHECK-NEXT:         sycl::nd_range<3>(griddim * threaddim, threaddim),
@@ -220,7 +220,7 @@ int main() {
   // CHECK-NEXT:*/
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto ktarg_ct2 = ktarg;
+  // CHECK-NEXT:       int ktarg_ct2 = ktarg;
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, LA>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 10) * sycl::range<3>(1, 1, intvar), sycl::range<3>(1, 1, intvar)),
