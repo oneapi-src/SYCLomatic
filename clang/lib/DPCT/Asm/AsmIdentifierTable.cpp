@@ -16,11 +16,7 @@ InlineAsmIdentifierInfoLookup::~InlineAsmIdentifierInfoLookup() = default;
 InlineAsmIdentifierTable::InlineAsmIdentifierTable(
     InlineAsmIdentifierInfoLookup *ExternalLookup)
     : HashTable(128), // Start with space for 8K identifiers.
-      ExternalLookup(ExternalLookup) {
-  // Populate the identifier table with info about keywords for the current
-  // language.
-  AddKeywords();
-}
+      ExternalLookup(ExternalLookup) {}
 
 void InlineAsmIdentifierTable::AddKeywords() {
 #define KEYWORD(X, Y) get(Y, asmtok::kw_##X);
