@@ -274,7 +274,7 @@ public:
       : CallExprRewriter(C, ""), Inner(InnerRewriter),
         IsAssigned(isAssigned(C)), ExtraParen(EP) {
     if (IsAssigned)
-      requestFeature(HelperFeatureEnum::Dpct_check_error_code, C);
+      DpctGlobalInfo::setNeedDpctDeviceExt();
   }
 
   std::optional<std::string> rewrite() override {
@@ -395,17 +395,15 @@ public:
   }
 };
 
-class RewriterFactoryWithFeatureRequest : public CallExprRewriterFactoryBase {
+class RewriterFactoryWithSetNeedDpctDeviceExt : public CallExprRewriterFactoryBase {
   std::shared_ptr<CallExprRewriterFactoryBase> Inner;
-  HelperFeatureEnum Feature;
 
 public:
-  RewriterFactoryWithFeatureRequest(
-      HelperFeatureEnum Feature,
+  RewriterFactoryWithSetNeedDpctDeviceExt(
       std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory)
-      : Inner(InnerFactory), Feature(Feature) {}
+      : Inner(InnerFactory) {}
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
-    requestFeature(Feature, C);
+    DpctGlobalInfo::setNeedDpctDeviceExt();
     return Inner->create(C);
   }
 };

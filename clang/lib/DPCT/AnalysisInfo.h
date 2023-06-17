@@ -2252,7 +2252,7 @@ public:
   bool isWritten() const {
     return !TDSI || !isTemplate() || TDSI->isDependOnWritten();
   }
-  std::set<HelperFeatureEnum> getHelperFeatureSet() { return HelperFeatureSet; }
+  bool getNeedDpctDeviceExtFlag() { return NeedDpctDeviceExtFlag; }
   inline bool containSizeofType() { return ContainSizeofType; }
   inline std::vector<std::string> getArraySizeOriginExprs() { return ArraySizeOriginExprs; }
 
@@ -2317,7 +2317,7 @@ private:
   bool TemplateDependentMacro = false;
 
   std::shared_ptr<TemplateDependentStringInfo> TDSI;
-  std::set<HelperFeatureEnum> HelperFeatureSet;
+  bool NeedDpctDeviceExtFlag = false;
   bool ContainSizeofType = false;
   std::vector<std::string> ArraySizeOriginExprs{};
 };
@@ -2346,9 +2346,8 @@ public:
   }
   inline void requestFeatureForSet(const std::string &Path) {
     if (Ty) {
-      for (const auto &Item : Ty->getHelperFeatureSet()) {
-        requestFeature(Item, Path);
-      }
+      if (Ty->getNeedDpctDeviceExtFlag())
+        DpctGlobalInfo::setNeedDpctDeviceExt();
     }
   }
 
@@ -2554,7 +2553,7 @@ private:
   const std::string &getMemoryAttr();
   std::string getSyclAccessorType();
   std::string getDpctAccessorType() {
-    requestFeature(HelperFeatureEnum::Memory_dpct_accessor, getFilePath());
+    DpctGlobalInfo::setNeedDpctDeviceExt();
     auto Type = getType();
     return buildString(MapNames::getDpctNamespace(true), "accessor<",
                        getAccessorDataType(), ", ", getMemoryAttr(), ", ",
@@ -2744,7 +2743,7 @@ public:
   virtual std::string getHostDeclString() {
     ParameterStream PS;
     Type->prepareForImage();
-    requestFeature(HelperFeatureEnum::Image_image_wrapper, FilePath);
+    DpctGlobalInfo::setNeedDpctDeviceExt();
 
     getDecl(PS, "image_wrapper") << ";";
     Type->endForImage();
@@ -2752,13 +2751,12 @@ public:
   }
 
   virtual std::string getSamplerDecl() {
-    requestFeature(HelperFeatureEnum::Image_image_wrapper_base_get_sampler,
-                   FilePath);
+    DpctGlobalInfo::setNeedDpctDeviceExt();
     return buildString("auto ", NewVarName, "_smpl = ", Name,
                        ".get_sampler();");
   }
   virtual std::string getAccessorDecl(const std::string &QueueStr) {
-    requestFeature(HelperFeatureEnum::Image_image_wrapper_get_access, FilePath);
+    DpctGlobalInfo::setNeedDpctDeviceExt();
     std::string Ret;
     llvm::raw_string_ostream OS(Ret);
     OS << "auto " << NewVarName << "_acc = " << Name << ".get_access(cgh";
@@ -2772,12 +2770,12 @@ public:
   }
 
   inline ParameterStream &getFuncDecl(ParameterStream &PS) {
-    requestFeature(HelperFeatureEnum::Image_image_accessor_ext, FilePath);
+    DpctGlobalInfo::setNeedDpctDeviceExt();
     return getDecl(PS, "image_accessor_ext");
   }
   inline ParameterStream &getFuncArg(ParameterStream &PS) { return PS << Name; }
   virtual ParameterStream &getKernelArg(ParameterStream &OS) {
-    requestFeature(HelperFeatureEnum::Image_image_accessor_ext, FilePath);
+    DpctGlobalInfo::setNeedDpctDeviceExt();
     getType()->printType(OS,
                          MapNames::getDpctNamespace() + "image_accessor_ext");
     OS << "(" << NewVarName << "_smpl, " << NewVarName << "_acc)";
@@ -2826,20 +2824,18 @@ public:
         << " *>(" << Name << ")->get_access(cgh";
     printQueueStr(PS, QueueString);
     PS << ");";
-    requestFeature(HelperFeatureEnum::Image_image_wrapper_get_access, FilePath);
-    requestFeature(HelperFeatureEnum::Image_image_wrapper, FilePath);
+    DpctGlobalInfo::setNeedDpctDeviceExt();
     return PS.Str;
   }
   std::string getSamplerDecl() override {
-    requestFeature(HelperFeatureEnum::Image_image_wrapper_base_get_sampler,
-                   FilePath);
+    DpctGlobalInfo::setNeedDpctDeviceExt();
     return buildString("auto ", NewVarName, "_smpl = ", Name,
                        "->get_sampler();");
   }
   inline unsigned getParamIdx() const { return ParamIdx; }
 
   std::string getParamDeclType() {
-    requestFeature(HelperFeatureEnum::Image_image_accessor_ext, FilePath);
+    DpctGlobalInfo::setNeedDpctDeviceExt();
     ParameterStream PS;
     Type->printType(PS, MapNames::getDpctNamespace() + "image_accessor_ext");
     return PS.Str;
@@ -2873,8 +2869,7 @@ public:
   CudaLaunchTextureObjectInfo(const ParmVarDecl *PVD, const std::string &ArgStr)
       : TextureObjectInfo(static_cast<const VarDecl *>(PVD)), ArgStr(ArgStr) {}
   std::string getAccessorDecl(const std::string &QueueString) override {
-    requestFeature(HelperFeatureEnum::Image_image_wrapper, FilePath);
-    requestFeature(HelperFeatureEnum::Image_image_wrapper_get_access, FilePath);
+    DpctGlobalInfo::setNeedDpctDeviceExt();
     ParameterStream PS;
     PS << "auto " << Name << "_acc = static_cast<";
     getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
@@ -2884,8 +2879,7 @@ public:
     return PS.Str;
   }
   std::string getSamplerDecl() override {
-    requestFeature(HelperFeatureEnum::Image_image_wrapper_base_get_sampler,
-                   FilePath);
+    DpctGlobalInfo::setNeedDpctDeviceExt();
     return buildString("auto ", Name, "_smpl = (", ArgStr, ")->get_sampler();");
   }
 };
@@ -4243,14 +4237,7 @@ private:
             MapNames::getDpctNamespace(), "dpct_memset(d_",
             DpctGlobalInfo::getSyncName(), ".get_ptr(), 0, sizeof(int));\n"));
 
-        requestFeature(HelperFeatureEnum::Memory_dpct_memset, getFilePath());
-        requestFeature(HelperFeatureEnum::Memory_get_access, getFilePath());
-
-        requestFeature(HelperFeatureEnum::Memory_global_memory_alias,
-                       getFilePath());
-        requestFeature(HelperFeatureEnum::Memory_device_memory_get_ptr,
-                       getFilePath());
-
+        DpctGlobalInfo::setNeedDpctDeviceExt();
       } else {
 
         OuterStmts.emplace_back(buildString(
@@ -4265,10 +4252,7 @@ private:
             MapNames::getDpctNamespace(), "get_default_queue().memset(",
             DpctGlobalInfo::getSyncName(), ", 0, sizeof(int)).wait();"));
 
-        requestFeature(HelperFeatureEnum::Memory_global_memory_alias,
-                       getFilePath());
-        requestFeature(HelperFeatureEnum::Memory_device_memory_get_ptr_q,
-                       getFilePath());
+        DpctGlobalInfo::setNeedDpctDeviceExt();
       }
     }
   }

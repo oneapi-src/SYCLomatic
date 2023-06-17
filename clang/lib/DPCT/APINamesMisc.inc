@@ -10,8 +10,7 @@ CONDITIONAL_FACTORY_ENTRY(
     UseOccupancyCalculation,
     WARNING_FACTORY_ENTRY(
         "cudaOccupancyMaxActiveBlocksPerMultiprocessor",
-        FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_calculate_max_active_wg_per_xecore,
+        SET_NEED_DPCT_DEVICE_EXT_FACTORY(
             CALL_FACTORY_ENTRY(
                 "cudaOccupancyMaxActiveBlocksPerMultiprocessor",
                 CALL(MapNames::getDpctNamespace() +
@@ -31,8 +30,7 @@ CONDITIONAL_FACTORY_ENTRY(
     UseOccupancyCalculation,
     WARNING_FACTORY_ENTRY(
         "cuOccupancyMaxActiveBlocksPerMultiprocessor",
-        FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_calculate_max_active_wg_per_xecore,
+        SET_NEED_DPCT_DEVICE_EXT_FACTORY(
             CALL_FACTORY_ENTRY(
                 "cuOccupancyMaxActiveBlocksPerMultiprocessor",
                 CALL(MapNames::getDpctNamespace() +

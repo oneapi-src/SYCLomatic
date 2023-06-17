@@ -7,24 +7,24 @@
 //===-----------------------------------------------------------------===//
 
 // Base API
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_get_version,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         CALL_FACTORY_ENTRY("cudnnGetVersion",
                                            CALL(MapNames::getDpctNamespace() +
                                                 "dnnl::get_version")))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_engine_ext,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnCreate", DEREF(ARG_WC(0)), false,
                             "create_engine")))
 
 REMOVE_API_FACTORY_ENTRY("cudnnDestroy")
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_engine_ext,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnSetStream", ARG_WC(0), false, "set_queue",
                             ARG_WC(1))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_engine_ext,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                             "cudnnGetStream", DEREF(ARG_WC(1)),
                             MEMBER_CALL(ARG_WC(0), false, "get_queue"))))
@@ -32,67 +32,67 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_engine_ext,
 // Memory API
 REMOVE_API_FACTORY_ENTRY("cudnnCreateTensorDescriptor")
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_memory_desc_ext,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnSetTensor4dDescriptor", ARG_WC(0), false,
                             "set", ARG_WC(1), ARG_WC(2), ARG_WC(3), ARG_WC(4),
                             ARG_WC(5), ARG_WC(6))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_memory_desc_ext,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnSetTensor4dDescriptorEx", ARG_WC(0), false,
                             "set", ARG_WC(1), ARG_WC(2), ARG_WC(3), ARG_WC(4),
                             ARG_WC(5), ARG_WC(6), ARG_WC(7), ARG_WC(8),
                             ARG_WC(9))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_memory_desc_ext,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnSetTensorNdDescriptor", ARG_WC(0), false,
                             "set", ARG_WC(1), ARG_WC(2), ARG_WC(3), ARG_WC(4))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_memory_desc_ext,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnSetTensorNdDescriptorEx", ARG_WC(0), false,
                             "set", ARG_WC(1), ARG_WC(2), ARG_WC(3), ARG_WC(4))))
 
 REMOVE_API_FACTORY_ENTRY("cudnnDestroyTensorDescriptor")
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_memory_desc_ext,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnGetTensor4dDescriptor", ARG_WC(0), false,
                             "get", ARG_WC(1), ARG_WC(2), ARG_WC(3), ARG_WC(4),
                             ARG_WC(5), ARG_WC(6), ARG_WC(7), ARG_WC(8),
                             ARG_WC(9))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_memory_desc_ext,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnGetTensorNdDescriptor", ARG_WC(0), false,
                             "get", ARG_WC(1), ARG_WC(2), ARG_WC(3), ARG_WC(4),
                             ARG_WC(5))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_memory_desc_ext,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                             "cudnnGetTensorSizeInBytes", DEREF(ARG_WC(1)),
                             MEMBER_CALL(ARG_WC(0), false, "get_size"))))
 
 // Simple Operation
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_reorder,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnTransformTensor", ARG_WC(0), false,
                             "async_reorder", DEREF(ARG_WC(1)), ARG_WC(2),
                             ARG_WC(3), DEREF(ARG_WC(4)), ARG_WC(5), ARG_WC(6))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_fill,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnSetTensor", ARG_WC(0), false, "async_fill",
                             ARG_WC(1), ARG_WC(2), ARG_WC(3))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_scale,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnScaleTensor", ARG_WC(0), false, "async_scale",
                             DEREF(ARG_WC(3)), ARG_WC(1), ARG_WC(2))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_sum,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnAddTensor", ARG_WC(0), false, "async_sum",
                             DEREF(ARG_WC(1)), ARG_WC(2), ARG_WC(3),
@@ -103,8 +103,7 @@ REMOVE_API_FACTORY_ENTRY("cudnnCreateActivationDescriptor")
 
 REMOVE_API_FACTORY_ENTRY("cudnnDestroyActivationDescriptor")
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_activation_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     WARNING_FACTORY_ENTRY("cudnnSetActivationDescriptor",
                           ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                               "cudnnSetActivationDescriptor", ARG_WC(0), false,
@@ -112,8 +111,7 @@ FEATURE_REQUEST_FACTORY(
                           Diagnostics::API_NOT_MIGRATED,
                           ARG("Nan numbers propagation option")))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_activation_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     WARNING_FACTORY_ENTRY("cudnnGetActivationDescriptor",
                           ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                               "cudnnGetActivationDescriptor", ARG_WC(0), false,
@@ -121,25 +119,25 @@ FEATURE_REQUEST_FACTORY(
                           Diagnostics::API_NOT_MIGRATED,
                           ARG("Nan numbers propagation option")))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_activation_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnSetActivationDescriptorSwishBeta", ARG_WC(0),
                             false, "set_beta", ARG_WC(1))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_activation_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                             "cudnnGetActivationDescriptorSwishBeta",
                             DEREF(ARG_WC(1)),
                             MEMBER_CALL(ARG_WC(0), false, "get_beta"))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_activation_forward,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnActivationForward", ARG_WC(0), false,
                             "async_activation_forward", ARG_WC(1),
                             DEREF(ARG_WC(2)), ARG_WC(3), ARG_WC(4),
                             DEREF(ARG_WC(5)), ARG_WC(6), ARG_WC(7))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_activation_backward,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnActivationBackward", ARG_WC(0), false,
                             "async_activation_backward", ARG_WC(1),
@@ -152,25 +150,24 @@ REMOVE_API_FACTORY_ENTRY("cudnnCreateLRNDescriptor")
 
 REMOVE_API_FACTORY_ENTRY("cudnnDestroyLRNDescriptor")
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_lrn_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnSetLRNDescriptor", ARG_WC(0), false, "set",
                             ARG_WC(1), ARG_WC(2), ARG_WC(3), ARG_WC(4))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_lrn_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnGetLRNDescriptor", ARG_WC(0), false, "get",
                             ARG_WC(1), ARG_WC(2), ARG_WC(3), ARG_WC(4))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_lrn_forward,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnLRNCrossChannelForward", ARG_WC(0), false,
                             "async_lrn_forward", ARG_WC(1), DEREF(ARG_WC(3)),
                             ARG_WC(4), ARG_WC(5), DEREF(ARG_WC(6)), ARG_WC(7),
                             ARG_WC(8))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_lrn_backward,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     WARNING_FACTORY_ENTRY("cudnnLRNCrossChannelBackward",
                           ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                               "cudnnLRNCrossChannelBackward", ARG_WC(0), false,
@@ -186,8 +183,7 @@ REMOVE_API_FACTORY_ENTRY("cudnnCreatePoolingDescriptor")
 
 REMOVE_API_FACTORY_ENTRY("cudnnDestroyPoolingDescriptor")
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_pooling_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     WARNING_FACTORY_ENTRY("cudnnSetPooling2dDescriptor",
                           ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                               "cudnnSetPooling2dDescriptor", ARG_WC(0), false,
@@ -196,8 +192,7 @@ FEATURE_REQUEST_FACTORY(
                           Diagnostics::API_NOT_MIGRATED,
                           ARG("Nan numbers propagation option")))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_pooling_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     WARNING_FACTORY_ENTRY("cudnnSetPoolingNdDescriptor",
                           ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                               "cudnnSetPoolingNdDescriptor", ARG_WC(0), false,
@@ -206,8 +201,7 @@ FEATURE_REQUEST_FACTORY(
                           Diagnostics::API_NOT_MIGRATED,
                           ARG("Nan numbers propagation option")))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_pooling_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     WARNING_FACTORY_ENTRY("cudnnGetPooling2dDescriptor",
                           ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                               "cudnnGetPooling2dDescriptor", ARG_WC(0), false,
@@ -216,8 +210,7 @@ FEATURE_REQUEST_FACTORY(
                           Diagnostics::API_NOT_MIGRATED,
                           ARG("Nan numbers propagation option")))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_pooling_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     WARNING_FACTORY_ENTRY("cudnnGetPoolingNdDescriptor",
                           ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                               "cudnnGetPoolingNdDescriptor", ARG_WC(0), false,
@@ -226,27 +219,26 @@ FEATURE_REQUEST_FACTORY(
                           Diagnostics::API_NOT_MIGRATED,
                           ARG("Nan numbers propagation option")))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_pooling_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnGetPooling2dForwardOutputDim", ARG_WC(0),
                             false, "get_forward_output_dim", ARG_WC(1),
                             ARG_WC(2), ARG_WC(3), ARG_WC(4), ARG_WC(5))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_pooling_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnGetPoolingNdForwardOutputDim", ARG_WC(0),
                             false, "get_forward_output_dim", ARG_WC(1),
                             ARG_WC(2), ARG_WC(3))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_pooling_forward,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnPoolingForward", ARG_WC(0), false,
                             "async_pooling_forward", ARG_WC(1),
                             DEREF(ARG_WC(2)), ARG_WC(3), ARG_WC(4),
                             DEREF(ARG_WC(5)), ARG_WC(6), ARG_WC(7))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_pooling_backward,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     WARNING_FACTORY_ENTRY("cudnnPoolingBackward",
                           ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                               "cudnnPoolingBackward", ARG_WC(0), false,
@@ -259,15 +251,14 @@ FEATURE_REQUEST_FACTORY(
                           ARG("async_pooling_forward")))
 
 // Softmax Layer
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_softmax_forward,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnSoftmaxForward", ARG_WC(0), false,
                             "async_softmax_forward", ARG_WC(1), ARG_WC(2),
                             DEREF(ARG_WC(3)), ARG_WC(4), ARG_WC(5),
                             DEREF(ARG_WC(6)), ARG_WC(7), ARG_WC(8))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_softmax_backward,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnSoftmaxBackward", ARG_WC(0), false, "async_softmax_backward",
         ARG_WC(1), ARG_WC(2), DEREF(ARG_WC(3)), ARG_WC(4), ARG_WC(5), ARG_WC(6),
@@ -278,8 +269,7 @@ REMOVE_API_FACTORY_ENTRY("cudnnCreateReduceTensorDescriptor")
 
 REMOVE_API_FACTORY_ENTRY("cudnnDestroyReduceTensorDescriptor")
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_reduction_op,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     WARNING_FACTORY_ENTRY("cudnnSetReduceTensorDescriptor",
                           ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                               "cudnnSetReduceTensorDescriptor", ARG_WC(0),
@@ -288,8 +278,7 @@ FEATURE_REQUEST_FACTORY(
                           ARG("computation datatype, Nan numbers propagation "
                               "and reduction index option")))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_reduction_op,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     WARNING_FACTORY_ENTRY("cudnnGetReduceTensorDescriptor",
                           ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                               "cudnnGetReduceTensorDescriptor",
@@ -301,8 +290,7 @@ FEATURE_REQUEST_FACTORY(
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudnnGetReductionWorkspaceSize",
                                         DEREF(ARG_WC(4)), ARG("0")))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_reduction,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     WARNING_FACTORY_ENTRY("cudnnReduceTensor",
                           ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                               "cudnnReduceTensor", ARG_WC(0), false,
@@ -317,8 +305,7 @@ REMOVE_API_FACTORY_ENTRY("cudnnCreateOpTensorDescriptor")
 
 REMOVE_API_FACTORY_ENTRY("cudnnDestroyOpTensorDescriptor")
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_binary_op,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     WARNING_FACTORY_ENTRY("cudnnSetOpTensorDescriptor",
                           ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                               "cudnnSetOpTensorDescriptor", ARG_WC(0),
@@ -326,8 +313,7 @@ FEATURE_REQUEST_FACTORY(
                           Diagnostics::API_NOT_MIGRATED,
                           ARG("computation datatype, Nan numbers propagation option")))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_binary_op,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     WARNING_FACTORY_ENTRY(
         "cudnnGetOpTensorDescriptor",
         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudnnGetOpTensorDescriptor",
@@ -335,7 +321,7 @@ FEATURE_REQUEST_FACTORY(
         Diagnostics::API_NOT_MIGRATED,
         ARG("computation datatype, Nan numbers propagation option")))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_binary,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnOpTensor", ARG_WC(0), false, "async_binary",
                             ARG_WC(1), DEREF(ARG_WC(2)), ARG_WC(3), ARG_WC(4),
@@ -343,16 +329,14 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_binary,
                             DEREF(ARG_WC(8)), ARG_WC(9), ARG_WC(10))))
 
 // Batch Normalization Layer
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_batch_normalization_forward_inference,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnBatchNormalizationForwardInference", ARG_WC(0), false,
         "async_batch_normalization_forward_inference", ARG_WC(1), ARG_WC(13),
         DEREF(ARG_WC(2)), ARG_WC(4), ARG_WC(5), DEREF(ARG_WC(3)), ARG_WC(6),
         ARG_WC(7), ARG_WC(8), ARG_WC(9), ARG_WC(10), ARG_WC(11), ARG_WC(12))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_batch_normalization_forward_training,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnBatchNormalizationForwardTraining", ARG_WC(0), false,
         "async_batch_normalization_forward_training", ARG_WC(1), ARG_WC(14),
@@ -360,8 +344,7 @@ FEATURE_REQUEST_FACTORY(
         ARG_WC(6), ARG_WC(7), ARG_WC(8), ARG_WC(9), ARG_WC(10), ARG_WC(12),
         ARG_WC(13), ARG_WC(15), ARG_WC(16))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_batch_normalization_forward_training_ex,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnBatchNormalizationForwardTrainingEx", ARG_WC(0), false,
         "async_batch_normalization_forward_training", ARG_WC(1), ARG_WC(2),
@@ -370,8 +353,7 @@ FEATURE_REQUEST_FACTORY(
         ARG_WC(8), ARG_WC(11), ARG_WC(12), ARG_WC(13), ARG_WC(15), ARG_WC(16),
         ARG_WC(18), ARG_WC(19), ARG_WC(24), ARG_WC(23))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_batch_normalization_backward,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnBatchNormalizationBackward", ARG_WC(0), false,
         "async_batch_normalization_backward", ARG_WC(1), ARG_WC(16), DEREF(ARG_WC(2)),
@@ -379,8 +361,7 @@ FEATURE_REQUEST_FACTORY(
         ARG_WC(10), ARG_WC(11), DEREF(ARG_WC(4)), ARG_WC(12), ARG_WC(13),
         DEREF(ARG_WC(5)), ARG_WC(14), ARG_WC(15), ARG_WC(17), ARG_WC(18))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_batch_normalization_backward_ex,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnBatchNormalizationBackwardEx", ARG_WC(0), false,
         "async_batch_normalization_backward", ARG_WC(1), ARG_WC(2), ARG_WC(25),
@@ -390,8 +371,7 @@ FEATURE_REQUEST_FACTORY(
         ARG_WC(18), ARG_WC(19), DEREF(ARG_WC(6)), ARG_WC(20), ARG_WC(21),
         ARG_WC(23), ARG_WC(24), ARG_WC(29), ARG_WC(28))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_engine_ext,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     CALL_FACTORY_ENTRY("cudnnDeriveBNTensorDescriptor",
                        CALL(MapNames::getDpctNamespace() +
                                 "dnnl::derive_batch_normalization_memory_desc",
@@ -405,8 +385,7 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
     "cudnnGetBatchNormalizationForwardTrainingExWorkspaceSize",
     DEREF(ARG_WC(8)), ARG("0")))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_get_batch_normalization_workspace_size,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
         "cudnnGetBatchNormalizationTrainingExReserveSpaceSize",
         DEREF(ARG_WC(5)),
@@ -414,8 +393,7 @@ FEATURE_REQUEST_FACTORY(
                     ARG_WC(2), ARG_WC(4)))))
 
 // Normalization Layer
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_engine_ext,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     CALL_FACTORY_ENTRY("cudnnDeriveNormTensorDescriptor",
                        CALL(MapNames::getDpctNamespace() +
                                 "dnnl::derive_batch_normalization_memory_desc",
@@ -429,15 +407,13 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
     "cudnnGetNormalizationBackwardWorkspaceSize",
     DEREF(ARG_WC(12)), ARG("0")))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_get_batch_normalization_workspace_size,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
         "cudnnGetNormalizationTrainingReserveSpaceSize", DEREF(ARG_WC(6)),
         MEMBER_CALL(ARG_WC(0), false, "get_batch_normalization_workspace_size",
                     ARG_WC(2), ARG_WC(5)))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_batch_normalization_forward_inference_ex_norm,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnNormalizationForwardInference", ARG_WC(0), false,
         "async_batch_normalization_forward_inference", ARG_WC(1), ARG_WC(2),
@@ -445,8 +421,7 @@ FEATURE_REQUEST_FACTORY(
         DEREF(ARG_WC(5)), ARG_WC(17), ARG_WC(18), ARG_WC(14), ARG_WC(15),
         ARG_WC(8), ARG_WC(9), ARG_WC(10), ARG_WC(11), ARG_WC(12), ARG_WC(13))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_batch_normalization_forward_training_ex_norm,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnNormalizationForwardTraining", ARG_WC(0), false,
         "async_batch_normalization_forward_training", ARG_WC(1), ARG_WC(2),
@@ -455,8 +430,7 @@ FEATURE_REQUEST_FACTORY(
         ARG_WC(20), ARG_WC(8), ARG_WC(9), ARG_WC(10), ARG_WC(12), ARG_WC(13),
         ARG_WC(14), ARG_WC(16), ARG_WC(17), ARG_WC(26), ARG_WC(25))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_batch_normalization_backward_ex_norm,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnNormalizationBackward", ARG_WC(0), false,
         "async_batch_normalization_backward", ARG_WC(1), ARG_WC(2), ARG_WC(27),
@@ -471,30 +445,30 @@ REMOVE_API_FACTORY_ENTRY("cudnnCreateFilterDescriptor")
 
 REMOVE_API_FACTORY_ENTRY("cudnnDestroyFilterDescriptor")
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_memory_desc_ext,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnGetFilter4dDescriptor", ARG_WC(0), false,
                             "get", ARG_WC(1), ARG_WC(2), ARG_WC(3), ARG_WC(4),
                             ARG_WC(5), ARG_WC(6))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_memory_desc_ext,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnGetFilterNdDescriptor", ARG_WC(0), false,
                             "get", ARG_WC(1), ARG_WC(2), ARG_WC(3), ARG_WC(4),
                             ARG_WC(5))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_memory_desc_ext,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                             "cudnnGetFilterSizeInBytes", DEREF(ARG_WC(1)),
                             MEMBER_CALL(ARG_WC(0), false, "get_size"))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_memory_desc_ext,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnSetFilter4dDescriptor", ARG_WC(0), false,
                             "set", ARG_WC(2), ARG_WC(1), ARG_WC(3), ARG_WC(4),
                             ARG_WC(5), ARG_WC(6))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_memory_desc_ext,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnSetFilterNdDescriptor", ARG_WC(0), false,
                             "set", ARG_WC(2), ARG_WC(1), ARG_WC(3), ARG_WC(4))))
@@ -503,18 +477,17 @@ REMOVE_API_FACTORY_ENTRY("cudnnCreateConvolutionDescriptor")
 
 REMOVE_API_FACTORY_ENTRY("cudnnDestroyConvolutionDescriptor")
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_convolution_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                             "cudnnGetConvolutionGroupCount", DEREF(ARG_WC(1)),
                             MEMBER_CALL(ARG_WC(0), false, "get_group_count"))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_convolution_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnSetConvolutionGroupCount", ARG_WC(0), false,
                             "set_group_count", ARG_WC(1))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_convolution_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     WARNING_FACTORY_ENTRY("cudnnSetConvolution2dDescriptor",
                           ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                               "cudnnSetConvolution2dDescriptor", ARG_WC(0), false,
@@ -523,8 +496,7 @@ FEATURE_REQUEST_FACTORY(
                           Diagnostics::API_NOT_MIGRATED,
                           ARG("convolution mode and computation datatype option")))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_pooling_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     WARNING_FACTORY_ENTRY("cudnnSetConvolutionNdDescriptor",
                           ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                               "cudnnSetConvolutionNdDescriptor", ARG_WC(0), false,
@@ -532,8 +504,7 @@ FEATURE_REQUEST_FACTORY(
                           Diagnostics::API_NOT_MIGRATED,
                           ARG("convolution mode and computation datatype option")))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_pooling_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     WARNING_FACTORY_ENTRY("cudnnGetConvolution2dDescriptor",
                           ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                               "cudnnGetConvolution2dDescriptor", ARG_WC(0), false,
@@ -542,8 +513,7 @@ FEATURE_REQUEST_FACTORY(
                           Diagnostics::API_NOT_MIGRATED,
                           ARG("convolution mode and computation datatype option")))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_pooling_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     WARNING_FACTORY_ENTRY(
         "cudnnGetConvolutionNdDescriptor",
         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
@@ -552,20 +522,20 @@ FEATURE_REQUEST_FACTORY(
         Diagnostics::API_NOT_MIGRATED,
         ARG("convolution mode and computation datatype option")))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_pooling_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnGetConvolution2dForwardOutputDim", ARG_WC(0),
                             false, "get_forward_output_dim", ARG_WC(1),
                             ARG_WC(2), ARG_WC(3), ARG_WC(4), ARG_WC(5),
                             ARG_WC(6))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_pooling_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnGetConvolutionNdForwardOutputDim", ARG_WC(0),
                             false, "get_forward_output_dim", ARG_WC(1),
                             ARG_WC(2), ARG_WC(3), ARG_WC(4))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_convolution_forward,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnConvolutionForward", ARG_WC(0), false,
                             "async_convolution_forward", ARG_WC(6), ARG_WC(7),
@@ -574,7 +544,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_convolution_forward,
                             DEREF_CAST_IF_NEED(LITERAL("float *"), ARG(10)),
                             ARG_WC(11), ARG_WC(12))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_convolution_forward_ex,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnConvolutionBiasActivationForward", ARG_WC(0),
                             false, "async_convolution_forward", ARG_WC(6),
@@ -583,7 +553,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_convolution_forward_ex,
                             ARG_WC(11), ARG_WC(12), ARG_WC(13), ARG_WC(14),
                             ARG_WC(16), ARG_WC(17))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_convolution_backward_data,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnConvolutionBackwardData", ARG_WC(0), false,
                             "async_convolution_backward_data", ARG_WC(6), ARG_WC(7),
@@ -591,15 +561,14 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_convolution_backward_data,
                             ARG_WC(5), DEREF(ARG_WC(10)), ARG_WC(11),
                             ARG_WC(12))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_convolution_backward_weight,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnConvolutionBackwardFilter", ARG_WC(0), false,
         "async_convolution_backward_weight", ARG_WC(6), ARG_WC(7), DEREF(ARG_WC(1)),
         ARG_WC(2), ARG_WC(3), ARG_WC(4), ARG_WC(5), DEREF(ARG_WC(10)),
         ARG_WC(11), ARG_WC(12))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_convolution_backward_bias,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnConvolutionBackwardBias", ARG_WC(0), false,
                             "async_convolution_backward_bias", DEREF(ARG_WC(1)),
@@ -627,13 +596,12 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
     "cudnnGetConvolutionForwardAlgorithm", DEREF(ARG_WC(7)),
     ARG("dnnl::algorithm::convolution_auto")))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_convolution_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnSetConvolutionMathType", ARG_WC(0), false,
                             "set_math_mode", ARG_WC(1))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_convolution_algorithm_info,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     MULTI_STMTS_FACTORY_ENTRY(
         "cudnnFindConvolutionForwardAlgorithm",
         BO(BinaryOperatorKind::BO_Assign,
@@ -652,8 +620,7 @@ REMOVE_API_FACTORY_ENTRY("cudnnDestroyRNNDescriptor")
 
 REMOVE_API_FACTORY_ENTRY("cudnnDestroyRNNDataDescriptor")
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_memory_desc_ext,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     WARNING_FACTORY_ENTRY("cudnnSetRNNDataDescriptor",
                           ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                               "cudnnSetRNNDataDescriptor", ARG_WC(0), false,
@@ -662,8 +629,7 @@ FEATURE_REQUEST_FACTORY(
                           Diagnostics::API_NOT_MIGRATED,
                           ARG("unpacked data layout")))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_memory_desc_ext,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     WARNING_FACTORY_ENTRY("cudnnGetRNNDataDescriptor",
                           ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                               "cudnnGetRNNDataDescriptor", ARG_WC(0), false,
@@ -672,8 +638,7 @@ FEATURE_REQUEST_FACTORY(
                           Diagnostics::API_NOT_MIGRATED,
                           ARG("unpacked data layout")))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_rnn_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     WARNING_FACTORY_ENTRY("cudnnSetRNNDescriptor_v8",
                           ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                               "cudnnSetRNNDescriptor_v8", ARG_WC(0), false,
@@ -683,8 +648,7 @@ FEATURE_REQUEST_FACTORY(
                           ARG("persist algorithm, input mode and dropout "
                               "operation between physical layers")))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_rnn_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     WARNING_FACTORY_ENTRY("cudnnGetRNNDescriptor_v8",
                           ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                               "cudnnGetRNNDescriptor_v8", ARG_WC(0), false,
@@ -694,19 +658,18 @@ FEATURE_REQUEST_FACTORY(
                           ARG("persist algorithm, input mode and dropout "
                               "operation between physical layers")))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_rnn_get_weight_space_size,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnGetRNNWeightSpaceSize", ARG_WC(0), false,
                             "rnn_get_weight_space_size", ARG_WC(1), ARG_WC(2))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_rnn_get_weight_space_size,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnGetRNNTempSpaceSizes", ARG_WC(0), false,
                             "rnn_get_scratchpad_workspace_size", ARG_WC(1),
                             ARG_WC(2), ARG_WC(3), ARG_WC(4), ARG_WC(5))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_async_rnn_forward,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnRNNForward", ARG_WC(0), false, "async_rnn_forward", ARG_WC(1),
         ARG_WC(2), ARG_WC(4), ARG_WC(5), ARG_WC(6), ARG_WC(7), ARG_WC(8),
@@ -714,50 +677,50 @@ FEATURE_REQUEST_FACTORY(
         ARG_WC(15), ARG_WC(16), ARG_WC(17), ARG_WC(18), ARG_WC(19))))
 
 // Dropout Layer
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_dropout_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnCreateDropoutDescriptor", DEREF(ARG_WC(0)), false,
                             "init")))
 
 REMOVE_API_FACTORY_ENTRY("cudnnDestroyDropoutDescriptor")
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_dropout_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnSetDropoutDescriptor", ARG_WC(0), false,
                             "set", ARG_WC(1), ARG_WC(2), ARG_WC(3), ARG_WC(4),
                             ARG_WC(5))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_dropout_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnGetDropoutDescriptor", ARG_WC(0), false,
                             "get", ARG_WC(2), ARG_WC(3), ARG_WC(4))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_dropout_desc,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnRestoreDropoutDescriptor", ARG_WC(0), false,
                             "restore", ARG_WC(1), ARG_WC(2), ARG_WC(3),
                             ARG_WC(4), ARG_WC(5))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_get_dropout_state_size,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                             "cudnnDropoutGetStatesSize", DEREF(ARG_WC(1)),
                             MEMBER_CALL(ARG_WC(0), false, "get_dropout_state_size"))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_get_dropout_workspace_size,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                             "cudnnDropoutGetReserveSpaceSize", DEREF(ARG_WC(1)),
                             CALL(MapNames::getDpctNamespace() +
                             "dnnl::engine_ext::get_dropout_workspace_size",
                             ARG_WC(0)))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_async_dropout_forward,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnDropoutForward", ARG_WC(0), false,
                             "async_dropout_forward", ARG_WC(1), ARG_WC(2),
                             ARG_WC(3), ARG_WC(4), ARG_WC(5), ARG_WC(6),
                             ARG_WC(7))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_async_dropout_backward,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnDropoutBackward", ARG_WC(0), false,
                             "async_dropout_backward", ARG_WC(1), ARG_WC(2),

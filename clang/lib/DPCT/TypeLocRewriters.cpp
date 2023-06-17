@@ -158,23 +158,21 @@ createReportWarningTypeLocRewriterFactory(Diagnostics MsgId,
 }
 
 std::pair<std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>
-createFeatureRequestFactory(
-    HelperFeatureEnum Feature,
+createSetNeedDpctDeviceExtFactory(
     std::pair<std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>
         &&Input) {
   return std::pair<std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>(
       std::move(Input.first),
-      std::make_shared<TypeLocRewriterFactoryWithFeatureRequest>(Feature,
+      std::make_shared<TypeLocRewriterFactoryWithSetNeedDpctDeviceExt>(
                                                           Input.second));
 }
 template <class T>
 std::pair<std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>
-createFeatureRequestFactory(
-    HelperFeatureEnum Feature,
+createSetNeedDpctDeviceExtFactory(
     std::pair<std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>
         &&Input,
     T) {
-  return createFeatureRequestFactory(Feature, std::move(Input));
+  return createSetNeedDpctDeviceExtFactory(std::move(Input));
 }
 
 std::shared_ptr<TypeLocRewriterFactoryBase> createHeaderInsertionFactory(
@@ -200,8 +198,8 @@ void TypeLocRewriterFactoryBase::initTypeLocRewriterMap() {
   createTypeLocConditionalFactory(Pred, First, Second)
 #define TYPE_FACTORY(...) createTypeLocRewriterFactory(__VA_ARGS__)
 #define CTAD_TYPE_FACTORY(...) createCtadTypeLocRewriterFactory(__VA_ARGS__)
-#define FEATURE_REQUEST_FACTORY(FEATURE, x)                                    \
-  createFeatureRequestFactory(FEATURE, x 0),
+#define SET_NEED_DPCT_DEVICE_EXT_FACTORY(x)                                    \
+  createSetNeedDpctDeviceExtFactory(x 0),
 #define HEADER_INSERTION_FACTORY(HEADER, SUB)                                  \
   createHeaderInsertionFactory(HEADER, SUB)
 #define TYPESTR makeTypeStrCreator()
@@ -213,7 +211,7 @@ void TypeLocRewriterFactoryBase::initTypeLocRewriterMap() {
 #undef WARNING_FACTORY
 #undef ADD_POINTER
 #undef HEADER_INSERTION_FACTORY
-#undef FEATURE_REQUEST_FACTORY
+#undef SET_NEED_DPCT_DEVICE_EXT_FACTORY
 #undef TYPE_FACTORY
 #undef TYPE_CONDITIONAL_FACTORY
 #undef TYPE_REWRITE_ENTRY

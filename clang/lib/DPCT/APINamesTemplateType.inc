@@ -34,7 +34,7 @@ TYPE_REWRITE_ENTRY(
     "thrust::not_equal_to",
     TYPE_FACTORY(STR("std::not_equal_to"), TEMPLATE_ARG(0)))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasIterators_constant_iterator,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
 TYPE_REWRITE_ENTRY(
     "thrust::constant_iterator",
     TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "constant_iterator"),
@@ -63,8 +63,7 @@ TYPE_REWRITE_ENTRY("cub::ConstantInputIterator",
                    HEADER_INSERTION_FACTORY(HeaderType::HT_DPCT_DPL_Utils,
                    TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "constant_iterator"), TEMPLATE_ARG(0))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DplExtrasIterators_arg_index_input_iterator,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     TYPE_REWRITE_ENTRY("cub::ArgIndexInputIterator",
                        HEADER_INSERTION_FACTORY(
                            HeaderType::HT_DPCT_DPL_Utils,
@@ -90,23 +89,20 @@ TYPE_REWRITE_ENTRY("cub::Max",
 
 TYPE_REWRITE_ENTRY("cub::Equality", TYPE_FACTORY(STR("std::equal_to"), STR("")))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DplExtrasIterators_key_value_pair,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     TYPE_REWRITE_ENTRY("cub::KeyValuePair",
                        HEADER_INSERTION_FACTORY(
                            HeaderType::HT_DPCT_DPL_Utils,
                            TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "key_value_pair"),
                                         TEMPLATE_ARG(0), TEMPLATE_ARG(1)))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::Memory_usm_host_allocator_alias,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     TYPE_REWRITE_ENTRY("thrust::system::cuda::experimental::pinned_allocator",
                        TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
                                         "deprecated::usm_host_allocator"),
                                     TEMPLATE_ARG(0))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::Memory_usm_host_allocator_alias,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     TYPE_REWRITE_ENTRY("thrust::cuda::experimental::pinned_allocator",
                        TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
                                         "deprecated::usm_host_allocator"),

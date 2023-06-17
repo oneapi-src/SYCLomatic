@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 ASSIGNABLE_FACTORY(
-    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_device_ext_destroy_queue,
+    SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     MEMBER_CALL_FACTORY_ENTRY(
         "cuStreamDestroy_v2", CALL(MapNames::getDpctNamespace() + "get_current_device"),
         false, "destroy_queue", ARG(0))))

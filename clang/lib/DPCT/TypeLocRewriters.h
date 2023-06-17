@@ -121,18 +121,16 @@ public:
   RulePriority Priority = RulePriority::Fallback;
 };
 
-class TypeLocRewriterFactoryWithFeatureRequest
+class TypeLocRewriterFactoryWithSetNeedDpctDeviceExt
     : public TypeLocRewriterFactoryBase {
   std::shared_ptr<TypeLocRewriterFactoryBase> Inner;
-  HelperFeatureEnum Feature;
 
 public:
-  TypeLocRewriterFactoryWithFeatureRequest(
-      HelperFeatureEnum Feature,
+  TypeLocRewriterFactoryWithSetNeedDpctDeviceExt(
       std::shared_ptr<TypeLocRewriterFactoryBase> InnerFactory)
-      : Inner(InnerFactory), Feature(Feature) {}
+      : Inner(InnerFactory) {}
   std::shared_ptr<TypeLocRewriter> create(const TypeLoc TL) const override {
-    requestFeature(Feature, TL.getBeginLoc());
+    DpctGlobalInfo::setNeedDpctDeviceExt();
     return Inner->create(TL);
   }
 };

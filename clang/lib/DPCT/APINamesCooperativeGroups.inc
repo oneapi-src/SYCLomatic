@@ -56,8 +56,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 CheckArgType(0, "const class cooperative_groups::__v1::grid_group &"),
                 CONDITIONAL_FACTORY_ENTRY(
                     UseNDRangeBarrier,
-                    FEATURE_REQUEST_FACTORY(
-                        HelperFeatureEnum::Util_nd_range_barrier,
+                    SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         CALL_FACTORY_ENTRY(
                             "sync",
                             CALL(MapNames::getDpctNamespace() +
@@ -113,8 +112,7 @@ CONDITIONAL_FACTORY_ENTRY(
                         argHasThreadBlockTileType(0, 4),
                         argHasThreadBlockTileType(0, 2),
                         argHasThreadBlockTileType(0, 1)),
-                    FEATURE_REQUEST_FACTORY(
-                        HelperFeatureEnum::Util_logical_group_get_local_linear_id,
+                    SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         MEMBER_CALL_FACTORY_ENTRY("thread_rank",
                                                   ARG(0), false, "get_local_linear_id")),
                     UNSUPPORT_FACTORY_ENTRY("thread_rank",
@@ -126,8 +124,7 @@ CONDITIONAL_FACTORY_ENTRY(
     makeCheckAnd(CheckArgType(0, "const class cooperative_groups::__v1::thread_block &"), CheckIntergerTemplateArgValueLE(0, 32)),
         CONDITIONAL_FACTORY_ENTRY(
             makeCheckAnd(CheckIntergerTemplateArgValueNE(0, 32), UseLogicalGroup),
-            FEATURE_REQUEST_FACTORY(
-                HelperFeatureEnum::Util_logical_group,
+            SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                 CALL_FACTORY_ENTRY("tiled_partition", CALL(MapNames::getDpctNamespace() + "experimental::logical_group", NDITEM, GROUP, makeCallArgCreatorFromTemplateArg(0)))),
             TOSTRING_FACTORY_ENTRY("tiled_partition", SUBGROUP)),
         UNSUPPORT_FACTORY_ENTRY("tiled_partition", Diagnostics::API_NOT_MIGRATED, ARG("tiled_partition")))
@@ -185,8 +182,7 @@ CONDITIONAL_FACTORY_ENTRY(
                             ARG("sync")))
 CONDITIONAL_FACTORY_ENTRY(
     UseNDRangeBarrier,
-    FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::Util_nd_range_barrier,
+    SET_NEED_DPCT_DEVICE_EXT_FACTORY(
         CALL_FACTORY_ENTRY(
             "cooperative_groups::__v1::grid_group.sync",
             CALL(MapNames::getDpctNamespace() + "experimental::nd_range_barrier", NDITEM, ARG(DpctGlobalInfo::getSyncName())))),
@@ -217,8 +213,7 @@ CASE_FACTORY_ENTRY(
                         baseHasThreadBlockTileType(4),
                         baseHasThreadBlockTileType(2),
                         baseHasThreadBlockTileType(1))),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_logical_group_get_local_linear_range,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.size",
                                        MemberExprBase(), false, "get_local_linear_range"))),
     OTHERWISE(
@@ -235,8 +230,7 @@ CASE_FACTORY_ENTRY(
                         baseHasThreadBlockTileType(4),
                         baseHasThreadBlockTileType(2),
                         baseHasThreadBlockTileType(1))),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_logical_group_get_local_linear_range,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.size",
                                        MemberExprBase(), false, "get_local_linear_range"))),
     OTHERWISE(
@@ -269,8 +263,7 @@ CASE_FACTORY_ENTRY(
                         baseHasThreadBlockTileType(4),
                         baseHasThreadBlockTileType(2),
                         baseHasThreadBlockTileType(1))),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_logical_group_get_local_linear_id,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.thread_rank",
                                        MemberExprBase(), false, "get_local_linear_id"))),
     OTHERWISE(
@@ -288,8 +281,7 @@ CASE_FACTORY_ENTRY(
                         baseHasThreadBlockTileType(4),
                         baseHasThreadBlockTileType(2),
                         baseHasThreadBlockTileType(1))),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_logical_group_get_local_linear_id,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.thread_rank",
                                        MemberExprBase(), false, "get_local_linear_id"))),
     OTHERWISE(
@@ -315,8 +307,7 @@ CASE_FACTORY_ENTRY(
                             baseHasThreadBlockTileType(4),
                             baseHasThreadBlockTileType(2),
                             baseHasThreadBlockTileType(1))),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_logical_group_get_group_linear_id,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block_tile.meta_group_rank",
                                        MemberExprBase(), false, "get_group_linear_id"))),
     OTHERWISE(
@@ -333,8 +324,7 @@ CASE_FACTORY_ENTRY(
                             baseHasThreadBlockTileType(4),
                             baseHasThreadBlockTileType(2),
                             baseHasThreadBlockTileType(1))),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_logical_group_get_group_linear_id,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__single_warp_thread_block_tile.meta_group_rank",
                                        MemberExprBase(), false, "get_group_linear_id"))),
     OTHERWISE(
@@ -357,36 +347,31 @@ CASE_FACTORY_ENTRY(
              CALL(MapNames::getClNamespace() + "shift_group_left",
                   SUBGROUP, ARG(0), ARG(1)))),
     CASE(baseHasThreadBlockTileType(16),
-         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_left,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.shfl_down",
                                CALL(MapNames::getDpctNamespace() +
                                         "shift_sub_group_left",
                                     SUBGROUP, ARG(0), ARG(1), ARG("16"))))),
     CASE(baseHasThreadBlockTileType(8),
-         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_left,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.shfl_down",
                                CALL(MapNames::getDpctNamespace() +
                                         "shift_sub_group_left",
                                     SUBGROUP, ARG(0), ARG(1), ARG("8"))))),
     CASE(baseHasThreadBlockTileType(4),
-         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_left,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.shfl_down",
                                CALL(MapNames::getDpctNamespace() +
                                         "shift_sub_group_left",
                                     SUBGROUP, ARG(0), ARG(1), ARG("4"))))),
     CASE(baseHasThreadBlockTileType(2),
-         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_left,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.shfl_down",
                                CALL(MapNames::getDpctNamespace() +
                                         "shift_sub_group_left",
                                     SUBGROUP, ARG(0), ARG(1), ARG("2"))))),
     CASE(baseHasThreadBlockTileType(1),
-         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_left,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base.shfl_down",
                                CALL(MapNames::getDpctNamespace() +
                                         "shift_sub_group_left",
@@ -403,36 +388,31 @@ CASE_FACTORY_ENTRY(
              CALL(MapNames::getClNamespace() + "shift_group_left",
                   SUBGROUP, ARG(0), ARG(1)))),
     CASE(baseHasThreadBlockTileType(16),
-         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_left,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_down",
                                CALL(MapNames::getDpctNamespace() +
                                         "shift_sub_group_left",
                                     SUBGROUP, ARG(0), ARG(1), ARG("16"))))),
     CASE(baseHasThreadBlockTileType(8),
-         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_left,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_down",
                                CALL(MapNames::getDpctNamespace() +
                                         "shift_sub_group_left",
                                     SUBGROUP, ARG(0), ARG(1), ARG("8"))))),
     CASE(baseHasThreadBlockTileType(4),
-         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_left,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_down",
                                CALL(MapNames::getDpctNamespace() +
                                         "shift_sub_group_left",
                                     SUBGROUP, ARG(0), ARG(1), ARG("4"))))),
     CASE(baseHasThreadBlockTileType(2),
-         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_left,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_down",
                                CALL(MapNames::getDpctNamespace() +
                                         "shift_sub_group_left",
                                     SUBGROUP, ARG(0), ARG(1), ARG("2"))))),
     CASE(baseHasThreadBlockTileType(1),
-         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_left,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
             CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_down",
                                CALL(MapNames::getDpctNamespace() +
                                         "shift_sub_group_left",
@@ -457,36 +437,31 @@ CASE_FACTORY_ENTRY(
              CALL(MapNames::getClNamespace() + "shift_group_right", SUBGROUP,
                   ARG(0), ARG(1)))),
     CASE(baseHasThreadBlockTileType(16),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_shift_sub_group_right,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              CALL_FACTORY_ENTRY(
                  "cooperative_groups::__v1::__thread_block_tile_base.shfl_up",
                  CALL(MapNames::getDpctNamespace() + "shift_sub_group_right",
                       SUBGROUP, ARG(0), ARG(1), ARG("16"))))),
     CASE(baseHasThreadBlockTileType(8),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_shift_sub_group_right,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              CALL_FACTORY_ENTRY(
                  "cooperative_groups::__v1::__thread_block_tile_base.shfl_up",
                  CALL(MapNames::getDpctNamespace() + "shift_sub_group_right",
                       SUBGROUP, ARG(0), ARG(1), ARG("8"))))),
     CASE(baseHasThreadBlockTileType(4),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_shift_sub_group_right,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              CALL_FACTORY_ENTRY(
                  "cooperative_groups::__v1::__thread_block_tile_base.shfl_up",
                  CALL(MapNames::getDpctNamespace() + "shift_sub_group_right",
                       SUBGROUP, ARG(0), ARG(1), ARG("4"))))),
     CASE(baseHasThreadBlockTileType(2),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_shift_sub_group_right,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              CALL_FACTORY_ENTRY(
                  "cooperative_groups::__v1::__thread_block_tile_base.shfl_up",
                  CALL(MapNames::getDpctNamespace() + "shift_sub_group_right",
                       SUBGROUP, ARG(0), ARG(1), ARG("2"))))),
     CASE(baseHasThreadBlockTileType(1),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_shift_sub_group_right,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              CALL_FACTORY_ENTRY(
                  "cooperative_groups::__v1::__thread_block_tile_base.shfl_up",
                  CALL(MapNames::getDpctNamespace() + "shift_sub_group_right",
@@ -503,36 +478,31 @@ CASE_FACTORY_ENTRY(
                                      "shift_group_right",
                                  SUBGROUP, ARG(0), ARG(1)))),
     CASE(baseHasThreadBlockTileType(16),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_shift_sub_group_right,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_up",
                                 CALL(MapNames::getDpctNamespace() +
                                          "shift_sub_group_right",
                                      SUBGROUP, ARG(0), ARG(1), ARG("16"))))),
     CASE(baseHasThreadBlockTileType(8),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_shift_sub_group_right,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_up",
                                 CALL(MapNames::getDpctNamespace() +
                                          "shift_sub_group_right",
                                      SUBGROUP, ARG(0), ARG(1), ARG("8"))))),
     CASE(baseHasThreadBlockTileType(4),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_shift_sub_group_right,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_up",
                                 CALL(MapNames::getDpctNamespace() +
                                          "shift_sub_group_right",
                                      SUBGROUP, ARG(0), ARG(1), ARG("4"))))),
     CASE(baseHasThreadBlockTileType(2),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_shift_sub_group_right,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_up",
                                 CALL(MapNames::getDpctNamespace() +
                                          "shift_sub_group_right",
                                      SUBGROUP, ARG(0), ARG(1), ARG("2"))))),
     CASE(baseHasThreadBlockTileType(1),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_shift_sub_group_right,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_up",
                                 CALL(MapNames::getDpctNamespace() +
                                          "shift_sub_group_right",
@@ -557,36 +527,31 @@ CASE_FACTORY_ENTRY(
              CALL(MapNames::getClNamespace() + "permute_group_by_xor", SUBGROUP,
                   ARG(0), ARG(1)))),
     CASE(baseHasThreadBlockTileType(16),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_permute_sub_group_by_xor,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              CALL_FACTORY_ENTRY(
                  "cooperative_groups::__v1::__thread_block_tile_base.shfl_xor",
                  CALL(MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
                       SUBGROUP, ARG(0), ARG(1), ARG("16"))))),
     CASE(baseHasThreadBlockTileType(8),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_permute_sub_group_by_xor,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              CALL_FACTORY_ENTRY(
                  "cooperative_groups::__v1::__thread_block_tile_base.shfl_xor",
                  CALL(MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
                       SUBGROUP, ARG(0), ARG(1), ARG("8"))))),
     CASE(baseHasThreadBlockTileType(4),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_permute_sub_group_by_xor,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              CALL_FACTORY_ENTRY(
                  "cooperative_groups::__v1::__thread_block_tile_base.shfl_xor",
                  CALL(MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
                       SUBGROUP, ARG(0), ARG(1), ARG("4"))))),
     CASE(baseHasThreadBlockTileType(2),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_permute_sub_group_by_xor,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              CALL_FACTORY_ENTRY(
                  "cooperative_groups::__v1::__thread_block_tile_base.shfl_xor",
                  CALL(MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
                       SUBGROUP, ARG(0), ARG(1), ARG("2"))))),
     CASE(baseHasThreadBlockTileType(1),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_permute_sub_group_by_xor,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              CALL_FACTORY_ENTRY(
                  "cooperative_groups::__v1::__thread_block_tile_base.shfl_xor",
                  CALL(MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
@@ -603,36 +568,31 @@ CASE_FACTORY_ENTRY(
                                      "permute_group_by_xor",
                                  SUBGROUP, ARG(0), ARG(1)))),
     CASE(baseHasThreadBlockTileType(16),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_permute_sub_group_by_xor,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_xor",
                                 CALL(MapNames::getDpctNamespace() +
                                          "permute_sub_group_by_xor",
                                      SUBGROUP, ARG(0), ARG(1), ARG("16"))))),
     CASE(baseHasThreadBlockTileType(8),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_permute_sub_group_by_xor,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_xor",
                                 CALL(MapNames::getDpctNamespace() +
                                          "permute_sub_group_by_xor",
                                      SUBGROUP, ARG(0), ARG(1), ARG("8"))))),
     CASE(baseHasThreadBlockTileType(4),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_permute_sub_group_by_xor,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_xor",
                                 CALL(MapNames::getDpctNamespace() +
                                          "permute_sub_group_by_xor",
                                      SUBGROUP, ARG(0), ARG(1), ARG("4"))))),
     CASE(baseHasThreadBlockTileType(2),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_permute_sub_group_by_xor,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_xor",
                                 CALL(MapNames::getDpctNamespace() +
                                          "permute_sub_group_by_xor",
                                      SUBGROUP, ARG(0), ARG(1), ARG("2"))))),
     CASE(baseHasThreadBlockTileType(1),
-         FEATURE_REQUEST_FACTORY(
-             HelperFeatureEnum::Util_permute_sub_group_by_xor,
+         SET_NEED_DPCT_DEVICE_EXT_FACTORY(
              CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_xor",
                                 CALL(MapNames::getDpctNamespace() +
                                          "permute_sub_group_by_xor",

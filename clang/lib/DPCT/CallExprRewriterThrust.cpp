@@ -195,7 +195,7 @@ struct ThrustOverload {
   PolicyState policyState;
   int ptrCnt;
   std::string migratedFunc;
-  HelperFeatureEnum feature;
+  bool NeedDpctDeviceExtFlag;
 };
 
 std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
@@ -305,24 +305,39 @@ std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
 thrustOverloadFactory(const std::string &thrustFunc,
                       const ThrustOverload &overload) {
   unsigned Idx = static_cast<bool>(overload.policyState) ? 1 : 0;
+
   auto not_usm = createIfElseRewriterFactory(
       thrustFunc,
-      createFeatureRequestFactory(
-          HelperFeatureEnum::Memory_is_device_ptr,
-          {thrustFunc,
-           createCallExprRewriterFactory(
-               thrustFunc,
-               makeCallExprCreator(
-                   MapNames::getDpctNamespace() + "is_device_ptr", ARG(Idx)))}),
-      createFeatureRequestFactory(
-          HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
-          {thrustFunc, createDevicePolicyCallExprRewriterFactory(
-                           thrustFunc, overload.migratedFunc, overload.argCnt,
-                           overload.ptrCnt, overload.policyState)}),
+      {thrustFunc,
+       createCallExprRewriterFactory(
+           thrustFunc,
+           makeCallExprCreator(MapNames::getDpctNamespace() + "is_device_ptr",
+                               ARG(Idx)))},
+      {thrustFunc, createDevicePolicyCallExprRewriterFactory(
+                       thrustFunc, overload.migratedFunc, overload.argCnt,
+                       overload.ptrCnt, overload.policyState)},
       {thrustFunc, createSequentialPolicyCallExprRewriterFactory(
                        thrustFunc, overload.migratedFunc, overload.argCnt,
                        overload.policyState)},
       0);
+  if (overload.NeedDpctDeviceExtFlag) {
+    not_usm = createIfElseRewriterFactory(
+        thrustFunc,
+        createSetNeedDpctDeviceExtFactory(
+            {thrustFunc,
+             createCallExprRewriterFactory(
+                 thrustFunc, makeCallExprCreator(MapNames::getDpctNamespace() +
+                                                     "is_device_ptr",
+                                                 ARG(Idx)))}),
+        createSetNeedDpctDeviceExtFactory(
+            {thrustFunc, createDevicePolicyCallExprRewriterFactory(
+                             thrustFunc, overload.migratedFunc, overload.argCnt,
+                             overload.ptrCnt, overload.policyState)}),
+        {thrustFunc, createSequentialPolicyCallExprRewriterFactory(
+                         thrustFunc, overload.migratedFunc, overload.argCnt,
+                         overload.policyState)},
+        0);
+  }
 
   auto usm =
       (static_cast<bool>(overload.policyState)
@@ -337,11 +352,14 @@ thrustOverloadFactory(const std::string &thrustFunc,
                  {thrustFunc, createSequentialPolicyCallExprRewriterFactory(
                                   thrustFunc, overload.migratedFunc,
                                   overload.argCnt, overload.policyState)}));
-  return createFeatureRequestFactory(
-      overload.feature,
-      createConditionalFactory(
+  if (overload.NeedDpctDeviceExtFlag)
+    return createSetNeedDpctDeviceExtFactory(
+        createConditionalFactory(
+            makeCheckAnd(CheckIsPtr(Idx), makeCheckNot(checkIsUSM())),
+            {thrustFunc, not_usm}, std::move(usm)));
+  return createConditionalFactory(
           makeCheckAnd(CheckIsPtr(Idx), makeCheckNot(checkIsUSM())),
-          {thrustFunc, not_usm}, std::move(usm)));
+          {thrustFunc, not_usm}, std::move(usm));
 }
 
 std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>

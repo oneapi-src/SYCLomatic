@@ -152,8 +152,7 @@ CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),
     REMOVE_API_FACTORY_ENTRY("cub::DeviceReduce::ArgMin"),
-    FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::DplExtrasAlgorithm_reduce_argmin,
+    SET_NEED_DPCT_DEVICE_EXT_FACTORY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPL_Execution,
             HEADER_INSERT_FACTORY(
@@ -179,8 +178,7 @@ CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),
     REMOVE_API_FACTORY_ENTRY("cub::DeviceReduce::ArgMax"),
-    FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::DplExtrasAlgorithm_reduce_argmax,
+    SET_NEED_DPCT_DEVICE_EXT_FACTORY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPL_Execution,
             HEADER_INSERT_FACTORY(
@@ -500,8 +498,7 @@ CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),
     REMOVE_API_FACTORY_ENTRY("cub::DeviceSelect::UniqueByKey"),
-    FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::DplExtrasAlgorithm_unique_copy,
+    SET_NEED_DPCT_DEVICE_EXT_FACTORY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPL_Execution,
             HEADER_INSERT_FACTORY(
@@ -654,9 +651,7 @@ CONDITIONAL_FACTORY_ENTRY(
                              makeCheckNot(CheckArgIsDefaultCudaStream(9))),
                 CONDITIONAL_FACTORY_ENTRY(
                     checkEnableUserDefineReductions(),
-                    FEATURE_REQUEST_FACTORY(
-                        HelperFeatureEnum::
-                            DplExtrasDpcppExtensions_segmented_reduce_ext,
+                    SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         CALL_FACTORY_ENTRY(
                             "cub::DeviceSegmentedReduce::Reduce",
                             CALL(TEMPLATED_CALLEE_WITH_ARGS(
@@ -666,9 +661,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                      LITERAL("128")),
                                  STREAM(9), ARG(2), ARG(3), ARG(4), ARG(5),
                                  ARG(6), ARG(7), ARG(8)))),
-                    FEATURE_REQUEST_FACTORY(
-                        HelperFeatureEnum::
-                            DplExtrasDpcppExtensions_segmented_reduce,
+                    SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         CONDITIONAL_FACTORY_ENTRY(
                             checkArgCanMappingToSyclNativeBinaryOp(7),
                             CALL_FACTORY_ENTRY(
@@ -693,9 +686,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 Diagnostics::UNSUPPORTED_BINARY_OPERATION)))),
                 CONDITIONAL_FACTORY_ENTRY(
                     checkEnableUserDefineReductions(),
-                    FEATURE_REQUEST_FACTORY(
-                        HelperFeatureEnum::
-                            DplExtrasDpcppExtensions_segmented_reduce_ext,
+                    SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         CALL_FACTORY_ENTRY(
                             "cub::DeviceSegmentedReduce::Reduce",
                             CALL(TEMPLATED_CALLEE_WITH_ARGS(
@@ -705,9 +696,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                      LITERAL("128")),
                                  QUEUESTR, ARG(2), ARG(3), ARG(4), ARG(5),
                                  ARG(6), ARG(7), ARG(8)))),
-                    FEATURE_REQUEST_FACTORY(
-                        HelperFeatureEnum::
-                            DplExtrasDpcppExtensions_segmented_reduce,
+                    SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         CONDITIONAL_FACTORY_ENTRY(
                             checkArgCanMappingToSyclNativeBinaryOp(7),
                             CALL_FACTORY_ENTRY(
@@ -736,8 +725,7 @@ CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),
     REMOVE_API_FACTORY_ENTRY("cub::DeviceSegmentedReduce::Sum"),
-    REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::DplExtrasDpcppExtensions_segmented_reduce,
+    REMOVE_CUB_TEMP_STORAGE_FACTORY(SET_NEED_DPCT_DEVICE_EXT_FACTORY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPCT_DPL_Utils,
             WARNING_FACTORY_ENTRY(
@@ -779,8 +767,7 @@ CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),
     REMOVE_API_FACTORY_ENTRY("cub::DeviceSegmentedReduce::Min"),
-    REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::DplExtrasDpcppExtensions_segmented_reduce,
+    REMOVE_CUB_TEMP_STORAGE_FACTORY(SET_NEED_DPCT_DEVICE_EXT_FACTORY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPCT_DPL_Utils,
             HEADER_INSERT_FACTORY(
@@ -837,8 +824,7 @@ CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),
     REMOVE_API_FACTORY_ENTRY("cub::DeviceSegmentedReduce::Max"),
-    REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::DplExtrasDpcppExtensions_segmented_reduce,
+    REMOVE_CUB_TEMP_STORAGE_FACTORY(SET_NEED_DPCT_DEVICE_EXT_FACTORY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPCT_DPL_Utils,
             HEADER_INSERT_FACTORY(
@@ -896,8 +882,7 @@ CASE_FACTORY_ENTRY(
   CASE(CheckCubRedundantFunctionCall(),
        REMOVE_API_FACTORY_ENTRY("cub::DeviceRadixSort::SortKeys")),
   OTHERWISE(
-       FEATURE_REQUEST_FACTORY(
-       HelperFeatureEnum::DplExtrasAlgorithm_sort_keys,
+       SET_NEED_DPCT_DEVICE_EXT_FACTORY(
        HEADER_INSERT_FACTORY(
        HeaderType::HT_DPCT_DPL_Utils,
        REMOVE_CUB_TEMP_STORAGE_FACTORY(
@@ -986,8 +971,7 @@ CASE_FACTORY_ENTRY(
        REMOVE_API_FACTORY_ENTRY("cub::DeviceRadixSort::SortKeysDescending")),
 
 OTHERWISE(
-       FEATURE_REQUEST_FACTORY(
-       HelperFeatureEnum::DplExtrasAlgorithm_sort_keys,
+       SET_NEED_DPCT_DEVICE_EXT_FACTORY(
        HEADER_INSERT_FACTORY(
        HeaderType::HT_DPCT_DPL_Utils,
        REMOVE_CUB_TEMP_STORAGE_FACTORY(
@@ -1075,8 +1059,7 @@ CASE_FACTORY_ENTRY(
   CASE(CheckCubRedundantFunctionCall(),
        REMOVE_API_FACTORY_ENTRY("cub::DeviceRadixSort::SortPairs")),
   OTHERWISE(
-       FEATURE_REQUEST_FACTORY(
-       HelperFeatureEnum::DplExtrasAlgorithm_sort_pairs,
+       SET_NEED_DPCT_DEVICE_EXT_FACTORY(
        HEADER_INSERT_FACTORY(
        HeaderType::HT_DPCT_DPL_Utils,
        REMOVE_CUB_TEMP_STORAGE_FACTORY(
@@ -1164,8 +1147,7 @@ CASE_FACTORY_ENTRY(
   CASE(CheckCubRedundantFunctionCall(),
        REMOVE_API_FACTORY_ENTRY("cub::DeviceRadixSort::SortPairsDescending")),
   OTHERWISE(
-       FEATURE_REQUEST_FACTORY(
-       HelperFeatureEnum::DplExtrasAlgorithm_sort_pairs,
+       SET_NEED_DPCT_DEVICE_EXT_FACTORY(
        HEADER_INSERT_FACTORY(
        HeaderType::HT_DPCT_DPL_Utils,
        REMOVE_CUB_TEMP_STORAGE_FACTORY(
@@ -1252,8 +1234,7 @@ CASE_FACTORY_ENTRY(
 CASE_FACTORY_ENTRY(
     CASE(CheckCubRedundantFunctionCall(),
          REMOVE_API_FACTORY_ENTRY("cub::DeviceSegmentedRadixSort::SortKeys")),
-    OTHERWISE(FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::DplExtrasAlgorithm_sort_keys,
+    OTHERWISE(SET_NEED_DPCT_DEVICE_EXT_FACTORY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
@@ -1352,8 +1333,7 @@ CASE_FACTORY_ENTRY(
     CASE(CheckCubRedundantFunctionCall(),
          REMOVE_API_FACTORY_ENTRY(
              "cub::DeviceSegmentedRadixSort::SortKeysDescending")),
-    OTHERWISE(FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::DplExtrasAlgorithm_sort_keys,
+    OTHERWISE(SET_NEED_DPCT_DEVICE_EXT_FACTORY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
@@ -1458,8 +1438,7 @@ CASE_FACTORY_ENTRY(
 CASE_FACTORY_ENTRY(
     CASE(CheckCubRedundantFunctionCall(),
          REMOVE_API_FACTORY_ENTRY("cub::DeviceSegmentedRadixSort::SortPairs")),
-    OTHERWISE(FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::DplExtrasAlgorithm_sort_pairs,
+    OTHERWISE(SET_NEED_DPCT_DEVICE_EXT_FACTORY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
@@ -1562,8 +1541,7 @@ CASE_FACTORY_ENTRY(
     CASE(CheckCubRedundantFunctionCall(),
          REMOVE_API_FACTORY_ENTRY(
              "cub::DeviceSegmentedRadixSort::SortPairsDescending")),
-    OTHERWISE(FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::DplExtrasAlgorithm_sort_pairs,
+    OTHERWISE(SET_NEED_DPCT_DEVICE_EXT_FACTORY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
@@ -1672,8 +1650,7 @@ CASE_FACTORY_ENTRY(
 CASE_FACTORY_ENTRY(
     CASE(CheckCubRedundantFunctionCall(),
          REMOVE_API_FACTORY_ENTRY("cub::DeviceSegmentedSort::SortKeys")),
-    OTHERWISE(FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::DplExtrasAlgorithm_sort_keys,
+    OTHERWISE(SET_NEED_DPCT_DEVICE_EXT_FACTORY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
@@ -1723,8 +1700,7 @@ CASE_FACTORY_ENTRY(
     CASE(CheckCubRedundantFunctionCall(),
          REMOVE_API_FACTORY_ENTRY(
              "cub::DeviceSegmentedSort::SortKeysDescending")),
-    OTHERWISE(FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::DplExtrasAlgorithm_sort_keys,
+    OTHERWISE(SET_NEED_DPCT_DEVICE_EXT_FACTORY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
@@ -1774,8 +1750,7 @@ CASE_FACTORY_ENTRY(
 CASE_FACTORY_ENTRY(
     CASE(CheckCubRedundantFunctionCall(),
          REMOVE_API_FACTORY_ENTRY("cub::DeviceSegmentedSort::SortPairs")),
-    OTHERWISE(FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::DplExtrasAlgorithm_sort_pairs,
+    OTHERWISE(SET_NEED_DPCT_DEVICE_EXT_FACTORY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
@@ -1831,8 +1806,7 @@ CASE_FACTORY_ENTRY(
     CASE(CheckCubRedundantFunctionCall(),
          REMOVE_API_FACTORY_ENTRY(
              "cub::DeviceSegmentedSort::SortPairsDescending")),
-    OTHERWISE(FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::DplExtrasAlgorithm_sort_pairs,
+    OTHERWISE(SET_NEED_DPCT_DEVICE_EXT_FACTORY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
@@ -2054,8 +2028,7 @@ CONDITIONAL_FACTORY_ENTRY(
                              ARG(3), ARG(4)))))))))
 #ifdef CLASS_METHOD_CALL
 // cub::ArgIndexInputIterator.normalize
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DplExtrasIterators_arg_index_input_iterator,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     HEADER_INSERT_FACTORY(
         HeaderType::HT_DPCT_DPL_Utils,
         ASSIGN_FACTORY_ENTRY(
@@ -2082,8 +2055,7 @@ MEMBER_CALL_FACTORY_ENTRY("cub::WarpId", MEMBER_CALL(NDITEM, false, LITERAL("get
 CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),
     REMOVE_API_FACTORY_ENTRY("cub::DeviceSegmentedSort::StableSortPairs"),
-    REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::DplExtrasAlgorithm_segmented_sort_pairs,
+    REMOVE_CUB_TEMP_STORAGE_FACTORY(SET_NEED_DPCT_DEVICE_EXT_FACTORY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
@@ -2143,8 +2115,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),
     REMOVE_API_FACTORY_ENTRY(
         "cub::DeviceSegmentedSort::StableSortPairsDescending"),
-    REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::DplExtrasAlgorithm_segmented_sort_pairs,
+    REMOVE_CUB_TEMP_STORAGE_FACTORY(SET_NEED_DPCT_DEVICE_EXT_FACTORY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(

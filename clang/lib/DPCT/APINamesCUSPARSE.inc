@@ -6,39 +6,38 @@
 //
 //===--------------------------------------------------------------------===//
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_matrix_info,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         MEMBER_CALL_FACTORY_ENTRY("cusparseSetMatType", ARG(0),
                                                   true, "set_matrix_type",
                                                   ARG(1)))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_matrix_info,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         MEMBER_CALL_FACTORY_ENTRY("cusparseSetMatIndexBase",
                                                   ARG(0), true,
                                                   "set_index_base", ARG(1)))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_matrix_info,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         MEMBER_CALL_FACTORY_ENTRY("cusparseSetMatDiagType",
                                                   ARG(0), true, "set_diag",
                                                   ARG(1)))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_matrix_info,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         MEMBER_CALL_FACTORY_ENTRY("cusparseSetMatFillMode",
                                                   ARG(0), true, "set_uplo",
                                                   ARG(1)))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_matrix_info,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         MEMBER_CALL_FACTORY_ENTRY("cusparseGetMatType", ARG(0),
                                                   true, "get_matrix_type"))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_matrix_info,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         MEMBER_CALL_FACTORY_ENTRY("cusparseGetMatIndexBase",
                                                   ARG(0), true,
                                                   "get_index_base"))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_matrix_info,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         MEMBER_CALL_FACTORY_ENTRY("cusparseGetMatDiagType",
                                                   ARG(0), true, "get_diag"))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_matrix_info,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         MEMBER_CALL_FACTORY_ENTRY("cusparseGetMatFillMode",
                                                   ARG(0), true, "get_uplo"))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::SparseUtils_matrix_info,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     ASSIGN_FACTORY_ENTRY("cusparseCreateMatDescr", DEREF(0),
                          CALL("std::make_shared<" +
                               MapNames::getDpctNamespace() +
@@ -54,65 +53,61 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseGetStream", DEREF(1), ARG(0)))
 REMOVE_API_FACTORY_ENTRY("cusparseGetPointerMode")
 REMOVE_API_FACTORY_ENTRY("cusparseSetPointerMode")
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_optimize_info,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                             "cusparseCreateSolveAnalysisInfo", DEREF(0),
                             CALL("std::make_shared<" +
                                  MapNames::getDpctNamespace() +
                                  "sparse::optimize_info>"))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_optimize_info,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cusparseDestroySolveAnalysisInfo", ARG(0), false,
                             "reset")))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::SparseUtils_optimize_csrsv,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
         "cusparseScsrsv_analysis",
         CALL(MapNames::getDpctNamespace() + "sparse::optimize_csrsv", DEREF(0),
              ARG(1), ARG(2), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8)))))
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::SparseUtils_optimize_csrsv,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
         "cusparseDcsrsv_analysis",
         CALL(MapNames::getDpctNamespace() + "sparse::optimize_csrsv", DEREF(0),
              ARG(1), ARG(2), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8)))))
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::SparseUtils_optimize_csrsv,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
         "cusparseCcsrsv_analysis",
         CALL(MapNames::getDpctNamespace() + "sparse::optimize_csrsv", DEREF(0),
              ARG(1), ARG(2), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8)))))
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::SparseUtils_optimize_csrsv,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
     ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
         "cusparseZcsrsv_analysis",
         CALL(MapNames::getDpctNamespace() + "sparse::optimize_csrsv", DEREF(0),
              ARG(1), ARG(2), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8)))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrmv,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
                             "cusparseScsrmv",
                             CALL(MapNames::getDpctNamespace() + "sparse::csrmv",
                                  DEREF(0), ARG(1), ARG(2), ARG(3), ARG(5),
                                  ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
                                  ARG(11), ARG(12)))))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrmv,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
                             "cusparseDcsrmv",
                             CALL(MapNames::getDpctNamespace() + "sparse::csrmv",
                                  DEREF(0), ARG(1), ARG(2), ARG(3), ARG(5),
                                  ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
                                  ARG(11), ARG(12)))))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrmv,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
                             "cusparseCcsrmv",
                             CALL(MapNames::getDpctNamespace() + "sparse::csrmv",
                                  DEREF(0), ARG(1), ARG(2), ARG(3), ARG(5),
                                  ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
                                  ARG(11), ARG(12)))))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrmv,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
                             "cusparseZcsrmv",
                             CALL(MapNames::getDpctNamespace() + "sparse::csrmv",
@@ -120,28 +115,28 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrmv,
                                  ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
                                  ARG(11), ARG(12)))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrmm,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
                             "cusparseScsrmm",
                             CALL(MapNames::getDpctNamespace() + "sparse::csrmm",
                                  DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4),
                                  ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
                                  ARG(11), ARG(12), ARG(13), ARG(14), ARG(15)))))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrmm,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
                             "cusparseDcsrmm",
                             CALL(MapNames::getDpctNamespace() + "sparse::csrmm",
                                  DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4),
                                  ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
                                  ARG(11), ARG(12), ARG(13), ARG(14), ARG(15)))))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrmm,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
                             "cusparseCcsrmm",
                             CALL(MapNames::getDpctNamespace() + "sparse::csrmm",
                                  DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4),
                                  ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
                                  ARG(11), ARG(12), ARG(13), ARG(14), ARG(15)))))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrmm,
+SET_NEED_DPCT_DEVICE_EXT_FACTORY(
                         ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
                             "cusparseZcsrmm",
                             CALL(MapNames::getDpctNamespace() + "sparse::csrmm",

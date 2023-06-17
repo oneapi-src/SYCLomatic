@@ -685,11 +685,10 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
        << MigratedArg0;
     if (FuncName == "sincospi") {
       RSO << " * DPCT_PI";
-      requestFeature(HelperFeatureEnum::Dpct_dpct_pi, Call);
     } else {
       RSO << " * DPCT_PI_F";
-      requestFeature(HelperFeatureEnum::Dpct_dpct_pi_f, Call);
     }
+    DpctGlobalInfo::setNeedDpctDeviceExt();
 
     if (FuncName == "sincospi")
       RSO << ", " + MapNames::getClNamespace() + "address_space_cast<"
@@ -856,15 +855,15 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
              FuncName == "scalbn" || FuncName == "scalbnf") {
     OS << MigratedArg0 << "*(2<<" << getMigratedArg(1) << ")";
   } else if (FuncName == "__double2hiint") {
-    requestFeature(HelperFeatureEnum::Util_cast_double_to_int, Call);
+    DpctGlobalInfo::setNeedDpctDeviceExt();
     OS << MapNames::getDpctNamespace() << "cast_double_to_int(" << MigratedArg0
        << ")";
   } else if (FuncName == "__double2loint") {
-    requestFeature(HelperFeatureEnum::Util_cast_double_to_int, Call);
+    DpctGlobalInfo::setNeedDpctDeviceExt();
     OS << MapNames::getDpctNamespace() << "cast_double_to_int(" << MigratedArg0
        << ", false)";
   } else if (FuncName == "__hiloint2double") {
-    requestFeature(HelperFeatureEnum::Util_cast_ints_to_double, Call);
+    DpctGlobalInfo::setNeedDpctDeviceExt();
     OS << MapNames::getDpctNamespace() << "cast_ints_to_double(" << MigratedArg0
        << ", " << getMigratedArg(1) << ")";
   } else if (FuncName == "__sad" || FuncName == "__usad") {

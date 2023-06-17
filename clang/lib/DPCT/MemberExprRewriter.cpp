@@ -47,19 +47,17 @@ public:
   }
 };
 
-class MemberExprRewriterWithFeatureRequestFactory
+class MemberExprRewriterWithSetNeedDpctDeviceExtFactory
     : public MemberExprRewriterFactoryBase {
   std::shared_ptr<MemberExprRewriterFactoryBase> Inner;
-  HelperFeatureEnum Feature;
 
 public:
-  MemberExprRewriterWithFeatureRequestFactory(
-      HelperFeatureEnum Feature,
+  MemberExprRewriterWithSetNeedDpctDeviceExtFactory(
       std::shared_ptr<MemberExprRewriterFactoryBase> InnerFactory)
-      : Inner(InnerFactory), Feature(Feature) {}
+      : Inner(InnerFactory) {}
   std::shared_ptr<MemberExprBaseRewriter>
   create(const MemberExpr *M) const override {
-    requestFeature(Feature, M);
+    DpctGlobalInfo::setNeedDpctDeviceExt();
     return Inner->create(M);
   }
 };
@@ -111,24 +109,22 @@ createReportMemWarningRewriterFactory(
 }
 
 std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>
-createMemberExprFeatureRequestFactory(
-    HelperFeatureEnum Feature,
+createMemberExprSetNeedDpctDeviceExtFactory(
     std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>
         &&Input) {
   return std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>(
       std::move(Input.first),
-      std::make_shared<MemberExprRewriterWithFeatureRequestFactory>(
-          Feature, Input.second));
+      std::make_shared<MemberExprRewriterWithSetNeedDpctDeviceExtFactory>(
+          Input.second));
 }
 
 template <class T>
 std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>
-createMemberExprFeatureRequestFactory(
-    HelperFeatureEnum Feature,
+createMemberExprSetNeedDpctDeviceExtFactory(
     std::pair<std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>
         &&Input,
     T) {
-  return createMemberExprFeatureRequestFactory(Feature, std::move(Input));
+  return createMemberExprSetNeedDpctDeviceExtFactory(std::move(Input));
 }
 
 void MemberExprRewriterFactoryBase::initMemberExprRewriterMap() {
@@ -146,10 +142,10 @@ void MemberExprRewriterFactoryBase::initMemberExprRewriterMap() {
 #define MEM_CALL(x) makeMemberGetCall(x)
 #define LITERAL(x) makeLiteral(x)
 #define IS_ARROW isArrow()
-#define FEATURE_REQUEST_FACTORY(FEATURE, x)                                    \
-  createMemberExprFeatureRequestFactory(FEATURE, x 0),
+#define SET_NEED_DPCT_DEVICE_EXT_FACTORY(x)                                    \
+  createMemberExprSetNeedDpctDeviceExtFactory(x 0),
 #include "APINamesMemberExpr.inc"
-#undef FEATURE_REQUEST_FACTORY
+#undef SET_NEED_DPCT_DEVICE_EXT_FACTORY
 #undef IS_ARROW
 #undef LITERAL
 #undef MEM_CALL

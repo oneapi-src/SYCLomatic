@@ -3,23 +3,7 @@
 // RUN: FileCheck --input-file %T/increamental_migration_yaml/out/MainSourceFiles.yaml --match-full-lines %s
 // RUN: rm -rf %T/increamental_migration_yaml/out
 
-//     CHECK:FeatureMap:
-//CHECK-NEXT:  dpct.hpp:
-//CHECK-NEXT:    dpct_align_and_inline:
-//CHECK-NEXT:      IsCalled:        true
-//CHECK-NEXT:      CallerSrcFiles:
-//CHECK-NEXT:        - '{{(.+)}}'
-//CHECK-NEXT:      SubFeatureMap:   {}
-//CHECK-NEXT:    dpct_compatibility_temp:
-//CHECK-NEXT:      IsCalled:        true
-//CHECK-NEXT:      CallerSrcFiles:
-//CHECK-NEXT:        - '{{(.+)}}'
-//CHECK-NEXT:      SubFeatureMap:   {}
-//CHECK-NEXT:    non_local_include_dependency:
-//CHECK-NEXT:      IsCalled:        true
-//CHECK-NEXT:      CallerSrcFiles:
-//CHECK-NEXT:        - ''
-//CHECK-NEXT:      SubFeatureMap:   {}
+//     CHECK:FeatureMap:      {}
 
 #ifdef AAA
 __forceinline__ void foo(){}

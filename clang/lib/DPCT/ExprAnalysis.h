@@ -90,7 +90,7 @@ class TemplateDependentStringInfo {
   std::vector<std::shared_ptr<TemplateDependentReplacement>> TDRs;
   bool IsDependOnWrittenArgument = false;
   bool ContainsTemplateDependentMacro = false;
-  std::set<HelperFeatureEnum> HelperFeatureSet;
+  bool NeedDpctDeviceExtFlag = false;
 
 public:
   TemplateDependentStringInfo() = default;
@@ -113,9 +113,9 @@ public:
   applyTemplateArguments(const std::vector<TemplateArgumentInfo> &TemplateList);
 
   bool isDependOnWritten() const { return IsDependOnWrittenArgument; }
-  std::set<HelperFeatureEnum> getHelperFeatureSet() { return HelperFeatureSet; }
-  void setHelperFeatureSet(std::set<HelperFeatureEnum> Set) {
-    HelperFeatureSet = Set;
+  bool getNeedDpctDeviceExtFlag() { return NeedDpctDeviceExtFlag; }
+  void setNeedDpctDeviceExtFlag(bool Flag) {
+    NeedDpctDeviceExtFlag = Flag;
   }
   bool containsTemplateDependentMacro() const { return ContainsTemplateDependentMacro; }
 };
@@ -219,7 +219,7 @@ public:
   inline std::shared_ptr<TemplateDependentStringInfo>
   getTemplateDependentStringInfo() {
     auto Res = ReplSet.getTemplateDependentStringInfo();
-    Res->setHelperFeatureSet(HelperFeatureSet);
+    Res->setNeedDpctDeviceExtFlag(NeedDpctDeviceExtFlag);
     return Res;
   }
   // This function is not re-enterable, if caller need to check if it returns
@@ -378,7 +378,7 @@ public:
     auto LocInfo = getOffsetAndLength(E);
     addReplacement(LocInfo.first, LocInfo.second, std::move(TemplateIndex));
   }
-  std::set<HelperFeatureEnum> getHelperFeatureSet() { return HelperFeatureSet; }
+  bool getNeedDpctDeviceExtFlag() { return NeedDpctDeviceExtFlag; }
 
   virtual ~ExprAnalysis() = default;
   SourceLocation CallSpellingBegin;
@@ -672,7 +672,7 @@ private:
   StringReplacements ReplSet;
   std::string RewritePrefix;
   std::string RewritePostfix;
-  std::set<HelperFeatureEnum> HelperFeatureSet;
+  bool NeedDpctDeviceExtFlag = false;
 };
 
 // Analyze pointer allocated by cudaMallocManaged.
