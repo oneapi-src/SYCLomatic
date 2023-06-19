@@ -508,7 +508,7 @@ class ReplaceInclude : public TextModification {
   bool RemoveTrailingSpaces;
 
 public:
-  ReplaceInclude(CharSourceRange Range, std::string &&T,
+  ReplaceInclude(CharSourceRange Range, const std::string &T,
                  bool RemoveTrailingSpaces = false)
       : TextModification(TMID::ReplaceInclude), Range(Range), T(T),
         RemoveTrailingSpaces(RemoveTrailingSpaces) {}
