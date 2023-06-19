@@ -149,15 +149,15 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_csrmm,
                                  ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
                                  ARG(11), ARG(12), ARG(13), ARG(14), ARG(15)))))
 
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cusparseCreateCsr",
-    CALL(MapNames::getDpctNamespace() + "sparse::sparse_matrix_desc::create_csr",
-         ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8),
-         ARG(9), ARG(10))))
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cusparseDestroySpMat",
-    CALL(MapNames::getDpctNamespace() + "sparse::sparse_matrix_desc::destroy",
-         ARG(0))))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+    "cusparseCreateCsr", DEREF(0),
+    CALL("std::make_shared<" + MapNames::getDpctNamespace() +
+             "sparse::sparse_matrix_desc>",
+         ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),
+         ARG(10),
+         ARG(MapNames::getDpctNamespace() + "sparse::matrix_format::csr"))))
+ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cusparseDestroySpMat", ARG(0),
+                                             false, "reset"))
 ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
     "cusparseCsrGet", ARG(0), true, "get_desc",
     ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),

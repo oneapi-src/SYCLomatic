@@ -31,8 +31,8 @@ int main() {
   cudaDataType valueType;
   cusparseFormat_t format;
 
-  //CHECK:dpct::sparse::sparse_matrix_desc::create_csr(&spMatDescr, rows, cols, nnz, csrRowOffsets, csrColInd, csrValues, csrRowOffsetsType, csrColIndType, idxBase, valueType);
-  //CHECK-NEXT:dpct::sparse::sparse_matrix_desc::destroy(spMatDescr);
+  //CHECK:spMatDescr = std::make_shared<dpct::sparse::sparse_matrix_desc>(rows, cols, nnz, csrRowOffsets, csrColInd, csrValues, csrRowOffsetsType, csrColIndType, idxBase, valueType, dpct::sparse::matrix_format::csr);
+  //CHECK-NEXT:spMatDescr.reset();
   //CHECK-NEXT:spMatDescr->get_desc(&rows, &cols, &nnz, &csrRowOffsets, &csrColInd, &csrValues, &csrRowOffsetsType, &csrColIndType, &idxBase, &valueType);
   //CHECK-NEXT:spMatDescr->get_format(&format);
   //CHECK-NEXT:spMatDescr->get_base(&idxBase);
