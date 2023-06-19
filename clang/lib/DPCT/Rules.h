@@ -21,37 +21,37 @@ enum RulePriority { Takeover, Default, Fallback };
 
 struct TypeNameRule {
   std::string NewName;
-  clang::dpct::HelperFeatureEnum RequestFeature;
+  bool NeedDpctDeviceExtFlag;
   RulePriority Priority;
   std::vector<std::string> Includes;
   TypeNameRule(std::string Name)
-      : NewName(Name),
-        RequestFeature(clang::dpct::HelperFeatureEnum::no_feature_helper),
+      : NewName(Name), NeedDpctDeviceExtFlag(false),
         Priority(RulePriority::Fallback) {}
-  TypeNameRule(std::string Name, clang::dpct::HelperFeatureEnum Feature,
+  TypeNameRule(std::string Name, bool NeedDpctDeviceExtFlag,
                RulePriority Priority = RulePriority::Fallback)
-      : NewName(Name), RequestFeature(Feature), Priority(Priority) {}
+      : NewName(Name), NeedDpctDeviceExtFlag(NeedDpctDeviceExtFlag),
+        Priority(Priority) {}
 };
 
 struct ClassFieldRule : public TypeNameRule {
   std::string SetterName;
   std::string GetterName;
   ClassFieldRule(std::string Name) : TypeNameRule(Name) {}
-  ClassFieldRule(std::string Name, clang::dpct::HelperFeatureEnum Feature,
+  ClassFieldRule(std::string Name, bool NeedDpctDeviceExtFlag,
                  RulePriority Priority = RulePriority::Fallback)
-      : TypeNameRule(Name, Feature) {}
+      : TypeNameRule(Name, NeedDpctDeviceExtFlag) {}
   ClassFieldRule(std::string SetterName, std::string GetterName,
-                 clang::dpct::HelperFeatureEnum Feature,
+                 bool NeedDpctDeviceExtFlag,
                  RulePriority Priority = RulePriority::Fallback)
-      : TypeNameRule(SetterName, Feature), SetterName(SetterName),
+      : TypeNameRule(SetterName, NeedDpctDeviceExtFlag), SetterName(SetterName),
         GetterName(GetterName) {}
 };
 
 struct EnumNameRule : public TypeNameRule {
   EnumNameRule(std::string Name) : TypeNameRule(Name) {}
-  EnumNameRule(std::string Name, clang::dpct::HelperFeatureEnum Feature,
-                 RulePriority Priority = RulePriority::Fallback)
-      : TypeNameRule(Name, Feature) {}
+  EnumNameRule(std::string Name, bool NeedDpctDeviceExtFlag,
+               RulePriority Priority = RulePriority::Fallback)
+      : TypeNameRule(Name, NeedDpctDeviceExtFlag) {}
 };
 
 // Record all information of imported rules
@@ -184,27 +184,25 @@ public:
   RuleKind Kind;
   std::string In;
   std::string Out;
-  clang::dpct::HelperFeatureEnum HelperFeature;
+  bool NeedDpctDeviceExtFlag;
   std::vector<std::string> Includes;
 
   RuleBase(
       std::string Id, RulePriority Priority, RuleKind Kind, std::string In,
-      std::string Out, clang::dpct::HelperFeatureEnum HelperFeature,
+      std::string Out, bool NeedDpctDeviceExtFlag,
       const std::vector<std::string> &Includes = std::vector<std::string>())
       : Id(Id), Priority(Priority), Kind(Kind), In(In), Out(Out),
-        HelperFeature(HelperFeature), Includes(Includes) {}
+        NeedDpctDeviceExtFlag(NeedDpctDeviceExtFlag), Includes(Includes) {}
 };
 
 class MacroMigrationRule : public RuleBase {
 public:
   MacroMigrationRule(
       std::string Id, RulePriority Priority, std::string InStr,
-      std::string OutStr,
-      clang::dpct::HelperFeatureEnum Helper =
-          clang::dpct::HelperFeatureEnum::no_feature_helper,
+      std::string OutStr, bool NeedDpctDeviceExtFlag = false,
       const std::vector<std::string> &Includes = std::vector<std::string>())
-      : RuleBase(Id, Priority, RuleKind::Macro, InStr, OutStr, Helper,
-                 Includes) {}
+      : RuleBase(Id, Priority, RuleKind::Macro, InStr, OutStr,
+                 NeedDpctDeviceExtFlag, Includes) {}
 };
 
 // The parsing result of the "Out" attribute of a API rule

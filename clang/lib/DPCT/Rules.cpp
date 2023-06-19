@@ -42,16 +42,13 @@ void registerMacroRule(MetaRuleObject &R) {
       It->second.Priority = R.Priority;
       It->second.In = R.In;
       It->second.Out = R.Out;
-      It->second.HelperFeature =
-          clang::dpct::HelperFeatureEnum::no_feature_helper;
+      It->second.NeedDpctDeviceExtFlag = false;
       It->second.Includes = R.Includes;
     }
   } else {
     MapNames::MacroRuleMap.emplace(
-        R.In,
-        MacroMigrationRule(R.RuleId, R.Priority, R.In, R.Out,
-                           clang::dpct::HelperFeatureEnum::no_feature_helper,
-                           R.Includes));
+        R.In, MacroMigrationRule(R.RuleId, R.Priority, R.In, R.Out, false,
+                                 R.Includes));
   }
 }
 
@@ -101,8 +98,7 @@ void registerTypeRule(MetaRuleObject &R) {
     if (It->second->Priority > R.Priority) {
       It->second->NewName = R.Out;
       It->second->Priority = R.Priority;
-      It->second->RequestFeature =
-          clang::dpct::HelperFeatureEnum::no_feature_helper;
+      It->second->NeedDpctDeviceExtFlag = false;
       It->second->Includes.insert(It->second->Includes.end(),
                                   R.Includes.begin(), R.Includes.end());
     }
@@ -110,8 +106,7 @@ void registerTypeRule(MetaRuleObject &R) {
     reisterMigrationRule(R.RuleId, [=] {
       return std::make_unique<clang::dpct::UserDefinedTypeRule>(R.In);
     });
-    auto RulePtr = std::make_shared<TypeNameRule>(
-        R.Out, clang::dpct::HelperFeatureEnum::no_feature_helper, R.Priority);
+    auto RulePtr = std::make_shared<TypeNameRule>(R.Out, false, R.Priority);
     RulePtr->Includes.insert(RulePtr->Includes.end(), R.Includes.begin(),
                              R.Includes.end());
     MapNames::TypeNamesMap.emplace(R.In, RulePtr);
@@ -137,8 +132,7 @@ void registerClassRule(MetaRuleObject &R) {
           ItFieldRule->second->NewName = (*ItField)->Out;
         }
         ItFieldRule->second->Priority = R.Priority;
-        ItFieldRule->second->RequestFeature =
-            clang::dpct::HelperFeatureEnum::no_feature_helper;
+        ItFieldRule->second->NeedDpctDeviceExtFlag = false;
         ItFieldRule->second->Includes.clear();
         ItFieldRule->second->Includes.insert(
             ItFieldRule->second->Includes.end(), R.Includes.begin(),
@@ -152,12 +146,10 @@ void registerClassRule(MetaRuleObject &R) {
       std::shared_ptr<ClassFieldRule> RulePtr;
       if ((*ItField)->OutGetter != "") {
         RulePtr = std::make_shared<ClassFieldRule>(
-            (*ItField)->OutSetter, (*ItField)->OutGetter,
-            clang::dpct::HelperFeatureEnum::no_feature_helper, R.Priority);
+            (*ItField)->OutSetter, (*ItField)->OutGetter, false, R.Priority);
       } else {
-        RulePtr = std::make_shared<ClassFieldRule>(
-            (*ItField)->Out, clang::dpct::HelperFeatureEnum::no_feature_helper,
-            R.Priority);
+        RulePtr = std::make_shared<ClassFieldRule>((*ItField)->Out, false,
+                                                   R.Priority);
       }
       RulePtr->Includes.insert(RulePtr->Includes.end(), R.Includes.begin(),
                                R.Includes.end());
@@ -197,8 +189,7 @@ void registerEnumRule(MetaRuleObject &R) {
     if (It->second->Priority > R.Priority) {
       It->second->Priority = R.Priority;
       It->second->NewName = R.Out;
-      It->second->RequestFeature =
-          clang::dpct::HelperFeatureEnum::no_feature_helper;
+      It->second->NeedDpctDeviceExtFlag = false;
       It->second->Includes.insert(It->second->Includes.end(),
                                  R.Includes.begin(), R.Includes.end());
     }
@@ -209,8 +200,7 @@ void registerEnumRule(MetaRuleObject &R) {
     reisterMigrationRule(R.RuleId, [=] {
       return std::make_unique<clang::dpct::UserDefinedEnumRule>(R.EnumName);
     });
-    auto RulePtr = std::make_shared<EnumNameRule>(
-        R.Out, clang::dpct::HelperFeatureEnum::no_feature_helper, R.Priority);
+    auto RulePtr = std::make_shared<EnumNameRule>(R.Out, false, R.Priority);
     RulePtr->Includes.insert(RulePtr->Includes.end(), R.Includes.begin(),
                              R.Includes.end());
     clang::dpct::EnumConstantRule::EnumNamesMap.emplace(

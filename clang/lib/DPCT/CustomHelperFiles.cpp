@@ -701,15 +701,10 @@ void generateHelperFunctions() {
 }
 
 void requestHelperFeatureForEnumNames(const std::string &Name) {
-  static const std::unordered_set<std::string>
-      NoDpctDeviceExtRequirementEnumSet = {
-          "cudaMemcpyHostToHost", "cudaMemcpyHostToDevice",
-          "cudaMemcpyDeviceToHost", "cudaMemcpyDeviceToDevice",
-          "cudaMemcpyDefault"};
   auto HelperFeatureIter =
       clang::dpct::EnumConstantRule::EnumNamesMap.find(Name);
   if (HelperFeatureIter != clang::dpct::EnumConstantRule::EnumNamesMap.end()) {
-    if (!NoDpctDeviceExtRequirementEnumSet.count(Name))
+    if (HelperFeatureIter->second->NeedDpctDeviceExtFlag)
       DpctGlobalInfo::setNeedDpctDeviceExt();
     return;
   }
@@ -717,23 +712,19 @@ void requestHelperFeatureForEnumNames(const std::string &Name) {
       clang::dpct::CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap.find(Name);
   if (CuDNNHelperFeatureIter !=
       clang::dpct::CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap.end()) {
-    if (!NoDpctDeviceExtRequirementEnumSet.count(Name))
-      DpctGlobalInfo::setNeedDpctDeviceExt();
+    DpctGlobalInfo::setNeedDpctDeviceExt();
   }
 }
 void requestHelperFeatureForTypeNames(const std::string &Name) {
-  static const std::unordered_set<std::string>
-      NoDpctDeviceExtRequirementTypeSet = {"cudaMemcpyKind", "dim3",
-                                           "cublasOperation_t", "float2"};
   auto HelperFeatureIter = MapNames::TypeNamesMap.find(Name);
   if (HelperFeatureIter != MapNames::TypeNamesMap.end()) {
-    if (!NoDpctDeviceExtRequirementTypeSet.count(Name))
+    if (HelperFeatureIter->second->NeedDpctDeviceExtFlag)
       DpctGlobalInfo::setNeedDpctDeviceExt();
     return;
   }
   auto CuDNNHelperFeatureIter = MapNames::CuDNNTypeNamesMap.find(Name);
   if (CuDNNHelperFeatureIter != MapNames::CuDNNTypeNamesMap.end()) {
-    if (!NoDpctDeviceExtRequirementTypeSet.count(Name))
+    if (CuDNNHelperFeatureIter->second->NeedDpctDeviceExtFlag)
       DpctGlobalInfo::setNeedDpctDeviceExt();
   }
 }
