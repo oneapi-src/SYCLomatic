@@ -80,3 +80,8 @@ FEATURE_REQUEST_FACTORY(
         MEMBER_CALL_FACTORY_ENTRY("ncclReduceScatter", ARG(5), true,
                                   "reduce_scatter", ARG(0), ARG(1), ARG(2),
                                   ARG(3), ARG(4), ARG(6))))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::CclUtils_communicator_wrapper_broadcast,
+                        MEMBER_CALL_FACTORY_ENTRY("ncclBcast", ARG(4), true,
+                                                  "broadcast", ARG(0),ARG(0), ARG(1),
+                                                  ARG(2), ARG(3), ARG(5)))
