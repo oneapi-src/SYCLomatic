@@ -720,3 +720,16 @@ void foo14() {
   cusolverDnXsyevdx(handle, params, CUSOLVER_EIG_MODE_VECTOR, CUSOLVER_EIG_RANGE_ALL, CUBLAS_FILL_MODE_UPPER, 2, CUDA_C_32F, a_c, 2, &vlvu_c, &vlvu_c, 0, 0, &h_meig_c, CUDA_R_32F, w_c, CUDA_C_32F, device_ws_c, lwork_c, host_ws_c, lwork_host_c, info);
   cusolverDnXsyevdx(handle, params, CUSOLVER_EIG_MODE_VECTOR, CUSOLVER_EIG_RANGE_ALL, CUBLAS_FILL_MODE_UPPER, 2, CUDA_C_64F, a_z, 2, &vlvu_z, &vlvu_z, 0, 0, &h_meig_z, CUDA_R_64F, w_z, CUDA_C_64F, device_ws_z, lwork_z, host_ws_z, lwork_host_z, info);
 }
+
+void foo15() {
+  //CHECK:int a = 0;
+  //CHECK-NEXT:int b = 1;
+  //CHECK-NEXT:int p;
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cusolverDnSetAdvOptions was removed because this call is redundant in SYCL.
+  //CHECK-NEXT:*/
+  cusolverDnFunction_t a = CUSOLVERDN_GETRF;
+  cusolverAlgMode_t b = CUSOLVER_ALG_1;
+  cusolverDnParams_t p;
+  cusolverDnSetAdvOptions(p, a, b);
+}

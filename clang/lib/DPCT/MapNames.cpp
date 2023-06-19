@@ -456,6 +456,8 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("oneapi::mkl::rangev")},
       {"cudaUUID_t",
        std::make_shared<TypeNameRule>("std::array<unsigned char, 16>")},
+      {"cusolverDnFunction_t", std::make_shared<TypeNameRule>("int")},
+      {"cusolverAlgMode_t", std::make_shared<TypeNameRule>("int")},
       // ...
   };
 
@@ -1767,7 +1769,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasCrot_v2", getDpctNamespace() + "rot"},
       {"cublasZrot_v2", getDpctNamespace() + "rot"}};
 
-  SOLVERAPIWithRewriter = {"cusolverDnSetStream",
+  SOLVERAPIWithRewriter = {"cusolverDnSetAdvOptions",
+                           "cusolverDnSetStream",
                            "cusolverDnGetStream",
                            "cusolverDnCreateParams",
                            "cusolverDnDestroyParams",
