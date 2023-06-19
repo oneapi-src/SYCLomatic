@@ -125,7 +125,6 @@ int main() {
   const float alpha = 1.1f;
   const float beta = 1.2f;
 
-  // 调用 GPU 核函数
   dim3 gridDim;
   dim3 blockDim;
 
