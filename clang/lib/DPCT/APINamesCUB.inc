@@ -891,6 +891,64 @@ CONDITIONAL_FACTORY_ENTRY(
                                      LITERAL("lowest")))))),
                     Diagnostics::REDUCE_PERFORMANCE_TUNE))))))
 
+// cub::DeviceSegmentedReduce::ArgMin
+CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY("cub::DeviceSegmentedReduce::ArgMin"),
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::DplExtrasAlgorithm_segmented_reduce_argmin,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPL_Execution,
+            HEADER_INSERT_FACTORY(
+                HeaderType::HT_DPCT_DPL_Utils,
+                REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+                    makeCheckAnd(CheckArgCount(8, std::greater_equal<>(),
+                                               /* IncludeDefaultArg */ false),
+                                 makeCheckNot(CheckArgIsDefaultCudaStream(7))),
+                    CALL_FACTORY_ENTRY(
+                        "cub::DeviceSegmentedReduce::ArgMin",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "segmented_reduce_argmin",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  STREAM(7)),
+                             ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))),
+                    CALL_FACTORY_ENTRY(
+                        "cub::DeviceSegmentedReduce::ArgMin",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "segmented_reduce_argmin",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  QUEUESTR),
+                             ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))))))))
+
+// cub::DeviceSegmentedReduce::ArgMax
+CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY("cub::DeviceSegmentedReduce::ArgMax"),
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::DplExtrasAlgorithm_segmented_reduce_argmax,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPL_Execution,
+            HEADER_INSERT_FACTORY(
+                HeaderType::HT_DPCT_DPL_Utils,
+                REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+                    makeCheckAnd(CheckArgCount(8, std::greater_equal<>(),
+                                               /* IncludeDefaultArg */ false),
+                                 makeCheckNot(CheckArgIsDefaultCudaStream(7))),
+                    CALL_FACTORY_ENTRY(
+                        "cub::DeviceSegmentedReduce::ArgMax",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "segmented_reduce_argmax",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  STREAM(7)),
+                             ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))),
+                    CALL_FACTORY_ENTRY(
+                        "cub::DeviceSegmentedReduce::ArgMax",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "segmented_reduce_argmax",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  QUEUESTR),
+                             ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))))))))
+
 // cub::DeviceRadixSort::SortKeys
 CASE_FACTORY_ENTRY(
   CASE(CheckCubRedundantFunctionCall(),
