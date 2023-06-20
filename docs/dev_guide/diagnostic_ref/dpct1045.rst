@@ -31,6 +31,14 @@ For example, this original CUDA\* code:
 .. code-block:: cpp
    :linenos:
 
+   //     --         --
+   //     | 1   0   2 |
+   // A = | 0   3   4 |
+   //     | 0   0   5 |
+   //     --         --
+   // a_val = [1, 2, 3, 4, 5]
+   // a_row_ptr = [0, 2, 4, 5]
+   // a_col_ind = [0, 2, 1, 2, 2]
     void test_cusparseTcsrmm(cusparseHandle_t handle, cusparseMatDescr_t descrA,
                              float alpha, float beta, float *a_val, int *a_row_ptr,
                              int *a_col_ind, float *b, float *c) {
@@ -44,6 +52,14 @@ results in the following migrated SYCL code:
 .. code-block:: cpp
    :linenos:
 
+   //     --         --
+   //     | 1   0   2 |
+   // A = | 0   3   4 |
+   //     | 0   0   5 |
+   //     --         --
+   // a_val = [1, 2, 3, 4, 5]
+   // a_row_ptr = [0, 2, 4, 5]
+   // a_col_ind = [0, 2, 1, 2, 2]
     void test_cusparseTcsrmm(sycl::queue *handle,
                              std::shared_ptr<dpct::sparse::matrix_info> descrA,
                              float alpha, float beta, float *a_val, int *a_row_ptr,
@@ -63,11 +79,30 @@ which is rewritten to:
 .. code-block:: cpp
    :linenos:
 
+   //     --         --
+   //     | 1   0   2 |
+   // A = | 0   3   4 |
+   //     | 0   0   5 |
+   //     --         --
+   // a_val = [1, 2, 3, 4, 5]
+   // a_row_ptr = [0, 2, 4, 5]
+   // a_col_ind = [0, 2, 1, 2, 2]
+   //
+   //         --         --
+   //         | 1   0   2 |
+   // new_A = | 0   3   4 |
+   //         | 2   4   5 |
+   //         --         --
+   // new_a_val = [1, 2, 3, 4, 2, 4, 5]
+   // new_a_row_ptr = [0, 2, 4, 7]
+   // new_a_col_ind = [0, 2, 1, 2, 0, 1, 2]
     void test_cusparseTcsrmm(sycl::queue *handle,
                              std::shared_ptr<dpct::sparse::matrix_info> descrA,
                              float alpha, float beta, float *a_val, int *a_row_ptr,
                              int *a_col_ind, float *b, float *c) {
-      // Update the data in matrix A from an upper(lower) matrix to a general matrix
+      a_val = new_a_val;
+      a_row_ptr = new_a_row_ptr;
+      a_col_ind = new_a_col_ind;
       descrA->set_matrix_type(dpct::sparse::matrix_info::matrix_type::ge);
       dpct::sparse::csrmm(*handle, oneapi::mkl::transpose::nontrans, 4, 2, 5,
                           &alpha, descrA, a_val, a_row_ptr, a_col_ind, &beta, 5, b,

@@ -72,11 +72,8 @@ which is rewritten to:
    :linenos:
 
     void foo() {
-      // If you do not care about the error status
-      result0 = dpct::dev_mgr::instance().get_device(device).get_major_version();
-    
-      // If you care about the error status
       try {
+        result0 = dpct::dev_mgr::instance().get_device(device).get_major_version();
         result1 = dpct::dev_mgr::instance().get_device(device).get_minor_version();
       } catch (...) {
         ...

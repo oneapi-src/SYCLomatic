@@ -29,7 +29,7 @@ For example, this original CUDA\* code:
 .. code-block:: cpp
    :linenos:
 
-    __global__ void kernel(unsigned mask, int val, int srcLane) {
+    __device__ void d(unsigned mask, int val, int srcLane) {
       __shfl_sync(mask, val, srcLane);
     }
 
@@ -38,8 +38,8 @@ results in the following migrated SYCL code:
 .. code-block:: cpp
    :linenos:
 
-    void kernel(unsigned mask, int val, int srcLane,
-                const sycl::nd_item<3> &item_ct1) {
+    void d(unsigned mask, int val, int srcLane,
+           const sycl::nd_item<3> &item_ct1) {
       /*
       DPCT1023:0: The SYCL sub-group does not support mask options for
       dpct::select_from_sub_group. You can specify
@@ -54,8 +54,8 @@ which is rewritten to:
 .. code-block:: cpp
    :linenos:
 
-    void kernel(unsigned mask, int val, int srcLane,
-                const sycl::nd_item<3> &item_ct1) {
+    void d(unsigned mask, int val, int srcLane,
+           const sycl::nd_item<3> &item_ct1) {
       // If this compiler & runtime support group non-uniform shuffle, then you can
       // use this API
       dpct::experimental::select_from_sub_group(mask, item_ct1.get_sub_group(), val,

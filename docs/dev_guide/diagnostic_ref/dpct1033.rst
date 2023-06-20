@@ -68,8 +68,12 @@ which is rewritten to:
                                            const std::uint64_t seed,
                                            const std::uint32_t dimensions) {
     #ifdef __INTEL_MKL__
+        // User can use the function read_sobol_dir_nums() from file soboluserdirnums-joe-kuo.cpp
+        // in the examples of Intel(R) oneAPI Math Kernel Library (oneMKL) package.
+        std::vector<std::uint32_t> init_vec(32 /*ALIGN_FACTOR_FOR_DIR_NUMS*/ * dimensions, 0);
+        read_sobol_dir_nums("./soboluserdirnums-joe-kuo.dat", dimensions, init_vec);
         return std::is_same_v<engine_t, oneapi::mkl::rng::sobol>
-                   ? engine_t(*queue, direction_numbers /*Use user-defined direction numbers*/)
+                   ? engine_t(*queue, init_vec)
                    : engine_t(*queue, seed);
     #else
         return engine_t(*queue, seed);

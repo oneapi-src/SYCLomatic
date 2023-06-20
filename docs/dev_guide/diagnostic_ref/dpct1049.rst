@@ -74,11 +74,12 @@ which is rewritten to:
               .get_device()
               .get_info<sycl::info::device::max_work_group_size>();
       size_t work_group_size = 2048;
-      while (work_group_size > max_work_group_size) {
-        work_group_size = work_group_size / 2;
+      if (work_group_size > max_work_group_size) {
+        work_group_size = max_work_group_size;
       }
+      size_t work_group_num = std::ceil((float)2048 / (float)work_group_size);
       dpct::get_default_queue().parallel_for(
-          sycl::nd_range<3>(sycl::range<3>(1, 1, work_group_size),
+          sycl::nd_range<3>(sycl::range<3>(1, 1, work_group_num * work_group_size),
                             sycl::range<3>(1, 1, work_group_size)),
           [=](sycl::nd_item<3> item_ct1) { k(); });
     }

@@ -33,8 +33,8 @@ For example, this original CUDA\* code:
     __global__ void kernel(int c, int d) {}
     
     void foo() {
-    #define KC(NAME, a, b, c, d) NAME<<<a, b, 0>>>(c, d);
-      KC(kernel, 3, 2, 1, 0)
+    #define KERNEL_LAUNCH(NAME, a, b, c, d) NAME<<<a, b, 0>>>(c, d);
+      KERNEL_LAUNCH(kernel, 3, 2, 1, 0)
     }
 
 results in the following migrated SYCL code:
@@ -45,7 +45,7 @@ results in the following migrated SYCL code:
     void kernel(int c, int d) {}
     
     void foo() {
-    #define KC(NAME, a, b, c, d)                                                   \
+    #define KERNEL_LAUNCH(NAME, a, b, c, d)                                        \
       dpct::get_default_queue().submit([&](sycl::handler &cgh) {                   \
         auto c_ct0 = c;                                                            \
         auto d_ct1 = d;                                                            \
@@ -60,7 +60,7 @@ results in the following migrated SYCL code:
       migration result may be incorrect. You need to verify the definition of the
       macro.
       */
-      KC(kernel, 3, 2, 1, 0)
+      KERNEL_LAUNCH(kernel, 3, 2, 1, 0)
     }
 
 which is rewritten to:
@@ -71,7 +71,7 @@ which is rewritten to:
     void kernel(int c, int d) {}
     
     void foo() {
-    #define KC(NAME, a, b, c, d)                                                   \
+    #define KERNEL_LAUNCH(NAME, a, b, c, d)                                        \
       dpct::get_default_queue().submit([&](sycl::handler &cgh) {                   \
         auto c_ct0 = c;                                                            \
         auto d_ct1 = d;                                                            \
@@ -81,6 +81,6 @@ which is rewritten to:
                               sycl::range<3>(1, 1, b)),                            \
             [=](sycl::nd_item<3> item_ct1) { NAME(c_ct0, d_ct1); });               \
       });
-      KC(kernel, 3, 2, 1, 0)
+      KERNEL_LAUNCH(kernel, 3, 2, 1, 0)
     }
 

@@ -90,7 +90,7 @@ which is rewritten to:
     void foo() {
       hd_host();
       dpct::get_default_queue().submit([&](sycl::handler &cgh) {
-        sycl::stream stream(64 * 1024, 80, cgh);
+        sycl::stream stream(64 * 1024 /*totalBufferSize*/, 80 /*workItemBufferSize*/, cgh);
     
         cgh.parallel_for(
             sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),

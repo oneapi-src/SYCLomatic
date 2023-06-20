@@ -65,8 +65,9 @@ which is rewritten to:
 
     void foo() {
       int version;
+      // `version` is the major version of the backend version
       version = dpct::get_current_device().get_major_version();
-      if (version >= 1) {
+      if (version >= 1 /*1 is the major version of the Level-Zero backend*/) {
         ...
       } else {
         ...

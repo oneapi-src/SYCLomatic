@@ -31,8 +31,8 @@ For example, this original CUDA\* code:
 .. code-block:: cpp
    :linenos:
 
-    void foo(size_t *value, cudaLimit limit){
-      cudaDeviceGetLimit(value, limit);
+    void foo(size_t *value){
+      cudaDeviceGetLimit(value, cudaLimitPrintfFifoSize);
     }
 
 results in the following migrated SYCL code:
@@ -40,7 +40,7 @@ results in the following migrated SYCL code:
 .. code-block:: cpp
    :linenos:
 
-    void foo(size_t *value, cudaLimit limit){
+    void foo(size_t *value){
       /*
       DPCT1029:0: SYCL currently does not support getting device resource limits.
       The output parameter(s) are set to 0.
@@ -54,6 +54,6 @@ which is rewritten to:
    :linenos:
 
     void foo(size_t *value){
-      *value = ??? /* set value manually */;
+      *value = totalBufferSize /* the first argument of the constructor of sycl::stream */;
     }
 

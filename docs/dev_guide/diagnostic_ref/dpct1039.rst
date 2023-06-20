@@ -71,12 +71,12 @@ which is rewritten to:
 
 .. code-block:: cpp
    :linenos:
-
+    template<sycl::access::address_space as>
     void d(int* s) {
-      dpct::atomic_fetch_add<sycl::access::address_space::local_space>(s, 1);
+      dpct::atomic_fetch_add<as>(s, 1);
     }
     
     void k(int &shared) {
-      d(&shared);
+      d<sycl::access::address_space::local_space>(&shared);
     }
 
