@@ -875,6 +875,24 @@ template <typename T> auto lamch_s() {
 }
 // DPCT_LABEL_END
 
+#define DISPATCH_FLOAT_FOR_SCRATCHPAD_SIZE(FUNC, ...)                          \
+  do {                                                                         \
+    if constexpr (std::is_floating_point_v<T>) {                               \
+      device_ws_size = oneapi::mkl::lapack::sy##FUNC(__VA_ARGS__);             \
+    } else {                                                                   \
+      device_ws_size = oneapi::mkl::lapack::he##FUNC(__VA_ARGS__);             \
+    }                                                                          \
+  } while (0)
+
+#define DISPATCH_FLOAT_FOR_CALCULATION(FUNC, ...)                              \
+  do {                                                                         \
+    if constexpr (std::is_floating_point_v<T>) {                               \
+      oneapi::mkl::lapack::sy##FUNC(__VA_ARGS__);                              \
+    } else {                                                                   \
+      oneapi::mkl::lapack::he##FUNC(__VA_ARGS__);                              \
+    }                                                                          \
+  } while (0)
+
 // DPCT_LABEL_BEGIN|syheevx_scratchpad_size_impl|dpct::lapack::detail
 // DPCT_DEPENDENCY_BEGIN
 // LapackUtils|value_type_trait
@@ -896,15 +914,9 @@ template <typename T> struct syheevx_scratchpad_size_impl {
     auto vl_value = *reinterpret_cast<value_t *>(vl);
     auto vu_value = *reinterpret_cast<value_t *>(vu);
     auto abstol = 2 * lamch_s<value_t>();
-    if constexpr (std::is_floating_point_v<T>) {
-      device_ws_size = oneapi::mkl::lapack::syevx_scratchpad_size<T>(
-          q, jobz, range, uplo, n, lda, vl_value, vu_value, il, iu, abstol,
-          lda);
-    } else {
-      device_ws_size = oneapi::mkl::lapack::heevx_scratchpad_size<T>(
-          q, jobz, range, uplo, n, lda, vl_value, vu_value, il, iu, abstol,
-          lda);
-    }
+    DISPATCH_FLOAT_FOR_SCRATCHPAD_SIZE(evx_scratchpad_size<T>, q, jobz, range,
+                                       uplo, n, lda, vl_value, vu_value, il, iu,
+                                       abstol, lda);
 #endif
   }
 };
@@ -965,17 +977,10 @@ template <typename T> struct syheevx_impl {
     auto vu_value = *reinterpret_cast<value_t *>(vu);
     auto w_data = dpct::detail::get_memory(reinterpret_cast<value_t *>(w));
     auto abstol = 2 * lamch_s<value_t>();
-    if constexpr (std::is_floating_point_v<T>) {
-      oneapi::mkl::lapack::syevx(q, jobz, range, uplo, n, a_data, lda, vl_value,
-                                 vu_value, il, iu, abstol, m_device_data,
-                                 w_data, z_data, lda, device_ws_data,
-                                 device_ws_size);
-    } else {
-      oneapi::mkl::lapack::heevx(q, jobz, range, uplo, n, a_data, lda, vl_value,
-                                 vu_value, il, iu, abstol, m_device_data,
-                                 w_data, z_data, lda, device_ws_data,
-                                 device_ws_size);
-    }
+    DISPATCH_FLOAT_FOR_CALCULATION(evx, q, jobz, range, uplo, n, a_data, lda,
+                                   vl_value, vu_value, il, iu, abstol,
+                                   m_device_data, w_data, z_data, lda,
+                                   device_ws_data, device_ws_size);
     dpct::async_dpct_memcpy(a, z.get_ptr(), n * lda * sizeof(T),
                             memcpy_direction::device_to_device, q);
     dpct::async_dpct_memcpy(m, m_device.get_ptr(), sizeof(std::int64_t),
@@ -1009,15 +1014,9 @@ template <typename T> struct syhegvx_scratchpad_size_impl {
     auto vl_value = *reinterpret_cast<value_t *>(vl);
     auto vu_value = *reinterpret_cast<value_t *>(vu);
     auto abstol = 2 * lamch_s<value_t>();
-    if constexpr (std::is_floating_point_v<T>) {
-      device_ws_size = oneapi::mkl::lapack::sygvx_scratchpad_size<T>(
-          q, itype, jobz, range, uplo, n, lda, ldb, vl_value, vu_value, il, iu,
-          abstol, lda);
-    } else {
-      device_ws_size = oneapi::mkl::lapack::hegvx_scratchpad_size<T>(
-          q, itype, jobz, range, uplo, n, lda, ldb, vl_value, vu_value, il, iu,
-          abstol, lda);
-    }
+    DISPATCH_FLOAT_FOR_SCRATCHPAD_SIZE(gvx_scratchpad_size<T>, q, itype, jobz,
+                                       range, uplo, n, lda, ldb, vl_value,
+                                       vu_value, il, iu, abstol, lda);
 #endif
   }
 };
@@ -1059,17 +1058,10 @@ template <typename T> struct syhegvx_impl {
     auto vu_value = *reinterpret_cast<value_t *>(vu);
     auto w_data = dpct::detail::get_memory(reinterpret_cast<value_t *>(w));
     auto abstol = 2 * lamch_s<value_t>();
-    if constexpr (std::is_floating_point_v<T>) {
-      oneapi::mkl::lapack::sygvx(q, itype, jobz, range, uplo, n, a_data, lda,
-                                 b_data, ldb, vl_value, vu_value, il, iu,
-                                 abstol, m_device_data, w_data, z_data, lda,
-                                 device_ws_data, device_ws_size);
-    } else {
-      oneapi::mkl::lapack::hegvx(q, itype, jobz, range, uplo, n, a_data, lda,
-                                 b_data, ldb, vl_value, vu_value, il, iu,
-                                 abstol, m_device_data, w_data, z_data, lda,
-                                 device_ws_data, device_ws_size);
-    }
+    DISPATCH_FLOAT_FOR_CALCULATION(gvx, q, itype, jobz, range, uplo, n, a_data,
+                                   lda, b_data, ldb, vl_value, vu_value, il, iu,
+                                   abstol, m_device_data, w_data, z_data, lda,
+                                   device_ws_data, device_ws_size);
     dpct::async_dpct_memcpy(a, z.get_ptr(), n * lda * sizeof(T),
                             memcpy_direction::device_to_device, q);
     dpct::async_dpct_memcpy(m, m_device.get_ptr(), sizeof(std::int64_t),
@@ -1089,13 +1081,8 @@ template <typename T> struct syhegvd_scratchpad_size_impl {
   void operator()(sycl::queue &q, std::int64_t itype, oneapi::mkl::job jobz,
                   oneapi::mkl::uplo uplo, std::int64_t n, std::int64_t lda,
                   std::int64_t ldb, std::size_t &device_ws_size) {
-    if constexpr (std::is_floating_point_v<T>) {
-      device_ws_size = oneapi::mkl::lapack::sygvd_scratchpad_size<T>(
-          q, itype, jobz, uplo, n, lda, ldb);
-    } else {
-      device_ws_size = oneapi::mkl::lapack::hegvd_scratchpad_size<T>(
-          q, itype, jobz, uplo, n, lda, ldb);
-    }
+    DISPATCH_FLOAT_FOR_SCRATCHPAD_SIZE(gvd_scratchpad_size<T>, q, itype, jobz,
+                                       uplo, n, lda, ldb);
   }
 };
 // DPCT_LABEL_END
@@ -1118,13 +1105,9 @@ template <typename T> struct syhegvd_impl {
     auto device_ws_data =
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     auto w_data = dpct::detail::get_memory(reinterpret_cast<value_t *>(w));
-    if constexpr (std::is_floating_point_v<T>) {
-      oneapi::mkl::lapack::sygvd(q, itype, jobz, uplo, n, a_data, lda, b_data,
-                                 ldb, w_data, device_ws_data, device_ws_size);
-    } else {
-      oneapi::mkl::lapack::hegvd(q, itype, jobz, uplo, n, a_data, lda, b_data,
-                                 ldb, w_data, device_ws_data, device_ws_size);
-    }
+    DISPATCH_FLOAT_FOR_CALCULATION(gvd, q, itype, jobz, uplo, n, a_data, lda,
+                                   b_data, ldb, w_data, device_ws_data,
+                                   device_ws_size);
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
 };
@@ -1163,13 +1146,8 @@ template <typename T> struct syheev_scratchpad_size_impl {
         "The oneAPI Math Kernel Library (oneMKL) Interfaces "
         "Project does not support this API.");
 #else
-    if constexpr (std::is_floating_point_v<T>) {
-      device_ws_size =
-          oneapi::mkl::lapack::syev_scratchpad_size<T>(q, jobz, uplo, n, lda);
-    } else {
-      device_ws_size =
-          oneapi::mkl::lapack::heev_scratchpad_size<T>(q, jobz, uplo, n, lda);
-    }
+    DISPATCH_FLOAT_FOR_SCRATCHPAD_SIZE(ev_scratchpad_size<T>, q, jobz, uplo, n,
+                                       lda);
 #endif
   }
 };
@@ -1196,13 +1174,8 @@ template <typename T> struct syheev_impl {
     auto device_ws_data =
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     auto w_data = dpct::detail::get_memory(reinterpret_cast<value_t *>(w));
-    if constexpr (std::is_floating_point_v<T>) {
-      oneapi::mkl::lapack::syev(q, jobz, uplo, n, a_data, lda, w_data,
-                                device_ws_data, device_ws_size);
-    } else {
-      oneapi::mkl::lapack::heev(q, jobz, uplo, n, a_data, lda, w_data,
-                                device_ws_data, device_ws_size);
-    }
+    DISPATCH_FLOAT_FOR_CALCULATION(ev, q, jobz, uplo, n, a_data, lda, w_data,
+                                   device_ws_data, device_ws_size);
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
 #endif
   }
@@ -1216,13 +1189,8 @@ template <typename T> struct syheevd_scratchpad_size_impl {
   void operator()(sycl::queue &q, oneapi::mkl::job jobz, oneapi::mkl::uplo uplo,
                   std::int64_t n, library_data_t a_type, std::int64_t lda,
                   std::size_t &device_ws_size) {
-    if constexpr (std::is_floating_point_v<T>) {
-      device_ws_size =
-          oneapi::mkl::lapack::syevd_scratchpad_size<T>(q, jobz, uplo, n, lda);
-    } else {
-      device_ws_size =
-          oneapi::mkl::lapack::heevd_scratchpad_size<T>(q, jobz, uplo, n, lda);
-    }
+    DISPATCH_FLOAT_FOR_SCRATCHPAD_SIZE(evd_scratchpad_size<T>, q, jobz, uplo, n,
+                                       lda);
   }
 };
 // DPCT_LABEL_END
@@ -1243,17 +1211,15 @@ template <typename T> struct syheevd_impl {
     auto device_ws_data =
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     auto w_data = dpct::detail::get_memory(reinterpret_cast<value_t *>(w));
-    if constexpr (std::is_floating_point_v<T>) {
-      oneapi::mkl::lapack::syevd(q, jobz, uplo, n, a_data, lda, w_data,
-                                 device_ws_data, device_ws_size);
-    } else {
-      oneapi::mkl::lapack::heevd(q, jobz, uplo, n, a_data, lda, w_data,
-                                 device_ws_data, device_ws_size);
-    }
+    DISPATCH_FLOAT_FOR_CALCULATION(evd, q, jobz, uplo, n, a_data, lda, w_data,
+                                   device_ws_data, device_ws_size);
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
 };
 // DPCT_LABEL_END
+
+#undef DISPATCH_FLOAT_FOR_SCRATCHPAD_SIZE
+#undef DISPATCH_FLOAT_FOR_CALCULATION
 
 // DPCT_LABEL_BEGIN|trtri_scratchpad_size_impl|dpct::lapack::detail
 // DPCT_DEPENDENCY_EMPTY
