@@ -59,7 +59,7 @@ public:
       : Inner(InnerFactory), Feature(Feature) {}
   std::shared_ptr<MemberExprBaseRewriter>
   create(const MemberExpr *M) const override {
-    requestFeature(Feature, M);
+    requestFeature(Feature);
     return Inner->create(M);
   }
 };
