@@ -9,9 +9,10 @@ Migrate a Project
    migrate-a-project/before-you-begin
    migrate-a-project/migrate-a-project-on-linux
    migrate-a-project/migrate-a-project-on-windows
+   migrate-a-project/generate-compilation-db
    migrate-a-project/incremental-migration
    migrate-a-project/user-defined-migration-rules
-   migrate-a-project/generate-compilation-db
+
 
 
 |tool_name| ports CUDA\* language kernels and library API calls to

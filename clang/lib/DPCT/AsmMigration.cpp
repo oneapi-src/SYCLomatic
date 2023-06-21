@@ -47,7 +47,8 @@ namespace {
 inline bool SYCLGenError() { return true; }
 inline bool SYCLGenSuccess() { return false; }
 
-/// This is used to handle all the AST nodes (except specific instructions).
+/// This is used to handle all the AST nodes (except specific instructions, Eg.
+/// mov/setp), and generate functionally equivalent SYCL code.
 class SYCLGenBase {
   bool IsInMacroDef = false;
   bool EmitNewLine = true;
@@ -354,6 +355,12 @@ bool SYCLGenBase::emitDeclRefExpression(const InlineAsmDeclRefExpr *E) {
     switch (E->getDecl().getDeclName()->getTokenID()) {
     case asmtok::bi_laneid:
       OS() << getItemName() << ".get_sub_group().get_local_linear_id()";
+      break;
+    case asmtok::bi_warpid:
+      OS() << getItemName() << ".get_sub_group().get_group_linear_id()";
+      break;
+    case asmtok::bi_WARP_SZ:
+      OS() << getItemName() << ".get_local_range().get(0)";
       break;
     default:
       return SYCLGenError();

@@ -728,8 +728,8 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange,
       SourceLocation IB = Begin.getLocWithOffset(Found);
       SourceLocation IE = IB.getLocWithOffset(MacroName.length());
       CharSourceRange InsertRange(SourceRange(IB, IE), false);
-      auto Repl = std::make_shared<ReplaceInclude>(
-          InsertRange, std::move(ReplacedMacroName));
+      auto Repl =
+          std::make_shared<ReplaceInclude>(InsertRange, ReplacedMacroName);
       if (MacroName == "__CUDA_ARCH__" &&
           DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
         insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
@@ -755,7 +755,7 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange,
                 InsertRange, "(SYCL_LANGUAGE_VERSION < 202000)");
           }
         } else if (!ReplaceInfo.empty()) {
-          for (const auto Info : ReplaceInfo) {
+          for (const auto &Info : ReplaceInfo) {
             EnableBlock = Info.second;
             SourceLocation NewEnd =
                 Info.first.getEnd().getLocWithOffset(Lexer::MeasureTokenLength(
@@ -1120,6 +1120,11 @@ void IncludesCallbacks::InclusionDirective(
   if (FileName.find("thrust/") != std::string::npos) {
     if (FileName.compare(StringRef("thrust/complex.h")) == 0) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Complex);
+    } else if (FileName.compare(StringRef("thrust/uninitialized_copy.h")) ==
+               0) {
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Memory);
+    } else if (FileName.compare(StringRef("thrust/random.h")) == 0) {
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Random);
     } else {
       if(FileName.compare(StringRef("thrust/functional.h")) == 0)
         DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Functional);
@@ -11839,11 +11844,27 @@ void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(MathFunctionsRule, PassKind::PK_Migration)
 
 void WarpFunctionsRule::registerMatcher(MatchFinder &MF) {
-  std::vector<std::string> WarpFunctions = {
-      "__shfl_up_sync", "__shfl_down_sync", "__shfl_sync", "__shfl_up",
-      "__shfl_down",    "__shfl",           "__shfl_xor",  "__shfl_xor_sync",
-      "__all",          "__all_sync",       "__any",       "__any_sync",
-      "__ballot",       "__ballot_sync",    "__activemask"};
+  std::vector<std::string> WarpFunctions = {"__reduce_add_sync",
+                                            "__reduce_min_sync",
+                                            "__reduce_and_sync",
+                                            "__reduce_or_sync",
+                                            "__reduce_xor_sync",
+                                            "__reduce_max_sync",
+                                            "__shfl_up_sync",
+                                            "__shfl_down_sync",
+                                            "__shfl_sync",
+                                            "__shfl_up",
+                                            "__shfl_down",
+                                            "__shfl",
+                                            "__shfl_xor",
+                                            "__shfl_xor_sync",
+                                            "__all",
+                                            "__all_sync",
+                                            "__any",
+                                            "__any_sync",
+                                            "__ballot",
+                                            "__ballot_sync",
+                                            "__activemask"};
 
   MF.addMatcher(callExpr(callee(functionDecl(internal::Matcher<NamedDecl>(
                              new internal::HasNameMatcher(WarpFunctions)))),
@@ -14604,17 +14625,37 @@ void TemplateSpecializationTypeLocRule::registerMatcher(
     ast_matchers::MatchFinder &MF) {
   auto TargetTypeName = [&]() {
     return hasAnyName("thrust::not_equal_to", "thrust::constant_iterator",
-                      "thrust::system::cuda::experimental::pinned_allocator");
+                      "thrust::system::cuda::experimental::pinned_allocator",
+                      "thrust::random::default_random_engine",
+                      "thrust::random::uniform_real_distribution",
+                      "thrust::random::normal_distribution",
+                      "thrust::random::linear_congruential_engine",
+                      "thrust::random::uniform_int_distribution");
   };
 
-  MF.addMatcher(typeLoc(
-                    loc(qualType(hasDeclaration(namedDecl(TargetTypeName())))))
-                    .bind("loc"),
-                this);
+  MF.addMatcher(
+      typeLoc(loc(qualType(hasDeclaration(namedDecl(TargetTypeName())))))
+          .bind("loc"),
+      this);
+
+  MF.addMatcher(declRefExpr().bind("declRefExpr"), this);
 }
 
 void TemplateSpecializationTypeLocRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
+
+  const DeclRefExpr *DRE = getNodeAsType<DeclRefExpr>(Result, "declRefExpr");
+  if (DRE) {
+    std::string TypeName = DpctGlobalInfo::getTypeName(DRE->getType());
+    std::string Name = DRE->getNameInfo().getName().getAsString();
+    if (TypeName.find("thrust::random::linear_congruential_engine") !=
+            std::string::npos &&
+        Name == "max") {
+      emplaceTransformation(
+          new ReplaceStmt(DRE, "oneapi::dpl::default_engine::max()"));
+    }
+  }
+
   if (auto TL = getNodeAsType<TypeLoc>(Result, "loc")) {
     ExprAnalysis EA;
     EA.analyze(*TL);

@@ -159,7 +159,8 @@ void CubMemberCallRule::runRule(
 
 void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(callExpr(callee(functionDecl(allOf(
-                             hasAnyName("IADD3", "SHR_ADD", "SHL_ADD"),
+                             hasAnyName("IADD3", "SHR_ADD", "SHL_ADD", "LaneId",
+                                        "WarpId"),
                              hasDeclContext(namespaceDecl(hasName("cub")))))))
                     .bind("IntrinsicCall"),
                 this);
@@ -1270,14 +1271,25 @@ void CubRule::processWarpLevelMemberCall(const CXXMemberCallExpr *WarpMC) {
     ExprAnalysis InEA(InData);
     if (NumArgs == 1) {
       OpRepl = getOpRepl(nullptr);
+      NewFuncName = "reduce_over_group";
+      Repl = MapNames::getClNamespace() + "reduce_over_group(" +
+             GroupOrWorkitem + ", " + InEA.getReplacedString() + ", " + OpRepl +
+             ")";
+    } else if (NumArgs == 2) {
+      OpRepl = getOpRepl(nullptr);
+      DpctGlobalInfo::getInstance().insertHeader(WarpMC->getBeginLoc(),
+                                                 HeaderType::HT_DPCT_DPL_Utils);
+      GroupOrWorkitem = DpctGlobalInfo::getItem(WarpMC, FD);
+      ExprAnalysis ValidItemEA(WarpMC->getArg(1));
+      Repl = MapNames::getDpctNamespace() +
+             "group::reduce_over_partial_group(" + GroupOrWorkitem + ", " +
+             InEA.getReplacedString() + ", " + ValidItemEA.getReplacedString() +
+             ", " + OpRepl + ")";
     } else {
       report(WarpMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
              "cub::" + FuncName);
       return;
     }
-    NewFuncName = "reduce_over_group";
-    Repl = MapNames::getClNamespace() + "reduce_over_group(" + GroupOrWorkitem +
-           ", " + InEA.getReplacedString() + ", " + OpRepl + ")";
     emplaceTransformation(new ReplaceStmt(WarpMC, Repl));
   }
 
