@@ -1225,6 +1225,138 @@ int KernelCallExpr::calculateOriginArgsSize() const {
   return Size;
 }
 
+// Return 1 or 3
+int analyzeGridBlockDim(const CUDAKernelCallExpr *KernelCall,
+                        const Expr *ConfigArg) {
+  if (!KernelCall)
+    return 3;
+  const CXXConstructExpr *CCE = dyn_cast_or_null<CXXConstructExpr>(ConfigArg);
+  if (!CCE)
+    return 3;
+
+  // Case 1. In-place construct dim3 or temp obj:
+  // clang-format off
+  // k<<<123, dim3(1, 2, 3)>>>()
+  // In-place construct:
+  //    CXXConstructExpr <col:7> 'dim3':'dim3' 'void (dim3 &&) noexcept' elidable
+  //    `-MaterializeTemporaryExpr <col:7> 'dim3':'dim3' xvalue
+  //      `-ImplicitCastExpr <col:7> 'dim3':'dim3' <ConstructorConversion>
+  //        `-CXXConstructExpr <col:7> 'dim3':'dim3' 'void (unsigned int, unsigned int, unsigned int)'
+  //          |-ImplicitCastExpr <col:7> 'unsigned int' <IntegralCast>
+  //          | `-IntegerLiteral <col:7> 'int' 123
+  //          |-CXXDefaultArgExpr 'unsigned int'
+  //          `-CXXDefaultArgExpr 'unsigned int'
+  // temp obj:
+  //    CXXConstructExpr <col:12, col:24> 'dim3':'dim3' 'void (dim3 &&) noexcept' elidable
+  //    `-MaterializeTemporaryExpr <col:12, col:24> 'dim3':'dim3' xvalue
+  //      `-CXXTemporaryObjectExpr <col:12, col:24> 'dim3':'dim3' 'void (unsigned int, unsigned int, unsigned int)'
+  //        |-ImplicitCastExpr <col:17> 'unsigned int' <IntegralCast>
+  //        | `-IntegerLiteral <col:17> 'int' 1
+  //        |-ImplicitCastExpr <col:20> 'unsigned int' <IntegralCast>
+  //        | `-IntegerLiteral <col:20> 'int' 2
+  //        `-ImplicitCastExpr <col:23> 'unsigned int' <IntegralCast>
+  //          `-IntegerLiteral <col:23> 'int' 3
+  // clang-format on
+
+  // return true: dim is 1
+  // return false: dim is 3 or cannot analyze
+  auto AnalyzeInplaceCtorOrTempObj = [](const CXXConstructExpr *CCE) -> bool {
+    if (CCE->getNumArgs() == 0)
+      return false;
+    const MaterializeTemporaryExpr *MTE =
+        dyn_cast_or_null<MaterializeTemporaryExpr>(CCE->getArg(0));
+    if (!MTE)
+      return false;
+    const Expr *SubExpr = MTE->getSubExpr()->IgnoreCasts();
+    if (!SubExpr)
+      return false;
+    const CXXConstructExpr *Dim3Ctor =
+        dyn_cast_or_null<CXXConstructExpr>(SubExpr->IgnoreImpCasts());
+    if (!Dim3Ctor)
+      return false;
+    if (Dim3Ctor->getNumArgs() == 1)
+      return false;
+    if (Dim3Ctor->getNumArgs() == 3) {
+      if (Dim3Ctor->getArg(1)->isDefaultArgument() &&
+          Dim3Ctor->getArg(2)->isDefaultArgument())
+        return true;
+      Expr::EvalResult ER1, ER2;
+      if (!Dim3Ctor->getArg(1)->isValueDependent() &&
+          Dim3Ctor->getArg(1)->EvaluateAsInt(ER1,
+                                             DpctGlobalInfo::getContext()) &&
+          !Dim3Ctor->getArg(2)->isValueDependent() &&
+          Dim3Ctor->getArg(2)->EvaluateAsInt(ER2,
+                                             DpctGlobalInfo::getContext())) {
+        if (ER1.Val.getInt().getZExtValue() == 1 &&
+            ER2.Val.getInt().getZExtValue() == 1)
+          return true;
+      }
+      return false;
+    }
+    return false;
+  };
+  if (AnalyzeInplaceCtorOrTempObj(CCE)) {
+    return 1;
+  }
+
+  // Case 2. Use variable:
+  // dim3 a(1, 2, 3);
+  // dim3 b(4, 5, 6);
+  // k<<<a, b>>>();
+  // clang-format off
+  //     CXXConstructExpr <col:7> 'dim3':'dim3' 'void (const dim3 &) noexcept'
+  //     `-ImplicitCastExpr <col:7> 'const dim3':'const dim3' lvalue <NoOp>
+  //       `-DeclRefExpr <col:7> 'dim3':'dim3' lvalue Var 0x55f084a39198 'a' 'dim3':'dim3'
+  // clang-format on
+  if (CCE->getNumArgs() < 1)
+    return 3;
+  const DeclRefExpr *DRE =
+      dyn_cast_or_null<DeclRefExpr>(CCE->getArg(0)->IgnoreImpCasts());
+  if (!DRE)
+    return 3;
+  const VarDecl *VD = dyn_cast_or_null<VarDecl>(DRE->getDecl());
+  if (!VD)
+    return 3;
+  // VD must be local variable and must have the same context with
+  // KernelCallExpr
+  if (!VD->isLocalVarDecl())
+    return 3;
+  const CompoundStmt *VDContext =
+      DpctGlobalInfo::findAncestor<CompoundStmt>(VD);
+  const CompoundStmt *KernelCallContext =
+      DpctGlobalInfo::findAncestor<CompoundStmt>(KernelCall);
+  if (!VDContext || !KernelCallContext || (VDContext != KernelCallContext))
+    return 3;
+
+  // VD's DRE should be only used once (as the config arg) in VDContext
+  auto DREMatcher =
+      ast_matchers::findAll(ast_matchers::declRefExpr().bind("DRE"));
+  auto MatchedResults =
+      ast_matchers::match(DREMatcher, *VDContext, DpctGlobalInfo::getContext());
+  size_t RefCount = 0;
+  for (const auto &Res : MatchedResults) {
+    const DeclRefExpr *RefExpr = Res.getNodeAs<DeclRefExpr>("DRE");
+    if (RefExpr->getDecl() == VD) {
+      RefCount++;
+    }
+  }
+  if (RefCount > 1)
+    return 3;
+
+  if (VD->getType().getCanonicalType().getAsString() != "struct dim3")
+    return 3;
+  if (!VD->hasInit())
+    return 1;
+
+  const CXXConstructExpr *Init = dyn_cast<CXXConstructExpr>(VD->getInit());
+  if (!Init)
+    return 3;
+  if (Init->getNumArgs() == 3 && Init->getArg(1)->isDefaultArgument() &&
+      Init->getArg(2)->isDefaultArgument())
+    return 1;
+  return 3;
+}
+
 template <class ArgsRange>
 void KernelCallExpr::buildExecutionConfig(
     const ArgsRange &ConfigArgs, const CallExpr *KernelCall) {
@@ -1275,15 +1407,28 @@ void KernelCallExpr::buildExecutionConfig(
   for (auto Arg : ConfigArgs) {
     if (Idx > 1)
       break;
-    KernelConfigAnalysis AnalysisTry1D(IsInMacroDefine);
-    AnalysisTry1D.IsTryToUseOneDimension = true;
-    AnalysisTry1D.analyze(Arg, Idx, Idx < 2);
     if (Idx == 0) {
-      GridDim = AnalysisTry1D.Dim;
-      ExecutionConfig.GroupSizeFor1D = AnalysisTry1D.getReplacedString();
+      GridDim =
+          analyzeGridBlockDim(dyn_cast<CUDAKernelCallExpr>(KernelCall), Arg);
+      KernelConfigAnalysis KCA(IsInMacroDefine);
+      KCA.setCallSpelling(KernelCall);
+      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+        KCA.IsTryToUseOneDimension = true;
+      }
+      KCA.Dim = GridDim;
+      KCA.analyze(Arg, Idx, Idx < 2);
+      ExecutionConfig.GroupSizeFor1D = KCA.getReplacedString();
     } else if (Idx == 1) {
-      BlockDim = AnalysisTry1D.Dim;
-      ExecutionConfig.LocalSizeFor1D = AnalysisTry1D.getReplacedString();
+      BlockDim =
+          analyzeGridBlockDim(dyn_cast<CUDAKernelCallExpr>(KernelCall), Arg);
+      KernelConfigAnalysis KCA(IsInMacroDefine);
+      KCA.setCallSpelling(KernelCall);
+      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+        KCA.IsTryToUseOneDimension = true;
+      }
+      KCA.Dim = BlockDim;
+      KCA.analyze(Arg, Idx, Idx < 2);
+      ExecutionConfig.LocalSizeFor1D = KCA.getReplacedString();
     }
     ++Idx;
   }
