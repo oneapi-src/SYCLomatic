@@ -4499,3 +4499,78 @@ const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "shfl_xor",
     "meta_group_rank",
     "block_tile_memory"};
+
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::PropToGetFeatureMap = {
+        {"clockRate", HelperFeatureEnum::device_ext},
+        {"major", HelperFeatureEnum::device_ext},
+        {"minor", HelperFeatureEnum::device_ext},
+        {"integrated", HelperFeatureEnum::device_ext},
+        {"warpSize", HelperFeatureEnum::device_ext},
+        {"multiProcessorCount", HelperFeatureEnum::device_ext},
+        {"maxThreadsPerBlock", HelperFeatureEnum::device_ext},
+        {"maxThreadsPerMultiProcessor", HelperFeatureEnum::device_ext},
+        {"name", HelperFeatureEnum::device_ext},
+        {"totalGlobalMem", HelperFeatureEnum::device_ext},
+        {"sharedMemPerMultiprocessor", HelperFeatureEnum::device_ext},
+        {"sharedMemPerBlock", HelperFeatureEnum::device_ext},
+        {"maxGridSize", HelperFeatureEnum::device_ext},
+        {"maxThreadsDim", HelperFeatureEnum::device_ext},
+        {"memoryClockRate", HelperFeatureEnum::device_ext},
+        {"memoryBusWidth", HelperFeatureEnum::device_ext},
+        {"pciDeviceID", HelperFeatureEnum::device_ext},
+        {"uuid", HelperFeatureEnum::device_ext},
+};
+
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::PropToSetFeatureMap = {
+        {"clockRate", HelperFeatureEnum::device_ext},
+        {"major", HelperFeatureEnum::device_ext},
+        {"minor", HelperFeatureEnum::device_ext},
+        {"integrated", HelperFeatureEnum::device_ext},
+        {"warpSize", HelperFeatureEnum::device_ext},
+        {"multiProcessorCount", HelperFeatureEnum::device_ext},
+        {"maxThreadsPerBlock", HelperFeatureEnum::device_ext},
+        {"maxThreadsPerMultiProcessor", HelperFeatureEnum::device_ext},
+        {"name", HelperFeatureEnum::device_ext},
+        {"totalGlobalMem", HelperFeatureEnum::device_ext},
+        {"sharedMemPerBlock", HelperFeatureEnum::device_ext},
+        {"maxGridSize", HelperFeatureEnum::device_ext},
+        {"maxThreadsDim", HelperFeatureEnum::device_ext},
+        {"memoryClockRate", HelperFeatureEnum::device_ext},
+        {"memoryBusWidth", HelperFeatureEnum::device_ext},
+        {"pciDeviceID", HelperFeatureEnum::device_ext},
+        {"uuid", HelperFeatureEnum::device_ext},
+};
+
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::SamplingInfoToSetFeatureMap = {
+        {"coordinate_normalization_mode", HelperFeatureEnum::device_ext}};
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::SamplingInfoToGetFeatureMap = {
+        {"addressing_mode", HelperFeatureEnum::device_ext},
+        {"filtering_mode", HelperFeatureEnum::device_ext}};
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::ImageWrapperBaseToSetFeatureMap = {
+        {"sampling_info", HelperFeatureEnum::device_ext},
+        {"data", HelperFeatureEnum::device_ext},
+        {"channel", HelperFeatureEnum::device_ext},
+        {"channel_data_type", HelperFeatureEnum::device_ext},
+        {"channel_size", HelperFeatureEnum::device_ext},
+        {"coordinate_normalization_mode", HelperFeatureEnum::device_ext},
+        {"channel_num", HelperFeatureEnum::device_ext},
+        {"channel_type", HelperFeatureEnum::device_ext}};
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::ImageWrapperBaseToGetFeatureMap = {
+        {"sampling_info", HelperFeatureEnum::device_ext},
+        {"data", HelperFeatureEnum::device_ext},
+        {"channel", HelperFeatureEnum::device_ext},
+        {"channel_data_type", HelperFeatureEnum::device_ext},
+        {"channel_size", HelperFeatureEnum::device_ext},
+        {"addressing_mode", HelperFeatureEnum::device_ext},
+        {"filtering_mode", HelperFeatureEnum::device_ext},
+        {"coordinate_normalization_mode", HelperFeatureEnum::device_ext},
+        {"channel_num", HelperFeatureEnum::device_ext},
+        {"channel_type", HelperFeatureEnum::device_ext},
+        {"sampler", HelperFeatureEnum::device_ext},
+};

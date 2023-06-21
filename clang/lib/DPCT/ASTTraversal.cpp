@@ -3557,7 +3557,7 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
   if (auto *BO = Parents[0].get<clang::BinaryOperator>()) {
   // migrate to set_XXX() eg. "a.minor = 1" to "a.set_minor_version(1)"
     if (BO->getOpcode() == clang::BO_Assign) {
-      requestFeature(PropToSetFeatureMap.at(MemberName));
+      requestFeature(MapNames::PropToSetFeatureMap.at(MemberName));
       emplaceTransformation(
           new RenameFieldInMemberExpr(ME, "set_" + Search->second));
       emplaceTransformation(new ReplaceText(BO->getOperatorLoc(), 1, "("));
@@ -3567,7 +3567,7 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (auto *OCE = Parents[0].get<clang::CXXOperatorCallExpr>()) {
   // migrate to set_XXX() for types with an overloaded = operator
     if (OCE->getOperator() == clang::OverloadedOperatorKind::OO_Equal) {
-      requestFeature(PropToSetFeatureMap.at(MemberName));
+      requestFeature(MapNames::PropToSetFeatureMap.at(MemberName));
       emplaceTransformation(
           new RenameFieldInMemberExpr(ME, "set_" + Search->second));
       emplaceTransformation(new ReplaceText(OCE->getOperatorLoc(), 1, "("));
@@ -3575,7 +3575,7 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
       return ;
     }
   }
-  requestFeature(PropToGetFeatureMap.at(MemberName));
+  requestFeature(MapNames::PropToGetFeatureMap.at(MemberName));
   emplaceTransformation(new RenameFieldInMemberExpr(
     ME, "get_" + Search->second + TmplArg + "()")); 
   return ;
@@ -13005,11 +13005,13 @@ void TextureRule::replaceTextureMember(const MemberExpr *ME,
     if (MethodName.empty()) {
       requestFeature(HelperFeatureEnum::device_ext);
     } else {
-      if (SamplingInfoToSetFeatureMap.count(MethodName.str())) {
-        requestFeature(SamplingInfoToSetFeatureMap.at(MethodName.str()));
+      if (MapNames::SamplingInfoToSetFeatureMap.count(MethodName.str())) {
+        requestFeature(
+            MapNames::SamplingInfoToSetFeatureMap.at(MethodName.str()));
       }
-      if (ImageWrapperBaseToSetFeatureMap.count(MethodName.str())) {
-        requestFeature(ImageWrapperBaseToSetFeatureMap.at(MethodName.str()));
+      if (MapNames::ImageWrapperBaseToSetFeatureMap.count(MethodName.str())) {
+        requestFeature(
+            MapNames::ImageWrapperBaseToSetFeatureMap.at(MethodName.str()));
       }
     }
     emplaceTransformation(ReplaceMemberAssignAsSetMethod(
@@ -13022,11 +13024,11 @@ void TextureRule::replaceTextureMember(const MemberExpr *ME,
     } else {
       emplaceTransformation(new RenameFieldInMemberExpr(
           ME, buildString("get_", ReplField, "()")));
-      if (SamplingInfoToGetFeatureMap.count(ReplField)) {
-        requestFeature(SamplingInfoToGetFeatureMap.at(ReplField));
+      if (MapNames::SamplingInfoToGetFeatureMap.count(ReplField)) {
+        requestFeature(MapNames::SamplingInfoToGetFeatureMap.at(ReplField));
       }
-      if (ImageWrapperBaseToGetFeatureMap.count(ReplField)) {
-        requestFeature(ImageWrapperBaseToGetFeatureMap.at(ReplField));
+      if (MapNames::ImageWrapperBaseToGetFeatureMap.count(ReplField)) {
+        requestFeature(MapNames::ImageWrapperBaseToGetFeatureMap.at(ReplField));
       }
     }
   }

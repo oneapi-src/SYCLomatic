@@ -900,79 +900,7 @@ const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
         {clang::dpct::HelperFileEnum::DplExtrasDpcppExtensions,
          "__DPCT_DPCPP_EXTENSIONS_H__"}};
 
-const std::unordered_map<std::string, HelperFeatureEnum> PropToGetFeatureMap = {
-    {"clockRate", HelperFeatureEnum::device_ext},
-    {"major", HelperFeatureEnum::device_ext},
-    {"minor", HelperFeatureEnum::device_ext},
-    {"integrated", HelperFeatureEnum::device_ext},
-    {"warpSize", HelperFeatureEnum::device_ext},
-    {"multiProcessorCount", HelperFeatureEnum::device_ext},
-    {"maxThreadsPerBlock", HelperFeatureEnum::device_ext},
-    {"maxThreadsPerMultiProcessor", HelperFeatureEnum::device_ext},
-    {"name", HelperFeatureEnum::device_ext},
-    {"totalGlobalMem", HelperFeatureEnum::device_ext},
-    {"sharedMemPerMultiprocessor", HelperFeatureEnum::device_ext},
-    {"sharedMemPerBlock", HelperFeatureEnum::device_ext},
-    {"maxGridSize", HelperFeatureEnum::device_ext},
-    {"maxThreadsDim", HelperFeatureEnum::device_ext},
-    {"memoryClockRate", HelperFeatureEnum::device_ext},
-    {"memoryBusWidth", HelperFeatureEnum::device_ext},
-    {"pciDeviceID", HelperFeatureEnum::device_ext},
-    {"uuid", HelperFeatureEnum::device_ext},
-};
 
-const std::unordered_map<std::string, HelperFeatureEnum> PropToSetFeatureMap = {
-    {"clockRate",
-     HelperFeatureEnum::device_ext},
-    {"major", HelperFeatureEnum::device_ext},
-    {"minor", HelperFeatureEnum::device_ext},
-    {"integrated", HelperFeatureEnum::device_ext},
-    {"warpSize", HelperFeatureEnum::device_ext},
-    {"multiProcessorCount", HelperFeatureEnum::device_ext},
-    {"maxThreadsPerBlock", HelperFeatureEnum::device_ext},
-    {"maxThreadsPerMultiProcessor", HelperFeatureEnum::device_ext},
-    {"name", HelperFeatureEnum::device_ext},
-    {"totalGlobalMem", HelperFeatureEnum::device_ext},
-    {"sharedMemPerBlock", HelperFeatureEnum::device_ext},
-    {"maxGridSize", HelperFeatureEnum::device_ext},
-    {"maxThreadsDim", HelperFeatureEnum::device_ext},
-    {"memoryClockRate", HelperFeatureEnum::device_ext},
-    {"memoryBusWidth", HelperFeatureEnum::device_ext},
-    {"pciDeviceID", HelperFeatureEnum::device_ext},
-    {"uuid", HelperFeatureEnum::device_ext},
-};
-
-const std::unordered_map<std::string, HelperFeatureEnum>
-    SamplingInfoToSetFeatureMap = {
-        {"coordinate_normalization_mode", HelperFeatureEnum::device_ext}};
-const std::unordered_map<std::string, HelperFeatureEnum>
-    SamplingInfoToGetFeatureMap = {
-        {"addressing_mode", HelperFeatureEnum::device_ext},
-        {"filtering_mode", HelperFeatureEnum::device_ext}};
-const std::unordered_map<std::string, HelperFeatureEnum>
-    ImageWrapperBaseToSetFeatureMap = {
-        {"sampling_info", HelperFeatureEnum::device_ext},
-        {"data", HelperFeatureEnum::device_ext},
-        {"channel", HelperFeatureEnum::device_ext},
-        {"channel_data_type", HelperFeatureEnum::device_ext},
-        {"channel_size", HelperFeatureEnum::device_ext},
-        {"coordinate_normalization_mode", HelperFeatureEnum::device_ext},
-        {"channel_num", HelperFeatureEnum::device_ext},
-        {"channel_type", HelperFeatureEnum::device_ext}};
-const std::unordered_map<std::string, HelperFeatureEnum>
-    ImageWrapperBaseToGetFeatureMap = {
-        {"sampling_info", HelperFeatureEnum::device_ext},
-        {"data", HelperFeatureEnum::device_ext},
-        {"channel", HelperFeatureEnum::device_ext},
-        {"channel_data_type", HelperFeatureEnum::device_ext},
-        {"channel_size", HelperFeatureEnum::device_ext},
-        {"addressing_mode", HelperFeatureEnum::device_ext},
-        {"filtering_mode", HelperFeatureEnum::device_ext},
-        {"coordinate_normalization_mode", HelperFeatureEnum::device_ext},
-        {"channel_num", HelperFeatureEnum::device_ext},
-        {"channel_type", HelperFeatureEnum::device_ext},
-        {"sampler", HelperFeatureEnum::device_ext},
-    };
 
 } // namespace dpct
 } // namespace clang

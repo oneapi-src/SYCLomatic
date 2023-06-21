@@ -370,6 +370,19 @@ public:
 
   static const std::unordered_set<std::string> CooperativeGroupsAPISet;
 
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      PropToGetFeatureMap;
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      PropToSetFeatureMap;
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      SamplingInfoToSetFeatureMap;
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      SamplingInfoToGetFeatureMap;
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      ImageWrapperBaseToSetFeatureMap;
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      ImageWrapperBaseToGetFeatureMap;
+
   template<class T>
   inline static const std::string &findReplacedName(
       const std::unordered_map<std::string, std::shared_ptr<T>> &Map,
