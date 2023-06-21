@@ -1,7 +1,7 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-// RUN: dpct --format-range=none --use-experimental-features=matrix -out-root %T/wmma %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/wmma/wmma.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/wmma_warning %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/wmma_warning/wmma_warning.dp.cpp --match-full-lines %s
 #include <assert.h>
 #include <cuda.h>
 #include <iostream>
@@ -70,17 +70,23 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
   int warpN = (blockIdx.y * blockDim.y + threadIdx.y);
 
   // Declare the fragments
-  // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix<sycl::sub_group, sycl::half, sycl::ext::oneapi::experimental::matrix::use::a, WMMA_M, WMMA_K, sycl::ext::oneapi::experimental::matrix::layout::row_major>
+  // CHECK: DPCT1082:{{[0-9]+}}: Migration of nvcuda::wmma::fragment<nvcuda::wmma::matrix_a, 16, 16, 16, half, nvcuda::wmma::row_major> type is not supported.
+  // CHECK: DPCT1082:{{[0-9]+}}: Migration of nvcuda::wmma::matrix_a type is not supported.
+  // CHECK: DPCT1082:{{[0-9]+}}: Migration of nvcuda::wmma::row_major type is not supported.
   nvcuda::wmma::fragment<nvcuda::wmma::matrix_a, WMMA_M, WMMA_N, WMMA_K, half, nvcuda::wmma::row_major>
       a_frag;
-  // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix<sycl::sub_group, sycl::half, sycl::ext::oneapi::experimental::matrix::use::b, WMMA_N, WMMA_K, sycl::ext::oneapi::experimental::matrix::layout::col_major>
+  // CHECK: DPCT1082:{{[0-9]+}}: Migration of nvcuda::wmma::fragment<nvcuda::wmma::matrix_b, 16, 16, 16, half, nvcuda::wmma::col_major> type is not supported.
+  // CHECK: DPCT1082:{{[0-9]+}}: Migration of nvcuda::wmma::matrix_b type is not supported.
+  // CHECK: DPCT1082:{{[0-9]+}}: Migration of nvcuda::wmma::col_major type is not supported.
   nvcuda::wmma::fragment<nvcuda::wmma::matrix_b, WMMA_M, WMMA_N, WMMA_K, half, nvcuda::wmma::col_major>
       b_frag;
-  // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix<sycl::sub_group, float, sycl::ext::oneapi::experimental::matrix::use::accumulator, WMMA_M, WMMA_N> acc_frag;
+  // CHECK: DPCT1082:{{[0-9]+}}: Migration of nvcuda::wmma::fragment<nvcuda::wmma::accumulator, 16, 16, 16, float> type is not supported.
+  // CHECK: DPCT1082:{{[0-9]+}}: Migration of nvcuda::wmma::accumulator type is not supported.
   nvcuda::wmma::fragment<nvcuda::wmma::accumulator, WMMA_M, WMMA_N, WMMA_K, float> acc_frag;
-  // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix<sycl::sub_group, float, sycl::ext::oneapi::experimental::matrix::use::accumulator, WMMA_M, WMMA_N> c_frag;
+  // CHECK: DPCT1082:{{[0-9]+}}: Migration of nvcuda::wmma::fragment<nvcuda::wmma::accumulator, 16, 16, 16, float> type is not supported.
+  // CHECK: DPCT1082:{{[0-9]+}}: Migration of nvcuda::wmma::accumulator type is not supported.
   nvcuda::wmma::fragment<nvcuda::wmma::accumulator, WMMA_M, WMMA_N, WMMA_K, float> c_frag;
-  // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_fill(item_ct1.get_sub_group(), acc_frag, 0.0f);
+  // CHECK: DPCT1007:{{[0-9]+}}: Migration of nvcuda::wmma::fill_fragment is not supported.
   nvcuda::wmma::fill_fragment(acc_frag, 0.0f);
 }
 

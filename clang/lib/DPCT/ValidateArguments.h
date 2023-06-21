@@ -76,7 +76,7 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_MaskedSubGroupFunction,
   Exp_DPLExperimentalAPI,
   Exp_OccupancyCalculation,
-  Exp_JointMatrix,
+  Exp_Matrix,
   Exp_ExperimentalFeaturesEnumSize
 };
 

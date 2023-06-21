@@ -386,8 +386,8 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
              DPCT_OPT_ENUM("occupancy-calculation", int(ExperimentalFeatures::Exp_OccupancyCalculation),
         "Experimental helper function used to calculate occupancy.\n",
         false),
-             DPCT_OPT_ENUM("oneapi-joint-matrix", int(ExperimentalFeatures::Exp_JointMatrix),
-        "Experimental extension that allows use of oneapi joint_matrix.\n",
+             DPCT_OPT_ENUM("matrix", int(ExperimentalFeatures::Exp_Matrix),
+        "Experimental extension that allows use of matrix extension like class joint_matrix.\n",
         false)
            ),
            llvm::cl::desc("Comma separated list of experimental features to be used in migrated "
