@@ -901,6 +901,5 @@ const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
          "__DPCT_DPCPP_EXTENSIONS_H__"}};
 
 
-
 } // namespace dpct
 } // namespace clang
