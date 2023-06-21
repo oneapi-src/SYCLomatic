@@ -149,7 +149,7 @@ compare(const T a, const T b, const BinaryOperation binary_op) {
   return {compare(a[0], b[0], binary_op), compare(a[1], b[1], binary_op)};
 }
 
-/// Performs 2 element comparison and return an unsigned int.
+/// Performs 2 elements comparison and returns an unsigned int.
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] binary_op functor that implements the binary operation
@@ -174,7 +174,7 @@ unordered_compare(const T a, const T b, const BinaryOperation binary_op) {
           unordered_compare(a[1], b[1], binary_op)};
 }
 
-/// Performs 2 element unordered comparison and return an unsigned int.
+/// Performs 2 elements unordered comparison and returns an unsigned int.
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] binary_op functor that implements the binary operation
@@ -323,8 +323,8 @@ inline sycl::vec<T, 2> complex_mul_add(const sycl::vec<T, 2> a,
                          a[0] * b[1] + a[1] * b[0] + c[1]};
 }
 
-/// Performs 2 element comparison and return the bigger one. If either of inputs
-/// is NaN, then return NaN.
+/// Performs 2 elements comparison and returns the bigger one. If either of
+/// inputs is NaN, then return NaN.
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \returns the bigger value
@@ -340,7 +340,7 @@ inline sycl::vec<T, 2> fmax_nan(const sycl::vec<T, 2> a,
   return {fmax_nan(a[0], b[0]), fmax_nan(a[1], b[1])};
 }
 
-/// Performs 2 element comparison and return the smaller one. If either of
+/// Performs 2 elements comparison and returns the smaller one. If either of
 /// inputs is NaN, then return NaN.
 /// \param [in] a The first value
 /// \param [in] b The second value
