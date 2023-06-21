@@ -1641,8 +1641,7 @@ private:
                                          std::string ObjName);
   std::vector<std::vector<std::string>>
   splitAPIName(std::vector<std::string> &AllAPINames);
-  void processMemberFuncCall(const CXXMemberCallExpr *MC);
-  void processFuncCall(const CallExpr *CE, bool HaveKeywordInAPIName);
+  void processFuncCall(const CallExpr *CE);
 };
 
 /// RecognizeTypeRule to emit warning message for known unsupported type
