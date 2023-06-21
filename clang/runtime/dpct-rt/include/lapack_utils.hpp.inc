@@ -896,7 +896,7 @@ template <typename T> struct syheevx_scratchpad_size_impl {
     auto vl_value = *reinterpret_cast<value_t *>(vl);
     auto vu_value = *reinterpret_cast<value_t *>(vu);
     auto abstol = 2 * lamch_s<value_t>();
-    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
+    if constexpr (std::is_floating_point_v<T>) {
       device_ws_size = oneapi::mkl::lapack::syevx_scratchpad_size<T>(
           q, jobz, range, uplo, n, lda, vl_value, vu_value, il, iu, abstol,
           lda);
@@ -965,7 +965,7 @@ template <typename T> struct syheevx_impl {
     auto vu_value = *reinterpret_cast<value_t *>(vu);
     auto w_data = dpct::detail::get_memory(reinterpret_cast<value_t *>(w));
     auto abstol = 2 * lamch_s<value_t>();
-    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
+    if constexpr (std::is_floating_point_v<T>) {
       oneapi::mkl::lapack::syevx(q, jobz, range, uplo, n, a_data, lda, vl_value,
                                  vu_value, il, iu, abstol, m_device_data,
                                  w_data, z_data, lda, device_ws_data,
@@ -1009,7 +1009,7 @@ template <typename T> struct syhegvx_scratchpad_size_impl {
     auto vl_value = *reinterpret_cast<value_t *>(vl);
     auto vu_value = *reinterpret_cast<value_t *>(vu);
     auto abstol = 2 * lamch_s<value_t>();
-    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
+    if constexpr (std::is_floating_point_v<T>) {
       device_ws_size = oneapi::mkl::lapack::sygvx_scratchpad_size<T>(
           q, itype, jobz, range, uplo, n, lda, ldb, vl_value, vu_value, il, iu,
           abstol, lda);
@@ -1059,7 +1059,7 @@ template <typename T> struct syhegvx_impl {
     auto vu_value = *reinterpret_cast<value_t *>(vu);
     auto w_data = dpct::detail::get_memory(reinterpret_cast<value_t *>(w));
     auto abstol = 2 * lamch_s<value_t>();
-    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
+    if constexpr (std::is_floating_point_v<T>) {
       oneapi::mkl::lapack::sygvx(q, itype, jobz, range, uplo, n, a_data, lda,
                                  b_data, ldb, vl_value, vu_value, il, iu,
                                  abstol, m_device_data, w_data, z_data, lda,
@@ -1089,7 +1089,7 @@ template <typename T> struct syhegvd_scratchpad_size_impl {
   void operator()(sycl::queue &q, std::int64_t itype, oneapi::mkl::job jobz,
                   oneapi::mkl::uplo uplo, std::int64_t n, std::int64_t lda,
                   std::int64_t ldb, std::size_t &device_ws_size) {
-    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
+    if constexpr (std::is_floating_point_v<T>) {
       device_ws_size = oneapi::mkl::lapack::sygvd_scratchpad_size<T>(
           q, itype, jobz, uplo, n, lda, ldb);
     } else {
@@ -1118,7 +1118,7 @@ template <typename T> struct syhegvd_impl {
     auto device_ws_data =
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     auto w_data = dpct::detail::get_memory(reinterpret_cast<value_t *>(w));
-    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
+    if constexpr (std::is_floating_point_v<T>) {
       oneapi::mkl::lapack::sygvd(q, itype, jobz, uplo, n, a_data, lda, b_data,
                                  ldb, w_data, device_ws_data, device_ws_size);
     } else {
@@ -1163,7 +1163,7 @@ template <typename T> struct syheev_scratchpad_size_impl {
         "The oneAPI Math Kernel Library (oneMKL) Interfaces "
         "Project does not support this API.");
 #else
-    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
+    if constexpr (std::is_floating_point_v<T>) {
       device_ws_size =
           oneapi::mkl::lapack::syev_scratchpad_size<T>(q, jobz, uplo, n, lda);
     } else {
@@ -1196,7 +1196,7 @@ template <typename T> struct syheev_impl {
     auto device_ws_data =
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     auto w_data = dpct::detail::get_memory(reinterpret_cast<value_t *>(w));
-    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
+    if constexpr (std::is_floating_point_v<T>) {
       oneapi::mkl::lapack::syev(q, jobz, uplo, n, a_data, lda, w_data,
                                 device_ws_data, device_ws_size);
     } else {
@@ -1216,7 +1216,7 @@ template <typename T> struct syheevd_scratchpad_size_impl {
   void operator()(sycl::queue &q, oneapi::mkl::job jobz, oneapi::mkl::uplo uplo,
                   std::int64_t n, library_data_t a_type, std::int64_t lda,
                   std::size_t &device_ws_size) {
-    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
+    if constexpr (std::is_floating_point_v<T>) {
       device_ws_size =
           oneapi::mkl::lapack::syevd_scratchpad_size<T>(q, jobz, uplo, n, lda);
     } else {
@@ -1243,7 +1243,7 @@ template <typename T> struct syheevd_impl {
     auto device_ws_data =
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     auto w_data = dpct::detail::get_memory(reinterpret_cast<value_t *>(w));
-    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
+    if constexpr (std::is_floating_point_v<T>) {
       oneapi::mkl::lapack::syevd(q, jobz, uplo, n, a_data, lda, w_data,
                                  device_ws_data, device_ws_size);
     } else {
