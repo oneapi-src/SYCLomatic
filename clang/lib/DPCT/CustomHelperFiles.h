@@ -14,6 +14,8 @@
 namespace clang {
 namespace dpct {
 
+std::string getDpctVersionStr();
+
 enum class HelperFeatureEnum : unsigned int {
   device_ext,
   no_feature_helper,

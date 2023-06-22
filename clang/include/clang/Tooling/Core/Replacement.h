@@ -386,17 +386,6 @@ llvm::Expected<std::string> applyAllReplacements(StringRef Code,
                                                  const Replacements &Replaces);
 
 #ifdef SYCLomatic_CUSTOMIZATION
-struct HelperFuncForYaml {
-  HelperFuncForYaml() : IsCalled(false), CallerSrcFiles({}) {}
-  HelperFuncForYaml(bool IsCalled, std::vector<std::string> CallerSrcFiles,
-                    std::map<std::string, HelperFuncForYaml> SubFeatureMap)
-      : IsCalled(IsCalled), CallerSrcFiles(CallerSrcFiles),
-        SubFeatureMap(SubFeatureMap) {}
-  bool IsCalled = false;
-  std::vector<std::string> CallerSrcFiles;
-  std::string APIName;
-  std::map<std::string, HelperFuncForYaml> SubFeatureMap;
-};
 struct CompilationInfo {
     CompilationInfo(){}
     std::string MigratedFileName;
@@ -425,7 +414,6 @@ struct TranslationUnitReplacements {
   std::string MainHelperFileName = "";
   std::string USMLevel = ""; // deprecated
 
-  std::map<std::string, std::map<std::string, HelperFuncForYaml>> FeatureMap;
   std::map<std::string, std::vector<CompilationInfo>> CompileTargets;
   std::map<std::string, OptionInfo> OptionMap;
 #endif // SYCLomatic_CUSTOMIZATION

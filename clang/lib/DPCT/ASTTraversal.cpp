@@ -941,15 +941,7 @@ void IncludesCallbacks::InclusionDirective(
 
   if ((FileName.compare(StringRef("cublas_v2.h")) == 0) ||
       (FileName.compare(StringRef("cublas.h")) == 0)) {
-    if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_None ||
-        DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_BLAS_Utils);
-    } else {
-      DpctGlobalInfo::getInstance().insertHeader(
-          HashLoc, HT_MKL_Mkl);
-    }
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_BLAS_Utils);
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
 
@@ -963,15 +955,7 @@ void IncludesCallbacks::InclusionDirective(
   // Replace with <oneapi/mkl.hpp> and <oneapi/mkl/rng/device.hpp>
   if ((FileName.compare(StringRef("curand.h")) == 0) ||
       (FileName.compare(StringRef("curand_kernel.h")) == 0)) {
-    if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_None ||
-        DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_RNG_Utils);
-    } else {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_RNG);
-    }
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_RNG_Utils);
     DpctGlobalInfo::setMKLHeaderUsed(true);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
@@ -983,16 +967,8 @@ void IncludesCallbacks::InclusionDirective(
   // Replace with <mkl_spblas_sycl.hpp>
   if ((FileName.compare(StringRef("cusparse.h")) == 0) ||
       (FileName.compare(StringRef("cusparse_v2.h")) == 0)) {
-    if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_None ||
-        DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_SPBLAS_Utils);
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_BLAS_Utils);
-    } else {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_Mkl);
-    }
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_SPBLAS_Utils);
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_BLAS_Utils);
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
 
@@ -1004,15 +980,7 @@ void IncludesCallbacks::InclusionDirective(
   }
 
   if (FileName.compare(StringRef("cufft.h")) == 0) {
-    if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_None ||
-        DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_FFT_Utils);
-    } else {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_Mkl);
-    }
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_FFT_Utils);
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
 
@@ -1024,15 +992,7 @@ void IncludesCallbacks::InclusionDirective(
   }
 
   if (FileName.compare(StringRef("cusolverDn.h")) == 0) {
-    if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_None ||
-        DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_LAPACK_Utils);
-    } else {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_Mkl);
-    }
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_LAPACK_Utils);
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
 
@@ -2719,13 +2679,8 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     if (TypeStr == "libraryPropertyType" ||
         TypeStr == "libraryPropertyType_t" || TypeStr == "cudaDataType_t" ||
         TypeStr == "cudaDataType" || TypeStr == "cublasComputeType_t") {
-      if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-              HelperFilesCustomizationLevel::HFCL_None ||
-          DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-              HelperFilesCustomizationLevel::HFCL_All) {
-        DpctGlobalInfo::getInstance().insertHeader(BeginLoc,
-                                                   HT_DPCT_COMMON_Utils);
-      }
+      DpctGlobalInfo::getInstance().insertHeader(BeginLoc,
+                                                 HT_DPCT_COMMON_Utils);
     }
 
     const DeclaratorDecl *DD = nullptr;
@@ -3693,15 +3648,10 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
       if (ETD->getName().str() == "libraryPropertyType_t" ||
           ETD->getName().str() == "cudaDataType_t" ||
           ETD->getName().str() == "cublasComputeType_t") {
-        if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-                HelperFilesCustomizationLevel::HFCL_None ||
-            DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-                HelperFilesCustomizationLevel::HFCL_All) {
-          DpctGlobalInfo::getInstance().insertHeader(
-              DpctGlobalInfo::getSourceManager().getExpansionLoc(
-                  E->getBeginLoc()),
-              HT_DPCT_COMMON_Utils);
-        }
+        DpctGlobalInfo::getInstance().insertHeader(
+            DpctGlobalInfo::getSourceManager().getExpansionLoc(
+                E->getBeginLoc()),
+            HT_DPCT_COMMON_Utils);
       }
     }
   }
@@ -5840,13 +5790,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cublasGetVersion" ||
              FuncName == "cublasGetVersion_v2") {
     if (FuncName == "cublasGetVersion" || FuncName == "cublasGetVersion_v2") {
-      if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-              HelperFilesCustomizationLevel::HFCL_None ||
-          DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-              HelperFilesCustomizationLevel::HFCL_All) {
-        DpctGlobalInfo::getInstance().insertHeader(
-            SM->getExpansionLoc(CE->getBeginLoc()), HT_DPCT_COMMON_Utils);
-      }
+      DpctGlobalInfo::getInstance().insertHeader(
+         SM->getExpansionLoc(CE->getBeginLoc()), HT_DPCT_COMMON_Utils);
     }
 
     ExprAnalysis EA(CE);
@@ -13899,13 +13844,8 @@ void FFTFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
 
   if (FuncName == "cufftGetVersion" || FuncName == "cufftGetProperty") {
-    if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_None ||
-        DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(
-          SM.getExpansionLoc(CE->getBeginLoc()), HT_DPCT_COMMON_Utils);
-    }
+    DpctGlobalInfo::getInstance().insertHeader(
+        SM.getExpansionLoc(CE->getBeginLoc()), HT_DPCT_COMMON_Utils);
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();

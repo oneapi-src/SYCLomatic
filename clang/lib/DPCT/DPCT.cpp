@@ -847,13 +847,8 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);
   DpctGlobalInfo::setUsmLevel(USMLevel);
   DpctGlobalInfo::setIsIncMigration(!NoIncrementalMigration);
-  DpctGlobalInfo::setHelperFilesCustomizationLevel(
-      HelperFilesCustomizationLevel::HFCL_None);
   DpctGlobalInfo::setCheckUnicodeSecurityFlag(CheckUnicodeSecurityFlag);
   DpctGlobalInfo::setEnablepProfilingFlag(EnablepProfilingFlag);
-  DpctGlobalInfo::setCustomHelperFileName("dpct");
-  HelperFileNameMap[HelperFileEnum::Dpct] =
-      DpctGlobalInfo::getCustomHelperFileName() + ".hpp";
   DpctGlobalInfo::setFormatRange(FormatRng);
   DpctGlobalInfo::setFormatStyle(FormatST);
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
@@ -919,8 +914,6 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_CommentsEnabled,
                      DpctGlobalInfo::isCommentsEnabled(),
                      EnableComments.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_CustomHelperFileName,
-                     DpctGlobalInfo::getCustomHelperFileName(), 0);
     setValueToOptMap(clang::dpct::OPTION_CtadEnabled,
                      DpctGlobalInfo::isCtadEnabled(),
                      EnableCTAD.getNumOccurrences());

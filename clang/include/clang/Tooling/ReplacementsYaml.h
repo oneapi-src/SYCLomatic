@@ -21,9 +21,6 @@
 
 LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::Replacement)
 #ifdef SYCLomatic_CUSTOMIZATION
-LLVM_YAML_IS_STRING_MAP(clang::tooling::HelperFuncForYaml)
-using FeatureOfFileMapTy = std::map<std::string/*feature name*/, clang::tooling::HelperFuncForYaml>;
-LLVM_YAML_IS_STRING_MAP(FeatureOfFileMapTy)
 LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::CompilationInfo)
 LLVM_YAML_IS_STRING_MAP(std::vector<clang::tooling::CompilationInfo>)
 LLVM_YAML_IS_STRING_MAP(clang::tooling::OptionInfo)
@@ -213,39 +210,6 @@ template <> struct MappingTraits<clang::tooling::OptionInfo> {
     Io.mapOptional("Specified", Keys->Specified);
   }
 };
-
-template <> struct MappingTraits<clang::tooling::HelperFuncForYaml> {
-  struct NormalizedHelperFuncForYaml {
-    NormalizedHelperFuncForYaml(const IO &)
-        : IsCalled(false), CallerSrcFiles({}), SubFeatureMap({}) {}
-
-    NormalizedHelperFuncForYaml(const IO &,
-                               const clang::tooling::HelperFuncForYaml &HFFY)
-        : IsCalled(HFFY.IsCalled), CallerSrcFiles(HFFY.CallerSrcFiles),
-          SubFeatureMap(HFFY.SubFeatureMap) {}
-
-    clang::tooling::HelperFuncForYaml denormalize(const IO &) {
-      clang::tooling::HelperFuncForYaml HFFY;
-      HFFY.IsCalled = IsCalled;
-      HFFY.CallerSrcFiles = CallerSrcFiles;
-      HFFY.SubFeatureMap = SubFeatureMap;
-      return HFFY;
-    }
-
-    bool IsCalled = false;
-    std::vector<std::string> CallerSrcFiles;
-    std::map<std::string, clang::tooling::HelperFuncForYaml> SubFeatureMap;
-  };
-
-  static void mapping(IO &Io, clang::tooling::HelperFuncForYaml &HFFY) {
-    MappingNormalization<NormalizedHelperFuncForYaml,
-                         clang::tooling::HelperFuncForYaml>
-        Keys(Io, HFFY);
-    Io.mapOptional("IsCalled", Keys->IsCalled);
-    Io.mapOptional("CallerSrcFiles", Keys->CallerSrcFiles);
-    Io.mapOptional("SubFeatureMap", Keys->SubFeatureMap);
-  }
-};
 #endif // SYCLomatic_CUSTOMIZATION
 
 
@@ -261,7 +225,6 @@ template <> struct MappingTraits<clang::tooling::TranslationUnitReplacements> {
     Io.mapOptional("DpctVersion", Doc.DpctVersion);
     Io.mapOptional("MainHelperFileName", Doc.MainHelperFileName);
     Io.mapOptional("USMLevel", Doc.USMLevel);
-    Io.mapOptional("FeatureMap", Doc.FeatureMap);
     Io.mapOptional("CompileTargets", Doc.CompileTargets);
     Io.mapOptional("OptionMap", Doc.OptionMap);
 #endif

@@ -25,13 +25,6 @@ MainSourceFilesDigest:
 DpctVersion:     9999.4.0
 MainHelperFileName: dpct
 USMLevel:        ''
-FeatureMap:
-  dpct.hpp:
-    non_local_include_dependency:
-      IsCalled:        true
-      CallerSrcFiles:
-        - ''
-      SubFeatureMap:   {}
 CompileTargets:  {}
 OptionMap:
   AsyncHandler:
