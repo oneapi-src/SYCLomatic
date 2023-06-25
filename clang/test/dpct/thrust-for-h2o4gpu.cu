@@ -65,10 +65,10 @@ void copy_if_device(ExecutionPolicy exec)
 
   //CHECK: dpct::get_default_queue().submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    thrust::detail::normal_iterator<dpct::device_pointer<int>> d_data_begin_ct1 = d_data.begin();
-  //CHECK-NEXT:    thrust::detail::normal_iterator<dpct::device_pointer<int>> d_data_end_ct2 = d_data.end();
-  //CHECK-NEXT:    thrust::detail::normal_iterator<dpct::device_pointer<int>> d_result_begin_ct3 = d_result.begin();
-  //CHECK-NEXT:    thrust::detail::normal_iterator<dpct::device_pointer<thrust::detail::normal_iterator<dpct::device_pointer<int>>>> dd_begin_ct5 = dd.begin();
+  //CHECK-NEXT:    auto d_data_begin_ct1 = d_data.begin();
+  //CHECK-NEXT:    auto d_data_end_ct2 = d_data.end();
+  //CHECK-NEXT:    auto d_result_begin_ct3 = d_result.begin();
+  //CHECK-NEXT:    auto dd_begin_ct5 = dd.begin();
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),

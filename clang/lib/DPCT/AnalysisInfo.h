@@ -3961,8 +3961,8 @@ public:
 
 private:
   struct ArgInfo {
-    ArgInfo(KernelArgumentAnalysis &Analysis, const Expr *Arg, bool Used,
-            int Index, KernelCallExpr *BASE)
+    ArgInfo(const ParmVarDecl *PVD, KernelArgumentAnalysis &Analysis,
+            const Expr *Arg, bool Used, int Index, KernelCallExpr *BASE)
         : IsPointer(false), IsRedeclareRequired(false),
           IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
       Analysis.analyze(Arg);
@@ -4007,9 +4007,8 @@ private:
         else
           ArgSize =
               MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Default);
-        if (!QT.getTypePtr()->isDependentType()) {
-          TypeString = DpctGlobalInfo::getReplacedTypeName(
-              QT.getDesugaredType(DpctGlobalInfo::getContext()));
+        if (PVD) {
+          TypeString = DpctGlobalInfo::getReplacedTypeName(PVD->getType());
         }
       }
       if (IsRedeclareRequired || IsPointer || BASE->IsInMacroDefine) {
@@ -4178,7 +4177,9 @@ private:
         bool Used = true;
         if (auto *ArgDRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
           Used = isArgUsedAsLvalueUntil(ArgDRE, CE);
-        ArgsInfo.emplace_back(Analysis, Arg, Used, Idx, this);
+        const auto FD = CE->getDirectCallee();
+        ArgsInfo.emplace_back(FD ? FD->parameters()[Idx] : nullptr, Analysis,
+                              Arg, Used, Idx, this);
       }
     }
   }
