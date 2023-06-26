@@ -996,9 +996,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::exp2((float)i);
   f2 = exp2f(i);
 
-  // CHECK: f2 = sycl::exp(f0);
+  // CHECK: f2 = sycl::native::exp(f0);
   f2 = expf(f0);
-  // CHECK: f2 = sycl::exp((float)i);
+  // CHECK: f2 = sycl::native::exp((float)i);
   f2 = expf(i);
 
   // CHECK: f2 = sycl::expm1(f0);
@@ -1272,9 +1272,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f0 = sycl::exp10((float)i);
   f0 = __exp10f(i);
 
-  // CHECK: f0 = sycl::exp(f0);
+  // CHECK: f0 = sycl::native::exp(f0);
   f0 = __expf(f0);
-  // CHECK: f0 = sycl::exp((float)i);
+  // CHECK: f0 = sycl::native::exp((float)i);
   f0 = __expf(i);
 
   // CHECK: /*
@@ -2644,7 +2644,7 @@ __host__ int foo(int i, int j) {
 }
 
 // CHECK:  float foo(float f, float g) {
-// CHECK-NEXT:   return sycl::max(f, g) + sycl::min(f, g);
+// CHECK-NEXT:   return max(f, g) + min(f, g);
 // CHECK-NEXT: }
 __host__ float foo(float f, float g) {
   return max(f, g) + min(f, g);
@@ -2672,7 +2672,7 @@ __device__ int __host__ foo3(int i, int j) {
 }
 
 // CHECK:  float  foo3(float f, float g) {
-// CHECK-NEXT:   return sycl::max(f, g) + sycl::min(f, g);
+// CHECK-NEXT:   return max(f, g) + min(f, g);
 // CHECK-NEXT: }
 __device__ float __host__ foo3(float f, float g) {
   return max(f, g) + min(f, g);

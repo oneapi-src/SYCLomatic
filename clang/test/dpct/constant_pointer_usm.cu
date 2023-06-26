@@ -23,7 +23,7 @@ void init() {
   cudaMemcpyToSymbol(schsfirst, &schsfirstD, sizeof(void *));
 
   cudaMalloc(&zmD, numschH * sizeof(double2));
-  //CHECK: q_ct1.memcpy(zm.get_ptr(), &zmD, sizeof(void *));
+  //CHECK: q_ct1.memcpy(zm.get_ptr(), &zmD, sizeof(void *)).wait();
   cudaMemcpyToSymbol(zm, &zmD, sizeof(void *));
 
   gpuMain2<<<1, 1>>>();

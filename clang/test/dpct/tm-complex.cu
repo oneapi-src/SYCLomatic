@@ -383,7 +383,7 @@ int foo_test_2()
 // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(*stop = dpct::get_default_queue().ext_oneapi_submit_barrier()));
 // CHECK-NEXT:    CHECK(0);
-// CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR(elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count()));
+// CHECK-NEXT:    CHECK(DPCT_CHECK_ERROR((elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count())));
     CHECK(cudaEventRecord(stop, 0));
     CHECK(cudaEventSynchronize(stop));
     CHECK(cudaEventElapsedTime(&elapsed_time, start, stop));

@@ -872,7 +872,7 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
       if ((!CommandLine.empty() && CommandLine[0] == "CudaCompile") ||
           (!CommandLine.empty() && CommandLine[0] == "CustomBuild" &&
            llvm::sys::path::extension(File)==".cu")) {
-        emitDefaultLanguageWarningIfNecessary(CommandLine[0],
+        emitDefaultLanguageWarningIfNecessary(File.str(),
                                               SpecifyLanguageInOption);
         CudaArgsAdjuster = combineAdjusters(
             std::move(CudaArgsAdjuster),
@@ -884,7 +884,7 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
 #else
       if (!CommandLine.empty() && CommandLine[0].size() >= 4 &&
           CommandLine[0].substr(CommandLine[0].size() - 4) == "nvcc") {
-        emitDefaultLanguageWarningIfNecessary(CommandLine[0],
+        emitDefaultLanguageWarningIfNecessary(File.str(),
                                               SpecifyLanguageInOption);
         CudaArgsAdjuster = combineAdjusters(
             std::move(CudaArgsAdjuster),

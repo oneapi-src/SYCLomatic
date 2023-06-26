@@ -212,7 +212,7 @@ int main(int argc, char* argv[]) {
   cudaEventSynchronize(stop);
   cudaEventElapsedTime(&elapsed_time, start, stop);
 
-  // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count()));
+  // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR((elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count())));
   MY_ERROR_CHECKER(cudaEventElapsedTime(&elapsed_time, start, stop));
 
   // kernel call without sync
@@ -317,7 +317,7 @@ void foo() {
 
   cudaEventSynchronize(stop);
 
-  // CHECK: MY_CHECKER(DPCT_CHECK_ERROR(elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count()));
+  // CHECK: MY_CHECKER(DPCT_CHECK_ERROR((elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count())));
   MY_CHECKER(cudaEventElapsedTime(&elapsed_time, start, stop));
 
   cudaEventDestroy(start);
@@ -359,7 +359,7 @@ void bar() {
   fun(cudaEventRecord(stop, 0));
 
   cudaEventSynchronize(stop);
-  // CHECK: fun(DPCT_CHECK_ERROR(elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count()));
+  // CHECK: fun(DPCT_CHECK_ERROR((elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count())));
   fun(cudaEventElapsedTime(&elapsed_time, start, stop));
 
   cudaEventDestroy(start);

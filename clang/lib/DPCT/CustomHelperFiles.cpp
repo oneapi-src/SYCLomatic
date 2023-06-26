@@ -23,57 +23,11 @@
 namespace clang {
 namespace dpct {
 
-void requestFeature(HelperFeatureEnum Feature, const std::string &UsedFile) {
+void requestFeature(HelperFeatureEnum Feature) {
   if (Feature == HelperFeatureEnum::no_feature_helper) {
     return;
   }
-  static const auto NotNeedDeviceExtMap = []() {
-    static bool NotNeedDeviceExtMap[static_cast<unsigned>(
-        HelperFeatureEnum::no_feature_helper)];
-    NotNeedDeviceExtMap[static_cast<int>(
-        HelperFeatureEnum::Memory_memcpy_direction)] = true;
-    return NotNeedDeviceExtMap;
-  }();
-  if (!NotNeedDeviceExtMap[static_cast<int>(Feature)]) {
-    DpctGlobalInfo::setNeedDpctDeviceExt();
-  }
-  if (!HelperFeatureEnumPairMap.count(Feature)) {
-#ifdef DPCT_DEBUG_BUILD
-    std::cout << "Unknown feature enum:" << (unsigned int)Feature << std::endl;
-    assert(0 && "Unknown requested feature.\n");
-#endif
-  }
-  auto Key = HelperFeatureEnumPairMap.at(Feature);
-  auto Iter = HelperNameContentMap.find(Key);
-  if (Iter != HelperNameContentMap.end()) {
-    Iter->second.IsCalled = true;
-    Iter->second.CallerSrcFiles.insert(UsedFile);
-  } else {
-#ifdef DPCT_DEBUG_BUILD
-    std::cout << "Unknown feature: File:" << (unsigned int)Key.first
-              << ", Feature:" << Key.second << std::endl;
-    assert(0 && "Unknown requested feature.\n");
-#endif
-  }
-}
-void requestFeature(HelperFeatureEnum Feature, SourceLocation SL) {
-  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
-  auto ExpansionLoc = SM.getExpansionLoc(SL);
-
-  std::string UsedFile = "";
-  if (ExpansionLoc.isValid())
-    UsedFile = dpct::DpctGlobalInfo::getLocInfo(ExpansionLoc).first;
-  requestFeature(Feature, UsedFile);
-}
-void requestFeature(HelperFeatureEnum Feature, const Stmt *Stmt) {
-  if (!Stmt)
-    return;
-  requestFeature(Feature, Stmt->getBeginLoc());
-}
-void requestFeature(HelperFeatureEnum Feature, const Decl *Decl) {
-  if (!Decl)
-    return;
-  requestFeature(Feature, Decl->getBeginLoc());
+  DpctGlobalInfo::setNeedDpctDeviceExt();
 }
 
 std::string getCopyrightHeader(const clang::dpct::HelperFileEnum File) {
@@ -403,10 +357,6 @@ void generateHelperFunctions() {
     return Res;
   };
 
-  // dpct.hpp is always exist, so request its non_local_include_dependency
-  // feature
-  requestFeature(dpct::HelperFeatureEnum::Dpct_non_local_include_dependency,
-                 "");
   // 1. add dependent APIs
   size_t UsedAPINum = getUsedAPINum();
   do {
@@ -757,44 +707,31 @@ void generateHelperFunctions() {
 #undef GENERATE_DPL_EXTRAS_FILE
 }
 
-#define ADD_HELPER_FEATURE_FOR_ENUM_NAMES(TYPE)                                \
-  void requestHelperFeatureForEnumNames(const std::string Name, TYPE File) {   \
-    auto HelperFeatureIter =                                                   \
-        clang::dpct::EnumConstantRule::EnumNamesMap.find(Name);                \
-    if (HelperFeatureIter !=                                                   \
-        clang::dpct::EnumConstantRule::EnumNamesMap.end()) {                   \
-      requestFeature(HelperFeatureIter->second->RequestFeature, File);         \
-      return;                                                                  \
-    }                                                                          \
-    auto CuDNNHelperFeatureIter =                                              \
-        clang::dpct::CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap.find(Name);\
-    if (CuDNNHelperFeatureIter !=                                              \
-        clang::dpct::CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap.end()) {   \
-      requestFeature(CuDNNHelperFeatureIter->second, File);                    \
-    }                                                                          \
+void requestHelperFeatureForEnumNames(const std::string Name) {
+  auto HelperFeatureIter =
+      clang::dpct::EnumConstantRule::EnumNamesMap.find(Name);
+  if (HelperFeatureIter != clang::dpct::EnumConstantRule::EnumNamesMap.end()) {
+    requestFeature(HelperFeatureIter->second->RequestFeature);
+    return;
   }
-#define ADD_HELPER_FEATURE_FOR_TYPE_NAMES(TYPE)                                \
-  void requestHelperFeatureForTypeNames(const std::string Name, TYPE File) {   \
-    auto HelperFeatureIter = MapNames::TypeNamesMap.find(Name);                \
-    if (HelperFeatureIter != MapNames::TypeNamesMap.end()) {                   \
-      requestFeature(HelperFeatureIter->second->RequestFeature, File);         \
-      return;                                                                  \
-    }                                                                          \
-    auto CuDNNHelperFeatureIter = MapNames::CuDNNTypeNamesMap.find(Name);      \
-    if (CuDNNHelperFeatureIter != MapNames::CuDNNTypeNamesMap.end()) {         \
-      requestFeature(CuDNNHelperFeatureIter->second->RequestFeature, File);    \
-    }                                                                          \
+  auto CuDNNHelperFeatureIter =
+      clang::dpct::CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap.find(Name);
+  if (CuDNNHelperFeatureIter !=
+      clang::dpct::CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap.end()) {
+    requestFeature(CuDNNHelperFeatureIter->second);
   }
-ADD_HELPER_FEATURE_FOR_ENUM_NAMES(const std::string)
-ADD_HELPER_FEATURE_FOR_ENUM_NAMES(SourceLocation)
-ADD_HELPER_FEATURE_FOR_ENUM_NAMES(const Stmt *)
-ADD_HELPER_FEATURE_FOR_ENUM_NAMES(const Decl *)
-ADD_HELPER_FEATURE_FOR_TYPE_NAMES(const std::string)
-ADD_HELPER_FEATURE_FOR_TYPE_NAMES(SourceLocation)
-ADD_HELPER_FEATURE_FOR_TYPE_NAMES(const Stmt *)
-ADD_HELPER_FEATURE_FOR_TYPE_NAMES(const Decl *)
-#undef ADD_HELPER_FEATURE_FOR_ENUM_NAMES
-#undef ADD_HELPER_FEATURE_FOR_TYPE_NAMES
+}
+void requestHelperFeatureForTypeNames(const std::string Name) {
+  auto HelperFeatureIter = MapNames::TypeNamesMap.find(Name);
+  if (HelperFeatureIter != MapNames::TypeNamesMap.end()) {
+    requestFeature(HelperFeatureIter->second->RequestFeature);
+    return;
+  }
+  auto CuDNNHelperFeatureIter = MapNames::CuDNNTypeNamesMap.find(Name);
+  if (CuDNNHelperFeatureIter != MapNames::CuDNNTypeNamesMap.end()) {
+    requestFeature(CuDNNHelperFeatureIter->second->RequestFeature);
+  }
+}
 
 std::string getCustomMainHelperFileName() {
   return dpct::DpctGlobalInfo::getCustomHelperFileName();
@@ -963,131 +900,78 @@ const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
         {clang::dpct::HelperFileEnum::DplExtrasDpcppExtensions,
          "__DPCT_DPCPP_EXTENSIONS_H__"}};
 
-const std::unordered_map<clang::dpct::HelperFeatureEnum,
-                         clang::dpct::HelperFeatureIDTy>
-    HelperFeatureEnumPairMap{
-#define DPCT_FEATURE_ENUM_FEATURE_PAIR_MAP
-#undef DPCT_FEATURE_ENUM
-#include "clang/DPCT/HelperFeatureEnum.inc"
-#undef DPCT_FEATURE_ENUM_FEATURE_PAIR_MAP
-    };
-
 const std::unordered_map<std::string, HelperFeatureEnum> PropToGetFeatureMap = {
-    {"clockRate",
-     HelperFeatureEnum::Device_device_info_get_max_clock_frequency},
-    {"major", HelperFeatureEnum::Device_device_info_get_major_version},
-    {"minor", HelperFeatureEnum::Device_device_info_get_minor_version},
-    {"integrated", HelperFeatureEnum::Device_device_info_get_integrated},
-    {"warpSize", HelperFeatureEnum::Device_device_info_get_max_sub_group_size},
-    {"multiProcessorCount",
-     HelperFeatureEnum::Device_device_info_get_max_compute_units},
-    {"maxThreadsPerBlock",
-     HelperFeatureEnum::Device_device_info_get_max_work_group_size},
-    {"maxThreadsPerMultiProcessor",
-     HelperFeatureEnum::Device_device_info_get_max_work_items_per_compute_unit},
-    {"name", HelperFeatureEnum::Device_device_info_get_name},
-    {"totalGlobalMem",
-     HelperFeatureEnum::Device_device_info_get_global_mem_size},
-    {"sharedMemPerMultiprocessor",
-     HelperFeatureEnum::Device_device_info_get_local_mem_size},
-    {"sharedMemPerBlock",
-     HelperFeatureEnum::Device_device_info_get_local_mem_size},
-    {"maxGridSize",
-     HelperFeatureEnum::Device_device_info_get_max_nd_range_size},
-    {"maxThreadsDim",
-     HelperFeatureEnum::Device_device_info_get_max_work_item_sizes},
-    {"memoryClockRate",
-     HelperFeatureEnum::Device_device_info_get_memory_clock_rate},
-    {"memoryBusWidth",
-     HelperFeatureEnum::Device_device_info_get_memory_bus_width},
-    {"pciDeviceID",
-     HelperFeatureEnum::Device_device_info_get_device_id},
-    {"uuid",
-     HelperFeatureEnum::Device_device_info_get_uuid},
+    {"clockRate", HelperFeatureEnum::device_ext},
+    {"major", HelperFeatureEnum::device_ext},
+    {"minor", HelperFeatureEnum::device_ext},
+    {"integrated", HelperFeatureEnum::device_ext},
+    {"warpSize", HelperFeatureEnum::device_ext},
+    {"multiProcessorCount", HelperFeatureEnum::device_ext},
+    {"maxThreadsPerBlock", HelperFeatureEnum::device_ext},
+    {"maxThreadsPerMultiProcessor", HelperFeatureEnum::device_ext},
+    {"name", HelperFeatureEnum::device_ext},
+    {"totalGlobalMem", HelperFeatureEnum::device_ext},
+    {"sharedMemPerMultiprocessor", HelperFeatureEnum::device_ext},
+    {"sharedMemPerBlock", HelperFeatureEnum::device_ext},
+    {"maxGridSize", HelperFeatureEnum::device_ext},
+    {"maxThreadsDim", HelperFeatureEnum::device_ext},
+    {"memoryClockRate", HelperFeatureEnum::device_ext},
+    {"memoryBusWidth", HelperFeatureEnum::device_ext},
+    {"pciDeviceID", HelperFeatureEnum::device_ext},
+    {"uuid", HelperFeatureEnum::device_ext},
 };
 
 const std::unordered_map<std::string, HelperFeatureEnum> PropToSetFeatureMap = {
     {"clockRate",
-     HelperFeatureEnum::Device_device_info_set_max_clock_frequency},
-    {"major", HelperFeatureEnum::Device_device_info_set_major_version},
-    {"minor", HelperFeatureEnum::Device_device_info_set_minor_version},
-    {"integrated", HelperFeatureEnum::Device_device_info_set_integrated},
-    {"warpSize", HelperFeatureEnum::Device_device_info_set_max_sub_group_size},
-    {"multiProcessorCount",
-     HelperFeatureEnum::Device_device_info_set_max_compute_units},
-    {"maxThreadsPerBlock",
-     HelperFeatureEnum::Device_device_info_set_max_work_group_size},
-    {"maxThreadsPerMultiProcessor",
-     HelperFeatureEnum::Device_device_info_set_max_work_items_per_compute_unit},
-    {"name", HelperFeatureEnum::Device_device_info_set_name},
-    {"totalGlobalMem",
-     HelperFeatureEnum::Device_device_info_set_global_mem_size},
-    {"sharedMemPerBlock",
-     HelperFeatureEnum::Device_device_info_set_local_mem_size},
-    {"maxGridSize",
-     HelperFeatureEnum::Device_device_info_set_max_nd_range_size},
-    {"maxThreadsDim",
-     HelperFeatureEnum::Device_device_info_set_max_work_item_sizes},
-    {"memoryClockRate",
-     HelperFeatureEnum::Device_device_info_set_memory_clock_rate},
-    {"memoryBusWidth",
-     HelperFeatureEnum::Device_device_info_set_memory_bus_width},
-    {"pciDeviceID",
-     HelperFeatureEnum::Device_device_info_set_device_id},
-    {"uuid",
-     HelperFeatureEnum::Device_device_info_set_uuid},
+     HelperFeatureEnum::device_ext},
+    {"major", HelperFeatureEnum::device_ext},
+    {"minor", HelperFeatureEnum::device_ext},
+    {"integrated", HelperFeatureEnum::device_ext},
+    {"warpSize", HelperFeatureEnum::device_ext},
+    {"multiProcessorCount", HelperFeatureEnum::device_ext},
+    {"maxThreadsPerBlock", HelperFeatureEnum::device_ext},
+    {"maxThreadsPerMultiProcessor", HelperFeatureEnum::device_ext},
+    {"name", HelperFeatureEnum::device_ext},
+    {"totalGlobalMem", HelperFeatureEnum::device_ext},
+    {"sharedMemPerBlock", HelperFeatureEnum::device_ext},
+    {"maxGridSize", HelperFeatureEnum::device_ext},
+    {"maxThreadsDim", HelperFeatureEnum::device_ext},
+    {"memoryClockRate", HelperFeatureEnum::device_ext},
+    {"memoryBusWidth", HelperFeatureEnum::device_ext},
+    {"pciDeviceID", HelperFeatureEnum::device_ext},
+    {"uuid", HelperFeatureEnum::device_ext},
 };
 
 const std::unordered_map<std::string, HelperFeatureEnum>
     SamplingInfoToSetFeatureMap = {
-        {"coordinate_normalization_mode",
-         HelperFeatureEnum::
-             Image_sampling_info_set_coordinate_normalization_mode}};
+        {"coordinate_normalization_mode", HelperFeatureEnum::device_ext}};
 const std::unordered_map<std::string, HelperFeatureEnum>
     SamplingInfoToGetFeatureMap = {
-        {"addressing_mode",
-         HelperFeatureEnum::Image_sampling_info_get_addressing_mode},
-        {"filtering_mode",
-         HelperFeatureEnum::Image_sampling_info_get_filtering_mode}};
+        {"addressing_mode", HelperFeatureEnum::device_ext},
+        {"filtering_mode", HelperFeatureEnum::device_ext}};
 const std::unordered_map<std::string, HelperFeatureEnum>
     ImageWrapperBaseToSetFeatureMap = {
-        {"sampling_info",
-         HelperFeatureEnum::Image_image_wrapper_base_set_sampling_info},
-        {"data", HelperFeatureEnum::Image_image_wrapper_base_set_data},
-        {"channel", HelperFeatureEnum::Image_image_wrapper_base_set_channel},
-        {"channel_data_type",
-         HelperFeatureEnum::Image_image_wrapper_base_set_channel_data_type},
-        {"channel_size",
-         HelperFeatureEnum::Image_image_wrapper_base_set_channel_size},
-        {"coordinate_normalization_mode",
-         HelperFeatureEnum::
-             Image_image_wrapper_base_set_coordinate_normalization_mode},
-        {"channel_num",
-         HelperFeatureEnum::Image_image_wrapper_base_set_channel_num},
-        {"channel_type",
-         HelperFeatureEnum::Image_image_wrapper_base_set_channel_type}};
+        {"sampling_info", HelperFeatureEnum::device_ext},
+        {"data", HelperFeatureEnum::device_ext},
+        {"channel", HelperFeatureEnum::device_ext},
+        {"channel_data_type", HelperFeatureEnum::device_ext},
+        {"channel_size", HelperFeatureEnum::device_ext},
+        {"coordinate_normalization_mode", HelperFeatureEnum::device_ext},
+        {"channel_num", HelperFeatureEnum::device_ext},
+        {"channel_type", HelperFeatureEnum::device_ext}};
 const std::unordered_map<std::string, HelperFeatureEnum>
     ImageWrapperBaseToGetFeatureMap = {
-        {"sampling_info",
-         HelperFeatureEnum::Image_image_wrapper_base_get_sampling_info},
-        {"data", HelperFeatureEnum::Image_image_wrapper_base_get_data},
-        {"channel", HelperFeatureEnum::Image_image_wrapper_base_get_channel},
-        {"channel_data_type",
-         HelperFeatureEnum::Image_image_wrapper_base_get_channel_data_type},
-        {"channel_size",
-         HelperFeatureEnum::Image_image_wrapper_base_get_channel_size},
-        {"addressing_mode",
-         HelperFeatureEnum::Image_image_wrapper_base_get_addressing_mode},
-        {"filtering_mode",
-         HelperFeatureEnum::Image_image_wrapper_base_get_filtering_mode},
-        {"coordinate_normalization_mode",
-         HelperFeatureEnum::
-             Image_image_wrapper_base_get_coordinate_normalization_mode},
-        {"channel_num",
-         HelperFeatureEnum::Image_image_wrapper_base_get_channel_num},
-        {"channel_type",
-         HelperFeatureEnum::Image_image_wrapper_base_get_channel_type},
-        {"sampler", HelperFeatureEnum::Image_image_wrapper_base_get_sampler},
+        {"sampling_info", HelperFeatureEnum::device_ext},
+        {"data", HelperFeatureEnum::device_ext},
+        {"channel", HelperFeatureEnum::device_ext},
+        {"channel_data_type", HelperFeatureEnum::device_ext},
+        {"channel_size", HelperFeatureEnum::device_ext},
+        {"addressing_mode", HelperFeatureEnum::device_ext},
+        {"filtering_mode", HelperFeatureEnum::device_ext},
+        {"coordinate_normalization_mode", HelperFeatureEnum::device_ext},
+        {"channel_num", HelperFeatureEnum::device_ext},
+        {"channel_type", HelperFeatureEnum::device_ext},
+        {"sampler", HelperFeatureEnum::device_ext},
     };
 
 } // namespace dpct
