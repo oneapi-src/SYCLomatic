@@ -66,7 +66,7 @@ which is rewritten to:
       // cublas/cusolver API getrs need the output of cublas/cusolver getrf as input.
       // MKL/dpct helper API getrs need the output of MKL/dpct helper getrf as input.
       // In this case, matrix P is only used as a temporary data between library API
-      // invocations, so we can ingore the warning.
+      // invocations, so the warning can be ignored.
       dpct::getrf_batch_wrapper(*handle, 2, a_array, 2, p_array, info_array, 1);
       dpct::getrs_batch_wrapper(*handle, oneapi::mkl::transpose::nontrans, 2, 2,
                                 const_cast<float const **>(a_array), 2, p_array,

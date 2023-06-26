@@ -107,9 +107,10 @@ results in the following migrated SYCL code:
 which is rewritten to:
 
 .. code-block:: cpp
+   :emphasize-lines: 1, 27, 36
    :linenos:
 
-    void kernel(const dpct::image_accessor_ext<sycl::float4, 1> texObj) {}
+    void kernel(const dpct::image_accessor_ext<sycl::float4, 2> texObj) {}
     
     void foo() {
       dpct::device_ext &dev_ct1 = dpct::get_current_device();
@@ -135,7 +136,7 @@ which is rewritten to:
     
       q_ct1.submit([&](sycl::handler &cgh) {
         auto tex42_acc =
-            static_cast<dpct::image_wrapper<sycl::float4, 1> *>(tex42)->get_access(
+            static_cast<dpct::image_wrapper<sycl::float4, 2> *>(tex42)->get_access(
                 cgh);
     
         auto tex42_smpl = tex42->get_sampler();
@@ -144,7 +145,7 @@ which is rewritten to:
             sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
             [=](sycl::nd_item<3> item_ct1) {
               kernel(
-                  dpct::image_accessor_ext<sycl::float4, 1>(tex42_smpl, tex42_acc));
+                  dpct::image_accessor_ext<sycl::float4, 2>(tex42_smpl, tex42_acc));
             });
       });
     }

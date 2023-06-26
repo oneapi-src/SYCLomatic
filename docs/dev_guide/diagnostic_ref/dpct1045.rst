@@ -88,6 +88,8 @@ which is rewritten to:
    // a_row_ptr = [0, 2, 4, 5]
    // a_col_ind = [0, 2, 1, 2, 2]
    //
+   // Original matrix A is a symmetric matrix. Only upper/lower data is used.
+   // To make it to be a general matrix, all data in the matrix need to be filled.
    //         --         --
    //         | 1   0   2 |
    // new_A = | 0   3   4 |
@@ -100,12 +102,15 @@ which is rewritten to:
                              std::shared_ptr<dpct::sparse::matrix_info> descrA,
                              float alpha, float beta, float *a_val, int *a_row_ptr,
                              int *a_col_ind, float *b, float *c) {
-      a_val = new_a_val;
-      a_row_ptr = new_a_row_ptr;
-      a_col_ind = new_a_col_ind;
       descrA->set_matrix_type(dpct::sparse::matrix_info::matrix_type::ge);
+      float* new_a_val = sycl::malloc_shared<float>(7, *handle);
+      int* new_a_row_ptr = sycl::malloc_shared<int>(4, *handle);
+      int* new_a_col_ind = sycl::malloc_shared<int>(7, *handle);
+      new_a_val = {1, 2, 3, 4, 2, 4, 5};
+      new_a_row_ptr = {0, 2, 4, 7};
+      new_a_col_ind = {0, 2, 1, 2, 0, 1, 2};
       dpct::sparse::csrmm(*handle, oneapi::mkl::transpose::nontrans, 4, 2, 5,
-                          &alpha, descrA, a_val, a_row_ptr, a_col_ind, &beta, 5, b,
-                          c, 4);
+                          &alpha, descrA, new_a_val, new_a_row_ptr, new_a_col_ind,
+                          &beta, 5, b, c, 4);
     }
 

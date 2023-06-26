@@ -66,6 +66,7 @@ results in the following migrated SYCL code:
 which is rewritten to:
 
 .. code-block:: cpp
+   :emphasize-lines: 12
    :linenos:
 
     void kernel(int c, int d) {}

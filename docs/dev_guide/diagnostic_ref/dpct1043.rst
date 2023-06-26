@@ -33,9 +33,9 @@ For example, this original CUDA\* code:
       int version;
       cudaDriverGetVersion(&version);
       if (version >= 12000) {
-        ...
+        code path 1
       } else {
-        ...
+        code path 2
       }
     }
 
@@ -64,13 +64,6 @@ which is rewritten to:
    :linenos:
 
     void foo() {
-      int version;
-      // `version` is the major version of the backend version
-      version = dpct::get_current_device().get_major_version();
-      if (version >= 1 /*1 is the major version of the Level-Zero backend*/) {
-        ...
-      } else {
-        ...
-      }
+      code path 1
     }
 
