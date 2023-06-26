@@ -60,6 +60,7 @@
 *    Comment:      extra comment on the migration.
 *
 ****************************************************************************/
+// clang-format off
 
 //Warp Level
 ENTRY(cub::ShuffleUp, cub::ShuffleUp, false, NO_FLAG, P4, "Comment")
@@ -224,12 +225,13 @@ ENTRY(cub::Debug, cub::Debug, false, NO_FLAG, P4, "Comment")
 ENTRY(cub::MaxSmOccupancy, cub::MaxSmOccupancy, false, NO_FLAG, P4, "Comment")
 ENTRY(cub::PtxVersion, cub::PtxVersion, false, NO_FLAG, P4, "Comment")
 ENTRY(cub::SmVersion, cub::SmVersion, false, NO_FLAG, P4, "Comment")
-ENTRY(cub::CurrentDevice, cub::CurrentDevice, false, NO_FLAG, P4, "Comment")
-ENTRY(cub::DeviceCount, cub::DeviceCount, false, NO_FLAG, P4, "Comment")
-ENTRY(cub::DeviceCountUncached, cub::DeviceCountUncached, false, NO_FLAG, P4, "Comment")
+ENTRY(cub::CurrentDevice, cub::CurrentDevice, true, NO_FLAG, P4, "Successful")
+ENTRY(cub::DeviceCount, cub::DeviceCount, true, NO_FLAG, P4, "Successful")
+ENTRY(cub::DeviceCountUncached, cub::DeviceCountUncached, true, NO_FLAG, P4, "Successful")
+ENTRY(cub::DeviceCountCachedValue, cub::DeviceCountCachedValue, true, NO_FLAG, P4, "Successful")
 ENTRY(cub::PtxVersionUncached, cub::PtxVersionUncached, false, NO_FLAG, P4, "Comment")
 ENTRY(cub::SmVersionUncached, cub::SmVersionUncached, false, NO_FLAG, P4, "Comment")
-ENTRY(cub::SyncStream, cub::SyncStream, false, NO_FLAG, P4, "Comment")
+ENTRY(cub::SyncStream, cub::SyncStream, true, NO_FLAG, P4, "Successful")
 
 // Fancy iterators
 ENTRY_MEMBER_FUNCTION(cub::ArgIndexInputIterator, normalize, normalize, true, NO_FLAG, P4, "Successful")
@@ -241,3 +243,5 @@ ENTRY(cub::CountingInputIterator, cub::CountingInputIterator, true, NO_FLAG, P4,
 ENTRY(cub::TransformInputIterator, cub::TransformInputIterator, true, NO_FLAG, P4, "Successful")
 ENTRY(cub::ConstantInputIterator, cub::ConstantInputIterator, true, NO_FLAG, P4, "Successful")
 ENTRY(cub::DiscardOutputIterator, cub::DiscardOutputIterator, true, NO_FLAG, P4, "Successful")
+
+// clang-format on
