@@ -5791,7 +5791,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cublasGetVersion_v2") {
     if (FuncName == "cublasGetVersion" || FuncName == "cublasGetVersion_v2") {
       DpctGlobalInfo::getInstance().insertHeader(
-         SM->getExpansionLoc(CE->getBeginLoc()), HT_DPCT_COMMON_Utils);
+          SM->getExpansionLoc(CE->getBeginLoc()), HT_DPCT_COMMON_Utils);
     }
 
     ExprAnalysis EA(CE);
