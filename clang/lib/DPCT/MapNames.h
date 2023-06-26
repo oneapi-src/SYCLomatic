@@ -9,7 +9,6 @@
 #ifndef DPCT_MAPNAMES_H
 #define DPCT_MAPNAMES_H
 
-#include "CustomHelperFiles.h"
 #include "Rules.h"
 #include "Utility.h"
 #include "ValidateArguments.h"

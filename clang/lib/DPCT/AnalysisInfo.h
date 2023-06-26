@@ -9,7 +9,6 @@
 #ifndef DPCT_ANALYSIS_INFO_H
 #define DPCT_ANALYSIS_INFO_H
 
-#include "CustomHelperFiles.h"
 #include "Error.h"
 #include "ExprAnalysis.h"
 #include "ExtReplacements.h"
@@ -20,8 +19,8 @@
 #include "Utility.h"
 #include "ValidateArguments.h"
 #include <bitset>
-#include <unordered_set>
 #include <optional>
+#include <unordered_set>
 #include <vector>
 
 #include "clang/AST/Attr.h"
