@@ -12438,6 +12438,8 @@ void RecognizeTypeRule::runRule(
     return;
   auto &Context = DpctGlobalInfo::getContext();
   QualType QTy = TL->getType();
+  if (QTy.isCanonical())
+    return;
   std::string TypeName =
       DpctGlobalInfo::getTypeName(QTy.getUnqualifiedType(), Context);
   // process pointer type
