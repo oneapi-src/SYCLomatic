@@ -1,6 +1,3 @@
-// DPCT_LABEL_BEGIN|License|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 //==---- fft_utils.hpp ----------------------------*- C++ -*----------------==//
 //
 // Copyright (C) Intel Corporation
@@ -8,61 +5,23 @@
 // See https://llvm.org/LICENSE.txt for license information.
 //
 //===----------------------------------------------------------------------===//
-// DPCT_LABEL_END
 
 #ifndef __DPCT_FFT_UTILS_HPP__
 #define __DPCT_FFT_UTILS_HPP__
-// DPCT_COMMENT
-// DPCT_COMMENT Example1:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_EMPTY
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT Example2:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_BEGIN
-// DPCT_COMMENT // FileID|FeatureNameRef
-// DPCT_COMMENT [// FileID|FeatureNameRef]
-// DPCT_COMMENT ...
-// DPCT_COMMENT // DPCT_DEPENDENCY_END
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT For header file including dependency, please use predefined feature name:
-// DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other header files
 
-// DPCT_LABEL_BEGIN|non_local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include <sycl/sycl.hpp>
 #include <oneapi/mkl.hpp>
 #include <optional>
 #include <utility>
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-// DPCT_LABEL_END
 #include "lib_common_utils.hpp"
 
 namespace dpct {
 namespace fft {
-// DPCT_LABEL_BEGIN|fft_direction|dpct::fft
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// An enumeration type to describe the FFT direction is forward or backward.
 enum fft_direction : int {
   forward = 0,
   backward
 };
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|fft_type|dpct::fft
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// An enumeration type to describe the types of FFT input and output data.
 enum fft_type : int {
   real_float_to_complex_float = 0,
@@ -72,17 +31,7 @@ enum fft_type : int {
   complex_float_to_complex_float,
   complex_double_to_complex_double,
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|fft_engine|dpct::fft
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// FftUtils|fft_direction
-// FftUtils|fft_type
-// LibCommonUtils|get_memory
-// Device|get_default_queue
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// A class to perform FFT calculation.
 class fft_engine {
 public:
@@ -1418,7 +1367,6 @@ private:
 };
 
 using fft_engine_ptr = fft_engine *;
-// DPCT_LABEL_END
 } // namespace fft
 } // namespace dpct
 

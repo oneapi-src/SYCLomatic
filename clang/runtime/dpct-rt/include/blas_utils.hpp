@@ -1,6 +1,3 @@
-// DPCT_LABEL_BEGIN|License|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 //==---- blas_utils.hpp----------------------------*- C++ -*----------------==//
 //
 // Copyright (C) Intel Corporation
@@ -8,57 +5,21 @@
 // See https://llvm.org/LICENSE.txt for license information.
 //
 //===----------------------------------------------------------------------===//
-// DPCT_LABEL_END
 
 #ifndef __DPCT_BLAS_UTILS_HPP__
 #define __DPCT_BLAS_UTILS_HPP__
-// DPCT_COMMENT
-// DPCT_COMMENT Example1:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_EMPTY
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT Example2:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_BEGIN
-// DPCT_COMMENT // FileID|FeatureNameRef
-// DPCT_COMMENT [// FileID|FeatureNameRef]
-// DPCT_COMMENT ...
-// DPCT_COMMENT // DPCT_DEPENDENCY_END
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT For header file including dependency, please use predefined feature name:
-// DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other header files
 
-// DPCT_LABEL_BEGIN|local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-// DPCT_LABEL_END
 #include "memory.hpp"
 #include "util.hpp"
 #include "lib_common_utils.hpp"
-// DPCT_LABEL_BEGIN|non_local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include <sycl/sycl.hpp>
 #include <oneapi/mkl.hpp>
 #include <utility>
 #include <vector>
 #include <thread>
-// DPCT_LABEL_END
 
 namespace dpct {
 
-// DPCT_LABEL_BEGIN|get_value|dpct
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|get_value
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Get the value of \p s.
 /// Copy the data to host synchronously, then return the data.
 /// \param [in] p The pointer points the data.
@@ -67,33 +28,19 @@ template <typename T>
 inline auto get_value(const T *s, sycl::queue &q) {
   return detail::get_value(s, q);
 }
-// DPCT_LABEL_END
 
 namespace detail {
-// DPCT_LABEL_BEGIN|mem_free|dpct::detail
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 inline void mem_free(sycl::queue *exec_queue,
                      std::vector<void *> pointers_array, sycl::event e) {
   e.wait();
   for (auto p : pointers_array)
     sycl::free(p, *exec_queue);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|stride_for|dpct::detail
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 inline int stride_for(int num_elems, int mem_align_in_elems) {
   return ((num_elems - 1) / mem_align_in_elems + 1) * mem_align_in_elems;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|working_memory|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Memory|async_dpct_free
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 #ifndef DPCT_USM_LEVEL_NONE
 template<typename T>
 class working_memory {
@@ -135,15 +82,7 @@ public:
   }
 };
 #endif
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|nrm2_impl|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Memory|get_buffer_T|UsmNone
-// Memory|is_device_ptr|UsmNone
-// BlasUtils|working_memory|UsmRestricted
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename Tx, typename Tr>
 inline void nrm2_impl(sycl::queue &q, int n, const void *x, int incx,
                          void *result) {
@@ -165,15 +104,7 @@ inline void nrm2_impl(sycl::queue &q, int n, const void *x, int incx,
 #endif
 #endif
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dotuc_impl|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Memory|get_buffer_T|UsmNone
-// Memory|is_device_ptr|UsmNone
-// BlasUtils|working_memory|UsmRestricted
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <bool is_conjugate, class Txy, class Tr>
 inline void dotuc_impl(sycl::queue &q, int n, const Txy *x, int incx,
                           const Txy *y, int incy, Tr *result) {
@@ -211,14 +142,7 @@ inline void dotuc_impl(sycl::queue &q, int n, const Txy *x, int incx,
 #endif
 #endif
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dotuc|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// BlasUtils|dotuc_impl
-// LibCommonUtils|get_type_combination_id_Ts
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <bool is_conjugate>
 inline void dotuc(sycl::queue &q, int n, const void *x,
                      library_data_t x_type, int incx, const void *y,
@@ -272,14 +196,7 @@ inline void dotuc(sycl::queue &q, int n, const void *x,
     throw std::runtime_error("the combination of data type is unsupported");
   }
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|scal_impl|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// BlasUtils|get_value
-// LibCommonUtils|get_memory
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <class Tx, class Te>
 inline void scal_impl(sycl::queue &q, int n, const void *alpha, void *x,
                          int incx) {
@@ -293,14 +210,7 @@ inline void scal_impl(sycl::queue &q, int n, const void *alpha, void *x,
                                         data_x, incx);
 #endif
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|axpy_impl|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// BlasUtils|get_value
-// LibCommonUtils|get_memory
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <class Txy, class Te>
 inline void axpy_impl(sycl::queue &q, int n, const void *alpha, const void *x,
                         int incx, void *y, int incy) {
@@ -316,14 +226,7 @@ inline void axpy_impl(sycl::queue &q, int n, const void *alpha, const void *x,
                                         data_y, incy);
 #endif
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rot_impl|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// BlasUtils|get_value
-// LibCommonUtils|get_memory
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <class Txy, class Tc, class Ts>
 inline void rot_impl(sycl::queue &q, int n, void *x, int incx, void *y,
                         int incy, const void *c, const void *s) {
@@ -340,14 +243,7 @@ inline void rot_impl(sycl::queue &q, int n, void *x, int incx, void *y,
                                        s_value);
 #endif
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|gemm_impl|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// BlasUtils|get_value
-// LibCommonUtils|get_memory
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <class Ta, class Tb, class Tc, class Ts>
 inline void gemm_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
                          oneapi::mkl::transpose b_trans, int m, int n, int k,
@@ -367,13 +263,7 @@ inline void gemm_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
       data_b, ldb, beta_value, data_c, ldc);
 #endif
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|gemm_batch_impl|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// BlasUtils|get_value
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <class Ta, class Tb, class Tc, class Ts>
 inline void gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
                             oneapi::mkl::transpose b_trans, int m, int n, int k,
@@ -419,14 +309,7 @@ inline void gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
     cgh.host_task([=] { std::free(matrix_info); });
   });
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|gemm_batch_impl_stride|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// BlasUtils|get_value
-// LibCommonUtils|get_memory
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <class Ta, class Tb, class Tc, class Ts>
 inline void
 gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
@@ -445,18 +328,7 @@ gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
       stride_a, data_b, ldb, stride_b, beta_value,
       data_c, ldc, stride_c, batch_size);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rk_impl|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// BlasUtils|get_value
-// LibCommonUtils|get_memory
-// Util|DataType
-// Memory|get_buffer_T|UsmNone
-// Memory|dpct_malloc|UsmNone
-// BlasUtils|working_memory|UsmRestricted
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <bool is_hermitian, class T, class Tbeta>
 inline void rk_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
                           oneapi::mkl::transpose trans, int n, int k,
@@ -523,13 +395,7 @@ inline void rk_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
         data_a, lda, data_b, ldb, beta_value, data_c, ldc);
   }
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|trsm_batch_impl|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// BlasUtils|get_value
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <class Ta, class Tb, class Ts>
 inline void
 trsm_batch_impl(sycl::queue &q, oneapi::mkl::side left_right,
@@ -579,20 +445,7 @@ trsm_batch_impl(sycl::queue &q, oneapi::mkl::side left_right,
     cgh.host_task([=] { delete matrix_info; });
   });
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|getrfnp_batch_wrapper|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Memory|dpct_malloc
-// Memory|dpct_memcpy
-// Memory|dpct_memcpy_detail
-// Memory|async_dpct_free|UsmRestricted
-// Util|DataType
-// Memory|dpct_memset_detail
-// Memory|get_buffer_T|UsmNone
-// Dpct|dpct_named_lambda
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T>
 inline void getrfnp_batch_wrapper(sycl::queue &exec_queue, int n, T *a[],
                                   int lda, int *info, int batch_size) {
@@ -650,13 +503,9 @@ inline void getrfnp_batch_wrapper(sycl::queue &exec_queue, int n, T *a[],
   });
 #endif
 }
-// DPCT_LABEL_END
 
 } // namespace detail
 
-// DPCT_LABEL_BEGIN|get_transpose|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 inline oneapi::mkl::transpose get_transpose(int t) {
   if (t == 0) {
     return oneapi::mkl::transpose::nontrans;
@@ -666,21 +515,7 @@ inline oneapi::mkl::transpose get_transpose(int t) {
     return oneapi::mkl::transpose::conjtrans;
   }
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|getrf_batch_wrapper|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Memory|dpct_malloc|UsmNone
-// Memory|dpct_memcpy|UsmNone
-// Memory|dpct_memcpy_detail|UsmNone
-// Memory|async_dpct_free|UsmRestricted
-// Util|DataType
-// Memory|dpct_memset_detail
-// Memory|get_buffer_T|UsmNone
-// Dpct|dpct_named_lambda
-// BlasUtils|getrfnp_batch_wrapper
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes the LU factorizations of a batch of general matrices.
 /// \param [in] exec_queue The queue where the routine should be executed.
 /// \param [in] n The order of the matrices.
@@ -787,19 +622,7 @@ inline void getrf_batch_wrapper(sycl::queue &exec_queue, int n, T *a[],
   async_dpct_free(ptrs, {e}, exec_queue);
 #endif
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|getrs_batch_wrapper|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Memory|dpct_malloc|UsmNone
-// Memory|dpct_memcpy|UsmNone
-// Memory|dpct_memcpy_detail|UsmNone
-// Memory|async_dpct_free|UsmRestricted
-// Util|DataType
-// Memory|get_buffer_T|UsmNone
-// Dpct|dpct_named_lambda
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Solves a system of linear equations with a batch of LU-factored square
 /// coefficient matrices, with multiple right-hand sides.
 /// \param [in] exec_queue The queue where the routine should be executed.
@@ -920,21 +743,7 @@ inline void getrs_batch_wrapper(sycl::queue &exec_queue,
   async_dpct_free(ptrs, {e}, exec_queue);
 #endif
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|getri_batch_wrapper|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Memory|dpct_malloc|UsmNone
-// Memory|dpct_memcpy|UsmNone
-// Memory|dpct_memcpy_detail|UsmNone
-// Memory|async_dpct_free|UsmRestricted
-// Util|DataType
-// Util|matrix_mem_copy_T
-// Memory|dpct_memset_detail
-// Memory|get_buffer_T|UsmNone
-// Dpct|dpct_named_lambda
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes the inverses of a batch of LU-factored matrices.
 /// \param [in] exec_queue The queue where the routine should be executed.
 /// \param [in] n The order of the matrices.
@@ -1052,18 +861,7 @@ inline void getri_batch_wrapper(sycl::queue &exec_queue, int n,
   async_dpct_free(ptrs, {e}, exec_queue);
 #endif
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|geqrf_batch_wrapper|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Memory|dpct_malloc|UsmNone
-// Memory|dpct_memcpy|UsmNone
-// Memory|dpct_memcpy_detail|UsmNone
-// Memory|async_dpct_free|UsmRestricted
-// Util|DataType
-// Memory|get_buffer_T|UsmNone
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes the QR factorizations of a batch of general matrices.
 /// \param [in] exec_queue The queue where the routine should be executed.
 /// \param [in] m The number of rows in the matrices.
@@ -1160,15 +958,7 @@ inline void geqrf_batch_wrapper(sycl::queue exec_queue, int m, int n,
   async_dpct_free(ptrs, {e}, exec_queue);
 #endif
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|nrm2|dpct
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LibCommonUtils|get_type_combination_id_Ts
-// BlasUtils|nrm2_impl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes the Euclidean norm of a vector.
 /// \param [in] q The queue where the routine should be executed.
 /// \param [in] n Number of elements in vector x.
@@ -1213,14 +1003,7 @@ inline void nrm2(sycl::queue &q, int n, const void *x, library_data_t x_type,
     throw std::runtime_error("the combination of data type is unsupported");
   }
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dot|dpct
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// BlasUtils|dotuc
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes the dot product of two vectors.
 /// \param [in] q The queue where the routine should be executed.
 /// \param [in] n Number of elements in vector x.
@@ -1238,14 +1021,7 @@ inline void dot(sycl::queue &q, int n, const void *x, library_data_t x_type,
   detail::dotuc<false>(q, n, x, x_type, incx, y, y_type, incy, result,
                           result_type);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dotc|dpct
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// BlasUtils|dotuc
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes the dot product of two vectors, conjugating the first vector.
 /// \param [in] q The queue where the routine should be executed.
 /// \param [in] n Number of elements in vector x.
@@ -1263,15 +1039,7 @@ inline void dotc(sycl::queue &q, int n, const void *x, library_data_t x_type,
   detail::dotuc<true>(q, n, x, x_type, incx, y, y_type, incy, result,
                          result_type);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|scal|dpct
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LibCommonUtils|get_type_combination_id_Ts
-// BlasUtils|scal_impl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes the product of a vector by a scalar.
 /// \param [in] q The queue where the routine should be executed.
 /// \param [in] n Number of elements in vector x.
@@ -1314,15 +1082,7 @@ inline void scal(sycl::queue &q, int n, const void *alpha,
     throw std::runtime_error("the combination of data type is unsupported");
   }
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|axpy|dpct
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LibCommonUtils|get_type_combination_id_Ts
-// BlasUtils|axpy_impl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes a vector-scalar product and adds the result to a vector.
 /// \param [in] q The queue where the routine should be executed.
 /// \param [in] n Number of elements in vector x.
@@ -1373,15 +1133,7 @@ inline void axpy(sycl::queue &q, int n, const void *alpha,
     throw std::runtime_error("the combination of data type is unsupported");
   }
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rot|dpct
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LibCommonUtils|get_type_combination_id_Ts
-// BlasUtils|rot_impl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Performs rotation of points in the plane.
 /// \param [in] q The queue where the routine should be executed.
 /// \param [in] n Number of elements in vector x.
@@ -1445,15 +1197,7 @@ inline void rot(sycl::queue &q, int n, void *x, library_data_t x_type,
     throw std::runtime_error("the combination of data type is unsupported");
   }
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|gemm|dpct
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LibCommonUtils|get_type_combination_id_Ts
-// BlasUtils|gemm_impl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes matrix-matrix product with general matrices.
 /// \param [in] q The queue where the routine should be executed.
 /// \param [in] a_trans Specifies the operation applied to A.
@@ -1588,15 +1332,7 @@ inline void gemm(sycl::queue &q, oneapi::mkl::transpose a_trans,
     throw std::runtime_error("the combination of data type is unsupported");
   }
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|gemm_batch|dpct
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LibCommonUtils|get_type_combination_id_Ts
-// BlasUtils|gemm_batch_impl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes a batch of matrix-matrix product with general matrices.
 /// \param [in] q The queue where the routine should be executed.
 /// \param [in] a_trans Specifies the operation applied to A.
@@ -1749,15 +1485,7 @@ inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
   }
 #endif
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|gemm_batch_stride|dpct
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LibCommonUtils|get_type_combination_id_Ts
-// BlasUtils|gemm_batch_impl_stride
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes a batch of matrix-matrix product with general matrices.
 /// \param [in] q The queue where the routine should be executed.
 /// \param [in] a_trans Specifies the operation applied to A.
@@ -1907,13 +1635,7 @@ inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
     throw std::runtime_error("the combination of data type is unsupported");
   }
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|syrk|dpct
-// DPCT_DEPENDENCY_BEGIN
-// BlasUtils|rk_impl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// This routines perform a special rank-k update of a symmetric matrix C by
 /// general matrices A and B.
 /// \param [in] q The queue where the routine should be executed.
@@ -1937,13 +1659,7 @@ inline void syrk(sycl::queue &q, oneapi::mkl::uplo uplo,
   detail::rk_impl<false, T, T>(q, uplo, trans, n, k, alpha, a, lda, b,
                                      ldb, beta, c, ldc);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|herk|dpct
-// DPCT_DEPENDENCY_BEGIN
-// BlasUtils|rk_impl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// This routines perform a special rank-k update of a Hermitian matrix C by
 /// general matrices A and B.
 /// \param [in] q The queue where the routine should be executed.
@@ -1967,15 +1683,7 @@ inline void herk(sycl::queue &q, oneapi::mkl::uplo uplo,
   detail::rk_impl<true, T, Tbeta>(q, uplo, trans, n, k, alpha, a, lda, b,
                                         ldb, beta, c, ldc);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|trsm_batch|dpct
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LibCommonUtils|get_type_combination_id_Ts
-// BlasUtils|trsm_batch_impl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// This routine performs a group of trsm operations. Each trsm solves an
 /// equation of the form op(A) * X = alpha * B or X * op(A) = alpha * B.
 /// \param [in] q The queue where the routine should be executed.
@@ -2046,16 +1754,7 @@ inline void trsm_batch(sycl::queue &q, oneapi::mkl::side left_right,
   }
 #endif
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|trmm|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Util|DataType
-// Util|matrix_mem_copy_T
-// BlasUtils|get_value
-// LibCommonUtils|get_memory
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes a triangular matrix-general matrix product.
 /// \param [in] q The queue where the routine should be executed.
 /// \param [in] left_right Specifies A is on the left or right side of the
@@ -2088,7 +1787,6 @@ inline void trmm(sycl::queue &q, oneapi::mkl::side left_right,
                                         unit_diag, m, n, alpha_val, data_a, lda,
                                         data_c, ldc);
 }
-// DPCT_LABEL_END
 
 } // namespace dpct
 #endif // __DPCT_BLAS_UTILS_HPP__

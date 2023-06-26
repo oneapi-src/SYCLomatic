@@ -1,6 +1,3 @@
-// DPCT_LABEL_BEGIN|License|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 //==---- kernel.hpp -------------------------------*- C++ -*----------------==//
 //
 // Copyright (C) Intel Corporation
@@ -8,37 +5,10 @@
 // See https://llvm.org/LICENSE.txt for license information.
 //
 //===----------------------------------------------------------------------===//
-// DPCT_LABEL_END
 
 #ifndef __DPCT_KERNEL_HPP__
 #define __DPCT_KERNEL_HPP__
-// DPCT_COMMENT
-// DPCT_COMMENT Example1:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_EMPTY
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT Example2:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_BEGIN
-// DPCT_COMMENT // FileID|FeatureNameRef
-// DPCT_COMMENT [// FileID|FeatureNameRef]
-// DPCT_COMMENT ...
-// DPCT_COMMENT // DPCT_DEPENDENCY_END
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT For header file including dependency, please use predefined
-// DPCT_COMMENT feature name:
-// DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other header files
 
-// DPCT_LABEL_BEGIN|non_local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include <sycl/sycl.hpp>
 #ifdef _WIN32
 #include <unordered_set>
@@ -57,37 +27,17 @@
 
 #include <random>
 
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include <image.hpp>
-// DPCT_LABEL_END
 
 namespace dpct {
 
-// DPCT_LABEL_BEGIN|kernel_functor|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 typedef void (*kernel_functor)(sycl::queue &, const sycl::nd_range<3> &,
                                unsigned int, void **, void **);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|kernel_function_info|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 struct kernel_function_info {
   int max_work_group_size = 0;
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_kernel_function_info|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Kernel|kernel_function_info
-// Device|dev_mgr
-// Device|dev_mgr_current_device
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 static inline void get_kernel_function_info(kernel_function_info *kernel_info,
                                             const void *function) {
   kernel_info->max_work_group_size =
@@ -104,13 +54,7 @@ get_kernel_function_info(const void *function) {
           .get_info<sycl::info::device::max_work_group_size>();
   return kernel_info;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|kernel_library|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Kernel|kernel_functor
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 
 namespace detail {
 
@@ -492,14 +436,7 @@ static inline void invoke_kernel_function(dpct::kernel_function &function,
   function(queue, sycl::nd_range<3>(groupRange * localRange, localRange),
            localMemSize, kernelParams, extra);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_image_wrapper|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Kernel|kernel_library
-// Image|image_wrapper_base_p_alias
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Find image wrapper in a kernel library and return its address.
 /// \param [in] library Handle to the kernel library.
 /// \param [in] name Name of the target image wrapper.
@@ -517,7 +454,6 @@ get_image_wrapper(dpct::kernel_library &library, const std::string &name) {
     throw std::runtime_error("Failed to get image");
   return fn;
 }
-// DPCT_LABEL_END
 
 } // namespace dpct
 #endif // __DPCT_KERNEL_HPP__

@@ -1,6 +1,3 @@
-// DPCT_LABEL_BEGIN|License|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 //==---- sparse_utils.hpp -------------------------*- C++ -*----------------==//
 //
 // Copyright (C) Intel Corporation
@@ -8,50 +5,16 @@
 // See https://llvm.org/LICENSE.txt for license information.
 //
 //===----------------------------------------------------------------------===//
-// DPCT_LABEL_END
 
 #ifndef __DPCT_SPARSE_UTILS_HPP__
 #define __DPCT_SPARSE_UTILS_HPP__
-// DPCT_COMMENT
-// DPCT_COMMENT Example1:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_EMPTY
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT Example2:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_BEGIN
-// DPCT_COMMENT // FileID|FeatureNameRef
-// DPCT_COMMENT [// FileID|FeatureNameRef]
-// DPCT_COMMENT ...
-// DPCT_COMMENT // DPCT_DEPENDENCY_END
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT For header file including dependency, please use predefined feature name:
-// DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other header files
 
-// DPCT_LABEL_BEGIN|local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include "lib_common_utils.hpp"
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|non_local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include <oneapi/mkl.hpp>
 #include <sycl/sycl.hpp>
-// DPCT_LABEL_END
 
 namespace dpct {
 namespace sparse {
-// DPCT_LABEL_BEGIN|matrix_info|dpct::sparse
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Describes properties of a sparse matrix.
 /// The properties are matrix type, diag, uplo and index base.
 class matrix_info {
@@ -78,16 +41,7 @@ private:
   oneapi::mkl::uplo _uplo = oneapi::mkl::uplo::upper;
   oneapi::mkl::index_base _index_base = oneapi::mkl::index_base::zero;
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|csrmv|dpct::sparse
-// DPCT_DEPENDENCY_BEGIN
-// SparseUtils|matrix_info
-// Util|DataType
-// LibCommonUtils|get_value
-// LibCommonUtils|get_memory
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes a CSR format sparse matrix-dense vector product.
 /// y = alpha * op(A) * x + beta * y
 /// \param [in] queue The queue where the routine should be executed. It must
@@ -167,16 +121,7 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
   });
 #endif
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|csrmm|dpct::sparse
-// DPCT_DEPENDENCY_BEGIN
-// SparseUtils|matrix_info
-// Util|DataType
-// LibCommonUtils|get_value
-// LibCommonUtils|get_memory
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes a CSR format sparse matrix-dense matrix product.
 /// C = alpha * op(A) * B + beta * C
 /// \param [in] queue The queue where the routine should be executed. It must
@@ -247,11 +192,7 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
   });
 #endif
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|optimize_info|dpct::sparse
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
 /// Saving the optimization information for solving a system of linear
 /// equations.
@@ -279,16 +220,7 @@ private:
   std::vector<sycl::event> _deps;
 };
 #endif
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|optimize_csrsv|dpct::sparse
-// DPCT_DEPENDENCY_BEGIN
-// SparseUtils|matrix_info
-// SparseUtils|optimize_info
-// Util|DataType
-// LibCommonUtils|get_memory
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 #ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
 /// Performs internal optimizations for solving a system of linear equations for
 /// a CSR format sparse matrix.
@@ -329,7 +261,6 @@ void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
 #endif
 }
 #endif
-// DPCT_LABEL_END
 
 } // namespace sparse
 } // namespace dpct

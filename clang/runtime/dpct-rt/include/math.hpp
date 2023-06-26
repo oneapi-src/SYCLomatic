@@ -1,6 +1,3 @@
-// DPCT_LABEL_BEGIN|License|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 //==---- math.hpp ---------------------------------*- C++ -*----------------==//
 //
 // Copyright (C) Intel Corporation
@@ -8,44 +5,14 @@
 // See https://llvm.org/LICENSE.txt for license information.
 //
 //===----------------------------------------------------------------------===//
-// DPCT_LABEL_END
 
 #ifndef __DPCT_MATH_HPP__
 #define __DPCT_MATH_HPP__
-// DPCT_COMMENT
-// DPCT_COMMENT Example1:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_EMPTY
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT Example2:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_BEGIN
-// DPCT_COMMENT // FileID|FeatureNameRef
-// DPCT_COMMENT [// FileID|FeatureNameRef]
-// DPCT_COMMENT ...
-// DPCT_COMMENT // DPCT_DEPENDENCY_END
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT For header file including dependency, please use predefined
-// DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other header files
 
-// DPCT_LABEL_BEGIN|non_local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include <sycl/sycl.hpp>
-// DPCT_LABEL_END
 
 namespace dpct {
 namespace detail {
-// DPCT_LABEL_BEGIN|detail_vectorized_binary|dpct::detail
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <typename VecT, class BinaryOperation, class = void>
 class vectorized_binary {
 public:
@@ -66,19 +33,11 @@ public:
     return binary_op(a, b).template as<VecT>();
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|detail_isnan|dpct::detail
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <typename T> bool isnan(const T a) { return sycl::isnan(a); }
 // TODO: Need add more specialization such as bfloat16 version.
-// DPCT_LABEL_END
 } // namespace detail
 
-// DPCT_LABEL_BEGIN|fast_length|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Compute fast_length for variable-length array
 /// \param [in] a The array
 /// \param [in] len Length of the array
@@ -102,11 +61,7 @@ inline float fast_length(const float *a, int len) {
     return sycl::sqrt(f);
   }
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|length|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Calculate the square root of the input array.
 /// \param [in] a The array pointer
 /// \param [in] len Length of the array
@@ -128,13 +83,7 @@ template <typename T> inline T length(const T *a, const int len) {
     return sycl::sqrt(ret);
   }
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|compare|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Math|detail_isnan
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Performs comparison.
 /// \param [in] a The first value
 /// \param [in] b The second value
@@ -152,13 +101,7 @@ inline std::enable_if_t<
 compare(const T a, const T b, const std::not_equal_to<> binary_op) {
   return !detail::isnan(a) && !detail::isnan(b) && binary_op(a, b);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|unordered_compare|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Math|detail_isnan
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Performs unordered comparison.
 /// \param [in] a The first value
 /// \param [in] b The second value
@@ -170,13 +113,7 @@ inline std::enable_if_t<
 unordered_compare(const T a, const T b, const BinaryOperation binary_op) {
   return detail::isnan(a) || detail::isnan(b) || binary_op(a, b);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|compare_both|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Math|compare
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Performs 2 element comparison and return true if both results are true.
 /// \param [in] a The first value
 /// \param [in] b The second value
@@ -187,13 +124,7 @@ inline std::enable_if_t<T::size() == 2, bool>
 compare_both(const T a, const T b, const BinaryOperation binary_op) {
   return compare(a[0], b[0], binary_op) && compare(a[1], b[1], binary_op);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|unordered_compare_both|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Math|unordered_compare
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Performs 2 element unordered comparison and return true if both results are
 /// true.
 /// \param [in] a The first value
@@ -206,13 +137,7 @@ unordered_compare_both(const T a, const T b, const BinaryOperation binary_op) {
   return unordered_compare(a[0], b[0], binary_op) &&
          unordered_compare(a[1], b[1], binary_op);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|compare2|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Math|compare
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Performs 2 element comparison.
 /// \param [in] a The first value
 /// \param [in] b The second value
@@ -223,13 +148,7 @@ inline std::enable_if_t<T::size() == 2, T>
 compare(const T a, const T b, const BinaryOperation binary_op) {
   return {compare(a[0], b[0], binary_op), compare(a[1], b[1], binary_op)};
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|unordered_compare2|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Math|unordered_compare
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Performs 2 element unordered comparison.
 /// \param [in] a The first value
 /// \param [in] b The second value
@@ -241,13 +160,7 @@ unordered_compare(const T a, const T b, const BinaryOperation binary_op) {
   return {unordered_compare(a[0], b[0], binary_op),
           unordered_compare(a[1], b[1], binary_op)};
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|isnan|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Math|detail_isnan
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Determine whether 2 element value is NaN.
 /// \param [in] a The input value
 /// \returns the comparison result
@@ -255,11 +168,7 @@ template <typename T>
 inline std::enable_if_t<T::size() == 2, T> isnan(const T a) {
   return {detail::isnan(a[0]), detail::isnan(a[1])};
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|min_max|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 // min function overloads.
 // For floating-point types, `float` or `double` arguments are acceptable.
 // For integer types, `std::uint32_t`, `std::int32_t`, `std::uint64_t` or
@@ -356,108 +265,63 @@ inline std::uint64_t max(const std::uint64_t a, const std::uint32_t b) {
 inline std::uint64_t max(const std::uint32_t a, const std::uint64_t b) {
   return sycl::max(static_cast<std::uint64_t>(a), b);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|abs|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// A sycl::abs wrapper functors.
 struct abs {
   template <typename T> auto operator()(const T x) const {
     return sycl::abs(x);
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|abs_diff|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// A sycl::abs_diff wrapper functors.
 struct abs_diff {
   template <typename T> auto operator()(const T x, const T y) const {
     return sycl::abs_diff(x, y);
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|add_sat|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// A sycl::add_sat wrapper functors.
 struct add_sat {
   template <typename T> auto operator()(const T x, const T y) const {
     return sycl::add_sat(x, y);
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rhadd|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// A sycl::rhadd wrapper functors.
 struct rhadd {
   template <typename T> auto operator()(const T x, const T y) const {
     return sycl::rhadd(x, y);
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|hadd|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// A sycl::hadd wrapper functors.
 struct hadd {
   template <typename T> auto operator()(const T x, const T y) const {
     return sycl::hadd(x, y);
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|maximum|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// A sycl::max wrapper functors.
 struct maximum {
   template <typename T> auto operator()(const T x, const T y) const {
     return sycl::max(x, y);
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|minimum|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// A sycl::min wrapper functors.
 struct minimum {
   template <typename T> auto operator()(const T x, const T y) const {
     return sycl::min(x, y);
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|sub_sat|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// A sycl::sub_sat wrapper functors.
 struct sub_sat {
   template <typename T> auto operator()(const T x, const T y) const {
     return sycl::sub_sat(x, y);
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|vectorized_binary|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Math|detail_vectorized_binary
-// Math|abs_diff
-// Math|add_sat
-// Math|rhadd
-// Math|hadd
-// Math|maximum
-// Math|minimum
-// Math|sub_sat
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Compute vectorized binary operation value for two values, with each value
 /// treated as a vector type \p VecT.
 /// \tparam [in] VecT The type of the vector
@@ -476,11 +340,7 @@ inline unsigned vectorized_binary(unsigned a, unsigned b,
   v0 = v4.template as<sycl::vec<unsigned, 1>>();
   return v0;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|vectorized_isgreater|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Compute vectorized isgreater for two values, with each value treated as a
 /// vector type \p S.
 /// \tparam [in] S The type of the vector
@@ -496,11 +356,7 @@ template <typename S, typename T> inline T vectorized_isgreater(T a, T b) {
   v0 = v4.template as<sycl::vec<T, 1>>();
   return v0;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|vectorized_max|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Compute vectorized max for two values, with each value treated as a vector
 /// type \p S.
 /// \tparam [in] S The type of the vector
@@ -516,11 +372,7 @@ template <typename S, typename T> inline T vectorized_max(T a, T b) {
   v0 = v4.template as<sycl::vec<T, 1>>();
   return v0;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|vectorized_min|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Compute vectorized min for two values, with each value treated as a vector
 /// type \p S.
 /// \tparam [in] S The type of the vector
@@ -536,13 +388,7 @@ template <typename S, typename T> inline T vectorized_min(T a, T b) {
   v0 = v4.template as<sycl::vec<T, 1>>();
   return v0;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|vectorized_unary|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Math|abs
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Compute vectorized unary operation for a value, with the value treated as a
 /// vector type \p VecT.
 /// \tparam [in] VecT The type of the vector
@@ -557,11 +403,7 @@ inline unsigned vectorized_unary(unsigned a, const UnaryOperation unary_op) {
   v0 = v2.template as<sycl::vec<unsigned, 1>>();
   return v0;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|vectorized_sum_abs_diff|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Compute vectorized absolute difference for two values without modulo
 /// overflow, with each value treated as a vector type \p VecT.
 /// \tparam [in] VecT The type of the vector
@@ -580,7 +422,6 @@ inline unsigned vectorized_sum_abs_diff(unsigned a, unsigned b) {
   }
   return sum;
 }
-// DPCT_LABEL_END
 } // namespace dpct
 
 #endif // __DPCT_MATH_HPP__

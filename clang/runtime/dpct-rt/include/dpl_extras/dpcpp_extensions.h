@@ -1,6 +1,3 @@
-// DPCT_LABEL_BEGIN|License|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 //==---- dpcpp_extensions.h ------------------*- C++ -*---------------==//
 //
 // Copyright (C) Intel Corporation
@@ -8,53 +5,33 @@
 // See https://llvm.org/LICENSE.txt for license information.
 //
 //===----------------------------------------------------------------===//
-// DPCT_LABEL_END
 
 #ifndef __DPCT_DPCPP_EXTENSIONS_H__
 #define __DPCT_DPCPP_EXTENSIONS_H__
 
-// DPCT_LABEL_BEGIN|non_local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include <sycl/sycl.hpp>
 #include <stdexcept>
 
 #ifdef SYCL_EXT_ONEAPI_USER_DEFINED_REDUCTIONS
 #include <sycl/ext/oneapi/experimental/user_defined_reductions.hpp>
 #endif
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include "../dpct.hpp"
-// DPCT_LABEL_END
 
 namespace dpct {
 namespace group {
 
 namespace detail {
 
-// DPCT_LABEL_BEGIN|group_reduce|dpct::group::detail
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <typename... _Args>
 constexpr auto __reduce_over_group(_Args... __args) {
   return sycl::reduce_over_group(__args...);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|group_broadcast|dpct::group::detail
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <typename... _Args> constexpr auto __group_broadcast(_Args... __args) {
   return sycl::group_broadcast(__args...);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|group_scan|dpct::group::detail
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <typename... _Args>
 constexpr auto __exclusive_scan_over_group(_Args... __args) {
   return sycl::exclusive_scan_over_group(__args...);
@@ -64,17 +41,9 @@ template <typename... _Args>
 constexpr auto __inclusive_scan_over_group(_Args... __args) {
   return sycl::inclusive_scan_over_group(__args...);
 }
-// DPCT_LABEL_END
 
 } // end namespace detail
 
-// DPCT_LABEL_BEGIN|exclusive_scan|dpct::group
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasDpcppExtensions|group_broadcast
-// DplExtrasDpcppExtensions|group_scan
-// Dpct|dpct_align_and_inline
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Perform an exclusive scan over the values of inputs from all work-items in
 /// the group using the operator binary_op, which must be one of the SYCL 2020
 /// group algorithms library function objects.
@@ -179,16 +148,9 @@ exclusive_scan(const Item &item, T input, BinaryOperation binary_op,
 
   return output;
 }
-// DPCT_LABEL_END
 
 namespace detail {
 
-// DPCT_LABEL_BEGIN|radix_rank|dpct::group::detail
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasDpcppExtensions|exclusive_scan
-// Dpct|dpct_align_and_inline
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 typedef uint16_t digit_counter_type;
 typedef uint32_t packed_counter_type;
 
@@ -348,13 +310,7 @@ private:
   packed_counter_type cached_segment[PADDED_COUNTER_LANES];
   uint8_t *_local_memory;
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|traits|dpct::group::detail
-// DPCT_DEPENDENCY_BEGIN
-// Dpct|dpct_align_and_inline
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T, typename U> struct base_traits {
 
   static __dpct_inline__ U twiddle_in(U key) {
@@ -392,15 +348,9 @@ template <typename T> struct traits : base_traits<T, T> {};
 template <> struct traits<uint32_t> : base_traits<uint32_t, uint32_t> {};
 template <> struct traits<int> : base_traits<int, uint32_t> {};
 template <> struct traits<float> : base_traits<float, uint32_t> {};
-// DPCT_LABEL_END
 
 } // namespace detail
 
-// DPCT_LABEL_BEGIN|exchange|dpct::group
-// DPCT_DEPENDENCY_BEGIN
-// Dpct|dpct_align_and_inline
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 namespace detail {
 
 template <int N> struct power_of_two {
@@ -463,14 +413,7 @@ private:
 
   uint8_t *_local_memory;
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|radix_sort|dpct::group
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasDpcppExtensions|traits
-// Dpct|dpct_align_and_inline
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Implements radix sort to sort integer data elements assigned to all threads
 /// in the group.
 ///
@@ -534,14 +477,7 @@ private:
 
   uint8_t *_local_memory;
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|reduce|dpct::group
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasDpcppExtensions|group_reduce
-// Dpct|dpct_align_and_inline
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Perform a reduction of the data elements assigned to all threads in the
 /// group.
 ///
@@ -561,14 +497,7 @@ reduce(Item item, T (&inputs)[VALUES_PER_THREAD], BinaryOperation binary_op) {
   }
   return detail::__reduce_over_group(item.get_group(), result, binary_op);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|reduce_over_partial_group|dpct::group
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasDpcppExtensions|group_reduce
-// Dpct|dpct_align_and_inline
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Perform a reduction on a limited number of the work items in a subgroup
 ///
 /// \param item A work-item in a group.
@@ -588,15 +517,7 @@ reduce_over_partial_group(const Item &item, const T &value,
   return detail::__reduce_over_group(item.get_sub_group(), value_temp,
                                      binary_op);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|inclusive_scan|dpct::group
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasDpcppExtensions|group_broadcast
-// DplExtrasDpcppExtensions|group_scan
-// Dpct|dpct_align_and_inline
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Perform an inclusive scan over the values of inputs from all work-items in
 /// the group using the operator binary_op, which must be one of the SYCL 2020
 /// group algorithms library function objects.
@@ -683,7 +604,6 @@ inclusive_scan(const Item &item, T input, BinaryOperation binary_op,
 
   return binary_op(group_prefix, output);
 }
-// DPCT_LABEL_END
 
 } // namespace group
 
@@ -691,21 +611,12 @@ namespace device {
 
 namespace detail {
 
-// DPCT_LABEL_BEGIN|joint_reduce|dpct::device::detail
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <typename... _Args> constexpr auto __joint_reduce(_Args... __args) {
   return sycl::joint_reduce(__args...);
 }
-// DPCT_LABEL_END
 
 } // namespace detail
 
-// DPCT_LABEL_BEGIN|segmented_reduce|dpct::device
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasDpcppExtensions|joint_reduce
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Perform a reduce on each of the segments specified within data stored on
 /// the device.
 ///
@@ -751,13 +662,7 @@ void segmented_reduce(sycl::queue queue, T *inputs, T *outputs,
   });
 }
 
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|segmented_reduce_ext|dpct::device::experimental
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasDpcppExtensions|segmented_reduce
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 #ifdef SYCL_EXT_ONEAPI_USER_DEFINED_REDUCTIONS
 
 namespace experimental {
@@ -841,7 +746,6 @@ void segmented_reduce(sycl::queue queue, T *inputs, T *outputs,
 
 #endif // SYCL_EXT_ONEAPI_USER_DEFINED_REDUCTIONS
 
-// DPCT_LABEL_END
 
 } // namespace device
 } // namespace dpct

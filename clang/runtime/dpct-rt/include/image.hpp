@@ -1,6 +1,3 @@
-// DPCT_LABEL_BEGIN|License|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 //==---- image.hpp --------------------------------*- C++ -*----------------==//
 //
 // Copyright (C) Intel Corporation
@@ -8,78 +5,26 @@
 // See https://llvm.org/LICENSE.txt for license information.
 //
 //===----------------------------------------------------------------------===//
-// DPCT_LABEL_END
 
 #ifndef __DPCT_IMAGE_HPP__
 #define __DPCT_IMAGE_HPP__
-// DPCT_COMMENT
-// DPCT_COMMENT Example1:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_EMPTY
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT Example2:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_BEGIN
-// DPCT_COMMENT // FileID|FeatureNameRef
-// DPCT_COMMENT [// FileID|FeatureNameRef]
-// DPCT_COMMENT ...
-// DPCT_COMMENT // DPCT_DEPENDENCY_END
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT For header file including dependency, please use predefined feature name:
-// DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other header files
 
-// DPCT_LABEL_BEGIN|non_local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include <sycl/sycl.hpp>
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-// DPCT_LABEL_END
 #include "memory.hpp"
 #include "util.hpp"
 
 namespace dpct {
 
-// DPCT_LABEL_BEGIN|image_channel_data_type|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 enum class image_channel_data_type {
   signed_int,
   unsigned_int,
   fp,
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_channel_forward_decl|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_channel
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 class image_channel;
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_wrapper_base_forward_decl|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 class image_wrapper_base;
-// DPCT_LABEL_END
 namespace detail {
-// DPCT_LABEL_BEGIN|image_trait|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_channel_data_type
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Image object type traits, with accessor type and sampled data type defined.
 /// The data type of an image accessor must be one of sycl::int4, sycl::uint4,
 /// sycl::float4 and sycl::half4. The data type of accessors with 8bits/16bits
@@ -149,13 +94,7 @@ struct image_trait<sycl::vec<T, 4>> : public image_trait<T> {
   using data_t = sycl::vec<T, 4>;
   static constexpr int channel_num = 4;
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|fetch_data|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_trait
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Functor to fetch data from read result of an image accessor.
 template <class T> struct fetch_data {
   using return_t = typename image_trait<T>::data_t;
@@ -187,15 +126,7 @@ template <class T> struct fetch_data<sycl::vec<T, 4>> {
                     origin_data.a());
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|create_image_wrapper_detail_forward_decl|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Image|create_image_wrapper_detail
-// Image|image_wrapper_base_forward_decl
-// Image|image_channel_forward_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Create image according with given type \p T and \p dims.
 template <class T> static image_wrapper_base *create_image_wrapper(int dims);
 
@@ -205,18 +136,9 @@ static image_wrapper_base *create_image_wrapper(unsigned channel_num, int dims);
 
 /// Create image with channel info and specified dimensions.
 static image_wrapper_base *create_image_wrapper(image_channel channel, int dims);
-// DPCT_LABEL_END
 
 } // namespace detail
 
-// DPCT_LABEL_BEGIN|image_channel|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_channel_1
-// Image|image_channel_2
-// Image|image_channel_3
-// Image|image_channel_data_type
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Image channel info, include channel number, order, data width and type
 class image_channel {
   image_channel_data_type _type = image_channel_data_type::signed_int;
@@ -228,16 +150,6 @@ class image_channel {
   unsigned _channel_size = 0;
 
 public:
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_channel_create|dpct
-// DPCT_PARENT_FEATURE|image_channel
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_channel
-// Image|image_trait
-// Image|image_channel_set_channel_size
-// Image|image_channel_set_channel_data_type
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Create image channel info according to template argument \p T.
   template <class T> static image_channel create() {
     image_channel channel;
@@ -247,70 +159,20 @@ public:
     channel.set_channel_data_type(detail::image_trait<T>::data_type);
     return channel;
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_channel_1|dpct
-// DPCT_PARENT_FEATURE|image_channel
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_channel
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   image_channel() = default;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_channel_get_channel_data_type|dpct
-// DPCT_PARENT_FEATURE|image_channel
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_channel
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   image_channel_data_type get_channel_data_type() { return _type; }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_channel_set_channel_data_type|dpct
-// DPCT_PARENT_FEATURE|image_channel
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_channel
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_channel_data_type(image_channel_data_type type) { _type = type; }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_channel_get_total_size|dpct
-// DPCT_PARENT_FEATURE|image_channel
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_channel
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   unsigned get_total_size() { return _total_size; }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_channel_get_channel_num|dpct
-// DPCT_PARENT_FEATURE|image_channel
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_channel
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   unsigned get_channel_num() { return _channel_num; }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_channel_set_channel_num|dpct
-// DPCT_PARENT_FEATURE|image_channel
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_channel
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_channel_num(unsigned channel_num) {
     _channel_num = channel_num;
     _total_size = _channel_size * _channel_num;
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_channel_2|dpct
-// DPCT_PARENT_FEATURE|image_channel
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_channel
-// Image|image_channel_set_channel_size
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// image_channel constructor.
   /// \param r Channel r width in bits.
   /// \param g Channel g width in bits. Should be same with \p r, or zero.
@@ -335,14 +197,7 @@ public:
       set_channel_size(1, r);
     }
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_channel_get_channel_type|dpct
-// DPCT_PARENT_FEATURE|image_channel
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_channel
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   sycl::image_channel_type get_channel_type() const {
     if (_channel_size == 4) {
       if (_type == image_channel_data_type::signed_int)
@@ -367,13 +222,6 @@ public:
     assert(false && "unexpected channel data kind and channel size");
     return sycl::image_channel_type::signed_int32;
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_channel_set_channel_type|dpct
-// DPCT_PARENT_FEATURE|image_channel
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_channel
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_channel_type(sycl::image_channel_type type) {
     switch (type) {
     case sycl::image_channel_type::unsigned_int8:
@@ -413,14 +261,7 @@ public:
     }
     _total_size = _channel_size * _channel_num;
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_channel_get_channel_order|dpct
-// DPCT_PARENT_FEATURE|image_channel
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_channel
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   sycl::image_channel_order get_channel_order() const {
     switch (_channel_num) {
     case 1:
@@ -435,23 +276,9 @@ public:
       return sycl::image_channel_order::r;
     }
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_channel_get_channel_size|dpct
-// DPCT_PARENT_FEATURE|image_channel
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_channel
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Get the size for each channel in bits.
   unsigned get_channel_size() const { return _channel_size * 8; }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_channel_set_channel_size|dpct
-// DPCT_PARENT_FEATURE|image_channel
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_channel
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Set channel size.
   /// \param in_channel_num Channels number to set.
   /// \param channel_size Size for each channel in bits.
@@ -463,68 +290,27 @@ public:
     _channel_size = channel_size / 8;
     _total_size = _channel_size * _channel_num;
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_channel_3|dpct
-// DPCT_PARENT_FEATURE|image_channel
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_channel
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_matrix|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_channel
-// Image|image_matrix_1
-// Image|image_matrix_2
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// 2D or 3D matrix data for image.
 class image_matrix {
   image_channel _channel;
   int _range[3] = {1, 1, 1};
   int _dims = 0;
   void *_host_data = nullptr;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_matrix_set_range|dpct
-// DPCT_PARENT_FEATURE|image_matrix
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_matrix
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Set range of each dimension.
   template <int dimensions> void set_range(sycl::range<dimensions> range) {
     for (int i = 0; i < dimensions; ++i)
       _range[i] = range[i];
     _dims = dimensions;
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_matrix_get_range_T|dpct
-// DPCT_PARENT_FEATURE|image_matrix
-// DPCT_DEPENDENCY_BEGIN
-// Util|make_index_sequence
-// Image|image_matrix
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   template <int... DimIdx>
   sycl::range<sizeof...(DimIdx)> get_range(integer_sequence<DimIdx...>) {
     return sycl::range<sizeof...(DimIdx)>(_range[DimIdx]...);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_matrix_1|dpct
-// DPCT_PARENT_FEATURE|image_matrix
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_matrix
-// Image|image_matrix_set_range
-// Image|image_channel_get_total_size
-// Image|image_channel_set_channel_type
-// Image|image_channel_set_channel_num
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 public:
   /// Constructor with channel info and dimension size info.
   template <int dimensions>
@@ -545,30 +331,11 @@ public:
     }
     _host_data = std::malloc(_range[0] * _range[1] * _channel.get_total_size());
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_matrix_create_image|dpct
-// DPCT_PARENT_FEATURE|image_matrix
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_matrix
-// Image|image_matrix_create_image_with_channel
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Construct a new image class with the matrix data.
   template <int dimensions> sycl::image<dimensions> *create_image() {
     return create_image<dimensions>(_channel);
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_matrix_create_image_with_channel|dpct
-// DPCT_PARENT_FEATURE|image_matrix
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_matrix
-// Image|image_channel_get_channel_type
-// Image|image_channel_get_channel_order
-// Util|make_index_sequence
-// Image|image_matrix_get_range_T
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Construct a new image class with the matrix data.
   template <int dimensions>
   sycl::image<dimensions> *create_image(image_channel channel) {
@@ -577,88 +344,30 @@ public:
         get_range(make_index_sequence<dimensions>()),
         sycl::property::image::use_host_ptr());
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_matrix_get_channel|dpct
-// DPCT_PARENT_FEATURE|image_matrix
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_matrix
-// Image|image_channel
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Get channel info.
   inline image_channel get_channel() { return _channel; }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_matrix_get_range|dpct
-// DPCT_PARENT_FEATURE|image_matrix
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_matrix
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Get range of the image.
   sycl::range<3> get_range() {
     return sycl::range<3>(_range[0], _range[1], _range[2]);
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_matrix_get_dims|dpct
-// DPCT_PARENT_FEATURE|image_matrix
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_matrix
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Get matrix dims.
   inline int get_dims() { return _dims; }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_matrix_to_pitched_data|dpct
-// DPCT_PARENT_FEATURE|image_matrix
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_matrix
-// Memory|pitched_data
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Convert to pitched data.
   pitched_data to_pitched_data() {
     return pitched_data(_host_data, _range[0], _range[0], _range[1]);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_matrix_2|dpct
-// DPCT_PARENT_FEATURE|image_matrix
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_matrix
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   ~image_matrix() {
     if (_host_data)
       std::free(_host_data);
     _host_data = nullptr;
   }
 };
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_matrix_p_alias|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_matrix
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 using image_matrix_p = image_matrix *;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_data_type|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 enum class image_data_type { matrix, linear, pitch, unsupport };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_data|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data_type
-// Image|image_matrix_p_alias
-// Image|image_channel
-// Image|image_data_1
-// Image|image_matrix_get_channel
-// Image|image_data_set_data
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Image data info.
 class image_data {
 public:
@@ -671,13 +380,6 @@ public:
              image_channel channel) {
     set_data(data_ptr, x_size, y_size, pitch_size, channel);
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_data_set_data|dpct
-// DPCT_PARENT_FEATURE|image_data
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_data(image_matrix_p matrix_data) {
     _type = image_data_type::matrix;
     _data = matrix_data;
@@ -698,220 +400,56 @@ public:
     _pitch = pitch_size;
     _channel = channel;
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_data_get_data_type|dpct
-// DPCT_PARENT_FEATURE|image_data
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   image_data_type get_data_type() const { return _type; }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_data_set_data_type|dpct
-// DPCT_PARENT_FEATURE|image_data
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_data_type(image_data_type type) { _type = type; }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_data_get_data_ptr|dpct
-// DPCT_PARENT_FEATURE|image_data
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void *get_data_ptr() const { return _data; }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_data_set_data_ptr|dpct
-// DPCT_PARENT_FEATURE|image_data
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_data_ptr(void *data) { _data = data; }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_data_get_x|dpct
-// DPCT_PARENT_FEATURE|image_data
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   size_t get_x() const { return _x; }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_data_set_x|dpct
-// DPCT_PARENT_FEATURE|image_data
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_x(size_t x) { _x = x; }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_data_get_y|dpct
-// DPCT_PARENT_FEATURE|image_data
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   size_t get_y() const { return _y; }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_data_set_y|dpct
-// DPCT_PARENT_FEATURE|image_data
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_y(size_t y) { _y = y; }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_data_get_pitch|dpct
-// DPCT_PARENT_FEATURE|image_data
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   size_t get_pitch() const { return _pitch; }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_data_set_pitch|dpct
-// DPCT_PARENT_FEATURE|image_data
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_pitch(size_t pitch) { _pitch = pitch; }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_data_get_channel|dpct
-// DPCT_PARENT_FEATURE|image_data
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data
-// Image|image_channel
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   image_channel get_channel() const { return _channel; }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_data_set_channel|dpct
-// DPCT_PARENT_FEATURE|image_data
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data
-// Image|image_channel
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_channel(image_channel channel) { _channel = channel; }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_data_get_channel_data_type|dpct
-// DPCT_PARENT_FEATURE|image_data
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data
-// Image|image_channel_get_channel_data_type
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   image_channel_data_type get_channel_data_type() {
     return _channel.get_channel_data_type();
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_data_set_channel_data_type|dpct
-// DPCT_PARENT_FEATURE|image_data
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data
-// Image|image_channel_set_channel_data_type
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_channel_data_type(image_channel_data_type type) {
     _channel.set_channel_data_type(type);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_data_get_channel_size|dpct
-// DPCT_PARENT_FEATURE|image_data
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data
-// Image|image_channel_get_channel_size
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   unsigned get_channel_size() { return _channel.get_channel_size(); }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_data_set_channel_size|dpct
-// DPCT_PARENT_FEATURE|image_data
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data
-// Image|image_channel_set_channel_size
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_channel_size(unsigned channel_num, unsigned channel_size) {
     return _channel.set_channel_size(channel_num, channel_size);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_data_get_channel_num|dpct
-// DPCT_PARENT_FEATURE|image_data
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data
-// Image|image_channel_get_channel_num
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   unsigned get_channel_num() { return _channel.get_channel_num(); }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_data_set_channel_num|dpct
-// DPCT_PARENT_FEATURE|image_data
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data
-// Image|image_channel_set_channel_num
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_channel_num(unsigned num) {
     return _channel.set_channel_num(num);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_data_get_channel_type|dpct
-// DPCT_PARENT_FEATURE|image_data
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data
-// Image|image_channel_get_channel_type
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   sycl::image_channel_type get_channel_type() {
     return _channel.get_channel_type();
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_data_set_channel_type|dpct
-// DPCT_PARENT_FEATURE|image_data
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data
-// Image|image_channel_set_channel_type
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_channel_type(sycl::image_channel_type type) {
     return _channel.set_channel_type(type);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_data_1|dpct
-// DPCT_PARENT_FEATURE|image_data
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_data
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 private:
   image_data_type _type;
   void *_data = nullptr;
   size_t _x, _y, _pitch;
   image_channel _channel;
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|sampling_info|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Image|sampling_info_1
-// Image|sampling_info_2
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Image sampling info, include addressing mode, filtering mode and
 /// normalization info.
 class sampling_info {
@@ -920,100 +458,30 @@ class sampling_info {
   sycl::filtering_mode _filtering_mode = sycl::filtering_mode::nearest;
   sycl::coordinate_normalization_mode _coordinate_normalization_mode =
       sycl::coordinate_normalization_mode::unnormalized;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|sampling_info_1|dpct
-// DPCT_PARENT_FEATURE|sampling_info
-// DPCT_DEPENDENCY_BEGIN
-// Image|sampling_info
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 public:
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|sampling_info_get_addressing_mode|dpct
-// DPCT_PARENT_FEATURE|sampling_info
-// DPCT_DEPENDENCY_BEGIN
-// Image|sampling_info_1
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   sycl::addressing_mode get_addressing_mode() { return _addressing_mode; }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|sampling_info_set_addressing_mode|dpct
-// DPCT_PARENT_FEATURE|sampling_info
-// DPCT_DEPENDENCY_BEGIN
-// Image|sampling_info_1
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set(sycl::addressing_mode addressing_mode) { _addressing_mode = addressing_mode; }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|sampling_info_get_filtering_mode|dpct
-// DPCT_PARENT_FEATURE|sampling_info
-// DPCT_DEPENDENCY_BEGIN
-// Image|sampling_info_1
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   sycl::filtering_mode get_filtering_mode() { return _filtering_mode; }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|sampling_info_set_filtering_mode|dpct
-// DPCT_PARENT_FEATURE|sampling_info
-// DPCT_DEPENDENCY_BEGIN
-// Image|sampling_info_1
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set(sycl::filtering_mode filtering_mode) { _filtering_mode = filtering_mode; }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|sampling_info_get_coordinate_normalization_mode|dpct
-// DPCT_PARENT_FEATURE|sampling_info
-// DPCT_DEPENDENCY_BEGIN
-// Image|sampling_info_1
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   sycl::coordinate_normalization_mode get_coordinate_normalization_mode() {
     return _coordinate_normalization_mode;
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|sampling_info_set_coordinate_normalization_mode_enum|dpct
-// DPCT_PARENT_FEATURE|sampling_info
-// DPCT_DEPENDENCY_BEGIN
-// Image|sampling_info_1
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set(sycl::coordinate_normalization_mode coordinate_normalization_mode) {
     _coordinate_normalization_mode = coordinate_normalization_mode;
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|sampling_info_is_coordinate_normalized|dpct
-// DPCT_PARENT_FEATURE|sampling_info
-// DPCT_DEPENDENCY_BEGIN
-// Image|sampling_info_1
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   bool is_coordinate_normalized() {
     return _coordinate_normalization_mode ==
            sycl::coordinate_normalization_mode::normalized;
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|sampling_info_set_coordinate_normalization_mode|dpct
-// DPCT_PARENT_FEATURE|sampling_info
-// DPCT_DEPENDENCY_BEGIN
-// Image|sampling_info_1
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_coordinate_normalization_mode(int is_normalized) {
     _coordinate_normalization_mode =
         is_normalized ? sycl::coordinate_normalization_mode::normalized
                       : sycl::coordinate_normalization_mode::unnormalized;
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|sampling_info_set_addressing_mode_filtering_mode_coordinate_normalization_mode|dpct
-// DPCT_PARENT_FEATURE|sampling_info
-// DPCT_DEPENDENCY_BEGIN
-// Image|sampling_info_1
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void
   set(sycl::addressing_mode addressing_mode,
       sycl::filtering_mode filtering_mode,
@@ -1022,48 +490,19 @@ public:
     set(filtering_mode);
     set(coordinate_normalization_mode);
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|sampling_info_set_addressing_mode_filtering_mode_is_normalized|dpct
-// DPCT_PARENT_FEATURE|sampling_info
-// DPCT_DEPENDENCY_BEGIN
-// Image|sampling_info_1
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set(sycl::addressing_mode addressing_mode,
            sycl::filtering_mode filtering_mode, int is_normalized) {
     set(addressing_mode);
     set(filtering_mode);
     set_coordinate_normalization_mode(is_normalized);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|sampling_info_get_sampler|dpct
-// DPCT_PARENT_FEATURE|sampling_info
-// DPCT_DEPENDENCY_BEGIN
-// Image|sampling_info_1
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   sycl::sampler get_sampler() {
     return sycl::sampler(_coordinate_normalization_mode, _addressing_mode,
                              _filtering_mode);
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|sampling_info_2|dpct
-// DPCT_PARENT_FEATURE|sampling_info
-// DPCT_DEPENDENCY_BEGIN
-// Image|sampling_info
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_wrapper_base|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Image|sampling_info
-// Image|image_data
-// Image|image_wrapper_base_1
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Image base class.
 class image_wrapper_base {
   sampling_info _sampling_info;
@@ -1071,22 +510,7 @@ class image_wrapper_base {
 
 public:
   virtual ~image_wrapper_base() = 0;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_wrapper_base_attach|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|image_wrapper_base_set_data
-// Image|image_matrix
-// Image|image_data
-// Image|image_channel
-// Image|image_wrapper_base_set_channel
-// Image|image_wrapper_base_get_channel
-// Image|image_wrapper_base_attach
-// Image|image_channel_get_total_size
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void attach(image_data data) { set_data(data); }
   /// Attach matrix data to this class.
   void attach(image_matrix *matrix) {
@@ -1120,207 +544,57 @@ public:
   }
   /// Detach data.
   virtual void detach() {}
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_wrapper_base_get_sampling_info|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   sampling_info get_sampling_info() { return _sampling_info; }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_wrapper_base_set_sampling_info|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_sampling_info(sampling_info info) {
     _sampling_info = info;
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_wrapper_base_get_data|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   const image_data &get_data() { return _data; }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_wrapper_base_set_data|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_data(image_data data) { _data = data; }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_wrapper_base_get_channel|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|image_data_get_channel
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   image_channel get_channel() { return _data.get_channel(); }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_wrapper_base_set_channel|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|image_data_set_channel
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_channel(image_channel channel) { _data.set_channel(channel); }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_wrapper_base_get_channel_data_type|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|image_data_get_channel_data_type
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   image_channel_data_type get_channel_data_type() {
     return _data.get_channel_data_type();
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_wrapper_base_set_channel_data_type|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|image_data_set_channel_data_type
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_channel_data_type(image_channel_data_type type) {
     _data.set_channel_data_type(type);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_wrapper_base_get_channel_size|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|image_data_get_channel_size
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   unsigned get_channel_size() { return _data.get_channel_size(); }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_wrapper_base_set_channel_size|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|image_data_set_channel_size
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_channel_size(unsigned channel_num, unsigned channel_size) {
     return _data.set_channel_size(channel_num, channel_size);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_wrapper_base_get_addressing_mode|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|sampling_info_get_addressing_mode
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   sycl::addressing_mode get_addressing_mode() {
     return _sampling_info.get_addressing_mode();
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_wrapper_base_set_addressing_mode|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|sampling_info_set_addressing_mode
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set(sycl::addressing_mode addressing_mode) {
     _sampling_info.set(addressing_mode);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_wrapper_base_get_filtering_mode|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|sampling_info_get_filtering_mode
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   sycl::filtering_mode get_filtering_mode() {
     return _sampling_info.get_filtering_mode();
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_wrapper_base_set_filtering_mode|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|sampling_info_set_filtering_mode
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set(sycl::filtering_mode filtering_mode) {
     _sampling_info.set(filtering_mode);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_wrapper_base_get_coordinate_normalization_mode|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|sampling_info_get_coordinate_normalization_mode
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   sycl::coordinate_normalization_mode get_coordinate_normalization_mode() {
     return _sampling_info.get_coordinate_normalization_mode();
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_wrapper_base_set_coordinate_normalization_mode_enum|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|sampling_info_set_coordinate_normalization_mode_enum
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void
   set(sycl::coordinate_normalization_mode coordinate_normalization_mode) {
     _sampling_info.set(coordinate_normalization_mode);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_wrapper_base_is_coordinate_normalized|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|sampling_info_is_coordinate_normalized
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   bool is_coordinate_normalized() {
     return _sampling_info.is_coordinate_normalized();
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_wrapper_base_set_coordinate_normalization_mode|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|sampling_info_set_coordinate_normalization_mode
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_coordinate_normalization_mode(int is_normalized) {
     _sampling_info.set_coordinate_normalization_mode(is_normalized);
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_wrapper_base_set_addressing_mode_filtering_mode_coordinate_normalization_mode|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|image_wrapper_base_set_addressing_mode
-// Image|image_wrapper_base_set_filtering_mode
-// Image|image_wrapper_base_set_coordinate_normalization_mode_enum
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void
   set(sycl::addressing_mode addressing_mode,
       sycl::filtering_mode filtering_mode,
@@ -1329,140 +603,36 @@ public:
     set(filtering_mode);
     set(coordinate_normalization_mode);
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_wrapper_base_set_addressing_mode_filtering_mode_is_normalized|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|image_wrapper_base_set_addressing_mode
-// Image|image_wrapper_base_set_filtering_mode
-// Image|image_wrapper_base_set_coordinate_normalization_mode
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set(sycl::addressing_mode addressing_mode,
            sycl::filtering_mode filtering_mode, int is_normalized) {
     set(addressing_mode);
     set(filtering_mode);
     set_coordinate_normalization_mode(is_normalized);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_wrapper_base_get_channel_num|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|image_data_get_channel_num
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   unsigned get_channel_num() { return _data.get_channel_num(); }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_wrapper_base_set_channel_num|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|image_data_set_channel_num
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_channel_num(unsigned num) {
     return _data.set_channel_num(num);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_wrapper_base_get_channel_type|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|image_data_get_channel_type
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   sycl::image_channel_type get_channel_type() {
     return _data.get_channel_type();
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_wrapper_base_set_channel_type|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|image_data_set_channel_type
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   void set_channel_type(sycl::image_channel_type type) {
     return _data.set_channel_type(type);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_wrapper_base_get_sampler|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|sampling_info_get_sampler
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   sycl::sampler get_sampler() { return _sampling_info.get_sampler(); }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_wrapper_base_1|dpct
-// DPCT_PARENT_FEATURE|image_wrapper_base
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 };
 inline image_wrapper_base::~image_wrapper_base() {}
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_wrapper_base_p_alias|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 using image_wrapper_base_p = image_wrapper_base *;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_accessor_ext_forward_decl|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_accessor_ext
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <class T, int dimensions, bool IsImageArray> class image_accessor_ext;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_wrapper|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|image_accessor_ext_forward_decl
-// Image|image_trait
-// Image|image_wrapper_1
-// Image|image_wrapper_2
-// Image|image_channel_create
-// Image|image_wrapper_base_set_channel
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Image class, wrapper of sycl::image.
 template <class T, int dimensions, bool IsImageArray = false> class image_wrapper : public image_wrapper_base {
   sycl::image<dimensions> *_image = nullptr;
 
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_wrapper_create_image|dpct
-// DPCT_PARENT_FEATURE|image_wrapper
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper
-// Memory|get_pointer_attribute
-// Image|image_wrapper_base
-// Image|image_data_get_data_type
-// Image|image_data_get_data_ptr
-// Image|image_data_get_channel
-// Image|image_data_get_x
-// Image|image_data_get_y
-// Image|image_data_get_pitch
-// Image|image_channel_get_channel_order
-// Image|image_channel_get_channel_type
-// Image|image_channel_get_total_size
-// Image|image_matrix_create_image_with_channel
-// Image|image_wrapper_base_get_data
-// Image|image_data_type
-// Image|image_matrix_p_alias
-// Memory|get_buffer_byte_t|UsmNone
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 #ifndef DPCT_USM_LEVEL_NONE
   std::vector<char> _host_buffer;
 #endif
@@ -1508,14 +678,7 @@ template <class T, int dimensions, bool IsImageArray = false> class image_wrappe
     }
     return;
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_wrapper_2|dpct
-// DPCT_PARENT_FEATURE|image_wrapper
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 public:
   using acc_data_t = typename detail::image_trait<T>::acc_data_t;
   using accessor_t =
@@ -1524,31 +687,14 @@ public:
 
   image_wrapper() { set_channel(image_channel::create<T>()); }
   ~image_wrapper() { detach(); }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_wrapper_get_access|dpct
-// DPCT_PARENT_FEATURE|image_wrapper
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper
-// Image|image_wrapper_create_image
-// Device|get_default_queue
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Get image accessor.
   accessor_t get_access(sycl::handler &cgh, sycl::queue &q = get_default_queue()) {
     if (!_image)
       create_image(q);
     return accessor_t(*_image, cgh);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_wrapper_1|dpct
-// DPCT_PARENT_FEATURE|image_wrapper
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper
-// Image|image_wrapper_base_attach
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Detach data.
   void detach() override {
     if (_image)
@@ -1556,14 +702,7 @@ public:
     _image = nullptr;
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|image_accessor_ext|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|fetch_data
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Wrap sampler and image accessor together.
 template <class T, int dimensions, bool IsImageArray = false>
 class image_accessor_ext {
@@ -1662,26 +801,7 @@ public:
         _img_acc[index].read(x, _sampler));
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|create_image_wrapper|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Image|create_image_wrapper_detail_forward_decl
-// Image|image_wrapper_base
-// Image|image_data
-// Image|sampling_info
-// Image|image_channel
-// Image|image_data_get_data_type
-// Image|image_matrix_p_alias
-// Image|image_data_get_data_ptr
-// Image|image_matrix_get_channel
-// Image|image_matrix_get_dims
-// Image|image_data_get_channel
-// Image|create_image_wrapper_detail
-// Image|image_wrapper_base_set_sampling_info
-// Image|image_wrapper_base_set_data
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Create image wrapper according to image data and sampling info.
 /// \return Pointer to image wrapper base class.
 /// \param data Image data used to create image wrapper.
@@ -1709,17 +829,8 @@ static inline image_wrapper_base *create_image_wrapper(image_data data,
   }
   return nullptr;
 }
-// DPCT_LABEL_END
 
 namespace detail {
-// DPCT_LABEL_BEGIN|create_image_wrapper_detail|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper_base
-// Image|image_wrapper
-// Image|image_data_get_channel_type
-// Image|image_data_get_channel_num
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Create image according with given type \p T and \p dims.
 template <class T> static image_wrapper_base *create_image_wrapper(int dims) {
   switch (dims) {
@@ -1773,7 +884,6 @@ static image_wrapper_base *create_image_wrapper(image_channel channel, int dims)
     return nullptr;
   }
 }
-// DPCT_LABEL_END
 } // namespace detail
 
 } // namespace dpct

@@ -1,6 +1,3 @@
-// DPCT_LABEL_BEGIN|License|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 //==---- lapack_utils.hpp -------------------------*- C++ -*----------------==//
 //
 // Copyright (C) Intel Corporation
@@ -8,55 +5,19 @@
 // See https://llvm.org/LICENSE.txt for license information.
 //
 //===----------------------------------------------------------------------===//
-// DPCT_LABEL_END
 
 #ifndef __DPCT_LAPACK_UTILS_HPP__
 #define __DPCT_LAPACK_UTILS_HPP__
-// DPCT_COMMENT
-// DPCT_COMMENT Example1:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_EMPTY
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT Example2:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_BEGIN
-// DPCT_COMMENT // FileID|FeatureNameRef
-// DPCT_COMMENT [// FileID|FeatureNameRef]
-// DPCT_COMMENT ...
-// DPCT_COMMENT // DPCT_DEPENDENCY_END
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT For header file including dependency, please use predefined feature name:
-// DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other header files
 
-// DPCT_LABEL_BEGIN|local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-// DPCT_LABEL_END
 #include "memory.hpp"
 #include "util.hpp"
 #include "lib_common_utils.hpp"
 
-// DPCT_LABEL_BEGIN|non_local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include <oneapi/mkl.hpp>
 #include <sycl/sycl.hpp>
-// DPCT_LABEL_END
 
 namespace dpct {
 namespace lapack {
-// DPCT_LABEL_BEGIN|sygvd|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// Memory|get_buffer_T|UsmNone
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes all eigenvalues and, optionally, eigenvectors of a real generalized
 /// symmetric definite eigenproblem using a divide and conquer method.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
@@ -134,13 +95,6 @@ inline int sygvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
   return 0;
 #endif
 }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|hegvd|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// Memory|get_buffer_T|UsmNone
-// Util|DataType
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes all the eigenvalues, and optionally, the eigenvectors of a complex
 /// generalized Hermitian positive-definite eigenproblem using a divide and
 /// conquer method.
@@ -220,12 +174,6 @@ inline int hegvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
   return 0;
 #endif
 }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|potrf_batch|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// Util|DataType|UsmRestricted
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes the Cholesky factorizations of a batch of symmetric (or Hermitian,
 /// for complex data) positive-definite matrices.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
@@ -315,12 +263,6 @@ inline int potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
   return 0;
 #endif
 }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|potrs_batch|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// Util|DataType|UsmRestricted
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Solves a batch of systems of linear equations with a Cholesky-factored
 /// symmetric (Hermitian) positive-definite coefficient matrices.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
@@ -420,17 +362,8 @@ inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
   return 0;
 #endif
 }
-// DPCT_LABEL_END
 
 namespace detail {
-// DPCT_LABEL_BEGIN|lapack_shim|dpct::lapack::detail
-// DPCT_DEPENDENCY_BEGIN
-// Memory|dpct_memcpy_detail
-// Memory|dpct_memset_detail
-// Memory|dpct_free
-// LibCommonUtils|library_data_t
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <template <typename> typename functor_t, typename... args_t>
 inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
                        std::string const &lapack_api_name, args_t &&...args) {
@@ -489,15 +422,7 @@ inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
   }
   return 0;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|working_memory|dpct::lapack::detail
-// DPCT_DEPENDENCY_BEGIN
-// Memory|dpct_malloc_detail
-// Memory|async_dpct_free
-// LibCommonUtils|get_memory
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> class working_memory {
 public:
   working_memory(std::size_t element_number, const sycl::queue &q) : _q(q) {
@@ -521,14 +446,7 @@ private:
   sycl::event _e;
   sycl::queue _q;
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|byte_to_from_element_number|dpct::lapack::detail
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_size
-// LibCommonUtils|library_data_t
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 std::size_t byte_to_element_number(std::size_t size_in_byte,
                                    dpct::library_data_t element_type) {
   auto dv = std::lldiv(
@@ -552,11 +470,7 @@ std::size_t element_number_to_byte(std::size_t size_in_element,
   }
   return size_in_element * dv.quot;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|char2jobsvd|dpct::lapack::detail
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 inline oneapi::mkl::jobsvd char2jobsvd(signed char job) {
   switch (job) {
   case 'A':
@@ -571,13 +485,7 @@ inline oneapi::mkl::jobsvd char2jobsvd(signed char job) {
     throw std::runtime_error("the job type is unsupported");
   }
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|getrf_scratchpad_size_impl|dpct::lapack::detail
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> struct getrf_scratchpad_size_impl {
   void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
                   library_data_t a_type, std::int64_t lda,
@@ -586,15 +494,7 @@ template <typename T> struct getrf_scratchpad_size_impl {
         oneapi::mkl::lapack::getrf_scratchpad_size<T>(q, m, n, lda);
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|getrf_impl|dpct::lapack::detail
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LibCommonUtils|get_memory
-// Memory|dpct_memset_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> struct getrf_impl {
   void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
                   library_data_t a_type, void *a, std::int64_t lda,
@@ -609,16 +509,7 @@ template <typename T> struct getrf_impl {
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|getrs_impl|dpct::lapack::detail
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LibCommonUtils|get_memory
-// LapackUtils|working_memory
-// Memory|dpct_memset_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> struct getrs_impl {
   void operator()(sycl::queue &q, oneapi::mkl::transpose trans, std::int64_t n,
                   std::int64_t nrhs, library_data_t a_type, void *a,
@@ -637,13 +528,7 @@ template <typename T> struct getrs_impl {
     device_ws.set_event(e);
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|geqrf_scratchpad_size_impl|dpct::lapack::detail
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> struct geqrf_scratchpad_size_impl {
   void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
                   library_data_t a_type, std::int64_t lda,
@@ -652,15 +537,7 @@ template <typename T> struct geqrf_scratchpad_size_impl {
         oneapi::mkl::lapack::geqrf_scratchpad_size<T>(q, m, n, lda);
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|geqrf_impl|dpct::lapack::detail
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|get_memory
-// LibCommonUtils|library_data_t
-// Memory|dpct_memset_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> struct geqrf_impl {
   void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
                   library_data_t a_type, void *a, std::int64_t lda,
@@ -675,15 +552,7 @@ template <typename T> struct geqrf_impl {
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|getrfnp_impl|dpct::lapack::detail
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LibCommonUtils|get_memory
-// Memory|dpct_memset_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> struct getrfnp_impl {
   void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
                   library_data_t a_type, void *a, std::int64_t lda,
@@ -704,13 +573,7 @@ template <typename T> struct getrfnp_impl {
 #endif
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|gesvd_scratchpad_size_impl|dpct::lapack::detail
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> struct gesvd_scratchpad_size_impl {
   void operator()(sycl::queue &q, oneapi::mkl::jobsvd jobu,
                   oneapi::mkl::jobsvd jobvt, std::int64_t m, std::int64_t n,
@@ -722,15 +585,7 @@ template <typename T> struct gesvd_scratchpad_size_impl {
         q, jobu, jobvt, m, n, lda, ldu, ldvt);
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|gesvd_impl|dpct::lapack::detail
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LibCommonUtils|get_memory
-// Memory|dpct_memset_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> struct ElementType {
   using value_tpye = T;
 };
@@ -781,13 +636,7 @@ template <typename T> struct gesvd_conj_impl : public gesvd_impl<T> {
 #endif
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|potrf_scratchpad_size_impl|dpct::lapack::detail
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> struct potrf_scratchpad_size_impl {
   void operator()(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                   library_data_t a_type, std::int64_t lda,
@@ -796,15 +645,7 @@ template <typename T> struct potrf_scratchpad_size_impl {
         oneapi::mkl::lapack::potrf_scratchpad_size<T>(q, uplo, n, lda);
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|potrf_impl|dpct::lapack::detail
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LibCommonUtils|get_memory
-// Memory|dpct_memset_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> struct potrf_impl {
   void operator()(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                   library_data_t a_type, void *a, std::int64_t lda,
@@ -817,16 +658,7 @@ template <typename T> struct potrf_impl {
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|potrs_impl|dpct::lapack::detail
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LibCommonUtils|get_memory
-// LapackUtils|working_memory
-// Memory|dpct_memset_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> struct potrs_impl {
   void operator()(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                   std::int64_t nrhs, library_data_t a_type, void *a,
@@ -844,22 +676,14 @@ template <typename T> struct potrs_impl {
     device_ws.set_event(e);
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|value_type_trait|dpct::lapack::detail
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <typename T> struct value_type_trait {
   using value_type = T;
 };
 template <typename T> struct value_type_trait<std::complex<T>> {
   using value_type = T;
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|lamch_s|dpct::lapack::detail
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <typename T> auto lamch_s() {
 #ifndef __INTEL_MKL__
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
@@ -873,14 +697,7 @@ template <typename T> auto lamch_s() {
   throw std::runtime_error("the type is unsupported");
 #endif
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|syheevx_scratchpad_size_impl|dpct::lapack::detail
-// DPCT_DEPENDENCY_BEGIN
-// LapackUtils|value_type_trait
-// LapackUtils|lamch_s
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> struct syheevx_scratchpad_size_impl {
   void operator()(sycl::queue &q, oneapi::mkl::compz jobz,
                   oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
@@ -908,13 +725,7 @@ template <typename T> struct syheevx_scratchpad_size_impl {
 #endif
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_library_data_t_from_type|dpct::lapack::detail
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> constexpr library_data_t get_library_data_t_from_type() {
   if constexpr (std::is_same_v<T, float>) {
     return library_data_t::real_float;
@@ -927,19 +738,7 @@ template <typename T> constexpr library_data_t get_library_data_t_from_type() {
   }
   throw std::runtime_error("the type is unsupported");
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|syheevx_impl|dpct::lapack::detail
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LibCommonUtils|get_memory
-// LapackUtils|working_memory
-// LapackUtils|value_type_trait
-// LapackUtils|lamch_s
-// Memory|dpct_memset_detail
-// Memory|async_dpct_memcpy
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> struct syheevx_impl {
   void operator()(sycl::queue &q, oneapi::mkl::compz jobz,
                   oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
@@ -986,14 +785,7 @@ template <typename T> struct syheevx_impl {
 #endif
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|syhegvx_scratchpad_size_impl|dpct::lapack::detail
-// DPCT_DEPENDENCY_BEGIN
-// LapackUtils|value_type_trait
-// LapackUtils|lamch_s
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> struct syhegvx_scratchpad_size_impl {
   void operator()(sycl::queue &q, std::int64_t itype, oneapi::mkl::compz jobz,
                   oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
@@ -1021,19 +813,7 @@ template <typename T> struct syhegvx_scratchpad_size_impl {
 #endif
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|syhegvx_impl|dpct::lapack::detail
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LibCommonUtils|get_memory
-// LapackUtils|working_memory
-// LapackUtils|value_type_trait
-// LapackUtils|lamch_s
-// Memory|dpct_memset_detail
-// Memory|async_dpct_memcpy
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> struct syhegvx_impl {
   void operator()(sycl::queue &q, std::int64_t itype, oneapi::mkl::compz jobz,
                   oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
@@ -1080,11 +860,7 @@ template <typename T> struct syhegvx_impl {
 #endif
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|syhegvd_scratchpad_size_impl|dpct::lapack::detail
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <typename T> struct syhegvd_scratchpad_size_impl {
   void operator()(sycl::queue &q, std::int64_t itype, oneapi::mkl::job jobz,
                   oneapi::mkl::uplo uplo, std::int64_t n, std::int64_t lda,
@@ -1098,14 +874,7 @@ template <typename T> struct syhegvd_scratchpad_size_impl {
     }
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|syhegvd_impl|dpct::lapack::detail
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|get_memory
-// Memory|dpct_memset_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> struct syhegvd_impl {
   void operator()(sycl::queue &q, std::int64_t itype, oneapi::mkl::job jobz,
                   oneapi::mkl::uplo uplo, std::int64_t n, void *a,
@@ -1128,14 +897,7 @@ template <typename T> struct syhegvd_impl {
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|job2compz|dpct::lapack::detail
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|get_memory
-// Memory|dpct_memset_detail
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 oneapi::mkl::compz job2compz(const oneapi::mkl::job &job) {
   oneapi::mkl::compz ret;
   if (job == oneapi::mkl::job::novec) {
@@ -1147,17 +909,8 @@ oneapi::mkl::compz job2compz(const oneapi::mkl::job &job) {
   }
   return ret;
 }
-// DPCT_LABEL_END
 } // namespace detail
 
-// DPCT_LABEL_BEGIN|getrf_scratchpad_size|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LapackUtils|lapack_shim
-// LapackUtils|getrf_scratchpad_size_impl
-// LapackUtils|byte_to_from_element_number
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes the size of workspace memory of getrf function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
@@ -1183,17 +936,7 @@ inline int getrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
   *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
   return ret;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|getrf|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LapackUtils|lapack_shim
-// LapackUtils|getrf_impl
-// LapackUtils|getrfnp_impl
-// LapackUtils|byte_to_from_element_number
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes the LU factorization of a general m-by-n matrix.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q The queue where the routine should be executed. It must
@@ -1231,15 +974,7 @@ inline int getrf(sycl::queue &q, std::int64_t m, std::int64_t n,
       device_ws_size_in_element_number, info);
 #endif
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|getrs|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LapackUtils|lapack_shim
-// LapackUtils|getrs_impl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Solves a system of linear equations with a LU-factored square coefficient
 /// matrix, with multiple right-hand sides.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
@@ -1267,16 +1002,7 @@ inline int getrs(sycl::queue &q, oneapi::mkl::transpose trans, std::int64_t n,
       q, a_type, info, "getrs_scratchpad_size/getrs", q, trans, n, nrhs, a_type,
       a, lda, ipiv, b_type, b, ldb, info);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|geqrf_scratchpad_size|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LapackUtils|lapack_shim
-// LapackUtils|geqrf_scratchpad_size_impl
-// LapackUtils|byte_to_from_element_number
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes the size of workspace memory of geqrf function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
@@ -1302,16 +1028,7 @@ inline int geqrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
   *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
   return ret;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|geqrf|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LapackUtils|lapack_shim
-// LapackUtils|geqrf_impl
-// LapackUtils|byte_to_from_element_number
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes the QR factorization of a general m-by-n matrix.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q The queue where the routine should be executed. It must
@@ -1339,17 +1056,7 @@ inline int geqrf(sycl::queue &q, std::int64_t m, std::int64_t n,
       q, a_type, info, "geqrf", q, m, n, a_type, a, lda, tau_type, tau,
       device_ws, device_ws_size_in_element_number, info);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|gesvd_scratchpad_size|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LapackUtils|lapack_shim
-// LapackUtils|gesvd_scratchpad_size_impl
-// LapackUtils|char2jobsvd
-// LapackUtils|byte_to_from_element_number
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes the size of workspace memory of gesvd function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
@@ -1442,18 +1149,7 @@ inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
   *device_ws_size = device_ws_size_64;
   return ret;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|gesvd|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LapackUtils|lapack_shim
-// LapackUtils|gesvd_impl
-// LibCommonUtils|get_memory
-// LapackUtils|char2jobsvd
-// LapackUtils|byte_to_from_element_number
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes the size of workspace memory of gesvd function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
@@ -1552,16 +1248,7 @@ inline int gesvd(sycl::queue &q, oneapi::mkl::job jobz, std::int64_t all_vec,
       u_type, u, ldu, vt_type, vt, ldvt, device_ws, device_ws_size, info);
   return 0;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|potrf_scratchpad_size|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LapackUtils|lapack_shim
-// LapackUtils|potrf_scratchpad_size_impl
-// LapackUtils|byte_to_from_element_number
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes the size of workspace memory of potrf function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
@@ -1587,16 +1274,7 @@ inline int potrf_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
   *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
   return ret;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|potrf|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LapackUtils|lapack_shim
-// LapackUtils|potrf_impl
-// LapackUtils|byte_to_from_element_number
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes the Cholesky factorization of a symmetric (Hermitian)
 /// positive-definite matrix.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
@@ -1622,15 +1300,7 @@ inline int potrf(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
       q, a_type, info, "potrf", q, uplo, n, a_type, a, lda, device_ws,
       device_ws_size_in_element_number, info);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|potrs|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LapackUtils|lapack_shim
-// LapackUtils|potrs_impl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Solves a system of linear equations with a Cholesky-factored symmetric
 /// (Hermitian) positive-definite coefficient matrix.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
@@ -1660,17 +1330,7 @@ inline int potrs(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
       q, a_type, info, "potrs_scratchpad_size/potrs", q, uplo, n, nrhs, a_type,
       a, lda, b_type, b, ldb, info);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|syheevx_scratchpad_size|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LapackUtils|lapack_shim
-// LapackUtils|syheevx_scratchpad_size_impl
-// LapackUtils|byte_to_from_element_number
-// LapackUtils|job2compz
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes the size of workspace memory of syevx/heevx function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
@@ -1713,17 +1373,7 @@ inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
   *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
   return ret;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|syheevx|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LapackUtils|lapack_shim
-// LapackUtils|syheevx_impl
-// LapackUtils|byte_to_from_element_number
-// LapackUtils|job2compz
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes selected eigenvalues and, optionally, eigenvectors of a
 /// symmetric/Hermitian matrix.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
@@ -1770,17 +1420,7 @@ inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
   q.wait();
   return ret;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|syheevx_scratchpad_size_T|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// LapackUtils|lapack_shim
-// LapackUtils|syheevx_scratchpad_size_impl
-// LapackUtils|byte_to_from_element_number
-// LapackUtils|get_library_data_t_from_type
-// LapackUtils|job2compz
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes the size of workspace memory of syevx/heevx function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
@@ -1816,16 +1456,7 @@ inline int syheevx_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
   *device_ws_size = (int)device_ws_size_tmp;
   return ret;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|syheevx_T|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// LapackUtils|lapack_shim
-// LapackUtils|syheevx_impl
-// LapackUtils|get_library_data_t_from_type
-// LapackUtils|job2compz
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes selected eigenvalues and, optionally, eigenvectors of a
 /// symmetric/Hermitian matrix.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
@@ -1871,16 +1502,7 @@ inline int syheevx(sycl::queue &q, oneapi::mkl::job jobz,
   *m = (int)m64;
   return ret;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|syhegvx_scratchpad_size|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// LapackUtils|lapack_shim
-// LapackUtils|syhegvx_scratchpad_size_impl
-// LapackUtils|get_library_data_t_from_type
-// LapackUtils|job2compz
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes the size of workspace memory of sygvx/hegvx function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
@@ -1918,16 +1540,7 @@ syhegvx_scratchpad_size(sycl::queue &q, int itype, oneapi::mkl::job jobz,
   *device_ws_size = (int)device_ws_size_tmp;
   return ret;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|syhegvx|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// LapackUtils|lapack_shim
-// LapackUtils|syhegvx_impl
-// LapackUtils|get_library_data_t_from_type
-// LapackUtils|job2compz
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes selected eigenvalues and, optionally, eigenvectors of a real
 /// generalized symmetric/Hermitian definite eigenproblem.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
@@ -1975,15 +1588,7 @@ inline int syhegvx(sycl::queue &q, int itype, oneapi::mkl::job jobz,
   *m = (int)m64;
   return ret;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|syhegvd_scratchpad_size|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// LapackUtils|lapack_shim
-// LapackUtils|syhegvd_scratchpad_size_impl
-// LapackUtils|get_library_data_t_from_type
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes the size of workspace memory of sygvd/hegvd function.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
 /// \param [in] q Device queue where computation will be performed. It must
@@ -2010,15 +1615,7 @@ inline int syhegvd_scratchpad_size(sycl::queue &q, int itype,
   *device_ws_size = (int)device_ws_size_tmp;
   return ret;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|syhegvd|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// LapackUtils|lapack_shim
-// LapackUtils|syhegvd_impl
-// LapackUtils|get_library_data_t_from_type
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Computes all eigenvalues and, optionally, eigenvectors of a real generalized
 /// symmetric/Hermitian definite eigenproblem using a divide and conquer method.
 /// \return Returns 0 if no synchronous exception, otherwise returns 1.
@@ -2047,7 +1644,6 @@ inline int syhegvd(sycl::queue &q, int itype, oneapi::mkl::job jobz,
       q, detail::get_library_data_t_from_type<T>(), info, "sygvd/hegvd", q,
       itype, jobz, uplo, n, a, lda, b, ldb, w, device_ws, device_ws_size, info);
 }
-// DPCT_LABEL_END
 } // namespace lapack
 } // namespace dpct
 

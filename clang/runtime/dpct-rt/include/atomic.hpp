@@ -1,6 +1,3 @@
-// DPCT_LABEL_BEGIN|License|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 //==---- atomic.hpp -------------------------------*- C++ -*----------------==//
 //
 // Copyright (C) Intel Corporation
@@ -8,48 +5,14 @@
 // See https://llvm.org/LICENSE.txt for license information.
 //
 //===----------------------------------------------------------------------===//
-// DPCT_LABEL_END
 
 #ifndef __DPCT_ATOMIC_HPP__
 #define __DPCT_ATOMIC_HPP__
-// DPCT_COMMENT
-// DPCT_COMMENT Example1:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_EMPTY
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT Example2:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_BEGIN
-// DPCT_COMMENT // FileID|FeatureNameRef
-// DPCT_COMMENT [// FileID|FeatureNameRef]
-// DPCT_COMMENT ...
-// DPCT_COMMENT // DPCT_DEPENDENCY_END
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT For header file including dependency, please use predefined feature name:
-// DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other header files
 
-// DPCT_LABEL_BEGIN|non_local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include <sycl/sycl.hpp>
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-// DPCT_LABEL_END
 
 namespace dpct {
 
-// DPCT_LABEL_BEGIN|atomic_fetch_add|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Atomically add the value operand to the value at the addr and assign the
 /// result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
@@ -112,11 +75,7 @@ inline T1 atomic_fetch_add(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
   atomic_fetch_add<T1, addressSpace>(addr, operand, memoryOrder);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|atomic_fetch_sub|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Atomically subtract the value operand from the value at the addr and assign
 /// the result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
@@ -179,11 +138,7 @@ inline T1 atomic_fetch_sub(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
   atomic_fetch_sub<T1, addressSpace>(addr, operand, memoryOrder);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|atomic_fetch_and|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Atomically perform a bitwise AND between the value operand and the value at the addr
 /// and assign the result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
@@ -246,11 +201,7 @@ inline T1 atomic_fetch_and(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
   atomic_fetch_and<T1, addressSpace>(addr, operand, memoryOrder);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|atomic_fetch_or|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Atomically or the value at the addr with the value operand, and assign
 /// the result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
@@ -313,11 +264,7 @@ inline T1 atomic_fetch_or(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
   atomic_fetch_or<T1, addressSpace>(addr, operand, memoryOrder);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|atomic_fetch_xor|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Atomically xor the value at the addr with the value operand, and assign
 /// the result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
@@ -380,11 +327,7 @@ inline T1 atomic_fetch_xor(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
   atomic_fetch_xor<T1, addressSpace>(addr, operand, memoryOrder);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|atomic_fetch_min|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Atomically calculate the minimum of the value at addr and the value operand
 /// and assign the result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
@@ -447,11 +390,7 @@ inline T1 atomic_fetch_min(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
   atomic_fetch_min<T1, addressSpace>(addr, operand, memoryOrder);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|atomic_fetch_max|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Atomically calculate the maximum of the value at addr and the value operand
 /// and assign the result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
@@ -514,11 +453,7 @@ inline T1 atomic_fetch_max(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
   atomic_fetch_max<T1, addressSpace>(addr, operand, memoryOrder);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|atomic_fetch_compare_dec|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Atomically set \p operand to the value stored in \p addr, if old value stored in
 /// \p addr is equal to zero or greater than \p operand, else decrease the value stored
 /// in \p addr.
@@ -546,11 +481,7 @@ inline unsigned int atomic_fetch_compare_dec(unsigned int *addr,
 
   return old;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|atomic_fetch_compare_inc|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Atomically increment the value stored in \p addr if old value stored in \p
 /// addr is less than \p operand, else set 0 to the value stored in \p addr.
 /// \param [in, out] addr The pointer to the data.
@@ -607,11 +538,7 @@ atomic_fetch_compare_inc(unsigned int *addr, unsigned int operand,
                     "sycl::memory_order::acq_rel, sycl::memory_order::seq_cst!");
   }
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|atomic_exchange|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Atomically exchange the value at the address addr with the value operand.
 /// \param [in, out] addr The pointer to the data.
 /// \param operand The value to be exchanged with the value pointed by \p addr.
@@ -672,11 +599,7 @@ inline T1 atomic_exchange(T1 *addr, T2 operand,
                            sycl::memory_order memoryOrder) {
   atomic_exchange<T1, addressSpace>(addr, operand, memoryOrder);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|atomic_compare_exchange_strong|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Atomically compare the value at \p addr to the value expected and exchange
 /// with the value desired if the value at \p addr is equal to the value expected.
 /// Returns the value at the \p addr before the call.
@@ -756,11 +679,7 @@ T1 atomic_compare_exchange_strong(
   atm.compare_exchange_strong(expected_value, desired, success, fail);
   return expected_value;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|atomic_class|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Atomic extension to implement standard APIs in std::atomic
 namespace detail{
 template <typename T> struct IsValidAtomicType {
@@ -797,24 +716,12 @@ public:
   static constexpr sycl::memory_order default_read_modify_write_order =
       DefaultOrder;
   
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|atomic_class_construct|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Atomic|atomic_class
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Default constructor.
   constexpr atomic() noexcept = default;
   /// Constructor with initialize value.
   constexpr atomic(T d) noexcept : __d(d){};
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|atomic_class_store|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Atomic|atomic_class
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// atomically replaces the value of the referenced object with a non-atomic argument
   /// \param operand The value to replace the pointed value.
   /// \param memoryOrder The memory ordering used.
@@ -824,13 +731,7 @@ public:
     sycl::atomic_ref<T, DefaultOrder, DefaultScope, Space> atm(__d);
     atm.store(operand, memoryOrder, memoryScope);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|atomic_class_load|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Atomic|atomic_class
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// atomically obtains the value of the referenced object
   /// \param memoryOrder The memory ordering used.
   /// \param memoryScope The memory scope used.
@@ -841,13 +742,7 @@ public:
       const_cast<T &>(__d));
     return atm.load(memoryOrder, memoryScope);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|atomic_class_exchange|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Atomic|atomic_class
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// atomically replaces the value of the referenced object and obtains the value held previously
   /// \param operand The value to replace the pointed value.
   /// \param memoryOrder The memory ordering used.
@@ -860,13 +755,7 @@ public:
     sycl::atomic_ref<T, DefaultOrder, DefaultScope, Space> atm(__d);
     return atm.exchange(operand, memoryOrder, memoryScope);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|atomic_class_compare_exchange_weak|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Atomic|atomic_class
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// atomically compares the value of the referenced object with non-atomic argument 
   /// and performs atomic exchange if equal or atomic load if not
   /// \param expected The value expected to be found in the object referenced by the atomic_ref object
@@ -893,13 +782,7 @@ public:
     sycl::atomic_ref<T, DefaultOrder, DefaultScope, Space> atm(__d);
     return atm.compare_exchange_weak(expected, desired, memoryOrder, memoryScope);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|atomic_class_compare_exchange_strong|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Atomic|atomic_class
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// atomically compares the value of the referenced object with non-atomic argument 
   /// and performs atomic exchange if equal or atomic load if not
   /// \param expected The value expected to be found in the object referenced by the atomic_ref object
@@ -927,13 +810,7 @@ public:
     sycl::atomic_ref<T, DefaultOrder, DefaultScope, Space> atm(__d);
     return atm.compare_exchange_strong(expected, desired, memoryOrder, memoryScope);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|atomic_class_fetch_add|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Atomic|atomic_class
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// atomically adds the argument to the value stored in the atomic object and obtains the value held previously
   /// \param operand 	The other argument of arithmetic addition
   /// \param memoryOrder The memory ordering used.
@@ -946,13 +823,7 @@ public:
     sycl::atomic_ref<T, DefaultOrder, DefaultScope, Space> atm(__d);
     return atm.fetch_add(operand, memoryOrder,  memoryScope);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|atomic_class_fetch_sub|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Atomic|atomic_class
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// atomically subtracts the argument from the value stored in the atomic object and obtains the value held previously
   /// \param operand 	The other argument of arithmetic subtraction
   /// \param memoryOrder The memory ordering used.
@@ -966,7 +837,6 @@ public:
     return atm.fetch_sub(operand, memoryOrder, memoryScope);
   }
 };
-// DPCT_LABEL_END
 
 } // namespace dpct
 #endif // __DPCT_ATOMIC_HPP__

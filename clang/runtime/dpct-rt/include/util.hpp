@@ -1,6 +1,3 @@
-// DPCT_LABEL_BEGIN|License|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 //==---- util.hpp ---------------------------------*- C++ -*----------------==//
 //
 // Copyright (C) Intel Corporation
@@ -8,50 +5,16 @@
 // See https://llvm.org/LICENSE.txt for license information.
 //
 //===----------------------------------------------------------------------===//
-// DPCT_LABEL_END
 
 #ifndef __DPCT_UTIL_HPP__
 #define __DPCT_UTIL_HPP__
-// DPCT_COMMENT
-// DPCT_COMMENT Example1:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_EMPTY
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT Example2:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_BEGIN
-// DPCT_COMMENT // FileID|FeatureNameRef
-// DPCT_COMMENT [// FileID|FeatureNameRef]
-// DPCT_COMMENT ...
-// DPCT_COMMENT // DPCT_DEPENDENCY_END
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT For header file including dependency, please use predefined feature name:
-// DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other header files
 
-// DPCT_LABEL_BEGIN|non_local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include <sycl/sycl.hpp>
 #include <complex>
 #include <type_traits>
 #include <cassert>
 #include <cstdint>
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|spirv_builtin_function|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 // TODO: Remove these function definitions once they exist in the DPC++ compiler
 #if defined(__SYCL_DEVICE_ONLY__) && defined(__INTEL_LLVM_COMPILER)
 template <typename T>
@@ -66,13 +29,9 @@ template <typename T>
 __SYCL_CONVERGENT__ extern SYCL_EXTERNAL __SYCL_EXPORT __attribute__((noduplicate))
 T __spirv_GroupNonUniformShuffleUp(__spv::Scope::Flag, T, unsigned) noexcept;
 #endif
-// DPCT_LABEL_END
 
 namespace dpct {
 
-// DPCT_LABEL_BEGIN|err_types|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 namespace detail {
 
 template <typename tag, typename T> class generic_error_type {
@@ -89,36 +48,19 @@ private:
 
 using err0 = detail::generic_error_type<struct err0_tag, int>;
 using err1 = detail::generic_error_type<struct err1_tag, int>;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|make_index_sequence|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <int... Ints> struct integer_sequence {};
 template <int Size, int... Ints>
 struct make_index_sequence
     : public make_index_sequence<Size - 1, Size - 1, Ints...> {};
 template <int... Ints>
 struct make_index_sequence<0, Ints...> : public integer_sequence<Ints...> {};
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|DataType|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <typename T> struct DataType { using T2 = T; };
 template <typename T> struct DataType<sycl::vec<T, 2>> {
   using T2 = std::complex<T>;
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|matrix_mem_copy|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_default_queue
-// Memory|dpct_memcpy_detail
-// Memory|dpct_memcpy_2d_pitch_detail
-// Memory|memcpy_direction
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline void matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld,
                             int from_ld, int rows, int cols, int elem_size,
                             memcpy_direction direction = automatic,
@@ -147,16 +89,7 @@ inline void matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld,
           elem_size * rows, cols, direction));
   }
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|matrix_mem_copy_T|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_default_queue
-// Util|matrix_mem_copy
-// Util|DataType
-// Memory|memcpy_direction
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Copy matrix data. The default leading dimension is column.
 /// \param [out] to_ptr A pointer points to the destination location.
 /// \param [in] from_ptr A pointer points to the source location.
@@ -178,11 +111,7 @@ inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld,
   matrix_mem_copy((void *)to_ptr, (void *)from_ptr, to_ld, from_ld, rows, cols,
                   sizeof(Ty), direction, queue, async);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|cast_double_to_int|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Cast the high or low 32 bits of a double to an integer.
 /// \param [in] d The double value.
 /// \param [in] use_high32 Cast the high 32 bits of the double if true;
@@ -194,11 +123,7 @@ inline int cast_double_to_int(double d, bool use_high32 = true) {
     return v1[1];
   return v1[0];
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|cast_ints_to_double|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Combine two integers, the first as the high 32 bits and the second
 /// as the low 32 bits, into a double.
 /// \param [in] high32 The integer as the high 32 bits
@@ -208,11 +133,7 @@ inline double cast_ints_to_double(int high32, int low32) {
   auto v1 = v0.as<sycl::vec<double, 1>>();
   return v1;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|reverse_bits|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Reverse the bit order of an unsigned integer
 /// \param [in] a Input unsigned integer value
 /// \returns Value of a with the bit order reversed
@@ -231,11 +152,7 @@ template <typename T> inline T reverse_bits(T a) {
   }
   return a;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|byte_level_permute|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// \param [in] a The first value contains 4 bytes
 /// \param [in] b The second value contains 4 bytes
 /// \param [in] s The selector value, only lower 16bit used
@@ -251,11 +168,7 @@ inline unsigned int byte_level_permute(unsigned int a, unsigned int b,
       (((((std::uint64_t)b << 32 | a) >> ((s >> 12) & 0x7) * 8) & 0xff) << 24);
   return ret;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|ffs|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Find position of first least significant set bit in an integer.
 /// ffs(0) returns 0.
 ///
@@ -265,11 +178,7 @@ template <typename T> inline int ffs(T a) {
   static_assert(std::is_integral<T>::value, "integer required");
   return (sycl::ctz(a) + 1) % (sizeof(T) * 8 + 1);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|select_from_sub_group|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// select_from_sub_group allows work-items to obtain a copy of a value held by
 /// any other work-item in the sub_group. The input sub_group will be divided
 /// into several logical sub_groups with id range [0, \p logical_sub_group_size
@@ -292,11 +201,7 @@ T select_from_sub_group(sycl::sub_group g, T x, int remote_local_id,
   return sycl::select_from_group(
       g, x, start_index + remote_local_id % logical_sub_group_size);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|shift_sub_group_left|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// shift_sub_group_left move values held by the work-items in a sub_group
 /// directly to another work-item in the sub_group, by shifting values a fixed
 /// number of work-items to the left. The input sub_group will be divided into
@@ -324,11 +229,7 @@ T shift_sub_group_left(sycl::sub_group g, T x, unsigned int delta,
   }
   return result;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|shift_sub_group_right|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// shift_sub_group_right move values held by the work-items in a sub_group
 /// directly to another work-item in the sub_group, by shifting values a fixed
 /// number of work-items to the right. The input sub_group will be divided into
@@ -356,11 +257,7 @@ T shift_sub_group_right(sycl::sub_group g, T x, unsigned int delta,
   }
   return result;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|permute_sub_group_by_xor|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// permute_sub_group_by_xor permutes values by exchanging values held by pairs
 /// of work-items identified by computing the bitwise exclusive OR of the
 /// work-item id and some fixed mask. The input sub_group will be divided into
@@ -388,14 +285,8 @@ T permute_sub_group_by_xor(sycl::sub_group g, T x, unsigned int mask,
                                      ? start_index + target_offset
                                      : id);
 }
-// DPCT_LABEL_END
 
 namespace experimental {
-// DPCT_LABEL_BEGIN|select_from_sub_group_mask|dpct::experimental
-// DPCT_DEPENDENCY_BEGIN
-// Util|spirv_builtin_function
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Masked version of select_from_sub_group, which execute masked sub-group
 /// operation. The parameter member_mask indicating the work-items participating
 /// the call. Whether the n-th bit is set to 1 representing whether the
@@ -434,13 +325,7 @@ T select_from_sub_group(unsigned int member_mask,
                         "supported on host device and none intel compiler.");
 #endif // __SYCL_DEVICE_ONLY__ && __INTEL_LLVM_COMPILER
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|shift_sub_group_left_mask|dpct::experimental
-// DPCT_DEPENDENCY_BEGIN
-// Util|spirv_builtin_function
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Masked version of shift_sub_group_left, which execute masked sub-group
 /// operation. The parameter member_mask indicating the work-items participating
 /// the call. Whether the n-th bit is set to 1 representing whether the
@@ -482,13 +367,7 @@ T shift_sub_group_left(unsigned int member_mask,
                         "supported on host device and none intel compiler.");
 #endif // __SYCL_DEVICE_ONLY__ && __INTEL_LLVM_COMPILER
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|shift_sub_group_right_mask|dpct::experimental
-// DPCT_DEPENDENCY_BEGIN
-// Util|spirv_builtin_function
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Masked version of shift_sub_group_right, which execute masked sub-group
 /// operation. The parameter member_mask indicating the work-items participating
 /// the call. Whether the n-th bit is set to 1 representing whether the
@@ -530,13 +409,7 @@ T shift_sub_group_right(unsigned int member_mask,
                         "supported on host device and none intel compiler.");
 #endif // __SYCL_DEVICE_ONLY && __INTEL_LLVM_COMPILER
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|permute_sub_group_by_xor_mask|dpct::experimental
-// DPCT_DEPENDENCY_BEGIN
-// Util|spirv_builtin_function
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Masked version of permute_sub_group_by_xor, which execute masked sub-group
 /// operation. The parameter member_mask indicating the work-items participating
 /// the call. Whether the n-th bit is set to 1 representing whether the
@@ -576,12 +449,8 @@ T permute_sub_group_by_xor(unsigned int member_mask,
                         "supported on host device and none intel compiler.");
 #endif // __SYCL_DEVICE_ONLY__ && __INTEL_LLVM_COMPILER
 }
-// DPCT_LABEL_END
 } // namespace experimental
 
-// DPCT_LABEL_BEGIN|cmul|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Computes the multiplication of two complex numbers.
 /// \tparam T Complex element type
 /// \param [in] x The first input complex number
@@ -593,11 +462,7 @@ sycl::vec<T, 2> cmul(sycl::vec<T, 2> x, sycl::vec<T, 2> y) {
   t1 = t1 * t2;
   return sycl::vec<T, 2>(t1.real(), t1.imag());
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|cdiv|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Computes the division of two complex numbers.
 /// \tparam T Complex element type
 /// \param [in] x The first input complex number
@@ -609,11 +474,7 @@ sycl::vec<T, 2> cdiv(sycl::vec<T, 2> x, sycl::vec<T, 2> y) {
   t1 = t1 / t2;
   return sycl::vec<T, 2>(t1.real(), t1.imag());
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|cabs|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Computes the magnitude of a complex number.
 /// \tparam T Complex element type
 /// \param [in] x The input complex number
@@ -623,11 +484,7 @@ T cabs(sycl::vec<T, 2> x) {
   std::complex<T> t(x[0], x[1]);
   return std::abs(t);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|conj|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Computes the complex conjugate of a complex number.
 /// \tparam T Complex element type
 /// \param [in] x The input complex number
@@ -638,11 +495,7 @@ sycl::vec<T, 2> conj(sycl::vec<T, 2> x) {
   t = std::conj(t);
   return sycl::vec<T, 2>(t.real(), t.imag());
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_sycl_language_version|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 inline int get_sycl_language_version() {
 #ifdef SYCL_LANGUAGE_VERSION
   return SYCL_LANGUAGE_VERSION;
@@ -650,12 +503,8 @@ inline int get_sycl_language_version() {
   return 202000;
 #endif
 }
-// DPCT_LABEL_END
 
 namespace experimental {
-// DPCT_LABEL_BEGIN|nd_range_barrier|dpct::experimental
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Synchronize work items from all work groups within a SYCL kernel.
 /// \param [in] item:  Represents a work group.
 /// \param [in] counter: An atomic object defined on a device memory which can
@@ -730,13 +579,7 @@ nd_range_barrier(const sycl::nd_item<1> &item,
 
   item.barrier();
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|logical_group|dpct::experimental
-// DPCT_DEPENDENCY_BEGIN
-// Util|logical_group_1
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// The logical-group is a logical collection of some work-items within a
 /// work-group.
 /// Note: Please make sure that the logical-group size is a power of 2 in the
@@ -758,35 +601,14 @@ public:
     _group_linear_range_in_parent =
         (_g.get_local_linear_range() - 1) / _logical_group_size + 1;
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|logical_group_get_local_linear_id|dpct::experimental
-// DPCT_PARENT_FEATURE|logical_group
-// DPCT_DEPENDENCY_BEGIN
-// Util|logical_group
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Returns the index of the work-item within the logical-group.
   uint32_t get_local_linear_id() const {
     return _item.get_local_linear_id() % _logical_group_size;
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|logical_group_get_group_linear_id|dpct::experimental
-// DPCT_PARENT_FEATURE|logical_group
-// DPCT_DEPENDENCY_BEGIN
-// Util|logical_group
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Returns the index of the logical-group in the parent group.
   uint32_t get_group_linear_id() const {
     return _item.get_local_linear_id() / _logical_group_size;
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|logical_group_get_local_linear_range|dpct::experimental
-// DPCT_PARENT_FEATURE|logical_group
-// DPCT_DEPENDENCY_BEGIN
-// Util|logical_group
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Returns the number of work-items in the logical-group.
   uint32_t get_local_linear_range() const {
     if (_g.get_local_linear_range() % _logical_group_size == 0) {
@@ -801,32 +623,12 @@ public:
       return _logical_group_size;
     }
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|logical_group_get_group_linear_range|dpct::experimental
-// DPCT_PARENT_FEATURE|logical_group
-// DPCT_DEPENDENCY_BEGIN
-// Util|logical_group
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Returns the number of logical-group in the parent group.
   uint32_t get_group_linear_range() const {
     return _group_linear_range_in_parent;
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|logical_group_1|dpct::experimental
-// DPCT_PARENT_FEATURE|logical_group
-// DPCT_DEPENDENCY_BEGIN
-// Util|logical_group
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|calculate_max_active_wg_per_xecore|dpct::experimental
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_current_device
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 // The original source of the function calculate_max_active_wg_per_xecore was
 // under the license below:
 //
@@ -913,15 +715,8 @@ inline int calculate_max_active_wg_per_xecore(int *num_wg, int wg_size,
   *num_wg = std::min(*num_wg, max_num_wg);
   return ret;
 }
-// DPCT_LABEL_END
 } // namespace experimental
 
-// DPCT_LABEL_BEGIN|int_as_queue_ptr|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|typedef_queue_ptr
-// Device|get_default_queue
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// If x <= 2, then return a pointer to the deafult queue;
 /// otherwise, return x reinterpreted as a dpct::queue_ptr.
 inline queue_ptr int_as_queue_ptr(uintptr_t x) {
@@ -929,11 +724,7 @@ inline queue_ptr int_as_queue_ptr(uintptr_t x) {
   &get_default_queue()
   : reinterpret_cast<queue_ptr>(x);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|kernel_wrapper|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <int n_nondefault_params, int n_default_params, typename T>
 class args_selector;
 
@@ -1044,7 +835,6 @@ public:
 #else
 #define DPCT_EXPORT
 #endif
-// DPCT_LABEL_END
 
 } // namespace dpct
 

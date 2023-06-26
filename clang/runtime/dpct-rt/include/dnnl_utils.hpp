@@ -1,6 +1,3 @@
-// DPCT_LABEL_BEGIN|License|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 //==---- dnnl_utils.hpp ---------------------------*- C++ -*----------------==//
 //
 // Copyright (C) Intel Corporation
@@ -8,14 +5,10 @@
 // See https://llvm.org/LICENSE.txt for license information.
 //
 //===----------------------------------------------------------------------===//
-// DPCT_LABEL_END
 
 #ifndef __DPCT_DNNL_UTILS_HPP__
 #define __DPCT_DNNL_UTILS_HPP__
 
-// DPCT_LABEL_BEGIN|non_local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
 #include <oneapi/dpl/numeric>
@@ -26,53 +19,28 @@
 #include <oneapi/dnnl/dnnl_sycl.hpp>
 #include <unordered_map>
 #include <algorithm>
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include "memory.hpp"
 #include "device.hpp"
 #include "lib_common_utils.hpp"
-// DPCT_LABEL_END
 
 namespace dpct {
 namespace dnnl {
-// DPCT_LABEL_BEGIN|get_version|dpct::dnnl
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// Get concatenated library version as an integer.
 static inline size_t get_version() {
   const ::dnnl::version_t *ver = ::dnnl::version();
   return ver->major * 1000 + ver->minor * 100 + ver->patch;
 }
-// DPCT_LABEL_END
 class engine_ext;
 typedef oneapi::mkl::rng::philox4x32x10 rng_engine_t;
-// DPCT_LABEL_BEGIN|memory_format_tag|dpct::dnnl
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// An enum class representing memory layout. Used by
 /// memory_desc_ext to create a memory with pre-defined layout.
 enum class memory_format_tag { nchw, nhwc, nchw_blocked };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rnn_memory_format_tag|dpct::dnnl
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// An enum class representing RNN data memory layout. Used by
 /// memory_desc_ext to create a memory with pre-defined layout.
 enum class rnn_memory_format_tag { tnc, ntc };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|memory_desc_ext|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|memory_format_tag
-// DnnlUtils|rnn_memory_format_tag
-// LibCommonUtils|library_data_t
-// DnnlUtils|memory_desc_ext_def
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// A class holding the description of an N-dimensions memory.
 class memory_desc_ext {
   ::dnnl::memory::desc _desc;
@@ -221,11 +189,7 @@ public:
     return *this;
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|activation_desc|dpct::dnnl
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// A class holding description for an activation operation.
 class activation_desc {
   ::dnnl::algorithm _alg;
@@ -275,11 +239,7 @@ public:
   /// \param [out] alg Activation algorithm.
   ::dnnl::algorithm get_algorithm() const { return _alg; }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|lrn_desc|dpct::dnnl
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// A class holding description for a local response normalization operation.
 class lrn_desc {
   unsigned int _local_size;
@@ -339,24 +299,12 @@ public:
   /// \param [out] k Value of k parameter.
   float get_k() const { return _k; }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|softmax_algorithm|dpct::dnnl
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// An enum class representing softmax algorithm.
 enum class softmax_algorithm { normal, log };
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|softmax_mode|dpct::dnnl
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// An enum class representing softmax mode.
 enum class softmax_mode { instance, channel };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|pooling_desc|dpct::dnnl
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// A class holding description for a pooling operation.
 class pooling_desc {
   ::dnnl::algorithm _alg;
@@ -499,11 +447,7 @@ public:
     }
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|reduction_op|dpct::dnnl
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// An enum class representing reduction operations.
 enum class reduction_op {
   max,
@@ -516,42 +460,22 @@ enum class reduction_op {
   norm1,
   norm2
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|batch_normalization_mode|dpct::dnnl
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// An enum class representing batch normalization mode.
 enum class batch_normalization_mode { per_activation, spatial };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|batch_normalization_ops|dpct::dnnl
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// An enum class representing batch normalization operations.
 enum class batch_normalization_ops { none, activation, add_activation };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|binary_op|dpct::dnnl
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// An enum class representing binary operations.
 enum class binary_op { add, sub, mul, div, min, max, sqrt, neg };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|convolution_algorithm_info|dpct::dnnl
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// An struct representing convolution algorithm infomation.
 struct convolution_algorithm_info {
   ::dnnl::algorithm algo = ::dnnl::algorithm::convolution_auto;
   int status = 0;
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|convolution_desc|dpct::dnnl
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// A class holding description for a convolution operation.
 class convolution_desc {
   std::vector<int64_t> _strides;
@@ -702,36 +626,16 @@ public:
              && _paddings.size() == 0);
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rnn_mode|dpct::dnnl
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// An enum class representing rnn mode.
 enum class rnn_mode { vanilla_relu, vanilla_tanh, lstm, gru };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rnn_bias_mode|dpct::dnnl
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// An enum class representing rnn bias mode.
 enum class rnn_bias_mode { none, single };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rnn_direction|dpct::dnnl
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /// An enum class representing rnn direction.
 enum class rnn_direction {unidirectional, bidirectional};
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rnn_desc|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|rnn_mode
-// DnnlUtils|rnn_bias_mode
-// DnnlUtils|rnn_direction
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// A class holding description for a RNN operation.
 class rnn_desc {
   rnn_mode _mode;
@@ -769,13 +673,7 @@ public:
     *dt = _dt;
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dropout_desc|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|dropout_desc_def
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// A class holding description for a Dropout operation.
 class dropout_desc {
   struct dropout_desc_imp {
@@ -851,17 +749,7 @@ public:
                unsigned long long seed);
   friend class engine_ext;
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|engine_ext|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext_1
-// DnnlUtils|engine_ext_2
-// DnnlUtils|memory_format_tag
-// LibCommonUtils|library_data_t
-// DnnlUtils|batch_normalization_mode
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// A class holding the oneDNN engine.
 class engine_ext {
   ::dnnl::engine _eng;
@@ -1235,12 +1123,6 @@ public:
                            const memory_desc_ext &src_desc, void *src,
                            float beta, const memory_desc_ext &diff_src_desc,
                            void *diff_src, ::dnnl::memory *workspace = nullptr);
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|fill_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Setting all elements of a memory to a given value asynchronously.
   /// \param [in] src_desc Source memory descriptor.
   /// \param [in] src Pointer to source data.
@@ -1248,12 +1130,6 @@ public:
   /// \returns An event representing the fill operations.
   sycl::event async_fill(const memory_desc_ext &src_desc, void *src,
                    const void *valuePtr);
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|reorder_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Coping the scaled data from a memory to another memory with a different
   /// description asynchronously.
   /// \param [in] alpha Value to scaling factors used to scale the computed
@@ -1267,24 +1143,12 @@ public:
   /// \returns An event representing the reorder operations.
   sycl::event async_reorder(float alpha, const memory_desc_ext &src_desc, void *src,
                       float beta, const memory_desc_ext &dst_desc, void *dst);
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|scale_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Scaling all the elements of a memory by a given factor asynchronously.
   /// \param [in] alpha Value to scaling factors.
   /// \param [in] src_desc Source memory descriptor.
   /// \param [out] src Pointer to source data.
   /// \returns An event representing the scale operations.
   sycl::event async_scale(float alpha, const memory_desc_ext &src_desc, void *src);
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|sum_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Adding the scaled values of a memory to another memory asynchronously.
   /// \param [in] alpha Value to scaling factors used to scale the computed
   /// value.
@@ -1297,14 +1161,7 @@ public:
   /// \returns An event representing the sum operations.
   sycl::event async_sum(float alpha, const memory_desc_ext &src_desc, void *src,
                   float beta, const memory_desc_ext &dst_desc, void *dst);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|binary_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|binary_op
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Perform specified binary operation asynchronously.
   /// \param [in] op Specified binary operation.
   /// \param [in] alpha_0 Value to scaling factors used to scale the src_0
@@ -1325,14 +1182,7 @@ public:
                      float alpha_1, const memory_desc_ext &src_desc_1,
                      void *src_1, float beta, const memory_desc_ext &dst_desc,
                      void *dst);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|reduction_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|reduction_op
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Perform specified binary operation asynchronously.
   /// \param [in] op Specified reduction operation.
   /// \param [in] alpha Value to scaling factors used to scale the data
@@ -1347,13 +1197,6 @@ public:
   sycl::event async_reduction(reduction_op op, float alpha,
                         const memory_desc_ext &src_desc, void *src, float beta,
                         const memory_desc_ext &dst_desc, void *dst);
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|activation_forward_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|activation_desc
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing a specified activation function value asynchronously.
   /// \param [in] desc Activation descriptor.
   /// \param [in] alpha Value to scaling factors used to scale the computed
@@ -1369,13 +1212,6 @@ public:
                                  const memory_desc_ext &src_desc, void *src,
                                  float beta, const memory_desc_ext &dst_desc,
                                  void *dst);
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|activation_backward_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|activation_desc
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing the gradient of a specified activation function asynchronously.
   /// \param [in] desc Activation descriptor.
   /// \param [in] alpha Value to scaling factors used to scale the computed
@@ -1397,13 +1233,6 @@ public:
                       const memory_desc_ext &diff_dst_desc, void *diff_dst,
                       const memory_desc_ext &src_desc, void *src, float beta,
                       const memory_desc_ext &diff_src_desc, void *diff_src);
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|pooling_forward_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|pooling_desc
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing a specified pooling function value asynchronously.
   /// \param [in] desc Pooling descriptor.
   /// \param [in] alpha Value to scaling factors used to scale the computed
@@ -1420,13 +1249,6 @@ public:
                               const memory_desc_ext &src_desc, void *src,
                               float beta, const memory_desc_ext &dst_desc,
                               void *dst, ::dnnl::memory *workspace = nullptr);
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|pooling_backward_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|pooling_desc
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing the gradient of a specified pooling function asynchronously.
   /// \param [in] desc Activation descriptor.
   /// \param [in] alpha Value to scaling factors used to scale the computed
@@ -1453,14 +1275,6 @@ public:
                                const memory_desc_ext &diff_src_desc,
                                void *diff_src,
                                ::dnnl::memory *workspace = nullptr);
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|softmax_forward_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|softmax_algorithm
-// DnnlUtils|softmax_mode
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing a specified softmax function value asynchronously.
   /// \param [in] alg Softmax algorithm.
   /// \param [in] mode Softmax mode.
@@ -1477,14 +1291,6 @@ public:
                               float alpha, const memory_desc_ext &src_desc,
                               void *src, float beta,
                               const memory_desc_ext &dst_desc, void *dst);
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|softmax_backward_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|softmax_algorithm
-// DnnlUtils|softmax_mode
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing the gradient of a specified softmax function asynchronously.
   /// \param [in] alg Softmax algorithm.
   /// \param [in] mode Softmax mode.
@@ -1505,13 +1311,6 @@ public:
                                void *diff_dst, float beta,
                                const memory_desc_ext &diff_src_desc,
                                void *diff_src);
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|lrn_forward_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|lrn_desc
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing a specified local response normalization function value
   /// asynchronously.
   /// \param [in] desc Local response normalization descriptor.
@@ -1530,13 +1329,6 @@ public:
                           const memory_desc_ext &src_desc, void *src,
                           float beta, const memory_desc_ext &dst_desc,
                           void *dst, ::dnnl::memory *workspace = nullptr);
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|lrn_backward_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|lrn_desc
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing the gradient of a specified local response normalization
   /// function asynchronously.
   /// \param [in] desc Local response normalization descriptor.
@@ -1559,15 +1351,7 @@ public:
                            const memory_desc_ext &src_desc, void *src,
                            float beta, const memory_desc_ext &diff_src_desc,
                            void *diff_src, ::dnnl::memory *workspace = nullptr);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|derive_batch_normalization_memory_desc_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|batch_normalization_mode
-// DnnlUtils|batch_normalization_ops
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Derives a memory descriptor for the batch normalization scale, bias, mean,
   /// variance from the source memory descriptor and batch normalization mode.
   /// \param [out] desc Derived memory descriptor.
@@ -1576,15 +1360,7 @@ public:
   static void derive_batch_normalization_memory_desc(memory_desc_ext &desc,
                                               const memory_desc_ext &src_desc,
                                               batch_normalization_mode mode);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|derive_batch_normalization_memory_desc_decl_norm|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|batch_normalization_mode
-// DnnlUtils|batch_normalization_ops
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Derives a memory descriptor for the batch normalization scale, bias, mean,
   /// variance from the source memory descriptor and batch normalization mode.
   /// \param [out] scale_bias_desc Derived scale and bias memory descriptor.
@@ -1595,15 +1371,7 @@ public:
                                              memory_desc_ext &mean_var_desc,
                                              const memory_desc_ext &src_desc,
                                              batch_normalization_mode mode);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_batch_normalization_workspace_size_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|batch_normalization_mode
-// DnnlUtils|batch_normalization_ops
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Get the size of workspace that needed by batch normalization. The data stored
   /// in workspace must be preserved between forward and backward.
   /// \param [in] ops Batch normalization operation mode. This mode can set to
@@ -1614,15 +1382,7 @@ public:
   /// \returns Size of workspace.
   size_t get_batch_normalization_workspace_size(
     batch_normalization_ops ops, const memory_desc_ext &src_desc);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|batch_normalization_forward_inference_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|batch_normalization_mode
-// DnnlUtils|batch_normalization_ops
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing a specified batch normalization inference stage function value
   /// asynchronously.
   /// \param [in] mode Batch normalization mode.
@@ -1648,15 +1408,7 @@ public:
       const memory_desc_ext &dst_desc, void *dst,
       const memory_desc_ext &scale_bias_mean_var_desc, void *scale, void *bias,
       void *mean, void *var);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|batch_normalization_forward_inference_ex_norm_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|batch_normalization_mode
-// DnnlUtils|batch_normalization_ops
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing a specified batch normalization inference stage function value
   /// asynchronously.
   /// \param [in] mode Batch normalization mode.
@@ -1691,15 +1443,7 @@ public:
       const memory_desc_ext &summand_desc, void *summand,
       const memory_desc_ext &scale_bias_desc, void *scale, void *bias,
       const memory_desc_ext &mean_var_desc, void *mean, void *var);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|batch_normalization_forward_training_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|batch_normalization_mode
-// DnnlUtils|batch_normalization_ops
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing a specified batch normalization training stage function value
   /// asynchronously.
   /// \param [in] mode Batch normalization mode.
@@ -1729,15 +1473,7 @@ public:
       const memory_desc_ext &dst_desc, void *dst,
       const memory_desc_ext &scale_bias_mean_var_desc, void *scale, void *bias,
       void *running_mean, void *running_var, void *saved_mean, void *saved_var);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|batch_normalization_forward_training_ex_1_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|batch_normalization_mode
-// DnnlUtils|batch_normalization_ops
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing a specified batch normalization training stage function value
   /// asynchronously.
   /// \param [in] mode Batch normalization mode.
@@ -1780,15 +1516,7 @@ public:
       const memory_desc_ext &scale_bias_mean_var_desc, void *scale, void *bias,
       void *running_mean, void *running_var, void *saved_mean, void *saved_var,
       size_t workspace_size, void *workspace);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|batch_normalization_forward_training_ex_2_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|batch_normalization_mode
-// DnnlUtils|batch_normalization_ops
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing a specified batch normalization training stage function value
   /// asynchronously.
   /// \param [in] mode Batch normalization mode.
@@ -1831,15 +1559,7 @@ public:
       const memory_desc_ext &scale_bias_desc, void *scale, void *bias,
       const memory_desc_ext &mean_var_desc, void *running_mean, void *running_var,
       void *saved_mean, void *saved_var, size_t workspace_size, void *workspace);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|batch_normalization_backward_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|batch_normalization_mode
-// DnnlUtils|batch_normalization_ops
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing the gradient of a specified batch normalization function asynchronously.
   /// \param [in] mode Batch normalization mode.
   /// \param [in] epsilon Epsilon value used in computation.
@@ -1873,15 +1593,7 @@ public:
       const memory_desc_ext &diff_scale_bias_mean_var_desc, void *scale,
       float beta_param, void *diff_scale, void *diff_bias, void *saved_mean,
       void *saved_var);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|batch_normalization_backward_ex_1_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|batch_normalization_mode
-// DnnlUtils|batch_normalization_ops
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing the gradient of a specified batch normalization function
   /// asynchronously.
   /// \param [in] mode Batch normalization mode.
@@ -1932,15 +1644,7 @@ public:
       void *scale, void *bias, float beta_param, void *diff_scale,
       void *diff_bias, void *saved_mean, void *saved_var,
       size_t workspace_size, void *workspace);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|batch_normalization_backward_ex_2_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|batch_normalization_mode
-// DnnlUtils|batch_normalization_ops
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing the gradient of a specified batch normalization function
   /// asynchronously.
   /// \param [in] mode Batch normalization mode.
@@ -1990,14 +1694,7 @@ public:
       void *bias, float beta_param, void *diff_scale, void *diff_bias,
       const memory_desc_ext &mean_var_desc, void *saved_mean, void *saved_var,
       size_t workspace_size, void *workspace);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|convolution_forward_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|convolution_desc
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing a specified convolution function value asynchronously.
   /// \param [in] desc Convolution descriptor.
   /// \param [in] alg Convolution algorithm.
@@ -2017,14 +1714,7 @@ public:
                                   void *src, const memory_desc_ext &weight_desc,
                                   void *weight, float beta,
                                   const memory_desc_ext &dst_desc, void *dst);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|convolution_forward_ex_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|convolution_desc
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing a specified convolution function value asynchronously.
   /// \param [in] desc Convolution descriptor.
   /// \param [in] alg Convolution algorithm.
@@ -2051,14 +1741,7 @@ public:
       const memory_desc_ext &summand_desc, void *summand,
       const memory_desc_ext &bias_desc, void *bias,
       const memory_desc_ext &dst_desc, void *dst);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|convolution_backward_data_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|convolution_desc
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing the data gradient of a specified convolution function asynchronously.
   /// \param [in] desc Convolution descriptor.
   /// \param [in] alg Convolution algorithm.
@@ -2078,14 +1761,7 @@ public:
       const memory_desc_ext &weight_desc, void *weight,
       const memory_desc_ext &diff_dst_desc, void *diff_dst, float beta,
       const memory_desc_ext &diff_src_desc, void *diff_src);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|convolution_backward_weight_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|convolution_desc
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing the weight gradient of a specified convolution function
   /// asynchronously.
   /// \param [in] desc Convolution descriptor.
@@ -2106,13 +1782,7 @@ public:
       const memory_desc_ext &src_desc, void *src,
       const memory_desc_ext &diff_dst_desc, void *diff_dst, float beta,
       const memory_desc_ext &diff_weight_desc, void *diff_weight);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|convolution_backward_bias_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing the bias gradient of a specified convolution function
   /// asynchronously.
   /// \param [in] alpha Value to scaling factors used to scale the computed
@@ -2129,31 +1799,13 @@ public:
                                         void *diff_dst, float beta,
                                         const memory_desc_ext &diff_bias_desc,
                                         void *diff_bias);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rnn_get_weight_space_size_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|rnn_mode
-// DnnlUtils|rnn_bias_mode
-// DnnlUtils|rnn_direction
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Getting the required weight space size for specified rnn operation.  
   /// \param [in] desc RNN descriptor.
   /// \param [out] weight_space_size Size of required weight space.
   void rnn_get_weight_space_size(const rnn_desc &desc,
                                  size_t *weight_space_size);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rnn_get_scratchpad_workspace_size_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|rnn_mode
-// DnnlUtils|rnn_bias_mode
-// DnnlUtils|rnn_direction
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Getting the required scratchpad size and workspace size for specified rnn operation.  
   /// \param [in] desc RNN descriptor.
   /// \param [in] kind Propagation kind.
@@ -2163,16 +1815,7 @@ public:
   void rnn_get_scratchpad_workspace_size(const rnn_desc &desc, ::dnnl::prop_kind kind,
                               const memory_desc_ext &src_desc,
                               size_t *scratchpad_size, size_t *workspace_size);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|async_rnn_forward_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|rnn_mode
-// DnnlUtils|rnn_bias_mode
-// DnnlUtils|rnn_direction
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing a specified rnn function value asynchronously.
   /// \param [in] desc RNN descriptor.
   /// \param [in] kind Propagation kind.
@@ -2203,16 +1846,7 @@ public:
                                size_t weight_size, void *weight,
                                size_t scratchpad_size, void *scratchpad,
                                size_t workspace_size, void *workspace);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|async_rnn_backward_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|rnn_mode
-// DnnlUtils|rnn_bias_mode
-// DnnlUtils|rnn_direction
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing the data and weight gradient of a specified rnn function
   /// asynchronously.
   /// \param [in] desc RNN descriptor.
@@ -2247,37 +1881,17 @@ public:
       void *diff_dst_iter_c, void *diff_src_iter_c, size_t weight_size,
       void *weight, void *diff_weight, size_t scratchpad_size, void *scratchpad,
       size_t workspace_size, void *workspace);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_dropout_state_size_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|dropout_desc
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Getting the required state size for specified dropout operation.
   /// \param [in] src_desc Source memory descriptor.
   /// \returns Required size of state.
   size_t get_dropout_state_size();
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_dropout_workspace_size_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Getting the required workspace size for dropout operation.
   /// \param [in] src_desc Source memory descriptor.
   /// \returns Required size of workspace.
   static size_t get_dropout_workspace_size(const memory_desc_ext &src_desc);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|async_dropout_forward_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|dropout_desc
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing a specified dropout function value asynchronously.
   /// \param [in] desc Dropout descriptor.
   /// \param [in] src_desc Source memory descriptor.
@@ -2291,14 +1905,7 @@ public:
                                     const memory_desc_ext &src_desc, void *src,
                                     const memory_desc_ext &dst_desc, void *dst,
                                     void *workspace, size_t workspace_size);
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|async_dropout_backward_decl|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DnnlUtils|dropout_desc
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Computing the gradient of a specified dropout function asynchronously.
   /// \param [in] desc Dropout descriptor.
   /// \param [in] diff_dst_desc Differential destination memory descriptor.
@@ -2314,18 +1921,8 @@ public:
                                      const memory_desc_ext &diff_src_desc,
                                      void *diff_src, void *workspace,
                                      size_t workspace_size);
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|engine_ext_1|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dropout_desc_def|dpct::dnnl
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 inline
 void dropout_desc::restore(engine_ext &engine, float p, void *state,
                                   size_t state_size, unsigned long long seed) {
@@ -2374,11 +1971,7 @@ void dropout_desc::set(engine_ext &engine, float p, void *state,
   }
 #endif
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|memory_desc_ext_def|dpct::dnnl
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 inline
 ::dnnl::memory::data_type
 memory_desc_ext::to_dnnl_data_type(dpct::library_data_t dt) {
@@ -2611,11 +2204,7 @@ void memory_desc_ext::get(int requested_ndims, dpct::library_data_t *dt,
     dims[index] = adims[index];
   }
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|engine_ext_2|dpct::dnnl
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 inline
 void engine_ext::get_rnn_configuration(const ::dnnl::memory::desc &desc,
                                        rnn_direction direction, rnn_mode mode,
@@ -3780,13 +3369,7 @@ void engine_ext::lrn_backward(lrn_desc &desc, float alpha,
                      src_desc, src, beta, diff_src_desc, diff_src, workspace)
       .wait();
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|fill|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|fill_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_fill(const memory_desc_ext &src_desc, void *src,
                              const void *valuePtr) {
@@ -3807,13 +3390,7 @@ sycl::event engine_ext::async_fill(const memory_desc_ext &src_desc, void *src,
     throw std::runtime_error("async_fill: unsupported data type.");
   }
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|reorder|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|reorder_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_reorder(float alpha, const memory_desc_ext &src_desc,
                                 void *src, float beta,
@@ -3830,13 +3407,7 @@ sycl::event engine_ext::async_reorder(float alpha, const memory_desc_ext &src_de
   return execute_primitive(primitive, execution_args,
                            {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|scale|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|scale_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_scale(float alpha, const memory_desc_ext &src_desc,
                               void *src) {
@@ -3857,13 +3428,7 @@ sycl::event engine_ext::async_scale(float alpha, const memory_desc_ext &src_desc
   async_free(_q, e, primitive, args, {src_cache});
   return e;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|sum|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|sum_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_sum(float alpha, const memory_desc_ext &src_desc,
                             void *src, float beta,
@@ -3888,13 +3453,7 @@ sycl::event engine_ext::async_sum(float alpha, const memory_desc_ext &src_desc,
   async_free(_q, e, primitive, args, {dst_cache});
   return e;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|binary|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|binary_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_binary(binary_op op, float alpha_0,
                                const memory_desc_ext &src_desc_0, void *src_0,
@@ -3997,13 +3556,7 @@ sycl::event engine_ext::async_binary(binary_op op, float alpha_0,
   });
   return e;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|reduction|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|reduction_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_reduction(reduction_op op, float alpha,
                                   const memory_desc_ext &src_desc, void *src,
@@ -4067,13 +3620,7 @@ sycl::event engine_ext::async_reduction(reduction_op op, float alpha,
   return execute_primitive(primitive, execution_args,
                            {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|activation_forward|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|activation_forward_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_activation_forward(activation_desc &desc, float alpha,
                                            const memory_desc_ext &src_desc,
@@ -4093,13 +3640,7 @@ sycl::event engine_ext::async_activation_forward(activation_desc &desc, float al
   return execute_primitive(primitive, execution_args,
                            {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|activation_backward|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|activation_backward_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_activation_backward(
     activation_desc &desc, float alpha, const memory_desc_ext &dst_desc,
@@ -4134,13 +3675,7 @@ sycl::event engine_ext::async_activation_backward(
       primitive, execution_args,
       {{alpha, beta, DNNL_ARG_DIFF_SRC, diff_src_desc, diff_src}});
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|pooling_forward|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|pooling_forward_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_pooling_forward(pooling_desc &desc, float alpha,
                                         const memory_desc_ext &src_desc,
@@ -4172,13 +3707,7 @@ sycl::event engine_ext::async_pooling_forward(pooling_desc &desc, float alpha,
   return execute_primitive(primitive, execution_args,
                            {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|pooling_backward|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|pooling_backward_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_pooling_backward(
     pooling_desc &desc, float alpha, const memory_desc_ext &dst_desc, void *dst,
@@ -4216,13 +3745,7 @@ sycl::event engine_ext::async_pooling_backward(
       primitive, execution_args,
       {{alpha, beta, DNNL_ARG_DIFF_SRC, diff_src_desc, diff_src}});
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|softmax_forward|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|softmax_forward_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_softmax_forward(softmax_algorithm alg,
                                         softmax_mode mode, float alpha,
@@ -4255,13 +3778,7 @@ sycl::event engine_ext::async_softmax_forward(softmax_algorithm alg,
       primitive, execution_args,
       {{alpha, beta, DNNL_ARG_DST, memory_desc_ext(help_dst_desc), dst}});
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|softmax_backward|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|softmax_backward_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_softmax_backward(
     softmax_algorithm alg, softmax_mode mode, float alpha,
@@ -4301,13 +3818,7 @@ sycl::event engine_ext::async_softmax_backward(
                            {{alpha, beta, DNNL_ARG_DIFF_SRC,
                              memory_desc_ext(help_diff_src_desc), diff_src}});
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|lrn_forward|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|lrn_forward_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_lrn_forward(lrn_desc &desc, float alpha,
                                     const memory_desc_ext &src_desc, void *src,
@@ -4337,13 +3848,7 @@ sycl::event engine_ext::async_lrn_forward(lrn_desc &desc, float alpha,
   return execute_primitive(primitive, execution_args,
                            {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|lrn_backward|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|lrn_backward_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event
 engine_ext::async_lrn_backward(lrn_desc &desc, float alpha,
@@ -4382,13 +3887,7 @@ engine_ext::async_lrn_backward(lrn_desc &desc, float alpha,
       primitive, execution_args,
       {{alpha, beta, DNNL_ARG_DIFF_SRC, diff_src_desc, diff_src}});
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_batch_normalization_workspace_size|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|get_batch_normalization_workspace_size_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 size_t engine_ext::get_batch_normalization_workspace_size(
     batch_normalization_ops ops, const memory_desc_ext &src_desc) {
@@ -4397,13 +3896,7 @@ size_t engine_ext::get_batch_normalization_workspace_size(
   }
   return src_desc.get_size();
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|batch_normalization_forward_inference|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|batch_normalization_forward_inference_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_batch_normalization_forward_inference(
     batch_normalization_mode mode, float epsilon, float alpha,
@@ -4417,13 +3910,7 @@ sycl::event engine_ext::async_batch_normalization_forward_inference(
       scale_bias_mean_var_desc, scale, bias, scale_bias_mean_var_desc, mean,
       var, nullptr, nullptr);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|batch_normalization_forward_inference_ex_norm|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|batch_normalization_forward_inference_ex_norm_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_batch_normalization_forward_inference(
     batch_normalization_mode mode, batch_normalization_ops ops,
@@ -4465,13 +3952,7 @@ sycl::event engine_ext::async_batch_normalization_forward_inference(
       true, mode, epsilon, 0.f, alpha, src_desc, src, beta, dst_desc, dst,
       scale_bias_desc, scale, bias, mean_var_desc, mean, var, nullptr, nullptr);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|batch_normalization_forward_training|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|batch_normalization_forward_training_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_batch_normalization_forward_training(
     batch_normalization_mode mode, float epsilon, float factor, float alpha,
@@ -4484,13 +3965,7 @@ sycl::event engine_ext::async_batch_normalization_forward_training(
       scale_bias_mean_var_desc, scale, bias, scale_bias_mean_var_desc,
       saved_mean, saved_var, running_mean, running_var);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|batch_normalization_forward_training_ex_norm|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|batch_normalization_forward_training_ex_2_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_batch_normalization_forward_training(
     batch_normalization_mode mode, batch_normalization_ops ops,
@@ -4525,13 +4000,7 @@ sycl::event engine_ext::async_batch_normalization_forward_training(
       scale_bias_desc, scale, bias, mean_var_desc, saved_mean, saved_var,
       running_mean, running_var);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|batch_normalization_forward_training_ex|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|batch_normalization_forward_training_ex_1_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_batch_normalization_forward_training(
     batch_normalization_mode mode, batch_normalization_ops ops,
@@ -4548,13 +4017,7 @@ sycl::event engine_ext::async_batch_normalization_forward_training(
       scale_bias_mean_var_desc, running_mean, running_var, saved_mean,
       saved_var, workspace_size, workspace);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|batch_normalization_backward|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|batch_normalization_backward_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_batch_normalization_backward(
     batch_normalization_mode mode, float epsilon, float alpha_data,
@@ -4571,13 +4034,7 @@ sycl::event engine_ext::async_batch_normalization_backward(
       diff_scale_bias_mean_var_desc, scale, nullptr, beta_param, diff_scale,
       diff_bias, diff_scale_bias_mean_var_desc, saved_mean, saved_var);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|batch_normalization_backward_ex_norm|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|batch_normalization_backward_ex_2_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_batch_normalization_backward(
     batch_normalization_mode mode, batch_normalization_ops ops,
@@ -4633,13 +4090,7 @@ sycl::event engine_ext::async_batch_normalization_backward(
   });
   return e;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|batch_normalization_backward_ex|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|batch_normalization_backward_ex_1_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_batch_normalization_backward(
     batch_normalization_mode mode, batch_normalization_ops ops,
@@ -4661,13 +4112,7 @@ sycl::event engine_ext::async_batch_normalization_backward(
       diff_bias, diff_scale_bias_mean_var_desc, saved_mean, saved_var,
       workspace_size, workspace);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|convolution_forward|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|convolution_forward_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event
 engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm alg,
@@ -4696,13 +4141,7 @@ engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm 
   return execute_primitive(primitive, execution_args,
                            {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|convolution_forward_ex|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|convolution_forward_ex_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_convolution_forward(
     convolution_desc &desc, ::dnnl::algorithm alg, activation_desc &adesc,
@@ -4748,13 +4187,7 @@ sycl::event engine_ext::async_convolution_forward(
   async_sum(alpha_1, summand_desc, summand, 1.f, dst_desc, dst);
   return async_activation_forward(adesc, 1.f, dst_desc, dst, 0.f, dst_desc, dst);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|convolution_backward_data|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|convolution_backward_data_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_convolution_backward_data(
     convolution_desc &desc, ::dnnl::algorithm alg, float alpha,
@@ -4793,13 +4226,7 @@ sycl::event engine_ext::async_convolution_backward_data(
       primitive, execution_args,
       {{alpha, beta, DNNL_ARG_DIFF_SRC, diff_src_desc, diff_src}});
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|convolution_backward_weight|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|convolution_backward_weight_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_convolution_backward_weight(
     convolution_desc &desc, ::dnnl::algorithm alg, float alpha,
@@ -4840,13 +4267,7 @@ sycl::event engine_ext::async_convolution_backward_weight(
                            {{alpha, beta, DNNL_ARG_DIFF_WEIGHTS,
                              help_diff_weight_desc, diff_weight}});
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|convolution_backward_bias|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|convolution_backward_bias_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_convolution_backward_bias(
     float alpha, const memory_desc_ext &diff_dst_desc, void *diff_dst,
@@ -4854,13 +4275,7 @@ sycl::event engine_ext::async_convolution_backward_bias(
   return async_reduction(reduction_op::sum, alpha, diff_dst_desc, diff_dst, beta,
                    diff_bias_desc, diff_bias);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rnn_get_weight_space_size|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|rnn_get_weight_space_size_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 void engine_ext::rnn_get_weight_space_size(const rnn_desc &desc,
                                            size_t *weight_space_size) {
@@ -4872,13 +4287,7 @@ void engine_ext::rnn_get_weight_space_size(const rnn_desc &desc,
                        weight_space_size, nullptr, nullptr);
   return;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rnn_get_scratchpad_workspace_size|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|rnn_get_scratchpad_workspace_size_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 void engine_ext::rnn_get_scratchpad_workspace_size(
     const rnn_desc &desc, ::dnnl::prop_kind kind,
@@ -4893,13 +4302,7 @@ void engine_ext::rnn_get_scratchpad_workspace_size(
                        scratchpad_size);
   return;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|async_rnn_forward|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|async_rnn_forward_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_rnn_forward(
     const rnn_desc &desc, ::dnnl::prop_kind kind,
@@ -4915,13 +4318,7 @@ sycl::event engine_ext::async_rnn_forward(
       workspace, scratchpad_size, scratchpad, false, nullptr, nullptr,
       nullptr);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|async_rnn_backward|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|async_rnn_backward_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_rnn_backward(
     const rnn_desc &desc, const memory_desc_ext &dst_desc, void *dst,
@@ -5013,13 +4410,7 @@ sycl::event engine_ext::async_rnn_backward(
   }
   return e;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_dropout_state_size|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|get_dropout_state_size_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 size_t engine_ext::get_dropout_state_size(){
 #ifndef __INTEL_MKL__
@@ -5039,24 +4430,12 @@ size_t engine_ext::get_dropout_state_size(){
   return _random_engine_state_size;
 #endif
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_dropout_workspace_size|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|get_dropout_workspace_size_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline size_t
 engine_ext::get_dropout_workspace_size(const memory_desc_ext &src_desc) {
   return src_desc.get_size();
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|async_dropout_forward|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|async_dropout_forward_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_dropout_forward(dropout_desc &desc,
                                               const memory_desc_ext &src_desc,
@@ -5112,13 +4491,7 @@ sycl::event engine_ext::async_dropout_forward(dropout_desc &desc,
   }
   return e;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|async_dropout_backward|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|async_dropout_backward_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline
 sycl::event engine_ext::async_dropout_backward(
     dropout_desc &desc, const memory_desc_ext &diff_dst_desc,
@@ -5144,7 +4517,6 @@ sycl::event engine_ext::async_dropout_backward(
 
   return execute_primitive(primitive, execution_args, {});
 }
-// DPCT_LABEL_END
 } // namespace dnnl
 } // namespace dpct
 

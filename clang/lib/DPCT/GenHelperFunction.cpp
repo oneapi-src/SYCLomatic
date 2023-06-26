@@ -116,14 +116,6 @@ void replaceEndOfLine(std::string &StrNeedProcess) {
 #endif
 }
 
-namespace {
-std::unordered_map<std::string, std::string> HelperFileNameMap{
-#define HELPERFILE(PATH, FILENAME, UNIQUE_ENUM) {#UNIQUE_ENUM, #FILENAME},
-#include "../../runtime/dpct-rt/include/HelperFileNames.inc"
-#undef HELPERFILE
-};
-} // namespace
-
 void genHelperFunction(const std::string &OutRoot) {
   if (!llvm::sys::fs::is_directory(OutRoot))
     llvm::sys::fs::create_directory(llvm::Twine(OutRoot));
@@ -136,49 +128,47 @@ void genHelperFunction(const std::string &OutRoot) {
   if (!llvm::sys::fs::is_directory(llvm::Twine(ToPath + "/dpl_extras")))
     llvm::sys::fs::create_directory(llvm::Twine(ToPath + "/dpl_extras"));
 
-#define GENERATE_ALL_FILE_CONTENT(FILE_NAME)                                   \
+#define GENERATE_ALL_FILE_CONTENT(VAR_NAME, FILE_NAME)                         \
   {                                                                            \
-    std::ofstream FILE_NAME##File(                                             \
-        ToPath + "/" + HelperFileNameMap.at(#FILE_NAME), std::ios::binary);    \
-    std::string Code = FILE_NAME##AllContentStr;                               \
+    std::ofstream VAR_NAME##File(ToPath + "/" + #FILE_NAME, std::ios::binary); \
+    std::string Code = VAR_NAME##AllContentStr;                                \
     replaceEndOfLine(Code);                                                    \
-    FILE_NAME##File << Code;                                                   \
-    FILE_NAME##File.flush();                                                   \
+    VAR_NAME##File << Code;                                                    \
+    VAR_NAME##File.flush();                                                    \
   }
-#define GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(FILE_NAME)                        \
+#define GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(VAR_NAME, FILE_NAME)              \
   {                                                                            \
-    std::ofstream FILE_NAME##File(ToPath + "/dpl_extras/" +                    \
-                                      HelperFileNameMap.at(#FILE_NAME),        \
-                                  std::ios::binary);                           \
-    std::string Code = FILE_NAME##AllContentStr;                               \
+    std::ofstream VAR_NAME##File(ToPath + "/dpl_extras/" + #FILE_NAME,         \
+                                 std::ios::binary);                            \
+    std::string Code = VAR_NAME##AllContentStr;                                \
     replaceEndOfLine(Code);                                                    \
-    FILE_NAME##File << Code;                                                   \
-    FILE_NAME##File.flush();                                                   \
+    VAR_NAME##File << Code;                                                    \
+    VAR_NAME##File.flush();                                                    \
   }
-  GENERATE_ALL_FILE_CONTENT(Atomic)
-  GENERATE_ALL_FILE_CONTENT(BlasUtils)
-  GENERATE_ALL_FILE_CONTENT(Device)
-  GENERATE_ALL_FILE_CONTENT(Dpct)
-  GENERATE_ALL_FILE_CONTENT(DplUtils)
-  GENERATE_ALL_FILE_CONTENT(DnnlUtils)
-  GENERATE_ALL_FILE_CONTENT(Image)
-  GENERATE_ALL_FILE_CONTENT(Kernel)
-  GENERATE_ALL_FILE_CONTENT(Math)
-  GENERATE_ALL_FILE_CONTENT(Memory)
-  GENERATE_ALL_FILE_CONTENT(Util)
-  GENERATE_ALL_FILE_CONTENT(RngUtils)
-  GENERATE_ALL_FILE_CONTENT(LibCommonUtils)
-  GENERATE_ALL_FILE_CONTENT(CclUtils)
-  GENERATE_ALL_FILE_CONTENT(SparseUtils)
-  GENERATE_ALL_FILE_CONTENT(FftUtils)
-  GENERATE_ALL_FILE_CONTENT(LapackUtils)
-  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasAlgorithm)
-  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasFunctional)
-  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasIterators)
-  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasMemory)
-  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasNumeric)
-  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasVector)
-  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasDpcppExtensions)
+  GENERATE_ALL_FILE_CONTENT(Atomic, "atomic.hpp")
+  GENERATE_ALL_FILE_CONTENT(BlasUtils, "blas_utils.hpp")
+  GENERATE_ALL_FILE_CONTENT(Device, "device.hpp")
+  GENERATE_ALL_FILE_CONTENT(Dpct, "dpct.hpp")
+  GENERATE_ALL_FILE_CONTENT(DplUtils, "dpl_utils.hpp")
+  GENERATE_ALL_FILE_CONTENT(DnnlUtils, "dnnl_utils.hpp")
+  GENERATE_ALL_FILE_CONTENT(Image, "image.hpp")
+  GENERATE_ALL_FILE_CONTENT(Kernel, "kernel.hpp")
+  GENERATE_ALL_FILE_CONTENT(Math, "math.hpp")
+  GENERATE_ALL_FILE_CONTENT(Memory, "memory.hpp")
+  GENERATE_ALL_FILE_CONTENT(Util, "util.hpp")
+  GENERATE_ALL_FILE_CONTENT(RngUtils, "rng_utils.hpp")
+  GENERATE_ALL_FILE_CONTENT(LibCommonUtils, "lib_common_utils.hpp")
+  GENERATE_ALL_FILE_CONTENT(CclUtils, "ccl_utils.hpp")
+  GENERATE_ALL_FILE_CONTENT(SparseUtils, "sparse_utils.hpp")
+  GENERATE_ALL_FILE_CONTENT(FftUtils, "fft_utils.hpp")
+  GENERATE_ALL_FILE_CONTENT(LapackUtils, "lapack_utils.hpp")
+  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasAlgorithm, "algorithm.h")
+  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasFunctional, "functional.h")
+  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasIterators, "iterators.h")
+  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasMemory, "memory.h")
+  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasNumeric, "numeric.h")
+  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasVector, "vector.h")
+  GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasDpcppExtensions, "dpcpp_extensions.h")
 #undef GENERATE_ALL_FILE_CONTENT
 #undef GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT
 }

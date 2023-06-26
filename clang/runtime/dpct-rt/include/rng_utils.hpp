@@ -1,6 +1,3 @@
-// DPCT_LABEL_BEGIN|License|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 //==---- rng_utils.hpp ----------------------------*- C++ -*----------------==//
 //
 // Copyright (C) Intel Corporation
@@ -8,46 +5,15 @@
 // See https://llvm.org/LICENSE.txt for license information.
 //
 //===----------------------------------------------------------------------===//
-// DPCT_LABEL_END
 
 #ifndef __DPCT_RNG_UTILS_HPP__
 #define __DPCT_RNG_UTILS_HPP__
-// DPCT_COMMENT
-// DPCT_COMMENT Example1:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_EMPTY
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT Example2:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_BEGIN
-// DPCT_COMMENT // FileID|FeatureNameRef
-// DPCT_COMMENT [// FileID|FeatureNameRef]
-// DPCT_COMMENT ...
-// DPCT_COMMENT // DPCT_DEPENDENCY_END
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT For header file including dependency, please use predefined feature name:
-// DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other header files
 
-// DPCT_LABEL_BEGIN|non_local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include <sycl/sycl.hpp>
 #include <oneapi/mkl.hpp>
 #ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
 #include <oneapi/mkl/rng/device.hpp>
 #endif
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-// DPCT_LABEL_END
 #include "device.hpp"
 #include "lib_common_utils.hpp"
 
@@ -55,11 +21,6 @@ namespace dpct {
 namespace rng {
 #ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
 namespace device {
-// DPCT_LABEL_BEGIN|rng_generator|dpct::rng::device
-// DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator_1
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// The random number generator on device.
 /// \tparam engine_t The device random number generator engine. It can only be
 /// oneapi::mkl::rng::device::mrg32k3a<1> or
@@ -119,14 +80,7 @@ public:
   rng_generator(std::uint64_t seed, std::uint64_t num_to_skip) {
     _engine = engine_t(seed, num_to_skip);
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_generate|dpct::rng::device
-// DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator
-// RngUtils|rng_generator_generate_vec
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Generate random number(s) obeys distribution \tparam distr_t.
   /// \tparam T The distribution of the random number. It can only be
   /// oneapi::mkl::rng::device::bits<std::uint32_t>,
@@ -203,23 +157,11 @@ public:
       return generate_vec<vec_size>(_distr_uniform_double);
     }
   }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_get_engine|dpct::rng::device
-// DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
   /// Get the random number generator engine.
   /// \return The reference of the internal random number generator engine.
   engine_t &get_engine() { return _engine; }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_generate_vec|dpct::rng::device
-// DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 private:
   template <int vec_size, typename distr_t, class... distr_params_t>
   auto generate_vec(distr_t &distr, distr_params_t... distr_params) {
@@ -258,25 +200,13 @@ private:
       }
     }
   }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|rng_generator_1|dpct::rng::device
-// DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 };
-// DPCT_LABEL_END
 
 } // namespace device
 #endif
 
 namespace host {
 namespace detail {
-// DPCT_LABEL_BEGIN|rng_generator_base|dpct::rng::host::detail
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_default_queue
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 class rng_generator_base {
 public:
   /// Set the seed of host rng_generator.
@@ -362,14 +292,7 @@ protected:
   std::uint64_t _seed{0};
   std::uint32_t _dimensions{1};
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator_host|dpct::rng::host::detail
-// DPCT_DEPENDENCY_BEGIN
-// RngUtils|rng_generator_base
-// LibCommonUtils|get_memory
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// The random number generator on host.
 template <typename engine_t = oneapi::mkl::rng::philox4x32x10>
 class rng_generator : public rng_generator_base {
@@ -535,13 +458,9 @@ private:
   }
   engine_t _engine{};
 };
-// DPCT_LABEL_END
 } // namespace detail
 } // namespace host
 
-// DPCT_LABEL_BEGIN|random_engine_type|dpct::rng
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 enum class random_engine_type {
   philox4x32x10,
   mrg32k3a,
@@ -550,21 +469,9 @@ enum class random_engine_type {
   sobol,
   mcg59
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|typedef_host_rng_ptr|dpct::rng
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 typedef std::shared_ptr<rng::host::detail::rng_generator_base> host_rng_ptr;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|create_host_rng|dpct::rng
-// DPCT_DEPENDENCY_BEGIN
-// RngUtils|typedef_host_rng_ptr
-// RngUtils|random_engine_type
-// RngUtils|rng_generator_host
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 /// Create a host random number generator.
 /// \param type The random engine type.
 /// \return The pointer of random number generator.
@@ -595,7 +502,6 @@ inline host_rng_ptr create_host_rng(const random_engine_type type) {
 #endif
   }
 }
-// DPCT_LABEL_END
 } // namespace rng
 } // namespace dpct
 

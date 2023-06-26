@@ -1,6 +1,3 @@
-// DPCT_LABEL_BEGIN|License|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 //==---- iterators.h ------------------------------*- C++ -*----------------==//
 //
 // Copyright (C) Intel Corporation
@@ -8,52 +5,18 @@
 // See https://llvm.org/LICENSE.txt for license information.
 //
 //===----------------------------------------------------------------------===//
-// DPCT_LABEL_END
 
 #ifndef __DPCT_ITERATORS_H__
 #define __DPCT_ITERATORS_H__
-// DPCT_COMMENT
-// DPCT_COMMENT Example1:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_EMPTY
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT Example2:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_BEGIN
-// DPCT_COMMENT // FileID|FeatureNameRef
-// DPCT_COMMENT [// FileID|FeatureNameRef]
-// DPCT_COMMENT ...
-// DPCT_COMMENT // DPCT_DEPENDENCY_END
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT For header file including dependency, please use predefined feature name:
-// DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other header files
 
-// DPCT_LABEL_BEGIN|non_local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include <oneapi/dpl/iterator>
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-// DPCT_LABEL_END
 #include "functional.h"
 
 namespace dpct {
 
 namespace internal {
 
-// DPCT_LABEL_BEGIN|transform_output_ref_wrapper|dpct::internal
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 // Wrapper class returned from a dereferenced transform_iterator which was
 // created using
 //  make_transform_output_iterator(). Used to apply the supplied transform
@@ -87,13 +50,7 @@ public:
     return *this;
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|_Unary_Out|dpct::internal
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasIterators|transform_output_ref_wrapper
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 // Unary functor to create a transform_output_reference_wrapper when a
 // transform_iterator is dereferenced, so that a
 // the supplied unary function may be applied on write, resulting in a
@@ -106,34 +63,18 @@ template <typename _UnaryFunc> struct _Unary_Out {
                                                        __f);
   }
 };
-// DPCT_LABEL_END
 
 } // end namespace internal
 
-// DPCT_LABEL_BEGIN|using_std_advance|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 using std::advance;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|using_std_distance|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 using std::distance;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|make_counting_iterator|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <typename T>
 oneapi::dpl::counting_iterator<T> make_counting_iterator(const T &input) {
   return oneapi::dpl::counting_iterator<T>(input);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|constant_iterator|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <typename _Tp> class constant_iterator {
 public:
   typedef std::false_type is_hetero;
@@ -220,22 +161,12 @@ private:
   _Tp __my_value_;
   uint64_t __my_counter_;
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|make_constant_iterator|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasIterators|constant_iterator
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename _Tp>
 constant_iterator<_Tp> make_constant_iterator(_Tp __value) {
   return constant_iterator<_Tp>(__value);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|key_value_pair|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 // key_value_pair class to represent a key and value, specifically a
 // dereferenced arg_index_input_iterator
 template <typename _KeyTp, typename _ValueTp> class key_value_pair {
@@ -256,15 +187,9 @@ public:
   _KeyTp key;
   _ValueTp value;
 };
-// DPCT_LABEL_END
 
 namespace detail {
 
-// DPCT_LABEL_BEGIN|make_key_value_pair|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasIterators|key_value_pair
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename KeyTp, typename _ValueTp> struct make_key_value_pair {
   template <typename ValRefTp>
   key_value_pair<KeyTp, _ValueTp>
@@ -273,37 +198,20 @@ template <typename KeyTp, typename _ValueTp> struct make_key_value_pair {
                                                    ::std::get<1>(tup));
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|zip_iterator_impl|dpct::detail
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <class T> struct __zip_iterator_impl;
 template <class... Ts> struct __zip_iterator_impl<std::tuple<Ts...>> {
   using type = oneapi::dpl::zip_iterator<Ts...>;
 };
-// DPCT_LABEL_END
 
 } // end namespace detail
 
-// DPCT_LABEL_BEGIN|zip_iterator|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasIterators|zip_iterator_impl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 // dpct::zip_iterator can only accept std::tuple type as template argument for
 // compatibility purpose. Please use oneapi::dpl::zip_iterator if you want to
 // pass iterator's types directly.
 template <typename... Ts>
 using zip_iterator = typename detail::__zip_iterator_impl<Ts...>::type;
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|arg_index_input_iterator|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasIterators|make_key_value_pair
-// DplExtrasIterators|key_value_pair
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 // arg_index_input_iterator is an iterator over a input iterator, with a index.
 // When dereferenced, it returns a key_value_pair, which can be interrogated for
 // the index key or the value from the input iterator
@@ -407,11 +315,7 @@ public:
         ::std::get<1>(arg_index_input_iterator_wrap::base().base()));
   }
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|io_iterator_pair|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <typename IterT> struct io_iterator_pair {
   inline io_iterator_pair() : selector(false) {}
 
@@ -431,19 +335,12 @@ template <typename IterT> struct io_iterator_pair {
 
   IterT iter[2];
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|make_transform_output_iterator|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasIterators|_Unary_Out
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename _Iter, typename _UnaryFunc>
 auto make_transform_output_iterator(_Iter __it, _UnaryFunc __unary_func) {
   return oneapi::dpl::transform_iterator(
       __it, internal::_Unary_Out<_UnaryFunc>(__unary_func));
 }
-// DPCT_LABEL_END
 
 } // end namespace dpct
 
