@@ -31,30 +31,30 @@ set(RUNTIME_HEADERS
   )
 
 set(PROCESS_FILES_OUTPUT
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/algorithm.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/dpcpp_extensions.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/functional.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/iterators.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/memory.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/numeric.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/vector.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/atomic.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/blas_utils.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dnnl_utils.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/device.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpct.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_utils.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/image.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/kernel.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/math.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/memory.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/util.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/rng_utils.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/lib_common_utils.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/ccl_utils.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/sparse_utils.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/fft_utils.all.inc
-  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/lapack_utils.all.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/algorithm.h.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/dpcpp_extensions.h.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/functional.h.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/iterators.h.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/memory.h.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/numeric.h.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_extras/vector.h.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/atomic.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/blas_utils.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dnnl_utils.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/device.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpct.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/dpl_utils.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/image.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/kernel.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/math.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/memory.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/util.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/rng_utils.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/lib_common_utils.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/ccl_utils.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/sparse_utils.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/fft_utils.hpp.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/lapack_utils.hpp.inc
 )
 
 add_custom_command(
