@@ -1737,7 +1737,7 @@ inline int syhegvd(sycl::queue &q, int itype, oneapi::mkl::job jobz,
 /// \param [in] uplo Must be uplo::upper or uplo::lower.
 /// \param [in] n The order of the matrix A.
 /// \param [in] lda The leading dimension of the matrix A.
-/// \param [in] device_ws_size The device workspace size as a number of
+/// \param [out] device_ws_size The device workspace size as a number of
 /// elements of type \tparam T.
 template <typename T>
 inline int syheev_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
@@ -1792,7 +1792,7 @@ inline int syheev(sycl::queue &q, oneapi::mkl::job jobz, oneapi::mkl::uplo uplo,
 /// \param [in] a_type The data type of the matrix A.
 /// \param [in] lda The leading dimension of the matrix A.
 /// \param [in] w_type The data type of the eigenvalues.
-/// \param [in] device_ws_size The device workspace size as a number of
+/// \param [out] device_ws_size The device workspace size as a number of
 /// elements of type \tparam T.
 /// \param [out] host_ws_size The host workspace size in bytes. Currently the
 /// value is always zero.
@@ -1853,7 +1853,7 @@ inline int syheevd(sycl::queue &q, oneapi::mkl::job jobz,
 /// \param [in] n The order of the matrix A.
 /// \param [in] a_type The data type of the matrix A.
 /// \param [in] lda The leading dimension of the matrix A.
-/// \param [in] device_ws_size The device workspace size as a number of
+/// \param [out] device_ws_size The device workspace size as a number of
 /// elements of type \tparam T.
 /// \param [out] host_ws_size The host workspace size in bytes. Currently the
 /// value is always zero.
