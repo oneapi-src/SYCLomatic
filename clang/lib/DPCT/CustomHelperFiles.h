@@ -38,10 +38,7 @@ enum class HelperFeatureDependencyKind : unsigned int {
 };
 
 enum class HelperFeatureEnum : unsigned int {
-#define DPCT_FEATURE_ENUM
-#undef DPCT_FEATURE_ENUM_FEATURE_PAIR_MAP
-#include "clang/DPCT/HelperFeatureEnum.inc"
-#undef DPCT_FEATURE_ENUM
+  device_ext,
   no_feature_helper,
 };
 
@@ -64,10 +61,7 @@ struct HelperFunc {
            // this field saved {Unknown, ""}.
 };
 
-void requestFeature(HelperFeatureEnum Feature, const std::string &UsedFile);
-void requestFeature(HelperFeatureEnum Feature, clang::SourceLocation SL);
-void requestFeature(HelperFeatureEnum Feature, const clang::Stmt *Stmt);
-void requestFeature(HelperFeatureEnum Feature, const clang::Decl *Decl);
+void requestFeature(HelperFeatureEnum Feature);
 
 std::string getCopyrightHeader(const clang::dpct::HelperFileEnum File);
 std::pair<std::string, std::string>
@@ -79,23 +73,9 @@ std::string getDpctVersionStr();
 void emitDpctVersionWarningIfNeed(const std::string &VersionFromYaml);
 void generateHelperFunctions();
 
-void requestHelperFeatureForEnumNames(const std::string Name,
-                                      const std::string File);
-void requestHelperFeatureForEnumNames(const std::string Name,
-                                      clang::SourceLocation File);
-void requestHelperFeatureForEnumNames(const std::string Name,
-                                      const clang::Stmt *File);
-void requestHelperFeatureForEnumNames(const std::string Name,
-                                      const clang::Decl *File);
+void requestHelperFeatureForEnumNames(const std::string Name);
 
-void requestHelperFeatureForTypeNames(const std::string Name,
-                                      const std::string File);
-void requestHelperFeatureForTypeNames(const std::string Name,
-                                      clang::SourceLocation File);
-void requestHelperFeatureForTypeNames(const std::string Name,
-                                      const clang::Stmt *File);
-void requestHelperFeatureForTypeNames(const std::string Name,
-                                      const clang::Decl *File);
+void requestHelperFeatureForTypeNames(const std::string Name);
 std::string getCustomMainHelperFileName();
 
 void updateHelperNameContentMap(
@@ -113,10 +93,6 @@ extern std::unordered_map<std::string, clang::dpct::HelperFileEnum>
     HelperFileIDMap;
 extern const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
     HelperFileHeaderGuardMacroMap;
-
-extern const std::unordered_map<clang::dpct::HelperFeatureEnum,
-                                clang::dpct::HelperFeatureIDTy>
-    HelperFeatureEnumPairMap;
 
 extern const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
     PropToGetFeatureMap;

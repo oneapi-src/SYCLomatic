@@ -140,20 +140,6 @@ void ShowStatus(int Status, std::string Message) {
         "Error: The input for option --use-explicit-namespace is not valid. "
         "Run 'dpct --help' to see supported options and values.";
     break;
-  case MigrationErrorCustomHelperFileNameContainInvalidChar:
-    StatusString =
-        "Error: Custom helper header file name is invalid. The name can only "
-        "contain digits(0-9), underscore(_) or letters(a-zA-Z).";
-    break;
-  case MigrationErrorCustomHelperFileNameTooLong:
-    StatusString = "Error: Custom helper header file name is too long.";
-    break;
-  case MigrationErrorCustomHelperFileNamePathTooLong:
-    StatusString =
-        "Error: The path resulted from --out-root and --custom-helper-name "
-        "option values: \"" +
-        Message + "\" is too long.";
-    break;
   case MigrationErrorDifferentOptSet:
     StatusString =
         "Error: Incremental migration requires the same option sets used "
@@ -174,9 +160,6 @@ void ShowStatus(int Status, std::string Message) {
   case MigrationErrorInvalidAnalysisScope:
     StatusString = "Error: The path for --analysis-scope-path is not the same "
                    "as or a parent directory of --in-root";
-    break;
-  case MigrationErrorConflictOptions:
-    StatusString = "Error: " + Message;
     break;
   default:
     DpctLog() << "Unknown error\n";

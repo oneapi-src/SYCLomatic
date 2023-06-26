@@ -698,6 +698,24 @@ template <typename T> auto lamch_s() {
 #endif
 }
 
+#define DISPATCH_FLOAT_FOR_SCRATCHPAD_SIZE(FUNC, ...)                          \
+  do {                                                                         \
+    if constexpr (std::is_floating_point_v<T>) {                               \
+      device_ws_size = oneapi::mkl::lapack::sy##FUNC(__VA_ARGS__);             \
+    } else {                                                                   \
+      device_ws_size = oneapi::mkl::lapack::he##FUNC(__VA_ARGS__);             \
+    }                                                                          \
+  } while (0)
+
+#define DISPATCH_FLOAT_FOR_CALCULATION(FUNC, ...)                              \
+  do {                                                                         \
+    if constexpr (std::is_floating_point_v<T>) {                               \
+      oneapi::mkl::lapack::sy##FUNC(__VA_ARGS__);                              \
+    } else {                                                                   \
+      oneapi::mkl::lapack::he##FUNC(__VA_ARGS__);                              \
+    }                                                                          \
+  } while (0)
+
 template <typename T> struct syheevx_scratchpad_size_impl {
   void operator()(sycl::queue &q, oneapi::mkl::compz jobz,
                   oneapi::mkl::rangev range, oneapi::mkl::uplo uplo,
@@ -713,15 +731,9 @@ template <typename T> struct syheevx_scratchpad_size_impl {
     auto vl_value = *reinterpret_cast<value_t *>(vl);
     auto vu_value = *reinterpret_cast<value_t *>(vu);
     auto abstol = 2 * lamch_s<value_t>();
-    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
-      device_ws_size = oneapi::mkl::lapack::syevx_scratchpad_size<T>(
-          q, jobz, range, uplo, n, lda, vl_value, vu_value, il, iu, abstol,
-          lda);
-    } else {
-      device_ws_size = oneapi::mkl::lapack::heevx_scratchpad_size<T>(
-          q, jobz, range, uplo, n, lda, vl_value, vu_value, il, iu, abstol,
-          lda);
-    }
+    DISPATCH_FLOAT_FOR_SCRATCHPAD_SIZE(evx_scratchpad_size<T>, q, jobz, range,
+                                       uplo, n, lda, vl_value, vu_value, il, iu,
+                                       abstol, lda);
 #endif
   }
 };
@@ -764,17 +776,10 @@ template <typename T> struct syheevx_impl {
     auto vu_value = *reinterpret_cast<value_t *>(vu);
     auto w_data = dpct::detail::get_memory(reinterpret_cast<value_t *>(w));
     auto abstol = 2 * lamch_s<value_t>();
-    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
-      oneapi::mkl::lapack::syevx(q, jobz, range, uplo, n, a_data, lda, vl_value,
-                                 vu_value, il, iu, abstol, m_device_data,
-                                 w_data, z_data, lda, device_ws_data,
-                                 device_ws_size);
-    } else {
-      oneapi::mkl::lapack::heevx(q, jobz, range, uplo, n, a_data, lda, vl_value,
-                                 vu_value, il, iu, abstol, m_device_data,
-                                 w_data, z_data, lda, device_ws_data,
-                                 device_ws_size);
-    }
+    DISPATCH_FLOAT_FOR_CALCULATION(evx, q, jobz, range, uplo, n, a_data, lda,
+                                   vl_value, vu_value, il, iu, abstol,
+                                   m_device_data, w_data, z_data, lda,
+                                   device_ws_data, device_ws_size);
     dpct::async_dpct_memcpy(a, z.get_ptr(), n * lda * sizeof(T),
                             memcpy_direction::device_to_device, q);
     dpct::async_dpct_memcpy(m, m_device.get_ptr(), sizeof(std::int64_t),
@@ -801,15 +806,9 @@ template <typename T> struct syhegvx_scratchpad_size_impl {
     auto vl_value = *reinterpret_cast<value_t *>(vl);
     auto vu_value = *reinterpret_cast<value_t *>(vu);
     auto abstol = 2 * lamch_s<value_t>();
-    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
-      device_ws_size = oneapi::mkl::lapack::sygvx_scratchpad_size<T>(
-          q, itype, jobz, range, uplo, n, lda, ldb, vl_value, vu_value, il, iu,
-          abstol, lda);
-    } else {
-      device_ws_size = oneapi::mkl::lapack::hegvx_scratchpad_size<T>(
-          q, itype, jobz, range, uplo, n, lda, ldb, vl_value, vu_value, il, iu,
-          abstol, lda);
-    }
+    DISPATCH_FLOAT_FOR_SCRATCHPAD_SIZE(gvx_scratchpad_size<T>, q, itype, jobz,
+                                       range, uplo, n, lda, ldb, vl_value,
+                                       vu_value, il, iu, abstol, lda);
 #endif
   }
 };
@@ -839,17 +838,10 @@ template <typename T> struct syhegvx_impl {
     auto vu_value = *reinterpret_cast<value_t *>(vu);
     auto w_data = dpct::detail::get_memory(reinterpret_cast<value_t *>(w));
     auto abstol = 2 * lamch_s<value_t>();
-    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
-      oneapi::mkl::lapack::sygvx(q, itype, jobz, range, uplo, n, a_data, lda,
-                                 b_data, ldb, vl_value, vu_value, il, iu,
-                                 abstol, m_device_data, w_data, z_data, lda,
-                                 device_ws_data, device_ws_size);
-    } else {
-      oneapi::mkl::lapack::hegvx(q, itype, jobz, range, uplo, n, a_data, lda,
-                                 b_data, ldb, vl_value, vu_value, il, iu,
-                                 abstol, m_device_data, w_data, z_data, lda,
-                                 device_ws_data, device_ws_size);
-    }
+    DISPATCH_FLOAT_FOR_CALCULATION(gvx, q, itype, jobz, range, uplo, n, a_data,
+                                   lda, b_data, ldb, vl_value, vu_value, il, iu,
+                                   abstol, m_device_data, w_data, z_data, lda,
+                                   device_ws_data, device_ws_size);
     dpct::async_dpct_memcpy(a, z.get_ptr(), n * lda * sizeof(T),
                             memcpy_direction::device_to_device, q);
     dpct::async_dpct_memcpy(m, m_device.get_ptr(), sizeof(std::int64_t),
@@ -865,13 +857,8 @@ template <typename T> struct syhegvd_scratchpad_size_impl {
   void operator()(sycl::queue &q, std::int64_t itype, oneapi::mkl::job jobz,
                   oneapi::mkl::uplo uplo, std::int64_t n, std::int64_t lda,
                   std::int64_t ldb, std::size_t &device_ws_size) {
-    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
-      device_ws_size = oneapi::mkl::lapack::sygvd_scratchpad_size<T>(
-          q, itype, jobz, uplo, n, lda, ldb);
-    } else {
-      device_ws_size = oneapi::mkl::lapack::hegvd_scratchpad_size<T>(
-          q, itype, jobz, uplo, n, lda, ldb);
-    }
+    DISPATCH_FLOAT_FOR_SCRATCHPAD_SIZE(gvd_scratchpad_size<T>, q, itype, jobz,
+                                       uplo, n, lda, ldb);
   }
 };
 
@@ -887,13 +874,9 @@ template <typename T> struct syhegvd_impl {
     auto device_ws_data =
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     auto w_data = dpct::detail::get_memory(reinterpret_cast<value_t *>(w));
-    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
-      oneapi::mkl::lapack::sygvd(q, itype, jobz, uplo, n, a_data, lda, b_data,
-                                 ldb, w_data, device_ws_data, device_ws_size);
-    } else {
-      oneapi::mkl::lapack::hegvd(q, itype, jobz, uplo, n, a_data, lda, b_data,
-                                 ldb, w_data, device_ws_data, device_ws_size);
-    }
+    DISPATCH_FLOAT_FOR_CALCULATION(gvd, q, itype, jobz, uplo, n, a_data, lda,
+                                   b_data, ldb, w_data, device_ws_data,
+                                   device_ws_size);
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
 };
@@ -909,6 +892,106 @@ oneapi::mkl::compz job2compz(const oneapi::mkl::job &job) {
   }
   return ret;
 }
+
+template <typename T> struct syheev_scratchpad_size_impl {
+  void operator()(sycl::queue &q, oneapi::mkl::compz jobz,
+                  oneapi::mkl::uplo uplo, std::int64_t n, std::int64_t lda,
+                  std::size_t &device_ws_size) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error(
+        "The oneAPI Math Kernel Library (oneMKL) Interfaces "
+        "Project does not support this API.");
+#else
+    DISPATCH_FLOAT_FOR_SCRATCHPAD_SIZE(ev_scratchpad_size<T>, q, jobz, uplo, n,
+                                       lda);
+#endif
+  }
+};
+
+template <typename T> struct syheev_impl {
+  void operator()(sycl::queue &q, oneapi::mkl::compz jobz,
+                  oneapi::mkl::uplo uplo, std::int64_t n, void *a,
+                  std::int64_t lda, void *w, void *device_ws,
+                  std::size_t device_ws_size, int *info) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error(
+        "The oneAPI Math Kernel Library (oneMKL) Interfaces "
+        "Project does not support this API.");
+#else
+    using value_t = typename value_type_trait<T>::value_type;
+    auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
+    auto device_ws_data =
+        dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
+    auto w_data = dpct::detail::get_memory(reinterpret_cast<value_t *>(w));
+    DISPATCH_FLOAT_FOR_CALCULATION(ev, q, jobz, uplo, n, a_data, lda, w_data,
+                                   device_ws_data, device_ws_size);
+    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+#endif
+  }
+};
+
+template <typename T> struct syheevd_scratchpad_size_impl {
+  void operator()(sycl::queue &q, oneapi::mkl::job jobz, oneapi::mkl::uplo uplo,
+                  std::int64_t n, library_data_t a_type, std::int64_t lda,
+                  std::size_t &device_ws_size) {
+    DISPATCH_FLOAT_FOR_SCRATCHPAD_SIZE(evd_scratchpad_size<T>, q, jobz, uplo, n,
+                                       lda);
+  }
+};
+
+template <typename T> struct syheevd_impl {
+  void operator()(sycl::queue &q, oneapi::mkl::job jobz, oneapi::mkl::uplo uplo,
+                  std::int64_t n, library_data_t a_type, void *a,
+                  std::int64_t lda, void *w, void *device_ws,
+                  std::size_t device_ws_size, int *info) {
+    using value_t = typename value_type_trait<T>::value_type;
+    auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
+    auto device_ws_data =
+        dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
+    auto w_data = dpct::detail::get_memory(reinterpret_cast<value_t *>(w));
+    DISPATCH_FLOAT_FOR_CALCULATION(evd, q, jobz, uplo, n, a_data, lda, w_data,
+                                   device_ws_data, device_ws_size);
+    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+  }
+};
+
+#undef DISPATCH_FLOAT_FOR_SCRATCHPAD_SIZE
+#undef DISPATCH_FLOAT_FOR_CALCULATION
+
+template <typename T> struct trtri_scratchpad_size_impl {
+  void operator()(sycl::queue &q, oneapi::mkl::uplo uplo,
+                  oneapi::mkl::diag diag, std::int64_t n, library_data_t a_type,
+                  std::int64_t lda, std::size_t &device_ws_size) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error(
+        "The oneAPI Math Kernel Library (oneMKL) Interfaces "
+        "Project does not support this API.");
+#else
+    device_ws_size =
+        oneapi::mkl::lapack::trtri_scratchpad_size<T>(q, uplo, diag, n, lda);
+#endif
+  }
+};
+
+template <typename T> struct trtri_impl {
+  void operator()(sycl::queue &q, oneapi::mkl::uplo uplo,
+                  oneapi::mkl::diag diag, std::int64_t n, library_data_t a_type,
+                  void *a, std::int64_t lda, void *device_ws,
+                  std::size_t device_ws_size, int *info) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error(
+        "The oneAPI Math Kernel Library (oneMKL) Interfaces "
+        "Project does not support this API.");
+#else
+    auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
+    auto device_ws_data =
+        dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
+    oneapi::mkl::lapack::trtri(q, uplo, diag, n, a_data, lda, device_ws_data,
+                               device_ws_size);
+    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+#endif
+  }
+};
 } // namespace detail
 
 /// Computes the size of workspace memory of getrf function.
@@ -1643,6 +1726,181 @@ inline int syhegvd(sycl::queue &q, int itype, oneapi::mkl::job jobz,
   return detail::lapack_shim<detail::syhegvd_impl>(
       q, detail::get_library_data_t_from_type<T>(), info, "sygvd/hegvd", q,
       itype, jobz, uplo, n, a, lda, b, ldb, w, device_ws, device_ws_size, info);
+}
+
+/// Computes the size of workspace memory of syev/heev function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [out] device_ws_size The device workspace size as a number of
+/// elements of type \tparam T.
+template <typename T>
+inline int syheev_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
+                                  oneapi::mkl::uplo uplo, int n, int lda,
+                                  int *device_ws_size) {
+  std::size_t device_ws_size_tmp;
+  oneapi::mkl::compz compz_jobz = detail::job2compz(jobz);
+  int ret = detail::lapack_shim<detail::syheev_scratchpad_size_impl>(
+      q, detail::get_library_data_t_from_type<T>(), nullptr,
+      "syev_scratchpad_size/heev_scratchpad_size", q, compz_jobz, uplo, n, lda,
+      device_ws_size_tmp);
+  *device_ws_size = (int)device_ws_size_tmp;
+  return ret;
+}
+
+/// Computes all eigenvalues and, optionally, eigenvectors of a real symmetric
+/// or Hermitian matrix.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in, out] a The input matrix A. On exit, it is overwritten by
+/// eigenvectors.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [out] w The eigenvalues of the matrix A in ascending order.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The device workspace size as a number of
+/// elements of type \tparam T.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
+template <typename T, typename ValueT>
+inline int syheev(sycl::queue &q, oneapi::mkl::job jobz, oneapi::mkl::uplo uplo,
+                  int n, T *a, int lda, ValueT *w, T *device_ws,
+                  int device_ws_size, int *info) {
+  oneapi::mkl::compz compz_jobz = detail::job2compz(jobz);
+  return detail::lapack_shim<detail::syheev_impl>(
+      q, detail::get_library_data_t_from_type<T>(), info, "syev/heev", q,
+      compz_jobz, uplo, n, a, lda, w, device_ws, device_ws_size, info);
+}
+
+/// Computes the size of workspace memory of syevd/heevd function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] w_type The data type of the eigenvalues.
+/// \param [out] device_ws_size The device workspace size as a number of
+/// elements of type \tparam T.
+/// \param [out] host_ws_size The host workspace size in bytes. Currently the
+/// value is always zero.
+inline int syheevd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
+                                   oneapi::mkl::uplo uplo, std::int64_t n,
+                                   library_data_t a_type, std::int64_t lda,
+                                   library_data_t w_type,
+                                   std::size_t *device_ws_size,
+                                   std::size_t *host_ws_size = nullptr) {
+  if (host_ws_size)
+    *host_ws_size = 0;
+  std::size_t device_ws_size_tmp;
+  int ret = detail::lapack_shim<detail::syheevd_scratchpad_size_impl>(
+      q, a_type, nullptr, "syevd_scratchpad_size/heevd_scratchpad_size", q,
+      jobz, uplo, n, a_type, lda, device_ws_size_tmp);
+  *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
+  return ret;
+}
+
+/// Computes all eigenvalues and, optionally, all eigenvectors of a real
+/// symmetric or Hermitian matrix using divide and conquer algorithm.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
+/// \param [in] jobz Must be job::novec or job::vec.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in, out] a The input matrix A. On exit, it is overwritten by
+/// eigenvectors.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] w_type The data type of the eigenvalues.
+/// \param [out] w The eigenvalues of the matrix A in ascending order.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The workspace size in bytes.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
+inline int syheevd(sycl::queue &q, oneapi::mkl::job jobz,
+                   oneapi::mkl::uplo uplo, std::int64_t n,
+                   library_data_t a_type, void *a, std::int64_t lda,
+                   library_data_t w_type, void *w, void *device_ws,
+                   std::size_t device_ws_size, int *info) {
+  std::size_t device_ws_size_in_element_number =
+      detail::byte_to_element_number(device_ws_size, a_type);
+  return detail::lapack_shim<detail::syheevd_impl>(
+      q, a_type, info, "syevd/heevd", q, jobz, uplo, n, a_type, a, lda, w,
+      device_ws, device_ws_size_in_element_number, info);
+}
+
+/// Computes the size of workspace memory of trtri function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] diag Must be diag::nonunit or diag::unit.
+/// \param [in] n The order of the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [out] device_ws_size The device workspace size as a number of
+/// elements of type \tparam T.
+/// \param [out] host_ws_size The host workspace size in bytes. Currently the
+/// value is always zero.
+inline int trtri_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
+                                 oneapi::mkl::diag diag, std::int64_t n,
+                                 library_data_t a_type, std::int64_t lda,
+                                 std::size_t *device_ws_size,
+                                 std::size_t *host_ws_size = nullptr) {
+  if (host_ws_size)
+    *host_ws_size = 0;
+  std::size_t device_ws_size_tmp;
+  int ret = detail::lapack_shim<detail::trtri_scratchpad_size_impl>(
+      q, a_type, nullptr, "trtri_scratchpad_size", q, uplo, diag, n, a_type,
+      lda, device_ws_size_tmp);
+  *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
+  return ret;
+}
+
+/// Computes the inverse of a triangular matrix.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed. It must
+/// have the in_order property when using the USM mode (DPCT_USM_LEVEL_NONE is
+/// not defined).
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] diag Must be diag::nonunit or diag::unit.
+/// \param [in] n The order of the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in, out] a The input matrix A. On exit, it is overwritten by
+/// the inverse matrix of A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The workspace size in bytes.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
+inline int trtri(sycl::queue &q, oneapi::mkl::uplo uplo, oneapi::mkl::diag diag,
+                 std::int64_t n, library_data_t a_type, void *a,
+                 std::int64_t lda, void *device_ws, std::size_t device_ws_size,
+                 int *info) {
+#ifdef DPCT_USM_LEVEL_NONE
+  throw std::runtime_error("this API is unsupported when USM level is none");
+#else
+  std::size_t device_ws_size_in_element_number =
+      detail::byte_to_element_number(device_ws_size, a_type);
+  return detail::lapack_shim<detail::trtri_impl>(
+      q, a_type, info, "trtri", q, uplo, diag, n, a_type, a, lda, device_ws,
+      device_ws_size_in_element_number, info);
+#endif
 }
 } // namespace lapack
 } // namespace dpct
