@@ -7,6 +7,7 @@
 //===--------------------------------------------------------------------===//
 
 // clang-format off
+REMOVE_API_FACTORY_ENTRY("cusolverDnSetAdvOptions")
 
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusolverDnSetStream", ARG(0), ARG(1)))
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusolverDnGetStream", DEREF(1),
