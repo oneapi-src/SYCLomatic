@@ -178,12 +178,12 @@ ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedReduce, Max, Max, true, NO_FLAG, P4, "
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedReduce, ArgMax, ArgMax, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, SortKeys, SortKeys, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, SortKeysDescending, SortKeysDescending, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
-ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, StableSortKeys, StableSortKeys, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, StableSortKeysDescending, StableSortKeysDescending, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, StableSortKeys, StableSortKeys, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
+ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, StableSortKeysDescending, StableSortKeysDescending, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, SortPairs, SortPairs, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, SortPairsDescending, SortPairsDescending, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
-ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, StableSortPairs, StableSortPairs, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, StableSortPairsDescending, StableSortPairsDescending, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, StableSortPairs, StableSortPairs, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
+ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, StableSortPairsDescending, StableSortPairsDescending, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
 
 // Thread and thread block I/O
 ENTRY(cub::ThreadLoad, cub::ThreadLoad, true, NO_FLAG, P4, "Successful")

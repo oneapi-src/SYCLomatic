@@ -2132,6 +2132,108 @@ MEMBER_CALL_FACTORY_ENTRY("cub::LaneId", MEMBER_CALL(NDITEM, false, LITERAL("get
 // cub::WarpId
 MEMBER_CALL_FACTORY_ENTRY("cub::WarpId", MEMBER_CALL(NDITEM, false, LITERAL("get_sub_group")), false, "get_group_linear_id")
 
+// cub::DeviceSegmentedSort::StableSortKeys
+CASE_FACTORY_ENTRY(
+    CASE(CheckCubRedundantFunctionCall(),
+         REMOVE_API_FACTORY_ENTRY("cub::DeviceSegmentedSort::StableSortKeys")),
+    OTHERWISE(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::DplExtrasAlgorithm_sort_keys,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPCT_DPL_Utils,
+            REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
+                CASE(CheckArgType(2, "cub::DoubleBuffer"),
+                     CASE_FACTORY_ENTRY(
+                         CASE(makeCheckAnd(
+                                  CheckArgCount(8, std::greater_equal<>(),
+                                                /* IncludeDefaultArg */ false),
+                                  makeCheckNot(CheckArgIsDefaultCudaStream(7))),
+                              CALL_FACTORY_ENTRY(
+                                  "cub::DeviceSegmentedSort::StableSortKeys",
+                                  CALL("dpct::segmented_sort_keys",
+                                       CALL("oneapi::dpl::execution::device_"
+                                            "policy",
+                                            STREAM(7)),
+                                       ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                                       LITERAL("false"), LITERAL("true")))),
+                         OTHERWISE(CALL_FACTORY_ENTRY(
+                             "cub::DeviceSegmentedSort::StableSortKeys",
+                             CALL("dpct::segmented_sort_keys",
+                                  CALL("oneapi::dpl::execution::device_policy",
+                                       QUEUESTR),
+                                  ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                                  LITERAL("false"), LITERAL("true")))))),
+                OTHERWISE(CASE_FACTORY_ENTRY(
+                    CASE(makeCheckAnd(
+                             CheckArgCount(9, std::greater_equal<>(),
+                                           /* IncludeDefaultArg */ false),
+                             makeCheckNot(CheckArgIsDefaultCudaStream(8))),
+                         CALL_FACTORY_ENTRY(
+                             "cub::DeviceSegmentedSort::StableSortKeys",
+                             CALL("dpct::segmented_sort_keys",
+                                  CALL("oneapi::dpl::execution::device_policy",
+                                       STREAM(8)),
+                                  ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                                  ARG(7), LITERAL("false")))),
+                    OTHERWISE(CALL_FACTORY_ENTRY(
+                        "cub::DeviceSegmentedSort::StableSortKeys",
+                        CALL("dpct::segmented_sort_keys",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  QUEUESTR),
+                             ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7),
+                             LITERAL("false"))))))))))))
+
+// cub::DeviceSegmentedSort::StableSortKeysDescending
+CASE_FACTORY_ENTRY(
+    CASE(CheckCubRedundantFunctionCall(),
+         REMOVE_API_FACTORY_ENTRY(
+             "cub::DeviceSegmentedSort::StableSortKeysDescending")),
+    OTHERWISE(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::DplExtrasAlgorithm_sort_keys,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPCT_DPL_Utils,
+            REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
+                CASE(
+                    CheckArgType(2, "cub::DoubleBuffer"),
+                    CASE_FACTORY_ENTRY(
+                        CASE(makeCheckAnd(
+                                 CheckArgCount(8, std::greater_equal<>(),
+                                               /* IncludeDefaultArg */ false),
+                                 makeCheckNot(CheckArgIsDefaultCudaStream(7))),
+                             CALL_FACTORY_ENTRY(
+                                 "cub::DeviceSegmentedSort::StableSortKeysDescending",
+                                 CALL("dpct::segmented_sort_keys",
+                                      CALL("oneapi::dpl::execution::device_"
+                                           "policy",
+                                           STREAM(7)),
+                                      ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                                      LITERAL("true"), LITERAL("true")))),
+                        OTHERWISE(CALL_FACTORY_ENTRY(
+                            "cub::DeviceSegmentedSort::StableSortKeysDescending",
+                            CALL("dpct::segmented_sort_keys",
+                                 CALL("oneapi::dpl::execution::device_policy",
+                                      QUEUESTR),
+                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                                 LITERAL("true"), LITERAL("true")))))),
+                OTHERWISE(CASE_FACTORY_ENTRY(
+                    CASE(makeCheckAnd(
+                             CheckArgCount(9, std::greater_equal<>(),
+                                           /* IncludeDefaultArg */ false),
+                             makeCheckNot(CheckArgIsDefaultCudaStream(8))),
+                         CALL_FACTORY_ENTRY(
+                             "cub::DeviceSegmentedSort::StableSortKeysDescending",
+                             CALL("dpct::segmented_sort_keys",
+                                  CALL("oneapi::dpl::execution::device_policy",
+                                       STREAM(8)),
+                                  ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                                  ARG(7), LITERAL("true")))),
+                    OTHERWISE(CALL_FACTORY_ENTRY(
+                        "cub::DeviceSegmentedSort::StableSortKeysDescending",
+                        CALL("dpct::segmented_sort_keys",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  QUEUESTR),
+                             ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7),
+                             LITERAL("true"))))))))))))
+
 // cub::DeviceSegmentedSort::StableSortPairs
 CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),
