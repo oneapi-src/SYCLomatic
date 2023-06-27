@@ -1956,7 +1956,8 @@ const std::map<std::string, int> MapNames::VectorTypeMigratedTypeSizeMap{
     {"ulonglong1", 8},  {"ulonglong2", 16}, {"ulonglong3", 32},
     {"ulonglong4", 32}, {"float1", 4},      {"float2", 8},
     {"float3", 16},     {"float4", 16},     {"double1", 8},
-    {"double2", 16},    {"double3", 32},    {"double4", 32}};
+    {"double2", 16},    {"double3", 32},    {"double4", 32},
+    {"__half", 2},      {"__half2", 4}};
 
 const std::map<clang::dpct::KernelArgType, int> MapNames::KernelArgTypeSizeMap{
     {clang::dpct::KernelArgType::KAT_Stream, 208},
