@@ -1229,7 +1229,7 @@ MATH_API_REWRITER_DEVICE(
                                 CALL(MapNames::getClNamespace() + "fmin",
                                      ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")),
                                      ARRAY_SUBSCRIPT(ARG(1), LITERAL("0"))),
-                                CALL(MapNames::getClNamespace() + "fmax",
+                                CALL(MapNames::getClNamespace() + "fmin",
                                      ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")),
                                      ARRAY_SUBSCRIPT(ARG(1), LITERAL("1")))))))
 
