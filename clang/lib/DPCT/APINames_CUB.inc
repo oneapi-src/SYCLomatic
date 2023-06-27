@@ -60,6 +60,7 @@
 *    Comment:      extra comment on the migration.
 *
 ****************************************************************************/
+// clang-format off
 
 //Warp Level
 ENTRY(cub::ShuffleUp, cub::ShuffleUp, false, NO_FLAG, P4, "Comment")
@@ -173,17 +174,17 @@ ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedRadixSort, SortKeysDescending, SortKey
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedReduce, Reduce, Reduce, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027/DPCT1091/DPCT1092")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedReduce, Sum, Sum, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027/DPCT1092")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedReduce, Min, Min, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027/DPCT1092")
-ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedReduce, ArgMin, ArgMin, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedReduce, ArgMin, ArgMin, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedReduce, Max, Max, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027/DPCT1092")
-ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedReduce, ArgMax, ArgMax, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedReduce, ArgMax, ArgMax, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, SortKeys, SortKeys, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, SortKeysDescending, SortKeysDescending, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
-ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, StableSortKeys, StableSortKeys, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, StableSortKeysDescending, StableSortKeysDescending, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, StableSortKeys, StableSortKeys, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
+ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, StableSortKeysDescending, StableSortKeysDescending, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, SortPairs, SortPairs, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, SortPairsDescending, SortPairsDescending, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
-ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, StableSortPairs, StableSortPairs, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, StableSortPairsDescending, StableSortPairsDescending, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, StableSortPairs, StableSortPairs, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
+ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedSort, StableSortPairsDescending, StableSortPairsDescending, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
 
 // Thread and thread block I/O
 ENTRY(cub::ThreadLoad, cub::ThreadLoad, true, NO_FLAG, P4, "Successful")
@@ -224,12 +225,13 @@ ENTRY(cub::Debug, cub::Debug, false, NO_FLAG, P4, "Comment")
 ENTRY(cub::MaxSmOccupancy, cub::MaxSmOccupancy, false, NO_FLAG, P4, "Comment")
 ENTRY(cub::PtxVersion, cub::PtxVersion, false, NO_FLAG, P4, "Comment")
 ENTRY(cub::SmVersion, cub::SmVersion, false, NO_FLAG, P4, "Comment")
-ENTRY(cub::CurrentDevice, cub::CurrentDevice, false, NO_FLAG, P4, "Comment")
-ENTRY(cub::DeviceCount, cub::DeviceCount, false, NO_FLAG, P4, "Comment")
-ENTRY(cub::DeviceCountUncached, cub::DeviceCountUncached, false, NO_FLAG, P4, "Comment")
+ENTRY(cub::CurrentDevice, cub::CurrentDevice, true, NO_FLAG, P4, "Successful")
+ENTRY(cub::DeviceCount, cub::DeviceCount, true, NO_FLAG, P4, "Successful")
+ENTRY(cub::DeviceCountUncached, cub::DeviceCountUncached, true, NO_FLAG, P4, "Successful")
+ENTRY(cub::DeviceCountCachedValue, cub::DeviceCountCachedValue, true, NO_FLAG, P4, "Successful")
 ENTRY(cub::PtxVersionUncached, cub::PtxVersionUncached, false, NO_FLAG, P4, "Comment")
 ENTRY(cub::SmVersionUncached, cub::SmVersionUncached, false, NO_FLAG, P4, "Comment")
-ENTRY(cub::SyncStream, cub::SyncStream, false, NO_FLAG, P4, "Comment")
+ENTRY(cub::SyncStream, cub::SyncStream, true, NO_FLAG, P4, "Successful")
 
 // Fancy iterators
 ENTRY_MEMBER_FUNCTION(cub::ArgIndexInputIterator, normalize, normalize, true, NO_FLAG, P4, "Successful")
@@ -241,3 +243,5 @@ ENTRY(cub::CountingInputIterator, cub::CountingInputIterator, true, NO_FLAG, P4,
 ENTRY(cub::TransformInputIterator, cub::TransformInputIterator, true, NO_FLAG, P4, "Successful")
 ENTRY(cub::ConstantInputIterator, cub::ConstantInputIterator, true, NO_FLAG, P4, "Successful")
 ENTRY(cub::DiscardOutputIterator, cub::DiscardOutputIterator, true, NO_FLAG, P4, "Successful")
+
+// clang-format on
