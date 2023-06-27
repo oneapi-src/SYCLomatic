@@ -51,7 +51,8 @@ auto isDeviceFuncCallExpr = []() {
         "InclusiveScanByKey", "InclusiveSumByKey", "ExclusiveScanByKey",
         "ExclusiveSumByKey", "Flagged", "Unique", "UniqueByKey", "Encode",
         "SortKeys", "SortKeysDescending", "SortPairs", "SortPairsDescending",
-        "If", "StableSortPairs", "StableSortPairsDescending");
+        "If", "StableSortKeys", "StableSortKeysDescending", "StableSortPairs",
+        "StableSortPairsDescending");
   };
   auto hasDeviceRecordName = []() {
     return hasAnyName("DeviceSegmentedReduce", "DeviceReduce", "DeviceScan",
@@ -75,12 +76,12 @@ REGISTER_RULE(CubIntrinsicRule, PassKind::PK_Analysis)
 
 void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto TargetTypeName = [&]() {
-    return hasAnyName("cub::Sum", "cub::Max", "cub::Min", "cub::Equality",
-                      "cub::KeyValuePair", "cub::CountingInputIterator",
-                      "cub::TransformInputIterator",
-                      "cub::ConstantInputIterator",
-                      "cub::ArgIndexInputIterator",
-                      "cub::DiscardOutputIterator", "cub::DoubleBuffer");
+    return hasAnyName(
+        "cub::Sum", "cub::Max", "cub::Min", "cub::Equality",
+        "cub::KeyValuePair", "cub::CountingInputIterator",
+        "cub::TransformInputIterator", "cub::ConstantInputIterator",
+        "cub::ArgIndexInputIterator", "cub::DiscardOutputIterator",
+        "cub::DoubleBuffer", "cub::NullType");
   };
 
   MF.addMatcher(
@@ -106,7 +107,7 @@ bool CubTypeRule::CanMappingToSyclNativeBinaryOp(StringRef OpTypeName) {
 
 bool CubTypeRule::CanMappingToSyclType(StringRef OpTypeName) {
   return CanMappingToSyclNativeBinaryOp(OpTypeName) ||
-         OpTypeName == "cub::Equality" ||
+         OpTypeName == "cub::Equality" || OpTypeName == "cub::NullType" ||
 
          // Ignore template arguments, .e.g cub::KeyValuePair<int, int>
          OpTypeName.startswith("cub::KeyValuePair");
@@ -158,12 +159,14 @@ void CubMemberCallRule::runRule(
 }
 
 void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
-  MF.addMatcher(callExpr(callee(functionDecl(allOf(
-                             hasAnyName("IADD3", "SHR_ADD", "SHL_ADD", "LaneId",
-                                        "WarpId"),
-                             hasDeclContext(namespaceDecl(hasName("cub")))))))
-                    .bind("IntrinsicCall"),
-                this);
+  MF.addMatcher(
+      callExpr(callee(functionDecl(allOf(
+                   hasAnyName("IADD3", "SHR_ADD", "SHL_ADD", "LaneId", "WarpId",
+                              "SyncStream", "CurrentDevice", "DeviceCount",
+                              "DeviceCountUncached", "DeviceCountCachedValue"),
+                   hasDeclContext(namespaceDecl(hasName("cub")))))))
+          .bind("IntrinsicCall"),
+      this);
 }
 
 void CubIntrinsicRule::runRule(
