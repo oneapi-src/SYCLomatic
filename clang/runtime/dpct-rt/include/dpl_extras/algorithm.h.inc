@@ -221,6 +221,44 @@ std::pair<Iter1, Iter2> unique(Policy &&policy, Iter1 keys_first,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|unique_usm_none|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|unique
+// DplExtrasFunctional|check_device_ptr_and_launch
+// DplExtrasFunctional|all_are_pointer_v
+// Device|get_default_queue
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+#ifdef DPCT_USM_LEVEL_NONE
+template <typename Ptr1, typename Size, typename Ptr2, typename BinaryPred>
+std::enable_if_t<std::is_pointer_v<Ptr1> && std::is_pointer_v<Ptr2>,
+                 std::pair<Ptr1, Ptr2>>
+unique(Ptr1 start1, Size size, Ptr2 start2, BinaryPred binary_pred) {
+  return dpct::internal::check_device_ptr_and_launch(
+      oneapi::dpl::execution::par_unseq,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      binary_pred, size,
+      [](auto &&policy, Ptr1 start1, Ptr1 end1, Ptr2 start2,
+         BinaryPred binary_pred) {
+        return dpct::unique(std::forward<decltype(policy)>(policy), start1,
+                            end1, start2, binary_pred);
+      },
+      start1, start2, // return base
+      start1, start2  // all ptrs
+  );
+}
+
+template <typename Ptr1, typename Size, typename Ptr2>
+std::enable_if_t<dpct::internal::all_are_pointer_v<Ptr1, Ptr2>,
+                 std::pair<Ptr1, Ptr2>>
+unique(Ptr1 start1, Size size, Ptr2 start2) {
+  return dpct::unique(
+      start1, size, start2,
+      std::equal_to<typename std::iterator_traits<Ptr1>::value_type>());
+}
+#endif // DPCT_USM_LEVEL_NONE
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|unique_copy|dpct
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasFunctional|unique_fun
@@ -273,6 +311,49 @@ std::pair<Iter3, Iter4> unique_copy(Policy &&policy, Iter1 keys_first,
   return unique_copy(std::forward<Policy>(policy), keys_first, keys_last,
                      values_first, keys_result, values_result, comp);
 }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|unique_copy_usm_none|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|unique_copy
+// DplExtrasFunctional|check_device_ptr_and_launch
+// DplExtrasFunctional|all_are_pointer_v
+// Device|get_default_queue
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+#ifdef DPCT_USM_LEVEL_NONE
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename BinaryPred>
+
+std::enable_if_t<dpct::internal::all_are_pointer_v<Ptr1, Ptr2, Ptr3, Ptr4>,
+                 std::pair<Ptr3, Ptr4>>
+unique_copy(Ptr1 keys_first, Size size, Ptr2 values_first, Ptr3 keys_result,
+            Ptr4 values_result, BinaryPred binary_pred) {
+  return dpct::internal::check_device_ptr_and_launch(
+      oneapi::dpl::execution::par_unseq,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      binary_pred, size,
+      [](auto &&policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
+         Ptr4 start4, BinaryPred binary_pred) {
+        return dpct::unique_copy(std::forward<decltype(policy)>(policy), start1,
+                                 end1, start2, start3, start4, binary_pred);
+      },
+      keys_result, values_result,                          // return base
+      keys_first, values_first, keys_result, values_result // all ptrs
+  );
+}
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4>
+std::enable_if_t<dpct::internal::all_are_pointer_v<Ptr1, Ptr2, Ptr3, Ptr4>,
+                 std::pair<Ptr3, Ptr4>>
+unique_copy(Ptr1 keys_first, Size size, Ptr2 values_first, Ptr3 keys_result,
+            Ptr4 values_result) {
+  return dpct::unique_copy(
+      keys_first, size, values_first, keys_result, values_result,
+      std::equal_to<typename std::iterator_traits<Ptr1>::value_type>());
+}
+#endif // DPCT_USM_LEVEL_NONE
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|partition_point|dpct
@@ -577,6 +658,53 @@ merge(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1, Iter2 keys_first2,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|merge_usm_none|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|merge
+// DplExtrasFunctional|check_device_ptr_and_launch
+// DplExtrasFunctional|all_are_pointer_v
+// Device|get_default_queue
+// DplExtrasFunctional|__less
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+#ifdef DPCT_USM_LEVEL_NONE
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Ptr5, typename Ptr6, typename Comp>
+std::enable_if_t<
+    dpct::internal::all_are_pointer_v<Ptr1, Ptr2, Ptr3, Ptr4, Ptr5, Ptr6>,
+    std::pair<Ptr5, Ptr6>>
+merge(Ptr1 keys_first1, Size size1, Ptr2 keys_first2, Size size2,
+      Ptr3 values_first1, Ptr4 values_first2, Ptr5 keys_result,
+      Ptr6 values_result, Comp comp) {
+  return dpct::internal::check_device_ptr_and_launch(
+      oneapi::dpl::execution::par_unseq,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      comp, size1, size2,
+      [](auto &&policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2,
+         Ptr3 start3, Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
+        return dpct::merge(std::forward<decltype(policy)>(policy), start1, end1,
+                           start2, end2, start3, start4, start5, start6, comp);
+      },
+      keys_result, values_result, // return base
+      keys_first1, keys_first2, values_first1, values_first2, keys_result,
+      values_result); // all ptrs
+}
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Ptr5, typename Ptr6>
+std::enable_if_t<
+    dpct::internal::all_are_pointer_v<Ptr1, Ptr2, Ptr3, Ptr4, Ptr5, Ptr6>,
+    std::pair<Ptr5, Ptr6>>
+merge(Ptr1 keys_first1, Size size1, Ptr2 keys_first2, Size size2,
+      Ptr3 values_first1, Ptr4 values_first2, Ptr5 keys_result,
+      Ptr6 values_result) {
+  return dpct::merge(keys_first1, size1, keys_first2, size2, values_first1,
+                     values_first2, keys_result, values_result,
+                     dpct::internal::__less());
+}
+#endif // DPCT_USM_LEVEL_NONE
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|iota|dpct
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasFunctional|sequence_fun
@@ -707,11 +835,12 @@ void for_each_index(Policy &&policy, Iter first, Iter last, Operator unary_op) {
 // DPCT_LABEL_BEGIN|set_intersection|dpct
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasFunctional|compare_key_fun
+// DplExtrasFunctional|enable_if_execution_policy
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <class Policy, class Iter1, class Iter2, class Iter3, class Iter4,
           class Iter5>
-std::pair<Iter4, Iter5>
+internal::enable_if_execution_policy<Policy, std::pair<Iter4, Iter5>>
 set_intersection(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
                  Iter2 keys_first2, Iter2 keys_last2, Iter3 values_first1,
                  Iter4 keys_result, Iter5 values_result) {
@@ -745,7 +874,7 @@ set_intersection(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
 
 template <class Policy, class Iter1, class Iter2, class Iter3, class Iter4,
           class Iter5, class Comp>
-std::pair<Iter4, Iter5>
+internal::enable_if_execution_policy<Policy, std::pair<Iter4, Iter5>>
 set_intersection(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
                  Iter2 keys_first2, Iter2 keys_last2, Iter3 values_first1,
                  Iter4 keys_result, Iter5 values_result, Comp comp) {
@@ -778,14 +907,63 @@ set_intersection(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|set_intersection_usm_none|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|set_intersection
+// DplExtrasFunctional|check_device_ptr_and_launch
+// DplExtrasFunctional|all_are_pointer_v
+// Device|get_default_queue
+// DplExtrasFunctional|__less
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+#ifdef DPCT_USM_LEVEL_NONE
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Ptr5, typename Comp>
+std::enable_if_t<
+    dpct::internal::all_are_pointer_v<Ptr1, Ptr2, Ptr3, Ptr4, Ptr5>,
+    std::pair<Ptr4, Ptr5>>
+set_intersection(Ptr1 keys_first1, Size size1, Ptr2 keys_first2, Size size2,
+                 Ptr3 values_first1, Ptr4 keys_result, Ptr5 values_result,
+                 Comp comp) {
+  return dpct::internal::check_device_ptr_and_launch(
+      oneapi::dpl::execution::par,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      comp, size1, size2,
+      [](auto &&policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2,
+         Ptr3 start3, Ptr4 start4, Ptr5 start5, Comp comp) {
+        return dpct::set_intersection(std::forward<decltype(policy)>(policy),
+                                      start1, end1, start2, end2, start3,
+                                      start4, start5, comp);
+      },
+      keys_result, values_result, // return base
+      keys_first1, keys_first2, values_first1, keys_result,
+      values_result // all ptrs
+  );
+}
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Ptr5>
+std::enable_if_t<
+    dpct::internal::all_are_pointer_v<Ptr1, Ptr2, Ptr3, Ptr4, Ptr5>,
+    std::pair<Ptr4, Ptr5>>
+set_intersection(Ptr1 keys_first1, Size size1, Ptr2 keys_first2, Size size2,
+                 Ptr3 values_first1, Ptr4 keys_result, Ptr5 values_result) {
+  return dpct::set_intersection(keys_first1, size1, keys_first2, size2,
+                                values_first1, keys_result, values_result,
+                                dpct::internal::__less());
+}
+#endif // DPCT_USM_LEVEL_NONE
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|set_symmetric_difference|dpct
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasFunctional|compare_key_fun
+// DplExtrasFunctional|enable_if_execution_policy
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <class Policy, class Iter1, class Iter2, class Iter3, class Iter4,
           class Iter5, class Iter6>
-std::pair<Iter5, Iter6>
+internal::enable_if_execution_policy<Policy, std::pair<Iter5, Iter6>>
 set_symmetric_difference(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
                          Iter2 keys_first2, Iter2 keys_last2,
                          Iter3 values_first1, Iter4 values_first2,
@@ -821,7 +999,7 @@ set_symmetric_difference(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
 
 template <class Policy, class Iter1, class Iter2, class Iter3, class Iter4,
           class Iter5, class Iter6, class Comp>
-std::pair<Iter5, Iter6>
+internal::enable_if_execution_policy<Policy, std::pair<Iter5, Iter6>>
 set_symmetric_difference(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
                          Iter2 keys_first2, Iter2 keys_last2,
                          Iter3 values_first1, Iter4 values_first2,
@@ -856,14 +1034,64 @@ set_symmetric_difference(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|set_symmetric_difference_usm_none|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|set_symmetric_difference
+// DplExtrasFunctional|check_device_ptr_and_launch
+// DplExtrasFunctional|all_are_pointer_v
+// Device|get_default_queue
+// DplExtrasFunctional|__less
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+#ifdef DPCT_USM_LEVEL_NONE
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Ptr5, typename Ptr6, typename Comp>
+std::enable_if_t<
+    dpct::internal::all_are_pointer_v<Ptr1, Ptr2, Ptr3, Ptr4, Ptr5, Ptr6>,
+    std::pair<Ptr5, Ptr6>>
+set_symmetric_difference(Ptr1 keys_first1, Size size1, Ptr2 keys_first2,
+                         Size size2, Ptr3 values_first1, Ptr4 values_first2,
+                         Ptr5 keys_result, Ptr6 values_result, Comp comp) {
+  return dpct::internal::check_device_ptr_and_launch(
+      oneapi::dpl::execution::par,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      comp, size1, size2,
+      [](auto &&policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2,
+         Ptr3 start3, Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
+        return dpct::set_symmetric_difference(
+            std::forward<decltype(policy)>(policy), start1, end1, start2, end2,
+            start3, start4, start5, start6);
+      },
+      keys_result, values_result, // return base
+      keys_first1, keys_first2, values_first1, values_first2, keys_result,
+      values_result // all ptrs
+  );
+}
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Ptr5, typename Ptr6>
+std::enable_if_t<
+    dpct::internal::all_are_pointer_v<Ptr1, Ptr2, Ptr3, Ptr4, Ptr5, Ptr6>,
+    std::pair<Ptr5, Ptr6>>
+set_symmetric_difference(Ptr1 keys_first1, Size size1, Ptr2 keys_first2,
+                         Size size2, Ptr3 values_first1, Ptr4 values_first2,
+                         Ptr5 keys_result, Ptr6 values_result) {
+  return dpct::set_symmetric_difference(
+      keys_first1, size1, keys_first2, size2, values_first1, values_first2,
+      keys_result, values_result, dpct::internal::__less());
+}
+#endif // DPCT_USM_LEVEL_NONE
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|set_difference|dpct
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasFunctional|compare_key_fun
+// DplExtrasFunctional|enable_if_execution_policy
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <class Policy, class Iter1, class Iter2, class Iter3, class Iter4,
           class Iter5, class Iter6>
-std::pair<Iter5, Iter6>
+internal::enable_if_execution_policy<Policy, std::pair<Iter5, Iter6>>
 set_difference(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
                Iter2 keys_first2, Iter2 keys_last2, Iter3 values_first1,
                Iter4 values_first2, Iter5 keys_result, Iter6 values_result) {
@@ -898,11 +1126,11 @@ set_difference(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
 
 template <class Policy, class Iter1, class Iter2, class Iter3, class Iter4,
           class Iter5, class Iter6, class Comp>
-std::pair<Iter5, Iter6> set_difference(Policy &&policy, Iter1 keys_first1,
-                                       Iter1 keys_last1, Iter2 keys_first2,
-                                       Iter2 keys_last2, Iter3 values_first1,
-                                       Iter4 values_first2, Iter5 keys_result,
-                                       Iter6 values_result, Comp comp) {
+internal::enable_if_execution_policy<Policy, std::pair<Iter5, Iter6>>
+set_difference(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
+               Iter2 keys_first2, Iter2 keys_last2, Iter3 values_first1,
+               Iter4 values_first2, Iter5 keys_result, Iter6 values_result,
+               Comp comp) {
   static_assert(
       std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
                    std::random_access_iterator_tag>::value &&
@@ -933,9 +1161,59 @@ std::pair<Iter5, Iter6> set_difference(Policy &&policy, Iter1 keys_first1,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|set_difference_usm_none|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|set_difference
+// DplExtrasFunctional|check_device_ptr_and_launch
+// DplExtrasFunctional|all_are_pointer_v
+// Device|get_default_queue
+// DplExtrasFunctional|__less
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+#ifdef DPCT_USM_LEVEL_NONE
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Ptr5, typename Ptr6, typename Comp>
+std::enable_if_t<
+    dpct::internal::all_are_pointer_v<Ptr1, Ptr2, Ptr3, Ptr4, Ptr5, Ptr6>,
+    std::pair<Ptr5, Ptr6>>
+set_difference(Ptr1 keys_first1, Size size1, Ptr2 keys_first2, Size size2,
+               Ptr3 values_first1, Ptr4 values_first2, Ptr5 keys_result,
+               Ptr6 values_result, Comp comp) {
+  return dpct::internal::check_device_ptr_and_launch(
+      oneapi::dpl::execution::par_unseq,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      comp, size1, size2,
+      [](auto &&policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2,
+         Ptr3 start3, Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
+        return dpct::set_difference(std::forward<decltype(policy)>(policy),
+                                    start1, end1, start2, end2, start3, start4,
+                                    start5, start6, comp);
+      },
+      keys_result, values_result, // return base
+      keys_first1, keys_first2, values_first1, values_first2, keys_result,
+      values_result // all ptrs
+  );
+}
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Ptr5, typename Ptr6>
+std::enable_if_t<
+    dpct::internal::all_are_pointer_v<Ptr1, Ptr2, Ptr3, Ptr4, Ptr5, Ptr6>,
+    std::pair<Ptr5, Ptr6>>
+set_difference(Ptr1 keys_first1, Size size1, Ptr2 keys_first2, Size size2,
+               Ptr3 values_first1, Ptr4 values_first2, Ptr5 keys_result,
+               Ptr6 values_result) {
+  return dpct::set_difference(keys_first1, size1, keys_first2, size2,
+                              values_first1, values_first2, keys_result,
+                              values_result, dpct::internal::__less());
+}
+#endif // DPCT_USM_LEVEL_NONE
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|set_union|dpct
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasFunctional|compare_key_fun
+// DplExtrasFunctional|enable_if_execution_policy
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <class Policy, class Iter1, class Iter2, class Iter3, class Iter4,
@@ -1010,9 +1288,59 @@ set_union(Policy &&policy, Iter1 keys_first1, Iter1 keys_last1,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|set_union_usm_none|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|set_union
+// DplExtrasFunctional|check_device_ptr_and_launch
+// DplExtrasFunctional|all_are_pointer_v
+// Device|get_default_queue
+// DplExtrasFunctional|__less
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+#ifdef DPCT_USM_LEVEL_NONE
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Ptr5, typename Ptr6, typename Comp>
+std::enable_if_t<
+    dpct::internal::all_are_pointer_v<Ptr1, Ptr2, Ptr3, Ptr4, Ptr5, Ptr6>,
+    std::pair<Ptr5, Ptr6>>
+set_union(Ptr1 keys_first1, Size size1, Ptr2 keys_first2, Size size2,
+          Ptr3 values_first1, Ptr4 values_first2, Ptr5 keys_result,
+          Ptr6 values_result, Comp comp) {
+  return dpct::internal::check_device_ptr_and_launch(
+      oneapi::dpl::execution::par,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      comp, size1, size2,
+      [](auto &&policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr2 end2,
+         Ptr3 start3, Ptr4 start4, Ptr5 start5, Ptr6 start6, Comp comp) {
+        return dpct::set_union(std::forward<decltype(policy)>(policy), start1,
+                               end1, start2, end2, start3, start4, start5,
+                               start6, comp);
+      },
+      keys_result, values_result, // return base
+      keys_first1, keys_first2, values_first1, values_first2, keys_result,
+      values_result // all ptrs
+  );
+}
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Ptr5, typename Ptr6>
+std::enable_if_t<
+    dpct::internal::all_are_pointer_v<Ptr1, Ptr2, Ptr3, Ptr4, Ptr5, Ptr6>,
+    std::pair<Ptr5, Ptr6>>
+set_union(Ptr1 keys_first1, Size size, Ptr2 keys_first2, Size size2,
+          Ptr3 values_first1, Ptr4 values_first2, Ptr5 keys_result,
+          Ptr6 values_result) {
+  return dpct::set_union(keys_first1, size, keys_first2, size2, values_first1,
+                         values_first2, keys_result, values_result,
+                         dpct::internal::__less());
+}
+#endif // DPCT_USM_LEVEL_NONE
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|stable_partition_copy|dpct
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasFunctional|predicate_key_fun
+// DplExtrasFunctional|enable_if_execution_policy
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
@@ -1059,9 +1387,63 @@ stable_partition_copy(Policy &&policy, Iter1 first, Iter1 last, Iter3 out_true,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|stable_partition_copy_usm_none|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|stable_partition_copy
+// DplExtrasFunctional|check_device_ptr_and_launch
+// DplExtrasFunctional|all_are_pointer_v
+// Device|get_default_queue
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+#ifdef DPCT_USM_LEVEL_NONE
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Pred>
+std::enable_if_t<dpct::internal::all_are_pointer_v<Ptr1, Ptr2, Ptr3, Ptr4>,
+                 std::pair<Ptr3, Ptr4>>
+stable_partition_copy(Ptr1 first, Size size, Ptr2 mask, Ptr3 out_true,
+                      Ptr4 out_false, Pred p) {
+  return dpct::internal::check_device_ptr_and_launch(
+      oneapi::dpl::execution::par_unseq,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), p,
+      size,
+      [](auto &&policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
+         Ptr4 start4, Pred pred) {
+        return dpct::stable_partition_copy(
+            std::forward<decltype(policy)>(policy), start1, end1, start2,
+            start3, start4, pred);
+      },
+      out_true, out_false,             // return base
+      first, mask, out_true, out_false // all ptrs
+  );
+}
+
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Pred>
+std::enable_if_t<dpct::internal::all_are_pointer_v<Ptr1, Ptr2, Ptr3>,
+                 std::pair<Ptr2, Ptr3>>
+stable_partition_copy(Ptr1 first, Size size, Ptr2 out_true, Ptr3 out_false,
+                      Pred p) {
+  return dpct::internal::check_device_ptr_and_launch(
+      oneapi::dpl::execution::par_unseq,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), p,
+      size,
+      [](auto &&policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
+         Pred pred) {
+        return dpct::stable_partition_copy(
+            std::forward<decltype(policy)>(policy), start1, end1, start2,
+            start3, pred);
+      },
+      out_true, out_false,       // return base
+      first, out_true, out_false // all ptrs
+  );
+}
+#endif // DPCT_USM_LEVEL_NONE
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|partition_copy|dpct
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasAlgorithm|stable_partition_copy
+// DplExtrasFunctional|enable_if_execution_policy
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
@@ -1082,6 +1464,37 @@ partition_copy(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
   return stable_partition_copy(std::forward<Policy>(policy), first, last, mask,
                                out_true, out_false, p);
 }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|partition_copy_usm_none|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|partition_copy
+// DplExtrasFunctional|check_device_ptr_and_launch
+// DplExtrasFunctional|all_are_pointer_v
+// Device|get_default_queue
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+#ifdef DPCT_USM_LEVEL_NONE
+template <typename Ptr1, typename Size, typename Ptr2, typename Ptr3,
+          typename Ptr4, typename Pred>
+std::enable_if_t<dpct::internal::all_are_pointer_v<Ptr1, Ptr2, Ptr3, Ptr4>,
+                 std::pair<Ptr3, Ptr4>>
+partition_copy(Ptr1 first, Size size, Ptr2 mask, Ptr3 out_true, Ptr4 out_false,
+               Pred p) {
+  return dpct::internal::check_device_ptr_and_launch(
+      oneapi::dpl::execution::par_unseq,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), p,
+      size,
+      [](auto &&policy, Ptr1 start1, Ptr1 end1, Ptr2 start2, Ptr3 start3,
+         Ptr4 start4, Pred pred) {
+        return dpct::partition_copy(std::forward<decltype(policy)>(policy),
+                                    start1, end1, start2, start3, start4, pred);
+      },
+      out_true, out_false,             // return base
+      first, mask, out_true, out_false // all ptrs
+  );
+}
+#endif // DPCT_USM_LEVEL_NONE
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|stable_partition|dpct
@@ -1147,6 +1560,7 @@ stable_partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
 // DPCT_LABEL_BEGIN|partition|dpct
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasAlgorithm|stable_partition
+// DplExtrasFunctional|enable_if_execution_policy
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename Policy, typename Iter1, typename Iter2, typename Pred>
@@ -2013,11 +2427,15 @@ inline void reduce_argmin(_ExecutionPolicy &&policy, Iter1 input, Iter2 output,
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|equal_range|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasFunctional|enable_if_execution_policy
+// DplExtrasFunctional|__less
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename _ExecutionPolicy, typename Iter1,
           typename ValueLessComparable, typename StrictWeakOrdering>
-inline ::std::pair<Iter1, Iter1>
+inline dpct::internal::enable_if_execution_policy<_ExecutionPolicy,
+                                                  ::std::pair<Iter1, Iter1>>
 equal_range(_ExecutionPolicy &&policy, Iter1 start, Iter1 end,
             const ValueLessComparable &value, StrictWeakOrdering comp) {
   ::std::vector<::std::int64_t> res_lower(1);
@@ -2034,12 +2452,48 @@ equal_range(_ExecutionPolicy &&policy, Iter1 start, Iter1 end,
 
 template <typename _ExecutionPolicy, typename Iter1,
           typename ValueLessComparable>
-inline ::std::pair<Iter1, Iter1> equal_range(_ExecutionPolicy &&policy,
-                                             Iter1 start, Iter1 end,
-                                             const ValueLessComparable &value) {
+inline dpct::internal::enable_if_execution_policy<_ExecutionPolicy,
+                                                  ::std::pair<Iter1, Iter1>>
+equal_range(_ExecutionPolicy &&policy, Iter1 start, Iter1 end,
+            const ValueLessComparable &value) {
   return equal_range(::std::forward<_ExecutionPolicy>(policy), start, end,
                      value, internal::__less());
 }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|equal_range|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasFunctional|check_device_ptr_and_launch_w_value
+// DplExtrasFunctional|__less
+// Device|get_default_queue
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+#ifdef DPCT_USM_LEVEL_NONE
+template <typename Ptr1, typename Size, typename ValueLessComparable,
+          typename StrictWeakOrdering>
+inline std::enable_if_t<std::is_pointer_v<Ptr1>, ::std::pair<Ptr1, Ptr1>>
+equal_range(Ptr1 start, Size size, const ValueLessComparable &value,
+            StrictWeakOrdering comp) {
+  return dpct::internal::check_device_ptr_and_launch_w_value(
+      oneapi::dpl::execution::par_unseq,
+      oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      value, comp, size,
+      [](auto &&policy, Ptr1 start, Ptr1 end, const ValueLessComparable &value,
+         StrictWeakOrdering comp) {
+        return dpct::equal_range(std::forward<decltype(policy)>(policy), start,
+                                 end, value, comp);
+      },
+      start, start, // return base
+      start         // all ptrs
+  );
+}
+
+template <typename _T, typename Size, typename ValueLessComparable>
+inline std::enable_if_t<std::is_pointer_v<_T>, ::std::pair<_T, _T>>
+equal_range(_T start, Size size, const ValueLessComparable &value) {
+  return dpct::equal_range(start, size, value, internal::__less());
+}
+#endif // DPCT_USM_LEVEL_NONE
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|segmented_reduce_argmin|dpct

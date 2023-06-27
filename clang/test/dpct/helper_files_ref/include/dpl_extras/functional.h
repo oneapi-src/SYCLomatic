@@ -292,6 +292,120 @@ private:
   mutable BinaryOperation op;
 };
 
+template <typename... T>
+constexpr inline bool all_are_pointer_v = (... & std::is_pointer_v<T>);
+
+#ifdef DPCT_USM_LEVEL_NONE
+template <typename T>
+dpct::device_pointer<typename std::iterator_traits<T>::value_type>
+make_device_pointer_from_virtual_pointer(T t) {
+  return dpct::device_pointer<typename std::iterator_traits<T>::value_type>(t);
+}
+#endif // DPCT_USM_LEVEL_NONE
+
+#ifdef DPCT_USM_LEVEL_NONE
+template <typename InitialPtr, typename VirtPtr>
+VirtPtr to_virtual_pointer_space(InitialPtr in_ptr, VirtPtr virt_base) {
+  return virt_base +
+         (in_ptr -
+          dpct::internal::make_device_pointer_from_virtual_pointer(virt_base));
+}
+#endif // DPCT_USM_LEVEL_NONE
+
+#ifdef DPCT_USM_LEVEL_NONE
+template <typename ExecutionPolicyHost, typename ExecutionPolicyDevice,
+          typename Oper, typename Func, typename RetPtr1, typename RetPtr2,
+          typename Ptr1, typename Ptr2, typename... MiddlePtrs>
+inline std::enable_if_t<dpct::internal::all_are_pointer_v<
+                            Ptr1, Ptr2, RetPtr1, RetPtr2, MiddlePtrs...>,
+                        ::std::pair<RetPtr1, RetPtr2>>
+check_device_ptr_and_launch(ExecutionPolicyHost &&host_policy,
+                            ExecutionPolicyDevice &&dev_policy, Oper op,
+                            std::size_t size1, std::size_t size2, Func func,
+                            RetPtr1 ret_base1, RetPtr2 ret_base2, Ptr1 start1,
+                            Ptr2 start2, MiddlePtrs... middle_ptrs) {
+  if (dpct::is_device_ptr(start1)) {
+
+    auto ret =
+        func(std::forward<ExecutionPolicyDevice>(dev_policy),
+             dpct::internal::make_device_pointer_from_virtual_pointer(start1),
+             dpct::internal::make_device_pointer_from_virtual_pointer(start1) +
+                 size1,
+             dpct::internal::make_device_pointer_from_virtual_pointer(start2),
+             dpct::internal::make_device_pointer_from_virtual_pointer(start2) +
+                 size2,
+             dpct::internal::make_device_pointer_from_virtual_pointer(
+                 middle_ptrs)...,
+             op);
+    return ::std::pair<RetPtr1, RetPtr2>(
+        dpct::internal::to_virtual_pointer_space(ret.first, ret_base1),
+        dpct::internal::to_virtual_pointer_space(ret.second, ret_base2));
+  } else {
+    return func(std::forward<ExecutionPolicyHost>(host_policy), start1,
+                start1 + size1, start2, start2 + size2, middle_ptrs..., op);
+  }
+}
+
+template <typename ExecutionPolicyHost, typename ExecutionPolicyDevice,
+          typename Oper, typename Func, typename RetPtr1, typename RetPtr2,
+          typename Ptr1, typename... MiddlePtrs>
+inline std::enable_if_t<
+    dpct::internal::all_are_pointer_v<Ptr1, RetPtr1, RetPtr2, MiddlePtrs...>,
+    ::std::pair<RetPtr1, RetPtr2>>
+check_device_ptr_and_launch(ExecutionPolicyHost &&host_policy,
+                            ExecutionPolicyDevice &&dev_policy, Oper op,
+                            std::size_t size, Func func, RetPtr1 ret_base1,
+                            RetPtr2 ret_base2, Ptr1 start1,
+                            MiddlePtrs... middle_ptrs) {
+  if (dpct::is_device_ptr(start1)) {
+    auto ret = func(
+        std::forward<ExecutionPolicyDevice>(dev_policy),
+        dpct::internal::make_device_pointer_from_virtual_pointer(start1),
+        dpct::internal::make_device_pointer_from_virtual_pointer(start1) + size,
+        dpct::internal::make_device_pointer_from_virtual_pointer(
+            middle_ptrs)...,
+        op);
+    return ::std::pair<RetPtr1, RetPtr2>(
+        dpct::internal::to_virtual_pointer_space(ret.first, ret_base1),
+        dpct::internal::to_virtual_pointer_space(ret.second, ret_base2));
+  } else {
+    return func(std::forward<ExecutionPolicyHost>(host_policy), start1,
+                start1 + size, middle_ptrs..., op);
+  }
+}
+#endif // DPCT_USM_LEVEL_NONE
+
+#ifdef DPCT_USM_LEVEL_NONE
+template <typename ExecutionPolicyHost, typename ExecutionPolicyDevice,
+          typename ValueType, typename Oper, typename Func, typename RetPtr1,
+          typename RetPtr2, typename Ptr1, typename... MiddlePtrs>
+inline std::enable_if_t<
+    dpct::internal::all_are_pointer_v<Ptr1, RetPtr1, RetPtr2, MiddlePtrs...>,
+    ::std::pair<RetPtr1, RetPtr2>>
+check_device_ptr_and_launch_w_value(ExecutionPolicyHost &&host_policy,
+                                    ExecutionPolicyDevice &&dev_policy,
+                                    ValueType value, Oper op, std::size_t size,
+                                    Func func, RetPtr1 ret_base1,
+                                    RetPtr2 ret_base2, Ptr1 start1,
+                                    MiddlePtrs... middle_ptrs) {
+  if (dpct::is_device_ptr(start1)) {
+    auto ret = func(
+        std::forward<ExecutionPolicyDevice>(dev_policy),
+        dpct::internal::make_device_pointer_from_virtual_pointer(start1),
+        dpct::internal::make_device_pointer_from_virtual_pointer(start1) + size,
+        dpct::internal::make_device_pointer_from_virtual_pointer(
+            middle_ptrs)...,
+        value, op);
+    return ::std::pair<RetPtr1, RetPtr2>(
+        dpct::internal::to_virtual_pointer_space(ret.first, ret_base1),
+        dpct::internal::to_virtual_pointer_space(ret.second, ret_base2));
+  } else {
+    return func(std::forward<ExecutionPolicyHost>(host_policy), start1,
+                start1 + size, middle_ptrs..., value, op);
+  }
+}
+#endif // DPCT_USM_LEVEL_NONE
+
 // This following code is similar to a section of code in
 // oneDPL/include/oneapi/dpl/pstl/hetero/dpcpp/parallel_backend_sycl_radix_sort.h
 // It has a similar approach, and could be consolidated.
