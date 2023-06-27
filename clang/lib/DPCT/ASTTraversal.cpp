@@ -2049,7 +2049,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasComputeType_t", "cublasAtomicsMode_t", "CUmem_advise_enum",
               "CUmem_advise", "thrust::tuple_element", "thrust::tuple_size",
               "cublasMath_t", "cudaPointerAttributes", "thrust::zip_iterator",
-              "cusolverEigRange_t", "cudaUUID_t"))))))
+              "cusolverEigRange_t", "cudaUUID_t", "cusolverDnFunction_t",
+              "cusolverAlgMode_t"))))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -6025,10 +6026,11 @@ REGISTER_RULE(BLASFunctionCallRule, PassKind::PK_Migration)
 // Migrate SOLVER status values to corresponding int values
 // Other SOLVER named values are migrated to corresponding named values
 void SOLVEREnumsRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(
-      declRefExpr(to(enumConstantDecl(matchesName("CUSOLVER_STATU.*"))))
-          .bind("SOLVERStatusConstants"),
-      this);
+  MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName(
+                                "(CUSOLVER_STATU.*)|(CUSOLVER_ALG.*)|("
+                                "CUSOLVERDN_GETRF)|(CUSOLVERDN_POTRF)"))))
+                    .bind("SOLVERConstants"),
+                this);
   MF.addMatcher(
       declRefExpr(to(enumConstantDecl(matchesName(
                       "(CUSOLVER_EIG_TYPE.*)|(CUSOLVER_EIG_MODE.*)"))))
@@ -6038,7 +6040,7 @@ void SOLVEREnumsRule::registerMatcher(MatchFinder &MF) {
 
 void SOLVEREnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   if (const DeclRefExpr *DE =
-          getNodeAsType<DeclRefExpr>(Result, "SOLVERStatusConstants")) {
+          getNodeAsType<DeclRefExpr>(Result, "SOLVERConstants")) {
     auto *EC = cast<EnumConstantDecl>(DE->getDecl());
     emplaceTransformation(new ReplaceStmt(DE, toString(EC->getInitVal(), 10)));
   }
@@ -6063,24 +6065,25 @@ REGISTER_RULE(SOLVEREnumsRule, PassKind::PK_Migration)
 void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
     return hasAnyName(
-        "cusolverDnGetStream", "cusolverDnSetStream", "cusolverDnCreateParams",
-        "cusolverDnDestroyParams", "cusolverDnCreate", "cusolverDnDestroy",
-        "cusolverDnSpotrf_bufferSize", "cusolverDnDpotrf_bufferSize",
-        "cusolverDnCpotrf_bufferSize", "cusolverDnZpotrf_bufferSize",
-        "cusolverDnSpotri_bufferSize", "cusolverDnDpotri_bufferSize",
-        "cusolverDnCpotri_bufferSize", "cusolverDnZpotri_bufferSize",
-        "cusolverDnSgetrf_bufferSize", "cusolverDnDgetrf_bufferSize",
-        "cusolverDnCgetrf_bufferSize", "cusolverDnZgetrf_bufferSize",
-        "cusolverDnSpotrf", "cusolverDnDpotrf", "cusolverDnCpotrf",
-        "cusolverDnZpotrf", "cusolverDnSpotrs", "cusolverDnDpotrs",
-        "cusolverDnCpotrs", "cusolverDnZpotrs", "cusolverDnSpotri",
-        "cusolverDnDpotri", "cusolverDnCpotri", "cusolverDnZpotri",
-        "cusolverDnSgetrf", "cusolverDnDgetrf", "cusolverDnCgetrf",
-        "cusolverDnZgetrf", "cusolverDnSgetrs", "cusolverDnDgetrs",
-        "cusolverDnCgetrs", "cusolverDnZgetrs", "cusolverDnSgeqrf_bufferSize",
-        "cusolverDnDgeqrf_bufferSize", "cusolverDnCgeqrf_bufferSize",
-        "cusolverDnZgeqrf_bufferSize", "cusolverDnSgeqrf", "cusolverDnDgeqrf",
-        "cusolverDnCgeqrf", "cusolverDnZgeqrf", "cusolverDnSormqr_bufferSize",
+        "cusolverDnSetAdvOptions", "cusolverDnGetStream", "cusolverDnSetStream",
+        "cusolverDnCreateParams", "cusolverDnDestroyParams", "cusolverDnCreate",
+        "cusolverDnDestroy", "cusolverDnSpotrf_bufferSize",
+        "cusolverDnDpotrf_bufferSize", "cusolverDnCpotrf_bufferSize",
+        "cusolverDnZpotrf_bufferSize", "cusolverDnSpotri_bufferSize",
+        "cusolverDnDpotri_bufferSize", "cusolverDnCpotri_bufferSize",
+        "cusolverDnZpotri_bufferSize", "cusolverDnSgetrf_bufferSize",
+        "cusolverDnDgetrf_bufferSize", "cusolverDnCgetrf_bufferSize",
+        "cusolverDnZgetrf_bufferSize", "cusolverDnSpotrf", "cusolverDnDpotrf",
+        "cusolverDnCpotrf", "cusolverDnZpotrf", "cusolverDnSpotrs",
+        "cusolverDnDpotrs", "cusolverDnCpotrs", "cusolverDnZpotrs",
+        "cusolverDnSpotri", "cusolverDnDpotri", "cusolverDnCpotri",
+        "cusolverDnZpotri", "cusolverDnSgetrf", "cusolverDnDgetrf",
+        "cusolverDnCgetrf", "cusolverDnZgetrf", "cusolverDnSgetrs",
+        "cusolverDnDgetrs", "cusolverDnCgetrs", "cusolverDnZgetrs",
+        "cusolverDnSgeqrf_bufferSize", "cusolverDnDgeqrf_bufferSize",
+        "cusolverDnCgeqrf_bufferSize", "cusolverDnZgeqrf_bufferSize",
+        "cusolverDnSgeqrf", "cusolverDnDgeqrf", "cusolverDnCgeqrf",
+        "cusolverDnZgeqrf", "cusolverDnSormqr_bufferSize",
         "cusolverDnDormqr_bufferSize", "cusolverDnSormqr", "cusolverDnDormqr",
         "cusolverDnCunmqr_bufferSize", "cusolverDnZunmqr_bufferSize",
         "cusolverDnCunmqr", "cusolverDnZunmqr", "cusolverDnSorgqr_bufferSize",
@@ -6140,7 +6143,13 @@ void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusolverDnChegvj", "cusolverDnZhegvj", "cusolverDnChegvj_bufferSize",
         "cusolverDnZhegvj_bufferSize", "cusolverDnXsyevdx",
         "cusolverDnXsyevdx_bufferSize", "cusolverDnSyevdx",
-        "cusolverDnSyevdx_bufferSize");
+        "cusolverDnSyevdx_bufferSize", "cusolverDnSsyevj", "cusolverDnDsyevj",
+        "cusolverDnSsyevj_bufferSize", "cusolverDnDsyevj_bufferSize",
+        "cusolverDnCheevj", "cusolverDnZheevj", "cusolverDnCheevj_bufferSize",
+        "cusolverDnZheevj_bufferSize", "cusolverDnXsyevd",
+        "cusolverDnXsyevd_bufferSize", "cusolverDnSyevd",
+        "cusolverDnSyevd_bufferSize", "cusolverDnXtrtri",
+        "cusolverDnXtrtri_bufferSize");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),

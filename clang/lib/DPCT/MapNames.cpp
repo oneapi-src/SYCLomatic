@@ -455,6 +455,8 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("oneapi::mkl::rangev")},
       {"cudaUUID_t",
        std::make_shared<TypeNameRule>("std::array<unsigned char, 16>")},
+      {"cusolverDnFunction_t", std::make_shared<TypeNameRule>("int")},
+      {"cusolverAlgMode_t", std::make_shared<TypeNameRule>("int")},
       // ...
   };
 
@@ -1753,7 +1755,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasCrot_v2", getDpctNamespace() + "rot"},
       {"cublasZrot_v2", getDpctNamespace() + "rot"}};
 
-  SOLVERAPIWithRewriter = {"cusolverDnSetStream",
+  SOLVERAPIWithRewriter = {"cusolverDnSetAdvOptions",
+                           "cusolverDnSetStream",
                            "cusolverDnGetStream",
                            "cusolverDnCreateParams",
                            "cusolverDnDestroyParams",
@@ -1836,7 +1839,21 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusolverDnSyevdx",
                            "cusolverDnSyevdx_bufferSize",
                            "cusolverDnCreateSyevjInfo",
-                           "cusolverDnDestroySyevjInfo"};
+                           "cusolverDnDestroySyevjInfo",
+                           "cusolverDnSsyevj",
+                           "cusolverDnDsyevj",
+                           "cusolverDnSsyevj_bufferSize",
+                           "cusolverDnDsyevj_bufferSize",
+                           "cusolverDnCheevj",
+                           "cusolverDnZheevj",
+                           "cusolverDnCheevj_bufferSize",
+                           "cusolverDnZheevj_bufferSize",
+                           "cusolverDnXsyevd",
+                           "cusolverDnXsyevd_bufferSize",
+                           "cusolverDnSyevd",
+                           "cusolverDnSyevd_bufferSize",
+                           "cusolverDnXtrtri",
+                           "cusolverDnXtrtri_bufferSize"};
 
   SPARSEAPIWithRewriter = {"cusparseCreateMatDescr",
                            "cusparseDestroyMatDescr",
