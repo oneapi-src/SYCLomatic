@@ -427,9 +427,9 @@ struct TranslationUnitReplacements {
   std::string MainHelperFileName = "";
   std::string USMLevel = ""; // deprecated
 
-// Keep here only for backward compatibility - begin
+  // Keep here only for backward compatibility - begin
   std::map<std::string, std::map<std::string, HelperFuncForYaml>> FeatureMap;
-// Keep here only for backward compatibility - end
+  // Keep here only for backward compatibility - end
   std::map<std::string, std::vector<CompilationInfo>> CompileTargets;
   std::map<std::string, OptionInfo> OptionMap;
 #endif // SYCLomatic_CUSTOMIZATION
