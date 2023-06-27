@@ -12194,11 +12194,9 @@ RecognizeAPINameRule::splitAPIName(std::vector<std::string> &AllAPINames) {
         if (std::find(ObjNames.begin(), ObjNames.end(),
                       APIName.substr(0, DotPos + DotOpSize)) ==
             ObjNames.end()) {
-          ObjNames.emplace_back(
-              APIName.substr(0, DotPos + DotOpSize));
+          ObjNames.emplace_back(APIName.substr(0, DotPos + DotOpSize));
         }
-        MemFuncNames.emplace_back(
-            APIName.substr(DotPos + DotOpSize));
+        MemFuncNames.emplace_back(APIName.substr(DotPos + DotOpSize));
       } else {
         // 4. Namespace::ObjectName.FunctionName
         if (std::find(ObjNamespaces.begin(), ObjNamespaces.end(),
@@ -12207,17 +12205,15 @@ RecognizeAPINameRule::splitAPIName(std::vector<std::string> &AllAPINames) {
           ObjNamespaces.emplace_back(APIName.substr(0, ScopeResolutionOpPos));
         }
         if (std::find(ObjNamesHasNS.begin(), ObjNamesHasNS.end(),
-                      APIName.substr(ScopeResolutionOpPos +
-                                         ScopeResolutionOpSize,
-                                     DotPos - ScopeResolutionOpPos -
-                                         ScopeResolutionOpSize)) ==
-            ObjNamesHasNS.end()) {
+                      APIName.substr(
+                          ScopeResolutionOpPos + ScopeResolutionOpSize,
+                          DotPos - ScopeResolutionOpPos -
+                              ScopeResolutionOpSize)) == ObjNamesHasNS.end()) {
           ObjNamesHasNS.emplace_back(APIName.substr(
               ScopeResolutionOpPos + ScopeResolutionOpSize,
               DotPos - ScopeResolutionOpPos - ScopeResolutionOpSize));
         }
-        MemFuncNamesHasNS.emplace_back(
-            APIName.substr(DotPos + DotOpSize));
+        MemFuncNamesHasNS.emplace_back(APIName.substr(DotPos + DotOpSize));
       }
     }
   }
@@ -12288,15 +12284,15 @@ void RecognizeAPINameRule::registerMatcher(MatchFinder &MF) {
             .bind("MFAPINamesHasNSUsed"),
         this);
     MF.addMatcher(
-      callExpr(callee(functionDecl(allOf(
-        namedDecl(internal::Matcher<NamedDecl>(
-                new internal::HasNameMatcher(AllAPIComponent[5]))),
-        hasAncestor(
+        callExpr(
+            callee(functionDecl(allOf(
+                namedDecl(internal::Matcher<NamedDecl>(
+                    new internal::HasNameMatcher(AllAPIComponent[5]))),
+                hasAncestor(
                     namespaceDecl(namedDecl(internal::Matcher<NamedDecl>(
-                        new internal::HasNameMatcher(AllAPIComponent[7])))))
-                        )))
-      ).bind("StaticMFAPINamesHasNSUsed"),
-      this);
+                        new internal::HasNameMatcher(AllAPIComponent[7])))))))))
+            .bind("StaticMFAPINamesHasNSUsed"),
+        this);
   }
 }
 
@@ -12335,9 +12331,8 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
 
   if (!dpct::DpctGlobalInfo::isInCudaPath(ND->getLocation()) &&
       !isChildOrSamePath(DpctInstallPath,
-                          dpct::DpctGlobalInfo::getLocInfo(ND).first)) {
-    if (!ND->getName().startswith("cudnn") &&
-        !ND->getName().startswith("nccl"))
+                         dpct::DpctGlobalInfo::getLocInfo(ND).first)) {
+    if (!ND->getName().startswith("cudnn") && !ND->getName().startswith("nccl"))
       return;
   }
   auto *NSD = dyn_cast<NamespaceDecl>(ND->getDeclContext());
