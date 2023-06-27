@@ -138,7 +138,7 @@ CONDITIONAL_FACTORY_ENTRY(
             WARNING_FACTORY_ENTRY(
                 "__shfl_up_sync",
                 FEATURE_REQUEST_FACTORY(
-                    HelperFeatureEnum::Util_shift_sub_group_right_mask,
+                    HelperFeatureEnum::device_ext,
                     CALL_FACTORY_ENTRY("__shfl_up_sync",
                                        CALL(MapNames::getDpctNamespace() +
                                                 "experimental::shift_sub_group_right",
@@ -154,7 +154,7 @@ CONDITIONAL_FACTORY_ENTRY(
             WARNING_FACTORY_ENTRY(
                 "__shfl_up_sync",
                 FEATURE_REQUEST_FACTORY(
-                    HelperFeatureEnum::Util_shift_sub_group_right_mask,
+                    HelperFeatureEnum::device_ext,
                     CALL_FACTORY_ENTRY("__shfl_up_sync",
                                        CALL(MapNames::getDpctNamespace() +
                                                 "experimental::shift_sub_group_right",
@@ -173,7 +173,7 @@ CONDITIONAL_FACTORY_ENTRY(
             WARNING_FACTORY_ENTRY(
                 "__shfl_up_sync",
                 FEATURE_REQUEST_FACTORY(
-                    HelperFeatureEnum::Util_shift_sub_group_right,
+                    HelperFeatureEnum::device_ext,
                     CALL_FACTORY_ENTRY("__shfl_up_sync",
                                        CALL(MapNames::getDpctNamespace() +
                                                 "shift_sub_group_right",
@@ -189,7 +189,7 @@ CONDITIONAL_FACTORY_ENTRY(
             WARNING_FACTORY_ENTRY(
                 "__shfl_up_sync",
                 FEATURE_REQUEST_FACTORY(
-                    HelperFeatureEnum::Util_shift_sub_group_right,
+                    HelperFeatureEnum::device_ext,
                     CALL_FACTORY_ENTRY("__shfl_up_sync",
                                        CALL(MapNames::getDpctNamespace() +
                                                 "shift_sub_group_right",
@@ -208,7 +208,7 @@ CONDITIONAL_FACTORY_ENTRY(
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_right",
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_right,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY("__shfl_up",
                                CALL(MapNames::getDpctNamespace() +
                                         "shift_sub_group_right",
@@ -217,7 +217,7 @@ CONDITIONAL_FACTORY_ENTRY(
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_right",
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_right,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY("__shfl_up",
                                CALL(MapNames::getDpctNamespace() +
                                         "shift_sub_group_right",
@@ -235,7 +235,7 @@ CONDITIONAL_FACTORY_ENTRY(
             WARNING_FACTORY_ENTRY(
                 "__shfl_down_sync",
                 FEATURE_REQUEST_FACTORY(
-                    HelperFeatureEnum::Util_shift_sub_group_left_mask,
+                    HelperFeatureEnum::device_ext,
                     CALL_FACTORY_ENTRY("__shfl_down_sync",
                                        CALL(MapNames::getDpctNamespace() +
                                                 "experimental::shift_sub_group_left",
@@ -251,7 +251,7 @@ CONDITIONAL_FACTORY_ENTRY(
             WARNING_FACTORY_ENTRY(
                 "__shfl_down_sync",
                 FEATURE_REQUEST_FACTORY(
-                    HelperFeatureEnum::Util_shift_sub_group_left_mask,
+                    HelperFeatureEnum::device_ext,
                     CALL_FACTORY_ENTRY("__shfl_down_sync",
                                        CALL(MapNames::getDpctNamespace() +
                                                 "experimental::shift_sub_group_left",
@@ -270,7 +270,7 @@ CONDITIONAL_FACTORY_ENTRY(
             WARNING_FACTORY_ENTRY(
                 "__shfl_down_sync",
                 FEATURE_REQUEST_FACTORY(
-                    HelperFeatureEnum::Util_shift_sub_group_left,
+                    HelperFeatureEnum::device_ext,
                     CALL_FACTORY_ENTRY("__shfl_down_sync",
                                        CALL(MapNames::getDpctNamespace() +
                                                 "shift_sub_group_left",
@@ -286,7 +286,7 @@ CONDITIONAL_FACTORY_ENTRY(
             WARNING_FACTORY_ENTRY(
                 "__shfl_down_sync",
                 FEATURE_REQUEST_FACTORY(
-                    HelperFeatureEnum::Util_shift_sub_group_left,
+                    HelperFeatureEnum::device_ext,
                     CALL_FACTORY_ENTRY("__shfl_down_sync",
                                        CALL(MapNames::getDpctNamespace() +
                                                 "shift_sub_group_left",
@@ -305,7 +305,7 @@ CONDITIONAL_FACTORY_ENTRY(
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_left",
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_left,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY("__shfl_down",
                                CALL(MapNames::getDpctNamespace() +
                                         "shift_sub_group_left",
@@ -314,7 +314,7 @@ CONDITIONAL_FACTORY_ENTRY(
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, MapNames::getDpctNamespace() + "shift_sub_group_left",
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_shift_sub_group_left,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY("__shfl_down",
                                CALL(MapNames::getDpctNamespace() +
                                         "shift_sub_group_left",
@@ -332,7 +332,7 @@ CONDITIONAL_FACTORY_ENTRY(
             WARNING_FACTORY_ENTRY(
                 "__shfl_sync",
                 FEATURE_REQUEST_FACTORY(
-                    HelperFeatureEnum::Util_select_from_sub_group_mask,
+                    HelperFeatureEnum::device_ext,
                     CALL_FACTORY_ENTRY("__shfl_sync",
                                        CALL(MapNames::getDpctNamespace() +
                                                 "experimental::select_from_sub_group",
@@ -348,7 +348,7 @@ CONDITIONAL_FACTORY_ENTRY(
             WARNING_FACTORY_ENTRY(
                 "__shfl_sync",
                 FEATURE_REQUEST_FACTORY(
-                    HelperFeatureEnum::Util_select_from_sub_group_mask,
+                    HelperFeatureEnum::device_ext,
                     CALL_FACTORY_ENTRY("__shfl_sync",
                                        CALL(MapNames::getDpctNamespace() +
                                                 "experimental::select_from_sub_group",
@@ -367,7 +367,7 @@ CONDITIONAL_FACTORY_ENTRY(
             WARNING_FACTORY_ENTRY(
                 "__shfl_sync",
                 FEATURE_REQUEST_FACTORY(
-                    HelperFeatureEnum::Util_select_from_sub_group,
+                    HelperFeatureEnum::device_ext,
                     CALL_FACTORY_ENTRY("__shfl_sync",
                                        CALL(MapNames::getDpctNamespace() +
                                                 "select_from_sub_group",
@@ -383,7 +383,7 @@ CONDITIONAL_FACTORY_ENTRY(
             WARNING_FACTORY_ENTRY(
                 "__shfl_sync",
                 FEATURE_REQUEST_FACTORY(
-                    HelperFeatureEnum::Util_select_from_sub_group,
+                    HelperFeatureEnum::device_ext,
                     CALL_FACTORY_ENTRY("__shfl_sync",
                                        CALL(MapNames::getDpctNamespace() +
                                                 "select_from_sub_group",
@@ -402,7 +402,7 @@ CONDITIONAL_FACTORY_ENTRY(
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, MapNames::getDpctNamespace() + "select_from_sub_group",
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_select_from_sub_group,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY("__shfl",
                                CALL(MapNames::getDpctNamespace() +
                                         "select_from_sub_group",
@@ -411,7 +411,7 @@ CONDITIONAL_FACTORY_ENTRY(
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, MapNames::getDpctNamespace() + "select_from_sub_group",
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_select_from_sub_group,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY("__shfl",
                                CALL(MapNames::getDpctNamespace() +
                                         "select_from_sub_group",
@@ -429,7 +429,7 @@ CONDITIONAL_FACTORY_ENTRY(
             WARNING_FACTORY_ENTRY(
                 "__shfl_xor_sync",
                 FEATURE_REQUEST_FACTORY(
-                    HelperFeatureEnum::Util_permute_sub_group_by_xor_mask,
+                    HelperFeatureEnum::device_ext,
                     CALL_FACTORY_ENTRY("__shfl_xor_sync",
                                        CALL(MapNames::getDpctNamespace() +
                                                 "experimental::permute_sub_group_by_xor",
@@ -445,7 +445,7 @@ CONDITIONAL_FACTORY_ENTRY(
             WARNING_FACTORY_ENTRY(
                 "__shfl_xor_sync",
                 FEATURE_REQUEST_FACTORY(
-                    HelperFeatureEnum::Util_permute_sub_group_by_xor_mask,
+                    HelperFeatureEnum::device_ext,
                     CALL_FACTORY_ENTRY("__shfl_xor_sync",
                                        CALL(MapNames::getDpctNamespace() +
                                                 "experimental::permute_sub_group_by_xor",
@@ -464,7 +464,7 @@ CONDITIONAL_FACTORY_ENTRY(
             WARNING_FACTORY_ENTRY(
                 "__shfl_xor_sync",
                 FEATURE_REQUEST_FACTORY(
-                    HelperFeatureEnum::Util_permute_sub_group_by_xor,
+                    HelperFeatureEnum::device_ext,
                     CALL_FACTORY_ENTRY("__shfl_xor_sync",
                                        CALL(MapNames::getDpctNamespace() +
                                                 "permute_sub_group_by_xor",
@@ -480,7 +480,7 @@ CONDITIONAL_FACTORY_ENTRY(
             WARNING_FACTORY_ENTRY(
                 "__shfl_xor_sync",
                 FEATURE_REQUEST_FACTORY(
-                    HelperFeatureEnum::Util_permute_sub_group_by_xor,
+                    HelperFeatureEnum::device_ext,
                     CALL_FACTORY_ENTRY("__shfl_xor_sync",
                                        CALL(MapNames::getDpctNamespace() +
                                                 "permute_sub_group_by_xor",
@@ -499,7 +499,7 @@ CONDITIONAL_FACTORY_ENTRY(
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_permute_sub_group_by_xor,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY("__shfl_xor",
                                CALL(MapNames::getDpctNamespace() +
                                         "permute_sub_group_by_xor",
@@ -508,7 +508,7 @@ CONDITIONAL_FACTORY_ENTRY(
     SUBGROUPSIZE_FACTORY(
         UINT_MAX, MapNames::getDpctNamespace() + "permute_sub_group_by_xor",
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Util_permute_sub_group_by_xor,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY("__shfl_xor",
                                CALL(MapNames::getDpctNamespace() +
                                         "permute_sub_group_by_xor",
