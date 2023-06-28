@@ -3728,6 +3728,21 @@ CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold)
   setTypeInfo(TL, NeedSizeFold);
 }
 
+CtTypeInfo::CtTypeInfo(const VarDecl *D, bool NeedSizeFold)
+    : PointerLevel(0), IsReference(false), IsTemplate(false) {
+  if (D) {
+    TypeLoc TL = getTypeLocIgnoreTypedef(D);
+    if (TL) {
+      setTypeInfo(TL, NeedSizeFold);
+      if (TL.getTypeLocClass() == TypeLoc::IncompleteArray) {
+        if (auto CAT = dyn_cast<ConstantArrayType>(D->getType())) {
+          Range[0] = std::to_string(CAT->getSize().getZExtValue());
+        }
+      }
+    }
+  }
+}
+
 std::string CtTypeInfo::getRangeArgument(const std::string &MemSize,
                                          bool MustArguments) {
   std::string Arg = "(";

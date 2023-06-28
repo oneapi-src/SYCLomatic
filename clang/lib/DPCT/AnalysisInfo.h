@@ -2213,19 +2213,7 @@ public:
   // will follow as comments. If NeedSizeFold is false, original size expression
   // will be the size string.
   CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold = false);
-  CtTypeInfo(const VarDecl *D, bool NeedSizeFold = false)
-      : PointerLevel(0), IsReference(false), IsTemplate(false) {
-    if (D && D->getTypeSourceInfo()) {
-      auto TL = D->getTypeSourceInfo()->getTypeLoc();
-      setTypeInfo(TL, NeedSizeFold);
-      if (TL.getTypeLocClass() ==
-          TypeLoc::IncompleteArray) {
-        if (auto CAT = dyn_cast<ConstantArrayType>(D->getType())) {
-          Range[0] = std::to_string(CAT->getSize().getZExtValue());
-        }
-      }
-    }
-  }
+  CtTypeInfo(const VarDecl *D, bool NeedSizeFold = false);
 
   inline const std::string &getBaseName() { return BaseName; }
 

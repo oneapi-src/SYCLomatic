@@ -4296,6 +4296,22 @@ bool containBuiltinWarpSize(const clang::Stmt *Node) {
   return false;
 }
 
+TypeLoc getTypeLocIgnoreTypedef(const VarDecl *D) {
+  TypeLoc TL;
+  const ElaboratedType *ET = dyn_cast_or_null<ElaboratedType>(D->getType());
+  if (ET && ET->desugar()->getTypeClass() == clang::Type::Typedef) {
+    const TypedefType *TDT = dyn_cast<TypedefType>(ET->desugar());
+    if (isTypeInAnalysisScope(TDT) &&
+        TDT->desugar()->getTypeClass() == clang::Type::ConstantArray) {
+      TL = TDT->getDecl()->getTypeSourceInfo()->getTypeLoc();
+    }
+  }
+  if (D->getTypeSourceInfo() && TL.isNull()) {
+    TL = D->getTypeSourceInfo()->getTypeLoc();
+  }
+  return TL;
+}
+
 bool isCapturedByLambda(const clang::TypeLoc *TL) {
   using namespace dpct;
   const FieldDecl *FD = DpctGlobalInfo::findAncestor<clang::FieldDecl>(TL);

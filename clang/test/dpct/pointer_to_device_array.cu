@@ -12,3 +12,41 @@ __device__ void my_kernel() {
   int (*p)[4] = NULL;
   p = arr;
 }
+
+typedef float *aaa_t[5][6];
+// CHECK: static dpct::constant_memory<float *, 2> var1(5, 6);
+__constant__ aaa_t var1;
+
+__global__ void kernel1() {
+  aaa_t *ptr;
+  // CHECK: ptr = (aaa_t *)var1.get_ptr();
+  ptr = &var1;
+}
+
+// CHECK: static dpct::constant_memory<float *, 2> var2(5, 6);
+__constant__ float * var2[5][6];
+
+__global__ void kernel2() {
+  aaa_t *ptr;
+  // CHECK: ptr = (float *(*)[5][6])var2.get_ptr();
+  ptr = &var2;
+}
+
+typedef float *bbb_t[5];
+// CHECK: static dpct::constant_memory<float *, 2> var1(5, 6);
+__constant__ bbb_t var3;
+
+__global__ void kernel3() {
+  bbb_t *ptr;
+  // CHECK: ptr = (aaa_t *)var1.get_ptr();
+  ptr = &var3;
+}
+
+// CHECK: static dpct::constant_memory<float *, 2> var2(5, 6);
+__constant__ float * var4[5];
+
+__global__ void kernel4() {
+  bbb_t *ptr;
+  // CHECK: ptr = (float *(*)[5][6])var2.get_ptr();
+  ptr = &var4;
+}
