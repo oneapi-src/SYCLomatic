@@ -9515,8 +9515,8 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
     if (isCubVar(Decl)) {
       return;
     }
-    auto emplaceGetPtrRepl = [&](std::string &&Replacement,
-                                 const Stmt *ReplaceNode) {
+    auto GetReplRange =
+        [&](const Stmt *ReplaceNode) -> std::pair<SourceLocation, unsigned> {
       auto Range = getDefinitionRange(ReplaceNode->getBeginLoc(),
                                       ReplaceNode->getEndLoc());
       auto &SM = DpctGlobalInfo::getSourceManager();
@@ -9526,8 +9526,7 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
           End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
       Length +=
           SM.getDecomposedLoc(End).second - SM.getDecomposedLoc(Begin).second;
-      emplaceTransformation(
-          new ReplaceText(Begin, Length, std::move(Replacement)));
+      return std::make_pair(Begin, Length);
     };
     const auto *Parent = getParentStmt(MemVarRef);
     // 1. Handle assigning a 2 or more dimensions array pointer to a variable.
@@ -9536,13 +9535,15 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
         if (ICE->getCastKind() == CK_ArrayToPointerDecay &&
             arrType->getElementType()->isArrayType() &&
             isAssignOperator(getParentStmt(Parent))) {
-          emplaceGetPtrRepl(buildString("(", ICE->getType(), ")",
-                                        Decl->getName(), ".get_ptr()"),
-                            MemVarRef);
+          auto Range = GetReplRange(MemVarRef);
+          emplaceTransformation(
+              new ReplaceText(Range.first, Range.second,
+                              buildString("(", ICE->getType(), ")",
+                                          Decl->getName(), ".get_ptr()")));
         }
       }
     }
-    // 2. Handle addressof operation on dpct::accessor for 2 or more dimensions.
+    // 2. Handle addressof operation on dpct::accessor for 1 or more dimensions.
     else if (const UnaryOperator *UO =
                  dyn_cast_or_null<UnaryOperator>(Parent)) {
       if (!Decl->hasAttr<CUDASharedAttr>() && UO->getOpcode() == UO_AddrOf) {
@@ -9552,9 +9553,17 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
               static_cast<const ConstantArrayTypeLoc &>(TL);
           if (CATL.getElementLoc().getTypeLocClass() ==
               TypeLoc::ConstantArray) {
-            emplaceGetPtrRepl(buildString("(", UO->getType(), ")",
-                                          Decl->getName(), ".get_ptr()"),
-                              UO);
+            // Dim >= 2
+            auto Range = GetReplRange(UO);
+            emplaceTransformation(
+                new ReplaceText(Range.first, Range.second,
+                                buildString("(", UO->getType(), ")",
+                                            Decl->getName(), ".get_ptr()")));
+          } else {
+            // Dim == 1
+            auto Range = GetReplRange(UO);
+            emplaceTransformation(new InsertText(
+                Range.first, buildString("(", UO->getType(), ")")));
           }
         }
       }
