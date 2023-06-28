@@ -17,6 +17,7 @@ typedef float *aaa_t[5][6];
 // CHECK: static dpct::constant_memory<float *, 2> var1(5, 6);
 __constant__ aaa_t var1;
 
+// CHECK: void kernel1(dpct::accessor<float *, dpct::constant, 2> var1) {
 __global__ void kernel1() {
   aaa_t *ptr;
   // CHECK: ptr = (aaa_t *)var1.get_ptr();
@@ -24,8 +25,9 @@ __global__ void kernel1() {
 }
 
 // CHECK: static dpct::constant_memory<float *, 2> var2(5, 6);
-__constant__ float * var2[5][6];
+__constant__ float *var2[5][6];
 
+// CHECK: void kernel2(dpct::accessor<float *, dpct::constant, 2> var2) {
 __global__ void kernel2() {
   aaa_t *ptr;
   // CHECK: ptr = (float *(*)[5][6])var2.get_ptr();
@@ -36,6 +38,7 @@ typedef float *bbb_t[5];
 // CHECK: static dpct::constant_memory<float *, 1> var3(5);
 __constant__ bbb_t var3;
 
+// CHECK: void kernel3(float **var3) {
 __global__ void kernel3() {
   bbb_t *ptr;
   // CHECK: ptr = (bbb_t *)&var3;
@@ -43,8 +46,9 @@ __global__ void kernel3() {
 }
 
 // CHECK: static dpct::constant_memory<float *, 1> var4(5);
-__constant__ float * var4[5];
+__constant__ float *var4[5];
 
+// CHECK: void kernel4(float **var4) {
 __global__ void kernel4() {
   bbb_t *ptr;
   // CHECK: ptr = (float *(*)[5])&var4;
@@ -55,6 +59,7 @@ typedef float *ccc_t;
 // CHECK: static dpct::constant_memory<ccc_t, 0> var5;
 __constant__ ccc_t var5;
 
+// CHECK: void kernel5(ccc_t var5) {
 __global__ void kernel5() {
   ccc_t *ptr;
   // CHECK: ptr = &var5;
@@ -62,8 +67,9 @@ __global__ void kernel5() {
 }
 
 // CHECK: static dpct::constant_memory<float *, 0> var6;
-__constant__ float * var6;
+__constant__ float *var6;
 
+// CHECK: void kernel6(float * var6) {
 __global__ void kernel6() {
   ccc_t *ptr;
   // CHECK: ptr = &var6;

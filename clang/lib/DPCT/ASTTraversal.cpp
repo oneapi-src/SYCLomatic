@@ -9543,7 +9543,7 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
         }
       }
     }
-    // 2. Handle addressof operation on dpct::accessor for 1 or more dimensions.
+    // 2. Handle address-of operation for dim>=1.
     else if (const UnaryOperator *UO =
                  dyn_cast_or_null<UnaryOperator>(Parent)) {
       if (!Decl->hasAttr<CUDASharedAttr>() && UO->getOpcode() == UO_AddrOf) {
