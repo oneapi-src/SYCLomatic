@@ -12,7 +12,7 @@ env:
   TEST_TIMEOUT: 3600
 
 jobs:
-  lint:
+  clang-format:
     runs-on: build
     steps:
     - name: 'PR commits + 1'
