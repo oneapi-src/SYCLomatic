@@ -1490,7 +1490,7 @@ ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_group, sync, sync, false,
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_group, get_type, get_type, false, NO_FLAG, P4, "Comment")
 
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block, sync, sync, true, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block, thread_rank, thread_rank, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block, thread_rank, thread_rank, true, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block, group_index, group_index, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block, thread_index, thread_index, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block, dim_threads, dim_threads, false, NO_FLAG, P4, "Comment")
@@ -1536,9 +1536,9 @@ ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::multi_grid_group, grid_rank, gri
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::multi_grid_group, num_grids, num_grids, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::multi_grid_group, size, size, false, NO_FLAG, P4, "Comment")
 
-ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block_tile, sync, sync, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block_tile, sync, sync, true, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block_tile, num_threads, num_threads, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block_tile, thread_rank, thread_rank, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block_tile, thread_rank, thread_rank, true, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block_tile, meta_group_size, meta_group_size, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block_tile, meta_group_rank, meta_group_rank, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block_tile, shfl, shfl, false, NO_FLAG, P4, "Comment")
@@ -1550,7 +1550,7 @@ ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block_tile, all, all, fal
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block_tile, ballot, ballot, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block_tile, match_any, match_any, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block_tile, match_all, match_all, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block_tile, size, size, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block_tile, size, size, true, NO_FLAG, P4, "Comment")
 
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::coalesced_group, sync, sync, true, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::coalesced_group, num_threads, num_threads, false, NO_FLAG, P4, "Comment")
