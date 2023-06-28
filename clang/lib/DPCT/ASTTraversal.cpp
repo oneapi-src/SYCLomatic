@@ -11,7 +11,7 @@
 #include "AsmMigration.h"
 #include "BarrierFenceSpaceAnalyzer.h"
 #include "CallExprRewriter.h"
-#include "CustomHelperFiles.h"
+#include "CallExprRewriterCommon.h"
 #include "DNNAPIMigration.h"
 #include "ExprAnalysis.h"
 #include "FFTAPIMigration.h"
@@ -25,7 +25,6 @@
 #include "TextModification.h"
 #include "ThrustAPIMigration.h"
 #include "Utility.h"
-#include "CallExprRewriterCommon.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/Stmt.h"
 #include "clang/AST/TypeLoc.h"
@@ -941,15 +940,7 @@ void IncludesCallbacks::InclusionDirective(
 
   if ((FileName.compare(StringRef("cublas_v2.h")) == 0) ||
       (FileName.compare(StringRef("cublas.h")) == 0)) {
-    if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_None ||
-        DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_BLAS_Utils);
-    } else {
-      DpctGlobalInfo::getInstance().insertHeader(
-          HashLoc, HT_MKL_Mkl);
-    }
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_BLAS_Utils);
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
 
@@ -963,15 +954,7 @@ void IncludesCallbacks::InclusionDirective(
   // Replace with <oneapi/mkl.hpp> and <oneapi/mkl/rng/device.hpp>
   if ((FileName.compare(StringRef("curand.h")) == 0) ||
       (FileName.compare(StringRef("curand_kernel.h")) == 0)) {
-    if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_None ||
-        DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_RNG_Utils);
-    } else {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_RNG);
-    }
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_RNG_Utils);
     DpctGlobalInfo::setMKLHeaderUsed(true);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
@@ -983,16 +966,8 @@ void IncludesCallbacks::InclusionDirective(
   // Replace with <mkl_spblas_sycl.hpp>
   if ((FileName.compare(StringRef("cusparse.h")) == 0) ||
       (FileName.compare(StringRef("cusparse_v2.h")) == 0)) {
-    if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_None ||
-        DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_SPBLAS_Utils);
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_BLAS_Utils);
-    } else {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_Mkl);
-    }
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_SPBLAS_Utils);
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_BLAS_Utils);
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
 
@@ -1004,15 +979,7 @@ void IncludesCallbacks::InclusionDirective(
   }
 
   if (FileName.compare(StringRef("cufft.h")) == 0) {
-    if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_None ||
-        DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_FFT_Utils);
-    } else {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_Mkl);
-    }
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_FFT_Utils);
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
 
@@ -1024,15 +991,7 @@ void IncludesCallbacks::InclusionDirective(
   }
 
   if (FileName.compare(StringRef("cusolverDn.h")) == 0) {
-    if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_None ||
-        DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_LAPACK_Utils);
-    } else {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_Mkl);
-    }
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_LAPACK_Utils);
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
 
@@ -2720,13 +2679,8 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     if (TypeStr == "libraryPropertyType" ||
         TypeStr == "libraryPropertyType_t" || TypeStr == "cudaDataType_t" ||
         TypeStr == "cudaDataType" || TypeStr == "cublasComputeType_t") {
-      if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-              HelperFilesCustomizationLevel::HFCL_None ||
-          DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-              HelperFilesCustomizationLevel::HFCL_All) {
-        DpctGlobalInfo::getInstance().insertHeader(BeginLoc,
-                                                   HT_DPCT_COMMON_Utils);
-      }
+      DpctGlobalInfo::getInstance().insertHeader(BeginLoc,
+                                                 HT_DPCT_COMMON_Utils);
     }
 
     const DeclaratorDecl *DD = nullptr;
@@ -3558,7 +3512,7 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
   if (auto *BO = Parents[0].get<clang::BinaryOperator>()) {
   // migrate to set_XXX() eg. "a.minor = 1" to "a.set_minor_version(1)"
     if (BO->getOpcode() == clang::BO_Assign) {
-      requestFeature(PropToSetFeatureMap.at(MemberName));
+      requestFeature(MapNames::PropToSetFeatureMap.at(MemberName));
       emplaceTransformation(
           new RenameFieldInMemberExpr(ME, "set_" + Search->second));
       emplaceTransformation(new ReplaceText(BO->getOperatorLoc(), 1, "("));
@@ -3568,7 +3522,7 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (auto *OCE = Parents[0].get<clang::CXXOperatorCallExpr>()) {
   // migrate to set_XXX() for types with an overloaded = operator
     if (OCE->getOperator() == clang::OverloadedOperatorKind::OO_Equal) {
-      requestFeature(PropToSetFeatureMap.at(MemberName));
+      requestFeature(MapNames::PropToSetFeatureMap.at(MemberName));
       emplaceTransformation(
           new RenameFieldInMemberExpr(ME, "set_" + Search->second));
       emplaceTransformation(new ReplaceText(OCE->getOperatorLoc(), 1, "("));
@@ -3576,7 +3530,7 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
       return ;
     }
   }
-  requestFeature(PropToGetFeatureMap.at(MemberName));
+  requestFeature(MapNames::PropToGetFeatureMap.at(MemberName));
   emplaceTransformation(new RenameFieldInMemberExpr(
     ME, "get_" + Search->second + TmplArg + "()")); 
   return ;
@@ -3694,15 +3648,10 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
       if (ETD->getName().str() == "libraryPropertyType_t" ||
           ETD->getName().str() == "cudaDataType_t" ||
           ETD->getName().str() == "cublasComputeType_t") {
-        if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-                HelperFilesCustomizationLevel::HFCL_None ||
-            DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-                HelperFilesCustomizationLevel::HFCL_All) {
-          DpctGlobalInfo::getInstance().insertHeader(
-              DpctGlobalInfo::getSourceManager().getExpansionLoc(
-                  E->getBeginLoc()),
-              HT_DPCT_COMMON_Utils);
-        }
+        DpctGlobalInfo::getInstance().insertHeader(
+            DpctGlobalInfo::getSourceManager().getExpansionLoc(
+                E->getBeginLoc()),
+            HT_DPCT_COMMON_Utils);
       }
     }
   }
@@ -5841,13 +5790,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cublasGetVersion" ||
              FuncName == "cublasGetVersion_v2") {
     if (FuncName == "cublasGetVersion" || FuncName == "cublasGetVersion_v2") {
-      if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-              HelperFilesCustomizationLevel::HFCL_None ||
-          DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-              HelperFilesCustomizationLevel::HFCL_All) {
-        DpctGlobalInfo::getInstance().insertHeader(
-            SM->getExpansionLoc(CE->getBeginLoc()), HT_DPCT_COMMON_Utils);
-      }
+      DpctGlobalInfo::getInstance().insertHeader(
+          SM->getExpansionLoc(CE->getBeginLoc()), HT_DPCT_COMMON_Utils);
     }
 
     ExprAnalysis EA(CE);
@@ -13035,11 +12979,13 @@ void TextureRule::replaceTextureMember(const MemberExpr *ME,
     if (MethodName.empty()) {
       requestFeature(HelperFeatureEnum::device_ext);
     } else {
-      if (SamplingInfoToSetFeatureMap.count(MethodName.str())) {
-        requestFeature(SamplingInfoToSetFeatureMap.at(MethodName.str()));
+      if (MapNames::SamplingInfoToSetFeatureMap.count(MethodName.str())) {
+        requestFeature(
+            MapNames::SamplingInfoToSetFeatureMap.at(MethodName.str()));
       }
-      if (ImageWrapperBaseToSetFeatureMap.count(MethodName.str())) {
-        requestFeature(ImageWrapperBaseToSetFeatureMap.at(MethodName.str()));
+      if (MapNames::ImageWrapperBaseToSetFeatureMap.count(MethodName.str())) {
+        requestFeature(
+            MapNames::ImageWrapperBaseToSetFeatureMap.at(MethodName.str()));
       }
     }
     emplaceTransformation(ReplaceMemberAssignAsSetMethod(
@@ -13052,11 +12998,11 @@ void TextureRule::replaceTextureMember(const MemberExpr *ME,
     } else {
       emplaceTransformation(new RenameFieldInMemberExpr(
           ME, buildString("get_", ReplField, "()")));
-      if (SamplingInfoToGetFeatureMap.count(ReplField)) {
-        requestFeature(SamplingInfoToGetFeatureMap.at(ReplField));
+      if (MapNames::SamplingInfoToGetFeatureMap.count(ReplField)) {
+        requestFeature(MapNames::SamplingInfoToGetFeatureMap.at(ReplField));
       }
-      if (ImageWrapperBaseToGetFeatureMap.count(ReplField)) {
-        requestFeature(ImageWrapperBaseToGetFeatureMap.at(ReplField));
+      if (MapNames::ImageWrapperBaseToGetFeatureMap.count(ReplField)) {
+        requestFeature(MapNames::ImageWrapperBaseToGetFeatureMap.at(ReplField));
       }
     }
   }
@@ -13927,13 +13873,8 @@ void FFTFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
 
   if (FuncName == "cufftGetVersion" || FuncName == "cufftGetProperty") {
-    if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_None ||
-        DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
-            HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(
-          SM.getExpansionLoc(CE->getBeginLoc()), HT_DPCT_COMMON_Utils);
-    }
+    DpctGlobalInfo::getInstance().insertHeader(
+        SM.getExpansionLoc(CE->getBeginLoc()), HT_DPCT_COMMON_Utils);
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();

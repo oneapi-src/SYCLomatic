@@ -8,7 +8,7 @@
 
 #ifndef DPCT_RULES_H
 #define DPCT_RULES_H
-#include "CustomHelperFiles.h"
+#include "Utility.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/YAMLTraits.h"
 #include <string>
