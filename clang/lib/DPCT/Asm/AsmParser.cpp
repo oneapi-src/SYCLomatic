@@ -398,7 +398,7 @@ InlineAsmExprResult InlineAsmParser::ParseCastExpression() {
       if (Res.isInvalid())
         return AsmExprError();
       Tuple.push_back(Res.get());
-      if (Tok.isNot(asmtok::comma))
+      if ((!TryConsumeToken(asmtok::comma)))
         break;
     }
 
