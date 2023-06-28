@@ -576,12 +576,7 @@ void ExprAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
 }
 
 void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
-  std::string TypeName = DpctGlobalInfo::getUnqualifiedTypeName(
-      Temp->getType().getCanonicalType());
-  if ((StringRef(TypeName).startswith("cub::") &&
-       CubTypeRule::CanMappingToSyclType(TypeName)) ||
-       StringRef(TypeName).startswith("thrust::") ||
-       StringRef(TypeName).startswith("cooperative_groups::")) {
+  if (Temp->getConstructor()->getDeclName().getAsString() != "dim3") {
     analyzeType(Temp->getTypeSourceInfo()->getTypeLoc());
   }
   analyzeExpr(static_cast<const CXXConstructExpr *>(Temp));

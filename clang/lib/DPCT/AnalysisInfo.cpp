@@ -1472,8 +1472,10 @@ void KernelCallExpr::buildKernelArgsStmt() {
         }
       }
     } else if (Arg.IsRedeclareRequired || IsInMacroDefine) {
+      const auto &TypeStr = Arg.getTypeString();
       SubmitStmtsList.CommandGroupList.emplace_back(buildString(
-          "auto ", Arg.getIdStringWithIndex(), " = ", Arg.getArgString(), ";"));
+          TypeStr.empty() ? "auto " : TypeStr + " ", Arg.getIdStringWithIndex(),
+          " = ", Arg.getArgString(), ";"));
       KernelArgs += Arg.getIdStringWithIndex();
     } else if (Arg.Texture) {
       ParameterStream OS;

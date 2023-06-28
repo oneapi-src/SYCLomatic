@@ -47,9 +47,9 @@ struct TestThis {
   void test() {
     // CHECK: dpct::get_default_queue().submit(
     // CHECK-NEXT:   [&](sycl::handler &cgh) {
-    // CHECK-NEXT:     auto args_arg1_ct0 = args.arg1;
-    // CHECK-NEXT:     auto args_arg2_ct1 = args.arg2;
-    // CHECK-NEXT:     auto arg3_ct2 = arg3;
+    // CHECK-NEXT:     int args_arg1_ct0 = args.arg1;
+    // CHECK-NEXT:     int args_arg2_ct1 = args.arg2;
+    // CHECK-NEXT:     int arg3_ct2 = arg3;
     // CHECK-EMPTY:
     // CHECK-NEXT:     cgh.parallel_for(
     // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
@@ -125,9 +125,9 @@ public:
   int run_foo() {
     // CHECK: dpct::get_default_queue().submit(
     // CHECK-NEXT:   [&](sycl::handler &cgh) {
-    // CHECK-NEXT:     auto a_ct0 = a;
-    // CHECK-NEXT:     auto aa_b_ct1 = aa.b;
-    // CHECK-NEXT:     auto aa_c_d_ct2 = aa.c.d;
+    // CHECK-NEXT:     int a_ct0 = a;
+    // CHECK-NEXT:     int aa_b_ct1 = aa.b;
+    // CHECK-NEXT:     int aa_c_d_ct2 = aa.c.d;
     // CHECK-EMPTY:
     // CHECK-NEXT:     cgh.parallel_for(
     // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),

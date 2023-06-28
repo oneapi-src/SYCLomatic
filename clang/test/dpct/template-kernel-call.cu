@@ -19,8 +19,8 @@ __global__ void kernel(int a, int b){
 // CHECK-NEXT:   void run(){
 // CHECK-NEXT:     dpct::get_default_queue().submit(
 // CHECK-NEXT:       [&](sycl::handler &cgh) {
-// CHECK-NEXT:         auto this_a_ct0 = this->a;
-// CHECK-NEXT:         auto ptest_data_ct1 = ptest->data;
+// CHECK-NEXT:         int this_a_ct0 = this->a;
+// CHECK-NEXT:         int ptest_data_ct1 = ptest->data;
 // CHECK-EMPTY:
 // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -220,7 +220,7 @@ int main() {
   // CHECK-NEXT:*/
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto ktarg_ct2 = ktarg;
+  // CHECK-NEXT:       int ktarg_ct2 = ktarg;
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, LA>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 10) * sycl::range<3>(1, 1, intvar), sycl::range<3>(1, 1, intvar)),
