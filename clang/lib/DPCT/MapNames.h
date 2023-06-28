@@ -9,7 +9,6 @@
 #ifndef DPCT_MAPNAMES_H
 #define DPCT_MAPNAMES_H
 
-#include "CustomHelperFiles.h"
 #include "Rules.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
@@ -369,6 +368,19 @@ public:
   static std::unordered_set<std::string> SPARSEAPIWithRewriter;
 
   static const std::unordered_set<std::string> CooperativeGroupsAPISet;
+
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      PropToGetFeatureMap;
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      PropToSetFeatureMap;
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      SamplingInfoToSetFeatureMap;
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      SamplingInfoToGetFeatureMap;
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      ImageWrapperBaseToSetFeatureMap;
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      ImageWrapperBaseToGetFeatureMap;
 
   template<class T>
   inline static const std::string &findReplacedName(

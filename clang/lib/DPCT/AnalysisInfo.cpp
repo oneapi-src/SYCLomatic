@@ -54,9 +54,6 @@ UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
 bool DpctGlobalInfo::NeedDpctDeviceExt = false;
 bool DpctGlobalInfo::IsIncMigration = true;
 unsigned int DpctGlobalInfo::AssumedNDRangeDim = 3;
-HelperFilesCustomizationLevel DpctGlobalInfo::HelperFilesCustomizationLvl =
-    HelperFilesCustomizationLevel::HFCL_None;
-std::string DpctGlobalInfo::CustomHelperFileName = "dpct";
 std::unordered_set<std::string> DpctGlobalInfo::PrecAndDomPairSet;
 format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
 DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::FS_LLVM;

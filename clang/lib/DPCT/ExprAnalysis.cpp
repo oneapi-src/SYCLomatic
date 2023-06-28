@@ -726,15 +726,16 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
         // Similar code in ASTTraversal.cpp
         TmplArg = "<int *>";
       }
-      addReplacement(ME->getMemberLoc(), "get_" + ReplacementStr + TmplArg + "()");
-      requestFeature(
-          PropToGetFeatureMap.at(ME->getMemberNameInfo().getAsString()));
+      addReplacement(ME->getMemberLoc(),
+                     "get_" + ReplacementStr + TmplArg + "()");
+      requestFeature(MapNames::PropToGetFeatureMap.at(
+          ME->getMemberNameInfo().getAsString()));
     }
   } else if (BaseType == "textureReference") {
     std::string FieldName = ME->getMemberDecl()->getName().str();
     if (MapNames::replaceName(TextureRule::TextureMemberNames, FieldName)) {
       addReplacement(ME->getMemberLoc(), buildString("get_", FieldName, "()"));
-      requestFeature(ImageWrapperBaseToGetFeatureMap.at(FieldName));
+      requestFeature(MapNames::ImageWrapperBaseToGetFeatureMap.at(FieldName));
     }
   } else if (MapNames::SupportedVectorTypes.find(BaseType) !=
              MapNames::SupportedVectorTypes.end()) {
