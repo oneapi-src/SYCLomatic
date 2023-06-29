@@ -12040,23 +12040,18 @@ void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
         V, MapNames::getDpctNamespace() + "kernel_function_info"));
     requestFeature(HelperFeatureEnum::device_ext);
   } else if (auto C = getNodeAsType<CallExpr>(Result, "call")) {
-<<<<<<< HEAD
     if (isAssigned(C)) {
-      requestFeature(HelperFeatureEnum::Dpct_check_error_code, C);
+      requestFeature(HelperFeatureEnum::device_ext);
       emplaceTransformation(new ReplaceToken(
-=======
-    requestFeature(HelperFeatureEnum::device_ext);
-    emplaceTransformation(new ReplaceToken(
->>>>>>> upstream_syclomatic/SYCLomatic
-        C->getBeginLoc(), "DPCT_CHECK_ERROR(" + MapNames::getDpctNamespace() +
-                              "get_kernel_function_info"));
+          C->getBeginLoc(), "DPCT_CHECK_ERROR(" + MapNames::getDpctNamespace() +
+                                "get_kernel_function_info"));
       emplaceTransformation(new InsertAfterStmt(C, ")"));
     } else {
-       emplaceTransformation(new ReplaceToken(
-        C->getBeginLoc(), MapNames::getDpctNamespace() +
-                              "get_kernel_function_info"));
+      emplaceTransformation(
+          new ReplaceToken(C->getBeginLoc(), MapNames::getDpctNamespace() +
+                                                 "get_kernel_function_info"));
     }
-    requestFeature(HelperFeatureEnum::Kernel_get_kernel_function_info, C);
+    requestFeature(HelperFeatureEnum::device_ext);
     auto FuncArg = C->getArg(1);
     emplaceTransformation(new InsertBeforeStmt(FuncArg, "(const void *)"));
   } else if (auto C = getNodeAsType<CallExpr>(Result, "callFuncGetAttribute")) {
