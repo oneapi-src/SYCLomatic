@@ -420,74 +420,7 @@ public:
       throw std::runtime_error("the sparse matrix data format is unsupported");
     }
     oneapi::mkl::sparse::init_matrix_handle(&_matrix_handle);
-#define SET_DATA(INDEX_TYPE, VALUE_TYPE)                                       \
-  do {                                                                         \
-    auto data_row_ptr =                                                        \
-        detail::get_memory(reinterpret_cast<INDEX_TYPE *>(_row_ptr));          \
-    auto data_col_ind =                                                        \
-        detail::get_memory(reinterpret_cast<INDEX_TYPE *>(_col_ind));          \
-    auto data_value =                                                          \
-        detail::get_memory(reinterpret_cast<VALUE_TYPE *>(_value));            \
-    oneapi::mkl::sparse::set_csr_data(get_default_queue(), _matrix_handle,     \
-                                      _row_num, _col_num, _base, data_row_ptr, \
-                                      data_col_ind, data_value);               \
-    get_default_queue().wait();                                                \
-  } while (0)
-    std::uint64_t key = detail::get_type_combination_id(
-        _row_ptr_type, _col_ind_type, _value_type);
-    switch (key) {
-    case detail::get_type_combination_id(library_data_t::real_int32,
-                                         library_data_t::real_int32,
-                                         library_data_t::real_float): {
-      SET_DATA(std::int32_t, float);
-      break;
-    }
-    case detail::get_type_combination_id(library_data_t::real_int32,
-                                         library_data_t::real_int32,
-                                         library_data_t::real_double): {
-      SET_DATA(std::int32_t, double);
-      break;
-    }
-    case detail::get_type_combination_id(library_data_t::real_int32,
-                                         library_data_t::real_int32,
-                                         library_data_t::complex_float): {
-      SET_DATA(std::int32_t, std::complex<float>);
-      break;
-    }
-    case detail::get_type_combination_id(library_data_t::real_int32,
-                                         library_data_t::real_int32,
-                                         library_data_t::complex_double): {
-      SET_DATA(std::int32_t, std::complex<double>);
-      break;
-    }
-    case detail::get_type_combination_id(library_data_t::real_int64,
-                                         library_data_t::real_int64,
-                                         library_data_t::real_float): {
-      SET_DATA(std::int64_t, float);
-      break;
-    }
-    case detail::get_type_combination_id(library_data_t::real_int64,
-                                         library_data_t::real_int64,
-                                         library_data_t::real_double): {
-      SET_DATA(std::int64_t, double);
-      break;
-    }
-    case detail::get_type_combination_id(library_data_t::real_int64,
-                                         library_data_t::real_int64,
-                                         library_data_t::complex_float): {
-      SET_DATA(std::int64_t, std::complex<float>);
-      break;
-    }
-    case detail::get_type_combination_id(library_data_t::real_int64,
-                                         library_data_t::real_int64,
-                                         library_data_t::complex_double): {
-      SET_DATA(std::int64_t, std::complex<double>);
-      break;
-    }
-    default:
-      throw std::runtime_error("the combination of data type is unsupported");
-    }
-#undef SET_DATA
+    constrcut();
   }
   /// Destructor
   ~sparse_matrix_desc() {
@@ -545,7 +478,12 @@ public:
   void get_value(void **value) const noexcept { *value = _value; }
   /// Set the value pointer of this descriptor
   /// \param [in] value The input value pointer
-  void set_value(void *value) { _value = value; }
+  void set_value(void *value) {   
+    // Assume the new data is different from the old data
+    optimized_matrix_info.reset();
+    _value = value;
+    constrcut();
+  }
   /// Get the size of the sparse matrix
   /// \param [out] row_num Number of rows of the sparse matrix.
   /// \param [out] col_num Number of colums of the sparse matrix.
@@ -620,9 +558,81 @@ public:
     _row_ptr = row_ptr;
     _col_ind = col_ind;
     _value = value;
+    constrcut();
   }
 
 private:
+  void constrcut() {
+#define SET_DATA(INDEX_TYPE, VALUE_TYPE)                                       \
+  do {                                                                         \
+    auto data_row_ptr =                                                        \
+        detail::get_memory(reinterpret_cast<INDEX_TYPE *>(_row_ptr));          \
+    auto data_col_ind =                                                        \
+        detail::get_memory(reinterpret_cast<INDEX_TYPE *>(_col_ind));          \
+    auto data_value =                                                          \
+        detail::get_memory(reinterpret_cast<VALUE_TYPE *>(_value));            \
+    oneapi::mkl::sparse::set_csr_data(get_default_queue(), _matrix_handle,     \
+                                      _row_num, _col_num, _base, data_row_ptr, \
+                                      data_col_ind, data_value);               \
+    get_default_queue().wait();                                                \
+  } while (0)
+
+    std::uint64_t key = detail::get_type_combination_id(
+        _row_ptr_type, _col_ind_type, _value_type);
+    switch (key) {
+    case detail::get_type_combination_id(library_data_t::real_int32,
+                                         library_data_t::real_int32,
+                                         library_data_t::real_float): {
+      SET_DATA(std::int32_t, float);
+      break;
+    }
+    case detail::get_type_combination_id(library_data_t::real_int32,
+                                         library_data_t::real_int32,
+                                         library_data_t::real_double): {
+      SET_DATA(std::int32_t, double);
+      break;
+    }
+    case detail::get_type_combination_id(library_data_t::real_int32,
+                                         library_data_t::real_int32,
+                                         library_data_t::complex_float): {
+      SET_DATA(std::int32_t, std::complex<float>);
+      break;
+    }
+    case detail::get_type_combination_id(library_data_t::real_int32,
+                                         library_data_t::real_int32,
+                                         library_data_t::complex_double): {
+      SET_DATA(std::int32_t, std::complex<double>);
+      break;
+    }
+    case detail::get_type_combination_id(library_data_t::real_int64,
+                                         library_data_t::real_int64,
+                                         library_data_t::real_float): {
+      SET_DATA(std::int64_t, float);
+      break;
+    }
+    case detail::get_type_combination_id(library_data_t::real_int64,
+                                         library_data_t::real_int64,
+                                         library_data_t::real_double): {
+      SET_DATA(std::int64_t, double);
+      break;
+    }
+    case detail::get_type_combination_id(library_data_t::real_int64,
+                                         library_data_t::real_int64,
+                                         library_data_t::complex_float): {
+      SET_DATA(std::int64_t, std::complex<float>);
+      break;
+    }
+    case detail::get_type_combination_id(library_data_t::real_int64,
+                                         library_data_t::real_int64,
+                                         library_data_t::complex_double): {
+      SET_DATA(std::int64_t, std::complex<double>);
+      break;
+    }
+    default:
+      throw std::runtime_error("the combination of data type is unsupported");
+    }
+#undef SET_DATA
+  }
   enum class routine_name { gemv, trmv, trsv };
   std::optional<std::tuple<routine_name, oneapi::mkl::transpose,
                            std::optional<oneapi::mkl::uplo>,
