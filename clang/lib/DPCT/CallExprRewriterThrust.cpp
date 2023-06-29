@@ -308,14 +308,14 @@ thrustOverloadFactory(const std::string &thrustFunc,
   auto not_usm = createIfElseRewriterFactory(
       thrustFunc,
       createFeatureRequestFactory(
-          HelperFeatureEnum::Memory_is_device_ptr,
+          HelperFeatureEnum::device_ext,
           {thrustFunc,
            createCallExprRewriterFactory(
                thrustFunc,
                makeCallExprCreator(
                    MapNames::getDpctNamespace() + "is_device_ptr", ARG(Idx)))}),
       createFeatureRequestFactory(
-          HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          HelperFeatureEnum::device_ext,
           {thrustFunc, createDevicePolicyCallExprRewriterFactory(
                            thrustFunc, overload.migratedFunc, overload.argCnt,
                            overload.ptrCnt, overload.policyState)}),

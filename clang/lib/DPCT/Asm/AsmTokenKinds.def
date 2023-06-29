@@ -245,6 +245,8 @@ INSTRUCTION(wmma)
 INSTRUCTION(xor)
 
 BUILTIN_ID(laneid, "%laneid", s64)
+BUILTIN_ID(warpid, "%warpid", s64)
+BUILTIN_ID(WARP_SZ, "WARP_SZ", s64)
 
 BUILTIN_TYPE(b8,      ".b8")
 BUILTIN_TYPE(b16,     ".b16")

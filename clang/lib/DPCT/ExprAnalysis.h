@@ -9,7 +9,6 @@
 #ifndef DPCT_EXPR_ANALYSIS_H
 #define DPCT_EXPR_ANALYSIS_H
 
-#include "CustomHelperFiles.h"
 #include "Statics.h"
 #include "TextModification.h"
 

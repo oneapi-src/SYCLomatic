@@ -34,7 +34,7 @@ TYPE_REWRITE_ENTRY(
     "thrust::not_equal_to",
     TYPE_FACTORY(STR("std::not_equal_to"), TEMPLATE_ARG(0)))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasIterators_constant_iterator,
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
 TYPE_REWRITE_ENTRY(
     "thrust::constant_iterator",
     TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "constant_iterator"),
@@ -64,7 +64,7 @@ TYPE_REWRITE_ENTRY("cub::ConstantInputIterator",
                    TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "constant_iterator"), TEMPLATE_ARG(0))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DplExtrasIterators_arg_index_input_iterator,
+    HelperFeatureEnum::device_ext,
     TYPE_REWRITE_ENTRY("cub::ArgIndexInputIterator",
                        HEADER_INSERTION_FACTORY(
                            HeaderType::HT_DPCT_DPL_Utils,
@@ -90,8 +90,13 @@ TYPE_REWRITE_ENTRY("cub::Max",
 
 TYPE_REWRITE_ENTRY("cub::Equality", TYPE_FACTORY(STR("std::equal_to"), STR("")))
 
+TYPE_REWRITE_ENTRY(
+    "cub::NullType",
+    HEADER_INSERTION_FACTORY(HeaderType::HT_DPCT_DPL_Utils,
+                             TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "null_type"))))
+
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DplExtrasIterators_key_value_pair,
+    HelperFeatureEnum::device_ext,
     TYPE_REWRITE_ENTRY("cub::KeyValuePair",
                        HEADER_INSERTION_FACTORY(
                            HeaderType::HT_DPCT_DPL_Utils,
@@ -99,14 +104,14 @@ FEATURE_REQUEST_FACTORY(
                                         TEMPLATE_ARG(0), TEMPLATE_ARG(1)))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::Memory_usm_host_allocator_alias,
+    HelperFeatureEnum::device_ext,
     TYPE_REWRITE_ENTRY("thrust::system::cuda::experimental::pinned_allocator",
                        TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
                                         "deprecated::usm_host_allocator"),
                                     TEMPLATE_ARG(0))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::Memory_usm_host_allocator_alias,
+    HelperFeatureEnum::device_ext,
     TYPE_REWRITE_ENTRY("thrust::cuda::experimental::pinned_allocator",
                        TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
                                         "deprecated::usm_host_allocator"),

@@ -9,7 +9,6 @@
 #ifndef DPCT_ANALYSIS_INFO_H
 #define DPCT_ANALYSIS_INFO_H
 
-#include "CustomHelperFiles.h"
 #include "Error.h"
 #include "ExprAnalysis.h"
 #include "ExtReplacements.h"
@@ -20,8 +19,8 @@
 #include "Utility.h"
 #include "ValidateArguments.h"
 #include <bitset>
-#include <unordered_set>
 #include <optional>
+#include <unordered_set>
 #include <vector>
 
 #include "clang/AST/Attr.h"
@@ -952,20 +951,6 @@ public:
   }
   inline static void setAssumedNDRangeDim(unsigned int Dim) {
     AssumedNDRangeDim = Dim;
-  }
-  inline static HelperFilesCustomizationLevel
-  getHelperFilesCustomizationLevel() {
-    return HelperFilesCustomizationLvl;
-  }
-  inline static void
-  setHelperFilesCustomizationLevel(HelperFilesCustomizationLevel Lvl) {
-    HelperFilesCustomizationLvl = Lvl;
-  }
-  inline static std::string getCustomHelperFileName() {
-    return CustomHelperFileName;
-  }
-  inline static void setCustomHelperFileName(const std::string &Name) {
-    CustomHelperFileName = Name;
   }
 
   inline static bool getUsingExtensionDE(DPCPPExtensionsDefaultEnabled Ext) {
@@ -2050,8 +2035,6 @@ private:
   static bool NeedDpctDeviceExt;
   static bool IsIncMigration;
   static unsigned int AssumedNDRangeDim;
-  static HelperFilesCustomizationLevel HelperFilesCustomizationLvl;
-  static std::string CustomHelperFileName;
   static std::unordered_set<std::string> PrecAndDomPairSet;
   static format::FormatRange FmtRng;
   static DPCTFormatStyle FmtST;
@@ -2350,7 +2333,7 @@ public:
   inline void requestFeatureForSet(const std::string &Path) {
     if (Ty) {
       for (const auto &Item : Ty->getHelperFeatureSet()) {
-        requestFeature(Item, Path);
+        requestFeature(Item);
       }
     }
   }
@@ -2557,7 +2540,7 @@ private:
   const std::string &getMemoryAttr();
   std::string getSyclAccessorType();
   std::string getDpctAccessorType() {
-    requestFeature(HelperFeatureEnum::Memory_dpct_accessor, getFilePath());
+    requestFeature(HelperFeatureEnum::device_ext);
     auto Type = getType();
     return buildString(MapNames::getDpctNamespace(true), "accessor<",
                        getAccessorDataType(), ", ", getMemoryAttr(), ", ",
@@ -2747,7 +2730,7 @@ public:
   virtual std::string getHostDeclString() {
     ParameterStream PS;
     Type->prepareForImage();
-    requestFeature(HelperFeatureEnum::Image_image_wrapper, FilePath);
+    requestFeature(HelperFeatureEnum::device_ext);
 
     getDecl(PS, "image_wrapper") << ";";
     Type->endForImage();
@@ -2755,13 +2738,12 @@ public:
   }
 
   virtual std::string getSamplerDecl() {
-    requestFeature(HelperFeatureEnum::Image_image_wrapper_base_get_sampler,
-                   FilePath);
+    requestFeature(HelperFeatureEnum::device_ext);
     return buildString("auto ", NewVarName, "_smpl = ", Name,
                        ".get_sampler();");
   }
   virtual std::string getAccessorDecl(const std::string &QueueStr) {
-    requestFeature(HelperFeatureEnum::Image_image_wrapper_get_access, FilePath);
+    requestFeature(HelperFeatureEnum::device_ext);
     std::string Ret;
     llvm::raw_string_ostream OS(Ret);
     OS << "auto " << NewVarName << "_acc = " << Name << ".get_access(cgh";
@@ -2775,12 +2757,12 @@ public:
   }
 
   inline ParameterStream &getFuncDecl(ParameterStream &PS) {
-    requestFeature(HelperFeatureEnum::Image_image_accessor_ext, FilePath);
+    requestFeature(HelperFeatureEnum::device_ext);
     return getDecl(PS, "image_accessor_ext");
   }
   inline ParameterStream &getFuncArg(ParameterStream &PS) { return PS << Name; }
   virtual ParameterStream &getKernelArg(ParameterStream &OS) {
-    requestFeature(HelperFeatureEnum::Image_image_accessor_ext, FilePath);
+    requestFeature(HelperFeatureEnum::device_ext);
     getType()->printType(OS,
                          MapNames::getDpctNamespace() + "image_accessor_ext");
     OS << "(" << NewVarName << "_smpl, " << NewVarName << "_acc)";
@@ -2829,20 +2811,18 @@ public:
         << " *>(" << Name << ")->get_access(cgh";
     printQueueStr(PS, QueueString);
     PS << ");";
-    requestFeature(HelperFeatureEnum::Image_image_wrapper_get_access, FilePath);
-    requestFeature(HelperFeatureEnum::Image_image_wrapper, FilePath);
+    requestFeature(HelperFeatureEnum::device_ext);
     return PS.Str;
   }
   std::string getSamplerDecl() override {
-    requestFeature(HelperFeatureEnum::Image_image_wrapper_base_get_sampler,
-                   FilePath);
+    requestFeature(HelperFeatureEnum::device_ext);
     return buildString("auto ", NewVarName, "_smpl = ", Name,
                        "->get_sampler();");
   }
   inline unsigned getParamIdx() const { return ParamIdx; }
 
   std::string getParamDeclType() {
-    requestFeature(HelperFeatureEnum::Image_image_accessor_ext, FilePath);
+    requestFeature(HelperFeatureEnum::device_ext);
     ParameterStream PS;
     Type->printType(PS, MapNames::getDpctNamespace() + "image_accessor_ext");
     return PS.Str;
@@ -2876,8 +2856,7 @@ public:
   CudaLaunchTextureObjectInfo(const ParmVarDecl *PVD, const std::string &ArgStr)
       : TextureObjectInfo(static_cast<const VarDecl *>(PVD)), ArgStr(ArgStr) {}
   std::string getAccessorDecl(const std::string &QueueString) override {
-    requestFeature(HelperFeatureEnum::Image_image_wrapper, FilePath);
-    requestFeature(HelperFeatureEnum::Image_image_wrapper_get_access, FilePath);
+    requestFeature(HelperFeatureEnum::device_ext);
     ParameterStream PS;
     PS << "auto " << Name << "_acc = static_cast<";
     getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
@@ -2887,8 +2866,7 @@ public:
     return PS.Str;
   }
   std::string getSamplerDecl() override {
-    requestFeature(HelperFeatureEnum::Image_image_wrapper_base_get_sampler,
-                   FilePath);
+    requestFeature(HelperFeatureEnum::device_ext);
     return buildString("auto ", Name, "_smpl = (", ArgStr, ")->get_sampler();");
   }
 };
@@ -3969,8 +3947,8 @@ public:
 
 private:
   struct ArgInfo {
-    ArgInfo(KernelArgumentAnalysis &Analysis, const Expr *Arg, bool Used,
-            int Index, KernelCallExpr *BASE)
+    ArgInfo(const ParmVarDecl *PVD, KernelArgumentAnalysis &Analysis,
+            const Expr *Arg, bool Used, int Index, KernelCallExpr *BASE)
         : IsPointer(false), IsRedeclareRequired(false),
           IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
       Analysis.analyze(Arg);
@@ -4015,6 +3993,9 @@ private:
         else
           ArgSize =
               MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Default);
+        if (PVD) {
+          TypeString = DpctGlobalInfo::getReplacedTypeName(PVD->getType());
+        }
       }
       if (IsRedeclareRequired || IsPointer || BASE->IsInMacroDefine) {
         IdString = getTempNameForExpr(Arg, false, true, BASE->IsInMacroDefine,
@@ -4182,7 +4163,9 @@ private:
         bool Used = true;
         if (auto *ArgDRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
           Used = isArgUsedAsLvalueUntil(ArgDRE, CE);
-        ArgsInfo.emplace_back(Analysis, Arg, Used, Idx, this);
+        const auto FD = CE->getDirectCallee();
+        ArgsInfo.emplace_back(FD ? FD->parameters()[Idx] : nullptr, Analysis,
+                              Arg, Used, Idx, this);
       }
     }
   }
@@ -4246,16 +4229,8 @@ private:
             MapNames::getDpctNamespace(), "dpct_memset(d_",
             DpctGlobalInfo::getSyncName(), ".get_ptr(), 0, sizeof(int));\n"));
 
-        requestFeature(HelperFeatureEnum::Memory_dpct_memset, getFilePath());
-        requestFeature(HelperFeatureEnum::Memory_get_access, getFilePath());
-
-        requestFeature(HelperFeatureEnum::Memory_global_memory_alias,
-                       getFilePath());
-        requestFeature(HelperFeatureEnum::Memory_device_memory_get_ptr,
-                       getFilePath());
-
+        requestFeature(HelperFeatureEnum::device_ext);
       } else {
-
         OuterStmts.emplace_back(buildString(
             MapNames::getDpctNamespace(), "global_memory<unsigned int, 0> d_",
             DpctGlobalInfo::getSyncName(), "(0);"));
@@ -4268,10 +4243,7 @@ private:
             MapNames::getDpctNamespace(), "get_default_queue().memset(",
             DpctGlobalInfo::getSyncName(), ", 0, sizeof(int)).wait();"));
 
-        requestFeature(HelperFeatureEnum::Memory_global_memory_alias,
-                       getFilePath());
-        requestFeature(HelperFeatureEnum::Memory_device_memory_get_ptr_q,
-                       getFilePath());
+        requestFeature(HelperFeatureEnum::device_ext);
       }
     }
   }

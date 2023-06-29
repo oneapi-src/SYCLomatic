@@ -151,7 +151,6 @@ add_clang_library(DPCT
   ExternalReplacement.cpp
   VcxprojParser.cpp
   LibraryAPIMigration.cpp
-  CustomHelperFiles.cpp
   GenMakefile.cpp
   IncrementalMigrationUtility.cpp
   Rules.cpp
