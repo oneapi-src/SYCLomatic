@@ -149,7 +149,9 @@ compare(const T a, const T b, const BinaryOperation binary_op) {
   return {compare(a[0], b[0], binary_op), compare(a[1], b[1], binary_op)};
 }
 
-/// Performs 2 elements comparison and returns an unsigned int.
+/// Performs 2 elements comparison, compare result of each element is 0 (false)
+/// or 0xffff (true), returns an unsigned int by composing compare result of two
+/// elements.
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] binary_op functor that implements the binary operation
@@ -174,7 +176,9 @@ unordered_compare(const T a, const T b, const BinaryOperation binary_op) {
           unordered_compare(a[1], b[1], binary_op)};
 }
 
-/// Performs 2 elements unordered comparison and returns an unsigned int.
+/// Performs 2 elements unordered comparison, compare result of each element is
+/// 0 (false) or 0xffff (true), returns an unsigned int by composing compare
+/// result of two elements.
 /// \param [in] a The first value
 /// \param [in] b The second value
 /// \param [in] binary_op functor that implements the binary operation
@@ -302,18 +306,13 @@ template <typename T> inline T relu(const T a) {
   return a;
 }
 template <class T> inline sycl::vec<T, 2> relu(const sycl::vec<T, 2> a) {
-  sycl::vec<T, 2> ret = a;
-  if (!detail::isnan(ret[0]) && ret[0] < 0.f)
-    ret[0] = 0.f;
-  if (!detail::isnan(ret[1]) && ret[1] < 0.f)
-    ret[1] = 0.f;
-  return ret;
+  return {relu(a[0]), relu(a[1])};
 }
 
 /// Performs complex number multiply addition.
 /// \param [in] a The first value
 /// \param [in] b The second value
-/// \param [in] b The third value
+/// \param [in] c The third value
 /// \returns the operation result
 template <typename T>
 inline sycl::vec<T, 2> complex_mul_add(const sycl::vec<T, 2> a,
@@ -331,8 +330,7 @@ inline sycl::vec<T, 2> complex_mul_add(const sycl::vec<T, 2> a,
 template <typename T> inline T fmax_nan(const T a, const T b) {
   if (detail::isnan(a) || detail::isnan(b))
     return NAN;
-  else
-    return sycl::fmax(a, b);
+  return sycl::fmax(a, b);
 }
 template <typename T>
 inline sycl::vec<T, 2> fmax_nan(const sycl::vec<T, 2> a,
@@ -348,8 +346,7 @@ inline sycl::vec<T, 2> fmax_nan(const sycl::vec<T, 2> a,
 template <typename T> inline T fmin_nan(const T a, const T b) {
   if (detail::isnan(a) || detail::isnan(b))
     return NAN;
-  else
-    return sycl::fmin(a, b);
+  return sycl::fmin(a, b);
 }
 template <typename T>
 inline sycl::vec<T, 2> fmin_nan(const sycl::vec<T, 2> a,
