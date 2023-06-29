@@ -398,7 +398,7 @@ InlineAsmExprResult InlineAsmParser::ParseCastExpression() {
       if (Res.isInvalid())
         return AsmExprError();
       Tuple.push_back(Res.get());
-      if ((!TryConsumeToken(asmtok::comma)))
+      if (!TryConsumeToken(asmtok::comma))
         break;
     }
 
@@ -431,7 +431,7 @@ InlineAsmExprResult InlineAsmParser::ParseCastExpression() {
     Res = ActOnUnaryOp(SavedKind, Res.get());
     break;
   default:
-    break;
+    return AsmExprError();
   }
   return Res;
 }
