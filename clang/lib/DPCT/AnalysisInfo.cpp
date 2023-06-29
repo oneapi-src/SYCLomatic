@@ -54,9 +54,6 @@ UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
 bool DpctGlobalInfo::NeedDpctDeviceExt = false;
 bool DpctGlobalInfo::IsIncMigration = true;
 unsigned int DpctGlobalInfo::AssumedNDRangeDim = 3;
-HelperFilesCustomizationLevel DpctGlobalInfo::HelperFilesCustomizationLvl =
-    HelperFilesCustomizationLevel::HFCL_None;
-std::string DpctGlobalInfo::CustomHelperFileName = "dpct";
 std::unordered_set<std::string> DpctGlobalInfo::PrecAndDomPairSet;
 format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
 DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::FS_LLVM;
@@ -1475,8 +1472,10 @@ void KernelCallExpr::buildKernelArgsStmt() {
         }
       }
     } else if (Arg.IsRedeclareRequired || IsInMacroDefine) {
+      const auto &TypeStr = Arg.getTypeString();
       SubmitStmtsList.CommandGroupList.emplace_back(buildString(
-          "auto ", Arg.getIdStringWithIndex(), " = ", Arg.getArgString(), ";"));
+          TypeStr.empty() ? "auto " : TypeStr + " ", Arg.getIdStringWithIndex(),
+          " = ", Arg.getArgString(), ";"));
       KernelArgs += Arg.getIdStringWithIndex();
     } else if (Arg.Texture) {
       ParameterStream OS;

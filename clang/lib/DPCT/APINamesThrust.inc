@@ -980,6 +980,7 @@ CALL_FACTORY_ENTRY("thrust::make_counting_iterator", CALL(MapNames::getDpctNames
 thrustFactory("thrust::scatter_if",
               {{7,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"scatter_if", HelperFeatureEnum::device_ext},
                {6,PolicyState::NoPolicy, 5,MapNames::getDpctNamespace()+"scatter_if", HelperFeatureEnum::device_ext}}),
+
 // thrust::uninitialized_copy(
 thrustFactory("thrust::uninitialized_copy",
               {{ 4,PolicyState::HasPolicy,3,"oneapi::dpl::uninitialized_copy", HelperFeatureEnum::no_feature_helper},
@@ -1045,3 +1046,9 @@ CONDITIONAL_FACTORY_ENTRY(
     )
 )
 
+// thrust::equal
+thrustFactory("thrust::equal",
+              {{ 4,PolicyState::HasPolicy,3,"oneapi::dpl::equal", HelperFeatureEnum::no_feature_helper},
+               { 3,PolicyState::NoPolicy, 3,"oneapi::dpl::equal", HelperFeatureEnum::no_feature_helper},
+               { 5,PolicyState::HasPolicy,3,"oneapi::dpl::equal", HelperFeatureEnum::no_feature_helper},
+               { 4,PolicyState::NoPolicy, 3,"oneapi::dpl::equal", HelperFeatureEnum::no_feature_helper}}),
