@@ -103,7 +103,4 @@ bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
 /// -1: Path is invalid
 int checkSDKPathOrIncludePath(const std::string &Path, std::string &RealPath);
 
-void validateCustomHelperFileNameArg(HelperFilesCustomizationLevel Level,
-                                     std::string &Name,
-                                     const std::string &OutRoot);
 #endif // DPCT_VALIDATE_ARGUMENTS_H

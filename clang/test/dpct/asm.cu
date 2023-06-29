@@ -12,16 +12,34 @@ __global__ void gpu_ptx(int *d_ptr, int length) {
     if (elemID < length) {
       unsigned int laneid;
       unsigned int warpid;
+      unsigned int WARP_SZ;
       // CHECK: laneid = item_ct1.get_sub_group().get_local_linear_id();
       asm("mov.u32 %0, %%laneid;" : "=r"(laneid));
 
+      // CHECK: warpid = item_ct1.get_sub_group().get_group_linear_id();
+      asm("mov.u32 %0, %%warpid;" : "=r"(warpid));
+
+      // CHECK: WARP_SZ = item_ct1.get_sub_group().get_local_range().get(0);
+      asm("mov.u32 %0, WARP_SZ;" : "=r"(WARP_SZ));
+      
+      // ill-formed inline asm, missing ';' at the end of mov instruction.
       // CHECK: /*
       // CHECK-NEXT: DPCT1053:{{.*}} Migration of device assembly code is not supported.
       // CHECK-NEXT: */
-      asm("mov.u32 %0, %%warpid;" : "=r"(warpid));
+      asm("mov.u32 %0, WARP_SZ" : "=r"(WARP_SZ));
       d_ptr[elemID] = laneid;
     }
   }
+}
+
+// CHECK: void asm_only(const sycl::nd_item<3> &item_ct1) {
+// CHECK-NEXT:  unsigned laneid;
+// CHECK-NEXT:  laneid = item_ct1.get_sub_group().get_local_linear_id();
+// CHECK-EMPTY:
+// CHECK-MEXT: }
+__global__ void asm_only() {
+  unsigned laneid;
+  asm volatile ("mov.u32 %0, %%laneid;" : "=r"(laneid));
 }
 
 // CHECK: void setp() {
@@ -298,6 +316,7 @@ int main(int argc, char **argv) {
   cudaGetLastError();
   cudaDeviceSynchronize();
 
+  asm_only<<<1, 1>>>();
 
   cudaEventRecord(stop, 0);
   cudaEventSynchronize(start);

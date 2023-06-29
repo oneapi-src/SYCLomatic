@@ -41,7 +41,7 @@ void foo() {
 
   // CHECK:   q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
-  // CHECK-NEXT:         auto bar_i_ct0 = bar(i);
+  // CHECK-NEXT:         int bar_i_ct0 = bar(i);
   // CHECK-EMPTY:
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class k_{{[a-z0-9]+}}>>(
   // CHECK-NEXT:             sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
@@ -53,7 +53,7 @@ void foo() {
 
   // CHECK:   q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
-  // CHECK-NEXT:         auto bar_T_ct0 = bar<T>();
+  // CHECK-NEXT:         int bar_T_ct0 = bar<T>();
   // CHECK-EMPTY:
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class k_{{[a-z0-9]+}}>>(
   // CHECK-NEXT:             sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
@@ -65,7 +65,7 @@ void foo() {
 
   // CHECK:   q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
-  // CHECK-NEXT:         auto S_T_bar_ct0 = S<T>::bar();
+  // CHECK-NEXT:         int S_T_bar_ct0 = S<T>::bar();
   // CHECK-EMPTY:
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class k_{{[a-z0-9]+}}>>(
   // CHECK-NEXT:             sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
@@ -77,7 +77,7 @@ void foo() {
 
   // CHECK:   q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
-  // CHECK-NEXT:         auto S2_bar_T_ct0 = S2::bar<T>();
+  // CHECK-NEXT:         int S2_bar_T_ct0 = S2::bar<T>();
   // CHECK-EMPTY:
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class k_{{[a-z0-9]+}}>>(
   // CHECK-NEXT:             sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
@@ -89,8 +89,8 @@ void foo() {
 
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto pointers_ct0 = pointers[0];
-  // CHECK-NEXT:       auto pointers_ct1 = pointers[1];
+  // CHECK-NEXT:       int *pointers_ct0 = pointers[0];
+  // CHECK-NEXT:       int *pointers_ct1 = pointers[1];
   // CHECK-EMPTY:
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class k2_{{[a-z0-9]+}}>>(
   // CHECK-NEXT:             sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),

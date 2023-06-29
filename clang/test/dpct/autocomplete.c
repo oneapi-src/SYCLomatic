@@ -16,7 +16,6 @@
 // DASH-NEXT: --comments
 // DASH-NEXT: --compilation-database
 // DASH-NEXT: --cuda-include-path
-// DASH-NEXT: --custom-helper-name
 // DASH-NEXT: --enable-ctad
 // DASH-NEXT: --enable-profiling
 // DASH-NEXT: --extra-arg
@@ -46,7 +45,6 @@
 // DASH-NEXT: --suppress-warnings
 // DASH-NEXT: --suppress-warnings-all
 // DASH-NEXT: --sycl-named-lambda
-// DASH-NEXT: --use-custom-helper=
 // DASH-NEXT: --use-dpcpp-extensions=
 // DASH-NEXT: --use-experimental-features=
 // DASH-NEXT: --use-explicit-namespace=

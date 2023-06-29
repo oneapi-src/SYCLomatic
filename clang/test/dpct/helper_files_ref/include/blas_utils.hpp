@@ -270,10 +270,6 @@ inline void gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
                             const void *alpha, const void **a, int lda,
                             const void **b, int ldb, const void *beta, void **c,
                             int ldc, int batch_size) {
-#ifndef __INTEL_MKL__
-  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
-                           "Project does not support this API.");
-#else
   struct matrix_info_t {
     oneapi::mkl::transpose transpose_info[2];
     Ts value_info[2];
@@ -312,7 +308,6 @@ inline void gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
     cgh.depends_on(e);
     cgh.host_task([=] { std::free(matrix_info); });
   });
-#endif
 }
 
 template <class Ta, class Tb, class Tc, class Ts>
@@ -323,10 +318,6 @@ gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
                     long long int stride_a, const void *b, int ldb,
                     long long int stride_b, const void *beta, void *c,
                     int ldc, long long int stride_c, int batch_size) {
-#ifndef __INTEL_MKL__
-  throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) Interfaces "
-                           "Project does not support this API.");
-#else
   Ts alpha_value = dpct::get_value(reinterpret_cast<const Ts *>(alpha), q);
   Ts beta_value = dpct::get_value(reinterpret_cast<const Ts *>(beta), q);
   auto data_a = get_memory(reinterpret_cast<const Ta *>(a));
@@ -336,7 +327,6 @@ gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
       q, a_trans, b_trans, m, n, k, alpha_value, data_a, lda,
       stride_a, data_b, ldb, stride_b, beta_value,
       data_c, ldc, stride_c, batch_size);
-#endif
 }
 
 template <bool is_hermitian, class T, class Tbeta>
@@ -1428,6 +1418,7 @@ inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
                                             batch_size);
     break;
   }
+#ifdef __INTEL_MKL__
   case detail::get_type_combination_id(
       library_data_t::real_bfloat16, library_data_t::real_bfloat16,
       library_data_t::real_bfloat16, library_data_t::real_float): {
@@ -1474,6 +1465,7 @@ inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
         batch_size);
     break;
   }
+#endif
   case detail::get_type_combination_id(
       library_data_t::real_half, library_data_t::real_half,
       library_data_t::real_half, library_data_t::real_float): {
@@ -1580,6 +1572,7 @@ inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
                                             beta, c, ldc, stride_c, batch_size);
     break;
   }
+#ifdef __INTEL_MKL__
   case detail::get_type_combination_id(
       library_data_t::real_bfloat16, library_data_t::real_bfloat16,
       library_data_t::real_bfloat16, library_data_t::real_float): {
@@ -1623,6 +1616,7 @@ inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
         beta, c, ldc, stride_c, batch_size);
     break;
   }
+#endif
   case detail::get_type_combination_id(
       library_data_t::real_half, library_data_t::real_half,
       library_data_t::real_half, library_data_t::real_float): {
