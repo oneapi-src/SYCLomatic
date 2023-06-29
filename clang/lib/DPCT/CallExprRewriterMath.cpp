@@ -636,41 +636,30 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
           MigratedArg0 = "(double)(" + MigratedArg0 + ")";
       }
     }
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    std::string Indent =
+        getIndent(SM.getExpansionLoc(Call->getBeginLoc()), SM).str();
     auto MigratedArg1 = getMigratedArg(1);
     auto MigratedArg2 = getMigratedArg(2);
     if (MigratedArg1[0] == '&')
       RSO << MigratedArg1.substr(1);
     else
       RSO << "*(" + MigratedArg1 + ")";
-    RSO << " = " + MapNames::getClNamespace(false, true) + "sincos("
-       << MigratedArg0;
-
-    if (FuncName == "sincos")
-      RSO << ", " + MapNames::getClNamespace() + "address_space_cast<"
-          << MapNames::getClNamespace() + "access::address_space::" +
-                 getAddressSpace(Call->getArg(2), MigratedArg2)
-          << ", " << MapNames::getClNamespace() + "access::decorated::yes"
-          << ", "
-          << "double"
-          << ">(";
+    RSO << " = " + MapNames::getClNamespace(false, true) + "sin("
+       << MigratedArg0 << ");\n" << Indent;
+    if (MigratedArg2[0] == '&')
+      RSO << MigratedArg2.substr(1);
     else
-      RSO << ", " + MapNames::getClNamespace() + "address_space_cast<"
-          << MapNames::getClNamespace() + "access::address_space::" +
-                 getAddressSpace(Call->getArg(2), MigratedArg2)
-          << ", " << MapNames::getClNamespace() + "access::decorated::yes"
-          << ", "
-          << "float"
-          << ">(";
-
-    RSO << MigratedArg2 << "))";
+      RSO << "*(" + MigratedArg2 + ")";
+    RSO << " = " + MapNames::getClNamespace(false, true) + "cos("
+       << MigratedArg0 << ")";
 
     if(IsInReturnStmt) {
-      OS << "[&](){ " << Buf << ";"<< " }()";
+      OS << "[&](){ " << Buf << "; }()";
       BlockLevelFormatFlag = true;
     } else {
       OS << Buf;
     }
-
   } else if (FuncName == "sincospi" || FuncName == "sincospif") {
     std::string Buf;
     llvm::raw_string_ostream RSO(Buf);

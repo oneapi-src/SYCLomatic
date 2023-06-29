@@ -613,7 +613,8 @@ __device__ static void multiply(int block_size, AccPtr<T> &ptr, T value) {
 }
 
 __device__ void sincos_1(double x, double* sptr, double* cptr) {
-  // CHECK:  return [&](){ *(sptr) = sycl::sincos(x, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(cptr)); }();
+  // CHECK: return [&](){ *(sptr) = sycl::sin(x);
+  // CHECK:   *(cptr) = sycl::cos(x); }();  
   return ::sincos(x, sptr, cptr);
 }
 
