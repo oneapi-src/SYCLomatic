@@ -218,6 +218,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
       Driver, llvm::Triple(Driver.getTargetTriple()), ParsedArgs);
 
   std::string Path = CudaIncludeDetector.getInstallPath().str();
+  dpct::DpctGlobalInfo::setSDKVersion(CudaIncludeDetector.version());
 
   if (!CudaIncludePath.empty()) {
     if (!CudaIncludeDetector.isIncludePathValid()) {

@@ -1,5 +1,8 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/predefined_macro_replacement %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -D__NVCC__ -D__CUDACC__
 // RUN: FileCheck --input-file %T/predefined_macro_replacement/predefined_macro_replacement.dp.cpp --match-full-lines %s
+
+//CHECK: #define DPCT_COMPAT_RT_VERSION {{[1-9][0-9]+}}
+
 #include <stdio.h>
 //CHECK: #ifdef DPCT_COMPATIBILITY_TEMP
 //CHECK-NEXT: void hello(const sycl::stream &[[STREAM:stream_ct1]]) { [[STREAM]] << "foo"; }
@@ -123,7 +126,7 @@ int main() {
 #endif
 
 int foo(int num) {
-//CHECK: #if SYCL_LANGUAGE_VERSION >= 4000
+//CHECK: #if DPCT_COMPAT_RT_VERSION >= 4000
 //CHECK-NEXT: dpct::get_current_device().reset();
 //CHECK-NEXT: #else
 //CHECK-NEXT: cudaThreadExit();
@@ -139,10 +142,10 @@ int foo(int num) {
 }
 
 int foo1() {
-//CHECK: #ifdef SYCL_LANGUAGE_VERSION
+//CHECK: #ifdef DPCT_COMPAT_RT_VERSION
 //CHECK-NEXT: sycl::int2 a;
 //CHECK-NEXT: #endif
-//CHECK-NEXT: #ifndef SYCL_LANGUAGE_VERSION
+//CHECK-NEXT: #ifndef DPCT_COMPAT_RT_VERSION
 //CHECK-NEXT: int2 b;
 //CHECK-NEXT: #endif
 #ifdef CUDART_VERSION
@@ -162,14 +165,171 @@ int foo2(){
   int major = version / 1000;
   int minor = (version - major * 1000) / 10;
   int pl = version - major * 1000 - minor * 10;
-  //CHECK: if (version != SYCL_LANGUAGE_VERSION) {
-  //CHECK-NEXT:   major = SYCL_LANGUAGE_VERSION / 1000;
-  //CHECK-NEXT:   minor = (SYCL_LANGUAGE_VERSION - major * 1000) / 10;
-  //CHECK-NEXT:   pl = SYCL_LANGUAGE_VERSION - major * 1000 - minor * 10;
+  //CHECK: if (version != DPCT_COMPAT_RT_VERSION) {
+  //CHECK-NEXT:   major = DPCT_COMPAT_RT_VERSION / 1000;
+  //CHECK-NEXT:   minor = (DPCT_COMPAT_RT_VERSION - major * 1000) / 10;
+  //CHECK-NEXT:   pl = DPCT_COMPAT_RT_VERSION - major * 1000 - minor * 10;
   //CHECK-NEXT: }
   if (version != CUDART_VERSION) {
     major = CUDART_VERSION / 1000;
     minor = (CUDART_VERSION - major * 1000) / 10;
     pl = CUDART_VERSION - major * 1000 - minor * 10;
   }
+}
+
+#define AAAA 1
+//CHECK: void foo3() {
+//CHECK-NEXT: #if defined DPCT_COMPAT_RT_VERSION && (DPCT_COMPAT_RT_VERSION >= 4000)
+//CHECK-NEXT:   sycl::int2 a1;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if defined(DPCT_COMPAT_RT_VERSION) && (DPCT_COMPAT_RT_VERSION >= 4000)
+//CHECK-NEXT:   sycl::int2 a2;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if (DPCT_COMPAT_RT_VERSION >= 4000) && AAAA
+//CHECK-NEXT:   sycl::int2 a3;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if !(DPCT_COMPAT_RT_VERSION > 4000) && AAAA
+//CHECK-NEXT:   int2 a4;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if (DPCT_COMPAT_RT_VERSION > 4000 ? 1 : 0) && AAAA
+//CHECK-NEXT:   sycl::int2 a5;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: }
+void foo3() {
+#if defined CUDART_VERSION && (CUDART_VERSION >= 4000)
+  int2 a1;
+#endif
+#if defined(CUDART_VERSION) && (CUDART_VERSION >= 4000)
+  int2 a2;
+#endif
+#if (CUDART_VERSION >= 4000) && AAAA
+  int2 a3;
+#endif
+#if !(CUDART_VERSION > 4000) && AAAA
+  int2 a4;
+#endif
+#if (CUDART_VERSION > 4000 ? 1 : 0) && AAAA
+  int2 a5;
+#endif
+}
+
+//CHECK: void foo4() {
+//CHECK-NEXT: #define BBBB 0
+//CHECK-NEXT: #if BBBB
+//CHECK-NEXT: #elif defined DPCT_COMPAT_RT_VERSION && (DPCT_COMPAT_RT_VERSION >= 4000)
+//CHECK-NEXT:   sycl::int2 a1;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if BBBB
+//CHECK-NEXT: #elif defined(DPCT_COMPAT_RT_VERSION) && (DPCT_COMPAT_RT_VERSION >= 4000)
+//CHECK-NEXT:   sycl::int2 a2;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if BBBB
+//CHECK-NEXT: #elif (DPCT_COMPAT_RT_VERSION >= 4000) && AAAA
+//CHECK-NEXT:   sycl::int2 a3;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if BBBB
+//CHECK-NEXT: #elif !(DPCT_COMPAT_RT_VERSION > 4000) && AAAA
+//CHECK-NEXT:   int2 a4;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if BBBB
+//CHECK-NEXT: #elif (DPCT_COMPAT_RT_VERSION > 4000 ? 1 : 0) && AAAA
+//CHECK-NEXT:   sycl::int2 a5;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: }
+void foo4() {
+#define BBBB 0
+#if BBBB
+#elif defined CUDART_VERSION && (CUDART_VERSION >= 4000)
+  int2 a1;
+#endif
+#if BBBB
+#elif defined(CUDART_VERSION) && (CUDART_VERSION >= 4000)
+  int2 a2;
+#endif
+#if BBBB
+#elif (CUDART_VERSION >= 4000) && AAAA
+  int2 a3;
+#endif
+#if BBBB
+#elif !(CUDART_VERSION > 4000) && AAAA
+  int2 a4;
+#endif
+#if BBBB
+#elif (CUDART_VERSION > 4000 ? 1 : 0) && AAAA
+  int2 a5;
+#endif
+}
+#undef BBBB
+
+//CHECK: void foo5() {
+//CHECK-NEXT: #define CCCC 1
+//CHECK-NEXT: #if CCCC
+//CHECK-NEXT: #elif defined DPCT_COMPAT_RT_VERSION && (DPCT_COMPAT_RT_VERSION >= 4000)
+//CHECK-NEXT:   int2 a1;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if CCCC
+//CHECK-NEXT: #elif defined(DPCT_COMPAT_RT_VERSION) && (DPCT_COMPAT_RT_VERSION >= 4000)
+//CHECK-NEXT:   int2 a2;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if CCCC
+//CHECK-NEXT: #elif (DPCT_COMPAT_RT_VERSION >= 4000) && AAAA
+//CHECK-NEXT:   int2 a3;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if CCCC
+//CHECK-NEXT: #elif !(DPCT_COMPAT_RT_VERSION > 4000) && AAAA
+//CHECK-NEXT:   int2 a4;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: #if CCCC
+//CHECK-NEXT: #elif (DPCT_COMPAT_RT_VERSION > 4000 ? 1 : 0) && AAAA
+//CHECK-NEXT:   int2 a5;
+//CHECK-NEXT: #endif
+//CHECK-NEXT: }
+void foo5() {
+#define CCCC 1
+#if CCCC
+#elif defined CUDART_VERSION && (CUDART_VERSION >= 4000)
+  int2 a1;
+#endif
+#if CCCC
+#elif defined(CUDART_VERSION) && (CUDART_VERSION >= 4000)
+  int2 a2;
+#endif
+#if CCCC
+#elif (CUDART_VERSION >= 4000) && AAAA
+  int2 a3;
+#endif
+#if CCCC
+#elif !(CUDART_VERSION > 4000) && AAAA
+  int2 a4;
+#endif
+#if CCCC
+#elif (CUDART_VERSION > 4000 ? 1 : 0) && AAAA
+  int2 a5;
+#endif
+}
+#undef CCCC
+#undef AAAA
+
+//CHECK: void foo6() {
+//CHECK-NEXT:   float* f;
+//CHECK-NEXT: #if (DPCT_COMPAT_RT_VERSION >= 12000)
+void foo6() {
+  float* f;
+  #if (CUDART_VERSION >= 12000)
+  cudaMalloc(&f, 4);
+#else
+  cudaMallocHost(&f, 4);
+#endif
+}
+
+//CHECK: void foo7() {
+//CHECK-NEXT:   float* f;
+//CHECK-NEXT: #if (DPCT_COMPAT_RT_VERSION >= 12000)
+void foo7() {
+  float* f;
+#if (__CUDART_API_VERSION >= 12000)
+  cudaMalloc(&f, 4);
+#else
+  cudaMallocHost(&f, 4);
+#endif
 }
