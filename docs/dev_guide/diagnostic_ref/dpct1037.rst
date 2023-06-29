@@ -20,5 +20,5 @@ Detailed Help
 Suggestions to Fix
 ------------------
 
-Rewrite this code manually by using the |dnnl_long| (|dnnl|) or the |ccl_long|
+Rewrite this code manually by using the |dnnl_long|_ (|dnnl|) or the |ccl_long|_
 (|ccl|).

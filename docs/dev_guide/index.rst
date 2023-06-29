@@ -5,7 +5,7 @@
 
 This guide provides a detailed overview of |tool_name| features, workflow, and use.
 
-Use |tool_name| to help port CUDA\* language kernels and library API calls to |dpcpp_long| code.
+Use |tool_name| to help port CUDA\* language kernels and library API calls to |dpcpp_long|_ code.
 
 Related Information
 -------------------
