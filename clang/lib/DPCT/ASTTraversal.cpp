@@ -9547,12 +9547,11 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
     else if (const UnaryOperator *UO =
                  dyn_cast_or_null<UnaryOperator>(Parent)) {
       if (!Decl->hasAttr<CUDASharedAttr>() && UO->getOpcode() == UO_AddrOf) {
-        const TypeLoc &TL = getTypeLocIgnoreTypedef(Decl);
-        if (TL && TL.getTypeLocClass() == TypeLoc::ConstantArray) {
-          const ConstantArrayTypeLoc &CATL =
-              static_cast<const ConstantArrayTypeLoc &>(TL);
-          if (CATL.getElementLoc().getTypeLocClass() ==
-              TypeLoc::ConstantArray) {
+        std::shared_ptr<MemVarInfo> Info = MemVarInfo::buildMemVarInfo(Decl);
+        if (!Info)
+          return;
+        if (Info->getType()->isArray()) {
+          if (Info->getType()->getDimension() >= 2) {
             // Dim >= 2
             auto Range = GetReplRange(UO);
             emplaceTransformation(

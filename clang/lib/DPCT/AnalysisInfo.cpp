@@ -3727,21 +3727,6 @@ CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold)
   setTypeInfo(TL, NeedSizeFold);
 }
 
-CtTypeInfo::CtTypeInfo(const VarDecl *D, bool NeedSizeFold)
-    : PointerLevel(0), IsReference(false), IsTemplate(false) {
-  if (D) {
-    TypeLoc TL = getTypeLocIgnoreTypedef(D);
-    if (TL) {
-      setTypeInfo(TL, NeedSizeFold);
-      if (TL.getTypeLocClass() == TypeLoc::IncompleteArray) {
-        if (auto CAT = dyn_cast<ConstantArrayType>(D->getType())) {
-          Range[0] = std::to_string(CAT->getSize().getZExtValue());
-        }
-      }
-    }
-  }
-}
-
 std::string CtTypeInfo::getRangeArgument(const std::string &MemSize,
                                          bool MustArguments) {
   std::string Arg = "(";
@@ -3769,6 +3754,7 @@ void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
     return setTypeInfo(TYPELOC_CAST(QualifiedTypeLoc).getUnqualifiedLoc(),
                        NeedSizeFold);
   case TypeLoc::ConstantArray:
+    IsArray = true;
     return setArrayInfo(TYPELOC_CAST(ConstantArrayTypeLoc), NeedSizeFold);
   case TypeLoc::DependentSizedArray:
     return setArrayInfo(TYPELOC_CAST(DependentSizedArrayTypeLoc), NeedSizeFold);
@@ -3781,6 +3767,23 @@ void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
   case TypeLoc::RValueReference:
     IsReference = true;
     return setTypeInfo(TYPELOC_CAST(ReferenceTypeLoc).getPointeeLoc());
+  case TypeLoc::Elaborated: {
+    const TypeLoc &NamedTypeLoc =
+        TYPELOC_CAST(ElaboratedTypeLoc).getNamedTypeLoc();
+    if (NamedTypeLoc.getTypeLocClass() == TypeLoc::Typedef)
+      return setTypeInfo(NamedTypeLoc);
+    break;
+  }
+  case TypeLoc::Typedef: {
+    const TypeLoc &TypedefTpyeDeclLoc = TYPELOC_CAST(TypedefTypeLoc)
+                                            .getTypedefNameDecl()
+                                            ->getTypeSourceInfo()
+                                            ->getTypeLoc();
+    if (DpctGlobalInfo::isInAnalysisScope(TypedefTpyeDeclLoc.getBeginLoc()) &&
+        TypedefTpyeDeclLoc.getTypeLocClass() == TypeLoc::ConstantArray)
+      return setTypeInfo(TypedefTpyeDeclLoc);
+    break;
+  }
   default:
     break;
   }
