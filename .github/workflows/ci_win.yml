@@ -57,6 +57,7 @@ jobs:
       - name: Configure
         timeout-minutes: 120
         run: |
+          set CMAKE_VERSION=v_3_23_2
           cd c2s.src
           mkdir build
           cd build
