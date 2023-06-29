@@ -59,7 +59,7 @@ ENTRY(thrust::device_malloc, thrust::device_malloc, true, NO_FLAG, P4, "Successf
 ENTRY(thrust::device_new, thrust::device_new, false, NO_FLAG, P4, "comment")
 ENTRY(thrust::device_pointer_cast, thrust::device_pointer_cast, true, NO_FLAG, P4, "Successful")
 ENTRY(thrust::distance, thrust::distance, true, NO_FLAG, P4, "Successful")
-ENTRY(thrust::equal, thrust::equal, false, NO_FLAG, P4, "comment")
+ENTRY(thrust::equal, thrust::equal, true, NO_FLAG, P4, "comment")
 ENTRY(thrust::equal_range, thrust::equal_range, true, NO_FLAG, P4, "Successful")
 ENTRY(thrust::exclusive_scan, thrust::exclusive_scan, true, NO_FLAG, P4, "Successful")
 ENTRY(thrust::exclusive_scan_by_key, thrust::exclusive_scan_by_key, true, NO_FLAG, P4, "Successful")

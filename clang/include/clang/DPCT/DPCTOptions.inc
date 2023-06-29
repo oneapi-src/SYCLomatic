@@ -398,14 +398,6 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), AnalysisS
         llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTCat))
 
 DPCT_NON_ENUM_OPTION(
-    DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), ChangeExtension,
-    "change-filename-extension",
-    llvm::cl::desc("DEPRECATED: A comma-separated list that specifies which\n"
-                   "extensions of migrated files will be changed. Default:\n"
-                   ".cu, .cuh, .cpp, .cxx, .cc, .c, .C"),
-    llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
-
-DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<bool>), LimitChangeExtension,
     "change-cuda-files-extension-only",
     llvm::cl::desc(
