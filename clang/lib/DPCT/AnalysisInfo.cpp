@@ -3771,17 +3771,31 @@ void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
     const TypeLoc &NamedTypeLoc =
         TYPELOC_CAST(ElaboratedTypeLoc).getNamedTypeLoc();
     if (NamedTypeLoc.getTypeLocClass() == TypeLoc::Typedef)
-      return setTypeInfo(NamedTypeLoc);
+      return setTypeInfo(NamedTypeLoc, NeedSizeFold);
     break;
   }
   case TypeLoc::Typedef: {
-    const TypeLoc &TypedefTpyeDeclLoc = TYPELOC_CAST(TypedefTypeLoc)
-                                            .getTypedefNameDecl()
-                                            ->getTypeSourceInfo()
-                                            ->getTypeLoc();
+    const TypedefNameDecl *TND =
+        TYPELOC_CAST(TypedefTypeLoc).getTypedefNameDecl();
+    if (!TND)
+      break;
+    if (!TND->getTypeSourceInfo())
+      break;
+    const TypeLoc &TypedefTpyeDeclLoc = TND->getTypeSourceInfo()->getTypeLoc();
     if (DpctGlobalInfo::isInAnalysisScope(TypedefTpyeDeclLoc.getBeginLoc()) &&
-        TypedefTpyeDeclLoc.getTypeLocClass() == TypeLoc::ConstantArray)
-      return setTypeInfo(TypedefTpyeDeclLoc);
+        TypedefTpyeDeclLoc.getTypeLocClass() == TypeLoc::ConstantArray) {
+      IsArray = true;
+      return setArrayInfo(
+          static_cast<const ConstantArrayTypeLoc &>(TypedefTpyeDeclLoc),
+          NeedSizeFold);
+    }
+    std::string FullTypeStr = TL.getType().getAsString(
+        DpctGlobalInfo::getContext().getPrintingPolicy());
+    std::string NameStr = TND->getName().str();
+    std::string::size_type Idx = FullTypeStr.rfind(NameStr);
+    if (Idx == std::string::npos)
+      break;
+    BaseName = BaseName + FullTypeStr.substr(0, Idx);
     break;
   }
   default:
@@ -3905,8 +3919,11 @@ void CtTypeInfo::updateName() {
 
   if (BaseName.empty())
     BaseName = BaseNameWithoutQualifiers;
-  else
-    BaseName = buildString(BaseName, " ", BaseNameWithoutQualifiers);
+  else {
+    StringRef BaseNameRef(BaseName);
+    BaseName = BaseName + (BaseNameRef.ends_with("::") ? "" : " ") +
+               BaseNameWithoutQualifiers;
+  }
 }
 
 std::shared_ptr<CtTypeInfo> CtTypeInfo::applyTemplateArguments(

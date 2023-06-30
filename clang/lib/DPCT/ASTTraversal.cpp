@@ -9547,22 +9547,21 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
     else if (const UnaryOperator *UO =
                  dyn_cast_or_null<UnaryOperator>(Parent)) {
       if (!Decl->hasAttr<CUDASharedAttr>() && UO->getOpcode() == UO_AddrOf) {
-        std::shared_ptr<MemVarInfo> Info = MemVarInfo::buildMemVarInfo(Decl);
-        if (!Info)
-          return;
-        if (Info->getType()->isArray()) {
-          if (Info->getType()->getDimension() >= 2) {
+        CtTypeInfo TypeAnalysis(Decl, false);
+        if (TypeAnalysis.isArray()) {
+          auto Range = GetReplRange(UO);
+          if (TypeAnalysis.getDimension() >= 2) {
             // Dim >= 2
-            auto Range = GetReplRange(UO);
-            emplaceTransformation(
-                new ReplaceText(Range.first, Range.second,
-                                buildString("(", UO->getType(), ")",
-                                            Decl->getName(), ".get_ptr()")));
+            emplaceTransformation(new ReplaceText(
+                Range.first, Range.second,
+                buildString("reinterpret_cast<", UO->getType(), ">(",
+                            Decl->getName(), ".get_ptr())")));
           } else {
             // Dim == 1
-            auto Range = GetReplRange(UO);
-            emplaceTransformation(new InsertText(
-                Range.first, buildString("(", UO->getType(), ")")));
+            emplaceTransformation(
+                new ReplaceText(Range.first, Range.second,
+                                buildString("reinterpret_cast<", UO->getType(),
+                                            ">(&", Decl->getName(), ")")));
           }
         }
       }

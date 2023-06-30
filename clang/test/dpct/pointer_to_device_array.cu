@@ -20,7 +20,7 @@ __constant__ aaa_t var1;
 // CHECK: void kernel1(dpct::accessor<float *, dpct::constant, 2> var1) {
 __global__ void kernel1() {
   aaa_t *ptr;
-  // CHECK: ptr = (aaa_t *)var1.get_ptr();
+  // CHECK: ptr = reinterpret_cast<aaa_t *>(var1.get_ptr());
   ptr = &var1;
 }
 
@@ -30,7 +30,7 @@ __constant__ float *var2[5][6];
 // CHECK: void kernel2(dpct::accessor<float *, dpct::constant, 2> var2) {
 __global__ void kernel2() {
   aaa_t *ptr;
-  // CHECK: ptr = (float *(*)[5][6])var2.get_ptr();
+  // CHECK: ptr = reinterpret_cast<float *(*)[5][6]>(var2.get_ptr());
   ptr = &var2;
 }
 
@@ -41,7 +41,7 @@ __constant__ bbb_t var3;
 // CHECK: void kernel3(float **var3) {
 __global__ void kernel3() {
   bbb_t *ptr;
-  // CHECK: ptr = (bbb_t *)&var3;
+  // CHECK: ptr = reinterpret_cast<bbb_t *>(&var3);
   ptr = &var3;
 }
 
@@ -51,7 +51,7 @@ __constant__ float *var4[5];
 // CHECK: void kernel4(float **var4) {
 __global__ void kernel4() {
   bbb_t *ptr;
-  // CHECK: ptr = (float *(*)[5])&var4;
+  // CHECK: ptr = reinterpret_cast<float *(*)[5]>(&var4);
   ptr = &var4;
 }
 
@@ -75,3 +75,9 @@ __global__ void kernel6() {
   // CHECK: ptr = &var6;
   ptr = &var6;
 }
+
+namespace ns {
+typedef float *ddd_t;
+}
+// CHECK: static dpct::constant_memory<ns::ddd_t, 0> var7;
+__constant__ ns::ddd_t var7;
