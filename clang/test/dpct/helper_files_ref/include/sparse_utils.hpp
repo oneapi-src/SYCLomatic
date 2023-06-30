@@ -411,7 +411,6 @@ public:
   /// \param [in] value The input value pointer
   void set_value(void *value) {   
     // Assume the new data is different from the old data
-    optimized_matrix_info.reset();
     _value = value;
     constrcut();
   }
@@ -485,7 +484,6 @@ public:
   /// \param [in] value An array containing the non-zero elements of the sparse matrix.
   void set_pointers(void *row_ptr, void *col_ind, void *value) {
     // Assume the new data is different from the old data
-    optimized_matrix_info.reset();
     _row_ptr = row_ptr;
     _col_ind = col_ind;
     _value = value;
@@ -564,33 +562,6 @@ private:
     }
 #undef SET_DATA
   }
-  enum class routine_name { gemv, trmv, trsv };
-  std::optional<std::tuple<routine_name, oneapi::mkl::transpose,
-                           std::optional<oneapi::mkl::uplo>,
-                           std::optional<oneapi::mkl::diag>>>
-      optimized_matrix_info;
-  bool is_optimized(routine_name name, oneapi::mkl::transpose trans,
-                    std::optional<oneapi::mkl::uplo> uplo,
-                    std::optional<oneapi::mkl::diag> diag) {
-    if (!optimized_matrix_info.has_value())
-      return false;
-    if (name != std::get<0>(optimized_matrix_info.value()))
-      return false;
-    if (trans != std::get<1>(optimized_matrix_info.value()))
-      return false;
-    if (name == routine_name::gemv)
-      return true;
-    if (uplo.value() != std::get<2>(optimized_matrix_info.value()).value())
-      return false;
-    if (diag.value() != std::get<3>(optimized_matrix_info.value()).value())
-      return false;
-    return true;
-  }
-  void set_optimized_info(routine_name name, oneapi::mkl::transpose trans,
-                          std::optional<oneapi::mkl::uplo> uplo,
-                          std::optional<oneapi::mkl::diag> diag) {
-    optimized_matrix_info = std::make_tuple(name, trans, uplo, diag);
-  }
 
   std::int64_t _row_num;
   std::int64_t _col_num;
@@ -662,23 +633,13 @@ inline void spmv(sycl::queue queue, oneapi::mkl::transpose trans,
     auto data_x = detail::get_memory(reinterpret_cast<Ty *>(x->_value));       \
     auto data_y = detail::get_memory(reinterpret_cast<Ty *>(y->_value));       \
     if (a->_diag.has_value() && a->_uplo.has_value()) {                        \
-      if (!a->is_optimized(sparse_matrix_desc::routine_name::trmv, trans,      \
-                           a->_uplo.value(), a->_diag.value())) {              \
-        oneapi::mkl::sparse::optimize_trmv(queue, a->_uplo.value(), trans,     \
-                                           a->_diag.value(),                   \
-                                           a->get_matrix_handle());            \
-        a->set_optimized_info(sparse_matrix_desc::routine_name::trmv, trans,   \
-                              a->_uplo.value(), a->_diag.value());             \
-      }                                                                        \
+      oneapi::mkl::sparse::optimize_trmv(queue, a->_uplo.value(), trans,       \
+                                         a->_diag.value(),                     \
+                                         a->get_matrix_handle());              \
       TRMV_STMT                                                                \
     } else {                                                                   \
-      if (!a->is_optimized(sparse_matrix_desc::routine_name::gemv, trans,      \
-                           std::nullopt, std::nullopt)) {                      \
-        oneapi::mkl::sparse::optimize_gemv(queue, trans,                       \
-                                           a->get_matrix_handle());            \
-        a->set_optimized_info(sparse_matrix_desc::routine_name::gemv, trans,   \
-                              std::nullopt, std::nullopt);                     \
-      }                                                                        \
+      oneapi::mkl::sparse::optimize_gemv(queue, trans,                         \
+                                         a->get_matrix_handle());              \
       GEMV_STMT                                                                \
     }                                                                          \
   } while (0)
