@@ -1853,7 +1853,15 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusolverDnSyevd",
                            "cusolverDnSyevd_bufferSize",
                            "cusolverDnXtrtri",
-                           "cusolverDnXtrtri_bufferSize"};
+                           "cusolverDnXtrtri_bufferSize",
+                           "cusolverDnSsyevd_bufferSize",
+                           "cusolverDnDsyevd_bufferSize",
+                           "cusolverDnCheevd_bufferSize",
+                           "cusolverDnZheevd_bufferSize",
+                           "cusolverDnSsyevd",
+                           "cusolverDnDsyevd",
+                           "cusolverDnCheevd",
+                           "cusolverDnZheevd"};
 
   SPARSEAPIWithRewriter = {"cusparseCreateMatDescr",
                            "cusparseDestroyMatDescr",
