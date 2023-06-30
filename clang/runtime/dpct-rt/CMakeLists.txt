@@ -52,7 +52,6 @@ foreach( f ${dpct_rt_dpstd_files})
   list(APPEND out_files ${dst})
 endforeach( f )
 add_custom_target(dpct-headers ALL DEPENDS ${out_files})
-#add_custom_target(dpct-headers ALL DEPENDS dpct_helper_headers_and_inc)
 
 install(
   FILES ${dpct_rt_files}
