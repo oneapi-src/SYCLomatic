@@ -1083,6 +1083,11 @@ createMathAPIRewriterDeviceImpl(
   if (DeviceNodes[1].second) {
     // MATH_LIBDEVICE: sycl::ext::intel::math API
     if (math::useMathLibdevice()) {
+      if (auto *CRF = dynamic_cast<ConditionalRewriterFactory *>(
+              DeviceNodes[1].second.get())) {
+        // Make the last DeviceNodes as the back up migration rule.
+        CRF->insertToNullOne(std::move(DeviceNodes[3].second));
+      }
       return std::move(DeviceNodes[1]);
     }
   }

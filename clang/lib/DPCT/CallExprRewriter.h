@@ -210,6 +210,12 @@ public:
       std::shared_ptr<CallExprRewriterFactoryBase> SecondFactory)
       : Pred(std::forward<InputPred>(P)), First(FirstFactory),
         Second(SecondFactory) {}
+  void insertToNullOne(std::shared_ptr<CallExprRewriterFactoryBase> Factory) {
+    if (First == nullptr)
+      First = Factory;
+    else if (Second == nullptr)
+      Second = Factory;
+  }
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
     if (Pred(C))
       return First->create(C);
