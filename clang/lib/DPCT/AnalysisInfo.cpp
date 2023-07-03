@@ -3754,7 +3754,6 @@ void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
     return setTypeInfo(TYPELOC_CAST(QualifiedTypeLoc).getUnqualifiedLoc(),
                        NeedSizeFold);
   case TypeLoc::ConstantArray:
-    IsArray = true;
     return setArrayInfo(TYPELOC_CAST(ConstantArrayTypeLoc), NeedSizeFold);
   case TypeLoc::DependentSizedArray:
     return setArrayInfo(TYPELOC_CAST(DependentSizedArrayTypeLoc), NeedSizeFold);
@@ -3770,32 +3769,17 @@ void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
   case TypeLoc::Elaborated: {
     const TypeLoc &NamedTypeLoc =
         TYPELOC_CAST(ElaboratedTypeLoc).getNamedTypeLoc();
-    if (NamedTypeLoc.getTypeLocClass() == TypeLoc::Typedef)
-      return setTypeInfo(NamedTypeLoc, NeedSizeFold);
+    bool HasConstantArray = false;
+    if (NamedTypeLoc.getTypeLocClass() == TypeLoc::Typedef) {
+      HasConstantArray =
+          setTypedefInfo(NamedTypeLoc.getAs<TypedefTypeLoc>(), NeedSizeFold);
+    }
+    if (HasConstantArray)
+      return;
     break;
   }
   case TypeLoc::Typedef: {
-    const TypedefNameDecl *TND =
-        TYPELOC_CAST(TypedefTypeLoc).getTypedefNameDecl();
-    if (!TND)
-      break;
-    if (!TND->getTypeSourceInfo())
-      break;
-    const TypeLoc &TypedefTpyeDeclLoc = TND->getTypeSourceInfo()->getTypeLoc();
-    if (DpctGlobalInfo::isInAnalysisScope(TypedefTpyeDeclLoc.getBeginLoc()) &&
-        TypedefTpyeDeclLoc.getTypeLocClass() == TypeLoc::ConstantArray) {
-      IsArray = true;
-      return setArrayInfo(
-          static_cast<const ConstantArrayTypeLoc &>(TypedefTpyeDeclLoc),
-          NeedSizeFold);
-    }
-    std::string FullTypeStr = TL.getType().getAsString(
-        DpctGlobalInfo::getContext().getPrintingPolicy());
-    std::string NameStr = TND->getName().str();
-    std::string::size_type Idx = FullTypeStr.rfind(NameStr);
-    if (Idx == std::string::npos)
-      break;
-    BaseName = BaseName + FullTypeStr.substr(0, Idx);
+    setTypedefInfo(TYPELOC_CAST(TypedefTypeLoc), NeedSizeFold);
     break;
   }
   default:
@@ -3804,14 +3788,32 @@ void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
   setName(TL);
 }
 
+bool CtTypeInfo::setTypedefInfo(const TypedefTypeLoc &TL, bool NeedSizeFold) {
+  const TypedefNameDecl *TND = TL.getTypedefNameDecl();
+  if (!TND)
+    return false;
+  if (!TND->getTypeSourceInfo())
+    return false;
+  const TypeLoc TypedefTpyeDeclLoc = TND->getTypeSourceInfo()->getTypeLoc();
+  if (DpctGlobalInfo::isInAnalysisScope(TypedefTpyeDeclLoc.getBeginLoc()) &&
+      TypedefTpyeDeclLoc.getTypeLocClass() == TypeLoc::ConstantArray) {
+    setArrayInfo(TypedefTpyeDeclLoc.getAs<ConstantArrayTypeLoc>(),
+                 NeedSizeFold);
+    return true;
+  }
+  return false;
+}
+
 void CtTypeInfo::setArrayInfo(const IncompleteArrayTypeLoc &TL,
                               bool NeedSizeFold) {
+  IsArray = true;
   Range.emplace_back();
   setTypeInfo(TL.getElementLoc(), NeedSizeFold);
 }
 
 void CtTypeInfo::setArrayInfo(const DependentSizedArrayTypeLoc &TL,
                               bool NeedSizeFold) {
+  IsArray = true;
   ContainSizeofType = containSizeOfType(TL.getSizeExpr());
   ExprAnalysis EA;
   EA.analyze(TL.getSizeExpr());
@@ -3824,6 +3826,7 @@ void CtTypeInfo::setArrayInfo(const DependentSizedArrayTypeLoc &TL,
 
 void CtTypeInfo::setArrayInfo(const ConstantArrayTypeLoc &TL,
                               bool NeedSizeFold) {
+  IsArray = true;
   ContainSizeofType = containSizeOfType(TL.getSizeExpr());
   if (NeedSizeFold) {
     Range.emplace_back(getFoldedArraySize(TL));

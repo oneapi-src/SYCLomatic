@@ -2261,6 +2261,8 @@ private:
   // Get original array size expression.
   std::string getUnfoldedArraySize(const ConstantArrayTypeLoc &TL);
 
+  bool setTypedefInfo(const TypedefTypeLoc &TL, bool NeedSizeFold);
+
   // Typically C++ array with constant size.
   // e.g.: __device__ int a[20];
   // If \p NeedSizeFold is true, original size expression will be appended as
