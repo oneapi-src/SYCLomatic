@@ -715,6 +715,30 @@ inline int calculate_max_active_wg_per_xecore(int *num_wg, int wg_size,
   *num_wg = std::min(*num_wg, max_num_wg);
   return ret;
 }
+
+/// This function is used for occupancy calculation, it computes the work-group
+/// number and the work-group size which achieves the maximum occupancy of the
+/// device potentially.
+/// \param [out] num_wg Work-group number.
+/// \param [out] wg_size Work-group size.
+/// \param [in] max_ws_size_for_device_code The maximum working work-group size
+/// for current device code logic. Zero means no limitation.
+/// \param [in] slm_size Share local memory size.
+/// \param [in] sg_size Sub-group size.
+/// \param [in] used_barrier Whether barrier is used.
+/// \param [in] used_large_grf Whether large General Register File is used.
+/// \return Returns 0.
+inline int calculate_max_potential_wg(int *num_wg, int *wg_size,
+                                      int max_ws_size_for_device_code,
+                                      int slm_size = 0, int sg_size = 32,
+                                      bool used_barrier = false,
+                                      bool used_large_grf = false) {
+  size_t max_wg_size = dev.get_info<sycl::info::device::max_work_group_size>();
+  *wg_size = (int)max_wg_size;
+  calculate_max_active_wg_per_xecore(num_wg, *wg_size, slm_size, sg_size,
+                                     used_barrier, used_large_grf);
+  return 0;
+}
 } // namespace experimental
 
 /// If x <= 2, then return a pointer to the deafult queue;

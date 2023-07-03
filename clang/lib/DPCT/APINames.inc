@@ -358,7 +358,7 @@ ENTRY(cudaGraphInstantiateWithParams, cudaGraphInstantiateWithParams, false, NO_
 
 
 // C++ high level API functions of runtime API
-ENTRY(cudaOccupancyMaxPotentialBlockSize, cudaOccupancyMaxPotentialBlockSize, false, NO_FLAG, P0, "no direct mapping yet")
+ENTRY(cudaOccupancyMaxPotentialBlockSize, cudaOccupancyMaxPotentialBlockSize, true, NO_FLAG, P0, "no direct mapping yet")
 ENTRY(cudaOccupancyMaxPotentialBlockSizeVariableSMem, cudaOccupancyMaxPotentialBlockSizeVariableSMem, false, NO_FLAG, P0, "comment")
 ENTRY(cudaOccupancyMaxPotentialBlockSizeVariableSMemWithFlags, cudaOccupancyMaxPotentialBlockSizeVariableSMemWithFlags, false, NO_FLAG, P4, "comment")
 ENTRY(cudaOccupancyMaxPotentialBlockSizeWithFlags, cudaOccupancyMaxPotentialBlockSizeWithFlags, false, NO_FLAG, P4, "comment")

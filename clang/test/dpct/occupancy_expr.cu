@@ -19,5 +19,23 @@ int main() {
   // CHECK: */
   // CHECK: dpct::experimental::calculate_max_active_wg_per_xecore(&num_blocks, block_size, dynamic_shared_memory_size + dpct_placeholder /* total share local memory size */);
   cuOccupancyMaxActiveBlocksPerMultiprocessor(&num_blocks, func, block_size, dynamic_shared_memory_size);
+
+  int min_grid_size;
+  int block_size_limit;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1111:{{[0-9]+}}: Please verify the input arguments of "dpct::experimental::calculate_max_potential_wg" base on the target function "k".
+  // CHECK-NEXT: */
+  // CHECK-NEXT:dpct::experimental::calculate_max_potential_wg(&min_grid_size, &block_size, 0, dpct_placeholder /* total share local memory size */);
+  cudaOccupancyMaxPotentialBlockSize(&min_grid_size, &block_size, k);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1111:{{[0-9]+}}: Please verify the input arguments of "dpct::experimental::calculate_max_potential_wg" base on the target function "k".
+  // CHECK-NEXT: */
+  // CHECK-NEXT:dpct::experimental::calculate_max_potential_wg(&min_grid_size, &block_size, 0, dynamic_shared_memory_size + dpct_placeholder /* total share local memory size */);
+  cudaOccupancyMaxPotentialBlockSize(&min_grid_size, &block_size, k, dynamic_shared_memory_size);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1111:{{[0-9]+}}: Please verify the input arguments of "dpct::experimental::calculate_max_potential_wg" base on the target function "k".
+  // CHECK-NEXT: */
+  // CHECK-NEXT:dpct::experimental::calculate_max_potential_wg(&min_grid_size, &block_size, block_size_limit, dynamic_shared_memory_size + dpct_placeholder /* total share local memory size */);
+  cudaOccupancyMaxPotentialBlockSize(&min_grid_size, &block_size, k, dynamic_shared_memory_size, block_size_limit);
   return 0;
 }
