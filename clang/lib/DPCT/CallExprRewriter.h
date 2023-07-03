@@ -200,6 +200,7 @@ protected:
 };
 
 class ConditionalRewriterFactory : public CallExprRewriterFactoryBase {
+protected:
   std::function<bool(const CallExpr *)> Pred;
   std::shared_ptr<CallExprRewriterFactoryBase> First, Second;
 
@@ -210,17 +211,23 @@ public:
       std::shared_ptr<CallExprRewriterFactoryBase> SecondFactory)
       : Pred(std::forward<InputPred>(P)), First(FirstFactory),
         Second(SecondFactory) {}
-  void insertToNullOne(std::shared_ptr<CallExprRewriterFactoryBase> Factory) {
-    if (First == nullptr)
-      First = Factory;
-    else if (Second == nullptr)
-      Second = Factory;
-  }
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
     if (Pred(C))
       return First->create(C);
     else
       return Second->create(C);
+  }
+};
+
+class NoElseConditionalRewriterFactory final
+    : public ConditionalRewriterFactory {
+public:
+  template <class InputPred>
+  NoElseConditionalRewriterFactory(
+      InputPred &&P, std::shared_ptr<CallExprRewriterFactoryBase> FirstFactory)
+      : ConditionalRewriterFactory(P, FirstFactory, nullptr) {}
+  void setElse(std::shared_ptr<CallExprRewriterFactoryBase> SecondFactory) {
+    Second = SecondFactory;
   }
 };
 
