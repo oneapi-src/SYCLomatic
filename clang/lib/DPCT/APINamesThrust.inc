@@ -1052,3 +1052,34 @@ thrustFactory("thrust::equal",
                { 3,PolicyState::NoPolicy, 3,"oneapi::dpl::equal", HelperFeatureEnum::no_feature_helper},
                { 5,PolicyState::HasPolicy,3,"oneapi::dpl::equal", HelperFeatureEnum::no_feature_helper},
                { 4,PolicyState::NoPolicy, 3,"oneapi::dpl::equal", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::all_of
+thrustFactory("thrust::all_of",
+              {{4,PolicyState::HasPolicy,2,"oneapi::dpl::all_of", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"oneapi::dpl::all_of", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::none_of
+thrustFactory("thrust::none_of",
+              {{4,PolicyState::HasPolicy,2,"oneapi::dpl::none_of", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"oneapi::dpl::none_of", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::is_partitioned
+thrustFactory("thrust::is_partitioned",
+              {{4,PolicyState::HasPolicy,2,"oneapi::dpl::is_partitioned", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"oneapi::dpl::is_partitioned", HelperFeatureEnum::no_feature_helper}}),
+
+
+// thrust::is_sorted_until
+thrustFactory("thrust::is_sorted_until",
+              {{ 3,PolicyState::HasPolicy,2,"oneapi::dpl::is_sorted_until", HelperFeatureEnum::no_feature_helper},
+               { 2,PolicyState::NoPolicy, 2,"oneapi::dpl::is_sorted_until", HelperFeatureEnum::no_feature_helper},
+               { 4,PolicyState::HasPolicy,2,"oneapi::dpl::is_sorted_until", HelperFeatureEnum::no_feature_helper},
+               { 3,PolicyState::NoPolicy, 2,"oneapi::dpl::is_sorted_until", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::set_intersection
+thrustFactory("thrust::set_intersection",
+              {{ 6,PolicyState::HasPolicy,5,"oneapi::dpl::set_intersection", HelperFeatureEnum::no_feature_helper},
+               { 5,PolicyState::NoPolicy, 5,"oneapi::dpl::set_intersection", HelperFeatureEnum::no_feature_helper},
+               { 7,PolicyState::HasPolicy,5,"oneapi::dpl::set_intersection", HelperFeatureEnum::no_feature_helper},
+               { 6,PolicyState::NoPolicy, 5,"oneapi::dpl::set_intersection", HelperFeatureEnum::no_feature_helper}}),
+
