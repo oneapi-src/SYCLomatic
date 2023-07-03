@@ -15,10 +15,7 @@
 namespace clang {
 namespace dpct {
 
-class APIMappingEntrys {
-  std::string Name;
-  std::string Description;
-
+class APIMapping {
   static std::unordered_map<std::string, std::string> EntryMap;
 
   static void registerEntry(const std::string &Name,
@@ -28,7 +25,7 @@ public:
   static void initEntryMap();
 
   template <class StreamTy>
-  static void printMappingDesc(StreamTy &Stream, const std::string &Key) {
+  static void queryAPIMapping(StreamTy &Stream, const std::string &Key) {
     auto Iter = EntryMap.find(Key);
     if (Iter == EntryMap.end() || Iter->second == "NA")
       Stream << "The API Mapping is not available\n";

@@ -11,18 +11,20 @@
 namespace clang {
 namespace dpct {
 
-std::unordered_map<std::string, std::string> APIMappingEntrys::EntryMap;
+std::unordered_map<std::string, std::string> APIMapping::EntryMap;
 
-void APIMappingEntrys::registerEntry(const std::string &Name,
-                                     const std::string &Description) {
+void APIMapping::registerEntry(const std::string &Name,
+                               const std::string &Description) {
+  if (Description == "NA")
+    return;
   EntryMap[Name] = Description;
 }
 
-void APIMappingEntrys::initEntryMap() {
+void APIMapping::initEntryMap() {
   static const std::string MultiStr =
-      "\nThere are multi migration solutions for this API with different "
-      "migration options,\nsuggest to use the tool to migrate a complete test "
-      "case to see more detail of the migration.";
+      "\nThere are multi kinds of migrations for this API with different "
+      "migration options,\nsuggest to use the tool to migrate a API usage "
+      "code to see more detail of the migration.";
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)   \
   registerEntry(#APINAME, MAPPING);
 #define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \

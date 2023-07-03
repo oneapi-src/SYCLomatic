@@ -408,11 +408,11 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), GenHelperFunctio
         llvm::cl::desc("Generate helper function files in the --out-root directory. Default: off."),
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>),
-                     QueryAPIMapping, "query-api-mapping",
-                     llvm::cl::desc("Outputs to stdout functionally compatible "
-                                    "SYCL API mapping for CUDA API."),
-                     llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat),
-                     llvm::cl::Optional)
+DPCT_NON_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), QueryAPIMapping,
+    "query-api-mapping",
+    llvm::cl::desc(
+        "Query functionally compatible SYCL API to migrate CUDA API."),
+    llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT

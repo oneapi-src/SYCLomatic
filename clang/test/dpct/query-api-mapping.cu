@@ -13,5 +13,5 @@
 // RUN: dpct --query-api-mapping=__hfma_sat | FileCheck %s -check-prefix=HFMA_SAT
 // HFMA_SAT: CUDA API: __hfma_sat
 // HFMA_SAT-NEXT: Is migrated to: sycl::ext::intel::math::hfma_sat(sycl::half x, sycl::half y, sycl::half z)
-// HFMA_SAT-NEXT: There are multi migration solutions for this API with different migration options,
-// HFMA_SAT-NEXT: suggest to use the tool to migrate a complete test case to see more detail of the migration.
+// HFMA_SAT-NEXT: There are multi kinds of migrations for this API with different migration options,
+// HFMA_SAT-NEXT: suggest to use the tool to migrate a API usage code to see more detail of the migration.

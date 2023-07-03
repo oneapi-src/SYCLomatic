@@ -656,8 +656,8 @@ int runDPCT(int argc, const char **argv) {
     dpctExit(MigrationSucceeded);
 
   if (QueryAPIMapping.getNumOccurrences()) {
-    APIMappingEntrys::initEntryMap();
-    APIMappingEntrys::printMappingDesc(llvm::outs(), QueryAPIMapping);
+    APIMapping::initEntryMap();
+    APIMapping::queryAPIMapping(llvm::outs(), QueryAPIMapping);
     dpctExit(MigrationSucceeded);
   }
 
