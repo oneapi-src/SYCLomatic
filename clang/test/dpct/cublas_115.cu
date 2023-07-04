@@ -10,6 +10,6 @@ void foo1(cublasStatus_t s) {
   //CHECK:/*
   //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:printf("Error name: %s", "cusparseGetErrorString is not supported"/*cusparseGetErrorString(s)*/);
-  printf("Error string: %s", cusparseGetErrorString(s));
+  //CHECK-NEXT:printf("Error string: %s", "cublasGetStatusString is not supported"/*cublasGetStatusString(s)*/);
+  printf("Error string: %s", cublasGetStatusString(s));
 }
