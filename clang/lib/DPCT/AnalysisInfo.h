@@ -588,12 +588,8 @@ public:
   std::vector<RnnBackwardFuncInfo> &getRnnBackwardFuncInfo() {
     return RBFuncInfo;
   }
-  void setRTVersionValue(std::string Value) {
-    RTVersionValue = Value;
-  }
-  std::string getRTVersionValue() {
-    return RTVersionValue;
-  }
+  void setRTVersionValue(std::string Value) { RTVersionValue = Value; }
+  std::string getRTVersionValue() { return RTVersionValue; }
 
 private:
   std::vector<std::pair<unsigned int, unsigned int>> TimeStubBounds;

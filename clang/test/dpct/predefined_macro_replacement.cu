@@ -311,11 +311,11 @@ void foo5() {
 #undef AAAA
 
 //CHECK: void foo6() {
-//CHECK-NEXT:   float* f;
+//CHECK-NEXT:   float *f;
 //CHECK-NEXT: #if (DPCT_COMPAT_RT_VERSION >= 12000)
 void foo6() {
-  float* f;
-  #if (CUDART_VERSION >= 12000)
+  float *f;
+#if (CUDART_VERSION >= 12000)
   cudaMalloc(&f, 4);
 #else
   cudaMallocHost(&f, 4);
@@ -323,10 +323,10 @@ void foo6() {
 }
 
 //CHECK: void foo7() {
-//CHECK-NEXT:   float* f;
+//CHECK-NEXT:   float *f;
 //CHECK-NEXT: #if (DPCT_COMPAT_RT_VERSION >= 12000)
 void foo7() {
-  float* f;
+  float *f;
 #if (__CUDART_API_VERSION >= 12000)
   cudaMalloc(&f, 4);
 #else

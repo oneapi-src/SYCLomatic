@@ -731,7 +731,8 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
           DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
         insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
         requestFeature(HelperFeatureEnum::device_ext);
-      } else if (MacroName == "CUDART_VERSION" || MacroName == "__CUDART_API_VERSION") {
+      } else if (MacroName == "CUDART_VERSION" ||
+                 MacroName == "__CUDART_API_VERSION") {
         auto LocInfo = DpctGlobalInfo::getLocInfo(IB);
         DpctGlobalInfo::getInstance()
             .insertFile(LocInfo.first)
