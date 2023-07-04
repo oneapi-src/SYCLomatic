@@ -1052,3 +1052,34 @@ thrustFactory("thrust::equal",
                { 3,PolicyState::NoPolicy, 3,"oneapi::dpl::equal", HelperFeatureEnum::none},
                { 5,PolicyState::HasPolicy,3,"oneapi::dpl::equal", HelperFeatureEnum::none},
                { 4,PolicyState::NoPolicy, 3,"oneapi::dpl::equal", HelperFeatureEnum::none}}),
+
+// thrust::all_of
+thrustFactory("thrust::all_of",
+              {{4,PolicyState::HasPolicy,2,"oneapi::dpl::all_of", HelperFeatureEnum::none},
+               {3,PolicyState::NoPolicy, 2,"oneapi::dpl::all_of", HelperFeatureEnum::none}}),
+
+// thrust::none_of
+thrustFactory("thrust::none_of",
+              {{4,PolicyState::HasPolicy,2,"oneapi::dpl::none_of", HelperFeatureEnum::none},
+               {3,PolicyState::NoPolicy, 2,"oneapi::dpl::none_of", HelperFeatureEnum::none}}),
+
+// thrust::is_partitioned
+thrustFactory("thrust::is_partitioned",
+              {{4,PolicyState::HasPolicy,2,"oneapi::dpl::is_partitioned", HelperFeatureEnum::none},
+               {3,PolicyState::NoPolicy, 2,"oneapi::dpl::is_partitioned", HelperFeatureEnum::none}}),
+
+
+// thrust::is_sorted_until
+thrustFactory("thrust::is_sorted_until",
+              {{ 3,PolicyState::HasPolicy,2,"oneapi::dpl::is_sorted_until", HelperFeatureEnum::none},
+               { 2,PolicyState::NoPolicy, 2,"oneapi::dpl::is_sorted_until", HelperFeatureEnum::none},
+               { 4,PolicyState::HasPolicy,2,"oneapi::dpl::is_sorted_until", HelperFeatureEnum::none},
+               { 3,PolicyState::NoPolicy, 2,"oneapi::dpl::is_sorted_until", HelperFeatureEnum::none}}),
+
+// thrust::set_intersection
+thrustFactory("thrust::set_intersection",
+              {{ 6,PolicyState::HasPolicy,5,"oneapi::dpl::set_intersection", HelperFeatureEnum::none},
+               { 5,PolicyState::NoPolicy, 5,"oneapi::dpl::set_intersection", HelperFeatureEnum::none},
+               { 7,PolicyState::HasPolicy,5,"oneapi::dpl::set_intersection", HelperFeatureEnum::none},
+               { 6,PolicyState::NoPolicy, 5,"oneapi::dpl::set_intersection", HelperFeatureEnum::none}}),
+
