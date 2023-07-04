@@ -1086,10 +1086,10 @@ thrustFactory("thrust::set_intersection",
 
 // thrust::set_symmetric_difference
 thrustFactory("thrust::set_symmetric_difference",
-              {{ 6,PolicyState::HasPolicy,5,"oneapi::dpl::set_symmetric_difference", HelperFeatureEnum::no_feature_helper},
-               { 5,PolicyState::NoPolicy, 5,"oneapi::dpl::set_symmetric_difference", HelperFeatureEnum::no_feature_helper},
-               { 7,PolicyState::HasPolicy,5,"oneapi::dpl::set_symmetric_difference", HelperFeatureEnum::no_feature_helper},
-               { 6,PolicyState::NoPolicy, 5,"oneapi::dpl::set_symmetric_difference", HelperFeatureEnum::no_feature_helper}}),
+              {{ 6,PolicyState::HasPolicy,5,"oneapi::dpl::set_symmetric_difference", HelperFeatureEnum::none},
+               { 5,PolicyState::NoPolicy, 5,"oneapi::dpl::set_symmetric_difference", HelperFeatureEnum::none},
+               { 7,PolicyState::HasPolicy,5,"oneapi::dpl::set_symmetric_difference", HelperFeatureEnum::none},
+               { 6,PolicyState::NoPolicy, 5,"oneapi::dpl::set_symmetric_difference", HelperFeatureEnum::none}}),
 
 // thrust::set_symmetric_difference_by_key
 thrustFactory("thrust::set_symmetric_difference_by_key",
