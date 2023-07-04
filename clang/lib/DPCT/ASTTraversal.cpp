@@ -12342,14 +12342,11 @@ void RecognizeAPINameRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if ((MC =
                   getNodeAsType<CXXMemberCallExpr>(Result, "MFAPINamesUsed")) ||
              (MC = getNodeAsType<CXXMemberCallExpr>(Result,
-                                                    "MFAPINamesHasNSUsed"))) {
-    processFuncCall(MC);
-  } else if ((MC = getNodeAsType<CXXMemberCallExpr>(
+                                                    "MFAPINamesHasNSUsed")) ||
+             (MC = getNodeAsType<CXXMemberCallExpr>(
                   Result, "StaticMFAPINamesHasNSUsed"))) {
     processFuncCall(MC);
   }
-
-  return;
 }
 
 REGISTER_RULE(RecognizeAPINameRule, PassKind::PK_Migration)
