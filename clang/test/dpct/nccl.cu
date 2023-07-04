@@ -138,6 +138,9 @@ int main() {
     // CHECK-NEXT: */
     ncclReduceScatter(buff, recvbuff, count, ncclChar, ncclAvg, comm, stream);
 
+    // CHECK: comm->broadcast(buff, buff, count, oneapi::ccl::datatype::int8, rank, stream);
+    ncclBcast(buff, count, ncclChar, rank, comm, stream);
+
     // CHECK: delete comm;
     ncclCommDestroy(comm);
 }

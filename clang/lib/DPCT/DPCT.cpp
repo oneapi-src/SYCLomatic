@@ -650,25 +650,6 @@ int runDPCT(int argc, const char **argv) {
   if (CommonOptionsParser::hasHelpOption(OriginalArgc, argv))
     dpctExit(MigrationSucceeded);
 
-  auto ExtensionStr = ChangeExtension.getValue();
-  ExtensionStr.erase(std::remove(ExtensionStr.begin(), ExtensionStr.end(), ' '),
-                     ExtensionStr.end());
-  auto Extensions = split(ExtensionStr, ',');
-  for (auto &Extension : Extensions) {
-    const auto len = Extension.length();
-    if (len < 2 || len > 5 || Extension[0] != '.') {
-      ShowStatus(MigrationErrorInvalidChangeFilenameExtension);
-      dpctExit(MigrationErrorInvalidChangeFilenameExtension, false);
-    }
-    for (size_t i = 1; i < len; ++i) {
-      if (!std::isalpha(Extension[i])) {
-        ShowStatus(MigrationErrorInvalidChangeFilenameExtension);
-        dpctExit(MigrationErrorInvalidChangeFilenameExtension, false);
-      }
-    }
-    DpctGlobalInfo::addChangeExtensions(Extension);
-  }
-
   if (LimitChangeExtension) {
     DpctGlobalInfo::addChangeExtensions(".cu");
     DpctGlobalInfo::addChangeExtensions(".cuh");
