@@ -980,6 +980,7 @@ CALL_FACTORY_ENTRY("thrust::make_counting_iterator", CALL(MapNames::getDpctNames
 thrustFactory("thrust::scatter_if",
               {{7,PolicyState::HasPolicy,5,MapNames::getDpctNamespace()+"scatter_if", HelperFeatureEnum::device_ext},
                {6,PolicyState::NoPolicy, 5,MapNames::getDpctNamespace()+"scatter_if", HelperFeatureEnum::device_ext}}),
+
 // thrust::uninitialized_copy(
 thrustFactory("thrust::uninitialized_copy",
               {{ 4,PolicyState::HasPolicy,3,"oneapi::dpl::uninitialized_copy", HelperFeatureEnum::no_feature_helper},
@@ -1045,3 +1046,54 @@ CONDITIONAL_FACTORY_ENTRY(
     )
 )
 
+// thrust::equal
+thrustFactory("thrust::equal",
+              {{ 4,PolicyState::HasPolicy,3,"oneapi::dpl::equal", HelperFeatureEnum::no_feature_helper},
+               { 3,PolicyState::NoPolicy, 3,"oneapi::dpl::equal", HelperFeatureEnum::no_feature_helper},
+               { 5,PolicyState::HasPolicy,3,"oneapi::dpl::equal", HelperFeatureEnum::no_feature_helper},
+               { 4,PolicyState::NoPolicy, 3,"oneapi::dpl::equal", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::all_of
+thrustFactory("thrust::all_of",
+              {{4,PolicyState::HasPolicy,2,"oneapi::dpl::all_of", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"oneapi::dpl::all_of", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::none_of
+thrustFactory("thrust::none_of",
+              {{4,PolicyState::HasPolicy,2,"oneapi::dpl::none_of", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"oneapi::dpl::none_of", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::is_partitioned
+thrustFactory("thrust::is_partitioned",
+              {{4,PolicyState::HasPolicy,2,"oneapi::dpl::is_partitioned", HelperFeatureEnum::no_feature_helper},
+               {3,PolicyState::NoPolicy, 2,"oneapi::dpl::is_partitioned", HelperFeatureEnum::no_feature_helper}}),
+
+
+// thrust::is_sorted_until
+thrustFactory("thrust::is_sorted_until",
+              {{ 3,PolicyState::HasPolicy,2,"oneapi::dpl::is_sorted_until", HelperFeatureEnum::no_feature_helper},
+               { 2,PolicyState::NoPolicy, 2,"oneapi::dpl::is_sorted_until", HelperFeatureEnum::no_feature_helper},
+               { 4,PolicyState::HasPolicy,2,"oneapi::dpl::is_sorted_until", HelperFeatureEnum::no_feature_helper},
+               { 3,PolicyState::NoPolicy, 2,"oneapi::dpl::is_sorted_until", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::set_intersection
+thrustFactory("thrust::set_intersection",
+              {{ 6,PolicyState::HasPolicy,5,"oneapi::dpl::set_intersection", HelperFeatureEnum::no_feature_helper},
+               { 5,PolicyState::NoPolicy, 5,"oneapi::dpl::set_intersection", HelperFeatureEnum::no_feature_helper},
+               { 7,PolicyState::HasPolicy,5,"oneapi::dpl::set_intersection", HelperFeatureEnum::no_feature_helper},
+               { 6,PolicyState::NoPolicy, 5,"oneapi::dpl::set_intersection", HelperFeatureEnum::no_feature_helper}}),
+
+
+// thrust::set_symmetric_difference
+thrustFactory("thrust::set_symmetric_difference",
+              {{ 6,PolicyState::HasPolicy,5,"oneapi::dpl::set_symmetric_difference", HelperFeatureEnum::no_feature_helper},
+               { 5,PolicyState::NoPolicy, 5,"oneapi::dpl::set_symmetric_difference", HelperFeatureEnum::no_feature_helper},
+               { 7,PolicyState::HasPolicy,5,"oneapi::dpl::set_symmetric_difference", HelperFeatureEnum::no_feature_helper},
+               { 6,PolicyState::NoPolicy, 5,"oneapi::dpl::set_symmetric_difference", HelperFeatureEnum::no_feature_helper}}),
+
+// thrust::set_symmetric_difference_by_key
+thrustFactory("thrust::set_symmetric_difference_by_key",
+              {{ 9, PolicyState::HasPolicy,8, MapNames::getDpctNamespace() + "set_symmetric_difference", HelperFeatureEnum::device_ext},
+               { 8, PolicyState::NoPolicy, 8, MapNames::getDpctNamespace() + "set_symmetric_difference", HelperFeatureEnum::device_ext},
+               { 10,PolicyState::HasPolicy,8, MapNames::getDpctNamespace() + "set_symmetric_difference", HelperFeatureEnum::device_ext},
+               { 9, PolicyState::NoPolicy, 8, MapNames::getDpctNamespace() + "set_symmetric_difference", HelperFeatureEnum::device_ext}}),
