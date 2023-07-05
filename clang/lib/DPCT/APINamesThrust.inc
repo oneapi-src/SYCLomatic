@@ -1117,3 +1117,8 @@ thrustFactory("thrust::set_union_by_key",
 thrustFactory("thrust::swap_ranges",
               {{4,PolicyState::HasPolicy,3,"oneapi::dpl::swap_ranges", HelperFeatureEnum::none},
                {3,PolicyState::NoPolicy, 3,"oneapi::dpl::swap_ranges", HelperFeatureEnum::none}}),
+
+// thrust::uninitialized_fill_n
+thrustFactory("thrust::uninitialized_fill_n",
+              {{4,PolicyState::HasPolicy,1,"oneapi::dpl::uninitialized_fill_n", HelperFeatureEnum::none},
+               {3,PolicyState::NoPolicy, 1,"oneapi::dpl::uninitialized_fill_n", HelperFeatureEnum::none}}),
