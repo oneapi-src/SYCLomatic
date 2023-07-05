@@ -4643,10 +4643,9 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   // TODO: Need to process the situation when scalar pointers (alpha, beta)
   // are device pointers.
 
-  if (MapNames::BLASAPIWithRewriter.find(FuncName) !=
-      MapNames::BLASAPIWithRewriter.end()) {
-    std::string NewFunctionName =
-        MapNames::BLASAPIWithRewriter.find(FuncName)->second;
+  auto Item = MapNames::BLASAPIWithRewriter.find(FuncName);
+  if (Item != MapNames::BLASAPIWithRewriter.end()) {
+    std::string NewFunctionName = Item->second;
     if (HasDeviceAttr && !NewFunctionName.empty()) {
       report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
              MapNames::ITFName.at(FuncName), NewFunctionName);
