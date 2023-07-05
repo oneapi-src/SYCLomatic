@@ -9,6 +9,9 @@
 #include <thrust/host_vector.h>
 #include <thrust/set_operations.h>
 
+// CHECK: #include <oneapi/dpl/memory>
+#include <thrust/uninitialized_fill.h>
+
 struct Compare {
   __host__ __device__ bool operator()(const int &a, const int &b) {
     return a < b;
@@ -78,4 +81,21 @@ void set_symmetric_difference_by_key() {
   thrust::set_symmetric_difference_by_key(A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result);
   thrust::set_symmetric_difference_by_key(thrust::host, A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result, Compare());
   thrust::set_symmetric_difference_by_key(A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result, Compare());
+}
+
+void swap_ranges() {
+  int v1[2], v2[2];
+
+  // CHECK:  if (dpct::is_device_ptr(v1)) {
+  // CHECK-NEXT:    oneapi::dpl::swap_ranges(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(v1), dpct::device_pointer<int>(v1 + 2), dpct::device_pointer<int>(v2));
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::swap_ranges(oneapi::dpl::execution::seq, v1, v1 + 2, v2);
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(v1)) {
+  // CHECK-NEXT:    oneapi::dpl::swap_ranges(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(v1), dpct::device_pointer<int>(v1 + 2), dpct::device_pointer<int>(v2));
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::swap_ranges(oneapi::dpl::execution::seq, v1, v1 + 2, v2);
+  // CHECK-NEXT:  };
+  thrust::swap_ranges(v1, v1 + 2, v2);
+  thrust::swap_ranges(thrust::host, v1, v1 + 2, v2);
 }

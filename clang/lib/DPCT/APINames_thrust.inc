@@ -165,7 +165,7 @@ ENTRY(thrust::stable_partition_copy, thrust::stable_partition_copy, true, NO_FLA
 ENTRY(thrust::stable_sort, thrust::stable_sort, true, NO_FLAG, P4, "comment")
 ENTRY(thrust::stable_sort_by_key, thrust::stable_sort_by_key, true, NO_FLAG, P4, "Successful")
 ENTRY(thrust::swap, thrust::swap, true, NO_FLAG, P4, "comment")
-ENTRY(thrust::swap_ranges, thrust::swap_ranges, false, NO_FLAG, P4, "comment")
+ENTRY(thrust::swap_ranges, thrust::swap_ranges, true, NO_FLAG, P4, "comment")
 ENTRY(thrust::system_category, thrust::system_category, false, NO_FLAG, P4, "comment")
 ENTRY(thrust::tabulate, thrust::tabulate, true, NO_FLAG, P4, "comment")
 ENTRY(thrust::tan, thrust::tan, true, NO_FLAG, P4, "Successful")

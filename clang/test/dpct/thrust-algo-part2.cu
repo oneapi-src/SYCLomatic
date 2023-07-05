@@ -9,6 +9,9 @@
 #include <thrust/host_vector.h>
 #include <thrust/set_operations.h>
 
+// CHECK: #include <oneapi/dpl/memory>
+#include <thrust/uninitialized_fill.h>
+
 struct Compare {
   __host__ __device__ bool operator()(const int &a, const int &b) {
     return a < b;
@@ -96,4 +99,22 @@ void set_symmetric_difference_by_key() {
   thrust::set_symmetric_difference_by_key(h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin());
   thrust::set_symmetric_difference_by_key(thrust::host, h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin(), Compare());
   thrust::set_symmetric_difference_by_key(h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin(), Compare());
+}
+
+void swap_ranges() {
+  thrust::device_vector<int> d_v1(2), d_v2(2);
+  thrust::host_vector<int> h_v1(2), h_v2(2);
+
+  // CHECK:  oneapi::dpl::swap_ranges(oneapi::dpl::execution::make_device_policy(q_ct1), d_v1.begin(), d_v1.end(), d_v2.begin());
+  // CHECK-NEXT:  oneapi::dpl::swap_ranges(oneapi::dpl::execution::seq, h_v1.begin(), h_v1.end(), h_v2.begin());
+  // CHECK-NEXT:  oneapi::dpl::swap_ranges(oneapi::dpl::execution::seq, h_v1, h_v1 + 2, h_v2);
+  // CHECK-NEXT:  oneapi::dpl::swap_ranges(oneapi::dpl::execution::make_device_policy(q_ct1), d_v1.begin(), d_v1.end(), d_v2.begin());
+  // CHECK-NEXT:  oneapi::dpl::swap_ranges(oneapi::dpl::execution::seq, h_v1.begin(), h_v1.end(), h_v2.begin());
+  // CHECK-NEXT:  oneapi::dpl::swap_ranges(oneapi::dpl::execution::seq, h_v1, h_v1 + 2, h_v2);
+  thrust::swap_ranges(thrust::device, d_v1.begin(), d_v1.end(), d_v2.begin());
+  thrust::swap_ranges(thrust::host, h_v1.begin(), h_v1.end(), h_v2.begin());
+  thrust::swap_ranges(thrust::host, h_v1, h_v1 + 2, h_v2);
+  thrust::swap_ranges(thrust::device, d_v1.begin(), d_v1.end(), d_v2.begin());
+  thrust::swap_ranges(thrust::host, h_v1.begin(), h_v1.end(), h_v2.begin());
+  thrust::swap_ranges(thrust::host, h_v1, h_v1 + 2, h_v2);
 }
