@@ -4315,7 +4315,7 @@ bool isCapturedByLambda(const clang::TypeLoc *TL) {
 namespace clang {
 namespace dpct {
 void requestFeature(HelperFeatureEnum Feature) {
-  if (Feature == HelperFeatureEnum::no_feature_helper) {
+  if (Feature == HelperFeatureEnum::none) {
     return;
   }
   DpctGlobalInfo::setNeedDpctDeviceExt();
