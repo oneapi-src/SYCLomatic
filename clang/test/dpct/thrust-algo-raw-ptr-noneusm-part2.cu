@@ -99,3 +99,30 @@ void swap_ranges() {
   thrust::swap_ranges(v1, v1 + 2, v2);
   thrust::swap_ranges(thrust::host, v1, v1 + 2, v2);
 }
+
+
+
+struct Int {
+  __host__ __device__ Int(int x) : val(x) {}
+  int val;
+};
+
+void uninitialized_fill_n() {
+
+  const int N = 137;
+  Int val(46);
+  int data[N];
+
+  // CHECK:  if (dpct::is_device_ptr(data)) {
+  // CHECK-NEXT:    oneapi::dpl::uninitialized_fill_n(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), N, val);
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::uninitialized_fill_n(oneapi::dpl::execution::seq, data, N, val);
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(data)) {
+  // CHECK-NEXT:    oneapi::dpl::uninitialized_fill_n(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), N, val);
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::uninitialized_fill_n(oneapi::dpl::execution::seq, data, N, val);
+  // CHECK-NEXT:  };
+  thrust::uninitialized_fill_n(data, N, val);
+  thrust::uninitialized_fill_n(thrust::host, data, N, val);
+}

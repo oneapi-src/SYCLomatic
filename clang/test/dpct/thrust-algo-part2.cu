@@ -118,3 +118,25 @@ void swap_ranges() {
   thrust::swap_ranges(thrust::host, h_v1.begin(), h_v1.end(), h_v2.begin());
   thrust::swap_ranges(thrust::host, h_v1, h_v1 + 2, h_v2);
 }
+
+struct Int {
+  __host__ __device__ Int(int x) : val(x) {}
+  int val;
+};
+
+void uninitialized_fill_n() {
+
+  const int N = 137;
+  Int val(46);
+  thrust::device_ptr<Int> d_array = thrust::device_malloc<Int>(N);
+  int data[N];
+
+  // CHECK:  oneapi::dpl::uninitialized_fill_n(oneapi::dpl::execution::make_device_policy(q_ct1), d_array, N, val);
+  // CHECK-NEXT:  oneapi::dpl::uninitialized_fill_n(oneapi::dpl::execution::make_device_policy(q_ct1), d_array, N, val);
+  // CHECK-NEXT:  oneapi::dpl::uninitialized_fill_n(oneapi::dpl::execution::seq, data, N, val);
+  // CHECK-NEXT:  oneapi::dpl::uninitialized_fill_n(oneapi::dpl::execution::seq, data, N, val);
+  thrust::uninitialized_fill_n(d_array, N, val);
+  thrust::uninitialized_fill_n(thrust::device, d_array, N, val);
+  thrust::uninitialized_fill_n(data, N, val);
+  thrust::uninitialized_fill_n(thrust::host, data, N, val);
+}
