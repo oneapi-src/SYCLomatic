@@ -230,7 +230,7 @@ MATH_API_REWRITER_DEVICE(
     "__h2div",
     MATH_API_DEVICE_NODES(
         EMPTY_FACTORY_ENTRY("__h2div"),
-        MATH_API_REWRITER_OVERLOAD_NO_ELSE(
+        MATH_API_REWRITER_OVERLOAD_ELSE_DELAY(
             CheckArgType(0, "__half"),
             HEADER_INSERT_FACTORY(
                 HeaderType::HT_SYCL_Math,

@@ -200,9 +200,13 @@ protected:
 };
 
 class ConditionalRewriterFactory : public CallExprRewriterFactoryBase {
-protected:
   std::function<bool(const CallExpr *)> Pred;
   std::shared_ptr<CallExprRewriterFactoryBase> First, Second;
+
+protected:
+  void setElse(std::shared_ptr<CallExprRewriterFactoryBase> SecondFactory) {
+    Second = SecondFactory;
+  }
 
 public:
   template <class InputPred>
@@ -219,16 +223,14 @@ public:
   }
 };
 
-class NoElseConditionalRewriterFactory final
+class MathElseDelayConditionalRewriterFactory final
     : public ConditionalRewriterFactory {
 public:
   template <class InputPred>
-  NoElseConditionalRewriterFactory(
+  MathElseDelayConditionalRewriterFactory(
       InputPred &&P, std::shared_ptr<CallExprRewriterFactoryBase> FirstFactory)
       : ConditionalRewriterFactory(P, FirstFactory, nullptr) {}
-  void setElse(std::shared_ptr<CallExprRewriterFactoryBase> SecondFactory) {
-    Second = SecondFactory;
-  }
+  using ConditionalRewriterFactory::setElse;
 };
 
 class CaseRewriterFactory : public CallExprRewriterFactoryBase {
