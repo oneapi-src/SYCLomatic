@@ -1112,3 +1112,8 @@ thrustFactory("thrust::set_union_by_key",
                { 8, PolicyState::NoPolicy, 8, MapNames::getDpctNamespace() + "set_union", HelperFeatureEnum::device_ext},
                { 10,PolicyState::HasPolicy,8, MapNames::getDpctNamespace() + "set_union", HelperFeatureEnum::device_ext},
                { 9, PolicyState::NoPolicy, 8, MapNames::getDpctNamespace() + "set_union", HelperFeatureEnum::device_ext}}),
+
+// thrust::swap_ranges
+thrustFactory("thrust::swap_ranges",
+              {{4,PolicyState::HasPolicy,3,"oneapi::dpl::swap_ranges", HelperFeatureEnum::none},
+               {3,PolicyState::NoPolicy, 3,"oneapi::dpl::swap_ranges", HelperFeatureEnum::none}}),
