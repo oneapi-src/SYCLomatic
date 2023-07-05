@@ -2221,7 +2221,6 @@ public:
 
   inline bool isTemplate() const { return IsTemplate; }
   inline bool isPointer() const { return PointerLevel; }
-  inline bool isArray() const { return IsArray; }
   inline bool isReference() const { return IsReference; }
   inline void adjustAsMemType() {
     setPointerAsArray();
@@ -2298,7 +2297,6 @@ private:
   std::string BaseNameWithoutQualifiers;
   std::vector<SizeInfo> Range;
   unsigned PointerLevel;
-  bool IsArray = false;
   bool IsReference;
   bool IsTemplate;
   bool TemplateDependentMacro = false;

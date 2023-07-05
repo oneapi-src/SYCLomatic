@@ -3769,17 +3769,15 @@ void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
   case TypeLoc::Elaborated: {
     const TypeLoc &NamedTypeLoc =
         TYPELOC_CAST(ElaboratedTypeLoc).getNamedTypeLoc();
-    bool HasConstantArray = false;
-    if (NamedTypeLoc.getTypeLocClass() == TypeLoc::Typedef) {
-      HasConstantArray =
-          setTypedefInfo(NamedTypeLoc.getAs<TypedefTypeLoc>(), NeedSizeFold);
+    if (const auto TTL = NamedTypeLoc.getAs<TypedefTypeLoc>()) {
+      if (setTypedefInfo(TTL, NeedSizeFold))
+        return;
     }
-    if (HasConstantArray)
-      return;
     break;
   }
   case TypeLoc::Typedef: {
-    setTypedefInfo(TYPELOC_CAST(TypedefTypeLoc), NeedSizeFold);
+    if (setTypedefInfo(TYPELOC_CAST(TypedefTypeLoc), NeedSizeFold))
+      return;
     break;
   }
   default:
@@ -3795,10 +3793,10 @@ bool CtTypeInfo::setTypedefInfo(const TypedefTypeLoc &TL, bool NeedSizeFold) {
   if (!TND->getTypeSourceInfo())
     return false;
   const TypeLoc TypedefTpyeDeclLoc = TND->getTypeSourceInfo()->getTypeLoc();
+  ConstantArrayTypeLoc CATL;
   if (DpctGlobalInfo::isInAnalysisScope(TypedefTpyeDeclLoc.getBeginLoc()) &&
-      TypedefTpyeDeclLoc.getTypeLocClass() == TypeLoc::ConstantArray) {
-    setArrayInfo(TypedefTpyeDeclLoc.getAs<ConstantArrayTypeLoc>(),
-                 NeedSizeFold);
+      (CATL = TypedefTpyeDeclLoc.getAs<ConstantArrayTypeLoc>())) {
+    setArrayInfo(CATL, NeedSizeFold);
     return true;
   }
   return false;
@@ -3806,14 +3804,12 @@ bool CtTypeInfo::setTypedefInfo(const TypedefTypeLoc &TL, bool NeedSizeFold) {
 
 void CtTypeInfo::setArrayInfo(const IncompleteArrayTypeLoc &TL,
                               bool NeedSizeFold) {
-  IsArray = true;
   Range.emplace_back();
   setTypeInfo(TL.getElementLoc(), NeedSizeFold);
 }
 
 void CtTypeInfo::setArrayInfo(const DependentSizedArrayTypeLoc &TL,
                               bool NeedSizeFold) {
-  IsArray = true;
   ContainSizeofType = containSizeOfType(TL.getSizeExpr());
   ExprAnalysis EA;
   EA.analyze(TL.getSizeExpr());
@@ -3826,7 +3822,6 @@ void CtTypeInfo::setArrayInfo(const DependentSizedArrayTypeLoc &TL,
 
 void CtTypeInfo::setArrayInfo(const ConstantArrayTypeLoc &TL,
                               bool NeedSizeFold) {
-  IsArray = true;
   ContainSizeofType = containSizeOfType(TL.getSizeExpr());
   if (NeedSizeFold) {
     Range.emplace_back(getFoldedArraySize(TL));
@@ -3923,9 +3918,7 @@ void CtTypeInfo::updateName() {
   if (BaseName.empty())
     BaseName = BaseNameWithoutQualifiers;
   else {
-    StringRef BaseNameRef(BaseName);
-    BaseName = BaseName + (BaseNameRef.ends_with("::") ? "" : " ") +
-               BaseNameWithoutQualifiers;
+    BaseName = buildString(BaseName, " ", BaseNameWithoutQualifiers);
   }
 }
 

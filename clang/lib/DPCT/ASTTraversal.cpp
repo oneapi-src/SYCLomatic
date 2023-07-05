@@ -9548,7 +9548,7 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
                  dyn_cast_or_null<UnaryOperator>(Parent)) {
       if (!Decl->hasAttr<CUDASharedAttr>() && UO->getOpcode() == UO_AddrOf) {
         CtTypeInfo TypeAnalysis(Decl, false);
-        if (TypeAnalysis.isArray()) {
+        if (TypeAnalysis.getDimension()) {
           auto Range = GetReplRange(UO);
           if (TypeAnalysis.getDimension() >= 2) {
             // Dim >= 2
