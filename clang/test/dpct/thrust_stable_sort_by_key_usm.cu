@@ -32,10 +32,10 @@ int main(void) {
 /*********** stable_sort_by_key ***********************************************************************************************************************************************/
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// CHECK:dpct::stable_sort(oneapi::dpl::execution::seq, AH.begin(), AH.end(), BH.begin());
+// CHECK:dpct::stable_sort(oneapi::dpl::execution::par_noseq, AH.begin(), AH.end(), BH.begin());
 // CHECK-NEXT:dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), BD.begin());
-// CHECK-NEXT:dpct::stable_sort(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, BH.begin());
-// CHECK-NEXT:dpct::stable_sort(oneapi::dpl::execution::seq, d_ptr, d_ptr + 4, BD.begin());
+// CHECK-NEXT:dpct::stable_sort(oneapi::dpl::execution::par_noseq, h_ptr, h_ptr + 4, BH.begin());
+// CHECK-NEXT:dpct::stable_sort(oneapi::dpl::execution::par_noseq, d_ptr, d_ptr + 4, BD.begin());
   // VERSION                                 first       last      result
   thrust::stable_sort_by_key(                AH.begin(), AH.end(), BH.begin());
   thrust::stable_sort_by_key(                AD.begin(), AD.end(), BD.begin());
@@ -43,10 +43,10 @@ int main(void) {
   thrust::stable_sort_by_key(                d_ptr,      d_ptr+4,  BD.begin());
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// CHECK:dpct::stable_sort(oneapi::dpl::execution::seq, AH.begin(), AH.end(), BH.begin(), std::greater<int>());
+// CHECK:dpct::stable_sort(oneapi::dpl::execution::par_noseq, AH.begin(), AH.end(), BH.begin(), std::greater<int>());
 // CHECK-NEXT:dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), BD.begin(), std::greater<int>());
-// CHECK-NEXT:dpct::stable_sort(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, BH.begin(), std::greater<int>());
-// CHECK-NEXT:dpct::stable_sort(oneapi::dpl::execution::seq, d_ptr, d_ptr + 4, BD.begin(), std::greater<int>());
+// CHECK-NEXT:dpct::stable_sort(oneapi::dpl::execution::par_noseq, h_ptr, h_ptr + 4, BH.begin(), std::greater<int>());
+// CHECK-NEXT:dpct::stable_sort(oneapi::dpl::execution::par_noseq, d_ptr, d_ptr + 4, BD.begin(), std::greater<int>());
   // VERSION                                 first       last      result      comparator
   thrust::stable_sort_by_key(                AH.begin(), AH.end(), BH.begin(), thrust::greater<int>());
   thrust::stable_sort_by_key(                AD.begin(), AD.end(), BD.begin(), thrust::greater<int>());
@@ -54,9 +54,9 @@ int main(void) {
   thrust::stable_sort_by_key(                d_ptr,      d_ptr+4,  BD.begin(), thrust::greater<int>());
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// CHECK:dpct::stable_sort(oneapi::dpl::execution::seq, AH.begin(), AH.end(), BH.begin());
+// CHECK:dpct::stable_sort(oneapi::dpl::execution::par_noseq, AH.begin(), AH.end(), BH.begin());
 // CHECK-NEXT:dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), BD.begin());
-// CHECK-NEXT:dpct::stable_sort(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, BH.begin());
+// CHECK-NEXT:dpct::stable_sort(oneapi::dpl::execution::par_noseq, h_ptr, h_ptr + 4, BH.begin());
 // CHECK-NEXT:dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_ptr, d_ptr + 4, BD.begin());
   // VERSION                 exec            first       last      result
   thrust::stable_sort_by_key(thrust::host,   AH.begin(), AH.end(), BH.begin());
@@ -65,9 +65,9 @@ int main(void) {
   thrust::stable_sort_by_key(thrust::device, d_ptr,      d_ptr+4,  BD.begin());
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// CHECK:dpct::stable_sort(oneapi::dpl::execution::seq, AH.begin(), AH.end(), BH.begin(), std::greater<int>());
+// CHECK:dpct::stable_sort(oneapi::dpl::execution::par_noseq, AH.begin(), AH.end(), BH.begin(), std::greater<int>());
 // CHECK-NEXT:dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), BD.begin(), std::greater<int>());
-// CHECK-NEXT:dpct::stable_sort(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, BH.begin(), std::greater<int>());
+// CHECK-NEXT:dpct::stable_sort(oneapi::dpl::execution::par_noseq, h_ptr, h_ptr + 4, BH.begin(), std::greater<int>());
 // CHECK-NEXT:dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_ptr, d_ptr + 4, BD.begin(), std::greater<int>());
   // VERSION                 exec            first       last      result      comparator
   thrust::stable_sort_by_key(thrust::host,   AH.begin(), AH.end(), BH.begin(), thrust::greater<int>());

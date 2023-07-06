@@ -193,7 +193,7 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
       // a host execution policy must be specified to match the thrust
       // behavior
       if (CE->getArg(0)->getType()->isPointerType()) {
-        ExtraParam = "oneapi::dpl::execution::seq";
+        ExtraParam = "oneapi::dpl::execution::par_noseq";
       } else {
         if (isPlaceholderIdxDuplicated(CE))
           return;

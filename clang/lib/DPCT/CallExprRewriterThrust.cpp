@@ -167,7 +167,7 @@ makeMappedThrustPolicyEnum(unsigned Idx) {
         return "oneapi::dpl::execution::make_device_policy(" +
                makeQueueStr()(C) + ")";
       } else if (EnumName == "seq" || EnumName == "host") {
-        return "oneapi::dpl::execution::seq";
+        return "oneapi::dpl::execution::par_noseq";
       } else {
         return EnumName;
       }
@@ -257,7 +257,7 @@ auto createSequentialPolicyCallExprRewriterFactory(
 
   return createCallExprRewriterFactory(
       thrustFunc,
-      makeCallExprCreator(syclFunc, ARG("oneapi::dpl::execution::seq"),
+      makeCallExprCreator(syclFunc, ARG("oneapi::dpl::execution::par_noseq"),
                           makeCallArgVectorCreator(argStart, argCnt)));
 }
 

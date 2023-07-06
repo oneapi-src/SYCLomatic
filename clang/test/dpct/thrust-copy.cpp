@@ -38,19 +38,19 @@ int main(void) {
   //CHECK: if(dpct::is_device_ptr(data)){
   //CHECK-NEXT:   std::copy(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<const char>(data), dpct::device_pointer<const char>(data + N), dpct::device_pointer<char>(dst_data));
   //CHECK-NEXT: } else {
-  //CHECK-NEXT:   std::copy(oneapi::dpl::execution::seq, data, data + N, dst_data);
+  //CHECK-NEXT:   std::copy(oneapi::dpl::execution::par_noseq, data, data + N, dst_data);
   //CHECK-NEXT: };
   thrust::copy(data, data + N, dst_data);
-  //CHECK: std::copy(oneapi::dpl::execution::seq, host_input.begin(), host_input.end(), std::ostream_iterator<char>(std::cout, ""));
+  //CHECK: std::copy(oneapi::dpl::execution::par_noseq, host_input.begin(), host_input.end(), std::ostream_iterator<char>(std::cout, ""));
   thrust::copy(host_input.begin(), host_input.end(), std::ostream_iterator<char>(std::cout, ""));
   //CHECK: std::copy(oneapi::dpl::execution::make_device_policy(q_ct1), input.begin(), input.end(), std::ostream_iterator<char>(std::cout, ""));
   thrust::copy(input.begin(), input.end(), std::ostream_iterator<char>(std::cout, ""));
-  //CHECK: std::copy(oneapi::dpl::execution::seq, host_input.begin(), host_input.end(), std::ostream_iterator<char>(std::cout, ""));
+  //CHECK: std::copy(oneapi::dpl::execution::par_noseq, host_input.begin(), host_input.end(), std::ostream_iterator<char>(std::cout, ""));
   thrust::copy(thrust::host, host_input.begin(), host_input.end(), std::ostream_iterator<char>(std::cout, ""));
   //CHECK: if(dpct::is_device_ptr(data)){
   //CHECK-NEXT:   std::copy(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<const char>(data), dpct::device_pointer<const char>(data + N), dpct::device_pointer<char>(dst_data));
   //CHECK-NEXT: } else {
-  //CHECK-NEXT:   std::copy(oneapi::dpl::execution::seq, data, data + N, dst_data);
+  //CHECK-NEXT:   std::copy(oneapi::dpl::execution::par_noseq, data, data + N, dst_data);
   //CHECK-NEXT: };
   thrust::copy(thrust::host, data, data + N, dst_data);
   //CHECK: std::copy(oneapi::dpl::execution::make_device_policy(q_ct1), input.begin(), input.end(), std::ostream_iterator<char>(std::cout, ""));
@@ -58,20 +58,20 @@ int main(void) {
 
   //CHECK: std::copy_n(oneapi::dpl::execution::make_device_policy(q_ct1), input.begin(), N, std::ostream_iterator<char>(std::cout, ""));
   thrust::copy_n(input.begin(), N, std::ostream_iterator<char>(std::cout, ""));
-  //CHECK: std::copy_n(oneapi::dpl::execution::seq, host_input.begin(), N, std::ostream_iterator<char>(std::cout, ""));
+  //CHECK: std::copy_n(oneapi::dpl::execution::par_noseq, host_input.begin(), N, std::ostream_iterator<char>(std::cout, ""));
   thrust::copy_n(host_input.begin(), N, std::ostream_iterator<char>(std::cout, ""));
   //CHECK: if(dpct::is_device_ptr(data)){
   //CHECK-NEXT:   std::copy_n(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<const char>(data), N, dpct::device_pointer<>(std::ostream_iterator<char>(std::cout, "")));
   //CHECK-NEXT: } else {
-  //CHECK-NEXT:   std::copy_n(oneapi::dpl::execution::seq, data, N, std::ostream_iterator<char>(std::cout, ""));
+  //CHECK-NEXT:   std::copy_n(oneapi::dpl::execution::par_noseq, data, N, std::ostream_iterator<char>(std::cout, ""));
   //CHECK-NEXT: };
   thrust::copy_n(data, N, std::ostream_iterator<char>(std::cout, ""));
-  //CHECK: std::copy_n(oneapi::dpl::execution::seq, host_input.begin(), N, std::ostream_iterator<char>(std::cout, ""));
+  //CHECK: std::copy_n(oneapi::dpl::execution::par_noseq, host_input.begin(), N, std::ostream_iterator<char>(std::cout, ""));
   thrust::copy_n(thrust::host, host_input.begin(), N, std::ostream_iterator<char>(std::cout, ""));
   //CHECK: if(dpct::is_device_ptr(data)){
   //CHECK-NEXT:   std::copy_n(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<const char>(data), N, dpct::device_pointer<char>(dst_data));
   //CHECK-NEXT: } else {
-  //CHECK-NEXT:   std::copy_n(oneapi::dpl::execution::seq, data, N, dst_data);
+  //CHECK-NEXT:   std::copy_n(oneapi::dpl::execution::par_noseq, data, N, dst_data);
   //CHECK-NEXT: };
   thrust::copy_n(thrust::host, data, N, dst_data);
   //CHECK: std::copy_n(oneapi::dpl::execution::make_device_policy(q_ct1), input.begin(), N, std::ostream_iterator<char>(std::cout, ""));

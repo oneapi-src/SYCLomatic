@@ -30,17 +30,17 @@ int main(void) {
 /*********** stable_sort_by_key ***********************************************************************************************************************************************/
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// CHECK:dpct::stable_sort(oneapi::dpl::execution::seq, AH.begin(), AH.end(), BH.begin());
+// CHECK:dpct::stable_sort(oneapi::dpl::execution::par_noseq, AH.begin(), AH.end(), BH.begin());
 // CHECK-NEXT:dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), BD.begin());
 // CHECK-NEXT:if (dpct::is_device_ptr(h_ptr)) {
 // CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(h_ptr), dpct::device_pointer<int>(h_ptr + 4), dpct::device_pointer<>(BH.begin()));
 // CHECK-NEXT:} else {
-// CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, BH.begin());
+// CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::par_noseq, h_ptr, h_ptr + 4, BH.begin());
 // CHECK-NEXT:};
 // CHECK-NEXT:if (dpct::is_device_ptr(d_ptr)) {
 // CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(d_ptr), dpct::device_pointer<int>(d_ptr + 4), dpct::device_pointer<>(BD.begin()));
 // CHECK-NEXT:} else {
-// CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::seq, d_ptr, d_ptr + 4, BD.begin());
+// CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::par_noseq, d_ptr, d_ptr + 4, BD.begin());
 // CHECK-NEXT:};
   // VERSION                                 first       last      result
   thrust::stable_sort_by_key(                AH.begin(), AH.end(), BH.begin());
@@ -49,17 +49,17 @@ int main(void) {
   thrust::stable_sort_by_key(                d_ptr,      d_ptr+4,  BD.begin());
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// CHECK:dpct::stable_sort(oneapi::dpl::execution::seq, AH.begin(), AH.end(), BH.begin(), std::greater<int>());
+// CHECK:dpct::stable_sort(oneapi::dpl::execution::par_noseq, AH.begin(), AH.end(), BH.begin(), std::greater<int>());
 // CHECK-NEXT:dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), BD.begin(), std::greater<int>());
 // CHECK-NEXT:if (dpct::is_device_ptr(h_ptr)) {
 // CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(h_ptr), dpct::device_pointer<int>(h_ptr + 4), dpct::device_pointer<>(BH.begin()), std::greater<int>());
 // CHECK-NEXT:} else {
-// CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, BH.begin(), std::greater<int>());
+// CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::par_noseq, h_ptr, h_ptr + 4, BH.begin(), std::greater<int>());
 // CHECK-NEXT:};
 // CHECK-NEXT:if (dpct::is_device_ptr(d_ptr)) {
 // CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(d_ptr), dpct::device_pointer<int>(d_ptr + 4), dpct::device_pointer<>(BD.begin()), std::greater<int>());
 // CHECK-NEXT:} else {
-// CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::seq, d_ptr, d_ptr + 4, BD.begin(), std::greater<int>());
+// CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::par_noseq, d_ptr, d_ptr + 4, BD.begin(), std::greater<int>());
 // CHECK-NEXT:};
   // VERSION                                 first       last      result      comparator
   thrust::stable_sort_by_key(                AH.begin(), AH.end(), BH.begin(), thrust::greater<int>());
@@ -69,17 +69,17 @@ int main(void) {
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// CHECK:dpct::stable_sort(oneapi::dpl::execution::seq, AH.begin(), AH.end(), BH.begin());
+// CHECK:dpct::stable_sort(oneapi::dpl::execution::par_noseq, AH.begin(), AH.end(), BH.begin());
 // CHECK-NEXT:dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), BD.begin());
 // CHECK-NEXT:if (dpct::is_device_ptr(h_ptr)) {
 // CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(h_ptr), dpct::device_pointer<int>(h_ptr + 4), dpct::device_pointer<>(BH.begin()));
 // CHECK-NEXT:} else {
-// CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, BH.begin());
+// CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::par_noseq, h_ptr, h_ptr + 4, BH.begin());
 // CHECK-NEXT:};
 // CHECK-NEXT:if (dpct::is_device_ptr(d_ptr)) {
 // CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(d_ptr), dpct::device_pointer<int>(d_ptr + 4), dpct::device_pointer<>(BD.begin()));
 // CHECK-NEXT:} else {
-// CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::seq, d_ptr, d_ptr + 4, BD.begin());
+// CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::par_noseq, d_ptr, d_ptr + 4, BD.begin());
 // CHECK-NEXT:};
   // VERSION                 exec            first       last      result
   thrust::stable_sort_by_key(thrust::host,   AH.begin(), AH.end(), BH.begin());
@@ -88,17 +88,17 @@ int main(void) {
   thrust::stable_sort_by_key(thrust::device, d_ptr,      d_ptr+4,  BD.begin());
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// CHECK:dpct::stable_sort(oneapi::dpl::execution::seq, AH.begin(), AH.end(), BH.begin(), std::greater<int>());
+// CHECK:dpct::stable_sort(oneapi::dpl::execution::par_noseq, AH.begin(), AH.end(), BH.begin(), std::greater<int>());
 // CHECK-NEXT:dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), BD.begin(), std::greater<int>());
 // CHECK-NEXT:if (dpct::is_device_ptr(h_ptr)) {
 // CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(h_ptr), dpct::device_pointer<int>(h_ptr + 4), dpct::device_pointer<>(BH.begin()), std::greater<int>());
 // CHECK-NEXT:} else {
-// CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, BH.begin(), std::greater<int>());
+// CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::par_noseq, h_ptr, h_ptr + 4, BH.begin(), std::greater<int>());
 // CHECK-NEXT:};
 // CHECK-NEXT:if (dpct::is_device_ptr(d_ptr)) {
 // CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(d_ptr), dpct::device_pointer<int>(d_ptr + 4), dpct::device_pointer<>(BD.begin()), std::greater<int>());
 // CHECK-NEXT:} else {
-// CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::seq, d_ptr, d_ptr + 4, BD.begin(), std::greater<int>());
+// CHECK-NEXT:  dpct::stable_sort(oneapi::dpl::execution::par_noseq, d_ptr, d_ptr + 4, BD.begin(), std::greater<int>());
 // CHECK-NEXT:};
   // VERSION                 exec            first       last      result      comparator
   thrust::stable_sort_by_key(thrust::host,   AH.begin(), AH.end(), BH.begin(), thrust::greater<int>());

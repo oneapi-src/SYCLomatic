@@ -132,8 +132,8 @@ void foo_host(){
   //CHECK-NEXT: oneapi::dpl::replace_if(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), pred, 0);
   //CHECK-NEXT: dpct::replace_if(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), S.begin(), pred, 0);
   //CHECK-NEXT: dpct::replace_if(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), S.begin(), pred, 0);
-  //CHECK-NEXT: oneapi::dpl::replace_if(oneapi::dpl::execution::seq, B.begin(), B.end(), pred, 0);
-  //CHECK-NEXT: dpct::replace_if(oneapi::dpl::execution::seq, B.begin(), B.end(), S2.begin(), pred, 0);
+  //CHECK-NEXT: oneapi::dpl::replace_if(oneapi::dpl::execution::par_noseq, B.begin(), B.end(), pred, 0);
+  //CHECK-NEXT: dpct::replace_if(oneapi::dpl::execution::par_noseq, B.begin(), B.end(), S2.begin(), pred, 0);
   thrust::replace_if(thrust::device, A.begin(), A.end(), pred, 0);
   thrust::replace_if(A.begin(), A.end(), pred, 0);
   thrust::replace_if(thrust::device, A.begin(), A.end(), S.begin(), pred, 0);
@@ -145,8 +145,8 @@ void foo_host(){
   //CHECK-NEXT: oneapi::dpl::remove_if(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), pred);
   //CHECK-NEXT: dpct::remove_if(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), S.begin(), pred);
   //CHECK-NEXT: dpct::remove_if(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), S.begin(), pred);
-  //CHECK-NEXT: oneapi::dpl::remove_if(oneapi::dpl::execution::seq, B.begin(), B.end(), pred);
-  //CHECK-NEXT: dpct::remove_if(oneapi::dpl::execution::seq, B.begin(), B.end(), S2.begin(), pred);
+  //CHECK-NEXT: oneapi::dpl::remove_if(oneapi::dpl::execution::par_noseq, B.begin(), B.end(), pred);
+  //CHECK-NEXT: dpct::remove_if(oneapi::dpl::execution::par_noseq, B.begin(), B.end(), S2.begin(), pred);
   thrust::remove_if(thrust::device, A.begin(), A.end(), pred);
   thrust::remove_if(A.begin(), A.end(), pred);
   thrust::remove_if(thrust::device, A.begin(), A.end(), S.begin(), pred);
@@ -159,8 +159,8 @@ void foo_host(){
   //CHECK-NEXT: oneapi::dpl::remove_copy_if(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), R.begin(), pred);
   //CHECK-NEXT: dpct::remove_copy_if(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), S.begin(), R.begin(), pred);
   //CHECK-NEXT: dpct::remove_copy_if(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), S.begin(), R.begin(), pred);
-  //CHECK-NEXT: oneapi::dpl::remove_copy_if(oneapi::dpl::execution::seq, B.begin(), B.end(), R2.begin(), pred);
-  //CHECK-NEXT: dpct::remove_copy_if(oneapi::dpl::execution::seq, B.begin(), B.end(), S2.begin(), R2.begin(), pred);
+  //CHECK-NEXT: oneapi::dpl::remove_copy_if(oneapi::dpl::execution::par_noseq, B.begin(), B.end(), R2.begin(), pred);
+  //CHECK-NEXT: dpct::remove_copy_if(oneapi::dpl::execution::par_noseq, B.begin(), B.end(), S2.begin(), R2.begin(), pred);
   thrust::remove_copy_if(thrust::device, A.begin(), A.end(), R.begin(), pred);
   thrust::remove_copy_if(A.begin(), A.end(), R.begin(), pred);
   thrust::remove_copy_if(thrust::device, A.begin(), A.end(), S.begin(), R.begin(), pred);
@@ -185,10 +185,10 @@ void foo_host(){
   //CHECK: #define TM std::minus<T>()
   //CHECK-NEXT: oneapi::dpl::adjacent_difference(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), R.begin(), TM);
   //CHECK-NEXT: oneapi::dpl::adjacent_difference(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), R.begin(), std::minus<T>());
-  //CHECK-NEXT: oneapi::dpl::adjacent_difference(oneapi::dpl::execution::seq, B.begin(), B.end(), R2.begin(), std::minus<T>());
+  //CHECK-NEXT: oneapi::dpl::adjacent_difference(oneapi::dpl::execution::par_noseq, B.begin(), B.end(), R2.begin(), std::minus<T>());
   //CHECK-NEXT: oneapi::dpl::adjacent_difference(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), R.begin());
   //CHECK-NEXT: oneapi::dpl::adjacent_difference(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), R.begin());
-  //CHECK-NEXT: oneapi::dpl::adjacent_difference(oneapi::dpl::execution::seq, B.begin(), B.end(), R2.begin());
+  //CHECK-NEXT: oneapi::dpl::adjacent_difference(oneapi::dpl::execution::par_noseq, B.begin(), B.end(), R2.begin());
   #define TM thrust::minus<T>()
   thrust::adjacent_difference(A.begin(), A.end(), R.begin(), TM);
   thrust::adjacent_difference(thrust::device, A.begin(), A.end(), R.begin(), thrust::minus<T>());
@@ -199,10 +199,10 @@ void foo_host(){
 
   //CHECK: oneapi::dpl::inclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), R.begin(), TM);
   //CHECK-NEXT: oneapi::dpl::inclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), R.begin(), std::minus<T>());
-  //CHECK-NEXT: oneapi::dpl::inclusive_scan(oneapi::dpl::execution::seq, B.begin(), B.end(), R2.begin(), std::minus<T>());
+  //CHECK-NEXT: oneapi::dpl::inclusive_scan(oneapi::dpl::execution::par_noseq, B.begin(), B.end(), R2.begin(), std::minus<T>());
   //CHECK-NEXT: oneapi::dpl::inclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), R.begin());
   //CHECK-NEXT: oneapi::dpl::inclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), R.begin());
-  //CHECK-NEXT: oneapi::dpl::inclusive_scan(oneapi::dpl::execution::seq, B.begin(), B.end(), R2.begin());
+  //CHECK-NEXT: oneapi::dpl::inclusive_scan(oneapi::dpl::execution::par_noseq, B.begin(), B.end(), R2.begin());
   thrust::inclusive_scan(A.begin(), A.end(), R.begin(), TM);
   thrust::inclusive_scan(thrust::device, A.begin(), A.end(), R.begin(), thrust::minus<T>());
   thrust::inclusive_scan(thrust::seq, B.begin(), B.end(), R2.begin(), thrust::minus<T>());
@@ -225,13 +225,13 @@ template <typename ELT_TYPE> void testfunc() {
   V2[0x0] = 0x0;
   V6[0x0] = 0xfcdd;
 
-  // CHECK: dpct::remove_copy_if(oneapi::dpl::execution::seq, V2.begin(), V2.end(), V1.begin(), V6.begin(), pred_A);
+  // CHECK: dpct::remove_copy_if(oneapi::dpl::execution::par_noseq, V2.begin(), V2.end(), V1.begin(), V6.begin(), pred_A);
   thrust::remove_copy_if(V2.begin(), V2.end(), V1.begin(), V6.begin(), pred_A);
 
-  // CHECK: oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, V2.begin(), V2.end(), V2.begin());
+  // CHECK: oneapi::dpl::unique_copy(oneapi::dpl::execution::par_noseq, V2.begin(), V2.end(), V2.begin());
   thrust::unique_copy(V2.begin(), V2.end(), V2.begin());
 
-  // CHECK:oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, V1.begin(), V1.end(), std::not2(std::greater_equal<int>()));
+  // CHECK:oneapi::dpl::stable_sort(oneapi::dpl::execution::par_noseq, V1.begin(), V1.end(), std::not2(std::greater_equal<int>()));
   thrust::stable_sort(V1.begin(),V1.end(),thrust::not2(thrust::greater_equal<int>()));
 }
 

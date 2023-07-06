@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 
     // CHECK: dpct::device_vector<float> dVec(hVec.size());
     thrust::device_vector<float> dVec(hVec.size());
-    // CHECK: std::copy(oneapi::dpl::execution::seq, hVec.begin(), hVec.end(), dVec.begin());
+    // CHECK: std::copy(oneapi::dpl::execution::par_noseq, hVec.begin(), hVec.end(), dVec.begin());
     thrust::copy(hVec.begin(), hVec.end(), dVec.begin());
 
     // CHECK: std::transform(oneapi::dpl::execution::make_device_policy(q_ct1), dVec.begin(), dVec.end(), dpct::make_constant_iterator(2), dVec.begin(), std::multiplies<float>());

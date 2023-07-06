@@ -20,10 +20,10 @@ void all_of() {
   thrust::host_vector<bool> h_A(A, A + 3);
   thrust::device_vector<bool> d_A(A, A + 3);
 
-  // CHECK:  result = oneapi::dpl::all_of(oneapi::dpl::execution::seq, A, A + 2, oneapi::dpl::identity());
-  // CHECK-NEXT:  result = oneapi::dpl::all_of(oneapi::dpl::execution::seq, A, A + 2, oneapi::dpl::identity());
-  // CHECK-NEXT:  result = oneapi::dpl::all_of(oneapi::dpl::execution::seq, h_A.begin(), h_A.begin() + 2, oneapi::dpl::identity());
-  // CHECK-NEXT:  result = oneapi::dpl::all_of(oneapi::dpl::execution::seq, h_A.begin(), h_A.begin() + 2, oneapi::dpl::identity());
+  // CHECK:  result = oneapi::dpl::all_of(oneapi::dpl::execution::par_noseq, A, A + 2, oneapi::dpl::identity());
+  // CHECK-NEXT:  result = oneapi::dpl::all_of(oneapi::dpl::execution::par_noseq, A, A + 2, oneapi::dpl::identity());
+  // CHECK-NEXT:  result = oneapi::dpl::all_of(oneapi::dpl::execution::par_noseq, h_A.begin(), h_A.begin() + 2, oneapi::dpl::identity());
+  // CHECK-NEXT:  result = oneapi::dpl::all_of(oneapi::dpl::execution::par_noseq, h_A.begin(), h_A.begin() + 2, oneapi::dpl::identity());
   // CHECK-NEXT:  result = oneapi::dpl::all_of(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.begin() + 2, oneapi::dpl::identity());
   // CHECK-NEXT:  result = oneapi::dpl::all_of(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.begin() + 2, oneapi::dpl::identity());
   result = thrust::all_of(thrust::host, A, A + 2, thrust::identity<bool>());
@@ -40,10 +40,10 @@ void none_of() {
   thrust::device_vector<bool> d_A(A, A + 3);
   bool result;
 
-  // CHECK:  result = oneapi::dpl::none_of(oneapi::dpl::execution::seq, A, A + 2, oneapi::dpl::identity());
-  // CHECK-NEXT:  result = oneapi::dpl::none_of(oneapi::dpl::execution::seq, A, A + 2, oneapi::dpl::identity());
-  // CHECK-NEXT:  result = oneapi::dpl::none_of(oneapi::dpl::execution::seq, h_A.begin(), h_A.begin() + 2, oneapi::dpl::identity());
-  // CHECK-NEXT:  result = oneapi::dpl::none_of(oneapi::dpl::execution::seq, h_A.begin(), h_A.begin() + 2, oneapi::dpl::identity());
+  // CHECK:  result = oneapi::dpl::none_of(oneapi::dpl::execution::par_noseq, A, A + 2, oneapi::dpl::identity());
+  // CHECK-NEXT:  result = oneapi::dpl::none_of(oneapi::dpl::execution::par_noseq, A, A + 2, oneapi::dpl::identity());
+  // CHECK-NEXT:  result = oneapi::dpl::none_of(oneapi::dpl::execution::par_noseq, h_A.begin(), h_A.begin() + 2, oneapi::dpl::identity());
+  // CHECK-NEXT:  result = oneapi::dpl::none_of(oneapi::dpl::execution::par_noseq, h_A.begin(), h_A.begin() + 2, oneapi::dpl::identity());
   // CHECK-NEXT:  result = oneapi::dpl::none_of(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.begin() + 2, oneapi::dpl::identity());
   // CHECK-NEXT:  result = oneapi::dpl::none_of(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.begin() + 2, oneapi::dpl::identity());
   result = thrust::none_of(thrust::host, A, A + 2, thrust::identity<bool>());
@@ -65,10 +65,10 @@ void is_partitioned() {
   thrust::host_vector<int> h_A(A, A + 10);
   thrust::device_vector<int> d_A(A, A + 10);
 
-  // CHECK:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::seq, A, A + 10, is_even());
-  // CHECK-NEXT:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::seq, A, A + 10, is_even());
-  // CHECK-NEXT:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::seq, h_A.begin(), h_A.end(), is_even());
-  // CHECK-NEXT:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::seq, h_A.begin(), h_A.end(), is_even());
+  // CHECK:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::par_noseq, A, A + 10, is_even());
+  // CHECK-NEXT:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::par_noseq, A, A + 10, is_even());
+  // CHECK-NEXT:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::par_noseq, h_A.begin(), h_A.end(), is_even());
+  // CHECK-NEXT:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::par_noseq, h_A.begin(), h_A.end(), is_even());
   // CHECK-NEXT:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.end(), is_even());
   // CHECK-NEXT:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.end(), is_even());
   result = thrust::is_partitioned(thrust::host, A, A + 10, is_even());
@@ -88,14 +88,14 @@ void is_sorted_until() {
   thrust::host_vector<int>::iterator h_end;
   thrust::device_vector<int>::iterator d_end;
 
-  // CHECK:B = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::seq, A, A + 8);
-  // CHECK-NEXT:B = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::seq, A, A + 8);
-  // CHECK-NEXT:B = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::seq, A, A + 8, comp);
-  // CHECK-NEXT:B = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::seq, A, A + 8, comp);
-  // CHECK-NEXT:h_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::seq, h_A.begin(), h_A.end());
-  // CHECK-NEXT:h_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::seq, h_A.begin(), h_A.end());
-  // CHECK-NEXT:h_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::seq, h_A.begin(), h_A.end(), comp);
-  // CHECK-NEXT:h_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::seq, h_A.begin(), h_A.end(), comp);
+  // CHECK:B = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_noseq, A, A + 8);
+  // CHECK-NEXT:B = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_noseq, A, A + 8);
+  // CHECK-NEXT:B = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_noseq, A, A + 8, comp);
+  // CHECK-NEXT:B = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_noseq, A, A + 8, comp);
+  // CHECK-NEXT:h_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_noseq, h_A.begin(), h_A.end());
+  // CHECK-NEXT:h_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_noseq, h_A.begin(), h_A.end());
+  // CHECK-NEXT:h_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_noseq, h_A.begin(), h_A.end(), comp);
+  // CHECK-NEXT:h_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_noseq, h_A.begin(), h_A.end(), comp);
   // CHECK-NEXT:d_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.end());
   // CHECK-NEXT:d_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.end());
   // CHECK-NEXT:d_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.end(), comp);

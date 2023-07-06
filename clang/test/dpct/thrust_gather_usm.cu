@@ -44,9 +44,9 @@ int main(void) {
 /*********** gather_if ***********************************************************************************************************************************************/
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// CHECK:dpct::gather_if(oneapi::dpl::execution::seq, AH.begin(), AH.end(), SH.begin(), BH.begin(), RH.begin(), pred);
+// CHECK:dpct::gather_if(oneapi::dpl::execution::par_noseq, AH.begin(), AH.end(), SH.begin(), BH.begin(), RH.begin(), pred);
 // CHECK-NEXT:dpct::gather_if(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), SD.begin(), BD.begin(), RD.begin(), pred);
-// CHECK-NEXT:dpct::gather_if(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, SH.begin(), BH.begin(), RH.begin(), pred);
+// CHECK-NEXT:dpct::gather_if(oneapi::dpl::execution::par_noseq, h_ptr, h_ptr + 4, SH.begin(), BH.begin(), RH.begin(), pred);
   // VERSION                        first       last      stencil     input       result      pred
   thrust::gather_if(                AH.begin(), AH.end(), SH.begin(), BH.begin(), RH.begin(), pred);
   thrust::gather_if(                AD.begin(), AD.end(), SD.begin(), BD.begin(), RD.begin(), pred);
@@ -55,9 +55,9 @@ int main(void) {
   // thrust::gather_if(                d_ptr,      d_ptr+4,  SD.begin(), BD.begin(), RD.begin(), pred);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// CHECK:dpct::gather_if(oneapi::dpl::execution::seq, AH.begin(), AH.end(), SH.begin(), BH.begin(), RH.begin(), pred);
+// CHECK:dpct::gather_if(oneapi::dpl::execution::par_noseq, AH.begin(), AH.end(), SH.begin(), BH.begin(), RH.begin(), pred);
 // CHECK-NEXT:dpct::gather_if(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), SD.begin(), BD.begin(), RD.begin(), pred);
-// CHECK-NEXT:dpct::gather_if(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, SH.begin(), BH.begin(), RH.begin(), pred);
+// CHECK-NEXT:dpct::gather_if(oneapi::dpl::execution::par_noseq, h_ptr, h_ptr + 4, SH.begin(), BH.begin(), RH.begin(), pred);
 // CHECK-NEXT:dpct::gather_if(oneapi::dpl::execution::make_device_policy(q_ct1), d_ptr, d_ptr + 4, SD.begin(), BD.begin(), RD.begin(), pred);
   // VERSION        exec            first       last      stencil     input       result      pred
   thrust::gather_if(thrust::host,   AH.begin(), AH.end(), SH.begin(), BH.begin(), RH.begin(), pred);
@@ -91,7 +91,7 @@ int main(void) {
 // CHECK: /*
 // CHECK-NEXT: DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::gather_if is not supported.
 // CHECK-NEXT: */
-// CHECK-NEXT: thrust::gather_if(oneapi::dpl::execution::seq, AH.begin(), AH.end(), SH.begin(), BH.begin(), RH.begin());
+// CHECK-NEXT: thrust::gather_if(oneapi::dpl::execution::par_noseq, AH.begin(), AH.end(), SH.begin(), BH.begin(), RH.begin());
 // CHECK-NEXT: /*
 // CHECK-NEXT: DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::gather_if is not supported.
 // CHECK-NEXT: */
@@ -99,7 +99,7 @@ int main(void) {
 // CHECK-NEXT: /*
 // CHECK-NEXT: DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::gather_if is not supported.
 // CHECK-NEXT: */
-// CHECK-NEXT: thrust::gather_if(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, SH.begin(), BH.begin(), RH.begin());
+// CHECK-NEXT: thrust::gather_if(oneapi::dpl::execution::par_noseq, h_ptr, h_ptr + 4, SH.begin(), BH.begin(), RH.begin());
 // CHECK-NEXT: /*
 // CHECK-NEXT: DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::gather_if is not supported.
 // CHECK-NEXT: */

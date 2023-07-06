@@ -38,9 +38,9 @@ int main(void) {
 /*********** merge_by_key ***********************************************************************************************************************************************/
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// CHECK:dpct::merge(oneapi::dpl::execution::seq, AH.begin(), AH.end(), BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin());
+// CHECK:dpct::merge(oneapi::dpl::execution::par_noseq, AH.begin(), AH.end(), BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin());
 // CHECK-NEXT:dpct::merge(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), BD.begin(), BD.end(), CD.begin(), DD.begin(), ED.begin(), FD.begin());
-// CHECK-NEXT:dpct::merge(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin());
+// CHECK-NEXT:dpct::merge(oneapi::dpl::execution::par_noseq, h_ptr, h_ptr + 4, BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin());
   // VERSION                           first1      last1     first2      last2     val1        val2        keys        values
   thrust::merge_by_key(                AH.begin(), AH.end(), BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin());
   thrust::merge_by_key(                AD.begin(), AD.end(), BD.begin(), BD.end(), CD.begin(), DD.begin(), ED.begin(), FD.begin());
@@ -49,9 +49,9 @@ int main(void) {
   // thrust::merge_by_key(                d_ptr,      d_ptr+4,  BD.begin(), BD.end(), CD.begin(), DD.begin(), ED.begin(), FD.begin());
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// CHECK:dpct::merge(oneapi::dpl::execution::seq, AH.begin(), AH.end(), BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin(), std::greater<int>());
+// CHECK:dpct::merge(oneapi::dpl::execution::par_noseq, AH.begin(), AH.end(), BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin(), std::greater<int>());
 // CHECK-NEXT:dpct::merge(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), BD.begin(), BD.end(), CD.begin(), DD.begin(), ED.begin(), FD.begin(), std::greater<int>());
-// CHECK-NEXT:dpct::merge(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin(), std::greater<int>());
+// CHECK-NEXT:dpct::merge(oneapi::dpl::execution::par_noseq, h_ptr, h_ptr + 4, BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin(), std::greater<int>());
   // VERSION                           first1      last1     first2      last2     val1        val2        keys        values      comparator
   thrust::merge_by_key(                AH.begin(), AH.end(), BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin(), thrust::greater<int>());
   thrust::merge_by_key(                AD.begin(), AD.end(), BD.begin(), BD.end(), CD.begin(), DD.begin(), ED.begin(), FD.begin(), thrust::greater<int>());
@@ -62,9 +62,9 @@ int main(void) {
 #endif
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// CHECK:dpct::merge(oneapi::dpl::execution::seq, AH.begin(), AH.end(), BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin());
+// CHECK:dpct::merge(oneapi::dpl::execution::par_noseq, AH.begin(), AH.end(), BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin());
 // CHECK-NEXT:dpct::merge(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), BD.begin(), BD.end(), CD.begin(), DD.begin(), ED.begin(), FD.begin());
-// CHECK-NEXT:dpct::merge(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin());
+// CHECK-NEXT:dpct::merge(oneapi::dpl::execution::par_noseq, h_ptr, h_ptr + 4, BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin());
 // CHECK-NEXT:dpct::merge(oneapi::dpl::execution::make_device_policy(q_ct1), d_ptr, d_ptr + 4, BD.begin(), BD.end(), CD.begin(), DD.begin(), ED.begin(), FD.begin());
   // VERSION                           first1      last1     first2      last2     val1        val2        keys        values
   thrust::merge_by_key(thrust::host,   AH.begin(), AH.end(), BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin());
@@ -73,9 +73,9 @@ int main(void) {
   thrust::merge_by_key(thrust::device, d_ptr,      d_ptr+4,  BD.begin(), BD.end(), CD.begin(), DD.begin(), ED.begin(), FD.begin());
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// CHECK:dpct::merge(oneapi::dpl::execution::seq, AH.begin(), AH.end(), BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin(), std::greater<int>());
+// CHECK:dpct::merge(oneapi::dpl::execution::par_noseq, AH.begin(), AH.end(), BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin(), std::greater<int>());
 // CHECK-NEXT:dpct::merge(oneapi::dpl::execution::make_device_policy(q_ct1), AD.begin(), AD.end(), BD.begin(), BD.end(), CD.begin(), DD.begin(), ED.begin(), FD.begin(), std::greater<int>());
-// CHECK-NEXT:dpct::merge(oneapi::dpl::execution::seq, h_ptr, h_ptr + 4, BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin(), std::greater<int>());
+// CHECK-NEXT:dpct::merge(oneapi::dpl::execution::par_noseq, h_ptr, h_ptr + 4, BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin(), std::greater<int>());
 // CHECK-NEXT:dpct::merge(oneapi::dpl::execution::make_device_policy(q_ct1), d_ptr, d_ptr + 4, BD.begin(), BD.end(), CD.begin(), DD.begin(), ED.begin(), FD.begin(), std::greater<int>());
   // VERSION                           first1      last1     first2      last2     val1        val2        keys        values      comparator
   thrust::merge_by_key(thrust::host,   AH.begin(), AH.end(), BH.begin(), BH.end(), CH.begin(), DH.begin(), EH.begin(), FH.begin(), thrust::greater<int>());
