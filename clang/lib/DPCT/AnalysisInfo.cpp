@@ -1262,28 +1262,15 @@ void KernelCallExpr::buildExecutionConfig(
   for (auto Arg : ConfigArgs) {
     if (Idx > 1)
       break;
+    KernelConfigAnalysis AnalysisTry1D(IsInMacroDefine);
+    AnalysisTry1D.IsTryToUseOneDimension = true;
+    AnalysisTry1D.analyze(Arg, Idx, Idx < 2);
     if (Idx == 0) {
-      GridDim =
-          analyzeGridBlockDim(dyn_cast<CUDAKernelCallExpr>(KernelCall), Arg);
-      KernelConfigAnalysis KCA(IsInMacroDefine);
-      KCA.setCallSpelling(KernelCall);
-      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
-        KCA.IsTryToUseOneDimension = true;
-      }
-      KCA.Dim = GridDim;
-      KCA.analyze(Arg, Idx, Idx < 2);
-      ExecutionConfig.GroupSizeFor1D = KCA.getReplacedString();
+      GridDim = AnalysisTry1D.Dim;
+      ExecutionConfig.GroupSizeFor1D = AnalysisTry1D.getReplacedString();
     } else if (Idx == 1) {
-      BlockDim =
-          analyzeGridBlockDim(dyn_cast<CUDAKernelCallExpr>(KernelCall), Arg);
-      KernelConfigAnalysis KCA(IsInMacroDefine);
-      KCA.setCallSpelling(KernelCall);
-      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
-        KCA.IsTryToUseOneDimension = true;
-      }
-      KCA.Dim = BlockDim;
-      KCA.analyze(Arg, Idx, Idx < 2);
-      ExecutionConfig.LocalSizeFor1D = KCA.getReplacedString();
+      BlockDim = AnalysisTry1D.Dim;
+      ExecutionConfig.LocalSizeFor1D = AnalysisTry1D.getReplacedString();
     }
     ++Idx;
   }
