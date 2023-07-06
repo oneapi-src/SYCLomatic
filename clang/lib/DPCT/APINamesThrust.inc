@@ -1100,10 +1100,10 @@ thrustFactory("thrust::set_symmetric_difference_by_key",
 
 // thrust::set_union
 thrustFactory("thrust::set_union",
-              {{ 6,PolicyState::HasPolicy,5,"oneapi::dpl::set_union", HelperFeatureEnum::no_feature_helper},
-               { 5,PolicyState::NoPolicy, 5,"oneapi::dpl::set_union", HelperFeatureEnum::no_feature_helper},
-               { 7,PolicyState::HasPolicy,5,"oneapi::dpl::set_union", HelperFeatureEnum::no_feature_helper},
-               { 6,PolicyState::NoPolicy, 5,"oneapi::dpl::set_union", HelperFeatureEnum::no_feature_helper}}),
+              {{ 6,PolicyState::HasPolicy,5,"oneapi::dpl::set_union", HelperFeatureEnum::none},
+               { 5,PolicyState::NoPolicy, 5,"oneapi::dpl::set_union", HelperFeatureEnum::none},
+               { 7,PolicyState::HasPolicy,5,"oneapi::dpl::set_union", HelperFeatureEnum::none},
+               { 6,PolicyState::NoPolicy, 5,"oneapi::dpl::set_union", HelperFeatureEnum::none}}),
 
 
 // thrust::set_union_by_key
