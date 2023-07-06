@@ -435,3 +435,10 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
                             ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"),
                             ARG(5), ARG(6), ARG(7), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double")))))
 
+WARNING_FACTORY_ENTRY(
+    "cublasGetStatusString",
+    INSERT_AROUND_FACTORY(CALL_FACTORY_ENTRY("cublasGetStatusString",
+                                             CALL("cublasGetStatusString",
+                                                  ARG_WC(0))),
+                          "\"cublasGetStatusString is not supported\"/*", "*/"),
+    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED)
