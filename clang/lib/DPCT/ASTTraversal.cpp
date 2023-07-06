@@ -4342,7 +4342,7 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasGetMatrixAsync", "cublasSetStream_v2", "cublasGetStream_v2",
         "cublasGetPointerMode_v2", "cublasSetPointerMode_v2",
         "cublasGetAtomicsMode", "cublasSetAtomicsMode", "cublasGetVersion_v2",
-        "cublasGetMathMode", "cublasSetMathMode",
+        "cublasGetMathMode", "cublasSetMathMode", "cublasGetStatusString",
         /*Regular level 1*/
         "cublasIsamax_v2", "cublasIdamax_v2", "cublasIcamax_v2",
         "cublasIzamax_v2", "cublasIsamin_v2", "cublasIdamin_v2",
@@ -4612,11 +4612,10 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   // TODO: Need to process the situation when scalar pointers (alpha, beta)
   // are device pointers.
 
-  if (MapNames::BLASComputingAPIWithRewriter.find(FuncName) !=
-      MapNames::BLASComputingAPIWithRewriter.end()) {
-    std::string NewFunctionName =
-        MapNames::BLASComputingAPIWithRewriter.find(FuncName)->second;
-    if (HasDeviceAttr) {
+  auto Item = MapNames::BLASAPIWithRewriter.find(FuncName);
+  if (Item != MapNames::BLASAPIWithRewriter.end()) {
+    std::string NewFunctionName = Item->second;
+    if (HasDeviceAttr && !NewFunctionName.empty()) {
       report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
              MapNames::ITFName.at(FuncName), NewFunctionName);
       return;

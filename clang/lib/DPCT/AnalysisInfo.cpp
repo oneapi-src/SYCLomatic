@@ -1475,10 +1475,14 @@ void KernelCallExpr::buildKernelArgsStmt() {
         }
       }
     } else if (Arg.IsRedeclareRequired || IsInMacroDefine) {
-      const auto &TypeStr = Arg.getTypeString();
-      SubmitStmtsList.CommandGroupList.emplace_back(buildString(
-          TypeStr.empty() ? "auto " : TypeStr + " ", Arg.getIdStringWithIndex(),
-          " = ", Arg.getArgString(), ";"));
+      std::string TypeStr =
+          Arg.getTypeString().empty()
+              ? "auto"
+              : (Arg.IsDeviceRandomGeneratorType ? Arg.getTypeString() + " *"
+                                                 : Arg.getTypeString());
+      SubmitStmtsList.CommandGroupList.emplace_back(
+          buildString(TypeStr, " ", Arg.getIdStringWithIndex(), " = ",
+                      Arg.getArgString(), ";"));
       KernelArgs += Arg.getIdStringWithIndex();
     } else if (Arg.Texture) {
       ParameterStream OS;
