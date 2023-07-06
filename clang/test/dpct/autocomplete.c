@@ -36,6 +36,7 @@
 // DASH-NEXT: --output-file
 // DASH-NEXT: --output-verbosity=
 // DASH-NEXT: --process-all
+// DASH-NEXT: --query-api-mapping
 // DASH-NEXT: --report-file-prefix
 // DASH-NEXT: --report-format=
 // DASH-NEXT: --report-only
