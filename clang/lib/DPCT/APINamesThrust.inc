@@ -1105,3 +1105,10 @@ thrustFactory("thrust::set_union",
                { 7,PolicyState::HasPolicy,5,"oneapi::dpl::set_union", HelperFeatureEnum::no_feature_helper},
                { 6,PolicyState::NoPolicy, 5,"oneapi::dpl::set_union", HelperFeatureEnum::no_feature_helper}}),
 
+
+// thrust::set_union_by_key
+thrustFactory("thrust::set_union_by_key",
+              {{ 9, PolicyState::HasPolicy,8, MapNames::getDpctNamespace() + "set_union", HelperFeatureEnum::device_ext},
+               { 8, PolicyState::NoPolicy, 8, MapNames::getDpctNamespace() + "set_union", HelperFeatureEnum::device_ext},
+               { 10,PolicyState::HasPolicy,8, MapNames::getDpctNamespace() + "set_union", HelperFeatureEnum::device_ext},
+               { 9, PolicyState::NoPolicy, 8, MapNames::getDpctNamespace() + "set_union", HelperFeatureEnum::device_ext}}),

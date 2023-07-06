@@ -194,3 +194,64 @@ void set_union() {
   h_result_iter_end = thrust::set_union(thrust::host, h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin(), thrust::greater<int>());
   h_result_iter_end = thrust::set_union(h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin(), thrust::greater<int>());
 }
+
+struct Compare {
+  __host__ __device__ bool operator()(const int &a, const int &b) {
+    // Custom comparison function
+    // Returns true if a < b, false otherwise
+    return a < b;
+  }
+};
+
+void set_union_by_key() {
+
+  int A_keys[7] = {0, 2, 4};
+  int A_vals[7] = {0, 0, 0};
+  int B_keys[5] = {0, 3, 3, 4};
+  int B_vals[5] = {1, 1, 1, 1};
+  int keys_result[5];
+  int vals_result[5];
+  thrust::pair<int *, int *> end;
+  thrust::device_vector<int> d_keys_result(10);
+  thrust::device_vector<int> d_vals_result(10);
+
+  thrust::device_vector<int> d_A_keys(A_keys, A_keys + 7);
+  thrust::device_vector<int> d_A_vals(A_vals, A_vals + 7);
+  thrust::device_vector<int> d_B_keys(B_keys, B_keys + 5);
+  thrust::device_vector<int> d_B_vals(B_vals, B_vals + 5);
+  typedef thrust::device_vector<int>::iterator d_Iterator;
+  thrust::pair<d_Iterator, d_Iterator> d_result;
+  thrust::host_vector<int> h_keys_result(10);
+  thrust::host_vector<int> h_vals_result(10);
+  thrust::host_vector<int> h_A_keys(A_keys, A_keys + 7);
+  thrust::host_vector<int> h_A_vals(A_vals, A_vals + 7);
+  thrust::host_vector<int> h_B_keys(B_keys, B_keys + 5);
+  thrust::host_vector<int> h_B_vals(B_vals, B_vals + 5);
+  typedef thrust::host_vector<int>::iterator h_Iterator;
+  thrust::pair<h_Iterator, h_Iterator> h_result;
+
+  // CHECK:  end = dpct::set_union(oneapi::dpl::execution::seq, A_keys, A_keys + 3, B_keys, B_keys + 4, A_vals, B_vals, keys_result, vals_result);
+  // CHECK-NEXT:  end = dpct::set_union(oneapi::dpl::execution::seq, A_keys, A_keys + 3, B_keys, B_keys + 4, A_vals, B_vals, keys_result, vals_result);
+  // CHECK-NEXT:  end = dpct::set_union(oneapi::dpl::execution::seq, A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result, Compare());
+  // CHECK-NEXT:  end = dpct::set_union(oneapi::dpl::execution::seq, A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result, Compare());
+  // CHECK-NEXT:  d_result = dpct::set_union(oneapi::dpl::execution::make_device_policy(q_ct1), d_A_keys.begin(), d_A_keys.end(), d_B_keys.begin(), d_B_keys.end(), d_A_vals.begin(), d_B_vals.begin(), d_keys_result.begin(), d_vals_result.begin());
+  // CHECK-NEXT:  d_result = dpct::set_union(oneapi::dpl::execution::make_device_policy(q_ct1), d_A_keys.begin(), d_A_keys.end(), d_B_keys.begin(), d_B_keys.end(), d_A_vals.begin(), d_B_vals.begin(), d_keys_result.begin(), d_vals_result.begin());
+  // CHECK-NEXT:  d_result = dpct::set_union(oneapi::dpl::execution::make_device_policy(q_ct1), d_A_keys.begin(), d_A_keys.end(), d_B_keys.begin(), d_B_keys.end(), d_A_vals.begin(), d_B_vals.begin(), d_keys_result.begin(), d_vals_result.begin(), Compare());
+  // CHECK-NEXT:  d_result = dpct::set_union(oneapi::dpl::execution::make_device_policy(q_ct1), d_A_keys.begin(), d_A_keys.end(), d_B_keys.begin(), d_B_keys.end(), d_A_vals.begin(), d_B_vals.begin(), d_keys_result.begin(), d_vals_result.begin(), Compare());
+  // CHECK-NEXT:  h_result = dpct::set_union(oneapi::dpl::execution::seq, h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin());
+  // CHECK-NEXT:  h_result = dpct::set_union(oneapi::dpl::execution::seq, h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin());
+  // CHECK-NEXT:  h_result = dpct::set_union(oneapi::dpl::execution::seq, h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin(), Compare());
+  // CHECK-NEXT:  h_result = dpct::set_union(oneapi::dpl::execution::seq, h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin(), Compare());
+  end = thrust::set_union_by_key(thrust::host, A_keys, A_keys + 3, B_keys, B_keys + 4, A_vals, B_vals, keys_result, vals_result);
+  end = thrust::set_union_by_key(A_keys, A_keys + 3, B_keys, B_keys + 4, A_vals, B_vals, keys_result, vals_result);
+  end = thrust::set_union_by_key(thrust::host, A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result, Compare());
+  end = thrust::set_union_by_key(A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result, Compare());
+  d_result = thrust::set_union_by_key(thrust::device, d_A_keys.begin(), d_A_keys.end(), d_B_keys.begin(), d_B_keys.end(), d_A_vals.begin(), d_B_vals.begin(), d_keys_result.begin(), d_vals_result.begin());
+  d_result = thrust::set_union_by_key(d_A_keys.begin(), d_A_keys.end(), d_B_keys.begin(), d_B_keys.end(), d_A_vals.begin(), d_B_vals.begin(), d_keys_result.begin(), d_vals_result.begin());
+  d_result = thrust::set_union_by_key(thrust::device, d_A_keys.begin(), d_A_keys.end(), d_B_keys.begin(), d_B_keys.end(), d_A_vals.begin(), d_B_vals.begin(), d_keys_result.begin(), d_vals_result.begin(), Compare());
+  d_result = thrust::set_union_by_key(d_A_keys.begin(), d_A_keys.end(), d_B_keys.begin(), d_B_keys.end(), d_A_vals.begin(), d_B_vals.begin(), d_keys_result.begin(), d_vals_result.begin(), Compare());
+  h_result = thrust::set_union_by_key(thrust::host, h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin());
+  h_result = thrust::set_union_by_key(h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin());
+  h_result = thrust::set_union_by_key(thrust::host, h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin(), Compare());
+  h_result = thrust::set_union_by_key(h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin(), Compare());
+}

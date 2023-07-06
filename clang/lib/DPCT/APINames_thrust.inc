@@ -154,7 +154,7 @@ ENTRY(thrust::set_intersection_by_key, thrust::set_intersection_by_key, true, NO
 ENTRY(thrust::set_symmetric_difference, thrust::set_symmetric_difference, true, NO_FLAG, P4, "comment")
 ENTRY(thrust::set_symmetric_difference_by_key, thrust::set_symmetric_difference_by_key, true, NO_FLAG, P4, "comment")
 ENTRY(thrust::set_union, thrust::set_union, true, NO_FLAG, P4, "comment")
-ENTRY(thrust::set_union_by_key, thrust::set_union_by_key, false, NO_FLAG, P4, "comment")
+ENTRY(thrust::set_union_by_key, thrust::set_union_by_key, true, NO_FLAG, P4, "comment")
 ENTRY(thrust::sin, thrust::sin, true, NO_FLAG, P4, "successful")
 ENTRY(thrust::sinh, thrust::sinh, true, NO_FLAG, P4, "successful")
 ENTRY(thrust::sort, thrust::sort, true, NO_FLAG, P4, "comment")
