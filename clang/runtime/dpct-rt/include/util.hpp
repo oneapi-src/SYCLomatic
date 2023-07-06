@@ -286,6 +286,73 @@ T permute_sub_group_by_xor(sycl::sub_group g, T x, unsigned int mask,
                                      : id);
 }
 
+/// match_any_over_sub_group return a mask in which some bits are set to 1,
+/// indicating that the values provided by the work-item represented by
+/// these bits are equal. The n-th bit of mask representing the work-item
+/// with id n. The parameter \p member_mask indicating the work-items
+/// participating the call.
+/// \tparam T Input value type
+/// \param [in] g Input sub_group
+/// \param [in] member_mask Input mask
+/// \param [in] value Input value
+/// \returns The result
+template <typename T>
+unsigned int match_any_over_sub_group(sycl::sub_group g, unsigned member_mask,
+                                      T value) {
+  if (!member_mask) {
+    return 0;
+  }
+  unsigned int id = g.get_local_linear_id();
+  unsigned int flag = 0, result = 0, reduce_result = 0;
+  unsigned int bit_index = 0x1 << id;
+  bool is_participate = member_mask & bit_index;
+  T broadcast_value = 0;
+  bool matched = false;
+  while (flag != member_mask) {
+    broadcast_value =
+        sycl::select_from_group(g, value, sycl::ctz((~flag & member_mask)));
+    reduce_result = sycl::reduce_over_group(
+        g, is_participate ? (broadcast_value == value ? bit_index : 0) : 0,
+        sycl::plus<>());
+    flag |= reduce_result;
+    matched = reduce_result & bit_index;
+    result = matched * reduce_result + (1 - matched) * result;
+  }
+  return result;
+}
+
+/// match_all_over_sub_group return mask and predicate \p pred will be set
+/// to 1 if all values that provided by each work-item are equal, otherwise
+/// return 0 and the predicate \p pred will be set to 0. The parameter
+/// \p member_mask indicating the work-items participating the call.
+/// \tparam T Input value type
+/// \param [in] g Input sub_group
+/// \param [in] member_mask Input mask
+/// \param [in] value Input value
+/// \param [in] pred Input predicate
+/// \returns The result
+template <typename T>
+unsigned int match_all_over_sub_group(sycl::sub_group g, unsigned member_mask,
+                                      T value, int *pred) {
+  if (!member_mask) {
+    return 0;
+  }
+  unsigned int id = g.get_local_linear_id();
+  unsigned int bit_index = 0x1 << id;
+  bool is_participate = member_mask & bit_index;
+  T broadcast_value = sycl::select_from_group(g, value, sycl::ctz(member_mask));
+  unsigned int reduce_result = sycl::reduce_over_group(
+      g,
+      (member_mask & bit_index) ? (broadcast_value == value ? bit_index : 0)
+                                : 0,
+      sycl::plus<>());
+  bool all_equal = (reduce_result == member_mask);
+  if (is_participate) {
+    *pred = all_equal;
+  }
+  return all_equal * member_mask;
+}
+
 namespace experimental {
 /// Masked version of select_from_sub_group, which execute masked sub-group
 /// operation. The parameter member_mask indicating the work-items participating

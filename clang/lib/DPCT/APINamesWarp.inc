@@ -56,6 +56,23 @@ SUBGROUPSIZE_FACTORY(
                        CALL(MapNames::getClNamespace() + "any_of_group",
                             SUBGROUP, makeCallArgCreatorWithCall(0))))
 
+// __match_any_sync
+SUBGROUPSIZE_FACTORY(UINT_MAX,
+                     MapNames::getDpctNamespace() + "match_any_over_sub_group",
+                     CALL_FACTORY_ENTRY("__match_any_sync",
+                                        CALL(MapNames::getDpctNamespace() +
+                                                 "match_any_over_sub_group",
+                                             SUBGROUP, ARG_WC(0), ARG_WC(1))))
+
+// __match_all_sync
+SUBGROUPSIZE_FACTORY(UINT_MAX,
+                     MapNames::getDpctNamespace() + "match_all_over_sub_group",
+                     CALL_FACTORY_ENTRY("__match_all_sync",
+                                        CALL(MapNames::getDpctNamespace() +
+                                                 "match_all_over_sub_group",
+                                             SUBGROUP, ARG_WC(0), ARG_WC(1),
+                                             ARG_WC(2))))
+
 // __reduce_add_sync
 SUBGROUPSIZE_FACTORY(
     UINT_MAX, MapNames::getClNamespace() + "reduce_over_group",
