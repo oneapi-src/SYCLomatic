@@ -3770,10 +3770,40 @@ void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
   case TypeLoc::RValueReference:
     IsReference = true;
     return setTypeInfo(TYPELOC_CAST(ReferenceTypeLoc).getPointeeLoc());
+  case TypeLoc::Elaborated: {
+    const TypeLoc &NamedTypeLoc =
+        TYPELOC_CAST(ElaboratedTypeLoc).getNamedTypeLoc();
+    if (const auto TTL = NamedTypeLoc.getAs<TypedefTypeLoc>()) {
+      if (setTypedefInfo(TTL, NeedSizeFold))
+        return;
+    }
+    break;
+  }
+  case TypeLoc::Typedef: {
+    if (setTypedefInfo(TYPELOC_CAST(TypedefTypeLoc), NeedSizeFold))
+      return;
+    break;
+  }
   default:
     break;
   }
   setName(TL);
+}
+
+bool CtTypeInfo::setTypedefInfo(const TypedefTypeLoc &TL, bool NeedSizeFold) {
+  const TypedefNameDecl *TND = TL.getTypedefNameDecl();
+  if (!TND)
+    return false;
+  if (!TND->getTypeSourceInfo())
+    return false;
+  const TypeLoc TypedefTpyeDeclLoc = TND->getTypeSourceInfo()->getTypeLoc();
+  ConstantArrayTypeLoc CATL;
+  if (DpctGlobalInfo::isInAnalysisScope(TypedefTpyeDeclLoc.getBeginLoc()) &&
+      (CATL = TypedefTpyeDeclLoc.getAs<ConstantArrayTypeLoc>())) {
+    setArrayInfo(CATL, NeedSizeFold);
+    return true;
+  }
+  return false;
 }
 
 void CtTypeInfo::setArrayInfo(const IncompleteArrayTypeLoc &TL,
@@ -3891,8 +3921,9 @@ void CtTypeInfo::updateName() {
 
   if (BaseName.empty())
     BaseName = BaseNameWithoutQualifiers;
-  else
+  else {
     BaseName = buildString(BaseName, " ", BaseNameWithoutQualifiers);
+  }
 }
 
 std::shared_ptr<CtTypeInfo> CtTypeInfo::applyTemplateArguments(
