@@ -110,6 +110,7 @@ add_clang_library(DPCT
   CallExprRewriterEvent.cpp
   CallExprRewriterMath.cpp
   CallExprRewriterCG.cpp
+  CallExprRewriterWmma.cpp
   CrashRecovery.cpp
   Diagnostics.cpp
   Error.cpp
@@ -149,6 +150,7 @@ add_clang_library(DPCT
   MigrationAction.cpp
   ThrustAPIMigration.cpp
   GenHelperFunction.cpp
+  WMMAAPIMigration.cpp
 
   DEPENDS
   ClangDriverOptions

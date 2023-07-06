@@ -25,6 +25,7 @@
 #include "TextModification.h"
 #include "ThrustAPIMigration.h"
 #include "Utility.h"
+#include "WMMAAPIMigration.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/Stmt.h"
 #include "clang/AST/TypeLoc.h"
@@ -14432,6 +14433,8 @@ REGISTER_RULE(LIBCURule, PassKind::PK_Migration)
 REGISTER_RULE(ThrustAPIRule, PassKind::PK_Migration)
 
 REGISTER_RULE(ThrustTypeRule, PassKind::PK_Migration)
+
+REGISTER_RULE(WMMARule, PassKind::PK_Analysis)
 
 void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ComplexAPI = [&]() {

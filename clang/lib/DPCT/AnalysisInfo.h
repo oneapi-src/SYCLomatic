@@ -1784,6 +1784,9 @@ public:
     return getUsingExperimental<
         ExperimentalFeatures::Exp_OccupancyCalculation>();
   }
+  static bool useExtJointMatrix() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_Matrix>();
+  }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
   }
