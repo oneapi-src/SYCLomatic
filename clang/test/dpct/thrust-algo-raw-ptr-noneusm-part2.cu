@@ -100,8 +100,6 @@ void swap_ranges() {
   thrust::swap_ranges(thrust::host, v1, v1 + 2, v2);
 }
 
-
-
 struct Int {
   __host__ __device__ Int(int x) : val(x) {}
   int val;
