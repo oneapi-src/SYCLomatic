@@ -2198,11 +2198,11 @@ public:
   // If NeedSizeFold is true, array size will be folded, but original expression
   // will follow as comments. If NeedSizeFold is false, original size expression
   // will be the size string.
-  CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold = false);
   CtTypeInfo(const VarDecl *D, bool NeedSizeFold = false)
       : PointerLevel(0), IsReference(false), IsTemplate(false) {
     if (D && D->getTypeSourceInfo()) {
       auto TL = D->getTypeSourceInfo()->getTypeLoc();
+      HasConstantAttr = D->hasAttr<CUDAConstantAttr>();
       setTypeInfo(TL, NeedSizeFold);
       if (TL.getTypeLocClass() ==
           TypeLoc::IncompleteArray) {
@@ -2308,6 +2308,7 @@ private:
   std::set<HelperFeatureEnum> HelperFeatureSet;
   bool ContainSizeofType = false;
   std::vector<std::string> ArraySizeOriginExprs{};
+  bool HasConstantAttr = false;
 };
 
 // variable info includes name, type and location.
