@@ -223,11 +223,11 @@ public:
   }
 };
 
-class MathElseDelayConditionalRewriterFactory final
+class MathSpecificElseEmuRewriterFactory final
     : public ConditionalRewriterFactory {
 public:
   template <class InputPred>
-  MathElseDelayConditionalRewriterFactory(
+  MathSpecificElseEmuRewriterFactory(
       InputPred &&P, std::shared_ptr<CallExprRewriterFactoryBase> FirstFactory)
       : ConditionalRewriterFactory(P, FirstFactory, nullptr) {}
   using ConditionalRewriterFactory::setElse;

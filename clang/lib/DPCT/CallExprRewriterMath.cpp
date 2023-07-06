@@ -1083,7 +1083,7 @@ createMathAPIRewriterDeviceImpl(
   if (DeviceNodes[1].second) {
     // MATH_LIBDEVICE: sycl::ext::intel::math API
     if (math::useMathLibdevice()) {
-      if (auto *CRF = dynamic_cast<MathElseDelayConditionalRewriterFactory *>(
+      if (auto *CRF = dynamic_cast<MathSpecificElseEmuRewriterFactory *>(
               DeviceNodes[1].second.get())) {
         // Make the last DeviceNodes as the back up migration rule.
         CRF->setElse(std::move(DeviceNodes[3].second));
@@ -1210,8 +1210,8 @@ createMathAPIRewriterHost(
 #define MATH_API_REWRITER_DEVICE_OVERLOAD(CONDITION, DEVICE_REWRITER_1,        \
                                           DEVICE_REWRITER_2)                   \
   createConditionalFactory(CONDITION, DEVICE_REWRITER_1 DEVICE_REWRITER_2 0),
-#define MATH_API_REWRITER_OVERLOAD_ELSE_DELAY(CONDITION, DEVICE_REWRITER)      \
-  createMathElseDelayConditionalRewriterFactory(CONDITION, DEVICE_REWRITER 0),
+#define MATH_API_SPECIFIC_ELSE_EMU(CONDITION, DEVICE_REWRITER)                 \
+  createMathSpecificElseEmuRewriterFactory(CONDITION, DEVICE_REWRITER 0),
 
 #define MATH_API_REWRITER_HOST_WITH_PERF(NAME, PERF_PRED, HOST_PERF,           \
                                          HOST_NORMAL)                          \
