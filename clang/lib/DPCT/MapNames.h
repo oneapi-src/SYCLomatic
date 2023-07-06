@@ -363,7 +363,7 @@ public:
   static const std::map<std::string, std::vector<unsigned int>>
       FFTPlanAPINeedParenIdxMap;
 
-  static MapTy BLASComputingAPIWithRewriter;
+  static MapTy BLASAPIWithRewriter;
   static std::unordered_set<std::string> SOLVERAPIWithRewriter;
   static std::unordered_set<std::string> SPARSEAPIWithRewriter;
 
