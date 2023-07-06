@@ -1097,3 +1097,11 @@ thrustFactory("thrust::set_symmetric_difference_by_key",
                { 8, PolicyState::NoPolicy, 8, MapNames::getDpctNamespace() + "set_symmetric_difference", HelperFeatureEnum::device_ext},
                { 10,PolicyState::HasPolicy,8, MapNames::getDpctNamespace() + "set_symmetric_difference", HelperFeatureEnum::device_ext},
                { 9, PolicyState::NoPolicy, 8, MapNames::getDpctNamespace() + "set_symmetric_difference", HelperFeatureEnum::device_ext}}),
+
+// thrust::set_union
+thrustFactory("thrust::set_union",
+              {{ 6,PolicyState::HasPolicy,5,"oneapi::dpl::set_union", HelperFeatureEnum::no_feature_helper},
+               { 5,PolicyState::NoPolicy, 5,"oneapi::dpl::set_union", HelperFeatureEnum::no_feature_helper},
+               { 7,PolicyState::HasPolicy,5,"oneapi::dpl::set_union", HelperFeatureEnum::no_feature_helper},
+               { 6,PolicyState::NoPolicy, 5,"oneapi::dpl::set_union", HelperFeatureEnum::no_feature_helper}}),
+
