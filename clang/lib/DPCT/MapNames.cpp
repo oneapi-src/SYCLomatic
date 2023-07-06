@@ -53,7 +53,7 @@ std::map<std::string, MapNames::BLASGemmExTypeInfo>
     MapNames::BLASTGemmExTypeInfoMap;
 std::unordered_map<std::string, std::pair<std::string, std::string>>
     MapNames::MathTypeCastingMap;
-MapNames::MapTy MapNames::BLASComputingAPIWithRewriter;
+MapNames::MapTy MapNames::BLASAPIWithRewriter;
 std::unordered_set<std::string> MapNames::SOLVERAPIWithRewriter;
 std::unordered_set<std::string> MapNames::SPARSEAPIWithRewriter;
 MapNames::MapTy MapNames::SPBLASEnumsMap;
@@ -1739,7 +1739,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"atomicDec", getDpctNamespace() + "atomic_fetch_compare_dec"},
   };
 
-  BLASComputingAPIWithRewriter = {
+  BLASAPIWithRewriter = {
       {"cublasNrm2Ex", getDpctNamespace() + "nrm2_ex"},
       {"cublasDotEx", getDpctNamespace() + "dot_ex"},
       {"cublasDotcEx", getDpctNamespace() + "dotc_ex"},
@@ -1786,7 +1786,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasCgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasZgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasCrot_v2", getDpctNamespace() + "rot"},
-      {"cublasZrot_v2", getDpctNamespace() + "rot"}};
+      {"cublasZrot_v2", getDpctNamespace() + "rot"},
+      {"cublasGetStatusString", ""}};
 
   SOLVERAPIWithRewriter = {"cusolverDnSetAdvOptions",
                            "cusolverDnSetStream",
