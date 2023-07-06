@@ -53,7 +53,7 @@ std::map<std::string, MapNames::BLASGemmExTypeInfo>
     MapNames::BLASTGemmExTypeInfoMap;
 std::unordered_map<std::string, std::pair<std::string, std::string>>
     MapNames::MathTypeCastingMap;
-MapNames::MapTy MapNames::BLASComputingAPIWithRewriter;
+MapNames::MapTy MapNames::BLASAPIWithRewriter;
 std::unordered_set<std::string> MapNames::SOLVERAPIWithRewriter;
 std::unordered_set<std::string> MapNames::SPARSEAPIWithRewriter;
 MapNames::MapTy MapNames::SPBLASEnumsMap;
@@ -1706,7 +1706,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"atomicDec", getDpctNamespace() + "atomic_fetch_compare_dec"},
   };
 
-  BLASComputingAPIWithRewriter = {
+  BLASAPIWithRewriter = {
       {"cublasNrm2Ex", getDpctNamespace() + "nrm2_ex"},
       {"cublasDotEx", getDpctNamespace() + "dot_ex"},
       {"cublasDotcEx", getDpctNamespace() + "dotc_ex"},
@@ -1753,7 +1753,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasCgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasZgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasCrot_v2", getDpctNamespace() + "rot"},
-      {"cublasZrot_v2", getDpctNamespace() + "rot"}};
+      {"cublasZrot_v2", getDpctNamespace() + "rot"},
+      {"cublasGetStatusString", ""}};
 
   SOLVERAPIWithRewriter = {"cusolverDnSetAdvOptions",
                            "cusolverDnSetStream",
@@ -1956,7 +1957,8 @@ const std::map<std::string, int> MapNames::VectorTypeMigratedTypeSizeMap{
     {"ulonglong1", 8},  {"ulonglong2", 16}, {"ulonglong3", 32},
     {"ulonglong4", 32}, {"float1", 4},      {"float2", 8},
     {"float3", 16},     {"float4", 16},     {"double1", 8},
-    {"double2", 16},    {"double3", 32},    {"double4", 32}};
+    {"double2", 16},    {"double3", 32},    {"double4", 32},
+    {"__half", 2},      {"__half2", 4}};
 
 const std::map<clang::dpct::KernelArgType, int> MapNames::KernelArgTypeSizeMap{
     {clang::dpct::KernelArgType::KAT_Stream, 208},
@@ -4516,3 +4518,78 @@ const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "shfl_xor",
     "meta_group_rank",
     "block_tile_memory"};
+
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::PropToGetFeatureMap = {
+        {"clockRate", HelperFeatureEnum::device_ext},
+        {"major", HelperFeatureEnum::device_ext},
+        {"minor", HelperFeatureEnum::device_ext},
+        {"integrated", HelperFeatureEnum::device_ext},
+        {"warpSize", HelperFeatureEnum::device_ext},
+        {"multiProcessorCount", HelperFeatureEnum::device_ext},
+        {"maxThreadsPerBlock", HelperFeatureEnum::device_ext},
+        {"maxThreadsPerMultiProcessor", HelperFeatureEnum::device_ext},
+        {"name", HelperFeatureEnum::device_ext},
+        {"totalGlobalMem", HelperFeatureEnum::device_ext},
+        {"sharedMemPerMultiprocessor", HelperFeatureEnum::device_ext},
+        {"sharedMemPerBlock", HelperFeatureEnum::device_ext},
+        {"maxGridSize", HelperFeatureEnum::device_ext},
+        {"maxThreadsDim", HelperFeatureEnum::device_ext},
+        {"memoryClockRate", HelperFeatureEnum::device_ext},
+        {"memoryBusWidth", HelperFeatureEnum::device_ext},
+        {"pciDeviceID", HelperFeatureEnum::device_ext},
+        {"uuid", HelperFeatureEnum::device_ext},
+};
+
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::PropToSetFeatureMap = {
+        {"clockRate", HelperFeatureEnum::device_ext},
+        {"major", HelperFeatureEnum::device_ext},
+        {"minor", HelperFeatureEnum::device_ext},
+        {"integrated", HelperFeatureEnum::device_ext},
+        {"warpSize", HelperFeatureEnum::device_ext},
+        {"multiProcessorCount", HelperFeatureEnum::device_ext},
+        {"maxThreadsPerBlock", HelperFeatureEnum::device_ext},
+        {"maxThreadsPerMultiProcessor", HelperFeatureEnum::device_ext},
+        {"name", HelperFeatureEnum::device_ext},
+        {"totalGlobalMem", HelperFeatureEnum::device_ext},
+        {"sharedMemPerBlock", HelperFeatureEnum::device_ext},
+        {"maxGridSize", HelperFeatureEnum::device_ext},
+        {"maxThreadsDim", HelperFeatureEnum::device_ext},
+        {"memoryClockRate", HelperFeatureEnum::device_ext},
+        {"memoryBusWidth", HelperFeatureEnum::device_ext},
+        {"pciDeviceID", HelperFeatureEnum::device_ext},
+        {"uuid", HelperFeatureEnum::device_ext},
+};
+
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::SamplingInfoToSetFeatureMap = {
+        {"coordinate_normalization_mode", HelperFeatureEnum::device_ext}};
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::SamplingInfoToGetFeatureMap = {
+        {"addressing_mode", HelperFeatureEnum::device_ext},
+        {"filtering_mode", HelperFeatureEnum::device_ext}};
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::ImageWrapperBaseToSetFeatureMap = {
+        {"sampling_info", HelperFeatureEnum::device_ext},
+        {"data", HelperFeatureEnum::device_ext},
+        {"channel", HelperFeatureEnum::device_ext},
+        {"channel_data_type", HelperFeatureEnum::device_ext},
+        {"channel_size", HelperFeatureEnum::device_ext},
+        {"coordinate_normalization_mode", HelperFeatureEnum::device_ext},
+        {"channel_num", HelperFeatureEnum::device_ext},
+        {"channel_type", HelperFeatureEnum::device_ext}};
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::ImageWrapperBaseToGetFeatureMap = {
+        {"sampling_info", HelperFeatureEnum::device_ext},
+        {"data", HelperFeatureEnum::device_ext},
+        {"channel", HelperFeatureEnum::device_ext},
+        {"channel_data_type", HelperFeatureEnum::device_ext},
+        {"channel_size", HelperFeatureEnum::device_ext},
+        {"addressing_mode", HelperFeatureEnum::device_ext},
+        {"filtering_mode", HelperFeatureEnum::device_ext},
+        {"coordinate_normalization_mode", HelperFeatureEnum::device_ext},
+        {"channel_num", HelperFeatureEnum::device_ext},
+        {"channel_type", HelperFeatureEnum::device_ext},
+        {"sampler", HelperFeatureEnum::device_ext},
+};

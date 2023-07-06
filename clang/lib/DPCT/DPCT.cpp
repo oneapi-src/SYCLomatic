@@ -11,20 +11,19 @@
 #include "AnalysisInfo.h"
 #include "AutoComplete.h"
 #include "CallExprRewriter.h"
-#include "MemberExprRewriter.h"
-#include "TypeLocRewriters.h"
-#include "CrashRecovery.h"
 #include "Config.h"
-#include "CustomHelperFiles.h"
+#include "CrashRecovery.h"
 #include "ExternalReplacement.h"
 #include "GenHelperFunction.h"
 #include "GenMakefile.h"
 #include "IncrementalMigrationUtility.h"
+#include "MemberExprRewriter.h"
 #include "MigrationAction.h"
 #include "MisleadingBidirectional.h"
 #include "Rules.h"
 #include "SaveNewFiles.h"
 #include "Statics.h"
+#include "TypeLocRewriters.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
 #include "VcxprojParser.h"
@@ -655,25 +654,6 @@ int runDPCT(int argc, const char **argv) {
   if (CommonOptionsParser::hasHelpOption(OriginalArgc, argv))
     dpctExit(MigrationSucceeded);
 
-  auto ExtensionStr = ChangeExtension.getValue();
-  ExtensionStr.erase(std::remove(ExtensionStr.begin(), ExtensionStr.end(), ' '),
-                     ExtensionStr.end());
-  auto Extensions = split(ExtensionStr, ',');
-  for (auto &Extension : Extensions) {
-    const auto len = Extension.length();
-    if (len < 2 || len > 5 || Extension[0] != '.') {
-      ShowStatus(MigrationErrorInvalidChangeFilenameExtension);
-      dpctExit(MigrationErrorInvalidChangeFilenameExtension, false);
-    }
-    for (size_t i = 1; i < len; ++i) {
-      if (!std::isalpha(Extension[i])) {
-        ShowStatus(MigrationErrorInvalidChangeFilenameExtension);
-        dpctExit(MigrationErrorInvalidChangeFilenameExtension, false);
-      }
-    }
-    DpctGlobalInfo::addChangeExtensions(Extension);
-  }
-
   if (LimitChangeExtension) {
     DpctGlobalInfo::addChangeExtensions(".cu");
     DpctGlobalInfo::addChangeExtensions(".cuh");
@@ -847,13 +827,8 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);
   DpctGlobalInfo::setUsmLevel(USMLevel);
   DpctGlobalInfo::setIsIncMigration(!NoIncrementalMigration);
-  DpctGlobalInfo::setHelperFilesCustomizationLevel(
-      HelperFilesCustomizationLevel::HFCL_None);
   DpctGlobalInfo::setCheckUnicodeSecurityFlag(CheckUnicodeSecurityFlag);
   DpctGlobalInfo::setEnablepProfilingFlag(EnablepProfilingFlag);
-  DpctGlobalInfo::setCustomHelperFileName("dpct");
-  HelperFileNameMap[HelperFileEnum::Dpct] =
-      DpctGlobalInfo::getCustomHelperFileName() + ".hpp";
   DpctGlobalInfo::setFormatRange(FormatRng);
   DpctGlobalInfo::setFormatStyle(FormatST);
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
@@ -919,8 +894,6 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_CommentsEnabled,
                      DpctGlobalInfo::isCommentsEnabled(),
                      EnableComments.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_CustomHelperFileName,
-                     DpctGlobalInfo::getCustomHelperFileName(), 0);
     setValueToOptMap(clang::dpct::OPTION_CtadEnabled,
                      DpctGlobalInfo::isCtadEnabled(),
                      EnableCTAD.getNumOccurrences());
