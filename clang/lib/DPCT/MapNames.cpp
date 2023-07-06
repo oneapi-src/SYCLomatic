@@ -53,7 +53,7 @@ std::map<std::string, MapNames::BLASGemmExTypeInfo>
     MapNames::BLASTGemmExTypeInfoMap;
 std::unordered_map<std::string, std::pair<std::string, std::string>>
     MapNames::MathTypeCastingMap;
-MapNames::MapTy MapNames::BLASComputingAPIWithRewriter;
+MapNames::MapTy MapNames::BLASAPIWithRewriter;
 std::unordered_set<std::string> MapNames::SOLVERAPIWithRewriter;
 std::unordered_set<std::string> MapNames::SPARSEAPIWithRewriter;
 MapNames::MapTy MapNames::SPBLASEnumsMap;
@@ -1325,12 +1325,15 @@ void MapNames::setExplicitNamespaceMap() {
       {"thrust::partition_point", HelperFeatureEnum::device_ext}};
 
   ITFName = {
-#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
+#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)   \
   {#APINAME, #INTERFACENAME},
 #define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
                               TARGET, COMMENT)                                 \
   {#OBJNAME "." #APINAME, #OBJNAME "." #INTERFACENAME},
 #include "APINames.inc"
+#undef ENTRY
+#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
+  {#APINAME, #INTERFACENAME},
 #include "APINames_CUB.inc"
 #include "APINames_NCCL.inc"
 #include "APINames_cuBLAS.inc"
@@ -1341,6 +1344,7 @@ void MapNames::setExplicitNamespaceMap() {
 #include "APINames_cuSPARSE.inc"
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
+#include "APINames_wmma.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
   };
@@ -1706,7 +1710,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"atomicDec", getDpctNamespace() + "atomic_fetch_compare_dec"},
   };
 
-  BLASComputingAPIWithRewriter = {
+  BLASAPIWithRewriter = {
       {"cublasNrm2Ex", getDpctNamespace() + "nrm2_ex"},
       {"cublasDotEx", getDpctNamespace() + "dot_ex"},
       {"cublasDotcEx", getDpctNamespace() + "dotc_ex"},
@@ -1753,7 +1757,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasCgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasZgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasCrot_v2", getDpctNamespace() + "rot"},
-      {"cublasZrot_v2", getDpctNamespace() + "rot"}};
+      {"cublasZrot_v2", getDpctNamespace() + "rot"},
+      {"cublasGetStatusString", ""}};
 
   SOLVERAPIWithRewriter = {"cusolverDnSetAdvOptions",
                            "cusolverDnSetStream",
@@ -4386,12 +4391,15 @@ const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
 };
 
 std::map<std::string, bool> MigrationStatistics::MigrationTable{
-#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
+#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)   \
   {#APINAME, VALUE},
 #define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
                               TARGET, COMMENT)                                 \
   {#OBJNAME "." #APINAME, VALUE},
 #include "APINames.inc"
+#undef ENTRY
+#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
+  {#APINAME, VALUE},
 #include "APINames_CUB.inc"
 #include "APINames_NCCL.inc"
 #include "APINames_NVML.inc"
@@ -4405,6 +4413,7 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #include "APINames_nvGRAPH.inc"
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
+#include "APINames_wmma.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
 };
