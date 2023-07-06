@@ -71,6 +71,9 @@ template <class T> void BindTextureObject(cudaArray_t &data, cudaTextureObject_t
 // CHECK: void device01(dpct::image_accessor_ext<sycl::uint2, 1> tex21) {
 // CHECK-NEXT: sycl::uint2 u21;
 // CHECK-NEXT: u21 = tex21.read(0.5f);
+// CHECK-NEXT: /*
+// CHECK-NEXT: DPCT1112:{{[0-9]+}}: The filtering mode may be "linear". You may need to adjust the code.
+// CHECK-NEXT: */
 // CHECK-NEXT: u21 = tex21.read(1);
 __device__ void device01(cudaTextureObject_t tex21) {
   uint2 u21;
@@ -297,6 +300,9 @@ struct TexList {
 
 // CHECK: void texlist_device(TexList list, dpct::image_accessor_ext<int, 1> list_tex1) {
 // CHECK-NEXT:  int a;
+// CHECK-NEXT: /*
+// CHECK-NEXT: DPCT1112:{{[0-9]+}}: The filtering mode may be "linear". You may need to adjust the code.
+// CHECK-NEXT: */
 // CHECK-NEXT:  a = list_tex1.read(1);
 __device__ void texlist_device(TexList list) {
   int a;
