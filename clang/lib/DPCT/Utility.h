@@ -587,7 +587,7 @@ namespace dpct {
 std::string getDpctVersionStr();
 enum class HelperFeatureEnum : unsigned int {
   device_ext,
-  no_feature_helper,
+  none,
 };
 void requestFeature(HelperFeatureEnum Feature);
 void requestHelperFeatureForEnumNames(const std::string Name);

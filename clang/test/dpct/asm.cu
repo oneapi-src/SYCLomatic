@@ -332,4 +332,14 @@ int main(int argc, char **argv) {
   // CHECK-NOT: DPCT1053:{{[0-9]+}}: Migration of device assembly code is not supported.
   // CHECK: return 0;
 }
+__device__ void test(void* dst, const void* src) {
+  uint4* data = reinterpret_cast<uint4*>(dst);
+ // CHECK: /*
+ // CHECK-NEXT: DPCT1053:{{.*}} Migration of device assembly code is not supported.
+ // CHECK-NEXT: */
+  asm volatile("ld.global.ca.v4.u32 {%0, %1, %2, %3}, [%4];\n"
+      : "=r"(data[0].x), "=r"(data[0].y), "=r"(data[0].z), "=r"(data[0].w)
+      : "l"(src));
+
+}
 // clang-format on
