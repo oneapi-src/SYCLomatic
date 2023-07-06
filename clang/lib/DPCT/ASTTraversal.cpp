@@ -9515,26 +9515,54 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
     if (isCubVar(Decl)) {
       return;
     }
+    auto GetReplRange =
+        [&](const Stmt *ReplaceNode) -> std::pair<SourceLocation, unsigned> {
+      auto Range = getDefinitionRange(ReplaceNode->getBeginLoc(),
+                                      ReplaceNode->getEndLoc());
+      auto &SM = DpctGlobalInfo::getSourceManager();
+      auto Begin = Range.getBegin();
+      auto End = Range.getEnd();
+      auto Length = Lexer::MeasureTokenLength(
+          End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
+      Length +=
+          SM.getDecomposedLoc(End).second - SM.getDecomposedLoc(Begin).second;
+      return std::make_pair(Begin, Length);
+    };
     const auto *Parent = getParentStmt(MemVarRef);
-    // Handle assigning a 2 or more dimensions array pointer to a variable.
+    // 1. Handle assigning a 2 or more dimensions array pointer to a variable.
     if (const auto *const ICE = dyn_cast_or_null<ImplicitCastExpr>(Parent)) {
       if (const auto *arrType = MemVarRef->getType()->getAsArrayTypeUnsafe()) {
         if (ICE->getCastKind() == CK_ArrayToPointerDecay &&
             arrType->getElementType()->isArrayType() &&
             isAssignOperator(getParentStmt(Parent))) {
-          std::string Replacement = buildString("(", ICE->getType(), ")",
-                                                Decl->getName(), ".get_ptr()");
-          auto Range = getDefinitionRange(MemVarRef->getBeginLoc(),
-                                          MemVarRef->getEndLoc());
-          auto &SM = DpctGlobalInfo::getSourceManager();
-          auto Begin = Range.getBegin();
-          auto End = Range.getEnd();
-          auto Length = Lexer::MeasureTokenLength(
-              End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
-          Length += SM.getDecomposedLoc(End).second -
-                    SM.getDecomposedLoc(Begin).second;
+          auto Range = GetReplRange(MemVarRef);
           emplaceTransformation(
-              new ReplaceText(Begin, Length, std::move(Replacement)));
+              new ReplaceText(Range.first, Range.second,
+                              buildString("(", ICE->getType(), ")",
+                                          Decl->getName(), ".get_ptr()")));
+        }
+      }
+    }
+    // 2. Handle address-of operation for dim>=1.
+    else if (const UnaryOperator *UO =
+                 dyn_cast_or_null<UnaryOperator>(Parent)) {
+      if (!Decl->hasAttr<CUDASharedAttr>() && UO->getOpcode() == UO_AddrOf) {
+        CtTypeInfo TypeAnalysis(Decl, false);
+        if (TypeAnalysis.getDimension()) {
+          auto Range = GetReplRange(UO);
+          if (TypeAnalysis.getDimension() >= 2) {
+            // Dim >= 2
+            emplaceTransformation(new ReplaceText(
+                Range.first, Range.second,
+                buildString("reinterpret_cast<", UO->getType(), ">(",
+                            Decl->getName(), ".get_ptr())")));
+          } else {
+            // Dim == 1
+            emplaceTransformation(
+                new ReplaceText(Range.first, Range.second,
+                                buildString("reinterpret_cast<", UO->getType(),
+                                            ">(&", Decl->getName(), ")")));
+          }
         }
       }
     }
