@@ -769,4 +769,54 @@ FEATURE_REQUEST_FACTORY(
                             DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5),
                             ARG(6), ARG(7), ARG(8), ARG(11))))
 
+// cusolverDn<T>syevd_bufferSize/cusolverDn<T>heevd_bufferSize
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cusolverDnSsyevd_bufferSize",
+                       CALL(MapNames::getDpctNamespace() + "lapack::syheevd_scratchpad_size<float>",
+                            DEREF(0), ARG(1), ARG(2), ARG(3), ARG(5), ARG(7))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cusolverDnDsyevd_bufferSize",
+                       CALL(MapNames::getDpctNamespace() + "lapack::syheevd_scratchpad_size<double>",
+                            DEREF(0), ARG(1), ARG(2), ARG(3), ARG(5), ARG(7))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cusolverDnCheevd_bufferSize",
+                       CALL(MapNames::getDpctNamespace() + "lapack::syheevd_scratchpad_size<std::complex<float>>",
+                            DEREF(0), ARG(1), ARG(2), ARG(3), ARG(5), ARG(7))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cusolverDnZheevd_bufferSize",
+                       CALL(MapNames::getDpctNamespace() + "lapack::syheevd_scratchpad_size<std::complex<double>>",
+                            DEREF(0), ARG(1), ARG(2), ARG(3), ARG(5), ARG(7))))
+
+// cusolverDn<T>syevd/cusolverDn<T>heevd
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cusolverDnSsyevd",
+                       CALL(MapNames::getDpctNamespace() + "lapack::syheevd<float, float>",
+                            DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                            ARG(7), ARG(8), ARG(9))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cusolverDnDsyevd",
+                       CALL(MapNames::getDpctNamespace() + "lapack::syheevd<double, double>",
+                            DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                            ARG(7), ARG(8), ARG(9))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cusolverDnCheevd",
+                       CALL(MapNames::getDpctNamespace() + "lapack::syheevd<" +
+                                MapNames::getClNamespace() + "float2, float>",
+                            DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                            ARG(7), ARG(8), ARG(9))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cusolverDnZheevd",
+                       CALL(MapNames::getDpctNamespace() + "lapack::syheevd<" +
+                                MapNames::getClNamespace() + "double2, double>",
+                            DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                            ARG(7), ARG(8), ARG(9))))
+
 // clang-format on
