@@ -96,8 +96,8 @@ void swap_ranges() {
   // CHECK-NEXT:  } else {
   // CHECK-NEXT:    oneapi::dpl::swap_ranges(oneapi::dpl::execution::seq, v1, v1 + 2, v2);
   // CHECK-NEXT:  };
-  thrust::swap_ranges(v1, v1 + 2, v2);
   thrust::swap_ranges(thrust::host, v1, v1 + 2, v2);
+  thrust::swap_ranges(v1, v1 + 2, v2);
 }
 
 struct Int {
@@ -108,7 +108,7 @@ struct Int {
 void uninitialized_fill_n() {
 
   const int N = 137;
-  Int val(46);
+  int val(46);
   int data[N];
 
   // CHECK:  if (dpct::is_device_ptr(data)) {

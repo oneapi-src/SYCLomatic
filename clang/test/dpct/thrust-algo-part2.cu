@@ -104,19 +104,20 @@ void set_symmetric_difference_by_key() {
 void swap_ranges() {
   thrust::device_vector<int> d_v1(2), d_v2(2);
   thrust::host_vector<int> h_v1(2), h_v2(2);
+  int v1[2], v2[2];
 
   // CHECK:  oneapi::dpl::swap_ranges(oneapi::dpl::execution::make_device_policy(q_ct1), d_v1.begin(), d_v1.end(), d_v2.begin());
-  // CHECK-NEXT:  oneapi::dpl::swap_ranges(oneapi::dpl::execution::seq, h_v1.begin(), h_v1.end(), h_v2.begin());
-  // CHECK-NEXT:  oneapi::dpl::swap_ranges(oneapi::dpl::execution::seq, h_v1, h_v1 + 2, h_v2);
   // CHECK-NEXT:  oneapi::dpl::swap_ranges(oneapi::dpl::execution::make_device_policy(q_ct1), d_v1.begin(), d_v1.end(), d_v2.begin());
   // CHECK-NEXT:  oneapi::dpl::swap_ranges(oneapi::dpl::execution::seq, h_v1.begin(), h_v1.end(), h_v2.begin());
-  // CHECK-NEXT:  oneapi::dpl::swap_ranges(oneapi::dpl::execution::seq, h_v1, h_v1 + 2, h_v2);
+  // CHECK-NEXT:  oneapi::dpl::swap_ranges(oneapi::dpl::execution::seq, h_v1.begin(), h_v1.end(), h_v2.begin());
+  // CHECK-NEXT:  oneapi::dpl::swap_ranges(oneapi::dpl::execution::seq, v1, v1 + 2, v2);
+  // CHECK-NEXT:  oneapi::dpl::swap_ranges(oneapi::dpl::execution::seq, v1, v1 + 2, v2);
   thrust::swap_ranges(thrust::device, d_v1.begin(), d_v1.end(), d_v2.begin());
+  thrust::swap_ranges(d_v1.begin(), d_v1.end(), d_v2.begin());
   thrust::swap_ranges(thrust::host, h_v1.begin(), h_v1.end(), h_v2.begin());
-  thrust::swap_ranges(thrust::host, h_v1, h_v1 + 2, h_v2);
-  thrust::swap_ranges(thrust::device, d_v1.begin(), d_v1.end(), d_v2.begin());
-  thrust::swap_ranges(thrust::host, h_v1.begin(), h_v1.end(), h_v2.begin());
-  thrust::swap_ranges(thrust::host, h_v1, h_v1 + 2, h_v2);
+  thrust::swap_ranges(h_v1.begin(), h_v1.end(), h_v2.begin());
+  thrust::swap_ranges(thrust::host, v1, v1 + 2, v2);
+  thrust::swap_ranges(v1, v1 + 2, v2);
 }
 
 struct Int {
@@ -127,16 +128,17 @@ struct Int {
 void uninitialized_fill_n() {
 
   const int N = 137;
-  Int val(46);
+  Int int_val(46);
+  int val(46);
   thrust::device_ptr<Int> d_array = thrust::device_malloc<Int>(N);
   int data[N];
 
-  // CHECK:  oneapi::dpl::uninitialized_fill_n(oneapi::dpl::execution::make_device_policy(q_ct1), d_array, N, val);
-  // CHECK-NEXT:  oneapi::dpl::uninitialized_fill_n(oneapi::dpl::execution::make_device_policy(q_ct1), d_array, N, val);
+  // CHECK:  oneapi::dpl::uninitialized_fill_n(oneapi::dpl::execution::make_device_policy(q_ct1), d_array, N, int_val);
+  // CHECK-NEXT:  oneapi::dpl::uninitialized_fill_n(oneapi::dpl::execution::make_device_policy(q_ct1), d_array, N, int_val);
   // CHECK-NEXT:  oneapi::dpl::uninitialized_fill_n(oneapi::dpl::execution::seq, data, N, val);
   // CHECK-NEXT:  oneapi::dpl::uninitialized_fill_n(oneapi::dpl::execution::seq, data, N, val);
-  thrust::uninitialized_fill_n(d_array, N, val);
-  thrust::uninitialized_fill_n(thrust::device, d_array, N, val);
+  thrust::uninitialized_fill_n(d_array, N, int_val);
+  thrust::uninitialized_fill_n(thrust::device, d_array, N, int_val);
   thrust::uninitialized_fill_n(data, N, val);
   thrust::uninitialized_fill_n(thrust::host, data, N, val);
 }
