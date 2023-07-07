@@ -652,7 +652,7 @@ void foo7() {
   dim3 block(n);
   dim3 grid(query_block(n));
   //CHECK:dpct::get_default_queue().parallel_for(
-  //CHECK-NEXT:  sycl::nd_range<1>(grid.get(2) * block.get(2), block.get(2)), 
+  //CHECK-NEXT:  sycl::nd_range<1>(grid.get(2) * block.get(2), block.get(2)),
   //CHECK-NEXT:  [=](sycl::nd_item<1> item_ct1) {
   //CHECK-NEXT:    global8();
   //CHECK-NEXT:  });
