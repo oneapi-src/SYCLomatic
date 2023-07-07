@@ -12327,10 +12327,12 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
 
   if (!dpct::DpctGlobalInfo::isInCudaPath(ND->getLocation()) &&
       !isChildOrSamePath(DpctInstallPath,
-                         dpct::DpctGlobalInfo::getLocInfo(ND).first)) {
-    if (!ND->getName().startswith("cudnn") && !ND->getName().startswith("nccl"))
+                          dpct::DpctGlobalInfo::getLocInfo(ND).first)) {
+    if (!StringRef(ND->getDeclName().getAsString()).startswith("cudnn") &&
+        !StringRef(ND->getDeclName().getAsString()).startswith("nccl"))
       return;
   }
+
   auto *NSD = dyn_cast<NamespaceDecl>(ND->getDeclContext());
   Namespace = getNameSpace(NSD);
   APIName = CE->getCalleeDecl()->getAsFunction()->getNameAsString();

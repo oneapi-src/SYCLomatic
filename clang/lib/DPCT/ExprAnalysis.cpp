@@ -848,6 +848,7 @@ void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
 // Precondition: CE != nullptr
 void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   // To set the RefString
+  RefString.clear();
   dispatch(CE->getCallee());
   // If the callee requires rewrite, get the rewriter
   if (!CallExprRewriterFactoryBase::RewriterMap)
