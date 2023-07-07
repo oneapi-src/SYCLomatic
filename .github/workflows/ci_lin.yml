@@ -60,11 +60,10 @@ jobs:
           cd c2s.src
           mkdir build
           cd build
-          export LLVM_SYMBOLIZER_PATH=$(pwd)/bin/llvm-symbolizer
           cmake \
             -G Ninja \
             -DLLVM_ENABLE_PROJECTS="clang"  \
-            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_BUILD_TYPE=Release \
             -DLLVM_TARGETS_TO_BUILD="X86;NVPTX" \
             -DLLVM_ENABLE_TERMINFO=OFF  \
             -DLLVM_ENABLE_ASSERTIONS=ON \
