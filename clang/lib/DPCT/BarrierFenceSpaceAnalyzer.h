@@ -30,8 +30,8 @@ public:
   bool shouldTraversePostOrder() const { return false; }
 
 #define VISIT_NODE(CLASS)                                                      \
-  bool Visit(CLASS *Node);                                                     \
-  void PostVisit(CLASS *FS);                                                   \
+  bool Visit(const CLASS *Node);                                               \
+  void PostVisit(const CLASS *FS);                                             \
   bool Traverse##CLASS(CLASS *Node) {                                          \
     if (!Visit(Node))                                                          \
       return false;                                                            \
@@ -61,6 +61,9 @@ public:
 
 private:
   bool traverseFunction(const clang::FunctionDecl *FD);
+  std::set<const clang::DeclRefExpr *>
+  matchAllDRE(const clang::VarDecl *TargetDecl, const clang::Stmt *Range);
+  const clang::DeclRefExpr *assignedToAnotherDRE(const clang::DeclRefExpr *);
   using Ranges = std::vector<clang::SourceRange>;
   struct SyncCallInfo {
     SyncCallInfo() {}
@@ -69,11 +72,13 @@ private:
     Ranges Predecessors;
     Ranges Successors;
   };
-  std::vector<std::pair<clang::CallExpr *, SyncCallInfo>> SyncCallsVec;
+  std::vector<std::pair<const clang::CallExpr *, SyncCallInfo>> SyncCallsVec;
   std::deque<clang::SourceRange> LoopRange;
   const clang::FunctionDecl *FD = nullptr;
 
-  std::unordered_map<clang::DeclRefExpr *, clang::ValueDecl *> DREDeclMap;
+  std::unordered_map<const clang::ParmVarDecl *,
+                     std::set<const clang::DeclRefExpr *>>
+      DefUseMap;
   std::string CELoc;
   std::string FDLoc;
 

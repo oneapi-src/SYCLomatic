@@ -15,43 +15,49 @@
 
 using namespace llvm;
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::IfStmt *IS) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const clang::IfStmt *IS) {
   // No special process, treat as one block
   return true;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::IfStmt *IS) {
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
+    const clang::IfStmt *IS) {
   // No special process, treat as one block
 }
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::SwitchStmt *SS) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
+    const clang::SwitchStmt *SS) {
   // No special process, treat as one block
   return true;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::SwitchStmt *SS) {
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
+    const clang::SwitchStmt *SS) {
   // No special process, treat as one block
 }
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::ForStmt *FS) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const clang::ForStmt *FS) {
   LoopRange.push_back(FS->getSourceRange());
   return true;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::ForStmt *FS) {
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
+    const clang::ForStmt *FS) {
   LoopRange.pop_back();
 }
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::DoStmt *DS) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const clang::DoStmt *DS) {
   LoopRange.push_back(DS->getSourceRange());
   return true;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::DoStmt *DS) {
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
+    const clang::DoStmt *DS) {
   LoopRange.pop_back();
 }
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::WhileStmt *WS) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const clang::WhileStmt *WS) {
   LoopRange.push_back(WS->getSourceRange());
   return true;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::WhileStmt *WS) {
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
+    const clang::WhileStmt *WS) {
   LoopRange.pop_back();
 }
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::CallExpr *CE) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const clang::CallExpr *CE) {
   const clang::FunctionDecl *FuncDecl = CE->getDirectCallee();
   std::string FuncName;
   if (FuncDecl)
@@ -78,44 +84,84 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::CallExpr *CE) {
   }
   return true;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::CallExpr *) {}
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
+    const clang::CallExpr *) {}
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::DeclRefExpr *DRE) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
+    const clang::DeclRefExpr *DRE) {
+  const ValueDecl *VD = DRE->getDecl();
+  if (DRE->getDecl()->hasAttr<clang::CUDADeviceAttr>() &&
+      !(VD->getName().str() == "threadIdx" ||
+        VD->getName().str() == "blockIdx" ||
+        VD->getName().str() == "blockDim" ||
+        VD->getName().str() == "gridDim")) {
+    setFalseForThisFunctionDecl();
+    return false; // not support __device__ variables
+  }
   // Collect all DREs and its Decl
-  DREDeclMap.insert(std::make_pair(DRE, DRE->getDecl()));
+  const auto PVD = dyn_cast<ParmVarDecl>(DRE->getDecl());
+  if (!PVD)
+    return true;
+  if (PVD->getType()->isPointerType()) {
+    if (!PVD->getType()->getPointeeType()->isFundamentalType()) {
+      return false;
+    } else {
+      if (PVD->getType()->getPointeeType().isConstQualified()) {
+        return true;
+      }
+    }
+  } else {
+    if (!PVD->getType()->isFundamentalType()) {
+      return false;
+    }
+  }
+
+  const auto &Iter = DefUseMap.find(PVD);
+  if (Iter != DefUseMap.end()) {
+    Iter->second.insert(DRE);
+  } else {
+    std::set<const DeclRefExpr *> Set;
+    Set.insert(DRE);
+    DefUseMap.insert(std::make_pair(PVD, Set));
+  }
   return true;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::DeclRefExpr *) {}
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
+    const clang::DeclRefExpr *) {}
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::GotoStmt *) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const clang::GotoStmt *) {
   // We will further refine it if meet real request.
   // By default, goto/label stmt is not supported.
   return false;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::GotoStmt *) {}
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
+    const clang::GotoStmt *) {}
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::LabelStmt *) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const clang::LabelStmt *) {
   // We will further refine it if meet real request.
   // By default, goto/label stmt is not supported.
   return false;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::LabelStmt *) {}
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
+    const clang::LabelStmt *) {}
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::MemberExpr *ME) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
+    const clang::MemberExpr *ME) {
   if (ME->getType()->isPointerType() || ME->getType()->isArrayType()) {
     return false;
   }
   return true;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::MemberExpr *) {}
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
+    const clang::MemberExpr *) {}
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
-    clang::CXXDependentScopeMemberExpr *) {
+    const clang::CXXDependentScopeMemberExpr *) {
   return false;
 }
 void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
-    clang::CXXDependentScopeMemberExpr *) {}
+    const clang::CXXDependentScopeMemberExpr *) {}
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
-    clang::CXXConstructExpr *CCE) {
+    const clang::CXXConstructExpr *CCE) {
   auto Ctor = CCE->getConstructor();
   std::string CtorName = Ctor->getParent()->getQualifiedNameAsString();
   if (AllowedDeviceFunctions.count(CtorName) && !isUserDefinedDecl(Ctor))
@@ -123,7 +169,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
   return false;
 }
 void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
-    clang::CXXConstructExpr *) {}
+    const clang::CXXConstructExpr *) {}
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::traverseFunction(
     const clang::FunctionDecl *FD) {
@@ -174,6 +220,33 @@ bool isPointerOperationSafe(const clang::Expr *Pointer) {
   return false;
 }
 
+std::set<const clang::DeclRefExpr *>
+clang::dpct::BarrierFenceSpaceAnalyzer::matchAllDRE(
+    const clang::VarDecl *TargetDecl, const clang::Stmt *Range) {
+  std::set<const clang::DeclRefExpr *> Set;
+  if (!TargetDecl || !Range) {
+    return Set;
+  }
+  auto DREMatcher = ast_matchers::findAll(
+      ast_matchers::declRefExpr(
+          ast_matchers::hasDeclaration(
+              ast_matchers::varDecl(ast_matchers::isSameAs(TargetDecl))))
+          .bind("DRE"));
+  auto MatchedResults =
+      ast_matchers::match(DREMatcher, *Range, DpctGlobalInfo::getContext());
+  for (auto Node : MatchedResults) {
+    if (auto DRE = Node.getNodeAs<clang::DeclRefExpr>("DRE"))
+      Set.insert(DRE);
+  }
+  return Set;
+}
+
+const clang::DeclRefExpr *
+clang::dpct::BarrierFenceSpaceAnalyzer::assignedToAnotherDRE(
+    const clang::DeclRefExpr *) {
+
+}
+
 bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     const clang::CallExpr *CE) {
   if (CE->getBeginLoc().isMacroID() || CE->getEndLoc().isMacroID())
@@ -215,34 +288,48 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     return false;
   }
 
-  std::unordered_set<clang::ParmVarDecl *> PointerParams;
-  for (auto &Param : FD->parameters()) {
-    if (Param->getType()->isPointerType()) {
-      PointerParams.insert(Param);
+  auto getSize =
+      [](const std::unordered_map<const clang::ParmVarDecl *,
+                                  std::set<const clang::DeclRefExpr *>>
+             &DefUseMap) -> std::size_t {
+    std::size_t Size = 0;
+    for (const auto &Pair : DefUseMap) {
+      Size = Size + Pair.second.size();
     }
-  }
+  };
 
-  // Check whether each input pointer of kernel is "safe" (no an alias name
-  // used) or not. If it is not "safe", exit.
-  std::map<clang::ValueDecl *, std::set<clang::SourceLocation>> DRELocs;
-  for (auto &Iter : DREDeclMap) {
-    if (auto VD = dyn_cast_or_null<VarDecl>(Iter.second)) {
-      if (VD->hasAttr<clang::CUDADeviceAttr>() &&
-          !(VD->getName().str() == "threadIdx" ||
-            VD->getName().str() == "blockIdx" ||
-            VD->getName().str() == "blockDim" ||
-            VD->getName().str() == "gridDim")) {
-        setFalseForThisFunctionDecl();
-        return false; // not support to check __device__ variables
+  // Collect all used positions
+  std::size_t MapSize = getSize(DefUseMap);
+  do {
+    MapSize = getSize(DefUseMap);
+    std::set<clang::DeclRefExpr *> NewDRESet;
+    for (auto &Pair : DefUseMap) {
+      const clang::ParmVarDecl *CurDecl = Pair.first;
+      std::set<const clang::DeclRefExpr *> CurDRESet = Pair.second;
+      std::set<const clang::DeclRefExpr *> MatchedResult =
+          matchAllDRE(CurDecl, FD->getBody());
+      CurDRESet.insert(MatchedResult.begin(), MatchedResult.end());
+      NewDRESet.clear();
+      for (const auto &DRE : CurDRESet) {
+        if (const clang::DeclRefExpr *AnotherDRE = assignedToAnotherDRE(DRE)) {
+          std::set<const clang::DeclRefExpr *> AnotherDREMatchedResult =
+              matchAllDRE(
+                  dyn_cast_or_null<clang::VarDecl>(AnotherDRE->getDecl()),
+                  FD->getBody());
+          NewDRESet.insert(AnotherDREMatchedResult.begin(),
+                           AnotherDREMatchedResult.end());
+        }
       }
+      if (!NewDRESet.empty())
+        Pair.second.insert(NewDRESet.begin(), NewDRESet.end());
     }
-    if (dyn_cast<clang::ParmVarDecl>(Iter.second) &&
-        PointerParams.count(dyn_cast<clang::ParmVarDecl>(Iter.second))) {
-      if (!isPointerOperationSafe(Iter.first)) {
-        setFalseForThisFunctionDecl();
-        return false; // avoid the alias of input pointers
-      }
-      DRELocs[Iter.second].insert(Iter.first->getBeginLoc());
+  } while (getSize(DefUseMap) != MapSize);
+
+  // Convert DRE to location for comparing
+  std::map<const clang::ParmVarDecl *, std::set<clang::SourceLocation>> DRELocs;
+  for (const auto &Pair : DefUseMap) {
+    for (const auto &Item : Pair.second) {
+      DRELocs[Pair.first].insert(Item->getBeginLoc());
     }
   }
 
@@ -338,4 +425,7 @@ const std::unordered_set<std::string>
         "__fetch_builtin_x",
         "__fetch_builtin_y",
         "__fetch_builtin_z",
-        "uint4"};
+        "uint4",
+        "sqrtf",
+        "__expf",
+        "fmaf"};
