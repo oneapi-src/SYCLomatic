@@ -2017,18 +2017,14 @@ void KernelConfigAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     return ArgumentAnalysis::analyzeExpr(DRE);
 
   // VD's DRE should be only used once (as the config arg) in VDContext
-  auto DREMatcher =
-      ast_matchers::findAll(ast_matchers::declRefExpr().bind("DRE"));
+  auto DREMatcher = ast_matchers::findAll(
+      ast_matchers::declRefExpr(
+          ast_matchers::hasDeclaration(
+              ast_matchers::varDecl(ast_matchers::isSameAs(VD))))
+          .bind("DRE"));
   auto MatchedResults =
       ast_matchers::match(DREMatcher, *VDContext, DpctGlobalInfo::getContext());
-  size_t RefCount = 0;
-  for (const auto &Res : MatchedResults) {
-    const DeclRefExpr *RefExpr = Res.getNodeAs<DeclRefExpr>("DRE");
-    if (RefExpr->getDecl() == VD) {
-      RefCount++;
-    }
-  }
-  if (RefCount > 1)
+  if (MatchedResults.size() != 1)
     return ArgumentAnalysis::analyzeExpr(DRE);
 
   if (VD->getType().getCanonicalType().getAsString() != "struct dim3")
