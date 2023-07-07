@@ -856,6 +856,7 @@ public:
   static void printItem(llvm::raw_ostream &, const Stmt *,
                         const FunctionDecl *FD = nullptr);
   static std::string getItem(const Stmt *, const FunctionDecl *FD = nullptr);
+  static void setItemInfo(const Stmt *, const FunctionDecl *FD = nullptr);
   static void printGroup(llvm::raw_ostream &, const Stmt *,
                          const FunctionDecl *FD = nullptr);
   static std::string getGroup(const Stmt *, const FunctionDecl *FD = nullptr);
