@@ -165,25 +165,6 @@ public:
       DpctGlobalInfo::getInstance().addReplacement(
           T->getReplacement(DpctGlobalInfo::getContext()));
   }
-  std::string getAddressSpace(const clang::Expr *E, std::string MigratedStr) {
-    bool HasAttr = false;
-    bool NeedReport = false;
-    getShareAttrRecursive(E, HasAttr, NeedReport);
-    if (HasAttr && !NeedReport)
-      return "local_space";
-
-    LocalVarAddrSpaceEnum LocalVarCheckResult =
-        LocalVarAddrSpaceEnum::AS_CannotDeduce;
-    checkIsPrivateVar(E, LocalVarCheckResult);
-    if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_IsPrivate) {
-      return "private_space";
-    } else if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_IsGlobal) {
-      return "global_space";
-    } else {
-      report(Diagnostics::UNDEDUCED_ADDRESS_SPACE, false, MigratedStr);
-      return "global_space";
-    }
-  }
 
   bool isNoRewrite() { return NoRewrite; }
 
@@ -266,25 +247,47 @@ public:
 class AssignableRewriter : public CallExprRewriter {
   std::shared_ptr<CallExprRewriter> Inner;
   bool IsAssigned;
-  bool ExtraParen = false;
+  bool IsInRetStmt;
+  bool CheckAssigned;
+  bool CheckInRetStmt;
+  bool UseDpctCheckError;
+  bool ExtraParen;
 
 public:
   AssignableRewriter(const CallExpr *C,
                      std::shared_ptr<CallExprRewriter> InnerRewriter,
-                     bool EP = false)
-      : CallExprRewriter(C, ""), Inner(InnerRewriter),
-        IsAssigned(isAssigned(C)), ExtraParen(EP) {
+                     bool checkAssigned = true, bool checkInRetStmt = false,
+                     bool useDpctCheckError = true, bool EP = false)
+      : CallExprRewriter(C, ""), Inner(InnerRewriter), IsAssigned(false),
+        IsInRetStmt(false), CheckAssigned(checkAssigned),
+        CheckInRetStmt(checkInRetStmt), UseDpctCheckError(useDpctCheckError),
+        ExtraParen(EP) {
+    if (CheckAssigned) {
+      IsAssigned = isAssigned(C);
+    }
+    if (CheckInRetStmt) {
+      IsInRetStmt = isInRetStmt(C);
+    }
     if (IsAssigned)
       requestFeature(HelperFeatureEnum::device_ext);
   }
 
   std::optional<std::string> rewrite() override {
     std::optional<std::string> &&Result = Inner->rewrite();
-    if (Result.has_value() && IsAssigned) {
-      if (ExtraParen) {
-        return "DPCT_CHECK_ERROR((" + Result.value() + "))";
+    if (Result.has_value()) {
+      if ((CheckAssigned && IsAssigned) || (CheckInRetStmt && IsInRetStmt)) {
+        if (UseDpctCheckError) {
+          if (ExtraParen) {
+            return "DPCT_CHECK_ERROR((" + Result.value() + "))";
+          }
+          return "DPCT_CHECK_ERROR(" + Result.value() + ")";
+        } else {
+          if (ExtraParen) {
+            return "[&](){ (" + Result.value() + "); }()";
+          }
+          return "[&](){ " + Result.value() + "; }()";
+        }
       }
-      return "DPCT_CHECK_ERROR(" + Result.value() + ")";
     }
     return Result;
   }
@@ -367,16 +370,23 @@ public:
 
 class AssignableRewriterFactory : public CallExprRewriterFactoryBase {
   std::shared_ptr<CallExprRewriterFactoryBase> Inner;
-  bool ExtraParen = false;
+  bool CheckAssigned;
+  bool CheckInRetStmt;
+  bool UseDpctCheckError;
+  bool ExtraParen;
 
 public:
   AssignableRewriterFactory(
       std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory,
-      bool EP = false)
-      : Inner(InnerFactory), ExtraParen(EP) {}
+      bool checkAssigned = true, bool checkInRetStmt = false,
+      bool useDpctCheckError = true, bool EP = false)
+      : Inner(InnerFactory), CheckAssigned(checkAssigned),
+        CheckInRetStmt(checkInRetStmt), UseDpctCheckError(useDpctCheckError),
+        ExtraParen(EP) {}
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
     return std::make_shared<AssignableRewriter>(C, Inner->create(C),
-                                                ExtraParen);
+                                                CheckAssigned, CheckInRetStmt,
+                                                UseDpctCheckError, ExtraParen);
   }
 };
 
@@ -1510,6 +1520,20 @@ std::shared_ptr<CallExprRewriterFactoryBase>
 createUserDefinedMethodRewriterFactory(
     const std::string &, MetaRuleObject &,
     std::shared_ptr<MetaRuleObject::ClassMethod>);
+
+class CheckParamType {
+  unsigned Idx;
+  std::string TypeName;
+
+public:
+  CheckParamType(unsigned I, std::string Name) : Idx(I), TypeName(Name) {}
+  bool operator()(const CallExpr *C) {
+    std::string ParamType = getParamTypeStr(C, Idx);
+    if (ParamType.empty())
+      return true;
+    return ParamType.find(TypeName) != std::string::npos;
+  }
+};
 
 class CheckArgType {
   unsigned Idx;

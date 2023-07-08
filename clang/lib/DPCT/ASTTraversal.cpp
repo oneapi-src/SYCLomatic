@@ -11895,7 +11895,7 @@ void CooperativeGroupsFunctionRule::runRule(
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
 
-    CheckArgType Checker1(
+    CheckParamType Checker1(
         0, "const class cooperative_groups::__v1::thread_block &");
     CheckIntergerTemplateArgValueNE Checker2(0, 32);
     CheckIntergerTemplateArgValueLE Checker3(0, 32);

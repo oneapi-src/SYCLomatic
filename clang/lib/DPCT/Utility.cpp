@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "Utility.h"
+#include "Diagnostics.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "Config.h"
@@ -1445,6 +1446,18 @@ bool isAssigned(const Stmt *S) {
   return !P || (!dyn_cast<CompoundStmt>(P) && !dyn_cast<ForStmt>(P) &&
                 !dyn_cast<WhileStmt>(P) && !dyn_cast<DoStmt>(P) &&
                 !dyn_cast<IfStmt>(P));
+}
+
+/// Determine if \param S is in return statement or not
+/// \param S A Stmt node
+/// \return True if S is in return statement and false if S is not
+bool isInRetStmt(const clang::Stmt *S) {
+  if (auto ParentStmt = getParentStmt(S)) {
+    if (ParentStmt->getStmtClass() == Stmt::StmtClass::ReturnStmtClass) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /// Compute a temporary variable name for \param E
@@ -4002,7 +4015,7 @@ std::string getBaseTypeStr(const CallExpr *CE) {
   return dpct::DpctGlobalInfo::getTypeName(Base->getType().getCanonicalType());
 }
 
-std::string getArgTypeStr(const CallExpr *CE, unsigned int Idx) {
+std::string getParamTypeStr(const CallExpr *CE, unsigned int Idx) {
   if (CE->getNumArgs() <= Idx)
     return "";
   if (!CE->getDirectCallee())
@@ -4016,6 +4029,21 @@ std::string getArgTypeStr(const CallExpr *CE, unsigned int Idx) {
       .getUnqualifiedType()
       .getAsString();
 }
+
+std::string getArgTypeStr(const clang::CallExpr *CE, unsigned int Idx) {
+  if (CE->getNumArgs() <= Idx)
+    return "";
+  const Expr *E = CE->getArg(Idx);
+  if (!E) {
+    return "";
+  }
+  return E->IgnoreImplicitAsWritten()
+      ->getType()
+      .getCanonicalType()
+      .getUnqualifiedType()
+      .getAsString();
+}
+
 std::string getFunctionName(const clang::FunctionDecl *Node) {
   std::string FunctionName;
   llvm::raw_string_ostream OS(FunctionName);
@@ -4312,6 +4340,36 @@ bool isCapturedByLambda(const clang::TypeLoc *TL) {
   }
   return false;
 }
+
+std::string getAddressSpace(const CallExpr *C, int ArgIdx) {
+  bool HasAttr = false;
+  bool NeedReport = false;
+  const Expr *Arg = C->getArg(ArgIdx);
+  if (!Arg) {
+    return "";
+  }
+  getShareAttrRecursive(Arg, HasAttr, NeedReport);
+  if (HasAttr && !NeedReport)
+    return "local_space";
+  LocalVarAddrSpaceEnum LocalVarCheckResult =
+      LocalVarAddrSpaceEnum::AS_CannotDeduce;
+  checkIsPrivateVar(Arg, LocalVarCheckResult);
+  if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_IsPrivate) {
+    return "private_space";
+  } else if (LocalVarCheckResult == LocalVarAddrSpaceEnum::AS_IsGlobal) {
+    return "global_space";
+  } else {
+    clang::dpct::ExprAnalysis EA(Arg);
+    auto LocInfo =
+        dpct::DpctGlobalInfo::getInstance().getLocInfo(C->getBeginLoc());
+    clang::dpct::DiagnosticsUtils::report(
+        LocInfo.first, LocInfo.second,
+        clang::dpct::Diagnostics::UNDEDUCED_ADDRESS_SPACE, true, false,
+        EA.getReplacedString());
+    return "global_space";
+  }
+}
+
 namespace clang {
 namespace dpct {
 void requestFeature(HelperFeatureEnum Feature) {
