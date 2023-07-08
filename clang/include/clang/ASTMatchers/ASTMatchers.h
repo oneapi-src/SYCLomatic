@@ -8288,13 +8288,6 @@ AST_MATCHER_P(Expr, ignoringElidableConstructorCall,
   return InnerMatcher.matches(Node, Finder, Builder);
 }
 
-#ifdef SYCLomatic_CUSTOMIZATION
-AST_MATCHER_P(VarDecl, isSameAs, const VarDecl *, TargetVD) {
-  const VarDecl *VD = &Node;
-  return TargetVD == VD;
-}
-#endif // SYCLomatic_CUSTOMIZATION
-
 //----------------------------------------------------------------------------//
 // OpenMP handling.
 //----------------------------------------------------------------------------//

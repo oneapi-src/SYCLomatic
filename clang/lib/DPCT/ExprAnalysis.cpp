@@ -2001,29 +2001,24 @@ void KernelConfigAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Ctor) {
 }
 
 void KernelConfigAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
+  using namespace ast_matchers;
   const VarDecl *VD = dyn_cast_or_null<VarDecl>(DRE->getDecl());
   if (!VD)
     return ArgumentAnalysis::analyzeExpr(DRE);
 
   // VD must be local variable and must have the same context with
   // KernelCallExpr
-  if (!VD->isLocalVarDecl())
+  if (VD->getKind() != Decl::Var)
     return ArgumentAnalysis::analyzeExpr(DRE);
-  const CompoundStmt *VDContext =
-      DpctGlobalInfo::findAncestor<CompoundStmt>(VD);
-  const CompoundStmt *KernelCallContext =
-      DpctGlobalInfo::findAncestor<CompoundStmt>(getTargetExpr());
-  if (!VDContext || !KernelCallContext || (VDContext != KernelCallContext))
+  const auto *FD = dyn_cast_or_null<FunctionDecl>(VD->getDeclContext());
+  if (!FD)
     return ArgumentAnalysis::analyzeExpr(DRE);
+  const Stmt *VDContext = FD->getBody();
 
   // VD's DRE should be only used once (as the config arg) in VDContext
-  auto DREMatcher = ast_matchers::findAll(
-      ast_matchers::declRefExpr(
-          ast_matchers::hasDeclaration(
-              ast_matchers::varDecl(ast_matchers::isSameAs(VD))))
-          .bind("DRE"));
+  auto DREMatcher = findAll(declRefExpr(isDeclSameAs(VD)).bind("DRE"));
   auto MatchedResults =
-      ast_matchers::match(DREMatcher, *VDContext, DpctGlobalInfo::getContext());
+      match(DREMatcher, *VDContext, DpctGlobalInfo::getContext());
   if (MatchedResults.size() != 1)
     return ArgumentAnalysis::analyzeExpr(DRE);
 
@@ -2032,17 +2027,15 @@ void KernelConfigAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   if (!VD->hasInit())
     return ArgumentAnalysis::analyzeExpr(DRE);
 
-  const CXXConstructExpr *Init = dyn_cast<CXXConstructExpr>(VD->getInit());
-  if (!Init)
+  if (!VD->getInit())
     return ArgumentAnalysis::analyzeExpr(DRE);
+
+  dispatch(VD->getInit());
 
   if (IsTryToUseOneDimension) {
     // Insert member access expr at the end of DRE
     addReplacement(getExprLength(), 0, ".get(2)");
   }
-
-  handleDim3Ctor(Init, SourceRange(Init->getBeginLoc(), Init->getEndLoc()),
-                 Init->arg_begin(), Init->arg_end());
 }
 
 void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
