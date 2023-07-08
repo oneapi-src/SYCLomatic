@@ -598,6 +598,6 @@ AST_MATCHER_P(DeclRefExpr, isDeclSameAs, const VarDecl *, TargetVD) {
   const DeclRefExpr *DRE = &Node;
   return DRE->getDecl() == TargetVD;
 }
-}
+} // namespace ast_matchers
 } // namespace clang
 #endif // DPCT_UTILITY_H
