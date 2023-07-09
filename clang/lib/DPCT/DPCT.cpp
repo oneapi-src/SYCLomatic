@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "clang/DPCT/DPCT.h"
+#include "APIMapping/QueryAPIMapping.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "AutoComplete.h"
@@ -653,6 +654,12 @@ int runDPCT(int argc, const char **argv) {
   // just show -- --help information and then exit
   if (CommonOptionsParser::hasHelpOption(OriginalArgc, argv))
     dpctExit(MigrationSucceeded);
+
+  if (QueryAPIMapping.getNumOccurrences()) {
+    APIMapping::initEntryMap();
+    APIMapping::queryAPIMapping(llvm::outs(), QueryAPIMapping);
+    dpctExit(MigrationSucceeded);
+  }
 
   if (LimitChangeExtension) {
     DpctGlobalInfo::addChangeExtensions(".cu");

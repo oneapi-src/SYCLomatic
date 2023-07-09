@@ -1358,12 +1358,15 @@ void MapNames::setExplicitNamespaceMap() {
       {"thrust::partition_point", HelperFeatureEnum::device_ext}};
 
   ITFName = {
-#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
+#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)   \
   {#APINAME, #INTERFACENAME},
 #define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
                               TARGET, COMMENT)                                 \
   {#OBJNAME "." #APINAME, #OBJNAME "." #INTERFACENAME},
 #include "APINames.inc"
+#undef ENTRY
+#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
+  {#APINAME, #INTERFACENAME},
 #include "APINames_CUB.inc"
 #include "APINames_NCCL.inc"
 #include "APINames_cuBLAS.inc"
@@ -1374,6 +1377,7 @@ void MapNames::setExplicitNamespaceMap() {
 #include "APINames_cuSPARSE.inc"
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
+#include "APINames_wmma.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
   };
@@ -1887,7 +1891,15 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusolverDnSyevd",
                            "cusolverDnSyevd_bufferSize",
                            "cusolverDnXtrtri",
-                           "cusolverDnXtrtri_bufferSize"};
+                           "cusolverDnXtrtri_bufferSize",
+                           "cusolverDnSsyevd_bufferSize",
+                           "cusolverDnDsyevd_bufferSize",
+                           "cusolverDnCheevd_bufferSize",
+                           "cusolverDnZheevd_bufferSize",
+                           "cusolverDnSsyevd",
+                           "cusolverDnDsyevd",
+                           "cusolverDnCheevd",
+                           "cusolverDnZheevd"};
 
   SPARSEAPIWithRewriter = {"cusparseCreateMatDescr",
                            "cusparseDestroyMatDescr",
@@ -4452,12 +4464,15 @@ const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
 };
 
 std::map<std::string, bool> MigrationStatistics::MigrationTable{
-#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
+#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)   \
   {#APINAME, VALUE},
 #define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
                               TARGET, COMMENT)                                 \
   {#OBJNAME "." #APINAME, VALUE},
 #include "APINames.inc"
+#undef ENTRY
+#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
+  {#APINAME, VALUE},
 #include "APINames_CUB.inc"
 #include "APINames_NCCL.inc"
 #include "APINames_NVML.inc"
@@ -4471,6 +4486,7 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #include "APINames_nvGRAPH.inc"
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
+#include "APINames_wmma.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
 };

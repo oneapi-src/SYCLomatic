@@ -1784,6 +1784,9 @@ public:
     return getUsingExperimental<
         ExperimentalFeatures::Exp_OccupancyCalculation>();
   }
+  static bool useExtJointMatrix() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_Matrix>();
+  }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
   }
@@ -2259,6 +2262,8 @@ private:
 
   // Get original array size expression.
   std::string getUnfoldedArraySize(const ConstantArrayTypeLoc &TL);
+
+  bool setTypedefInfo(const TypedefTypeLoc &TL, bool NeedSizeFold);
 
   // Typically C++ array with constant size.
   // e.g.: __device__ int a[20];
