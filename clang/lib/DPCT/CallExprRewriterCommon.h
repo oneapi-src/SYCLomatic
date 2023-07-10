@@ -540,7 +540,7 @@ makeFuncNameFromDevAttrCreator(unsigned idx) {
       auto ArgName = DRE->getNameInfo().getAsString();
       auto Search = EnumConstantRule::EnumNamesMap.find(ArgName);
       if (Search != EnumConstantRule::EnumNamesMap.end()) {
-        requestHelperFeatureForEnumNames(ArgName, CE);
+        requestHelperFeatureForEnumNames(ArgName);
         return Search->second->NewName;
       }
     }

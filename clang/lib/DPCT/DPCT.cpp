@@ -7,24 +7,24 @@
 //===----------------------------------------------------------------------===//
 
 #include "clang/DPCT/DPCT.h"
+#include "APIMapping/QueryAPIMapping.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "AutoComplete.h"
 #include "CallExprRewriter.h"
-#include "MemberExprRewriter.h"
-#include "TypeLocRewriters.h"
-#include "CrashRecovery.h"
 #include "Config.h"
-#include "CustomHelperFiles.h"
+#include "CrashRecovery.h"
 #include "ExternalReplacement.h"
 #include "GenHelperFunction.h"
 #include "GenMakefile.h"
 #include "IncrementalMigrationUtility.h"
+#include "MemberExprRewriter.h"
 #include "MigrationAction.h"
 #include "MisleadingBidirectional.h"
 #include "Rules.h"
 #include "SaveNewFiles.h"
 #include "Statics.h"
+#include "TypeLocRewriters.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
 #include "VcxprojParser.h"
@@ -655,23 +655,10 @@ int runDPCT(int argc, const char **argv) {
   if (CommonOptionsParser::hasHelpOption(OriginalArgc, argv))
     dpctExit(MigrationSucceeded);
 
-  auto ExtensionStr = ChangeExtension.getValue();
-  ExtensionStr.erase(std::remove(ExtensionStr.begin(), ExtensionStr.end(), ' '),
-                     ExtensionStr.end());
-  auto Extensions = split(ExtensionStr, ',');
-  for (auto &Extension : Extensions) {
-    const auto len = Extension.length();
-    if (len < 2 || len > 5 || Extension[0] != '.') {
-      ShowStatus(MigrationErrorInvalidChangeFilenameExtension);
-      dpctExit(MigrationErrorInvalidChangeFilenameExtension, false);
-    }
-    for (size_t i = 1; i < len; ++i) {
-      if (!std::isalpha(Extension[i])) {
-        ShowStatus(MigrationErrorInvalidChangeFilenameExtension);
-        dpctExit(MigrationErrorInvalidChangeFilenameExtension, false);
-      }
-    }
-    DpctGlobalInfo::addChangeExtensions(Extension);
+  if (QueryAPIMapping.getNumOccurrences()) {
+    APIMapping::initEntryMap();
+    APIMapping::queryAPIMapping(llvm::outs(), QueryAPIMapping);
+    dpctExit(MigrationSucceeded);
   }
 
   if (LimitChangeExtension) {
@@ -790,21 +777,9 @@ int runDPCT(int argc, const char **argv) {
   }
   ValidateInputDirectory(Tool, AnalysisScope);
 
-  if (GenHelperFunction.getNumOccurrences() &&
-      (UseCustomHelperFileLevel.getNumOccurrences() ||
-       CustomHelperFileName.getNumOccurrences())) {
-    ShowStatus(MigrationErrorConflictOptions,
-               "Option --gen-helper-function cannot be used with "
-               "--use-custom-helper or --custom-helper-name together");
-    dpctExit(MigrationErrorConflictOptions);
-  }
   if (GenHelperFunction.getValue()) {
     dpct::genHelperFunction(dpct::DpctGlobalInfo::getOutRoot());
   }
-
-  validateCustomHelperFileNameArg(UseCustomHelperFileLevel,
-                                  CustomHelperFileName,
-                                  dpct::DpctGlobalInfo::getOutRoot());
 
   Tool.appendArgumentsAdjuster(
       getInsertArgumentAdjuster("-nocudalib", ArgumentInsertPosition::BEGIN));
@@ -859,20 +834,8 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);
   DpctGlobalInfo::setUsmLevel(USMLevel);
   DpctGlobalInfo::setIsIncMigration(!NoIncrementalMigration);
-  DpctGlobalInfo::setHelperFilesCustomizationLevel(UseCustomHelperFileLevel);
-  if (UseCustomHelperFileLevel.getNumOccurrences()) {
-    clang::dpct::PrintMsg("Note: Option --use-custom-helper is deprecated and "
-                          "may be removed in the future.\n");
-  }
   DpctGlobalInfo::setCheckUnicodeSecurityFlag(CheckUnicodeSecurityFlag);
   DpctGlobalInfo::setEnablepProfilingFlag(EnablepProfilingFlag);
-  DpctGlobalInfo::setCustomHelperFileName(CustomHelperFileName);
-  if (CustomHelperFileName.getNumOccurrences()) {
-    clang::dpct::PrintMsg("Note: Option --custom-helper-name is deprecated and "
-                          "may be removed in the future.\n");
-  }
-  HelperFileNameMap[HelperFileEnum::Dpct] =
-      DpctGlobalInfo::getCustomHelperFileName() + ".hpp";
   DpctGlobalInfo::setFormatRange(FormatRng);
   DpctGlobalInfo::setFormatStyle(FormatST);
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
@@ -938,9 +901,6 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_CommentsEnabled,
                      DpctGlobalInfo::isCommentsEnabled(),
                      EnableComments.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_CustomHelperFileName,
-                     DpctGlobalInfo::getCustomHelperFileName(),
-                     CustomHelperFileName.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_CtadEnabled,
                      DpctGlobalInfo::isCtadEnabled(),
                      EnableCTAD.getNumOccurrences());
