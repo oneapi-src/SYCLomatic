@@ -15,6 +15,8 @@
 
 using namespace llvm;
 
+// #define __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const clang::IfStmt *IS) {
   // No special process, treat as one block
   return true;
@@ -78,6 +80,12 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const clang::CallExpr *CE) {
     if (auto FD = CE->getDirectCallee()) {
       std::string FuncName = FD->getNameInfo().getName().getAsString();
       if (!AllowedDeviceFunctions.count(FuncName) || isUserDefinedDecl(FD)) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+        std::cout << "Return False case A: "
+                  << CE->getBeginLoc().printToString(
+                         clang::dpct::DpctGlobalInfo::getSourceManager())
+                  << std::endl;
+#endif
         return false;
       }
     }
@@ -90,30 +98,61 @@ void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
     const clang::DeclRefExpr *DRE) {
   const ValueDecl *VD = DRE->getDecl();
-  if (DRE->getDecl()->hasAttr<clang::CUDADeviceAttr>() &&
+  if (!dyn_cast<FunctionDecl>(VD) &&
+      DRE->getDecl()->hasAttr<clang::CUDADeviceAttr>() &&
       !(VD->getName().str() == "threadIdx" ||
         VD->getName().str() == "blockIdx" ||
         VD->getName().str() == "blockDim" ||
         VD->getName().str() == "gridDim")) {
     setFalseForThisFunctionDecl();
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "Return False case B: "
+              << DRE->getBeginLoc().printToString(
+                     clang::dpct::DpctGlobalInfo::getSourceManager())
+              << std::endl;
+#endif
     return false; // not support __device__ variables
   }
   // Collect all DREs and its Decl
   const auto PVD = dyn_cast<ParmVarDecl>(DRE->getDecl());
   if (!PVD)
     return true;
-  if (PVD->getType()->isPointerType()) {
-    if (!PVD->getType()->getPointeeType()->isFundamentalType()) {
-      return false;
-    } else {
-      if (PVD->getType()->getPointeeType().isConstQualified()) {
-        return true;
+
+  /// \return One of below 3 int values:
+  ///  1: can skip analysis
+  ///  0: need analysis
+  /// -1: unsupport to analyze
+  std::function<int(QualType)> getInputParamterTypeKind =
+      [](QualType QT) -> int {
+    if (QT->isPointerType()) {
+      QualType PointeeQT = QT->getPointeeType();
+      if (PointeeQT.isConstQualified())
+        return 1;
+      if (PointeeQT->isFundamentalType())
+        return 0;
+      return -1;
+    }
+    if (QT->isFundamentalType()) {
+      return 1;
+    }
+    if (auto ET = dyn_cast<ElaboratedType>(QT.getTypePtr())) {
+      if (auto RT = dyn_cast<RecordType>(ET->desugar())) {
+        for (const auto &Field : RT->getDecl()->fields()) {
+          if (!Field->getType()->isFundamentalType()) {
+            return -1;
+          }
+        }
+        return 1;
       }
     }
-  } else {
-    if (!PVD->getType()->isFundamentalType()) {
-      return false;
-    }
+    return -1;
+  };
+
+  int ParamterTypeKind = getInputParamterTypeKind(PVD->getType());
+  if (ParamterTypeKind == 1) {
+    return true;
+  } else if (ParamterTypeKind == -1) {
+    return false;
   }
 
   const auto &Iter = DefUseMap.find(PVD);
@@ -129,17 +168,29 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
 void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
     const clang::DeclRefExpr *) {}
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const clang::GotoStmt *) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const clang::GotoStmt *GS) {
   // We will further refine it if meet real request.
   // By default, goto/label stmt is not supported.
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  std::cout << "Return False case F: "
+            << GS->getBeginLoc().printToString(
+                   clang::dpct::DpctGlobalInfo::getSourceManager())
+            << std::endl;
+#endif
   return false;
 }
 void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
     const clang::GotoStmt *) {}
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const clang::LabelStmt *) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const clang::LabelStmt *LS) {
   // We will further refine it if meet real request.
   // By default, goto/label stmt is not supported.
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  std::cout << "Return False case G: "
+            << LS->getBeginLoc().printToString(
+                   clang::dpct::DpctGlobalInfo::getSourceManager())
+            << std::endl;
+#endif
   return false;
 }
 void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
@@ -148,6 +199,12 @@ void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
     const clang::MemberExpr *ME) {
   if (ME->getType()->isPointerType() || ME->getType()->isArrayType()) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "Return False case H: "
+              << ME->getBeginLoc().printToString(
+                     clang::dpct::DpctGlobalInfo::getSourceManager())
+              << std::endl;
+#endif
     return false;
   }
   return true;
@@ -155,7 +212,13 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
 void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
     const clang::MemberExpr *) {}
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
-    const clang::CXXDependentScopeMemberExpr *) {
+    const clang::CXXDependentScopeMemberExpr *CDSME) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  std::cout << "Return False case I: "
+            << CDSME->getBeginLoc().printToString(
+                   clang::dpct::DpctGlobalInfo::getSourceManager())
+            << std::endl;
+#endif
   return false;
 }
 void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
@@ -166,6 +229,12 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
   std::string CtorName = Ctor->getParent()->getQualifiedNameAsString();
   if (AllowedDeviceFunctions.count(CtorName) && !isUserDefinedDecl(Ctor))
     return true;
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  std::cout << "Return False case J: "
+            << CCE->getBeginLoc().printToString(
+                   clang::dpct::DpctGlobalInfo::getSourceManager())
+            << std::endl;
+#endif
   return false;
 }
 void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
@@ -177,47 +246,6 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::traverseFunction(
     return false;
   }
   return true;
-}
-
-bool isPointerOperationSafe(const clang::Expr *Pointer) {
-  auto P = getNonImplicitCastNonParenExprParentStmt(Pointer);
-  if (!P)
-    return false;
-
-  if (auto ASE = dyn_cast<clang::ArraySubscriptExpr>(P)) {
-    auto PP = getNonImplicitCastNonParenExprParentStmt(ASE);
-    if (auto UO = dyn_cast_or_null<clang::UnaryOperator>(PP)) {
-      if (UO->getOpcode() == clang::UnaryOperatorKind::UO_AddrOf) {
-        return isPointerOperationSafe(UO);
-      }
-    }
-    return true;
-  }
-  if (auto UO = dyn_cast<clang::UnaryOperator>(P)) {
-    if (UO->getOpcode() == clang::UnaryOperatorKind::UO_Deref) {
-      auto PP = getNonImplicitCastNonParenExprParentStmt(UO);
-      if (auto OuterUO = dyn_cast_or_null<clang::UnaryOperator>(PP)) {
-        if (OuterUO->getOpcode() == clang::UnaryOperatorKind::UO_AddrOf) {
-          return isPointerOperationSafe(OuterUO);
-        }
-      }
-      return true;
-    }
-    return false;
-  }
-
-  // Special case for atomicAdd.
-  // If the Pointer is the first arg of atomicAdd function, return true.
-  if (auto CE = dyn_cast<clang::CallExpr>(P)) {
-    if (auto FD = CE->getDirectCallee()) {
-      std::string FuncName = FD->getNameInfo().getName().getAsString();
-      if (FuncName == "atomicAdd" && (CE->getArg(0) == Pointer) &&
-          !isUserDefinedDecl(FD)) {
-        return true;
-      }
-    }
-  }
-  return false;
 }
 
 std::set<const clang::DeclRefExpr *>
@@ -269,6 +297,9 @@ clang::dpct::BarrierFenceSpaceAnalyzer::isAssignedToAnotherDRE(
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     const clang::CallExpr *CE) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  std::cout << "BarrierFenceSpaceAnalyzer Analyzing ..." << std::endl;
+#endif
   if (CE->getBeginLoc().isMacroID() || CE->getEndLoc().isMacroID())
     return false;
   auto FD = dpct::DpctGlobalInfo::findAncestor<clang::FunctionDecl>(CE);
@@ -295,6 +326,10 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     }
   }
 
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  std::cout << "Before traverse" << std::endl;
+#endif
+
   this->FD = FD;
   // analyze this FD
   // Traverse AST, analysis the context info of kernel calling sycthreads()
@@ -318,6 +353,19 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     }
     return Size;
   };
+
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  std::cout << "DefUseMap init value:" << std::endl;
+  for (const auto &Pair : DefUseMap) {
+    const auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
+    std::cout << "Decl:" << Pair.first->getBeginLoc().printToString(SM)
+              << std::endl;
+    for (const auto &Item : Pair.second) {
+      std::cout << "    DRE:" << Item->getBeginLoc().printToString(SM)
+                << std::endl;
+    }
+  }
+#endif
 
   // Collect all used positions
   std::size_t MapSize = getSize(DefUseMap);
@@ -347,6 +395,19 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
         Pair.second.insert(NewDRESet.begin(), NewDRESet.end());
     }
   } while (getSize(DefUseMap) != MapSize);
+
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  std::cout << "DefUseMap after collection:" << std::endl;
+  for (const auto &Pair : DefUseMap) {
+    const auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
+    std::cout << "Decl:" << Pair.first->getBeginLoc().printToString(SM)
+              << std::endl;
+    for (const auto &Item : Pair.second) {
+      std::cout << "    DRE:" << Item->getBeginLoc().printToString(SM)
+                << std::endl;
+    }
+  }
+#endif
 
   // Convert DRE to location for comparing
   std::map<const clang::ParmVarDecl *, std::set<clang::SourceLocation>> DRELocs;
