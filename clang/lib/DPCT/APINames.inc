@@ -409,7 +409,7 @@ ENTRY(__hneg, __hneg, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(__hsub, __hsub, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(__hsub_rn, __hsub_rn, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(__hsub_sat, __hsub_sat, true, NO_FLAG, P4, "Successful", "NA")
-// atomicAdd is overload with other ENTRY
+// half version atomicAdd is overload with the ENTRY in 'Atomic API'
 
 // Half2 Arithmetic Functions
 ENTRY(__h2div, __h2div, true, NO_FLAG, P4, "Successful", "NA")
@@ -428,7 +428,7 @@ ENTRY(__hneg2, __hneg2, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(__hsub2, __hsub2, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(__hsub2_rn, __hsub2_rn, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(__hsub2_sat, __hsub2_sat, true, NO_FLAG, P4, "Successful", "NA")
-// atomicAdd is overload with other ENTRY
+// half2 version atomicAdd is overload with the ENTRY in 'Atomic API'
 
 // Half Comparison Functions
 ENTRY(__heq, __heq, true, NO_FLAG, P4, "Successful", "NA")
@@ -542,17 +542,17 @@ ENTRY(__int2half_rn, __int2half_rn, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(__int2half_ru, __int2half_ru, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(__int2half_rz, __int2half_rz, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(__ldca, __ldca, true, NO_FLAG, P4, "DPCT1098", "NA")
-// __ldca is overload with other ENTRY
+// half2 version __ldca is overload with previous half version ENTRY
 ENTRY(__ldcg, __ldcg, true, NO_FLAG, P4, "DPCT1098", "NA")
-// __ldcg is overload with other ENTRY
+// half2 version __ldcg is overload with previous half version ENTRY
 ENTRY(__ldcs, __ldcs, true, NO_FLAG, P4, "DPCT1098", "NA")
-// __ldcs is overload with other ENTRY
+// half2 version __ldcs is overload with previous half version ENTRY
 ENTRY(__ldcv, __ldcv, true, NO_FLAG, P4, "DPCT1098", "NA")
-// __ldcv is overload with other ENTRY
+// half2 version __ldcv is overload with previous half version ENTRY
 ENTRY(__ldg, __ldg, true, NO_FLAG, P0, "DPCT1098", "NA")
-// __ldg is overload with other ENTRY
+// half2 version __ldg is overload with previous half version ENTRY
 ENTRY(__ldlu, __ldlu, true, NO_FLAG, P4, "DPCT1098", "NA")
-// __ldlu is overload with other ENTRY
+// half2 version __ldlu is overload with previous half version ENTRY
 ENTRY(__ll2half_rd, __ll2half_rd, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(__ll2half_rn, __ll2half_rn, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(__ll2half_ru, __ll2half_ru, true, NO_FLAG, P4, "Successful", "NA")
@@ -563,26 +563,26 @@ ENTRY(__low2half2, __low2half2, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(__lowhigh2highlow, __lowhigh2highlow, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(__lows2half2, __lows2half2, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(__shfl_down_sync, __shfl_down_sync, true, NO_FLAG, P0, "Successful", "NA")
-// __shfl_down_sync is overload with other ENTRY
+// half2 version __shfl_down_sync is overload with previous half version ENTRY
 ENTRY(__shfl_sync, __shfl_sync, true, NO_FLAG, P0, "Successful", "NA")
-// __shfl_sync is overload with other ENTRY
+// half2 version __shfl_sync is overload with previous half version ENTRY
 ENTRY(__shfl_up_sync, __shfl_up_sync, true, NO_FLAG, P0, "Successful", "NA")
-// __shfl_up_sync is overload with other ENTRY
+// half2 version __shfl_up_sync is overload with previous half version ENTRY
 ENTRY(__shfl_xor_sync, __shfl_xor_sync, true, NO_FLAG, P0, "Successful", "NA")
-// __shfl_xor_sync is overload with other ENTRY
+// half2 version __shfl_xor_sync is overload with previous half version ENTRY
 ENTRY(__short2half_rd, __short2half_rd, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(__short2half_rn, __short2half_rn, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(__short2half_ru, __short2half_ru, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(__short2half_rz, __short2half_rz, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(__short_as_half, __short_as_half, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(__stcg, __stcg, true, NO_FLAG, P4, "DPCT1098", "NA")
-// __stcg is overload with other ENTRY
+// half2 version __stcg is overload with previous half version ENTRY
 ENTRY(__stcs, __stcs, true, NO_FLAG, P4, "DPCT1098", "NA")
-// __stcs is overload with other ENTRY
+// half2 version __stcs is overload with previous half version ENTRY
 ENTRY(__stwb, __stwb, true, NO_FLAG, P4, "DPCT1098", "NA")
-// __stwb is overload with other ENTRY
+// half2 version __stwb is overload with previous half version ENTRY
 ENTRY(__stwt, __stwt, true, NO_FLAG, P4, "DPCT1098", "NA")
-// __stwt is overload with other ENTRY
+// half2 version __stwt is overload with previous half version ENTRY
 ENTRY(__uint2half_rd, __uint2half_rd, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(__uint2half_rn, __uint2half_rn, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(__uint2half_ru, __uint2half_ru, true, NO_FLAG, P4, "Successful", "NA")
@@ -631,13 +631,13 @@ ENTRY(h2sin, h2sin, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(h2sqrt, h2sqrt, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(h2trunc, h2trunc, true, NO_FLAG, P4, "Successful", "NA")
 
-// 16 Bfloat16 Arithmetic Functions are overload with other ENTRY
+// 16 Bfloat16 Arithmetic Functions are overload with the ENTRYs of Half Arithmetic Functions
 
-// 17 Bfloat162 Arithmetic Functions are overload with other ENTRY
+// 17 Bfloat162 Arithmetic Functions are overload with the ENTRYs of Half2 Arithmetic Functions
 
-// 18 Bfloat16 Comparison Functions are overload with other ENTRY
+// 18 Bfloat16 Comparison Functions are overload with the ENTRYs of Half Comparison Functions
 
-// 41 Bfloat162 Comparison Functions are overload with other ENTRY
+// 41 Bfloat162 Comparison Functions are overload with the ENTRYs of Half2 Comparison Functions
 
 // Bfloat16 Precision Conversion and Data Movement
 ENTRY(__bfloat1622float2, __bfloat1622float2, true, NO_FLAG, P4, "Successful", "NA")
@@ -681,40 +681,40 @@ ENTRY(__floats2bfloat162_rn, __floats2bfloat162_rn, false, NO_FLAG, P4, "comment
 ENTRY(__halves2bfloat162, __halves2bfloat162, false, NO_FLAG, P4, "comment", "NA")
 ENTRY(__high2bfloat16, __high2bfloat16, false, NO_FLAG, P4, "comment", "NA")
 ENTRY(__high2bfloat162, __high2bfloat162, false, NO_FLAG, P4, "comment", "NA")
-// __high2float is overload with other ENTRY
+// __high2float is overload with the ENTRY in 'Half Precision Conversion and Data Movement'
 ENTRY(__highs2bfloat162, __highs2bfloat162, false, NO_FLAG, P4, "comment", "NA")
 ENTRY(__int2bfloat16_rd, __int2bfloat16_rd, false, NO_FLAG, P4, "comment", "NA")
 ENTRY(__int2bfloat16_rn, __int2bfloat16_rn, false, NO_FLAG, P4, "comment", "NA")
 ENTRY(__int2bfloat16_ru, __int2bfloat16_ru, false, NO_FLAG, P4, "comment", "NA")
 ENTRY(__int2bfloat16_rz, __int2bfloat16_rz, false, NO_FLAG, P4, "comment", "NA")
-// 2 __ldca APIs are overload with other ENTRY
-// 2 __ldcg APIs are overload with other ENTRY
-// 2 __ldcs APIs are overload with other ENTRY
-// 2 __ldcv APIs are overload with other ENTRY
-// 2 __ldg APIs are overload with other ENTRY
-// 2 __ldlu APIs are overload with other ENTRY
+// 2 __ldca APIs are overload with the ENTRY in 'Half Precision Conversion and Data Movement'
+// 2 __ldcg APIs are overload with the ENTRY in 'Half Precision Conversion and Data Movement'
+// 2 __ldcs APIs are overload with the ENTRY in 'Half Precision Conversion and Data Movement'
+// 2 __ldcv APIs are overload with the ENTRY in 'Half Precision Conversion and Data Movement'
+// 2 __ldg APIs are overload with the ENTRY in 'Half Precision Conversion and Data Movement'
+// 2 __ldlu APIs are overload with the ENTRY in 'Half Precision Conversion and Data Movement'
 ENTRY(__ll2bfloat16_rd, __ll2bfloat16_rd, false, NO_FLAG, P4, "comment", "NA")
 ENTRY(__ll2bfloat16_rn, __ll2bfloat16_rn, false, NO_FLAG, P4, "comment", "NA")
 ENTRY(__ll2bfloat16_ru, __ll2bfloat16_ru, false, NO_FLAG, P4, "comment", "NA")
 ENTRY(__ll2bfloat16_rz, __ll2bfloat16_rz, false, NO_FLAG, P4, "comment", "NA")
 ENTRY(__low2bfloat16, __low2bfloat16, false, NO_FLAG, P4, "comment", "NA")
 ENTRY(__low2bfloat162, __low2bfloat162, false, NO_FLAG, P4, "comment", "NA")
-// __low2float is overload with other ENTRY
-// __lowhigh2highlow is overload with other ENTRY
+// __low2float is overload with the ENTRY in 'Half Precision Conversion and Data Movement'
+// __lowhigh2highlow is overload with the ENTRY in 'Half Precision Conversion and Data Movement'
 ENTRY(__lows2bfloat162, __lows2bfloat162, false, NO_FLAG, P4, "comment", "NA")
-// 2 __shfl_down_sync APIs are overload with other ENTRY
-// 2 __shfl_sync APIs are overload with other ENTRY
-// 2 __shfl_up_sync APIs are overload with other ENTRY
-// 2 __shfl_xor_sync APIs are overload with other ENTRY
+// 2 __shfl_down_sync APIs are overload with the ENTRY in 'Half Precision Conversion and Data Movement'
+// 2 __shfl_sync APIs are overload with the ENTRY in 'Half Precision Conversion and Data Movement'
+// 2 __shfl_up_sync APIs are overload with the ENTRY in 'Half Precision Conversion and Data Movement'
+// 2 __shfl_xor_sync APIs are overload with the ENTRY in 'Half Precision Conversion and Data Movement'
 ENTRY(__short2bfloat16_rd, __short2bfloat16_rd, false, NO_FLAG, P4, "comment", "NA")
 ENTRY(__short2bfloat16_rn, __short2bfloat16_rn, false, NO_FLAG, P4, "comment", "NA")
 ENTRY(__short2bfloat16_ru, __short2bfloat16_ru, false, NO_FLAG, P4, "comment", "NA")
 ENTRY(__short2bfloat16_rz, __short2bfloat16_rz, false, NO_FLAG, P4, "comment", "NA")
 ENTRY(__short_as_bfloat16, __short_as_bfloat16, false, NO_FLAG, P4, "comment", "NA")
-// 2 __stcg APIs are overload with other ENTRY
-// 2 __stcs APIs are overload with other ENTRY
-// 2 __stwb APIs are overload with other ENTRY
-// 2 __stwt APIs are overload with other ENTRY
+// 2 __stcg APIs are overload with the ENTRY in 'Half Precision Conversion and Data Movement'
+// 2 __stcs APIs are overload with the ENTRY in 'Half Precision Conversion and Data Movement'
+// 2 __stwb APIs are overload with the ENTRY in 'Half Precision Conversion and Data Movement'
+// 2 __stwt APIs are overload with the ENTRY in 'Half Precision Conversion and Data Movement'
 ENTRY(__uint2bfloat16_rd, __uint2bfloat16_rd, false, NO_FLAG, P4, "comment", "NA")
 ENTRY(__uint2bfloat16_rn, __uint2bfloat16_rn, false, NO_FLAG, P4, "comment", "NA")
 ENTRY(__uint2bfloat16_ru, __uint2bfloat16_ru, false, NO_FLAG, P4, "comment", "NA")
@@ -729,9 +729,9 @@ ENTRY(__ushort2bfloat16_ru, __ushort2bfloat16_ru, false, NO_FLAG, P4, "comment",
 ENTRY(__ushort2bfloat16_rz, __ushort2bfloat16_rz, false, NO_FLAG, P4, "comment", "NA")
 ENTRY(__ushort_as_bfloat16, __ushort_as_bfloat16, false, NO_FLAG, P4, "comment", "NA")
 
-// 15 Bfloat16 Math Functions are overload with other ENTRY
+// 15 Bfloat16 Math Functions are overload with with the ENTRYs of Half Math Functions
 
-// 15 Bfloat162 Math Functions are overload with other ENTRY
+// 15 Bfloat162 Math Functions are overload with with the ENTRYs of Half2 Math Functions
 
 // Single Precision Mathematical Functions
 ENTRY(acosf, acosf, true, NO_FLAG, P0, "Successful", "NA")
@@ -860,9 +860,9 @@ ENTRY(fmod, fmod, true, NO_FLAG, P0, "Successful", "NA")
 ENTRY(frexp, frexp, true, NO_FLAG, P0, "Successful: DPCT1017", "NA")
 ENTRY(hypot, hypot, true, NO_FLAG, P0, "Successful", "NA")
 ENTRY(ilogb, ilogb, true, NO_FLAG, P0, "Successful", "NA")
-// isfinite is overload with other ENTRY
-// isinf is overload with other ENTRY
-// isnan is overload with other ENTRY
+// isfinite is overload with the ENTRY in 'Single Precision Mathematical Functions'
+// isinf is overload with the ENTRY in 'Single Precision Mathematical Functions'
+// isnan is overload with the ENTRY in 'Single Precision Mathematical Functions'
 ENTRY(j0, j0, false, NO_FLAG, P0, "Unsupported: [TODO]: explain why unsupported", "NA")
 ENTRY(j1, j1, false, NO_FLAG, P0, "Unsupported: [TODO]: explain why unsupported", "NA")
 ENTRY(jn, jn, false, NO_FLAG, P0, "Unsupported: [TODO]: explain why unsupported", "NA")
@@ -877,8 +877,8 @@ ENTRY(log2, log2, true, NO_FLAG, P0, "Successful", "NA")
 ENTRY(logb, logb, true, NO_FLAG, P0, "Successful", "NA")
 ENTRY(lrint, lrint, true, NO_FLAG, P0, "Successful", "NA")
 ENTRY(lround, lround, true, NO_FLAG, P0, "Successful", "NA")
-// 3 max APIs are overload with other ENTRY
-// 3 min APIs are overload with other ENTRY
+// 3 max APIs are overload with the ENTRY in 'Single Precision Mathematical Functions'
+// 3 min APIs are overload with the ENTRY in 'Single Precision Mathematical Functions'
 ENTRY(modf, modf, true, NO_FLAG, P0, "Successful: DPCT1017", "NA")
 ENTRY(nan, nan, true, NO_FLAG, P0, "Successful: DPCT1017", "NA")
 ENTRY(nearbyint, nearbyint, true, NO_FLAG, P0, "DPCT1017", "NA")
@@ -901,7 +901,7 @@ ENTRY(round, round, true, NO_FLAG, P0, "Successful", "NA")
 ENTRY(rsqrt, rsqrt, true, NO_FLAG, P0, "Successful", "NA")
 ENTRY(scalbln, scalbln, true, NO_FLAG, P0, "DPCT1017", "NA")
 ENTRY(scalbn, scalbn, true, NO_FLAG, P0, "DPCT1017", "NA")
-// signbit is overload with other ENTRY
+// signbit is overload with the ENTRY in 'Single Precision Mathematical Functions'
 ENTRY(sin, sin, true, NO_FLAG, P0, "Successful", "NA")
 ENTRY(sincos, sincos, true, NO_FLAG, P0, "Successful: DPCT1017", "NA")
 ENTRY(sincospi, sincospi, true, NO_FLAG, P4, "DPCT1017", "NA")
@@ -922,8 +922,8 @@ ENTRY(labs, abs, true, NO_FLAG, P0, "Successful", "NA")
 ENTRY(llabs, abs, true, NO_FLAG, P0, "Successful", "NA")
 ENTRY(llmax, llmax, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(llmin, llmin, true, NO_FLAG, P4, "Successful", "NA")
-// 12 max APIs are overload with other ENTRY
-// 12 min APIs are overload with other ENTRY
+// 12 max APIs are overload with the ENTRY in 'Single Precision Mathematical Functions'
+// 12 min APIs are overload with the ENTRY in 'Single Precision Mathematical Functions'
 ENTRY(ullmax, ullmax, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(ullmin, ullmin, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(umax, umax, true, NO_FLAG, P4, "Successful", "NA")
@@ -1018,7 +1018,7 @@ ENTRY(__funnelshift_l, __funnelshift_l, true, NO_FLAG, P4, "Successful: DPCT1098
 ENTRY(__funnelshift_lc, __funnelshift_lc, true, NO_FLAG, P4, "Successful: DPCT1098", "NA")
 ENTRY(__funnelshift_r, __funnelshift_r, true, NO_FLAG, P4, "Successful: DPCT1098", "NA")
 ENTRY(__funnelshift_rc, __funnelshift_rc, true, NO_FLAG, P4, "Successful: DPCT1098", "NA")
-// __hadd is overload with other ENTRY
+// __hadd is overload with the ENTRY in 'Half Arithmetic Functions'
 ENTRY(__mul24, __mul24, true, NO_FLAG, P0, "Successful", "NA")
 ENTRY(__mul64hi, __mul64hi, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(__mulhi, __mulhi, true, NO_FLAG, P4, "Successful", "NA")
