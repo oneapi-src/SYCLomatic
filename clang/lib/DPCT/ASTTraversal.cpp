@@ -6894,11 +6894,14 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
   } else if (FuncName == "clock" || FuncName == "clock64") {
-    report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED_SYCL_UNDEF, false,
-           FuncName);
-    // Add '#include <time.h>' directive to the file only once
-    auto Loc = CE->getBeginLoc();
-    DpctGlobalInfo::getInstance().insertHeader(Loc, HT_Time);
+    if (CE->getCalleeDecl()->hasAttr<CUDAGlobalAttr>() ||
+        CE->getCalleeDecl()->hasAttr<CUDADeviceAttr>()) {
+      report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED_SYCL_UNDEF, false,
+             FuncName);
+      // Add '#include <time.h>' directive to the file only once
+      auto Loc = CE->getBeginLoc();
+      DpctGlobalInfo::getInstance().insertHeader(Loc, HT_Time);
+    }
   } else if (FuncName == "cudaDeviceSetLimit" ||
              FuncName == "cudaThreadSetLimit" ||
              FuncName == "cudaDeviceSetCacheConfig" ||

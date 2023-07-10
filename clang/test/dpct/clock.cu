@@ -31,12 +31,24 @@ __global__ static void timedReduction(const float *input, float *output, clock_t
     clock64();
 }
 
+// CHECK: void timedAddition(const float *input, float *output, clock_t *timer){
+// CHECK-NEXT:    *timer = clock();
+// CHECK-NEXT:    clock();
+// CHECK-NEXT:}
+void timedAddition(const float *input, float *output, clock_t *timer){
+    *timer = clock();
+    clock();
+}
+
 int main(int argc, char **argv)
 {
     float *dinput = NULL;
+    float *hinput = NULL;
     float *doutput = NULL;
+    float *houtput = NULL;
     clock_t *dtimer = NULL;
+    clock_t *htimer = NULL;
     timedReduction<<<64, 256, sizeof(float) * 2 * 256>>>(dinput, doutput, dtimer);
+    timedAddition(hinput, houtput, htimer);
     return 0;
 }
-
