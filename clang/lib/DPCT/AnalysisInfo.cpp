@@ -54,9 +54,6 @@ UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
 bool DpctGlobalInfo::NeedDpctDeviceExt = false;
 bool DpctGlobalInfo::IsIncMigration = true;
 unsigned int DpctGlobalInfo::AssumedNDRangeDim = 3;
-HelperFilesCustomizationLevel DpctGlobalInfo::HelperFilesCustomizationLvl =
-    HelperFilesCustomizationLevel::HFCL_None;
-std::string DpctGlobalInfo::CustomHelperFileName = "dpct";
 std::unordered_set<std::string> DpctGlobalInfo::PrecAndDomPairSet;
 format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
 DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::FS_LLVM;
@@ -1475,8 +1472,14 @@ void KernelCallExpr::buildKernelArgsStmt() {
         }
       }
     } else if (Arg.IsRedeclareRequired || IsInMacroDefine) {
-      SubmitStmtsList.CommandGroupList.emplace_back(buildString(
-          "auto ", Arg.getIdStringWithIndex(), " = ", Arg.getArgString(), ";"));
+      std::string TypeStr =
+          Arg.getTypeString().empty()
+              ? "auto"
+              : (Arg.IsDeviceRandomGeneratorType ? Arg.getTypeString() + " *"
+                                                 : Arg.getTypeString());
+      SubmitStmtsList.CommandGroupList.emplace_back(
+          buildString(TypeStr, " ", Arg.getIdStringWithIndex(), " = ",
+                      Arg.getArgString(), ";"));
       KernelArgs += Arg.getIdStringWithIndex();
     } else if (Arg.Texture) {
       ParameterStream OS;
@@ -3767,10 +3770,40 @@ void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
   case TypeLoc::RValueReference:
     IsReference = true;
     return setTypeInfo(TYPELOC_CAST(ReferenceTypeLoc).getPointeeLoc());
+  case TypeLoc::Elaborated: {
+    const TypeLoc &NamedTypeLoc =
+        TYPELOC_CAST(ElaboratedTypeLoc).getNamedTypeLoc();
+    if (const auto TTL = NamedTypeLoc.getAs<TypedefTypeLoc>()) {
+      if (setTypedefInfo(TTL, NeedSizeFold))
+        return;
+    }
+    break;
+  }
+  case TypeLoc::Typedef: {
+    if (setTypedefInfo(TYPELOC_CAST(TypedefTypeLoc), NeedSizeFold))
+      return;
+    break;
+  }
   default:
     break;
   }
   setName(TL);
+}
+
+bool CtTypeInfo::setTypedefInfo(const TypedefTypeLoc &TL, bool NeedSizeFold) {
+  const TypedefNameDecl *TND = TL.getTypedefNameDecl();
+  if (!TND)
+    return false;
+  if (!TND->getTypeSourceInfo())
+    return false;
+  const TypeLoc TypedefTpyeDeclLoc = TND->getTypeSourceInfo()->getTypeLoc();
+  ConstantArrayTypeLoc CATL;
+  if (DpctGlobalInfo::isInAnalysisScope(TypedefTpyeDeclLoc.getBeginLoc()) &&
+      (CATL = TypedefTpyeDeclLoc.getAs<ConstantArrayTypeLoc>())) {
+    setArrayInfo(CATL, NeedSizeFold);
+    return true;
+  }
+  return false;
 }
 
 void CtTypeInfo::setArrayInfo(const IncompleteArrayTypeLoc &TL,
@@ -3888,8 +3921,9 @@ void CtTypeInfo::updateName() {
 
   if (BaseName.empty())
     BaseName = BaseNameWithoutQualifiers;
-  else
+  else {
     BaseName = buildString(BaseName, " ", BaseNameWithoutQualifiers);
+  }
 }
 
 std::shared_ptr<CtTypeInfo> CtTypeInfo::applyTemplateArguments(

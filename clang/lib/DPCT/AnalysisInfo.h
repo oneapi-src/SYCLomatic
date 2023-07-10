@@ -9,7 +9,6 @@
 #ifndef DPCT_ANALYSIS_INFO_H
 #define DPCT_ANALYSIS_INFO_H
 
-#include "CustomHelperFiles.h"
 #include "Error.h"
 #include "ExprAnalysis.h"
 #include "ExtReplacements.h"
@@ -20,8 +19,8 @@
 #include "Utility.h"
 #include "ValidateArguments.h"
 #include <bitset>
-#include <unordered_set>
 #include <optional>
+#include <unordered_set>
 #include <vector>
 
 #include "clang/AST/Attr.h"
@@ -953,20 +952,6 @@ public:
   inline static void setAssumedNDRangeDim(unsigned int Dim) {
     AssumedNDRangeDim = Dim;
   }
-  inline static HelperFilesCustomizationLevel
-  getHelperFilesCustomizationLevel() {
-    return HelperFilesCustomizationLvl;
-  }
-  inline static void
-  setHelperFilesCustomizationLevel(HelperFilesCustomizationLevel Lvl) {
-    HelperFilesCustomizationLvl = Lvl;
-  }
-  inline static std::string getCustomHelperFileName() {
-    return CustomHelperFileName;
-  }
-  inline static void setCustomHelperFileName(const std::string &Name) {
-    CustomHelperFileName = Name;
-  }
 
   inline static bool getUsingExtensionDE(DPCPPExtensionsDefaultEnabled Ext) {
     return ExtensionDEFlag & (1 << static_cast<unsigned>(Ext));
@@ -1799,6 +1784,9 @@ public:
     return getUsingExperimental<
         ExperimentalFeatures::Exp_OccupancyCalculation>();
   }
+  static bool useExtJointMatrix() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_Matrix>();
+  }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
   }
@@ -2047,8 +2035,6 @@ private:
   static bool NeedDpctDeviceExt;
   static bool IsIncMigration;
   static unsigned int AssumedNDRangeDim;
-  static HelperFilesCustomizationLevel HelperFilesCustomizationLvl;
-  static std::string CustomHelperFileName;
   static std::unordered_set<std::string> PrecAndDomPairSet;
   static format::FormatRange FmtRng;
   static DPCTFormatStyle FmtST;
@@ -2276,6 +2262,8 @@ private:
 
   // Get original array size expression.
   std::string getUnfoldedArraySize(const ConstantArrayTypeLoc &TL);
+
+  bool setTypedefInfo(const TypedefTypeLoc &TL, bool NeedSizeFold);
 
   // Typically C++ array with constant size.
   // e.g.: __device__ int a[20];
@@ -3961,8 +3949,8 @@ public:
 
 private:
   struct ArgInfo {
-    ArgInfo(KernelArgumentAnalysis &Analysis, const Expr *Arg, bool Used,
-            int Index, KernelCallExpr *BASE)
+    ArgInfo(const ParmVarDecl *PVD, KernelArgumentAnalysis &Analysis,
+            const Expr *Arg, bool Used, int Index, KernelCallExpr *BASE)
         : IsPointer(false), IsRedeclareRequired(false),
           IsUsedAsLvalueAfterMalloc(Used), Index(Index) {
       Analysis.analyze(Arg);
@@ -4007,6 +3995,9 @@ private:
         else
           ArgSize =
               MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Default);
+        if (PVD) {
+          TypeString = DpctGlobalInfo::getReplacedTypeName(PVD->getType());
+        }
       }
       if (IsRedeclareRequired || IsPointer || BASE->IsInMacroDefine) {
         IdString = getTempNameForExpr(Arg, false, true, BASE->IsInMacroDefine,
@@ -4174,7 +4165,9 @@ private:
         bool Used = true;
         if (auto *ArgDRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
           Used = isArgUsedAsLvalueUntil(ArgDRE, CE);
-        ArgsInfo.emplace_back(Analysis, Arg, Used, Idx, this);
+        const auto FD = CE->getDirectCallee();
+        ArgsInfo.emplace_back(FD ? FD->parameters()[Idx] : nullptr, Analysis,
+                              Arg, Used, Idx, this);
       }
     }
   }

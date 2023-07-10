@@ -582,4 +582,16 @@ std::string getBaseTypeRemoveTemplateArguments(const clang::MemberExpr* ME);
 bool containIterationSpaceBuiltinVar(const clang::Stmt *Node);
 bool containBuiltinWarpSize(const clang::Stmt *Node);
 bool isCapturedByLambda(const clang::TypeLoc *TL);
+namespace clang {
+namespace dpct {
+std::string getDpctVersionStr();
+enum class HelperFeatureEnum : unsigned int {
+  device_ext,
+  none,
+};
+void requestFeature(HelperFeatureEnum Feature);
+void requestHelperFeatureForEnumNames(const std::string Name);
+void requestHelperFeatureForTypeNames(const std::string Name);
+} // namespace dpct
+} // namespace clang
 #endif // DPCT_UTILITY_H

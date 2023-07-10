@@ -1,6 +1,3 @@
-// DPCT_LABEL_BEGIN|License|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 //==---- memory.h ---------------------------------*- C++ -*----------------==//
 //
 // Copyright (C) Intel Corporation
@@ -8,53 +5,17 @@
 // See https://llvm.org/LICENSE.txt for license information.
 //
 //===----------------------------------------------------------------------===//
-// DPCT_LABEL_END
 
 #ifndef __DPCT_MEMORY_H__
 #define __DPCT_MEMORY_H__
-// DPCT_COMMENT
-// DPCT_COMMENT Example1:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_EMPTY
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT Example2:
-// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
-// DPCT_COMMENT // DPCT_DEPENDENCY_BEGIN
-// DPCT_COMMENT // FileID|FeatureNameRef
-// DPCT_COMMENT [// FileID|FeatureNameRef]
-// DPCT_COMMENT ...
-// DPCT_COMMENT // DPCT_DEPENDENCY_END
-// DPCT_COMMENT // DPCT_CODE
-// DPCT_COMMENT some code
-// DPCT_COMMENT // DPCT_LABEL_END
-// DPCT_COMMENT
-// DPCT_COMMENT For header file including dependency, please use predefined feature name:
-// DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other header files
 
-// DPCT_LABEL_BEGIN|local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|non_local_include_dependency|
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #include <sycl/sycl.hpp>
 
 // Memory management section:
 // device_pointer, device_reference, swap, device_iterator, malloc_device,
 // device_new, free_device, device_delete
-// DPCT_LABEL_END
 namespace dpct {
 namespace detail {
-// DPCT_LABEL_BEGIN|make_allocatable|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Memory|typedef_byte_t
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T>
 struct make_allocatable
 {
@@ -66,11 +27,7 @@ struct make_allocatable<void>
 {
   using type = dpct::byte_t;
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|_DPCT_LIBSYCL_VERSION|dpct::detail
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 #if defined(__LIBSYCL_MAJOR_VERSION) && defined(__LIBSYCL_MINOR_VERSION) &&    \
     defined(__LIBSYCL_PATCH_VERSION)
 #define _DPCT_LIBSYCL_VERSION                                                  \
@@ -79,14 +36,7 @@ struct make_allocatable<void>
 #else
 #define _DPCT_LIBSYCL_VERSION 0
 #endif
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|__buffer_allocator|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasMemory|make_allocatable
-// DplExtrasMemory|_DPCT_LIBSYCL_VERSION
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename _DataT>
 using __buffer_allocator =
 #if _DPCT_LIBSYCL_VERSION >= 60000
@@ -94,15 +44,8 @@ using __buffer_allocator =
 #else
     sycl::buffer_allocator;
 #endif
-// DPCT_LABEL_END
 } // namespace detail
 
-// DPCT_LABEL_BEGIN|device_pointer_forward_decl|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasMemory|device_iterator_forward_decl_device_pointer
-// DplExtrasMemory|__buffer_allocator
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 #ifdef DPCT_USM_LEVEL_NONE
 template <typename T, sycl::access_mode Mode = sycl::access_mode::read_write,
           typename Allocator = detail::__buffer_allocator<T>>
@@ -110,13 +53,7 @@ class device_pointer;
 #else
 template <typename T> class device_pointer;
 #endif
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|device_reference|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasMemory|device_pointer_forward_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> struct device_reference {
   using pointer = device_pointer<T>;
   using value_type = T;
@@ -206,14 +143,7 @@ template <typename T> struct device_reference {
   }
   T &value;
 };
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|swap|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasMemory|swap
-// DplExtrasMemory|device_reference
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T>
 void swap(device_reference<T> &x, device_reference<T> &y) {
   x.swap(y);
@@ -224,12 +154,8 @@ template <typename T> void swap(T &x, T &y) {
   x = y;
   y = tmp;
 }
-// DPCT_LABEL_END
 
 namespace internal {
-// DPCT_LABEL_BEGIN|is_hetero_iterator|dpct::internal
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 // struct for checking if iterator is heterogeneous or not
 template <typename Iter,
           typename Void = void> // for non-heterogeneous iterators
@@ -239,19 +165,8 @@ template <typename Iter> // for heterogeneous iterators
 struct is_hetero_iterator<
     Iter, typename std::enable_if<Iter::is_hetero::value, void>::type>
     : std::true_type {};
-// DPCT_LABEL_END
 } // namespace internal
 
-// DPCT_LABEL_BEGIN|device_iterator_forward_decl_device_pointer|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Memory|typedef_byte_t
-// DplExtrasMemory|is_hetero_iterator
-// DplExtrasMemory|device_iterator
-// Device|get_default_queue|UsmRestricted
-// Memory|mem_mgr_translate_ptr|UsmNone
-// DplExtrasMemory|device_pointer_forward_decl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 #ifdef DPCT_USM_LEVEL_NONE
 template <typename T, sycl::access_mode Mode, typename Allocator>
 class device_iterator;
@@ -443,7 +358,7 @@ public:
   device_pointer_base(ValueType *p) : ptr(p) {}
   device_pointer_base(const std::size_t count) {
     sycl::queue default_queue = dpct::get_default_queue();
-    ptr = static_cast<ValueType *>(sycl::malloc_device(
+    ptr = static_cast<ValueType *>(sycl::malloc_shared(
         count, default_queue.get_device(), default_queue.get_context()));
   }
   device_pointer_base() {}
@@ -563,15 +478,7 @@ public:
   }
 };
 #endif
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|device_iterator|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasMemory|is_hetero_iterator
-// DplExtrasMemory|device_iterator_forward_decl_device_pointer
-// DplExtrasMemory|__buffer_allocator
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 #ifdef DPCT_USM_LEVEL_NONE
 template <typename T, sycl::access_mode Mode = sycl::access_mode::read_write,
           typename Allocator = detail::__buffer_allocator<T>>
@@ -760,13 +667,7 @@ public:
   std::size_t size() const { return idx; }
 };
 #endif
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|malloc_device|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasMemory|device_iterator_forward_decl_device_pointer
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T>
 device_pointer<T> malloc_device(const std::size_t num_elements) {
   return device_pointer<T>(num_elements * sizeof(T));
@@ -774,12 +675,6 @@ device_pointer<T> malloc_device(const std::size_t num_elements) {
 static inline device_pointer<void> malloc_device(const std::size_t num_bytes) {
   return device_pointer<void>(num_bytes);
 }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|device_new|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasMemory|device_iterator_forward_decl_device_pointer
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T>
 device_pointer<T> device_new(device_pointer<T> p, const T &value,
                              const std::size_t count = 1) {
@@ -795,21 +690,9 @@ template <typename T>
 device_pointer<T> device_new(const std::size_t count = 1) {
   return device_pointer<T>(count);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|free_device|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasMemory|device_iterator_forward_decl_device_pointer
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> void free_device(device_pointer<T> ptr) {}
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|device_delete|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasMemory|device_iterator_forward_decl_device_pointer
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T>
 typename std::enable_if<!std::is_trivially_destructible<T>::value, void>::type
 device_delete(device_pointer<T> p, const std::size_t count = 1) {
@@ -820,13 +703,7 @@ device_delete(device_pointer<T> p, const std::size_t count = 1) {
 template <typename T>
 typename std::enable_if<std::is_trivially_destructible<T>::value, void>::type
 device_delete(device_pointer<T>, const std::size_t count = 1) {}
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_device_pointer|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasMemory|device_iterator_forward_decl_device_pointer
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> device_pointer<T> get_device_pointer(T *ptr) {
   return device_pointer<T>(ptr);
 }
@@ -835,13 +712,7 @@ template <typename T>
 device_pointer<T> get_device_pointer(const device_pointer<T> &ptr) {
   return device_pointer<T>(ptr);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_raw_pointer|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasMemory|device_iterator_forward_decl_device_pointer
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> T *get_raw_pointer(const device_pointer<T> &ptr) {
   return ptr.get();
 }
@@ -849,13 +720,7 @@ template <typename T> T *get_raw_pointer(const device_pointer<T> &ptr) {
 template <typename Pointer> Pointer get_raw_pointer(const Pointer &ptr) {
   return ptr;
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_raw_reference|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasMemory|device_reference
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 template <typename T> const T &get_raw_reference(const device_reference<T> &ref) {
   return ref.value;
 }
@@ -871,7 +736,6 @@ template <typename T> const T &get_raw_reference(const T &ref) {
 template <typename T> T &get_raw_reference(T &ref) {
   return ref;
 }
-// DPCT_LABEL_END
 
 } // namespace dpct
 
