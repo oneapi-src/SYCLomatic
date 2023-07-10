@@ -69,8 +69,8 @@ int main() {
   //CHECK:dnMatDescr = std::make_shared<dpct::sparse::dense_matrix_desc>(rows, cols, ld, values, valueType, order);
   //CHECK-NEXT:dnMatDescr.reset();
   //CHECK-NEXT:dnMatDescr->get_desc(&rows, &cols, &ld, &values, &valueType, &order);
-  //CHECK-NEXT:values = dnMatDescr->_value;
-  //CHECK-NEXT:dnMatDescr->_value = values;
+  //CHECK-NEXT:values = dnMatDescr->value;
+  //CHECK-NEXT:dnMatDescr->value = values;
   cusparseCreateDnMat(&dnMatDescr, rows, cols, ld, values, valueType, order);
   cusparseDestroyDnMat(dnMatDescr);
   cusparseDnMatGet(dnMatDescr, &rows, &cols, &ld, &values, &valueType, &order);
@@ -125,8 +125,8 @@ int main() {
   //CHECK:dnVecDescr = std::make_shared<dpct::sparse::dense_vector_desc>(size, values, valueType);
   //CHECK-NEXT:dnVecDescr.reset();
   //CHECK-NEXT:dnVecDescr->get_desc(&size, &values, &valueType);
-  //CHECK-NEXT:values = dnVecDescr->_value;
-  //CHECK-NEXT:dnVecDescr->_value = values;
+  //CHECK-NEXT:values = dnVecDescr->value;
+  //CHECK-NEXT:dnVecDescr->value = values;
   cusparseCreateDnVec(&dnVecDescr, size, values, valueType);
   cusparseDestroyDnVec(dnVecDescr);
   cusparseDnVecGet(dnVecDescr, &size, &values, &valueType);

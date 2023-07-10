@@ -187,10 +187,10 @@ ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
     ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseDnMatGetValues", DEREF(1),
                                         MEMBER_EXPR(DEREF(0), false,
-                                                    LITERAL("_value"))))
+                                                    LITERAL("value"))))
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseDnMatSetValues",
                                         MEMBER_EXPR(DEREF(0), false,
-                                                    LITERAL("_value")),
+                                                    LITERAL("value")),
                                         ARG(1)))
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseCreateDnVec", DEREF(0),
                                         CALL("std::make_shared<" +
@@ -204,10 +204,10 @@ ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cusparseDnVecGet", ARG(0), true,
                                              ARG(1), ARG(2), ARG(3)))
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseDnVecGetValues", DEREF(1),
                                         MEMBER_EXPR(DEREF(0), false,
-                                                    LITERAL("_value"))))
+                                                    LITERAL("value"))))
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseDnVecSetValues",
                                         MEMBER_EXPR(DEREF(0), false,
-                                                    LITERAL("_value")),
+                                                    LITERAL("value")),
                                         ARG(1)))
 ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cusparseCsrSetPointers", ARG(0),
                                              true, "set_pointers", ARG(1),
@@ -235,7 +235,7 @@ ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
     "get_desc", ARG(1), ARG(2), ARG(3)))
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseConstDnVecGetValues", DEREF(1),
                                         MEMBER_EXPR(DEREF(0), false,
-                                                    LITERAL("_value"))))
+                                                    LITERAL("value"))))
 
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseSpMM_bufferSize", DEREF(10),
                                         LITERAL("0")))
