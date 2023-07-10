@@ -907,6 +907,8 @@ bool useMathLibdevice() {
   return DpctGlobalInfo::useIntelDeviceMath();
 }
 
+bool useExtBFloat16() { return DpctGlobalInfo::useExtBFloat16(); };
+
 auto IsPerf = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::isOptimizeMigration();
 };
@@ -1114,6 +1116,21 @@ createMathAPIRewriterDevice(
 
 template <class T>
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createMathAPIRewriterExperimental(
+    const std::string &Name,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Rewriter1,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Rewriter2,
+    T) {
+  return createConditionalFactory(
+      math::IsDefinedInCUDA(),
+      std::move(math::useExtBFloat16() ? Rewriter1 : Rewriter2),
+      {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});
+}
+
+template <class T>
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
 createMathAPIRewriterHost(
     const std::string &Name,
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
@@ -1151,6 +1168,8 @@ createMathAPIRewriterHost(
 #define MATH_API_REWRITER_DEVICE_OVERLOAD(CONDITION, DEVICE_REWRITER_1,        \
                                           DEVICE_REWRITER_2)                   \
   createConditionalFactory(CONDITION, DEVICE_REWRITER_1 DEVICE_REWRITER_2 0),
+#define MATH_API_REWRITER_EXPERIMENTAL(NAME, REWRITER_1, REWRITER_2)           \
+  createMathAPIRewriterExperimental(NAME, REWRITER_1 REWRITER_2 0),
 #define MATH_API_SPECIFIC_ELSE_EMU(CONDITION, DEVICE_REWRITER)                 \
   createMathSpecificElseEmuRewriterFactory(CONDITION, DEVICE_REWRITER 0),
 

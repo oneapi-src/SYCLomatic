@@ -32,6 +32,26 @@ MATH_API_REWRITER_HOST_DEVICE(
             EMPTY_FACTORY_ENTRY("std::abs"))))
 
 // Half Arithmetic Functions
+MATH_API_REWRITER_DEVICE_OVERLOAD(
+    CheckArgType(0, "__half"),
+    MATH_API_REWRITER_DEVICE(
+        "__habs",
+        MATH_API_DEVICE_NODES(
+            CALL_FACTORY_ENTRY(
+                "__habs",
+                CALL(MapNames::getClNamespace(false, true) + "fabs", ARG(0))),
+            EMPTY_FACTORY_ENTRY("__habs"), EMPTY_FACTORY_ENTRY("__habs"),
+            EMPTY_FACTORY_ENTRY("__habs"))),
+    MATH_API_REWRITER_EXPERIMENTAL(
+        "__habs",
+        CALL_FACTORY_ENTRY("__habs",
+                           CALL(MapNames::getClNamespace(false, true) +
+                                    "ext::oneapi::experimental::fabs",
+                                ARG(0))),
+        CALL_FACTORY_ENTRY("__habs",
+                           CALL(MapNames::getClNamespace(false, true) + "fabs",
+                                CALL("float", ARG(0))))))
+
 MATH_API_REWRITER_DEVICE(
     "__hadd_rn",
     MATH_API_DEVICE_NODES(
