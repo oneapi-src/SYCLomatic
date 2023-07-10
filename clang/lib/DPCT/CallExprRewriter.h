@@ -1070,9 +1070,9 @@ class MultiStmtsPrinter : public MultiStmtsPrinter<RestPrinter...> {
   FirstPrinter First;
 
 public:
-  MultiStmtsPrinter(SourceLocation BeginLoc, SourceManager &SM,
-                    FirstPrinter &&First, RestPrinter &&...Rest)
-      : Base(BeginLoc, SM, std::move(Rest)...), First(std::move(First)) {}
+  MultiStmtsPrinter(SourceRange Range, SourceManager &SM, FirstPrinter &&First,
+                    RestPrinter &&...Rest)
+      : Base(Range, SM, std::move(Rest)...), First(std::move(First)) {}
 
   MultiStmtsPrinter(FirstPrinter &&First, RestPrinter &&...Rest)
       : Base(std::move(Rest)...), First(std::move(First)) {}
@@ -1101,14 +1101,14 @@ protected:
   }
 
 public:
-  MultiStmtsPrinter(SourceLocation BeginLoc, SourceManager &SM,
-                    LastPrinter &&Last)
-      : Last(std::move(Last)), Indent(getIndent(BeginLoc, SM)),
-        NL(getNL(BeginLoc, SM)),
-        isInMacroDef(isInMacroDefinition(BeginLoc, BeginLoc)) {}
+  MultiStmtsPrinter(SourceRange Range, SourceManager &SM, LastPrinter &&Last)
+      : Last(std::move(Last)), Indent(getIndent(Range.getBegin(), SM)),
+        NL(getNL(Range.getBegin(), SM)),
+        isInMacroDef(isInMacroDefinition(Range.getBegin(), Range.getBegin()) &&
+                     isInMacroDefinition(Range.getEnd(), Range.getEnd())) {}
 
   MultiStmtsPrinter(LastPrinter &&Last)
-      : Last(std::move(Last)), Indent(" "), NL("") {}
+      : Last(std::move(Last)), Indent(" "), NL(""), isInMacroDef(false) {}
 
   template <class StreamT> void print(StreamT &Stream) const {
     dpct::print(Stream, Last);
@@ -1184,7 +1184,7 @@ class PrinterRewriter<MultiStmtsPrinter<StmtPrinters...>>
 public:
   PrinterRewriter(const CallExpr *C, StringRef Source,
                   StmtPrinters &&...Printers)
-      : Base(getDefinitionRange(C->getBeginLoc(), C->getEndLoc()).getBegin(),
+      : Base(getDefinitionRange(C->getBeginLoc(), C->getEndLoc()),
              DpctGlobalInfo::getSourceManager(), std::move(Printers)...),
         CallExprRewriter(C, Source) {}
   PrinterRewriter(
