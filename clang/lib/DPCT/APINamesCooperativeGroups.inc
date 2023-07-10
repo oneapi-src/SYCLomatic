@@ -128,7 +128,7 @@ CONDITIONAL_FACTORY_ENTRY(
             makeCheckAnd(CheckIntergerTemplateArgValueNE(0, 32), UseLogicalGroup),
             FEATURE_REQUEST_FACTORY(
                 HelperFeatureEnum::device_ext,
-                CALL_FACTORY_ENTRY("tiled_partition", CALL(MapNames::getDpctNamespace() + "experimental::logical_group", NDITEM, GROUP, makeCallArgCreatorFromTemplateArg(0)))),
+                CALL_FACTORY_ENTRY("tiled_partition", CALL(DIMENSION(MapNames::getDpctNamespace() + "experimental::logical_group"), NDITEM, GROUP, makeCallArgCreatorFromTemplateArg(0)))),
             TOSTRING_FACTORY_ENTRY("tiled_partition", SUBGROUP)),
         UNSUPPORT_FACTORY_ENTRY("tiled_partition", Diagnostics::API_NOT_MIGRATED, ARG("tiled_partition")))
 #endif
@@ -640,4 +640,14 @@ CASE_FACTORY_ENTRY(
     OTHERWISE(UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_xor",
                                       Diagnostics::API_NOT_MIGRATED,
                                       ARG("shfl_xor"))))
+MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_group.thread_rank",
+                          MemberExprBase(), false, "get_local_linear_id")
+MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_group.sync",
+                          MemberExprBase(), false, "barrier")
+MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_group.size",
+                          MemberExprBase(), false, "get_local_linear_range")
+MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_group.num_threads",
+                          MemberExprBase(), false, "get_local_linear_range")
+MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_group.get_type",
+                          MemberExprBase(), false, "get_type")
 #endif

@@ -1504,11 +1504,11 @@ ENTRY(cooperative_groups::invoke_one_broadcast, cooperative_groups::__v1::invoke
 ENTRY(cooperative_groups::exclusive_scan_update, cooperative_groups::__v1::exclusive_scan_update, false, NO_FLAG, P4, "comment", "NA")
 ENTRY(cooperative_groups::exclusive_scan_update, cooperative_groups::__v1::exclusive_scan_update, false, NO_FLAG, P4, "comment", "NA")
 
-ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_group, cooperative_groups::__v1::thread_group, size, size, false, NO_FLAG, P4, "Comment", "NA")
-ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_group, cooperative_groups::__v1::thread_group, num_threads, num_threads, false, NO_FLAG, P4, "Comment", "NA")
-ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_group, cooperative_groups::__v1::thread_group, thread_rank, thread_rank, false, NO_FLAG, P4, "Comment", "NA")
-ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_group, cooperative_groups::__v1::thread_group, sync, sync, false, NO_FLAG, P4, "Comment", "NA")
-ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_group, cooperative_groups::__v1::thread_group, get_type, get_type, false, NO_FLAG, P4, "Comment", "NA")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_group, cooperative_groups::__v1::thread_group, size, size, true, NO_FLAG, P4, "Comment", "NA")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_group, cooperative_groups::__v1::thread_group, num_threads, num_threads, true, NO_FLAG, P4, "Comment", "NA")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_group, cooperative_groups::__v1::thread_group, thread_rank, thread_rank, true, NO_FLAG, P4, "Comment", "NA")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_group, cooperative_groups::__v1::thread_group, sync, sync, true, NO_FLAG, P4, "Comment", "NA")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_group, cooperative_groups::__v1::thread_group, get_type, get_type, true, NO_FLAG, P4, "Comment", "NA")
 
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block, cooperative_groups::__v1::thread_block, sync, sync, true, NO_FLAG, P4, "Comment", "NA")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block, cooperative_groups::__v1::thread_block, thread_rank, thread_rank, true, NO_FLAG, P4, "Comment", "NA")

@@ -2028,6 +2028,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "CUdeviceptr", "cudaDeviceAttr", "CUmodule", "CUjit_option",
               "CUfunction", "cudaMemcpyKind", "cudaComputeMode",
               "__nv_bfloat16", "__nv_bfloat162",
+              "cooperative_groups::__v1::thread_group",
               "cooperative_groups::__v1::thread_block_tile",
               "cooperative_groups::__v1::thread_block", "libraryPropertyType_t",
               "libraryPropertyType", "cudaDataType_t", "cudaDataType",
@@ -2554,6 +2555,40 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         return;
       }
     }
+
+    if (CanonicalTypeStr == "cooperative_groups::__v1::thread_group") {
+     // Skip migrate the type in function body.
+     if (DpctGlobalInfo::findAncestor<clang::CompoundStmt>(TL) &&
+         DpctGlobalInfo::findAncestor<clang::FunctionDecl>(TL))
+       return;
+     if (auto ETL = TL->getUnqualifiedLoc().getAs<ElaboratedTypeLoc>()) {
+       SourceLocation Begin = ETL.getBeginLoc();
+       SourceLocation End = ETL.getEndLoc();
+       if (Begin.isMacroID() || End.isMacroID())
+         return;
+       End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+           End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
+       if (End.isMacroID())
+         return;
+       if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+         auto FD = DpctGlobalInfo::getParentFunction(TL);
+         if (!FD)
+           return;
+         auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
+         auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
+         DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
+         emplaceTransformation(new ReplaceText(
+             Begin, End.getRawEncoding() - Begin.getRawEncoding(),
+             MapNames::getDpctNamespace() + "group_base<{{NEEDREPLACEG" +
+                 std::to_string(Index) + "}}>"));
+       } else {
+         emplaceTransformation(new ReplaceText(
+             Begin, End.getRawEncoding() - Begin.getRawEncoding(),
+             MapNames::getDpctNamespace() + "group_base<3>"));
+       }
+       return;
+     }
+   }
 
     if (CanonicalTypeStr == "cooperative_groups::__v1::thread_block") {
       // Skip migrate the type in function body.
@@ -11833,11 +11868,75 @@ void CooperativeGroupsFunctionRule::registerMatcher(MatchFinder &MF) {
                                                hasAttr(attr::CUDAGlobal))))))
           .bind("FuncCall"),
       this);
+  MF.addMatcher(declRefExpr(hasAncestor(implicitCastExpr(hasImplicitDestinationType(qualType(hasCanonicalType(
+           recordType(hasDeclaration(cxxRecordDecl(hasName("cooperative_groups::__v1::thread_group")))))))).bind("imp")
+           )).bind("declRef"), this);
 }
 
 void CooperativeGroupsFunctionRule::runRule(
     const MatchFinder::MatchResult &Result) {
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FuncCall");
+  const DeclRefExpr *DR = getNodeAsType<DeclRefExpr>(Result, "declRef");
+  const ImplicitCastExpr *ICE = getNodeAsType<ImplicitCastExpr>(Result, "imp");
+  const SourceManager &SM = DpctGlobalInfo::getSourceManager();
+   if (DR) {
+     std::string DREName =
+          DR->getType().getCanonicalType().getAsString();
+     auto Range = getDefinitionRange(DR->getBeginLoc(), DR->getEndLoc());
+     auto Length = Lexer::MeasureTokenLength(Range.getEnd(), SM,
+                                             Result.Context->getLangOpts());
+     std::string ReplacedStr = "";
+     if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+       auto FD = DpctGlobalInfo::getParentFunction(DR);
+       if (!FD)
+         return;
+       auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
+       auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
+       ReplacedStr = "<{{NEEDREPLACEG" + std::to_string(Index) + "}}>";
+       DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
+     } else {
+       ReplacedStr = "<3>";
+     }
+
+     if (DREName.find(
+                    "cooperative_groups::__v1::thread_block_tile<32>") !=
+                std::string::npos) {
+       ReplacedStr = "sycl::sub_group" + ReplacedStr;
+     } else if (DREName == "class cooperative_groups::__v1::thread_block") {
+       ReplacedStr = "sycl::group" + ReplacedStr;
+     } else {
+       ReplacedStr = "dpct::experimental::logical_group" + ReplacedStr;
+     }
+
+     ReplacedStr = MapNames::getDpctNamespace() + "item_group<" + ReplacedStr +
+                   ">(" + DR->getNameInfo().getAsString() + ", " +
+                   DpctGlobalInfo::getItem(DR) + ")";
+     SourceLocation Begin = DR->getBeginLoc();
+     SourceLocation End = DR->getEndLoc();
+     End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+         End, SM, DpctGlobalInfo::getContext().getLangOpts()));
+     if (End.isMacroID())
+       return;
+     if (Begin.isMacroID() || End.isMacroID())
+       return;
+     }
+
+     ReplacedStr = MapNames::getDpctNamespace() + "item_group<" + ReplacedStr +
+                   ">(" + DR->getNameInfo().getAsString() + ", " +
+                   DpctGlobalInfo::getItem(DR) + ")";
+     SourceLocation Begin = DR->getBeginLoc();
+     SourceLocation End = DR->getEndLoc();
+     End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+         End, SM, DpctGlobalInfo::getContext().getLangOpts()));
+     if (End.isMacroID())
+       return;
+     if (Begin.isMacroID() || End.isMacroID())
+       return;
+     emplaceTransformation(
+         new ReplaceText(Begin, End.getRawEncoding() - Begin.getRawEncoding(),
+                         std::move(ReplacedStr)));
+     return;
+   }
   if (!CE)
     return;
   std::string FuncName =

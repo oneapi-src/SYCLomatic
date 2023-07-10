@@ -584,9 +584,10 @@ nd_range_barrier(const sycl::nd_item<1> &item,
 /// work-group.
 /// Note: Please make sure that the logical-group size is a power of 2 in the
 /// range [1, current_sub_group_size].
+template<unsigned int dimension>
 class logical_group {
-  sycl::nd_item<3> _item;
-  sycl::group<3> _g;
+  sycl::nd_item<dimension> _item;
+  sycl::group<dimension> _g;
   uint32_t _logical_group_size;
   uint32_t _group_linear_range_in_parent;
 
@@ -595,12 +596,13 @@ public:
   /// \param [in] item Current work-item.
   /// \param [in] parent_group The group to be divided.
   /// \param [in] size The logical-group size.
-  logical_group(sycl::nd_item<3> item, sycl::group<3> parent_group,
+  logical_group(sycl::nd_item<dimension> item, sycl::group<dimension> parent_group,
                 uint32_t size)
       : _item(item), _g(parent_group), _logical_group_size(size) {
     _group_linear_range_in_parent =
         (_g.get_local_linear_range() - 1) / _logical_group_size + 1;
   }
+  logical_group(sycl::nd_item<dimension> item): _item(item), _g(item.get_group()) {}
   /// Returns the index of the work-item within the logical-group.
   uint32_t get_local_linear_id() const {
     return _item.get_local_linear_id() % _logical_group_size;
@@ -826,6 +828,96 @@ public:
       return *static_cast<arg_type<i>*>(kernel_params[i]);
     } else {
       return *reinterpret_cast<arg_type<i>*>(args_buffer + get_offset<i>());
+    }
+  }
+};
+
+enum class group_type {
+  work_group,
+  sub_group,
+  logical_group,
+  root_group
+};
+
+template<unsigned int dimension = 3>
+class group_base
+{
+public:
+  group_base(sycl::nd_item<dimension> item) : nd_item(item), logical_group(item) {}
+  ~group_base() {}
+  size_t get_local_linear_range()
+  {
+    switch (type)
+    {
+    case group_type::work_group:
+      return nd_item.get_group().get_local_linear_range();
+    case group_type::sub_group:
+      return nd_item.get_sub_group().get_local_linear_range();
+    case group_type::logical_group:
+      return logical_group.get_local_linear_range();
+    default:
+      break;
+    }
+  }
+  size_t get_local_linear_id()
+  {
+    switch (type)
+    {
+    case group_type::work_group:
+      return nd_item.get_group().get_local_linear_id();
+    case group_type::sub_group:
+      return nd_item.get_sub_group().get_local_linear_id();
+    case group_type::logical_group:
+      return logical_group.get_local_linear_id();
+    default:
+      throw sycl::exception(sycl::errc::runtime, "The group type is unkown, please check it. ")
+    }
+  }
+
+  void barrier()
+  {
+    switch (type)
+    {
+    case group_type::work_group:
+      sycl::group_barrier(nd_item.get_group());
+      break;
+    case group_type::sub_group:
+      sycl::group_barrier(nd_item.get_sub_group());
+      break;
+    case group_type::logical_group:
+      sycl::group_barrier(nd_item.get_sub_group());
+      break;
+    default:
+      throw sycl::exception(sycl::errc::runtime, "The group type is unkown, please check it. ")
+    }
+  }
+
+protected:
+  experimental::logical_group<dimension> logical_group;
+  sycl::nd_item<dimension> nd_item;
+  group_type type;
+};
+
+template <typename T, unsigned int dimension = 3>
+class item_group : public group_base<dimension>
+{
+  using group_base<dimension>::type;
+  using group_base<dimension>::logical_group;
+public:
+  item_group(T group, sycl::nd_item<dimension> item) : group_base<dimension>(item)
+  {
+    if constexpr (std::is_same_v<T, sycl::sub_group>)
+    {
+      type = group_type::sub_group;
+    }
+    else if constexpr (std::is_same_v<T, sycl::group<dimension>>)
+    {
+      type = group_type::work_group;
+    }
+    else if constexpr (std::is_same_v<T, dpct::experimental::logical_group<dimension>>)
+    {
+      logical_group = group;
+      type = group_type::logical_group;
     }
   }
 };
