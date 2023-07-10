@@ -1156,14 +1156,6 @@ createMathAPIRewriterHost(
 #define MATH_API_REWRITER_HOST_DEVICE(HOST_REWRITER, DEVICE_REWRITER)          \
   createConditionalFactory(math::IsPureHost, HOST_REWRITER DEVICE_REWRITER 0),
 
-#define MATH_API_REWRITER_HOST_DEVICE_WITH_PERF(                               \
-    PERF_PRED, HOST_PERF, HOST_NORMAL, DEVICE_PERF, DEVICE_NORMAL)             \
-  createConditionalFactory(                                                    \
-      makeCheckAnd(math::IsPerf, PERF_PRED),                                   \
-      createConditionalFactory(math::IsPureHost, HOST_PERF DEVICE_PERF 0),     \
-      createConditionalFactory(math::IsPureHost,                               \
-                               HOST_NORMAL DEVICE_NORMAL 0)),
-
 template <typename T>
 std::array<std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>,
            4>

@@ -3540,41 +3540,50 @@ MATH_API_REWRITER_DEVICE_OVERLOAD(
                                     ARG(0), ARG(1)))))
 
 #define SINCOS_REWRITER(FuncName, CastType)                                    \
-  MATH_API_REWRITER_HOST_DEVICE_WITH_PERF(                                     \
-      SinCosPerfPred(),                                                        \
+  MATH_API_REWRITER_HOST_DEVICE(                                               \
       MATH_API_REWRITER_HOST(                                                  \
-          FuncName, NO_REWRITE_FUNCNAME_FACTORY_ENTRY(FuncName, FuncName)),    \
-      MATH_API_REWRITER_HOST(                                                  \
-          FuncName, NO_REWRITE_FUNCNAME_FACTORY_ENTRY(FuncName, FuncName)),    \
-      MATH_API_REWRITER_DEVICE(                                                \
           FuncName,                                                            \
-          MATH_API_DEVICE_NODES(                                               \
-              WARNING_FACTORY_ENTRY(                                           \
-                  FuncName,                                                    \
-                  CONDITIONAL_FACTORY_ENTRY(                                   \
-                      CheckArgType(0, "int"),                                  \
-                      MULTI_STMTS_FACTORY_ENTRY(                               \
-                          FuncName, false, true, false, true,                  \
-                          BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),  \
-                             CALL(MapNames::getClNamespace() + "sin",          \
-                                  CAST(makeLiteral(CastType), ARG_WC(0)))),    \
-                          BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(2)),  \
-                             CALL(MapNames::getClNamespace() + "cos",          \
-                                  CAST(makeLiteral(CastType), ARG_WC(0))))),   \
-                      MULTI_STMTS_FACTORY_ENTRY(                               \
-                          FuncName, false, true, false, true,                  \
-                          BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),  \
-                             CALL(MapNames::getClNamespace() + "sin",          \
-                                  ARG_WC(0))),                                 \
-                          BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(2)),  \
-                             CALL(MapNames::getClNamespace() + "cos",          \
-                                  ARG_WC(0))))),                               \
-                  Diagnostics::MATH_EMULATION, std::string(FuncName),          \
-                  MapNames::getClNamespace() + std::string("sin/cos")),        \
-              EMPTY_FACTORY_ENTRY(FuncName), EMPTY_FACTORY_ENTRY(FuncName),    \
-              EMPTY_FACTORY_ENTRY(FuncName))),                                 \
-      MATH_API_REWRITER_DEVICE(                                                \
-          FuncName,                                                            \
+          WARNING_FACTORY_ENTRY(                                               \
+              FuncName,                                                        \
+              CONDITIONAL_FACTORY_ENTRY(                                       \
+                  CheckArgType(0, "int"),                                      \
+                  MULTI_STMTS_FACTORY_ENTRY(                                   \
+                      FuncName, false, true, false, false,                     \
+                      BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),      \
+                         CALL(MapNames::getClNamespace() + "sincos",           \
+                              CAST(makeLiteral(CastType), ARG_WC(0)),          \
+                              makeArgWithAddressSpaceCast(2, CastType)))),     \
+                  MULTI_STMTS_FACTORY_ENTRY(                                   \
+                      FuncName, false, true, false, false,                     \
+                      BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),      \
+                         CALL(MapNames::getClNamespace() + "sincos",           \
+                              ARG_WC(0),                                       \
+                              makeArgWithAddressSpaceCast(2, CastType))))),    \
+              Diagnostics::MATH_EMULATION, std::string(FuncName),              \
+              MapNames::getClNamespace() + std::string("sincos"))),            \
+      MATH_API_REWRITER_DEVICE_WITH_PERF(                                      \
+          FuncName, SinCosPerfPred(),                                          \
+          WARNING_FACTORY_ENTRY(                                               \
+              FuncName,                                                        \
+              CONDITIONAL_FACTORY_ENTRY(                                       \
+                  CheckArgType(0, "int"),                                      \
+                  MULTI_STMTS_FACTORY_ENTRY(                                   \
+                      FuncName, false, true, false, true,                      \
+                      BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),      \
+                         CALL(MapNames::getClNamespace() + "sin",              \
+                              CAST(makeLiteral(CastType), ARG_WC(0)))),        \
+                      BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(2)),      \
+                         CALL(MapNames::getClNamespace() + "cos",              \
+                              CAST(makeLiteral(CastType), ARG_WC(0))))),       \
+                  MULTI_STMTS_FACTORY_ENTRY(                                   \
+                      FuncName, false, true, false, true,                      \
+                      BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),      \
+                         CALL(MapNames::getClNamespace() + "sin", ARG_WC(0))), \
+                      BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(2)),      \
+                         CALL(MapNames::getClNamespace() + "cos",              \
+                              ARG_WC(0))))),                                   \
+              Diagnostics::MATH_EMULATION, std::string(FuncName),              \
+              MapNames::getClNamespace() + std::string("sin/cos")),            \
           MATH_API_DEVICE_NODES(                                               \
               WARNING_FACTORY_ENTRY(                                           \
                   FuncName,                                                    \
