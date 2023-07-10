@@ -228,9 +228,7 @@ clang::dpct::BarrierFenceSpaceAnalyzer::matchAllDRE(
     return Set;
   }
   auto DREMatcher = ast_matchers::findAll(
-      ast_matchers::declRefExpr(
-          ast_matchers::hasDeclaration(
-              ast_matchers::varDecl(ast_matchers::isSameAs(TargetDecl))))
+      ast_matchers::declRefExpr(ast_matchers::isDeclSameAs(TargetDecl))
           .bind("DRE"));
   auto MatchedResults =
       ast_matchers::match(DREMatcher, *Range, DpctGlobalInfo::getContext());
@@ -241,10 +239,32 @@ clang::dpct::BarrierFenceSpaceAnalyzer::matchAllDRE(
   return Set;
 }
 
-const clang::DeclRefExpr *
-clang::dpct::BarrierFenceSpaceAnalyzer::assignedToAnotherDRE(
-    const clang::DeclRefExpr *) {
-
+std::set<const clang::DeclRefExpr *>
+clang::dpct::BarrierFenceSpaceAnalyzer::isAssignedToAnotherDRE(
+    const clang::DeclRefExpr *CurrentDRE) {
+  std::set<const clang::DeclRefExpr *> ResultSet;
+  auto &Context = clang::dpct::DpctGlobalInfo::getContext();
+  clang::DynTypedNode Current = clang::DynTypedNode::create(*CurrentDRE);
+  clang::DynTypedNodeList Parents = Context.getParents(Current);
+  while (!Parents.empty()) {
+    if (Parents[0].get<FunctionDecl>() && Parents[0].get<FunctionDecl>() == FD)
+      break;
+    const auto BO = Parents[0].get<BinaryOperator>();
+    if (BO && BO->isAssignmentOp() &&
+        (BO->getRHS() == Current.get<clang::Expr>())) {
+      auto DREMatcher =
+          ast_matchers::findAll(ast_matchers::declRefExpr().bind("DRE"));
+      auto MatchedResults = ast_matchers::match(DREMatcher, *(BO->getRHS()),
+                                                DpctGlobalInfo::getContext());
+      for (auto Node : MatchedResults) {
+        if (auto DRE = Node.getNodeAs<clang::DeclRefExpr>("DRE"))
+          ResultSet.insert(DRE);
+      }
+    }
+    Current = Parents[0];
+    Parents = Context.getParents(Current);
+  }
+  return ResultSet;
 }
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
@@ -296,13 +316,14 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     for (const auto &Pair : DefUseMap) {
       Size = Size + Pair.second.size();
     }
+    return Size;
   };
 
   // Collect all used positions
   std::size_t MapSize = getSize(DefUseMap);
   do {
     MapSize = getSize(DefUseMap);
-    std::set<clang::DeclRefExpr *> NewDRESet;
+    std::set<const clang::DeclRefExpr *> NewDRESet;
     for (auto &Pair : DefUseMap) {
       const clang::ParmVarDecl *CurDecl = Pair.first;
       std::set<const clang::DeclRefExpr *> CurDRESet = Pair.second;
@@ -311,7 +332,9 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
       CurDRESet.insert(MatchedResult.begin(), MatchedResult.end());
       NewDRESet.clear();
       for (const auto &DRE : CurDRESet) {
-        if (const clang::DeclRefExpr *AnotherDRE = assignedToAnotherDRE(DRE)) {
+        std::set<const clang::DeclRefExpr *> AssignedDREs =
+            isAssignedToAnotherDRE(DRE);
+        for (const auto AnotherDRE : AssignedDREs) {
           std::set<const clang::DeclRefExpr *> AnotherDREMatchedResult =
               matchAllDRE(
                   dyn_cast_or_null<clang::VarDecl>(AnotherDRE->getDecl()),

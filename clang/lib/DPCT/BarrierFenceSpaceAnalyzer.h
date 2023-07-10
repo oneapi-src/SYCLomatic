@@ -63,7 +63,8 @@ private:
   bool traverseFunction(const clang::FunctionDecl *FD);
   std::set<const clang::DeclRefExpr *>
   matchAllDRE(const clang::VarDecl *TargetDecl, const clang::Stmt *Range);
-  const clang::DeclRefExpr *assignedToAnotherDRE(const clang::DeclRefExpr *);
+  std::set<const clang::DeclRefExpr *>
+  isAssignedToAnotherDRE(const clang::DeclRefExpr *);
   using Ranges = std::vector<clang::SourceRange>;
   struct SyncCallInfo {
     SyncCallInfo() {}
