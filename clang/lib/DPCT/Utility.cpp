@@ -7,7 +7,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "Utility.h"
-#include "Diagnostics.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "Config.h"
