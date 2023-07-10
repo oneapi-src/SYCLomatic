@@ -295,6 +295,41 @@ clang::dpct::BarrierFenceSpaceAnalyzer::isAssignedToAnotherDRE(
   return ResultSet;
 }
 
+clang::dpct::BarrierFenceSpaceAnalyzer::AccessMode
+clang::dpct::BarrierFenceSpaceAnalyzer::getAccessKind(
+    const clang::DeclRefExpr *CurrentDRE) {
+  using namespace ast_matchers;
+  auto Matcher = findAll(
+      declRefExpr(
+          anyOf(hasAncestor(unaryOperator(
+                    hasOperatorName("*"),
+                    hasAncestor(binaryOperator(isAssignmentOperator(),
+                                               hasLHS(hasDescendant(declRefExpr(
+                                                   isSameAs(CurrentDRE)))))
+                                    .bind("BO1")))),
+                hasAncestor(arraySubscriptExpr(
+                    hasAncestor(binaryOperator(isAssignmentOperator(),
+                                               hasLHS(hasDescendant(declRefExpr(
+                                                   isSameAs(CurrentDRE)))))
+                                    .bind("BO2"))))),
+          declRefExpr(isSameAs(CurrentDRE)))
+          .bind("DRE"));
+  auto MatchedResults =
+      ast_matchers::match(Matcher, *FD, DpctGlobalInfo::getContext());
+  if (MatchedResults.empty())
+    return clang::dpct::BarrierFenceSpaceAnalyzer::AccessMode::Read;
+  auto Node = MatchedResults.begin();
+  const clang::BinaryOperator *BO = nullptr;
+  BO = Node->getNodeAs<clang::BinaryOperator>("BO1");
+  if (!BO) {
+    BO = Node->getNodeAs<clang::BinaryOperator>("BO2");
+  }
+  if (BO->getOpcode() == clang::BinaryOperatorKind::BO_Assign) {
+    return clang::dpct::BarrierFenceSpaceAnalyzer::AccessMode::Write;
+  }
+  return clang::dpct::BarrierFenceSpaceAnalyzer::AccessMode::ReadWrite;
+}
+
 bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     const clang::CallExpr *CE) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
@@ -409,11 +444,16 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
   }
 #endif
 
-  // Convert DRE to location for comparing
-  std::map<const clang::ParmVarDecl *, std::set<clang::SourceLocation>> DRELocs;
+  // Convert DRE to <Location, AccessMode> pair for comparing
+  std::map<
+      const clang::ParmVarDecl *,
+      std::set<std::pair<clang::SourceLocation,
+                         clang::dpct::BarrierFenceSpaceAnalyzer::AccessMode>>>
+      DRELocs;
   for (const auto &Pair : DefUseMap) {
     for (const auto &Item : Pair.second) {
-      DRELocs[Pair.first].insert(Item->getBeginLoc());
+      DRELocs[Pair.first].insert(
+          std::make_pair(Item->getBeginLoc(), getAccessKind(Item)));
     }
   }
 
@@ -448,18 +488,18 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
   // used in either predecessor parts or successor parts
   for (auto &SyncCall : SyncCallsVec) {
     bool Result = true;
-    for (auto &Pair : DRELocs) {
-      if (Pair.second.size() == 1) {
+    for (auto &DeclLocPair : DRELocs) {
+      if (DeclLocPair.second.size() == 1) {
         continue;
       }
       std::optional<bool> DREInPredecessors;
-      for (auto &Loc : Pair.second) {
-        if (containsMacro(Loc, SyncCall.second.Predecessors) ||
-            containsMacro(Loc, SyncCall.second.Successors)) {
+      for (auto &LocModePair : DeclLocPair.second) {
+        if (containsMacro(LocModePair.first, SyncCall.second.Predecessors) ||
+            containsMacro(LocModePair.first, SyncCall.second.Successors)) {
           Result = false;
           break;
         }
-        if (isInRanges(Loc, SyncCall.second.Predecessors)) {
+        if (isInRanges(LocModePair.first, SyncCall.second.Predecessors)) {
           if (DREInPredecessors.has_value()) {
             if (DREInPredecessors.value() != true) {
               Result = false;
@@ -469,7 +509,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
             DREInPredecessors = true;
           }
         }
-        if (isInRanges(Loc, SyncCall.second.Successors)) {
+        if (isInRanges(LocModePair.first, SyncCall.second.Successors)) {
           if (DREInPredecessors.has_value()) {
             if (DREInPredecessors.value() != false) {
               Result = false;

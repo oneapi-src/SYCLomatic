@@ -60,11 +60,17 @@ public:
   bool canSetLocalFenceSpace(const clang::CallExpr *CE);
 
 private:
+  enum class AccessMode : int {
+    Read,
+    Write,
+    ReadWrite
+  };
   bool traverseFunction(const clang::FunctionDecl *FD);
   std::set<const clang::DeclRefExpr *>
   matchAllDRE(const clang::VarDecl *TargetDecl, const clang::Stmt *Range);
   std::set<const clang::DeclRefExpr *>
   isAssignedToAnotherDRE(const clang::DeclRefExpr *);
+  AccessMode getAccessKind(const clang::DeclRefExpr *);
   using Ranges = std::vector<clang::SourceRange>;
   struct SyncCallInfo {
     SyncCallInfo() {}
