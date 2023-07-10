@@ -585,7 +585,6 @@ private:
   std::optional<oneapi::mkl::uplo> _uplo;
   std::optional<oneapi::mkl::diag> _diag;
 };
-#endif
 
 namespace detail {
 #ifdef DPCT_USM_LEVEL_NONE
@@ -646,7 +645,6 @@ inline void spmm_impl(sycl::queue queue, oneapi::mkl::transpose trans_a,
 #undef SPARSE_CALL
 } // namespace detail
 
-#ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
 /// Computes a sparse matrix-dense vector product: y = alpha * op(a) * x + beta * y.
 /// \param [in] queue The queue where the routine should be executed. It must
 /// have the in_order property when using the USM mode.
@@ -683,9 +681,7 @@ inline void spmv(sycl::queue queue, oneapi::mkl::transpose trans,
     throw std::runtime_error("the combination of data type is unsupported");
   }
 }
-#endif
 
-#ifdef __INTEL_MKL__ // The oneMKL Interfaces Project does not support this.
 /// Computes a sparse matrix-dense matrix product: c = alpha * op(a) * op(b) + beta * c.
 /// \param [in] queue The queue where the routine should be executed. It must
 /// have the in_order property when using the USM mode.
