@@ -358,7 +358,7 @@ public:
   device_pointer_base(ValueType *p) : ptr(p) {}
   device_pointer_base(const std::size_t count) {
     sycl::queue default_queue = dpct::get_default_queue();
-    ptr = static_cast<ValueType *>(sycl::malloc_device(
+    ptr = static_cast<ValueType *>(sycl::malloc_shared(
         count, default_queue.get_device(), default_queue.get_context()));
   }
   device_pointer_base() {}
