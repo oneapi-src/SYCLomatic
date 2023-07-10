@@ -1087,19 +1087,25 @@ template <class LastPrinter> class MultiStmtsPrinter<LastPrinter> {
   LastPrinter Last;
   StringRef Indent;
   StringRef NL;
+  bool isInMacroDef;
 
 protected:
   template <class StreamT, class PrinterT>
   void printStmt(StreamT &Stream, const PrinterT &Printer) const {
     dpct::print(Stream, Printer);
-    Stream << ";" << NL << Indent;
+    if (isInMacroDef) {
+      Stream << "; \\" << NL << Indent;
+    } else {
+      Stream << "; " << NL << Indent;
+    }
   }
 
 public:
   MultiStmtsPrinter(SourceLocation BeginLoc, SourceManager &SM,
                     LastPrinter &&Last)
       : Last(std::move(Last)), Indent(getIndent(BeginLoc, SM)),
-        NL(getNL(BeginLoc, SM)) {}
+        NL(getNL(BeginLoc, SM)),
+        isInMacroDef(isInMacroDefinition(BeginLoc, BeginLoc)) {}
 
   MultiStmtsPrinter(LastPrinter &&Last)
       : Last(std::move(Last)), Indent(" "), NL("") {}
@@ -1108,7 +1114,6 @@ public:
     dpct::print(Stream, Last);
   }
 };
-
 
 template <class... StmtPrinter>
 class LambdaPrinter {
