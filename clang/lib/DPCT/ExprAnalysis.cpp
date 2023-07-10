@@ -2001,6 +2001,9 @@ void KernelConfigAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Ctor) {
 }
 
 void KernelConfigAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
+  if (!IsDim3Config)
+    return ArgumentAnalysis::analyzeExpr(DRE);
+
   using namespace ast_matchers;
   const VarDecl *VD = dyn_cast_or_null<VarDecl>(DRE->getDecl());
   if (!VD)
@@ -2022,12 +2025,7 @@ void KernelConfigAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   if (MatchedResults.size() != 1)
     return ArgumentAnalysis::analyzeExpr(DRE);
 
-  if (VD->getType().getCanonicalType().getAsString() != "struct dim3")
-    return ArgumentAnalysis::analyzeExpr(DRE);
   if (!VD->hasInit())
-    return ArgumentAnalysis::analyzeExpr(DRE);
-
-  if (!VD->getInit())
     return ArgumentAnalysis::analyzeExpr(DRE);
 
   dispatch(VD->getInit());
