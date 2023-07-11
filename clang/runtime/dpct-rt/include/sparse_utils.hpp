@@ -282,15 +282,10 @@ public:
                 library_data_t *value_type) {
     get_desc(ele_num, const_cast<const void **>(value), value_type);
   }
-  void get_value(void **value) { *value = _value; }
+  void *get_value() { return _value; }
   void set_value(void *value) { _value = value; }
 
 private:
-  template <typename Ty>
-  friend void spmv_impl(sycl::queue queue, oneapi::mkl::transpose trans,
-                        const void *alpha, sparse_matrix_desc_t a,
-                        std::shared_ptr<dense_vector_desc> x, const void *beta,
-                        std::shared_ptr<dense_vector_desc> y);
   std::int64_t _ele_num;
   void *_value;
   library_data_t _value_type;
@@ -314,21 +309,13 @@ public:
     *value_type = _value_type;
     *layout = _layout;
   }
-  void get_value(void **value) { *value = _value; }
+  void *get_value() { return _value; }
   void set_value(void *value) { _value = value; }
+  std::int64_t get_col_num() { return _col_num; }
+  std::int64_t get_leading_dim() { return _leading_dim; }
+  oneapi::mkl::layout get_layout() { return _layout; }
 
 private:
-  friend void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
-                   oneapi::mkl::transpose trans_b, const void *alpha,
-                   sparse_matrix_desc_t a, std::shared_ptr<dense_matrix_desc> b,
-                   const void *beta, std::shared_ptr<dense_matrix_desc> c,
-                   library_data_t data_type);
-  template <typename Ty>
-  friend void spmm_impl(sycl::queue queue, oneapi::mkl::transpose trans_a,
-                        oneapi::mkl::transpose trans_b, const void *alpha,
-                        sparse_matrix_desc_t a,
-                        std::shared_ptr<dense_matrix_desc> b, const void *beta,
-                        std::shared_ptr<dense_matrix_desc> c);
   std::int64_t _row_num;
   std::int64_t _col_num;
   std::int64_t _leading_dim;
@@ -631,8 +618,10 @@ inline void spmv_impl(sycl::queue queue, oneapi::mkl::transpose trans,
       dpct::detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
   auto beta_value =
       dpct::detail::get_value(reinterpret_cast<const Ty *>(beta), queue);
-  auto data_x = dpct::detail::get_memory(reinterpret_cast<Ty *>(x->_value));
-  auto data_y = dpct::detail::get_memory(reinterpret_cast<Ty *>(y->_value));
+  auto data_x =
+      dpct::detail::get_memory(reinterpret_cast<Ty *>(x->get_value()));
+  auto data_y =
+      dpct::detail::get_memory(reinterpret_cast<Ty *>(y->get_value()));
   if (a->get_diag().has_value() && a->get_uplo().has_value()) {
     oneapi::mkl::sparse::optimize_trmv(queue, a->get_uplo().value(), trans,
                                        a->get_diag().value(),
@@ -658,12 +647,14 @@ inline void spmm_impl(sycl::queue queue, oneapi::mkl::transpose trans_a,
       dpct::detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
   auto beta_value =
       dpct::detail::get_value(reinterpret_cast<const Ty *>(beta), queue);
-  auto data_b = dpct::detail::get_memory(reinterpret_cast<Ty *>(b->_value));
-  auto data_c = dpct::detail::get_memory(reinterpret_cast<Ty *>(c->_value));
-  SPARSE_CALL(oneapi::mkl::sparse::gemm(queue, b->_layout, trans_a, trans_b,
-                                        alpha_value, a->get_matrix_handle(),
-                                        data_b, b->_col_num, b->_leading_dim,
-                                        beta_value, data_c, c->_leading_dim));
+  auto data_b =
+      dpct::detail::get_memory(reinterpret_cast<Ty *>(b->get_value()));
+  auto data_c =
+      dpct::detail::get_memory(reinterpret_cast<Ty *>(c->get_value()));
+  SPARSE_CALL(oneapi::mkl::sparse::gemm(
+      queue, b->get_layout(), trans_a, trans_b, alpha_value,
+      a->get_matrix_handle(), data_b, b->get_col_num(), b->get_leading_dim(),
+      beta_value, data_c, c->get_leading_dim()));
 }
 #undef SPARSE_CALL
 } // namespace detail
@@ -721,7 +712,7 @@ inline void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
                  sparse_matrix_desc_t a, std::shared_ptr<dense_matrix_desc> b,
                  const void *beta, std::shared_ptr<dense_matrix_desc> c,
                  library_data_t data_type) {
-  if (b->_layout != c->_layout)
+  if (b->get_layout() != c->get_layout())
     throw std::runtime_error("the layout of b and c are different");
 
   switch (data_type) {

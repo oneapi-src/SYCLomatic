@@ -185,8 +185,9 @@ ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cusparseDestroyDnMat", ARG(0),
 ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
     "cusparseDnMatGet", ARG(0), true, "get_desc",
     ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))
-ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cusparseDnMatGetValues", ARG(0),
-                                             true, "get_value", ARG(1)))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseDnMatGetValues", DEREF(1),
+                                        MEMBER_CALL(DEREF(0), true,
+                                                    "get_value")))
 ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cusparseDnMatSetValues", ARG(0),
                                              true, "set_value", ARG(1)))
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseCreateDnVec", DEREF(0),
@@ -199,8 +200,9 @@ ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cusparseDestroyDnVec", ARG(0),
 ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cusparseDnVecGet", ARG(0), true,
                                              "get_desc",
                                              ARG(1), ARG(2), ARG(3)))
-ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cusparseDnVecGetValues", ARG(0),
-                                             true, "get_value", ARG(1)))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseDnVecGetValues", DEREF(1),
+                                        MEMBER_CALL(DEREF(0), true,
+                                                    "get_value")))
 ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cusparseDnVecSetValues", ARG(0),
                                              true, "set_value", ARG(1)))
 ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cusparseCsrSetPointers", ARG(0),
@@ -227,8 +229,9 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseCreateConstDnVec", DEREF(0),
 ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
     "cusparseConstDnVecGet", ARG(0), true,
     "get_desc", ARG(1), ARG(2), ARG(3)))
-ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cusparseConstDnVecGetValues",
-                                             ARG(0), true, "get_value", ARG(1)))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseConstDnVecGetValues", DEREF(1),
+                                        MEMBER_CALL(DEREF(0), true,
+                                                    "get_value")))
 
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cusparseSpMM_bufferSize", DEREF(10),
                                         LITERAL("0")))
