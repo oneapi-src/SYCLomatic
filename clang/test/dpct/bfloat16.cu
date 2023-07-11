@@ -28,6 +28,13 @@ void foo(__nv_bfloat16 *a, __nv_bfloat162 *b) {
   b->y;
 }
 
+__global__ void kernelFuncBfloat162Arithmetic() {
+  // CHECK: sycl::marray<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1, bf162_2;
+  __nv_bfloat162 bf162, bf162_1, bf162_2;
+  // CHECK: bf162 = bf162_1 / bf162_2;
+  bf162 = __h2div(bf162_1, bf162_2);
+}
+
 // CHECK: void test_conversions_device(sycl::ext::oneapi::bfloat16 *deviceArrayBFloat16) {
 // CHECK-NEXT:   float f, f_1, f_2;
 // CHECK-NEXT:   sycl::float2 f2, f2_1, f2_2;

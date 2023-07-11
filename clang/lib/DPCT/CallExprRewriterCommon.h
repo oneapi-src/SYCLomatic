@@ -1295,6 +1295,21 @@ createConditionalFactory(
                                   std::move(Second));
 }
 
+/// Create MathSpecificElseEmuRewriterFactory key-value pair with one
+/// key-value candidates and predicate. If predicate result is true, \p First
+/// will be used.
+template <class T>
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createMathSpecificElseEmuRewriterFactory(
+    std::function<bool(const CallExpr *)> Pred,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&First,
+    T) {
+  return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
+      std::move(First.first),
+      std::make_shared<MathSpecificElseEmuRewriterFactory>(Pred, First.second));
+}
+
 template <typename T>
 inline std::pair<std::string, CaseRewriterFactory::CaseT>
 createCase(
