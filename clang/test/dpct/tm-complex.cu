@@ -425,9 +425,6 @@ void foo_test_3()
 
     // asynchronously issue work to the GPU (all to stream 0)
 // CHECK:    CHECK(DPCT_CHECK_ERROR(stop_q_ct1_1 = dpct::get_default_queue().memcpy(d_a, h_a, nbytes)));
-// CHECK-NEXT:    /*
-// CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
-// CHECK-NEXT:    */
 // CHECK-NEXT:    *stop = dpct::get_default_queue().parallel_for<dpct_kernel_name<class kernel_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                sycl::nd_range<3>(grid * block, block),
 // CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {

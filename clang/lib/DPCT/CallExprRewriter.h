@@ -204,6 +204,11 @@ class ConditionalRewriterFactory : public CallExprRewriterFactoryBase {
   std::function<bool(const CallExpr *)> Pred;
   std::shared_ptr<CallExprRewriterFactoryBase> First, Second;
 
+protected:
+  void setElse(std::shared_ptr<CallExprRewriterFactoryBase> SecondFactory) {
+    Second = SecondFactory;
+  }
+
 public:
   template <class InputPred>
   ConditionalRewriterFactory(
@@ -217,6 +222,16 @@ public:
     else
       return Second->create(C);
   }
+};
+
+class MathSpecificElseEmuRewriterFactory final
+    : public ConditionalRewriterFactory {
+public:
+  template <class InputPred>
+  MathSpecificElseEmuRewriterFactory(
+      InputPred &&P, std::shared_ptr<CallExprRewriterFactoryBase> FirstFactory)
+      : ConditionalRewriterFactory(P, FirstFactory, nullptr) {}
+  using ConditionalRewriterFactory::setElse;
 };
 
 class CaseRewriterFactory : public CallExprRewriterFactoryBase {
