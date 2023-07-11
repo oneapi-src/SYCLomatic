@@ -9,6 +9,7 @@
 #ifndef __DPCT_MATH_HPP__
 #define __DPCT_MATH_HPP__
 
+#include <limits>
 #include <sycl/sycl.hpp>
 
 namespace dpct {
@@ -42,6 +43,41 @@ inline bool isnan(const sycl::ext::oneapi::bfloat16 a) {
   throw std::runtime_error("bfloat16 version isnan is only supported in "
                            "sycl::ext::oneapi::experimental.");
 #endif
+}
+
+template <typename T>
+inline int64_t zero_or_signed_extent(T val, unsigned bit) {
+  if constexpr (std::is_signed_v<T>) {
+    return int64_t(val << (64 - bit)) >> (64 - bit);
+  }
+  return val;
+}
+
+template <typename RetT, bool needSat, typename AT, typename BT,
+          typename BinaryOperation>
+inline constexpr RetT extend_binary(AT a, BT b, BinaryOperation binary_op) {
+  const auto extend_a = zero_or_signed_extent(a, 33);
+  const auto extend_b = zero_or_signed_extent(b, 33);
+  const auto ret = binary_op(extend_a, extend_b);
+  if constexpr (needSat)
+    return sycl::clamp(ret, std::numeric_limits<RetT>::min(),
+                       std::numeric_limits<RetT>::max());
+  return ret;
+}
+
+template <typename RetT, bool needSat, typename AT, typename BT, typename CT,
+          typename BinaryOperation>
+inline constexpr RetT extend_binary(AT a, BT b, CT c, BinaryOperation binary_op,
+                                    BinaryOperation second_op) {
+  const auto extend_a = zero_or_signed_extent(a, 33);
+  const auto extend_b = zero_or_signed_extent(b, 33);
+  const auto extend_temp =
+      zero_or_signed_extent(binary_op(extend_a, extend_b), 34);
+  if constexpr (needSat)
+    extend_temp = sycl::clamp(extend_temp, std::numeric_limits<RetT>::min(),
+                              std::numeric_limits<RetT>::max());
+  const auto extend_c = zero_or_signed_extent(c, 33);
+  return second_op(extend_temp, c);
 }
 } // namespace detail
 
@@ -546,6 +582,125 @@ inline unsigned vectorized_sum_abs_diff(unsigned a, unsigned b) {
     sum += v4[i];
   }
   return sum;
+}
+
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_add(AT a, BT b) {
+  return detail::extend_binary<RetT, false>(a, b, std::plus());
+}
+
+template <typename RetT, typename AT, typename BT, typename CT,
+          typename BinaryOperation>
+inline constexpr RetT extend_add(AT a, BT b, CT c, BinaryOperation second_op) {
+  return detail::extend_binary<RetT, false>(a, b, c, std::plus(), second_op);
+}
+
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_add_sat(AT a, BT b) {
+  return detail::extend_binary<RetT, true>(a, b, std::plus(), true);
+}
+
+template <typename RetT, typename AT, typename BT, typename CT,
+          typename BinaryOperation>
+inline constexpr RetT extend_add_sat(AT a, BT b, CT c,
+                                     BinaryOperation second_op) {
+  return detail::extend_binary<RetT, true>(a, b, c, std::plus(), second_op,
+                                           true);
+}
+
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_sub(AT a, BT b) {
+  return detail::extend_binary<RetT, false>(a, b, std::minus());
+}
+
+template <typename RetT, typename AT, typename BT, typename CT,
+          typename BinaryOperation>
+inline constexpr RetT extend_sub(AT a, BT b, CT c, BinaryOperation second_op) {
+  return detail::extend_binary<RetT, false>(a, b, c, std::minus(), second_op);
+}
+
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_sub_sat(AT a, BT b) {
+  return detail::extend_binary<RetT, true>(a, b, std::minus(), true);
+}
+
+template <typename RetT, typename AT, typename BT, typename CT,
+          typename BinaryOperation>
+inline constexpr RetT extend_sub_sat(AT a, BT b, CT c,
+                                     BinaryOperation second_op) {
+  return detail::extend_binary<RetT, true>(a, b, c, std::minus(), second_op,
+                                           true);
+}
+
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_absdiff(AT a, BT b) {
+  return detail::extend_binary<RetT, false>(a, b, abs_diff());
+}
+
+template <typename RetT, typename AT, typename BT, typename CT,
+          typename BinaryOperation>
+inline constexpr RetT extend_absdiff(AT a, BT b, CT c,
+                                     BinaryOperation second_op) {
+  return detail::extend_binary<RetT, false>(a, b, c, abs_diff(), second_op);
+}
+
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_absdiff_sat(AT a, BT b) {
+  return detail::extend_binary<RetT, true>(a, b, abs_diff(), true);
+}
+
+template <typename RetT, typename AT, typename BT, typename CT,
+          typename BinaryOperation>
+inline constexpr RetT extend_absdiff_sat(AT a, BT b, CT c,
+                                         BinaryOperation second_op) {
+  return detail::extend_binary<RetT, true>(a, b, c, abs_diff(), second_op,
+                                           true);
+}
+
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_min(AT a, BT b) {
+  return detail::extend_binary<RetT, false>(a, b, minimum());
+}
+
+template <typename RetT, typename AT, typename BT, typename CT,
+          typename BinaryOperation>
+inline constexpr RetT extend_min(AT a, BT b, CT c, BinaryOperation second_op) {
+  return detail::extend_binary<RetT, false>(a, b, c, minimum(), second_op);
+}
+
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_min_sat(AT a, BT b) {
+  return detail::extend_binary<RetT, true>(a, b, minimum(), true);
+}
+
+template <typename RetT, typename AT, typename BT, typename CT,
+          typename BinaryOperation>
+inline constexpr RetT extend_min_sat(AT a, BT b, CT c,
+                                     BinaryOperation second_op) {
+  return detail::extend_binary<RetT, true>(a, b, c, minimum(), second_op, true);
+}
+
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_max(AT a, BT b) {
+  return detail::extend_binary<RetT, false>(a, b, maximum());
+}
+
+template <typename RetT, typename AT, typename BT, typename CT,
+          typename BinaryOperation>
+inline constexpr RetT extend_max(AT a, BT b, CT c, BinaryOperation second_op) {
+  return detail::extend_binary<RetT, false>(a, b, c, maximum(), second_op);
+}
+
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_max_sat(AT a, BT b) {
+  return detail::extend_binary<RetT, true>(a, b, maximum(), true);
+}
+
+template <typename RetT, typename AT, typename BT, typename CT,
+          typename BinaryOperation>
+inline constexpr RetT extend_max_sat(AT a, BT b, CT c,
+                                     BinaryOperation second_op) {
+  return detail::extend_binary<RetT, true>(a, b, c, maximum(), second_op, true);
 }
 } // namespace dpct
 
