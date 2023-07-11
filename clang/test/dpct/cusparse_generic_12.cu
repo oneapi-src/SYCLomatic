@@ -13,7 +13,7 @@ int main() {
   //CHECK-NEXT:dpct::library_data_t valueType;
   //CHECK-NEXT:constDnVecDescr = std::make_shared<dpct::sparse::dense_vector_desc>(size, values, valueType);
   //CHECK-NEXT:constDnVecDescr->get_desc(&size, &c_values, &valueType);
-  //CHECK-NEXT:c_values = constDnVecDescr->value;
+  //CHECK-NEXT:constDnVecDescr->get_value(&c_values);
   cusparseConstDnVecDescr_t constDnVecDescr;
   const void *c_values;
   int64_t size;
