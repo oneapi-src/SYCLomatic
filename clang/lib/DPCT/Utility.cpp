@@ -1972,10 +1972,12 @@ SourceLocation getEndLocOfFollowingEmptyMacro(SourceLocation Loc) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto &Map = dpct::DpctGlobalInfo::getBeginOfEmptyMacros();
   Token Tok;
-  Lexer::getRawToken(
+  bool Ret = Lexer::getRawToken(
       Loc.getLocWithOffset(Lexer::MeasureTokenLength(
           Loc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())),
       Tok, SM, dpct::DpctGlobalInfo::getContext().getLangOpts(), true);
+  if (Ret)
+    return Loc;
 
   SourceLocation EndOfToken = SM.getExpansionLoc(Tok.getLocation());
   while (Tok.isNot(tok::eof) && Tok.is(tok::comment)) {

@@ -1078,12 +1078,14 @@ void IncludesCallbacks::InclusionDirective(
     if (FileName.compare(StringRef("thrust/complex.h")) == 0) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Complex);
     } else if (FileName.compare(StringRef("thrust/uninitialized_copy.h")) ==
-               0) {
+                   0 ||
+               FileName.compare(StringRef("thrust/uninitialized_fill.h")) ==
+                   0) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Memory);
     } else if (FileName.compare(StringRef("thrust/random.h")) == 0) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Random);
     } else {
-      if(FileName.compare(StringRef("thrust/functional.h")) == 0)
+      if (FileName.compare(StringRef("thrust/functional.h")) == 0)
         DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Functional);
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_DPL_Utils);
       requestFeature(HelperFeatureEnum::device_ext);
@@ -1318,30 +1320,19 @@ void IterationSpaceBuiltinRule::runRule(
       if (!DFI)
         return;
 
-      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
-        if (FieldName == "x") {
-          DpctGlobalInfo::getInstance().insertBuiltinVarInfo(Begin, TyLen,
-                                                             Replacement, DFI);
-          DpctGlobalInfo::updateSpellingLocDFIMaps(DRE->getBeginLoc(), DFI);
-          return;
-        } else if (FieldName == "y") {
-          Dimension = 1;
-          DFI->getVarMap().Dim = 3;
-        } else if (FieldName == "z") {
-          Dimension = 0;
-          DFI->getVarMap().Dim = 3;
-        } else
-          return;
-      } else {
-        if (FieldName == "x") {
-          Dimension = 2;
-        } else if (FieldName == "y")
-          Dimension = 1;
-        else if (FieldName == "z")
-          Dimension = 0;
-        else
-          return;
-      }
+      if (FieldName == "x") {
+        DpctGlobalInfo::getInstance().insertBuiltinVarInfo(Begin, TyLen,
+                                                           Replacement, DFI);
+        DpctGlobalInfo::updateSpellingLocDFIMaps(DRE->getBeginLoc(), DFI);
+        return;
+      } else if (FieldName == "y") {
+        Dimension = 1;
+        DFI->getVarMap().Dim = 3;
+      } else if (FieldName == "z") {
+        Dimension = 0;
+        DFI->getVarMap().Dim = 3;
+      } else
+        return;
 
       Replacement += std::to_string(Dimension);
       Replacement += ")";
@@ -1387,44 +1378,30 @@ void IterationSpaceBuiltinRule::runRule(
     ValueDecl *Field = ME->getMemberDecl();
     StringRef FieldName = Field->getName();
     unsigned Dimension;
-    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
-      if (FieldName == "__fetch_builtin_x") {
-        auto Range = getDefinitionRange(ME->getBeginLoc(), ME->getEndLoc());
-        SourceLocation Begin = Range.getBegin();
-        SourceLocation End = Range.getEnd();
+    if (FieldName == "__fetch_builtin_x") {
+      auto Range = getDefinitionRange(ME->getBeginLoc(), ME->getEndLoc());
+      SourceLocation Begin = Range.getBegin();
+      SourceLocation End = Range.getEnd();
 
-        End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-            End, SM, DpctGlobalInfo::getContext().getLangOpts()));
+      End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+          End, SM, DpctGlobalInfo::getContext().getLangOpts()));
 
-        unsigned int Len =
-            SM.getDecomposedLoc(End).second - SM.getDecomposedLoc(Begin).second;
-        DpctGlobalInfo::getInstance().insertBuiltinVarInfo(Begin, Len,
-                                                           Replacement, DFI);
-        DpctGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
-        return;
-      } else if (FieldName == "__fetch_builtin_y") {
-        Dimension = 1;
-        DFI->getVarMap().Dim = 3;
-      } else if (FieldName == "__fetch_builtin_z") {
-        Dimension = 0;
-        DFI->getVarMap().Dim = 3;
-      } else {
-        llvm::dbgs() << "[" << getName()
-                     << "] Unexpected field name: " << FieldName;
-        return;
-      }
+      unsigned int Len =
+          SM.getDecomposedLoc(End).second - SM.getDecomposedLoc(Begin).second;
+      DpctGlobalInfo::getInstance().insertBuiltinVarInfo(Begin, Len,
+                                                         Replacement, DFI);
+      DpctGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
+      return;
+    } else if (FieldName == "__fetch_builtin_y") {
+      Dimension = 1;
+      DFI->getVarMap().Dim = 3;
+    } else if (FieldName == "__fetch_builtin_z") {
+      Dimension = 0;
+      DFI->getVarMap().Dim = 3;
     } else {
-      if (FieldName == "__fetch_builtin_x")
-        Dimension = 2;
-      else if (FieldName == "__fetch_builtin_y")
-        Dimension = 1;
-      else if (FieldName == "__fetch_builtin_z")
-        Dimension = 0;
-      else {
-        llvm::dbgs() << "[" << getName()
-                     << "] Unexpected field name: " << FieldName;
-        return;
-      }
+      llvm::dbgs() << "[" << getName()
+                   << "] Unexpected field name: " << FieldName;
+      return;
     }
 
     Replacement += std::to_string(Dimension);
@@ -2570,22 +2547,16 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
             End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
         if (End.isMacroID())
           return;
-        if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
-          auto FD = DpctGlobalInfo::getParentFunction(TL);
-          if (!FD)
-            return;
-          auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
-          auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
-          DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
-          emplaceTransformation(new ReplaceText(
-              Begin, End.getRawEncoding() - Begin.getRawEncoding(),
-              MapNames::getClNamespace() + "group<{{NEEDREPLACEG" +
-                  std::to_string(Index) + "}}>"));
-        } else {
-          emplaceTransformation(new ReplaceText(
-              Begin, End.getRawEncoding() - Begin.getRawEncoding(),
-              MapNames::getClNamespace() + "group<3>"));
-        }
+        auto FD = DpctGlobalInfo::getParentFunction(TL);
+        if (!FD)
+          return;
+        auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
+        auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
+        DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
+        emplaceTransformation(new ReplaceText(
+            Begin, End.getRawEncoding() - Begin.getRawEncoding(),
+            MapNames::getClNamespace() + "group<{{NEEDREPLACEG" +
+                std::to_string(Index) + "}}>"));
         return;
       }
     }
