@@ -22,9 +22,16 @@ void clang::dpct::WMMARule::registerMatcher(ast_matchers::MatchFinder &MF) {
                     .bind("type"),
                 this);
   MF.addMatcher(callExpr(callee(functionDecl(allOf(
-                             hasAnyName("fill_fragment"),
+                             hasAnyName("fill_fragment", "load_matrix_sync",
+                                        "mma_sync", "store_matrix_sync"),
                              hasDeclContext(namespaceDecl(hasName("wmma")))))))
                     .bind("call"),
+                this);
+  MF.addMatcher(declRefExpr(to(enumConstantDecl(
+                                allOf(hasAnyName("mem_row_major"),
+                                      hasType(enumDecl(hasDeclContext(
+                                          namespaceDecl(hasName("wmma")))))))))
+                    .bind("enum"),
                 this);
 }
 
@@ -35,7 +42,11 @@ void clang::dpct::WMMARule::runRule(
     EA.analyze(*TL);
   } else if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call")) {
     EA.analyze(CE);
-  } else {
+  } else if (const DeclRefExpr *DRE =
+                 getNodeAsType<DeclRefExpr>(Result, "enum")) {
+    DRE->dump();
+    EA.analyze(DRE);
+  }else {
     return;
   }
   emplaceTransformation(EA.getReplacement());

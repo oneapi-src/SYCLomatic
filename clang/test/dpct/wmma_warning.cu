@@ -88,6 +88,43 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
   nvcuda::wmma::fragment<nvcuda::wmma::accumulator, WMMA_M, WMMA_N, WMMA_K, float> c_frag;
   // CHECK: DPCT1007:{{[0-9]+}}: Migration of nvcuda::wmma::fill_fragment is not supported.
   nvcuda::wmma::fill_fragment(acc_frag, 0.0f);
+
+  // Loop over k
+  for (int i = 0; i < k_ld; i += WMMA_K) {
+    int aCol = i;
+    int aRow = warpM * WMMA_M;
+    int bCol = warpN * N;
+    int bRow = i;
+
+    // Bounds checking
+    if (aRow < m_ld && aCol < k_ld && bRow < k_ld && bCol < n_ld) {
+      // Load the inputs
+      // CHECK: DPCT1007:{{[0-9]+}}: Migration of nvcuda::wmma::load_matrix_sync is not supported.
+      nvcuda::wmma::load_matrix_sync(a_frag, a + aCol + aRow * lda, lda);
+      // CHECK: DPCT1007:{{[0-9]+}}: Migration of nvcuda::wmma::load_matrix_sync is not supported.
+      nvcuda::wmma::load_matrix_sync(b_frag, b + bRow + bCol * ldb, ldb);
+
+      // Perform the matrix multiplication
+      // CHECK: DPCT1007:{{[0-9]+}}: Migration of nvcuda::wmma::mma_sync is not supported.
+      nvcuda::wmma::mma_sync(acc_frag, a_frag, b_frag, acc_frag);
+    }
+  }
+
+  // Load in the current value of c, scale it by beta, and add this our result
+  // scaled by alpha
+  int cCol = warpN * WMMA_N;
+  int cRow = warpM * WMMA_M;
+
+  if (cRow < m_ld && cCol < n_ld) {
+    // CHECK: DPCT1007:{{[0-9]+}}: Migration of nvcuda::wmma::load_matrix_sync is not supported.
+    nvcuda::wmma::load_matrix_sync(c_frag, c + cCol + cRow * ldc, ldc,
+                           nvcuda::wmma::mem_row_major);
+
+    // Store the output
+    // CHECK: DPCT1007:{{[0-9]+}}: Migration of nvcuda::wmma::store_matrix_sync is not supported.
+    nvcuda::wmma::store_matrix_sync(d + cCol + cRow * ldc, c_frag, ldc,
+                            nvcuda::wmma::mem_row_major);
+  }
 }
 
 int main() {
