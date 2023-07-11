@@ -921,14 +921,12 @@ class engine_ext {
   void allocate_and_reorder_memory_to_optimal(::dnnl::memory::desc &from_desc,
                                               void *&from,
                                               ::dnnl::memory::desc &to_desc,
-                                              void *&to, bool need_reorder,
+                                              void *&to,
                                               std::vector<void *> &caches) {
     if (from_desc != to_desc) {
       to = allocate(to_desc);
       caches.push_back(to);
-      if (need_reorder) {
-        async_reorder(1.f, from_desc, from, 0.f, to_desc, to);
-      }
+      async_reorder(1.f, from_desc, from, 0.f, to_desc, to);
     }
   }
   template <typename primitive_type, typename... args_type>
@@ -4372,12 +4370,12 @@ engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm 
   void *optimal_src = src, *optimal_dst = dst, *optimal_weight = weight;
   std::vector<void *> input_caches, output_caches;
   allocate_and_reorder_memory_to_optimal(origin_src_md, src, optimal_src_md,
-                                         optimal_src, true, input_caches);
+                                         optimal_src, input_caches);
   allocate_and_reorder_memory_to_optimal(origin_dst_md, dst, optimal_dst_md,
-                                         optimal_dst, false, output_caches);
+                                         optimal_dst, output_caches);
   allocate_and_reorder_memory_to_optimal(origin_weight_md, weight,
                                          optimal_weight_md, optimal_weight,
-                                         true, input_caches);
+                                         input_caches);
   auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
       {DNNL_ARG_SRC, {::dnnl::memory(optimal_src_md, _eng, optimal_src)}},
       {DNNL_ARG_WEIGHTS, {::dnnl::memory(optimal_weight_md, _eng, optimal_weight)}}};
