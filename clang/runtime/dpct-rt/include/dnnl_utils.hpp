@@ -918,15 +918,17 @@ class engine_ext {
     return ::dnnl::memory::desc(desc.get_dims(), desc.get_data_type(),
                                 ::dnnl::memory::format_tag::any);
   }
-  void reorder_memory_desc_to_optimal(::dnnl::memory::desc &from_desc,
-                                      void *&from,
-                                      ::dnnl::memory::desc &to_desc,
-                                      void *&to,
-                                      std::vector<void *> &caches){
-    if(from_desc != to_desc) {
+  void allocate_and_reorder_memory_to_optimal(::dnnl::memory::desc &from_desc,
+                                              void *&from,
+                                              ::dnnl::memory::desc &to_desc,
+                                              void *&to, bool need_reorder,
+                                              std::vector<void *> &caches) {
+    if (from_desc != to_desc) {
       to = allocate(to_desc);
       caches.push_back(to);
-      async_reorder(1.f, from_desc, from, 0.f, to_desc, to); 
+      if (need_reorder) {
+        async_reorder(1.f, from_desc, from, 0.f, to_desc, to);
+      }
     }
   }
   template <typename primitive_type, typename... args_type>
@@ -3903,20 +3905,41 @@ sycl::event engine_ext::async_softmax_forward(softmax_algorithm alg,
     help_dst_desc = compress_spatial_dimensions_to_channel(help_dst_desc);
   }
 
-  auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
-      {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc, _eng, src)}}};
+  auto src_dims = help_src_desc.get_dims();
+  auto dst_dims = help_dst_desc.get_dims();
 
   ::dnnl::algorithm softmax_alg = ::dnnl::algorithm::softmax_accurate;
   if (alg == softmax_algorithm::log) {
     softmax_alg = ::dnnl::algorithm::softmax_log;
   }
-  auto primitive = create_forward_primitive<::dnnl::softmax_forward>(
-      ::dnnl::prop_kind::forward, softmax_alg, help_src_desc, 
-      help_dst_desc, 1);
+
+  detail::primitive_key_type key;
+  key.params = (std::uint64_t)detail::primitive_kind::softmax_forward +
+               ((std::uint64_t)::dnnl::prop_kind::forward << 4) +
+               ((std::uint64_t)softmax_alg << 8) +
+               ((std::uint64_t)help_src_desc.get_data_type() << 16) +
+               ((std::uint64_t)help_dst_desc.get_data_type() << 20);
+
+  key.mem_dims.insert(key.mem_dims.end(), src_dims.begin(), src_dims.end());
+  key.mem_dims.insert(key.mem_dims.end(), dst_dims.begin(), dst_dims.end());
+
+  ::dnnl::softmax_forward *primitive =
+      (::dnnl::softmax_forward *)_primitive_cache.get(key);
+
+  if (!primitive) {
+    primitive = create_forward_primitive<::dnnl::softmax_forward>(
+        ::dnnl::prop_kind::forward, softmax_alg, help_src_desc, help_dst_desc,
+        1);
+    _primitive_cache.put(key, primitive);
+  }
+
+  auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
+      {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc, _eng, src)}}};
 
   return execute_primitive(
       primitive, execution_args,
-      {{alpha, beta, DNNL_ARG_DST, memory_desc_ext(help_dst_desc), dst}});
+      {{alpha, beta, DNNL_ARG_DST, memory_desc_ext(help_dst_desc), dst}}, {},
+      true);
 }
 
 inline
@@ -3939,24 +3962,51 @@ sycl::event engine_ext::async_softmax_backward(
         compress_spatial_dimensions_to_channel(help_diff_dst_desc);
   }
 
-  auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
-      {DNNL_ARG_DST, {::dnnl::memory(help_dst_desc, _eng, dst)}},
-      {DNNL_ARG_DIFF_DST,
-       {::dnnl::memory(help_diff_dst_desc, _eng, diff_dst)}}};
+  auto help_diff_src_dims = help_diff_src_desc.get_dims();
+  auto help_diff_dst_dims = help_diff_dst_desc.get_dims();
+  auto help_dst_dims = help_dst_desc.get_dims();
 
   ::dnnl::algorithm softmax_alg = ::dnnl::algorithm::softmax_accurate;
   if (alg == softmax_algorithm::log) {
     softmax_alg = ::dnnl::algorithm::softmax_log;
   }
 
-  auto primitive = create_backward_primitive<::dnnl::softmax_backward>(
-      softmax_alg, help_diff_src_desc, help_diff_dst_desc, help_dst_desc, 1,
-      create_primitive_desc<::dnnl::softmax_forward>(
-          ::dnnl::prop_kind::forward, softmax_alg, help_diff_src_desc,
-          help_dst_desc, 1));
+  detail::primitive_key_type key;
+  key.params = (std::uint64_t)detail::primitive_kind::softmax_backward +
+               ((std::uint64_t)::dnnl::prop_kind::forward << 4) +
+               ((std::uint64_t)softmax_alg << 8) +
+               ((std::uint64_t)help_diff_dst_desc.get_data_type() << 16) +
+               ((std::uint64_t)help_diff_src_desc.get_data_type() << 20) +
+               ((std::uint64_t)help_dst_desc.get_data_type() << 24);
+
+  key.mem_dims.insert(key.mem_dims.end(), help_diff_src_dims.begin(),
+                      help_diff_src_dims.end());
+  key.mem_dims.insert(key.mem_dims.end(), help_diff_dst_dims.begin(),
+                      help_diff_dst_dims.end());
+  key.mem_dims.insert(key.mem_dims.end(), help_dst_dims.begin(),
+                      help_dst_dims.end());
+
+  ::dnnl::softmax_backward *primitive =
+      (::dnnl::softmax_backward *)_primitive_cache.get(key);
+
+  if (!primitive) {
+    primitive = create_backward_primitive<::dnnl::softmax_backward>(
+        softmax_alg, help_diff_src_desc, help_diff_dst_desc, help_dst_desc, 1,
+        create_primitive_desc<::dnnl::softmax_forward>(
+            ::dnnl::prop_kind::forward, softmax_alg, help_diff_src_desc,
+            help_dst_desc, 1));
+    _primitive_cache.put(key, primitive);
+  }
+
+  auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
+      {DNNL_ARG_DST, {::dnnl::memory(help_dst_desc, _eng, dst)}},
+      {DNNL_ARG_DIFF_DST,
+       {::dnnl::memory(help_diff_dst_desc, _eng, diff_dst)}}};
+
   return execute_primitive(primitive, execution_args,
                            {{alpha, beta, DNNL_ARG_DIFF_SRC,
-                             memory_desc_ext(help_diff_src_desc), diff_src}});
+                             memory_desc_ext(help_diff_src_desc), diff_src}},
+                           {}, true);
 }
 
 inline
@@ -4281,6 +4331,9 @@ engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm 
   auto &dilate = desc.get_dilate();
   auto &padding = desc.get_padding();
   auto &stride = desc.get_stride();
+  auto src_dims = src_md.get_dims();
+  auto dst_dims = dst_md.get_dims();
+  auto weight_dims = weight_md.get_dims();
 
   detail::primitive_key_type key;
   key.params = (std::uint64_t)detail::primitive_kind::convolution_forward +
@@ -4294,6 +4347,9 @@ engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm 
   key.mem_dims.insert(key.mem_dims.end(), dilate.begin(), dilate.end());
   key.mem_dims.insert(key.mem_dims.end(), padding.begin(), padding.end());
   key.mem_dims.insert(key.mem_dims.end(), stride.begin(), stride.end());
+  key.mem_dims.insert(key.mem_dims.end(), src_dims.begin(), src_dims.end());
+  key.mem_dims.insert(key.mem_dims.end(), dst_dims.begin(), dst_dims.end());
+  key.mem_dims.insert(key.mem_dims.end(), weight_dims.begin(), weight_dims.end());
 
   ::dnnl::convolution_forward* primitive = 
     (::dnnl::convolution_forward*)_primitive_cache.get(key);
@@ -4315,12 +4371,13 @@ engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm 
 
   void *optimal_src = src, *optimal_dst = dst, *optimal_weight = weight;
   std::vector<void *> input_caches, output_caches;
-  reorder_memory_desc_to_optimal(origin_src_md, src, optimal_src_md, optimal_src,
-                                 input_caches);
-  reorder_memory_desc_to_optimal(origin_weight_md, weight, optimal_weight_md, optimal_weight,
-                                 input_caches);
-  reorder_memory_desc_to_optimal(origin_dst_md, dst, optimal_dst_md, optimal_dst,
-                                 output_caches);
+  allocate_and_reorder_memory_to_optimal(origin_src_md, src, optimal_src_md,
+                                         optimal_src, true, input_caches);
+  allocate_and_reorder_memory_to_optimal(origin_dst_md, dst, optimal_dst_md,
+                                         optimal_dst, false, output_caches);
+  allocate_and_reorder_memory_to_optimal(origin_weight_md, weight,
+                                         optimal_weight_md, optimal_weight,
+                                         true, input_caches);
   auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
       {DNNL_ARG_SRC, {::dnnl::memory(optimal_src_md, _eng, optimal_src)}},
       {DNNL_ARG_WEIGHTS, {::dnnl::memory(optimal_weight_md, _eng, optimal_weight)}}};
