@@ -8,6 +8,15 @@
 #include <stdint.h>
 #include <time.h>
 
+// CHECK:void foo(clock_t *timer) {
+// CHECK-NEXT:   *timer = clock();
+// CHECK-NEXT:   clock();
+// CHECK-NEXT:}
+void foo(clock_t *timer) {
+  *timer = clock();
+  clock();
+}
+
 __global__ static void timedReduction(const float *input, float *output, clock_t *timer)
 {
     // CHECK: /*
