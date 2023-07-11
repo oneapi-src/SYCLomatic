@@ -1746,6 +1746,76 @@ segmented_reduce_argmax(Policy &&policy, Iter1 keys_in, Iter2 keys_out,
   policy.queue().wait();
 }
 
+template <typename ExecutionPolicy, typename InputIterator,
+          typename OutputIterator1, typename OutputIterator2,
+          typename OutputIterator3>
+::std::pair<OutputIterator1, OutputIterator2> nontrivial_run_length_encode(
+    ExecutionPolicy &&policy, InputIterator input_beg, InputIterator input_end,
+    OutputIterator1 offsets_out, OutputIterator2 lengths_out,
+    OutputIterator3 num_runs) {
+  using oneapi::dpl::make_transform_iterator;
+  using oneapi::dpl::make_zip_iterator;
+  using offsets_t =
+      typename ::std::iterator_traits<OutputIterator1>::value_type;
+  using lengths_t =
+      typename ::std::iterator_traits<OutputIterator2>::value_type;
+
+  auto n = ::std::distance(input_beg, input_end);
+  auto first_adj_it = oneapi::dpl::adjacent_find(policy, input_beg, input_end);
+  auto first_adj_idx = ::std::distance(input_beg, first_adj_it);
+  if (first_adj_it == input_end) {
+    ::std::fill(policy, num_runs, num_runs + 1, 0);
+    return ::std::make_pair(offsets_out, lengths_out);
+  }
+  auto get_prev_idx_element = [first_adj_idx](const auto &idx) {
+    auto out_idx = idx + first_adj_idx;
+    return (out_idx == 0) ? 0 : out_idx - 1;
+  };
+  auto get_next_idx_element = [first_adj_idx, n](const auto &idx) {
+    auto out_idx = idx + first_adj_idx;
+    return (out_idx == n - 1) ? n - 1 : out_idx + 1;
+  };
+  auto left_shifted_input_beg =
+      oneapi::dpl::make_permutation_iterator(input_beg, get_prev_idx_element);
+  auto right_shifted_input_beg =
+      oneapi::dpl::make_permutation_iterator(input_beg, get_next_idx_element);
+  auto zipped_keys_beg = make_zip_iterator(
+      left_shifted_input_beg, input_beg, right_shifted_input_beg,
+      oneapi::dpl::counting_iterator<offsets_t>(0));
+  auto flags_beg =
+      make_transform_iterator(zipped_keys_beg, [n](const auto &zipped) {
+        using ::std::get;
+        if (get<3>(zipped) == n - 1)
+          return false;
+        if (get<3>(zipped) == 0)
+          return get<1>(zipped) == get<2>(zipped);
+        return get<0>(zipped) != get<1>(zipped) &&
+               get<1>(zipped) == get<2>(zipped);
+      });
+  auto count_beg = oneapi::dpl::counting_iterator<offsets_t>(0);
+  auto const_it = dpct::make_constant_iterator(lengths_t(1));
+  auto zipped_vals_beg =
+      make_zip_iterator(left_shifted_input_beg, input_beg,
+                        right_shifted_input_beg, count_beg, const_it);
+  auto pred = [](bool lhs, bool rhs) { return !rhs; };
+  auto op = [](auto lhs, const auto &rhs) {
+    using ::std::get;
+    if (get<0>(rhs) == get<1>(rhs))
+      ++::std::get<4>(lhs);
+    return lhs;
+  };
+  auto zipped_out_beg = make_zip_iterator(
+      oneapi::dpl::discard_iterator(), oneapi::dpl::discard_iterator(),
+      oneapi::dpl::discard_iterator(), offsets_out, lengths_out);
+  auto [_, zipped_out_vals_end] = oneapi::dpl::reduce_by_segment(
+      policy, flags_beg + first_adj_idx, flags_beg + n,
+      zipped_vals_beg + first_adj_idx, oneapi::dpl::discard_iterator(),
+      zipped_out_beg, pred, op);
+  auto ret_dist = ::std::distance(zipped_out_beg, zipped_out_vals_end);
+  ::std::fill(policy, num_runs, num_runs + 1, ret_dist);
+  return ::std::make_pair(offsets_out + ret_dist, lengths_out + ret_dist);
+}
+
 } // end namespace dpct
 
 #endif
