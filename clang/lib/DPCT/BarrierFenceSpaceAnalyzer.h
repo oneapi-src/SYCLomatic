@@ -79,6 +79,17 @@ private:
     Ranges Predecessors;
     Ranges Successors;
   };
+  bool isValidAccessPattern(
+      const std::map<const clang::ParmVarDecl *,
+                     std::set<std::pair<clang::SourceLocation, AccessMode>>>
+          &DRELocs,
+      const SyncCallInfo &SCI);
+  bool isInRanges(clang::SourceLocation SL,
+                  std::vector<clang::SourceRange> Ranges);
+  bool containsMacro(const clang::SourceLocation &SL, const SyncCallInfo &SCI);
+  bool isValidLocationSet(
+      const std::set<std::pair<clang::SourceLocation, AccessMode>> &LocationSet,
+      const SyncCallInfo &SCI);
   std::vector<std::pair<const clang::CallExpr *, SyncCallInfo>> SyncCallsVec;
   std::deque<clang::SourceRange> LoopRange;
   const clang::FunctionDecl *FD = nullptr;

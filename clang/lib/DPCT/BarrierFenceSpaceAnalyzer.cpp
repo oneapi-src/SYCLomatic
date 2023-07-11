@@ -15,8 +15,6 @@
 
 using namespace llvm;
 
-// #define __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const clang::IfStmt *IS) {
   // No special process, treat as one block
   return true;
@@ -279,7 +277,8 @@ clang::dpct::BarrierFenceSpaceAnalyzer::isAssignedToAnotherDRE(
       break;
     const auto BO = Parents[0].get<BinaryOperator>();
     if (BO && BO->isAssignmentOp() &&
-        (BO->getRHS() == Current.get<clang::Expr>())) {
+        (BO->getRHS() == Current.get<clang::Expr>()) &&
+        BO->getLHS()->getType()->isPointerType()) {
       auto DREMatcher =
           ast_matchers::findAll(ast_matchers::declRefExpr().bind("DRE"));
       auto MatchedResults = ast_matchers::match(DREMatcher, *(BO->getRHS()),
@@ -292,6 +291,14 @@ clang::dpct::BarrierFenceSpaceAnalyzer::isAssignedToAnotherDRE(
     Current = Parents[0];
     Parents = Context.getParents(Current);
   }
+
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  const auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
+  std::cout << "CurrentDRE:" << CurrentDRE->getBeginLoc().printToString(SM) << std::endl;
+  for (const auto Item : ResultSet) {
+    std::cout << "    AnotherDRE:" << Item->getBeginLoc().printToString(SM) << std::endl;
+  }
+#endif
   return ResultSet;
 }
 
@@ -299,34 +306,38 @@ clang::dpct::BarrierFenceSpaceAnalyzer::AccessMode
 clang::dpct::BarrierFenceSpaceAnalyzer::getAccessKind(
     const clang::DeclRefExpr *CurrentDRE) {
   using namespace ast_matchers;
+//  auto Matcher = findAll(
+//      binaryOperator(
+//          isAssignmentOperator(),
+//          hasLHS(anyOf(hasDescendant(unaryOperator(
+//                           hasOperatorName("*"),
+//                           hasUnaryOperand(hasDescendant(
+//                               declRefExpr(isSameAs(CurrentDRE)))))),
+//                       hasDescendant(arraySubscriptExpr(hasBase(hasDescendant(
+//                           declRefExpr(isSameAs(CurrentDRE)))))))))
+//          .bind("BO"));
   auto Matcher = findAll(
-      declRefExpr(
-          anyOf(hasAncestor(unaryOperator(
-                    hasOperatorName("*"),
-                    hasAncestor(binaryOperator(isAssignmentOperator(),
-                                               hasLHS(hasDescendant(declRefExpr(
-                                                   isSameAs(CurrentDRE)))))
-                                    .bind("BO1")))),
-                hasAncestor(arraySubscriptExpr(
-                    hasAncestor(binaryOperator(isAssignmentOperator(),
-                                               hasLHS(hasDescendant(declRefExpr(
-                                                   isSameAs(CurrentDRE)))))
-                                    .bind("BO2"))))),
-          declRefExpr(isSameAs(CurrentDRE)))
-          .bind("DRE"));
+      binaryOperator(
+          isAssignmentOperator(),
+          hasLHS(hasDescendant(arraySubscriptExpr(hasBase(hasDescendant(
+                           declRefExpr(isSameAs(CurrentDRE))))))))
+          .bind("BO"));
+  const auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
+  //std::cout << "CurrentDRE:" << CurrentDRE->getBeginLoc().printToString(SM) << std::endl;
   auto MatchedResults =
       ast_matchers::match(Matcher, *FD, DpctGlobalInfo::getContext());
-  if (MatchedResults.empty())
+  if (MatchedResults.empty()) {
+    //std::cout << "aaaaaaaaa" << std::endl;
     return clang::dpct::BarrierFenceSpaceAnalyzer::AccessMode::Read;
+  }
   auto Node = MatchedResults.begin();
   const clang::BinaryOperator *BO = nullptr;
-  BO = Node->getNodeAs<clang::BinaryOperator>("BO1");
-  if (!BO) {
-    BO = Node->getNodeAs<clang::BinaryOperator>("BO2");
-  }
+  BO = Node->getNodeAs<clang::BinaryOperator>("BO");
   if (BO->getOpcode() == clang::BinaryOperatorKind::BO_Assign) {
+    //std::cout << "bbbbbbbbbbb" << std::endl;
     return clang::dpct::BarrierFenceSpaceAnalyzer::AccessMode::Write;
   }
+  //std::cout << "cccccccccc" << std::endl;
   return clang::dpct::BarrierFenceSpaceAnalyzer::AccessMode::ReadWrite;
 }
 
@@ -457,72 +468,40 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     }
   }
 
-  auto isInRanges = [](clang::SourceLocation SL,
-                       std::vector<clang::SourceRange> Ranges) -> bool {
-    auto &SM = dpct::DpctGlobalInfo::getSourceManager();
-    for (auto &Range : Ranges) {
-      if (SM.getFileOffset(Range.getBegin()) < SM.getFileOffset(SL) &&
-          SM.getFileOffset(SL) < SM.getFileOffset(Range.getEnd())) {
-        return true;
-      }
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  std::cout << "===== DRELocs contnet: =====" << std::endl;
+  for (const auto &DeclSetPair : DRELocs) {
+    const auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
+    std::cout << "Decl:" << DeclSetPair.first->getBeginLoc().printToString(SM)
+              << std::endl;
+    for (const auto &Pair : DeclSetPair.second) {
+      std::cout << "    DRE:" << Pair.first.printToString(SM)
+                << ", AccessMode:" << (int)(Pair.second) << std::endl;
     }
-    return false;
-  };
-
-  auto containsMacro = [](clang::SourceLocation SL,
-                          std::vector<clang::SourceRange> Ranges) -> bool {
-    if (SL.isMacroID())
-      return true;
-    for (auto &Range : Ranges) {
-      if (Range.getBegin().isMacroID() || Range.getEnd().isMacroID()) {
-        return true;
-      }
+  }
+  std::cout << "===== DRELocs contnet end =====" << std::endl;
+#endif
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  std::cout << "===== SyncCall info contnet: =====" << std::endl;
+  for (const auto &SyncCall : SyncCallsVec) {
+    const auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
+    std::cout << "SyncCall:" << SyncCall.first->getBeginLoc().printToString(SM)
+              << std::endl;
+    std::cout << "    Predecessors:" << std::endl;
+    for (const auto &Range : SyncCall.second.Predecessors) {
+      std::cout << "        [" << Range.getBegin().printToString(SM) << ", " << Range.getEnd().printToString(SM) << "]" << std::endl;
     }
-    return false;
-  };
+    std::cout << "    Successors:" << std::endl;
+    for (const auto &Range : SyncCall.second.Successors) {
+      std::cout << "        [" << Range.getBegin().printToString(SM) << ", " << Range.getEnd().printToString(SM) << "]" << std::endl;
+    }
+  }
+  std::cout << "===== SyncCall info contnet end =====" << std::endl;
+#endif
 
-  // DRELoc: input pointer parameter's usage location
-  // For a syncthreads call, tool will use local_space fence for this barrier,
-  // if it meets:
-  // For arbitrary input pointer of kernel, all DREs of this pointer are only
-  // used in either predecessor parts or successor parts
   for (auto &SyncCall : SyncCallsVec) {
-    bool Result = true;
-    for (auto &DeclLocPair : DRELocs) {
-      if (DeclLocPair.second.size() == 1) {
-        continue;
-      }
-      std::optional<bool> DREInPredecessors;
-      for (auto &LocModePair : DeclLocPair.second) {
-        if (containsMacro(LocModePair.first, SyncCall.second.Predecessors) ||
-            containsMacro(LocModePair.first, SyncCall.second.Successors)) {
-          Result = false;
-          break;
-        }
-        if (isInRanges(LocModePair.first, SyncCall.second.Predecessors)) {
-          if (DREInPredecessors.has_value()) {
-            if (DREInPredecessors.value() != true) {
-              Result = false;
-              break;
-            }
-          } else {
-            DREInPredecessors = true;
-          }
-        }
-        if (isInRanges(LocModePair.first, SyncCall.second.Successors)) {
-          if (DREInPredecessors.has_value()) {
-            if (DREInPredecessors.value() != false) {
-              Result = false;
-              break;
-            }
-          } else {
-            DREInPredecessors = false;
-          }
-        }
-      }
-    }
     CachedResults[FDLoc][getHashStrFromLoc(SyncCall.first->getBeginLoc())] =
-        Result;
+        isValidAccessPattern(DRELocs, SyncCall.second);
   }
 
   // find the result in the new map
@@ -536,6 +515,96 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     }
   }
   return false;
+}
+
+bool clang::dpct::BarrierFenceSpaceAnalyzer::isInRanges(
+    clang::SourceLocation SL, std::vector<clang::SourceRange> Ranges) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  for (auto &Range : Ranges) {
+    if (SM.getFileOffset(Range.getBegin()) < SM.getFileOffset(SL) &&
+        SM.getFileOffset(SL) < SM.getFileOffset(Range.getEnd())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool clang::dpct::BarrierFenceSpaceAnalyzer::containsMacro(
+    const clang::SourceLocation &SL, const SyncCallInfo &SCI) {
+  if (SL.isMacroID())
+    return true;
+  for (auto &Range : SCI.Predecessors) {
+    if (Range.getBegin().isMacroID() || Range.getEnd().isMacroID()) {
+      return true;
+    }
+  }
+  for (auto &Range : SCI.Successors) {
+    if (Range.getBegin().isMacroID() || Range.getEnd().isMacroID()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool clang::dpct::BarrierFenceSpaceAnalyzer::isValidLocationSet(
+    const std::set<
+        std::pair<clang::SourceLocation,
+                  clang::dpct::BarrierFenceSpaceAnalyzer::AccessMode>>
+        &LocationSet,
+    const SyncCallInfo &SCI) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  const auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
+  std::cout << "===== isValidLocationSet: =====" << std::endl;
+  for (const auto &LocModePair : LocationSet) {
+      std::cout << "    DRE:" << LocModePair.first.printToString(SM)
+                << ", AccessMode:" << (int)(LocModePair.second) << std::endl;
+  }
+  std::cout << "Predecessors:" << std::endl;
+  for (const auto &Range : SCI.Predecessors) {
+    std::cout << "    [" << Range.getBegin().printToString(SM) << ", " << Range.getEnd().printToString(SM) << "]" << std::endl;
+  }
+  std::cout << "Successors:" << std::endl;
+  for (const auto &Range : SCI.Successors) {
+    std::cout << "    [" << Range.getBegin().printToString(SM) << ", " << Range.getEnd().printToString(SM) << "]" << std::endl;
+  }
+  std::cout << "===== isValidLocationSet end =====" << std::endl;
+#endif
+  bool DREInPredecessors = false;
+  bool DREInSuccessors = false;
+  for (auto &LocModePair : LocationSet) {
+    if (isInRanges(LocModePair.first, SCI.Predecessors)) {
+      DREInPredecessors = true;
+    }
+    if (isInRanges(LocModePair.first, SCI.Successors)) {
+      DREInSuccessors = true;
+    }
+    if (DREInPredecessors && DREInSuccessors) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool clang::dpct::BarrierFenceSpaceAnalyzer::isValidAccessPattern(
+    const std::map<
+        const clang::ParmVarDecl *,
+        std::set<std::pair<clang::SourceLocation,
+                           clang::dpct::BarrierFenceSpaceAnalyzer::AccessMode>>>
+        &DRELocs,
+    const SyncCallInfo &SCI) {
+  for (auto &DeclLocPair : DRELocs) {
+    if (DeclLocPair.second.size() == 1) {
+      continue;
+    }
+    for (auto &LocModePair : DeclLocPair.second) {
+      if (containsMacro(LocModePair.first, SCI)) {
+        return false;
+      }
+    }
+    if (!isValidLocationSet(DeclLocPair.second, SCI))
+      return false;
+  }
+  return true;
 }
 
 std::unordered_map<std::string, std::unordered_map<std::string, bool>>

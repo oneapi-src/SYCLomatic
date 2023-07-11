@@ -598,9 +598,9 @@ AST_MATCHER_P(DeclRefExpr, isDeclSameAs, const VarDecl *, TargetVD) {
   const DeclRefExpr *DRE = &Node;
   return DRE->getDecl() == TargetVD;
 }
-AST_MATCHER_P(Stmt, isSameAs, const Stmt *, TargetStmt) {
-  const Stmt *S = &Node;
-  return S == TargetStmt;
+AST_MATCHER_P(DeclRefExpr, isSameAs, const DeclRefExpr *, TargetDRE) {
+  const DeclRefExpr *DRE = &Node;
+  return DRE == TargetDRE;
 }
 } // namespace ast_matchers
 } // namespace clang
