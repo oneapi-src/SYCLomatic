@@ -686,23 +686,18 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   auto ItemItr = NdItemMap.find(BaseType);
   if (ItemItr != NdItemMap.end()) {
     if (MapNames::replaceName(NdItemMemberMap, FieldName)) {
-      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
-        auto TargetExpr = getTargetExpr();
-        auto FD = getImmediateOuterFuncDecl(TargetExpr);
-        auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
-        if (ME->getMemberDecl()->getName().str() == "__fetch_builtin_x") {
-          auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
-          DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
-          addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
-                                         ItemItr->second, "({{NEEDREPLACER",
-                                         std::to_string(Index), "}})"));
-          DpctGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
-        } else {
-          DFI->getVarMap().Dim = 3;
-          addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
-                                         ItemItr->second, "(", FieldName, ")"));
-        }
+      auto TargetExpr = getTargetExpr();
+      auto FD = getImmediateOuterFuncDecl(TargetExpr);
+      auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
+      if (ME->getMemberDecl()->getName().str() == "__fetch_builtin_x") {
+        auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
+        DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
+        addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
+                                       ItemItr->second, "({{NEEDREPLACER",
+                                       std::to_string(Index), "}})"));
+        DpctGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
       } else {
+        DFI->getVarMap().Dim = 3;
         addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
                                        ItemItr->second, "(", FieldName, ")"));
       }
@@ -1836,6 +1831,7 @@ void KernelConfigAnalysis::dispatch(const Stmt *Expression) {
     ANALYZE_EXPR(CStyleCastExpr)
     ANALYZE_EXPR(CXXFunctionalCastExpr)
     ANALYZE_EXPR(CXXStaticCastExpr)
+    ANALYZE_EXPR(DeclRefExpr)
   default:
     return ArgumentAnalysis::dispatch(Expression);
   }
@@ -2002,6 +1998,42 @@ void KernelConfigAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Ctor) {
     }
   }
   return ArgumentAnalysis::analyzeExpr(Ctor);
+}
+
+void KernelConfigAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
+  if (!IsDim3Config)
+    return ArgumentAnalysis::analyzeExpr(DRE);
+
+  using namespace ast_matchers;
+  const VarDecl *VD = dyn_cast_or_null<VarDecl>(DRE->getDecl());
+  if (!VD)
+    return ArgumentAnalysis::analyzeExpr(DRE);
+
+  // VD must be local variable and must have the same context with
+  // KernelCallExpr
+  if (VD->getKind() != Decl::Var)
+    return ArgumentAnalysis::analyzeExpr(DRE);
+  const auto *FD = dyn_cast_or_null<FunctionDecl>(VD->getDeclContext());
+  if (!FD)
+    return ArgumentAnalysis::analyzeExpr(DRE);
+  const Stmt *VDContext = FD->getBody();
+
+  // VD's DRE should be only used once (as the config arg) in VDContext
+  auto DREMatcher = findAll(declRefExpr(isDeclSameAs(VD)).bind("DRE"));
+  auto MatchedResults =
+      match(DREMatcher, *VDContext, DpctGlobalInfo::getContext());
+  if (MatchedResults.size() != 1)
+    return ArgumentAnalysis::analyzeExpr(DRE);
+
+  if (!VD->hasInit())
+    return ArgumentAnalysis::analyzeExpr(DRE);
+
+  dispatch(VD->getInit());
+
+  if (IsTryToUseOneDimension) {
+    // Insert member access expr at the end of DRE
+    addReplacement(getExprLength(), 0, ".get(2)");
+  }
 }
 
 void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,

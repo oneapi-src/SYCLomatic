@@ -230,11 +230,14 @@ MATH_API_REWRITER_DEVICE(
     "__h2div",
     MATH_API_DEVICE_NODES(
         EMPTY_FACTORY_ENTRY("__h2div"),
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY("__h2div", CALL(MapNames::getClNamespace() +
-                                                   "ext::intel::math::h2div",
-                                               ARG(0), ARG(1)))),
+        MATH_API_SPECIFIC_ELSE_EMU(
+            CheckArgType(0, "__half"),
+            HEADER_INSERT_FACTORY(
+                HeaderType::HT_SYCL_Math,
+                CALL_FACTORY_ENTRY("__h2div",
+                                   CALL(MapNames::getClNamespace() +
+                                            "ext::intel::math::h2div",
+                                        ARG(0), ARG(1))))),
         EMPTY_FACTORY_ENTRY("__h2div"),
         BINARY_OP_FACTORY_ENTRY("__h2div", BinaryOperatorKind::BO_Div,
                                 makeCallArgCreatorWithCall(0),
