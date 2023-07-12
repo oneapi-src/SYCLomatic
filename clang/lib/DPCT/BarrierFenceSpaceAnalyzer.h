@@ -81,8 +81,11 @@ private:
       const SyncCallInfo &SCI);
   bool containsMacro(const SourceLocation &SL, const SyncCallInfo &SCI);
   const BinaryOperator *getAssignmentBinaryOP(const DeclRefExpr *DRE);
+  bool isNoOverlappingAccessAmongWorkItems(int KernelDim,
+                                           const DeclRefExpr *DRE);
   std::vector<std::pair<const CallExpr *, SyncCallInfo>> SyncCallsVec;
   std::deque<SourceRange> LoopRange;
+  int KernelDim = 3; // 3 or 1
   const FunctionDecl *FD = nullptr;
 
   std::unordered_map<const ParmVarDecl *, std::set<const DeclRefExpr *>>

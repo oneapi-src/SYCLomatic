@@ -367,6 +367,22 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
 #endif
 
   this->FD = FD;
+
+  auto QueryKernelDim = [](const FunctionDecl *FD) -> int {
+    const auto DFD = DpctGlobalInfo::getInstance().findDeviceFunctionDecl(FD);
+    if (!DFD)
+      return 3;
+    const auto FuncInfo = DFD->getFuncInfo();
+    if (!FuncInfo)
+      return 3;
+    const auto MVM =
+        MemVarMap::getHeadWithoutPathCompression(&(FuncInfo->getVarMap()));
+    if (!MVM)
+      return 3;
+    return MVM->Dim;
+  };
+  KernelDim = QueryKernelDim(FD);
+
   // analyze this FD
   // Traverse AST, analysis the context info of kernel calling sycthreads()
   //   1. Find each syncthreads call's predecessor parts and successor parts.
@@ -448,8 +464,10 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
       DeclUsedLocsMap;
   for (const auto &Pair : DefUseMap) {
     for (const auto &Item : Pair.second) {
-      DeclUsedLocsMap[Pair.first].insert(
-          std::make_pair(Item->getBeginLoc(), getAccessKind(Item)));
+      if (!isNoOverlappingAccessAmongWorkItems(KernelDim, Item)) {
+        DeclUsedLocsMap[Pair.first].insert(
+            std::make_pair(Item->getBeginLoc(), getAccessKind(Item)));
+      }
     }
   }
 
@@ -500,6 +518,141 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     } else {
       return false;
     }
+  }
+  return false;
+}
+
+bool clang::dpct::BarrierFenceSpaceAnalyzer::
+    isNoOverlappingAccessAmongWorkItems(int KernelDim, const DeclRefExpr *DRE) {
+  using namespace ast_matchers;
+  if (KernelDim != 1) {
+    return false;
+  }
+  // Check if this DRE(Ptr) matches pattern: Ptr[Idx]
+  // clang-format off
+  //    ArraySubscriptExpr <col:7, col:16> 'float' lvalue
+  //    |-ImplicitCastExpr <col:7> 'float *' <LValueToRValue>
+  //    | `-DeclRefExpr <col:7> 'float *' lvalue ParmVar 0x555a6c216d68 'Ptr' 'float *'
+  //    `-ImplicitCastExpr <col:12> 'int' <LValueToRValue>
+  //      `-DeclRefExpr <col:12> 'int' lvalue Var 0x555a6c217078 'Idx' 'int'
+  // clang-format on
+  auto IsParentArraySubscriptExpr =
+      [](const DeclRefExpr *Node) -> const ArraySubscriptExpr * {
+    auto ICE = DpctGlobalInfo::findParent<ImplicitCastExpr>(Node);
+    if (!ICE || (ICE->getCastKind() != CastKind::CK_LValueToRValue))
+      return nullptr;
+    auto ASE = DpctGlobalInfo::findParent<ArraySubscriptExpr>(ICE);
+    if (!ASE)
+      return nullptr;
+    return ASE;
+  };
+  const ArraySubscriptExpr *ASE = IsParentArraySubscriptExpr(DRE);
+  if (!ASE)
+    return false;
+
+  // IdxVD must be local variable and must be defined in this function
+  const DeclRefExpr *IdxDRE =
+      dyn_cast_or_null<DeclRefExpr>(ASE->getIdx()->IgnoreImpCasts());
+  if (!IdxDRE)
+    return false;
+  const VarDecl *IdxVD = dyn_cast_or_null<VarDecl>(IdxDRE->getDecl());
+  if (IdxVD->getKind() != Decl::Var)
+    return false;
+  const auto *IdxFD = dyn_cast_or_null<FunctionDecl>(IdxVD->getDeclContext());
+  if (!IdxFD)
+    return false;
+  const Stmt *IdxVDContext = IdxFD->getBody();
+
+  // VD's DRE should only be used as rvalue
+  auto DREMatcher = findAll(declRefExpr(isDeclSameAs(IdxVD)).bind("DRE"));
+  auto MatchedResults =
+      match(DREMatcher, *IdxVDContext, DpctGlobalInfo::getContext());
+  for (const auto &Res : MatchedResults) {
+    const DeclRefExpr *RefDRE = Res.getNodeAs<DeclRefExpr>("DRE");
+    auto ICE = DpctGlobalInfo::findParent<ImplicitCastExpr>(RefDRE);
+    if (!ICE || (ICE->getCastKind() != CastKind::CK_LValueToRValue))
+      return false;
+  }
+
+  // Check if Index variable match pattern: blockIdx.x * blockDim.x +
+  // threadIdx.x
+  if (!IdxVD->hasInit())
+    return false;
+  auto IsIterationSpaceBuiltinVar =
+      [](const PseudoObjectExpr *Node, const std::string &BuiltinNameRef,
+         const std::string &FieldNameRef) -> bool {
+    if (!Node)
+      return false;
+    auto BuiltinMatcher = findAll(
+        memberExpr(hasObjectExpression(opaqueValueExpr(hasSourceExpression(
+                       declRefExpr(to(varDecl(hasAnyName(
+                                       "threadIdx", "blockDim", "blockIdx"))))
+                           .bind("declRefExpr")))),
+                   hasParent(implicitCastExpr(
+                       hasParent(callExpr(hasParent(pseudoObjectExpr()))))))
+            .bind("memberExpr"));
+    auto MatchedResults =
+        match(BuiltinMatcher, *Node, DpctGlobalInfo::getContext());
+    if (MatchedResults.size() != 1)
+      return false;
+    const auto Res = MatchedResults[0];
+    auto ME = Res.getNodeAs<MemberExpr>("memberExpr");
+    auto DRE = Res.getNodeAs<DeclRefExpr>("declRefExpr");
+    if (!ME || !DRE)
+      return false;
+    StringRef BuiltinName = DRE->getDecl()->getName();
+    StringRef FieldName = ME->getMemberDecl()->getName();
+    if (BuiltinName == BuiltinNameRef && FieldName == FieldNameRef)
+      return true;
+    return false;
+  };
+  const Expr *InitExpr = IdxVD->getInit()->IgnoreImpCasts();
+  // Case 1: blockIdx.x * blockDim.x + threadIdx.x
+  // Case 2: blockDim.x * blockIdx.x + threadIdx.x
+  // Case 3: threadIdx.x + blockIdx.x * blockDim.x
+  // Case 4: threadIdx.x + blockDim.x * blockIdx.x
+  const BinaryOperator *BOAdd = dyn_cast<BinaryOperator>(InitExpr);
+  if (!BOAdd || BOAdd->getOpcode() != BinaryOperatorKind::BO_Add)
+    return false;
+  const BinaryOperator *BOMul = dyn_cast<BinaryOperator>(BOAdd->getLHS());
+  if (BOMul &&
+      IsIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOAdd->getRHS()),
+                                 "threadIdx", "__fetch_builtin_x")) {
+    if (IsIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getLHS()),
+                                   "blockIdx", "__fetch_builtin_x") &&
+        IsIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getRHS()),
+                                   "blockDim", "__fetch_builtin_x")) {
+      // Case 1
+      return true;
+    }
+    if (IsIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getRHS()),
+                                   "blockIdx", "__fetch_builtin_x") &&
+        IsIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getLHS()),
+                                   "blockDim", "__fetch_builtin_x")) {
+      // Case 2
+      return true;
+    }
+    return false;
+  }
+  BOMul = dyn_cast<BinaryOperator>(BOAdd->getRHS());
+  if (BOMul &&
+      IsIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOAdd->getLHS()),
+                                 "threadIdx", "__fetch_builtin_x")) {
+    if (IsIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getLHS()),
+                                   "blockIdx", "__fetch_builtin_x") &&
+        IsIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getRHS()),
+                                   "blockDim", "__fetch_builtin_x")) {
+      // Case 3
+      return true;
+    }
+    if (IsIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getRHS()),
+                                   "blockIdx", "__fetch_builtin_x") &&
+        IsIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getLHS()),
+                                   "blockDim", "__fetch_builtin_x")) {
+      // Case 4
+      return true;
+    }
+    return false;
   }
   return false;
 }
