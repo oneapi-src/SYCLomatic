@@ -237,5 +237,5 @@ DEF_WARNING(REGISTER_USAGE, 1110, "The total declared local variable size in dev
 DEF_COMMENT(REGISTER_USAGE, 1110, "The total declared local variable size in device function {0} exceeds 128 bytes and may cause high register pressure. Consult with your hardware vendor to find the total register size available and adjust the code, or use smaller sub-group size to avoid high register pressure.")
 DEF_WARNING(MAX_ACTIVE_WG_ARGS, 1111, "Please verify the input arguments of \"%0\" base on the target function \"%1\".")
 DEF_COMMENT(MAX_ACTIVE_WG_ARGS, 1111, "Please verify the input arguments of \"{0}\" base on the target function \"{1}\".")
-DEF_WARNING(TEX_FETCH, 1112, "The filtering mode may be \"linear\". You may need to adjust the code.")
-DEF_COMMENT(TEX_FETCH, 1112, "The filtering mode may be \"linear\". You may need to adjust the code.")
+DEF_WARNING(TEX_FETCH, 1112, "If the filter mode is set to 'linear', the behavior of \"read\" may be different from \"tex1Dfetch\". You may need to adjust the code.")
+DEF_COMMENT(TEX_FETCH, 1112, "If the filter mode is set to 'linear', the behavior of \"read\" may be different from \"tex1Dfetch\". You may need to adjust the code.")
