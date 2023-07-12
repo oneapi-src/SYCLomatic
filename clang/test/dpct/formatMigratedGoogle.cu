@@ -148,11 +148,11 @@ void test() {
 
 __device__ void sincos_1(double x, double* sptr, double* cptr) {
 
-//CHECK:  return [&]() {
-//CHECK-NEXT:    *(sptr) = cl::sycl::sincos(
-//CHECK-NEXT:        x, cl::sycl::address_space_cast<
-//CHECK-NEXT:               cl::sycl::access::address_space::global_space,
-//CHECK-NEXT:               cl::sycl::access::decorated::yes, double>(cptr));
+     //CHECK:  return [&]() {
+//CHECK-NEXT:                *sptr = cl::sycl::sincos(
+//CHECK-NEXT:                    x, cl::sycl::address_space_cast<
+//CHECK-NEXT:                           cl::sycl::access::address_space::global_space,
+//CHECK-NEXT:                           cl::sycl::access::decorated::yes, double>(cptr));
 //CHECK-NEXT:  }();
   return ::sincos(x, sptr, cptr);
 }
