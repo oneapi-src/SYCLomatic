@@ -31,8 +31,30 @@
 #include <windows.h>
 #endif
 
-
 namespace dpct {
+namespace detail {
+static void get_version(const sycl::device &dev, int &major, int &minor) {
+  // Version string has the following format:
+  // a. OpenCL<space><major.minor><space><vendor-specific-information>
+  // b. <major.minor>
+  std::string ver;
+  ver = dev.get_info<sycl::info::device::version>();
+  std::string::size_type i = 0;
+  while (i < ver.size()) {
+    if (isdigit(ver[i]))
+      break;
+    i++;
+  }
+  major = std::stoi(&(ver[i]));
+  while (i < ver.size()) {
+    if (ver[i] == '.')
+      break;
+    i++;
+  }
+  i++;
+  minor = std::stoi(&(ver[i]));
+}
+} // namespace detail
 
 /// SYCL default exception handler
 inline auto exception_handler = [](sycl::exception_list exceptions) {
@@ -229,34 +251,24 @@ private:
   std::array<unsigned char, 16> _uuid;
 };
 
-static void get_version(const sycl::device &dev, int &major, int &minor) {
-  // Version string has the following format:
-  // a. OpenCL<space><major.minor><space><vendor-specific-information>
-  // b. <major.minor>
-  std::string ver;
-  ver = dev.get_info<sycl::info::device::version>();
-  std::string::size_type i = 0;
-  while (i < ver.size()) {
-    if (isdigit(ver[i]))
-      break;
-    i++;
-  }
-  major = std::stoi(&(ver[i]));
-  while (i < ver.size()) {
-    if (ver[i] == '.')
-      break;
-    i++;
-  }
-  i++;
-  minor = std::stoi(&(ver[i]));
+static int get_major_version(const sycl::device &dev) {
+  int major, minor;
+  detail::get_version(dev, major, minor);
+  return major;
 }
 
-static void get_device_info(const sycl::device &dev, device_info &out) {
+static int get_minor_version(const sycl::device &dev) {
+  int major, minor;
+  detail::get_version(dev, major, minor);
+  return minor;
+}
+
+static void get_device_info(device_info &out, const sycl::device &dev) {
   device_info prop;
   prop.set_name(dev.get_info<sycl::info::device::name>().c_str());
 
   int major, minor;
-  get_version(dev, major, minor);
+  detail::get_version(dev, major, minor);
   prop.set_major_version(major);
   prop.set_minor_version(minor);
 
@@ -351,16 +363,12 @@ public:
   }
 
   int is_native_atomic_supported() { return 0; }
-  int get_major_version() const {
-    int major, minor;
-    get_version(major, minor);
-    return major;
+  [[deprecated]] int get_major_version() const {
+    return dpct::get_major_version(*this);
   }
 
-  int get_minor_version() const {
-    int major, minor;
-    get_version(major, minor);
-    return minor;
+  [[deprecated]] int get_minor_version() const {
+    return dpct::get_minor_version(*this);
   }
 
   int get_max_compute_units() const {
@@ -417,13 +425,13 @@ public:
     total_memory = get_device_info().get_global_mem_size();
   }
 
-  void get_device_info(device_info &out) const {
-    dpct::get_device_info(*this, out);
+  [[deprecated]] void get_device_info(device_info &out) const {
+    dpct::get_device_info(out, *this);
   }
 
   device_info get_device_info() const {
     device_info prop;
-    get_device_info(prop);
+    dpct::get_device_info(prop, *this);
     return prop;
   }
 
@@ -526,8 +534,8 @@ private:
     return _queues.back().get();
   }
 
-  void get_version(int &major, int &minor) const {
-    dpct::get_version(*this, major, minor);
+  [[deprecated]] void get_version(int &major, int &minor) const {
+    detail::get_version(*this, major, minor);
   }
   sycl::queue *_q_in_order, *_q_out_of_order;
   sycl::queue *_saved_queue;

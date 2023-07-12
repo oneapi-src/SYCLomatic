@@ -76,21 +76,25 @@ FEATURE_REQUEST_FACTORY(
                                 false,
                                 ARG(1)))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    ASSIGNABLE_FACTORY(
-        ASSIGN_FACTORY_ENTRY(
-            "cuCtxCreate_v2",
-            DEREF(0),
-            CALL(MapNames::getDpctNamespace() + "select_device", ARG(2)))))
+CONDITIONAL_FACTORY_ENTRY(
+    checkIsUsePureSyclQueue(),
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxCreate_v2", DEREF(0),
+                                            LITERAL("0"))),
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+            "cuCtxCreate_v2", DEREF(0),
+            CALL(MapNames::getDpctNamespace() + "select_device", ARG(2))))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    ASSIGNABLE_FACTORY(
-        ASSIGN_FACTORY_ENTRY(
-            "cuDevicePrimaryCtxRetain",
-            DEREF(0),
-            CALL(MapNames::getDpctNamespace() + "select_device", ARG(1)))))
+CONDITIONAL_FACTORY_ENTRY(
+    checkIsUsePureSyclQueue(),
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuDevicePrimaryCtxRetain",
+                                            DEREF(0), LITERAL("0"))),
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+            "cuDevicePrimaryCtxRetain", DEREF(0),
+            CALL(MapNames::getDpctNamespace() + "select_device", ARG(1))))))
 
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaHostGetFlags", DEREF(0), ARG("0")))
 
@@ -130,11 +134,15 @@ WARNING_FACTORY_ENTRY("cuDriverGetVersion",
                     "info::device::version>"))))),
     Diagnostics::TYPE_MISMATCH)
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
+CONDITIONAL_FACTORY_ENTRY(
+    clang::dpct::checkIsUsePureSyclQueue(),
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxGetDevice", DEREF(0),
-                                            CALL(MapNames::getDpctNamespace() +
-                                                 "get_current_device_id"))))
+                                            LITERAL("0"))),
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                            ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                                "cuCtxGetDevice", DEREF(0),
+                                CALL(MapNames::getDpctNamespace() +
+                                     "get_current_device_id")))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,

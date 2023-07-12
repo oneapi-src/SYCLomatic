@@ -912,7 +912,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
   DpctGlobalInfo::setGenBuildScriptEnabled(GenBuildScript);
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
-  DpctGlobalInfo::setUsePureSycl(UsePureSycl);
+  DpctGlobalInfo::setUsePureSyclQueue(UsePureSyclQueue);
   DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
   DpctGlobalInfo::setExperimentalFlag(Experimentals.getBits());
   DpctGlobalInfo::setExtensionDEFlag(~(NoDPCPPExtensions.getBits()));
@@ -988,6 +988,9 @@ int runDPCT(int argc, const char **argv) {
                      NoDRYPattern.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_CompilationsDir, CompilationsDir,
                      OptParser->isPSpecified());
+    setValueToOptMap(clang::dpct::OPTION_UsePureSyclQueue,
+                     DpctGlobalInfo::isUsePureSyclQueue(),
+                     UsePureSyclQueue.getNumOccurrences());
 #ifdef _WIN32
     if (!VcxprojFilePath.empty()) {
       // To convert the relative path to absolute path.

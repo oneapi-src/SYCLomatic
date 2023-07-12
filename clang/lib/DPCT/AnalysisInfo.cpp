@@ -63,7 +63,7 @@ std::set<ExplicitNamespace> DpctGlobalInfo::ExplicitNamespaceSet;
 bool DpctGlobalInfo::EnableCtad = false;
 bool DpctGlobalInfo::GenBuildScript = false;
 bool DpctGlobalInfo::EnableComments = false;
-bool DpctGlobalInfo::UsePureSycl = false;
+bool DpctGlobalInfo::UsePureSyclQueue = false;
 bool DpctGlobalInfo::TempEnableDPCTNamespace = false;
 bool DpctGlobalInfo::IsMLKHeaderUsed = false;
 ASTContext *DpctGlobalInfo::Context = nullptr;
@@ -378,7 +378,7 @@ void DpctGlobalInfo::buildReplacements() {
   }
 
   for (auto &Counter : TempVariableDeclCounterMap) {
-    if (DpctGlobalInfo::isUsePureSycl()) {
+    if (DpctGlobalInfo::isUsePureSyclQueue()) {
       Counter.second.PlaceholderStr[1] = "q_ct1";
       Counter.second.PlaceholderStr[2] = "dev_ct1";
       // Need not insert q_ct1 and dev_ct1 declrations and request feature.
@@ -1176,9 +1176,11 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
             ExplicitNamespace::EN_CL)) {
       OS << "using namespace sycl;" << getNL();
     }
-    if (DpctGlobalInfo::isUsePureSycl()) {
+    if (DpctGlobalInfo::isUsePureSyclQueue()) {
       static bool Flag = true;
-      if (Flag) {
+      auto SourceFileType = GetSourceFileType(getFilePath());
+      if (Flag && (SourceFileType == SPT_CudaSource ||
+                   SourceFileType == SPT_CppSource)) {
         OS << MapNames::getClNamespace() << "device dev_ct1;" << getNL();
         // Now the UsmLevel must not be UL_None here.
         OS << MapNames::getClNamespace() << "queue q_ct1(dev_ct1, "
@@ -4364,24 +4366,21 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
 
 const std::string &getDefaultString(HelperFuncType HFT) {
   const static std::string NullString;
-  switch (HFT) {
-  case clang::dpct::HelperFuncType::HFT_DefaultQueue: {
-    if (DpctGlobalInfo::isUsePureSycl()) {
-      const static std::string DefaultQueue = "q_ct1";
-      return DefaultQueue;
-    }
-    const static std::string DefaultQueue =
+  const static auto GetDefaultStr = [](bool IsQueue = true) -> const auto & {
+    const static std::string Q = "q_ct1";
+    const static std::string D = "dev_ct1";
+    const static std::string DefaultQ =
         MapNames::getDpctNamespace() + "get_default_queue()";
-    return DefaultQueue;
-  }
-  case clang::dpct::HelperFuncType::HFT_CurrentDevice: {
-    if (DpctGlobalInfo::isUsePureSycl()) {
-      const static std::string DefaultDevice = "dev_ct1";
-      return DefaultDevice;
-    }
-    const static std::string DefaultQueue =
+    const static std::string DefaultD =
         MapNames::getDpctNamespace() + "get_current_device()";
-    return DefaultQueue;
+    if (DpctGlobalInfo::isUsePureSyclQueue())
+      return IsQueue ? Q : D;
+    return IsQueue ? DefaultQ : DefaultD;
+  };
+  switch (HFT) {
+  case clang::dpct::HelperFuncType::HFT_DefaultQueue:
+  case clang::dpct::HelperFuncType::HFT_CurrentDevice: {
+    return GetDefaultStr(HFT == HelperFuncType::HFT_DefaultQueue);
   }
   case clang::dpct::HelperFuncType::HFT_InitValue: {
     return NullString;

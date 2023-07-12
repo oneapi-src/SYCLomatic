@@ -1099,9 +1099,9 @@ public:
   inline static void setCommentsEnabled(bool Enable = true) {
     EnableComments = Enable;
   }
-  inline static bool isUsePureSycl() { return UsePureSycl; }
-  inline static void setUsePureSycl(bool PureSycl = true) {
-    UsePureSycl = PureSycl;
+  inline static bool isUsePureSyclQueue() { return UsePureSyclQueue; }
+  inline static void setUsePureSyclQueue(bool PureSyclQueue = true) {
+    UsePureSyclQueue = PureSyclQueue;
   }
 
   inline static bool isDPCTNamespaceTempEnabled() {
@@ -2009,7 +2009,7 @@ private:
   static bool IsMLKHeaderUsed;
   static bool GenBuildScript;
   static bool EnableComments;
-  static bool UsePureSycl;
+  static bool UsePureSyclQueue;
   static std::string ClNamespace;
   static std::set<ExplicitNamespace> ExplicitNamespaceSet;
 

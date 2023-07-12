@@ -885,6 +885,12 @@ inline std::function<bool(const CallExpr *C)> checkIsUSM() {
   };
 }
 
+inline std::function<bool(const CallExpr *C)> checkIsUsePureSyclQueue() {
+  return [](const CallExpr *C) -> bool {
+    return DpctGlobalInfo::isUsePureSyclQueue();
+  };
+}
+
 inline std::function<bool(const CallExpr *C)> checkArgSpelling(size_t index,
                                                         std::string str) {
   return [=](const CallExpr *C) -> bool {

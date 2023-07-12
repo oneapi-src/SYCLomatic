@@ -6704,19 +6704,19 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       requestFeature(HelperFeatureEnum::device_ext);
     }
     std::string ResultVarName = getDrefName(CE->getArg(0));
-    if (DpctGlobalInfo::isUsePureSycl()) {
+    emplaceTransformation(
+        new ReplaceStmt(CE->getCallee(), Prefix + MapNames::getDpctNamespace() +
+                                             "get_device_info"));
+    emplaceTransformation(new ReplaceStmt(CE->getArg(0), ResultVarName));
+    if (DpctGlobalInfo::isUsePureSyclQueue()) {
       int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
       emplaceTransformation(new ReplaceStmt(
-          CE, Prefix + MapNames::getDpctNamespace() +
-                  "get_device_info({{NEEDREPLACED" + std::to_string(Index) +
-                  "}}, " + ResultVarName + ")"));
+          CE->getArg(1), "{{NEEDREPLACED" + std::to_string(Index) + "}}"));
     } else {
       emplaceTransformation(new ReplaceStmt(
-          CE->getCallee(), Prefix + MapNames::getDpctNamespace() +
-                               "dev_mgr::instance().get_device"));
-      emplaceTransformation(new RemoveArg(CE, 0));
-      emplaceTransformation(new InsertAfterStmt(
-          CE, ".get_device_info(" + ResultVarName + ")" + Suffix));
+          CE->getArg(1), MapNames::getDpctNamespace() +
+                             "dev_mgr::instance().get_device(" +
+                             getStmtSpelling(CE->getArg(1)) + ")"));
       requestFeature(HelperFeatureEnum::device_ext);
     }
   } else if (FuncName == "cudaDriverGetVersion" ||
@@ -6728,9 +6728,13 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(
         new InsertBeforeStmt(CE, Prefix + ResultVarName + " = "));
 
-    std::string ReplStr =
-        MapNames::getDpctNamespace() + "get_current_device()." +
-          "get_major_version()";
+    std::string ReplStr = MapNames::getDpctNamespace() + "get_major_version(";
+    if (DpctGlobalInfo::isUsePureSyclQueue()) {
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      ReplStr += "{{NEEDREPLACED" + std::to_string(Index) + "}})";
+    } else {
+      ReplStr += MapNames::getDpctNamespace() + "get_current_device())";
+    }
     emplaceTransformation(new ReplaceStmt(CE, ReplStr + Suffix));
     report(CE->getBeginLoc(), Warnings::TYPE_MISMATCH, false);
     requestFeature(HelperFeatureEnum::device_ext);
@@ -6750,15 +6754,16 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     DpctGlobalInfo::setDeviceChangedFlag(true);
     report(CE->getBeginLoc(), Diagnostics::DEVICE_ID_DIFFERENT, false,
            getStmtSpelling(CE->getArg(0)));
-    if (IsAssigned) {
+    if (DpctGlobalInfo::isUsePureSyclQueue()) {
+      emplaceTransformation(new ReplaceStmt(CE, "0"));
+    } else {
+      emplaceTransformation(new ReplaceStmt(
+          CE->getCallee(),
+          Prefix + MapNames::getDpctNamespace() + "select_device"));
       requestFeature(HelperFeatureEnum::device_ext);
     }
-    emplaceTransformation(
-        new ReplaceStmt(CE->getCallee(), Prefix + MapNames::getDpctNamespace() +
-                                             "select_device"));
     if (IsAssigned)
       emplaceTransformation(new InsertAfterStmt(CE, ")"));
-    requestFeature(HelperFeatureEnum::device_ext);
   } else if (FuncName == "cudaDeviceGetAttribute") {
     std::string ResultVarName = getDrefName(CE->getArg(0));
     auto AttrArg = CE->getArg(1);
@@ -6818,10 +6823,14 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaGetDevice") {
     std::string ResultVarName = getDrefName(CE->getArg(0));
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
-    emplaceTransformation(
-        new ReplaceStmt(CE, MapNames::getDpctNamespace() +
-                                "dev_mgr::instance().current_device_id()"));
-    requestFeature(HelperFeatureEnum::device_ext);
+    if (DpctGlobalInfo::isUsePureSyclQueue()) {
+      emplaceTransformation(new ReplaceStmt(CE, "0"));
+    } else {
+      emplaceTransformation(
+          new ReplaceStmt(CE, MapNames::getDpctNamespace() +
+                                  "dev_mgr::instance().current_device_id()"));
+      requestFeature(HelperFeatureEnum::device_ext);
+    }
   } else if (FuncName == "cudaDeviceSynchronize" ||
              FuncName == "cudaThreadSynchronize") {
     if (isPlaceholderIdxDuplicated(CE))
@@ -6829,7 +6838,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
     buildTempVariableMap(Index, CE, HelperFuncType::HFT_CurrentDevice);
     std::string ReplStr;
-    if (DpctGlobalInfo::isUsePureSycl()) {
+    if (DpctGlobalInfo::isUsePureSyclQueue()) {
       ReplStr =
           "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.wait_and_throw()";
     } else {
@@ -14032,29 +14041,37 @@ void DriverDeviceAPIRule::runRule(
     auto FirArg = CE->getArg(0)->IgnoreImplicitAsWritten();
     auto SecArg = CE->getArg(1)->IgnoreImplicitAsWritten();
     auto ThrArg = CE->getArg(2)->IgnoreImplicitAsWritten();
-    std::string ThrRep;
-    ExprAnalysis EA(ThrArg);
-    EA.analyze();
-    ThrRep = EA.getReplacedString();
-    std::string common_str = " = " + MapNames::getDpctNamespace() +
-                             "dev_mgr::instance().get_device(";
-    std::string major_api = ").get_major_version()";
-    std::string minor_api = ").get_minor_version()";
-    requestFeature(HelperFeatureEnum::device_ext);
+    std::string device_str;
+    if (DpctGlobalInfo::isUsePureSyclQueue()) {
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      device_str = "{{NEEDREPLACED" + std::to_string(Index) + "}}";
+    } else {
+      std::string ThrRep;
+      ExprAnalysis EA(ThrArg);
+      EA.analyze();
+      ThrRep = EA.getReplacedString();
+      device_str = MapNames::getDpctNamespace() +
+                   "dev_mgr::instance().get_device(" + ThrRep + ")";
+      requestFeature(HelperFeatureEnum::device_ext);
+    }
     if (IsAssigned) {
       OS << Indent << "  ";
       printDerefOp(OS, FirArg);
-      OS << common_str << ThrRep << major_api << ";" << getNL();
+      OS << " = " << MapNames::getDpctNamespace() << "get_major_version("
+         << device_str << ");" << getNL();
       OS << Indent << "  ";
       printDerefOp(OS, SecArg);
-      OS << common_str << ThrRep << minor_api << ";" << getNL();
+      OS << " = " << MapNames::getDpctNamespace() << "get_minor_version("
+         << device_str << ");" << getNL();
       OS << Indent << "  "
          << "return 0;" << getNL();
     } else {
       printDerefOp(OS, FirArg);
-      OS << common_str << ThrRep << major_api << ";" << getNL() << Indent;
+      OS << " = " << MapNames::getDpctNamespace() << "get_major_version("
+         << device_str << ");" << getNL() << Indent;
       printDerefOp(OS, SecArg);
-      OS << common_str << ThrRep << minor_api;
+      OS << " = " << MapNames::getDpctNamespace() << "get_minor_version("
+         << device_str << ")";
     }
     if (IsAssigned) {
       OS << Indent << "}()";
@@ -14209,19 +14226,27 @@ void DriverContextAPIRule::runRule(
     }
     return;
   } else if (APIName == "cuCtxSetCurrent") {
-    auto Arg = CE->getArg(0)->IgnoreImplicitAsWritten();
-    ExprAnalysis EA(Arg);
-    EA.analyze();
-    OS << MapNames::getDpctNamespace() + "select_device("
-       << EA.getReplacedString() << ")";
-    requestFeature(HelperFeatureEnum::device_ext);
+    if (DpctGlobalInfo::isUsePureSyclQueue()) {
+      OS << "0";
+    } else {
+      auto Arg = CE->getArg(0)->IgnoreImplicitAsWritten();
+      ExprAnalysis EA(Arg);
+      EA.analyze();
+      OS << MapNames::getDpctNamespace() + "select_device("
+         << EA.getReplacedString() << ")";
+      requestFeature(HelperFeatureEnum::device_ext);
+    }
   } else if (APIName == "cuCtxGetCurrent") {
     auto Arg = CE->getArg(0)->IgnoreImplicitAsWritten();
     printDerefOp(OS, Arg);
-    OS << " = "
-       << MapNames::getDpctNamespace() +
-              "dev_mgr::instance().current_device_id()";
-    requestFeature(HelperFeatureEnum::device_ext);
+    OS << " = ";
+    if (DpctGlobalInfo::isUsePureSyclQueue()) {
+      OS << "0";
+    } else {
+      OS << MapNames::getDpctNamespace() +
+                "dev_mgr::instance().current_device_id()";
+      requestFeature(HelperFeatureEnum::device_ext);
+    }
   } else if (APIName == "cuCtxSynchronize") {
     OS << MapNames::getDpctNamespace() +
               "get_current_device().queues_wait_and_throw()";

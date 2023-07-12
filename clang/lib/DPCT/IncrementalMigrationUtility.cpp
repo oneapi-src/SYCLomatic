@@ -346,6 +346,10 @@ bool printOptions(
     if (Key == clang::dpct::OPTION_AnalysisScopePath) {
       Opts.emplace_back("--analysis-scope-path=\"" + Value + "\"");
     }
+    if (Key == clang::dpct::OPTION_UsePureSyclQueue) {
+      if ("true" == Value)
+        Opts.emplace_back("--use-pure-sycl-queue");
+    }
   }
 
   Msg = "";
