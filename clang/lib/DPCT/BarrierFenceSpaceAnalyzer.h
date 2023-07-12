@@ -64,7 +64,9 @@ private:
   bool traverseFunction(const FunctionDecl *FD);
   std::set<const DeclRefExpr *> matchAllDRE(const VarDecl *TargetDecl,
                                             const Stmt *Range);
-  std::set<const DeclRefExpr *> isAssignedToAnotherDRE(const DeclRefExpr *);
+  std::pair<std::set<const DeclRefExpr *>, std::set<const VarDecl *>>
+  isAssignedToAnotherDREOrVD(const DeclRefExpr *);
+  bool isAccessingMemory(const DeclRefExpr *);
   AccessMode getAccessKind(const DeclRefExpr *);
   using Ranges = std::vector<SourceRange>;
   struct SyncCallInfo {

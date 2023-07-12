@@ -337,3 +337,14 @@ __global__ void test14(uint8_t *pout) {
   uint8 b = abs(a);
 }
 
+//CHECK:void test15(float *_res, const sycl::nd_item<3> &item_ct1,
+//CHECK-NEXT:            sycl::float2 *ker_even) {
+//CHECK-NEXT:   // shared mem
+//CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
+__global__ void test15(float *_res) {
+  __shared__ float2 ker_even[123]; // shared mem
+  __syncthreads();
+  float *res = _res + 123;
+  res[2] = 123;
+  res += 2;
+}

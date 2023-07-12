@@ -72,12 +72,12 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const CallExpr *CE) {
   } else {
     if (auto FD = CE->getDirectCallee()) {
       if (!isSimpleDeviceFuntion(FD)) {
-//#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
         std::cout << "Return False case A: "
                   << CE->getBeginLoc().printToString(
                          DpctGlobalInfo::getSourceManager())
                   << std::endl;
-//#endif
+#endif
         return false;
       }
     }
@@ -95,7 +95,6 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const DeclRefExpr *DRE) {
         VD->getName().str() == "blockIdx" ||
         VD->getName().str() == "blockDim" ||
         VD->getName().str() == "gridDim")) {
-    setFalseForThisFunctionDecl();
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
     std::cout << "Return False case B: "
               << DRE->getBeginLoc().printToString(
@@ -253,10 +252,11 @@ clang::dpct::BarrierFenceSpaceAnalyzer::matchAllDRE(const VarDecl *TargetDecl,
   return Set;
 }
 
-std::set<const clang::DeclRefExpr *>
-clang::dpct::BarrierFenceSpaceAnalyzer::isAssignedToAnotherDRE(
+std::pair<std::set<const clang::DeclRefExpr *>, std::set<const clang::VarDecl *>>
+clang::dpct::BarrierFenceSpaceAnalyzer::isAssignedToAnotherDREOrVD(
     const DeclRefExpr *CurrentDRE) {
-  std::set<const DeclRefExpr *> ResultSet;
+  std::set<const DeclRefExpr *> ResultDRESet;
+  std::set<const VarDecl *> ResultVDSet;
   auto &Context = DpctGlobalInfo::getContext();
   DynTypedNode Current = DynTypedNode::create(*CurrentDRE);
   DynTypedNodeList Parents = Context.getParents(Current);
@@ -264,6 +264,7 @@ clang::dpct::BarrierFenceSpaceAnalyzer::isAssignedToAnotherDRE(
     if (Parents[0].get<FunctionDecl>() && Parents[0].get<FunctionDecl>() == FD)
       break;
     const auto BO = Parents[0].get<BinaryOperator>();
+    const auto VD = Parents[0].get<VarDecl>();
     if (BO && BO->isAssignmentOp() && (BO->getRHS() == Current.get<Expr>()) &&
         BO->getLHS()->getType()->isPointerType()) {
       auto DREMatcher =
@@ -272,8 +273,10 @@ clang::dpct::BarrierFenceSpaceAnalyzer::isAssignedToAnotherDRE(
                                                 DpctGlobalInfo::getContext());
       for (auto Node : MatchedResults) {
         if (auto DRE = Node.getNodeAs<DeclRefExpr>("DRE"))
-          ResultSet.insert(DRE);
+          ResultDRESet.insert(DRE);
       }
+    } else if (VD && VD->getType()->isPointerType()) {
+      ResultVDSet.insert(VD);
     }
     Current = Parents[0];
     Parents = Context.getParents(Current);
@@ -283,12 +286,16 @@ clang::dpct::BarrierFenceSpaceAnalyzer::isAssignedToAnotherDRE(
   const auto &SM = DpctGlobalInfo::getSourceManager();
   std::cout << "CurrentDRE:" << CurrentDRE->getBeginLoc().printToString(SM)
             << std::endl;
-  for (const auto Item : ResultSet) {
+  for (const auto Item : ResultDRESet) {
     std::cout << "    AnotherDRE:" << Item->getBeginLoc().printToString(SM)
               << std::endl;
   }
+  for (const auto Item : ResultVDSet) {
+    std::cout << "    AnotherVD:" << Item->getBeginLoc().printToString(SM)
+              << std::endl;
+  }
 #endif
-  return ResultSet;
+  return std::make_pair(ResultDRESet, ResultVDSet);
 }
 
 const clang::BinaryOperator *
@@ -432,11 +439,16 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
       CurDRESet.insert(MatchedResult.begin(), MatchedResult.end());
       NewDRESet.clear();
       for (const auto &DRE : CurDRESet) {
-        std::set<const DeclRefExpr *> AssignedDREs =
-            isAssignedToAnotherDRE(DRE);
-        for (const auto AnotherDRE : AssignedDREs) {
+        const auto &SetPair = isAssignedToAnotherDREOrVD(DRE);
+        for (const auto AnotherDRE : SetPair.first) {
           std::set<const DeclRefExpr *> AnotherDREMatchedResult = matchAllDRE(
               dyn_cast_or_null<VarDecl>(AnotherDRE->getDecl()), FD->getBody());
+          NewDRESet.insert(AnotherDREMatchedResult.begin(),
+                           AnotherDREMatchedResult.end());
+        }
+        for (const auto AnotherVD : SetPair.second) {
+          std::set<const DeclRefExpr *> AnotherDREMatchedResult =
+              matchAllDRE(AnotherVD, FD->getBody());
           NewDRESet.insert(AnotherDREMatchedResult.begin(),
                            AnotherDREMatchedResult.end());
         }
@@ -464,7 +476,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
       DeclUsedLocsMap;
   for (const auto &Pair : DefUseMap) {
     for (const auto &Item : Pair.second) {
-      if (!isNoOverlappingAccessAmongWorkItems(KernelDim, Item)) {
+      if (isAccessingMemory(Item) && !isNoOverlappingAccessAmongWorkItems(KernelDim, Item)) {
         DeclUsedLocsMap[Pair.first].insert(
             std::make_pair(Item->getBeginLoc(), getAccessKind(Item)));
       }
@@ -679,22 +691,36 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isValidAccessPattern(
                    std::set<std::pair<SourceLocation, AccessMode>>>
         &DeclUsedLocsMap,
     const SyncCallInfo &SCI) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  std::cout << "===== isValidAccessPattern =====" << std::endl;
+#endif
   for (auto &DeclUsedLocPair : DeclUsedLocsMap) {
     bool FoundRead = false;
     bool FoundWrite = false;
     for (auto &LocModePair : DeclUsedLocPair.second) {
       if (containsMacro(LocModePair.first, SCI) ||
-          (LocModePair.second == AccessMode::ReadWrite))
+          (LocModePair.second == AccessMode::ReadWrite)) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+        std::cout << "isValidAccessPattern False case 1" << std::endl;
+#endif
         return false;
+      }
       if (LocModePair.second == AccessMode::Read) {
         FoundRead = true;
       } else if (LocModePair.second == AccessMode::Write) {
         FoundWrite = true;
       }
-      if (FoundRead && FoundWrite)
+      if (FoundRead && FoundWrite) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+        std::cout << "isValidAccessPattern False case 2" << std::endl;
+#endif
         return false;
+      }
     }
   }
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  std::cout << "isValidAccessPattern True" << std::endl;
+#endif
   return true;
 }
 
@@ -737,6 +763,27 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isSimpleDeviceFuntion(
   return true;
 }
 
+bool clang::dpct::BarrierFenceSpaceAnalyzer::isAccessingMemory(
+    const DeclRefExpr *DRE) {
+  auto &Context = DpctGlobalInfo::getContext();
+  DynTypedNode Current = DynTypedNode::create(*DRE);
+  DynTypedNodeList Parents = Context.getParents(Current);
+  while (!Parents.empty()) {
+    if (Parents[0].get<FunctionDecl>() && Parents[0].get<FunctionDecl>() == FD)
+      break;
+    const auto UO = Parents[0].get<UnaryOperator>();
+    const auto ASE = Parents[0].get<ArraySubscriptExpr>();
+    if (UO && (UO->getOpcode() == UnaryOperatorKind::UO_Deref)) {
+      return true;
+    } else if (ASE && (ASE->getBase() == Current.get<Expr>())) {
+      return true;
+    }
+    Current = Parents[0];
+    Parents = Context.getParents(Current);
+  }
+  return false;
+}
+
 std::unordered_map<std::string, std::unordered_map<std::string, bool>>
     clang::dpct::BarrierFenceSpaceAnalyzer::CachedResults;
 
@@ -752,7 +799,8 @@ const std::unordered_set<std::string>
         "sqrtf",
         "__expf",
         "fmaf",
-        "abs"};
+        "abs",
+        "float2"};
 
 // TODO: Implement more accuracy Predecessors and Successors. Then below code
 //       can be used for checking.
