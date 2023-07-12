@@ -24,7 +24,7 @@ namespace clang {
 namespace dpct {
 
 class BarrierFenceSpaceAnalyzer
-    : public clang::RecursiveASTVisitor<BarrierFenceSpaceAnalyzer> {
+    : public RecursiveASTVisitor<BarrierFenceSpaceAnalyzer> {
 public:
   bool shouldVisitImplicitCode() const { return true; }
   bool shouldTraversePostOrder() const { return false; }
@@ -35,8 +35,8 @@ public:
   bool Traverse##CLASS(CLASS *Node) {                                          \
     if (!Visit(Node))                                                          \
       return false;                                                            \
-    if (!clang::RecursiveASTVisitor<                                           \
-            BarrierFenceSpaceAnalyzer>::Traverse##CLASS(Node))                 \
+    if (!RecursiveASTVisitor<BarrierFenceSpaceAnalyzer>::Traverse##CLASS(      \
+            Node))                                                             \
       return false;                                                            \
     PostVisit(Node);                                                           \
     return true;                                                               \
@@ -57,21 +57,16 @@ public:
 #undef VISIT_NODE
 
 public:
-  bool canSetLocalFenceSpace(const clang::CallExpr *CE);
+  bool canSetLocalFenceSpace(const CallExpr *CE);
 
 private:
-  enum class AccessMode : int {
-    Read,
-    Write,
-    ReadWrite
-  };
-  bool traverseFunction(const clang::FunctionDecl *FD);
-  std::set<const clang::DeclRefExpr *>
-  matchAllDRE(const clang::VarDecl *TargetDecl, const clang::Stmt *Range);
-  std::set<const clang::DeclRefExpr *>
-  isAssignedToAnotherDRE(const clang::DeclRefExpr *);
-  AccessMode getAccessKind(const clang::DeclRefExpr *);
-  using Ranges = std::vector<clang::SourceRange>;
+  enum class AccessMode : int { Read = 0, Write, ReadWrite };
+  bool traverseFunction(const FunctionDecl *FD);
+  std::set<const DeclRefExpr *> matchAllDRE(const VarDecl *TargetDecl,
+                                            const Stmt *Range);
+  std::set<const DeclRefExpr *> isAssignedToAnotherDRE(const DeclRefExpr *);
+  AccessMode getAccessKind(const DeclRefExpr *);
+  using Ranges = std::vector<SourceRange>;
   struct SyncCallInfo {
     SyncCallInfo() {}
     SyncCallInfo(Ranges Predecessors, Ranges Successors)
@@ -80,22 +75,17 @@ private:
     Ranges Successors;
   };
   bool isValidAccessPattern(
-      const std::map<const clang::ParmVarDecl *,
-                     std::set<std::pair<clang::SourceLocation, AccessMode>>>
-          &DRELocs,
+      const std::map<const ParmVarDecl *,
+                     std::set<std::pair<SourceLocation, AccessMode>>>
+          &DeclUsedLocsMap,
       const SyncCallInfo &SCI);
-  bool isInRanges(clang::SourceLocation SL,
-                  std::vector<clang::SourceRange> Ranges);
-  bool containsMacro(const clang::SourceLocation &SL, const SyncCallInfo &SCI);
-  bool isValidLocationSet(
-      const std::set<std::pair<clang::SourceLocation, AccessMode>> &LocationSet,
-      const SyncCallInfo &SCI);
-  std::vector<std::pair<const clang::CallExpr *, SyncCallInfo>> SyncCallsVec;
-  std::deque<clang::SourceRange> LoopRange;
-  const clang::FunctionDecl *FD = nullptr;
+  bool containsMacro(const SourceLocation &SL, const SyncCallInfo &SCI);
+  const BinaryOperator *getAssignmentBinaryOP(const DeclRefExpr *DRE);
+  std::vector<std::pair<const CallExpr *, SyncCallInfo>> SyncCallsVec;
+  std::deque<SourceRange> LoopRange;
+  const FunctionDecl *FD = nullptr;
 
-  std::unordered_map<const clang::ParmVarDecl *,
-                     std::set<const clang::DeclRefExpr *>>
+  std::unordered_map<const ParmVarDecl *, std::set<const DeclRefExpr *>>
       DefUseMap;
   std::string CELoc;
   std::string FDLoc;
@@ -112,6 +102,15 @@ private:
   static std::unordered_map<std::string, std::unordered_map<std::string, bool>>
       CachedResults;
   static const std::unordered_set<std::string> AllowedDeviceFunctions;
+
+  // TODO: Implement more accuracy Predecessors and Successors. Then below code
+  //       can be used for checking.
+#if 0
+  bool isInRanges(SourceLocation SL, std::vector<SourceRange> Ranges);
+  bool isValidLocationSet(
+      const std::set<std::pair<SourceLocation, AccessMode>> &LocationSet,
+      const SyncCallInfo &SCI);
+#endif
 };
 } // namespace dpct
 } // namespace clang
