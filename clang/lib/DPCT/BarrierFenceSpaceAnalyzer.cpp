@@ -71,14 +71,13 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const CallExpr *CE) {
     SyncCallsVec.push_back(std::make_pair(CE, SCI));
   } else {
     if (auto FD = CE->getDirectCallee()) {
-      std::string FuncName = FD->getNameInfo().getName().getAsString();
-      if (!AllowedDeviceFunctions.count(FuncName) || isUserDefinedDecl(FD)) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+      if (!isSimpleDeviceFuntion(FD)) {
+//#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
         std::cout << "Return False case A: "
                   << CE->getBeginLoc().printToString(
                          DpctGlobalInfo::getSourceManager())
                   << std::endl;
-#endif
+//#endif
         return false;
       }
     }
@@ -90,7 +89,8 @@ void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(const CallExpr *) {}
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const DeclRefExpr *DRE) {
   const ValueDecl *VD = DRE->getDecl();
   if (!dyn_cast<FunctionDecl>(VD) &&
-      DRE->getDecl()->hasAttr<CUDADeviceAttr>() &&
+      (DRE->getDecl()->hasAttr<CUDADeviceAttr>() ||
+       DRE->getDecl()->hasAttr<HIPManagedAttr>()) &&
       !(VD->getName().str() == "threadIdx" ||
         VD->getName().str() == "blockIdx" ||
         VD->getName().str() == "blockDim" ||
@@ -694,6 +694,45 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isValidAccessPattern(
       if (FoundRead && FoundWrite)
         return false;
     }
+  }
+  return true;
+}
+
+bool clang::dpct::BarrierFenceSpaceAnalyzer::isSimpleDeviceFuntion(
+    const FunctionDecl *FD) {
+  using namespace ast_matchers;
+  if (!isUserDefinedDecl(FD)) {
+    if (AllowedDeviceFunctions.count(FD->getNameInfo().getName().getAsString()))
+      return true;
+    else
+      return false;
+  }
+  // "Simple" means: only fundamental value parameters && no file scope
+  // __device__/__managed__ variable access/no further call
+  for (const auto &Param : FD->parameters()) {
+    if (Param->getType()->isPointerType())
+      return false;
+    if (!Param->getType()->isFundamentalType())
+      return false;
+  }
+  auto DREMatcher = findAll(
+      declRefExpr(
+          to(varDecl(
+              anyOf(hasAttr(attr::CUDADevice), hasAttr(attr::HIPManaged)),
+              unless(hasAnyName("threadIdx", "blockDim", "blockIdx", "gridDim",
+                                "warpSize")))))
+          .bind("DRE"));
+  auto DREMatchedResults =
+      match(DREMatcher, *(FD->getBody()), DpctGlobalInfo::getContext());
+  if (!DREMatchedResults.empty()) {
+    std::cout << "aaaaaaaaaa" << std::endl;
+    return false;
+  }
+  auto CallMatcher = findAll(callExpr().bind("CALL"));
+  auto CallMatchedResults =
+      match(CallMatcher, *(FD->getBody()), DpctGlobalInfo::getContext());
+  if (!CallMatchedResults.empty()) {
+    return false;
   }
   return true;
 }

@@ -275,3 +275,59 @@ __global__ void test11(float *a_ptr, float *b_ptr,
     var4[8] = a_c_ptr[idx + var3];
   }
 }
+
+__device__ int bar12(int num) {
+  int n = num - 1;
+  n |= n >> 1;
+  return n + 1;
+}
+
+//CHECK:void test12(uint8_t *pout, const sycl::nd_item<3> &item_ct1) {
+//CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
+__global__ void test12(uint8_t *pout) {
+  __syncthreads();
+  int idx = 456;
+  idx = bar12(idx);
+  pout[idx] = 123;
+}
+
+__device__ int d_a[10];
+
+__device__ int bar13(int num) {
+  int n = num - 1;
+  n |= d_a[1] >> 1;
+  return n + 1;
+}
+
+//CHECK:void test13(uint8_t *pout, const sycl::nd_item<3> &item_ct1, int *d_a) {
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  item_ct1.barrier();
+__global__ void test13(uint8_t *pout) {
+  __syncthreads();
+  int idx = 456;
+  idx = bar13(idx);
+  pout[idx] = 123;
+}
+
+__device__ void barbar14() {}
+
+__device__ int bar14() {
+  barbar14();
+  int n = 123;
+  return n + 1;
+}
+
+//CHECK:void test14(uint8_t *pout, const sycl::nd_item<3> &item_ct1) {
+//CHECK-NEXT:  /*
+//CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  item_ct1.barrier();
+__global__ void test14(uint8_t *pout) {
+  __syncthreads();
+  int idx = 456;
+  idx = bar14();
+  pout[idx] = 123;
+}
+

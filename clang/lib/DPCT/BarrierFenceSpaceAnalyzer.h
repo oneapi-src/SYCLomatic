@@ -83,6 +83,7 @@ private:
   const BinaryOperator *getAssignmentBinaryOP(const DeclRefExpr *DRE);
   bool isNoOverlappingAccessAmongWorkItems(int KernelDim,
                                            const DeclRefExpr *DRE);
+  bool isSimpleDeviceFuntion(const FunctionDecl *FD);
   std::vector<std::pair<const CallExpr *, SyncCallInfo>> SyncCallsVec;
   std::deque<SourceRange> LoopRange;
   int KernelDim = 3; // 3 or 1
