@@ -77,16 +77,17 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
   oneapi::mkl::sparse::matrix_handle_t *sparse_matrix_handle =
       new oneapi::mkl::sparse::matrix_handle_t;
   oneapi::mkl::sparse::init_matrix_handle(sparse_matrix_handle);
-  auto data_row_ptr = detail::get_memory(const_cast<int *>(row_ptr));
-  auto data_col_ind = detail::get_memory(const_cast<int *>(col_ind));
+  auto data_row_ptr = dpct::detail::get_memory(const_cast<int *>(row_ptr));
+  auto data_col_ind = dpct::detail::get_memory(const_cast<int *>(col_ind));
   auto data_val =
-      detail::get_memory(reinterpret_cast<Ty *>(const_cast<T *>(val)));
+      dpct::detail::get_memory(reinterpret_cast<Ty *>(const_cast<T *>(val)));
   oneapi::mkl::sparse::set_csr_data(queue, *sparse_matrix_handle, num_rows,
                                     num_cols, info->get_index_base(),
                                     data_row_ptr, data_col_ind, data_val);
 
-  auto data_x = detail::get_memory(reinterpret_cast<Ty *>(const_cast<T *>(x)));
-  auto data_y = detail::get_memory(reinterpret_cast<Ty *>(y));
+  auto data_x =
+      dpct::detail::get_memory(reinterpret_cast<Ty *>(const_cast<T *>(x)));
+  auto data_y = dpct::detail::get_memory(reinterpret_cast<Ty *>(y));
   switch (info->get_matrix_type()) {
   case matrix_info::matrix_type::ge: {
     oneapi::mkl::sparse::optimize_gemv(queue, trans, *sparse_matrix_handle);
@@ -160,16 +161,17 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
   oneapi::mkl::sparse::matrix_handle_t *sparse_matrix_handle =
       new oneapi::mkl::sparse::matrix_handle_t;
   oneapi::mkl::sparse::init_matrix_handle(sparse_matrix_handle);
-  auto data_row_ptr = detail::get_memory(const_cast<int *>(row_ptr));
-  auto data_col_ind = detail::get_memory(const_cast<int *>(col_ind));
+  auto data_row_ptr = dpct::detail::get_memory(const_cast<int *>(row_ptr));
+  auto data_col_ind = dpct::detail::get_memory(const_cast<int *>(col_ind));
   auto data_val =
-      detail::get_memory(reinterpret_cast<Ty *>(const_cast<T *>(val)));
+      dpct::detail::get_memory(reinterpret_cast<Ty *>(const_cast<T *>(val)));
   oneapi::mkl::sparse::set_csr_data(queue, *sparse_matrix_handle, sparse_rows,
                                     sparse_cols, info->get_index_base(),
                                     data_row_ptr, data_col_ind, data_val);
 
-  auto data_b = detail::get_memory(reinterpret_cast<Ty *>(const_cast<T *>(b)));
-  auto data_c = detail::get_memory(reinterpret_cast<Ty *>(c));
+  auto data_b =
+      dpct::detail::get_memory(reinterpret_cast<Ty *>(const_cast<T *>(b)));
+  auto data_c = dpct::detail::get_memory(reinterpret_cast<Ty *>(c));
   switch (info->get_matrix_type()) {
   case matrix_info::matrix_type::ge: {
     oneapi::mkl::sparse::gemm(queue, oneapi::mkl::layout::row_major, trans,
@@ -240,10 +242,10 @@ void optimize_csrsv(sycl::queue &queue, oneapi::mkl::transpose trans,
                     const T *val, const int *row_ptr, const int *col_ind,
                     std::shared_ptr<optimize_info> optimize_info) {
   using Ty = typename dpct::DataType<T>::T2;
-  auto data_row_ptr = detail::get_memory(const_cast<int *>(row_ptr));
-  auto data_col_ind = detail::get_memory(const_cast<int *>(col_ind));
+  auto data_row_ptr = dpct::detail::get_memory(const_cast<int *>(row_ptr));
+  auto data_col_ind = dpct::detail::get_memory(const_cast<int *>(col_ind));
   auto data_val =
-      detail::get_memory(reinterpret_cast<Ty *>(const_cast<T *>(val)));
+      dpct::detail::get_memory(reinterpret_cast<Ty *>(const_cast<T *>(val)));
   oneapi::mkl::sparse::set_csr_data(queue, optimize_info->get_matrix_handle(),
                                     row_col, row_col, info->get_index_base(),
                                     data_row_ptr, data_col_ind, data_val);
@@ -273,16 +275,16 @@ public:
                     library_data_t value_type)
       : _ele_num(ele_num), _value(value), _value_type(value_type) {}
   void get_desc(std::int64_t *ele_num, const void **value,
-                library_data_t *value_type) {
+                library_data_t *value_type) const noexcept {
     *ele_num = _ele_num;
     *value = _value;
     *value_type = _value_type;
   }
   void get_desc(std::int64_t *ele_num, void **value,
-                library_data_t *value_type) {
+                library_data_t *value_type) const noexcept {
     get_desc(ele_num, const_cast<const void **>(value), value_type);
   }
-  void *get_value() { return _value; }
+  void *get_value() const noexcept { return _value; }
   void set_value(void *value) { _value = value; }
 
 private:
@@ -301,7 +303,8 @@ public:
         _value(value), _value_type(value_type), _layout(layout) {}
   void get_desc(std::int64_t *row_num, std::int64_t *col_num,
                 std::int64_t *leading_dim, void **value,
-                library_data_t *value_type, oneapi::mkl::layout *layout) {
+                library_data_t *value_type,
+                oneapi::mkl::layout *layout) const noexcept {
     *row_num = _row_num;
     *col_num = _col_num;
     *leading_dim = _leading_dim;
@@ -309,11 +312,11 @@ public:
     *value_type = _value_type;
     *layout = _layout;
   }
-  void *get_value() { return _value; }
+  void *get_value() const noexcept { return _value; }
   void set_value(void *value) { _value = value; }
-  std::int64_t get_col_num() { return _col_num; }
-  std::int64_t get_leading_dim() { return _leading_dim; }
-  oneapi::mkl::layout get_layout() { return _layout; }
+  std::int64_t get_col_num() const noexcept { return _col_num; }
+  std::int64_t get_leading_dim() const noexcept { return _leading_dim; }
+  oneapi::mkl::layout get_layout() const noexcept { return _layout; }
 
 private:
   std::int64_t _row_num;
@@ -470,7 +473,8 @@ public:
   /// \param [out] attribute The attribute type
   /// \param [out] data The attribute value
   /// \param [out] data_size The data size of the attribute value
-  void get_attribute(matrix_attribute attribute, void *data, size_t data_size) {
+  void get_attribute(matrix_attribute attribute, void *data,
+                     size_t data_size) const {
     if (attribute == matrix_attribute::diag) {
       oneapi::mkl::diag *diag_ptr = reinterpret_cast<oneapi::mkl::diag *>(data);
       if (_diag.has_value()) {
@@ -504,18 +508,19 @@ public:
 
   /// Get the diag attribute
   /// \return diag value
-  std::optional<oneapi::mkl::diag> get_diag() const { return _diag; }
+  std::optional<oneapi::mkl::diag> get_diag() const noexcept { return _diag; }
   /// Get the uplo attribute
   /// \return uplo value
-  std::optional<oneapi::mkl::uplo> get_uplo() const { return _uplo; }
+  std::optional<oneapi::mkl::uplo> get_uplo() const noexcept { return _uplo; }
 
 private:
   template <typename index_t, typename value_t> void set_data() {
     auto data_row_ptr =
-        detail::get_memory(reinterpret_cast<index_t *>(_row_ptr));
+        dpct::detail::get_memory(reinterpret_cast<index_t *>(_row_ptr));
     auto data_col_ind =
-        detail::get_memory(reinterpret_cast<index_t *>(_col_ind));
-    auto data_value = detail::get_memory(reinterpret_cast<value_t *>(_value));
+        dpct::detail::get_memory(reinterpret_cast<index_t *>(_col_ind));
+    auto data_value =
+        dpct::detail::get_memory(reinterpret_cast<value_t *>(_value));
     oneapi::mkl::sparse::set_csr_data(get_default_queue(), _matrix_handle,
                                       _row_num, _col_num, _base, data_row_ptr,
                                       data_col_ind, data_value);
