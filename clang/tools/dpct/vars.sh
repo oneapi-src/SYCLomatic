@@ -70,6 +70,8 @@ fi
 DPCT_ETC_ROOT="${ONEAPI_ROOT}/etc/dpct"
 BASH_AUTOCOMPLETE_SCRIPT=${DPCT_ETC_ROOT}/bash-autocomplete.sh
 
-if [ -f "$BASH_AUTOCOMPLETE_SCRIPT" ]; then
-. "${BASH_AUTOCOMPLETE_SCRIPT}"
+if [ -n "${BASH_VERSION:-}" ] ; then
+  if [ -f "$BASH_AUTOCOMPLETE_SCRIPT" ]; then
+    source "${BASH_AUTOCOMPLETE_SCRIPT}"
+  fi
 fi
