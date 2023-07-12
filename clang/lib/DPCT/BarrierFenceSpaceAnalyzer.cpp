@@ -751,7 +751,8 @@ const std::unordered_set<std::string>
         "uint4",
         "sqrtf",
         "__expf",
-        "fmaf"};
+        "fmaf",
+        "abs"};
 
 // TODO: Implement more accuracy Predecessors and Successors. Then below code
 //       can be used for checking.
