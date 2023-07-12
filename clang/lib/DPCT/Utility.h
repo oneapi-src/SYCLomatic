@@ -415,7 +415,7 @@ calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
                        const std::vector<clang::tooling::Range> &Ranges);
 
 bool isAssigned(const clang::Stmt *S);
-
+bool isInRetStmt(const clang::Stmt *S);
 std::string getTempNameForExpr(const clang::Expr *E, bool HandleLiteral = false,
                                bool KeepLastUnderline = true,
                                bool IsInMacroDefine = false,
@@ -569,6 +569,7 @@ bool isUserDefinedDecl(const clang::ValueDecl *VD);
 void insertHeaderForTypeRule(std::string, clang::SourceLocation);
 std::string getRemovedAPIWarningMessage(std::string FuncName);
 std::string getBaseTypeStr(const clang::CallExpr *CE);
+std::string getParamTypeStr(const clang::CallExpr *CE, unsigned int Idx);
 std::string getArgTypeStr(const clang::CallExpr *CE, unsigned int Idx);
 std::string getFunctionName(const clang::FunctionDecl *Node);
 std::string getFunctionName(const clang::UnresolvedLookupExpr *Node);
@@ -582,6 +583,7 @@ std::string getBaseTypeRemoveTemplateArguments(const clang::MemberExpr* ME);
 bool containIterationSpaceBuiltinVar(const clang::Stmt *Node);
 bool containBuiltinWarpSize(const clang::Stmt *Node);
 bool isCapturedByLambda(const clang::TypeLoc *TL);
+std::string getAddressSpace(const clang::CallExpr *C, int ArgIdx);
 namespace clang {
 namespace dpct {
 std::string getDpctVersionStr();

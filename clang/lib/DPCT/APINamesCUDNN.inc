@@ -635,13 +635,11 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     MULTI_STMTS_FACTORY_ENTRY(
-        "cudnnFindConvolutionForwardAlgorithm",
+        "cudnnFindConvolutionForwardAlgorithm", true, false, true, true,
         BO(BinaryOperatorKind::BO_Assign,
-                             MEMBER_EXPR(DEREF(ARG_WC(7)), false,
-                                         LITERAL("algo")),
-                             ARG("dnnl::algorithm::convolution_auto")),
-        BO(BinaryOperatorKind::BO_Assign,
-                             DEREF(ARG_WC(6)), ARG("1"))))
+           MEMBER_EXPR(DEREF(ARG_WC(7)), false, LITERAL("algo")),
+           ARG("dnnl::algorithm::convolution_auto")),
+        BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(6)), ARG("1"))))
 
 // RNN Layer
 REMOVE_API_FACTORY_ENTRY("cudnnCreateRNNDescriptor")
