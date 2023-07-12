@@ -252,7 +252,8 @@ clang::dpct::BarrierFenceSpaceAnalyzer::matchAllDRE(const VarDecl *TargetDecl,
   return Set;
 }
 
-std::pair<std::set<const clang::DeclRefExpr *>, std::set<const clang::VarDecl *>>
+std::pair<std::set<const clang::DeclRefExpr *>,
+          std::set<const clang::VarDecl *>>
 clang::dpct::BarrierFenceSpaceAnalyzer::isAssignedToAnotherDREOrVD(
     const DeclRefExpr *CurrentDRE) {
   std::set<const DeclRefExpr *> ResultDRESet;
@@ -476,7 +477,8 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
       DeclUsedLocsMap;
   for (const auto &Pair : DefUseMap) {
     for (const auto &Item : Pair.second) {
-      if (isAccessingMemory(Item) && !isNoOverlappingAccessAmongWorkItems(KernelDim, Item)) {
+      if (isAccessingMemory(Item) &&
+          !isNoOverlappingAccessAmongWorkItems(KernelDim, Item)) {
         DeclUsedLocsMap[Pair.first].insert(
             std::make_pair(Item->getBeginLoc(), getAccessKind(Item)));
       }
