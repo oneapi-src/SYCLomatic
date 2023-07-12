@@ -1078,12 +1078,14 @@ void IncludesCallbacks::InclusionDirective(
     if (FileName.compare(StringRef("thrust/complex.h")) == 0) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Complex);
     } else if (FileName.compare(StringRef("thrust/uninitialized_copy.h")) ==
-               0) {
+                   0 ||
+               FileName.compare(StringRef("thrust/uninitialized_fill.h")) ==
+                   0) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Memory);
     } else if (FileName.compare(StringRef("thrust/random.h")) == 0) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Random);
     } else {
-      if(FileName.compare(StringRef("thrust/functional.h")) == 0)
+      if (FileName.compare(StringRef("thrust/functional.h")) == 0)
         DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Functional);
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_DPL_Utils);
       requestFeature(HelperFeatureEnum::device_ext);
@@ -11867,7 +11869,7 @@ void CooperativeGroupsFunctionRule::runRule(
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
 
-    CheckArgType Checker1(
+    CheckParamType Checker1(
         0, "const class cooperative_groups::__v1::thread_block &");
     CheckIntergerTemplateArgValueNE Checker2(0, 32);
     CheckIntergerTemplateArgValueLE Checker3(0, 32);
