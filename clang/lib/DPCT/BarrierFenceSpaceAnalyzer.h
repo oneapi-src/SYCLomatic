@@ -9,10 +9,9 @@
 #ifndef DPCT_BARRIER_FENCE_SPACE_ANALYZER_H
 #define DPCT_BARRIER_FENCE_SPACE_ANALYZER_H
 
+#include "AnalysisInfo.h"
 #include "Utility.h"
-
 #include "clang/AST/RecursiveASTVisitor.h"
-
 #include <map>
 #include <stack>
 #include <string>
@@ -82,7 +81,6 @@ private:
           &DeclUsedLocsMap,
       const SyncCallInfo &SCI);
   bool containsMacro(const SourceLocation &SL, const SyncCallInfo &SCI);
-  const BinaryOperator *getAssignmentBinaryOP(const DeclRefExpr *DRE);
   bool isNoOverlappingAccessAmongWorkItems(int KernelDim,
                                            const DeclRefExpr *DRE);
   bool isSimpleDeviceFuntion(const FunctionDecl *FD);
@@ -108,6 +106,27 @@ private:
   static std::unordered_map<std::string, std::unordered_map<std::string, bool>>
       CachedResults;
   static const std::unordered_set<std::string> AllowedDeviceFunctions;
+
+  template <class TargetTy, class NodeTy>
+  static inline const TargetTy *findAncestorInFunctionScope(
+      const NodeTy *N, const FunctionDecl *Scope,
+      const std::function<const void *(const DynTypedNode &,
+                                       const DynTypedNode &)> &Operation) {
+    auto &Context = DpctGlobalInfo::getContext();
+    DynTypedNode Current = DynTypedNode::create(*N);
+    DynTypedNodeList Parents = Context.getParents(Current);
+    while (!Parents.empty()) {
+      if (Parents[0].get<FunctionDecl>() &&
+          Parents[0].get<FunctionDecl>() == Scope)
+        break;
+      if (const void *Node = Operation(Parents[0], Current)) {
+        return reinterpret_cast<const TargetTy *>(Node);
+      }
+      Current = Parents[0];
+      Parents = Context.getParents(Current);
+    }
+    return nullptr;
+  }
 
   // TODO: Implement more accuracy Predecessors and Successors. Then below code
   //       can be used for checking.

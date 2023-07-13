@@ -7,10 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "BarrierFenceSpaceAnalyzer.h"
-#include "AnalysisInfo.h"
-
 #include "llvm/Support/Casting.h"
-
 #include <algorithm>
 
 using namespace llvm;
@@ -258,31 +255,28 @@ clang::dpct::BarrierFenceSpaceAnalyzer::isAssignedToAnotherDREOrVD(
     const DeclRefExpr *CurrentDRE) {
   std::set<const DeclRefExpr *> ResultDRESet;
   std::set<const VarDecl *> ResultVDSet;
-  auto &Context = DpctGlobalInfo::getContext();
-  DynTypedNode Current = DynTypedNode::create(*CurrentDRE);
-  DynTypedNodeList Parents = Context.getParents(Current);
-  while (!Parents.empty()) {
-    if (Parents[0].get<FunctionDecl>() && Parents[0].get<FunctionDecl>() == FD)
-      break;
-    const auto BO = Parents[0].get<BinaryOperator>();
-    const auto VD = Parents[0].get<VarDecl>();
-    if (BO && BO->isAssignmentOp() && (BO->getRHS() == Current.get<Expr>()) &&
-        BO->getLHS()->getType()->isPointerType()) {
-      auto DREMatcher =
-          ast_matchers::findAll(ast_matchers::declRefExpr().bind("DRE"));
-      auto MatchedResults = ast_matchers::match(DREMatcher, *(BO->getRHS()),
-                                                DpctGlobalInfo::getContext());
-      for (auto Node : MatchedResults) {
-        if (auto DRE = Node.getNodeAs<DeclRefExpr>("DRE"))
-          ResultDRESet.insert(DRE);
-      }
-    } else if (VD && VD->getType()->isPointerType()) {
-      ResultVDSet.insert(VD);
-    }
-    Current = Parents[0];
-    Parents = Context.getParents(Current);
-  }
-
+  findAncestorInFunctionScope<Stmt>(
+      CurrentDRE, FD,
+      [&](const DynTypedNode &Parent,
+          const DynTypedNode &Current) -> const void * {
+        const auto BO = Parent.get<BinaryOperator>();
+        const auto VD = Parent.get<VarDecl>();
+        if (BO && BO->isAssignmentOp() &&
+            (BO->getRHS() == Current.get<Expr>()) &&
+            BO->getLHS()->getType()->isPointerType()) {
+          auto DREMatcher =
+              ast_matchers::findAll(ast_matchers::declRefExpr().bind("DRE"));
+          auto MatchedResults = ast_matchers::match(
+              DREMatcher, *(BO->getRHS()), DpctGlobalInfo::getContext());
+          for (auto Node : MatchedResults) {
+            if (auto DRE = Node.getNodeAs<DeclRefExpr>("DRE"))
+              ResultDRESet.insert(DRE);
+          }
+        } else if (VD && VD->getType()->isPointerType()) {
+          ResultVDSet.insert(VD);
+        }
+        return nullptr;
+      });
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
   const auto &SM = DpctGlobalInfo::getSourceManager();
   std::cout << "CurrentDRE:" << CurrentDRE->getBeginLoc().printToString(SM)
@@ -299,37 +293,28 @@ clang::dpct::BarrierFenceSpaceAnalyzer::isAssignedToAnotherDREOrVD(
   return std::make_pair(ResultDRESet, ResultVDSet);
 }
 
-const clang::BinaryOperator *
-clang::dpct::BarrierFenceSpaceAnalyzer::getAssignmentBinaryOP(
-    const DeclRefExpr *CurrentDRE) {
-  bool FoundDerefOrArraySubscript = false;
-  auto &Context = DpctGlobalInfo::getContext();
-  DynTypedNode Current = DynTypedNode::create(*CurrentDRE);
-  DynTypedNodeList Parents = Context.getParents(Current);
-  while (!Parents.empty()) {
-    if (Parents[0].get<FunctionDecl>() && Parents[0].get<FunctionDecl>() == FD)
-      break;
-    const auto BO = Parents[0].get<BinaryOperator>();
-    const auto UO = Parents[0].get<UnaryOperator>();
-    const auto ASE = Parents[0].get<ArraySubscriptExpr>();
-    if (BO && BO->isAssignmentOp() && (BO->getLHS() == Current.get<Expr>()) &&
-        FoundDerefOrArraySubscript) {
-      return BO;
-    } else if (UO && (UO->getOpcode() == UnaryOperatorKind::UO_Deref)) {
-      FoundDerefOrArraySubscript = true;
-    } else if (ASE && (ASE->getBase() == Current.get<Expr>())) {
-      FoundDerefOrArraySubscript = true;
-    }
-    Current = Parents[0];
-    Parents = Context.getParents(Current);
-  }
-  return nullptr;
-}
-
 clang::dpct::BarrierFenceSpaceAnalyzer::AccessMode
 clang::dpct::BarrierFenceSpaceAnalyzer::getAccessKind(
     const DeclRefExpr *CurrentDRE) {
-  const BinaryOperator *BO = getAssignmentBinaryOP(CurrentDRE);
+  bool FoundDerefOrArraySubscript = false;
+  const BinaryOperator *BO = findAncestorInFunctionScope<BinaryOperator>(
+      CurrentDRE, FD,
+      [&](const DynTypedNode &Parent,
+          const DynTypedNode &Current) -> const void * {
+        const auto BO = Parent.get<BinaryOperator>();
+        const auto UO = Parent.get<UnaryOperator>();
+        const auto ASE = Parent.get<ArraySubscriptExpr>();
+        if (BO && BO->isAssignmentOp() &&
+            (BO->getLHS() == Current.get<Expr>()) &&
+            FoundDerefOrArraySubscript) {
+          return reinterpret_cast<const void *>(BO);
+        } else if (UO && (UO->getOpcode() == UnaryOperatorKind::UO_Deref)) {
+          FoundDerefOrArraySubscript = true;
+        } else if (ASE && (ASE->getBase() == Current.get<Expr>())) {
+          FoundDerefOrArraySubscript = true;
+        }
+        return nullptr;
+      });
   if (!BO) {
     return AccessMode::Read;
   }
@@ -753,7 +738,6 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isSimpleDeviceFuntion(
   auto DREMatchedResults =
       match(DREMatcher, *(FD->getBody()), DpctGlobalInfo::getContext());
   if (!DREMatchedResults.empty()) {
-    std::cout << "aaaaaaaaaa" << std::endl;
     return false;
   }
   auto CallMatcher = findAll(callExpr().bind("CALL"));
