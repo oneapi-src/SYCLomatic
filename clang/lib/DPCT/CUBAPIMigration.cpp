@@ -60,11 +60,11 @@ auto isDeviceFuncCallExpr = []() {
                       "DeviceRadixSort", "DeviceSegmentedRadixSort",
                       "DeviceSegmentedSort");
   };
-  return callExpr(callee(functionDecl(
-      allOf(hasDeviceFuncName(),
-            hasDeclContext(cxxRecordDecl(
-                allOf(hasDeviceRecordName(),
-                      hasDeclContext(namespaceDecl(hasName("cub"))))))))));
+  return callExpr(callee(functionDecl(allOf(
+      hasDeviceFuncName(),
+      hasDeclContext(cxxRecordDecl(allOf(
+          hasDeviceRecordName(),
+          hasAncestor(hasDeclContext(namespaceDecl(hasName("cub")))))))))));
 };
 
 } // namespace
@@ -160,11 +160,12 @@ void CubMemberCallRule::runRule(
 
 void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
-      callExpr(callee(functionDecl(allOf(
-                   hasAnyName("IADD3", "SHR_ADD", "SHL_ADD", "LaneId", "WarpId",
-                              "SyncStream", "CurrentDevice", "DeviceCount",
-                              "DeviceCountUncached", "DeviceCountCachedValue"),
-                   hasDeclContext(namespaceDecl(hasName("cub")))))))
+      callExpr(
+          callee(functionDecl(allOf(
+              hasAnyName("IADD3", "SHR_ADD", "SHL_ADD", "LaneId", "WarpId",
+                         "SyncStream", "CurrentDevice", "DeviceCount",
+                         "DeviceCountUncached", "DeviceCountCachedValue"),
+              hasAncestor(hasDeclContext(namespaceDecl(hasName("cub"))))))))
           .bind("IntrinsicCall"),
       this);
 }
@@ -617,14 +618,14 @@ std::string CubRule::getOpRepl(const Expr *Operator) {
       std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
           D->getType().getCanonicalType());
       if (OpType == "cub::Sum" || OpType == "cub::Max" ||
-          OpType == "cub::Min") {
+          OpType == "cub::Min" || OpType == "cuda::std::plus<void>") {
         ExprAnalysis EA(Operator);
         OpRepl = EA.getReplacedString();
       }
     } else if (auto CXXTempObj = dyn_cast<CXXTemporaryObjectExpr>(CtorArg)) {
       std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
           CXXTempObj->getType().getCanonicalType());
-      if (OpType == "cub::Sum") {
+      if (OpType == "cub::Sum" || OpType == "cuda::std::plus<void>") {
         OpRepl = MapNames::getClNamespace() + "plus<>()";
       } else if (OpType == "cub::Max") {
         OpRepl = MapNames::getClNamespace() + "maximum<>()";
@@ -850,7 +851,7 @@ void CubRule::processCubFuncCall(const CallExpr *CE, bool FuncCallUsed) {
     return;
 
   llvm::StringRef FuncName = DC->getName();
-
+  CE->dump();
   if (FuncName == "ShuffleIndex") {
     processWarpLevelFuncCall(CE, FuncCallUsed);
   } else if (FuncName == "ThreadLoad" || FuncName == "ThreadStore") {

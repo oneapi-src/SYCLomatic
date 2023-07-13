@@ -40,6 +40,7 @@ static const CudaVersionMapEntry CudaNameVersionMap[] = {
     CUDA_ENTRY(12, 0),
   #ifdef SYCLomatic_CUSTOMIZATION
     CUDA_ENTRY(12, 1),
+    CUDA_ENTRY(12, 2),
   #endif
     {"", CudaVersion::NEW, llvm::VersionTuple(std::numeric_limits<int>::max())},
     {"unknown", CudaVersion::UNKNOWN, {}} // End of list tombstone.

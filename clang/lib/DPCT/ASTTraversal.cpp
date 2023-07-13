@@ -12182,9 +12182,9 @@ void RecognizeAPINameRule::registerMatcher(MatchFinder &MF) {
             callee(functionDecl(allOf(
                 namedDecl(internal::Matcher<NamedDecl>(
                     new internal::HasNameMatcher(AllAPIComponent[1]))),
-                hasDeclContext(
-                    namespaceDecl(namedDecl(internal::Matcher<NamedDecl>(
-                        new internal::HasNameMatcher(AllAPIComponent[2])))))))))
+                hasAncestor(hasDeclContext(namespaceDecl(namedDecl(
+                    internal::Matcher<NamedDecl>(new internal::HasNameMatcher(
+                        AllAPIComponent[2]))))))))))
             .bind("APINamesHasNSUsed"),
         this);
   }
@@ -12208,9 +12208,9 @@ void RecognizeAPINameRule::registerMatcher(MatchFinder &MF) {
             on(hasType(hasCanonicalType(qualType(hasDeclaration(allOf(
                 namedDecl(internal::Matcher<NamedDecl>(
                     new internal::HasNameMatcher(AllAPIComponent[6]))),
-                hasDeclContext(namespaceDecl(namedDecl(
+                hasAncestor(hasDeclContext(namespaceDecl(namedDecl(
                     internal::Matcher<NamedDecl>(new internal::HasNameMatcher(
-                        AllAPIComponent[7]))))))))))),
+                        AllAPIComponent[7])))))))))))),
             callee(cxxMethodDecl(namedDecl(internal::Matcher<NamedDecl>(
                 new internal::HasNameMatcher(AllAPIComponent[5]))))))
             .bind("MFAPINamesHasNSUsed"),
@@ -12248,13 +12248,12 @@ void RecognizeAPINameRule::processMemberFuncCall(const CXXMemberCallExpr *MC) {
   }
   std::string ObjNameSpace, ObjName;
   auto ObjDecl = getNamedDecl(ObjType.getTypePtr());
-  if (const auto *NSD = dyn_cast<NamespaceDecl>(ObjDecl->getDeclContext())) {
+  auto *NSD = dyn_cast<NamespaceDecl>(ObjDecl->getDeclContext());
+  while (NSD) {
     if (!NSD->isInlineNamespace()) {
-      if (dyn_cast<NamespaceDecl>(NSD->getDeclContext())) {
-        return;
-      }
-      ObjNameSpace = NSD->getName().str() + "::";
+      ObjNameSpace = NSD->getName().str() + "::" + ObjNameSpace;
     }
+    NSD = dyn_cast<NamespaceDecl>(NSD->getDeclContext());
   }
 
   ObjName = ObjNameSpace + ObjDecl->getNameAsString() + ".";
@@ -12288,21 +12287,23 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE,
                                            bool HaveKeywordInAPIName) {
   std::string Namespace;
   const NamedDecl *ND = dyn_cast<NamedDecl>(CE->getCalleeDecl());
+  if (CE->getDirectCallee()->isOverloadedOperator())
+    return;
   if (ND) {
     if (!dpct::DpctGlobalInfo::isInCudaPath(ND->getLocation()) &&
-        !isChildOrSamePath(
-          DpctInstallPath,
-          dpct::DpctGlobalInfo::getLocInfo(ND).first)) {
+        !isChildOrSamePath(DpctInstallPath,
+                           dpct::DpctGlobalInfo::getLocInfo(ND).first)) {
       if (!ND->getName().startswith("cudnn") &&
           !ND->getName().startswith("nccl"))
         return;
     }
-    const auto *NSD = dyn_cast<NamespaceDecl>(ND->getDeclContext());
-    if (NSD && !NSD->isInlineNamespace()) {
-      if (dyn_cast<NamespaceDecl>(NSD->getDeclContext())) {
-        return;
-      }
+    auto *NSD = dyn_cast<NamespaceDecl>(ND->getDeclContext());
+    while (NSD) {
       Namespace = NSD->getName().str();
+      if (NSD = dyn_cast<NamespaceDecl>(NSD->getDeclContext())) {
+        continue;
+      }
+      break;
     }
   }
 
