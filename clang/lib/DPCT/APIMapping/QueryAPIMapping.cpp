@@ -27,7 +27,7 @@ void APIMapping::initEntryMap() {
       "code to see more detail of the migration.";
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)   \
   registerEntry(#APINAME, MAPPING);
-#define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
+#define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
                               TARGET, COMMENT, MAPPING)                        \
   registerEntry(#OBJNAME "." #APINAME, MAPPING);
 #define MAP_SYCL(MAPPING) MAPPING

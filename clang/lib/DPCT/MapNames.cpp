@@ -1327,17 +1327,17 @@ void MapNames::setExplicitNamespaceMap() {
   ITFName = {
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)   \
   {#APINAME, #INTERFACENAME},
-#define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
+#define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
                               TARGET, COMMENT, MAPPING)                        \
-  {#OBJNAME "." #APINAME, #OBJNAME "." #INTERFACENAME},
+ {#OBJNAME "." #APINAME, #INTERFACEOBJNAME "." #INTERFACENAME},
 #include "APINames.inc"
 #undef ENTRY
 #undef ENTRY_MEMBER_FUNCTION
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
   {#APINAME, #INTERFACENAME},
-#define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
+#define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
                               TARGET, COMMENT)                                 \
-  {#OBJNAME "." #APINAME, #OBJNAME "." #INTERFACENAME},
+  {#OBJNAME "." #APINAME, #INTERFACEOBJNAME "." #INTERFACENAME},
 #include "APINames_CUB.inc"
 #include "APINames_NCCL.inc"
 #include "APINames_cuBLAS.inc"
@@ -4405,16 +4405,16 @@ const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
 std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)   \
   {#APINAME, VALUE},
-#define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
-                              TARGET, COMMENT, MAPPING)                        \
+#define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME,        \
+                              APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)  \
   {#OBJNAME "." #APINAME, VALUE},
 #include "APINames.inc"
 #undef ENTRY
 #undef ENTRY_MEMBER_FUNCTION
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
   {#APINAME, VALUE},
-#define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
-                              TARGET, COMMENT)                                 \
+#define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME,        \
+                              APINAME, VALUE, FLAG, TARGET, COMMENT)           \
   {#OBJNAME "." #APINAME, VALUE},
 #include "APINames_CUB.inc"
 #include "APINames_NCCL.inc"
