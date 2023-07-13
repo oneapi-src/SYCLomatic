@@ -35,7 +35,7 @@
 /****************************************************************************
 *
 * ENTRY_MEMBER_FUNCTION(cub::ObjectName, Interface APIName, APINAME, ProcessedOrNot, Flag, Priority, MigrationDesc)
-*   ObjectName: name of Object of underlying
+*  ObjectName: name of Object of underlying
 *
 *  Interface APIName: name of library Interface API available in official document
 *  APIName: name of library API
@@ -82,7 +82,7 @@ ENTRY_MEMBER_FUNCTION(cub::WarpExchange, BlockedToStriped, BlockedToStriped, fal
 ENTRY_MEMBER_FUNCTION(cub::WarpExchange, StripedToBlocked, StripedToBlocked, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::WarpExchange, ScatterToStriped, ScatterToStriped, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::WarpLoad, Load, Load, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cub::WarpLoad, Store, Store, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cub::WarpStore, Store, Store, false, NO_FLAG, P4, "Comment")
 
 //Block Level
 ENTRY_MEMBER_FUNCTION(cub::BlockAdjacentDifference, SubtractLeft, SubtractLeft, false, NO_FLAG, P4, "Comment")
