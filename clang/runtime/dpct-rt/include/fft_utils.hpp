@@ -541,11 +541,14 @@ public:
     if (_input_type == library_data_t::complex_float &&
         _output_type == library_data_t::complex_float) {
       compute_complex<std::complex<float>, oneapi::mkl::dft::precision::SINGLE>(
-          (std::complex<float> *)input, (std::complex<float> *)output, direction);
+          (std::complex<float> *)input, (std::complex<float> *)output,
+          direction);
     } else if (_input_type == library_data_t::complex_double &&
                _output_type == library_data_t::complex_double) {
-      compute_complex<std::complex<double>, oneapi::mkl::dft::precision::DOUBLE>(
-          (std::complex<double> *)input, (std::complex<double> *)output, direction);
+      compute_complex<std::complex<double>,
+                      oneapi::mkl::dft::precision::DOUBLE>(
+          (std::complex<double> *)input, (std::complex<double> *)output,
+          direction);
     } else if (_input_type == library_data_t::real_float &&
                _output_type == library_data_t::complex_float) {
       _direction = direction;
@@ -602,7 +605,8 @@ public:
   void compute(sycl::double2 *input, sycl::double2 *output,
                fft_direction direction) {
     compute_complex<std::complex<double>, oneapi::mkl::dft::precision::DOUBLE>(
-        (std::complex<double> *)input, (std::complex<double> *)output, direction);
+        (std::complex<double> *)input, (std::complex<double> *)output,
+        direction);
   }
   /// Setting the user's SYCL queue for calculation.
   /// \param [in] q Pointer to the SYCL queue.
@@ -1164,27 +1168,33 @@ private:
                     backward_distance);
   }
 
-#define COMPUTE(DESC)                                                                                                       \
-  {                                                                                                                         \
-    if (_is_inplace) {                                                                                                      \
-      auto data_input =                                                                                                     \
-          dpct::detail::get_memory(reinterpret_cast<T *>(input));                                                           \
-      if (_direction == fft_direction::forward) {                                                                           \
-        oneapi::mkl::dft::compute_forward<std::remove_reference_t<decltype(*DESC)>, T>(*DESC, data_input);                  \
-      } else {                                                                                                              \
-        oneapi::mkl::dft::compute_backward<std::remove_reference_t<decltype(*DESC)>, T>(*DESC, data_input);                 \
-      }                                                                                                                     \
-    } else {                                                                                                                \
-      auto data_input =                                                                                                     \
-          dpct::detail::get_memory(reinterpret_cast<T *>(input));                                                           \
-      auto data_output =                                                                                                    \
-          dpct::detail::get_memory(reinterpret_cast<T *>(output));                                                          \
-      if (_direction == fft_direction::forward) {                                                                           \
-        oneapi::mkl::dft::compute_forward<std::remove_reference_t<decltype(*DESC)>, T, T>(*DESC, data_input, data_output);  \
-      } else {                                                                                                              \
-        oneapi::mkl::dft::compute_backward<std::remove_reference_t<decltype(*DESC)>, T, T>(*DESC, data_input, data_output); \
-      }                                                                                                                     \
-    }                                                                                                                       \
+#define COMPUTE(DESC)                                                          \
+  {                                                                            \
+    if (_is_inplace) {                                                         \
+      auto data_input =                                                        \
+          dpct::detail::get_memory(reinterpret_cast<T *>(input));              \
+      if (_direction == fft_direction::forward) {                              \
+        oneapi::mkl::dft::compute_forward<                                     \
+            std::remove_reference_t<decltype(*DESC)>, T>(*DESC, data_input);   \
+      } else {                                                                 \
+        oneapi::mkl::dft::compute_backward<                                    \
+            std::remove_reference_t<decltype(*DESC)>, T>(*DESC, data_input);   \
+      }                                                                        \
+    } else {                                                                   \
+      auto data_input =                                                        \
+          dpct::detail::get_memory(reinterpret_cast<T *>(input));              \
+      auto data_output =                                                       \
+          dpct::detail::get_memory(reinterpret_cast<T *>(output));             \
+      if (_direction == fft_direction::forward) {                              \
+        oneapi::mkl::dft::compute_forward<                                     \
+            std::remove_reference_t<decltype(*DESC)>, T, T>(*DESC, data_input, \
+                                                            data_output);      \
+      } else {                                                                 \
+        oneapi::mkl::dft::compute_backward<                                    \
+            std::remove_reference_t<decltype(*DESC)>, T, T>(*DESC, data_input, \
+                                                            data_output);      \
+      }                                                                        \
+    }                                                                          \
   }
 
   template <class T, oneapi::mkl::dft::precision Precision>
