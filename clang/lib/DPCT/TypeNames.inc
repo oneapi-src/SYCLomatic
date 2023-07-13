@@ -134,6 +134,9 @@ ENTRY_TYPE(nvmlVgpuVmCompatibility_t, false, NO_FLAG, P4, "comment")
 ENTRY_TYPE(nvmlVgpuPgpuCompatibilityLimitCode_t, false, NO_FLAG, P4, "comment")
 ENTRY_TYPE(nvmlBlacklistDeviceInfo_t, false, NO_FLAG, P4, "comment")
 
+// cooperative groups
+ENTRY_TYPE(cooperative_groups::__v1::experimental::block_tile_memory, false, NO_FLAG, P4, "comment")
+
 //CUmem
 ENTRY_TYPE(CUmemGenericAllocationHandle, false, NO_FLAG, P4, "comment")
 ENTRY_TYPE(CUmemAllocationProp, false, NO_FLAG, P4, "comment")
