@@ -12098,8 +12098,8 @@ RecognizeAPINameRule::splitAPIName(std::vector<std::string> &AllAPINames) {
   std::vector<std::vector<std::string>> Result;
   std::vector<std::string> FuncNames, FuncNamesHasNS, FuncNamespaces,
       MemFuncNames, ObjNames, MemFuncNamesHasNS, ObjNamesHasNS, ObjNamespaces;
-  size_t ScopeResolutionOpSize = std::string("::").length();
-  size_t DotOpSize = std::string(".").length();
+  size_t ScopeResolutionOpSize = 2; // The length of string("::")
+  size_t DotOpSize = 1; // The length of string(".")
   for (auto &APIName : AllAPINames) {
     size_t ScopeResolutionOpPos = APIName.rfind("::");
     size_t DotPos = APIName.find(".");
