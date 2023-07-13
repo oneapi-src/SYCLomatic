@@ -1083,7 +1083,7 @@ void IncludesCallbacks::InclusionDirective(
     } else if (FileName.compare(StringRef("thrust/random.h")) == 0) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Random);
     } else {
-      if(FileName.compare(StringRef("thrust/functional.h")) == 0)
+      if (FileName.compare(StringRef("thrust/functional.h")) == 0)
         DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Functional);
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_DPL_Utils);
       requestFeature(HelperFeatureEnum::device_ext);
@@ -12182,9 +12182,9 @@ void RecognizeAPINameRule::registerMatcher(MatchFinder &MF) {
             callee(functionDecl(allOf(
                 namedDecl(internal::Matcher<NamedDecl>(
                     new internal::HasNameMatcher(AllAPIComponent[1]))),
-                hasAncestor(hasDeclContext(namespaceDecl(namedDecl(
+                hasAncestor(namespaceDecl(namedDecl(
                     internal::Matcher<NamedDecl>(new internal::HasNameMatcher(
-                        AllAPIComponent[2]))))))))))
+                        AllAPIComponent[2])))))))))
             .bind("APINamesHasNSUsed"),
         this);
   }
@@ -12208,9 +12208,9 @@ void RecognizeAPINameRule::registerMatcher(MatchFinder &MF) {
             on(hasType(hasCanonicalType(qualType(hasDeclaration(allOf(
                 namedDecl(internal::Matcher<NamedDecl>(
                     new internal::HasNameMatcher(AllAPIComponent[6]))),
-                hasAncestor(hasDeclContext(namespaceDecl(namedDecl(
+                hasAncestor(namespaceDecl(namedDecl(
                     internal::Matcher<NamedDecl>(new internal::HasNameMatcher(
-                        AllAPIComponent[7])))))))))))),
+                        AllAPIComponent[7]))))))))))),
             callee(cxxMethodDecl(namedDecl(internal::Matcher<NamedDecl>(
                 new internal::HasNameMatcher(AllAPIComponent[5]))))))
             .bind("MFAPINamesHasNSUsed"),

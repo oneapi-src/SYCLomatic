@@ -64,7 +64,7 @@ auto isDeviceFuncCallExpr = []() {
       hasDeviceFuncName(),
       hasDeclContext(cxxRecordDecl(allOf(
           hasDeviceRecordName(),
-          hasAncestor(hasDeclContext(namespaceDecl(hasName("cub")))))))))));
+          hasAncestor(namespaceDecl(hasName("cub"))))))))));
 };
 
 } // namespace
@@ -165,7 +165,7 @@ void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
               hasAnyName("IADD3", "SHR_ADD", "SHL_ADD", "LaneId", "WarpId",
                          "SyncStream", "CurrentDevice", "DeviceCount",
                          "DeviceCountUncached", "DeviceCountCachedValue"),
-              hasAncestor(hasDeclContext(namespaceDecl(hasName("cub"))))))))
+              hasAncestor(namespaceDecl(hasName("cub")))))))
           .bind("IntrinsicCall"),
       this);
 }

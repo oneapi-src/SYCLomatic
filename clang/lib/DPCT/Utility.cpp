@@ -3727,8 +3727,7 @@ bool maybeDependentCubType(const clang::TypeSourceInfo *TInfo) {
       auto *Ctx = TemplateDecl->getDeclContext();
       auto *CubNS = dyn_cast<NamespaceDecl>(Ctx);
       while (CubNS) {
-        if(CubNS->isInlineNamespace())
-        {
+        if (CubNS->isInlineNamespace()) {
           CubNS = dyn_cast<NamespaceDecl>(CubNS->getDeclContext());
           continue;
         }
