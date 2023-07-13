@@ -70,9 +70,9 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
 #else
   using Ty = typename dpct::DataType<T>::T2;
   auto alpha_value =
-      detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
+      dpct::detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
   auto beta_value =
-      detail::get_value(reinterpret_cast<const Ty *>(beta), queue);
+      dpct::detail::get_value(reinterpret_cast<const Ty *>(beta), queue);
 
   oneapi::mkl::sparse::matrix_handle_t *sparse_matrix_handle =
       new oneapi::mkl::sparse::matrix_handle_t;
@@ -154,9 +154,9 @@ void csrmm(sycl::queue &queue, oneapi::mkl::transpose trans, int sparse_rows,
 #else
   using Ty = typename dpct::DataType<T>::T2;
   auto alpha_value =
-      detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
+      dpct::detail::get_value(reinterpret_cast<const Ty *>(alpha), queue);
   auto beta_value =
-      detail::get_value(reinterpret_cast<const Ty *>(beta), queue);
+      dpct::detail::get_value(reinterpret_cast<const Ty *>(beta), queue);
 
   oneapi::mkl::sparse::matrix_handle_t *sparse_matrix_handle =
       new oneapi::mkl::sparse::matrix_handle_t;
@@ -527,54 +527,54 @@ private:
     get_default_queue().wait();
   }
   void construct() {
-    std::uint64_t key = detail::get_type_combination_id(
+    std::uint64_t key = dpct::detail::get_type_combination_id(
         _row_ptr_type, _col_ind_type, _value_type);
     switch (key) {
-    case detail::get_type_combination_id(library_data_t::real_int32,
-                                         library_data_t::real_int32,
-                                         library_data_t::real_float): {
+    case dpct::detail::get_type_combination_id(library_data_t::real_int32,
+                                               library_data_t::real_int32,
+                                               library_data_t::real_float): {
       set_data<std::int32_t, float>();
       break;
     }
-    case detail::get_type_combination_id(library_data_t::real_int32,
-                                         library_data_t::real_int32,
-                                         library_data_t::real_double): {
+    case dpct::detail::get_type_combination_id(library_data_t::real_int32,
+                                               library_data_t::real_int32,
+                                               library_data_t::real_double): {
       set_data<std::int32_t, double>();
       break;
     }
-    case detail::get_type_combination_id(library_data_t::real_int32,
-                                         library_data_t::real_int32,
-                                         library_data_t::complex_float): {
+    case dpct::detail::get_type_combination_id(library_data_t::real_int32,
+                                               library_data_t::real_int32,
+                                               library_data_t::complex_float): {
       set_data<std::int32_t, std::complex<float>>();
       break;
     }
-    case detail::get_type_combination_id(library_data_t::real_int32,
-                                         library_data_t::real_int32,
-                                         library_data_t::complex_double): {
+    case dpct::detail::get_type_combination_id(
+        library_data_t::real_int32, library_data_t::real_int32,
+        library_data_t::complex_double): {
       set_data<std::int32_t, std::complex<double>>();
       break;
     }
-    case detail::get_type_combination_id(library_data_t::real_int64,
-                                         library_data_t::real_int64,
-                                         library_data_t::real_float): {
+    case dpct::detail::get_type_combination_id(library_data_t::real_int64,
+                                               library_data_t::real_int64,
+                                               library_data_t::real_float): {
       set_data<std::int64_t, float>();
       break;
     }
-    case detail::get_type_combination_id(library_data_t::real_int64,
-                                         library_data_t::real_int64,
-                                         library_data_t::real_double): {
+    case dpct::detail::get_type_combination_id(library_data_t::real_int64,
+                                               library_data_t::real_int64,
+                                               library_data_t::real_double): {
       set_data<std::int64_t, double>();
       break;
     }
-    case detail::get_type_combination_id(library_data_t::real_int64,
-                                         library_data_t::real_int64,
-                                         library_data_t::complex_float): {
+    case dpct::detail::get_type_combination_id(library_data_t::real_int64,
+                                               library_data_t::real_int64,
+                                               library_data_t::complex_float): {
       set_data<std::int64_t, std::complex<float>>();
       break;
     }
-    case detail::get_type_combination_id(library_data_t::real_int64,
-                                         library_data_t::real_int64,
-                                         library_data_t::complex_double): {
+    case dpct::detail::get_type_combination_id(
+        library_data_t::real_int64, library_data_t::real_int64,
+        library_data_t::complex_double): {
       set_data<std::int64_t, std::complex<double>>();
       break;
     }
