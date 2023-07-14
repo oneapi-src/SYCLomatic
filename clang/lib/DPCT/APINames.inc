@@ -1467,6 +1467,7 @@ ENTRY(cooperative_groups::__v1::coalesced_group, cooperative_groups::__v1::coale
 ENTRY(cooperative_groups::__v1::grid_group, cooperative_groups::__v1::grid_group, false, NO_FLAG, P4, "comment", "NA")
 ENTRY(cooperative_groups::__v1::thread_rank, cooperative_groups::__v1::thread_rank, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(cooperative_groups::__v1::meta_group_rank, cooperative_groups::__v1::meta_group_rank, true, NO_FLAG, P4, "Successful", "NA")
+ENTRY(cooperative_groups::__v1::reduce, cooperative_groups::__v1::reduce, true, NO_FLAG, P4, "Successful", "NA")
 
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_group, size, size, false, NO_FLAG, P4, "Comment", "NA")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_group, num_threads, num_threads, false, NO_FLAG, P4, "Comment", "NA")
