@@ -1078,7 +1078,9 @@ void IncludesCallbacks::InclusionDirective(
     if (FileName.compare(StringRef("thrust/complex.h")) == 0) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Complex);
     } else if (FileName.compare(StringRef("thrust/uninitialized_copy.h")) ==
-               0) {
+                   0 ||
+               FileName.compare(StringRef("thrust/uninitialized_fill.h")) ==
+                   0) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Memory);
     } else if (FileName.compare(StringRef("thrust/random.h")) == 0) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Random);
@@ -1318,30 +1320,19 @@ void IterationSpaceBuiltinRule::runRule(
       if (!DFI)
         return;
 
-      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
-        if (FieldName == "x") {
-          DpctGlobalInfo::getInstance().insertBuiltinVarInfo(Begin, TyLen,
-                                                             Replacement, DFI);
-          DpctGlobalInfo::updateSpellingLocDFIMaps(DRE->getBeginLoc(), DFI);
-          return;
-        } else if (FieldName == "y") {
-          Dimension = 1;
-          DFI->getVarMap().Dim = 3;
-        } else if (FieldName == "z") {
-          Dimension = 0;
-          DFI->getVarMap().Dim = 3;
-        } else
-          return;
-      } else {
-        if (FieldName == "x") {
-          Dimension = 2;
-        } else if (FieldName == "y")
-          Dimension = 1;
-        else if (FieldName == "z")
-          Dimension = 0;
-        else
-          return;
-      }
+      if (FieldName == "x") {
+        DpctGlobalInfo::getInstance().insertBuiltinVarInfo(Begin, TyLen,
+                                                           Replacement, DFI);
+        DpctGlobalInfo::updateSpellingLocDFIMaps(DRE->getBeginLoc(), DFI);
+        return;
+      } else if (FieldName == "y") {
+        Dimension = 1;
+        DFI->getVarMap().Dim = 3;
+      } else if (FieldName == "z") {
+        Dimension = 0;
+        DFI->getVarMap().Dim = 3;
+      } else
+        return;
 
       Replacement += std::to_string(Dimension);
       Replacement += ")";
@@ -1387,44 +1378,30 @@ void IterationSpaceBuiltinRule::runRule(
     ValueDecl *Field = ME->getMemberDecl();
     StringRef FieldName = Field->getName();
     unsigned Dimension;
-    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
-      if (FieldName == "__fetch_builtin_x") {
-        auto Range = getDefinitionRange(ME->getBeginLoc(), ME->getEndLoc());
-        SourceLocation Begin = Range.getBegin();
-        SourceLocation End = Range.getEnd();
+    if (FieldName == "__fetch_builtin_x") {
+      auto Range = getDefinitionRange(ME->getBeginLoc(), ME->getEndLoc());
+      SourceLocation Begin = Range.getBegin();
+      SourceLocation End = Range.getEnd();
 
-        End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-            End, SM, DpctGlobalInfo::getContext().getLangOpts()));
+      End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+          End, SM, DpctGlobalInfo::getContext().getLangOpts()));
 
-        unsigned int Len =
-            SM.getDecomposedLoc(End).second - SM.getDecomposedLoc(Begin).second;
-        DpctGlobalInfo::getInstance().insertBuiltinVarInfo(Begin, Len,
-                                                           Replacement, DFI);
-        DpctGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
-        return;
-      } else if (FieldName == "__fetch_builtin_y") {
-        Dimension = 1;
-        DFI->getVarMap().Dim = 3;
-      } else if (FieldName == "__fetch_builtin_z") {
-        Dimension = 0;
-        DFI->getVarMap().Dim = 3;
-      } else {
-        llvm::dbgs() << "[" << getName()
-                     << "] Unexpected field name: " << FieldName;
-        return;
-      }
+      unsigned int Len =
+          SM.getDecomposedLoc(End).second - SM.getDecomposedLoc(Begin).second;
+      DpctGlobalInfo::getInstance().insertBuiltinVarInfo(Begin, Len,
+                                                         Replacement, DFI);
+      DpctGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
+      return;
+    } else if (FieldName == "__fetch_builtin_y") {
+      Dimension = 1;
+      DFI->getVarMap().Dim = 3;
+    } else if (FieldName == "__fetch_builtin_z") {
+      Dimension = 0;
+      DFI->getVarMap().Dim = 3;
     } else {
-      if (FieldName == "__fetch_builtin_x")
-        Dimension = 2;
-      else if (FieldName == "__fetch_builtin_y")
-        Dimension = 1;
-      else if (FieldName == "__fetch_builtin_z")
-        Dimension = 0;
-      else {
-        llvm::dbgs() << "[" << getName()
-                     << "] Unexpected field name: " << FieldName;
-        return;
-      }
+      llvm::dbgs() << "[" << getName()
+                   << "] Unexpected field name: " << FieldName;
+      return;
     }
 
     Replacement += std::to_string(Dimension);
@@ -2035,7 +2012,10 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "CUmem_advise", "thrust::tuple_element", "thrust::tuple_size",
               "cublasMath_t", "cudaPointerAttributes", "thrust::zip_iterator",
               "cusolverEigRange_t", "cudaUUID_t", "cusolverDnFunction_t",
-              "cusolverAlgMode_t"))))))
+              "cusolverAlgMode_t", "cusparseIndexType_t", "cusparseFormat_t",
+              "cusparseDnMatDescr_t", "cusparseOrder_t", "cusparseDnVecDescr_t",
+              "cusparseConstDnVecDescr_t", "cusparseSpMatDescr_t",
+              "cusparseSpMMAlg_t", "cusparseSpMVAlg_t"))))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -2570,22 +2550,16 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
             End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
         if (End.isMacroID())
           return;
-        if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
-          auto FD = DpctGlobalInfo::getParentFunction(TL);
-          if (!FD)
-            return;
-          auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
-          auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
-          DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
-          emplaceTransformation(new ReplaceText(
-              Begin, End.getRawEncoding() - Begin.getRawEncoding(),
-              MapNames::getClNamespace() + "group<{{NEEDREPLACEG" +
-                  std::to_string(Index) + "}}>"));
-        } else {
-          emplaceTransformation(new ReplaceText(
-              Begin, End.getRawEncoding() - Begin.getRawEncoding(),
-              MapNames::getClNamespace() + "group<3>"));
-        }
+        auto FD = DpctGlobalInfo::getParentFunction(TL);
+        if (!FD)
+          return;
+        auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
+        auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
+        DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
+        emplaceTransformation(new ReplaceText(
+            Begin, End.getRawEncoding() - Begin.getRawEncoding(),
+            MapNames::getClNamespace() + "group<{{NEEDREPLACEG" +
+                std::to_string(Index) + "}}>"));
         return;
       }
     }
@@ -3934,8 +3908,9 @@ void SPBLASEnumsRule::registerMatcher(MatchFinder &MF) {
       this);
   MF.addMatcher(
       declRefExpr(to(enumConstantDecl(matchesName(
-                      "(CUSPARSE_OPERATION.*)|(CUSPARSE_FILL_MODE.*)|(CUSPARSE_"
-                      "DIAG_TYPE.*)|(CUSPARSE_INDEX_BASE.*)|(CUSPARSE_MATRIX_TYPE.*)"))))
+                      "(CUSPARSE_OPERATION_.*)|(CUSPARSE_FILL_MODE_.*)|("
+                      "CUSPARSE_DIAG_TYPE_.*)|(CUSPARSE_INDEX_.*)|(CUSPARSE_"
+                      "MATRIX_TYPE_.*)|(CUSPARSE_ORDER_.*)"))))
           .bind("SPBLASNamedValueConstants"),
       this);
 }
@@ -4012,6 +3987,7 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         /*management*/
         "cusparseCreate", "cusparseDestroy", "cusparseSetStream",
         "cusparseGetStream", "cusparseGetPointerMode", "cusparseSetPointerMode",
+        "cusparseGetErrorName", "cusparseGetErrorString", "cusparseGetProperty",
         /*helper*/
         "cusparseCreateMatDescr", "cusparseDestroyMatDescr",
         "cusparseSetMatType", "cusparseGetMatType", "cusparseSetMatIndexBase",
@@ -4024,7 +4000,21 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseScsrsv_analysis", "cusparseDcsrsv_analysis",
         "cusparseCcsrsv_analysis", "cusparseZcsrsv_analysis",
         /*level 3*/
-        "cusparseScsrmm", "cusparseDcsrmm", "cusparseCcsrmm", "cusparseZcsrmm");
+        "cusparseScsrmm", "cusparseDcsrmm", "cusparseCcsrmm", "cusparseZcsrmm",
+        /*Generic*/
+        "cusparseCreateCsr", "cusparseDestroySpMat", "cusparseCsrGet",
+        "cusparseSpMatGetFormat", "cusparseSpMatGetIndexBase",
+        "cusparseSpMatGetValues", "cusparseSpMatSetValues",
+        "cusparseCreateDnMat", "cusparseDestroyDnMat", "cusparseDnMatGet",
+        "cusparseDnMatGetValues", "cusparseDnMatSetValues",
+        "cusparseCreateDnVec", "cusparseDestroyDnVec", "cusparseDnVecGet",
+        "cusparseDnVecGetValues", "cusparseDnVecSetValues",
+        "cusparseCsrSetPointers", "cusparseSpMatGetSize",
+        "cusparseSpMatGetAttribute", "cusparseSpMatSetAttribute",
+        "cusparseCreateConstDnVec", "cusparseConstDnVecGet",
+        "cusparseConstDnVecGetValues", "cusparseSpMM",
+        "cusparseSpMM_bufferSize", "cusparseSpMV", "cusparseSpMV_bufferSize",
+        "cusparseSpMM_preprocess");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))
@@ -11898,7 +11888,7 @@ void CooperativeGroupsFunctionRule::runRule(
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
 
-    CheckArgType Checker1(
+    CheckParamType Checker1(
         0, "const class cooperative_groups::__v1::thread_block &");
     CheckIntergerTemplateArgValueNE Checker2(0, 32);
     CheckIntergerTemplateArgValueLE Checker3(0, 32);

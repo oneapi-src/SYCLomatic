@@ -956,7 +956,7 @@ CASE_FACTORY_ENTRY(
        HeaderType::HT_DPCT_DPL_Utils,
        REMOVE_CUB_TEMP_STORAGE_FACTORY(
        CASE_FACTORY_ENTRY(
-         CASE(CheckArgType(2, "cub::DoubleBuffer"),
+         CASE(CheckParamType(2, "cub::DoubleBuffer"),
               CASE_FACTORY_ENTRY(
                 CASE(makeCheckAnd(
                      CheckArgCount(7, std::greater_equal<>(),
@@ -1046,7 +1046,7 @@ OTHERWISE(
        HeaderType::HT_DPCT_DPL_Utils,
        REMOVE_CUB_TEMP_STORAGE_FACTORY(
        CASE_FACTORY_ENTRY(
-         CASE(CheckArgType(2, "cub::DoubleBuffer"),
+         CASE(CheckParamType(2, "cub::DoubleBuffer"),
               CASE_FACTORY_ENTRY(
                 CASE(makeCheckAnd(
                      CheckArgCount(7, std::greater_equal<>(),
@@ -1082,7 +1082,7 @@ OTHERWISE(
                             ARG(4)))),
                 OTHERWISE(
                      MULTI_STMTS_FACTORY_ENTRY(
-                       "cub::DeviceRadixSort::SortKeysDescending",
+                       "cub::DeviceRadixSort::SortKeysDescending", true, false, true, true,
                        CALL(MapNames::getDpctNamespace() + "sort_keys",
                             CALL("oneapi::dpl::execution::device_policy",
                                  QUEUESTR),
@@ -1135,7 +1135,7 @@ CASE_FACTORY_ENTRY(
        HeaderType::HT_DPCT_DPL_Utils,
        REMOVE_CUB_TEMP_STORAGE_FACTORY(
        CASE_FACTORY_ENTRY(
-         CASE(CheckArgType(2, "cub::DoubleBuffer"),
+         CASE(CheckParamType(2, "cub::DoubleBuffer"),
               CASE_FACTORY_ENTRY(
                 CASE(makeCheckAnd(
                      CheckArgCount(8, std::greater_equal<>(),
@@ -1224,7 +1224,7 @@ CASE_FACTORY_ENTRY(
        HeaderType::HT_DPCT_DPL_Utils,
        REMOVE_CUB_TEMP_STORAGE_FACTORY(
        CASE_FACTORY_ENTRY(
-         CASE(CheckArgType(2, "cub::DoubleBuffer"),
+         CASE(CheckParamType(2, "cub::DoubleBuffer"),
               CASE_FACTORY_ENTRY(
                 CASE(makeCheckAnd(
                      CheckArgCount(8, std::greater_equal<>(),
@@ -1311,7 +1311,7 @@ CASE_FACTORY_ENTRY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
-                CASE(CheckArgType(2, "cub::DoubleBuffer"),
+                CASE(CheckParamType(2, "cub::DoubleBuffer"),
                      CASE_FACTORY_ENTRY(
                          CASE(makeCheckAnd(
                                   CheckArgCount(10, std::greater_equal<>(),
@@ -1412,7 +1412,7 @@ CASE_FACTORY_ENTRY(
             HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
                 CASE(
-                    CheckArgType(2, "cub::DoubleBuffer"),
+                    CheckParamType(2, "cub::DoubleBuffer"),
                     CASE_FACTORY_ENTRY(
                         CASE(makeCheckAnd(
                                  CheckArgCount(10, std::greater_equal<>(),
@@ -1518,7 +1518,7 @@ CASE_FACTORY_ENTRY(
             HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
                 CASE(
-                    CheckArgType(2, "cub::DoubleBuffer"),
+                    CheckParamType(2, "cub::DoubleBuffer"),
                     CASE_FACTORY_ENTRY(
                         CASE(makeCheckAnd(
                                  CheckArgCount(11, std::greater_equal<>(),
@@ -1622,7 +1622,7 @@ CASE_FACTORY_ENTRY(
             HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
                 CASE(
-                    CheckArgType(2, "cub::DoubleBuffer"),
+                    CheckParamType(2, "cub::DoubleBuffer"),
                     CASE_FACTORY_ENTRY(
                         CASE(makeCheckAnd(
                                  CheckArgCount(11, std::greater_equal<>(),
@@ -1731,7 +1731,7 @@ CASE_FACTORY_ENTRY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
-                CASE(CheckArgType(2, "cub::DoubleBuffer"),
+                CASE(CheckParamType(2, "cub::DoubleBuffer"),
                      CASE_FACTORY_ENTRY(
                          CASE(makeCheckAnd(
                                   CheckArgCount(8, std::greater_equal<>(),
@@ -1783,7 +1783,7 @@ CASE_FACTORY_ENTRY(
             HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
                 CASE(
-                    CheckArgType(2, "cub::DoubleBuffer"),
+                    CheckParamType(2, "cub::DoubleBuffer"),
                     CASE_FACTORY_ENTRY(
                         CASE(makeCheckAnd(
                                  CheckArgCount(8, std::greater_equal<>(),
@@ -1833,7 +1833,7 @@ CASE_FACTORY_ENTRY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
-                CASE(CheckArgType(2, "cub::DoubleBuffer"),
+                CASE(CheckParamType(2, "cub::DoubleBuffer"),
                      CASE_FACTORY_ENTRY(
                          CASE(makeCheckAnd(
                                   CheckArgCount(9, std::greater_equal<>(),
@@ -1891,7 +1891,7 @@ CASE_FACTORY_ENTRY(
             HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
                 CASE(
-                    CheckArgType(2, "cub::DoubleBuffer"),
+                    CheckParamType(2, "cub::DoubleBuffer"),
                     CASE_FACTORY_ENTRY(
                         CASE(
                             makeCheckAnd(
@@ -2141,7 +2141,7 @@ CASE_FACTORY_ENTRY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
-                CASE(CheckArgType(2, "cub::DoubleBuffer"),
+                CASE(CheckParamType(2, "cub::DoubleBuffer"),
                      CASE_FACTORY_ENTRY(
                          CASE(makeCheckAnd(
                                   CheckArgCount(8, std::greater_equal<>(),
@@ -2193,7 +2193,7 @@ CASE_FACTORY_ENTRY(
             HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
                 CASE(
-                    CheckArgType(2, "cub::DoubleBuffer"),
+                    CheckParamType(2, "cub::DoubleBuffer"),
                     CASE_FACTORY_ENTRY(
                         CASE(makeCheckAnd(
                                  CheckArgCount(8, std::greater_equal<>(),
@@ -2255,7 +2255,7 @@ CONDITIONAL_FACTORY_ENTRY(
                               ARG(8), ARG(9)))),
                 CASE(makeCheckAnd(CheckArgCount(10, std::greater_equal<>(),
                                                 /* IncludeDefaultArg */ false),
-                                  CheckArgType(9, "_Bool")),
+                                  CheckParamType(9, "_Bool")),
                      CALL_FACTORY_ENTRY(
                          "cub::DeviceSegmentedSort::StableSortPairs",
                          CALL(MapNames::getDpctNamespace() +
@@ -2316,7 +2316,7 @@ CONDITIONAL_FACTORY_ENTRY(
                               ARG(8), ARG(9), LITERAL("true")))),
                 CASE(makeCheckAnd(CheckArgCount(10, std::greater_equal<>(),
                                                 /* IncludeDefaultArg */ false),
-                                  CheckArgType(9, "_Bool")),
+                                  CheckParamType(9, "_Bool")),
                      CALL_FACTORY_ENTRY(
                          "cub::DeviceSegmentedSort::StableSortPairsDescending",
                          CALL(MapNames::getDpctNamespace() +

@@ -743,9 +743,11 @@ template <typename T> constexpr library_data_t get_library_data_t_from_type() {
     return library_data_t::real_float;
   } else if constexpr (std::is_same_v<T, double>) {
     return library_data_t::real_double;
-  } else if constexpr (std::is_same_v<T, sycl::float2>) {
+  } else if constexpr (std::is_same_v<T, sycl::float2> ||
+                       std::is_same_v<T, std::complex<float>>) {
     return library_data_t::complex_float;
-  } else if constexpr (std::is_same_v<T, sycl::double2>) {
+  } else if constexpr (std::is_same_v<T, sycl::double2> ||
+                       std::is_same_v<T, std::complex<double>>) {
     return library_data_t::complex_double;
   }
   throw std::runtime_error("the type is unsupported");
