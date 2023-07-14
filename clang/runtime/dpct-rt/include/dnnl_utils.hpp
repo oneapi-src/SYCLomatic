@@ -763,8 +763,10 @@ typedef struct {
 } primitive_cache_value_type;
 typedef std::unordered_map<primitive_cache_key_type, primitive_cache_value_type>
     cache_map_type;
+
+// The primitive cache uses LRU replacement policy, and the default cache
+// capacity is 1024.
 class primitive_cache {
-  // The default cache capacity is 1024.
   int _capacity = 1024;
   usage_list_type usage;
   cache_map_type cache_map;
