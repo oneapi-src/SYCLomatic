@@ -938,9 +938,11 @@ void DpctFileInfo::buildReplacements() {
   for (auto &BuiltinVar : BuiltinVarInfoMap) {
     auto Ptr = MemVarMap::getHeadWithoutPathCompression(
         &(BuiltinVar.second.DFI->getVarMap()));
-    if (Ptr) {
+    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && Ptr) {
       unsigned int ID = (Ptr->Dim == 1) ? 0 : 2;
       BuiltinVar.second.buildInfo(FilePath, BuiltinVar.first, ID);
+    } else {
+      BuiltinVar.second.buildInfo(FilePath, BuiltinVar.first, 2);
     }
   }
 
@@ -1256,23 +1258,21 @@ void KernelCallExpr::buildExecutionConfig(
     ++Idx;
   }
 
-  if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
-    Idx = 0;
-    for (auto Arg : ConfigArgs) {
-      if (Idx > 1)
-        break;
-      KernelConfigAnalysis AnalysisTry1D(IsInMacroDefine);
-      AnalysisTry1D.IsTryToUseOneDimension = true;
-      AnalysisTry1D.analyze(Arg, Idx, Idx < 2);
-      if (Idx == 0) {
-        GridDim = AnalysisTry1D.Dim;
-        ExecutionConfig.GroupSizeFor1D = AnalysisTry1D.getReplacedString();
-      } else if (Idx == 1) {
-        BlockDim = AnalysisTry1D.Dim;
-        ExecutionConfig.LocalSizeFor1D = AnalysisTry1D.getReplacedString();
-      }
-      ++Idx;
+  Idx = 0;
+  for (auto Arg : ConfigArgs) {
+    if (Idx > 1)
+      break;
+    KernelConfigAnalysis AnalysisTry1D(IsInMacroDefine);
+    AnalysisTry1D.IsTryToUseOneDimension = true;
+    AnalysisTry1D.analyze(Arg, Idx, Idx < 2);
+    if (Idx == 0) {
+      GridDim = AnalysisTry1D.Dim;
+      ExecutionConfig.GroupSizeFor1D = AnalysisTry1D.getReplacedString();
+    } else if (Idx == 1) {
+      BlockDim = AnalysisTry1D.Dim;
+      ExecutionConfig.LocalSizeFor1D = AnalysisTry1D.getReplacedString();
     }
+    ++Idx;
   }
 
   if (ExecutionConfig.Stream == "0") {
@@ -4211,18 +4211,24 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   //    this_sub_group.
   switch (Method) {
   case 'R':
-    if (auto DFI = getCudaKernelDimDFI(Index)) {
-      auto Ptr = MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
-      if (Ptr && Ptr->Dim == 1) {
-        return "0";
+    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+      if (auto DFI = getCudaKernelDimDFI(Index)) {
+        auto Ptr =
+            MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
+        if (Ptr && Ptr->Dim == 1) {
+          return "0";
+        }
       }
     }
     return "2";
   case 'G':
-    if (auto DFI = getCudaKernelDimDFI(Index)) {
-      auto Ptr = MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
-      if (Ptr && Ptr->Dim == 1) {
-        return "1";
+    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+      if (auto DFI = getCudaKernelDimDFI(Index)) {
+        auto Ptr =
+            MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
+        if (Ptr && Ptr->Dim == 1) {
+          return "1";
+        }
       }
     }
     return "3";

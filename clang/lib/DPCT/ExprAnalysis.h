@@ -836,6 +836,7 @@ private:
   void analyzeExpr(const CXXUnresolvedConstructExpr *Ctor);
   void analyzeExpr(const CXXTemporaryObjectExpr *Ctor);
   void analyzeExpr(const ExplicitCastExpr *Cast);
+  void analyzeExpr(const DeclRefExpr *DRE);
 
   template <class T, class ArgIter>
   void handleDim3Ctor(const T *, SourceRange Parens, ArgIter ArgBegin,
