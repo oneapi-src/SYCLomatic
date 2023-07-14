@@ -455,6 +455,27 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("oneapi::mkl::rangev")},
       {"cudaUUID_t",
        std::make_shared<TypeNameRule>("std::array<unsigned char, 16>")},
+      {"cusparseIndexType_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "library_data_t")},
+      {"cusparseFormat_t",
+       std::make_shared<TypeNameRule>(
+        getDpctNamespace() + "sparse::matrix_format")},
+      {"cusparseDnMatDescr_t",
+       std::make_shared<TypeNameRule>(
+        "std::shared_ptr<" + getDpctNamespace() + "sparse::dense_matrix_desc>")},
+      {"cusparseOrder_t",
+       std::make_shared<TypeNameRule>("oneapi::mkl::layout")},
+      {"cusparseDnVecDescr_t",
+       std::make_shared<TypeNameRule>(
+        "std::shared_ptr<" + getDpctNamespace() + "sparse::dense_vector_desc>")},
+      {"cusparseConstDnVecDescr_t",
+       std::make_shared<TypeNameRule>(
+        "std::shared_ptr<" + getDpctNamespace() + "sparse::dense_vector_desc>")},
+      {"cusparseSpMatDescr_t",
+       std::make_shared<TypeNameRule>(
+        getDpctNamespace() + "sparse::sparse_matrix_desc_t")},
+      {"cusparseSpMMAlg_t", std::make_shared<TypeNameRule>("int")},
+      {"cusparseSpMVAlg_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverDnFunction_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverAlgMode_t", std::make_shared<TypeNameRule>("int")},
       // ...
@@ -1295,6 +1316,18 @@ void MapNames::setExplicitNamespaceMap() {
        getDpctNamespace() + "sparse::matrix_info::matrix_type::he"},
       {"CUSPARSE_MATRIX_TYPE_TRIANGULAR",
        getDpctNamespace() + "sparse::matrix_info::matrix_type::tr"},
+      {"CUSPARSE_SPMAT_FILL_MODE",
+       getDpctNamespace() + "sparse::matrix_attribute::uplo"},
+      {"CUSPARSE_SPMAT_DIAG_TYPE",
+       getDpctNamespace() + "sparse::matrix_attribute::diag"},
+      {"CUSPARSE_INDEX_16U",
+       getDpctNamespace() + "library_data_t::real_uint16"},
+      {"CUSPARSE_INDEX_32I",
+       getDpctNamespace() + "library_data_t::real_int32"},
+      {"CUSPARSE_INDEX_64I",
+       getDpctNamespace() + "library_data_t::real_int64"},
+      {"CUSPARSE_ORDER_COL", "oneapi::mkl::layout::col_major"},
+      {"CUSPARSE_ORDER_ROW", "oneapi::mkl::layout::row_major"},
   };
 
   ClassFieldMap = {};
@@ -1897,7 +1930,39 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusparseScsrmm",
                            "cusparseDcsrmm",
                            "cusparseCcsrmm",
-                           "cusparseZcsrmm"};
+                           "cusparseZcsrmm",
+                           "cusparseCreateCsr",
+                           "cusparseDestroySpMat",
+                           "cusparseCsrGet",
+                           "cusparseSpMatGetFormat",
+                           "cusparseSpMatGetIndexBase",
+                           "cusparseSpMatGetValues",
+                           "cusparseSpMatSetValues",
+                           "cusparseCreateDnMat",
+                           "cusparseDestroyDnMat",
+                           "cusparseDnMatGet",
+                           "cusparseDnMatGetValues",
+                           "cusparseDnMatSetValues",
+                           "cusparseCreateDnVec",
+                           "cusparseDestroyDnVec",
+                           "cusparseDnVecGet",
+                           "cusparseDnVecGetValues",
+                           "cusparseDnVecSetValues",
+                           "cusparseCsrSetPointers",
+                           "cusparseSpMatGetSize",
+                           "cusparseGetErrorName",
+                           "cusparseGetErrorString",
+                           "cusparseGetProperty",
+                           "cusparseSpMatGetAttribute",
+                           "cusparseSpMatSetAttribute",
+                           "cusparseCreateConstDnVec",
+                           "cusparseConstDnVecGet",
+                           "cusparseConstDnVecGetValues",
+                           "cusparseSpMM",
+                           "cusparseSpMM_bufferSize",
+                           "cusparseSpMV",
+                           "cusparseSpMV_bufferSize",
+                           "cusparseSpMM_preprocess"};
 
   // Below set and map are only used to migrate using declaration
   MathFuncNameMap = {
