@@ -2012,7 +2012,10 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "CUmem_advise", "thrust::tuple_element", "thrust::tuple_size",
               "cublasMath_t", "cudaPointerAttributes", "thrust::zip_iterator",
               "cusolverEigRange_t", "cudaUUID_t", "cusolverDnFunction_t",
-              "cusolverAlgMode_t"))))))
+              "cusolverAlgMode_t", "cusparseIndexType_t", "cusparseFormat_t",
+              "cusparseDnMatDescr_t", "cusparseOrder_t", "cusparseDnVecDescr_t",
+              "cusparseConstDnVecDescr_t", "cusparseSpMatDescr_t",
+              "cusparseSpMMAlg_t", "cusparseSpMVAlg_t"))))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -3905,8 +3908,9 @@ void SPBLASEnumsRule::registerMatcher(MatchFinder &MF) {
       this);
   MF.addMatcher(
       declRefExpr(to(enumConstantDecl(matchesName(
-                      "(CUSPARSE_OPERATION.*)|(CUSPARSE_FILL_MODE.*)|(CUSPARSE_"
-                      "DIAG_TYPE.*)|(CUSPARSE_INDEX_BASE.*)|(CUSPARSE_MATRIX_TYPE.*)"))))
+                      "(CUSPARSE_OPERATION_.*)|(CUSPARSE_FILL_MODE_.*)|("
+                      "CUSPARSE_DIAG_TYPE_.*)|(CUSPARSE_INDEX_.*)|(CUSPARSE_"
+                      "MATRIX_TYPE_.*)|(CUSPARSE_ORDER_.*)"))))
           .bind("SPBLASNamedValueConstants"),
       this);
 }
@@ -3983,6 +3987,7 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         /*management*/
         "cusparseCreate", "cusparseDestroy", "cusparseSetStream",
         "cusparseGetStream", "cusparseGetPointerMode", "cusparseSetPointerMode",
+        "cusparseGetErrorName", "cusparseGetErrorString", "cusparseGetProperty",
         /*helper*/
         "cusparseCreateMatDescr", "cusparseDestroyMatDescr",
         "cusparseSetMatType", "cusparseGetMatType", "cusparseSetMatIndexBase",
@@ -3995,7 +4000,21 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseScsrsv_analysis", "cusparseDcsrsv_analysis",
         "cusparseCcsrsv_analysis", "cusparseZcsrsv_analysis",
         /*level 3*/
-        "cusparseScsrmm", "cusparseDcsrmm", "cusparseCcsrmm", "cusparseZcsrmm");
+        "cusparseScsrmm", "cusparseDcsrmm", "cusparseCcsrmm", "cusparseZcsrmm",
+        /*Generic*/
+        "cusparseCreateCsr", "cusparseDestroySpMat", "cusparseCsrGet",
+        "cusparseSpMatGetFormat", "cusparseSpMatGetIndexBase",
+        "cusparseSpMatGetValues", "cusparseSpMatSetValues",
+        "cusparseCreateDnMat", "cusparseDestroyDnMat", "cusparseDnMatGet",
+        "cusparseDnMatGetValues", "cusparseDnMatSetValues",
+        "cusparseCreateDnVec", "cusparseDestroyDnVec", "cusparseDnVecGet",
+        "cusparseDnVecGetValues", "cusparseDnVecSetValues",
+        "cusparseCsrSetPointers", "cusparseSpMatGetSize",
+        "cusparseSpMatGetAttribute", "cusparseSpMatSetAttribute",
+        "cusparseCreateConstDnVec", "cusparseConstDnVecGet",
+        "cusparseConstDnVecGetValues", "cusparseSpMM",
+        "cusparseSpMM_bufferSize", "cusparseSpMV", "cusparseSpMV_bufferSize",
+        "cusparseSpMM_preprocess");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))
