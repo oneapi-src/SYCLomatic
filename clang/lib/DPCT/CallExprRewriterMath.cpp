@@ -907,7 +907,7 @@ bool useMathLibdevice() {
   return DpctGlobalInfo::useIntelDeviceMath();
 }
 
-bool useExtBFloat16() { return DpctGlobalInfo::useExtBFloat16(); };
+bool useExtBFloat16() { return DpctGlobalInfo::useExtBFloat16(); }
 
 auto IsPerf = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::isOptimizeMigration();
@@ -1116,17 +1116,25 @@ createMathAPIRewriterDevice(
 
 template <class T>
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
-createMathAPIRewriterExperimental(
+createMathAPIRewriterExperimentalBfloat16(
     const std::string &Name,
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
         &&Rewriter1,
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
         &&Rewriter2,
     T) {
-  return createConditionalFactory(
-      math::IsDefinedInCUDA(),
-      std::move(math::useExtBFloat16() ? Rewriter1 : Rewriter2),
-      {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});
+  if (math::useExtBFloat16() && Rewriter1.second)
+    return createConditionalFactory(
+        math::IsDefinedInCUDA(), std::move(Rewriter1),
+        {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});
+  if (Rewriter2.second)
+    return createConditionalFactory(
+        math::IsDefinedInCUDA(), std::move(Rewriter2),
+        {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});
+  // report unsupport
+  return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
+      {Name, std::make_shared<UnsupportFunctionRewriterFactory<std::string>>(
+                 Name, Diagnostics::API_NOT_MIGRATED, Name)});
 }
 
 template <class T>
@@ -1168,8 +1176,8 @@ createMathAPIRewriterHost(
 #define MATH_API_REWRITER_DEVICE_OVERLOAD(CONDITION, DEVICE_REWRITER_1,        \
                                           DEVICE_REWRITER_2)                   \
   createConditionalFactory(CONDITION, DEVICE_REWRITER_1 DEVICE_REWRITER_2 0),
-#define MATH_API_REWRITER_EXPERIMENTAL(NAME, REWRITER_1, REWRITER_2)           \
-  createMathAPIRewriterExperimental(NAME, REWRITER_1 REWRITER_2 0),
+#define MATH_API_REWRITER_EXPERIMENTAL_BFLOAT16(NAME, REWRITER_1, REWRITER_2)  \
+  createMathAPIRewriterExperimentalBfloat16(NAME, REWRITER_1 REWRITER_2 0),
 #define MATH_API_SPECIFIC_ELSE_EMU(CONDITION, DEVICE_REWRITER)                 \
   createMathSpecificElseEmuRewriterFactory(CONDITION, DEVICE_REWRITER 0),
 

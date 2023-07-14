@@ -42,7 +42,7 @@ MATH_API_REWRITER_DEVICE_OVERLOAD(
                 CALL(MapNames::getClNamespace(false, true) + "fabs", ARG(0))),
             EMPTY_FACTORY_ENTRY("__habs"), EMPTY_FACTORY_ENTRY("__habs"),
             EMPTY_FACTORY_ENTRY("__habs"))),
-    MATH_API_REWRITER_EXPERIMENTAL(
+    MATH_API_REWRITER_EXPERIMENTAL_BFLOAT16(
         "__habs",
         CALL_FACTORY_ENTRY("__habs",
                            CALL(MapNames::getClNamespace(false, true) +
