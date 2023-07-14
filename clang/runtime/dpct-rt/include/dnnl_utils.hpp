@@ -791,8 +791,6 @@ public:
   ::dnnl::primitive *get(const primitive_cache_key_type &key) {
     auto it = cache_map.find(key);
     if (it == cache_map.end()) {
-      std::cout << "map size:" << cache_map.size() << std::endl;
-      std::cout << "return null" << std::endl;
       return nullptr;
     }
     touch(it);
@@ -3371,12 +3369,13 @@ sycl::event engine_ext::execute_rnn_backward_primitive(
 
 #define GENERATE_RNN_PRIMITIVE_KEY(name)                                       \
   template <>                                                                  \
-  std::string engine_ext::generate_cache_key<::dnnl::name::primitive_desc>(    \
+  inline std::string                                                           \
+  engine_ext::generate_cache_key<::dnnl::name::primitive_desc>(                \
       const ::dnnl::name::primitive_desc &pd) {                                \
     std::stringstream ss;                                                      \
     ss << (std::uint8_t)pd.get_kind() << (std::uint8_t)pd.get_prop_kind()      \
-       << (std::uint8_t)pd.get_cell_kind()                                     \
-       << (std::uint8_t)pd.get_direction();                                    \
+       << (std::uint8_t)pd.get_cell_kind() << (std::uint8_t)pd.get_direction() \
+       << (std::uint8_t)pd.get_algorithm();                                    \
     serialize_mem_desc(ss, pd.src_layer_desc());                               \
     serialize_mem_desc(ss, pd.src_iter_desc());                                \
     serialize_mem_desc(ss, pd.dst_layer_desc());                               \
@@ -3392,12 +3391,38 @@ sycl::event engine_ext::execute_rnn_backward_primitive(
     return ss.str();                                                           \
   }
 
+#define GENERATE_CONVOLUTION_PRIMITIVE_KEY(name, query_type)                   \
+  template <>                                                                  \
+  inline std::string                                                           \
+  engine_ext::generate_cache_key<::dnnl::name::primitive_desc>(                \
+      const ::dnnl::name::primitive_desc &pd) {                                \
+    std::stringstream ss;                                                      \
+    ss << (std::uint8_t)pd.get_kind() << (std::uint8_t)pd.get_prop_kind()      \
+       << (std::uint8_t)pd.get_algorithm()                                     \
+       << (std::uint8_t)pd.get_primitive_attr().get_fpmath_mode()              \
+       << (std::uint8_t)pd.get_group_size();                                   \
+    serialize_dims(ss, pd.get_strides());                                      \
+    serialize_dims(ss, pd.get_dilations());                                    \
+    serialize_dims(ss, pd.get_padding_l());                                    \
+    serialize_mem_desc(ss, pd.src_desc());                                     \
+    serialize_mem_desc(ss, pd.diff_src_desc());                                \
+    serialize_mem_desc(ss, pd.dst_desc());                                     \
+    serialize_mem_desc(ss, pd.diff_dst_desc());                                \
+    serialize_mem_desc(ss, pd.query_type());                                   \
+    serialize_mem_desc(ss, pd.weights_desc());                                 \
+    serialize_mem_desc(ss, pd.diff_weights_desc());                            \
+    return ss.str();                                                           \
+  }
+
 GENERATE_RNN_PRIMITIVE_KEY(vanilla_rnn_forward)
 GENERATE_RNN_PRIMITIVE_KEY(vanilla_rnn_backward)
 GENERATE_RNN_PRIMITIVE_KEY(lstm_forward)
 GENERATE_RNN_PRIMITIVE_KEY(lstm_backward)
 GENERATE_RNN_PRIMITIVE_KEY(gru_forward)
 GENERATE_RNN_PRIMITIVE_KEY(gru_backward)
+GENERATE_CONVOLUTION_PRIMITIVE_KEY(convolution_forward, bias_desc)
+GENERATE_CONVOLUTION_PRIMITIVE_KEY(convolution_backward_data, scratchpad_desc)
+GENERATE_CONVOLUTION_PRIMITIVE_KEY(convolution_backward_weights, diff_bias_desc)
 
 template <typename primitive_desc_type>
 std::string engine_ext::generate_cache_key(const primitive_desc_type &pd) {
@@ -3410,25 +3435,24 @@ std::string engine_ext::generate_cache_key(const primitive_desc_type &pd) {
   serialize_mem_desc(ss, pd.dst_desc());
   serialize_mem_desc(ss, pd.diff_dst_desc());
   switch (kind) {
-  case ::dnnl::primitive::kind::convolution:
-    ss << (std::uint8_t)pd.get_primitive_attr().get_fpmath_mode()
-       << (std::uint8_t)pd.get_group_size();
-    serialize_dims(ss, pd.get_strides());
-    serialize_dims(ss, pd.get_dilations());
-    serialize_dims(ss, pd.get_padding_l());
-    serialize_mem_desc(ss, pd.weights_desc());
-    serialize_mem_desc(ss, pd.diff_weights_desc());
-    break;
   case ::dnnl::primitive::kind::batch_normalization:
-    ss << pd.get_epsilon();
+    ss << pd.get_epsilon() << (std::uint8_t)pd.get_flags();
+  case ::dnnl::primitive::kind::reduction:
+    ss << pd.get_p();
     break;
   case ::dnnl::primitive::kind::eltwise:
     ss << pd.get_alpha() << pd.get_beta();
   case ::dnnl::primitive::kind::lrn:
     ss << pd.get_k();
     break;
-  case ::dnnl::primitive::kind::reduction:
-    ss << pd.get_p();
+  case ::dnnl::primitive::kind::pooling:
+    serialize_dims(ss, pd.get_strides());
+    serialize_dims(ss, pd.get_dilations());
+    serialize_dims(ss, pd.get_padding_l());
+    serialize_dims(ss, pd.get_kernel());
+    break;
+  case ::dnnl::primitive::kind::softmax:
+    ss << pd.get_axis();
     break;
   default:
     break;
@@ -3450,11 +3474,8 @@ engine_ext::create_primitive_with_pd(
     const typename primitive_type::primitive_desc &pd) {
   detail::primitive_cache_key_type key = generate_cache_key(pd);
   primitive_type *p = (primitive_type *)_primitive_cache.get(key);
-  std::cout << "key size:" << key.size() << std::endl;
   if (!p) {
     p = new primitive_type(pd);
-  } else {
-    std::cout << "cache found" << std::endl;
   }
   return {key, p};
 }
@@ -3635,27 +3656,37 @@ sycl::event engine_ext::async_scale(float alpha, const memory_desc_ext &src_desc
   return execute_primitive(primitive, args, {}, {src_cache});
 }
 
-inline
-sycl::event engine_ext::async_sum(float alpha, const memory_desc_ext &src_desc,
-                            void *src, float beta,
-                            const memory_desc_ext &dst_desc, void *dst) {
+inline sycl::event
+engine_ext::async_sum(float alpha, const memory_desc_ext &src_desc, void *src,
+                      float beta, const memory_desc_ext &dst_desc, void *dst) {
   if (alpha == 0.f && beta == 1.f) {
     return sycl::event();
   }
   void *dst_cache = allocate(dst_desc);
   _q->memcpy(dst_cache, dst, dst_desc.get_size());
-  auto primitive = create_primitive<::dnnl::sum>(
-      std::vector<float>{alpha, beta}, 
-      std::vector<::dnnl::memory::desc>{src_desc.get_desc(),
-      dst_desc.get_desc()});
 
+  auto pd = create_primitive_desc<::dnnl::sum>(
+      std::vector<float>{alpha, beta},
+      std::vector<::dnnl::memory::desc>{src_desc.get_desc(),
+                                        dst_desc.get_desc()});
+
+  std::stringstream ss;
+  ss << (std::uint8_t)pd.get_kind() << alpha << beta;
+  serialize_mem_desc(ss, pd.src_desc(0));
+  serialize_mem_desc(ss, pd.src_desc(1));
+  detail::primitive_cache_key_type key = ss.str();
+
+  ::dnnl::sum *p = (::dnnl::sum *)_primitive_cache.get(key);
+  if (!p) {
+    p = new ::dnnl::sum(pd);
+  }
   auto args = new std::unordered_map<int, ::dnnl::memory>{
       {DNNL_ARG_DST, ::dnnl::memory(dst_desc.get_desc(), _eng, dst)},
       {DNNL_ARG_MULTIPLE_SRC, ::dnnl::memory(src_desc.get_desc(), _eng, src)},
       {DNNL_ARG_MULTIPLE_SRC + 1,
        ::dnnl::memory(dst_desc.get_desc(), _eng, dst_cache)}};
 
-  return execute_primitive(primitive, args, {}, {dst_cache});
+  return execute_primitive<::dnnl::sum>({key, p}, args, {}, {dst_cache});
 }
 
 inline
