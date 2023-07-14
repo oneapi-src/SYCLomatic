@@ -44,9 +44,8 @@ void clang::dpct::WMMARule::runRule(
     EA.analyze(CE);
   } else if (const DeclRefExpr *DRE =
                  getNodeAsType<DeclRefExpr>(Result, "enum")) {
-    DRE->dump();
     EA.analyze(DRE);
-  }else {
+  } else {
     return;
   }
   emplaceTransformation(EA.getReplacement());

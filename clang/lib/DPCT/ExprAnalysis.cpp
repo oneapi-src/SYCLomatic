@@ -491,6 +491,7 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
         NameStringOS << ECD->getNameAsString();
         RefString = NameString;
       }
+
     auto &ReplEnum =
         MapNames::findReplacedName(EnumConstantRule::EnumNamesMap, RefString);
     requestHelperFeatureForEnumNames(RefString);
