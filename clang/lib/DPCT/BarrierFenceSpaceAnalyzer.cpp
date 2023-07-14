@@ -82,37 +82,8 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const DeclRefExpr *DRE) {
   if (!PVD)
     return true;
 
-  /// \return One of below 3 int values:
-  ///  1: can skip analysis
-  ///  0: need analysis
-  /// -1: unsupport to analyze
-  std::function<int(QualType)> getInputParamterTypeKind =
-      [](QualType QT) -> int {
-    if (QT->isPointerType()) {
-      QualType PointeeQT = QT->getPointeeType();
-      if (PointeeQT.isConstQualified())
-        return 1;
-      if (PointeeQT->isFundamentalType())
-        return 0;
-      return -1;
-    }
-    if (QT->isFundamentalType()) {
-      return 1;
-    }
-    if (auto ET = dyn_cast<ElaboratedType>(QT.getTypePtr())) {
-      if (auto RT = dyn_cast<RecordType>(ET->desugar())) {
-        for (const auto &Field : RT->getDecl()->fields()) {
-          if (!Field->getType()->isFundamentalType()) {
-            return -1;
-          }
-        }
-        return 1;
-      }
-    }
-    return -1;
-  };
-
-  int ParamterTypeKind = getInputParamterTypeKind(PVD->getType());
+  TypeAnalyzer TA;
+  int ParamterTypeKind = TA.getInputParamterTypeKind(PVD->getType());
   if (ParamterTypeKind == 1) {
     return true;
   } else if (ParamterTypeKind == -1) {
@@ -741,7 +712,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isValidAccessPattern(
     bool FoundRead = false;
     bool FoundWrite = false;
     for (auto &LocModePair : DeclUsedLocPair.second) {
-      if (containsMacro(LocModePair.first, SCI) ||
+      if (LocModePair.first.isMacroID() ||
           (LocModePair.second == AccessMode::ReadWrite)) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
         std::cout << "isValidAccessPattern False case 1" << std::endl;

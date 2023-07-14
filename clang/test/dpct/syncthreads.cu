@@ -291,8 +291,8 @@ __global__ void test12(uint8_t *pout) {
   int idx = 456;
   idx = bar12(idx);
   pout[idx] = 123;
-  uint8 a = 4;
-  uint8 b = abs(a);
+  uint8_t a = 4;
+  uint8_t b = abs(a);
 }
 
 __device__ int d_a[10];
@@ -313,8 +313,8 @@ __global__ void test13(uint8_t *pout) {
   int idx = 456;
   idx = bar13(idx);
   pout[idx] = 123;
-  uint8 a = 4;
-  uint8 b = abs(a);
+  uint8_t a = 4;
+  uint8_t b = abs(a);
 }
 
 __device__ void barbar14() {}
@@ -332,8 +332,8 @@ __global__ void test14(uint8_t *pout) {
   int idx = 456;
   idx = bar14();
   pout[idx] = 123;
-  uint8 a = 4;
-  uint8 b = abs(a);
+  uint8_t a = 4;
+  uint8_t b = abs(a);
 }
 
 //CHECK:void test15(float *_res, const sycl::nd_item<3> &item_ct1,

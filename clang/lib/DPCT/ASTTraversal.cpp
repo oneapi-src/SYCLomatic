@@ -12039,10 +12039,8 @@ void SyncThreadsMigrationRule::registerMatcher(MatchFinder &MF) {
 }
 
 void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
-  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "SyncFuncCall");
-  const FunctionDecl *FD =
-      getAssistNodeAsType<FunctionDecl>(Result, "FuncDecl");
-  if (!CE || !FD)
+  const CallExpr *CE = getAssistNodeAsType<CallExpr>(Result, "SyncFuncCall");
+  if (!CE)
     return;
 
   std::string FuncName =
