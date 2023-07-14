@@ -50,16 +50,15 @@
 
 if [ -z "${SETVARS_CALL:-}" ] ; then
   >&2 echo " "
-  >&2 echo ":: ERROR: This script must be sourced by setvars.sh."
-  >&2 echo "   Try 'source <install-dir>/setvars.sh --help' for help."
+  >&2 echo ":: ERROR: This script must be sourced by oneapi-vars.sh."
+  >&2 echo "   Try 'source <install-dir>/oneapi-vars.sh --help' for help."
   >&2 echo " "
   return 255
 fi
-
 if [ -z "${ONEAPI_ROOT:-}" ] ; then
   >&2 echo " "
   >&2 echo ":: ERROR: This script requires that the ONEAPI_ROOT env variable is set."
-  >&2 echo "   Try 'source <install-dir>\setvars.sh --help' for help."
+  >&2 echo "   Try 'source <install-dir>\oneapi-vars.sh --help' for help."
   >&2 echo " "
   return 254
 fi
@@ -67,8 +66,8 @@ fi
 
 #############################################################################
 
-DPCT_ETC_ROOT="${ONEAPI_ROOT}/etc/dpct"
-BASH_AUTOCOMPLETE_SCRIPT=${DPCT_ETC_ROOT}/bash-autocomplete.sh
+BASH_AUTOCOMPLETE_SCRIPT="${ONEAPI_ROOT}/etc/dpct/bash-autocomplete.sh"
+DIAGUTIL_PATH=$(prepend_path "${ONEAPI_ROOT}/etc/dpct/sys_check/sys_check.sh" "${DIAGUTIL_PATH:-}") ; export DIAGUTIL_PATH
 
 if [ -n "${BASH_VERSION:-}" ] ; then
   if [ -f "$BASH_AUTOCOMPLETE_SCRIPT" ]; then

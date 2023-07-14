@@ -26,20 +26,44 @@ target_link_libraries(dpct-binary
 
 add_clang_symlink(c2s dpct-binary)
 
-if(UNIX)
-  set(dpct_vars_script
-    vars.sh
-    )
-  set(dpct_syscheck_script
-    sys_check.sh
-    )
-  set(dpct_modulefiles_script
-    dpct
-    )
+if(INTEL_DEPLOY_UNIFIED_LAYOUT)
+  if(UNIX)
+    set(dpct_vars_script
+      vars.sh
+      )
+    set(dpct_vars_2023_style_script
+      vars.sh_2023_style
+      )
+    set(dpct_syscheck_script
+      sys_check.sh
+      )
+    set(dpct_modulefiles_script
+      dpct
+      )
+  else()
+    set(dpct_vars_script
+      vars.bat
+      )
+    set(dpct_vars_2023_style_script
+      vars.bat_2023_style
+      )
+  endif()
 else()
-  set(dpct_vars_script
-    vars.bat
-    )
+  if(UNIX)
+    set(dpct_vars_script
+      vars.sh_2023_style
+      )
+    set(dpct_syscheck_script
+      sys_check.sh
+      )
+    set(dpct_modulefiles_script
+      dpct
+      )
+  else()
+    set(dpct_vars_script
+      vars.bat_2023_style
+      )
+  endif()
 endif()
 
 if(INTEL_DEPLOY_UNIFIED_LAYOUT)
@@ -48,6 +72,23 @@ if(INTEL_DEPLOY_UNIFIED_LAYOUT)
     COMPONENT dpct-vars
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
     DESTINATION etc/dpct)
+
+  if(UNIX)
+    install(
+      FILES ${dpct_vars_2023_style_script}
+      COMPONENT dpct-vars
+      PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+      DESTINATION ./env
+      RENAME "vars.sh")
+  else()
+    install(
+      FILES ${dpct_vars_2023_style_script}
+      COMPONENT dpct-vars
+      PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+      DESTINATION ./env
+      RENAME "vars.bat")
+  endif()
+
   if(UNIX)
     install(
       FILES ${dpct_syscheck_script}
@@ -55,17 +96,29 @@ if(INTEL_DEPLOY_UNIFIED_LAYOUT)
       PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
       DESTINATION etc/dpct/sys_check)
   endif()
+
   install(
     FILES ${dpct_modulefiles_script}
     COMPONENT dpct-modulefiles
     PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
     DESTINATION etc/modulefiles)
 else()
-  install(
-    FILES ${dpct_vars_script}
-    COMPONENT dpct-vars
-    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-    DESTINATION ./env)
+  if(UNIX)
+    install(
+      FILES ${dpct_vars_script}
+      COMPONENT dpct-vars
+      PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+      DESTINATION ./env
+      RENAME "vars.sh")
+  else()
+    install(
+      FILES ${dpct_vars_script}
+      COMPONENT dpct-vars
+      PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+      DESTINATION ./env
+      RENAME "vars.bat")
+  endif()
+
   if(UNIX)
     install(
       FILES ${dpct_syscheck_script}
