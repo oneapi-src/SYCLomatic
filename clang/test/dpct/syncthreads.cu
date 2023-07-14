@@ -276,6 +276,8 @@ __global__ void test11(float *a_ptr, float *b_ptr,
   }
 }
 
+typedef unsigned char uint8_t;
+
 __device__ int bar12(int num) {
   int n = num - 1;
   n |= n >> 1;
@@ -324,10 +326,7 @@ __device__ int bar14() {
 }
 
 //CHECK:void test14(uint8_t *pout, const sycl::nd_item<3> &item_ct1) {
-//CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
-//CHECK-NEXT:  */
-//CHECK-NEXT:  item_ct1.barrier();
+//CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
 __global__ void test14(uint8_t *pout) {
   __syncthreads();
   int idx = 456;

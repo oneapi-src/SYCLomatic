@@ -51,9 +51,14 @@ void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(const WhileStmt *WS) {
 }
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const CallExpr *CE) {
   const FunctionDecl *FuncDecl = CE->getDirectCallee();
-  std::string FuncName;
-  if (FuncDecl)
-    FuncName = FuncDecl->getNameInfo().getName().getAsString();
+  if (!FuncDecl)
+    return true;
+  std::string FuncName = FuncDecl->getNameInfo().getName().getAsString();
+
+  if (isUserDefinedDecl(FuncDecl)) {
+    for (const auto &Arg : CE->arguments())
+      DeviceFunctionCallArgs.insert(Arg);
+  }
 
   if (FuncName == "__syncthreads") {
     SyncCallInfo SCI;
@@ -66,40 +71,12 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const CallExpr *CE) {
       SCI.Successors.push_back(LoopRange.front());
     }
     SyncCallsVec.push_back(std::make_pair(CE, SCI));
-  } else {
-    if (auto FD = CE->getDirectCallee()) {
-      if (!isSimpleDeviceFuntion(FD)) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-        std::cout << "Return False case A: "
-                  << CE->getBeginLoc().printToString(
-                         DpctGlobalInfo::getSourceManager())
-                  << std::endl;
-#endif
-        return false;
-      }
-    }
   }
   return true;
 }
 void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(const CallExpr *) {}
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const DeclRefExpr *DRE) {
-  const ValueDecl *VD = DRE->getDecl();
-  if (!dyn_cast<FunctionDecl>(VD) &&
-      (DRE->getDecl()->hasAttr<CUDADeviceAttr>() ||
-       DRE->getDecl()->hasAttr<HIPManagedAttr>()) &&
-      !(VD->getName().str() == "threadIdx" ||
-        VD->getName().str() == "blockIdx" ||
-        VD->getName().str() == "blockDim" ||
-        VD->getName().str() == "gridDim")) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case B: "
-              << DRE->getBeginLoc().printToString(
-                     DpctGlobalInfo::getSourceManager())
-              << std::endl;
-#endif
-    return false; // not support __device__ variables
-  }
   // Collect all DREs and its Decl
   const auto PVD = dyn_cast<ParmVarDecl>(DRE->getDecl());
   if (!PVD)
@@ -139,6 +116,12 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const DeclRefExpr *DRE) {
   if (ParamterTypeKind == 1) {
     return true;
   } else if (ParamterTypeKind == -1) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "Return False case A: "
+              << PVD->getBeginLoc().printToString(
+                     DpctGlobalInfo::getSourceManager())
+              << std::endl;
+#endif
     return false;
   }
 
@@ -158,7 +141,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const GotoStmt *GS) {
   // We will further refine it if meet real request.
   // By default, goto/label stmt is not supported.
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "Return False case F: "
+  std::cout << "Return False case B: "
             << GS->getBeginLoc().printToString(
                    DpctGlobalInfo::getSourceManager())
             << std::endl;
@@ -171,7 +154,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const LabelStmt *LS) {
   // We will further refine it if meet real request.
   // By default, goto/label stmt is not supported.
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "Return False case G: "
+  std::cout << "Return False case C: "
             << LS->getBeginLoc().printToString(
                    DpctGlobalInfo::getSourceManager())
             << std::endl;
@@ -183,7 +166,7 @@ void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(const LabelStmt *) {}
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const MemberExpr *ME) {
   if (ME->getType()->isPointerType() || ME->getType()->isArrayType()) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-    std::cout << "Return False case H: "
+    std::cout << "Return False case D: "
               << ME->getBeginLoc().printToString(
                      DpctGlobalInfo::getSourceManager())
               << std::endl;
@@ -196,7 +179,7 @@ void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(const MemberExpr *) {}
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
     const CXXDependentScopeMemberExpr *CDSME) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "Return False case I: "
+  std::cout << "Return False case E: "
             << CDSME->getBeginLoc().printToString(
                    DpctGlobalInfo::getSourceManager())
             << std::endl;
@@ -205,30 +188,18 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
 }
 void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
     const CXXDependentScopeMemberExpr *) {}
+
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
     const CXXConstructExpr *CCE) {
   auto Ctor = CCE->getConstructor();
-  std::string CtorName = Ctor->getParent()->getQualifiedNameAsString();
-  if (AllowedDeviceFunctions.count(CtorName) && !isUserDefinedDecl(Ctor))
-    return true;
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "Return False case J: "
-            << CCE->getBeginLoc().printToString(
-                   DpctGlobalInfo::getSourceManager())
-            << std::endl;
-#endif
-  return false;
-}
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
-    const CXXConstructExpr *) {}
-
-bool clang::dpct::BarrierFenceSpaceAnalyzer::traverseFunction(
-    const FunctionDecl *FD) {
-  if (!this->TraverseDecl(const_cast<FunctionDecl *>(FD))) {
-    return false;
+  if (isUserDefinedDecl(Ctor)) {
+    for (const auto &Arg : CCE->arguments())
+      DeviceFunctionCallArgs.insert(Arg);
   }
   return true;
 }
+void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
+    const CXXConstructExpr *) {}
 
 std::set<const clang::DeclRefExpr *>
 clang::dpct::BarrierFenceSpaceAnalyzer::matchAllDRE(const VarDecl *TargetDecl,
@@ -324,21 +295,56 @@ clang::dpct::BarrierFenceSpaceAnalyzer::getAccessKind(
   return AccessMode::ReadWrite;
 }
 
+bool clang::dpct::BarrierFenceSpaceAnalyzer::isPotentialGlobalMemoryAccess(
+    std::shared_ptr<DeviceFunctionInfo> DFI, bool IsInGlobalFunction) {
+  if (!DFI)
+    return false;
+
+  const MemVarInfoMap &MVIM =
+      DFI->getVarMap().getMap(MemVarInfo::VarScope::Global);
+  for (const auto &VarInfo : MVIM) {
+    auto Attr = VarInfo.second->getAttr();
+    if (Attr == MemVarInfo::VarAttrKind::Device ||
+        Attr == MemVarInfo::VarAttrKind::Managed)
+      return true;
+  }
+  for (const auto &Call : DFI->getCallExprMap()) {
+    if (Call.second->getName() == "__syncthreads" && !IsInGlobalFunction) {
+      // Currently we do not support the analysis for __syncthreads in
+      // __device__ function
+      return false;
+    }
+    if (isPotentialGlobalMemoryAccess(Call.second->getFuncInfo(), false))
+      return true;
+  }
+  return false;
+}
+
 bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     const CallExpr *CE) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
   std::cout << "BarrierFenceSpaceAnalyzer Analyzing ..." << std::endl;
 #endif
-  if (CE->getBeginLoc().isMacroID() || CE->getEndLoc().isMacroID())
+  if (CE->getBeginLoc().isMacroID() || CE->getEndLoc().isMacroID()) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "Return False case F: CE->getBeginLoc().isMacroID() || "
+                 "CE->getEndLoc().isMacroID()"
+              << std::endl;
+#endif
     return false;
+  }
   auto FD = DpctGlobalInfo::findAncestor<FunctionDecl>(CE);
-  if (!FD)
+  if (!FD) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "Return False case G: !FD" << std::endl;
+#endif
     return false;
-  if (!FD->hasAttr<CUDAGlobalAttr>())
-    return false;
-  if (FD->getTemplateSpecializationKind() !=
-          TemplateSpecializationKind::TSK_Undeclared ||
-      FD->getDescribedFunctionTemplate()) {
+  }
+  if (!FD->hasAttr<CUDAGlobalAttr>()) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+    std::cout << "Return False case H: !FD->hasAttr<CUDAGlobalAttr>()"
+              << std::endl;
+#endif
     return false;
   }
 
@@ -355,9 +361,15 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     }
   }
 
+  if (isPotentialGlobalMemoryAccess(DeviceFunctionDecl::LinkRedecls(FD),
+                                    true)) {
+    setFalseForThisFunctionDecl();
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "Before traverse" << std::endl;
+    std::cout << "Return False case I: Found device/managed variable usage"
+              << std::endl;
 #endif
+    return false;
+  }
 
   this->FD = FD;
 
@@ -376,6 +388,10 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
   };
   KernelDim = QueryKernelDim(FD);
 
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  std::cout << "Before traversing current __global__ function" << std::endl;
+#endif
+
   // analyze this FD
   // Traverse AST, analysis the context info of kernel calling sycthreads()
   //   1. Find each syncthreads call's predecessor parts and successor parts.
@@ -383,7 +399,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
   //      in allow list, exit.
   //   3. Check all DREs(Declare Ref Expr), if __device__ variable is used,
   //      exit.
-  if (!traverseFunction(FD)) {
+  if (!this->TraverseDecl(const_cast<FunctionDecl *>(FD))) {
     setFalseForThisFunctionDecl();
     return false;
   }
@@ -457,16 +473,56 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
   }
 #endif
 
-  // Convert DRE to <Location, AccessMode> pair for comparing
-  std::map<const ParmVarDecl *, std::set<std::pair<SourceLocation, AccessMode>>>
-      DeclUsedLocsMap;
+  std::map<const ParmVarDecl *,
+           std::set<std::pair<const DeclRefExpr *, AccessMode>>>
+      DeclUsedMap;
   for (const auto &Pair : DefUseMap) {
     for (const auto &Item : Pair.second) {
       if (isAccessingMemory(Item) &&
           !isNoOverlappingAccessAmongWorkItems(KernelDim, Item)) {
-        DeclUsedLocsMap[Pair.first].insert(
-            std::make_pair(Item->getBeginLoc(), getAccessKind(Item)));
+        DeclUsedMap[Pair.first].insert(
+            std::make_pair(Item, getAccessKind(Item)));
       }
+    }
+  }
+
+  auto isDREInDeclUsedMap = [&](const DeclRefExpr *Ref) {
+    for (const auto &Pair : DeclUsedMap) {
+      for (const auto &Item : Pair.second) {
+        if (Item.first == Ref)
+          return true;
+      }
+    }
+    return false;
+  };
+
+  for (const auto &Arg : DeviceFunctionCallArgs) {
+    auto DREMatcher =
+        ast_matchers::findAll(ast_matchers::declRefExpr().bind("DRE"));
+    auto DREResults =
+        ast_matchers::match(DREMatcher, *Arg, DpctGlobalInfo::getContext());
+    for (auto Node : DREResults) {
+      const DeclRefExpr *DRE = Node.getNodeAs<DeclRefExpr>("DRE");
+      if (isDREInDeclUsedMap(DRE)) {
+        setFalseForThisFunctionDecl();
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+        std::cout << "Return False case J:"
+                  << DRE->getBeginLoc().printToString(
+                         DpctGlobalInfo::getSourceManager())
+                  << std::endl;
+#endif
+        return false;
+      }
+    }
+  }
+
+  // Convert DRE to Location for comparing
+  std::map<const ParmVarDecl *, std::set<std::pair<SourceLocation, AccessMode>>>
+      DeclUsedLocsMap;
+  for (const auto &Pair : DeclUsedMap) {
+    for (const auto &Item : Pair.second) {
+      DeclUsedLocsMap[Pair.first].insert(
+          std::make_pair(Item.first->getBeginLoc(), Item.second));
     }
   }
 
@@ -711,44 +767,6 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isValidAccessPattern(
   return true;
 }
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::isSimpleDeviceFuntion(
-    const FunctionDecl *FD) {
-  using namespace ast_matchers;
-  if (!isUserDefinedDecl(FD)) {
-    if (AllowedDeviceFunctions.count(FD->getNameInfo().getName().getAsString()))
-      return true;
-    else
-      return false;
-  }
-  // "Simple" means: only fundamental value parameters && no file scope
-  // __device__/__managed__ variable access/no further call
-  for (const auto &Param : FD->parameters()) {
-    if (Param->getType()->isPointerType())
-      return false;
-    if (!Param->getType()->isFundamentalType())
-      return false;
-  }
-  auto DREMatcher = findAll(
-      declRefExpr(
-          to(varDecl(
-              anyOf(hasAttr(attr::CUDADevice), hasAttr(attr::HIPManaged)),
-              unless(hasAnyName("threadIdx", "blockDim", "blockIdx", "gridDim",
-                                "warpSize")))))
-          .bind("DRE"));
-  auto DREMatchedResults =
-      match(DREMatcher, *(FD->getBody()), DpctGlobalInfo::getContext());
-  if (!DREMatchedResults.empty()) {
-    return false;
-  }
-  auto CallMatcher = findAll(callExpr().bind("CALL"));
-  auto CallMatchedResults =
-      match(CallMatcher, *(FD->getBody()), DpctGlobalInfo::getContext());
-  if (!CallMatchedResults.empty()) {
-    return false;
-  }
-  return true;
-}
-
 bool clang::dpct::BarrierFenceSpaceAnalyzer::isAccessingMemory(
     const DeclRefExpr *DRE) {
   auto &Context = DpctGlobalInfo::getContext();
@@ -772,21 +790,6 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isAccessingMemory(
 
 std::unordered_map<std::string, std::unordered_map<std::string, bool>>
     clang::dpct::BarrierFenceSpaceAnalyzer::CachedResults;
-
-// Functions in this set should not create alias name for input pointer
-const std::unordered_set<std::string>
-    clang::dpct::BarrierFenceSpaceAnalyzer::AllowedDeviceFunctions = {
-        "__popc",
-        "atomicAdd",
-        "__fetch_builtin_x",
-        "__fetch_builtin_y",
-        "__fetch_builtin_z",
-        "uint4",
-        "sqrtf",
-        "__expf",
-        "fmaf",
-        "abs",
-        "float2"};
 
 // TODO: Implement more accuracy Predecessors and Successors. Then below code
 //       can be used for checking.

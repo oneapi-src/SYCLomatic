@@ -60,7 +60,6 @@ public:
 
 private:
   enum class AccessMode : int { Read = 0, Write, ReadWrite };
-  bool traverseFunction(const FunctionDecl *FD);
   std::set<const DeclRefExpr *> matchAllDRE(const VarDecl *TargetDecl,
                                             const Stmt *Range);
   std::pair<std::set<const DeclRefExpr *>, std::set<const VarDecl *>>
@@ -83,7 +82,6 @@ private:
   bool containsMacro(const SourceLocation &SL, const SyncCallInfo &SCI);
   bool isNoOverlappingAccessAmongWorkItems(int KernelDim,
                                            const DeclRefExpr *DRE);
-  bool isSimpleDeviceFuntion(const FunctionDecl *FD);
   std::vector<std::pair<const CallExpr *, SyncCallInfo>> SyncCallsVec;
   std::deque<SourceRange> LoopRange;
   int KernelDim = 3; // 3 or 1
@@ -105,7 +103,6 @@ private:
   /// (FD location, (Call location, result))
   static std::unordered_map<std::string, std::unordered_map<std::string, bool>>
       CachedResults;
-  static const std::unordered_set<std::string> AllowedDeviceFunctions;
 
   template <class TargetTy, class NodeTy>
   static inline const TargetTy *findAncestorInFunctionScope(
@@ -127,6 +124,10 @@ private:
     }
     return nullptr;
   }
+
+  bool isPotentialGlobalMemoryAccess(std::shared_ptr<DeviceFunctionInfo> DFI,
+                                     bool IsInGlobalFunction);
+  std::set<const Expr *> DeviceFunctionCallArgs;
 
   // TODO: Implement more accuracy Predecessors and Successors. Then below code
   //       can be used for checking.
