@@ -56,7 +56,7 @@ public:
 #undef VISIT_NODE
 
 public:
-  bool canSetLocalFenceSpace(const CallExpr *CE);
+  bool canSetLocalFenceSpace(const CallExpr *CE, bool IsDryRun = false);
 
 private:
   enum class AccessMode : int { Read = 0, Write, ReadWrite };
@@ -97,12 +97,14 @@ private:
   // FDLoc is in the map means this kernel function is analyzed.
   // CELoc is not in the map means cannot set local fence space.
   void setFalseForThisFunctionDecl() {
-    CachedResults[FDLoc] = std::unordered_map<std::string, bool>();
+    if (!IsDryRun)
+      CachedResults[FDLoc] = std::unordered_map<std::string, bool>();
   }
 
   /// (FD location, (Call location, result))
   static std::unordered_map<std::string, std::unordered_map<std::string, bool>>
       CachedResults;
+  bool IsDryRun = false;
 
   template <class TargetTy, class NodeTy>
   static inline const TargetTy *findAncestorInFunctionScope(
@@ -181,6 +183,10 @@ private:
           }
         }
         return true;
+      case clang::Type::TypeClass::SubstTemplateTypeParm:
+        return getTypeInfo(dyn_cast<clang::SubstTemplateTypeParmType>(TypePtr)
+                               ->getReplacementType()
+                               .getTypePtr());
       default:
         if (TypePtr->isFundamentalType())
           return true;

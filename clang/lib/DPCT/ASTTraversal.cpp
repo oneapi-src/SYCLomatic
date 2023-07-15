@@ -12039,24 +12039,55 @@ void SyncThreadsMigrationRule::registerMatcher(MatchFinder &MF) {
 }
 
 void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
+  static std::map<std::string, bool> LocationResultMapForTemplate;
+  static auto emplaceReplacement = [&](bool UseLocal, const CallExpr *CE) {
+    std::string Replacement;
+    if (UseLocal) {
+      Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
+                    MapNames::getClNamespace() +
+                    "access::fence_space::local_space)";
+    } else {
+      report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true,
+             "nd_item");
+      Replacement = DpctGlobalInfo::getItem(CE) + ".barrier()";
+    }
+    emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+  };
+
   const CallExpr *CE = getAssistNodeAsType<CallExpr>(Result, "SyncFuncCall");
-  if (!CE)
+  const FunctionDecl *FD =
+      getAssistNodeAsType<FunctionDecl>(Result, "FuncDecl");
+  if (!CE || !FD)
     return;
 
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
   if (FuncName == "__syncthreads") {
     BarrierFenceSpaceAnalyzer A;
-    if (A.canSetLocalFenceSpace(CE)) {
-      std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
-                                MapNames::getClNamespace() +
-                                "access::fence_space::local_space)";
-      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+    const FunctionTemplateDecl *FTD = FD->getDescribedFunctionTemplate();
+    if (FTD) {
+      if (FTD->specializations().empty()) {
+        emplaceReplacement(A.canSetLocalFenceSpace(CE), CE);
+      }
     } else {
-      report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true,
-             "nd_item");
-      std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier()";
-      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+      if (FD->getTemplateSpecializationKind() ==
+          TemplateSpecializationKind::TSK_Undeclared) {
+        emplaceReplacement(A.canSetLocalFenceSpace(CE), CE);
+      } else {
+        bool CurRes = A.canSetLocalFenceSpace(CE, true);
+        std::string LocHash = getHashStrFromLoc(CE->getBeginLoc());
+        auto Iter = LocationResultMapForTemplate.find(LocHash);
+        if (Iter != LocationResultMapForTemplate.end()) {
+          if (Iter->second != CurRes) {
+            report(CE->getBeginLoc(),
+                   Diagnostics::CANNOT_UNIFY_FUNCTION_CALL_IN_MACRO_OR_TEMPLATE,
+                   false, FuncName);
+          }
+        } else {
+          LocationResultMapForTemplate[LocHash] = CurRes;
+          emplaceReplacement(CurRes, CE);
+        }
+      }
     }
   }
 }

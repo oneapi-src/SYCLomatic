@@ -91,6 +91,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const DeclRefExpr *DRE) {
     std::cout << "Return False case A: "
               << PVD->getBeginLoc().printToString(
                      DpctGlobalInfo::getSourceManager())
+              << ", Type:" << DpctGlobalInfo::getTypeName(PVD->getType())
               << std::endl;
 #endif
     return false;
@@ -292,7 +293,8 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isPotentialGlobalMemoryAccess(
 }
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
-    const CallExpr *CE) {
+    const CallExpr *CE, bool IsDryRun) {
+  this->IsDryRun = IsDryRun;
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
   std::cout << "BarrierFenceSpaceAnalyzer Analyzing ..." << std::endl;
 #endif
@@ -323,12 +325,14 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
   FDLoc = getHashStrFromLoc(FD->getBeginLoc());
 
   auto FDIter = CachedResults.find(FDLoc);
-  if (FDIter != CachedResults.end()) {
-    auto CEIter = FDIter->second.find(CELoc);
-    if (CEIter != FDIter->second.end()) {
-      return CEIter->second;
-    } else {
-      return false;
+  if (!IsDryRun) {
+    if (FDIter != CachedResults.end()) {
+      auto CEIter = FDIter->second.find(CELoc);
+      if (CEIter != FDIter->second.end()) {
+        return CEIter->second;
+      } else {
+        return false;
+      }
     }
   }
 
@@ -530,6 +534,14 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
   std::cout << "===== SyncCall info contnet end =====" << std::endl;
 #endif
 
+  if (IsDryRun) {
+    for (auto &SyncCall : SyncCallsVec) {
+      if (CE == SyncCall.first) {
+        return isValidAccessPattern(DeclUsedLocsMap, SyncCall.second);
+      }
+    }
+    return false;
+  }
   for (auto &SyncCall : SyncCallsVec) {
     CachedResults[FDLoc][getHashStrFromLoc(SyncCall.first->getBeginLoc())] =
         isValidAccessPattern(DeclUsedLocsMap, SyncCall.second);
