@@ -1,6 +1,8 @@
 // RUN: dpct --format-range=none -out-root %T/syncthreads %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/syncthreads/syncthreads.dp.cpp
 
+#include "cuda_fp16.h"
+
 // CHECK: void test_syncthreads(int *arr, const sycl::nd_item<3> &[[ITEMNAME:item_ct1]]) {
 __global__ void test_syncthreads(int *arr) {
   // CHECK: [[ITEMNAME]].barrier(sycl::access::fence_space::local_space);
@@ -347,3 +349,17 @@ __global__ void test15(float *_res) {
   res[2] = 123;
   res += 2;
 }
+
+//CHECK:template <class T> void test16(T *res, const sycl::nd_item<3> &item_ct1) {
+//CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
+template <class T> __global__ void test16(T *res) {
+  __syncthreads();
+  auto a = res[2];
+}
+
+template <class T> void foo16(int grid, int block, T *res, cudaStream_t stream) {
+  test16<T><<<grid, block, 0, stream>>>(res);
+}
+
+template void foo16<half>(int grid, int block, half *res, cudaStream_t stream);
+template void foo16<float>(int grid, int block, float *res, cudaStream_t stream);

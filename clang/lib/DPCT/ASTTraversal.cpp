@@ -12040,7 +12040,7 @@ void SyncThreadsMigrationRule::registerMatcher(MatchFinder &MF) {
 
 void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
   static std::map<std::string, bool> LocationResultMapForTemplate;
-  static auto emplaceReplacement = [&](bool UseLocal, const CallExpr *CE) {
+  auto emplaceReplacement = [&](bool UseLocal, const CallExpr *CE) {
     std::string Replacement;
     if (UseLocal) {
       Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +

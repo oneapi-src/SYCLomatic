@@ -176,6 +176,9 @@ private:
                                .getTypePtr());
       case clang::Type::TypeClass::Record:
         IsClass = true;
+        if (PointerLevel &&
+            isUserDefinedDecl(dyn_cast<clang::RecordType>(TypePtr)->getDecl()))
+          return false;
         for (const auto &Field :
              dyn_cast<clang::RecordType>(TypePtr)->getDecl()->fields()) {
           if (!getTypeInfo(Field->getType().getTypePtr())) {
