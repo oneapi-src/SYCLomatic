@@ -568,6 +568,28 @@ inline std::function<std::string(const CallExpr *)> makeLiteral(std::string Str)
   return [=](const CallExpr *) { return Str; };
 }
 
+inline std::function<bool(const CallExpr *)> SinCosPerfPred(){
+  return [=](const CallExpr *) { return true; };
+}
+
+inline std::function<std::string(const CallExpr *)>
+makeArgWithAddressSpaceCast(int ArgIdx, std::string Type) {
+  return [=](const CallExpr *C) -> std::string {
+    const Expr *E = C->getArg(ArgIdx);
+    if (!E) {
+      return "";
+    }
+    ExprAnalysis EA(E);
+    std::string Result =
+        MapNames::getClNamespace() + "address_space_cast<" +
+        MapNames::getClNamespace() +
+        "access::address_space::" + getAddressSpace(C, ArgIdx) + ", " +
+        MapNames::getClNamespace() + "access::decorated::yes" + ", " +
+        Type + ">(" + EA.getReplacedString() + ")";
+    return Result;
+  };
+}
+
 template <class BaseT, class MemberT>
 inline std::function<MemberExprPrinter<BaseT, MemberT>(const CallExpr *)>
 makeMemberExprCreator(std::function<BaseT(const CallExpr *)> Base, bool IsArrow,
@@ -666,6 +688,12 @@ makeZeroInitializerCreator(std::function<SubExprT(const CallExpr *)> SubExpr) {
 }
 
 inline bool isCallAssigned(const CallExpr *C) { return isAssigned(C); }
+
+inline bool isCallInRetStmt(const CallExpr *C) { return isInRetStmt(C); }
+
+inline bool isCallAssignedOrInRetStmt(const CallExpr *C) {
+  return isInRetStmt(C) || isAssigned(C);
+}
 
 template <unsigned int Idx>
 inline unsigned int getSizeFromCallArg(const CallExpr *C, std::string &Var) {
@@ -915,16 +943,22 @@ createFactoryWithSubGroupSizeRequest(
 template <class... StmtPrinters>
 inline std::shared_ptr<CallExprRewriterFactoryBase>
 createMultiStmtsRewriterFactory(
-    const std::string &SourceName,
-    std::function<StmtPrinters(const CallExpr *)> &&... Creators) {
+    const std::string &SourceName, bool CheckAssigned, bool CheckInRetStmt,
+    bool UseDdpctCheckError, bool ExtraParen,
+    std::function<StmtPrinters(const CallExpr *)> &&...Creators) {
   return std::make_shared<ConditionalRewriterFactory>(
-      isCallAssigned,
+      (CheckAssigned && CheckInRetStmt)
+          ? isCallAssignedOrInRetStmt
+          : (CheckAssigned
+                 ? isCallAssigned
+                 : (CheckInRetStmt ? isCallInRetStmt
+                                   : [](const CallExpr *C) { return true; })),
       std::make_shared<AssignableRewriterFactory>(
           std::make_shared<CallExprRewriterFactory<
               PrinterRewriter<CommaExprPrinter<StmtPrinters...>>,
               std::function<StmtPrinters(const CallExpr *)>...>>(SourceName,
                                                                  Creators...),
-          true),
+          CheckAssigned, CheckInRetStmt, UseDdpctCheckError, ExtraParen),
       std::make_shared<CallExprRewriterFactory<
           PrinterRewriter<MultiStmtsPrinter<StmtPrinters...>>,
           std::function<StmtPrinters(const CallExpr *)>...>>(SourceName,
@@ -1146,8 +1180,8 @@ createAssignableFactoryWithExtraParen(
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
         &&Input) {
   return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
-      std::move(Input.first),
-      std::make_shared<AssignableRewriterFactory>(Input.second, true));
+      std::move(Input.first), std::make_shared<AssignableRewriterFactory>(
+                                  Input.second, true, false, true, true));
 }
 
 template <class T>
@@ -1259,6 +1293,21 @@ createConditionalFactory(
     T) {
   return createConditionalFactory(std::move(Pred), std::move(First),
                                   std::move(Second));
+}
+
+/// Create MathSpecificElseEmuRewriterFactory key-value pair with one
+/// key-value candidates and predicate. If predicate result is true, \p First
+/// will be used.
+template <class T>
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createMathSpecificElseEmuRewriterFactory(
+    std::function<bool(const CallExpr *)> Pred,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&First,
+    T) {
+  return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
+      std::move(First.first),
+      std::make_shared<MathSpecificElseEmuRewriterFactory>(Pred, First.second));
 }
 
 template <typename T>
