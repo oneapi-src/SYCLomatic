@@ -118,12 +118,12 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
   if (cRow < m_ld && cCol < n_ld) {
     // CHECK: DPCT1007:{{[0-9]+}}: Migration of nvcuda::wmma::load_matrix_sync is not supported.
     nvcuda::wmma::load_matrix_sync(c_frag, c + cCol + cRow * ldc, ldc,
-                           nvcuda::wmma::mem_row_major);
+                                   nvcuda::wmma::mem_row_major);
 
     // Store the output
     // CHECK: DPCT1007:{{[0-9]+}}: Migration of nvcuda::wmma::store_matrix_sync is not supported.
     nvcuda::wmma::store_matrix_sync(d + cCol + cRow * ldc, c_frag, ldc,
-                            nvcuda::wmma::mem_row_major);
+                                    nvcuda::wmma::mem_row_major);
   }
 }
 

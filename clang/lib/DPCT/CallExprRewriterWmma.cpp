@@ -6,9 +6,9 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "ASTTraversal.h"
 #include "CallExprRewriter.h"
 #include "CallExprRewriterCommon.h"
-#include "ASTTraversal.h"
 #include "MapNames.h"
 
 namespace clang {
