@@ -12277,6 +12277,8 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE,
                                            bool HaveKeywordInAPIName) {
   std::string Namespace;
   const NamedDecl *ND = dyn_cast<NamedDecl>(CE->getCalleeDecl());
+  if (dyn_cast<RecordDecl>(ND->getDeclContext()))
+      return;
   if (CE->getDirectCallee()->isOverloadedOperator())
     return;
   if (ND) {
