@@ -19,7 +19,6 @@
 #include <oneapi/dnnl/dnnl_sycl.hpp>
 #include <unordered_map>
 #include <algorithm>
-#include <functional>
 #include <list>
 
 #include "memory.hpp"
