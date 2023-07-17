@@ -7,8 +7,6 @@
 //===------------------------------------------------------------------===//
 
 #include "WMMAAPIMigration.h"
-
-#include "ASTTraversal.h"
 #include "ExprAnalysis.h"
 
 using namespace clang::dpct;
