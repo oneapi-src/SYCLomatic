@@ -286,13 +286,14 @@ __device__ int bar12(int num) {
   return n + 1;
 }
 
-//CHECK:void test12(uint8_t *pout, const sycl::nd_item<3> &item_ct1) {
-//CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
 __global__ void test12(uint8_t *pout) {
-  __syncthreads();
   int idx = 456;
   idx = bar12(idx);
+  //CHECK:  pout[idx] = 123;
+  //CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
+  //CHECK-NEXT:  uint8_t a = 4;
   pout[idx] = 123;
+  __syncthreads();
   uint8_t a = 4;
   uint8_t b = abs(a);
 }
@@ -305,16 +306,17 @@ __device__ int bar13(int num) {
   return n + 1;
 }
 
-//CHECK:void test13(uint8_t *pout, const sycl::nd_item<3> &item_ct1, int *d_a) {
-//CHECK-NEXT:  /*
-//CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
-//CHECK-NEXT:  */
-//CHECK-NEXT:  item_ct1.barrier();
-__global__ void test13(uint8_t *pout) {
-  __syncthreads();
+__global__ void test13(uint8_t *pout) {  
   int idx = 456;
   idx = bar13(idx);
-  pout[idx] = 123;
+  //CHECK:  pout[idx] = 456;
+  //CHECK-NEXT:  /*
+  //CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
+  //CHECK-NEXT:  */
+  //CHECK-NEXT:  item_ct1.barrier();
+  //CHECK-NEXT:  uint8_t a = 4;
+  pout[idx] = 456;
+  __syncthreads();
   uint8_t a = 4;
   uint8_t b = abs(a);
 }
@@ -327,34 +329,37 @@ __device__ int bar14() {
   return n + 1;
 }
 
-//CHECK:void test14(uint8_t *pout, const sycl::nd_item<3> &item_ct1) {
-//CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
 __global__ void test14(uint8_t *pout) {
-  __syncthreads();
   int idx = 456;
   idx = bar14();
-  pout[idx] = 123;
+  //CHECK:  pout[idx] = 789;
+  //CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
+  //CHECK-NEXT:  uint8_t a = 4;
+  pout[idx] = 789;
+  __syncthreads();
   uint8_t a = 4;
   uint8_t b = abs(a);
 }
 
-//CHECK:void test15(float *_res, const sycl::nd_item<3> &item_ct1,
-//CHECK-NEXT:            sycl::float2 *ker_even) {
-//CHECK-NEXT:   // shared mem
-//CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
 __global__ void test15(float *_res) {
   __shared__ float2 ker_even[123]; // shared mem
-  __syncthreads();
+  //CHECK:  float *res = _res + 123;
+  //CHECK-NEXT:  res[2] = 123;
+  //CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
+  //CHECK-NEXT:  res += 2;
   float *res = _res + 123;
   res[2] = 123;
+  __syncthreads();
   res += 2;
 }
 
-//CHECK:template <class T> void test16(T *res, const sycl::nd_item<3> &item_ct1) {
-//CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
 template <class T> __global__ void test16(T *res) {
-  __syncthreads();
+  //CHECK:  auto a = res[2];
+  //CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
+  //CHECK-NEXT:  a++;
   auto a = res[2];
+  __syncthreads();
+  a++;
 }
 
 template <class T> void foo16(int grid, int block, T *res, cudaStream_t stream) {
