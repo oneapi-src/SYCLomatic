@@ -851,7 +851,6 @@ void CubRule::processCubFuncCall(const CallExpr *CE, bool FuncCallUsed) {
     return;
 
   llvm::StringRef FuncName = DC->getName();
-  CE->dump();
   if (FuncName == "ShuffleIndex") {
     processWarpLevelFuncCall(CE, FuncCallUsed);
   } else if (FuncName == "ThreadLoad" || FuncName == "ThreadStore") {
