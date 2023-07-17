@@ -9992,7 +9992,7 @@ void MemoryMigrationRule::mallocMigration(
     } else {
       DpctGlobalInfo::getInstance().insertCudaMalloc(C);
       auto LocInfo = DpctGlobalInfo::getLocInfo(C->getBeginLoc());
-      auto Action = [LocInfo, IsAssigned, C]() {
+      auto Action = []() {
         requestFeature(HelperFeatureEnum::device_ext);
       };
       auto Info = std::make_shared<PriorityReplInfo>();
