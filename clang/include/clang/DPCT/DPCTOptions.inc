@@ -362,6 +362,9 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
         false),
              DPCT_OPT_ENUM("occupancy-calculation", int(ExperimentalFeatures::Exp_OccupancyCalculation),
         "Experimental helper function used to calculate occupancy.\n",
+        false),
+             DPCT_OPT_ENUM("matrix", int(ExperimentalFeatures::Exp_Matrix),
+        "Experimental extension that allows use of matrix extension like class joint_matrix.\n",
         false)
            ),
            llvm::cl::desc("Comma separated list of experimental features to be used in migrated "
@@ -407,5 +410,12 @@ DPCT_NON_ENUM_OPTION(
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), GenHelperFunction, "gen-helper-function",
         llvm::cl::desc("Generate helper function files in the --out-root directory. Default: off."),
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+
+DPCT_NON_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), QueryAPIMapping,
+    "query-api-mapping",
+    llvm::cl::desc(
+        "Query functionally compatible SYCL API to migrate CUDA API."),
+    llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT

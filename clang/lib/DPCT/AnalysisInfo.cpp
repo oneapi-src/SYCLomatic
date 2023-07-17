@@ -939,9 +939,11 @@ void DpctFileInfo::buildReplacements() {
   for (auto &BuiltinVar : BuiltinVarInfoMap) {
     auto Ptr = MemVarMap::getHeadWithoutPathCompression(
         &(BuiltinVar.second.DFI->getVarMap()));
-    if (Ptr) {
+    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && Ptr) {
       unsigned int ID = (Ptr->Dim == 1) ? 0 : 2;
       BuiltinVar.second.buildInfo(FilePath, BuiltinVar.first, ID);
+    } else {
+      BuiltinVar.second.buildInfo(FilePath, BuiltinVar.first, 2);
     }
   }
 
@@ -1259,23 +1261,21 @@ void KernelCallExpr::buildExecutionConfig(
     ++Idx;
   }
 
-  if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
-    Idx = 0;
-    for (auto Arg : ConfigArgs) {
-      if (Idx > 1)
-        break;
-      KernelConfigAnalysis AnalysisTry1D(IsInMacroDefine);
-      AnalysisTry1D.IsTryToUseOneDimension = true;
-      AnalysisTry1D.analyze(Arg, Idx, Idx < 2);
-      if (Idx == 0) {
-        GridDim = AnalysisTry1D.Dim;
-        ExecutionConfig.GroupSizeFor1D = AnalysisTry1D.getReplacedString();
-      } else if (Idx == 1) {
-        BlockDim = AnalysisTry1D.Dim;
-        ExecutionConfig.LocalSizeFor1D = AnalysisTry1D.getReplacedString();
-      }
-      ++Idx;
+  Idx = 0;
+  for (auto Arg : ConfigArgs) {
+    if (Idx > 1)
+      break;
+    KernelConfigAnalysis AnalysisTry1D(IsInMacroDefine);
+    AnalysisTry1D.IsTryToUseOneDimension = true;
+    AnalysisTry1D.analyze(Arg, Idx, Idx < 2);
+    if (Idx == 0) {
+      GridDim = AnalysisTry1D.Dim;
+      ExecutionConfig.GroupSizeFor1D = AnalysisTry1D.getReplacedString();
+    } else if (Idx == 1) {
+      BlockDim = AnalysisTry1D.Dim;
+      ExecutionConfig.LocalSizeFor1D = AnalysisTry1D.getReplacedString();
     }
+    ++Idx;
   }
 
   if (ExecutionConfig.Stream == "0") {
@@ -3773,10 +3773,40 @@ void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
   case TypeLoc::RValueReference:
     IsReference = true;
     return setTypeInfo(TYPELOC_CAST(ReferenceTypeLoc).getPointeeLoc());
+  case TypeLoc::Elaborated: {
+    const TypeLoc &NamedTypeLoc =
+        TYPELOC_CAST(ElaboratedTypeLoc).getNamedTypeLoc();
+    if (const auto TTL = NamedTypeLoc.getAs<TypedefTypeLoc>()) {
+      if (setTypedefInfo(TTL, NeedSizeFold))
+        return;
+    }
+    break;
+  }
+  case TypeLoc::Typedef: {
+    if (setTypedefInfo(TYPELOC_CAST(TypedefTypeLoc), NeedSizeFold))
+      return;
+    break;
+  }
   default:
     break;
   }
   setName(TL);
+}
+
+bool CtTypeInfo::setTypedefInfo(const TypedefTypeLoc &TL, bool NeedSizeFold) {
+  const TypedefNameDecl *TND = TL.getTypedefNameDecl();
+  if (!TND)
+    return false;
+  if (!TND->getTypeSourceInfo())
+    return false;
+  const TypeLoc TypedefTpyeDeclLoc = TND->getTypeSourceInfo()->getTypeLoc();
+  ConstantArrayTypeLoc CATL;
+  if (DpctGlobalInfo::isInAnalysisScope(TypedefTpyeDeclLoc.getBeginLoc()) &&
+      (CATL = TypedefTpyeDeclLoc.getAs<ConstantArrayTypeLoc>())) {
+    setArrayInfo(CATL, NeedSizeFold);
+    return true;
+  }
+  return false;
 }
 
 void CtTypeInfo::setArrayInfo(const IncompleteArrayTypeLoc &TL,
@@ -3894,8 +3924,9 @@ void CtTypeInfo::updateName() {
 
   if (BaseName.empty())
     BaseName = BaseNameWithoutQualifiers;
-  else
+  else {
     BaseName = buildString(BaseName, " ", BaseNameWithoutQualifiers);
+  }
 }
 
 std::shared_ptr<CtTypeInfo> CtTypeInfo::applyTemplateArguments(
@@ -4183,18 +4214,24 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   //    this_sub_group.
   switch (Method) {
   case 'R':
-    if (auto DFI = getCudaKernelDimDFI(Index)) {
-      auto Ptr = MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
-      if (Ptr && Ptr->Dim == 1) {
-        return "0";
+    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+      if (auto DFI = getCudaKernelDimDFI(Index)) {
+        auto Ptr =
+            MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
+        if (Ptr && Ptr->Dim == 1) {
+          return "0";
+        }
       }
     }
     return "2";
   case 'G':
-    if (auto DFI = getCudaKernelDimDFI(Index)) {
-      auto Ptr = MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
-      if (Ptr && Ptr->Dim == 1) {
-        return "1";
+    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+      if (auto DFI = getCudaKernelDimDFI(Index)) {
+        auto Ptr =
+            MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
+        if (Ptr && Ptr->Dim == 1) {
+          return "1";
+        }
       }
     }
     return "3";
