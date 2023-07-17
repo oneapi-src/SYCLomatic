@@ -12255,19 +12255,10 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
       return;
   }
   auto *NSD = dyn_cast<NamespaceDecl>(ND->getDeclContext());
-  while (NSD) {
-    if (!NSD->isInlineNamespace()) {
-      if (Namespace.empty()) {
-        Namespace = NSD->getName().str();
-      } else {
-        Namespace = NSD->getName().str() + "::" + Namespace;
-      }
-    }
-    NSD = dyn_cast<NamespaceDecl>(NSD->getDeclContext());
-  }
+  Namespace = getNameSpace(NSD);
 
   std::string APIName = CE->getCalleeDecl()->getAsFunction()->getNameAsString();
-  if (auto MD = dyn_cast<CXXMemberCallExpr>(CE)) {
+  if (const auto *MD = dyn_cast<CXXMemberCallExpr>(CE)) {
     APIName = Namespace + "::" + ND->getNameAsString() + "." + APIName;
     SrcAPIStaticsMap[getFunctionSignature(MD->getMethodDecl(), Namespace)]++;
   } else {
@@ -12307,9 +12298,8 @@ void RecognizeAPINameRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if ((MC =
                   getNodeAsType<CXXMemberCallExpr>(Result, "MFAPINamesUsed")) ||
              (MC = getNodeAsType<CXXMemberCallExpr>(Result,
-                                                    "MFAPINamesHasNSUsed"))) {
-    processFuncCall(MC);
-  } else if ((MC = getNodeAsType<CXXMemberCallExpr>(
+                                                    "MFAPINamesHasNSUsed")) ||
+             (MC = getNodeAsType<CXXMemberCallExpr>(
                   Result, "StaticMFAPINamesHasNSUsed"))) {
     processFuncCall(MC);
   }
