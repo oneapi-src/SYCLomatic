@@ -60,15 +60,15 @@ __global__ void test1(unsigned int *ptr1, unsigned int *ptr2, unsigned int *ptr3
       nnn += __popc(mmm.x) + __popc(mmm.y) + __popc(mmm.z) + __popc(mmm.w);
     }
   }
-//     CHECK:  /*
-//CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
-//CHECK-NEXT:  */
-//CHECK-NEXT:  item_ct1.barrier();
-//CHECK-NEXT:  for (;;) {
-//CHECK-NEXT:    /*
-//CHECK-NEXT:    DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
-//CHECK-NEXT:    */
-//CHECK-NEXT:    item_ct1.barrier();
+  //     CHECK:  /*
+  //CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
+  //CHECK-NEXT:  */
+  //CHECK-NEXT:  item_ct1.barrier();
+  //CHECK-NEXT:  for (;;) {
+  //CHECK-NEXT:    /*
+  //CHECK-NEXT:    DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
+  //CHECK-NEXT:    */
+  //CHECK-NEXT:    item_ct1.barrier();
   __syncthreads();
   for (;;) {
     __syncthreads();
@@ -321,7 +321,7 @@ __device__ int bar13(int num) {
   return n + 1;
 }
 
-__global__ void test13(uint8_t *pout) {  
+__global__ void test13(uint8_t *pout) {
   int idx = 456;
   idx = bar13(idx);
   //CHECK:  pout[idx] = 456;

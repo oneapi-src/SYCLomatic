@@ -478,7 +478,7 @@ __global__ void mykernel(unsigned int *dev) {
 }
 
 // CHECK: void mykernel_1(unsigned char *buffer, long size,
-// CHECK-NEXT:                             unsigned int *histo, 
+// CHECK-NEXT:                             unsigned int *histo,
 // CHECK-NEXT:                             const sycl::nd_item<3> &item_ct1,
 // CHECK-NEXT:                             unsigned int *temp) {
 // CHECK-EMPTY:
