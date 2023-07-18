@@ -7,6 +7,10 @@ Get Started with |tool_name|
 is written in CUDA\* to a program written in |dpcpp_long|, which is based on
 modern C++ and incorporates portable industry standards such as SYCL\*.
 
+|tool_name| supports the migration of programs implemented with CUDA versions
+|cuda_versions|. The list of supported languages and versions may be extended in
+the future.
+
 .. include:: /_include_files/intro_links_gsg.rst
 
 .. note::
@@ -23,7 +27,7 @@ Before You Begin
 
 Certain CUDA header files (specific to your project) may need to be accessible
 to |tool_name|. |tool_name| looks for these CUDA
-header files in the default locations:
+header files in the following default locations:
 
 -  ``/usr/local/cuda/include``
 
@@ -38,10 +42,6 @@ command line.
 
    The CUDA include path should not be the same as, or a child path of, the
    directory where the source code that needs to be migrated is located.
-
-Currently, |tool_name| supports the migration of programs
-implemented with CUDA versions |cuda_versions|. The list of supported languages
-and versions may be extended in the future.
 
 .. include:: /_include_files/env_setup_gsg.rst
 
