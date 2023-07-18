@@ -379,7 +379,7 @@ __global__ void kernel(){
 // CHECK:  int test3(){
 // CHECK:    return 1;
 // CHECK:  }
-// CHECK:  int test3_host_ct2(){
+// CHECK:  int test3_host_ct{{[0-9]+}}(){
 // CHECK:    return 0;
 // CHECK:  }
 __host__ __device__ int test3(){
@@ -393,8 +393,8 @@ __host__ __device__ int test3(){
 // CHECK:  int test4(){
 // CHECK:    return test3();
 // CHECK:  }
-// CHECK:  int test4_host_ct1(){
-// CHECK:    return test3_host_ct2();
+// CHECK:  int test4_host_ct{{[0-9]+}}(){
+// CHECK:    return test3_host_ct{{[0-9]+}}();
 // CHECK:  }
 __host__ __device__ int test4(){
 #ifdef __CUDA_ARCH__
@@ -407,8 +407,8 @@ __host__ __device__ int test4(){
 // CHECK:  int test5(){
 // CHECK:    return test4();
 // CHECK:  }
-// CHECK:  int test5_host_ct0(){
-// CHECK:    return test4_host_ct1();
+// CHECK:  int test5_host_ct{{[0-9]+}}(){
+// CHECK:    return test4_host_ct{{[0-9]+}}();
 // CHECK:  }
 __host__ __device__ int test5(){
   #ifdef __CUDA_ARCH__
@@ -429,7 +429,7 @@ float a, b;
 // CHECK-NEXT: Env_cuda_thread_in_threadblock4_host_ct{{[0-9]+}}(0);
 // CHECK-NEXT: test1_host_ct{{[0-9]+}}();
 // CHECK-NEXT: test2();
-// CHECK-NEXT: test5_host_ct0();
+// CHECK-NEXT: test5_host_ct{{[0-9]+}}();
 test(a, b);
 test<int>(1, 1);
 Env_cuda_thread_in_threadblock(0);
