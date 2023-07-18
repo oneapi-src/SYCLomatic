@@ -256,6 +256,7 @@ clang::dpct::BarrierFenceSpaceAnalyzer::getAccessKind(
         return nullptr;
       });
   if (!BO) {
+    // TODO: Need check code pattern like: &(*(&(ptr[a])))
     if (UO || ASE) {
       const ImplicitCastExpr *ICE = nullptr;
       if (UO) {
