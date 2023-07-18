@@ -398,9 +398,9 @@ __global__ void foo() {
 
 
   // CHECK: malloc(sizeof(dpct::queue_ptr *));
-  // CHECK-NEXT: malloc(sizeof(dpct::queue_ptr **));
-  // CHECK-NEXT: malloc(sizeof(dpct::queue_ptr ***));
-  // CHECK-NEXT: malloc(sizeof(dpct::queue_ptr &));
+  // CHECK: malloc(sizeof(dpct::queue_ptr **));
+  // CHECK: malloc(sizeof(dpct::queue_ptr ***));
+  // CHECK: malloc(sizeof(dpct::queue_ptr &));
   malloc(sizeof(cudaStream_t *));
   malloc(sizeof(cudaStream_t **));
   malloc(sizeof(cudaStream_t ***));
