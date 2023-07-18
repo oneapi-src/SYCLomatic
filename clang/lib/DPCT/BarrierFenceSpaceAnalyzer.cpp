@@ -55,10 +55,8 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const CallExpr *CE) {
     return true;
   std::string FuncName = FuncDecl->getNameInfo().getName().getAsString();
 
-  if (isUserDefinedDecl(FuncDecl)) {
-    for (const auto &Arg : CE->arguments())
-      DeviceFunctionCallArgs.insert(Arg);
-  }
+  for (const auto &Arg : CE->arguments())
+    DeviceFunctionCallArgs.insert(Arg);
 
   if (FuncName == "__syncthreads") {
     SyncCallInfo SCI;
@@ -163,11 +161,8 @@ void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
     const CXXConstructExpr *CCE) {
-  auto Ctor = CCE->getConstructor();
-  if (isUserDefinedDecl(Ctor)) {
-    for (const auto &Arg : CCE->arguments())
-      DeviceFunctionCallArgs.insert(Arg);
-  }
+  for (const auto &Arg : CCE->arguments())
+    DeviceFunctionCallArgs.insert(Arg);
   return true;
 }
 void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
@@ -240,26 +235,42 @@ clang::dpct::BarrierFenceSpaceAnalyzer::AccessMode
 clang::dpct::BarrierFenceSpaceAnalyzer::getAccessKind(
     const DeclRefExpr *CurrentDRE) {
   bool FoundDerefOrArraySubscript = false;
+  const UnaryOperator *UO = nullptr;
+  const ArraySubscriptExpr *ASE = nullptr;
   const BinaryOperator *BO = findAncestorInFunctionScope<BinaryOperator>(
       CurrentDRE, FD,
       [&](const DynTypedNode &Parent,
           const DynTypedNode &Current) -> const void * {
         const auto BO = Parent.get<BinaryOperator>();
-        const auto UO = Parent.get<UnaryOperator>();
-        const auto ASE = Parent.get<ArraySubscriptExpr>();
         if (BO && BO->isAssignmentOp() &&
             (BO->getLHS() == Current.get<Expr>()) &&
             FoundDerefOrArraySubscript) {
           return reinterpret_cast<const void *>(BO);
-        } else if (UO && (UO->getOpcode() == UnaryOperatorKind::UO_Deref)) {
+        } else if (!FoundDerefOrArraySubscript && UO &&
+                   (UO->getOpcode() == UnaryOperatorKind::UO_Deref)) {
           FoundDerefOrArraySubscript = true;
-        } else if (ASE && (ASE->getBase() == Current.get<Expr>())) {
+        } else if (!FoundDerefOrArraySubscript && ASE &&
+                   (ASE->getBase() == Current.get<Expr>())) {
           FoundDerefOrArraySubscript = true;
         }
         return nullptr;
       });
   if (!BO) {
-    return AccessMode::Read;
+    if (UO || ASE) {
+      const ImplicitCastExpr *ICE = nullptr;
+      if (UO) {
+        ICE = DpctGlobalInfo::findParent<ImplicitCastExpr>(UO);
+      } else if (ASE) {
+        ICE = DpctGlobalInfo::findParent<ImplicitCastExpr>(ASE);
+      }
+      if (ICE && ICE->getCastKind() == CastKind::CK_LValueToRValue) {
+        return AccessMode::Read;
+      } else {
+        return AccessMode::ReadWrite;
+      }
+    } else {
+      return AccessMode::Read;
+    }
   }
   if (BO->getOpcode() == BinaryOperatorKind::BO_Assign) {
     return AccessMode::Write;
@@ -461,36 +472,6 @@ clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
           DeclUsedMap[Pair.first].insert(
               std::make_pair(Item, getAccessKind(Item)));
         }
-      }
-    }
-  }
-
-  auto isDREInDeclUsedMap = [&](const DeclRefExpr *Ref) {
-    for (const auto &Pair : DeclUsedMap) {
-      for (const auto &Item : Pair.second) {
-        if (Item.first == Ref)
-          return true;
-      }
-    }
-    return false;
-  };
-
-  for (const auto &Arg : DeviceFunctionCallArgs) {
-    auto DREMatcher =
-        ast_matchers::findAll(ast_matchers::declRefExpr().bind("DRE"));
-    auto DREResults =
-        ast_matchers::match(DREMatcher, *Arg, DpctGlobalInfo::getContext());
-    for (auto Node : DREResults) {
-      const DeclRefExpr *DRE = Node.getNodeAs<DeclRefExpr>("DRE");
-      if (isDREInDeclUsedMap(DRE)) {
-        setFalseForThisFunctionDecl();
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-        std::cout << "Return False case J:"
-                  << DRE->getBeginLoc().printToString(
-                         DpctGlobalInfo::getSourceManager())
-                  << std::endl;
-#endif
-        return BarrierFenceSpaceAnalyzerResult(false, false);
       }
     }
   }
