@@ -12040,9 +12040,14 @@ void SyncThreadsMigrationRule::registerMatcher(MatchFinder &MF) {
 
 void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
   static std::map<std::string, bool> LocationResultMapForTemplate;
-  auto emplaceReplacement = [&](bool UseLocal, const CallExpr *CE) {
+  auto emplaceReplacement = [&](BarrierFenceSpaceAnalyzerResult Res,
+                                const CallExpr *CE) {
     std::string Replacement;
-    if (UseLocal) {
+    if (Res.CanUseLocalBarrier) {
+      if (Res.MayDependOn1DKernel) {
+        report(CE->getBeginLoc(), Diagnostics::ONE_DIMENSION_KERNEL_BARRIER,
+               true);
+      }
       Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
                     MapNames::getClNamespace() +
                     "access::fence_space::local_space)";
@@ -12074,17 +12079,17 @@ void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
           TemplateSpecializationKind::TSK_Undeclared) {
         emplaceReplacement(A.canSetLocalFenceSpace(CE), CE);
       } else {
-        bool CurRes = A.canSetLocalFenceSpace(CE, true);
+        auto CurRes = A.canSetLocalFenceSpace(CE, true);
         std::string LocHash = getHashStrFromLoc(CE->getBeginLoc());
         auto Iter = LocationResultMapForTemplate.find(LocHash);
         if (Iter != LocationResultMapForTemplate.end()) {
-          if (Iter->second != CurRes) {
+          if (Iter->second != CurRes.CanUseLocalBarrier) {
             report(CE->getBeginLoc(),
                    Diagnostics::CANNOT_UNIFY_FUNCTION_CALL_IN_MACRO_OR_TEMPLATE,
                    false, FuncName);
           }
         } else {
-          LocationResultMapForTemplate[LocHash] = CurRes;
+          LocationResultMapForTemplate[LocHash] = CurRes.CanUseLocalBarrier;
           emplaceReplacement(CurRes, CE);
         }
       }

@@ -22,6 +22,16 @@
 namespace clang {
 namespace dpct {
 
+struct BarrierFenceSpaceAnalyzerResult {
+  BarrierFenceSpaceAnalyzerResult() {}
+  BarrierFenceSpaceAnalyzerResult(bool CanUseLocalBarrier,
+                                  bool MayDependOn1DKernel)
+      : CanUseLocalBarrier(CanUseLocalBarrier),
+        MayDependOn1DKernel(MayDependOn1DKernel) {}
+  bool CanUseLocalBarrier = false;
+  bool MayDependOn1DKernel = false;
+};
+
 class BarrierFenceSpaceAnalyzer
     : public RecursiveASTVisitor<BarrierFenceSpaceAnalyzer> {
 public:
@@ -56,7 +66,8 @@ public:
 #undef VISIT_NODE
 
 public:
-  bool canSetLocalFenceSpace(const CallExpr *CE, bool IsDryRun = false);
+  BarrierFenceSpaceAnalyzerResult canSetLocalFenceSpace(const CallExpr *CE,
+                                                        bool IsDryRun = false);
 
 private:
   enum class AccessMode : int { Read = 0, Write, ReadWrite };
@@ -98,13 +109,17 @@ private:
   // CELoc is not in the map means cannot set local fence space.
   void setFalseForThisFunctionDecl() {
     if (!IsDryRun)
-      CachedResults[FDLoc] = std::unordered_map<std::string, bool>();
+      CachedResults[FDLoc] =
+          std::unordered_map<std::string, BarrierFenceSpaceAnalyzerResult>();
   }
 
   /// (FD location, (Call location, result))
-  static std::unordered_map<std::string, std::unordered_map<std::string, bool>>
+  static std::unordered_map<
+      std::string,
+      std::unordered_map<std::string, BarrierFenceSpaceAnalyzerResult>>
       CachedResults;
   bool IsDryRun = false;
+  bool MayDependOn1DKernel = false;
 
   template <class TargetTy, class NodeTy>
   static inline const TargetTy *findAncestorInFunctionScope(

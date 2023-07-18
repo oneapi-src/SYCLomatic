@@ -165,7 +165,10 @@ __global__ void test10(float *arg1_ptr, int arg2_scalar, int arg3_scalar) {
       var2[var1] = a;
       arg1_ptr[var1] = a;
     }
-    // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
+    // CHECK: /*
+    // CHECK-NEXT: DPCT1113:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier(sycl::access::fence_space::local_space) with sycl::nd_item::barrier() if you change the dimension of the kernel.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: item_ct1.barrier(sycl::access::fence_space::local_space);
     // CHECK-NEXT: int var3 = arg3_scalar / 2;
     __syncthreads();
     int var3 = arg3_scalar / 2;
@@ -174,6 +177,9 @@ __global__ void test10(float *arg1_ptr, int arg2_scalar, int arg3_scalar) {
         var2[var1] += var2[var1 + var3];
       }
       // CHECK: var3 = var3 / 2;
+      // CHECK-NEXT: /*
+      // CHECK-NEXT: DPCT1113:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier(sycl::access::fence_space::local_space) with sycl::nd_item::barrier() if you change the dimension of the kernel.
+      // CHECK-NEXT: */
       // CHECK-NEXT: item_ct1.barrier(sycl::access::fence_space::local_space);
       var3 = var3 / 2;
       __syncthreads();
@@ -184,7 +190,10 @@ __global__ void test10(float *arg1_ptr, int arg2_scalar, int arg3_scalar) {
       arg1_ptr[var1] = sqrtf(arg1_ptr[var1]);
     }
   }
-  // CHECK:   item_ct1.barrier(sycl::access::fence_space::local_space);
+  // CHECK:   /*
+  // CHECK-NEXT:   DPCT1113:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier(sycl::access::fence_space::local_space) with sycl::nd_item::barrier() if you change the dimension of the kernel.
+  // CHECK-NEXT:   */
+  // CHECK-NEXT:   item_ct1.barrier(sycl::access::fence_space::local_space);
   // CHECK-NEXT: }
   __syncthreads();
 }

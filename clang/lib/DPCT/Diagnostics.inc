@@ -239,3 +239,5 @@ DEF_WARNING(MAX_ACTIVE_WG_ARGS, 1111, "Please verify the input arguments of \"%0
 DEF_COMMENT(MAX_ACTIVE_WG_ARGS, 1111, "Please verify the input arguments of \"{0}\" base on the target function \"{1}\".")
 DEF_WARNING(TEX_FETCH, 1112, "If the filter mode is set to 'linear', the behavior of \"read\" may be different from \"tex1Dfetch\". You may need to adjust the code.")
 DEF_COMMENT(TEX_FETCH, 1112, "If the filter mode is set to 'linear', the behavior of \"read\" may be different from \"tex1Dfetch\". You may need to adjust the code.")
+DEF_WARNING(ONE_DIMENSION_KERNEL_BARRIER, 1113, "Consider replacing sycl::nd_item::barrier(sycl::access::fence_space::local_space) with sycl::nd_item::barrier() if you change the dimension of the kernel.")
+DEF_COMMENT(ONE_DIMENSION_KERNEL_BARRIER, 1113, "Consider replacing sycl::nd_item::barrier(sycl::access::fence_space::local_space) with sycl::nd_item::barrier() if you change the dimension of the kernel.")

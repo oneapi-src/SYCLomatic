@@ -292,7 +292,8 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isPotentialGlobalMemoryAccess(
   return false;
 }
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
+clang::dpct::BarrierFenceSpaceAnalyzerResult
+clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     const CallExpr *CE, bool IsDryRun) {
   this->IsDryRun = IsDryRun;
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
@@ -304,21 +305,21 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
                  "CE->getEndLoc().isMacroID()"
               << std::endl;
 #endif
-    return false;
+    return BarrierFenceSpaceAnalyzerResult(false, false);
   }
   auto FD = DpctGlobalInfo::findAncestor<FunctionDecl>(CE);
   if (!FD) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
     std::cout << "Return False case G: !FD" << std::endl;
 #endif
-    return false;
+    return BarrierFenceSpaceAnalyzerResult(false, false);
   }
   if (!FD->hasAttr<CUDAGlobalAttr>()) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
     std::cout << "Return False case H: !FD->hasAttr<CUDAGlobalAttr>()"
               << std::endl;
 #endif
-    return false;
+    return BarrierFenceSpaceAnalyzerResult(false, false);
   }
 
   CELoc = getHashStrFromLoc(CE->getBeginLoc());
@@ -331,7 +332,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
       if (CEIter != FDIter->second.end()) {
         return CEIter->second;
       } else {
-        return false;
+        return BarrierFenceSpaceAnalyzerResult(false, false);
       }
     }
   }
@@ -343,7 +344,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     std::cout << "Return False case I: Found device/managed variable usage"
               << std::endl;
 #endif
-    return false;
+    return BarrierFenceSpaceAnalyzerResult(false, false);
   }
 
   this->FD = FD;
@@ -376,7 +377,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
   //      exit.
   if (!this->TraverseDecl(const_cast<FunctionDecl *>(FD))) {
     setFalseForThisFunctionDecl();
-    return false;
+    return BarrierFenceSpaceAnalyzerResult(false, false);
   }
 
   auto getSize =
@@ -453,10 +454,13 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
       DeclUsedMap;
   for (const auto &Pair : DefUseMap) {
     for (const auto &Item : Pair.second) {
-      if (isAccessingMemory(Item) &&
-          !isNoOverlappingAccessAmongWorkItems(KernelDim, Item)) {
-        DeclUsedMap[Pair.first].insert(
-            std::make_pair(Item, getAccessKind(Item)));
+      if (isAccessingMemory(Item)) {
+        if (isNoOverlappingAccessAmongWorkItems(KernelDim, Item)) {
+          MayDependOn1DKernel = true;
+        } else {
+          DeclUsedMap[Pair.first].insert(
+              std::make_pair(Item, getAccessKind(Item)));
+        }
       }
     }
   }
@@ -486,7 +490,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
                          DpctGlobalInfo::getSourceManager())
                   << std::endl;
 #endif
-        return false;
+        return BarrierFenceSpaceAnalyzerResult(false, false);
       }
     }
   }
@@ -537,14 +541,18 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
   if (IsDryRun) {
     for (auto &SyncCall : SyncCallsVec) {
       if (CE == SyncCall.first) {
-        return isValidAccessPattern(DeclUsedLocsMap, SyncCall.second);
+        return BarrierFenceSpaceAnalyzerResult(
+            isValidAccessPattern(DeclUsedLocsMap, SyncCall.second),
+            MayDependOn1DKernel);
       }
     }
-    return false;
+    return BarrierFenceSpaceAnalyzerResult(false, false);
   }
   for (auto &SyncCall : SyncCallsVec) {
     CachedResults[FDLoc][getHashStrFromLoc(SyncCall.first->getBeginLoc())] =
-        isValidAccessPattern(DeclUsedLocsMap, SyncCall.second);
+        BarrierFenceSpaceAnalyzerResult(
+            isValidAccessPattern(DeclUsedLocsMap, SyncCall.second),
+            MayDependOn1DKernel);
   }
 
   // find the result in the new map
@@ -554,10 +562,10 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     if (CEIter != FDIter->second.end()) {
       return CEIter->second;
     } else {
-      return false;
+      return BarrierFenceSpaceAnalyzerResult(false, false);
     }
   }
-  return false;
+  return BarrierFenceSpaceAnalyzerResult(false, false);
 }
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::
@@ -771,7 +779,9 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isAccessingMemory(
   return false;
 }
 
-std::unordered_map<std::string, std::unordered_map<std::string, bool>>
+std::unordered_map<
+    std::string, std::unordered_map<
+                     std::string, clang::dpct::BarrierFenceSpaceAnalyzerResult>>
     clang::dpct::BarrierFenceSpaceAnalyzer::CachedResults;
 
 // TODO: Implement more accuracy Predecessors and Successors. Then below code
