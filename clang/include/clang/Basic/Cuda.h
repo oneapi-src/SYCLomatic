@@ -49,7 +49,7 @@ enum class CudaVersion {
   PARTIALLY_SUPPORTED =
       CUDA_118, // Partially supported. Proceed with a warning.
 #endif // SYCLomatic_CUSTOMIZATION
-  NEW = 10000, // Too new. Issue a warning, but allow using it.
+  NEW = 10000,  // Too new. Issue a warning, but allow using it.
 };
 const char *CudaVersionToString(CudaVersion V);
 #ifdef SYCLomatic_CUSTOMIZATION
