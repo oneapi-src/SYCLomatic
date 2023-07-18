@@ -60,9 +60,15 @@ __global__ void test1(unsigned int *ptr1, unsigned int *ptr2, unsigned int *ptr3
       nnn += __popc(mmm.x) + __popc(mmm.y) + __popc(mmm.z) + __popc(mmm.w);
     }
   }
-//     CHECK:  item_ct1.barrier(sycl::access::fence_space::local_space);
+//     CHECK:  /*
+//CHECK-NEXT:  DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
+//CHECK-NEXT:  */
+//CHECK-NEXT:  item_ct1.barrier();
 //CHECK-NEXT:  for (;;) {
-//CHECK-NEXT:    item_ct1.barrier(sycl::access::fence_space::local_space);
+//CHECK-NEXT:    /*
+//CHECK-NEXT:    DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
+//CHECK-NEXT:    */
+//CHECK-NEXT:    item_ct1.barrier();
   __syncthreads();
   for (;;) {
     __syncthreads();

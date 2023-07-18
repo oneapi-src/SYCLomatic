@@ -211,7 +211,8 @@ clang::dpct::BarrierFenceSpaceAnalyzer::isAssignedToAnotherDREOrVD(
               ResultDRESet.insert(DRE);
           }
         } else if (VD && VD->getType()->isPointerType()) {
-          ResultVDSet.insert(VD);
+          if (!VD->getType()->getPointeeType().isConstQualified())
+            ResultVDSet.insert(VD);
         }
         return nullptr;
       });
@@ -234,49 +235,88 @@ clang::dpct::BarrierFenceSpaceAnalyzer::isAssignedToAnotherDREOrVD(
 clang::dpct::BarrierFenceSpaceAnalyzer::AccessMode
 clang::dpct::BarrierFenceSpaceAnalyzer::getAccessKind(
     const DeclRefExpr *CurrentDRE) {
-  bool FoundDerefOrArraySubscript = false;
-  const UnaryOperator *UO = nullptr;
-  const ArraySubscriptExpr *ASE = nullptr;
-  const BinaryOperator *BO = findAncestorInFunctionScope<BinaryOperator>(
-      CurrentDRE, FD,
-      [&](const DynTypedNode &Parent,
-          const DynTypedNode &Current) -> const void * {
-        const auto BO = Parent.get<BinaryOperator>();
-        if (BO && BO->isAssignmentOp() &&
-            (BO->getLHS() == Current.get<Expr>()) &&
-            FoundDerefOrArraySubscript) {
-          return reinterpret_cast<const void *>(BO);
-        } else if (!FoundDerefOrArraySubscript && UO &&
-                   (UO->getOpcode() == UnaryOperatorKind::UO_Deref)) {
-          FoundDerefOrArraySubscript = true;
-        } else if (!FoundDerefOrArraySubscript && ASE &&
-                   (ASE->getBase() == Current.get<Expr>())) {
-          FoundDerefOrArraySubscript = true;
-        }
-        return nullptr;
-      });
-  if (!BO) {
-    // TODO: Need check code pattern like: &(*(&(ptr[a])))
-    if (UO || ASE) {
-      const ImplicitCastExpr *ICE = nullptr;
-      if (UO) {
-        ICE = DpctGlobalInfo::findParent<ImplicitCastExpr>(UO);
-      } else if (ASE) {
-        ICE = DpctGlobalInfo::findParent<ImplicitCastExpr>(ASE);
-      }
-      if (ICE && ICE->getCastKind() == CastKind::CK_LValueToRValue) {
+  auto processCallArg = [](const Expr *CallExprArg) -> AccessMode {
+    if (CallExprArg->getType()->isPointerType())
+      return AccessMode::ReadWrite;
+    const ImplicitCastExpr *ICE = dyn_cast<ImplicitCastExpr>(CallExprArg);
+    if (ICE) {
+      if (ICE->getCastKind() == CastKind::CK_LValueToRValue) {
         return AccessMode::Read;
-      } else {
-        return AccessMode::ReadWrite;
       }
-    } else {
-      return AccessMode::Read;
     }
+    return AccessMode::ReadWrite;
+  };
+
+  bool FoundDerefOrArraySubscript = false;
+  const BinaryOperator *BO = nullptr;
+  const UnaryOperator *UOInBO = nullptr;
+  const ArraySubscriptExpr *ASEInBO = nullptr;
+  const Expr *CallExprArg = nullptr;
+
+  auto &Context = DpctGlobalInfo::getContext();
+  DynTypedNode Current = DynTypedNode::create(*CurrentDRE);
+  DynTypedNodeList Parents = Context.getParents(Current);
+  while (!Parents.empty()) {
+    if (Parents[0].get<FunctionDecl>() && Parents[0].get<FunctionDecl>() == FD)
+      break;
+
+    const auto CE = Parents[0].get<CallExpr>();
+    UOInBO = Parents[0].get<UnaryOperator>();
+    ASEInBO = Parents[0].get<ArraySubscriptExpr>();
+
+    if (CE) {
+      for (const auto Arg : CE->arguments()) {
+        if (Arg == Current.get<Expr>()) {
+          CallExprArg = Arg;
+          break;
+        }
+      }
+    } else if (BO && BO->isAssignmentOp() &&
+               (BO->getLHS() == Current.get<Expr>()) &&
+               FoundDerefOrArraySubscript) {
+      break;
+    } else if (!FoundDerefOrArraySubscript && UOInBO &&
+               (UOInBO->getOpcode() == UnaryOperatorKind::UO_Deref)) {
+      FoundDerefOrArraySubscript = true;
+    } else if (!FoundDerefOrArraySubscript && ASEInBO &&
+               (ASEInBO->getBase() == Current.get<Expr>())) {
+      FoundDerefOrArraySubscript = true;
+    }
+
+    Current = Parents[0];
+    Parents = Context.getParents(Current);
   }
-  if (BO->getOpcode() == BinaryOperatorKind::BO_Assign) {
-    return AccessMode::Write;
+
+  if (BO) {
+    const Expr *CallArg = findAncestorInFunctionScope<Expr>(
+        BO, FD,
+        [&](const DynTypedNode &Parent,
+            const DynTypedNode &Current) -> const void * {
+          const auto CE = Parent.get<CallExpr>();
+          if (CE) {
+            for (const auto Arg : CE->arguments()) {
+              if (Arg == Current.get<Expr>()) {
+                return Arg;
+              }
+            }
+          }
+          return nullptr;
+        });
+
+    if (CallArg) {
+      return processCallArg(CallArg);
+    }
+    if (BO->getOpcode() == BinaryOperatorKind::BO_Assign) {
+      return AccessMode::Write;
+    }
+    return AccessMode::ReadWrite;
   }
-  return AccessMode::ReadWrite;
+
+  if (CallExprArg) {
+    return processCallArg(CallExprArg);
+  }
+  // No BO or Call in ancestor
+  return AccessMode::Read;
 }
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::isPotentialGlobalMemoryAccess(
