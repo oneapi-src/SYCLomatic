@@ -8,20 +8,20 @@ Message
 
 .. _msg-1045-start:
 
-Migration is only supported for this API for the general sparse matrix type. You
-may need to adjust the code.
+Migration is only supported for this API for the <matrix type> sparse matrix type.
+You may need to adjust the code.
 
 .. _msg-1045-end:
 
 Detailed Help
 -------------
 
-This warning appears if the used matrix type is not general or cannot be determined.
+This warning appears if the matrix type in use is not supported or cannot be determined.
 
 Suggestions to Fix
 ------------------
 
-If the matrix type used is:
+If the matrix type in used is:
 
-* Non-general: manually fix the code according to `sparse-blas-routines <https://software.intel.com/content/www/us/en/develop/documentation/oneapi-mkl-dpcpp-developer-reference/top/sparse-blas-routines.html>`_.
-* General: ignore this warning.
+* Supported by the routine: ignore this warning.
+* Not supported by the routine: manually fix the code according to `sparse-blas-routines <https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-dpcpp/current/sparse-blas-routines.html>`_.

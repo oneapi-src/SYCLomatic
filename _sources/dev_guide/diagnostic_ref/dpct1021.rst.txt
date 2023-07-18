@@ -25,3 +25,5 @@ Suggestions to Fix
 
 Redesign the code to submit all kernels by the host program instead of device-side
 enqueue.
+
+Refer to :ref:`DPCT1020`.

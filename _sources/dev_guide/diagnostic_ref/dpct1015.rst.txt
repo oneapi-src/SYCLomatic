@@ -22,3 +22,37 @@ Suggestions to Fix
 ------------------
 
 Use a SYCL output stream instead of a ``printf``-like formatted string.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __global__ void kernel() {
+     ...
+     printf("value is %d\n", value);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel(const sycl::stream &stream_ct1) {
+     ...
+     /*
+     DPCT1015:0: Output needs adjustment.
+     */
+     stream_ct1 << "value is %d\n";
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel(const sycl::stream &stream_ct1) {
+     ...
+     stream_ct1 << "value is " << value << "\n";
+   }
+   

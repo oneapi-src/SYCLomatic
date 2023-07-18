@@ -37,7 +37,7 @@ messages, detailed help, and suggestion to fix your errors.
           :start-after: msg-1003-start:
           :end-before: msg-1003-end:
    * - :ref:`DPCT1004`
-     - DEPRECATED.
+     - REMOVED.
 
        .. include:: diagnostic_ref/dpct1004.rst
           :start-after: msg-1004-start:
@@ -88,7 +88,7 @@ messages, detailed help, and suggestion to fix your errors.
           :start-after: msg-1015-start:
           :end-before: msg-1015-end:
    * - :ref:`DPCT1016`
-     - DEPRECATED.
+     - REMOVED.
 
        .. include:: diagnostic_ref/dpct1016.rst
           :start-after: msg-1016-start:
@@ -170,7 +170,9 @@ messages, detailed help, and suggestion to fix your errors.
           :start-after: msg-1035-start:
           :end-before: msg-1035-end:
    * - :ref:`DPCT1036`
-     - .. include:: diagnostic_ref/dpct1036.rst
+     - REMOVED.
+
+       .. include:: diagnostic_ref/dpct1036.rst
           :start-after: msg-1036-start:
           :end-before: msg-1036-end:
    * - :ref:`DPCT1037`
@@ -290,7 +292,9 @@ messages, detailed help, and suggestion to fix your errors.
           :start-after: msg-1065-start:
           :end-before: msg-1065-end:
    * - :ref:`DPCT1066`
-     - .. include:: diagnostic_ref/dpct1066.rst
+     - REMOVED.
+
+       .. include:: diagnostic_ref/dpct1066.rst
           :start-after: msg-1066-start:
           :end-before: msg-1066-end:
    * - :ref:`DPCT1067`
@@ -298,7 +302,9 @@ messages, detailed help, and suggestion to fix your errors.
           :start-after: msg-1067-start:
           :end-before: msg-1067-end:
    * - :ref:`DPCT1068`
-     - .. include:: diagnostic_ref/dpct1068.rst
+     - REMOVED.
+
+       .. include:: diagnostic_ref/dpct1068.rst
           :start-after: msg-1068-start:
           :end-before: msg-1068-end:
    * - :ref:`DPCT1069`
@@ -310,7 +316,7 @@ messages, detailed help, and suggestion to fix your errors.
           :start-after: msg-1070-start:
           :end-before: msg-1070-end:
    * - :ref:`DPCT1071`
-     - DEPRECATED.
+     - REMOVED.
 
        .. include:: diagnostic_ref/dpct1071.rst
           :start-after: msg-1071-start:
@@ -328,7 +334,7 @@ messages, detailed help, and suggestion to fix your errors.
           :start-after: msg-1074-start:
           :end-before: msg-1074-end:
    * - :ref:`DPCT1075`
-     - DEPRECATED.
+     - REMOVED.
 
        .. include:: diagnostic_ref/dpct1075.rst
           :start-after: msg-1075-start:
@@ -346,7 +352,9 @@ messages, detailed help, and suggestion to fix your errors.
           :start-after: msg-1078-start:
           :end-before: msg-1078-end:
    * - :ref:`DPCT1079`
-     - .. include:: diagnostic_ref/dpct1079.rst
+     - REMOVED.
+
+       .. include:: diagnostic_ref/dpct1079.rst
           :start-after: msg-1079-start:
           :end-before: msg-1079-end:
    * - :ref:`DPCT1080`
@@ -449,8 +457,31 @@ messages, detailed help, and suggestion to fix your errors.
      - .. include:: diagnostic_ref/dpct1104.rst
           :start-after: msg-1104-start:
           :end-before: msg-1104-end:
+   * - :ref:`DPCT1105`
+     - .. include:: diagnostic_ref/dpct1105.rst
+          :start-after: msg-1105-start:
+          :end-before: msg-1105-end:
    * - :ref:`DPCT1106`
      - .. include:: diagnostic_ref/dpct1106.rst
           :start-after: msg-1106-start:
           :end-before: msg-1106-end:
-
+   * - :ref:`DPCT1107`
+     - .. include:: diagnostic_ref/dpct1107.rst
+          :start-after: msg-1107-start:
+          :end-before: msg-1107-end:
+   * - :ref:`DPCT1108`
+     - .. include:: diagnostic_ref/dpct1108.rst
+          :start-after: msg-1108-start:
+          :end-before: msg-1108-end:
+   * - :ref:`DPCT1109`
+     - .. include:: diagnostic_ref/dpct1109.rst
+          :start-after: msg-1109-start:
+          :end-before: msg-1109-end:
+   * - :ref:`DPCT1110`
+     - .. include:: diagnostic_ref/dpct1110.rst
+          :start-after: msg-1110-start:
+          :end-before: msg-1110-end:
+   * - :ref:`DPCT1111`
+     - .. include:: diagnostic_ref/dpct1111.rst
+          :start-after: msg-1111-start:
+          :end-before: msg-1111-end:

@@ -17,7 +17,7 @@ Detailed Help
 -------------
 
 There is no analogue of the ``maxGridSize`` in SYCL\*. SYCL ``nd_ranges`` can have
-up to three dimensions, just like grids in CUDA, but there is no maximum of
+up to three dimensions, just like grids in CUDA\*, but there is no maximum of
 ``nd_range`` size beyond the data type width, which is ``size_t``. The
 |tool_name| replaces the ``maxGridSize`` with the ``max_nd_range_size``
 helper, which is initialized to the ``size_t`` width.
@@ -26,3 +26,51 @@ Suggestions to Fix
 ------------------
 
 Verify the code correctness.
+
+For example, this original CUDA code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     cudaDeviceProp prop;
+     cudaGetDeviceProperties(&prop, 0);
+     if (prop.maxGridSize[0] >= TASK_SIZE) {
+   // submit the task on one kernel
+   ...
+     } else {
+   // split the task into multi kernels
+   ...
+     }
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     dpct::device_info prop;
+     dpct::dev_mgr::instance().get_device(0).get_device_info(prop);
+     /*
+     DPCT1022:0: There is no exact match between the maxGridSize and the
+     max_nd_range size. Verify the correctness of the code.
+     */
+     if (prop.get_max_nd_range_size()[0] >= TASK_SIZE) {
+       // submit the task on one kernel
+       ...
+     } else {
+       // split the task into multi kernels
+       ...
+     }
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     // submit the task on one kernel
+     ...
+   }

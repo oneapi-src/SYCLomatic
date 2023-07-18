@@ -15,7 +15,7 @@ A different random number generator is used. You may need to adjust the code.
 Detailed Help
 -------------
 
-|mkl_long| (|mkl|) RNG currently does not support the following engine types:
+|mkl_long|_ (|mkl|) RNG currently does not support the following engine types:
 
 * XORWOW generator
 * Sobol generator of 64-bit sequences
@@ -23,7 +23,7 @@ Detailed Help
 
 The engine types are migrated to the following supported generators, respectively:
 
-* Philox4x32x10 generator
+* MCG59 generator
 * Basic Sobol generator
 * Basic Sobol generator
 

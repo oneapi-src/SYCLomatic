@@ -35,3 +35,52 @@ If in a |dpcpp| application you:
   ``(*, 0)`` operator.
 * Need the code that consumes the error code, try to replace it with an exception
   handling code and use your logic in an exception handler.
+
+For example, this original CUDA code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     cudaError_t err;
+     float *f;
+     err = cudaMalloc(&f, 4);
+     err = cudaFree(f);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo()
+     dpct::device_ext &dev_ct1 = dpct::get_current_device();
+     sycl::queue &q_ct1 = dev_ct1.default_queue();
+     int err;
+     float *f;
+     /*
+     DPCT1003:0: Migrated API does not return error code. (*, 0) is inserted. You
+     may need to rewrite this code.
+     */
+     err = (f = (float *)sycl::malloc_device(4, q_ct1), 0);
+     /*
+     DPCT1003:1: Migrated API does not return error code. (*, 0) is inserted. You
+     may need to rewrite this code.
+     */
+     err = (sycl::free(f, q_ct1), 0);
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo()
+     dpct::device_ext &dev_ct1 = dpct::get_current_device();
+     sycl::queue &q_ct1 = dev_ct1.default_queue();
+
+     float *f;
+     f = (float *)sycl::malloc_device(4, q_ct1);
+     sycl::free(f, q_ct1);
+   }
+

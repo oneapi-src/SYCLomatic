@@ -25,3 +25,44 @@ Suggestions to Fix
 ------------------
 
 Review the logic and adjust it.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __global__ void foo(double *res) {
+     double a = 1.00001;
+     double b = 100000000000000000;
+     *res = __dadd_ru(a, b);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(double *res) {
+     double a = 1.00001;
+     double b = 100000000000000000;
+     /*
+     DPCT1013:0: The rounding mode could not be specified and the generated code
+     may have different accuracy than the original code. Verify the correctness.
+     SYCL math built-in function rounding mode is aligned with OpenCL C 1.2
+     standard.
+     */
+     *res = a + b;
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(double *res) {
+     double a = 1.00001;
+     double b = 100000000000000000;
+     *res = a + b; // For precision, use: *res = sycl::nextafter(a + b, (double)INFINITY);
+     
+   }
+

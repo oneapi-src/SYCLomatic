@@ -19,8 +19,7 @@ Detailed Help
 SYCL\* currently does not support getting device resource limits. The output
 parameter(s) are set to 0.
 
-Contact `Support <https://software.intel.com/content/www/us/en/develop/support.html>`_
-for help.
+.. include:: /_include_files/support-msg.txt
 
 Suggestions to Fix
 ------------------

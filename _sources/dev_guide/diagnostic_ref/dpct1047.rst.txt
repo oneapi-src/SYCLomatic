@@ -17,7 +17,7 @@ Detailed Help
 -------------
 
 In cuBLAS\* and cuSolver\* getrf API, the LU factorization is done as ``P*A=L*U``;
-in |mkl_long| API, it is done as
+in |mkl_long|_ API, it is done as
 ``A=P*L*U``. The result of the matrix P may be different.
 
 Suggestions to Fix

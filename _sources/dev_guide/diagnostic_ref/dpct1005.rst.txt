@@ -28,3 +28,51 @@ Suggestions to Fix
 ------------------
 
 Review the logic and adjust it.
+
+For example, this original CUDA code:
+
+.. code-block:: cpp
+   :linenos:
+
+   int main() {
+     cudaDeviceProp deviceProp;
+     int deviceID = 0;
+     cudaGetDeviceProperties(&deviceProp, deviceID);
+     if (deviceProp.major >= 3) {
+       // Use functionality from Compute Capability 3.0+
+     }
+     return 0;
+   }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   int main() {
+     dpct::device_info deviceProp;
+     dpct::dev_mgr::instance().get_device(0).get_device_info(deviceProp);
+     /*
+     DPCT1005:0: The SYCL device version is different from CUDA Compute
+     Compatibility. You may need to rewrite this code.
+     */
+     if (deviceProp.get_major_version() >= 3) {
+       // Invoke kernel using __shfl() which requires Compute Capability 3.0+
+     }
+     return 0;
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+    int main() {
+      // sycl::select_from_group is supported in SYCL 2020.
+      if (SYCL_LANGUAGE_VERSION >= 202000) {
+        // Invoke kernel using sycl::select_from_group
+        ...
+      }
+      return 0;
+    }
+

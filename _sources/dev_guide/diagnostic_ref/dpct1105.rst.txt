@@ -1,0 +1,65 @@
+.. _DPCT1105:
+
+DPCT1105
+========
+
+Message
+-------
+
+.. _msg-1105-start:
+
+The mcg59 random number generator is used. The subsequence argument <expression>
+is ignored. You need to verify the migration.
+
+.. _msg-1105-end:
+
+Detailed Help
+-------------
+
+The mcg59 random number generator does not support the subsequence parameter. If
+you want to use the subsequence parameter, you can use the philox4x32x10 random
+number generator instead.
+
+Suggestions to Fix
+------------------
+
+For example, this original CUDA* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __global__ void kernel() {
+     unsigned int u;
+     curandStateXORWOW_t rng1;
+     curand_init(1, 2, 3, &rng1);
+     u = curand(&rng1);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel() {
+     /*
+     DPCT1032:0: A different random number generator is used. You may need to adjust the code.
+     */
+     dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> rng1;
+     /*
+     DPCT1105:1: The mcg59 random number generator is used. The subsequence argument “2” is ignored. You need to verify the    migration.
+     */
+     rng1 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>(1, 3);
+     u = rng1.generate<oneapi::mkl::rng::device::uniform_bits<std::uint32_t>, 1>();
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel() {
+     dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> rng1;
+     rng1 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>(1, 3);
+     u = rng1.generate<oneapi::mkl::rng::device::uniform_bits<std::uint32_t>, 1>();
+   }
+

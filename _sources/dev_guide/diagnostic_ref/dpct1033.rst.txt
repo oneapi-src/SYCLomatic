@@ -16,7 +16,7 @@ generator with user-defined direction numbers to use it as Scrambled Sobol gener
 Detailed Help
 -------------
 
-|mkl_long| (|mkl|) RNG currently does not support Scrambled Sobol generator by
+|mkl_long|_ (|mkl|) RNG currently does not support Scrambled Sobol generator by
 default.
 
 Migrated code uses a basic Sobol generator.
@@ -27,4 +27,4 @@ Suggestions to Fix
 Set user-defined direction numbers to the basic Sobol generator and use it as
 Scrambled Sobol generator.
 
-See the `Random Number Generators <https://software.intel.com/content/www/us/en/develop/documentation/oneapi-mkl-dpcpp-developer-reference/top/random-number-generators/manual-offload-rng-routines/engines-basic-random-number-generators.html>`_ topic for more information.
+See the `Random Number Generators <https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-dpcpp/current/engines-basic-random-number-generators.html>`_ topic for more information.

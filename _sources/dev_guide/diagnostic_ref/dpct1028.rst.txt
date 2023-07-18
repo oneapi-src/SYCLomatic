@@ -23,7 +23,7 @@ Suggestions to Fix
 
 If the parameter is an engine type:
 Rewrite this code manually by using a supported random number generator. See the
-`Random Number Generators <https://software.intel.com/content/www/us/en/develop/documentation/oneapi-mkl-dpcpp-developer-reference/top/random-number-generators/manual-offload-rng-routines/engines-basic-random-number-generators.html>`_ topic for more information.
+`Random Number Generators <https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-dpcpp/current/engines-basic-random-number-generators.html>`_ topic for more information.
 
 If the parameter is a CUDA device attribute:
 Redesign the code logic to remove use of the device attribute.

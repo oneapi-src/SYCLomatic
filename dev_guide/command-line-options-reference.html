@@ -35,8 +35,20 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Diagnostics Reference" href="diagnostics-reference.html" />
-    <link rel="prev" title="DPCT Namespace Usage Guide" href="dpct-namespace-usage-guide.html" />
-<!-- all your analytics scripts go here -->
+    <link rel="prev" title="Reference" href="reference.html" />
+
+<script type="text/javascript">
+  // Configure TMS settings
+  var wapLocalCode = 'us_en';
+  var wapSection = 'SYCL-docs';
+  // Load TMS
+  (function () {
+    var url = 'https://www.intel.com/content/dam/www/global/wap/tms-loader.js'; // WAP file URL
+    var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true; po.src = url;
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+  })();
+</script>
+
 
   </head>
   <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
@@ -132,6 +144,11 @@
     </a>
    </li>
    <li class="toctree-l2">
+    <a class="reference internal" href="migrate-a-project/generate-compilation-db.html">
+     Generate a Compilation Database
+    </a>
+   </li>
+   <li class="toctree-l2">
     <a class="reference internal" href="migrate-a-project/incremental-migration.html">
      Incremental Migration
     </a>
@@ -143,554 +160,606 @@
    </li>
   </ul>
  </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="dpct-namespace-usage-guide.html">
-   DPCT Namespace Usage Guide
+ <li class="toctree-l1 current active has-children">
+  <a class="reference internal" href="reference.html">
+   Reference
   </a>
- </li>
- <li class="toctree-l1 current active">
-  <a class="current reference internal" href="#">
-   Command Line Options Reference
-  </a>
- </li>
- <li class="toctree-l1 has-children">
-  <a class="reference internal" href="diagnostics-reference.html">
-   Diagnostics Reference
-  </a>
-  <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
   <label for="toctree-checkbox-2">
    <i class="fas fa-chevron-down">
    </i>
   </label>
-  <ul>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1000.html">
-     DPCT1000
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1001.html">
-     DPCT1001
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1002.html">
-     DPCT1002
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1003.html">
-     DPCT1003
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1004.html">
-     DPCT1004
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1005.html">
-     DPCT1005
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1006.html">
-     DPCT1006
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1007.html">
-     DPCT1007
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1008.html">
-     DPCT1008
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1009.html">
-     DPCT1009
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1010.html">
-     DPCT1010
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1011.html">
-     DPCT1011
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1012.html">
-     DPCT1012
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1013.html">
-     DPCT1013
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1014.html">
-     DPCT1014
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1015.html">
-     DPCT1015
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1016.html">
-     DPCT1016
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1017.html">
-     DPCT1017
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1018.html">
-     DPCT1018
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1019.html">
-     DPCT1019
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1020.html">
-     DPCT1020
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1021.html">
-     DPCT1021
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1022.html">
-     DPCT1022
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1023.html">
-     DPCT1023
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1024.html">
-     DPCT1024
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1025.html">
-     DPCT1025
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1026.html">
-     DPCT1026
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1027.html">
-     DPCT1027
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1028.html">
-     DPCT1028
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1029.html">
-     DPCT1029
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1030.html">
-     DPCT1030
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1031.html">
-     DPCT1031
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1032.html">
-     DPCT1032
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1033.html">
-     DPCT1033
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1034.html">
-     DPCT1034
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1035.html">
-     DPCT1035
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1036.html">
-     DPCT1036
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1037.html">
-     DPCT1037
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1038.html">
-     DPCT1038
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1039.html">
-     DPCT1039
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1040.html">
-     DPCT1040
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1041.html">
-     DPCT1041
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1042.html">
-     DPCT1042
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1043.html">
-     DPCT1043
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1044.html">
-     DPCT1044
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1045.html">
-     DPCT1045
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1046.html">
-     DPCT1046
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1047.html">
-     DPCT1047
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1048.html">
-     DPCT1048
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1049.html">
-     DPCT1049
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1050.html">
-     DPCT1050
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1051.html">
-     DPCT1051
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1052.html">
-     DPCT1052
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1053.html">
-     DPCT1053
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1054.html">
-     DPCT1054
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1055.html">
-     DPCT1055
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1056.html">
-     DPCT1056
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1057.html">
-     DPCT1057
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1058.html">
-     DPCT1058
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1059.html">
-     DPCT1059
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1060.html">
-     DPCT1060
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1061.html">
-     DPCT1061
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1062.html">
-     DPCT1062
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1063.html">
-     DPCT1063
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1064.html">
-     DPCT1064
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1065.html">
-     DPCT1065
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1066.html">
-     DPCT1066
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1067.html">
-     DPCT1067
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1068.html">
-     DPCT1068
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1069.html">
-     DPCT1069
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1070.html">
-     DPCT1070
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1071.html">
-     DPCT1071
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1072.html">
-     DPCT1072
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1073.html">
-     DPCT1073
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1074.html">
-     DPCT1074
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1075.html">
-     DPCT1075
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1076.html">
-     DPCT1076
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1077.html">
-     DPCT1077
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1078.html">
-     DPCT1078
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1079.html">
-     DPCT1079
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1080.html">
-     DPCT1080
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1081.html">
-     DPCT1081
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1082.html">
-     DPCT1082
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1083.html">
-     DPCT1083
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1084.html">
-     DPCT1084
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1085.html">
-     DPCT1085
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1086.html">
-     DPCT1086
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1087.html">
-     DPCT1087
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1088.html">
-     DPCT1088
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1089.html">
-     DPCT1089
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1090.html">
-     DPCT1090
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1091.html">
-     DPCT1091
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1092.html">
-     DPCT1092
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1093.html">
-     DPCT1093
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1094.html">
-     DPCT1094
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1095.html">
-     DPCT1095
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1096.html">
-     DPCT1096
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1097.html">
-     DPCT1097
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1098.html">
-     DPCT1098
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1099.html">
-     DPCT1099
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1100.html">
-     DPCT1100
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1101.html">
-     DPCT1101
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1102.html">
-     DPCT1102
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1103.html">
-     DPCT1103
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1104.html">
-     DPCT1104
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1106.html">
-     DPCT1106
+  <ul class="current">
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
+     Command Line Options Reference
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="diagnostics-reference.html">
+     Diagnostics Reference
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+    <label for="toctree-checkbox-3">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1000.html">
+       DPCT1000
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1001.html">
+       DPCT1001
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1002.html">
+       DPCT1002
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1003.html">
+       DPCT1003
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1004.html">
+       DPCT1004
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1005.html">
+       DPCT1005
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1006.html">
+       DPCT1006
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1007.html">
+       DPCT1007
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1008.html">
+       DPCT1008
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1009.html">
+       DPCT1009
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1010.html">
+       DPCT1010
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1011.html">
+       DPCT1011
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1012.html">
+       DPCT1012
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1013.html">
+       DPCT1013
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1014.html">
+       DPCT1014
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1015.html">
+       DPCT1015
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1016.html">
+       DPCT1016
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1017.html">
+       DPCT1017
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1018.html">
+       DPCT1018
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1019.html">
+       DPCT1019
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1020.html">
+       DPCT1020
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1021.html">
+       DPCT1021
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1022.html">
+       DPCT1022
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1023.html">
+       DPCT1023
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1024.html">
+       DPCT1024
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1025.html">
+       DPCT1025
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1026.html">
+       DPCT1026
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1027.html">
+       DPCT1027
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1028.html">
+       DPCT1028
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1029.html">
+       DPCT1029
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1030.html">
+       DPCT1030
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1031.html">
+       DPCT1031
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1032.html">
+       DPCT1032
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1033.html">
+       DPCT1033
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1034.html">
+       DPCT1034
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1035.html">
+       DPCT1035
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1036.html">
+       DPCT1036
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1037.html">
+       DPCT1037
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1038.html">
+       DPCT1038
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1039.html">
+       DPCT1039
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1040.html">
+       DPCT1040
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1041.html">
+       DPCT1041
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1042.html">
+       DPCT1042
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1043.html">
+       DPCT1043
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1044.html">
+       DPCT1044
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1045.html">
+       DPCT1045
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1046.html">
+       DPCT1046
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1047.html">
+       DPCT1047
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1048.html">
+       DPCT1048
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1049.html">
+       DPCT1049
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1050.html">
+       DPCT1050
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1051.html">
+       DPCT1051
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1052.html">
+       DPCT1052
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1053.html">
+       DPCT1053
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1054.html">
+       DPCT1054
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1055.html">
+       DPCT1055
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1056.html">
+       DPCT1056
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1057.html">
+       DPCT1057
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1058.html">
+       DPCT1058
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1059.html">
+       DPCT1059
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1060.html">
+       DPCT1060
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1061.html">
+       DPCT1061
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1062.html">
+       DPCT1062
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1063.html">
+       DPCT1063
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1064.html">
+       DPCT1064
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1065.html">
+       DPCT1065
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1066.html">
+       DPCT1066
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1067.html">
+       DPCT1067
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1068.html">
+       DPCT1068
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1069.html">
+       DPCT1069
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1070.html">
+       DPCT1070
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1071.html">
+       DPCT1071
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1072.html">
+       DPCT1072
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1073.html">
+       DPCT1073
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1074.html">
+       DPCT1074
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1075.html">
+       DPCT1075
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1076.html">
+       DPCT1076
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1077.html">
+       DPCT1077
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1078.html">
+       DPCT1078
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1079.html">
+       DPCT1079
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1080.html">
+       DPCT1080
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1081.html">
+       DPCT1081
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1082.html">
+       DPCT1082
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1083.html">
+       DPCT1083
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1084.html">
+       DPCT1084
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1085.html">
+       DPCT1085
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1086.html">
+       DPCT1086
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1087.html">
+       DPCT1087
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1088.html">
+       DPCT1088
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1089.html">
+       DPCT1089
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1090.html">
+       DPCT1090
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1091.html">
+       DPCT1091
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1092.html">
+       DPCT1092
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1093.html">
+       DPCT1093
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1094.html">
+       DPCT1094
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1095.html">
+       DPCT1095
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1096.html">
+       DPCT1096
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1097.html">
+       DPCT1097
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1098.html">
+       DPCT1098
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1099.html">
+       DPCT1099
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1100.html">
+       DPCT1100
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1101.html">
+       DPCT1101
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1102.html">
+       DPCT1102
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1103.html">
+       DPCT1103
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1104.html">
+       DPCT1104
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1105.html">
+       DPCT1105
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1106.html">
+       DPCT1106
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1107.html">
+       DPCT1107
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1108.html">
+       DPCT1108
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1109.html">
+       DPCT1109
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1110.html">
+       DPCT1110
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1111.html">
+       DPCT1111
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct-namespace-usage-guide.html">
+     DPCT Namespace Usage Guide
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="term-mapping-quick-ref.html">
+     CUDA* to SYCL* Term Mapping Quick Reference
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="compare-prog-models.html">
+     CUDA* and SYCL* Programing Model Comparison
     </a>
    </li>
   </ul>
@@ -892,6 +961,11 @@ title="Print to PDF"
    Deprecated Command Line Options
   </a>
  </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#intercept-build-options">
+   intercept-build Options
+  </a>
+ </li>
 </ul>
 
     </nav>
@@ -919,6 +993,11 @@ title="Print to PDF"
  <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#deprecated-command-line-options">
    Deprecated Command Line Options
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#intercept-build-options">
+   intercept-build Options
   </a>
  </li>
 </ul>
@@ -1003,35 +1082,42 @@ using bi-directional formatting codes and homoglyphs in identifiers. Default: <c
 <td><p>Insert comments explaining the generated code. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--cuda-include-path=&lt;dir&gt;</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--compilation-database=&lt;dir&gt;</span></code></p>
+</td>
+<td><p>The directory path for the compilation database (<cite>compile_commands.json</cite>). When no
+path is specified, a search for <cite>compile_commands.json</cite> is attempted through all
+parent directories of the first input source file. Same as <code class="docutils literal notranslate"><span class="pre">-p</span></code>.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--cuda-include-path=&lt;dir&gt;</span></code></p>
 </td>
 <td><p>The directory path of the CUDA* header files.</p>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--custom-helper-name=&lt;name&gt;</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--custom-helper-name=&lt;name&gt;</span></code></p>
 </td>
 <td><p>DEPRECATED: Specifies the helper headers folder name and main helper header file
 name. Default: <code class="docutils literal notranslate"><span class="pre">dpct</span></code>.</p>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--enable-ctad</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--enable-ctad</span></code></p>
 </td>
 <td><p>Use a C++17 class template argument deduction (CTAD) in your generated code.</p>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--enable-profiling</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--enable-profiling</span></code></p>
 </td>
 <td><p>Enable SYCL* queue profiling in helper functions. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--extra-arg=&lt;string&gt;</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--extra-arg=&lt;string&gt;</span></code></p>
 </td>
 <td><p>Additional argument to append to the migration command line, example:
 <code class="docutils literal notranslate"><span class="pre">--extra-arg=&quot;-I</span> <span class="pre">/path/to/header&quot;</span></code>. The options that can be passed this
 way can be found with the <code class="docutils literal notranslate"><span class="pre">dpct</span> <span class="pre">--</span> <span class="pre">-help</span></code> command.</p>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--format-range=&lt;value&gt;</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--format-range=&lt;value&gt;</span></code></p>
 </td>
 <td><p>Sets the range of formatting.</p>
 <p>The values are:</p>
@@ -1042,7 +1128,7 @@ way can be found with the <code class="docutils literal notranslate"><span class
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--format-style=&lt;value&gt;</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--format-style=&lt;value&gt;</span></code></p>
 </td>
 <td><p>Sets the formatting style.</p>
 <p>The values are:</p>
@@ -1060,10 +1146,15 @@ way can be found with the <code class="docutils literal notranslate"><span class
 </div>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--gen-build-script</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--gen-build-script</span></code></p>
 </td>
 <td><p>Generates makefile for migrated file(s) in <code class="docutils literal notranslate"><span class="pre">-out-root</span></code> directory.
 Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--gen-helper-function</span></code></p>
+</td>
+<td><p>Generates helper function files in the <code class="docutils literal notranslate"><span class="pre">--out-root</span></code> directory. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p>
 </td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--help</span></code></p>
@@ -1169,11 +1260,9 @@ and crashes (default).</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-p=&lt;dir&gt;</span></code></p>
+<tr class="row-even"><td><p>-p</p>
 </td>
-<td><p>The directory path for the compilation database (<code class="docutils literal notranslate"><span class="pre">compile_commands.json</span></code>).
-When no path is specified, a search for <code class="docutils literal notranslate"><span class="pre">compile_commands.json</span></code> is
-attempted through all parent directories of the first input source file.</p>
+<td><p>Alias for <code class="docutils literal notranslate"><span class="pre">--compilation-database</span></code>.</p>
 </td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--process-all</span></code></p>
@@ -1292,7 +1381,7 @@ in the <code class="docutils literal notranslate"><span class="pre">--out-root</
 By default, these extensions are not used in migrated code.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">=c_cxx_standard_library</span></code>: Use std functions from the libdevice library
-(provided by Intel® oneAPI DPC++/C++ Compiler) and C/C++ Standard Library to migrate functions
+(provided by <a class="reference external" href="https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler.html">Intel® oneAPI DPC++/C++ Compiler</a>) and C/C++ Standard Library to migrate functions
 which have no mapping in the SYCL standard. If this value is used together with
 <code class="docutils literal notranslate"><span class="pre">intel_device_math</span></code>, the <code class="docutils literal notranslate"><span class="pre">intel_device_math</span></code> functions take precedence.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">=intel_device_math</span></code>: Use <code class="docutils literal notranslate"><span class="pre">sycl::ext::intel::math</span></code> functions from the libdevice
@@ -1307,6 +1396,8 @@ mapping in the SYCL standard.</p></li>
 By default, experimental features will not be used in migrated code.</p>
 <p>The values are:</p>
 <ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">=dpl-experimental-api</span></code>: Experimental extension that allows use of experimental
+oneDPL APIs.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">=free-function-queries</span></code>: Experimental extension that allows getting
 <code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">item</span></code>, <code class="docutils literal notranslate"><span class="pre">nd_item</span></code>, <code class="docutils literal notranslate"><span class="pre">group</span></code>, and <code class="docutils literal notranslate"><span class="pre">sub_group</span></code> instances
 globally.</p></li>
@@ -1314,8 +1405,13 @@ globally.</p></li>
 allows allocation of local memory objects at the kernel functor scope.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">=logical-group</span></code>: Experimental helper function used to logically
 group work-items.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=masked-sub-group-operation</span></code>: Experimental helper function used to execute
+sub-group operation with mask.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">=nd_range_barrier</span></code>: Experimental helper function used to help cross
 group synchronization during migration.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=occupancy-calculation</span></code>: Experimental helper function used to calculate occupancy.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=user-defined-reductions</span></code>: Experimental extension that allows user-defined
+reductions.</p></li>
 </ul>
 </td>
 </tr>
@@ -1404,6 +1500,52 @@ for memory management migration.</p></li>
 </tbody>
 </table>
 </div>
+<div class="section" id="intercept-build-options">
+<h2>intercept-build Options<a class="headerlink" href="#intercept-build-options" title="Permalink to this headline">#</a></h2>
+<p>The following table lists all current <cite>intercept-build</cite> tool command line options
+in alphabetical order.</p>
+<table class="colwidths-given table">
+<colgroup>
+<col style="width: 30%" />
+<col style="width: 70%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><cite>–append</cite></p></td>
+<td><p>Extend existing compilation database with new entries. Duplicate entries are
+detected and not present in the final output. The output is not continuously
+updated; it’s done when the build command finished. Default: disabled.</p></td>
+</tr>
+<tr class="row-odd"><td><p><cite>–cdb &lt;file&gt;</cite></p></td>
+<td><p>The JSON compilation database. Default name: <cite>compile_commands.json</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><cite>–linker-entry</cite></p></td>
+<td><p>Generate linker entry in compilation database if the <cite>–linker-entry</cite> option
+is present. Default: enabled.</p></td>
+</tr>
+<tr class="row-odd"><td><p><cite>–no-linker-entry</cite></p></td>
+<td><p>Do not generate linker entry in compilation database if the <cite>–no-linker-entry</cite>
+option is present. Default: disabled.</p></td>
+</tr>
+<tr class="row-even"><td><p><cite>–parse-build-log &lt;file&gt;</cite></p></td>
+<td><p>Specifies the file path of the build log.</p></td>
+</tr>
+<tr class="row-odd"><td><p><cite>–verbose</cite>, <cite>-v</cite></p></td>
+<td><p>Enable verbose output from <cite>intercept-build</cite>. A second, third, and fourth
+flag increases verbosity.</p></td>
+</tr>
+<tr class="row-even"><td><p><cite>–work-directory &lt;path&gt;</cite></p></td>
+<td><p>Specifies the working directory of the command that generates the build log
+specified by option <cite>-parse-build-log</cite>. Default: the directory of build log
+file specified by option <cite>-parse-build-log</cite>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
 </div>
 
 
@@ -1414,11 +1556,11 @@ for memory management migration.</p></li>
                 
     <!-- Previous / next buttons -->
 <div class='prev-next-area'>
-    <a class='left-prev' id="prev-link" href="dpct-namespace-usage-guide.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="reference.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">DPCT Namespace Usage Guide</p>
+            <p class="prev-next-title">Reference</p>
         </div>
     </a>
     <a class='right-next' id="next-link" href="diagnostics-reference.html" title="next page">
@@ -1435,9 +1577,8 @@ for memory management migration.</p></li>
     <div class="footer-content row">
         <footer class="col footer"><p>
   
-      &copy; Copyright Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc..<br/>
     <div class="extra_footer">
-      <div>No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div>
+      <div><a href='https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html' data-cookie-notice='true'>Cookies</a> <a href='https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html'>| Privacy</a> <a data-wap_ref='dns' id='wap_dns' href='https://www.intel.com/content/www/us/en/privacy/intel-cookie- notice.html'>| Do Not Share My Personal Information</a> </div><div>&copy; Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc. No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div>
     </div>
 </p>
         </footer>

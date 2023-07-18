@@ -8,8 +8,8 @@ Message
 
 .. _msg-1064-start:
 
-Migrated *<function name>* call is used in a macro definition and is not valid
-for all macro uses. Adjust the code.
+Migrated <function name> call is used in a macro/template definition and may not
+be valid for all macro/template uses. Adjust the code.
 
 .. _msg-1064-end:
 

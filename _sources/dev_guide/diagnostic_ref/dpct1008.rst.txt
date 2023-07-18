@@ -24,3 +24,114 @@ Suggestions to Fix
 ------------------
 
 Consult with your hardware vendor to find a replacement.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __global__ void k(clock_t *timer) {
+     int tid = threadIdx.x;
+     if (tid == 0)
+       timer[0] = clock();
+
+     // workload
+
+     __syncthreads();
+     if (tid == 0)
+       timer[1] = clock();
+   }
+
+   int main() {
+     clock_t *dtimer = NULL;
+     cudaMalloc((void **)&dtimer, sizeof(clock_t) * 2);
+     clock_t timer[2];
+     k<<<1, 128>>>(dtimer);
+     cudaMemcpy(timer, dtimer, sizeof(clock_t) * 2, cudaMemcpyDeviceToHost);
+     cudaFree(dtimer);
+     long double time = timer[1] - timer[0];
+     return 0;
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   #include <sycl/sycl.hpp>
+   #include <dpct/dpct.hpp>
+   #include <time.h>
+   void k(clock_t *timer, sycl::nd_item<3> item_ct1) {
+     int tid = item_ct1.get_local_id(2);
+     if (tid == 0)
+       /*
+       DPCT1008:1: clock function is not defined in SYCL. This is a
+       hardware-specific feature. Consult with your hardware vendor to find a
+       replacement.
+       */
+       timer[0] = clock();// clock() is used to measure the kernel runtime
+   
+     // workload
+   
+     item_ct1.barrier();
+     if (tid == 0)
+       /*
+   		DPCT1008:2: clock function is not defined in SYCL. This is a
+   		hardware-specific feature. Consult with your hardware vendor to find a
+        replacement.
+       */
+       timer[1] = clock();
+   }
+   
+   int main() {
+     dpct::device_ext &dev_ct1 = dpct::get_current_device();
+     sycl::queue &q_ct1 = dev_ct1.default_queue();
+     clock_t *dtimer = NULL;
+     dtimer = sycl::malloc_device<clock_t>(2, q_ct1);
+     clock_t timer[2];
+     q_ct1.parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
+         [=](sycl::nd_item<3> item_ct1) {
+           k(dtimer, item_ct1);
+         });
+     q_ct1.memcpy(timer, dtimer, sizeof(clock_t) * 2).wait();
+     sycl::free(dtimer, q_ct1);
+     long double time = timer[1] - timer[0];
+     return 0;
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   #define DPCT_PROFILING_ENABLED
+   #include <sycl/sycl.hpp>
+   #include <dpct/dpct.hpp>
+   #include <time.h>
+   void k(sycl::nd_item<3> item_ct1) {
+     // workload
+   }
+   
+   int main() {
+     dpct::device_ext &dev_ct1 = dpct::get_current_device();
+     sycl::queue &q_ct1 = dev_ct1.default_queue();
+     dpct::event_ptr start;
+     dpct::event_ptr end;
+     start = new sycl::event();
+     end = new sycl::event();
+     *start = q_ct1.ext_oneapi_submit_barrier();
+     q_ct1.parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, 128), sycl::range<3>(1, 1, 128)),
+         [=](sycl::nd_item<3> item_ct1) {
+           k(item_ct1);
+         });
+     *end = q_ct1.ext_oneapi_submit_barrier();
+     end->wait_and_throw();
+     long double time =
+         (end->get_profiling_info<sycl::info::event_profiling::command_end>() -
+          start
+              ->get_profiling_info<sycl::info::event_profiling::command_start>()) /
+         1000000.0f;  return 0;
+   }
+   

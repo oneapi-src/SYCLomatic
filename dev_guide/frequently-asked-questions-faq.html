@@ -35,7 +35,19 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="prev" title="CUDA API Migration Support Status" href="api-mapping-status.html" />
-<!-- all your analytics scripts go here -->
+
+<script type="text/javascript">
+  // Configure TMS settings
+  var wapLocalCode = 'us_en';
+  var wapSection = 'SYCL-docs';
+  // Load TMS
+  (function () {
+    var url = 'https://www.intel.com/content/dam/www/global/wap/tms-loader.js'; // WAP file URL
+    var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true; po.src = url;
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+  })();
+</script>
+
 
   </head>
   <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
@@ -131,6 +143,11 @@
     </a>
    </li>
    <li class="toctree-l2">
+    <a class="reference internal" href="migrate-a-project/generate-compilation-db.html">
+     Generate a Compilation Database
+    </a>
+   </li>
+   <li class="toctree-l2">
     <a class="reference internal" href="migrate-a-project/incremental-migration.html">
      Incremental Migration
     </a>
@@ -142,19 +159,9 @@
    </li>
   </ul>
  </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="dpct-namespace-usage-guide.html">
-   DPCT Namespace Usage Guide
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="command-line-options-reference.html">
-   Command Line Options Reference
-  </a>
- </li>
  <li class="toctree-l1 has-children">
-  <a class="reference internal" href="diagnostics-reference.html">
-   Diagnostics Reference
+  <a class="reference internal" href="reference.html">
+   Reference
   </a>
   <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
   <label for="toctree-checkbox-2">
@@ -163,533 +170,595 @@
   </label>
   <ul>
    <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1000.html">
-     DPCT1000
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1001.html">
-     DPCT1001
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1002.html">
-     DPCT1002
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1003.html">
-     DPCT1003
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1004.html">
-     DPCT1004
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1005.html">
-     DPCT1005
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1006.html">
-     DPCT1006
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1007.html">
-     DPCT1007
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1008.html">
-     DPCT1008
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1009.html">
-     DPCT1009
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1010.html">
-     DPCT1010
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1011.html">
-     DPCT1011
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1012.html">
-     DPCT1012
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1013.html">
-     DPCT1013
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1014.html">
-     DPCT1014
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1015.html">
-     DPCT1015
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1016.html">
-     DPCT1016
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1017.html">
-     DPCT1017
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1018.html">
-     DPCT1018
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1019.html">
-     DPCT1019
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1020.html">
-     DPCT1020
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1021.html">
-     DPCT1021
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1022.html">
-     DPCT1022
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1023.html">
-     DPCT1023
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1024.html">
-     DPCT1024
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1025.html">
-     DPCT1025
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1026.html">
-     DPCT1026
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1027.html">
-     DPCT1027
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1028.html">
-     DPCT1028
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1029.html">
-     DPCT1029
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1030.html">
-     DPCT1030
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1031.html">
-     DPCT1031
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1032.html">
-     DPCT1032
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1033.html">
-     DPCT1033
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1034.html">
-     DPCT1034
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1035.html">
-     DPCT1035
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1036.html">
-     DPCT1036
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1037.html">
-     DPCT1037
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1038.html">
-     DPCT1038
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1039.html">
-     DPCT1039
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1040.html">
-     DPCT1040
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1041.html">
-     DPCT1041
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1042.html">
-     DPCT1042
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1043.html">
-     DPCT1043
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1044.html">
-     DPCT1044
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1045.html">
-     DPCT1045
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1046.html">
-     DPCT1046
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1047.html">
-     DPCT1047
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1048.html">
-     DPCT1048
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1049.html">
-     DPCT1049
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1050.html">
-     DPCT1050
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1051.html">
-     DPCT1051
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1052.html">
-     DPCT1052
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1053.html">
-     DPCT1053
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1054.html">
-     DPCT1054
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1055.html">
-     DPCT1055
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1056.html">
-     DPCT1056
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1057.html">
-     DPCT1057
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1058.html">
-     DPCT1058
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1059.html">
-     DPCT1059
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1060.html">
-     DPCT1060
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1061.html">
-     DPCT1061
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1062.html">
-     DPCT1062
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1063.html">
-     DPCT1063
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1064.html">
-     DPCT1064
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1065.html">
-     DPCT1065
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1066.html">
-     DPCT1066
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1067.html">
-     DPCT1067
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1068.html">
-     DPCT1068
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1069.html">
-     DPCT1069
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1070.html">
-     DPCT1070
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1071.html">
-     DPCT1071
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1072.html">
-     DPCT1072
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1073.html">
-     DPCT1073
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1074.html">
-     DPCT1074
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1075.html">
-     DPCT1075
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1076.html">
-     DPCT1076
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1077.html">
-     DPCT1077
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1078.html">
-     DPCT1078
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1079.html">
-     DPCT1079
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1080.html">
-     DPCT1080
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1081.html">
-     DPCT1081
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1082.html">
-     DPCT1082
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1083.html">
-     DPCT1083
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1084.html">
-     DPCT1084
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1085.html">
-     DPCT1085
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1086.html">
-     DPCT1086
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1087.html">
-     DPCT1087
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1088.html">
-     DPCT1088
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1089.html">
-     DPCT1089
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1090.html">
-     DPCT1090
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1091.html">
-     DPCT1091
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1092.html">
-     DPCT1092
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1093.html">
-     DPCT1093
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1094.html">
-     DPCT1094
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1095.html">
-     DPCT1095
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1096.html">
-     DPCT1096
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1097.html">
-     DPCT1097
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1098.html">
-     DPCT1098
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1099.html">
-     DPCT1099
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1100.html">
-     DPCT1100
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1101.html">
-     DPCT1101
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1102.html">
-     DPCT1102
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1103.html">
-     DPCT1103
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1104.html">
-     DPCT1104
-    </a>
-   </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="diagnostic_ref/dpct1106.html">
-     DPCT1106
+    <a class="reference internal" href="command-line-options-reference.html">
+     Command Line Options Reference
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="diagnostics-reference.html">
+     Diagnostics Reference
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+    <label for="toctree-checkbox-3">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1000.html">
+       DPCT1000
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1001.html">
+       DPCT1001
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1002.html">
+       DPCT1002
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1003.html">
+       DPCT1003
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1004.html">
+       DPCT1004
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1005.html">
+       DPCT1005
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1006.html">
+       DPCT1006
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1007.html">
+       DPCT1007
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1008.html">
+       DPCT1008
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1009.html">
+       DPCT1009
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1010.html">
+       DPCT1010
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1011.html">
+       DPCT1011
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1012.html">
+       DPCT1012
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1013.html">
+       DPCT1013
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1014.html">
+       DPCT1014
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1015.html">
+       DPCT1015
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1016.html">
+       DPCT1016
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1017.html">
+       DPCT1017
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1018.html">
+       DPCT1018
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1019.html">
+       DPCT1019
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1020.html">
+       DPCT1020
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1021.html">
+       DPCT1021
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1022.html">
+       DPCT1022
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1023.html">
+       DPCT1023
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1024.html">
+       DPCT1024
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1025.html">
+       DPCT1025
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1026.html">
+       DPCT1026
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1027.html">
+       DPCT1027
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1028.html">
+       DPCT1028
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1029.html">
+       DPCT1029
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1030.html">
+       DPCT1030
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1031.html">
+       DPCT1031
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1032.html">
+       DPCT1032
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1033.html">
+       DPCT1033
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1034.html">
+       DPCT1034
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1035.html">
+       DPCT1035
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1036.html">
+       DPCT1036
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1037.html">
+       DPCT1037
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1038.html">
+       DPCT1038
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1039.html">
+       DPCT1039
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1040.html">
+       DPCT1040
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1041.html">
+       DPCT1041
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1042.html">
+       DPCT1042
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1043.html">
+       DPCT1043
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1044.html">
+       DPCT1044
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1045.html">
+       DPCT1045
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1046.html">
+       DPCT1046
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1047.html">
+       DPCT1047
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1048.html">
+       DPCT1048
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1049.html">
+       DPCT1049
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1050.html">
+       DPCT1050
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1051.html">
+       DPCT1051
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1052.html">
+       DPCT1052
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1053.html">
+       DPCT1053
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1054.html">
+       DPCT1054
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1055.html">
+       DPCT1055
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1056.html">
+       DPCT1056
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1057.html">
+       DPCT1057
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1058.html">
+       DPCT1058
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1059.html">
+       DPCT1059
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1060.html">
+       DPCT1060
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1061.html">
+       DPCT1061
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1062.html">
+       DPCT1062
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1063.html">
+       DPCT1063
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1064.html">
+       DPCT1064
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1065.html">
+       DPCT1065
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1066.html">
+       DPCT1066
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1067.html">
+       DPCT1067
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1068.html">
+       DPCT1068
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1069.html">
+       DPCT1069
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1070.html">
+       DPCT1070
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1071.html">
+       DPCT1071
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1072.html">
+       DPCT1072
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1073.html">
+       DPCT1073
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1074.html">
+       DPCT1074
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1075.html">
+       DPCT1075
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1076.html">
+       DPCT1076
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1077.html">
+       DPCT1077
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1078.html">
+       DPCT1078
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1079.html">
+       DPCT1079
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1080.html">
+       DPCT1080
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1081.html">
+       DPCT1081
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1082.html">
+       DPCT1082
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1083.html">
+       DPCT1083
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1084.html">
+       DPCT1084
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1085.html">
+       DPCT1085
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1086.html">
+       DPCT1086
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1087.html">
+       DPCT1087
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1088.html">
+       DPCT1088
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1089.html">
+       DPCT1089
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1090.html">
+       DPCT1090
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1091.html">
+       DPCT1091
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1092.html">
+       DPCT1092
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1093.html">
+       DPCT1093
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1094.html">
+       DPCT1094
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1095.html">
+       DPCT1095
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1096.html">
+       DPCT1096
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1097.html">
+       DPCT1097
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1098.html">
+       DPCT1098
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1099.html">
+       DPCT1099
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1100.html">
+       DPCT1100
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1101.html">
+       DPCT1101
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1102.html">
+       DPCT1102
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1103.html">
+       DPCT1103
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1104.html">
+       DPCT1104
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1105.html">
+       DPCT1105
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1106.html">
+       DPCT1106
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1107.html">
+       DPCT1107
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1108.html">
+       DPCT1108
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1109.html">
+       DPCT1109
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1110.html">
+       DPCT1110
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="diagnostic_ref/dpct1111.html">
+       DPCT1111
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="dpct-namespace-usage-guide.html">
+     DPCT Namespace Usage Guide
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="term-mapping-quick-ref.html">
+     CUDA* to SYCL* Term Mapping Quick Reference
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="compare-prog-models.html">
+     CUDA* and SYCL* Programing Model Comparison
     </a>
    </li>
   </ul>
@@ -885,11 +954,90 @@ title="Print to PDF"
   <a class="reference internal nav-link" href="#general-information">
    General Information
   </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#how-do-i-migrate-source-files-that-use-c-11-or-newer-standard-features-on-linux-and-windows">
+     How do I migrate source files that use C++11 or newer standard features on Linux* and Windows*?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#how-do-i-migrate-files-on-windows-when-using-a-cmake-project">
+     How do I migrate files on Windows when using a CMake project?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#how-is-the-migrated-code-formatted">
+     How is the migrated code formatted?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#why-does-the-compilation-database-not-contain-all-source-files-in-the-project">
+     Why does the compilation database not contain all source files in the project?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#how-do-i-use-the-migrated-module-file-in-the-new-project">
+     How do I use the migrated module file in the new project?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#is-the-memory-space-allocated-by-sycl-malloc-device-sycl-malloc-host-and-dpct-dpct-malloc-initialized">
+     Is the memory space allocated by sycl::malloc_device, sycl::malloc_host, and dpct::dpct_malloc initialized?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#how-do-i-migrate-cuda-source-code-that-contains-cub-library-implementation-source-code">
+     How do I migrate CUDA* source code that contains CUB library implementation source code?
+    </a>
+   </li>
+  </ul>
  </li>
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#troubleshooting">
-   Troubleshooting
+  <a class="reference internal nav-link" href="#troubleshooting-migration">
+   Troubleshooting Migration
   </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#how-do-i-fix-an-error-such-as-error-unknown-type-name-when-i-migrate-files-with-dpct-in-root-srcdir-out-root-dstdir-cu">
+     How do I fix an error such as “error: unknown type name” when I migrate files with “dpct –in-root=srcdir –out-root=dstdir *.cu”?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#how-do-i-fix-a-parsing-error-such-as-no-member-named-max-in-namespace-std-or-no-member-named-min-in-namespace-std-when-migrating-code-on-windows">
+     How do I fix a parsing error such as “no member named ‘max’ in namespace ‘std’” or “no member named ‘min’ in namespace ‘std’” when migrating code on Windows?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#how-do-i-fix-a-compilation-error-such-as-error-dlopen-not-declared-when-i-compile-code-on-a-windows-machine-that-was-originally-migrated-on-linux">
+     How do I fix a compilation error such as “error: dlopen not declared” when I compile code on a Windows machine, that was originally migrated on Linux?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#why-didn-t-the-atomic-apis-get-migrated">
+     Why didn’t the “atomic*” APIs get migrated?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#why-did-my-migration-fail-with-error-restrict-requires-a-pointer-or-reference">
+     Why did my migration fail with “error: restrict requires a pointer or reference”?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#how-do-i-resolve-incorrect-runtime-behavior-for-dpct-dev-mgr-and-dpct-mem-mgr-in-a-library-project-that-is-loaded-more-than-once-in-another-application">
+     How do I resolve incorrect runtime behavior for dpct::dev_mgr and dpct:mem_mgr in a library project that is loaded more than once in another application?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#why-do-i-get-warning-shift-count-width-of-type-when-i-compile-migrated-code-with-the-intel-oneapi-dpc-c-compiler">
+     Why do I get “warning: shift count &gt;= width of type” when I compile migrated code with the Intel® oneAPI DPC++/C++ Compiler?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#how-do-i-resolve-missing-include-errors-that-occur-when-migrating-my-code">
+     How do I resolve missing include errors that occur when migrating my code?
+    </a>
+   </li>
+  </ul>
  </li>
 </ul>
 
@@ -914,11 +1062,90 @@ title="Print to PDF"
   <a class="reference internal nav-link" href="#general-information">
    General Information
   </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#how-do-i-migrate-source-files-that-use-c-11-or-newer-standard-features-on-linux-and-windows">
+     How do I migrate source files that use C++11 or newer standard features on Linux* and Windows*?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#how-do-i-migrate-files-on-windows-when-using-a-cmake-project">
+     How do I migrate files on Windows when using a CMake project?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#how-is-the-migrated-code-formatted">
+     How is the migrated code formatted?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#why-does-the-compilation-database-not-contain-all-source-files-in-the-project">
+     Why does the compilation database not contain all source files in the project?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#how-do-i-use-the-migrated-module-file-in-the-new-project">
+     How do I use the migrated module file in the new project?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#is-the-memory-space-allocated-by-sycl-malloc-device-sycl-malloc-host-and-dpct-dpct-malloc-initialized">
+     Is the memory space allocated by sycl::malloc_device, sycl::malloc_host, and dpct::dpct_malloc initialized?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#how-do-i-migrate-cuda-source-code-that-contains-cub-library-implementation-source-code">
+     How do I migrate CUDA* source code that contains CUB library implementation source code?
+    </a>
+   </li>
+  </ul>
  </li>
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#troubleshooting">
-   Troubleshooting
+  <a class="reference internal nav-link" href="#troubleshooting-migration">
+   Troubleshooting Migration
   </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#how-do-i-fix-an-error-such-as-error-unknown-type-name-when-i-migrate-files-with-dpct-in-root-srcdir-out-root-dstdir-cu">
+     How do I fix an error such as “error: unknown type name” when I migrate files with “dpct –in-root=srcdir –out-root=dstdir *.cu”?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#how-do-i-fix-a-parsing-error-such-as-no-member-named-max-in-namespace-std-or-no-member-named-min-in-namespace-std-when-migrating-code-on-windows">
+     How do I fix a parsing error such as “no member named ‘max’ in namespace ‘std’” or “no member named ‘min’ in namespace ‘std’” when migrating code on Windows?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#how-do-i-fix-a-compilation-error-such-as-error-dlopen-not-declared-when-i-compile-code-on-a-windows-machine-that-was-originally-migrated-on-linux">
+     How do I fix a compilation error such as “error: dlopen not declared” when I compile code on a Windows machine, that was originally migrated on Linux?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#why-didn-t-the-atomic-apis-get-migrated">
+     Why didn’t the “atomic*” APIs get migrated?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#why-did-my-migration-fail-with-error-restrict-requires-a-pointer-or-reference">
+     Why did my migration fail with “error: restrict requires a pointer or reference”?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#how-do-i-resolve-incorrect-runtime-behavior-for-dpct-dev-mgr-and-dpct-mem-mgr-in-a-library-project-that-is-loaded-more-than-once-in-another-application">
+     How do I resolve incorrect runtime behavior for dpct::dev_mgr and dpct:mem_mgr in a library project that is loaded more than once in another application?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#why-do-i-get-warning-shift-count-width-of-type-when-i-compile-migrated-code-with-the-intel-oneapi-dpc-c-compiler">
+     Why do I get “warning: shift count &gt;= width of type” when I compile migrated code with the Intel® oneAPI DPC++/C++ Compiler?
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#how-do-i-resolve-missing-include-errors-that-occur-when-migrating-my-code">
+     How do I resolve missing include errors that occur when migrating my code?
+    </a>
+   </li>
+  </ul>
  </li>
 </ul>
 
@@ -932,11 +1159,31 @@ title="Print to PDF"
                 
   <div class="section" id="frequently-asked-questions">
 <h1>Frequently Asked Questions<a class="headerlink" href="#frequently-asked-questions" title="Permalink to this headline">#</a></h1>
-<p>This page contains the most frequently asked questions about SYCLomatic.</p>
+<p><strong>General Information</strong></p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#how-do-i-migrate-source-files-that-use-c-11-or-newer-standard-features-on-linux-and-windows">How do I migrate source files that use C++11 or newer standard features on Linux* and Windows*?</a></p></li>
+<li><p><a class="reference internal" href="#how-do-i-migrate-files-on-windows-when-using-a-cmake-project">How do I migrate files on Windows when using a CMake project?</a></p></li>
+<li><p><a class="reference internal" href="#how-is-the-migrated-code-formatted">How is the migrated code formatted?</a></p></li>
+<li><p><a class="reference internal" href="#why-does-the-compilation-database-not-contain-all-source-files-in-the-project">Why does the compilation database not contain all source files in the project?</a></p></li>
+<li><p><a class="reference internal" href="#how-do-i-use-the-migrated-module-file-in-the-new-project">How do I use the migrated module file in the new project?</a></p></li>
+<li><p><a class="reference internal" href="#is-the-memory-space-allocated-by-sycl-malloc-device-sycl-malloc-host-and-dpct-dpct-malloc-initialized">Is the memory space allocated by sycl::malloc_device, sycl::malloc_host, and dpct::dpct_malloc initialized?</a></p></li>
+<li><p><a class="reference internal" href="#how-do-i-migrate-cuda-source-code-that-contains-cub-library-implementation-source-code">How do I migrate CUDA* source code that contains CUB library implementation source code?</a></p></li>
+</ul>
+<p><strong>Troubleshooting Migration</strong></p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#how-do-i-fix-an-error-such-as-error-unknown-type-name-when-i-migrate-files-with-dpct-in-root-srcdir-out-root-dstdir-cu">How do I fix an error such as “error: unknown type name” when I migrate files with “dpct –in-root=srcdir –out-root=dstdir *.cu”?</a></p></li>
+<li><p><a class="reference internal" href="#how-do-i-fix-a-parsing-error-such-as-no-member-named-max-in-namespace-std-or-no-member-named-min-in-namespace-std-when-migrating-code-on-windows">How do I fix a parsing error such as “no member named ‘max’ in namespace ‘std’” or “no member named ‘min’ in namespace ‘std’” when migrating code on Windows?</a></p></li>
+<li><p><a class="reference internal" href="#how-do-i-fix-a-compilation-error-such-as-error-dlopen-not-declared-when-i-compile-code-on-a-windows-machine-that-was-originally-migrated-on-linux">How do I fix a compilation error such as “error: dlopen not declared” when I compile code on a Windows machine, that was originally migrated on Linux?</a></p></li>
+<li><p><a class="reference internal" href="#why-didn-t-the-atomic-apis-get-migrated">Why didn’t the “atomic*” APIs get migrated?</a></p></li>
+<li><p><a class="reference internal" href="#why-did-my-migration-fail-with-error-restrict-requires-a-pointer-or-reference">Why did my migration fail with “error: restrict requires a pointer or reference”?</a></p></li>
+<li><p><a class="reference internal" href="#how-do-i-resolve-incorrect-runtime-behavior-for-dpct-dev-mgr-and-dpct-mem-mgr-in-a-library-project-that-is-loaded-more-than-once-in-another-application">How do I resolve incorrect runtime behavior for dpct::dev_mgr and dpct:mem_mgr in a library project that is loaded more than once in another application?</a></p></li>
+<li><p><a class="reference internal" href="#why-do-i-get-warning-shift-count-width-of-type-when-i-compile-migrated-code-with-the-intel-oneapi-dpc-c-compiler">Why do I get “warning: shift count &gt;= width of type” when I compile migrated code with the Intel® oneAPI DPC++/C++ Compiler?</a></p></li>
+<li><p><a class="reference internal" href="#how-do-i-resolve-missing-include-errors-that-occur-when-migrating-my-code">How do I resolve missing include errors that occur when migrating my code?</a></p></li>
+</ul>
 <div class="section" id="general-information">
 <h2>General Information<a class="headerlink" href="#general-information" title="Permalink to this headline">#</a></h2>
-<p><strong>How do I migrate source files that are using C++11 or newer C++ standard features
-on Linux* and Windows*?</strong></p>
+<div class="section" id="how-do-i-migrate-source-files-that-use-c-11-or-newer-standard-features-on-linux-and-windows">
+<h3>How do I migrate source files that use C++11 or newer standard features on Linux* and Windows*?<a class="headerlink" href="#how-do-i-migrate-source-files-that-use-c-11-or-newer-standard-features-on-linux-and-windows" title="Permalink to this headline">#</a></h3>
 <p>On Linux, the default C++ standard for SYCLomatic’s
 parser is C++98, with some C++11 features
 accepted. If you want to enable other C++11 or newer standard
@@ -952,7 +1199,9 @@ command line. The supported values are:</p>
 parser is C++14. If you want to enable C++17
 features in SYCLomatic, you need to add
 the option <code class="docutils literal notranslate"><span class="pre">--extra-arg=&quot;-std=c++17&quot;</span></code> to the command line.</p>
-<p><strong>How do I migrate files on Windows when using a CMake project?</strong></p>
+</div>
+<div class="section" id="how-do-i-migrate-files-on-windows-when-using-a-cmake-project">
+<h3>How do I migrate files on Windows when using a CMake project?<a class="headerlink" href="#how-do-i-migrate-files-on-windows-when-using-a-cmake-project" title="Permalink to this headline">#</a></h3>
 <p>For a CMake project on a Windows OS, you can use CMake to generate
 Microsoft Visual Studio* project files (<code class="docutils literal notranslate"><span class="pre">vcxproj</span></code> files). Then choose one of
 the following options:</p>
@@ -962,7 +1211,9 @@ the following options:</p>
 <li><p>Migrate the entire project in Microsoft Visual Studio
 with an SYCLomatic Microsoft Visual Studio plugin.</p></li>
 </ul>
-<p><strong>How is the migrated code formatted?</strong></p>
+</div>
+<div class="section" id="how-is-the-migrated-code-formatted">
+<h3>How is the migrated code formatted?<a class="headerlink" href="#how-is-the-migrated-code-formatted" title="Permalink to this headline">#</a></h3>
 <p>SYCLomatic provides two options to control the format of
 migrated code: <code class="docutils literal notranslate"><span class="pre">--format-range</span></code> and <code class="docutils literal notranslate"><span class="pre">--format-style</span></code> .</p>
 <p>If input source code is well formatted, SYCLomatic
@@ -987,8 +1238,9 @@ code.</p></li>
 <li><p>Format your input source code, then use SYCLomatic
 with the same <code class="docutils literal notranslate"><span class="pre">.clang-format</span></code> file for migration.</p></li>
 </ul>
-<p><strong>Why does the compilation database (compile_commands.json) not contain all
-source file(s) in the project?</strong></p>
+</div>
+<div class="section" id="why-does-the-compilation-database-not-contain-all-source-files-in-the-project">
+<h3>Why does the compilation database not contain all source files in the project?<a class="headerlink" href="#why-does-the-compilation-database-not-contain-all-source-files-in-the-project" title="Permalink to this headline">#</a></h3>
 <p>In the project build folder, the command <code class="docutils literal notranslate"><span class="pre">intercept-build</span> <span class="pre">make</span> <span class="pre">[target]</span></code> is
 used to generate the compilation database. The content of the compilation
 database depends on the optional [target] parameter. If you need to get the
@@ -1001,7 +1253,9 @@ Use the following command to disable ccache before running the intercept-build c
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">CCACHE_DISABLE</span><span class="o">=</span><span class="m">1</span>
 </pre></div>
 </div>
-<p><strong>How do I use the migrated module file in the new project?</strong></p>
+</div>
+<div class="section" id="how-do-i-use-the-migrated-module-file-in-the-new-project">
+<h3>How do I use the migrated module file in the new project?<a class="headerlink" href="#how-do-i-use-the-migrated-module-file-in-the-new-project" title="Permalink to this headline">#</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">.cu</span></code> module files are compiled with the <code class="docutils literal notranslate"><span class="pre">-ptx</span></code> or <code class="docutils literal notranslate"><span class="pre">-cubin</span></code> options in the
 original project and dynamically loaded into other <code class="docutils literal notranslate"><span class="pre">*.cu</span></code> files with
 <code class="docutils literal notranslate"><span class="pre">cuModuleLoad()</span></code> or <code class="docutils literal notranslate"><span class="pre">cuModuleLoadData()</span></code>.</p>
@@ -1014,7 +1268,9 @@ library with a dynamic library API appropriate to your platform. For example:</p
 <li><p>In Linux, load a dynamic library (<code class="docutils literal notranslate"><span class="pre">.so</span></code>) using <code class="docutils literal notranslate"><span class="pre">dlopen()</span></code></p></li>
 <li><p>In Windows, load a dynamic library (<code class="docutils literal notranslate"><span class="pre">.dll</span></code>) using <code class="docutils literal notranslate"><span class="pre">LoadLibraryA()</span></code></p></li>
 </ul>
-<p><strong>Is the memory space allocated by sycl::malloc_device, sycl::malloc_host, and dpct::dpct_malloc initialized?</strong></p>
+</div>
+<div class="section" id="is-the-memory-space-allocated-by-sycl-malloc-device-sycl-malloc-host-and-dpct-dpct-malloc-initialized">
+<h3>Is the memory space allocated by sycl::malloc_device, sycl::malloc_host, and dpct::dpct_malloc initialized?<a class="headerlink" href="#is-the-memory-space-allocated-by-sycl-malloc-device-sycl-malloc-host-and-dpct-dpct-malloc-initialized" title="Permalink to this headline">#</a></h3>
 <p>The memory allocated by <code class="docutils literal notranslate"><span class="pre">sycl::malloc_device</span></code>, <code class="docutils literal notranslate"><span class="pre">sycl::malloc_host</span></code>, and
 <code class="docutils literal notranslate"><span class="pre">dpct::dpct_malloc</span></code> is not initialized. If your program explicitly or
 implicitly relies on the initial value of newly allocated memory, the program
@@ -1034,17 +1290,19 @@ may fail at runtime. Adjust your code to avoid such failures.</p>
 <span class="linenos">5</span><span class="n">device_mem</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">somevalue</span><span class="p">;</span><span class="w"></span>
 </pre></div>
 </div>
-<p><strong>How do I migrate CUDA* source code that contains CUB library implementation
-source code?</strong></p>
+</div>
+<div class="section" id="how-do-i-migrate-cuda-source-code-that-contains-cub-library-implementation-source-code">
+<h3>How do I migrate CUDA* source code that contains CUB library implementation source code?<a class="headerlink" href="#how-do-i-migrate-cuda-source-code-that-contains-cub-library-implementation-source-code" title="Permalink to this headline">#</a></h3>
 <p>If you migrate the CUB library implementation code directly, you may not get the
 expected results. Instead, exclude CUB library implementation source code from
 your migration by adding <code class="docutils literal notranslate"><span class="pre">--in-root-exclude=&lt;path</span> <span class="pre">to</span> <span class="pre">CUB</span> <span class="pre">library</span> <span class="pre">source</span> <span class="pre">code&gt;</span></code>
 to your migration command.</p>
 </div>
-<div class="section" id="troubleshooting">
-<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">#</a></h2>
-<p><strong>How do I fix an error such as “error: unknown type name” when I migrate files
-with “dpct –in-root=srcdir –out-root=dstdir *.cu”?</strong></p>
+</div>
+<div class="section" id="troubleshooting-migration">
+<h2>Troubleshooting Migration<a class="headerlink" href="#troubleshooting-migration" title="Permalink to this headline">#</a></h2>
+<div class="section" id="how-do-i-fix-an-error-such-as-error-unknown-type-name-when-i-migrate-files-with-dpct-in-root-srcdir-out-root-dstdir-cu">
+<h3>How do I fix an error such as “error: unknown type name” when I migrate files with “dpct –in-root=srcdir –out-root=dstdir *.cu”?<a class="headerlink" href="#how-do-i-fix-an-error-such-as-error-unknown-type-name-when-i-migrate-files-with-dpct-in-root-srcdir-out-root-dstdir-cu" title="Permalink to this headline">#</a></h3>
 <p>The problem may be caused by files in the <code class="docutils literal notranslate"><span class="pre">*.cu</span></code> list, which can
 be used as header files (included with an <code class="docutils literal notranslate"><span class="pre">#include</span></code> statement)
 and are not supposed to be parsed as a standalone file. In this
@@ -1064,8 +1322,9 @@ by the files provided as the input to the tool and are located
 within the <code class="docutils literal notranslate"><span class="pre">in-root</span></code> folder:
 <code class="docutils literal notranslate"><span class="pre">dpct</span> <span class="pre">--in-root=</span> <span class="pre">srcdir</span> <span class="pre">--out-root=dstdir</span> <span class="pre">sample.cu</span></code></p></li>
 </ul>
-<p><strong>How do I fix a parsing error such as “no member named ‘max’ in namespace ‘std’”
-or “no member named ‘min’ in namespace ‘std’” when migrating code on Windows?</strong></p>
+</div>
+<div class="section" id="how-do-i-fix-a-parsing-error-such-as-no-member-named-max-in-namespace-std-or-no-member-named-min-in-namespace-std-when-migrating-code-on-windows">
+<h3>How do I fix a parsing error such as “no member named ‘max’ in namespace ‘std’” or “no member named ‘min’ in namespace ‘std’” when migrating code on Windows?<a class="headerlink" href="#how-do-i-fix-a-parsing-error-such-as-no-member-named-max-in-namespace-std-or-no-member-named-min-in-namespace-std-when-migrating-code-on-windows" title="Permalink to this headline">#</a></h3>
 <p>Use one of the following methods to resolve the error:</p>
 <ul class="simple">
 <li><p>Add <code class="docutils literal notranslate"><span class="pre">#include</span> <span class="pre">&lt;algorithm&gt;</span></code> to the source file before using <code class="docutils literal notranslate"><span class="pre">std::min</span></code> and
@@ -1073,8 +1332,9 @@ or “no member named ‘min’ in namespace ‘std’” when migrating code on
 <li><p>Define the NOMINMAX macro by inserting <code class="docutils literal notranslate"><span class="pre">#define</span> <span class="pre">NOMINMAX</span></code> before including
 <code class="docutils literal notranslate"><span class="pre">WinDef.h</span></code></p></li>
 </ul>
-<p><strong>How do I fix a compilation error such as “error: dlopen not declared” when I
-compile code on a Windows machine, that was originally migrated on Linux?</strong></p>
+</div>
+<div class="section" id="how-do-i-fix-a-compilation-error-such-as-error-dlopen-not-declared-when-i-compile-code-on-a-windows-machine-that-was-originally-migrated-on-linux">
+<h3>How do I fix a compilation error such as “error: dlopen not declared” when I compile code on a Windows machine, that was originally migrated on Linux?<a class="headerlink" href="#how-do-i-fix-a-compilation-error-such-as-error-dlopen-not-declared-when-i-compile-code-on-a-windows-machine-that-was-originally-migrated-on-linux" title="Permalink to this headline">#</a></h3>
 <p>When SYCLomatic generates the source code, it uses dynamic loading
 APIs specific to the OS on which SYCLomatic is running.</p>
 <p>For example, <code class="docutils literal notranslate"><span class="pre">dlopen</span></code>, <code class="docutils literal notranslate"><span class="pre">dlclose</span></code>, and <code class="docutils literal notranslate"><span class="pre">dlsym</span></code> are used on Linux and
@@ -1082,7 +1342,9 @@ APIs specific to the OS on which SYCLomatic is running.</p>
 <p>If your code was migrated on a OS that is different from the OS you
 need to compile the generated code on, migrate the project again with the
 SYCLomatic on the target OS or fix the code manually.</p>
-<p><strong>Why didn’t the “atomic*” APIs get migrated?</strong></p>
+</div>
+<div class="section" id="why-didn-t-the-atomic-apis-get-migrated">
+<h3>Why didn’t the “atomic*” APIs get migrated?<a class="headerlink" href="#why-didn-t-the-atomic-apis-get-migrated" title="Permalink to this headline">#</a></h3>
 <p>SYCLomatic may assume that the “atomic*” APIs are user-defined
 APIs, in which case they are not migrated.</p>
 <p>This can occur in the following scenarios:</p>
@@ -1095,13 +1357,16 @@ files located on the default CUDA install path</p></li>
 <p>To make sure “atomic*” APIs are migrated, don’t use <code class="docutils literal notranslate"><span class="pre">-I*</span></code> to specify the CUDA
 include path with the <code class="docutils literal notranslate"><span class="pre">dpct</span></code> migration command. Instead, use only
 <code class="docutils literal notranslate"><span class="pre">--cuda-include-path</span></code> to specify the CUDA include path.</p>
-<p><strong>Why did my migration fail with “error: restrict requires a pointer or reference”?</strong></p>
+</div>
+<div class="section" id="why-did-my-migration-fail-with-error-restrict-requires-a-pointer-or-reference">
+<h3>Why did my migration fail with “error: restrict requires a pointer or reference”?<a class="headerlink" href="#why-did-my-migration-fail-with-error-restrict-requires-a-pointer-or-reference" title="Permalink to this headline">#</a></h3>
 <p>The C++ standard does not support the restrict qualifier and the C standard
 supports the restrict qualifier only on pointers to an object type.</p>
 <p>Based on these language standards SYCLomatic emits the parsing error.</p>
 <p>You may need to adjust the source code.</p>
-<p><strong>How do I resolve incorrect runtime behavior for dpct::dev_mgr and dpct:mem_mgr
-in a library project that is loaded more than once in another application?</strong></p>
+</div>
+<div class="section" id="how-do-i-resolve-incorrect-runtime-behavior-for-dpct-dev-mgr-and-dpct-mem-mgr-in-a-library-project-that-is-loaded-more-than-once-in-another-application">
+<h3>How do I resolve incorrect runtime behavior for dpct::dev_mgr and dpct:mem_mgr in a library project that is loaded more than once in another application?<a class="headerlink" href="#how-do-i-resolve-incorrect-runtime-behavior-for-dpct-dev-mgr-and-dpct-mem-mgr-in-a-library-project-that-is-loaded-more-than-once-in-another-application" title="Permalink to this headline">#</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">dpct::dev_mgr</span></code> and <code class="docutils literal notranslate"><span class="pre">dpct::mem_mgr</span></code> are singleton classes in the
 SYCLomatic helper functions. When the helper function headers are used
 to build an executable project, both <code class="docutils literal notranslate"><span class="pre">dpct::dev_mgr</span></code> and <code class="docutils literal notranslate"><span class="pre">dpct::mem_mgr</span></code>
@@ -1177,10 +1442,11 @@ and <code class="docutils literal notranslate"><span class="pre">dpct::mem_mgr</
 <p>After performing the update steps, all the libraries and applications will share
 the same instance of the device manager <code class="docutils literal notranslate"><span class="pre">dpct::dev_mgr</span></code> and the memory manager
 <code class="docutils literal notranslate"><span class="pre">dpct::mem_mgr</span></code> in SYCLomatic helper functions.</p>
-<p><strong>Why do I get “warning: shift count &gt;= width of type” when I compile migrated
-code with the Intel® oneAPI DPC++/C++ Compiler?</strong></p>
+</div>
+<div class="section" id="why-do-i-get-warning-shift-count-width-of-type-when-i-compile-migrated-code-with-the-intel-oneapi-dpc-c-compiler">
+<h3>Why do I get “warning: shift count &gt;= width of type” when I compile migrated code with the Intel® oneAPI DPC++/C++ Compiler?<a class="headerlink" href="#why-do-i-get-warning-shift-count-width-of-type-when-i-compile-migrated-code-with-the-intel-oneapi-dpc-c-compiler" title="Permalink to this headline">#</a></h3>
 <p>Shifting bits where the shift is greater than the type length is undefined
-behavior for the Intel® oneAPI DPC++/C++ Compiler and may result in different behavior on
+behavior for the <a class="reference external" href="https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler.html">Intel® oneAPI DPC++/C++ Compiler</a> and may result in different behavior on
 different devices. Adjust your code to avoid this type of shift.</p>
 <p>For example, the migrated SYCL* code:</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="c1">// migrated SYCL code</span>
@@ -1208,7 +1474,9 @@ different devices. Adjust your code to avoid this type of shift.</p>
 <span class="linenos">12</span><span class="p">}</span><span class="w"></span>
 </pre></div>
 </div>
-<p><strong>How do I resolve missing include errors that occur when migrating my code?</strong></p>
+</div>
+<div class="section" id="how-do-i-resolve-missing-include-errors-that-occur-when-migrating-my-code">
+<h3>How do I resolve missing include errors that occur when migrating my code?<a class="headerlink" href="#how-do-i-resolve-missing-include-errors-that-occur-when-migrating-my-code" title="Permalink to this headline">#</a></h3>
 <p>Use the option <code class="docutils literal notranslate"><span class="pre">--extra-arg=-v</span></code> to prompt SYCLomatic to use verbose
 output, which includes information about which paths the tool searches
 for includes.</p>
@@ -1222,6 +1490,7 @@ during migration.</p></li>
 option to the compile command in the database for the source files, to
 specify the include path.</p></li>
 </ul>
+</div>
 </div>
 </div>
 
@@ -1247,9 +1516,8 @@ specify the include path.</p></li>
     <div class="footer-content row">
         <footer class="col footer"><p>
   
-      &copy; Copyright Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc..<br/>
     <div class="extra_footer">
-      <div>No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div>
+      <div><a href='https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html' data-cookie-notice='true'>Cookies</a> <a href='https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html'>| Privacy</a> <a data-wap_ref='dns' id='wap_dns' href='https://www.intel.com/content/www/us/en/privacy/intel-cookie- notice.html'>| Do Not Share My Personal Information</a> </div><div>&copy; Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. SYCL is a registered trademark of the Kronos Group, Inc. No license (express or implied, by estoppel or otherwise) to any intellectual property rights is granted by this document, with the sole exception that code included in this document is licensed subject to the Zero-Clause BSD open source license (OBSD), <a href='http://opensource.org/licenses/0BSD'>http://opensource.org/licenses/0BSD</a>. </div><br><div>SYCLomatic is licensed under Apache License Version 2.0 with LLVM exceptions. Refer to the <a href='https://github.com/oneapi-src/SYCLomatic/blob/e96dbad0a424be9decd0aff7955707d8fb679043/LICENSE.TXT'>LICENSE </a> file for the full license text and copyright notice.</div>
     </div>
 </p>
         </footer>

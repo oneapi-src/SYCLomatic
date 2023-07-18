@@ -8,8 +8,7 @@ Message
 
 .. _msg-1065-start:
 
-Consider replacing ``sycl::<...>::barrier()`` with ``sycl::<...>::barrier(sycl::access::fence_space::local_space)`` for better performance if there is no
- access to global memory.
+Consider replacing ``sycl::<...>::barrier()`` with ``sycl::<...>::barrier(sycl::access::fence_space::local_space)`` for better performance if there is no access to global memory.
 
 .. _msg-1065-end:
 

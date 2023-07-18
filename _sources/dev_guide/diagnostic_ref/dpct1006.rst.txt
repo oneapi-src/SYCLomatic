@@ -11,7 +11,6 @@ Message
 SYCL does not provide a standard API to differentiate between integrated and
 discrete GPU devices.
 
-
 .. _msg-1006-end:
 
 Detailed Help
@@ -23,3 +22,64 @@ Suggestions to Fix
 ------------------
 
 Consider re-implementing the code that depends on this field.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     int device_number = 0;
+       cudaDeviceProp prop;
+       cudaGetDeviceProperties(&prop, device_number);
+       if (prop.integrated) {
+         ...
+       } else {
+         ...
+       }
+   }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     int device_number = 0;
+       dpct::device_info prop;
+       dpct::dev_mgr::instance().get_device(device_number).get_device_info(prop);
+       /*
+       DPCT1006:0: SYCL does not provide a standard API to differentiate between
+       integrated and discrete GPU devices.
+       */
+       if (prop.get_integrated()) {
+         ...
+       } else {
+         ...
+       }
+     }
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo() {
+     int device_number = 0;
+       dpct::device_info prop;
+       // 1. User can use device name or other info to select device. The `a_device_name` can be obtained by running command `   sycl-ls`
+       // 2. User can use the environment variable `ONEAPI_DEVICE_SELECTOR` to filter out some devices.
+       // 3. User can use the user-provided device-selector like:
+       //   int prefer_my_device(const sycl::device& d) {
+       //     return d.get_info<info::device::name>() == "MyDevice";
+       //   }
+       //   sycl::device preferred_device { prefer_my_device };
+       if (dpct::dev_mgr::instance().get_device(device_numbe).get_info<sycl::info::device::name>() == "a_device_name") {
+         ...
+       } else {
+         ...
+       }
+     }
+   }
+

@@ -35,14 +35,6 @@ cuFFT API
    :widths: 40, 15, 45
    :header-rows: 1
 
-cuGRAPH API
------------
-
-.. csv-table::
-   :file: api-mapping-status/cuGRAPH_API_migration_status.csv
-   :widths: 40, 15, 45
-   :header-rows: 1
-
 cuRAND API
 ----------
 
@@ -72,6 +64,14 @@ NCCL API
 
 .. csv-table::
    :file: api-mapping-status/NCCL_API_migration_status.csv
+   :widths: 40, 15, 45
+   :header-rows: 1
+
+nvGRAPH API
+-----------
+
+.. csv-table::
+   :file: api-mapping-status/nvGRAPH_API_migration_status.csv
    :widths: 40, 15, 45
    :header-rows: 1
 
