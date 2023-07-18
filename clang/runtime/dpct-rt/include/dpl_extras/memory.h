@@ -498,6 +498,7 @@ public:
   device_iterator() : Base() {}
   device_iterator(sycl::buffer<T, 1, Allocator> vec, std::size_t index)
       : Base(vec, index) {}
+  device_iterator(const Base &dev_ptr) : Base(dev_ptr) {}
   template <sycl::access_mode inMode>
   device_iterator(const device_iterator<T, inMode, Allocator> &in)
       : Base(in.buffer, in.idx) {} // required for iter_mode
@@ -592,6 +593,7 @@ public:
 
   device_iterator() : Base(nullptr), idx(0) {}
   device_iterator(T *vec, std::size_t index) : Base(vec), idx(index) {}
+  device_iterator(const Base &dev_ptr) : Base(dev_ptr), idx(0) {}
   template <sycl::access_mode inMode>
   device_iterator(const device_iterator<T> &in)
       : Base(in.ptr), idx(in.idx) {} // required for iter_mode
