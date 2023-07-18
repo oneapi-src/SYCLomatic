@@ -25,6 +25,7 @@
 
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Attr.h"
+#include "clang/AST/Decl.h"
 #include "clang/AST/ParentMapContext.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
@@ -34,6 +35,7 @@
 #include "llvm/Support/Path.h"
 namespace path = llvm::sys::path;
 
+using namespace clang;
 namespace llvm {
 class StringRef;
 } // namespace llvm
@@ -415,7 +417,7 @@ calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
                        const std::vector<clang::tooling::Range> &Ranges);
 
 bool isAssigned(const clang::Stmt *S);
-
+bool isInRetStmt(const clang::Stmt *S);
 std::string getTempNameForExpr(const clang::Expr *E, bool HandleLiteral = false,
                                bool KeepLastUnderline = true,
                                bool IsInMacroDefine = false,
@@ -569,6 +571,7 @@ bool isUserDefinedDecl(const clang::ValueDecl *VD);
 void insertHeaderForTypeRule(std::string, clang::SourceLocation);
 std::string getRemovedAPIWarningMessage(std::string FuncName);
 std::string getBaseTypeStr(const clang::CallExpr *CE);
+std::string getParamTypeStr(const clang::CallExpr *CE, unsigned int Idx);
 std::string getArgTypeStr(const clang::CallExpr *CE, unsigned int Idx);
 std::string getFunctionName(const clang::FunctionDecl *Node);
 std::string getFunctionName(const clang::UnresolvedLookupExpr *Node);
@@ -582,6 +585,8 @@ std::string getBaseTypeRemoveTemplateArguments(const clang::MemberExpr* ME);
 bool containIterationSpaceBuiltinVar(const clang::Stmt *Node);
 bool containBuiltinWarpSize(const clang::Stmt *Node);
 bool isCapturedByLambda(const clang::TypeLoc *TL);
+std::string getAddressSpace(const clang::CallExpr *C, int ArgIdx);
+std::string getNameSpace(const NamespaceDecl *NSD);
 namespace clang {
 namespace dpct {
 std::string getDpctVersionStr();
@@ -593,5 +598,11 @@ void requestFeature(HelperFeatureEnum Feature);
 void requestHelperFeatureForEnumNames(const std::string Name);
 void requestHelperFeatureForTypeNames(const std::string Name);
 } // namespace dpct
+namespace ast_matchers {
+AST_MATCHER_P(DeclRefExpr, isDeclSameAs, const VarDecl *, TargetVD) {
+  const DeclRefExpr *DRE = &Node;
+  return DRE->getDecl() == TargetVD;
+}
+} // namespace ast_matchers
 } // namespace clang
 #endif // DPCT_UTILITY_H

@@ -565,8 +565,8 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     auto MigratedArg1 = getMigratedArg(1);
     OS << MapNames::getClNamespace(false, true) + "frexp(" << MigratedArg0
        << ", " + MapNames::getClNamespace() + "address_space_cast<"
-       << MapNames::getClNamespace() + "access::address_space::" +
-              getAddressSpace(Call->getArg(1), MigratedArg1)
+       << MapNames::getClNamespace() +
+              "access::address_space::" + getAddressSpace(Call, 1)
        << ", " << MapNames::getClNamespace() + "access::decorated::yes"
        << ", "
        << "int"
@@ -594,83 +594,24 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     OS << MapNames::getClNamespace(false, true) + "modf(" << MigratedArg0;
     if (FuncName == "modf")
       OS << ", " + MapNames::getClNamespace() + "address_space_cast<"
-         << MapNames::getClNamespace() + "access::address_space::" +
-                getAddressSpace(Call->getArg(1), MigratedArg1)
+         << MapNames::getClNamespace() +
+                "access::address_space::" + getAddressSpace(Call, 1)
          << ", " << MapNames::getClNamespace() + "access::decorated::yes"
          << ", "
          << "double"
          << ">(";
     else
       OS << ", " + MapNames::getClNamespace() + "address_space_cast<"
-         << MapNames::getClNamespace() + "access::address_space::" +
-                getAddressSpace(Call->getArg(1), MigratedArg1)
+         << MapNames::getClNamespace() +
+                "access::address_space::" + getAddressSpace(Call, 1)
          << ", " << MapNames::getClNamespace() + "access::decorated::yes"
          << ", "
          << "float"
          << ">(";
 
-
     OS << MigratedArg1 << "))";
   } else if (FuncName == "nan" || FuncName == "nanf") {
     OS << MapNames::getClNamespace(false, true) + "nan(0u)";
-  } else if (FuncName == "sincos" || FuncName == "sincosf" ||
-             FuncName == "__sincosf") {
-    std::string Buf;
-    llvm::raw_string_ostream RSO(Buf);
-
-    auto Arg = Call->getArg(0);
-    std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
-        PrintingPolicy(LangOptions()));
-    std::string ArgExpr = Arg->getStmtClassName();
-    auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
-    if (ArgT == "int") {
-      if (FuncName == "sincosf" || FuncName == "__sincosf") {
-        if (DRE)
-          MigratedArg0 = "(float)" + MigratedArg0;
-        else
-          MigratedArg0 = "(float)(" + MigratedArg0 + ")";
-      } else {
-        if (DRE)
-          MigratedArg0 = "(double)" + MigratedArg0;
-        else
-          MigratedArg0 = "(double)(" + MigratedArg0 + ")";
-      }
-    }
-    auto MigratedArg1 = getMigratedArg(1);
-    auto MigratedArg2 = getMigratedArg(2);
-    if (MigratedArg1[0] == '&')
-      RSO << MigratedArg1.substr(1);
-    else
-      RSO << "*(" + MigratedArg1 + ")";
-    RSO << " = " + MapNames::getClNamespace(false, true) + "sincos("
-       << MigratedArg0;
-
-    if (FuncName == "sincos")
-      RSO << ", " + MapNames::getClNamespace() + "address_space_cast<"
-          << MapNames::getClNamespace() + "access::address_space::" +
-                 getAddressSpace(Call->getArg(2), MigratedArg2)
-          << ", " << MapNames::getClNamespace() + "access::decorated::yes"
-          << ", "
-          << "double"
-          << ">(";
-    else
-      RSO << ", " + MapNames::getClNamespace() + "address_space_cast<"
-          << MapNames::getClNamespace() + "access::address_space::" +
-                 getAddressSpace(Call->getArg(2), MigratedArg2)
-          << ", " << MapNames::getClNamespace() + "access::decorated::yes"
-          << ", "
-          << "float"
-          << ">(";
-
-    RSO << MigratedArg2 << "))";
-
-    if(IsInReturnStmt) {
-      OS << "[&](){ " << Buf << ";"<< " }()";
-      BlockLevelFormatFlag = true;
-    } else {
-      OS << Buf;
-    }
-
   } else if (FuncName == "sincospi" || FuncName == "sincospif") {
     std::string Buf;
     llvm::raw_string_ostream RSO(Buf);
@@ -693,16 +634,16 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
 
     if (FuncName == "sincospi")
       RSO << ", " + MapNames::getClNamespace() + "address_space_cast<"
-          << MapNames::getClNamespace() + "access::address_space::" +
-                 getAddressSpace(Call->getArg(2), MigratedArg2)
+          << MapNames::getClNamespace() +
+                 "access::address_space::" + getAddressSpace(Call, 2)
           << ", " << MapNames::getClNamespace() + "access::decorated::yes"
           << ", "
           << "double"
           << ">(";
     else
       RSO << ", " + MapNames::getClNamespace() + "address_space_cast<"
-          << MapNames::getClNamespace() + "access::address_space::" +
-                 getAddressSpace(Call->getArg(2), MigratedArg2)
+          << MapNames::getClNamespace() +
+                 "access::address_space::" + getAddressSpace(Call, 2)
           << ", " << MapNames::getClNamespace() + "access::decorated::yes"
           << ", "
           << "float"
@@ -761,8 +702,8 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
     OS << MapNames::getClNamespace(false, true) + "remquo(" << MigratedArg0
        << ", " << MigratedArg1
        << ", " + MapNames::getClNamespace() + "address_space_cast<"
-       << MapNames::getClNamespace() + "access::address_space::" +
-              getAddressSpace(Call->getArg(2), MigratedArg2)
+       << MapNames::getClNamespace() +
+              "access::address_space::" + getAddressSpace(Call, 2)
        << ", " << MapNames::getClNamespace() + "access::decorated::yes"
        << ", "
        << "int"
