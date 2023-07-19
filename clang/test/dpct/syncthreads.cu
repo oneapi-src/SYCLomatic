@@ -395,8 +395,8 @@ __global__ void test17(float *f) {
 
 __global__ void test18(unsigned int *aaa) {
   __shared__ unsigned int bbb[2][10];
-  //CHECK:  *((sycl::uint4*)(&aaa[5])) = *((sycl::uint4*)&bbb[1][2]);
+  //CHECK:  *((sycl::uint4 *)(&aaa[5])) = *((sycl::uint4 *)&bbb[1][2]);
   //CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
-  *((uint4*)(&aaa[5])) = *((uint4*)&bbb[1][2]);
+  *((uint4 *)(&aaa[5])) = *((uint4 *)&bbb[1][2]);
   __syncthreads();
 }
