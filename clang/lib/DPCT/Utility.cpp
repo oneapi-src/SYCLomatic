@@ -4420,7 +4420,7 @@ void requestHelperFeatureForTypeNames(const std::string Name) {
   }
 }
 
-bool isFuncdeclDefTogether(const clang::FunctionDecl *FD) {
+bool isFuncDeclDefTogether(const clang::FunctionDecl *FD) {
   if (!FD)
     return false;
   if (FD->getPreviousDecl() != nullptr) {

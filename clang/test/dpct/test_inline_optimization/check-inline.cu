@@ -9,7 +9,7 @@ __host__ __device__ int test() {
 }
 
 int main() {
-    test();
-    test1();
-    return 0;
+  test();
+  test1();
+  return 0;
 }

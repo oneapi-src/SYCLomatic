@@ -27,10 +27,10 @@ blockDim.x + threadIdx.x;
 }
 
 
-//CHECK: inline void testKernel(int L, int M, const cl::sycl::nd_item<3> &item_ct1, int N);
+//CHECK: void testKernel(int L, int M, const cl::sycl::nd_item<3> &item_ct1, int N);
 __global__ void testKernel(int L, int M, int N);
 
-// CHECK: inline void testKernel(int L, int M, const cl::sycl::nd_item<3> &[[ITEMNAME:item_ct1]], int N = 0);
+// CHECK: void testKernel(int L, int M, const cl::sycl::nd_item<3> &[[ITEMNAME:item_ct1]], int N = 0);
 __global__ void testKernel(int L, int M, int N = 0);
 
 // CHECK: inline void testKernelPtr(const int *L, const int *M, int N,
@@ -43,8 +43,8 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 }
 
 
-// CHECK: inline // Test Launch Bounds
-// CHECK-NEXT: void testKernel(int L, int M, const cl::sycl::nd_item<3> &[[ITEMNAME:item_ct1]], int N) {
+
+// CHECK: void testKernel(int L, int M, const cl::sycl::nd_item<3> &[[ITEMNAME:item_ct1]], int N) {
 __launch_bounds__(256, 512) // Test Launch Bounds
 __global__ void testKernel(int L, int M, int N) {
   // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range(2) + [[ITEMNAME]].get_local_id(2);
