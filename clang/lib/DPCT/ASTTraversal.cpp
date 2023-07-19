@@ -14411,8 +14411,11 @@ void CudaArchMacroRule::runRule(
       return;
     if (auto *PF = DpctGlobalInfo::getParentFunction(CE)) {
       if ((PF->hasAttr<CUDADeviceAttr>() && !PF->hasAttr<CUDAHostAttr>()) ||
-          PF->hasAttr<CUDAGlobalAttr>())
+          PF->hasAttr<CUDAGlobalAttr>()) {
         return;
+      } else if (PF->hasAttr<CUDADeviceAttr>() && PF->hasAttr<CUDAHostAttr>()) {
+        HDFLI.CalledByHostDeviceFunction = true;
+      }
     }
     const FunctionDecl *DC = CE->getDirectCallee();
     if (DC) {
