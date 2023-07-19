@@ -18,12 +18,59 @@
 #include "common.cuh"
 #include <stdio.h>
 
+void f() {
+  CUcontext ctx;
+  CUdevice device;
+  int major;
+  int minor;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuCtxCreate_v2 was removed because it is in --use-pure-sycl-queue mode.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: ctx = device;
+  cuCtxCreate_v2(&ctx, 0, device);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuDevicePrimaryCtxRetain was removed because it is in --use-pure-sycl-queue mode.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: ctx = device;
+  cuDevicePrimaryCtxRetain(&ctx, device);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuCtxGetDevice was removed because it is in --use-pure-sycl-queue mode.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: device = 0;
+  cuCtxGetDevice(&device);
+  // CHECK: device = dpct::get_major_version(dev_ct1);
+  cudaDriverGetVersion(&device);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaSetDevice was removed because it is in --use-pure-sycl-queue mode.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: 0;
+  cudaSetDevice(device);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaGetDevice was removed because it is in --use-pure-sycl-queue mode.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: device = 0;
+  cudaGetDevice(&device);
+  // CHECK: major = dpct::get_major_version(dev_ct1);
+  // CHECK-NEXT: minor = dpct::get_minor_version(dev_ct1);
+  cuDeviceComputeCapability(&major, &minor, device);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuCtxSetCurrent was removed because it is in --use-pure-sycl-queue mode.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: 0;
+  cuCtxSetCurrent(ctx);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuCtxGetCurrent was removed because it is in --use-pure-sycl-queue mode.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: ctx = 0;
+  cuCtxGetCurrent(&ctx);
+}
+
 // CHECK: int main() {
 // CHECK-NEXT:   int *h_Data;
 // CHECK-NEXT:   int *d_Data;
 // CHECK-NEXT:   dpct::device_info deviceProp;
 // CHECK-NEXT:   /*
-// CHECK-NEXT:   DPCT1005:0: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
+// CHECK-NEXT:   DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
 // CHECK-NEXT:   */
 // CHECK-NEXT:   deviceProp.set_major_version(0);
 // CHECK-NEXT:   dpct::get_device_info(deviceProp, dev_ct1);

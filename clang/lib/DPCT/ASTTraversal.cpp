@@ -6709,9 +6709,8 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                                              "get_device_info"));
     emplaceTransformation(new ReplaceStmt(CE->getArg(0), ResultVarName));
     if (DpctGlobalInfo::isUsePureSyclQueue()) {
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
       emplaceTransformation(new ReplaceStmt(
-          CE->getArg(1), "{{NEEDREPLACED" + std::to_string(Index) + "}}"));
+          CE->getArg(1), DpctGlobalInfo::getGlobalDeviceName()));
     } else {
       emplaceTransformation(new ReplaceStmt(
           CE->getArg(1), MapNames::getDpctNamespace() +
@@ -6730,8 +6729,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
     std::string ReplStr = MapNames::getDpctNamespace() + "get_major_version(";
     if (DpctGlobalInfo::isUsePureSyclQueue()) {
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      ReplStr += "{{NEEDREPLACED" + std::to_string(Index) + "}})";
+      ReplStr += DpctGlobalInfo::getGlobalDeviceName() + ")";
     } else {
       ReplStr += MapNames::getDpctNamespace() + "get_current_device())";
     }
@@ -6751,12 +6749,14 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                                                   "}}.reset()" + Suffix));
     requestFeature(HelperFeatureEnum::device_ext);
   } else if (FuncName == "cudaSetDevice") {
-    DpctGlobalInfo::setDeviceChangedFlag(true);
-    report(CE->getBeginLoc(), Diagnostics::DEVICE_ID_DIFFERENT, false,
-           getStmtSpelling(CE->getArg(0)));
     if (DpctGlobalInfo::isUsePureSyclQueue()) {
       emplaceTransformation(new ReplaceStmt(CE, "0"));
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+             "cudaSetDevice", "it is in --use-pure-sycl-queue mode.");
     } else {
+      DpctGlobalInfo::setDeviceChangedFlag(true);
+      report(CE->getBeginLoc(), Diagnostics::DEVICE_ID_DIFFERENT, false,
+             getStmtSpelling(CE->getArg(0)));
       emplaceTransformation(new ReplaceStmt(
           CE->getCallee(),
           Prefix + MapNames::getDpctNamespace() + "select_device"));
@@ -6825,6 +6825,8 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
     if (DpctGlobalInfo::isUsePureSyclQueue()) {
       emplaceTransformation(new ReplaceStmt(CE, "0"));
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+             "cudaGetDevice", "it is in --use-pure-sycl-queue mode.");
     } else {
       emplaceTransformation(
           new ReplaceStmt(CE, MapNames::getDpctNamespace() +
@@ -6835,13 +6837,12 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaThreadSynchronize") {
     if (isPlaceholderIdxDuplicated(CE))
       return;
-    int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-    buildTempVariableMap(Index, CE, HelperFuncType::HFT_CurrentDevice);
     std::string ReplStr;
     if (DpctGlobalInfo::isUsePureSyclQueue()) {
-      ReplStr =
-          "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.wait_and_throw()";
+      ReplStr = DpctGlobalInfo::getGlobalQueueName() + ".wait_and_throw()";
     } else {
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, CE, HelperFuncType::HFT_CurrentDevice);
       ReplStr = "{{NEEDREPLACED" + std::to_string(Index) +
                 "}}.queues_wait_and_throw()";
       requestFeature(HelperFeatureEnum::device_ext);
@@ -6872,8 +6873,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaThreadSetLimit" ||
              FuncName == "cudaDeviceSetCacheConfig" ||
              FuncName == "cudaDeviceGetCacheConfig" ||
-             FuncName == "cuCtxSetCacheConfig" ||
-             FuncName == "cuCtxSetLimit") {
+             FuncName == "cuCtxSetCacheConfig" || FuncName == "cuCtxSetLimit") {
     auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
@@ -14043,8 +14043,7 @@ void DriverDeviceAPIRule::runRule(
     auto ThrArg = CE->getArg(2)->IgnoreImplicitAsWritten();
     std::string device_str;
     if (DpctGlobalInfo::isUsePureSyclQueue()) {
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      device_str = "{{NEEDREPLACED" + std::to_string(Index) + "}}";
+      device_str = DpctGlobalInfo::getGlobalDeviceName();
     } else {
       std::string ThrRep;
       ExprAnalysis EA(ThrArg);
@@ -14228,6 +14227,8 @@ void DriverContextAPIRule::runRule(
   } else if (APIName == "cuCtxSetCurrent") {
     if (DpctGlobalInfo::isUsePureSyclQueue()) {
       OS << "0";
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+             "cuCtxSetCurrent", "it is in --use-pure-sycl-queue mode.");
     } else {
       auto Arg = CE->getArg(0)->IgnoreImplicitAsWritten();
       ExprAnalysis EA(Arg);
@@ -14242,6 +14243,8 @@ void DriverContextAPIRule::runRule(
     OS << " = ";
     if (DpctGlobalInfo::isUsePureSyclQueue()) {
       OS << "0";
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+             "cuCtxGetCurrent", "it is in --use-pure-sycl-queue mode.");
     } else {
       OS << MapNames::getDpctNamespace() +
                 "dev_mgr::instance().current_device_id()";

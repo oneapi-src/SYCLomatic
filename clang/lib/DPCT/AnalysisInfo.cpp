@@ -379,8 +379,8 @@ void DpctGlobalInfo::buildReplacements() {
 
   for (auto &Counter : TempVariableDeclCounterMap) {
     if (DpctGlobalInfo::isUsePureSyclQueue()) {
-      Counter.second.PlaceholderStr[1] = "q_ct1";
-      Counter.second.PlaceholderStr[2] = "dev_ct1";
+      Counter.second.PlaceholderStr[1] = DpctGlobalInfo::getGlobalQueueName();
+      Counter.second.PlaceholderStr[2] = DpctGlobalInfo::getGlobalDeviceName();
       // Need not insert q_ct1 and dev_ct1 declrations and request feature.
       continue;
     }
@@ -1181,9 +1181,12 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
       auto SourceFileType = GetSourceFileType(getFilePath());
       if (Flag && (SourceFileType == SPT_CudaSource ||
                    SourceFileType == SPT_CppSource)) {
-        OS << MapNames::getClNamespace() << "device dev_ct1;" << getNL();
+        OS << MapNames::getClNamespace() << "device "
+           << DpctGlobalInfo::getGlobalDeviceName() << ";" << getNL();
         // Now the UsmLevel must not be UL_None here.
-        OS << MapNames::getClNamespace() << "queue q_ct1(dev_ct1, "
+        OS << MapNames::getClNamespace() << "queue "
+           << DpctGlobalInfo::getGlobalQueueName() << "("
+           << DpctGlobalInfo::getGlobalDeviceName() << ", "
            << MapNames::getClNamespace() << "property_list{"
            << MapNames::getClNamespace() << "property::queue::in_order()";
         if (DpctGlobalInfo::getEnablepProfilingFlag()) {
@@ -1193,11 +1196,11 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
         OS << "});" << getNL();
         Flag = false;
       } else {
-        OS << "extern " << MapNames::getClNamespace() << "device dev_ct1;"
-           << getNL();
+        OS << "extern " << MapNames::getClNamespace() << "device "
+           << DpctGlobalInfo::getGlobalDeviceName() << ";" << getNL();
         // Now the UsmLevel must not be UL_None here.
-        OS << "extern " << MapNames::getClNamespace() << "queue q_ct1;"
-           << getNL();
+        OS << "extern " << MapNames::getClNamespace() << "queue "
+           << DpctGlobalInfo::getGlobalQueueName() << ";" << getNL();
       }
     }
     return insertHeader(OS.str(), FirstIncludeOffset, InsertPosition::IP_Left);
@@ -4366,21 +4369,20 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
 
 const std::string &getDefaultString(HelperFuncType HFT) {
   const static std::string NullString;
-  const static auto GetDefaultStr = [](bool IsQueue = true) -> const auto & {
-    const static std::string Q = "q_ct1";
-    const static std::string D = "dev_ct1";
-    const static std::string DefaultQ =
-        MapNames::getDpctNamespace() + "get_default_queue()";
-    const static std::string DefaultD =
-        MapNames::getDpctNamespace() + "get_current_device()";
-    if (DpctGlobalInfo::isUsePureSyclQueue())
-      return IsQueue ? Q : D;
-    return IsQueue ? DefaultQ : DefaultD;
-  };
+  const static std::string Q =
+      DpctGlobalInfo::isUsePureSyclQueue()
+          ? DpctGlobalInfo::getGlobalQueueName()
+          : MapNames::getDpctNamespace() + "get_default_queue()";
+  const static std::string D =
+      DpctGlobalInfo::isUsePureSyclQueue()
+          ? DpctGlobalInfo::getGlobalDeviceName()
+          : MapNames::getDpctNamespace() + "get_current_device()";
   switch (HFT) {
-  case clang::dpct::HelperFuncType::HFT_DefaultQueue:
+  case clang::dpct::HelperFuncType::HFT_DefaultQueue: {
+    return Q;
+  }
   case clang::dpct::HelperFuncType::HFT_CurrentDevice: {
-    return GetDefaultStr(HFT == HelperFuncType::HFT_DefaultQueue);
+    return D;
   }
   case clang::dpct::HelperFuncType::HFT_InitValue: {
     return NullString;
