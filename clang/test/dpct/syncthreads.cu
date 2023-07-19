@@ -383,3 +383,12 @@ template <class T> void foo16(int grid, int block, T *res, cudaStream_t stream) 
 
 template void foo16<half>(int grid, int block, half *res, cudaStream_t stream);
 template void foo16<float>(int grid, int block, float *res, cudaStream_t stream);
+
+__global__ void test17(float *f) {
+  __shared__ float ff[10];
+  //CHECK:  *((sycl::float2 *)&ff[2]) = *((sycl::float2 *)&f[123]);
+  //CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
+  item_ct1.barrier(sycl::access::fence_space::local_space);
+  *((float2 *)&ff[2]) = *((float2 *)&f[123]);
+  __syncthreads();
+}

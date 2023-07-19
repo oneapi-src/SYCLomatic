@@ -235,23 +235,12 @@ clang::dpct::BarrierFenceSpaceAnalyzer::isAssignedToAnotherDREOrVD(
 clang::dpct::BarrierFenceSpaceAnalyzer::AccessMode
 clang::dpct::BarrierFenceSpaceAnalyzer::getAccessKind(
     const DeclRefExpr *CurrentDRE) {
-  auto processCallArg = [](const Expr *CallExprArg) -> AccessMode {
-    if (CallExprArg->getType()->isPointerType())
-      return AccessMode::ReadWrite;
-    const ImplicitCastExpr *ICE = dyn_cast<ImplicitCastExpr>(CallExprArg);
-    if (ICE) {
-      if (ICE->getCastKind() == CastKind::CK_LValueToRValue) {
-        return AccessMode::Read;
-      }
-    }
-    return AccessMode::ReadWrite;
-  };
-
   bool FoundDerefOrArraySubscript = false;
+  bool FoundBO = false;
   const BinaryOperator *BO = nullptr;
   const UnaryOperator *UOInBO = nullptr;
   const ArraySubscriptExpr *ASEInBO = nullptr;
-  const Expr *CallExprArg = nullptr;
+  const ParmVarDecl *PVD = nullptr;
 
   auto &Context = DpctGlobalInfo::getContext();
   DynTypedNode Current = DynTypedNode::create(*CurrentDRE);
@@ -263,18 +252,22 @@ clang::dpct::BarrierFenceSpaceAnalyzer::getAccessKind(
     const auto CE = Parents[0].get<CallExpr>();
     UOInBO = Parents[0].get<UnaryOperator>();
     ASEInBO = Parents[0].get<ArraySubscriptExpr>();
+    BO = Parents[0].get<BinaryOperator>();
 
-    if (CE) {
+    if (CE && CE->getDirectCallee()) {
+      unsigned int Idx = 0;
       for (const auto Arg : CE->arguments()) {
-        if (Arg == Current.get<Expr>()) {
-          CallExprArg = Arg;
+        if (Arg == Current.get<Expr>())
           break;
-        }
+        Idx++;
       }
-    } else if (BO && BO->isAssignmentOp() &&
-               (BO->getLHS() == Current.get<Expr>()) &&
-               FoundDerefOrArraySubscript) {
-      break;
+      if (dyn_cast<CXXOperatorCallExpr>(CE) || dyn_cast<CXXMemberCallExpr>(CE))
+        Idx--;
+      PVD = CE->getDirectCallee()->getParamDecl(Idx);
+    }
+    if (!FoundBO && BO && BO->isAssignmentOp() &&
+        (BO->getLHS() == Current.get<Expr>()) && FoundDerefOrArraySubscript) {
+      FoundBO = true;
     } else if (!FoundDerefOrArraySubscript && UOInBO &&
                (UOInBO->getOpcode() == UnaryOperatorKind::UO_Deref)) {
       FoundDerefOrArraySubscript = true;
@@ -287,34 +280,27 @@ clang::dpct::BarrierFenceSpaceAnalyzer::getAccessKind(
     Parents = Context.getParents(Current);
   }
 
-  if (BO) {
-    const Expr *CallArg = findAncestorInFunctionScope<Expr>(
-        BO, FD,
-        [&](const DynTypedNode &Parent,
-            const DynTypedNode &Current) -> const void * {
-          const auto CE = Parent.get<CallExpr>();
-          if (CE) {
-            for (const auto Arg : CE->arguments()) {
-              if (Arg == Current.get<Expr>()) {
-                return Arg;
-              }
-            }
-          }
-          return nullptr;
-        });
-
-    if (CallArg) {
-      return processCallArg(CallArg);
+  if (PVD) {
+    if (PVD->getType()->isPointerType()) {
+      if (PVD->getType()->getPointeeType().isConstQualified())
+        return AccessMode::Read;
+      return AccessMode::ReadWrite;
     }
+    if (PVD->getType()->isLValueReferenceType()) {
+      if (PVD->getType().getNonReferenceType().isConstQualified())
+        return AccessMode::Read;
+      return AccessMode::ReadWrite;
+    }
+    return AccessMode::Read;
+  }
+
+  if (BO) {
     if (BO->getOpcode() == BinaryOperatorKind::BO_Assign) {
       return AccessMode::Write;
     }
     return AccessMode::ReadWrite;
   }
 
-  if (CallExprArg) {
-    return processCallArg(CallExprArg);
-  }
   // No BO or Call in ancestor
   return AccessMode::Read;
 }
