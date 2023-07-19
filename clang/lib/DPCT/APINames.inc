@@ -1678,6 +1678,7 @@ ENTRY(cooperative_groups::__v1::grid_group, cooperative_groups::__v1::grid_group
 ENTRY(cooperative_groups::__v1::thread_rank, cooperative_groups::__v1::thread_rank, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(cooperative_groups::__v1::meta_group_rank, cooperative_groups::__v1::meta_group_rank, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY(cooperative_groups::__v1::reduce, cooperative_groups::__v1::reduce, true, NO_FLAG, P4, "Successful", "NA")
+ENTRY(cooperative_groups::__v1::sync, cooperative_groups::__v1::sync, true, NO_FLAG, P4, "Successful", "NA")
 
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_group, size, size, false, NO_FLAG, P4, "Comment", "NA")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_group, num_threads, num_threads, false, NO_FLAG, P4, "Comment", "NA")
@@ -1687,11 +1688,14 @@ ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_group, get_type, get_type
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block, sync, sync, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block, size, size, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block, thread_rank, thread_rank, true, NO_FLAG, P4, "Successful", "NA")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block, thread_index, thread_index, false, NO_FLAG, P4, "Comment", "NA")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::grid_group, sync, sync, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block_tile, thread_rank, thread_rank, true, NO_FLAG, P4, "Successful", "NA")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block_tile, meta_group_rank, meta_group_rank, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block_tile, sync, sync, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::thread_block_tile, size, size, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::coalesced_group, sync, sync, true, NO_FLAG, P4, "Successful", "NA")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::__v1::__static_size_tile_base, thread_rank, thread_rank, true, NO_FLAG, P4, "Successful", "NA")
 
 // nvrtc APIs
 ENTRY(nvrtcGetErrorString, nvrtcGetErrorString, false, NO_FLAG, P4, "comment", "NA")

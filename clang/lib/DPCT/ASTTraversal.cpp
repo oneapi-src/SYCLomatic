@@ -26,8 +26,10 @@
 #include "ThrustAPIMigration.h"
 #include "Utility.h"
 #include "WMMAAPIMigration.h"
+#include "clang/AST/Decl.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/Stmt.h"
+#include "clang/AST/Type.h"
 #include "clang/AST/TypeLoc.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Analysis/AnalysisDeclContext.h"
@@ -12086,58 +12088,25 @@ REGISTER_RULE(KernelFunctionInfoRule, PassKind::PK_Migration)
 std::vector<std::vector<std::string>>
 RecognizeAPINameRule::splitAPIName(std::vector<std::string> &AllAPINames) {
   std::vector<std::vector<std::string>> Result;
-  std::vector<std::string> FuncNames, FuncNamesHasNS, FuncNamespaces,
-      MemFuncNames, ObjNames, MemFuncNamesHasNS, ObjNamesHasNS, ObjNamespaces;
+  std::vector<std::string> FuncNames, FuncNamesHasNS, FuncNamespaces;
   size_t ScopeResolutionOpSize = 2; // The length of string("::")
-  size_t DotOpSize = 1; // The length of string(".")
   for (auto &APIName : AllAPINames) {
     size_t ScopeResolutionOpPos = APIName.rfind("::");
-    size_t DotPos = APIName.find(".");
-    if (DotPos == std::string::npos) {
-      // 1. FunctionName
-      if (ScopeResolutionOpPos == std::string::npos) {
-        FuncNames.emplace_back(APIName);
-      } else {
-        // 2. NameSpace::FunctionName
-        if (std::find(FuncNamespaces.begin(), FuncNamespaces.end(),
-                      APIName.substr(0, ScopeResolutionOpPos)) ==
-            FuncNamespaces.end()) {
-          FuncNamespaces.emplace_back(APIName.substr(0, ScopeResolutionOpPos));
-        }
-        FuncNamesHasNS.emplace_back(
-            APIName.substr(ScopeResolutionOpPos + ScopeResolutionOpSize));
-      }
+    // 1. FunctionName
+    if (ScopeResolutionOpPos == std::string::npos) {
+      FuncNames.emplace_back(APIName);
     } else {
-      // 3. ObjectName.FunctionName
-      if (ScopeResolutionOpPos == std::string::npos) {
-        if (std::find(ObjNames.begin(), ObjNames.end(),
-                      APIName.substr(0, DotPos + DotOpSize)) ==
-            ObjNames.end()) {
-          ObjNames.emplace_back(APIName.substr(0, DotPos + DotOpSize));
-        }
-        MemFuncNames.emplace_back(APIName.substr(DotPos + DotOpSize));
-      } else {
-        // 4. Namespace::ObjectName.FunctionName
-        if (std::find(ObjNamespaces.begin(), ObjNamespaces.end(),
-                      APIName.substr(0, ScopeResolutionOpPos)) ==
-            ObjNamespaces.end()) {
-          ObjNamespaces.emplace_back(APIName.substr(0, ScopeResolutionOpPos));
-        }
-        if (std::find(ObjNamesHasNS.begin(), ObjNamesHasNS.end(),
-                      APIName.substr(
-                          ScopeResolutionOpPos + ScopeResolutionOpSize,
-                          DotPos - ScopeResolutionOpPos -
-                              ScopeResolutionOpSize)) == ObjNamesHasNS.end()) {
-          ObjNamesHasNS.emplace_back(APIName.substr(
-              ScopeResolutionOpPos + ScopeResolutionOpSize,
-              DotPos - ScopeResolutionOpPos - ScopeResolutionOpSize));
-        }
-        MemFuncNamesHasNS.emplace_back(APIName.substr(DotPos + DotOpSize));
+      // 2. NameSpace::FunctionName
+      if (std::find(FuncNamespaces.begin(), FuncNamespaces.end(),
+                    APIName.substr(0, ScopeResolutionOpPos)) ==
+          FuncNamespaces.end()) {
+        FuncNamespaces.emplace_back(APIName.substr(0, ScopeResolutionOpPos));
       }
+      FuncNamesHasNS.emplace_back(
+          APIName.substr(ScopeResolutionOpPos + ScopeResolutionOpSize));
     }
   }
-  return {FuncNames, FuncNamesHasNS,    FuncNamespaces, MemFuncNames,
-          ObjNames,  MemFuncNamesHasNS, ObjNamesHasNS,  ObjNamespaces};
+  return {FuncNames, FuncNamesHasNS, FuncNamespaces};
 }
 
 void RecognizeAPINameRule::registerMatcher(MatchFinder &MF) {
@@ -12145,11 +12114,6 @@ void RecognizeAPINameRule::registerMatcher(MatchFinder &MF) {
   // AllAPIComponent[0] : FuncNames
   // AllAPIComponent[1] : FuncNamesHasNS
   // AllAPIComponent[2] : FuncNamespaces
-  // AllAPIComponent[3] : MemFuncNames
-  // AllAPIComponent[4] : ObjNames
-  // AllAPIComponent[5] : MemFuncNamesHasNS
-  // AllAPIComponent[6] : ObjNamesHasNS
-  // AllAPIComponent[7] : ObjNamespaces
   std::vector<std::vector<std::string>> AllAPIComponent =
       splitAPIName(AllAPINames);
   if (!AllAPIComponent[0].empty()) {
@@ -12169,48 +12133,10 @@ void RecognizeAPINameRule::registerMatcher(MatchFinder &MF) {
             callee(functionDecl(allOf(
                 namedDecl(internal::Matcher<NamedDecl>(
                     new internal::HasNameMatcher(AllAPIComponent[1]))),
-                hasDeclContext(
+                hasAncestor(
                     namespaceDecl(namedDecl(internal::Matcher<NamedDecl>(
                         new internal::HasNameMatcher(AllAPIComponent[2])))))))))
             .bind("APINamesHasNSUsed"),
-        this);
-  }
-
-  if (!AllAPIComponent[3].empty() && !AllAPIComponent[4].empty()) {
-    MF.addMatcher(
-        cxxMemberCallExpr(
-            on(hasType(hasCanonicalType(
-                qualType(hasDeclaration(namedDecl(internal::Matcher<NamedDecl>(
-                    new internal::HasNameMatcher(AllAPIComponent[4])))))))),
-            callee(cxxMethodDecl(namedDecl(internal::Matcher<NamedDecl>(
-                new internal::HasNameMatcher(AllAPIComponent[3]))))))
-            .bind("MFAPINamesUsed"),
-        this);
-  }
-
-  if (!AllAPIComponent[5].empty() && !AllAPIComponent[6].empty() &&
-      !AllAPIComponent[7].empty()) {
-    MF.addMatcher(
-        cxxMemberCallExpr(
-            on(hasType(hasCanonicalType(qualType(hasDeclaration(allOf(
-                namedDecl(internal::Matcher<NamedDecl>(
-                    new internal::HasNameMatcher(AllAPIComponent[6]))),
-                hasDeclContext(namespaceDecl(namedDecl(
-                    internal::Matcher<NamedDecl>(new internal::HasNameMatcher(
-                        AllAPIComponent[7]))))))))))),
-            callee(cxxMethodDecl(namedDecl(internal::Matcher<NamedDecl>(
-                new internal::HasNameMatcher(AllAPIComponent[5]))))))
-            .bind("MFAPINamesHasNSUsed"),
-        this);
-    MF.addMatcher(
-        callExpr(
-            callee(functionDecl(allOf(
-                namedDecl(internal::Matcher<NamedDecl>(
-                    new internal::HasNameMatcher(AllAPIComponent[5]))),
-                hasAncestor(
-                    namespaceDecl(namedDecl(internal::Matcher<NamedDecl>(
-                        new internal::HasNameMatcher(AllAPIComponent[7])))))))))
-            .bind("StaticMFAPINamesHasNSUsed"),
         this);
   }
 }
@@ -12238,14 +12164,31 @@ RecognizeAPINameRule::getFunctionSignature(const FunctionDecl *Func,
 void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
   const NamedDecl *ND;
   std::string Namespace = "";
+  std::string ObjName = "";
+  std::string APIName = "";
+  if (dyn_cast<CXXOperatorCallExpr>(CE))
+    return;
   if (auto MD = dyn_cast<CXXMemberCallExpr>(CE)) {
     QualType ObjType = MD->getImplicitObjectArgument()
                            ->IgnoreImpCasts()
                            ->getType()
                            .getCanonicalType();
     ND = getNamedDecl(ObjType.getTypePtr());
+    ObjName = ND->getNameAsString();
   } else {
-    ND = dyn_cast<NamedDecl>(CE->getCalleeDecl());
+    // Match the static member function call, like: A a; a.staticCall();
+    if (auto ME = dyn_cast<MemberExpr>(CE->getCallee()->IgnoreImpCasts())) {
+      auto ObjType = ME->getBase()->getType().getCanonicalType();
+      ND = getNamedDecl(ObjType.getTypePtr());
+      ObjName = ND->getNameAsString();
+    // Match the static call, like: A::staticCall();
+    } else if (auto RT = dyn_cast<RecordDecl>(
+                   CE->getCalleeDecl()->getDeclContext())) {
+      ObjName = RT->getNameAsString();
+      ND = dyn_cast<NamedDecl>(RT);
+    } else {
+      ND = dyn_cast<NamedDecl>(CE->getCalleeDecl());
+    }
   }
 
   if (!dpct::DpctGlobalInfo::isInCudaPath(ND->getLocation()) &&
@@ -12256,18 +12199,13 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
   }
   auto *NSD = dyn_cast<NamespaceDecl>(ND->getDeclContext());
   Namespace = getNameSpace(NSD);
-
-  std::string APIName = CE->getCalleeDecl()->getAsFunction()->getNameAsString();
-  if (const auto *MD = dyn_cast<CXXMemberCallExpr>(CE)) {
-    APIName = Namespace + "::" + ND->getNameAsString() + "." + APIName;
-    SrcAPIStaticsMap[getFunctionSignature(MD->getMethodDecl(), Namespace)]++;
-  } else {
-    if (!Namespace.empty()) {
-      APIName = Namespace + "::" + APIName;
-    }
-    SrcAPIStaticsMap[getFunctionSignature(CE->getCalleeDecl()->getAsFunction(),
-                                          "")]++;
-  }
+  APIName = CE->getCalleeDecl()->getAsFunction()->getNameAsString();
+  if (!ObjName.empty())
+    APIName = ObjName + "::" + APIName;
+  if (!Namespace.empty())
+    APIName = Namespace + "::" + APIName;
+  SrcAPIStaticsMap[getFunctionSignature(CE->getCalleeDecl()->getAsFunction(),
+                                        "")]++;
 
   if (!MigrationStatistics::IsMigrated(APIName)) {
     const SourceManager &SM = DpctGlobalInfo::getSourceManager();
@@ -12293,18 +12231,8 @@ void RecognizeAPINameRule::runRule(const MatchFinder::MatchResult &Result) {
   const CallExpr *CE = nullptr;
   const CXXMemberCallExpr *MC = nullptr;
   if ((CE = getNodeAsType<CallExpr>(Result, "APINamesUsed")) ||
-      (CE = getNodeAsType<CallExpr>(Result, "APINamesHasNSUsed"))) {
+      (CE = getNodeAsType<CallExpr>(Result, "APINamesHasNSUsed")))
     processFuncCall(CE);
-  } else if ((MC =
-                  getNodeAsType<CXXMemberCallExpr>(Result, "MFAPINamesUsed")) ||
-             (MC = getNodeAsType<CXXMemberCallExpr>(Result,
-                                                    "MFAPINamesHasNSUsed")) ||
-             (MC = getNodeAsType<CXXMemberCallExpr>(
-                  Result, "StaticMFAPINamesHasNSUsed"))) {
-    processFuncCall(MC);
-  }
-
-  return;
 }
 
 REGISTER_RULE(RecognizeAPINameRule, PassKind::PK_Migration)
