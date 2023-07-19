@@ -190,3 +190,4 @@ ENTRY_MEMBER_FUNCTION(thrust::random::uniform_int_distribution, min, min, true, 
 ENTRY_MEMBER_FUNCTION(thrust::random::uniform_int_distribution, max, max, true, NO_FLAG, P4, "Successful")
 ENTRY_MEMBER_FUNCTION(thrust::host_vector, size, size, true, NO_FLAG, P4, "Successful")
 ENTRY_MEMBER_FUNCTION(thrust::device_vector, size, size, true, NO_FLAG, P4, "Successful")
+ENTRY_MEMBER_FUNCTION(thrust::device_ptr, get, get, true, NO_FLAG, P4, "Successful")
