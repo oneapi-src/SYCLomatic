@@ -2684,8 +2684,9 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     if (!TST)
       return;
 
-    if (!DpctGlobalInfo::getTypeName(TST->template_arguments()[0].getAsType())
-            .compare("thrust::use_default")) {
+    if (!TST->template_arguments().empty() &&
+        !DpctGlobalInfo::getTypeName(TST->template_arguments()[0].getAsType())
+             .compare("thrust::use_default")) {
       auto ArgBeginLoc = TSTL.getArgLoc(0).getSourceRange().getBegin();
       auto ArgEndLoc = TSTL.getArgLoc(0).getSourceRange().getEnd();
       emplaceTransformation(new ReplaceToken(ArgBeginLoc, ArgEndLoc, ""));
