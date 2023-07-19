@@ -8971,7 +8971,7 @@ void DeviceFunctionDeclRule::runRule(
     FuncInfo->setKernel();
   }
   if (DpctGlobalInfo::isOptimizeMigration() && !FD->isInlined() &&
-                                !FuncInfo->IsAlwaysInlineDevFunc()) {
+      isFuncdeclDefTogether(FD) && !FuncInfo->IsAlwaysInlineDevFunc()) {
     FuncInfo->setAlwaysInlineDevFunc();
   }
   if (auto CE = getAssistNodeAsType<CallExpr>(Result, "callExpr")) {

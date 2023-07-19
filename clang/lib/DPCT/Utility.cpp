@@ -4413,5 +4413,18 @@ void requestHelperFeatureForTypeNames(const std::string Name) {
     requestFeature(CuDNNHelperFeatureIter->second->RequestFeature);
   }
 }
+
+bool isFuncdeclDefTogether(const clang::FunctionDecl *FD) {
+  if (!FD)
+    return false;
+  if (FD->getPreviousDecl() != nullptr) {
+    return false;
+  }
+  if (FD->getMostRecentDecl() != FD) {
+    return false;
+  }
+  return true;
+}
+
 } // namespace dpct
 } // namespace clang

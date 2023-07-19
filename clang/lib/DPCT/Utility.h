@@ -594,6 +594,7 @@ enum class HelperFeatureEnum : unsigned int {
 void requestFeature(HelperFeatureEnum Feature);
 void requestHelperFeatureForEnumNames(const std::string Name);
 void requestHelperFeatureForTypeNames(const std::string Name);
+bool isFuncdeclDefTogether(const clang::FunctionDecl *FD);
 } // namespace dpct
 namespace ast_matchers {
 AST_MATCHER_P(DeclRefExpr, isDeclSameAs, const VarDecl *, TargetVD) {
