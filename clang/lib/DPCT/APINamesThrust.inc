@@ -940,9 +940,9 @@ thrustFactory("thrust::merge",
                { 6,PolicyState::NoPolicy, 5,"std::merge", HelperFeatureEnum::none}}),
 
 // thrust::uninitialized_fill
-// thrustFactory("thrust::uninitialized_fill",
-//               {{4,PolicyState::HasPolicy,2,"std::uninitialized_fill", HelperFeatureEnum::none},
-//                {3,PolicyState::NoPolicy, 2,"std::uninitialized_fill", HelperFeatureEnum::none}}),
+thrustFactory("thrust::uninitialized_fill",
+              {{4,PolicyState::HasPolicy,2,"std::uninitialized_fill", HelperFeatureEnum::none},
+               {3,PolicyState::NoPolicy, 2,"std::uninitialized_fill", HelperFeatureEnum::none}}),
 
 // thrust::unique
 thrustFactory("thrust::unique",
@@ -1126,3 +1126,9 @@ thrustFactory("thrust::uninitialized_fill_n",
 // thrust::detail::vector_equal
 thrustFactory("thrust::detail::vector_equal",
               {{3,PolicyState::NoPolicy,3,"oneapi::dpl::equal", HelperFeatureEnum::none}}),
+
+// thrust::max
+CALL_FACTORY_ENTRY("thrust::max", CALL("std::max", ARG(0), ARG(1)))
+
+// thrust::min
+CALL_FACTORY_ENTRY("thrust::min", CALL("std::min",ARG(0), ARG(1)))
