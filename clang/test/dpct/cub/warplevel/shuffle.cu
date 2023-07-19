@@ -62,7 +62,6 @@ __global__ void ShuffleIndexKernel2(int* data) {
 __global__ void ShuffleIndexKernel3(int* data) {
 
   int threadid = threadIdx.x;
-
   int input = data[threadid];
   int output = 0;
 // CHECK: /*
