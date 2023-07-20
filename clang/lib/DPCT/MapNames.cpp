@@ -1362,7 +1362,7 @@ void MapNames::setExplicitNamespaceMap() {
   {#APINAME, #INTERFACENAME},
 #define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
                               TARGET, COMMENT, MAPPING)                        \
- {#OBJNAME "." #APINAME, #INTERFACEOBJNAME "." #INTERFACENAME},
+  {#OBJNAME "::" #APINAME, #INTERFACEOBJNAME "::" #INTERFACENAME},
 #include "APINames.inc"
 #undef ENTRY
 #undef ENTRY_MEMBER_FUNCTION
@@ -1370,7 +1370,7 @@ void MapNames::setExplicitNamespaceMap() {
   {#APINAME, #INTERFACENAME},
 #define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
                               TARGET, COMMENT)                                 \
-  {#OBJNAME "." #APINAME, #INTERFACEOBJNAME "." #INTERFACENAME},
+  {#OBJNAME "::" #APINAME, #INTERFACEOBJNAME "::" #INTERFACENAME},
 #include "APINames_CUB.inc"
 #include "APINames_NCCL.inc"
 #include "APINames_cuBLAS.inc"
@@ -4472,7 +4472,7 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
   {#APINAME, VALUE},
 #define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME,        \
                               APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)  \
-  {#OBJNAME "." #APINAME, VALUE},
+  {#OBJNAME "::" #APINAME, VALUE},
 #include "APINames.inc"
 #undef ENTRY
 #undef ENTRY_MEMBER_FUNCTION
@@ -4480,7 +4480,7 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
   {#APINAME, VALUE},
 #define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME,        \
                               APINAME, VALUE, FLAG, TARGET, COMMENT)           \
-  {#OBJNAME "." #APINAME, VALUE},
+  {#OBJNAME "::" #APINAME, VALUE},
 #include "APINames_CUB.inc"
 #include "APINames_NCCL.inc"
 #include "APINames_NVML.inc"
