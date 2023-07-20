@@ -4382,10 +4382,12 @@ std::string getNameSpace(const NamespaceDecl *NSD) {
     return "";
   }
   std::string NameSpace = getNameSpace(dyn_cast<NamespaceDecl>(NSD->getDeclContext()));
-  if (!NameSpace.empty()) {
+  if (!NameSpace.empty() && !NSD->isInlineNamespace()) {
     return NameSpace + "::" + NSD->getName().str();
-  } else {
+  } else if (NameSpace.empty() && !NSD->isInlineNamespace()) {
     return NSD->getName().str();
+  } else {
+    return NameSpace;
   }
 }
 namespace clang {
