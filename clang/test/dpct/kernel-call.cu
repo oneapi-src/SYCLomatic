@@ -43,7 +43,6 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 }
 
 
-
 // CHECK: void testKernel(int L, int M, const cl::sycl::nd_item<3> &[[ITEMNAME:item_ct1]], int N) {
 __launch_bounds__(256, 512) // Test Launch Bounds
 __global__ void testKernel(int L, int M, int N) {
