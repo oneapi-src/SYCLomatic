@@ -32,8 +32,8 @@
 *
 ****************************************************************************/
 // wmma API
-ENTRY(nvcuda::wmma::fill_fragment, nvcuda::wmma::fill_fragment, true, NO_FLAG, P4, "comment")
-ENTRY(nvcuda::wmma::load_matrix_sync, nvcuda::wmma::load_matrix_sync, false, NO_FLAG, P4, "comment")
-ENTRY(nvcuda::wmma::store_matrix_sync, nvcuda::wmma::store_matrix_sync, false, NO_FLAG, P4, "comment")
-ENTRY(nvcuda::wmma::mma_sync, nvcuda::wmma::mma_sync, false, NO_FLAG, P4, "comment")
-ENTRY(nvcuda::wmma::bmma_sync, nvcuda::wmma::bmma_sync, false, NO_FLAG, P4, "comment")
+ENTRY(fill_fragment, fill_fragment, true, NO_FLAG, P4, "comment")
+ENTRY(load_matrix_sync, load_matrix_sync, true, NO_FLAG, P4, "comment")
+ENTRY(store_matrix_sync, store_matrix_sync, true, NO_FLAG, P4, "comment")
+ENTRY(mma_sync, mma_sync, true, NO_FLAG, P4, "comment")
+ENTRY(bmma_sync, bmma_sync, false, NO_FLAG, P4, "comment")
