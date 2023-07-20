@@ -2144,7 +2144,7 @@ public:
       : PointerLevel(0), IsReference(false), IsTemplate(false) {
     if (D && D->getTypeSourceInfo()) {
       auto TL = D->getTypeSourceInfo()->getTypeLoc();
-      HasConstantAttr = D->hasAttr<CUDAConstantAttr>();
+      NeedConstQualifierForNonUSM = D->hasAttr<CUDAConstantAttr>();
       setTypeInfo(TL, NeedSizeFold);
       if (TL.getTypeLocClass() ==
           TypeLoc::IncompleteArray) {
@@ -2185,6 +2185,7 @@ public:
   inline std::vector<std::string> getArraySizeOriginExprs() { return ArraySizeOriginExprs; }
 
   bool containsTemplateDependentMacro() const { return TemplateDependentMacro; }
+  bool needConstQualifierForNonUSM() const { return NeedConstQualifierForNonUSM; }
 
 private:
   // For ConstantArrayType, size in generated code is folded as an integer.
@@ -2250,7 +2251,7 @@ private:
   std::set<HelperFeatureEnum> HelperFeatureSet;
   bool ContainSizeofType = false;
   std::vector<std::string> ArraySizeOriginExprs{};
-  bool HasConstantAttr = false;
+  bool NeedConstQualifierForNonUSM = false;
 };
 
 // variable info includes name, type and location.
@@ -2287,6 +2288,8 @@ private:
   const std::string FilePath;
   unsigned Offset;
   std::string Name;
+
+protected:
   std::shared_ptr<CtTypeInfo> Ty;
 };
 
@@ -2396,6 +2399,9 @@ public:
     if (AccMode == Value) {
       PS << getAccessorDataType(true) << " ";
     } else if (AccMode == Pointer) {
+      if (Ty->needConstQualifierForNonUSM() &&
+          (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None))
+        PS << "const ";
       PS << getAccessorDataType(true);
       if (!getType()->isPointer())
         PS << " ";

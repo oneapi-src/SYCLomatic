@@ -3806,19 +3806,13 @@ std::string CtTypeInfo::getRangeArgument(const std::string &MemSize,
 
 void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
   switch (TL.getTypeLocClass()) {
-  case TypeLoc::Qualified: {
-    auto Qualifiers = TL.getType().getLocalQualifiers();
-    if (!Qualifiers.hasConst() && HasConstantAttr) {
-      Qualifiers.addConst();
-    }
-    if (Qualifiers.hasQualifiers()) {
-      BaseName = Qualifiers.getAsString(
-          DpctGlobalInfo::getContext().getPrintingPolicy());
-    }
-    HasConstantAttr = false;
+  case TypeLoc::Qualified:
+    if (TL.getType().getQualifiers().hasConst())
+      NeedConstQualifierForNonUSM = false;
+    BaseName = TL.getType().getLocalQualifiers().getAsString(
+        DpctGlobalInfo::getContext().getPrintingPolicy());
     return setTypeInfo(TYPELOC_CAST(QualifiedTypeLoc).getUnqualifiedLoc(),
                        NeedSizeFold);
-  }
   case TypeLoc::ConstantArray:
     return setArrayInfo(TYPELOC_CAST(ConstantArrayTypeLoc), NeedSizeFold);
   case TypeLoc::DependentSizedArray:
@@ -3980,9 +3974,6 @@ void CtTypeInfo::updateName() {
     BaseNameWithoutQualifiers += ' ';
     BaseNameWithoutQualifiers.append(PointerLevel, '*');
   }
-
-  if (HasConstantAttr)
-    BaseName = "const" + (BaseName.empty() ? "" : (" " + BaseName));
 
   if (BaseName.empty())
     BaseName = BaseNameWithoutQualifiers;
