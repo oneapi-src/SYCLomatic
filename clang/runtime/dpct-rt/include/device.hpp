@@ -138,7 +138,7 @@ public:
       _name[255] = '\0';
     }
   }
-  void set_max_work_item_sizes(const sycl::id<3> max_work_item_sizes) {
+  void set_max_work_item_sizes(const sycl::range<3> max_work_item_sizes) {
     _max_work_item_sizes = max_work_item_sizes;
     for (int i = 0; i < 3; ++i)
       _max_work_item_sizes_i[i] = max_work_item_sizes[i];
@@ -193,7 +193,7 @@ public:
   }
 private:
   char _name[256];
-  sycl::id<3> _max_work_item_sizes;
+  sycl::range<3> _max_work_item_sizes{1, 1, 1};
   int _max_work_item_sizes_i[3];
   bool _host_unified_memory = false;
   int _major;
