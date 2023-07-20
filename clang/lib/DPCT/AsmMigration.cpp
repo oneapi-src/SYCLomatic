@@ -47,7 +47,8 @@ namespace {
 inline bool SYCLGenError() { return true; }
 inline bool SYCLGenSuccess() { return false; }
 
-/// This is used to handle all the AST nodes (except specific instructions).
+/// This is used to handle all the AST nodes (except specific instructions, Eg.
+/// mov/setp), and generate functionally equivalent SYCL code.
 class SYCLGenBase {
   bool IsInMacroDef = false;
   bool EmitNewLine = true;
@@ -57,6 +58,7 @@ class SYCLGenBase {
   llvm::SmallString<16> Indent;
   llvm::SmallString<4> NewLine;
   llvm::raw_ostream *Stream;
+  const GCCAsmStmt *GAS;
 
   class BlockDelimiterGuard {
     SYCLGenBase &CodeGen;
@@ -77,7 +79,8 @@ class SYCLGenBase {
   };
 
 public:
-  SYCLGenBase(llvm::raw_ostream &OS) : Stream(&OS) {}
+  SYCLGenBase(llvm::raw_ostream &OS, const GCCAsmStmt *G)
+      : Stream(&OS), GAS(G) {}
 
   virtual ~SYCLGenBase() = default;
 
@@ -353,7 +356,16 @@ bool SYCLGenBase::emitDeclRefExpression(const InlineAsmDeclRefExpr *E) {
   if (E->getDecl().getDeclName()->isBuiltinID()) {
     switch (E->getDecl().getDeclName()->getTokenID()) {
     case asmtok::bi_laneid:
-      OS() << getItemName() << ".get_sub_group().get_local_linear_id()";
+      OS() << DpctGlobalInfo::getItem(GAS)
+           << ".get_sub_group().get_local_linear_id()";
+      break;
+    case asmtok::bi_warpid:
+      OS() << DpctGlobalInfo::getItem(GAS)
+           << ".get_sub_group().get_group_linear_id()";
+      break;
+    case asmtok::bi_WARP_SZ:
+      OS() << DpctGlobalInfo::getItem(GAS)
+           << ".get_sub_group().get_local_range().get(0)";
       break;
     default:
       return SYCLGenError();
@@ -487,7 +499,7 @@ bool SYCLGenBase::emitVariableDeclaration(const InlineAsmVariableDecl *D) {
 /// This used to handle the specific instruction.
 class SYCLGen : public SYCLGenBase {
 public:
-  SYCLGen(llvm::raw_ostream &OS) : SYCLGenBase(OS) {}
+  SYCLGen(llvm::raw_ostream &OS, const GCCAsmStmt *G) : SYCLGenBase(OS, G) {}
 
   bool handleStatement(const InlineAsmStmt *S) { return emitStatement(S); }
 
@@ -824,7 +836,7 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
   InlineAsmParser Parser(Context, Mgr);
   std::string ReplaceString;
   llvm::raw_string_ostream OS(ReplaceString);
-  SYCLGen CodeGen(OS);
+  SYCLGen CodeGen(OS, GAS);
   StringRef Indent =
       getIndent(GAS->getBeginLoc(), DpctGlobalInfo::getSourceManager());
 

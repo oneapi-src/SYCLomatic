@@ -33,6 +33,19 @@ MATH_API_REWRITER_HOST_DEVICE(
 
 // Half Arithmetic Functions
 MATH_API_REWRITER_DEVICE(
+    "__hadd_rn",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hadd_rn"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hadd_rn", CALL(MapNames::getClNamespace() +
+                                                     "ext::intel::math::hadd",
+                                                 ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hadd_rn"),
+        BINARY_OP_FACTORY_ENTRY("__hadd_rn", BinaryOperatorKind::BO_Add, ARG(0),
+                                ARG(1))))
+
+MATH_API_REWRITER_DEVICE(
     "__hadd_sat",
     MATH_API_DEVICE_NODES(
         EMPTY_FACTORY_ENTRY("__hadd_sat"),
@@ -62,6 +75,22 @@ MATH_API_REWRITER_DEVICE(
         BINARY_OP_FACTORY_ENTRY("__hdiv", BinaryOperatorKind::BO_Div,
                                 makeCallArgCreatorWithCall(0),
                                 makeCallArgCreatorWithCall(1))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hfma_relu",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hfma_relu"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hfma_relu",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::hfma_relu",
+                                    ARG(0), ARG(1), ARG(2)))),
+        EMPTY_FACTORY_ENTRY("__hfma_relu"),
+        CALL_FACTORY_ENTRY("__hfma_relu",
+                           CALL(MapNames::getDpctNamespace() + "relu",
+                                CALL(MapNames::getClNamespace() + "fma", ARG(0),
+                                     ARG(1), ARG(2))))))
 
 MATH_API_REWRITER_DEVICE(
     "__hfma_sat",
@@ -94,6 +123,19 @@ MATH_API_REWRITER_DEVICE(
         BINARY_OP_FACTORY_ENTRY("__hmul", BinaryOperatorKind::BO_Mul,
                                 makeCallArgCreatorWithCall(0),
                                 makeCallArgCreatorWithCall(1))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hmul_rn",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hmul_rn"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hmul_rn", CALL(MapNames::getClNamespace() +
+                                                     "ext::intel::math::hmul",
+                                                 ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hmul_rn"),
+        BINARY_OP_FACTORY_ENTRY("__hmul_rn", BinaryOperatorKind::BO_Mul, ARG(0),
+                                ARG(1))))
 
 MATH_API_REWRITER_DEVICE(
     "__hmul_sat",
@@ -140,6 +182,19 @@ MATH_API_REWRITER_DEVICE(
                                 makeCallArgCreatorWithCall(1))))
 
 MATH_API_REWRITER_DEVICE(
+    "__hsub_rn",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hsub_rn"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hsub_rn", CALL(MapNames::getClNamespace() +
+                                                     "ext::intel::math::hsub",
+                                                 ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hsub_rn"),
+        BINARY_OP_FACTORY_ENTRY("__hsub_rn", BinaryOperatorKind::BO_Sub, ARG(0),
+                                ARG(1))))
+
+MATH_API_REWRITER_DEVICE(
     "__hsub_sat",
     MATH_API_DEVICE_NODES(
         EMPTY_FACTORY_ENTRY("__hsub_sat"),
@@ -175,11 +230,14 @@ MATH_API_REWRITER_DEVICE(
     "__h2div",
     MATH_API_DEVICE_NODES(
         EMPTY_FACTORY_ENTRY("__h2div"),
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY("__h2div", CALL(MapNames::getClNamespace() +
-                                                   "ext::intel::math::h2div",
-                                               ARG(0), ARG(1)))),
+        MATH_API_SPECIFIC_ELSE_EMU(
+            CheckArgType(0, "__half"),
+            HEADER_INSERT_FACTORY(
+                HeaderType::HT_SYCL_Math,
+                CALL_FACTORY_ENTRY("__h2div",
+                                   CALL(MapNames::getClNamespace() +
+                                            "ext::intel::math::h2div",
+                                        ARG(0), ARG(1))))),
         EMPTY_FACTORY_ENTRY("__h2div"),
         BINARY_OP_FACTORY_ENTRY("__h2div", BinaryOperatorKind::BO_Div,
                                 makeCallArgCreatorWithCall(0),
@@ -200,6 +258,19 @@ MATH_API_REWRITER_DEVICE(
                                 makeCallArgCreatorWithCall(1))))
 
 MATH_API_REWRITER_DEVICE(
+    "__hadd2_rn",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hadd2_rn"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hadd2_rn", CALL(MapNames::getClNamespace() +
+                                                      "ext::intel::math::hadd2",
+                                                  ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hadd2_rn"),
+        BINARY_OP_FACTORY_ENTRY("__hadd2_rn", BinaryOperatorKind::BO_Add,
+                                ARG(0), ARG(1))))
+
+MATH_API_REWRITER_DEVICE(
     "__hadd2_sat",
     MATH_API_DEVICE_NODES(
         EMPTY_FACTORY_ENTRY("__hadd2_sat"),
@@ -215,6 +286,36 @@ MATH_API_REWRITER_DEVICE(
                                     MapNames::getClNamespace() + "half2>",
                                 BO(BinaryOperatorKind::BO_Add, ARG(0), ARG(1)),
                                 LITERAL("{0.f, 0.f}"), LITERAL("{1.f, 1.f}")))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hcmadd",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hcmadd"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hcmadd", CALL(MapNames::getClNamespace() +
+                                                    "ext::intel::math::hcmadd",
+                                                ARG(0), ARG(1), ARG(2)))),
+        EMPTY_FACTORY_ENTRY("__hcmadd"),
+        CALL_FACTORY_ENTRY("__hcmadd", CALL(MapNames::getDpctNamespace() +
+                                                "complex_mul_add",
+                                            ARG(0), ARG(1), ARG(2)))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hfma2_relu",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hfma2_relu"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hfma2_relu",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::hfma2_relu",
+                                    ARG(0), ARG(1), ARG(2)))),
+        EMPTY_FACTORY_ENTRY("__hfma2_relu"),
+        CALL_FACTORY_ENTRY("__hfma2_relu",
+                           CALL(MapNames::getDpctNamespace() + "relu",
+                                CALL(MapNames::getClNamespace() + "fma", ARG(0),
+                                     ARG(1), ARG(2))))))
 
 MATH_API_REWRITER_DEVICE(
     "__hfma2_sat",
@@ -247,6 +348,19 @@ MATH_API_REWRITER_DEVICE(
         BINARY_OP_FACTORY_ENTRY("__hmul2", BinaryOperatorKind::BO_Mul,
                                 makeCallArgCreatorWithCall(0),
                                 makeCallArgCreatorWithCall(1))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hmul2_rn",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hmul2_rn"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hmul2_rn", CALL(MapNames::getClNamespace() +
+                                                      "ext::intel::math::hmul2",
+                                                  ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hmul2_rn"),
+        BINARY_OP_FACTORY_ENTRY("__hmul2_rn", BinaryOperatorKind::BO_Mul,
+                                ARG(0), ARG(1))))
 
 MATH_API_REWRITER_DEVICE(
     "__hmul2_sat",
@@ -291,6 +405,19 @@ MATH_API_REWRITER_DEVICE(
         BINARY_OP_FACTORY_ENTRY("__hsub2", BinaryOperatorKind::BO_Sub,
                                 makeCallArgCreatorWithCall(0),
                                 makeCallArgCreatorWithCall(1))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hsub2_rn",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hsub2_rn"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hsub2_rn", CALL(MapNames::getClNamespace() +
+                                                      "ext::intel::math::hsub2",
+                                                  ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hsub2_rn"),
+        BINARY_OP_FACTORY_ENTRY("__hsub2_rn", BinaryOperatorKind::BO_Sub,
+                                ARG(0), ARG(1))))
 
 MATH_API_REWRITER_DEVICE(
     "__hsub2_sat",
@@ -349,7 +476,7 @@ MATH_API_REWRITER_DEVICE(
                                               ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hequ"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY("__hequ", CALL(MapNames::getDpctNamespace() +
                                                   "unordered_compare",
                                               ARG(0), ARG(1),
@@ -380,7 +507,7 @@ MATH_API_REWRITER_DEVICE(
                                               ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hgeu"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__hgeu",
                 CALL(MapNames::getDpctNamespace() + "unordered_compare", ARG(0),
@@ -411,7 +538,7 @@ MATH_API_REWRITER_DEVICE(
                                               ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hgtu"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY("__hgtu", CALL(MapNames::getDpctNamespace() +
                                                   "unordered_compare",
                                               ARG(0), ARG(1),
@@ -442,7 +569,7 @@ MATH_API_REWRITER_DEVICE(
                                               ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hleu"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__hleu",
                 CALL(MapNames::getDpctNamespace() + "unordered_compare", ARG(0),
@@ -473,11 +600,67 @@ MATH_API_REWRITER_DEVICE(
                                               ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hltu"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY("__hltu", CALL(MapNames::getDpctNamespace() +
                                                   "unordered_compare",
                                               ARG(0), ARG(1),
                                               LITERAL("std::less<>()"))))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hmax",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hmax"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hmax", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hmax",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hmax"),
+        CALL_FACTORY_ENTRY("__hmax", CALL(MapNames::getClNamespace() + "fmax",
+                                          ARG(0), ARG(1)))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hmax_nan",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hmax_nan"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hmax_nan",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::hmax_nan",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hmax_nan"),
+        CALL_FACTORY_ENTRY("__hmax_nan",
+                           CALL(MapNames::getDpctNamespace() + "fmax_nan",
+                                ARG(0), ARG(1)))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hmin",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hmin"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hmin", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hmin",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hmin"),
+        CALL_FACTORY_ENTRY("__hmin", CALL(MapNames::getClNamespace() + "fmin",
+                                          ARG(0), ARG(1)))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hmin_nan",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hmin_nan"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hmin_nan",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::hmin_nan",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hmin_nan"),
+        CALL_FACTORY_ENTRY("__hmin_nan",
+                           CALL(MapNames::getDpctNamespace() + "fmin_nan",
+                                ARG(0), ARG(1)))))
 
 MATH_API_REWRITER_DEVICE(
     "__hne",
@@ -490,7 +673,7 @@ MATH_API_REWRITER_DEVICE(
                                              ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hne"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare,
+            HelperFeatureEnum::device_ext,
             // Notice: not equal compare need consider 'isnan'.
             CALL_FACTORY_ENTRY(
                 "__hne", CALL(MapNames::getDpctNamespace() + "compare", ARG(0),
@@ -507,7 +690,7 @@ MATH_API_REWRITER_DEVICE(
                                               ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hneu"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__hneu",
                 CALL(MapNames::getDpctNamespace() + "unordered_compare", ARG(0),
@@ -525,7 +708,7 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hbeq2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_compare_both,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY("__hbeq2", CALL(MapNames::getDpctNamespace() +
                                                    "compare_both",
                                                ARG(0), ARG(1),
@@ -542,7 +725,7 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hbequ2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare_both,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__hbequ2",
                 CALL(MapNames::getDpctNamespace() + "unordered_compare_both",
@@ -559,7 +742,7 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hbge2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_compare_both,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__hbge2",
                 CALL(MapNames::getDpctNamespace() + "compare_both", ARG(0),
@@ -576,7 +759,7 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hbgeu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare_both,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__hbgeu2",
                 CALL(MapNames::getDpctNamespace() + "unordered_compare_both",
@@ -593,7 +776,7 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hbgt2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_compare_both,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__hbgt2", CALL(MapNames::getDpctNamespace() + "compare_both",
                                 ARG(0), ARG(1), LITERAL("std::greater<>()"))))))
@@ -609,7 +792,7 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hbgtu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare_both,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY("__hbgtu2", CALL(MapNames::getDpctNamespace() +
                                                     "unordered_compare_both",
                                                 ARG(0), ARG(1),
@@ -626,7 +809,7 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hble2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_compare_both,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__hble2",
                 CALL(MapNames::getDpctNamespace() + "compare_both", ARG(0),
@@ -643,7 +826,7 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hbleu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare_both,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__hbleu2",
                 CALL(MapNames::getDpctNamespace() + "unordered_compare_both",
@@ -660,7 +843,7 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hblt2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_compare_both,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__hblt2", CALL(MapNames::getDpctNamespace() + "compare_both",
                                 ARG(0), ARG(1), LITERAL("std::less<>()"))))))
@@ -676,7 +859,7 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hbltu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare_both,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY("__hbltu2", CALL(MapNames::getDpctNamespace() +
                                                     "unordered_compare_both",
                                                 ARG(0), ARG(1),
@@ -693,7 +876,7 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hbne2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_compare_both,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__hbne2",
                 CALL(MapNames::getDpctNamespace() + "compare_both", ARG(0),
@@ -710,7 +893,7 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hbneu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare_both,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__hbneu2",
                 CALL(MapNames::getDpctNamespace() + "unordered_compare_both",
@@ -727,10 +910,19 @@ MATH_API_REWRITER_DEVICE(
                                               ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__heq2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_compare2,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__heq2", CALL(MapNames::getDpctNamespace() + "compare", ARG(0),
                                ARG(1), LITERAL("std::equal_to<>()"))))))
+
+MATH_API_REWRITER_DEVICE(
+    "__heq2_mask",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__heq2_mask"), EMPTY_FACTORY_ENTRY("__heq2_mask"),
+        EMPTY_FACTORY_ENTRY("__heq2_mask"),
+        CALL_FACTORY_ENTRY("__heq2_mask",
+                           CALL(MapNames::getDpctNamespace() + "compare_mask",
+                                ARG(0), ARG(1), LITERAL("std::equal_to<>()")))))
 
 MATH_API_REWRITER_DEVICE(
     "__hequ2",
@@ -743,11 +935,22 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hequ2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare2,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY("__hequ2", CALL(MapNames::getDpctNamespace() +
                                                    "unordered_compare",
                                                ARG(0), ARG(1),
                                                LITERAL("std::equal_to<>()"))))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hequ2_mask",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hequ2_mask"),
+        EMPTY_FACTORY_ENTRY("__hequ2_mask"),
+        EMPTY_FACTORY_ENTRY("__hequ2_mask"),
+        CALL_FACTORY_ENTRY("__hequ2_mask",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "unordered_compare_mask",
+                                ARG(0), ARG(1), LITERAL("std::equal_to<>()")))))
 
 MATH_API_REWRITER_DEVICE(
     "__hge2",
@@ -760,10 +963,20 @@ MATH_API_REWRITER_DEVICE(
                                               ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hge2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_compare2,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__hge2", CALL(MapNames::getDpctNamespace() + "compare", ARG(0),
                                ARG(1), LITERAL("std::greater_equal<>()"))))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hge2_mask",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hge2_mask"), EMPTY_FACTORY_ENTRY("__hge2_mask"),
+        EMPTY_FACTORY_ENTRY("__hge2_mask"),
+        CALL_FACTORY_ENTRY("__hge2_mask",
+                           CALL(MapNames::getDpctNamespace() + "compare_mask",
+                                ARG(0), ARG(1),
+                                LITERAL("std::greater_equal<>()")))))
 
 MATH_API_REWRITER_DEVICE(
     "__hgeu2",
@@ -776,11 +989,22 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hgeu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare2,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__hgeu2",
                 CALL(MapNames::getDpctNamespace() + "unordered_compare", ARG(0),
                      ARG(1), LITERAL("std::greater_equal<>()"))))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hgeu2_mask",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hgeu2_mask"),
+        EMPTY_FACTORY_ENTRY("__hgeu2_mask"),
+        EMPTY_FACTORY_ENTRY("__hgeu2_mask"),
+        CALL_FACTORY_ENTRY(
+            "__hgeu2_mask",
+            CALL(MapNames::getDpctNamespace() + "unordered_compare_mask",
+                 ARG(0), ARG(1), LITERAL("std::greater_equal<>()")))))
 
 MATH_API_REWRITER_DEVICE(
     "__hgt2",
@@ -793,10 +1017,19 @@ MATH_API_REWRITER_DEVICE(
                                               ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hgt2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_compare2,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__hgt2", CALL(MapNames::getDpctNamespace() + "compare", ARG(0),
                                ARG(1), LITERAL("std::greater<>()"))))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hgt2_mask",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hgt2_mask"), EMPTY_FACTORY_ENTRY("__hgt2_mask"),
+        EMPTY_FACTORY_ENTRY("__hgt2_mask"),
+        CALL_FACTORY_ENTRY("__hgt2_mask",
+                           CALL(MapNames::getDpctNamespace() + "compare_mask",
+                                ARG(0), ARG(1), LITERAL("std::greater<>()")))))
 
 MATH_API_REWRITER_DEVICE(
     "__hgtu2",
@@ -809,11 +1042,22 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hgtu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare2,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY("__hgtu2", CALL(MapNames::getDpctNamespace() +
                                                    "unordered_compare",
                                                ARG(0), ARG(1),
                                                LITERAL("std::greater<>()"))))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hgtu2_mask",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hgtu2_mask"),
+        EMPTY_FACTORY_ENTRY("__hgtu2_mask"),
+        EMPTY_FACTORY_ENTRY("__hgtu2_mask"),
+        CALL_FACTORY_ENTRY("__hgtu2_mask",
+                           CALL(MapNames::getDpctNamespace() +
+                                    "unordered_compare_mask",
+                                ARG(0), ARG(1), LITERAL("std::greater<>()")))))
 
 MATH_API_REWRITER_DEVICE(
     "__hisnan2",
@@ -827,7 +1071,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0)))),
         EMPTY_FACTORY_ENTRY("__hisnan2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_isnan,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY("__hisnan2",
                                CALL(MapNames::getDpctNamespace() + "isnan",
                                     ARG(0))))))
@@ -843,10 +1087,20 @@ MATH_API_REWRITER_DEVICE(
                                               ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hle2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_compare2,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__hle2", CALL(MapNames::getDpctNamespace() + "compare", ARG(0),
                                ARG(1), LITERAL("std::less_equal<>()"))))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hle2_mask",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hle2_mask"), EMPTY_FACTORY_ENTRY("__hle2_mask"),
+        EMPTY_FACTORY_ENTRY("__hle2_mask"),
+        CALL_FACTORY_ENTRY("__hle2_mask",
+                           CALL(MapNames::getDpctNamespace() + "compare_mask",
+                                ARG(0), ARG(1),
+                                LITERAL("std::less_equal<>()")))))
 
 MATH_API_REWRITER_DEVICE(
     "__hleu2",
@@ -859,11 +1113,22 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hleu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare2,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__hleu2",
                 CALL(MapNames::getDpctNamespace() + "unordered_compare", ARG(0),
                      ARG(1), LITERAL("std::less_equal<>()"))))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hleu2_mask",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hleu2_mask"),
+        EMPTY_FACTORY_ENTRY("__hleu2_mask"),
+        EMPTY_FACTORY_ENTRY("__hleu2_mask"),
+        CALL_FACTORY_ENTRY(
+            "__hleu2_mask",
+            CALL(MapNames::getDpctNamespace() + "unordered_compare_mask",
+                 ARG(0), ARG(1), LITERAL("std::less_equal<>()")))))
 
 MATH_API_REWRITER_DEVICE(
     "__hlt2",
@@ -876,10 +1141,19 @@ MATH_API_REWRITER_DEVICE(
                                               ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hlt2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_compare2,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__hlt2", CALL(MapNames::getDpctNamespace() + "compare", ARG(0),
                                ARG(1), LITERAL("std::less<>()"))))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hlt2_mask",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hlt2_mask"), EMPTY_FACTORY_ENTRY("__hlt2_mask"),
+        EMPTY_FACTORY_ENTRY("__hlt2_mask"),
+        CALL_FACTORY_ENTRY("__hlt2_mask",
+                           CALL(MapNames::getDpctNamespace() + "compare_mask",
+                                ARG(0), ARG(1), LITERAL("std::less<>()")))))
 
 MATH_API_REWRITER_DEVICE(
     "__hltu2",
@@ -892,11 +1166,90 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hltu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare2,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY("__hltu2", CALL(MapNames::getDpctNamespace() +
                                                    "unordered_compare",
                                                ARG(0), ARG(1),
                                                LITERAL("std::less<>()"))))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hltu2_mask",
+    MATH_API_DEVICE_NODES(EMPTY_FACTORY_ENTRY("__hltu2_mask"),
+                          EMPTY_FACTORY_ENTRY("__hltu2_mask"),
+                          EMPTY_FACTORY_ENTRY("__hltu2_mask"),
+                          CALL_FACTORY_ENTRY("__hltu2_mask",
+                                             CALL(MapNames::getDpctNamespace() +
+                                                      "unordered_compare_mask",
+                                                  ARG(0), ARG(1),
+                                                  LITERAL("std::less<>()")))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hmax2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hmax2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hmax2", CALL(MapNames::getClNamespace() +
+                                                   "ext::intel::math::hmax2",
+                                               ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hmax2"),
+        CALL_FACTORY_ENTRY("__hmax2",
+                           CALL(MapNames::getClNamespace() + "half2",
+                                CALL(MapNames::getClNamespace() + "fmax",
+                                     ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")),
+                                     ARRAY_SUBSCRIPT(ARG(1), LITERAL("0"))),
+                                CALL(MapNames::getClNamespace() + "fmax",
+                                     ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")),
+                                     ARRAY_SUBSCRIPT(ARG(1), LITERAL("1")))))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hmax2_nan",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hmax2_nan"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hmax2_nan",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::hmax2_nan",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hmax2_nan"),
+        CALL_FACTORY_ENTRY("__hmax2_nan",
+                           CALL(MapNames::getDpctNamespace() + "fmax_nan",
+                                ARG(0), ARG(1)))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hmin2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hmin2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hmin2", CALL(MapNames::getClNamespace() +
+                                                   "ext::intel::math::hmin2",
+                                               ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hmin2"),
+        CALL_FACTORY_ENTRY("__hmin2",
+                           CALL(MapNames::getClNamespace() + "half2",
+                                CALL(MapNames::getClNamespace() + "fmin",
+                                     ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")),
+                                     ARRAY_SUBSCRIPT(ARG(1), LITERAL("0"))),
+                                CALL(MapNames::getClNamespace() + "fmin",
+                                     ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")),
+                                     ARRAY_SUBSCRIPT(ARG(1), LITERAL("1")))))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hmin2_nan",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hmin2_nan"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hmin2_nan",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::hmin2_nan",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hmin2_nan"),
+        CALL_FACTORY_ENTRY("__hmin2_nan",
+                           CALL(MapNames::getDpctNamespace() + "fmin_nan",
+                                ARG(0), ARG(1)))))
 
 MATH_API_REWRITER_DEVICE(
     "__hne2",
@@ -909,10 +1262,20 @@ MATH_API_REWRITER_DEVICE(
                                               ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hne2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_compare2,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__hne2", CALL(MapNames::getDpctNamespace() + "compare", ARG(0),
                                ARG(1), LITERAL("std::not_equal_to<>()"))))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hne2_mask",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hne2_mask"), EMPTY_FACTORY_ENTRY("__hne2_mask"),
+        EMPTY_FACTORY_ENTRY("__hne2_mask"),
+        CALL_FACTORY_ENTRY("__hne2_mask",
+                           CALL(MapNames::getDpctNamespace() + "compare_mask",
+                                ARG(0), ARG(1),
+                                LITERAL("std::not_equal_to<>()")))))
 
 MATH_API_REWRITER_DEVICE(
     "__hneu2",
@@ -925,13 +1288,27 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hneu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_unordered_compare2,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__hneu2",
                 CALL(MapNames::getDpctNamespace() + "unordered_compare", ARG(0),
                      ARG(1), LITERAL("std::not_equal_to<>()"))))))
 
+MATH_API_REWRITER_DEVICE(
+    "__hneu2_mask",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hneu2_mask"),
+        EMPTY_FACTORY_ENTRY("__hneu2_mask"),
+        EMPTY_FACTORY_ENTRY("__hneu2_mask"),
+        CALL_FACTORY_ENTRY(
+            "__hneu2_mask",
+            CALL(MapNames::getDpctNamespace() + "unordered_compare_mask",
+                 ARG(0), ARG(1), LITERAL("std::not_equal_to<>()")))))
+
 // Half Precision Conversion and Data Movement
+CALL_FACTORY_ENTRY("__double2half",
+                   CALL(MapNames::getClNamespace() + "half", ARG(0)))
+
 ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY("__high2float", ARG(0), LITERAL("1"))
 
 MATH_API_REWRITER_DEVICE(
@@ -1075,6 +1452,15 @@ MATH_API_REWRITER_DEVICE(
         EMPTY_FACTORY_ENTRY("erfinvf"), EMPTY_FACTORY_ENTRY("erfinvf")))
 
 MATH_API_REWRITER_DEVICE(
+    "expf",
+    MATH_API_DEVICE_NODES(
+        CALL_FACTORY_ENTRY(
+            "expf", CALL(MapNames::getClNamespace(false, true) + "native::exp",
+                         CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0)))),
+        EMPTY_FACTORY_ENTRY("expf"), EMPTY_FACTORY_ENTRY("expf"),
+        EMPTY_FACTORY_ENTRY("expf")))
+
+MATH_API_REWRITER_DEVICE(
     "ldexpf",
     MATH_API_DEVICE_NODES(
         CALL_FACTORY_ENTRY(
@@ -1147,7 +1533,7 @@ MATH_API_REWRITER_DEVICE(
                                              ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("normf"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_length,
+            HelperFeatureEnum::device_ext,
             WARNING_FACTORY_ENTRY(
                 "normf",
                 CALL_FACTORY_ENTRY("normf",
@@ -1206,7 +1592,7 @@ MATH_API_REWRITER_DEVICE(
                                               ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("rnormf"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_length,
+            HelperFeatureEnum::device_ext,
             WARNING_FACTORY_ENTRY(
                 "rnormf",
                 CALL_FACTORY_ENTRY(
@@ -1262,7 +1648,7 @@ MATH_API_REWRITER_DEVICE(
                                             ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("norm"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_length,
+            HelperFeatureEnum::device_ext,
             WARNING_FACTORY_ENTRY(
                 "norm",
                 CALL_FACTORY_ENTRY("norm",
@@ -1349,7 +1735,7 @@ MATH_API_REWRITER_DEVICE(
                                              ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("rnorm"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_length,
+            HelperFeatureEnum::device_ext,
             WARNING_FACTORY_ENTRY(
                 "rnorm",
                 BINARY_OP_FACTORY_ENTRY(
@@ -1424,7 +1810,7 @@ MATH_API_REWRITER_HOST_DEVICE(
         CONDITIONAL_FACTORY_ENTRY(
             math::UsingDpctMinMax,
             FEATURE_REQUEST_FACTORY(
-                HelperFeatureEnum::Math_min_max,
+                HelperFeatureEnum::device_ext,
                 CALL_FACTORY_ENTRY("min",
                                    CALL(MapNames::getDpctNamespace() + "min",
                                         CAST_IF_SPECIAL(0),
@@ -1437,7 +1823,7 @@ MATH_API_REWRITER_HOST_DEVICE(
             CONDITIONAL_FACTORY_ENTRY(
                 math::UsingDpctMinMax,
                 FEATURE_REQUEST_FACTORY(
-                    HelperFeatureEnum::Math_min_max,
+                    HelperFeatureEnum::device_ext,
                     CALL_FACTORY_ENTRY(
                         "min", CALL(MapNames::getDpctNamespace() + "min",
                                     CAST_IF_SPECIAL(0),
@@ -1455,7 +1841,7 @@ MATH_API_REWRITER_HOST_DEVICE(
         CONDITIONAL_FACTORY_ENTRY(
             math::UsingDpctMinMax,
             FEATURE_REQUEST_FACTORY(
-                HelperFeatureEnum::Math_min_max,
+                HelperFeatureEnum::device_ext,
                 CALL_FACTORY_ENTRY("max",
                                    CALL(MapNames::getDpctNamespace() + "max",
                                         CAST_IF_SPECIAL(0),
@@ -1468,7 +1854,7 @@ MATH_API_REWRITER_HOST_DEVICE(
             CONDITIONAL_FACTORY_ENTRY(
                 math::UsingDpctMinMax,
                 FEATURE_REQUEST_FACTORY(
-                    HelperFeatureEnum::Math_min_max,
+                    HelperFeatureEnum::device_ext,
                     CALL_FACTORY_ENTRY(
                         "max", CALL(MapNames::getDpctNamespace() + "max",
                                     CAST_IF_SPECIAL(0),
@@ -1536,6 +1922,17 @@ MATH_API_REWRITER_DEVICE(
         EMPTY_FACTORY_ENTRY("umin"), EMPTY_FACTORY_ENTRY("umin"),
         EMPTY_FACTORY_ENTRY("umin")))
 
+// Single Precision Intrinsics
+MATH_API_REWRITER_DEVICE(
+    "__expf",
+    MATH_API_DEVICE_NODES(
+        CALL_FACTORY_ENTRY(
+            "__expf",
+            CALL(MapNames::getClNamespace(false, true) + "native::exp",
+                 CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0)))),
+        EMPTY_FACTORY_ENTRY("__expf"), EMPTY_FACTORY_ENTRY("__expf"),
+        EMPTY_FACTORY_ENTRY("__expf")))
+
 // SIMD Intrinsics
 MATH_API_REWRITER_DEVICE(
     "__vabs2",
@@ -1548,7 +1945,7 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0)))),
         EMPTY_FACTORY_ENTRY("__vabs2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_unary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vabs2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_unary<" +
@@ -1567,7 +1964,7 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0)))),
         EMPTY_FACTORY_ENTRY("__vabs4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_unary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vabs4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_unary<" +
@@ -1587,7 +1984,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vabsdiffs2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vabsdiffs2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -1607,7 +2004,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vabsdiffs4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vabsdiffs4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -1627,7 +2024,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vabsdiffu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vabsdiffu2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -1647,7 +2044,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vabsdiffu4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vabsdiffu4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -1667,7 +2064,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0)))),
         EMPTY_FACTORY_ENTRY("__vabsss2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vabsss2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -1687,7 +2084,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0)))),
         EMPTY_FACTORY_ENTRY("__vabsss4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vabsss4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -1706,7 +2103,7 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vadd2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vadd2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -1724,7 +2121,7 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vadd4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vadd4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -1743,7 +2140,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vaddss2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vaddss2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -1763,7 +2160,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vaddss4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vaddss4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -1783,7 +2180,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vaddus2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vaddus2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -1803,7 +2200,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vaddus4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vaddus4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -1822,7 +2219,7 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vavgs2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vavgs2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -1841,7 +2238,7 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vavgs4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vavgs4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -1860,7 +2257,7 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vavgu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vavgu2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -1879,7 +2276,7 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vavgu4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vavgu4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -1899,7 +2296,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vcmpeq2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vcmpeq2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -1918,7 +2315,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vcmpeq4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vcmpeq4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -1937,7 +2334,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vcmpges2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vcmpges2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -1956,7 +2353,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vcmpges4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vcmpges4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -1975,7 +2372,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vcmpgeu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vcmpgeu2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -1994,7 +2391,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vcmpgeu4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vcmpgeu4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2013,7 +2410,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vcmpgts2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vcmpgts2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2032,7 +2429,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vcmpgts4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vcmpgts4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2051,7 +2448,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vcmpgtu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vcmpgtu2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2070,7 +2467,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vcmpgtu4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vcmpgtu4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2089,7 +2486,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vcmples2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vcmples2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2108,7 +2505,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vcmples4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vcmples4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2127,7 +2524,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vcmpleu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vcmpleu2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2146,7 +2543,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vcmpleu4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vcmpleu4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2165,7 +2562,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vcmplts2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vcmplts2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2184,7 +2581,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vcmplts4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vcmplts4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2203,7 +2600,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vcmpltu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vcmpltu2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2222,7 +2619,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vcmpltu4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vcmpltu4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2241,7 +2638,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vcmpne2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vcmpne2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2260,7 +2657,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vcmpne4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vcmpne4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2279,7 +2676,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vhaddu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vhaddu2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2299,7 +2696,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vhaddu4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vhaddu4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2318,7 +2715,7 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vmaxs2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vmaxs2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2337,7 +2734,7 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vmaxs4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vmaxs4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2356,7 +2753,7 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vmaxu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vmaxu2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2375,7 +2772,7 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vmaxu4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vmaxu4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2394,7 +2791,7 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vmins2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vmins2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2413,7 +2810,7 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vmins4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vmins4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2432,7 +2829,7 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vminu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vminu2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2451,7 +2848,7 @@ MATH_API_REWRITER_DEVICE(
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vminu4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vminu4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2470,7 +2867,7 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0)))),
         EMPTY_FACTORY_ENTRY("__vneg2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_unary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY("__vneg2",
                                CALL(MapNames::getDpctNamespace() +
                                         "vectorized_unary<" +
@@ -2488,7 +2885,7 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0)))),
         EMPTY_FACTORY_ENTRY("__vneg4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_unary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY("__vneg4",
                                CALL(MapNames::getDpctNamespace() +
                                         "vectorized_unary<" +
@@ -2507,7 +2904,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0)))),
         EMPTY_FACTORY_ENTRY("__vnegss2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vnegss2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2527,7 +2924,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0)))),
         EMPTY_FACTORY_ENTRY("__vnegss4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vnegss4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2545,7 +2942,7 @@ MATH_API_REWRITER_DEVICE(
                                                     "ext::intel::math::vsads2",
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsads2"),
-        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Math_vectorized_sum_abs_diff,
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                                 ENTRY_RENAMED("__vsads2",
                                               MapNames::getDpctNamespace() +
                                                   "vectorized_sum_abs_diff<" +
@@ -2562,7 +2959,7 @@ MATH_API_REWRITER_DEVICE(
                                                     "ext::intel::math::vsads4",
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsads4"),
-        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Math_vectorized_sum_abs_diff,
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                                 ENTRY_RENAMED("__vsads4",
                                               MapNames::getDpctNamespace() +
                                                   "vectorized_sum_abs_diff<" +
@@ -2579,7 +2976,7 @@ MATH_API_REWRITER_DEVICE(
                                                     "ext::intel::math::vsadu2",
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsadu2"),
-        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Math_vectorized_sum_abs_diff,
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                                 ENTRY_RENAMED("__vsadu2",
                                               MapNames::getDpctNamespace() +
                                                   "vectorized_sum_abs_diff<" +
@@ -2596,7 +2993,7 @@ MATH_API_REWRITER_DEVICE(
                                                     "ext::intel::math::vsadu4",
                                                 ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsadu4"),
-        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Math_vectorized_sum_abs_diff,
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                                 ENTRY_RENAMED("__vsadu4",
                                               MapNames::getDpctNamespace() +
                                                   "vectorized_sum_abs_diff<" +
@@ -2615,7 +3012,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vseteq2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vseteq2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2635,7 +3032,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vseteq4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vseteq4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2655,7 +3052,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsetges2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsetges2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2674,7 +3071,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsetges4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsetges4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2693,7 +3090,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsetgeu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsetgeu2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2713,7 +3110,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsetgeu4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsetgeu4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2733,7 +3130,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsetgts2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsetgts2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2752,7 +3149,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsetgts4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsetgts4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2771,7 +3168,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsetgtu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsetgtu2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2791,7 +3188,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsetgtu4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsetgtu4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2811,7 +3208,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsetles2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsetles2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2830,7 +3227,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsetles4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsetles4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2849,7 +3246,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsetleu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsetleu2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2869,7 +3266,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsetleu4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsetleu4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2889,7 +3286,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsetlts2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsetlts2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2908,7 +3305,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsetlts4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsetlts4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2927,7 +3324,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsetltu2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsetltu2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2946,7 +3343,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsetltu4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsetltu4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2965,7 +3362,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsetne2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsetne2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -2985,7 +3382,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsetne4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsetne4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -3004,7 +3401,7 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsub2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsub2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -3022,7 +3419,7 @@ MATH_API_REWRITER_DEVICE(
                                                ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsub4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsub4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -3041,7 +3438,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsubss2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsubss2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -3061,7 +3458,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsubss4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsubss4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -3081,7 +3478,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsubus2"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsubus2",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -3101,7 +3498,7 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__vsubus4"),
         FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::Math_vectorized_binary,
+            HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
                 "__vsubus4",
                 CALL(MapNames::getDpctNamespace() + "vectorized_binary<" +
@@ -3122,7 +3519,7 @@ MATH_API_REWRITER_DEVICE(
 
 // Overload (Half Arithmetic Functions and Integer Intrinsics)
 MATH_API_REWRITER_DEVICE_OVERLOAD(
-    CheckArgType(0, "int"),
+    CheckParamType(0, "int"),
     MATH_API_REWRITER_DEVICE(
         "__hadd",
         MATH_API_DEVICE_NODES(
@@ -3144,3 +3541,75 @@ MATH_API_REWRITER_DEVICE_OVERLOAD(
             EMPTY_FACTORY_ENTRY("__hadd"),
             BINARY_OP_FACTORY_ENTRY("__hadd", BinaryOperatorKind::BO_Add,
                                     ARG(0), ARG(1)))))
+
+#define SINCOS_REWRITER(FuncName, CastType)                                    \
+  MATH_API_REWRITER_HOST_DEVICE(                                               \
+      MATH_API_REWRITER_HOST(                                                  \
+          FuncName,                                                            \
+          WARNING_FACTORY_ENTRY(                                               \
+              FuncName,                                                        \
+              CONDITIONAL_FACTORY_ENTRY(                                       \
+                  CheckArgType(0, "int"),                                      \
+                  MULTI_STMTS_FACTORY_ENTRY(                                   \
+                      FuncName, false, true, false, false,                     \
+                      BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),      \
+                         CALL(MapNames::getClNamespace() + "sincos",           \
+                              CAST(makeLiteral(CastType), ARG_WC(0)),          \
+                              makeArgWithAddressSpaceCast(2, CastType)))),     \
+                  MULTI_STMTS_FACTORY_ENTRY(                                   \
+                      FuncName, false, true, false, false,                     \
+                      BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),      \
+                         CALL(MapNames::getClNamespace() + "sincos",           \
+                              ARG_WC(0),                                       \
+                              makeArgWithAddressSpaceCast(2, CastType))))),    \
+              Diagnostics::MATH_EMULATION, std::string(FuncName),              \
+              MapNames::getClNamespace() + std::string("sincos"))),            \
+      MATH_API_REWRITER_DEVICE_WITH_PERF(                                      \
+          FuncName, SinCosPerfPred(),                                          \
+          WARNING_FACTORY_ENTRY(                                               \
+              FuncName,                                                        \
+              CONDITIONAL_FACTORY_ENTRY(                                       \
+                  CheckArgType(0, "int"),                                      \
+                  MULTI_STMTS_FACTORY_ENTRY(                                   \
+                      FuncName, false, true, false, true,                      \
+                      BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),      \
+                         CALL(MapNames::getClNamespace() + "sin",              \
+                              CAST(makeLiteral(CastType), ARG_WC(0)))),        \
+                      BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(2)),      \
+                         CALL(MapNames::getClNamespace() + "cos",              \
+                              CAST(makeLiteral(CastType), ARG_WC(0))))),       \
+                  MULTI_STMTS_FACTORY_ENTRY(                                   \
+                      FuncName, false, true, false, true,                      \
+                      BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),      \
+                         CALL(MapNames::getClNamespace() + "sin", ARG_WC(0))), \
+                      BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(2)),      \
+                         CALL(MapNames::getClNamespace() + "cos",              \
+                              ARG_WC(0))))),                                   \
+              Diagnostics::MATH_EMULATION, std::string(FuncName),              \
+              MapNames::getClNamespace() + std::string("sin/cos")),            \
+          MATH_API_DEVICE_NODES(                                               \
+              WARNING_FACTORY_ENTRY(                                           \
+                  FuncName,                                                    \
+                  CONDITIONAL_FACTORY_ENTRY(                                   \
+                      CheckArgType(0, "int"),                                  \
+                      MULTI_STMTS_FACTORY_ENTRY(                               \
+                          FuncName, false, true, false, false,                 \
+                          BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),  \
+                             CALL(MapNames::getClNamespace() + "sincos",       \
+                                  CAST(makeLiteral(CastType), ARG_WC(0)),      \
+                                  makeArgWithAddressSpaceCast(2, CastType)))), \
+                      MULTI_STMTS_FACTORY_ENTRY(                               \
+                          FuncName, false, true, false, false,                 \
+                          BO(BinaryOperatorKind::BO_Assign, DEREF(ARG_WC(1)),  \
+                             CALL(                                             \
+                                 MapNames::getClNamespace() + "sincos",        \
+                                 ARG_WC(0),                                    \
+                                 makeArgWithAddressSpaceCast(2, CastType))))), \
+                  Diagnostics::MATH_EMULATION, std::string(FuncName),          \
+                  MapNames::getClNamespace() + std::string("sincos")),         \
+              EMPTY_FACTORY_ENTRY(FuncName), EMPTY_FACTORY_ENTRY(FuncName),    \
+              EMPTY_FACTORY_ENTRY(FuncName))))
+
+SINCOS_REWRITER("sincos", "double")
+SINCOS_REWRITER("sincosf", "float")
+SINCOS_REWRITER("__sincosf", "float")

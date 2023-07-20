@@ -95,6 +95,32 @@ void bar7(){
   cudaMemcpy(h_A, C, 100 * sizeof(float), cudaMemcpyHostToDevice);
 }
 
+void bar8(){
+  float *A, *B, *C;
+  float *h_temp, *h_C;
+  cudaMalloc(&A, 100 * sizeof(float));
+  cudaMalloc(&B, 100 * sizeof(float));
+  cudaMalloc(&C, 100 * sizeof(float));
+  h_C = (float *)malloc(100 * sizeof(float));
+  for(int i = 0; i < 10; i++) {
+    h_temp = (float *)malloc(100 * sizeof(float));
+// CHECK:  q_ct1.memcpy(A, h_temp, 100 * sizeof(float));
+// CHECK:  q_ct1.memcpy(B, h_temp, 100 * sizeof(float)).wait();
+// CHECK:  q_ct1.parallel_for(
+// CHECK:    sycl::nd_range<3>(sycl::range<3>(1, 1, 100), sycl::range<3>(1, 1, 100)),
+// CHECK:    [=](sycl::nd_item<3> item_ct1) {
+// CHECK:      kernel(A, B, C, item_ct1);
+// CHECK:    });
+// CHECK:  free(h_temp);
+    cudaMemcpy(A, h_temp, 100 * sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(B, h_temp, 100 * sizeof(float), cudaMemcpyDeviceToHost);
+    kernel<<<1, 100>>>(A, B, C);
+    free(h_temp);
+  }
+  // CHECK: q_ct1.memcpy(h_C, C, 100 * sizeof(float)).wait();
+  cudaMemcpy(h_C, C, 100 * sizeof(float), cudaMemcpyHostToDevice);
+}
+
 void foo1() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();

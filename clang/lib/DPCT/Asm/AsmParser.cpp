@@ -398,7 +398,7 @@ InlineAsmExprResult InlineAsmParser::ParseCastExpression() {
       if (Res.isInvalid())
         return AsmExprError();
       Tuple.push_back(Res.get());
-      if (Tok.isNot(asmtok::comma))
+      if (!TryConsumeToken(asmtok::comma))
         break;
     }
 
@@ -431,7 +431,7 @@ InlineAsmExprResult InlineAsmParser::ParseCastExpression() {
     Res = ActOnUnaryOp(SavedKind, Res.get());
     break;
   default:
-    break;
+    return AsmExprError();
   }
   return Res;
 }
@@ -720,12 +720,12 @@ namespace {
 class AsmNumericLiteralParser {
   const char *const ThisTokBegin;
   const char *const ThisTokEnd;
-  const char *DigitsBegin, *SuffixBegin; // markers
-  const char *s;                         // cursor
+  const char *DigitsBegin = nullptr, *SuffixBegin = nullptr; // markers
+  const char *s = nullptr;                                   // cursor
 
-  unsigned radix;
+  unsigned radix = 0;
 
-  bool saw_exponent, saw_period;
+  bool saw_exponent = false, saw_period = false;
 
 public:
   AsmNumericLiteralParser(StringRef TokSpelling);

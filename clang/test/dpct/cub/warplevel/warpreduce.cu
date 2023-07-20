@@ -2,7 +2,7 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none -in-root %S -out-root %T/warplevel/warpreduce %S/warpreduce.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/warplevel/warpreduce/warpreduce.dp.cpp --match-full-lines %s
-
+// clang-format off
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK: #include <oneapi/dpl/algorithm>
 // CHECK: #include <dpct/dpl_utils.hpp>
@@ -88,6 +88,26 @@ __global__ void ReduceKernel2(int* data, int valid_items) {
   data[threadid] = output;
 }
 
+// CHECK: void SumKernel2(int* data, int valid_items, const sycl::nd_item<3> &item_ct1) {
+// CHECK:  int threadid = item_ct1.get_local_id(2);
+// CHECK:  int input = data[threadid];
+// CHECK:  int output = 0;
+// CHECK:  output = dpct::group::reduce_over_partial_group(item_ct1, input, valid_items, sycl::plus<>());
+// CHECK:  data[threadid] = output;
+// CHECK: }
+__global__ void SumKernel2(int* data, int valid_items) {
+  typedef cub::WarpReduce<int> WarpReduce;
+
+  __shared__ typename WarpReduce::TempStorage temp1;
+
+  int threadid = threadIdx.x;
+
+  int input = data[threadid];
+  int output = 0;
+  output = WarpReduce(temp1).Sum(input, valid_items);
+  data[threadid] = output;
+}
+
 int main() {
   int* dev_data = nullptr;
 
@@ -127,5 +147,15 @@ int main() {
   cudaDeviceSynchronize();
   verify_data(dev_data, 4);
 
+  // CHECK: q_ct1.parallel_for(
+  // CHECK-NEXT:       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
+  // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+  // CHECK-NEXT:         SumKernel2(dev_data, 4, item_ct1);
+  // CHECK-NEXT:       });
+  SumKernel2<<<GridSize, BlockSize>>>(dev_data, 4);
+  cudaDeviceSynchronize();
+  verify_data(dev_data, 4);
+
   return 0;
 }
+// clang-format off

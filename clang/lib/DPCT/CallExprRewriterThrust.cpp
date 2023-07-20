@@ -192,7 +192,7 @@ enum class PolicyState : bool { HasPolicy = true, NoPolicy = false };
 
 struct ThrustOverload {
   int argCnt;
-  PolicyState hasPolicy;
+  PolicyState policyState;
   int ptrCnt;
   std::string migratedFunc;
   HelperFeatureEnum feature;
@@ -245,11 +245,11 @@ makeTemplatedCallArgVectorCreator(unsigned idx, int number) {
 
 auto createSequentialPolicyCallExprRewriterFactory(
     const std::string &thrustFunc, const std::string &syclFunc, int argCnt,
-    PolicyState hasPolicy) {
+    PolicyState policyState) {
 
   int argStart = 0;
 
-  if (static_cast<bool>(hasPolicy)) {
+  if (static_cast<bool>(policyState)) {
     // Skip policy argument
     argCnt--;
     argStart = 1;
@@ -280,14 +280,14 @@ auto createMappedPolicyCallExprRewriterFactory(const std::string &thrustFunc,
 auto createDevicePolicyCallExprRewriterFactory(const std::string &thrustFunc,
                                                const std::string &syclFunc,
                                                int argCnt, int templatedCnt,
-                                               PolicyState hasPolicy) {
+                                               PolicyState policyState) {
 
   auto makeDevicePolicy = makeCallExprCreator(
       "oneapi::dpl::execution::make_device_policy", QUEUESTR);
 
   int argStart = 0;
 
-  if (static_cast<bool>(hasPolicy)) {
+  if (static_cast<bool>(policyState)) {
     // Skip policy argument
     argCnt--;
     argStart = 1;
@@ -304,46 +304,43 @@ auto createDevicePolicyCallExprRewriterFactory(const std::string &thrustFunc,
 std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
 thrustOverloadFactory(const std::string &thrustFunc,
                       const ThrustOverload &overload) {
+  unsigned Idx = static_cast<bool>(overload.policyState) ? 1 : 0;
   auto not_usm = createIfElseRewriterFactory(
       thrustFunc,
       createFeatureRequestFactory(
-          HelperFeatureEnum::Memory_is_device_ptr,
+          HelperFeatureEnum::device_ext,
           {thrustFunc,
            createCallExprRewriterFactory(
                thrustFunc,
                makeCallExprCreator(
-                   MapNames::getDpctNamespace() + "is_device_ptr",
-                   ARG(static_cast<bool>(overload.hasPolicy) ? 1 : 0)))}),
+                   MapNames::getDpctNamespace() + "is_device_ptr", ARG(Idx)))}),
       createFeatureRequestFactory(
-          HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          HelperFeatureEnum::device_ext,
           {thrustFunc, createDevicePolicyCallExprRewriterFactory(
                            thrustFunc, overload.migratedFunc, overload.argCnt,
-                           overload.ptrCnt, overload.hasPolicy)}),
+                           overload.ptrCnt, overload.policyState)}),
       {thrustFunc, createSequentialPolicyCallExprRewriterFactory(
                        thrustFunc, overload.migratedFunc, overload.argCnt,
-                       overload.hasPolicy)},
+                       overload.policyState)},
       0);
 
   auto usm =
-      (static_cast<bool>(overload.hasPolicy)
+      (static_cast<bool>(overload.policyState)
            ? std::pair{thrustFunc,
                        createMappedPolicyCallExprRewriterFactory(
                            thrustFunc, overload.migratedFunc, overload.argCnt)}
            : createConditionalFactory(
-                 CheckThrustArgType(static_cast<bool>(overload.hasPolicy) ? 1
-                                                                          : 0,
-                                    "thrust::device_ptr"),
+                 CheckThrustArgType(Idx, "thrust::device_ptr"),
                  {thrustFunc, createDevicePolicyCallExprRewriterFactory(
                                   thrustFunc, overload.migratedFunc,
-                                  overload.argCnt, 0, overload.hasPolicy)},
+                                  overload.argCnt, 0, overload.policyState)},
                  {thrustFunc, createSequentialPolicyCallExprRewriterFactory(
                                   thrustFunc, overload.migratedFunc,
-                                  overload.argCnt, overload.hasPolicy)}));
-
+                                  overload.argCnt, overload.policyState)}));
   return createFeatureRequestFactory(
       overload.feature,
       createConditionalFactory(
-          makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+          makeCheckAnd(CheckIsPtr(Idx), makeCheckNot(checkIsUSM())),
           {thrustFunc, not_usm}, std::move(usm)));
 }
 
@@ -357,7 +354,7 @@ thrustFactory(const std::string &thrustFunc,
                                 makeCallArgCreator(thrustFunc))};
 
   for (auto it = overloads.rbegin(); it != overloads.rend(); it++) {
-    u = (static_cast<bool>(it->hasPolicy)
+    u = (static_cast<bool>(it->policyState)
              ? createConditionalFactory(
                    makeCheckAnd(CheckArgCount(it->argCnt), IsPolicyArgType(0)),
                    thrustOverloadFactory(thrustFunc, *it), std::move(u))

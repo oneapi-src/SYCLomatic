@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::Atomic_atomic_fetch_add,
+    HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
         GetUsingGenericSpace,
         CALL_FACTORY_ENTRY(
@@ -49,7 +49,7 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(1)))))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::Atomic_atomic_fetch_sub,
+    HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
         GetUsingGenericSpace,
         CALL_FACTORY_ENTRY(
@@ -91,7 +91,7 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(1)))))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::Atomic_atomic_exchange,
+    HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
         GetUsingGenericSpace,
         CALL_FACTORY_ENTRY(
@@ -133,7 +133,7 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(1)))))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::Atomic_atomic_fetch_max,
+    HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
         GetUsingGenericSpace,
         CALL_FACTORY_ENTRY(
@@ -175,7 +175,7 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(1)))))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::Atomic_atomic_fetch_min,
+    HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
         GetUsingGenericSpace,
         CALL_FACTORY_ENTRY(
@@ -217,7 +217,7 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(1)))))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::Atomic_atomic_compare_exchange_strong,
+    HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
         GetUsingGenericSpace,
         CALL_FACTORY_ENTRY(
@@ -265,7 +265,7 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(2)))))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::Atomic_atomic_fetch_compare_inc,
+    HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
         GetUsingGenericSpace,
         CALL_FACTORY_ENTRY(
@@ -308,7 +308,7 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(1)))))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::Atomic_atomic_fetch_compare_dec,
+    HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
         GetUsingGenericSpace,
         CALL_FACTORY_ENTRY(
@@ -351,7 +351,7 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(1)))))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::Atomic_atomic_fetch_and,
+    HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
         GetUsingGenericSpace,
         CALL_FACTORY_ENTRY(
@@ -393,7 +393,7 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(1)))))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::Atomic_atomic_fetch_or,
+    HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
         GetUsingGenericSpace,
         CALL_FACTORY_ENTRY(
@@ -435,7 +435,7 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(1)))))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::Atomic_atomic_fetch_xor,
+    HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
         GetUsingGenericSpace,
         CALL_FACTORY_ENTRY(

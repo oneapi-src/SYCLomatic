@@ -362,7 +362,7 @@ bool canContinueMigration(std::string &Msg) {
 
   if (!llvm::sys::fs::exists(YamlFilePath))
     return true;
-  if (loadFromYaml(std::move(YamlFilePath), *PreTU, true) != 0) {
+  if (loadFromYaml(std::move(YamlFilePath), *PreTU) != 0) {
     llvm::errs() << getLoadYamlFailWarning(YamlFilePath.str().str());
     return true;
   }

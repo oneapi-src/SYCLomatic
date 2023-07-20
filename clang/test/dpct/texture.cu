@@ -1,5 +1,5 @@
-// UNSUPPORTED: cuda-12.0, cuda-12.1
-// UNSUPPORTED: v12.0, v12.1
+// UNSUPPORTED: cuda-12.0, cuda-12.1, cuda-12.2
+// UNSUPPORTED: v12.0, v12.1, v12.2
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/texture %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14 -fno-delayed-template-parsing
 // RUN: FileCheck --input-file %T/texture/texture.dp.cpp --match-full-lines %s
 
@@ -39,6 +39,9 @@ static texture<uint2, 1> tex21;
 
 // CHECK: void device01(dpct::image_accessor_ext<sycl::uint2, 1> tex21) {
 // CHECK-NEXT: sycl::uint2 u21 = tex21.read(1.0f);
+// CHECK-NEXT: /*
+// CHECK-NEXT: DPCT1112:{{[0-9]+}}: If the filter mode is set to 'linear', the behavior of "read" may be different from "tex1Dfetch". You may need to adjust the code.
+// CHECK-NEXT: */
 // CHECK-NEXT: sycl::uint2 u21_fetch = tex21.read(1);
 // CHECK-NEXT: float data[3][3];
 // CHECK-NEXT: FETCH(data[0], tex21, 2);

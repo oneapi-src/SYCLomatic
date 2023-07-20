@@ -118,7 +118,7 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
   auto HelperFeatureIter = MapNames::ThrustFuncNamesHelperFeaturesMap.find(
       ThrustFuncNameWithNamespace);
   if (HelperFeatureIter != MapNames::ThrustFuncNamesHelperFeaturesMap.end()) {
-    requestFeature(HelperFeatureIter->second, CE);
+    requestFeature(HelperFeatureIter->second);
   }
 
   auto NewName = ReplInfo->second.ReplName;
@@ -290,7 +290,7 @@ void ThrustTypeRule::runRule(
       std::string Replacement =
           MapNames::findReplacedName(MapNames::TypeNamesMap, ThrustVarName);
       insertHeaderForTypeRule(ThrustVarName, DRE->getBeginLoc());
-      requestHelperFeatureForTypeNames(ThrustVarName, DRE);
+      requestHelperFeatureForTypeNames(ThrustVarName);
       if (Replacement == "oneapi::dpl::execution::dpcpp_default")
         Replacement = makeDevicePolicy(DRE);
 

@@ -132,7 +132,7 @@ public:
       std::shared_ptr<TypeLocRewriterFactoryBase> InnerFactory)
       : Inner(InnerFactory), Feature(Feature) {}
   std::shared_ptr<TypeLocRewriter> create(const TypeLoc TL) const override {
-    requestFeature(Feature, TL.getBeginLoc());
+    requestFeature(Feature);
     return Inner->create(TL);
   }
 };

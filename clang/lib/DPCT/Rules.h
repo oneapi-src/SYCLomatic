@@ -8,7 +8,7 @@
 
 #ifndef DPCT_RULES_H
 #define DPCT_RULES_H
-#include "CustomHelperFiles.h"
+#include "Utility.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/YAMLTraits.h"
 #include <string>
@@ -26,7 +26,7 @@ struct TypeNameRule {
   std::vector<std::string> Includes;
   TypeNameRule(std::string Name)
       : NewName(Name),
-        RequestFeature(clang::dpct::HelperFeatureEnum::no_feature_helper),
+        RequestFeature(clang::dpct::HelperFeatureEnum::none),
         Priority(RulePriority::Fallback) {}
   TypeNameRule(std::string Name, clang::dpct::HelperFeatureEnum Feature,
                RulePriority Priority = RulePriority::Fallback)
@@ -201,7 +201,7 @@ public:
       std::string Id, RulePriority Priority, std::string InStr,
       std::string OutStr,
       clang::dpct::HelperFeatureEnum Helper =
-          clang::dpct::HelperFeatureEnum::no_feature_helper,
+          clang::dpct::HelperFeatureEnum::none,
       const std::vector<std::string> &Includes = std::vector<std::string>())
       : RuleBase(Id, Priority, RuleKind::Macro, InStr, OutStr, Helper,
                  Includes) {}

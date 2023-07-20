@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
   // CHECK: DPCT_CHECK_ERROR(q_ct1.memcpy(const_angle.get_ptr() + 3+NUM, &h_array[0], sizeof(float) * 354));
   cudaMemcpyToSymbol(&const_angle[3+NUM], &h_array[0], sizeof(float) * 354);
 
-  // CHECK:  DPCT_CHECK_ERROR(q_ct1.memcpy(&h_array[0], const_angle.get_ptr() + 3+NUM, sizeof(float) * 354));
+  // CHECK:  DPCT_CHECK_ERROR(q_ct1.memcpy(&h_array[0], const_angle.get_ptr() + 3+NUM, sizeof(float) * 354).wait());
   cudaMemcpyFromSymbol(&h_array[0], &const_angle[3+NUM], sizeof(float) * 354);
 
   // CHECK:   q_ct1.submit(

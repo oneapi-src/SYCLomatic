@@ -537,8 +537,6 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
           .write(Stream);
     }
 
-    generateHelperFunctions();
-
     // Print the in-root path and the number of processed files
     size_t ProcessedFileNumber;
     if (ProcessAllFlag) {
@@ -718,7 +716,7 @@ void loadYAMLIntoFileInfo(std::string Path) {
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
   if (fs::exists(YamlFilePath)) {
     if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
-      if (loadFromYaml(YamlFilePath, *PreTU, false) == 0) {
+      if (loadFromYaml(YamlFilePath, *PreTU) == 0) {
         DpctGlobalInfo::getInstance().insertReplInfoFromYAMLToFileInfo(
             OriginPath, PreTU);
       } else {

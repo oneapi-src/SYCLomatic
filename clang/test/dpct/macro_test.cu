@@ -229,11 +229,10 @@ double cosine = cos(2 * PI);
 //CHECK: MACRO_KC
 MACRO_KC
 
-
 //CHECK: #define HARD_KC(NAME, a, b, c, d)                                              \
 //CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {                                       \
-//CHECK-NEXT:     auto c_ct0 = c;                                                            \
-//CHECK-NEXT:     auto d_ct1 = d;                                                            \
+//CHECK-NEXT:     int c_ct0 = c;                                                            \
+//CHECK-NEXT:     int d_ct1 = d;                                                            \
 //CHECK:     cgh.parallel_for(                                                          \
 //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, a) * sycl::range<3>(1, 1, b),   \
 //CHECK-NEXT:                           sycl::range<3>(1, 1, b)),                            \
@@ -248,11 +247,10 @@ MACRO_KC
 #define HARD_KC(NAME,a,b,c,d) NAME<<<a,b,0>>>(c,d);
 HARD_KC(foo3,3,2,1,0)
 
-
 //CHECK: #define MACRO_KC2(a, b, c, d)                                                       \
 //CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {                                       \
-//CHECK-NEXT:     auto c_ct0 = c;                                                            \
-//CHECK-NEXT:     auto d_ct1 = d;                                                            \
+//CHECK-NEXT:     int c_ct0 = c;                                                            \
+//CHECK-NEXT:     int d_ct1 = d;                                                            \
 //CHECK-NEXT:                                                                                \
 //CHECK-NEXT:     cgh.parallel_for(sycl::nd_range<3>(a * b, b),                  \
 //CHECK-NEXT:                      [=](sycl::nd_item<3> item_ct1) { foo3(c_ct0, d_ct1); });  \
@@ -921,8 +919,8 @@ void foo20() {
 //CHECK: /*
 //CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for
 //CHECK-NEXT: dpct::select_from_sub_group. You can specify
-//CHECK-NEXT: "--use-experimental-features=masked-sub-group-operation" to use the dpct
-//CHECK-NEXT: experimental helper function to migrate __shfl_sync.
+//CHECK-NEXT: "--use-experimental-features=masked-sub-group-operation" to use the experimental
+//CHECK-NEXT: helper function to migrate __shfl_sync.
 //CHECK-NEXT: */
 //CHECK-NEXT: #define CALLSHFLSYNC(x)                                                        \
 //CHECK-NEXT: dpct::select_from_sub_group(item_ct1.get_sub_group(), x, 3 ^ 1);
@@ -1169,7 +1167,7 @@ class ArgClass{};
 //CHECK-NEXT: #define VACALL2(...) VACALL3(__VA_ARGS__)
 //CHECK-NEXT: #define VACALL(x)                                                              \
 //CHECK-NEXT:   dpct::get_default_queue().submit([&](sycl::handler &cgh) {                   \
-//CHECK-NEXT:     auto i_ct0 = i;                                                            \
+//CHECK-NEXT:     int i_ct0 = i;                                                            \
 //CHECK-NEXT:     auto ac_ct0 = ac;                                                          \
 //CHECK:     cgh.parallel_for(                                                          \
 //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2) *                            \

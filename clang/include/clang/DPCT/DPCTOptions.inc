@@ -253,29 +253,6 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), EnableComments, 
            llvm::cl::desc("Insert comments explaining the generated code. Default: off."),
            llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
-DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<HelperFilesCustomizationLevel>), UseCustomHelperFileLevel, "use-custom-helper",
-           DPCT_OPTION_VALUES(
-             DPCT_OPT_ENUM("none", int(HelperFilesCustomizationLevel::HFCL_None),
-            "No customization (default).", false),
-             DPCT_OPT_ENUM("file", int(HelperFilesCustomizationLevel::HFCL_File),
-            "Limit helper header files to only the necessary files for the migrated code and\n"
-            "place them in the --out-root directory.", false),
-             DPCT_OPT_ENUM("api", int(HelperFilesCustomizationLevel::HFCL_API),
-            "Limit helper header files to only the necessary APIs for the migrated code and\n"
-            "place them in the --out-root directory.", false),
-             DPCT_OPT_ENUM("all", int(HelperFilesCustomizationLevel::HFCL_All),
-            "Generate a complete set of helper header files and place them in the --out-root\n"
-            "directory.", false)
-           ),
-           llvm::cl::desc("DEPRECATED: Customize the helper header files for migrated code. The values are:\n"),
-           llvm::cl::init(HelperFilesCustomizationLevel::HFCL_None), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
-           llvm::cl::Optional)
-
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), CustomHelperFileName, "custom-helper-name",
-        llvm::cl::desc("DEPRECATED: Specifies the helper headers folder name and main helper header file name.\n"
-        "Default: dpct."),
-        llvm::cl::init("dpct"), llvm::cl::value_desc("name"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
-
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), AsyncHandler, "always-use-async-handler",
         llvm::cl::desc("Use async exception handler when creating new sycl::queue "
                    "with dpct::create_queue\nin addition to default "
@@ -385,6 +362,9 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
         false),
              DPCT_OPT_ENUM("occupancy-calculation", int(ExperimentalFeatures::Exp_OccupancyCalculation),
         "Experimental helper function used to calculate occupancy.\n",
+        false),
+             DPCT_OPT_ENUM("matrix", int(ExperimentalFeatures::Exp_Matrix),
+        "Experimental extension that allows use of matrix extension like class joint_matrix.\n",
         false)
            ),
            llvm::cl::desc("Comma separated list of experimental features to be used in migrated "
@@ -421,14 +401,6 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), AnalysisS
         llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTCat))
 
 DPCT_NON_ENUM_OPTION(
-    DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), ChangeExtension,
-    "change-filename-extension",
-    llvm::cl::desc("DEPRECATED: A comma-separated list that specifies which\n"
-                   "extensions of migrated files will be changed. Default:\n"
-                   ".cu, .cuh, .cpp, .cxx, .cc, .c, .C"),
-    llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
-
-DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<bool>), LimitChangeExtension,
     "change-cuda-files-extension-only",
     llvm::cl::desc(
@@ -438,5 +410,12 @@ DPCT_NON_ENUM_OPTION(
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), GenHelperFunction, "gen-helper-function",
         llvm::cl::desc("Generate helper function files in the --out-root directory. Default: off."),
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+
+DPCT_NON_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), QueryAPIMapping,
+    "query-api-mapping",
+    llvm::cl::desc(
+        "Query functionally compatible SYCL API to migrate CUDA API."),
+    llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT

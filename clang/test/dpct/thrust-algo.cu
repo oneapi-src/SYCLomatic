@@ -4,32 +4,37 @@
 // RUN: FileCheck --input-file %T/thrust-algo/thrust-algo.dp.cpp --match-full-lines %s
 #include <vector>
 
+#include <thrust/binary_search.h>
 #include <thrust/copy.h>
+#include <thrust/device_malloc.h>
 #include <thrust/device_vector.h>
 #include <thrust/execution_policy.h>
+#include <thrust/extrema.h>
+#include <thrust/find.h>
+#include <thrust/functional.h>
+#include <thrust/gather.h>
+#include <thrust/host_vector.h>
+#include <thrust/inner_product.h>
+#include <thrust/mismatch.h>
 #include <thrust/random.h>
 #include <thrust/reduce.h>
-#include <thrust/inner_product.h>
-#include <thrust/extrema.h>
-#include <thrust/gather.h>
-#include <thrust/binary_search.h>
-#include <thrust/unique.h>
-#include <thrust/find.h>
-#include <thrust/sort.h>
-#include <thrust/host_vector.h>
-#include <thrust/transform_scan.h>
-#include <thrust/set_operations.h>
-#include <thrust/tabulate.h>
-#include <thrust/functional.h>
 #include <thrust/remove.h>
-#include <thrust/mismatch.h>
 #include <thrust/replace.h>
 #include <thrust/reverse.h>
+#include <thrust/set_operations.h>
+#include <thrust/sort.h>
+#include <thrust/tabulate.h>
+#include <thrust/transform_scan.h>
+#include <thrust/unique.h>
+
+// CHECK: #include <oneapi/dpl/memory>
+#include <thrust/equal.h>
+#include <thrust/uninitialized_copy.h>
 
 // for cuda 12.0
 #include <thrust/iterator/constant_iterator.h>
 #include <thrust/partition.h>
-
+#include <thrust/scatter.h>
 
 void k() {
   std::vector<int> v, v2, v3, v4;
@@ -200,7 +205,6 @@ void k() {
   // CHECK: std::merge(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), v2.end(), v3.begin(), bp);
   thrust::merge(v.begin(), v.end(), v2.begin(), v2.end(), v3.begin(), bp);
 }
-
 
 void foo(cudaStream_t stream) {
   //CHECK:std::vector<int> h;
@@ -411,7 +415,6 @@ struct is_even
 };
 void is_partition_test() {
   int datas[]={1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-  int ans[]={2, 4, 6, 8, 10, 1, 3, 5, 7, 9};
   const int N=sizeof(datas)/sizeof(int);
   int stencil[N]={1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
@@ -454,7 +457,6 @@ void unique_copy_test() {
   int A[N]={1, 3, 3, 3, 2, 2, 1};
   int B[N];
   const int M=N-3;
-  int ans[M]={1, 3, 2, 1};
   thrust::host_vector<int> h_V(A,A+N);
   thrust::device_vector<int> d_V(A,A+N);
   thrust::host_vector<int> h_result(B,B+M);
@@ -489,7 +491,6 @@ void unique_copy_test() {
 void stable_sort_test() {
   const int N=6;
   int datas[N]={1, 4, 2, 8, 5, 7};
-  int ans[N]={1, 2, 4, 5, 7, 8};
   thrust::host_vector<int> h_v(datas,datas+N);
   thrust::device_vector<int> d_v(datas,datas+N);
 // CHECK:  oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, h_v.begin(), h_v.end());
@@ -527,8 +528,6 @@ void set_difference_by_key_test() {
 
   int Ckey[P];
   int Cvalue[P];
-  int anskey[P]={0,4,6};
-  int ansvalue[P]={0,0,0};
 
   thrust::host_vector<int> h_VAkey(Akey,Akey+N);
   thrust::host_vector<int> h_VAvalue(Avalue,Avalue+N);
@@ -580,7 +579,6 @@ void set_difference_test() {
   int A[N]={0, 1, 3, 4, 5, 6, 9};
   int B[M]={1, 3, 5, 7, 9};
   int C[P];
-  int ans[P]={0,4,6};
   thrust::host_vector<int> h_VA(A,A+N);
   thrust::host_vector<int> h_VB(B,B+M);
   thrust::host_vector<int> h_VC(C,C+P);
@@ -626,7 +624,6 @@ struct add_functor
 void for_each_n_test() {
   const int N=3;
   int A[N]={0,1,2};
-  int ans[N]={1,2,3};
   thrust::host_vector<int> h_V(A,A+N);
   thrust::device_vector<int> d_V(A,A+N);
 
@@ -648,7 +645,6 @@ void for_each_n_test() {
 void tabulate_test() {
   const int N=10;
   int A[N];
-  int ans[N]={0, -1, -2, -3, -4, -5, -6, -7, -8, -9};
   thrust::host_vector<int> h_V(A,A+N);
   thrust::device_vector<int> d_V(A,A+N);
 
@@ -670,7 +666,6 @@ void remove_copy_test() {
   const int N = 6;
   int A[N] = {-2, 0, -1, 0, 1, 2};
   int B[N - 2];
-  int ans[N - 2] = {-2, -1, 1, 2};
   int result[N - 2];
   int V[N] = {-2, 0, -1, 0, 1, 2};
 
@@ -696,7 +691,6 @@ void remove_copy_test() {
 void transform_exclusive_scan_test() {
   const int N=6;
   int A[N]={1, 0, 2, 2, 1, 3};
-  int ans[N]={4, 3, 3, 1, -1, -2};
   thrust::host_vector<int> h_V(A,A+N);
   thrust::device_vector<int> d_V(A,A+N);
   thrust::negate<int> unary_op;
@@ -722,11 +716,8 @@ void set_intersection_by_key_test() {
   int Akey[N] = {1, 3, 5, 7, 9, 11};
   int Avalue[N] = {0, 0, 0, 0, 0, 0};
   int Bkey[M] = {1, 1, 2, 3, 5, 8, 13};
-
   int Ckey[P];
   int Cvalue[P];
-  int anskey[P] = {1, 3, 5};
-  int ansvalue[P] = {0, 0, 0};
 
   thrust::host_vector<int> h_VAkey(Akey, Akey + N);
   thrust::host_vector<int> h_VAvalue(Avalue, Avalue + N);
@@ -1102,4 +1093,161 @@ void transform_inclusive_scan() {
   thrust::transform_inclusive_scan(thrust::host, data, data + N, data, unary_op, binary_op);
   thrust::transform_inclusive_scan(thrust::host, h_vec_data.begin(), h_vec_data.end(), h_vec_data.begin(), unary_op, binary_op);
   thrust::transform_inclusive_scan(thrust::device, d_vec_data.begin(), d_vec_data.end(), d_vec_data.begin(), unary_op, binary_op);
+}
+
+struct is_even_scatter_if {
+  __host__ __device__ bool operator()(int x) const { return (x % 2) == 0; }
+};
+
+void scatter_if() {
+
+  const int N = 8;
+
+  int V[N] = {10, 20, 30, 40, 50, 60, 70, 80};
+  int M[N] = {0, 5, 1, 6, 2, 7, 3, 4};
+  int S[N] = {1, 0, 1, 0, 1, 0, 1, 0};
+  int D[N] = {0, 0, 0, 0, 0, 0, 0, 0};
+  is_even_scatter_if pred;
+  thrust::device_vector<int> d_V(V, V + N);
+  thrust::device_vector<int> d_M(M, M + N);
+  thrust::device_vector<int> d_S(S, S + N);
+  thrust::device_vector<int> d_D(N);
+  thrust::host_vector<int> h_V(V, V + N);
+  thrust::host_vector<int> h_M(M, M + N);
+  thrust::host_vector<int> h_S(S, S + N);
+  thrust::host_vector<int> h_D(N);
+
+  // CHECK:  /*
+  // CHECK-NEXT:  DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::scatter_if is not supported.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  thrust::scatter_if(oneapi::dpl::execution::seq, V, V + 8, M, S, D);
+  // CHECK-NEXT:  /*
+  // CHECK-NEXT:  DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::scatter_if is not supported.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  thrust::scatter_if(V, V + 8, M, S, D);
+  // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::seq, V, V + 8, M, S, D, pred);
+  // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::seq, V, V + 8, M, S, D, pred);
+  // CHECK-NEXT:  /*
+  // CHECK-NEXT:  DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::scatter_if is not supported.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  thrust::scatter_if(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin());
+  // CHECK-NEXT:  /*
+  // CHECK-NEXT:  DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::scatter_if is not supported.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  thrust::scatter_if(d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin());
+  // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin(), pred);
+  // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin(), pred);
+  // CHECK-NEXT:  /*
+  // CHECK-NEXT:  DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::scatter_if is not supported.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  thrust::scatter_if(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin());
+  // CHECK-NEXT:  /*
+  // CHECK-NEXT:  DPCT1107:{{[0-9]+}}: Migration for this overload of thrust::scatter_if is not supported.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  thrust::scatter_if(h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(),  h_D.begin());
+  // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin(), pred);
+  // CHECK-NEXT:  dpct::scatter_if(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin(), pred);
+  thrust::scatter_if(thrust::host, V, V + 8, M, S, D);
+  thrust::scatter_if(V, V + 8, M, S, D);
+  thrust::scatter_if(thrust::host, V, V + 8, M, S, D, pred);
+  thrust::scatter_if(V, V + 8, M, S, D, pred);
+  thrust::scatter_if(thrust::device, d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin());
+  thrust::scatter_if(d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin());
+  thrust::scatter_if(thrust::device, d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin(), pred);
+  thrust::scatter_if(d_V.begin(), d_V.end(), d_M.begin(), d_S.begin(), d_D.begin(), pred);
+  thrust::scatter_if(thrust::host, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin());
+  thrust::scatter_if(h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin());
+  thrust::scatter_if(thrust::host, h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin(), pred);
+  thrust::scatter_if(h_V.begin(), h_V.end(), h_M.begin(), h_S.begin(), h_D.begin(), pred);
+}
+
+struct Int {
+  __host__ __device__ Int(int x) : val(x) {}
+  int val;
+};
+
+void uninitialized_copy() {
+  const int N = 137;
+  Int val(46);
+  thrust::device_ptr<Int> array = thrust::device_malloc<Int>(N);
+  thrust::device_vector<Int> d_input(N, val);
+  thrust::device_ptr<Int> d_array = thrust::device_malloc<Int>(N);
+  int data[N];
+  int h_array[N];
+
+  // CHECK:  oneapi::dpl::uninitialized_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_input.begin(), d_input.end(), d_array);
+  // CHECK-NEXT:  oneapi::dpl::uninitialized_copy(oneapi::dpl::execution::seq, data, data + N, array);
+  // CHECK-NEXT:  oneapi::dpl::uninitialized_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_input.begin(), d_input.end(), d_array);
+  // CHECK-NEXT:  oneapi::dpl::uninitialized_copy(oneapi::dpl::execution::seq, data, data + N, h_array);
+  thrust::uninitialized_copy(d_input.begin(), d_input.end(), d_array);
+  thrust::uninitialized_copy(data, data + N, array);
+  thrust::uninitialized_copy(thrust::device, d_input.begin(), d_input.end(), d_array);
+  thrust::uninitialized_copy(thrust::host, data, data + N, h_array);
+}
+
+void uninitialized_copy_n() {
+  const int N = 137;
+  Int val(46);
+  thrust::device_ptr<Int> array = thrust::device_malloc<Int>(N);
+  thrust::device_vector<Int> d_input(N, val);
+  thrust::device_ptr<Int> d_array = thrust::device_malloc<Int>(N);
+  int h_data[N];
+  int h_array[N];
+
+  // CHECK:  oneapi::dpl::uninitialized_copy_n(oneapi::dpl::execution::make_device_policy(q_ct1), d_input.begin(), N, d_array);
+  // CHECK-NEXT:  oneapi::dpl::uninitialized_copy_n(oneapi::dpl::execution::seq, h_data, N, h_array);
+  // CHECK-NEXT:  oneapi::dpl::uninitialized_copy_n(oneapi::dpl::execution::make_device_policy(q_ct1), d_input.begin(), N, d_array);
+  // CHECK-NEXT:  oneapi::dpl::uninitialized_copy_n(oneapi::dpl::execution::seq, h_data, N, h_array);
+  thrust::uninitialized_copy_n(d_input.begin(), N, d_array);
+  thrust::uninitialized_copy_n(h_data, N, h_array);
+  thrust::uninitialized_copy_n(thrust::device, d_input.begin(), N, d_array);
+  thrust::uninitialized_copy_n(thrust::host, h_data, N, h_array);
+}
+
+struct compare_modulo_two {
+  __host__ __device__ bool operator()(int x, int y) const {
+    return (x % 2) == (y % 2);
+  }
+};
+
+void equal() {
+  const int N = 7;
+
+  int A1[N] = {3, 1, 4, 1, 5, 9, 3};
+  int A2[N] = {3, 1, 4, 2, 8, 5, 7};
+  int x[N] = {0, 2, 4, 6, 8, 10};
+  int y[N] = {1, 3, 5, 7, 9, 11};
+  thrust::host_vector<int> h_A1(A1, A1 + N);
+  thrust::host_vector<int> h_A2(A2, A2 + N);
+  thrust::host_vector<int> h_x(x, x + N);
+  thrust::host_vector<int> h_y(y, y + N);
+  thrust::device_vector<int> d_A1(A1, A1 + N);
+  thrust::device_vector<int> d_A2(A2, A2 + N);
+  thrust::device_vector<int> d_x(x, x + N);
+  thrust::device_vector<int> d_y(y, y + N);
+
+  // CHECK:  oneapi::dpl::equal(oneapi::dpl::execution::seq, A1, A1 + N, A2);
+  // CHECK-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::seq, A1, A1 + N, A2);
+  // CHECK-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::seq, x, x + N, y, compare_modulo_two());
+  // CHECK-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::seq, x, x + N, y, compare_modulo_two());
+  // CHECK-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::seq, h_A1.begin(), h_A1.end(), h_A2.begin());
+  // CHECK-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::seq, h_A1.begin(), h_A1.end(), h_A2.begin());
+  // CHECK-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::seq, h_x.begin(), h_x.end(), h_y.begin(), compare_modulo_two());
+  // CHECK-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::seq, h_x.begin(), h_x.end(), h_y.begin(), compare_modulo_two());
+  // CHECK-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(q_ct1), d_A1.begin(), d_A1.end(), d_A2.begin());
+  // CHECK-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(q_ct1), d_A1.begin(), d_A1.end(), d_A2.begin());
+  // CHECK-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(q_ct1), d_x.begin(), d_x.end(), d_y.begin(), compare_modulo_two());
+  // CHECK-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(q_ct1), d_x.begin(), d_x.end(), d_y.begin(), compare_modulo_two());
+  thrust::equal(thrust::host, A1, A1 + N, A2);
+  thrust::equal(A1, A1 + N, A2);
+  thrust::equal(x, x + N, y, compare_modulo_two());
+  thrust::equal(thrust::host, x, x + N, y, compare_modulo_two());
+  thrust::equal(thrust::host, h_A1.begin(), h_A1.end(), h_A2.begin());
+  thrust::equal(h_A1.begin(), h_A1.end(), h_A2.begin());
+  thrust::equal(h_x.begin(), h_x.end(), h_y.begin(), compare_modulo_two());
+  thrust::equal(thrust::host, h_x.begin(), h_x.end(), h_y.begin(), compare_modulo_two());
+  thrust::equal(thrust::device, d_A1.begin(), d_A1.end(), d_A2.begin());
+  thrust::equal(d_A1.begin(), d_A1.end(), d_A2.begin());
+  thrust::equal(d_x.begin(), d_x.end(), d_y.begin(), compare_modulo_two());
+  thrust::equal(thrust::device, d_x.begin(), d_x.end(), d_y.begin(), compare_modulo_two());
 }

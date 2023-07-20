@@ -195,10 +195,10 @@ public:
 class InlineAsmVariableDecl : public InlineAsmDecl {
 
   /// The state space of a variable, e.g. '.reg', '.global', '.local', etc.
-  InlineAsmIdentifierInfo *StorageClass;
+  InlineAsmIdentifierInfo *StorageClass = nullptr;
 
   /// The type of this variable.
-  InlineAsmType *Type;
+  InlineAsmType *Type = nullptr;
 
   /// Alignment of this variable, specificed by '.align' attribute.
   unsigned Align = 0;

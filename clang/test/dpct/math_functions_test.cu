@@ -249,7 +249,7 @@ void test_sincospi(float a, float *sptr, float *cptr) {
 }
 
 // CHECK: void test_sincos(float a, float *sptr, float *cptr) {
-// CHECK:   return sincos(a, sptr, cptr);
+// CHECK:   return [&](){ *sptr = sycl::sincos(a, sycl::address_space_cast<sycl::access::address_space::global_space, sycl::access::decorated::yes, double>(cptr)); }();
 // CHECK: }
 void test_sincos(float a, float *sptr, float *cptr) {
   return sincos(a, sptr, cptr);
