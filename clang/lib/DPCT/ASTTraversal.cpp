@@ -12181,7 +12181,7 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
       auto ObjType = ME->getBase()->getType().getCanonicalType();
       ND = getNamedDecl(ObjType.getTypePtr());
       ObjName = ND->getNameAsString();
-    // Match the static call, like: A::staticCall();
+      // Match the static call, like: A::staticCall();
     } else if (auto RT = dyn_cast<RecordDecl>(
                    CE->getCalleeDecl()->getDeclContext())) {
       ObjName = RT->getNameAsString();
