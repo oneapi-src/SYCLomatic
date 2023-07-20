@@ -2140,6 +2140,7 @@ public:
   // If NeedSizeFold is true, array size will be folded, but original expression
   // will follow as comments. If NeedSizeFold is false, original size expression
   // will be the size string.
+  CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold = false);
   CtTypeInfo(const VarDecl *D, bool NeedSizeFold = false)
       : PointerLevel(0), IsReference(false), IsTemplate(false) {
     if (D && D->getTypeSourceInfo()) {
