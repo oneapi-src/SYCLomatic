@@ -34,7 +34,6 @@ __constant__ int const_init[5] = {1, 2, 3, 7, 8};
 // CHECK: static dpct::constant_memory<int, 2> const_init_2d(sycl::range<2>(5, 5), {{[{][{]}}1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7, 8, 0}, {1, 3}, {4, 0, 56}});
 __constant__ int const_init_2d[5][5] = {{1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7, 8, 0}, {1, 3}, {4, 0, 56}};
 
-
 // CHECK: struct FuncObj {
 // CHECK-NEXT: void operator()(float *out, int index, float const *const_angle) {
 // CHECK-NEXT:   out[index] = const_angle[index];

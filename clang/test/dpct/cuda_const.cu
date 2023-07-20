@@ -38,7 +38,6 @@ __constant__ int const_init_2d[5][5] = {{1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7,
 // CHECK: static dpct::constant_memory<int, 2> incomplete_size_init_2d(sycl::range<2>(3, 2), { {1,2},{3,4},{5,6}});
 __constant__ int incomplete_size_init_2d[][2] = { {1,2},{3,4},{5,6}};
 
-
 // CHECK: struct FuncObj {
 // CHECK-NEXT: void operator()(float *out, int index, float const *const_angle) {
 // CHECK-NEXT:   out[index] = const_angle[index];
@@ -229,7 +228,6 @@ __device__ __constant__ int const_array[10];
 
 #define l_arg &d_a0, &d_a1
 #define d_arg int *d_a0, int *d_a1
-
 
 // CHECK: void bar(int const *const_array) { int a = const_array[0]; }
 // CHECK-NEXT: void inner_foo(int *last, d_arg, int const *const_array) { bar(const_array); }

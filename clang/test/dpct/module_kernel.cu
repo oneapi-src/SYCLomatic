@@ -23,7 +23,6 @@ __constant__ unsigned int const_data[3] = {1, 2, 3};
 //CHECK-NEXT: int a = item_ct1.get_local_id(2);
 //CHECK-NEXT: }
 
-
 // CHECK:      extern "C" {
 // CHECK-NEXT:   DPCT_EXPORT void foo_wrapper(sycl::queue &queue, const sycl::nd_range<3> &nr, unsigned int localMemSize, void **kernelParams, void **extra) {
 // CHECK-NEXT:     // 2 non-default parameters, 0 default parameters
