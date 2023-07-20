@@ -1786,22 +1786,20 @@ template <typename ExecutionPolicy, typename InputIterator,
   auto zipped_keys_beg = make_zip_iterator(
       left_shifted_input_beg, input_beg, right_shifted_input_beg,
       oneapi::dpl::counting_iterator<offsets_t>(0));
-  // Set flag at the beginning of new nontrivial run (ex: (0, 1, 1) -> 1)
+  // Set flag at the beginning of new nontrivial run (ex: (2, 3, 3) -> 1)
   auto key_flags_beg =
       make_transform_iterator(zipped_keys_beg, [n](const auto &zipped) {
         using ::std::get;
-        bool zero_idx_mask = get<3>(zipped) != 0;
         bool last_idx_mask = get<3>(zipped) != n - 1;
-        return (zero_idx_mask * (get<0>(zipped) != get<1>(zipped)) &&
-                get<1>(zipped) == get<2>(zipped)) *
+        return (get<0>(zipped) != get<1>(zipped) &&
+                get<1>(zipped) == get<2>(zipped)) &&
                last_idx_mask;
       });
   auto count_beg = oneapi::dpl::counting_iterator<offsets_t>(0);
   auto const_it = dpct::make_constant_iterator(lengths_t(1));
   // Check for presence of nontrivial element at current index
   auto tr_nontrivial_flags = make_transform_iterator(
-      make_zip_iterator(left_shifted_input_beg, input_beg,
-                        right_shifted_input_beg),
+      make_zip_iterator(left_shifted_input_beg, input_beg),
       [](const auto &zip) {
         using ::std::get;
         return get<0>(zip) == get<1>(zip);
@@ -1809,10 +1807,16 @@ template <typename ExecutionPolicy, typename InputIterator,
   auto zipped_vals_beg =
       make_zip_iterator(tr_nontrivial_flags, count_beg, const_it);
   auto pred = [](bool lhs, bool rhs) { return !rhs; };
-  // Update count of run. Starting index of run stored in assignment of initial
-  // element (first element in each segment).
+  // The first call to op in reduce_by_segment will have the second of the input
+  // values as the rhs parameter as the first is passed as lhs. The first
+  // element's flag of 1 due to the padded left shift will always be ignored and
+  // will never be added to the length count which is only updated in
+  // get<2>(lhs) += get<0>(rhs) and initialized to 1.
   auto op = [](auto lhs, const auto &rhs) {
     using ::std::get;
+    // Update count of run. The run's starting index is stored in get<1>(lhs) as
+    // the initial value in the segment and is preserved throughout the
+    // segment's reduction.
     get<2>(lhs) += get<0>(rhs);
     return ::std::move(lhs);
   };
