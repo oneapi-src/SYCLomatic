@@ -42,6 +42,7 @@ __global__ void test_syncthreads(int *arr) {
 //   test_syncthreads_or<<<blocks_per_grid, threads_per_block>>>(d_arr);
 // }
 
+// TODO: Further refine the analysis of barrier to support this case.
 #define MACRO 1
 __global__ void test1(unsigned int *ptr1, unsigned int *ptr2, unsigned int *ptr3) {
   uint4 mmm;
@@ -172,7 +173,7 @@ __global__ void test10(float *arg1_ptr, int arg2_scalar, int arg3_scalar) {
       arg1_ptr[var1] = a;
     }
     // CHECK: /*
-    // CHECK-NEXT: DPCT1113:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier(sycl::access::fence_space::local_space) with sycl::nd_item::barrier() if you change the dimension of the kernel.
+    // CHECK-NEXT: DPCT1113:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier(sycl::access::fence_space::local_space) with sycl::nd_item::barrier() if function "test10" is called in a multidimensional kernel.
     // CHECK-NEXT: */
     // CHECK-NEXT: item_ct1.barrier(sycl::access::fence_space::local_space);
     // CHECK-NEXT: int var3 = arg3_scalar / 2;
@@ -184,7 +185,7 @@ __global__ void test10(float *arg1_ptr, int arg2_scalar, int arg3_scalar) {
       }
       // CHECK: var3 = var3 / 2;
       // CHECK-NEXT: /*
-      // CHECK-NEXT: DPCT1113:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier(sycl::access::fence_space::local_space) with sycl::nd_item::barrier() if you change the dimension of the kernel.
+      // CHECK-NEXT: DPCT1113:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier(sycl::access::fence_space::local_space) with sycl::nd_item::barrier() if function "test10" is called in a multidimensional kernel.
       // CHECK-NEXT: */
       // CHECK-NEXT: item_ct1.barrier(sycl::access::fence_space::local_space);
       var3 = var3 / 2;
@@ -197,7 +198,7 @@ __global__ void test10(float *arg1_ptr, int arg2_scalar, int arg3_scalar) {
     }
   }
   // CHECK:   /*
-  // CHECK-NEXT:   DPCT1113:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier(sycl::access::fence_space::local_space) with sycl::nd_item::barrier() if you change the dimension of the kernel.
+  // CHECK-NEXT:   DPCT1113:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier(sycl::access::fence_space::local_space) with sycl::nd_item::barrier() if function "test10" is called in a multidimensional kernel.
   // CHECK-NEXT:   */
   // CHECK-NEXT:   item_ct1.barrier(sycl::access::fence_space::local_space);
   // CHECK-NEXT: }
@@ -321,6 +322,7 @@ __device__ int bar13(int num) {
   return n + 1;
 }
 
+// TODO: Further refine the analysis of barrier to support this case.
 __global__ void test13(uint8_t *pout) {
   int idx = 456;
   idx = bar13(idx);
@@ -391,6 +393,8 @@ __global__ void test17(float *f) {
   item_ct1.barrier(sycl::access::fence_space::local_space);
   *((float2 *)&ff[2]) = *((float2 *)&f[123]);
   __syncthreads();
+  float xyz = f[123];
+  // other code ...
 }
 
 __global__ void test18(unsigned int *aaa) {
@@ -399,4 +403,6 @@ __global__ void test18(unsigned int *aaa) {
   //CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
   *((uint4 *)(&aaa[5])) = *((uint4 *)&bbb[1][2]);
   __syncthreads();
+  unsigned int xyz = bbb[1][2];
+  // other code ...
 }

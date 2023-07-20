@@ -351,21 +351,21 @@ clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
                  "CE->getEndLoc().isMacroID()"
               << std::endl;
 #endif
-    return BarrierFenceSpaceAnalyzerResult(false, false);
+    return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
   }
   auto FD = DpctGlobalInfo::findAncestor<FunctionDecl>(CE);
   if (!FD) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
     std::cout << "Return False case G: !FD" << std::endl;
 #endif
-    return BarrierFenceSpaceAnalyzerResult(false, false);
+    return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
   }
   if (!FD->hasAttr<CUDAGlobalAttr>()) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
     std::cout << "Return False case H: !FD->hasAttr<CUDAGlobalAttr>()"
               << std::endl;
 #endif
-    return BarrierFenceSpaceAnalyzerResult(false, false);
+    return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
   }
 
   CELoc = getHashStrFromLoc(CE->getBeginLoc());
@@ -378,7 +378,8 @@ clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
       if (CEIter != FDIter->second.end()) {
         return CEIter->second;
       } else {
-        return BarrierFenceSpaceAnalyzerResult(false, false);
+        return BarrierFenceSpaceAnalyzerResult(false, false,
+                                               GlobalFunctionName);
       }
     }
   }
@@ -390,10 +391,11 @@ clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     std::cout << "Return False case I: Found device/managed variable usage"
               << std::endl;
 #endif
-    return BarrierFenceSpaceAnalyzerResult(false, false);
+    return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
   }
 
   this->FD = FD;
+  GlobalFunctionName = FD->getDeclName().getAsString();
 
   auto QueryKernelDim = [](const FunctionDecl *FD) -> int {
     const auto DFD = DpctGlobalInfo::getInstance().findDeviceFunctionDecl(FD);
@@ -423,7 +425,7 @@ clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
   //      exit.
   if (!this->TraverseDecl(const_cast<FunctionDecl *>(FD))) {
     setFalseForThisFunctionDecl();
-    return BarrierFenceSpaceAnalyzerResult(false, false);
+    return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
   }
 
   auto getSize =
@@ -559,16 +561,16 @@ clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
       if (CE == SyncCall.first) {
         return BarrierFenceSpaceAnalyzerResult(
             isValidAccessPattern(DeclUsedLocsMap, SyncCall.second),
-            MayDependOn1DKernel);
+            MayDependOn1DKernel, GlobalFunctionName);
       }
     }
-    return BarrierFenceSpaceAnalyzerResult(false, false);
+    return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
   }
   for (auto &SyncCall : SyncCallsVec) {
     CachedResults[FDLoc][getHashStrFromLoc(SyncCall.first->getBeginLoc())] =
         BarrierFenceSpaceAnalyzerResult(
             isValidAccessPattern(DeclUsedLocsMap, SyncCall.second),
-            MayDependOn1DKernel);
+            MayDependOn1DKernel, GlobalFunctionName);
   }
 
   // find the result in the new map
@@ -578,10 +580,10 @@ clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     if (CEIter != FDIter->second.end()) {
       return CEIter->second;
     } else {
-      return BarrierFenceSpaceAnalyzerResult(false, false);
+      return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
     }
   }
-  return BarrierFenceSpaceAnalyzerResult(false, false);
+  return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
 }
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::
@@ -736,44 +738,6 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::containsMacro(
   return false;
 }
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::isValidAccessPattern(
-    const std::map<const ParmVarDecl *,
-                   std::set<std::pair<SourceLocation, AccessMode>>>
-        &DeclUsedLocsMap,
-    const SyncCallInfo &SCI) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "===== isValidAccessPattern =====" << std::endl;
-#endif
-  for (auto &DeclUsedLocPair : DeclUsedLocsMap) {
-    bool FoundRead = false;
-    bool FoundWrite = false;
-    for (auto &LocModePair : DeclUsedLocPair.second) {
-      if (LocModePair.first.isMacroID() ||
-          (LocModePair.second == AccessMode::ReadWrite)) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-        std::cout << "isValidAccessPattern False case 1" << std::endl;
-#endif
-        return false;
-      }
-      if (LocModePair.second == AccessMode::Read) {
-        FoundRead = true;
-      } else if (LocModePair.second == AccessMode::Write) {
-        FoundWrite = true;
-      }
-      if (FoundRead && FoundWrite) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-        std::cout << "isValidAccessPattern False case 2" << std::endl;
-#endif
-        return false;
-      }
-    }
-  }
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "isValidAccessPattern True" << std::endl;
-#endif
-  return true;
-}
-
 bool clang::dpct::BarrierFenceSpaceAnalyzer::isAccessingMemory(
     const DeclRefExpr *DRE) {
   auto &Context = DpctGlobalInfo::getContext();
@@ -795,14 +759,63 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isAccessingMemory(
   return false;
 }
 
+bool clang::dpct::BarrierFenceSpaceAnalyzer::isValidAccessPattern(
+    const std::map<const ParmVarDecl *,
+                   std::set<std::pair<SourceLocation, AccessMode>>>
+        &DeclUsedLocsMap,
+    const SyncCallInfo &SCI) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  std::cout << "===== isValidAccessPattern =====" << std::endl;
+#endif
+  for (auto &DeclUsedLocPair : DeclUsedLocsMap) {
+    bool FoundRead = false;
+    bool FoundWrite = false;
+    bool FoundWriteInPredecessors = false;
+    bool FoundWriteInSuccessors = false;
+    for (auto &LocModePair : DeclUsedLocPair.second) {
+      if (LocModePair.first.isMacroID() ||
+          (LocModePair.second == AccessMode::ReadWrite)) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+        std::cout << "isValidAccessPattern False case 1" << std::endl;
+#endif
+        return false;
+      }
+      if (LocModePair.second == AccessMode::Read) {
+        FoundRead = true;
+      } else if (LocModePair.second == AccessMode::Write) {
+        FoundWrite = true;
+        if (isInRanges(LocModePair.first, SCI.Predecessors)) {
+          FoundWriteInPredecessors = true;
+        }
+        if (isInRanges(LocModePair.first, SCI.Successors)) {
+          FoundWriteInSuccessors = true;
+        }
+      }
+      if (FoundRead && FoundWrite) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+        std::cout << "isValidAccessPattern False case 2" << std::endl;
+#endif
+        return false;
+      }
+      if (FoundWriteInPredecessors && FoundWriteInSuccessors) {
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+        std::cout << "isValidAccessPattern False case 3" << std::endl;
+#endif
+        return false;
+      }
+    }
+  }
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  std::cout << "isValidAccessPattern True" << std::endl;
+#endif
+  return true;
+}
+
 std::unordered_map<
     std::string, std::unordered_map<
                      std::string, clang::dpct::BarrierFenceSpaceAnalyzerResult>>
     clang::dpct::BarrierFenceSpaceAnalyzer::CachedResults;
 
-// TODO: Implement more accuracy Predecessors and Successors. Then below code
-//       can be used for checking.
-#if 0
 bool clang::dpct::BarrierFenceSpaceAnalyzer::isInRanges(
     SourceLocation SL, std::vector<SourceRange> Ranges) {
   auto &SM = DpctGlobalInfo::getSourceManager();
@@ -814,42 +827,3 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isInRanges(
   }
   return false;
 }
-
-bool clang::dpct::BarrierFenceSpaceAnalyzer::isValidLocationSet(
-    const std::set<std::pair<SourceLocation, AccessMode>> &LocationSet,
-    const SyncCallInfo &SCI) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  const auto &SM = DpctGlobalInfo::getSourceManager();
-  std::cout << "===== isValidLocationSet: =====" << std::endl;
-  for (const auto &LocModePair : LocationSet) {
-    std::cout << "    DRE:" << LocModePair.first.printToString(SM)
-              << ", AccessMode:" << (int)(LocModePair.second) << std::endl;
-  }
-  std::cout << "Predecessors:" << std::endl;
-  for (const auto &Range : SCI.Predecessors) {
-    std::cout << "    [" << Range.getBegin().printToString(SM) << ", "
-              << Range.getEnd().printToString(SM) << "]" << std::endl;
-  }
-  std::cout << "Successors:" << std::endl;
-  for (const auto &Range : SCI.Successors) {
-    std::cout << "    [" << Range.getBegin().printToString(SM) << ", "
-              << Range.getEnd().printToString(SM) << "]" << std::endl;
-  }
-  std::cout << "===== isValidLocationSet end =====" << std::endl;
-#endif
-  bool DREInPredecessors = false;
-  bool DREInSuccessors = false;
-  for (auto &LocModePair : LocationSet) {
-    if (isInRanges(LocModePair.first, SCI.Predecessors)) {
-      DREInPredecessors = true;
-    }
-    if (isInRanges(LocModePair.first, SCI.Successors)) {
-      DREInSuccessors = true;
-    }
-    if (DREInPredecessors && DREInSuccessors) {
-      return false;
-    }
-  }
-  return true;
-}
-#endif

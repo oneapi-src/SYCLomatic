@@ -477,6 +477,7 @@ __global__ void mykernel(unsigned int *dev) {
   dev[tid]=as[kc];
 }
 
+// TODO: Further refine the analysis of barrier to support this case.
 // CHECK: void mykernel_1(unsigned char *buffer, long size,
 // CHECK-NEXT:                             unsigned int *histo,
 // CHECK-NEXT:                             const sycl::nd_item<3> &item_ct1,

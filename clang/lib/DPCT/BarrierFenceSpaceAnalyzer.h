@@ -25,11 +25,14 @@ namespace dpct {
 struct BarrierFenceSpaceAnalyzerResult {
   BarrierFenceSpaceAnalyzerResult() {}
   BarrierFenceSpaceAnalyzerResult(bool CanUseLocalBarrier,
-                                  bool MayDependOn1DKernel)
+                                  bool MayDependOn1DKernel,
+                                  std::string GlobalFunctionName)
       : CanUseLocalBarrier(CanUseLocalBarrier),
-        MayDependOn1DKernel(MayDependOn1DKernel) {}
+        MayDependOn1DKernel(MayDependOn1DKernel),
+        GlobalFunctionName(GlobalFunctionName) {}
   bool CanUseLocalBarrier = false;
   bool MayDependOn1DKernel = false;
+  std::string GlobalFunctionName;
 };
 
 class BarrierFenceSpaceAnalyzer
@@ -97,6 +100,7 @@ private:
   std::deque<SourceRange> LoopRange;
   int KernelDim = 3; // 3 or 1
   const FunctionDecl *FD = nullptr;
+  std::string GlobalFunctionName;
 
   std::unordered_map<const ParmVarDecl *, std::set<const DeclRefExpr *>>
       DefUseMap;
@@ -214,14 +218,7 @@ private:
     }
   };
 
-  // TODO: Implement more accuracy Predecessors and Successors. Then below code
-  //       can be used for checking.
-#if 0
   bool isInRanges(SourceLocation SL, std::vector<SourceRange> Ranges);
-  bool isValidLocationSet(
-      const std::set<std::pair<SourceLocation, AccessMode>> &LocationSet,
-      const SyncCallInfo &SCI);
-#endif
 };
 } // namespace dpct
 } // namespace clang

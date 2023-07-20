@@ -12046,7 +12046,7 @@ void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
     if (Res.CanUseLocalBarrier) {
       if (Res.MayDependOn1DKernel) {
         report(CE->getBeginLoc(), Diagnostics::ONE_DIMENSION_KERNEL_BARRIER,
-               true);
+               true, Res.GlobalFunctionName);
       }
       Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
                     MapNames::getClNamespace() +
