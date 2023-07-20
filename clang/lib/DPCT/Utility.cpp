@@ -3739,9 +3739,15 @@ bool maybeDependentCubType(const clang::TypeSourceInfo *TInfo) {
     if (auto *SpecType = dyn_cast<TemplateSpecializationType>(T)) {
       auto *TemplateDecl = SpecType->getTemplateName().getAsTemplateDecl();
       auto *Ctx = TemplateDecl->getDeclContext();
-      if (auto *CubNS = dyn_cast<NamespaceDecl>(Ctx)) {
-        return CubNS->getCanonicalDecl()->getName() == "cub";
+      auto *CubNS = dyn_cast<NamespaceDecl>(Ctx);
+      while (CubNS) {
+        if (CubNS->isInlineNamespace()) {
+          CubNS = dyn_cast<NamespaceDecl>(CubNS->getDeclContext());
+          continue;
+        }
+        break;
       }
+      return CubNS && CubNS->getCanonicalDecl()->getName() == "cub";
     }
     return false;
   };

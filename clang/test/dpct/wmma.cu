@@ -82,6 +82,43 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
   nvcuda::wmma::fragment<nvcuda::wmma::accumulator, WMMA_M, WMMA_N, WMMA_K, float> c_frag;
   // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_fill(item_ct1.get_sub_group(), acc_frag, 0.0f);
   nvcuda::wmma::fill_fragment(acc_frag, 0.0f);
+
+  // Loop over k
+  for (int i = 0; i < k_ld; i += WMMA_K) {
+    int aCol = i;
+    int aRow = warpM * WMMA_M;
+    int bCol = warpN * N;
+    int bRow = i;
+
+    // Bounds checking
+    if (aRow < m_ld && aCol < k_ld && bRow < k_ld && bCol < n_ld) {
+      // Load the inputs
+      // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_load(item_ct1.get_sub_group(), a_frag, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, const sycl::half>(a + aCol + aRow * lda), lda);
+      nvcuda::wmma::load_matrix_sync(a_frag, a + aCol + aRow * lda, lda);
+      // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_load(item_ct1.get_sub_group(), b_frag, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, const sycl::half>(b + bRow + bCol * ldb), ldb);
+      nvcuda::wmma::load_matrix_sync(b_frag, b + bRow + bCol * ldb, ldb);
+
+      // Perform the matrix multiplication
+      // CHECK: acc_frag = sycl::ext::oneapi::experimental::matrix::joint_matrix_mad(item_ct1.get_sub_group(), a_frag, b_frag, acc_frag);
+      nvcuda::wmma::mma_sync(acc_frag, a_frag, b_frag, acc_frag);
+    }
+  }
+
+  // Load in the current value of c, scale it by beta, and add this our result
+  // scaled by alpha
+  int cCol = warpN * WMMA_N;
+  int cRow = warpM * WMMA_M;
+
+  if (cRow < m_ld && cCol < n_ld) {
+    // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_load(item_ct1.get_sub_group(), c_frag, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, const float>(c + cCol + cRow * ldc), ldc, sycl::ext::oneapi::experimental::matrix::layout::row_major);
+    nvcuda::wmma::load_matrix_sync(c_frag, c + cCol + cRow * ldc, ldc,
+                                   nvcuda::wmma::mem_row_major);
+
+    // Store the output
+    // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_store(item_ct1.get_sub_group(), c_frag, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, float>(d + cCol + cRow * ldc), ldc, sycl::ext::oneapi::experimental::matrix::layout::row_major);
+    nvcuda::wmma::store_matrix_sync(d + cCol + cRow * ldc, c_frag, ldc,
+                                    nvcuda::wmma::mem_row_major);
+  }
 }
 
 int main() {

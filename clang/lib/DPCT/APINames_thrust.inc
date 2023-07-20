@@ -186,3 +186,4 @@ ENTRY(thrust::unique_by_key_copy, thrust::unique_by_key_copy, true, NO_FLAG, P4,
 ENTRY(thrust::unique_copy, thrust::unique_copy, true, NO_FLAG, P4, "comment")
 ENTRY(thrust::upper_bound, thrust::upper_bound, true, NO_FLAG, P4, "Successful")
 ENTRY(thrust::unique_count, thrust::unique_count, false, NO_FLAG, P4, "comment")
+ENTRY_MEMBER_FUNCTION(thrust::device_ptr, get, get, true, NO_FLAG, P4, "Successful")

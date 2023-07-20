@@ -615,6 +615,65 @@ void DpctGlobalInfo::processCudaArchMacro(){
   }
 }
 
+void DpctGlobalInfo::postProcess() {
+  auto &MSMap = DpctGlobalInfo::getMainSourceFileMap();
+  bool isFirstPass = !DpctGlobalInfo::getRunRound();
+  processCudaArchMacro();
+  for (auto &Element : HostDeviceFuncInfoMap) {
+    auto &Info = Element.second;
+    if (Info.isCalledInHost && Info.isDefInserted) {
+      Info.needGenerateHostCode = true;
+      if (Info.PostFixId == -1) {
+        Info.PostFixId = HostDeviceFuncInfo::MaxId++;
+      }
+      for (auto &E : Info.LocInfos) {
+        auto &LocInfo = E.second;
+        if (isFirstPass) {
+          auto &MSFiles = MSMap[LocInfo.FilePath];
+          for (auto &File : MSFiles) {
+            if (ProcessedFile.count(File))
+              ReProcessFile.emplace(File);
+          }
+        }
+        if (LocInfo.Type == HDFuncInfoType::HDFI_Call &&
+          !LocInfo.Processed) {
+          if(LocInfo.CalledByHostDeviceFunction && isFirstPass) {
+            LocInfo.Processed = true;
+            continue;
+          }
+          LocInfo.Processed = true;
+          auto R = std::make_shared<ExtReplacement>(
+              LocInfo.FilePath, LocInfo.FuncEndOffset, 0,
+              "_host_ct" + std::to_string(Info.PostFixId), nullptr);
+          addReplacement(R);
+        }
+      }
+    }
+  }
+  if (!ReProcessFile.empty() && isFirstPass) {
+    DpctGlobalInfo::setNeedRunAgain(true);
+  }
+  for (auto &File : FileMap) {
+    File.second->postProcess();
+  }
+  if (!isFirstPass) {
+    for (auto &Element : HostDeviceFuncInfoMap) {
+      auto &Info = Element.second;
+      if (Info.needGenerateHostCode) {
+        for (auto &E : Info.LocInfos) {
+          auto &LocInfo = E.second;
+          if (LocInfo.Type == HDFuncInfoType::HDFI_Call) {
+            continue;
+          }
+          auto &ReplLists =
+              FileMap[LocInfo.FilePath]->getRepls()->getReplMap();
+          generateHostCode(ReplLists, LocInfo, Info.PostFixId);
+        }
+      }
+    }
+  }
+}
+
 void DpctGlobalInfo::generateHostCode(
     std::multimap<unsigned int, std::shared_ptr<clang::dpct::ExtReplacement>>
         &ProcessedReplList,
