@@ -1960,7 +1960,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cublasDataType_t", "curandState_t", "curandState",
               "curandStateXORWOW_t", "curandStateXORWOW",
               "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
-              "curandStateMRG32k3a_t", "curandStateMRG32k3a", "thrust::minus",
+              "curandStateMRG32k3a_t", "curandStateMRG32k3a",
               "thrust::negate", "thrust::logical_or", "thrust::equal_to",
               "thrust::less", "cudaSharedMemConfig", "curandGenerator_t",
               "curandRngType_t", "cufftHandle", "cufftReal", "cufftDoubleReal",
@@ -2101,9 +2101,9 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
     BeginLoc = Tok.getLocation();
   }
   auto LAngleLoc = TSL.getLAngleLoc();
-
-  const char *Start = SM->getCharacterData(BeginLoc);
-  const char *End = SM->getCharacterData(LAngleLoc);
+  auto Range = getDefinitionRange(BeginLoc, LAngleLoc);
+  const char *Start = SM->getCharacterData(Range.getBegin());
+  const char *End = SM->getCharacterData(Range.getEnd());
   auto TyLen = End - Start;
   if (TyLen <= 0)
     return false;

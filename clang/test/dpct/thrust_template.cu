@@ -182,8 +182,8 @@ void foo_host(){
   thrust::replace(thrust::device, A.begin(), A.end(), 0, 399);
   thrust::replace(thrust::device, B.begin(), B.end(), 0, 399);
 
-  //CHECK: #define TM std::minus<T>()
-  //CHECK-NEXT: oneapi::dpl::adjacent_difference(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), R.begin(), TM);
+  //CHECK: #define TM thrust::minus<T>()
+  //CHECK-NEXT: oneapi::dpl::adjacent_difference(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), R.begin(), std::minus<T>);
   //CHECK-NEXT: oneapi::dpl::adjacent_difference(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), R.begin(), std::minus<T>());
   //CHECK-NEXT: oneapi::dpl::adjacent_difference(oneapi::dpl::execution::seq, B.begin(), B.end(), R2.begin(), std::minus<T>());
   //CHECK-NEXT: oneapi::dpl::adjacent_difference(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), R.begin());
@@ -197,7 +197,7 @@ void foo_host(){
   thrust::adjacent_difference(thrust::device, A.begin(), A.end(), R.begin());
   thrust::adjacent_difference(thrust::seq, B.begin(), B.end(), R2.begin());
 
-  //CHECK: oneapi::dpl::inclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), R.begin(), TM);
+  //CHECK: oneapi::dpl::inclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), R.begin(), std::minus<T>);
   //CHECK-NEXT: oneapi::dpl::inclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), R.begin(), std::minus<T>());
   //CHECK-NEXT: oneapi::dpl::inclusive_scan(oneapi::dpl::execution::seq, B.begin(), B.end(), R2.begin(), std::minus<T>());
   //CHECK-NEXT: oneapi::dpl::inclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), R.begin());
