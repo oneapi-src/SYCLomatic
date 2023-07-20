@@ -14,7 +14,7 @@ public:
 // CHECK: static dpct::constant_memory<TestStruct, 0> t1;
 __constant__ TestStruct t1;
 
-// CHECK: void member_acc(TestStruct t1) {
+// CHECK: void member_acc(TestStruct const t1) {
 // CHECK-NEXT:  t1.test();
 // CHECK-NEXT:}
 __global__ void member_acc() {
@@ -36,7 +36,7 @@ __constant__ int const_init_2d[5][5] = {{1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7,
 
 
 // CHECK: struct FuncObj {
-// CHECK-NEXT: void operator()(float *out, int index, float *const_angle) {
+// CHECK-NEXT: void operator()(float *out, int index, float const *const_angle) {
 // CHECK-NEXT:   out[index] = const_angle[index];
 struct FuncObj {
   __device__ void operator()(float *out, int index) {
@@ -45,7 +45,7 @@ struct FuncObj {
 };
 
 // CHECK:void simple_kernel(float *d_array, const sycl::nd_item<3> &[[ITEM:item_ct1]],
-// CHECK-NEXT:              float *const_angle, int * const_ptr) {
+// CHECK-NEXT:              float const *const_angle, int * const  const_ptr) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range(2) + [[ITEM]].get_local_id(2);
 // CHECK-NEXT:  FuncObj f;
@@ -73,7 +73,7 @@ __device__ __constant__ float const_one;
 
 // CHECK:void simple_kernel_one(float *d_array, const sycl::nd_item<3> &[[ITEM:item_ct1]],
 // CHECK-NEXT:                  dpct::accessor<float, dpct::constant, 2> const_float,
-// CHECK-NEXT:                  float const_one) {
+// CHECK-NEXT:                  float const const_one) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range(2) + [[ITEM]].get_local_id(2);
 // CHECK-NEXT:  if (index < 33) {

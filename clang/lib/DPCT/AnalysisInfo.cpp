@@ -3807,8 +3807,6 @@ std::string CtTypeInfo::getRangeArgument(const std::string &MemSize,
 void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
   switch (TL.getTypeLocClass()) {
   case TypeLoc::Qualified:
-    if (TL.getType().getQualifiers().hasConst())
-      NeedConstQualifierForNonUSM = false;
     BaseName = TL.getType().getLocalQualifiers().getAsString(
         DpctGlobalInfo::getContext().getPrintingPolicy());
     return setTypeInfo(TYPELOC_CAST(QualifiedTypeLoc).getUnqualifiedLoc(),
