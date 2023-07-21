@@ -69,8 +69,8 @@ public:
 #undef VISIT_NODE
 
 public:
-  BarrierFenceSpaceAnalyzerResult
-  canSetLocalFenceSpace(const CallExpr *CE, bool SkipCacheInAnalyzer = false);
+  BarrierFenceSpaceAnalyzerResult analyze(const CallExpr *CE,
+                                          bool SkipCacheInAnalyzer = false);
 
 private:
   enum class AccessMode : int { Read = 0, Write, ReadWrite };
@@ -88,14 +88,14 @@ private:
     Ranges Predecessors;
     Ranges Successors;
   };
-  bool isValidAccessPattern(
+  bool isSafeToUseLocalBarrier(
       const std::map<const ParmVarDecl *,
                      std::set<std::pair<SourceLocation, AccessMode>>>
-          &DeclUsedLocsMap,
+          &DefLocInfoMap,
       const SyncCallInfo &SCI);
   bool containsMacro(const SourceLocation &SL, const SyncCallInfo &SCI);
-  bool isNoOverlappingAccessAmongWorkItems(int KernelDim,
-                                           const DeclRefExpr *DRE);
+  bool hasOverlappingAccessAmongWorkItems(int KernelDim,
+                                          const DeclRefExpr *DRE);
   std::vector<std::pair<const CallExpr *, SyncCallInfo>> SyncCallsVec;
   std::deque<SourceRange> LoopRange;
   int KernelDim = 3; // 3 or 1
@@ -106,16 +106,10 @@ private:
       DefUseMap;
   std::string CELoc;
   std::string FDLoc;
-
-  // If meets exit condition when visit AST nodes, all __syncthreads() in this
-  // kernel function cannot set local fence space.
-  // FDLoc is in the map means this kernel function is analyzed.
-  // CELoc is not in the map means cannot set local fence space.
-  void setFalseForThisFunctionDecl() {
-    if (!SkipCacheInAnalyzer)
-      CachedResults[FDLoc] =
-          std::unordered_map<std::string, BarrierFenceSpaceAnalyzerResult>();
-  }
+  void constructDefUseMap();
+  void simplifyAndConvertToDefLocInfoMap(
+      std::map<const ParmVarDecl *,
+               std::set<std::pair<SourceLocation, AccessMode>>> &DefLocInfoMap);
 
   /// (FD location, (Call location, result))
   static std::unordered_map<
@@ -146,8 +140,6 @@ private:
     return nullptr;
   }
 
-  bool hasGlobalMemoryAccess(std::shared_ptr<DeviceFunctionInfo> DFI,
-                             bool IsKernel);
   std::set<const Expr *> DeviceFunctionCallArgs;
 
   class TypeAnalyzer {

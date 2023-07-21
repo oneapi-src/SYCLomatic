@@ -12072,14 +12072,14 @@ void SyncThreadsMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
     const FunctionTemplateDecl *FTD = FD->getDescribedFunctionTemplate();
     if (FTD) {
       if (FTD->specializations().empty()) {
-        emplaceReplacement(A.canSetLocalFenceSpace(CE), CE);
+        emplaceReplacement(A.analyze(CE), CE);
       }
     } else {
       if (FD->getTemplateSpecializationKind() ==
           TemplateSpecializationKind::TSK_Undeclared) {
-        emplaceReplacement(A.canSetLocalFenceSpace(CE), CE);
+        emplaceReplacement(A.analyze(CE), CE);
       } else {
-        auto CurRes = A.canSetLocalFenceSpace(CE, true);
+        auto CurRes = A.analyze(CE, true);
         std::string LocHash = getHashStrFromLoc(CE->getBeginLoc());
         auto Iter = LocationResultMapForTemplate.find(LocHash);
         if (Iter != LocationResultMapForTemplate.end()) {

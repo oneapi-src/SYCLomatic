@@ -188,6 +188,15 @@ clang::dpct::BarrierFenceSpaceAnalyzer::matchAllDRE(const VarDecl *TargetDecl,
   return Set;
 }
 
+/// @brief Check if a DRE is assigned to another DRE.
+/// This function checks the ancestors of \p CurrentDRE iteratively.
+/// If it finds the parent node is AssignmentOp and \p CurrentDRE is
+/// in RHS and the LHS is pointer type, it will insert all DREs in LHS into
+/// return value.
+/// If it finds the parent node is VarDecl and the VarDecl is pointer type, it
+/// will insert the VaeDecl into return value.
+/// @param CurrentDRE The DRE to need to be checked.
+/// @return Assigned DREs or VDs
 std::pair<std::set<const clang::DeclRefExpr *>,
           std::set<const clang::VarDecl *>>
 clang::dpct::BarrierFenceSpaceAnalyzer::isAssignedToAnotherDREOrVD(
@@ -314,8 +323,88 @@ clang::dpct::BarrierFenceSpaceAnalyzer::getAccessKind(
   return AccessMode::Read;
 }
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::hasGlobalMemoryAccess(
-    std::shared_ptr<DeviceFunctionInfo> DFI, bool IsKernel) {
+namespace {
+using namespace clang;
+using namespace dpct;
+// Check if this DRE(Ptr) matches pattern: Ptr[Idx]
+// clang-format off
+//    ArraySubscriptExpr <col:7, col:16> 'float' lvalue
+//    |-ImplicitCastExpr <col:7> 'float *' <LValueToRValue>
+//    | `-DeclRefExpr <col:7> 'float *' lvalue ParmVar 0x555a6c216d68 'Ptr' 'float *'
+//    `-ImplicitCastExpr <col:12> 'int' <LValueToRValue>
+//      `-DeclRefExpr <col:12> 'int' lvalue Var 0x555a6c217078 'Idx' 'int'
+// clang-format on
+const ArraySubscriptExpr *isParentArraySubscriptExpr(const DeclRefExpr *Node) {
+  auto ICE = DpctGlobalInfo::findParent<ImplicitCastExpr>(Node);
+  if (!ICE || (ICE->getCastKind() != CastKind::CK_LValueToRValue))
+    return nullptr;
+  auto ASE = DpctGlobalInfo::findParent<ArraySubscriptExpr>(ICE);
+  if (!ASE)
+    return nullptr;
+  return ASE;
+}
+
+const Expr *isIdxOfASEConstValue(const ArraySubscriptExpr *ASE) {
+  // IdxVD must be local variable and must be defined in this function
+  const DeclRefExpr *IdxDRE =
+      dyn_cast_or_null<DeclRefExpr>(ASE->getIdx()->IgnoreImpCasts());
+  if (!IdxDRE)
+    return nullptr;
+  const VarDecl *IdxVD = dyn_cast_or_null<VarDecl>(IdxDRE->getDecl());
+  if (IdxVD->getKind() != Decl::Var)
+    return nullptr;
+  const auto *IdxFD = dyn_cast_or_null<FunctionDecl>(IdxVD->getDeclContext());
+  if (!IdxFD)
+    return nullptr;
+  const Stmt *IdxVDContext = IdxFD->getBody();
+
+  using namespace ast_matchers;
+  // VD's DRE should only be used as rvalue
+  auto DREMatcher = findAll(declRefExpr(isDeclSameAs(IdxVD)).bind("DRE"));
+  auto MatchedResults =
+      match(DREMatcher, *IdxVDContext, DpctGlobalInfo::getContext());
+  for (const auto &Res : MatchedResults) {
+    const DeclRefExpr *RefDRE = Res.getNodeAs<DeclRefExpr>("DRE");
+    auto ICE = DpctGlobalInfo::findParent<ImplicitCastExpr>(RefDRE);
+    if (!ICE || (ICE->getCastKind() != CastKind::CK_LValueToRValue))
+      return nullptr;
+  }
+  if (!IdxVD->hasInit())
+    return nullptr;
+  return IdxVD->getInit()->IgnoreImpCasts();
+}
+
+bool isIterationSpaceBuiltinVar(const PseudoObjectExpr *Node,
+                                const std::string &BuiltinNameRef,
+                                const std::string &FieldNameRef) {
+  using namespace ast_matchers;
+  if (!Node)
+    return false;
+  auto BuiltinMatcher = findAll(
+      memberExpr(hasObjectExpression(opaqueValueExpr(hasSourceExpression(
+                     declRefExpr(to(varDecl(hasAnyName("threadIdx", "blockDim",
+                                                       "blockIdx"))))
+                         .bind("declRefExpr")))),
+                 hasParent(implicitCastExpr(
+                     hasParent(callExpr(hasParent(pseudoObjectExpr()))))))
+          .bind("memberExpr"));
+  auto MatchedResults =
+      match(BuiltinMatcher, *Node, DpctGlobalInfo::getContext());
+  if (MatchedResults.size() != 1)
+    return false;
+  const auto Res = MatchedResults[0];
+  auto ME = Res.getNodeAs<MemberExpr>("memberExpr");
+  auto DRE = Res.getNodeAs<DeclRefExpr>("declRefExpr");
+  if (!ME || !DRE)
+    return false;
+  StringRef BuiltinName = DRE->getDecl()->getName();
+  StringRef FieldName = ME->getMemberDecl()->getName();
+  if (BuiltinName == BuiltinNameRef && FieldName == FieldNameRef)
+    return true;
+  return false;
+}
+bool hasGlobalMemoryAccess(std::shared_ptr<DeviceFunctionInfo> DFI,
+                           bool IsKernel) {
   if (!DFI)
     return false;
 
@@ -338,11 +427,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::hasGlobalMemoryAccess(
   }
   return false;
 }
-
-clang::dpct::BarrierFenceSpaceAnalyzerResult
-clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
-    const CallExpr *CE, bool SkipCacheInAnalyzer) {
-  this->SkipCacheInAnalyzer = SkipCacheInAnalyzer;
+bool isMeetAnalyisPrerequirements(const CallExpr *CE, const FunctionDecl *&FD) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
   std::cout << "BarrierFenceSpaceAnalyzer Analyzing ..." << std::endl;
 #endif
@@ -352,82 +437,34 @@ clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
                  "CE->getEndLoc().isMacroID()"
               << std::endl;
 #endif
-    return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
+    return false;
   }
-  auto FD = DpctGlobalInfo::findAncestor<FunctionDecl>(CE);
+  FD = DpctGlobalInfo::findAncestor<FunctionDecl>(CE);
   if (!FD) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
     std::cout << "Return False case G: !FD" << std::endl;
 #endif
-    return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
+    return false;
   }
   if (!FD->hasAttr<CUDAGlobalAttr>()) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
     std::cout << "Return False case H: !FD->hasAttr<CUDAGlobalAttr>()"
               << std::endl;
 #endif
-    return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
+    return false;
   }
-
-  CELoc = getHashStrFromLoc(CE->getBeginLoc());
-  FDLoc = getHashStrFromLoc(FD->getBeginLoc());
-
-  auto FDIter = CachedResults.find(FDLoc);
-  if (!SkipCacheInAnalyzer) {
-    if (FDIter != CachedResults.end()) {
-      auto CEIter = FDIter->second.find(CELoc);
-      if (CEIter != FDIter->second.end()) {
-        return CEIter->second;
-      } else {
-        return BarrierFenceSpaceAnalyzerResult(false, false,
-                                               GlobalFunctionName);
-      }
-    }
-  }
-
   if (hasGlobalMemoryAccess(DeviceFunctionDecl::LinkRedecls(FD), true)) {
-    setFalseForThisFunctionDecl();
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
     std::cout << "Return False case I: Found device/managed variable usage"
               << std::endl;
 #endif
-    return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
+    return false;
   }
+  return true;
+}
+} // namespace
 
-  this->FD = FD;
-  GlobalFunctionName = FD->getDeclName().getAsString();
-
-  auto QueryKernelDim = [](const FunctionDecl *FD) -> int {
-    const auto DFD = DpctGlobalInfo::getInstance().findDeviceFunctionDecl(FD);
-    if (!DFD)
-      return 3;
-    const auto FuncInfo = DFD->getFuncInfo();
-    if (!FuncInfo)
-      return 3;
-    const auto MVM =
-        MemVarMap::getHeadWithoutPathCompression(&(FuncInfo->getVarMap()));
-    if (!MVM)
-      return 3;
-    return MVM->Dim;
-  };
-  KernelDim = QueryKernelDim(FD);
-
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "Before traversing current __global__ function" << std::endl;
-#endif
-
-  // analyze this FD
-  // Traverse AST, analysis the context info of kernel calling sycthreads()
-  //   1. Find each syncthreads call's predecessor parts and successor parts.
-  //   2. When meet __device__ function is called, if the device function is not
-  //      in allow list, exit.
-  //   3. Check all DREs(Declare Ref Expr), if __device__ variable is used,
-  //      exit.
-  if (!this->TraverseDecl(const_cast<FunctionDecl *>(FD))) {
-    setFalseForThisFunctionDecl();
-    return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
-  }
-
+void clang::dpct::BarrierFenceSpaceAnalyzer::constructDefUseMap() {
   auto getSize =
       [](const std::unordered_map<const ParmVarDecl *,
                                   std::set<const DeclRefExpr *>> &DefUseMap)
@@ -496,17 +533,22 @@ clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     }
   }
 #endif
+}
 
+void clang::dpct::BarrierFenceSpaceAnalyzer::simplifyAndConvertToDefLocInfoMap(
+    std::map<const ParmVarDecl *,
+             std::set<std::pair<SourceLocation, AccessMode>>> &DefLocInfoMap) {
   std::map<const ParmVarDecl *,
            std::set<std::pair<const DeclRefExpr *, AccessMode>>>
-      DeclUsedMap;
+      DefDREInfoMap;
+  // simplify DefUseMap
   for (const auto &Pair : DefUseMap) {
     for (const auto &Item : Pair.second) {
       if (isAccessingMemory(Item)) {
-        if (isNoOverlappingAccessAmongWorkItems(KernelDim, Item)) {
+        if (!hasOverlappingAccessAmongWorkItems(KernelDim, Item)) {
           MayDependOn1DKernel = true;
         } else {
-          DeclUsedMap[Pair.first].insert(
+          DefDREInfoMap[Pair.first].insert(
               std::make_pair(Item, getAccessKind(Item)));
         }
       }
@@ -514,28 +556,88 @@ clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
   }
 
   // Convert DRE to Location for comparing
-  std::map<const ParmVarDecl *, std::set<std::pair<SourceLocation, AccessMode>>>
-      DeclUsedLocsMap;
-  for (const auto &Pair : DeclUsedMap) {
+  for (const auto &Pair : DefDREInfoMap) {
     for (const auto &Item : Pair.second) {
-      DeclUsedLocsMap[Pair.first].insert(
+      DefLocInfoMap[Pair.first].insert(
           std::make_pair(Item.first->getBeginLoc(), Item.second));
     }
   }
 
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "===== DeclUsedLocsMap contnet: =====" << std::endl;
-  for (const auto &DeclSetPair : DeclUsedLocsMap) {
+  std::cout << "===== DefLocInfoMap contnet: =====" << std::endl;
+  for (const auto &LocInfo : DefLocInfoMap) {
     const auto &SM = DpctGlobalInfo::getSourceManager();
-    std::cout << "Decl:" << DeclSetPair.first->getBeginLoc().printToString(SM)
+    std::cout << "Decl:" << LocInfo.first->getBeginLoc().printToString(SM)
               << std::endl;
-    for (const auto &Pair : DeclSetPair.second) {
+    for (const auto &Pair : LocInfo.second) {
       std::cout << "    DRE:" << Pair.first.printToString(SM)
                 << ", AccessMode:" << (int)(Pair.second) << std::endl;
     }
   }
-  std::cout << "===== DeclUsedLocsMap contnet end =====" << std::endl;
+  std::cout << "===== DefLocInfoMap contnet end =====" << std::endl;
 #endif
+}
+
+clang::dpct::BarrierFenceSpaceAnalyzerResult
+clang::dpct::BarrierFenceSpaceAnalyzer::analyze(const CallExpr *CE,
+                                                bool SkipCacheInAnalyzer) {
+  // Check prerequirements
+  const FunctionDecl *FD = nullptr;
+  if (!isMeetAnalyisPrerequirements(CE, FD))
+    return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
+
+  // Init values
+  this->SkipCacheInAnalyzer = SkipCacheInAnalyzer;
+  this->FD = FD;
+  GlobalFunctionName = FD->getDeclName().getAsString();
+  auto QueryKernelDim = [](const FunctionDecl *FD) -> int {
+    const auto DFD = DpctGlobalInfo::getInstance().findDeviceFunctionDecl(FD);
+    if (!DFD)
+      return 3;
+    const auto FuncInfo = DFD->getFuncInfo();
+    if (!FuncInfo)
+      return 3;
+    const auto MVM =
+        MemVarMap::getHeadWithoutPathCompression(&(FuncInfo->getVarMap()));
+    if (!MVM)
+      return 3;
+    return MVM->Dim;
+  };
+  KernelDim = QueryKernelDim(FD);
+
+  CELoc = getHashStrFromLoc(CE->getBeginLoc());
+  FDLoc = getHashStrFromLoc(FD->getBeginLoc());
+
+  auto FDIter = CachedResults.find(FDLoc);
+  if (!SkipCacheInAnalyzer) {
+    if (FDIter != CachedResults.end()) {
+      auto CEIter = FDIter->second.find(CELoc);
+      if (CEIter != FDIter->second.end()) {
+        return CEIter->second;
+      } else {
+        return BarrierFenceSpaceAnalyzerResult(false, false,
+                                               GlobalFunctionName);
+      }
+    }
+  }
+
+#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
+  std::cout << "Before traversing current __global__ function" << std::endl;
+#endif
+
+  if (!this->TraverseDecl(const_cast<FunctionDecl *>(FD))) {
+    if (!SkipCacheInAnalyzer) {
+      CachedResults[FDLoc] =
+          std::unordered_map<std::string, BarrierFenceSpaceAnalyzerResult>();
+    }
+    return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
+  }
+
+  constructDefUseMap();
+  std::map<const ParmVarDecl *, std::set<std::pair<SourceLocation, AccessMode>>>
+      DefLocInfoMap;
+  simplifyAndConvertToDefLocInfoMap(DefLocInfoMap);
+
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
   std::cout << "===== SyncCall info contnet: =====" << std::endl;
   for (const auto &SyncCall : SyncCallsVec) {
@@ -560,7 +662,7 @@ clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     for (auto &SyncCall : SyncCallsVec) {
       if (CE == SyncCall.first) {
         return BarrierFenceSpaceAnalyzerResult(
-            isValidAccessPattern(DeclUsedLocsMap, SyncCall.second),
+            isSafeToUseLocalBarrier(DefLocInfoMap, SyncCall.second),
             MayDependOn1DKernel, GlobalFunctionName);
       }
     }
@@ -569,7 +671,7 @@ clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
   for (auto &SyncCall : SyncCallsVec) {
     CachedResults[FDLoc][getHashStrFromLoc(SyncCall.first->getBeginLoc())] =
         BarrierFenceSpaceAnalyzerResult(
-            isValidAccessPattern(DeclUsedLocsMap, SyncCall.second),
+            isSafeToUseLocalBarrier(DefLocInfoMap, SyncCall.second),
             MayDependOn1DKernel, GlobalFunctionName);
   }
 
@@ -586,139 +688,71 @@ clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
   return BarrierFenceSpaceAnalyzerResult(false, false, GlobalFunctionName);
 }
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::
-    isNoOverlappingAccessAmongWorkItems(int KernelDim, const DeclRefExpr *DRE) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::hasOverlappingAccessAmongWorkItems(
+    int KernelDim, const DeclRefExpr *DRE) {
   using namespace ast_matchers;
   if (KernelDim != 1) {
-    return false;
+    return true;
   }
-  // Check if this DRE(Ptr) matches pattern: Ptr[Idx]
-  // clang-format off
-  //    ArraySubscriptExpr <col:7, col:16> 'float' lvalue
-  //    |-ImplicitCastExpr <col:7> 'float *' <LValueToRValue>
-  //    | `-DeclRefExpr <col:7> 'float *' lvalue ParmVar 0x555a6c216d68 'Ptr' 'float *'
-  //    `-ImplicitCastExpr <col:12> 'int' <LValueToRValue>
-  //      `-DeclRefExpr <col:12> 'int' lvalue Var 0x555a6c217078 'Idx' 'int'
-  // clang-format on
-  auto IsParentArraySubscriptExpr =
-      [](const DeclRefExpr *Node) -> const ArraySubscriptExpr * {
-    auto ICE = DpctGlobalInfo::findParent<ImplicitCastExpr>(Node);
-    if (!ICE || (ICE->getCastKind() != CastKind::CK_LValueToRValue))
-      return nullptr;
-    auto ASE = DpctGlobalInfo::findParent<ArraySubscriptExpr>(ICE);
-    if (!ASE)
-      return nullptr;
-    return ASE;
-  };
-  const ArraySubscriptExpr *ASE = IsParentArraySubscriptExpr(DRE);
+
+  const ArraySubscriptExpr *ASE = isParentArraySubscriptExpr(DRE);
   if (!ASE)
-    return false;
+    return true;
 
-  // IdxVD must be local variable and must be defined in this function
-  const DeclRefExpr *IdxDRE =
-      dyn_cast_or_null<DeclRefExpr>(ASE->getIdx()->IgnoreImpCasts());
-  if (!IdxDRE)
-    return false;
-  const VarDecl *IdxVD = dyn_cast_or_null<VarDecl>(IdxDRE->getDecl());
-  if (IdxVD->getKind() != Decl::Var)
-    return false;
-  const auto *IdxFD = dyn_cast_or_null<FunctionDecl>(IdxVD->getDeclContext());
-  if (!IdxFD)
-    return false;
-  const Stmt *IdxVDContext = IdxFD->getBody();
-
-  // VD's DRE should only be used as rvalue
-  auto DREMatcher = findAll(declRefExpr(isDeclSameAs(IdxVD)).bind("DRE"));
-  auto MatchedResults =
-      match(DREMatcher, *IdxVDContext, DpctGlobalInfo::getContext());
-  for (const auto &Res : MatchedResults) {
-    const DeclRefExpr *RefDRE = Res.getNodeAs<DeclRefExpr>("DRE");
-    auto ICE = DpctGlobalInfo::findParent<ImplicitCastExpr>(RefDRE);
-    if (!ICE || (ICE->getCastKind() != CastKind::CK_LValueToRValue))
-      return false;
-  }
+  const Expr *InitExpr = isIdxOfASEConstValue(ASE);
+  if (!InitExpr)
+    return true;
 
   // Check if Index variable match pattern: blockIdx.x * blockDim.x +
   // threadIdx.x
-  if (!IdxVD->hasInit())
-    return false;
-  auto IsIterationSpaceBuiltinVar =
-      [](const PseudoObjectExpr *Node, const std::string &BuiltinNameRef,
-         const std::string &FieldNameRef) -> bool {
-    if (!Node)
-      return false;
-    auto BuiltinMatcher = findAll(
-        memberExpr(hasObjectExpression(opaqueValueExpr(hasSourceExpression(
-                       declRefExpr(to(varDecl(hasAnyName(
-                                       "threadIdx", "blockDim", "blockIdx"))))
-                           .bind("declRefExpr")))),
-                   hasParent(implicitCastExpr(
-                       hasParent(callExpr(hasParent(pseudoObjectExpr()))))))
-            .bind("memberExpr"));
-    auto MatchedResults =
-        match(BuiltinMatcher, *Node, DpctGlobalInfo::getContext());
-    if (MatchedResults.size() != 1)
-      return false;
-    const auto Res = MatchedResults[0];
-    auto ME = Res.getNodeAs<MemberExpr>("memberExpr");
-    auto DRE = Res.getNodeAs<DeclRefExpr>("declRefExpr");
-    if (!ME || !DRE)
-      return false;
-    StringRef BuiltinName = DRE->getDecl()->getName();
-    StringRef FieldName = ME->getMemberDecl()->getName();
-    if (BuiltinName == BuiltinNameRef && FieldName == FieldNameRef)
-      return true;
-    return false;
-  };
-  const Expr *InitExpr = IdxVD->getInit()->IgnoreImpCasts();
   // Case 1: blockIdx.x * blockDim.x + threadIdx.x
   // Case 2: blockDim.x * blockIdx.x + threadIdx.x
   // Case 3: threadIdx.x + blockIdx.x * blockDim.x
   // Case 4: threadIdx.x + blockDim.x * blockIdx.x
   const BinaryOperator *BOAdd = dyn_cast<BinaryOperator>(InitExpr);
   if (!BOAdd || BOAdd->getOpcode() != BinaryOperatorKind::BO_Add)
-    return false;
+    return true;
   const BinaryOperator *BOMul = dyn_cast<BinaryOperator>(BOAdd->getLHS());
   if (BOMul &&
-      IsIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOAdd->getRHS()),
+      isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOAdd->getRHS()),
                                  "threadIdx", "__fetch_builtin_x")) {
-    if (IsIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getLHS()),
+    if (isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getLHS()),
                                    "blockIdx", "__fetch_builtin_x") &&
-        IsIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getRHS()),
+        isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getRHS()),
                                    "blockDim", "__fetch_builtin_x")) {
       // Case 1
-      return true;
+      return false;
     }
-    if (IsIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getRHS()),
+    if (isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getRHS()),
                                    "blockIdx", "__fetch_builtin_x") &&
-        IsIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getLHS()),
+        isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getLHS()),
                                    "blockDim", "__fetch_builtin_x")) {
       // Case 2
-      return true;
+      return false;
     }
-    return false;
+    return true;
   }
   BOMul = dyn_cast<BinaryOperator>(BOAdd->getRHS());
   if (BOMul &&
-      IsIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOAdd->getLHS()),
+      isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOAdd->getLHS()),
                                  "threadIdx", "__fetch_builtin_x")) {
-    if (IsIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getLHS()),
+    if (isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getLHS()),
                                    "blockIdx", "__fetch_builtin_x") &&
-        IsIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getRHS()),
+        isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getRHS()),
                                    "blockDim", "__fetch_builtin_x")) {
       // Case 3
-      return true;
+      return false;
     }
-    if (IsIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getRHS()),
+    if (isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getRHS()),
                                    "blockIdx", "__fetch_builtin_x") &&
-        IsIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getLHS()),
+        isIterationSpaceBuiltinVar(dyn_cast<PseudoObjectExpr>(BOMul->getLHS()),
                                    "blockDim", "__fetch_builtin_x")) {
       // Case 4
-      return true;
+      return false;
     }
-    return false;
+    return true;
   }
-  return false;
+  return true;
 }
 
 bool clang::dpct::BarrierFenceSpaceAnalyzer::containsMacro(
@@ -759,24 +793,37 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isAccessingMemory(
   return false;
 }
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::isValidAccessPattern(
+/// @brief Check if it is safe to use local barrier to migrate current
+/// __syncthreads call.
+/// The requirements to return ture:
+///   For each global pointer Decl :
+///   (1) all of its reference points must be read accesses
+///   or
+///   (2) all of its reference points must be wirte accesses and write accesses
+///   must all in predecessor or all in successor
+/// @param DefUsageInfoMap Saves info of all global memory pointers' reference
+/// points
+/// @param SCI Saves predecessor ranges and successor ranges of current
+/// __syncthreads call
+/// @return Is safe or not
+bool clang::dpct::BarrierFenceSpaceAnalyzer::isSafeToUseLocalBarrier(
     const std::map<const ParmVarDecl *,
                    std::set<std::pair<SourceLocation, AccessMode>>>
-        &DeclUsedLocsMap,
+        &DefLocInfoMap,
     const SyncCallInfo &SCI) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "===== isValidAccessPattern =====" << std::endl;
+  std::cout << "===== isSafeToUseLocalBarrier =====" << std::endl;
 #endif
-  for (auto &DeclUsedLocPair : DeclUsedLocsMap) {
+  for (auto &LocInfo : DefLocInfoMap) {
     bool FoundRead = false;
     bool FoundWrite = false;
     bool FoundWriteInPredecessors = false;
     bool FoundWriteInSuccessors = false;
-    for (auto &LocModePair : DeclUsedLocPair.second) {
+    for (auto &LocModePair : LocInfo.second) {
       if (LocModePair.first.isMacroID() ||
           (LocModePair.second == AccessMode::ReadWrite)) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-        std::cout << "isValidAccessPattern False case 1" << std::endl;
+        std::cout << "isSafeToUseLocalBarrier False case 1" << std::endl;
 #endif
         return false;
       }
@@ -793,20 +840,20 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isValidAccessPattern(
       }
       if (FoundRead && FoundWrite) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-        std::cout << "isValidAccessPattern False case 2" << std::endl;
+        std::cout << "isSafeToUseLocalBarrier False case 2" << std::endl;
 #endif
         return false;
       }
       if (FoundWriteInPredecessors && FoundWriteInSuccessors) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-        std::cout << "isValidAccessPattern False case 3" << std::endl;
+        std::cout << "isSafeToUseLocalBarrier False case 3" << std::endl;
 #endif
         return false;
       }
     }
   }
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-  std::cout << "isValidAccessPattern True" << std::endl;
+  std::cout << "isSafeToUseLocalBarrier True" << std::endl;
 #endif
   return true;
 }
