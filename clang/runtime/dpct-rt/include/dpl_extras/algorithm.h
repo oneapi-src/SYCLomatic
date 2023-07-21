@@ -1807,17 +1807,21 @@ template <typename ExecutionPolicy, typename InputIterator,
   auto zipped_vals_beg =
       make_zip_iterator(tr_nontrivial_flags, count_beg, const_it);
   auto pred = [](bool lhs, bool rhs) { return !rhs; };
-  // The first call to op in reduce_by_segment will have the second of the input
-  // values as the rhs parameter as the first is passed as lhs. The first
-  // element's flag of 1 due to the padded left shift will always be ignored and
-  // will never be added to the length count which is only updated in
-  // get<2>(lhs) += get<0>(rhs) and initialized to 1.
   auto op = [](auto lhs, const auto &rhs) {
     using ::std::get;
-    // Update count of run. The run's starting index is stored in get<1>(lhs) as
-    // the initial value in the segment and is preserved throughout the
-    // segment's reduction.
+
+    // Update length count of run.
+    // The first call to this op will use the first element of the input as lhs
+    // and second element as rhs. get<0>(first_element) is ignored in favor of a
+    // constant `1` in get<2>, avoiding the need for special casing the first
+    // element. The constant `1` utilizes the knowledge that each segment begins
+    // with a nontrivial run.
     get<2>(lhs) += get<0>(rhs);
+
+    // A run's starting index is stored in get<1>(lhs) as the initial value in
+    // the segment and is preserved throughout the segment's reduction as the
+    // nontrivial run's offset.
+
     return ::std::move(lhs);
   };
   auto zipped_out_beg = make_zip_iterator(oneapi::dpl::discard_iterator(),
