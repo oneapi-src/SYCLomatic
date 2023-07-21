@@ -4420,6 +4420,11 @@ void requestHelperFeatureForTypeNames(const std::string Name) {
   }
 }
 
+// isFuncDeclDefTogether will analysis FuncDeclLink and determine if the
+// parameter FD has only one decl. The function will return true only if the
+// following two conditions are met.
+// Condition 1: The FD has no preceding FuncDecl in FuncDeclLink.
+// Condition 2: The FD is the last function decl in FuncDeclLink.
 bool isFuncDeclDefTogether(const clang::FunctionDecl *FD) {
   if (!FD)
     return false;
