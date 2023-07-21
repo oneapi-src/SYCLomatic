@@ -303,15 +303,14 @@ __device__ int bar12(int num) {
 }
 
 __global__ void test12(uint8_t *pout) {
+  __shared__ float local[123];
   int idx = 456;
   idx = bar12(idx);
-  //CHECK:  pout[idx] = 123;
-  //CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
-  //CHECK-NEXT:  uint8_t a = 4;
-  pout[idx] = 123;
+  local[idx] = idx;
+  //CHECK:  item_ct1.barrier(sycl::access::fence_space::local_space);
+  //CHECK-NEXT:  pout[idx] = local[idx];
   __syncthreads();
-  uint8_t a = 4;
-  uint8_t b = abs(a);
+  pout[idx] = local[idx];
 }
 
 __device__ int d_a[10];

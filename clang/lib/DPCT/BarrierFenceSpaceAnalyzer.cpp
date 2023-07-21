@@ -81,10 +81,11 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(const DeclRefExpr *DRE) {
     return true;
 
   TypeAnalyzer TA;
-  int ParamterTypeKind = TA.getInputParamterTypeKind(PVD->getType());
-  if (ParamterTypeKind == 1) {
+  TypeAnalyzer::ParamterTypeKind Kind =
+      TA.getInputParamterTypeKind(PVD->getType());
+  if (Kind == TypeAnalyzer::ParamterTypeKind::CanSkipAnalysis) {
     return true;
-  } else if (ParamterTypeKind == -1) {
+  } else if (Kind == TypeAnalyzer::ParamterTypeKind::Unsupported) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
     std::cout << "Return False case A: "
               << PVD->getBeginLoc().printToString(
@@ -313,8 +314,8 @@ clang::dpct::BarrierFenceSpaceAnalyzer::getAccessKind(
   return AccessMode::Read;
 }
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::isPotentialGlobalMemoryAccess(
-    std::shared_ptr<DeviceFunctionInfo> DFI, bool IsInGlobalFunction) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::hasGlobalMemoryAccess(
+    std::shared_ptr<DeviceFunctionInfo> DFI, bool IsKernel) {
   if (!DFI)
     return false;
 
@@ -327,12 +328,12 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isPotentialGlobalMemoryAccess(
       return true;
   }
   for (const auto &Call : DFI->getCallExprMap()) {
-    if (Call.second->getName() == "__syncthreads" && !IsInGlobalFunction) {
+    if (Call.second->getName() == "__syncthreads" && !IsKernel) {
       // Currently we do not support the analysis for __syncthreads in
       // __device__ function
       return false;
     }
-    if (isPotentialGlobalMemoryAccess(Call.second->getFuncInfo(), false))
+    if (hasGlobalMemoryAccess(Call.second->getFuncInfo(), false))
       return true;
   }
   return false;
@@ -340,8 +341,8 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isPotentialGlobalMemoryAccess(
 
 clang::dpct::BarrierFenceSpaceAnalyzerResult
 clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
-    const CallExpr *CE, bool IsDryRun) {
-  this->IsDryRun = IsDryRun;
+    const CallExpr *CE, bool SkipCacheInAnalyzer) {
+  this->SkipCacheInAnalyzer = SkipCacheInAnalyzer;
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
   std::cout << "BarrierFenceSpaceAnalyzer Analyzing ..." << std::endl;
 #endif
@@ -372,7 +373,7 @@ clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
   FDLoc = getHashStrFromLoc(FD->getBeginLoc());
 
   auto FDIter = CachedResults.find(FDLoc);
-  if (!IsDryRun) {
+  if (!SkipCacheInAnalyzer) {
     if (FDIter != CachedResults.end()) {
       auto CEIter = FDIter->second.find(CELoc);
       if (CEIter != FDIter->second.end()) {
@@ -384,8 +385,7 @@ clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     }
   }
 
-  if (isPotentialGlobalMemoryAccess(DeviceFunctionDecl::LinkRedecls(FD),
-                                    true)) {
+  if (hasGlobalMemoryAccess(DeviceFunctionDecl::LinkRedecls(FD), true)) {
     setFalseForThisFunctionDecl();
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
     std::cout << "Return False case I: Found device/managed variable usage"
@@ -556,7 +556,7 @@ clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
   std::cout << "===== SyncCall info contnet end =====" << std::endl;
 #endif
 
-  if (IsDryRun) {
+  if (SkipCacheInAnalyzer) {
     for (auto &SyncCall : SyncCallsVec) {
       if (CE == SyncCall.first) {
         return BarrierFenceSpaceAnalyzerResult(

@@ -69,8 +69,8 @@ public:
 #undef VISIT_NODE
 
 public:
-  BarrierFenceSpaceAnalyzerResult canSetLocalFenceSpace(const CallExpr *CE,
-                                                        bool IsDryRun = false);
+  BarrierFenceSpaceAnalyzerResult
+  canSetLocalFenceSpace(const CallExpr *CE, bool SkipCacheInAnalyzer = false);
 
 private:
   enum class AccessMode : int { Read = 0, Write, ReadWrite };
@@ -112,7 +112,7 @@ private:
   // FDLoc is in the map means this kernel function is analyzed.
   // CELoc is not in the map means cannot set local fence space.
   void setFalseForThisFunctionDecl() {
-    if (!IsDryRun)
+    if (!SkipCacheInAnalyzer)
       CachedResults[FDLoc] =
           std::unordered_map<std::string, BarrierFenceSpaceAnalyzerResult>();
   }
@@ -122,7 +122,7 @@ private:
       std::string,
       std::unordered_map<std::string, BarrierFenceSpaceAnalyzerResult>>
       CachedResults;
-  bool IsDryRun = false;
+  bool SkipCacheInAnalyzer = false;
   bool MayDependOn1DKernel = false;
 
   template <class TargetTy, class NodeTy>
@@ -146,53 +146,53 @@ private:
     return nullptr;
   }
 
-  bool isPotentialGlobalMemoryAccess(std::shared_ptr<DeviceFunctionInfo> DFI,
-                                     bool IsInGlobalFunction);
+  bool hasGlobalMemoryAccess(std::shared_ptr<DeviceFunctionInfo> DFI,
+                             bool IsKernel);
   std::set<const Expr *> DeviceFunctionCallArgs;
 
   class TypeAnalyzer {
   public:
-    /// Decide the input parameter type class
-    /// \return One of below 3 int values:
-    ///  1: can skip analysis
-    ///  0: need analysis
-    /// -1: unsupport to analyze
-    int getInputParamterTypeKind(clang::QualType QT) {
-      bool Res = getTypeInfo(QT.getTypePtr());
+    enum class ParamterTypeKind : int {
+      NeedAnalysis = 0,
+      CanSkipAnalysis,
+      Unsupported
+    };
+    ParamterTypeKind getInputParamterTypeKind(clang::QualType QT) {
+      bool Res = canBeAnalyzed(QT.getTypePtr());
       if (!Res)
-        return -1;
+        return ParamterTypeKind::Unsupported;
       if (PointerLevel) {
         if (IsConstPtr)
-          return 1;
-        return 0;
+          return ParamterTypeKind::CanSkipAnalysis;
+        return ParamterTypeKind::NeedAnalysis;
       }
-      return 1;
+      return ParamterTypeKind::CanSkipAnalysis;
     }
 
   private:
     int PointerLevel = 0;
     bool IsConstPtr = false;
     bool IsClass = false;
-    bool getTypeInfo(const clang::Type *TypePtr) {
+    bool canBeAnalyzed(const clang::Type *TypePtr) {
       switch (TypePtr->getTypeClass()) {
       case clang::Type::TypeClass::ConstantArray:
-        return getTypeInfo(dyn_cast<clang::ConstantArrayType>(TypePtr)
-                               ->getElementType()
-                               .getTypePtr());
+        return canBeAnalyzed(dyn_cast<clang::ConstantArrayType>(TypePtr)
+                                 ->getElementType()
+                                 .getTypePtr());
       case clang::Type::TypeClass::Pointer:
         PointerLevel++;
         if (PointerLevel >= 2 || IsClass)
           return false;
         IsConstPtr = TypePtr->getPointeeType().isConstQualified();
-        return getTypeInfo(TypePtr->getPointeeType().getTypePtr());
+        return canBeAnalyzed(TypePtr->getPointeeType().getTypePtr());
       case clang::Type::TypeClass::Elaborated:
-        return getTypeInfo(
+        return canBeAnalyzed(
             dyn_cast<clang::ElaboratedType>(TypePtr)->desugar().getTypePtr());
       case clang::Type::TypeClass::Typedef:
-        return getTypeInfo(dyn_cast<clang::TypedefType>(TypePtr)
-                               ->getDecl()
-                               ->getUnderlyingType()
-                               .getTypePtr());
+        return canBeAnalyzed(dyn_cast<clang::TypedefType>(TypePtr)
+                                 ->getDecl()
+                                 ->getUnderlyingType()
+                                 .getTypePtr());
       case clang::Type::TypeClass::Record:
         IsClass = true;
         if (PointerLevel &&
@@ -200,15 +200,15 @@ private:
           return false;
         for (const auto &Field :
              dyn_cast<clang::RecordType>(TypePtr)->getDecl()->fields()) {
-          if (!getTypeInfo(Field->getType().getTypePtr())) {
+          if (!canBeAnalyzed(Field->getType().getTypePtr())) {
             return false;
           }
         }
         return true;
       case clang::Type::TypeClass::SubstTemplateTypeParm:
-        return getTypeInfo(dyn_cast<clang::SubstTemplateTypeParmType>(TypePtr)
-                               ->getReplacementType()
-                               .getTypePtr());
+        return canBeAnalyzed(dyn_cast<clang::SubstTemplateTypeParmType>(TypePtr)
+                                 ->getReplacementType()
+                                 .getTypePtr());
       default:
         if (TypePtr->isFundamentalType())
           return true;
