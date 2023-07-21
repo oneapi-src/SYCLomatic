@@ -209,8 +209,6 @@ private:
       }
     }
   };
-
-  bool isInRanges(SourceLocation SL, std::vector<SourceRange> Ranges);
 };
 } // namespace dpct
 } // namespace clang

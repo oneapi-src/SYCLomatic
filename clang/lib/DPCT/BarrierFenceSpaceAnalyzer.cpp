@@ -247,10 +247,12 @@ clang::dpct::BarrierFenceSpaceAnalyzer::getAccessKind(
     const DeclRefExpr *CurrentDRE) {
   bool FoundDeref = false;
   bool FoundBO = false;
+  bool FoundCE = false;
   const BinaryOperator *BO = nullptr;
   const UnaryOperator *UOInBO = nullptr;
   const ArraySubscriptExpr *ASEInBO = nullptr;
   const ParmVarDecl *PVD = nullptr;
+  const CallExpr *CE = nullptr;
 
   auto &Context = DpctGlobalInfo::getContext();
   DynTypedNode Current = DynTypedNode::create(*CurrentDRE);
@@ -259,12 +261,17 @@ clang::dpct::BarrierFenceSpaceAnalyzer::getAccessKind(
     if (Parents[0].get<FunctionDecl>() && Parents[0].get<FunctionDecl>() == FD)
       break;
 
-    const auto CE = Parents[0].get<CallExpr>();
-    UOInBO = Parents[0].get<UnaryOperator>();
-    ASEInBO = Parents[0].get<ArraySubscriptExpr>();
-    BO = Parents[0].get<BinaryOperator>();
+    if (!FoundCE)
+      CE = Parents[0].get<CallExpr>();
+    if (!FoundDeref)
+      UOInBO = Parents[0].get<UnaryOperator>();
+    if (!FoundDeref)
+      ASEInBO = Parents[0].get<ArraySubscriptExpr>();
+    if (!FoundBO)
+      BO = Parents[0].get<BinaryOperator>();
 
-    if (CE && CE->getDirectCallee()) {
+    if (!FoundCE && CE && CE->getDirectCallee()) {
+      FoundCE = true;
       int Idx = 0;
       for (const auto Arg : CE->arguments()) {
         if (Arg == Current.get<Expr>())
@@ -817,8 +824,6 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isSafeToUseLocalBarrier(
   for (auto &LocInfo : DefLocInfoMap) {
     bool FoundRead = false;
     bool FoundWrite = false;
-    bool FoundWriteInPredecessors = false;
-    bool FoundWriteInSuccessors = false;
     for (auto &LocModePair : LocInfo.second) {
       if (LocModePair.first.isMacroID() ||
           (LocModePair.second == AccessMode::ReadWrite)) {
@@ -831,22 +836,10 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::isSafeToUseLocalBarrier(
         FoundRead = true;
       } else if (LocModePair.second == AccessMode::Write) {
         FoundWrite = true;
-        if (isInRanges(LocModePair.first, SCI.Predecessors)) {
-          FoundWriteInPredecessors = true;
-        }
-        if (isInRanges(LocModePair.first, SCI.Successors)) {
-          FoundWriteInSuccessors = true;
-        }
       }
       if (FoundRead && FoundWrite) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
         std::cout << "isSafeToUseLocalBarrier False case 2" << std::endl;
-#endif
-        return false;
-      }
-      if (FoundWriteInPredecessors && FoundWriteInSuccessors) {
-#ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
-        std::cout << "isSafeToUseLocalBarrier False case 3" << std::endl;
 #endif
         return false;
       }
@@ -862,15 +855,3 @@ std::unordered_map<
     std::string, std::unordered_map<
                      std::string, clang::dpct::BarrierFenceSpaceAnalyzerResult>>
     clang::dpct::BarrierFenceSpaceAnalyzer::CachedResults;
-
-bool clang::dpct::BarrierFenceSpaceAnalyzer::isInRanges(
-    SourceLocation SL, std::vector<SourceRange> Ranges) {
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  for (auto &Range : Ranges) {
-    if (SM.getFileOffset(Range.getBegin()) < SM.getFileOffset(SL) &&
-        SM.getFileOffset(SL) < SM.getFileOffset(Range.getEnd())) {
-      return true;
-    }
-  }
-  return false;
-}
