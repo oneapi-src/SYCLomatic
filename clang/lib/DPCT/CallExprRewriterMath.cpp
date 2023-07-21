@@ -907,7 +907,7 @@ bool useMathLibdevice() {
   return DpctGlobalInfo::useIntelDeviceMath();
 }
 
-bool useExtBFloat16() { return DpctGlobalInfo::useExtBFloat16(); }
+bool useExtBFloat16Math() { return DpctGlobalInfo::useExtBFloat16Math(); }
 
 auto IsPerf = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::isOptimizeMigration();
@@ -1123,7 +1123,7 @@ createMathAPIRewriterExperimentalBfloat16(
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
         &&Rewriter2,
     T) {
-  if (math::useExtBFloat16() && Rewriter1.second)
+  if (math::useExtBFloat16Math() && Rewriter1.second)
     return createConditionalFactory(
         math::IsDefinedInCUDA(), std::move(Rewriter1),
         {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});

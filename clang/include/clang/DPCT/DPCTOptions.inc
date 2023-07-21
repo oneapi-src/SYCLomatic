@@ -366,7 +366,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
              DPCT_OPT_ENUM("matrix", int(ExperimentalFeatures::Exp_Matrix),
         "Experimental extension that allows use of matrix extension like class joint_matrix.\n",
         false),
-             DPCT_OPT_ENUM("bfloat16", int(ExperimentalFeatures::Exp_BFloat16),
+             DPCT_OPT_ENUM("bfloat16_math_functions", int(ExperimentalFeatures::Exp_BFloat16Math),
         "Experimental extension that allows use of bfloat16 math functions.\n",
         false)
            ),
