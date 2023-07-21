@@ -47,53 +47,19 @@ FEATURE_REQUEST_FACTORY(
                                             "atomic_fetch_add",
                                         makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1)))))))
-#if 1
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CONDITIONAL_FACTORY_ENTRY(
-        GetUsingGenericSpace,
-        CALL_FACTORY_ENTRY(
-            "atomicAdd_system",
-            CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                     MapNames::getDpctNamespace() + "atomic_fetch_add",
-                     LITERAL(MapNames::getClNamespace() +
-                             "access::address_space::generic_space"),
-                     LITERAL(MapNames::getClNamespace() +
-                             "memory_order::relaxed"),
-                     LITERAL(MapNames::getClNamespace() +
-                             "memory_scope::system")),
-                 makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1))),
-        CONDITIONAL_FACTORY_ENTRY(
-            GetHasSharedAttr(0),
-            CALL_FACTORY_ENTRY(
-                "atomicAdd_system",
-                CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                         MapNames::getDpctNamespace() + "atomic_fetch_add",
-                         LITERAL(MapNames::getClNamespace() +
-                                 "access::address_space::local_space")),
-                     makeCallArgCreatorWithCall(0),
-                     makeCallArgCreatorWithCall(1))),
-            CONDITIONAL_FACTORY_ENTRY(
-                ReportMemoryAttrDeduce(0),
-                WARNING_FACTORY_ENTRY(
-                    "atomicAdd_system",
-                    CALL_FACTORY_ENTRY("atomicAdd_system",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "atomic_fetch_add",
-                                            makeCallArgCreatorWithCall(0),
-                                            makeCallArgCreatorWithCall(1))),
-                    Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
-                    makeCallArgCreatorWithCall(0),
-                    std::string("atomic_fetch_add"),
-                    std::string("atomic_fetch_add<") +
-                        MapNames::getClNamespace() +
-                        std::string("access::address_space::local_space>")),
-                CALL_FACTORY_ENTRY("atomicAdd_system",
-                                   CALL(MapNames::getDpctNamespace() +
-                                            "atomic_fetch_add",
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1)))))))
-#endif
+
+CALL_FACTORY_ENTRY(
+    "atomicAdd_system",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+        MapNames::getDpctNamespace() + "atomic_fetch_add",
+        LITERAL(MapNames::getClNamespace() +
+                "access::address_space::generic_space"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_order::relaxed"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_scope::system")),
+    makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1)))
+
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
@@ -136,56 +102,17 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1)))))))
 
-#if 1
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CONDITIONAL_FACTORY_ENTRY(
-        GetUsingGenericSpace,
-        CALL_FACTORY_ENTRY(
-            "atomicSub_system",
-            CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                     MapNames::getDpctNamespace() + "atomic_fetch_sub",
-                     LITERAL(MapNames::getClNamespace() +
-                             "access::address_space::generic_space"),
-                     LITERAL(MapNames::getClNamespace() +
-                             "memory_order::relaxed"),
-                     LITERAL(MapNames::getClNamespace() +
-                             "memory_scope::system")),
-                 makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1))),
-        CONDITIONAL_FACTORY_ENTRY(
-            GetHasSharedAttr(0),
-            CALL_FACTORY_ENTRY(
-                "atomicSub_system",
-                CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                         MapNames::getDpctNamespace() + "atomic_fetch_sub",
-                         LITERAL(MapNames::getClNamespace() +
-                                 "access::address_space::local_space")),
-                     makeCallArgCreatorWithCall(0),
-                     makeCallArgCreatorWithCall(1))),
-            CONDITIONAL_FACTORY_ENTRY(
-                ReportMemoryAttrDeduce(0),
-                WARNING_FACTORY_ENTRY(
-                    "atomicSub_system",
-                    CALL_FACTORY_ENTRY("atomicSub_system",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "atomic_fetch_sub",
-                                            makeCallArgCreatorWithCall(0),
-                                            makeCallArgCreatorWithCall(1))),
-                    Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
-                    makeCallArgCreatorWithCall(0),
-                    std::string("atomic_fetch_sub"),
-                    std::string("atomic_fetch_sub<") +
-                        MapNames::getClNamespace() +
-                        std::string("access::address_space::local_space>")),
-                CALL_FACTORY_ENTRY("atomicSub_system",
-                                   CALL(MapNames::getDpctNamespace() +
-                                            "atomic_fetch_sub",
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1)))))))
-
-
-#endif
-
+CALL_FACTORY_ENTRY(
+    "atomicSub_system",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+        MapNames::getDpctNamespace() + "atomic_fetch_sub",
+        LITERAL(MapNames::getClNamespace() +
+                "access::address_space::generic_space"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_order::relaxed"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_scope::system")),
+    makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1)))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
@@ -229,55 +156,17 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1)))))))
 
-#if 1
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CONDITIONAL_FACTORY_ENTRY(
-        GetUsingGenericSpace,
-        CALL_FACTORY_ENTRY(
-            "atomicExch_system",
-            CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                     MapNames::getDpctNamespace() + "atomic_exchange",
-                     LITERAL(MapNames::getClNamespace() +
-                             "access::address_space::generic_space"),
-                     LITERAL(MapNames::getClNamespace() +
-                             "memory_order::relaxed"),
-                     LITERAL(MapNames::getClNamespace() +
-                             "memory_scope::system")),
-                 makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1))),
-        CONDITIONAL_FACTORY_ENTRY(
-            GetHasSharedAttr(0),
-            CALL_FACTORY_ENTRY(
-                "atomicExch_system",
-                CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                         MapNames::getDpctNamespace() + "atomic_exchange",
-                         LITERAL(MapNames::getClNamespace() +
-                                 "access::address_space::local_space")),
-                     makeCallArgCreatorWithCall(0),
-                     makeCallArgCreatorWithCall(1))),
-            CONDITIONAL_FACTORY_ENTRY(
-                ReportMemoryAttrDeduce(0),
-                WARNING_FACTORY_ENTRY(
-                    "atomicExch_system",
-                    CALL_FACTORY_ENTRY("atomicExch_system",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "atomic_exchange",
-                                            makeCallArgCreatorWithCall(0),
-                                            makeCallArgCreatorWithCall(1))),
-                    Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
-                    makeCallArgCreatorWithCall(0),
-                    std::string("atomic_exchange"),
-                    std::string("atomic_exchange<") +
-                        MapNames::getClNamespace() +
-                        std::string("access::address_space::local_space>")),
-                CALL_FACTORY_ENTRY("atomicExch_system",
-                                   CALL(MapNames::getDpctNamespace() +
-                                            "atomic_exchange",
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1)))))))
-
-
-#endif
+CALL_FACTORY_ENTRY(
+    "atomicExch_system",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+        MapNames::getDpctNamespace() + "atomic_exchange",
+        LITERAL(MapNames::getClNamespace() +
+                "access::address_space::generic_space"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_order::relaxed"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_scope::system")),
+    makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1)))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
@@ -321,56 +210,18 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1)))))))
 
-#if 1
+CALL_FACTORY_ENTRY(
+    "atomicMax_system",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+        MapNames::getDpctNamespace() + "atomic_fetch_max",
+        LITERAL(MapNames::getClNamespace() +
+                "access::address_space::generic_space"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_order::relaxed"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_scope::system")),
+    makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1)))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CONDITIONAL_FACTORY_ENTRY(
-        GetUsingGenericSpace,
-        CALL_FACTORY_ENTRY(
-            "atomicMax_system",
-            CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                     MapNames::getDpctNamespace() + "atomic_fetch_max",
-                     LITERAL(MapNames::getClNamespace() +
-                             "access::address_space::generic_space"),
-                     LITERAL(MapNames::getClNamespace() +
-                             "memory_order::relaxed"),
-                     LITERAL(MapNames::getClNamespace() +
-                             "memory_scope::system")),
-                 makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1))),
-        CONDITIONAL_FACTORY_ENTRY(
-            GetHasSharedAttr(0),
-            CALL_FACTORY_ENTRY(
-                "atomicMax_system",
-                CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                         MapNames::getDpctNamespace() + "atomic_fetch_max",
-                         LITERAL(MapNames::getClNamespace() +
-                                 "access::address_space::local_space")),
-                     makeCallArgCreatorWithCall(0),
-                     makeCallArgCreatorWithCall(1))),
-            CONDITIONAL_FACTORY_ENTRY(
-                ReportMemoryAttrDeduce(0),
-                WARNING_FACTORY_ENTRY(
-                    "atomicMax_system",
-                    CALL_FACTORY_ENTRY("atomicMax_system",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "atomic_fetch_max",
-                                            makeCallArgCreatorWithCall(0),
-                                            makeCallArgCreatorWithCall(1))),
-                    Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
-                    makeCallArgCreatorWithCall(0),
-                    std::string("atomic_fetch_max"),
-                    std::string("atomic_fetch_max<") +
-                        MapNames::getClNamespace() +
-                        std::string("access::address_space::local_space>")),
-                CALL_FACTORY_ENTRY("atomicMax_system",
-                                   CALL(MapNames::getDpctNamespace() +
-                                            "atomic_fetch_max",
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1)))))))
-
-
-#endif
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
@@ -413,55 +264,18 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1)))))))
 
-#if 1
+CALL_FACTORY_ENTRY(
+    "atomicMin_system",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+        MapNames::getDpctNamespace() + "atomic_fetch_min",
+        LITERAL(MapNames::getClNamespace() +
+                "access::address_space::generic_space"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_order::relaxed"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_scope::system")),
+    makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1)))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CONDITIONAL_FACTORY_ENTRY(
-        GetUsingGenericSpace,
-        CALL_FACTORY_ENTRY(
-            "atomicMin_system",
-            CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                     MapNames::getDpctNamespace() + "atomic_fetch_min",
-                     LITERAL(MapNames::getClNamespace() +
-                             "access::address_space::generic_space"),
-                     LITERAL(MapNames::getClNamespace() +
-                             "memory_order::relaxed"),
-                     LITERAL(MapNames::getClNamespace() +
-                             "memory_scope::system")),
-                 makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1))),
-        CONDITIONAL_FACTORY_ENTRY(
-            GetHasSharedAttr(0),
-            CALL_FACTORY_ENTRY(
-                "atomicMin_system",
-                CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                         MapNames::getDpctNamespace() + "atomic_fetch_min",
-                         LITERAL(MapNames::getClNamespace() +
-                                 "access::address_space::local_space")),
-                     makeCallArgCreatorWithCall(0),
-                     makeCallArgCreatorWithCall(1))),
-            CONDITIONAL_FACTORY_ENTRY(
-                ReportMemoryAttrDeduce(0),
-                WARNING_FACTORY_ENTRY(
-                    "atomicMin_system",
-                    CALL_FACTORY_ENTRY("atomicMin_system",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "atomic_fetch_min",
-                                            makeCallArgCreatorWithCall(0),
-                                            makeCallArgCreatorWithCall(1))),
-                    Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
-                    makeCallArgCreatorWithCall(0),
-                    std::string("atomic_fetch_min"),
-                    std::string("atomic_fetch_min<") +
-                        MapNames::getClNamespace() +
-                        std::string("access::address_space::local_space>")),
-                CALL_FACTORY_ENTRY("atomicMin_system",
-                                   CALL(MapNames::getDpctNamespace() +
-                                            "atomic_fetch_min",
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1)))))))
-
-#endif
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
@@ -510,62 +324,19 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(1),
                                         makeCallArgCreatorWithCall(2)))))))
 
-#if 1
-
-
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CONDITIONAL_FACTORY_ENTRY(
-        GetUsingGenericSpace,
-        CALL_FACTORY_ENTRY(
-            "atomicCAS_system",
-            CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                     MapNames::getDpctNamespace() +
-                         "atomic_compare_exchange_strong",
-                     LITERAL(MapNames::getClNamespace() +
-                             "access::address_space::generic_space"),
-                     LITERAL(MapNames::getClNamespace() +
-                             "memory_order::relaxed"),
-                     LITERAL(MapNames::getClNamespace() +
-                             "memory_scope::system")),
-                 makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1),
-                 makeCallArgCreatorWithCall(2))),
-        CONDITIONAL_FACTORY_ENTRY(
-            GetHasSharedAttr(0),
-            CALL_FACTORY_ENTRY(
-                "atomicCAS_system",
-                CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                         MapNames::getDpctNamespace() +
-                             "atomic_compare_exchange_strong",
-                         LITERAL(MapNames::getClNamespace() +
-                                 "access::address_space::local_space")),
-                     makeCallArgCreatorWithCall(0),
-                     makeCallArgCreatorWithCall(1),
-                     makeCallArgCreatorWithCall(2))),
-            CONDITIONAL_FACTORY_ENTRY(
-                ReportMemoryAttrDeduce(0),
-                WARNING_FACTORY_ENTRY(
-                    "atomicCAS_system",
-                    CALL_FACTORY_ENTRY(
-                        "atomicCAS_system", CALL(MapNames::getDpctNamespace() +
-                                              "atomic_compare_exchange_strong",
-                                          makeCallArgCreatorWithCall(0),
-                                          makeCallArgCreatorWithCall(1),
-                                          makeCallArgCreatorWithCall(2))),
-                    Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
-                    makeCallArgCreatorWithCall(0),
-                    std::string("atomic_compare_exchange_strong"),
-                    std::string("atomic_compare_exchange_strong<") +
-                        MapNames::getClNamespace() +
-                        std::string("access::address_space::local_space>")),
-                CALL_FACTORY_ENTRY("atomicCAS_system",
-                                   CALL(MapNames::getDpctNamespace() +
-                                            "atomic_compare_exchange_strong",
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1),
-                                        makeCallArgCreatorWithCall(2)))))))
-
-#endif
+CALL_FACTORY_ENTRY(
+    "atomicCAS_system",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+        MapNames::getDpctNamespace() +
+            "atomic_compare_exchange_strong",
+        LITERAL(MapNames::getClNamespace() +
+                "access::address_space::generic_space"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_order::relaxed"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_scope::system")),
+    makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1),
+    makeCallArgCreatorWithCall(2)))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
@@ -610,58 +381,18 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1)))))))
 
-#if 1
+CALL_FACTORY_ENTRY(
+    "atomicInc_system",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+        MapNames::getDpctNamespace() + "atomic_fetch_compare_inc",
+        LITERAL(MapNames::getClNamespace() +
+                "access::address_space::generic_space"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_order::relaxed"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_scope::system")),
+    makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1)))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CONDITIONAL_FACTORY_ENTRY(
-        GetUsingGenericSpace,
-        CALL_FACTORY_ENTRY(
-            "atomicInc_system",
-            CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                     MapNames::getDpctNamespace() + "atomic_fetch_compare_inc",
-                     LITERAL(MapNames::getClNamespace() +
-                             "access::address_space::generic_space"),
-                     LITERAL(MapNames::getClNamespace() +
-                             "memory_order::relaxed"),
-                     LITERAL(MapNames::getClNamespace() +
-                             "memory_scope::system")),
-                 makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1))),
-        CONDITIONAL_FACTORY_ENTRY(
-            GetHasSharedAttr(0),
-            CALL_FACTORY_ENTRY(
-                "atomicInc_system",
-                CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                         MapNames::getDpctNamespace() +
-                             "atomic_fetch_compare_inc",
-                         LITERAL(MapNames::getClNamespace() +
-                                 "access::address_space::local_space")),
-                     makeCallArgCreatorWithCall(0),
-                     makeCallArgCreatorWithCall(1))),
-            CONDITIONAL_FACTORY_ENTRY(
-                ReportMemoryAttrDeduce(0),
-                WARNING_FACTORY_ENTRY(
-                    "atomicInc_system",
-                    CALL_FACTORY_ENTRY("atomicInc_system",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "atomic_fetch_compare_inc",
-                                            makeCallArgCreatorWithCall(0),
-                                            makeCallArgCreatorWithCall(1))),
-                    Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
-                    makeCallArgCreatorWithCall(0),
-                    std::string("atomic_fetch_compare_inc"),
-                    std::string("atomic_fetch_compare_inc<") +
-                        MapNames::getClNamespace() +
-                        std::string("access::address_space::local_space>")),
-                CALL_FACTORY_ENTRY("atomicInc_system",
-                                   CALL(MapNames::getDpctNamespace() +
-                                            "atomic_fetch_compare_inc",
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1)))))))
-
-
-
-#endif
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
@@ -705,56 +436,18 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1)))))))
 
+CALL_FACTORY_ENTRY(
+    "atomicDec_system",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+        MapNames::getDpctNamespace() + "atomic_fetch_compare_dec",
+        LITERAL(MapNames::getClNamespace() +
+                "access::address_space::generic_space"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_order::relaxed"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_scope::system")),
+    makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1)))
 
-#if 1
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CONDITIONAL_FACTORY_ENTRY(
-        GetUsingGenericSpace,
-        CALL_FACTORY_ENTRY(
-            "atomicDec_system",
-            CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                     MapNames::getDpctNamespace() + "atomic_fetch_compare_dec",
-                     LITERAL(MapNames::getClNamespace() +
-                             "access::address_space::generic_space"),
-                     LITERAL(MapNames::getClNamespace() +
-                             "memory_order::relaxed"),
-                     LITERAL(MapNames::getClNamespace() +
-                             "memory_scope::system")),
-                 makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1))),
-        CONDITIONAL_FACTORY_ENTRY(
-            GetHasSharedAttr(0),
-            CALL_FACTORY_ENTRY(
-                "atomicDec_system",
-                CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                         MapNames::getDpctNamespace() +
-                             "atomic_fetch_compare_dec",
-                         LITERAL(MapNames::getClNamespace() +
-                                 "access::address_space::local_space")),
-                     makeCallArgCreatorWithCall(0),
-                     makeCallArgCreatorWithCall(1))),
-            CONDITIONAL_FACTORY_ENTRY(
-                ReportMemoryAttrDeduce(0),
-                WARNING_FACTORY_ENTRY(
-                    "atomicDec_system",
-                    CALL_FACTORY_ENTRY("atomicDec_system",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "atomic_fetch_compare_dec",
-                                            makeCallArgCreatorWithCall(0),
-                                            makeCallArgCreatorWithCall(1))),
-                    Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
-                    makeCallArgCreatorWithCall(0),
-                    std::string("atomic_fetch_compare_dec"),
-                    std::string("atomic_fetch_compare_dec<") +
-                        MapNames::getClNamespace() +
-                        std::string("access::address_space::local_space>")),
-                CALL_FACTORY_ENTRY("atomicDec_system",
-                                   CALL(MapNames::getDpctNamespace() +
-                                            "atomic_fetch_compare_dec",
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1)))))))
-
-#endif
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
@@ -797,54 +490,17 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1)))))))
 
-#if 1
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CONDITIONAL_FACTORY_ENTRY(
-        GetUsingGenericSpace,
-        CALL_FACTORY_ENTRY(
-            "atomicAnd_system",
-            CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                     MapNames::getDpctNamespace() + "atomic_fetch_and",
-                     LITERAL(MapNames::getClNamespace() +
-                             "access::address_space::generic_space"),
-                     LITERAL(MapNames::getClNamespace() +
-                             "memory_order::relaxed"),
-                     LITERAL(MapNames::getClNamespace() +
-                             "memory_scope::system")),
-                 makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1))),
-        CONDITIONAL_FACTORY_ENTRY(
-            GetHasSharedAttr(0),
-            CALL_FACTORY_ENTRY(
-                "atomicAnd_system",
-                CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                         MapNames::getDpctNamespace() + "atomic_fetch_and",
-                         LITERAL(MapNames::getClNamespace() +
-                                 "access::address_space::local_space")),
-                     makeCallArgCreatorWithCall(0),
-                     makeCallArgCreatorWithCall(1))),
-            CONDITIONAL_FACTORY_ENTRY(
-                ReportMemoryAttrDeduce(0),
-                WARNING_FACTORY_ENTRY(
-                    "atomicAnd_system",
-                    CALL_FACTORY_ENTRY("atomicAnd_system",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "atomic_fetch_and",
-                                            makeCallArgCreatorWithCall(0),
-                                            makeCallArgCreatorWithCall(1))),
-                    Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
-                    makeCallArgCreatorWithCall(0),
-                    std::string("atomic_fetch_and"),
-                    std::string("atomic_fetch_and<") +
-                        MapNames::getClNamespace() +
-                        std::string("access::address_space::local_space>")),
-                CALL_FACTORY_ENTRY("atomicAnd_system",
-                                   CALL(MapNames::getDpctNamespace() +
-                                            "atomic_fetch_and",
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1)))))))
-
-#endif
+CALL_FACTORY_ENTRY(
+    "atomicAnd_system",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+        MapNames::getDpctNamespace() + "atomic_fetch_and",
+        LITERAL(MapNames::getClNamespace() +
+                "access::address_space::generic_space"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_order::relaxed"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_scope::system")),
+    makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1)))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
@@ -888,55 +544,17 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1)))))))
 
-#if 1
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CONDITIONAL_FACTORY_ENTRY(
-        GetUsingGenericSpace,
-        CALL_FACTORY_ENTRY(
-            "atomicOr_system",
-            CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                     MapNames::getDpctNamespace() + "atomic_fetch_or",
-                     LITERAL(MapNames::getClNamespace() +
-                             "access::address_space::generic_space"),
-                     LITERAL(MapNames::getClNamespace() +
-                             "memory_order::relaxed"),
-                     LITERAL(MapNames::getClNamespace() +
-                             "memory_scope::system")),
-                 makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1))),
-        CONDITIONAL_FACTORY_ENTRY(
-            GetHasSharedAttr(0),
-            CALL_FACTORY_ENTRY(
-                "atomicOr_system",
-                CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                         MapNames::getDpctNamespace() + "atomic_fetch_or",
-                         LITERAL(MapNames::getClNamespace() +
-                                 "access::address_space::local_space")),
-                     makeCallArgCreatorWithCall(0),
-                     makeCallArgCreatorWithCall(1))),
-            CONDITIONAL_FACTORY_ENTRY(
-                ReportMemoryAttrDeduce(0),
-                WARNING_FACTORY_ENTRY(
-                    "atomicOr_system",
-                    CALL_FACTORY_ENTRY("atomicOr_system",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "atomic_fetch_or",
-                                            makeCallArgCreatorWithCall(0),
-                                            makeCallArgCreatorWithCall(1))),
-                    Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
-                    makeCallArgCreatorWithCall(0),
-                    std::string("atomic_fetch_or"),
-                    std::string("atomic_fetch_or<") +
-                        MapNames::getClNamespace() +
-                        std::string("access::address_space::local_space>")),
-                CALL_FACTORY_ENTRY("atomicOr_system",
-                                   CALL(MapNames::getDpctNamespace() +
-                                            "atomic_fetch_or",
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1)))))))
-
-#endif
-
+CALL_FACTORY_ENTRY(
+    "atomicOr_system",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+        MapNames::getDpctNamespace() + "atomic_fetch_or",
+        LITERAL(MapNames::getClNamespace() +
+                "access::address_space::generic_space"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_order::relaxed"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_scope::system")),
+    makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1)))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
@@ -980,52 +598,14 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1)))))))
 
-#if 1
-
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::device_ext,
-    CONDITIONAL_FACTORY_ENTRY(
-        GetUsingGenericSpace,
-        CALL_FACTORY_ENTRY(
-            "atomicXor_system",
-            CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                     MapNames::getDpctNamespace() + "atomic_fetch_xor",
-                     LITERAL(MapNames::getClNamespace() +
-                             "access::address_space::generic_space"),
-                     LITERAL(MapNames::getClNamespace() +
-                             "memory_order::relaxed"),
-                     LITERAL(MapNames::getClNamespace() +
-                             "memory_scope::system")),
-                 makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1))),
-        CONDITIONAL_FACTORY_ENTRY(
-            GetHasSharedAttr(0),
-            CALL_FACTORY_ENTRY(
-                "atomicXor_system",
-                CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                         MapNames::getDpctNamespace() + "atomic_fetch_xor",
-                         LITERAL(MapNames::getClNamespace() +
-                                 "access::address_space::local_space")),
-                     makeCallArgCreatorWithCall(0),
-                     makeCallArgCreatorWithCall(1))),
-            CONDITIONAL_FACTORY_ENTRY(
-                ReportMemoryAttrDeduce(0),
-                WARNING_FACTORY_ENTRY(
-                    "atomicXor_system",
-                    CALL_FACTORY_ENTRY("atomicXor_system",
-                                       CALL(MapNames::getDpctNamespace() +
-                                                "atomic_fetch_xor",
-                                            makeCallArgCreatorWithCall(0),
-                                            makeCallArgCreatorWithCall(1))),
-                    Diagnostics::SHARE_MEMORY_ATTR_DEDUCE,
-                    makeCallArgCreatorWithCall(0),
-                    std::string("atomic_fetch_xor"),
-                    std::string("atomic_fetch_xor<") +
-                        MapNames::getClNamespace() +
-                        std::string("access::address_space::local_space>")),
-                CALL_FACTORY_ENTRY("atomicXor_system",
-                                   CALL(MapNames::getDpctNamespace() +
-                                            "atomic_fetch_xor",
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1)))))))
-
-#endif
+CALL_FACTORY_ENTRY(
+    "atomicXor_system",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+        MapNames::getDpctNamespace() + "atomic_fetch_xor",
+        LITERAL(MapNames::getClNamespace() +
+                "access::address_space::generic_space"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_order::relaxed"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_scope::system")),
+    makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1)))
