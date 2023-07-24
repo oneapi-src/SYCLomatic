@@ -1,5 +1,5 @@
-// UNSUPPORTED: cuda-12.0, cuda-12.1
-// UNSUPPORTED: v12.0, v12.1
+// UNSUPPORTED: cuda-12.0, cuda-12.1, cuda-12.2
+// UNSUPPORTED: v12.0, v12.1, v12.2
 // RUN: dpct --format-range=none -out-root %T/cuda-math-intrinsics-cuda12.0-not-support %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/cuda-math-intrinsics-cuda12.0-not-support/cuda-math-intrinsics-cuda12.0-not-support.dp.cpp --match-full-lines %s
 
