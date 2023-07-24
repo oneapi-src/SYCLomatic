@@ -2,5 +2,4 @@
 #include <nccl.h>
 
 int main() {
-
 }
