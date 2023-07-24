@@ -6,8 +6,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "ASTTraversal.h"
 #include "CallExprRewriter.h"
 #include "CallExprRewriterCommon.h"
+#include "MapNames.h"
 
 namespace clang {
 namespace dpct {
@@ -19,6 +21,17 @@ std::function<bool(const CallExpr *)> checkEnableJointMatrix() {
 }
 
 void CallExprRewriterFactoryBase::initRewriterMapWmma() {
+  // Load this migration mapping on-demand based on options at runtime.
+  // Using SYCL experimental type as the the mapping of
+  // nvcuda::wmma::mem_row_major, this mapping must be protected by option
+  // "--use-experimental-features=matrix".
+  if (DpctGlobalInfo::useExtJointMatrix()) {
+    EnumConstantRule::EnumNamesMap.insert(
+        {"nvcuda::wmma::mem_row_major",
+         std::make_shared<EnumNameRule>(
+             MapNames::getClNamespace() +
+             "ext::oneapi::experimental::matrix::layout::row_major")});
+  }
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({

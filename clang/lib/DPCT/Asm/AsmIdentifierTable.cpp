@@ -20,8 +20,17 @@ InlineAsmIdentifierTable::InlineAsmIdentifierTable(
 
 void InlineAsmIdentifierTable::AddKeywords() {
 #define KEYWORD(X, Y) get(Y, asmtok::kw_##X);
-#define BUILTIN_ID(X, Y, Z) get(Y, asmtok::bi_##X).setBuiltinID();
-#define BUILTIN_TYPE(X, Y) get(Y, asmtok::kw_##X).setBuiltinType();
-#define INSTRUCTION(X) get(#X, asmtok::op_##X).setInstruction();
+#define BUILTIN_ID(X, Y, Z)                                                    \
+  get(Y, asmtok::bi_##X).setFlag(InlineAsmIdentifierInfo::BuiltinID);
+#define BUILTIN_TYPE(X, Y)                                                     \
+  get(Y, asmtok::kw_##X).setFlag(InlineAsmIdentifierInfo::BuiltinType);
+#define INSTRUCTION(X)                                                         \
+  get(#X, asmtok::op_##X).setFlag(InlineAsmIdentifierInfo::Instruction);
+#define ROUND_MOD(X, Y)                                                        \
+  get(Y, asmtok::kw_##X).setFlag(InlineAsmIdentifierInfo::InstAttr);
+#define SAT_MOD(X, Y)                                                          \
+  get(Y, asmtok::kw_##X).setFlag(InlineAsmIdentifierInfo::InstAttr);
+#define CMP_OP(X, Y)                                                           \
+  get(Y, asmtok::kw_##X).setFlag(InlineAsmIdentifierInfo::InstAttr);
 #include "AsmTokenKinds.def"
 }

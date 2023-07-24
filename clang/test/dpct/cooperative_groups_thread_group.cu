@@ -12,15 +12,23 @@ namespace cg = cooperative_groups;
 // CHECK-NEXT:  */
 __device__ void testThreadGroup(cg::thread_group g) {
   // CHECK:  /*
-  // CHECK-NEXT:  DPCT1007:{{[0-9]+}}: Migration of cooperative_groups::__v1::thread_group.thread_rank is not supported.
+  // CHECK-NEXT:  DPCT1007:{{[0-9]+}}: Migration of cooperative_groups::thread_group::thread_rank is not supported.
   // CHECK-NEXT:  */
   g.thread_rank();
   // CHECK:  /*
-  // CHECK-NEXT:  DPCT1007:{{[0-9]+}}: Migration of cooperative_groups::__v1::thread_group.sync is not supported.
+  // CHECK-NEXT:  DPCT1007:{{[0-9]+}}: Migration of cooperative_groups::thread_group::sync is not supported.
   // CHECK-NEXT:  */
   g.sync();
   // CHECK:  /*
-  // CHECK-NEXT:  DPCT1007:{{[0-9]+}}: Migration of cooperative_groups::__v1::thread_group.size is not supported.
+  // CHECK-NEXT:  DPCT1007:{{[0-9]+}}: Migration of cooperative_groups::thread_group::size is not supported.
   // CHECK-NEXT:  */
   g.size();
+}
+
+__global__ void testThreadBlock() {
+  auto block = cg::this_thread_block();
+  // CHECK:  /*
+  // CHECK-NEXT:  DPCT1007:{{[0-9]+}}:  Migration of cooperative_groups::thread_block::thread_index is not supported.
+  // CHECK-NEXT:  */
+  block.thread_index();
 }
