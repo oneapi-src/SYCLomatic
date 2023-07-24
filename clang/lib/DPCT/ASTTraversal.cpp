@@ -9017,17 +9017,17 @@ void DeviceFunctionDeclRule::runRule(
 
   if (auto CXX = getAssistNodeAsType<CXXNewExpr>(Result, "CxxNewExpr")) {
     report(CXX->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
-           false, "The usage of memory manipulation relevant APIs");
+           false, "The usage of dynamic memory allocation and deallocation APIs");
   }
 
   if (auto CXX = getAssistNodeAsType<CXXDeleteExpr>(Result, "CxxDeleteExpr")) {
     report(CXX->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
-           false, "The usage of memory manipulation relevant APIs");
+           false, "The usage of dynamic memory allocation and deallocation APIs");
   }
 
   if (auto CE = getAssistNodeAsType<CallExpr>(Result, "MemoryManipulation")) {
     report(CE->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION, false,
-           "The usage of memory manipulation relevant APIs");
+           "The usage of dynamic memory allocation and deallocation APIs");
   }
 
   if (auto Var = getAssistNodeAsType<VarDecl>(Result, "varGrid")) {

@@ -23,14 +23,14 @@ template <typename T>
 class TestSeqContainer : public TestVirtualFunc<T> {
 public:
   // CHECK: /*
-  // CHECK-NEXT: DPCT1109:{{[0-9]+}}: The usage of memory manipulation relevant APIs cannot be called in SYCL device code. You need to adjust the code.
+  // CHECK-NEXT: DPCT1109:{{[0-9]+}}: The usage of dynamic memory allocation and deallocation APIs cannot be called in SYCL device code. You need to adjust the code.
   // CHECK-NEXT: */
   __device__ TestSeqContainer(int size) : index_top(-1) { m_data = new T[size]; }
 
   __device__ ~TestSeqContainer() {
     if (m_data)
   // CHECK: /*
-  // CHECK-NEXT: DPCT1109:{{[0-9]+}}: The usage of memory manipulation relevant APIs cannot be called in SYCL device code. You need to adjust the code.
+  // CHECK-NEXT: DPCT1109:{{[0-9]+}}: The usage of dynamic memory allocation and deallocation APIs cannot be called in SYCL device code. You need to adjust the code.
   // CHECK-NEXT: */
       delete[] m_data;
   }
@@ -50,7 +50,7 @@ private:
 };
 __global__ void func() {
   // CHECK: /*
-  // CHECK-NEXT: DPCT1109:{{[0-9]+}}: The usage of memory manipulation relevant APIs cannot be called in SYCL device code. You need to adjust the code.
+  // CHECK-NEXT: DPCT1109:{{[0-9]+}}: The usage of dynamic memory allocation and deallocation APIs cannot be called in SYCL device code. You need to adjust the code.
   // CHECK-NEXT: */
   auto seq = new TestSeqContainer<int>(10);
   // CHECK: /*
@@ -58,19 +58,19 @@ __global__ void func() {
   // CHECK-NEXT: */
   seq->push(10);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1109:{{[0-9]+}}: The usage of memory manipulation relevant APIs cannot be called in SYCL device code. You need to adjust the code.
+  // CHECK-NEXT: DPCT1109:{{[0-9]+}}: The usage of dynamic memory allocation and deallocation APIs cannot be called in SYCL device code. You need to adjust the code.
   // CHECK-NEXT: */
   int *test = (int *)malloc(10 * sizeof(10));
   // CHECK: /*
-  // CHECK-NEXT: DPCT1109:{{[0-9]+}}: The usage of memory manipulation relevant APIs cannot be called in SYCL device code. You need to adjust the code.
+  // CHECK-NEXT: DPCT1109:{{[0-9]+}}: The usage of dynamic memory allocation and deallocation APIs cannot be called in SYCL device code. You need to adjust the code.
   // CHECK-NEXT: */
   free(test);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1109:{{[0-9]+}}: The usage of memory manipulation relevant APIs cannot be called in SYCL device code. You need to adjust the code.
+  // CHECK-NEXT: DPCT1109:{{[0-9]+}}: The usage of dynamic memory allocation and deallocation APIs cannot be called in SYCL device code. You need to adjust the code.
   // CHECK-NEXT: */
   delete seq;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1109:{{[0-9]+}}: The usage of memory manipulation relevant APIs cannot be called in SYCL device code. You need to adjust the code.
+  // CHECK-NEXT: DPCT1109:{{[0-9]+}}: The usage of dynamic memory allocation and deallocation APIs cannot be called in SYCL device code. You need to adjust the code.
   // CHECK-NEXT: */
   int4 *ptr = (int4 *)alloca(10 * sizeof(int4));
 }
