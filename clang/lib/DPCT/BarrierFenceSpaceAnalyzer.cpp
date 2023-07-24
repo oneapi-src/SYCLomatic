@@ -252,6 +252,7 @@ clang::dpct::BarrierFenceSpaceAnalyzer::getAccessKind(
   const UnaryOperator *UOInBO = nullptr;
   const ArraySubscriptExpr *ASEInBO = nullptr;
   const ParmVarDecl *PVD = nullptr;
+  const UnaryOperator *IncDec = nullptr;
   const CallExpr *CE = nullptr;
 
   auto &Context = DpctGlobalInfo::getContext();
@@ -269,6 +270,7 @@ clang::dpct::BarrierFenceSpaceAnalyzer::getAccessKind(
       ASEInBO = Parents[0].get<ArraySubscriptExpr>();
     if (!FoundBO)
       BO = Parents[0].get<BinaryOperator>();
+    IncDec = Parents[0].get<UnaryOperator>();
 
     if (!FoundCE && CE && CE->getDirectCallee()) {
       FoundCE = true;
@@ -290,8 +292,11 @@ clang::dpct::BarrierFenceSpaceAnalyzer::getAccessKind(
         return AccessMode::ReadWrite;
       }
     }
-    if (!FoundBO && BO && BO->isAssignmentOp() &&
-        (BO->getLHS() == Current.get<Expr>()) && FoundDeref) {
+    if (IncDec && (IncDec->isIncrementOp() || IncDec->isDecrementOp()) &&
+        FoundDeref) {
+      return AccessMode::ReadWrite;
+    } else if (!FoundBO && BO && BO->isAssignmentOp() &&
+               (BO->getLHS() == Current.get<Expr>()) && FoundDeref) {
       FoundBO = true;
     } else if (!FoundDeref && UOInBO &&
                (UOInBO->getOpcode() == UnaryOperatorKind::UO_Deref)) {
