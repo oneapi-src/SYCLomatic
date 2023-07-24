@@ -12229,7 +12229,6 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
 
 void RecognizeAPINameRule::runRule(const MatchFinder::MatchResult &Result) {
   const CallExpr *CE = nullptr;
-  const CXXMemberCallExpr *MC = nullptr;
   if ((CE = getNodeAsType<CallExpr>(Result, "APINamesUsed")) ||
       (CE = getNodeAsType<CallExpr>(Result, "APINamesHasNSUsed")))
     processFuncCall(CE);
