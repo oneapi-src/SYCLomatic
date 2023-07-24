@@ -25,7 +25,6 @@ __device__ void testThreadGroup(cg::thread_group g) {
   g.size();
 }
 
-
 __global__ void testThreadBlock() {
   auto block = cg::this_thread_block();
   // CHECK:  /*

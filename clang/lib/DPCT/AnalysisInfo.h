@@ -1729,6 +1729,9 @@ public:
   static bool useExtJointMatrix() {
     return getUsingExperimental<ExperimentalFeatures::Exp_Matrix>();
   }
+  static bool useExtBFloat16Math() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_BFloat16Math>();
+  }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
   }
