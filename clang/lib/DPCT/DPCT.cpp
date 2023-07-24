@@ -564,6 +564,13 @@ int runDPCT(int argc, const char **argv) {
   // CommonOptionsParser will adjust argc to the index of "--"
   int OriginalArgc = argc;
   clang::tooling::SetModuleFiles(dpct::DpctGlobalInfo::getModuleFiles());
+
+  // TODO: implement one of this for each source language.
+  CudaPath = getCudaInstallPath(OriginalArgc, argv);
+  DpctDiags() << "Cuda Include Path found: " << CudaPath << "\n";
+
+  SetSDKIncludePath(CudaPath);
+
 #ifdef _WIN32
   // Set function handle for libclangTooling to parse vcxproj file.
   clang::tooling::SetParserHandle(vcxprojParser);
@@ -682,8 +689,7 @@ int runDPCT(int argc, const char **argv) {
     dpctExit(MigrationErrorNoFileTypeAvail);
   }
 
-  int SDKIncPathRes =
-      checkSDKPathOrIncludePath(CudaIncludePath, RealSDKIncludePath);
+  int SDKIncPathRes = checkSDKPathOrIncludePath(CudaPath, RealSDKIncludePath);
   if (SDKIncPathRes == -1) {
     ShowStatus(MigrationErrorInvalidCudaIncludePath);
     dpctExit(MigrationErrorInvalidCudaIncludePath);
@@ -731,10 +737,6 @@ int runDPCT(int argc, const char **argv) {
 
     PrintMsg(OS.str());
   }
-
-  // TODO: implement one of this for each source language.
-  CudaPath = getCudaInstallPath(OriginalArgc, argv);
-  DpctDiags() << "Cuda Include Path found: " << CudaPath << "\n";
 
   RefactoringTool Tool(OptParser->getCompilations(),
                        OptParser->getSourcePathList());
@@ -795,7 +797,6 @@ int runDPCT(int argc, const char **argv) {
   Tool.appendArgumentsAdjuster(
       getInsertArgumentAdjuster("-D__NVCC__", ArgumentInsertPosition::BEGIN));
 
-  SetSDKIncludePath(CudaPath);
 
 #ifdef _WIN32
   if ((SDKVersionMajor == 11 && SDKVersionMinor == 2) ||

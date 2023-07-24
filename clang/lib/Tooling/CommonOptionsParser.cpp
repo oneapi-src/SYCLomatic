@@ -60,8 +60,10 @@ namespace tooling {
 std::string VcxprojFilePath;
 #endif
 
+static std::string SDKIncludePath = "";
 static std::string FormatSearchPath = "";
 std::string getFormatSearchPath() { return FormatSearchPath; }
+void SetSDKIncludePath(const std::string &Path) { SDKIncludePath = Path; }
 extern bool SpecifyLanguageInOption;
 void emitDefaultLanguageWarningIfNecessary(const std::string &FileName,
                                            bool SpecifyLanguageInOption);
@@ -370,6 +372,18 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
           std::move(Compilations));
   Adjuster =
       getInsertArgumentAdjuster(ArgsBefore, ArgumentInsertPosition::BEGIN);
+
+  for (size_t index = 0; index < SDKIncludePath.size(); index++) {
+    if (SDKIncludePath[index] == '\\') {
+      SDKIncludePath[index] = '/';
+    }
+  }
+
+  Adjuster = combineAdjusters(
+      std::move(Adjuster),
+      getInsertArgumentAdjuster((std::string("-I") + SDKIncludePath).c_str(),
+                                ArgumentInsertPosition::END));
+
   Adjuster = combineAdjusters(
       std::move(Adjuster),
       getInsertArgumentAdjuster(ArgsAfter, ArgumentInsertPosition::END));

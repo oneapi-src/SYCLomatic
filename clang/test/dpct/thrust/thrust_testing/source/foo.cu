@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct -out-root %T/thrust/thrust_testing %s --cuda-include-path="%cuda-path/include" -extra-arg="-I%S" -- -x cuda --cuda-host-only -std=c++17
+// RUN: dpct -out-root %T/thrust/thrust_testing %s --cuda-include-path="%cuda-path/include" -extra-arg-before="-I%S" -- -x cuda --cuda-host-only -std=c++17
 // RUN: FileCheck --input-file %T//thrust/thrust_testing/foo.dp.cpp --match-full-lines %s
 
 #include <algorithm>

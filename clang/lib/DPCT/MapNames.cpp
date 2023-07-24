@@ -263,7 +263,6 @@ void MapNames::setExplicitNamespaceMap() {
            HelperFeatureEnum::device_ext)},
       {"thrust::maximum",
        std::make_shared<TypeNameRule>("oneapi::dpl::maximum")},
-      {"thrust::multiplies", std::make_shared<TypeNameRule>("std::multiplies")},
       {"thrust::plus", std::make_shared<TypeNameRule>("std::plus")},
       {"thrust::seq",
        std::make_shared<TypeNameRule>("oneapi::dpl::execution::seq")},

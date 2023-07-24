@@ -62,6 +62,9 @@ namespace tooling {
 ///   return Tool.run(newFrontendActionFactory<SyntaxOnlyAction>().get());
 /// }
 /// \endcode
+#ifdef SYCLomatic_CUSTOMIZATION
+void SetSDKIncludePath(const std::string &Path);
+#endif
 class CommonOptionsParser {
 
 protected:

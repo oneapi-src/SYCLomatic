@@ -72,7 +72,6 @@ using namespace tooling;
 namespace clang {
 namespace tooling {
 static PrintType MsgPrintHandle = nullptr;
-static std::string SDKIncludePath = "";
 static std::set<std::string> *FileSetInCompiationDBPtr = nullptr;
 static std::vector<std::pair<std::string, std::vector<std::string>>>
     *CompileTargetsMapPtr = nullptr;
@@ -154,8 +153,6 @@ std::set<std::string> GetReProcessFile(){
   }
   return std::set<std::string>();
 }
-
-void SetSDKIncludePath(const std::string &Path) { SDKIncludePath = Path; }
 
 static llvm::raw_ostream *OSTerm = nullptr;
 void SetDiagnosticOutput(llvm::raw_ostream &OStream) { OSTerm = &OStream; }
@@ -848,11 +845,6 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
         return -30 /*MigrationErrorInconsistentFileInDatabase*/;
       }
 
-      for (size_t index = 0; index < SDKIncludePath.size(); index++) {
-        if (SDKIncludePath[index] == '\\') {
-          SDKIncludePath[index] = '/';
-        }
-      }
       ArgumentsAdjuster CudaArgsAdjuster{ArgsAdjuster};
 #ifdef _WIN32
       // In Microsoft Visual Studio Project, CUDA file in <None> is not part of
@@ -894,9 +886,6 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
             getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
       }
 #endif
-      CommandLine = getInsertArgumentAdjuster(
-          (std::string("-I") + SDKIncludePath).c_str(),
-          ArgumentInsertPosition::END)(CommandLine, "");
       if (CudaArgsAdjuster)
         CommandLine = CudaArgsAdjuster(CommandLine, CompileCommand.Filename);
 

@@ -226,7 +226,7 @@ void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "thrust::detail::true_type", "thrust::detail::false_type",
         "thrust::detail::integral_constant", "thrust::detail::is_same",
         "thrust::system::detail::bad_alloc", "thrust::iterator_traits",
-        "thrust::detail::vector_base", "thrust::minus");
+        "thrust::detail::vector_base", "thrust::minus", "thrust::multiplies");
   };
   MF.addMatcher(
       typeLoc(loc(qualType(hasDeclaration(namedDecl(ThrustTypeHasNames())))))
