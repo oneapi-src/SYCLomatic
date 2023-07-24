@@ -1146,11 +1146,11 @@ public:
     CurrentMaxIndex++;
     return Res;
   }
-  inline static std::string getGlobalQueueName() {
+  inline static const std::string &getGlobalQueueName() {
     const static std::string Q = "q_ct1";
     return Q;
   }
-  inline static std::string getGlobalDeviceName() {
+  inline static const std::string &getGlobalDeviceName() {
     const static std::string D = "dev_ct1";
     return D;
   }

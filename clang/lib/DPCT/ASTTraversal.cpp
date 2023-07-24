@@ -6729,9 +6729,11 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
     std::string ReplStr = MapNames::getDpctNamespace() + "get_major_version(";
     if (DpctGlobalInfo::isUsePureSyclQueue()) {
-      ReplStr += DpctGlobalInfo::getGlobalDeviceName() + ")";
+      ReplStr += DpctGlobalInfo::getGlobalDeviceName();
+      ReplStr += ")";
     } else {
-      ReplStr += MapNames::getDpctNamespace() + "get_current_device())";
+      ReplStr += MapNames::getDpctNamespace();
+      ReplStr += "get_current_device())";
     }
     emplaceTransformation(new ReplaceStmt(CE, ReplStr + Suffix));
     report(CE->getBeginLoc(), Warnings::TYPE_MISMATCH, false);
