@@ -2104,6 +2104,7 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
   auto Range = getDefinitionRange(BeginLoc, LAngleLoc);
   const char *Start = SM->getCharacterData(Range.getBegin());
   const char *End = SM->getCharacterData(Range.getEnd());
+
   auto TyLen = End - Start;
   if (TyLen <= 0)
     return false;

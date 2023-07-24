@@ -1,7 +1,5 @@
 // RUN: echo "empty command"
 #pragma once
 inline int bar() {
-	return 0;
+  return 0;
 }
-
-
