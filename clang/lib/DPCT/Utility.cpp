@@ -4377,6 +4377,18 @@ std::string getAddressSpace(const CallExpr *C, int ArgIdx) {
   }
 }
 
+std::string getNameSpace(const NamespaceDecl *NSD) {
+  if (!NSD)
+    return "";
+  std::string NameSpace =
+      getNameSpace(dyn_cast<NamespaceDecl>(NSD->getDeclContext()));
+  if (!NameSpace.empty() && !NSD->isInlineNamespace())
+    return NameSpace + "::" + NSD->getName().str();
+  else if (NameSpace.empty() && !NSD->isInlineNamespace())
+    return NSD->getName().str();
+
+  return NameSpace;
+}
 namespace clang {
 namespace dpct {
 void requestFeature(HelperFeatureEnum Feature) {
