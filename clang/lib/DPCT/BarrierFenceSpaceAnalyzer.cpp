@@ -346,7 +346,7 @@ using namespace dpct;
 //    `-ImplicitCastExpr <col:12> 'int' <LValueToRValue>
 //      `-DeclRefExpr <col:12> 'int' lvalue Var 0x555a6c217078 'Idx' 'int'
 // clang-format on
-const ArraySubscriptExpr *isParentArraySubscriptExpr(const DeclRefExpr *Node) {
+const ArraySubscriptExpr *getArraySubscriptExpr(const DeclRefExpr *Node) {
   auto ICE = DpctGlobalInfo::findParent<ImplicitCastExpr>(Node);
   if (!ICE || (ICE->getCastKind() != CastKind::CK_LValueToRValue))
     return nullptr;
@@ -356,7 +356,7 @@ const ArraySubscriptExpr *isParentArraySubscriptExpr(const DeclRefExpr *Node) {
   return ASE;
 }
 
-const Expr *isIdxOfASEConstValue(const ArraySubscriptExpr *ASE) {
+const Expr *getIdxOfASEConstValueExpr(const ArraySubscriptExpr *ASE) {
   // IdxVD must be local variable and must be defined in this function
   const DeclRefExpr *IdxDRE =
       dyn_cast_or_null<DeclRefExpr>(ASE->getIdx()->IgnoreImpCasts());
@@ -707,11 +707,11 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::hasOverlappingAccessAmongWorkItems(
     return true;
   }
 
-  const ArraySubscriptExpr *ASE = isParentArraySubscriptExpr(DRE);
+  const ArraySubscriptExpr *ASE = getArraySubscriptExpr(DRE);
   if (!ASE)
     return true;
 
-  const Expr *InitExpr = isIdxOfASEConstValue(ASE);
+  const Expr *InitExpr = getIdxOfASEConstValueExpr(ASE);
   if (!InitExpr)
     return true;
 

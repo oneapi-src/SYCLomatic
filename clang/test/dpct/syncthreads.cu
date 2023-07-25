@@ -411,8 +411,8 @@ __global__ void test19(unsigned int *a) {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
   //CHECK-NEXT: */
-  item_ct1.barrier();
+  //CHECK-NEXT: item_ct1.barrier();
   a[threadIdx.x]++;
   __syncthreads();
-  // other code ...
+  a[threadIdx.x]++;
 }
