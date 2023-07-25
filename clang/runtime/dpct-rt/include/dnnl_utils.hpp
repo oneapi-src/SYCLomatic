@@ -754,15 +754,28 @@ public:
 namespace detail {
 typedef std::string primitive_cache_key_type;
 typedef std::list<primitive_cache_key_type> usage_list_type;
-typedef struct {
+struct primitive_cache_value_type {
+  ::dnnl::primitive *_primitive;
+  std::unordered_map<int, ::dnnl::memory> *_args;
+  usage_list_type::iterator _usage_it;
+  std::function<void(::dnnl::primitive *)> _destructor;
+  sycl::event _e;
+  sycl::queue _q;
+  primitive_cache_value_type(
+      ::dnnl::primitive *primitive,
+      std::unordered_map<int, ::dnnl::memory> *args,
+      usage_list_type::iterator usage_it,
+      std::function<void(::dnnl::primitive *)> destructor, sycl::event e,
+      sycl::queue q)
+      : _primitive(primitive), _args(args), _usage_it(usage_it),
+        _destructor(destructor), _e(e), _q(q) {}
+};
+struct primitive_and_args {
   ::dnnl::primitive *primitive;
   std::unordered_map<int, ::dnnl::memory> *args;
-  usage_list_type::iterator usage_it;
-  std::function<void(::dnnl::primitive *)> destructor;
-  sycl::event e;
-  sycl::queue *q;
-} primitive_cache_value_type;
-typedef std::unordered_map<primitive_cache_key_type, primitive_cache_value_type>
+};
+typedef std::unordered_map<primitive_cache_key_type,
+                           std::shared_ptr<primitive_cache_value_type>>
     cache_map_type;
 
 // The primitive cache uses LRU replacement policy, and the default cache
@@ -773,35 +786,26 @@ class primitive_cache {
   cache_map_type cache_map;
   void touch(cache_map_type::iterator it, sycl::event e = {},
              bool update_event = false) {
-    if (it->second.usage_it != usage.begin()) {
+    if (it->second->_usage_it != usage.begin()) {
       const primitive_cache_key_type &key = it->first;
-      usage.erase(it->second.usage_it);
+      usage.erase(it->second->_usage_it);
       usage.push_front(key);
-      it->second.usage_it = usage.begin();
+      it->second->_usage_it = usage.begin();
     }
     if (update_event) {
-      it->second.e = e;
+      it->second->_e = e;
     }
-  }
-  void async_destruct(const primitive_cache_value_type &value) {
-    value.q->submit([&](sycl::handler &cgh) {
-      cgh.depends_on(value.e);
-      cgh.host_task([=] {
-        delete value.args;
-        value.destructor(value.primitive);
-      });
-    });
   }
 
 public:
-  std::pair<::dnnl::primitive *, std::unordered_map<int, ::dnnl::memory> *>
+  std::shared_ptr<primitive_cache_value_type>
   get(const primitive_cache_key_type &key) {
     auto it = cache_map.find(key);
     if (it == cache_map.end()) {
-      return {nullptr, nullptr};
+      return nullptr;
     }
     touch(it);
-    return {it->second.primitive, it->second.args};
+    return it->second;
   }
   void put(const primitive_cache_key_type &key, ::dnnl::primitive *value,
            std::unordered_map<int, ::dnnl::memory> *args,
@@ -812,13 +816,20 @@ public:
       touch(it, e, true);
     } else {
       if (cache_map.size() == _capacity) {
-        auto last_primitive = cache_map.find(usage.back());
-        async_destruct(last_primitive->second);
+        auto v = cache_map.find(usage.back())->second;
+        v->_q.submit([&](sycl::handler &cgh) {
+          cgh.depends_on(v->_e);
+          cgh.host_task([=] {
+            delete v->_args;
+            v->_destructor(v->_primitive);
+          });
+        });
         cache_map.erase(usage.back());
         usage.pop_back();
       }
       usage.push_front(key);
-      cache_map[key] = {value, args, usage.begin(), destructor, e, q};
+      cache_map[key] = std::make_shared<primitive_cache_value_type>(
+          value, args, usage.begin(), destructor, e, *q);
     }
   }
 };
@@ -839,27 +850,23 @@ class engine_ext {
                          void *data)
         : _alpha(alpha), _beta(beta), _name(0), _desc(desc), _data(data) {}
   };
-  struct primitive_and_args {
-    ::dnnl::primitive *primitive;
-    std::unordered_map<int, ::dnnl::memory> *args;
-  };
   struct buffer_info {
-    size_t size;
-    uint8_t *buffer;
-    size_t usage;
-    sycl::queue *q;
+    size_t capacity = 0;
+    uint8_t *buffer = nullptr;
+    size_t usage = 0;
+    sycl::queue q;
     sycl::event deps;
+    size_t primitive_depth = 0;
   };
   ::dnnl::engine *_eng = nullptr;
   ::dnnl::stream *_s = nullptr;
   sycl::queue *_q = nullptr;
-  static size_t _primitive_depth;
+  detail::primitive_cache_key_type _key_buffer;
   static std::map<void *, ::dnnl::memory> _workspace_map;
   static std::map<sycl::queue *, std::int64_t> _random_engine_state_size_map;
-  static detail::primitive_cache_key_type _key_buffer;
   static std::map<sycl::queue *, buffer_info> _buffer_map;
-  static std::map<unsigned int, ::dnnl::engine> _engine_cache;
-  static std::map<sycl::queue *, ::dnnl::stream> _stream_cache;
+  static std::map<unsigned int, std::shared_ptr<::dnnl::engine>> _engine_cache;
+  static std::map<sycl::queue *, std::shared_ptr<::dnnl::stream>> _stream_cache;
   static detail::primitive_cache _primitive_cache;
   ::dnnl::memory &get_workspace(void *key) { return _workspace_map[key]; }
   void insert_workspace(void *key, ::dnnl::memory workspace) {
@@ -870,17 +877,31 @@ class engine_ext {
 
   void *allocate(const memory_desc_ext &desc, int count = 1);
   void *allocate(size_t size);
-  void check_buffer(size_t size);
   void enter_primitive(size_t request_buffer_size = 0) {
-    if (_primitive_depth == 0) {
-      check_buffer(request_buffer_size);
+    auto &info = _buffer_map[_q];
+    if (info.primitive_depth == 0) {
+      info.usage = 0;
+      if (request_buffer_size > info.capacity) {
+        if (info.buffer) {
+          info.q.submit([&](sycl::handler &cgh) {
+            cgh.depends_on(info.deps);
+            cgh.host_task([=] { sycl::free(info.buffer, info.q); });
+          });
+        }
+        size_t new_buffer_capacity = (request_buffer_size + info.capacity) * 2;
+        info.capacity = new_buffer_capacity;
+        info.buffer = (uint8_t *)sycl::malloc_device(new_buffer_capacity, *_q);
+        info.q = *_q;
+        info.deps = sycl::event();
+      }
     }
-    _primitive_depth++;
+    info.primitive_depth++;
   }
   sycl::event exit_primitive(const sycl::event &e) {
-    _primitive_depth--;
-    if ((_primitive_depth == 0) && _buffer_map[_q].usage) {
-      _buffer_map[_q].deps = e;
+    auto &info = _buffer_map[_q];
+    info.primitive_depth--;
+    if ((info.primitive_depth == 0) && info.usage) {
+      info.deps = e;
     }
     return e;
   }
@@ -924,7 +945,7 @@ class engine_ext {
     }
   }
   template <typename primitive_type, typename... args_type>
-  std::pair<detail::primitive_cache_key_type, primitive_and_args>
+  std::pair<detail::primitive_cache_key_type, detail::primitive_and_args>
   create_primitive_args_or_get(args_type &&...args);
   template <typename primitive_type>
   typename primitive_type::primitive_desc
@@ -937,8 +958,9 @@ class engine_ext {
   void generate_cache_key(const T &first_arg, const args_type &...args);
   void insert_arg(std::unordered_map<int, ::dnnl::memory> *args, int name,
                   const ::dnnl::memory::desc &desc, void *data) {
-    if (args->count(name)) {
-      (*args)[name].set_data_handle(data);
+    auto it = args->find(name);
+    if (it != args->end()) {
+      it->second.set_data_handle(data);
     } else {
       args->insert({name, ::dnnl::memory(desc, *_eng, data)});
     }
@@ -973,20 +995,12 @@ class engine_ext {
       int seq_length, int batch_size, int src_c, int dst_c, int layer_size,
       int direction_num, int hidden_size, int gate_num, int projection_size,
       std::vector<void *> &data, std::vector<int> &offset, int iter_num);
-  template <typename T>
-  void async_free(sycl::queue *q, sycl::event e, const T &v,
-                  std::function<void(T)> destructor) {
-    q->submit([&](sycl::handler &cgh) {
-      cgh.depends_on(e);
-      cgh.host_task([=] { destructor(v); });
-    });
-  }
   bool
   scale_parameter_preprocess(const std::vector<output_argument_info> &args);
   template <typename primitive_type>
   sycl::event
   execute_primitive(const std::pair<detail::primitive_cache_key_type,
-                                    primitive_and_args> &primitive,
+                                    detail::primitive_and_args> &primitive,
                     const std::vector<output_argument_info> &extra_args = {});
   template <typename T>
   sycl::event fill_with_type(sycl::queue *q, void *src, const void *value,
@@ -1023,28 +1037,36 @@ class engine_ext {
 public:
   engine_ext() {}
   operator bool() const {
-    return bool(*_eng) && bool(*_s) && bool(_q);
+    return bool(_eng) && bool(_s) && bool(_q);
   }
   engine_ext &operator=(std::nullptr_t) {
-    _eng->reset(nullptr);
-    _s->reset(nullptr);
+    _eng = nullptr;
+    _s = nullptr;
     _q = nullptr;
     return *this;
   }
   /// Creating oneDNN engine.
   void create_engine() {
-    unsigned int _device_id = dpct::get_current_device_id();
+    unsigned int device_id = dpct::get_current_device_id();
     _q = &dpct::get_current_device().default_queue();
-    if (!_engine_cache.count(_device_id)) {
-      _engine_cache[_device_id] = ::dnnl::sycl_interop::make_engine(
-          dpct::get_current_device(), dpct::get_current_device().get_context());
+    auto engine_it = _engine_cache.find(device_id);
+    auto stream_it = _stream_cache.find(_q);
+    if (engine_it != _engine_cache.end()) {
+      _eng = engine_it->second.get();
+    } else {
+      _engine_cache[device_id] =
+          std::make_shared<::dnnl::engine>(::dnnl::sycl_interop::make_engine(
+              dpct::get_current_device(),
+              dpct::get_current_device().get_context()));
+      _eng = _engine_cache[device_id].get();
     }
-    _eng = &_engine_cache[_device_id];
-    if (!_stream_cache.count(_q)) {
-      _stream_cache[_q] = ::dnnl::sycl_interop::make_stream(
-          *_eng, dpct::get_current_device().default_queue());
+    if (stream_it != _stream_cache.end()) {
+      _s = stream_it->second.get();
+    } else {
+      _stream_cache[_q] = std::make_shared<::dnnl::stream>(
+          ::dnnl::sycl_interop::make_stream(*_eng, *_q));
+      _s = _stream_cache[_q].get();
     }
-    _s = &_stream_cache[_q];
     _key_buffer.reserve(512);
   }
   /// Setting the user's SYCL queue for an oneDNN engine.
@@ -1061,10 +1083,14 @@ public:
           "set_queue: queue is mismatch with current engine context.");
     }
     _q = q;
-    if (!_stream_cache.count(_q)) {
-      _stream_cache[_q] = ::dnnl::sycl_interop::make_stream(*_eng, *_q);
+    auto it = _stream_cache.find(_q);
+    if (it != _stream_cache.end()) {
+      _s = it->second.get();
+    } else {
+      _stream_cache[_q] = std::make_shared<::dnnl::stream>(
+          ::dnnl::sycl_interop::make_stream(*_eng, *_q));
+      _s = _stream_cache[_q].get();
     }
-    _s = &_stream_cache[_q];
   }
   /// Retrieving the user's SYCL queue set in the oneDNN engine.
   /// \returns Pointer to the SYCL queue.
@@ -2048,13 +2074,13 @@ public:
                                      size_t workspace_size);
 };
 
-inline size_t engine_ext::_primitive_depth = 0;
 inline detail::primitive_cache engine_ext::_primitive_cache;
-inline std::map<unsigned int, ::dnnl::engine> engine_ext::_engine_cache;
+inline std::map<unsigned int, std::shared_ptr<::dnnl::engine>>
+    engine_ext::_engine_cache;
 inline std::map<void *, ::dnnl::memory> engine_ext::_workspace_map;
 inline std::map<sycl::queue *, engine_ext::buffer_info> engine_ext::_buffer_map;
-inline std::map<sycl::queue *, ::dnnl::stream> engine_ext::_stream_cache;
-inline detail::primitive_cache_key_type engine_ext::_key_buffer;
+inline std::map<sycl::queue *, std::shared_ptr<::dnnl::stream>>
+    engine_ext::_stream_cache;
 inline std::map<sycl::queue *, std::int64_t>
     engine_ext::_random_engine_state_size_map;
 
@@ -2390,34 +2416,10 @@ void *engine_ext::allocate(const memory_desc_ext &data_desc, int count) {
 
 inline
 void *engine_ext::allocate(size_t size) {
-  uint8_t *result = _buffer_map[_q].buffer + _buffer_map[_q].usage;
-  _buffer_map[_q].usage += size;
+  auto &Info = _buffer_map[_q];
+  uint8_t *result = Info.buffer + Info.usage;
+  Info.usage += size;
   return result;
-}
-
-inline
-void engine_ext::check_buffer(size_t size) {
-  if (!size) {
-    return;
-  }
-  if (_buffer_map.count(_q)) {
-    auto &info = _buffer_map[_q];
-    if (size > info.size) {
-      async_free<buffer_info>(_q, info.deps, info, [](buffer_info binfo) {
-        sycl::free(binfo.buffer, *binfo.q);
-      });
-      size_t new_buffer_size = (size + info.size) * 2;
-      info.size = new_buffer_size;
-      info.buffer = (uint8_t *)sycl::malloc_device(new_buffer_size, *_q);
-      info.q = _q;
-      info.deps = sycl::event();
-    }
-    info.usage = 0;
-  } else {
-    size_t new_buffer_size = size * 2;
-    uint8_t *ptr = (uint8_t *)sycl::malloc_device(new_buffer_size, *_q);
-    _buffer_map[_q] = {new_buffer_size, ptr, 0, _q, sycl::event()};
-  }
 }
 
 inline
@@ -2620,7 +2622,7 @@ void engine_ext::derive_batch_normalization_memory_desc(
 
 template <typename primitive_type>
 sycl::event engine_ext::execute_primitive(
-    const std::pair<detail::primitive_cache_key_type, primitive_and_args>
+    const std::pair<detail::primitive_cache_key_type, detail::primitive_and_args>
         &primitive,
     const std::vector<output_argument_info> &output_args) {
   std::vector<void *> caches;
@@ -3415,6 +3417,7 @@ EMPTY_CACHE_KEY(::dnnl::batch_normalization_forward::primitive_desc)
 EMPTY_CACHE_KEY(::dnnl::vanilla_rnn_forward::primitive_desc)
 EMPTY_CACHE_KEY(::dnnl::lstm_forward::primitive_desc)
 EMPTY_CACHE_KEY(::dnnl::gru_forward::primitive_desc)
+#undef EMPTY_CACHE_KEY
 
 template <>
 inline void engine_ext::generate_cache_key<std::vector<float>>(
@@ -3462,15 +3465,18 @@ void engine_ext::generate_cache_key(const T &first_arg,
 }
 
 template <typename primitive_type, typename... args_type>
-std::pair<detail::primitive_cache_key_type, engine_ext::primitive_and_args>
+std::pair<detail::primitive_cache_key_type, detail::primitive_and_args>
 engine_ext::create_primitive_args_or_get(args_type &&...args) {
   _key_buffer.clear();
   generate_cache_key(std::forward<args_type>(args)...);
   _key_buffer.append(std::to_string(dpct::get_current_device_id()));
   auto value = _primitive_cache.get(_key_buffer);
-  primitive_type *p = (primitive_type *)value.first;
-  std::unordered_map<int, ::dnnl::memory> *a = value.second;
-  if (!p) {
+  primitive_type *p = nullptr;
+  std::unordered_map<int, ::dnnl::memory> *a = nullptr;
+  if (value) {
+    p = (primitive_type *)value->_primitive;
+    a = value->_args;
+  } else {
     p = new primitive_type(create_primitive_desc<primitive_type>(
         std::forward<args_type>(args)...));
     a = new std::unordered_map<int, ::dnnl::memory>();
@@ -4402,6 +4408,7 @@ engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm 
                                          optimal_src);
   allocate_and_reorder_memory_to_optimal(origin_weight_md, weight,
                                          optimal_weight_md, optimal_weight);
+
   if (beta == 0.f) {
     optimal_dst = allocate(optimal_dst_md);
   } else {
@@ -4424,7 +4431,6 @@ engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm 
     e = async_reorder(1.f, optimal_dst_md, optimal_dst, 0.f, origin_dst_md,
                       dst);
   }
-
   return exit_primitive(e);
 }
 
@@ -4704,12 +4710,13 @@ size_t engine_ext::get_dropout_state_size(){
   throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
                            "Interfaces Project does not support this API.");
 #else
-  if (!_random_engine_state_size_map.count(_q)) {
+  auto it = _random_engine_state_size_map.find(_q);
+  if (it == _random_engine_state_size_map.end()) {
     auto rand_engine = rng_engine_t(*_q, 0);
-    _random_engine_state_size_map[_q] =
+    return _random_engine_state_size_map[_q] =
         oneapi::mkl::rng::get_state_size(rand_engine);
   }
-  return _random_engine_state_size_map[_q];
+  return it->second;
 #endif
 }
 
