@@ -93,6 +93,9 @@ __global__ void kernel(cudaTextureObject_t tex2, cudaTextureObject_t tex4) {
 }
 
 int main() {
+  using CudaRGBA = float4;
+  // CHECK: dpct::image_channel channelCudaRGBA = dpct::image_channel::create<CudaRGBA>();
+  cudaChannelFormatDesc channelCudaRGBA = cudaCreateChannelDesc<CudaRGBA>();
 
   // CHECK: sycl::float4 *d_data42;
   // CHECK-NEXT: dpct::image_matrix_p a42;

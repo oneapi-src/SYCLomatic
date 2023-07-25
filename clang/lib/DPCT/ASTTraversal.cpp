@@ -13130,7 +13130,11 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
       if (Callee) {
         auto TemArg = Callee->template_arguments();
         if (TemArg.size() != 0) {
-          auto ChnType = TemArg[0].getArgument().getAsType().getAsString();
+          auto ChnType = TemArg[0]
+                             .getArgument()
+                             .getAsType()
+                             .getCanonicalType()
+                             .getAsString();
           if (ChnType.back() != '4') {
             report(CE->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_FORMAT,
                    true);
