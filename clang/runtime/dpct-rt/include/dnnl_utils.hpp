@@ -874,7 +874,6 @@ class engine_ext {
   void enter_primitive(size_t request_buffer_size = 0) {
     if (_primitive_depth == 0) {
       check_buffer(request_buffer_size);
-      _buffer_map[_q].usage = 0;
     }
     _primitive_depth++;
   }
@@ -939,14 +938,14 @@ class engine_ext {
   void insert_arg(std::unordered_map<int, ::dnnl::memory> *args, int name,
                   const ::dnnl::memory::desc &desc, void *data) {
     if (args->count(name)) {
-      args->at(name).set_data_handle(data);
+      (*args)[name].set_data_handle(data);
     } else {
       args->insert({name, ::dnnl::memory(desc, *_eng, data)});
     }
   }
   void insert_arg(std::unordered_map<int, ::dnnl::memory> *args, int name,
                   const ::dnnl::memory &mem) {
-    args->at(name) = mem;
+    (*args)[name] = mem;
   }
   sycl::event execute_rnn_forward_primitive(
       rnn_mode mode, ::dnnl::prop_kind kind, ::dnnl::rnn_direction direction,
@@ -2052,7 +2051,7 @@ public:
 inline size_t engine_ext::_primitive_depth = 0;
 inline detail::primitive_cache engine_ext::_primitive_cache;
 inline std::map<unsigned int, ::dnnl::engine> engine_ext::_engine_cache;
-inline std::map<void *, ::dnnl::memory> _workspace_map;
+inline std::map<void *, ::dnnl::memory> engine_ext::_workspace_map;
 inline std::map<sycl::queue *, engine_ext::buffer_info> engine_ext::_buffer_map;
 inline std::map<sycl::queue *, ::dnnl::stream> engine_ext::_stream_cache;
 inline detail::primitive_cache_key_type engine_ext::_key_buffer;
@@ -2398,6 +2397,9 @@ void *engine_ext::allocate(size_t size) {
 
 inline
 void engine_ext::check_buffer(size_t size) {
+  if (!size) {
+    return;
+  }
   if (_buffer_map.count(_q)) {
     auto &info = _buffer_map[_q];
     if (size > info.size) {
@@ -2409,8 +2411,8 @@ void engine_ext::check_buffer(size_t size) {
       info.buffer = (uint8_t *)sycl::malloc_device(new_buffer_size, *_q);
       info.q = _q;
       info.deps = sycl::event();
-      info.usage = 0;
     }
+    info.usage = 0;
   } else {
     size_t new_buffer_size = size * 2;
     uint8_t *ptr = (uint8_t *)sycl::malloc_device(new_buffer_size, *_q);
@@ -3627,7 +3629,7 @@ sycl::event engine_ext::async_reorder(float alpha, const memory_desc_ext &src_de
   if (scale_parameter_preprocess({{alpha, beta, dst_desc, dst}})) {
     return sycl::event();
   }
-  enter_primitive();
+  enter_primitive(dst_desc.get_size());
 
   auto primitive_args = create_primitive_args_or_get<::dnnl::reorder>(
       src_desc.get_desc(), *_eng, dst_desc.get_desc());
@@ -4772,7 +4774,7 @@ sycl::event engine_ext::async_dropout_backward(
     dropout_desc &desc, const memory_desc_ext &diff_dst_desc,
     void *diff_dst, const memory_desc_ext &diff_src_desc, void *diff_src,
     void *workspace, size_t workspace_size) {
-  enter_primitive();
+  enter_primitive(diff_src_desc.get_size());
   float p = desc.get_probability();
   if (p == 1.f) {
     return _q->memset(diff_src, 0, diff_src_desc.get_size());
