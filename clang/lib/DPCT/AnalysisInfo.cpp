@@ -53,6 +53,7 @@ std::string DpctGlobalInfo::RuleFile = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
 bool DpctGlobalInfo::NeedDpctDeviceExt = false;
 bool DpctGlobalInfo::IsIncMigration = true;
+bool DpctGlobalInfo::IsQueryAPIMapping = false;
 unsigned int DpctGlobalInfo::AssumedNDRangeDim = 3;
 std::unordered_set<std::string> DpctGlobalInfo::PrecAndDomPairSet;
 format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;

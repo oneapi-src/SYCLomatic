@@ -1,17 +1,18 @@
-// RUN: dpct --query-api-mapping=cudaStreamGetFlags | FileCheck %s -check-prefix=CUDASTREAMGETFLAGS
-// CUDASTREAMGETFLAGS: CUDA API: cudaStreamGetFlags
-// CUDASTREAMGETFLAGS-NEXT: Is migrated to: an expression statement which set the output parameter 'flags' to 0
+// RUN: dpct --in-root=%S/api_mapping_cases --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaStreamGetFlags | FileCheck %s -check-prefix=CUDASTREAMGETFLAGS
+// CUDASTREAMGETFLAGS: CUDA API: cudaStreamGetFlags(s, f);
+// CUDASTREAMGETFLAGS-NEXT: Is migrated to: *(f) = 0;
 
-// RUN: dpct --query-api-mapping=cudaEventDestroy | FileCheck %s -check-prefix=CUDAEVENTDESTROY
-// CUDAEVENTDESTROY: CUDA API: cudaEventDestroy
-// CUDAEVENTDESTROY-NEXT: Is migrated to: dpct::destroy_event(event_ptr event)
+// RUN: dpct --in-root=%S/api_mapping_cases --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaEventDestroy | FileCheck %s -check-prefix=CUDAEVENTDESTROY
+// CUDAEVENTDESTROY: CUDA API: cudaEventDestroy(e);
+// CUDAEVENTDESTROY-NEXT: Is migrated to: dpct::destroy_event(e);
 
-// RUN: dpct --query-api-mapping=__hfma | FileCheck %s -check-prefix=HFMA
-// HFMA: CUDA API: __hfma
-// HFMA-NEXT: Is migrated to: sycl::fma(genfloat a, genfloat b, genfloat c)
+// RUN: dpct --in-root=%S/api_mapping_cases --cuda-include-path="%cuda-path/include" --query-api-mapping=__hfma | FileCheck %s -check-prefix=HFMA
+// HFMA: CUDA API: __hfma(h1, h2, h3);
+// HFMA-NEXT: Is migrated to: sycl::fma(h1, h2, h3);
 
-// RUN: dpct --query-api-mapping=__hfma_sat | FileCheck %s -check-prefix=HFMA_SAT
-// HFMA_SAT: CUDA API: __hfma_sat
-// HFMA_SAT-NEXT: Is migrated to: sycl::ext::intel::math::hfma_sat(sycl::half x, sycl::half y, sycl::half z)
-// HFMA_SAT-NEXT: There are multi kinds of migrations for this API with different migration options,
-// HFMA_SAT-NEXT: suggest to use the tool to migrate a API usage code to see more detail of the migration.
+// RUN: dpct --in-root=%S/api_mapping_cases --cuda-include-path="%cuda-path/include" --query-api-mapping=__hfma_sat | FileCheck %s -check-prefix=HFMA_SAT
+// HFMA_SAT: CUDA API: __hfma_sat(h1, h2, h3);
+// HFMA_SAT-NEXT: Is migrated to: sycl::clamp<sycl::half>(sycl::fma(h1, h2, h3), 0.f, 1.0f);
+
+// RUN: dpct --in-root=%S/api_mapping_cases --cuda-include-path="%cuda-path/include" --query-api-mapping=aaa | FileCheck %s -check-prefix=AAA
+// AAA: The API Mapping is not available

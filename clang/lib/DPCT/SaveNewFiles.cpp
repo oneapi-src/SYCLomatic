@@ -30,6 +30,7 @@
 
 #include "Utility.h"
 #include "llvm/Support/raw_os_ostream.h"
+#include "llvm/Support/raw_ostream.h"
 #include <cassert>
 #include <fstream>
 using namespace clang::dpct;
@@ -457,26 +458,17 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         continue;
       }
 
-      std::error_code EC;
-      EC = fs::create_directories(path::parent_path(OutPath));
-      if ((bool)EC) {
-        std::string ErrMsg =
-            "[ERROR] Create file : " + std::string(OutPath.str()) +
-            " fail: " + EC.message() + "\n";
-        status = MigrationSaveOutFail;
-        PrintMsg(ErrMsg);
-        return status;
-      }
-      // std::ios::binary prevents ofstream::operator<< from converting \n to
-      // \r\n on windows.
-      std::ofstream File(OutPath.str().str(), std::ios::binary);
-      llvm::raw_os_ostream Stream(File);
-      if (!File) {
-        std::string ErrMsg =
-            "[ERROR] Create file: " + std::string(OutPath.str()) + " fail.\n";
-        PrintMsg(ErrMsg);
-        status = MigrationSaveOutFail;
-        return status;
+      if (!DpctGlobalInfo::isQueryAPIMapping()) {
+        std::error_code EC;
+        EC = fs::create_directories(path::parent_path(OutPath));
+        if ((bool)EC) {
+          std::string ErrMsg =
+              "[ERROR] Create file : " + std::string(OutPath.str()) +
+              " fail: " + EC.message() + "\n";
+          status = MigrationSaveOutFail;
+          PrintMsg(ErrMsg);
+          return status;
+        }
       }
 
       // For header file, as it can be included from different file, it needs
@@ -530,6 +522,42 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
           std::make_pair(OutPath.str().str(), BlockLevelFormatRanges));
 
       tooling::applyAllReplacements(Entry.second, Rewrite);
+
+      if (DpctGlobalInfo::isQueryAPIMapping()) {
+        auto GetFuncBodyStr = [](const std::string &s) {
+          return std::string(s, s.find_first_of('{') + 1,
+                             s.find_last_of('}') - s.find_first_of('{') - 1);
+        };
+        std::ifstream Inputfile;
+        Inputfile.open(
+            Tool.getFiles().getFile(Entry.first).get()->getName().str());
+        std::stringstream InputStream;
+        InputStream << Inputfile.rdbuf();
+        llvm::outs() << "CUDA API:" << GetFuncBodyStr(InputStream.str())
+                     << "\n";
+
+        std::ostringstream OS;
+        llvm::raw_os_ostream Stream(OS);
+        Rewrite
+            .getEditBuffer(Sources.getOrCreateFileID(
+                Tool.getFiles().getFile(Entry.first).get(),
+                clang::SrcMgr::C_User /*normal user code*/))
+            .write(Stream);
+        Stream.flush();
+        llvm::outs() << "Is migrated to:" << GetFuncBodyStr(OS.str());
+        return status; // Must be only 1 file.
+      }
+      // std::ios::binary prevents ofstream::operator<< from converting \n to
+      // \r\n on windows.
+      std::ofstream File(OutPath.str().str(), std::ios::binary);
+      llvm::raw_os_ostream Stream(File);
+      if (!File) {
+        std::string ErrMsg =
+            "[ERROR] Create file: " + std::string(OutPath.str()) + " fail.\n";
+        PrintMsg(ErrMsg);
+        status = MigrationSaveOutFail;
+        return status;
+      }
       Rewrite
           .getEditBuffer(Sources.getOrCreateFileID(
               Tool.getFiles().getFile(Entry.first).get(),

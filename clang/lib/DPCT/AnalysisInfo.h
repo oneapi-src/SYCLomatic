@@ -945,6 +945,10 @@ public:
   inline static void setUsmLevel(UsmLevel UL) { UsmLvl = UL; }
   inline static bool isIncMigration() { return IsIncMigration; }
   inline static void setIsIncMigration(bool Flag) { IsIncMigration = Flag; }
+  inline static bool isQueryAPIMapping() { return IsQueryAPIMapping; }
+  inline static void setIsQueryAPIMapping(bool Flag) {
+    IsQueryAPIMapping = Flag;
+  }
   inline static bool needDpctDeviceExt() { return NeedDpctDeviceExt; }
   inline static void setNeedDpctDeviceExt() { NeedDpctDeviceExt = true; }
   inline static unsigned int getAssumedNDRangeDim() {
@@ -1979,6 +1983,7 @@ private:
   static UsmLevel UsmLvl;
   static bool NeedDpctDeviceExt;
   static bool IsIncMigration;
+  static bool IsQueryAPIMapping;
   static unsigned int AssumedNDRangeDim;
   static std::unordered_set<std::string> PrecAndDomPairSet;
   static format::FormatRange FmtRng;
