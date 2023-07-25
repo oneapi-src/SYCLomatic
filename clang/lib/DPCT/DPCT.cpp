@@ -7,7 +7,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "clang/DPCT/DPCT.h"
-#include "APIMapping/QueryAPIMapping.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "AutoComplete.h"
@@ -247,8 +246,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   return CudaPathAbs.str().str();
 }
 
-std::string getInstallPath(clang::tooling::ClangTool &Tool,
-                           const char *invokeCommand) {
+std::string getInstallPath(const char *invokeCommand) {
   SmallString<512> InstalledPath(invokeCommand);
 
   // Do a PATH lookup, if there are no directory components.
@@ -651,12 +649,6 @@ int runDPCT(int argc, const char **argv) {
   if (CommonOptionsParser::hasHelpOption(OriginalArgc, argv))
     dpctExit(MigrationSucceeded);
 
-  if (QueryAPIMapping.getNumOccurrences()) {
-    APIMapping::initEntryMap();
-    APIMapping::queryAPIMapping(llvm::outs(), QueryAPIMapping);
-    dpctExit(MigrationSucceeded);
-  }
-
   if (LimitChangeExtension) {
     DpctGlobalInfo::addChangeExtensions(".cu");
     DpctGlobalInfo::addChangeExtensions(".cuh");
@@ -736,8 +728,23 @@ int runDPCT(int argc, const char **argv) {
   CudaPath = getCudaInstallPath(OriginalArgc, argv);
   DpctDiags() << "Cuda Include Path found: " << CudaPath << "\n";
 
-  RefactoringTool Tool(OptParser->getCompilations(),
-                       OptParser->getSourcePathList());
+  DpctInstallPath = getInstallPath(argv[0]);
+  ArrayRef<std::string> SourcePathList;
+  if (QueryAPIMapping.getNumOccurrences()) {
+    if (InRoot.empty())
+      InRoot = DpctInstallPath + "/test/api_mapping_cases";
+    static const std::vector<std::string> Source = {InRoot + "/" +
+                                                    QueryAPIMapping + ".cu"};
+    if (!llvm::sys::fs::is_regular_file(Source[0])) {
+      llvm::outs() << "The API Mapping is not available\n";
+      dpctExit(MigrationSucceeded);
+    }
+    DpctGlobalInfo::setIsQueryAPIMapping(true);
+    SourcePathList = Source;
+  } else {
+    SourcePathList = OptParser->getSourcePathList();
+  }
+  RefactoringTool Tool(OptParser->getCompilations(), SourcePathList);
 
   if (GenBuildScript) {
     clang::tooling::SetCompileTargetsMap(CompileTargetsMap);
@@ -753,14 +760,17 @@ int runDPCT(int argc, const char **argv) {
   }
 
   Tool.setCompilationDatabaseDir(CompilationsDir);
-  DpctInstallPath = getInstallPath(Tool, argv[0]);
 
   ValidateInputDirectory(Tool, InRoot);
 
   IsUsingDefaultOutRoot = OutRoot.empty();
-  if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
-    ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
-    dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
+  if (DpctGlobalInfo::isQueryAPIMapping()) {
+    OutRoot = InRoot + "/dpct_output";
+  } else {
+    if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
+      ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
+      dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
+    }
   }
   dpct::DpctGlobalInfo::setOutRoot(OutRoot);
 
@@ -848,6 +858,10 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setOptimizeMigrationFlag(OptimizeMigration.getValue());
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRoot;
+
+  if (DpctGlobalInfo::isQueryAPIMapping()) {
+    DpctGlobalInfo::setIsIncMigration(false);
+  }
 
   if (ExcludePathList.getNumOccurrences()) {
     DpctGlobalInfo::setExcludePath(ExcludePathList);
