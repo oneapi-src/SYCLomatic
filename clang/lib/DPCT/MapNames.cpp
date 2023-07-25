@@ -1791,7 +1791,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasZgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasCrot_v2", getDpctNamespace() + "rot"},
       {"cublasZrot_v2", getDpctNamespace() + "rot"},
-      {"cublasGetStatusString", ""}};
+      {"cublasGetStatusString", ""},
+      {"cublasSgemm_v2_64", "oneapi::mkl::blas::column_major::gemm"}};
 
   SOLVERAPIWithRewriter = {"cusolverDnSetAdvOptions",
                            "cusolverDnSetStream",
