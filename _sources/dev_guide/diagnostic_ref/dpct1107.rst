@@ -1,0 +1,23 @@
+.. _DPCT1107:
+
+DPCT1107
+========
+
+Message
+-------
+
+.. _msg-1107-start:
+
+Migration for this overload of <API Name> is not supported.
+
+.. _msg-1107-end:
+
+Detailed Help
+-------------
+
+.. include:: /_include_files/support-msg.txt
+
+Suggestions to Fix
+------------------
+
+.. include:: /_include_files/support-msg.txt
