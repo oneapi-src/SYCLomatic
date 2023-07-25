@@ -478,6 +478,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cusparseSpMVAlg_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverDnFunction_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverAlgMode_t", std::make_shared<TypeNameRule>("int")},
+      {"__half_raw", std::make_shared<TypeNameRule>(getClNamespace() + "half")},
       // ...
   };
 

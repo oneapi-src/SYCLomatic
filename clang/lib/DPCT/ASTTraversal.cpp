@@ -12229,7 +12229,6 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
 
 void RecognizeAPINameRule::runRule(const MatchFinder::MatchResult &Result) {
   const CallExpr *CE = nullptr;
-  const CXXMemberCallExpr *MC = nullptr;
   if ((CE = getNodeAsType<CallExpr>(Result, "APINamesUsed")) ||
       (CE = getNodeAsType<CallExpr>(Result, "APINamesHasNSUsed")))
     processFuncCall(CE);
@@ -14606,3 +14605,43 @@ void CudaUuidRule::runRule(
 }
 
 REGISTER_RULE(CudaUuidRule, PassKind::PK_Analysis)
+
+void HalfRawRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(
+      typeLoc(loc(qualType(hasDeclaration(namedDecl(hasAnyName("__half_raw"))))))
+          .bind("halfRawType"),
+      this);
+  MF.addMatcher(
+      initListExpr(hasType(namedDecl(hasAnyName("__half_raw"))))
+          .bind("halfRawInitListExpr"),
+      this);
+}
+
+void HalfRawRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  ExprAnalysis EA;
+  if (auto TL = getNodeAsType<TypeLoc>(Result, "halfRawType")) {
+    EA.analyze(*TL);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  } else if (const InitListExpr *Init =
+                 getNodeAsType<InitListExpr>(Result, "halfRawInitListExpr")) {
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    std::string Replacement;
+    llvm::raw_string_ostream OS(Replacement);
+    OS << "{" + MapNames::getClNamespace() + "bit_cast<" +
+              MapNames::getClNamespace() + "half>(uint16_t(";
+    EA.analyze(Init->getInit(0));
+    OS << EA.getReplacedString();
+    OS << "))}";
+    OS.flush();
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(SM, Init, Replacement, nullptr));
+    return;
+  } else {
+    return;
+  }
+}
+
+REGISTER_RULE(HalfRawRule, PassKind::PK_Analysis)
