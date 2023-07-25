@@ -294,9 +294,12 @@ def format_entry(exec_trace):
             file_path = abspath(exec_trace['directory'], preprocess_source)
             logging.debug('preprocess_file: %s,', file_path)
             preproess_output_files.add(file_path)
-
+        
         for source in compilation.files:
-            command = [compiler, "-c"] + compilation.flags + [source]
+            command = [compiler]
+            if('-o' not in compilation.flags):
+                command+= ['-c']
+            command+= compilation.flags + [source]
             logging.debug("formated as: %s", command)
             yield {
                 "directory": exec_trace["directory"],
