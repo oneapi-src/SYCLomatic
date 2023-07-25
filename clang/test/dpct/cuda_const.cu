@@ -14,7 +14,7 @@ public:
 // CHECK: static dpct::constant_memory<TestStruct, 0> t1;
 __constant__ TestStruct t1;
 
-// CHECK: void member_acc(TestStruct t1) {
+// CHECK: void member_acc(TestStruct const t1) {
 // CHECK-NEXT:  t1.test();
 // CHECK-NEXT:}
 __global__ void member_acc() {
@@ -38,9 +38,8 @@ __constant__ int const_init_2d[5][5] = {{1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7,
 // CHECK: static dpct::constant_memory<int, 2> incomplete_size_init_2d(sycl::range<2>(3, 2), { {1,2},{3,4},{5,6}});
 __constant__ int incomplete_size_init_2d[][2] = { {1,2},{3,4},{5,6}};
 
-
 // CHECK: struct FuncObj {
-// CHECK-NEXT: void operator()(float *out, int index, float *const_angle) {
+// CHECK-NEXT: void operator()(float *out, int index, float const *const_angle) {
 // CHECK-NEXT:   out[index] = const_angle[index];
 struct FuncObj {
   __device__ void operator()(float *out, int index) {
@@ -49,7 +48,7 @@ struct FuncObj {
 };
 
 // CHECK:void simple_kernel(float *d_array, const sycl::nd_item<3> &[[ITEM:item_ct1]],
-// CHECK-NEXT:              float *const_angle, int *const_ptr) {
+// CHECK-NEXT:              float const *const_angle, int const *const_ptr) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range(2) + [[ITEM]].get_local_id(2);
 // CHECK-NEXT:  FuncObj f;
@@ -77,7 +76,7 @@ __device__ __constant__ float const_one;
 
 // CHECK:void simple_kernel_one(float *d_array, const sycl::nd_item<3> &[[ITEM:item_ct1]],
 // CHECK-NEXT:                  sycl::accessor<float, 2, sycl::access_mode::read, sycl::access::target::device> const_float,
-// CHECK-NEXT:                  float const_one) {
+// CHECK-NEXT:                  float const const_one) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range(2) + [[ITEM]].get_local_id(2);
 // CHECK-NEXT:  if (index < 33) {
@@ -211,7 +210,7 @@ int main(int argc, char **argv) {
 // CHECK: static dpct::constant_memory<float, 0> C;
 __constant__ float C;
 
-// CHECK: void foo(float d, float y, float C){
+// CHECK: void foo(float d, float y, float const C){
 // CHECK-NEXT:   float temp;
 // CHECK-NEXT:   float maxtemp = sycl::fmax(temp=(y*d)<(y==1?C:0) ? -(3*y) :-10, (float)(-10));
 // CHECK-NEXT: }
@@ -230,10 +229,9 @@ __device__ __constant__ int const_array[10];
 #define l_arg &d_a0, &d_a1
 #define d_arg int *d_a0, int *d_a1
 
-
-// CHECK: void bar(int *const_array) { int a = const_array[0]; }
-// CHECK-NEXT: void inner_foo(int *last, d_arg, int *const_array) { bar(const_array); }
-// CHECK-NEXT: void foo(int d_a0, int d_a1, int *const_array) {
+// CHECK: void bar(int const *const_array) { int a = const_array[0]; }
+// CHECK-NEXT: void inner_foo(int *last, d_arg, int const *const_array) { bar(const_array); }
+// CHECK-NEXT: void foo(int const d_a0, int const d_a1, int const *const_array) {
 // CHECK-NEXT:   int last;
 // CHECK-NEXT:   inner_foo(&last, l_arg, const_array);
 // CHECK-NEXT: }

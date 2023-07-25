@@ -25,6 +25,7 @@
 
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Attr.h"
+#include "clang/AST/Decl.h"
 #include "clang/AST/ParentMapContext.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
@@ -34,6 +35,7 @@
 #include "llvm/Support/Path.h"
 namespace path = llvm::sys::path;
 
+using namespace clang;
 namespace llvm {
 class StringRef;
 } // namespace llvm
@@ -584,6 +586,7 @@ bool containIterationSpaceBuiltinVar(const clang::Stmt *Node);
 bool containBuiltinWarpSize(const clang::Stmt *Node);
 bool isCapturedByLambda(const clang::TypeLoc *TL);
 std::string getAddressSpace(const clang::CallExpr *C, int ArgIdx);
+std::string getNameSpace(const NamespaceDecl *NSD);
 namespace clang {
 namespace dpct {
 std::string getDpctVersionStr();
