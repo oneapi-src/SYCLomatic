@@ -26,6 +26,7 @@
 #include "ThrustAPIMigration.h"
 #include "Utility.h"
 #include "WMMAAPIMigration.h"
+#include "clang/AST/Expr.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/Stmt.h"
@@ -8860,7 +8861,15 @@ void DeviceFunctionDeclRule::registerMatcher(ast_matchers::MatchFinder &MF) {
           .bind("deviceFuncDecl"),
       this);
 
-  MF.addMatcher(cxxNewExpr(hasAncestor(DeviceFunctionMatcher)).bind("CxxNew"),
+  MF.addMatcher(
+      cxxNewExpr(hasAncestor(DeviceFunctionMatcher)).bind("CxxNewExpr"), this);
+  MF.addMatcher(
+      cxxDeleteExpr(hasAncestor(DeviceFunctionMatcher)).bind("CxxDeleteExpr"),
+      this);
+  MF.addMatcher(callExpr(hasAncestor(DeviceFunctionMatcher),
+                         callee(functionDecl(hasAnyName(
+                             "malloc", "free", "delete", "__builtin_alloca"))))
+                    .bind("MemoryManipulation"),
                 this);
 
   MF.addMatcher(typeLoc(hasAncestor(DeviceFunctionMatcher),
@@ -9008,9 +9017,19 @@ void DeviceFunctionDeclRule::runRule(
     FuncInfo->addCallee(Ctor);
   }
 
-  if (auto CXX = getAssistNodeAsType<CXXNewExpr>(Result, "CxxNew")) {
-      report(CXX->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
-                            false, "Memory storage allocation");
+  if (auto CXX = getAssistNodeAsType<CXXNewExpr>(Result, "CxxNewExpr")) {
+    report(CXX->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
+           false, "The usage of dynamic memory allocation and deallocation APIs");
+  }
+
+  if (auto CXX = getAssistNodeAsType<CXXDeleteExpr>(Result, "CxxDeleteExpr")) {
+    report(CXX->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
+           false, "The usage of dynamic memory allocation and deallocation APIs");
+  }
+
+  if (auto CE = getAssistNodeAsType<CallExpr>(Result, "MemoryManipulation")) {
+    report(CE->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION, false,
+           "The usage of dynamic memory allocation and deallocation APIs");
   }
 
   if (auto Var = getAssistNodeAsType<VarDecl>(Result, "varGrid")) {
