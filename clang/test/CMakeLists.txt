@@ -192,13 +192,6 @@ add_specific_lit_testsuite(check-clang-c2s dpct ${CMAKE_CURRENT_SOURCE_DIR}/dpct
   PARAMS ${CLANG_TEST_PARAMS}
   DEPENDS ${CLANG_TEST_DEPS}
 )
-
-install(
-  DIRECTORY dpct/api_mapping_cases
-  COMPONENT dpct-api_mapping_cases
-  DESTINATION test)
-add_llvm_install_targets(install-dpct-api_mapping_cases
-  COMPONENT dpct-api_mapping_cases)
 # SYCLomatic_CUSTOMIZATION end
 
 # Add a legacy target spelling: clang-test

@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "clang/DPCT/DPCT.h"
+#include "APIMapping/QueryAPIMapping.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "AutoComplete.h"
@@ -250,7 +251,8 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   return CudaPathAbs.str().str();
 }
 
-std::string getInstallPath(const char *invokeCommand) {
+std::string getInstallPath(clang::tooling::ClangTool &Tool,
+                           const char *invokeCommand) {
   SmallString<512> InstalledPath(invokeCommand);
 
   // Do a PATH lookup, if there are no directory components.
@@ -732,17 +734,26 @@ int runDPCT(int argc, const char **argv) {
   CudaPath = getCudaInstallPath(OriginalArgc, argv);
   DpctDiags() << "Cuda Include Path found: " << CudaPath << "\n";
 
-  DpctInstallPath = getInstallPath(argv[0]);
   ArrayRef<std::string> SourcePathList;
   if (QueryAPIMapping.getNumOccurrences()) {
-    if (InRoot.empty())
-      InRoot = DpctInstallPath + "/test/api_mapping_cases";
-    static const std::vector<std::string> Source = {InRoot + "/" +
-                                                    QueryAPIMapping + ".cu"};
-    if (!llvm::sys::fs::is_regular_file(Source[0])) {
+    APIMapping::initEntryMap();
+    auto SourceCode = APIMapping::getAPISourceCode(QueryAPIMapping);
+    if (SourceCode.empty()) {
       llvm::outs() << "The API Mapping is not available\n";
       dpctExit(MigrationSucceeded);
     }
+    int FD;
+    SmallString<64> TempFile;
+    if (auto EC =
+            llvm::sys::fs::createTemporaryFile("tmp", "cu", FD, TempFile)) {
+      llvm::errs() << "Error: dpct internal error. Cannot create temp file for "
+                      "api mapping.\n";
+    }
+    llvm::raw_fd_ostream(FD, true) << SourceCode;
+    SmallString<64> TempPath;
+    llvm::sys::path::system_temp_directory(true, TempPath);
+    InRoot = TempPath.str().str();
+    static const std::vector<std::string> Source = {TempFile.str().str()};
     DpctGlobalInfo::setIsQueryAPIMapping(true);
     SourcePathList = Source;
   } else {
@@ -764,6 +775,7 @@ int runDPCT(int argc, const char **argv) {
   }
 
   Tool.setCompilationDatabaseDir(CompilationsDir);
+  DpctInstallPath = getInstallPath(Tool, argv[0]);
 
   ValidateInputDirectory(Tool, InRoot);
 
@@ -864,6 +876,10 @@ int runDPCT(int argc, const char **argv) {
   InRootTooling = InRoot;
 
   if (DpctGlobalInfo::isQueryAPIMapping()) {
+    // Need add some flags to do the best migration.
+    DpctGlobalInfo::setExtensionDDFlag(
+        1 << static_cast<unsigned>(
+            DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath));
     DpctGlobalInfo::setIsIncMigration(false);
   }
 
