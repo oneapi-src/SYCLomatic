@@ -1075,7 +1075,7 @@ public:
     if (!q) {
       throw std::runtime_error("set_queue: pointer must not be nullptr.");
     }
-    if (!*_eng) {
+    if (!_eng) {
       throw std::runtime_error("set_queue: current engine is invalid.");
     }
     if (q->get_context() != ::dnnl::sycl_interop::get_context(*_eng)) {
