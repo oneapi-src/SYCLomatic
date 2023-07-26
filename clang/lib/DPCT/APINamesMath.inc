@@ -290,7 +290,7 @@ ENTRY_EMULATED("__drcp_rz", "(1.0/(X))")
 
 
 // Half/Half2 Arithmetic Functions
-ENTRY_RENAMED("__habs", MapNames::getClNamespace(false, true) + "fabs")
+ENTRY_REWRITE("__habs")
 ENTRY_RENAMED("__habs2", MapNames::getClNamespace(false, true) + "fabs")
 ENTRY_REWRITE("__hadd2")
 ENTRY_REWRITE("__h2div")
