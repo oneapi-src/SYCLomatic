@@ -4,7 +4,7 @@
 
 __constant__ int ca[32];
 
-// CHECK: void kernel(int *i, int *ca) {
+// CHECK: void kernel(int *i, int const *ca) {
 __global__ void kernel(int *i) {
   ca[0] = *i;
 }

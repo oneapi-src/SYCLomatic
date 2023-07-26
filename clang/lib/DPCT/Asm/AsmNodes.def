@@ -1,0 +1,44 @@
+//===-------------------------- AsmNodes.def --------------------*- C++ -*-===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
+
+// clang-format off
+#ifndef STMT
+#define STMT(Class, Parent) InlineAsm ## Class
+#endif
+
+#ifndef ABSTRACT_STMT
+#  define ABSTRACT_STMT(Type) Type
+#endif
+
+#ifndef STMT_RANGE
+#  define STMT_RANGE(Base, First, Last)
+#endif
+
+STMT(DeclStmt, Stmt)
+STMT(CompoundStmt, Stmt)
+STMT(Instruction, Stmt)
+STMT(ConditionalInstruction, Stmt)
+ABSTRACT_STMT(Expr)
+STMT(UnaryOperator, Expr)
+STMT(BinaryOperator, Expr)
+STMT(ConditionalOperator, Expr)
+STMT(VectorExpr, Expr)
+STMT(DiscardExpr, Expr)
+STMT(AddressExpr, Expr)
+STMT(CastExpr, Expr)
+STMT(ParenExpr, Expr)
+STMT(DeclRefExpr, Expr)
+STMT(IntegerLiteral, Expr)
+STMT(FloatingLiteral, Expr)
+STMT_RANGE(Expr, UnaryOperator, FloatingLiteral)
+STMT_RANGE(Stmt, DeclStmt, FloatingLiteral)
+
+#undef STMT_RANGE
+#undef ABSTRACT_STMT
+#undef STMT
+// clang-format on

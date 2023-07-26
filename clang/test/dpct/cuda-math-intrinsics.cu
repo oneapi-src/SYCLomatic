@@ -28,14 +28,14 @@ using ::max;
 __constant__ double d;
 __constant__ double d2;
 
-// CHECK: double test(double d3, double d) {
+// CHECK: double test(double d3, double const d) {
 // CHECK-NEXT:  return sycl::max(d, d3);
 // CHECK-NEXT:}
 __device__ double test(double d3) {
   return max(d, d3);
 }
 
-// CHECK:  double test2(double d, double d2) {
+// CHECK:  double test2(double const d, double const d2) {
 // CHECK-NEXT:   return sycl::max(d, d2);
 // CHECK-NEXT: }
 __device__ double test2() {
@@ -50,7 +50,7 @@ __device__ double test3(double d4, double d5) {
 }
 
 // CHECK: static dpct::constant_memory<float, 0> C;
-// CHECK-NEXT:  int foo(int n, float C) {
+// CHECK-NEXT:  int foo(int n, float const C) {
 // CHECK-NEXT:   return n == 1 ? C : 0;
 // CHECK-NEXT: }
 __constant__ float C;
