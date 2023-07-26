@@ -2703,9 +2703,9 @@ sycl::event engine_ext::batch_normalization_backward_internal(
   ::dnnl::memory::desc actual_diff_src_desc = help_diff_src_desc;
   ::dnnl::memory::desc actual_diff_scale_bias_desc = help_diff_scale_bias_desc;
   enter_primitive(
-      help_diff_scale_bias_desc.get_size() * 8 + help_src_desc.get_size() * 3 +
-      help_diff_dst_desc.get_size() * 3 + help_diff_src_desc.get_size() +
-      help_mean_var_desc.get_size() * 9);
+      help_diff_scale_bias_desc.get_size() * 14 + help_src_desc.get_size() * 2 +
+      help_diff_dst_desc.get_size() * 7 + help_diff_src_desc.get_size() * 5 +
+      help_mean_var_desc.get_size() * 13);
   if (mode == batch_normalization_mode::per_activation) {
     help_src_desc = bn_reorder_memory_to_channel_major_format(true, help_src_desc, src,
                                                        &reordered_src);
@@ -2840,9 +2840,9 @@ sycl::event engine_ext::batch_normalization_forward_internal(
   if (scale_parameter_preprocess({{alpha, beta, dst_desc, dst}})) {
     return sycl::event();
   }
-  enter_primitive(src_desc.get_size() + dst_desc.get_size() +
+  enter_primitive(src_desc.get_size() + 5 * dst_desc.get_size() +
                   scale_bias_desc.get_size() * 2 +
-                  mean_var_desc.get_size() * 5);
+                  mean_var_desc.get_size() * 9);
   void *reordered_src = nullptr, *reordered_dst = nullptr,
        *reordered_scale = nullptr, *reordered_bias = nullptr,
        *reordered_saved_mean = nullptr, *reordered_saved_var = nullptr;
@@ -3635,7 +3635,7 @@ sycl::event engine_ext::async_reorder(float alpha, const memory_desc_ext &src_de
   if (scale_parameter_preprocess({{alpha, beta, dst_desc, dst}})) {
     return sycl::event();
   }
-  enter_primitive(dst_desc.get_size());
+  enter_primitive(2 * dst_desc.get_size());
 
   auto primitive_args = create_primitive_args_or_get<::dnnl::reorder>(
       src_desc.get_desc(), *_eng, dst_desc.get_desc());
@@ -3733,7 +3733,8 @@ sycl::event engine_ext::async_binary(binary_op op, float alpha_0,
   size_t src0_cache_size = src_desc_0.get_size();
   size_t src1_cache_size = src_desc_1.get_size();
   size_t dst_cache_size = dst_desc.get_size();
-  enter_primitive(src0_cache_size + src1_cache_size + dst_cache_size);
+  enter_primitive(2 * src0_cache_size + 2 * src1_cache_size +
+                  5 * dst_cache_size);
   if (onednn_algorithm == ::dnnl::algorithm::eltwise_sqrt ||
       onednn_algorithm == ::dnnl::algorithm::eltwise_linear) {
     void *src_cache = nullptr, *dst_cache = nullptr;
@@ -3801,7 +3802,7 @@ sycl::event engine_ext::async_reduction(reduction_op op, float alpha,
   }
   size_t src_cache_size = src_desc.get_size();
   size_t dst_cache_size = dst_desc.get_size();
-  enter_primitive(src_cache_size + dst_cache_size);
+  enter_primitive(3 * src_cache_size + 2 * dst_cache_size);
   float p = 2.f;
   ::dnnl::algorithm onednn_algorithm;
   void *cache = nullptr;
@@ -3864,7 +3865,7 @@ sycl::event engine_ext::async_activation_forward(activation_desc &desc, float al
   if (scale_parameter_preprocess({{alpha, beta, dst_desc, dst}})) {
     return sycl::event();
   }
-  enter_primitive(dst_desc.get_size());
+  enter_primitive(2 * dst_desc.get_size());
   auto primitive_args = create_primitive_args_or_get<::dnnl::eltwise_forward>(
       ::dnnl::prop_kind::forward, desc.get_algorithm(), src_desc.get_desc(),
       dst_desc.get_desc(), desc.get_alpha(), desc.get_beta());
@@ -3888,7 +3889,7 @@ sycl::event engine_ext::async_activation_backward(
   if (scale_parameter_preprocess({{alpha, beta, diff_src_desc, diff_src}})) {
     return sycl::event();
   }
-  enter_primitive(diff_src_desc.get_size());
+  enter_primitive(2 * diff_src_desc.get_size());
   ::dnnl::memory::desc data_desc = dst_desc.get_desc();
   auto alg = desc.get_algorithm();
   if ((alg == ::dnnl::algorithm::eltwise_clip) ||
@@ -3926,7 +3927,7 @@ sycl::event engine_ext::async_pooling_forward(pooling_desc &desc, float alpha,
   if (scale_parameter_preprocess({{alpha, beta, dst_desc, dst}})) {
     return sycl::event();
   }
-  enter_primitive(dst_desc.get_size());
+  enter_primitive(2 * dst_desc.get_size());
   int pooling_dim = desc.get_stride().size();
   std::vector<int64_t> dilation(pooling_dim, 0);
   auto primitive_args =
@@ -3962,7 +3963,7 @@ sycl::event engine_ext::async_pooling_backward(
   if (scale_parameter_preprocess({{alpha, beta, diff_src_desc, diff_src}})) {
     return sycl::event();
   }
-  enter_primitive(diff_src_desc.get_size());
+  enter_primitive(2 * diff_src_desc.get_size());
   int pooling_dim = desc.get_stride().size();
   std::vector<int64_t> dilation(pooling_dim, 0);
   auto primitive_args = create_primitive_args_or_get<::dnnl::pooling_backward>(
@@ -4012,7 +4013,7 @@ sycl::event engine_ext::async_softmax_forward(softmax_algorithm alg,
     help_src_desc = compress_spatial_dimensions_to_channel(help_src_desc);
     help_dst_desc = compress_spatial_dimensions_to_channel(help_dst_desc);
   }
-  enter_primitive(help_dst_desc.get_size());
+  enter_primitive(2 * help_dst_desc.get_size());
 
   ::dnnl::algorithm softmax_alg = ::dnnl::algorithm::softmax_accurate;
   if (alg == softmax_algorithm::log) {
@@ -4049,7 +4050,7 @@ sycl::event engine_ext::async_softmax_backward(
     help_diff_dst_desc =
         compress_spatial_dimensions_to_channel(help_diff_dst_desc);
   }
-  enter_primitive(help_diff_src_desc.get_size());
+  enter_primitive(2 * help_diff_src_desc.get_size());
 
   ::dnnl::algorithm softmax_alg = ::dnnl::algorithm::softmax_accurate;
   if (alg == softmax_algorithm::log) {
@@ -4081,7 +4082,7 @@ sycl::event engine_ext::async_lrn_forward(lrn_desc &desc, float alpha,
   if (scale_parameter_preprocess({{alpha, beta, dst_desc, dst}})) {
     return sycl::event();
   }
-  enter_primitive(dst_desc.get_size());
+  enter_primitive(2 * dst_desc.get_size());
   auto primitive_args = create_primitive_args_or_get<::dnnl::lrn_forward>(
       ::dnnl::prop_kind::forward_training,
       ::dnnl::algorithm::lrn_across_channels, src_desc.get_desc(),
@@ -4118,7 +4119,7 @@ engine_ext::async_lrn_backward(lrn_desc &desc, float alpha,
   if (scale_parameter_preprocess({{alpha, beta, diff_src_desc, diff_src}})) {
     return sycl::event();
   }
-  enter_primitive(diff_src_desc.get_size());
+  enter_primitive(2 * diff_src_desc.get_size());
   auto primitive_args = create_primitive_args_or_get<::dnnl::lrn_backward>(
       ::dnnl::algorithm::lrn_across_channels, diff_src_desc.get_desc(),
       diff_dst_desc.get_desc(), src_desc.get_desc(), desc.get_local_size(),
@@ -4385,7 +4386,7 @@ engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm 
   auto origin_dst_md = dst_desc.get_desc();
   auto origin_weight_md = help_weight_desc;
 
-  enter_primitive(origin_src_md.get_size() + origin_dst_md.get_size() * 2 +
+  enter_primitive(origin_src_md.get_size() + origin_dst_md.get_size() * 5 +
                   origin_weight_md.get_size());
   auto src_md = transfer_memory_desc_to_format_tag_any(origin_src_md);
   auto dst_md = transfer_memory_desc_to_format_tag_any(origin_dst_md);
@@ -4451,7 +4452,7 @@ sycl::event engine_ext::async_convolution_forward(
                                          ::dnnl::memory::format_tag::a};
   ::dnnl::primitive_attr attr;
   attr.set_fpmath_mode(desc.get_math_mode());
-  enter_primitive(dst_desc.get_size() * 3 + weight_desc.get_size());
+  enter_primitive(dst_desc.get_size() * 5 + 2 * weight_desc.get_size());
   auto primitive_args = create_primitive_args_or_get<::dnnl::convolution_forward>(
       ::dnnl::prop_kind::forward_training, alg, src_desc.get_desc(),
       help_weight_desc, help_bias_desc, dst_desc.get_desc(), desc.get_stride(),
@@ -4492,7 +4493,7 @@ sycl::event engine_ext::async_convolution_backward_data(
   if (scale_parameter_preprocess({{alpha, beta, diff_dst_desc, diff_dst}})) {
     return sycl::event();
   }
-  enter_primitive(diff_src_desc.get_size());
+  enter_primitive(2 * diff_src_desc.get_size());
   auto help_weight_desc =
       get_group_weight_desc(desc.get_group_count(), weight_desc);
 
@@ -4536,7 +4537,7 @@ sycl::event engine_ext::async_convolution_backward_weight(
           {{alpha, beta, diff_weight_desc, diff_weight}})) {
     return sycl::event();
   }
-  enter_primitive(diff_weight_desc.get_size());
+  enter_primitive(2 * diff_weight_desc.get_size());
   auto help_diff_weight_desc =
       get_group_weight_desc(desc.get_group_count(), diff_weight_desc);
 
@@ -4735,7 +4736,7 @@ sycl::event engine_ext::async_dropout_forward(dropout_desc &desc,
   if (workspace_size < src_desc.get_size()) {
     throw std::runtime_error("async_dropout_forward: no sufficient workspace.");
   }
-  enter_primitive(src_desc.get_size() * 2);
+  enter_primitive(src_desc.get_size() * 2 + dst_desc.get_size() * 2);
   float p = desc.get_probability();
   if (p == 1.f) {
     return _q->memset(dst, 0, dst_desc.get_size());
@@ -4781,7 +4782,7 @@ sycl::event engine_ext::async_dropout_backward(
     dropout_desc &desc, const memory_desc_ext &diff_dst_desc,
     void *diff_dst, const memory_desc_ext &diff_src_desc, void *diff_src,
     void *workspace, size_t workspace_size) {
-  enter_primitive(diff_src_desc.get_size());
+  enter_primitive(2 * diff_src_desc.get_size());
   float p = desc.get_probability();
   if (p == 1.f) {
     return _q->memset(diff_src, 0, diff_src_desc.get_size());
