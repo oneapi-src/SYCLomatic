@@ -525,8 +525,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
       if (DpctGlobalInfo::isQueryAPIMapping()) {
         auto GetFuncBodyStr = [](const std::string &s) {
-          return std::string(s, s.find_first_of('{') + 1,
-                             s.find_last_of('}') - s.find_first_of('{') - 1);
+          return std::string(s, s.find(") {") + 3,
+                             s.find_last_of(';') - s.find(") {") - 2);
         };
         std::ifstream Inputfile;
         Inputfile.open(

@@ -77,6 +77,20 @@ add_custom_target(dpct_helper_headers_and_inc
   DEPENDS ${PROCESS_FILES_OUTPUT}
   )
 
+# Handle API mapping cases header
+set(API_MAPPING_REGISTER_FOLDER ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/)
+file(GLOB SRC_FILES ../../test/dpct/api_mapping_cases/*/*.cu)
+file(WRITE ${API_MAPPING_REGISTER_FOLDER}APIMappingRegister.def "")
+foreach(FILE ${SRC_FILES})
+  file(READ ${FILE} FILE_STR)
+  string(REGEX REPLACE ".*/(.*).cu$" "\\1" API_NAME ${FILE})
+  file(APPEND ${API_MAPPING_REGISTER_FOLDER}APIMappingRegister.def
+  "registerEntry(\"" "${API_NAME}" "\",\nR\"(" "${FILE_STR}" ")\");\n")
+endforeach()
+include_directories(
+  ${API_MAPPING_REGISTER_FOLDER}
+  )
+
 include_directories(
   # For the CUDA-Toolchain and its CudaInstallationDetector
   ../../../clang/lib/Driver/
@@ -139,6 +153,7 @@ add_clang_library(DPCT
   TypeLocRewriters.cpp
   AutoComplete.cpp
   AsmMigration.cpp
+  APIMapping/QueryAPIMapping.cpp
   Asm/AsmLexer.cpp
   Asm/AsmParser.cpp
   Asm/AsmIdentifierTable.cpp
