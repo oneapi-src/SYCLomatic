@@ -11,10 +11,10 @@
 namespace clang {
 namespace dpct {
 
-std::unordered_map<std::string, std::string> APIMapping::EntryMap;
+llvm::DenseMap<llvm::StringRef, llvm::StringRef> APIMapping::EntryMap;
 
-void APIMapping::registerEntry(const std::string &Name,
-                               const std::string &SourceCode) {
+void APIMapping::registerEntry(const llvm::StringRef Name,
+                               const llvm::StringRef SourceCode) {
   EntryMap[Name] = SourceCode;
 }
 
@@ -22,7 +22,7 @@ void APIMapping::initEntryMap() {
 #include "APIMappingRegister.def"
 }
 
-const std::string &APIMapping::getAPISourceCode(const std::string &Key) {
+const llvm::StringRef APIMapping::getAPISourceCode(const llvm::StringRef Key) {
   auto Iter = EntryMap.find(Key);
   if (Iter == EntryMap.end()) {
     static const std::string Empty{""};
