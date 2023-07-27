@@ -513,10 +513,28 @@ public:
   /// \return uplo value
   std::optional<oneapi::mkl::uplo> get_uplo() const noexcept { return _uplo; }
 
+  void set_nnz(std::int64_t nnz) { _nnz = nnz; }
+
 private:
   template <typename index_t, typename value_t> void set_data() {
+    void *row_ptr = nullptr;
+    if (!_row_ptr && !_temp_row_ptr) {
+      row_ptr = _temp_row_ptr = dpct::dpct_malloc(
+          sizeof(index_t) * (_row_num + 1), get_default_queue());
+    } else if (!_row_ptr && _temp_row_ptr) {
+      row_ptr = _temp_row_ptr;
+    } else if (_row_ptr && !_temp_row_ptr) {
+      row_ptr = _row_ptr;
+    } else if (_row_ptr && _temp_row_ptr) {
+      dpct::dpct_memcpy(
+          _row_ptr, _temp_row_ptr, sizeof(index_t) * (_row_num + 1),
+          memcpy_direction::device_to_device, get_default_queue());
+      row_ptr = _row_ptr;
+      dpct::dpct_free(_temp_row_ptr, get_default_queue());
+      _temp_row_ptr = nullptr;
+    }
     auto data_row_ptr =
-        dpct::detail::get_memory(reinterpret_cast<index_t *>(_row_ptr));
+        dpct::detail::get_memory(reinterpret_cast<index_t *>(row_ptr));
     auto data_col_ind =
         dpct::detail::get_memory(reinterpret_cast<index_t *>(_col_ind));
     auto data_value =
@@ -598,6 +616,7 @@ private:
   matrix_format _data_format;
   std::optional<oneapi::mkl::uplo> _uplo;
   std::optional<oneapi::mkl::diag> _diag;
+  void *_temp_row_ptr = nullptr;
 };
 
 namespace detail {
