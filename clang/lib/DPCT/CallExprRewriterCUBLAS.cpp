@@ -52,7 +52,7 @@ createBLASMultiStmtsRewriterFactory(
           PrinterRewriter<MultiStmtsPrinter<StmtPrinters...>>,
           std::function<StmtPrinters(const CallExpr *)>...>>(SourceName,
                                                              Creators...),
-      true, true, true, false);
+      true, false, true, false);
 }
 
 #define BLAS_MULTI_STMTS_FACTORY_ENTRY(FuncName, ...)                          \
