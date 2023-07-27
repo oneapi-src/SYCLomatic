@@ -734,7 +734,7 @@ int runDPCT(int argc, const char **argv) {
   CudaPath = getCudaInstallPath(OriginalArgc, argv);
   DpctDiags() << "Cuda Include Path found: " << CudaPath << "\n";
 
-  ArrayRef<std::string> SourcePathList;
+  std::vector<std::string> SourcePathList;
   if (QueryAPIMapping.getNumOccurrences()) {
     APIMapping::initEntryMap();
     auto SourceCode = APIMapping::getAPISourceCode(QueryAPIMapping);
@@ -753,9 +753,8 @@ int runDPCT(int argc, const char **argv) {
     SmallString<64> TempPath;
     llvm::sys::path::system_temp_directory(true, TempPath);
     InRoot = TempPath.str().str();
-    static const std::vector<std::string> Source = {TempFile.str().str()};
     DpctGlobalInfo::setIsQueryAPIMapping(true);
-    SourcePathList = Source;
+    SourcePathList = {TempFile.str().str()};
   } else {
     SourcePathList = OptParser->getSourcePathList();
   }

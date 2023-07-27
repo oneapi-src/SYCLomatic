@@ -17,6 +17,7 @@
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
+#include "llvm/Support/FileUtilities.h"
 #include "llvm/Support/Path.h"
 #include <algorithm>
 
@@ -32,6 +33,7 @@
 #include "llvm/Support/raw_os_ostream.h"
 #include "llvm/Support/raw_ostream.h"
 #include <cassert>
+#include <cstdio>
 #include <fstream>
 using namespace clang::dpct;
 using namespace llvm;
@@ -524,9 +526,12 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       tooling::applyAllReplacements(Entry.second, Rewrite);
 
       if (DpctGlobalInfo::isQueryAPIMapping()) {
-        auto GetFuncBodyStr = [](const std::string &s) {
-          return std::string(s, s.find(") {") + 3,
-                             s.find_last_of(';') - s.find(") {") - 2);
+        static auto GetFuncBodyStr = [](const std::string &S) {
+          static const std::string StartStr{") {"};
+          static const std::string EndStr{";"};
+          const auto StartPos = S.find(StartStr) + StartStr.length();
+          const auto EndPos = S.find_last_of(EndStr) + 1;
+          return std::string(S, StartPos, EndPos - StartPos);
         };
         std::ifstream Inputfile;
         Inputfile.open(
@@ -545,6 +550,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
             .write(Stream);
         Stream.flush();
         llvm::outs() << "Is migrated to:" << GetFuncBodyStr(OS.str());
+        sys::fs::remove(Entry.first.c_str());
         return status; // Must be only 1 file.
       }
       // std::ios::binary prevents ofstream::operator<< from converting \n to

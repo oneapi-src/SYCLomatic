@@ -12,19 +12,22 @@
 #include <string>
 #include <unordered_map>
 
+#include "llvm/ADT/DenseMap.h"
+#include "llvm/ADT/StringRef.h"
+
 namespace clang {
 namespace dpct {
 
 class APIMapping {
-  static std::unordered_map<std::string, std::string> EntryMap;
+  static llvm::DenseMap<llvm::StringRef, llvm::StringRef> EntryMap;
 
-  static void registerEntry(const std::string &Name,
-                            const std::string &Description);
+  static void registerEntry(const llvm::StringRef Name,
+                            const llvm::StringRef Description);
 
 public:
   static void initEntryMap();
 
-  static const std::string &getAPISourceCode(const std::string &Key);
+  static const llvm::StringRef getAPISourceCode(const llvm::StringRef Key);
 };
 
 } // namespace dpct
