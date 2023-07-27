@@ -4016,7 +4016,9 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseCreateConstDnVec", "cusparseConstDnVecGet",
         "cusparseConstDnVecGetValues", "cusparseSpMM",
         "cusparseSpMM_bufferSize", "cusparseSpMV", "cusparseSpMV_bufferSize",
-        "cusparseSpMM_preprocess");
+        "cusparseSpMM_preprocess", "cusparseSpGEMM_compute",
+        "cusparseSpGEMM_copy", "cusparseSpGEMM_createDescr",
+        "cusparseSpGEMM_destroyDescr", "cusparseSpGEMM_workEstimation");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))

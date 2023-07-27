@@ -1966,7 +1966,12 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusparseSpMM_bufferSize",
                            "cusparseSpMV",
                            "cusparseSpMV_bufferSize",
-                           "cusparseSpMM_preprocess"};
+                           "cusparseSpMM_preprocess",
+                           "cusparseSpGEMM_compute",
+                           "cusparseSpGEMM_copy",
+                           "cusparseSpGEMM_createDescr",
+                           "cusparseSpGEMM_destroyDescr",
+                           "cusparseSpGEMM_workEstimation"};
 
   // Below set and map are only used to migrate using declaration
   MathFuncNameMap = {

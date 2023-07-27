@@ -762,6 +762,91 @@ inline void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
     throw std::runtime_error("the combination of data type is unsupported");
   }
 }
+
+void spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
+                            oneapi::mkl::transpose trans_b, const void *alpha,
+                            sparse_matrix_desc_t matA,
+                            sparse_matrix_desc_t matB, const void *beta,
+                            sparse_matrix_desc_t matC,
+                            oneapi::mkl::sparse::matmat_descr_t spgemmDescr,
+                            size_t *bufferSize, void *externalBuffer) {
+  set_matmat_data(spgemmDescr, oneapi::mkl::sparse::matrix_view_descr::general,
+                  trans_a, oneapi::mkl::sparse::matrix_view_descr::general,
+                  trans_b, oneapi::mkl::sparse::matrix_view_descr::general);
+  if (externalBuffer) {
+    std::int64_t *bufSize = sycl::malloc_host<std::int64_t>(1, queue);
+    *bufSize = static_cast<std::int64_t>(*bufferSize);
+    sycl::event e = oneapi::mkl::sparse::matmat(
+        queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
+        matC->get_matrix_handle(),
+        oneapi::mkl::sparse::matmat_request::work_estimation, spgemmDescr,
+        bufSize, dBuffer1, {});
+    async_dpct_free({bufSize}, {e}, queue);
+  } else {
+    std::int64_t *bufSize = sycl::malloc_host<std::int64_t>(1, queue);
+    oneapi::mkl::sparse::matmat(
+        queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
+        matC->get_matrix_handle(),
+        oneapi::mkl::sparse::matmat_request::get_work_estimation_buf_size,
+        spgemmDescr, bufSize, nullptr, {});
+    queue.wait();
+    *bufferSize = static_cast<size_t>(*bufSize);
+    sycl::free(bufSize, queue);
+  }
+}
+
+void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
+                    oneapi::mkl::transpose trans_b, const void *alpha,
+                    sparse_matrix_desc_t matA, sparse_matrix_desc_t matB,
+                    const void *beta, sparse_matrix_desc_t matC,
+                    oneapi::mkl::sparse::matmat_descr_t spgemmDescr,
+                    size_t *bufferSize, void *externalBuffer) {
+  set_matmat_data(spgemmDescr, oneapi::mkl::sparse::matrix_view_descr::general,
+                  trans_a, oneapi::mkl::sparse::matrix_view_descr::general,
+                  trans_b, oneapi::mkl::sparse::matrix_view_descr::general);
+  if (externalBuffer) {
+    std::int64_t *bufSize = sycl::malloc_host<std::int64_t>(1, queue);
+    *bufSize = static_cast<std::int64_t>(bufferSize2);
+    oneapi::mkl::sparse::matmat(
+        queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
+        matC->get_matrix_handle(), oneapi::mkl::sparse::matmat_request::compute,
+        spgemmDescr, bufSize, dBuffer2, {});
+    std::int64_t *c_nnz = sycl::malloc_host<std::int64_t>(1, queue);
+    oneapi::mkl::sparse::matmat(
+        queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
+        matC->get_matrix_handle(), oneapi::mkl::sparse::matmat_request::get_nnz,
+        spgemmDescr, c_nnz, nullptr, {});
+    queue.wait();
+    matC->set_nnz(*c_nnz);
+    sycl::free(bufSize, queue);
+  } else {
+    std::int64_t *bufSize = sycl::malloc_host<std::int64_t>(1, queue);
+    oneapi::mkl::sparse::matmat(
+        queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
+        matC->get_matrix_handle(),
+        oneapi::mkl::sparse::matmat_request::get_compute_buf_size, spgemmDescr,
+        bufSize, nullptr, {});
+    queue.wait();
+    *externalBuffer = static_cast<size_t>(*bufSize);
+    sycl::free(bufSize, queue);
+  }
+}
+
+void spgemm_finalize(sycl::queue queue, oneapi::mkl::transpose trans_a,
+                     oneapi::mkl::transpose trans_b, const void *alpha,
+                     sparse_matrix_desc_t matA, sparse_matrix_desc_t matB,
+                     const void *beta, sparse_matrix_desc_t matC,
+                     oneapi::mkl::sparse::matmat_descr_t spgemmDescr) {
+  set_matmat_data(spgemmDescr, oneapi::mkl::sparse::matrix_view_descr::general,
+                  trans_a, oneapi::mkl::sparse::matrix_view_descr::general,
+                  trans_b, oneapi::mkl::sparse::matrix_view_descr::general);
+  oneapi::mkl::sparse::matmat(
+      queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
+      matC->get_matrix_handle(), oneapi::mkl::sparse::matmat_request::finalize,
+      spgemmDescr, nullptr, nullptr, {});
+  queue.wait();
+}
+
 #endif
 } // namespace sparse
 } // namespace dpct

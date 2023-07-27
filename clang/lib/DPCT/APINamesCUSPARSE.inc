@@ -260,3 +260,23 @@ WARNING_FACTORY_ENTRY(
                                                   ARG_WC(0))),
                           "\"cusparseGetErrorName is not supported\"/*", "*/"),
     Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED)
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseSpGEMM_createDescr",
+    CALL("oneapi::mkl::sparse::init_matmat_descr", ARG(0))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseSpGEMM_destroyDescr",
+    CALL("oneapi::mkl::sparse::release_matmat_descr", ARG(0), ARG(1))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseSpGEMM_workEstimation",
+    CALL(MapNames::getDpctNamespace() + "spgemm_work_estimation", ARG(0), ARG(1))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseSpGEMM_compute",
+    CALL(MapNames::getDpctNamespace() + "spgemm_compute", ARG(0), ARG(1))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseSpGEMM_copy",
+    CALL(MapNames::getDpctNamespace() + "spgemm_finalize", ARG(0), ARG(1))))
