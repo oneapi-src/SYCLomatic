@@ -371,6 +371,14 @@ void scatter_if(Policy &&policy, InputIter1 first, InputIter1 last,
 }
 
 template <typename Policy, typename InputIter1, typename InputIter2,
+          typename InputIter3, typename OutputIter>
+void scatter_if(Policy &&policy, InputIter1 first, InputIter1 last,
+                InputIter2 map, InputIter3 mask, OutputIter result) {
+  scatter_if(::std::forward<Policy>(policy), first, last, map, mask, result,
+             [=](auto &&mask_element) { return mask_element; });
+}
+
+template <typename Policy, typename InputIter1, typename InputIter2,
           typename InputIter3, typename OutputIter, typename Predicate>
 OutputIter gather_if(Policy &&policy, InputIter1 map_first, InputIter1 map_last,
                      InputIter2 mask, InputIter3 input_first, OutputIter result,
@@ -395,6 +403,16 @@ OutputIter gather_if(Policy &&policy, InputIter1 map_first, InputIter1 map_last,
   return transform_if(policy, perm_begin, perm_begin + n, mask, result,
                       [=](auto &&v) { return v; },
                       [=](auto &&m) { return pred(m); });
+}
+
+template <typename Policy, typename InputIter1, typename InputIter2,
+          typename InputIter3, typename OutputIter>
+OutputIter gather_if(Policy &&policy, InputIter1 map_first, InputIter1 map_last,
+                     InputIter2 mask, InputIter3 input_first,
+                     OutputIter result) {
+  return gather_if(::std::forward<Policy>(policy), map_first, map_last, mask,
+                   input_first, result,
+                   [](auto &&mask_element) { return mask_element; });
 }
 
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
