@@ -63,7 +63,6 @@ def intercept_build():
     args = parse_args_for_intercept_build()
     return capture(args)
 
-
 def get_outfile(command):
     """ Get output filepath from compilation command. """
     pos = command.find("-o")
@@ -78,7 +77,6 @@ def get_outfile(command):
         end = len(command)
     outfile = command[start:end]
     return outfile
-
 
 def capture(args):
     """The entry point of build command interception."""
