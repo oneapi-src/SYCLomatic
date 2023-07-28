@@ -121,6 +121,8 @@ static inline std::string getMessagePrefix(int ID) {
 template <typename... Ts>
 void reportWarning(SourceLocation SL, const DiagnosticsMessage &Msg,
                    DiagnosticsEngine &Engine, Ts &&...Vals) {
+  if (DpctGlobalInfo::isQueryAPIMapping())
+    return;
   std::string Message = getMessagePrefix(Msg.ID) + Msg.Msg;
   if (OutputVerbosity != OutputVerbosityLevel::OVL_Silent) {
     unsigned ID = Engine.getDiagnosticIDs()->getCustomDiagID(

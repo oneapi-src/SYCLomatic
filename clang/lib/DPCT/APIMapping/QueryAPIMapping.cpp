@@ -6,6 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llvm/Support/raw_ostream.h"
+
 #include "QueryAPIMapping.h"
 
 namespace clang {
@@ -13,21 +15,22 @@ namespace dpct {
 
 llvm::DenseMap<llvm::StringRef, llvm::StringRef> APIMapping::EntryMap;
 
-void APIMapping::registerEntry(const llvm::StringRef Name,
-                               const llvm::StringRef SourceCode) {
+void APIMapping::registerEntry(llvm::StringRef Name,
+                               llvm::StringRef SourceCode) {
+  if (EntryMap.contains(Name)) {
+    llvm::errs() << "The API Mapping cases name is duplicated.\n";
+  }
   EntryMap[Name] = SourceCode;
 }
 
-void APIMapping::initEntryMap() {
+void APIMapping::initEntryMap(){
 #include "APIMappingRegister.def"
 }
 
-const llvm::StringRef APIMapping::getAPISourceCode(const llvm::StringRef Key) {
+llvm::StringRef APIMapping::getAPISourceCode(llvm::StringRef Key) {
   auto Iter = EntryMap.find(Key);
-  if (Iter == EntryMap.end()) {
-    static const std::string Empty{""};
-    return Empty;
-  }
+  if (Iter == EntryMap.end())
+    return llvm::StringRef{};
   return Iter->second;
 }
 

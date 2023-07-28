@@ -1154,6 +1154,8 @@ void IncludesCallbacks::InclusionDirective(
 void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
                                     SrcMgr::CharacteristicKind FileType,
                                     FileID PrevFID) {
+  if (DpctGlobalInfo::isQueryAPIMapping())
+    return;
   // Record the location when a file is entered
   if (Reason == clang::PPCallbacks::EnterFile) {
     DpctGlobalInfo::getInstance().setFileEnterLocation(Loc);

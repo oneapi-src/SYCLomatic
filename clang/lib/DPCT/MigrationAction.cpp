@@ -146,9 +146,8 @@ StringRef DpctToolAction::getStagingName(PassKind Pass) {
 }
 
 void DpctToolAction::printFileStaging(StringRef Staging, StringRef File) {
-  if (DpctGlobalInfo::isQueryAPIMapping()) {
+  if (DpctGlobalInfo::isQueryAPIMapping())
     return;
-  }
   std::string Msg;
   llvm::raw_string_ostream Out(Msg);
   Out << Staging << ": " << File << "\n";
