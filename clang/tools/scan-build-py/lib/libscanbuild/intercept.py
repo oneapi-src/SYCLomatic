@@ -63,6 +63,7 @@ def intercept_build():
     args = parse_args_for_intercept_build()
     return capture(args)
 
+
 def get_outfile(command):
     """ Get output filepath from compilation command. """
     pos = command.find("-o")
@@ -77,6 +78,7 @@ def get_outfile(command):
         end = len(command)
     outfile = command[start:end]
     return outfile
+
 
 def capture(args):
     """The entry point of build command interception."""
@@ -269,16 +271,17 @@ def format_entry(exec_trace):
         """Create normalized absolute path from input filename."""
         fullname = name if os.path.isabs(name) else os.path.join(cwd, name)
         return os.path.normpath(fullname)
-    
+
+    # SYCLomatic_CUSTOMIZATION begin
     def get_object_files(flags):
         return [flag for flag in flags if flag.endswith('.o')]
-    
+
     def filter_linker_entry(flags):
         object_files = get_object_files(flags)
         output_file_idx = flags.index('-o')
         output_flags = flags[output_file_idx:output_file_idx+2]
         return [flag for flag in flags if flag not in object_files and flag not in output_flags]
-
+    # SYCLomatic_CUSTOMIZATION end
 
     logging.debug("format this command: %s", exec_trace["command"])
     compilation = split_command(exec_trace["command"])
@@ -300,13 +303,17 @@ def format_entry(exec_trace):
                 'directory': exec_trace['directory'],
                 'command': encode(command),
             }
+
+        # SYCLomatic_CUSTOMIZATION begin
         # If linker entry contains source compilation files, generate output files for the source files, then generate linker entry
         elif len(get_object_files(compilation.flags)) > 1 and compilation.files:
             output_files = []
             for source_idx in reversed(range(len(compilation.files))):
                 source = compilation.files[source_idx]
-                command = [compiler, "-c"] + filter_linker_entry(compilation.flags) + ['-o'] + [os.path.splitext(os.path.basename(source))[0]+'.o'] + [source]
-                output_files.append(os.path.splitext(os.path.basename(source))[0]+'.o')
+                command = [compiler, "-c"] + filter_linker_entry(compilation.flags) + ['-o'] + [
+                    os.path.splitext(os.path.basename(source))[0]+'.o'] + [source]
+                output_files.append(os.path.splitext(
+                    os.path.basename(source))[0]+'.o')
                 yield {
                     "directory": exec_trace["directory"],
                     "command": encode(command),
@@ -314,10 +321,11 @@ def format_entry(exec_trace):
                 }
                 del compilation.files[source_idx]
             command = [compiler] + compilation.flags + list(output_files)
-            yield{
+            yield {
                 'directory': exec_trace['directory'],
                 'command': encode(command),
             }
+        # SYCLomatic_CUSTOMIZATION end
 
         for preprocess_source in compilation.preprocess_output_files:
             file_path = abspath(exec_trace['directory'], preprocess_source)
