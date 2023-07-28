@@ -1059,7 +1059,6 @@ public:
   }
   /// Creating oneDNN engine.
   void create_engine() {
-    unsigned int device_id = dpct::get_current_device_id();
     _q = &dpct::get_current_device().default_queue();
     _eng = std::make_shared<::dnnl::engine>(::dnnl::sycl_interop::make_engine(
         dpct::get_current_device(), dpct::get_current_device().get_context()));
@@ -3460,7 +3459,7 @@ engine_ext::create_primitive_args_or_get(args_type &&...args) {
   std::string buffer;
   buffer.reserve(512);
   generate_cache_key(buffer, std::forward<args_type>(args)...);
-  void *eng_addr = _eng.get();
+  void *eng_addr = _eng.get()->get();
   buffer.append((char *)&eng_addr, sizeof(void *));
   auto value = _primitive_cache.get(buffer);
   primitive_type *p = nullptr;
