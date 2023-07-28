@@ -775,9 +775,7 @@ int runDPCT(int argc, const char **argv) {
   ValidateInputDirectory(Tool, InRoot);
 
   IsUsingDefaultOutRoot = OutRoot.empty();
-  if (DpctGlobalInfo::isQueryAPIMapping()) {
-    OutRoot = InRoot + "/dpct_output";
-  } else {
+  if (!DpctGlobalInfo::isQueryAPIMapping()) {
     if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
       ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
       dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
