@@ -3413,8 +3413,7 @@ MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
                 ? (Var->getStorageClass() == SC_Extern ? Extern : Local)
                 : Global),
       PointerAsArray(false) {
-  if (getType()->isPointer() && getScope() == Global &&
-      DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+  if (isTreatPointerAsArray()) {
     Attr = Device;
     getType()->adjustAsMemType();
     PointerAsArray = true;
@@ -3817,6 +3816,7 @@ void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
     return setTypeInfo(TYPELOC_CAST(QualifiedTypeLoc).getUnqualifiedLoc(),
                        NeedSizeFold);
   case TypeLoc::ConstantArray:
+    IsArray = true;
     return setArrayInfo(TYPELOC_CAST(ConstantArrayTypeLoc), NeedSizeFold);
   case TypeLoc::DependentSizedArray:
     return setArrayInfo(TYPELOC_CAST(DependentSizedArrayTypeLoc), NeedSizeFold);

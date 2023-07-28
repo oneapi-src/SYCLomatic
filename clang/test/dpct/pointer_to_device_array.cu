@@ -38,7 +38,7 @@ typedef float *bbb_t[5];
 // CHECK: static dpct::constant_memory<float *, 1> var3(5);
 __constant__ bbb_t var3;
 
-// CHECK: void kernel3(float * const *var3) {
+// CHECK: void kernel3(float * const*var3) {
 __global__ void kernel3() {
   bbb_t *ptr;
   // CHECK: ptr = reinterpret_cast<bbb_t *>(&var3);
@@ -48,7 +48,7 @@ __global__ void kernel3() {
 // CHECK: static dpct::constant_memory<float *, 1> var4(5);
 __constant__ float *var4[5];
 
-// CHECK: void kernel4(float * const *var4) {
+// CHECK: void kernel4(float * const*var4) {
 __global__ void kernel4() {
   bbb_t *ptr;
   // CHECK: ptr = reinterpret_cast<float *(*)[5]>(&var4);
@@ -59,7 +59,7 @@ typedef float *ccc_t;
 // CHECK: static dpct::constant_memory<ccc_t, 0> var5;
 __constant__ ccc_t var5;
 
-// CHECK: void kernel5(ccc_t const var5) {
+// CHECK: void kernel5(ccc_t var5) {
 __global__ void kernel5() {
   ccc_t *ptr;
   // CHECK: ptr = &var5;

@@ -2170,6 +2170,7 @@ public:
 
   inline bool isTemplate() const { return IsTemplate; }
   inline bool isPointer() const { return PointerLevel; }
+  inline bool isArray() const { return IsArray; }
   inline bool isReference() const { return IsReference; }
   inline void adjustAsMemType() {
     setPointerAsArray();
@@ -2250,6 +2251,7 @@ private:
   bool IsReference;
   bool IsTemplate;
   bool TemplateDependentMacro = false;
+  bool IsArray = false;
 
   std::shared_ptr<TemplateDependentStringInfo> TDSI;
   std::set<HelperFeatureEnum> HelperFeatureSet;
@@ -2458,14 +2460,23 @@ public:
         return "uint8_t[sizeof(" + LocalTypeName + ")]";
       }
     }
+
+    std::string Ret = getType()->getBaseName();
+    if ((!getType()->isArray() && !getType()->isPointer()) ||
+        isTreatPointerAsArray())
+      return Ret;
     if (NeedCheckExtraConstQualifier && getType()->isConstantQualified()) {
-      return getType()->getBaseName() + " const" +
-             (getType()->isPointer() ? " " : "");
+      return Ret + " const";
     }
-    return getType()->getBaseName();
+    return Ret;
   }
 
 private:
+  bool isTreatPointerAsArray() {
+    return getType()->isPointer() && getScope() == Global &&
+           DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None;
+  }
+
   static VarAttrKind getAddressAttr(const AttrVec &Attrs);
 
   void setInitList(const Expr *E, const VarDecl *V) {
