@@ -4,7 +4,7 @@
 
 .. _refer-diag-ref:
 
-For more details on what a specific warning means, refer to the
+For more details on what a specific message means, refer to the
 :ref:`diag_ref`.
 
 .. _refer-diag-ref-end:

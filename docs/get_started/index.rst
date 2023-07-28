@@ -3,9 +3,10 @@
 Get Started with |tool_name|
 ============================
 
-|tool_name| assists in the migration of a developer's program that
-is written in CUDA\* to a program written in |dpcpp_long|, which is based on
-modern C++ and incorporates portable industry standards such as SYCL\*.
+|tool_name| assists in the migration of your existing CUDA\* code to SYCL\* code.
+The tool ports CUDA language kernels and library API calls, migrating 90%-95% of
+CUDA code to SYCL code. The tool additionally inserts inline warnings to help you
+complete the migration and tune your code.
 
 |tool_name| supports the migration of programs implemented with CUDA versions
 |cuda_versions|. The list of supported languages and versions may be extended in
@@ -13,58 +14,52 @@ the future.
 
 .. include:: /_include_files/intro_links_gsg.rst
 
-.. note::
-
-   Use of |tool_name| will result in a project that is not entirely
-   migrated. Additional work, as outlined by the output of |tool_name|,
-   is required to complete the migration.
-
 
 Before You Begin
 ----------------
 
-.. include:: /_include_files/before_begin_intro_gsg.rst
+#. Install the tool.
 
-Certain CUDA header files (specific to your project) may need to be accessible
-to |tool_name|. |tool_name| looks for these CUDA
-header files in the following default locations:
+   .. include:: /_include_files/before_begin_intro_gsg.rst
 
--  ``/usr/local/cuda/include``
+#. Make sure CUDA headers are accessible to the tool.
 
--  ``/usr/local/cuda-x.y/include``, where *x.y* is one of these values:
-   |cuda_versions|.
+   Certain CUDA header files (specific to your project) may need to be accessible
+   to |tool_name|. The tool looks for these CUDA header files in the following
+   default locations:
 
-You can reference custom locations by pointing to them with the
-``--cuda-include-path=<path/to/cuda/include>`` option in |tool_name|
-command line.
+   -  ``/usr/local/cuda/include``
 
-.. note::
+   -  ``/usr/local/cuda-x.y/include``, where *x.y* is one of these values:
+      |cuda_versions|.
 
-   The CUDA include path should not be the same as, or a child path of, the
-   directory where the source code that needs to be migrated is located.
+   .. include:: /_include_files/alt_cuda_header_files.rst
 
-.. include:: /_include_files/env_setup_gsg.rst
+   .. note::
+
+      The CUDA include path should not be the same as, or a child path of, the
+      directory where the source code that needs to be migrated is located.
+
+#. Configure the tool environment.
+
+   .. include:: /_include_files/env_setup_gsg.rst
+
+#. Install the |dpcpp_compiler|.
+
+   |tool_name| migrates CUDA code to SYCL code for the |dpcpp_compiler|_.
+
+   If your program targets GPUs, install the appropriate GPU drivers or plug-ins (optional),
+   so you can compile your program to run on Intel, AMD*, or NVIDIA* GPUs.
+
+   - To use an Intel GPU, install the latest Intel GPU drivers.
+   - To use an AMD GPU, install the oneAPI for AMD GPUs plugin.
+   - To use an NVIDIA GPU, install the oneAPI for NVIDIA GPUs plugin.
 
 
-Invoke the Tool
----------------
+Run the Tool
+------------
 
-The general invocation syntax from the operating system shell is:
-
-.. code-block::
-
-   dpct [options] [<source0>... <sourceN>]
-
-.. note::
-
-   ``c2s`` is an alias to the ``dpct`` command and may be used in it's place.
-
-
-To see the list of |tool_name|–specific options, use ``--help``:
-
-.. code-block::
-
-   dpct --help
+.. include:: /_include_files/run_tool_cmd.rst
 
 To see the list of the language parser (Clang\*) options, pass ``-help``
 as the Clang option:
@@ -111,14 +106,14 @@ place generated files in the directory specified by the ``--out-root`` option:
    dpct --in-root=foo --out-root=bar
 
 
-Emitted Warnings
-----------------
+Understand Emitted Warnings
+---------------------------
 
 |tool_name| identifies the places in the code that may require your
 attention during the migration of the files in order to make the code SYCL
 compliant or correct.
 
-Comments are inserted into the generated source files and displayed as warnings
+Warnings are inserted into the generated source files and displayed as warnings
 in the output. For example:
 
 .. code-block::
@@ -132,23 +127,19 @@ in the output. For example:
           :end-before: refer-diag-ref-end:
 
 
-Migrate a Simple Test Project
------------------------------
+Get Code Samples
+----------------
 
-Several sample projects for |tool_name| are available to explore the tool and
-familiarize yourself with how it functions.
+Use the |tool_name| code samples to get familiar with the migration process and
+tool features.
 
 .. include:: /_include_files/access_samples.rst
 
 .. include:: /_include_files/samples.rst
 
 
-
-
-
-
-Try a Sample Project
-~~~~~~~~~~~~~~~~~~~~
+Migrate the Vector Add Sample
+-----------------------------
 
 The following steps show how to migrate the Vector Add sample using |tool_name|:
 
@@ -196,10 +187,21 @@ The following steps show how to migrate the Vector Add sample using |tool_name|:
    from |tool_name|, see the **Addressing Warnings in Migrated Code** section of
    the `README files <https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/Migration>`_.
 
-   .. note::
+#. Compile the migrated code:
 
-      To compile the migrated sample, add ``-I<dpct_root_folder>/include`` to
-      your compile command.
+   .. code-block::
+
+      icpx -fsycl -I<dpct_root_folder>/include src/vector_add.dp.cpp
+
+   where <dpct_root_folder> is TODO.
+
+#. Run the migrated program:
+
+   .. code-block::
+
+      ./vector_add
+
+   You should see a block of even numbers, indicating the result of adding two vectors: ``[1..N] + [1..N]``.
 
 .. include:: /_include_files/cross_ref_links_gsg.rst
           :start-after: refer-migrate-proj:

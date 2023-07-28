@@ -1,3 +1,5 @@
+For migration instructions, refer to the README file in each sample.
+
 .. list-table::
    :widths: 30 70
    :header-rows: 1
@@ -7,8 +9,8 @@
    *  -  Vector Add
 
          +  ``vector_add.cu``
-      -  The Vector Add sample demonstrates how to migrate a simple program
-         from CUDA\* to SYCL\*. Vector Add provides an easy way to verify that your
+      -  The Vector Add sample shows how to migrate a simple program
+         from CUDA\* to SYCL\*. You can use this sample to verify that your
          development environment is set up correctly to use |tool_name|.
    *  -  Folder Options 
 
@@ -25,6 +27,4 @@
       -  The Rodinia needleman-wunsch sample demonstrates how to migrate a Make/CMake\*
          project from CUDA to SYCL.
 
-Review the README file provided with each sample for more detailed information
-about the purpose and usage of the sample project.
 
