@@ -4232,6 +4232,9 @@ void DpctGlobalInfo::printItem(llvm::raw_ostream &OS, const Stmt *S,
 std::string DpctGlobalInfo::getItem(const Stmt *S, const FunctionDecl *FD) {
   return buildStringFromPrinter(DpctGlobalInfo::printItem, S, FD);
 }
+void DpctGlobalInfo::registerNDItemUser(const Stmt *S, const FunctionDecl *FD) {
+  getItem(S, FD);
+}
 
 void DpctGlobalInfo::printGroup(llvm::raw_ostream &OS, const Stmt *S,
                                 const FunctionDecl *FD) {
