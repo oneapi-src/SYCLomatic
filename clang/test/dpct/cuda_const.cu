@@ -242,3 +242,30 @@ __device__ void foo() {
   inner_foo(&last, l_arg);
 }
 
+
+//CHECK:static dpct::constant_memory<float, 1> aaa(10);
+//CHECK-NEXT:void kernel1(float const *aaa) {
+//CHECK-NEXT:  float *a = const_cast<float *>(aaa) + 5;
+//CHECK-NEXT:}
+//CHECK-NEXT:void foo1() {
+//CHECK-NEXT:  dpct::get_default_queue().submit(
+//CHECK-NEXT:    [&](sycl::handler &cgh) {
+//CHECK-NEXT:      aaa.init();
+//CHECK-EMPTY:
+//CHECK-NEXT:      auto aaa_acc_ct1 = aaa.get_access(cgh);
+//CHECK-EMPTY:
+//CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
+//CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+//CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:          kernel1(aaa_acc_ct1.get_pointer());
+//CHECK-NEXT:        });
+//CHECK-NEXT:    });
+//CHECK-NEXT:}
+__constant__ float aaa[10];
+__global__ void kernel1() {
+  float *a = aaa + 5;
+}
+void foo1() {
+  kernel1<<<1,1>>>();
+}
+

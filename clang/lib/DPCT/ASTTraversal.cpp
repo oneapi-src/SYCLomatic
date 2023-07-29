@@ -9480,6 +9480,34 @@ bool MemVarRule::currentIsHost(const VarDecl *VD, std::string VarName) {
 }
 
 void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
+  auto getTypeOfTheNonConstAssignedVar = [](const DeclRefExpr *DRE,
+                                            const Decl *Range) -> QualType {
+    auto &Context = DpctGlobalInfo::getContext();
+    DynTypedNode Current = DynTypedNode::create(*DRE);
+    DynTypedNodeList Parents = Context.getParents(Current);
+    while (!Parents.empty()) {
+      if (Parents[0].get<Decl>() && Parents[0].get<Decl>() == Range)
+        break;
+      const BinaryOperator *BO = Parents[0].get<BinaryOperator>();
+      const VarDecl *VD = Parents[0].get<VarDecl>();
+
+      if (BO) {
+        if (BO->isAssignmentOp() && (BO->getRHS() == Current.get<Expr>()) &&
+            BO->getLHS()->getType()->isPointerType() &&
+            !BO->getLHS()->getType()->getPointeeType().isConstQualified())
+          return BO->getLHS()->getType();
+      } else if (VD) {
+        if (VD->hasInit() && (VD->getInit() == Current.get<Expr>()) &&
+            VD->getType()->isPointerType() &&
+            !VD->getType()->getPointeeType().isConstQualified())
+          return VD->getType();
+      }
+      Current = Parents[0];
+      Parents = Context.getParents(Current);
+    }
+    return QualType();
+  };
+
   std::string CanonicalType;
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
     if (isCubVar(MemVar)) {
@@ -9578,6 +9606,17 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
                                             ">(&", Decl->getName(), ")")));
           }
         }
+      }
+    }
+    if (Decl->hasAttr<CUDAConstantAttr>() &&
+        MemVarRef->getType()->isArrayType() &&
+        !MemVarRef->getType().isConstQualified()) {
+      QualType LHSType = getTypeOfTheNonConstAssignedVar(MemVarRef, Func);
+      if (!LHSType.isNull()) {
+        auto Range = GetReplRange(MemVarRef);
+        emplaceTransformation(new ReplaceText(
+            Range.first, Range.second,
+            buildString("const_cast<", LHSType, ">(", Decl->getName(), ")")));
       }
     }
     auto VD = dyn_cast<VarDecl>(MemVarRef->getDecl());
