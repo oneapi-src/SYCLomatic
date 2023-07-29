@@ -858,7 +858,7 @@ class engine_ext {
     sycl::event deps;
     size_t primitive_depth = 0;
   };
-  struct internal_resource{
+  struct internal_resource {
     std::int64_t _random_engine_state_size = -1;
     buffer_info binfo;
     ::dnnl::stream s;
@@ -867,7 +867,8 @@ class engine_ext {
   ::dnnl::stream *_s = nullptr;
   sycl::queue *_q = nullptr;
   static thread_local std::map<void *, ::dnnl::memory> _workspace_map;
-  static thread_local std::map<sycl::queue *, std::shared_ptr<internal_resource>>
+  static thread_local std::map<sycl::queue *,
+                               std::shared_ptr<internal_resource>>
       _internal_resource_cache;
   static thread_local detail::primitive_cache _primitive_cache;
   ::dnnl::memory &get_workspace(void *key) { return _workspace_map[key]; }
