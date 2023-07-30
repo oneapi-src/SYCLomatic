@@ -816,12 +816,12 @@ public:
       touch(it, e, true);
     } else {
       if (cache_map.size() == _capacity) {
-        auto v = cache_map.find(usage.back())->second;
-        v->_q.submit([=](sycl::handler &cgh) {
-          cgh.depends_on(v->_e);
+        auto v = *(cache_map.find(usage.back())->second);
+        v._q.submit([=](sycl::handler &cgh) {
+          cgh.depends_on(v._e);
           cgh.host_task([=] {
-            delete v->_args;
-            v->_destructor(v->_primitive);
+            delete v._args;
+            v._destructor(v._primitive);
           });
         });
         cache_map.erase(usage.back());
@@ -895,9 +895,10 @@ class engine_ext {
       info.usage = 0;
       if (request_buffer_size > info.capacity) {
         if (info.buffer && (info.capacity != 0)) {
-          info.q.submit([=](sycl::handler &cgh) {
-            cgh.depends_on(info.deps);
-            cgh.host_task([=] { sycl::free(info.buffer, info.q); });
+          auto ainfo = info;
+          ainfo.q.submit([=](sycl::handler &cgh) {
+            cgh.depends_on(ainfo.deps);
+            cgh.host_task([=] { sycl::free(ainfo.buffer, ainfo.q); });
           });
         }
         size_t new_buffer_capacity =
@@ -4381,8 +4382,6 @@ engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm 
   auto origin_dst_md = dst_desc.get_desc();
   auto origin_weight_md = help_weight_desc;
 
-  enter_primitive(origin_src_md.get_size() * 3 + origin_dst_md.get_size() * 7 +
-                  origin_weight_md.get_size() * 3);
   auto src_md = transfer_memory_desc_to_format_tag_any(origin_src_md);
   auto dst_md = transfer_memory_desc_to_format_tag_any(origin_dst_md);
   auto weight_md = transfer_memory_desc_to_format_tag_any(origin_weight_md);
@@ -4398,6 +4397,10 @@ engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm 
   auto optimal_src_md = pd.src_desc();
   auto optimal_dst_md = pd.dst_desc();
   auto optimal_weight_md = pd.weights_desc();
+
+  enter_primitive(
+      optimal_src_md.get_size() * 3 + optimal_dst_md.get_size() * 5 +
+      optimal_weight_md.get_size() * 3 + origin_dst_md.get_size() * 2);
 
   void *optimal_src = src, *optimal_dst = dst, *optimal_weight = weight;
   allocate_and_reorder_memory_to_optimal(origin_src_md, src, optimal_src_md,
