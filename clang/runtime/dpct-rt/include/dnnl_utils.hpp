@@ -866,6 +866,8 @@ class engine_ext {
   std::shared_ptr<::dnnl::engine> _eng = nullptr;
   ::dnnl::stream *_s = nullptr;
   sycl::queue *_q = nullptr;
+  unsigned int _engine_id = 0;
+  static thread_local unsigned int _engine_count;
   static thread_local std::map<void *, ::dnnl::memory> _workspace_map;
   static thread_local std::map<sycl::queue *,
                                std::shared_ptr<internal_resource>>
@@ -1066,6 +1068,7 @@ public:
     auto r = get_internal_resource(_q);
     r->s = ::dnnl::sycl_interop::make_stream(*_eng, *_q);
     _s = &r->s;
+    _engine_id = _engine_count++;
   }
   /// Setting the user's SYCL queue for an oneDNN engine.
   /// \param [in] q Pointer to the SYCL queue.
@@ -2067,6 +2070,7 @@ public:
                                      size_t workspace_size);
 };
 
+inline thread_local unsigned int engine_ext::_engine_count;
 inline thread_local detail::primitive_cache engine_ext::_primitive_cache;
 inline thread_local std::map<void *, ::dnnl::memory> engine_ext::_workspace_map;
 inline thread_local std::map<sycl::queue *,
@@ -3460,8 +3464,7 @@ engine_ext::create_primitive_args_or_get(args_type &&...args) {
   std::string buffer;
   buffer.reserve(512);
   generate_cache_key(buffer, std::forward<args_type>(args)...);
-  void *eng_addr = _eng.get()->get();
-  buffer.append((char *)&eng_addr, sizeof(void *));
+  buffer.append(std::to_string(_engine_id));
   auto value = _primitive_cache.get(buffer);
   primitive_type *p = nullptr;
   std::unordered_map<int, ::dnnl::memory> *a = nullptr;
