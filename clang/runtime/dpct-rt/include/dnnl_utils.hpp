@@ -4381,8 +4381,8 @@ engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm 
   auto origin_dst_md = dst_desc.get_desc();
   auto origin_weight_md = help_weight_desc;
 
-  enter_primitive(origin_src_md.get_size() * 2 + origin_dst_md.get_size() * 6 +
-                  origin_weight_md.get_size() * 2);
+  enter_primitive(origin_src_md.get_size() * 3 + origin_dst_md.get_size() * 7 +
+                  origin_weight_md.get_size() * 3);
   auto src_md = transfer_memory_desc_to_format_tag_any(origin_src_md);
   auto dst_md = transfer_memory_desc_to_format_tag_any(origin_dst_md);
   auto weight_md = transfer_memory_desc_to_format_tag_any(origin_weight_md);
