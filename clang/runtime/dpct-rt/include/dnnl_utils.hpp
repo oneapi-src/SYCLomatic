@@ -817,7 +817,7 @@ public:
     } else {
       if (cache_map.size() == _capacity) {
         auto v = cache_map.find(usage.back())->second;
-        v->_q.submit([&](sycl::handler &cgh) {
+        v->_q.submit([=](sycl::handler &cgh) {
           cgh.depends_on(v->_e);
           cgh.host_task([=] {
             delete v->_args;
@@ -894,8 +894,8 @@ class engine_ext {
     if (info.primitive_depth == 0) {
       info.usage = 0;
       if (request_buffer_size > info.capacity) {
-        if (info.buffer) {
-          info.q.submit([&](sycl::handler &cgh) {
+        if (info.buffer && (info.capacity != 0)) {
+          info.q.submit([=](sycl::handler &cgh) {
             cgh.depends_on(info.deps);
             cgh.host_task([=] { sycl::free(info.buffer, info.q); });
           });
