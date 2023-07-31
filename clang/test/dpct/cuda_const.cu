@@ -242,7 +242,6 @@ __device__ void foo() {
   inner_foo(&last, l_arg);
 }
 
-
 //CHECK:static dpct::constant_memory<float, 1> aaa(10);
 //CHECK-NEXT:void kernel1(float const *aaa) {
 //CHECK-NEXT:  float *a = const_cast<float *>(aaa + 5);
@@ -268,4 +267,3 @@ __global__ void kernel1() {
 void foo1() {
   kernel1<<<1, 1>>>();
 }
-
