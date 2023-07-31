@@ -857,6 +857,8 @@ public:
   static void printItem(llvm::raw_ostream &, const Stmt *,
                         const FunctionDecl *FD = nullptr);
   static std::string getItem(const Stmt *, const FunctionDecl *FD = nullptr);
+  static void registerNDItemUser(const Stmt *,
+                                 const FunctionDecl *FD = nullptr);
   static void printGroup(llvm::raw_ostream &, const Stmt *,
                          const FunctionDecl *FD = nullptr);
   static std::string getGroup(const Stmt *, const FunctionDecl *FD = nullptr);
@@ -2148,6 +2150,7 @@ public:
       : PointerLevel(0), IsReference(false), IsTemplate(false) {
     if (D && D->getTypeSourceInfo()) {
       auto TL = D->getTypeSourceInfo()->getTypeLoc();
+      IsConstantQualified = D->hasAttr<CUDAConstantAttr>();
       setTypeInfo(TL, NeedSizeFold);
       if (TL.getTypeLocClass() ==
           TypeLoc::IncompleteArray) {
@@ -2188,6 +2191,7 @@ public:
   inline std::vector<std::string> getArraySizeOriginExprs() { return ArraySizeOriginExprs; }
 
   bool containsTemplateDependentMacro() const { return TemplateDependentMacro; }
+  bool isConstantQualified() const { return IsConstantQualified; }
 
 private:
   // For ConstantArrayType, size in generated code is folded as an integer.
@@ -2253,6 +2257,7 @@ private:
   std::set<HelperFeatureEnum> HelperFeatureSet;
   bool ContainSizeofType = false;
   std::vector<std::string> ArraySizeOriginExprs{};
+  bool IsConstantQualified = false;
 };
 
 // variable info includes name, type and location.
@@ -2396,14 +2401,14 @@ public:
   }
   ParameterStream &getFuncDecl(ParameterStream &PS) {
     if (AccMode == Value) {
-      PS << getAccessorDataType(true) << " ";
+      PS << getAccessorDataType(true, true) << " ";
     } else if (AccMode == Pointer) {
-      PS << getAccessorDataType(true);
+      PS << getAccessorDataType(true, true);
       if (!getType()->isPointer())
         PS << " ";
       PS << "*";
     } else if (AccMode == Reference) {
-      PS << getAccessorDataType(true);
+      PS << getAccessorDataType(true, true);
       if (!getType()->isPointer())
         PS << " ";
       PS << "&";
@@ -2426,7 +2431,7 @@ public:
     if (isShared() || DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
       if (AccMode == Pointer) {
         if (!getType()->isWritten())
-          PS << "(" << getAccessorDataType() << " *)";
+          PS << "(" << getAccessorDataType(false, true) << " *)";
         PS << getAccessorName() << ".get_pointer()";
       } else {
         PS << getAccessorName();
@@ -2443,7 +2448,8 @@ public:
     }
     return PS;
   }
-  std::string getAccessorDataType(bool IsTypeUsedInDevFunDecl = false) {
+  std::string getAccessorDataType(bool IsTypeUsedInDevFunDecl = false,
+                                  bool NeedCheckExtraConstQualifier = false) {
     if (isExtern()) {
       return "uint8_t";
     } else if (isTypeDeclaredLocal()) {
@@ -2453,6 +2459,10 @@ public:
         // used in accessor decl
         return "uint8_t[sizeof(" + LocalTypeName + ")]";
       }
+    }
+    if (NeedCheckExtraConstQualifier && getType()->isConstantQualified()) {
+      return getType()->getBaseName() + " const" +
+             (getType()->isPointer() ? " " : "");
     }
     return getType()->getBaseName();
   }

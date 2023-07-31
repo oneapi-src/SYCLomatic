@@ -1735,16 +1735,27 @@ void MapNames::setExplicitNamespaceMap() {
   // Atomic function names mapping
   AtomicFuncNamesMap = {
       {"atomicAdd", getDpctNamespace() + "atomic_fetch_add"},
+      {"atomicAdd_system", getDpctNamespace() + "atomic_fetch_add"},
       {"atomicSub", getDpctNamespace() + "atomic_fetch_sub"},
+      {"atomicSub_system", getDpctNamespace() + "atomic_fetch_sub"},
       {"atomicAnd", getDpctNamespace() + "atomic_fetch_and"},
+      {"atomicAnd_system", getDpctNamespace() + "atomic_fetch_and"},
       {"atomicOr", getDpctNamespace() + "atomic_fetch_or"},
+      {"atomicOr_system", getDpctNamespace() + "atomic_fetch_or"},
       {"atomicXor", getDpctNamespace() + "atomic_fetch_xor"},
+      {"atomicXor_system", getDpctNamespace() + "atomic_fetch_xor"},
       {"atomicMin", getDpctNamespace() + "atomic_fetch_min"},
+      {"atomicMin_system", getDpctNamespace() + "atomic_fetch_min"},
       {"atomicMax", getDpctNamespace() + "atomic_fetch_max"},
+      {"atomicMax_system", getDpctNamespace() + "atomic_fetch_max"},
       {"atomicExch", getDpctNamespace() + "atomic_exchange"},
+      {"atomicExch_system", getDpctNamespace() + "atomic_exchange"},
       {"atomicCAS", getDpctNamespace() + "atomic_compare_exchange_strong"},
+      {"atomicCAS_system", getDpctNamespace() + "atomic_compare_exchange_strong"},
       {"atomicInc", getDpctNamespace() + "atomic_fetch_compare_inc"},
+      {"atomicInc_system", getDpctNamespace() + "atomic_fetch_compare_inc"},
       {"atomicDec", getDpctNamespace() + "atomic_fetch_compare_dec"},
+      {"atomicDec_system", getDpctNamespace() + "atomic_fetch_compare_dec"},
   };
 
   BLASAPIWithRewriter = {
