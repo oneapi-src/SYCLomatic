@@ -14607,39 +14607,64 @@ void CudaUuidRule::runRule(
 REGISTER_RULE(CudaUuidRule, PassKind::PK_Analysis)
 
 void HalfRawRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(
+                            namedDecl(hasAnyName("__half_raw"))))))
+                    .bind("halfRawType"),
+                this);
+  MF.addMatcher(memberExpr(hasObjectExpression(hasType(qualType(hasDeclaration(
+                               namedDecl(hasAnyName("__half_raw")))))))
+                    .bind("halfRawMember"),
+                this);
   MF.addMatcher(
-      typeLoc(loc(qualType(hasDeclaration(namedDecl(hasAnyName("__half_raw"))))))
-          .bind("halfRawType"),
+      memberExpr(hasObjectExpression(hasType(pointerType(pointee(qualType(
+                     (hasDeclaration(namedDecl(hasAnyName("__half_raw"))))))))))
+          .bind("halfRawMember"),
       this);
   MF.addMatcher(
-      initListExpr(hasType(namedDecl(hasAnyName("__half_raw"))))
-          .bind("halfRawInitListExpr"),
+      declRefExpr(allOf(unless(hasParent(memberExpr())),
+                        unless(hasParent(unaryOperator(hasOperatorName("&")))),
+                        to(varDecl(hasType(qualType(hasDeclaration(
+                                       namedDecl(hasAnyName("__half_raw"))))))
+                               .bind("varDecl"))))
+          .bind("halfRawExpr"),
       this);
 }
 
 void HalfRawRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   ExprAnalysis EA;
+  auto &SM = DpctGlobalInfo::getSourceManager();
   if (auto TL = getNodeAsType<TypeLoc>(Result, "halfRawType")) {
     EA.analyze(*TL);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
     return;
-  } else if (const InitListExpr *Init =
-                 getNodeAsType<InitListExpr>(Result, "halfRawInitListExpr")) {
-    auto &SM = DpctGlobalInfo::getSourceManager();
+  }
+  if (auto ME = getNodeAsType<MemberExpr>(Result, "halfRawMember")) {
+    if (ME->isArrow()) {
+      DpctGlobalInfo::getInstance().addReplacement(
+          std::make_shared<ExtReplacement>(SM, ME->getBeginLoc(), 0, "*",
+                                           nullptr));
+    }
+    DpctGlobalInfo::getInstance().addReplacement(
+        std::make_shared<ExtReplacement>(
+            SM, ME->getOperatorLoc(),
+            SM.getFileOffset(ME->getEndLoc()) -
+                SM.getFileOffset(ME->getOperatorLoc()) + 1,
+            "", nullptr));
+    return;
+  }
+  if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "halfRawExpr")) {
     std::string Replacement;
     llvm::raw_string_ostream OS(Replacement);
-    OS << "{" + MapNames::getClNamespace() + "bit_cast<" +
-              MapNames::getClNamespace() + "half>(uint16_t(";
-    EA.analyze(Init->getInit(0));
+    OS << MapNames::getClNamespace() + "bit_cast<" +
+              MapNames::getClNamespace() + "half>(";
+    EA.analyze(DRE);
     OS << EA.getReplacedString();
-    OS << "))}";
+    OS << ")";
     OS.flush();
     DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(SM, Init, Replacement, nullptr));
-    return;
-  } else {
+        std::make_shared<ExtReplacement>(SM, DRE, Replacement, nullptr));
     return;
   }
 }
