@@ -1,7 +1,7 @@
 #%Module1.0
 ##############################################################################
 
-# Copyright (c), Intel Corporation
+# Copyright (c) Intel Corporation
 # SPDX-License-Identifier: MIT
 # https://opensource.org/licenses/MIT
 
@@ -10,39 +10,47 @@
 
 ##############################################################################
 
-set tmppath "[file dirname "${ModulesCurrentModulefile}"]"
-source "[file normalize "$tmppath/../moduledeps/.oneapi_tcl_min"]"
-source "[file normalize "$tmppath/../moduledeps/.oneapi_script_path"]"
+set min_tcl_ver 8.4
+if { $tcl_version < $min_tcl_ver } {
+    puts stderr " "
+    puts stderr "ERROR: This modulefile requires tcl $min_tcl_ver or greater."
+    puts stderr "Your system reports that tclsh version $tcl_version is installed."
+    exit 1
+}
+
+# if modulefile script name is a symlink, resolve it and then
+# get the fully qualified pathname to this modulefile script
+set scriptpath "${ModulesCurrentModulefile}"
+if { "[file type "$scriptpath"]" eq "link" } {
+    set scriptpath "[file readlink "$scriptpath"]"
+}
+set scriptpath "[file normalize "$scriptpath"]"
+
+# define componentroot, modulefileroot, modulefilename and modulefilever
+set modulefilename "[file tail [file dirname "${scriptpath}"]]"
+set modulefilever "[file tail "$scriptpath"]"
+set modulefilepath "${scriptpath}"
+set componentroot "[file dirname [file dirname [file dirname [file dirname "${scriptpath}"]]]]"
+
+##############################################################################
 
 module-whatis "Name: Intel® DPC++ Compatibility Tool"
-module-whatis "Version: $modulefileversion"
+module-whatis "Version: $modulefilename/$modulefilever"
 module-whatis "Description: Migrate existing CUDA* code to SYCL code."
 module-whatis "URL: https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compatibility-tool.html"
+module-whatis "Dependencies: none"
 
 proc ModulesHelp { } {
     global modulefilename
-    module whatis $modulefilename
+    global modulefilever
+    module whatis "${modulefilename}/${modulefilever}"
 }
 
 ##############################################################################
 
-# Initialize common environment variables (PATH, CPATH, LD_LIBRARY_PATH, ...).
-# Defines "$oneapiroot" variable for setting component environment variables.
-set tmppath "[file dirname "${ModulesCurrentModulefile}"]"
-source "[file normalize "$tmppath/../moduledeps/.oneapi_base_env"]"
+# Define environment variables needed for an isolated component install.
 
-##############################################################################
-
-# Define list of required dependent components.
-set reqdependlist dev-utilities
-
-# Load required dependent components.
-set tmppath "[file dirname "${ModulesCurrentModulefile}"]"
-source "[file normalize "$tmppath/../moduledeps/.oneapi_load_modules"]"
-
-##############################################################################
-
-# Define component-unique environment variables for this modulefile.
-# That is, env vars that are needed but not defined by the oneapi modulefile.
-
-setenv DPCT_BUNDLE_ROOT "$oneapiroot"
+set dpct_root "$componentroot"
+setenv DPCT_BUNDLE_ROOT "$dpct_root"
+prepend-path CPATH "$dpct_root/include"
+prepend-path PATH "$dpct_root/bin"
