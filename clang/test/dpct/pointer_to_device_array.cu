@@ -72,7 +72,7 @@ __constant__ float *var6;
 // CHECK: void kernel6(float * const  var6) {
 __global__ void kernel6() {
   ccc_t *ptr;
-  // CHECK: ptr = &var6;
+  // CHECK: ptr = const_cast<float **>(&var6);
   ptr = &var6;
 }
 

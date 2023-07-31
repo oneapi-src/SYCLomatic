@@ -9480,8 +9480,8 @@ bool MemVarRule::currentIsHost(const VarDecl *VD, std::string VarName) {
 }
 
 void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
-  auto getTypeOfTheNonConstAssignedVar = [](const DeclRefExpr *DRE,
-                                            const Decl *Range) -> QualType {
+  auto getRHSOfTheNonConstAssignedVar = [](const DeclRefExpr *DRE,
+                                           const Decl *Range) -> const Expr * {
     auto &Context = DpctGlobalInfo::getContext();
     DynTypedNode Current = DynTypedNode::create(*DRE);
     DynTypedNodeList Parents = Context.getParents(Current);
@@ -9490,22 +9490,21 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
         break;
       const BinaryOperator *BO = Parents[0].get<BinaryOperator>();
       const VarDecl *VD = Parents[0].get<VarDecl>();
-
       if (BO) {
         if (BO->isAssignmentOp() && (BO->getRHS() == Current.get<Expr>()) &&
             BO->getLHS()->getType()->isPointerType() &&
             !BO->getLHS()->getType()->getPointeeType().isConstQualified())
-          return BO->getLHS()->getType();
+          return BO->getRHS();
       } else if (VD) {
         if (VD->hasInit() && (VD->getInit() == Current.get<Expr>()) &&
             VD->getType()->isPointerType() &&
             !VD->getType()->getPointeeType().isConstQualified())
-          return VD->getType();
+          return VD->getInit();
       }
       Current = Parents[0];
       Parents = Context.getParents(Current);
     }
-    return QualType();
+    return nullptr;
   };
 
   std::string CanonicalType;
@@ -9571,6 +9570,7 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
       return std::make_pair(Begin, Length);
     };
     const auto *Parent = getParentStmt(MemVarRef);
+    bool ReplacementEmplaced = false;
     // 1. Handle assigning a 2 or more dimensions array pointer to a variable.
     if (const auto *const ICE = dyn_cast_or_null<ImplicitCastExpr>(Parent)) {
       if (const auto *arrType = MemVarRef->getType()->getAsArrayTypeUnsafe()) {
@@ -9582,6 +9582,7 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
               new ReplaceText(Range.first, Range.second,
                               buildString("(", ICE->getType(), ")",
                                           Decl->getName(), ".get_ptr()")));
+          ReplacementEmplaced = true;
         }
       }
     }
@@ -9605,18 +9606,21 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
                                 buildString("reinterpret_cast<", UO->getType(),
                                             ">(&", Decl->getName(), ")")));
           }
+          ReplacementEmplaced = true;
         }
       }
     }
-    if (Decl->hasAttr<CUDAConstantAttr>() &&
-        MemVarRef->getType()->isArrayType() &&
-        !MemVarRef->getType().isConstQualified()) {
-      QualType LHSType = getTypeOfTheNonConstAssignedVar(MemVarRef, Func);
-      if (!LHSType.isNull()) {
-        auto Range = GetReplRange(MemVarRef);
-        emplaceTransformation(new ReplaceText(
-            Range.first, Range.second,
-            buildString("const_cast<", LHSType, ">(", Decl->getName(), ")")));
+    if (!ReplacementEmplaced && Decl->hasAttr<CUDAConstantAttr>() &&
+        (MemVarRef->getType()->getTypeClass() ==
+             Type::TypeClass::ConstantArray ||
+         MemVarRef->getType()->getTypeClass() == Type::TypeClass::Pointer)) {
+      const Expr *RHS = getRHSOfTheNonConstAssignedVar(MemVarRef, Func);
+      if (RHS) {
+        auto Range = GetReplRange(RHS);
+        emplaceTransformation(
+            new ReplaceText(Range.first, Range.second,
+                            buildString("const_cast<", RHS->getType(), ">(",
+                                        ExprAnalysis::ref(RHS), ")")));
       }
     }
     auto VD = dyn_cast<VarDecl>(MemVarRef->getDecl());

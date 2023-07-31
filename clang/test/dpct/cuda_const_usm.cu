@@ -203,7 +203,7 @@ int main(int argc, char **argv) {
 
 //CHECK:static dpct::constant_memory<float, 1> aaa(10);
 //CHECK-NEXT:void kernel1(float const *aaa) {
-//CHECK-NEXT:  float *a = const_cast<float *>(aaa) + 5;
+//CHECK-NEXT:  float *a = const_cast<float *>(aaa + 5);
 //CHECK-NEXT:}
 //CHECK-NEXT:void foo1() {
 //CHECK-NEXT:  dpct::get_default_queue().submit(
@@ -213,7 +213,7 @@ int main(int argc, char **argv) {
 //CHECK-NEXT:      auto aaa_ptr_ct1 = aaa.get_ptr();
 //CHECK-EMPTY:
 //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
-//CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+//CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:          kernel1(aaa_ptr_ct1);
 //CHECK-NEXT:        });
@@ -224,5 +224,5 @@ __global__ void kernel1() {
   float *a = aaa + 5;
 }
 void foo1() {
-  kernel1<<<1,1>>>();
+  kernel1<<<1, 1>>>();
 }
