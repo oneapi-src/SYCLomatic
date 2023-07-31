@@ -780,7 +780,7 @@ void spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
         queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
         matC->get_matrix_handle(),
         oneapi::mkl::sparse::matmat_request::work_estimation, spgemmDescr,
-        bufSize, dBuffer1, {});
+        bufSize, externalBuffer, {});
     async_dpct_free({bufSize}, {e}, queue);
   } else {
     std::int64_t *bufSize = sycl::malloc_host<std::int64_t>(1, queue);
@@ -806,11 +806,11 @@ void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
                   trans_b, oneapi::mkl::sparse::matrix_view_descr::general);
   if (externalBuffer) {
     std::int64_t *bufSize = sycl::malloc_host<std::int64_t>(1, queue);
-    *bufSize = static_cast<std::int64_t>(bufferSize2);
+    *bufSize = static_cast<std::int64_t>(*bufferSize);
     oneapi::mkl::sparse::matmat(
         queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
         matC->get_matrix_handle(), oneapi::mkl::sparse::matmat_request::compute,
-        spgemmDescr, bufSize, dBuffer2, {});
+        spgemmDescr, bufSize, externalBuffer, {});
     std::int64_t *c_nnz = sycl::malloc_host<std::int64_t>(1, queue);
     oneapi::mkl::sparse::matmat(
         queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
@@ -827,7 +827,7 @@ void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
         oneapi::mkl::sparse::matmat_request::get_compute_buf_size, spgemmDescr,
         bufSize, nullptr, {});
     queue.wait();
-    *externalBuffer = static_cast<size_t>(*bufSize);
+    *bufferSize = static_cast<size_t>(*bufSize);
     sycl::free(bufSize, queue);
   }
 }
@@ -846,7 +846,6 @@ void spgemm_finalize(sycl::queue queue, oneapi::mkl::transpose trans_a,
       spgemmDescr, nullptr, nullptr, {});
   queue.wait();
 }
-
 #endif
 } // namespace sparse
 } // namespace dpct

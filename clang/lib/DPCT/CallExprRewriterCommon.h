@@ -229,6 +229,13 @@ makeDerefStreamExprCreator(unsigned Idx) {
   };
 }
 
+inline std::function<AddrOfExpr(const CallExpr *)>
+makeAddrOfExprCreator(unsigned Idx) {
+  return [=](const CallExpr *C) -> AddrOfExpr {
+    return AddrOfExpr(C->getArg(Idx));
+  };
+}
+
 inline std::function<DerefExpr(const CallExpr *)> makeDerefExprCreator(unsigned Idx) {
   return [=](const CallExpr *C) -> DerefExpr {
     return DerefExpr(C->getArg(Idx));
@@ -1986,6 +1993,7 @@ public:
 #define SUBGROUPSIZE_FACTORY(IDX, NEWFUNCNAME, x)                              \
   createFactoryWithSubGroupSizeRequest<IDX>(NEWFUNCNAME, x 0),
 #define STREAM(x) makeDerefStreamExprCreator(x)
+#define ADDROF(x) makeAddrOfExprCreator(x)
 #define DEREF(x) makeDerefExprCreator(x)
 #define DEREF_CAST_IF_NEED(T, S) makeDerefCastIfNeedExprCreator(T, S)
 #define STRUCT_DISMANTLE(idx, ...) makeStructDismantler(idx, {__VA_ARGS__})

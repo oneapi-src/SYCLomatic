@@ -651,6 +651,42 @@ void printCapture(StreamT &Stream, bool IsCaptureRef) {
     Stream << "[=]";
 }
 
+class AddrOfExpr {
+  const Expr *E = nullptr;
+  const CallExpr *C = nullptr;
+
+  template <class StreamT> void print(StreamT &Stream, ExprAnalysis &EA) const {
+    Stream << "&";
+    dpct::print(Stream, EA, E);
+  }
+
+  template <class StreamT>
+  void print(StreamT &Stream, ArgumentAnalysis &AA,
+             std::pair<const CallExpr *, const Expr *> P) const {
+    Stream << "&";
+    AA.setCallSpelling(C);
+    dpct::print(Stream, AA, P);
+  }
+
+public:
+  AddrOfExpr(const Expr *E, const CallExpr *C = nullptr) : E(E), C(C) {}
+  template <class StreamT>
+  void printArg(StreamT &Stream, ArgumentAnalysis &A) const {
+    print(Stream);
+  }
+
+  template <class StreamT> void print(StreamT &Stream) const {
+    if (C == nullptr) {
+      ExprAnalysis EA;
+      print(Stream, EA);
+    } else {
+      ArgumentAnalysis AA;
+      std::pair<const CallExpr *, const Expr *> ExprPair(C, E);
+      print(Stream, AA, ExprPair);
+    }
+  }
+};
+
 class DerefExpr {
   bool AddrOfRemoved = false, NeedParens = false;
   const Expr *E = nullptr;

@@ -153,8 +153,8 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
     "cusparseCreateCsr", DEREF(0),
     CALL("std::make_shared<" + MapNames::getDpctNamespace() +
              "sparse::sparse_matrix_desc>",
-         ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),
-         ARG(10),
+         ARG(1), ARG(2), ARG(3), NULLPTR_OR_ARG(4), NULLPTR_OR_ARG(5),
+         NULLPTR_OR_ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
          ARG(MapNames::getDpctNamespace() + "sparse::matrix_format::csr"))))
 ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cusparseDestroySpMat", ARG(0),
                                              false, "reset"))
@@ -261,22 +261,27 @@ WARNING_FACTORY_ENTRY(
                           "\"cusparseGetErrorName is not supported\"/*", "*/"),
     Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED)
 
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cusparseSpGEMM_createDescr",
-    CALL("oneapi::mkl::sparse::init_matmat_descr", ARG(0))))
+ASSIGNABLE_FACTORY(
+    CALL_FACTORY_ENTRY("cusparseSpGEMM_createDescr",
+                       CALL("oneapi::mkl::sparse::init_matmat_descr", ARG(0))))
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseSpGEMM_destroyDescr",
-    CALL("oneapi::mkl::sparse::release_matmat_descr", ARG(0), ARG(1))))
+    CALL("oneapi::mkl::sparse::release_matmat_descr", ADDROF(0))))
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseSpGEMM_workEstimation",
-    CALL(MapNames::getDpctNamespace() + "spgemm_work_estimation", ARG(0), ARG(1))))
+    CALL(MapNames::getDpctNamespace() + "sparse::spgemm_work_estimation",
+         DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7),
+         ARG(10), ARG(11), ARG(12))))
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseSpGEMM_compute",
-    CALL(MapNames::getDpctNamespace() + "spgemm_compute", ARG(0), ARG(1))))
+    CALL(MapNames::getDpctNamespace() + "sparse::spgemm_compute", DEREF(0),
+         ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(10),
+         ARG(11), ARG(12))))
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseSpGEMM_copy",
-    CALL(MapNames::getDpctNamespace() + "spgemm_finalize", ARG(0), ARG(1))))
+    CALL(MapNames::getDpctNamespace() + "sparse::spgemm_finalize", DEREF(0),
+         ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(10))))

@@ -478,6 +478,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cusparseSpMVAlg_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverDnFunction_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverAlgMode_t", std::make_shared<TypeNameRule>("int")},
+      {"cusparseSpGEMMDescr_t",
+          std::make_shared<TypeNameRule>("oneapi::mkl::sparse::matmat_descr_t")},
       // ...
   };
 
