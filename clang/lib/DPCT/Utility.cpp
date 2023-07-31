@@ -4389,6 +4389,7 @@ std::string getNameSpace(const NamespaceDecl *NSD) {
 
   return NameSpace;
 }
+
 namespace clang {
 namespace dpct {
 void requestFeature(HelperFeatureEnum Feature) {
