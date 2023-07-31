@@ -64,22 +64,22 @@ public:
   // get interface
   const char *get_name() const { return _name; }
   char *get_name() { return _name; }
-  template <typename WorkItemSizesTy = sycl::id<3>,
-            std::enable_if_t<std::is_same_v<WorkItemSizesTy, sycl::id<3>> ||
+  template <typename WorkItemSizesTy = sycl::range<3>,
+            std::enable_if_t<std::is_same_v<WorkItemSizesTy, sycl::range<3>> ||
                                  std::is_same_v<WorkItemSizesTy, int *>,
                              int> = 0>
   auto get_max_work_item_sizes() const {
-    if constexpr (std::is_same_v<WorkItemSizesTy, sycl::id<3>>)
+    if constexpr (std::is_same_v<WorkItemSizesTy, sycl::range<3>>)
       return _max_work_item_sizes;
     else
       return _max_work_item_sizes_i;
   }
-  template <typename WorkItemSizesTy = sycl::id<3>,
-            std::enable_if_t<std::is_same_v<WorkItemSizesTy, sycl::id<3>> ||
+  template <typename WorkItemSizesTy = sycl::range<3>,
+            std::enable_if_t<std::is_same_v<WorkItemSizesTy, sycl::range<3>> ||
                                  std::is_same_v<WorkItemSizesTy, int *>,
                              int> = 0>
   auto get_max_work_item_sizes() {
-    if constexpr (std::is_same_v<WorkItemSizesTy, sycl::id<3>>)
+    if constexpr (std::is_same_v<WorkItemSizesTy, sycl::range<3>>)
       return _max_work_item_sizes;
     else
       return _max_work_item_sizes_i;
@@ -138,10 +138,16 @@ public:
       _name[255] = '\0';
     }
   }
-  void set_max_work_item_sizes(const sycl::id<3> max_work_item_sizes) {
+  void set_max_work_item_sizes(const sycl::range<3> max_work_item_sizes) {
     _max_work_item_sizes = max_work_item_sizes;
     for (int i = 0; i < 3; ++i)
       _max_work_item_sizes_i[i] = max_work_item_sizes[i];
+  }
+  void set_max_work_item_sizes(const sycl::id<3> max_work_item_sizes) {
+    for (int i = 0; i < 3; ++i) {
+      _max_work_item_sizes_i[i] = max_work_item_sizes[i];
+      _max_work_item_sizes[i] = max_work_item_sizes[i];
+    }
   }
   void set_host_unified_memory(bool host_unified_memory) {
     _host_unified_memory = host_unified_memory;
@@ -193,8 +199,8 @@ public:
   }
 private:
   char _name[256];
-  sycl::id<3> _max_work_item_sizes;
-  int _max_work_item_sizes_i[3];
+  sycl::range<3> _max_work_item_sizes{1, 1, 1};
+  int _max_work_item_sizes_i[3] = {1, 1, 1};
   bool _host_unified_memory = false;
   int _major;
   int _minor;
