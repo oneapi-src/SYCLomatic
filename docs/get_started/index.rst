@@ -44,16 +44,19 @@ Before You Begin
 
    .. include:: /_include_files/env_setup_gsg.rst
 
-#. Install the |dpcpp_compiler|.
+#. Install a compiler that supports the DPC++ -specific extensions used in code
+   migrated by SYCLomatic.
 
-   |tool_name| migrates CUDA code to SYCL code for the |dpcpp_compiler|_.
+   * |dpcpp_compiler|_
+   * `oneAPI DPC++ Compiler <https://github.com/intel/llvm>`_
 
-   If your program targets GPUs, install the appropriate GPU drivers or plug-ins (optional),
-   so you can compile your program to run on Intel, AMD*, or NVIDIA* GPUs.
+#. If your program targets GPUs, install the appropriate GPU drivers or plug-ins
+   (optional), so you can compile your program to run on Intel, AMD*, or NVIDIA*
+   GPUs.
 
-   - To use an Intel GPU, install the latest Intel GPU drivers.
-   - To use an AMD GPU, install the oneAPI for AMD GPUs plugin.
-   - To use an NVIDIA GPU, install the oneAPI for NVIDIA GPUs plugin.
+   - To use an Intel GPU, `install the latest Intel GPU drivers <https://dgpu-docs.intel.com/installation-guides/index.html>`_.
+   - To use an AMD GPU, `install the oneAPI for AMD GPUs plugin <https://developer.codeplay.com/products/oneapi/amd/guides/>`_.
+   - To use an NVIDIA GPU, `install the oneAPI for NVIDIA GPUs plugin <https://developer.codeplay.com/products/oneapi/nvidia/guides/>`_.
 
 
 Run the Tool
