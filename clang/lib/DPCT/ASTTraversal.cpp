@@ -4545,7 +4545,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       IsInitializeVarDecl = true;
     } else if (auto *ULE = getNodeAsType<UnresolvedLookupExpr>(
                    Result, "unresolvedCallUsed")) {
-      CE = getAssistNodeAsType<CallExpr>(Result, "callExprUsed");
+      CE = getNodeAsType<CallExpr>(Result, "callExprUsed");
       FuncName = ULE->getName().getAsString();
     } else {
       return;
