@@ -4386,10 +4386,11 @@ engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm 
   auto dst_md = transfer_memory_desc_to_format_tag_any(origin_dst_md);
   auto weight_md = transfer_memory_desc_to_format_tag_any(origin_weight_md);
 
-  auto primitive_args = create_primitive_args_or_get<::dnnl::convolution_forward>(
-      ::dnnl::prop_kind::forward_training, alg, src_md, weight_md, dst_md,
-      desc.get_stride(), desc.get_dilate(), desc.get_padding(),
-      desc.get_padding(), attr);
+  auto primitive_args =
+      create_primitive_args_or_get<::dnnl::convolution_forward>(
+          ::dnnl::prop_kind::forward_training, alg, src_md, weight_md, dst_md,
+          desc.get_stride(), desc.get_dilate(), desc.get_padding(),
+          desc.get_padding(), attr);
 
   auto pd = get_primitive_desc<::dnnl::convolution_forward>(
       primitive_args.second.primitive);
