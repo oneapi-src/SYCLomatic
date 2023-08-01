@@ -584,7 +584,7 @@ nd_range_barrier(const sycl::nd_item<1> &item,
 /// work-group.
 /// Note: Please make sure that the logical-group size is a power of 2 in the
 /// range [1, current_sub_group_size].
-template<unsigned int dimension>
+template<unsigned int dimension = 3>
 class logical_group {
   sycl::nd_item<dimension> _item;
   sycl::group<dimension> _g;
@@ -888,7 +888,7 @@ public:
       sycl::group_barrier(nd_item.get_sub_group());
       break;
     default:
-      throw sycl::exception(sycl::errc::runtime, "The group type is unkown, please check it. ")
+      throw sycl::exception(sycl::errc::runtime, "The group type is unkown, please check it. ");
     }
   }
 

@@ -32,13 +32,13 @@ __device__ void foo() {
   // CHECK: sycl::sub_group tile32 = item_ct1.get_sub_group();
   cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(block);
 
-  // const auto catile16 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16);
+  // const auto catile16 = dpct::experimental::logical_group<3>(item_ct1, item_ct1.get_group(), 16);
   const auto catile16 = cg::tiled_partition<16>(block);
-  // auto atile16 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16);
+  // auto atile16 = dpct::experimental::logical_group<3>(item_ct1, item_ct1.get_group(), 16);
   auto atile16 = cg::tiled_partition<16>(block);
-  // const dpct::experimental::logical_group ctile16 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16);
+  // const dpct::experimental::logical_group ctile16 = dpct::experimental::logical_group<3>(item_ct1, item_ct1.get_group(), 16);
   const cg::thread_block_tile<16> ctile16 = cg::tiled_partition<16>(block);
-  // dpct::experimental::logical_group tile16 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16);
+  // dpct::experimental::logical_group tile16 = dpct::experimental::logical_group<3>(item_ct1, item_ct1.get_group(), 16);
   cg::thread_block_tile<16> tile16 = cg::tiled_partition<16>(block);
 
   const auto cgg = cg::this_grid();
@@ -87,7 +87,7 @@ __device__ void foo() {
   cg::thread_rank(ctile32);
   cg::thread_rank(tile32);
 
-  // CHECK: dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16).get_local_linear_id();
+  // CHECK: dpct::experimental::logical_group<3>(item_ct1, item_ct1.get_group(), 16).get_local_linear_id();
   cg::thread_rank(cg::tiled_partition<16>(block));
   // CHECK: catile16.get_local_linear_id();
   cg::thread_rank(catile16);
@@ -139,7 +139,7 @@ __device__ void foo() {
   ctile32.thread_rank();
   tile32.thread_rank();
 
-  // CHECK: dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16).get_local_linear_id();
+  // CHECK: dpct::experimental::logical_group<3>(item_ct1, item_ct1.get_group(), 16).get_local_linear_id();
   cg::tiled_partition<16>(block).thread_rank();
   // CHECK: catile16.get_local_linear_id();
   catile16.thread_rank();
@@ -165,7 +165,7 @@ __device__ void foo() {
   ctile32.size();
   tile32.size();
 
-  // CHECK: dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), 16).get_local_linear_range();
+  // CHECK: dpct::experimental::logical_group<3>(item_ct1, item_ct1.get_group(), 16).get_local_linear_range();
   cg::tiled_partition<16>(block).size();
   // CHECK: catile16.get_local_linear_range();
   catile16.size();

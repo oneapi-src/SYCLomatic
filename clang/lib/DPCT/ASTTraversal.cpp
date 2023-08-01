@@ -11893,9 +11893,6 @@ void CooperativeGroupsFunctionRule::runRule(
    if (DR) {
      std::string DREName =
           DR->getType().getCanonicalType().getAsString();
-     auto Range = getDefinitionRange(DR->getBeginLoc(), DR->getEndLoc());
-     auto Length = Lexer::MeasureTokenLength(Range.getEnd(), SM,
-                                             Result.Context->getLangOpts());
      std::string ReplacedStr = "";
      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
        auto FD = DpctGlobalInfo::getParentFunction(DR);
@@ -11930,24 +11927,15 @@ void CooperativeGroupsFunctionRule::runRule(
        return;
      if (Begin.isMacroID() || End.isMacroID())
        return;
-     }
 
      ReplacedStr = MapNames::getDpctNamespace() + "item_group<" + ReplacedStr +
                    ">(" + DR->getNameInfo().getAsString() + ", " +
                    DpctGlobalInfo::getItem(DR) + ")";
-     SourceLocation Begin = DR->getBeginLoc();
-     SourceLocation End = DR->getEndLoc();
-     End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-         End, SM, DpctGlobalInfo::getContext().getLangOpts()));
-     if (End.isMacroID())
-       return;
-     if (Begin.isMacroID() || End.isMacroID())
-       return;
      emplaceTransformation(
          new ReplaceText(Begin, End.getRawEncoding() - Begin.getRawEncoding(),
                          std::move(ReplacedStr)));
      return;
-   }
+    }
   if (!CE)
     return;
   std::string FuncName =
@@ -12020,7 +12008,7 @@ void CooperativeGroupsFunctionRule::runRule(
         if (Checker2(CE) && DpctGlobalInfo::useLogicalGroup()) {
           FuncInfo->addSubGroupSizeRequest(32, CE->getBeginLoc(),
                                            MapNames::getDpctNamespace() +
-                                               "experimental::logical_group");
+                                               "experimental::logical_group<3>");
         } else {
           FuncInfo->addSubGroupSizeRequest(32, CE->getBeginLoc(),
                                            DpctGlobalInfo::getSubGroup(CE));
@@ -12368,7 +12356,6 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
     } else {
       ND = dyn_cast<NamedDecl>(CE->getCalleeDecl());
     }
-    NSD = dyn_cast<NamespaceDecl>(NSD->getDeclContext());
   }
 
   if (!dpct::DpctGlobalInfo::isInCudaPath(ND->getLocation()) &&
