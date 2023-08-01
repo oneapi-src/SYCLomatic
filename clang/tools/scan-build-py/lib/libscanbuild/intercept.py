@@ -270,7 +270,7 @@ def format_entry(exec_trace):
         fullname = name if os.path.isabs(name) else os.path.join(cwd, name)
         return os.path.normpath(fullname)
 
-    # SYCLomatic_CUSTOMIZATION begin
+# SYCLomatic_CUSTOMIZATION begin
     def get_object_files(flags):
         return [flag for flag in flags if flag.endswith('.o')]
 
@@ -279,7 +279,7 @@ def format_entry(exec_trace):
         output_file_idx = flags.index('-o')
         output_flags = flags[output_file_idx:output_file_idx+2]
         return [flag for flag in flags if flag not in object_files and flag not in output_flags]
-    # SYCLomatic_CUSTOMIZATION end
+# SYCLomatic_CUSTOMIZATION end
 
     logging.debug("format this command: %s", exec_trace["command"])
     compilation = split_command(exec_trace["command"])
@@ -302,7 +302,7 @@ def format_entry(exec_trace):
                 'command': encode(command),
             }
 
-        # SYCLomatic_CUSTOMIZATION begin
+# SYCLomatic_CUSTOMIZATION begin
         # If linker entry contains source compilation files, generate output files for the source files, then generate linker entry
         elif len(get_object_files(compilation.flags)) > 1 and compilation.files:
             output_files = []
@@ -323,7 +323,7 @@ def format_entry(exec_trace):
                 'directory': exec_trace['directory'],
                 'command': encode(command),
             }
-        # SYCLomatic_CUSTOMIZATION end
+# SYCLomatic_CUSTOMIZATION end
 
         for preprocess_source in compilation.preprocess_output_files:
             file_path = abspath(exec_trace['directory'], preprocess_source)
