@@ -25,7 +25,7 @@ __global__ void k() {
 
   // CHECK: auto block = item_ct1.get_group();
   cg::thread_block block = cg::this_thread_block();
-  // CHECK: item_ct1.barrier();
+  // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
   __syncthreads();
   // CHECK: item_ct1.barrier();
   block.sync();

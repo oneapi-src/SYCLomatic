@@ -25,9 +25,9 @@
 #error "SYCLomatic runtime requires C++ filesystem support"
 #endif
 
-#include <random>
-
+#include <fstream>
 #include <image.hpp>
+#include <random>
 
 namespace dpct {
 
