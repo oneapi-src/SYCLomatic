@@ -33,9 +33,11 @@ Before You Begin
    -  ``/usr/local/cuda-x.y/include``, where *x.y* is one of these values:
       |cuda_versions|.
 
-   .. include:: /_include_files/alt_cuda_header_files.rst
+
 
    .. note::
+
+      .. include:: /_include_files/alt_cuda_header_files.rst
 
       The CUDA include path should not be the same as, or a child path of, the
       directory where the source code that needs to be migrated is located.
@@ -50,9 +52,8 @@ Before You Begin
    * |dpcpp_compiler|_
    * `oneAPI DPC++ Compiler <https://github.com/intel/llvm>`_
 
-#. If your program targets GPUs, install the appropriate GPU drivers or plug-ins
-   (optional), so you can compile your program to run on Intel, AMD*, or NVIDIA*
-   GPUs.
+#. Optional: If your program targets GPUs, install the appropriate GPU drivers or
+   plug-ins, so you can compile your program to run on Intel, AMD*, or NVIDIA* GPUs.
 
    - To use an Intel GPU, `install the latest Intel GPU drivers <https://dgpu-docs.intel.com/installation-guides/index.html>`_.
    - To use an AMD GPU, `install the oneAPI for AMD GPUs plugin <https://developer.codeplay.com/products/oneapi/amd/guides/>`_.
