@@ -81,10 +81,7 @@ __global__ void helloFromGPU2() {
 void testReference(const int &i) {
   dim3 griddim = 2;
   dim3 threaddim = 32;
-  // CHECK:  /*
-  // CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
-  // CHECK-NEXT:  */
-  // CHECK-NEXT:   dpct::get_default_queue().parallel_for<dpct_kernel_name<class helloFromGPU_{{[a-f0-9]+}}>>(
+  // CHECK:   dpct::get_default_queue().parallel_for<dpct_kernel_name<class helloFromGPU_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         cl::sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           helloFromGPU(i, item_ct1);

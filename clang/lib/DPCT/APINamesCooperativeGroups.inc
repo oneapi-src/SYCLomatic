@@ -32,14 +32,14 @@
    Also, issue warning about barrier performance tuning.
 */
 CONDITIONAL_FACTORY_ENTRY(
-    CheckArgType(0, "const class cooperative_groups::__v1::thread_block &"),
+    CheckParamType(0, "const class cooperative_groups::__v1::thread_block &"),
     WARNING_FACTORY_ENTRY(
         "sync",
         MEMBER_CALL_FACTORY_ENTRY("sync", NDITEM,
                                   false, "barrier"),
         Diagnostics::BARRIER_PERFORMANCE_TUNNING, ARG("nd_item")),
     CONDITIONAL_FACTORY_ENTRY(
-        CheckArgType(0, "const class cooperative_groups::__v1::coalesced_group &"),
+        CheckParamType(0, "const class cooperative_groups::__v1::coalesced_group &"),
         WARNING_FACTORY_ENTRY(
             "sync",
             MEMBER_CALL_FACTORY_ENTRY("sync", NDITEM,
@@ -53,7 +53,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                           SUBGROUP, false, "barrier"),
                 Diagnostics::BARRIER_PERFORMANCE_TUNNING, ARG("sub_group")),
             CONDITIONAL_FACTORY_ENTRY(
-                CheckArgType(0, "const class cooperative_groups::__v1::grid_group &"),
+                CheckParamType(0, "const class cooperative_groups::__v1::grid_group &"),
                 CONDITIONAL_FACTORY_ENTRY(
                     UseNDRangeBarrier,
                     FEATURE_REQUEST_FACTORY(
@@ -97,7 +97,7 @@ CONDITIONAL_FACTORY_ENTRY(
      ARG(0).get_local_linear_id()
 */
 CONDITIONAL_FACTORY_ENTRY(
-        CheckArgType(0, "const class cooperative_groups::__v1::thread_block &"),
+        CheckParamType(0, "const class cooperative_groups::__v1::thread_block &"),
         MEMBER_CALL_FACTORY_ENTRY("thread_rank", NDITEM,
                                   false, "get_local_linear_id"),
         CONDITIONAL_FACTORY_ENTRY(
@@ -123,7 +123,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                         Diagnostics::API_NOT_MIGRATED, ARG("thread_rank")))))
 
 CONDITIONAL_FACTORY_ENTRY(
-    makeCheckAnd(CheckArgType(0, "const class cooperative_groups::__v1::thread_block &"), CheckIntergerTemplateArgValueLE(0, 32)),
+    makeCheckAnd(CheckParamType(0, "const class cooperative_groups::__v1::thread_block &"), CheckIntergerTemplateArgValueLE(0, 32)),
         CONDITIONAL_FACTORY_ENTRY(
             makeCheckAnd(CheckIntergerTemplateArgValueNE(0, 32), UseLogicalGroup),
             FEATURE_REQUEST_FACTORY(

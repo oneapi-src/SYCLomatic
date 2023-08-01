@@ -6,10 +6,10 @@
 //
 //===----------------------------------------------------------------------===//
 // Half Arithmetic Functions
-ENTRY_RENAMED("__hfma", MapNames::getClNamespace(false, true) + "fma")
+ENTRY_REWRITE("__hfma")
 
 // Half2 Arithmetic Functions
-ENTRY_RENAMED("__hfma2", MapNames::getClNamespace(false, true) + "fma")
+ENTRY_REWRITE("__hfma2")
 
 // Half Comparison Functions
 ENTRY_RENAMED("__hisinf", MapNames::getClNamespace(false, true) + "isinf")
@@ -254,9 +254,9 @@ ENTRY_EMULATED("nanf", MapNames::getClNamespace(false, true) + "nan")
 ENTRY_EMULATED("nearbyintf", MapNames::getClNamespace(false, true) + "floor")
 ENTRY_EMULATED("remquof", MapNames::getClNamespace(false, true) + "remquo")
 ENTRY_EMULATED("rhypotf", MapNames::getClNamespace(false, true) + "hypot")
-ENTRY_EMULATED("sincosf", MapNames::getClNamespace(false, true) + "sincos")
+ENTRY_REWRITE("sincosf")
 ENTRY_EMULATED("sincospif", MapNames::getClNamespace(false, true) + "sincos")
-ENTRY_EMULATED("__sincosf", MapNames::getClNamespace(false, true) + "sincos")
+ENTRY_REWRITE("__sincosf")
 ENTRY_EMULATED("powf", MapNames::getClNamespace(false, true) + "pow<float>")
 ENTRY_EMULATED("__powf", MapNames::getClNamespace(false, true) + "pow<float>")
 
@@ -267,7 +267,7 @@ ENTRY_EMULATED("nan", MapNames::getClNamespace(false, true) + "nan")
 ENTRY_EMULATED("nearbyint", MapNames::getClNamespace(false, true) + "floor")
 ENTRY_EMULATED("remquo", MapNames::getClNamespace(false, true) + "remquo")
 ENTRY_EMULATED("rhypot", MapNames::getClNamespace(false, true) + "hypot")
-ENTRY_EMULATED("sincos", MapNames::getClNamespace(false, true) + "sincos")
+ENTRY_REWRITE("sincos")
 ENTRY_EMULATED("sincospi", MapNames::getClNamespace(false, true) + "sincos")
 ENTRY_EMULATED("pow", MapNames::getClNamespace(false, true) + "pow<double>")
 
@@ -290,8 +290,8 @@ ENTRY_EMULATED("__drcp_rz", "(1.0/(X))")
 
 
 // Half/Half2 Arithmetic Functions
-ENTRY_RENAMED("__habs", MapNames::getClNamespace(false, true) + "fabs")
-ENTRY_RENAMED("__habs2", MapNames::getClNamespace(false, true) + "fabs")
+ENTRY_REWRITE("__habs")
+ENTRY_REWRITE("__habs2")
 ENTRY_REWRITE("__hadd2")
 ENTRY_REWRITE("__h2div")
 ENTRY_REWRITE("__hdiv")

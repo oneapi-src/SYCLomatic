@@ -17,7 +17,7 @@ FEATURE_REQUEST_FACTORY(
 CONDITIONAL_FACTORY_ENTRY(
 NeedExtraParens(0),
 CONDITIONAL_FACTORY_ENTRY(
-    CheckArgType(1, "struct curandStateMRG32k3a *"),
+    CheckParamType(1, "struct curandStateMRG32k3a *"),
     FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::device_ext,
         CALL_FACTORY_ENTRY(
@@ -28,7 +28,7 @@ CONDITIONAL_FACTORY_ENTRY(
                  makeCombinedArg(makeCombinedArg(ARG("{0, ("), ARG(0)),
                                  ARG(") * (std::uint64_t(1) << 63)}"))))),
     CONDITIONAL_FACTORY_ENTRY(
-        CheckArgType(1, "struct curandStatePhilox4_32_10 *"),
+        CheckParamType(1, "struct curandStatePhilox4_32_10 *"),
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
@@ -42,7 +42,7 @@ CONDITIONAL_FACTORY_ENTRY(
                          ARG(") * 4)}"))))),
         REMOVE_API_FACTORY_ENTRY_WITH_MSG("skipahead_sequence", "this API is not supported for mcg59 engine."))),
 CONDITIONAL_FACTORY_ENTRY(
-    CheckArgType(1, "struct curandStateMRG32k3a *"),
+    CheckParamType(1, "struct curandStateMRG32k3a *"),
     FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::device_ext,
         CALL_FACTORY_ENTRY(
@@ -53,7 +53,7 @@ CONDITIONAL_FACTORY_ENTRY(
                  makeCombinedArg(makeCombinedArg(ARG("{0, "), ARG(0)),
                                  ARG(" * (std::uint64_t(1) << 63)}"))))),
     CONDITIONAL_FACTORY_ENTRY(
-        CheckArgType(1, "struct curandStatePhilox4_32_10 *"),
+        CheckParamType(1, "struct curandStatePhilox4_32_10 *"),
         FEATURE_REQUEST_FACTORY(
             HelperFeatureEnum::device_ext,
             CALL_FACTORY_ENTRY(
@@ -98,7 +98,7 @@ FEATURE_REQUEST_FACTORY(
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
-        CheckArgType(0, "struct curandStateXORWOW *"),
+        CheckParamType(0, "struct curandStateXORWOW *"),
         MEMBER_CALL_FACTORY_ENTRY("curand",
                                   DEREF(makeDerefArgCreatorWithCall(0)), false,
                                   "generate<oneapi::mkl::rng::device::uniform_"
