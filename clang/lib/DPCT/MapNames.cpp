@@ -1360,17 +1360,17 @@ void MapNames::setExplicitNamespaceMap() {
   ITFName = {
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)   \
   {#APINAME, #INTERFACENAME},
-#define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
+#define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
                               TARGET, COMMENT, MAPPING)                        \
-  {#OBJNAME "::" #APINAME, #OBJNAME "::" #INTERFACENAME},
+  {#OBJNAME "::" #APINAME, #INTERFACEOBJNAME "::" #INTERFACENAME},
 #include "APINames.inc"
 #undef ENTRY
 #undef ENTRY_MEMBER_FUNCTION
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
   {#APINAME, #INTERFACENAME},
-#define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
+#define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
                               TARGET, COMMENT)                                 \
-  {#OBJNAME "::" #APINAME, #OBJNAME "::" #INTERFACENAME},
+  {#OBJNAME "::" #APINAME, #INTERFACEOBJNAME "::" #INTERFACENAME},
 #include "APINames_CUB.inc"
 #include "APINames_NCCL.inc"
 #include "APINames_cuBLAS.inc"
@@ -1735,16 +1735,27 @@ void MapNames::setExplicitNamespaceMap() {
   // Atomic function names mapping
   AtomicFuncNamesMap = {
       {"atomicAdd", getDpctNamespace() + "atomic_fetch_add"},
+      {"atomicAdd_system", getDpctNamespace() + "atomic_fetch_add"},
       {"atomicSub", getDpctNamespace() + "atomic_fetch_sub"},
+      {"atomicSub_system", getDpctNamespace() + "atomic_fetch_sub"},
       {"atomicAnd", getDpctNamespace() + "atomic_fetch_and"},
+      {"atomicAnd_system", getDpctNamespace() + "atomic_fetch_and"},
       {"atomicOr", getDpctNamespace() + "atomic_fetch_or"},
+      {"atomicOr_system", getDpctNamespace() + "atomic_fetch_or"},
       {"atomicXor", getDpctNamespace() + "atomic_fetch_xor"},
+      {"atomicXor_system", getDpctNamespace() + "atomic_fetch_xor"},
       {"atomicMin", getDpctNamespace() + "atomic_fetch_min"},
+      {"atomicMin_system", getDpctNamespace() + "atomic_fetch_min"},
       {"atomicMax", getDpctNamespace() + "atomic_fetch_max"},
+      {"atomicMax_system", getDpctNamespace() + "atomic_fetch_max"},
       {"atomicExch", getDpctNamespace() + "atomic_exchange"},
+      {"atomicExch_system", getDpctNamespace() + "atomic_exchange"},
       {"atomicCAS", getDpctNamespace() + "atomic_compare_exchange_strong"},
+      {"atomicCAS_system", getDpctNamespace() + "atomic_compare_exchange_strong"},
       {"atomicInc", getDpctNamespace() + "atomic_fetch_compare_inc"},
+      {"atomicInc_system", getDpctNamespace() + "atomic_fetch_compare_inc"},
       {"atomicDec", getDpctNamespace() + "atomic_fetch_compare_dec"},
+      {"atomicDec_system", getDpctNamespace() + "atomic_fetch_compare_dec"},
   };
 
   BLASAPIWithRewriter = {
@@ -4470,16 +4481,16 @@ const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
 std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)   \
   {#APINAME, VALUE},
-#define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
-                              TARGET, COMMENT, MAPPING)                        \
+#define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME,        \
+                              APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)  \
   {#OBJNAME "::" #APINAME, VALUE},
 #include "APINames.inc"
 #undef ENTRY
 #undef ENTRY_MEMBER_FUNCTION
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
   {#APINAME, VALUE},
-#define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
-                              TARGET, COMMENT)                                 \
+#define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME,        \
+                              APINAME, VALUE, FLAG, TARGET, COMMENT)           \
   {#OBJNAME "::" #APINAME, VALUE},
 #include "APINames_CUB.inc"
 #include "APINames_NCCL.inc"

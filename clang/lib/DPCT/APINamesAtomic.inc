@@ -48,6 +48,18 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1)))))))
 
+CALL_FACTORY_ENTRY(
+    "atomicAdd_system",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+        MapNames::getDpctNamespace() + "atomic_fetch_add",
+        LITERAL(MapNames::getClNamespace() +
+                "access::address_space::generic_space"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_order::relaxed"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_scope::system")),
+    makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1)))
+
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
@@ -89,6 +101,18 @@ FEATURE_REQUEST_FACTORY(
                                             "atomic_fetch_sub",
                                         makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1)))))))
+
+CALL_FACTORY_ENTRY(
+    "atomicSub_system",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+        MapNames::getDpctNamespace() + "atomic_fetch_sub",
+        LITERAL(MapNames::getClNamespace() +
+                "access::address_space::generic_space"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_order::relaxed"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_scope::system")),
+    makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1)))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
@@ -132,6 +156,18 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1)))))))
 
+CALL_FACTORY_ENTRY(
+    "atomicExch_system",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+        MapNames::getDpctNamespace() + "atomic_exchange",
+        LITERAL(MapNames::getClNamespace() +
+                "access::address_space::generic_space"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_order::relaxed"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_scope::system")),
+    makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1)))
+
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
@@ -174,6 +210,18 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1)))))))
 
+CALL_FACTORY_ENTRY(
+    "atomicMax_system",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+        MapNames::getDpctNamespace() + "atomic_fetch_max",
+        LITERAL(MapNames::getClNamespace() +
+                "access::address_space::generic_space"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_order::relaxed"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_scope::system")),
+    makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1)))
+
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
@@ -215,6 +263,18 @@ FEATURE_REQUEST_FACTORY(
                                             "atomic_fetch_min",
                                         makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1)))))))
+
+CALL_FACTORY_ENTRY(
+    "atomicMin_system",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+        MapNames::getDpctNamespace() + "atomic_fetch_min",
+        LITERAL(MapNames::getClNamespace() +
+                "access::address_space::generic_space"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_order::relaxed"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_scope::system")),
+    makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1)))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
@@ -264,6 +324,20 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(1),
                                         makeCallArgCreatorWithCall(2)))))))
 
+CALL_FACTORY_ENTRY(
+    "atomicCAS_system",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+        MapNames::getDpctNamespace() +
+            "atomic_compare_exchange_strong",
+        LITERAL(MapNames::getClNamespace() +
+                "access::address_space::generic_space"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_order::relaxed"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_scope::system")),
+    makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1),
+    makeCallArgCreatorWithCall(2)))
+
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
@@ -306,6 +380,18 @@ FEATURE_REQUEST_FACTORY(
                                             "atomic_fetch_compare_inc",
                                         makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1)))))))
+
+CALL_FACTORY_ENTRY(
+    "atomicInc_system",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+        MapNames::getDpctNamespace() + "atomic_fetch_compare_inc",
+        LITERAL(MapNames::getClNamespace() +
+                "access::address_space::generic_space"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_order::relaxed"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_scope::system")),
+    makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1)))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
@@ -350,6 +436,18 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1)))))))
 
+CALL_FACTORY_ENTRY(
+    "atomicDec_system",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+        MapNames::getDpctNamespace() + "atomic_fetch_compare_dec",
+        LITERAL(MapNames::getClNamespace() +
+                "access::address_space::generic_space"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_order::relaxed"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_scope::system")),
+    makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1)))
+
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
@@ -391,6 +489,18 @@ FEATURE_REQUEST_FACTORY(
                                             "atomic_fetch_and",
                                         makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1)))))))
+
+CALL_FACTORY_ENTRY(
+    "atomicAnd_system",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+        MapNames::getDpctNamespace() + "atomic_fetch_and",
+        LITERAL(MapNames::getClNamespace() +
+                "access::address_space::generic_space"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_order::relaxed"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_scope::system")),
+    makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1)))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
@@ -434,6 +544,18 @@ FEATURE_REQUEST_FACTORY(
                                         makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1)))))))
 
+CALL_FACTORY_ENTRY(
+    "atomicOr_system",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+        MapNames::getDpctNamespace() + "atomic_fetch_or",
+        LITERAL(MapNames::getClNamespace() +
+                "access::address_space::generic_space"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_order::relaxed"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_scope::system")),
+    makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1)))
+
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CONDITIONAL_FACTORY_ENTRY(
@@ -475,3 +597,15 @@ FEATURE_REQUEST_FACTORY(
                                             "atomic_fetch_xor",
                                         makeCallArgCreatorWithCall(0),
                                         makeCallArgCreatorWithCall(1)))))))
+
+CALL_FACTORY_ENTRY(
+    "atomicXor_system",
+    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+        MapNames::getDpctNamespace() + "atomic_fetch_xor",
+        LITERAL(MapNames::getClNamespace() +
+                "access::address_space::generic_space"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_order::relaxed"),
+        LITERAL(MapNames::getClNamespace() +
+                "memory_scope::system")),
+    makeCallArgCreatorWithCall(0), makeCallArgCreatorWithCall(1)))
