@@ -12830,15 +12830,16 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
                     .bind("texMember"),
                 this);
   MF.addMatcher(
-      typeLoc(loc(qualType(hasDeclaration(namedDecl(hasAnyName(
-                  "cudaChannelFormatDesc", "cudaChannelFormatKind",
-                  "cudaTextureDesc", "cudaResourceDesc", "cudaResourceType",
-                  "cudaTextureAddressMode", "cudaTextureFilterMode",
-                  "cudaArray", "cudaArray_t", "CUarray_st", "CUarray",
-                  "CUarray_format", "CUarray_format_enum", "CUdeviceptr",
-                  "CUresourcetype", "CUresourcetype_enum", "CUaddress_mode",
-                  "CUaddress_mode_enum", "CUfilter_mode", "CUfilter_mode_enum",
-                  "CUDA_RESOURCE_DESC", "CUDA_TEXTURE_DESC", "CUtexref"))))))
+      typeLoc(
+          loc(qualType(hasDeclaration(namedDecl(hasAnyName(
+              "cudaChannelFormatDesc", "cudaChannelFormatKind",
+              "cudaTextureDesc", "cudaResourceDesc", "cudaResourceType",
+              "cudaTextureAddressMode", "cudaTextureFilterMode", "cudaArray",
+              "cudaArray_t", "CUarray_st", "CUarray", "CUarray_format",
+              "CUarray_format_enum", "CUdeviceptr", "CUresourcetype",
+              "CUresourcetype_enum", "CUaddress_mode", "CUaddress_mode_enum",
+              "CUfilter_mode", "CUfilter_mode_enum", "CUDA_RESOURCE_DESC",
+              "CUDA_TEXTURE_DESC", "CUtexref", "textureReference"))))))
           .bind("texType"),
       this);
 
