@@ -61,8 +61,7 @@ public:
               const MacroDefinition &MD) override;
   // TODO: implement one of this for each source language.
   bool ReplaceCuMacro(const Token &MacroNameTok);
-  void ReplaceCuMacro(SourceRange ConditionRange,
-                      ConditionValueKind ConditionValue, IfType IT,
+  void ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
                       SourceLocation IfLoc, SourceLocation ElifLoc);
   void Defined(const Token &MacroNameTok, const MacroDefinition &MD,
                SourceRange Range) override;
@@ -1613,6 +1612,13 @@ public:
 ///
 /// This rule replace __syncthreads() with item.barrier()
 class SyncThreadsRule : public NamedMigrationRule<SyncThreadsRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class SyncThreadsMigrationRule
+    : public NamedMigrationRule<SyncThreadsMigrationRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);

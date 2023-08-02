@@ -2529,15 +2529,6 @@ private:
   ///
   /// If the expression is equivalent to "!defined(X)" return X in IfNDefMacro.
   DirectiveEvalResult EvaluateDirectiveExpression(IdentifierInfo *&IfNDefMacro);
-#ifdef SYCLomatic_CUSTOMIZATION
-  DirectiveEvalResult
-  EvaluateDirectiveExpressionWithGuard(IdentifierInfo *&IfNDefMacro) {
-    IsEvaluatingExpression = true;
-    DirectiveEvalResult Ret = EvaluateDirectiveExpression(IfNDefMacro);
-    IsEvaluatingExpression = false;
-    return Ret;
-  }
-#endif // SYCLomatic_CUSTOMIZATION
 
   /// Process a '__has_include("path")' expression.
   ///
@@ -2876,9 +2867,6 @@ private:
   // locations.  A region is "open" if its' start and end locations are
   // identical.
   SmallVector<std::pair<SourceLocation, SourceLocation>, 8> SafeBufferOptOutMap;
-#ifdef SYCLomatic_CUSTOMIZATION
-  bool IsEvaluatingExpression = false;
-#endif // SYCLomatic_CUSTOMIZATION
 
 public:
   /// \return true iff the given `Loc` is in a "-Wunsafe-buffer-usage" opt-out
