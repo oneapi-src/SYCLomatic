@@ -110,6 +110,10 @@ FEATURE_REQUEST_FACTORY(
                                         "deprecated::usm_host_allocator"),
                                     TEMPLATE_ARG(0))))
 
+TYPE_REWRITE_ENTRY("thrust::detail::enable_if",
+                    TYPE_FACTORY(STR("std::enable_if"),
+                                TEMPLATE_ARG(0),  TEMPLATE_ARG(1)))
+
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     TYPE_REWRITE_ENTRY("thrust::cuda::experimental::pinned_allocator",

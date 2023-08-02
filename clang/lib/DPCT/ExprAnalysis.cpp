@@ -1040,7 +1040,8 @@ void ExprAnalysis::analyzeExpr(const DeclStmt *DS) {
   }
 }
 
-void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
+void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
+                               const DependentNameTypeLoc *DNTL) {
   SourceRange SR = TL.getSourceRange();
   std::string TyName;
 
@@ -1055,6 +1056,10 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
       else
         SR = TL.getSourceRange();
     }
+  }
+
+  if (DNTL) {
+    SR.setBegin(DNTL->getQualifierLoc().getBeginLoc());
   }
 
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)

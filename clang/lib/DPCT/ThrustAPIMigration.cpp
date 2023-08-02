@@ -220,7 +220,7 @@ void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                       "thrust::logical_and", "thrust::bit_and",
                       "thrust::bit_or", "thrust::minimum", "thrust::bit_xor",
                       "thrust::modulus", "thrust::greater", "thrust::identity",
-                      "thrust::null_type");
+                      "thrust::null_type", "thrust::detail::enable_if");
   };
   MF.addMatcher(typeLoc(loc(hasCanonicalType(qualType(
                             hasDeclaration(namedDecl(ThrustTypeHasNames()))))))
@@ -257,11 +257,17 @@ void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                 this);
 }
 
+
 void ThrustTypeRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  ExprAnalysis EA;
   if (auto TL = getNodeAsType<TypeLoc>(Result, "thrustTypeLoc")) {
-    EA.analyze(*TL);
+    ExprAnalysis EA;
+    auto DNTL = DpctGlobalInfo::findAncestor<DependentNameTypeLoc>(TL);
+    if (DNTL) {
+      EA.analyze(*TL, *DNTL);
+    } else {
+      EA.analyze(*TL);
+    }
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
   } else if (const CXXConstructExpr *CE =

@@ -206,6 +206,13 @@ public:
     analyzeType(TL);
   }
 
+  inline void analyze(const TypeLoc &TL, const DependentNameTypeLoc &DNTL) {
+    auto SourceRange = getDefinitionRange(DNTL.getQualifierLoc().getBeginLoc(),
+                                          TL.getSourceRange().getEnd());
+    initSourceRange(SourceRange);
+    analyzeType(TL, nullptr, &DNTL);
+  }
+
   inline void analyze(const TemplateArgumentLoc &TAL) {
     initSourceRange(TAL.getSourceRange());
     analyzeTemplateArgument(TAL);
@@ -639,7 +646,8 @@ protected:
                           const Expr *CSCE = nullptr) {
     analyzeType(TSI->getTypeLoc(), CSCE);
   }
-  void analyzeType(TypeLoc TL, const Expr *E = nullptr);
+  void analyzeType(TypeLoc TL, const Expr *E = nullptr,
+                   const DependentNameTypeLoc *DNTL = nullptr);
   void analyzeDecltypeType(DecltypeTypeLoc TL);
 
   // Doing nothing when it doesn't need analyze
