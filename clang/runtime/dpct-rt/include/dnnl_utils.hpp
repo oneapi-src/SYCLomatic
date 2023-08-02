@@ -859,12 +859,11 @@ class engine_ext {
     size_t primitive_depth = 0;
   };
   struct internal_resource {
-    std::int64_t _random_engine_state_size = -1;
+    std::int64_t random_engine_state_size = -1;
     buffer_info binfo;
-    ::dnnl::stream s;
   };
   std::shared_ptr<::dnnl::engine> _eng = nullptr;
-  ::dnnl::stream *_s = nullptr;
+  std::shared_ptr<::dnnl::stream> _s = nullptr;
   sycl::queue *_q = nullptr;
   unsigned int _engine_id = 0;
   static thread_local unsigned int _engine_count;
@@ -1066,9 +1065,8 @@ public:
     _q = &dpct::get_current_device().default_queue();
     _eng = std::make_shared<::dnnl::engine>(::dnnl::sycl_interop::make_engine(
         dpct::get_current_device(), dpct::get_current_device().get_context()));
-    auto r = get_internal_resource(_q);
-    r->s = ::dnnl::sycl_interop::make_stream(*_eng, *_q);
-    _s = &r->s;
+    _s = std::make_shared<::dnnl::stream>(
+        ::dnnl::sycl_interop::make_stream(*_eng, *_q));
     _engine_id = _engine_count++;
   }
   /// Setting the user's SYCL queue for an oneDNN engine.
@@ -1085,9 +1083,8 @@ public:
           "set_queue: queue is mismatch with current engine context.");
     }
     _q = q;
-    auto r = get_internal_resource(_q);
-    r->s = ::dnnl::sycl_interop::make_stream(*_eng, *_q);
-    _s = &r->s;
+    _s = std::make_shared<::dnnl::stream>(
+        ::dnnl::sycl_interop::make_stream(*_eng, *_q));
   }
   /// Retrieving the user's SYCL queue set in the oneDNN engine.
   /// \returns Pointer to the SYCL queue.
@@ -4710,12 +4707,12 @@ size_t engine_ext::get_dropout_state_size(){
                            "Interfaces Project does not support this API.");
 #else
   auto r = get_internal_resource(_q);
-  if(r->_random_engine_state_size == -1){
+  if(r->random_engine_state_size == -1){
     auto rand_engine = rng_engine_t(*_q, 0);
-    r->_random_engine_state_size =
+    r->random_engine_state_size =
         oneapi::mkl::rng::get_state_size(rand_engine);
   }
-  return r->_random_engine_state_size;
+  return r->random_engine_state_size;
 #endif
 }
 
