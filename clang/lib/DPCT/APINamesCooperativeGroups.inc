@@ -640,4 +640,9 @@ CASE_FACTORY_ENTRY(
     OTHERWISE(UNSUPPORT_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base.shfl_xor",
                                       Diagnostics::API_NOT_MIGRATED,
                                       ARG("shfl_xor"))))
+
+MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.group_index", NDITEM,
+                          false, "get_global_id")
+MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.thread_index", NDITEM,
+                          false, "get_local_id")
 #endif
