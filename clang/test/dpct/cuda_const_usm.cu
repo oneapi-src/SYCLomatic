@@ -14,7 +14,7 @@ public:
 // CHECK: static dpct::constant_memory<TestStruct, 0> t1;
 __constant__ TestStruct t1;
 
-// CHECK: void member_acc(TestStruct const t1) {
+// CHECK: void member_acc(TestStruct t1) {
 // CHECK-NEXT:  t1.test();
 // CHECK-NEXT:}
 __global__ void member_acc() {
@@ -44,7 +44,7 @@ struct FuncObj {
 };
 
 // CHECK:void simple_kernel(float *d_array, const sycl::nd_item<3> &[[ITEM:item_ct1]],
-// CHECK-NEXT:              float const *const_angle, int * const  const_ptr) {
+// CHECK-NEXT:              float const *const_angle, int * const const_ptr) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range(2) + [[ITEM]].get_local_id(2);
 // CHECK-NEXT:  FuncObj f;
@@ -72,7 +72,7 @@ __device__ __constant__ float const_one;
 
 // CHECK:void simple_kernel_one(float *d_array, const sycl::nd_item<3> &[[ITEM:item_ct1]],
 // CHECK-NEXT:                  dpct::accessor<float, dpct::constant, 2> const_float,
-// CHECK-NEXT:                  float const const_one) {
+// CHECK-NEXT:                  float const_one) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range(2) + [[ITEM]].get_local_id(2);
 // CHECK-NEXT:  if (index < 33) {
@@ -201,3 +201,28 @@ int main(int argc, char **argv) {
   return 0;
 }
 
+//CHECK:static dpct::constant_memory<float, 1> aaa(10);
+//CHECK-NEXT:void kernel1(float const *aaa) {
+//CHECK-NEXT:  float *a = const_cast<float *>(aaa + 5);
+//CHECK-NEXT:}
+//CHECK-NEXT:void foo1() {
+//CHECK-NEXT:  dpct::get_default_queue().submit(
+//CHECK-NEXT:    [&](sycl::handler &cgh) {
+//CHECK-NEXT:      aaa.init();
+//CHECK-EMPTY:
+//CHECK-NEXT:      auto aaa_ptr_ct1 = aaa.get_ptr();
+//CHECK-EMPTY:
+//CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
+//CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:          kernel1(aaa_ptr_ct1);
+//CHECK-NEXT:        });
+//CHECK-NEXT:    });
+//CHECK-NEXT:}
+__constant__ float aaa[10];
+__global__ void kernel1() {
+  float *a = aaa + 5;
+}
+void foo1() {
+  kernel1<<<1, 1>>>();
+}
