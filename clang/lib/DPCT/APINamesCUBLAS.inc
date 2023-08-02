@@ -443,27 +443,14 @@ WARNING_FACTORY_ENTRY(
                           "\"cublasGetStatusString is not supported\"/*", "*/"),
     Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED)
 
-CONDITIONAL_FACTORY_ENTRY(
-    checkIsUSM(),
-    CALL_FACTORY_ENTRY(
-        "cublasSgemm_v2_64",
-        CALL("oneapi::mkl::blas::column_major::gemm", DEREF(0), ARG(1),
-             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             ARG(4), ARG(5),
-             CALL(MapNames::getDpctNamespace() + "get_value", ARG(6), QUEUESTR), ARG(7),
-             ARG(8), ARG(9), ARG(10),
-             CALL(MapNames::getDpctNamespace() + "get_value", ARG(11), QUEUESTR), ARG(12),
-             ARG(13))),
-    BLAS_MULTI_STMTS_FACTORY_ENTRY(
-        "cublasSgemm_v2_64", BLAS_BUFFER_DECL(ARG(7), 7, "float"),
-        BLAS_BUFFER_DECL(ARG(9), 9, "float"),
-        BLAS_BUFFER_DECL(ARG(12), 12, "float"),
-        CALL("oneapi::mkl::blas::column_major::gemm", DEREF(0), ARG(1),
-             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             ARG(4), ARG(5),
-             CALL(MapNames::getDpctNamespace() + "get_value", ARG(6), QUEUESTR),
-             ARG("Arg_7_buf_ct"), ARG(8), ARG("Arg_9_buf_ct"), ARG(10),
-             CALL(MapNames::getDpctNamespace() + "get_value", ARG(11), QUEUESTR),
-             ARG("Arg_12_buf_ct"), ARG(13))))
+CALL_FACTORY_ENTRY(
+    "cublasSgemm_v2_64",
+    CALL("oneapi::mkl::blas::column_major::gemm", DEREF(0), ARG(1),
+         BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+         BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+         ARG(4), ARG(5),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(6), QUEUESTR),
+         BUFFER_OR_USM_PTR(7, "float"), ARG(8), BUFFER_OR_USM_PTR(9, "float"),
+         ARG(10),
+         CALL(MapNames::getDpctNamespace() + "get_value", ARG(11), QUEUESTR),
+         BUFFER_OR_USM_PTR(12, "float"), ARG(13)))

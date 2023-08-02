@@ -20,5 +20,6 @@ void foo() {
   const float *beta_s;
   float *C_s;
   int64_t ldc;
+  // CHECK: oneapi::mkl::blas::column_major::gemm(*handle, transa, transb, m, n, k, dpct::get_value(alpha_s, dpct::get_default_queue()), dpct::cast_to_lvalue_ref(dpct::get_buffer<float>(A_s)), lda, dpct::cast_to_lvalue_ref(dpct::get_buffer<float>(B_s)), ldb, dpct::get_value(beta_s, dpct::get_default_queue()), dpct::cast_to_lvalue_ref(dpct::get_buffer<float>(C_s)), ldc);
   cublasSgemm_64(handle, transa, transb, m, n, k, alpha_s, A_s, lda, B_s, ldb, beta_s, C_s, ldc);
 }

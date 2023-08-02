@@ -12,52 +12,44 @@
 namespace clang {
 namespace dpct {
 
-template <class VirtualPtrT> class BLASBufferDeclPrinter {
-  VirtualPtrT VirtualPtr;
-  unsigned int Idx;
-  std::string Type;
+class BufferOrUSMPtrCallArgExpr {
+  BufferOrUSMPtrCallArgExpr() = default;
 
 public:
-  BLASBufferDeclPrinter(VirtualPtrT &&VirtualPtr, unsigned int &&Idx,
-                        llvm::StringRef Type)
-      : VirtualPtr(std::forward<VirtualPtrT>(VirtualPtr)), Idx(Idx),
-        Type(Type.str()) {}
+  const Expr *E = nullptr;
+  std::string DataType;
+
   template <class StreamT> void print(StreamT &Stream) const {
-    Stream << "auto Arg_" << std::to_string(Idx)
-           << "_buf_ct = " << MapNames::getDpctNamespace() << "get_buffer<"
-           << Type << ">(";
-    dpct::print(Stream, VirtualPtr);
-    Stream << ")";
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+      Stream << MapNames::getDpctNamespace() << "cast_to_lvalue_ref("
+             << MapNames::getDpctNamespace() << "get_buffer<" << DataType
+             << ">(";
+      clang::dpct::print(Stream, E);
+      Stream << "))";
+    } else {
+      clang::dpct::print(Stream, E);
+    }
   }
+
+  static BufferOrUSMPtrCallArgExpr create(const Expr *E, std::string DataType);
 };
 
-template <class VirtualPtrT>
-inline std::function<BLASBufferDeclPrinter<VirtualPtrT>(const CallExpr *)>
-makeBLASBufferDeclCreator(
-    std::function<VirtualPtrT(const CallExpr *)> VirtualPtr, unsigned int Idx,
-    std::string Type) {
-  return PrinterCreator<BLASBufferDeclPrinter<VirtualPtrT>,
-                        std::function<VirtualPtrT(const CallExpr *)>,
-                        unsigned int, std::string>(
-      std::move(VirtualPtr), std::move(Idx), Type);
+BufferOrUSMPtrCallArgExpr
+BufferOrUSMPtrCallArgExpr::create(const Expr *E, std::string DataType) {
+  BufferOrUSMPtrCallArgExpr BOUPCAE;
+  BOUPCAE.E = E;
+  BOUPCAE.DataType = DataType;
+  return BOUPCAE;
 }
 
-template <class... StmtPrinters>
-inline std::shared_ptr<CallExprRewriterFactoryBase>
-createBLASMultiStmtsRewriterFactory(
-    const std::string &SourceName,
-    std::function<StmtPrinters(const CallExpr *)> &&...Creators) {
-  return std::make_shared<AssignableRewriterFactory>(
-      std::make_shared<CallExprRewriterFactory<
-          PrinterRewriter<MultiStmtsPrinter<StmtPrinters...>>,
-          std::function<StmtPrinters(const CallExpr *)>...>>(SourceName,
-                                                             Creators...),
-      true, false, true, false);
+inline std::function<BufferOrUSMPtrCallArgExpr(const CallExpr *)>
+makeBufferOrUSMPtrCallArgCreator(unsigned Idx, std::string DataType) {
+  return [=](const CallExpr *C) -> BufferOrUSMPtrCallArgExpr {
+    return BufferOrUSMPtrCallArgExpr::create(C->getArg(Idx), DataType);
+  };
 }
 
-#define BLAS_MULTI_STMTS_FACTORY_ENTRY(FuncName, ...)                          \
-  {FuncName, createBLASMultiStmtsRewriterFactory(FuncName, __VA_ARGS__)},
-#define BLAS_BUFFER_DECL(VP, IDX, TYPE) makeBLASBufferDeclCreator(VP, IDX, TYPE)
+#define BUFFER_OR_USM_PTR(Idx, T) makeBufferOrUSMPtrCallArgCreator(Idx, T)
 
 void CallExprRewriterFactoryBase::initRewriterMapCUBLAS() {
   RewriterMap->merge(
