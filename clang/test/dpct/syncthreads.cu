@@ -416,3 +416,24 @@ __global__ void test19(unsigned int *a) {
   __syncthreads();
   a[threadIdx.x]++;
 }
+
+__device__ void recursive1(int i);
+
+__device__ void recursive(int i) {
+  if (i > 0) {
+    recursive1(i - 1);
+  }
+}
+
+__device__ void recursive1(int i) {
+  if (i > 0) {
+    recursive(i - 1);
+  }
+}
+
+__global__ void test20() {
+  // CHECK: recursive(10);
+  // CHECK-NEXT: item_ct1.barrier(sycl::access::fence_space::local_space);
+  recursive(10);
+  __syncthreads();
+}

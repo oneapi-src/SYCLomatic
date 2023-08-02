@@ -415,8 +415,13 @@ bool isIterationSpaceBuiltinVar(const PseudoObjectExpr *Node,
     return true;
   return false;
 }
-bool hasGlobalMemoryAccess(std::shared_ptr<DeviceFunctionInfo> DFI,
-                           bool IsKernel) {
+bool hasGlobalMemoryAccess(
+    std::shared_ptr<DeviceFunctionInfo> DFI, bool IsKernel,
+    std::unordered_set<const DeviceFunctionInfo *> &Visited) {
+  if (Visited.count(DFI.get())) {
+    return false; // Avoid infinite recursive call.
+  }
+  Visited.emplace(DFI.get());
   if (!DFI)
     return false;
 
@@ -434,7 +439,7 @@ bool hasGlobalMemoryAccess(std::shared_ptr<DeviceFunctionInfo> DFI,
       // __device__ function
       return false;
     }
-    if (hasGlobalMemoryAccess(Call.second->getFuncInfo(), false))
+    if (hasGlobalMemoryAccess(Call.second->getFuncInfo(), false, Visited))
       return true;
   }
   return false;
@@ -465,7 +470,9 @@ bool isMeetAnalyisPrerequirements(const CallExpr *CE, const FunctionDecl *&FD) {
 #endif
     return false;
   }
-  if (hasGlobalMemoryAccess(DeviceFunctionDecl::LinkRedecls(FD), true)) {
+  std::unordered_set<const DeviceFunctionInfo *> Visited{};
+  if (hasGlobalMemoryAccess(DeviceFunctionDecl::LinkRedecls(FD), true,
+                            Visited)) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
     std::cout << "Return False case I: Found device/managed variable usage"
               << std::endl;
