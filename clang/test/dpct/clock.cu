@@ -1,8 +1,8 @@
 // RUN: dpct --format-range=none -out-root %T/clock %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/clock/clock.dp.cpp
 
-// CHECK: #include <stdio.h>
-// CHECK-NEXT: #include <stdint.h>
+// CHECK: #include <stdint.h>
+// CHECK-NEXT: #include <stdio.h>
 // CHECK-NEXT: #include <time.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -30,7 +30,7 @@ __global__ static void timedReduction(const float *input, float *output, clock_t
   clock64();
 }
 
-// CHECK: void timedAddition(const float *input, float *output, clock_t *timer){
+// CHECK: void timedAddition(const float *input, float *output, clock_t *timer) {
 // CHECK-NEXT:    *timer = clock();
 // CHECK-NEXT:    clock();
 // CHECK-NEXT:}
