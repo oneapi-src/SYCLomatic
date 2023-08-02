@@ -30,6 +30,8 @@
 #include "clang/AST/Mangle.h"
 #include "clang/AST/ParentMapContext.h"
 
+#include "clang/Basic/Cuda.h"
+
 #include "clang/Format/Format.h"
 #include "clang/Frontend/CompilerInstance.h"
 
@@ -587,6 +589,8 @@ public:
   std::vector<RnnBackwardFuncInfo> &getRnnBackwardFuncInfo() {
     return RBFuncInfo;
   }
+  void setRTVersionValue(std::string Value) { RTVersionValue = Value; }
+  std::string getRTVersionValue() { return RTVersionValue; }
 
 private:
   std::vector<std::pair<unsigned int, unsigned int>> TimeStubBounds;
@@ -651,6 +655,7 @@ private:
   std::vector<std::shared_ptr<ExtReplacement>> IncludeDirectiveInsertions;
   std::vector<std::pair<unsigned int, unsigned int>> ExternCRanges;
   std::vector<RnnBackwardFuncInfo> RBFuncInfo;
+  std::string RTVersionValue = "";
 };
 template <> inline GlobalMap<MemVarInfo> &DpctFileInfo::getMap() {
   return MemVarMap;
@@ -945,6 +950,8 @@ public:
   }
   inline static UsmLevel getUsmLevel() { return UsmLvl; }
   inline static void setUsmLevel(UsmLevel UL) { UsmLvl = UL; }
+  inline static clang::CudaVersion getSDKVersion() { return SDKVersion; }
+  inline static void setSDKVersion(clang::CudaVersion V) { SDKVersion = V; }
   inline static bool isIncMigration() { return IsIncMigration; }
   inline static void setIsIncMigration(bool Flag) { IsIncMigration = Flag; }
   inline static bool needDpctDeviceExt() { return NeedDpctDeviceExt; }
@@ -1979,6 +1986,7 @@ private:
   static std::string CudaPath;
   static std::string RuleFile;
   static UsmLevel UsmLvl;
+  static clang::CudaVersion SDKVersion;
   static bool NeedDpctDeviceExt;
   static bool IsIncMigration;
   static unsigned int AssumedNDRangeDim;
@@ -2172,6 +2180,7 @@ public:
 
   inline bool isTemplate() const { return IsTemplate; }
   inline bool isPointer() const { return PointerLevel; }
+  inline bool isArray() const { return IsArray; }
   inline bool isReference() const { return IsReference; }
   inline void adjustAsMemType() {
     setPointerAsArray();
@@ -2252,6 +2261,7 @@ private:
   bool IsReference;
   bool IsTemplate;
   bool TemplateDependentMacro = false;
+  bool IsArray = false;
 
   std::shared_ptr<TemplateDependentStringInfo> TDSI;
   std::set<HelperFeatureEnum> HelperFeatureSet;
@@ -2460,14 +2470,23 @@ public:
         return "uint8_t[sizeof(" + LocalTypeName + ")]";
       }
     }
+
+    std::string Ret = getType()->getBaseName();
+    if ((!getType()->isArray() && !getType()->isPointer()) ||
+        isTreatPointerAsArray())
+      return Ret;
     if (NeedCheckExtraConstQualifier && getType()->isConstantQualified()) {
-      return getType()->getBaseName() + " const" +
-             (getType()->isPointer() ? " " : "");
+      return Ret + " const";
     }
-    return getType()->getBaseName();
+    return Ret;
   }
 
 private:
+  bool isTreatPointerAsArray() {
+    return getType()->isPointer() && getScope() == Global &&
+           DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None;
+  }
+
   static VarAttrKind getAddressAttr(const AttrVec &Attrs);
 
   void setInitList(const Expr *E, const VarDecl *V) {

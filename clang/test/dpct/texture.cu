@@ -466,4 +466,19 @@ __global__ void test_call(uchar4 *d_output,
   }
 }
 
+struct Image {
+  void *ptr;
+  size_t cols;
+  size_t rows;
+  size_t step;
+};
 
+// CHECK: void test(dpct::image_wrapper_base *texRef, Image image) {
+// CHECK-NEXT:   dpct::image_channel desc = dpct::image_channel::create<T>();
+// CHECK-NEXT:   texRef->attach(image.ptr, image.cols, image.rows, image.step, desc);
+// CHECK-NEXT: }
+template <class T>
+void test(textureReference *texRef, Image image) {
+  cudaChannelFormatDesc desc = cudaCreateChannelDesc<T>();
+  cudaBindTexture2D(0, texRef, image.ptr, &desc, image.cols, image.rows, image.step);
+}
