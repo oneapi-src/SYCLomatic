@@ -30,6 +30,8 @@
 #include "clang/AST/Mangle.h"
 #include "clang/AST/ParentMapContext.h"
 
+#include "clang/Basic/Cuda.h"
+
 #include "clang/Format/Format.h"
 #include "clang/Frontend/CompilerInstance.h"
 
@@ -135,6 +137,7 @@ struct HostDeviceFuncLocInfo {
   unsigned FuncEndOffset = 0;
   unsigned FuncNameOffset = 0;
   bool Processed = false;
+  bool CalledByHostDeviceFunction = false;
   HDFuncInfoType Type;
 };
 
@@ -586,6 +589,8 @@ public:
   std::vector<RnnBackwardFuncInfo> &getRnnBackwardFuncInfo() {
     return RBFuncInfo;
   }
+  void setRTVersionValue(std::string Value) { RTVersionValue = Value; }
+  std::string getRTVersionValue() { return RTVersionValue; }
 
 private:
   std::vector<std::pair<unsigned int, unsigned int>> TimeStubBounds;
@@ -650,6 +655,7 @@ private:
   std::vector<std::shared_ptr<ExtReplacement>> IncludeDirectiveInsertions;
   std::vector<std::pair<unsigned int, unsigned int>> ExternCRanges;
   std::vector<RnnBackwardFuncInfo> RBFuncInfo;
+  std::string RTVersionValue = "";
 };
 template <> inline GlobalMap<MemVarInfo> &DpctFileInfo::getMap() {
   return MemVarMap;
@@ -856,6 +862,8 @@ public:
   static void printItem(llvm::raw_ostream &, const Stmt *,
                         const FunctionDecl *FD = nullptr);
   static std::string getItem(const Stmt *, const FunctionDecl *FD = nullptr);
+  static void registerNDItemUser(const Stmt *,
+                                 const FunctionDecl *FD = nullptr);
   static void printGroup(llvm::raw_ostream &, const Stmt *,
                          const FunctionDecl *FD = nullptr);
   static std::string getGroup(const Stmt *, const FunctionDecl *FD = nullptr);
@@ -942,6 +950,8 @@ public:
   }
   inline static UsmLevel getUsmLevel() { return UsmLvl; }
   inline static void setUsmLevel(UsmLevel UL) { UsmLvl = UL; }
+  inline static clang::CudaVersion getSDKVersion() { return SDKVersion; }
+  inline static void setSDKVersion(clang::CudaVersion V) { SDKVersion = V; }
   inline static bool isIncMigration() { return IsIncMigration; }
   inline static void setIsIncMigration(bool Flag) { IsIncMigration = Flag; }
   inline static bool needDpctDeviceExt() { return NeedDpctDeviceExt; }
@@ -1410,64 +1420,7 @@ public:
       std::multimap<unsigned int, std::shared_ptr<clang::dpct::ExtReplacement>>
           &ProcessedReplList,
       HostDeviceFuncLocInfo Info, unsigned ID);
-  void postProcess() {
-    auto &MSMap = DpctGlobalInfo::getMainSourceFileMap();
-    bool isFirstPass = !DpctGlobalInfo::getRunRound();
-
-    processCudaArchMacro();
-
-    for (auto &Element : HostDeviceFuncInfoMap) {
-      auto &Info = Element.second;
-      if (Info.isCalledInHost && Info.isDefInserted) {
-        Info.needGenerateHostCode = true;
-        if (Info.PostFixId == -1) {
-          Info.PostFixId = HostDeviceFuncInfo::MaxId++;
-        }
-        for (auto &E : Info.LocInfos) {
-          auto &LocInfo = E.second;
-          if (isFirstPass) {
-            auto &MSFiles = MSMap[LocInfo.FilePath];
-            for (auto &File : MSFiles) {
-              if (ProcessedFile.count(File))
-                ReProcessFile.emplace(File);
-            }
-          }
-          if (LocInfo.Type == HDFuncInfoType::HDFI_Call &&
-            !LocInfo.Processed) {
-            LocInfo.Processed = true;
-            auto R = std::make_shared<ExtReplacement>(
-                LocInfo.FilePath, LocInfo.FuncEndOffset, 0,
-                "_host_ct" + std::to_string(Info.PostFixId), nullptr);
-            addReplacement(R);
-          }
-        }
-      }
-    }
-
-    if (!ReProcessFile.empty() && isFirstPass) {
-      DpctGlobalInfo::setNeedRunAgain(true);
-    }
-
-    for (auto &File : FileMap) {
-      File.second->postProcess();
-    }
-    if (!isFirstPass) {
-      for (auto &Element : HostDeviceFuncInfoMap) {
-        auto &Info = Element.second;
-        if (Info.needGenerateHostCode) {
-          for (auto &E : Info.LocInfos) {
-            auto &LocInfo = E.second;
-            if (LocInfo.Type == HDFuncInfoType::HDFI_Call) {
-              continue;
-            }
-            auto &ReplLists =
-                FileMap[LocInfo.FilePath]->getRepls()->getReplMap();
-            generateHostCode(ReplLists, LocInfo, Info.PostFixId);
-          }
-        }
-      }
-    }
-  }
+  void postProcess();
   void cacheFileRepl(std::string FilePath,
                      std::shared_ptr<ExtReplacements> Repl) {
     FileReplCache[FilePath] = Repl;
@@ -1785,6 +1738,9 @@ public:
   static bool useExtJointMatrix() {
     return getUsingExperimental<ExperimentalFeatures::Exp_Matrix>();
   }
+  static bool useExtBFloat16Math() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_BFloat16Math>();
+  }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
   }
@@ -2030,6 +1986,7 @@ private:
   static std::string CudaPath;
   static std::string RuleFile;
   static UsmLevel UsmLvl;
+  static clang::CudaVersion SDKVersion;
   static bool NeedDpctDeviceExt;
   static bool IsIncMigration;
   static unsigned int AssumedNDRangeDim;
@@ -2201,6 +2158,7 @@ public:
       : PointerLevel(0), IsReference(false), IsTemplate(false) {
     if (D && D->getTypeSourceInfo()) {
       auto TL = D->getTypeSourceInfo()->getTypeLoc();
+      IsConstantQualified = D->hasAttr<CUDAConstantAttr>();
       setTypeInfo(TL, NeedSizeFold);
       if (TL.getTypeLocClass() ==
           TypeLoc::IncompleteArray) {
@@ -2241,6 +2199,7 @@ public:
   inline std::vector<std::string> getArraySizeOriginExprs() { return ArraySizeOriginExprs; }
 
   bool containsTemplateDependentMacro() const { return TemplateDependentMacro; }
+  bool isConstantQualified() const { return IsConstantQualified; }
 
 private:
   // For ConstantArrayType, size in generated code is folded as an integer.
@@ -2306,6 +2265,7 @@ private:
   std::set<HelperFeatureEnum> HelperFeatureSet;
   bool ContainSizeofType = false;
   std::vector<std::string> ArraySizeOriginExprs{};
+  bool IsConstantQualified = false;
 };
 
 // variable info includes name, type and location.
@@ -2449,14 +2409,14 @@ public:
   }
   ParameterStream &getFuncDecl(ParameterStream &PS) {
     if (AccMode == Value) {
-      PS << getAccessorDataType(true) << " ";
+      PS << getAccessorDataType(true, true) << " ";
     } else if (AccMode == Pointer) {
-      PS << getAccessorDataType(true);
+      PS << getAccessorDataType(true, true);
       if (!getType()->isPointer())
         PS << " ";
       PS << "*";
     } else if (AccMode == Reference) {
-      PS << getAccessorDataType(true);
+      PS << getAccessorDataType(true, true);
       if (!getType()->isPointer())
         PS << " ";
       PS << "&";
@@ -2479,7 +2439,7 @@ public:
     if (isShared() || DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
       if (AccMode == Pointer) {
         if (!getType()->isWritten())
-          PS << "(" << getAccessorDataType() << " *)";
+          PS << "(" << getAccessorDataType(false, true) << " *)";
         PS << getAccessorName() << ".get_pointer()";
       } else {
         PS << getAccessorName();
@@ -2496,7 +2456,8 @@ public:
     }
     return PS;
   }
-  std::string getAccessorDataType(bool IsTypeUsedInDevFunDecl = false) {
+  std::string getAccessorDataType(bool IsTypeUsedInDevFunDecl = false,
+                                  bool NeedCheckExtraConstQualifier = false) {
     if (isExtern()) {
       return "uint8_t";
     } else if (isTypeDeclaredLocal()) {
@@ -2506,6 +2467,10 @@ public:
         // used in accessor decl
         return "uint8_t[sizeof(" + LocalTypeName + ")]";
       }
+    }
+    if (NeedCheckExtraConstQualifier && getType()->isConstantQualified()) {
+      return getType()->getBaseName() + " const" +
+             (getType()->isPointer() ? " " : "");
     }
     return getType()->getBaseName();
   }

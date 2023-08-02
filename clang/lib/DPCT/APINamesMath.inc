@@ -6,10 +6,10 @@
 //
 //===----------------------------------------------------------------------===//
 // Half Arithmetic Functions
-ENTRY_RENAMED("__hfma", MapNames::getClNamespace(false, true) + "fma")
+ENTRY_REWRITE("__hfma")
 
 // Half2 Arithmetic Functions
-ENTRY_RENAMED("__hfma2", MapNames::getClNamespace(false, true) + "fma")
+ENTRY_REWRITE("__hfma2")
 
 // Half Comparison Functions
 ENTRY_RENAMED("__hisinf", MapNames::getClNamespace(false, true) + "isinf")
@@ -290,8 +290,8 @@ ENTRY_EMULATED("__drcp_rz", "(1.0/(X))")
 
 
 // Half/Half2 Arithmetic Functions
-ENTRY_RENAMED("__habs", MapNames::getClNamespace(false, true) + "fabs")
-ENTRY_RENAMED("__habs2", MapNames::getClNamespace(false, true) + "fabs")
+ENTRY_REWRITE("__habs")
+ENTRY_REWRITE("__habs2")
 ENTRY_REWRITE("__hadd2")
 ENTRY_REWRITE("__h2div")
 ENTRY_REWRITE("__hdiv")

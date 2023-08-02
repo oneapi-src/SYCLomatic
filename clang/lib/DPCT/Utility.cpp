@@ -3739,9 +3739,15 @@ bool maybeDependentCubType(const clang::TypeSourceInfo *TInfo) {
     if (auto *SpecType = dyn_cast<TemplateSpecializationType>(T)) {
       auto *TemplateDecl = SpecType->getTemplateName().getAsTemplateDecl();
       auto *Ctx = TemplateDecl->getDeclContext();
-      if (auto *CubNS = dyn_cast<NamespaceDecl>(Ctx)) {
-        return CubNS->getCanonicalDecl()->getName() == "cub";
+      auto *CubNS = dyn_cast<NamespaceDecl>(Ctx);
+      while (CubNS) {
+        if (CubNS->isInlineNamespace()) {
+          CubNS = dyn_cast<NamespaceDecl>(CubNS->getDeclContext());
+          continue;
+        }
+        break;
       }
+      return CubNS && CubNS->getCanonicalDecl()->getName() == "cub";
     }
     return false;
   };
@@ -3987,10 +3993,10 @@ std::string getRemovedAPIWarningMessage(std::string FuncName) {
     return "";
 }
 
-bool isUserDefinedDecl(const clang::ValueDecl *VD) {
-  std::string InFile = dpct::DpctGlobalInfo::getLocInfo(VD).first;
+bool isUserDefinedDecl(const clang::Decl *D) {
+  std::string InFile = dpct::DpctGlobalInfo::getLocInfo(D).first;
   bool InInstallPath = isChildOrSamePath(DpctInstallPath, InFile);
-  bool InCudaPath = dpct::DpctGlobalInfo::isInCudaPath(VD->getLocation());
+  bool InCudaPath = dpct::DpctGlobalInfo::isInCudaPath(D->getLocation());
   if (InInstallPath || InCudaPath)
     return false;
   return true;
@@ -4369,6 +4375,19 @@ std::string getAddressSpace(const CallExpr *C, int ArgIdx) {
         EA.getReplacedString());
     return "global_space";
   }
+}
+
+std::string getNameSpace(const NamespaceDecl *NSD) {
+  if (!NSD)
+    return "";
+  std::string NameSpace =
+      getNameSpace(dyn_cast<NamespaceDecl>(NSD->getDeclContext()));
+  if (!NameSpace.empty() && !NSD->isInlineNamespace())
+    return NameSpace + "::" + NSD->getName().str();
+  else if (NameSpace.empty() && !NSD->isInlineNamespace())
+    return NSD->getName().str();
+
+  return NameSpace;
 }
 
 namespace clang {

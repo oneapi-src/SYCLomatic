@@ -38,9 +38,10 @@ static const CudaVersionMapEntry CudaNameVersionMap[] = {
     CUDA_ENTRY(11, 7),
     CUDA_ENTRY(11, 8),
     CUDA_ENTRY(12, 0),
-  #ifdef SYCLomatic_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     CUDA_ENTRY(12, 1),
-  #endif
+    CUDA_ENTRY(12, 2),
+#endif
     {"", CudaVersion::NEW, llvm::VersionTuple(std::numeric_limits<int>::max())},
     {"unknown", CudaVersion::UNKNOWN, {}} // End of list tombstone.
 };
@@ -55,15 +56,16 @@ const char *CudaVersionToString(CudaVersion V) {
 }
 
 #ifdef SYCLomatic_CUSTOMIZATION
-unsigned int CudaVersionToValue(CudaVersion V) {
+std::string CudaVersionToMacroDefStr(CudaVersion V) {
   for (auto *I = CudaNameVersionMap; I->Version != CudaVersion::UNKNOWN; ++I)
     if (I->Version == V) {
-      return I->TVersion.getMajor() * 1000 +
-             I->TVersion.getMinor().value() * 10;
+      return std::to_string(I->TVersion.getMajor() * 1000 +
+                            I->TVersion.getMinor().value() * 10);
     }
-  return 0;
+  return "";
 }
 #endif // SYCLomatic_CUSTOMIZATION
+
 CudaVersion CudaStringToVersion(const llvm::Twine &S) {
   std::string VS = S.str();
   for (auto *I = CudaNameVersionMap; I->Version != CudaVersion::UNKNOWN; ++I)

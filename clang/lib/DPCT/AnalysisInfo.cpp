@@ -51,6 +51,7 @@ std::unordered_set<std::string> DpctGlobalInfo::ChangeExtensions = {};
 std::string DpctGlobalInfo::CudaPath = std::string();
 std::string DpctGlobalInfo::RuleFile = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
+clang::CudaVersion DpctGlobalInfo::SDKVersion = clang::CudaVersion::UNKNOWN;
 bool DpctGlobalInfo::NeedDpctDeviceExt = false;
 bool DpctGlobalInfo::IsIncMigration = true;
 unsigned int DpctGlobalInfo::AssumedNDRangeDim = 3;
@@ -615,6 +616,65 @@ void DpctGlobalInfo::processCudaArchMacro(){
   }
 }
 
+void DpctGlobalInfo::postProcess() {
+  auto &MSMap = DpctGlobalInfo::getMainSourceFileMap();
+  bool isFirstPass = !DpctGlobalInfo::getRunRound();
+  processCudaArchMacro();
+  for (auto &Element : HostDeviceFuncInfoMap) {
+    auto &Info = Element.second;
+    if (Info.isCalledInHost && Info.isDefInserted) {
+      Info.needGenerateHostCode = true;
+      if (Info.PostFixId == -1) {
+        Info.PostFixId = HostDeviceFuncInfo::MaxId++;
+      }
+      for (auto &E : Info.LocInfos) {
+        auto &LocInfo = E.second;
+        if (isFirstPass) {
+          auto &MSFiles = MSMap[LocInfo.FilePath];
+          for (auto &File : MSFiles) {
+            if (ProcessedFile.count(File))
+              ReProcessFile.emplace(File);
+          }
+        }
+        if (LocInfo.Type == HDFuncInfoType::HDFI_Call &&
+          !LocInfo.Processed) {
+          if(LocInfo.CalledByHostDeviceFunction && isFirstPass) {
+            LocInfo.Processed = true;
+            continue;
+          }
+          LocInfo.Processed = true;
+          auto R = std::make_shared<ExtReplacement>(
+              LocInfo.FilePath, LocInfo.FuncEndOffset, 0,
+              "_host_ct" + std::to_string(Info.PostFixId), nullptr);
+          addReplacement(R);
+        }
+      }
+    }
+  }
+  if (!ReProcessFile.empty() && isFirstPass) {
+    DpctGlobalInfo::setNeedRunAgain(true);
+  }
+  for (auto &File : FileMap) {
+    File.second->postProcess();
+  }
+  if (!isFirstPass) {
+    for (auto &Element : HostDeviceFuncInfoMap) {
+      auto &Info = Element.second;
+      if (Info.needGenerateHostCode) {
+        for (auto &E : Info.LocInfos) {
+          auto &LocInfo = E.second;
+          if (LocInfo.Type == HDFuncInfoType::HDFI_Call) {
+            continue;
+          }
+          auto &ReplLists =
+              FileMap[LocInfo.FilePath]->getRepls()->getReplMap();
+          generateHostCode(ReplLists, LocInfo, Info.PostFixId);
+        }
+      }
+    }
+  }
+}
+
 void DpctGlobalInfo::generateHostCode(
     std::multimap<unsigned int, std::shared_ptr<clang::dpct::ExtReplacement>>
         &ProcessedReplList,
@@ -1093,6 +1153,8 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
       OS << "#define DPCT_PROFILING_ENABLED" << getNL();
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
       OS << "#define DPCT_USM_LEVEL_NONE" << getNL();
+    if (!RTVersionValue.empty())
+      OS << "#define DPCT_COMPAT_RT_VERSION " << RTVersionValue << getNL();
     concatHeader(OS, getHeaderSpelling(Type));
     concatHeader(OS, getHeaderSpelling(HT_DPCT_Dpct));
     HeaderInsertedBitMap[HT_DPCT_Dpct] = true;
@@ -4172,6 +4234,9 @@ void DpctGlobalInfo::printItem(llvm::raw_ostream &OS, const Stmt *S,
 }
 std::string DpctGlobalInfo::getItem(const Stmt *S, const FunctionDecl *FD) {
   return buildStringFromPrinter(DpctGlobalInfo::printItem, S, FD);
+}
+void DpctGlobalInfo::registerNDItemUser(const Stmt *S, const FunctionDecl *FD) {
+  getItem(S, FD);
 }
 
 void DpctGlobalInfo::printGroup(llvm::raw_ostream &OS, const Stmt *S,
