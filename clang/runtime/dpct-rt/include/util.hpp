@@ -735,7 +735,11 @@ inline int calculate_max_potential_wg(int *num_wg, int *wg_size,
                                       bool used_large_grf = false) {
   size_t max_wg_size = dpct::get_current_device()
                            .get_info<sycl::info::device::max_work_group_size>();
-  *wg_size = (int)max_wg_size;
+  if (max_ws_size_for_device_code == 0 ||
+      max_ws_size_for_device_code >= max_wg_size)
+    *wg_size = (int)max_wg_size;
+  else
+    *wg_size = max_ws_size_for_device_code;
   calculate_max_active_wg_per_xecore(num_wg, *wg_size, slm_size, sg_size,
                                      used_barrier, used_large_grf);
   return 0;
