@@ -10,12 +10,15 @@
 #include <CL/__spirv/spirv_ops.hpp>
 #include <CL/__spirv/spirv_vars.hpp>
 #include <sycl/detail/helpers.hpp>
+#include <sycl/detail/type_traits.hpp>
 #include <sycl/exception.hpp>
 #include <sycl/id.hpp>
 #include <sycl/marray.hpp>
 
+#include <climits>
+
 namespace sycl {
-__SYCL_INLINE_VER_NAMESPACE(_V1) {
+inline namespace _V1 {
 namespace detail {
 class Builder;
 
@@ -40,7 +43,7 @@ namespace ext::oneapi {
 // need to forward declare sub_group_mask first
 struct sub_group_mask;
 template <typename Group>
-std::enable_if_t<std::is_same_v<std::decay_t<Group>, sub_group>, sub_group_mask>
+std::enable_if_t<sycl::detail::is_sub_group<Group>::value, sub_group_mask>
 group_ballot(Group g, bool predicate = true);
 
 struct sub_group_mask {
@@ -93,6 +96,18 @@ struct sub_group_mask {
   bool any() const { return count() != 0; }
   bool none() const { return count() == 0; }
   uint32_t count() const {
+#if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
+    sycl::marray<unsigned, 4> TmpMArray;
+    this->extract_bits(TmpMArray);
+    sycl::vec<unsigned, 4> MemberMask;
+    for (int i = 0; i < 4; ++i) {
+      MemberMask[i] = TmpMArray[i];
+    }
+    auto OCLMask =
+        sycl::detail::ConvertToOpenCLType_t<sycl::vec<unsigned, 4>>(MemberMask);
+    return __spirv_GroupNonUniformBallotBitCount(
+        __spv::Scope::Subgroup, (int)__spv::GroupOperation::Reduce, OCLMask);
+#else
     unsigned int count = 0;
     auto word = (Bits & valuable_bits(bits_num));
     while (word) {
@@ -100,6 +115,7 @@ struct sub_group_mask {
       count++;
     }
     return count;
+#endif
   }
   uint32_t size() const { return bits_num; }
   id<1> find_low() const {
@@ -236,6 +252,8 @@ struct sub_group_mask {
   sub_group_mask(const sub_group_mask &rhs)
       : Bits(rhs.Bits), bits_num(rhs.bits_num) {}
 
+  sub_group_mask &operator=(const sub_group_mask &rhs) = delete;
+
   template <typename Group>
   friend std::enable_if_t<std::is_same_v<std::decay_t<Group>, sub_group>,
                           sub_group_mask>
@@ -280,7 +298,7 @@ private:
 };
 
 template <typename Group>
-std::enable_if_t<std::is_same_v<std::decay_t<Group>, sub_group>, sub_group_mask>
+std::enable_if_t<sycl::detail::is_sub_group<Group>::value, sub_group_mask>
 group_ballot(Group g, bool predicate) {
   (void)g;
 #ifdef __SYCL_DEVICE_ONLY__
@@ -301,5 +319,5 @@ group_ballot(Group g, bool predicate) {
 #undef BITS_TYPE
 
 } // namespace ext::oneapi
-} // __SYCL_INLINE_VER_NAMESPACE(_V1)
+} // namespace _V1
 } // namespace sycl

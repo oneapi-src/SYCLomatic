@@ -18,7 +18,7 @@ extern "C" __DPCPP_SYCL_EXTERNAL float
 __devicelib_ConvertBF16ToFINTEL(const uint16_t &) noexcept;
 
 namespace sycl {
-__SYCL_INLINE_VER_NAMESPACE(_V1) {
+inline namespace _V1 {
 namespace ext::oneapi {
 
 class bfloat16;
@@ -115,16 +115,11 @@ public:
 
   // Unary minus operator overloading
   friend bfloat16 operator-(bfloat16 &lhs) {
-#if defined(__SYCL_DEVICE_ONLY__)
-#if defined(__NVPTX__)
-#if (__SYCL_CUDA_ARCH__ >= 800)
+#if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__) &&                     \
+    (__SYCL_CUDA_ARCH__ >= 800)
     return detail::bitsToBfloat16(__nvvm_neg_bf16(lhs.value));
-#else
-    return -to_float(lhs.value);
-#endif
-#else
+#elif defined(__SYCL_DEVICE_ONLY__) && defined(__SPIR__)
     return bfloat16{-__devicelib_ConvertBF16ToFINTEL(lhs.value)};
-#endif
 #else
     return -to_float(lhs.value);
 #endif
@@ -218,5 +213,5 @@ inline bfloat16 bitsToBfloat16(const Bfloat16StorageT Value) {
 
 } // namespace ext::oneapi
 
-} // __SYCL_INLINE_VER_NAMESPACE(_V1)
+} // namespace _V1
 } // namespace sycl
