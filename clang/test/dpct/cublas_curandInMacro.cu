@@ -71,7 +71,7 @@ int main() {
     // CHECK-NEXT: } else {
     // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
     // CHECK-NEXT: }
-    // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*handle, N, x_S_buf_ct{{[0-9]+}}, N, res_temp_buf_ct{{[0-9]+}});
+    // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*handle, N, x_S_buf_ct{{[0-9]+}}, N, res_temp_buf_ct{{[0-9]+}}, oneapi::mkl::index_base::one);
     // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
     // CHECK-NEXT: return 0;
     // CHECK-NEXT: }());
@@ -122,7 +122,7 @@ int main() {
     // CHECK-NEXT:} else {
     // CHECK-NEXT:  result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
     // CHECK-NEXT:}
-    // CHECK-NEXT:oneapi::mkl::blas::column_major::iamax(*handle, N, x_C_buf_ct{{[0-9]+}}, N, res_temp_buf_ct{{[0-9]+}});
+    // CHECK-NEXT:oneapi::mkl::blas::column_major::iamax(*handle, N, x_C_buf_ct{{[0-9]+}}, N, res_temp_buf_ct{{[0-9]+}}, oneapi::mkl::index_base::one);
     // CHECK-NEXT:result_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
     // CHECK-NEXT:return 0;
     // CHECK-NEXT:}());
