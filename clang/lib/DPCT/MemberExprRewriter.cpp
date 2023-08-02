@@ -6,7 +6,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "CustomHelperFiles.h"
 #include "MemberExprRewriter.h"
 
 namespace clang {

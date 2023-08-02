@@ -133,6 +133,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
   initRewriterMapEvent();
   initRewriterMapMath();
   initRewriterMapCooperativeGroups();
+  initRewriterMapWmma();
   initMethodRewriterMapCUB();
   initMethodRewriterMapCooperativeGroups();
   initMethodRewriterMapLIBCU();

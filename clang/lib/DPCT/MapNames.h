@@ -9,7 +9,6 @@
 #ifndef DPCT_MAPNAMES_H
 #define DPCT_MAPNAMES_H
 
-#include "CustomHelperFiles.h"
 #include "Rules.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
@@ -34,7 +33,7 @@ const std::string StringLiteralUnsupported{"UNSUPPORTED"};
       "long4", "ulong4", "float1", "float2", "float3", "float4", "longlong1",  \
       "ulonglong1", "longlong2", "ulonglong2", "longlong3", "ulonglong3",      \
       "longlong4", "ulonglong4", "double1", "double2", "double3", "double4",   \
-      "__half2", "__nv_bfloat162"
+      "__half", "__half2", "__nv_bfloat162"
 #define VECTORTYPE2MARRAYNAMES "__nv_bfloat162"
 
 /// Record mapping between names
@@ -364,11 +363,24 @@ public:
   static const std::map<std::string, std::vector<unsigned int>>
       FFTPlanAPINeedParenIdxMap;
 
-  static MapTy BLASComputingAPIWithRewriter;
+  static MapTy BLASAPIWithRewriter;
   static std::unordered_set<std::string> SOLVERAPIWithRewriter;
   static std::unordered_set<std::string> SPARSEAPIWithRewriter;
 
   static const std::unordered_set<std::string> CooperativeGroupsAPISet;
+
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      PropToGetFeatureMap;
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      PropToSetFeatureMap;
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      SamplingInfoToSetFeatureMap;
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      SamplingInfoToGetFeatureMap;
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      ImageWrapperBaseToSetFeatureMap;
+  static const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+      ImageWrapperBaseToGetFeatureMap;
 
   template<class T>
   inline static const std::string &findReplacedName(

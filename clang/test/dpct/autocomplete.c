@@ -12,7 +12,6 @@
 // DASH-NEXT: --assume-nd-range-dim=
 // DASH-NEXT: --build-script-file
 // DASH-NEXT: --change-cuda-files-extension-only
-// DASH-NEXT: --change-filename-extension
 // DASH-NEXT: --check-unicode-security
 // DASH-NEXT: --comments
 // DASH-NEXT: --compilation-database
@@ -37,6 +36,7 @@
 // DASH-NEXT: --output-file
 // DASH-NEXT: --output-verbosity=
 // DASH-NEXT: --process-all
+// DASH-NEXT: --query-api-mapping
 // DASH-NEXT: --report-file-prefix
 // DASH-NEXT: --report-format=
 // DASH-NEXT: --report-only

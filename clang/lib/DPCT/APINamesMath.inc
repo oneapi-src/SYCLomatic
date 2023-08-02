@@ -6,10 +6,10 @@
 //
 //===----------------------------------------------------------------------===//
 // Half Arithmetic Functions
-ENTRY_RENAMED("__hfma", MapNames::getClNamespace(false, true) + "fma")
+ENTRY_REWRITE("__hfma")
 
 // Half2 Arithmetic Functions
-ENTRY_RENAMED("__hfma2", MapNames::getClNamespace(false, true) + "fma")
+ENTRY_REWRITE("__hfma2")
 
 // Half Comparison Functions
 ENTRY_RENAMED("__hisinf", MapNames::getClNamespace(false, true) + "isinf")
@@ -254,9 +254,9 @@ ENTRY_EMULATED("nanf", MapNames::getClNamespace(false, true) + "nan")
 ENTRY_EMULATED("nearbyintf", MapNames::getClNamespace(false, true) + "floor")
 ENTRY_EMULATED("remquof", MapNames::getClNamespace(false, true) + "remquo")
 ENTRY_EMULATED("rhypotf", MapNames::getClNamespace(false, true) + "hypot")
-ENTRY_EMULATED("sincosf", MapNames::getClNamespace(false, true) + "sincos")
+ENTRY_REWRITE("sincosf")
 ENTRY_EMULATED("sincospif", MapNames::getClNamespace(false, true) + "sincos")
-ENTRY_EMULATED("__sincosf", MapNames::getClNamespace(false, true) + "sincos")
+ENTRY_REWRITE("__sincosf")
 ENTRY_EMULATED("powf", MapNames::getClNamespace(false, true) + "pow<float>")
 ENTRY_EMULATED("__powf", MapNames::getClNamespace(false, true) + "pow<float>")
 
@@ -267,7 +267,7 @@ ENTRY_EMULATED("nan", MapNames::getClNamespace(false, true) + "nan")
 ENTRY_EMULATED("nearbyint", MapNames::getClNamespace(false, true) + "floor")
 ENTRY_EMULATED("remquo", MapNames::getClNamespace(false, true) + "remquo")
 ENTRY_EMULATED("rhypot", MapNames::getClNamespace(false, true) + "hypot")
-ENTRY_EMULATED("sincos", MapNames::getClNamespace(false, true) + "sincos")
+ENTRY_REWRITE("sincos")
 ENTRY_EMULATED("sincospi", MapNames::getClNamespace(false, true) + "sincos")
 ENTRY_EMULATED("pow", MapNames::getClNamespace(false, true) + "pow<double>")
 
@@ -290,8 +290,8 @@ ENTRY_EMULATED("__drcp_rz", "(1.0/(X))")
 
 
 // Half/Half2 Arithmetic Functions
-ENTRY_RENAMED("__habs", MapNames::getClNamespace(false, true) + "fabs")
-ENTRY_RENAMED("__habs2", MapNames::getClNamespace(false, true) + "fabs")
+ENTRY_REWRITE("__habs")
+ENTRY_REWRITE("__habs2")
 ENTRY_REWRITE("__hadd2")
 ENTRY_REWRITE("__h2div")
 ENTRY_REWRITE("__hdiv")
@@ -352,6 +352,7 @@ ENTRY_OPERATOR("__ddiv_rz", BinaryOperatorKind::BO_Div)
 
 
 // Half Precision Conversion And Data Movement
+ENTRY_REWRITE("__double2half")
 ENTRY_TYPECAST("__float22half2_rn")
 ENTRY_TYPECAST("__float2half")
 ENTRY_TYPECAST("__float2half2_rn")
@@ -587,15 +588,24 @@ ENTRY_REWRITE("__vsubus2")
 ENTRY_REWRITE("__vsubus4")
 
 // Half Arithmetic Functions
+ENTRY_REWRITE("__hadd_rn")
 ENTRY_REWRITE("__hadd_sat")
+ENTRY_REWRITE("__hfma_relu")
 ENTRY_REWRITE("__hfma_sat")
+ENTRY_REWRITE("__hmul_rn")
 ENTRY_REWRITE("__hmul_sat")
+ENTRY_REWRITE("__hsub_rn")
 ENTRY_REWRITE("__hsub_sat")
 
 // Half2 Arithmetic Functions
+ENTRY_REWRITE("__hadd2_rn")
 ENTRY_REWRITE("__hadd2_sat")
+ENTRY_REWRITE("__hcmadd")
+ENTRY_REWRITE("__hfma2_relu")
 ENTRY_REWRITE("__hfma2_sat")
+ENTRY_REWRITE("__hmul2_rn")
 ENTRY_REWRITE("__hmul2_sat")
+ENTRY_REWRITE("__hsub2_rn")
 ENTRY_REWRITE("__hsub2_sat")
 
 // Half Comparison Functions
@@ -604,6 +614,10 @@ ENTRY_REWRITE("__hgeu")
 ENTRY_REWRITE("__hgtu")
 ENTRY_REWRITE("__hleu")
 ENTRY_REWRITE("__hltu")
+ENTRY_REWRITE("__hmax")
+ENTRY_REWRITE("__hmax_nan")
+ENTRY_REWRITE("__hmin")
+ENTRY_REWRITE("__hmin_nan")
 ENTRY_REWRITE("__hneu")
 
 // Half2 Comparison Functions
@@ -620,18 +634,34 @@ ENTRY_REWRITE("__hbltu2")
 ENTRY_REWRITE("__hbne2")
 ENTRY_REWRITE("__hbneu2")
 ENTRY_REWRITE("__heq2")
+ENTRY_REWRITE("__heq2_mask")
 ENTRY_REWRITE("__hequ2")
+ENTRY_REWRITE("__hequ2_mask")
 ENTRY_REWRITE("__hge2")
+ENTRY_REWRITE("__hge2_mask")
 ENTRY_REWRITE("__hgeu2")
+ENTRY_REWRITE("__hgeu2_mask")
 ENTRY_REWRITE("__hgt2")
+ENTRY_REWRITE("__hgt2_mask")
 ENTRY_REWRITE("__hgtu2")
+ENTRY_REWRITE("__hgtu2_mask")
 ENTRY_REWRITE("__hisnan2")
 ENTRY_REWRITE("__hle2")
+ENTRY_REWRITE("__hle2_mask")
 ENTRY_REWRITE("__hleu2")
+ENTRY_REWRITE("__hleu2_mask")
 ENTRY_REWRITE("__hlt2")
+ENTRY_REWRITE("__hlt2_mask")
 ENTRY_REWRITE("__hltu2")
+ENTRY_REWRITE("__hltu2_mask")
+ENTRY_REWRITE("__hmax2")
+ENTRY_REWRITE("__hmax2_nan")
+ENTRY_REWRITE("__hmin2")
+ENTRY_REWRITE("__hmin2_nan")
 ENTRY_REWRITE("__hne2")
+ENTRY_REWRITE("__hne2_mask")
 ENTRY_REWRITE("__hneu2")
+ENTRY_REWRITE("__hneu2_mask")
 
 // Half2 Math Functions
 ENTRY_UNSUPPORTED("h2rcp")

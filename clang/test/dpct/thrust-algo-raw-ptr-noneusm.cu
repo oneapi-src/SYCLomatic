@@ -22,6 +22,7 @@
 #include <thrust/transform_scan.h>
 #include <thrust/unique.h>
 // CHECK: #include <oneapi/dpl/memory>
+#include <thrust/equal.h>
 #include <thrust/uninitialized_copy.h>
 
 // for cuda 12.0
@@ -793,4 +794,44 @@ void uninitialized_copy_n() {
   // CHECK-NEXT:  };
   thrust::uninitialized_copy_n(data, N, array);
   thrust::uninitialized_copy_n(thrust::host, data, N, array);
+}
+
+struct compare_modulo_two {
+  __host__ __device__ bool operator()(int x, int y) const {
+    return (x % 2) == (y % 2);
+  }
+};
+
+void equal() {
+  const int N = 7;
+
+  int A1[N] = {3, 1, 4, 1, 5, 9, 3};
+  int A2[N] = {3, 1, 4, 2, 8, 5, 7};
+  int x[N] = {0, 2, 4, 6, 8, 10};
+  int y[N] = {1, 3, 5, 7, 9, 11};
+
+  // CHECK:  if (dpct::is_device_ptr(A1)) {
+  // CHECK-NEXT:    oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A1), dpct::device_pointer<int>(A1 + N), dpct::device_pointer<int>(A2));
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::equal(oneapi::dpl::execution::seq, A1, A1 + N, A2);
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(A1)) {
+  // CHECK-NEXT:    oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A1), dpct::device_pointer<int>(A1 + N), dpct::device_pointer<int>(A2));
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::equal(oneapi::dpl::execution::seq, A1, A1 + N, A2);
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(x)) {
+  // CHECK-NEXT:    oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(x), dpct::device_pointer<int>(x + N), dpct::device_pointer<int>(y), compare_modulo_two());
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::equal(oneapi::dpl::execution::seq, x, x + N, y, compare_modulo_two());
+  // CHECK-NEXT:  };
+  // CHECK-NEXT:  if (dpct::is_device_ptr(x)) {
+  // CHECK-NEXT:    oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(x), dpct::device_pointer<int>(x + N), dpct::device_pointer<int>(y), compare_modulo_two());
+  // CHECK-NEXT:  } else {
+  // CHECK-NEXT:    oneapi::dpl::equal(oneapi::dpl::execution::seq, x, x + N, y, compare_modulo_two());
+  // CHECK-NEXT:  };
+  thrust::equal(thrust::host, A1, A1 + N, A2);
+  thrust::equal(A1, A1 + N, A2);
+  thrust::equal(x, x + N, y, compare_modulo_two());
+  thrust::equal(thrust::host, x, x + N, y, compare_modulo_two());
 }

@@ -51,12 +51,10 @@ std::unordered_set<std::string> DpctGlobalInfo::ChangeExtensions = {};
 std::string DpctGlobalInfo::CudaPath = std::string();
 std::string DpctGlobalInfo::RuleFile = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
+clang::CudaVersion DpctGlobalInfo::SDKVersion = clang::CudaVersion::UNKNOWN;
 bool DpctGlobalInfo::NeedDpctDeviceExt = false;
 bool DpctGlobalInfo::IsIncMigration = true;
 unsigned int DpctGlobalInfo::AssumedNDRangeDim = 3;
-HelperFilesCustomizationLevel DpctGlobalInfo::HelperFilesCustomizationLvl =
-    HelperFilesCustomizationLevel::HFCL_None;
-std::string DpctGlobalInfo::CustomHelperFileName = "dpct";
 std::unordered_set<std::string> DpctGlobalInfo::PrecAndDomPairSet;
 format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
 DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::FS_LLVM;
@@ -618,6 +616,65 @@ void DpctGlobalInfo::processCudaArchMacro(){
   }
 }
 
+void DpctGlobalInfo::postProcess() {
+  auto &MSMap = DpctGlobalInfo::getMainSourceFileMap();
+  bool isFirstPass = !DpctGlobalInfo::getRunRound();
+  processCudaArchMacro();
+  for (auto &Element : HostDeviceFuncInfoMap) {
+    auto &Info = Element.second;
+    if (Info.isCalledInHost && Info.isDefInserted) {
+      Info.needGenerateHostCode = true;
+      if (Info.PostFixId == -1) {
+        Info.PostFixId = HostDeviceFuncInfo::MaxId++;
+      }
+      for (auto &E : Info.LocInfos) {
+        auto &LocInfo = E.second;
+        if (isFirstPass) {
+          auto &MSFiles = MSMap[LocInfo.FilePath];
+          for (auto &File : MSFiles) {
+            if (ProcessedFile.count(File))
+              ReProcessFile.emplace(File);
+          }
+        }
+        if (LocInfo.Type == HDFuncInfoType::HDFI_Call &&
+          !LocInfo.Processed) {
+          if(LocInfo.CalledByHostDeviceFunction && isFirstPass) {
+            LocInfo.Processed = true;
+            continue;
+          }
+          LocInfo.Processed = true;
+          auto R = std::make_shared<ExtReplacement>(
+              LocInfo.FilePath, LocInfo.FuncEndOffset, 0,
+              "_host_ct" + std::to_string(Info.PostFixId), nullptr);
+          addReplacement(R);
+        }
+      }
+    }
+  }
+  if (!ReProcessFile.empty() && isFirstPass) {
+    DpctGlobalInfo::setNeedRunAgain(true);
+  }
+  for (auto &File : FileMap) {
+    File.second->postProcess();
+  }
+  if (!isFirstPass) {
+    for (auto &Element : HostDeviceFuncInfoMap) {
+      auto &Info = Element.second;
+      if (Info.needGenerateHostCode) {
+        for (auto &E : Info.LocInfos) {
+          auto &LocInfo = E.second;
+          if (LocInfo.Type == HDFuncInfoType::HDFI_Call) {
+            continue;
+          }
+          auto &ReplLists =
+              FileMap[LocInfo.FilePath]->getRepls()->getReplMap();
+          generateHostCode(ReplLists, LocInfo, Info.PostFixId);
+        }
+      }
+    }
+  }
+}
+
 void DpctGlobalInfo::generateHostCode(
     std::multimap<unsigned int, std::shared_ptr<clang::dpct::ExtReplacement>>
         &ProcessedReplList,
@@ -941,9 +998,11 @@ void DpctFileInfo::buildReplacements() {
   for (auto &BuiltinVar : BuiltinVarInfoMap) {
     auto Ptr = MemVarMap::getHeadWithoutPathCompression(
         &(BuiltinVar.second.DFI->getVarMap()));
-    if (Ptr) {
+    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && Ptr) {
       unsigned int ID = (Ptr->Dim == 1) ? 0 : 2;
       BuiltinVar.second.buildInfo(FilePath, BuiltinVar.first, ID);
+    } else {
+      BuiltinVar.second.buildInfo(FilePath, BuiltinVar.first, 2);
     }
   }
 
@@ -1094,6 +1153,8 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
       OS << "#define DPCT_PROFILING_ENABLED" << getNL();
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
       OS << "#define DPCT_USM_LEVEL_NONE" << getNL();
+    if (!RTVersionValue.empty())
+      OS << "#define DPCT_COMPAT_RT_VERSION " << RTVersionValue << getNL();
     concatHeader(OS, getHeaderSpelling(Type));
     concatHeader(OS, getHeaderSpelling(HT_DPCT_Dpct));
     HeaderInsertedBitMap[HT_DPCT_Dpct] = true;
@@ -1259,23 +1320,21 @@ void KernelCallExpr::buildExecutionConfig(
     ++Idx;
   }
 
-  if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
-    Idx = 0;
-    for (auto Arg : ConfigArgs) {
-      if (Idx > 1)
-        break;
-      KernelConfigAnalysis AnalysisTry1D(IsInMacroDefine);
-      AnalysisTry1D.IsTryToUseOneDimension = true;
-      AnalysisTry1D.analyze(Arg, Idx, Idx < 2);
-      if (Idx == 0) {
-        GridDim = AnalysisTry1D.Dim;
-        ExecutionConfig.GroupSizeFor1D = AnalysisTry1D.getReplacedString();
-      } else if (Idx == 1) {
-        BlockDim = AnalysisTry1D.Dim;
-        ExecutionConfig.LocalSizeFor1D = AnalysisTry1D.getReplacedString();
-      }
-      ++Idx;
+  Idx = 0;
+  for (auto Arg : ConfigArgs) {
+    if (Idx > 1)
+      break;
+    KernelConfigAnalysis AnalysisTry1D(IsInMacroDefine);
+    AnalysisTry1D.IsTryToUseOneDimension = true;
+    AnalysisTry1D.analyze(Arg, Idx, Idx < 2);
+    if (Idx == 0) {
+      GridDim = AnalysisTry1D.Dim;
+      ExecutionConfig.GroupSizeFor1D = AnalysisTry1D.getReplacedString();
+    } else if (Idx == 1) {
+      BlockDim = AnalysisTry1D.Dim;
+      ExecutionConfig.LocalSizeFor1D = AnalysisTry1D.getReplacedString();
     }
+    ++Idx;
   }
 
   if (ExecutionConfig.Stream == "0") {
@@ -1475,8 +1534,14 @@ void KernelCallExpr::buildKernelArgsStmt() {
         }
       }
     } else if (Arg.IsRedeclareRequired || IsInMacroDefine) {
-      SubmitStmtsList.CommandGroupList.emplace_back(buildString(
-          "auto ", Arg.getIdStringWithIndex(), " = ", Arg.getArgString(), ";"));
+      std::string TypeStr =
+          Arg.getTypeString().empty()
+              ? "auto"
+              : (Arg.IsDeviceRandomGeneratorType ? Arg.getTypeString() + " *"
+                                                 : Arg.getTypeString());
+      SubmitStmtsList.CommandGroupList.emplace_back(
+          buildString(TypeStr, " ", Arg.getIdStringWithIndex(), " = ",
+                      Arg.getArgString(), ";"));
       KernelArgs += Arg.getIdStringWithIndex();
     } else if (Arg.Texture) {
       ParameterStream OS;
@@ -3767,10 +3832,40 @@ void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
   case TypeLoc::RValueReference:
     IsReference = true;
     return setTypeInfo(TYPELOC_CAST(ReferenceTypeLoc).getPointeeLoc());
+  case TypeLoc::Elaborated: {
+    const TypeLoc &NamedTypeLoc =
+        TYPELOC_CAST(ElaboratedTypeLoc).getNamedTypeLoc();
+    if (const auto TTL = NamedTypeLoc.getAs<TypedefTypeLoc>()) {
+      if (setTypedefInfo(TTL, NeedSizeFold))
+        return;
+    }
+    break;
+  }
+  case TypeLoc::Typedef: {
+    if (setTypedefInfo(TYPELOC_CAST(TypedefTypeLoc), NeedSizeFold))
+      return;
+    break;
+  }
   default:
     break;
   }
   setName(TL);
+}
+
+bool CtTypeInfo::setTypedefInfo(const TypedefTypeLoc &TL, bool NeedSizeFold) {
+  const TypedefNameDecl *TND = TL.getTypedefNameDecl();
+  if (!TND)
+    return false;
+  if (!TND->getTypeSourceInfo())
+    return false;
+  const TypeLoc TypedefTpyeDeclLoc = TND->getTypeSourceInfo()->getTypeLoc();
+  ConstantArrayTypeLoc CATL;
+  if (DpctGlobalInfo::isInAnalysisScope(TypedefTpyeDeclLoc.getBeginLoc()) &&
+      (CATL = TypedefTpyeDeclLoc.getAs<ConstantArrayTypeLoc>())) {
+    setArrayInfo(CATL, NeedSizeFold);
+    return true;
+  }
+  return false;
 }
 
 void CtTypeInfo::setArrayInfo(const IncompleteArrayTypeLoc &TL,
@@ -3888,8 +3983,9 @@ void CtTypeInfo::updateName() {
 
   if (BaseName.empty())
     BaseName = BaseNameWithoutQualifiers;
-  else
+  else {
     BaseName = buildString(BaseName, " ", BaseNameWithoutQualifiers);
+  }
 }
 
 std::shared_ptr<CtTypeInfo> CtTypeInfo::applyTemplateArguments(
@@ -4139,6 +4235,9 @@ void DpctGlobalInfo::printItem(llvm::raw_ostream &OS, const Stmt *S,
 std::string DpctGlobalInfo::getItem(const Stmt *S, const FunctionDecl *FD) {
   return buildStringFromPrinter(DpctGlobalInfo::printItem, S, FD);
 }
+void DpctGlobalInfo::registerNDItemUser(const Stmt *S, const FunctionDecl *FD) {
+  getItem(S, FD);
+}
 
 void DpctGlobalInfo::printGroup(llvm::raw_ostream &OS, const Stmt *S,
                                 const FunctionDecl *FD) {
@@ -4177,18 +4276,24 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   //    this_sub_group.
   switch (Method) {
   case 'R':
-    if (auto DFI = getCudaKernelDimDFI(Index)) {
-      auto Ptr = MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
-      if (Ptr && Ptr->Dim == 1) {
-        return "0";
+    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+      if (auto DFI = getCudaKernelDimDFI(Index)) {
+        auto Ptr =
+            MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
+        if (Ptr && Ptr->Dim == 1) {
+          return "0";
+        }
       }
     }
     return "2";
   case 'G':
-    if (auto DFI = getCudaKernelDimDFI(Index)) {
-      auto Ptr = MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
-      if (Ptr && Ptr->Dim == 1) {
-        return "1";
+    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+      if (auto DFI = getCudaKernelDimDFI(Index)) {
+        auto Ptr =
+            MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
+        if (Ptr && Ptr->Dim == 1) {
+          return "1";
+        }
       }
     }
     return "3";

@@ -50,7 +50,7 @@ __constant__ float A4, A5;
 __constant__ float A[3 * 3] = {0.0625f, 0.125f,  0.0625f, 0.1250f, 0.250f,
                                0.1250f, 0.0625f, 0.125f,  0.0625f}, A3;
 
-// CHECK: void constAdd(float *C, const sycl::nd_item<3> &item_ct1, float *A) {
+// CHECK: void constAdd(float *C, const sycl::nd_item<3> &item_ct1, float const *A) {
 // CHECK-NEXT:  int i = item_ct1.get_group(2);
 // CHECK-NEXT:  int j = item_ct1.get_local_id(2);
 // CHECK-NEXT:  int k = 3 * i + j;

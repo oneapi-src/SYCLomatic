@@ -3,6 +3,8 @@
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/template-kernel-call %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck --input-file %T/template-kernel-call/template-kernel-call.dp.cpp --match-full-lines %s
 
+#include <vector>
+
 void printf(const char *format, unsigned char data);
 
 __global__ void kernel(int a, int b){
@@ -19,8 +21,8 @@ __global__ void kernel(int a, int b){
 // CHECK-NEXT:   void run(){
 // CHECK-NEXT:     dpct::get_default_queue().submit(
 // CHECK-NEXT:       [&](sycl::handler &cgh) {
-// CHECK-NEXT:         auto this_a_ct0 = this->a;
-// CHECK-NEXT:         auto ptest_data_ct1 = ptest->data;
+// CHECK-NEXT:         int this_a_ct0 = this->a;
+// CHECK-NEXT:         int ptest_data_ct1 = ptest->data;
 // CHECK-EMPTY:
 // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -220,7 +222,7 @@ int main() {
   // CHECK-NEXT:*/
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto ktarg_ct2 = ktarg;
+  // CHECK-NEXT:       int ktarg_ct2 = ktarg;
   // CHECK-EMPTY:
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}, LA>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 10) * sycl::range<3>(1, 1, intvar), sycl::range<3>(1, 1, intvar)),
@@ -524,4 +526,17 @@ __global__ void test_fooclass1() {
   a.foo();
   foo_class1<float, 10> b;
   b.foo();
+}
+
+__global__ void test_kernel();
+
+template<class T>
+void test_host() {
+  std::vector<T> vec;
+  // CHECK:  dpct::get_default_queue().parallel_for<dpct_kernel_name<class test_kernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:  sycl::nd_range<3>(sycl::range<3>(1, 1, vec.size()), sycl::range<3>(1, 1, 1)),
+  // CHECK-NEXT:  [=](sycl::nd_item<3> item_ct1) {
+  // CHECK-NEXT:    test_kernel();
+  // CHECK-NEXT:  });
+  test_kernel<<<vec.size(), 1>>>();
 }

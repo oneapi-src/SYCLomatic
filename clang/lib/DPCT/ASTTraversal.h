@@ -61,8 +61,7 @@ public:
               const MacroDefinition &MD) override;
   // TODO: implement one of this for each source language.
   bool ReplaceCuMacro(const Token &MacroNameTok);
-  void ReplaceCuMacro(SourceRange ConditionRange,
-                      ConditionValueKind ConditionValue, IfType IT,
+  void ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
                       SourceLocation IfLoc, SourceLocation ElifLoc);
   void Defined(const Token &MacroNameTok, const MacroDefinition &MD,
                SourceRange Range) override;
@@ -1618,6 +1617,13 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+class SyncThreadsMigrationRule
+    : public NamedMigrationRule<SyncThreadsMigrationRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
 /// Migrate Function Attributes to Sycl kernel info, defined in
 /// runtime headers.
 class KernelFunctionInfoRule
@@ -1640,8 +1646,7 @@ private:
                                          std::string ObjName);
   std::vector<std::vector<std::string>>
   splitAPIName(std::vector<std::string> &AllAPINames);
-  void processMemberFuncCall(const CXXMemberCallExpr *MC);
-  void processFuncCall(const CallExpr *CE, bool HaveKeywordInAPIName);
+  void processFuncCall(const CallExpr *CE);
 };
 
 /// RecognizeTypeRule to emit warning message for known unsupported type

@@ -53,7 +53,7 @@ std::map<std::string, MapNames::BLASGemmExTypeInfo>
     MapNames::BLASTGemmExTypeInfoMap;
 std::unordered_map<std::string, std::pair<std::string, std::string>>
     MapNames::MathTypeCastingMap;
-MapNames::MapTy MapNames::BLASComputingAPIWithRewriter;
+MapNames::MapTy MapNames::BLASAPIWithRewriter;
 std::unordered_set<std::string> MapNames::SOLVERAPIWithRewriter;
 std::unordered_set<std::string> MapNames::SPARSEAPIWithRewriter;
 MapNames::MapTy MapNames::SPBLASEnumsMap;
@@ -330,6 +330,10 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "image_wrapper_base_p",
            HelperFeatureEnum::device_ext)},
+      {"textureReference",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "image_wrapper_base",
+           HelperFeatureEnum::device_ext)},
       {"cudaTextureAddressMode",
        std::make_shared<TypeNameRule>(getClNamespace() + "addressing_mode")},
       {"cudaTextureFilterMode",
@@ -455,6 +459,27 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("oneapi::mkl::rangev")},
       {"cudaUUID_t",
        std::make_shared<TypeNameRule>("std::array<unsigned char, 16>")},
+      {"cusparseIndexType_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "library_data_t")},
+      {"cusparseFormat_t",
+       std::make_shared<TypeNameRule>(
+        getDpctNamespace() + "sparse::matrix_format")},
+      {"cusparseDnMatDescr_t",
+       std::make_shared<TypeNameRule>(
+        "std::shared_ptr<" + getDpctNamespace() + "sparse::dense_matrix_desc>")},
+      {"cusparseOrder_t",
+       std::make_shared<TypeNameRule>("oneapi::mkl::layout")},
+      {"cusparseDnVecDescr_t",
+       std::make_shared<TypeNameRule>(
+        "std::shared_ptr<" + getDpctNamespace() + "sparse::dense_vector_desc>")},
+      {"cusparseConstDnVecDescr_t",
+       std::make_shared<TypeNameRule>(
+        "std::shared_ptr<" + getDpctNamespace() + "sparse::dense_vector_desc>")},
+      {"cusparseSpMatDescr_t",
+       std::make_shared<TypeNameRule>(
+        getDpctNamespace() + "sparse::sparse_matrix_desc_t")},
+      {"cusparseSpMMAlg_t", std::make_shared<TypeNameRule>("int")},
+      {"cusparseSpMVAlg_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverDnFunction_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverAlgMode_t", std::make_shared<TypeNameRule>("int")},
       // ...
@@ -1295,6 +1320,18 @@ void MapNames::setExplicitNamespaceMap() {
        getDpctNamespace() + "sparse::matrix_info::matrix_type::he"},
       {"CUSPARSE_MATRIX_TYPE_TRIANGULAR",
        getDpctNamespace() + "sparse::matrix_info::matrix_type::tr"},
+      {"CUSPARSE_SPMAT_FILL_MODE",
+       getDpctNamespace() + "sparse::matrix_attribute::uplo"},
+      {"CUSPARSE_SPMAT_DIAG_TYPE",
+       getDpctNamespace() + "sparse::matrix_attribute::diag"},
+      {"CUSPARSE_INDEX_16U",
+       getDpctNamespace() + "library_data_t::real_uint16"},
+      {"CUSPARSE_INDEX_32I",
+       getDpctNamespace() + "library_data_t::real_int32"},
+      {"CUSPARSE_INDEX_64I",
+       getDpctNamespace() + "library_data_t::real_int64"},
+      {"CUSPARSE_ORDER_COL", "oneapi::mkl::layout::col_major"},
+      {"CUSPARSE_ORDER_ROW", "oneapi::mkl::layout::row_major"},
   };
 
   ClassFieldMap = {};
@@ -1325,12 +1362,19 @@ void MapNames::setExplicitNamespaceMap() {
       {"thrust::partition_point", HelperFeatureEnum::device_ext}};
 
   ITFName = {
+#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)   \
+  {#APINAME, #INTERFACENAME},
+#define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
+                              TARGET, COMMENT, MAPPING)                        \
+  {#OBJNAME "::" #APINAME, #INTERFACEOBJNAME "::" #INTERFACENAME},
+#include "APINames.inc"
+#undef ENTRY
+#undef ENTRY_MEMBER_FUNCTION
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
   {#APINAME, #INTERFACENAME},
-#define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
+#define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
                               TARGET, COMMENT)                                 \
-  {#OBJNAME "." #APINAME, #OBJNAME "." #INTERFACENAME},
-#include "APINames.inc"
+  {#OBJNAME "::" #APINAME, #INTERFACEOBJNAME "::" #INTERFACENAME},
 #include "APINames_CUB.inc"
 #include "APINames_NCCL.inc"
 #include "APINames_cuBLAS.inc"
@@ -1341,6 +1385,7 @@ void MapNames::setExplicitNamespaceMap() {
 #include "APINames_cuSPARSE.inc"
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
+#include "APINames_wmma.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
   };
@@ -1694,19 +1739,30 @@ void MapNames::setExplicitNamespaceMap() {
   // Atomic function names mapping
   AtomicFuncNamesMap = {
       {"atomicAdd", getDpctNamespace() + "atomic_fetch_add"},
+      {"atomicAdd_system", getDpctNamespace() + "atomic_fetch_add"},
       {"atomicSub", getDpctNamespace() + "atomic_fetch_sub"},
+      {"atomicSub_system", getDpctNamespace() + "atomic_fetch_sub"},
       {"atomicAnd", getDpctNamespace() + "atomic_fetch_and"},
+      {"atomicAnd_system", getDpctNamespace() + "atomic_fetch_and"},
       {"atomicOr", getDpctNamespace() + "atomic_fetch_or"},
+      {"atomicOr_system", getDpctNamespace() + "atomic_fetch_or"},
       {"atomicXor", getDpctNamespace() + "atomic_fetch_xor"},
+      {"atomicXor_system", getDpctNamespace() + "atomic_fetch_xor"},
       {"atomicMin", getDpctNamespace() + "atomic_fetch_min"},
+      {"atomicMin_system", getDpctNamespace() + "atomic_fetch_min"},
       {"atomicMax", getDpctNamespace() + "atomic_fetch_max"},
+      {"atomicMax_system", getDpctNamespace() + "atomic_fetch_max"},
       {"atomicExch", getDpctNamespace() + "atomic_exchange"},
+      {"atomicExch_system", getDpctNamespace() + "atomic_exchange"},
       {"atomicCAS", getDpctNamespace() + "atomic_compare_exchange_strong"},
+      {"atomicCAS_system", getDpctNamespace() + "atomic_compare_exchange_strong"},
       {"atomicInc", getDpctNamespace() + "atomic_fetch_compare_inc"},
+      {"atomicInc_system", getDpctNamespace() + "atomic_fetch_compare_inc"},
       {"atomicDec", getDpctNamespace() + "atomic_fetch_compare_dec"},
+      {"atomicDec_system", getDpctNamespace() + "atomic_fetch_compare_dec"},
   };
 
-  BLASComputingAPIWithRewriter = {
+  BLASAPIWithRewriter = {
       {"cublasNrm2Ex", getDpctNamespace() + "nrm2_ex"},
       {"cublasDotEx", getDpctNamespace() + "dot_ex"},
       {"cublasDotcEx", getDpctNamespace() + "dotc_ex"},
@@ -1753,7 +1809,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasCgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasZgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasCrot_v2", getDpctNamespace() + "rot"},
-      {"cublasZrot_v2", getDpctNamespace() + "rot"}};
+      {"cublasZrot_v2", getDpctNamespace() + "rot"},
+      {"cublasGetStatusString", ""}};
 
   SOLVERAPIWithRewriter = {"cusolverDnSetAdvOptions",
                            "cusolverDnSetStream",
@@ -1853,7 +1910,15 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusolverDnSyevd",
                            "cusolverDnSyevd_bufferSize",
                            "cusolverDnXtrtri",
-                           "cusolverDnXtrtri_bufferSize"};
+                           "cusolverDnXtrtri_bufferSize",
+                           "cusolverDnSsyevd_bufferSize",
+                           "cusolverDnDsyevd_bufferSize",
+                           "cusolverDnCheevd_bufferSize",
+                           "cusolverDnZheevd_bufferSize",
+                           "cusolverDnSsyevd",
+                           "cusolverDnDsyevd",
+                           "cusolverDnCheevd",
+                           "cusolverDnZheevd"};
 
   SPARSEAPIWithRewriter = {"cusparseCreateMatDescr",
                            "cusparseDestroyMatDescr",
@@ -1884,7 +1949,39 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusparseScsrmm",
                            "cusparseDcsrmm",
                            "cusparseCcsrmm",
-                           "cusparseZcsrmm"};
+                           "cusparseZcsrmm",
+                           "cusparseCreateCsr",
+                           "cusparseDestroySpMat",
+                           "cusparseCsrGet",
+                           "cusparseSpMatGetFormat",
+                           "cusparseSpMatGetIndexBase",
+                           "cusparseSpMatGetValues",
+                           "cusparseSpMatSetValues",
+                           "cusparseCreateDnMat",
+                           "cusparseDestroyDnMat",
+                           "cusparseDnMatGet",
+                           "cusparseDnMatGetValues",
+                           "cusparseDnMatSetValues",
+                           "cusparseCreateDnVec",
+                           "cusparseDestroyDnVec",
+                           "cusparseDnVecGet",
+                           "cusparseDnVecGetValues",
+                           "cusparseDnVecSetValues",
+                           "cusparseCsrSetPointers",
+                           "cusparseSpMatGetSize",
+                           "cusparseGetErrorName",
+                           "cusparseGetErrorString",
+                           "cusparseGetProperty",
+                           "cusparseSpMatGetAttribute",
+                           "cusparseSpMatSetAttribute",
+                           "cusparseCreateConstDnVec",
+                           "cusparseConstDnVecGet",
+                           "cusparseConstDnVecGetValues",
+                           "cusparseSpMM",
+                           "cusparseSpMM_bufferSize",
+                           "cusparseSpMV",
+                           "cusparseSpMV_bufferSize",
+                           "cusparseSpMM_preprocess"};
 
   // Below set and map are only used to migrate using declaration
   MathFuncNameMap = {
@@ -1956,7 +2053,8 @@ const std::map<std::string, int> MapNames::VectorTypeMigratedTypeSizeMap{
     {"ulonglong1", 8},  {"ulonglong2", 16}, {"ulonglong3", 32},
     {"ulonglong4", 32}, {"float1", 4},      {"float2", 8},
     {"float3", 16},     {"float4", 16},     {"double1", 8},
-    {"double2", 16},    {"double3", 32},    {"double4", 32}};
+    {"double2", 16},    {"double3", 32},    {"double4", 32},
+    {"__half", 2},      {"__half2", 4}};
 
 const std::map<clang::dpct::KernelArgType, int> MapNames::KernelArgTypeSizeMap{
     {clang::dpct::KernelArgType::KAT_Stream, 208},
@@ -4259,7 +4357,8 @@ const MapNames::MapTy MapNames::MacrosMap{
     {"__CUDACC__", "SYCL_LANGUAGE_VERSION"},
     {"__DRIVER_TYPES_H__", "__DPCT_HPP__"},
     {"__CUDA_RUNTIME_H__", "__DPCT_HPP__"},
-    {"CUDART_VERSION", "SYCL_LANGUAGE_VERSION"},
+    {"CUDART_VERSION", "DPCT_COMPAT_RT_VERSION"},
+    {"__CUDART_API_VERSION", "DPCT_COMPAT_RT_VERSION"},
     {"CUBLAS_V2_H_", "MKL_SYCL_HPP"},
     {"__CUDA__", "SYCL_LANGUAGE_VERSION"},
     {"CUFFT_FORWARD", "-1"},
@@ -4385,12 +4484,19 @@ const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
 };
 
 std::map<std::string, bool> MigrationStatistics::MigrationTable{
+#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)   \
+  {#APINAME, VALUE},
+#define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME,        \
+                              APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)  \
+  {#OBJNAME "::" #APINAME, VALUE},
+#include "APINames.inc"
+#undef ENTRY
+#undef ENTRY_MEMBER_FUNCTION
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
   {#APINAME, VALUE},
-#define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
-                              TARGET, COMMENT)                                 \
-  {#OBJNAME "." #APINAME, VALUE},
-#include "APINames.inc"
+#define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME,        \
+                              APINAME, VALUE, FLAG, TARGET, COMMENT)           \
+  {#OBJNAME "::" #APINAME, VALUE},
 #include "APINames_CUB.inc"
 #include "APINames_NCCL.inc"
 #include "APINames_NVML.inc"
@@ -4404,6 +4510,7 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #include "APINames_nvGRAPH.inc"
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
+#include "APINames_wmma.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
 };
@@ -4516,3 +4623,78 @@ const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "shfl_xor",
     "meta_group_rank",
     "block_tile_memory"};
+
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::PropToGetFeatureMap = {
+        {"clockRate", HelperFeatureEnum::device_ext},
+        {"major", HelperFeatureEnum::device_ext},
+        {"minor", HelperFeatureEnum::device_ext},
+        {"integrated", HelperFeatureEnum::device_ext},
+        {"warpSize", HelperFeatureEnum::device_ext},
+        {"multiProcessorCount", HelperFeatureEnum::device_ext},
+        {"maxThreadsPerBlock", HelperFeatureEnum::device_ext},
+        {"maxThreadsPerMultiProcessor", HelperFeatureEnum::device_ext},
+        {"name", HelperFeatureEnum::device_ext},
+        {"totalGlobalMem", HelperFeatureEnum::device_ext},
+        {"sharedMemPerMultiprocessor", HelperFeatureEnum::device_ext},
+        {"sharedMemPerBlock", HelperFeatureEnum::device_ext},
+        {"maxGridSize", HelperFeatureEnum::device_ext},
+        {"maxThreadsDim", HelperFeatureEnum::device_ext},
+        {"memoryClockRate", HelperFeatureEnum::device_ext},
+        {"memoryBusWidth", HelperFeatureEnum::device_ext},
+        {"pciDeviceID", HelperFeatureEnum::device_ext},
+        {"uuid", HelperFeatureEnum::device_ext},
+};
+
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::PropToSetFeatureMap = {
+        {"clockRate", HelperFeatureEnum::device_ext},
+        {"major", HelperFeatureEnum::device_ext},
+        {"minor", HelperFeatureEnum::device_ext},
+        {"integrated", HelperFeatureEnum::device_ext},
+        {"warpSize", HelperFeatureEnum::device_ext},
+        {"multiProcessorCount", HelperFeatureEnum::device_ext},
+        {"maxThreadsPerBlock", HelperFeatureEnum::device_ext},
+        {"maxThreadsPerMultiProcessor", HelperFeatureEnum::device_ext},
+        {"name", HelperFeatureEnum::device_ext},
+        {"totalGlobalMem", HelperFeatureEnum::device_ext},
+        {"sharedMemPerBlock", HelperFeatureEnum::device_ext},
+        {"maxGridSize", HelperFeatureEnum::device_ext},
+        {"maxThreadsDim", HelperFeatureEnum::device_ext},
+        {"memoryClockRate", HelperFeatureEnum::device_ext},
+        {"memoryBusWidth", HelperFeatureEnum::device_ext},
+        {"pciDeviceID", HelperFeatureEnum::device_ext},
+        {"uuid", HelperFeatureEnum::device_ext},
+};
+
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::SamplingInfoToSetFeatureMap = {
+        {"coordinate_normalization_mode", HelperFeatureEnum::device_ext}};
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::SamplingInfoToGetFeatureMap = {
+        {"addressing_mode", HelperFeatureEnum::device_ext},
+        {"filtering_mode", HelperFeatureEnum::device_ext}};
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::ImageWrapperBaseToSetFeatureMap = {
+        {"sampling_info", HelperFeatureEnum::device_ext},
+        {"data", HelperFeatureEnum::device_ext},
+        {"channel", HelperFeatureEnum::device_ext},
+        {"channel_data_type", HelperFeatureEnum::device_ext},
+        {"channel_size", HelperFeatureEnum::device_ext},
+        {"coordinate_normalization_mode", HelperFeatureEnum::device_ext},
+        {"channel_num", HelperFeatureEnum::device_ext},
+        {"channel_type", HelperFeatureEnum::device_ext}};
+const std::unordered_map<std::string, HelperFeatureEnum>
+    MapNames::ImageWrapperBaseToGetFeatureMap = {
+        {"sampling_info", HelperFeatureEnum::device_ext},
+        {"data", HelperFeatureEnum::device_ext},
+        {"channel", HelperFeatureEnum::device_ext},
+        {"channel_data_type", HelperFeatureEnum::device_ext},
+        {"channel_size", HelperFeatureEnum::device_ext},
+        {"addressing_mode", HelperFeatureEnum::device_ext},
+        {"filtering_mode", HelperFeatureEnum::device_ext},
+        {"coordinate_normalization_mode", HelperFeatureEnum::device_ext},
+        {"channel_num", HelperFeatureEnum::device_ext},
+        {"channel_type", HelperFeatureEnum::device_ext},
+        {"sampler", HelperFeatureEnum::device_ext},
+};
