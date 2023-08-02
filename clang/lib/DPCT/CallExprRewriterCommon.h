@@ -362,7 +362,7 @@ inline std::function<std::string(const CallExpr *)> makeDeviceStr() {
   };
 }
 
-inline std::function<std::string(const CallExpr *)> makeGroupDimension(std::string str) {
+inline std::function<std::string(const CallExpr *)> makeGroupDimension(std::string Prefix) {
    return [=](const CallExpr *C) -> std::string {
      int Index = getPlaceholderIdx(C);
      if (Index == 0) {
@@ -370,8 +370,7 @@ inline std::function<std::string(const CallExpr *)> makeGroupDimension(std::stri
      }
 
      buildTempVariableMap(Index, C, HelperFuncType::HFT_CurrentDevice);
-     std::string S = str + "<{{NEEDREPLACEG" + std::to_string(Index) + "}}>";
-     return S;
+     return Prefix + "<{{NEEDREPLACEG" + std::to_string(Index) + "}}>";
    };
 }
 
