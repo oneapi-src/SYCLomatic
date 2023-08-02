@@ -6,6 +6,7 @@
 #include <thrust/device_ptr.h>
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
+#include <thrust/iterator/iterator_traits.h>
 
 
 int main(int argc, char **argv) {
@@ -44,6 +45,13 @@ int main(int argc, char **argv) {
   a = sizeof(std::vector<int>);
   a = sizeof(host_vec);
   a = sizeof host_vec;
+
+  // CHECK:  typedef dpct::device_vector<int>::iterator Iterator;
+  // CHECK-NEXT:  typedef oneapi::dpl::iterator_traits<Iterator>::value_type value_type;
+  // CHECK-NEXT:  typedef oneapi::dpl::iterator_traits<Iterator>::difference_type difference_type;
+  typedef thrust::device_vector<int>::iterator Iterator;
+  typedef thrust::iterator_traits<Iterator>::value_type value_type;
+  typedef thrust::iterator_traits<Iterator>::difference_type difference_type;
 }
 
 template <typename T>

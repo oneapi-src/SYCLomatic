@@ -253,6 +253,10 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "device_reference",
            HelperFeatureEnum::device_ext)},
+      {"thrust::iterator_traits",
+       std::make_shared<TypeNameRule>(
+           "oneapi::dpl::iterator_traits",
+           HelperFeatureEnum::device_ext)},
       {"thrust::device_vector",
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "device_vector",
