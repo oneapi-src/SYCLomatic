@@ -330,6 +330,10 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "image_wrapper_base_p",
            HelperFeatureEnum::device_ext)},
+      {"textureReference",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "image_wrapper_base",
+           HelperFeatureEnum::device_ext)},
       {"cudaTextureAddressMode",
        std::make_shared<TypeNameRule>(getClNamespace() + "addressing_mode")},
       {"cudaTextureFilterMode",
