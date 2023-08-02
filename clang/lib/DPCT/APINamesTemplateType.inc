@@ -114,6 +114,12 @@ TYPE_REWRITE_ENTRY("thrust::detail::enable_if",
                     TYPE_FACTORY(STR("std::enable_if"),
                                 TEMPLATE_ARG(0),  TEMPLATE_ARG(1)))
 
+TYPE_REWRITE_ENTRY("thrust::detail::true_type",
+                    TYPE_FACTORY(STR("std::true_type")))
+
+TYPE_REWRITE_ENTRY("thrust::detail::false_type",
+                    TYPE_FACTORY(STR("std::false_type")))
+
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     TYPE_REWRITE_ENTRY("thrust::cuda::experimental::pinned_allocator",

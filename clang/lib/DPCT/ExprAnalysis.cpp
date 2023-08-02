@@ -1074,13 +1074,8 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
   case TypeLoc::Typedef:
   case TypeLoc::Builtin:
   case TypeLoc::Using:
+  case TypeLoc::Elaborated:
   case TypeLoc::Record: {
-    if (TyName.find("cub") == std::string::npos &&
-        TL.getTypeLocClass() == TypeLoc::Typedef) {
-      TyName +=
-          TYPELOC_CAST(TypedefTypeLoc).getTypedefNameDecl()->getName().str();
-      break;
-    }
     TyName = DpctGlobalInfo::getTypeName(TL.getType());
     auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TyName);
     if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {

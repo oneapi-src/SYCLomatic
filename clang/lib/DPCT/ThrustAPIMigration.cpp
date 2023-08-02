@@ -216,16 +216,17 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
 void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   // TYPE register
   auto ThrustTypeHasNames = [&]() {
-    return hasAnyName("thrust::greater_equal", "thrust::less_equal",
-                      "thrust::logical_and", "thrust::bit_and",
-                      "thrust::bit_or", "thrust::minimum", "thrust::bit_xor",
-                      "thrust::modulus", "thrust::greater", "thrust::identity",
-                      "thrust::null_type", "thrust::detail::enable_if");
+    return hasAnyName(
+        "thrust::greater_equal", "thrust::less_equal", "thrust::logical_and",
+        "thrust::bit_and", "thrust::bit_or", "thrust::minimum",
+        "thrust::bit_xor", "thrust::modulus", "thrust::greater",
+        "thrust::identity", "thrust::null_type", "thrust::detail::enable_if",
+        "thrust::detail::true_type", "thrust::detail::false_type");
   };
-  MF.addMatcher(typeLoc(loc(hasCanonicalType(qualType(
-                            hasDeclaration(namedDecl(ThrustTypeHasNames()))))))
-                    .bind("thrustTypeLoc"),
-                this);
+  MF.addMatcher(
+      typeLoc(loc(qualType(hasDeclaration(namedDecl(ThrustTypeHasNames())))))
+          .bind("thrustTypeLoc"),
+      this);
 
   // CTOR register
   auto hasAnyThrustRecord = []() {
