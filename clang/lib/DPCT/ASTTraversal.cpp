@@ -11876,7 +11876,8 @@ void CooperativeGroupsFunctionRule::runRule(
   if (FuncName == "sync" || FuncName == "thread_rank" || FuncName == "size" ||
       FuncName == "shfl_down" || FuncName == "shfl_up" ||
       FuncName == "shfl_xor" || FuncName == "meta_group_rank" ||
-      FuncName == "reduce") {
+      FuncName == "reduce" || FuncName == "thread_index" ||
+      FuncName == "group_index") {
     // There are 3 usages of cooperative groups APIs.
     // 1. cg::thread_block tb; tb.sync(); // member function
     // 2. cg::thread_block tb; cg::sync(tb); // free function
