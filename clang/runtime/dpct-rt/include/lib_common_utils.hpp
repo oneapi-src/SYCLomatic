@@ -26,18 +26,24 @@ template <typename T> inline auto get_memory(T *x) {
 
 template <typename T>
 inline typename DataType<T>::T2 get_value(const T *s, sycl::queue &q) {
+  bool need_memcpy =
+#ifdef DPCT_USM_LEVEL_NONE
+      dpct::is_device_ptr(s);
+#else
+      sycl::get_pointer_type(s, q.get_context()) == sycl::usm::alloc::device;
+#endif
   using Ty = typename DataType<T>::T2;
   Ty s_h;
-  detail::dpct_memcpy(q, (void *)&s_h, (void *)s, sizeof(T), automatic).wait();
+  if (need_memcpy)
+    detail::dpct_memcpy(q, (void *)&s_h, (void *)s, sizeof(T), automatic)
+        .wait();
+  else
+    s_h = *reinterpret_cast<const Ty *>(s);
   return s_h;
 }
-}
-enum class version_field : int {
-  major,
-  minor,
-  update,
-  patch
-};
+} // namespace detail
+
+enum class version_field : int { major, minor, update, patch };
 
 /// Returns the requested field of Intel(R) oneAPI Math Kernel Library version.
 /// \param field The version information field (major, minor, update or patch).
