@@ -34,7 +34,7 @@ For example, this original CUDA\* code:
       cudaHostAlloc(&h_A, sizeof(double2), cudaHostAllocDefault);
     }
 
-results in the following migrated SYCL code:
+results in the following migrated SYCL\* code:
 
 .. code-block:: cpp
    :linenos:

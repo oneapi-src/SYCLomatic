@@ -29,7 +29,7 @@ Review the logic and adjust it manually.
 
 .. include:: /_include_files/support-msg.txt
 
-For example, this original CUDA\* code:
+For example, this original CUDA code:
 
 .. code-block:: cpp
    :linenos:

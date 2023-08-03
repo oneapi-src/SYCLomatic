@@ -49,7 +49,7 @@ For example, this original CUDA\* code:
       kernel<<<1, 1>>>(tex42);
     }
 
-results in the following migrated SYCL code:
+results in the following migrated SYCL\* code:
 
 .. code-block:: cpp
    :linenos:

@@ -43,7 +43,7 @@ For example, this original CUDA\* code:
                     b, type, 2, &beta, c, type, 2);
     }
 
-results in the following migrated SYCL code:
+results in the following migrated SYCL\* code:
 
 .. code-block:: cpp
    :linenos:
