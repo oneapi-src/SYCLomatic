@@ -286,6 +286,7 @@ public:
   }
   void *get_value() const noexcept { return _value; }
   void set_value(void *value) { _value = value; }
+  library_data_t get_value_type() { return _value_type; }
 
 private:
   std::int64_t _ele_num;
@@ -514,6 +515,8 @@ public:
   std::optional<oneapi::mkl::uplo> get_uplo() const noexcept { return _uplo; }
 
   void set_nnz(std::int64_t nnz) { _nnz = nnz; }
+
+  library_data_t get_value_type() { return _value_type; }
 
 private:
   template <typename index_t, typename value_t> void set_data() {
@@ -845,6 +848,108 @@ void spgemm_finalize(sycl::queue queue, oneapi::mkl::transpose trans_a,
       matC->get_matrix_handle(), oneapi::mkl::sparse::matmat_request::finalize,
       spgemmDescr, nullptr, nullptr, {});
   queue.wait();
+}
+
+namespace detail {
+template <typename T>
+void check_alpha_value(const void *alpha, sycl::queue queue) {
+  auto alpha_value =
+      dpct::detail::get_value(reinterpret_cast<const T *>(alpha), queue);
+  if (alpha_value != 1.0f) {
+    throw std::runtime_error(
+        "oneapi::mkl::sparse::trsv only supports alpha == 1.");
+  }
+}
+} // namespace detail
+
+void spsv_optimize(sycl::queue queue, oneapi::mkl::transpose trans_a,
+                   cusparseSpMatDescr_t matA) {
+  if (!matA->get_uplo() || !matA->get_diag()) {
+    throw std::runtime_error("oneapi::mkl::sparse::trsv needs uplo and diag "
+                             "attributes to be specified.");
+  }
+  oneapi::mkl::sparse::optimize_trsv(
+      queue, matA->get_uplo().value(), oneapi::mkl::transpose::nontrans,
+      matA->get_diag().value(), matA->get_matrix_handle());
+}
+
+void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a, const void *alpha,
+          sparse_matrix_desc_t matA, std::shared_ptr<dense_vector_desc> vecX,
+          std::shared_ptr<dense_vector_desc> vecY, library_data_t value_type) {
+  switch (value_type) {
+  case library_data_t::real_float:
+    check_alpha_value<float>(alpha, queue);
+    break;
+  case library_data_t::real_double:
+    check_alpha_value<double>(alpha, queue);
+    break;
+  case library_data_t::complex_float:
+    check_alpha_value<std::complex<float>>(alpha, queue);
+    break;
+  case library_data_t::complex_double:
+    check_alpha_value<std::complex<double>>(alpha, queue);
+    break;
+  default:
+    throw std::runtime_error("Unsupported data type.");
+  }
+
+  if (!matA->get_uplo() || !matA->get_diag()) {
+    throw std::runtime_error("oneapi::mkl::sparse::trsv needs uplo and diag "
+                             "attributes to be specified.");
+  }
+  oneapi::mkl::uplo uplo = matA->get_uplo().value();
+  oneapi::mkl::diag diag = matA->get_diag().value();
+
+  std::uint64_t key = detail::get_type_combination_id(
+      matA->get_value_type(), vecX->get_value_type(), vecY->get_value_type());
+  switch (key) {
+  case detail::get_type_combination_id(library_data_t::real_float,
+                                       library_data_t::real_float,
+                                       library_data_t::real_float): {
+    auto data_x =
+        dpct::detail::get_memory(reinterpret_cast<float *>(vecX->get_value()));
+    auto data_y =
+        dpct::detail::get_memory(reinterpret_cast<float *>(vecY->get_value()));
+    oneapi::mkl::sparse::trsv(queue, uplo, trans_a, diag,
+                              matA->get_matrix_handle(), data_x, data_y);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::real_double,
+                                       library_data_t::real_double,
+                                       library_data_t::real_double): {
+    auto data_x =
+        dpct::detail::get_memory(reinterpret_cast<double *>(vecX->get_value()));
+    auto data_y =
+        dpct::detail::get_memory(reinterpret_cast<double *>(vecY->get_value()));
+    oneapi::mkl::sparse::trsv(queue, uplo, trans_a, diag,
+                              matA->get_matrix_handle(), data_x, data_y);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::complex_float,
+                                       library_data_t::complex_float,
+                                       library_data_t::complex_float): {
+    auto data_x = dpct::detail::get_memory(
+        reinterpret_cast<std::complex<float> *>(vecX->get_value()));
+    auto data_y = dpct::detail::get_memory(
+        reinterpret_cast<std::complex<float> *>(vecY->get_value()));
+    oneapi::mkl::sparse::trsv(queue, uplo, trans_a, diag,
+                              matA->get_matrix_handle(), data_x, data_y);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::complex_double,
+                                       library_data_t::complex_double,
+                                       library_data_t::complex_double): {
+    auto data_x = dpct::detail::get_memory(
+        reinterpret_cast<std::complex<double> *>(vecX->get_value()));
+    auto data_y = dpct::detail::get_memory(
+        reinterpret_cast<std::complex<double> *>(vecY->get_value()));
+    oneapi::mkl::sparse::trsv(queue, uplo, trans_a, diag,
+                              matA->get_matrix_handle(), data_x, data_y);
+    break;
+  }
+  default:
+    throw std::runtime_error("the combination of data type is unsupported");
+  }
 }
 #endif
 } // namespace sparse

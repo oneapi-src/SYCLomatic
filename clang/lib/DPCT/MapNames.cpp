@@ -484,6 +484,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cusolverAlgMode_t", std::make_shared<TypeNameRule>("int")},
       {"cusparseSpGEMMDescr_t",
           std::make_shared<TypeNameRule>("oneapi::mkl::sparse::matmat_descr_t")},
+      {"cusparseSpGEMMDescr_t", std::make_shared<TypeNameRule>("int")},
       // ...
   };
 
@@ -1988,7 +1989,12 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusparseSpGEMM_copy",
                            "cusparseSpGEMM_createDescr",
                            "cusparseSpGEMM_destroyDescr",
-                           "cusparseSpGEMM_workEstimation"};
+                           "cusparseSpGEMM_workEstimation",
+                           "cusparseSpSV_createDescr",
+                           "cusparseSpSV_destroyDescr",
+                           "cusparseSpSV_solve",
+                           "cusparseSpSV_bufferSize",
+                           "cusparseSpSV_analysis"};
 
   // Below set and map are only used to migrate using declaration
   MathFuncNameMap = {

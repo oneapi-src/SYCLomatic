@@ -1979,7 +1979,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cusolverAlgMode_t", "cusparseIndexType_t", "cusparseFormat_t",
               "cusparseDnMatDescr_t", "cusparseOrder_t", "cusparseDnVecDescr_t",
               "cusparseConstDnVecDescr_t", "cusparseSpMatDescr_t",
-              "cusparseSpMMAlg_t", "cusparseSpMVAlg_t", "cusparseSpGEMMDescr_t"))))))
+              "cusparseSpMMAlg_t", "cusparseSpMVAlg_t", "cusparseSpGEMMDescr_t",
+              "cusparseSpSVDescr_t"))))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -3980,7 +3981,10 @@ void SPBLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusparseSpMM_bufferSize", "cusparseSpMV", "cusparseSpMV_bufferSize",
         "cusparseSpMM_preprocess", "cusparseSpGEMM_compute",
         "cusparseSpGEMM_copy", "cusparseSpGEMM_createDescr",
-        "cusparseSpGEMM_destroyDescr", "cusparseSpGEMM_workEstimation");
+        "cusparseSpGEMM_destroyDescr", "cusparseSpGEMM_workEstimation",
+        "cusparseSpSV_createDescr", "cusparseSpSV_destroyDescr",
+        "cusparseSpSV_solve", "cusparseSpSV_bufferSize",
+        "cusparseSpSV_analysis");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))

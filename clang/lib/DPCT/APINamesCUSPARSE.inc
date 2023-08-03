@@ -285,3 +285,17 @@ ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
     "cusparseSpGEMM_copy",
     CALL(MapNames::getDpctNamespace() + "sparse::spgemm_finalize", DEREF(0),
          ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(10))))
+
+REMOVE_API_FACTORY_ENTRY("cusparseSpSV_createDescr")
+REMOVE_API_FACTORY_ENTRY("cusparseSpSV_destroyDescr")
+REMOVE_API_FACTORY_ENTRY("cusparseSpSV_bufferSize")
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY("cusparseSpSV_analysis",
+                                      CALL(MapNames::getDpctNamespace() +
+                                               "sparse::spsv_optimize",
+                                           DEREF(0), ARG(1), ARG(3))))
+
+ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
+    "cusparseSpSV_solve",
+    CALL(MapNames::getDpctNamespace() + "sparse::spsv", DEREF(0), ARG(1),
+         ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))))
