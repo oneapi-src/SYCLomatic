@@ -53,6 +53,15 @@ struct is_integer<long> {
   typedef thrust::detail::true_type type;
 };
 
+// CHECK:template <std::size_t Len, std::size_t Align>
+// CHECK-NEXT:void test_aligned_storage_instantiation() {
+// CHECK-NEXT:  typedef std::integral_constant<bool, false> ValidAlign;
+// CHECK-NEXT:}
+template <std::size_t Len, std::size_t Align>
+void test_aligned_storage_instantiation() {
+  typedef thrust::detail::integral_constant<bool, false> ValidAlign;
+}
+
 void foo() {
   int integer_val = 42;
   float float_val = 3.14f;
