@@ -629,8 +629,8 @@ public:
   }
 };
 
-// The original source of the function calculate_max_active_wg_per_xecore was
-// under the license below:
+// The original source of the functions calculate_max_active_wg_per_xecore and
+// calculate_max_potential_wg were under the license below:
 //
 // Copyright Intel Corporation
 //
@@ -718,7 +718,8 @@ inline int calculate_max_active_wg_per_xecore(int *num_wg, int wg_size,
 
 /// This function is used for occupancy calculation, it computes the work-group
 /// number and the work-group size which achieves the maximum occupancy of the
-/// device potentially.
+/// device potentially. Ref to
+/// https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/GPU-Occupancy-Calculator
 /// \param [out] num_wg Work-group number.
 /// \param [out] wg_size Work-group size.
 /// \param [in] max_ws_size_for_device_code The maximum working work-group size
