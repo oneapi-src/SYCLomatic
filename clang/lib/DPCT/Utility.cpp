@@ -3560,6 +3560,20 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
   if (!CE)
     return false;
 
+  if (dpct::DpctGlobalInfo::isOptimizeMigration()) {
+    if (auto Direction = dyn_cast<DeclRefExpr>(CE->getArg(3))) {
+      auto CpyKind = Direction->getDecl()->getName();
+      if (CpyKind == "cudaMemcpyHostToDevice" ||
+          CpyKind == "cudaMemcpyDeviceToDevice") {
+        auto LocInfo = dpct::DpctGlobalInfo::getLocInfo(CE->getBeginLoc());
+        clang::dpct::DiagnosticsUtils::report(
+            LocInfo.first, LocInfo.second,
+            clang::dpct::Diagnostics::WAIT_REMOVE, true, false);
+        return true;
+      }
+    }
+  }
+
   const clang::CompoundStmt *CS = getBodyofAncestorFCStmt(CE);
   if (!CS) {
     auto FD = clang::dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(CE);
@@ -3624,20 +3638,6 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
         if (*FirstDREAfterCurrentCallExprEndLoc <= NextCallExprEndOffset)
           return false;
 
-        return true;
-      }
-    }
-  }
-
-  if (dpct::DpctGlobalInfo::isOptimizeMigration()) {
-    if (auto Direction = dyn_cast<DeclRefExpr>(CE->getArg(3))) {
-      auto CpyKind = Direction->getDecl()->getName();
-      if (CpyKind == "cudaMemcpyHostToDevice" ||
-          CpyKind == "cudaMemcpyDeviceToDevice") {
-        auto LocInfo = dpct::DpctGlobalInfo::getLocInfo(CE->getBeginLoc());
-        clang::dpct::DiagnosticsUtils::report(
-            LocInfo.first, LocInfo.second,
-            clang::dpct::Diagnostics::WAIT_REMOVE, true, false);
         return true;
       }
     }
