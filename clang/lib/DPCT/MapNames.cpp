@@ -330,6 +330,10 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "image_wrapper_base_p",
            HelperFeatureEnum::device_ext)},
+      {"textureReference",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "image_wrapper_base",
+           HelperFeatureEnum::device_ext)},
       {"cudaTextureAddressMode",
        std::make_shared<TypeNameRule>(getClNamespace() + "addressing_mode")},
       {"cudaTextureFilterMode",
@@ -1360,17 +1364,17 @@ void MapNames::setExplicitNamespaceMap() {
   ITFName = {
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)   \
   {#APINAME, #INTERFACENAME},
-#define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
+#define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
                               TARGET, COMMENT, MAPPING)                        \
-  {#OBJNAME "::" #APINAME, #OBJNAME "::" #INTERFACENAME},
+  {#OBJNAME "::" #APINAME, #INTERFACEOBJNAME "::" #INTERFACENAME},
 #include "APINames.inc"
 #undef ENTRY
 #undef ENTRY_MEMBER_FUNCTION
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
   {#APINAME, #INTERFACENAME},
-#define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
+#define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
                               TARGET, COMMENT)                                 \
-  {#OBJNAME "::" #APINAME, #OBJNAME "::" #INTERFACENAME},
+  {#OBJNAME "::" #APINAME, #INTERFACEOBJNAME "::" #INTERFACENAME},
 #include "APINames_CUB.inc"
 #include "APINames_NCCL.inc"
 #include "APINames_cuBLAS.inc"
@@ -4353,7 +4357,8 @@ const MapNames::MapTy MapNames::MacrosMap{
     {"__CUDACC__", "SYCL_LANGUAGE_VERSION"},
     {"__DRIVER_TYPES_H__", "__DPCT_HPP__"},
     {"__CUDA_RUNTIME_H__", "__DPCT_HPP__"},
-    {"CUDART_VERSION", "SYCL_LANGUAGE_VERSION"},
+    {"CUDART_VERSION", "DPCT_COMPAT_RT_VERSION"},
+    {"__CUDART_API_VERSION", "DPCT_COMPAT_RT_VERSION"},
     {"CUBLAS_V2_H_", "MKL_SYCL_HPP"},
     {"__CUDA__", "SYCL_LANGUAGE_VERSION"},
     {"CUFFT_FORWARD", "-1"},
@@ -4481,16 +4486,16 @@ const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
 std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)   \
   {#APINAME, VALUE},
-#define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
-                              TARGET, COMMENT, MAPPING)                        \
+#define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME,        \
+                              APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)  \
   {#OBJNAME "::" #APINAME, VALUE},
 #include "APINames.inc"
 #undef ENTRY
 #undef ENTRY_MEMBER_FUNCTION
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
   {#APINAME, VALUE},
-#define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
-                              TARGET, COMMENT)                                 \
+#define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME,        \
+                              APINAME, VALUE, FLAG, TARGET, COMMENT)           \
   {#OBJNAME "::" #APINAME, VALUE},
 #include "APINames_CUB.inc"
 #include "APINames_NCCL.inc"
