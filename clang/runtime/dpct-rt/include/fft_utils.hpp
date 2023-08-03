@@ -540,15 +540,12 @@ public:
   void compute(input_t *input, output_t *output, fft_direction direction) {
     if (_input_type == library_data_t::complex_float &&
         _output_type == library_data_t::complex_float) {
-      compute_complex<std::complex<float>, oneapi::mkl::dft::precision::SINGLE>(
-          (std::complex<float> *)input, (std::complex<float> *)output,
-          direction);
+      compute_complex<float, oneapi::mkl::dft::precision::SINGLE>(
+          (float *)input, (float *)output, direction);
     } else if (_input_type == library_data_t::complex_double &&
                _output_type == library_data_t::complex_double) {
-      compute_complex<std::complex<double>,
-                      oneapi::mkl::dft::precision::DOUBLE>(
-          (std::complex<double> *)input, (std::complex<double> *)output,
-          direction);
+      compute_complex<double, oneapi::mkl::dft::precision::DOUBLE>(
+          (double *)input, (double *)output, direction);
     } else if (_input_type == library_data_t::real_float &&
                _output_type == library_data_t::complex_float) {
       _direction = direction;
@@ -598,15 +595,14 @@ public:
   template <>
   void compute(sycl::float2 *input, sycl::float2 *output,
                fft_direction direction) {
-    compute_complex<std::complex<float>, oneapi::mkl::dft::precision::SINGLE>(
-        (std::complex<float> *)input, (std::complex<float> *)output, direction);
+    compute_complex<float, oneapi::mkl::dft::precision::SINGLE>(
+        (float *)input, (float *)output, direction);
   }
   template <>
   void compute(sycl::double2 *input, sycl::double2 *output,
                fft_direction direction) {
-    compute_complex<std::complex<double>, oneapi::mkl::dft::precision::DOUBLE>(
-        (std::complex<double> *)input, (std::complex<double> *)output,
-        direction);
+    compute_complex<double, oneapi::mkl::dft::precision::DOUBLE>(
+        (double *)input, (double *)output, direction);
   }
   /// Setting the user's SYCL queue for calculation.
   /// \param [in] q Pointer to the SYCL queue.
