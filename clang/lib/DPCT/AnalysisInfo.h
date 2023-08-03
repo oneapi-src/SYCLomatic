@@ -30,6 +30,8 @@
 #include "clang/AST/Mangle.h"
 #include "clang/AST/ParentMapContext.h"
 
+#include "clang/Basic/Cuda.h"
+
 #include "clang/Format/Format.h"
 #include "clang/Frontend/CompilerInstance.h"
 
@@ -587,6 +589,8 @@ public:
   std::vector<RnnBackwardFuncInfo> &getRnnBackwardFuncInfo() {
     return RBFuncInfo;
   }
+  void setRTVersionValue(std::string Value) { RTVersionValue = Value; }
+  std::string getRTVersionValue() { return RTVersionValue; }
 
 private:
   std::vector<std::pair<unsigned int, unsigned int>> TimeStubBounds;
@@ -651,6 +655,7 @@ private:
   std::vector<std::shared_ptr<ExtReplacement>> IncludeDirectiveInsertions;
   std::vector<std::pair<unsigned int, unsigned int>> ExternCRanges;
   std::vector<RnnBackwardFuncInfo> RBFuncInfo;
+  std::string RTVersionValue = "";
 };
 template <> inline GlobalMap<MemVarInfo> &DpctFileInfo::getMap() {
   return MemVarMap;
@@ -857,6 +862,8 @@ public:
   static void printItem(llvm::raw_ostream &, const Stmt *,
                         const FunctionDecl *FD = nullptr);
   static std::string getItem(const Stmt *, const FunctionDecl *FD = nullptr);
+  static void registerNDItemUser(const Stmt *,
+                                 const FunctionDecl *FD = nullptr);
   static void printGroup(llvm::raw_ostream &, const Stmt *,
                          const FunctionDecl *FD = nullptr);
   static std::string getGroup(const Stmt *, const FunctionDecl *FD = nullptr);
@@ -943,6 +950,8 @@ public:
   }
   inline static UsmLevel getUsmLevel() { return UsmLvl; }
   inline static void setUsmLevel(UsmLevel UL) { UsmLvl = UL; }
+  inline static clang::CudaVersion getSDKVersion() { return SDKVersion; }
+  inline static void setSDKVersion(clang::CudaVersion V) { SDKVersion = V; }
   inline static bool isIncMigration() { return IsIncMigration; }
   inline static void setIsIncMigration(bool Flag) { IsIncMigration = Flag; }
   inline static bool needDpctDeviceExt() { return NeedDpctDeviceExt; }
@@ -1729,6 +1738,9 @@ public:
   static bool useExtJointMatrix() {
     return getUsingExperimental<ExperimentalFeatures::Exp_Matrix>();
   }
+  static bool useExtBFloat16Math() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_BFloat16Math>();
+  }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
   }
@@ -1974,6 +1986,7 @@ private:
   static std::string CudaPath;
   static std::string RuleFile;
   static UsmLevel UsmLvl;
+  static clang::CudaVersion SDKVersion;
   static bool NeedDpctDeviceExt;
   static bool IsIncMigration;
   static unsigned int AssumedNDRangeDim;
@@ -2145,6 +2158,7 @@ public:
       : PointerLevel(0), IsReference(false), IsTemplate(false) {
     if (D && D->getTypeSourceInfo()) {
       auto TL = D->getTypeSourceInfo()->getTypeLoc();
+      IsConstantQualified = D->hasAttr<CUDAConstantAttr>();
       setTypeInfo(TL, NeedSizeFold);
       if (TL.getTypeLocClass() ==
           TypeLoc::IncompleteArray) {
@@ -2166,6 +2180,7 @@ public:
 
   inline bool isTemplate() const { return IsTemplate; }
   inline bool isPointer() const { return PointerLevel; }
+  inline bool isArray() const { return IsArray; }
   inline bool isReference() const { return IsReference; }
   inline void adjustAsMemType() {
     setPointerAsArray();
@@ -2185,6 +2200,7 @@ public:
   inline std::vector<std::string> getArraySizeOriginExprs() { return ArraySizeOriginExprs; }
 
   bool containsTemplateDependentMacro() const { return TemplateDependentMacro; }
+  bool isConstantQualified() const { return IsConstantQualified; }
 
 private:
   // For ConstantArrayType, size in generated code is folded as an integer.
@@ -2245,11 +2261,13 @@ private:
   bool IsReference;
   bool IsTemplate;
   bool TemplateDependentMacro = false;
+  bool IsArray = false;
 
   std::shared_ptr<TemplateDependentStringInfo> TDSI;
   std::set<HelperFeatureEnum> HelperFeatureSet;
   bool ContainSizeofType = false;
   std::vector<std::string> ArraySizeOriginExprs{};
+  bool IsConstantQualified = false;
 };
 
 // variable info includes name, type and location.
@@ -2393,14 +2411,14 @@ public:
   }
   ParameterStream &getFuncDecl(ParameterStream &PS) {
     if (AccMode == Value) {
-      PS << getAccessorDataType(true) << " ";
+      PS << getAccessorDataType(true, true) << " ";
     } else if (AccMode == Pointer) {
-      PS << getAccessorDataType(true);
+      PS << getAccessorDataType(true, true);
       if (!getType()->isPointer())
         PS << " ";
       PS << "*";
     } else if (AccMode == Reference) {
-      PS << getAccessorDataType(true);
+      PS << getAccessorDataType(true, true);
       if (!getType()->isPointer())
         PS << " ";
       PS << "&";
@@ -2423,7 +2441,7 @@ public:
     if (isShared() || DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
       if (AccMode == Pointer) {
         if (!getType()->isWritten())
-          PS << "(" << getAccessorDataType() << " *)";
+          PS << "(" << getAccessorDataType(false, true) << " *)";
         PS << getAccessorName() << ".get_pointer()";
       } else {
         PS << getAccessorName();
@@ -2440,7 +2458,8 @@ public:
     }
     return PS;
   }
-  std::string getAccessorDataType(bool IsTypeUsedInDevFunDecl = false) {
+  std::string getAccessorDataType(bool IsTypeUsedInDevFunDecl = false,
+                                  bool NeedCheckExtraConstQualifier = false) {
     if (isExtern()) {
       return "uint8_t";
     } else if (isTypeDeclaredLocal()) {
@@ -2451,10 +2470,23 @@ public:
         return "uint8_t[sizeof(" + LocalTypeName + ")]";
       }
     }
-    return getType()->getBaseName();
+
+    std::string Ret = getType()->getBaseName();
+    if ((!getType()->isArray() && !getType()->isPointer()) ||
+        isTreatPointerAsArray())
+      return Ret;
+    if (NeedCheckExtraConstQualifier && getType()->isConstantQualified()) {
+      return Ret + " const";
+    }
+    return Ret;
   }
 
 private:
+  bool isTreatPointerAsArray() {
+    return getType()->isPointer() && getScope() == Global &&
+           DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None;
+  }
+
   static VarAttrKind getAddressAttr(const AttrVec &Attrs);
 
   void setInitList(const Expr *E, const VarDecl *V) {

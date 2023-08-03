@@ -34,8 +34,15 @@ public:
   }
 };
 
-template <typename T> bool isnan(const T a) { return sycl::isnan(a); }
-// TODO: Need add more specialization such as bfloat16 version.
+template <typename T> inline bool isnan(const T a) { return sycl::isnan(a); }
+inline bool isnan(const sycl::ext::oneapi::bfloat16 a) {
+#ifdef SYCL_EXT_ONEAPI_BFLOAT16_MATH_FUNCTIONS
+  return sycl::ext::oneapi::experimental::isnan(a);
+#else
+  throw std::runtime_error("bfloat16 version isnan is only supported in "
+                           "sycl::ext::oneapi::experimental.");
+#endif
+}
 } // namespace detail
 
 /// Compute fast_length for variable-length array
@@ -82,6 +89,26 @@ template <typename T> inline T length(const T *a, const int len) {
       ret += a[i] * a[i];
     return sycl::sqrt(ret);
   }
+}
+
+/// Returns min(max(val, min_val), max_val)
+/// \param [in] val The input value
+/// \param [in] min_val The minimum value
+/// \param [in] max_val The maximum value
+/// \returns the value between min_val and max_val
+template <typename T> inline T clamp(T val, T min_val, T max_val) {
+  if (val < min_val)
+    return min_val;
+  if (val > max_val)
+    return max_val;
+  return val;
+}
+template <typename T>
+inline sycl::marray<T, 2> clamp(sycl::marray<T, 2> val,
+                                sycl::marray<T, 2> min_val,
+                                sycl::marray<T, 2> max_val) {
+  return {clamp(val[0], min_val[0], max_val[0]),
+          clamp(val[1], min_val[1], max_val[1])};
 }
 
 /// Performs comparison.
@@ -308,6 +335,9 @@ template <typename T> inline T relu(const T a) {
 template <class T> inline sycl::vec<T, 2> relu(const sycl::vec<T, 2> a) {
   return {relu(a[0]), relu(a[1])};
 }
+template <class T> inline sycl::marray<T, 2> relu(const sycl::marray<T, 2> a) {
+  return {relu(a[0]), relu(a[1])};
+}
 
 /// Performs complex number multiply addition.
 /// \param [in] a The first value
@@ -320,6 +350,13 @@ inline sycl::vec<T, 2> complex_mul_add(const sycl::vec<T, 2> a,
                                        const sycl::vec<T, 2> c) {
   return sycl::vec<T, 2>{a[0] * b[0] - a[1] * b[1] + c[0],
                          a[0] * b[1] + a[1] * b[0] + c[1]};
+}
+template <typename T>
+inline sycl::marray<T, 2> complex_mul_add(const sycl::marray<T, 2> a,
+                                          const sycl::marray<T, 2> b,
+                                          const sycl::marray<T, 2> c) {
+  return sycl::marray<T, 2>{a[0] * b[0] - a[1] * b[1] + c[0],
+                            a[0] * b[1] + a[1] * b[0] + c[1]};
 }
 
 /// Performs 2 elements comparison and returns the bigger one. If either of

@@ -3993,10 +3993,10 @@ std::string getRemovedAPIWarningMessage(std::string FuncName) {
     return "";
 }
 
-bool isUserDefinedDecl(const clang::ValueDecl *VD) {
-  std::string InFile = dpct::DpctGlobalInfo::getLocInfo(VD).first;
+bool isUserDefinedDecl(const clang::Decl *D) {
+  std::string InFile = dpct::DpctGlobalInfo::getLocInfo(D).first;
   bool InInstallPath = isChildOrSamePath(DpctInstallPath, InFile);
-  bool InCudaPath = dpct::DpctGlobalInfo::isInCudaPath(VD->getLocation());
+  bool InCudaPath = dpct::DpctGlobalInfo::isInCudaPath(D->getLocation());
   if (InInstallPath || InCudaPath)
     return false;
   return true;
@@ -4375,6 +4375,19 @@ std::string getAddressSpace(const CallExpr *C, int ArgIdx) {
         EA.getReplacedString());
     return "global_space";
   }
+}
+
+std::string getNameSpace(const NamespaceDecl *NSD) {
+  if (!NSD)
+    return "";
+  std::string NameSpace =
+      getNameSpace(dyn_cast<NamespaceDecl>(NSD->getDeclContext()));
+  if (!NameSpace.empty() && !NSD->isInlineNamespace())
+    return NameSpace + "::" + NSD->getName().str();
+  else if (NameSpace.empty() && !NSD->isInlineNamespace())
+    return NSD->getName().str();
+
+  return NameSpace;
 }
 
 namespace clang {

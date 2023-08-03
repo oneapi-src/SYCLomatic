@@ -38,9 +38,8 @@ __constant__ int const_init_2d[5][5] = {{1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7,
 // CHECK: static dpct::constant_memory<int, 2> incomplete_size_init_2d(sycl::range<2>(3, 2), { {1,2},{3,4},{5,6}});
 __constant__ int incomplete_size_init_2d[][2] = { {1,2},{3,4},{5,6}};
 
-
 // CHECK: struct FuncObj {
-// CHECK-NEXT: void operator()(float *out, int index, float *const_angle) {
+// CHECK-NEXT: void operator()(float *out, int index, float const *const_angle) {
 // CHECK-NEXT:   out[index] = const_angle[index];
 struct FuncObj {
   __device__ void operator()(float *out, int index) {
@@ -49,7 +48,7 @@ struct FuncObj {
 };
 
 // CHECK:void simple_kernel(float *d_array, const sycl::nd_item<3> &[[ITEM:item_ct1]],
-// CHECK-NEXT:              float *const_angle, int *const_ptr) {
+// CHECK-NEXT:              float const *const_angle, int *const_ptr) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range(2) + [[ITEM]].get_local_id(2);
 // CHECK-NEXT:  FuncObj f;
@@ -230,10 +229,9 @@ __device__ __constant__ int const_array[10];
 #define l_arg &d_a0, &d_a1
 #define d_arg int *d_a0, int *d_a1
 
-
-// CHECK: void bar(int *const_array) { int a = const_array[0]; }
-// CHECK-NEXT: void inner_foo(int *last, d_arg, int *const_array) { bar(const_array); }
-// CHECK-NEXT: void foo(int d_a0, int d_a1, int *const_array) {
+// CHECK: void bar(int const *const_array) { int a = const_array[0]; }
+// CHECK-NEXT: void inner_foo(int *last, d_arg, int const *const_array) { bar(const_array); }
+// CHECK-NEXT: void foo(int d_a0, int d_a1, int const *const_array) {
 // CHECK-NEXT:   int last;
 // CHECK-NEXT:   inner_foo(&last, l_arg, const_array);
 // CHECK-NEXT: }
@@ -244,3 +242,28 @@ __device__ void foo() {
   inner_foo(&last, l_arg);
 }
 
+//CHECK:static dpct::constant_memory<float, 1> aaa(10);
+//CHECK-NEXT:void kernel1(float const *aaa) {
+//CHECK-NEXT:  float *a = const_cast<float *>(aaa + 5);
+//CHECK-NEXT:}
+//CHECK-NEXT:void foo1() {
+//CHECK-NEXT:  dpct::get_default_queue().submit(
+//CHECK-NEXT:    [&](sycl::handler &cgh) {
+//CHECK-NEXT:      aaa.init();
+//CHECK-EMPTY:
+//CHECK-NEXT:      auto aaa_acc_ct1 = aaa.get_access(cgh);
+//CHECK-EMPTY:
+//CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
+//CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:          kernel1(aaa_acc_ct1.get_pointer());
+//CHECK-NEXT:        });
+//CHECK-NEXT:    });
+//CHECK-NEXT:}
+__constant__ float aaa[10];
+__global__ void kernel1() {
+  float *a = aaa + 5;
+}
+void foo1() {
+  kernel1<<<1, 1>>>();
+}

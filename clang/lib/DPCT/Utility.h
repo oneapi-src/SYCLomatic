@@ -25,6 +25,7 @@
 
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Attr.h"
+#include "clang/AST/Decl.h"
 #include "clang/AST/ParentMapContext.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
@@ -34,6 +35,7 @@
 #include "llvm/Support/Path.h"
 namespace path = llvm::sys::path;
 
+using namespace clang;
 namespace llvm {
 class StringRef;
 } // namespace llvm
@@ -565,7 +567,7 @@ void findAllVarRef(const clang::DeclRefExpr *DRE,
                    bool IsGlobalScopeAllowed = false);
 bool isExprUsed(const clang::Expr *E, bool &Result);
 const std::string &getItemName();
-bool isUserDefinedDecl(const clang::ValueDecl *VD);
+bool isUserDefinedDecl(const clang::Decl *D);
 void insertHeaderForTypeRule(std::string, clang::SourceLocation);
 std::string getRemovedAPIWarningMessage(std::string FuncName);
 std::string getBaseTypeStr(const clang::CallExpr *CE);
@@ -584,6 +586,7 @@ bool containIterationSpaceBuiltinVar(const clang::Stmt *Node);
 bool containBuiltinWarpSize(const clang::Stmt *Node);
 bool isCapturedByLambda(const clang::TypeLoc *TL);
 std::string getAddressSpace(const clang::CallExpr *C, int ArgIdx);
+std::string getNameSpace(const NamespaceDecl *NSD);
 namespace clang {
 namespace dpct {
 std::string getDpctVersionStr();
