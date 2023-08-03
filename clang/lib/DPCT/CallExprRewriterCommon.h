@@ -134,7 +134,7 @@ public:
   template <class StreamT> void print(StreamT &Stream) const {
     const Expr *InputArg = SubExpr->IgnoreImpCasts();
     clang::QualType ArgType = InputArg->getType().getCanonicalType();
-    ArgType.removeLocalCVRQualifiers(clang::Qualifiers::CVRMask);
+    ArgType.removeLocalFastQualifiers(clang::Qualifiers::CVRMask);
     if (ArgType.getAsString() != TypeInfo) {
       Stream << "(" << TypeInfo << ")";
     }
@@ -151,7 +151,7 @@ public:
   template <class StreamT> void print(StreamT &Stream) const {
     if (isContainTargetSpecialExpr(Arg)) {
       clang::QualType ArgType = Arg->getType().getCanonicalType();
-      ArgType.removeLocalCVRQualifiers(clang::Qualifiers::CVRMask);
+      ArgType.removeLocalFastQualifiers(clang::Qualifiers::CVRMask);
       Stream << "(" << ArgType.getAsString() << ")";
       if (!dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()) &&
           !dyn_cast<IntegerLiteral>(Arg->IgnoreImpCasts()) &&
@@ -182,7 +182,7 @@ public:
       dpct::print(Stream, DerefInputArg);
     } else {
       clang::QualType ArgType = InputArg->getType().getCanonicalType();
-      ArgType.removeLocalCVRQualifiers(clang::Qualifiers::CVRMask);
+      ArgType.removeLocalFastQualifiers(clang::Qualifiers::CVRMask);
       Stream << "*";
       if (ArgType.getAsString() != TypeInfo) {
         Stream << "(" << TypeInfo << ")";

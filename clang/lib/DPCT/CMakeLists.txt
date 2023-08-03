@@ -155,6 +155,7 @@ add_clang_library(DPCT
 
   DEPENDS
   ClangDriverOptions
+  DeviceConfigFile
   dpct_helper_headers_and_inc
   genconfusable
 
