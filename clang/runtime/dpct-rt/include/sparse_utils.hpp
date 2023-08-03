@@ -855,7 +855,7 @@ template <typename T>
 void check_alpha_value(const void *alpha, sycl::queue queue) {
   auto alpha_value =
       dpct::detail::get_value(reinterpret_cast<const T *>(alpha), queue);
-  if (alpha_value != 1.0f) {
+  if (alpha_value != T(1.0f)) {
     throw std::runtime_error(
         "oneapi::mkl::sparse::trsv only supports alpha == 1.");
   }
@@ -863,7 +863,7 @@ void check_alpha_value(const void *alpha, sycl::queue queue) {
 } // namespace detail
 
 void spsv_optimize(sycl::queue queue, oneapi::mkl::transpose trans_a,
-                   cusparseSpMatDescr_t matA) {
+                   sparse_matrix_desc_t matA) {
   if (!matA->get_uplo() || !matA->get_diag()) {
     throw std::runtime_error("oneapi::mkl::sparse::trsv needs uplo and diag "
                              "attributes to be specified.");
@@ -878,16 +878,16 @@ void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a, const void *alpha,
           std::shared_ptr<dense_vector_desc> vecY, library_data_t value_type) {
   switch (value_type) {
   case library_data_t::real_float:
-    check_alpha_value<float>(alpha, queue);
+    detail::check_alpha_value<float>(alpha, queue);
     break;
   case library_data_t::real_double:
-    check_alpha_value<double>(alpha, queue);
+    detail::check_alpha_value<double>(alpha, queue);
     break;
   case library_data_t::complex_float:
-    check_alpha_value<std::complex<float>>(alpha, queue);
+    detail::check_alpha_value<std::complex<float>>(alpha, queue);
     break;
   case library_data_t::complex_double:
-    check_alpha_value<std::complex<double>>(alpha, queue);
+    detail::check_alpha_value<std::complex<double>>(alpha, queue);
     break;
   default:
     throw std::runtime_error("Unsupported data type.");
@@ -900,12 +900,12 @@ void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a, const void *alpha,
   oneapi::mkl::uplo uplo = matA->get_uplo().value();
   oneapi::mkl::diag diag = matA->get_diag().value();
 
-  std::uint64_t key = detail::get_type_combination_id(
+  std::uint64_t key = dpct::detail::get_type_combination_id(
       matA->get_value_type(), vecX->get_value_type(), vecY->get_value_type());
   switch (key) {
-  case detail::get_type_combination_id(library_data_t::real_float,
-                                       library_data_t::real_float,
-                                       library_data_t::real_float): {
+  case dpct::detail::get_type_combination_id(library_data_t::real_float,
+                                             library_data_t::real_float,
+                                             library_data_t::real_float): {
     auto data_x =
         dpct::detail::get_memory(reinterpret_cast<float *>(vecX->get_value()));
     auto data_y =
@@ -914,9 +914,9 @@ void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a, const void *alpha,
                               matA->get_matrix_handle(), data_x, data_y);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_double,
-                                       library_data_t::real_double,
-                                       library_data_t::real_double): {
+  case dpct::detail::get_type_combination_id(library_data_t::real_double,
+                                             library_data_t::real_double,
+                                             library_data_t::real_double): {
     auto data_x =
         dpct::detail::get_memory(reinterpret_cast<double *>(vecX->get_value()));
     auto data_y =
@@ -925,9 +925,9 @@ void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a, const void *alpha,
                               matA->get_matrix_handle(), data_x, data_y);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::complex_float,
-                                       library_data_t::complex_float,
-                                       library_data_t::complex_float): {
+  case dpct::detail::get_type_combination_id(library_data_t::complex_float,
+                                             library_data_t::complex_float,
+                                             library_data_t::complex_float): {
     auto data_x = dpct::detail::get_memory(
         reinterpret_cast<std::complex<float> *>(vecX->get_value()));
     auto data_y = dpct::detail::get_memory(
@@ -936,9 +936,9 @@ void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a, const void *alpha,
                               matA->get_matrix_handle(), data_x, data_y);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::complex_double,
-                                       library_data_t::complex_double,
-                                       library_data_t::complex_double): {
+  case dpct::detail::get_type_combination_id(library_data_t::complex_double,
+                                             library_data_t::complex_double,
+                                             library_data_t::complex_double): {
     auto data_x = dpct::detail::get_memory(
         reinterpret_cast<std::complex<double> *>(vecX->get_value()));
     auto data_y = dpct::detail::get_memory(
