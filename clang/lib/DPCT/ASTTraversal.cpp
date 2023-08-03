@@ -9443,6 +9443,36 @@ bool MemVarRule::currentIsHost(const VarDecl *VD, std::string VarName) {
 }
 
 void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
+  auto getRHSOfTheNonConstAssignedVar =
+      [](const DeclRefExpr *DRE) -> const Expr * {
+    auto isExpectedRHS = [](const Expr *E, DynTypedNode Current,
+                            QualType QT) -> bool {
+      return (E == Current.get<Expr>()) && QT->isPointerType() &&
+             !QT->getPointeeType().isConstQualified();
+    };
+
+    auto &Context = DpctGlobalInfo::getContext();
+    DynTypedNode Current = DynTypedNode::create(*DRE);
+    DynTypedNodeList Parents = Context.getParents(Current);
+    while (!Parents.empty()) {
+      const BinaryOperator *BO = Parents[0].get<BinaryOperator>();
+      const VarDecl *VD = Parents[0].get<VarDecl>();
+      if (BO) {
+        if (BO->isAssignmentOp() &&
+            isExpectedRHS(BO->getRHS(), Current, BO->getLHS()->getType()))
+          return BO->getRHS();
+      } else if (VD) {
+        if (VD->hasInit() &&
+            isExpectedRHS(VD->getInit(), Current, VD->getType()))
+          return VD->getInit();
+        return nullptr;
+      }
+      Current = Parents[0];
+      Parents = Context.getParents(Current);
+    }
+    return nullptr;
+  };
+
   std::string CanonicalType;
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
     if (isCubVar(MemVar)) {
@@ -9506,6 +9536,7 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
       return std::make_pair(Begin, Length);
     };
     const auto *Parent = getParentStmt(MemVarRef);
+    bool HasTypeCasted = false;
     // 1. Handle assigning a 2 or more dimensions array pointer to a variable.
     if (const auto *const ICE = dyn_cast_or_null<ImplicitCastExpr>(Parent)) {
       if (const auto *arrType = MemVarRef->getType()->getAsArrayTypeUnsafe()) {
@@ -9517,30 +9548,58 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
               new ReplaceText(Range.first, Range.second,
                               buildString("(", ICE->getType(), ")",
                                           Decl->getName(), ".get_ptr()")));
+          HasTypeCasted = true;
         }
       }
     }
-    // 2. Handle address-of operation for dim>=1.
+    // 2. Handle address-of operation.
     else if (const UnaryOperator *UO =
                  dyn_cast_or_null<UnaryOperator>(Parent)) {
       if (!Decl->hasAttr<CUDASharedAttr>() && UO->getOpcode() == UO_AddrOf) {
         CtTypeInfo TypeAnalysis(Decl, false);
-        if (TypeAnalysis.getDimension()) {
-          auto Range = GetReplRange(UO);
-          if (TypeAnalysis.getDimension() >= 2) {
-            // Dim >= 2
-            emplaceTransformation(new ReplaceText(
-                Range.first, Range.second,
-                buildString("reinterpret_cast<", UO->getType(), ">(",
-                            Decl->getName(), ".get_ptr())")));
-          } else {
-            // Dim == 1
-            emplaceTransformation(
-                new ReplaceText(Range.first, Range.second,
-                                buildString("reinterpret_cast<", UO->getType(),
-                                            ">(&", Decl->getName(), ")")));
+        auto Range = GetReplRange(UO);
+        if (TypeAnalysis.getDimension() >= 2) {
+          // Dim >= 2
+          emplaceTransformation(new ReplaceText(
+              Range.first, Range.second,
+              buildString("reinterpret_cast<", UO->getType(), ">(",
+                          Decl->getName(), ".get_ptr())")));
+          HasTypeCasted = true;
+        } else if (TypeAnalysis.getDimension() == 1) {
+          // Dim == 1
+          emplaceTransformation(
+              new ReplaceText(Range.first, Range.second,
+                              buildString("reinterpret_cast<", UO->getType(),
+                                          ">(&", Decl->getName(), ")")));
+          HasTypeCasted = true;
+        } else {
+          // Dim == 0
+          if (Decl->hasAttr<CUDAConstantAttr>() &&
+              (MemVarRef->getType()->getTypeClass() !=
+               Type::TypeClass::Elaborated)) {
+            const Expr *RHS = getRHSOfTheNonConstAssignedVar(MemVarRef);
+            if (RHS) {
+              auto Range = GetReplRange(RHS);
+              emplaceTransformation(new ReplaceText(
+                  Range.first, Range.second,
+                  buildString("const_cast<", RHS->getType(), ">(",
+                              ExprAnalysis::ref(RHS), ")")));
+              HasTypeCasted = true;
+            }
           }
         }
+      }
+    }
+    if (!HasTypeCasted && Decl->hasAttr<CUDAConstantAttr>() &&
+        (MemVarRef->getType()->getTypeClass() ==
+         Type::TypeClass::ConstantArray)) {
+      const Expr *RHS = getRHSOfTheNonConstAssignedVar(MemVarRef);
+      if (RHS) {
+        auto Range = GetReplRange(RHS);
+        emplaceTransformation(
+            new ReplaceText(Range.first, Range.second,
+                            buildString("const_cast<", RHS->getType(), ">(",
+                                        ExprAnalysis::ref(RHS), ")")));
       }
     }
     auto VD = dyn_cast<VarDecl>(MemVarRef->getDecl());
