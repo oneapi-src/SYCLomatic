@@ -1,10 +1,14 @@
-// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-12.2
-// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v12.2
+// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-11.0, cuda-11.1, cuda-11.2, cuda-11.3
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v11.0, v11.1, v11.2, v11.3
 // RUN: dpct --sycl-named-lambda --format-range=none --usm-level=none -out-root %T/thrust_detail_namespace -in-root=%S %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17 -fsized-deallocation
 // RUN: FileCheck --input-file %T/thrust_detail_namespace/thrust_detail_namespace.dp.cpp --match-full-lines %s
 
 #include <iostream>
 #include <thrust/detail/type_traits.h>
+#include <thrust/detail/allocator/allocator_traits.h>
+#include <thrust/iterator/iterator_traits.h>
+#include <thrust/device_vector.h>
+
 
 // CHECK:template <typename T>
 // CHECK-NEXT:typename std::enable_if<std::is_integral<T>::value, void>::type
@@ -79,6 +83,13 @@ void checkTypes() {
   }
 }
 
+// CHECK:template <class ExampleVector, typename NewType, typename new_alloc> struct vector_like {
+// CHECK-NEXT:  typedef dpct::device_vector<NewType, new_alloc> type;
+// CHECK-NEXT:};
+template <class ExampleVector, typename NewType, typename new_alloc> struct vector_like {
+  typedef thrust::detail::vector_base<NewType, new_alloc> type;
+};
+
 void foo() {
   int integer_val = 42;
   float float_val = 3.14f;
@@ -87,4 +98,11 @@ void foo() {
   print_info(integer_val); // Output: Integral value: 42
   print_info(float_val);   // Output: Floating-point value: 3.14
   print_info(double_val);  // Output: Floating-point value: 2.71828
+
+  // CHECK:  dpct::device_vector<int> Array1(7);
+  // CHECK-NEXT:  dpct::device_vector<int> Array2(7);
+  // CHECK-NEXT:  bool t = oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), Array1.begin(), Array1.end(), Array2.begin());
+  thrust::device_vector<int> Array1(7);
+  thrust::device_vector<int> Array2(7);
+  bool t = thrust::detail::vector_equal(Array1.begin(), Array1.end(), Array2.begin());
 }
