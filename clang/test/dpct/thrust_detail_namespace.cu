@@ -62,6 +62,23 @@ void test_aligned_storage_instantiation() {
   typedef thrust::detail::integral_constant<bool, false> ValidAlign;
 }
 
+// CHECK:template <typename T, typename U>
+// CHECK-NEXT:void checkTypes() {
+// CHECK-NEXT:  if (std::is_same<T, U>::value) {
+// CHECK-NEXT:    std::cout << "Types T and U are the same." << std::endl;
+// CHECK-NEXT:  } else {
+// CHECK-NEXT:    std::cout << "Types T and U are different." << std::endl;
+// CHECK-NEXT:  }
+// CHECK-NEXT:}
+template <typename T, typename U>
+void checkTypes() {
+  if (thrust::detail::is_same<T, U>::value) {
+    std::cout << "Types T and U are the same." << std::endl;
+  } else {
+    std::cout << "Types T and U are different." << std::endl;
+  }
+}
+
 void foo() {
   int integer_val = 42;
   float float_val = 3.14f;

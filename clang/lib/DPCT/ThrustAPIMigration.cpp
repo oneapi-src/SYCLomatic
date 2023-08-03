@@ -222,7 +222,7 @@ void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                       "thrust::modulus", "thrust::greater", "thrust::identity",
                       "thrust::null_type", "thrust::detail::enable_if",
                       "thrust::detail::true_type", "thrust::detail::false_type",
-                      "thrust::detail::integral_constant");
+                      "thrust::detail::integral_constant","thrust::detail::is_same");
   };
   MF.addMatcher(
       typeLoc(loc(qualType(hasDeclaration(namedDecl(ThrustTypeHasNames())))))
@@ -263,9 +263,36 @@ void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 void ThrustTypeRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto TL = getNodeAsType<TypeLoc>(Result, "thrustTypeLoc")) {
+
+    printf("#### getType [%s]\n", TL->getType().getAsString().c_str());
+    printf("### line [%s]\n",
+           TL->getBeginLoc()
+               .printToString(dpct::DpctGlobalInfo::getSourceManager())
+               .data());
+
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  clang::DynTypedNodeList Parents = Context.getParents(*TL);
+  while (!Parents.empty()) {
+
+    auto &Cur = Parents[0];
+
+    if (Cur.get<clang::TranslationUnitDecl>()) {
+      break;
+    }
+
+    Cur.dump(llvm::outs(), Context);
+
+    Parents = Context.getParents(Cur);
+  }
+
+
+
     ExprAnalysis EA;
     auto DNTL = DpctGlobalInfo::findAncestor<DependentNameTypeLoc>(TL);
-    if (DNTL) {
+    auto NNSL = DpctGlobalInfo::findAncestor<NestedNameSpecifierLoc>(TL);
+    if(NNSL) {
+      EA.analyze(*TL, *NNSL);
+    } else if (DNTL) {
       EA.analyze(*TL, *DNTL);
     } else {
       EA.analyze(*TL);

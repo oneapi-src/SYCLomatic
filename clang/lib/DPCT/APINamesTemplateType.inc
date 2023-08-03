@@ -114,6 +114,10 @@ TYPE_REWRITE_ENTRY("thrust::detail::enable_if",
                     TYPE_FACTORY(STR("std::enable_if"),
                                 TEMPLATE_ARG(0),  TEMPLATE_ARG(1)))
 
+TYPE_REWRITE_ENTRY("thrust::detail::is_same",
+                    TYPE_FACTORY(STR("std::is_same"),
+                                TEMPLATE_ARG(0),  TEMPLATE_ARG(1)))
+
 TYPE_REWRITE_ENTRY("thrust::detail::integral_constant",
                     TYPE_FACTORY(STR("std::integral_constant"),
                                 TEMPLATE_ARG(0),  TEMPLATE_ARG(1)))
