@@ -733,8 +733,8 @@ inline int calculate_max_potential_wg(int *num_wg, int *wg_size,
                                       int slm_size = 0, int sg_size = 32,
                                       bool used_barrier = false,
                                       bool used_large_grf = false) {
-  size_t max_wg_size = dpct::get_current_device()
-                           .get_info<sycl::info::device::max_work_group_size>();
+  sycl::device &dev = dpct::get_current_device();
+  size_t max_wg_size = dev.get_info<sycl::info::device::max_work_group_size>();
   if (max_ws_size_for_device_code == 0 ||
       max_ws_size_for_device_code >= max_wg_size)
     *wg_size = (int)max_wg_size;
@@ -742,6 +742,14 @@ inline int calculate_max_potential_wg(int *num_wg, int *wg_size,
     *wg_size = max_ws_size_for_device_code;
   calculate_max_active_wg_per_xecore(num_wg, *wg_size, slm_size, sg_size,
                                      used_barrier, used_large_grf);
+  std::uint32_t num_ss = 1;
+  if (dev.has(sycl::aspect::ext_intel_gpu_slices) &&
+      dev.has(sycl::aspect::ext_intel_gpu_subslices_per_slice)) {
+    num_ss =
+        dev.get_info<sycl::ext::intel::info::device::gpu_slices>() *
+        dev.get_info<sycl::ext::intel::info::device::gpu_subslices_per_slice>();
+  }
+  num_wg[0] = num_ss * num_wg[0];
   return 0;
 }
 } // namespace experimental
