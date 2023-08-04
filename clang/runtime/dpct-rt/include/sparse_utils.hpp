@@ -777,6 +777,19 @@ void spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
                   trans_a, oneapi::mkl::sparse::matrix_view_descr::general,
                   trans_b, oneapi::mkl::sparse::matrix_view_descr::general);
   if (externalBuffer) {
+#ifdef DPCT_USM_LEVEL_NONE
+    sycl::buffer<std::uint8_t> extBuf =
+        dpct::get_buffer<std::uint8_t>(externalBuffer);
+    sycl::buffer<std::int64_t, 1> bufSizeBuf(sycl::range<1>(1));
+    auto bufSizeBuf_acc = bufSizeBuf.get_host_access(sycl::write_only);
+    bufSizeBuf_acc[0] = static_cast<std::int64_t>(*bufferSize);
+    oneapi::mkl::sparse::matmat(
+        queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
+        matC->get_matrix_handle(),
+        oneapi::mkl::sparse::matmat_request::work_estimation, spgemmDescr,
+        &bufSizeBuf, &extBuf);
+    queue.wait();
+#else
     std::int64_t *bufSize = sycl::malloc_host<std::int64_t>(1, queue);
     *bufSize = static_cast<std::int64_t>(*bufferSize);
     sycl::event e = oneapi::mkl::sparse::matmat(
@@ -785,7 +798,21 @@ void spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
         oneapi::mkl::sparse::matmat_request::work_estimation, spgemmDescr,
         bufSize, externalBuffer, {});
     async_dpct_free({bufSize}, {e}, queue);
+#endif
   } else {
+#ifdef DPCT_USM_LEVEL_NONE
+    std::int64_t bufSizeValue = 0;
+    {
+      sycl::buffer<std::int64_t, 1> bufSizeBuf(&bufSizeValue,
+                                               sycl::range<1>(1));
+      oneapi::mkl::sparse::matmat(
+          queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
+          matC->get_matrix_handle(),
+          oneapi::mkl::sparse::matmat_request::get_work_estimation_buf_size,
+          spgemmDescr, &bufSizeBuf, nullptr);
+    }
+    *bufferSize = static_cast<size_t>(bufSizeValue);
+#else
     std::int64_t *bufSize = sycl::malloc_host<std::int64_t>(1, queue);
     oneapi::mkl::sparse::matmat(
         queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
@@ -795,6 +822,7 @@ void spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
     queue.wait();
     *bufferSize = static_cast<size_t>(*bufSize);
     sycl::free(bufSize, queue);
+#endif
   }
 }
 
@@ -808,6 +836,27 @@ void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
                   trans_a, oneapi::mkl::sparse::matrix_view_descr::general,
                   trans_b, oneapi::mkl::sparse::matrix_view_descr::general);
   if (externalBuffer) {
+#ifdef DPCT_USM_LEVEL_NONE
+    sycl::buffer<std::uint8_t> extBuf =
+        dpct::get_buffer<std::uint8_t>(externalBuffer);
+    sycl::buffer<std::int64_t, 1> bufSizeBuf(sycl::range<1>(1));
+    auto bufSizeBuf_acc = bufSizeBuf.get_host_access(sycl::write_only);
+    bufSizeBuf_acc[0] = static_cast<std::int64_t>(*bufferSize);
+    oneapi::mkl::sparse::matmat(
+        queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
+        matC->get_matrix_handle(), oneapi::mkl::sparse::matmat_request::compute,
+        spgemmDescr, &bufSizeBuf, &extBuf);
+    std::int64_t nnzValue = 0;
+    {
+      sycl::buffer<std::int64_t, 1> nnzBuf(&nnzValue, sycl::range<1>(1));
+      oneapi::mkl::sparse::matmat(queue, matA->get_matrix_handle(),
+                                  matB->get_matrix_handle(),
+                                  matC->get_matrix_handle(),
+                                  oneapi::mkl::sparse::matmat_request::get_nnz,
+                                  spgemmDescr, &nnzBuf, nullptr);
+    }
+    matC->set_nnz(nnzValue);
+#else
     std::int64_t *bufSize = sycl::malloc_host<std::int64_t>(1, queue);
     *bufSize = static_cast<std::int64_t>(*bufferSize);
     oneapi::mkl::sparse::matmat(
@@ -822,7 +871,21 @@ void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
     queue.wait();
     matC->set_nnz(*c_nnz);
     sycl::free(bufSize, queue);
+#endif
   } else {
+#ifdef DPCT_USM_LEVEL_NONE
+    std::int64_t bufSizeValue = 0;
+    {
+      sycl::buffer<std::int64_t, 1> bufSizeBuf(&bufSizeValue,
+                                               sycl::range<1>(1));
+      oneapi::mkl::sparse::matmat(
+          queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
+          matC->get_matrix_handle(),
+          oneapi::mkl::sparse::matmat_request::get_compute_buf_size,
+          spgemmDescr, &bufSizeBuf, nullptr);
+    }
+    *bufferSize = static_cast<size_t>(bufSizeValue);
+#else
     std::int64_t *bufSize = sycl::malloc_host<std::int64_t>(1, queue);
     oneapi::mkl::sparse::matmat(
         queue, matA->get_matrix_handle(), matB->get_matrix_handle(),
@@ -832,6 +895,7 @@ void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
     queue.wait();
     *bufferSize = static_cast<size_t>(*bufSize);
     sycl::free(bufSize, queue);
+#endif
   }
 }
 
