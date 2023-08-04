@@ -7,21 +7,12 @@
 #include <cooperative_groups/reduce.h>
 
 namespace cg = cooperative_groups;
-// CHECK:  /*
-// CHECK-NEXT:  DPCT1082:{{[0-9]+}}: Migration of cg::thread_group type is not supported.
-// CHECK-NEXT:  */
 __device__ void testThreadGroup(cg::thread_group g) {
-  // CHECK:  /*
-  // CHECK-NEXT:  DPCT1007:{{[0-9]+}}: Migration of cooperative_groups::thread_group::thread_rank is not supported.
-  // CHECK-NEXT:  */
+  // CHECK:  g.get_local_linear_id();
   g.thread_rank();
-  // CHECK:  /*
-  // CHECK-NEXT:  DPCT1007:{{[0-9]+}}: Migration of cooperative_groups::thread_group::sync is not supported.
-  // CHECK-NEXT:  */
+  // CHECK:  g.barrier();
   g.sync();
-  // CHECK:  /*
-  // CHECK-NEXT:  DPCT1007:{{[0-9]+}}: Migration of cooperative_groups::thread_group::size is not supported.
-  // CHECK-NEXT:  */
+  // CHECK:  g.get_local_linear_range();
   g.size();
 }
 

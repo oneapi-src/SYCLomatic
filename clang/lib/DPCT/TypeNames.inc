@@ -137,7 +137,7 @@ ENTRY_TYPE(nvmlBlacklistDeviceInfo_t, false, NO_FLAG, P4, "comment")
 // cooperative groups
 ENTRY_TYPE(cooperative_groups::__v1::experimental::block_tile_memory, false, NO_FLAG, P4, "comment")
 ENTRY_TYPE(cooperative_groups::__v1::block_tile_memory, true, NO_FLAG, P4, "Successful")
-ENTRY_TYPE(cooperative_groups::__v1::thread_group, false, NO_FLAG, P4, "comment")
+ENTRY_TYPE(cooperative_groups::__v1::thread_group, true, NO_FLAG, P4, "Successful")
 ENTRY_TYPE(cooperative_groups::__v1::cluster_group, false, NO_FLAG, P4, "comment")
 ENTRY_TYPE(cooperative_groups::__v1::gird_group, true, NO_FLAG, P4, "Successful")
 ENTRY_TYPE(cooperative_groups::__v1::multi_grid_group, false, NO_FLAG, P4, "comment")
