@@ -766,13 +766,13 @@ inline void spmm(sycl::queue queue, oneapi::mkl::transpose trans_a,
   }
 }
 
-void spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
-                            oneapi::mkl::transpose trans_b, const void *alpha,
-                            sparse_matrix_desc_t matA,
-                            sparse_matrix_desc_t matB, const void *beta,
-                            sparse_matrix_desc_t matC,
-                            oneapi::mkl::sparse::matmat_descr_t spgemmDescr,
-                            size_t *bufferSize, void *externalBuffer) {
+inline void
+spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
+                       oneapi::mkl::transpose trans_b, const void *alpha,
+                       sparse_matrix_desc_t matA, sparse_matrix_desc_t matB,
+                       const void *beta, sparse_matrix_desc_t matC,
+                       oneapi::mkl::sparse::matmat_descr_t spgemmDescr,
+                       size_t *bufferSize, void *externalBuffer) {
   set_matmat_data(spgemmDescr, oneapi::mkl::sparse::matrix_view_descr::general,
                   trans_a, oneapi::mkl::sparse::matrix_view_descr::general,
                   trans_b, oneapi::mkl::sparse::matrix_view_descr::general);
@@ -826,12 +826,12 @@ void spgemm_work_estimation(sycl::queue queue, oneapi::mkl::transpose trans_a,
   }
 }
 
-void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
-                    oneapi::mkl::transpose trans_b, const void *alpha,
-                    sparse_matrix_desc_t matA, sparse_matrix_desc_t matB,
-                    const void *beta, sparse_matrix_desc_t matC,
-                    oneapi::mkl::sparse::matmat_descr_t spgemmDescr,
-                    size_t *bufferSize, void *externalBuffer) {
+inline void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
+                           oneapi::mkl::transpose trans_b, const void *alpha,
+                           sparse_matrix_desc_t matA, sparse_matrix_desc_t matB,
+                           const void *beta, sparse_matrix_desc_t matC,
+                           oneapi::mkl::sparse::matmat_descr_t spgemmDescr,
+                           size_t *bufferSize, void *externalBuffer) {
   set_matmat_data(spgemmDescr, oneapi::mkl::sparse::matrix_view_descr::general,
                   trans_a, oneapi::mkl::sparse::matrix_view_descr::general,
                   trans_b, oneapi::mkl::sparse::matrix_view_descr::general);
@@ -899,11 +899,12 @@ void spgemm_compute(sycl::queue queue, oneapi::mkl::transpose trans_a,
   }
 }
 
-void spgemm_finalize(sycl::queue queue, oneapi::mkl::transpose trans_a,
-                     oneapi::mkl::transpose trans_b, const void *alpha,
-                     sparse_matrix_desc_t matA, sparse_matrix_desc_t matB,
-                     const void *beta, sparse_matrix_desc_t matC,
-                     oneapi::mkl::sparse::matmat_descr_t spgemmDescr) {
+inline void spgemm_finalize(sycl::queue queue, oneapi::mkl::transpose trans_a,
+                            oneapi::mkl::transpose trans_b, const void *alpha,
+                            sparse_matrix_desc_t matA,
+                            sparse_matrix_desc_t matB, const void *beta,
+                            sparse_matrix_desc_t matC,
+                            oneapi::mkl::sparse::matmat_descr_t spgemmDescr) {
   set_matmat_data(spgemmDescr, oneapi::mkl::sparse::matrix_view_descr::general,
                   trans_a, oneapi::mkl::sparse::matrix_view_descr::general,
                   trans_b, oneapi::mkl::sparse::matrix_view_descr::general);
@@ -916,7 +917,7 @@ void spgemm_finalize(sycl::queue queue, oneapi::mkl::transpose trans_a,
 
 namespace detail {
 template <typename T>
-void check_alpha_value(const void *alpha, sycl::queue queue) {
+inline void check_alpha_value(const void *alpha, sycl::queue queue) {
   auto alpha_value =
       dpct::detail::get_value(reinterpret_cast<const T *>(alpha), queue);
   if (alpha_value != T(1.0f)) {
@@ -926,8 +927,8 @@ void check_alpha_value(const void *alpha, sycl::queue queue) {
 }
 } // namespace detail
 
-void spsv_optimize(sycl::queue queue, oneapi::mkl::transpose trans_a,
-                   sparse_matrix_desc_t matA) {
+inline void spsv_optimize(sycl::queue queue, oneapi::mkl::transpose trans_a,
+                          sparse_matrix_desc_t matA) {
   if (!matA->get_uplo() || !matA->get_diag()) {
     throw std::runtime_error("oneapi::mkl::sparse::trsv needs uplo and diag "
                              "attributes to be specified.");
@@ -937,9 +938,11 @@ void spsv_optimize(sycl::queue queue, oneapi::mkl::transpose trans_a,
       matA->get_diag().value(), matA->get_matrix_handle());
 }
 
-void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a, const void *alpha,
-          sparse_matrix_desc_t matA, std::shared_ptr<dense_vector_desc> vecX,
-          std::shared_ptr<dense_vector_desc> vecY, library_data_t value_type) {
+inline void spsv(sycl::queue queue, oneapi::mkl::transpose trans_a,
+                 const void *alpha, sparse_matrix_desc_t matA,
+                 std::shared_ptr<dense_vector_desc> vecX,
+                 std::shared_ptr<dense_vector_desc> vecY,
+                 library_data_t value_type) {
   switch (value_type) {
   case library_data_t::real_float:
     detail::check_alpha_value<float>(alpha, queue);
