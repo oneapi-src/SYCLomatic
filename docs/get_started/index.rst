@@ -72,6 +72,10 @@ as the Clang option:
 
    dpct -- -help
 
+.. include:: /_include_files/cross_ref_links_gsg.rst
+          :start-after: refer-cmd-ref:
+          :end-before: refer-cmd-ref-end:
+
 
 Specify Files to Migrate
 ------------------------
@@ -84,30 +88,30 @@ You can optionally provide file paths for source files that should be migrated.
 The paths can be found in the compilation database. The following examples show
 ways to specify a file or directory for migration.
 
-Migrate single source file:
+* Migrate a single source file:
 
-.. code-block::
+  .. code-block::
 
-   dpct source.cpp
+     dpct source.cpp
 
-Migrate all files available in compilation database:
+* Migrate all files available in compilation database:
 
-.. code-block::
+  .. code-block::
 
-   dpct -p=<path to location of compilation database file>
+     dpct -p=<path to location of compilation database file>
 
-Migrate one file in compilation database:
+* Migrate one file in compilation database:
 
-.. code-block::
+  .. code-block::
 
-   dpct -p=<path to location of compilation database file> source.cpp
+     dpct -p=<path to location of compilation database file> source.cpp
 
-Migrate source files in the directory specified by the ``--in-root`` option and
-place generated files in the directory specified by the ``--out-root`` option:
+* Migrate source files in the directory specified by the ``--in-root`` option and
+  place generated files in the directory specified by the ``--out-root`` option:
 
-.. code-block::
+  .. code-block::
 
-   dpct --in-root=foo --out-root=bar
+     dpct --in-root=foo --out-root=bar
 
 
 Understand Emitted Warnings

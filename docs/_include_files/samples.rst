@@ -1,4 +1,4 @@
-For migration instructions, refer to the README file in each sample.
+Each sample README provides detailed instructions for how to migrate the sample code.
 
 .. list-table::
    :widths: 30 70

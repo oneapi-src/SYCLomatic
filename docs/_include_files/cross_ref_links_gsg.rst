@@ -16,3 +16,9 @@ For more complex sample instructions, refer to the
 of the |tool_name| Developer Guide and Reference.
 
 .. _refer-migrate-proj-end:
+
+.. _refer-cmd-ref:
+
+For a complete list of command-line options, refer to the :ref:`cmd_opt_ref`.
+
+.. _refer-cmd-ref-end:
