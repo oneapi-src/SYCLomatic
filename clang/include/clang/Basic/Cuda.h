@@ -9,6 +9,10 @@
 #ifndef LLVM_CLANG_BASIC_CUDA_H
 #define LLVM_CLANG_BASIC_CUDA_H
 
+#ifdef SYCLomatic_CUSTOMIZATION
+#include <string>
+#endif // SYCLomatic_CUSTOMIZATION
+
 namespace llvm {
 class StringRef;
 class Twine;
@@ -53,7 +57,7 @@ enum class CudaVersion {
 };
 const char *CudaVersionToString(CudaVersion V);
 #ifdef SYCLomatic_CUSTOMIZATION
-unsigned int CudaVersionToValue(CudaVersion V);
+std::string CudaVersionToMacroDefStr(CudaVersion V);
 #endif // SYCLomatic_CUSTOMIZATION
 // Input is "Major.Minor"
 CudaVersion CudaStringToVersion(const llvm::Twine &S);

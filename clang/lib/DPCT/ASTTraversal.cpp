@@ -36,6 +36,7 @@
 #include "clang/Analysis/AnalysisDeclContext.h"
 #include "clang/Analysis/CallGraph.h"
 #include "clang/Basic/CharInfo.h"
+#include "clang/Basic/Cuda.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/SCCIterator.h"
 #include "llvm/ADT/StringSet.h"
@@ -55,12 +56,6 @@ using namespace clang;
 using namespace clang::ast_matchers;
 using namespace clang::dpct;
 using namespace clang::tooling;
-
-namespace clang {
-extern bool ProcessingCudaRTVersionMacro;
-extern std::vector<std::pair<SourceRange /*range*/, bool /*evaluated value*/>>
-    ReplaceInfo;
-} // namespace clang
 
 extern std::string CudaPath;
 extern std::string DpctInstallPath; // Installation directory for this tool
@@ -192,6 +187,13 @@ bool IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
     if (MacroName == "__CUDACC__" &&
         !MacroNameTok.getIdentifierInfo()->hasMacroDefinition())
       return false;
+    if (MacroName == "CUDART_VERSION" || MacroName == "__CUDART_API_VERSION") {
+      auto LocInfo = DpctGlobalInfo::getLocInfo(MacroNameTok.getLocation());
+      DpctGlobalInfo::getInstance()
+          .insertFile(LocInfo.first)
+          ->setRTVersionValue(
+              clang::CudaVersionToMacroDefStr(DpctGlobalInfo::getSDKVersion()));
+    }
     TransformSet.emplace_back(Repl);
     return true;
   }
@@ -641,9 +643,8 @@ void IncludesCallbacks::Endif(SourceLocation Loc, SourceLocation IfLoc) {
     }
   }
 }
-void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange,
-                                       ConditionValueKind ConditionValue,
-                                       IfType IT, SourceLocation IfLoc,
+void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
+                                       SourceLocation IfLoc,
                                        SourceLocation ElifLoc) {
   auto Begin = SM.getExpansionLoc(ConditionRange.getBegin());
   auto End = SM.getExpansionLoc(ConditionRange.getEnd());
@@ -734,46 +735,6 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange,
           DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
         insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
         requestFeature(HelperFeatureEnum::device_ext);
-      } else if (MacroName == "CUDART_VERSION" && DpctGlobalInfo::getInstance()
-                                                      .getContext()
-                                                      .getLangOpts()
-                                                      .CUDA) {
-        bool EnableBlock = false;
-        if (ProcessingCudaRTVersionMacro) {
-          EnableBlock = ConditionValue == ConditionValueKind::CVK_True;
-          SourceLocation NewEnd = ConditionRange.getEnd().getLocWithOffset(
-              Lexer::MeasureTokenLength(
-                  ConditionRange.getEnd(), SM,
-                  DpctGlobalInfo::getInstance().getContext().getLangOpts()));
-          InsertRange = CharSourceRange(
-              SourceRange(ConditionRange.getBegin(), NewEnd), false);
-          if (EnableBlock) {
-            Repl = std::make_shared<ReplaceInclude>(
-                InsertRange, "(SYCL_LANGUAGE_VERSION >= 202000)");
-          } else {
-            Repl = std::make_shared<ReplaceInclude>(
-                InsertRange, "(SYCL_LANGUAGE_VERSION < 202000)");
-          }
-        } else if (!ReplaceInfo.empty()) {
-          for (const auto &Info : ReplaceInfo) {
-            EnableBlock = Info.second;
-            SourceLocation NewEnd =
-                Info.first.getEnd().getLocWithOffset(Lexer::MeasureTokenLength(
-                    Info.first.getEnd(), SM,
-                    DpctGlobalInfo::getInstance().getContext().getLangOpts()));
-            InsertRange = CharSourceRange(
-                SourceRange(Info.first.getBegin(), NewEnd), false);
-            if (EnableBlock) {
-              Repl = std::make_shared<ReplaceInclude>(
-                  InsertRange, "(SYCL_LANGUAGE_VERSION >= 202000)");
-            } else {
-              Repl = std::make_shared<ReplaceInclude>(
-                  InsertRange, "(SYCL_LANGUAGE_VERSION < 202000)");
-            }
-          }
-          ReplaceInfo.clear();
-        }
-        TransformSet.emplace_back(Repl);
       } else if ((MacroName != "__CUDACC__" ||
                   DpctGlobalInfo::getMacroDefines().count(MacroName)) &&
                  MacroName != "__CUDA_ARCH__") {
@@ -795,7 +756,7 @@ void IncludesCallbacks::If(SourceLocation Loc, SourceRange ConditionRange,
   if (!IsInAnalysisScope) {
     return;
   }
-  ReplaceCuMacro(ConditionRange, ConditionValue, IfType::IT_If, Loc, Loc);
+  ReplaceCuMacro(ConditionRange, IfType::IT_If, Loc, Loc);
 }
 void IncludesCallbacks::Elif(SourceLocation Loc, SourceRange ConditionRange,
                              ConditionValueKind ConditionValue,
@@ -806,7 +767,7 @@ void IncludesCallbacks::Elif(SourceLocation Loc, SourceRange ConditionRange,
     return;
   }
 
-  ReplaceCuMacro(ConditionRange, ConditionValue, IfType::IT_Elif, IfLoc, Loc);
+  ReplaceCuMacro(ConditionRange, IfType::IT_Elif, IfLoc, Loc);
 }
 bool IncludesCallbacks::ShouldEnter(StringRef FileName, bool IsAngled) {
 #ifdef _WIN32
@@ -9483,6 +9444,36 @@ bool MemVarRule::currentIsHost(const VarDecl *VD, std::string VarName) {
 }
 
 void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
+  auto getRHSOfTheNonConstAssignedVar =
+      [](const DeclRefExpr *DRE) -> const Expr * {
+    auto isExpectedRHS = [](const Expr *E, DynTypedNode Current,
+                            QualType QT) -> bool {
+      return (E == Current.get<Expr>()) && QT->isPointerType() &&
+             !QT->getPointeeType().isConstQualified();
+    };
+
+    auto &Context = DpctGlobalInfo::getContext();
+    DynTypedNode Current = DynTypedNode::create(*DRE);
+    DynTypedNodeList Parents = Context.getParents(Current);
+    while (!Parents.empty()) {
+      const BinaryOperator *BO = Parents[0].get<BinaryOperator>();
+      const VarDecl *VD = Parents[0].get<VarDecl>();
+      if (BO) {
+        if (BO->isAssignmentOp() &&
+            isExpectedRHS(BO->getRHS(), Current, BO->getLHS()->getType()))
+          return BO->getRHS();
+      } else if (VD) {
+        if (VD->hasInit() &&
+            isExpectedRHS(VD->getInit(), Current, VD->getType()))
+          return VD->getInit();
+        return nullptr;
+      }
+      Current = Parents[0];
+      Parents = Context.getParents(Current);
+    }
+    return nullptr;
+  };
+
   std::string CanonicalType;
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
     if (isCubVar(MemVar)) {
@@ -9546,6 +9537,7 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
       return std::make_pair(Begin, Length);
     };
     const auto *Parent = getParentStmt(MemVarRef);
+    bool HasTypeCasted = false;
     // 1. Handle assigning a 2 or more dimensions array pointer to a variable.
     if (const auto *const ICE = dyn_cast_or_null<ImplicitCastExpr>(Parent)) {
       if (const auto *arrType = MemVarRef->getType()->getAsArrayTypeUnsafe()) {
@@ -9557,30 +9549,58 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
               new ReplaceText(Range.first, Range.second,
                               buildString("(", ICE->getType(), ")",
                                           Decl->getName(), ".get_ptr()")));
+          HasTypeCasted = true;
         }
       }
     }
-    // 2. Handle address-of operation for dim>=1.
+    // 2. Handle address-of operation.
     else if (const UnaryOperator *UO =
                  dyn_cast_or_null<UnaryOperator>(Parent)) {
       if (!Decl->hasAttr<CUDASharedAttr>() && UO->getOpcode() == UO_AddrOf) {
         CtTypeInfo TypeAnalysis(Decl, false);
-        if (TypeAnalysis.getDimension()) {
-          auto Range = GetReplRange(UO);
-          if (TypeAnalysis.getDimension() >= 2) {
-            // Dim >= 2
-            emplaceTransformation(new ReplaceText(
-                Range.first, Range.second,
-                buildString("reinterpret_cast<", UO->getType(), ">(",
-                            Decl->getName(), ".get_ptr())")));
-          } else {
-            // Dim == 1
-            emplaceTransformation(
-                new ReplaceText(Range.first, Range.second,
-                                buildString("reinterpret_cast<", UO->getType(),
-                                            ">(&", Decl->getName(), ")")));
+        auto Range = GetReplRange(UO);
+        if (TypeAnalysis.getDimension() >= 2) {
+          // Dim >= 2
+          emplaceTransformation(new ReplaceText(
+              Range.first, Range.second,
+              buildString("reinterpret_cast<", UO->getType(), ">(",
+                          Decl->getName(), ".get_ptr())")));
+          HasTypeCasted = true;
+        } else if (TypeAnalysis.getDimension() == 1) {
+          // Dim == 1
+          emplaceTransformation(
+              new ReplaceText(Range.first, Range.second,
+                              buildString("reinterpret_cast<", UO->getType(),
+                                          ">(&", Decl->getName(), ")")));
+          HasTypeCasted = true;
+        } else {
+          // Dim == 0
+          if (Decl->hasAttr<CUDAConstantAttr>() &&
+              (MemVarRef->getType()->getTypeClass() !=
+               Type::TypeClass::Elaborated)) {
+            const Expr *RHS = getRHSOfTheNonConstAssignedVar(MemVarRef);
+            if (RHS) {
+              auto Range = GetReplRange(RHS);
+              emplaceTransformation(new ReplaceText(
+                  Range.first, Range.second,
+                  buildString("const_cast<", RHS->getType(), ">(",
+                              ExprAnalysis::ref(RHS), ")")));
+              HasTypeCasted = true;
+            }
           }
         }
+      }
+    }
+    if (!HasTypeCasted && Decl->hasAttr<CUDAConstantAttr>() &&
+        (MemVarRef->getType()->getTypeClass() ==
+         Type::TypeClass::ConstantArray)) {
+      const Expr *RHS = getRHSOfTheNonConstAssignedVar(MemVarRef);
+      if (RHS) {
+        auto Range = GetReplRange(RHS);
+        emplaceTransformation(
+            new ReplaceText(Range.first, Range.second,
+                            buildString("const_cast<", RHS->getType(), ">(",
+                                        ExprAnalysis::ref(RHS), ")")));
       }
     }
     auto VD = dyn_cast<VarDecl>(MemVarRef->getDecl());
@@ -12888,15 +12908,16 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
                     .bind("texMember"),
                 this);
   MF.addMatcher(
-      typeLoc(loc(qualType(hasDeclaration(namedDecl(hasAnyName(
-                  "cudaChannelFormatDesc", "cudaChannelFormatKind",
-                  "cudaTextureDesc", "cudaResourceDesc", "cudaResourceType",
-                  "cudaTextureAddressMode", "cudaTextureFilterMode",
-                  "cudaArray", "cudaArray_t", "CUarray_st", "CUarray",
-                  "CUarray_format", "CUarray_format_enum", "CUdeviceptr",
-                  "CUresourcetype", "CUresourcetype_enum", "CUaddress_mode",
-                  "CUaddress_mode_enum", "CUfilter_mode", "CUfilter_mode_enum",
-                  "CUDA_RESOURCE_DESC", "CUDA_TEXTURE_DESC", "CUtexref"))))))
+      typeLoc(
+          loc(qualType(hasDeclaration(namedDecl(hasAnyName(
+              "cudaChannelFormatDesc", "cudaChannelFormatKind",
+              "cudaTextureDesc", "cudaResourceDesc", "cudaResourceType",
+              "cudaTextureAddressMode", "cudaTextureFilterMode", "cudaArray",
+              "cudaArray_t", "CUarray_st", "CUarray", "CUarray_format",
+              "CUarray_format_enum", "CUdeviceptr", "CUresourcetype",
+              "CUresourcetype_enum", "CUaddress_mode", "CUaddress_mode_enum",
+              "CUfilter_mode", "CUfilter_mode_enum", "CUDA_RESOURCE_DESC",
+              "CUDA_TEXTURE_DESC", "CUtexref", "textureReference"))))))
           .bind("texType"),
       this);
 
