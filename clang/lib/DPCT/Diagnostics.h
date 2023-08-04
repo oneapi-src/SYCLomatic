@@ -121,8 +121,6 @@ static inline std::string getMessagePrefix(int ID) {
 template <typename... Ts>
 void reportWarning(SourceLocation SL, const DiagnosticsMessage &Msg,
                    DiagnosticsEngine &Engine, Ts &&...Vals) {
-  if (DpctGlobalInfo::isQueryAPIMapping())
-    return;
   std::string Message = getMessagePrefix(Msg.ID) + Msg.Msg;
   if (OutputVerbosity != OutputVerbosityLevel::OVL_Silent) {
     unsigned ID = Engine.getDiagnosticIDs()->getCustomDiagID(
@@ -292,6 +290,8 @@ bool report(const std::string &FileAbsPath, unsigned int Offset, IDTy MsgID,
 template <typename IDTy, typename... Ts>
 inline bool report(SourceLocation SL, IDTy MsgID,
             TransformSetTy *TS, bool UseTextBegin, Ts &&... Vals) {
+  if (DpctGlobalInfo::isQueryAPIMapping())
+    return true;
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   if (SL.isMacroID() && !SM.isMacroArgExpansion(SL)) {
     auto ItMatch = dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().find(

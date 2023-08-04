@@ -6,9 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm/Support/raw_ostream.h"
-
 #include "QueryAPIMapping.h"
+#include "llvm/Support/raw_ostream.h"
 
 namespace clang {
 namespace dpct {

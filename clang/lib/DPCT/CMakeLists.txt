@@ -79,7 +79,7 @@ add_custom_target(dpct_helper_headers_and_inc
 
 # Handle API mapping cases header
 set(API_MAPPING_REGISTER_FOLDER ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/)
-file(GLOB SRC_FILES ../../test/dpct/api_mapping_cases/*/*.cu)
+file(GLOB SRC_FILES ../../examples/DPCT/*/*.cu)
 file(WRITE ${API_MAPPING_REGISTER_FOLDER}APIMappingRegister.def "")
 foreach(FILE ${SRC_FILES})
   file(READ ${FILE} FILE_STR)

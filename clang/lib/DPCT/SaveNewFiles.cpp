@@ -17,7 +17,6 @@
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
-#include "llvm/Support/FileUtilities.h"
 #include "llvm/Support/Path.h"
 #include <algorithm>
 
@@ -31,9 +30,7 @@
 
 #include "Utility.h"
 #include "llvm/Support/raw_os_ostream.h"
-#include "llvm/Support/raw_ostream.h"
 #include <cassert>
-#include <cstdio>
 #include <fstream>
 using namespace clang::dpct;
 using namespace llvm;
@@ -460,17 +457,26 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         continue;
       }
 
-      if (!DpctGlobalInfo::isQueryAPIMapping()) {
-        std::error_code EC;
-        EC = fs::create_directories(path::parent_path(OutPath));
-        if ((bool)EC) {
-          std::string ErrMsg =
-              "[ERROR] Create file : " + std::string(OutPath.str()) +
-              " fail: " + EC.message() + "\n";
-          status = MigrationSaveOutFail;
-          PrintMsg(ErrMsg);
-          return status;
-        }
+      std::error_code EC;
+      EC = fs::create_directories(path::parent_path(OutPath));
+      if ((bool)EC) {
+        std::string ErrMsg =
+            "[ERROR] Create file : " + std::string(OutPath.str()) +
+            " fail: " + EC.message() + "\n";
+        status = MigrationSaveOutFail;
+        PrintMsg(ErrMsg);
+        return status;
+      }
+      // std::ios::binary prevents ofstream::operator<< from converting \n to
+      // \r\n on windows.
+      std::ofstream File(OutPath.str().str(), std::ios::binary);
+      llvm::raw_os_ostream Stream(File);
+      if (!File) {
+        std::string ErrMsg =
+            "[ERROR] Create file: " + std::string(OutPath.str()) + " fail.\n";
+        PrintMsg(ErrMsg);
+        status = MigrationSaveOutFail;
+        return status;
       }
 
       // For header file, as it can be included from different file, it needs
@@ -524,46 +530,6 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
           std::make_pair(OutPath.str().str(), BlockLevelFormatRanges));
 
       tooling::applyAllReplacements(Entry.second, Rewrite);
-
-      if (DpctGlobalInfo::isQueryAPIMapping()) {
-        static auto GetFuncBodyStr = [](const std::string &S) {
-          static const std::string StartStr{") {"};
-          static const std::string EndStr{";"};
-          const auto StartPos = S.find(StartStr) + StartStr.length();
-          const auto EndPos = S.find_last_of(EndStr) + 1;
-          return std::string(S, StartPos, EndPos - StartPos);
-        };
-        std::ifstream Inputfile;
-        Inputfile.open(
-            Tool.getFiles().getFile(Entry.first).get()->getName().str());
-        std::stringstream InputStream;
-        InputStream << Inputfile.rdbuf();
-        llvm::outs() << "CUDA API:" << GetFuncBodyStr(InputStream.str())
-                     << "\n";
-
-        std::ostringstream OS;
-        llvm::raw_os_ostream Stream(OS);
-        Rewrite
-            .getEditBuffer(Sources.getOrCreateFileID(
-                Tool.getFiles().getFile(Entry.first).get(),
-                clang::SrcMgr::C_User /*normal user code*/))
-            .write(Stream);
-        Stream.flush();
-        llvm::outs() << "Is migrated to:" << GetFuncBodyStr(OS.str());
-        sys::fs::remove(Entry.first.c_str());
-        return status; // Must be only 1 file.
-      }
-      // std::ios::binary prevents ofstream::operator<< from converting \n to
-      // \r\n on windows.
-      std::ofstream File(OutPath.str().str(), std::ios::binary);
-      llvm::raw_os_ostream Stream(File);
-      if (!File) {
-        std::string ErrMsg =
-            "[ERROR] Create file: " + std::string(OutPath.str()) + " fail.\n";
-        PrintMsg(ErrMsg);
-        status = MigrationSaveOutFail;
-        return status;
-      }
       Rewrite
           .getEditBuffer(Sources.getOrCreateFileID(
               Tool.getFiles().getFile(Entry.first).get(),

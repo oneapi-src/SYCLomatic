@@ -36,6 +36,7 @@
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Refactoring.h"
 #include "clang/Tooling/Tooling.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/Path.h"
@@ -543,6 +544,14 @@ void parseFormatStyle() {
   DpctGlobalInfo::setCodeFormatStyle(Style);
 }
 
+std::string getApiMappingStr(StringRef S) {
+  static const std::string StartStr{"// Start"};
+  static const std::string EndStr{"// End"};
+  const auto StartPos = S.find(StartStr) + StartStr.length();
+  const auto EndPos = S.find_last_of('\n', S.find(EndStr));
+  return std::string(S, StartPos, EndPos - StartPos + 1);
+}
+
 int runDPCT(int argc, const char **argv) {
 
   if (argc < 2) {
@@ -738,6 +747,7 @@ int runDPCT(int argc, const char **argv) {
       llvm::outs() << "The API Mapping is not available\n";
       dpctExit(MigrationSucceeded);
     }
+    llvm::outs() << "CUDA API:" << getApiMappingStr(SourceCode);
     int FD;
     SmallString<64> TempFile;
     if (auto EC =
@@ -749,6 +759,7 @@ int runDPCT(int argc, const char **argv) {
     SmallString<64> TempPath;
     llvm::sys::path::system_temp_directory(true, TempPath);
     InRoot = TempPath.str().str();
+    OutRoot = TempPath.str().str();
     DpctGlobalInfo::setIsQueryAPIMapping(true);
     SourcePathList = {TempFile.str().str()};
   } else {
@@ -775,11 +786,9 @@ int runDPCT(int argc, const char **argv) {
   ValidateInputDirectory(Tool, InRoot);
 
   IsUsingDefaultOutRoot = OutRoot.empty();
-  if (!DpctGlobalInfo::isQueryAPIMapping()) {
-    if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
-      ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
-      dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
-    }
+  if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
+    ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
+    dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
   }
   dpct::DpctGlobalInfo::setOutRoot(OutRoot);
 
@@ -874,6 +883,7 @@ int runDPCT(int argc, const char **argv) {
         1 << static_cast<unsigned>(
             DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath));
     DpctGlobalInfo::setIsIncMigration(false);
+    SuppressWarningsAllFlag = true;
   }
 
   if (ExcludePathList.getNumOccurrences()) {
@@ -1052,6 +1062,27 @@ int runDPCT(int argc, const char **argv) {
 
     Action.runPasses();
   } while (DpctGlobalInfo::isNeedRunAgain());
+
+  if (DpctGlobalInfo::isQueryAPIMapping()) {
+    DiagnosticsEngine Diagnostics(
+        IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()),
+        IntrusiveRefCntPtr<DiagnosticOptions>(new DiagnosticOptions()));
+    SourceManager Sources(Diagnostics, Tool.getFiles());
+    LangOptions DefaultLangOptions;
+    Rewriter Rewrite(Sources, DefaultLangOptions);
+    // Must be only 1 file.
+    tooling::applyAllReplacements(Tool.getReplacements().begin()->second,
+                                  Rewrite);
+    std::ostringstream OS;
+    const auto &RewriteBuffer = Rewrite.buffer_begin()->second;
+    for (auto I = RewriteBuffer.begin(), E = RewriteBuffer.end(); I != E;
+         I.MoveToNextPiece())
+      OS << I.piece().str();
+    llvm::outs() << "Is migrated to (with some neccessary option):"
+                 << getApiMappingStr(OS.str());
+    llvm::sys::fs::remove(SourcePathList.front().c_str());
+    return MigrationSucceeded;
+  }
 
   if (GenReport) {
     // report: apis, stats, all, diags

@@ -5,7 +5,7 @@
 // HFMA: CUDA API:
 // HFMA-NEXT:   __hfma(h1 /*__half*/, h2 /*__half*/, h3 /*__half*/);
 // HFMA-NEXT:   __hfma(b1 /*__nv_bfloat16*/, b2 /*__nv_bfloat16*/, b3 /*__nv_bfloat16*/);
-// HFMA-NEXT: Is migrated to:
+// HFMA-NEXT: Is migrated to (with some neccessary option):
 // HFMA-NEXT:   sycl::ext::intel::math::hfma(h1, h2);
 // HFMA-NEXT:   b1 * b2 + b3;
 
@@ -13,7 +13,7 @@
 // HFMA_SAT: CUDA API:
 // HFMA_SAT-NEXT:   __hfma_sat(h1 /*__half*/, h2 /*__half*/, h3 /*__half*/);
 // HFMA_SAT-NEXT:   __hfma_sat(b1 /*__nv_bfloat16*/, b2 /*__nv_bfloat16*/, b3 /*__nv_bfloat16*/);
-// HFMA_SAT-NEXT: Is migrated to:
+// HFMA_SAT-NEXT: Is migrated to (with some neccessary option):
 // HFMA_SAT-NEXT:   sycl::ext::intel::math::hfma_sat(h1, h2, h3);
 // HFMA_SAT-NEXT:   dpct::clamp(b1 * b2 + b3, 0.f, 1.0f);
 
