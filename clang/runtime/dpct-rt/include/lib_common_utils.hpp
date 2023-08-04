@@ -26,16 +26,10 @@ template <typename T> inline auto get_memory(T *x) {
 
 template <typename T>
 inline typename DataType<T>::T2 get_value(const T *s, sycl::queue &q) {
-  bool need_memcpy =
-#ifdef DPCT_USM_LEVEL_NONE
-      dpct::is_device_ptr(s);
-#else
-      sycl::get_pointer_type(s, q.get_context()) == sycl::usm::alloc::device;
-#endif
   using Ty = typename DataType<T>::T2;
   Ty s_h;
-  if (need_memcpy)
-    detail::dpct_memcpy(q, (void *)&s_h, (void *)s, sizeof(T), automatic)
+  if (get_pointer_attribute(q, s) == pointer_access_attribute::device_only)
+    detail::dpct_memcpy(q, (void *)&s_h, (void *)s, sizeof(T), device_to_host)
         .wait();
   else
     s_h = *reinterpret_cast<const Ty *>(s);
