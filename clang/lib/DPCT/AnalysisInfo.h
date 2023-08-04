@@ -3041,7 +3041,7 @@ class MemVarMap {
 public:
   MemVarMap()
       : HasItem(false), HasStream(false), HasSync(false), HasBF64(false),
-        HasBF16(false) {}
+        HasBF16(false), HasGlobalMemAcc(false) {}
   unsigned int Dim = 1;
   /// This member is only used to construct the union-find set.
   MemVarMap *Parent = this;
@@ -3050,12 +3050,14 @@ public:
   bool hasSync() const { return HasSync; }
   bool hasBF64() const { return HasBF64; }
   bool hasBF16() const { return HasBF16; }
+  bool hasGlobalMemAcc() const { return HasGlobalMemAcc; }
   bool hasExternShared() const { return !ExternVarMap.empty(); }
   inline void setItem(bool Has = true) { HasItem = Has; }
   inline void setStream(bool Has = true) { HasStream = Has; }
   inline void setSync(bool Has = true) { HasSync = Has; }
   inline void setBF64(bool Has = true) { HasBF64 = Has; }
   inline void setBF16(bool Has = true) { HasBF16 = Has; }
+  inline void setGlobalMemAcc(bool Has = true) { HasGlobalMemAcc = Has; }
   inline void addTexture(std::shared_ptr<TextureInfo> Tex) {
     TextureMap.insert(std::make_pair(Tex->getOffset(), Tex));
   }
@@ -3074,6 +3076,14 @@ public:
     setSync(hasSync() || VarMap.hasSync());
     setBF64(hasBF64() || VarMap.hasBF64());
     setBF16(hasBF16() || VarMap.hasBF16());
+    bool HasGlobalMemAcc = false;
+    for (const auto &VarInfo : VarMap.GlobalVarMap) {
+      auto Attr = VarInfo.second->getAttr();
+      if (Attr == MemVarInfo::VarAttrKind::Device ||
+          Attr == MemVarInfo::VarAttrKind::Managed)
+        HasGlobalMemAcc = true;
+    }
+    setGlobalMemAcc(hasGlobalMemAcc() || HasGlobalMemAcc);
     merge(LocalVarMap, VarMap.LocalVarMap, TemplateArgs);
     merge(GlobalVarMap, VarMap.GlobalVarMap, TemplateArgs);
     merge(ExternVarMap, VarMap.ExternVarMap, TemplateArgs);
@@ -3284,7 +3294,7 @@ private:
                                               int PreParams,
                                               int PostParams) const;
 
-  bool HasItem, HasStream, HasSync, HasBF64, HasBF16;
+  bool HasItem, HasStream, HasSync, HasBF64, HasBF16, HasGlobalMemAcc;
   MemVarInfoMap LocalVarMap;
   MemVarInfoMap GlobalVarMap;
   MemVarInfoMap ExternVarMap;
@@ -3742,6 +3752,7 @@ public:
   inline void setSync() { VarMap.setSync(); }
   inline void setBF64() { VarMap.setBF64(); }
   inline void setBF16() { VarMap.setBF16(); }
+  inline void setGlobalMemAcc() { VarMap.setGlobalMemAcc(); }
   inline void addTexture(std::shared_ptr<TextureInfo> Tex) {
     VarMap.addTexture(Tex);
   }
