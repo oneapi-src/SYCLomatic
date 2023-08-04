@@ -2726,6 +2726,12 @@ void CallFunctionExpr::buildInfo() {
     FuncInfo->setNeedSyclExternMacro();
   }
 
+  if (DpctGlobalInfo::isOptimizeMigration() && !FuncInfo->isInlined() &&
+      (DefFilePath.empty() || (DefFilePath == getFilePath() &&
+                               isIncludedFile(getFilePath(), DefFilePath)))) {
+    FuncInfo->setAlwaysInlineDevFunc();
+  }
+
   FuncInfo->buildInfo();
   VarMap.merge(FuncInfo->getVarMap(), TemplateArgs);
   mergeTextureObjectInfo();

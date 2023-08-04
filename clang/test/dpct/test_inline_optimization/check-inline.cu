@@ -8,8 +8,12 @@ __host__ __device__ int test() {
   return 5;
 }
 
-int main() {
+__global__ void kernel() {
   test();
   test1();
+}
+
+int main() {
+  kernel<<<1, 1>>>();
   return 0;
 }

@@ -3759,6 +3759,9 @@ public:
   inline bool isLambda() { return IsLambda; }
   inline void setLambda() { IsLambda = true; }
 
+  inline bool isInlined() { return IsInlined; }
+  inline void setInlined() { IsInlined = true; }
+
   inline bool isKernel() { return IsKernel; }
   inline void setKernel() { IsKernel = true; }
 
@@ -3844,6 +3847,7 @@ private:
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   std::vector<ParameterProps> ParametersProps;
   std::string FunctionName;
+  bool IsInlined = false;
   bool IsLambda;
   bool IsKernel = false;
   bool IsKernelInvoked = false;
