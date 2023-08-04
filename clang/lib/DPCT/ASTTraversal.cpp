@@ -4943,6 +4943,11 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       CallExprArguReplVec.push_back(CurrentArgumentRepl);
     }
 
+    if (FuncName == "cublasIsamax_v2" || FuncName == "cublasIdamax_v2" ||
+        FuncName == "cublasIsamin_v2" || FuncName == "cublasIdamin_v2") {
+      CallExprArguReplVec.push_back("oneapi::mkl::index_base::one");
+    }
+
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
       if (FuncName == "cublasSrotm_v2") {
         CallExprArguReplVec[6] =
@@ -5090,6 +5095,11 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       }
 
       CallExprArguReplVec.push_back(CurrentArgumentRepl);
+    }
+
+    if (FuncName == "cublasIcamax_v2" || FuncName == "cublasIzamax_v2" ||
+        FuncName == "cublasIcamin_v2" || FuncName == "cublasIzamin_v2") {
+      CallExprArguReplVec.push_back("oneapi::mkl::index_base::one");
     }
 
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
@@ -5315,6 +5325,13 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       } else {
         CallExprReplStr = CallExprReplStr + ", " + ParamsStrsVec[i];
       }
+    }
+
+    if (FuncName == "cublasIsamax" || FuncName == "cublasIdamax" ||
+        FuncName == "cublasIcamax" || FuncName == "cublasIzamax" ||
+        FuncName == "cublasIsamin" || FuncName == "cublasIdamin" ||
+        FuncName == "cublasIcamin" || FuncName == "cublasIzamin") {
+      CallExprArguReplVec.push_back("oneapi::mkl::index_base::one");
     }
 
     // All legacy APIs are synchronous
