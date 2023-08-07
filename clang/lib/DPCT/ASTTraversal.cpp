@@ -6894,7 +6894,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
   } else if (FuncName == "clock" || FuncName == "clock64") {
-    if(CE->getDirectCallee()->hasAttr<CUDAGlobalAttr>() ||
+    if (CE->getDirectCallee()->hasAttr<CUDAGlobalAttr>() ||
         CE->getDirectCallee()->hasAttr<CUDADeviceAttr>()) {
       report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED_SYCL_UNDEF, false,
              FuncName);
