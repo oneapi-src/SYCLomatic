@@ -2727,8 +2727,7 @@ void CallFunctionExpr::buildInfo() {
   }
 
   if (DpctGlobalInfo::isOptimizeMigration() && !FuncInfo->isInlined() &&
-      (DefFilePath.empty() || (DefFilePath == getFilePath() &&
-                               isIncludedFile(getFilePath(), DefFilePath)))) {
+      !FuncInfo->IsSyclExternMacroNeeded()) {
     FuncInfo->setAlwaysInlineDevFunc();
   }
 
