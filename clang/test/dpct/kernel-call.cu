@@ -27,10 +27,10 @@ blockDim.x + threadIdx.x;
 }
 
 
-//CHECK: void testKernel(int L, int M, const cl::sycl::nd_item<3> &item_ct1, int N);
+//CHECK: inline void testKernel(int L, int M, const cl::sycl::nd_item<3> &item_ct1, int N);
 __global__ void testKernel(int L, int M, int N);
 
-// CHECK: void testKernel(int L, int M, const cl::sycl::nd_item<3> &[[ITEMNAME:item_ct1]], int N = 0);
+// CHECK: inline void testKernel(int L, int M, const cl::sycl::nd_item<3> &[[ITEMNAME:item_ct1]], int N = 0);
 __global__ void testKernel(int L, int M, int N = 0);
 
 // CHECK: inline void testKernelPtr(const int *L, const int *M, int N,
@@ -518,6 +518,10 @@ __device__ void deviceFoo2(int i = 0, int j = 0){
 __global__ void callDeviceFoo(){
   deviceFoo(1,2,3,4,5,6);
   deviceFoo2(1,2);
+}
+
+int run_callDeviceFoo(){
+  callDeviceFoo<<<1,1>>>();
 }
 
 struct A{
