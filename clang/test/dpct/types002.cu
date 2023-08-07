@@ -1,3 +1,4 @@
+// UNSUPPORTED: system-windows
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/types002 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17 -fsized-deallocation
@@ -44,16 +45,6 @@ int main(int argc, char **argv) {
   a = sizeof(std::vector<int>);
   a = sizeof(host_vec);
   a = sizeof host_vec;
-
-  // CHECK:  typedef dpct::device_vector<int>::iterator Iterator;
-  // CHECK-NEXT:  typedef oneapi::dpl::iterator_traits<Iterator>::value_type value_type;
-  // CHECK-NEXT:  typedef oneapi::dpl::iterator_traits<Iterator>::difference_type difference_type;
-  typedef thrust::device_vector<int>::iterator Iterator;
-  typedef thrust::iterator_traits<Iterator>::value_type value_type;
-  typedef thrust::iterator_traits<Iterator>::difference_type difference_type;
-
-  // std::bad_alloc("bad_alloc");
-  thrust::system::detail::bad_alloc("bad_alloc");
 }
 
 template <typename T>

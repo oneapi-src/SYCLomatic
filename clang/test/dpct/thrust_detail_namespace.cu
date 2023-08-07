@@ -105,4 +105,14 @@ void foo() {
   thrust::device_vector<int> Array1(7);
   thrust::device_vector<int> Array2(7);
   bool t = thrust::detail::vector_equal(Array1.begin(), Array1.end(), Array2.begin());
+
+  // CHECK:  typedef dpct::device_vector<int>::iterator Iterator;
+  // CHECK-NEXT:  typedef oneapi::dpl::iterator_traits<Iterator>::value_type value_type;
+  // CHECK-NEXT:  typedef oneapi::dpl::iterator_traits<Iterator>::difference_type difference_type;
+  typedef thrust::device_vector<int>::iterator Iterator;
+  typedef thrust::iterator_traits<Iterator>::value_type value_type;
+  typedef thrust::iterator_traits<Iterator>::difference_type difference_type;
+
+  // std::bad_alloc("bad_alloc");
+  thrust::system::detail::bad_alloc("bad_alloc");
 }
