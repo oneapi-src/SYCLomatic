@@ -16,10 +16,28 @@ __device__ void testThreadGroup(cg::thread_group g) {
   g.size();
 }
 
-__global__ void testThreadBlock() {
+__global__ void kernelFunc() {
   auto block = cg::this_thread_block();
   // CHECK:  /*
   // CHECK-NEXT:  DPCT1007:{{[0-9]+}}:  Migration of cooperative_groups::thread_block::thread_index is not supported.
   // CHECK-NEXT:  */
   block.thread_index();
+  // CHECK:  auto threadBlockGroup = sycl::ext::oneapi::experimental::this_group<3>();
+  auto threadBlockGroup = cg::this_thread_block();
+  // CHECK:  testThreadGroup(dpct::item_group<sycl::group<3>>(threadBlockGroup, item_ct1));
+  testThreadGroup(threadBlockGroup);
+  // CHECK:  dpct::experimental::logical_group tilePartition16 = dpct::experimental::logical_group<3>(item_ct1, sycl::ext::oneapi::experimental::this_group<3>(), 16);
+  cg::thread_block_tile<16> tilePartition16 = cg::tiled_partition<16>(threadBlockGroup);
+  // CHECK:  testThreadGroup(dpct::item_group<dpct::experimental::logical_group<3>>(tilePartition16, item_ct1));
+  testThreadGroup(tilePartition16);
+  // CHECK:  sycl::sub_group tilePartition32 = sycl::ext::oneapi::experimental::this_sub_group();
+  cg::thread_block_tile<32> tilePartition32 = cg::tiled_partition<32>(threadBlockGroup);
+  // CHECK:  testThreadGroup(dpct::item_group<sycl::sub_group>(tilePartition32, item_ct1));
+  testThreadGroup(tilePartition32);
+}
+
+
+int main() {
+  kernelFunc<<<1,1>>>();
+  return 0;
 }

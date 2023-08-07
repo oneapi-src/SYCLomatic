@@ -870,7 +870,7 @@ public:
     case group_type::logical_group:
       return logical_group.get_local_linear_id();
     default:
-      throw sycl::exception(sycl::errc::runtime, "The group type is unkown, please check it. ")
+      break;
     }
   }
 
@@ -888,7 +888,7 @@ public:
       sycl::group_barrier(nd_item.get_sub_group());
       break;
     default:
-      throw sycl::exception(sycl::errc::runtime, "The group type is unkown, please check it. ");
+      break;
     }
   }
 

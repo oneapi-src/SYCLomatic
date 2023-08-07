@@ -11917,7 +11917,7 @@ void CooperativeGroupsFunctionRule::runRule(
 
     if (DREName.find("cooperative_groups::__v1::thread_block_tile<32>") !=
         std::string::npos) {
-      ReplacedStr = "sycl::sub_group" + ReplacedStr;
+      ReplacedStr = "sycl::sub_group";
     } else if (DREName == "class cooperative_groups::__v1::thread_block") {
       ReplacedStr = "sycl::group" + ReplacedStr;
     } else {
@@ -11935,10 +11935,6 @@ void CooperativeGroupsFunctionRule::runRule(
       return;
     if (Begin.isMacroID() || End.isMacroID())
       return;
-
-    ReplacedStr = MapNames::getDpctNamespace() + "item_group<" + ReplacedStr +
-                  ">(" + DR->getNameInfo().getAsString() + ", " +
-                  DpctGlobalInfo::getItem(DR) + ")";
     emplaceTransformation(
         new ReplaceText(Begin, End.getRawEncoding() - Begin.getRawEncoding(),
                         std::move(ReplacedStr)));
