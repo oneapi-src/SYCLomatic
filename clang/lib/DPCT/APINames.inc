@@ -1710,8 +1710,8 @@ ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_group, cooperative_groups::__v1
 
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block, cooperative_groups::__v1::thread_block, sync, sync, true, NO_FLAG, P4, "Comment", "NA")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block, cooperative_groups::__v1::thread_block, thread_rank, thread_rank, true, NO_FLAG, P4, "Comment", "NA")
-ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block, cooperative_groups::__v1::thread_block, group_index, group_index, false, NO_FLAG, P4, "Comment", "NA")
-ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block, cooperative_groups::__v1::thread_block, thread_index, thread_index, false, NO_FLAG, P4, "Comment", "NA")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block, cooperative_groups::__v1::thread_block, group_index, group_index, true, NO_FLAG, P4, "Successful", "NA")
+ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block, cooperative_groups::__v1::thread_block, thread_index, thread_index, true, NO_FLAG, P4, "Successful", "NA")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block, cooperative_groups::__v1::thread_block, dim_threads, dim_threads, false, NO_FLAG, P4, "Comment", "NA")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block, cooperative_groups::__v1::thread_block, num_threads, num_threads, false, NO_FLAG, P4, "Comment", "NA")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_block, cooperative_groups::__v1::thread_block, size, size, true, NO_FLAG, P4, "Successful", "NA")
