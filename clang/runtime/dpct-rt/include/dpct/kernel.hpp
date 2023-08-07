@@ -7,10 +7,8 @@
 //===----------------------------------------------------------------------===//
 
 /**
- * @file kernel.hpp
+ * @file
  * @brief Utility functions to load kernel from module
- * @version 0.1
- * @date 2023-03-18
  * 
  * @copyright Copyright (C) Intel Corporation
  * 
@@ -41,27 +39,26 @@
 
 namespace dpct {
 
-// DPCT_LABEL_BEGIN|kernel_functor|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /**
- * @brief Function pointer for wrapped kernel functions
- * @details Type define for function pointers pointing to kernel wrappers created by SYCLomatic
+ * @typedef kernel_functor
+ * @brief Type define for function pointers pointing to kernel wrappers created
+ * by SYCLomatic
  */
 typedef void (*kernel_functor)(sycl::queue &, const sycl::nd_range<3> &,
                                unsigned int, void **, void **);
 
-// DPCT_LABEL_BEGIN|kernel_function_info|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 /**
- * @brief Struct to collect kernel function information
- * @details Struct to collect kernel function information like max_work_group_size
+ * @class kernel_function_info
+ * @brief Struct to collect kernel function information like max_work_group_size
  */
 struct kernel_function_info {
   int max_work_group_size = 0;
 };
-
+/**
+ * @brief Function to get kernel_function_info from a function pointer
+ * @param[out] kernel_info The result kernel_function_info.
+ * @param[in] function The function pointer to get info from.
+ */
 static inline void get_kernel_function_info(kernel_function_info *kernel_info,
                                             const void *function) {
   kernel_info->max_work_group_size =
@@ -69,6 +66,11 @@ static inline void get_kernel_function_info(kernel_function_info *kernel_info,
           .current_device()
           .get_info<sycl::info::device::max_work_group_size>();
 }
+/**
+ * @brief Function to get kernel_function_info from a function pointer
+ * @param [in] function The function pointer to get info from.
+ * @return kernel_function_info of function pointer.
+ */
 static inline kernel_function_info
 get_kernel_function_info(const void *function) {
   kernel_function_info kernel_info;
@@ -88,23 +90,9 @@ namespace fs = std::filesystem;
 namespace fs = std::experimental::filesystem;
 #endif
 
-/** 
- * @defgroup file_io
- * 
- * @brief read/write module from/to files
- * 
- * - Sample code
- * @code
- * write_data_to_file(...)
- * 
- * @endcode
- * 
- * @{
- */
-
 /**
- * @brief Write a module from buffer to a file
- * @details Write data to temporary file and return absolute path to temporary file.
+ * @brief Function to write a module from buffer to a file
+ * @details Write data to temporary file and return absolute path to the temporary file.
  * Temporary file is created in a temporary directory both of which have random
  * names with only the user having access permissions.  Only one temporary file
  * will be created in the temporary directory.
@@ -206,7 +194,9 @@ static inline fs::path write_data_to_file(char const *const data, size_t size) {
   return filepath;
 }
 /**
- * @brief extract16
+ * @brief Function to extract a uint16_t from char[2] (little-endian)
+ * @param[in] ptr The input char[2].
+ * @return The result uint16_t.
  */
 static inline uint16_t extract16(unsigned char const *const ptr) {
   uint16_t ret = 0;
@@ -217,7 +207,9 @@ static inline uint16_t extract16(unsigned char const *const ptr) {
   return (ret);
 }
 /**
- * @brief extract32
+ * @brief Function to extract a uint32_t from char[4] (little-endian)
+ * @param[in] ptr The input char[4].
+ * @return The result uint32_t.
  */
 static inline uint32_t extract32(unsigned char const *const ptr) {
   uint32_t ret = 0;
@@ -230,7 +222,9 @@ static inline uint32_t extract32(unsigned char const *const ptr) {
   return (ret);
 }
 /**
- * @brief extract64
+ * @brief Function to extract a uint64_t from char[8] (little-endian)
+ * @param[in] ptr The input char[8].
+ * @return The result uint64_t.
  */
 static inline uint64_t extract64(unsigned char const *const ptr) {
   uint64_t ret = 0;
@@ -246,12 +240,13 @@ static inline uint64_t extract64(unsigned char const *const ptr) {
 
   return (ret);
 }
-
-/** @}*/ //end of file io
-
+/**
+ * @brief Function to analyze the size of a lib according to the file header.
+ * @param[in] blob The pointer to the lib.
+ * @return The size of the lib.
+ */
 static inline uint64_t get_lib_size(char const *const blob) {
 #ifdef _WIN32
-  ///////////////////////////////////////////////////////////////////////
   // Analyze DOS stub
   unsigned char const *const ublob =
       reinterpret_cast<unsigned char const *const>(blob);
@@ -260,7 +255,6 @@ static inline uint64_t get_lib_size(char const *const blob) {
   }
   uint32_t pe_header_offset = extract32(ublob + 0x3c);
 
-  ///////////////////////////////////////////////////////////////////////
   // Ananlyze PE-header
   unsigned char const *const pe_header = ublob + pe_header_offset;
 
@@ -288,7 +282,6 @@ static inline uint64_t get_lib_size(char const *const blob) {
     throw std::runtime_error("MAGIC is not 0x010b or 0x020b");
   }
 
-  ///////////////////////////////////////////////////////////////////////
   // Analyze tail of optional header
   constexpr int coff_header_size = 24;
 
@@ -298,7 +291,6 @@ static inline uint64_t get_lib_size(char const *const blob) {
     throw std::runtime_error("Optional header not zero-padded");
   }
 
-  ///////////////////////////////////////////////////////////////////////
   // Analyze last section header
   constexpr int section_header_size = 40;
   unsigned char const *const last_section_header =
@@ -329,6 +321,10 @@ static inline uint64_t get_lib_size(char const *const blob) {
 }
 
 #ifdef _WIN32
+/**
+ * @class path_lib_record
+ * @brief [_WIN32] An utility class to map library pointer to path
+ */
 class path_lib_record {
 public:
   void operator=(const path_lib_record &) = delete;
@@ -361,7 +357,10 @@ private:
 #endif
 
 } // namespace detail
-
+/**
+ * @class kernel_library
+ * @brief A wrapper class for a loaded kernel library
+ */
 class kernel_library {
 public:
   kernel_library() : ptr{nullptr} {}
@@ -377,7 +376,11 @@ private:
 };
 
 namespace detail {
-
+/**
+ * @brief Function to write buffer data into a file and then load it dynamically
+ * @param [in] data The pointer to the library.
+ * @param [in] size The size of the library.
+ */
 static inline kernel_library load_dl_from_data(char const *const data,
                                                size_t size) {
   fs::path filename = write_data_to_file(data, size);
@@ -404,9 +407,11 @@ static inline kernel_library load_dl_from_data(char const *const data,
 }
 
 } // namespace detail
-
-/// Load kernel library and return a handle to use the library.
-/// \param [in] name The name of the library.
+/**
+ * @brief Function to load kernel library and return a handle to use the
+ * library.
+ * @param [in] name The name of the library.
+ */
 static inline kernel_library load_kernel_library(const std::string &name) {
   std::ifstream ifs;
   ifs.open(name, std::ios::in | std::ios::binary);
@@ -417,18 +422,20 @@ static inline kernel_library load_kernel_library(const std::string &name) {
   const std::string buffer_string = buffer.str();
   return detail::load_dl_from_data(buffer_string.c_str(), buffer_string.size());
 }
-
-/// Load kernel library whose image is alreay in memory and return a handle to
-/// use the library.
-/// \param [in] image A pointer to the image in memory.
+/**
+ * @brief Function to load kernel library whose image is alreay in memory and
+ * return a handle to use the library.
+ * @param [in] image A pointer to the image in memory.
+ */
 static inline kernel_library load_kernel_library_mem(char const *const image) {
   const size_t size = detail::get_lib_size(image);
 
   return detail::load_dl_from_data(image, size);
 }
-
-/// Unload kernel library.
-/// \param [in,out] library Handle to the library to be closed.
+/**
+ * @brief Function to unload kernel library.
+ * @param [in,out] library Handle to the library to be closed.
+ */
 static inline void unload_kernel_library(const kernel_library &library) {
 #ifdef _WIN32
   detail::path_lib_record::remove_lib(library);
@@ -436,7 +443,10 @@ static inline void unload_kernel_library(const kernel_library &library) {
   dlclose(library);
 #endif
 }
-
+/**
+ * @class kernel_function
+ * @brief A callable wrapper for a kernel function
+ */
 class kernel_function {
 public:
   kernel_function() : ptr{nullptr} {}
@@ -452,10 +462,11 @@ public:
 private:
   dpct::kernel_functor ptr;
 };
-
-/// Find kernel function in a kernel library and return its address.
-/// \param [in] library Handle to the kernel library.
-/// \param [in] name Name of the kernel function.
+/**
+ * @brief Find kernel function in a kernel library and return its address.
+ * @param [in] library Handle to the kernel library.
+ * @param [in] name Name of the kernel function.
+ */
 static inline dpct::kernel_function
 get_kernel_function(kernel_library &library, const std::string &name) {
 #ifdef _WIN32
@@ -471,15 +482,17 @@ get_kernel_function(kernel_library &library, const std::string &name) {
   return fn;
 }
 
-/// Invoke a kernel function.
-/// \param [in] function kernel function.
-/// \param [in] queue SYCL queue used to execute kernel
-/// \param [in] groupRange SYCL group range
-/// \param [in] localRange SYCL local range
-/// \param [in] localMemSize The size of local memory required by the kernel
-///             function.
-/// \param [in] kernelParams Array of pointers to kernel arguments.
-/// \param [in] extra Extra arguments.
+
+/**
+ * @brief Function to invoke a kernel function.
+ * @param [in] function kernel function.
+ * @param [in] queue SYCL queue used to execute kernel
+ * @param [in] groupRange SYCL group range
+ * @param [in] localRange SYCL local range
+ * @param [in] localMemSize The size of local memory required by the kernel function.
+ * @param [in] kernelParams Array of pointers to kernel arguments.
+ * @param [in] extra Extra arguments.
+ */
 static inline void invoke_kernel_function(dpct::kernel_function &function,
                                           sycl::queue &queue,
                                           sycl::range<3> groupRange,
@@ -489,10 +502,11 @@ static inline void invoke_kernel_function(dpct::kernel_function &function,
   function(queue, sycl::nd_range<3>(groupRange * localRange, localRange),
            localMemSize, kernelParams, extra);
 }
-
-/// Find image wrapper in a kernel library and return its address.
-/// \param [in] library Handle to the kernel library.
-/// \param [in] name Name of the target image wrapper.
+/**
+ * @brief Function to find image wrapper in a kernel library and return its address.
+ * @param [in] library Handle to the kernel library.
+ * @param [in] name Name of the target image wrapper.
+ */
 static inline dpct::image_wrapper_base_p
 get_image_wrapper(dpct::kernel_library &library, const std::string &name) {
 #ifdef _WIN32

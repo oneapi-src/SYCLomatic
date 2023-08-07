@@ -6,6 +6,15 @@
 //
 //===----------------------------------------------------------------------===//
 
+/**
+ * @file
+ * @brief Utility functions to get devices and queues and perform device level
+ * synchronization.
+ *
+ * @copyright Copyright (C) Intel Corporation
+ *
+ */
+
 #ifndef __DPCT_DEVICE_HPP__
 #define __DPCT_DEVICE_HPP__
 
@@ -62,7 +71,9 @@ static void get_version(const sycl::device &dev, int &major, int &minor) {
 }
 } // namespace detail
 
-/// SYCL default exception handler
+/**
+ * @brief Default exception handler used in device_ext.
+ */
 inline auto exception_handler = [](sycl::exception_list exceptions) {
   for (std::exception_ptr const &e : exceptions) {
     try {
@@ -75,25 +86,45 @@ inline auto exception_handler = [](sycl::exception_list exceptions) {
     }
   }
 };
-
+/**
+ * @brief Pointer type of sycl::event.
+ */
 typedef sycl::event *event_ptr;
-
+/**
+ * @brief Pointer type of sycl::queue.
+ */
 typedef sycl::queue *queue_ptr;
-
+/**
+ * @brief Pointer type of device_ext.
+ */
 typedef char *device_ptr;
-
-/// Destroy \p event pointed memory.
-///
-/// \param event Pointer to the sycl::event address.
+/**
+ * @brief Destroy the sycl::event pointed by \p event.
+ * @param event Pointer to the sycl::event address.
+ */
 static void destroy_event(event_ptr event) {
     delete event;
 }
-
+/**
+ * @class device_info.
+ * @brief class to store device information.
+ */
 class device_info {
 public:
-  // get interface
+  /**
+   * @brief Gets device name.
+   * @return The name of the device.
+   */
   const char *get_name() const { return _name; }
+  /**
+   * @brief Gets device name.
+   * @return The name of the device.
+   */
   char *get_name() { return _name; }
+  /**
+   * @brief Gets the max work item size of the device.
+   * @return The max work item size of the device.
+   */
   template <typename WorkItemSizesTy = sycl::range<3>,
             std::enable_if_t<std::is_same_v<WorkItemSizesTy, sycl::range<3>> ||
                                  std::is_same_v<WorkItemSizesTy, int *>,
@@ -107,6 +138,12 @@ public:
       return _max_work_item_sizes_i;
     }  
   }
+  /**
+   * @brief Gets the max work item size of the device.
+   * @tparam WorkItemSizesTy If WorkItemSizesTy is \a sycl::id<3> the return
+   * type is \a sycl::id<3>. Otherwise, the return type is \a int[3].
+   * @return The max work item size of the device.
+   */  
   template <typename WorkItemSizesTy = sycl::range<3>,
             std::enable_if_t<std::is_same_v<WorkItemSizesTy, sycl::range<3>> ||
                                  std::is_same_v<WorkItemSizesTy, int *>,
@@ -120,20 +157,67 @@ public:
       return _max_work_item_sizes_i;
     }  
   }
+  /**
+   * @brief Gets whether the device can allocate memory with usm::alloc::host.
+   * @return true if the device can allocate memory with usm::alloc::host.
+   */
   bool get_host_unified_memory() const { return _host_unified_memory; }
+  /**
+   * @brief Gets the major device version.
+   * @return The major device version.
+   */
   int get_major_version() const { return _major; }
+  /**
+   * @brief Gets the minor device version.
+   * @return The minor device version.
+   */
   int get_minor_version() const { return _minor; }
+  /**
+   * @brief Gets if the GPU device is integrated.
+   * @return true if the GPU device is integrated.
+   */
   int get_integrated() const { return _integrated; }
+  /**
+   * @brief Gets the max clock frequency of the device.
+   * @return The max clock frequency of the device.
+   */
   int get_max_clock_frequency() const { return _frequency; }
+  /**
+   * @brief Gets the max compute unit number of the device.
+   * @return The max compute unit number of the device.
+   */
   int get_max_compute_units() const { return _max_compute_units; }
+  /**
+   * @brief Gets the max work group size of the device.
+   * @return The max work group size of the device.
+   */
   int get_max_work_group_size() const { return _max_work_group_size; }
+  /**
+   * @brief Gets the max sub group size of the device.
+   * @return The max sub group size of the device.
+   */
   int get_max_sub_group_size() const { return _max_sub_group_size; }
+  /**
+   * @brief Gets the max work item per compute unit of the device.
+   * @return The max work item per compute unit of the device.
+   */
   int get_max_work_items_per_compute_unit() const {
     return _max_work_items_per_compute_unit;
   }
+  /**
+   * @brief Gets the max register size per work group of the device.
+   * @return The max register size per work group of the device.
+   */
   int get_max_register_size_per_work_group() const {
     return _max_register_size_per_work_group;
   }
+  /**
+   * @brief Gets the max nd_range size of the device
+   * @tparam NDRangeSizeTy If NDRangeSizeTy is \a size_t*, the type of the
+   * return value will be \a size_t[3]. Otherwise, the type of the return value
+   * will be \a int[3].
+   * @return The max nd_range size of the device.
+   */
   template <typename NDRangeSizeTy = size_t *,
             std::enable_if_t<std::is_same_v<NDRangeSizeTy, size_t *> ||
                                  std::is_same_v<NDRangeSizeTy, int *>,
@@ -144,27 +228,45 @@ public:
     else
       return _max_nd_range_size_i;
   }
-  template <typename NDRangeSizeTy = size_t *,
-            std::enable_if_t<std::is_same_v<NDRangeSizeTy, size_t *> ||
-                                 std::is_same_v<NDRangeSizeTy, int *>,
-                             int> = 0>
-  auto get_max_nd_range_size() {
-    if constexpr (std::is_same_v<NDRangeSizeTy, size_t *>)
-      return _max_nd_range_size;
-    else
-      return _max_nd_range_size_i;
-  }
+
+  /**
+   * @brief Gets the global memory size of the device.
+   * @return The global memory size of the device.
+   */
   size_t get_global_mem_size() const { return _global_mem_size; }
+  /**
+   * @brief Gets the local memory size of the device.
+   * @return The local memory size of the device.
+   */
   size_t get_local_mem_size() const { return _local_mem_size; }
-  /// Returns the maximum clock rate of device's global memory in kHz. If
-  /// compiler does not support this API then returns default value 3200000 kHz.
+  /**
+   * @brief Gets the maximum clock rate of device's global memory in kHz.
+   * @details If the compiler does not support this API then returns default
+   * value 3200000 kHz.
+   * @return The maximum clock rate of device's global memory.
+   */
   unsigned int get_memory_clock_rate() const { return _memory_clock_rate; }
-  /// Returns the maximum bus width between device and memory in bits. If
-  /// compiler does not support this API then returns default value 64 bits.
+  /**
+   * @brief Gets the maximum bus width between device and memory in bits.
+   * @details If the compiler does not support this API then returns default
+   * value 64 bits.
+   * @return The maximum bus width between device and memory in bits.
+   */
   unsigned int get_memory_bus_width() const { return _memory_bus_width; }
+  /**
+   * @brief Gets the device id.
+   * @return The device id.
+   */
   uint32_t get_device_id() const { return _device_id; }
+  /**
+   * @brief Gets the uuid of the device.
+   * @return The uuid of the device.
+   */
   std::array<unsigned char, 16> get_uuid() const { return _uuid; }
-  /// Returns global memory cache size in bytes.
+  /**
+   * @brief Sets the name of the device.
+   * @param name The name of the device.
+   */
   unsigned int get_global_mem_cache_size() const {
     return _global_mem_cache_size;
   }
@@ -179,10 +281,19 @@ public:
       _name[255] = '\0';
     }
   }
+  /**
+   * @brief Sets the max work item sizes.
+   * @param max_work_item_sizes The max work item sizes.
+   */
   void set_max_work_item_sizes(const sycl::range<3> max_work_item_sizes) {
     for (int i = 0; i < 3; ++i)
       _max_work_item_sizes_i[i] = max_work_item_sizes[i];
   }
+  /**
+   * @brief Sets whether the device can allocate memory with usm::alloc::host.
+   * @param host_unified_memory true if the device can allocate memory with
+   * usm::alloc::host.
+   */
   [[deprecated]] void
   set_max_work_item_sizes(const sycl::id<3> max_work_item_sizes) {
     for (int i = 0; i < 3; ++i) {
@@ -192,48 +303,116 @@ public:
   void set_host_unified_memory(bool host_unified_memory) {
     _host_unified_memory = host_unified_memory;
   }
+  /**
+   * @brief Sets the major version of the device.
+   * @param major the major version of the device.
+   */
   void set_major_version(int major) { _major = major; }
+  /**
+   * @brief Sets the minor version of the device.
+   * @param minor the minor version of the device.
+   */
   void set_minor_version(int minor) { _minor = minor; }
+  /**
+   * @brief Sets if the device is integrated GPU device.
+   * @param integrated If the device is integrated GPU device.
+   */
   void set_integrated(int integrated) { _integrated = integrated; }
+  /**
+   * @brief Sets the max clock frequency of the device.
+   * @param frequency The max clock frequency of the device.
+   */
   void set_max_clock_frequency(int frequency) { _frequency = frequency; }
+  /**
+   * @brief Sets the max compute unit number of the device.
+   * @param max_compute_units The max compute unit number of the device.
+   */
   void set_max_compute_units(int max_compute_units) {
     _max_compute_units = max_compute_units;
   }
+  /**
+   * @brief Sets the global memory size of the device.
+   * @param global_mem_size The global memory size of the device.
+   */
   void set_global_mem_size(size_t global_mem_size) {
     _global_mem_size = global_mem_size;
   }
+  /**
+   * @brief Sets the local memory size of the device.
+   * @param local_mem_size The local memory size of the device.
+   */
   void set_local_mem_size(size_t local_mem_size) {
     _local_mem_size = local_mem_size;
   }
+  /**
+   * @brief Sets the max work_group size of the device.
+   * @param max_work_group_size The max work_group size of the device.
+   */
   void set_max_work_group_size(int max_work_group_size) {
     _max_work_group_size = max_work_group_size;
   }
+  /**
+   * @brief Sets the max sub_group size of the device.
+   * @param max_sub_group_size The max sub_group size of the device.
+   */
   void set_max_sub_group_size(int max_sub_group_size) {
     _max_sub_group_size = max_sub_group_size;
   }
+  /**
+   * @brief Sets the max work_item size per compute unit of the device.
+   * @param max_work_items_per_compute_unit The max work_item size per compute
+   * unit of the device.
+   */
   void
   set_max_work_items_per_compute_unit(int max_work_items_per_compute_unit) {
     _max_work_items_per_compute_unit = max_work_items_per_compute_unit;
   }
+  /**
+   * @brief Sets the max nd_range size of the device.
+   * @param max_nd_range_size The max nd_range size of the device.
+   */
   void set_max_nd_range_size(int max_nd_range_size[]) {
     for (int i = 0; i < 3; i++) {
       _max_nd_range_size[i] = max_nd_range_size[i];
       _max_nd_range_size_i[i] = max_nd_range_size[i];
     }
   }
+  /**
+   * @brief Gets the maximum clock rate of device's global memory in kHz.
+   * @param memory_clock_rate The maximum clock rate of device's global memory
+   * in kHz.
+   */
   void set_memory_clock_rate(unsigned int memory_clock_rate) {
     _memory_clock_rate = memory_clock_rate;
   }
+  /**
+   * @brief Sets the maximum bus width between device and memory in bits.
+   * @param memory_bus_width The maximum bus width between device and memory in
+   * bits.
+   */
   void set_memory_bus_width(unsigned int memory_bus_width) {
     _memory_bus_width = memory_bus_width;
   }
+  /**
+   * @brief Sets the max register size per work group of the device.
+   * @param max_register_size_per_work_group The max register size per work
+   * group of the device.
+   */
   void
   set_max_register_size_per_work_group(int max_register_size_per_work_group) {
     _max_register_size_per_work_group = max_register_size_per_work_group;
   }
+  /**
+   * @brief Sets the id for the device.
+   * @param device_id The id for the device.
+   */
   void set_device_id(uint32_t device_id) {
     _device_id = device_id;
   }
+  /**
+   * @brief Sets the uuid for the device.
+   * @param uuid The uuid for the device.
+   */
   void set_uuid(std::array<unsigned char, 16> uuid) {
     _uuid = std::move(uuid);
   }
@@ -365,53 +544,87 @@ Use 64 bits as memory_bus_width default value."
   out = prop;
 }
 
-/// dpct device extension
+/**
+ * @class device_ext
+ * @brief device extension of \a sycl::device.
+ */
 class device_ext : public sycl::device {
   typedef std::mutex mutex_type;
 
 public:
+  /// @brief Default constructor.
   device_ext() : sycl::device(), _ctx(*this) {}
+  /// @brief Default destructor. Clears all stored queues.
   ~device_ext() {
     std::lock_guard<mutex_type> lock(m_mutex);
     clear_queues();
   }
+  /// @brief Constructor with existing \a sycl::device.
   device_ext(const sycl::device &base) : sycl::device(base), _ctx(*this) {
     std::lock_guard<mutex_type> lock(m_mutex);
     init_queues();
   }
-
+  /// @brief Gets if the device support native atomic operations. Currently,
+  /// always returns false.
   int is_native_atomic_supported() { return 0; }
+  /**
+   * @brief Gets the major device version.
+   * @return The major device version.
+   */
   int get_major_version() const {
     return dpct::get_major_version(*this);
   }
-
+  /**
+   * @brief Gets the minor device version.
+   * @return The minor device version.
+   */
   int get_minor_version() const {
     return dpct::get_minor_version(*this);
   }
-
+  /**
+   * @brief Gets the max compute unit number of the device.
+   * @return The max compute unit number of the device.
+   */
   int get_max_compute_units() const {
     return get_device_info().get_max_compute_units();
   }
-
-  /// Return the maximum clock frequency of this device in KHz.
+  /**
+   * @brief Gets the max clock frequency of the device.
+   * @return The max clock frequency of the device.
+   */
   int get_max_clock_frequency() const {
     return get_device_info().get_max_clock_frequency();
   }
-
+  /**
+   * @brief Gets if the GPU device is integrated.
+   * @return true if the GPU device is integrated.
+   */
   int get_integrated() const { return get_device_info().get_integrated(); }
-
+  /**
+   * @brief Gets the max sub group size of the device.
+   * @return The max sub group size of the device.
+   */
   int get_max_sub_group_size() const {
     return get_device_info().get_max_sub_group_size();
   }
-
+  /**
+   * @brief Gets the max register size per work group of the device.
+   * @return The max register size per work group of the device.
+   */
   int get_max_register_size_per_work_group() const {
     return get_device_info().get_max_register_size_per_work_group();
   }
-
+  /**
+   * @brief Gets the max work group size of the device.
+   * @return The max work group size of the device.
+   */
   int get_max_work_group_size() const {
     return get_device_info().get_max_work_group_size();
   }
-
+  /**
+   * @brief Gets the memory base address alignment the device.
+   * @return The memory base address alignment the device.
+   */
   int get_mem_base_addr_align() const {
     return get_info<sycl::info::device::mem_base_addr_align>();
   }
@@ -420,13 +633,18 @@ public:
     return get_info<sycl::info::device::mem_base_addr_align>() / 8;
   }
 
+  /**
+   * @brief Gets the global memory size of the device.
+   * @return The global memory size of the device.
+   */
   size_t get_global_mem_size() const {
     return get_device_info().get_global_mem_size();
   }
-
-  /// Get the number of bytes of free and total memory on the SYCL device.
-  /// \param [out] free_memory The number of bytes of free memory on the SYCL device.
-  /// \param [out] total_memory The number of bytes of total memory on the SYCL device.
+  /**
+   * @brief Gets the number of bytes of free and total memory on the SYCL device.
+   * @param [out] free_memory The number of bytes of free memory on the SYCL device.
+   * @param [out] total_memory The number of bytes of total memory on the SYCL device.
+  */
   void get_memory_info(size_t &free_memory, size_t &total_memory) {
 #if (defined(__SYCL_COMPILER_VERSION) && __SYCL_COMPILER_VERSION >= 20221105)
     if (!has(sycl::aspect::ext_intel_free_memory)) {
@@ -446,27 +664,46 @@ public:
 #endif
     total_memory = get_device_info().get_global_mem_size();
   }
-
+  /**
+   * @brief Gets the \a device_info of current device.
+   * @param [out] device_info The result \a device_info.
+  */
   void get_device_info(device_info &out) const {
     dpct::get_device_info(out, *this);
   }
-
+  /**
+   * @brief Gets the \a device_info of current device.
+   * @return The result \a device_info.
+   */
   device_info get_device_info() const {
     device_info prop;
     dpct::get_device_info(prop, *this);
     return prop;
   }
-
+  /**
+   * @brief Reset all queues of current device.
+   */
   void reset() {
     std::lock_guard<mutex_type> lock(m_mutex);
     clear_queues();
     init_queues();
   }
-
+  /**
+   * @brief Gets the default in-order queue of current device.
+   * @return The default in-order queue of current device.
+   */
   sycl::queue &in_order_queue() { return *_q_in_order; }
-
+  /**
+   * @brief Gets the default out-of-order queue of current device.
+   * @return The default out-of-order queue of current device.
+   */
   sycl::queue &out_of_order_queue() { return *_q_out_of_order; }
-
+  /**
+   * @brief Gets the default queue of current device. If the USM level is set to
+   * none, the default queue is an out-of-order queue. Otherwise, the default
+   * queue is an in-order queue.
+   * @return The default queue of current device.
+   */
   sycl::queue &default_queue() {
 #ifdef DPCT_USM_LEVEL_NONE
     return out_of_order_queue();
@@ -474,7 +711,9 @@ public:
     return in_order_queue();
 #endif // DPCT_USM_LEVEL_NONE
   }
-
+  /**
+   * @brief Performs synchronization on the queues on current device.
+   */
   void queues_wait_and_throw() {
     std::unique_lock<mutex_type> lock(m_mutex);
     std::vector<std::shared_ptr<sycl::queue>> current_queues(
@@ -486,7 +725,13 @@ public:
     // Guard the destruct of current_queues to make sure the ref count is safe.
     lock.lock();
   }
-
+  /**
+   * @brief Creates a queue on current device. If the USM level is set to none,
+   * the queue will be out-of-order. Otherwise, the queue will be in-order.
+   * @param [in] enable_exception_handler Whether to use the default exception
+   * handler.
+   * @return The pointer of the created queue.
+   */
   sycl::queue *create_queue(bool enable_exception_handler = false) {
 #ifdef DPCT_USM_LEVEL_NONE
     return create_out_of_order_queue(enable_exception_handler);
@@ -494,18 +739,31 @@ public:
     return create_in_order_queue(enable_exception_handler);
 #endif // DPCT_USM_LEVEL_NONE
   }
-
+  /**
+   * @brief Creates an in-order queue on current device.
+   * @param [in] enable_exception_handler Whether to use the default exception
+   * handler.
+   * @return The pointer of the created queue.
+   */
   sycl::queue *create_in_order_queue(bool enable_exception_handler = false) {
     std::lock_guard<mutex_type> lock(m_mutex);
     return create_queue_impl(enable_exception_handler,
                              sycl::property::queue::in_order());
   }
-
+  /**
+   * @brief Creates an out-of-order queue on current device.
+   * @param [in] enable_exception_handler Whether to use the default exception
+   * handler.
+   * @return The pointer of the created queue.
+   */
   sycl::queue *create_out_of_order_queue(bool enable_exception_handler = false) {
     std::lock_guard<mutex_type> lock(m_mutex);
     return create_queue_impl(enable_exception_handler);
   }
-
+  /**
+   * @brief Destroys a created queue.
+   * @param [in] queue The pointer to the \a sycl::queue which is going to be destroyed.
+   */
   void destroy_queue(sycl::queue *&queue) {
     std::lock_guard<mutex_type> lock(m_mutex);
     _queues.erase(std::remove_if(_queues.begin(), _queues.end(),
@@ -515,12 +773,21 @@ public:
                    _queues.end());
     queue = nullptr;
   }
+  /**
+   * @brief Sets a queue as _saved_queue.
+   * @param [in] queue The pointer to the \a sycl::queue which is going to be
+   * saved.
+   */
   [[deprecated("set_saved_queue for device_ext is deprecated, please use "
                "dpct::blas::descriptor::set_saved_queue instead")]] void
   set_saved_queue(sycl::queue *q) {
     std::lock_guard<mutex_type> lock(m_mutex);
     _saved_queue = q;
   }
+  /**
+   * @brief Gets the _saved_queue.
+   * @return The pointer to the _saved_queue.
+   */
   [[deprecated(
       "get_saved_queue for device_ext is deprecated, please use "
       "dpct::blas::descriptor::get_saved_queue instead")]] sycl::queue *
@@ -528,6 +795,10 @@ public:
     std::lock_guard<mutex_type> lock(m_mutex);
     return _saved_queue;
   }
+  /**
+   * @brief Gets the \a sycl::context of the default queue of current device.
+   * @return The \a sycl::context of the default queue of current device.
+   */
   sycl::context get_context() const { return _ctx; }
 
 private:
@@ -570,7 +841,10 @@ private:
   std::vector<std::shared_ptr<sycl::queue>> _queues;
   mutable mutex_type m_mutex;
 };
-
+/**
+ * @brief Gets tid of current thread.
+ * @return The tid of current thread.
+ */
 static inline unsigned int get_tid() {
 #if defined(__linux__)
   return syscall(SYS_gettid);
@@ -581,14 +855,25 @@ static inline unsigned int get_tid() {
 #endif
 }
 
-/// device manager
+/**
+ * @class dev_mgr
+ * @brief device manager to manage queues and devices.
+ */
 class dev_mgr {
 public:
+  /**
+   * @brief Gets the current device of current thread.
+   * @return The current device of current thread.
+   */
   device_ext &current_device() {
     unsigned int dev_id=current_device_id();
     check_id(dev_id);
     return *_devs[dev_id];
   }
+  /**
+   * @brief Gets a CPU device if any.
+   * @return The CPU device.
+   */
   device_ext &cpu_device() const {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
     if (_cpu_device == -1) {
@@ -597,11 +882,20 @@ public:
       return *_devs[_cpu_device];
     }
   }
+  /**
+   * @brief Gets device with device ID.
+   * @param id The target device ID.
+   * @return The device with device ID equals \p id.
+   */
   device_ext &get_device(unsigned int id) const {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
     check_id(id);
     return *_devs[id];
   }
+  /**
+   * @brief Gets the device ID of current device.
+   * @return The device ID of current device.
+   */
   unsigned int current_device_id() const {
    std::lock_guard<std::recursive_mutex> lock(m_mutex);
    auto it=_thread2dev_map.find(get_tid());
@@ -610,16 +904,25 @@ public:
     return DEFAULT_DEVICE_ID;
   }
 
-/// Select device with a device ID.
-/// \param [in] id The id of the device which can
-/// be obtained through get_device_id(const sycl::device).
+  /**
+   * @brief Sets current device with device ID.
+   * @param [in] id The id of the target device which can be obtained through
+   * get_device_id(const sycl::device).
+   */
   void select_device(unsigned int id) {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
     check_id(id);
     _thread2dev_map[get_tid()]=id;
   }
+  /**
+   * @brief Gets the device count.
+   * @return The number of available devices.
+   */
   unsigned int device_count() { return _devs.size(); }
-
+  /**
+   * @brief Gets the device ID of a \a sycl::device.
+   * @param [in] dev The target \a sycl::device.
+   */
   unsigned int get_device_id(const sycl::device &dev) {
     unsigned int id = 0;
     for(auto dev_item : _devs) {
@@ -630,7 +933,11 @@ public:
     }
     return id;
   }
-
+  /**
+   * @brief Sets current device with device selector.
+   * @tparam DeviceSelector The device selector type to be used.
+   * @param [in] selector The device selector to be used.
+   */
   template <class DeviceSelector>
   std::enable_if_t<
       std::is_invocable_r_v<int, DeviceSelector, const sycl::device &>>
@@ -639,8 +946,10 @@ public:
     unsigned int selected_device_id = get_device_id(selected_device);
     select_device(selected_device_id);
   }
-
-  /// Returns the instance of device manager singleton.
+  /**
+   * @brief Gets the instance of device manager singleton.
+   * @return An instance of device manager singleton.
+   */
   static dev_mgr &instance() {
     static dev_mgr d_m;
     return d_m;
@@ -686,70 +995,101 @@ private:
   std::map<unsigned int, unsigned int> _thread2dev_map;
   int _cpu_device = -1;
 };
-
-/// Util function to get the default queue of current selected device depends on
-/// the USM config. Return the default out-of-ordered queue when USM-none is
-/// enabled, otherwise return the default in-ordered queue.
+/**
+ * @brief Gets the default queue of current selected device.
+ * @details Return the default out-of-order queue when USM-none is enabled,
+ * otherwise return the default in-order queue.
+ * @return The default queue of current device.
+ */
 static inline sycl::queue &get_default_queue() {
   return dev_mgr::instance().current_device().default_queue();
 }
-
-/// Util function to get the default in-ordered queue of current device in
-/// dpct device manager.
+/**
+ * @brief Gets the default in-order queue of current device.
+ * @return The default in-order queue of current device.
+ */
 static inline sycl::queue &get_in_order_queue() {
   return dev_mgr::instance().current_device().in_order_queue();
 }
-
-/// Util function to get the default out-of-ordered queue of current device in
-/// dpct device manager.
+/**
+ * @brief Gets the default out-of-order queue of current device.
+ * @return The default out-of-order queue of current device.
+ */
 static inline sycl::queue &get_out_of_order_queue() {
   return dev_mgr::instance().current_device().out_of_order_queue();
 }
-
-/// Util function to get the id of current device in
-/// dpct device manager.
+/**
+ * @brief Gets the device ID of current device.
+ * @return The device ID of current device.
+ */
 static inline unsigned int get_current_device_id() {
   return dev_mgr::instance().current_device_id();
 }
 
-/// Util function to get the current device.
+/**
+ * @brief Gets the current device of current thread.
+ * @return The current device.
+ */
 static inline device_ext &get_current_device() {
   return dev_mgr::instance().current_device();
 }
 
-/// Util function to get a device by id.
+/**
+ * @brief Gets device with device ID.
+ * @return The device.
+ */
 static inline device_ext &get_device(unsigned int id) {
   return dev_mgr::instance().get_device(id);
 }
-
-/// Util function to get the context of the default queue of current
-/// device in dpct device manager.
+/**
+ * @brief Gets the context of the default queue of current device.
+ * @return The context of the default queue of current device.
+ */
 static inline sycl::context get_default_context() {
   return dpct::get_current_device().get_context();
 }
 
-/// Util function to get a CPU device.
+/**
+ * @brief Gets a CPU device if any.
+ * @return The CPU device.
+ */
 static inline device_ext &cpu_device() {
   return dev_mgr::instance().cpu_device();
 }
-
+/**
+ * @brief Sets current device with device ID.
+ * @param [in] id The id of the target device which can be obtained through
+ * get_device_id(const sycl::device).
+ * @return The input id.
+ */
 static inline unsigned int select_device(unsigned int id) {
   dev_mgr::instance().select_device(id);
   return id;
 }
-
+/**
+ * @brief Sets current device with device selector.
+ * @tparam DeviceSelector The device selector type to be used.
+ * @param [in] selector The device selector to be used.
+ */
 template <class DeviceSelector>
 static inline std::enable_if_t<
     std::is_invocable_r_v<int, DeviceSelector, const sycl::device &>>
 select_device(const DeviceSelector &selector = sycl::gpu_selector_v) {
   dev_mgr::instance().select_device(selector);
 }
-
+/**
+ * @brief Gets the device ID of a \a sycl::device.
+ * @return The target \a sycl::device.
+ */
 static inline unsigned int get_device_id(const sycl::device &dev){
   return dev_mgr::instance().get_device_id(dev);
 }
-
-/// Util function to check whether a device supports some kinds of sycl::aspect.
+/**
+ * @brief Checks whether a device supports target \a sycl::aspect. Throws
+ * \a std::runtime_error if the \a sycl::aspect is not supported.
+ * @param [in] dev The device to be checked.
+ * @param [in] props The target \a sycl::aspect.
+ */
 inline void
 has_capability_or_fail(const sycl::device &dev,
                        const std::initializer_list<sycl::aspect> &props) {
