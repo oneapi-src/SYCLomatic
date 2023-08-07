@@ -6898,10 +6898,10 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         CE->getDirectCallee()->hasAttr<CUDADeviceAttr>()) {
       report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED_SYCL_UNDEF, false,
              FuncName);
-      // Add '#include <time.h>' directive to the file only once
-      auto Loc = CE->getBeginLoc();
-      DpctGlobalInfo::getInstance().insertHeader(Loc, HT_Time);
     }
+    // Add '#include <time.h>' directive to the file only once
+    auto Loc = CE->getBeginLoc();
+    DpctGlobalInfo::getInstance().insertHeader(Loc, HT_Time);
   } else if (FuncName == "cudaDeviceSetLimit" ||
              FuncName == "cudaThreadSetLimit" ||
              FuncName == "cudaDeviceSetCacheConfig" ||
