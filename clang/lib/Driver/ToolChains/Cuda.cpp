@@ -45,6 +45,7 @@ bool HasSDKIncludeOption = false;
 bool HasSDKPathOption = false;
 std::string RealSDKIncludePath = "";
 std::string RealSDKPath = "";
+std::vector<std::string> ExtraIncPaths;
 int SDKVersionMajor=0;
 int SDKVersionMinor=0;
 
@@ -305,7 +306,44 @@ CudaInstallationDetector::CudaInstallationDetector(
 
 #ifdef SYCLomatic_CUSTOMIZATION
   Args.hasArg(options::OPT_nogpulib);
-  if (HasSDKIncludeOption) {
+  bool IsCudaHeaderFilesIncluded = false;
+  for (auto &IncPath : ExtraIncPaths) {
+    if (!D.getVFS().exists(IncPath))
+      continue;
+    if (!(FS.exists(IncPath + "/cuda_runtime.h") &&
+          FS.exists(IncPath + "/cuda.h")))
+      continue;
+
+    bool IsFound = ParseCudaVersionFile(IncPath + "/cuda.h", Version);
+    if (!IsFound)
+      continue;
+    IsValid = true;
+
+    InstallPath = IncPath;
+    IncludePath = IncPath;
+
+    // To certain include path specified by --cuda-include-path is valid
+    IsIncludePathValid = true;
+
+    // To certain CUDA version specified by --cuda-include-path is supported
+    IsVersionSupported = true;
+
+    // To certain SDK header file path specified by user '-I...' option is valid
+    IsCudaHeaderFilesIncluded = true;
+    static bool PrintOnce = true;
+    if (PrintOnce && (!RealSDKIncludePath.empty() || !RealSDKPath.empty())) {
+      llvm::outs() << "warning: CUDA SDK header files is detected in path:\""
+                   << IncPath
+                   << "\" specified by option '-I', this path will be used "
+                      "as the path of CUDA header files during migration.\n";
+      PrintOnce = false;
+    };
+    break;
+  }
+
+  if (IsCudaHeaderFilesIncluded) {
+    return;
+  } else if (HasSDKIncludeOption) {
     if (RealSDKIncludePath.empty() ||
         !D.getVFS().exists(RealSDKIncludePath))
       return;
