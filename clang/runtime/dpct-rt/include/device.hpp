@@ -25,7 +25,9 @@
 #include <sys/syscall.h>
 #endif
 #if defined(_WIN64)
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #include <windows.h>
 #endif
 
