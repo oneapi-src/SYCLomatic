@@ -1,3 +1,4 @@
+// Option: --use-dpcpp-extensions=intel_device_math
 #include "cuda_bf16.h"
 #include "cuda_fp16.h"
 

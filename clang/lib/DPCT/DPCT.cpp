@@ -544,14 +544,6 @@ void parseFormatStyle() {
   DpctGlobalInfo::setCodeFormatStyle(Style);
 }
 
-std::string getApiMappingStr(StringRef S) {
-  static const std::string StartStr{"// Start"};
-  static const std::string EndStr{"// End"};
-  const auto StartPos = S.find(StartStr) + StartStr.length();
-  const auto EndPos = S.find_last_of('\n', S.find(EndStr));
-  return std::string(S, StartPos, EndPos - StartPos + 1);
-}
-
 int runDPCT(int argc, const char **argv) {
 
   if (argc < 2) {
@@ -744,18 +736,50 @@ int runDPCT(int argc, const char **argv) {
     APIMapping::initEntryMap();
     auto SourceCode = APIMapping::getAPISourceCode(QueryAPIMapping);
     if (SourceCode.empty()) {
-      llvm::outs() << "The API Mapping is not available\n";
-      dpctExit(MigrationSucceeded);
+      dpctExit(MigrationErrorNoAPIMapping);
     }
-    llvm::outs() << "CUDA API:" << getApiMappingStr(SourceCode);
+
     int FD;
     SmallString<64> TempFile;
     if (auto EC =
             llvm::sys::fs::createTemporaryFile("tmp", "cu", FD, TempFile)) {
-      llvm::errs() << "Error: dpct internal error. Cannot create temp file for "
-                      "api mapping.\n";
+      dpctExit(MigrationErrorCannotCreateTempFile);
     }
     llvm::raw_fd_ostream(FD, true) << SourceCode;
+
+    llvm::outs() << "CUDA API:";
+    static const std::string StartStr{"// Start"};
+    static const std::string EndStr{"// End"};
+    auto StartPos = SourceCode.find(StartStr);
+    auto EndPos = SourceCode.find(EndStr);
+    if (StartPos == std::string::npos || EndPos == std::string::npos) {
+      dpctExit(MigrationErrorNoAPIMapping);
+    }
+    StartPos = StartPos + StartStr.length();
+    EndPos = SourceCode.find_last_of('\n', EndPos);
+    llvm::outs() << SourceCode.substr(StartPos, EndPos - StartPos + 1);
+    llvm::outs() << "Is migrated to";
+    static const std::string OptionStr{"// Option:"};
+    if (SourceCode.starts_with(OptionStr)) {
+      llvm::outs() << " (with the option";
+      const auto Options =
+          SourceCode.substr(OptionStr.length(), SourceCode.find_first_of('\n') -
+                                                    OptionStr.length());
+      std::istringstream SS(Options.str());
+      std::string Option;
+      while (SS >> Option) {
+        if (Option == "--use-dpcpp-extensions=intel_device_math") {
+          llvm::outs() << " " << Option;
+          UseDPCPPExtensions.addValue(
+              DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath);
+        }
+        // Need add more option.
+      }
+      llvm::outs() << ")";
+    }
+    llvm::outs() << ":";
+
+    NoIncrementalMigration = true;
     SmallString<64> TempPath;
     llvm::sys::path::system_temp_directory(true, TempPath);
     InRoot = TempPath.str().str();
@@ -876,15 +900,6 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setOptimizeMigrationFlag(OptimizeMigration.getValue());
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRoot;
-
-  if (DpctGlobalInfo::isQueryAPIMapping()) {
-    // Need add some flags to do the best migration.
-    DpctGlobalInfo::setExtensionDDFlag(
-        1 << static_cast<unsigned>(
-            DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath));
-    DpctGlobalInfo::setIsIncMigration(false);
-    SuppressWarningsAllFlag = true;
-  }
 
   if (ExcludePathList.getNumOccurrences()) {
     DpctGlobalInfo::setExcludePath(ExcludePathList);
@@ -1073,13 +1088,25 @@ int runDPCT(int argc, const char **argv) {
     // Must be only 1 file.
     tooling::applyAllReplacements(Tool.getReplacements().begin()->second,
                                   Rewrite);
-    std::ostringstream OS;
     const auto &RewriteBuffer = Rewrite.buffer_begin()->second;
+    static const std::string StartStr{"// Start"};
+    static const std::string EndStr{"// End"};
+    bool Flag = false;
     for (auto I = RewriteBuffer.begin(), E = RewriteBuffer.end(); I != E;
-         I.MoveToNextPiece())
-      OS << I.piece().str();
-    llvm::outs() << "Is migrated to (with some neccessary option):"
-                 << getApiMappingStr(OS.str());
+         I.MoveToNextPiece()) {
+      if (I.piece().contains(EndStr)) {
+        llvm::outs() << I.piece().substr(0, I.piece().find(EndStr));
+        break;
+      }
+      if (Flag) {
+        llvm::outs() << I.piece();
+      }
+      if (I.piece().contains(StartStr)) {
+        Flag = true;
+        llvm::outs() << I.piece().substr(I.piece().find(StartStr) +
+                                         StartStr.length());
+      }
+    }
     llvm::sys::fs::remove(SourcePathList.front().c_str());
     return MigrationSucceeded;
   }

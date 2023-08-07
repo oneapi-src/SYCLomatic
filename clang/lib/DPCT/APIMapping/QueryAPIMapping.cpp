@@ -16,9 +16,6 @@ llvm::DenseMap<llvm::StringRef, llvm::StringRef> APIMapping::EntryMap;
 
 void APIMapping::registerEntry(llvm::StringRef Name,
                                llvm::StringRef SourceCode) {
-  if (EntryMap.contains(Name)) {
-    llvm::errs() << "The API Mapping cases name is duplicated.\n";
-  }
   EntryMap[Name] = SourceCode;
 }
 
