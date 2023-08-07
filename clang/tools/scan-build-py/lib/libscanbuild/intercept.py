@@ -55,6 +55,9 @@ COMPILER_WRAPPER_CXX = "intercept-c++"
 TRACE_FILE_EXTENSION = ".cmd"  # same as in ear.c
 WRAPPER_ONLY_PLATFORMS = frozenset({"win32", "cygwin"})
 
+# SYCLomatic_CUSTOMIZATION begin
+OUTPUT_FILE_NAME_POSITION_IDX = 2
+# SYCLomatic_CUSTOMIZATION end
 
 @command_entry_point
 def intercept_build():
@@ -277,7 +280,8 @@ def format_entry(exec_trace):
     def filter_linker_entry(flags):
         object_files = get_object_files(flags)
         output_file_idx = flags.index('-o')
-        output_flags = flags[output_file_idx:output_file_idx+2]
+        output_flags = flags[output_file_idx:output_file_idx +
+                             OUTPUT_FILE_NAME_POSITION_IDX]
         return [flag for flag in flags if flag not in object_files and flag not in output_flags]
 # SYCLomatic_CUSTOMIZATION end
 
@@ -309,9 +313,9 @@ def format_entry(exec_trace):
             for source_idx in reversed(range(len(compilation.files))):
                 source = compilation.files[source_idx]
                 command = [compiler, "-c"] + filter_linker_entry(compilation.flags) + ['-o'] + [
-                    os.path.splitext(os.path.basename(source))[0]+'.o'] + [source]
+                    os.path.splitext(os.path.basename(source))[0] + '.o'] + [source]
                 output_files.append(os.path.splitext(
-                    os.path.basename(source))[0]+'.o')
+                    os.path.basename(source))[0] + '.o')
                 yield {
                     "directory": exec_trace["directory"],
                     "command": encode(command),
