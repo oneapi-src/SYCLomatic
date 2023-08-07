@@ -4471,6 +4471,13 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
                     hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)))))))
           .bind("FunctionCallUsedInitializeVarDecl"),
       this);
+
+  MF.addMatcher(
+      unresolvedLookupExpr(
+          hasAnyDeclaration(namedDecl(functionName())),
+          hasParent(callExpr(unless(parentStmt())).bind("callExprUsed")))
+          .bind("unresolvedCallUsed"),
+      this);
 }
 
 void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -4485,6 +4492,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   bool IsAssigned = false;
   bool IsInitializeVarDecl = false;
   bool HasDeviceAttr = false;
+  std::string FuncName = "";
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "kernelCall");
   if (CE) {
     HasDeviceAttr = true;
@@ -4496,15 +4504,20 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                     Result, "FunctionCallUsedInitializeVarDecl"))) {
       IsAssigned = true;
       IsInitializeVarDecl = true;
+    } else if (auto *ULE = getNodeAsType<UnresolvedLookupExpr>(
+                   Result, "unresolvedCallUsed")) {
+      CE = getNodeAsType<CallExpr>(Result, "callExprUsed");
+      FuncName = ULE->getName().getAsString();
     } else {
       return;
     }
   }
 
-  if (!CE->getDirectCallee())
-    return;
-  std::string FuncName =
-      CE->getDirectCallee()->getNameInfo().getName().getAsString();
+  if (FuncName == "") {
+    if (!CE->getDirectCallee())
+      return;
+    FuncName = CE->getDirectCallee()->getNameInfo().getName().getAsString();
+  }
 
   const SourceManager *SM = Result.SourceManager;
   auto Loc = DpctGlobalInfo::getLocInfo(SM->getExpansionLoc(CE->getBeginLoc()));
