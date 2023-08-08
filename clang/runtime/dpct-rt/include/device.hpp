@@ -143,7 +143,8 @@ public:
     for (int i = 0; i < 3; ++i)
       _max_work_item_sizes_i[i] = max_work_item_sizes[i];
   }
-  void set_max_work_item_sizes(const sycl::id<3> max_work_item_sizes) {
+  [[deprecated]] void
+  set_max_work_item_sizes(const sycl::id<3> max_work_item_sizes) {
     for (int i = 0; i < 3; ++i) {
       _max_work_item_sizes_i[i] = max_work_item_sizes[i];
       _max_work_item_sizes[i] = max_work_item_sizes[i];
