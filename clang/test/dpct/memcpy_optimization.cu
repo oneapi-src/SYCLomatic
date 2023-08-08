@@ -12,5 +12,6 @@ int main(){
 //CHECK:  q_ct1.memcpy(a, b, 10);
     cudaMemcpy(a, b, 10, cudaMemcpyHostToDevice);
     cudaMemcpy(a, b, 10, cudaMemcpyDeviceToDevice);
+
     return 0;
 }
