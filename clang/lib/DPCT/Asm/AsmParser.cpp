@@ -1130,7 +1130,9 @@ static bool alwaysFitsInto64Bits(unsigned Radix, unsigned NumDigits) {
     return NumDigits <= 64 / 4; // Digits are groups of 4 bits.
   default:
     assert(0 && "impossible Radix");
+    break;
   }
+  return true;
 }
 
 /// GetIntegerValue - Convert this numeric literal value to an APInt that
