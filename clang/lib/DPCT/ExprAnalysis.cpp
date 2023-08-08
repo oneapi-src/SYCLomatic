@@ -1040,7 +1040,9 @@ void ExprAnalysis::analyzeExpr(const DeclStmt *DS) {
   }
 }
 
-void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
+void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
+                               const DependentNameTypeLoc *DNTL,
+                               const NestedNameSpecifierLoc *NNSL) {
   SourceRange SR = TL.getSourceRange();
   std::string TyName;
 
@@ -1056,6 +1058,12 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
         SR = TL.getSourceRange();
     }
   }
+  if (DNTL) {
+    SR.setBegin(DNTL->getQualifierLoc().getBeginLoc());
+  }
+  if (NNSL) {
+    SR.setBegin(NNSL->getBeginLoc());
+  }
 
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
   switch (TL.getTypeLocClass()) {
@@ -1069,13 +1077,8 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
   case TypeLoc::Typedef:
   case TypeLoc::Builtin:
   case TypeLoc::Using:
+  case TypeLoc::Elaborated:
   case TypeLoc::Record: {
-    if (TyName.find("cub") == std::string::npos &&
-        TL.getTypeLocClass() == TypeLoc::Typedef) {
-      TyName +=
-          TYPELOC_CAST(TypedefTypeLoc).getTypedefNameDecl()->getName().str();
-      break;
-    }
     TyName = DpctGlobalInfo::getTypeName(TL.getType());
     auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TyName);
     if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
