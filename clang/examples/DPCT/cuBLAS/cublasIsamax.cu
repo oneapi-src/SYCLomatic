@@ -1,8 +1,8 @@
 #include "cublas_v2.h"
 
-void test(cublasHandle_t h, int n, const float *x, int incx, int *res) {
+void test(cublasHandle_t handle, int n, const float *x, int incx, int *res) {
   // Start
-  cublasIsamax(h /*cublasHandle_t*/, n /*int*/, x /*const float **/,
+  cublasIsamax(handle /*cublasHandle_t*/, n /*int*/, x /*const float **/,
                incx /*int*/, res /*int **/);
   // End
 }

@@ -3,7 +3,7 @@
 void test(cublasHandle_t handle, int n, const double *x, int incx,
           double *res) {
   // Start
-  cublasDasum(handle /*cublasHandle_t*/, n /*int*/, x /*const double **/,
+  cublasDnrm2(handle /*cublasHandle_t*/, n /*int*/, x /*const double **/,
               incx /*int*/, res /*double **/);
   // End
 }
