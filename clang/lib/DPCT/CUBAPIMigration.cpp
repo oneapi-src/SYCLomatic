@@ -764,9 +764,9 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
     auto EndLoc =
         SM.getExpansionLoc(TD->getTypeSourceInfo()->getTypeLoc().getEndLoc());
     if (CanonicalTypeStr.find("Warp") != std::string::npos) {
-      emplaceTransformation(replaceText(
-          BeginLoc, EndLoc.getLocWithOffset(1),
-          MapNames::getClNamespace() + "ext::oneapi::sub_group", SM));
+      emplaceTransformation(
+          replaceText(BeginLoc, EndLoc.getLocWithOffset(1),
+                      MapNames::getClNamespace() + "sub_group", SM));
     } else if (CanonicalTypeStr.find("Block") != std::string::npos) {
       auto DeviceFuncDecl = DpctGlobalInfo::findAncestor<FunctionDecl>(TD);
       if (DeviceFuncDecl && (DeviceFuncDecl->hasAttr<CUDADeviceAttr>() ||
@@ -1313,9 +1313,9 @@ void CubRule::processTypeLoc(const TypeLoc *TL) {
   std::string TypeName = TL->getType().getCanonicalType().getAsString();
   if (TypeName.find("class cub::WarpScan") == 0 ||
       TypeName.find("class cub::WarpReduce") == 0) {
-    emplaceTransformation(
-        replaceText(BeginLoc, EndLoc.getLocWithOffset(1),
-                    MapNames::getClNamespace() + "ext::oneapi::sub_group", SM));
+    emplaceTransformation(replaceText(BeginLoc, EndLoc.getLocWithOffset(1),
+                                      MapNames::getClNamespace() + "sub_group",
+                                      SM));
   } else if (TypeName.find("class cub::BlockScan") == 0 ||
              TypeName.find("class cub::BlockReduce") == 0) {
     auto DeviceFuncDecl = DpctGlobalInfo::findAncestor<FunctionDecl>(TL);
