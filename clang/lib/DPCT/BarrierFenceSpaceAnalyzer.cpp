@@ -181,7 +181,7 @@ clang::dpct::BarrierFenceSpaceAnalyzer::matchAllDRE(const VarDecl *TargetDecl,
           .bind("DRE"));
   auto MatchedResults =
       ast_matchers::match(DREMatcher, *Range, DpctGlobalInfo::getContext());
-  for (auto Node : MatchedResults) {
+  for (auto &Node : MatchedResults) {
     if (auto DRE = Node.getNodeAs<DeclRefExpr>("DRE"))
       Set.insert(DRE);
   }
@@ -216,7 +216,7 @@ clang::dpct::BarrierFenceSpaceAnalyzer::isAssignedToAnotherDREOrVD(
               ast_matchers::findAll(ast_matchers::declRefExpr().bind("DRE"));
           auto MatchedResults = ast_matchers::match(
               DREMatcher, *(BO->getRHS()), DpctGlobalInfo::getContext());
-          for (auto Node : MatchedResults) {
+          for (auto &Node : MatchedResults) {
             if (auto DRE = Node.getNodeAs<DeclRefExpr>("DRE"))
               ResultDRESet.insert(DRE);
           }
