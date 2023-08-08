@@ -2728,7 +2728,10 @@ void CallFunctionExpr::buildInfo() {
 
   if (DpctGlobalInfo::isOptimizeMigration() && !FuncInfo->isInlined() &&
       !FuncInfo->IsSyclExternMacroNeeded()) {
-    FuncInfo->setAlwaysInlineDevFunc();
+    if (FuncInfo->isKernel())
+      FuncInfo->setForceInlineDevFunc();
+    else
+      FuncInfo->setAlwaysInlineDevFunc();
   }
 
   FuncInfo->buildInfo();
@@ -2968,6 +2971,11 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
 
   if (FuncInfo->IsAlwaysInlineDevFunc()) {
     std::string StrRepl = "inline ";
+    DpctGlobalInfo::getInstance().addReplacement(
+      std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl, nullptr));
+  }
+  if (FuncInfo->IsForceInlineDevFunc()) {
+    std::string StrRepl = "__forceinline ";
     DpctGlobalInfo::getInstance().addReplacement(
       std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl, nullptr));
   }
