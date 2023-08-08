@@ -3,6 +3,6 @@
 void test(cublasHandle_t h, int n, const cuComplex *x, int incx, float *res) {
   // Start
   cublasScasum(h /*cublasHandle_t*/, n /*int*/, x /*const cuComplex **/,
-               incx /*int*/, res /*float* */);
+               incx /*int*/, res /*float **/);
   // End
 }
