@@ -18,7 +18,7 @@ __device__ void testThreadGroup(cg::thread_group g) {
 
 __global__ void kernelFunc() {
   auto block = cg::this_thread_block();
-  // CHECK: sycl::ext::oneapi::experimental::this_nd_item<3>().get_local_id();
+  // CHECK: item_ct1.get_local_id();
   block.thread_index();
   // CHECK:  auto threadBlockGroup = sycl::ext::oneapi::experimental::this_group<3>();
   auto threadBlockGroup = cg::this_thread_block();
