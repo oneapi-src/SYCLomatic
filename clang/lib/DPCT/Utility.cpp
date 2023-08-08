@@ -4401,7 +4401,6 @@ std::string getNameSpace(const NamespaceDecl *NSD) {
     return NameSpace + "::" + NSD->getName().str();
   else if (NameSpace.empty() && !NSD->isInlineNamespace())
     return NSD->getName().str();
-
   return NameSpace;
 }
 
