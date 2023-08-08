@@ -1,7 +1,7 @@
 #--------------------------------------------------------------------------------
 # MIT License
 # 
-# Copyright (c) 2023 Intel Corporation
+# Copyright (c) Intel Corporation
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -64,8 +64,7 @@ else:
         os_name = "Linux"
         command = ["nm", "--demangle"]
     else:
-        os_name = "Unknown"
-        command = ["unknown"]
+        sys.exit("Running script on an unsupported OS: Aborting! [Supported OSes - Windows, Linux]")
 
 
 # Regular expression dictionary for all the function signatures from Intel oneAPI copmponents
@@ -184,7 +183,6 @@ def scan_functions_linux(binary: str, debug_output):
             token_count = len(tokens)
             if token_count > 0:
                 if re.match("U|u|w|W", tokens[0]):
-                #if tokens[0] == "U" or tokens[0] == "T" or tokens[0] == "w" or tokens[0] == "W":
                     # Sometimes functions signatures can have spaces in them
                     # and will result in multiple tokens. We piece them back
                     # here 
