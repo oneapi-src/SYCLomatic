@@ -2975,7 +2975,7 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
       std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl, nullptr));
   }
   if (FuncInfo->IsForceInlineDevFunc()) {
-    std::string StrRepl = "__forceinline ";
+    std::string StrRepl = "__dpct_inline__ ";
     DpctGlobalInfo::getInstance().addReplacement(
       std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl, nullptr));
   }

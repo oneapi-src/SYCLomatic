@@ -4,14 +4,14 @@
 #include <stdio.h>
 // CHECK: SYCL_EXTERNAL extern void test_device(const sycl::stream &stream_ct1);
 extern __device__ void test_device();
-// CHECK: __forceinline void test_global(const sycl::nd_item<3> &item_ct1,
+// CHECK: __dpct_inline__ void test_global(const sycl::nd_item<3> &item_ct1,
 __global__ void test_global() {
     test_device();
     printf("%d\n", blockIdx.x);
 
 }
 
-// CHECK: __forceinline void test_global_inline(const sycl::nd_item<3> &item_ct1,
+// CHECK: __dpct_inline__ void test_global_inline(const sycl::nd_item<3> &item_ct1,
 __global__ void test_global_inline() {
     printf("%d\n", blockIdx.x);
 
