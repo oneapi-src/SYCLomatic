@@ -4623,7 +4623,8 @@ const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "shfl_xor",
     "meta_group_rank",
     "block_tile_memory",
-    "thread_group"};
+    "thread_index",
+    "group_index"};
 
 const std::unordered_map<std::string, HelperFeatureEnum>
     MapNames::PropToGetFeatureMap = {
