@@ -6924,8 +6924,11 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
   } else if (FuncName == "clock" || FuncName == "clock64") {
-    report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED_SYCL_UNDEF, false,
-           FuncName);
+    if (CE->getDirectCallee()->hasAttr<CUDAGlobalAttr>() ||
+        CE->getDirectCallee()->hasAttr<CUDADeviceAttr>()) {
+      report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED_SYCL_UNDEF, false,
+             FuncName);
+    }
     // Add '#include <time.h>' directive to the file only once
     auto Loc = CE->getBeginLoc();
     DpctGlobalInfo::getInstance().insertHeader(Loc, HT_Time);
