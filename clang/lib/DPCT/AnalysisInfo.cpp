@@ -113,7 +113,6 @@ std::unordered_map<std::string, DpctGlobalInfo::TempVariableDeclCounter>
     DpctGlobalInfo::TempVariableDeclCounterMap;
 std::unordered_map<std::string, int> DpctGlobalInfo::TempVariableHandledMap;
 bool DpctGlobalInfo::UsingDRYPattern = true;
-bool DpctGlobalInfo::UsingGenericSpace = true;
 unsigned int DpctGlobalInfo::CudaKernelDimDFIIndex = 1;
 std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CudaKernelDimDFIMap;
@@ -2724,6 +2723,11 @@ void CallFunctionExpr::buildInfo() {
   if (!DefFilePath.empty() && DefFilePath != getFilePath() &&
       !isIncludedFile(getFilePath(), DefFilePath) && !FuncInfo->isLambda()) {
     FuncInfo->setNeedSyclExternMacro();
+  }
+
+  if (DpctGlobalInfo::isOptimizeMigration() && !FuncInfo->isInlined() &&
+      !FuncInfo->IsSyclExternMacroNeeded()) {
+    FuncInfo->setAlwaysInlineDevFunc();
   }
 
   FuncInfo->buildInfo();

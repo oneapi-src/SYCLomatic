@@ -1642,41 +1642,11 @@ public:
   }
 };
 
-class GetHasSharedAttr {
-  unsigned Index;
-
-public:
-  GetHasSharedAttr(unsigned Index) : Index(Index) {}
-  bool operator()(const CallExpr *C) {
-    bool Result = false;
-    bool NeedReport = false;
-    getShareAttrRecursive(C->getArg(Index), Result, NeedReport);
-    return Result;
-  }
-};
-
-class ReportMemoryAttrDeduce {
-  unsigned Index;
-
-public:
-  ReportMemoryAttrDeduce(unsigned Index) : Index(Index) {}
-  bool operator()(const CallExpr *C) {
-    bool SharedAttr = false;
-    bool Result = false;
-    getShareAttrRecursive(C->getArg(Index), SharedAttr, Result);
-    return Result;
-  }
-};
-
 inline auto UseNDRangeBarrier = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useNdRangeBarrier();
 };
 inline auto UseLogicalGroup = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useLogicalGroup();
-};
-
-inline auto GetUsingGenericSpace = [](const CallExpr *C) -> bool {
-  return DpctGlobalInfo::getUsingGenericSpace();
 };
 
 class CheckDerefedTypeBeforeCast {

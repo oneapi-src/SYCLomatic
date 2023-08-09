@@ -839,7 +839,6 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setGenBuildScriptEnabled(GenBuildScript);
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
   DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
-  DpctGlobalInfo::setUsingGenericSpace(!NoUseGenericSpaceFlag);
   DpctGlobalInfo::setExperimentalFlag(Experimentals.getBits());
   DpctGlobalInfo::setExtensionDEFlag(~(NoDPCPPExtensions.getBits()));
   DpctGlobalInfo::setExtensionDDFlag(UseDPCPPExtensions.getBits());

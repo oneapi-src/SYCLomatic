@@ -1708,8 +1708,6 @@ public:
   }
   static bool getUsingDRYPattern() { return UsingDRYPattern; }
   static void setUsingDRYPattern(bool Flag) { UsingDRYPattern = Flag; }
-  static bool getUsingGenericSpace() { return UsingGenericSpace; }
-  static void setUsingGenericSpace(bool Flag) { UsingGenericSpace = Flag; }
   static bool useNdRangeBarrier() {
     return getUsingExperimental<ExperimentalFeatures::Exp_NdRangeBarrier>();
   }
@@ -2050,7 +2048,6 @@ private:
       TempVariableDeclCounterMap;
   static std::unordered_map<std::string, int> TempVariableHandledMap;
   static bool UsingDRYPattern;
-  static bool UsingGenericSpace;
   static bool UsingThisItem;
   static unsigned int CudaKernelDimDFIIndex;
   static std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
@@ -3759,6 +3756,9 @@ public:
   inline bool isLambda() { return IsLambda; }
   inline void setLambda() { IsLambda = true; }
 
+  inline bool isInlined() { return IsInlined; }
+  inline void setInlined() { IsInlined = true; }
+
   inline bool isKernel() { return IsKernel; }
   inline void setKernel() { IsKernel = true; }
 
@@ -3844,6 +3844,7 @@ private:
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   std::vector<ParameterProps> ParametersProps;
   std::string FunctionName;
+  bool IsInlined = false;
   bool IsLambda;
   bool IsKernel = false;
   bool IsKernelInvoked = false;
