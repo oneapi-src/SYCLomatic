@@ -2100,10 +2100,9 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
     BeginLoc = Tok.getLocation();
   }
   auto LAngleLoc = TSL.getLAngleLoc();
-  auto Range = getDefinitionRange(BeginLoc, LAngleLoc);
-  const char *Start = SM->getCharacterData(Range.getBegin());
-  const char *End = SM->getCharacterData(Range.getEnd());
 
+  const char *Start = SM->getCharacterData(BeginLoc);
+  const char *End = SM->getCharacterData(LAngleLoc);
   auto TyLen = End - Start;
   if (TyLen <= 0)
     return false;
