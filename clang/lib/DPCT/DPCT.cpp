@@ -747,43 +747,46 @@ int runDPCT(int argc, const char **argv) {
     }
     llvm::raw_fd_ostream(FD, true) << SourceCode;
 
+    std::string OptionMsg;
+    static const std::string OptionStr{"// Option:"};
+    if (SourceCode.starts_with(OptionStr)) {
+      OptionMsg += " (with the option";
+      const auto Options =
+          SourceCode.substr(OptionStr.length(), SourceCode.find_first_of('\n') -
+                                                    OptionStr.length());
+      size_t PrePos = 0;
+      size_t NextPos = Options.find_first_of(' ');
+      while (PrePos != std::string::npos) {
+        auto Option = Options.substr(PrePos, NextPos - PrePos);
+        if (Option == "--use-dpcpp-extensions=intel_device_math") {
+          OptionMsg += " ";
+          OptionMsg += Option.str();
+          UseDPCPPExtensions.addValue(
+              DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath);
+        }
+        // Need add more option.
+        PrePos = Options.find_first_not_of(' ', NextPos);
+        NextPos = Options.find_first_of(' ', PrePos);
+      }
+      OptionMsg += ")";
+    }
+
     llvm::outs() << "CUDA API:";
     static const std::string StartStr{"// Start"};
     static const std::string EndStr{"// End"};
     auto StartPos = SourceCode.find(StartStr);
     auto EndPos = SourceCode.find(EndStr);
-    if (StartPos == std::string::npos || EndPos == std::string::npos) {
+    if (StartPos == StringRef::npos || EndPos == StringRef::npos) {
       dpctExit(MigrationErrorNoAPIMapping);
     }
     StartPos = StartPos + StartStr.length();
     EndPos = SourceCode.find_last_of('\n', EndPos);
     llvm::outs() << SourceCode.substr(StartPos, EndPos - StartPos + 1);
-    llvm::outs() << "Is migrated to";
-    static const std::string OptionStr{"// Option:"};
-    if (SourceCode.starts_with(OptionStr)) {
-      llvm::outs() << " (with the option";
-      const auto Options =
-          SourceCode.substr(OptionStr.length(), SourceCode.find_first_of('\n') -
-                                                    OptionStr.length());
-      std::istringstream SS(Options.str());
-      std::string Option;
-      while (SS >> Option) {
-        if (Option == "--use-dpcpp-extensions=intel_device_math") {
-          llvm::outs() << " " << Option;
-          UseDPCPPExtensions.addValue(
-              DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath);
-        }
-        // Need add more option.
-      }
-      llvm::outs() << ")";
-    }
-    llvm::outs() << ":";
+    llvm::outs() << "Is migrated to" << OptionMsg << ":";
 
     NoIncrementalMigration = true;
-    SmallString<64> TempPath;
-    llvm::sys::path::system_temp_directory(true, TempPath);
-    InRoot = TempPath.str().str();
-    OutRoot = TempPath.str().str();
+    InRoot = llvm::sys::path::parent_path(TempFile).str();
+    OutRoot = llvm::sys::path::parent_path(TempFile).str();
     DpctGlobalInfo::setIsQueryAPIMapping(true);
     SourcePathList = {TempFile.str().str()};
   } else {
@@ -1094,17 +1097,15 @@ int runDPCT(int argc, const char **argv) {
     bool Flag = false;
     for (auto I = RewriteBuffer.begin(), E = RewriteBuffer.end(); I != E;
          I.MoveToNextPiece()) {
-      if (I.piece().contains(EndStr)) {
-        llvm::outs() << I.piece().substr(0, I.piece().find(EndStr));
-        break;
-      }
       if (Flag) {
+        if (auto It = I.piece().find(EndStr); It != StringRef::npos) {
+          llvm::outs() << I.piece().substr(0, It);
+          break;
+        }
         llvm::outs() << I.piece();
-      }
-      if (I.piece().contains(StartStr)) {
+      } else if (auto It = I.piece().find(StartStr); It != StringRef::npos) {
         Flag = true;
-        llvm::outs() << I.piece().substr(I.piece().find(StartStr) +
-                                         StartStr.length());
+        llvm::outs() << I.piece().substr(It + StartStr.length());
       }
     }
     llvm::sys::fs::remove(SourcePathList.front().c_str());

@@ -159,7 +159,7 @@ void ShowStatus(int Status, std::string Message) {
     StatusString = "Error: The API Mapping is not available";
     break;
   case MigrationErrorCannotCreateTempFile:
-    StatusString = "Error: dpct internal error. Cannot create temp file.";
+    StatusString = "Error: Cannot create temp file.";
     break;
   default:
     DpctLog() << "Unknown error\n";
