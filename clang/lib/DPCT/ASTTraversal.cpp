@@ -8975,9 +8975,8 @@ void DeviceFunctionDeclRule::runRule(
   if (FD->hasAttr<CUDAGlobalAttr>()) {
     FuncInfo->setKernel();
   }
-  if (DpctGlobalInfo::isOptimizeMigration() && !FD->isInlined() &&
-                                !FuncInfo->IsAlwaysInlineDevFunc()) {
-    FuncInfo->setAlwaysInlineDevFunc();
+  if (FD->isInlined()) {
+    FuncInfo->setInlined();
   }
   if (auto CE = getAssistNodeAsType<CallExpr>(Result, "callExpr")) {
     if (CE->getDirectCallee()) {
