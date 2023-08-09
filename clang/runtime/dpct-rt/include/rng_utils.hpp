@@ -291,6 +291,7 @@ protected:
   sycl::queue *_queue{&dpct::get_default_queue()};
   std::uint64_t _seed{0};
   std::uint32_t _dimensions{1};
+  std::vector<std::uint32_t> _direction_numbers;
 };
 
 /// The random number generator on host.
@@ -328,6 +329,17 @@ public:
     }
     _queue = queue;
     _engine = create_engine(_queue, _seed, _dimensions);
+  }
+
+  /// Set the direction numbers of Sobol host rng_generator.
+  /// \param direction_numbers The user-defined direction numbers.
+  void
+  set_direction_numbers(const std::vector<std::uint32_t> &direction_numbers) {
+    if (direction_numbers == _direction_numbers) {
+      return;
+    }
+    _direction_numbers = direction_numbers;
+    _engine = create_engine(_queue, _direction_numbers);
   }
 
   /// Generate unsigned int random number(s) with 'uniform_bits' distribution.
@@ -447,6 +459,11 @@ private:
 #else
     return engine_t(*queue, seed);
 #endif
+  }
+  static inline engine_t
+  create_engine(sycl::queue *queue,
+                std::vector<std::uint32_t> &direction_numbers) {
+    return engine_t(*queue, direction_numbers);
   }
 
   template <typename distr_t, typename buffer_t, class... distr_params_t>
