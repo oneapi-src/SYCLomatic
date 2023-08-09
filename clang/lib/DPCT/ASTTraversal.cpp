@@ -1915,7 +1915,8 @@ REGISTER_RULE(ZeroLengthArrayRule, PassKind::PK_Migration)
 void MiscAPIRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
     return hasAnyName("cudaOccupancyMaxActiveBlocksPerMultiprocessor",
-                      "cuOccupancyMaxActiveBlocksPerMultiprocessor");
+                      "cuOccupancyMaxActiveBlocksPerMultiprocessor",
+                      "cudaOccupancyMaxPotentialBlockSize");
   };
 
   MF.addMatcher(
