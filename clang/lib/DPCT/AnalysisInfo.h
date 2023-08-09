@@ -3062,6 +3062,11 @@ public:
     TextureMap.insert(std::make_pair(Tex->getOffset(), Tex));
   }
   void addVar(std::shared_ptr<MemVarInfo> Var) {
+    auto Attr = Var->getAttr();
+    if (Var->isGlobal() && (Attr == MemVarInfo::VarAttrKind::Device ||
+                            Attr == MemVarInfo::VarAttrKind::Managed)) {
+      setGlobalMemAcc(true);
+    }
     getMap(Var->getScope())
         .insert(MemVarInfoMap::value_type(Var->getOffset(), Var));
   }
@@ -3076,14 +3081,7 @@ public:
     setSync(hasSync() || VarMap.hasSync());
     setBF64(hasBF64() || VarMap.hasBF64());
     setBF16(hasBF16() || VarMap.hasBF16());
-    bool HasGlobalMemAcc = false;
-    for (const auto &VarInfo : VarMap.GlobalVarMap) {
-      auto Attr = VarInfo.second->getAttr();
-      if (Attr == MemVarInfo::VarAttrKind::Device ||
-          Attr == MemVarInfo::VarAttrKind::Managed)
-        HasGlobalMemAcc = true;
-    }
-    setGlobalMemAcc(hasGlobalMemAcc() || HasGlobalMemAcc);
+    setGlobalMemAcc(hasGlobalMemAcc() || VarMap.hasGlobalMemAcc());
     merge(LocalVarMap, VarMap.LocalVarMap, TemplateArgs);
     merge(GlobalVarMap, VarMap.GlobalVarMap, TemplateArgs);
     merge(ExternVarMap, VarMap.ExternVarMap, TemplateArgs);
