@@ -5,7 +5,7 @@ void test(cublasHandle_t handle, cublasFillMode_t upper_lower, int n,
           const cuComplex *x, int incx, const cuComplex *beta, cuComplex *y,
           int incy) {
   // Start
-  cublasCsymv(handle /*cublasHandle_t*/, upper_lower /*cublasFillMode_t*/,
+  cublasChemv(handle /*cublasHandle_t*/, upper_lower /*cublasFillMode_t*/,
               n /*int*/, alpha /*const cuComplex **/, a /*const cuComplex **/,
               lda /*int*/, x /*const cuComplex **/, incx /*int*/,
               beta /*const cuComplex **/, y /*cuComplex **/, incy /*int*/);

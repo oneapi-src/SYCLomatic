@@ -5,6 +5,6 @@ void test(cublasHandle_t handle, cublasFillMode_t upper_lower, int n,
   // Start
   cublasDsyr(handle /*cublasHandle_t*/, upper_lower /*cublasFillMode_t*/,
              n /*int*/, alpha /*const double **/, x /*const double **/,
-             incx /*int*/, a /*const double **/, lda /*int*/);
+             incx /*int*/, a /*double **/, lda /*int*/);
   // End
 }

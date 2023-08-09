@@ -5,7 +5,7 @@ void test(cublasHandle_t handle, cublasFillMode_t upper_lower, int n,
           const cuDoubleComplex *x, int incx, const cuDoubleComplex *beta,
           cuDoubleComplex *y, int incy) {
   // Start
-  cublasZsymv(
+  cublasZhemv(
       handle /*cublasHandle_t*/, upper_lower /*cublasFillMode_t*/, n /*int*/,
       alpha /*const cuDoubleComplex **/, a /*const cuDoubleComplex **/,
       lda /*int*/, x /*const cuDoubleComplex **/, incx /*int*/,

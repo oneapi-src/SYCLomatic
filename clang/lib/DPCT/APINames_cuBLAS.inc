@@ -134,7 +134,7 @@ ENTRY(cublasSsymv, cublasSsymv_v2, true, NO_FLAG, P4, "DPCT1020/DPCT1034/DPCT104
 ENTRY(cublasDsymv, cublasDsymv_v2, true, NO_FLAG, P4, "DPCT1020/DPCT1034/DPCT1041")
 ENTRY(cublasCsymv, cublasCsymv_v2, true, NO_FLAG, P4, "DPCT1020/DPCT1034/DPCT1041")
 ENTRY(cublasZsymv, cublasZsymv_v2, true, NO_FLAG, P4, "DPCT1020/DPCT1034/DPCT1041")
-ENTRY(cublasSsyr, cublasSsyr_v2, true, NO_FLAG, P4, "DPCT1020/DPCT1034/DPCT1041") 
+ENTRY(cublasSsyr, cublasSsyr_v2, true, NO_FLAG, P4, "DPCT1020/DPCT1034/DPCT1041")
 ENTRY(cublasDsyr, cublasDsyr_v2, true, NO_FLAG, P4, "DPCT1020/DPCT1034/DPCT1041")
 ENTRY(cublasCsyr, cublasCsyr_v2, true, NO_FLAG, P4, "DPCT1020/DPCT1034/DPCT1041")
 ENTRY(cublasZsyr, cublasZsyr_v2, true, NO_FLAG, P4, "DPCT1020/DPCT1034/DPCT1041")
