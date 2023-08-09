@@ -584,10 +584,10 @@ nd_range_barrier(const sycl::nd_item<1> &item,
 /// work-group.
 /// Note: Please make sure that the logical-group size is a power of 2 in the
 /// range [1, current_sub_group_size].
-template<unsigned int dimension = 3>
+template<int dimensions = 3>
 class logical_group {
-  sycl::nd_item<dimension> _item;
-  sycl::group<dimension> _g;
+  sycl::nd_item<dimensions> _item;
+  sycl::group<dimensions> _g;
   uint32_t _logical_group_size;
   uint32_t _group_linear_range_in_parent;
 
@@ -596,13 +596,13 @@ public:
   /// \param [in] item Current work-item.
   /// \param [in] parent_group The group to be divided.
   /// \param [in] size The logical-group size.
-  logical_group(sycl::nd_item<dimension> item, sycl::group<dimension> parent_group,
+  logical_group(sycl::nd_item<dimensions> item, sycl::group<dimensions> parent_group,
                 uint32_t size)
       : _item(item), _g(parent_group), _logical_group_size(size) {
     _group_linear_range_in_parent =
         (_g.get_local_linear_range() - 1) / _logical_group_size + 1;
   }
-  logical_group(sycl::nd_item<dimension> item): _item(item), _g(item.get_group()) {}
+  logical_group(sycl::nd_item<dimensions> item): _item(item), _g(item.get_group()) {}
   /// Returns the index of the work-item within the logical-group.
   uint32_t get_local_linear_id() const {
     return _item.get_local_linear_id() % _logical_group_size;
@@ -839,11 +839,11 @@ enum class group_type {
   root_group
 };
 
-template<unsigned int dimension = 3>
+template<int dimensions = 3>
 class group_base
 {
 public:
-  group_base(sycl::nd_item<dimension> item) : nd_item(item), logical_group(item) {}
+  group_base(sycl::nd_item<dimensions> item) : nd_item(item), logical_group(item) {}
   ~group_base() {}
   size_t get_local_linear_range()
   {
@@ -893,28 +893,28 @@ public:
   }
 
 protected:
-  experimental::logical_group<dimension> logical_group;
-  sycl::nd_item<dimension> nd_item;
+  experimental::logical_group<dimensions> logical_group;
+  sycl::nd_item<dimensions> nd_item;
   group_type type;
 };
 
-template <typename T, unsigned int dimension = 3>
-class item_group : public group_base<dimension>
+template <typename T, int dimensions = 3>
+class item_group : public group_base<dimensions>
 {
-  using group_base<dimension>::type;
-  using group_base<dimension>::logical_group;
+  using group_base<dimensions>::type;
+  using group_base<dimensions>::logical_group;
 public:
-  item_group(T group, sycl::nd_item<dimension> item) : group_base<dimension>(item)
+  item_group(T group, sycl::nd_item<dimensions> item) : group_base<dimensions>(item)
   {
     if constexpr (std::is_same_v<T, sycl::sub_group>)
     {
       type = group_type::sub_group;
     }
-    else if constexpr (std::is_same_v<T, sycl::group<dimension>>)
+    else if constexpr (std::is_same_v<T, sycl::group<dimensions>>)
     {
       type = group_type::work_group;
     }
-    else if constexpr (std::is_same_v<T, dpct::experimental::logical_group<dimension>>)
+    else if constexpr (std::is_same_v<T, dpct::experimental::logical_group<dimensions>>)
     {
       logical_group = group;
       type = group_type::logical_group;
