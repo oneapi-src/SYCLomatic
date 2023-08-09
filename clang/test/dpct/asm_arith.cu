@@ -394,10 +394,10 @@ __global__ void min() {
   // CHECK: u16x2 = sycl::min<sycl::ushort2>(ua, ub);
   asm("min.u16x2 %0, %1, %2;" : "=r"(u16x2) : "r"(ua), "r"(ub));
 
-  // CHECK: i32 = sycl::clamp<int32_t>(sycl::min<int32_t>(x, y), int32_t{0, 0}, int32_t{std::numeric_limits<int32_t>::max(), std::numeric_limits<int32_t>::max()});
+  // CHECK: i32 = sycl::clamp<int32_t>(sycl::min<int32_t>(x, y), 0, std::numeric_limits<int32_t>::max());
   asm("min.s32.relu %0, %1, %2;" : "=r"(i32) : "r"(x), "r"(y));
 
-  // CHECK: s16x2 = sycl::clamp<sycl::short2>(sycl::min<sycl::short2>(sa, sb), sycl::short2{0, 0}, sycl::short2{std::numeric_limits<sycl::short2>::max(), std::numeric_limits<sycl::short2>::max()});
+  // CHECK: s16x2 = sycl::clamp<sycl::short2>(sycl::min<sycl::short2>(sa, sb), sycl::short2(0), sycl::short2(std::numeric_limits<sycl::short2::element_type>::max()));
   asm("min.s16x2.relu %0, %1, %2;" : "=r"(s16x2) : "r"(sa), "r"(sb));
 }
 
@@ -436,10 +436,10 @@ __global__ void max() {
   // CHECK: u16x2 = sycl::max<sycl::ushort2>(ua, ub);
   asm("max.u16x2 %0, %1, %2;" : "=r"(u16x2) : "r"(ua), "r"(ub));
 
-  // CHECK: i32 = sycl::clamp<int32_t>(sycl::max<int32_t>(x, y), int32_t{0, 0}, int32_t{std::numeric_limits<int32_t>::max(), std::numeric_limits<int32_t>::max()});
+  // CHECK: i32 = sycl::clamp<int32_t>(sycl::max<int32_t>(x, y), 0, std::numeric_limits<int32_t>::max());
   asm("max.s32.relu %0, %1, %2;" : "=r"(i32) : "r"(x), "r"(y));
 
-  // CHECK: s16x2 = sycl::clamp<sycl::short2>(sycl::max<sycl::short2>(sa, sb), sycl::short2{0, 0}, sycl::short2{std::numeric_limits<sycl::short2>::max(), std::numeric_limits<sycl::short2>::max()});
+  // CHECK: s16x2 = sycl::clamp<sycl::short2>(sycl::max<sycl::short2>(sa, sb), sycl::short2(0), sycl::short2(std::numeric_limits<sycl::short2::element_type>::max()));
   asm("max.s16x2.relu %0, %1, %2;" : "=r"(s16x2) : "r"(sa), "r"(sb));
 }
 

@@ -850,8 +850,8 @@ protected:
           BI->getKind() != InlineAsmBuiltinType::TK_s16x2 &&
           BI->getKind() != InlineAsmBuiltinType::TK_u16x2)
         return false;
-      isVec = BI->getKind() != InlineAsmBuiltinType::TK_s16x2 ||
-              BI->getKind() != InlineAsmBuiltinType::TK_u16x2;
+      isVec = BI->getKind() == InlineAsmBuiltinType::TK_s16x2 ||
+              BI->getKind() == InlineAsmBuiltinType::TK_u16x2;
     } else {
       return false;
     }
@@ -1179,30 +1179,35 @@ protected:
       return SYCLGenError();
 
     std::string Op[2];
-    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I) {
+    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I)
       if (tryEmitStmt(Op[I], Inst->getInputOperand(I)))
         return SYCLGenError();
-    }
-    auto GenMin = [&]() {
+
+    auto GenZeroVal = [&]() {
       if (isVec)
-        return llvm::formatv("{0}{{0, 0}", TypeRepl).str();
+        return TypeRepl + "(0)";
       return std::string{"0"};
     };
 
-    auto GenMax = [&]() {
+    auto GenMaxVal = [&]() {
       if (isVec)
-        return llvm::formatv("{0}{{std::numeric_limits<{0}>::max(), "
-                             "std::numeric_limits<{0}>::max()}",
-                             TypeRepl)
+        return llvm::Twine(TypeRepl)
+            .concat("(std::numeric_limits<")
+            .concat(TypeRepl)
+            .concat("::element_type>::max())")
             .str();
-      return llvm::formatv("std::numeric_limits<{0}>::max()", TypeRepl).str();
+      return llvm::Twine("std::numeric_limits<")
+          .concat(TypeRepl)
+          .concat(">::max()")
+          .str();
     };
 
     if (Inst->hasAttr(InstAttr::relu)) {
-      OS() << llvm::formatv(
+      std::string str = llvm::formatv(
           "sycl::clamp<{0}>(sycl::{5}<{0}>({1}, {2}), {3}, {4})", TypeRepl,
-          Op[0], Op[1], GenMin(), GenMax(),
-          Inst->is(asmtok::op_min) ? "min" : "max");
+          Op[0], Op[1], GenZeroVal(), GenMaxVal(),
+          Inst->is(asmtok::op_min) ? "min" : "max").str();
+      OS() << str;
     } else {
       OS() << llvm::formatv("sycl::{3}<{0}>({1}, {2})", TypeRepl, Op[0], Op[1],
                             Inst->is(asmtok::op_min) ? "min" : "max");
