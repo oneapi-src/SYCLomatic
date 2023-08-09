@@ -954,6 +954,10 @@ public:
   inline static void setSDKVersion(clang::CudaVersion V) { SDKVersion = V; }
   inline static bool isIncMigration() { return IsIncMigration; }
   inline static void setIsIncMigration(bool Flag) { IsIncMigration = Flag; }
+  inline static bool isQueryAPIMapping() { return IsQueryAPIMapping; }
+  inline static void setIsQueryAPIMapping(bool Flag) {
+    IsQueryAPIMapping = Flag;
+  }
   inline static bool needDpctDeviceExt() { return NeedDpctDeviceExt; }
   inline static void setNeedDpctDeviceExt() { NeedDpctDeviceExt = true; }
   inline static unsigned int getAssumedNDRangeDim() {
@@ -1987,6 +1991,7 @@ private:
   static clang::CudaVersion SDKVersion;
   static bool NeedDpctDeviceExt;
   static bool IsIncMigration;
+  static bool IsQueryAPIMapping;
   static unsigned int AssumedNDRangeDim;
   static std::unordered_set<std::string> PrecAndDomPairSet;
   static format::FormatRange FmtRng;
@@ -3756,6 +3761,9 @@ public:
   inline bool isLambda() { return IsLambda; }
   inline void setLambda() { IsLambda = true; }
 
+  inline bool isInlined() { return IsInlined; }
+  inline void setInlined() { IsInlined = true; }
+
   inline bool isKernel() { return IsKernel; }
   inline void setKernel() { IsKernel = true; }
 
@@ -3841,6 +3849,7 @@ private:
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   std::vector<ParameterProps> ParametersProps;
   std::string FunctionName;
+  bool IsInlined = false;
   bool IsLambda;
   bool IsKernel = false;
   bool IsKernelInvoked = false;
