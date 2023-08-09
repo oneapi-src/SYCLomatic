@@ -584,8 +584,7 @@ nd_range_barrier(const sycl::nd_item<1> &item,
 /// work-group.
 /// Note: Please make sure that the logical-group size is a power of 2 in the
 /// range [1, current_sub_group_size].
-template<int dimensions = 3>
-class logical_group {
+template <int dimensions = 3> class logical_group {
   sycl::nd_item<dimensions> _item;
   sycl::group<dimensions> _g;
   uint32_t _logical_group_size;
@@ -596,13 +595,14 @@ public:
   /// \param [in] item Current work-item.
   /// \param [in] parent_group The group to be divided.
   /// \param [in] size The logical-group size.
-  logical_group(sycl::nd_item<dimensions> item, sycl::group<dimensions> parent_group,
-                uint32_t size)
+  logical_group(sycl::nd_item<dimensions> item,
+                sycl::group<dimensions> parent_group, uint32_t size)
       : _item(item), _g(parent_group), _logical_group_size(size) {
     _group_linear_range_in_parent =
         (_g.get_local_linear_range() - 1) / _logical_group_size + 1;
   }
-  logical_group(sycl::nd_item<dimensions> item): _item(item), _g(item.get_group()) {}
+  logical_group(sycl::nd_item<dimensions> item)
+      : _item(item), _g(item.get_group()) {}
   /// Returns the index of the work-item within the logical-group.
   uint32_t get_local_linear_id() const {
     return _item.get_local_linear_id() % _logical_group_size;
@@ -832,23 +832,16 @@ public:
   }
 };
 
-enum class group_type {
-  work_group,
-  sub_group,
-  logical_group,
-  root_group
-};
+// Supported group type during during migration.
+enum class group_type { work_group, sub_group, logical_group, root_group };
 
-template<int dimensions = 3>
-class group_base
-{
+template <int dimensions = 3> class group_base {
 public:
-  group_base(sycl::nd_item<dimensions> item) : nd_item(item), logical_group(item) {}
+  group_base(sycl::nd_item<dimensions> item)
+      : nd_item(item), logical_group(item) {}
   ~group_base() {}
-  size_t get_local_linear_range()
-  {
-    switch (type)
-    {
+  size_t get_local_linear_range() {
+    switch (type) {
     case group_type::work_group:
       return nd_item.get_group().get_local_linear_range();
     case group_type::sub_group:
@@ -859,10 +852,8 @@ public:
       break;
     }
   }
-  size_t get_local_linear_id()
-  {
-    switch (type)
-    {
+  size_t get_local_linear_id() {
+    switch (type) {
     case group_type::work_group:
       return nd_item.get_group().get_local_linear_id();
     case group_type::sub_group:
@@ -874,10 +865,8 @@ public:
     }
   }
 
-  void barrier()
-  {
-    switch (type)
-    {
+  void barrier() {
+    switch (type) {
     case group_type::work_group:
       sycl::group_barrier(nd_item.get_group());
       break;
@@ -898,24 +887,22 @@ protected:
   group_type type;
 };
 
+// The item_group is a container type that can storage supported group_type.
+// Then the item_group will call the real storaged group APIs.
 template <typename T, int dimensions = 3>
-class item_group : public group_base<dimensions>
-{
+class item_group : public group_base<dimensions> {
   using group_base<dimensions>::type;
   using group_base<dimensions>::logical_group;
+
 public:
-  item_group(T group, sycl::nd_item<dimensions> item) : group_base<dimensions>(item)
-  {
-    if constexpr (std::is_same_v<T, sycl::sub_group>)
-    {
+  item_group(T group, sycl::nd_item<dimensions> item)
+      : group_base<dimensions>(item) {
+    if constexpr (std::is_same_v<T, sycl::sub_group>) {
       type = group_type::sub_group;
-    }
-    else if constexpr (std::is_same_v<T, sycl::group<dimensions>>)
-    {
+    } else if constexpr (std::is_same_v<T, sycl::group<dimensions>>) {
       type = group_type::work_group;
-    }
-    else if constexpr (std::is_same_v<T, dpct::experimental::logical_group<dimensions>>)
-    {
+    } else if constexpr (std::is_same_v<T, dpct::experimental::logical_group<
+                                               dimensions>>) {
       logical_group = group;
       type = group_type::logical_group;
     }
@@ -929,7 +916,5 @@ public:
 #endif
 
 } // namespace dpct
-
-
 
 #endif // __DPCT_UTIL_HPP__

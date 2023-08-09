@@ -11933,9 +11933,10 @@ void CooperativeGroupsFunctionRule::runRule(
       ReplacedStr = "sycl::sub_group";
     } else if (DREName == "class cooperative_groups::__v1::thread_block") {
       ReplacedStr = "sycl::group" + ReplacedStr;
-    } else {
+    } else if (DpctGlobalInfo::useLogicalGroup()) {
       ReplacedStr = "dpct::experimental::logical_group" + ReplacedStr;
-    }
+    } else
+      return;
 
     ReplacedStr = MapNames::getDpctNamespace() + "item_group<" + ReplacedStr +
                   ">(" + DR->getNameInfo().getAsString() + ", " +
@@ -11948,6 +11949,7 @@ void CooperativeGroupsFunctionRule::runRule(
       return;
     if (Begin.isMacroID() || End.isMacroID())
       return;
+    assert(End.getRawEncoding() > Begin.getRawEncoding());
     emplaceTransformation(
         new ReplaceText(Begin, End.getRawEncoding() - Begin.getRawEncoding(),
                         std::move(ReplacedStr)));
