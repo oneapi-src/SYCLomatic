@@ -14778,7 +14778,7 @@ void ForLoopUnrollRule::runRule(
       auto MatchResult = ast_matchers::match(VarDeclMatcher, *C, Context);
       for (auto &SubResult : MatchResult) {
         const DeclStmt *DS = SubResult.getNodeAs<DeclStmt>("ds");
-        if (!DS) {
+        if (!DS || Context.getParents(*DS)[0].get<ForStmt>()) {
           continue;
         }
         for (auto D : DS->decls()) {
