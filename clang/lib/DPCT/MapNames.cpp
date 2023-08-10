@@ -1770,6 +1770,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasAxpyEx", getDpctNamespace() + "axpy_ex"},
       {"cublasRotEx", getDpctNamespace() + "rot_ex"},
       {"cublasGemmEx", getDpctNamespace() + "gemm_ex"},
+      {"cublasSgemmEx", getDpctNamespace() + "gemm_ex"},
+      {"cublasCgemmEx", getDpctNamespace() + "gemm_ex"},
       {"cublasGemmBatchedEx", getDpctNamespace() + "gemm_batched_ex"},
       {"cublasGemmStridedBatchedEx",
        getDpctNamespace() + "gemm_strided_batched_ex"},
