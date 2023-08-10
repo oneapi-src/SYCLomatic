@@ -71,8 +71,13 @@ public:
   auto get_max_work_item_sizes() const {
     if constexpr (std::is_same_v<WorkItemSizesTy, sycl::range<3>>)
       return _max_work_item_sizes;
-    else
-      return _max_work_item_sizes_i;
+    else {
+      int max_work_item_sizes_i[3];
+      for (int i = 0;i<3;++i){
+        max_work_item_sizes_i[i] = _max_work_item_sizes[i];
+      }
+      return max_work_item_sizes_i;
+    }  
   }
   template <typename WorkItemSizesTy = sycl::range<3>,
             std::enable_if_t<std::is_same_v<WorkItemSizesTy, sycl::range<3>> ||
@@ -81,8 +86,13 @@ public:
   auto get_max_work_item_sizes() {
     if constexpr (std::is_same_v<WorkItemSizesTy, sycl::range<3>>)
       return _max_work_item_sizes;
-    else
-      return _max_work_item_sizes_i;
+    else {
+      int max_work_item_sizes_i[3];
+      for (int i = 0;i<3;++i){
+        max_work_item_sizes_i[i] = _max_work_item_sizes[i];
+      }
+      return max_work_item_sizes_i;
+    }  
   }
   bool get_host_unified_memory() const { return _host_unified_memory; }
   int get_major_version() const { return _major; }
@@ -140,13 +150,10 @@ public:
   }
   void set_max_work_item_sizes(const sycl::range<3> max_work_item_sizes) {
     _max_work_item_sizes = max_work_item_sizes;
-    for (int i = 0; i < 3; ++i)
-      _max_work_item_sizes_i[i] = max_work_item_sizes[i];
   }
   [[deprecated]] void
   set_max_work_item_sizes(const sycl::id<3> max_work_item_sizes) {
     for (int i = 0; i < 3; ++i) {
-      _max_work_item_sizes_i[i] = max_work_item_sizes[i];
       _max_work_item_sizes[i] = max_work_item_sizes[i];
     }
   }
@@ -201,7 +208,6 @@ public:
 private:
   char _name[256];
   sycl::range<3> _max_work_item_sizes{1, 1, 1};
-  int _max_work_item_sizes_i[3] = {1, 1, 1};
   bool _host_unified_memory = false;
   int _major;
   int _minor;
