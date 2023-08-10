@@ -149,6 +149,9 @@ tool features.
 Migrate the Vector Add Sample
 -----------------------------
 
+The Vector Add targets an Intel CPU by default. To target a different device, 
+use `ONEAPI_DEVICE_SELECTOR <https://intel.github.io/llvm-docs/EnvironmentVariables.html#oneapi-device-selector>`_.
+
 The following steps show how to migrate the Vector Add sample using |tool_name|:
 
 #. Download the `Vector Add sample <https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/Migration/vector-add-dpct>`_.
@@ -199,9 +202,9 @@ The following steps show how to migrate the Vector Add sample using |tool_name|:
 
    .. code-block::
 
-      icpx -fsycl -I<dpct_root_folder>/include src/vector_add.dp.cpp
+      icpx -fsycl -I<tool_intall_directory>/include src/vector_add.dp.cpp
 
-   where <dpct_root_folder> is TODO.
+   where <tool_intall_directory> is the tool install directory.
 
 #. Run the migrated program:
 
