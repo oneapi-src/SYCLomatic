@@ -247,8 +247,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   return CudaPathAbs.str().str();
 }
 
-std::string getInstallPath(clang::tooling::ClangTool &Tool,
-                           const char *invokeCommand) {
+std::string getInstallPath(const char *invokeCommand) {
   SmallString<512> InstalledPath(invokeCommand);
 
   // Do a PATH lookup, if there are no directory components.
@@ -266,8 +265,8 @@ std::string getInstallPath(clang::tooling::ClangTool &Tool,
   StringRef InstallPath = llvm::sys::path::parent_path(InstalledPathParent);
 
   SmallString<512> InstallPathAbs;
-  std::error_code EC = llvm::sys::fs::real_path(InstallPath,
-                                                InstallPathAbs, true);
+  std::error_code EC =
+      llvm::sys::fs::real_path(InstallPath, InstallPathAbs, true);
   if ((bool)EC) {
     ShowStatus(MigrationErrorInvalidInstallPath);
     dpctExit(MigrationErrorInvalidInstallPath);
@@ -276,8 +275,7 @@ std::string getInstallPath(clang::tooling::ClangTool &Tool,
 }
 
 // To validate the root path of the project to be migrated.
-void ValidateInputDirectory(clang::tooling::RefactoringTool &Tool,
-                            std::string &InRoot) {
+void ValidateInputDirectory(std::string &InRoot) {
 
   if (isChildOrSamePath(CudaPath, InRoot)) {
     ShowStatus(MigrationErrorRunFromSDKFolder);
@@ -603,6 +601,23 @@ int runDPCT(int argc, const char **argv) {
   }
 
   initWarningIDs();
+
+  DpctInstallPath = getInstallPath(argv[0]);
+
+  if (PathToHelperFunction) {
+    SmallString<512> pathToHelperFunction(DpctInstallPath);
+    llvm::sys::path::append(pathToHelperFunction, "include");
+    if (!llvm::sys::fs::exists(pathToHelperFunction)) {
+      DpctLog() << "Error: Helper functions not found"
+                << "/n";
+      ShowStatus(MigrationErrorInvalidInstallPath);
+      dpctExit(MigrationErrorInvalidInstallPath);
+    }
+    DpctLog() << pathToHelperFunction.str() << "\n";
+    ShowStatus(MigrationSucceeded);
+    dpctExit(MigrationSucceeded);
+  }
+
   if (InRoot.size() >= MAX_PATH_LEN - 1) {
     DpctLog() << "Error: --in-root '" << InRoot << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
@@ -753,9 +768,7 @@ int runDPCT(int argc, const char **argv) {
   }
 
   Tool.setCompilationDatabaseDir(CompilationsDir);
-  DpctInstallPath = getInstallPath(Tool, argv[0]);
-
-  ValidateInputDirectory(Tool, InRoot);
+  ValidateInputDirectory(InRoot);
 
   IsUsingDefaultOutRoot = OutRoot.empty();
   if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
@@ -771,7 +784,7 @@ int runDPCT(int argc, const char **argv) {
     ShowStatus(MigrationErrorInvalidAnalysisScope);
     dpctExit(MigrationErrorInvalidAnalysisScope);
   }
-  ValidateInputDirectory(Tool, AnalysisScope);
+  ValidateInputDirectory(AnalysisScope);
 
   if (GenHelperFunction.getValue()) {
     dpct::genHelperFunction(dpct::DpctGlobalInfo::getOutRoot());
