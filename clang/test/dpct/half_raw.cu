@@ -5,14 +5,14 @@
 
 #include <cuda_fp16.h>
 #include <cuda_runtime.h>
-int main(){
+int main() {
   // CHECK: uint16_t one_h{0x3C00};
   __half_raw one_h{0x3C00};
   // CHECK: uint16_t zero_h{0};
   __half_raw zero_h{0};
   // CHECK: uint16_t *ptr = new uint16_t{0};
   __half_raw *ptr = new __half_raw{0};
-// clang-format off
+  // clang-format off
   // CHECK: *ptr = 0x3C00;
   ptr->x = 0x3C00;
   // CHECK: *ptr = 0x3C00;
@@ -29,7 +29,7 @@ int main(){
   zero_h. x = 0x3C00;
   // CHECK: zero_h = 0x3C00;
   zero_h . x = 0x3C00;
-// clang-format on
+  // clang-format on
   // CHECK: sycl::half alpha = sycl::bit_cast<sycl::half>(one_h);
   half alpha = one_h;
   // CHECK: alpha = sycl::bit_cast<sycl::half>(one_h);

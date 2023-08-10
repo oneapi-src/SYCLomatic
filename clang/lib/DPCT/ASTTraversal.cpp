@@ -2760,9 +2760,18 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(cxxRecordDecl(isDirectlyDerivedFrom(hasAnyName(
                                   "char1", "uchar1", "short1", "ushort1",
                                   "int1", "uint1", "long1", "ulong1", "float1",
-                                  "longlong1", "ulonglong1", "double1")))
+                                  "longlong1", "ulonglong1", "double1", "__half_raw")))
                     .bind("inherit"),
                 this);
+  // Matcher for __half_raw implicitly convert to half.
+  MF.addMatcher(
+      declRefExpr(allOf(unless(hasParent(memberExpr())),
+                        unless(hasParent(unaryOperator(hasOperatorName("&")))),
+                        to(varDecl(hasType(qualType(hasDeclaration(
+                                       namedDecl(hasAnyName("__half_raw"))))))),
+                        hasParent(implicitCastExpr())))
+          .bind("halfRawExpr"),
+      this);
 }
 
 void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -2901,14 +2910,30 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
 
     report(UETT, Diagnostics::SIZEOF_WARNING, true, argTypeName);
   }
+  // Runrule for __half_raw implicitly convert to half.
+  if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "halfRawExpr")) {
+    ExprAnalysis EA;
+    std::string Replacement;
+    llvm::raw_string_ostream OS(Replacement);
+    OS << MapNames::getClNamespace() + "bit_cast<" +
+              MapNames::getClNamespace() + "half>(";
+    EA.analyze(DRE);
+    OS << EA.getReplacedString();
+    OS << ")";
+    OS.flush();
+    emplaceTransformation(new ReplaceStmt(DRE, Replacement));
+    return;
+  }
 }
 
 REGISTER_RULE(VectorTypeNamespaceRule, PassKind::PK_Migration)
 
 void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
   auto memberAccess = [&]() {
-    return hasObjectExpression(hasType(qualType(hasCanonicalType(
-        recordType(hasDeclaration(cxxRecordDecl(vectorTypeName())))))));
+    return hasObjectExpression(
+        hasType(qualType(anyOf(hasCanonicalType(recordType(hasDeclaration(
+                                   cxxRecordDecl(vectorTypeName())))),
+                               hasDeclaration(namedDecl(vectorTypeName()))))));
   };
 
   // int2.x => int2.x()
@@ -2920,8 +2945,8 @@ void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
       this);
 
   // class A : int2{ void foo(){x = 3;}}
-  MF.addMatcher(memberExpr(hasObjectExpression(hasType(pointsTo(cxxRecordDecl(
-                               hasAnyName(SUPPORTEDVECTORTYPENAMES))))))
+  MF.addMatcher(memberExpr(hasObjectExpression(hasType(
+                               pointsTo(cxxRecordDecl(vectorTypeName())))))
                     .bind("DerivedVecMemberExpr"),
                 this);
 
@@ -2935,9 +2960,10 @@ void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
 
   // int2 *a; a->x = 1;
   MF.addMatcher(
-      memberExpr(hasObjectExpression(hasType(pointerType(pointee(qualType(
-                     hasCanonicalType(recordType(hasDeclaration(cxxRecordDecl(
-                         hasAnyName(SUPPORTEDVECTORTYPENAMES)))))))))))
+      memberExpr(
+          hasObjectExpression(hasType(pointerType(pointee(qualType(
+              anyOf(recordType(hasDeclaration(cxxRecordDecl(vectorTypeName()))),
+                    hasDeclaration(namedDecl(vectorTypeName())))))))))
           .bind("VecMemberExprArrow"),
       this);
 
@@ -14689,68 +14715,3 @@ void CudaUuidRule::runRule(
 }
 
 REGISTER_RULE(CudaUuidRule, PassKind::PK_Analysis)
-
-void HalfRawRule::registerMatcher(ast_matchers::MatchFinder &MF) {
-  MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(
-                            namedDecl(hasAnyName("__half_raw"))))))
-                    .bind("halfRawType"),
-                this);
-  MF.addMatcher(memberExpr(hasObjectExpression(hasType(qualType(hasDeclaration(
-                               namedDecl(hasAnyName("__half_raw")))))))
-                    .bind("halfRawMember"),
-                this);
-  MF.addMatcher(
-      memberExpr(hasObjectExpression(hasType(pointerType(pointee(qualType(
-                     (hasDeclaration(namedDecl(hasAnyName("__half_raw"))))))))))
-          .bind("halfRawMember"),
-      this);
-  MF.addMatcher(
-      declRefExpr(allOf(unless(hasParent(memberExpr())),
-                        unless(hasParent(unaryOperator(hasOperatorName("&")))),
-                        to(varDecl(hasType(qualType(hasDeclaration(
-                                       namedDecl(hasAnyName("__half_raw"))))))
-                               .bind("varDecl"))))
-          .bind("halfRawExpr"),
-      this);
-}
-
-void HalfRawRule::runRule(
-    const ast_matchers::MatchFinder::MatchResult &Result) {
-  ExprAnalysis EA;
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  if (auto TL = getNodeAsType<TypeLoc>(Result, "halfRawType")) {
-    EA.analyze(*TL);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
-    return;
-  }
-  if (auto ME = getNodeAsType<MemberExpr>(Result, "halfRawMember")) {
-    if (ME->isArrow()) {
-      DpctGlobalInfo::getInstance().addReplacement(
-          std::make_shared<ExtReplacement>(SM, ME->getBeginLoc(), 0, "*",
-                                           nullptr));
-    }
-    DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(
-            SM, ME->getOperatorLoc(),
-            SM.getFileOffset(ME->getEndLoc()) -
-                SM.getFileOffset(ME->getOperatorLoc()) + 1,
-            "", nullptr));
-    return;
-  }
-  if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "halfRawExpr")) {
-    std::string Replacement;
-    llvm::raw_string_ostream OS(Replacement);
-    OS << MapNames::getClNamespace() + "bit_cast<" +
-              MapNames::getClNamespace() + "half>(";
-    EA.analyze(DRE);
-    OS << EA.getReplacedString();
-    OS << ")";
-    OS.flush();
-    DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(SM, DRE, Replacement, nullptr));
-    return;
-  }
-}
-
-REGISTER_RULE(HalfRawRule, PassKind::PK_Analysis)
