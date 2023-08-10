@@ -733,19 +733,24 @@ int runDPCT(int argc, const char **argv) {
 
   std::vector<std::string> SourcePathList;
   if (QueryAPIMapping.getNumOccurrences()) {
+    // Set a virtual file for --query-api-mapping.
+    llvm::SmallVector<char> SysTempDir;
+    llvm::sys::path::system_temp_directory(true, SysTempDir);
+    SourcePathList.emplace_back(
+        std::string(SysTempDir.data(), SysTempDir.size()) + "/temp.cu");
+    DpctGlobalInfo::setIsQueryAPIMapping(true);
+  } else {
+    SourcePathList = OptParser->getSourcePathList();
+  }
+  RefactoringTool Tool(OptParser->getCompilations(), SourcePathList);
+  if (DpctGlobalInfo::isQueryAPIMapping()) {
     APIMapping::initEntryMap();
     auto SourceCode = APIMapping::getAPISourceCode(QueryAPIMapping);
     if (SourceCode.empty()) {
       dpctExit(MigrationErrorNoAPIMapping);
     }
 
-    int FD;
-    SmallString<64> TempFile;
-    if (auto EC =
-            llvm::sys::fs::createTemporaryFile("tmp", "cu", FD, TempFile)) {
-      dpctExit(MigrationErrorCannotCreateTempFile);
-    }
-    llvm::raw_fd_ostream(FD, true) << SourceCode;
+    Tool.mapVirtualFile(SourcePathList[0], SourceCode);
 
     std::string OptionMsg;
     static const std::string OptionStr{"// Option:"};
@@ -785,14 +790,9 @@ int runDPCT(int argc, const char **argv) {
     llvm::outs() << "Is migrated to" << OptionMsg << ":";
 
     NoIncrementalMigration = true;
-    InRoot = llvm::sys::path::parent_path(TempFile).str();
-    OutRoot = llvm::sys::path::parent_path(TempFile).str();
-    DpctGlobalInfo::setIsQueryAPIMapping(true);
-    SourcePathList = {TempFile.str().str()};
-  } else {
-    SourcePathList = OptParser->getSourcePathList();
+    InRoot = llvm::sys::path::parent_path(SourcePathList[0]).str();
+    OutRoot = llvm::sys::path::parent_path(SourcePathList[0]).str();
   }
-  RefactoringTool Tool(OptParser->getCompilations(), SourcePathList);
 
   if (GenBuildScript) {
     clang::tooling::SetCompileTargetsMap(CompileTargetsMap);
@@ -1047,7 +1047,8 @@ int runDPCT(int argc, const char **argv) {
     DpctGlobalInfo::setRunRound(RunCount++);
     DpctToolAction Action(OutputFile.empty() ? llvm::errs() : DpctTerm(),
                           Tool.getReplacements(), Passes,
-                          {PassKind::PK_Analysis, PassKind::PK_Migration});
+                          {PassKind::PK_Analysis, PassKind::PK_Migration},
+                          Tool.getFiles().getVirtualFileSystemPtr());
 
     if (ProcessAllFlag) {
       clang::tooling::SetFileProcessHandle(InRoot, OutRoot, processAllFiles);
@@ -1098,7 +1099,8 @@ int runDPCT(int argc, const char **argv) {
          I.MoveToNextPiece()) {
       if (Flag) {
         if (auto It = I.piece().find(EndStr); It != StringRef::npos) {
-          llvm::outs() << I.piece().substr(0, It);
+          auto TempStr = I.piece().substr(0, It);
+          llvm::outs() << TempStr.substr(0, TempStr.find_last_of("\n") + 1);
           break;
         }
         llvm::outs() << I.piece();
