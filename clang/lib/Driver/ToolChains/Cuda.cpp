@@ -332,10 +332,11 @@ CudaInstallationDetector::CudaInstallationDetector(
     IsCudaHeaderFilesIncluded = true;
     static bool PrintOnce = true;
     if (PrintOnce && (!RealSDKIncludePath.empty() || !RealSDKPath.empty())) {
-      llvm::outs() << "warning: CUDA SDK header files is detected in path:\""
+      llvm::outs() << "warning: CUDA header files are detected in path \""
                    << IncPath
-                   << "\" specified by option '-I', this path will be used "
-                      "as the path of CUDA header files during migration.\n";
+                   << "\" specified by option '-I'. CUDA header files in this "
+                      "path will be used "
+                      "during migration.\n";
       PrintOnce = false;
     };
     break;
