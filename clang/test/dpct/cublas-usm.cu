@@ -639,10 +639,10 @@ int main() {
   cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, CUDA_R_32F, N, B, CUDA_R_32F, N, beta, C, CUDA_R_32F, N, CUDA_R_32F, algo);
 
   float2 alpha_C, beta_C;
-  // CHECK: oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, sycl::vec<float, 1>{alpha_S}.convert<sycl::half, sycl::rounding_mode::automatic>()[0], (sycl::half*)A, N, (sycl::half*)B, N, sycl::vec<float, 1>{beta_S}.convert<sycl::half, sycl::rounding_mode::automatic>()[0], (sycl::half*)C, N);
-  //CHECK-NEXT:oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, alpha_S, (sycl::half*)A, N, (sycl::half*)B, N, beta_S, (float*)C, N);
-  //CHECK-NEXT:oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, alpha_S, (float*)A, N, (float*)B, N, beta_S, (float*)C, N);
-  //CHECK-NEXT:oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, std::complex<float>(alpha_C.x(), alpha_C.y()), (std::complex<float>*)A, N, (std::complex<float>*)B, N, std::complex<float>(beta_C.x(), beta_C.y()), (std::complex<float>*)C, N);
+  // CHECK: dpct::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, &alpha_S, A, dpct::library_data_t::real_half, N, B, dpct::library_data_t::real_half, N, &beta_S, C, dpct::library_data_t::real_half, N, dpct::library_data_t::real_float);
+  // CHECK-NEXT: dpct::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, &alpha_S, A, dpct::library_data_t::real_half, N, B, dpct::library_data_t::real_half, N, &beta_S, C, dpct::library_data_t::real_float, N, dpct::library_data_t::real_float);
+  // CHECK-NEXT: dpct::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, &alpha_S, A, dpct::library_data_t::real_float, N, B, dpct::library_data_t::real_float, N, &beta_S, C, dpct::library_data_t::real_float, N, dpct::library_data_t::real_float);
+  // CHECK-NEXT: dpct::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, &alpha_C, A, dpct::library_data_t::complex_float, N, B, dpct::library_data_t::complex_float, N, &beta_C, C, dpct::library_data_t::complex_float, N, dpct::library_data_t::complex_float);
   cublasSgemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, &alpha_S, A, CUDA_R_16F, N, B, CUDA_R_16F, N, &beta_S, C, CUDA_R_16F, N);
   cublasSgemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, &alpha_S, A, CUDA_R_16F, N, B, CUDA_R_16F, N, &beta_S, C, CUDA_R_32F, N);
   cublasSgemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, &alpha_S, A, CUDA_R_32F, N, B, CUDA_R_32F, N, &beta_S, C, CUDA_R_32F, N);
