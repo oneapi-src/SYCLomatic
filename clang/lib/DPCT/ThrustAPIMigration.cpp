@@ -20,11 +20,13 @@ void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   // API register
   auto functionName = [&]() { return hasAnyName("on"); };
   MF.addMatcher(
-      callExpr(anyOf(callee(functionDecl(
-                         anyOf(hasDeclContext(namespaceDecl(hasName("thrust"))),
-                               functionName()))),
-                     callee(unresolvedLookupExpr(hasAnyDeclaration(namedDecl(
-                         hasDeclContext(namespaceDecl(hasName("thrust")))))))))
+      callExpr(
+          anyOf(callee(functionDecl(anyOf(
+                    hasDeclContext(namespaceDecl(hasName("thrust"))),
+                    hasDeclContext(namespaceDecl(hasName("thrust::detail"))),
+                    functionName()))),
+                callee(unresolvedLookupExpr(hasAnyDeclaration(namedDecl(
+                    hasDeclContext(namespaceDecl(hasName("thrust")))))))))
           .bind("thrustFuncCall"),
       this);
   // THRUST_STATIC_ASSERT macro register
@@ -216,16 +218,20 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
 void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   // TYPE register
   auto ThrustTypeHasNames = [&]() {
-    return hasAnyName("thrust::greater_equal", "thrust::less_equal",
-                      "thrust::logical_and", "thrust::bit_and",
-                      "thrust::bit_or", "thrust::minimum", "thrust::bit_xor",
-                      "thrust::modulus", "thrust::greater", "thrust::identity",
-                      "thrust::null_type");
+    return hasAnyName(
+        "thrust::greater_equal", "thrust::less_equal", "thrust::logical_and",
+        "thrust::bit_and", "thrust::bit_or", "thrust::minimum",
+        "thrust::bit_xor", "thrust::modulus", "thrust::greater",
+        "thrust::identity", "thrust::null_type", "thrust::detail::enable_if",
+        "thrust::detail::true_type", "thrust::detail::false_type",
+        "thrust::detail::integral_constant", "thrust::detail::is_same",
+        "thrust::system::detail::bad_alloc", "thrust::iterator_traits",
+        "thrust::detail::vector_base");
   };
-  MF.addMatcher(typeLoc(loc(hasCanonicalType(qualType(
-                            hasDeclaration(namedDecl(ThrustTypeHasNames()))))))
-                    .bind("thrustTypeLoc"),
-                this);
+  MF.addMatcher(
+      typeLoc(loc(qualType(hasDeclaration(namedDecl(ThrustTypeHasNames())))))
+          .bind("thrustTypeLoc"),
+      this);
 
   // CTOR register
   auto hasAnyThrustRecord = []() {
@@ -259,9 +265,17 @@ void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
 void ThrustTypeRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  ExprAnalysis EA;
   if (auto TL = getNodeAsType<TypeLoc>(Result, "thrustTypeLoc")) {
-    EA.analyze(*TL);
+    ExprAnalysis EA;
+    auto DNTL = DpctGlobalInfo::findAncestor<DependentNameTypeLoc>(TL);
+    auto NNSL = DpctGlobalInfo::findAncestor<NestedNameSpecifierLoc>(TL);
+    if (NNSL) {
+      EA.analyze(*TL, *NNSL);
+    } else if (DNTL) {
+      EA.analyze(*TL, *DNTL);
+    } else {
+      EA.analyze(*TL);
+    }
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
   } else if (const CXXConstructExpr *CE =

@@ -4419,8 +4419,8 @@ const MapNames::SetTy MapNames::ThrustFileExcludeSet{
     "thrust/detail/pointer.inl",
     "thrust/detail/sequence.inl",
     "thrust/detail/sort.inl",
-    "thrust/detail/temporary_buffer.h",
-    "thrust/detail/vector_base.inl"};
+    "thrust/detail/temporary_buffer.h"
+    };
 
 // Texture names mapping.
 const MapNames::MapTy TextureRule::TextureMemberNames{
