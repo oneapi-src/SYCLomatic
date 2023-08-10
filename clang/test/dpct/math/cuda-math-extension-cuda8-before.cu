@@ -1,7 +1,7 @@
 // REQUIRES: cuda-8.0
 // REQUIRES: v8.0
-// RUN: dpct --format-range=none --use-dpcpp-extensions=intel_device_math -out-root %T/cuda-math-extension2 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
-// RUN: FileCheck --input-file %T/cuda-math-extension2/cuda-math-extension2.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --use-dpcpp-extensions=intel_device_math -out-root %T/math/cuda-math-extension-cuda8-before %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
+// RUN: FileCheck --input-file %T/math/cuda-math-extension-cuda8-before/cuda-math-extension-cuda8-before.dp.cpp --match-full-lines %s
 
 #include "cuda_fp16.h"
 
