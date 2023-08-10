@@ -6,8 +6,8 @@ void test(cublasHandle_t handle, int n, const void *alpha,
   // Start
   cublasAxpyEx(handle /*cublasHandle_t*/, n /*int*/, alpha /*const void **/,
                alphatype /*cudaDataType*/, x /*const void **/,
-               xtype /*cudaDataType_t*/, incx /*int*/, y /*void **/,
-               ytype /*cudaDataType_t*/, incy /*int*/,
+               xtype /*cudaDataType*/, incx /*int*/, y /*void **/,
+               ytype /*cudaDataType*/, incy /*int*/,
                computetype /*cudaDataType*/);
   // End
 }

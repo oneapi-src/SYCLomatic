@@ -5,8 +5,8 @@ void test(cublasHandle_t handle, int n, const void *x, cudaDataType xtype,
           cudaDataType restype, cudaDataType computetype) {
   // Start
   cublasDotcEx(handle /*cublasHandle_t*/, n /*int*/, x /*const void **/,
-               xtype /*cudaDataType_t*/, incx /*int*/, y /*const void **/,
+               xtype /*cudaDataType*/, incx /*int*/, y /*const void **/,
                ytype /*cudaDataType*/, incy /*int*/, res /*void **/,
-               restype /*cudaDataType_t*/, computetype /*cudaDataType*/);
+               restype /*cudaDataType*/, computetype /*cudaDataType*/);
   // End
 }

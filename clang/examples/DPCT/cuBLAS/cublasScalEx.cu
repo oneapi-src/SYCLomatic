@@ -5,8 +5,7 @@ void test(cublasHandle_t handle, int n, const void *alpha,
           cudaDataType computetype) {
   // Start
   cublasScalEx(handle /*cublasHandle_t*/, n /*int*/, alpha /*const void **/,
-               alphatype /*cudaDataType_t*/, x /*const void **/,
-               xtype /*cudaDataType*/, incx /*int*/,
-               computetype /*cudaDataType*/);
+               alphatype /*cudaDataType*/, x /*void **/, xtype /*cudaDataType*/,
+               incx /*int*/, computetype /*cudaDataType*/);
   // End
 }

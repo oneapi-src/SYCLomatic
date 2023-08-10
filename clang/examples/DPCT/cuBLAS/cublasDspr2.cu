@@ -6,6 +6,6 @@ void test(cublasHandle_t handle, cublasFillMode_t upper_lower, int n,
   // Start
   cublasDspr2(handle /*cublasHandle_t*/, upper_lower /*cublasFillMode_t*/,
               n /*int*/, alpha /*const double **/, x /*const double **/,
-              incx /*int*/, y /*const double **/, incy /*int*/, a /*double**/);
+              incx /*int*/, y /*const double **/, incy /*int*/, a /*double **/);
   // End
 }

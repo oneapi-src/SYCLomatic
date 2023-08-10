@@ -4,7 +4,7 @@ void test(cublasHandle_t handle, int n, const void *x, cudaDataType xtype,
           int incx, void *res, cudaDataType restype, cudaDataType computetype) {
   // Start
   cublasNrm2Ex(handle /*cublasHandle_t*/, n /*int*/, x /*const void **/,
-               xtype /*cudaDataType_t*/, incx /*int*/, res /*void **/,
-               restype /*cudaDataType_t*/, computetype /*cudaDataType*/);
+               xtype /*cudaDataType*/, incx /*int*/, res /*void **/,
+               restype /*cudaDataType*/, computetype /*cudaDataType*/);
   // End
 }

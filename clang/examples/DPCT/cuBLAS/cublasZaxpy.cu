@@ -5,6 +5,6 @@ void test(cublasHandle_t handle, int n, const cuDoubleComplex *alpha,
   // Start
   cublasZaxpy(handle /*cublasHandle_t*/, n /*int*/,
               alpha /*const cuDoubleComplex **/, x /*const cuDoubleComplex **/,
-              incx /*int*/, y /*const cuDoubleComplex **/, incy /*int*/);
+              incx /*int*/, y /*cuDoubleComplex **/, incy /*int*/);
   // End
 }
