@@ -1697,6 +1697,34 @@ CALL_FACTORY_ENTRY("__float2bfloat16",
 
 // Single Precision Mathematical Functions
 MATH_API_REWRITER_DEVICE(
+    "cyl_bessel_i0f",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("cyl_bessel_i0f"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("cyl_bessel_i0f",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::cyl_bessel_i0",
+                                    CAST_IF_NOT_SAME(makeLiteral("float"),
+                                                     ARG(0))))),
+        EMPTY_FACTORY_ENTRY("cyl_bessel_i0f"),
+        EMPTY_FACTORY_ENTRY("cyl_bessel_i0f")))
+
+MATH_API_REWRITER_DEVICE(
+    "cyl_bessel_i1f",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("cyl_bessel_i1f"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("cyl_bessel_i1f",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::cyl_bessel_i1",
+                                    CAST_IF_NOT_SAME(makeLiteral("float"),
+                                                     ARG(0))))),
+        EMPTY_FACTORY_ENTRY("cyl_bessel_i1f"),
+        EMPTY_FACTORY_ENTRY("cyl_bessel_i1f")))
+
+MATH_API_REWRITER_DEVICE(
     "erfcinvf",
     MATH_API_DEVICE_NODES(
         EMPTY_FACTORY_ENTRY("erfcinvf"),
@@ -1728,6 +1756,28 @@ MATH_API_REWRITER_DEVICE(
                          CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0)))),
         EMPTY_FACTORY_ENTRY("expf"), EMPTY_FACTORY_ENTRY("expf"),
         EMPTY_FACTORY_ENTRY("expf")))
+
+MATH_API_REWRITER_DEVICE(
+    "j0f",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("j0f"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY(
+                "j0f", CALL(MapNames::getClNamespace() + "ext::intel::math::j0",
+                            CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0))))),
+        EMPTY_FACTORY_ENTRY("j0f"), EMPTY_FACTORY_ENTRY("j0f")))
+
+MATH_API_REWRITER_DEVICE(
+    "j1f",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("j1f"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY(
+                "j1f", CALL(MapNames::getClNamespace() + "ext::intel::math::j1",
+                            CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0))))),
+        EMPTY_FACTORY_ENTRY("j1f"), EMPTY_FACTORY_ENTRY("j1f")))
 
 MATH_API_REWRITER_DEVICE(
     "ldexpf",
@@ -1872,7 +1922,57 @@ MATH_API_REWRITER_DEVICE(
                 Diagnostics::MATH_EMULATION, std::string("rnormf"),
                 MapNames::getDpctNamespace() + "length"))))
 
+MATH_API_REWRITER_DEVICE(
+    "y0f",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("y0f"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY(
+                "y0f", CALL(MapNames::getClNamespace() + "ext::intel::math::y0",
+                            CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0))))),
+        EMPTY_FACTORY_ENTRY("y0f"), EMPTY_FACTORY_ENTRY("y0f")))
+
+MATH_API_REWRITER_DEVICE(
+    "y1f",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("y1f"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY(
+                "y1f", CALL(MapNames::getClNamespace() + "ext::intel::math::y1",
+                            CAST_IF_NOT_SAME(makeLiteral("float"), ARG(0))))),
+        EMPTY_FACTORY_ENTRY("y1f"), EMPTY_FACTORY_ENTRY("y1f")))
+
 // Double Precision Mathematical Functions
+MATH_API_REWRITER_DEVICE(
+    "cyl_bessel_i0",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("cyl_bessel_i0"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("cyl_bessel_i0",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::cyl_bessel_i0",
+                                    CAST_IF_NOT_SAME(makeLiteral("double"),
+                                                     ARG(0))))),
+        EMPTY_FACTORY_ENTRY("cyl_bessel_i0"),
+        EMPTY_FACTORY_ENTRY("cyl_bessel_i0")))
+
+MATH_API_REWRITER_DEVICE(
+    "cyl_bessel_i1",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("cyl_bessel_i1"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("cyl_bessel_i1",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::cyl_bessel_i1",
+                                    CAST_IF_NOT_SAME(makeLiteral("double"),
+                                                     ARG(0))))),
+        EMPTY_FACTORY_ENTRY("cyl_bessel_i1"),
+        EMPTY_FACTORY_ENTRY("cyl_bessel_i1")))
+
 MATH_API_REWRITER_DEVICE(
     "erfcinv",
     MATH_API_DEVICE_NODES(
@@ -1896,6 +1996,28 @@ MATH_API_REWRITER_DEVICE(
                 CALL(MapNames::getClNamespace() + "ext::intel::math::erfinv",
                      CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0))))),
         EMPTY_FACTORY_ENTRY("erfinv"), EMPTY_FACTORY_ENTRY("erfinv")))
+
+MATH_API_REWRITER_DEVICE(
+    "j0",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("j0"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY(
+                "j0", CALL(MapNames::getClNamespace() + "ext::intel::math::j0",
+                           CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0))))),
+        EMPTY_FACTORY_ENTRY("j0"), EMPTY_FACTORY_ENTRY("j0")))
+
+MATH_API_REWRITER_DEVICE(
+    "j1",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("j1"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY(
+                "j1", CALL(MapNames::getClNamespace() + "ext::intel::math::j1",
+                           CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0))))),
+        EMPTY_FACTORY_ENTRY("j1"), EMPTY_FACTORY_ENTRY("j1")))
 
 MATH_API_REWRITER_DEVICE(
     "ldexp",
@@ -2050,6 +2172,28 @@ MATH_API_REWRITER_HOST_DEVICE(
                 CALL(MapNames::getClNamespace(false, true) + "rsqrt", ARG(0))),
             EMPTY_FACTORY_ENTRY("rsqrt"), EMPTY_FACTORY_ENTRY("rsqrt"),
             EMPTY_FACTORY_ENTRY("rsqrt"))))
+
+MATH_API_REWRITER_DEVICE(
+    "y0",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("y0"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY(
+                "y0", CALL(MapNames::getClNamespace() + "ext::intel::math::y0",
+                           CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0))))),
+        EMPTY_FACTORY_ENTRY("y0"), EMPTY_FACTORY_ENTRY("y0")))
+
+MATH_API_REWRITER_DEVICE(
+    "y1",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("y1"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY(
+                "y1", CALL(MapNames::getClNamespace() + "ext::intel::math::y1",
+                           CAST_IF_NOT_SAME(makeLiteral("double"), ARG(0))))),
+        EMPTY_FACTORY_ENTRY("y1"), EMPTY_FACTORY_ENTRY("y1")))
 
 // Integer Mathematical Functions
 MATH_API_REWRITER_HOST_DEVICE(
