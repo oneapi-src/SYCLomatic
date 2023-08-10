@@ -26,6 +26,7 @@
 #include "ThrustAPIMigration.h"
 #include "Utility.h"
 #include "WMMAAPIMigration.h"
+#include "OptimizeMigration.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/ExprCXX.h"
@@ -14492,6 +14493,8 @@ REGISTER_RULE(ThrustTypeRule, PassKind::PK_Migration)
 
 REGISTER_RULE(WMMARule, PassKind::PK_Analysis)
 
+REGISTER_RULE(ForLoopUnrollRule, PassKind::PK_Migration)
+
 void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ComplexAPI = [&]() {
     return hasAnyName("make_cuDoubleComplex", "cuCreal", "cuCrealf", "cuCimag",
@@ -14744,58 +14747,3 @@ void CudaUuidRule::runRule(
 }
 
 REGISTER_RULE(CudaUuidRule, PassKind::PK_Analysis)
-
-void ForLoopUnrollRule::registerMatcher(ast_matchers::MatchFinder &MF) {
-  MF.addMatcher(forStmt().bind("loop"), this);
-}
-
-void ForLoopUnrollRule::runRule(
-    const ast_matchers::MatchFinder::MatchResult &Result) {
-  if (!DpctGlobalInfo::isOptimizeMigration()) {
-    return;
-  }
-
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  auto &Context = DpctGlobalInfo::getContext();
-
-  if (auto Loop = getNodeAsType<ForStmt>(Result, "loop")) {
-    auto FD = getImmediateOuterFuncDecl(Loop);
-    if (!FD ||
-        (!FD->hasAttr<CUDAGlobalAttr>() && !FD->hasAttr<CUDADeviceAttr>())) {
-      return;
-    }
-
-    if (auto Parent = Context.getParents(*Loop)[0].get<AttributedStmt>()) {
-      auto Attrs = Parent->getAttrs();
-      for (auto Attr : Attrs) {
-        if (dyn_cast<LoopHintAttr>(Attr)) {
-          return;
-        }
-      }
-    }
-    if (auto C = dyn_cast<CompoundStmt>(Loop->getBody())) {
-      auto VarDeclMatcher = findAll(declStmt().bind("ds"));
-      auto MatchResult = ast_matchers::match(VarDeclMatcher, *C, Context);
-      for (auto &SubResult : MatchResult) {
-        const DeclStmt *DS = SubResult.getNodeAs<DeclStmt>("ds");
-        if (!DS || Context.getParents(*DS)[0].get<ForStmt>()) {
-          continue;
-        }
-        for (auto D : DS->decls()) {
-          if (auto VD = dyn_cast<VarDecl>(D)) {
-            if (!VD->hasAttr<CUDASharedAttr>() && VD->isLocalVarDecl() &&
-                !isCubVar(VD)) {
-              return;
-            }
-          }
-        }
-      }
-    }
-    auto IndentStr = getIndent(Loop->getBeginLoc(), SM).str();
-    std::string Repl = "#pragma unroll\n" + IndentStr;
-    auto Begin = SM.getSpellingLoc(Loop->getBeginLoc());
-    emplaceTransformation(new InsertText(Begin, Repl));
-  }
-}
-
-REGISTER_RULE(ForLoopUnrollRule, PassKind::PK_Migration)
