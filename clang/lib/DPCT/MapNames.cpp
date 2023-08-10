@@ -4417,8 +4417,8 @@ const MapNames::SetTy MapNames::ThrustFileExcludeSet{
     "thrust/detail/pointer.inl",
     "thrust/detail/sequence.inl",
     "thrust/detail/sort.inl",
-    "thrust/detail/temporary_buffer.h",
-    "thrust/detail/vector_base.inl"};
+    "thrust/detail/temporary_buffer.h"
+    };
 
 // Texture names mapping.
 const MapNames::MapTy TextureRule::TextureMemberNames{
@@ -4622,7 +4622,9 @@ const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "shfl_up",
     "shfl_xor",
     "meta_group_rank",
-    "block_tile_memory"};
+    "block_tile_memory",
+    "thread_index",
+    "group_index"};
 
 const std::unordered_map<std::string, HelperFeatureEnum>
     MapNames::PropToGetFeatureMap = {

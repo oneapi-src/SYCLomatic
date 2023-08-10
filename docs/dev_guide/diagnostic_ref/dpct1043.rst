@@ -23,3 +23,47 @@ Suggestions to Fix
 ------------------
 
 Adjust the generated code.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+    void foo() {
+      int version;
+      cudaDriverGetVersion(&version);
+      if (version >= 12000) {
+        code path 1
+      } else {
+        code path 2
+      }
+    }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+    void foo() {
+      int version;
+      /*
+      DPCT1043:0: The version-related API is different in SYCL. An initial code was
+      generated, but you need to adjust it.
+      */
+      version = dpct::get_current_device().get_major_version();
+      if (version >= 12000) {
+        ...
+      } else {
+        ...
+      }
+    }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+    void foo() {
+      code path 1
+    }
+

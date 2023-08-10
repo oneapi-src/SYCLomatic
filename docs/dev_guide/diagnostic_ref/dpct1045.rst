@@ -25,3 +25,143 @@ If the matrix type in used is:
 
 * Supported by the routine: ignore this warning.
 * Not supported by the routine: manually fix the code according to `sparse-blas-routines <https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-dpcpp/current/sparse-blas-routines.html>`_.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   //     --         --
+   //     | 1   0   2 |
+   // A = | 0   3   4 |
+   //     | 0   0   5 |
+   //     --         --
+   // a_val = [1, 2, 3, 4, 5]
+   // a_row_ptr = [0, 2, 4, 5]
+   // a_col_ind = [0, 2, 1, 2, 2]
+   void test_cusparseTcsrmm(cusparseHandle_t handle, cusparseMatDescr_t descrA,
+                            float alpha, float beta, float *b, float *c) {
+     // malloc and set value
+     float *a_val = my_malloc<float>();
+     int *a_row_ptr = my_malloc<int>();
+     int *a_col_ind = my_malloc<int>();
+     set_value(a_val);
+     set_value(a_row_ptr);
+     set_value(a_col_ind);
+   
+     // calculate
+     cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_SYMMETRIC);
+     cusparseScsrmm(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, 4, 2, 5, 9, &alpha,
+                    descrA, a_val, a_row_ptr, a_col_ind, &beta, 5, b, c, 4);
+   
+     // synchronize and check value
+     ...
+     // free
+     my_free(a_val);
+     my_free(a_row_ptr);
+     my_free(a_col_ind);
+   }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   //     --         --
+   //     | 1   0   2 |
+   // A = | 0   3   4 |
+   //     | 0   0   5 |
+   //     --         --
+   // a_val = [1, 2, 3, 4, 5]
+   // a_row_ptr = [0, 2, 4, 5]
+   // a_col_ind = [0, 2, 1, 2, 2]
+   void test_cusparseTcsrmm(sycl::queue *handle,
+                            std::shared_ptr<dpct::sparse::matrix_info> descrA,
+                            float alpha, float beta, float *b, float *c) {
+     // malloc and set value
+     float *a_val = my_malloc<float>();
+     int *a_row_ptr = my_malloc<int>();
+     int *a_col_ind = my_malloc<int>();
+     set_value(a_val);
+     set_value(a_row_ptr);
+     set_value(a_col_ind);
+   
+     // calculate
+     descrA->set_matrix_type(dpct::sparse::matrix_info::matrix_type::sy);
+     /*
+     DPCT1045:0: Migration is only supported for this API for the general sparse
+     matrix type. You may need to adjust the code.
+     */
+     dpct::sparse::csrmm(*handle, oneapi::mkl::transpose::nontrans, 4, 2, 5,
+                         &alpha, descrA, a_val, a_row_ptr, a_col_ind, &beta, 5, b,
+                         c, 4);
+   
+     // synchronize and check value
+     ...
+     // free
+     my_free(a_val);
+     my_free(a_row_ptr);
+     my_free(a_col_ind);
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   //     --         --
+   //     | 1   0   2 |
+   // A = | 0   3   4 |
+   //     | 0   0   5 |
+   //     --         --
+   // a_val = [1, 2, 3, 4, 5]
+   // a_row_ptr = [0, 2, 4, 5]
+   // a_col_ind = [0, 2, 1, 2, 2]
+   //
+   // Original matrix A is a symmetric matrix. Only upper/lower data is used.
+   // To make it to be a general matrix, all data in the matrix need to be filled.
+   //         --         --
+   //         | 1   0   2 |
+   // new_A = | 0   3   4 |
+   //         | 2   4   5 |
+   //         --         --
+   // new_a_val = [1, 2, 3, 4, 2, 4, 5]
+   // new_a_row_ptr = [0, 2, 4, 7]
+   // new_a_col_ind = [0, 2, 1, 2, 0, 1, 2]
+   void test_cusparseTcsrmm(sycl::queue *handle,
+                            std::shared_ptr<dpct::sparse::matrix_info> descrA,
+                            float alpha, float beta, float *b, float *c) {
+     // malloc and set value
+     float *a_val = my_malloc<float>();
+     int *a_row_ptr = my_malloc<int>();
+     int *a_col_ind = my_malloc<int>();
+     set_value(a_val);
+     set_value(a_row_ptr);
+     set_value(a_col_ind);
+
+     float *new_a_val = my_malloc<float>();
+     int *new_a_row_ptr = my_malloc<int>();
+     int *new_a_col_ind = my_malloc<int>();
+
+     // convert matrix data from symmetric format to general format
+     std::tie(new_a_val, new_a_row_ptr, new_a_col_ind) =
+         symmetric_to_general(a_val, a_row_ptr, a_col_ind);
+
+     my_free(a_val);
+     my_free(a_row_ptr);
+     my_free(a_col_ind);
+
+     // calculate
+     descrA->set_matrix_type(dpct::sparse::matrix_info::matrix_type::ge);
+     dpct::sparse::csrmm(*handle, oneapi::mkl::transpose::nontrans, 4, 2, 5,
+                         &alpha, descrA, new_a_val, new_a_row_ptr,
+                         new_a_col_ind, &beta, 5, b, c, 4);
+   
+     // synchronize and check value
+     ...
+     // free
+     my_free(new_a_val);
+     my_free(new_a_row_ptr);
+     my_free(new_a_col_ind);
+   }
+

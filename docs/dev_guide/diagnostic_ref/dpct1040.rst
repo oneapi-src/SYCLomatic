@@ -25,3 +25,78 @@ Suggestions to Fix
 * If the ``printf`` statement is only used from the host, do not change your code.
 * If the ``printf`` statement is only used from the device, use ``sycl::stream``
   instead of ``printf``.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+    __host__ __device__ void hd() {
+      printf("Hello!\n");
+    }
+    
+    __global__ void k() {
+      hd();
+    }
+    
+    void foo() {
+      hd();
+      k<<<1, 1>>>();
+    }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+    void hd() {
+      /*
+      DPCT1040:0: Use sycl::stream instead of printf if your code is used on the
+      device.
+      */
+      printf("Hello!\n");
+    }
+    
+    void k() {
+      hd();
+    }
+    
+    void foo() {
+      hd();
+      dpct::get_default_queue().parallel_for(
+          sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+          [=](sycl::nd_item<3> item_ct1) {
+            k();
+          });
+    }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+    void hd_host() {
+      printf("Hello!\n");
+    }
+    
+    void hd_device(const sycl::stream &stream) {
+      stream << "Hello!\n";
+    }
+    
+    void k(const sycl::stream &stream) {
+      hd_device(stream);
+    }
+    
+    void foo() {
+      hd_host();
+      dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+        sycl::stream stream(64 * 1024 /*totalBufferSize*/, 80 /*workItemBufferSize*/, cgh);
+    
+        cgh.parallel_for(
+            sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+            [=](sycl::nd_item<3> item_ct1) {
+              k(stream);
+            });
+      }); 
+    }
+

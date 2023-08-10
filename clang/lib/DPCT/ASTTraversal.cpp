@@ -1115,6 +1115,8 @@ void IncludesCallbacks::InclusionDirective(
 void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
                                     SrcMgr::CharacteristicKind FileType,
                                     FileID PrevFID) {
+  if (DpctGlobalInfo::isQueryAPIMapping())
+    return;
   // Record the location when a file is entered
   if (Reason == clang::PPCallbacks::EnterFile) {
     DpctGlobalInfo::getInstance().setFileEnterLocation(Loc);
@@ -1915,7 +1917,8 @@ REGISTER_RULE(ZeroLengthArrayRule, PassKind::PK_Migration)
 void MiscAPIRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
     return hasAnyName("cudaOccupancyMaxActiveBlocksPerMultiprocessor",
-                      "cuOccupancyMaxActiveBlocksPerMultiprocessor");
+                      "cuOccupancyMaxActiveBlocksPerMultiprocessor",
+                      "cudaOccupancyMaxPotentialBlockSize");
   };
 
   MF.addMatcher(
@@ -4471,6 +4474,13 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
                     hasAttr(attr::CUDADevice), hasAttr(attr::CUDAGlobal)))))))
           .bind("FunctionCallUsedInitializeVarDecl"),
       this);
+
+  MF.addMatcher(
+      unresolvedLookupExpr(
+          hasAnyDeclaration(namedDecl(functionName())),
+          hasParent(callExpr(unless(parentStmt())).bind("callExprUsed")))
+          .bind("unresolvedCallUsed"),
+      this);
 }
 
 void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -4485,6 +4495,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   bool IsAssigned = false;
   bool IsInitializeVarDecl = false;
   bool HasDeviceAttr = false;
+  std::string FuncName = "";
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "kernelCall");
   if (CE) {
     HasDeviceAttr = true;
@@ -4496,15 +4507,20 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                     Result, "FunctionCallUsedInitializeVarDecl"))) {
       IsAssigned = true;
       IsInitializeVarDecl = true;
+    } else if (auto *ULE = getNodeAsType<UnresolvedLookupExpr>(
+                   Result, "unresolvedCallUsed")) {
+      CE = getNodeAsType<CallExpr>(Result, "callExprUsed");
+      FuncName = ULE->getName().getAsString();
     } else {
       return;
     }
   }
 
-  if (!CE->getDirectCallee())
-    return;
-  std::string FuncName =
-      CE->getDirectCallee()->getNameInfo().getName().getAsString();
+  if (FuncName == "") {
+    if (!CE->getDirectCallee())
+      return;
+    FuncName = CE->getDirectCallee()->getNameInfo().getName().getAsString();
+  }
 
   const SourceManager *SM = Result.SourceManager;
   auto Loc = DpctGlobalInfo::getLocInfo(SM->getExpansionLoc(CE->getBeginLoc()));
@@ -4943,6 +4959,11 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       CallExprArguReplVec.push_back(CurrentArgumentRepl);
     }
 
+    if (FuncName == "cublasIsamax_v2" || FuncName == "cublasIdamax_v2" ||
+        FuncName == "cublasIsamin_v2" || FuncName == "cublasIdamin_v2") {
+      CallExprArguReplVec.push_back("oneapi::mkl::index_base::one");
+    }
+
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
       if (FuncName == "cublasSrotm_v2") {
         CallExprArguReplVec[6] =
@@ -5090,6 +5111,11 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       }
 
       CallExprArguReplVec.push_back(CurrentArgumentRepl);
+    }
+
+    if (FuncName == "cublasIcamax_v2" || FuncName == "cublasIzamax_v2" ||
+        FuncName == "cublasIcamin_v2" || FuncName == "cublasIzamin_v2") {
+      CallExprArguReplVec.push_back("oneapi::mkl::index_base::one");
     }
 
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
@@ -5315,6 +5341,13 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       } else {
         CallExprReplStr = CallExprReplStr + ", " + ParamsStrsVec[i];
       }
+    }
+
+    if (FuncName == "cublasIsamax" || FuncName == "cublasIdamax" ||
+        FuncName == "cublasIcamax" || FuncName == "cublasIzamax" ||
+        FuncName == "cublasIsamin" || FuncName == "cublasIdamin" ||
+        FuncName == "cublasIcamin" || FuncName == "cublasIzamin") {
+      CallExprArguReplVec.push_back("oneapi::mkl::index_base::one");
     }
 
     // All legacy APIs are synchronous
@@ -6894,8 +6927,11 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
   } else if (FuncName == "clock" || FuncName == "clock64") {
-    report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED_SYCL_UNDEF, false,
-           FuncName);
+    if (CE->getDirectCallee()->hasAttr<CUDAGlobalAttr>() ||
+        CE->getDirectCallee()->hasAttr<CUDADeviceAttr>()) {
+      report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED_SYCL_UNDEF, false,
+             FuncName);
+    }
     // Add '#include <time.h>' directive to the file only once
     auto Loc = CE->getBeginLoc();
     DpctGlobalInfo::getInstance().insertHeader(Loc, HT_Time);
@@ -11895,7 +11931,8 @@ void CooperativeGroupsFunctionRule::runRule(
   if (FuncName == "sync" || FuncName == "thread_rank" || FuncName == "size" ||
       FuncName == "shfl_down" || FuncName == "shfl_up" ||
       FuncName == "shfl_xor" || FuncName == "meta_group_rank" ||
-      FuncName == "reduce") {
+      FuncName == "reduce" || FuncName == "thread_index" ||
+      FuncName == "group_index") {
     // There are 3 usages of cooperative groups APIs.
     // 1. cg::thread_block tb; tb.sync(); // member function
     // 2. cg::thread_block tb; cg::sync(tb); // free function

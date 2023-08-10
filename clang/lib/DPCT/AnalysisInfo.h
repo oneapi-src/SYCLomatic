@@ -954,6 +954,10 @@ public:
   inline static void setSDKVersion(clang::CudaVersion V) { SDKVersion = V; }
   inline static bool isIncMigration() { return IsIncMigration; }
   inline static void setIsIncMigration(bool Flag) { IsIncMigration = Flag; }
+  inline static bool isQueryAPIMapping() { return IsQueryAPIMapping; }
+  inline static void setIsQueryAPIMapping(bool Flag) {
+    IsQueryAPIMapping = Flag;
+  }
   inline static bool needDpctDeviceExt() { return NeedDpctDeviceExt; }
   inline static void setNeedDpctDeviceExt() { NeedDpctDeviceExt = true; }
   inline static unsigned int getAssumedNDRangeDim() {
@@ -1708,8 +1712,6 @@ public:
   }
   static bool getUsingDRYPattern() { return UsingDRYPattern; }
   static void setUsingDRYPattern(bool Flag) { UsingDRYPattern = Flag; }
-  static bool getUsingGenericSpace() { return UsingGenericSpace; }
-  static void setUsingGenericSpace(bool Flag) { UsingGenericSpace = Flag; }
   static bool useNdRangeBarrier() {
     return getUsingExperimental<ExperimentalFeatures::Exp_NdRangeBarrier>();
   }
@@ -1989,6 +1991,7 @@ private:
   static clang::CudaVersion SDKVersion;
   static bool NeedDpctDeviceExt;
   static bool IsIncMigration;
+  static bool IsQueryAPIMapping;
   static unsigned int AssumedNDRangeDim;
   static std::unordered_set<std::string> PrecAndDomPairSet;
   static format::FormatRange FmtRng;
@@ -2050,7 +2053,6 @@ private:
       TempVariableDeclCounterMap;
   static std::unordered_map<std::string, int> TempVariableHandledMap;
   static bool UsingDRYPattern;
-  static bool UsingGenericSpace;
   static bool UsingThisItem;
   static unsigned int CudaKernelDimDFIIndex;
   static std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>

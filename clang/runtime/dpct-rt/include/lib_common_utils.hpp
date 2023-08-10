@@ -28,16 +28,16 @@ template <typename T>
 inline typename DataType<T>::T2 get_value(const T *s, sycl::queue &q) {
   using Ty = typename DataType<T>::T2;
   Ty s_h;
-  detail::dpct_memcpy(q, (void *)&s_h, (void *)s, sizeof(T), automatic).wait();
+  if (get_pointer_attribute(q, s) == pointer_access_attribute::device_only)
+    detail::dpct_memcpy(q, (void *)&s_h, (void *)s, sizeof(T), device_to_host)
+        .wait();
+  else
+    s_h = *reinterpret_cast<const Ty *>(s);
   return s_h;
 }
-}
-enum class version_field : int {
-  major,
-  minor,
-  update,
-  patch
-};
+} // namespace detail
+
+enum class version_field : int { major, minor, update, patch };
 
 /// Returns the requested field of Intel(R) oneAPI Math Kernel Library version.
 /// \param field The version information field (major, minor, update or patch).

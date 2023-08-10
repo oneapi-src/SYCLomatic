@@ -24,7 +24,9 @@
 #if defined(__linux__)
 #include <sys/mman.h>
 #elif defined(_WIN64)
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #include <windows.h>
 #else
 #error "Only support Windows and Linux."
