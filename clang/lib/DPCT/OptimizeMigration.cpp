@@ -31,13 +31,13 @@ void ForLoopUnrollRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 }
 
 
-// Automatically add "#pragma unroll" to for loops that meet the following criteria:
+// Automatically add "#pragma unroll" to for loops that meet the following condition:
 // 1. The loop is inside a device function.
 // 2. The loop does not have any other loop hint attributes.
-// 3. No variable declarations are allowed inside the loop, with the following exceptions:
+// 3. No local variable declarations inside the loop, except:
 //    a) Variables declared in for loop init-statement.
-//    b) Variables declared as local memory.
-//    c) Temporary variables that will be removed after migration.
+//    b) Variables that will be located in local memory after migration.
+//    c) Variables that will be removed after migration.
 void ForLoopUnrollRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   auto &SM = DpctGlobalInfo::getSourceManager();
