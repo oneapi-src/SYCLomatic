@@ -415,30 +415,6 @@ bool isIterationSpaceBuiltinVar(const PseudoObjectExpr *Node,
     return true;
   return false;
 }
-bool hasGlobalMemoryAccess(std::shared_ptr<DeviceFunctionInfo> DFI,
-                           bool IsKernel) {
-  if (!DFI)
-    return false;
-
-  const MemVarInfoMap &MVIM =
-      DFI->getVarMap().getMap(MemVarInfo::VarScope::Global);
-  for (const auto &VarInfo : MVIM) {
-    auto Attr = VarInfo.second->getAttr();
-    if (Attr == MemVarInfo::VarAttrKind::Device ||
-        Attr == MemVarInfo::VarAttrKind::Managed)
-      return true;
-  }
-  for (const auto &Call : DFI->getCallExprMap()) {
-    if (Call.second->getName() == "__syncthreads" && !IsKernel) {
-      // Currently we do not support the analysis for __syncthreads in
-      // __device__ function
-      return false;
-    }
-    if (hasGlobalMemoryAccess(Call.second->getFuncInfo(), false))
-      return true;
-  }
-  return false;
-}
 bool isMeetAnalyisPrerequirements(const CallExpr *CE, const FunctionDecl *&FD) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
   std::cout << "BarrierFenceSpaceAnalyzer Analyzing ..." << std::endl;
@@ -465,7 +441,8 @@ bool isMeetAnalyisPrerequirements(const CallExpr *CE, const FunctionDecl *&FD) {
 #endif
     return false;
   }
-  if (hasGlobalMemoryAccess(DeviceFunctionDecl::LinkRedecls(FD), true)) {
+  std::unordered_set<const DeviceFunctionInfo *> Visited{};
+  if (DeviceFunctionDecl::LinkRedecls(FD)->getVarMap().hasGlobalMemAcc()) {
 #ifdef __DEBUG_BARRIER_FENCE_SPACE_ANALYZER
     std::cout << "Return False case I: Found device/managed variable usage"
               << std::endl;
