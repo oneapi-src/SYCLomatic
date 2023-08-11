@@ -670,6 +670,178 @@ public:
 };
 #endif
 
+struct sys_tag {};
+struct device_sys_tag : public sys_tag {};
+struct host_sys_tag : public sys_tag {};
+
+namespace internal {
+
+// Utility that converts a policy to a tag or reflects a provided tag
+template <typename PolicyOrTag> struct policy_or_tag_to_tag {
+  using DecayedPolicyOrTag = ::std::decay_t<PolicyOrTag>;
+  static constexpr bool is_policy_v =
+      oneapi::dpl::execution::is_execution_policy_v<DecayedPolicyOrTag>;
+  static constexpr bool is_sys_tag_v =
+      ::std::is_base_of_v<sys_tag, std::decay_t<DecayedPolicyOrTag>>;
+  static_assert(is_policy_v || is_sys_tag_v,
+                "Only oneDPL policies or system tags may be provided");
+
+  using policy_conversion =
+      ::std::conditional_t<oneapi::dpl::__internal::__is_host_execution_policy<
+                               DecayedPolicyOrTag>::value,
+                           host_sys_tag, device_sys_tag>;
+  using type =
+      ::std::conditional_t<is_policy_v, policy_conversion, DecayedPolicyOrTag>;
+};
+
+template <typename PolicyOrTag>
+using policy_or_tag_to_tag_t = typename policy_or_tag_to_tag<PolicyOrTag>::type;
+
+} // namespace internal
+
+// Pointer provides a wrapper around a raw pointer type with a tag of the
+// location of the memory allocation. Basic pointer operations are supported
+// with this class.
+// TODO: Improve this pointer wrapper and make an iterator adaptor
+// once we have the Boost library dependency
+template <typename Tag, typename T = void> class tagged_pointer {
+public:
+  using difference_type = ::std::make_signed_t<std::size_t>;
+  tagged_pointer() = default;
+  tagged_pointer(T *ptr) : m_ptr(ptr) {}
+
+  operator T *() const { return m_ptr; }
+  operator T *() { return m_ptr; }
+
+  // Enable conversion of void tagged_pointer to any other tagged_pointer.
+  template <typename OtherPtr, typename U = T,
+            ::std::enable_if_t<::std::is_same_v<U, void>, int> = 0>
+  operator OtherPtr *() const {
+    return static_cast<OtherPtr *>(m_ptr);
+  }
+
+  template <typename OtherPtr, typename U = T,
+            ::std::enable_if_t<::std::is_same_v<U, void>, int> = 0>
+  operator OtherPtr *() {
+    return static_cast<OtherPtr *>(m_ptr);
+  }
+
+  template <typename U = T>
+  ::std::enable_if_t<!::std::is_same_v<void, U>, U &>
+  operator[](difference_type idx) {
+    return m_ptr[idx];
+  }
+
+  template <typename U = T>
+  ::std::enable_if_t<!::std::is_same_v<void, U>, U &>
+  operator[](difference_type idx) const {
+    return m_ptr[idx];
+  }
+
+  tagged_pointer operator+(difference_type forward) const {
+    return tagged_pointer{m_ptr + forward};
+  }
+  tagged_pointer operator-(difference_type backward) const {
+    return tagged_pointer{m_ptr - backward};
+  }
+  tagged_pointer operator++(int) {
+    tagged_pointer p(m_ptr);
+    ++m_ptr;
+    return p;
+  }
+  tagged_pointer operator--(int) {
+    tagged_pointer p(m_ptr);
+    --m_ptr;
+    return p;
+  }
+  difference_type operator-(const tagged_pointer &it) const {
+    return m_ptr - it.ptr;
+  }
+  tagged_pointer &operator+=(difference_type forward) {
+    m_ptr = m_ptr + forward;
+    return *this;
+  }
+  tagged_pointer &operator-=(difference_type backward) {
+    m_ptr = m_ptr - backward;
+    return *this;
+  }
+
+private:
+  T *m_ptr;
+};
+
+namespace internal {
+
+// Internal utility to return raw pointer to allocated memory. Note that host
+// allocations are not device accessible (not pinned).
+template <typename PolicyOrTag>
+void *malloc_base(PolicyOrTag &&policy_or_tag, const ::std::size_t num_bytes) {
+  using tag = policy_or_tag_to_tag<PolicyOrTag>;
+  if constexpr (::std::is_same_v<typename tag::type, host_sys_tag>) {
+    return ::std::malloc(num_bytes);
+  } else {
+    sycl::queue q;
+    // Grab the associated queue if a device policy is provided. Otherwise, use
+    // default constructed.
+    if constexpr (tag::is_policy_v) {
+      q = policy_or_tag.queue();
+    } else {
+      q = get_default_queue();
+    }
+    return sycl::malloc_shared(num_bytes, q);
+  }
+}
+
+} // namespace internal
+
+template <typename PolicyOrTag>
+auto malloc(PolicyOrTag &&policy_or_tag, const ::std::size_t num_bytes) {
+  return tagged_pointer<internal::policy_or_tag_to_tag_t<PolicyOrTag>, void>(
+      internal::malloc_base(::std::forward<PolicyOrTag>(policy_or_tag),
+                            num_bytes));
+}
+
+template <typename T, typename PolicyOrTag>
+auto malloc(PolicyOrTag &&policy_or_tag, const ::std::size_t num_elements) {
+  return tagged_pointer<internal::policy_or_tag_to_tag_t<PolicyOrTag>, T>(
+      static_cast<T *>(
+          internal::malloc_base(::std::forward<PolicyOrTag>(policy_or_tag),
+                                num_elements * sizeof(T))));
+}
+
+template <typename PolicyOrTag, typename Pointer>
+void free(PolicyOrTag &&policy_or_tag, Pointer ptr) {
+  using tag = internal::policy_or_tag_to_tag<PolicyOrTag>;
+  if constexpr (::std::is_same_v<typename tag::type, host_sys_tag>) {
+    ::std::free(ptr);
+  } else {
+    sycl::queue q;
+    // Grab the associated queue if a device policy is provided. Otherwise, use
+    // default constructed.
+    if constexpr (tag::is_policy_v) {
+      q = policy_or_tag.queue();
+    } else {
+      q = get_default_queue();
+    }
+    sycl::free(ptr, q);
+  }
+}
+
+template <typename T, typename PolicyOrTag, typename SizeType>
+auto get_temporary_allocation(PolicyOrTag &&policy_or_tag,
+                              SizeType num_elements) {
+  auto allocation_ptr =
+      malloc<T>(::std::forward<PolicyOrTag>(policy_or_tag), num_elements);
+  if (allocation_ptr == nullptr)
+    return ::std::make_pair(allocation_ptr, SizeType(0));
+  return ::std::make_pair(allocation_ptr, num_elements);
+}
+
+template <typename PolicyOrTag, typename Pointer>
+void release_temporary_allocation(PolicyOrTag &&policy_or_tag, Pointer ptr) {
+  free(::std::forward<PolicyOrTag>(policy_or_tag), ptr);
+}
+
 template <typename T>
 device_pointer<T> malloc_device(const std::size_t num_elements) {
   return device_pointer<T>(num_elements * sizeof(T));
