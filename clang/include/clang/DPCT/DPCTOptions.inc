@@ -313,7 +313,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultEnabl
                                      false),
              DPCT_OPT_ENUM("bfloat16",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_BFloat16),
-                                     "Use the Intel extensions for bfloat16.",
+                                     "Use the SYCL extensions for bfloat16.",
                                      false)
            ),
            llvm::cl::desc("A comma-separated list of extensions not to be used in migrated code.\n"
