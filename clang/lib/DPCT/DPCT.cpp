@@ -734,10 +734,9 @@ int runDPCT(int argc, const char **argv) {
   std::vector<std::string> SourcePathList;
   if (QueryAPIMapping.getNumOccurrences()) {
     // Set a virtual file for --query-api-mapping.
-    llvm::SmallVector<char> SysTempDir;
+    llvm::SmallString<32> SysTempDir;
     llvm::sys::path::system_temp_directory(true, SysTempDir);
-    SourcePathList.emplace_back(
-        std::string(SysTempDir.data(), SysTempDir.size()) + "/temp.cu");
+    SourcePathList.emplace_back(SysTempDir.str().str() + "/temp.cu");
     DpctGlobalInfo::setIsQueryAPIMapping(true);
   } else {
     SourcePathList = OptParser->getSourcePathList();

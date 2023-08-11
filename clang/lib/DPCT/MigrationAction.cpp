@@ -129,7 +129,7 @@ void DpctFrontEndAction::EndSourceFileAction() {
 DpctToolAction::DpctToolAction(
     llvm::raw_ostream &DS, ReplTy &Replacements, const std::string &RuleNames,
     std::vector<PassKind> Passes,
-    const llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem> FS)
+    llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem> FS)
     : Global(DpctGlobalInfo::getInstance()), Repls(Replacements),
       Passes(std::move(Passes)), DiagnosticStream(DS), FS(FS) {
   if (RuleNames.empty())

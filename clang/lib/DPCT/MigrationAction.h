@@ -57,7 +57,7 @@ class DpctToolAction : public tooling::ToolAction {
 public:
   DpctToolAction(llvm::raw_ostream &DS, ReplTy &Replacements,
                  const std::string &RuleNames, std::vector<PassKind> Passes,
-                 const llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem> FS);
+                 llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem> FS);
   /// Perform an action for an invocation.
   bool runInvocation(std::shared_ptr<CompilerInvocation> Invocation,
                      FileManager *Files,
