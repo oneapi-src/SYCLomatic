@@ -30,6 +30,8 @@ void InlineAsmIdentifierTable::AddKeywords() {
   get(Y, asmtok::kw_##X).setFlag(InlineAsmIdentifierInfo::InstAttr);
 #define SAT_MOD(X, Y)                                                          \
   get(Y, asmtok::kw_##X).setFlag(InlineAsmIdentifierInfo::InstAttr);
+#define MUL_MOD(X, Y)                                                          \
+  get(Y, asmtok::kw_##X).setFlag(InlineAsmIdentifierInfo::InstAttr);
 #define CMP_OP(X, Y)                                                           \
   get(Y, asmtok::kw_##X).setFlag(InlineAsmIdentifierInfo::InstAttr);
 #include "AsmTokenKinds.def"

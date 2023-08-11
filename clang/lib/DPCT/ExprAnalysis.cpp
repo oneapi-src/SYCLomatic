@@ -710,7 +710,6 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       {"__cuda_builtin_blockDim_t", "get_local_range"},
       {"__cuda_builtin_threadIdx_t", "get_local_id"},
   };
-
   auto ItemItr = NdItemMap.find(BaseType);
   if (ItemItr != NdItemMap.end()) {
     if (MapNames::replaceName(NdItemMemberMap, FieldName)) {
@@ -762,7 +761,6 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
     }
   } else if (MapNames::SupportedVectorTypes.find(BaseType) !=
              MapNames::SupportedVectorTypes.end()) {
-
     // Skip user-defined type.
     if (isTypeInAnalysisScope(ME->getBase()->getType().getTypePtr()))
       return;
@@ -774,7 +772,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       Begin = ME->getMemberLoc();
       isImplicit = true;
     }
-    if (*BaseType.rbegin() == '1') {
+    if (*BaseType.rbegin() == '1' || BaseType == "__half_raw") {
       if (isImplicit) {
         // "x" is migrated to "*this".
         addReplacement(Begin, ME->getEndLoc(), "*this");

@@ -26,6 +26,7 @@
 #include "ThrustAPIMigration.h"
 #include "Utility.h"
 #include "WMMAAPIMigration.h"
+#include "OptimizeMigration.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/ExprCXX.h"
@@ -3125,9 +3126,18 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(cxxRecordDecl(isDirectlyDerivedFrom(hasAnyName(
                                   "char1", "uchar1", "short1", "ushort1",
                                   "int1", "uint1", "long1", "ulong1", "float1",
-                                  "longlong1", "ulonglong1", "double1")))
+                                  "longlong1", "ulonglong1", "double1", "__half_raw")))
                     .bind("inherit"),
                 this);
+  // Matcher for __half_raw implicitly convert to half.
+  MF.addMatcher(
+      declRefExpr(allOf(unless(hasParent(memberExpr())),
+                        unless(hasParent(unaryOperator(hasOperatorName("&")))),
+                        to(varDecl(hasType(qualType(hasDeclaration(
+                                       namedDecl(hasAnyName("__half_raw"))))))),
+                        hasParent(implicitCastExpr())))
+          .bind("halfRawExpr"),
+      this);
 }
 
 void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -3266,14 +3276,30 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
 
     report(UETT, Diagnostics::SIZEOF_WARNING, true, argTypeName);
   }
+  // Runrule for __half_raw implicitly convert to half.
+  if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "halfRawExpr")) {
+    ExprAnalysis EA;
+    std::string Replacement;
+    llvm::raw_string_ostream OS(Replacement);
+    OS << MapNames::getClNamespace() + "bit_cast<" +
+              MapNames::getClNamespace() + "half>(";
+    EA.analyze(DRE);
+    OS << EA.getReplacedString();
+    OS << ")";
+    OS.flush();
+    emplaceTransformation(new ReplaceStmt(DRE, Replacement));
+    return;
+  }
 }
 
 REGISTER_RULE(VectorTypeNamespaceRule, PassKind::PK_Migration)
 
 void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
   auto memberAccess = [&]() {
-    return hasObjectExpression(hasType(qualType(hasCanonicalType(
-        recordType(hasDeclaration(cxxRecordDecl(vectorTypeName())))))));
+    return hasObjectExpression(
+        hasType(qualType(anyOf(hasCanonicalType(recordType(hasDeclaration(
+                                   cxxRecordDecl(vectorTypeName())))),
+                               hasDeclaration(namedDecl(vectorTypeName()))))));
   };
 
   // int2.x => int2.x()
@@ -3285,8 +3311,8 @@ void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
       this);
 
   // class A : int2{ void foo(){x = 3;}}
-  MF.addMatcher(memberExpr(hasObjectExpression(hasType(pointsTo(cxxRecordDecl(
-                               hasAnyName(SUPPORTEDVECTORTYPENAMES))))))
+  MF.addMatcher(memberExpr(hasObjectExpression(hasType(
+                               pointsTo(cxxRecordDecl(vectorTypeName())))))
                     .bind("DerivedVecMemberExpr"),
                 this);
 
@@ -3300,9 +3326,10 @@ void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
 
   // int2 *a; a->x = 1;
   MF.addMatcher(
-      memberExpr(hasObjectExpression(hasType(pointerType(pointee(qualType(
-                     hasCanonicalType(recordType(hasDeclaration(cxxRecordDecl(
-                         hasAnyName(SUPPORTEDVECTORTYPENAMES)))))))))))
+      memberExpr(
+          hasObjectExpression(hasType(pointerType(pointee(qualType(
+              anyOf(recordType(hasDeclaration(cxxRecordDecl(vectorTypeName()))),
+                    hasDeclaration(namedDecl(vectorTypeName())))))))))
           .bind("VecMemberExprArrow"),
       this);
 
@@ -14906,6 +14933,8 @@ REGISTER_RULE(ThrustAPIRule, PassKind::PK_Migration)
 REGISTER_RULE(ThrustTypeRule, PassKind::PK_Migration)
 
 REGISTER_RULE(WMMARule, PassKind::PK_Analysis)
+
+REGISTER_RULE(ForLoopUnrollRule, PassKind::PK_Migration)
 
 void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ComplexAPI = [&]() {

@@ -1,3 +1,4 @@
+// clang-format off
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
 // RUN: dpct --format-range=none -out-root %T/wmma_warning %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
@@ -123,7 +124,7 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
     // Store the output
     // CHECK: DPCT1007:{{[0-9]+}}: Migration of nvcuda::wmma::store_matrix_sync is not supported.
     nvcuda::wmma::store_matrix_sync(d + cCol + cRow * ldc, c_frag, ldc,
-                                    nvcuda::wmma::mem_row_major);
+                                    nvcuda::wmma::mem_col_major);
   }
 }
 
@@ -195,3 +196,4 @@ int main() {
 
   return 0;
 }
+// clang-format on
