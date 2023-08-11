@@ -674,24 +674,58 @@ struct sys_tag {};
 struct device_sys_tag : public sys_tag {};
 struct host_sys_tag : public sys_tag {};
 
+#ifdef DPCT_USM_LEVEL_NONE
+template <typename Tag, typename T = void> class tagged_pointer {
+  static_assert(false,
+                "tagged_pointer is not supported with DPCT_USM_LEVEL_NONE");
+};
+template <typename PolicyOrTag, typename Pointer>
+void release_temporary_allocation(PolicyOrTag &&policy_or_tag, Pointer ptr) {
+  static_assert(
+      false,
+      "release_temporary_allocation is not supported with DPCT_USM_LEVEL_NONE");
+}
+template <typename T, typename PolicyOrTag, typename SizeType>
+auto get_temporary_allocation(PolicyOrTag &&policy_or_tag,
+                              SizeType num_elements) {
+  static_assert(
+      false,
+      "get_temporary_allocation is not supported with DPCT_USM_LEVEL_NONE");
+}
+template <typename PolicyOrTag>
+auto malloc(PolicyOrTag &&policy_or_tag, const ::std::size_t num_bytes) {
+  static_assert(false, "malloc is not supported with DPCT_USM_LEVEL_NONE");
+}
+template <typename T, typename PolicyOrTag>
+auto malloc(PolicyOrTag &&policy_or_tag, const ::std::size_t num_elements) {
+  static_assert(false, "malloc<T> is not supported with DPCT_USM_LEVEL_NONE");
+}
+template <typename PolicyOrTag, typename Pointer>
+void free(PolicyOrTag &&policy_or_tag, Pointer ptr) {
+  static_assert(false, "free is not supported with DPCT_USM_LEVEL_NONE");
+}
+#else
 namespace internal {
 
 // Utility that converts a policy to a tag or reflects a provided tag
 template <typename PolicyOrTag> struct policy_or_tag_to_tag {
-  using DecayedPolicyOrTag = ::std::decay_t<PolicyOrTag>;
+private:
+  using decayed_policy_or_tag_t = ::std::decay_t<PolicyOrTag>;
+  using policy_conversion =
+      ::std::conditional_t<oneapi::dpl::__internal::__is_host_execution_policy<
+                               decayed_policy_or_tag_t>::value,
+                           host_sys_tag, device_sys_tag>;
+
+public:
   static constexpr bool is_policy_v =
-      oneapi::dpl::execution::is_execution_policy_v<DecayedPolicyOrTag>;
+      oneapi::dpl::execution::is_execution_policy_v<decayed_policy_or_tag_t>;
   static constexpr bool is_sys_tag_v =
-      ::std::is_base_of_v<sys_tag, std::decay_t<DecayedPolicyOrTag>>;
+      ::std::is_base_of_v<sys_tag, std::decay_t<decayed_policy_or_tag_t>>;
   static_assert(is_policy_v || is_sys_tag_v,
                 "Only oneDPL policies or system tags may be provided");
 
-  using policy_conversion =
-      ::std::conditional_t<oneapi::dpl::__internal::__is_host_execution_policy<
-                               DecayedPolicyOrTag>::value,
-                           host_sys_tag, device_sys_tag>;
-  using type =
-      ::std::conditional_t<is_policy_v, policy_conversion, DecayedPolicyOrTag>;
+  using type = ::std::conditional_t<is_policy_v, policy_conversion,
+                                    decayed_policy_or_tag_t>;
 };
 
 template <typename PolicyOrTag>
@@ -699,75 +733,105 @@ using policy_or_tag_to_tag_t = typename policy_or_tag_to_tag<PolicyOrTag>::type;
 
 } // namespace internal
 
-// Pointer provides a wrapper around a raw pointer type with a tag of the
-// location of the memory allocation. Basic pointer operations are supported
-// with this class.
 // TODO: Improve this pointer wrapper and make an iterator adaptor
 // once we have the Boost library dependency
-template <typename Tag, typename T = void> class tagged_pointer {
+template <typename Tag, typename T, typename Derived>
+class tagged_pointer_base {
 public:
+  using pointer = T *;
   using difference_type = ::std::make_signed_t<std::size_t>;
-  tagged_pointer() = default;
-  tagged_pointer(T *ptr) : m_ptr(ptr) {}
-
+  tagged_pointer_base() = default;
+  tagged_pointer_base(T *ptr) : m_ptr(ptr) {}
   operator T *() const { return m_ptr; }
   operator T *() { return m_ptr; }
 
-  // Enable conversion of void tagged_pointer to any other tagged_pointer.
-  template <typename OtherPtr, typename U = T,
-            ::std::enable_if_t<::std::is_same_v<U, void>, int> = 0>
-  operator OtherPtr *() const {
-    return static_cast<OtherPtr *>(m_ptr);
-  }
+protected:
+  T *m_ptr;
+};
 
-  template <typename OtherPtr, typename U = T,
-            ::std::enable_if_t<::std::is_same_v<U, void>, int> = 0>
-  operator OtherPtr *() {
-    return static_cast<OtherPtr *>(m_ptr);
-  }
+// tagged_pointer provides a wrapper around a raw pointer type with a tag of the
+// location of the allocated memory. Standard pointer operations are supported
+// with this class.
+template <typename Tag, typename T = void>
+class tagged_pointer
+    : public tagged_pointer_base<Tag, T, tagged_pointer<Tag, T>> {
+  using super_t = tagged_pointer_base<Tag, T, tagged_pointer<Tag, T>>;
 
-  template <typename U = T>
-  ::std::enable_if_t<!::std::is_same_v<void, U>, U &>
-  operator[](difference_type idx) {
-    return m_ptr[idx];
-  }
+public:
+  using value_type = T;
+  using difference_type = typename super_t::difference_type;
+  using pointer = typename super_t::pointer;
+  using reference = T &;
+  using iterator_category = std::random_access_iterator_tag;
+  using is_hetero = ::std::is_same<Tag, host_sys_tag>; // required
+  using is_passed_directly = std::false_type;
 
-  template <typename U = T>
-  ::std::enable_if_t<!::std::is_same_v<void, U>, U &>
-  operator[](difference_type idx) const {
-    return m_ptr[idx];
+  tagged_pointer() : super_t() {}
+  tagged_pointer(T *ptr) : super_t(ptr) {}
+  T &operator[](difference_type idx) { return this->m_ptr[idx]; }
+  T &operator[](difference_type idx) const { return this->m_ptr[idx]; }
+  // Enable conversion to other pointer types only if it is convertible
+  template <
+      typename OtherType,
+      ::std::enable_if_t<::std::is_convertible_v<T *, OtherType *>, int> = 0>
+  operator tagged_pointer<Tag, OtherType>() {
+    return tagged_pointer<Tag, OtherType>(
+        static_cast<OtherType *>(this->m_ptr));
   }
-
   tagged_pointer operator+(difference_type forward) const {
-    return tagged_pointer{m_ptr + forward};
+    return tagged_pointer{this->m_ptr + forward};
   }
   tagged_pointer operator-(difference_type backward) const {
-    return tagged_pointer{m_ptr - backward};
+    return tagged_pointer{this->m_ptr - backward};
   }
   tagged_pointer operator++(int) {
-    tagged_pointer p(m_ptr);
-    ++m_ptr;
+    tagged_pointer p(this->m_ptr);
+    ++this->m_ptr;
     return p;
   }
   tagged_pointer operator--(int) {
-    tagged_pointer p(m_ptr);
-    --m_ptr;
+    tagged_pointer p(this->m_ptr);
+    --this->m_ptr;
     return p;
   }
+  tagged_pointer &operator++() {
+    ++this->m_ptr;
+    return *this;
+  }
+  tagged_pointer &operator--() {
+    --this->m_ptr;
+    return *this;
+  }
   difference_type operator-(const tagged_pointer &it) const {
-    return m_ptr - it.ptr;
+    return this->m_ptr - it.m_ptr;
   }
   tagged_pointer &operator+=(difference_type forward) {
-    m_ptr = m_ptr + forward;
+    this->m_ptr = this->m_ptr + forward;
     return *this;
   }
   tagged_pointer &operator-=(difference_type backward) {
-    m_ptr = m_ptr - backward;
+    this->m_ptr = this->m_ptr - backward;
     return *this;
   }
+};
 
-private:
-  T *m_ptr;
+// Void specialization for tagged pointers. Iterator traits are not provided but
+// conversion to other non-void tagged pointers is allowed. Pointer arithmetic
+// is disallowed with this specialization.
+template <typename Tag>
+class tagged_pointer<Tag, void>
+    : public tagged_pointer_base<Tag, void, tagged_pointer<Tag, void>> {
+  using super_t = tagged_pointer_base<Tag, void, tagged_pointer<Tag, void>>;
+
+public:
+  using difference_type = typename super_t::difference_type;
+  using pointer = typename super_t::pointer;
+  tagged_pointer() : super_t() {}
+  tagged_pointer(pointer ptr) : super_t(ptr) {}
+  // Enable void pointer to convert to all other pointer types.
+  template <typename OtherType> operator tagged_pointer<Tag, OtherType>() {
+    return static_cast<OtherType *>(this->m_ptr);
+  }
 };
 
 namespace internal {
@@ -841,6 +905,7 @@ template <typename PolicyOrTag, typename Pointer>
 void release_temporary_allocation(PolicyOrTag &&policy_or_tag, Pointer ptr) {
   free(::std::forward<PolicyOrTag>(policy_or_tag), ptr);
 }
+#endif
 
 template <typename T>
 device_pointer<T> malloc_device(const std::size_t num_elements) {
