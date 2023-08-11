@@ -26,6 +26,7 @@
 #include "ThrustAPIMigration.h"
 #include "Utility.h"
 #include "WMMAAPIMigration.h"
+#include "OptimizeMigration.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/ExprCXX.h"
@@ -14493,6 +14494,8 @@ REGISTER_RULE(ThrustAPIRule, PassKind::PK_Migration)
 REGISTER_RULE(ThrustTypeRule, PassKind::PK_Migration)
 
 REGISTER_RULE(WMMARule, PassKind::PK_Analysis)
+
+REGISTER_RULE(ForLoopUnrollRule, PassKind::PK_Migration)
 
 void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ComplexAPI = [&]() {

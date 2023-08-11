@@ -172,6 +172,7 @@ add_clang_library(DPCT
   ThrustAPIMigration.cpp
   GenHelperFunction.cpp
   WMMAAPIMigration.cpp
+  OptimizeMigration.cpp
 
   DEPENDS
   ClangDriverOptions
