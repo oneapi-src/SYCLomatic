@@ -31,6 +31,11 @@ void CallExprRewriterFactoryBase::initRewriterMapWmma() {
          std::make_shared<EnumNameRule>(
              MapNames::getClNamespace() +
              "ext::oneapi::experimental::matrix::layout::row_major")});
+    EnumConstantRule::EnumNamesMap.insert(
+        {"nvcuda::wmma::mem_col_major",
+         std::make_shared<EnumNameRule>(
+             MapNames::getClNamespace() +
+             "ext::oneapi::experimental::matrix::layout::col_major")});
   }
   RewriterMap->merge(
       std::unordered_map<std::string,

@@ -482,6 +482,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cusparseSpMVAlg_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverDnFunction_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverAlgMode_t", std::make_shared<TypeNameRule>("int")},
+      {"__half_raw", std::make_shared<TypeNameRule>("uint16_t")},
       // ...
   };
 
@@ -2056,7 +2057,7 @@ const std::map<std::string, int> MapNames::VectorTypeMigratedTypeSizeMap{
     {"ulonglong4", 32}, {"float1", 4},      {"float2", 8},
     {"float3", 16},     {"float4", 16},     {"double1", 8},
     {"double2", 16},    {"double3", 32},    {"double4", 32},
-    {"__half", 2},      {"__half2", 4}};
+    {"__half", 2},      {"__half2", 4},     {"__half_raw", 2}};
 
 const std::map<clang::dpct::KernelArgType, int> MapNames::KernelArgTypeSizeMap{
     {clang::dpct::KernelArgType::KAT_Stream, 208},

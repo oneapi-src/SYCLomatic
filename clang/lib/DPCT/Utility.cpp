@@ -4308,9 +4308,14 @@ std::string getBaseTypeRemoveTemplateArguments(const clang::MemberExpr *ME) {
     QT = QT->getPointeeType();
   const auto CT = QT.getCanonicalType();
   if (const auto RT = dyn_cast<clang::RecordType>(CT.getTypePtr())) {
+    if(const clang::CXXRecordDecl* RD = RT->getAsCXXRecordDecl()) {
+      if(RD->getIdentifier() == nullptr) {
+        return dpct::DpctGlobalInfo::getUnqualifiedTypeName(QT);
+      }
+    }
     return RT->getDecl()->getQualifiedNameAsString();
   } else {
-    return dpct::DpctGlobalInfo::getUnqualifiedTypeName(CT);
+    return dpct::DpctGlobalInfo::getUnqualifiedTypeName(QT);
   }
 }
 
