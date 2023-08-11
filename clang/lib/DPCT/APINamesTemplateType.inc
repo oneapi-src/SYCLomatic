@@ -185,16 +185,6 @@ TYPE_REWRITE_ENTRY(
     "thrust::bit_xor",
     TYPE_FACTORY(STR("std::bit_xor"), TEMPLATE_ARG(0)))
 
-//thrust::minus
-TYPE_REWRITE_ENTRY(
-    "thrust::minus",
-    TYPE_FACTORY(STR("std::minus"), TEMPLATE_ARG(0)))
-
-//thrust::multiplies
-TYPE_REWRITE_ENTRY(
-    "thrust::multiplies",
-    TYPE_FACTORY(STR("std::multiplies"), TEMPLATE_ARG(0)))
-
 //thrust::modulus
 TYPE_REWRITE_ENTRY(
     "thrust::modulus",

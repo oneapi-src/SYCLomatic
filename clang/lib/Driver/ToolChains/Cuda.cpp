@@ -213,6 +213,27 @@ void CudaInstallationDetector::WarnIfUnsupportedVersion() {
         << CudaVersionToString(Version);
 }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+bool CudaInstallationDetector::validateCudaHeaderDirectory(
+    const std::string &FilePath, const Driver &D) {
+  auto &FS = D.getVFS();
+  if (!D.getVFS().exists(FilePath))
+    return false;
+  if (!(FS.exists(FilePath + "/cuda_runtime.h") &&
+        FS.exists(FilePath + "/cuda.h")))
+    return false;
+  IsIncludePathValid = true;
+  bool IsFound = ParseCudaVersionFile(FilePath + "/cuda.h", Version);
+  if (!IsFound)
+    return false;
+  IsValid = true;
+
+  InstallPath = FilePath;
+  IncludePath = FilePath;
+
+  return true;
+}
+#endif // SYCLomatic_CUSTOMIZATION
 CudaInstallationDetector::CudaInstallationDetector(
     const Driver &D, const llvm::Triple &HostTriple,
     const llvm::opt::ArgList &Args)
@@ -308,97 +329,33 @@ CudaInstallationDetector::CudaInstallationDetector(
   Args.hasArg(options::OPT_nogpulib);
   bool IsCudaHeaderFilesIncluded = false;
   for (auto &IncPath : ExtraIncPaths) {
-    if (!D.getVFS().exists(IncPath))
-      continue;
-    if (!(FS.exists(IncPath + "/cuda_runtime.h") &&
-          FS.exists(IncPath + "/cuda.h")))
-      continue;
-
-    bool IsFound = ParseCudaVersionFile(IncPath + "/cuda.h", Version);
-    if (!IsFound)
-      continue;
-    IsValid = true;
-
-    InstallPath = IncPath;
-    IncludePath = IncPath;
-
-    // To certain include path specified by --cuda-include-path is valid
-    IsIncludePathValid = true;
-
-    // To certain CUDA version specified by --cuda-include-path is supported
-    IsVersionSupported = true;
-
-    // To certain SDK header file path specified by user '-I...' option is valid
-    IsCudaHeaderFilesIncluded = true;
-    static bool PrintOnce = true;
-    if (PrintOnce && (!RealSDKIncludePath.empty() || !RealSDKPath.empty())) {
-      llvm::outs() << "warning: CUDA header files are detected in path \""
-                   << IncPath
-                   << "\" specified by option '-I'. CUDA header files in this "
-                      "path will be used during migration.\n";
-      PrintOnce = false;
-    };
-    break;
+    IsCudaHeaderFilesIncluded = validateCudaHeaderDirectory(IncPath, D);
+    if (IsCudaHeaderFilesIncluded) {
+      static bool PrintOnce = true;
+      if (PrintOnce && (!RealSDKIncludePath.empty() || !RealSDKPath.empty())) {
+        llvm::outs() << "warning: CUDA header files are detected in path \""
+                     << IncPath
+                     << "\" specified by option '-I'. CUDA header files in "
+                        "this path will be used during migration.\n";
+        PrintOnce = false;
+      };
+      break;
+    }
   }
 
   if (IsCudaHeaderFilesIncluded) {
     return;
   } else if (HasSDKIncludeOption) {
-    if (RealSDKIncludePath.empty() ||
-        !D.getVFS().exists(RealSDKIncludePath))
-      return;
-    if (!(FS.exists(RealSDKIncludePath + "/cuda_runtime.h") &&
-          FS.exists(RealSDKIncludePath + "/cuda.h")))
-      return;
-    InstallPath = RealSDKIncludePath;
-    IncludePath = RealSDKIncludePath;
-
-    // To certain include path specified by --cuda-include-path is valid
-    IsIncludePathValid = true;
-
-    bool IsFound =
-        ParseCudaVersionFile(RealSDKIncludePath + "/cuda.h", Version);
-    if (!IsFound)
-      return;
-    IsValid = true;
-
-    // To certain CUDA version specified by --cuda-include-path is supported
-    IsVersionSupported = true;
+    validateCudaHeaderDirectory(RealSDKIncludePath, D);
   } else {
     for (const auto &Candidate : Candidates) {
       InstallPath = Candidate.Path;
-      if (InstallPath.empty() || !D.getVFS().exists(InstallPath))
-        continue;
-
-      bool IsFound = false;
-      if (FS.exists(InstallPath + "/include/cuda_runtime.h") &&
-          FS.exists(InstallPath + "/include/cuda.h")) {
-        IsFound = ParseCudaVersionFile(InstallPath + "/include/cuda.h", Version);
-        if (!IsFound)
-          continue;
-        InstallPath = InstallPath + "/include/";
-        IncludePath = InstallPath;
-
-        // To certain include path detected is valid
-        IsIncludePathValid = true;
-      } else if (FS.exists(InstallPath + "/cuda_runtime.h") &&
-                 FS.exists(InstallPath + "/cuda.h")) {
-        IsFound = ParseCudaVersionFile(InstallPath + "/cuda.h", Version);
-        if (!IsFound)
-          continue;
-        IncludePath = InstallPath;
-
-        // To certain include path detected is valid
-        IsIncludePathValid = true;
-      } else {
-        continue;
+      if (validateCudaHeaderDirectory(InstallPath + "/include/", D) ||
+          validateCudaHeaderDirectory(InstallPath, D)) {
+        // To certain CUDA version that dpct supports is available
+        IsSupportedVersionAvailable = true;
+        break;
       }
-
-      IsValid = true;
-
-      // To certain CUDA version that dpct supports is available
-      IsSupportedVersionAvailable = true;
-      break;
     }
   }
 #else
