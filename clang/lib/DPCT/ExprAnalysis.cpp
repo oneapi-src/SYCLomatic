@@ -458,6 +458,14 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
             Qualifier->getAsNamespace()->getBeginLoc())) {
       CTSName = getNestedNameSpecifierString(Qualifier) +
                 DRE->getNameInfo().getAsString();
+    } else if (Qualifier->getAsNamespace() &&
+               Qualifier->getAsNamespace()->getName() == "wmma" &&
+               dpct::DpctGlobalInfo::isInCudaPath(
+                   Qualifier->getAsNamespace()->getBeginLoc())) {
+      if (const auto *NSD =
+              dyn_cast<NamespaceDecl>(Qualifier->getAsNamespace())) {
+        CTSName = getNameSpace(NSD) + "::" + DRE->getNameInfo().getAsString();
+      }
     } else if (!IsNamespaceOrAlias || !IsSpecicalAPI) {
       CTSName = getNestedNameSpecifierString(Qualifier) +
                 DRE->getNameInfo().getAsString();
