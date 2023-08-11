@@ -439,7 +439,35 @@ bool isCGAPI(std::string Name) {
   return MapNames::CooperativeGroupsAPISet.count(Name);
 }
 
+bool ExprAnalysis::getSpecialRepl(const Stmt *S, std::string &Str) {
+  auto &Map = DpctGlobalInfo::getSpecialReplForEAMap();
+  auto LocInfo =
+      DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(S->getBeginLoc()));
+  std::string Key = LocInfo.first + ":" + std::to_string(LocInfo.second);
+  auto it = Map.find(Key);
+  if (it == Map.end()) {
+    return false;
+  }
+  Str = it->second;
+  return true;
+}
+
+void ExprAnalysis::analyzeExpr(const ArraySubscriptExpr *ASE) {
+  std::string SpecialRepl;
+  if (getSpecialRepl(ASE, SpecialRepl)) {
+    addReplacement(ASE, SpecialRepl);
+    return;
+  }
+  dispatch(ASE->getBase());
+  dispatch(ASE->getIdx());
+}
+
 void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
+  std::string SpecialRepl;
+  if (getSpecialRepl(DRE, SpecialRepl)) {
+    addReplacement(DRE, SpecialRepl);
+    return;
+  }
   std::string CTSName;
   auto Qualifier = DRE->getQualifier();
   if (Qualifier) {

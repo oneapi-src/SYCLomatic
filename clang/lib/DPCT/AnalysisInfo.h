@@ -1910,6 +1910,11 @@ public:
   getMallocHostInfoMap(){
     return MallocHostInfoMap;
   };
+  static inline std::unordered_map<std::string, std::string> &
+  getSpecialReplForEAMap() {
+    return SpecialReplForEAMap;
+  };
+
 private:
   DpctGlobalInfo();
 
@@ -2092,6 +2097,7 @@ private:
   static std::unordered_map<std::string, std::vector<std::string>>
       MainSourceFileMap;
   static std::unordered_map<std::string, bool> MallocHostInfoMap;
+  static std::unordered_map<std::string, std::string> SpecialReplForEAMap;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.
@@ -2482,6 +2488,10 @@ public:
     }
     return Ret;
   }
+  void setManualInitValue(const std::string &Init) {
+    InitList = Init;
+    IsManualInitSet = true;
+  }
 
 private:
   bool isTreatPointerAsArray() {
@@ -2558,7 +2568,7 @@ private:
   std::string InitList;
   bool IsIgnored = false;
   bool IsStatic = false;
-
+  bool IsManualInitSet = false;
   static const std::string ExternVariableName;
 
   // To store the new name for __constant__ variable's name that needs to be

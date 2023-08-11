@@ -622,10 +622,7 @@ protected:
 
   inline void analyzeExpr(const ParenExpr *PE) { dispatch(PE->getSubExpr()); }
 
-  inline void analyzeExpr(const ArraySubscriptExpr *ASE) {
-    dispatch(ASE->getBase());
-    dispatch(ASE->getIdx());
-  }
+  void analyzeExpr(const ArraySubscriptExpr *ASE);
   inline void analyzeExpr(const ExprWithCleanups *EWC) {
     dispatch(EWC->getSubExpr());
   }
@@ -664,7 +661,7 @@ protected:
   void analyzeTemplateArgument(const TemplateArgumentLoc &TAL);
 
   inline const Expr *getTargetExpr() { return E; }
-
+  bool getSpecialRepl(const Stmt *S, std::string &Str);
   ASTContext &Context;
   const SourceManager &SM;
 

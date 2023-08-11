@@ -399,6 +399,19 @@ private:
                          const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+class AtomicFunctionOptimizationRule
+    : public NamedMigrationRule<AtomicFunctionOptimizationRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+  friend class AtomicFunctionRule;
+
+private:
+  std::unordered_map<const Decl *, bool> DeclMap;
+  static std::set<std::string> OptimizedCESet;
+  void optimizeMigration(const CallExpr *CE, const std::string &FuncName);
+};
+
 class ZeroLengthArrayRule
     : public NamedMigrationRule<ZeroLengthArrayRule> {
 public:

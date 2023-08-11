@@ -157,6 +157,8 @@ std::unordered_map<std::string, std::vector<std::string>>
     DpctGlobalInfo::MainSourceFileMap;
 std::unordered_map<std::string, bool>
     DpctGlobalInfo::MallocHostInfoMap;
+std::unordered_map<std::string, std::string>
+    DpctGlobalInfo::SpecialReplForEAMap;
 /// This variable saved the info of previous migration from the
 /// MainSourceFiles.yaml file. This variable is valid after
 /// canContinueMigration() is called.

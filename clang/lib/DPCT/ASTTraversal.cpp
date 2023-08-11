@@ -1851,8 +1851,15 @@ void AtomicFunctionRule::MigrateAtomicFunc(
   } else {
     return;
   };
-
+  auto &SM = DpctGlobalInfo::getSourceManager();
   const std::string FuncName = CE->getDirectCallee()->getName().str();
+  auto CELocInfo =
+      DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(CE->getBeginLoc()));
+  if (AtomicFunctionOptimizationRule::OptimizedCESet.count(
+          CELocInfo.first + ":" + std::to_string(CELocInfo.second))) {
+    return;
+  }
+
   if (!CallExprRewriterFactoryBase::RewriterMap)
     return;
   auto Iter = CallExprRewriterFactoryBase::RewriterMap->find(FuncName);
@@ -1873,6 +1880,400 @@ void AtomicFunctionRule::runRule(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(AtomicFunctionRule, PassKind::PK_Migration)
+
+void AtomicFunctionOptimizationRule::registerMatcher(MatchFinder &MF) {
+  std::vector<std::string> AtomicFuncNames = {"atomicInc", "atomicDec"};
+
+  auto hasAnyAtomicFuncName = [&]() {
+    return internal::Matcher<NamedDecl>(
+        new internal::HasNameMatcher(AtomicFuncNames));
+  };
+
+  MF.addMatcher(callExpr(callee(functionDecl(hasAnyAtomicFuncName())))
+                    .bind("AtomicFuncCall"),
+                this);
+}
+
+void AtomicFunctionOptimizationRule::optimizeMigration(
+    const CallExpr *CE, const std::string &FuncName) {
+  if ((FuncName != "atomicInc") && (FuncName != "atomicDec")) {
+    return;
+  }
+  std::string FuncNameRepl = "atomic_fetch_add";
+  if (FuncName == "atomicDec") {
+    FuncNameRepl = "atomic_fetch_sub";
+  }
+
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  const Expr *Addr = CE->getArg(0)->IgnoreImplicitAsWritten();
+  const Expr *Val = CE->getArg(1)->IgnoreImplicitAsWritten();
+  const DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(Addr);
+  const IntegerLiteral *IL = dyn_cast<IntegerLiteral>(Val);
+  auto &Context = DpctGlobalInfo::getContext();
+  bool IsArrayType = false;
+  std::string VariableName;
+  unsigned int UpperLimit = 0, Step = 0;
+  auto CELocInfo =
+      DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(CE->getBeginLoc()));
+  std::string CEKey = CELocInfo.first + ":" + std::to_string(CELocInfo.second);
+
+  auto ReplaceCE = [&](std::string Name, unsigned int Step) {
+    std::ostringstream OS;
+    std::string StepStr = std::to_string(Step);
+    ExprAnalysis AddrEA(Addr);
+    std::string AddrRepl = AddrEA.getReplacedString();
+    OS << MapNames::getDpctNamespace() << Name
+       << "<sycl::access::address_space::generic_space>(" << AddrRepl << ", "
+       << StepStr << ")";
+    if (Step != 1) {
+      OS << " / " + StepStr;
+    }
+    emplaceTransformation(new ReplaceStmt(CE, OS.str()));
+  };
+  // Ensure the 0x100000000ul(unsigned int range) is divisible by
+  // (UpperLimit + 1).
+  if(!IL) {
+    return;
+  }
+  UpperLimit = IL->getValue().getZExtValue();
+  if (UpperLimit == 0xFFFFFFFF) {
+    ReplaceCE(FuncNameRepl, 1);
+    OptimizedCESet.insert(CEKey);
+    return;
+  }
+  if (0x100000000ull % ((uint64_t)UpperLimit + 1) != 0) {
+    return;
+  }
+  Step = 0x100000000ull / ((uint64_t)UpperLimit + 1);
+
+  //1.Find the variable DeclRefExpr and the Decl
+  if (!DRE) {
+    if (auto UO = dyn_cast<UnaryOperator>(Addr)) {
+      if (UO->getOpcode() == clang::UO_AddrOf) {
+        auto SubE = UO->getSubExpr()->IgnoreImplicitAsWritten();
+        DRE = dyn_cast<DeclRefExpr>(SubE);
+        if (!DRE) {
+          if (auto ASE = dyn_cast<ArraySubscriptExpr>(SubE)) {
+            DRE = dyn_cast<DeclRefExpr>(
+                ASE->getBase()->IgnoreImplicitAsWritten());
+          }
+        }
+      }
+    }
+  }
+
+  if (!DRE) {
+    return;
+  }
+  auto VDecl = dyn_cast<VarDecl>(DRE->getDecl());
+  if (!VDecl || !Context.getParents(*VDecl)[0].get<TranslationUnitDecl>()) {
+    return;
+  }
+  // 2. Check if the variable is processed.
+  auto VDeclIt = DeclMap.find(VDecl);
+  if (VDeclIt != DeclMap.end()) {
+    if(VDeclIt->second) {
+      ReplaceCE(FuncNameRepl, Step);
+      OptimizedCESet.insert(CEKey);
+    }
+    return;
+  }
+  DeclMap[VDecl] = false;
+  // 3. Find the variable initial value.
+  std::vector<const IntegerLiteral *> InitExprs;
+  VariableName = VDecl->getNameAsString();
+  if (VDecl->hasInit()) {
+    if (VDecl->getType()->isArrayType()) {
+      IsArrayType = true;
+      if (const auto ILE = dyn_cast<InitListExpr>(
+              VDecl->getInit()->IgnoreImplicitAsWritten())) {
+        auto Inits = ILE->inits();
+        for (auto Init : Inits) {
+          if (auto IE =
+                  dyn_cast<IntegerLiteral>(Init->IgnoreImplicitAsWritten())) {
+            InitExprs.push_back(IE);
+          } else {
+            return;
+          }
+        }
+      } else {
+        return;
+      }
+    } else {
+      if (auto IE = dyn_cast<IntegerLiteral>(
+              VDecl->getInit()->IgnoreImplicitAsWritten())) {
+        InitExprs.push_back(IE);
+      } else {
+        return;
+      }
+    }
+  }
+
+  // 4. Match all DeclRefExpr, and analyze each result.
+  std::vector<const clang::DeclRefExpr *> Results;
+  std::vector<const clang::Expr *> RValueRefs;
+  std::vector<const clang::CallExpr *> CompareFunctions;
+  std::vector<const IntegerLiteral *> AssignExprs;
+  findAllVarRef(DRE, Results, true);
+  bool isSafeToOpt = false;
+  auto getFunctionName = [&](const Stmt *S) -> std::string {
+    if (!S) {
+      return "";
+    }
+    const CallExpr *C = dyn_cast<CallExpr>(S);
+    if (!C) {
+      C = Context.getParents(*S)[0].get<CallExpr>();
+    }
+    if (C) {
+      StringRef CallName;
+      if (auto DC = C->getDirectCallee()) {
+        CallName = DC->getName();
+      }
+      return CallName.str();
+    }
+    return "";
+  };
+  auto CheckCallExpr = [&](const CallExpr *E, const Stmt *D) {
+    if (E == CE) {
+      isSafeToOpt = true;
+    }
+    StringRef CalleeName;
+    if (auto DC = E->getDirectCallee()) {
+      CalleeName = DC->getName();
+    } else {
+      isSafeToOpt = false;
+    }
+    if (CalleeName == "atomicInc" || CalleeName == "atomicDec") {
+      const IntegerLiteral *AnotherVal =
+          dyn_cast<IntegerLiteral>(CE->getArg(1)->IgnoreImplicitAsWritten());
+      if (AnotherVal) {
+        unsigned AnotherUpperLimit = AnotherVal->getValue().getZExtValue();
+        if (UpperLimit == AnotherUpperLimit) {
+          isSafeToOpt = true;
+        }
+      }
+    } else if (CalleeName == "atomicMax" || CalleeName == "atomicMin") {
+      if (DpctGlobalInfo::isAncestor(E->getArg(0), D)) {
+        auto SecArg = E->getArg(1)->IgnoreImplicitAsWritten();
+        const DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(SecArg);
+        if (DRE && (DRE->getDecl() == VDecl)) {
+          isSafeToOpt = true;
+          CompareFunctions.push_back(E);
+        } else if (auto A = dyn_cast<ArraySubscriptExpr>(SecArg)) {
+          auto Base =
+              dyn_cast<DeclRefExpr>(A->getBase()->IgnoreImplicitAsWritten());
+          if (Base && (Base->getDecl() == VDecl)) {
+            isSafeToOpt = true;
+            CompareFunctions.push_back(E);
+          }
+        }
+      }
+    } else if (CalleeName == "cudaGetSymbolAddress") {
+      const Expr *Arg = E->getArg(0)->IgnoreImplicitAsWritten();
+      auto ArgDRE = dyn_cast<DeclRefExpr>(Arg);
+      if (!ArgDRE) {
+        if (auto CCast = dyn_cast<CStyleCastExpr>(Arg)) {
+          ArgDRE = dyn_cast<DeclRefExpr>(
+              CCast->getSubExpr()->IgnoreImplicitAsWritten());
+          if (!ArgDRE) {
+            if (auto U = dyn_cast<UnaryOperator>(CCast->getSubExpr())) {
+              ArgDRE = dyn_cast<DeclRefExpr>(
+                  U->getSubExpr()->IgnoreImplicitAsWritten());
+            }
+          }
+        }
+      }
+      if (!ArgDRE) {
+        return;
+      }
+      std::vector<const clang::DeclRefExpr *> SymbolRefs;
+      const CallExpr *CExpr = nullptr;
+      findAllVarRef(ArgDRE, SymbolRefs);
+      bool isSymbolSafeToOpt = false;
+      for (auto &SymbolRef : SymbolRefs) {
+        if (ArgDRE == SymbolRef) {
+          continue;
+        }
+        if (auto LTRCastExpr =
+                Context.getParents(*SymbolRef)[0].get<ImplicitCastExpr>()) {
+          if (LTRCastExpr->getCastKind() == clang::CK_LValueToRValue) {
+            auto PNode = Context.getParents(*LTRCastExpr)[0];
+            if (auto ImpCastExpr = PNode.get<ImplicitCastExpr>()) {
+              CExpr = Context.getParents(*ImpCastExpr)[0].get<CallExpr>();
+            } else {
+              CExpr = PNode.get<CallExpr>();
+            }
+          }
+        }
+        if (CExpr) {
+          auto FuncName = getFunctionName(CExpr);
+          if(FuncName == "cudaMemset") {
+            auto SettingValueExpr = CExpr->getArg(1)->IgnoreImplicitAsWritten();
+            if (auto IL = dyn_cast<IntegerLiteral>(SettingValueExpr)) {
+              AssignExprs.push_back(IL);
+              isSymbolSafeToOpt = true;
+            }
+          } else if(FuncName == "cudaMemset") {
+            isSymbolSafeToOpt = true;
+          }
+        }
+        if (!isSymbolSafeToOpt) {
+          return;
+        }
+      }
+      isSafeToOpt = true;
+    }
+  };
+  auto CheckDREorArraySubExpr = [&](const Expr *S) {
+    if (auto UO = Context.getParents(*S)[0].get<UnaryOperator>()) {
+      if (UO->getOpcode() == clang::UO_AddrOf) {
+        if (auto C = Context.getParents(*UO)[0].get<CallExpr>()) {
+          CheckCallExpr(C, S);
+        } else if (auto MTE = Context.getParents(*UO)[0]
+                                  .get<MaterializeTemporaryExpr>()) {
+          if (auto C = Context.getParents(*MTE)[0].get<CallExpr>()) {
+            CheckCallExpr(C, S);
+          }
+        }
+      }
+    } else if (auto I = Context.getParents(*S)[0].get<ImplicitCastExpr>()) {
+      if (I->getCastKind() == clang::CK_LValueToRValue) {
+        auto FuncName = getFunctionName(I);
+        if (FuncName != "atomicMax" && FuncName != "atomicMin") {
+          RValueRefs.push_back(S);
+        }
+        isSafeToOpt = true;
+      } else if (I->getCastKind() == clang::CK_NoOp) {
+        if (auto C = Context.getParents(*I)[0].get<CallExpr>()) {
+          CheckCallExpr(C, S);
+        }
+      }
+    } else if (auto C = Context.getParents(*S)[0].get<CallExpr>()) {
+      CheckCallExpr(C, S);
+    }
+  };
+  for (auto &Result : Results) {
+    if (!DpctGlobalInfo::isInAnalysisScope(
+            SM.getExpansionLoc(Result->getBeginLoc())) ||
+        (Result == DRE)) {
+      continue;
+    }
+    isSafeToOpt = false;
+    CheckDREorArraySubExpr(Result);
+    if (!isSafeToOpt) {
+      if (auto ICE = Context.getParents(*Result)[0].get<ImplicitCastExpr>()) {
+        if (ICE->getCastKind() == clang::CK_ArrayToPointerDecay) {
+          if (auto ASE =
+                  Context.getParents(*ICE)[0].get<ArraySubscriptExpr>()) {
+            CheckDREorArraySubExpr(ASE);
+          }
+        }
+      }
+    }
+    if (!isSafeToOpt) {
+      return;
+    }
+  }
+  DeclMap[VDecl] = true;
+  // 5. If it's to optimize, then process variable init, assign and ref
+  // expression.
+  auto ProcessInitAndAssignExpr = [&](const Expr *E, unsigned V) {
+    std::string Repl;
+    bool setToConstant = true;
+    if (FuncName == "atomicInc") {
+      if (V <= UpperLimit) {
+        setToConstant = false;
+      } else {
+        Repl = "0xFFFFFFFF";
+      }
+    } else if (FuncName == "atomicDec") {
+      if (V < UpperLimit) {
+        setToConstant = false;
+      } else {
+        Repl = "0";
+      }
+    }
+    if (!setToConstant) {
+      ExprAnalysis ExprEA(E);
+      if (needExtraParens(E)) {
+        Repl = "(" + ExprEA.getReplacedString() + ") * " + std::to_string(Step);
+      } else {
+        Repl = ExprEA.getReplacedString() + " * " + std::to_string(Step);
+      }
+    }
+    return Repl;
+  };
+  auto &SpecialReplMap = DpctGlobalInfo::getSpecialReplForEAMap();
+  if(!InitExprs.empty()) {
+    auto VInfo = MemVarInfo::buildMemVarInfo(VDecl);
+    std::string InitList;
+    if(IsArrayType) {
+      InitList = "{";
+    }
+    for (auto &InitExpr : InitExprs) {
+      InitList = InitList +
+                 ProcessInitAndAssignExpr(InitExpr,
+                                          InitExpr->getValue().getZExtValue()) +
+                 ", ";
+    }
+    InitList.erase(InitList.size() - 2);
+    if(IsArrayType) {
+      InitList.append("}");
+    }
+    VInfo->setManualInitValue(InitList);
+  }
+  for (auto &AssignExpr : AssignExprs) {
+    auto LocInfo = DpctGlobalInfo::getLocInfo(
+        SM.getExpansionLoc(AssignExpr->getBeginLoc()));
+    std::string R = ProcessInitAndAssignExpr(
+        AssignExpr, AssignExpr->getValue().getZExtValue());
+    SpecialReplMap[LocInfo.first + ":" + std::to_string(LocInfo.second)] = R;
+    emplaceTransformation(new ReplaceStmt(AssignExpr, R));
+  }
+  for (auto &RValueRef : RValueRefs) {
+    ExprAnalysis RefEA(RValueRef);
+    std::string RefRepl =
+        RefEA.getReplacedString() + " / " + std::to_string(Step);
+    auto LocInfo = DpctGlobalInfo::getLocInfo(
+        SM.getExpansionLoc(RValueRef->getBeginLoc()));
+    SpecialReplMap[LocInfo.first + ":" + std::to_string(LocInfo.second)] =
+        RefRepl;
+    emplaceTransformation(new ReplaceStmt(RValueRef, RefRepl));
+  }
+  // 6.Generate Repl for atomic compare functions
+  for (auto &CompareFunction : CompareFunctions) {
+    emplaceTransformation(
+        new InsertAfterStmt(CompareFunction, " / " + std::to_string(Step)));
+  }
+  // 7. Generate Repl for atomic call
+  ReplaceCE(FuncNameRepl, Step);
+  OptimizedCESet.insert(CEKey);
+}
+
+void AtomicFunctionOptimizationRule::runRule(
+    const MatchFinder::MatchResult &Result) {
+  if(!DpctGlobalInfo::isOptimizeMigration()){
+    return;
+  }
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "AtomicFuncCall");
+  if (!CE)
+    return;
+
+  if (auto *CalleeDecl = CE->getDirectCallee()) {
+    if (isUserDefinedDecl(CalleeDecl))
+      return;
+  } else {
+    return;
+  };
+
+  const std::string FuncName = CE->getDirectCallee()->getName().str();
+
+  optimizeMigration(CE, FuncName);
+}
+
+std::set<std::string> AtomicFunctionOptimizationRule::OptimizedCESet;
+
+REGISTER_RULE(AtomicFunctionOptimizationRule, PassKind::PK_Analysis)
 
 void ZeroLengthArrayRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(typeLoc(loc(constantArrayType())).bind("ConstantArrayType"),
@@ -9507,6 +9908,7 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
   };
 
   std::string CanonicalType;
+  DpctGlobalInfo &Global = DpctGlobalInfo::getInstance();
   if (auto MemVar = getAssistNodeAsType<VarDecl>(Result, "var")) {
     if (isCubVar(MemVar)) {
       return;
@@ -9516,7 +9918,11 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
       emplaceTransformation(new ReplaceVarDecl(MemVar, ""));
       return;
     }
-    auto Info = MemVarInfo::buildMemVarInfo(MemVar);
+
+    auto Info = Global.findMemVarInfo(MemVar);
+    if (!Info) {
+      Info = MemVarInfo::buildMemVarInfo(MemVar);
+    }
     if (!Info)
       return;
 
@@ -9550,7 +9956,7 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
   auto MemVarRef = getNodeAsType<DeclRefExpr>(Result, "used");
   auto Func = getAssistNodeAsType<FunctionDecl>(Result, "func");
   auto Decl = getAssistNodeAsType<VarDecl>(Result, "decl");
-  DpctGlobalInfo &Global = DpctGlobalInfo::getInstance();
+
   if (MemVarRef && Func && Decl) {
     if (isCubVar(Decl)) {
       return;
