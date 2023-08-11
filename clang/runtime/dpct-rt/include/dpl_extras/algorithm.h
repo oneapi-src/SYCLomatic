@@ -1578,7 +1578,12 @@ _RandomAccessIterator histogram_general_registers_local_reduction(
       typename std::iterator_traits<_ForwardIterator>::value_type;
   using __histo_value_type =
       typename std::iterator_traits<_RandomAccessIterator>::value_type;
-
+  using __local_histogram_type = typename std::conditional<__work_group_size * __iters_per_work_item < 65536,
+                                         std::uint16_t,
+                                         std::uint32_t>;
+  using __private_histogram_type = typename std::conditional<__iters_per_work_item < 256,
+                                         std::uint8_t,
+                                         std::uint16_t>;
   sycl::buffer<__value_type, 1> mbuf(&(*__first), sycl::range<1>(N));
   sycl::buffer<__histo_value_type, 1> hbuf(&(*__histogram_first),
                                            sycl::range<1>(num_bins));
@@ -1591,7 +1596,7 @@ _RandomAccessIterator histogram_general_registers_local_reduction(
     h.depends_on(init_e);
     sycl::accessor macc(mbuf, h, sycl::read_only);
     sycl::accessor hacc(hbuf, h, sycl::write_only);
-    sycl::local_accessor<std::uint32_t, 1> local_histogram(
+    sycl::local_accessor<__local_histogram_type, 1> local_histogram(
         sycl::range(num_bins), h);
     h.parallel_for(
         sycl::nd_range<1>(segments * __work_group_size, __work_group_size),
@@ -1604,11 +1609,10 @@ _RandomAccessIterator histogram_general_registers_local_reduction(
           clear_wglocal_histograms(&(local_histogram[0]), num_bins,
                                    __self_item);
 
-          ::std::uint16_t
-              histogram[__bins_per_work_item]; // histogram bins take less
-                                               // storage with smaller data type
+          // histogram bins take less storage with smaller data type
+          __private_histogram_type histogram[__bins_per_work_item];
 #pragma unroll
-          for (int k = 0; k < __bins_per_work_item; k++) {
+          for (::std::uint8_t k = 0; k < __bins_per_work_item; k++) {
             histogram[k] = 0;
           }
 
@@ -1617,14 +1621,14 @@ _RandomAccessIterator histogram_general_registers_local_reduction(
 #pragma unroll
           for (::std::size_t __val_idx = __seg_start + __self_lidx;
                __val_idx < __seg_end; __val_idx += __work_group_size) {
-            __value_type x = macc[__val_idx];
-            ::std::uint32_t c = __func(x);
+            const __value_type& x = macc[__val_idx];
+            ::std::uint8_t c = __func(x);
             histogram[c] += 1;
           }
 
 #pragma unroll
-          for (int k = 0; k < num_bins; k++) {
-            sycl::atomic_ref<std::uint32_t, sycl::memory_order::relaxed,
+          for (::std::uint8_t k = 0; k < num_bins; k++) {
+            sycl::atomic_ref<__local_histogram_type, sycl::memory_order::relaxed,
                              sycl::memory_scope::work_group,
                              sycl::access::address_space::local_space>
                 local_bin(local_histogram[k]);
@@ -1654,6 +1658,10 @@ _RandomAccessIterator histogram_general_local_atomics(
       typename std::iterator_traits<_ForwardIterator>::value_type;
   using __histo_value_type =
       typename std::iterator_traits<_RandomAccessIterator>::value_type;
+  using __local_histogram_type = typename std::conditional<__work_group_size * __iters_per_work_item < 65536,
+                                         std::uint16_t,
+                                         std::uint32_t>;
+
   const std::size_t N = __last - __first;
 
   sycl::buffer<__value_type, 1> mbuf(&(*__first), sycl::range<1>(N));
@@ -1668,7 +1676,7 @@ _RandomAccessIterator histogram_general_local_atomics(
     h.depends_on(init_e);
     sycl::accessor macc(mbuf, h, sycl::read_only);
     sycl::accessor hacc(hbuf, h, sycl::write_only);
-    sycl::local_accessor<std::uint32_t, 1> local_histogram(
+    sycl::local_accessor<__local_histogram_type, 1> local_histogram(
         sycl::range(num_bins), h);
     h.parallel_for(
         sycl::nd_range<1>(segments * __work_group_size, __work_group_size),
@@ -1686,9 +1694,9 @@ _RandomAccessIterator histogram_general_local_atomics(
 #pragma unroll
           for (::std::size_t __val_idx = __seg_start + __self_lidx;
                __val_idx < __seg_end; __val_idx += __work_group_size) {
-            __value_type x = macc[__val_idx];
-            std::uint32_t y = __func(x);
-            sycl::atomic_ref<std::uint32_t, sycl::memory_order::relaxed,
+            const __value_type& x = macc[__val_idx];
+            std::uint16_t y = __func(x);
+            sycl::atomic_ref<__local_histogram_type, sycl::memory_order::relaxed,
                              sycl::memory_scope::work_group,
                              sycl::access::address_space::local_space>
                 local_bin(local_histogram[y]);
@@ -1720,6 +1728,7 @@ _RandomAccessIterator histogram_general_private_global_atomics(
       typename std::iterator_traits<_ForwardIterator>::value_type;
   using __histo_value_type =
       typename std::iterator_traits<_RandomAccessIterator>::value_type;
+      
   auto __global_mem_size =
       policy.queue()
           .get_device()
@@ -1762,8 +1771,8 @@ _RandomAccessIterator histogram_general_private_global_atomics(
 #pragma unroll
           for (::std::size_t __val_idx = __seg_start + __self_lidx;
                __val_idx < __seg_end; __val_idx += __work_group_size) {
-            __value_type x = macc[__val_idx];
-            ::std::size_t c = __func(x);
+            const __value_type& x = macc[__val_idx];
+            ::std::uint32_t c = __func(x);
 
             sycl::atomic_ref<__histo_value_type, sycl::memory_order::relaxed,
                              sycl::memory_scope::work_group,
@@ -1817,6 +1826,8 @@ histogram_general_select_best(_ExecutionPolicy &&policy,
   }
 }
 
+} // end namespace internal
+
 template <typename _ExecutionPolicy, typename _ForwardIterator,
           typename _RandomAccessIterator, typename _Size, typename _T>
 _RandomAccessIterator
@@ -1844,6 +1855,7 @@ _RandomAccessIterator1 histogram_range(_ExecutionPolicy &&policy,
       internal::__custom_range_binhash{__boundary_first, __boundary_last});
 }
 
+<<<<<<< HEAD
 } // end namespace internal
 
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
@@ -1861,6 +1873,23 @@ sort_pairs(Policy &&policy, Iter1 keys_in, Iter2 keys_out, Iter3 values_in,
 }
 
 template <typename Policy, typename Iter1, typename Iter2>
+=======
+template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
+          typename value_t, typename value_out_t>
+inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value &&
+                        dpct::internal::is_iterator<key_out_t>::value &&
+                        dpct::internal::is_iterator<value_t>::value &&
+                        dpct::internal::is_iterator<value_out_t>::value>
+sort_pairs(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
+                value_t values_in, value_out_t values_out, int64_t n,
+                bool descending, int begin_bit, int end_bit) {
+  internal::sort_pairs_impl(std::forward<_ExecutionPolicy>(policy), keys_in,
+                            keys_out, values_in, values_out, n, descending,
+                            begin_bit, end_bit);
+}
+
+template <typename _ExecutionPolicy, typename key_t, typename value_t>
+>>>>>>> 4ce821a5e17d... improving types
 inline void sort_pairs(
     Policy &&policy, io_iterator_pair<Iter1> &keys,
     io_iterator_pair<Iter2> &values, ::std::int64_t n, bool descending = false,
