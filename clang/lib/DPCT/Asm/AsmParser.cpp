@@ -264,6 +264,9 @@ static inline InstAttr ConvertToInstAttr(asmtok::TokenKind Kind) {
 #define SAT_MOD(X, Y)                                                          \
   case asmtok::kw_##X:                                                         \
     return InstAttr::X;
+#define MUL_MOD(X, Y)                                                          \
+  case asmtok::kw_##X:                                                         \
+    return InstAttr::X;
 #define CMP_OP(X, Y)                                                           \
   case asmtok::kw_##X:                                                         \
     return InstAttr::X;
