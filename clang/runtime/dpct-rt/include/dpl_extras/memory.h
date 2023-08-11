@@ -763,21 +763,13 @@ public:
   using pointer = typename super_t::pointer;
   using reference = T &;
   using iterator_category = std::random_access_iterator_tag;
-  using is_hetero = ::std::is_same<Tag, host_sys_tag>; // required
-  using is_passed_directly = std::false_type;
+  using is_hetero = ::std::false_type;
+  using is_passed_directly = std::true_type;
 
   tagged_pointer() : super_t() {}
   tagged_pointer(T *ptr) : super_t(ptr) {}
   T &operator[](difference_type idx) { return this->m_ptr[idx]; }
   T &operator[](difference_type idx) const { return this->m_ptr[idx]; }
-  // Enable conversion to other pointer types only if it is convertible
-  template <
-      typename OtherType,
-      ::std::enable_if_t<::std::is_convertible_v<T *, OtherType *>, int> = 0>
-  operator tagged_pointer<Tag, OtherType>() {
-    return tagged_pointer<Tag, OtherType>(
-        static_cast<OtherType *>(this->m_ptr));
-  }
   tagged_pointer operator+(difference_type forward) const {
     return tagged_pointer{this->m_ptr + forward};
   }
@@ -828,9 +820,12 @@ public:
   using pointer = typename super_t::pointer;
   tagged_pointer() : super_t() {}
   tagged_pointer(pointer ptr) : super_t(ptr) {}
-  // Enable void pointer to convert to all other pointer types.
-  template <typename OtherType> operator tagged_pointer<Tag, OtherType>() {
-    return static_cast<OtherType *>(this->m_ptr);
+  // Enable tagged void pointer to convert to all other raw pointer types.
+  template <typename OtherPtr> operator OtherPtr *() const {
+    return static_cast<OtherPtr *>(this->m_ptr);
+  }
+  template <typename OtherPtr> operator OtherPtr *() {
+    return static_cast<OtherPtr *>(this->m_ptr);
   }
 };
 
