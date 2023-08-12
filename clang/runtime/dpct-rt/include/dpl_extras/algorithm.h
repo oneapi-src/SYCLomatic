@@ -1578,12 +1578,10 @@ _RandomAccessIterator histogram_general_registers_local_reduction(
       typename std::iterator_traits<_ForwardIterator>::value_type;
   using __histo_value_type =
       typename std::iterator_traits<_RandomAccessIterator>::value_type;
-  using __local_histogram_type = typename std::conditional<__work_group_size * __iters_per_work_item < 65536,
-                                         std::uint16_t,
-                                         std::uint32_t>;
-  using __private_histogram_type = typename std::conditional<__iters_per_work_item < 256,
-                                         std::uint8_t,
-                                         std::uint16_t>;
+  //minimum type size for atomics
+  using __local_histogram_type = std::uint32_t; 
+  // even though we fit into uint8_t, this is faster
+  using __private_histogram_type = std::uint16_t;
   sycl::buffer<__value_type, 1> mbuf(&(*__first), sycl::range<1>(N));
   sycl::buffer<__histo_value_type, 1> hbuf(&(*__histogram_first),
                                            sycl::range<1>(num_bins));
@@ -1658,9 +1656,8 @@ _RandomAccessIterator histogram_general_local_atomics(
       typename std::iterator_traits<_ForwardIterator>::value_type;
   using __histo_value_type =
       typename std::iterator_traits<_RandomAccessIterator>::value_type;
-  using __local_histogram_type = typename std::conditional<__work_group_size * __iters_per_work_item < 65536,
-                                         std::uint16_t,
-                                         std::uint32_t>;
+  //minimum type size for atomics
+  using __local_histogram_type = std::uint32_t; 
 
   const std::size_t N = __last - __first;
 
