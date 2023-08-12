@@ -1540,7 +1540,7 @@ void reduce_out_histograms(_HistAccessorIn in_histogram,
                            _HistAccessorOut out_histogram, _Size num_bins,
                            _SelfItem self_item) {
   using __histo_value_type =
-      typename std::iterator_traits<_HistAccessorOut>::value_type;
+      typename ::std::iterator_traits<_HistAccessorOut>::value_type;
   ::std::uint32_t gSize = self_item.get_local_range()[0];
   ::std::uint32_t self_lidx = self_item.get_local_id(0);
   ::std::uint8_t factor = num_bins / gSize;
@@ -1573,20 +1573,20 @@ _RandomAccessIterator histogram_general_registers_local_reduction(
     _ExecutionPolicy &&policy, _ForwardIterator __first,
     _ForwardIterator __last, _RandomAccessIterator __histogram_first,
     _Size num_bins, _IdxHashFunc __func) {
-  const std::size_t N = __last - __first;
+  const ::std::size_t N = __last - __first;
   using __value_type =
-      typename std::iterator_traits<_ForwardIterator>::value_type;
+      typename ::std::iterator_traits<_ForwardIterator>::value_type;
   using __histo_value_type =
-      typename std::iterator_traits<_RandomAccessIterator>::value_type;
+      typename ::std::iterator_traits<_RandomAccessIterator>::value_type;
   //minimum type size for atomics
-  using __local_histogram_type = std::uint32_t; 
+  using __local_histogram_type = ::std::uint32_t; 
   // even though we fit into uint8_t, this is faster
-  using __private_histogram_type = std::uint16_t;
+  using __private_histogram_type = ::std::uint16_t;
   sycl::buffer<__value_type, 1> mbuf(&(*__first), sycl::range<1>(N));
   sycl::buffer<__histo_value_type, 1> hbuf(&(*__histogram_first),
                                            sycl::range<1>(num_bins));
 
-  std::size_t segments =
+  ::std::size_t segments =
       __ceiling_div(N, __work_group_size * __iters_per_work_item);
   auto init_e = __async_initialize_bins(policy, oneapi::dpl::begin(hbuf),
                                         oneapi::dpl::end(hbuf));
@@ -1653,13 +1653,13 @@ _RandomAccessIterator histogram_general_local_atomics(
     _ForwardIterator __last, _RandomAccessIterator __histogram_first,
     _Size num_bins, _IdxHashFunc __func) {
   using __value_type =
-      typename std::iterator_traits<_ForwardIterator>::value_type;
+      typename ::std::iterator_traits<_ForwardIterator>::value_type;
   using __histo_value_type =
-      typename std::iterator_traits<_RandomAccessIterator>::value_type;
+      typename ::std::iterator_traits<_RandomAccessIterator>::value_type;
   //minimum type size for atomics
-  using __local_histogram_type = std::uint32_t; 
+  using __local_histogram_type = ::std::uint32_t; 
 
-  const std::size_t N = __last - __first;
+  const ::std::size_t N = __last - __first;
 
   sycl::buffer<__value_type, 1> mbuf(&(*__first), sycl::range<1>(N));
   sycl::buffer<__histo_value_type, 1> hbuf(&(*__histogram_first),
@@ -1692,7 +1692,7 @@ _RandomAccessIterator histogram_general_local_atomics(
           for (::std::size_t __val_idx = __seg_start + __self_lidx;
                __val_idx < __seg_end; __val_idx += __work_group_size) {
             const __value_type& x = macc[__val_idx];
-            std::uint16_t y = __func(x);
+            ::std::uint16_t y = __func(x);
             sycl::atomic_ref<__local_histogram_type, sycl::memory_order::relaxed,
                              sycl::memory_scope::work_group,
                              sycl::access::address_space::local_space>
@@ -1720,22 +1720,22 @@ _RandomAccessIterator histogram_general_private_global_atomics(
     _ForwardIterator __last, _RandomAccessIterator __histogram_first,
     _Size num_bins, _IdxHashFunc __func) {
 
-  const std::size_t N = __last - __first;
+  const ::std::size_t N = __last - __first;
   using __value_type =
-      typename std::iterator_traits<_ForwardIterator>::value_type;
+      typename ::std::iterator_traits<_ForwardIterator>::value_type;
   using __histo_value_type =
-      typename std::iterator_traits<_RandomAccessIterator>::value_type;
+      typename ::std::iterator_traits<_RandomAccessIterator>::value_type;
       
   auto __global_mem_size =
       policy.queue()
           .get_device()
           .template get_info<sycl::info::device::global_mem_size>();
   const ::std::size_t max_segments =
-      std::min(__global_mem_size / (num_bins * sizeof(__histo_value_type)),
+      ::std::min(__global_mem_size / (num_bins * sizeof(__histo_value_type)),
                __ceiling_div(N, __work_group_size * __min_iters_per_work_item));
   const ::std::size_t iters_per_work_item =
       __ceiling_div(N, max_segments * __work_group_size);
-  std::size_t segments =
+  ::std::size_t segments =
       __ceiling_div(N, __work_group_size * iters_per_work_item);
 
   sycl::buffer<__value_type, 1> mbuf(&(*__first), sycl::range<1>(N));
@@ -1796,7 +1796,7 @@ histogram_general_select_best(_ExecutionPolicy &&policy,
                               _RandomAccessIterator __histogram_first,
                               _Size num_bins, _IdxHashFunc __func) {
   using __histo_value_type =
-      typename std::iterator_traits<_RandomAccessIterator>::value_type;
+      typename ::std::iterator_traits<_RandomAccessIterator>::value_type;
   auto __local_mem_size =
       policy.queue()
           .get_device()
