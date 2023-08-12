@@ -1806,7 +1806,7 @@ histogram_general_select_best(_ExecutionPolicy &&policy,
 
   // if bins fit into registers, use register private accumulation
   if (num_bins < MAX_BINS_PER_WORK_ITEM) {
-    return histogram_general_registers_local_reduction<1024, 4, 16>(
+    return histogram_general_registers_local_reduction<1024, 32, 16>(
         ::std::forward<_ExecutionPolicy>(policy), __first, __last,
         __histogram_first, num_bins, __func);
   } else if (num_bins * sizeof(__histo_value_type) <
