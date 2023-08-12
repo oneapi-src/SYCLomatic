@@ -6,7 +6,8 @@
 #include <thrust/device_ptr.h>
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
-
+#include <thrust/optional.h>
+#include <thrust/pair.h>
 
 int main(int argc, char **argv) {
   //CHECK:dpct::device_vector<int> device_vec;
@@ -44,6 +45,11 @@ int main(int argc, char **argv) {
   a = sizeof(std::vector<int>);
   a = sizeof(host_vec);
   a = sizeof host_vec;
+
+  // CHECK:  std::optional<int> b = std::nullopt;
+  // CHECK-NEXT:  std::optional<int> c = 1;
+  thrust::optional<int> b = thrust::nullopt;
+  thrust::optional<int> c = 1;
 }
 
 template <typename T>
