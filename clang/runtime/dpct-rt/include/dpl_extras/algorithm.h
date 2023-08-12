@@ -1514,7 +1514,7 @@ auto __async_initialize_bins(_ExecutionPolicy &&policy,
 }
 
 template <typename _HistAccessor, typename _Size, typename _SelfItem>
-void clear_wglocal_histograms(_HistAccessor local_histogram, _Size num_bins,
+void __clear_wglocal_histograms(_HistAccessor local_histogram, _Size num_bins,
                               _SelfItem self_item) {
   ::std::uint32_t gSize = self_item.get_local_range()[0];
   ::std::uint32_t self_lidx = self_item.get_local_id(0);
@@ -1536,7 +1536,7 @@ void clear_wglocal_histograms(_HistAccessor local_histogram, _Size num_bins,
 
 template <typename _HistAccessorIn, typename _HistAccessorOut, typename _Size,
           typename _SelfItem>
-void reduce_out_histograms(_HistAccessorIn in_histogram,
+void __reduce_out_histograms(_HistAccessorIn in_histogram,
                            _HistAccessorOut out_histogram, _Size num_bins,
                            _SelfItem self_item) {
   using __histo_value_type =
@@ -1569,7 +1569,7 @@ template <::std::uint16_t __work_group_size,
           ::std::uint8_t __bins_per_work_item, typename _ExecutionPolicy,
           typename _ForwardIterator, typename _RandomAccessIterator,
           typename _Size, typename _IdxHashFunc>
-_RandomAccessIterator histogram_general_registers_local_reduction(
+_RandomAccessIterator __histogram_general_registers_local_reduction(
     _ExecutionPolicy &&policy, _ForwardIterator __first,
     _ForwardIterator __last, _RandomAccessIterator __histogram_first,
     _Size num_bins, _IdxHashFunc __func) {
@@ -1604,7 +1604,7 @@ _RandomAccessIterator histogram_general_registers_local_reduction(
           const ::std::size_t __seg_start =
               __work_group_size * __iters_per_work_item * __wgroup_idx;
 
-          clear_wglocal_histograms(&(local_histogram[0]), num_bins,
+          __clear_wglocal_histograms(&(local_histogram[0]), num_bins,
                                    __self_item);
 
           // histogram bins take less storage with smaller data type
@@ -1635,7 +1635,7 @@ _RandomAccessIterator histogram_general_registers_local_reduction(
 
           __self_item.barrier(sycl::access::fence_space::local_space);
 
-          reduce_out_histograms(&(local_histogram[0]), &(hacc[0]), num_bins,
+          __reduce_out_histograms(&(local_histogram[0]), &(hacc[0]), num_bins,
                                 __self_item);
         });
   });
@@ -1648,7 +1648,7 @@ template <::std::uint16_t __work_group_size,
           ::std::uint8_t __iters_per_work_item, typename _ExecutionPolicy,
           typename _ForwardIterator, typename _RandomAccessIterator,
           typename _Size, typename _IdxHashFunc>
-_RandomAccessIterator histogram_general_local_atomics(
+_RandomAccessIterator __histogram_general_local_atomics(
     _ExecutionPolicy &&policy, _ForwardIterator __first,
     _ForwardIterator __last, _RandomAccessIterator __histogram_first,
     _Size num_bins, _IdxHashFunc __func) {
@@ -1683,7 +1683,7 @@ _RandomAccessIterator histogram_general_local_atomics(
           const ::std::size_t __seg_start =
               __work_group_size * __wgroup_idx * __iters_per_work_item;
 
-          clear_wglocal_histograms(&(local_histogram[0]), num_bins,
+          __clear_wglocal_histograms(&(local_histogram[0]), num_bins,
                                    __self_item);
 
           const ::std::size_t __seg_end = sycl::min(
@@ -1702,7 +1702,7 @@ _RandomAccessIterator histogram_general_local_atomics(
 
           __self_item.barrier(sycl::access::fence_space::local_space);
 
-          reduce_out_histograms(&(local_histogram[0]), &(hacc[0]), num_bins,
+          __reduce_out_histograms(&(local_histogram[0]), &(hacc[0]), num_bins,
                                 __self_item);
         });
   });
@@ -1715,7 +1715,7 @@ template <::std::uint16_t __work_group_size,
           ::std::uint8_t __min_iters_per_work_item, typename _ExecutionPolicy,
           typename _ForwardIterator, typename _RandomAccessIterator,
           typename _Size, typename _IdxHashFunc>
-_RandomAccessIterator histogram_general_private_global_atomics(
+_RandomAccessIterator __histogram_general_private_global_atomics(
     _ExecutionPolicy &&policy, _ForwardIterator __first,
     _ForwardIterator __last, _RandomAccessIterator __histogram_first,
     _Size num_bins, _IdxHashFunc __func) {
@@ -1760,7 +1760,7 @@ _RandomAccessIterator histogram_general_private_global_atomics(
           const ::std::size_t __seg_start =
               __work_group_size * iters_per_work_item * __wgroup_idx;
 
-          clear_wglocal_histograms(&(hacc_private[__wgroup_idx * num_bins]),
+          __clear_wglocal_histograms(&(hacc_private[__wgroup_idx * num_bins]),
                                    num_bins, __self_item);
 
           const ::std::size_t __seg_end = sycl::min(
@@ -1780,7 +1780,7 @@ _RandomAccessIterator histogram_general_private_global_atomics(
 
           __self_item.barrier(sycl::access::fence_space::local_space);
 
-          reduce_out_histograms(&(hacc_private[__wgroup_idx * num_bins]),
+          __reduce_out_histograms(&(hacc_private[__wgroup_idx * num_bins]),
                                 &(hacc[0]), num_bins, __self_item);
         });
   });
@@ -1791,7 +1791,7 @@ _RandomAccessIterator histogram_general_private_global_atomics(
 template <typename _ExecutionPolicy, typename _ForwardIterator,
           typename _RandomAccessIterator, typename _Size, typename _IdxHashFunc>
 _RandomAccessIterator
-histogram_general_select_best(_ExecutionPolicy &&policy,
+__histogram_general_select_best(_ExecutionPolicy &&policy,
                               _ForwardIterator __first, _ForwardIterator __last,
                               _RandomAccessIterator __histogram_first,
                               _Size num_bins, _IdxHashFunc __func) {
@@ -1806,18 +1806,18 @@ histogram_general_select_best(_ExecutionPolicy &&policy,
 
   // if bins fit into registers, use register private accumulation
   if (num_bins < MAX_BINS_PER_WORK_ITEM) {
-    return histogram_general_registers_local_reduction<1024, 32, 16>(
+    return __histogram_general_registers_local_reduction<1024, 32, 16>(
         ::std::forward<_ExecutionPolicy>(policy), __first, __last,
         __histogram_first, num_bins, __func);
   } else if (num_bins * sizeof(__histo_value_type) <
              __local_mem_size) // if bins fit into SLM, use local atomics
   {
-    return histogram_general_local_atomics<1024, 4>(
+    return __histogram_general_local_atomics<1024, 4>(
         ::std::forward<_ExecutionPolicy>(policy), __first, __last,
         __histogram_first, num_bins, __func);
   } else // otherwise, use global atomics (private copies per workgroup)
   {
-    return histogram_general_private_global_atomics<1024, 4>(
+    return __histogram_general_private_global_atomics<1024, 4>(
         ::std::forward<_ExecutionPolicy>(policy), __first, __last,
         __histogram_first, num_bins, __func);
   }
@@ -1831,7 +1831,7 @@ _RandomAccessIterator
 histogram_even(_ExecutionPolicy &&policy, _ForwardIterator __first,
                _ForwardIterator __last, _RandomAccessIterator __histogram_first,
                _Size num_bins, _T __first_bin_min_val, _T __last_bin_max_val) {
-  return internal::histogram_general_select_best(
+  return internal::__histogram_general_select_best(
       ::std::forward<_ExecutionPolicy>(policy), __first, __last,
       __histogram_first, num_bins,
       internal::__evenly_divided_binhash<_T>(__first_bin_min_val,
@@ -1846,7 +1846,7 @@ _RandomAccessIterator1 histogram_range(_ExecutionPolicy &&policy,
                                        _RandomAccessIterator1 __histogram_first,
                                        _RandomAccessIterator2 __boundary_first,
                                        _RandomAccessIterator2 __boundary_last) {
-  return internal::histogram_general_select_best(
+  return internal::__histogram_general_select_best(
       ::std::forward<_ExecutionPolicy>(policy), __first, __last,
       __histogram_first, (__boundary_last - __boundary_first) - 1,
       internal::__custom_range_binhash{__boundary_first, __boundary_last});
