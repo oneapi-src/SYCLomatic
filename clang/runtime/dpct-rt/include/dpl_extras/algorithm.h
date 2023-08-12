@@ -1801,11 +1801,10 @@ __histogram_general_select_best(_ExecutionPolicy &&policy,
       policy.queue()
           .get_device()
           .template get_info<sycl::info::device::local_mem_size>();
-
-  ::std::size_t N = __last - __first;
+  constexpr ::std::uint8_t __max_registers = 16;
 
   // if bins fit into registers, use register private accumulation
-  if (num_bins < MAX_BINS_PER_WORK_ITEM) {
+  if (num_bins < __max_registers) {
     return __histogram_general_registers_local_reduction<1024, 32, 16>(
         ::std::forward<_ExecutionPolicy>(policy), __first, __last,
         __histogram_first, num_bins, __func);
