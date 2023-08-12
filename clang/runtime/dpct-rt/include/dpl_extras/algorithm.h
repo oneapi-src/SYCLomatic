@@ -1580,7 +1580,7 @@ _RandomAccessIterator __histogram_general_registers_local_reduction(
       typename ::std::iterator_traits<_RandomAccessIterator>::value_type;
   //minimum type size for atomics
   using __local_histogram_type = ::std::uint32_t; 
-  // even though we fit into uint8_t, this is faster
+  // even though we fit into uint8_t, uint16_t is faster
   using __private_histogram_type = ::std::uint16_t;
   sycl::buffer<__value_type, 1> mbuf(&(*__first), sycl::range<1>(N));
   sycl::buffer<__histo_value_type, 1> hbuf(&(*__histogram_first),
