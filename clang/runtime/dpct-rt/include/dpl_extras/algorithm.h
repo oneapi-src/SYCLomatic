@@ -1874,18 +1874,18 @@ histogram(Policy &&policy,
 
 } // end namespace internal
 
-template<typename Policy, typename SampleIteratorT, typename CounterT, typename LevelT, typename OffsetT>
+template<typename Policy, typename Iter1, typename HistBin, typename T, typename Size>
 void 
-HistogramEven (Policy&& policy, SampleIteratorT d_samples, CounterT *d_histogram, int num_levels, LevelT lower_level, LevelT upper_level, 
-                             OffsetT num_samples)
+HistogramEven (Policy&& policy, Iter1 d_samples, HistBin *d_histogram, int num_levels, T lower_level, T upper_level, 
+                             Size num_samples)
 {
   internal::histogram(::std::forward<Policy>(policy), d_samples, d_samples + num_samples, d_histogram, num_levels - 1, lower_level, upper_level);
 }
 
 
-template<typename SampleIteratorT , typename CounterT , typename LevelT , typename OffsetT >
+template<typename Iter1 , typename HistBin , typename T , typename Size >
 void 
-HistogramRange (Policy&& policy, SampleIteratorT d_samples, CounterT *d_histogram, int num_levels, LevelT *d_levels, OffsetT num_samples)
+HistogramRange (Policy&& policy, Iter1 d_samples, HistBin *d_histogram, int num_levels, T *d_levels, Size num_samples)
 {
   internal::histogram(::std::forward<Policy>(policy), d_samples, d_samples + num_samples, d_histogram, d_levels, d_levels + num_levels);
 }
