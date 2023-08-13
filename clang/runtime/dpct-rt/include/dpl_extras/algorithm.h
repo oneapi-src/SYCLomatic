@@ -1533,18 +1533,20 @@ void __clear_wglocal_histograms(_HistAccessor local_histogram, _Size num_bins,
 }
 
 template <::std::uint16_t __work_group_size,
-          ::std::uint8_t __iters_per_work_item, typename _BinIdxType,
-          typename _Iter1, typename _HistAccessor, typename _MemorySpace,
-          typename _BinFunc>
+          typename _BinIdxType,
+          sycl::access::address_space _AddressSpace,
+          typename _Iter1, typename _HistAccessor,
+          typename _BinFunc, typename _SelfItem>
 void __accum_local_atomics(_Iter1 in_acc, const ::std::size_t &seg_start,
                            const ::std::size_t &N,
                            const ::std::uint32_t &self_lidx,
                            _HistAccessor wg_local_histogram,
-                           const _MemorySpace &memory_space, _BinFunc func) {
-  using __histo_value_type = ::std::iterator_traits<_HistAccessor>::value_type;
-  using __value_type = ::std::iterator_traits<_Iter1>::value_type;
+                           _BinFunc func, 
+                           _SelfItem self_item, const std::uint8_t& iters_per_work_item) {
+  using __histo_value_type = typename ::std::iterator_traits<_HistAccessor>::value_type;
+  using __value_type = typename ::std::iterator_traits<_Iter1>::value_type;
   const ::std::size_t __seg_end =
-      sycl::min(seg_start + __work_group_size * __iters_per_work_item, N);
+      sycl::min(seg_start + __work_group_size * iters_per_work_item, N);
 #pragma unroll
   for (::std::size_t __val_idx = seg_start + self_lidx; __val_idx < __seg_end;
        __val_idx += __work_group_size) {
@@ -1552,11 +1554,11 @@ void __accum_local_atomics(_Iter1 in_acc, const ::std::size_t &seg_start,
     _BinIdxType c = func(x);
 
     sycl::atomic_ref<__histo_value_type, sycl::memory_order::relaxed,
-                     sycl::memory_scope::work_group, memory_space>
-        global_bin(hacc_private[c]);
+                     sycl::memory_scope::work_group, _AddressSpace>
+        global_bin(wg_local_histogram[c]);
     global_bin++;
   }
-  __self_item.barrier(sycl::access::fence_space::local_space);
+  self_item.barrier(sycl::access::fence_space::local_space);
 }
 
 template <typename _HistAccessorIn, typename _HistAccessorOut, typename _Size,
@@ -1705,10 +1707,12 @@ Iter2 __histogram_general_local_atomics(Policy &&policy, _Iter1 __first,
           __clear_wglocal_histograms(&(local_histogram[0]), num_bins,
                                      __self_item);
 
-          __accum_local_atomics<__work_group_size, __iters_per_work_item,
-                                ::std::uint16_t>(
+          __accum_local_atomics<__work_group_size,
+                                ::std::uint16_t, 
+                                sycl::access::address_space::local_space>(
               &(macc[0]), __seg_start, N, __self_lidx, &(local_histogram[0]),
-              sycl::access::address_space::local_space, __func);
+               __func, __self_item,
+              __iters_per_work_item);
 
           __reduce_out_histograms(&(local_histogram[0]), &(hacc[0]), num_bins,
                                   __self_item);
@@ -1770,11 +1774,13 @@ Iter2 __histogram_general_private_global_atomics(Policy &&policy,
           __clear_wglocal_histograms(&(hacc_private[__wgroup_idx * num_bins]),
                                      num_bins, __self_item);
 
-          __accum_local_atomics<__work_group_size, __iters_per_work_item,
-                                ::std::uint32_t>(
+          __accum_local_atomics<__work_group_size,
+                                ::std::uint32_t, 
+                                sycl::access::address_space::global_space>(
               &(macc[0]), __seg_start, N, __self_lidx,
               &(hacc_private[__wgroup_idx * num_bins]),
-              sycl::access::address_space::global_space, __func);
+              __func, __self_item,
+              iters_per_work_item);
 
           __reduce_out_histograms(&(hacc_private[__wgroup_idx * num_bins]),
                                   &(hacc[0]), num_bins, __self_item);
