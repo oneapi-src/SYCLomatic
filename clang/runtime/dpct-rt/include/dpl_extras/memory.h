@@ -742,7 +742,7 @@ public:
   using difference_type = ::std::make_signed_t<std::size_t>;
   tagged_pointer_base() = default;
   tagged_pointer_base(T *ptr) : m_ptr(ptr) {}
-  operator T *() const { return m_ptr; }
+  operator const T *() const { return m_ptr; }
   operator T *() { return m_ptr; }
 
 protected:
@@ -822,9 +822,6 @@ public:
   tagged_pointer(pointer ptr) : super_t(ptr) {}
   // Enable tagged void pointer to convert to all other raw pointer types.
   template <typename OtherPtr> operator OtherPtr *() const {
-    return static_cast<OtherPtr *>(this->m_ptr);
-  }
-  template <typename OtherPtr> operator OtherPtr *() {
     return static_cast<OtherPtr *>(this->m_ptr);
   }
 };
