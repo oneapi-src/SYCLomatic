@@ -1837,37 +1837,58 @@ __histogram_general_select_best(_ExecutionPolicy &&policy,
   }
 }
 
-} // end namespace internal
-
-template <typename _ExecutionPolicy, typename _InputIterator,
-          typename _RandomAccessIterator, typename _Size, typename _T>
-_RandomAccessIterator
-histogram_even(_ExecutionPolicy &&policy, _InputIterator __first,
-               _InputIterator __last, _RandomAccessIterator __histogram_first,
+template <typename Policy, typename Iter1,
+          typename Iter2, typename _Size, typename _T>
+inline ::std::enable_if_t<
+    dpct::internal::is_iterator<Iter1>::value &&
+    dpct::internal::is_iterator<Iter2>::value &&
+    internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value, Iter2> 
+histogram(Policy &&policy, Iter1 __first,
+               Iter1 __last, Iter2 __histogram_first,
                _Size num_bins, _T __first_bin_min_val, _T __last_bin_max_val) {
   return internal::__histogram_general_select_best(
-      ::std::forward<_ExecutionPolicy>(policy), __first, __last,
+      ::std::forward<Policy>(policy), __first, __last,
       __histogram_first, num_bins,
       internal::__evenly_divided_binhash<_T>(__first_bin_min_val,
                                              __last_bin_max_val, num_bins));
 }
 
-template <typename _ExecutionPolicy, typename _InputIterator,
-          typename _RandomAccessIterator1, typename _RandomAccessIterator2>
-_RandomAccessIterator1 histogram_range(_ExecutionPolicy &&policy,
-                                       _InputIterator __first,
-                                       _InputIterator __last,
-                                       _RandomAccessIterator1 __histogram_first,
-                                       _RandomAccessIterator2 __boundary_first,
-                                       _RandomAccessIterator2 __boundary_last) {
+template <typename Policy, typename Iter1,
+          typename Iter2, typename Iter3>
+inline ::std::enable_if_t<
+    dpct::internal::is_iterator<Iter1>::value &&
+    dpct::internal::is_iterator<Iter2>::value &&
+    dpct::internal::is_iterator<Iter3>::value &&
+    internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value, Iter2> 
+histogram(Policy &&policy,
+          Iter1 __first,
+          Iter1 __last,
+          Iter2 __histogram_first,
+          Iter3 __boundary_first,
+          Iter3 __boundary_last) {
   return internal::__histogram_general_select_best(
-      ::std::forward<_ExecutionPolicy>(policy), __first, __last,
+      ::std::forward<Policy>(policy), __first, __last,
       __histogram_first, (__boundary_last - __boundary_first) - 1,
       internal::__custom_range_binhash{__boundary_first, __boundary_last});
 }
 
-<<<<<<< HEAD
 } // end namespace internal
+
+template<typename Policy, typename SampleIteratorT, typename CounterT, typename LevelT, typename OffsetT>
+void 
+HistogramEven (Policy&& policy, SampleIteratorT d_samples, CounterT *d_histogram, int num_levels, LevelT lower_level, LevelT upper_level, 
+                             OffsetT num_samples)
+{
+  internal::histogram(::std::forward<Policy>(policy), d_samples, d_samples + num_samples, d_histogram, num_levels - 1, lower_level, upper_level);
+}
+
+
+template<typename SampleIteratorT , typename CounterT , typename LevelT , typename OffsetT >
+void 
+HistogramRange (Policy&& policy, SampleIteratorT d_samples, CounterT *d_histogram, int num_levels, LevelT *d_levels, OffsetT num_samples)
+{
+  internal::histogram(::std::forward<Policy>(policy), d_samples, d_samples + num_samples, d_histogram, d_levels, d_levels + num_levels);
+}
 
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
           typename Iter4>
@@ -1883,24 +1904,7 @@ sort_pairs(Policy &&policy, Iter1 keys_in, Iter2 keys_out, Iter3 values_in,
                             end_bit);
 }
 
-template <typename Policy, typename Iter1, typename Iter2>
-=======
-template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
-          typename value_t, typename value_out_t>
-inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value &&
-                        dpct::internal::is_iterator<key_out_t>::value &&
-                        dpct::internal::is_iterator<value_t>::value &&
-                        dpct::internal::is_iterator<value_out_t>::value>
-sort_pairs(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
-                value_t values_in, value_out_t values_out, int64_t n,
-                bool descending, int begin_bit, int end_bit) {
-  internal::sort_pairs_impl(std::forward<_ExecutionPolicy>(policy), keys_in,
-                            keys_out, values_in, values_out, n, descending,
-                            begin_bit, end_bit);
-}
-
 template <typename _ExecutionPolicy, typename key_t, typename value_t>
->>>>>>> 4ce821a5e17d... improving types
 inline void sort_pairs(
     Policy &&policy, io_iterator_pair<Iter1> &keys,
     io_iterator_pair<Iter2> &values, ::std::int64_t n, bool descending = false,
