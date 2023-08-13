@@ -1502,14 +1502,14 @@ template <typename _ForwardIterator> struct __custom_range_binhash {
   }
 };
 
-template <typename _ExecutionPolicy, typename _RandomAccessIterator>
-auto __async_initialize_bins(_ExecutionPolicy &&policy,
-                             _RandomAccessIterator __histogram_first,
-                             _RandomAccessIterator __histogram_last) {
+template <typename Policy, typename Iter2>
+auto __async_initialize_bins(Policy &&policy,
+                             Iter2 __histogram_first,
+                             Iter2 __histogram_last) {
   using __histo_value_type =
-      typename std::iterator_traits<_RandomAccessIterator>::value_type;
+      typename std::iterator_traits<Iter2>::value_type;
   return oneapi::dpl::experimental::fill_async(
-      std::forward<_ExecutionPolicy>(policy), __histogram_first,
+      std::forward<Policy>(policy), __histogram_first,
       __histogram_last, __histo_value_type(0));
 }
 
@@ -1537,9 +1537,9 @@ void __clear_wglocal_histograms(_HistAccessor local_histogram, _Size num_bins,
 
 template <::std::uint16_t __work_group_size, 
           ::std::uint8_t __iters_per_work_item, typename _BinIdxType,
-          typename _InputIterator, typename _HistAccessor,
+          typename _Iter1, typename _HistAccessor,
           typename _MemorySpace, typename _BinFunc>
-void __accum_local_atomics(_InputIterator in_acc, 
+void __accum_local_atomics(_Iter1 in_acc, 
                            const ::std::size_t& seg_start,
                            const ::std::size_t& N,
                            const ::std::uint32_t& self_lidx,
@@ -1547,7 +1547,7 @@ void __accum_local_atomics(_InputIterator in_acc,
                            const _MemorySpace& memory_space, _BinFunc func)
 {
   using __histo_value_type = ::std::iterator_traits<_HistAccessor>::value_type;
-  using __value_type = ::std::iterator_traits<_InputIterator>::value_type;
+  using __value_type = ::std::iterator_traits<_Iter1>::value_type;
   const ::std::size_t __seg_end = sycl::min(
       seg_start + __work_group_size * __iters_per_work_item, N);
 #pragma unroll
@@ -1597,18 +1597,18 @@ void __reduce_out_histograms(_HistAccessorIn in_histogram,
 
 template <::std::uint16_t __work_group_size,
           ::std::uint8_t __iters_per_work_item,
-          ::std::uint8_t __bins_per_work_item, typename _ExecutionPolicy,
-          typename _InputIterator, typename _RandomAccessIterator,
+          ::std::uint8_t __bins_per_work_item, typename Policy,
+          typename _Iter1, typename Iter2,
           typename _Size, typename _IdxHashFunc>
-_RandomAccessIterator __histogram_general_registers_local_reduction(
-    _ExecutionPolicy &&policy, _InputIterator __first,
-    _InputIterator __last, _RandomAccessIterator __histogram_first,
+Iter2 __histogram_general_registers_local_reduction(
+    Policy &&policy, _Iter1 __first,
+    _Iter1 __last, Iter2 __histogram_first,
     _Size num_bins, _IdxHashFunc __func) {
   const ::std::size_t N = __last - __first;
   using __value_type =
-      typename ::std::iterator_traits<_InputIterator>::value_type;
+      typename ::std::iterator_traits<_Iter1>::value_type;
   using __histo_value_type =
-      typename ::std::iterator_traits<_RandomAccessIterator>::value_type;
+      typename ::std::iterator_traits<Iter2>::value_type;
   //minimum type size for atomics
   using __local_histogram_type = ::std::uint32_t; 
   // even though we fit into uint8_t, uint16_t is faster
@@ -1676,17 +1676,17 @@ _RandomAccessIterator __histogram_general_registers_local_reduction(
 }
 
 template <::std::uint16_t __work_group_size,
-          ::std::uint8_t __iters_per_work_item, typename _ExecutionPolicy,
-          typename _InputIterator, typename _RandomAccessIterator,
+          ::std::uint8_t __iters_per_work_item, typename Policy,
+          typename _Iter1, typename Iter2,
           typename _Size, typename _IdxHashFunc>
-_RandomAccessIterator __histogram_general_local_atomics(
-    _ExecutionPolicy &&policy, _InputIterator __first,
-    _InputIterator __last, _RandomAccessIterator __histogram_first,
+Iter2 __histogram_general_local_atomics(
+    Policy &&policy, _Iter1 __first,
+    _Iter1 __last, Iter2 __histogram_first,
     _Size num_bins, _IdxHashFunc __func) {
   using __value_type =
-      typename ::std::iterator_traits<_InputIterator>::value_type;
+      typename ::std::iterator_traits<_Iter1>::value_type;
   using __histo_value_type =
-      typename ::std::iterator_traits<_RandomAccessIterator>::value_type;
+      typename ::std::iterator_traits<Iter2>::value_type;
   //minimum type size for atomics
   using __local_histogram_type = ::std::uint32_t; 
 
@@ -1736,19 +1736,19 @@ _RandomAccessIterator __histogram_general_local_atomics(
 }
 
 template <::std::uint16_t __work_group_size,
-          ::std::uint8_t __min_iters_per_work_item, typename _ExecutionPolicy,
-          typename _InputIterator, typename _RandomAccessIterator,
+          ::std::uint8_t __min_iters_per_work_item, typename Policy,
+          typename _Iter1, typename Iter2,
           typename _Size, typename _IdxHashFunc>
-_RandomAccessIterator __histogram_general_private_global_atomics(
-    _ExecutionPolicy &&policy, _InputIterator __first,
-    _InputIterator __last, _RandomAccessIterator __histogram_first,
+Iter2 __histogram_general_private_global_atomics(
+    Policy &&policy, _Iter1 __first,
+    _Iter1 __last, Iter2 __histogram_first,
     _Size num_bins, _IdxHashFunc __func) {
 
   const ::std::size_t N = __last - __first;
   using __value_type =
-      typename ::std::iterator_traits<_InputIterator>::value_type;
+      typename ::std::iterator_traits<_Iter1>::value_type;
   using __histo_value_type =
-      typename ::std::iterator_traits<_RandomAccessIterator>::value_type;
+      typename ::std::iterator_traits<Iter2>::value_type;
       
   auto __global_mem_size =
       policy.queue()
@@ -1803,15 +1803,15 @@ _RandomAccessIterator __histogram_general_private_global_atomics(
   return __histogram_first + num_bins;
 }
 
-template <typename _ExecutionPolicy, typename _InputIterator,
-          typename _RandomAccessIterator, typename _Size, typename _IdxHashFunc>
-_RandomAccessIterator
-__histogram_general_select_best(_ExecutionPolicy &&policy,
-                              _InputIterator __first, _InputIterator __last,
-                              _RandomAccessIterator __histogram_first,
+template <typename Policy, typename Iter1,
+          typename Iter2, typename _Size, typename _IdxHashFunc>
+Iter2
+__histogram_general_select_best(Policy &&policy,
+                              Iter1 __first, Iter1 __last,
+                              Iter2 __histogram_first,
                               _Size num_bins, _IdxHashFunc __func) {
   using __histo_value_type =
-      typename ::std::iterator_traits<_RandomAccessIterator>::value_type;
+      typename ::std::iterator_traits<Iter2>::value_type;
   auto __local_mem_size =
       policy.queue()
           .get_device()
@@ -1821,18 +1821,18 @@ __histogram_general_select_best(_ExecutionPolicy &&policy,
   // if bins fit into registers, use register private accumulation
   if (num_bins < __max_registers) {
     return __histogram_general_registers_local_reduction<1024, 32, 16>(
-        ::std::forward<_ExecutionPolicy>(policy), __first, __last,
+        ::std::forward<Policy>(policy), __first, __last,
         __histogram_first, num_bins, __func);
   } else if (num_bins * sizeof(__histo_value_type) <
              __local_mem_size) // if bins fit into SLM, use local atomics
   {
     return __histogram_general_local_atomics<1024, 4>(
-        ::std::forward<_ExecutionPolicy>(policy), __first, __last,
+        ::std::forward<Policy>(policy), __first, __last,
         __histogram_first, num_bins, __func);
   } else // otherwise, use global atomics (private copies per workgroup)
   {
     return __histogram_general_private_global_atomics<1024, 4>(
-        ::std::forward<_ExecutionPolicy>(policy), __first, __last,
+        ::std::forward<Policy>(policy), __first, __last,
         __histogram_first, num_bins, __func);
   }
 }
@@ -2181,11 +2181,11 @@ segmented_reduce_argmax(Policy &&policy, Iter1 keys_in, Iter2 keys_out,
   policy.queue().wait();
 }
 
-template <typename ExecutionPolicy, typename InputIterator,
+template <typename ExecutionPolicy, typename Iter1,
           typename OutputIterator1, typename OutputIterator2,
           typename OutputIterator3>
 void nontrivial_run_length_encode(ExecutionPolicy &&policy,
-                                  InputIterator input_beg,
+                                  Iter1 input_beg,
                                   OutputIterator1 offsets_out,
                                   OutputIterator2 lengths_out,
                                   OutputIterator3 num_runs,
