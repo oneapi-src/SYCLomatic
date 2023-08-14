@@ -442,3 +442,29 @@ WARNING_FACTORY_ENTRY(
                                                   ARG_WC(0))),
                           "\"cublasGetStatusString is not supported\"/*", "*/"),
     Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED)
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY(
+        "cublasSgemmEx",
+        CALL(MapNames::getDpctNamespace() + "gemm",
+             DEREF(makeDerefArgCreatorWithCall(0)),
+             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+             ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
+             ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16),
+             ARG(MapNames::getDpctNamespace() +
+                 "library_data_t::real_float")))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY(
+        "cublasCgemmEx",
+        CALL(MapNames::getDpctNamespace() + "gemm",
+             DEREF(makeDerefArgCreatorWithCall(0)),
+             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+             BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+             ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
+             ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16),
+             ARG(MapNames::getDpctNamespace() +
+                 "library_data_t::complex_float")))))
