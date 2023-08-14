@@ -8,10 +8,11 @@
 #include <thrust/system_error.h>
 #include <string>
 
-void cuda_safe_call(cudaError_t error, const std::string& message = "")
-{
-  if(error) {
-// CHECK: throw std::system_error(error, std::generic_category(), message);
+void cuda_safe_call(cudaError_t error, const std::string &message = "") {
+  // CHECK: std::system_error(error, std::generic_category(), message);
+  std::system_error(error, std::generic_category(), message);
+  if (error) {
+    // CHECK: throw std::system_error(error, std::generic_category(), message);
     throw thrust::system_error(error, thrust::cuda_category(), message);
   }
 }

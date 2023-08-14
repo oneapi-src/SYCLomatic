@@ -821,6 +821,9 @@ CONDITIONAL_FACTORY_ENTRY(
 // thrust::cuda_category
 CALL_FACTORY_ENTRY("thrust::cuda_category", CALL("std::generic_category"))
 
+// thrust::system::cuda_category
+CALL_FACTORY_ENTRY("thrust::system::cuda_category", CALL("std::generic_category"))
+
 // thrust::equal_range
 thrustFactory("thrust::equal_range",
               {{4,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::device_ext},
