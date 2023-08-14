@@ -48,12 +48,9 @@ void ForLoopUnrollRule::runRule(
     if(ForLoopLoc.isMacroID()) {
       return;
     }
-    const Decl* D = DpctGlobalInfo::findAncestor<FunctionDecl>(ForLoop);
-    if(!D) {
-      D = DpctGlobalInfo::findAncestor<CXXMethodDecl>(ForLoop);
-    }
-    if (!D ||
-        (!D->hasAttr<CUDAGlobalAttr>() && !D->hasAttr<CUDADeviceAttr>())) {
+    auto FD = getImmediateOuterFuncDecl(ForLoop);
+    if (!FD ||
+        (!FD->hasAttr<CUDAGlobalAttr>() && !FD->hasAttr<CUDADeviceAttr>())) {
       return;
     }
 
