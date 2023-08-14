@@ -55,33 +55,6 @@
 // cublasChemm-NEXT: Is migrated to:
 // cublasChemm-NEXT:   oneapi::mkl::blas::column_major::hemm(*handle, left_right, upper_lower, m, n, dpct::get_value(alpha, *handle), (std::complex<float>*)a, lda, (std::complex<float>*)b, ldb, dpct::get_value(beta, *handle), (std::complex<float>*)c, ldc);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZgetriBatched | FileCheck %s -check-prefix=cublasZgetriBatched
-// cublasZgetriBatched: CUDA API:
-// cublasZgetriBatched-NEXT:   cublasZgetriBatched(handle /*cublasHandle_t*/, n /*int*/,
-// cublasZgetriBatched-NEXT:                       a /*const cuDoubleComplex *const **/, lda /*int*/,
-// cublasZgetriBatched-NEXT:                       ipiv /*const int **/, c /*cuDoubleComplex *const **/,
-// cublasZgetriBatched-NEXT:                       ldc /*int*/, info /*int **/, group_count /*int*/);
-// cublasZgetriBatched-NEXT: Is migrated to:
-// cublasZgetriBatched-NEXT:   dpct::getri_batch_wrapper(*handle, n, const_cast<sycl::double2 const **>(a), lda, ipiv, const_cast<sycl::double2 **>(c), ldc, info, group_count);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZgetrsBatched | FileCheck %s -check-prefix=cublasZgetrsBatched
-// cublasZgetrsBatched: CUDA API:
-// cublasZgetrsBatched-NEXT:   cublasZgetrsBatched(handle /*cublasHandle_t*/, trans /*cublasOperation_t*/,
-// cublasZgetrsBatched-NEXT:                       n /*int*/, nrhs /*int*/,
-// cublasZgetrsBatched-NEXT:                       a /*const cuDoubleComplex *const **/, lda /*int*/,
-// cublasZgetrsBatched-NEXT:                       ipiv /*const int **/, b /*cuDoubleComplex *const **/,
-// cublasZgetrsBatched-NEXT:                       ldb /*int*/, info /*int **/, group_count /*int*/);
-// cublasZgetrsBatched-NEXT: Is migrated to:
-// cublasZgetrsBatched-NEXT:   dpct::getrs_batch_wrapper(*handle, trans, n, nrhs, const_cast<sycl::double2 const **>(a), lda, ipiv, const_cast<sycl::double2 **>(b), ldb, info, group_count);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZgetrfBatched | FileCheck %s -check-prefix=cublasZgetrfBatched
-// cublasZgetrfBatched: CUDA API:
-// cublasZgetrfBatched-NEXT:   cublasZgetrfBatched(handle /*cublasHandle_t*/, n /*int*/,
-// cublasZgetrfBatched-NEXT:                       a /*cuDoubleComplex *const **/, lda /*int*/,
-// cublasZgetrfBatched-NEXT:                       ipiv /*int **/, info /*int **/, group_count /*int*/);
-// cublasZgetrfBatched-NEXT: Is migrated to:
-// cublasZgetrfBatched-NEXT:   dpct::getrf_batch_wrapper(*handle, n, const_cast<sycl::double2 **>(a), lda, ipiv, info, group_count);
-
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDrotg | FileCheck %s -check-prefix=cublasDrotg
 // cublasDrotg: CUDA API:
 // cublasDrotg-NEXT:   cublasDrotg(handle /*cublasHandle_t*/, a /*double **/, b /*double **/,
@@ -129,11 +102,6 @@
 // cublasAxpyEx-NEXT:                computetype /*cudaDataType*/);
 // cublasAxpyEx-NEXT: Is migrated to:
 // cublasAxpyEx-NEXT:   dpct::axpy(*handle, n, alpha, alphatype, x, xtype, incx, y, ytype, incy);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSetMathMode | FileCheck %s -check-prefix=cublasSetMathMode
-// cublasSetMathMode: CUDA API:
-// cublasSetMathMode-NEXT:   cublasSetMathMode(handle /*cublasHandle_t*/, precision /*cublasMath_t*/);
-// cublasSetMathMode-NEXT: Is migrated to:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDtpmv | FileCheck %s -check-prefix=cublasDtpmv
 // cublasDtpmv: CUDA API:
@@ -250,16 +218,6 @@
 // cublasZsyr2k-NEXT: Is migrated to:
 // cublasZsyr2k-NEXT:   oneapi::mkl::blas::column_major::syr2k(*handle, upper_lower, trans, n, k, dpct::get_value(alpha, *handle), (std::complex<double>*)a, lda, (std::complex<double>*)b, ldb, dpct::get_value(beta, *handle), (std::complex<double>*)c, ldc);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasRotEx | FileCheck %s -check-prefix=cublasRotEx
-// cublasRotEx: CUDA API:
-// cublasRotEx-NEXT:   cublasRotEx(handle /*cublasHandle_t*/, n /*int*/, x /*void **/,
-// cublasRotEx-NEXT:               xtype /*cudaDataType*/, incx /*int*/, y /*void **/,
-// cublasRotEx-NEXT:               ytype /*cudaDataType*/, incy /*int*/, c /*const void **/,
-// cublasRotEx-NEXT:               s /*const void **/, cstype /*cudaDataType*/,
-// cublasRotEx-NEXT:               computetype /*cudaDataType*/);
-// cublasRotEx-NEXT: Is migrated to:
-// cublasRotEx-NEXT:   dpct::rot(*handle, n, x, xtype, incx, y, ytype, incy, c, s, cstype);
-
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDrotm | FileCheck %s -check-prefix=cublasDrotm
 // cublasDrotm: CUDA API:
 // cublasDrotm-NEXT:   cublasDrotm(handle /*cublasHandle_t*/, n /*int*/, x /*double **/,
@@ -320,15 +278,6 @@
 // cublasCgemv-NEXT: Is migrated to:
 // cublasCgemv-NEXT:   oneapi::mkl::blas::column_major::gemv(*handle, trans, m, n, dpct::get_value(alpha, *handle), (std::complex<float>*)a, lda, (std::complex<float>*)x, incx, dpct::get_value(beta, *handle), (std::complex<float>*)y, incy);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSgetriBatched | FileCheck %s -check-prefix=cublasSgetriBatched
-// cublasSgetriBatched: CUDA API:
-// cublasSgetriBatched-NEXT:   cublasSgetriBatched(handle /*cublasHandle_t*/, n /*int*/,
-// cublasSgetriBatched-NEXT:                       a /*const float *const **/, lda /*int*/,
-// cublasSgetriBatched-NEXT:                       ipiv /*const int **/, c /*float *const **/, ldc /*int*/,
-// cublasSgetriBatched-NEXT:                       info /*int **/, group_count /*int*/);
-// cublasSgetriBatched-NEXT: Is migrated to:
-// cublasSgetriBatched-NEXT:   dpct::getri_batch_wrapper(*handle, n, const_cast<float const **>(a), lda, ipiv, const_cast<float **>(c), ldc, info, group_count);
-
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCsyr | FileCheck %s -check-prefix=cublasCsyr
 // cublasCsyr: CUDA API:
 // cublasCsyr-NEXT:   cublasCsyr(handle /*cublasHandle_t*/, upper_lower /*cublasFillMode_t*/,
@@ -344,14 +293,6 @@
 // cublasZcopy-NEXT:               y /*cuDoubleComplex **/, incy /*int*/);
 // cublasZcopy-NEXT: Is migrated to:
 // cublasZcopy-NEXT:   oneapi::mkl::blas::column_major::copy(*handle, n, (std::complex<double>*)x, incx, (std::complex<double>*)y, incy);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSgetrfBatched | FileCheck %s -check-prefix=cublasSgetrfBatched
-// cublasSgetrfBatched: CUDA API:
-// cublasSgetrfBatched-NEXT:   cublasSgetrfBatched(handle /*cublasHandle_t*/, n /*int*/,
-// cublasSgetrfBatched-NEXT:                       a /*float *const **/, lda /*int*/, ipiv /*int **/,
-// cublasSgetrfBatched-NEXT:                       info /*int **/, group_count /*int*/);
-// cublasSgetrfBatched-NEXT: Is migrated to:
-// cublasSgetrfBatched-NEXT:   dpct::getrf_batch_wrapper(*handle, n, const_cast<float **>(a), lda, ipiv, info, group_count);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDspmv | FileCheck %s -check-prefix=cublasDspmv
 // cublasDspmv: CUDA API:
@@ -462,17 +403,6 @@
 // cublasDsyrk-NEXT: Is migrated to:
 // cublasDsyrk-NEXT:   oneapi::mkl::blas::column_major::syrk(*handle, upper_lower, trans, n, k, dpct::get_value(alpha, *handle), a, lda, dpct::get_value(beta, *handle), c, ldc);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSgemmBatched | FileCheck %s -check-prefix=cublasSgemmBatched
-// cublasSgemmBatched: CUDA API:
-// cublasSgemmBatched-NEXT:   cublasSgemmBatched(
-// cublasSgemmBatched-NEXT:       handle /*cublasHandle_t*/, transa /*cublasOperation_t*/,
-// cublasSgemmBatched-NEXT:       transb /*cublasOperation_t*/, m /*int*/, n /*int*/, k /*int*/,
-// cublasSgemmBatched-NEXT:       alpha /*const float **/, a /*const float *const **/, lda /*int*/,
-// cublasSgemmBatched-NEXT:       b /*const float *const **/, ldb /*int*/, beta /*const float **/,
-// cublasSgemmBatched-NEXT:       c /*float *const **/, ldc /*int*/, group_count /*int*/);
-// cublasSgemmBatched-NEXT: Is migrated to:
-// cublasSgemmBatched-NEXT:   dpct::gemm_batch(*handle, transa, transb, m, n, k, alpha, (const void**)a, dpct::library_data_t::real_float, lda, (const void**)b, dpct::library_data_t::real_float, ldb, beta, (void**)c, dpct::library_data_t::real_float, ldc, group_count, dpct::library_data_t::real_float);
-
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDswap | FileCheck %s -check-prefix=cublasDswap
 // cublasDswap: CUDA API:
 // cublasDswap-NEXT:   cublasDswap(handle /*cublasHandle_t*/, n /*int*/, x /*double **/,
@@ -533,15 +463,6 @@
 // cublasSscal-NEXT:               x /*float **/, incx /*int*/);
 // cublasSscal-NEXT: Is migrated to:
 // cublasSscal-NEXT:   oneapi::mkl::blas::column_major::scal(*handle, n, dpct::get_value(alpha, *handle), x, incx);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDgeqrfBatched | FileCheck %s -check-prefix=cublasDgeqrfBatched
-// cublasDgeqrfBatched: CUDA API:
-// cublasDgeqrfBatched-NEXT:   cublasDgeqrfBatched(handle /*cublasHandle_t*/, m /*int*/, n /*int*/,
-// cublasDgeqrfBatched-NEXT:                       a /*double *const **/, lda /*int*/,
-// cublasDgeqrfBatched-NEXT:                       tau /*double *const **/, info /*int **/,
-// cublasDgeqrfBatched-NEXT:                       group_count /*int*/);
-// cublasDgeqrfBatched-NEXT: Is migrated to:
-// cublasDgeqrfBatched-NEXT:   dpct::geqrf_batch_wrapper(*handle, m, n, const_cast<double **>(a), lda, const_cast<double **>(tau), info, group_count);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasIzamax | FileCheck %s -check-prefix=cublasIzamax
 // cublasIzamax: CUDA API:
@@ -614,31 +535,6 @@
 // cublasSsyr2-NEXT:               lda /*int*/);
 // cublasSsyr2-NEXT: Is migrated to:
 // cublasSsyr2-NEXT:   oneapi::mkl::blas::column_major::syr2(*handle, upper_lower, n, dpct::get_value(alpha, *handle), x, incx, y, incy, a, lda);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasGemmStridedBatchedEx | FileCheck %s -check-prefix=cublasGemmStridedBatchedEx
-// cublasGemmStridedBatchedEx: CUDA API:
-// cublasGemmStridedBatchedEx-NEXT:   cublasGemmStridedBatchedEx(
-// cublasGemmStridedBatchedEx-NEXT:       handle /*cublasHandle_t*/, transa /*cublasOperation_t*/,
-// cublasGemmStridedBatchedEx-NEXT:       transb /*cublasOperation_t*/, m /*int*/, n /*int*/, k /*int*/,
-// cublasGemmStridedBatchedEx-NEXT:       alpha /*const void **/, a /*const void **/, atype /*cudaDataType*/,
-// cublasGemmStridedBatchedEx-NEXT:       lda /*int*/, stridea /*long long int*/, b /*const void **/,
-// cublasGemmStridedBatchedEx-NEXT:       btype /*cudaDataType*/, ldb /*int*/, strideb /*long long int*/,
-// cublasGemmStridedBatchedEx-NEXT:       beta /*const void **/, c /*void **/, ctype /*cudaDataType*/, ldc /*int*/,
-// cublasGemmStridedBatchedEx-NEXT:       stridec /*long long int*/, group_count /*int*/,
-// cublasGemmStridedBatchedEx-NEXT:       computetype_computeType_t /*cublasComputeType_t*/,
-// cublasGemmStridedBatchedEx-NEXT:       algo /*cublasGemmAlgo_t*/);
-// cublasGemmStridedBatchedEx-NEXT:   cublasGemmStridedBatchedEx(
-// cublasGemmStridedBatchedEx-NEXT:       handle /*cublasHandle_t*/, transa /*cublasOperation_t*/,
-// cublasGemmStridedBatchedEx-NEXT:       transb /*cublasOperation_t*/, m /*int*/, n /*int*/, k /*int*/,
-// cublasGemmStridedBatchedEx-NEXT:       alpha /*const void **/, a /*const void **/, atype /*cudaDataType*/,
-// cublasGemmStridedBatchedEx-NEXT:       lda /*int*/, stridea /*long long int*/, b /*const void **/,
-// cublasGemmStridedBatchedEx-NEXT:       btype /*cudaDataType*/, ldb /*int*/, strideb /*long long int*/,
-// cublasGemmStridedBatchedEx-NEXT:       beta /*const void **/, c /*void **/, ctype /*cudaDataType*/, ldc /*int*/,
-// cublasGemmStridedBatchedEx-NEXT:       stridec /*long long int*/, group_count /*int*/,
-// cublasGemmStridedBatchedEx-NEXT:       computetype_dataType /*cudaDataType*/, algo /*cublasGemmAlgo_t*/);
-// cublasGemmStridedBatchedEx-NEXT: Is migrated to:
-// cublasGemmStridedBatchedEx-NEXT:   dpct::gemm_batch(*handle, transa, transb, m, n, k, alpha, a, atype, lda, stridea, b, btype, ldb, strideb, beta, c, ctype, ldc, stridec, group_count, computetype_computeType_t);
-// cublasGemmStridedBatchedEx-NEXT:   dpct::gemm_batch(*handle, transa, transb, m, n, k, alpha, a, atype, lda, stridea, b, btype, ldb, strideb, beta, c, ctype, ldc, stridec, group_count, computetype_dataType);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasChemv | FileCheck %s -check-prefix=cublasChemv
 // cublasChemv: CUDA API:
@@ -760,14 +656,6 @@
 // cublasDdgmm-NEXT: Is migrated to:
 // cublasDdgmm-NEXT:   oneapi::mkl::blas::column_major::dgmm_batch(*handle, left_right, m, n, a, lda, 0, x, incx, 0, c, ldc, ldc * n, 1);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDgetrfBatched | FileCheck %s -check-prefix=cublasDgetrfBatched
-// cublasDgetrfBatched: CUDA API:
-// cublasDgetrfBatched-NEXT:   cublasDgetrfBatched(handle /*cublasHandle_t*/, n /*int*/,
-// cublasDgetrfBatched-NEXT:                       a /*double *const **/, lda /*int*/, ipiv /*int **/,
-// cublasDgetrfBatched-NEXT:                       info /*int **/, group_count /*int*/);
-// cublasDgetrfBatched-NEXT: Is migrated to:
-// cublasDgetrfBatched-NEXT:   dpct::getrf_batch_wrapper(*handle, n, const_cast<double **>(a), lda, ipiv, info, group_count);
-
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasStrmv | FileCheck %s -check-prefix=cublasStrmv
 // cublasStrmv: CUDA API:
 // cublasStrmv-NEXT:   cublasStrmv(handle /*cublasHandle_t*/, upper_lower /*cublasFillMode_t*/,
@@ -776,15 +664,6 @@
 // cublasStrmv-NEXT:               incx /*int*/);
 // cublasStrmv-NEXT: Is migrated to:
 // cublasStrmv-NEXT:   oneapi::mkl::blas::column_major::trmv(*handle, upper_lower, trans, unit_nonunit, n, a, lda, x, incx);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCgetriBatched | FileCheck %s -check-prefix=cublasCgetriBatched
-// cublasCgetriBatched: CUDA API:
-// cublasCgetriBatched-NEXT:   cublasCgetriBatched(handle /*cublasHandle_t*/, n /*int*/,
-// cublasCgetriBatched-NEXT:                       a /*const cuComplex *const **/, lda /*int*/,
-// cublasCgetriBatched-NEXT:                       ipiv /*const int **/, c /*cuComplex *const **/,
-// cublasCgetriBatched-NEXT:                       ldc /*int*/, info /*int **/, group_count /*int*/);
-// cublasCgetriBatched-NEXT: Is migrated to:
-// cublasCgetriBatched-NEXT:   dpct::getri_batch_wrapper(*handle, n, const_cast<sycl::float2 const **>(a), lda, ipiv, const_cast<sycl::float2 **>(c), ldc, info, group_count);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCrot | FileCheck %s -check-prefix=cublasCrot
 // cublasCrot: CUDA API:
@@ -854,18 +733,6 @@
 // cublasDtpsv-NEXT:               n /*int*/, a /*const double **/, x /*double **/, incx /*int*/);
 // cublasDtpsv-NEXT: Is migrated to:
 // cublasDtpsv-NEXT:   oneapi::mkl::blas::column_major::tpsv(*handle, upper_lower, trans, unit_nonunit, n, a, x, incx);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZgemmBatched | FileCheck %s -check-prefix=cublasZgemmBatched
-// cublasZgemmBatched: CUDA API:
-// cublasZgemmBatched-NEXT:   cublasZgemmBatched(
-// cublasZgemmBatched-NEXT:       handle /*cublasHandle_t*/, transa /*cublasOperation_t*/,
-// cublasZgemmBatched-NEXT:       transb /*cublasOperation_t*/, m /*int*/, n /*int*/, k /*int*/,
-// cublasZgemmBatched-NEXT:       alpha /*const cuDoubleComplex **/, a /*const cuDoubleComplex *const **/,
-// cublasZgemmBatched-NEXT:       lda /*int*/, b /*const cuDoubleComplex *const **/, ldb /*int*/,
-// cublasZgemmBatched-NEXT:       beta /*const cuDoubleComplex **/, c /*cuDoubleComplex *const **/,
-// cublasZgemmBatched-NEXT:       ldc /*int*/, group_count /*int*/);
-// cublasZgemmBatched-NEXT: Is migrated to:
-// cublasZgemmBatched-NEXT:   dpct::gemm_batch(*handle, transa, transb, m, n, k, alpha, (const void**)a, dpct::library_data_t::complex_double, lda, (const void**)b, dpct::library_data_t::complex_double, ldb, beta, (void**)c, dpct::library_data_t::complex_double, ldc, group_count, dpct::library_data_t::complex_double);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDtrsv | FileCheck %s -check-prefix=cublasDtrsv
 // cublasDtrsv: CUDA API:
@@ -987,11 +854,6 @@
 // cublasZaxpy-NEXT: Is migrated to:
 // cublasZaxpy-NEXT:   oneapi::mkl::blas::column_major::axpy(*handle, n, dpct::get_value(alpha, *handle), (std::complex<double>*)x, incx, (std::complex<double>*)y, incy);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasGetMathMode | FileCheck %s -check-prefix=cublasGetMathMode
-// cublasGetMathMode: CUDA API:
-// cublasGetMathMode-NEXT:   cublasGetMathMode(handle /*cublasHandle_t*/, precision /*cublasMath_t **/);
-// cublasGetMathMode-NEXT: Is migrated to:
-
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZsymv | FileCheck %s -check-prefix=cublasZsymv
 // cublasZsymv: CUDA API:
 // cublasZsymv-NEXT:   cublasZsymv(
@@ -1019,15 +881,6 @@
 // cublasZtrmm-NEXT:               c /*cuDoubleComplex **/, ldc /*int*/);
 // cublasZtrmm-NEXT: Is migrated to:
 // cublasZtrmm-NEXT:   dpct::trmm(*handle, left_right, upper_lower, transa, unit_diag, m, n, alpha, a, lda, b, ldb, c, ldc);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDgetriBatched | FileCheck %s -check-prefix=cublasDgetriBatched
-// cublasDgetriBatched: CUDA API:
-// cublasDgetriBatched-NEXT:   cublasDgetriBatched(handle /*cublasHandle_t*/, n /*int*/,
-// cublasDgetriBatched-NEXT:                       a /*const double *const **/, lda /*int*/,
-// cublasDgetriBatched-NEXT:                       ipiv /*const int **/, c /*double *const **/, ldc /*int*/,
-// cublasDgetriBatched-NEXT:                       info /*int **/, group_count /*int*/);
-// cublasDgetriBatched-NEXT: Is migrated to:
-// cublasDgetriBatched-NEXT:   dpct::getri_batch_wrapper(*handle, n, const_cast<double const **>(a), lda, ipiv, const_cast<double **>(c), ldc, info, group_count);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasStrmm | FileCheck %s -check-prefix=cublasStrmm
 // cublasStrmm: CUDA API:
@@ -1141,14 +994,6 @@
 // cublasSsbmv-NEXT: Is migrated to:
 // cublasSsbmv-NEXT:   oneapi::mkl::blas::column_major::sbmv(*handle, upper_lower, n, k, dpct::get_value(alpha, *handle), a, lda, x, incx, dpct::get_value(beta, *handle), y, incy);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCgetrfBatched | FileCheck %s -check-prefix=cublasCgetrfBatched
-// cublasCgetrfBatched: CUDA API:
-// cublasCgetrfBatched-NEXT:   cublasCgetrfBatched(handle /*cublasHandle_t*/, n /*int*/,
-// cublasCgetrfBatched-NEXT:                       a /*cuComplex *const **/, lda /*int*/, ipiv /*int **/,
-// cublasCgetrfBatched-NEXT:                       info /*int **/, group_count /*int*/);
-// cublasCgetrfBatched-NEXT: Is migrated to:
-// cublasCgetrfBatched-NEXT:   dpct::getrf_batch_wrapper(*handle, n, const_cast<sycl::float2 **>(a), lda, ipiv, info, group_count);
-
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasIzamin | FileCheck %s -check-prefix=cublasIzamin
 // cublasIzamin: CUDA API:
 // cublasIzamin-NEXT:   cublasIzamin(handle /*cublasHandle_t*/, n /*int*/,
@@ -1230,17 +1075,6 @@
 // cublasCher-NEXT: Is migrated to:
 // cublasCher-NEXT:   oneapi::mkl::blas::column_major::her(*handle, upper_lower, n, dpct::get_value(alpha, *handle), (std::complex<float>*)x, incx, (std::complex<float>*)a, lda);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasStrsmBatched | FileCheck %s -check-prefix=cublasStrsmBatched
-// cublasStrsmBatched: CUDA API:
-// cublasStrsmBatched-NEXT:   cublasStrsmBatched(
-// cublasStrsmBatched-NEXT:       handle /*cublasHandle_t*/, left_right /*cublasSideMode_t*/,
-// cublasStrsmBatched-NEXT:       upper_lower /*cublasFillMode_t*/, transa /*cublasOperation_t*/,
-// cublasStrsmBatched-NEXT:       unit_diag /*cublasDiagType_t*/, m /*int*/, n /*int*/,
-// cublasStrsmBatched-NEXT:       alpha /*const float **/, a /*const float *const **/, lda /*int*/,
-// cublasStrsmBatched-NEXT:       b /*float *const **/, ldb /*int*/, group_count /*int*/);
-// cublasStrsmBatched-NEXT: Is migrated to:
-// cublasStrsmBatched-NEXT:   dpct::trsm_batch(*handle, left_right, upper_lower, transa, unit_diag, m, n, alpha, (const void**)a, dpct::library_data_t::real_float, lda, (void**)b, dpct::library_data_t::real_float, ldb, group_count, dpct::library_data_t::real_float);
-
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSgemm | FileCheck %s -check-prefix=cublasSgemm
 // cublasSgemm: CUDA API:
 // cublasSgemm-NEXT:   cublasSgemm(handle /*cublasHandle_t*/, transa /*cublasOperation_t*/,
@@ -1271,26 +1105,6 @@
 // cublasZhemm-NEXT: Is migrated to:
 // cublasZhemm-NEXT:   oneapi::mkl::blas::column_major::hemm(*handle, left_right, upper_lower, m, n, dpct::get_value(alpha, *handle), (std::complex<double>*)a, lda, (std::complex<double>*)b, ldb, dpct::get_value(beta, *handle), (std::complex<double>*)c, ldc);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSgetrsBatched | FileCheck %s -check-prefix=cublasSgetrsBatched
-// cublasSgetrsBatched: CUDA API:
-// cublasSgetrsBatched-NEXT:   cublasSgetrsBatched(handle /*cublasHandle_t*/, trans /*cublasOperation_t*/,
-// cublasSgetrsBatched-NEXT:                       n /*int*/, nrhs /*int*/, a /*const float *const **/,
-// cublasSgetrsBatched-NEXT:                       lda /*int*/, ipiv /*const int **/, b /*float *const **/,
-// cublasSgetrsBatched-NEXT:                       ldb /*int*/, info /*int **/, group_count /*int*/);
-// cublasSgetrsBatched-NEXT: Is migrated to:
-// cublasSgetrsBatched-NEXT:   dpct::getrs_batch_wrapper(*handle, trans, n, nrhs, const_cast<float const **>(a), lda, ipiv, const_cast<float **>(b), ldb, info, group_count);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDgemmBatched | FileCheck %s -check-prefix=cublasDgemmBatched
-// cublasDgemmBatched: CUDA API:
-// cublasDgemmBatched-NEXT:   cublasDgemmBatched(
-// cublasDgemmBatched-NEXT:       handle /*cublasHandle_t*/, transa /*cublasOperation_t*/,
-// cublasDgemmBatched-NEXT:       transb /*cublasOperation_t*/, m /*int*/, n /*int*/, k /*int*/,
-// cublasDgemmBatched-NEXT:       alpha /*const double **/, a /*const double *const **/, lda /*int*/,
-// cublasDgemmBatched-NEXT:       b /*const double *const **/, ldb /*int*/, beta /*const double **/,
-// cublasDgemmBatched-NEXT:       c /*double *const **/, ldc /*int*/, group_count /*int*/);
-// cublasDgemmBatched-NEXT: Is migrated to:
-// cublasDgemmBatched-NEXT:   dpct::gemm_batch(*handle, transa, transb, m, n, k, alpha, (const void**)a, dpct::library_data_t::real_double, lda, (const void**)b, dpct::library_data_t::real_double, ldb, beta, (void**)c, dpct::library_data_t::real_double, ldc, group_count, dpct::library_data_t::real_double);
-
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSetMatrixAsync | FileCheck %s -check-prefix=cublasSetMatrixAsync
 // cublasSetMatrixAsync: CUDA API:
 // cublasSetMatrixAsync-NEXT:   cublasSetMatrixAsync(rows /*int*/, cols /*int*/, elementsize /*int*/,
@@ -1320,15 +1134,6 @@
 // cublasDsymv-NEXT:               beta /*const double **/, y /*double **/, incy /*int*/);
 // cublasDsymv-NEXT: Is migrated to:
 // cublasDsymv-NEXT:   oneapi::mkl::blas::column_major::symv(*handle, upper_lower, n, dpct::get_value(alpha, *handle), a, lda, x, incx, dpct::get_value(beta, *handle), y, incy);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCgeqrfBatched | FileCheck %s -check-prefix=cublasCgeqrfBatched
-// cublasCgeqrfBatched: CUDA API:
-// cublasCgeqrfBatched-NEXT:   cublasCgeqrfBatched(handle /*cublasHandle_t*/, m /*int*/, n /*int*/,
-// cublasCgeqrfBatched-NEXT:                       a /*cuComplex *const **/, lda /*int*/,
-// cublasCgeqrfBatched-NEXT:                       tau /*cuComplex *const **/, info /*int **/,
-// cublasCgeqrfBatched-NEXT:                       group_count /*int*/);
-// cublasCgeqrfBatched-NEXT: Is migrated to:
-// cublasCgeqrfBatched-NEXT:   dpct::geqrf_batch_wrapper(*handle, m, n, const_cast<sycl::float2 **>(a), lda, const_cast<sycl::float2 **>(tau), info, group_count);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDsymm | FileCheck %s -check-prefix=cublasDsymm
 // cublasDsymm: CUDA API:
@@ -1480,15 +1285,6 @@
 // cublasCtrmv-NEXT: Is migrated to:
 // cublasCtrmv-NEXT:   oneapi::mkl::blas::column_major::trmv(*handle, upper_lower, trans, unit_nonunit, n, (std::complex<float>*)a, lda, (std::complex<float>*)x, incx);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDgetrsBatched | FileCheck %s -check-prefix=cublasDgetrsBatched
-// cublasDgetrsBatched: CUDA API:
-// cublasDgetrsBatched-NEXT:   cublasDgetrsBatched(handle /*cublasHandle_t*/, trans /*cublasOperation_t*/,
-// cublasDgetrsBatched-NEXT:                       n /*int*/, nrhs /*int*/, a /*const double *const **/,
-// cublasDgetrsBatched-NEXT:                       lda /*int*/, ipiv /*const int **/, b /*double *const **/,
-// cublasDgetrsBatched-NEXT:                       ldb /*int*/, info /*int **/, group_count /*int*/);
-// cublasDgetrsBatched-NEXT: Is migrated to:
-// cublasDgetrsBatched-NEXT:   dpct::getrs_batch_wrapper(*handle, trans, n, nrhs, const_cast<double const **>(a), lda, ipiv, const_cast<double **>(b), ldb, info, group_count);
-
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZrot | FileCheck %s -check-prefix=cublasZrot
 // cublasZrot: CUDA API:
 // cublasZrot-NEXT:   cublasZrot(handle /*cublasHandle_t*/, n /*int*/, x /*cuDoubleComplex **/,
@@ -1509,29 +1305,6 @@
 // cublasSetStream-NEXT:   cublasSetStream(handle /*cublasHandle_t*/, stream /*cudaStream_t*/);
 // cublasSetStream-NEXT: Is migrated to:
 // cublasSetStream-NEXT:   handle = stream;
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasGemmBatchedEx | FileCheck %s -check-prefix=cublasGemmBatchedEx
-// cublasGemmBatchedEx: CUDA API:
-// cublasGemmBatchedEx-NEXT:   cublasGemmBatchedEx(
-// cublasGemmBatchedEx-NEXT:       handle /*cublasHandle_t*/, transa /*cublasOperation_t*/,
-// cublasGemmBatchedEx-NEXT:       transb /*cublasOperation_t*/, m /*int*/, n /*int*/, k /*int*/,
-// cublasGemmBatchedEx-NEXT:       alpha /*const void **/, a /*const void *const **/, atype /*cudaDataType*/,
-// cublasGemmBatchedEx-NEXT:       lda /*int*/, b /*const void *const **/, btype /*cudaDataType*/,
-// cublasGemmBatchedEx-NEXT:       ldb /*int*/, beta /*const void **/, c /*void *const **/,
-// cublasGemmBatchedEx-NEXT:       ctype /*cudaDataType*/, ldc /*int*/, group_count /*int*/,
-// cublasGemmBatchedEx-NEXT:       computetype_computeType_t /*cublasComputeType_t*/,
-// cublasGemmBatchedEx-NEXT:       algo /*cublasGemmAlgo_t*/);
-// cublasGemmBatchedEx-NEXT:   cublasGemmBatchedEx(
-// cublasGemmBatchedEx-NEXT:       handle /*cublasHandle_t*/, transa /*cublasOperation_t*/,
-// cublasGemmBatchedEx-NEXT:       transb /*cublasOperation_t*/, m /*int*/, n /*int*/, k /*int*/,
-// cublasGemmBatchedEx-NEXT:       alpha /*const void **/, a /*const void *const **/, atype /*cudaDataType*/,
-// cublasGemmBatchedEx-NEXT:       lda /*int*/, b /*const void *const **/, btype /*cudaDataType*/,
-// cublasGemmBatchedEx-NEXT:       ldb /*int*/, beta /*const void **/, c /*void *const **/,
-// cublasGemmBatchedEx-NEXT:       ctype /*cudaDataType*/, ldc /*int*/, group_count /*int*/,
-// cublasGemmBatchedEx-NEXT:       computetype_dataType /*cudaDataType*/, algo /*cublasGemmAlgo_t*/);
-// cublasGemmBatchedEx-NEXT: Is migrated to:
-// cublasGemmBatchedEx-NEXT:   dpct::gemm_batch(*handle, transa, transb, m, n, k, alpha, const_cast<void const **>(a), atype, lda, const_cast<void const **>(b), btype, ldb, beta, const_cast<void **>(c), ctype, ldc, group_count, computetype_computeType_t);
-// cublasGemmBatchedEx-NEXT:   dpct::gemm_batch(*handle, transa, transb, m, n, k, alpha, const_cast<void const **>(a), atype, lda, const_cast<void const **>(b), btype, ldb, beta, const_cast<void **>(c), ctype, ldc, group_count, computetype_dataType);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZdgmm | FileCheck %s -check-prefix=cublasZdgmm
 // cublasZdgmm: CUDA API:
@@ -1615,18 +1388,6 @@
 // cublasIdamax-NEXT:   dpct::dpct_memcpy(res, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
 // cublasIdamax-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZtrsmBatched | FileCheck %s -check-prefix=cublasZtrsmBatched
-// cublasZtrsmBatched: CUDA API:
-// cublasZtrsmBatched-NEXT:   cublasZtrsmBatched(
-// cublasZtrsmBatched-NEXT:       handle /*cublasHandle_t*/, left_right /*cublasSideMode_t*/,
-// cublasZtrsmBatched-NEXT:       upper_lower /*cublasFillMode_t*/, transa /*cublasOperation_t*/,
-// cublasZtrsmBatched-NEXT:       unit_diag /*cublasDiagType_t*/, m /*int*/, n /*int*/,
-// cublasZtrsmBatched-NEXT:       alpha /*const cuDoubleComplex **/, a /*const cuDoubleComplex *const **/,
-// cublasZtrsmBatched-NEXT:       lda /*int*/, b /*cuDoubleComplex *const **/, ldb /*int*/,
-// cublasZtrsmBatched-NEXT:       group_count /*int*/);
-// cublasZtrsmBatched-NEXT: Is migrated to:
-// cublasZtrsmBatched-NEXT:   dpct::trsm_batch(*handle, left_right, upper_lower, transa, unit_diag, m, n, alpha, (const void**)a, dpct::library_data_t::complex_double, lda, (void**)b, dpct::library_data_t::complex_double, ldb, group_count, dpct::library_data_t::complex_double);
-
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZgemv | FileCheck %s -check-prefix=cublasZgemv
 // cublasZgemv: CUDA API:
 // cublasZgemv-NEXT:   cublasZgemv(handle /*cublasHandle_t*/, trans /*cublasOperation_t*/, m /*int*/,
@@ -1648,17 +1409,6 @@
 // cublasIsamin-NEXT:   int res_temp_host_ct{{[0-9]+}} = (int)*res_temp_ptr_ct{{[0-9]+}};
 // cublasIsamin-NEXT:   dpct::dpct_memcpy(res, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
 // cublasIsamin-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDtrsmBatched | FileCheck %s -check-prefix=cublasDtrsmBatched
-// cublasDtrsmBatched: CUDA API:
-// cublasDtrsmBatched-NEXT:   cublasDtrsmBatched(
-// cublasDtrsmBatched-NEXT:       handle /*cublasHandle_t*/, left_right /*cublasSideMode_t*/,
-// cublasDtrsmBatched-NEXT:       upper_lower /*cublasFillMode_t*/, transa /*cublasOperation_t*/,
-// cublasDtrsmBatched-NEXT:       unit_diag /*cublasDiagType_t*/, m /*int*/, n /*int*/,
-// cublasDtrsmBatched-NEXT:       alpha /*const double **/, a /*const double *const **/, lda /*int*/,
-// cublasDtrsmBatched-NEXT:       b /*double *const **/, ldb /*int*/, group_count /*int*/);
-// cublasDtrsmBatched-NEXT: Is migrated to:
-// cublasDtrsmBatched-NEXT:   dpct::trsm_batch(*handle, left_right, upper_lower, transa, unit_diag, m, n, alpha, (const void**)a, dpct::library_data_t::real_double, lda, (void**)b, dpct::library_data_t::real_double, ldb, group_count, dpct::library_data_t::real_double);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZswap | FileCheck %s -check-prefix=cublasZswap
 // cublasZswap: CUDA API:
@@ -1784,14 +1534,6 @@
 // cublasSrotg-NEXT:     sycl::free(a_ct{{[0-9]+}}, dpct::get_default_queue());
 // cublasSrotg-NEXT:   }
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSgeqrfBatched | FileCheck %s -check-prefix=cublasSgeqrfBatched
-// cublasSgeqrfBatched: CUDA API:
-// cublasSgeqrfBatched-NEXT:   cublasSgeqrfBatched(handle /*cublasHandle_t*/, m /*int*/, n /*int*/,
-// cublasSgeqrfBatched-NEXT:                       a /*float *const **/, lda /*int*/, tau /*float *const **/,
-// cublasSgeqrfBatched-NEXT:                       info /*int **/, group_count /*int*/);
-// cublasSgeqrfBatched-NEXT: Is migrated to:
-// cublasSgeqrfBatched-NEXT:   dpct::geqrf_batch_wrapper(*handle, m, n, const_cast<float **>(a), lda, const_cast<float **>(tau), info, group_count);
-
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSgemmEx | FileCheck %s -check-prefix=cublasSgemmEx
 // cublasSgemmEx: CUDA API:
 // cublasSgemmEx-NEXT:   cublasSgemmEx(handle /*cublasHandle_t*/, transa /*cublasOperation_t*/,
@@ -1802,27 +1544,6 @@
 // cublasSgemmEx-NEXT:                 c /*void **/, ctype /*cudaDataType*/, ldc /*int*/);
 // cublasSgemmEx-NEXT: Is migrated to:
 // cublasSgemmEx-NEXT:   dpct::gemm(*handle, transa, transb, m, n, k, alpha, a, atype, lda, b, btype, ldb, beta, c, ctype, ldc, dpct::library_data_t::real_float);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasGemmEx | FileCheck %s -check-prefix=cublasGemmEx
-// cublasGemmEx: CUDA API:
-// cublasGemmEx-NEXT:   cublasGemmEx(handle /*cublasHandle_t*/, transa /*cublasOperation_t*/,
-// cublasGemmEx-NEXT:                transb /*cublasOperation_t*/, m /*int*/, n /*int*/, k /*int*/,
-// cublasGemmEx-NEXT:                alpha /*const void **/, a /*const void **/,
-// cublasGemmEx-NEXT:                atype /*cudaDataType*/, lda /*int*/, b /*const void **/,
-// cublasGemmEx-NEXT:                btype /*cudaDataType*/, ldb /*int*/, beta /*const void **/,
-// cublasGemmEx-NEXT:                c /*void **/, ctype /*cudaDataType*/, ldc /*int*/,
-// cublasGemmEx-NEXT:                computetype_computeType_t /*cublasComputeType_t*/,
-// cublasGemmEx-NEXT:                algo /*cublasGemmAlgo_t*/);
-// cublasGemmEx-NEXT:   cublasGemmEx(
-// cublasGemmEx-NEXT:       handle /*cublasHandle_t*/, transa /*cublasOperation_t*/,
-// cublasGemmEx-NEXT:       transb /*cublasOperation_t*/, m /*int*/, n /*int*/, k /*int*/,
-// cublasGemmEx-NEXT:       alpha /*const void **/, a /*const void **/, atype /*cudaDataType*/,
-// cublasGemmEx-NEXT:       lda /*int*/, b /*const void **/, btype /*cudaDataType*/, ldb /*int*/,
-// cublasGemmEx-NEXT:       beta /*const void **/, c /*void **/, ctype /*cudaDataType*/, ldc /*int*/,
-// cublasGemmEx-NEXT:       computetype_dataType /*cudaDataType*/, algo /*cublasGemmAlgo_t*/);
-// cublasGemmEx-NEXT: Is migrated to:
-// cublasGemmEx-NEXT:   dpct::gemm(*handle, transa, transb, m, n, k, alpha, a, atype, lda, b, btype, ldb, beta, c, ctype, ldc, computetype_computeType_t);
-// cublasGemmEx-NEXT:   dpct::gemm(*handle, transa, transb, m, n, k, alpha, a, atype, lda, b, btype, ldb, beta, c, ctype, ldc, computetype_dataType);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDrotmg | FileCheck %s -check-prefix=cublasDrotmg
 // cublasDrotmg: CUDA API:
@@ -2025,22 +1746,6 @@
 // cublasDaxpy-NEXT: Is migrated to:
 // cublasDaxpy-NEXT:   oneapi::mkl::blas::column_major::axpy(*handle, n, dpct::get_value(alpha, *handle), x, incx, y, incy);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasGetStatusString | FileCheck %s -check-prefix=cublasGetStatusString
-// cublasGetStatusString: CUDA API:
-// cublasGetStatusString-NEXT:   res /*const char **/ = cublasGetStatusString(status /*cublasStatus_t*/);
-// cublasGetStatusString-NEXT: Is migrated to:
-// cublasGetStatusString-NEXT:   res /*const char **/ = "cublasGetStatusString is not supported"/*cublasGetStatusString(status)*/;
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCgetrsBatched | FileCheck %s -check-prefix=cublasCgetrsBatched
-// cublasCgetrsBatched: CUDA API:
-// cublasCgetrsBatched-NEXT:   cublasCgetrsBatched(handle /*cublasHandle_t*/, trans /*cublasOperation_t*/,
-// cublasCgetrsBatched-NEXT:                       n /*int*/, nrhs /*int*/, a /*const cuComplex *const **/,
-// cublasCgetrsBatched-NEXT:                       lda /*int*/, ipiv /*const int **/,
-// cublasCgetrsBatched-NEXT:                       b /*cuComplex *const **/, ldb /*int*/, info /*int **/,
-// cublasCgetrsBatched-NEXT:                       group_count /*int*/);
-// cublasCgetrsBatched-NEXT: Is migrated to:
-// cublasCgetrsBatched-NEXT:   dpct::getrs_batch_wrapper(*handle, trans, n, nrhs, const_cast<sycl::float2 const **>(a), lda, ipiv, const_cast<sycl::float2 **>(b), ldb, info, group_count);
-
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDscal | FileCheck %s -check-prefix=cublasDscal
 // cublasDscal: CUDA API:
 // cublasDscal-NEXT:   cublasDscal(handle /*cublasHandle_t*/, n /*int*/, alpha /*const double **/,
@@ -2068,17 +1773,6 @@
 // cublasCgbmv-NEXT:               incy /*int*/);
 // cublasCgbmv-NEXT: Is migrated to:
 // cublasCgbmv-NEXT:   oneapi::mkl::blas::column_major::gbmv(*handle, trans, m, n, kl, ku, dpct::get_value(alpha, *handle), (std::complex<float>*)a, lda, (std::complex<float>*)x, incx, dpct::get_value(beta, *handle), (std::complex<float>*)y, incy);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCtrsmBatched | FileCheck %s -check-prefix=cublasCtrsmBatched
-// cublasCtrsmBatched: CUDA API:
-// cublasCtrsmBatched-NEXT:   cublasCtrsmBatched(
-// cublasCtrsmBatched-NEXT:       handle /*cublasHandle_t*/, left_right /*cublasSideMode_t*/,
-// cublasCtrsmBatched-NEXT:       upper_lower /*cublasFillMode_t*/, transa /*cublasOperation_t*/,
-// cublasCtrsmBatched-NEXT:       unit_diag /*cublasDiagType_t*/, m /*int*/, n /*int*/,
-// cublasCtrsmBatched-NEXT:       alpha /*const cuComplex **/, a /*const cuComplex *const **/, lda /*int*/,
-// cublasCtrsmBatched-NEXT:       b /*cuComplex *const **/, ldb /*int*/, group_count /*int*/);
-// cublasCtrsmBatched-NEXT: Is migrated to:
-// cublasCtrsmBatched-NEXT:   dpct::trsm_batch(*handle, left_right, upper_lower, transa, unit_diag, m, n, alpha, (const void**)a, dpct::library_data_t::complex_float, lda, (void**)b, dpct::library_data_t::complex_float, ldb, group_count, dpct::library_data_t::complex_float);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSgemmStridedBatched | FileCheck %s -check-prefix=cublasSgemmStridedBatched
 // cublasSgemmStridedBatched: CUDA API:
@@ -2123,17 +1817,6 @@
 // cublasScasum-NEXT:     *res = *res_temp_ptr_ct{{[0-9]+}};
 // cublasScasum-NEXT:     sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
 // cublasScasum-NEXT:   }
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCgemmBatched | FileCheck %s -check-prefix=cublasCgemmBatched
-// cublasCgemmBatched: CUDA API:
-// cublasCgemmBatched-NEXT:   cublasCgemmBatched(
-// cublasCgemmBatched-NEXT:       handle /*cublasHandle_t*/, transa /*cublasOperation_t*/,
-// cublasCgemmBatched-NEXT:       transb /*cublasOperation_t*/, m /*int*/, n /*int*/, k /*int*/,
-// cublasCgemmBatched-NEXT:       alpha /*const cuComplex **/, a /*const cuComplex *const **/, lda /*int*/,
-// cublasCgemmBatched-NEXT:       b /*const cuComplex *const **/, ldb /*int*/, beta /*const cuComplex **/,
-// cublasCgemmBatched-NEXT:       c /*cuComplex *const **/, ldc /*int*/, group_count /*int*/);
-// cublasCgemmBatched-NEXT: Is migrated to:
-// cublasCgemmBatched-NEXT:   dpct::gemm_batch(*handle, transa, transb, m, n, k, alpha, (const void**)a, dpct::library_data_t::complex_float, lda, (const void**)b, dpct::library_data_t::complex_float, ldb, beta, (void**)c, dpct::library_data_t::complex_float, ldc, group_count, dpct::library_data_t::complex_float);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSsyr2k | FileCheck %s -check-prefix=cublasSsyr2k
 // cublasSsyr2k: CUDA API:
@@ -2268,17 +1951,6 @@
 // cublasGetMatrixAsync-NEXT: Is migrated to:
 // cublasGetMatrixAsync-NEXT:   dpct::matrix_mem_copy((void*)b, (void*)a, ldb, lda, rows, cols, elementsize, dpct::automatic, *stream, true);
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasHgemmBatched | FileCheck %s -check-prefix=cublasHgemmBatched
-// cublasHgemmBatched: CUDA API:
-// cublasHgemmBatched-NEXT:   cublasHgemmBatched(
-// cublasHgemmBatched-NEXT:       handle /*cublasHandle_t*/, transa /*cublasOperation_t*/,
-// cublasHgemmBatched-NEXT:       transb /*cublasOperation_t*/, m /*int*/, n /*int*/, k /*int*/,
-// cublasHgemmBatched-NEXT:       alpha /*const __half **/, a /*const __half *const **/, lda /*int*/,
-// cublasHgemmBatched-NEXT:       b /*const __half *const **/, ldb /*int*/, beta /*const __half **/,
-// cublasHgemmBatched-NEXT:       c /*__half *const **/, ldc /*int*/, group_count /*int*/);
-// cublasHgemmBatched-NEXT: Is migrated to:
-// cublasHgemmBatched-NEXT:   dpct::gemm_batch(*handle, transa, transb, m, n, k, alpha, (const void**)a, dpct::library_data_t::real_half, lda, (const void**)b, dpct::library_data_t::real_half, ldb, beta, (void**)c, dpct::library_data_t::real_half, ldc, group_count, dpct::library_data_t::real_half);
-
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDtrmm | FileCheck %s -check-prefix=cublasDtrmm
 // cublasDtrmm: CUDA API:
 // cublasDtrmm-NEXT:   cublasDtrmm(handle /*cublasHandle_t*/, left_right /*cublasSideMode_t*/,
@@ -2360,15 +2032,6 @@
 // cublasSspr2-NEXT:               incx /*int*/, y /*const float **/, incy /*int*/, a /*float **/);
 // cublasSspr2-NEXT: Is migrated to:
 // cublasSspr2-NEXT:   oneapi::mkl::blas::column_major::spr2(*handle, upper_lower, n, dpct::get_value(alpha, *handle), x, incx, y, incy, a);
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZgeqrfBatched | FileCheck %s -check-prefix=cublasZgeqrfBatched
-// cublasZgeqrfBatched: CUDA API:
-// cublasZgeqrfBatched-NEXT:   cublasZgeqrfBatched(handle /*cublasHandle_t*/, m /*int*/, n /*int*/,
-// cublasZgeqrfBatched-NEXT:                       a /*cuDoubleComplex *const **/, lda /*int*/,
-// cublasZgeqrfBatched-NEXT:                       tau /*cuDoubleComplex *const **/, info /*int **/,
-// cublasZgeqrfBatched-NEXT:                       group_count /*int*/);
-// cublasZgeqrfBatched-NEXT: Is migrated to:
-// cublasZgeqrfBatched-NEXT:   dpct::geqrf_batch_wrapper(*handle, m, n, const_cast<sycl::double2 **>(a), lda, const_cast<sycl::double2 **>(tau), info, group_count);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZhpmv | FileCheck %s -check-prefix=cublasZhpmv
 // cublasZhpmv: CUDA API:
