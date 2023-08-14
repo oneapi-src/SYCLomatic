@@ -116,7 +116,7 @@ ENTRY(cudaWaitExternalSemaphoresAsync, cudaWaitExternalSemaphoresAsync, false, N
 
 // execution control functions of runtime API
 ENTRY(cudaFuncGetAttributes, cudaFuncGetAttributes, true, NO_FLAG, P0, "Successful", "NA")
-ENTRY(cudaFuncSetAttribute, cudaFuncSetAttribute, false, NO_FLAG, P0, "comment", "NA")
+ENTRY(cudaFuncSetAttribute, cudaFuncSetAttribute, true, NO_FLAG, P0, "comment", "NA")
 ENTRY(cudaFuncSetCacheConfig, cudaFuncSetCacheConfig, true, API_CALL_UNSUPPORTED, P0, "DPCT1026", "NA")
 ENTRY(cudaFuncSetSharedMemConfig, cudaFuncSetSharedMemConfig, true, NO_FLAG, P0, "DPCT1026", "NA")
 ENTRY(cudaLaunchCooperativeKernel, cudaLaunchCooperativeKernel, true, NO_FLAG, P4, "DPCT1007", "NA")

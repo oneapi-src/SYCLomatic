@@ -6686,7 +6686,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaFuncSetSharedMemConfig", "cuFuncSetCacheConfig",
         "cudaPointerGetAttributes", "cuCtxSetCacheConfig", "cuCtxSetLimit",
         "cudaCtxResetPersistingL2Cache", "cuCtxResetPersistingL2Cache",
-        "cudaStreamSetAttribute", "cudaStreamGetAttribute");
+        "cudaStreamSetAttribute", "cudaStreamGetAttribute", "cudaFuncSetAttribute");
   };
 
   MF.addMatcher(
@@ -6972,7 +6972,8 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaStreamSetAttribute" ||
              FuncName == "cudaStreamGetAttribute" ||
              FuncName == "cudaCtxResetPersistingL2Cache" ||
-             FuncName == "cuCtxResetPersistingL2Cache") {
+             FuncName == "cuCtxResetPersistingL2Cache" ||
+             FuncName == "cudaFuncSetAttribute") {
     auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
@@ -14782,43 +14783,26 @@ void CudaUuidRule::runRule(
 REGISTER_RULE(CudaUuidRule, PassKind::PK_Analysis)
 
 void TypeRemoveRule::registerMatcher(ast_matchers::MatchFinder &MF) {
-  MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(
+ MF.addMatcher(varDecl(hasType(qualType(hasDeclaration(
                             typedefDecl(hasAnyName("cudaLaunchAttributeValue"))))))
-                    .bind("TypeRemoveType"),
+                    .bind("VarDeclRemove"),
                 this);
-  MF.addMatcher(binaryOperator(allOf(isAssignmentOperator(),hasLHS(memberExpr(hasObjectExpression(hasType(qualType(hasDeclaration(
-                               typedefDecl(hasAnyName("cudaLaunchAttributeValue"))))))))))
-                    .bind("TypeRemoveMemberAssign"),
-                this);
-  MF.addMatcher(binaryOperator(allOf(isAssignmentOperator(),hasLHS(
-      memberExpr(hasObjectExpression(hasType(pointerType(pointee(qualType(
-                     (hasDeclaration(typedefDecl(hasAnyName("cudaLaunchAttributeValue")))))))))))))
-          .bind("TypeRemoveMemberAssign"),
-      this);
   MF.addMatcher(binaryOperator(allOf(isAssignmentOperator(), hasLHS(
-      declRefExpr())))
-          .bind("TypeRemoveExprAssign"),
+      hasDescendant(declRefExpr(to(varDecl(hasType(qualType(hasDeclaration(
+                      typedefDecl(hasAnyName("cudaLaunchAttributeValue"))))))))))))
+          .bind("AssignStmtRemove"),
       this);
 }
 
 void TypeRemoveRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  ExprAnalysis EA;
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  if (auto TL = getNodeAsType<TypeLoc>(Result, "TypeRemoveType")) {
-    std::cout<<"TypeRemoveType\n";
+  if (auto VD = getNodeAsType<VarDecl>(Result, "VarDeclRemove")) {
+    emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(VD, ""));
   }
-  if (auto ME = getNodeAsType<MemberExpr>(Result, "TypeRemoveMemberAssign")) {
-    std::cout<<"TypeRemoveMember\n";
-    const auto *ParentStmt = DpctGlobalInfo::findAncestor<Stmt>(ME);
-    ParentStmt->dump();
-    emplaceTransformation(new ReplaceStmt(ParentStmt, ""));
-  }
-  if (auto BO = getNodeAsType<BinaryOperator>(Result, "TypeRemoveExprAssign")) {
-    std::cout<<"TypeRemoveExpr\n";
+  if (auto BO = getNodeAsType<BinaryOperator>(Result, "AssignStmtRemove")) {
     emplaceTransformation(new ReplaceStmt(BO, ""));
-    }
-
+  }
+  return;
 }
 
 REGISTER_RULE(TypeRemoveRule, PassKind::PK_Analysis)

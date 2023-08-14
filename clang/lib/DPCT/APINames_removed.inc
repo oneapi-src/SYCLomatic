@@ -17,6 +17,8 @@ ENTRY(cudaCtxResetPersistingL2Cache,   "SYCL currently does not support setting 
 ENTRY(cuCtxResetPersistingL2Cache,     "SYCL currently does not support setting cache config on devices.")
 ENTRY(cudaStreamSetAttribute,          "SYCL currently does not support setting cache config on devices.")
 ENTRY(cudaStreamGetAttribute,          "SYCL currently does not support setting cache config on devices.")
+ENTRY(cudaFuncSetAttribute,          "SYCL currently does not support setting cache config on devices.")
+
 ENTRY(cuCtxSetLimit,                   "SYCL currently does not support setting resource limits on devices.")
 ENTRY(cuCtxGetLimit,                   "SYCL currently does not support getting resource limits on devices.")
 ENTRY(cuCtxSetCacheConfig,             "SYCL currently does not support setting cache config on devices.")
