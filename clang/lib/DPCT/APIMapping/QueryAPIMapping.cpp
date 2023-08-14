@@ -19,24 +19,32 @@ std::vector<llvm::StringRef> APIMapping::EntryArray;
 void APIMapping::registerEntry(std::string Name, llvm::StringRef SourceCode) {
   std::replace(Name.begin(), Name.end(), '$', ':');
   // Try to fuzz the original API name:
-  // 1. Remove 0/1/2/... leader '_'.
+  // 1. Remove partial or all leading '_'.
   // 2. For each name got by step 1, put 4 kind of fuzzed name into the map
   // keys:
   //   (1) original name
-  //   (2) first char upper case name
-  //   (3) all char upper case name
-  //   (4) all char lower case name
+  //   (2) remove or add Suffix "_v2"
+  //   (3) first char upper case name
+  //   (4) all char upper case name
+  //   (5) all char lower case name
   for (int i = Name.find_first_not_of("_"); i >= 0; --i) {
-    EntryMap[Name] = EntryArray.size();
+    const auto TargetIndex = EntryArray.size();
+    EntryMap[Name] = TargetIndex;
     auto TempName = Name;
+    std::string Suffix = "_v2";
+    if (TempName.find_last_of(Suffix) == TempName.size() - Suffix.length()) {
+      EntryMap[TempName.substr(0, TempName.size() - 3)] = TargetIndex;
+    } else {
+      EntryMap[TempName + Suffix] = TargetIndex;
+    }
     TempName[i] = std::toupper(TempName[i]);
-    EntryMap[TempName] = EntryArray.size();
+    EntryMap[TempName] = TargetIndex;
     std::transform(TempName.begin(), TempName.end(), TempName.begin(),
                    ::toupper);
-    EntryMap[TempName] = EntryArray.size();
+    EntryMap[TempName] = TargetIndex;
     std::transform(TempName.begin(), TempName.end(), TempName.begin(),
                    ::tolower);
-    EntryMap[TempName] = EntryArray.size();
+    EntryMap[TempName] = TargetIndex;
     Name.erase(0, 1);
   }
   EntryArray.emplace_back(SourceCode);
