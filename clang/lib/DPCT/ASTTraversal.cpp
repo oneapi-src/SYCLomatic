@@ -1972,8 +1972,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cufftResult", "cufftType_t", "cufftType", "thrust::pair",
               "CUdeviceptr", "cudaDeviceAttr", "CUmodule", "CUjit_option",
               "CUfunction", "cudaMemcpyKind", "cudaComputeMode",
-              "__nv_bfloat16", "__nv_bfloat162",
-              "cooperative_groups::__v1::thread_block_tile",
+              "__nv_bfloat16", "cooperative_groups::__v1::thread_block_tile",
               "cooperative_groups::__v1::thread_block", "libraryPropertyType_t",
               "libraryPropertyType", "cudaDataType_t", "cudaDataType",
               "cublasComputeType_t", "cublasAtomicsMode_t", "CUmem_advise_enum",
@@ -2551,6 +2550,10 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           return;
         }
       } else if (NTL.getTypeLocClass() == clang::TypeLoc::Record) {
+        if (TypeStr == "__nv_bfloat16" && !DpctGlobalInfo::useBFloat16()) {
+          return;
+        }
+
         auto TSL = NTL.getUnqualifiedLoc().getAs<RecordTypeLoc>();
 
         const std::string TyName =
@@ -2782,6 +2785,9 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     Lexer::getRawToken(BeginLoc, Tok, *SM, LOpts, true);
     if (Tok.isAnyIdentifier()) {
       const std::string TypeStr = Tok.getRawIdentifier().str();
+      if (TypeStr == "__nv_bfloat162" && !DpctGlobalInfo::useBFloat16()) {
+        return;
+      }
       std::string Str =
           MapNames::findReplacedName(MapNames::TypeNamesMap, TypeStr);
       insertHeaderForTypeRule(TypeStr, BeginLoc);

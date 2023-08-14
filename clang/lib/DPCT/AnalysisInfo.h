@@ -1757,6 +1757,10 @@ public:
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo);
   }
 
+  static bool useBFloat16() {
+    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_BFloat16);
+  }
+
   inline std::shared_ptr<DpctFileInfo> insertFile(const std::string &FilePath) {
     return insertObject(FileMap, FilePath);
   }
