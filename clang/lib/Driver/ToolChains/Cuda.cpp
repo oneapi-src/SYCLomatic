@@ -336,7 +336,8 @@ CudaInstallationDetector::CudaInstallationDetector(
         llvm::outs() << "warning: CUDA header files are detected in path \""
                      << IncPath
                      << "\" specified by option '-I'. CUDA header files in "
-                        "this path will be used during migration.\n";
+                        "this path will be used during migration, and value of "
+                        "option --cuda-include-path will be ignored.\n";
         PrintOnce = false;
       };
       break;
