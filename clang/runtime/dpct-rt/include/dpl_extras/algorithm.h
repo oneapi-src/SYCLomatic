@@ -2160,11 +2160,11 @@ segmented_reduce_argmax(Policy &&policy, Iter1 keys_in, Iter2 keys_out,
   policy.queue().wait();
 }
 
-template <typename ExecutionPolicy, typename Iter1,
+template <typename ExecutionPolicy, typename InputIterator,
           typename OutputIterator1, typename OutputIterator2,
           typename OutputIterator3>
 void nontrivial_run_length_encode(ExecutionPolicy &&policy,
-                                  Iter1 input_beg,
+                                  InputIterator input_beg,
                                   OutputIterator1 offsets_out,
                                   OutputIterator2 lengths_out,
                                   OutputIterator3 num_runs,
