@@ -11938,8 +11938,8 @@ void CooperativeGroupsFunctionRule::runRule(
     } else
       return;
 
-    ReplacedStr = MapNames::getDpctNamespace() + "item_group<" + ReplacedStr +
-                  ">(" + DR->getNameInfo().getAsString() + ", " +
+    ReplacedStr = MapNames::getDpctNamespace() + "item_group" +
+                  "(" + DR->getNameInfo().getAsString() + ", " +
                   DpctGlobalInfo::getItem(DR) + ")";
     SourceLocation Begin = DR->getBeginLoc();
     SourceLocation End = DR->getEndLoc();

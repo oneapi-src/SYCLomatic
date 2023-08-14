@@ -362,18 +362,6 @@ inline std::function<std::string(const CallExpr *)> makeDeviceStr() {
   };
 }
 
-inline std::function<std::string(const CallExpr *)> makeGroupDimension(std::string Prefix) {
-   return [=](const CallExpr *C) -> std::string {
-     int Index = getPlaceholderIdx(C);
-     if (Index == 0) {
-       Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-     }
-
-     buildTempVariableMap(Index, C, HelperFuncType::HFT_CurrentDevice);
-     return Prefix + "<{{NEEDREPLACEG" + std::to_string(Index) + "}}>";
-   };
-}
-
 template <class BaseT, class... CallArgsT>
 using MemberCallPrinterCreator =
     PrinterCreator<MemberCallPrinter<BaseT, StringRef, CallArgsT...>,
@@ -2009,7 +1997,6 @@ public:
 #define EXTENDSTR(idx, str) makeExtendStr(idx, str)
 #define QUEUESTR makeQueueStr()
 #define QUEUEPTRSTR makeQueuePtrStr()
-#define DIMENSION(str) makeGroupDimension(str)
 #define BO(Op, L, R) makeBinaryOperatorCreator<Op>(L, R)
 #define MEMBER_CALL(...) makeMemberCallCreator(__VA_ARGS__)
 #define MEMBER_EXPR(...) makeMemberExprCreator(__VA_ARGS__)

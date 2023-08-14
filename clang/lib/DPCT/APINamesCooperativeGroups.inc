@@ -128,7 +128,7 @@ CONDITIONAL_FACTORY_ENTRY(
             makeCheckAnd(CheckIntergerTemplateArgValueNE(0, 32), UseLogicalGroup),
             FEATURE_REQUEST_FACTORY(
                 HelperFeatureEnum::device_ext,
-                CALL_FACTORY_ENTRY("tiled_partition", CALL(DIMENSION(MapNames::getDpctNamespace() + "experimental::logical_group"), NDITEM, GROUP, makeCallArgCreatorFromTemplateArg(0)))),
+                CALL_FACTORY_ENTRY("tiled_partition", CALL(MapNames::getDpctNamespace() + "experimental::logical_group", NDITEM, GROUP, makeCallArgCreatorFromTemplateArg(0)))),
             TOSTRING_FACTORY_ENTRY("tiled_partition", SUBGROUP)),
         UNSUPPORT_FACTORY_ENTRY("tiled_partition", Diagnostics::API_NOT_MIGRATED, ARG("tiled_partition")))
 #endif
