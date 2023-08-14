@@ -5,10 +5,10 @@
 # SPDX-License-Identifier: MIT
 # https://opensource.org/licenses/MIT
 
+##############################################################################
+
 # This modulefile requires Environment Modules 4.1 or later.
 # Type `module --version` to determine the current installed version.
-
-##############################################################################
 
 set min_tcl_ver 8.4
 if { $tcl_version < $min_tcl_ver } {
