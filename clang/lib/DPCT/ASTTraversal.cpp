@@ -1972,8 +1972,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cufftResult", "cufftType_t", "cufftType", "thrust::pair",
               "CUdeviceptr", "cudaDeviceAttr", "CUmodule", "CUjit_option",
               "CUfunction", "cudaMemcpyKind", "cudaComputeMode",
-              "__nv_bfloat16", "__nv_bfloat162",
-              "cooperative_groups::__v1::thread_block_tile",
+              "__nv_bfloat16", "cooperative_groups::__v1::thread_block_tile",
               "cooperative_groups::__v1::thread_block", "libraryPropertyType_t",
               "libraryPropertyType", "cudaDataType_t", "cudaDataType",
               "cublasComputeType_t", "cublasAtomicsMode_t", "CUmem_advise_enum",
@@ -2551,6 +2550,10 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           return;
         }
       } else if (NTL.getTypeLocClass() == clang::TypeLoc::Record) {
+        if (TypeStr == "__nv_bfloat16" && !DpctGlobalInfo::useBFloat16()) {
+          return;
+        }
+
         auto TSL = NTL.getUnqualifiedLoc().getAs<RecordTypeLoc>();
 
         const std::string TyName =
@@ -2782,6 +2785,9 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     Lexer::getRawToken(BeginLoc, Tok, *SM, LOpts, true);
     if (Tok.isAnyIdentifier()) {
       const std::string TypeStr = Tok.getRawIdentifier().str();
+      if (TypeStr == "__nv_bfloat162" && !DpctGlobalInfo::useBFloat16()) {
+        return;
+      }
       std::string Str =
           MapNames::findReplacedName(MapNames::TypeNamesMap, TypeStr);
       insertHeaderForTypeRule(TypeStr, BeginLoc);
@@ -4747,131 +4753,6 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
 
-    applyMigrationText(NeedUseLambda, IsMacroArg, CanAvoidBrace,
-                       CanAvoidUsingLambda, OriginStmtType, IsAssigned,
-                       OuterInsertLoc, PrefixInsertLoc, SuffixInsertLoc,
-                       FuncNameBegin, FuncCallEnd, FuncCallLength, IndentStr,
-                       PrefixInsertStr, SuffixInsertStr);
-  } else if (FuncName == "cublasSgemmEx" || FuncName == "cublasCgemmEx") {
-    std::string Replacement = "oneapi::mkl::blas::column_major::gemm";
-    if (HasDeviceAttr) {
-      report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
-             MapNames::ITFName.at(FuncName), Replacement);
-      return;
-    }
-
-    auto AType = CE->getArg(8);
-    auto BType = CE->getArg(11);
-    auto CType = CE->getArg(15);
-
-    Expr::EvalResult ATypeER, BTypeER, CTypeER;
-    bool CanATypeBeEval =
-        AType->EvaluateAsInt(ATypeER, DpctGlobalInfo::getContext());
-    bool CanBTypeBeEval =
-        BType->EvaluateAsInt(BTypeER, DpctGlobalInfo::getContext());
-    bool CanCTypeBeEval =
-        CType->EvaluateAsInt(CTypeER, DpctGlobalInfo::getContext());
-
-    int64_t ABTypeValue, CTypeValue;
-    if (CanCTypeBeEval && (CanATypeBeEval || CanBTypeBeEval)) {
-      CTypeValue = CTypeER.Val.getInt().getExtValue();
-      if (CanATypeBeEval)
-        ABTypeValue = ATypeER.Val.getInt().getExtValue();
-      else
-        ABTypeValue = BTypeER.Val.getInt().getExtValue();
-    } else {
-      report(FuncNameBegin, Diagnostics::UNSUPPORT_PARAM_COMBINATION, false,
-             MapNames::ITFName.at(FuncName),
-             "not all values of parameters could be evaluated in migration");
-      return;
-    }
-
-    MapNames::BLASGemmExTypeInfo TypeInfo;
-    std::string Key =
-        std::to_string(ABTypeValue) + ":" + std::to_string(CTypeValue);
-    if (MapNames::BLASTGemmExTypeInfoMap.find(Key) !=
-        MapNames::BLASTGemmExTypeInfoMap.end()) {
-      TypeInfo = MapNames::BLASTGemmExTypeInfoMap.find(Key)->second;
-    } else {
-      report(
-          FuncNameBegin, Diagnostics::UNSUPPORT_PARAM_COMBINATION, false,
-          MapNames::ITFName.at(FuncName),
-          "the combination of matrix data type and scalar type is unsupported");
-      return;
-    }
-
-    std::vector<int> ArgsIndex{0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 12, 13, 14, 16};
-    // initialize the replacement of each argument
-    for (auto I : ArgsIndex) {
-      ExprAnalysis EA;
-      EA.analyze(CE->getArg(I));
-      CallExprArguReplVec.push_back(EA.getReplacedString());
-    }
-
-    // update the replacement of four enum arguments
-    BLASEnumInfo EnumInfo = BLASEnumInfo({1, 2}, -1, -1, -1);
-    auto processEnumArgus = [&](const Expr *E, unsigned int Index,
-                                std::string &Argu) {
-      const CStyleCastExpr *CSCE = nullptr;
-      if (CSCE = dyn_cast<CStyleCastExpr>(E)) {
-        std::string CurrentArgumentRepl;
-        processParamIntCastToBLASEnum(E, CSCE, Index, IndentStr, EnumInfo,
-                                      PrefixInsertStr, CurrentArgumentRepl);
-        Argu = CurrentArgumentRepl;
-      }
-    };
-    processEnumArgus(CE->getArg(1), 1, CallExprArguReplVec[1]);
-    processEnumArgus(CE->getArg(2), 2, CallExprArguReplVec[2]);
-
-    // update the replacement of three buffers
-    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-      requestFeature(HelperFeatureEnum::device_ext);
-      std::string BufferDecl;
-      CallExprArguReplVec[7] = getBufferNameAndDeclStr(
-          CE->getArg(7), TypeInfo.ABType, IndentStr, BufferDecl);
-      PrefixInsertStr = PrefixInsertStr + BufferDecl;
-      CallExprArguReplVec[9] = getBufferNameAndDeclStr(
-          CE->getArg(10), TypeInfo.ABType, IndentStr, BufferDecl);
-      PrefixInsertStr = PrefixInsertStr + BufferDecl;
-      CallExprArguReplVec[12] = getBufferNameAndDeclStr(
-          CE->getArg(14), TypeInfo.CType, IndentStr, BufferDecl);
-      PrefixInsertStr = PrefixInsertStr + BufferDecl;
-    } else {
-      CallExprArguReplVec[7] =
-          "(" + TypeInfo.ABType + "*)" + CallExprArguReplVec[7];
-      CallExprArguReplVec[9] =
-          "(" + TypeInfo.ABType + "*)" + CallExprArguReplVec[9];
-      CallExprArguReplVec[12] =
-          "(" + TypeInfo.CType + "*)" + CallExprArguReplVec[12];
-    }
-
-    // update the replacement of two scalar arguments
-    CallExprArguReplVec[6] = getValueStr(
-        CE->getArg(6), CallExprArguReplVec[6], CallExprArguReplVec[0],
-        FuncName == "cublasCgemmEx" ? "std::complex<float>" : "");
-    CallExprArguReplVec[11] = getValueStr(
-        CE->getArg(13), CallExprArguReplVec[11], CallExprArguReplVec[0],
-        FuncName == "cublasCgemmEx" ? "std::complex<float>" : "");
-    if (Key == "2:2") {
-      CallExprArguReplVec[6] = MapNames::getClNamespace() + "vec<float, 1>{" +
-                               CallExprArguReplVec[6] + "}.convert<" +
-                               MapNames::getClNamespace() + "half, " +
-                               MapNames::getClNamespace() +
-                               "rounding_mode::automatic>()[0]";
-      CallExprArguReplVec[11] = MapNames::getClNamespace() + "vec<float, 1>{" +
-                                CallExprArguReplVec[11] + "}.convert<" +
-                                MapNames::getClNamespace() + "half, " +
-                                MapNames::getClNamespace() +
-                                "rounding_mode::automatic>()[0]";
-    }
-
-    CallExprReplStr = getFinalCallExprStr(Replacement) + CallExprReplStr;
-
-    if (NeedUseLambda) {
-      if (PrefixInsertStr.empty() && SuffixInsertStr.empty()) {
-        NeedUseLambda = false;
-      }
-    }
     applyMigrationText(NeedUseLambda, IsMacroArg, CanAvoidBrace,
                        CanAvoidUsingLambda, OriginStmtType, IsAssigned,
                        OuterInsertLoc, PrefixInsertLoc, SuffixInsertLoc,
@@ -13729,7 +13610,8 @@ void NamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
   if (auto UDD =
           getAssistNodeAsType<UsingDirectiveDecl>(Result, "usingDirective")) {
     std::string Namespace = UDD->getNominatedNamespace()->getNameAsString();
-    if (Namespace == "cooperative_groups" || Namespace == "placeholders")
+    if (Namespace == "cooperative_groups" || Namespace == "placeholders" ||
+        Namespace == "nvcuda")
       emplaceTransformation(new ReplaceDecl(UDD, ""));
   } else if (auto NAD = getAssistNodeAsType<NamespaceAliasDecl>(
                  Result, "namespaceAlias")) {
