@@ -18,7 +18,7 @@ Each sample README provides detailed instructions for how to migrate the sample 
          +  ``bar/util.cu``
          +  ``bar/util.h``
       -  The Folder Options sample shows how to migrate more complex projects
-         and to use options.
+         and use tool options.
    *  -  Rodinia needleman-wunsch
 
          +  ``needle.cu``

@@ -8,7 +8,7 @@ The tool ports CUDA language kernels and library API calls, migrating 90%-95% of
 CUDA code to SYCL code. The tool additionally inserts inline warnings to help you
 complete the migration and tune your code.
 
-|tool_name| supports the migration of programs implemented with CUDA versions
+|tool_name| supports migrating programs implemented with CUDA versions
 |cuda_versions|. The list of supported languages and versions may be extended in
 the future.
 
@@ -40,11 +40,11 @@ Before You Begin
       .. include:: /_include_files/alt_cuda_header_files.rst
 
       The CUDA include path should not be the same as, or a child path of, the
-      directory where the source code that needs to be migrated is located.
+      directory where the source code (that needs to be migrated) is located.
 
 
 #. Install a compiler that supports the DPC++ -specific extensions used in code
-   migrated by SYCLomatic.
+   migrated by |tool_name|.
 
    * |dpcpp_compiler|_
    * `oneAPI DPC++ Compiler <https://github.com/intel/llvm>`_
@@ -52,7 +52,7 @@ Before You Begin
 #. .. include:: /_include_files/env_setup_gsg.rst
 
 #. Optional: If your program targets GPUs, install the appropriate GPU drivers or
-   plug-ins, so you can compile your program to run on Intel, AMD*, or NVIDIA* GPUs.
+   plug-ins to compile your program to run on Intel, AMD*, or NVIDIA* GPUs.
 
    - To use an Intel GPU, `install the latest Intel GPU drivers <https://dgpu-docs.intel.com/installation-guides/index.html>`_.
    - To use an AMD GPU, `install the oneAPI for AMD GPUs plugin <https://developer.codeplay.com/products/oneapi/amd/guides/>`_.
@@ -93,17 +93,17 @@ ways to specify a file or directory for migration.
 
      dpct source.cpp
 
-* Migrate all files available in compilation database:
+* Migrate all files available in the compilation database:
 
   .. code-block::
 
-     dpct -p=<path to location of compilation database file>
+     dpct -p=<path to the location of compilation database file>
 
-* Migrate one file in compilation database:
+* Migrate one file in the compilation database:
 
   .. code-block::
 
-     dpct -p=<path to location of compilation database file> source.cpp
+     dpct -p=<path to the location of compilation database file> source.cpp
 
 * Migrate source files in the directory specified by the ``--in-root`` option and
   place generated files in the directory specified by the ``--out-root`` option:
@@ -116,9 +116,8 @@ ways to specify a file or directory for migration.
 Understand Emitted Warnings
 ---------------------------
 
-|tool_name| identifies the places in the code that may require your
-attention during the migration of the files in order to make the code SYCL
-compliant or correct.
+During file migration, |tool_name| identifies the places in the code that may
+require your attention to make the code SYCL-compliant or correct.
 
 Warnings are inserted into the generated source files and displayed as warnings
 in the output. For example:
@@ -148,10 +147,9 @@ tool features.
 Migrate the Vector Add Sample
 -----------------------------
 
-.. note::
-
-   The Vector Add sample assumes an Intel CPU. To target a different device,
-   use `ONEAPI_DEVICE_SELECTOR <https://intel.github.io/llvm-docs/EnvironmentVariables.html#oneapi-device-selector>`_.
+The Vector Add sample shows how to migrate a simple CUDA program to SYCL-compliant
+code. The simple program adds two vectors of [1..N] and prints the result. The
+program is intended for CPU.
 
 The following steps show how to migrate the Vector Add sample using |tool_name|:
 
@@ -160,7 +158,6 @@ The following steps show how to migrate the Vector Add sample using |tool_name|:
 #. Navigate to the root of the Vector Add sample. The sample contains a single
    CUDA file, ``vector_add.cu``, located in the ``src`` folder.
 
-
 #. From the root folder of the sample project, run |tool_name|:
 
    .. code-block::
@@ -168,10 +165,10 @@ The following steps show how to migrate the Vector Add sample using |tool_name|:
       dpct --in-root=. src/vector_add.cu
 
    The ``--in-root`` option specifies the root location of the program sources
-   that should be migrated. Only files and folders located within the
+   that should be migrated. Only files and folders within the
    ``--in-root`` directory will be considered for migration by the tool. Files
-   located outside the ``--in-root`` directory  will not be migrated, even if
-   they are included by a source file located within the ``--in-root`` directory.
+   outside the ``--in-root`` directory  will not be migrated, even if
+   they are included by a source file within the ``--in-root`` directory.
    By default, the migrated files are created in a new folder named ``dpct_output``.
 
    As a result of the migration command, you should see the new SYCL source file
@@ -217,6 +214,15 @@ The following steps show how to migrate the Vector Add sample using |tool_name|:
    where <install_dir> is the |tool_name| installation directory.
 
 #. Run the migrated program:
+
+   .. note::
+
+      The Vector Add sample is for CPU. Make sure to target your CPU by using the
+      `ONEAPI_DEVICE_SELECTOR environment variable <https://intel.github.io/llvm-docs/EnvironmentVariables.html#oneapi-device-selector>`_:
+
+      .. code-block::
+
+         ONEAPI_DEVICE_SELECTOR=*:cpu
 
    .. code-block::
 
