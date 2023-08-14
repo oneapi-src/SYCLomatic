@@ -49,11 +49,12 @@
 #ifndef SAT_MOD
 #define SAT_MOD(X, Y) KEYWORD(X, Y)
 #endif
-
+#ifndef MUL_MOD
+#define MUL_MOD(X, Y) KEYWORD(X, Y)
+#endif
 #ifndef CMP_OP
 #define CMP_OP(X, Y) KEYWORD(X, Y)
 #endif
-
 #ifndef BUILTIN_ID
 #define BUILTIN_ID(X, Y, Z) TOK(bi_ ## X)
 #endif
@@ -308,6 +309,9 @@ ROUND_MOD(rpi, ".rpi")
 
 SAT_MOD(sat, ".sat")
 SAT_MOD(satfinite, ".satfinite")
+SAT_MOD(relu, ".relu")
+
+MUL_MOD(wide, ".wide")
 
 CMP_OP(eq, ".eq")
 CMP_OP(ne, ".ne")
@@ -330,6 +334,7 @@ CMP_OP(nan, ".nan")
 
 #undef BUILTIN_ID
 #undef CMP_OP
+#undef MUL_MOD
 #undef SAT_MOD
 #undef ROUND_MOD
 #undef STATE_SPACE

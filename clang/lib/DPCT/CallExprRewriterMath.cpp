@@ -917,6 +917,10 @@ inline auto UseIntelDeviceMath = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useIntelDeviceMath();
 };
 
+inline auto UseBFloat16 = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useBFloat16();
+};
+
 auto IsPureHost = [](const CallExpr *C) -> bool {
   const FunctionDecl *FD = C->getDirectCallee();
   if (!FD)
@@ -1123,14 +1127,18 @@ createMathAPIRewriterExperimentalBfloat16(
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
         &&Rewriter2,
     T) {
-  if (math::useExtBFloat16Math() && Rewriter1.second)
-    return createConditionalFactory(
-        math::IsDefinedInCUDA(), std::move(Rewriter1),
-        {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});
-  if (Rewriter2.second)
-    return createConditionalFactory(
-        math::IsDefinedInCUDA(), std::move(Rewriter2),
-        {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});
+  if (DpctGlobalInfo::useBFloat16()) {
+    if (math::useExtBFloat16Math() && Rewriter1.second)
+      return createConditionalFactory(
+          math::IsDefinedInCUDA(), std::move(Rewriter1),
+          {Name,
+           std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});
+    if (Rewriter2.second)
+      return createConditionalFactory(
+          math::IsDefinedInCUDA(), std::move(Rewriter2),
+          {Name,
+           std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});
+  }
   // report unsupport
   return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
       {Name, std::make_shared<UnsupportFunctionRewriterFactory<std::string>>(

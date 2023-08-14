@@ -55,6 +55,7 @@ class InlineAsmIntegerLiteral;
 enum class InstAttr {
 #define ROUND_MOD(X, Y) X,
 #define SAT_MOD(X, Y) X,
+#define MUL_MOD(X, Y) X,
 #define CMP_OP(X, Y) X,
 #include "Asm/AsmTokenKinds.def"
 };
@@ -338,8 +339,13 @@ public:
     return Opcode->getTokenID() == OpKind;
   }
 
+  template <typename K, typename... Ks> bool is(K OpKind, Ks... OpKinds) const {
+    return is(OpKind) || (is(OpKinds) || ...);
+  }
+
   bool hasAttr(InstAttr Attr) const { return Attributes.contains(Attr); }
-  const InlineAsmIdentifierInfo *getOpcode() const { return Opcode; }
+  const InlineAsmIdentifierInfo *getOpcodeID() const { return Opcode; }
+  asmtok::TokenKind getOpcode() const { return Opcode->getTokenID(); }
   ArrayRef<InlineAsmType *> getTypes() const { return Types; }
   const InlineAsmType *getType(unsigned I) const { return Types[I]; }
   unsigned getNumTypes() const { return Types.size(); }
@@ -612,6 +618,7 @@ public:
   }
 
   const InlineAsmExpr *getElement(unsigned I) const { return Elements[I]; }
+  unsigned getNumElements() const { return Elements.size(); }
 
   static bool classof(const InlineAsmStmt *S) {
     return S->getStmtClass() == VectorExprClass;
