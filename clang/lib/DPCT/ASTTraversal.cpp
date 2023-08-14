@@ -6684,7 +6684,9 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaDeviceEnablePeerAccess", "cudaDriverGetVersion",
         "cudaRuntimeGetVersion", "clock64",
         "cudaFuncSetSharedMemConfig", "cuFuncSetCacheConfig",
-        "cudaPointerGetAttributes", "cuCtxSetCacheConfig", "cuCtxSetLimit");
+        "cudaPointerGetAttributes", "cuCtxSetCacheConfig", "cuCtxSetLimit",
+        "cudaCtxResetPersistingL2Cache", "cuCtxResetPersistingL2Cache",
+        "cudaStreamSetAttribute", "cudaStreamGetAttribute");
   };
 
   MF.addMatcher(
@@ -6966,8 +6968,11 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaThreadSetLimit" ||
              FuncName == "cudaDeviceSetCacheConfig" ||
              FuncName == "cudaDeviceGetCacheConfig" ||
-             FuncName == "cuCtxSetCacheConfig" ||
-             FuncName == "cuCtxSetLimit") {
+             FuncName == "cuCtxSetCacheConfig" || FuncName == "cuCtxSetLimit" ||
+             FuncName == "cudaStreamSetAttribute" ||
+             FuncName == "cudaStreamGetAttribute" ||
+             FuncName == "cudaCtxResetPersistingL2Cache" ||
+             FuncName == "cuCtxResetPersistingL2Cache") {
     auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
@@ -14775,3 +14780,45 @@ void CudaUuidRule::runRule(
 }
 
 REGISTER_RULE(CudaUuidRule, PassKind::PK_Analysis)
+
+void TypeRemoveRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(
+                            typedefDecl(hasAnyName("cudaLaunchAttributeValue"))))))
+                    .bind("TypeRemoveType"),
+                this);
+  MF.addMatcher(binaryOperator(allOf(isAssignmentOperator(),hasLHS(memberExpr(hasObjectExpression(hasType(qualType(hasDeclaration(
+                               typedefDecl(hasAnyName("cudaLaunchAttributeValue"))))))))))
+                    .bind("TypeRemoveMemberAssign"),
+                this);
+  MF.addMatcher(binaryOperator(allOf(isAssignmentOperator(),hasLHS(
+      memberExpr(hasObjectExpression(hasType(pointerType(pointee(qualType(
+                     (hasDeclaration(typedefDecl(hasAnyName("cudaLaunchAttributeValue")))))))))))))
+          .bind("TypeRemoveMemberAssign"),
+      this);
+  MF.addMatcher(binaryOperator(allOf(isAssignmentOperator(), hasLHS(
+      declRefExpr())))
+          .bind("TypeRemoveExprAssign"),
+      this);
+}
+
+void TypeRemoveRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  ExprAnalysis EA;
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  if (auto TL = getNodeAsType<TypeLoc>(Result, "TypeRemoveType")) {
+    std::cout<<"TypeRemoveType\n";
+  }
+  if (auto ME = getNodeAsType<MemberExpr>(Result, "TypeRemoveMemberAssign")) {
+    std::cout<<"TypeRemoveMember\n";
+    const auto *ParentStmt = DpctGlobalInfo::findAncestor<Stmt>(ME);
+    ParentStmt->dump();
+    emplaceTransformation(new ReplaceStmt(ParentStmt, ""));
+  }
+  if (auto BO = getNodeAsType<BinaryOperator>(Result, "TypeRemoveExprAssign")) {
+    std::cout<<"TypeRemoveExpr\n";
+    emplaceTransformation(new ReplaceStmt(BO, ""));
+    }
+
+}
+
+REGISTER_RULE(TypeRemoveRule, PassKind::PK_Analysis)
