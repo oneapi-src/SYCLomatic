@@ -122,7 +122,6 @@ bool EnablepProfilingFlag = false;
 bool SyclNamedLambdaFlag = false;
 bool ExplicitClNamespace = false;
 bool NoDRYPatternFlag = false;
-bool NoUseGenericSpaceFlag = false;
 bool ProcessAllFlag = false;
 bool AsyncHandlerFlag = false;
 static std::string SuppressWarningsMessage = "A comma separated list of migration warnings to suppress. Valid "
@@ -169,10 +168,6 @@ static llvm::cl::opt<std::string>
                  llvm::cl::value_desc("[pass|transformation]"), llvm::cl::cat(DPCTCat),
                  llvm::cl::Optional, llvm::cl::Hidden);
 #endif
-static llvm::cl::opt<bool, true> NoUseGenericSpace(
-  "no-use-generic-space", llvm::cl::desc("sycl::access::address_space::generic_space is not used during atomic\n"
-                                         " function's migration. Default: off.\n"),
-  llvm::cl::cat(DPCTCat), llvm::cl::location(NoUseGenericSpaceFlag), llvm::cl::ReallyHidden);
 #ifdef __linux__
 static AutoCompletePrinter AutoCompletePrinterInstance;
 static llvm::cl::opt<AutoCompletePrinter, true, llvm::cl::parser<std::string>> AutoComplete(
@@ -968,9 +963,6 @@ int runDPCT(int argc, const char **argv) {
                      UseDPCPPExtensions.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_NoDRYPattern, NoDRYPatternFlag,
                      NoDRYPattern.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_NoUseGenericSpace,
-                     NoUseGenericSpaceFlag,
-                     NoUseGenericSpace.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_CompilationsDir, CompilationsDir,
                      OptParser->isPSpecified());
 #ifdef _WIN32
