@@ -1450,7 +1450,7 @@ inline void segmented_sort_pairs_by_two_pair_sorts(
 }
 
 template <typename _T1, typename _T2>
-constexpr inline auto __ceiling_div(const _T1 &__number, const _T2 &__divisor) {
+constexpr inline auto __ceiling_div(const _T1& __number, const _T2& __divisor) {
   return (__number - 1) / __divisor + 1;
 }
 
@@ -1504,22 +1504,19 @@ template <typename _ForwardIterator> struct __custom_range_binhash {
 
 template <typename Policy, typename Iter2>
 inline auto __async_initialize_bins(Policy &&policy, Iter2 __histogram_first,
-                                    Iter2 __histogram_last) {
+                             Iter2 __histogram_last) {
   using __histo_value_type = typename std::iterator_traits<Iter2>::value_type;
   return oneapi::dpl::experimental::fill_async(
       std::forward<Policy>(policy), __histogram_first, __histogram_last,
       __histo_value_type(0));
 }
 
-template <typename _HistAccessor, typename _OffsetT, typename _Size,
-          typename _SelfItem>
-inline void __clear_wglocal_histograms(_HistAccessor local_histogram,
-                                       const _OffsetT &offset,
-                                       const _Size &num_bins,
-                                       const _SelfItem &self_item) {
+template <typename _HistAccessor, typename _OffsetT, typename _Size, typename _SelfItem>
+inline void __clear_wglocal_histograms(const _HistAccessor& local_histogram, const _OffsetT& offset, const _Size& num_bins,
+                                const _SelfItem& self_item) {
   ::std::uint32_t gSize = self_item.get_local_range()[0];
   ::std::uint32_t self_lidx = self_item.get_local_id(0);
-  ::std::uint8_t factor = num_bins / gSize;
+  ::std::uint8_t factor = __ceiling_div(num_bins, gSize);
   ::std::uint8_t k;
   // no need for atomicity when we are explicitly assigning work-items to
   // locations
@@ -1535,44 +1532,45 @@ inline void __clear_wglocal_histograms(_HistAccessor local_histogram,
   self_item.barrier(sycl::access::fence_space::local_space);
 }
 
-template <::std::uint16_t __work_group_size, typename _BinIdxType,
-          sycl::access::address_space _AddressSpace, typename _Iter1,
-          typename _HistAccessor, typename _OffsetT, typename _BinFunc,
-          typename _SelfItem>
-inline void
-__accum_local_atomics(_Iter1 in_acc, const ::std::size_t &seg_start,
-                      const ::std::size_t &N, const ::std::uint32_t &self_lidx,
-                      _HistAccessor wg_local_histogram, const _OffsetT &offset,
-                      _BinFunc func, const _SelfItem &self_item,
-                      const std::uint8_t &iters_per_work_item) {
+template <::std::uint16_t __work_group_size,
+          typename _BinIdxType,
+          sycl::access::address_space _AddressSpace,
+          typename _Iter1, typename _HistAccessor, typename _OffsetT,
+          typename _BinFunc, typename _SelfItem, typename _T>
+inline void __accum_local_atomics(const _Iter1& in_acc, const ::std::size_t &seg_start,
+                           const ::std::size_t &N,
+                           const ::std::uint32_t &self_lidx,
+                           const _HistAccessor& wg_local_histogram, const _OffsetT& offset,
+                           _BinFunc func, 
+                           const _SelfItem& self_item, const _T& iters_per_work_item) {
   using __histo_value_type = typename _HistAccessor::value_type;
   using __value_type = typename _Iter1::value_type;
 #pragma unroll
   for (::std::uint8_t idx = 0; idx < iters_per_work_item; idx++) {
     ::std::size_t __val_idx = seg_start + idx * __work_group_size + self_lidx;
-    if (__val_idx < N) {
+    if (__val_idx < N)
+    {
       const __value_type &x = in_acc[__val_idx];
       _BinIdxType c = func(x);
 
       sycl::atomic_ref<__histo_value_type, sycl::memory_order::relaxed,
-                       sycl::memory_scope::work_group, _AddressSpace>
-          global_bin(wg_local_histogram[offset + c]);
-      global_bin++;
+                     sycl::memory_scope::work_group, _AddressSpace>
+          local_bin(wg_local_histogram[offset + c]);
+      local_bin++;
     }
   }
   self_item.barrier(sycl::access::fence_space::local_space);
 }
 
-template <typename _HistAccessorIn, typename _OffsetT,
-          typename _HistAccessorOut, typename _Size, typename _SelfItem>
-inline void
-__reduce_out_histograms(_HistAccessorIn in_histogram, const _OffsetT &offset,
-                        _HistAccessorOut out_histogram, const _Size &num_bins,
-                        const _SelfItem &self_item) {
+template <typename _HistAccessorIn, typename _OffsetT, typename _HistAccessorOut, typename _Size,
+          typename _SelfItem>
+inline void __reduce_out_histograms(const _HistAccessorIn& in_histogram, const _OffsetT& offset,
+                             const _HistAccessorOut& out_histogram, const _Size& num_bins,
+                             const _SelfItem& self_item) {
   using __histo_value_type = typename _HistAccessorOut::value_type;
   ::std::uint32_t gSize = self_item.get_local_range()[0];
   ::std::uint32_t self_lidx = self_item.get_local_id(0);
-  ::std::uint8_t factor = num_bins / gSize;
+  ::std::uint8_t factor = __ceiling_div(num_bins, gSize);
   ::std::uint8_t k;
 
 #pragma unroll
@@ -1594,12 +1592,12 @@ __reduce_out_histograms(_HistAccessorIn in_histogram, const _OffsetT &offset,
 }
 
 template <::std::uint16_t __work_group_size,
-          ::std::uint8_t __iters_per_work_item,
+          ::std::uint16_t __iters_per_work_item,
           ::std::uint8_t __bins_per_work_item, typename Policy, typename _Iter1,
           typename Iter2, typename _Size, typename _IdxHashFunc>
 inline Iter2 __histogram_general_registers_local_reduction(
     Policy &&policy, _Iter1 __first, _Iter1 __last, Iter2 __histogram_first,
-    const _Size &num_bins, _IdxHashFunc __func) {
+    const _Size& num_bins, _IdxHashFunc __func) {
   const ::std::size_t N = __last - __first;
   using __value_type = typename ::std::iterator_traits<_Iter1>::value_type;
   using __histo_value_type = typename ::std::iterator_traits<Iter2>::value_type;
@@ -1629,8 +1627,8 @@ inline Iter2 __histogram_general_registers_local_reduction(
           const ::std::size_t __seg_start =
               __work_group_size * __iters_per_work_item * __wgroup_idx;
 
-          __clear_wglocal_histograms(local_histogram, 0, num_bins, __self_item);
-
+          __clear_wglocal_histograms(local_histogram, 0, num_bins,
+                                     __self_item);
           // histogram bins take less storage with smaller data type
           __private_histogram_type histogram[__bins_per_work_item];
 #pragma unroll
@@ -1640,15 +1638,14 @@ inline Iter2 __histogram_general_registers_local_reduction(
 
 #pragma unroll
           for (::std::uint8_t idx = 0; idx < __iters_per_work_item; idx++) {
-            ::std::size_t __val_idx =
-                __seg_start + idx * __work_group_size + __self_lidx;
-            if (__val_idx < N) {
+            ::std::size_t __val_idx = __seg_start + idx * __work_group_size + __self_lidx;
+            if (__val_idx < N)
+            {
               const __value_type &x = macc[__val_idx];
               ::std::uint8_t c = __func(x);
-              histogram[c]++;
+              histogram[c] ++;
             }
           }
-
 #pragma unroll
           for (::std::uint8_t k = 0; k < num_bins; k++) {
             sycl::atomic_ref<__local_histogram_type,
@@ -1671,13 +1668,12 @@ inline Iter2 __histogram_general_registers_local_reduction(
 }
 
 template <::std::uint16_t __work_group_size,
-          ::std::uint8_t __iters_per_work_item, typename Policy,
+          ::std::uint16_t __iters_per_work_item, typename Policy,
           typename _Iter1, typename Iter2, typename _Size,
           typename _IdxHashFunc>
-inline Iter2
-__histogram_general_local_atomics(Policy &&policy, _Iter1 __first,
-                                  _Iter1 __last, Iter2 __histogram_first,
-                                  const _Size &num_bins, _IdxHashFunc __func) {
+inline Iter2 __histogram_general_local_atomics(Policy &&policy, _Iter1 __first,
+                                        _Iter1 __last, Iter2 __histogram_first,
+                                        const _Size& num_bins, _IdxHashFunc __func) {
   using __value_type = typename ::std::iterator_traits<_Iter1>::value_type;
   using __histo_value_type = typename ::std::iterator_traits<Iter2>::value_type;
   // minimum type size for atomics
@@ -1707,12 +1703,14 @@ __histogram_general_local_atomics(Policy &&policy, _Iter1 __first,
           const ::std::size_t __seg_start =
               __work_group_size * __wgroup_idx * __iters_per_work_item;
 
-          __clear_wglocal_histograms(local_histogram, 0, num_bins, __self_item);
+          __clear_wglocal_histograms(local_histogram, 0, num_bins,
+                                     __self_item);
 
-          __accum_local_atomics<__work_group_size, ::std::uint16_t,
+          __accum_local_atomics<__work_group_size,
+                                ::std::uint16_t, 
                                 sycl::access::address_space::local_space>(
-              macc, __seg_start, N, __self_lidx, local_histogram, 0, __func,
-              __self_item, __iters_per_work_item);
+              macc, __seg_start, N, __self_lidx, local_histogram, 0,
+              __func, __self_item, __iters_per_work_item);
 
           __reduce_out_histograms(local_histogram, 0, hacc, num_bins,
                                   __self_item);
@@ -1724,12 +1722,14 @@ __histogram_general_local_atomics(Policy &&policy, _Iter1 __first,
 }
 
 template <::std::uint16_t __work_group_size,
-          ::std::uint8_t __min_iters_per_work_item, typename Policy,
+          ::std::uint16_t __min_iters_per_work_item, typename Policy,
           typename _Iter1, typename Iter2, typename _Size,
           typename _IdxHashFunc>
-inline Iter2 __histogram_general_private_global_atomics(
-    Policy &&policy, _Iter1 __first, _Iter1 __last, Iter2 __histogram_first,
-    const _Size &num_bins, _IdxHashFunc __func) {
+inline Iter2 __histogram_general_private_global_atomics(Policy &&policy,
+                                                 _Iter1 __first, _Iter1 __last,
+                                                 Iter2 __histogram_first,
+                                                 const _Size& num_bins,
+                                                 _IdxHashFunc __func) {
 
   const ::std::size_t N = __last - __first;
   using __value_type = typename ::std::iterator_traits<_Iter1>::value_type;
@@ -1771,15 +1771,16 @@ inline Iter2 __histogram_general_private_global_atomics(
 
           __clear_wglocal_histograms(hacc_private, __wgroup_idx * num_bins,
                                      num_bins, __self_item);
-
-          __accum_local_atomics<__work_group_size, ::std::uint32_t,
+          __accum_local_atomics<__work_group_size,
+                                ::std::uint32_t, 
                                 sycl::access::address_space::global_space>(
-              macc, __seg_start, N, __self_lidx, hacc_private,
-              __wgroup_idx * num_bins, __func, __self_item,
+              macc, __seg_start, N, __self_lidx,
+              hacc_private, __wgroup_idx * num_bins,
+              __func, __self_item,
               iters_per_work_item);
 
-          __reduce_out_histograms(hacc_private, __wgroup_idx * num_bins, hacc,
-                                  num_bins, __self_item);
+          __reduce_out_histograms(hacc_private, __wgroup_idx * num_bins,
+                                  hacc, num_bins, __self_item);
         });
   });
   e.wait();
@@ -1788,10 +1789,9 @@ inline Iter2 __histogram_general_private_global_atomics(
 
 template <typename Policy, typename Iter1, typename Iter2, typename _Size,
           typename _IdxHashFunc>
-inline Iter2
-__histogram_general_select_best(Policy &&policy, Iter1 __first, Iter1 __last,
-                                Iter2 __histogram_first, const _Size &num_bins,
-                                _IdxHashFunc __func) {
+inline Iter2 __histogram_general_select_best(Policy &&policy, Iter1 __first,
+                                      Iter1 __last, Iter2 __histogram_first,
+                                      const _Size& num_bins, _IdxHashFunc __func) {
   using __histo_value_type = typename ::std::iterator_traits<Iter2>::value_type;
   auto __local_mem_size =
       policy.queue()
@@ -1799,6 +1799,7 @@ __histogram_general_select_best(Policy &&policy, Iter1 __first, Iter1 __last,
           .template get_info<sycl::info::device::local_mem_size>();
   constexpr ::std::uint8_t __max_registers = 16;
 
+  auto N = __last - __first;
   // if bins fit into registers, use register private accumulation
   if (num_bins < __max_registers) {
     return __histogram_general_registers_local_reduction<1024, 32, 16>(
@@ -1807,14 +1808,32 @@ __histogram_general_select_best(Policy &&policy, Iter1 __first, Iter1 __last,
   } else if (num_bins * sizeof(__histo_value_type) <
              __local_mem_size) // if bins fit into SLM, use local atomics
   {
-    return __histogram_general_local_atomics<1024, 4>(
-        ::std::forward<Policy>(policy), __first, __last, __histogram_first,
-        num_bins, __func);
+    if (N <= 524288)
+    {
+      return __histogram_general_local_atomics<1024, 4>(
+          ::std::forward<Policy>(policy), __first, __last, __histogram_first,
+          num_bins, __func);
+    }
+    else
+    {
+      return __histogram_general_local_atomics<1024, 32>(
+          ::std::forward<Policy>(policy), __first, __last, __histogram_first,
+          num_bins, __func);
+    }
   } else // otherwise, use global atomics (private copies per workgroup)
   {
-    return __histogram_general_private_global_atomics<1024, 4>(
-        ::std::forward<Policy>(policy), __first, __last, __histogram_first,
-        num_bins, __func);
+    if (N <= 524288)
+    {
+      return __histogram_general_private_global_atomics<1024, 4>(
+          ::std::forward<Policy>(policy), __first, __last, __histogram_first,
+          num_bins, __func);
+    }
+    else
+    {
+      return __histogram_general_private_global_atomics<1024, 32>(
+          ::std::forward<Policy>(policy), __first, __last, __histogram_first,
+          num_bins, __func);
+    }
   }
 }
 
@@ -1826,7 +1845,7 @@ inline ::std::enable_if_t<
         internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value,
     Iter2>
 histogram(Policy &&policy, Iter1 __first, Iter1 __last, Iter2 __histogram_first,
-          _Size num_bins, _T __first_bin_min_val, _T __last_bin_max_val) {
+          const _Size& num_bins, const _T& __first_bin_min_val, const _T& __last_bin_max_val) {
   return internal::__histogram_general_select_best(
       ::std::forward<Policy>(policy), __first, __last, __histogram_first,
       num_bins,
