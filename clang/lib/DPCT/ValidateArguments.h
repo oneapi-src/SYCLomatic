@@ -59,6 +59,7 @@ enum class ExplicitNamespace : unsigned int {
 enum class DPCPPExtensionsDefaultEnabled : unsigned int {
   ExtDE_EnqueueBarrier = 0,
   ExtDE_DeviceInfo,
+  ExtDE_BFloat16,
   ExtDE_DPCPPExtensionsDefaultEnabledEnumSize
 };
 enum class DPCPPExtensionsDefaultDisabled : unsigned int {
@@ -77,6 +78,7 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_DPLExperimentalAPI,
   Exp_OccupancyCalculation,
   Exp_Matrix,
+  Exp_BFloat16Math,
   Exp_ExperimentalFeaturesEnumSize
 };
 

@@ -9,6 +9,10 @@
 #ifndef LLVM_CLANG_BASIC_CUDA_H
 #define LLVM_CLANG_BASIC_CUDA_H
 
+#ifdef SYCLomatic_CUSTOMIZATION
+#include <string>
+#endif // SYCLomatic_CUSTOMIZATION
+
 namespace llvm {
 class StringRef;
 class Twine;
@@ -38,21 +42,22 @@ enum class CudaVersion {
   CUDA_117,
   CUDA_118,
   CUDA_120,
-#ifdef SYCLomatic_CUSTOMIZATION
   CUDA_121,
-  FULLY_SUPPORTED = CUDA_121,
+#ifdef SYCLomatic_CUSTOMIZATION
+  CUDA_122,
+  FULLY_SUPPORTED = CUDA_122,
   PARTIALLY_SUPPORTED =
-      CUDA_121, // Partially supported. Proceed with a warning.
+      CUDA_122, // Partially supported. Proceed with a warning.
 #else
   FULLY_SUPPORTED = CUDA_115,
   PARTIALLY_SUPPORTED =
-      CUDA_118, // Partially supported. Proceed with a warning.
+      CUDA_121, // Partially supported. Proceed with a warning.
 #endif // SYCLomatic_CUSTOMIZATION
   NEW = 10000,  // Too new. Issue a warning, but allow using it.
 };
 const char *CudaVersionToString(CudaVersion V);
 #ifdef SYCLomatic_CUSTOMIZATION
-unsigned int CudaVersionToValue(CudaVersion V);
+std::string CudaVersionToMacroDefStr(CudaVersion V);
 #endif // SYCLomatic_CUSTOMIZATION
 // Input is "Major.Minor"
 CudaVersion CudaStringToVersion(const llvm::Twine &S);

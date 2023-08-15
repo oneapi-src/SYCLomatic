@@ -61,7 +61,9 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ENTRY_TEXTURE("tex3D", 0x03, 1, 2, 3))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
-                        ENTRY_TEXTURE("tex1Dfetch", 0x01, 1))
+                        WARNING_FACTORY_ENTRY("tex1Dfetch",
+                            ENTRY_TEXTURE("tex1Dfetch", 0x01, 1),
+                        Diagnostics::TEX_FETCH))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         ENTRY_TEXTURE("tex1DLayered", 0xF1, 2, 1))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
@@ -156,7 +158,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
-        MULTI_STMTS_FACTORY_ENTRY(
-            "cuTexRefSetFormat",
-            MEMBER_CALL(ARG(0), true, "set_channel_type", ARG(1)),
-            MEMBER_CALL(ARG(0), true, "set_channel_num", ARG(2))))
+    MULTI_STMTS_FACTORY_ENTRY(
+        "cuTexRefSetFormat", true, false, true, true,
+        MEMBER_CALL(ARG(0), true, "set_channel_type", ARG(1)),
+        MEMBER_CALL(ARG(0), true, "set_channel_num", ARG(2))))

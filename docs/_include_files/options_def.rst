@@ -257,12 +257,13 @@ Only files under this root are migrated. Default:
 
 Details:
 
-Any source within the directory specified by ``--in-root`` (at any nesting
-level) may be migrated. Any header file within the directory specified by
-``--in-root`` (at any nesting level) included by the source or header file,
-which is being migrated, is also migrated. Files from outside the ``--in-root``
-directory will not be migrated even if they are included by any of the program
-source files.
+- Any source within the directory specified by ``--in-root`` (at any nesting level)
+  may be migrated.
+- Any header file within the directory specified by ``--in-root`` (at any nesting
+  level) that is included by the source or header file which is being migrated, is also
+  migrated.
+- Files from outside the ``--in-root`` directory will not be migrated even if
+  they are included by any of the program source files.
 
 .. _end-in-root:
 

@@ -206,6 +206,20 @@ public:
     analyzeType(TL);
   }
 
+  inline void analyze(const TypeLoc &TL, const NestedNameSpecifierLoc &NNSL) {
+    auto SourceRange = getDefinitionRange(NNSL.getBeginLoc(),
+                                          TL.getSourceRange().getEnd());
+    initSourceRange(SourceRange);
+    analyzeType(TL, nullptr, nullptr, &NNSL);
+  }
+
+  inline void analyze(const TypeLoc &TL, const DependentNameTypeLoc &DNTL) {
+    auto SourceRange = getDefinitionRange(DNTL.getQualifierLoc().getBeginLoc(),
+                                          TL.getSourceRange().getEnd());
+    initSourceRange(SourceRange);
+    analyzeType(TL, nullptr, &DNTL);
+  }
+
   inline void analyze(const TemplateArgumentLoc &TAL) {
     initSourceRange(TAL.getSourceRange());
     analyzeTemplateArgument(TAL);
@@ -639,7 +653,9 @@ protected:
                           const Expr *CSCE = nullptr) {
     analyzeType(TSI->getTypeLoc(), CSCE);
   }
-  void analyzeType(TypeLoc TL, const Expr *E = nullptr);
+  void analyzeType(TypeLoc TL, const Expr *E = nullptr,
+                   const DependentNameTypeLoc *DNTL = nullptr,
+                   const NestedNameSpecifierLoc *NNSL = nullptr);
   void analyzeDecltypeType(DecltypeTypeLoc TL);
 
   // Doing nothing when it doesn't need analyze
@@ -836,6 +852,7 @@ private:
   void analyzeExpr(const CXXUnresolvedConstructExpr *Ctor);
   void analyzeExpr(const CXXTemporaryObjectExpr *Ctor);
   void analyzeExpr(const ExplicitCastExpr *Cast);
+  void analyzeExpr(const DeclRefExpr *DRE);
 
   template <class T, class ArgIter>
   void handleDim3Ctor(const T *, SourceRange Parens, ArgIter ArgBegin,

@@ -847,7 +847,7 @@ thrustFactory("thrust::sort",
 thrustFactory("thrust::reduce",
               {{3,PolicyState::HasPolicy,2,"std::reduce", HelperFeatureEnum::none},
                {2,PolicyState::NoPolicy, 2,"std::reduce", HelperFeatureEnum::none},
-               {4,PolicyState::HasPolicy,2,"std::reducet", HelperFeatureEnum::none},
+               {4,PolicyState::HasPolicy,2,"std::reduce", HelperFeatureEnum::none},
                {3,PolicyState::NoPolicy, 2,"std::reduce", HelperFeatureEnum::none},
                {5,PolicyState::HasPolicy,2,"std::reduce", HelperFeatureEnum::none},
                {4,PolicyState::NoPolicy, 2,"std::reduce", HelperFeatureEnum::none}}),
@@ -1097,3 +1097,32 @@ thrustFactory("thrust::set_symmetric_difference_by_key",
                { 8, PolicyState::NoPolicy, 8, MapNames::getDpctNamespace() + "set_symmetric_difference", HelperFeatureEnum::device_ext},
                { 10,PolicyState::HasPolicy,8, MapNames::getDpctNamespace() + "set_symmetric_difference", HelperFeatureEnum::device_ext},
                { 9, PolicyState::NoPolicy, 8, MapNames::getDpctNamespace() + "set_symmetric_difference", HelperFeatureEnum::device_ext}}),
+
+// thrust::set_union
+thrustFactory("thrust::set_union",
+              {{ 6,PolicyState::HasPolicy,5,"oneapi::dpl::set_union", HelperFeatureEnum::none},
+               { 5,PolicyState::NoPolicy, 5,"oneapi::dpl::set_union", HelperFeatureEnum::none},
+               { 7,PolicyState::HasPolicy,5,"oneapi::dpl::set_union", HelperFeatureEnum::none},
+               { 6,PolicyState::NoPolicy, 5,"oneapi::dpl::set_union", HelperFeatureEnum::none}}),
+
+
+// thrust::set_union_by_key
+thrustFactory("thrust::set_union_by_key",
+              {{ 9, PolicyState::HasPolicy,8, MapNames::getDpctNamespace() + "set_union", HelperFeatureEnum::device_ext},
+               { 8, PolicyState::NoPolicy, 8, MapNames::getDpctNamespace() + "set_union", HelperFeatureEnum::device_ext},
+               { 10,PolicyState::HasPolicy,8, MapNames::getDpctNamespace() + "set_union", HelperFeatureEnum::device_ext},
+               { 9, PolicyState::NoPolicy, 8, MapNames::getDpctNamespace() + "set_union", HelperFeatureEnum::device_ext}}),
+
+// thrust::swap_ranges
+thrustFactory("thrust::swap_ranges",
+              {{4,PolicyState::HasPolicy,3,"oneapi::dpl::swap_ranges", HelperFeatureEnum::none},
+               {3,PolicyState::NoPolicy, 3,"oneapi::dpl::swap_ranges", HelperFeatureEnum::none}}),
+
+// thrust::uninitialized_fill_n
+thrustFactory("thrust::uninitialized_fill_n",
+              {{4,PolicyState::HasPolicy,1,"oneapi::dpl::uninitialized_fill_n", HelperFeatureEnum::none},
+               {3,PolicyState::NoPolicy, 1,"oneapi::dpl::uninitialized_fill_n", HelperFeatureEnum::none}}),
+
+// thrust::detail::vector_equal
+thrustFactory("thrust::detail::vector_equal",
+              {{3,PolicyState::NoPolicy,3,"oneapi::dpl::equal", HelperFeatureEnum::none}}),

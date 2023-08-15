@@ -60,11 +60,11 @@ auto isDeviceFuncCallExpr = []() {
                       "DeviceRadixSort", "DeviceSegmentedRadixSort",
                       "DeviceSegmentedSort");
   };
-  return callExpr(callee(functionDecl(
-      allOf(hasDeviceFuncName(),
-            hasDeclContext(cxxRecordDecl(
-                allOf(hasDeviceRecordName(),
-                      hasDeclContext(namespaceDecl(hasName("cub"))))))))));
+  return callExpr(callee(functionDecl(allOf(
+      hasDeviceFuncName(),
+      hasDeclContext(cxxRecordDecl(allOf(
+          hasDeviceRecordName(),
+          hasAncestor(namespaceDecl(hasName("cub"))))))))));
 };
 
 } // namespace
@@ -160,11 +160,12 @@ void CubMemberCallRule::runRule(
 
 void CubIntrinsicRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
-      callExpr(callee(functionDecl(allOf(
-                   hasAnyName("IADD3", "SHR_ADD", "SHL_ADD", "LaneId", "WarpId",
-                              "SyncStream", "CurrentDevice", "DeviceCount",
-                              "DeviceCountUncached", "DeviceCountCachedValue"),
-                   hasDeclContext(namespaceDecl(hasName("cub")))))))
+      callExpr(
+          callee(functionDecl(allOf(
+              hasAnyName("IADD3", "SHR_ADD", "SHL_ADD", "LaneId", "WarpId",
+                         "SyncStream", "CurrentDevice", "DeviceCount",
+                         "DeviceCountUncached", "DeviceCountCachedValue"),
+              hasAncestor(namespaceDecl(hasName("cub")))))))
           .bind("IntrinsicCall"),
       this);
 }
@@ -617,14 +618,14 @@ std::string CubRule::getOpRepl(const Expr *Operator) {
       std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
           D->getType().getCanonicalType());
       if (OpType == "cub::Sum" || OpType == "cub::Max" ||
-          OpType == "cub::Min") {
+          OpType == "cub::Min" || OpType == "cuda::std::plus<void>") {
         ExprAnalysis EA(Operator);
         OpRepl = EA.getReplacedString();
       }
     } else if (auto CXXTempObj = dyn_cast<CXXTemporaryObjectExpr>(CtorArg)) {
       std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
           CXXTempObj->getType().getCanonicalType());
-      if (OpType == "cub::Sum") {
+      if (OpType == "cub::Sum" || OpType == "cuda::std::plus<void>") {
         OpRepl = MapNames::getClNamespace() + "plus<>()";
       } else if (OpType == "cub::Max") {
         OpRepl = MapNames::getClNamespace() + "maximum<>()";
@@ -763,9 +764,9 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
     auto EndLoc =
         SM.getExpansionLoc(TD->getTypeSourceInfo()->getTypeLoc().getEndLoc());
     if (CanonicalTypeStr.find("Warp") != std::string::npos) {
-      emplaceTransformation(replaceText(
-          BeginLoc, EndLoc.getLocWithOffset(1),
-          MapNames::getClNamespace() + "ext::oneapi::sub_group", SM));
+      emplaceTransformation(
+          replaceText(BeginLoc, EndLoc.getLocWithOffset(1),
+                      MapNames::getClNamespace() + "sub_group", SM));
     } else if (CanonicalTypeStr.find("Block") != std::string::npos) {
       auto DeviceFuncDecl = DpctGlobalInfo::findAncestor<FunctionDecl>(TD);
       if (DeviceFuncDecl && (DeviceFuncDecl->hasAttr<CUDADeviceAttr>() ||
@@ -850,7 +851,6 @@ void CubRule::processCubFuncCall(const CallExpr *CE, bool FuncCallUsed) {
     return;
 
   llvm::StringRef FuncName = DC->getName();
-
   if (FuncName == "ShuffleIndex") {
     processWarpLevelFuncCall(CE, FuncCallUsed);
   } else if (FuncName == "ThreadLoad" || FuncName == "ThreadStore") {
@@ -1313,9 +1313,9 @@ void CubRule::processTypeLoc(const TypeLoc *TL) {
   std::string TypeName = TL->getType().getCanonicalType().getAsString();
   if (TypeName.find("class cub::WarpScan") == 0 ||
       TypeName.find("class cub::WarpReduce") == 0) {
-    emplaceTransformation(
-        replaceText(BeginLoc, EndLoc.getLocWithOffset(1),
-                    MapNames::getClNamespace() + "ext::oneapi::sub_group", SM));
+    emplaceTransformation(replaceText(BeginLoc, EndLoc.getLocWithOffset(1),
+                                      MapNames::getClNamespace() + "sub_group",
+                                      SM));
   } else if (TypeName.find("class cub::BlockScan") == 0 ||
              TypeName.find("class cub::BlockReduce") == 0) {
     auto DeviceFuncDecl = DpctGlobalInfo::findAncestor<FunctionDecl>(TL);

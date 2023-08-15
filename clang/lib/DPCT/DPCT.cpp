@@ -36,6 +36,7 @@
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Refactoring.h"
 #include "clang/Tooling/Tooling.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/Path.h"
@@ -71,7 +72,6 @@ using namespace clang::tooling;
 using namespace llvm::cl;
 
 namespace clang {
-extern llvm::APSInt CudaRTVersionValue;
 namespace tooling {
 std::string getFormatSearchPath();
 extern std::string ClangToolOutputMessage;
@@ -122,7 +122,6 @@ bool EnablepProfilingFlag = false;
 bool SyclNamedLambdaFlag = false;
 bool ExplicitClNamespace = false;
 bool NoDRYPatternFlag = false;
-bool NoUseGenericSpaceFlag = false;
 bool ProcessAllFlag = false;
 bool AsyncHandlerFlag = false;
 static std::string SuppressWarningsMessage = "A comma separated list of migration warnings to suppress. Valid "
@@ -169,10 +168,6 @@ static llvm::cl::opt<std::string>
                  llvm::cl::value_desc("[pass|transformation]"), llvm::cl::cat(DPCTCat),
                  llvm::cl::Optional, llvm::cl::Hidden);
 #endif
-static llvm::cl::opt<bool, true> NoUseGenericSpace(
-  "no-use-generic-space", llvm::cl::desc("sycl::access::address_space::generic_space is not used during atomic\n"
-                                         " function's migration. Default: off.\n"),
-  llvm::cl::cat(DPCTCat), llvm::cl::location(NoUseGenericSpaceFlag), llvm::cl::ReallyHidden);
 #ifdef __linux__
 static AutoCompletePrinter AutoCompletePrinterInstance;
 static llvm::cl::opt<AutoCompletePrinter, true, llvm::cl::parser<std::string>> AutoComplete(
@@ -220,10 +215,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
       Driver, llvm::Triple(Driver.getTargetTriple()), ParsedArgs);
 
   std::string Path = CudaIncludeDetector.getInstallPath().str();
-  uint64_t CudaRTVersionValueUint64 =
-      clang::CudaVersionToValue(CudaIncludeDetector.version());
-  CudaRTVersionValue =
-      llvm::APSInt(llvm::APInt(64, CudaRTVersionValueUint64, false), true);
+  dpct::DpctGlobalInfo::setSDKVersion(CudaIncludeDetector.version());
 
   if (!CudaIncludePath.empty()) {
     if (!CudaIncludeDetector.isIncludePathValid()) {
@@ -655,12 +647,6 @@ int runDPCT(int argc, const char **argv) {
   if (CommonOptionsParser::hasHelpOption(OriginalArgc, argv))
     dpctExit(MigrationSucceeded);
 
-  if (QueryAPIMapping.getNumOccurrences()) {
-    APIMapping::initEntryMap();
-    APIMapping::queryAPIMapping(llvm::outs(), QueryAPIMapping);
-    dpctExit(MigrationSucceeded);
-  }
-
   if (LimitChangeExtension) {
     DpctGlobalInfo::addChangeExtensions(".cu");
     DpctGlobalInfo::addChangeExtensions(".cuh");
@@ -736,12 +722,74 @@ int runDPCT(int argc, const char **argv) {
     PrintMsg(OS.str());
   }
 
+  ExtraIncPaths = OptParser->getExtraIncPathList();
+
   // TODO: implement one of this for each source language.
   CudaPath = getCudaInstallPath(OriginalArgc, argv);
   DpctDiags() << "Cuda Include Path found: " << CudaPath << "\n";
 
-  RefactoringTool Tool(OptParser->getCompilations(),
-                       OptParser->getSourcePathList());
+  std::vector<std::string> SourcePathList;
+  if (QueryAPIMapping.getNumOccurrences()) {
+    APIMapping::initEntryMap();
+    auto SourceCode = APIMapping::getAPISourceCode(QueryAPIMapping);
+    if (SourceCode.empty()) {
+      dpctExit(MigrationErrorNoAPIMapping);
+    }
+
+    int FD;
+    SmallString<64> TempFile;
+    if (auto EC =
+            llvm::sys::fs::createTemporaryFile("tmp", "cu", FD, TempFile)) {
+      dpctExit(MigrationErrorCannotCreateTempFile);
+    }
+    llvm::raw_fd_ostream(FD, true) << SourceCode;
+
+    std::string OptionMsg;
+    static const std::string OptionStr{"// Option:"};
+    if (SourceCode.starts_with(OptionStr)) {
+      OptionMsg += " (with the option";
+      const auto Options =
+          SourceCode.substr(OptionStr.length(), SourceCode.find_first_of('\n') -
+                                                    OptionStr.length());
+      size_t PrePos = 0;
+      size_t NextPos = Options.find_first_of(' ');
+      while (PrePos != std::string::npos) {
+        auto Option = Options.substr(PrePos, NextPos - PrePos);
+        if (Option == "--use-dpcpp-extensions=intel_device_math") {
+          OptionMsg += " ";
+          OptionMsg += Option.str();
+          UseDPCPPExtensions.addValue(
+              DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath);
+        }
+        // Need add more option.
+        PrePos = Options.find_first_not_of(' ', NextPos);
+        NextPos = Options.find_first_of(' ', PrePos);
+      }
+      OptionMsg += ")";
+    }
+
+    llvm::outs() << "CUDA API:";
+    static const std::string StartStr{"// Start"};
+    static const std::string EndStr{"// End"};
+    auto StartPos = SourceCode.find(StartStr);
+    auto EndPos = SourceCode.find(EndStr);
+    if (StartPos == StringRef::npos || EndPos == StringRef::npos) {
+      dpctExit(MigrationErrorNoAPIMapping);
+    }
+    StartPos = StartPos + StartStr.length();
+    EndPos = SourceCode.find_last_of('\n', EndPos);
+    llvm::outs() << SourceCode.substr(StartPos, EndPos - StartPos + 1);
+    llvm::outs() << "Is migrated to" << OptionMsg << ":";
+
+    NoIncrementalMigration = true;
+    InRoot = llvm::sys::path::parent_path(TempFile).str();
+    OutRoot = llvm::sys::path::parent_path(TempFile).str();
+    DpctGlobalInfo::setIsQueryAPIMapping(true);
+    SourcePathList = {TempFile.str().str()};
+  } else {
+    SourcePathList = OptParser->getSourcePathList();
+  }
+  RefactoringTool Tool(OptParser->getCompilations(), SourcePathList);
 
   if (GenBuildScript) {
     clang::tooling::SetCompileTargetsMap(CompileTargetsMap);
@@ -810,7 +858,8 @@ int runDPCT(int argc, const char **argv) {
       (SDKVersionMajor == 11 && SDKVersionMinor == 7) ||
       (SDKVersionMajor == 11 && SDKVersionMinor == 8) ||
       (SDKVersionMajor == 12 && SDKVersionMinor == 0) ||
-      (SDKVersionMajor == 12 && SDKVersionMinor == 1)) {
+      (SDKVersionMajor == 12 && SDKVersionMinor == 1) ||
+      (SDKVersionMajor == 12 && SDKVersionMinor == 2)) {
     Tool.appendArgumentsAdjuster(
         getInsertArgumentAdjuster("-fms-compatibility-version=19.21.27702.0",
                                   ArgumentInsertPosition::BEGIN));
@@ -842,7 +891,6 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setGenBuildScriptEnabled(GenBuildScript);
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
   DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
-  DpctGlobalInfo::setUsingGenericSpace(!NoUseGenericSpaceFlag);
   DpctGlobalInfo::setExperimentalFlag(Experimentals.getBits());
   DpctGlobalInfo::setExtensionDEFlag(~(NoDPCPPExtensions.getBits()));
   DpctGlobalInfo::setExtensionDDFlag(UseDPCPPExtensions.getBits());
@@ -915,9 +963,6 @@ int runDPCT(int argc, const char **argv) {
                      UseDPCPPExtensions.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_NoDRYPattern, NoDRYPatternFlag,
                      NoDRYPattern.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_NoUseGenericSpace,
-                     NoUseGenericSpaceFlag,
-                     NoUseGenericSpace.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_CompilationsDir, CompilationsDir,
                      OptParser->isPSpecified());
 #ifdef _WIN32
@@ -1028,6 +1073,37 @@ int runDPCT(int argc, const char **argv) {
 
     Action.runPasses();
   } while (DpctGlobalInfo::isNeedRunAgain());
+
+  if (DpctGlobalInfo::isQueryAPIMapping()) {
+    DiagnosticsEngine Diagnostics(
+        IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()),
+        IntrusiveRefCntPtr<DiagnosticOptions>(new DiagnosticOptions()));
+    SourceManager Sources(Diagnostics, Tool.getFiles());
+    LangOptions DefaultLangOptions;
+    Rewriter Rewrite(Sources, DefaultLangOptions);
+    // Must be only 1 file.
+    tooling::applyAllReplacements(Tool.getReplacements().begin()->second,
+                                  Rewrite);
+    const auto &RewriteBuffer = Rewrite.buffer_begin()->second;
+    static const std::string StartStr{"// Start"};
+    static const std::string EndStr{"// End"};
+    bool Flag = false;
+    for (auto I = RewriteBuffer.begin(), E = RewriteBuffer.end(); I != E;
+         I.MoveToNextPiece()) {
+      if (Flag) {
+        if (auto It = I.piece().find(EndStr); It != StringRef::npos) {
+          llvm::outs() << I.piece().substr(0, It);
+          break;
+        }
+        llvm::outs() << I.piece();
+      } else if (auto It = I.piece().find(StartStr); It != StringRef::npos) {
+        Flag = true;
+        llvm::outs() << I.piece().substr(It + StartStr.length());
+      }
+    }
+    llvm::sys::fs::remove(SourcePathList.front().c_str());
+    return MigrationSucceeded;
+  }
 
   if (GenReport) {
     // report: apis, stats, all, diags

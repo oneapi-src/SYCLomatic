@@ -638,3 +638,23 @@ int foo6() {
 __global__ void global7() {
   unsigned int tid = threadIdx.x;
 }
+
+__global__ void global8() {}
+
+int query_block(const int x) {
+  return x;
+}
+
+void foo7() {
+  int n = 128;
+  //CHECK:sycl::range<3> block(1, 1, n);
+  //CHECK-NEXT:sycl::range<3> grid(1, 1, query_block(n));
+  dim3 block(n);
+  dim3 grid(query_block(n));
+  //CHECK:dpct::get_default_queue().parallel_for(
+  //CHECK-NEXT:  sycl::nd_range<1>(grid.get(2) * block.get(2), block.get(2)),
+  //CHECK-NEXT:  [=](sycl::nd_item<1> item_ct1) {
+  //CHECK-NEXT:    global8();
+  //CHECK-NEXT:  });
+  global8<<<grid, block>>>();
+}

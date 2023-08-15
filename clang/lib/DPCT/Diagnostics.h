@@ -290,6 +290,8 @@ bool report(const std::string &FileAbsPath, unsigned int Offset, IDTy MsgID,
 template <typename IDTy, typename... Ts>
 inline bool report(SourceLocation SL, IDTy MsgID,
             TransformSetTy *TS, bool UseTextBegin, Ts &&... Vals) {
+  if (DpctGlobalInfo::isQueryAPIMapping())
+    return true;
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   if (SL.isMacroID() && !SM.isMacroArgExpansion(SL)) {
     auto ItMatch = dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().find(

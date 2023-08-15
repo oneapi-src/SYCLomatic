@@ -16,6 +16,6 @@ __global__ void test1(S1<Q> s1) {
 
 template<class Q>
 __global__ void test2() {
-  // CHECK:item_ct1.barrier();
+  // CHECK:item_ct1.barrier(sycl::access::fence_space::local_space);
   __syncthreads();
 }

@@ -142,8 +142,8 @@ void ShowStatus(int Status, std::string Message) {
         "previous migration: \"" +
         Message +
         "\". See "
-        "https://software.intel.com/content/www/us/en/develop/documentation/"
-        "intel-dpcpp-compatibility-tool-user-guide/top.html for more details.";
+        "https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/"
+        "developer-guide-reference/current/overview.html for more details.";
     break;
   case MigrationErrorInvalidRuleFilePath:
     StatusString = "Error: The path for --rule-file is not valid";
@@ -154,6 +154,12 @@ void ShowStatus(int Status, std::string Message) {
   case MigrationErrorInvalidAnalysisScope:
     StatusString = "Error: The path for --analysis-scope-path is not the same "
                    "as or a parent directory of --in-root";
+    break;
+  case MigrationErrorNoAPIMapping:
+    StatusString = "Error: The API Mapping is not available";
+    break;
+  case MigrationErrorCannotCreateTempFile:
+    StatusString = "Error: Cannot create temp file.";
     break;
   default:
     DpctLog() << "Unknown error\n";
@@ -172,15 +178,17 @@ void ShowStatus(int Status, std::string Message) {
 std::string getLoadYamlFailWarning(std::string YamlPath) {
   return "Warning: Failed to load " + YamlPath +
          ". Migration continues with incremental migration disabled. See "
-         "https://software.intel.com/content/www/us/en/develop/documentation/"
-         "intel-dpcpp-compatibility-tool-user-guide/top.html for more "
+         "https://www.intel.com/content/www/us/en/docs/"
+         "dpcpp-compatibility-tool/developer-guide-reference/current/"
+         "overview.html for more "
          "details.\n";
 }
 std::string getCheckVersionFailWarning() {
   return "Warning: Incremental migration requires the same version of dpct. "
          "Migration continues with incremental migration disabled. See "
-         "https://software.intel.com/content/www/us/en/develop/documentation/"
-         "intel-dpcpp-compatibility-tool-user-guide/top.html for more "
+         "https://www.intel.com/content/www/us/en/docs/"
+         "dpcpp-compatibility-tool/developer-guide-reference/current/"
+         "overview.html for more "
          "details.\n";
 }
 

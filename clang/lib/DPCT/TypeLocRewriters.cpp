@@ -99,8 +99,18 @@ checkTemplateArgSpelling(size_t index, std::string str) {
         if (TSTL.getNumArgs() > 0) {
           const TemplateArgument &arg = TST->template_arguments()[index];
           if (arg.getKind() == TemplateArgument::ArgKind::Type) {
-            const QualType &type = arg.getAsType();
-            return type.getAsString() == str;
+            const Type *type = arg.getAsType().getTypePtrOrNull();
+            if (type != nullptr)
+              if (const CXXRecordDecl *RD =
+                      dyn_cast_or_null<CXXRecordDecl>(type->getAsTagDecl())) {
+                if (const auto *NSD =
+                        dyn_cast<NamespaceDecl>(RD->getDeclContext())) {
+                  std::string typeQualifiedString =
+                      getNameSpace(NSD) + "::" + RD->getNameAsString();
+                  return typeQualifiedString == str;
+                }
+              }
+            return arg.getAsType().getAsString() == str;
           } else if (arg.getKind() == TemplateArgument::ArgKind::Declaration) {
             const ValueDecl *decl = arg.getAsDecl();
             return decl->getNameAsString() == str;

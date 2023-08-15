@@ -6,10 +6,10 @@
 //
 //===----------------------------------------------------------------------===//
 // Half Arithmetic Functions
-ENTRY_RENAMED("__hfma", MapNames::getClNamespace(false, true) + "fma")
+ENTRY_REWRITE("__hfma")
 
 // Half2 Arithmetic Functions
-ENTRY_RENAMED("__hfma2", MapNames::getClNamespace(false, true) + "fma")
+ENTRY_REWRITE("__hfma2")
 
 // Half Comparison Functions
 ENTRY_RENAMED("__hisinf", MapNames::getClNamespace(false, true) + "isinf")
@@ -254,9 +254,9 @@ ENTRY_EMULATED("nanf", MapNames::getClNamespace(false, true) + "nan")
 ENTRY_EMULATED("nearbyintf", MapNames::getClNamespace(false, true) + "floor")
 ENTRY_EMULATED("remquof", MapNames::getClNamespace(false, true) + "remquo")
 ENTRY_EMULATED("rhypotf", MapNames::getClNamespace(false, true) + "hypot")
-ENTRY_EMULATED("sincosf", MapNames::getClNamespace(false, true) + "sincos")
+ENTRY_REWRITE("sincosf")
 ENTRY_EMULATED("sincospif", MapNames::getClNamespace(false, true) + "sincos")
-ENTRY_EMULATED("__sincosf", MapNames::getClNamespace(false, true) + "sincos")
+ENTRY_REWRITE("__sincosf")
 ENTRY_EMULATED("powf", MapNames::getClNamespace(false, true) + "pow<float>")
 ENTRY_EMULATED("__powf", MapNames::getClNamespace(false, true) + "pow<float>")
 
@@ -267,7 +267,7 @@ ENTRY_EMULATED("nan", MapNames::getClNamespace(false, true) + "nan")
 ENTRY_EMULATED("nearbyint", MapNames::getClNamespace(false, true) + "floor")
 ENTRY_EMULATED("remquo", MapNames::getClNamespace(false, true) + "remquo")
 ENTRY_EMULATED("rhypot", MapNames::getClNamespace(false, true) + "hypot")
-ENTRY_EMULATED("sincos", MapNames::getClNamespace(false, true) + "sincos")
+ENTRY_REWRITE("sincos")
 ENTRY_EMULATED("sincospi", MapNames::getClNamespace(false, true) + "sincos")
 ENTRY_EMULATED("pow", MapNames::getClNamespace(false, true) + "pow<double>")
 
@@ -290,8 +290,8 @@ ENTRY_EMULATED("__drcp_rz", "(1.0/(X))")
 
 
 // Half/Half2 Arithmetic Functions
-ENTRY_RENAMED("__habs", MapNames::getClNamespace(false, true) + "fabs")
-ENTRY_RENAMED("__habs2", MapNames::getClNamespace(false, true) + "fabs")
+ENTRY_REWRITE("__habs")
+ENTRY_REWRITE("__habs2")
 ENTRY_REWRITE("__hadd2")
 ENTRY_REWRITE("__h2div")
 ENTRY_REWRITE("__hdiv")
@@ -667,12 +667,12 @@ ENTRY_REWRITE("__hneu2_mask")
 ENTRY_UNSUPPORTED("h2rcp")
 
 // Single Precision Mathematical Functions
-ENTRY_UNSUPPORTED("cyl_bessel_i0f")
-ENTRY_UNSUPPORTED("cyl_bessel_i1f")
+ENTRY_REWRITE("cyl_bessel_i0f")
+ENTRY_REWRITE("cyl_bessel_i1f")
 ENTRY_REWRITE("erfcinvf")
 ENTRY_REWRITE("erfinvf")
-ENTRY_UNSUPPORTED("j0f")
-ENTRY_UNSUPPORTED("j1f")
+ENTRY_REWRITE("j0f")
+ENTRY_REWRITE("j1f")
 ENTRY_UNSUPPORTED("jnf")
 ENTRY_REWRITE("normcdff")
 ENTRY_REWRITE("normcdfinvf")
@@ -682,17 +682,17 @@ ENTRY_REWRITE("normf")
 ENTRY_REWRITE("rnorm3df")
 ENTRY_REWRITE("rnorm4df")
 ENTRY_REWRITE("rnormf")
-ENTRY_UNSUPPORTED("y0f")
-ENTRY_UNSUPPORTED("y1f")
+ENTRY_REWRITE("y0f")
+ENTRY_REWRITE("y1f")
 ENTRY_UNSUPPORTED("ynf")
 
 // Double Precision Mathematical Functions
-ENTRY_UNSUPPORTED("cyl_bessel_i0")
-ENTRY_UNSUPPORTED("cyl_bessel_i1")
+ENTRY_REWRITE("cyl_bessel_i0")
+ENTRY_REWRITE("cyl_bessel_i1")
 ENTRY_REWRITE("erfcinv")
 ENTRY_REWRITE("erfinv")
-ENTRY_UNSUPPORTED("j0")
-ENTRY_UNSUPPORTED("j1")
+ENTRY_REWRITE("j0")
+ENTRY_REWRITE("j1")
 ENTRY_UNSUPPORTED("jn")
 ENTRY_REWRITE("norm")
 ENTRY_REWRITE("norm3d")
@@ -702,8 +702,8 @@ ENTRY_REWRITE("normcdfinv")
 ENTRY_REWRITE("rnorm")
 ENTRY_REWRITE("rnorm3d")
 ENTRY_REWRITE("rnorm4d")
-ENTRY_UNSUPPORTED("y0")
-ENTRY_UNSUPPORTED("y1")
+ENTRY_REWRITE("y0")
+ENTRY_REWRITE("y1")
 ENTRY_UNSUPPORTED("yn")
 
 // Integer Mathematical Functions

@@ -330,6 +330,10 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "image_wrapper_base_p",
            HelperFeatureEnum::device_ext)},
+      {"textureReference",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "image_wrapper_base",
+           HelperFeatureEnum::device_ext)},
       {"cudaTextureAddressMode",
        std::make_shared<TypeNameRule>(getClNamespace() + "addressing_mode")},
       {"cudaTextureFilterMode",
@@ -455,8 +459,30 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("oneapi::mkl::rangev")},
       {"cudaUUID_t",
        std::make_shared<TypeNameRule>("std::array<unsigned char, 16>")},
+      {"cusparseIndexType_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "library_data_t")},
+      {"cusparseFormat_t",
+       std::make_shared<TypeNameRule>(
+        getDpctNamespace() + "sparse::matrix_format")},
+      {"cusparseDnMatDescr_t",
+       std::make_shared<TypeNameRule>(
+        "std::shared_ptr<" + getDpctNamespace() + "sparse::dense_matrix_desc>")},
+      {"cusparseOrder_t",
+       std::make_shared<TypeNameRule>("oneapi::mkl::layout")},
+      {"cusparseDnVecDescr_t",
+       std::make_shared<TypeNameRule>(
+        "std::shared_ptr<" + getDpctNamespace() + "sparse::dense_vector_desc>")},
+      {"cusparseConstDnVecDescr_t",
+       std::make_shared<TypeNameRule>(
+        "std::shared_ptr<" + getDpctNamespace() + "sparse::dense_vector_desc>")},
+      {"cusparseSpMatDescr_t",
+       std::make_shared<TypeNameRule>(
+        getDpctNamespace() + "sparse::sparse_matrix_desc_t")},
+      {"cusparseSpMMAlg_t", std::make_shared<TypeNameRule>("int")},
+      {"cusparseSpMVAlg_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverDnFunction_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverAlgMode_t", std::make_shared<TypeNameRule>("int")},
+      {"__half_raw", std::make_shared<TypeNameRule>("uint16_t")},
       // ...
   };
 
@@ -1295,6 +1321,18 @@ void MapNames::setExplicitNamespaceMap() {
        getDpctNamespace() + "sparse::matrix_info::matrix_type::he"},
       {"CUSPARSE_MATRIX_TYPE_TRIANGULAR",
        getDpctNamespace() + "sparse::matrix_info::matrix_type::tr"},
+      {"CUSPARSE_SPMAT_FILL_MODE",
+       getDpctNamespace() + "sparse::matrix_attribute::uplo"},
+      {"CUSPARSE_SPMAT_DIAG_TYPE",
+       getDpctNamespace() + "sparse::matrix_attribute::diag"},
+      {"CUSPARSE_INDEX_16U",
+       getDpctNamespace() + "library_data_t::real_uint16"},
+      {"CUSPARSE_INDEX_32I",
+       getDpctNamespace() + "library_data_t::real_int32"},
+      {"CUSPARSE_INDEX_64I",
+       getDpctNamespace() + "library_data_t::real_int64"},
+      {"CUSPARSE_ORDER_COL", "oneapi::mkl::layout::col_major"},
+      {"CUSPARSE_ORDER_ROW", "oneapi::mkl::layout::row_major"},
   };
 
   ClassFieldMap = {};
@@ -1325,15 +1363,12 @@ void MapNames::setExplicitNamespaceMap() {
       {"thrust::partition_point", HelperFeatureEnum::device_ext}};
 
   ITFName = {
-#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)   \
+#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)   \
   {#APINAME, #INTERFACENAME},
-#define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
-                              TARGET, COMMENT)                                 \
-  {#OBJNAME "." #APINAME, #OBJNAME "." #INTERFACENAME},
+#define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
+                              TARGET, COMMENT)                        \
+  {#OBJNAME "::" #APINAME, #INTERFACEOBJNAME "::" #INTERFACENAME},
 #include "APINames.inc"
-#undef ENTRY
-#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
-  {#APINAME, #INTERFACENAME},
 #include "APINames_CUB.inc"
 #include "APINames_NCCL.inc"
 #include "APINames_cuBLAS.inc"
@@ -1698,16 +1733,27 @@ void MapNames::setExplicitNamespaceMap() {
   // Atomic function names mapping
   AtomicFuncNamesMap = {
       {"atomicAdd", getDpctNamespace() + "atomic_fetch_add"},
+      {"atomicAdd_system", getDpctNamespace() + "atomic_fetch_add"},
       {"atomicSub", getDpctNamespace() + "atomic_fetch_sub"},
+      {"atomicSub_system", getDpctNamespace() + "atomic_fetch_sub"},
       {"atomicAnd", getDpctNamespace() + "atomic_fetch_and"},
+      {"atomicAnd_system", getDpctNamespace() + "atomic_fetch_and"},
       {"atomicOr", getDpctNamespace() + "atomic_fetch_or"},
+      {"atomicOr_system", getDpctNamespace() + "atomic_fetch_or"},
       {"atomicXor", getDpctNamespace() + "atomic_fetch_xor"},
+      {"atomicXor_system", getDpctNamespace() + "atomic_fetch_xor"},
       {"atomicMin", getDpctNamespace() + "atomic_fetch_min"},
+      {"atomicMin_system", getDpctNamespace() + "atomic_fetch_min"},
       {"atomicMax", getDpctNamespace() + "atomic_fetch_max"},
+      {"atomicMax_system", getDpctNamespace() + "atomic_fetch_max"},
       {"atomicExch", getDpctNamespace() + "atomic_exchange"},
+      {"atomicExch_system", getDpctNamespace() + "atomic_exchange"},
       {"atomicCAS", getDpctNamespace() + "atomic_compare_exchange_strong"},
+      {"atomicCAS_system", getDpctNamespace() + "atomic_compare_exchange_strong"},
       {"atomicInc", getDpctNamespace() + "atomic_fetch_compare_inc"},
+      {"atomicInc_system", getDpctNamespace() + "atomic_fetch_compare_inc"},
       {"atomicDec", getDpctNamespace() + "atomic_fetch_compare_dec"},
+      {"atomicDec_system", getDpctNamespace() + "atomic_fetch_compare_dec"},
   };
 
   BLASAPIWithRewriter = {
@@ -1718,6 +1764,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasAxpyEx", getDpctNamespace() + "axpy_ex"},
       {"cublasRotEx", getDpctNamespace() + "rot_ex"},
       {"cublasGemmEx", getDpctNamespace() + "gemm_ex"},
+      {"cublasSgemmEx", getDpctNamespace() + "gemm_ex"},
+      {"cublasCgemmEx", getDpctNamespace() + "gemm_ex"},
       {"cublasGemmBatchedEx", getDpctNamespace() + "gemm_batched_ex"},
       {"cublasGemmStridedBatchedEx",
        getDpctNamespace() + "gemm_strided_batched_ex"},
@@ -1858,7 +1906,15 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusolverDnSyevd",
                            "cusolverDnSyevd_bufferSize",
                            "cusolverDnXtrtri",
-                           "cusolverDnXtrtri_bufferSize"};
+                           "cusolverDnXtrtri_bufferSize",
+                           "cusolverDnSsyevd_bufferSize",
+                           "cusolverDnDsyevd_bufferSize",
+                           "cusolverDnCheevd_bufferSize",
+                           "cusolverDnZheevd_bufferSize",
+                           "cusolverDnSsyevd",
+                           "cusolverDnDsyevd",
+                           "cusolverDnCheevd",
+                           "cusolverDnZheevd"};
 
   SPARSEAPIWithRewriter = {"cusparseCreateMatDescr",
                            "cusparseDestroyMatDescr",
@@ -1889,7 +1945,39 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusparseScsrmm",
                            "cusparseDcsrmm",
                            "cusparseCcsrmm",
-                           "cusparseZcsrmm"};
+                           "cusparseZcsrmm",
+                           "cusparseCreateCsr",
+                           "cusparseDestroySpMat",
+                           "cusparseCsrGet",
+                           "cusparseSpMatGetFormat",
+                           "cusparseSpMatGetIndexBase",
+                           "cusparseSpMatGetValues",
+                           "cusparseSpMatSetValues",
+                           "cusparseCreateDnMat",
+                           "cusparseDestroyDnMat",
+                           "cusparseDnMatGet",
+                           "cusparseDnMatGetValues",
+                           "cusparseDnMatSetValues",
+                           "cusparseCreateDnVec",
+                           "cusparseDestroyDnVec",
+                           "cusparseDnVecGet",
+                           "cusparseDnVecGetValues",
+                           "cusparseDnVecSetValues",
+                           "cusparseCsrSetPointers",
+                           "cusparseSpMatGetSize",
+                           "cusparseGetErrorName",
+                           "cusparseGetErrorString",
+                           "cusparseGetProperty",
+                           "cusparseSpMatGetAttribute",
+                           "cusparseSpMatSetAttribute",
+                           "cusparseCreateConstDnVec",
+                           "cusparseConstDnVecGet",
+                           "cusparseConstDnVecGetValues",
+                           "cusparseSpMM",
+                           "cusparseSpMM_bufferSize",
+                           "cusparseSpMV",
+                           "cusparseSpMV_bufferSize",
+                           "cusparseSpMM_preprocess"};
 
   // Below set and map are only used to migrate using declaration
   MathFuncNameMap = {
@@ -1962,7 +2050,7 @@ const std::map<std::string, int> MapNames::VectorTypeMigratedTypeSizeMap{
     {"ulonglong4", 32}, {"float1", 4},      {"float2", 8},
     {"float3", 16},     {"float4", 16},     {"double1", 8},
     {"double2", 16},    {"double3", 32},    {"double4", 32},
-    {"__half", 2},      {"__half2", 4}};
+    {"__half", 2},      {"__half2", 4},     {"__half_raw", 2}};
 
 const std::map<clang::dpct::KernelArgType, int> MapNames::KernelArgTypeSizeMap{
     {clang::dpct::KernelArgType::KAT_Stream, 208},
@@ -4265,7 +4353,8 @@ const MapNames::MapTy MapNames::MacrosMap{
     {"__CUDACC__", "SYCL_LANGUAGE_VERSION"},
     {"__DRIVER_TYPES_H__", "__DPCT_HPP__"},
     {"__CUDA_RUNTIME_H__", "__DPCT_HPP__"},
-    {"CUDART_VERSION", "SYCL_LANGUAGE_VERSION"},
+    {"CUDART_VERSION", "DPCT_COMPAT_RT_VERSION"},
+    {"__CUDART_API_VERSION", "DPCT_COMPAT_RT_VERSION"},
     {"CUBLAS_V2_H_", "MKL_SYCL_HPP"},
     {"__CUDA__", "SYCL_LANGUAGE_VERSION"},
     {"CUFFT_FORWARD", "-1"},
@@ -4324,8 +4413,8 @@ const MapNames::SetTy MapNames::ThrustFileExcludeSet{
     "thrust/detail/pointer.inl",
     "thrust/detail/sequence.inl",
     "thrust/detail/sort.inl",
-    "thrust/detail/temporary_buffer.h",
-    "thrust/detail/vector_base.inl"};
+    "thrust/detail/temporary_buffer.h"
+    };
 
 // Texture names mapping.
 const MapNames::MapTy TextureRule::TextureMemberNames{
@@ -4391,15 +4480,12 @@ const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
 };
 
 std::map<std::string, bool> MigrationStatistics::MigrationTable{
-#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)   \
-  {#APINAME, VALUE},
-#define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
-                              TARGET, COMMENT)                                 \
-  {#OBJNAME "." #APINAME, VALUE},
-#include "APINames.inc"
-#undef ENTRY
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
   {#APINAME, VALUE},
+#define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME,        \
+                              APINAME, VALUE, FLAG, TARGET, COMMENT)           \
+  {#OBJNAME "::" #APINAME, VALUE},
+#include "APINames.inc"
 #include "APINames_CUB.inc"
 #include "APINames_NCCL.inc"
 #include "APINames_NVML.inc"
@@ -4525,7 +4611,9 @@ const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "shfl_up",
     "shfl_xor",
     "meta_group_rank",
-    "block_tile_memory"};
+    "block_tile_memory",
+    "thread_index",
+    "group_index"};
 
 const std::unordered_map<std::string, HelperFeatureEnum>
     MapNames::PropToGetFeatureMap = {

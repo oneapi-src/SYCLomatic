@@ -458,6 +458,14 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
             Qualifier->getAsNamespace()->getBeginLoc())) {
       CTSName = getNestedNameSpecifierString(Qualifier) +
                 DRE->getNameInfo().getAsString();
+    } else if (Qualifier->getAsNamespace() &&
+               Qualifier->getAsNamespace()->getName() == "wmma" &&
+               dpct::DpctGlobalInfo::isInCudaPath(
+                   Qualifier->getAsNamespace()->getBeginLoc())) {
+      if (const auto *NSD =
+              dyn_cast<NamespaceDecl>(Qualifier->getAsNamespace())) {
+        CTSName = getNameSpace(NSD) + "::" + DRE->getNameInfo().getAsString();
+      }
     } else if (!IsNamespaceOrAlias || !IsSpecicalAPI) {
       CTSName = getNestedNameSpecifierString(Qualifier) +
                 DRE->getNameInfo().getAsString();
@@ -583,7 +591,6 @@ void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
 }
 
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
-
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
     std::string ArgsString;
     llvm::raw_string_ostream OS(ArgsString);
@@ -682,27 +689,21 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       {"__cuda_builtin_blockDim_t", "get_local_range"},
       {"__cuda_builtin_threadIdx_t", "get_local_id"},
   };
-
   auto ItemItr = NdItemMap.find(BaseType);
   if (ItemItr != NdItemMap.end()) {
     if (MapNames::replaceName(NdItemMemberMap, FieldName)) {
-      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
-        auto TargetExpr = getTargetExpr();
-        auto FD = getImmediateOuterFuncDecl(TargetExpr);
-        auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
-        if (ME->getMemberDecl()->getName().str() == "__fetch_builtin_x") {
-          auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
-          DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
-          addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
-                                         ItemItr->second, "({{NEEDREPLACER",
-                                         std::to_string(Index), "}})"));
-          DpctGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
-        } else {
-          DFI->getVarMap().Dim = 3;
-          addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
-                                         ItemItr->second, "(", FieldName, ")"));
-        }
+      auto TargetExpr = getTargetExpr();
+      auto FD = getImmediateOuterFuncDecl(TargetExpr);
+      auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
+      if (ME->getMemberDecl()->getName().str() == "__fetch_builtin_x") {
+        auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
+        DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
+        addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
+                                       ItemItr->second, "({{NEEDREPLACER",
+                                       std::to_string(Index), "}})"));
+        DpctGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
       } else {
+        DFI->getVarMap().Dim = 3;
         addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
                                        ItemItr->second, "(", FieldName, ")"));
       }
@@ -739,7 +740,6 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
     }
   } else if (MapNames::SupportedVectorTypes.find(BaseType) !=
              MapNames::SupportedVectorTypes.end()) {
-
     // Skip user-defined type.
     if (isTypeInAnalysisScope(ME->getBase()->getType().getTypePtr()))
       return;
@@ -751,7 +751,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       Begin = ME->getMemberLoc();
       isImplicit = true;
     }
-    if (*BaseType.rbegin() == '1') {
+    if (*BaseType.rbegin() == '1' || BaseType == "__half_raw") {
       if (isImplicit) {
         // "x" is migrated to "*this".
         addReplacement(Begin, ME->getEndLoc(), "*this");
@@ -853,6 +853,7 @@ void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
 // Precondition: CE != nullptr
 void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   // To set the RefString
+  RefString.clear();
   dispatch(CE->getCallee());
   // If the callee requires rewrite, get the rewriter
   if (!CallExprRewriterFactoryBase::RewriterMap)
@@ -1045,7 +1046,9 @@ void ExprAnalysis::analyzeExpr(const DeclStmt *DS) {
   }
 }
 
-void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
+void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
+                               const DependentNameTypeLoc *DNTL,
+                               const NestedNameSpecifierLoc *NNSL) {
   SourceRange SR = TL.getSourceRange();
   std::string TyName;
 
@@ -1061,6 +1064,12 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
         SR = TL.getSourceRange();
     }
   }
+  if (DNTL) {
+    SR.setBegin(DNTL->getQualifierLoc().getBeginLoc());
+  }
+  if (NNSL) {
+    SR.setBegin(NNSL->getBeginLoc());
+  }
 
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
   switch (TL.getTypeLocClass()) {
@@ -1072,11 +1081,9 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
   case TypeLoc::Pointer:
     return analyzeType(TYPELOC_CAST(PointerTypeLoc).getPointeeLoc(), CSCE);
   case TypeLoc::Typedef:
-    TyName +=
-        TYPELOC_CAST(TypedefTypeLoc).getTypedefNameDecl()->getName().str();
-    break;
   case TypeLoc::Builtin:
   case TypeLoc::Using:
+  case TypeLoc::Elaborated:
   case TypeLoc::Record: {
     TyName = DpctGlobalInfo::getTypeName(TL.getType());
     auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TyName);
@@ -1111,11 +1118,24 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
       auto Result = Rewriter->rewrite();
       if (Result.has_value()) {
         auto ResultStr = Result.value();
-        // Since Parser splits ">>" or ">>>" to ">" when parse template
-        // the SR.getEnd location might be a "scratch space" location.
-        // Therfore, need to apply SM.getExpansionLoc before call addReplacement.
-        addReplacement(SM.getExpansionLoc(SR.getBegin()),
-                       SM.getExpansionLoc(SR.getEnd()), CSCE, ResultStr);
+        if (SM.isWrittenInScratchSpace(SR.getEnd())) {
+          // Since Parser splits ">>" or ">>>" to ">" when parse template
+          // the SR.getEnd location might be a "scratch space" location.
+          // Therfore, need to apply SM.getExpansionLoc before call
+          // addReplacement.
+          addReplacement(SM.getExpansionLoc(SR.getBegin()),
+                         SM.getExpansionLoc(SR.getEnd()), CSCE, ResultStr);
+        } else {
+          // To handle case like:
+          // #define TM thrust::multiplies<int>()
+          // thrust::adjacent_difference(A.begin(), A.end(), R.begin(), TM);
+          // to:
+          // #define TM std::multiplies<int>()
+          // oneapi::dpl::adjacent_difference(..., TM);
+          auto DefRange = getDefinitionRange(SR.getBegin(), SR.getEnd());
+          addReplacement(DefRange.getBegin(), DefRange.getEnd(), CSCE,
+                         ResultStr);
+        }
         return;
       }
     }
@@ -1836,6 +1856,7 @@ void KernelConfigAnalysis::dispatch(const Stmt *Expression) {
     ANALYZE_EXPR(CStyleCastExpr)
     ANALYZE_EXPR(CXXFunctionalCastExpr)
     ANALYZE_EXPR(CXXStaticCastExpr)
+    ANALYZE_EXPR(DeclRefExpr)
   default:
     return ArgumentAnalysis::dispatch(Expression);
   }
@@ -2002,6 +2023,42 @@ void KernelConfigAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Ctor) {
     }
   }
   return ArgumentAnalysis::analyzeExpr(Ctor);
+}
+
+void KernelConfigAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
+  if (!IsDim3Config)
+    return ArgumentAnalysis::analyzeExpr(DRE);
+
+  using namespace ast_matchers;
+  const VarDecl *VD = dyn_cast_or_null<VarDecl>(DRE->getDecl());
+  if (!VD)
+    return ArgumentAnalysis::analyzeExpr(DRE);
+
+  // VD must be local variable and must have the same context with
+  // KernelCallExpr
+  if (VD->getKind() != Decl::Var)
+    return ArgumentAnalysis::analyzeExpr(DRE);
+  const auto *FD = dyn_cast_or_null<FunctionDecl>(VD->getDeclContext());
+  if (!FD)
+    return ArgumentAnalysis::analyzeExpr(DRE);
+  const Stmt *VDContext = FD->getBody();
+
+  // VD's DRE should be only used once (as the config arg) in VDContext
+  auto DREMatcher = findAll(declRefExpr(isDeclSameAs(VD)).bind("DRE"));
+  auto MatchedResults =
+      match(DREMatcher, *VDContext, DpctGlobalInfo::getContext());
+  if (MatchedResults.size() != 1)
+    return ArgumentAnalysis::analyzeExpr(DRE);
+
+  if (!VD->hasInit())
+    return ArgumentAnalysis::analyzeExpr(DRE);
+
+  dispatch(VD->getInit());
+
+  if (IsTryToUseOneDimension) {
+    // Insert member access expr at the end of DRE
+    addReplacement(getExprLength(), 0, ".get(2)");
+  }
 }
 
 void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,

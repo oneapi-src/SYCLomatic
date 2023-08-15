@@ -310,6 +310,10 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultEnabl
              DPCT_OPT_ENUM("device_info",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo),
                                      "Use the Intel extensions for device information if supported by the compiler and the backend.",
+                                     false),
+             DPCT_OPT_ENUM("bfloat16",
+                                     int(DPCPPExtensionsDefaultEnabled::ExtDE_BFloat16),
+                                     "Use the SYCL extensions for bfloat16.",
                                      false)
            ),
            llvm::cl::desc("A comma-separated list of extensions not to be used in migrated code.\n"
@@ -365,6 +369,9 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<ExperimentalFeatures>), Exp
         false),
              DPCT_OPT_ENUM("matrix", int(ExperimentalFeatures::Exp_Matrix),
         "Experimental extension that allows use of matrix extension like class joint_matrix.\n",
+        false),
+             DPCT_OPT_ENUM("bfloat16_math_functions", int(ExperimentalFeatures::Exp_BFloat16Math),
+        "Experimental extension that allows use of bfloat16 math functions.\n",
         false)
            ),
            llvm::cl::desc("Comma separated list of experimental features to be used in migrated "
