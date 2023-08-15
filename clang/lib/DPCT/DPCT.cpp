@@ -734,9 +734,10 @@ int runDPCT(int argc, const char **argv) {
   std::vector<std::string> SourcePathList;
   if (QueryAPIMapping.getNumOccurrences()) {
     // Set a virtual file for --query-api-mapping.
-    llvm::SmallString<32> SysTempDir;
-    llvm::sys::path::system_temp_directory(true, SysTempDir);
-    SourcePathList.emplace_back(SysTempDir.str().str() + "/temp.cu");
+    llvm::SmallString<16> VirtFile;
+    llvm::sys::path::system_temp_directory(/*ErasedOnReboot=*/true, VirtFile);
+    llvm::sys::path::append(VirtFile, "temp.cu");
+    SourcePathList.emplace_back(VirtFile);
     DpctGlobalInfo::setIsQueryAPIMapping(true);
   } else {
     SourcePathList = OptParser->getSourcePathList();
@@ -789,8 +790,15 @@ int runDPCT(int argc, const char **argv) {
     llvm::outs() << "Is migrated to" << OptionMsg << ":";
 
     NoIncrementalMigration = true;
+    // Need set a virtual path and it will used by AnalysisScope.
     InRoot = llvm::sys::path::parent_path(SourcePathList[0]).str();
-    OutRoot = llvm::sys::path::parent_path(SourcePathList[0]).str();
+  } else {
+    IsUsingDefaultOutRoot = OutRoot.empty();
+    if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
+      ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
+      dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
+    }
+    dpct::DpctGlobalInfo::setOutRoot(OutRoot);
   }
 
   if (GenBuildScript) {
@@ -810,13 +818,6 @@ int runDPCT(int argc, const char **argv) {
   DpctInstallPath = getInstallPath(Tool, argv[0]);
 
   ValidateInputDirectory(Tool, InRoot);
-
-  IsUsingDefaultOutRoot = OutRoot.empty();
-  if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
-    ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
-    dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
-  }
-  dpct::DpctGlobalInfo::setOutRoot(OutRoot);
 
   // AnalysisScope defaults to the value of InRoot
   // InRoot must be the same as or child of AnalysisScope
