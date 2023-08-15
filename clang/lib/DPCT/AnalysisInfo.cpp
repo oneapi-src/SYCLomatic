@@ -87,7 +87,7 @@ std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
 std::map<std::string, std::string>
     DpctGlobalInfo::FunctionCallInMacroMigrateRecord;
 std::map<std::string, SourceLocation> DpctGlobalInfo::EndOfEmptyMacros;
-std::map<std::string, SourceLocation> DpctGlobalInfo::BeginOfEmptyMacros;
+std::map<std::string, unsigned int> DpctGlobalInfo::BeginOfEmptyMacros;
 std::map<std::string, bool> DpctGlobalInfo::MacroDefines;
 std::set<std::string> DpctGlobalInfo::IncludingFileSet;
 std::set<std::string> DpctGlobalInfo::FileSetInCompiationDB;

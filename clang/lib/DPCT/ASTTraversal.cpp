@@ -371,7 +371,9 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
       dpct::DpctGlobalInfo::getEndOfEmptyMacros()[getHashStrFromLoc(
           Tok.getLocation())] = Range.getBegin();
       dpct::DpctGlobalInfo::getBeginOfEmptyMacros()[getHashStrFromLoc(
-          Range.getBegin())] = Range.getEnd();
+          Range.getBegin())] =
+          dpct::DpctGlobalInfo::getLocInfo(Range.getEnd()).second -
+          dpct::DpctGlobalInfo::getLocInfo(Range.getBegin()).second;
     }
   }
 
