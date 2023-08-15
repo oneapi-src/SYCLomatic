@@ -77,6 +77,26 @@ add_custom_target(dpct_helper_headers_and_inc
   DEPENDS ${PROCESS_FILES_OUTPUT}
   )
 
+# Handle API mapping cases header
+set(API_MAPPING_REGISTER_FOLDER ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/)
+file(GLOB SRC_FILES ../../examples/DPCT/*/*.cu)
+file(WRITE ${API_MAPPING_REGISTER_FOLDER}APIMappingRegister.def "")
+set(API_NAME_SET)
+foreach(FILE ${SRC_FILES})
+  file(READ ${FILE} FILE_STR)
+  string(REGEX REPLACE ".*/(.*).cu$" "\\1" API_NAME ${FILE})
+  list(FIND API_NAME_SET ${API_NAME} INDEX)
+  if(${INDEX} GREATER_EQUAL 0)
+    message(FATAL_ERROR "The API Mapping cases name " ${API_NAME} " is duplicated.")
+  endif()
+  list(APPEND API_NAME_SET ${API_NAME})
+  file(APPEND ${API_MAPPING_REGISTER_FOLDER}APIMappingRegister.def
+  "registerEntry(\"" "${API_NAME}" "\",\nR\"(" "${FILE_STR}" ")\");\n")
+endforeach()
+include_directories(
+  ${API_MAPPING_REGISTER_FOLDER}
+  )
+
 include_directories(
   # For the CUDA-Toolchain and its CudaInstallationDetector
   ../../../clang/lib/Driver/
@@ -152,9 +172,11 @@ add_clang_library(DPCT
   ThrustAPIMigration.cpp
   GenHelperFunction.cpp
   WMMAAPIMigration.cpp
+  OptimizeMigration.cpp
 
   DEPENDS
   ClangDriverOptions
+  DeviceConfigFile
   dpct_helper_headers_and_inc
   genconfusable
 

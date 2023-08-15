@@ -3560,6 +3560,21 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
   if (!CE)
     return false;
 
+  if (auto Direction = dyn_cast<DeclRefExpr>(CE->getArg(3))) {
+    auto CpyKind = Direction->getDecl()->getName();
+    if (CpyKind == "cudaMemcpyDeviceToDevice") {
+      return true;
+    }
+    if (CpyKind == "cudaMemcpyHostToDevice" &&
+        dpct::DpctGlobalInfo::isOptimizeMigration()) {
+      auto LocInfo = dpct::DpctGlobalInfo::getLocInfo(CE->getBeginLoc());
+      clang::dpct::DiagnosticsUtils::report(
+          LocInfo.first, LocInfo.second, clang::dpct::Diagnostics::WAIT_REMOVE,
+          true, false);
+      return true;
+    }
+  }
+
   const clang::CompoundStmt *CS = getBodyofAncestorFCStmt(CE);
   if (!CS) {
     auto FD = clang::dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(CE);
@@ -3628,6 +3643,7 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
       }
     }
   }
+
   return false;
 }
 /// Check if \p E contains a sizeof(Type) sub-expression
@@ -3735,7 +3751,7 @@ bool maybeDependentCubType(const clang::TypeSourceInfo *TInfo) {
   //  }
 
   // Handle 1
-  auto isCubRecordType = [&](const Type *T) -> bool {
+  auto isCubRecordType = [&](const clang::Type *T) -> bool {
     if (auto *SpecType = dyn_cast<TemplateSpecializationType>(T)) {
       auto *TemplateDecl = SpecType->getTemplateName().getAsTemplateDecl();
       auto *Ctx = TemplateDecl->getDeclContext();
@@ -4099,33 +4115,33 @@ getImmediateOuterLambdaExpr(const clang::FunctionDecl *FuncDecl) {
 bool typeIsPostfix(clang::QualType QT) {
   using namespace clang;
   while (true) {
-    const Type* T = QT.getTypePtr();
+    const auto *const T = QT.getTypePtr();
     switch (T->getTypeClass()) {
     default:
       return false;
-    case Type::Pointer:
-      QT = cast<PointerType>(T)->getPointeeType();
+    case clang::Type::Pointer:
+      QT = cast<clang::PointerType>(T)->getPointeeType();
       break;
-    case Type::BlockPointer:
+    case clang::Type::BlockPointer:
       QT = cast<BlockPointerType>(T)->getPointeeType();
       break;
-    case Type::MemberPointer:
+    case clang::Type::MemberPointer:
       QT = cast<MemberPointerType>(T)->getPointeeType();
       break;
-    case Type::LValueReference:
-    case Type::RValueReference:
+    case clang::Type::LValueReference:
+    case clang::Type::RValueReference:
       QT = cast<ReferenceType>(T)->getPointeeType();
       break;
-    case Type::PackExpansion:
+    case clang::Type::PackExpansion:
       QT = cast<PackExpansionType>(T)->getPattern();
       break;
-    case Type::Paren:
-    case Type::ConstantArray:
-    case Type::DependentSizedArray:
-    case Type::IncompleteArray:
-    case Type::VariableArray:
-    case Type::FunctionProto:
-    case Type::FunctionNoProto:
+    case clang::Type::Paren:
+    case clang::Type::ConstantArray:
+    case clang::Type::DependentSizedArray:
+    case clang::Type::IncompleteArray:
+    case clang::Type::VariableArray:
+    case clang::Type::FunctionProto:
+    case clang::Type::FunctionNoProto:
       return true;
     }
   }
@@ -4292,9 +4308,14 @@ std::string getBaseTypeRemoveTemplateArguments(const clang::MemberExpr *ME) {
     QT = QT->getPointeeType();
   const auto CT = QT.getCanonicalType();
   if (const auto RT = dyn_cast<clang::RecordType>(CT.getTypePtr())) {
+    if(const clang::CXXRecordDecl* RD = RT->getAsCXXRecordDecl()) {
+      if(RD->getIdentifier() == nullptr) {
+        return dpct::DpctGlobalInfo::getUnqualifiedTypeName(QT);
+      }
+    }
     return RT->getDecl()->getQualifiedNameAsString();
   } else {
-    return dpct::DpctGlobalInfo::getUnqualifiedTypeName(CT);
+    return dpct::DpctGlobalInfo::getUnqualifiedTypeName(QT);
   }
 }
 
@@ -4386,7 +4407,6 @@ std::string getNameSpace(const NamespaceDecl *NSD) {
     return NameSpace + "::" + NSD->getName().str();
   else if (NameSpace.empty() && !NSD->isInlineNamespace())
     return NSD->getName().str();
-
   return NameSpace;
 }
 

@@ -11,7 +11,7 @@
 #include <sycl/ext/oneapi/sub_group_mask.hpp>
 
 namespace sycl {
-__SYCL_INLINE_VER_NAMESPACE(_V1) {
+inline namespace _V1 {
 namespace ext::oneapi::experimental {
 
 template <typename ParentGroup> class tangle_group;
@@ -119,8 +119,8 @@ protected:
 
   friend tangle_group<ParentGroup> get_tangle_group<ParentGroup>(ParentGroup);
 
-  friend uint32_t sycl::detail::IdToMaskPosition<tangle_group<ParentGroup>>(
-      tangle_group<ParentGroup> Group, uint32_t Id);
+  friend sub_group_mask sycl::detail::GetMask<tangle_group<ParentGroup>>(
+      tangle_group<ParentGroup> Group);
 };
 
 template <typename Group>
@@ -156,5 +156,5 @@ template <typename ParentGroup>
 struct is_group<ext::oneapi::experimental::tangle_group<ParentGroup>>
     : std::true_type {};
 
-} // __SYCL_INLINE_VER_NAMESPACE(_V1)
+} // namespace _V1
 } // namespace sycl

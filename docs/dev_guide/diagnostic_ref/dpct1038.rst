@@ -24,3 +24,64 @@ Suggestions to Fix
 ------------------
 
 Review the kernel call inside the macro definition and adjust it manually, if needed.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+    __global__ void kernel(int c, int d) {}
+    
+    void foo() {
+    #define KERNEL_LAUNCH(NAME, a, b, c, d) NAME<<<a, b, 0>>>(c, d);
+      KERNEL_LAUNCH(kernel, 3, 2, 1, 0)
+    }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+    void kernel(int c, int d) {}
+    
+    void foo() {
+    #define KERNEL_LAUNCH(NAME, a, b, c, d)                                        \
+      dpct::get_default_queue().submit([&](sycl::handler &cgh) {                   \
+        auto c_ct0 = c;                                                            \
+        auto d_ct1 = d;                                                            \
+                                                                                   \
+        cgh.parallel_for(                                                          \
+            sycl::nd_range<3>(sycl::range<3>(1, 1, a) * sycl::range<3>(1, 1, b),   \
+                              sycl::range<3>(1, 1, b)),                            \
+            [=](sycl::nd_item<3> item_ct1) { kernel(c_ct0, d_ct1); });             \
+      });
+      /*
+      DPCT1038:0: When the kernel function name is used as a macro argument, the
+      migration result may be incorrect. You need to verify the definition of the
+      macro.
+      */
+      KERNEL_LAUNCH(kernel, 3, 2, 1, 0)
+    }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :emphasize-lines: 12
+   :linenos:
+
+    void kernel(int c, int d) {}
+    
+    void foo() {
+    #define KERNEL_LAUNCH(NAME, a, b, c, d)                                        \
+      dpct::get_default_queue().submit([&](sycl::handler &cgh) {                   \
+        auto c_ct0 = c;                                                            \
+        auto d_ct1 = d;                                                            \
+                                                                                   \
+        cgh.parallel_for(                                                          \
+            sycl::nd_range<3>(sycl::range<3>(1, 1, a) * sycl::range<3>(1, 1, b),   \
+                              sycl::range<3>(1, 1, b)),                            \
+            [=](sycl::nd_item<3> item_ct1) { NAME(c_ct0, d_ct1); });               \
+      });
+      KERNEL_LAUNCH(kernel, 3, 2, 1, 0)
+    }
+

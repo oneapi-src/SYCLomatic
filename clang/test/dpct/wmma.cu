@@ -1,3 +1,4 @@
+// clang-format off
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
 // RUN: dpct --format-range=none --use-experimental-features=matrix -out-root %T/wmma %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
@@ -115,9 +116,9 @@ __global__ void simple_wmma_gemm(half *a, half *b, float *c, float *d, int m_ld,
                                    nvcuda::wmma::mem_row_major);
 
     // Store the output
-    // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_store(item_ct1.get_sub_group(), c_frag, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, float>(d + cCol + cRow * ldc), ldc, sycl::ext::oneapi::experimental::matrix::layout::row_major);
+    // CHECK: sycl::ext::oneapi::experimental::matrix::joint_matrix_store(item_ct1.get_sub_group(), c_frag, sycl::address_space_cast<sycl::access::address_space::generic_space, sycl::access::decorated::no, float>(d + cCol + cRow * ldc), ldc, sycl::ext::oneapi::experimental::matrix::layout::col_major);
     nvcuda::wmma::store_matrix_sync(d + cCol + cRow * ldc, c_frag, ldc,
-                                    nvcuda::wmma::mem_row_major);
+                                    nvcuda::wmma::mem_col_major);
   }
 }
 
@@ -189,3 +190,4 @@ int main() {
 
   return 0;
 }
+// clang-format on
