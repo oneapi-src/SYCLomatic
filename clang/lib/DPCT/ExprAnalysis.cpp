@@ -856,6 +856,9 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   // If the callee requires rewrite, get the rewriter
   if (!CallExprRewriterFactoryBase::RewriterMap)
     return;
+
+
+  printf("RefString: [%s]\n", RefString.c_str());
   auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(RefString);
   if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
     for (unsigned I = 0, E = CE->getNumArgs(); I != E; ++I) {

@@ -36,8 +36,10 @@ void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(typedefDecl(isExpandedFromMacro("THRUST_STATIC_ASSERT"))
                     .bind("THRUST_STATIC_ASSERT"),
                 this);
-  MF.addMatcher(cxxTemporaryObjectExpr(
-                    hasType(namedDecl(hasName("thrust::system::system_error"))))
+
+  MF.addMatcher(cxxConstructExpr(hasType(namedDecl(hasAnyName(
+                                           "thrust::system::system_error",
+                                           "thrust::system::error_code"))))
                     .bind("THRUST_SYSTEM_ERROR"),
                 this);
 }
@@ -55,11 +57,12 @@ void ThrustAPIRule::runRule(
     const SourceLocation BeginLoc = SM.getExpansionLoc(D->getBeginLoc());
     emplaceTransformation(new ReplaceText(
         BeginLoc, std::string("THRUST_STATIC_ASSERT").size(), "static_assert"));
-  } else if (const CXXTemporaryObjectExpr *CXXTempObj =
-                 getNodeAsType<CXXTemporaryObjectExpr>(Result,
+  } else if (const CXXConstructExpr *CCE =
+                 getNodeAsType<CXXConstructExpr>(Result,
                                                        "THRUST_SYSTEM_ERROR")) {
+    printf("##### [%s]\n", CCE->getBeginLoc().printToString(dpct::DpctGlobalInfo::getSourceManager()).data());
     dpct::ExprAnalysis EA;
-    EA.analyze(CXXTempObj);
+    EA.analyze(CCE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
     return;

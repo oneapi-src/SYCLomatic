@@ -824,6 +824,9 @@ CALL_FACTORY_ENTRY("thrust::cuda_category", CALL("std::generic_category"))
 // thrust::system::cuda_category
 CALL_FACTORY_ENTRY("thrust::system::cuda_category", CALL("std::generic_category"))
 
+// thrust::system::make_error_code
+CALL_FACTORY_ENTRY("thrust::system::make_error_code", CALL("std::make_error_code", ARG(0)))
+
 // thrust::equal_range
 thrustFactory("thrust::equal_range",
               {{4,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::device_ext},
