@@ -54,6 +54,7 @@ UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
 clang::CudaVersion DpctGlobalInfo::SDKVersion = clang::CudaVersion::UNKNOWN;
 bool DpctGlobalInfo::NeedDpctDeviceExt = false;
 bool DpctGlobalInfo::IsIncMigration = true;
+bool DpctGlobalInfo::IsQueryAPIMapping = false;
 unsigned int DpctGlobalInfo::AssumedNDRangeDim = 3;
 std::unordered_set<std::string> DpctGlobalInfo::PrecAndDomPairSet;
 format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
@@ -113,7 +114,6 @@ std::unordered_map<std::string, DpctGlobalInfo::TempVariableDeclCounter>
     DpctGlobalInfo::TempVariableDeclCounterMap;
 std::unordered_map<std::string, int> DpctGlobalInfo::TempVariableHandledMap;
 bool DpctGlobalInfo::UsingDRYPattern = true;
-bool DpctGlobalInfo::UsingGenericSpace = true;
 unsigned int DpctGlobalInfo::CudaKernelDimDFIIndex = 1;
 std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CudaKernelDimDFIMap;
@@ -2288,7 +2288,7 @@ void deduceTemplateArgumentFromType(std::vector<TemplateArgumentInfo> &TAIList,
       setTypeTemplateArgument(
           TAIList, PARM_TYPE_CAST(TemplateTypeParmType)->getIndex(), TL);
     } else {
-      ArgType.removeLocalCVRQualifiers(ParmType.getCVRQualifiers());
+      ArgType.removeLocalFastQualifiers(ParmType.getCVRQualifiers());
       setTypeTemplateArgument(
           TAIList, PARM_TYPE_CAST(TemplateTypeParmType)->getIndex(), ArgType);
     }
@@ -2724,6 +2724,11 @@ void CallFunctionExpr::buildInfo() {
   if (!DefFilePath.empty() && DefFilePath != getFilePath() &&
       !isIncludedFile(getFilePath(), DefFilePath) && !FuncInfo->isLambda()) {
     FuncInfo->setNeedSyclExternMacro();
+  }
+
+  if (DpctGlobalInfo::isOptimizeMigration() && !FuncInfo->isInlined() &&
+      !FuncInfo->IsSyclExternMacroNeeded()) {
+    FuncInfo->setAlwaysInlineDevFunc();
   }
 
   FuncInfo->buildInfo();
