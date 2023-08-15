@@ -265,7 +265,7 @@ void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
 void ThrustTypeRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  if (auto TL = getNodeAsType<TypeLoc>(Result, "thrustTypeLoc")) {
+  if (auto TL = getAssistNodeAsType<TypeLoc>(Result, "thrustTypeLoc")) {
     ExprAnalysis EA;
     auto DNTL = DpctGlobalInfo::findAncestor<DependentNameTypeLoc>(TL);
     auto NNSL = DpctGlobalInfo::findAncestor<NestedNameSpecifierLoc>(TL);
