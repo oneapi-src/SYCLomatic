@@ -582,6 +582,7 @@ void ExprAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
 }
 
 void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
+  printf("ExprAnalysis::analyzeExpr CXXTemporaryObjectExpr: [%s]\n", Temp->getConstructor()->getDeclName().getAsString().c_str());
   if (Temp->getConstructor()->getDeclName().getAsString() != "dim3") {
     analyzeType(Temp->getTypeSourceInfo()->getTypeLoc());
   }
