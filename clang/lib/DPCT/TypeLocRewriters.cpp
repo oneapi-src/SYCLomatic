@@ -91,35 +91,37 @@ public:
 };
 
 inline std::function<bool(const TypeLoc TL)>
-checkTemplateArgSpelling(size_t index, std::string str) {
+checkTemplateArgSpelling(size_t Index, std::string Str) {
+  auto getQualtifiedNameStr = [=](const NamedDecl *NL) -> std::string {
+    if (const auto *NSD = dyn_cast<NamespaceDecl>(NL->getDeclContext())) {
+      std::string TypeQualifiedString =
+          getNameSpace(NSD) + "::" + NL->getNameAsString();
+      return TypeQualifiedString;
+    }
+    return "";
+  };
+
   return [=](const TypeLoc TL) -> bool {
     if (const auto &TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
       if (const TemplateSpecializationType *TST =
               dyn_cast<TemplateSpecializationType>(TSTL.getTypePtr())) {
         if (TSTL.getNumArgs() > 0) {
-          const TemplateArgument &arg = TST->template_arguments()[index];
-          if (arg.getKind() == TemplateArgument::ArgKind::Type) {
-            const Type *type = arg.getAsType().getTypePtrOrNull();
-            if (type != nullptr)
-              if (const CXXRecordDecl *RD =
-                      dyn_cast_or_null<CXXRecordDecl>(type->getAsTagDecl())) {
-                if (const auto *NSD =
-                        dyn_cast<NamespaceDecl>(RD->getDeclContext())) {
-                  std::string typeQualifiedString =
-                      getNameSpace(NSD) + "::" + RD->getNameAsString();
-                  return typeQualifiedString == str;
-                }
-              }
-            return arg.getAsType().getAsString() == str;
-          } else if (arg.getKind() == TemplateArgument::ArgKind::Declaration) {
-            const ValueDecl *decl = arg.getAsDecl();
-            return decl->getNameAsString() == str;
-          } else if (arg.getKind() == TemplateArgument::ArgKind::Integral) {
-            const llvm::APSInt &value = arg.getAsIntegral();
-            return std::to_string(value.getExtValue()) == str;
-          } else if (arg.getKind() == TemplateArgument::ArgKind::Expression) {
-            const Expr *expr = arg.getAsExpr();
-            return getStmtSpelling(expr) == str;
+          const TemplateArgument &TARG = TST->template_arguments()[Index];
+          if (TARG.getKind() == TemplateArgument::ArgKind::Type) {
+            if (!TARG.getAsType().isNull()) {
+              return getQualtifiedNameStr(TARG.getAsType()->getAsTagDecl()) ==
+                     Str;
+            }
+            return TARG.getAsType().getAsString() == Str;
+          } else if (TARG.getKind() == TemplateArgument::ArgKind::Declaration) {
+            const ValueDecl *DECL = TARG.getAsDecl();
+            return DECL->getNameAsString() == Str;
+          } else if (TARG.getKind() == TemplateArgument::ArgKind::Integral) {
+            const llvm::APSInt &VAL = TARG.getAsIntegral();
+            return std::to_string(VAL.getExtValue()) == Str;
+          } else if (TARG.getKind() == TemplateArgument::ArgKind::Expression) {
+            const Expr *EXPR = TARG.getAsExpr();
+            return getStmtSpelling(EXPR) == Str;
           }
         }
       }
