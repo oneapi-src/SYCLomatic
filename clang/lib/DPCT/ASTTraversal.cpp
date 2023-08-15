@@ -12220,6 +12220,8 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
                            ->getType()
                            .getCanonicalType();
     ND = getNamedDecl(ObjType.getTypePtr());
+    if (!ND)
+      return;
     ObjName = ND->getNameAsString();
   } else {
     // Match the static member function call, like: A a; a.staticCall();
