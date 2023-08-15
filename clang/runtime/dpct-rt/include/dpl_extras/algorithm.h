@@ -1450,28 +1450,23 @@ inline void segmented_sort_pairs_by_two_pair_sorts(
 }
 
 template <typename _T1, typename _T2>
-constexpr inline auto __ceiling_div(const _T1& __number, const _T2& __divisor) {
+constexpr inline auto __ceiling_div(const _T1 &__number, const _T2 &__divisor) {
   return (__number - 1) / __divisor + 1;
 }
 
-template <typename FunctorInner, typename FunctorOuter>
-struct compose_functor{
-  compose_functor(FunctorInner in, FunctorOuter out): _in(in), _out(out){}
-  template<typename T>
-  T operator()(const T& i) const{
-    return _out(_in(i));
-  }
+template <typename FunctorInner, typename FunctorOuter> struct compose_functor {
+  compose_functor(FunctorInner in, FunctorOuter out) : _in(in), _out(out) {}
+  template <typename T> T operator()(const T &i) const { return _out(_in(i)); }
   FunctorInner _in;
   FunctorOuter _out;
 };
 
-template <typename OffsetT>
-struct roi_2d_index{
-  roi_2d_index(const OffsetT& num_cols, const OffsetT&  num_rows, const ::std::size_t& row_stride) : _num_cols(num_cols), _num_rows(num_rows), _row_stride(row_stride)
-  {}
+template <typename OffsetT> struct roi_2d_index {
+  roi_2d_index(const OffsetT &num_cols, const OffsetT &num_rows,
+               const ::std::size_t &row_stride)
+      : _num_cols(num_cols), _num_rows(num_rows), _row_stride(row_stride) {}
 
-  template <typename Index>
-  Index operator()(const Index& i) const{
+  template <typename Index> Index operator()(const Index &i) const {
     return _row_stride * (i / _num_cols) + (i % _num_cols);
   }
 
@@ -1480,21 +1475,18 @@ struct roi_2d_index{
   ::std::size_t _row_stride;
 };
 
-template <typename OffsetT>
-struct interleaved_select_channel{
-  interleaved_select_channel(const OffsetT& total_channels, const OffsetT&  active_channel) : _total_channels(total_channels), _active_channel(active_channel)
-  {}
+template <typename OffsetT> struct interleaved_select_channel {
+  interleaved_select_channel(const OffsetT &total_channels,
+                             const OffsetT &active_channel)
+      : _total_channels(total_channels), _active_channel(active_channel) {}
 
-  template <typename Index>
-  Index operator()(const Index& i) const{
+  template <typename Index> Index operator()(const Index &i) const {
     return i * _total_channels + _active_channel;
   }
 
   OffsetT _total_channels;
   OffsetT _active_channel;
 };
-
-
 
 template <typename _T1, bool _IsFloatingPoint>
 struct __evenly_divided_binhash_impl {};
@@ -1546,16 +1538,19 @@ template <typename _ForwardIterator> struct __custom_range_binhash {
 
 template <typename Policy, typename Iter2>
 inline auto __async_initialize_bins(Policy &&policy, Iter2 __histogram_first,
-                             Iter2 __histogram_last) {
+                                    Iter2 __histogram_last) {
   using __histo_value_type = typename std::iterator_traits<Iter2>::value_type;
   return oneapi::dpl::experimental::fill_async(
       std::forward<Policy>(policy), __histogram_first, __histogram_last,
       __histo_value_type(0));
 }
 
-template <typename _HistAccessor, typename _OffsetT, typename _Size, typename _SelfItem>
-inline void __clear_wglocal_histograms(const _HistAccessor& local_histogram, const _OffsetT& offset, const _Size& num_bins,
-                                const _SelfItem& self_item) {
+template <typename _HistAccessor, typename _OffsetT, typename _Size,
+          typename _SelfItem>
+inline void __clear_wglocal_histograms(const _HistAccessor &local_histogram,
+                                       const _OffsetT &offset,
+                                       const _Size &num_bins,
+                                       const _SelfItem &self_item) {
   ::std::uint32_t gSize = self_item.get_local_range()[0];
   ::std::uint32_t self_lidx = self_item.get_local_id(0);
   ::std::uint8_t factor = __ceiling_div(num_bins, gSize);
@@ -1574,29 +1569,26 @@ inline void __clear_wglocal_histograms(const _HistAccessor& local_histogram, con
   self_item.barrier(sycl::access::fence_space::local_space);
 }
 
-template <::std::uint16_t __work_group_size,
-          typename _BinIdxType,
-          sycl::access::address_space _AddressSpace,
-          typename _Iter1, typename _HistAccessor, typename _OffsetT,
-          typename _BinFunc, typename _SelfItem, typename _T>
-inline void __accum_local_atomics(const _Iter1& in_acc, const ::std::size_t &seg_start,
-                           const ::std::size_t &N,
-                           const ::std::uint32_t &self_lidx,
-                           const _HistAccessor& wg_local_histogram, const _OffsetT& offset,
-                           _BinFunc func, 
-                           const _SelfItem& self_item, const _T& iters_per_work_item) {
+template <::std::uint16_t __work_group_size, typename _BinIdxType,
+          sycl::access::address_space _AddressSpace, typename _Iter1,
+          typename _HistAccessor, typename _OffsetT, typename _BinFunc,
+          typename _SelfItem, typename _T>
+inline void __accum_local_atomics(
+    const _Iter1 &in_acc, const ::std::size_t &seg_start,
+    const ::std::size_t &N, const ::std::uint32_t &self_lidx,
+    const _HistAccessor &wg_local_histogram, const _OffsetT &offset,
+    _BinFunc func, const _SelfItem &self_item, const _T &iters_per_work_item) {
   using __histo_value_type = typename _HistAccessor::value_type;
   using __value_type = typename _Iter1::value_type;
 #pragma unroll
   for (::std::uint8_t idx = 0; idx < iters_per_work_item; idx++) {
     ::std::size_t __val_idx = seg_start + idx * __work_group_size + self_lidx;
-    if (__val_idx < N)
-    {
+    if (__val_idx < N) {
       const __value_type &x = in_acc[__val_idx];
       _BinIdxType c = func(x);
 
       sycl::atomic_ref<__histo_value_type, sycl::memory_order::relaxed,
-                     sycl::memory_scope::work_group, _AddressSpace>
+                       sycl::memory_scope::work_group, _AddressSpace>
           local_bin(wg_local_histogram[offset + c]);
       local_bin++;
     }
@@ -1604,11 +1596,13 @@ inline void __accum_local_atomics(const _Iter1& in_acc, const ::std::size_t &seg
   self_item.barrier(sycl::access::fence_space::local_space);
 }
 
-template <typename _HistAccessorIn, typename _OffsetT, typename _HistAccessorOut, typename _Size,
-          typename _SelfItem>
-inline void __reduce_out_histograms(const _HistAccessorIn& in_histogram, const _OffsetT& offset,
-                             const _HistAccessorOut& out_histogram, const _Size& num_bins,
-                             const _SelfItem& self_item) {
+template <typename _HistAccessorIn, typename _OffsetT,
+          typename _HistAccessorOut, typename _Size, typename _SelfItem>
+inline void __reduce_out_histograms(const _HistAccessorIn &in_histogram,
+                                    const _OffsetT &offset,
+                                    const _HistAccessorOut &out_histogram,
+                                    const _Size &num_bins,
+                                    const _SelfItem &self_item) {
   using __histo_value_type = typename _HistAccessorOut::value_type;
   ::std::uint32_t gSize = self_item.get_local_range()[0];
   ::std::uint32_t self_lidx = self_item.get_local_id(0);
@@ -1639,7 +1633,7 @@ template <::std::uint16_t __work_group_size,
           typename Iter2, typename _Size, typename _IdxHashFunc>
 inline Iter2 __histogram_general_registers_local_reduction(
     Policy &&policy, _Iter1 __first, _Iter1 __last, Iter2 __histogram_first,
-    const _Size& num_bins, _IdxHashFunc __func) {
+    const _Size &num_bins, _IdxHashFunc __func) {
   const ::std::size_t N = __last - __first;
   using __value_type = typename ::std::iterator_traits<_Iter1>::value_type;
   using __histo_value_type = typename ::std::iterator_traits<Iter2>::value_type;
@@ -1669,8 +1663,7 @@ inline Iter2 __histogram_general_registers_local_reduction(
           const ::std::size_t __seg_start =
               __work_group_size * __iters_per_work_item * __wgroup_idx;
 
-          __clear_wglocal_histograms(local_histogram, 0, num_bins,
-                                     __self_item);
+          __clear_wglocal_histograms(local_histogram, 0, num_bins, __self_item);
           // histogram bins take less storage with smaller data type
           __private_histogram_type histogram[__bins_per_work_item];
 #pragma unroll
@@ -1680,12 +1673,12 @@ inline Iter2 __histogram_general_registers_local_reduction(
 
 #pragma unroll
           for (::std::uint8_t idx = 0; idx < __iters_per_work_item; idx++) {
-            ::std::size_t __val_idx = __seg_start + idx * __work_group_size + __self_lidx;
-            if (__val_idx < N)
-            {
+            ::std::size_t __val_idx =
+                __seg_start + idx * __work_group_size + __self_lidx;
+            if (__val_idx < N) {
               const __value_type &x = macc[__val_idx];
               ::std::uint8_t c = __func(x);
-              histogram[c] ++;
+              histogram[c]++;
             }
           }
 #pragma unroll
@@ -1713,9 +1706,10 @@ template <::std::uint16_t __work_group_size,
           ::std::uint16_t __iters_per_work_item, typename Policy,
           typename _Iter1, typename Iter2, typename _Size,
           typename _IdxHashFunc>
-inline Iter2 __histogram_general_local_atomics(Policy &&policy, _Iter1 __first,
-                                        _Iter1 __last, Iter2 __histogram_first,
-                                        const _Size& num_bins, _IdxHashFunc __func) {
+inline Iter2
+__histogram_general_local_atomics(Policy &&policy, _Iter1 __first,
+                                  _Iter1 __last, Iter2 __histogram_first,
+                                  const _Size &num_bins, _IdxHashFunc __func) {
   using __value_type = typename ::std::iterator_traits<_Iter1>::value_type;
   using __histo_value_type = typename ::std::iterator_traits<Iter2>::value_type;
   // minimum type size for atomics
@@ -1745,14 +1739,12 @@ inline Iter2 __histogram_general_local_atomics(Policy &&policy, _Iter1 __first,
           const ::std::size_t __seg_start =
               __work_group_size * __wgroup_idx * __iters_per_work_item;
 
-          __clear_wglocal_histograms(local_histogram, 0, num_bins,
-                                     __self_item);
+          __clear_wglocal_histograms(local_histogram, 0, num_bins, __self_item);
 
-          __accum_local_atomics<__work_group_size,
-                                ::std::uint16_t, 
+          __accum_local_atomics<__work_group_size, ::std::uint16_t,
                                 sycl::access::address_space::local_space>(
-              macc, __seg_start, N, __self_lidx, local_histogram, 0,
-              __func, __self_item, __iters_per_work_item);
+              macc, __seg_start, N, __self_lidx, local_histogram, 0, __func,
+              __self_item, __iters_per_work_item);
 
           __reduce_out_histograms(local_histogram, 0, hacc, num_bins,
                                   __self_item);
@@ -1767,11 +1759,9 @@ template <::std::uint16_t __work_group_size,
           ::std::uint16_t __min_iters_per_work_item, typename Policy,
           typename _Iter1, typename Iter2, typename _Size,
           typename _IdxHashFunc>
-inline Iter2 __histogram_general_private_global_atomics(Policy &&policy,
-                                                 _Iter1 __first, _Iter1 __last,
-                                                 Iter2 __histogram_first,
-                                                 const _Size& num_bins,
-                                                 _IdxHashFunc __func) {
+inline Iter2 __histogram_general_private_global_atomics(
+    Policy &&policy, _Iter1 __first, _Iter1 __last, Iter2 __histogram_first,
+    const _Size &num_bins, _IdxHashFunc __func) {
 
   const ::std::size_t N = __last - __first;
   using __value_type = typename ::std::iterator_traits<_Iter1>::value_type;
@@ -1813,16 +1803,14 @@ inline Iter2 __histogram_general_private_global_atomics(Policy &&policy,
 
           __clear_wglocal_histograms(hacc_private, __wgroup_idx * num_bins,
                                      num_bins, __self_item);
-          __accum_local_atomics<__work_group_size,
-                                ::std::uint32_t, 
+          __accum_local_atomics<__work_group_size, ::std::uint32_t,
                                 sycl::access::address_space::global_space>(
-              macc, __seg_start, N, __self_lidx,
-              hacc_private, __wgroup_idx * num_bins,
-              __func, __self_item,
+              macc, __seg_start, N, __self_lidx, hacc_private,
+              __wgroup_idx * num_bins, __func, __self_item,
               iters_per_work_item);
 
-          __reduce_out_histograms(hacc_private, __wgroup_idx * num_bins,
-                                  hacc, num_bins, __self_item);
+          __reduce_out_histograms(hacc_private, __wgroup_idx * num_bins, hacc,
+                                  num_bins, __self_item);
         });
   });
   e.wait();
@@ -1831,9 +1819,10 @@ inline Iter2 __histogram_general_private_global_atomics(Policy &&policy,
 
 template <typename Policy, typename Iter1, typename Iter2, typename _Size,
           typename _IdxHashFunc>
-inline Iter2 __histogram_general_select_best(Policy &&policy, Iter1 __first,
-                                      Iter1 __last, Iter2 __histogram_first,
-                                      const _Size& num_bins, _IdxHashFunc __func) {
+inline Iter2
+__histogram_general_select_best(Policy &&policy, Iter1 __first, Iter1 __last,
+                                Iter2 __histogram_first, const _Size &num_bins,
+                                _IdxHashFunc __func) {
   using __histo_value_type = typename ::std::iterator_traits<Iter2>::value_type;
   auto __local_mem_size =
       policy.queue()
@@ -1850,28 +1839,22 @@ inline Iter2 __histogram_general_select_best(Policy &&policy, Iter1 __first,
   } else if (num_bins * sizeof(__histo_value_type) <
              __local_mem_size) // if bins fit into SLM, use local atomics
   {
-    if (N <= 524288)
-    {
+    if (N <= 524288) {
       return __histogram_general_local_atomics<1024, 4>(
           ::std::forward<Policy>(policy), __first, __last, __histogram_first,
           num_bins, __func);
-    }
-    else
-    {
+    } else {
       return __histogram_general_local_atomics<1024, 32>(
           ::std::forward<Policy>(policy), __first, __last, __histogram_first,
           num_bins, __func);
     }
   } else // otherwise, use global atomics (private copies per workgroup)
   {
-    if (N <= 524288)
-    {
+    if (N <= 524288) {
       return __histogram_general_private_global_atomics<1024, 4>(
           ::std::forward<Policy>(policy), __first, __last, __histogram_first,
           num_bins, __func);
-    }
-    else
-    {
+    } else {
       return __histogram_general_private_global_atomics<1024, 32>(
           ::std::forward<Policy>(policy), __first, __last, __histogram_first,
           num_bins, __func);
@@ -1887,7 +1870,8 @@ inline ::std::enable_if_t<
         internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value,
     Iter2>
 histogram(Policy &&policy, Iter1 __first, Iter1 __last, Iter2 __histogram_first,
-          const _Size& num_bins, const _T& __first_bin_min_val, const _T& __last_bin_max_val) {
+          const _Size &num_bins, const _T &__first_bin_min_val,
+          const _T &__last_bin_max_val) {
   return internal::__histogram_general_select_best(
       ::std::forward<Policy>(policy), __first, __last, __histogram_first,
       num_bins,
@@ -1922,35 +1906,72 @@ void HistogramEven(Policy &&policy, Iter1 d_samples, HistBin *d_histogram,
                       lower_level, upper_level);
 }
 
-template<typename Policy, typename Iter1 , typename HistBin , typename T , typename OffsetT >
-HistBin* HistogramEven (Policy &&policy, Iter1 d_samples, HistBin *d_histogram, int num_levels,
-                             T lower_level, T upper_level, 
-                             OffsetT num_row_samples, OffsetT num_rows, ::std::size_t row_stride_bytes)
-{
-  return HistogramEven(::std::forward<Policy>(policy), oneapi::dpl::permutation_iterator(d_samples, internal::roi_2d_index(num_row_samples, num_rows, row_stride_bytes / sizeof(std::iterator_traits<Iter1>::value_type))), d_histogram, num_levels, lower_level, upper_level, num_row_samples*num_rows);
+template <typename Policy, typename Iter1, typename HistBin, typename T,
+          typename OffsetT>
+HistBin *HistogramEven(Policy &&policy, Iter1 d_samples, HistBin *d_histogram,
+                       int num_levels, T lower_level, T upper_level,
+                       OffsetT num_row_samples, OffsetT num_rows,
+                       ::std::size_t row_stride_bytes) {
+  return HistogramEven(
+      ::std::forward<Policy>(policy),
+      oneapi::dpl::permutation_iterator(
+          d_samples, internal::roi_2d_index(
+                         num_row_samples, num_rows,
+                         row_stride_bytes /
+                             sizeof(std::iterator_traits<Iter1>::value_type))),
+      d_histogram, num_levels, lower_level, upper_level,
+      num_row_samples * num_rows);
 }
 
-template<int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename Policy, typename Iter1 , typename HistBin , typename T , typename Size>
-void MultiHistogramEven(Policy &&policy, Iter1 d_samples, HistBin * d_histogram[NUM_ACTIVE_CHANNELS], int num_levels[NUM_ACTIVE_CHANNELS],
-                             T lower_level[NUM_ACTIVE_CHANNELS], T upper_level[NUM_ACTIVE_CHANNELS], Size num_pixels)
-{
-  for (int active_channel=0; active_channel < NUM_ACTIVE_CHANNELS; active_channel++)
-  {
-    HistogramEven(policy, oneapi::dpl::permutation_iterator(d_samples,internal::interleaved_select_channel(NUM_CHANNELS, active_channel)), d_histogram[active_channel], num_levels[active_channel], lower_level[active_channel], upper_level[active_channel], num_pixels);
+template <int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename Policy,
+          typename Iter1, typename HistBin, typename T, typename Size>
+void MultiHistogramEven(Policy &&policy, Iter1 d_samples,
+                        HistBin *d_histogram[NUM_ACTIVE_CHANNELS],
+                        int num_levels[NUM_ACTIVE_CHANNELS],
+                        T lower_level[NUM_ACTIVE_CHANNELS],
+                        T upper_level[NUM_ACTIVE_CHANNELS], Size num_pixels) {
+  for (int active_channel = 0; active_channel < NUM_ACTIVE_CHANNELS;
+       active_channel++) {
+    HistogramEven(
+        policy,
+        oneapi::dpl::permutation_iterator(
+            d_samples,
+            internal::interleaved_select_channel(NUM_CHANNELS, active_channel)),
+        d_histogram[active_channel], num_levels[active_channel],
+        lower_level[active_channel], upper_level[active_channel], num_pixels);
   }
 }
 
-template<int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename Policy, typename Iter1 , typename HistBin , typename T , typename OffsetT >
-void MultiHistogramEven(Policy &&policy, Iter1 d_samples, HistBin * d_histogram[NUM_ACTIVE_CHANNELS], int num_levels[NUM_ACTIVE_CHANNELS],
-                             T lower_level[NUM_ACTIVE_CHANNELS], T upper_level[NUM_ACTIVE_CHANNELS], OffsetT num_row_samples, OffsetT num_rows, ::std::size_t row_stride_bytes)
-{
-  for (int active_channel=0; active_channel < NUM_ACTIVE_CHANNELS; active_channel++)
-  {
-    HistogramEven(policy, oneapi::dpl::permutation_iterator(d_samples,internal::compose_functor(internal::interleaved_select_channel(NUM_CHANNELS, active_channel), internal::roi_2d_index(num_row_samples,num_rows, row_stride_bytes / sizeof(::std::iterator_traits<Iter1>::value_type)))), d_histogram[active_channel], num_levels[active_channel], lower_level[active_channel], upper_level[active_channel], num_row_samples, num_rows, row_stride_bytes);
+template <int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename Policy,
+          typename Iter1, typename HistBin, typename T, typename OffsetT>
+void MultiHistogramEven(Policy &&policy, Iter1 d_samples,
+                        HistBin *d_histogram[NUM_ACTIVE_CHANNELS],
+                        int num_levels[NUM_ACTIVE_CHANNELS],
+                        T lower_level[NUM_ACTIVE_CHANNELS],
+                        T upper_level[NUM_ACTIVE_CHANNELS],
+                        OffsetT num_row_samples, OffsetT num_rows,
+                        ::std::size_t row_stride_bytes) {
+  for (int active_channel = 0; active_channel < NUM_ACTIVE_CHANNELS;
+       active_channel++) {
+    HistogramEven(
+        policy,
+        oneapi::dpl::permutation_iterator(
+            d_samples,
+            internal::compose_functor(
+                internal::interleaved_select_channel(NUM_CHANNELS,
+                                                     active_channel),
+                internal::roi_2d_index(
+                    num_row_samples, num_rows,
+                    row_stride_bytes /
+                        sizeof(::std::iterator_traits<Iter1>::value_type)))),
+        d_histogram[active_channel], num_levels[active_channel],
+        lower_level[active_channel], upper_level[active_channel],
+        num_row_samples, num_rows, row_stride_bytes);
   }
 }
 
-template <typename Policy, typename Iter1, typename HistBin, typename T, typename Size>
+template <typename Policy, typename Iter1, typename HistBin, typename T,
+          typename Size>
 void HistogramRange(Policy &&policy, Iter1 d_samples, HistBin *d_histogram,
                     int num_levels, T *d_levels, Size num_samples) {
   internal::histogram(::std::forward<Policy>(policy), d_samples,
@@ -1958,34 +1979,61 @@ void HistogramRange(Policy &&policy, Iter1 d_samples, HistBin *d_histogram,
                       d_levels + num_levels);
 }
 
-template <typename Policy, typename Iter1, typename HistBin, typename T, typename OffsetT>
-HistBin* HistogramRange(Policy &&policy, Iter1 d_samples, HistBin *d_histogram,
-                    int num_levels, T *d_levels, OffsetT num_row_samples, OffsetT num_rows, ::std::size_t row_stride_bytes) {
-  return HistogramRange(::std::forward<Policy>(policy), 
-                 oneapi::dpl::permutation_iterator(d_samples, 
-                                                      internal::roi_2d_index(num_row_samples,
-                                                                             num_rows,
-                                                                             row_stride_bytes / sizeof(std::iterator_traits<Iter1>::value_type))),
-                 d_histogram, num_levels, d_levels, num_row_samples*num_rows);
+template <typename Policy, typename Iter1, typename HistBin, typename T,
+          typename OffsetT>
+HistBin *HistogramRange(Policy &&policy, Iter1 d_samples, HistBin *d_histogram,
+                        int num_levels, T *d_levels, OffsetT num_row_samples,
+                        OffsetT num_rows, ::std::size_t row_stride_bytes) {
+  return HistogramRange(
+      ::std::forward<Policy>(policy),
+      oneapi::dpl::permutation_iterator(
+          d_samples, internal::roi_2d_index(
+                         num_row_samples, num_rows,
+                         row_stride_bytes /
+                             sizeof(std::iterator_traits<Iter1>::value_type))),
+      d_histogram, num_levels, d_levels, num_row_samples * num_rows);
 }
 
-template<int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename Policy, typename Iter1 , typename HistBin , typename T , typename Size>
-void MultiHistogramRange(Policy &&policy, Iter1 d_samples, HistBin * d_histogram[NUM_ACTIVE_CHANNELS], int num_levels[NUM_ACTIVE_CHANNELS],
-                             T* d_levels[NUM_ACTIVE_CHANNELS], Size num_pixels)
-{
-  for (int active_channel=0; active_channel < NUM_ACTIVE_CHANNELS; active_channel++)
-  {
-    HistogramRange(policy, oneapi::dpl::permutation_iterator(d_samples,internal::interleaved_select_channel(NUM_CHANNELS, active_channel)), d_histogram[active_channel], num_levels[active_channel], d_levels[active_channel], num_pixels);
+template <int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename Policy,
+          typename Iter1, typename HistBin, typename T, typename Size>
+void MultiHistogramRange(Policy &&policy, Iter1 d_samples,
+                         HistBin *d_histogram[NUM_ACTIVE_CHANNELS],
+                         int num_levels[NUM_ACTIVE_CHANNELS],
+                         T *d_levels[NUM_ACTIVE_CHANNELS], Size num_pixels) {
+  for (int active_channel = 0; active_channel < NUM_ACTIVE_CHANNELS;
+       active_channel++) {
+    HistogramRange(policy,
+                   oneapi::dpl::permutation_iterator(
+                       d_samples, internal::interleaved_select_channel(
+                                      NUM_CHANNELS, active_channel)),
+                   d_histogram[active_channel], num_levels[active_channel],
+                   d_levels[active_channel], num_pixels);
   }
 }
 
-template<int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename Policy, typename Iter1 , typename HistBin , typename T , typename OffsetT >
-void MultiHistogramRange(Policy &&policy, Iter1 d_samples, HistBin * d_histogram[NUM_ACTIVE_CHANNELS], int num_levels[NUM_ACTIVE_CHANNELS],
-                             T* d_levels[NUM_ACTIVE_CHANNELS], OffsetT num_row_samples, OffsetT num_rows, ::std::size_t row_stride_bytes)
-{
-  for (int active_channel=0; active_channel < NUM_ACTIVE_CHANNELS; active_channel++)
-  {
-    HistogramRange(policy, oneapi::dpl::permutation_iterator(d_samples,internal::compose_functor(internal::interleaved_select_channel(NUM_CHANNELS, active_channel), internal::roi_2d_index(num_row_samples,num_rows, row_stride_bytes / sizeof(::std::iterator_traits<Iter1>::value_type)))), d_histogram[active_channel], num_levels[active_channel], d_levels[active_channel], num_row_samples, num_rows, row_stride_bytes);
+template <int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename Policy,
+          typename Iter1, typename HistBin, typename T, typename OffsetT>
+void MultiHistogramRange(Policy &&policy, Iter1 d_samples,
+                         HistBin *d_histogram[NUM_ACTIVE_CHANNELS],
+                         int num_levels[NUM_ACTIVE_CHANNELS],
+                         T *d_levels[NUM_ACTIVE_CHANNELS],
+                         OffsetT num_row_samples, OffsetT num_rows,
+                         ::std::size_t row_stride_bytes) {
+  for (int active_channel = 0; active_channel < NUM_ACTIVE_CHANNELS;
+       active_channel++) {
+    HistogramRange(
+        policy,
+        oneapi::dpl::permutation_iterator(
+            d_samples,
+            internal::compose_functor(
+                internal::interleaved_select_channel(NUM_CHANNELS,
+                                                     active_channel),
+                internal::roi_2d_index(
+                    num_row_samples, num_rows,
+                    row_stride_bytes /
+                        sizeof(::std::iterator_traits<Iter1>::value_type)))),
+        d_histogram[active_channel], num_levels[active_channel],
+        d_levels[active_channel], num_row_samples, num_rows, row_stride_bytes);
   }
 }
 
