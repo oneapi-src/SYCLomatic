@@ -512,6 +512,30 @@ document.write(`
 <section id="suggestions-to-fix">
 <h2>Suggestions to Fix<a class="headerlink" href="#suggestions-to-fix" title="Permalink to this heading">#</a></h2>
 <p>You may need to adjust the code.</p>
+<p>For example, this original CUDA* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w"> </span><span class="n">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">kernel</span><span class="p">(</span><span class="n">curandStateXORWOW_t</span><span class="w"> </span><span class="n">rng</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="linenos">2</span><span class="w">   </span><span class="p">...</span>
+<span class="linenos">3</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>results in the following migrated SYCL* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w"> </span><span class="cm">/*</span>
+<span class="linenos">2</span><span class="cm"> DPCT1032:0: A different random number generator is used. You may need to adjust</span>
+<span class="linenos">3</span><span class="cm"> the code.</span>
+<span class="linenos">4</span><span class="cm"> */</span>
+<span class="linenos">5</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">kernel</span><span class="p">(</span>
+<span class="linenos">6</span><span class="w">     </span><span class="n">dpct</span><span class="o">::</span><span class="n">rng</span><span class="o">::</span><span class="n">device</span><span class="o">::</span><span class="n">rng_generator</span><span class="o">&lt;</span><span class="n">oneapi</span><span class="o">::</span><span class="n">mkl</span><span class="o">::</span><span class="n">rng</span><span class="o">::</span><span class="n">device</span><span class="o">::</span><span class="n">mcg59</span><span class="o">&lt;</span><span class="mi">1</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">rng</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="linenos">7</span><span class="w">   </span><span class="p">...</span>
+<span class="linenos">8</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>which is rewritten to:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">kernel</span><span class="p">(</span>
+<span class="linenos">2</span><span class="w">     </span><span class="n">dpct</span><span class="o">::</span><span class="n">rng</span><span class="o">::</span><span class="n">device</span><span class="o">::</span><span class="n">rng_generator</span><span class="o">&lt;</span><span class="n">oneapi</span><span class="o">::</span><span class="n">mkl</span><span class="o">::</span><span class="n">rng</span><span class="o">::</span><span class="n">device</span><span class="o">::</span><span class="n">mcg59</span><span class="o">&lt;</span><span class="mi">1</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">rng</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="linenos">3</span><span class="w">   </span><span class="p">...</span>
+<span class="linenos">4</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
 </section>
 </section>
 

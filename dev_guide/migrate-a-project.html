@@ -488,30 +488,26 @@ help you complete the remaining code migration.</p>
 <figure class="align-default">
 <img alt="../_images/cuda-sycl-migration-workflow.png" src="../_images/cuda-sycl-migration-workflow.png" />
 </figure>
-<p>SYCLomatic migration workflow overview:</p>
+<p>The SYCLomatic migration workflow follows four high-level steps:</p>
 <ol class="arabic">
-<li><p><strong>Prepare CUDA source for migration</strong></p>
+<li><p><strong>Prepare your CUDA source for migration</strong></p>
 <p>Start with a running CUDA project that can be built and run. SYCLomatic
 looks for CUDA headers, so make sure the headers are accessible to the tool.</p>
 </li>
 <li><p><strong>Migrate your project</strong></p>
-<p>To generate annotated SYCL code, run SYCLomatic with the
-original source as input to the tool.</p>
-<p>For simple projects, you can use file-to-file migration, with the option to
-migrate all files at once or to migrate files one-by-one.</p>
-<p>For complex projects, you can utilize the Microsoft Visual Studio* project
-file or Make/Cmake file to build a <a class="reference internal" href="migrate-a-project/generate-compilation-db.html#gen-comp-db"><span class="std std-ref">compilation database</span></a>,
-used to migrate the complete project.</p>
+<p>Run SYCLomatic with the original source as input to the tool to generate
+annotated SYCL code.</p>
+<p>You can use file-to-file migration for simple projects or a
+<a class="reference internal" href="migrate-a-project/generate-compilation-db.html#gen-comp-db"><span class="std std-ref">compilation database</span></a> for more complex projects.</p>
 </li>
-<li><p><strong>Review converted code</strong></p>
-<p>Output files contain annotations to help migrate any remaining code that
-could not be automatically migrated. Inspect the converted code, review the
-annotations to help manually convert unmigrated code, and look for potential
-code improvements.</p>
+<li><p><strong>Review the converted code</strong></p>
+<p>Output files contain annotations to mark code that could not be automatically
+migrated. Review the annotations and manually convert any unmigrated code.
+Also look for potential code improvements.</p>
 </li>
-<li><p><strong>Build the project with the Intel® oneAPI DPC++/C++ Compiler</strong></p>
-<p>Make sure your newly migrated project compiles successfully with the
-<a class="reference external" href="https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler.html">Intel® oneAPI DPC++/C++ Compiler</a>.</p>
+<li><p><strong>Build your project</strong></p>
+<p>To make sure your newly migrated project compiles successfully, build the
+project with the <a class="reference external" href="https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler.html">Intel® oneAPI DPC++/C++ Compiler</a>.</p>
 </li>
 </ol>
 </section>

@@ -504,6 +504,56 @@ parameters. This may lead to incorrectly generated DPC++ code.</p>
 <section id="suggestions-to-fix">
 <h2>Suggestions to Fix<a class="headerlink" href="#suggestions-to-fix" title="Permalink to this heading">#</a></h2>
 <p>Review the kernel call inside the macro definition and adjust it manually, if needed.</p>
+<p>For example, this original CUDA* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w"> </span><span class="n">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">kernel</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">d</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<span class="linenos">2</span>
+<span class="linenos">3</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="linenos">4</span><span class="w"> </span><span class="cp">#define KERNEL_LAUNCH(NAME, a, b, c, d) NAME&lt;&lt;&lt;a, b, 0&gt;&gt;&gt;(c, d);</span>
+<span class="linenos">5</span><span class="w">   </span><span class="n">KERNEL_LAUNCH</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="linenos">6</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>results in the following migrated SYCL* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">kernel</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">d</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<span class="linenos"> 2</span>
+<span class="linenos"> 3</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="linenos"> 4</span><span class="w"> </span><span class="cp">#define KERNEL_LAUNCH(NAME, a, b, c, d)                                        \</span>
+<span class="linenos"> 5</span><span class="cp">   dpct::get_default_queue().submit([&amp;](sycl::handler &amp;cgh) {                   \</span>
+<span class="linenos"> 6</span><span class="cp">     auto c_ct0 = c;                                                            \</span>
+<span class="linenos"> 7</span><span class="cp">     auto d_ct1 = d;                                                            \</span>
+<span class="linenos"> 8</span><span class="cp">                                                                                \</span>
+<span class="linenos"> 9</span><span class="cp">     cgh.parallel_for(                                                          \</span>
+<span class="linenos">10</span><span class="cp">         sycl::nd_range&lt;3&gt;(sycl::range&lt;3&gt;(1, 1, a) * sycl::range&lt;3&gt;(1, 1, b),   \</span>
+<span class="linenos">11</span><span class="cp">                           sycl::range&lt;3&gt;(1, 1, b)),                            \</span>
+<span class="linenos">12</span><span class="cp">         [=](sycl::nd_item&lt;3&gt; item_ct1) { kernel(c_ct0, d_ct1); });             \</span>
+<span class="linenos">13</span><span class="cp">   });</span>
+<span class="linenos">14</span><span class="w">   </span><span class="cm">/*</span>
+<span class="linenos">15</span><span class="cm">   DPCT1038:0: When the kernel function name is used as a macro argument, the</span>
+<span class="linenos">16</span><span class="cm">   migration result may be incorrect. You need to verify the definition of the</span>
+<span class="linenos">17</span><span class="cm">   macro.</span>
+<span class="linenos">18</span><span class="cm">   */</span>
+<span class="linenos">19</span><span class="w">   </span><span class="n">KERNEL_LAUNCH</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="linenos">20</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>which is rewritten to:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">kernel</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">d</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+<span class="linenos"> 2</span>
+<span class="linenos"> 3</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="linenos"> 4</span><span class="w"> </span><span class="cp">#define KERNEL_LAUNCH(NAME, a, b, c, d)                                        \</span>
+<span class="linenos"> 5</span><span class="cp">   dpct::get_default_queue().submit([&amp;](sycl::handler &amp;cgh) {                   \</span>
+<span class="linenos"> 6</span><span class="cp">     auto c_ct0 = c;                                                            \</span>
+<span class="linenos"> 7</span><span class="cp">     auto d_ct1 = d;                                                            \</span>
+<span class="linenos"> 8</span><span class="cp">                                                                                \</span>
+<span class="linenos"> 9</span><span class="cp">     cgh.parallel_for(                                                          \</span>
+<span class="linenos">10</span><span class="cp">         sycl::nd_range&lt;3&gt;(sycl::range&lt;3&gt;(1, 1, a) * sycl::range&lt;3&gt;(1, 1, b),   \</span>
+<span class="linenos">11</span><span class="cp">                           sycl::range&lt;3&gt;(1, 1, b)),                            \</span>
+<span class="hll"><span class="linenos">12</span><span class="cp">         [=](sycl::nd_item&lt;3&gt; item_ct1) { NAME(c_ct0, d_ct1); });               \</span>
+</span><span class="linenos">13</span><span class="cp">   });</span>
+<span class="linenos">14</span><span class="w">   </span><span class="n">KERNEL_LAUNCH</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="linenos">15</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
 </section>
 </section>
 

@@ -3,20 +3,20 @@ Before You Begin
 
 .. include:: /_include_files/before_begin_intro_dgr.rst
 
-Samples
--------
+Get Code Samples
+----------------
 
-Several sample projects for |tool_name| are available to explore the tool and
-familiarize yourself with how it functions.
-
-.. include:: /_include_files/access_samples.rst
+Use the |tool_name| code samples to get familiar with the migration process and
+tool features.
 
 .. include:: /_include_files/samples.rst
 
+.. include:: /_include_files/access_samples.rst
+
 .. _emitted-warnings:
 
-Emitted Warnings
-----------------
+Understand Emitted Warnings
+---------------------------
 
 During the migration of the files |tool_name| identifies places
 in the code that may require your attention to make the code SYCL compliant
@@ -31,5 +31,5 @@ are displayed as warnings in the output. For example:
   // source code line for which warning was generated
   ^
 
-For more details on what a particular warning means, see the
+For detailed information about a warning, refer to the
 :ref:`Diagnostics Reference <diag_ref>`.

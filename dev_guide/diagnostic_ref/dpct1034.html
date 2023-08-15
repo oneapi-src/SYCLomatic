@@ -515,6 +515,38 @@ the new API does not return it. Review all such places in the code.</p>
 handling code and use your logic in an exception handler.</p></li>
 </ul>
 <p>Similar to <a class="reference internal" href="dpct1003.html#dpct1003"><span class="std std-ref">DPCT1003</span></a>.</p>
+<p>For example, this original CUDA* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="linenos">2</span><span class="w">   </span><span class="n">CUdevice</span><span class="w"> </span><span class="n">device</span><span class="p">;</span>
+<span class="linenos">3</span><span class="w">   </span><span class="n">CUresult</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cuDeviceComputeCapability</span><span class="p">(</span><span class="o">&amp;</span><span class="n">result0</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">result1</span><span class="p">,</span><span class="w"> </span><span class="n">device</span><span class="p">);</span>
+<span class="linenos">4</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>results in the following migrated SYCL code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="linenos"> 2</span><span class="w">   </span><span class="cm">/*</span>
+<span class="linenos"> 3</span><span class="cm">   DPCT1034:0: Migrated API does not return an error code. 0 is returned in the</span>
+<span class="linenos"> 4</span><span class="cm">   lambda. You may need to rewrite this code.</span>
+<span class="linenos"> 5</span><span class="cm">   */</span>
+<span class="linenos"> 6</span><span class="w">   </span><span class="kt">int</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="o">&amp;</span><span class="p">]()</span><span class="w"> </span><span class="p">{</span>
+<span class="linenos"> 7</span><span class="w">     </span><span class="n">result0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dpct</span><span class="o">::</span><span class="n">dev_mgr</span><span class="o">::</span><span class="n">instance</span><span class="p">().</span><span class="n">get_device</span><span class="p">(</span><span class="n">device</span><span class="p">).</span><span class="n">get_major_version</span><span class="p">();</span>
+<span class="linenos"> 8</span><span class="w">     </span><span class="n">result1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dpct</span><span class="o">::</span><span class="n">dev_mgr</span><span class="o">::</span><span class="n">instance</span><span class="p">().</span><span class="n">get_device</span><span class="p">(</span><span class="n">device</span><span class="p">).</span><span class="n">get_minor_version</span><span class="p">();</span>
+<span class="linenos"> 9</span><span class="w">     </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="linenos">10</span><span class="w">   </span><span class="p">}();</span>
+<span class="linenos">11</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>which is rewritten to:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="linenos">2</span><span class="w">   </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="linenos">3</span><span class="w">     </span><span class="n">result0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dpct</span><span class="o">::</span><span class="n">dev_mgr</span><span class="o">::</span><span class="n">instance</span><span class="p">().</span><span class="n">get_device</span><span class="p">(</span><span class="n">device</span><span class="p">).</span><span class="n">get_major_version</span><span class="p">();</span>
+<span class="linenos">4</span><span class="w">     </span><span class="n">result1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dpct</span><span class="o">::</span><span class="n">dev_mgr</span><span class="o">::</span><span class="n">instance</span><span class="p">().</span><span class="n">get_device</span><span class="p">(</span><span class="n">device</span><span class="p">).</span><span class="n">get_minor_version</span><span class="p">();</span>
+<span class="linenos">5</span><span class="w">   </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(...)</span><span class="w"> </span><span class="p">{</span>
+<span class="linenos">6</span><span class="w">     </span><span class="p">...</span>
+<span class="linenos">7</span><span class="w">   </span><span class="p">}</span>
+<span class="linenos">8</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
 </section>
 </section>
 
