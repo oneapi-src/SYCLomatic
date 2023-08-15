@@ -2644,9 +2644,9 @@ bool ASTUnit::visitLocalTopLevelDecls(void *context, DeclVisitorFn Fn) {
   return true;
 }
 
-const FileEntry *ASTUnit::getPCHFile() {
+OptionalFileEntryRef ASTUnit::getPCHFile() {
   if (!Reader)
-    return nullptr;
+    return std::nullopt;
 
   serialization::ModuleFile *Mod = nullptr;
   Reader->getModuleManager().visit([&Mod](serialization::ModuleFile &M) {
@@ -2669,7 +2669,7 @@ const FileEntry *ASTUnit::getPCHFile() {
   if (Mod)
     return Mod->File;
 
-  return nullptr;
+  return std::nullopt;
 }
 
 bool ASTUnit::isModuleFile() const {

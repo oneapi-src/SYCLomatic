@@ -2288,7 +2288,7 @@ void deduceTemplateArgumentFromType(std::vector<TemplateArgumentInfo> &TAIList,
       setTypeTemplateArgument(
           TAIList, PARM_TYPE_CAST(TemplateTypeParmType)->getIndex(), TL);
     } else {
-      ArgType.removeLocalCVRQualifiers(ParmType.getCVRQualifiers());
+      ArgType.removeLocalFastQualifiers(ParmType.getCVRQualifiers());
       setTypeTemplateArgument(
           TAIList, PARM_TYPE_CAST(TemplateTypeParmType)->getIndex(), ArgType);
     }

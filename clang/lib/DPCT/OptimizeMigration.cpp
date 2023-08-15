@@ -44,6 +44,10 @@ void ForLoopUnrollRule::runRule(
   auto &Context = DpctGlobalInfo::getContext();
 
   if (auto ForLoop = getNodeAsType<ForStmt>(Result, "for_loop")) {
+    auto ForLoopLoc = ForLoop->getBeginLoc();
+    if(ForLoopLoc.isMacroID()) {
+      return;
+    }
     auto FD = getImmediateOuterFuncDecl(ForLoop);
     if (!FD ||
         (!FD->hasAttr<CUDAGlobalAttr>() && !FD->hasAttr<CUDADeviceAttr>())) {

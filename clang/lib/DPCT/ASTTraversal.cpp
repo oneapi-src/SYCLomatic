@@ -13604,7 +13604,8 @@ void NamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
   if (auto UDD =
           getAssistNodeAsType<UsingDirectiveDecl>(Result, "usingDirective")) {
     std::string Namespace = UDD->getNominatedNamespace()->getNameAsString();
-    if (Namespace == "cooperative_groups" || Namespace == "placeholders")
+    if (Namespace == "cooperative_groups" || Namespace == "placeholders" ||
+        Namespace == "nvcuda")
       emplaceTransformation(new ReplaceDecl(UDD, ""));
   } else if (auto NAD = getAssistNodeAsType<NamespaceAliasDecl>(
                  Result, "namespaceAlias")) {
