@@ -896,7 +896,7 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
 #endif
       CommandLine = getInsertArgumentAdjuster(
           (std::string("-I") + SDKIncludePath).c_str(),
-          ArgumentInsertPosition::BEGIN)(CommandLine, "");
+          ArgumentInsertPosition::END)(CommandLine, "");
       if (CudaArgsAdjuster)
         CommandLine = CudaArgsAdjuster(CommandLine, CompileCommand.Filename);
 

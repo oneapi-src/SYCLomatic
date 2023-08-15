@@ -591,7 +591,6 @@ void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
 }
 
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
-
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
     std::string ArgsString;
     llvm::raw_string_ostream OS(ArgsString);
@@ -854,6 +853,7 @@ void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
 // Precondition: CE != nullptr
 void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   // To set the RefString
+  RefString.clear();
   dispatch(CE->getCallee());
   // If the callee requires rewrite, get the rewriter
   if (!CallExprRewriterFactoryBase::RewriterMap)
@@ -1118,11 +1118,24 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
       auto Result = Rewriter->rewrite();
       if (Result.has_value()) {
         auto ResultStr = Result.value();
-        // Since Parser splits ">>" or ">>>" to ">" when parse template
-        // the SR.getEnd location might be a "scratch space" location.
-        // Therfore, need to apply SM.getExpansionLoc before call addReplacement.
-        addReplacement(SM.getExpansionLoc(SR.getBegin()),
-                       SM.getExpansionLoc(SR.getEnd()), CSCE, ResultStr);
+        if (SM.isWrittenInScratchSpace(SR.getEnd())) {
+          // Since Parser splits ">>" or ">>>" to ">" when parse template
+          // the SR.getEnd location might be a "scratch space" location.
+          // Therfore, need to apply SM.getExpansionLoc before call
+          // addReplacement.
+          addReplacement(SM.getExpansionLoc(SR.getBegin()),
+                         SM.getExpansionLoc(SR.getEnd()), CSCE, ResultStr);
+        } else {
+          // To handle case like:
+          // #define TM thrust::multiplies<int>()
+          // thrust::adjacent_difference(A.begin(), A.end(), R.begin(), TM);
+          // to:
+          // #define TM std::multiplies<int>()
+          // oneapi::dpl::adjacent_difference(..., TM);
+          auto DefRange = getDefinitionRange(SR.getBegin(), SR.getEnd());
+          addReplacement(DefRange.getBegin(), DefRange.getEnd(), CSCE,
+                         ResultStr);
+        }
         return;
       }
     }

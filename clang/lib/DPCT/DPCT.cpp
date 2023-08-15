@@ -727,6 +727,8 @@ int runDPCT(int argc, const char **argv) {
     PrintMsg(OS.str());
   }
 
+  ExtraIncPaths = OptParser->getExtraIncPathList();
+
   // TODO: implement one of this for each source language.
   CudaPath = getCudaInstallPath(OriginalArgc, argv);
   DpctDiags() << "Cuda Include Path found: " << CudaPath << "\n";
