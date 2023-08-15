@@ -22,15 +22,15 @@ __global__ void kernelFunc() {
   block.thread_index();
   // CHECK:  auto threadBlockGroup = sycl::ext::oneapi::experimental::this_group<3>();
   auto threadBlockGroup = cg::this_thread_block();
-  // CHECK:  testThreadGroup(dpct::item_group<sycl::group<3>>(threadBlockGroup, item_ct1));
+  // CHECK:  testThreadGroup(dpct::item_group(threadBlockGroup, item_ct1));
   testThreadGroup(threadBlockGroup);
-  // CHECK:  dpct::experimental::logical_group tilePartition16 = dpct::experimental::logical_group<3>(item_ct1, sycl::ext::oneapi::experimental::this_group<3>(), 16);
+  // CHECK:  dpct::experimental::logical_group tilePartition16 = dpct::experimental::logical_group(item_ct1, sycl::ext::oneapi::experimental::this_group<3>(), 16);
   cg::thread_block_tile<16> tilePartition16 = cg::tiled_partition<16>(threadBlockGroup);
-  // CHECK:  testThreadGroup(dpct::item_group<dpct::experimental::logical_group<3>>(tilePartition16, item_ct1));
+  // CHECK:  testThreadGroup(dpct::item_group(tilePartition16, item_ct1));
   testThreadGroup(tilePartition16);
   // CHECK:  sycl::sub_group tilePartition32 = sycl::ext::oneapi::experimental::this_sub_group();
   cg::thread_block_tile<32> tilePartition32 = cg::tiled_partition<32>(threadBlockGroup);
-  // CHECK:  testThreadGroup(dpct::item_group<sycl::sub_group>(tilePartition32, item_ct1));
+  // CHECK:  testThreadGroup(dpct::item_group(tilePartition32, item_ct1));
   testThreadGroup(tilePartition32);
 }
 
