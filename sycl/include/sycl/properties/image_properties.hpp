@@ -13,7 +13,7 @@
 #include <sycl/properties/property_traits.hpp>
 
 namespace sycl {
-__SYCL_INLINE_VER_NAMESPACE(_V1) {
+inline namespace _V1 {
 namespace property::image {
 class use_host_ptr : public detail::DataLessProperty<detail::ImageUseHostPtr> {
 };
@@ -42,8 +42,10 @@ private:
 
 // Forward declaration
 template <int Dimensions, typename AllocatorT> class image;
+template <int Dimensions, typename AllocatorT> class sampled_image;
+template <int Dimensions, typename AllocatorT> class unsampled_image;
 
-// Image property trait specializations
+// SYCL 1.2.1 image property trait specializations
 template <int Dimensions, typename AllocatorT>
 struct is_property_of<property::image::use_host_ptr,
                       image<Dimensions, AllocatorT>> : std::true_type {};
@@ -54,5 +56,31 @@ template <int Dimensions, typename AllocatorT>
 struct is_property_of<property::image::context_bound,
                       image<Dimensions, AllocatorT>> : std::true_type {};
 
-} // __SYCL_INLINE_VER_NAMESPACE(_V1)
+// SYCL 2020 image property trait specializations
+template <int Dimensions, typename AllocatorT>
+struct is_property_of<property::image::use_host_ptr,
+                      sampled_image<Dimensions, AllocatorT>> : std::true_type {
+};
+template <int Dimensions, typename AllocatorT>
+struct is_property_of<property::image::use_mutex,
+                      sampled_image<Dimensions, AllocatorT>> : std::true_type {
+};
+template <int Dimensions, typename AllocatorT>
+struct is_property_of<property::image::context_bound,
+                      sampled_image<Dimensions, AllocatorT>> : std::true_type {
+};
+template <int Dimensions, typename AllocatorT>
+struct is_property_of<property::image::use_host_ptr,
+                      unsampled_image<Dimensions, AllocatorT>>
+    : std::true_type {};
+template <int Dimensions, typename AllocatorT>
+struct is_property_of<property::image::use_mutex,
+                      unsampled_image<Dimensions, AllocatorT>>
+    : std::true_type {};
+template <int Dimensions, typename AllocatorT>
+struct is_property_of<property::image::context_bound,
+                      unsampled_image<Dimensions, AllocatorT>>
+    : std::true_type {};
+
+} // namespace _V1
 } // namespace sycl

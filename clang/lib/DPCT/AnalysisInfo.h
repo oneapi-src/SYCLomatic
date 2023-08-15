@@ -748,7 +748,8 @@ public:
                                     std::string FilePathStr) {
     // Get rid of symlinks
     SmallString<4096> NoSymlinks = StringRef("");
-    auto Dir = FM.getDirectory(llvm::sys::path::parent_path(FilePathStr));
+    auto Dir =
+        FM.getOptionalDirectoryRef(llvm::sys::path::parent_path(FilePathStr));
     if (Dir) {
       StringRef DirName = FM.getCanonicalName(*Dir);
       StringRef FileName = llvm::sys::path::filename(FilePathStr);

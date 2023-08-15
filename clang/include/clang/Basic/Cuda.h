@@ -42,8 +42,8 @@ enum class CudaVersion {
   CUDA_117,
   CUDA_118,
   CUDA_120,
-#ifdef SYCLomatic_CUSTOMIZATION
   CUDA_121,
+#ifdef SYCLomatic_CUSTOMIZATION
   CUDA_122,
   FULLY_SUPPORTED = CUDA_122,
   PARTIALLY_SUPPORTED =
@@ -51,7 +51,7 @@ enum class CudaVersion {
 #else
   FULLY_SUPPORTED = CUDA_115,
   PARTIALLY_SUPPORTED =
-      CUDA_118, // Partially supported. Proceed with a warning.
+      CUDA_121, // Partially supported. Proceed with a warning.
 #endif // SYCLomatic_CUSTOMIZATION
   NEW = 10000,  // Too new. Issue a warning, but allow using it.
 };
