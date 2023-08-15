@@ -521,6 +521,10 @@ __global__ void callDeviceFoo(){
   deviceFoo2(1,2);
 }
 
+int run_callDeviceFoo(){
+  callDeviceFoo<<<1,1>>>();
+}
+
 struct A{
   int a;
   int* get_pointer(){

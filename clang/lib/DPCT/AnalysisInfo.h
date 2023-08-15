@@ -748,7 +748,8 @@ public:
                                     std::string FilePathStr) {
     // Get rid of symlinks
     SmallString<4096> NoSymlinks = StringRef("");
-    auto Dir = FM.getDirectory(llvm::sys::path::parent_path(FilePathStr));
+    auto Dir =
+        FM.getOptionalDirectoryRef(llvm::sys::path::parent_path(FilePathStr));
     if (Dir) {
       StringRef DirName = FM.getCanonicalName(*Dir);
       StringRef FileName = llvm::sys::path::filename(FilePathStr);
@@ -954,6 +955,10 @@ public:
   inline static void setSDKVersion(clang::CudaVersion V) { SDKVersion = V; }
   inline static bool isIncMigration() { return IsIncMigration; }
   inline static void setIsIncMigration(bool Flag) { IsIncMigration = Flag; }
+  inline static bool isQueryAPIMapping() { return IsQueryAPIMapping; }
+  inline static void setIsQueryAPIMapping(bool Flag) {
+    IsQueryAPIMapping = Flag;
+  }
   inline static bool needDpctDeviceExt() { return NeedDpctDeviceExt; }
   inline static void setNeedDpctDeviceExt() { NeedDpctDeviceExt = true; }
   inline static unsigned int getAssumedNDRangeDim() {
@@ -1708,8 +1713,6 @@ public:
   }
   static bool getUsingDRYPattern() { return UsingDRYPattern; }
   static void setUsingDRYPattern(bool Flag) { UsingDRYPattern = Flag; }
-  static bool getUsingGenericSpace() { return UsingGenericSpace; }
-  static void setUsingGenericSpace(bool Flag) { UsingGenericSpace = Flag; }
   static bool useNdRangeBarrier() {
     return getUsingExperimental<ExperimentalFeatures::Exp_NdRangeBarrier>();
   }
@@ -1753,6 +1756,10 @@ public:
 
   static bool useDeviceInfo() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo);
+  }
+
+  static bool useBFloat16() {
+    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_BFloat16);
   }
 
   inline std::shared_ptr<DpctFileInfo> insertFile(const std::string &FilePath) {
@@ -1989,6 +1996,7 @@ private:
   static clang::CudaVersion SDKVersion;
   static bool NeedDpctDeviceExt;
   static bool IsIncMigration;
+  static bool IsQueryAPIMapping;
   static unsigned int AssumedNDRangeDim;
   static std::unordered_set<std::string> PrecAndDomPairSet;
   static format::FormatRange FmtRng;
@@ -2050,7 +2058,6 @@ private:
       TempVariableDeclCounterMap;
   static std::unordered_map<std::string, int> TempVariableHandledMap;
   static bool UsingDRYPattern;
-  static bool UsingGenericSpace;
   static bool UsingThisItem;
   static unsigned int CudaKernelDimDFIIndex;
   static std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
@@ -3039,7 +3046,7 @@ class MemVarMap {
 public:
   MemVarMap()
       : HasItem(false), HasStream(false), HasSync(false), HasBF64(false),
-        HasBF16(false) {}
+        HasBF16(false), HasGlobalMemAcc(false) {}
   unsigned int Dim = 1;
   /// This member is only used to construct the union-find set.
   MemVarMap *Parent = this;
@@ -3048,16 +3055,23 @@ public:
   bool hasSync() const { return HasSync; }
   bool hasBF64() const { return HasBF64; }
   bool hasBF16() const { return HasBF16; }
+  bool hasGlobalMemAcc() const { return HasGlobalMemAcc; }
   bool hasExternShared() const { return !ExternVarMap.empty(); }
   inline void setItem(bool Has = true) { HasItem = Has; }
   inline void setStream(bool Has = true) { HasStream = Has; }
   inline void setSync(bool Has = true) { HasSync = Has; }
   inline void setBF64(bool Has = true) { HasBF64 = Has; }
   inline void setBF16(bool Has = true) { HasBF16 = Has; }
+  inline void setGlobalMemAcc(bool Has = true) { HasGlobalMemAcc = Has; }
   inline void addTexture(std::shared_ptr<TextureInfo> Tex) {
     TextureMap.insert(std::make_pair(Tex->getOffset(), Tex));
   }
   void addVar(std::shared_ptr<MemVarInfo> Var) {
+    auto Attr = Var->getAttr();
+    if (Var->isGlobal() && (Attr == MemVarInfo::VarAttrKind::Device ||
+                            Attr == MemVarInfo::VarAttrKind::Managed)) {
+      setGlobalMemAcc(true);
+    }
     getMap(Var->getScope())
         .insert(MemVarInfoMap::value_type(Var->getOffset(), Var));
   }
@@ -3072,6 +3086,7 @@ public:
     setSync(hasSync() || VarMap.hasSync());
     setBF64(hasBF64() || VarMap.hasBF64());
     setBF16(hasBF16() || VarMap.hasBF16());
+    setGlobalMemAcc(hasGlobalMemAcc() || VarMap.hasGlobalMemAcc());
     merge(LocalVarMap, VarMap.LocalVarMap, TemplateArgs);
     merge(GlobalVarMap, VarMap.GlobalVarMap, TemplateArgs);
     merge(ExternVarMap, VarMap.ExternVarMap, TemplateArgs);
@@ -3282,7 +3297,7 @@ private:
                                               int PreParams,
                                               int PostParams) const;
 
-  bool HasItem, HasStream, HasSync, HasBF64, HasBF16;
+  bool HasItem, HasStream, HasSync, HasBF64, HasBF16, HasGlobalMemAcc;
   MemVarInfoMap LocalVarMap;
   MemVarInfoMap GlobalVarMap;
   MemVarInfoMap ExternVarMap;
@@ -3740,6 +3755,7 @@ public:
   inline void setSync() { VarMap.setSync(); }
   inline void setBF64() { VarMap.setBF64(); }
   inline void setBF16() { VarMap.setBF16(); }
+  inline void setGlobalMemAcc() { VarMap.setGlobalMemAcc(); }
   inline void addTexture(std::shared_ptr<TextureInfo> Tex) {
     VarMap.addTexture(Tex);
   }
@@ -3758,6 +3774,9 @@ public:
 
   inline bool isLambda() { return IsLambda; }
   inline void setLambda() { IsLambda = true; }
+
+  inline bool isInlined() { return IsInlined; }
+  inline void setInlined() { IsInlined = true; }
 
   inline bool isKernel() { return IsKernel; }
   inline void setKernel() { IsKernel = true; }
@@ -3844,6 +3863,7 @@ private:
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   std::vector<ParameterProps> ParametersProps;
   std::string FunctionName;
+  bool IsInlined = false;
   bool IsLambda;
   bool IsKernel = false;
   bool IsKernelInvoked = false;

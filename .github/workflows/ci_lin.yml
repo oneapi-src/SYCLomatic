@@ -24,6 +24,8 @@ jobs:
         fetch-depth: ${{ env.PR_FETCH_DEPTH }}
     - name: Run clang-format
       uses: ./devops/actions/clang-format
+      with:
+        path: clang
 
   linux-build-lit:
     name: linux-build-lit

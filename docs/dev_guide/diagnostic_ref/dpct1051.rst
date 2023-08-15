@@ -28,3 +28,39 @@ Suggestions to Fix
 Review the logic and adjust it manually.
 
 .. include:: /_include_files/support-msg.txt
+
+For example, this original CUDA code:
+
+.. code-block:: cpp
+   :linenos:
+
+    void foo(cudaDeviceProp deviceProp) {
+      size_t a = deviceProp.totalConstMem;
+      ...
+    }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+    void foo(dpct::device_info deviceProp) {
+      /*
+      DPCT1051:0: SYCL does not support a device property functionally compatible
+      with totalConstMem. It was migrated to get_global_mem_size. You may need to
+      adjust the value of get_global_mem_size for the specific device.
+      */
+      size_t a = deviceProp.get_global_mem_size();
+      ...
+    }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+    void foo(dpct::device_info deviceProp) {
+      size_t a = deviceProp.get_global_mem_size();
+      ...
+    }
+

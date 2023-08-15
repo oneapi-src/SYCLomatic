@@ -9,6 +9,9 @@
 #ifndef DPCT_QUERY_API_MAPPING_H
 #define DPCT_QUERY_API_MAPPING_H
 
+#include "llvm/ADT/DenseMap.h"
+#include "llvm/ADT/StringRef.h"
+
 #include <string>
 #include <unordered_map>
 
@@ -16,24 +19,14 @@ namespace clang {
 namespace dpct {
 
 class APIMapping {
-  static std::unordered_map<std::string, std::string> EntryMap;
+  static llvm::DenseMap<llvm::StringRef, llvm::StringRef> EntryMap;
 
-  static void registerEntry(const std::string &Name,
-                            const std::string &Description);
+  static void registerEntry(llvm::StringRef Name, llvm::StringRef Description);
 
 public:
   static void initEntryMap();
 
-  template <class StreamTy>
-  static void queryAPIMapping(StreamTy &Stream, const std::string &Key) {
-    auto Iter = EntryMap.find(Key);
-    if (Iter == EntryMap.end() || Iter->second == "NA")
-      Stream << "The API Mapping is not available\n";
-    else {
-      Stream << "CUDA API: " << Key << "\n";
-      Stream << "Is migrated to: " << Iter->second << "\n";
-    }
-  }
+  static llvm::StringRef getAPISourceCode(llvm::StringRef Key);
 };
 
 } // namespace dpct

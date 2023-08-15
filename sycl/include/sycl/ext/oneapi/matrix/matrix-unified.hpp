@@ -11,7 +11,7 @@
 #include "utils.hpp"
 #include <sycl/ext/oneapi/matrix/matrix-tensorcores.hpp>
 namespace sycl {
-__SYCL_INLINE_VER_NAMESPACE(_V1) {
+inline namespace _V1 {
 namespace ext {
 namespace oneapi {
 namespace experimental {
@@ -42,6 +42,23 @@ struct joint_matrix {
                         PI_ERROR_INVALID_DEVICE);
 #endif
   }
+#ifdef __SYCL_DEVICE_ONLY__
+#if defined(__SPIR__)
+  // Generate a non-trivial assignment operator and copy c'tor that prevents
+  // memcpy from being generated.
+  // TODO: to remove, when either IGC can handle alloca JointMatrix or
+  // combination of InstCombine + SROA + mem2reg can remove it
+  joint_matrix(const joint_matrix &other) {
+    spvm = other.spvm;
+    return *this;
+  }
+
+  joint_matrix &operator=(const joint_matrix &rhs) {
+    spvm = rhs.spvm;
+    return *this;
+  }
+#endif // defined(__SPIR__)
+#endif
 };
 
 #ifdef __SYCL_DEVICE_ONLY__
@@ -423,5 +440,5 @@ inline __SYCL_ALWAYS_INLINE float round_to_tf32(const float &a) {
 } // namespace experimental
 } // namespace oneapi
 } // namespace ext
-} // __SYCL_INLINE_VER_NAMESPACE(_V1)
+} // namespace _V1
 } // namespace sycl
