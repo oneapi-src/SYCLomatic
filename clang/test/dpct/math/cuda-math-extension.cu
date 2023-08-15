@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none --use-dpcpp-extensions=intel_device_math -out-root %T/cuda-math-extension %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
-// RUN: FileCheck --input-file %T/cuda-math-extension/cuda-math-extension.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --use-dpcpp-extensions=intel_device_math -out-root %T/math/cuda-math-extension %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
+// RUN: FileCheck --input-file %T/math/cuda-math-extension/cuda-math-extension.dp.cpp --match-full-lines %s
 
 // CHECK: #include <sycl/ext/intel/math.hpp>
 #include "cuda_fp16.h"
@@ -9,13 +9,30 @@ using namespace std;
 __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   double &d0 = *deviceArrayDouble, &d1 = *(deviceArrayDouble + 1), &d2 = *(deviceArrayDouble + 2);
   int i;
+  float f0;
 
   // Double Precision Mathematical Functions
 
+  // CHECK: d2 = sycl::ext::intel::math::cyl_bessel_i0((double)f0);
+  d2 = cyl_bessel_i0(f0);
+  // CHECK: d2 = sycl::ext::intel::math::cyl_bessel_i0(d0);
+  d2 = cyl_bessel_i0(d0);
+  // CHECK: d2 = sycl::ext::intel::math::cyl_bessel_i1((double)f0);
+  d2 = cyl_bessel_i1(f0);
+  // CHECK: d2 = sycl::ext::intel::math::cyl_bessel_i1(d0);
+  d2 = cyl_bessel_i1(d0);
   // CHECK: d2 = sycl::ext::intel::math::erfcinv(d0);
   d2 = erfcinv(d0);
   // CHECK: d2 = sycl::ext::intel::math::erfinv(d0);
   d2 = erfinv(d0);
+  // CHECK: d2 = sycl::ext::intel::math::j0((double)f0);
+  d2 = j0(f0);
+  // CHECK: d2 = sycl::ext::intel::math::j0(d0);
+  d2 = j0(d0);
+  // CHECK: d2 = sycl::ext::intel::math::j1((double)f0);
+  d2 = j1(f0);
+  // CHECK: d2 = sycl::ext::intel::math::j1(d0);
+  d2 = j1(d0);
   // CHECK: d2 = sycl::ext::intel::math::cdfnorm(d0);
   d2 = normcdf(d0);
   // CHECK: d2 = sycl::ext::intel::math::cdfnorminv(d0);
@@ -28,14 +45,31 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   d2 = rnorm(i, &d0);
   // CHECK: d2 = sycl::ext::intel::math::rnorm(d1, &d0);
   d2 = rnorm(d1, &d0);
+  // CHECK: d2 = sycl::ext::intel::math::y0((double)f0);
+  d2 = y0(f0);
+  // CHECK: d2 = sycl::ext::intel::math::y0(d0);
+  d2 = y0(d0);
+  // CHECK: d2 = sycl::ext::intel::math::y1((double)f0);
+  d2 = y1(f0);
+  // CHECK: d2 = sycl::ext::intel::math::y1(d0);
+  d2 = y1(d0);
 }
 
 __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   float &f0 = *deviceArrayFloat, &f1 = *(deviceArrayFloat + 1), &f2 = *(deviceArrayFloat + 2);
   int i;
+  double d0;
 
   // Single Precision Mathematical Functions
 
+  // CHECK: f2 = sycl::ext::intel::math::cyl_bessel_i0(f0);
+  f2 = cyl_bessel_i0f(f0);
+  // CHECK: f2 = sycl::ext::intel::math::cyl_bessel_i0((float)d0);
+  f2 = cyl_bessel_i0f(d0);
+  // CHECK: f2 = sycl::ext::intel::math::cyl_bessel_i1(f0);
+  f2 = cyl_bessel_i1f(f0);
+  // CHECK: f2 = sycl::ext::intel::math::cyl_bessel_i1((float)d0);
+  f2 = cyl_bessel_i1f(d0);
   // CHECK: f2 = sycl::ext::intel::math::erfcinv(f0);
   f2 = erfcinvf(f0);
   // CHECK: f2 = sycl::ext::intel::math::erfcinv((float)i);
@@ -44,6 +78,14 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = erfinvf(f0);
   // CHECK: f2 = sycl::ext::intel::math::erfinv((float)i);
   f2 = erfinvf(i);
+  // CHECK: f2 = sycl::ext::intel::math::j0(f0);
+  f2 = j0f(f0);
+  // CHECK: f2 = sycl::ext::intel::math::j0((float)d0);
+  f2 = j0f(d0);
+  // CHECK: f2 = sycl::ext::intel::math::j1(f0);
+  f2 = j1f(f0);
+  // CHECK: f2 = sycl::ext::intel::math::j1((float)d0);
+  f2 = j1f(d0);
   // CHECK: f2 = sycl::ext::intel::math::cdfnorm(f0);
   f2 = normcdff(f0);
   // CHECK: f2 = sycl::ext::intel::math::cdfnorm((float)i);
@@ -60,6 +102,14 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   f2 = rnormf(i, &f0);
   // CHECK: f2 = sycl::ext::intel::math::rnorm(f1, &f0);
   f2 = rnormf(f1, &f0);
+  // CHECK: f2 = sycl::ext::intel::math::y0(f0);
+  f2 = y0f(f0);
+  // CHECK: f2 = sycl::ext::intel::math::y0((float)d0);
+  f2 = y0f(d0);
+  // CHECK: f2 = sycl::ext::intel::math::y1(f0);
+  f2 = y1f(f0);
+  // CHECK: f2 = sycl::ext::intel::math::y1((float)d0);
+  f2 = y1f(d0);
 }
 
 __global__ void kernelFuncHalf() {

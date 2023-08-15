@@ -3560,6 +3560,21 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
   if (!CE)
     return false;
 
+  if (auto Direction = dyn_cast<DeclRefExpr>(CE->getArg(3))) {
+    auto CpyKind = Direction->getDecl()->getName();
+    if (CpyKind == "cudaMemcpyDeviceToDevice") {
+      return true;
+    }
+    if (CpyKind == "cudaMemcpyHostToDevice" &&
+        dpct::DpctGlobalInfo::isOptimizeMigration()) {
+      auto LocInfo = dpct::DpctGlobalInfo::getLocInfo(CE->getBeginLoc());
+      clang::dpct::DiagnosticsUtils::report(
+          LocInfo.first, LocInfo.second, clang::dpct::Diagnostics::WAIT_REMOVE,
+          true, false);
+      return true;
+    }
+  }
+
   const clang::CompoundStmt *CS = getBodyofAncestorFCStmt(CE);
   if (!CS) {
     auto FD = clang::dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(CE);
@@ -3628,6 +3643,7 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
       }
     }
   }
+
   return false;
 }
 /// Check if \p E contains a sizeof(Type) sub-expression
@@ -4292,9 +4308,14 @@ std::string getBaseTypeRemoveTemplateArguments(const clang::MemberExpr *ME) {
     QT = QT->getPointeeType();
   const auto CT = QT.getCanonicalType();
   if (const auto RT = dyn_cast<clang::RecordType>(CT.getTypePtr())) {
+    if(const clang::CXXRecordDecl* RD = RT->getAsCXXRecordDecl()) {
+      if(RD->getIdentifier() == nullptr) {
+        return dpct::DpctGlobalInfo::getUnqualifiedTypeName(QT);
+      }
+    }
     return RT->getDecl()->getQualifiedNameAsString();
   } else {
-    return dpct::DpctGlobalInfo::getUnqualifiedTypeName(CT);
+    return dpct::DpctGlobalInfo::getUnqualifiedTypeName(QT);
   }
 }
 

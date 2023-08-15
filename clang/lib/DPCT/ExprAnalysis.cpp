@@ -458,6 +458,14 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
             Qualifier->getAsNamespace()->getBeginLoc())) {
       CTSName = getNestedNameSpecifierString(Qualifier) +
                 DRE->getNameInfo().getAsString();
+    } else if (Qualifier->getAsNamespace() &&
+               Qualifier->getAsNamespace()->getName() == "wmma" &&
+               dpct::DpctGlobalInfo::isInCudaPath(
+                   Qualifier->getAsNamespace()->getBeginLoc())) {
+      if (const auto *NSD =
+              dyn_cast<NamespaceDecl>(Qualifier->getAsNamespace())) {
+        CTSName = getNameSpace(NSD) + "::" + DRE->getNameInfo().getAsString();
+      }
     } else if (!IsNamespaceOrAlias || !IsSpecicalAPI) {
       CTSName = getNestedNameSpecifierString(Qualifier) +
                 DRE->getNameInfo().getAsString();
@@ -682,7 +690,6 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       {"__cuda_builtin_blockDim_t", "get_local_range"},
       {"__cuda_builtin_threadIdx_t", "get_local_id"},
   };
-
   auto ItemItr = NdItemMap.find(BaseType);
   if (ItemItr != NdItemMap.end()) {
     if (MapNames::replaceName(NdItemMemberMap, FieldName)) {
@@ -734,7 +741,6 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
     }
   } else if (MapNames::SupportedVectorTypes.find(BaseType) !=
              MapNames::SupportedVectorTypes.end()) {
-
     // Skip user-defined type.
     if (isTypeInAnalysisScope(ME->getBase()->getType().getTypePtr()))
       return;
@@ -746,7 +752,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       Begin = ME->getMemberLoc();
       isImplicit = true;
     }
-    if (*BaseType.rbegin() == '1') {
+    if (*BaseType.rbegin() == '1' || BaseType == "__half_raw") {
       if (isImplicit) {
         // "x" is migrated to "*this".
         addReplacement(Begin, ME->getEndLoc(), "*this");
@@ -1040,7 +1046,9 @@ void ExprAnalysis::analyzeExpr(const DeclStmt *DS) {
   }
 }
 
-void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
+void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
+                               const DependentNameTypeLoc *DNTL,
+                               const NestedNameSpecifierLoc *NNSL) {
   SourceRange SR = TL.getSourceRange();
   std::string TyName;
 
@@ -1056,6 +1064,12 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
         SR = TL.getSourceRange();
     }
   }
+  if (DNTL) {
+    SR.setBegin(DNTL->getQualifierLoc().getBeginLoc());
+  }
+  if (NNSL) {
+    SR.setBegin(NNSL->getBeginLoc());
+  }
 
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
   switch (TL.getTypeLocClass()) {
@@ -1069,13 +1083,8 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
   case TypeLoc::Typedef:
   case TypeLoc::Builtin:
   case TypeLoc::Using:
+  case TypeLoc::Elaborated:
   case TypeLoc::Record: {
-    if (TyName.find("cub") == std::string::npos &&
-        TL.getTypeLocClass() == TypeLoc::Typedef) {
-      TyName +=
-          TYPELOC_CAST(TypedefTypeLoc).getTypedefNameDecl()->getName().str();
-      break;
-    }
     TyName = DpctGlobalInfo::getTypeName(TL.getType());
     auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TyName);
     if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {

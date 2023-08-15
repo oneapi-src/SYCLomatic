@@ -1,7 +1,7 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none -out-root %T/cuda-math-intrinsics-cuda8.0-not-support %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
-// RUN: FileCheck --input-file %T/cuda-math-intrinsics-cuda8.0-not-support/cuda-math-intrinsics-cuda8.0-not-support.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/math/cuda-math-intrinsics-cuda8.0-not-support %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
+// RUN: FileCheck --input-file %T/math/cuda-math-intrinsics-cuda8.0-not-support/cuda-math-intrinsics-cuda8.0-not-support.dp.cpp --match-full-lines %s
 
 #include "cuda_fp16.h"
 

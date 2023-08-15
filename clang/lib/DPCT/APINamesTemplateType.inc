@@ -110,6 +110,35 @@ FEATURE_REQUEST_FACTORY(
                                         "deprecated::usm_host_allocator"),
                                     TEMPLATE_ARG(0))))
 
+TYPE_REWRITE_ENTRY("thrust::detail::enable_if",
+                    TYPE_FACTORY(STR("std::enable_if"),
+                                TEMPLATE_ARG(0), TEMPLATE_ARG(1)))
+
+TYPE_REWRITE_ENTRY("thrust::detail::is_same",
+                    TYPE_FACTORY(STR("std::is_same"),
+                                TEMPLATE_ARG(0), TEMPLATE_ARG(1)))
+
+TYPE_REWRITE_ENTRY("thrust::detail::integral_constant",
+                    TYPE_FACTORY(STR("std::integral_constant"),
+                                TEMPLATE_ARG(0), TEMPLATE_ARG(1)))
+
+TYPE_REWRITE_ENTRY("thrust::detail::true_type",
+                    TYPE_FACTORY(STR("std::true_type")))
+
+TYPE_REWRITE_ENTRY("thrust::detail::false_type",
+                    TYPE_FACTORY(STR("std::false_type")))
+
+TYPE_REWRITE_ENTRY("thrust::system::detail::bad_alloc",
+                    TYPE_FACTORY(STR("std::bad_alloc")))
+
+TYPE_REWRITE_ENTRY("thrust::iterator_traits",
+                    TYPE_FACTORY(STR("oneapi::dpl::iterator_traits"),
+                                 TEMPLATE_ARG(0)))
+
+TYPE_REWRITE_ENTRY("thrust::detail::vector_base",
+                    TYPE_FACTORY(STR("dpct::device_vector"),
+                                 TEMPLATE_ARG(0), TEMPLATE_ARG(1)))
+
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     TYPE_REWRITE_ENTRY("thrust::cuda::experimental::pinned_allocator",
