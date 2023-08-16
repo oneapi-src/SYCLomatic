@@ -739,8 +739,8 @@ template <typename Tag, typename T, typename Derived>
 class tagged_pointer_base {
 public:
   using pointer = T *;
-  using difference_type = ::std::make_signed_t<std::size_t>;
-  tagged_pointer_base() = default;
+  using difference_type = ::std::ptrdiff_t;
+  tagged_pointer_base() : m_ptr(nullptr) {}
   tagged_pointer_base(T *ptr) : m_ptr(ptr) {}
   operator const T *() const { return m_ptr; }
   operator T *() { return m_ptr; }
@@ -769,7 +769,7 @@ public:
   tagged_pointer() : super_t() {}
   tagged_pointer(T *ptr) : super_t(ptr) {}
   T &operator[](difference_type idx) { return this->m_ptr[idx]; }
-  T &operator[](difference_type idx) const { return this->m_ptr[idx]; }
+  const T &operator[](difference_type idx) const { return this->m_ptr[idx]; }
   tagged_pointer operator+(difference_type forward) const {
     return tagged_pointer{this->m_ptr + forward};
   }
