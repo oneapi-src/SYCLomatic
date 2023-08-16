@@ -836,6 +836,12 @@ CALL_FACTORY_ENTRY("thrust::system::make_error_code", CALL("std::make_error_code
 // thrust::system::make_error_condition
 CALL_FACTORY_ENTRY("thrust::system::make_error_condition", CALL("std::make_error_condition", ARG(0)))
 
+// thrust::system_category
+CALL_FACTORY_ENTRY("thrust::system_category", CALL("std::system_category"))
+
+// thrust::system::system_category
+CALL_FACTORY_ENTRY("thrust::system::system_category", CALL("std::system_category"))
+
 // thrust::equal_range
 thrustFactory("thrust::equal_range",
               {{4,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::device_ext},
