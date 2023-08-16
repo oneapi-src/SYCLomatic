@@ -181,4 +181,3 @@ void foo_host(){
   thrust::inclusive_scan(thrust::seq, B.begin(), B.end(), R2.begin());
   foo2(thrust::device, A);
 }
-

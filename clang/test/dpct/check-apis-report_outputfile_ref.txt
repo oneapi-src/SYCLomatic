@@ -2,5 +2,5 @@
 // CHECK:Analyzing: {{(.+)/([^/]+)}}.cu
 // CHECK:Migrating: {{(.+)/([^/]+)}}.cu
 // CHECK:{{(.+)/([^/]+)}}:{{[0-9]+}}:{{[0-9]+}}: warning: DPCT1007:{{[0-9]+}}: Migration of cuMemGetAddressRange is not supported.
-// CHECK:    cuMemGetAddressRange_v2(&base, &size_range, dptr);
-// CHECK:    ^
+// CHECK:{{(.+)}}    cuMemGetAddressRange_v2(&base, &size_range, dptr);
+// CHECK:{{(.+)}}    ^

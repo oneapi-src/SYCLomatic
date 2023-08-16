@@ -9,24 +9,24 @@
 #ifndef DPCT_QUERY_API_MAPPING_H
 #define DPCT_QUERY_API_MAPPING_H
 
-#include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/StringRef.h"
 
-#include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace clang {
 namespace dpct {
 
 class APIMapping {
-  static llvm::DenseMap<llvm::StringRef, llvm::StringRef> EntryMap;
+  static std::unordered_map<std::string, size_t> EntryMap;
+  static std::vector<llvm::StringRef> EntryArray;
 
-  static void registerEntry(llvm::StringRef Name, llvm::StringRef Description);
+  static void registerEntry(std::string Name, llvm::StringRef Description);
 
 public:
   static void initEntryMap();
 
-  static llvm::StringRef getAPISourceCode(llvm::StringRef Key);
+  static llvm::StringRef getAPISourceCode(std::string Key);
 };
 
 } // namespace dpct
