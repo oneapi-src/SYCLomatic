@@ -506,6 +506,136 @@ You may need to adjust the code.</p>
 <li><p>Supported by the routine: ignore this warning.</p></li>
 <li><p>Not supported by the routine: manually fix the code according to <a class="reference external" href="https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-dpcpp/current/sparse-blas-routines.html">sparse-blas-routines</a>.</p></li>
 </ul>
+<p>For example, this original CUDA* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="c1">//     --         --</span>
+<span class="linenos"> 2</span><span class="c1">//     | 1   0   2 |</span>
+<span class="linenos"> 3</span><span class="c1">// A = | 0   3   4 |</span>
+<span class="linenos"> 4</span><span class="c1">//     | 0   0   5 |</span>
+<span class="linenos"> 5</span><span class="c1">//     --         --</span>
+<span class="linenos"> 6</span><span class="c1">// a_val = [1, 2, 3, 4, 5]</span>
+<span class="linenos"> 7</span><span class="c1">// a_row_ptr = [0, 2, 4, 5]</span>
+<span class="linenos"> 8</span><span class="c1">// a_col_ind = [0, 2, 1, 2, 2]</span>
+<span class="linenos"> 9</span><span class="kt">void</span><span class="w"> </span><span class="nf">test_cusparseTcsrmm</span><span class="p">(</span><span class="n">cusparseHandle_t</span><span class="w"> </span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">cusparseMatDescr_t</span><span class="w"> </span><span class="n">descrA</span><span class="p">,</span>
+<span class="linenos">10</span><span class="w">                         </span><span class="kt">float</span><span class="w"> </span><span class="n">alpha</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">beta</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="linenos">11</span><span class="w">  </span><span class="c1">// malloc and set value</span>
+<span class="linenos">12</span><span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">a_val</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">my_malloc</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="linenos">13</span><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">a_row_ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">my_malloc</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="linenos">14</span><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">a_col_ind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">my_malloc</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="linenos">15</span><span class="w">  </span><span class="n">set_value</span><span class="p">(</span><span class="n">a_val</span><span class="p">);</span>
+<span class="linenos">16</span><span class="w">  </span><span class="n">set_value</span><span class="p">(</span><span class="n">a_row_ptr</span><span class="p">);</span>
+<span class="linenos">17</span><span class="w">  </span><span class="n">set_value</span><span class="p">(</span><span class="n">a_col_ind</span><span class="p">);</span>
+<span class="linenos">18</span>
+<span class="linenos">19</span><span class="w">  </span><span class="c1">// calculate</span>
+<span class="linenos">20</span><span class="w">  </span><span class="n">cusparseSetMatType</span><span class="p">(</span><span class="n">descrA</span><span class="p">,</span><span class="w"> </span><span class="n">CUSPARSE_MATRIX_TYPE_SYMMETRIC</span><span class="p">);</span>
+<span class="linenos">21</span><span class="w">  </span><span class="n">cusparseScsrmm</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">CUSPARSE_OPERATION_NON_TRANSPOSE</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">9</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">alpha</span><span class="p">,</span>
+<span class="linenos">22</span><span class="w">                 </span><span class="n">descrA</span><span class="p">,</span><span class="w"> </span><span class="n">a_val</span><span class="p">,</span><span class="w"> </span><span class="n">a_row_ptr</span><span class="p">,</span><span class="w"> </span><span class="n">a_col_ind</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">beta</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">);</span>
+<span class="linenos">23</span>
+<span class="linenos">24</span><span class="w">  </span><span class="c1">// synchronize and check value</span>
+<span class="linenos">25</span><span class="w">  </span><span class="p">...</span>
+<span class="linenos">26</span><span class="w">  </span><span class="c1">// free</span>
+<span class="linenos">27</span><span class="w">  </span><span class="n">my_free</span><span class="p">(</span><span class="n">a_val</span><span class="p">);</span>
+<span class="linenos">28</span><span class="w">  </span><span class="n">my_free</span><span class="p">(</span><span class="n">a_row_ptr</span><span class="p">);</span>
+<span class="linenos">29</span><span class="w">  </span><span class="n">my_free</span><span class="p">(</span><span class="n">a_col_ind</span><span class="p">);</span>
+<span class="linenos">30</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>results in the following migrated SYCL* code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="c1">//     --         --</span>
+<span class="linenos"> 2</span><span class="c1">//     | 1   0   2 |</span>
+<span class="linenos"> 3</span><span class="c1">// A = | 0   3   4 |</span>
+<span class="linenos"> 4</span><span class="c1">//     | 0   0   5 |</span>
+<span class="linenos"> 5</span><span class="c1">//     --         --</span>
+<span class="linenos"> 6</span><span class="c1">// a_val = [1, 2, 3, 4, 5]</span>
+<span class="linenos"> 7</span><span class="c1">// a_row_ptr = [0, 2, 4, 5]</span>
+<span class="linenos"> 8</span><span class="c1">// a_col_ind = [0, 2, 1, 2, 2]</span>
+<span class="linenos"> 9</span><span class="kt">void</span><span class="w"> </span><span class="nf">test_cusparseTcsrmm</span><span class="p">(</span><span class="n">sycl</span><span class="o">::</span><span class="n">queue</span><span class="w"> </span><span class="o">*</span><span class="n">handle</span><span class="p">,</span>
+<span class="linenos">10</span><span class="w">                         </span><span class="n">std</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">dpct</span><span class="o">::</span><span class="n">sparse</span><span class="o">::</span><span class="n">matrix_info</span><span class="o">&gt;</span><span class="w"> </span><span class="n">descrA</span><span class="p">,</span>
+<span class="linenos">11</span><span class="w">                         </span><span class="kt">float</span><span class="w"> </span><span class="n">alpha</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">beta</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="linenos">12</span><span class="w">  </span><span class="c1">// malloc and set value</span>
+<span class="linenos">13</span><span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">a_val</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">my_malloc</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="linenos">14</span><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">a_row_ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">my_malloc</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="linenos">15</span><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">a_col_ind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">my_malloc</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="linenos">16</span><span class="w">  </span><span class="n">set_value</span><span class="p">(</span><span class="n">a_val</span><span class="p">);</span>
+<span class="linenos">17</span><span class="w">  </span><span class="n">set_value</span><span class="p">(</span><span class="n">a_row_ptr</span><span class="p">);</span>
+<span class="linenos">18</span><span class="w">  </span><span class="n">set_value</span><span class="p">(</span><span class="n">a_col_ind</span><span class="p">);</span>
+<span class="linenos">19</span>
+<span class="linenos">20</span><span class="w">  </span><span class="c1">// calculate</span>
+<span class="linenos">21</span><span class="w">  </span><span class="n">descrA</span><span class="o">-&gt;</span><span class="n">set_matrix_type</span><span class="p">(</span><span class="n">dpct</span><span class="o">::</span><span class="n">sparse</span><span class="o">::</span><span class="n">matrix_info</span><span class="o">::</span><span class="n">matrix_type</span><span class="o">::</span><span class="n">sy</span><span class="p">);</span>
+<span class="linenos">22</span><span class="w">  </span><span class="cm">/*</span>
+<span class="linenos">23</span><span class="cm">  DPCT1045:0: Migration is only supported for this API for the general sparse</span>
+<span class="linenos">24</span><span class="cm">  matrix type. You may need to adjust the code.</span>
+<span class="linenos">25</span><span class="cm">  */</span>
+<span class="linenos">26</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">sparse</span><span class="o">::</span><span class="n">csrmm</span><span class="p">(</span><span class="o">*</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">oneapi</span><span class="o">::</span><span class="n">mkl</span><span class="o">::</span><span class="n">transpose</span><span class="o">::</span><span class="n">nontrans</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<span class="linenos">27</span><span class="w">                      </span><span class="o">&amp;</span><span class="n">alpha</span><span class="p">,</span><span class="w"> </span><span class="n">descrA</span><span class="p">,</span><span class="w"> </span><span class="n">a_val</span><span class="p">,</span><span class="w"> </span><span class="n">a_row_ptr</span><span class="p">,</span><span class="w"> </span><span class="n">a_col_ind</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">beta</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span>
+<span class="linenos">28</span><span class="w">                      </span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">);</span>
+<span class="linenos">29</span>
+<span class="linenos">30</span><span class="w">  </span><span class="c1">// synchronize and check value</span>
+<span class="linenos">31</span><span class="w">  </span><span class="p">...</span>
+<span class="linenos">32</span><span class="w">  </span><span class="c1">// free</span>
+<span class="linenos">33</span><span class="w">  </span><span class="n">my_free</span><span class="p">(</span><span class="n">a_val</span><span class="p">);</span>
+<span class="linenos">34</span><span class="w">  </span><span class="n">my_free</span><span class="p">(</span><span class="n">a_row_ptr</span><span class="p">);</span>
+<span class="linenos">35</span><span class="w">  </span><span class="n">my_free</span><span class="p">(</span><span class="n">a_col_ind</span><span class="p">);</span>
+<span class="linenos">36</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>which is rewritten to:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="c1">//     --         --</span>
+<span class="linenos"> 2</span><span class="c1">//     | 1   0   2 |</span>
+<span class="linenos"> 3</span><span class="c1">// A = | 0   3   4 |</span>
+<span class="linenos"> 4</span><span class="c1">//     | 0   0   5 |</span>
+<span class="linenos"> 5</span><span class="c1">//     --         --</span>
+<span class="linenos"> 6</span><span class="c1">// a_val = [1, 2, 3, 4, 5]</span>
+<span class="linenos"> 7</span><span class="c1">// a_row_ptr = [0, 2, 4, 5]</span>
+<span class="linenos"> 8</span><span class="c1">// a_col_ind = [0, 2, 1, 2, 2]</span>
+<span class="linenos"> 9</span><span class="c1">//</span>
+<span class="linenos">10</span><span class="c1">// Original matrix A is a symmetric matrix. Only upper/lower data is used.</span>
+<span class="linenos">11</span><span class="c1">// To make it to be a general matrix, all data in the matrix need to be filled.</span>
+<span class="linenos">12</span><span class="c1">//         --         --</span>
+<span class="linenos">13</span><span class="c1">//         | 1   0   2 |</span>
+<span class="linenos">14</span><span class="c1">// new_A = | 0   3   4 |</span>
+<span class="linenos">15</span><span class="c1">//         | 2   4   5 |</span>
+<span class="linenos">16</span><span class="c1">//         --         --</span>
+<span class="linenos">17</span><span class="c1">// new_a_val = [1, 2, 3, 4, 2, 4, 5]</span>
+<span class="linenos">18</span><span class="c1">// new_a_row_ptr = [0, 2, 4, 7]</span>
+<span class="linenos">19</span><span class="c1">// new_a_col_ind = [0, 2, 1, 2, 0, 1, 2]</span>
+<span class="linenos">20</span><span class="kt">void</span><span class="w"> </span><span class="nf">test_cusparseTcsrmm</span><span class="p">(</span><span class="n">sycl</span><span class="o">::</span><span class="n">queue</span><span class="w"> </span><span class="o">*</span><span class="n">handle</span><span class="p">,</span>
+<span class="linenos">21</span><span class="w">                         </span><span class="n">std</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">dpct</span><span class="o">::</span><span class="n">sparse</span><span class="o">::</span><span class="n">matrix_info</span><span class="o">&gt;</span><span class="w"> </span><span class="n">descrA</span><span class="p">,</span>
+<span class="linenos">22</span><span class="w">                         </span><span class="kt">float</span><span class="w"> </span><span class="n">alpha</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">beta</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="linenos">23</span><span class="w">  </span><span class="c1">// malloc and set value</span>
+<span class="linenos">24</span><span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">a_val</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">my_malloc</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="linenos">25</span><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">a_row_ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">my_malloc</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="linenos">26</span><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">a_col_ind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">my_malloc</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="linenos">27</span><span class="w">  </span><span class="n">set_value</span><span class="p">(</span><span class="n">a_val</span><span class="p">);</span>
+<span class="linenos">28</span><span class="w">  </span><span class="n">set_value</span><span class="p">(</span><span class="n">a_row_ptr</span><span class="p">);</span>
+<span class="linenos">29</span><span class="w">  </span><span class="n">set_value</span><span class="p">(</span><span class="n">a_col_ind</span><span class="p">);</span>
+<span class="linenos">30</span>
+<span class="linenos">31</span><span class="w">  </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">new_a_val</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">my_malloc</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="linenos">32</span><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">new_a_row_ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">my_malloc</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="linenos">33</span><span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">new_a_col_ind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">my_malloc</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="linenos">34</span>
+<span class="linenos">35</span><span class="w">  </span><span class="c1">// convert matrix data from symmetric format to general format</span>
+<span class="linenos">36</span><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">tie</span><span class="p">(</span><span class="n">new_a_val</span><span class="p">,</span><span class="w"> </span><span class="n">new_a_row_ptr</span><span class="p">,</span><span class="w"> </span><span class="n">new_a_col_ind</span><span class="p">)</span><span class="w"> </span><span class="o">=</span>
+<span class="linenos">37</span><span class="w">      </span><span class="n">symmetric_to_general</span><span class="p">(</span><span class="n">a_val</span><span class="p">,</span><span class="w"> </span><span class="n">a_row_ptr</span><span class="p">,</span><span class="w"> </span><span class="n">a_col_ind</span><span class="p">);</span>
+<span class="linenos">38</span>
+<span class="linenos">39</span><span class="w">  </span><span class="n">my_free</span><span class="p">(</span><span class="n">a_val</span><span class="p">);</span>
+<span class="linenos">40</span><span class="w">  </span><span class="n">my_free</span><span class="p">(</span><span class="n">a_row_ptr</span><span class="p">);</span>
+<span class="linenos">41</span><span class="w">  </span><span class="n">my_free</span><span class="p">(</span><span class="n">a_col_ind</span><span class="p">);</span>
+<span class="linenos">42</span>
+<span class="linenos">43</span><span class="w">  </span><span class="c1">// calculate</span>
+<span class="linenos">44</span><span class="w">  </span><span class="n">descrA</span><span class="o">-&gt;</span><span class="n">set_matrix_type</span><span class="p">(</span><span class="n">dpct</span><span class="o">::</span><span class="n">sparse</span><span class="o">::</span><span class="n">matrix_info</span><span class="o">::</span><span class="n">matrix_type</span><span class="o">::</span><span class="n">ge</span><span class="p">);</span>
+<span class="linenos">45</span><span class="w">  </span><span class="n">dpct</span><span class="o">::</span><span class="n">sparse</span><span class="o">::</span><span class="n">csrmm</span><span class="p">(</span><span class="o">*</span><span class="n">handle</span><span class="p">,</span><span class="w"> </span><span class="n">oneapi</span><span class="o">::</span><span class="n">mkl</span><span class="o">::</span><span class="n">transpose</span><span class="o">::</span><span class="n">nontrans</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<span class="linenos">46</span><span class="w">                      </span><span class="o">&amp;</span><span class="n">alpha</span><span class="p">,</span><span class="w"> </span><span class="n">descrA</span><span class="p">,</span><span class="w"> </span><span class="n">new_a_val</span><span class="p">,</span><span class="w"> </span><span class="n">new_a_row_ptr</span><span class="p">,</span>
+<span class="linenos">47</span><span class="w">                      </span><span class="n">new_a_col_ind</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">beta</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">);</span>
+<span class="linenos">48</span>
+<span class="linenos">49</span><span class="w">  </span><span class="c1">// synchronize and check value</span>
+<span class="linenos">50</span><span class="w">  </span><span class="p">...</span>
+<span class="linenos">51</span><span class="w">  </span><span class="c1">// free</span>
+<span class="linenos">52</span><span class="w">  </span><span class="n">my_free</span><span class="p">(</span><span class="n">new_a_val</span><span class="p">);</span>
+<span class="linenos">53</span><span class="w">  </span><span class="n">my_free</span><span class="p">(</span><span class="n">new_a_row_ptr</span><span class="p">);</span>
+<span class="linenos">54</span><span class="w">  </span><span class="n">my_free</span><span class="p">(</span><span class="n">new_a_col_ind</span><span class="p">);</span>
+<span class="linenos">55</span><span class="p">}</span>
+</pre></div>
+</div>
 </section>
 </section>
 

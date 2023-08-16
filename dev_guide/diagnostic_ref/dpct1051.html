@@ -507,6 +507,32 @@ depending on the context.</p>
 <h2>Suggestions to Fix<a class="headerlink" href="#suggestions-to-fix" title="Permalink to this heading">#</a></h2>
 <p>Review the logic and adjust it manually.</p>
 <p>Visit the <a class="reference external" href="https://community.intel.com/t5/Migrating-to-SYCL/bd-p/migrating-sycl">Migrating to SYCL forum</a> for additional help.</p>
+<p>For example, this original CUDA code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">cudaDeviceProp</span><span class="w"> </span><span class="n">deviceProp</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="linenos">2</span><span class="w">   </span><span class="kt">size_t</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">deviceProp</span><span class="p">.</span><span class="n">totalConstMem</span><span class="p">;</span>
+<span class="linenos">3</span><span class="w">   </span><span class="p">...</span>
+<span class="linenos">4</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>results in the following migrated SYCL code:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">dpct</span><span class="o">::</span><span class="n">device_info</span><span class="w"> </span><span class="n">deviceProp</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="linenos">2</span><span class="w">   </span><span class="cm">/*</span>
+<span class="linenos">3</span><span class="cm">   DPCT1051:0: SYCL does not support a device property functionally compatible</span>
+<span class="linenos">4</span><span class="cm">   with totalConstMem. It was migrated to get_global_mem_size. You may need to</span>
+<span class="linenos">5</span><span class="cm">   adjust the value of get_global_mem_size for the specific device.</span>
+<span class="linenos">6</span><span class="cm">   */</span>
+<span class="linenos">7</span><span class="w">   </span><span class="kt">size_t</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">deviceProp</span><span class="p">.</span><span class="n">get_global_mem_size</span><span class="p">();</span>
+<span class="linenos">8</span><span class="w">   </span><span class="p">...</span>
+<span class="linenos">9</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>which is rewritten to:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">(</span><span class="n">dpct</span><span class="o">::</span><span class="n">device_info</span><span class="w"> </span><span class="n">deviceProp</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="linenos">2</span><span class="w">   </span><span class="kt">size_t</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">deviceProp</span><span class="p">.</span><span class="n">get_global_mem_size</span><span class="p">();</span>
+<span class="linenos">3</span><span class="w">   </span><span class="p">...</span>
+<span class="linenos">4</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
 </section>
 </section>
 

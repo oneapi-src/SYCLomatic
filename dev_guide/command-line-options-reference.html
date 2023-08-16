@@ -649,12 +649,15 @@ Only files under this root are migrated. Default:</p>
 <li><p>The directory of the first input source file, if the input source files are provided.</p></li>
 </ul>
 <p>Details:</p>
-<p>Any source within the directory specified by <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> (at any nesting
-level) may be migrated. Any header file within the directory specified by
-<code class="docutils literal notranslate"><span class="pre">--in-root</span></code> (at any nesting level) included by the source or header file,
-which is being migrated, is also migrated. Files from outside the <code class="docutils literal notranslate"><span class="pre">--in-root</span></code>
-directory will not be migrated even if they are included by any of the program
-source files.</p>
+<ul class="simple">
+<li><p>Any source within the directory specified by <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> (at any nesting level)
+may be migrated.</p></li>
+<li><p>Any header file within the directory specified by <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> (at any nesting
+level) that is included by the source or header file which is being migrated, is also
+migrated.</p></li>
+<li><p>Files from outside the <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> directory will not be migrated even if
+they are included by any of the program source files.</p></li>
+</ul>
 </td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--in-root-exclude=&lt;dir|file&gt;</span></code></p>

@@ -475,6 +475,7 @@ document.write(`
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#use-the-command-line">Use the Command Line</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#migrate-the-folder-options-sample">Migrate the Folder Options Sample</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#use-make-cmake-to-migrate-a-complete-project">Use Make/CMake* to Migrate a Complete Project</a></li>
 </ul>
             </nav>
@@ -491,27 +492,26 @@ document.write(`
 <h1>Migrate a Project on Linux*<a class="headerlink" href="#migrate-a-project-on-linux" title="Permalink to this heading">#</a></h1>
 <section id="use-the-command-line">
 <h2>Use the Command Line<a class="headerlink" href="#use-the-command-line" title="Permalink to this heading">#</a></h2>
-<p>You can invoke SYCLomatic at the command line.</p>
-<p>Use the tool’s <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> option to specify the location of the
-source that should be migrated:</p>
-<ul class="simple">
-<li><p>Any source within the <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> directory (at any nesting
-level) may be migrated.</p></li>
-<li><p>Any header file within the <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> directory (at any nesting level) that
-is included by the source or header file, which is being migrated, is also
-migrated.</p></li>
-<li><p>Files from outside the <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> directory will not be migrated even if
-they are included by any of your program source files.</p></li>
-<li><p>If the <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> option is not specified, the directory of the first input
-source file is implied.</p></li>
-</ul>
-<p>Use the tool’s <code class="docutils literal notranslate"><span class="pre">--out-root</span></code> option to specify the directory where the
-SYCL* code produced by SYCLomatic is written:</p>
-<ul class="simple">
-<li><p>Relative paths of the migrated files are maintained.</p></li>
-<li><p>Extensions are changed to <code class="docutils literal notranslate"><span class="pre">.dp.cpp</span></code>.</p></li>
-<li><p>If the <code class="docutils literal notranslate"><span class="pre">--out-root</span></code> option is not specified, <code class="docutils literal notranslate"><span class="pre">./dpct_output</span></code> is implied.</p></li>
-</ul>
+<p>You can run SYCLomatic from the command line and provide migration instructions
+using the tool’s command-line options. The general command syntax is:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span> <span class="p">[</span><span class="o">&lt;</span><span class="n">source0</span><span class="o">&gt;...</span> <span class="o">&lt;</span><span class="n">sourceN</span><span class="o">&gt;</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">c2s</span></code> is an alias to the <code class="docutils literal notranslate"><span class="pre">dpct</span></code> command and may be used in its place.</p>
+</div>
+<p>To see the list of SYCLomatic–specific options, use <code class="docutils literal notranslate"><span class="pre">--help</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="o">--</span><span class="n">help</span>
+</pre></div>
+</div>
+<p>If your CUDA installation is from a source other than NVIDIA, your header
+files may be in a different location. Locate your header files and use the
+<code class="docutils literal notranslate"><span class="pre">--cuda-include-path=&lt;path/to/cuda/include&gt;</span></code> option to specify the location
+when you run the tool.</p>
+</section>
+<section id="migrate-the-folder-options-sample">
+<h2>Migrate the Folder Options Sample<a class="headerlink" href="#migrate-the-folder-options-sample" title="Permalink to this heading">#</a></h2>
 <p>The following steps show how to migrate the Folder Options sample using SYCLomatic:</p>
 <ol class="arabic">
 <li><p>Get the Folder Options sample:</p>
@@ -537,8 +537,7 @@ files (<code class="docutils literal notranslate"><span class="pre">main.cu</spa
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> option specifies the location of the CUDA
 files that need migration. The <code class="docutils literal notranslate"><span class="pre">--out-root</span></code> option specifies the location for the migrated files.</p>
-</li>
-<li><p>As a result of the migration command, you should see the following files:</p>
+<p>As a result of the migration command, you should see the following files:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>result/foo
      ├── bar
      │   ├── util.dp.cpp
@@ -550,23 +549,28 @@ files that need migration. The <code class="docutils literal notranslate"><span 
 <li><p>Inspect the migrated source code, address any generated DPCT warnings, and
 verify correctness of the new program.</p></li>
 </ol>
-<p>Review <a class="reference internal" href="before-you-begin.html#emitted-warnings"><span class="std std-ref">Emitted Warnings</span></a> for additional information about inserted warnings
+<p>Review <a class="reference internal" href="before-you-begin.html#emitted-warnings"><span class="std std-ref">Understand Emitted Warnings</span></a> for additional information about inserted warnings
 and comments.</p>
-<p>For the most accurate and detailed instructions of addressing warnings, see the
+<p>For details on addressing warnings generated when migrating code samples, refer to the
 <strong>Addressing Warnings in the Migrated Code</strong> section of the sample README files.</p>
 <p>For more information on command line capabilities, review the
 <a class="reference internal" href="../command-line-options-reference.html#cmd-opt-ref"><span class="std std-ref">Command Line Options Reference</span></a>.</p>
 </section>
 <section id="use-make-cmake-to-migrate-a-complete-project">
 <h2>Use Make/CMake* to Migrate a Complete Project<a class="headerlink" href="#use-make-cmake-to-migrate-a-complete-project" title="Permalink to this heading">#</a></h2>
-<p>If your project uses Make or CMake, you can utilize compilation database support
-to provide compilation options, settings, macro definitions, and include paths to
-SYCLomatic. Refer to <a class="reference internal" href="generate-compilation-db.html#gen-comp-db"><span class="std std-ref">Generate a Compilation Database</span></a> for detailed information about generating a compilation database.</p>
+<p>If your project uses Make or CMake, you can use a compilation database to provide
+compilation options, settings, macro definitions, and include paths to SYCLomatic.
+Refer to <a class="reference internal" href="generate-compilation-db.html#gen-comp-db"><span class="std std-ref">Generate a Compilation Database</span></a> for detailed information about generating a compilation database.</p>
 <p>SYCLomatic parses the compilation database and applies the necessary
 options when migrating the input sources.</p>
 <p>This example uses the Rodinia needleman-wunsch sample to demonstrate the use of a
-compilation database.</p>
-<p><strong>Step 1: Create the Compilation Database</strong></p>
+compilation database, following three high-level steps:</p>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="#step-1-compdb"><span class="std std-ref">Create the Compilation Database</span></a></p></li>
+<li><p><a class="reference internal" href="#step-2-compdb"><span class="std std-ref">Use the Compilation Database with the Migration Tool</span></a></p></li>
+<li><p><a class="reference internal" href="#step-3-compdb"><span class="std std-ref">Verify the Migrated Source</span></a></p></li>
+</ol>
+<p id="step-1-compdb"><strong>Step 1: Create the Compilation Database</strong></p>
 <ol class="arabic">
 <li><p>Get the Rodinia needleman-wunsch sample:</p>
 <ul class="simple">
@@ -605,7 +609,7 @@ this example:</p>
 </div>
 </li>
 </ol>
-<p><strong>Step 2: Use the Compilation Database with the Migration Tool</strong></p>
+<p id="step-2-compdb"><strong>Step 2: Use the Compilation Database with the Migration Tool</strong></p>
 <p>By default, SYCLomatic looks for the <code class="docutils literal notranslate"><span class="pre">compile_commands.json</span></code> file
 in the current directory and uses the compiler options from it for each input file.</p>
 <p>Use the following command to migrate the CUDA code in the Rodinia needleman-wunsch
@@ -628,14 +632,14 @@ The new project will be created in the migration directory.</p>
     └── needle.dp.cpp
 </pre></div>
 </div>
-<p><strong>Step 3: Verify the Source for Correctness and Fix Anything the Tool was Unable
-to Migrate</strong></p>
-<p>Verify the migration of the source code that uses variables declared
-using preprocessor directives. Inspect the migrated source code, address any
-generated DPCT warnings, and verify correctness of the new program.</p>
-<p>Review <a class="reference internal" href="before-you-begin.html#emitted-warnings"><span class="std std-ref">Emitted Warnings</span></a> for additional information about inserted warnings
-and comments.</p>
-<p>For the most accurate and detailed instructions on addressing warnings, see the
+<p id="step-3-compdb"><strong>Step 3: Verify the Migrated Source</strong></p>
+<ul class="simple">
+<li><p>Verify the migration of the source code that uses variables declared using preprocessor directives.</p></li>
+<li><p>Inspect the migrated source code and address any generated DPCT warnings.</p></li>
+<li><p>Verify correctness of the new program.</p></li>
+<li><p>Review <a class="reference internal" href="before-you-begin.html#emitted-warnings"><span class="std std-ref">Understand Emitted Warnings</span></a> for additional information about inserted warnings and comments.</p></li>
+</ul>
+<p>For details on addressing warnings generated when migrating code samples, refer to the
 <strong>Addressing Warnings in the Migrated Code</strong> section of the samples README files.</p>
 </section>
 </section>
@@ -689,6 +693,7 @@ and comments.</p>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#use-the-command-line">Use the Command Line</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#migrate-the-folder-options-sample">Migrate the Folder Options Sample</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#use-make-cmake-to-migrate-a-complete-project">Use Make/CMake* to Migrate a Complete Project</a></li>
 </ul>
   </nav></div>
