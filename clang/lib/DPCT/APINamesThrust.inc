@@ -824,6 +824,12 @@ CALL_FACTORY_ENTRY("thrust::cuda_category", CALL("std::generic_category"))
 // thrust::system::cuda_category
 CALL_FACTORY_ENTRY("thrust::system::cuda_category", CALL("std::generic_category"))
 
+// thrust::generic_category
+CALL_FACTORY_ENTRY("thrust::generic_category", CALL("std::generic_category"))
+
+// thrust::system::generic_category
+CALL_FACTORY_ENTRY("thrust::system::generic_category", CALL("std::generic_category"))
+
 // thrust::system::make_error_code
 CALL_FACTORY_ENTRY("thrust::system::make_error_code", CALL("std::make_error_code", ARG(0)))
 

@@ -13,8 +13,12 @@ void cuda_safe_call(cudaError_t error, const std::string &message = "") {
   thrust::errc::errc_t e;
   // CHECK:     auto ret = std::make_error_code(e);
   // CHECK-NEXT: std::make_error_condition(e);
+  // CHECK-NEXT: std::generic_category();
+  // CHECK-NEXT: std::generic_category();
   auto ret = thrust::system::make_error_code(e);
   thrust::system::make_error_condition(e);
+  thrust::system::generic_category();
+  thrust::generic_category();
 
   // CHECK: std::system_error(error, std::generic_category(), message);
   std::system_error(error, std::generic_category(), message);
