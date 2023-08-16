@@ -3812,6 +3812,8 @@ public:
   bool IsSyclExternMacroNeeded() { return NeedSyclExternMacro; }
   void setAlwaysInlineDevFunc() { AlwaysInlineDevFunc = true; }
   bool IsAlwaysInlineDevFunc() { return AlwaysInlineDevFunc; }
+  void setForceInlineDevFunc() { ForceInlineDevFunc = true; }
+  bool IsForceInlineDevFunc() { return ForceInlineDevFunc; }
   void merge(std::shared_ptr<DeviceFunctionInfo> Other);
   size_t ParamsNum;
   size_t NonDefaultParamNum;
@@ -3853,6 +3855,7 @@ private:
   std::string DefinitionFilePath;
   bool NeedSyclExternMacro = false;
   bool AlwaysInlineDevFunc = false;
+  bool ForceInlineDevFunc = false;
   // subgroup size, filepath, offset, API name, var name
   std::vector<std::tuple<unsigned int, std::string, unsigned int, std::string,
                          std::string>>

@@ -4452,5 +4452,6 @@ void requestHelperFeatureForTypeNames(const std::string Name) {
     requestFeature(CuDNNHelperFeatureIter->second->RequestFeature);
   }
 }
+
 } // namespace dpct
 } // namespace clang
