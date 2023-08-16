@@ -969,8 +969,8 @@ auto UsingDpctMinMax = [](const CallExpr *C) -> bool {
     return true;
   QualType Arg0T = C->getArg(0)->IgnoreImpCasts()->getType();
   QualType Arg1T = C->getArg(1)->IgnoreImpCasts()->getType();
-  Arg0T.removeLocalCVRQualifiers(Qualifiers::CVRMask);
-  Arg1T.removeLocalCVRQualifiers(Qualifiers::CVRMask);
+  Arg0T.removeLocalFastQualifiers(Qualifiers::CVRMask);
+  Arg1T.removeLocalFastQualifiers(Qualifiers::CVRMask);
   return Arg0T != Arg1T;
 };
 }

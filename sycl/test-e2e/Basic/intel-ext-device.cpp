@@ -26,9 +26,6 @@ using namespace sycl;
 #endif
 
 int main(int argc, char **argv) {
-  // Must be enabled at the beginning of the application
-  // to obtain the PCI address
-  setenv("SYCL_ENABLE_PCI", "1", 0);
 
   int pltCount = 1;
   for (const auto &plt : platform::get_platforms()) {
@@ -53,6 +50,8 @@ int main(int argc, char **argv) {
         std::cout << "OpenCL" << std::endl;
       } else if (plt.get_backend() == backend::ext_oneapi_cuda) {
         std::cout << "CUDA" << std::endl;
+      } else if (plt.get_backend() == backend::ext_oneapi_hip) {
+        std::cout << "HIP" << std::endl;
       } else {
         std::cout << "Unknown" << std::endl;
       }

@@ -126,11 +126,12 @@ void DpctFrontEndAction::EndSourceFileAction() {
   getCompilerInstance().getASTContext().getParentMapContext().clear();
 }
 
-DpctToolAction::DpctToolAction(llvm::raw_ostream &DS, ReplTy &Replacements,
-                               const std::string &RuleNames,
-                               std::vector<PassKind> Passes)
+DpctToolAction::DpctToolAction(
+    llvm::raw_ostream &DS, ReplTy &Replacements, const std::string &RuleNames,
+    std::vector<PassKind> Passes,
+    llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem> FS)
     : Global(DpctGlobalInfo::getInstance()), Repls(Replacements),
-      Passes(std::move(Passes)), DiagnosticStream(DS) {
+      Passes(std::move(Passes)), DiagnosticStream(DS), FS(FS) {
   if (RuleNames.empty())
     return;
   auto Names = split(RuleNames, ',');
@@ -178,6 +179,8 @@ std::shared_ptr<TranslationUnitInfo> DpctToolAction::createTranslationUnitInfoIm
       /*ShouldOwnClient=*/false, &Invocation->getCodeGenOpts());
   DpctGlobalInfo::setColorOption(Invocation->getDiagnosticOpts().ShowColors);
   Info->AST = ASTUnit::create(Invocation, Diags, CaptureDiagsKind::None, false);
+  // Use the FileSystem passed by RefactoringTool.
+  Info->AST->getFileManager().setVirtualFileSystem(FS);
   DpctFrontEndAction FEAction(Info.get());
   auto Ret = ASTUnit::LoadFromCompilerInvocationAction(
       Invocation, std::make_shared<PCHContainerOperations>(), Diags, &FEAction,

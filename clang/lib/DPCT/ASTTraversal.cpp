@@ -371,7 +371,9 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
       dpct::DpctGlobalInfo::getEndOfEmptyMacros()[getHashStrFromLoc(
           Tok.getLocation())] = Range.getBegin();
       dpct::DpctGlobalInfo::getBeginOfEmptyMacros()[getHashStrFromLoc(
-          Range.getBegin())] = Range.getEnd();
+          Range.getBegin())] =
+          dpct::DpctGlobalInfo::getLocInfo(Range.getEnd()).second -
+          dpct::DpctGlobalInfo::getLocInfo(Range.getBegin()).second;
     }
   }
 
@@ -2688,11 +2690,11 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     if (!TSTL)
       return;
     auto TST = TSTL.getType()->getAsAdjusted<TemplateSpecializationType>();
-    if (!TST)
+    if (!TST || TST->template_arguments().empty())
       return;
 
     if (!DpctGlobalInfo::getTypeName(TST->template_arguments()[0].getAsType())
-            .compare("thrust::use_default")) {
+             .compare("thrust::use_default")) {
       auto ArgBeginLoc = TSTL.getArgLoc(0).getSourceRange().getBegin();
       auto ArgEndLoc = TSTL.getArgLoc(0).getSourceRange().getEnd();
       emplaceTransformation(new ReplaceToken(ArgBeginLoc, ArgEndLoc, ""));
@@ -12224,6 +12226,8 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
                            ->getType()
                            .getCanonicalType();
     ND = getNamedDecl(ObjType.getTypePtr());
+    if (!ND)
+      return;
     ObjName = ND->getNameAsString();
   } else {
     // Match the static member function call, like: A a; a.staticCall();
@@ -12244,9 +12248,10 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
   if (!dpct::DpctGlobalInfo::isInCudaPath(ND->getLocation()) &&
       !isChildOrSamePath(DpctInstallPath,
                          dpct::DpctGlobalInfo::getLocInfo(ND).first)) {
-    if (!ND->getName().startswith("cudnn") && !ND->getName().startswith("nccl"))
+    if ( ND->getIdentifier() && !ND->getName().startswith("cudnn") && !ND->getName().startswith("nccl"))
       return;
   }
+
   auto *NSD = dyn_cast<NamespaceDecl>(ND->getDeclContext());
   Namespace = getNameSpace(NSD);
   APIName = CE->getCalleeDecl()->getAsFunction()->getNameAsString();

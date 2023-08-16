@@ -122,7 +122,6 @@ bool EnablepProfilingFlag = false;
 bool SyclNamedLambdaFlag = false;
 bool ExplicitClNamespace = false;
 bool NoDRYPatternFlag = false;
-bool NoUseGenericSpaceFlag = false;
 bool ProcessAllFlag = false;
 bool AsyncHandlerFlag = false;
 static std::string SuppressWarningsMessage = "A comma separated list of migration warnings to suppress. Valid "
@@ -169,10 +168,6 @@ static llvm::cl::opt<std::string>
                  llvm::cl::value_desc("[pass|transformation]"), llvm::cl::cat(DPCTCat),
                  llvm::cl::Optional, llvm::cl::Hidden);
 #endif
-static llvm::cl::opt<bool, true> NoUseGenericSpace(
-  "no-use-generic-space", llvm::cl::desc("sycl::access::address_space::generic_space is not used during atomic\n"
-                                         " function's migration. Default: off.\n"),
-  llvm::cl::cat(DPCTCat), llvm::cl::location(NoUseGenericSpaceFlag), llvm::cl::ReallyHidden);
 #ifdef __linux__
 static AutoCompletePrinter AutoCompletePrinterInstance;
 static llvm::cl::opt<AutoCompletePrinter, true, llvm::cl::parser<std::string>> AutoComplete(
@@ -727,25 +722,32 @@ int runDPCT(int argc, const char **argv) {
     PrintMsg(OS.str());
   }
 
+  ExtraIncPaths = OptParser->getExtraIncPathList();
+
   // TODO: implement one of this for each source language.
   CudaPath = getCudaInstallPath(OriginalArgc, argv);
   DpctDiags() << "Cuda Include Path found: " << CudaPath << "\n";
 
   std::vector<std::string> SourcePathList;
   if (QueryAPIMapping.getNumOccurrences()) {
+    // Set a virtual file for --query-api-mapping.
+    llvm::SmallString<16> VirtFile;
+    llvm::sys::path::system_temp_directory(/*ErasedOnReboot=*/true, VirtFile);
+    llvm::sys::path::append(VirtFile, "temp.cu");
+    SourcePathList.emplace_back(VirtFile);
+    DpctGlobalInfo::setIsQueryAPIMapping(true);
+  } else {
+    SourcePathList = OptParser->getSourcePathList();
+  }
+  RefactoringTool Tool(OptParser->getCompilations(), SourcePathList);
+  if (DpctGlobalInfo::isQueryAPIMapping()) {
     APIMapping::initEntryMap();
     auto SourceCode = APIMapping::getAPISourceCode(QueryAPIMapping);
     if (SourceCode.empty()) {
       dpctExit(MigrationErrorNoAPIMapping);
     }
 
-    int FD;
-    SmallString<64> TempFile;
-    if (auto EC =
-            llvm::sys::fs::createTemporaryFile("tmp", "cu", FD, TempFile)) {
-      dpctExit(MigrationErrorCannotCreateTempFile);
-    }
-    llvm::raw_fd_ostream(FD, true) << SourceCode;
+    Tool.mapVirtualFile(SourcePathList[0], SourceCode);
 
     std::string OptionMsg;
     static const std::string OptionStr{"// Option:"};
@@ -785,14 +787,16 @@ int runDPCT(int argc, const char **argv) {
     llvm::outs() << "Is migrated to" << OptionMsg << ":";
 
     NoIncrementalMigration = true;
-    InRoot = llvm::sys::path::parent_path(TempFile).str();
-    OutRoot = llvm::sys::path::parent_path(TempFile).str();
-    DpctGlobalInfo::setIsQueryAPIMapping(true);
-    SourcePathList = {TempFile.str().str()};
+    // Need set a virtual path and it will used by AnalysisScope.
+    InRoot = llvm::sys::path::parent_path(SourcePathList[0]).str();
   } else {
-    SourcePathList = OptParser->getSourcePathList();
+    IsUsingDefaultOutRoot = OutRoot.empty();
+    if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
+      ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
+      dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
+    }
+    dpct::DpctGlobalInfo::setOutRoot(OutRoot);
   }
-  RefactoringTool Tool(OptParser->getCompilations(), SourcePathList);
 
   if (GenBuildScript) {
     clang::tooling::SetCompileTargetsMap(CompileTargetsMap);
@@ -811,13 +815,6 @@ int runDPCT(int argc, const char **argv) {
   DpctInstallPath = getInstallPath(Tool, argv[0]);
 
   ValidateInputDirectory(Tool, InRoot);
-
-  IsUsingDefaultOutRoot = OutRoot.empty();
-  if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
-    ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
-    dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
-  }
-  dpct::DpctGlobalInfo::setOutRoot(OutRoot);
 
   // AnalysisScope defaults to the value of InRoot
   // InRoot must be the same as or child of AnalysisScope
@@ -966,9 +963,6 @@ int runDPCT(int argc, const char **argv) {
                      UseDPCPPExtensions.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_NoDRYPattern, NoDRYPatternFlag,
                      NoDRYPattern.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_NoUseGenericSpace,
-                     NoUseGenericSpaceFlag,
-                     NoUseGenericSpace.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_CompilationsDir, CompilationsDir,
                      OptParser->isPSpecified());
 #ifdef _WIN32
@@ -1047,7 +1041,8 @@ int runDPCT(int argc, const char **argv) {
     DpctGlobalInfo::setRunRound(RunCount++);
     DpctToolAction Action(OutputFile.empty() ? llvm::errs() : DpctTerm(),
                           Tool.getReplacements(), Passes,
-                          {PassKind::PK_Analysis, PassKind::PK_Migration});
+                          {PassKind::PK_Analysis, PassKind::PK_Migration},
+                          Tool.getFiles().getVirtualFileSystemPtr());
 
     if (ProcessAllFlag) {
       clang::tooling::SetFileProcessHandle(InRoot, OutRoot, processAllFiles);
@@ -1098,7 +1093,8 @@ int runDPCT(int argc, const char **argv) {
          I.MoveToNextPiece()) {
       if (Flag) {
         if (auto It = I.piece().find(EndStr); It != StringRef::npos) {
-          llvm::outs() << I.piece().substr(0, It);
+          auto TempStr = I.piece().substr(0, It);
+          llvm::outs() << TempStr.substr(0, TempStr.find_last_of("\n") + 1);
           break;
         }
         llvm::outs() << I.piece();
