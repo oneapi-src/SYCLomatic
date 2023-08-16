@@ -1932,30 +1932,29 @@ void MultiHistogramEven(Policy &&policy, Iter1 d_samples,
         oneapi::dpl::permutation_iterator(
             d_samples,
             internal::compose_functor(
-                internal::interleaved_select_channel(NUM_CHANNELS,
-                                                     active_channel),
                 internal::roi_2d_index(
                     num_row_samples, row_stride_bytes /
-                        sizeof(typename ::std::iterator_traits<Iter1>::value_type)))),
+                        (NUM_CHANNELS * sizeof(typename ::std::iterator_traits<Iter1>::value_type))),
+            internal::interleaved_select_channel(NUM_CHANNELS, active_channel))),
         d_histogram[active_channel], num_levels[active_channel],
         lower_level[active_channel], upper_level[active_channel],
-        num_row_samples, num_rows, row_stride_bytes);
+        num_row_samples * num_rows);
   }
 }
 
-template <typename Policy, typename Iter1, typename Iter2, typename T,
+template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
           typename Size>
 void HistogramRange(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
-                    int num_levels, T *d_levels, Size num_samples) {
+                    int num_levels, Iter3 d_levels, Size num_samples) {
   internal::histogram(::std::forward<Policy>(policy), d_samples,
                       d_samples + num_samples, d_histogram, d_levels,
                       d_levels + num_levels);
 }
 
-template <typename Policy, typename Iter1, typename Iter2, typename T,
+template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
           typename OffsetT>
 void HistogramRange(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
-                        int num_levels, T *d_levels, OffsetT num_row_samples,
+                        int num_levels, Iter3 d_levels, OffsetT num_row_samples,
                         OffsetT num_rows, ::std::size_t row_stride_bytes) {
   return HistogramRange(
       ::std::forward<Policy>(policy),
@@ -1967,11 +1966,11 @@ void HistogramRange(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
 }
 
 template <int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename Policy,
-          typename Iter1, typename Iter2, typename T, typename Size>
+          typename Iter1, typename Iter2, typename Iter3, typename Size>
 void MultiHistogramRange(Policy &&policy, Iter1 d_samples,
                          Iter2 d_histogram[NUM_ACTIVE_CHANNELS],
                          int num_levels[NUM_ACTIVE_CHANNELS],
-                         T *d_levels[NUM_ACTIVE_CHANNELS], Size num_pixels) {
+                         Iter3 d_levels[NUM_ACTIVE_CHANNELS], Size num_pixels) {
   for (int active_channel = 0; active_channel < NUM_ACTIVE_CHANNELS;
        active_channel++) {
     HistogramRange(policy,
@@ -1984,11 +1983,11 @@ void MultiHistogramRange(Policy &&policy, Iter1 d_samples,
 }
 
 template <int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename Policy,
-          typename Iter1, typename Iter2, typename T, typename OffsetT>
+          typename Iter1, typename Iter2, typename Iter3, typename OffsetT>
 void MultiHistogramRange(Policy &&policy, Iter1 d_samples,
                          Iter2 d_histogram[NUM_ACTIVE_CHANNELS],
                          int num_levels[NUM_ACTIVE_CHANNELS],
-                         T *d_levels[NUM_ACTIVE_CHANNELS],
+                         Iter3 d_levels[NUM_ACTIVE_CHANNELS],
                          OffsetT num_row_samples, OffsetT num_rows,
                          ::std::size_t row_stride_bytes) {
   for (int active_channel = 0; active_channel < NUM_ACTIVE_CHANNELS;
@@ -1998,14 +1997,13 @@ void MultiHistogramRange(Policy &&policy, Iter1 d_samples,
         oneapi::dpl::permutation_iterator(
             d_samples,
             internal::compose_functor(
-                internal::interleaved_select_channel(NUM_CHANNELS,
-                                                     active_channel),
                 internal::roi_2d_index(
                     num_row_samples,
                     row_stride_bytes /
-                        sizeof(typename ::std::iterator_traits<Iter1>::value_type)))),
+                         (NUM_CHANNELS * sizeof(typename ::std::iterator_traits<Iter1>::value_type))),
+                internal::interleaved_select_channel(NUM_CHANNELS, active_channel))),
         d_histogram[active_channel], num_levels[active_channel],
-        d_levels[active_channel], num_row_samples, num_rows, row_stride_bytes);
+        d_levels[active_channel], num_row_samples * num_rows);
   }
 }
 
