@@ -1980,7 +1980,7 @@ SourceLocation getBeginLocOfPreviousEmptyMacro(SourceLocation Loc) {
   return Loc;
 }
 
-SourceLocation getEndLocOfFollowingEmptyMacro(SourceLocation Loc) {
+unsigned int getEndLocOfFollowingEmptyMacro(SourceLocation Loc) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto &Map = dpct::DpctGlobalInfo::getBeginOfEmptyMacros();
   Token Tok;
@@ -1989,7 +1989,7 @@ SourceLocation getEndLocOfFollowingEmptyMacro(SourceLocation Loc) {
           Loc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())),
       Tok, SM, dpct::DpctGlobalInfo::getContext().getLangOpts(), true);
   if (Ret)
-    return Loc;
+    return 0;
 
   SourceLocation EndOfToken = SM.getExpansionLoc(Tok.getLocation());
   while (Tok.isNot(tok::eof) && Tok.is(tok::comment)) {
@@ -2001,11 +2001,16 @@ SourceLocation getEndLocOfFollowingEmptyMacro(SourceLocation Loc) {
     ;
   }
 
-  auto It = Map.find(getHashStrFromLoc(EndOfToken));
+  auto EndOfTokenLocInfo = dpct::DpctGlobalInfo::getLocInfo(EndOfToken);
+  std::string EndOfTokenKey = std::to_string(std::hash<std::string>()(
+      dpct::buildString(EndOfTokenLocInfo.first, EndOfTokenLocInfo.second)));
+  auto OriginalLocInfo = dpct::DpctGlobalInfo::getLocInfo(Loc);
+
+  auto It = Map.find(EndOfTokenKey);
   if (It != Map.end()) {
-    return It->second;
+    return It->second + EndOfTokenLocInfo.second - OriginalLocInfo.second;
   }
-  return Loc;
+  return 0;
 }
 
 std::string
@@ -4452,5 +4457,6 @@ void requestHelperFeatureForTypeNames(const std::string Name) {
     requestFeature(CuDNNHelperFeatureIter->second->RequestFeature);
   }
 }
+
 } // namespace dpct
 } // namespace clang
