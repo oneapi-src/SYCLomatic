@@ -226,7 +226,7 @@ void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "thrust::detail::true_type", "thrust::detail::false_type",
         "thrust::detail::integral_constant", "thrust::detail::is_same",
         "thrust::system::detail::bad_alloc", "thrust::iterator_traits",
-        "thrust::detail::vector_base");
+        "thrust::detail::vector_base", "thrust::optional", "thrust::nullopt");
   };
   MF.addMatcher(
       typeLoc(loc(qualType(hasDeclaration(namedDecl(ThrustTypeHasNames())))))
@@ -256,16 +256,18 @@ void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       this);
 
   // Var register
-  auto hasPolicyName = [&]() { return hasAnyName("seq", "host", "device"); };
+  auto hasExprName = [&]() {
+    return hasAnyName("seq", "host", "device", "thrust::nullopt");
+  };
 
-  MF.addMatcher(declRefExpr(to(varDecl(hasPolicyName()).bind("varDecl")))
+  MF.addMatcher(declRefExpr(to(varDecl(hasExprName()).bind("varDecl")))
                     .bind("declRefExpr"),
                 this);
 }
 
 void ThrustTypeRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  if (auto TL = getNodeAsType<TypeLoc>(Result, "thrustTypeLoc")) {
+  if (auto TL = getAssistNodeAsType<TypeLoc>(Result, "thrustTypeLoc")) {
     ExprAnalysis EA;
     auto DNTL = DpctGlobalInfo::findAncestor<DependentNameTypeLoc>(TL);
     auto NNSL = DpctGlobalInfo::findAncestor<NestedNameSpecifierLoc>(TL);
@@ -288,18 +290,17 @@ void ThrustTypeRule::runRule(
   } else if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "declRefExpr")) {
     auto VD = getAssistNodeAsType<VarDecl>(Result, "varDecl");
     if (DRE->hasQualifier()) {
+      auto ND =
+          DRE->getQualifierLoc().getNestedNameSpecifier()->getAsNamespace();
 
-      auto ND = DRE->getQualifierLoc()
-                           .getNestedNameSpecifier()
-                           ->getAsNamespace();
-
-      if (!ND||ND->getName() != "thrust")
+      if (!ND || ND->getName() != "thrust")
         return;
 
-      if(!VD)
+      if (!VD)
         return;
 
-      const std::string ThrustVarName = ND->getNameAsString() + "::" + VD->getName().str();
+      const std::string ThrustVarName =
+          ND->getNameAsString() + "::" + VD->getName().str();
 
       std::string Replacement =
           MapNames::findReplacedName(MapNames::TypeNamesMap, ThrustVarName);
@@ -311,6 +312,17 @@ void ThrustTypeRule::runRule(
       if (!Replacement.empty()) {
         emplaceTransformation(new ReplaceToken(
             DRE->getBeginLoc(), DRE->getEndLoc(), std::move(Replacement)));
+      }
+    } else {
+      ExprAnalysis EA(DRE);
+      EA.analyze();
+      const std::string TyName = EA.getReplacedString();
+
+      std::string ReplStr =
+          MapNames::findReplacedName(MapNames::TypeNamesMap, TyName);
+
+      if (!ReplStr.empty()) {
+        emplaceTransformation(new ReplaceStmt(DRE, "std::nullopt"));
       }
     }
   } else {
