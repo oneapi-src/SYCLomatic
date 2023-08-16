@@ -180,6 +180,11 @@ TYPE_REWRITE_ENTRY(
     "thrust::minimum",
     TYPE_FACTORY(STR("oneapi::dpl::minimum"), TEMPLATE_ARG(0)))
 
+// thrust::optional
+TYPE_REWRITE_ENTRY(
+    "thrust::optional",
+    TYPE_FACTORY(STR("std::optional"), TEMPLATE_ARG(0)))
+
 //thrust::bit_xor
 TYPE_REWRITE_ENTRY(
     "thrust::bit_xor",

@@ -2,7 +2,7 @@
 
 - Add the API mapping cases of different libraries in corresponding folder.
 
-- Make sure the file name is format as `${API_Name}.cu`.
+- Make sure the file name is format as `${API_Name}.cu` (change the `:` to `$`).
 
 - Content of `${API_Name}.cu`, take the `__hfma.cu` as an example (The comment with "///" is not the content of the file):
 
