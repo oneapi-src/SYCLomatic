@@ -1700,8 +1700,6 @@ ENTRY(cooperative_groups::experimental::exclusive_scan_update, cooperative_group
 ENTRY(cooperative_groups::exclusive_scan_update, cooperative_groups::__v1::exclusive_scan_update, false, NO_FLAG, P4, "comment")
 ENTRY(cooperative_groups::invoke_one, cooperative_groups::__v1::invoke_one, false, NO_FLAG, P4, "comment")
 ENTRY(cooperative_groups::invoke_one_broadcast, cooperative_groups::__v1::invoke_one_broadcast, false, NO_FLAG, P4, "comment")
-ENTRY(cooperative_groups::exclusive_scan_update, cooperative_groups::__v1::exclusive_scan_update, false, NO_FLAG, P4, "comment")
-ENTRY(cooperative_groups::exclusive_scan_update, cooperative_groups::__v1::exclusive_scan_update, false, NO_FLAG, P4, "comment")
 
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_group, cooperative_groups::__v1::thread_group, size, size, true, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cooperative_groups::thread_group, cooperative_groups::__v1::thread_group, num_threads, num_threads, true, NO_FLAG, P4, "Comment")
