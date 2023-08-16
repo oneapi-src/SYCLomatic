@@ -8,26 +8,63 @@
 
 #include "QueryAPIMapping.h"
 #include "llvm/Support/raw_ostream.h"
+#include <unordered_map>
 
 namespace clang {
 namespace dpct {
 
-llvm::DenseMap<llvm::StringRef, llvm::StringRef> APIMapping::EntryMap;
+std::unordered_map<std::string, size_t> APIMapping::EntryMap;
+std::vector<llvm::StringRef> APIMapping::EntryArray;
 
-void APIMapping::registerEntry(llvm::StringRef Name,
-                               llvm::StringRef SourceCode) {
-  EntryMap[Name] = SourceCode;
+void APIMapping::registerEntry(std::string Name, llvm::StringRef SourceCode) {
+  std::replace(Name.begin(), Name.end(), '$', ':');
+  // Try to fuzz the original API name:
+  // 1. Remove partial or all leading '_'.
+  // 2. For each name got by step 1, put 4 kind of fuzzed name into the map
+  // keys:
+  //   (1) original name
+  //   (2) remove or add Suffix "_v2"
+  //   (3) first char upper case name
+  //   (4) all char upper case name
+  //   (5) all char lower case name
+  for (int i = Name.find_first_not_of("_"); i >= 0; --i) {
+    const auto TargetIndex = EntryArray.size();
+    EntryMap[Name] = TargetIndex;
+    auto TempName = Name;
+    std::string Suffix = "_v2";
+    if (TempName.find_last_of(Suffix) == TempName.size() - Suffix.length()) {
+      EntryMap[TempName.substr(0, TempName.size() - 3)] = TargetIndex;
+    } else {
+      EntryMap[TempName + Suffix] = TargetIndex;
+    }
+    TempName[i] = std::toupper(TempName[i]);
+    EntryMap[TempName] = TargetIndex;
+    std::transform(TempName.begin(), TempName.end(), TempName.begin(),
+                   ::toupper);
+    EntryMap[TempName] = TargetIndex;
+    std::transform(TempName.begin(), TempName.end(), TempName.begin(),
+                   ::tolower);
+    EntryMap[TempName] = TargetIndex;
+    Name.erase(0, 1);
+  }
+  EntryArray.emplace_back(SourceCode);
 }
 
 void APIMapping::initEntryMap(){
 #include "APIMappingRegister.def"
 }
 
-llvm::StringRef APIMapping::getAPISourceCode(llvm::StringRef Key) {
+llvm::StringRef APIMapping::getAPISourceCode(std::string Key) {
+  Key.erase(0, Key.find_first_not_of(" "));
+  Key.erase(Key.find_last_not_of(" ") + 1);
   auto Iter = EntryMap.find(Key);
+  if (Iter == EntryMap.end()) {
+    std::transform(Key.begin(), Key.end(), Key.begin(), ::tolower);
+    Iter = EntryMap.find(Key);
+  }
   if (Iter == EntryMap.end())
     return llvm::StringRef{};
-  return Iter->second;
+  return EntryArray[Iter->second];
 }
 
 } // namespace dpct

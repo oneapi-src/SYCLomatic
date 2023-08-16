@@ -90,6 +90,9 @@ public:
 #ifdef SYCLomatic_CUSTOMIZATION
   static bool hasHelpOption(int argc, const char **argv);
   std::string &getCompilationsDir() { return CompilationsDir; }
+  const std::vector<std::string> &getExtraIncPathList() const {
+    return ExtraIncPathList;
+  }
   bool isPSpecified() { return IsPSpecified; }
 #ifdef _WIN32
   bool isVcxprojfileSpecified() { return IsVcxprojfileSpecified; }
@@ -123,6 +126,7 @@ private:
 #ifdef SYCLomatic_CUSTOMIZATION
   std::string CompilationsDir = "";
   bool IsPSpecified = false;
+  std::vector<std::string> ExtraIncPathList;
 #ifdef _WIN32
   bool IsVcxprojfileSpecified = false;
 #endif

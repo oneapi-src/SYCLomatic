@@ -6,9 +6,11 @@
 //
 //===----------------------------------------------------------------------===//
 #include <string>
+#include <vector>
 
 extern bool HasSDKIncludeOption;
 extern std::string RealSDKIncludePath;
+extern std::vector<std::string> ExtraIncPaths;
 extern bool HasSDKPathOption;
 extern std::string RealSDKPath;
 extern int SDKVersionMajor;

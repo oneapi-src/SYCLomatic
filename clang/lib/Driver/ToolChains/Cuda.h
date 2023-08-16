@@ -67,6 +67,9 @@ public:
   bool isVersionSupported() const { return IsVersionSupported; }
   /// Check whether supported version of CUDA header files is available.
   bool isSupportedVersionAvailable() const { return IsSupportedVersionAvailable; }
+  /// validate whether FilePath is the directory of CUDA header files
+  bool validateCudaHeaderDirectory(const std::string &FilePath,
+                                   const Driver &D);
 #endif // SYCLomatic_CUSTOMIZATION
   /// Print information about the detected CUDA installation.
   void print(raw_ostream &OS) const;
