@@ -1659,7 +1659,7 @@ public:
     return ConditionalCompilationLoc;
   }
 
-  static std::map<std::string, SourceLocation> &getBeginOfEmptyMacros() {
+  static std::map<std::string, unsigned int> &getBeginOfEmptyMacros() {
     return BeginOfEmptyMacros;
   }
   static std::map<std::string, SourceLocation> &getEndOfEmptyMacros() {
@@ -2038,7 +2038,7 @@ private:
   static std::map<std::string, SourceLocation> EndOfEmptyMacros;
   // key: The hash string of the begin location of the macro expansion
   // value: The end location of the macro expansion
-  static std::map<std::string, SourceLocation> BeginOfEmptyMacros;
+  static std::map<std::string, unsigned int> BeginOfEmptyMacros;
   static std::unordered_map<std::string,
                             std::vector<clang::tooling::Replacement>>
       FileRelpsMap;

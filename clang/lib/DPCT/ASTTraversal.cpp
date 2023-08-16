@@ -371,7 +371,9 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
       dpct::DpctGlobalInfo::getEndOfEmptyMacros()[getHashStrFromLoc(
           Tok.getLocation())] = Range.getBegin();
       dpct::DpctGlobalInfo::getBeginOfEmptyMacros()[getHashStrFromLoc(
-          Range.getBegin())] = Range.getEnd();
+          Range.getBegin())] =
+          dpct::DpctGlobalInfo::getLocInfo(Range.getEnd()).second -
+          dpct::DpctGlobalInfo::getLocInfo(Range.getBegin()).second;
     }
   }
 
@@ -12218,6 +12220,8 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE) {
                            ->getType()
                            .getCanonicalType();
     ND = getNamedDecl(ObjType.getTypePtr());
+    if (!ND)
+      return;
     ObjName = ND->getNameAsString();
   } else {
     // Match the static member function call, like: A a; a.staticCall();
