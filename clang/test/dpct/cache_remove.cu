@@ -18,23 +18,33 @@ int main()
   const int res_block_mem =
       transformed_tensor_size * 2 + pre_transform_tensor_size;
   float *aptr;
+  // CHECK: DPCT1007:{{[0-9]+}}: Migration of cudaLaunchAttributeValue is not supported.
   cudaStreamAttrValue stream_attribute = {};
   stream_attribute.accessPolicyWindow.base_ptr = aptr;
   stream_attribute.accessPolicyWindow.num_bytes = res_block_mem;
   stream_attribute.accessPolicyWindow.hitRatio = 1.0f;
   stream_attribute.accessPolicyWindow.hitProp = cudaAccessPropertyPersisting;
   stream_attribute.accessPolicyWindow.missProp = cudaAccessPropertyStreaming;
-
-  // CHECK: DPCT1026:{{[0-9]+}}:  The call to cudaStreamSetAttribute was removed because SYCL currently does not support setting cache config on devices.
+  // CHECK: DPCT1007:{{[0-9]+}}: Migration of cudaStreamSetAttribute is not supported.
+  cudaStreamSetAttribute(
+      stream, cudaLaunchAttributeIgnore, &stream_attribute);
+  // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaStreamSetAttribute was removed because SYCL currently does not support setting cache config on devices.
   cudaStreamSetAttribute(
       stream, cudaStreamAttributeAccessPolicyWindow, &stream_attribute);
-  // CHECK: DPCT1026:{{[0-9]+}}:  The call to cudaStreamGetAttribute was removed because SYCL currently does not support setting cache config on devices.
+  // CHECK: DPCT1007:{{[0-9]+}}: Migration of cudaStreamGetAttribute is not supported.
+  cudaStreamGetAttribute(
+      stream, cudaLaunchAttributeIgnore, &stream_attribute);
+  // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaStreamGetAttribute was removed because SYCL currently does not support setting cache config on devices.
   cudaStreamGetAttribute(
       stream, cudaStreamAttributeAccessPolicyWindow, &stream_attribute);
-  // CHECK: DPCT1026:{{[0-9]+}}:  The call to cudaCtxResetPersistingL2Cache was removed because SYCL currently does not support setting cache config on devices.
+  // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaCtxResetPersistingL2Cache was removed because SYCL currently does not support setting cache config on devices.
   cudaCtxResetPersistingL2Cache();
-  // CHECK: DPCT1026:{{[0-9]+}}:  The call to cuCtxResetPersistingL2Cache was removed because SYCL currently does not support setting cache config on devices.
+  // CHECK: DPCT1026:{{[0-9]+}}: The call to cuCtxResetPersistingL2Cache was removed because SYCL currently does not support setting cache config on devices.
   cuCtxResetPersistingL2Cache();
-  // CHECK: DPCT1026:{{[0-9]+}}:  The call to cudaFuncSetAttribute was removed because SYCL currently does not support setting cache config on devices.
+  // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaFuncSetAttribute was removed because SYCL currently does not support configuring shared emory on devices.
   cudaFuncSetAttribute(kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, 8 * 8 * 8);
+  // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaFuncSetAttribute was removed because SYCL currently does not support configuring shared emory on devices.
+  cudaFuncSetAttribute(kernel, cudaFuncAttributePreferredSharedMemoryCarveout, 8 * 8 * 8);
+  // CHECK: DPCT1007:{{[0-9]+}}: Migration of cudaFuncSetAttribute is not supported.
+  cudaFuncSetAttribute(kernel, cudaFuncAttributeClusterDimMustBeSet, 8 * 8 * 8);
 }
