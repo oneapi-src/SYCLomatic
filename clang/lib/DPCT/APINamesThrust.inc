@@ -839,6 +839,9 @@ CALL_FACTORY_ENTRY("thrust::make_error_code", CALL("std::make_error_code", ARG(0
 // thrust::system::make_error_condition
 CALL_FACTORY_ENTRY("thrust::system::make_error_condition", CALL("std::make_error_condition", ARG(0)))
 
+// thrust::make_error_condition
+CALL_FACTORY_ENTRY("thrust::make_error_condition", CALL("std::make_error_condition", ARG(0)))
+
 // thrust::system_category
 CALL_FACTORY_ENTRY("thrust::system_category", CALL("std::system_category"))
 

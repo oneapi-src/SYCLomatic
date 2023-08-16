@@ -11,17 +11,26 @@
 void cuda_safe_call(cudaError_t error, const std::string &message = "") {
 
   thrust::errc::errc_t e;
-  // CHECK:     auto ret = std::make_error_code(e);
-  // CHECK-NEXT: std::make_error_condition(e);
-  // CHECK-NEXT: std::generic_category();
-  // CHECK-NEXT: std::generic_category();
-  auto ret = thrust::system::make_error_code(e);
-  thrust::system::make_error_condition(e);
-  thrust::system::generic_category();
-  thrust::generic_category();
 
   // CHECK: std::system_error(error, std::generic_category(), message);
   std::system_error(error, std::generic_category(), message);
+
+  // CHECK:	std::make_error_condition(e);
+  // CHECK-NEXT:	std::make_error_condition(e);
+  // CHECK-NEXT:	std::generic_category();
+  // CHECK-NEXT:  std::generic_category();
+  // CHECK-NEXT:	std::generic_category();
+  // CHECK-NEXT:	std::generic_category();
+  // CHECK-NEXT:	std::system_category();
+  // CHECK-NEXT:	std::system_category();
+  thrust::make_error_condition(e);
+  thrust::system::make_error_condition(e);
+  thrust::cuda_category();
+  thrust::system::cuda_category();
+  thrust::generic_category();
+  thrust::system::generic_category();
+  thrust::system_category();
+  thrust::system::system_category();
   if (error) {
     // CHECK: throw std::system_error(error, std::generic_category(), message);
     throw thrust::system_error(error, thrust::cuda_category(), message);
