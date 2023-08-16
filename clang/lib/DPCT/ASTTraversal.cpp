@@ -11827,45 +11827,16 @@ void CooperativeGroupsFunctionRule::runRule(
   const DeclRefExpr *DR = getNodeAsType<DeclRefExpr>(Result, "declRef");
   const SourceManager &SM = DpctGlobalInfo::getSourceManager();
   if (DR) {
-    std::string DREName = DR->getType().getCanonicalType().getAsString();
-    std::string ReplacedStr = "";
-    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
-      auto FD = DpctGlobalInfo::getParentFunction(DR);
-      if (!FD)
-        return;
-      auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
-      auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
-      ReplacedStr = "<{{NEEDREPLACEG" + std::to_string(Index) + "}}>";
-      DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
-    } else {
-      ReplacedStr = "<3>";
-    }
-
-    if (DREName.find("cooperative_groups::__v1::thread_block_tile<32>") !=
-        std::string::npos) {
-      ReplacedStr = "sycl::sub_group";
-    } else if (DREName == "class cooperative_groups::__v1::thread_block") {
-      ReplacedStr = "sycl::group" + ReplacedStr;
-    } else if (DpctGlobalInfo::useLogicalGroup()) {
-      ReplacedStr = "dpct::experimental::logical_group" + ReplacedStr;
-    } else
-      return;
-
-    ReplacedStr = MapNames::getDpctNamespace() + "item_group" +
+    std::string ReplacedStr = MapNames::getDpctNamespace() + "item_group" +
                   "(" + DR->getNameInfo().getAsString() + ", " +
                   DpctGlobalInfo::getItem(DR) + ")";
-    SourceLocation Begin = DR->getBeginLoc();
-    SourceLocation End = DR->getEndLoc();
+    SourceRange DefRange = getDefinitionRange(DR->getBeginLoc(),  DR->getEndLoc());
+    SourceLocation Begin = DefRange.getBegin();
+    SourceLocation End = DefRange.getEnd();
     End = End.getLocWithOffset(Lexer::MeasureTokenLength(
         End, SM, DpctGlobalInfo::getContext().getLangOpts()));
-    if (End.isMacroID())
-      return;
-    if (Begin.isMacroID() || End.isMacroID())
-      return;
-    assert(End.getRawEncoding() > Begin.getRawEncoding());
-    emplaceTransformation(
-        new ReplaceText(Begin, End.getRawEncoding() - Begin.getRawEncoding(),
-                        std::move(ReplacedStr)));
+    emplaceTransformation(replaceText(Begin, End, std::move(ReplacedStr),
+                                      DpctGlobalInfo::getSourceManager()));
     return;
   }
   if (!CE)
