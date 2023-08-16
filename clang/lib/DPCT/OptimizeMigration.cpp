@@ -89,7 +89,7 @@ void ForLoopUnrollRule::runRule(
       Repl = getNL();
     }
     auto IndentStr = getIndent(ForLoopLoc, SM).str();
-    Repl = Repl + "#pragma unroll\n" + IndentStr;
+    Repl = Repl + "#pragma unroll" + getNL() + IndentStr;
     auto Begin = SM.getSpellingLoc(ForLoop->getBeginLoc());
     emplaceTransformation(new InsertText(Begin, Repl));
   }
