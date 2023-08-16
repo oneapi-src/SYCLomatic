@@ -1494,45 +1494,65 @@ struct __evenly_divided_binhash_impl {};
 template <typename _T>
 struct __evenly_divided_binhash_impl<_T, /* is_floating_point = */ true> {
   _T __minimum;
+  ::std::uint32_t __num_bins;
   _T __scale;
   __evenly_divided_binhash_impl(const _T &min, const _T &max,
-                                const ::std::size_t &num_bins)
-      : __minimum(min), __scale(_T(num_bins) / (max - min)) {}
+                                const ::std::uint32_t &num_bins)
+      : __minimum(min), __num_bins(num_bins), __scale(_T(num_bins) / (max - min)) {}
   template <typename _T2>::std::uint32_t operator()(_T2 &&value) const {
     return ::std::uint32_t((::std::forward<_T2>(value) - __minimum) * __scale);
   }
+
+  template <typename _T2> 
+  bool is_valid(const _T2& value) const
+  {
+    return value >= __minimum && value < __minimum + __scale * _T(__num_bins);
+  }
+
 };
 
 // non floating point type
 template <typename _T>
 struct __evenly_divided_binhash_impl<_T, /* is_floating_point= */ false> {
   _T __minimum;
-  ::std::size_t __num_bins;
+  ::std::uint32_t __num_bins;
   _T __range_size;
   __evenly_divided_binhash_impl(const _T &min, const _T &max,
-                                const ::std::size_t &num_bins)
+                                const ::std::uint32_t &num_bins)
       : __minimum(min), __num_bins(num_bins), __range_size(max - min) {}
   template <typename _T2>::std::uint32_t operator()(_T2 &&value) const {
     return ::std::uint32_t(
         ((_T(::std::forward<_T2>(value)) - __minimum) * _T(__num_bins)) /
         __range_size);
   }
+
+  template <typename _T2> 
+  bool is_valid(const _T2& value) const
+  {
+    return value >= __minimum && value < __minimum + __range_size;
+  }
+
 };
 
 template <typename _T1>
 using __evenly_divided_binhash =
     __evenly_divided_binhash_impl<_T1, std::is_floating_point_v<_T1>>;
 
-template <typename _ForwardIterator> struct __custom_range_binhash {
-  _ForwardIterator __first;
-  _ForwardIterator __last;
-  __custom_range_binhash(_ForwardIterator first, _ForwardIterator last)
-      : __first(first), __last(last) {}
+template <typename _Range> struct __custom_range_binhash {
+  _Range __boundaries;
+  __custom_range_binhash(_Range boundaries)
+      : __boundaries(boundaries) {}
 
   template <typename _T>::std::uint32_t operator()(_T &&value) const {
-    return (::std::upper_bound(__first, __last, ::std::forward<_T>(value)) -
-            __first) -
+    return (::std::upper_bound(__boundaries.begin(), __boundaries.end(), ::std::forward<_T>(value)) -
+            __boundaries.begin()) -
            1;
+  }
+
+  template <typename _T2> 
+  bool is_valid(const _T2& value) const
+  {
+    return value >= __boundaries[0] && value < __boundaries[__boundaries.size()-1];
   }
 };
 
@@ -1580,12 +1600,16 @@ inline void __accum_local_atomics(
   for (::std::uint8_t idx = 0; idx < iters_per_work_item; idx++) {
     ::std::size_t __val_idx = seg_start + idx * __work_group_size + self_lidx;
     if (__val_idx < N) {
-      _BinIdxType c = func(in_acc[__val_idx]);
 
-      sycl::atomic_ref<__histo_value_type, sycl::memory_order::relaxed,
-                       sycl::memory_scope::work_group, _AddressSpace>
-          local_bin(wg_local_histogram[offset + c]);
-      local_bin++;
+      const auto& x = in_acc[__val_idx];
+      if (func.is_valid(x))
+      {
+        _BinIdxType c = func(x);
+        sycl::atomic_ref<__histo_value_type, sycl::memory_order::relaxed,
+                        sycl::memory_scope::work_group, _AddressSpace>
+            local_bin(wg_local_histogram[offset + c]);
+        local_bin++;
+      }
     }
   }
   self_item.barrier(sycl::access::fence_space::local_space);
@@ -1626,10 +1650,10 @@ template <::std::uint16_t __work_group_size,
           ::std::uint8_t __bins_per_work_item, 
           typename _BinType,
           typename Policy, typename _Event, typename _Range1,
-          typename _Range2, typename _Size, typename _IdxHashFunc>
+          typename _Range2, typename _Size, typename _IdxHashFunc, typename... _Range3>
 inline void __histogram_general_registers_local_reduction(
     Policy &&policy, _Event&& __init_e, _Range1&& __input, _Range2&& __bins,
-    const _Size &num_bins, _IdxHashFunc __func) {
+    const _Size &num_bins, _IdxHashFunc __func, _Range3&& ...__opt_range) {
   const ::std::size_t N = __input.size();
   // minimum type size for atomics
   using __local_histogram_type = ::std::uint32_t;
@@ -1640,8 +1664,7 @@ inline void __histogram_general_registers_local_reduction(
       __ceiling_div(N, __work_group_size * __iters_per_work_item);
   auto e = policy.queue().submit([&](auto &h) {
     h.depends_on(::std::forward<_Event>(__init_e));
-    oneapi::dpl::__ranges::__require_access(h, __input);
-    oneapi::dpl::__ranges::__require_access(h, __bins);
+    oneapi::dpl::__ranges::__require_access(h, __input, __bins, __opt_range...);
     sycl::local_accessor<__local_histogram_type, 1> local_histogram(
         sycl::range(num_bins), h);
     h.parallel_for(
@@ -1665,8 +1688,12 @@ inline void __histogram_general_registers_local_reduction(
             ::std::size_t __val_idx =
                 __seg_start + idx * __work_group_size + __self_lidx;
             if (__val_idx < N) {
-              ::std::uint8_t c = __func(__input[__val_idx]);
-              histogram[c]++;
+              const auto& x = __input[__val_idx];
+              if (__func.is_valid(x))
+              {
+                ::std::uint8_t c = __func(x);
+                histogram[c]++;
+              }
             }
           }
 #pragma unroll
@@ -1692,17 +1719,16 @@ template <::std::uint16_t __work_group_size,
           ::std::uint16_t __iters_per_work_item, 
           typename _BinType, typename Policy, typename _Event,
           typename _Range1, typename _Range2, typename _Size,
-          typename _IdxHashFunc>
+          typename _IdxHashFunc, typename... _Range3>
 inline void
 __histogram_general_local_atomics(Policy &&policy, _Event&& __init_e, _Range1&& __input, _Range2&& __bins,
-                                  const _Size &num_bins, _IdxHashFunc __func) {
+                                  const _Size &num_bins, _IdxHashFunc __func, _Range3&& ...__opt_range) {
   const ::std::size_t N = __input.size();
   std::size_t segments =
       __ceiling_div(N, __work_group_size * __iters_per_work_item);
   auto e = policy.queue().submit([&](auto &h) {
     h.depends_on(::std::forward<_Event>(__init_e));
-    oneapi::dpl::__ranges::__require_access(h, __input);
-    oneapi::dpl::__ranges::__require_access(h, __bins);
+    oneapi::dpl::__ranges::__require_access(h, __input, __bins, __opt_range...);
     // minimum type size for atomics
     sycl::local_accessor<::std::uint32_t, 1> local_histogram(
         sycl::range(num_bins), h);
@@ -1734,10 +1760,10 @@ template <::std::uint16_t __work_group_size,
           typename _BinType,
           typename Policy, typename _Event,
           typename _Range1, typename _Range2, typename _Size,
-          typename _IdxHashFunc>
+          typename _IdxHashFunc, typename... _Range3>
 inline void __histogram_general_private_global_atomics(
     Policy &&policy, _Event&& __init_e, _Range1&& __input, _Range2&& __bins,
-    const _Size &num_bins, _IdxHashFunc __func) {
+    const _Size &num_bins, _IdxHashFunc __func, _Range3&& ...__opt_range) {
 
   const ::std::size_t N = __input.size();
   auto __global_mem_size =
@@ -1757,8 +1783,7 @@ inline void __histogram_general_private_global_atomics(
 
   auto e = policy.queue().submit([&](auto &h) {
     h.depends_on(::std::forward<_Event>(__init_e));
-    oneapi::dpl::__ranges::__require_access(h, __input);
-    oneapi::dpl::__ranges::__require_access(h, __bins);
+    oneapi::dpl::__ranges::__require_access(h, __input, __bins, __opt_range...);
     sycl::accessor hacc_private(private_histograms, h, sycl::read_write,
                                 sycl::no_init);
     h.parallel_for(
@@ -1785,11 +1810,11 @@ inline void __histogram_general_private_global_atomics(
 }
 
 template <typename Policy, typename _Iter1, typename _Iter2, typename _Size,
-          typename _IdxHashFunc>
+          typename _IdxHashFunc, typename... _Range>
 inline _Iter2
 __histogram_general_select_best(Policy &&policy, _Iter1 __first, _Iter1 __last,
                                 _Iter2 __histogram_first, const _Size &num_bins,
-                                _IdxHashFunc __func) {
+                                _IdxHashFunc __func, _Range&&... __opt_range) {
   using __histo_value_type = typename ::std::iterator_traits<_Iter2>::value_type;
   auto __local_mem_size =
       policy.queue()
@@ -1808,18 +1833,18 @@ __histogram_general_select_best(Policy &&policy, _Iter1 __first, _Iter1 __last,
   if (num_bins < __max_registers) {
     __histogram_general_registers_local_reduction<1024, 32, 16, __histo_value_type>(
         ::std::forward<Policy>(policy), init_e, input_buf.all_view(), bins_buf.all_view(),
-        num_bins, __func);
+        num_bins, __func, std::forward<_Range...>(__opt_range)...);
   } else if (num_bins * sizeof(__histo_value_type) <
              __local_mem_size) // if bins fit into SLM, use local atomics
   {
     if (N <= 524288) {
       __histogram_general_local_atomics<1024, 4, __histo_value_type>(
           ::std::forward<Policy>(policy), init_e, input_buf.all_view(), bins_buf.all_view(),
-          num_bins, __func);
+          num_bins, __func, std::forward<_Range...>(__opt_range)...);
     } else {
       __histogram_general_local_atomics<1024, 32, __histo_value_type>(
           ::std::forward<Policy>(policy), init_e, input_buf.all_view(), bins_buf.all_view(),
-          num_bins, __func);
+          num_bins, __func, std::forward<_Range...>(__opt_range)...);
     }
   } else // otherwise, use global atomics (private copies per workgroup)
   {
@@ -1827,16 +1852,15 @@ __histogram_general_select_best(Policy &&policy, _Iter1 __first, _Iter1 __last,
     if (N <= 524288) {
       __histogram_general_private_global_atomics<1024, 4, __histo_value_type>(
           ::std::forward<Policy>(policy), init_e, input_buf.all_view(), bins_buf.all_view(),
-          num_bins, __func);
+          num_bins, __func, std::forward<_Range...>(__opt_range)...);
     } else {
       __histogram_general_private_global_atomics<1024, 32, __histo_value_type>(
           ::std::forward<Policy>(policy), init_e, input_buf.all_view(), bins_buf.all_view(),
-          num_bins, __func);
+          num_bins, __func, std::forward<_Range...>(__opt_range)...);
     }
   }
   return __histogram_first + num_bins;
 }
-
 template <typename Policy, typename Iter1, typename Iter2, typename _Size,
           typename _T>
 inline ::std::enable_if_t<
@@ -1863,10 +1887,14 @@ inline ::std::enable_if_t<
     Iter2>
 histogram(Policy &&policy, Iter1 __first, Iter1 __last, Iter2 __histogram_first,
           Iter3 __boundary_first, Iter3 __boundary_last) {
+  
+  auto keep_boundaries = oneapi::dpl::__ranges::__get_sycl_range<oneapi::dpl::__par_backend_hetero::access_mode::read, Iter3>();
+  auto boundary_buf = keep_boundaries(__boundary_first, __boundary_last);
+
   return internal::__histogram_general_select_best(
       ::std::forward<Policy>(policy), __first, __last, __histogram_first,
       (__boundary_last - __boundary_first) - 1,
-      internal::__custom_range_binhash{__boundary_first, __boundary_last});
+      internal::__custom_range_binhash{boundary_buf.all_view()}, boundary_buf.all_view());
 }
 
 } // end namespace internal
