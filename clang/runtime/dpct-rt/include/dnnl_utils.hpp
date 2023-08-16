@@ -4644,7 +4644,7 @@ sycl::event engine_ext::async_convolution_backward_weight(
   auto optimal_diff_dst_md = pd.diff_dst_desc();
   auto optimal_diff_weight_md = pd.diff_weights_desc();
 
-  enter_primitive(origin_diff_weight_md.get_size() * 5 +
+  enter_primitive(optimal_diff_weight_md.get_size() * 5 +
                   optimal_diff_dst_md.get_size() + optimal_src_md.get_size());
 
   void *optimal_src = src, *optimal_diff_dst = diff_dst,
