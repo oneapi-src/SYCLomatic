@@ -56,18 +56,18 @@ void foo_host(){
     //algo
     //CHECK: std::uninitialized_fill(h_input.begin(), h_input.end(), 10);
     thrust::uninitialized_fill(h_input.begin(), h_input.end(), 10);
-    //CHECK: std::unique(oneapi::dpl::execution::par_noseq, h_input.begin(), h_input.end());
+    //CHECK: std::unique(oneapi::dpl::execution::par_unseq, h_input.begin(), h_input.end());
     thrust::unique(h_input.begin(), h_input.end());
-    //CHECK: std::exclusive_scan(oneapi::dpl::execution::par_noseq, h_input.begin(), h_input.end(), h_output.begin(), (decltype(h_output.begin())::value_type)0);
+    //CHECK: std::exclusive_scan(oneapi::dpl::execution::par_unseq, h_input.begin(), h_input.end(), h_output.begin(), (decltype(h_output.begin())::value_type)0);
     thrust::exclusive_scan(h_input.begin(), h_input.end(), h_output.begin());
-    //CHECK: std::max_element(oneapi::dpl::execution::par_noseq, h_input.begin(), h_input.end());
+    //CHECK: std::max_element(oneapi::dpl::execution::par_unseq, h_input.begin(), h_input.end());
     thrust::max_element(h_input.begin(), h_input.end());
-    //CHECK: std::min_element(oneapi::dpl::execution::par_noseq, h_input.begin(), h_input.end());
+    //CHECK: std::min_element(oneapi::dpl::execution::par_unseq, h_input.begin(), h_input.end());
     thrust::min_element(h_input.begin(), h_input.end());
 
     //CHECK: oneapi::dpl::discard_iterator();
     thrust::make_discard_iterator();
-    //CHECK: oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::par_noseq, h_input.begin(), h_input.end(), h_input2.begin(), h_output.begin(), h_output2.begin());
+    //CHECK: oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::par_unseq, h_input.begin(), h_input.end(), h_input2.begin(), h_output.begin(), h_output2.begin());
     thrust::reduce_by_key(h_input.begin(), h_input.end(), h_input2.begin(), h_output.begin(), h_output2.begin()
     );
 }

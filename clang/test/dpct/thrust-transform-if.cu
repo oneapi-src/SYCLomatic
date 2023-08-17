@@ -33,15 +33,15 @@ int main() {
   thrust::device_vector<int> stencilD(dataLen);
 
   // Policy
-// CHECK:  dpct::transform_if(oneapi::dpl::execution::par_noseq, inDataH, inDataH + dataLen, outDataH, neg, is_odd());
+// CHECK:  dpct::transform_if(oneapi::dpl::execution::par_unseq, inDataH, inDataH + dataLen, outDataH, neg, is_odd());
   thrust::transform_if(thrust::host, inDataH, inDataH + dataLen, outDataH, neg, is_odd());
 
   // Policy and stencil
-// CHECK:  dpct::transform_if(oneapi::dpl::execution::par_noseq, inDataH, inDataH + dataLen, stencilH, outDataH, neg, identity());
+// CHECK:  dpct::transform_if(oneapi::dpl::execution::par_unseq, inDataH, inDataH + dataLen, stencilH, outDataH, neg, identity());
   thrust::transform_if(thrust::host, inDataH, inDataH + dataLen, stencilH, outDataH, neg, identity());
 
   // Policy, second input, stencil and binary op
-// CHECK:  dpct::transform_if(oneapi::dpl::execution::par_noseq, inDataH, inDataH + dataLen, inDataH, stencilH, outDataH, plus, identity());
+// CHECK:  dpct::transform_if(oneapi::dpl::execution::par_unseq, inDataH, inDataH + dataLen, inDataH, stencilH, outDataH, plus, identity());
   thrust::transform_if(thrust::host, inDataH, inDataH + dataLen, inDataH, stencilH, outDataH, plus, identity());
 
   // No policy

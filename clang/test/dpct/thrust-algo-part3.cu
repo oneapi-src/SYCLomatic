@@ -20,10 +20,10 @@ void all_of() {
   thrust::host_vector<bool> h_A(A, A + 3);
   thrust::device_vector<bool> d_A(A, A + 3);
 
-  // CHECK:  result = oneapi::dpl::all_of(oneapi::dpl::execution::par_noseq, A, A + 2, oneapi::dpl::identity());
-  // CHECK-NEXT:  result = oneapi::dpl::all_of(oneapi::dpl::execution::par_noseq, A, A + 2, oneapi::dpl::identity());
-  // CHECK-NEXT:  result = oneapi::dpl::all_of(oneapi::dpl::execution::par_noseq, h_A.begin(), h_A.begin() + 2, oneapi::dpl::identity());
-  // CHECK-NEXT:  result = oneapi::dpl::all_of(oneapi::dpl::execution::par_noseq, h_A.begin(), h_A.begin() + 2, oneapi::dpl::identity());
+  // CHECK:  result = oneapi::dpl::all_of(oneapi::dpl::execution::par_unseq, A, A + 2, oneapi::dpl::identity());
+  // CHECK-NEXT:  result = oneapi::dpl::all_of(oneapi::dpl::execution::par_unseq, A, A + 2, oneapi::dpl::identity());
+  // CHECK-NEXT:  result = oneapi::dpl::all_of(oneapi::dpl::execution::par_unseq, h_A.begin(), h_A.begin() + 2, oneapi::dpl::identity());
+  // CHECK-NEXT:  result = oneapi::dpl::all_of(oneapi::dpl::execution::par_unseq, h_A.begin(), h_A.begin() + 2, oneapi::dpl::identity());
   // CHECK-NEXT:  result = oneapi::dpl::all_of(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.begin() + 2, oneapi::dpl::identity());
   // CHECK-NEXT:  result = oneapi::dpl::all_of(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.begin() + 2, oneapi::dpl::identity());
   result = thrust::all_of(thrust::host, A, A + 2, thrust::identity<bool>());
@@ -40,10 +40,10 @@ void none_of() {
   thrust::device_vector<bool> d_A(A, A + 3);
   bool result;
 
-  // CHECK:  result = oneapi::dpl::none_of(oneapi::dpl::execution::par_noseq, A, A + 2, oneapi::dpl::identity());
-  // CHECK-NEXT:  result = oneapi::dpl::none_of(oneapi::dpl::execution::par_noseq, A, A + 2, oneapi::dpl::identity());
-  // CHECK-NEXT:  result = oneapi::dpl::none_of(oneapi::dpl::execution::par_noseq, h_A.begin(), h_A.begin() + 2, oneapi::dpl::identity());
-  // CHECK-NEXT:  result = oneapi::dpl::none_of(oneapi::dpl::execution::par_noseq, h_A.begin(), h_A.begin() + 2, oneapi::dpl::identity());
+  // CHECK:  result = oneapi::dpl::none_of(oneapi::dpl::execution::par_unseq, A, A + 2, oneapi::dpl::identity());
+  // CHECK-NEXT:  result = oneapi::dpl::none_of(oneapi::dpl::execution::par_unseq, A, A + 2, oneapi::dpl::identity());
+  // CHECK-NEXT:  result = oneapi::dpl::none_of(oneapi::dpl::execution::par_unseq, h_A.begin(), h_A.begin() + 2, oneapi::dpl::identity());
+  // CHECK-NEXT:  result = oneapi::dpl::none_of(oneapi::dpl::execution::par_unseq, h_A.begin(), h_A.begin() + 2, oneapi::dpl::identity());
   // CHECK-NEXT:  result = oneapi::dpl::none_of(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.begin() + 2, oneapi::dpl::identity());
   // CHECK-NEXT:  result = oneapi::dpl::none_of(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.begin() + 2, oneapi::dpl::identity());
   result = thrust::none_of(thrust::host, A, A + 2, thrust::identity<bool>());
@@ -65,10 +65,10 @@ void is_partitioned() {
   thrust::host_vector<int> h_A(A, A + 10);
   thrust::device_vector<int> d_A(A, A + 10);
 
-  // CHECK:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::par_noseq, A, A + 10, is_even());
-  // CHECK-NEXT:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::par_noseq, A, A + 10, is_even());
-  // CHECK-NEXT:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::par_noseq, h_A.begin(), h_A.end(), is_even());
-  // CHECK-NEXT:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::par_noseq, h_A.begin(), h_A.end(), is_even());
+  // CHECK:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::par_unseq, A, A + 10, is_even());
+  // CHECK-NEXT:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::par_unseq, A, A + 10, is_even());
+  // CHECK-NEXT:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::par_unseq, h_A.begin(), h_A.end(), is_even());
+  // CHECK-NEXT:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::par_unseq, h_A.begin(), h_A.end(), is_even());
   // CHECK-NEXT:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.end(), is_even());
   // CHECK-NEXT:  result = oneapi::dpl::is_partitioned(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.end(), is_even());
   result = thrust::is_partitioned(thrust::host, A, A + 10, is_even());
@@ -88,14 +88,14 @@ void is_sorted_until() {
   thrust::host_vector<int>::iterator h_end;
   thrust::device_vector<int>::iterator d_end;
 
-  // CHECK:B = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_noseq, A, A + 8);
-  // CHECK-NEXT:B = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_noseq, A, A + 8);
-  // CHECK-NEXT:B = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_noseq, A, A + 8, comp);
-  // CHECK-NEXT:B = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_noseq, A, A + 8, comp);
-  // CHECK-NEXT:h_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_noseq, h_A.begin(), h_A.end());
-  // CHECK-NEXT:h_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_noseq, h_A.begin(), h_A.end());
-  // CHECK-NEXT:h_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_noseq, h_A.begin(), h_A.end(), comp);
-  // CHECK-NEXT:h_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_noseq, h_A.begin(), h_A.end(), comp);
+  // CHECK:B = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_unseq, A, A + 8);
+  // CHECK-NEXT:B = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_unseq, A, A + 8);
+  // CHECK-NEXT:B = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_unseq, A, A + 8, comp);
+  // CHECK-NEXT:B = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_unseq, A, A + 8, comp);
+  // CHECK-NEXT:h_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_unseq, h_A.begin(), h_A.end());
+  // CHECK-NEXT:h_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_unseq, h_A.begin(), h_A.end());
+  // CHECK-NEXT:h_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_unseq, h_A.begin(), h_A.end(), comp);
+  // CHECK-NEXT:h_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::par_unseq, h_A.begin(), h_A.end(), comp);
   // CHECK-NEXT:d_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.end());
   // CHECK-NEXT:d_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.end());
   // CHECK-NEXT:d_end = oneapi::dpl::is_sorted_until(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.end(), comp);
@@ -128,18 +128,18 @@ void set_intersection() {
   thrust::host_vector<int> h_result(3);
   thrust::host_vector<int>::iterator h_end;
 
-  // CHECK:  result_end = oneapi::dpl::set_intersection(oneapi::dpl::execution::seq, A1, A1 + 6, A2, A2 + 7, result);
-  // CHECK-NEXT:  result_end = oneapi::dpl::set_intersection(oneapi::dpl::execution::seq, A1, A1 + 6, A2, A2 + 7, result);
-  // CHECK-NEXT:  result_end = oneapi::dpl::set_intersection(oneapi::dpl::execution::seq, A1, A1 + 6, A2, A2 + 7, result, std::greater<int>());
-  // CHECK-NEXT:  result_end = oneapi::dpl::set_intersection(oneapi::dpl::execution::seq, A1, A1 + 6, A2, A2 + 7, result, std::greater<int>());
+  // CHECK:  result_end = oneapi::dpl::set_intersection(oneapi::dpl::execution::par_unseq, A1, A1 + 6, A2, A2 + 7, result);
+  // CHECK-NEXT:  result_end = oneapi::dpl::set_intersection(oneapi::dpl::execution::par_unseq, A1, A1 + 6, A2, A2 + 7, result);
+  // CHECK-NEXT:  result_end = oneapi::dpl::set_intersection(oneapi::dpl::execution::par_unseq, A1, A1 + 6, A2, A2 + 7, result, std::greater<int>());
+  // CHECK-NEXT:  result_end = oneapi::dpl::set_intersection(oneapi::dpl::execution::par_unseq, A1, A1 + 6, A2, A2 + 7, result, std::greater<int>());
   // CHECK-NEXT:   d_end = oneapi::dpl::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), d_A1.begin(), d_A1.end(), d_A2.begin(), d_A2.end(), d_result.begin());
   // CHECK-NEXT:   d_end = oneapi::dpl::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), d_A1.begin(), d_A1.end(), d_A2.begin(), d_A2.end(), d_result.begin());
   // CHECK-NEXT:   d_end = oneapi::dpl::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), d_A1.begin(), d_A1.end(), d_A2.begin(), d_A2.end(), d_result.begin(), std::greater<int>());
   // CHECK-NEXT:   d_end = oneapi::dpl::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), d_A1.begin(), d_A1.end(), d_A2.begin(), d_A2.end(), d_result.begin(), std::greater<int>());
-  // CHECK-NEXT:   h_end = oneapi::dpl::set_intersection(oneapi::dpl::execution::seq, h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin());
-  // CHECK-NEXT:   h_end = oneapi::dpl::set_intersection(oneapi::dpl::execution::seq, h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin());
-  // CHECK-NEXT:  h_end = oneapi::dpl::set_intersection(oneapi::dpl::execution::seq, h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin(), std::greater<int>());
-  // CHECK-NEXT:  h_end = oneapi::dpl::set_intersection(oneapi::dpl::execution::seq, h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin(), std::greater<int>());
+  // CHECK-NEXT:   h_end = oneapi::dpl::set_intersection(oneapi::dpl::execution::par_unseq, h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin());
+  // CHECK-NEXT:   h_end = oneapi::dpl::set_intersection(oneapi::dpl::execution::par_unseq, h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin());
+  // CHECK-NEXT:  h_end = oneapi::dpl::set_intersection(oneapi::dpl::execution::par_unseq, h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin(), std::greater<int>());
+  // CHECK-NEXT:  h_end = oneapi::dpl::set_intersection(oneapi::dpl::execution::par_unseq, h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin(), std::greater<int>());
   result_end = thrust::set_intersection(thrust::host, A1, A1 + 6, A2, A2 + 7, result);
   result_end = thrust::set_intersection(A1, A1 + 6, A2, A2 + 7, result);
   result_end = thrust::set_intersection(thrust::host, A1, A1 + 6, A2, A2 + 7, result, thrust::greater<int>());
@@ -169,18 +169,18 @@ void set_union() {
   thrust::host_vector<int> h_result(12);
   thrust::host_vector<int>::iterator h_result_iter_end;
 
-  // CHECK:  result_end = oneapi::dpl::set_union(oneapi::dpl::execution::seq, A1, A1 + 7, A2, A2 + 5, result);
-  // CHECK-NEXT:  result_end = oneapi::dpl::set_union(oneapi::dpl::execution::seq, A1, A1 + 7, A2, A2 + 5, result);
-  // CHECK-NEXT:  result_end = oneapi::dpl::set_union(oneapi::dpl::execution::seq, A1, A1 + 7, A2, A2 + 5, result, std::greater<int>());
-  // CHECK-NEXT:  result_end = oneapi::dpl::set_union(oneapi::dpl::execution::seq, A1, A1 + 7, A2, A2 + 5, result, std::greater<int>());
+  // CHECK:  result_end = oneapi::dpl::set_union(oneapi::dpl::execution::par_unseq, A1, A1 + 7, A2, A2 + 5, result);
+  // CHECK-NEXT:  result_end = oneapi::dpl::set_union(oneapi::dpl::execution::par_unseq, A1, A1 + 7, A2, A2 + 5, result);
+  // CHECK-NEXT:  result_end = oneapi::dpl::set_union(oneapi::dpl::execution::par_unseq, A1, A1 + 7, A2, A2 + 5, result, std::greater<int>());
+  // CHECK-NEXT:  result_end = oneapi::dpl::set_union(oneapi::dpl::execution::par_unseq, A1, A1 + 7, A2, A2 + 5, result, std::greater<int>());
   // CHECK-NEXT:  d_result_iter_end = oneapi::dpl::set_union(oneapi::dpl::execution::make_device_policy(q_ct1), d_A1.begin(), d_A1.end(), d_A2.begin(), d_A2.end(), d_result.begin());
   // CHECK-NEXT:  d_result_iter_end = oneapi::dpl::set_union(oneapi::dpl::execution::make_device_policy(q_ct1), d_A1.begin(), d_A1.end(), d_A2.begin(), d_A2.end(), d_result.begin());
   // CHECK-NEXT:  d_result_iter_end = oneapi::dpl::set_union(oneapi::dpl::execution::make_device_policy(q_ct1), d_A1.begin(), d_A1.end(), d_A2.begin(), d_A2.end(), d_result.begin(), std::greater<int>());
   // CHECK-NEXT:  d_result_iter_end = oneapi::dpl::set_union(oneapi::dpl::execution::make_device_policy(q_ct1), d_A1.begin(), d_A1.end(), d_A2.begin(), d_A2.end(), d_result.begin(), std::greater<int>());
-  // CHECK-NEXT:  h_result_iter_end = oneapi::dpl::set_union(oneapi::dpl::execution::seq, h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin());
-  // CHECK-NEXT:  h_result_iter_end = oneapi::dpl::set_union(oneapi::dpl::execution::seq, h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin());
-  // CHECK-NEXT:  h_result_iter_end = oneapi::dpl::set_union(oneapi::dpl::execution::seq, h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin(), std::greater<int>());
-  // CHECK-NEXT:  h_result_iter_end = oneapi::dpl::set_union(oneapi::dpl::execution::seq, h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin(), std::greater<int>());
+  // CHECK-NEXT:  h_result_iter_end = oneapi::dpl::set_union(oneapi::dpl::execution::par_unseq, h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin());
+  // CHECK-NEXT:  h_result_iter_end = oneapi::dpl::set_union(oneapi::dpl::execution::par_unseq, h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin());
+  // CHECK-NEXT:  h_result_iter_end = oneapi::dpl::set_union(oneapi::dpl::execution::par_unseq, h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin(), std::greater<int>());
+  // CHECK-NEXT:  h_result_iter_end = oneapi::dpl::set_union(oneapi::dpl::execution::par_unseq, h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin(), std::greater<int>());
   result_end = thrust::set_union(thrust::host, A1, A1 + 7, A2, A2 + 5, result);
   result_end = thrust::set_union(A1, A1 + 7, A2, A2 + 5, result);
   result_end = thrust::set_union(thrust::host, A1, A1 + 7, A2, A2 + 5, result, thrust::greater<int>());
@@ -230,18 +230,18 @@ void set_union_by_key() {
   typedef thrust::host_vector<int>::iterator h_Iterator;
   thrust::pair<h_Iterator, h_Iterator> h_result;
 
-  // CHECK:  end = dpct::set_union(oneapi::dpl::execution::seq, A_keys, A_keys + 3, B_keys, B_keys + 4, A_vals, B_vals, keys_result, vals_result);
-  // CHECK-NEXT:  end = dpct::set_union(oneapi::dpl::execution::seq, A_keys, A_keys + 3, B_keys, B_keys + 4, A_vals, B_vals, keys_result, vals_result);
-  // CHECK-NEXT:  end = dpct::set_union(oneapi::dpl::execution::seq, A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result, Compare());
-  // CHECK-NEXT:  end = dpct::set_union(oneapi::dpl::execution::seq, A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result, Compare());
+  // CHECK:  end = dpct::set_union(oneapi::dpl::execution::par_unseq, A_keys, A_keys + 3, B_keys, B_keys + 4, A_vals, B_vals, keys_result, vals_result);
+  // CHECK-NEXT:  end = dpct::set_union(oneapi::dpl::execution::par_unseq, A_keys, A_keys + 3, B_keys, B_keys + 4, A_vals, B_vals, keys_result, vals_result);
+  // CHECK-NEXT:  end = dpct::set_union(oneapi::dpl::execution::par_unseq, A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result, Compare());
+  // CHECK-NEXT:  end = dpct::set_union(oneapi::dpl::execution::par_unseq, A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result, Compare());
   // CHECK-NEXT:  d_result = dpct::set_union(oneapi::dpl::execution::make_device_policy(q_ct1), d_A_keys.begin(), d_A_keys.end(), d_B_keys.begin(), d_B_keys.end(), d_A_vals.begin(), d_B_vals.begin(), d_keys_result.begin(), d_vals_result.begin());
   // CHECK-NEXT:  d_result = dpct::set_union(oneapi::dpl::execution::make_device_policy(q_ct1), d_A_keys.begin(), d_A_keys.end(), d_B_keys.begin(), d_B_keys.end(), d_A_vals.begin(), d_B_vals.begin(), d_keys_result.begin(), d_vals_result.begin());
   // CHECK-NEXT:  d_result = dpct::set_union(oneapi::dpl::execution::make_device_policy(q_ct1), d_A_keys.begin(), d_A_keys.end(), d_B_keys.begin(), d_B_keys.end(), d_A_vals.begin(), d_B_vals.begin(), d_keys_result.begin(), d_vals_result.begin(), Compare());
   // CHECK-NEXT:  d_result = dpct::set_union(oneapi::dpl::execution::make_device_policy(q_ct1), d_A_keys.begin(), d_A_keys.end(), d_B_keys.begin(), d_B_keys.end(), d_A_vals.begin(), d_B_vals.begin(), d_keys_result.begin(), d_vals_result.begin(), Compare());
-  // CHECK-NEXT:  h_result = dpct::set_union(oneapi::dpl::execution::seq, h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin());
-  // CHECK-NEXT:  h_result = dpct::set_union(oneapi::dpl::execution::seq, h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin());
-  // CHECK-NEXT:  h_result = dpct::set_union(oneapi::dpl::execution::seq, h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin(), Compare());
-  // CHECK-NEXT:  h_result = dpct::set_union(oneapi::dpl::execution::seq, h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin(), Compare());
+  // CHECK-NEXT:  h_result = dpct::set_union(oneapi::dpl::execution::par_unseq, h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin());
+  // CHECK-NEXT:  h_result = dpct::set_union(oneapi::dpl::execution::par_unseq, h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin());
+  // CHECK-NEXT:  h_result = dpct::set_union(oneapi::dpl::execution::par_unseq, h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin(), Compare());
+  // CHECK-NEXT:  h_result = dpct::set_union(oneapi::dpl::execution::par_unseq, h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin(), Compare());
   end = thrust::set_union_by_key(thrust::host, A_keys, A_keys + 3, B_keys, B_keys + 4, A_vals, B_vals, keys_result, vals_result);
   end = thrust::set_union_by_key(A_keys, A_keys + 3, B_keys, B_keys + 4, A_vals, B_vals, keys_result, vals_result);
   end = thrust::set_union_by_key(thrust::host, A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result, Compare());

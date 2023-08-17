@@ -144,7 +144,7 @@ CONDITIONAL_FACTORY_ENTRY(
                  ARG(0), ARG(1), ARG(3), ARG(4), ARG(2))),
         CALL_FACTORY_ENTRY("thrust::transform_reduce",
                            CALL("std::transform_reduce",
-                                ARG("oneapi::dpl::execution::par_noseq"), ARG(0),
+                                ARG("oneapi::dpl::execution::par_unseq"), ARG(0),
                                 ARG(1), ARG(3), ARG(4), ARG(2)))),
     CONDITIONAL_FACTORY_ENTRY(
         CheckThrustArgType(0, "thrust::device_ptr"),
@@ -155,7 +155,7 @@ CONDITIONAL_FACTORY_ENTRY(
                  ARG(1), ARG(2), ARG(4), ARG(5), ARG(3))),
         CALL_FACTORY_ENTRY("thrust::transform_reduce",
                            CALL("std::transform_reduce",
-                                ARG("oneapi::dpl::execution::par_noseq"), ARG(1),
+                                ARG("oneapi::dpl::execution::par_unseq"), ARG(1),
                                 ARG(2), ARG(4), ARG(5), ARG(3)))))
 
 
@@ -232,7 +232,7 @@ CONDITIONAL_FACTORY_ENTRY(
                  ARG(0), ARG(1), THRUST_FUNCTOR(2))),
         CALL_FACTORY_ENTRY("thrust::for_each",
                            CALL("std::for_each",
-                                ARG("oneapi::dpl::execution::par_noseq"), ARG(0),
+                                ARG("oneapi::dpl::execution::par_unseq"), ARG(0),
                                 ARG(1), THRUST_FUNCTOR(2)))))
 
 // thrust::transform
@@ -254,7 +254,7 @@ CONDITIONAL_FACTORY_ENTRY(
                               ARG(0), ARG(1), ARG(2), THRUST_FUNCTOR(3))),
       CALL_FACTORY_ENTRY("thrust::transform",
                          CALL("std::transform",
-                              ARG("oneapi::dpl::execution::par_noseq"),
+                              ARG("oneapi::dpl::execution::par_unseq"),
                               ARG(0), ARG(1), ARG(2), THRUST_FUNCTOR(3)))),
       CONDITIONAL_FACTORY_ENTRY(
         IsPolicyArgType(0),
@@ -272,7 +272,7 @@ CONDITIONAL_FACTORY_ENTRY(
                               ARG(0), ARG(1), ARG(2), ARG(3), THRUST_FUNCTOR(4))),
           CALL_FACTORY_ENTRY("thrust::transform",
                          CALL("std::transform",
-                              ARG("oneapi::dpl::execution::par_noseq"),
+                              ARG("oneapi::dpl::execution::par_unseq"),
                               ARG(0), ARG(1), ARG(2), ARG(3), THRUST_FUNCTOR(4))))
       ))
 )
@@ -324,7 +324,7 @@ CONDITIONAL_FACTORY_ENTRY(
         ARG(0), ARG(1), ARG(2), makeAddTypeCastThrustToZero(2))),
     CALL_FACTORY_ENTRY("thrust::exclusive_scan",
       CALL("std::exclusive_scan",
-        ARG("oneapi::dpl::execution::par_noseq"), ARG(0), ARG(1), ARG(2), makeAddTypeCastThrustToZero(2)))
+        ARG("oneapi::dpl::execution::par_unseq"), ARG(0), ARG(1), ARG(2), makeAddTypeCastThrustToZero(2)))
   ),
   CONDITIONAL_FACTORY_ENTRY(
     CheckArgCount(4),
@@ -343,7 +343,7 @@ CONDITIONAL_FACTORY_ENTRY(
             ARG(0), ARG(1), ARG(2), makeAddTypeCastToThrustArg(3))),
         CALL_FACTORY_ENTRY("thrust::exclusive_scan",
           CALL("std::exclusive_scan",
-            ARG("oneapi::dpl::execution::par_noseq"), ARG(0), ARG(1), ARG(2), makeAddTypeCastToThrustArg(3)))
+            ARG("oneapi::dpl::execution::par_unseq"), ARG(0), ARG(1), ARG(2), makeAddTypeCastToThrustArg(3)))
       )
     ),
     CONDITIONAL_FACTORY_ENTRY(
@@ -363,7 +363,7 @@ CONDITIONAL_FACTORY_ENTRY(
               ARG(0), ARG(1), ARG(2), makeAddTypeCastToThrustArg(3), ARG(4))),
           CALL_FACTORY_ENTRY("thrust::exclusive_scan",
             CALL("std::exclusive_scan",
-              ARG("oneapi::dpl::execution::par_noseq"), ARG(0), ARG(1), ARG(2), makeAddTypeCastToThrustArg(3), ARG(4)))
+              ARG("oneapi::dpl::execution::par_unseq"), ARG(0), ARG(1), ARG(2), makeAddTypeCastToThrustArg(3), ARG(4)))
         )
       ),
       // thrust::exclusive_scan(thrust::host, data, data + 10, data, 1, binary_op);
@@ -547,7 +547,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 ARG(5), ARG(6), ARG(4)))),
       CALL_FACTORY_ENTRY("thrust::transform_exclusive_scan",
                         CALL("oneapi::dpl::transform_exclusive_scan",
-                              ARG("oneapi::dpl::execution::par_noseq"),
+                              ARG("oneapi::dpl::execution::par_unseq"),
                               ARG(1), ARG(2), ARG(3), ARG(5), ARG(6), ARG(4)))),
     // Handling case: thrust::unique_by_key(thrust::device, iterator, iterator, iterator, val);
     CALL_FACTORY_ENTRY("thrust::transform_exclusive_scan",
@@ -573,7 +573,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   ARG(4), ARG(5), ARG(3)))),
         CALL_FACTORY_ENTRY("thrust::transform_exclusive_scan",
                           CALL("oneapi::dpl::transform_exclusive_scan",
-                                ARG("oneapi::dpl::execution::par_noseq"),
+                                ARG("oneapi::dpl::execution::par_unseq"),
                                 ARG(0), ARG(1), ARG(2), ARG(4), ARG(5), ARG(3)))),
       CONDITIONAL_FACTORY_ENTRY(
         CheckThrustArgType(1, "thrust::device_ptr"),
@@ -584,7 +584,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 ARG(0), ARG(1), ARG(2), ARG(4), ARG(5), ARG(3))),
         CALL_FACTORY_ENTRY("thrust::transform_exclusive_scan",
                             CALL("oneapi::dpl::transform_exclusive_scan",
-                              ARG("oneapi::dpl::execution::par_noseq"),
+                              ARG("oneapi::dpl::execution::par_unseq"),
                               ARG(0), ARG(1), ARG(2), ARG(4), ARG(5), ARG(3))))
     )
 )
@@ -610,7 +610,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 ARG(5), ARG(4)))),
       CALL_FACTORY_ENTRY("thrust::transform_inclusive_scan",
                         CALL("oneapi::dpl::transform_inclusive_scan",
-                              ARG("oneapi::dpl::execution::par_noseq"),
+                              ARG("oneapi::dpl::execution::par_unseq"),
                               ARG(1), ARG(2), ARG(3), ARG(5), ARG(4)))),
     // Handling case: thrust::unique_by_key(thrust::device, iterator, iterator, iterator, unary_op, binary_op);
     CALL_FACTORY_ENTRY("thrust::transform_inclusive_scan",
@@ -636,7 +636,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   ARG(4), ARG(3)))),
         CALL_FACTORY_ENTRY("thrust::transform_inclusive_scan",
                           CALL("oneapi::dpl::transform_inclusive_scan",
-                                ARG("oneapi::dpl::execution::par_noseq"),
+                                ARG("oneapi::dpl::execution::par_unseq"),
                                 ARG(0), ARG(1), ARG(2), ARG(4), ARG(3)))),
       CONDITIONAL_FACTORY_ENTRY(
         CheckThrustArgType(1, "thrust::device_ptr"),
@@ -647,7 +647,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 ARG(0), ARG(1), ARG(2), ARG(4), ARG(3))),
         CALL_FACTORY_ENTRY("thrust::transform_inclusive_scan",
                             CALL("oneapi::dpl::transform_inclusive_scan",
-                              ARG("oneapi::dpl::execution::par_noseq"),
+                              ARG("oneapi::dpl::execution::par_unseq"),
                               ARG(0), ARG(1), ARG(2), ARG(4), ARG(3))))
     )
 )
@@ -678,7 +678,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 ARG(2), THRUST_FUNCTOR(3)))),
       CALL_FACTORY_ENTRY("thrust::for_each_n",
                         CALL("oneapi::dpl::for_each_n",
-                              ARG("oneapi::dpl::execution::par_noseq"),
+                              ARG("oneapi::dpl::execution::par_unseq"),
                               ARG(1), ARG(2), THRUST_FUNCTOR(3)))),
     // Handling case: thrust::unique_by_key(thrust::device, iterator, iterator, iterator, val);
     CALL_FACTORY_ENTRY("thrust::for_each_n",
@@ -702,7 +702,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   ARG(1), THRUST_FUNCTOR(2)))),
         CALL_FACTORY_ENTRY("thrust::for_each_n",
                           CALL("oneapi::dpl::for_each_n",
-                                ARG("oneapi::dpl::execution::par_noseq"),
+                                ARG("oneapi::dpl::execution::par_unseq"),
                                 ARG(0), ARG(1), THRUST_FUNCTOR(2)))),
       CONDITIONAL_FACTORY_ENTRY(
         CheckThrustArgType(1, "thrust::device_ptr"),
@@ -713,7 +713,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                 ARG(0), ARG(1), THRUST_FUNCTOR(2))),
         CALL_FACTORY_ENTRY("thrust::for_each_n",
                             CALL("oneapi::dpl::for_each_n",
-                              ARG("oneapi::dpl::execution::par_noseq"),
+                              ARG("oneapi::dpl::execution::par_unseq"),
                               ARG(0), ARG(1), THRUST_FUNCTOR(2))))
     )
 )
@@ -782,7 +782,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2))))),
             CALL_FACTORY_ENTRY("thrust::copy_n",
                           CALL("std::copy_n",
-                                ARG("oneapi::dpl::execution::par_noseq"),
+                                ARG("oneapi::dpl::execution::par_unseq"),
                                 ARG(0), ARG(1), ARG(2)))),
         CONDITIONAL_FACTORY_ENTRY(
             CheckThrustArgType(0, "thrust::device_ptr"),
@@ -795,7 +795,7 @@ CONDITIONAL_FACTORY_ENTRY(
             // Handle case thrust::copy(host_itr, N, host_itr)
             CALL_FACTORY_ENTRY("thrust::copy_n",
                                CALL("std::copy_n",
-                                    ARG("oneapi::dpl::execution::par_noseq"), ARG(0),
+                                    ARG("oneapi::dpl::execution::par_unseq"), ARG(0),
                                     ARG(1), ARG(2))))),
     CONDITIONAL_FACTORY_ENTRY(
         makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
@@ -811,7 +811,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3))))),
             CALL_FACTORY_ENTRY("thrust::copy_n",
                           CALL("std::copy_n",
-                                ARG("oneapi::dpl::execution::par_noseq"),
+                                ARG("oneapi::dpl::execution::par_unseq"),
                                 ARG(1), ARG(2), ARG(3)))),
         // Handle case thrust::copy(policy,itr, N, itr)
         CALL_FACTORY_ENTRY("thrust::copy_n",
@@ -1032,7 +1032,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3))))),
       CALL_FACTORY_ENTRY("thrust::uninitialized_copy_n",
                         CALL("oneapi::dpl::uninitialized_copy_n",
-                             ARG("oneapi::dpl::execution::par_noseq"),
+                             ARG("oneapi::dpl::execution::par_unseq"),
                              ARG(1), ARG(2), ARG(3)))),
     // Handling case: thrust::unique_by_key(thrust::device, iter, n, iter);
     CALL_FACTORY_ENTRY("thrust::uninitialized_copy_n",
@@ -1057,7 +1057,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2))))),
         CALL_FACTORY_ENTRY("thrust::uninitialized_copy_n",
                           CALL("oneapi::dpl::uninitialized_copy_n",
-                                ARG("oneapi::dpl::execution::par_noseq"),
+                                ARG("oneapi::dpl::execution::par_unseq"),
                                 ARG(0), ARG(1), ARG(2)))),
       CONDITIONAL_FACTORY_ENTRY(
         CheckThrustArgType(0, "thrust::device_ptr"),
@@ -1068,7 +1068,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                  ARG(0), ARG(1), ARG(2))),
         CALL_FACTORY_ENTRY("thrust::uninitialized_copy_n",
                             CALL("oneapi::dpl::uninitialized_copy_n",
-                                 ARG("oneapi::dpl::execution::par_noseq"),
+                                 ARG("oneapi::dpl::execution::par_unseq"),
                                  ARG(0), ARG(1), ARG(2))))
     )
 )

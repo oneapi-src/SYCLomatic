@@ -19,7 +19,7 @@ void checkCopyIf() {
   thrust::device_vector<int> dVecOut(N);
  
   // No policy specified.  Assume host memory.
-// CHECK:  std::copy_if(oneapi::dpl::execution::par_noseq, vecHIn, vecHIn+N, vecHOut, isEven);
+// CHECK:  std::copy_if(oneapi::dpl::execution::par_unseq, vecHIn, vecHIn+N, vecHOut, isEven);
   thrust::copy_if(vecHIn, vecHIn+N, vecHOut, isEven);
  
   int *vecDIn;
@@ -29,7 +29,7 @@ void checkCopyIf() {
   cudaMemcpy(vecDIn, vecHIn, sizeof(int)*N, cudaMemcpyHostToDevice);
  
   // No policy specified. Assume host memory.  This segfaults with nvcc
-// CHECK:  std::copy_if(oneapi::dpl::execution::par_noseq, vecDIn, vecDIn+N, vecDOut, isEven);
+// CHECK:  std::copy_if(oneapi::dpl::execution::par_unseq, vecDIn, vecDIn+N, vecDOut, isEven);
   thrust::copy_if(vecDIn, vecDIn+N, vecDOut, isEven);
   cudaMemcpy(vecHOut, vecDOut, sizeof(int)*N, cudaMemcpyDeviceToHost);
  
@@ -39,7 +39,7 @@ void checkCopyIf() {
   cudaMemcpy(vecHOut, vecDOut, sizeof(int)*N, cudaMemcpyDeviceToHost);
 
   // Policy (thrust::host) specified. Derive memory source from policy. This works with nvcc!
-// CHECK:  std::copy_if(oneapi::dpl::execution::par_noseq, vecHIn, vecHIn+N, vecHOut, isEven);
+// CHECK:  std::copy_if(oneapi::dpl::execution::par_unseq, vecHIn, vecHIn+N, vecHOut, isEven);
   thrust::copy_if(thrust::host, vecHIn, vecHIn+N, vecHOut, isEven);
 
   // No policy specified. thrust::device_vector used for input/output use device policy

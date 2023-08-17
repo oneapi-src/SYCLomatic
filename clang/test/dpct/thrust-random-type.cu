@@ -50,8 +50,8 @@ void test(void) {
     const int N = 20;
     // CHECK:    dpct::device_vector<float> numbers(N);
     // CHECK-NEXT:    oneapi::dpl::counting_iterator<unsigned int> index_sequence_begin(0);
-    // CHECK-NEXT:    std::transform(oneapi::dpl::execution::par_noseq, index_sequence_begin, index_sequence_begin + N, numbers.begin(), random_1());
-    // CHECK-NEXT:    std::transform(oneapi::dpl::execution::par_noseq, index_sequence_begin, index_sequence_begin + N, numbers.begin(), random_2());
+    // CHECK-NEXT:    std::transform(oneapi::dpl::execution::par_unseq, index_sequence_begin, index_sequence_begin + N, numbers.begin(), random_1());
+    // CHECK-NEXT:    std::transform(oneapi::dpl::execution::par_unseq, index_sequence_begin, index_sequence_begin + N, numbers.begin(), random_2());
     thrust::device_vector<float> numbers(N);
     thrust::counting_iterator<unsigned int> index_sequence_begin(0);
     thrust::transform(index_sequence_begin, index_sequence_begin + N, numbers.begin(), random_1());

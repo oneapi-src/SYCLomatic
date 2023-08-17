@@ -44,16 +44,16 @@ int main() {
   float x[] = {1.0f, 2.0f, 3.0f, 4.0f};
   float y[] = {2.0f, 1.0f, 1.0f, 1.0f};
   float a = 2.0f;
-// CHECK:  std::transform(oneapi::dpl::execution::par_noseq, x, x + 4, y, y, [=](auto _1, auto _2){ return a * _1 + _2; });
+// CHECK:  std::transform(oneapi::dpl::execution::par_unseq, x, x + 4, y, y, [=](auto _1, auto _2){ return a * _1 + _2; });
   thrust::transform(x, x + 4, y, y, a * _1 + _2);
 
-// CHECK:  std::transform(oneapi::dpl::execution::par_noseq, x, x + 4, y, y, [=](auto _1, auto _2){ return a*_1+_2; });
+// CHECK:  std::transform(oneapi::dpl::execution::par_unseq, x, x + 4, y, y, [=](auto _1, auto _2){ return a*_1+_2; });
   thrust::transform(x, x + 4, y, y, a*_1+_2);
 
-// CHECK:  std::transform(oneapi::dpl::execution::par_noseq, x, x + 4, y, y, [=](auto _1, auto _2){ return a * _1 + _2; });
+// CHECK:  std::transform(oneapi::dpl::execution::par_unseq, x, x + 4, y, y, [=](auto _1, auto _2){ return a * _1 + _2; });
   thrust::transform(x, x + 4, y, y, a * thrust::placeholders::_1 + thrust::placeholders::_2);
 
-// CHECK:  std::transform(oneapi::dpl::execution::par_noseq, x, x + 4, y, y, [=](auto _1, auto _2){ return a * _1 + _2; });
+// CHECK:  std::transform(oneapi::dpl::execution::par_unseq, x, x + 4, y, y, [=](auto _1, auto _2){ return a * _1 + _2; });
   thrust::transform(x, x + 4, y, y, a * ph::_1 + ph::_2);
 
 // CHECK:  auto tmp1 = [=](auto _1,auto _2,auto _3,auto _4,auto _5,auto _6,auto _7,auto _8,auto _9){return _1 + _2 + _3 + _4 + _5 + _6 + _7 + _8 + _9;};
