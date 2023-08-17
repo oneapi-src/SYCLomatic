@@ -896,7 +896,7 @@ int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
 #endif
       CommandLine = getInsertArgumentAdjuster(
           (std::string("-I") + SDKIncludePath).c_str(),
-          ArgumentInsertPosition::BEGIN)(CommandLine, "");
+          ArgumentInsertPosition::END)(CommandLine, "");
       if (CudaArgsAdjuster)
         CommandLine = CudaArgsAdjuster(CommandLine, CompileCommand.Filename);
 
@@ -996,13 +996,11 @@ int ClangTool::run(ToolAction *Action) {
 #endif // SYCLomatic_CUSTOMIZATION
   // Remember the working directory in case we need to restore it.
   std::string InitialWorkingDir;
-  if (RestoreCWD) {
-    if (auto CWD = OverlayFileSystem->getCurrentWorkingDirectory()) {
-      InitialWorkingDir = std::move(*CWD);
-    } else {
-      llvm::errs() << "Could not get working directory: "
-                   << CWD.getError().message() << "\n";
-    }
+  if (auto CWD = OverlayFileSystem->getCurrentWorkingDirectory()) {
+    InitialWorkingDir = std::move(*CWD);
+  } else {
+    llvm::errs() << "Could not get working directory: "
+                 << CWD.getError().message() << "\n";
   }
 
   for (llvm::StringRef File : AbsolutePaths) {
@@ -1155,10 +1153,6 @@ public:
 int ClangTool::buildASTs(std::vector<std::unique_ptr<ASTUnit>> &ASTs) {
   ASTBuilderAction Action(ASTs);
   return run(&Action);
-}
-
-void ClangTool::setRestoreWorkingDir(bool RestoreCWD) {
-  this->RestoreCWD = RestoreCWD;
 }
 
 void ClangTool::setPrintErrorMessage(bool PrintErrorMessage) {

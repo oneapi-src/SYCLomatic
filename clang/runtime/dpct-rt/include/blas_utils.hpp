@@ -640,7 +640,7 @@ inline void getrf_batch_wrapper(sycl::queue &exec_queue, int n, T *a[],
 template <typename T>
 inline void getrs_batch_wrapper(sycl::queue &exec_queue,
                                 oneapi::mkl::transpose trans, int n, int nrhs,
-                                const T *a[], int lda, int *ipiv, T *b[],
+                                const T *a[], int lda, const int *ipiv, T *b[],
                                 int ldb, int *info, int batch_size) {
   using Ty = typename DataType<T>::T2;
   // Set the info value to 0

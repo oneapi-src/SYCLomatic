@@ -1,5 +1,5 @@
-CUDA* and SYCL* Programing Model Comparison
-===========================================
+CUDA* and SYCL* Programming Model Comparison
+============================================
 
 This section compares the CUDA* and SYCL* programming models and shows how to map
 concepts and APIs from CUDA to SYCL.
