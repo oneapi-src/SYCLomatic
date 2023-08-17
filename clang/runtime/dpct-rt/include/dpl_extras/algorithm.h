@@ -1482,9 +1482,8 @@ template <typename OffsetT> struct interleaved_select_channel {
 };
 
 // The dpl_histogram namespace contains a temporary preview of an upcoming
-// oneDPL histogram API.
-//   This namespace will be removed and replaced with corresponding calls to
-//   oneapi::dpl::histogram()
+// oneDPL histogram API.  This namespace will be removed and replaced with
+// corresponding calls to oneapi::dpl::histogram()
 namespace dpl_histogram {
 
 template <typename _T1, typename _T2>
@@ -1564,14 +1563,10 @@ inline void __clear_wglocal_histograms(const _HistAccessor &local_histogram,
   ::std::uint32_t self_lidx = self_item.get_local_id(0);
   ::std::uint8_t factor = __ceiling_div(num_bins, gSize);
   ::std::uint8_t k;
-  // no need for atomicity when we are explicitly assigning work-items to
-  // locations
-
 #pragma unroll
   for (k = 0; k < factor - 1; k++) {
     local_histogram[offset + gSize * k + self_lidx] = 0;
   }
-  // residual
   if (gSize * k + self_lidx < num_bins) {
     local_histogram[offset + gSize * k + self_lidx] = 0;
   }
@@ -1626,7 +1621,6 @@ inline void __reduce_out_histograms(const _HistAccessorIn &in_histogram,
         global_bin(out_histogram[gSize * k + self_lidx]);
     global_bin += in_histogram[offset + gSize * k + self_lidx];
   }
-  // residual
   if (gSize * k + self_lidx < num_bins) {
     sycl::atomic_ref<_BinType, sycl::memory_order::relaxed,
                      sycl::memory_scope::device,
@@ -1645,16 +1639,14 @@ inline void __histogram_general_registers_local_reduction(
     Policy &&policy, _Range1 &&__input, _Range2 &&__bins, const _Size &num_bins,
     _IdxHashFunc __func, _Range3 &&...__opt_range) {
   const ::std::size_t N = __input.size();
-  // minimum type size for atomics
   using __local_histogram_type = ::std::uint32_t;
-  // even though we fit into uint8_t, uint16_t is faster
   using __private_histogram_type = ::std::uint16_t;
 
   ::std::size_t segments =
       __ceiling_div(N, __work_group_size * __iters_per_work_item);
   auto e = policy.queue().submit([&](auto &h) {
-    // temporary use of stable non-public API from oneDPL, this functionality
-    // will move into oneDPL soon.
+    // Temporary use of stable non-public API from oneDPL,  this function will
+    // be replaced with oneDPL call in an upcoming release.
     oneapi::dpl::__ranges::__require_access(h, __input, __bins, __opt_range...);
     sycl::local_accessor<__local_histogram_type, 1> local_histogram(
         sycl::range(num_bins), h);
@@ -1667,7 +1659,6 @@ inline void __histogram_general_registers_local_reduction(
               __work_group_size * __iters_per_work_item * __wgroup_idx;
 
           __clear_wglocal_histograms(local_histogram, 0, num_bins, __self_item);
-          // histogram bins take less storage with smaller data type
           __private_histogram_type histogram[__bins_per_work_item];
 #pragma unroll
           for (::std::uint8_t k = 0; k < __bins_per_work_item; k++) {
@@ -1716,10 +1707,9 @@ inline void __histogram_general_local_atomics(
   std::size_t segments =
       __ceiling_div(N, __work_group_size * __iters_per_work_item);
   auto e = policy.queue().submit([&](auto &h) {
-    // temporary use of stable non-public API from oneDPL, this functionality
-    // will move into oneDPL soon.
+    // Temporary use of stable non-public API from oneDPL,  this function will
+    // be replaced with oneDPL call in an upcoming release.
     oneapi::dpl::__ranges::__require_access(h, __input, __bins, __opt_range...);
-    // minimum type size for atomics
     sycl::local_accessor<::std::uint32_t, 1> local_histogram(
         sycl::range(num_bins), h);
     h.parallel_for(
@@ -1770,8 +1760,8 @@ inline void __histogram_general_private_global_atomics(
       sycl::range<1>(segments * num_bins));
 
   auto e = policy.queue().submit([&](auto &h) {
-    // temporary use of stable non-public API from oneDPL, this functionality
-    // will move into oneDPL soon.
+    // Temporary use of stable non-public API from oneDPL,  this function will
+    // be replaced with oneDPL call in an upcoming release.
     oneapi::dpl::__ranges::__require_access(h, __input, __bins, __opt_range...);
     sycl::accessor hacc_private(private_histograms, h, sycl::read_write,
                                 sycl::no_init);
@@ -1813,31 +1803,31 @@ __histogram_general_select_best(Policy &&policy, _Iter1 __first, _Iter1 __last,
           .template get_info<sycl::info::device::local_mem_size>();
   constexpr ::std::uint8_t __max_registers = 16;
 
-  // temporary use of stable non-public API from oneDPL, this functionality will
-  // move into oneDPL soon.
+  // Temporary use of stable non-public API from oneDPL,  this function will be
+  // replaced with oneDPL call in an upcoming release.
   auto keep_input = oneapi::dpl::__ranges::__get_sycl_range<
       oneapi::dpl::__par_backend_hetero::access_mode::read, _Iter1>();
   auto input_buf = keep_input(__first, __last);
-  // temporary use of stable non-public API from oneDPL, this functionality will
-  // move into oneDPL soon.
+  // Temporary use of stable non-public API from oneDPL,  this function will be
+  // replaced with oneDPL call in an upcoming release.
   auto keep_bins = oneapi::dpl::__ranges::__get_sycl_range<
       oneapi::dpl::__par_backend_hetero::access_mode::write, _Iter2>();
   auto bins_buf = keep_bins(__histogram_first, __histogram_first + num_bins);
 
-  // synchronous to avoid experimental oneDPL API
   oneapi::dpl::fill(std::forward<Policy>(policy), bins_buf.all_view().begin(),
                     bins_buf.all_view().end(), __histo_value_type(0));
   auto N = __last - __first;
-  // if bins fit into registers, use register private accumulation
   if (num_bins < __max_registers) {
+    // If bins fit into registers, use register private accumulation
     __histogram_general_registers_local_reduction<1024, 32, 16,
                                                   __histo_value_type>(
         ::std::forward<Policy>(policy), input_buf.all_view(),
         bins_buf.all_view(), num_bins, __func,
         std::forward<_Range...>(__opt_range)...);
-  } else if (num_bins * sizeof(__histo_value_type) <
-             __local_mem_size) // if bins fit into SLM, use local atomics
-  {
+  } else if (num_bins * sizeof(__histo_value_type) < __local_mem_size) {
+    // If bins fit into SLM, use local atomics
+
+    // Experimentally determined iters per work-item
     if (N <= 524288) {
       __histogram_general_local_atomics<1024, 4, __histo_value_type>(
           ::std::forward<Policy>(policy), input_buf.all_view(),
@@ -1849,9 +1839,9 @@ __histogram_general_select_best(Policy &&policy, _Iter1 __first, _Iter1 __last,
           bins_buf.all_view(), num_bins, __func,
           std::forward<_Range...>(__opt_range)...);
     }
-  } else // otherwise, use global atomics (private copies per workgroup)
+  } else // Otherwise, use global atomics (private copies per workgroup)
   {
-
+    // Experimentally determined iters per work-item
     if (N <= 524288) {
       __histogram_general_private_global_atomics<1024, 4, __histo_value_type>(
           ::std::forward<Policy>(policy), input_buf.all_view(),
@@ -1893,8 +1883,8 @@ inline ::std::enable_if_t<
     Iter2>
 histogram(Policy &&policy, Iter1 __first, Iter1 __last, Iter2 __histogram_first,
           Iter3 __boundary_first, Iter3 __boundary_last) {
-  // temporary use of stable non-public API from oneDPL,  this function will be
-  // replaced with oneDPL call soon.
+  // Temporary use of stable non-public API from oneDPL,  this function will be
+  // replaced with oneDPL call in an upcoming release.
   auto keep_boundaries = oneapi::dpl::__ranges::__get_sycl_range<
       oneapi::dpl::__par_backend_hetero::access_mode::read, Iter3>();
   auto boundary_buf = keep_boundaries(__boundary_first, __boundary_last);
@@ -1910,9 +1900,12 @@ histogram(Policy &&policy, Iter1 __first, Iter1 __last, Iter2 __histogram_first,
 
 template <typename Policy, typename Iter1, typename Iter2, typename T,
           typename Size>
-void HistogramEven(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
-                   int num_levels, T lower_level, T upper_level,
-                   Size num_samples) {
+::std::enable_if_t<
+    dpct::internal::is_iterator<Iter1>::value &&
+    dpct::internal::is_iterator<Iter2>::value &&
+    internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value>
+HistogramEven(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
+              int num_levels, T lower_level, T upper_level, Size num_samples) {
   internal::dpl_histogram::histogram(::std::forward<Policy>(policy), d_samples,
                                      d_samples + num_samples, d_histogram,
                                      num_levels - 1, lower_level, upper_level);
@@ -1920,10 +1913,14 @@ void HistogramEven(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
 
 template <typename Policy, typename Iter1, typename Iter2, typename T,
           typename OffsetT>
-void HistogramEven(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
-                   int num_levels, T lower_level, T upper_level,
-                   OffsetT num_row_samples, OffsetT num_rows,
-                   ::std::size_t row_stride_bytes) {
+::std::enable_if_t<
+    dpct::internal::is_iterator<Iter1>::value &&
+    dpct::internal::is_iterator<Iter2>::value &&
+    internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value>
+HistogramEven(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
+              int num_levels, T lower_level, T upper_level,
+              OffsetT num_row_samples, OffsetT num_rows,
+              ::std::size_t row_stride_bytes) {
   return HistogramEven(
       ::std::forward<Policy>(policy),
       oneapi::dpl::permutation_iterator(
@@ -1938,11 +1935,15 @@ void HistogramEven(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
 
 template <int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename Policy,
           typename Iter1, typename Iter2, typename T, typename Size>
-void MultiHistogramEven(Policy &&policy, Iter1 d_samples,
-                        Iter2 d_histogram[NUM_ACTIVE_CHANNELS],
-                        int num_levels[NUM_ACTIVE_CHANNELS],
-                        T lower_level[NUM_ACTIVE_CHANNELS],
-                        T upper_level[NUM_ACTIVE_CHANNELS], Size num_pixels) {
+::std::enable_if_t<
+    dpct::internal::is_iterator<Iter1>::value &&
+    dpct::internal::is_iterator<Iter2>::value &&
+    internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value>
+MultiHistogramEven(Policy &&policy, Iter1 d_samples,
+                   Iter2 d_histogram[NUM_ACTIVE_CHANNELS],
+                   int num_levels[NUM_ACTIVE_CHANNELS],
+                   T lower_level[NUM_ACTIVE_CHANNELS],
+                   T upper_level[NUM_ACTIVE_CHANNELS], Size num_pixels) {
   for (int active_channel = 0; active_channel < NUM_ACTIVE_CHANNELS;
        active_channel++) {
     HistogramEven(
@@ -1957,13 +1958,16 @@ void MultiHistogramEven(Policy &&policy, Iter1 d_samples,
 
 template <int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename Policy,
           typename Iter1, typename Iter2, typename T, typename OffsetT>
-void MultiHistogramEven(Policy &&policy, Iter1 d_samples,
-                        Iter2 d_histogram[NUM_ACTIVE_CHANNELS],
-                        int num_levels[NUM_ACTIVE_CHANNELS],
-                        T lower_level[NUM_ACTIVE_CHANNELS],
-                        T upper_level[NUM_ACTIVE_CHANNELS],
-                        OffsetT num_row_samples, OffsetT num_rows,
-                        ::std::size_t row_stride_bytes) {
+::std::enable_if_t<
+    dpct::internal::is_iterator<Iter1>::value &&
+    dpct::internal::is_iterator<Iter2>::value &&
+    internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value>
+MultiHistogramEven(Policy &&policy, Iter1 d_samples,
+                   Iter2 d_histogram[NUM_ACTIVE_CHANNELS],
+                   int num_levels[NUM_ACTIVE_CHANNELS],
+                   T lower_level[NUM_ACTIVE_CHANNELS],
+                   T upper_level[NUM_ACTIVE_CHANNELS], OffsetT num_row_samples,
+                   OffsetT num_rows, ::std::size_t row_stride_bytes) {
   for (int active_channel = 0; active_channel < NUM_ACTIVE_CHANNELS;
        active_channel++) {
     HistogramEven(
@@ -1986,8 +1990,13 @@ void MultiHistogramEven(Policy &&policy, Iter1 d_samples,
 
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
           typename Size>
-void HistogramRange(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
-                    int num_levels, Iter3 d_levels, Size num_samples) {
+::std::enable_if_t<
+    dpct::internal::is_iterator<Iter1>::value &&
+    dpct::internal::is_iterator<Iter2>::value &&
+    dpct::internal::is_iterator<Iter3>::value &&
+    internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value>
+HistogramRange(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
+               int num_levels, Iter3 d_levels, Size num_samples) {
   internal::dpl_histogram::histogram(::std::forward<Policy>(policy), d_samples,
                                      d_samples + num_samples, d_histogram,
                                      d_levels, d_levels + num_levels);
@@ -1995,9 +2004,14 @@ void HistogramRange(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
 
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
           typename OffsetT>
-void HistogramRange(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
-                    int num_levels, Iter3 d_levels, OffsetT num_row_samples,
-                    OffsetT num_rows, ::std::size_t row_stride_bytes) {
+::std::enable_if_t<
+    dpct::internal::is_iterator<Iter1>::value &&
+    dpct::internal::is_iterator<Iter2>::value &&
+    dpct::internal::is_iterator<Iter3>::value &&
+    internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value>
+HistogramRange(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
+               int num_levels, Iter3 d_levels, OffsetT num_row_samples,
+               OffsetT num_rows, ::std::size_t row_stride_bytes) {
   return HistogramRange(
       ::std::forward<Policy>(policy),
       oneapi::dpl::permutation_iterator(
@@ -2011,10 +2025,15 @@ void HistogramRange(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
 
 template <int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename Policy,
           typename Iter1, typename Iter2, typename Iter3, typename Size>
-void MultiHistogramRange(Policy &&policy, Iter1 d_samples,
-                         Iter2 d_histogram[NUM_ACTIVE_CHANNELS],
-                         int num_levels[NUM_ACTIVE_CHANNELS],
-                         Iter3 d_levels[NUM_ACTIVE_CHANNELS], Size num_pixels) {
+::std::enable_if_t<
+    dpct::internal::is_iterator<Iter1>::value &&
+    dpct::internal::is_iterator<Iter2>::value &&
+    dpct::internal::is_iterator<Iter3>::value &&
+    internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value>
+MultiHistogramRange(Policy &&policy, Iter1 d_samples,
+                    Iter2 d_histogram[NUM_ACTIVE_CHANNELS],
+                    int num_levels[NUM_ACTIVE_CHANNELS],
+                    Iter3 d_levels[NUM_ACTIVE_CHANNELS], Size num_pixels) {
   for (int active_channel = 0; active_channel < NUM_ACTIVE_CHANNELS;
        active_channel++) {
     HistogramRange(policy,
@@ -2028,12 +2047,17 @@ void MultiHistogramRange(Policy &&policy, Iter1 d_samples,
 
 template <int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename Policy,
           typename Iter1, typename Iter2, typename Iter3, typename OffsetT>
-void MultiHistogramRange(Policy &&policy, Iter1 d_samples,
-                         Iter2 d_histogram[NUM_ACTIVE_CHANNELS],
-                         int num_levels[NUM_ACTIVE_CHANNELS],
-                         Iter3 d_levels[NUM_ACTIVE_CHANNELS],
-                         OffsetT num_row_samples, OffsetT num_rows,
-                         ::std::size_t row_stride_bytes) {
+::std::enable_if_t<
+    dpct::internal::is_iterator<Iter1>::value &&
+    dpct::internal::is_iterator<Iter2>::value &&
+    dpct::internal::is_iterator<Iter3>::value &&
+    internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value>
+MultiHistogramRange(Policy &&policy, Iter1 d_samples,
+                    Iter2 d_histogram[NUM_ACTIVE_CHANNELS],
+                    int num_levels[NUM_ACTIVE_CHANNELS],
+                    Iter3 d_levels[NUM_ACTIVE_CHANNELS],
+                    OffsetT num_row_samples, OffsetT num_rows,
+                    ::std::size_t row_stride_bytes) {
   for (int active_channel = 0; active_channel < NUM_ACTIVE_CHANNELS;
        active_channel++) {
     HistogramRange(
