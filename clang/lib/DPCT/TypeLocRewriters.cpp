@@ -98,7 +98,7 @@ checkTemplateArgSpelling(size_t Index, std::string Str) {
           getNameSpace(NSD) + "::" + NL->getNameAsString();
       return TypeQualifiedString;
     }
-    return "";
+    return NL->getNameAsString();
   };
 
   return [=](const TypeLoc TL) -> bool {
@@ -109,7 +109,7 @@ checkTemplateArgSpelling(size_t Index, std::string Str) {
       if (TA.getKind() == TemplateArgument::ArgKind::Type) {
         return getQualtifiedNameStr(TA.getAsType()->getAsTagDecl()) == Str;
       } else if (TA.getKind() == TemplateArgument::ArgKind::Declaration) {
-        return TA.getAsDecl()->getNameAsString() == Str;
+        return getQualtifiedNameStr(TA.getAsDecl()) == Str;
       } else if (TA.getKind() == TemplateArgument::ArgKind::Integral) {
         return std::to_string(TA.getAsIntegral().getExtValue()) == Str;
       } else if (TA.getKind() == TemplateArgument::ArgKind::Expression) {
