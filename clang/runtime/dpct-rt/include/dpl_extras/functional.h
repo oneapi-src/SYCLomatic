@@ -362,6 +362,14 @@ private:
   uint_type_t flip_key;
 };
 
+// Unary operator that returns reference to its argument. Ported from
+// oneDPL: oneapi/dpl/pstl/utils.h
+struct no_op_fun {
+  template <typename Tp> Tp &&operator()(Tp &&a) const {
+    return ::std::forward<Tp>(a);
+  }
+};
+
 } // end namespace internal
 
 } // end namespace dpct
