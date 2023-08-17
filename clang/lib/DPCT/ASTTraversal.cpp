@@ -10267,6 +10267,16 @@ void MemoryMigrationRule::arrayMigration(
   StringRef NameRef(Name);
   auto EndPos = C->getNumArgs() - 1;
   bool IsAsync = NameRef.endswith("Async");
+  if (NameRef == "cuMemcpyAtoH_v2" || NameRef == "cuMemcpyHtoA_v2" ||
+      NameRef == "cuMemcpyAtoHAsync_v2" || NameRef == "cuMemcpyHtoAAsync_v2" ||
+      NameRef == "cuMemcpyAtoD_v2" || NameRef == "cuMemcpyDtoA_v2" ||
+      NameRef == "cuMemcpyAtoA_v2") {
+    ExprAnalysis EA(C);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  }
+
   if (IsAsync) {
     NameRef = NameRef.drop_back(5 /* len of "Async" */);
     ReplaceStr = MapNames::getDpctNamespace() + "async_dpct_memcpy";
@@ -10931,8 +10941,10 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cuMemHostGetDevicePointer_v2", "cuMemcpyDtoDAsync_v2",
         "cuMemcpyDtoD_v2", "cuMemAllocPitch_v2", "cuMemPrefetchAsync",
         "cuMemFree_v2", "cuDeviceTotalMem_v2", "cuMemHostGetFlags",
-        "cuMemHostRegister_v2", "cuMemHostUnregister",
-        "cuMemcpy", "cuMemcpyAsync");
+        "cuMemHostRegister_v2", "cuMemHostUnregister", "cuMemcpy",
+        "cuMemcpyAsync", "cuMemcpyHtoA_v2", "cuMemcpyAtoH_v2",
+        "cuMemcpyHtoAAsync_v2", "cuMemcpyAtoHAsync_v2", "cuMemcpyDtoA_v2",
+        "cuMemcpyAtoD_v2", "cuMemcpyAtoA_v2");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -10994,7 +11006,6 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
     }
 
     MigrationDispatcher.at(Name)(Result, C, ULExpr, IsAssigned);
-
     // if API is removed, then no need to add (*, 0)
     // There are some cases where (*, 0) has already been added.
     // If the API is processed with rewriter in APINamesMemory.inc,
@@ -11042,6 +11053,7 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
       insertAroundStmt(C, std::move(PreStr), std::move(PostStr));
     }
   };
+
   MigrateCallExpr(getAssistNodeAsType<CallExpr>(Result, "call"),
                   /* IsAssigned */ false);
   MigrateCallExpr(getAssistNodeAsType<CallExpr>(Result, "callUsed"),
@@ -11124,6 +11136,13 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cudaMemcpyToArrayAsync", &MemoryMigrationRule::arrayMigration},
           {"cudaMemcpyFromArray", &MemoryMigrationRule::arrayMigration},
           {"cudaMemcpyFromArrayAsync", &MemoryMigrationRule::arrayMigration},
+          {"cuMemcpyAtoH_v2", &MemoryMigrationRule::arrayMigration},
+          {"cuMemcpyHtoA_v2", &MemoryMigrationRule::arrayMigration},
+          {"cuMemcpyAtoHAsync_v2", &MemoryMigrationRule::arrayMigration},
+          {"cuMemcpyHtoAAsync_v2", &MemoryMigrationRule::arrayMigration},
+          {"cuMemcpyAtoD_v2", &MemoryMigrationRule::arrayMigration},
+          {"cuMemcpyDtoA_v2", &MemoryMigrationRule::arrayMigration},
+          {"cuMemcpyAtoA_v2", &MemoryMigrationRule::arrayMigration},
           {"cudaFree", &MemoryMigrationRule::freeMigration},
           {"cuMemFree_v2", &MemoryMigrationRule::freeMigration},
           {"cudaFreeArray", &MemoryMigrationRule::freeMigration},
