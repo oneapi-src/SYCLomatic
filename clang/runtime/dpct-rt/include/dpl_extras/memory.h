@@ -776,6 +776,10 @@ public:
   tagged_pointer operator-(difference_type backward) const {
     return tagged_pointer{this->m_ptr - backward};
   }
+  T &operator*() { return *this->m_ptr; }
+  const T &operator*() const { return *this->m_ptr; }
+  T *operator->() { return this->m_ptr; }
+  const T *operator->() const { return this->m_ptr; }
   tagged_pointer operator++(int) {
     tagged_pointer p(this->m_ptr);
     ++this->m_ptr;
