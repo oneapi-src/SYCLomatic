@@ -1859,6 +1859,7 @@ histogram(Policy &&policy, Iter1 first, Iter1 last, Iter2 histogram_first,
 
 } // end namespace internal
 
+// Evenly Divided Histogram of a 1-D array
 template <typename Policy, typename Iter1, typename Iter2, typename T,
           typename Size>
 ::std::enable_if_t<
@@ -1872,6 +1873,7 @@ HistogramEven(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
                                      num_levels - 1, lower_level, upper_level);
 }
 
+// Evenly Divided Histogram of a 2-D ROI in a flattened 2-D array
 template <typename Policy, typename Iter1, typename Iter2, typename T,
           typename OffsetT>
 ::std::enable_if_t<
@@ -1894,6 +1896,7 @@ HistogramEven(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
       num_row_samples * num_rows);
 }
 
+// Evenly Divided Multi-Channel Histogram of a 1-D array
 template <int NumChannels, int NumActiveChannels, typename Policy,
           typename Iter1, typename Iter2, typename T, typename Size>
 ::std::enable_if_t<
@@ -1917,6 +1920,7 @@ MultiHistogramEven(Policy &&policy, Iter1 d_samples,
   }
 }
 
+// Evenly Divided Multi-Channel Histogram of a 2-D ROI in a flattened 2-D array
 template <int NumChannels, int NumActiveChannels, typename Policy,
           typename Iter1, typename Iter2, typename T, typename OffsetT>
 ::std::enable_if_t<
@@ -1949,6 +1953,7 @@ MultiHistogramEven(Policy &&policy, Iter1 d_samples,
   }
 }
 
+// Custom Range Histogram of a 1-D array
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
           typename Size>
 ::std::enable_if_t<
@@ -1963,6 +1968,7 @@ HistogramRange(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
                                      d_levels, d_levels + num_levels);
 }
 
+// Custom Range Histogram of a 2-D ROI in a flattened 2-D Array
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
           typename OffsetT>
 ::std::enable_if_t<
@@ -1984,6 +1990,7 @@ HistogramRange(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
       d_histogram, num_levels, d_levels, num_row_samples * num_rows);
 }
 
+// Custom Range Multi-Channel Histogram of a 1-D array
 template <int NumChannels, int NumActiveChannels, typename Policy,
           typename Iter1, typename Iter2, typename Iter3, typename Size>
 ::std::enable_if_t<
@@ -2006,6 +2013,7 @@ MultiHistogramRange(Policy &&policy, Iter1 d_samples,
   }
 }
 
+// Custom Range Multi-Channel Histogram of a 2-D ROI in a flattened 2-D array
 template <int NumChannels, int NumActiveChannels, typename Policy,
           typename Iter1, typename Iter2, typename Iter3, typename OffsetT>
 ::std::enable_if_t<
