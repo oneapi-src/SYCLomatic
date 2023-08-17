@@ -10,6 +10,7 @@
 #define __DPCT_MEMORY_H__
 
 #include <sycl/sycl.hpp>
+#include "functional.h"
 
 // Memory management section:
 // device_pointer, device_reference, swap, device_iterator, malloc_device,
@@ -711,12 +712,9 @@ namespace internal {
 template <typename PolicyOrTag> struct policy_or_tag_to_tag {
 private:
   using decayed_policy_or_tag_t = ::std::decay_t<PolicyOrTag>;
-  using policy_conversion =
-      ::std::conditional_t<oneapi::dpl::__internal::__is_host_execution_policy<
-                               decayed_policy_or_tag_t>::value,
-                           host_sys_tag, device_sys_tag>;
-
-public:
+  using policy_conversion = ::std::conditional_t<
+      !is_hetero_execution_policy<decayed_policy_or_tag_t>::value, host_sys_tag,
+      device_sys_tag>;
   static constexpr bool is_policy_v =
       oneapi::dpl::execution::is_execution_policy_v<decayed_policy_or_tag_t>;
   static constexpr bool is_sys_tag_v = ::std::disjunction_v<
@@ -725,6 +723,7 @@ public:
   static_assert(is_policy_v || is_sys_tag_v,
                 "Only oneDPL policies or system tags may be provided");
 
+public:
   using type = ::std::conditional_t<is_policy_v, policy_conversion,
                                     decayed_policy_or_tag_t>;
 };
@@ -732,10 +731,21 @@ public:
 template <typename PolicyOrTag>
 using policy_or_tag_to_tag_t = typename policy_or_tag_to_tag<PolicyOrTag>::type;
 
+template <typename PolicyOrTag> struct is_host_policy_or_tag {
+private:
+  using tag_t = policy_or_tag_to_tag_t<PolicyOrTag>;
+
+public:
+  static constexpr bool value = ::std::is_same_v<tag_t, host_sys_tag>;
+};
+
+template <typename PolicyOrTag>
+inline constexpr bool is_host_policy_or_tag_v =
+    is_host_policy_or_tag<PolicyOrTag>::value;
+
 } // namespace internal
 
-// TODO: Improve this pointer wrapper and make an iterator adaptor
-// once we have the Boost library dependency
+// TODO: Make this class an iterator adaptor
 template <typename Tag, typename T> class tagged_pointer_base {
 public:
   using pointer = T *;
@@ -834,14 +844,15 @@ namespace internal {
 // allocations are not device accessible (not pinned).
 template <typename PolicyOrTag>
 void *malloc_base(PolicyOrTag &&policy_or_tag, const ::std::size_t num_bytes) {
-  using tag = policy_or_tag_to_tag<PolicyOrTag>;
-  if constexpr (::std::is_same_v<typename tag::type, host_sys_tag>) {
+  using decayed_policy_or_tag_t = ::std::decay_t<PolicyOrTag>;
+  if constexpr (internal::is_host_policy_or_tag_v<PolicyOrTag>) {
     return ::std::malloc(num_bytes);
   } else {
     sycl::queue q;
     // Grab the associated queue if a device policy is provided. Otherwise, use
     // default constructed.
-    if constexpr (tag::is_policy_v) {
+    if constexpr (oneapi::dpl::execution::is_execution_policy_v<
+                      decayed_policy_or_tag_t>) {
       q = policy_or_tag.queue();
     } else {
       q = get_default_queue();
@@ -869,14 +880,15 @@ auto malloc(PolicyOrTag &&policy_or_tag, const ::std::size_t num_elements) {
 
 template <typename PolicyOrTag, typename Pointer>
 void free(PolicyOrTag &&policy_or_tag, Pointer ptr) {
-  using tag = internal::policy_or_tag_to_tag<PolicyOrTag>;
-  if constexpr (::std::is_same_v<typename tag::type, host_sys_tag>) {
+  using decayed_policy_or_tag_t = ::std::decay_t<PolicyOrTag>;
+  if constexpr (internal::is_host_policy_or_tag_v<PolicyOrTag>) {
     ::std::free(ptr);
   } else {
     sycl::queue q;
     // Grab the associated queue if a device policy is provided. Otherwise, use
     // default constructed.
-    if constexpr (tag::is_policy_v) {
+    if constexpr (oneapi::dpl::execution::is_execution_policy_v<
+                      decayed_policy_or_tag_t>) {
       q = policy_or_tag.queue();
     } else {
       q = get_default_queue();
@@ -889,7 +901,7 @@ template <typename T, typename PolicyOrTag, typename SizeType>
 auto get_temporary_allocation(PolicyOrTag &&policy_or_tag,
                               SizeType num_elements) {
   auto allocation_ptr =
-      malloc<T>(::std::forward<PolicyOrTag>(policy_or_tag), num_elements);
+      dpct::malloc<T>(::std::forward<PolicyOrTag>(policy_or_tag), num_elements);
   if (allocation_ptr == nullptr)
     return ::std::make_pair(allocation_ptr, SizeType(0));
   return ::std::make_pair(allocation_ptr, num_elements);
@@ -897,7 +909,7 @@ auto get_temporary_allocation(PolicyOrTag &&policy_or_tag,
 
 template <typename PolicyOrTag, typename Pointer>
 void release_temporary_allocation(PolicyOrTag &&policy_or_tag, Pointer ptr) {
-  free(::std::forward<PolicyOrTag>(policy_or_tag), ptr);
+  dpct::free(::std::forward<PolicyOrTag>(policy_or_tag), ptr);
 }
 #endif
 
