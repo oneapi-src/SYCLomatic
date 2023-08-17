@@ -379,6 +379,42 @@ struct no_op_fun {
   }
 };
 
+//Unary functor which composes a pair of functors by calling them in succession on an input
+template <typename FunctorInner, typename FunctorOuter> struct __composition_functor {
+  __composition_functor(FunctorInner in, FunctorOuter out) : _in(in), _out(out) {}
+  template <typename T> T operator()(T&& i) const { return _out(_in(::std::forward<T>(i))); }
+  FunctorInner _in;
+  FunctorOuter _out;
+};
+
+//Unary functor which maps an index of a ROI into a 2D flattened array
+template <typename OffsetT> struct __roi_2d_index_functor {
+  __roi_2d_index_functor(const OffsetT &num_cols, const ::std::size_t &row_stride)
+      : _num_cols(num_cols), _row_stride(row_stride) {}
+
+  template <typename Index> Index operator()(const Index &i) const {
+    return _row_stride * (i / _num_cols) + (i % _num_cols);
+  }
+
+  OffsetT _num_cols;
+  ::std::size_t _row_stride;
+};
+
+//Unary functor which maps and index into an interleaved array by its active channel
+template <typename OffsetT> struct __interleaved_index_functor {
+  __interleaved_index_functor(const OffsetT &total_channels,
+                             const OffsetT &active_channel)
+      : _total_channels(total_channels), _active_channel(active_channel) {}
+
+  template <typename Index> Index operator()(const Index &i) const {
+    return i * _total_channels + _active_channel;
+  }
+
+  OffsetT _total_channels;
+  OffsetT _active_channel;
+};
+
+
 } // end namespace internal
 
 } // end namespace dpct
