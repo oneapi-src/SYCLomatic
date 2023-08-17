@@ -2054,7 +2054,7 @@ sort_pairs(Policy &&policy, Iter1 keys_in, Iter2 keys_out, Iter3 values_in,
                             end_bit);
 }
 
-template <typename _ExecutionPolicy, typename key_t, typename value_t>
+template <typename Policy, typename Iter1, typename Iter2>
 inline void sort_pairs(
     Policy &&policy, io_iterator_pair<Iter1> &keys,
     io_iterator_pair<Iter2> &values, ::std::int64_t n, bool descending = false,
