@@ -13,7 +13,15 @@ function(get_clang_resource_dir out_var)
     set(ret_dir bin/${CLANG_RESOURCE_DIR})
   else()
     string(REGEX MATCH "^[0-9]+" CLANG_VERSION_MAJOR ${PACKAGE_VERSION})
-    set(ret_dir lib${LLVM_LIBDIR_SUFFIX}/clang/${CLANG_VERSION_MAJOR})
+# SYCLomatic_CUSTOMIZATION begin
+    if(INTEL_DEPLOY_UNIFIED_LAYOUT)
+      set(ret_dir opt/dpct/lib${LLVM_LIBDIR_SUFFIX}/clang/${CLANG_VERSION_MAJOR})
+    else()
+      set(ret_dir lib${LLVM_LIBDIR_SUFFIX}/clang/${CLANG_VERSION_MAJOR})
+    endif()
+# SYCLomatic_CUSTOMIZATION else
+#   set(ret_dir lib${LLVM_LIBDIR_SUFFIX}/clang/${CLANG_VERSION_MAJOR})
+# SYCLomatic_CUSTOMIZATION end
   endif()
 
   if(ARG_PREFIX)

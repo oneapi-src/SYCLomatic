@@ -473,19 +473,7 @@ add_header_target("openmp-resource-headers" ${openmp_wrapper_files})
 add_header_target("windows-resource-headers" ${windows_only_files})
 add_header_target("utility-resource-headers" ${utility_files})
 
-<<<<<<< HEAD
-# SYCLomatic_CUSTOMIZATION begin
-if(INTEL_DEPLOY_UNIFIED_LAYOUT)
-  set(header_install_dir opt/dpct/lib${LLVM_LIBDIR_SUFFIX}/clang/${CLANG_VERSION_MAJOR}/include)
-else()
-  set(header_install_dir lib${LLVM_LIBDIR_SUFFIX}/clang/${CLANG_VERSION_MAJOR}/include)
-endif()
-# SYCLomatic_CUSTOMIZATION else
-# set(header_install_dir lib${LLVM_LIBDIR_SUFFIX}/clang/${CLANG_VERSION_MAJOR}/include)
-# SYCLomatic_CUSTOMIZATION end
-=======
 get_clang_resource_dir(header_install_dir SUBDIR include)
->>>>>>> SYCLomatic/SYCLomatic
 
 #############################################################
 # Install rules for the catch-all clang-resource-headers target

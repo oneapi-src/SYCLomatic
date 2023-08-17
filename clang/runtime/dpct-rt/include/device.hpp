@@ -159,12 +159,6 @@ public:
       _max_work_item_sizes[i] = max_work_item_sizes[i];
     }
   }
-  void set_max_work_item_sizes(const sycl::id<3> max_work_item_sizes) {
-    for (int i = 0; i < 3; ++i) {
-      _max_work_item_sizes_i[i] = max_work_item_sizes[i];
-      _max_work_item_sizes[i] = max_work_item_sizes[i];
-    }
-  }
   void set_host_unified_memory(bool host_unified_memory) {
     _host_unified_memory = host_unified_memory;
   }
@@ -216,10 +210,6 @@ public:
 private:
   char _name[256];
   sycl::range<3> _max_work_item_sizes{1, 1, 1};
-<<<<<<< HEAD
-  int _max_work_item_sizes_i[3] = {1, 1, 1};
-=======
->>>>>>> SYCLomatic/SYCLomatic
   bool _host_unified_memory = false;
   int _major;
   int _minor;
