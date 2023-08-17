@@ -15,4 +15,4 @@
 // HFMA_SAT-NEXT:   __hfma_sat(b1 /*__nv_bfloat16*/, b2 /*__nv_bfloat16*/, b3 /*__nv_bfloat16*/);
 // HFMA_SAT-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
 // HFMA_SAT-NEXT:   sycl::ext::intel::math::hfma_sat(h1, h2, h3);
-// HFMA_SAT-NEXT:   dpct::clamp(b1 * b2 + b3, 0.f, 1.0f);
+// HFMA_SAT-NEXT:   dpct::clamp<sycl::ext::oneapi::bfloat16>(b1 * b2 + b3, 0.f, 1.0f);

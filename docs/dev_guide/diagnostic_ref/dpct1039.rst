@@ -71,6 +71,7 @@ which is rewritten to:
 
 .. code-block:: cpp
    :linenos:
+   
     template<sycl::access::address_space as>
     void d(int* s) {
       dpct::atomic_fetch_add<as>(s, 1);

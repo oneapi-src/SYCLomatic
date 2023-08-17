@@ -94,11 +94,18 @@ MATH_API_REWRITER_DEVICE(
                                     BO(BinaryOperatorKind::BO_Add, ARG(0),
                                        ARG(1)),
                                     LITERAL("0.f"), LITERAL("1.0f"))),
-            CALL_FACTORY_ENTRY("__hadd_sat",
-                               CALL(MapNames::getDpctNamespace() + "clamp",
-                                    BO(BinaryOperatorKind::BO_Add, ARG(0),
-                                       ARG(1)),
-                                    LITERAL("0.f"), LITERAL("1.0f"))))))
+            CONDITIONAL_FACTORY_ENTRY(
+                math::UseBFloat16,
+                CALL_FACTORY_ENTRY(
+                    "__hadd_sat",
+                    CALL(MapNames::getDpctNamespace() + "clamp<" +
+                             MapNames::getClNamespace() +
+                             "ext::oneapi::bfloat16>",
+                         BO(BinaryOperatorKind::BO_Add, ARG(0), ARG(1)),
+                         LITERAL("0.f"), LITERAL("1.0f"))),
+                UNSUPPORT_FACTORY_ENTRY("__hadd_sat",
+                                        Diagnostics::API_NOT_MIGRATED,
+                                        ARG("__hadd_sat"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__hdiv",
@@ -191,13 +198,17 @@ MATH_API_REWRITER_DEVICE_OVERLOAD(
     MATH_API_REWRITER_EXPERIMENTAL_BFLOAT16(
         "__hfma_sat",
         CALL_FACTORY_ENTRY("__hfma_sat",
-                           CALL(MapNames::getDpctNamespace() + "clamp",
+                           CALL(MapNames::getDpctNamespace() + "clamp<" +
+                                    MapNames::getClNamespace() +
+                                    "ext::oneapi::bfloat16>",
                                 CALL(MapNames::getClNamespace(false, true) +
                                          "ext::oneapi::experimental::fma",
                                      ARG(0), ARG(1), ARG(2)),
                                 LITERAL("0.f"), LITERAL("1.0f"))),
         CALL_FACTORY_ENTRY("__hfma_sat",
-                           CALL(MapNames::getDpctNamespace() + "clamp",
+                           CALL(MapNames::getDpctNamespace() + "clamp<" +
+                                    MapNames::getClNamespace() +
+                                    "ext::oneapi::bfloat16>",
                                 BO(BinaryOperatorKind::BO_Add,
                                    BO(BinaryOperatorKind::BO_Mul,
                                       makeCallArgCreatorWithCall(0),
@@ -258,11 +269,18 @@ MATH_API_REWRITER_DEVICE(
                                     BO(BinaryOperatorKind::BO_Mul, ARG(0),
                                        ARG(1)),
                                     LITERAL("0.f"), LITERAL("1.0f"))),
-            CALL_FACTORY_ENTRY("__hmul_sat",
-                               CALL(MapNames::getDpctNamespace() + "clamp",
-                                    BO(BinaryOperatorKind::BO_Mul, ARG(0),
-                                       ARG(1)),
-                                    LITERAL("0.f"), LITERAL("1.0f"))))))
+            CONDITIONAL_FACTORY_ENTRY(
+                math::UseBFloat16,
+                CALL_FACTORY_ENTRY(
+                    "__hmul_sat",
+                    CALL(MapNames::getDpctNamespace() + "clamp<" +
+                             MapNames::getClNamespace() +
+                             "ext::oneapi::bfloat16>",
+                         BO(BinaryOperatorKind::BO_Mul, ARG(0), ARG(1)),
+                         LITERAL("0.f"), LITERAL("1.0f"))),
+                UNSUPPORT_FACTORY_ENTRY("__hmul_sat",
+                                        Diagnostics::API_NOT_MIGRATED,
+                                        ARG("__hmul_sat"))))))
 
 MATH_API_REWRITER_DEVICE(
     "__hneg",
@@ -332,11 +350,18 @@ MATH_API_REWRITER_DEVICE(
                                     BO(BinaryOperatorKind::BO_Sub, ARG(0),
                                        ARG(1)),
                                     LITERAL("0.f"), LITERAL("1.0f"))),
-            CALL_FACTORY_ENTRY("__hsub_sat",
-                               CALL(MapNames::getDpctNamespace() + "clamp",
-                                    BO(BinaryOperatorKind::BO_Sub, ARG(0),
-                                       ARG(1)),
-                                    LITERAL("0.f"), LITERAL("1.0f"))))))
+            CONDITIONAL_FACTORY_ENTRY(
+                math::UseBFloat16,
+                CALL_FACTORY_ENTRY(
+                    "__hsub_sat",
+                    CALL(MapNames::getDpctNamespace() + "clamp<" +
+                             MapNames::getClNamespace() +
+                             "ext::oneapi::bfloat16>",
+                         BO(BinaryOperatorKind::BO_Sub, ARG(0), ARG(1)),
+                         LITERAL("0.f"), LITERAL("1.0f"))),
+                UNSUPPORT_FACTORY_ENTRY("__hsub_sat",
+                                        Diagnostics::API_NOT_MIGRATED,
+                                        ARG("__hsub_sat"))))))
 
 MATH_API_REWRITER_DEVICE(
     "hdiv",
@@ -1684,16 +1709,26 @@ CALL_FACTORY_ENTRY("__bfloat1622float2",
 
 CALL_FACTORY_ENTRY("__bfloat162float", CALL("static_cast<float>", ARG(0)))
 
-CALL_FACTORY_ENTRY("__float22bfloat162_rn",
-                   CALL(MapNames::getClNamespace() + "marray<" +
-                            MapNames::getClNamespace() +
-                            "ext::oneapi::bfloat16, 2>",
-                        ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")),
-                        ARRAY_SUBSCRIPT(ARG(0), LITERAL("1"))))
+CONDITIONAL_FACTORY_ENTRY(
+    math::UseBFloat16,
+    CALL_FACTORY_ENTRY("__float22bfloat162_rn",
+                       CALL(MapNames::getClNamespace() + "marray<" +
+                                MapNames::getClNamespace() +
+                                "ext::oneapi::bfloat16, 2>",
+                            ARRAY_SUBSCRIPT(ARG(0), LITERAL("0")),
+                            ARRAY_SUBSCRIPT(ARG(0), LITERAL("1")))),
+    UNSUPPORT_FACTORY_ENTRY("__float22bfloat162_rn",
+                            Diagnostics::API_NOT_MIGRATED,
+                            ARG("__float22bfloat162_rn")))
 
-CALL_FACTORY_ENTRY("__float2bfloat16",
-                   CALL(MapNames::getClNamespace() + "ext::oneapi::bfloat16",
-                        ARG(0)))
+CONDITIONAL_FACTORY_ENTRY(math::UseBFloat16,
+                          CALL_FACTORY_ENTRY("__float2bfloat16",
+                                             CALL(MapNames::getClNamespace() +
+                                                      "ext::oneapi::bfloat16",
+                                                  ARG(0))),
+                          UNSUPPORT_FACTORY_ENTRY("__float2bfloat16",
+                                                  Diagnostics::API_NOT_MIGRATED,
+                                                  ARG("__float2bfloat16")))
 
 // Single Precision Mathematical Functions
 MATH_API_REWRITER_DEVICE(

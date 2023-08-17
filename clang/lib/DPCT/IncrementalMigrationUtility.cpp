@@ -203,6 +203,9 @@ bool printOptions(
         if (!(UValue & (1 << static_cast<unsigned>(
                             DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo))))
           Str += "device_info,";
+        if (!(UValue & (1 << static_cast<unsigned>(
+                            DPCPPExtensionsDefaultEnabled::ExtDE_BFloat16))))
+          Str += "bfloat16,";
       }
       if (!Str.empty()) {
         Str = "--no-dpcpp-extensions=" + Str;
