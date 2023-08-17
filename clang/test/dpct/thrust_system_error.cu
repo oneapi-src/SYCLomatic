@@ -50,6 +50,37 @@ void cuda_safe_call(cudaError_t error, const std::string &message = "") {
   }
 }
 
+void foo() {
+  thrust::error_code t1(static_cast<int>(0), thrust::generic_category());
+  std::string arg;
+  char *char_arg = "test";
+  int ev = 0;
+  // CHECK: std::system_error test_1(t1, arg);
+  // CHECK-NEXT: std::system_error test_2(t1, char_arg);
+  // CHECK-NEXT: std::system_error test_3(t1);
+  // CHECK-NEXT: std::system_error test_4(ev, std::generic_category(), arg);
+  // CHECK-NEXT: std::system_error test_5(ev, std::generic_category(), char_arg);
+  // CHECK-NEXT: std::system_error test_6(ev, std::generic_category());
+  // CHECK-NEXT: std::system_error test_7(t1, arg);
+  // CHECK-NEXT: std::system_error test_8(t1, char_arg);
+  // CHECK-NEXT: std::system_error test_9(t1);
+  // CHECK-NEXT: std::system_error test_10(ev, std::generic_category(), arg);
+  // CHECK-NEXT: std::system_error test_11(ev, std::generic_category(), char_arg);
+  // CHECK-NEXT: std::system_error test_12(ev, std::generic_category());
+  thrust::system::system_error test_1(t1, arg);
+  thrust::system::system_error test_2(t1, char_arg);
+  thrust::system::system_error test_3(t1);
+  thrust::system::system_error test_4(ev, thrust::cuda_category(), arg);
+  thrust::system::system_error test_5(ev, thrust::cuda_category(), char_arg);
+  thrust::system::system_error test_6(ev, thrust::cuda_category());
+  thrust::system_error test_7(t1, arg);
+  thrust::system_error test_8(t1, char_arg);
+  thrust::system_error test_9(t1);
+  thrust::system_error test_10(ev, thrust::cuda_category(), arg);
+  thrust::system_error test_11(ev, thrust::cuda_category(), char_arg);
+  thrust::system_error test_12(ev, thrust::cuda_category());
+}
+
 int main() {
 // CHECK: dpct::err0 e = 1;  
   cudaError_t e = cudaErrorInvalidValue;  
