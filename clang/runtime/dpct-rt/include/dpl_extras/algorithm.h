@@ -12,7 +12,6 @@
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
 #include <oneapi/dpl/numeric>
-#include <oneapi/dpl/async>
 
 #include "functional.h"
 #include "iterators.h"
