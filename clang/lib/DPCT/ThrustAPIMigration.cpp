@@ -42,10 +42,6 @@ void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 void ThrustAPIRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "thrustFuncCall")) {
-    printf("CE ### [%s]\n",
-           CE->getBeginLoc()
-               .printToString(dpct::DpctGlobalInfo::getSourceManager())
-               .data());
     if (const UnresolvedLookupExpr *ULE =
             dyn_cast_or_null<UnresolvedLookupExpr>(CE->getCallee()))
       thrustFuncMigration(Result, CE, ULE);
