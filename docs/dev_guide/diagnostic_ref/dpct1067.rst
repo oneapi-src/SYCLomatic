@@ -16,7 +16,7 @@ the code manually.
 Detailed Help
 -------------
 
-|oneCCL| (|oneCCL|) oneCCL currently does not support average reduction operation.
+|ccl_long| (|ccl|) currently does not support average reduction operation.
 
 Suggestions to Fix
 ------------------
