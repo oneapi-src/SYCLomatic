@@ -37,18 +37,17 @@ void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(typedefDecl(isExpandedFromMacro("THRUST_STATIC_ASSERT"))
                     .bind("THRUST_STATIC_ASSERT"),
                 this);
-
-  MF.addMatcher(cxxConstructExpr(hasType(namedDecl(hasAnyName(
-                                     "thrust::system::error_code"))))
-                    .bind("THRUST_SYSTEM_ERROR"),
-                this);
 }
 
 void ThrustAPIRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "thrustFuncCall")) {
-    printf("CE ### [%s]\n", CE->getBeginLoc().printToString(dpct::DpctGlobalInfo::getSourceManager()).data());
-    if(const UnresolvedLookupExpr * ULE = dyn_cast_or_null<UnresolvedLookupExpr>(CE->getCallee()))
+    printf("CE ### [%s]\n",
+           CE->getBeginLoc()
+               .printToString(dpct::DpctGlobalInfo::getSourceManager())
+               .data());
+    if (const UnresolvedLookupExpr *ULE =
+            dyn_cast_or_null<UnresolvedLookupExpr>(CE->getCallee()))
       thrustFuncMigration(Result, CE, ULE);
     else
       thrustFuncMigration(Result, CE);
@@ -58,15 +57,6 @@ void ThrustAPIRule::runRule(
     const SourceLocation BeginLoc = SM.getExpansionLoc(D->getBeginLoc());
     emplaceTransformation(new ReplaceText(
         BeginLoc, std::string("THRUST_STATIC_ASSERT").size(), "static_assert"));
-  } else if (const CXXConstructExpr *CCE =
-                 getNodeAsType<CXXConstructExpr>(Result,
-                                                       "THRUST_SYSTEM_ERROR")) {
-    printf("##### [%s]\n", CCE->getBeginLoc().printToString(dpct::DpctGlobalInfo::getSourceManager()).data());
-    dpct::ExprAnalysis EA;
-    EA.analyze(CCE);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
-    return;
   }
 }
 
@@ -231,7 +221,8 @@ void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "thrust::detail::integral_constant", "thrust::detail::is_same",
         "thrust::system::detail::bad_alloc", "thrust::iterator_traits",
         "thrust::detail::vector_base", "thrust::optional", "thrust::nullopt",
-        "thrust::system::system_error");
+        "thrust::system::system_error", "thrust::system::error_code",
+        "enum thrust::system::errc::errc_t");
   };
   MF.addMatcher(
       typeLoc(loc(qualType(hasDeclaration(namedDecl(ThrustTypeHasNames())))))
@@ -272,12 +263,7 @@ void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
 void ThrustTypeRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-<<<<<<< HEAD
   if (auto TL = getAssistNodeAsType<TypeLoc>(Result, "thrustTypeLoc")) {
-=======
-  if (auto TL = getNodeAsType<TypeLoc>(Result, "thrustTypeLoc")) {
-    printf("ThrustTypeRule ####[%s]\n", TL->getBeginLoc().printToString(dpct::DpctGlobalInfo::getSourceManager()).data());
->>>>>>> Support migration of thrust::system::make_error_condition
     ExprAnalysis EA;
     auto DNTL = DpctGlobalInfo::findAncestor<DependentNameTypeLoc>(TL);
     auto NNSL = DpctGlobalInfo::findAncestor<NestedNameSpecifierLoc>(TL);

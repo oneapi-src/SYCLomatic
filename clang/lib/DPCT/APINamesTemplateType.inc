@@ -165,6 +165,9 @@ TYPE_REWRITE_ENTRY(
 TYPE_REWRITE_ENTRY("thrust::system::system_error",
                    TYPE_FACTORY(STR("std::system_error")))
 
+// thrust::system::error_code
+TYPE_REWRITE_ENTRY("thrust::system::error_code", TYPE_FACTORY(STR("std::error_code")))
+
 // thrust::bit_and
 TYPE_REWRITE_ENTRY(
     "thrust::bit_and",

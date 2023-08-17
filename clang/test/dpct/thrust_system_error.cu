@@ -31,6 +31,11 @@ void cuda_safe_call(cudaError_t error, const std::string &message = "") {
   thrust::system::generic_category();
   thrust::system_category();
   thrust::system::system_category();
+	thrust::error_code t1(static_cast<int>(0), thrust::generic_category());
+	thrust::system::error_code t1(static_cast<int>(0), thrust::generic_category());
+  thrust::error_code t1(static_cast<int>(0), thrust::generic_category());
+  thrust::system::error_code t2(static_cast<int>(0), thrust::generic_category());
+
   if (error) {
     // CHECK: throw std::system_error(error, std::generic_category(), message);
     throw thrust::system_error(error, thrust::cuda_category(), message);

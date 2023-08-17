@@ -582,7 +582,6 @@ void ExprAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
 }
 
 void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
-  printf("ExprAnalysis::analyzeExpr CXXTemporaryObjectExpr: [%s]\n", Temp->getConstructor()->getDeclName().getAsString().c_str());
   if (Temp->getConstructor()->getDeclName().getAsString() != "dim3") {
     analyzeType(Temp->getTypeSourceInfo()->getTypeLoc());
   }
@@ -1072,7 +1071,6 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
   if (NNSL) {
     SR.setBegin(NNSL->getBeginLoc());
   }
-
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
   switch (TL.getTypeLocClass()) {
   case TypeLoc::Qualified:
