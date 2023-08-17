@@ -719,8 +719,9 @@ private:
 public:
   static constexpr bool is_policy_v =
       oneapi::dpl::execution::is_execution_policy_v<decayed_policy_or_tag_t>;
-  static constexpr bool is_sys_tag_v =
-      ::std::is_base_of_v<sys_tag, std::decay_t<decayed_policy_or_tag_t>>;
+  static constexpr bool is_sys_tag_v = ::std::disjunction_v<
+      ::std::is_same<decayed_policy_or_tag_t, host_sys_tag>,
+      ::std::is_same<decayed_policy_or_tag_t, device_sys_tag>>;
   static_assert(is_policy_v || is_sys_tag_v,
                 "Only oneDPL policies or system tags may be provided");
 
