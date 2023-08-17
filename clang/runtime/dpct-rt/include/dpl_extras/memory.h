@@ -735,8 +735,7 @@ using policy_or_tag_to_tag_t = typename policy_or_tag_to_tag<PolicyOrTag>::type;
 
 // TODO: Improve this pointer wrapper and make an iterator adaptor
 // once we have the Boost library dependency
-template <typename Tag, typename T, typename Derived>
-class tagged_pointer_base {
+template <typename Tag, typename T> class tagged_pointer_base {
 public:
   using pointer = T *;
   using difference_type = ::std::ptrdiff_t;
@@ -753,9 +752,8 @@ protected:
 // location of the allocated memory. Standard pointer operations are supported
 // with this class.
 template <typename Tag, typename T = void>
-class tagged_pointer
-    : public tagged_pointer_base<Tag, T, tagged_pointer<Tag, T>> {
-  using super_t = tagged_pointer_base<Tag, T, tagged_pointer<Tag, T>>;
+class tagged_pointer : public tagged_pointer_base<Tag, T> {
+  using super_t = tagged_pointer_base<Tag, T>;
 
 public:
   using value_type = T;
@@ -815,9 +813,8 @@ public:
 // conversion to other non-void tagged pointers is allowed. Pointer arithmetic
 // is disallowed with this specialization.
 template <typename Tag>
-class tagged_pointer<Tag, void>
-    : public tagged_pointer_base<Tag, void, tagged_pointer<Tag, void>> {
-  using super_t = tagged_pointer_base<Tag, void, tagged_pointer<Tag, void>>;
+class tagged_pointer<Tag, void> : public tagged_pointer_base<Tag, void> {
+  using super_t = tagged_pointer_base<Tag, void>;
 
 public:
   using difference_type = typename super_t::difference_type;
