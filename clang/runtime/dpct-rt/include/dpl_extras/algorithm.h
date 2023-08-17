@@ -1449,15 +1449,15 @@ inline void segmented_sort_pairs_by_two_pair_sorts(
       oneapi::dpl::begin(segments), zip_keys_vals, zip_keys_vals_out, n, false);
 }
 
-template <typename FunctorInner, typename FunctorOuter> struct compose_functor {
-  compose_functor(FunctorInner in, FunctorOuter out) : _in(in), _out(out) {}
-  template <typename T> T operator()(const T &i) const { return _out(_in(i)); }
+template <typename FunctorInner, typename FunctorOuter> struct __composition_functor {
+  __composition_functor(FunctorInner in, FunctorOuter out) : _in(in), _out(out) {}
+  template <typename T> T operator()(T&& i) const { return _out(_in(::std::forward<T>(i))); }
   FunctorInner _in;
   FunctorOuter _out;
 };
 
-template <typename OffsetT> struct roi_2d_index {
-  roi_2d_index(const OffsetT &num_cols, const ::std::size_t &row_stride)
+template <typename OffsetT> struct __roi_2d_index_functor {
+  __roi_2d_index_functor(const OffsetT &num_cols, const ::std::size_t &row_stride)
       : _num_cols(num_cols), _row_stride(row_stride) {}
 
   template <typename Index> Index operator()(const Index &i) const {
@@ -1468,8 +1468,8 @@ template <typename OffsetT> struct roi_2d_index {
   ::std::size_t _row_stride;
 };
 
-template <typename OffsetT> struct interleaved_select_channel {
-  interleaved_select_channel(const OffsetT &total_channels,
+template <typename OffsetT> struct __interleaved_index_functor {
+  __interleaved_index_functor(const OffsetT &total_channels,
                              const OffsetT &active_channel)
       : _total_channels(total_channels), _active_channel(active_channel) {}
 
@@ -1925,7 +1925,7 @@ HistogramEven(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
       ::std::forward<Policy>(policy),
       oneapi::dpl::permutation_iterator(
           d_samples,
-          internal::roi_2d_index(
+          internal::__roi_2d_index_functor(
               num_row_samples,
               row_stride_bytes /
                   sizeof(typename ::std::iterator_traits<Iter1>::value_type))),
@@ -1950,7 +1950,7 @@ MultiHistogramEven(Policy &&policy, Iter1 d_samples,
         policy,
         oneapi::dpl::permutation_iterator(
             d_samples,
-            internal::interleaved_select_channel(NUM_CHANNELS, active_channel)),
+            internal::__interleaved_index_functor(NUM_CHANNELS, active_channel)),
         d_histogram[active_channel], num_levels[active_channel],
         lower_level[active_channel], upper_level[active_channel], num_pixels);
   }
@@ -1974,13 +1974,13 @@ MultiHistogramEven(Policy &&policy, Iter1 d_samples,
         policy,
         oneapi::dpl::permutation_iterator(
             d_samples,
-            internal::compose_functor(
-                internal::roi_2d_index(
+            internal::__composition_functor(
+                internal::__roi_2d_index_functor(
                     num_row_samples,
                     row_stride_bytes /
                         (NUM_CHANNELS * sizeof(typename ::std::iterator_traits<
                                                Iter1>::value_type))),
-                internal::interleaved_select_channel(NUM_CHANNELS,
+                internal::__interleaved_index_functor(NUM_CHANNELS,
                                                      active_channel))),
         d_histogram[active_channel], num_levels[active_channel],
         lower_level[active_channel], upper_level[active_channel],
@@ -2016,7 +2016,7 @@ HistogramRange(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
       ::std::forward<Policy>(policy),
       oneapi::dpl::permutation_iterator(
           d_samples,
-          internal::roi_2d_index(
+          internal::__roi_2d_index_functor(
               num_row_samples,
               row_stride_bytes /
                   sizeof(typename ::std::iterator_traits<Iter1>::value_type))),
@@ -2038,7 +2038,7 @@ MultiHistogramRange(Policy &&policy, Iter1 d_samples,
        active_channel++) {
     HistogramRange(policy,
                    oneapi::dpl::permutation_iterator(
-                       d_samples, internal::interleaved_select_channel(
+                       d_samples, internal::__interleaved_index_functor(
                                       NUM_CHANNELS, active_channel)),
                    d_histogram[active_channel], num_levels[active_channel],
                    d_levels[active_channel], num_pixels);
@@ -2064,13 +2064,13 @@ MultiHistogramRange(Policy &&policy, Iter1 d_samples,
         policy,
         oneapi::dpl::permutation_iterator(
             d_samples,
-            internal::compose_functor(
-                internal::roi_2d_index(
+            internal::__composition_functor(
+                internal::__roi_2d_index_functor(
                     num_row_samples,
                     row_stride_bytes /
                         (NUM_CHANNELS * sizeof(typename ::std::iterator_traits<
                                                Iter1>::value_type))),
-                internal::interleaved_select_channel(NUM_CHANNELS,
+                internal::__interleaved_index_functor(NUM_CHANNELS,
                                                      active_channel))),
         d_histogram[active_channel], num_levels[active_channel],
         d_levels[active_channel], num_row_samples * num_rows);
