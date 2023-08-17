@@ -1914,13 +1914,13 @@ MultiHistogramEven(Policy &&policy, Iter1 d_samples,
                    T upper_level[NUM_ACTIVE_CHANNELS], Size num_pixels) {
   for (int active_channel = 0; active_channel < NUM_ACTIVE_CHANNELS;
        active_channel++) {
-    HistogramEven(
-        policy,
-        oneapi::dpl::permutation_iterator(
-            d_samples,
-            internal::__interleaved_index_functor(NUM_CHANNELS, active_channel)),
-        d_histogram[active_channel], num_levels[active_channel],
-        lower_level[active_channel], upper_level[active_channel], num_pixels);
+    HistogramEven(policy,
+                  oneapi::dpl::permutation_iterator(
+                      d_samples, internal::__interleaved_index_functor(
+                                     NUM_CHANNELS, active_channel)),
+                  d_histogram[active_channel], num_levels[active_channel],
+                  lower_level[active_channel], upper_level[active_channel],
+                  num_pixels);
   }
 }
 
@@ -1949,7 +1949,7 @@ MultiHistogramEven(Policy &&policy, Iter1 d_samples,
                         (NUM_CHANNELS * sizeof(typename ::std::iterator_traits<
                                                Iter1>::value_type))),
                 internal::__interleaved_index_functor(NUM_CHANNELS,
-                                                     active_channel))),
+                                                      active_channel))),
         d_histogram[active_channel], num_levels[active_channel],
         lower_level[active_channel], upper_level[active_channel],
         num_row_samples * num_rows);
@@ -2039,7 +2039,7 @@ MultiHistogramRange(Policy &&policy, Iter1 d_samples,
                         (NUM_CHANNELS * sizeof(typename ::std::iterator_traits<
                                                Iter1>::value_type))),
                 internal::__interleaved_index_functor(NUM_CHANNELS,
-                                                     active_channel))),
+                                                      active_channel))),
         d_histogram[active_channel], num_levels[active_channel],
         d_levels[active_channel], num_row_samples * num_rows);
   }
