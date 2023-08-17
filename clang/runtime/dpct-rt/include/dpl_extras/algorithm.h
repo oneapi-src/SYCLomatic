@@ -9,8 +9,8 @@
 #ifndef __DPCT_ALGORITHM_H__
 #define __DPCT_ALGORITHM_H__
 
-#include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
+#include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/numeric>
 
 #include "functional.h"
