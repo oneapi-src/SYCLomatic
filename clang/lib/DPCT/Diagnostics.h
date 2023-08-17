@@ -140,7 +140,7 @@ static inline SourceLocation getStartOfLine(SourceLocation Loc,
   auto Buffer = SM.getBufferData(LocInfo.first);
   auto NLPos = Buffer.find_last_of('\n', LocInfo.second);
   auto Skip = 1;
-  while (NLPos != StringRef::npos) {
+  while (NLPos && (NLPos != StringRef::npos)) {
     if (Buffer[NLPos - 1] == '\r') {
       --NLPos;
       Skip = 2;
