@@ -220,10 +220,17 @@ void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "thrust::detail::true_type", "thrust::detail::false_type",
         "thrust::detail::integral_constant", "thrust::detail::is_same",
         "thrust::system::detail::bad_alloc", "thrust::iterator_traits",
+<<<<<<< HEAD
         "thrust::detail::vector_base", "thrust::optional", "thrust::nullopt",
         "thrust::system::system_error", "thrust::system::error_code",
         "enum thrust::system::errc::errc_t");
+=======
+        "thrust::detail::vector_base", "thrust::system::system_error",
+        "thrust::system::error_code", "enum thrust::system::errc::errc_t",
+        "thrust::system::error_condition");
+>>>>>>> Support migration thrust::system::system_error and thrust::system_error
   };
+
   MF.addMatcher(
       typeLoc(loc(qualType(hasDeclaration(namedDecl(ThrustTypeHasNames())))))
           .bind("thrustTypeLoc"),

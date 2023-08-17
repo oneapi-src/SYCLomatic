@@ -23,6 +23,12 @@ void cuda_safe_call(cudaError_t error, const std::string &message = "") {
   // CHECK-NEXT:	std::generic_category();
   // CHECK-NEXT:	std::system_category();
   // CHECK-NEXT:	std::system_category();
+  // CHECK-NEXT:	std::error_code t1(static_cast<int>(0), std::generic_category());
+  // CHECK-NEXT:	std::error_code t2(static_cast<int>(0), std::generic_category());
+  // CHECK-NEXT:  std::error_code t3(static_cast<int>(0), std::generic_category());
+  // CHECK-NEXT:  std::error_code t4(static_cast<int>(0), std::generic_category());
+  // CHECK-NEXT:  std::error_condition t5(0, std::generic_category());
+  // CHECK-NEXT:  std::error_condition t6(0, std::generic_category());
   thrust::make_error_condition(e);
   thrust::system::make_error_condition(e);
   thrust::cuda_category();
@@ -31,10 +37,12 @@ void cuda_safe_call(cudaError_t error, const std::string &message = "") {
   thrust::system::generic_category();
   thrust::system_category();
   thrust::system::system_category();
-	thrust::error_code t1(static_cast<int>(0), thrust::generic_category());
-	thrust::system::error_code t1(static_cast<int>(0), thrust::generic_category());
   thrust::error_code t1(static_cast<int>(0), thrust::generic_category());
   thrust::system::error_code t2(static_cast<int>(0), thrust::generic_category());
+  thrust::error_code t3(static_cast<int>(0), thrust::generic_category());
+  thrust::system::error_code t4(static_cast<int>(0), thrust::generic_category());
+  thrust::error_condition t5(0, thrust::generic_category());
+  thrust::system::error_condition t6(0, thrust::generic_category());
 
   if (error) {
     // CHECK: throw std::system_error(error, std::generic_category(), message);
