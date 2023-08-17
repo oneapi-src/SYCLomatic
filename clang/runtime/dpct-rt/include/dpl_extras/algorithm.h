@@ -1866,8 +1866,8 @@ template <typename Policy, typename Iter1, typename Iter2, typename T,
     dpct::internal::is_iterator<Iter1>::value &&
     dpct::internal::is_iterator<Iter2>::value &&
     internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value>
-HistogramEven(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
-              int num_levels, T lower_level, T upper_level, Size num_samples) {
+histogram_even(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
+               int num_levels, T lower_level, T upper_level, Size num_samples) {
   internal::dpl_histogram::histogram(::std::forward<Policy>(policy), d_samples,
                                      d_samples + num_samples, d_histogram,
                                      num_levels - 1, lower_level, upper_level);
@@ -1880,11 +1880,11 @@ template <typename Policy, typename Iter1, typename Iter2, typename T,
     dpct::internal::is_iterator<Iter1>::value &&
     dpct::internal::is_iterator<Iter2>::value &&
     internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value>
-HistogramEven(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
-              int num_levels, T lower_level, T upper_level,
-              OffsetT num_row_samples, OffsetT num_rows,
-              ::std::size_t row_stride_bytes) {
-  return HistogramEven(
+histogram_even_roi(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
+                   int num_levels, T lower_level, T upper_level,
+                   OffsetT num_row_samples, OffsetT num_rows,
+                   ::std::size_t row_stride_bytes) {
+  return histogram_even(
       ::std::forward<Policy>(policy),
       oneapi::dpl::permutation_iterator(
           d_samples,
@@ -1903,14 +1903,14 @@ template <int NumChannels, int NumActiveChannels, typename Policy,
     dpct::internal::is_iterator<Iter1>::value &&
     dpct::internal::is_iterator<Iter2>::value &&
     internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value>
-MultiHistogramEven(Policy &&policy, Iter1 d_samples,
-                   Iter2 d_histogram[NumActiveChannels],
-                   int num_levels[NumActiveChannels],
-                   T lower_level[NumActiveChannels],
-                   T upper_level[NumActiveChannels], Size num_pixels) {
+multi_histogram_even(Policy &&policy, Iter1 d_samples,
+                     Iter2 d_histogram[NumActiveChannels],
+                     int num_levels[NumActiveChannels],
+                     T lower_level[NumActiveChannels],
+                     T upper_level[NumActiveChannels], Size num_pixels) {
   for (int active_channel = 0; active_channel < NumActiveChannels;
        active_channel++) {
-    HistogramEven(
+    histogram_even(
         policy,
         oneapi::dpl::permutation_iterator(
             d_samples,
@@ -1927,15 +1927,16 @@ template <int NumChannels, int NumActiveChannels, typename Policy,
     dpct::internal::is_iterator<Iter1>::value &&
     dpct::internal::is_iterator<Iter2>::value &&
     internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value>
-MultiHistogramEven(Policy &&policy, Iter1 d_samples,
-                   Iter2 d_histogram[NumActiveChannels],
-                   int num_levels[NumActiveChannels],
-                   T lower_level[NumActiveChannels],
-                   T upper_level[NumActiveChannels], OffsetT num_row_samples,
-                   OffsetT num_rows, ::std::size_t row_stride_bytes) {
+multi_histogram_even_roi(Policy &&policy, Iter1 d_samples,
+                         Iter2 d_histogram[NumActiveChannels],
+                         int num_levels[NumActiveChannels],
+                         T lower_level[NumActiveChannels],
+                         T upper_level[NumActiveChannels],
+                         OffsetT num_row_samples, OffsetT num_rows,
+                         ::std::size_t row_stride_bytes) {
   for (int active_channel = 0; active_channel < NumActiveChannels;
        active_channel++) {
-    HistogramEven(
+    histogram_even(
         policy,
         oneapi::dpl::permutation_iterator(
             d_samples,
@@ -1961,8 +1962,8 @@ template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
     dpct::internal::is_iterator<Iter2>::value &&
     dpct::internal::is_iterator<Iter3>::value &&
     internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value>
-HistogramRange(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
-               int num_levels, Iter3 d_levels, Size num_samples) {
+histogram_range(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
+                int num_levels, Iter3 d_levels, Size num_samples) {
   internal::dpl_histogram::histogram(::std::forward<Policy>(policy), d_samples,
                                      d_samples + num_samples, d_histogram,
                                      d_levels, d_levels + num_levels);
@@ -1976,10 +1977,10 @@ template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
     dpct::internal::is_iterator<Iter2>::value &&
     dpct::internal::is_iterator<Iter3>::value &&
     internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value>
-HistogramRange(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
-               int num_levels, Iter3 d_levels, OffsetT num_row_samples,
-               OffsetT num_rows, ::std::size_t row_stride_bytes) {
-  return HistogramRange(
+histogram_range_roi(Policy &&policy, Iter1 d_samples, Iter2 d_histogram,
+                    int num_levels, Iter3 d_levels, OffsetT num_row_samples,
+                    OffsetT num_rows, ::std::size_t row_stride_bytes) {
+  return histogram_range(
       ::std::forward<Policy>(policy),
       oneapi::dpl::permutation_iterator(
           d_samples,
@@ -1998,18 +1999,18 @@ template <int NumChannels, int NumActiveChannels, typename Policy,
     dpct::internal::is_iterator<Iter2>::value &&
     dpct::internal::is_iterator<Iter3>::value &&
     internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value>
-MultiHistogramRange(Policy &&policy, Iter1 d_samples,
-                    Iter2 d_histogram[NumActiveChannels],
-                    int num_levels[NumActiveChannels],
-                    Iter3 d_levels[NumActiveChannels], Size num_pixels) {
+multi_histogram_range(Policy &&policy, Iter1 d_samples,
+                      Iter2 d_histogram[NumActiveChannels],
+                      int num_levels[NumActiveChannels],
+                      Iter3 d_levels[NumActiveChannels], Size num_pixels) {
   for (int active_channel = 0; active_channel < NumActiveChannels;
        active_channel++) {
-    HistogramRange(policy,
-                   oneapi::dpl::permutation_iterator(
-                       d_samples, internal::__interleaved_index_functor(
-                                      NumChannels, active_channel)),
-                   d_histogram[active_channel], num_levels[active_channel],
-                   d_levels[active_channel], num_pixels);
+    histogram_range(policy,
+                    oneapi::dpl::permutation_iterator(
+                        d_samples, internal::__interleaved_index_functor(
+                                       NumChannels, active_channel)),
+                    d_histogram[active_channel], num_levels[active_channel],
+                    d_levels[active_channel], num_pixels);
   }
 }
 
@@ -2021,14 +2022,15 @@ template <int NumChannels, int NumActiveChannels, typename Policy,
     dpct::internal::is_iterator<Iter2>::value &&
     dpct::internal::is_iterator<Iter3>::value &&
     internal::is_hetero_execution_policy<::std::decay_t<Policy>>::value>
-MultiHistogramRange(Policy &&policy, Iter1 d_samples,
-                    Iter2 d_histogram[NumActiveChannels],
-                    int num_levels[NumActiveChannels],
-                    Iter3 d_levels[NumActiveChannels], OffsetT num_row_samples,
-                    OffsetT num_rows, ::std::size_t row_stride_bytes) {
+multi_histogram_range_roi(Policy &&policy, Iter1 d_samples,
+                          Iter2 d_histogram[NumActiveChannels],
+                          int num_levels[NumActiveChannels],
+                          Iter3 d_levels[NumActiveChannels],
+                          OffsetT num_row_samples, OffsetT num_rows,
+                          ::std::size_t row_stride_bytes) {
   for (int active_channel = 0; active_channel < NumActiveChannels;
        active_channel++) {
-    HistogramRange(
+    histogram_range(
         policy,
         oneapi::dpl::permutation_iterator(
             d_samples,
