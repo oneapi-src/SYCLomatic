@@ -5,6 +5,7 @@
 
 // clang-format off
 #include <cuda_runtime.h>
+#include <cstdint>
 
 __global__ void add() {
   int x = 1, y = 2;
