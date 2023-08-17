@@ -385,8 +385,8 @@ template <typename FunctorInner, typename FunctorOuter>
 struct __composition_functor {
   __composition_functor(FunctorInner in, FunctorOuter out)
       : _in(in), _out(out) {}
-  template <typename T> T operator()(T &&i) const {
-    return _out(_in(::std::forward<T>(i)));
+  template <typename T> T operator()(const T &i) const {
+    return _out(_in(i));
   }
   FunctorInner _in;
   FunctorOuter _out;
