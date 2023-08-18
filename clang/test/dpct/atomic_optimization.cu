@@ -8,7 +8,7 @@
 // CHECK: inline void foo(unsigned int p){}
 __device__ void foo(unsigned int p){}
 // CHECK: dpct::global_memory<unsigned int, 0> a1(4 * 2);
-// CHECK: inline void kernel1(unsigned int &a1){
+// CHECK: __dpct_inline__ void kernel1(unsigned int &a1){
 // CHECK:   dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(&a1, 2) / 2;
 // CHECK:   int c = a1 / 2;
 // CHECK:   foo(a1 / 2);
@@ -25,7 +25,7 @@ __global__ void kernel1(){
 
 }
 // CHECK: dpct::global_memory<unsigned int, 1> b1(sycl::range<1>(10), {0 * 2});
-// CHECK: inline void kernel2(unsigned int *b1){
+// CHECK: __dpct_inline__ void kernel2(unsigned int *b1){
 // CHECK:   dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(b1, 2) / 2;
 // CHECK:   foo(b1[0] / 2);
 // CHECK: }
@@ -39,7 +39,7 @@ __global__ void kernel2(){
 
 }
 // CHECK: dpct::global_memory<unsigned int, 0> a2(10);
-// CHECK: inline void kernel3(unsigned int &a2){
+// CHECK: __dpct_inline__ void kernel3(unsigned int &a2){
 // CHECK:     dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(&a2, 1);
 // CHECK: }
 __device__ unsigned int a2 = 10;
@@ -50,7 +50,7 @@ __global__ void kernel3(){
 
 }
 // CHECK: dpct::global_memory<unsigned int, 1> b2(sycl::range<1>(10), {0 * 2});
-// CHECK: inline void kernel4(unsigned int *b2){
+// CHECK: __dpct_inline__ void kernel4(unsigned int *b2){
 // CHECK:     dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(&b2[0], 2) / 2;
 // CHECK:     dpct::atomic_fetch_max<sycl::access::address_space::generic_space>(&b2[1], b2[2]) / 2;
 // CHECK: }
@@ -64,7 +64,7 @@ __global__ void kernel4(){
 
 }
 // CHECK: dpct::global_memory<unsigned int, 0> a3(10 * 2);
-// CHECK: inline void kernel5(unsigned int &a3){
+// CHECK: __dpct_inline__ void kernel5(unsigned int &a3){
 // CHECK:     dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(&a3, 2) / 2;
 // CHECK:     dpct::atomic_fetch_sub<sycl::access::address_space::generic_space>(&a3, 2) / 2;
 // CHECK:     foo(a3 / 2);
