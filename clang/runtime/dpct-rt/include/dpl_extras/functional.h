@@ -21,6 +21,23 @@
 #include <utility>
 
 #include "../dpct.hpp"
+#define _DPCT_GCC_VERSION                                                      \
+  (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
+
+// Portability "#pragma" definition
+#ifdef _MSC_VER
+#define _DPCT_PRAGMA(x) __pragma(x)
+#else
+#define _DPCT_PRAGMA(x) _Pragma(#x)
+#endif
+
+// Enable loop unrolling pragmas where supported
+#if (__INTEL_COMPILER ||                                                       \
+     (!defined(__INTEL_COMPILER) && _DPCT_GCC_VERSION >= 80000))
+#define _DPCT_PRAGMA_UNROLL _DPCT_PRAGMA(unroll)
+#else // no pragma unroll
+#define _DPCT_PRAGMA_UNROLL
+#endif
 
 namespace dpct {
 

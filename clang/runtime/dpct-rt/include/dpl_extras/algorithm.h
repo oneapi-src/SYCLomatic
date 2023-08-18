@@ -1530,7 +1530,7 @@ inline void __clear_wglocal_histograms(const HistAccessor &local_histogram,
   ::std::uint32_t self_lidx = self_item.get_local_id(0);
   ::std::uint8_t factor = __ceiling_div(num_bins, gSize);
   ::std::uint8_t k;
-#pragma unroll
+  _DPCT_PRAGMA_UNROLL
   for (k = 0; k < factor - 1; k++) {
     local_histogram[offset + gSize * k + self_lidx] = 0;
   }
@@ -1540,32 +1540,34 @@ inline void __clear_wglocal_histograms(const HistAccessor &local_histogram,
   self_item.barrier(sycl::access::fence_space::local_space);
 }
 
-template <::std::uint16_t WorkGroupSize, typename BinIdxType,
-          sycl::access::address_space AddressSpace, typename Iter1,
-          typename HistAccessor, typename OffsetT, typename IdxHashFunc,
-          typename T>
-inline void __accum_local_atomics(
-    const Iter1 &in_acc, const ::std::size_t &seg_start, const ::std::size_t &N,
-    const ::std::uint32_t &self_lidx, const HistAccessor &wg_local_histogram,
-    const OffsetT &offset, IdxHashFunc func, const sycl::nd_item<1> &self_item,
-    const T &iters_per_work_item) {
-  using __histo_value_type = typename HistAccessor::value_type;
-#pragma unroll
-  for (::std::uint8_t idx = 0; idx < iters_per_work_item; idx++) {
-    ::std::size_t __val_idx = seg_start + idx * WorkGroupSize + self_lidx;
-    if (__val_idx < N) {
-
-      const auto &x = in_acc[__val_idx];
-      if (func.is_valid(x)) {
-        BinIdxType c = func(x);
-        sycl::atomic_ref<__histo_value_type, sycl::memory_order::relaxed,
-                         sycl::memory_scope::work_group, AddressSpace>
-            local_bin(wg_local_histogram[offset + c]);
-        local_bin++;
-      }
-    }
+template <typename BinIdxType, typename Iter1, typename HistReg,
+          typename BinFunc>
+inline void __accum_local_register_iter(const Iter1 &in_acc,
+                                        const ::std::size_t &index,
+                                        HistReg *histogram, BinFunc func) {
+  const auto &x = in_acc[index];
+  if (func.is_valid(x)) {
+    BinIdxType c = func(x);
+    histogram[c]++;
   }
-  self_item.barrier(sycl::access::fence_space::local_space);
+}
+
+template <typename BinIdxType, sycl::access::address_space AddressSpace,
+          typename Iter1, typename HistAccessor, typename OffsetT,
+          typename BinFunc>
+inline void __accum_local_atomics_iter(const Iter1 &in_acc,
+                                       const ::std::size_t &index,
+                                       const HistAccessor &wg_local_histogram,
+                                       const OffsetT &offset, BinFunc func) {
+  using __histo_value_type = typename HistAccessor::value_type;
+  const auto &x = in_acc[index];
+  if (func.is_valid(x)) {
+    BinIdxType c = func(x);
+    sycl::atomic_ref<__histo_value_type, sycl::memory_order::relaxed,
+                     sycl::memory_scope::work_group, AddressSpace>
+        local_bin(wg_local_histogram[offset + c]);
+    local_bin++;
+  }
 }
 
 template <typename BinType, typename HistAccessorIn, typename OffsetT,
@@ -1580,7 +1582,7 @@ inline void __reduce_out_histograms(const HistAccessorIn &in_histogram,
   ::std::uint8_t factor = __ceiling_div(num_bins, gSize);
   ::std::uint8_t k;
 
-#pragma unroll
+  _DPCT_PRAGMA_UNROLL
   for (k = 0; k < factor - 1; k++) {
     sycl::atomic_ref<BinType, sycl::memory_order::relaxed,
                      sycl::memory_scope::device,
@@ -1618,6 +1620,7 @@ inline void __histogram_general_registers_local_reduction(
     h.parallel_for(
         sycl::nd_range<1>(segments * WorkGroupSize, WorkGroupSize),
         [=](sycl::nd_item<1> __self_item) {
+          using __bin_idx_type = ::std::uint8_t;
           const ::std::size_t __self_lidx = __self_item.get_local_id(0);
           const ::std::size_t __wgroup_idx = __self_item.get_group(0);
           const ::std::size_t __seg_start =
@@ -1625,24 +1628,31 @@ inline void __histogram_general_registers_local_reduction(
 
           __clear_wglocal_histograms(local_histogram, 0, num_bins, __self_item);
           __private_histogram_type histogram[BinsPerWorkItem];
-#pragma unroll
+          _DPCT_PRAGMA_UNROLL
           for (::std::uint8_t k = 0; k < BinsPerWorkItem; k++) {
             histogram[k] = 0;
           }
 
-#pragma unroll
-          for (::std::uint8_t idx = 0; idx < ItersPerWorkItem; idx++) {
-            ::std::size_t __val_idx =
-                __seg_start + idx * WorkGroupSize + __self_lidx;
-            if (__val_idx < N) {
-              const auto &x = input[__val_idx];
-              if (func.is_valid(x)) {
-                ::std::uint8_t c = func(x);
-                histogram[c]++;
+          if (__seg_start + WorkGroupSize * ItersPerWorkItem < N) {
+            _DPCT_PRAGMA_UNROLL
+            for (::std::uint8_t idx = 0; idx < ItersPerWorkItem; idx++) {
+              __accum_local_register_iter<__bin_idx_type>(
+                  input, __seg_start + idx * WorkGroupSize + __self_lidx,
+                  histogram, func);
+            }
+          } else {
+            _DPCT_PRAGMA_UNROLL
+            for (::std::uint8_t idx = 0; idx < ItersPerWorkItem; idx++) {
+              ::std::size_t __val_idx =
+                  __seg_start + idx * WorkGroupSize + __self_lidx;
+              if (__val_idx < N) {
+                __accum_local_register_iter<__bin_idx_type>(input, __val_idx,
+                                                            histogram, func);
               }
             }
           }
-#pragma unroll
+
+          _DPCT_PRAGMA_UNROLL
           for (::std::uint8_t k = 0; k < num_bins; k++) {
             sycl::atomic_ref<__local_histogram_type,
                              sycl::memory_order::relaxed,
@@ -1679,6 +1689,9 @@ __histogram_general_local_atomics(Policy &&policy, Range1 &&input,
     h.parallel_for(
         sycl::nd_range<1>(segments * WorkGroupSize, WorkGroupSize),
         [=](sycl::nd_item<1> __self_item) {
+          using __bin_idx_type = ::std::uint16_t;
+          constexpr auto __atomic_address_space =
+              sycl::access::address_space::local_space;
           const ::std::size_t __self_lidx = __self_item.get_local_id(0);
           const ::std::uint32_t __wgroup_idx = __self_item.get_group(0);
           const ::std::size_t __seg_start =
@@ -1686,10 +1699,27 @@ __histogram_general_local_atomics(Policy &&policy, Range1 &&input,
 
           __clear_wglocal_histograms(local_histogram, 0, num_bins, __self_item);
 
-          __accum_local_atomics<WorkGroupSize, ::std::uint16_t,
-                                sycl::access::address_space::local_space>(
-              input, __seg_start, N, __self_lidx, local_histogram, 0, func,
-              __self_item, ItersPerWorkItem);
+          if (__seg_start + WorkGroupSize * ItersPerWorkItem < N) {
+            _DPCT_PRAGMA_UNROLL
+            for (::std::uint8_t idx = 0; idx < ItersPerWorkItem; idx++) {
+              __accum_local_atomics_iter<__bin_idx_type,
+                                         __atomic_address_space>(
+                  input, __seg_start + idx * WorkGroupSize + __self_lidx,
+                  local_histogram, 0, func);
+            }
+          } else {
+            _DPCT_PRAGMA_UNROLL
+            for (::std::uint8_t idx = 0; idx < ItersPerWorkItem; idx++) {
+              ::std::size_t __val_idx =
+                  __seg_start + idx * WorkGroupSize + __self_lidx;
+              if (__val_idx < N) {
+                __accum_local_atomics_iter<__bin_idx_type,
+                                           __atomic_address_space>(
+                    input, __val_idx, local_histogram, 0, func);
+              }
+            }
+          }
+          __self_item.barrier(sycl::access::fence_space::local_space);
 
           __reduce_out_histograms<BinType>(local_histogram, 0, bins, num_bins,
                                            __self_item);
@@ -1732,6 +1762,9 @@ inline void __histogram_general_private_global_atomics(
     h.parallel_for(
         sycl::nd_range<1>(segments * WorkGroupSize, WorkGroupSize),
         [=](sycl::nd_item<1> __self_item) {
+          using __bin_idx_type = ::std::uint32_t;
+          constexpr auto __atomic_address_space =
+              sycl::access::address_space::global_space;
           const ::std::size_t __self_lidx = __self_item.get_local_id(0);
           const ::std::size_t __wgroup_idx = __self_item.get_group(0);
           const ::std::size_t __seg_start =
@@ -1739,10 +1772,26 @@ inline void __histogram_general_private_global_atomics(
 
           __clear_wglocal_histograms(hacc_private, __wgroup_idx * num_bins,
                                      num_bins, __self_item);
-          __accum_local_atomics<WorkGroupSize, ::std::uint32_t,
-                                sycl::access::address_space::global_space>(
-              input, __seg_start, N, __self_lidx, hacc_private,
-              __wgroup_idx * num_bins, func, __self_item, iters_per_work_item);
+          if (__seg_start + WorkGroupSize * iters_per_work_item < N) {
+            for (::std::size_t idx = 0; idx < iters_per_work_item; idx++) {
+              __accum_local_atomics_iter<__bin_idx_type,
+                                         __atomic_address_space>(
+                  input, __seg_start + idx * WorkGroupSize + __self_lidx,
+                  hacc_private, __wgroup_idx * num_bins, func);
+            }
+          } else {
+            for (::std::size_t idx = 0; idx < iters_per_work_item; idx++) {
+              ::std::size_t __val_idx =
+                  __seg_start + idx * WorkGroupSize + __self_lidx;
+              if (__val_idx < N) {
+                __accum_local_atomics_iter<__bin_idx_type,
+                                           __atomic_address_space>(
+                    input, __val_idx, hacc_private, __wgroup_idx * num_bins,
+                    func);
+              }
+            }
+          }
+          __self_item.barrier(sycl::access::fence_space::local_space);
 
           __reduce_out_histograms<BinType>(hacc_private,
                                            __wgroup_idx * num_bins, bins,
