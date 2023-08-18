@@ -109,7 +109,7 @@
 // cublasSetAtomicsMode: CUDA API:
 // cublasSetAtomicsMode-NEXT:   cublasSetAtomicsMode(handle /*cublasHandle_t*/,
 // cublasSetAtomicsMode-NEXT:                        atomics /*cublasAtomicsMode_t*/);
-// cublasSetAtomicsMode-NEXT: Is migrated to:
+// cublasSetAtomicsMode-NEXT: The API is Removed because this it is redundant in SYCL.
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDsymv | FileCheck %s -check-prefix=cublasDsymv
 // cublasDsymv: CUDA API:
