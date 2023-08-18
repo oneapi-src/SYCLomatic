@@ -321,9 +321,7 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E, Source
                              SM.getCharacterData(BeginLoc);
 
   auto EndLocWithoutPostfix = SM.getExpansionLoc(EndLoc);
-  EndLoc = SM.getExpansionLoc(getEndLocOfFollowingEmptyMacro(EndLoc));
-  auto RewritePostfixLength =
-      SM.getCharacterData(EndLoc) - SM.getCharacterData(EndLocWithoutPostfix);
+  unsigned int RewritePostfixLength = getEndLocOfFollowingEmptyMacro(EndLoc);
 
   if (Loc)
     *Loc = BeginLoc;
@@ -1070,7 +1068,6 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
   if (NNSL) {
     SR.setBegin(NNSL->getBeginLoc());
   }
-
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
   switch (TL.getTypeLocClass()) {
   case TypeLoc::Qualified:
