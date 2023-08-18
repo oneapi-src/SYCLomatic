@@ -541,12 +541,12 @@ void parseFormatStyle() {
 }
 
 int runDPCT(int argc, const char **argv) {
-  llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
+
   if (argc < 2) {
     std::cout << CtHelpHint;
     return MigrationErrorShowHelp;
   }
-  //clang::dpct::initCrashRecovery();
+  clang::dpct::initCrashRecovery();
 
 #if defined(_WIN32)
   // To support wildcard "*" in source file name in windows.
