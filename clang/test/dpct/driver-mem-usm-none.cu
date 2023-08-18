@@ -233,6 +233,11 @@ int main(){
 
     // CHECK: dpct::dpct_memcpy(cpy2_to_data_ct1, cpy2_to_pos_ct1, cpy2_from_data_ct1, cpy2_from_pos_ct1, cpy2_size_ct1);
     cuMemcpy3D(&cpy2);
+
+    CUstream cs;
+    // CHECK: dpct::async_dpct_memcpy(cpy2_to_data_ct1, cpy2_to_pos_ct1, cpy2_from_data_ct1, cpy2_from_pos_ct1, cpy2_size_ct1, dpct::automatic, *cs);
+    cuMemcpy3DAsync(&cpy2, cs);
+
     // CHECK: dpct::dpct_free(f_D);
     cuMemFree(f_D);
     unsigned int flags;
