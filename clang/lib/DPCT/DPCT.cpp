@@ -730,40 +730,44 @@ int runDPCT(int argc, const char **argv) {
 
   std::vector<std::string> SourcePathList;
   if (QueryAPIMapping.getNumOccurrences()) {
+    // Set a virtual file for --query-api-mapping.
+    llvm::SmallString<16> VirtFile;
+    llvm::sys::path::system_temp_directory(/*ErasedOnReboot=*/true, VirtFile);
+    llvm::sys::path::append(VirtFile, "temp.cu");
+    SourcePathList.emplace_back(VirtFile);
+    DpctGlobalInfo::setIsQueryAPIMapping(true);
+  } else {
+    SourcePathList = OptParser->getSourcePathList();
+  }
+  RefactoringTool Tool(OptParser->getCompilations(), SourcePathList);
+  if (DpctGlobalInfo::isQueryAPIMapping()) {
     APIMapping::initEntryMap();
     auto SourceCode = APIMapping::getAPISourceCode(QueryAPIMapping);
     if (SourceCode.empty()) {
       dpctExit(MigrationErrorNoAPIMapping);
     }
 
-    int FD;
-    SmallString<64> TempFile;
-    if (auto EC =
-            llvm::sys::fs::createTemporaryFile("tmp", "cu", FD, TempFile)) {
-      dpctExit(MigrationErrorCannotCreateTempFile);
-    }
-    llvm::raw_fd_ostream(FD, true) << SourceCode;
+    Tool.mapVirtualFile(SourcePathList[0], SourceCode);
 
     std::string OptionMsg;
     static const std::string OptionStr{"// Option:"};
     if (SourceCode.starts_with(OptionStr)) {
       OptionMsg += " (with the option";
-      const auto Options =
-          SourceCode.substr(OptionStr.length(), SourceCode.find_first_of('\n') -
-                                                    OptionStr.length());
-      size_t PrePos = 0;
-      size_t NextPos = Options.find_first_of(' ');
-      while (PrePos != std::string::npos) {
-        auto Option = Options.substr(PrePos, NextPos - PrePos);
-        if (Option == "--use-dpcpp-extensions=intel_device_math") {
-          OptionMsg += " ";
-          OptionMsg += Option.str();
-          UseDPCPPExtensions.addValue(
-              DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath);
+      while (SourceCode.consume_front(OptionStr)) {
+        auto Option = SourceCode.substr(0, SourceCode.find_first_of('\n'));
+        Option = Option.trim(' ');
+        SourceCode = SourceCode.substr(SourceCode.find_first_of('\n') + 1);
+        OptionMsg += " ";
+        OptionMsg += Option.str();
+        if (Option.starts_with("--use-dpcpp-extensions")) {
+          if (Option.ends_with("intel_device_math"))
+            UseDPCPPExtensions.addValue(
+                DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath);
+        } else if (Option.starts_with("--use-experimental-features")) {
+          if (Option.ends_with("bfloat16_math_functions"))
+            Experimentals.addValue(ExperimentalFeatures::Exp_BFloat16Math);
         }
         // Need add more option.
-        PrePos = Options.find_first_not_of(' ', NextPos);
-        NextPos = Options.find_first_of(' ', PrePos);
       }
       OptionMsg += ")";
     }
@@ -782,14 +786,16 @@ int runDPCT(int argc, const char **argv) {
     llvm::outs() << "Is migrated to" << OptionMsg << ":";
 
     NoIncrementalMigration = true;
-    InRoot = llvm::sys::path::parent_path(TempFile).str();
-    OutRoot = llvm::sys::path::parent_path(TempFile).str();
-    DpctGlobalInfo::setIsQueryAPIMapping(true);
-    SourcePathList = {TempFile.str().str()};
+    // Need set a virtual path and it will used by AnalysisScope.
+    InRoot = llvm::sys::path::parent_path(SourcePathList[0]).str();
   } else {
-    SourcePathList = OptParser->getSourcePathList();
+    IsUsingDefaultOutRoot = OutRoot.empty();
+    if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
+      ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
+      dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
+    }
+    dpct::DpctGlobalInfo::setOutRoot(OutRoot);
   }
-  RefactoringTool Tool(OptParser->getCompilations(), SourcePathList);
 
   if (GenBuildScript) {
     clang::tooling::SetCompileTargetsMap(CompileTargetsMap);
@@ -808,13 +814,6 @@ int runDPCT(int argc, const char **argv) {
   DpctInstallPath = getInstallPath(Tool, argv[0]);
 
   ValidateInputDirectory(Tool, InRoot);
-
-  IsUsingDefaultOutRoot = OutRoot.empty();
-  if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
-    ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
-    dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
-  }
-  dpct::DpctGlobalInfo::setOutRoot(OutRoot);
 
   // AnalysisScope defaults to the value of InRoot
   // InRoot must be the same as or child of AnalysisScope
@@ -1041,7 +1040,8 @@ int runDPCT(int argc, const char **argv) {
     DpctGlobalInfo::setRunRound(RunCount++);
     DpctToolAction Action(OutputFile.empty() ? llvm::errs() : DpctTerm(),
                           Tool.getReplacements(), Passes,
-                          {PassKind::PK_Analysis, PassKind::PK_Migration});
+                          {PassKind::PK_Analysis, PassKind::PK_Migration},
+                          Tool.getFiles().getVirtualFileSystemPtr());
 
     if (ProcessAllFlag) {
       clang::tooling::SetFileProcessHandle(InRoot, OutRoot, processAllFiles);
@@ -1092,7 +1092,8 @@ int runDPCT(int argc, const char **argv) {
          I.MoveToNextPiece()) {
       if (Flag) {
         if (auto It = I.piece().find(EndStr); It != StringRef::npos) {
-          llvm::outs() << I.piece().substr(0, It);
+          auto TempStr = I.piece().substr(0, It);
+          llvm::outs() << TempStr.substr(0, TempStr.find_last_of("\n") + 1);
           break;
         }
         llvm::outs() << I.piece();

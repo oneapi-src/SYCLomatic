@@ -165,6 +165,12 @@ TYPE_REWRITE_ENTRY(
 TYPE_REWRITE_ENTRY("thrust::system::system_error",
                    TYPE_FACTORY(STR("std::system_error")))
 
+// thrust::system::error_code
+TYPE_REWRITE_ENTRY("thrust::system::error_code", TYPE_FACTORY(STR("std::error_code")))
+
+// thrust::system::error_condition
+TYPE_REWRITE_ENTRY("thrust::system::error_condition", TYPE_FACTORY(STR("std::error_condition")))
+
 // thrust::bit_and
 TYPE_REWRITE_ENTRY(
     "thrust::bit_and",
@@ -179,6 +185,11 @@ TYPE_REWRITE_ENTRY(
 TYPE_REWRITE_ENTRY(
     "thrust::minimum",
     TYPE_FACTORY(STR("oneapi::dpl::minimum"), TEMPLATE_ARG(0)))
+
+// thrust::optional
+TYPE_REWRITE_ENTRY(
+    "thrust::optional",
+    TYPE_FACTORY(STR("std::optional"), TEMPLATE_ARG(0)))
 
 //thrust::bit_xor
 TYPE_REWRITE_ENTRY(

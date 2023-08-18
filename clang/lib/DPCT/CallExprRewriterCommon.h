@@ -221,6 +221,12 @@ public:
   }
 };
 
+inline std::function<std::string(const CallExpr *)>
+makeCharPtrCreator() {
+  return [=](const CallExpr *C) -> std::string {
+    return "char *";
+  };
+}
 
 inline std::function<DerefStreamExpr(const CallExpr *)>
 makeDerefStreamExprCreator(unsigned Idx) {
@@ -612,11 +618,12 @@ makeStaticMemberExprCreator(std::function<BaseT(const CallExpr *)> Base,
 template <class TypeInfoT, class SubExprT>
 inline std::function<CastExprPrinter<TypeInfoT, SubExprT>(const CallExpr *)>
 makeCastExprCreator(std::function<TypeInfoT(const CallExpr *)> TypeInfo,
-                    std::function<SubExprT(const CallExpr *)> Sub) {
+                    std::function<SubExprT(const CallExpr *)> Sub,
+                    bool ExtraParen = false) {
   return PrinterCreator<CastExprPrinter<TypeInfoT, SubExprT>,
                         std::function<TypeInfoT(const CallExpr *)>,
-                        std::function<SubExprT(const CallExpr *)>>(TypeInfo,
-                                                                   Sub);
+                        std::function<SubExprT(const CallExpr *)>, bool>(
+      TypeInfo, Sub, ExtraParen);
 }
 
 template <class SubExprT>
