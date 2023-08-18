@@ -138,9 +138,13 @@ static inline SourceLocation getStartOfLine(SourceLocation Loc,
                                             bool UseTextBegin = false) {
   auto LocInfo = SM.getDecomposedLoc(SM.getExpansionLoc(Loc));
   auto Buffer = SM.getBufferData(LocInfo.first);
+  std::cout << "Buffer:" << Buffer.str() << std::endl;
   auto NLPos = Buffer.find_last_of('\n', LocInfo.second);
   auto Skip = 1;
+  std::cout << "NLPos init:" << NLPos << std::endl;
+  std::cout << "StringRef::npos:" << StringRef::npos << std::endl;
   while (NLPos && (NLPos != StringRef::npos)) {
+    std::cout << "NLPos:" << NLPos << std::endl;
     if (Buffer[NLPos - 1] == '\r') {
       --NLPos;
       Skip = 2;
