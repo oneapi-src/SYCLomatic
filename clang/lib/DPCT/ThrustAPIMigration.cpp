@@ -24,6 +24,7 @@ void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
           anyOf(callee(functionDecl(anyOf(
                     hasDeclContext(namespaceDecl(hasName("thrust"))),
                     hasDeclContext(namespaceDecl(hasName("thrust::detail"))),
+                    hasDeclContext(namespaceDecl(hasName("thrust::system"))),
                     functionName()))),
                 callee(unresolvedLookupExpr(hasAnyDeclaration(namedDecl(
                     hasDeclContext(namespaceDecl(hasName("thrust")))))))))
@@ -36,16 +37,13 @@ void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(typedefDecl(isExpandedFromMacro("THRUST_STATIC_ASSERT"))
                     .bind("THRUST_STATIC_ASSERT"),
                 this);
-  MF.addMatcher(cxxTemporaryObjectExpr(
-                    hasType(namedDecl(hasName("thrust::system::system_error"))))
-                    .bind("THRUST_SYSTEM_ERROR"),
-                this);
 }
 
 void ThrustAPIRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "thrustFuncCall")) {
-    if(const UnresolvedLookupExpr * ULE = dyn_cast_or_null<UnresolvedLookupExpr>(CE->getCallee()))
+    if (const UnresolvedLookupExpr *ULE =
+            dyn_cast_or_null<UnresolvedLookupExpr>(CE->getCallee()))
       thrustFuncMigration(Result, CE, ULE);
     else
       thrustFuncMigration(Result, CE);
@@ -55,14 +53,6 @@ void ThrustAPIRule::runRule(
     const SourceLocation BeginLoc = SM.getExpansionLoc(D->getBeginLoc());
     emplaceTransformation(new ReplaceText(
         BeginLoc, std::string("THRUST_STATIC_ASSERT").size(), "static_assert"));
-  } else if (const CXXTemporaryObjectExpr *CXXTempObj =
-                 getNodeAsType<CXXTemporaryObjectExpr>(Result,
-                                                       "THRUST_SYSTEM_ERROR")) {
-    dpct::ExprAnalysis EA;
-    EA.analyze(CXXTempObj);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
-    return;
   }
 }
 
@@ -226,8 +216,11 @@ void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "thrust::detail::true_type", "thrust::detail::false_type",
         "thrust::detail::integral_constant", "thrust::detail::is_same",
         "thrust::system::detail::bad_alloc", "thrust::iterator_traits",
-        "thrust::detail::vector_base", "thrust::optional", "thrust::nullopt");
+        "thrust::detail::vector_base", "thrust::optional", "thrust::nullopt",
+        "thrust::system::system_error", "thrust::system::error_code",
+        "enum thrust::system::errc::errc_t", "thrust::system::error_condition");
   };
+
   MF.addMatcher(
       typeLoc(loc(qualType(hasDeclaration(namedDecl(ThrustTypeHasNames())))))
           .bind("thrustTypeLoc"),

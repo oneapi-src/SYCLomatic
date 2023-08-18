@@ -161,6 +161,39 @@ __global__ void kernelFuncHalf() {
   b = __hne(h, h_1);
   // CHECK: b = sycl::ext::intel::math::hneu(h, h_1);
   b = __hneu(h, h_1);
+
+  // Half Math Functions
+
+  // CHECK: h_2 = sycl::ext::intel::math::ceil(h);
+  h_2 = hceil(h);
+  // CHECK: h_2 = sycl::ext::intel::math::cos(h);
+  h_2 = hcos(h);
+  // CHECK: h_2 = sycl::ext::intel::math::exp(h);
+  h_2 = hexp(h);
+  // CHECK: h_2 = sycl::ext::intel::math::exp10(h);
+  h_2 = hexp10(h);
+  // CHECK: h_2 = sycl::ext::intel::math::exp2(h);
+  h_2 = hexp2(h);
+  // CHECK: h_2 = sycl::ext::intel::math::floor(h);
+  h_2 = hfloor(h);
+  // CHECK: h_2 = sycl::ext::intel::math::log(h);
+  h_2 = hlog(h);
+  // CHECK: h_2 = sycl::ext::intel::math::log10(h);
+  h_2 = hlog10(h);
+  // CHECK: h_2 = sycl::ext::intel::math::log2(h);
+  h_2 = hlog2(h);
+  // CHECK: h_2 = sycl::ext::intel::math::inv(h);
+  h_2 = hrcp(h);
+  // CHECK: h_2 = sycl::ext::intel::math::rint(h);
+  h_2 = hrint(h);
+  // CHECK: h_2 = sycl::ext::intel::math::rsqrt(h);
+  h_2 = hrsqrt(h);
+  // CHECK: h_2 = sycl::ext::intel::math::sin(h);
+  h_2 = hsin(h);
+  // CHECK: h_2 = sycl::ext::intel::math::sqrt(h);
+  h_2 = hsqrt(h);
+  // CHECK: h_2 = sycl::ext::intel::math::trunc(h);
+  h_2 = htrunc(h);
 }
 
 __global__ void kernelFuncHalf2() {
@@ -241,6 +274,39 @@ __global__ void kernelFuncHalf2() {
   h2_2 = __hne2(h2, h2_1);
   // CHECK: sycl::ext::intel::math::hneu2(h2, h2);
   __hneu2(h2, h2);
+
+  // Half2 Math Functions
+
+  // CHECK: h2_2 = sycl::ext::intel::math::ceil(h2);
+  h2_2 = h2ceil(h2);
+  // CHECK: h2_2 = sycl::ext::intel::math::cos(h2);
+  h2_2 = h2cos(h2);
+  // CHECK: h2_2 = sycl::ext::intel::math::exp(h2);
+  h2_2 = h2exp(h2);
+  // CHECK: h2_2 = sycl::ext::intel::math::exp10(h2);
+  h2_2 = h2exp10(h2);
+  // CHECK: h2_2 = sycl::ext::intel::math::exp2(h2);
+  h2_2 = h2exp2(h2);
+  // CHECK: h2_2 = sycl::ext::intel::math::floor(h2);
+  h2_2 = h2floor(h2);
+  // CHECK: h2_2 = sycl::ext::intel::math::log(h2);
+  h2_2 = h2log(h2);
+  // CHECK: h2_2 = sycl::ext::intel::math::log10(h2);
+  h2_2 = h2log10(h2);
+  // CHECK: h2_2 = sycl::ext::intel::math::log2(h2);
+  h2_2 = h2log2(h2);
+  // CHECK: h2_2 = sycl::ext::intel::math::inv(h2);
+  h2_2 = h2rcp(h2);
+  // CHECK: h2_2 = sycl::ext::intel::math::rint(h2);
+  h2_2 = h2rint(h2);
+  // CHECK: h2_2 = sycl::ext::intel::math::rsqrt(h2);
+  h2_2 = h2rsqrt(h2);
+  // CHECK: h2_2 = sycl::ext::intel::math::sin(h2);
+  h2_2 = h2sin(h2);
+  // CHECK: h2_2 = sycl::ext::intel::math::sqrt(h2);
+  h2_2 = h2sqrt(h2);
+  // CHECK: h2_2 = sycl::ext::intel::math::trunc(h2);
+  h2_2 = h2trunc(h2);
 }
 
 __global__ void kernelFuncInt() {

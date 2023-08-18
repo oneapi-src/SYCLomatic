@@ -207,7 +207,7 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   h_2 = hlog10(h);
   // CHECK: h_2 = sycl::log2(h);
   h_2 = hlog2(h);
-  // CHECK: h_2 = sycl::half_precision::recip<float>(h);
+  // CHECK: h_2 = sycl::half_precision::recip(float(h));
   h_2 = hrcp(h);
   // CHECK: h_2 = sycl::rint(h);
   h_2 = hrint(h);
@@ -240,9 +240,7 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   h2_2 = h2log10(h2);
   // CHECK: h2_2 = sycl::log2(h2);
   h2_2 = h2log2(h2);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of h2rcp is not supported.
-  // CHECK-NEXT: */
+  // CHECK: h2_2 = sycl::half2(sycl::half_precision::recip(float(h2[0])), sycl::half_precision::recip(float(h2[1])));
   h2_2 = h2rcp(h2);
   // CHECK: h2_2 = sycl::rint(h2);
   h2_2 = h2rint(h2);
