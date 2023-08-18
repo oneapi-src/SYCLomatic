@@ -81,8 +81,9 @@ bool canCacheMoreTranslateUnit() {
 
 DpctConsumer::DpctConsumer(TranslationUnitInfo *TUI, Preprocessor &PP)
     : Info(TUI) {
-  PP.addPPCallbacks(std::make_unique<IncludesCallbacks>(
-      Info->Transforms, Info->IncludeMapSet, PP.getSourceManager()));
+  PP.addPPCallbacks(
+      std::make_unique<IncludesCallbacks>(Info->Transforms, Info->IncludeMapSet,
+                                          PP.getSourceManager(), Info->Groups));
   if (DpctGlobalInfo::getCheckUnicodeSecurityFlag()) {
     Handler =
         std::make_unique<MisleadingBidirectionalHandler>(Info->Transforms);
@@ -218,7 +219,7 @@ void DpctToolAction::traversTranslationUnit(PassKind Pass,
       Context.getLangOpts());
   DpctGlobalInfo::setContext(Context);
   DpctGlobalInfo::getInstance().setMainFile(Info.MainFile);
-  MigrationRuleManager MRM(Pass, Transforms);
+  MigrationRuleManager MRM(Pass, Transforms, Info.Groups);
   Global.getProcessedFile().insert(Info.MainFile->getFilePath());
   printFileStaging(getStagingName(Pass), Info.MainFile->getFilePath());
   MRM.matchAST(Context, MigrationRuleNames);

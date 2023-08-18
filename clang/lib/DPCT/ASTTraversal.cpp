@@ -781,340 +781,6 @@ bool IncludesCallbacks::ShouldEnter(StringRef FileName, bool IsAngled) {
 #endif
 }
 
-// A class that uses the RAII idiom to selectively update the locations of the
-// last inclusion directives.
-class LastInclusionLocationUpdater {
-public:
-  LastInclusionLocationUpdater(SourceLocation Loc, bool UpdateNeeded = true)
-      : Loc(Loc), UpdateNeeded(UpdateNeeded) {}
-  ~LastInclusionLocationUpdater() {
-    if (UpdateNeeded)
-      DpctGlobalInfo::getInstance().setLastIncludeLocation(Loc);
-  }
-  void update(bool UpdateNeeded) { this->UpdateNeeded = UpdateNeeded; }
-
-private:
-  SourceLocation Loc;
-  bool UpdateNeeded;
-};
-
-void IncludesCallbacks::InclusionDirective(
-    SourceLocation HashLoc, const Token &IncludeTok, StringRef FileName,
-    bool IsAngled, CharSourceRange FilenameRange, OptionalFileEntryRef File,
-    StringRef SearchPath, StringRef RelativePath, const Module *Imported,
-    SrcMgr::CharacteristicKind FileType) {
-  // Record the locations of the first and last inclusion directives in a file
-  DpctGlobalInfo::getInstance().setFirstIncludeLocation(HashLoc);
-  LastInclusionLocationUpdater Updater{FilenameRange.getEnd()};
-
-  std::string IncludePath = SearchPath.str();
-  makeCanonical(IncludePath);
-
-  std::string IncludingFile = DpctGlobalInfo::getLocInfo(HashLoc).first;
-
-  // eg. '/home/path/util.h' -> '/home/path'
-  StringRef Directory = llvm::sys::path::parent_path(IncludingFile);
-  std::string AnalysisScope = DpctGlobalInfo::getAnalysisScope();
-
-  bool IsIncludingFileInAnalysisScope =
-      !isDirectory(IncludingFile) && isChildOrSamePath(AnalysisScope, Directory.str());
-
-  // If the header file included cannot be found, just return.
-  if (!File) {
-    return;
-  }
-
-  std::string FilePath;
-  if (!File->getFileEntry().tryGetRealPathName().empty()) {
-    FilePath = File->getFileEntry().tryGetRealPathName().str();
-  } else {
-    llvm::SmallString<512> FilePathAbs(File->getName());
-    DpctGlobalInfo::getSourceManager().getFileManager().makeAbsolutePath(
-        FilePathAbs);
-    llvm::sys::path::native(FilePathAbs);
-    llvm::sys::path::remove_dots(FilePathAbs, true);
-    FilePath = std::string(FilePathAbs.str());
-  }
-
-  std::string DirPath = llvm::sys::path::parent_path(FilePath).str();
-  bool IsFileInAnalysisScope = !isChildPath(DpctInstallPath, DirPath) &&
-                        (isChildOrSamePath(AnalysisScope, DirPath));
-  bool IsExcluded = DpctGlobalInfo::isExcluded(FilePath);
-
-  bool NeedMigrate = !IsExcluded && IsFileInAnalysisScope;
-
-  if (IsFileInAnalysisScope) {
-    auto FilePathWithoutSymlinks =
-        DpctGlobalInfo::removeSymlinks(SM.getFileManager(), FilePath);
-    IncludeFileMap[FilePathWithoutSymlinks] = false;
-    dpct::DpctGlobalInfo::getIncludingFileSet().insert(FilePathWithoutSymlinks);
-  }
-
-  if ((!SM.isWrittenInMainFile(HashLoc) && !IsIncludingFileInAnalysisScope) ||
-      IsExcluded) {
-    return;
-  }
-
-  // The "FilePath" is included by the "IncludingFile".
-  // If "FilePath" is not under the AnalysisScope folder, do not record the including
-  // relationship information.
-  if (DpctGlobalInfo::isInAnalysisScope(FilePath, false))
-    DpctGlobalInfo::getInstance().recordIncludingRelationship(IncludingFile,
-                                                              FilePath);
-
-  // Apply user-defined rule if needed
-  auto It = MapNames::HeaderRuleMap.find(FileName.str());
-  if (It != MapNames::HeaderRuleMap.end() &&
-      It->second.Priority == RulePriority::Takeover) {
-    std::string ReplHeaderStr = It->second.Prefix;
-    for (auto ItHeader = It->second.Includes.begin();
-         ItHeader != It->second.Includes.end(); ItHeader++) {
-      ReplHeaderStr += "#include ";
-      if ((*ItHeader)[0] != '<' && (*ItHeader)[0] != '"') {
-        ReplHeaderStr += "\"" + (*ItHeader) + "\"" + getNL();
-      } else {
-        ReplHeaderStr += (*ItHeader) + getNL();
-      }
-    }
-    ReplHeaderStr += "#include ";
-    if (It->second.Out[0] != '<' && It->second.Out[0] != '"') {
-      ReplHeaderStr += "\"" + It->second.Out + "\"" + getNL();
-    } else {
-      ReplHeaderStr += It->second.Out + getNL();
-    }
-    ReplHeaderStr += It->second.Postfix;
-    TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        std::move(ReplHeaderStr)));
-    return;
-  }
-
-  // Record that math header is included in this file
-  if (IsAngled && (FileName.compare(StringRef("math.h")) == 0 ||
-                   FileName.compare(StringRef("cmath")) == 0)) {
-    DpctGlobalInfo::getInstance().setMathHeaderInserted(HashLoc, true);
-  }
-
-  // Record that time header is included in this file
-  if (IsAngled && (FileName.compare(StringRef("time.h")) == 0)) {
-    DpctGlobalInfo::getInstance().setTimeHeaderInserted(HashLoc, true);
-  }
-
-  // Record that algorithm header is included in this file
-  if (IsAngled && FileName.compare(StringRef("algorithm")) == 0) {
-    DpctGlobalInfo::getInstance().setAlgorithmHeaderInserted(HashLoc, true);
-  }
-
-  if ((FileName.compare(StringRef("cublas_v2.h")) == 0) ||
-      (FileName.compare(StringRef("cublas.h")) == 0)) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_BLAS_Utils);
-
-    DpctGlobalInfo::setMKLHeaderUsed(true);
-
-    TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        ""));
-    Updater.update(false);
-  }
-
-  // Replace with <oneapi/mkl.hpp> and <oneapi/mkl/rng/device.hpp>
-  if ((FileName.compare(StringRef("curand.h")) == 0) ||
-      (FileName.compare(StringRef("curand_kernel.h")) == 0)) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_RNG_Utils);
-    DpctGlobalInfo::setMKLHeaderUsed(true);
-    TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        ""));
-    Updater.update(false);
-  }
-
-  // Replace with <mkl_spblas_sycl.hpp>
-  if ((FileName.compare(StringRef("cusparse.h")) == 0) ||
-      (FileName.compare(StringRef("cusparse_v2.h")) == 0)) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_SPBLAS_Utils);
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_BLAS_Utils);
-
-    DpctGlobalInfo::setMKLHeaderUsed(true);
-
-    TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        ""));
-    Updater.update(false);
-  }
-
-  if (FileName.compare(StringRef("cufft.h")) == 0) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_FFT_Utils);
-
-    DpctGlobalInfo::setMKLHeaderUsed(true);
-
-    TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        ""));
-    Updater.update(false);
-  }
-
-  if (FileName.compare(StringRef("cusolverDn.h")) == 0) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_LAPACK_Utils);
-
-    DpctGlobalInfo::setMKLHeaderUsed(true);
-
-    TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        ""));
-    Updater.update(false);
-  }
-
-  if (FileName.compare(StringRef("nccl.h")) == 0) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_CCL_Utils);
-    requestFeature(HelperFeatureEnum::device_ext);
-    TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        ""));
-    Updater.update(false);
-  }
-  if (FileName.startswith(StringRef("cudnn.h"))) {
-    if (isChildOrSamePath(AnalysisScope, DirPath)) {
-      return;
-    }
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_DNNL_Utils);
-    TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        ""));
-    Updater.update(false);
-  }
-  if (FileName.find("cuda/") != std::string::npos) {
-    if (FileName.compare(StringRef("cuda/atomic")) == 0 ||
-        FileName.compare(StringRef("cuda/std/atomic")) == 0) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_Atomic);
-      TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        ""));
-    Updater.update(false);
-    }
-    if (FileName.compare(StringRef("cuda/std/complex")) == 0) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Complex);
-    }
-    if (FileName.compare(StringRef("cuda/std/array")) == 0) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Array);
-    }
-    if (FileName.compare(StringRef("cuda/std/tuple")) == 0) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Tuple);
-    }
-
-  }
-
-  if (!isChildPath(CudaPath, IncludePath) &&
-      IncludePath.compare(0, 15, "/usr/local/cuda", 15)) {
-
-    // Replace "#include "*"" if needed
-    if (NeedMigrate) {
-      SmallString<512> NewFileName = FileName;
-      rewriteFileName(NewFileName, FilePath);
-      CharSourceRange InsertRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                                  /* IsTokenRange */ false);
-      if (NewFileName != FileName) {
-        const auto Extension = path::extension(FileName);
-        if (Extension == ".cu" || Extension == ".cuh") {
-          // For CUDA files, it will always change name.
-          TransformSet.emplace_back(new ReplaceInclude(
-              InsertRange, buildString("#include \"", NewFileName, "\"")));
-        } else {
-          // For other CppSource file type, it may change name or not, which
-          // determined by whether it has CUDA syntax, so just record the
-          // replacement in the IncludeMapSet.
-          IncludeMapSet[FilePath].emplace_back(new ReplaceInclude(
-              InsertRange, buildString("#include \"", NewFileName, "\"")));
-        }
-      }
-      return;
-    }
-  }
-
-  // Extra process thrust headers, map to PSTL mapping headers in runtime.
-  // For multi thrust header files, only insert once for PSTL mapping header.
-  if (FileName.find("thrust/") != std::string::npos) {
-    if (FileName.compare(StringRef("thrust/complex.h")) == 0) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Complex);
-    } else if (FileName.compare(StringRef("thrust/uninitialized_copy.h")) ==
-                   0 ||
-               FileName.compare(StringRef("thrust/uninitialized_fill.h")) ==
-                   0) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Memory);
-    } else if (FileName.compare(StringRef("thrust/random.h")) == 0) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Random);
-    } else {
-      if (FileName.compare(StringRef("thrust/functional.h")) == 0)
-        DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Functional);
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_DPL_Utils);
-      requestFeature(HelperFeatureEnum::device_ext);
-      TransformSet.emplace_back(new ReplaceInclude(
-          CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                          /*IsTokenRange=*/false),
-          ""));
-      Updater.update(false);
-
-      // The #include of oneapi/dpl/execution and oneapi/dpl/algorithm were
-      // previously added here.  However, due to some unfortunate include
-      // dependencies introduced with the PSTL/TBB headers from the
-      // gcc-9.3.0 include files, those two headers must now be included
-      // before the CL/sycl.hpp are included, so the FileInfo is set
-      // to hold a boolean that'll indicate whether to insert them when
-      // the #include CL/sycl.cpp is added later
-      auto BeginLocInfo = DpctGlobalInfo::getLocInfo(FilenameRange.getBegin());
-      auto FileInfo =
-          DpctGlobalInfo::getInstance().insertFile(BeginLocInfo.first);
-      FileInfo->insertHeader(HeaderType::HT_DPL_Execution);
-      FileInfo->insertHeader(HeaderType::HT_DPL_Algorithm);
-    }
-  }
-
-  //  TODO: implement one of this for each source language.
-  // If it's not an include from the SDK, leave it,
-  // unless it's runtime header, in which case it will be replaced.
-  // In other words, runtime header will be replaced regardless of where it's
-  // coming from.
-  if (!isChildOrSamePath(CudaPath, IncludePath) &&
-      IncludePath.compare(0, 15, "/usr/local/cuda", 15)) {
-    if (!(IsAngled && FileName.compare(StringRef("cuda_runtime.h")) == 0)) {
-      return;
-    }
-  }
-
-  // If CudaPath is in /usr/include,
-  // for all the include files without following pattern, keep it
-  if (!CudaPath.compare(0, 12, "/usr/include", 12)) {
-    if (!FileName.startswith("cuda") && !FileName.startswith("cusolver") &&
-        !FileName.startswith("cublas") && !FileName.startswith("cusparse") &&
-        !FileName.startswith("curand")) {
-      return;
-    }
-  }
-
-  // Always keep include of CL/*.  Do not delete even if
-  // they are found in a CUDA include directory.
-  // Only CUDA code is migrated, not OpenCL.
-  // Thus CL/* headers must be kept
-  if (FileName.startswith("CL/"))
-    return;
-
-  // Replace the complete include directive with an empty string.
-  // Also remove the trailing spaces to end of the line.
-  TransformSet.emplace_back(new ReplaceInclude(
-      CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                      /*IsTokenRange=*/false),
-      "", true));
-  Updater.update(false);
-}
-
 void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
                                     SrcMgr::CharacteristicKind FileType,
                                     FileID PrevFID) {
@@ -3769,7 +3435,8 @@ void ManualMigrateEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(ManualMigrateEnumsRule, PassKind::PK_Migration)
+REGISTER_RULE(ManualMigrateEnumsRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_NCCL)
 
 // Rule for FFT enums.
 void FFTEnumsRule::registerMatcher(MatchFinder &MF) {
@@ -3795,7 +3462,7 @@ void FFTEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(FFTEnumsRule, PassKind::PK_Migration)
+REGISTER_RULE(FFTEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_FFT)
 
 // Rule for CU_JIT enums.
 void CU_JITEnumsRule::registerMatcher(MatchFinder &MF) {
@@ -3858,7 +3525,7 @@ void BLASEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(BLASEnumsRule, PassKind::PK_Migration)
+REGISTER_RULE(BLASEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_BLas)
 
 // Rule for RANDOM enums.
 void RandomEnumsRule::registerMatcher(MatchFinder &MF) {
@@ -3896,7 +3563,7 @@ void RandomEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(RandomEnumsRule, PassKind::PK_Migration)
+REGISTER_RULE(RandomEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Rng)
 
 // Rule for spBLAS enums.
 // Migrate spBLAS status values to corresponding int values
@@ -3939,7 +3606,7 @@ void SPBLASEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(SPBLASEnumsRule, PassKind::PK_Migration)
+REGISTER_RULE(SPBLASEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Sparse)
 
 /// The function returns the migrated arguments of the scalar parameters.
 /// In the original code, the type of this parameter is pointer.
@@ -4061,7 +3728,8 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(SPBLASFunctionCallRule, PassKind::PK_Migration)
+REGISTER_RULE(SPBLASFunctionCallRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_Sparse)
 
 // Rule for Random function calls. Currently only support host APIs.
 void RandomFunctionCallRule::registerMatcher(MatchFinder &MF) {
@@ -4200,7 +3868,8 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(RandomFunctionCallRule, PassKind::PK_Migration)
+REGISTER_RULE(RandomFunctionCallRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_Rng)
 
 // Rule for device Random function calls.
 void DeviceRandomFunctionCallRule::registerMatcher(MatchFinder &MF) {
@@ -4353,7 +4022,8 @@ void DeviceRandomFunctionCallRule::runRule(
   }
 }
 
-REGISTER_RULE(DeviceRandomFunctionCallRule, PassKind::PK_Migration)
+REGISTER_RULE(DeviceRandomFunctionCallRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_Rng)
 
 void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
@@ -5892,7 +5562,8 @@ std::string BLASFunctionCallRule::processParamIntCastToBLASEnum(
   return DpctTempVarName;
 }
 
-REGISTER_RULE(BLASFunctionCallRule, PassKind::PK_Migration)
+REGISTER_RULE(BLASFunctionCallRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_BLas)
 
 // Rule for SOLVER enums.
 // Migrate SOLVER status values to corresponding int values
@@ -5932,7 +5603,7 @@ void SOLVEREnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(SOLVEREnumsRule, PassKind::PK_Migration)
+REGISTER_RULE(SOLVEREnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Solver)
 
 void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
@@ -6546,7 +6217,8 @@ SOLVERFunctionCallRule::getAncestralVarDecl(const clang::CallExpr *CE) {
   return nullptr;
 }
 
-REGISTER_RULE(SOLVERFunctionCallRule, PassKind::PK_Migration)
+REGISTER_RULE(SOLVERFunctionCallRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_Solver)
 
 void FunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
@@ -13873,7 +13545,8 @@ void FFTFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(FFTFunctionCallRule, PassKind::PK_Migration)
+REGISTER_RULE(FFTFunctionCallRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_FFT)
 
 void DriverModuleAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto DriverModuleAPI = [&]() {
@@ -14416,17 +14089,17 @@ REGISTER_RULE(ConfusableIdentifierDetectionRule, PassKind::PK_Migration)
 
 REGISTER_RULE(MisleadingBidirectionalRule, PassKind::PK_Migration)
 
-REGISTER_RULE(CuDNNTypeRule, PassKind::PK_Migration)
+REGISTER_RULE(CuDNNTypeRule, PassKind::PK_Migration, RuleGroupKind::RK_DNN)
 
-REGISTER_RULE(CuDNNAPIRule, PassKind::PK_Migration)
+REGISTER_RULE(CuDNNAPIRule, PassKind::PK_Migration, RuleGroupKind::RK_DNN)
 
-REGISTER_RULE(NCCLRule, PassKind::PK_Migration)
+REGISTER_RULE(NCCLRule, PassKind::PK_Migration, RuleGroupKind::RK_NCCL)
 
-REGISTER_RULE(LIBCURule, PassKind::PK_Migration)
+REGISTER_RULE(LIBCURule, PassKind::PK_Migration, RuleGroupKind::RK_Libcu)
 
-REGISTER_RULE(ThrustAPIRule, PassKind::PK_Migration)
+REGISTER_RULE(ThrustAPIRule, PassKind::PK_Migration, RuleGroupKind::RK_Thrust)
 
-REGISTER_RULE(ThrustTypeRule, PassKind::PK_Migration)
+REGISTER_RULE(ThrustTypeRule, PassKind::PK_Migration, RuleGroupKind::RK_Thrust)
 
 REGISTER_RULE(WMMARule, PassKind::PK_Analysis)
 
