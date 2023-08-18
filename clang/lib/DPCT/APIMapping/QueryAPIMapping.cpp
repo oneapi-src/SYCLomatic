@@ -18,7 +18,9 @@ std::vector<llvm::StringRef> APIMapping::EntryArray;
 
 void APIMapping::registerEntry(std::string Name, llvm::StringRef SourceCode) {
   std::replace(Name.begin(), Name.end(), '$', ':');
-  // Try to fuzz the original API name:
+  const auto TargetIndex = EntryArray.size();
+  EntryMap[Name] = TargetIndex; // Set the entry whether it exist or not.
+  // Try to fuzz the original API name (only when the entry not exist):
   // 1. Remove partial or all leading '_'.
   // 2. For each name got by step 1, put 4 kind of fuzzed name into the map
   // keys:
@@ -28,24 +30,25 @@ void APIMapping::registerEntry(std::string Name, llvm::StringRef SourceCode) {
   //   (4) all char upper case name
   //   (5) all char lower case name
   for (int i = Name.find_first_not_of("_"); i >= 0; --i) {
-    const auto TargetIndex = EntryArray.size();
-    EntryMap[Name] = TargetIndex;
     auto TempName = Name;
     std::string Suffix = "_v2";
-    if (TempName.find_last_of(Suffix) == TempName.size() - Suffix.length()) {
-      EntryMap[TempName.substr(0, TempName.size() - 3)] = TargetIndex;
+    if (TempName.size() > Suffix.length() &&
+        TempName.substr(TempName.size() - Suffix.length()) == Suffix) {
+      EntryMap.try_emplace(TempName.substr(0, TempName.size() - 3),
+                           TargetIndex);
     } else {
-      EntryMap[TempName + Suffix] = TargetIndex;
+      EntryMap.try_emplace(TempName + Suffix, TargetIndex);
     }
     TempName[i] = std::toupper(TempName[i]);
-    EntryMap[TempName] = TargetIndex;
+    EntryMap.try_emplace(TempName, TargetIndex);
     std::transform(TempName.begin(), TempName.end(), TempName.begin(),
                    ::toupper);
-    EntryMap[TempName] = TargetIndex;
+    EntryMap.try_emplace(TempName, TargetIndex);
     std::transform(TempName.begin(), TempName.end(), TempName.begin(),
                    ::tolower);
-    EntryMap[TempName] = TargetIndex;
+    EntryMap.try_emplace(TempName, TargetIndex);
     Name.erase(0, 1);
+    EntryMap.try_emplace(Name, TargetIndex);
   }
   EntryArray.emplace_back(SourceCode);
 }

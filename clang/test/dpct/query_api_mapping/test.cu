@@ -14,6 +14,6 @@
 // CHECK: CUDA API:
 // CHECK-NEXT:   __hfma(h1 /*__half*/, h2 /*__half*/, h3 /*__half*/);
 // CHECK-NEXT:   __hfma(b1 /*__nv_bfloat16*/, b2 /*__nv_bfloat16*/, b3 /*__nv_bfloat16*/);
-// CHECK-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// CHECK-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
 // CHECK-NEXT:   sycl::ext::intel::math::hfma(h1, h2);
-// CHECK-NEXT:   b1 * b2 + b3;
+// CHECK-NEXT:   sycl::ext::oneapi::experimental::fma(b1, b2, b3);
