@@ -1935,12 +1935,13 @@ public:
     // resolution by adding a special attribute.
     // So we need treat function which is declared in this file as it
     // is from standard lib.
-    SmallString<512> HackedCudaWrapperFile = StringRef(DpctInstallPath);
-    path::append(HackedCudaWrapperFile, Twine("lib"), Twine("clang"),
+    SmallString<512> AlgorithmFileInCudaWrapper = StringRef(DpctInstallPath);
+    path::append(AlgorithmFileInCudaWrapper, Twine("lib"), Twine("clang"),
                  Twine(CLANG_VERSION_MAJOR_STRING), Twine("include"));
-    path::append(HackedCudaWrapperFile, Twine("cuda_wrappers"),
+    path::append(AlgorithmFileInCudaWrapper, Twine("cuda_wrappers"),
                  Twine("algorithm"));
-    if (HackedCudaWrapperFile.str().str() == DeclLocFilePath) {
+
+    if (AlgorithmFileInCudaWrapper.str().str() == DeclLocFilePath) {
       return false;
     }
 
