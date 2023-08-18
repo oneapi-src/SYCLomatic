@@ -8,6 +8,9 @@
 class TestObject{
 public:
   // CHECK: static void run(int *in, int *out, const sycl::nd_item<3> &item_ct1) {
+  // CHECK-NEXT:    /*
+  // CHECK-NEXT:    DPCT1115:{{[0-9]+}}: The sycl::ext::oneapi::group_local_memory function is not used at the kernel functor scope of a work-group data parallel kernel. You may need to adjust the code.
+  // CHECK-NEXT:    */
   // CHECK-NEXT:  auto &a0 = *sycl::ext::oneapi::group_local_memory<int>(item_ct1.get_group()); // the size of s is static
   // CHECK-NEXT:  a0 = item_ct1.get_local_id(2);
   __device__ static void run(int *in, int *out) {
