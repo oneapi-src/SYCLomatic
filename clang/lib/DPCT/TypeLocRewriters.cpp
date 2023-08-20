@@ -93,6 +93,8 @@ public:
 inline std::function<bool(const TypeLoc TL)>
 checkTemplateArgSpelling(size_t Index, std::string Str) {
   auto getQualtifiedNameStr = [=](const NamedDecl *NL) -> std::string {
+    if (NL == nullptr)
+      return "";
     if (const auto *NSD = dyn_cast<NamespaceDecl>(NL->getDeclContext())) {
       std::string TypeQualifiedString =
           getNameSpace(NSD) + "::" + NL->getNameAsString();
