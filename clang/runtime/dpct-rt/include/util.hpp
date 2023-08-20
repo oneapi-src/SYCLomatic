@@ -870,7 +870,7 @@ public:
   }
 };
 
-// Supported group type during during migration.
+// Supported group type during migration.
 enum class group_type { work_group, sub_group, logical_group, root_group };
 
 template <int dimensions = 3> class group_base {
@@ -926,7 +926,8 @@ protected:
 };
 
 // The item_group is a container type that can storage supported group_type.
-// Then the item_group will call the real storaged group APIs.
+// The item_group will call the real storaged group APIs. The CTAD is enabled
+// for the item_group constructor.
 template <typename T, int dimensions = 3>
 class item_group : public group_base<dimensions> {
   using group_base<dimensions>::type;
