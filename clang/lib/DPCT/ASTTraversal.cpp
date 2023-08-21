@@ -6867,7 +6867,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if(FuncName == "cudaStreamSetAttribute" ||
              FuncName == "cudaStreamGetAttribute" ||
              FuncName == "cudaFuncSetAttribute"){
-    std::string ArgStr = getDrefName(CE->getArg(1));
+    std::string ArgStr = getStmtSpelling(CE->getArg(1));
     if (ArgStr == "cudaStreamAttributeAccessPolicyWindow") {
       if (IsAssigned) {
         report(
@@ -6898,8 +6898,19 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         emplaceTransformation(new ReplaceStmt(CE, ""));
       }
     } else {
-      report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-           MapNames::ITFName.at(FuncName));
+      if (IsAssigned) {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
+               MapNames::ITFName.at(FuncName),
+               "SYCL currently does not support setting " + ArgStr +
+                   " on device.");
+        emplaceTransformation(new ReplaceStmt(CE, "0"));
+      } else {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+               MapNames::ITFName.at(FuncName),
+               "SYCL currently does not support setting " + ArgStr +
+                   " on device.");
+        emplaceTransformation(new ReplaceStmt(CE, ""));
+      }
     }
   }else if (FuncName == "cudaOccupancyMaxPotentialBlockSize") {
     report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
