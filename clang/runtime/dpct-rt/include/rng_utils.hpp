@@ -341,11 +341,16 @@ public:
   /// \param direction_numbers The user-defined direction numbers.
   void
   set_direction_numbers(const std::vector<std::uint32_t> &direction_numbers) {
+#ifndef __INTEL_MKL__
+    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
+                             "Interfaces Project does not support this API.");
+#else
     if constexpr (std::is_same_v<engine_t, oneapi::mkl::rng::sobol>) {
       set_direction_numbers_impl(direction_numbers);
     } else {
       throw std::runtime_error("Only Sobol engine supports this method.");
     }
+#endif
   }
 
   /// Generate unsigned int random number(s) with 'uniform_bits' distribution.
@@ -455,6 +460,7 @@ public:
   }
 
 private:
+#ifdef __INTEL_MKL__
   template <typename T = engine_t>
   typename std::enable_if<std::is_same_v<T, oneapi::mkl::rng::sobol>>::type
   set_direction_numbers_impl(
@@ -466,6 +472,13 @@ private:
     _engine = create_engine(_queue, _direction_numbers);
   }
 
+  static inline oneapi::mkl::rng::sobol
+  create_engine(sycl::queue *queue,
+                std::vector<std::uint32_t> &direction_numbers) {
+    return oneapi::mkl::rng::sobol(*queue, direction_numbers);
+  }
+#endif
+
   static inline engine_t create_engine(sycl::queue *queue,
                                        const std::uint64_t seed,
                                        const std::uint32_t dimensions) {
@@ -476,11 +489,6 @@ private:
 #else
     return engine_t(*queue, seed);
 #endif
-  }
-  static inline oneapi::mkl::rng::sobol
-  create_engine(sycl::queue *queue,
-                std::vector<std::uint32_t> &direction_numbers) {
-    return oneapi::mkl::rng::sobol(*queue, direction_numbers);
   }
 
   template <typename distr_t, typename buffer_t, class... distr_params_t>
