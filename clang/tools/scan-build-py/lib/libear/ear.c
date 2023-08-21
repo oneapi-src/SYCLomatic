@@ -649,7 +649,7 @@ const unsigned char g_data[] = {
 
 
 /*
-* The content of g_data[] comes from hex dump of file foo.o,
+* The content of g_compile_data[] comes from hex dump of file foo.o,
 * where foo.cu is a empty file. It comes from the following steps
 * $gcc -xc foo.cu -c foo.o
 * $hexdump foo.o
