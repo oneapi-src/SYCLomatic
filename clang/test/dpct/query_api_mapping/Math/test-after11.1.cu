@@ -68,6 +68,10 @@
 // MAX-NEXT:   max(i /*const int*/, u /*const unsigned int*/);
 // MAX-NEXT:   max(u /*const unsigned int*/, u /*const unsigned int*/);
 // MAX-NEXT:   max(i /*const int*/, i /*const int*/);
+// MAX-NEXT:   max(f /*const float*/, f /*const float*/);
+// MAX-NEXT:   max(d /*const double*/, f /*const float*/);
+// MAX-NEXT:   max(f /*const float*/, d /*const double*/);
+// MAX-NEXT:   max(d /*const double*/, d /*const double*/);
 // MAX-NEXT: Is migrated to:
 // MAX-NEXT:   dpct::max(ull, ll);
 // MAX-NEXT:   dpct::max(ll, ull);
@@ -81,6 +85,10 @@
 // MAX-NEXT:   dpct::max(i, u);
 // MAX-NEXT:   sycl::max(u, u);
 // MAX-NEXT:   sycl::max(i, i);
+// MAX-NEXT:   sycl::max(f, f);
+// MAX-NEXT:   dpct::max(d, f);
+// MAX-NEXT:   dpct::max(f, d);
+// MAX-NEXT:   sycl::max(d, d);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=min | FileCheck %s -check-prefix=MIN
 // MIN: CUDA API:
@@ -97,6 +105,10 @@
 // MIN-NEXT:   min(i /*const int*/, u /*const unsigned int*/);
 // MIN-NEXT:   min(u /*const unsigned int*/, u /*const unsigned int*/);
 // MIN-NEXT:   min(i /*const int*/, i /*const int*/);
+// MIN-NEXT:   min(f /*const float*/, f /*const float*/);
+// MIN-NEXT:   min(d /*const double*/, f /*const float*/);
+// MIN-NEXT:   min(f /*const float*/, d /*const double*/);
+// MIN-NEXT:   min(d /*const double*/, d /*const double*/);
 // MIN-NEXT: Is migrated to:
 // MIN-NEXT:   dpct::min(ull, ll);
 // MIN-NEXT:   dpct::min(ll, ull);
@@ -110,3 +122,7 @@
 // MIN-NEXT:   dpct::min(i, u);
 // MIN-NEXT:   sycl::min(u, u);
 // MIN-NEXT:   sycl::min(i, i);
+// MIN-NEXT:   sycl::min(f, f);
+// MIN-NEXT:   dpct::min(d, f);
+// MIN-NEXT:   dpct::min(f, d);
+// MIN-NEXT:   sycl::min(d, d);
