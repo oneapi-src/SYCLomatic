@@ -287,6 +287,9 @@ public:
   /// \param num_to_skip The number of random numbers to be skipped.
   virtual void skip_ahead(const std::uint64_t num_to_skip) = 0;
 
+  /// Set the direction numbers of host rng_generator. Only Sobol engine
+  /// supports this method.
+  /// \param direction_numbers The engine direction numbers.
   virtual void
   set_direction_numbers(const std::vector<std::uint32_t> &direction_numbers) {
     throw std::runtime_error("Only Sobol engine supports this method.");
