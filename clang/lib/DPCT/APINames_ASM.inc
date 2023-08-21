@@ -33,7 +33,7 @@
 *
 ****************************************************************************/
 
-ENTRY("abs", "abs", false, NO_FLAG, P1, "Comment")
+ENTRY("abs", "abs", true, NO_FLAG, P1, "Successful")
 ENTRY("activemask", "activemask", false, NO_FLAG, P1, "Comment")
 ENTRY("add", "add", true, NO_FLAG, P1, "Successful")
 ENTRY("addc", "addc", false, NO_FLAG, P1, "Comment")
@@ -53,7 +53,7 @@ ENTRY("brkpt", "brkpt", false, NO_FLAG, P1, "Comment")
 ENTRY("brx", "brx", false, NO_FLAG, P1, "Comment")
 ENTRY("call", "call", false, NO_FLAG, P1, "Comment")
 ENTRY("clz", "clz", true, NO_FLAG, P1, "Successful")
-ENTRY("cnot", "cnot", false, NO_FLAG, P1, "Comment")
+ENTRY("cnot", "cnot", true, NO_FLAG, P1, "Successful")
 ENTRY("copysign", "copysign", false, NO_FLAG, P1, "Comment")
 ENTRY("cos", "cos", false, NO_FLAG, P1, "Comment")
 ENTRY("cp", "cp", false, NO_FLAG, P1, "Comment")
