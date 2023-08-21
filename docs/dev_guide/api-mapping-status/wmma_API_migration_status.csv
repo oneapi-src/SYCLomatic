@@ -1,0 +1,6 @@
+Function,Migration Support,Diagnostic Message
+nvcuda::wmma::fill_fragment,YES,
+nvcuda::wmma::load_matrix_sync,YES,
+nvcuda::wmma::store_matrix_sync,YES,
+nvcuda::wmma::mma_sync,YES,
+nvcuda::wmma::bmma_sync,NO,

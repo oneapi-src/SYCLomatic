@@ -242,8 +242,8 @@ cublasStrttp,NO,
 cublasDtrttp,NO,
 cublasCtrttp,NO,
 cublasZtrttp,NO,
-cublasSgemmEx,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041` / :ref:`DPCT1046`
-cublasCgemmEx,YES,:ref:`DPCT1020` / :ref:`DPCT1034` / :ref:`DPCT1041` / :ref:`DPCT1046`
+cublasSgemmEx,YES,:ref:`DPCT1020`
+cublasCgemmEx,YES,:ref:`DPCT1020`
 cublasGemmEx,YES,:ref:`DPCT1020`
 cublasGemmBatchedEx,YES,:ref:`DPCT1020`
 cublasGemmStridedBatchedEx,YES,:ref:`DPCT1020`
@@ -511,7 +511,7 @@ cublasXtMaxBoards,NO,
 cublasGetSmCountTarget,NO,
 cublasSetSmCountTarget,NO,
 cublasGetStatusName,NO,
-cublasGetStatusString,NO,
+cublasGetStatusString,YES,:ref:`DPCT1009`
 cublasLogCallback,NO,
 cublasMigrateComputeType,NO,
 cublasSetWorkspace,NO,
