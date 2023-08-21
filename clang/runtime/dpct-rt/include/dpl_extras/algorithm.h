@@ -9,8 +9,8 @@
 #ifndef __DPCT_ALGORITHM_H__
 #define __DPCT_ALGORITHM_H__
 
-#include <oneapi/dpl/execution>
 #include <oneapi/dpl/algorithm>
+#include <oneapi/dpl/execution>
 #include <oneapi/dpl/numeric>
 
 #include "functional.h"
@@ -29,8 +29,10 @@ void replace_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p,
           std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
                        std::random_access_iterator_tag>::value,
       "Iterators passed to algorithms must be random-access iterators.");
-  std::transform(std::forward<Policy>(policy), first, last, mask, first,
-                 internal::replace_if_fun<typename std::iterator_traits<Iter1>::value_type, Pred>(p, new_value));
+  std::transform(
+      std::forward<Policy>(policy), first, last, mask, first,
+      internal::replace_if_fun<typename std::iterator_traits<Iter1>::value_type,
+                               Pred>(p, new_value));
 }
 
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
@@ -45,8 +47,10 @@ Iter3 replace_copy_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
           std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
                        std::random_access_iterator_tag>::value,
       "Iterators passed to algorithms must be random-access iterators.");
-  return std::transform(std::forward<Policy>(policy), first, last, mask, result,
-                        internal::replace_if_fun<typename std::iterator_traits<Iter3>::value_type, Pred>(p, new_value));
+  return std::transform(
+      std::forward<Policy>(policy), first, last, mask, result,
+      internal::replace_if_fun<typename std::iterator_traits<Iter3>::value_type,
+                               Pred>(p, new_value));
 }
 
 template <typename Policy, typename Iter1, typename Iter2, typename Pred>
