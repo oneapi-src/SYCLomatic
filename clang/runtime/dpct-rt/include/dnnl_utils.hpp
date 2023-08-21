@@ -4388,20 +4388,11 @@ engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm 
           desc.get_stride(), desc.get_dilate(), desc.get_padding(),
           desc.get_padding(), attr);
 
-  ::dnnl::memory::desc optimal_src_md, optimal_dst_md, optimal_weight_md;
-
-  if ((*primitive_args.second.args).empty()) {
-    auto pd = get_primitive_desc<::dnnl::convolution_forward>(
-        primitive_args.second.primitive);
-    optimal_src_md = pd.src_desc();
-    optimal_dst_md = pd.dst_desc();
-    optimal_weight_md = pd.weights_desc();
-  } else {
-    optimal_src_md = (*primitive_args.second.args)[DNNL_ARG_SRC].get_desc();
-    optimal_dst_md = (*primitive_args.second.args)[DNNL_ARG_DST].get_desc();
-    optimal_weight_md =
-        (*primitive_args.second.args)[DNNL_ARG_WEIGHTS].get_desc();
-  }
+  auto pd = get_primitive_desc<::dnnl::convolution_forward>(
+      primitive_args.second.primitive);
+  auto optimal_src_md = pd.src_desc();
+  auto optimal_dst_md = pd.dst_desc();
+  auto optimal_weight_md = pd.weights_desc();
 
   enter_primitive(
       optimal_src_md.get_size() * 3 + optimal_dst_md.get_size() * 5 +
@@ -4473,23 +4464,12 @@ sycl::event engine_ext::async_convolution_forward(
           dst_md, desc.get_stride(), desc.get_dilate(), desc.get_padding(),
           desc.get_padding(), attr);
 
-  ::dnnl::memory::desc optimal_src_md, optimal_dst_md, optimal_weight_md,
-      optimal_bias_md;
-
-  if ((*primitive_args.second.args).empty()) {
-    auto pd = get_primitive_desc<::dnnl::convolution_forward>(
-        primitive_args.second.primitive);
-    optimal_src_md = pd.src_desc();
-    optimal_dst_md = pd.dst_desc();
-    optimal_weight_md = pd.weights_desc();
-    optimal_bias_md = pd.bias_desc();
-  } else {
-    optimal_src_md = (*primitive_args.second.args)[DNNL_ARG_SRC].get_desc();
-    optimal_dst_md = (*primitive_args.second.args)[DNNL_ARG_DST].get_desc();
-    optimal_weight_md =
-        (*primitive_args.second.args)[DNNL_ARG_WEIGHTS].get_desc();
-    optimal_bias_md = (*primitive_args.second.args)[DNNL_ARG_BIAS].get_desc();
-  }
+  auto pd = get_primitive_desc<::dnnl::convolution_forward>(
+      primitive_args.second.primitive);
+  auto optimal_src_md = pd.src_desc();
+  auto optimal_dst_md = pd.dst_desc();
+  auto optimal_weight_md = pd.weights_desc();
+  auto optimal_bias_md = pd.bias_desc();
 
   enter_primitive(optimal_src_md.get_size() + 3 * optimal_weight_md.get_size() +
                   optimal_bias_md.get_size() + 7 * optimal_dst_md.get_size() +
@@ -4574,22 +4554,12 @@ sycl::event engine_ext::async_convolution_backward_data(
           diff_dst_md, desc.get_stride(), desc.get_dilate(), desc.get_padding(),
           desc.get_padding(), forward_primitive, attr);
 
-  ::dnnl::memory::desc optimal_diff_src_md, optimal_diff_dst_md,
-      optimal_weight_md;
-  if ((*primitive_args.second.args).empty()) {
-    auto pd = get_primitive_desc<::dnnl::convolution_backward_data>(
-        primitive_args.second.primitive);
-    optimal_diff_src_md = pd.diff_src_desc();
-    optimal_diff_dst_md = pd.diff_dst_desc();
-    optimal_weight_md = pd.weights_desc();
-  } else {
-    optimal_diff_src_md =
-        (*primitive_args.second.args)[DNNL_ARG_DIFF_SRC].get_desc();
-    optimal_diff_dst_md =
-        (*primitive_args.second.args)[DNNL_ARG_DIFF_DST].get_desc();
-    optimal_weight_md =
-        (*primitive_args.second.args)[DNNL_ARG_WEIGHTS].get_desc();
-  }
+  auto pd = get_primitive_desc<::dnnl::convolution_backward_data>(
+      primitive_args.second.primitive);
+  auto optimal_diff_src_md = pd.diff_src_desc();
+  auto optimal_diff_dst_md = pd.diff_dst_desc();
+  auto optimal_weight_md = pd.weights_desc();
+
   enter_primitive(5 * optimal_diff_src_md.get_size() +
                   optimal_diff_dst_md.get_size() +
                   optimal_weight_md.get_size());
@@ -4664,22 +4634,11 @@ sycl::event engine_ext::async_convolution_backward_weight(
           diff_dst_md, desc.get_stride(), desc.get_dilate(), desc.get_padding(),
           desc.get_padding(), forward_primitive, attr);
 
-  ::dnnl::memory::desc optimal_src_md, optimal_diff_dst_md,
-      optimal_diff_weight_md;
-
-  if ((*primitive_args.second.args).empty()) {
-    auto pd = get_primitive_desc<::dnnl::convolution_backward_weights>(
-        primitive_args.second.primitive);
-    optimal_src_md = pd.src_desc();
-    optimal_diff_dst_md = pd.diff_dst_desc();
-    optimal_diff_weight_md = pd.diff_weights_desc();
-  } else {
-    optimal_src_md = (*primitive_args.second.args)[DNNL_ARG_SRC].get_desc();
-    optimal_diff_dst_md =
-        (*primitive_args.second.args)[DNNL_ARG_DIFF_DST].get_desc();
-    optimal_diff_weight_md =
-        (*primitive_args.second.args)[DNNL_ARG_DIFF_WEIGHTS].get_desc();
-  }
+  auto pd = get_primitive_desc<::dnnl::convolution_backward_weights>(
+      primitive_args.second.primitive);
+  auto optimal_src_md = pd.src_desc();
+  auto optimal_diff_dst_md = pd.diff_dst_desc();
+  auto optimal_diff_weight_md = pd.diff_weights_desc();
 
   enter_primitive(optimal_diff_weight_md.get_size() * 5 +
                   optimal_diff_dst_md.get_size() + optimal_src_md.get_size());
