@@ -794,6 +794,7 @@ int runDPCT(int argc, const char **argv) {
     }
     llvm::outs() << "Is migrated to" << OptionMsg << ":";
 
+    Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster("-w"));
     NoIncrementalMigration = true;
     // Need set a virtual path and it will used by AnalysisScope.
     InRoot = llvm::sys::path::parent_path(SourcePathList[0]).str();
