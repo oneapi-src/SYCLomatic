@@ -240,24 +240,25 @@ static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y, size_t z,
 /// \param value Value to be set.
 /// \param size Number of bytes to be set to the value.
 /// \returns An event representing the memset operation.
+template<typename valueT>
 static inline sycl::event dpct_memset(sycl::queue &q, void *dev_ptr,
-                                          int value, size_t size) {
+                                          valueT value, size_t size) {
 #ifdef DPCT_USM_LEVEL_NONE
   auto &mm = mem_mgr::instance();
   assert(mm.is_device_ptr(dev_ptr));
   auto alloc = mm.translate_ptr(dev_ptr);
-  size_t offset = (byte_t *)dev_ptr - alloc.alloc_ptr;
+  size_t offset = (valueT *)dev_ptr - alloc.alloc_ptr;
 
   return q.submit([&](sycl::handler &cgh) {
     auto r = sycl::range<1>(size);
     auto o = sycl::id<1>(offset);
-    sycl::accessor<byte_t, 1, sycl::access_mode::write,
+    sycl::accessor<valueT, 1, sycl::access_mode::write,
                        sycl::access::target::device>
         acc(alloc.buffer, cgh, r, o);
-    cgh.fill(acc, (byte_t)value);
+    cgh.fill(acc, value);
   });
 #else
-  return q.memset(dev_ptr, value, size);
+  return q.fill(dev_ptr, value, size);
 #endif // DPCT_USM_LEVEL_NONE
 }
 
@@ -269,8 +270,9 @@ static inline sycl::event dpct_memset(sycl::queue &q, void *dev_ptr,
 /// \param value Value to be set.
 /// \param size Memory region size.
 /// \returns An event list representing the memset operations.
+template<typename valueT>
 static inline std::vector<sycl::event>
-dpct_memset(sycl::queue &q, pitched_data data, int value,
+dpct_memset(sycl::queue &q, pitched_data data, valueT value,
             sycl::range<3> size) {
   std::vector<sycl::event> event_list;
   size_t slice = data.get_pitch() * data.get_y();
@@ -287,8 +289,9 @@ dpct_memset(sycl::queue &q, pitched_data data, int value,
 }
 
 /// memset 2D matrix with pitch.
+template<typename valueT>
 static inline std::vector<sycl::event>
-dpct_memset(sycl::queue &q, void *ptr, size_t pitch, int val, size_t x,
+dpct_memset(sycl::queue &q, void *ptr, size_t pitch, valueT val, size_t x,
             size_t y) {
   return dpct_memset(q, pitched_data(ptr, pitch, x, 1), val,
                      sycl::range<3>(x, y, 1));
@@ -983,6 +986,16 @@ async_dpct_memcpy(pitched_data to, sycl::id<3> to_pos, pitched_data from,
 /// \returns no return value.
 static void dpct_memset(void *dev_ptr, int value, size_t size,
                         sycl::queue &q = get_default_queue()) {
+  detail::dpct_memset<unsigned char>(q, dev_ptr, value, size).wait();
+}
+
+static void dpct_memset_d16(void *dev_ptr, unsigned short value, size_t size,
+                        sycl::queue &q = get_default_queue()) {
+  detail::dpct_memset(q, dev_ptr, value, size).wait();
+}
+
+static void dpct_memset_d32(void *dev_ptr, unsigned int value, size_t size,
+                        sycl::queue &q = get_default_queue()) {
   detail::dpct_memset(q, dev_ptr, value, size).wait();
 }
 
@@ -995,6 +1008,16 @@ static void dpct_memset(void *dev_ptr, int value, size_t size,
 /// \param size Number of bytes to be set to the value.
 /// \returns no return value.
 static void async_dpct_memset(void *dev_ptr, int value, size_t size,
+                              sycl::queue &q = dpct::get_default_queue()) {
+  detail::dpct_memset<unsigned char>(q, dev_ptr, value, size);
+}
+
+static void async_dpct_memset_d16(void *dev_ptr, unsigned short value, size_t size,
+                              sycl::queue &q = dpct::get_default_queue()) {
+  detail::dpct_memset(q, dev_ptr, value, size);
+}
+
+static void async_dpct_memset_d32(void *dev_ptr, unsigned int value, size_t size,
                               sycl::queue &q = dpct::get_default_queue()) {
   detail::dpct_memset(q, dev_ptr, value, size);
 }
@@ -1014,6 +1037,18 @@ static void async_dpct_memset(void *dev_ptr, int value, size_t size,
 static inline void dpct_memset(void *ptr, size_t pitch, int val, size_t x,
                                size_t y,
                                sycl::queue &q = get_default_queue()) {
+  sycl::event::wait(detail::dpct_memset<unsigned char>(q, ptr, pitch, val, x, y));
+}
+
+static inline void dpct_memset_d16(void *ptr, size_t pitch, unsigned short val, size_t x,
+                               size_t y,
+                               sycl::queue &q = get_default_queue()) {
+  sycl::event::wait(detail::dpct_memset(q, ptr, pitch, val, x, y));
+}
+
+static inline void dpct_memset_d32(void *ptr, size_t pitch, unsigned int val, size_t x,
+                               size_t y,
+                               sycl::queue &q = get_default_queue()) {
   sycl::event::wait(detail::dpct_memset(q, ptr, pitch, val, x, y));
 }
 
@@ -1030,6 +1065,18 @@ static inline void dpct_memset(void *ptr, size_t pitch, int val, size_t x,
 /// \param q The queue in which the operation is done.
 /// \returns no return value.
 static inline void async_dpct_memset(void *ptr, size_t pitch, int val, size_t x,
+                                     size_t y,
+                                     sycl::queue &q = get_default_queue()) {
+  detail::dpct_memset<unsigned char>(q, ptr, pitch, val, x, y);
+}
+
+static inline void async_dpct_memset_d16(void *ptr, size_t pitch, unsigned short val, size_t x,
+                                     size_t y,
+                                     sycl::queue &q = get_default_queue()) {
+  detail::dpct_memset(q, ptr, pitch, val, x, y);
+}
+
+static inline void async_dpct_memset_d32(void *ptr, size_t pitch, unsigned int val, size_t x,
                                      size_t y,
                                      sycl::queue &q = get_default_queue()) {
   detail::dpct_memset(q, ptr, pitch, val, x, y);
