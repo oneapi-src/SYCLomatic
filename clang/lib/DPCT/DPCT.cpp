@@ -783,6 +783,15 @@ int runDPCT(int argc, const char **argv) {
     StartPos = StartPos + StartStr.length();
     EndPos = SourceCode.find_last_of('\n', EndPos);
     llvm::outs() << SourceCode.substr(StartPos, EndPos - StartPos + 1);
+    static const std::string NoMigrate{"// Not migrate: "};
+    auto NoMigratePos = SourceCode.find(NoMigrate);
+    if (NoMigratePos != StringRef::npos) {
+      auto NoMigrateBegin = NoMigratePos + NoMigrate.length();
+      auto NoMigrateEnd = SourceCode.find_first_of('\n', NoMigratePos);
+      llvm::outs() << SourceCode.substr(NoMigrateBegin,
+                                        NoMigrateEnd - NoMigrateBegin + 1);
+      dpctExit(MigrationSucceeded);
+    }
     llvm::outs() << "Is migrated to" << OptionMsg << ":";
 
     NoIncrementalMigration = true;
@@ -1102,7 +1111,6 @@ int runDPCT(int argc, const char **argv) {
         llvm::outs() << I.piece().substr(It + StartStr.length());
       }
     }
-    llvm::sys::fs::remove(SourcePathList.front().c_str());
     return MigrationSucceeded;
   }
 
