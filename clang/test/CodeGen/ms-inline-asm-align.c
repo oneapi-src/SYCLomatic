@@ -23,7 +23,7 @@ void align_test(void) {
 
 // WINDOWS-LABEL: define dso_local void @align_test()
 // WINDOWS: call void asm sideeffect inteldialect
-// WINDOWS-SAME: .align 8
+// ge-SAME: .align 8
 // WINDOWS-SAME: .align 16
 // WINDOWS-SAME: .align 128
 // WINDOWS-SAME: .align 256
