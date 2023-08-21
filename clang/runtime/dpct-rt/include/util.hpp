@@ -286,11 +286,12 @@ T permute_sub_group_by_xor(sycl::sub_group g, T x, unsigned int mask,
                                      : id);
 }
 
-/// match_any_over_sub_group return a mask in which some bits are set to 1,
-/// indicating that the \p value provided by the work-item represented by
-/// these bits are equal. The n-th bit of mask representing the work-item
-/// with id n. The parameter \p member_mask indicating the work-items
-/// participating the call.
+/// The function match_any_over_sub_group conducts a comparison of values
+/// across work-items within a sub-group. match_any_over_sub_group return a mask
+/// in which some bits are set to 1, indicating that the \p value provided by
+/// the work-item represented by these bits are equal. The n-th bit of mask
+/// representing the work-item with id n. The parameter \p member_mask
+/// indicating the work-items participating the call.
 /// \tparam T Input value type
 /// \param [in] g Input sub_group
 /// \param [in] member_mask Input mask
@@ -322,11 +323,13 @@ unsigned int match_any_over_sub_group(sycl::sub_group g, unsigned member_mask,
   return result;
 }
 
-/// match_all_over_sub_group return \p member_mask and predicate \p pred will be
-/// set to 1 if all \p value that provided by each work-item in \p member_mask
-/// are equal, otherwise return 0 and the predicate \p pred will be set to 0.
-/// The n-th bit of \p member_mask representing the work-item with id n. The
-/// parameter \p member_mask indicating the work-items participating the call.
+/// The function match_all_over_sub_group conducts a comparison of values
+/// across work-items within a sub-group. match_all_over_sub_group return \p
+/// member_mask and predicate \p pred will be set to 1 if all \p value that
+/// provided by each work-item in \p member_mask are equal, otherwise return 0
+/// and the predicate \p pred will be set to 0. The n-th bit of \p member_mask
+/// representing the work-item with id n. The parameter \p member_mask
+/// indicating the work-items participating the call.
 /// \tparam T Input value type
 /// \param [in] g Input sub_group
 /// \param [in] member_mask Input mask
