@@ -508,6 +508,9 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
                     true),
                 makeCallArgCreatorWithCall(3)),
              makeCallArgCreatorWithCall(4)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cuMemsetD8_v2",
                        CALL(MapNames::getDpctNamespace() + "dpct_memset",
                             ARG(0), ARG(1), ARG(2)))))
