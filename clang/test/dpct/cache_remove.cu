@@ -20,11 +20,15 @@ int main()
   float *aptr;
   // CHECK: DPCT1007:{{[0-9]+}}: Migration of cudaLaunchAttributeValue is not supported.
   cudaStreamAttrValue stream_attribute = {};
+  // CHECK: // begin for check remove stream_attribute.accessPolicyWindow
+  // CHECK-NEXT: // end for check remove stream_attribute.accessPolicyWindow
+  // begin for check remove stream_attribute.accessPolicyWindow
   stream_attribute.accessPolicyWindow.base_ptr = aptr;
   stream_attribute.accessPolicyWindow.num_bytes = res_block_mem;
   stream_attribute.accessPolicyWindow.hitRatio = 1.0f;
   stream_attribute.accessPolicyWindow.hitProp = cudaAccessPropertyPersisting;
   stream_attribute.accessPolicyWindow.missProp = cudaAccessPropertyStreaming;
+  // end for check remove stream_attribute.accessPolicyWindow
   // CHECK: DPCT1007:{{[0-9]+}}: Migration of cudaStreamSetAttribute is not supported.
   cudaStreamSetAttribute(
       stream, cudaLaunchAttributeIgnore, &stream_attribute);

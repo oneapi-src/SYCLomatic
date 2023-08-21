@@ -6867,7 +6867,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if(FuncName == "cudaStreamSetAttribute" ||
              FuncName == "cudaStreamGetAttribute" ||
              FuncName == "cudaFuncSetAttribute"){
-    std::string ArgStr = getStmtSpelling(CE->getArg(1));
+    std::string ArgStr = getDrefName(CE->getArg(1));
     if (ArgStr == "cudaStreamAttributeAccessPolicyWindow") {
       if (IsAssigned) {
         report(
