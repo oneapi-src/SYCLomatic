@@ -247,7 +247,7 @@ static inline sycl::event dpct_memset(sycl::queue &q, void *dev_ptr,
   auto &mm = mem_mgr::instance();
   assert(mm.is_device_ptr(dev_ptr));
   auto alloc = mm.translate_ptr(dev_ptr);
-  size_t offset = (valueT *)dev_ptr - alloc.alloc_ptr;
+  size_t offset = (valueT *)dev_ptr - (valueT *)alloc.alloc_ptr;
 
   return q.submit([&](sycl::handler &cgh) {
     auto r = sycl::range<1>(size);
