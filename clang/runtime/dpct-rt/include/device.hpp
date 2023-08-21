@@ -136,6 +136,9 @@ public:
   unsigned int get_memory_bus_width() const { return _memory_bus_width; }
   uint32_t get_device_id() const { return _device_id; }
   std::array<unsigned char, 16> get_uuid() const { return _uuid; }
+  /// Returns estimated size of L2 cache in bytes.
+  unsigned int get_L2_cache_size() { return _L2_cache_size; }
+
   // set interface
   void set_name(const char* name) {
     size_t length = strlen(name);
@@ -204,6 +207,10 @@ public:
   void set_uuid(std::array<unsigned char, 16> uuid) {
     _uuid = std::move(uuid);
   }
+  void set_L2_cache_size(unsigned int L2_cache_size) {
+    _L2_cache_size = L2_cache_size;
+  }
+
 private:
   char _name[256];
   int _max_work_item_sizes_i[3];
@@ -216,6 +223,7 @@ private:
   unsigned int _memory_clock_rate = 3200000;
   // Set estimated value 64 bits as default value.
   unsigned int _memory_bus_width = 64;
+  unsigned int _L2_cache_size;
   int _max_compute_units;
   int _max_work_group_size;
   int _max_sub_group_size;
@@ -392,6 +400,10 @@ Use 64 bits as memory_bus_width default value."
     // Estimates max register size per work group, feel free to update the value
     // according to device properties.
     prop.set_max_register_size_per_work_group(65536);
+
+    // Set estimates max L2 cache size(16MB), feel free to update the value
+    // according to device properties.
+    prop.set_L2_cache_size(16777216);
 
     out = prop;
   }

@@ -4458,6 +4458,7 @@ const MapNames::MapTy DeviceInfoVarRule::PropNamesMap{
     {"memoryBusWidth", "memory_bus_width"},
     {"pciDeviceID", "device_id"},
     {"uuid", "uuid"},
+    {"l2CacheSize", "L2_cache_size"},
     // ...
 };
 
@@ -4643,6 +4644,7 @@ const std::unordered_map<std::string, HelperFeatureEnum>
         {"memoryBusWidth", HelperFeatureEnum::device_ext},
         {"pciDeviceID", HelperFeatureEnum::device_ext},
         {"uuid", HelperFeatureEnum::device_ext},
+        {"l2CacheSize", HelperFeatureEnum::device_ext},
 };
 
 const std::unordered_map<std::string, HelperFeatureEnum>
@@ -4664,6 +4666,7 @@ const std::unordered_map<std::string, HelperFeatureEnum>
         {"memoryBusWidth", HelperFeatureEnum::device_ext},
         {"pciDeviceID", HelperFeatureEnum::device_ext},
         {"uuid", HelperFeatureEnum::device_ext},
+        {"l2CacheSize", HelperFeatureEnum::device_ext},
 };
 
 const std::unordered_map<std::string, HelperFeatureEnum>
