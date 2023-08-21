@@ -290,10 +290,8 @@ public:
   /// Set the direction numbers of host rng_generator. Only Sobol engine
   /// supports this method.
   /// \param direction_numbers The engine direction numbers.
-  virtual void
-  set_direction_numbers(const std::vector<std::uint32_t> &direction_numbers) {
-    throw std::runtime_error("Only Sobol engine supports this method.");
-  }
+  virtual void set_direction_numbers(
+      const std::vector<std::uint32_t> &direction_numbers) = 0;
 
 protected:
   sycl::queue *_queue{&dpct::get_default_queue()};
@@ -343,11 +341,11 @@ public:
   /// \param direction_numbers The user-defined direction numbers.
   void
   set_direction_numbers(const std::vector<std::uint32_t> &direction_numbers) {
-    if (direction_numbers == _direction_numbers) {
-      return;
+    if constexpr (std::is_same_v<engine_t, oneapi::mkl::rng::sobol>) {
+      set_direction_numbers_impl(direction_numbers);
+    } else {
+      throw std::runtime_error("Only Sobol engine supports this method.");
     }
-    _direction_numbers = direction_numbers;
-    _engine = create_engine(_queue, _direction_numbers);
   }
 
   /// Generate unsigned int random number(s) with 'uniform_bits' distribution.
@@ -457,6 +455,17 @@ public:
   }
 
 private:
+  template <typename T = engine_t>
+  typename std::enable_if<std::is_same_v<T, oneapi::mkl::rng::sobol>>::type
+  set_direction_numbers_impl(
+      const std::vector<std::uint32_t> &direction_numbers) {
+    if (direction_numbers == _direction_numbers) {
+      return;
+    }
+    _direction_numbers = direction_numbers;
+    _engine = create_engine(_queue, _direction_numbers);
+  }
+
   static inline engine_t create_engine(sycl::queue *queue,
                                        const std::uint64_t seed,
                                        const std::uint32_t dimensions) {
@@ -468,10 +477,10 @@ private:
     return engine_t(*queue, seed);
 #endif
   }
-  static inline engine_t
+  static inline oneapi::mkl::rng::sobol
   create_engine(sycl::queue *queue,
                 std::vector<std::uint32_t> &direction_numbers) {
-    return engine_t(*queue, direction_numbers);
+    return oneapi::mkl::rng::sobol(*queue, direction_numbers);
   }
 
   template <typename distr_t, typename buffer_t, class... distr_params_t>
