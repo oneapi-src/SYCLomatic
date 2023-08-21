@@ -78,12 +78,14 @@ FEATURE_REQUEST_FACTORY(
 
 CONDITIONAL_FACTORY_ENTRY(
     checkIsUsePureSyclQueue(),
-    WARNING_FACTORY_ENTRY("cuCtxCreate_v2",
-                          ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-                              "cuCtxCreate_v2", DEREF(0), ARG(2))),
-                          Diagnostics::FUNC_CALL_REMOVED,
-                          std::string("cuCtxCreate_v2"),
-                          std::string("it is in --use-pure-sycl-queue mode.")),
+    WARNING_FACTORY_ENTRY(
+        "cuCtxCreate_v2",
+        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxCreate_v2", DEREF(0),
+                                                ARG(2))),
+        Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxCreate_v2"),
+        std::string("it is redundant if it is migrated with option "
+                    "--use-pure-sycl-queue which declares a global SYCL device "
+                    "and queue.")),
     FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::device_ext,
         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
@@ -92,12 +94,14 @@ CONDITIONAL_FACTORY_ENTRY(
 
 CONDITIONAL_FACTORY_ENTRY(
     checkIsUsePureSyclQueue(),
-    WARNING_FACTORY_ENTRY("cuDevicePrimaryCtxRetain",
-                          ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-                              "cuDevicePrimaryCtxRetain", DEREF(0), ARG(1))),
-                          Diagnostics::FUNC_CALL_REMOVED,
-                          std::string("cuDevicePrimaryCtxRetain"),
-                          std::string("it is in --use-pure-sycl-queue mode.")),
+    WARNING_FACTORY_ENTRY(
+        "cuDevicePrimaryCtxRetain",
+        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuDevicePrimaryCtxRetain",
+                                                DEREF(0), ARG(1))),
+        Diagnostics::FUNC_CALL_REMOVED, std::string("cuDevicePrimaryCtxRetain"),
+        std::string("it is redundant if it is migrated with option "
+                    "--use-pure-sycl-queue which declares a global SYCL device "
+                    "and queue.")),
     FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::device_ext,
         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
@@ -144,12 +148,14 @@ WARNING_FACTORY_ENTRY("cuDriverGetVersion",
 
 CONDITIONAL_FACTORY_ENTRY(
     clang::dpct::checkIsUsePureSyclQueue(),
-    WARNING_FACTORY_ENTRY("cuCtxGetDevice",
-                          ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-                              "cuCtxGetDevice", DEREF(0), LITERAL("0"))),
-                          Diagnostics::FUNC_CALL_REMOVED,
-                          std::string("cuCtxGetDevice"),
-                          std::string("it is in --use-pure-sycl-queue mode.")),
+    WARNING_FACTORY_ENTRY(
+        "cuCtxGetDevice",
+        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxGetDevice", DEREF(0),
+                                                LITERAL("0"))),
+        Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxGetDevice"),
+        std::string("it is redundant if it is migrated with option "
+                    "--use-pure-sycl-queue which declares a global SYCL device "
+                    "and queue.")),
     FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
                                 "cuCtxGetDevice", DEREF(0),

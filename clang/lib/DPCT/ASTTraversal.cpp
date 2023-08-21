@@ -6753,8 +6753,11 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaSetDevice") {
     if (DpctGlobalInfo::isUsePureSyclQueue()) {
       emplaceTransformation(new ReplaceStmt(CE, "0"));
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
-             "cudaSetDevice", "it is in --use-pure-sycl-queue mode.");
+      report(
+          CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+          "cudaSetDevice",
+          "it is redundant if it is migrated with option --use-pure-sycl-queue "
+          "which declares a global SYCL device and queue.");
     } else {
       DpctGlobalInfo::setDeviceChangedFlag(true);
       report(CE->getBeginLoc(), Diagnostics::DEVICE_ID_DIFFERENT, false,
@@ -6827,8 +6830,11 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
     if (DpctGlobalInfo::isUsePureSyclQueue()) {
       emplaceTransformation(new ReplaceStmt(CE, "0"));
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
-             "cudaGetDevice", "it is in --use-pure-sycl-queue mode.");
+      report(
+          CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+          "cudaGetDevice",
+          "it is redundant if it is migrated with option --use-pure-sycl-queue "
+          "which declares a global SYCL device and queue.");
     } else {
       emplaceTransformation(
           new ReplaceStmt(CE, MapNames::getDpctNamespace() +
@@ -14229,8 +14235,11 @@ void DriverContextAPIRule::runRule(
   } else if (APIName == "cuCtxSetCurrent") {
     if (DpctGlobalInfo::isUsePureSyclQueue()) {
       OS << "0";
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
-             "cuCtxSetCurrent", "it is in --use-pure-sycl-queue mode.");
+      report(
+          CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+          "cuCtxSetCurrent",
+          "it is redundant if it is migrated with option --use-pure-sycl-queue "
+          "which declares a global SYCL device and queue.");
     } else {
       auto Arg = CE->getArg(0)->IgnoreImplicitAsWritten();
       ExprAnalysis EA(Arg);
@@ -14245,8 +14254,11 @@ void DriverContextAPIRule::runRule(
     OS << " = ";
     if (DpctGlobalInfo::isUsePureSyclQueue()) {
       OS << "0";
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
-             "cuCtxGetCurrent", "it is in --use-pure-sycl-queue mode.");
+      report(
+          CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+          "cuCtxGetCurrent",
+          "it is redundant if it is migrated with option --use-pure-sycl-queue "
+          "which declares a global SYCL device and queue.");
     } else {
       OS << MapNames::getDpctNamespace() +
                 "dev_mgr::instance().current_device_id()";

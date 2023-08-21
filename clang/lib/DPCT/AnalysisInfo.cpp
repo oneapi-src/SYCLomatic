@@ -1182,7 +1182,8 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
       if (Flag && (SourceFileType == SPT_CudaSource ||
                    SourceFileType == SPT_CppSource)) {
         OS << MapNames::getClNamespace() << "device "
-           << DpctGlobalInfo::getGlobalDeviceName() << ";" << getNL();
+           << DpctGlobalInfo::getGlobalDeviceName()
+           << "(sycl::default_selector_v);" << getNL();
         // Now the UsmLevel must not be UL_None here.
         OS << MapNames::getClNamespace() << "queue "
            << DpctGlobalInfo::getGlobalQueueName() << "("

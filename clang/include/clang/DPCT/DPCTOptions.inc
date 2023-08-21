@@ -435,9 +435,12 @@ DPCT_NON_ENUM_OPTION(
 DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<bool>), UsePureSyclQueue,
     "use-pure-sycl-queue",
-    llvm::cl::desc("Generates pure SYCL code to get queue and device. Notice "
-                   "that the runtime behavior may not be the same with the "
-                   "original code. Default: off."),
+    llvm::cl::desc("Generates pure SYCL code to get SYCL queue and device "
+                   "instead of calling helper functions. Notice that the "
+                   "runtime behavior may not be the same with the original "
+                   "code because there is only one global definition of SYCL "
+                   "queue and device, and will be passed to every place where "
+                   "SYCL queue and device are expected. Default: off."),
     llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT
