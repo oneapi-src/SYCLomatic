@@ -287,6 +287,11 @@ public:
   /// \param num_to_skip The number of random numbers to be skipped.
   virtual void skip_ahead(const std::uint64_t num_to_skip) = 0;
 
+  virtual void
+  set_direction_numbers(const std::vector<std::uint32_t> &direction_numbers) {
+    throw std::runtime_error("Only Sobol engine supports this method.");
+  }
+
 protected:
   sycl::queue *_queue{&dpct::get_default_queue()};
   std::uint64_t _seed{0};
