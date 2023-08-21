@@ -109,7 +109,10 @@ checkTemplateArgSpelling(size_t Index, std::string Str) {
         return false;
       const auto TA = TSTL.getArgLoc(Index).getArgument();
       if (TA.getKind() == TemplateArgument::ArgKind::Type) {
-        return getQualtifiedNameStr(TA.getAsType()->getAsTagDecl()) == Str;
+        const std::string & ResStr = getQualtifiedNameStr(TA.getAsType()->getAsTagDecl());
+        if (ResStr.empty())
+          return TA.getAsType().getAsString() == Str;
+        return ResStr == Str;
       } else if (TA.getKind() == TemplateArgument::ArgKind::Declaration) {
         return getQualtifiedNameStr(TA.getAsDecl()) == Str;
       } else if (TA.getKind() == TemplateArgument::ArgKind::Integral) {
