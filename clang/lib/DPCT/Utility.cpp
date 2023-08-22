@@ -2264,8 +2264,12 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
         auto InnerResult = getRangeInRange(Range, MacroDefBegin, MacroDefEnd, false);
         // If the new range covers the entire macro, use the original range,
         // otherwise, use the inner range.
-        if(!isSameLocation(It->second.getBegin(), InnerResult.first) ||
-           !isSameLocation(It->second.getEnd(), InnerResult.second)){
+        if (isInRange(It->second.getBegin(), It->second.getEnd(),
+                      InnerResult.first) &&
+            isInRange(It->second.getBegin(), It->second.getEnd(),
+                      InnerResult.second) &&
+            (!isSameLocation(It->second.getBegin(), InnerResult.first) ||
+             !isSameLocation(It->second.getEnd(), InnerResult.second))) {
           ResultBegin = InnerResult.first;
           ResultEnd = InnerResult.second;
         }
