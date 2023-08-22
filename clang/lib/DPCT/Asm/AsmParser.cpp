@@ -270,6 +270,9 @@ static inline InstAttr ConvertToInstAttr(asmtok::TokenKind Kind) {
 #define CMP_OP(X, Y)                                                           \
   case asmtok::kw_##X:                                                         \
     return InstAttr::X;
+#define BIN_OP(X, Y)                                                           \
+  case asmtok::kw_##X:                                                         \
+    return InstAttr::X;
 #include "Asm/AsmTokenKinds.def"
   default:
     llvm_unreachable("Kind is not an instruction attribute");
