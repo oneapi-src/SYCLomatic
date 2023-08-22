@@ -840,7 +840,6 @@ if (LLVM_ENABLE_WARNINGS AND (LLVM_COMPILER_IS_GCC_COMPATIBLE OR CLANG_CL))
   append_if(USE_NO_UNINITIALIZED "-Wno-uninitialized" CMAKE_CXX_FLAGS)
   append_if(USE_NO_MAYBE_UNINITIALIZED "-Wno-maybe-uninitialized" CMAKE_CXX_FLAGS)
 
-<<<<<<< HEAD
 # SYCLomatic_CUSTOMIZATION begin
   if ((NOT (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")) OR
       (NOT (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)))
@@ -870,12 +869,11 @@ if (LLVM_ENABLE_WARNINGS AND (LLVM_COMPILER_IS_GCC_COMPATIBLE OR CLANG_CL))
   add_flag_if_supported("-Wno-array-bounds" NO_ARRAY_BOUNDS)
   add_flag_if_supported("-Wno-pessimizing-move" NO_PESSIMIZING_MOVE)
 # SYCLomatic_CUSTOMIZATION end
-=======
+
   # Disable -Wnonnull for GCC warning as it is emitting a lot of false positives.
   if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     append("-Wno-nonnull" CMAKE_CXX_FLAGS)
   endif()
->>>>>>> upstream/sycl
 
   # Disable -Wclass-memaccess, a C++-only warning from GCC 8 that fires on
   # LLVM's ADT classes.

@@ -3067,17 +3067,14 @@ void UnwrappedLineParser::parseNamespace() {
     }
   }
   if (FormatTok->is(tok::l_brace)) {
-<<<<<<< HEAD
+    FormatTok->setFinalizedType(TT_NamespaceLBrace);
+
 #ifdef SYCLomatic_CUSTOMIZATION
     if ((formatRangeGetter() == FormatRange::migrated &&
          isAllSpaceUntilNL(FormatTok, SourceMgr)) ||
         (formatRangeGetter() != FormatRange::migrated &&
          ShouldBreakBeforeBrace(Style, InitialToken)))
 #else
-=======
-    FormatTok->setFinalizedType(TT_NamespaceLBrace);
-
->>>>>>> upstream/sycl
     if (ShouldBreakBeforeBrace(Style, InitialToken))
 #endif // SYCLomatic_CUSTOMIZATION
       addUnwrappedLine();
