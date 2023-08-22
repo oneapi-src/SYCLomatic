@@ -532,7 +532,7 @@ __global__ static void vlc_encode_kernel_sm64huff() {
   atomicOr(&as[kc], a);
 }
 
-// CHECK:void addByte(unsigned int *s_WarpHist, unsigned int data) {
+// CHECK:  inline void addByte(unsigned int *s_WarpHist, unsigned int data) {
 // CHECK-NEXT:  dpct::atomic_fetch_add<sycl::access::address_space::generic_space>(s_WarpHist + data, 1);
 // CHECK-NEXT:}
 __device__ void addByte(unsigned int *s_WarpHist, unsigned int data) {

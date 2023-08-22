@@ -78,7 +78,7 @@ void foo2() {
   dynamicReverse<<<1, 1, shared_memory_size>>>();
 }
 
-// CHECK: void kernel3(int *a) {
+// CHECK: __dpct_inline__ void kernel3(int *a) {
 // CHECK-NOT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK: }
 __global__ void kernel3() {

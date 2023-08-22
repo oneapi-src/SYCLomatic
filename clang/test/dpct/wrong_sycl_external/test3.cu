@@ -4,7 +4,7 @@
 
 #include "test3.cuh"
 
-  // CHECK: template <typename T> void do_work() {
+  // CHECK: template <typename T> __dpct_inline__ void do_work() {
 template <typename T> __global__ void do_work() {
   T x=T(), y=T();
   // CHECK: func_wrapper<T>([] (T a, T b) -> T { return a * b; }).reduce(x, y);

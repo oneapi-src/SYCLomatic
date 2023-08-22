@@ -8,7 +8,7 @@
 
 #include "cuda_fp16.h"
 
-// CHECK: void kernelFunc(double *deviceArray) {
+// CHECK: __dpct_inline__ void kernelFunc(double *deviceArray) {
 // CHECK:   double &d0 = *deviceArray;
 // CHECK:   d0 = sycl::ext::intel::math::erfinv(d0);
 // CHECK:   d0 = sycl::ext::intel::math::cdfnorm(d0);
@@ -20,7 +20,7 @@ __global__ void kernelFunc(double *deviceArray) {
   
 }
 
-// CHECK: void kernelFunc(float *deviceArray) {
+// CHECK: __dpct_inline__ void kernelFunc(float *deviceArray) {
 // CHECK:   float &f0 = *deviceArray;
 // CHECK:   f0 = sycl::ext::intel::math::erfinv(f0);
 // CHECK:   f0 = sycl::ext::intel::math::cdfnorm(f0);

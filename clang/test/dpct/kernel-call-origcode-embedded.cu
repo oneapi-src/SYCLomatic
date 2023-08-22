@@ -7,7 +7,7 @@
 #include <cuda_runtime.h>
 
 // CHECK:   /* DPCT_ORIG __global__ void testKernelPtr(const int *L, const int *M, int N) {*/
-// CHECK-NEXT:void testKernelPtr(const int *L, const int *M, int N,
+// CHECK-NEXT: __dpct_inline__ void testKernelPtr(const int *L, const int *M, int N,
 // CHECK-NEXT: const sycl::nd_item<3> &[[ITEMNAME:item_ct1]]) {
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
   // CHECK: /* DPCT_ORIG   int gtid = blockIdx.x  * blockDim.x */
@@ -21,7 +21,7 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 }
 
 // CHECK:     /* DPCT_ORIG __global__ void testKernel(int L, int M, int N) {*/
-// CHECK-NEXT: void testKernel(int L, int M, int N, const sycl::nd_item<3> &[[ITEMNAME:item_ct1]]) {
+// CHECK-NEXT: __dpct_inline__ void testKernel(int L, int M, int N, const sycl::nd_item<3> &[[ITEMNAME:item_ct1]]) {
 __global__ void testKernel(int L, int M, int N) {
   // CHECK:      /* DPCT_ORIG   int gtid = blockIdx.x*/
   // CHECK-NEXT:  int gtid = item_ct1.get_group(2)
@@ -170,7 +170,7 @@ int main() {
 // CHECK-NEXT:                            int blockIndex,
 // CHECK-NEXT:                            int baseIndex);*/
 // CHECK-NEXT:template <bool storeSum, bool isNP2>
-// CHECK-NEXT:static void foo_2(unsigned int *g_odata,
+// CHECK-NEXT:  __dpct_inline__ static void foo_2(unsigned int *g_odata,
 // CHECK-NEXT:                            const unsigned int *g_idata,
 // CHECK-NEXT:                            unsigned int *g_blockSums,
 // CHECK-NEXT:                            int n,
@@ -194,7 +194,7 @@ __global__ static void foo_2(unsigned int *g_odata,
 // CHECK-NEXT:                          int mem_ai, int mem_bi,
 // CHECK-NEXT:                          int bankOffsetA, int bankOffsetB);*/
 // CHECK-NEXT:template <bool isNP2>
-// CHECK-NEXT:static void foo_1(unsigned int* g_odata,
+// CHECK-NEXT:inline static void foo_1(unsigned int* g_odata,
 // CHECK-NEXT:                          const unsigned int* s_data,
 // CHECK-NEXT:                          int n,
 // CHECK-NEXT:                          int ai, int bi,
@@ -217,7 +217,7 @@ __device__ static void foo_1(unsigned int* g_odata,
 // CHECK-NEXT:                              int mem_ai, int mem_bi,
 // CHECK-NEXT:                              int bankOffsetA, int bankOffsetB)*/
 // CHECK-NEXT: template <bool isNP2>
-// CHECK-NEXT:static void foo_1(unsigned int* g_odata,
+// CHECK-NEXT:inline static void foo_1(unsigned int* g_odata,
 // CHECK-NEXT:                              const unsigned int* s_data,
 // CHECK-NEXT:                              int n,
 // CHECK-NEXT:                              int ai, int bi,
@@ -249,7 +249,7 @@ __device__ static void foo_1(unsigned int* g_odata,
 // CHECK-NEXT:                        int blockIndex,
 // CHECK-NEXT:                        int baseIndex)*/
 // CHECK-NEXT:template <bool storeSum, bool isNP2>
-// CHECK-NEXT:static void foo_2(unsigned int *g_odata,
+// CHECK-NEXT:__dpct_inline__ static void foo_2(unsigned int *g_odata,
 // CHECK-NEXT:                        const unsigned int *g_idata,
 // CHECK-NEXT:                        unsigned int *g_blockSums,
 // CHECK-NEXT:                        int n,

@@ -3,18 +3,18 @@
 
 #include <cstdio>
 
-// CHECK: void test0_with_item(int a, const sycl::nd_item<3> &[[ITEM:item_ct1]]) {
+// CHECK: inline void test0_with_item(int a, const sycl::nd_item<3> &[[ITEM:item_ct1]]) {
 __device__ void test0_with_item(int a) {
   int i = threadIdx.x;
 }
 
-// CHECK: void test0(int a) {
+// CHECK: inline void test0(int a) {
 __device__ void test0(int a) {
   // CHECK: sycl::sqrt(10.0);
   sqrt(10.0);
 }
 
-// CHECK: void test1(int a) {
+// CHECK: inline void test1(int a) {
 __device__ void test1(int a) {
   // CHECK: test0(a);
   test0(a);
@@ -22,14 +22,14 @@ __device__ void test1(int a) {
   test0(a + 1);
 }
 
-// CHECK: void test1_with_item(int a, const sycl::nd_item<3> &[[ITEM:item_ct1]]) {
+// CHECK: inline void test1_with_item(int a, const sycl::nd_item<3> &[[ITEM:item_ct1]]) {
 __device__ void test1_with_item(int a) {
   //CHECK: test0_with_item(a, [[ITEM]]);
   test0_with_item(a);
   test0(a);
 }
 
-// CHECK: void test2(int a) {
+// CHECK: inline void test2(int a) {
 __device__ void test2(int a) {
   // CHECK: test1(a);
   test1(a);
@@ -37,7 +37,7 @@ __device__ void test2(int a) {
   test1(a + 1);
 }
 
-// CHECK: void test3(int a) {
+// CHECK: inline void test3(int a) {
 __device__ void test3(int a) {
   // CHECK: test2(a);
   test2(a);
@@ -45,7 +45,7 @@ __device__ void test3(int a) {
   test2(a + 1);
 }
 
-// CHECK: void kernel() {
+// CHECK: __dpct_inline__ void kernel() {
 __global__ void kernel() {
   // CHECK: test3(1);
   test3(1);
@@ -53,7 +53,7 @@ __global__ void kernel() {
   test3(2);
 }
 
-// CHECK: void kernel_with_item(const sycl::nd_item<3> &[[ITEM:item_ct1]]) {
+// CHECK: __dpct_inline__ void kernel_with_item(const sycl::nd_item<3> &[[ITEM:item_ct1]]) {
 __global__ void kernel_with_item() {
   // CHECK: test1_with_item(1, [[ITEM]]);
   test1_with_item(1);

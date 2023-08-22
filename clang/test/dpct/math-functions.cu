@@ -629,7 +629,7 @@ __device__  T foo2(T a) {
 }
 
 // CHECK: template <class T>
-// CHECK-NEXT: T foo3(T a) {
+// CHECK-NEXT: inline T foo3(T a) {
 // CHECK-NEXT:   return sycl::cos((float)a);
 // CHECK-NEXT: }
 template <class T> 

@@ -9,7 +9,7 @@ void func3(int2 a, int2 b, int2 c) {
 // CHECK: void fun(sycl::int2 a) {}
 void fun(int2 a) {}
 
-// CHECK: void kernel(sycl::int2* data) {
+// CHECK: __dpct_inline__ void kernel(sycl::int2* data) {
 __global__ void kernel(int2* data) {
 }
 

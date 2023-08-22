@@ -6,7 +6,7 @@
 #include <cuda_runtime.h>
 #include <cassert>
 
-//CHECK:void testDevice(const int *K) {
+//CHECK:inline void testDevice(const int *K) {
 //CHECK-NEXT:  int t = K[1];
 //CHECK-NEXT:}
 __device__ void testDevice(const int *K) {
@@ -16,8 +16,8 @@ __device__ void testDevice(const int *K) {
      //CHECK:void testDevice1(const int *K) { int t = K[1]; }
 __device__ void testDevice1(const int *K) { int t = K[1]; }
 
-     //CHECK:void testKernelPtr(const int *L, const int *M, int N,
-//CHECK-NEXT:                   const cl::sycl::nd_item<3> &item_ct1) {
+     //CHECK:__dpct_inline__ void testKernelPtr(const int *L, const int *M, int N,
+//CHECK-NEXT:                                   const cl::sycl::nd_item<3> &item_ct1) {
 //CHECK-NEXT:  testDevice(L);
 //CHECK-NEXT:  int gtid = item_ct1.get_group(2) * item_ct1.get_local_range(2) +
 //CHECK-NEXT:             item_ct1.get_local_id(2);
@@ -86,23 +86,16 @@ typedef struct
 
 // Currently, keep the parameters as original location.
      //CHECK:template <int EFLAG>
-//CHECK-NEXT:void k_mdppp_outer_nn(const int * __restrict__ pos,
-//CHECK-NEXT:                                 const float * __restrict__ q,
-//CHECK-NEXT:                                 const int * __restrict__ numneigh,
-//CHECK-NEXT:                                 const int * __restrict__ firstneigh,
-//CHECK-NEXT:                                 const float * __restrict__ special_lj,
-//CHECK-NEXT:                                 const float * __restrict__ special_coul,
-//CHECK-NEXT:                                 const int * __restrict__ ljd_in,
-//CHECK-NEXT:                                 const int vflag, const int ntypes,
-//CHECK-NEXT:                                 const int nlocal, const int nbor_stride,
-//CHECK-NEXT:                                 const float cut_coulsq, const float cut_ljsq,
-//CHECK-NEXT:                                 const float cut_lj_innersq,
-//CHECK-NEXT:                                 const float g_ewald, const float qqrd2e,
-//CHECK-NEXT:                                 const float denom_lj_inv,
-//CHECK-NEXT:                                 const int loop_trip,
-//CHECK-NEXT:                                 const cl::sycl::nd_item<3> &item_ct1,
-//CHECK-NEXT:                                 float *sp_lj, float *sp_coul, int *ljd,
-//CHECK-NEXT:                                 cl::sycl::local_accessor<double, 2> la) {
+//CHECK-NEXT:__dpct_inline__ void k_mdppp_outer_nn(
+//CHECK-NEXT:    const int *__restrict__ pos, const float *__restrict__ q,
+//CHECK-NEXT:    const int *__restrict__ numneigh, const int *__restrict__ firstneigh,
+//CHECK-NEXT:    const float *__restrict__ special_lj,
+//CHECK-NEXT:    const float *__restrict__ special_coul, const int *__restrict__ ljd_in,
+//CHECK-NEXT:    const int vflag, const int ntypes, const int nlocal, const int nbor_stride,
+//CHECK-NEXT:    const float cut_coulsq, const float cut_ljsq, const float cut_lj_innersq,
+//CHECK-NEXT:    const float g_ewald, const float qqrd2e, const float denom_lj_inv,
+//CHECK-NEXT:    const int loop_trip, const cl::sycl::nd_item<3> &item_ct1, float *sp_lj,
+//CHECK-NEXT:    float *sp_coul, int *ljd, cl::sycl::local_accessor<double, 2> la) {
 template <int EFLAG>
 __global__ void k_mdppp_outer_nn(const int * __restrict__ pos,
                                  const float * __restrict__ q,

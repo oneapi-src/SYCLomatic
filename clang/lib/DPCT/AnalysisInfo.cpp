@@ -2726,8 +2726,7 @@ void CallFunctionExpr::buildInfo() {
     FuncInfo->setNeedSyclExternMacro();
   }
 
-  if (DpctGlobalInfo::isOptimizeMigration() && !FuncInfo->isInlined() &&
-      !FuncInfo->IsSyclExternMacroNeeded()) {
+  if (!FuncInfo->isInlined() && !FuncInfo->IsSyclExternMacroNeeded()) {
     if (FuncInfo->isKernel())
       FuncInfo->setForceInlineDevFunc();
     else

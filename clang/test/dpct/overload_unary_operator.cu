@@ -4,7 +4,7 @@
 #include <cuda_runtime.h>
 
 // CHECK: namespace dpct_operator_overloading {
-// CHECK: static sycl::uint2 operator~(sycl::uint2 test) {
+// CHECK: inline static sycl::uint2 operator~(sycl::uint2 test) {
 // CHECK-NEXT:    return sycl::uint2(~test.x(), ~test.y());
 // CHECK-NEXT: }
 static __device__ uint2 operator~(uint2 test) {
@@ -12,7 +12,7 @@ static __device__ uint2 operator~(uint2 test) {
 }
 
 // CHECK: namespace dpct_operator_overloading {
-// CHECK: static sycl::uint2 operator&(const sycl::uint2 a, const sycl::uint2 b) {
+// CHECK: inline static sycl::uint2 operator&(const sycl::uint2 a, const sycl::uint2 b) {
 // CHECK-NEXT:   return sycl::uint2(a.x() & b.x(), b.y() & a.y());
 // CHECK-NEXT: }
 static __device__ uint2 operator&(const uint2 a, const uint2 b) {

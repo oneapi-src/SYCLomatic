@@ -91,7 +91,7 @@ __global__ void k() {
   FOO(__syncthreads_count(p));
 }
 
-// CHECK: void kernel(const sycl::nd_item<3> &item_ct1,
+// CHECK: __dpct_inline__ void kernel(const sycl::nd_item<3> &item_ct1,
 // CHECK-NEXT:            sycl::atomic_ref<unsigned int, sycl::memory_order::seq_cst, sycl::memory_scope::device, sycl::access::address_space::global_space> &sync_ct1) {
 // CHECK-NEXT:  dpct::experimental::nd_range_barrier(item_ct1, sync_ct1);
 // CHECK-NEXT:}
@@ -119,7 +119,7 @@ int main() {
 
 #define LOGICAL_SIZE 8
 
-// CHECK:void foo1(sycl::group<3> &tb,
+// CHECK:inline void foo1(sycl::group<3> &tb,
 // CHECK-NEXT:   sycl::sub_group &tbt32,
 // CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
 __device__ void foo1(cg::thread_block &tb,

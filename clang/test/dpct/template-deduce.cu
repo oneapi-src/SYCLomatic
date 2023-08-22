@@ -6,31 +6,31 @@
 
 template<class T1, class T2> class TemplateClass { using type = T1; };
 
-// CHECK: template<class T, size_t S> void template_device(T *a) {
+// CHECK: template<class T, size_t S> inline void template_device(T *a) {
 // CHECK-EMPTY
 template<class T, size_t S> __device__ void template_device() {
     __shared__ T a[S];
 }
 
-// CHECK: template<class T1, class T2> void template_kernel1(TemplateClass<T1, T2> *a) {
+// CHECK: template<class T1, class T2> __dpct_inline__ void template_kernel1(TemplateClass<T1, T2> *a) {
 // CHECK-NEXT: template_device<TemplateClass<T1, T2>, 10>(a);
 template<class T1, class T2> __global__ void template_kernel1() {
     template_device<TemplateClass<T1, T2>, 10>();
 }
 
-// CHECK: template<class T1> void template_kernel2(TemplateClass<T1, int> *a) {
+// CHECK: template<class T1> __dpct_inline__ void template_kernel2(TemplateClass<T1, int> *a) {
 // CHECK-NEXT: template_device<TemplateClass<T1, int>, 10>(a);
 template<class T1> __global__ void template_kernel2() {
     template_device<TemplateClass<T1, int>, 10>();
 }
 
-// CHECK: template<class T, size_t S> void template_kernel3(TemplateClass<T, T> *a) {
+// CHECK: template<class T, size_t S> __dpct_inline__ void template_kernel3(TemplateClass<T, T> *a) {
 // CHECK-NEXT: template_device<TemplateClass<T, T>, S>(a);
 template<class T, size_t S> __global__ void template_kernel3() {
     template_device<TemplateClass<T, T>, S>();
 }
 
-// CHECK: template<class T> void template_kernel4(TemplateClass<T, float> *a) {
+// CHECK: template<class T> __dpct_inline__ void template_kernel4(TemplateClass<T, float> *a) {
 // CHECK-NEXT: template_device<TemplateClass<T, float>, 3>(a);
 template<class T> __global__ void template_kernel4() {
     template_device<TemplateClass<T, float>, 3>();
@@ -115,7 +115,7 @@ int main() {
 }
 
 // CHECK: template<typename T1, typename T2>
-// CHECK-NEXT: void k(T1 arg1, T2 arg2, T1 &v1, T2 &v2) {
+// CHECK-NEXT: __dpct_inline__ void k(T1 arg1, T2 arg2, T1 &v1, T2 &v2) {
 // CHECK-EMPTY:
 // CHECK-EMPTY:
 // CHECK-NEXT:   v1 += arg1;

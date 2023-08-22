@@ -2,7 +2,7 @@
 #include "cuda_runtime.h"
 
 namespace {
-// CHECK: void test_device() {}
+// CHECK: inline void test_device() {}
 __device__ void test_device() {}
 }
 

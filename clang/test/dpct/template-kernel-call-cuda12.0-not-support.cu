@@ -26,7 +26,7 @@ struct texReader_dp {
 };
 
 // CHECK: template <typename texReader>
-// CHECK-NEXT: void compute_lj_force(const sycl::nd_item<3> &item_ct1,
+// CHECK-NEXT: __dpct_inline__ void compute_lj_force(const sycl::nd_item<3> &item_ct1,
 // CHECK-NEXT:                       dpct::image_accessor_ext<sycl::int4, 1> posTexture_dp)
 template <typename texReader>
 __global__ void compute_lj_force()

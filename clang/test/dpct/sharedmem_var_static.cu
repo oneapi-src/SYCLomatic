@@ -20,7 +20,7 @@ public:
   __device__ void test() {}
 };
 
-// CHECK: void memberAcc(TestObject &s) {
+// CHECK: __dpct_inline__ void memberAcc(TestObject &s) {
 // CHECK-NEXT: // the size of s is static
 // CHECK-NEXT: s.test();
 // CHECK-NEXT: }
@@ -29,7 +29,7 @@ __global__ void memberAcc() {
   s.test();
 }
 
-// CHECK: void nonTypeTemplateReverse(int *d, int n, const sycl::nd_item<3> &[[ITEM:item_ct1]],
+// CHECK: __dpct_inline__ void nonTypeTemplateReverse(int *d, int n, const sycl::nd_item<3> &[[ITEM:item_ct1]],
 // CHECK-NEXT: sycl::int2 *s) {
 // CHECK-NEXT:  // the size of s is dependent on parameter
 template <int ArraySize>
@@ -41,7 +41,7 @@ __global__ void nonTypeTemplateReverse(int *d, int n) {
   }
 }
 
-// CHECK: void staticReverse(int *d, int n, const sycl::nd_item<3> &[[ITEM:item_ct1]], int &a0,
+// CHECK: __dpct_inline__ void staticReverse(int *d, int n, const sycl::nd_item<3> &[[ITEM:item_ct1]], int &a0,
 // CHECK-NEXT: int *s) {
 __global__ void staticReverse(int *d, int n) {
   const int size = 64;
@@ -56,7 +56,7 @@ __global__ void staticReverse(int *d, int n) {
 }
 
 // CHECK: template<typename TData>
-// CHECK-NEXT: void templateReverse(TData *d, TData n, const sycl::nd_item<3> &[[ITEM:item_ct1]],
+// CHECK-NEXT: __dpct_inline__ void templateReverse(TData *d, TData n, const sycl::nd_item<3> &[[ITEM:item_ct1]],
 // CHECK-NEXT:                      sycl::local_accessor<TData, 2> s,
 // CHECK-NEXT:                      sycl::local_accessor<TData, 3> s3) {
 template<typename TData>

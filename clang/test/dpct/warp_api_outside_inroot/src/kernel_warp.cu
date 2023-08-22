@@ -16,7 +16,7 @@
 #include "../inc/utils.cuh"
 #include "../inc/empty.h"
 
-//CHECK:void kernel(float *input, const sycl::nd_item<3> &item_ct1, float *smem) {
+//CHECK: __dpct_inline__ void kernel(float *input, const sycl::nd_item<3> &item_ct1, float *smem) {
 __global__ void kernel(float *input) {
   float sum = 0;
   __shared__ float smem[128];
@@ -41,7 +41,7 @@ void foo() {
 }
 
 template <class ReduceOp>
-//CHECK:float WarpReduce(float val, const ReduceOp &op,
+//CHECK:  inline float WarpReduce(float val, const ReduceOp &op,
 //CHECK:const sycl::nd_item<3> &item_ct1) {
 //CHECK-NEXT:  val = op.warp_shfl_down(val, 16, item_ct1);
 __device__ float WarpReduce(float val, const ReduceOp &op) {
@@ -50,7 +50,7 @@ __device__ float WarpReduce(float val, const ReduceOp &op) {
 }
 
 template <size_t num>
-//CHECK:void compute_mode(float *input, const sycl::nd_item<3> &item_ct1) {
+//CHECK: __dpct_inline__ void compute_mode(float *input, const sycl::nd_item<3> &item_ct1) {
 __global__ void compute_mode(float *input) {
   struct MaxOp {
     //CHECK:float warp_shfl_down(float acc, int offset,

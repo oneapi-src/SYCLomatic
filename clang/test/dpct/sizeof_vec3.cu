@@ -40,7 +40,7 @@ void test_char3_using() {
   (void)size;
 }
 
-// CHECK: void char3_shared_kernel(int *a, int *b, int *c) {
+// CHECK: __dpct_inline__ void char3_shared_kernel(int *a, int *b, int *c) {
 // CHECK-NOT: DPCT1083:{{[0-9]+}}: The size of char3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK: }
 __global__ void char3_shared_kernel() {
@@ -110,7 +110,7 @@ void test_uchar3_using() {
   (void)size;
 }
 
-// CHECK: void uchar3_shared_kernel(int *a, int *b, int *c) {
+// CHECK: __dpct_inline__ void uchar3_shared_kernel(int *a, int *b, int *c) {
 // CHECK-NOT: DPCT1083:{{[0-9]+}}: The size of uchar3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK: }
 __global__ void uchar3_shared_kernel() {
@@ -180,7 +180,7 @@ void test_short3_using() {
   (void)size;
 }
 
-// CHECK: void short3_shared_kernel(int *a, int *b, int *c) {
+// CHECK: __dpct_inline__ void short3_shared_kernel(int *a, int *b, int *c) {
 // CHECK-NOT: DPCT1083:{{[0-9]+}}: The size of short3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK: }
 __global__ void short3_shared_kernel() {
@@ -250,7 +250,7 @@ void test_ushort3_using() {
   (void)size;
 }
 
-// CHECK: void ushort3_shared_kernel(int *a, int *b, int *c) {
+// CHECK: __dpct_inline__ void ushort3_shared_kernel(int *a, int *b, int *c) {
 // CHECK-NOT: DPCT1083:{{[0-9]+}}: The size of ushort3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK: }
 __global__ void ushort3_shared_kernel() {
@@ -320,7 +320,7 @@ void test_int3_using() {
   (void)size;
 }
 
-// CHECK: void int3_shared_kernel(int *a, int *b, int *c) {
+// CHECK: __dpct_inline__ void int3_shared_kernel(int *a, int *b, int *c) {
 // CHECK-NOT: DPCT1083:{{[0-9]+}}: The size of int3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK: }
 __global__ void int3_shared_kernel() {
@@ -390,7 +390,7 @@ void test_uint3_using() {
   (void)size;
 }
 
-// CHECK: void uint3_shared_kernel(int *a, int *b, int *c) {
+// CHECK: __dpct_inline__ void uint3_shared_kernel(int *a, int *b, int *c) {
 // CHECK-NOT: DPCT1083:{{[0-9]+}}: The size of uint3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK: }
 __global__ void uint3_shared_kernel() {
@@ -460,7 +460,7 @@ void test_long3_using() {
   (void)size;
 }
 
-// CHECK: void long3_shared_kernel(int *a, int *b, int *c) {
+// CHECK: __dpct_inline__ void long3_shared_kernel(int *a, int *b, int *c) {
 // CHECK-NOT: DPCT1083:{{[0-9]+}}:The size of long3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK: }
 __global__ void long3_shared_kernel() {
@@ -530,7 +530,7 @@ void test_ulong3_using() {
   (void)size;
 }
 
-// CHECK: void ulong3_shared_kernel(int *a, int *b, int *c) {
+// CHECK: __dpct_inline__ void ulong3_shared_kernel(int *a, int *b, int *c) {
 // CHECK-NOT: DPCT1083:{{[0-9]+}}: The size of ulong3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK: }
 __global__ void ulong3_shared_kernel() {
@@ -600,7 +600,7 @@ void test_longlong3_using() {
   (void)size;
 }
 
-// CHECK: void longlong3_shared_kernel(int *a, int *b, int *c) {
+// CHECK: __dpct_inline__ void longlong3_shared_kernel(int *a, int *b, int *c) {
 // CHECK-NOT: DPCT1083:{{[0-9]+}}: The size of longlong3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK: }
 __global__ void longlong3_shared_kernel() {
@@ -670,7 +670,7 @@ void test_ulonglong3_using() {
   (void)size;
 }
 
-// CHECK: void ulonglong3_shared_kernel(int *a, int *b, int *c) {
+// CHECK: __dpct_inline__ void ulonglong3_shared_kernel(int *a, int *b, int *c) {
 // CHECK-NOT: DPCT1083:{{[0-9]+}}: The size of ulonglong3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK: }
 __global__ void ulonglong3_shared_kernel() {
@@ -741,7 +741,7 @@ void test_float3_using() {
   (void)size;
 }
 
-// CHECK: void float3_shared_kernel(int *a, int *b, int *c) {
+// CHECK: __dpct_inline__ void float3_shared_kernel(int *a, int *b, int *c) {
 // CHECK-NOT: DPCT1083:{{[0-9]+}}: The size of float3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK: }
 __global__ void float3_shared_kernel() {
@@ -811,7 +811,7 @@ void test_double3_using() {
   (void)size;
 }
 
-// CHECK: void double3_shared_kernel(int *a, int *b, int *c) {
+// CHECK: __dpct_inline__ void double3_shared_kernel(int *a, int *b, int *c) {
 // CHECK-NOT: DPCT1083:{{[0-9]+}}: The size of double3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK: }
 __global__ void double3_shared_kernel() {

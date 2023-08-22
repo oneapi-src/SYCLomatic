@@ -32,7 +32,7 @@ __global__ void gpu_ptx(int *d_ptr, int length) {
   }
 }
 
-// CHECK: void asm_only(const sycl::nd_item<3> &item_ct1) {
+// CHECK: __dpct_inline__ void asm_only(const sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT:  unsigned laneid;
 // CHECK-NEXT:  laneid = item_ct1.get_sub_group().get_local_linear_id();
 // CHECK-EMPTY:
@@ -134,7 +134,7 @@ __device__ void setp() {
       : "=f"(y) : "f"(x), "r"(a), "r"(b));
 }
 
-// CHECK:void mov() {
+// CHECK: void mov() {
 // CHECK-NEXT: unsigned p;
 // CHECK-NEXT: double d;
 // CHECK-NEXT: float f;
