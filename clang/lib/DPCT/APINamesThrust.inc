@@ -821,6 +821,33 @@ CONDITIONAL_FACTORY_ENTRY(
 // thrust::cuda_category
 CALL_FACTORY_ENTRY("thrust::cuda_category", CALL("std::generic_category"))
 
+// thrust::system::cuda_category
+CALL_FACTORY_ENTRY("thrust::system::cuda_category", CALL("std::generic_category"))
+
+// thrust::generic_category
+CALL_FACTORY_ENTRY("thrust::generic_category", CALL("std::generic_category"))
+
+// thrust::system::generic_category
+CALL_FACTORY_ENTRY("thrust::system::generic_category", CALL("std::generic_category"))
+
+// thrust::system::make_error_code
+CALL_FACTORY_ENTRY("thrust::system::make_error_code", CALL("std::make_error_code", ARG(0)))
+
+// thrust::make_error_code
+CALL_FACTORY_ENTRY("thrust::make_error_code", CALL("std::make_error_code", ARG(0)))
+
+// thrust::system::make_error_condition
+CALL_FACTORY_ENTRY("thrust::system::make_error_condition", CALL("std::make_error_condition", ARG(0)))
+
+// thrust::make_error_condition
+CALL_FACTORY_ENTRY("thrust::make_error_condition", CALL("std::make_error_condition", ARG(0)))
+
+// thrust::system_category
+CALL_FACTORY_ENTRY("thrust::system_category", CALL("std::system_category"))
+
+// thrust::system::system_category
+CALL_FACTORY_ENTRY("thrust::system::system_category", CALL("std::system_category"))
+
 // thrust::equal_range
 thrustFactory("thrust::equal_range",
               {{4,PolicyState::HasPolicy,2,MapNames::getDpctNamespace()+"equal_range", HelperFeatureEnum::device_ext},
@@ -847,7 +874,7 @@ thrustFactory("thrust::sort",
 thrustFactory("thrust::reduce",
               {{3,PolicyState::HasPolicy,2,"std::reduce", HelperFeatureEnum::none},
                {2,PolicyState::NoPolicy, 2,"std::reduce", HelperFeatureEnum::none},
-               {4,PolicyState::HasPolicy,2,"std::reducet", HelperFeatureEnum::none},
+               {4,PolicyState::HasPolicy,2,"std::reduce", HelperFeatureEnum::none},
                {3,PolicyState::NoPolicy, 2,"std::reduce", HelperFeatureEnum::none},
                {5,PolicyState::HasPolicy,2,"std::reduce", HelperFeatureEnum::none},
                {4,PolicyState::NoPolicy, 2,"std::reduce", HelperFeatureEnum::none}}),
@@ -1122,3 +1149,7 @@ thrustFactory("thrust::swap_ranges",
 thrustFactory("thrust::uninitialized_fill_n",
               {{4,PolicyState::HasPolicy,1,"oneapi::dpl::uninitialized_fill_n", HelperFeatureEnum::none},
                {3,PolicyState::NoPolicy, 1,"oneapi::dpl::uninitialized_fill_n", HelperFeatureEnum::none}}),
+
+// thrust::detail::vector_equal
+thrustFactory("thrust::detail::vector_equal",
+              {{3,PolicyState::NoPolicy,3,"oneapi::dpl::equal", HelperFeatureEnum::none}}),

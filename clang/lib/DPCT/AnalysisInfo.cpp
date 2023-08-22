@@ -51,8 +51,10 @@ std::unordered_set<std::string> DpctGlobalInfo::ChangeExtensions = {};
 std::string DpctGlobalInfo::CudaPath = std::string();
 std::string DpctGlobalInfo::RuleFile = std::string();
 UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
+clang::CudaVersion DpctGlobalInfo::SDKVersion = clang::CudaVersion::UNKNOWN;
 bool DpctGlobalInfo::NeedDpctDeviceExt = false;
 bool DpctGlobalInfo::IsIncMigration = true;
+bool DpctGlobalInfo::IsQueryAPIMapping = false;
 unsigned int DpctGlobalInfo::AssumedNDRangeDim = 3;
 std::unordered_set<std::string> DpctGlobalInfo::PrecAndDomPairSet;
 format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
@@ -85,7 +87,7 @@ std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
 std::map<std::string, std::string>
     DpctGlobalInfo::FunctionCallInMacroMigrateRecord;
 std::map<std::string, SourceLocation> DpctGlobalInfo::EndOfEmptyMacros;
-std::map<std::string, SourceLocation> DpctGlobalInfo::BeginOfEmptyMacros;
+std::map<std::string, unsigned int> DpctGlobalInfo::BeginOfEmptyMacros;
 std::map<std::string, bool> DpctGlobalInfo::MacroDefines;
 std::set<std::string> DpctGlobalInfo::IncludingFileSet;
 std::set<std::string> DpctGlobalInfo::FileSetInCompiationDB;
@@ -112,7 +114,6 @@ std::unordered_map<std::string, DpctGlobalInfo::TempVariableDeclCounter>
     DpctGlobalInfo::TempVariableDeclCounterMap;
 std::unordered_map<std::string, int> DpctGlobalInfo::TempVariableHandledMap;
 bool DpctGlobalInfo::UsingDRYPattern = true;
-bool DpctGlobalInfo::UsingGenericSpace = true;
 unsigned int DpctGlobalInfo::CudaKernelDimDFIIndex = 1;
 std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CudaKernelDimDFIMap;
@@ -1152,6 +1153,8 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
       OS << "#define DPCT_PROFILING_ENABLED" << getNL();
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
       OS << "#define DPCT_USM_LEVEL_NONE" << getNL();
+    if (!RTVersionValue.empty())
+      OS << "#define DPCT_COMPAT_RT_VERSION " << RTVersionValue << getNL();
     concatHeader(OS, getHeaderSpelling(Type));
     concatHeader(OS, getHeaderSpelling(HT_DPCT_Dpct));
     HeaderInsertedBitMap[HT_DPCT_Dpct] = true;
@@ -2285,7 +2288,7 @@ void deduceTemplateArgumentFromType(std::vector<TemplateArgumentInfo> &TAIList,
       setTypeTemplateArgument(
           TAIList, PARM_TYPE_CAST(TemplateTypeParmType)->getIndex(), TL);
     } else {
-      ArgType.removeLocalCVRQualifiers(ParmType.getCVRQualifiers());
+      ArgType.removeLocalFastQualifiers(ParmType.getCVRQualifiers());
       setTypeTemplateArgument(
           TAIList, PARM_TYPE_CAST(TemplateTypeParmType)->getIndex(), ArgType);
     }
@@ -2723,6 +2726,14 @@ void CallFunctionExpr::buildInfo() {
     FuncInfo->setNeedSyclExternMacro();
   }
 
+  if (DpctGlobalInfo::isOptimizeMigration() && !FuncInfo->isInlined() &&
+      !FuncInfo->IsSyclExternMacroNeeded()) {
+    if (FuncInfo->isKernel())
+      FuncInfo->setForceInlineDevFunc();
+    else
+      FuncInfo->setAlwaysInlineDevFunc();
+  }
+
   FuncInfo->buildInfo();
   VarMap.merge(FuncInfo->getVarMap(), TemplateArgs);
   mergeTextureObjectInfo();
@@ -2960,6 +2971,11 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
 
   if (FuncInfo->IsAlwaysInlineDevFunc()) {
     std::string StrRepl = "inline ";
+    DpctGlobalInfo::getInstance().addReplacement(
+      std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl, nullptr));
+  }
+  if (FuncInfo->IsForceInlineDevFunc()) {
+    std::string StrRepl = "__dpct_inline__ ";
     DpctGlobalInfo::getInstance().addReplacement(
       std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl, nullptr));
   }
@@ -3413,8 +3429,7 @@ MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
                 ? (Var->getStorageClass() == SC_Extern ? Extern : Local)
                 : Global),
       PointerAsArray(false) {
-  if (getType()->isPointer() && getScope() == Global &&
-      DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+  if (isTreatPointerAsArray()) {
     Attr = Device;
     getType()->adjustAsMemType();
     PointerAsArray = true;
@@ -3817,6 +3832,7 @@ void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
     return setTypeInfo(TYPELOC_CAST(QualifiedTypeLoc).getUnqualifiedLoc(),
                        NeedSizeFold);
   case TypeLoc::ConstantArray:
+    IsArray = true;
     return setArrayInfo(TYPELOC_CAST(ConstantArrayTypeLoc), NeedSizeFold);
   case TypeLoc::DependentSizedArray:
     return setArrayInfo(TYPELOC_CAST(DependentSizedArrayTypeLoc), NeedSizeFold);

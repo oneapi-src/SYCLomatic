@@ -321,9 +321,7 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E, Source
                              SM.getCharacterData(BeginLoc);
 
   auto EndLocWithoutPostfix = SM.getExpansionLoc(EndLoc);
-  EndLoc = SM.getExpansionLoc(getEndLocOfFollowingEmptyMacro(EndLoc));
-  auto RewritePostfixLength =
-      SM.getCharacterData(EndLoc) - SM.getCharacterData(EndLocWithoutPostfix);
+  unsigned int RewritePostfixLength = getEndLocOfFollowingEmptyMacro(EndLoc);
 
   if (Loc)
     *Loc = BeginLoc;
@@ -458,6 +456,14 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
             Qualifier->getAsNamespace()->getBeginLoc())) {
       CTSName = getNestedNameSpecifierString(Qualifier) +
                 DRE->getNameInfo().getAsString();
+    } else if (Qualifier->getAsNamespace() &&
+               Qualifier->getAsNamespace()->getName() == "wmma" &&
+               dpct::DpctGlobalInfo::isInCudaPath(
+                   Qualifier->getAsNamespace()->getBeginLoc())) {
+      if (const auto *NSD =
+              dyn_cast<NamespaceDecl>(Qualifier->getAsNamespace())) {
+        CTSName = getNameSpace(NSD) + "::" + DRE->getNameInfo().getAsString();
+      }
     } else if (!IsNamespaceOrAlias || !IsSpecicalAPI) {
       CTSName = getNestedNameSpecifierString(Qualifier) +
                 DRE->getNameInfo().getAsString();
@@ -583,7 +589,6 @@ void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
 }
 
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
-
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
     std::string ArgsString;
     llvm::raw_string_ostream OS(ArgsString);
@@ -682,7 +687,6 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       {"__cuda_builtin_blockDim_t", "get_local_range"},
       {"__cuda_builtin_threadIdx_t", "get_local_id"},
   };
-
   auto ItemItr = NdItemMap.find(BaseType);
   if (ItemItr != NdItemMap.end()) {
     if (MapNames::replaceName(NdItemMemberMap, FieldName)) {
@@ -734,7 +738,6 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
     }
   } else if (MapNames::SupportedVectorTypes.find(BaseType) !=
              MapNames::SupportedVectorTypes.end()) {
-
     // Skip user-defined type.
     if (isTypeInAnalysisScope(ME->getBase()->getType().getTypePtr()))
       return;
@@ -746,7 +749,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       Begin = ME->getMemberLoc();
       isImplicit = true;
     }
-    if (*BaseType.rbegin() == '1') {
+    if (*BaseType.rbegin() == '1' || BaseType == "__half_raw") {
       if (isImplicit) {
         // "x" is migrated to "*this".
         addReplacement(Begin, ME->getEndLoc(), "*this");
@@ -848,6 +851,7 @@ void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
 // Precondition: CE != nullptr
 void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   // To set the RefString
+  RefString.clear();
   dispatch(CE->getCallee());
   // If the callee requires rewrite, get the rewriter
   if (!CallExprRewriterFactoryBase::RewriterMap)
@@ -1040,7 +1044,9 @@ void ExprAnalysis::analyzeExpr(const DeclStmt *DS) {
   }
 }
 
-void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
+void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
+                               const DependentNameTypeLoc *DNTL,
+                               const NestedNameSpecifierLoc *NNSL) {
   SourceRange SR = TL.getSourceRange();
   std::string TyName;
 
@@ -1056,7 +1062,12 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
         SR = TL.getSourceRange();
     }
   }
-
+  if (DNTL) {
+    SR.setBegin(DNTL->getQualifierLoc().getBeginLoc());
+  }
+  if (NNSL) {
+    SR.setBegin(NNSL->getBeginLoc());
+  }
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
   switch (TL.getTypeLocClass()) {
   case TypeLoc::Qualified:
@@ -1069,13 +1080,8 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
   case TypeLoc::Typedef:
   case TypeLoc::Builtin:
   case TypeLoc::Using:
+  case TypeLoc::Elaborated:
   case TypeLoc::Record: {
-    if (TyName.find("cub") == std::string::npos &&
-        TL.getTypeLocClass() == TypeLoc::Typedef) {
-      TyName +=
-          TYPELOC_CAST(TypedefTypeLoc).getTypedefNameDecl()->getName().str();
-      break;
-    }
     TyName = DpctGlobalInfo::getTypeName(TL.getType());
     auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TyName);
     if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
@@ -1109,11 +1115,24 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
       auto Result = Rewriter->rewrite();
       if (Result.has_value()) {
         auto ResultStr = Result.value();
-        // Since Parser splits ">>" or ">>>" to ">" when parse template
-        // the SR.getEnd location might be a "scratch space" location.
-        // Therfore, need to apply SM.getExpansionLoc before call addReplacement.
-        addReplacement(SM.getExpansionLoc(SR.getBegin()),
-                       SM.getExpansionLoc(SR.getEnd()), CSCE, ResultStr);
+        if (SM.isWrittenInScratchSpace(SR.getEnd())) {
+          // Since Parser splits ">>" or ">>>" to ">" when parse template
+          // the SR.getEnd location might be a "scratch space" location.
+          // Therfore, need to apply SM.getExpansionLoc before call
+          // addReplacement.
+          addReplacement(SM.getExpansionLoc(SR.getBegin()),
+                         SM.getExpansionLoc(SR.getEnd()), CSCE, ResultStr);
+        } else {
+          // To handle case like:
+          // #define TM thrust::multiplies<int>()
+          // thrust::adjacent_difference(A.begin(), A.end(), R.begin(), TM);
+          // to:
+          // #define TM std::multiplies<int>()
+          // oneapi::dpl::adjacent_difference(..., TM);
+          auto DefRange = getDefinitionRange(SR.getBegin(), SR.getEnd());
+          addReplacement(DefRange.getBegin(), DefRange.getEnd(), CSCE,
+                         ResultStr);
+        }
         return;
       }
     }

@@ -25,10 +25,10 @@ void clang::dpct::WMMARule::registerMatcher(ast_matchers::MatchFinder &MF) {
                              hasDeclContext(namespaceDecl(hasName("wmma")))))))
                     .bind("call"),
                 this);
-  MF.addMatcher(declRefExpr(to(enumConstantDecl(
-                                allOf(hasAnyName("mem_row_major"),
-                                      hasType(enumDecl(hasDeclContext(
-                                          namespaceDecl(hasName("wmma")))))))))
+  MF.addMatcher(declRefExpr(to(enumConstantDecl(allOf(
+                                hasAnyName("mem_row_major", "mem_col_major"),
+                                hasType(enumDecl(hasDeclContext(
+                                    namespaceDecl(hasName("wmma")))))))))
                     .bind("enum"),
                 this);
 }

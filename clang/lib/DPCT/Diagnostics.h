@@ -140,13 +140,13 @@ static inline SourceLocation getStartOfLine(SourceLocation Loc,
   auto Buffer = SM.getBufferData(LocInfo.first);
   auto NLPos = Buffer.find_last_of('\n', LocInfo.second);
   auto Skip = 1;
-  while (NLPos != StringRef::npos) {
+  while (NLPos && (NLPos != StringRef::npos)) {
     if (Buffer[NLPos - 1] == '\r') {
       --NLPos;
       Skip = 2;
     }
 
-    if (Buffer[NLPos - 1] == '\\')
+    if (NLPos && (Buffer[NLPos - 1] == '\\'))
       NLPos = Buffer.find_last_of('\n', NLPos - 1);
     else
       break;
@@ -290,6 +290,8 @@ bool report(const std::string &FileAbsPath, unsigned int Offset, IDTy MsgID,
 template <typename IDTy, typename... Ts>
 inline bool report(SourceLocation SL, IDTy MsgID,
             TransformSetTy *TS, bool UseTextBegin, Ts &&... Vals) {
+  if (DpctGlobalInfo::isQueryAPIMapping())
+    return true;
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   if (SL.isMacroID() && !SM.isMacroArgExpansion(SL)) {
     auto ItMatch = dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().find(
