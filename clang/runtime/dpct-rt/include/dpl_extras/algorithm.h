@@ -9,8 +9,8 @@
 #ifndef __DPCT_ALGORITHM_H__
 #define __DPCT_ALGORITHM_H__
 
-#include <oneapi/dpl/execution>
 #include <oneapi/dpl/algorithm>
+#include <oneapi/dpl/execution>
 #include <oneapi/dpl/numeric>
 
 #include "functional.h"
@@ -70,7 +70,7 @@ remove_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
   __buffer<ValueType> _tmp(std::distance(first, last));
 
   auto end = std::copy_if(
-      std::forward<Policy>(policy), make_zip_iterator(first, mask),
+      policy, make_zip_iterator(first, mask),
       make_zip_iterator(last, mask + std::distance(first, last)),
       make_zip_iterator(_tmp.get(), oneapi::dpl::discard_iterator()),
       internal::negate_predicate_key_fun<Pred>(p));
@@ -213,7 +213,7 @@ Iter partition_point(Policy &&policy, Iter first, Iter last, Pred p) {
       std::is_same<typename std::iterator_traits<Iter>::iterator_category,
                    std::random_access_iterator_tag>::value,
       "Iterators passed to algorithms must be random-access iterators.");
-  if (std::is_partitioned(std::forward<Policy>(policy), first, last, p))
+  if (std::is_partitioned(policy, first, last, p))
     return std::find_if_not(std::forward<Policy>(policy), first, last, p);
   else
     return first;
@@ -370,7 +370,7 @@ void scatter_if(Policy &&policy, InputIter1 first, InputIter1 last,
               std::random_access_iterator_tag>::value,
       "Iterators passed to algorithms must be random-access iterators.");
   transform_if(
-      policy, first, last, mask,
+      ::std::forward<Policy>(policy), first, last, mask,
       oneapi::dpl::make_permutation_iterator(result, map),
       [=](auto &&v) { return v; }, [=](auto &&m) { return pred(m); });
 }
@@ -406,7 +406,7 @@ OutputIter gather_if(Policy &&policy, InputIter1 map_first, InputIter1 map_last,
   const int n = std::distance(map_first, map_last);
 
   return transform_if(
-      policy, perm_begin, perm_begin + n, mask, result,
+      ::std::forward<Policy>(policy), perm_begin, perm_begin + n, mask, result,
       [=](auto &&v) { return v; }, [=](auto &&m) { return pred(m); });
 }
 
@@ -943,8 +943,7 @@ stable_partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
   internal::__buffer<typename std::iterator_traits<Iter1>::value_type> _tmp(
       std::distance(first, last));
 
-  std::copy(std::forward<Policy>(policy), mask,
-            mask + std::distance(first, last), _tmp.get());
+  std::copy(policy, mask, mask + std::distance(first, last), _tmp.get());
 
   auto ret_val =
       std::stable_partition(std::forward<Policy>(policy),
@@ -970,8 +969,7 @@ stable_partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
   std::vector<typename std::iterator_traits<Iter1>::value_type> _tmp(
       std::distance(first, last));
 
-  std::copy(std::forward<Policy>(policy), mask,
-            mask + std::distance(first, last), _tmp.begin());
+  std::copy(policy, mask, mask + std::distance(first, last), _tmp.begin());
 
   auto ret_val = std::stable_partition(
       std::forward<Policy>(policy),
@@ -1211,21 +1209,20 @@ inline void segmented_sort_pairs_by_parallel_sorts(
   ::std::vector<offset_type> host_accessible_offset_starts(nsegments);
   ::std::vector<offset_type> host_accessible_offset_ends(nsegments);
   // make offsets accessible on host
-  ::std::copy(::std::forward<Policy>(policy), begin_offsets,
-              begin_offsets + nsegments, host_accessible_offset_starts.begin());
-  ::std::copy(::std::forward<Policy>(policy), end_offsets,
-              end_offsets + nsegments, host_accessible_offset_ends.begin());
+  ::std::copy(policy, begin_offsets, begin_offsets + nsegments,
+              host_accessible_offset_starts.begin());
+  ::std::copy(policy, end_offsets, end_offsets + nsegments,
+              host_accessible_offset_ends.begin());
 
   for (::std::uint64_t i = 0; i < nsegments; i++) {
     ::std::uint64_t segment_begin = host_accessible_offset_starts[i];
     ::std::uint64_t segment_end =
         ::std::min(n, (::std::int64_t)host_accessible_offset_ends[i]);
     if (segment_begin < segment_end) {
-      ::dpct::sort_pairs(::std::forward<Policy>(policy),
-                         keys_in + segment_begin, keys_out + segment_begin,
-                         values_in + segment_begin, values_out + segment_begin,
-                         segment_end - segment_begin, descending, begin_bit,
-                         end_bit);
+      ::dpct::sort_pairs(
+          policy, keys_in + segment_begin, keys_out + segment_begin,
+          values_in + segment_begin, values_out + segment_begin,
+          segment_end - segment_begin, descending, begin_bit, end_bit);
     }
   }
 }
@@ -1241,17 +1238,17 @@ inline void segmented_sort_keys_by_parallel_sorts(
   ::std::vector<offset_type> host_accessible_offset_starts(nsegments);
   ::std::vector<offset_type> host_accessible_offset_ends(nsegments);
   // make offsets accessible on host
-  ::std::copy(::std::forward<Policy>(policy), begin_offsets,
-              begin_offsets + nsegments, host_accessible_offset_starts.begin());
-  ::std::copy(::std::forward<Policy>(policy), end_offsets,
-              end_offsets + nsegments, host_accessible_offset_ends.begin());
+  ::std::copy(policy, begin_offsets, begin_offsets + nsegments,
+              host_accessible_offset_starts.begin());
+  ::std::copy(policy, end_offsets, end_offsets + nsegments,
+              host_accessible_offset_ends.begin());
 
   for (::std::uint64_t i = 0; i < nsegments; i++) {
     ::std::uint64_t segment_begin = host_accessible_offset_starts[i];
     ::std::uint64_t segment_end =
         ::std::min(n, (::std::int64_t)host_accessible_offset_ends[i]);
     if (segment_begin < segment_end) {
-      ::dpct::sort_keys(::std::forward<Policy>(policy), keys_in + segment_begin,
+      ::dpct::sort_keys(policy, keys_in + segment_begin,
                         keys_out + segment_begin, segment_end - segment_begin,
                         descending, begin_bit, end_bit);
     }
@@ -1401,12 +1398,11 @@ inline void segmented_sort_keys_by_two_pair_sorts(
   using key_t_value_t = typename ::std::iterator_traits<Iter1>::value_type;
   sycl::buffer<key_t_value_t, 1> keys_temp{sycl::range<1>(n)};
 
-  mark_segments(::std::forward<Policy>(policy), begin_offsets, end_offsets, n,
-                nsegments, segments);
+  mark_segments(policy, begin_offsets, end_offsets, n, nsegments, segments);
 
   // Part 1: Sort by keys keeping track of which segment were in
-  dpct::sort_pairs(::std::forward<Policy>(policy), keys_in,
-                   oneapi::dpl::begin(keys_temp), oneapi::dpl::begin(segments),
+  dpct::sort_pairs(policy, keys_in, oneapi::dpl::begin(keys_temp),
+                   oneapi::dpl::begin(segments),
                    oneapi::dpl::begin(segments_sorted), n, descending);
 
   // Part 2: Sort the segments with a stable sort to get back sorted segments.
@@ -1434,16 +1430,14 @@ inline void segmented_sort_pairs_by_two_pair_sorts(
   using value_t_value_t = typename ::std::iterator_traits<Iter3>::value_type;
   sycl::buffer<value_t_value_t, 1> values_temp{sycl::range<1>(n)};
 
-  mark_segments(::std::forward<Policy>(policy), begin_offsets, end_offsets, n,
-                nsegments, segments);
+  mark_segments(policy, begin_offsets, end_offsets, n, nsegments, segments);
 
   auto zip_seg_vals =
       oneapi::dpl::make_zip_iterator(oneapi::dpl::begin(segments), values_in);
   auto zip_seg_vals_out = oneapi::dpl::make_zip_iterator(
       oneapi::dpl::begin(segments_sorted), oneapi::dpl::begin(values_temp));
   // Part 1: Sort by keys keeping track of which segment were in
-  dpct::sort_pairs(::std::forward<Policy>(policy), keys_in,
-                   oneapi::dpl::begin(keys_temp), zip_seg_vals,
+  dpct::sort_pairs(policy, keys_in, oneapi::dpl::begin(keys_temp), zip_seg_vals,
                    zip_seg_vals_out, n, descending);
 
   auto zip_keys_vals = oneapi::dpl::make_zip_iterator(
@@ -1658,7 +1652,7 @@ inline void reduce_argmax(Policy &&policy, Iter1 input, Iter2 output,
                           ::std::size_t n) {
   dpct::arg_index_input_iterator<decltype(input), int> input_arg_idx(input);
   auto ret = ::std::max_element(
-      ::std::forward<Policy>(policy), input_arg_idx, input_arg_idx + n,
+      policy, input_arg_idx, input_arg_idx + n,
       [](const auto &a, const auto &b) { return (a.value < b.value); });
   ::std::copy(::std::forward<Policy>(policy), ret, ret + 1, output);
 }
@@ -1668,7 +1662,7 @@ inline void reduce_argmin(Policy &&policy, Iter1 input, Iter2 output,
                           ::std::size_t n) {
   dpct::arg_index_input_iterator<decltype(input), int> input_arg_idx(input);
   auto ret = ::std::min_element(
-      ::std::forward<Policy>(policy), input_arg_idx, input_arg_idx + n,
+      policy, input_arg_idx, input_arg_idx + n,
       [](const auto &a, const auto &b) { return (a.value < b.value); });
   ::std::copy(::std::forward<Policy>(policy), ret, ret + 1, output);
 }
