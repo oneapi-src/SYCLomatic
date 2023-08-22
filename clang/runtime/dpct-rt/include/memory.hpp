@@ -240,9 +240,9 @@ static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y, size_t z,
 /// \param value Value to be set.
 /// \param size Number of bytes to be set to the value.
 /// \returns An event representing the memset operation.
-template<typename valueT>
+template <typename valueT>
 static inline sycl::event dpct_memset(sycl::queue &q, void *dev_ptr,
-                                          valueT value, size_t size) {
+                                      valueT value, size_t size) {
 #ifdef DPCT_USM_LEVEL_NONE
   auto &mm = mem_mgr::instance();
   assert(mm.is_device_ptr(dev_ptr));
@@ -252,9 +252,11 @@ static inline sycl::event dpct_memset(sycl::queue &q, void *dev_ptr,
   return q.submit([&](sycl::handler &cgh) {
     auto r = sycl::range<1>(size);
     auto o = sycl::id<1>(offset);
+    auto new_buffer = alloc.buffer.reinterpret<valueT>(
+        sycl::range<1>(alloc.size / sizeof(valueT)));
     sycl::accessor<valueT, 1, sycl::access_mode::write,
-                       sycl::access::target::device>
-        acc(alloc.buffer, cgh, r, o);
+                   sycl::access::target::device>
+        acc(new_buffer, cgh, r, o);
     cgh.fill(acc, value);
   });
 #else
