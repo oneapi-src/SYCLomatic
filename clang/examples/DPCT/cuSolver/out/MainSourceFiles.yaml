@@ -1,0 +1,426 @@
+---
+MainSourceFile:  MainSrcFiles_placehold
+Replacements:
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnCpotrfBatched.cu'
+    Offset:          0
+    Length:          24
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n#include <dpct/lapack_utils.hpp>\n#include <complex>\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnCpotrfBatched.cu'
+    Offset:          35
+    Length:          18
+    ReplacementText: 'sycl::queue*'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnCpotrfBatched.cu'
+    Offset:          62
+    Length:          16
+    ReplacementText: 'oneapi::mkl::uplo'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnCpotrfBatched.cu'
+    Offset:          109
+    Length:          9
+    ReplacementText: 'sycl::float2'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnCpotrfBatched.cu'
+    Offset:          176
+    Length:          247
+    ReplacementText: 'dpct::lapack::potrf_batch(*handle, upper_lower, n, a, lda, info, group_count)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnCpotrsBatched.cu'
+    Offset:          0
+    Length:          24
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n#include <dpct/lapack_utils.hpp>\n#include <complex>\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnCpotrsBatched.cu'
+    Offset:          35
+    Length:          18
+    ReplacementText: 'sycl::queue*'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnCpotrsBatched.cu'
+    Offset:          62
+    Length:          16
+    ReplacementText: 'oneapi::mkl::uplo'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnCpotrsBatched.cu'
+    Offset:          119
+    Length:          9
+    ReplacementText: 'sycl::float2'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnCpotrsBatched.cu'
+    Offset:          143
+    Length:          9
+    ReplacementText: 'sycl::float2'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnCpotrsBatched.cu'
+    Offset:          220
+    Length:          235
+    ReplacementText: 'dpct::lapack::potrs_batch(*handle, upper_lower, n, nrhs, a, lda, b, ldb, info, group_count)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnDpotrfBatched.cu'
+    Offset:          0
+    Length:          24
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n#include <dpct/lapack_utils.hpp>\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnDpotrfBatched.cu'
+    Offset:          35
+    Length:          18
+    ReplacementText: 'sycl::queue*'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnDpotrfBatched.cu'
+    Offset:          62
+    Length:          16
+    ReplacementText: 'oneapi::mkl::uplo'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnDpotrfBatched.cu'
+    Offset:          173
+    Length:          244
+    ReplacementText: 'dpct::lapack::potrf_batch(*handle, upper_lower, n, a, lda, info, group_count)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnDpotrsBatched.cu'
+    Offset:          0
+    Length:          24
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n#include <dpct/lapack_utils.hpp>\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnDpotrsBatched.cu'
+    Offset:          35
+    Length:          18
+    ReplacementText: 'sycl::queue*'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnDpotrsBatched.cu'
+    Offset:          62
+    Length:          16
+    ReplacementText: 'oneapi::mkl::uplo'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnDpotrsBatched.cu'
+    Offset:          214
+    Length:          229
+    ReplacementText: 'dpct::lapack::potrs_batch(*handle, upper_lower, n, nrhs, a, lda, b, ldb, info, group_count)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnSpotrfBatched.cu'
+    Offset:          0
+    Length:          24
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n#include <dpct/lapack_utils.hpp>\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnSpotrfBatched.cu'
+    Offset:          35
+    Length:          18
+    ReplacementText: 'sycl::queue*'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnSpotrfBatched.cu'
+    Offset:          62
+    Length:          16
+    ReplacementText: 'oneapi::mkl::uplo'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnSpotrfBatched.cu'
+    Offset:          172
+    Length:          243
+    ReplacementText: 'dpct::lapack::potrf_batch(*handle, upper_lower, n, a, lda, info, group_count)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnSpotrsBatched.cu'
+    Offset:          0
+    Length:          24
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n#include <dpct/lapack_utils.hpp>\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnSpotrsBatched.cu'
+    Offset:          35
+    Length:          18
+    ReplacementText: 'sycl::queue*'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnSpotrsBatched.cu'
+    Offset:          62
+    Length:          16
+    ReplacementText: 'oneapi::mkl::uplo'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnSpotrsBatched.cu'
+    Offset:          212
+    Length:          227
+    ReplacementText: 'dpct::lapack::potrs_batch(*handle, upper_lower, n, nrhs, a, lda, b, ldb, info, group_count)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnZpotrfBatched.cu'
+    Offset:          0
+    Length:          24
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n#include <dpct/lapack_utils.hpp>\n#include <complex>\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnZpotrfBatched.cu'
+    Offset:          35
+    Length:          18
+    ReplacementText: 'sycl::queue*'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnZpotrfBatched.cu'
+    Offset:          62
+    Length:          16
+    ReplacementText: 'oneapi::mkl::uplo'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnZpotrfBatched.cu'
+    Offset:          109
+    Length:          15
+    ReplacementText: 'sycl::double2'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnZpotrfBatched.cu'
+    Offset:          182
+    Length:          253
+    ReplacementText: 'dpct::lapack::potrf_batch(*handle, upper_lower, n, a, lda, info, group_count)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnZpotrsBatched.cu'
+    Offset:          0
+    Length:          24
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n#include <dpct/lapack_utils.hpp>\n#include <complex>\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnZpotrsBatched.cu'
+    Offset:          35
+    Length:          18
+    ReplacementText: 'sycl::queue*'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnZpotrsBatched.cu'
+    Offset:          62
+    Length:          16
+    ReplacementText: 'oneapi::mkl::uplo'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnZpotrsBatched.cu'
+    Offset:          119
+    Length:          15
+    ReplacementText: 'sycl::double2'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnZpotrsBatched.cu'
+    Offset:          149
+    Length:          15
+    ReplacementText: 'sycl::double2'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnZpotrsBatched.cu'
+    Offset:          232
+    Length:          332
+    ReplacementText: 'dpct::lapack::potrs_batch(*handle, upper_lower, n, nrhs, a, lda, b, ldb, info, group_count)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+MainSourceFilesDigest:
+  - MainSourceFile:  '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnCpotrfBatched.cu'
+    Digest:          bafdce23f5bc1c2e20ffb1a9ddbfc5c6
+  - MainSourceFile:  '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnCpotrsBatched.cu'
+    Digest:          0aa65b11acd60e5d7abd5b06601774ed
+  - MainSourceFile:  '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnDpotrfBatched.cu'
+    Digest:          00bdbc2d9ba864af83bf55dc02e82159
+  - MainSourceFile:  '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnDpotrsBatched.cu'
+    Digest:          db6821638afe92c2a1f26d52ee5711ac
+  - MainSourceFile:  '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnSpotrfBatched.cu'
+    Digest:          a6368749b1186126dd4c9c7d344513d7
+  - MainSourceFile:  '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnSpotrsBatched.cu'
+    Digest:          f897dcc8746d1e7dd40a059ad5372451
+  - MainSourceFile:  '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnZpotrfBatched.cu'
+    Digest:          f5dea8dd45acfaabf3d3f67894f41029
+  - MainSourceFile:  '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver/cusolverDnZpotrsBatched.cu'
+    Digest:          fa43082962839204c902fd0bfd6d89bd
+DpctVersion:     17.0.0
+MainHelperFileName: ''
+USMLevel:        ''
+FeatureMap:      {}
+CompileTargets:  {}
+OptionMap:
+  AnalysisScopePath:
+    Value:           '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuSolver'
+    Specified:       false
+  AsyncHandler:
+    Value:           'false'
+    Specified:       false
+  CommentsEnabled:
+    Value:           'false'
+    Specified:       false
+  CompilationsDir:
+    Value:           ''
+    Specified:       false
+  CtadEnabled:
+    Value:           'false'
+    Specified:       false
+  EnablepProfiling:
+    Value:           'false'
+    Specified:       false
+  ExperimentalFlag:
+    Value:           '0'
+    Specified:       false
+  ExplicitClNamespace:
+    Value:           'false'
+    Specified:       false
+  ExplicitNamespace:
+    Value:           '20'
+    Specified:       false
+  ExtensionDDFlag:
+    Value:           '0'
+    Specified:       false
+  ExtensionDEFlag:
+    Value:           '4294967295'
+    Specified:       false
+  NDRangeDim:
+    Value:           '3'
+    Specified:       false
+  NoDRYPattern:
+    Value:           'false'
+    Specified:       false
+  NoUseGenericSpace:
+    Value:           ''
+    Specified:       true
+  OptimizeMigration:
+    Value:           'false'
+    Specified:       false
+  ProcessAll:
+    Value:           'false'
+    Specified:       false
+  RuleFile:
+    Value:           ''
+    Specified:       false
+  SyclNamedLambda:
+    Value:           'false'
+    Specified:       false
+  UsmLevel:
+    Value:           '1'
+    Specified:       false
+...

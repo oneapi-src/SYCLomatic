@@ -1,0 +1,522 @@
+---
+MainSourceFile:  MainSrcFiles_placehold
+Replacements:
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftCreate.cu'
+    Offset:          0
+    Length:          19
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n#include <dpct/fft_utils.hpp>\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftCreate.cu'
+    Offset:          30
+    Length:          11
+    ReplacementText: 'dpct::fft::fft_engine_ptr'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftCreate.cu'
+    Offset:          64
+    Length:          35
+    ReplacementText: '*plan = dpct::fft::fft_engine::create()'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftDestroy.cu'
+    Offset:          0
+    Length:          19
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n#include <dpct/fft_utils.hpp>\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftDestroy.cu'
+    Offset:          30
+    Length:          11
+    ReplacementText: 'dpct::fft::fft_engine_ptr'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftDestroy.cu'
+    Offset:          63
+    Length:          34
+    ReplacementText: 'dpct::fft::fft_engine::destroy(plan)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecC2C.cu'
+    Offset:          0
+    Length:          19
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n#include <dpct/fft_utils.hpp>\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecC2C.cu'
+    Offset:          30
+    Length:          11
+    ReplacementText: 'dpct::fft::fft_engine_ptr'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecC2C.cu'
+    Offset:          48
+    Length:          12
+    ReplacementText: 'sycl::float2'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecC2C.cu'
+    Offset:          66
+    Length:          12
+    ReplacementText: 'sycl::float2'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecC2C.cu'
+    Offset:          109
+    Length:          109
+    ReplacementText: 'plan->compute<sycl::float2, sycl::float2>(in, out, dir == 1 ? dpct::fft::fft_direction::backward : dpct::fft::fft_direction::forward)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecC2R.cu'
+    Offset:          0
+    Length:          19
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n#include <dpct/fft_utils.hpp>\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecC2R.cu'
+    Offset:          30
+    Length:          11
+    ReplacementText: 'dpct::fft::fft_engine_ptr'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecC2R.cu'
+    Offset:          48
+    Length:          12
+    ReplacementText: 'sycl::float2'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecC2R.cu'
+    Offset:          66
+    Length:          9
+    ReplacementText: float
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecC2R.cu'
+    Offset:          97
+    Length:          93
+    ReplacementText: 'plan->compute<sycl::float2, float>(in, out, dpct::fft::fft_direction::backward)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecD2Z.cu'
+    Offset:          0
+    Length:          19
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n#include <dpct/fft_utils.hpp>\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecD2Z.cu'
+    Offset:          30
+    Length:          11
+    ReplacementText: 'dpct::fft::fft_engine_ptr'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecD2Z.cu'
+    Offset:          48
+    Length:          15
+    ReplacementText: double
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecD2Z.cu'
+    Offset:          69
+    Length:          18
+    ReplacementText: 'sycl::double2'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecD2Z.cu'
+    Offset:          109
+    Length:          105
+    ReplacementText: 'plan->compute<double, sycl::double2>(in, out, dpct::fft::fft_direction::forward)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecR2C.cu'
+    Offset:          0
+    Length:          19
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n#include <dpct/fft_utils.hpp>\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecR2C.cu'
+    Offset:          30
+    Length:          11
+    ReplacementText: 'dpct::fft::fft_engine_ptr'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecR2C.cu'
+    Offset:          48
+    Length:          9
+    ReplacementText: float
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecR2C.cu'
+    Offset:          63
+    Length:          12
+    ReplacementText: 'sycl::float2'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecR2C.cu'
+    Offset:          97
+    Length:          93
+    ReplacementText: 'plan->compute<float, sycl::float2>(in, out, dpct::fft::fft_direction::forward)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecZ2D.cu'
+    Offset:          0
+    Length:          19
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n#include <dpct/fft_utils.hpp>\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecZ2D.cu'
+    Offset:          30
+    Length:          11
+    ReplacementText: 'dpct::fft::fft_engine_ptr'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecZ2D.cu'
+    Offset:          48
+    Length:          18
+    ReplacementText: 'sycl::double2'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecZ2D.cu'
+    Offset:          72
+    Length:          15
+    ReplacementText: double
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecZ2D.cu'
+    Offset:          109
+    Length:          105
+    ReplacementText: 'plan->compute<sycl::double2, double>(in, out, dpct::fft::fft_direction::backward)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecZ2Z.cu'
+    Offset:          0
+    Length:          19
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n#include <dpct/fft_utils.hpp>\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecZ2Z.cu'
+    Offset:          30
+    Length:          11
+    ReplacementText: 'dpct::fft::fft_engine_ptr'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecZ2Z.cu'
+    Offset:          48
+    Length:          18
+    ReplacementText: 'sycl::double2'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecZ2Z.cu'
+    Offset:          72
+    Length:          18
+    ReplacementText: 'sycl::double2'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecZ2Z.cu'
+    Offset:          131
+    Length:          121
+    ReplacementText: 'plan->compute<sycl::double2, sycl::double2>(in, out, dir == 1 ? dpct::fft::fft_direction::backward : dpct::fft::fft_direction::forward)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftPlan1d.cu'
+    Offset:          0
+    Length:          19
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n#include <dpct/fft_utils.hpp>\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftPlan1d.cu'
+    Offset:          30
+    Length:          11
+    ReplacementText: 'dpct::fft::fft_engine_ptr'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftPlan1d.cu'
+    Offset:          57
+    Length:          9
+    ReplacementText: 'dpct::fft::fft_type'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftPlan1d.cu'
+    Offset:          106
+    Length:          103
+    ReplacementText: '*plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), nx, type, num_of_trans)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftPlan2d.cu'
+    Offset:          0
+    Length:          19
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n#include <dpct/fft_utils.hpp>\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftPlan2d.cu'
+    Offset:          30
+    Length:          11
+    ReplacementText: 'dpct::fft::fft_engine_ptr'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftPlan2d.cu'
+    Offset:          65
+    Length:          9
+    ReplacementText: 'dpct::fft::fft_type'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftPlan2d.cu'
+    Offset:          96
+    Length:          93
+    ReplacementText: '*plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), nx, ny, type)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftPlan3d.cu'
+    Offset:          0
+    Length:          19
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n#include <dpct/fft_utils.hpp>\n"
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftPlan3d.cu'
+    Offset:          30
+    Length:          11
+    ReplacementText: 'dpct::fft::fft_engine_ptr'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftPlan3d.cu'
+    Offset:          73
+    Length:          9
+    ReplacementText: 'dpct::fft::fft_type'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+  - FilePath:        '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftPlan3d.cu'
+    Offset:          104
+    Length:          105
+    ReplacementText: '*plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), nx, ny, nz, type)'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+    BlockLevelFormatFlag: false
+MainSourceFilesDigest:
+  - MainSourceFile:  '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftCreate.cu'
+    Digest:          5904ba88a45f0389e53f2118a39c2bf7
+  - MainSourceFile:  '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftDestroy.cu'
+    Digest:          aab2bd46ab937945e44e997b61593b8a
+  - MainSourceFile:  '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecC2C.cu'
+    Digest:          a06158eaaf25693f2d171a6774122969
+  - MainSourceFile:  '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecC2R.cu'
+    Digest:          30a35fded92400c5b2076400bd4a430b
+  - MainSourceFile:  '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecD2Z.cu'
+    Digest:          60ef8a7788fe4971f7353a49833e138f
+  - MainSourceFile:  '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecR2C.cu'
+    Digest:          aff92ebb291f8138bc3d4e633e702bc4
+  - MainSourceFile:  '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecZ2D.cu'
+    Digest:          84bacd79fc0eca8512adb98955146c9b
+  - MainSourceFile:  '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftExecZ2Z.cu'
+    Digest:          ffaefd86e9d2cea6128640fbba26ac3d
+  - MainSourceFile:  '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftPlan1d.cu'
+    Digest:          40880989dc01be51579780ff4475eb92
+  - MainSourceFile:  '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftPlan2d.cu'
+    Digest:          f4e58603a58422631384628bc8ec0667
+  - MainSourceFile:  '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT/cufftPlan3d.cu'
+    Digest:          740b178fac82d7f6649746fa8ebd76af
+DpctVersion:     17.0.0
+MainHelperFileName: ''
+USMLevel:        ''
+FeatureMap:      {}
+CompileTargets:  {}
+OptionMap:
+  AnalysisScopePath:
+    Value:           '/home/zhiwei/newdisk/monorepo/SYCLomatic/clang/examples/DPCT/cuFFT'
+    Specified:       false
+  AsyncHandler:
+    Value:           'false'
+    Specified:       false
+  CommentsEnabled:
+    Value:           'false'
+    Specified:       false
+  CompilationsDir:
+    Value:           ''
+    Specified:       false
+  CtadEnabled:
+    Value:           'false'
+    Specified:       false
+  EnablepProfiling:
+    Value:           'false'
+    Specified:       false
+  ExperimentalFlag:
+    Value:           '0'
+    Specified:       false
+  ExplicitClNamespace:
+    Value:           'false'
+    Specified:       false
+  ExplicitNamespace:
+    Value:           '20'
+    Specified:       false
+  ExtensionDDFlag:
+    Value:           '0'
+    Specified:       false
+  ExtensionDEFlag:
+    Value:           '4294967295'
+    Specified:       false
+  NDRangeDim:
+    Value:           '3'
+    Specified:       false
+  NoDRYPattern:
+    Value:           'false'
+    Specified:       false
+  NoUseGenericSpace:
+    Value:           ''
+    Specified:       true
+  OptimizeMigration:
+    Value:           'false'
+    Specified:       false
+  ProcessAll:
+    Value:           'false'
+    Specified:       false
+  RuleFile:
+    Value:           ''
+    Specified:       false
+  SyclNamedLambda:
+    Value:           'false'
+    Specified:       false
+  UsmLevel:
+    Value:           '1'
+    Specified:       false
+...
