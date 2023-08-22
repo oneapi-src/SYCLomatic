@@ -1941,6 +1941,7 @@ public:
     path::append(AlgorithmFileInCudaWrapper, Twine("cuda_wrappers"),
                  Twine("algorithm"));
 
+<<<<<<< HEAD
     SmallString<512> AlgorithmFileInCudaWrapperWithUnifiedLayout =
         StringRef(DpctInstallPath);
     path::append(AlgorithmFileInCudaWrapperWithUnifiedLayout, Twine("opt"),
@@ -1959,6 +1960,9 @@ public:
       return false;
     } else if (!IsIntelDeployUnifiedLayout &&
                (AlgorithmFileInCudaWrapper.str().str() == DeclLocFilePath)) {
+=======
+    if (AlgorithmFileInCudaWrapper.str().str() == DeclLocFilePath) {
+>>>>>>> SYCLomatic/SYCLomatic
       return false;
     }
 
