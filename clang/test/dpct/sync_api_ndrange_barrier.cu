@@ -1,3 +1,5 @@
+// UNSUPPORTED: system-linux
+// UNSUPPORTED: system-windows
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none -out-root %T/sync_api_ndrange_barrier %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
