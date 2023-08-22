@@ -96,16 +96,6 @@ int main() {
     ncclGroupStart();
 
     // CHECK:     /*
-    // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of ncclSend is not supported.
-    // CHECK-NEXT: */
-    ncclSend(buff, count, datatype, peer, comm, stream);
-
-    // CHECK:     /*
-    // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of ncclRecv is not supported.
-    // CHECK-NEXT: */
-    ncclRecv(buff, count, datatype, peer, comm, stream);
-
-    // CHECK:     /*
     // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of ncclGroupEnd is not supported.
     // CHECK-NEXT: */
     ncclGroupEnd();
@@ -140,6 +130,12 @@ int main() {
 
     // CHECK: comm->broadcast(buff, buff, count, oneapi::ccl::datatype::int8, rank, stream);
     ncclBcast(buff, count, ncclChar, rank, comm, stream);
+
+    // CHECK: comm->send(buff, count, oneapi::ccl::datatype::int8, rank, stream);
+    ncclSend(buff, count, ncclChar, rank, comm, stream);
+
+    // CHECK: comm->recv(buff, count, oneapi::ccl::datatype::int8, rank, stream);
+    ncclRecv(buff, count, ncclChar, rank, comm, stream);
 
     // CHECK: delete comm;
     ncclCommDestroy(comm);

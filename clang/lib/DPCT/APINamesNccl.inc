@@ -83,3 +83,13 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                         MEMBER_CALL_FACTORY_ENTRY("ncclBcast", ARG(4), true,
                                                   "broadcast", ARG(0),ARG(0), ARG(1),
                                                   ARG(2), ARG(3), ARG(5)))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        MEMBER_CALL_FACTORY_ENTRY("ncclSend", ARG(4), true,
+                                                  "send", ARG(0), ARG(1),
+                                                  ARG(2), ARG(3), ARG(5)))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
+                        MEMBER_CALL_FACTORY_ENTRY("ncclRecv", ARG(4), true,
+                                                  "recv", ARG(0), ARG(1),
+                                                  ARG(2), ARG(3), ARG(5)))
