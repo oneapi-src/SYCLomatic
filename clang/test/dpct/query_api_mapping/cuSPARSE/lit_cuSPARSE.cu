@@ -8,10 +8,6 @@
 // cusparseSpMM_preprocess-NEXT:       computetype /*cudaDataType*/, algo /*cusparseSpMMAlg_t*/,
 // cusparseSpMM_preprocess-NEXT:       workspace /*void **/);
 // cusparseSpMM_preprocess-NEXT: Is migrated to:
-// cusparseSpMM_preprocess-NEXT:   /*
-// cusparseSpMM_preprocess-NEXT:   DPCT1026:0: The call to cusparseSpMM_preprocess was removed because this call
-// cusparseSpMM_preprocess-NEXT:   is redundant in SYCL.
-// cusparseSpMM_preprocess-NEXT:   */
 // cusparseSpMM_preprocess-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseSpMM_bufferSize | FileCheck %s -check-prefix=cusparseSpMM_bufferSize
@@ -36,7 +32,6 @@
 // cusparseSpMM-NEXT:                computetype /*cudaDataType*/, algo /*cusparseSpMMAlg_t*/,
 // cusparseSpMM-NEXT:                workspace /*void **/);
 // cusparseSpMM-NEXT: Is migrated to:
-// cusparseSpMM-NEXT:   dpct::sparse::spmm(*handle, transa, transb, alpha, a, b, beta, c,
-// cusparseSpMM-NEXT:                      computetype);
+// cusparseSpMM-NEXT:   dpct::sparse::spmm(*handle, transa, transb, alpha, a, b, beta, c, computetype);
 // cusparseSpMM-EMPTY:
 

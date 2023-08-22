@@ -5,8 +5,7 @@
 // cusolverDnSpotrsBatched-NEXT:       n /*int*/, nrhs /*int*/, a /*float ***/, lda /*int*/, b /*float ***/,
 // cusolverDnSpotrsBatched-NEXT:       ldb /*int*/, info /*int **/, group_count /*int*/);
 // cusolverDnSpotrsBatched-NEXT: Is migrated to:
-// cusolverDnSpotrsBatched-NEXT:   dpct::lapack::potrs_batch(*handle, upper_lower, n, nrhs, a, lda, b, ldb, info,
-// cusolverDnSpotrsBatched-NEXT:                             group_count);
+// cusolverDnSpotrsBatched-NEXT:   dpct::lapack::potrs_batch(*handle, upper_lower, n, nrhs, a, lda, b, ldb, info, group_count);
 // cusolverDnSpotrsBatched-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusolverDnSpotrfBatched | FileCheck %s -check-prefix=cusolverDnSpotrfBatched
@@ -36,8 +35,7 @@
 // cusolverDnCpotrsBatched-NEXT:       n /*int*/, nrhs /*int*/, a /*cuComplex ***/, lda /*int*/,
 // cusolverDnCpotrsBatched-NEXT:       b /*cuComplex ***/, ldb /*int*/, info /*int **/, group_count /*int*/);
 // cusolverDnCpotrsBatched-NEXT: Is migrated to:
-// cusolverDnCpotrsBatched-NEXT:   dpct::lapack::potrs_batch(*handle, upper_lower, n, nrhs, a, lda, b, ldb, info,
-// cusolverDnCpotrsBatched-NEXT:                             group_count);
+// cusolverDnCpotrsBatched-NEXT:   dpct::lapack::potrs_batch(*handle, upper_lower, n, nrhs, a, lda, b, ldb, info, group_count);
 // cusolverDnCpotrsBatched-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusolverDnZpotrsBatched | FileCheck %s -check-prefix=cusolverDnZpotrsBatched
@@ -48,8 +46,7 @@
 // cusolverDnZpotrsBatched-NEXT:                           b /*cuDoubleComplex ***/, ldb /*int*/, info /*int **/,
 // cusolverDnZpotrsBatched-NEXT:                           group_count /*int*/);
 // cusolverDnZpotrsBatched-NEXT: Is migrated to:
-// cusolverDnZpotrsBatched-NEXT:   dpct::lapack::potrs_batch(*handle, upper_lower, n, nrhs, a, lda, b, ldb, info,
-// cusolverDnZpotrsBatched-NEXT:                             group_count);
+// cusolverDnZpotrsBatched-NEXT:   dpct::lapack::potrs_batch(*handle, upper_lower, n, nrhs, a, lda, b, ldb, info, group_count);
 // cusolverDnZpotrsBatched-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusolverDnDpotrsBatched | FileCheck %s -check-prefix=cusolverDnDpotrsBatched
@@ -59,8 +56,7 @@
 // cusolverDnDpotrsBatched-NEXT:       n /*int*/, nrhs /*int*/, a /*double ***/, lda /*int*/, b /*double ***/,
 // cusolverDnDpotrsBatched-NEXT:       ldb /*int*/, info /*int **/, group_count /*int*/);
 // cusolverDnDpotrsBatched-NEXT: Is migrated to:
-// cusolverDnDpotrsBatched-NEXT:   dpct::lapack::potrs_batch(*handle, upper_lower, n, nrhs, a, lda, b, ldb, info,
-// cusolverDnDpotrsBatched-NEXT:                             group_count);
+// cusolverDnDpotrsBatched-NEXT:   dpct::lapack::potrs_batch(*handle, upper_lower, n, nrhs, a, lda, b, ldb, info, group_count);
 // cusolverDnDpotrsBatched-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusolverDnZpotrfBatched | FileCheck %s -check-prefix=cusolverDnZpotrfBatched
