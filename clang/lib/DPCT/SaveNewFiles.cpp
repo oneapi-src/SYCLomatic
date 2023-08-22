@@ -14,7 +14,6 @@
 #include "GenMakefile.h"
 #include "Statics.h"
 
-#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
