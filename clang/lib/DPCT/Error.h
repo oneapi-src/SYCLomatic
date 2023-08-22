@@ -52,6 +52,7 @@ enum ProcessStatus {
   MigrationErrorInvalidAnalysisScope = -40,
   MigrationErrorInvalidChangeFilenameExtension = -41,
   MigrationErrorConflictOptions = -42,
+  MigrationErrorNoAPIMapping = -43,
 };
 
 namespace clang {

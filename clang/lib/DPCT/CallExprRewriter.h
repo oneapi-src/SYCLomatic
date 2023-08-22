@@ -956,16 +956,21 @@ public:
 template <class TypeInfoT, class SubExprT> class CastExprPrinter {
   TypeInfoT TypeInfo;
   SubExprT SubExpr;
+  bool ExtraParen;
 
 public:
-  CastExprPrinter(TypeInfoT &&T, SubExprT &&S)
+  CastExprPrinter(TypeInfoT &&T, SubExprT &&S, bool EP = false)
       : TypeInfo(std::forward<TypeInfoT>(T)),
-        SubExpr(std::forward<SubExprT>(S)) {}
+        SubExpr(std::forward<SubExprT>(S)), ExtraParen(EP) {}
   template <class StreamT> void print(StreamT &Stream) const {
     Stream << "(";
     dpct::print(Stream, TypeInfo);
     Stream << ")";
+    if(ExtraParen)
+      Stream << "(";
     dpct::print(Stream, SubExpr);
+    if(ExtraParen)
+      Stream << ")";
   }
 };
 

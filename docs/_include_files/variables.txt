@@ -29,6 +29,5 @@
 .. |ccl| replace:: oneCCL
 
 .. |dpcpp_compiler| replace:: Intel® oneAPI DPC++/C++ Compiler
-
 .. _dpcpp_compiler: https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler.html
 

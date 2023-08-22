@@ -110,6 +110,35 @@ FEATURE_REQUEST_FACTORY(
                                         "deprecated::usm_host_allocator"),
                                     TEMPLATE_ARG(0))))
 
+TYPE_REWRITE_ENTRY("thrust::detail::enable_if",
+                    TYPE_FACTORY(STR("std::enable_if"),
+                                TEMPLATE_ARG(0), TEMPLATE_ARG(1)))
+
+TYPE_REWRITE_ENTRY("thrust::detail::is_same",
+                    TYPE_FACTORY(STR("std::is_same"),
+                                TEMPLATE_ARG(0), TEMPLATE_ARG(1)))
+
+TYPE_REWRITE_ENTRY("thrust::detail::integral_constant",
+                    TYPE_FACTORY(STR("std::integral_constant"),
+                                TEMPLATE_ARG(0), TEMPLATE_ARG(1)))
+
+TYPE_REWRITE_ENTRY("thrust::detail::true_type",
+                    TYPE_FACTORY(STR("std::true_type")))
+
+TYPE_REWRITE_ENTRY("thrust::detail::false_type",
+                    TYPE_FACTORY(STR("std::false_type")))
+
+TYPE_REWRITE_ENTRY("thrust::system::detail::bad_alloc",
+                    TYPE_FACTORY(STR("std::bad_alloc")))
+
+TYPE_REWRITE_ENTRY("thrust::iterator_traits",
+                    TYPE_FACTORY(STR("oneapi::dpl::iterator_traits"),
+                                 TEMPLATE_ARG(0)))
+
+TYPE_REWRITE_ENTRY("thrust::detail::vector_base",
+                    TYPE_FACTORY(STR("dpct::device_vector"),
+                                 TEMPLATE_ARG(0), TEMPLATE_ARG(1)))
+
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     TYPE_REWRITE_ENTRY("thrust::cuda::experimental::pinned_allocator",
@@ -136,6 +165,12 @@ TYPE_REWRITE_ENTRY(
 TYPE_REWRITE_ENTRY("thrust::system::system_error",
                    TYPE_FACTORY(STR("std::system_error")))
 
+// thrust::system::error_code
+TYPE_REWRITE_ENTRY("thrust::system::error_code", TYPE_FACTORY(STR("std::error_code")))
+
+// thrust::system::error_condition
+TYPE_REWRITE_ENTRY("thrust::system::error_condition", TYPE_FACTORY(STR("std::error_condition")))
+
 // thrust::bit_and
 TYPE_REWRITE_ENTRY(
     "thrust::bit_and",
@@ -150,6 +185,11 @@ TYPE_REWRITE_ENTRY(
 TYPE_REWRITE_ENTRY(
     "thrust::minimum",
     TYPE_FACTORY(STR("oneapi::dpl::minimum"), TEMPLATE_ARG(0)))
+
+// thrust::optional
+TYPE_REWRITE_ENTRY(
+    "thrust::optional",
+    TYPE_FACTORY(STR("std::optional"), TEMPLATE_ARG(0)))
 
 //thrust::bit_xor
 TYPE_REWRITE_ENTRY(

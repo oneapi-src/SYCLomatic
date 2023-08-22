@@ -272,6 +272,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"thrust::host",
        std::make_shared<TypeNameRule>("oneapi::dpl::execution::seq")},
       {"thrust::minus", std::make_shared<TypeNameRule>("std::minus")},
+      {"thrust::nullopt", std::make_shared<TypeNameRule>("std::nullopt")},
       {"thrust::greater", std::make_shared<TypeNameRule>("std::greater")},
       {"thrust::equal_to",
        std::make_shared<TypeNameRule>("oneapi::dpl::equal_to")},
@@ -482,6 +483,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cusparseSpMVAlg_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverDnFunction_t", std::make_shared<TypeNameRule>("int")},
       {"cusolverAlgMode_t", std::make_shared<TypeNameRule>("int")},
+      {"__half_raw", std::make_shared<TypeNameRule>("uint16_t")},
       // ...
   };
 
@@ -1362,19 +1364,12 @@ void MapNames::setExplicitNamespaceMap() {
       {"thrust::partition_point", HelperFeatureEnum::device_ext}};
 
   ITFName = {
-#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)   \
+#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)   \
   {#APINAME, #INTERFACENAME},
 #define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
-                              TARGET, COMMENT, MAPPING)                        \
+                              TARGET, COMMENT)                        \
   {#OBJNAME "::" #APINAME, #INTERFACEOBJNAME "::" #INTERFACENAME},
 #include "APINames.inc"
-#undef ENTRY
-#undef ENTRY_MEMBER_FUNCTION
-#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
-  {#APINAME, #INTERFACENAME},
-#define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
-                              TARGET, COMMENT)                                 \
-  {#OBJNAME "::" #APINAME, #INTERFACEOBJNAME "::" #INTERFACENAME},
 #include "APINames_CUB.inc"
 #include "APINames_NCCL.inc"
 #include "APINames_cuBLAS.inc"
@@ -1770,6 +1765,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasAxpyEx", getDpctNamespace() + "axpy_ex"},
       {"cublasRotEx", getDpctNamespace() + "rot_ex"},
       {"cublasGemmEx", getDpctNamespace() + "gemm_ex"},
+      {"cublasSgemmEx", getDpctNamespace() + "gemm_ex"},
+      {"cublasCgemmEx", getDpctNamespace() + "gemm_ex"},
       {"cublasGemmBatchedEx", getDpctNamespace() + "gemm_batched_ex"},
       {"cublasGemmStridedBatchedEx",
        getDpctNamespace() + "gemm_strided_batched_ex"},
@@ -2054,7 +2051,7 @@ const std::map<std::string, int> MapNames::VectorTypeMigratedTypeSizeMap{
     {"ulonglong4", 32}, {"float1", 4},      {"float2", 8},
     {"float3", 16},     {"float4", 16},     {"double1", 8},
     {"double2", 16},    {"double3", 32},    {"double4", 32},
-    {"__half", 2},      {"__half2", 4}};
+    {"__half", 2},      {"__half2", 4},     {"__half_raw", 2}};
 
 const std::map<clang::dpct::KernelArgType, int> MapNames::KernelArgTypeSizeMap{
     {clang::dpct::KernelArgType::KAT_Stream, 208},
@@ -4399,7 +4396,14 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
                         "CU_LAUNCH_PARAM_END", "((void *) 0)",
                         HelperFeatureEnum::device_ext)},
     {"CUDART_PI_F", MacroMigrationRule("CUDART_PI_F", RulePriority::Fallback,
-                        "CUDART_PI_F", "3.141592654F")}
+                                       "CUDART_PI_F", "3.141592654F")},
+    {"CUB_MAX", MacroMigrationRule("cub_macro_rule", RulePriority::Fallback,
+                                   "CUB_MAX", getClNamespace() + "max")},
+    {"CUB_MIN", MacroMigrationRule("cub_macro_rule", RulePriority::Fallback,
+                                   "CUB_MIN", getClNamespace() + "min")},
+    {"CUB_RUNTIME_FUNCTION",
+     MacroMigrationRule("cub_macro_rule", RulePriority::Fallback,
+                        "CUB_RUNTIME_FUNCTION", "")}
     //...
 };
 
@@ -4417,8 +4421,8 @@ const MapNames::SetTy MapNames::ThrustFileExcludeSet{
     "thrust/detail/pointer.inl",
     "thrust/detail/sequence.inl",
     "thrust/detail/sort.inl",
-    "thrust/detail/temporary_buffer.h",
-    "thrust/detail/vector_base.inl"};
+    "thrust/detail/temporary_buffer.h"
+    };
 
 // Texture names mapping.
 const MapNames::MapTy TextureRule::TextureMemberNames{
@@ -4484,19 +4488,12 @@ const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
 };
 
 std::map<std::string, bool> MigrationStatistics::MigrationTable{
-#define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)   \
-  {#APINAME, VALUE},
-#define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME,        \
-                              APINAME, VALUE, FLAG, TARGET, COMMENT, MAPPING)  \
-  {#OBJNAME "::" #APINAME, VALUE},
-#include "APINames.inc"
-#undef ENTRY
-#undef ENTRY_MEMBER_FUNCTION
 #define ENTRY(INTERFACENAME, APINAME, VALUE, FLAG, TARGET, COMMENT)            \
   {#APINAME, VALUE},
 #define ENTRY_MEMBER_FUNCTION(INTERFACEOBJNAME, OBJNAME, INTERFACENAME,        \
                               APINAME, VALUE, FLAG, TARGET, COMMENT)           \
   {#OBJNAME "::" #APINAME, VALUE},
+#include "APINames.inc"
 #include "APINames_CUB.inc"
 #include "APINames_NCCL.inc"
 #include "APINames_NVML.inc"
@@ -4622,7 +4619,9 @@ const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "shfl_up",
     "shfl_xor",
     "meta_group_rank",
-    "block_tile_memory"};
+    "block_tile_memory",
+    "thread_index",
+    "group_index"};
 
 const std::unordered_map<std::string, HelperFeatureEnum>
     MapNames::PropToGetFeatureMap = {

@@ -155,6 +155,9 @@ void ShowStatus(int Status, std::string Message) {
     StatusString = "Error: The path for --analysis-scope-path is not the same "
                    "as or a parent directory of --in-root";
     break;
+  case MigrationErrorNoAPIMapping:
+    StatusString = "Error: The API Mapping is not available";
+    break;
   default:
     DpctLog() << "Unknown error\n";
     dpctExit(-1);
