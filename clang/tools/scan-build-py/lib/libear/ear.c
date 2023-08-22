@@ -1089,8 +1089,8 @@ const unsigned char g_compile_data[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 // This function is used to generate a fake file specified by \p filename.
-// if ar_binary_used is zero, the content of file is initialized by
-// g_compile_data[]. if ar_binary_used is not zero,  the content of file is
+// If ar_binary_used is zero, the content of file will be initialized by
+// g_compile_data[]. If ar_binary_used is not zero, the content of file will be
 // initialized by g_data[].
 static int generate_file(char *filename, int ar_binary_used) {
   char buf[PATH_MAX];
