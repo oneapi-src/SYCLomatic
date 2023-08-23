@@ -1,4 +1,4 @@
-// Migration desc: The API is Removed because this it is redundant in SYCL.
+// Migration desc: The API is Removed.
 void test(CUdevice d) {
   // Start
   cuDevicePrimaryCtxRelease(d /*CUdevice*/);

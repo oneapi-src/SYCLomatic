@@ -1,4 +1,4 @@
-// Migration desc: The API is Removed because SYCL currently does not support.
+// Migration desc: The API is Removed.
 void test(void *pv) {
   // Start
   cuMemHostUnregister(pv /*void **/);

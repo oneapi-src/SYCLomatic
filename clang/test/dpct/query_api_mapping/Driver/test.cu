@@ -3,7 +3,7 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuInit | FileCheck %s -check-prefix=CUINIT
 // CUINIT: CUDA API:
 // CUINIT-NEXT:   cuInit(u /*unsigned int*/);
-// CUINIT-NEXT: The API is Removed because this it is redundant in SYCL.
+// CUINIT-NEXT: The API is Removed.
 // CUINIT-EMPTY:
 
 /// Version Management
@@ -60,7 +60,7 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuDevicePrimaryCtxRelease | FileCheck %s -check-prefix=CUDEVICEPRIMARYCTXRELEASE
 // CUDEVICEPRIMARYCTXRELEASE: CUDA API:
 // CUDEVICEPRIMARYCTXRELEASE-NEXT:   cuDevicePrimaryCtxRelease(d /*CUdevice*/);
-// CUDEVICEPRIMARYCTXRELEASE-NEXT: The API is Removed because this it is redundant in SYCL.
+// CUDEVICEPRIMARYCTXRELEASE-NEXT: The API is Removed.
 // CUDEVICEPRIMARYCTXRELEASE-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuDevicePrimaryCtxRetain | FileCheck %s -check-prefix=CUDEVICEPRIMARYCTXRETAIN
@@ -75,7 +75,7 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxDestroy | FileCheck %s -check-prefix=CUCTXDESTROY
 // CUCTXDESTROY: CUDA API:
 // CUCTXDESTROY-NEXT:   cuCtxDestroy(c /*CUcontext*/);
-// CUCTXDESTROY-NEXT: The API is Removed because this it is redundant in SYCL.
+// CUCTXDESTROY-NEXT: The API is Removed.
 // CUCTXDESTROY-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxGetApiVersion | FileCheck %s -check-prefix=CUCTXGETAPIVERSION
@@ -102,7 +102,7 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxSetCacheConfig | FileCheck %s -check-prefix=CUCTXSETCACHECONFIG
 // CUCTXSETCACHECONFIG: CUDA API:
 // CUCTXSETCACHECONFIG-NEXT:   cuCtxSetCacheConfig(f /*CUfunc_cache*/);
-// CUCTXSETCACHECONFIG-NEXT: The API is Removed because SYCL currently does not support.
+// CUCTXSETCACHECONFIG-NEXT: The API is Removed.
 // CUCTXSETCACHECONFIG-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuCtxSetCurrent | FileCheck %s -check-prefix=CUCTXSETCURRENT
@@ -250,13 +250,13 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuMemHostRegister | FileCheck %s -check-prefix=CUMEMHOSTREGISTER
 // CUMEMHOSTREGISTER: CUDA API:
 // CUMEMHOSTREGISTER-NEXT:   cuMemHostRegister(pv /*void **/, s /*size_t*/, u /*unsigned int*/);
-// CUMEMHOSTREGISTER-NEXT: The API is Removed because SYCL currently does not support.
+// CUMEMHOSTREGISTER-NEXT: The API is Removed.
 // CUMEMHOSTREGISTER-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuMemHostUnregister | FileCheck %s -check-prefix=CUMEMHOSTUNREGISTER
 // CUMEMHOSTUNREGISTER: CUDA API:
 // CUMEMHOSTUNREGISTER-NEXT:   cuMemHostUnregister(pv /*void **/);
-// CUMEMHOSTUNREGISTER-NEXT: The API is Removed because SYCL currently does not support.
+// CUMEMHOSTUNREGISTER-NEXT: The API is Removed.
 // CUMEMHOSTUNREGISTER-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuMemcpy | FileCheck %s -check-prefix=CUMEMCPY
@@ -432,7 +432,7 @@
 // CUSTREAMATTACHMEMASYNC: CUDA API:
 // CUSTREAMATTACHMEMASYNC-NEXT:   cuStreamAttachMemAsync(cs /*CUstream*/, d /*CUdeviceptr*/, s /*size_t*/,
 // CUSTREAMATTACHMEMASYNC-NEXT:                          u /*unsigned int*/);
-// CUSTREAMATTACHMEMASYNC-NEXT: The API is Removed because SYCL currently does not support.
+// CUSTREAMATTACHMEMASYNC-NEXT: The API is Removed.
 // CUSTREAMATTACHMEMASYNC-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuStreamCreate | FileCheck %s -check-prefix=CUSTREAMCREATE

@@ -227,7 +227,7 @@
 // cublasSetPointerMode: CUDA API:
 // cublasSetPointerMode-NEXT:   cublasSetPointerMode(handle /*cublasHandle_t*/,
 // cublasSetPointerMode-NEXT:                        host_device /*cublasPointerMode_t*/);
-// cublasSetPointerMode-NEXT: The API is Removed because this it is redundant in SYCL.
+// cublasSetPointerMode-NEXT: The API is Removed.
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCgerc | FileCheck %s -check-prefix=cublasCgerc
 // cublasCgerc: CUDA API:

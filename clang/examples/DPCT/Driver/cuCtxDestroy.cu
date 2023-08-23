@@ -1,4 +1,4 @@
-// Migration desc: The API is Removed because this it is redundant in SYCL.
+// Migration desc: The API is Removed.
 void test(CUcontext c) {
   // Start
   cuCtxDestroy(c /*CUcontext*/);
