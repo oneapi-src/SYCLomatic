@@ -609,7 +609,7 @@ int runDPCT(int argc, const char **argv) {
       ShowStatus(MigrationErrorInvalidInstallPath);
       dpctExit(MigrationErrorInvalidInstallPath);
     }
-    DpctLog() << pathToHelperFunction.str() << "\n";
+    std::cout << pathToHelperFunction.c_str() << "\n";
     ShowStatus(MigrationSucceeded);
     dpctExit(MigrationSucceeded);
   }
