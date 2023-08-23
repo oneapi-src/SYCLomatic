@@ -80,8 +80,16 @@ void ForLoopUnrollRule::runRule(
         }
       }
     }
-    auto IndentStr = getIndent(ForLoop->getBeginLoc(), SM).str();
-    std::string Repl = "#pragma unroll\n" + IndentStr;
+    std::string Repl;
+    const char *RawData = SM.getCharacterData(ForLoopLoc.getLocWithOffset(-1));
+    while(RawData && (*RawData == ' ')) {
+      RawData--;
+    }
+    if(RawData && ((*RawData != '\r') && (*RawData != '\n'))) {
+      Repl = getNL();
+    }
+    auto IndentStr = getIndent(ForLoopLoc, SM).str();
+    Repl = Repl + "#pragma unroll" + getNL() + IndentStr;
     auto Begin = SM.getSpellingLoc(ForLoop->getBeginLoc());
     emplaceTransformation(new InsertText(Begin, Repl));
   }
