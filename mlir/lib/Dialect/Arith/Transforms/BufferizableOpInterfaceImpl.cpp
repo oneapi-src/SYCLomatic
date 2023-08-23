@@ -155,10 +155,12 @@ struct SelectOpInterface
           bufferization::getBufferType(selectOp.getResult(), options);
       if (failed(targetType))
         return failure();
-      trueBuffer =
-          rewriter.create<memref::CastOp>(loc, *targetType, trueBuffer);
-      falseBuffer =
-          rewriter.create<memref::CastOp>(loc, *targetType, falseBuffer);
+      if (trueBuffer.getType() != *targetType)
+        trueBuffer =
+            rewriter.create<memref::CastOp>(loc, *targetType, trueBuffer);
+      if (falseBuffer.getType() != *targetType)
+        falseBuffer =
+            rewriter.create<memref::CastOp>(loc, *targetType, falseBuffer);
     }
 
     replaceOpWithNewBufferizedOp<arith::SelectOp>(
@@ -184,7 +186,7 @@ struct SelectOpInterface
 
     // If the buffers have different types, they differ only in their layout
     // map.
-    auto memrefType = trueType->cast<MemRefType>();
+    auto memrefType = llvm::cast<MemRefType>(*trueType);
     return getMemRefTypeWithFullyDynamicLayout(
         RankedTensorType::get(memrefType.getShape(),
                               memrefType.getElementType()),

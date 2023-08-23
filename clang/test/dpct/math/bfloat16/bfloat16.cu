@@ -296,4 +296,74 @@ void test_conversions() {
   bf16 = __float2bfloat16(f);
 }
 
+__global__ void kernelFuncBfloat16Math() {
+  // CHECK: sycl::ext::oneapi::bfloat16 bf16, bf16_1;
+  __nv_bfloat16 bf16, bf16_1;
+  // CHECK: bf16_1 = sycl::ceil(float(bf16));
+  bf16_1 = hceil(bf16);
+  // CHECK: bf16_1 = sycl::cos(float(bf16));
+  bf16_1 = hcos(bf16);
+  // CHECK: bf16_1 = sycl::exp(float(bf16));
+  bf16_1 = hexp(bf16);
+  // CHECK: bf16_1 = sycl::exp10(float(bf16));
+  bf16_1 = hexp10(bf16);
+  // CHECK: bf16_1 = sycl::exp2(float(bf16));
+  bf16_1 = hexp2(bf16);
+  // CHECK: bf16_1 = sycl::floor(float(bf16));
+  bf16_1 = hfloor(bf16);
+  // CHECK: bf16_1 = sycl::log(float(bf16));
+  bf16_1 = hlog(bf16);
+  // CHECK: bf16_1 = sycl::log10(float(bf16));
+  bf16_1 = hlog10(bf16);
+  // CHECK: bf16_1 = sycl::log2(float(bf16));
+  bf16_1 = hlog2(bf16);
+  // CHECK: bf16_1 = sycl::half_precision::recip(float(bf16));
+  bf16_1 = hrcp(bf16);
+  // CHECK: bf16_1 = sycl::rint(float(bf16));
+  bf16_1 = hrint(bf16);
+  // CHECK: bf16_1 = sycl::rsqrt(float(bf16));
+  bf16_1 = hrsqrt(bf16);
+  // CHECK: bf16_1 = sycl::sin(float(bf16));
+  bf16_1 = hsin(bf16);
+  // CHECK: bf16_1 = sycl::sqrt(float(bf16));
+  bf16_1 = hsqrt(bf16);
+  // CHECK: bf16_1 = sycl::trunc(float(bf16));
+  bf16_1 = htrunc(bf16);
+}
+
+__global__ void kernelFuncBfloat162Math() {
+  // CHECK: sycl::marray<sycl::ext::oneapi::bfloat16, 2> bf162, bf162_1;
+  __nv_bfloat162 bf162, bf162_1;
+  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::ceil(float(bf162[0])), sycl::ceil(float(bf162[1])));
+  bf162_1 = h2ceil(bf162);
+  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::cos(float(bf162[0])), sycl::cos(float(bf162[1])));
+  bf162_1 = h2cos(bf162);
+  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::exp(float(bf162[0])), sycl::exp(float(bf162[1])));
+  bf162_1 = h2exp(bf162);
+  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::exp10(float(bf162[0])), sycl::exp10(float(bf162[1])));
+  bf162_1 = h2exp10(bf162);
+  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::exp2(float(bf162[0])), sycl::exp2(float(bf162[1])));
+  bf162_1 = h2exp2(bf162);
+  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::floor(float(bf162[0])), sycl::floor(float(bf162[1])));
+  bf162_1 = h2floor(bf162);
+  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::log(float(bf162[0])), sycl::log(float(bf162[1])));
+  bf162_1 = h2log(bf162);
+  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::log10(float(bf162[0])), sycl::log10(float(bf162[1])));
+  bf162_1 = h2log10(bf162);
+  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::log2(float(bf162[0])), sycl::log2(float(bf162[1])));
+  bf162_1 = h2log2(bf162);
+  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::half_precision::recip(float(bf162[0])), sycl::half_precision::recip(float(bf162[1])));
+  bf162_1 = h2rcp(bf162);
+  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::rint(float(bf162[0])), sycl::rint(float(bf162[1])));
+  bf162_1 = h2rint(bf162);
+  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::rsqrt(float(bf162[0])), sycl::rsqrt(float(bf162[1])));
+  bf162_1 = h2rsqrt(bf162);
+  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::sin(float(bf162[0])), sycl::sin(float(bf162[1])));
+  bf162_1 = h2sin(bf162);
+  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::sqrt(float(bf162[0])), sycl::sqrt(float(bf162[1])));
+  bf162_1 = h2sqrt(bf162);
+  // CHECK: bf162_1 = sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::trunc(float(bf162[0])), sycl::trunc(float(bf162[1])));
+  bf162_1 = h2trunc(bf162);
+}
+
 int main() { return 0; }

@@ -6601,7 +6601,7 @@ void Sema::CodeCompleteQualifiedId(Scope *S, CXXScopeSpec &SS,
   // The "template" keyword can follow "::" in the grammar, but only
   // put it into the grammar if the nested-name-specifier is dependent.
   // FIXME: results is always empty, this appears to be dead.
-  if (!Results.empty() && NNS->isDependent())
+  if (!Results.empty() && NNS && NNS->isDependent())
     Results.AddResult("template");
 
   // If the scope is a concept-constrained type parameter, infer nested
@@ -8460,6 +8460,24 @@ void Sema::CodeCompleteObjCInterfaceDecl(Scope *S) {
                             Results.data(), Results.size());
 }
 
+void Sema::CodeCompleteObjCClassForwardDecl(Scope *S) {
+  ResultBuilder Results(*this, CodeCompleter->getAllocator(),
+                        CodeCompleter->getCodeCompletionTUInfo(),
+                        CodeCompletionContext::CCC_ObjCClassForwardDecl);
+  Results.EnterNewScope();
+
+  if (CodeCompleter->includeGlobals()) {
+    // Add all classes.
+    AddInterfaceResults(Context.getTranslationUnitDecl(), CurContext, false,
+                        false, Results);
+  }
+
+  Results.ExitScope();
+
+  HandleCodeCompleteResults(this, CodeCompleter, Results.getCompletionContext(),
+                            Results.data(), Results.size());
+}
+
 void Sema::CodeCompleteObjCSuperclass(Scope *S, IdentifierInfo *ClassName,
                                       SourceLocation ClassNameLoc) {
   ResultBuilder Results(*this, CodeCompleter->getAllocator(),
@@ -10055,12 +10073,12 @@ void Sema::CodeCompleteIncludedFile(llvm::StringRef Dir, bool Angled) {
       // header maps are not (currently) enumerable.
       break;
     case DirectoryLookup::LT_NormalDir:
-      AddFilesFromIncludeDir(IncludeDir.getDir()->getName(), IsSystem,
+      AddFilesFromIncludeDir(IncludeDir.getDirRef()->getName(), IsSystem,
                              DirectoryLookup::LT_NormalDir);
       break;
     case DirectoryLookup::LT_Framework:
-      AddFilesFromIncludeDir(IncludeDir.getFrameworkDir()->getName(), IsSystem,
-                             DirectoryLookup::LT_Framework);
+      AddFilesFromIncludeDir(IncludeDir.getFrameworkDirRef()->getName(),
+                             IsSystem, DirectoryLookup::LT_Framework);
       break;
     }
   };
@@ -10072,9 +10090,8 @@ void Sema::CodeCompleteIncludedFile(llvm::StringRef Dir, bool Angled) {
   using llvm::make_range;
   if (!Angled) {
     // The current directory is on the include path for "quoted" includes.
-    const FileEntry *CurFile = PP.getCurrentFileLexer()->getFileEntry();
-    if (CurFile && CurFile->getDir())
-      AddFilesFromIncludeDir(CurFile->getDir()->getName(), false,
+    if (auto CurFile = PP.getCurrentFileLexer()->getFileEntry())
+      AddFilesFromIncludeDir(CurFile->getDir().getName(), false,
                              DirectoryLookup::LT_NormalDir);
     for (const auto &D : make_range(S.quoted_dir_begin(), S.quoted_dir_end()))
       AddFilesFromDirLookup(D, false);

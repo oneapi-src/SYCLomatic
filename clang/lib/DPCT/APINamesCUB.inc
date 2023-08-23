@@ -640,6 +640,34 @@ CONDITIONAL_FACTORY_ENTRY(
                             LITERAL("1")),
                         false, "wait")))))))
 
+CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY("cub::DeviceRunLengthEncode::NonTrivialRuns"),
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_DPCT_DPL_Utils,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPL_Execution,
+            HEADER_INSERT_FACTORY(
+                HeaderType::HT_DPL_Algorithm,
+                REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+                    makeCheckAnd(CheckArgCount(8, std::greater_equal<>(),
+                                               /* IncludeDefaultArg */ false),
+                                 makeCheckNot(CheckArgIsDefaultCudaStream(7))),
+                    CALL_FACTORY_ENTRY(
+                        "cub::DeviceRunLengthEncode::NonTrivialRuns",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "nontrivial_run_length_encode",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  STREAM(7)),
+                             ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))),
+                    CALL_FACTORY_ENTRY(
+                        "cub::DeviceRunLengthEncode::NonTrivialRuns",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "nontrivial_run_length_encode",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  QUEUESTR),
+                             ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))))))))
+
 // cub::DeviceSegmentedReduce::Reduce
 CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),

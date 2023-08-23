@@ -4390,7 +4390,6 @@ engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm 
 
   auto pd = get_primitive_desc<::dnnl::convolution_forward>(
       primitive_args.second.primitive);
-
   auto optimal_src_md = pd.src_desc();
   auto optimal_dst_md = pd.dst_desc();
   auto optimal_weight_md = pd.weights_desc();
@@ -4406,7 +4405,9 @@ engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm 
                                          optimal_weight_md, optimal_weight);
 
   if (beta == 0.f) {
-    optimal_dst = allocate(optimal_dst_md);
+    if(origin_dst_md != optimal_dst_md) {
+      optimal_dst = allocate(optimal_dst_md);
+    }
   } else {
     allocate_and_reorder_memory_to_optimal(origin_dst_md, dst, optimal_dst_md,
                                            optimal_dst);
@@ -4445,33 +4446,73 @@ sycl::event engine_ext::async_convolution_forward(
   ::dnnl::memory::desc help_bias_desc = {{channel_num},
                                          bias_desc.get_desc().get_data_type(),
                                          ::dnnl::memory::format_tag::a};
+  auto origin_weight_md = help_weight_desc;
+  auto origin_bias_md = help_bias_desc;
+  auto origin_src_md = src_desc.get_desc();
+  auto origin_dst_md = dst_desc.get_desc();
+  auto src_md = transfer_memory_desc_to_format_tag_any(origin_src_md);
+  auto dst_md = transfer_memory_desc_to_format_tag_any(origin_dst_md);
+  auto weight_md = transfer_memory_desc_to_format_tag_any(origin_weight_md);
+  auto bias_md = transfer_memory_desc_to_format_tag_any(origin_bias_md);
+
   ::dnnl::primitive_attr attr;
   attr.set_fpmath_mode(desc.get_math_mode());
-  enter_primitive(dst_desc.get_size() * 5 + 2 * weight_desc.get_size());
-  auto primitive_args = create_primitive_args_or_get<::dnnl::convolution_forward>(
-      ::dnnl::prop_kind::forward_training, alg, src_desc.get_desc(),
-      help_weight_desc, help_bias_desc, dst_desc.get_desc(), desc.get_stride(),
-      desc.get_dilate(), desc.get_padding(), desc.get_padding(), attr);
 
-  insert_arg(primitive_args.second.args, DNNL_ARG_SRC, src_desc.get_desc(),
-             src);
-  insert_arg(primitive_args.second.args, DNNL_ARG_BIAS, help_bias_desc, bias);
-  insert_arg(primitive_args.second.args, DNNL_ARG_DST, dst_desc.get_desc(),
-             dst);
+  auto primitive_args =
+      create_primitive_args_or_get<::dnnl::convolution_forward>(
+          ::dnnl::prop_kind::forward_training, alg, src_md, weight_md, bias_md,
+          dst_md, desc.get_stride(), desc.get_dilate(), desc.get_padding(),
+          desc.get_padding(), attr);
+
+  auto pd = get_primitive_desc<::dnnl::convolution_forward>(
+      primitive_args.second.primitive);
+  auto optimal_src_md = pd.src_desc();
+  auto optimal_dst_md = pd.dst_desc();
+  auto optimal_weight_md = pd.weights_desc();
+  auto optimal_bias_md = pd.bias_desc();
+
+  enter_primitive(optimal_src_md.get_size() + 3 * optimal_weight_md.get_size() +
+                  optimal_bias_md.get_size() + 7 * optimal_dst_md.get_size() +
+                  summand_desc.get_size());
+
+  void *optimal_src = src, *optimal_dst = dst, *optimal_weight = weight,
+       *optimal_bias = bias;
+  allocate_and_reorder_memory_to_optimal(origin_src_md, src, optimal_src_md,
+                                         optimal_src);
+  allocate_and_reorder_memory_to_optimal(origin_weight_md, weight,
+                                         optimal_weight_md, optimal_weight);
+  allocate_and_reorder_memory_to_optimal(origin_bias_md, bias, optimal_bias_md,
+                                         optimal_bias);
+  if (origin_dst_md != optimal_dst_md) {
+    optimal_dst = allocate(optimal_dst_md);
+  }
+
+  insert_arg(primitive_args.second.args, DNNL_ARG_SRC, optimal_src_md,
+             optimal_src);
+  insert_arg(primitive_args.second.args, DNNL_ARG_BIAS, optimal_bias_md,
+             optimal_bias);
+  insert_arg(primitive_args.second.args, DNNL_ARG_DST, optimal_dst_md,
+             optimal_dst);
+
   void *cache = nullptr;
   if (alpha_0 != 1.f) {
-    cache = allocate(help_weight_desc);
-    _q->memcpy(cache, weight, weight_desc.get_size());
-    async_scale(alpha_0, help_weight_desc, cache);
-    insert_arg(primitive_args.second.args, DNNL_ARG_WEIGHTS, help_weight_desc,
+    cache = allocate(optimal_weight_md);
+    _q->memcpy(cache, optimal_weight, optimal_weight_md.get_size());
+    async_scale(alpha_0, optimal_weight_md, cache);
+    insert_arg(primitive_args.second.args, DNNL_ARG_WEIGHTS, optimal_weight_md,
                cache);
     execute_primitive<::dnnl::convolution_forward>(
-        primitive_args, {{1.f, 0.f, DNNL_ARG_DST, dst_desc, dst}});
+        primitive_args,
+        {{1.f, 0.f, DNNL_ARG_DST, optimal_dst_md, optimal_dst}});
   } else {
-    insert_arg(primitive_args.second.args, DNNL_ARG_WEIGHTS, help_weight_desc,
-               weight);
+    insert_arg(primitive_args.second.args, DNNL_ARG_WEIGHTS, optimal_weight_md,
+               optimal_weight);
     execute_primitive<::dnnl::convolution_forward>(
-        primitive_args, {{1.f, 0.f, DNNL_ARG_DST, dst_desc, dst}});
+        primitive_args,
+        {{1.f, 0.f, DNNL_ARG_DST, optimal_dst_md, optimal_dst}});
+  }
+  if (origin_dst_md != optimal_dst_md) {
+    async_reorder(1.f, optimal_dst_md, optimal_dst, 0.f, origin_dst_md, dst);
   }
   async_sum(alpha_1, summand_desc, summand, 1.f, dst_desc, dst);
   return exit_primitive(
@@ -4488,37 +4529,72 @@ sycl::event engine_ext::async_convolution_backward_data(
   if (scale_parameter_preprocess({{alpha, beta, diff_dst_desc, diff_dst}})) {
     return sycl::event();
   }
-  enter_primitive(2 * diff_src_desc.get_size());
+
   auto help_weight_desc =
       get_group_weight_desc(desc.get_group_count(), weight_desc);
+
+  auto origin_weight_md = help_weight_desc;
+  auto origin_diff_src_md = diff_src_desc.get_desc();
+  auto origin_diff_dst_md = diff_dst_desc.get_desc();
+  auto diff_src_md = transfer_memory_desc_to_format_tag_any(origin_diff_src_md);
+  auto diff_dst_md = transfer_memory_desc_to_format_tag_any(origin_diff_dst_md);
+  auto weight_md = transfer_memory_desc_to_format_tag_any(origin_weight_md);
 
   ::dnnl::primitive_attr attr;
   attr.set_fpmath_mode(desc.get_math_mode());
 
-  auto forward_primitive =
-      create_primitive_desc<::dnnl::convolution_forward>(
-          ::dnnl::prop_kind::forward_training,
-          ::dnnl::algorithm::convolution_auto, diff_src_desc.get_desc(),
-          help_weight_desc, diff_dst_desc.get_desc(), desc.get_stride(),
-          desc.get_dilate(), desc.get_padding(), desc.get_padding(), attr);
+  auto forward_primitive = create_primitive_desc<::dnnl::convolution_forward>(
+      ::dnnl::prop_kind::forward_training, ::dnnl::algorithm::convolution_auto,
+      diff_src_md, weight_md, diff_dst_md, desc.get_stride(), desc.get_dilate(),
+      desc.get_padding(), desc.get_padding(), attr);
 
-  auto primitive_args = 
-    create_primitive_args_or_get<::dnnl::convolution_backward_data>(
-      ::dnnl::algorithm::convolution_auto, diff_src_desc.get_desc(),
-      help_weight_desc, diff_dst_desc.get_desc(), desc.get_stride(),
-      desc.get_dilate(), desc.get_padding(), desc.get_padding(),
-      forward_primitive, attr);
+  auto primitive_args =
+      create_primitive_args_or_get<::dnnl::convolution_backward_data>(
+          ::dnnl::algorithm::convolution_auto, diff_src_md, weight_md,
+          diff_dst_md, desc.get_stride(), desc.get_dilate(), desc.get_padding(),
+          desc.get_padding(), forward_primitive, attr);
 
-  insert_arg(primitive_args.second.args, DNNL_ARG_DIFF_DST,
-             diff_dst_desc.get_desc(), diff_dst);
-  insert_arg(primitive_args.second.args, DNNL_ARG_WEIGHTS, help_weight_desc,
-             weight);
-  insert_arg(primitive_args.second.args, DNNL_ARG_DIFF_SRC,
-             diff_src_desc.get_desc(), diff_src);
+  auto pd = get_primitive_desc<::dnnl::convolution_backward_data>(
+      primitive_args.second.primitive);
+  auto optimal_diff_src_md = pd.diff_src_desc();
+  auto optimal_diff_dst_md = pd.diff_dst_desc();
+  auto optimal_weight_md = pd.weights_desc();
 
-  return exit_primitive(execute_primitive<::dnnl::convolution_backward_data>(
+  enter_primitive(5 * optimal_diff_src_md.get_size() +
+                  optimal_diff_dst_md.get_size() +
+                  optimal_weight_md.get_size());
+
+  void *optimal_diff_src = diff_src, *optimal_diff_dst = diff_dst,
+       *optimal_weight = weight;
+  allocate_and_reorder_memory_to_optimal(origin_diff_dst_md, diff_dst,
+                                         optimal_diff_dst_md, optimal_diff_dst);
+  allocate_and_reorder_memory_to_optimal(origin_weight_md, weight,
+                                         optimal_weight_md, optimal_weight);
+  if (beta == 0.f) {
+    if (origin_diff_src_md != optimal_diff_src_md) {
+      optimal_diff_src = allocate(optimal_diff_src_md);
+    }
+  } else {
+    allocate_and_reorder_memory_to_optimal(
+        origin_diff_src_md, diff_src, optimal_diff_src_md, optimal_diff_src);
+  }
+
+  insert_arg(primitive_args.second.args, DNNL_ARG_DIFF_DST, optimal_diff_dst_md,
+             optimal_diff_dst);
+  insert_arg(primitive_args.second.args, DNNL_ARG_WEIGHTS, optimal_weight_md,
+             optimal_weight);
+  insert_arg(primitive_args.second.args, DNNL_ARG_DIFF_SRC, optimal_diff_src_md,
+             optimal_diff_src);
+
+  auto e = execute_primitive<::dnnl::convolution_backward_data>(
       primitive_args,
-      {{alpha, beta, DNNL_ARG_DIFF_SRC, diff_src_desc, diff_src}}));
+      {{alpha, beta, DNNL_ARG_DIFF_SRC, optimal_diff_src_md, optimal_diff_src}});
+
+  if (origin_diff_src_md != optimal_diff_src_md) {
+    e = async_reorder(1.f, optimal_diff_src_md, optimal_diff_src, 0.f,
+                      origin_diff_src_md, diff_src);
+  }
+  return exit_primitive(e);
 }
 
 inline
@@ -4532,37 +4608,73 @@ sycl::event engine_ext::async_convolution_backward_weight(
           {{alpha, beta, diff_weight_desc, diff_weight}})) {
     return sycl::event();
   }
-  enter_primitive(2 * diff_weight_desc.get_size());
+
   auto help_diff_weight_desc =
       get_group_weight_desc(desc.get_group_count(), diff_weight_desc);
 
   ::dnnl::primitive_attr attr;
   attr.set_fpmath_mode(desc.get_math_mode());
 
-  auto forward_primitive =
-      create_primitive_desc<::dnnl::convolution_forward>(
-          ::dnnl::prop_kind::forward_training,
-          ::dnnl::algorithm::convolution_auto, src_desc.get_desc(),
-          help_diff_weight_desc, diff_dst_desc.get_desc(), desc.get_stride(),
-          desc.get_dilate(), desc.get_padding(), desc.get_padding(), attr);
+  auto origin_diff_weight_md = help_diff_weight_desc;
+  auto origin_src_md = src_desc.get_desc();
+  auto origin_diff_dst_md = diff_dst_desc.get_desc();
+  auto src_md = transfer_memory_desc_to_format_tag_any(origin_src_md);
+  auto diff_dst_md = transfer_memory_desc_to_format_tag_any(origin_diff_dst_md);
+  auto diff_weight_md =
+      transfer_memory_desc_to_format_tag_any(origin_diff_weight_md);
+
+  auto forward_primitive = create_primitive_desc<::dnnl::convolution_forward>(
+      ::dnnl::prop_kind::forward_training, ::dnnl::algorithm::convolution_auto,
+      src_md, diff_weight_md, diff_dst_md, desc.get_stride(), desc.get_dilate(),
+      desc.get_padding(), desc.get_padding(), attr);
 
   auto primitive_args =
       create_primitive_args_or_get<::dnnl::convolution_backward_weights>(
-          ::dnnl::algorithm::convolution_auto, src_desc.get_desc(),
-          help_diff_weight_desc, diff_dst_desc.get_desc(), desc.get_stride(),
-          desc.get_dilate(), desc.get_padding(), desc.get_padding(),
-          forward_primitive, attr);
+          ::dnnl::algorithm::convolution_auto, src_md, diff_weight_md,
+          diff_dst_md, desc.get_stride(), desc.get_dilate(), desc.get_padding(),
+          desc.get_padding(), forward_primitive, attr);
 
-  insert_arg(primitive_args.second.args, DNNL_ARG_SRC, src_desc.get_desc(),
-             src);
-  insert_arg(primitive_args.second.args, DNNL_ARG_DIFF_DST,
-             diff_dst_desc.get_desc(), diff_dst);
+  auto pd = get_primitive_desc<::dnnl::convolution_backward_weights>(
+      primitive_args.second.primitive);
+  auto optimal_src_md = pd.src_desc();
+  auto optimal_diff_dst_md = pd.diff_dst_desc();
+  auto optimal_diff_weight_md = pd.diff_weights_desc();
+
+  enter_primitive(optimal_diff_weight_md.get_size() * 5 +
+                  optimal_diff_dst_md.get_size() + optimal_src_md.get_size());
+
+  void *optimal_src = src, *optimal_diff_dst = diff_dst,
+       *optimal_diff_weight = diff_weight;
+  allocate_and_reorder_memory_to_optimal(origin_diff_dst_md, diff_dst,
+                                         optimal_diff_dst_md, optimal_diff_dst);
+  allocate_and_reorder_memory_to_optimal(origin_src_md, src, optimal_src_md,
+                                         optimal_src);
+  if (beta == 0.f) {
+    if (origin_diff_weight_md != optimal_diff_weight_md) {
+      optimal_diff_weight = allocate(optimal_diff_weight_md);
+    }
+  } else {
+    allocate_and_reorder_memory_to_optimal(origin_diff_weight_md, diff_weight,
+                                           optimal_diff_weight_md,
+                                           optimal_diff_weight);
+  }
+
+  insert_arg(primitive_args.second.args, DNNL_ARG_SRC, optimal_src_md,
+             optimal_src);
+  insert_arg(primitive_args.second.args, DNNL_ARG_DIFF_DST, optimal_diff_dst_md,
+             optimal_diff_dst);
   insert_arg(primitive_args.second.args, DNNL_ARG_DIFF_WEIGHTS,
-             help_diff_weight_desc, diff_weight);
+             optimal_diff_weight_md, optimal_diff_weight);
 
-  return exit_primitive(execute_primitive<::dnnl::convolution_backward_weights>(
+  auto e = execute_primitive<::dnnl::convolution_backward_weights>(
       primitive_args, {{alpha, beta, DNNL_ARG_DIFF_WEIGHTS,
-                        help_diff_weight_desc, diff_weight}}));
+                        optimal_diff_weight_md, optimal_diff_weight}});
+
+  if (origin_diff_weight_md != optimal_diff_weight_md) {
+    e = async_reorder(1.f, optimal_diff_weight_md, optimal_diff_weight, 0.f,
+                      origin_diff_weight_md, diff_weight);
+  }
+  return exit_primitive(e);
 }
 
 inline

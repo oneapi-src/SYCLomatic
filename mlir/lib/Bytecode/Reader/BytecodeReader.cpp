@@ -6,11 +6,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-// TODO: Support for big-endian architectures.
-
 #include "mlir/Bytecode/BytecodeReader.h"
 #include "mlir/AsmParser/AsmParser.h"
 #include "mlir/Bytecode/BytecodeImplementation.h"
+#include "mlir/Bytecode/BytecodeOpInterface.h"
 #include "mlir/Bytecode/Encoding.h"
 #include "mlir/IR/BuiltinDialect.h"
 #include "mlir/IR/BuiltinOps.h"
@@ -20,14 +19,17 @@
 #include "mlir/IR/Visitors.h"
 #include "mlir/Support/LLVM.h"
 #include "mlir/Support/LogicalResult.h"
+#include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/MapVector.h"
 #include "llvm/ADT/ScopeExit.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Endian.h"
 #include "llvm/Support/MemoryBufferRef.h"
 #include "llvm/Support/SaveAndRestore.h"
 #include "llvm/Support/SourceMgr.h"
+#include <cstddef>
 #include <list>
 #include <memory>
 #include <numeric>
@@ -56,13 +58,15 @@ static std::string toString(bytecode::Section::ID sectionID) {
     return "ResourceOffset (6)";
   case bytecode::Section::kDialectVersions:
     return "DialectVersions (7)";
+  case bytecode::Section::kProperties:
+    return "Properties (8)";
   default:
     return ("Unknown (" + Twine(static_cast<unsigned>(sectionID)) + ")").str();
   }
 }
 
 /// Returns true if the given top-level section ID is optional.
-static bool isSectionOptional(bytecode::Section::ID sectionID) {
+static bool isSectionOptional(bytecode::Section::ID sectionID, int version) {
   switch (sectionID) {
   case bytecode::Section::kString:
   case bytecode::Section::kDialect:
@@ -74,6 +78,8 @@ static bool isSectionOptional(bytecode::Section::ID sectionID) {
   case bytecode::Section::kResourceOffset:
   case bytecode::Section::kDialectVersions:
     return true;
+  case bytecode::Section::kProperties:
+    return version < bytecode::kNativePropertiesEncoding;
   default:
     llvm_unreachable("unknown section ID");
   }
@@ -196,8 +202,14 @@ public:
     // Handle the overwhelming uncommon case where the value required all 8
     // bytes (i.e. a really really big number). In this case, the marker byte is
     // all zeros: `00000000`.
-    if (LLVM_UNLIKELY(result == 0))
-      return parseBytes(sizeof(result), reinterpret_cast<uint8_t *>(&result));
+    if (LLVM_UNLIKELY(result == 0)) {
+      llvm::support::ulittle64_t resultLE;
+      if (failed(parseBytes(sizeof(resultLE),
+                            reinterpret_cast<uint8_t *>(&resultLE))))
+        return failure();
+      result = resultLE;
+      return success();
+    }
     return parseMultiByteVarInt(result);
   }
 
@@ -298,12 +310,13 @@ private:
            "unexpected number of trailing zeros in varint encoding");
 
     // Parse in the remaining bytes of the value.
-    if (failed(parseBytes(numBytes, reinterpret_cast<uint8_t *>(&result) + 1)))
+    llvm::support::ulittle64_t resultLE(result);
+    if (failed(parseBytes(numBytes, reinterpret_cast<uint8_t *>(&resultLE) + 1)))
       return failure();
 
     // Shift out the low-order bits that were used to mark how the value was
     // encoded.
-    result >>= (numBytes + 1);
+    result = resultLE >> (numBytes + 1);
     return success();
   }
 
@@ -360,6 +373,17 @@ public:
   /// encoded using an index to a corresponding string in the string section.
   LogicalResult parseString(EncodingReader &reader, StringRef &result) {
     return parseEntry(reader, strings, result, "string");
+  }
+
+  /// Parse a shared string from the string section. The shared string is
+  /// encoded using an index to a corresponding string in the string section.
+  /// This variant parses a flag compressed with the index.
+  LogicalResult parseStringWithFlag(EncodingReader &reader, StringRef &result,
+                                    bool &flag) {
+    uint64_t entryIdx;
+    if (failed(reader.parseVarIntWithFlag(entryIdx, flag)))
+      return failure();
+    return parseStringAtIndex(reader, entryIdx, result);
   }
 
   /// Parse a shared string from the string section. The shared string is
@@ -427,7 +451,7 @@ struct BytecodeDialect {
   /// Returns failure if the dialect couldn't be loaded *and* the provided
   /// context does not allow unregistered dialects. The provided reader is used
   /// for error emission if necessary.
-  LogicalResult load(DialectReader &reader, MLIRContext *ctx);
+  LogicalResult load(const DialectReader &reader, MLIRContext *ctx);
 
   /// Return the loaded dialect, or nullptr if the dialect is unknown. This can
   /// only be called after `load`.
@@ -459,8 +483,9 @@ struct BytecodeDialect {
 
 /// This struct represents an operation name entry within the bytecode.
 struct BytecodeOperationName {
-  BytecodeOperationName(BytecodeDialect *dialect, StringRef name)
-      : dialect(dialect), name(name) {}
+  BytecodeOperationName(BytecodeDialect *dialect, StringRef name,
+                        std::optional<bool> wasRegistered)
+      : dialect(dialect), name(name), wasRegistered(wasRegistered) {}
 
   /// The loaded operation name, or std::nullopt if it hasn't been processed
   /// yet.
@@ -471,15 +496,20 @@ struct BytecodeOperationName {
 
   /// The name of the operation, without the dialect prefix.
   StringRef name;
+
+  /// Whether this operation was registered when the bytecode was produced.
+  /// This flag is populated when bytecode version >=kNativePropertiesEncoding.
+  std::optional<bool> wasRegistered;
 };
 } // namespace
 
 /// Parse a single dialect group encoded in the byte stream.
 static LogicalResult parseDialectGrouping(
-    EncodingReader &reader, MutableArrayRef<BytecodeDialect> dialects,
+    EncodingReader &reader,
+    MutableArrayRef<std::unique_ptr<BytecodeDialect>> dialects,
     function_ref<LogicalResult(BytecodeDialect *)> entryCallback) {
   // Parse the dialect and the number of entries in the group.
-  BytecodeDialect *dialect;
+  std::unique_ptr<BytecodeDialect> *dialect;
   if (failed(parseEntry(reader, dialects, dialect, "dialect")))
     return failure();
   uint64_t numEntries;
@@ -487,7 +517,7 @@ static LogicalResult parseDialectGrouping(
     return failure();
 
   for (uint64_t i = 0; i < numEntries; ++i)
-    if (failed(entryCallback(dialect)))
+    if (failed(entryCallback(dialect->get())))
       return failure();
   return success();
 }
@@ -503,7 +533,7 @@ public:
   /// Initialize the resource section reader with the given section data.
   LogicalResult
   initialize(Location fileLoc, const ParserConfig &config,
-             MutableArrayRef<BytecodeDialect> dialects,
+             MutableArrayRef<std::unique_ptr<BytecodeDialect>> dialects,
              StringSectionReader &stringReader, ArrayRef<uint8_t> sectionData,
              ArrayRef<uint8_t> offsetSectionData, DialectReader &dialectReader,
              const std::shared_ptr<llvm::SourceMgr> &bufferOwnerRef);
@@ -653,7 +683,7 @@ parseResourceGroup(Location fileLoc, bool allowEmpty,
 
 LogicalResult ResourceSectionReader::initialize(
     Location fileLoc, const ParserConfig &config,
-    MutableArrayRef<BytecodeDialect> dialects,
+    MutableArrayRef<std::unique_ptr<BytecodeDialect>> dialects,
     StringSectionReader &stringReader, ArrayRef<uint8_t> sectionData,
     ArrayRef<uint8_t> offsetSectionData, DialectReader &dialectReader,
     const std::shared_ptr<llvm::SourceMgr> &bufferOwnerRef) {
@@ -702,19 +732,19 @@ LogicalResult ResourceSectionReader::initialize(
   // Read the dialect resources from the bytecode.
   MLIRContext *ctx = fileLoc->getContext();
   while (!offsetReader.empty()) {
-    BytecodeDialect *dialect;
+    std::unique_ptr<BytecodeDialect> *dialect;
     if (failed(parseEntry(offsetReader, dialects, dialect, "dialect")) ||
-        failed(dialect->load(dialectReader, ctx)))
+        failed((*dialect)->load(dialectReader, ctx)))
       return failure();
-    Dialect *loadedDialect = dialect->getLoadedDialect();
+    Dialect *loadedDialect = (*dialect)->getLoadedDialect();
     if (!loadedDialect) {
       return resourceReader.emitError()
-             << "dialect '" << dialect->name << "' is unknown";
+             << "dialect '" << (*dialect)->name << "' is unknown";
     }
     const auto *handler = dyn_cast<OpAsmDialectInterface>(loadedDialect);
     if (!handler) {
       return resourceReader.emitError()
-             << "unexpected resources for dialect '" << dialect->name << "'";
+             << "unexpected resources for dialect '" << (*dialect)->name << "'";
     }
 
     // Ensure that each resource is declared before being processed.
@@ -724,7 +754,7 @@ LogicalResult ResourceSectionReader::initialize(
       if (failed(handle)) {
         return resourceReader.emitError()
                << "unknown 'resource' key '" << key << "' for dialect '"
-               << dialect->name << "'";
+               << (*dialect)->name << "'";
       }
       dialectResourceHandleRenamingMap[key] = handler->getResourceKey(*handle);
       dialectResources.push_back(*handle);
@@ -767,14 +797,19 @@ class AttrTypeReader {
 
 public:
   AttrTypeReader(StringSectionReader &stringReader,
-                 ResourceSectionReader &resourceReader, Location fileLoc)
+                 ResourceSectionReader &resourceReader,
+                 const llvm::StringMap<BytecodeDialect *> &dialectsMap,
+                 uint64_t &bytecodeVersion, Location fileLoc,
+                 const ParserConfig &config)
       : stringReader(stringReader), resourceReader(resourceReader),
-        fileLoc(fileLoc) {}
+        dialectsMap(dialectsMap), fileLoc(fileLoc),
+        bytecodeVersion(bytecodeVersion), parserConfig(config) {}
 
   /// Initialize the attribute and type information within the reader.
-  LogicalResult initialize(MutableArrayRef<BytecodeDialect> dialects,
-                           ArrayRef<uint8_t> sectionData,
-                           ArrayRef<uint8_t> offsetSectionData);
+  LogicalResult
+  initialize(MutableArrayRef<std::unique_ptr<BytecodeDialect>> dialects,
+             ArrayRef<uint8_t> sectionData,
+             ArrayRef<uint8_t> offsetSectionData);
 
   /// Resolve the attribute or type at the given index. Returns nullptr on
   /// failure.
@@ -791,6 +826,18 @@ public:
     result = resolveAttribute(attrIdx);
     return success(!!result);
   }
+  LogicalResult parseOptionalAttribute(EncodingReader &reader,
+                                       Attribute &result) {
+    uint64_t attrIdx;
+    bool flag;
+    if (failed(reader.parseVarIntWithFlag(attrIdx, flag)))
+      return failure();
+    if (!flag)
+      return success();
+    result = resolveAttribute(attrIdx);
+    return success(!!result);
+  }
+
   LogicalResult parseType(EncodingReader &reader, Type &result) {
     uint64_t typeIdx;
     if (failed(reader.parseVarInt(typeIdx)))
@@ -836,29 +883,61 @@ private:
   /// parsing custom encoded attribute/type entries.
   ResourceSectionReader &resourceReader;
 
+  /// The map of the loaded dialects used to retrieve dialect information, such
+  /// as the dialect version.
+  const llvm::StringMap<BytecodeDialect *> &dialectsMap;
+
   /// The set of attribute and type entries.
   SmallVector<AttrEntry> attributes;
   SmallVector<TypeEntry> types;
 
   /// A location used for error emission.
   Location fileLoc;
+
+  /// Current bytecode version being used.
+  uint64_t &bytecodeVersion;
+
+  /// Reference to the parser configuration.
+  const ParserConfig &parserConfig;
 };
 
 class DialectReader : public DialectBytecodeReader {
 public:
   DialectReader(AttrTypeReader &attrTypeReader,
                 StringSectionReader &stringReader,
-                ResourceSectionReader &resourceReader, EncodingReader &reader)
+                ResourceSectionReader &resourceReader,
+                const llvm::StringMap<BytecodeDialect *> &dialectsMap,
+                EncodingReader &reader, uint64_t &bytecodeVersion)
       : attrTypeReader(attrTypeReader), stringReader(stringReader),
-        resourceReader(resourceReader), reader(reader) {}
+        resourceReader(resourceReader), dialectsMap(dialectsMap),
+        reader(reader), bytecodeVersion(bytecodeVersion) {}
 
-  InFlightDiagnostic emitError(const Twine &msg) override {
+  InFlightDiagnostic emitError(const Twine &msg) const override {
     return reader.emitError(msg);
   }
 
-  DialectReader withEncodingReader(EncodingReader &encReader) {
+  FailureOr<const DialectVersion *>
+  getDialectVersion(StringRef dialectName) const override {
+    // First check if the dialect is available in the map.
+    auto dialectEntry = dialectsMap.find(dialectName);
+    if (dialectEntry == dialectsMap.end())
+      return failure();
+    // If the dialect was found, try to load it. This will trigger reading the
+    // bytecode version from the version buffer if it wasn't already processed.
+    // Return failure if either of those two actions could not be completed.
+    if (failed(dialectEntry->getValue()->load(*this, getLoc().getContext())) ||
+        dialectEntry->getValue()->loadedVersion == nullptr)
+      return failure();
+    return dialectEntry->getValue()->loadedVersion.get();
+  }
+
+  MLIRContext *getContext() const override { return getLoc().getContext(); }
+
+  uint64_t getBytecodeVersion() const override { return bytecodeVersion; }
+
+  DialectReader withEncodingReader(EncodingReader &encReader) const {
     return DialectReader(attrTypeReader, stringReader, resourceReader,
-                         encReader);
+                         dialectsMap, encReader, bytecodeVersion);
   }
 
   Location getLoc() const { return reader.getLoc(); }
@@ -870,7 +949,9 @@ public:
   LogicalResult readAttribute(Attribute &result) override {
     return attrTypeReader.parseAttribute(reader, result);
   }
-
+  LogicalResult readOptionalAttribute(Attribute &result) override {
+    return attrTypeReader.parseOptionalAttribute(reader, result);
+  }
   LogicalResult readType(Type &result) override {
     return attrTypeReader.parseType(reader, result);
   }
@@ -951,18 +1032,104 @@ public:
     return success();
   }
 
+  LogicalResult readBool(bool &result) override {
+    return reader.parseByte(result);
+  }
+
 private:
   AttrTypeReader &attrTypeReader;
   StringSectionReader &stringReader;
   ResourceSectionReader &resourceReader;
+  const llvm::StringMap<BytecodeDialect *> &dialectsMap;
   EncodingReader &reader;
+  uint64_t &bytecodeVersion;
+};
+
+/// Wraps the properties section and handles reading properties out of it.
+class PropertiesSectionReader {
+public:
+  /// Initialize the properties section reader with the given section data.
+  LogicalResult initialize(Location fileLoc, ArrayRef<uint8_t> sectionData) {
+    if (sectionData.empty())
+      return success();
+    EncodingReader propReader(sectionData, fileLoc);
+    uint64_t count;
+    if (failed(propReader.parseVarInt(count)))
+      return failure();
+    // Parse the raw properties buffer.
+    if (failed(propReader.parseBytes(propReader.size(), propertiesBuffers)))
+      return failure();
+
+    EncodingReader offsetsReader(propertiesBuffers, fileLoc);
+    offsetTable.reserve(count);
+    for (auto idx : llvm::seq<int64_t>(0, count)) {
+      (void)idx;
+      offsetTable.push_back(propertiesBuffers.size() - offsetsReader.size());
+      ArrayRef<uint8_t> rawProperties;
+      uint64_t dataSize;
+      if (failed(offsetsReader.parseVarInt(dataSize)) ||
+          failed(offsetsReader.parseBytes(dataSize, rawProperties)))
+        return failure();
+    }
+    if (!offsetsReader.empty())
+      return offsetsReader.emitError()
+             << "Broken properties section: didn't exhaust the offsets table";
+    return success();
+  }
+
+  LogicalResult read(Location fileLoc, DialectReader &dialectReader,
+                     OperationName *opName, OperationState &opState) {
+    uint64_t propertiesIdx;
+    if (failed(dialectReader.readVarInt(propertiesIdx)))
+      return failure();
+    if (propertiesIdx >= offsetTable.size())
+      return dialectReader.emitError("Properties idx out-of-bound for ")
+             << opName->getStringRef();
+    size_t propertiesOffset = offsetTable[propertiesIdx];
+    if (propertiesIdx >= propertiesBuffers.size())
+      return dialectReader.emitError("Properties offset out-of-bound for ")
+             << opName->getStringRef();
+
+    // Acquire the sub-buffer that represent the requested properties.
+    ArrayRef<char> rawProperties;
+    {
+      // "Seek" to the requested offset by getting a new reader with the right
+      // sub-buffer.
+      EncodingReader reader(propertiesBuffers.drop_front(propertiesOffset),
+                            fileLoc);
+      // Properties are stored as a sequence of {size + raw_data}.
+      if (failed(
+              dialectReader.withEncodingReader(reader).readBlob(rawProperties)))
+        return failure();
+    }
+    // Setup a new reader to read from the `rawProperties` sub-buffer.
+    EncodingReader reader(
+        StringRef(rawProperties.begin(), rawProperties.size()), fileLoc);
+    DialectReader propReader = dialectReader.withEncodingReader(reader);
+
+    auto *iface = opName->getInterface<BytecodeOpInterface>();
+    if (iface)
+      return iface->readProperties(propReader, opState);
+    if (opName->isRegistered())
+      return propReader.emitError(
+                 "has properties but missing BytecodeOpInterface for ")
+             << opName->getStringRef();
+    // Unregistered op are storing properties as an attribute.
+    return propReader.readAttribute(opState.propertiesAttr);
+  }
+
+private:
+  /// The properties buffer referenced within the bytecode file.
+  ArrayRef<uint8_t> propertiesBuffers;
+
+  /// Table of offset in the buffer above.
+  SmallVector<int64_t> offsetTable;
 };
 } // namespace
 
-LogicalResult
-AttrTypeReader::initialize(MutableArrayRef<BytecodeDialect> dialects,
-                           ArrayRef<uint8_t> sectionData,
-                           ArrayRef<uint8_t> offsetSectionData) {
+LogicalResult AttrTypeReader::initialize(
+    MutableArrayRef<std::unique_ptr<BytecodeDialect>> dialects,
+    ArrayRef<uint8_t> sectionData, ArrayRef<uint8_t> offsetSectionData) {
   EncodingReader offsetReader(offsetSectionData, fileLoc);
 
   // Parse the number of attribute and type entries.
@@ -1014,6 +1181,7 @@ AttrTypeReader::initialize(MutableArrayRef<BytecodeDialect> dialects,
     return offsetReader.emitError(
         "unexpected trailing data in the Attribute/Type offset section");
   }
+
   return success();
 }
 
@@ -1079,31 +1247,54 @@ template <typename T>
 LogicalResult AttrTypeReader::parseCustomEntry(Entry<T> &entry,
                                                EncodingReader &reader,
                                                StringRef entryType) {
-  DialectReader dialectReader(*this, stringReader, resourceReader, reader);
+  DialectReader dialectReader(*this, stringReader, resourceReader, dialectsMap,
+                              reader, bytecodeVersion);
   if (failed(entry.dialect->load(dialectReader, fileLoc.getContext())))
     return failure();
+
+  if constexpr (std::is_same_v<T, Type>) {
+    // Try parsing with callbacks first if available.
+    for (const auto &callback :
+         parserConfig.getBytecodeReaderConfig().getTypeCallbacks()) {
+      if (failed(
+              callback->read(dialectReader, entry.dialect->name, entry.entry)))
+        return failure();
+      // Early return if parsing was successful.
+      if (!!entry.entry)
+        return success();
+
+      // Reset the reader if we failed to parse, so we can fall through the
+      // other parsing functions.
+      reader = EncodingReader(entry.data, reader.getLoc());
+    }
+  } else {
+    // Try parsing with callbacks first if available.
+    for (const auto &callback :
+         parserConfig.getBytecodeReaderConfig().getAttributeCallbacks()) {
+      if (failed(
+              callback->read(dialectReader, entry.dialect->name, entry.entry)))
+        return failure();
+      // Early return if parsing was successful.
+      if (!!entry.entry)
+        return success();
+
+      // Reset the reader if we failed to parse, so we can fall through the
+      // other parsing functions.
+      reader = EncodingReader(entry.data, reader.getLoc());
+    }
+  }
+
   // Ensure that the dialect implements the bytecode interface.
   if (!entry.dialect->interface) {
     return reader.emitError("dialect '", entry.dialect->name,
                             "' does not implement the bytecode interface");
   }
 
-  // Ask the dialect to parse the entry. If the dialect is versioned, parse
-  // using the versioned encoding readers.
-  if (entry.dialect->loadedVersion.get()) {
-    if constexpr (std::is_same_v<T, Type>)
-      entry.entry = entry.dialect->interface->readType(
-          dialectReader, *entry.dialect->loadedVersion);
-    else
-      entry.entry = entry.dialect->interface->readAttribute(
-          dialectReader, *entry.dialect->loadedVersion);
+  if constexpr (std::is_same_v<T, Type>)
+    entry.entry = entry.dialect->interface->readType(dialectReader);
+  else
+    entry.entry = entry.dialect->interface->readAttribute(dialectReader);
 
-  } else {
-    if constexpr (std::is_same_v<T, Type>)
-      entry.entry = entry.dialect->interface->readType(dialectReader);
-    else
-      entry.entry = entry.dialect->interface->readAttribute(dialectReader);
-  }
   return success(!!entry.entry);
 }
 
@@ -1124,7 +1315,8 @@ public:
        llvm::MemoryBufferRef buffer,
        const std::shared_ptr<llvm::SourceMgr> &bufferOwnerRef)
       : config(config), fileLoc(fileLoc), lazyLoading(lazyLoading),
-        attrTypeReader(stringReader, resourceReader, fileLoc),
+        attrTypeReader(stringReader, resourceReader, dialectsMap, version,
+                       fileLoc, config),
         // Use the builtin unrealized conversion cast operation to represent
         // forward references to values that aren't yet defined.
         forwardRefOpState(UnknownLoc::get(config.getContext()),
@@ -1193,9 +1385,11 @@ private:
     regionStack.push_back(std::move(it->getSecond()->second));
     lazyLoadableOps.erase(it->getSecond());
     lazyLoadableOpsMap.erase(it);
-    auto result = parseRegions(regionStack, regionStack.back());
-    assert(regionStack.empty());
-    return result;
+
+    while (!regionStack.empty())
+      if (failed(parseRegions(regionStack, regionStack.back())))
+        return failure();
+    return success();
   }
 
   /// Return the context for this config.
@@ -1209,8 +1403,11 @@ private:
 
   LogicalResult parseDialectSection(ArrayRef<uint8_t> sectionData);
 
-  /// Parse an operation name reference using the given reader.
-  FailureOr<OperationName> parseOpName(EncodingReader &reader);
+  /// Parse an operation name reference using the given reader, and set the
+  /// `wasRegistered` flag that indicates if the bytecode was produced by a
+  /// context where opName was registered.
+  FailureOr<OperationName> parseOpName(EncodingReader &reader,
+                                       std::optional<bool> &wasRegistered);
 
   //===--------------------------------------------------------------------===//
   // Attribute/Type Section
@@ -1385,7 +1582,8 @@ private:
   StringRef producer;
 
   /// The table of IR units referenced within the bytecode file.
-  SmallVector<BytecodeDialect> dialects;
+  SmallVector<std::unique_ptr<BytecodeDialect>> dialects;
+  llvm::StringMap<BytecodeDialect *> dialectsMap;
   SmallVector<BytecodeOperationName> opNames;
 
   /// The reader used to process resources within the bytecode.
@@ -1397,6 +1595,9 @@ private:
 
   /// The table of strings referenced within the bytecode file.
   StringSectionReader stringReader;
+
+  /// The table of properties referenced by the operation in the bytecode file.
+  PropertiesSectionReader propertiesReader;
 
   /// The current set of available IR value scopes.
   std::vector<ValueScope> valueScopes;
@@ -1466,7 +1667,7 @@ LogicalResult BytecodeReader::Impl::read(
   // Check that all of the required sections were found.
   for (int i = 0; i < bytecode::Section::kNumSections; ++i) {
     bytecode::Section::ID sectionID = static_cast<bytecode::Section::ID>(i);
-    if (!sectionDatas[i] && !isSectionOptional(sectionID)) {
+    if (!sectionDatas[i] && !isSectionOptional(sectionID, version)) {
       return reader.emitError("missing data for top-level section: ",
                               ::toString(sectionID));
     }
@@ -1475,6 +1676,12 @@ LogicalResult BytecodeReader::Impl::read(
   // Process the string section first.
   if (failed(stringReader.initialize(
           fileLoc, *sectionDatas[bytecode::Section::kString])))
+    return failure();
+
+  // Process the properties section.
+  if (sectionDatas[bytecode::Section::kProperties] &&
+      failed(propertiesReader.initialize(
+          fileLoc, *sectionDatas[bytecode::Section::kProperties])))
     return failure();
 
   // Process the dialect section.
@@ -1515,7 +1722,7 @@ LogicalResult BytecodeReader::Impl::parseVersion(EncodingReader &reader) {
                             currentVersion);
   }
   // Override any request to lazy-load if the bytecode version is too old.
-  if (version < 2)
+  if (version < bytecode::kLazyLoading)
     lazyLoading = false;
   return success();
 }
@@ -1523,7 +1730,8 @@ LogicalResult BytecodeReader::Impl::parseVersion(EncodingReader &reader) {
 //===----------------------------------------------------------------------===//
 // Dialect Section
 
-LogicalResult BytecodeDialect::load(DialectReader &reader, MLIRContext *ctx) {
+LogicalResult BytecodeDialect::load(const DialectReader &reader,
+                                    MLIRContext *ctx) {
   if (dialect)
     return success();
   Dialect *loadedDialect = ctx->getOrLoadDialect(name);
@@ -1567,13 +1775,15 @@ BytecodeReader::Impl::parseDialectSection(ArrayRef<uint8_t> sectionData) {
 
   // Parse each of the dialects.
   for (uint64_t i = 0; i < numDialects; ++i) {
-    /// Before version 1, there wasn't any versioning available for dialects,
-    /// and the entryIdx represent the string itself.
-    if (version == 0) {
-      if (failed(stringReader.parseString(sectionReader, dialects[i].name)))
+    dialects[i] = std::make_unique<BytecodeDialect>();
+    /// Before version kDialectVersioning, there wasn't any versioning available
+    /// for dialects, and the entryIdx represent the string itself.
+    if (version < bytecode::kDialectVersioning) {
+      if (failed(stringReader.parseString(sectionReader, dialects[i]->name)))
         return failure();
       continue;
     }
+
     // Parse ID representing dialect and version.
     uint64_t dialectNameIdx;
     bool versionAvailable;
@@ -1581,31 +1791,43 @@ BytecodeReader::Impl::parseDialectSection(ArrayRef<uint8_t> sectionData) {
                                                  versionAvailable)))
       return failure();
     if (failed(stringReader.parseStringAtIndex(sectionReader, dialectNameIdx,
-                                               dialects[i].name)))
+                                               dialects[i]->name)))
       return failure();
     if (versionAvailable) {
       bytecode::Section::ID sectionID;
-      if (failed(
-              sectionReader.parseSection(sectionID, dialects[i].versionBuffer)))
+      if (failed(sectionReader.parseSection(sectionID,
+                                            dialects[i]->versionBuffer)))
         return failure();
       if (sectionID != bytecode::Section::kDialectVersions) {
         emitError(fileLoc, "expected dialect version section");
         return failure();
       }
     }
+    dialectsMap[dialects[i]->name] = dialects[i].get();
   }
 
   // Parse the operation names, which are grouped by dialect.
   auto parseOpName = [&](BytecodeDialect *dialect) {
     StringRef opName;
-    if (failed(stringReader.parseString(sectionReader, opName)))
-      return failure();
-    opNames.emplace_back(dialect, opName);
+    std::optional<bool> wasRegistered;
+    // Prior to version kNativePropertiesEncoding, the information about wheter
+    // an op was registered or not wasn't encoded.
+    if (version < bytecode::kNativePropertiesEncoding) {
+      if (failed(stringReader.parseString(sectionReader, opName)))
+        return failure();
+    } else {
+      bool wasRegisteredFlag;
+      if (failed(stringReader.parseStringWithFlag(sectionReader, opName,
+                                                  wasRegisteredFlag)))
+        return failure();
+      wasRegistered = wasRegisteredFlag;
+    }
+    opNames.emplace_back(dialect, opName, wasRegistered);
     return success();
   };
-  // Avoid re-allocation in bytecode version > 3 where the number of ops are
-  // known.
-  if (version > 3) {
+  // Avoid re-allocation in bytecode version >=kElideUnknownBlockArgLocation
+  // where the number of ops are known.
+  if (version >= bytecode::kElideUnknownBlockArgLocation) {
     uint64_t numOps;
     if (failed(sectionReader.parseVarInt(numOps)))
       return failure();
@@ -1618,17 +1840,18 @@ BytecodeReader::Impl::parseDialectSection(ArrayRef<uint8_t> sectionData) {
 }
 
 FailureOr<OperationName>
-BytecodeReader::Impl::parseOpName(EncodingReader &reader) {
+BytecodeReader::Impl::parseOpName(EncodingReader &reader,
+                                  std::optional<bool> &wasRegistered) {
   BytecodeOperationName *opName = nullptr;
   if (failed(parseEntry(reader, opNames, opName, "operation name")))
     return failure();
-
+  wasRegistered = opName->wasRegistered;
   // Check to see if this operation name has already been resolved. If we
   // haven't, load the dialect and build the operation name.
   if (!opName->opName) {
     // Load the dialect and its version.
     DialectReader dialectReader(attrTypeReader, stringReader, resourceReader,
-                                reader);
+                                dialectsMap, reader, version);
     if (failed(opName->dialect->load(dialectReader, getContext())))
       return failure();
     // If the opName is empty, this is because we use to accept names such as
@@ -1671,7 +1894,7 @@ LogicalResult BytecodeReader::Impl::parseResourceSection(
 
   // Initialize the resource reader with the resource sections.
   DialectReader dialectReader(attrTypeReader, stringReader, resourceReader,
-                              reader);
+                              dialectsMap, reader, version);
   return resourceReader.initialize(fileLoc, config, dialects, stringReader,
                                    *resourceData, *resourceOffsetData,
                                    dialectReader, bufferOwnerRef);
@@ -1872,14 +2095,14 @@ BytecodeReader::Impl::parseIRSection(ArrayRef<uint8_t> sectionData,
         "parsed use-list orders were invalid and could not be applied");
 
   // Resolve dialect version.
-  for (const BytecodeDialect &byteCodeDialect : dialects) {
+  for (const std::unique_ptr<BytecodeDialect> &byteCodeDialect : dialects) {
     // Parsing is complete, give an opportunity to each dialect to visit the
     // IR and perform upgrades.
-    if (!byteCodeDialect.loadedVersion)
+    if (!byteCodeDialect->loadedVersion)
       continue;
-    if (byteCodeDialect.interface &&
-        failed(byteCodeDialect.interface->upgradeFromVersion(
-            *moduleOp, *byteCodeDialect.loadedVersion)))
+    if (byteCodeDialect->interface &&
+        failed(byteCodeDialect->interface->upgradeFromVersion(
+            *moduleOp, *byteCodeDialect->loadedVersion)))
       return failure();
   }
 
@@ -1934,7 +2157,7 @@ BytecodeReader::Impl::parseRegions(std::vector<RegionReadState> &regionStack,
           RegionReadState childState(*op, &reader, isIsolatedFromAbove);
 
           // Isolated regions are encoded as a section in version 2 and above.
-          if (version >= 2 && isIsolatedFromAbove) {
+          if (version >= bytecode::kLazyLoading && isIsolatedFromAbove) {
             bytecode::Section::ID sectionID;
             ArrayRef<uint8_t> sectionData;
             if (failed(reader.parseSection(sectionID, sectionData)))
@@ -1944,14 +2167,11 @@ BytecodeReader::Impl::parseRegions(std::vector<RegionReadState> &regionStack,
             childState.owningReader =
                 std::make_unique<EncodingReader>(sectionData, fileLoc);
             childState.reader = childState.owningReader.get();
-          }
 
-          if (lazyLoading) {
-            // If the user has a callback set, they have the opportunity
-            // to control lazyloading as we go.
-            if (!lazyOpsCallback || !lazyOpsCallback(*op)) {
-              lazyLoadableOps.push_back(
-                  std::make_pair(*op, std::move(childState)));
+            // If the user has a callback set, they have the opportunity to
+            // control lazyloading as we go.
+            if (lazyLoading && (!lazyOpsCallback || !lazyOpsCallback(*op))) {
+              lazyLoadableOps.emplace_back(*op, std::move(childState));
               lazyLoadableOpsMap.try_emplace(*op,
                                              std::prev(lazyLoadableOps.end()));
               continue;
@@ -1994,7 +2214,8 @@ BytecodeReader::Impl::parseOpWithoutRegions(EncodingReader &reader,
                                             RegionReadState &readState,
                                             bool &isIsolatedFromAbove) {
   // Parse the name of the operation.
-  FailureOr<OperationName> opName = parseOpName(reader);
+  std::optional<bool> wasRegistered;
+  FailureOr<OperationName> opName = parseOpName(reader, wasRegistered);
   if (failed(opName))
     return failure();
 
@@ -2019,6 +2240,31 @@ BytecodeReader::Impl::parseOpWithoutRegions(EncodingReader &reader,
     if (failed(parseAttribute(reader, dictAttr)))
       return failure();
     opState.attributes = dictAttr;
+  }
+
+  if (opMask & bytecode::OpEncodingMask::kHasProperties) {
+    // kHasProperties wasn't emitted in older bytecode, we should never get
+    // there without also having the `wasRegistered` flag available.
+    if (!wasRegistered)
+      return emitError(fileLoc,
+                       "Unexpected missing `wasRegistered` opname flag at "
+                       "bytecode version ")
+             << version << " with properties.";
+    // When an operation is emitted without being registered, the properties are
+    // stored as an attribute. Otherwise the op must implement the bytecode
+    // interface and control the serialization.
+    if (wasRegistered) {
+      DialectReader dialectReader(attrTypeReader, stringReader, resourceReader,
+                                  dialectsMap, reader, version);
+      if (failed(
+              propertiesReader.read(fileLoc, dialectReader, &*opName, opState)))
+        return failure();
+    } else {
+      // If the operation wasn't registered when it was emitted, the properties
+      // was serialized as an attribute.
+      if (failed(parseAttribute(reader, opState.propertiesAttr)))
+        return failure();
+    }
   }
 
   /// Parse the results of the operation.
@@ -2059,7 +2305,8 @@ BytecodeReader::Impl::parseOpWithoutRegions(EncodingReader &reader,
   /// Parse the use-list orders for the results of the operation. Use-list
   /// orders are available since version 3 of the bytecode.
   std::optional<UseListMapT> resultIdxToUseListMap = std::nullopt;
-  if (version > 2 && (opMask & bytecode::OpEncodingMask::kHasUseListOrders)) {
+  if (version >= bytecode::kUseListOrdering &&
+      (opMask & bytecode::OpEncodingMask::kHasUseListOrders)) {
     size_t numResults = opState.types.size();
     auto parseResult = parseUseListOrderForRange(reader, numResults);
     if (failed(parseResult))
@@ -2146,7 +2393,7 @@ BytecodeReader::Impl::parseBlockHeader(EncodingReader &reader,
     return failure();
 
   // Uselist orders are available since version 3 of the bytecode.
-  if (version < 3)
+  if (version < bytecode::kUseListOrdering)
     return success();
 
   uint8_t hasUseListOrders = 0;
@@ -2187,7 +2434,7 @@ LogicalResult BytecodeReader::Impl::parseBlockArguments(EncodingReader &reader,
   while (numArgs--) {
     Type argType;
     LocationAttr argLoc = unknownLoc;
-    if (version > 3) {
+    if (version >= bytecode::kElideUnknownBlockArgLocation) {
       // Parse the type with hasLoc flag to determine if it has type.
       uint64_t typeIdx;
       bool hasLoc;

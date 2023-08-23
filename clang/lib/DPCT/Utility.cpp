@@ -1980,7 +1980,7 @@ SourceLocation getBeginLocOfPreviousEmptyMacro(SourceLocation Loc) {
   return Loc;
 }
 
-SourceLocation getEndLocOfFollowingEmptyMacro(SourceLocation Loc) {
+unsigned int getEndLocOfFollowingEmptyMacro(SourceLocation Loc) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto &Map = dpct::DpctGlobalInfo::getBeginOfEmptyMacros();
   Token Tok;
@@ -1989,7 +1989,7 @@ SourceLocation getEndLocOfFollowingEmptyMacro(SourceLocation Loc) {
           Loc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())),
       Tok, SM, dpct::DpctGlobalInfo::getContext().getLangOpts(), true);
   if (Ret)
-    return Loc;
+    return 0;
 
   SourceLocation EndOfToken = SM.getExpansionLoc(Tok.getLocation());
   while (Tok.isNot(tok::eof) && Tok.is(tok::comment)) {
@@ -2001,11 +2001,16 @@ SourceLocation getEndLocOfFollowingEmptyMacro(SourceLocation Loc) {
     ;
   }
 
-  auto It = Map.find(getHashStrFromLoc(EndOfToken));
+  auto EndOfTokenLocInfo = dpct::DpctGlobalInfo::getLocInfo(EndOfToken);
+  std::string EndOfTokenKey = std::to_string(std::hash<std::string>()(
+      dpct::buildString(EndOfTokenLocInfo.first, EndOfTokenLocInfo.second)));
+  auto OriginalLocInfo = dpct::DpctGlobalInfo::getLocInfo(Loc);
+
+  auto It = Map.find(EndOfTokenKey);
   if (It != Map.end()) {
-    return It->second;
+    return It->second + EndOfTokenLocInfo.second - OriginalLocInfo.second;
   }
-  return Loc;
+  return 0;
 }
 
 std::string
@@ -3751,7 +3756,7 @@ bool maybeDependentCubType(const clang::TypeSourceInfo *TInfo) {
   //  }
 
   // Handle 1
-  auto isCubRecordType = [&](const Type *T) -> bool {
+  auto isCubRecordType = [&](const clang::Type *T) -> bool {
     if (auto *SpecType = dyn_cast<TemplateSpecializationType>(T)) {
       auto *TemplateDecl = SpecType->getTemplateName().getAsTemplateDecl();
       auto *Ctx = TemplateDecl->getDeclContext();
@@ -4115,33 +4120,33 @@ getImmediateOuterLambdaExpr(const clang::FunctionDecl *FuncDecl) {
 bool typeIsPostfix(clang::QualType QT) {
   using namespace clang;
   while (true) {
-    const Type* T = QT.getTypePtr();
+    const auto *const T = QT.getTypePtr();
     switch (T->getTypeClass()) {
     default:
       return false;
-    case Type::Pointer:
-      QT = cast<PointerType>(T)->getPointeeType();
+    case clang::Type::Pointer:
+      QT = cast<clang::PointerType>(T)->getPointeeType();
       break;
-    case Type::BlockPointer:
+    case clang::Type::BlockPointer:
       QT = cast<BlockPointerType>(T)->getPointeeType();
       break;
-    case Type::MemberPointer:
+    case clang::Type::MemberPointer:
       QT = cast<MemberPointerType>(T)->getPointeeType();
       break;
-    case Type::LValueReference:
-    case Type::RValueReference:
+    case clang::Type::LValueReference:
+    case clang::Type::RValueReference:
       QT = cast<ReferenceType>(T)->getPointeeType();
       break;
-    case Type::PackExpansion:
+    case clang::Type::PackExpansion:
       QT = cast<PackExpansionType>(T)->getPattern();
       break;
-    case Type::Paren:
-    case Type::ConstantArray:
-    case Type::DependentSizedArray:
-    case Type::IncompleteArray:
-    case Type::VariableArray:
-    case Type::FunctionProto:
-    case Type::FunctionNoProto:
+    case clang::Type::Paren:
+    case clang::Type::ConstantArray:
+    case clang::Type::DependentSizedArray:
+    case clang::Type::IncompleteArray:
+    case clang::Type::VariableArray:
+    case clang::Type::FunctionProto:
+    case clang::Type::FunctionNoProto:
       return true;
     }
   }
@@ -4452,5 +4457,6 @@ void requestHelperFeatureForTypeNames(const std::string Name) {
     requestFeature(CuDNNHelperFeatureIter->second->RequestFeature);
   }
 }
+
 } // namespace dpct
 } // namespace clang

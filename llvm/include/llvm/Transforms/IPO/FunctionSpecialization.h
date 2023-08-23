@@ -82,12 +82,9 @@ struct SpecSig {
   SmallVector<ArgInfo, 4> Args;
 
   bool operator==(const SpecSig &Other) const {
-    if (Key != Other.Key || Args.size() != Other.Args.size())
+    if (Key != Other.Key)
       return false;
-    for (size_t I = 0; I < Args.size(); ++I)
-      if (Args[I] != Other.Args[I])
-        return false;
-    return true;
+    return Args == Other.Args;
   }
 
   friend hash_code hash_value(const SpecSig &S) {
@@ -108,15 +105,47 @@ struct Spec {
   SpecSig Sig;
 
   // Profitability of the specialization.
-  Cost Score;
+  unsigned Score;
 
   // List of call sites, matching this specialization.
   SmallVector<CallBase *> CallSites;
 
-  Spec(Function *F, const SpecSig &S, Cost Score)
+  Spec(Function *F, const SpecSig &S, unsigned Score)
       : F(F), Sig(S), Score(Score) {}
-  Spec(Function *F, const SpecSig &&S, Cost Score)
+  Spec(Function *F, const SpecSig &&S, unsigned Score)
       : F(F), Sig(S), Score(Score) {}
+};
+
+struct Bonus {
+  unsigned CodeSize = 0;
+  unsigned Latency = 0;
+
+  Bonus() = default;
+
+  Bonus(Cost CodeSize, Cost Latency) {
+    int64_t Sz = *CodeSize.getValue();
+    int64_t Ltc = *Latency.getValue();
+
+    assert(Sz >= 0 && Ltc >= 0 && "CodeSize and Latency cannot be negative");
+    // It is safe to down cast since we know the arguments
+    // cannot be negative and Cost is of type int64_t.
+    this->CodeSize = static_cast<unsigned>(Sz);
+    this->Latency = static_cast<unsigned>(Ltc);
+  }
+
+  Bonus &operator+=(const Bonus RHS) {
+    CodeSize += RHS.CodeSize;
+    Latency += RHS.Latency;
+    return *this;
+  }
+
+  Bonus operator+(const Bonus RHS) const {
+    return Bonus(CodeSize + RHS.CodeSize, Latency + RHS.Latency);
+  }
+
+  bool operator==(const Bonus RHS) const {
+    return CodeSize == RHS.CodeSize && Latency == RHS.Latency;
+  }
 };
 
 class InstCostVisitor : public InstVisitor<InstCostVisitor, Constant *> {
@@ -126,6 +155,15 @@ class InstCostVisitor : public InstVisitor<InstCostVisitor, Constant *> {
   SCCPSolver &Solver;
 
   ConstMap KnownConstants;
+  // Basic blocks known to be unreachable after constant propagation.
+  DenseSet<BasicBlock *> DeadBlocks;
+  // PHI nodes we have visited before.
+  DenseSet<Instruction *> VisitedPHIs;
+  // PHI nodes we have visited once without successfully constant folding them.
+  // Once the InstCostVisitor has processed all the specialization arguments,
+  // it should be possible to determine whether those PHIs can be folded
+  // (some of their incoming values may have become constant or dead).
+  SmallVector<Instruction *> PendingPHIs;
 
   ConstMap::iterator LastVisited;
 
@@ -134,15 +172,29 @@ public:
                   TargetTransformInfo &TTI, SCCPSolver &Solver)
       : DL(DL), BFI(BFI), TTI(TTI), Solver(Solver) {}
 
-  Cost getUserBonus(Instruction *User, Value *Use, Constant *C);
+  bool isBlockExecutable(BasicBlock *BB) {
+    return Solver.isBlockExecutable(BB) && !DeadBlocks.contains(BB);
+  }
+
+  Bonus getUserBonus(Instruction *User, Value *Use = nullptr,
+                     Constant *C = nullptr);
+
+  Bonus getBonusFromPendingPHIs();
 
 private:
   friend class InstVisitor<InstCostVisitor, Constant *>;
 
+  static bool canEliminateSuccessor(BasicBlock *BB, BasicBlock *Succ,
+                                    DenseSet<BasicBlock *> &DeadBlocks);
+
+  Cost estimateBasicBlocks(SmallVectorImpl<BasicBlock *> &WorkList);
   Cost estimateSwitchInst(SwitchInst &I);
   Cost estimateBranchInst(BranchInst &I);
 
   Constant *visitInstruction(Instruction &I) { return nullptr; }
+  Constant *visitPHINode(PHINode &I);
+  Constant *visitFreezeInst(FreezeInst &I);
+  Constant *visitCallBase(CallBase &I);
   Constant *visitLoadInst(LoadInst &I);
   Constant *visitGetElementPtrInst(GetElementPtrInst &I);
   Constant *visitSelectInst(SelectInst &I);
@@ -184,21 +236,17 @@ public:
 
   ~FunctionSpecializer();
 
-  bool isClonedFunction(Function *F) { return Specializations.count(F); }
-
   bool run();
 
-  static unsigned getBlockFreqMultiplier();
-
   InstCostVisitor getInstCostVisitorFor(Function *F) {
-    auto &BFI = (GetBFI)(*F);
-    auto &TTI = (GetTTI)(*F);
+    auto &BFI = GetBFI(*F);
+    auto &TTI = GetTTI(*F);
     return InstCostVisitor(M.getDataLayout(), BFI, TTI, Solver);
   }
 
   /// Compute a bonus for replacing argument \p A with constant \p C.
-  Cost getSpecializationBonus(Argument *A, Constant *C,
-                              InstCostVisitor &Visitor);
+  Bonus getSpecializationBonus(Argument *A, Constant *C,
+                               InstCostVisitor &Visitor);
 
 private:
   Constant *getPromotableAlloca(AllocaInst *Alloca, CallInst *Call);
@@ -208,19 +256,15 @@ private:
   /// is a function argument.
   Constant *getConstantStackValue(CallInst *Call, Value *Val);
 
-  /// Iterate over the argument tracked functions see if there
-  /// are any new constant values for the call instruction via
-  /// stack variables.
-  void promoteConstantStackValues();
+  /// See if there are any new constant values for the callers of \p F via
+  /// stack variables and promote them to global variables.
+  void promoteConstantStackValues(Function *F);
 
   /// Clean up fully specialized functions.
   void removeDeadFunctions();
 
   /// Remove any ssa_copy intrinsics that may have been introduced.
   void cleanUpSSA();
-
-  // Compute the code metrics for function \p F.
-  CodeMetrics &analyzeFunction(Function *F);
 
   /// @brief  Find potential specialization opportunities.
   /// @param F Function to specialize
@@ -229,7 +273,7 @@ private:
   /// @param AllSpecs A vector to add potential specializations to.
   /// @param SM  A map for a function's specialisation range
   /// @return True, if any potential specializations were found
-  bool findSpecializations(Function *F, Cost SpecCost,
+  bool findSpecializations(Function *F, unsigned SpecCost,
                            SmallVectorImpl<Spec> &AllSpecs, SpecMap &SM);
 
   bool isCandidateFunction(Function *F);
@@ -239,9 +283,6 @@ private:
   /// @param S Which specialization to create
   /// @return The new, cloned function
   Function *createSpecialization(Function *F, const SpecSig &S);
-
-  /// Compute and return the cost of specializing function \p F.
-  Cost getSpecializationCost(Function *F);
 
   /// Determine if it is possible to specialise the function for constant values
   /// of the formal parameter \p A.

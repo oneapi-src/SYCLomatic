@@ -18,12 +18,12 @@
 // We get availability markup errors when aligned allocation is missing
 // XFAIL: availability-aligned_allocation-missing
 
+// https://reviews.llvm.org/D129198 is not in AppleClang 14
+// XFAIL: stdlib=apple-libc++ && target={{.+}}-apple-macosx10.13{{(.0)?}} && apple-clang-14
+
 // Libc++ when built for z/OS doesn't contain the aligned allocation functions,
 // nor does the dynamic library shipped with z/OS.
 // UNSUPPORTED: target={{.+}}-zos{{.*}}
-
-// TODO: Investigate why this fails on MinGW-shared
-// UNSUPPORTED: target={{.+}}-windows-gnu
 
 #include <new>
 #include <cstddef>
@@ -58,11 +58,11 @@ int main(int, char**) {
     {
         new_called = delete_called = 0;
         OverAligned* x = new OverAligned[3];
-        assert(static_cast<void*>(x) == DummyData);
-        assert(new_called == 1);
+        ASSERT_WITH_OPERATOR_NEW_FALLBACKS(static_cast<void*>(x) == DummyData);
+        ASSERT_WITH_OPERATOR_NEW_FALLBACKS(new_called == 1);
 
         delete[] x;
-        assert(delete_called == 1);
+        ASSERT_WITH_OPERATOR_NEW_FALLBACKS(delete_called == 1);
     }
 
     // Test with a type that is right on the verge of being overaligned

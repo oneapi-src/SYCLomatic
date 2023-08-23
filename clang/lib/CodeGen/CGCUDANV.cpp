@@ -24,6 +24,7 @@
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/ReplaceConstant.h"
 #include "llvm/Support/Format.h"
+#include "llvm/Support/VirtualFileSystem.h"
 
 using namespace clang;
 using namespace CodeGen;
@@ -359,9 +360,13 @@ void CGNVCUDARuntime::emitDeviceStubBodyNew(CodeGenFunction &CGF,
   TranslationUnitDecl *TUDecl = CGM.getContext().getTranslationUnitDecl();
   DeclContext *DC = TranslationUnitDecl::castToDeclContext(TUDecl);
   std::string KernelLaunchAPI = "LaunchKernel";
-  if (CGF.getLangOpts().HIP && CGF.getLangOpts().GPUDefaultStream ==
-                                   LangOptions::GPUDefaultStreamKind::PerThread)
-    KernelLaunchAPI = KernelLaunchAPI + "_spt";
+  if (CGF.getLangOpts().GPUDefaultStream ==
+      LangOptions::GPUDefaultStreamKind::PerThread) {
+    if (CGF.getLangOpts().HIP)
+      KernelLaunchAPI = KernelLaunchAPI + "_spt";
+    else if (CGF.getLangOpts().CUDA)
+      KernelLaunchAPI = KernelLaunchAPI + "_ptsz";
+  }
   auto LaunchKernelName = addPrefixToName(KernelLaunchAPI);
   IdentifierInfo &cudaLaunchKernelII =
       CGM.getContext().Idents.get(LaunchKernelName);
@@ -721,8 +726,9 @@ llvm::Function *CGNVCUDARuntime::makeModuleCtorFunction() {
   // handle so CUDA runtime can figure out what to call on the GPU side.
   std::unique_ptr<llvm::MemoryBuffer> CudaGpuBinary = nullptr;
   if (!CudaGpuBinaryFileName.empty()) {
-    llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> CudaGpuBinaryOrErr =
-        llvm::MemoryBuffer::getFileOrSTDIN(CudaGpuBinaryFileName);
+    auto VFS = CGM.getFileSystem();
+    auto CudaGpuBinaryOrErr =
+        VFS->getBufferForFile(CudaGpuBinaryFileName, -1, false);
     if (std::error_code EC = CudaGpuBinaryOrErr.getError()) {
       CGM.getDiags().Report(diag::err_cannot_open_file)
           << CudaGpuBinaryFileName << EC.message();

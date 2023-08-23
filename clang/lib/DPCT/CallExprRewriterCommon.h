@@ -134,7 +134,7 @@ public:
   template <class StreamT> void print(StreamT &Stream) const {
     const Expr *InputArg = SubExpr->IgnoreImpCasts();
     clang::QualType ArgType = InputArg->getType().getCanonicalType();
-    ArgType.removeLocalCVRQualifiers(clang::Qualifiers::CVRMask);
+    ArgType.removeLocalFastQualifiers(clang::Qualifiers::CVRMask);
     if (ArgType.getAsString() != TypeInfo) {
       Stream << "(" << TypeInfo << ")";
     }
@@ -151,7 +151,7 @@ public:
   template <class StreamT> void print(StreamT &Stream) const {
     if (isContainTargetSpecialExpr(Arg)) {
       clang::QualType ArgType = Arg->getType().getCanonicalType();
-      ArgType.removeLocalCVRQualifiers(clang::Qualifiers::CVRMask);
+      ArgType.removeLocalFastQualifiers(clang::Qualifiers::CVRMask);
       Stream << "(" << ArgType.getAsString() << ")";
       if (!dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()) &&
           !dyn_cast<IntegerLiteral>(Arg->IgnoreImpCasts()) &&
@@ -182,7 +182,7 @@ public:
       dpct::print(Stream, DerefInputArg);
     } else {
       clang::QualType ArgType = InputArg->getType().getCanonicalType();
-      ArgType.removeLocalCVRQualifiers(clang::Qualifiers::CVRMask);
+      ArgType.removeLocalFastQualifiers(clang::Qualifiers::CVRMask);
       Stream << "*";
       if (ArgType.getAsString() != TypeInfo) {
         Stream << "(" << TypeInfo << ")";
@@ -221,6 +221,12 @@ public:
   }
 };
 
+inline std::function<std::string(const CallExpr *)>
+makeCharPtrCreator() {
+  return [=](const CallExpr *C) -> std::string {
+    return "char *";
+  };
+}
 
 inline std::function<DerefStreamExpr(const CallExpr *)>
 makeDerefStreamExprCreator(unsigned Idx) {
@@ -612,11 +618,12 @@ makeStaticMemberExprCreator(std::function<BaseT(const CallExpr *)> Base,
 template <class TypeInfoT, class SubExprT>
 inline std::function<CastExprPrinter<TypeInfoT, SubExprT>(const CallExpr *)>
 makeCastExprCreator(std::function<TypeInfoT(const CallExpr *)> TypeInfo,
-                    std::function<SubExprT(const CallExpr *)> Sub) {
+                    std::function<SubExprT(const CallExpr *)> Sub,
+                    bool ExtraParen = false) {
   return PrinterCreator<CastExprPrinter<TypeInfoT, SubExprT>,
                         std::function<TypeInfoT(const CallExpr *)>,
-                        std::function<SubExprT(const CallExpr *)>>(TypeInfo,
-                                                                   Sub);
+                        std::function<SubExprT(const CallExpr *)>, bool>(
+      TypeInfo, Sub, ExtraParen);
 }
 
 template <class SubExprT>
@@ -1928,12 +1935,13 @@ public:
     // resolution by adding a special attribute.
     // So we need treat function which is declared in this file as it
     // is from standard lib.
-    SmallString<512> HackedCudaWrapperFile = StringRef(DpctInstallPath);
-    path::append(HackedCudaWrapperFile, Twine("lib"), Twine("clang"),
+    SmallString<512> AlgorithmFileInCudaWrapper = StringRef(DpctInstallPath);
+    path::append(AlgorithmFileInCudaWrapper, Twine("lib"), Twine("clang"),
                  Twine(CLANG_VERSION_MAJOR_STRING), Twine("include"));
-    path::append(HackedCudaWrapperFile, Twine("cuda_wrappers"),
+    path::append(AlgorithmFileInCudaWrapper, Twine("cuda_wrappers"),
                  Twine("algorithm"));
-    if (HackedCudaWrapperFile.str().str() == DeclLocFilePath) {
+
+    if (AlgorithmFileInCudaWrapper.str().str() == DeclLocFilePath) {
       return false;
     }
 

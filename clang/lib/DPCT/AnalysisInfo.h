@@ -748,7 +748,8 @@ public:
                                     std::string FilePathStr) {
     // Get rid of symlinks
     SmallString<4096> NoSymlinks = StringRef("");
-    auto Dir = FM.getDirectory(llvm::sys::path::parent_path(FilePathStr));
+    auto Dir =
+        FM.getOptionalDirectoryRef(llvm::sys::path::parent_path(FilePathStr));
     if (Dir) {
       StringRef DirName = FM.getCanonicalName(*Dir);
       StringRef FileName = llvm::sys::path::filename(FilePathStr);
@@ -1658,7 +1659,7 @@ public:
     return ConditionalCompilationLoc;
   }
 
-  static std::map<std::string, SourceLocation> &getBeginOfEmptyMacros() {
+  static std::map<std::string, unsigned int> &getBeginOfEmptyMacros() {
     return BeginOfEmptyMacros;
   }
   static std::map<std::string, SourceLocation> &getEndOfEmptyMacros() {
@@ -2037,7 +2038,7 @@ private:
   static std::map<std::string, SourceLocation> EndOfEmptyMacros;
   // key: The hash string of the begin location of the macro expansion
   // value: The end location of the macro expansion
-  static std::map<std::string, SourceLocation> BeginOfEmptyMacros;
+  static std::map<std::string, unsigned int> BeginOfEmptyMacros;
   static std::unordered_map<std::string,
                             std::vector<clang::tooling::Replacement>>
       FileRelpsMap;
@@ -3811,6 +3812,8 @@ public:
   bool IsSyclExternMacroNeeded() { return NeedSyclExternMacro; }
   void setAlwaysInlineDevFunc() { AlwaysInlineDevFunc = true; }
   bool IsAlwaysInlineDevFunc() { return AlwaysInlineDevFunc; }
+  void setForceInlineDevFunc() { ForceInlineDevFunc = true; }
+  bool IsForceInlineDevFunc() { return ForceInlineDevFunc; }
   void merge(std::shared_ptr<DeviceFunctionInfo> Other);
   size_t ParamsNum;
   size_t NonDefaultParamNum;
@@ -3852,6 +3855,7 @@ private:
   std::string DefinitionFilePath;
   bool NeedSyclExternMacro = false;
   bool AlwaysInlineDevFunc = false;
+  bool ForceInlineDevFunc = false;
   // subgroup size, filepath, offset, API name, var name
   std::vector<std::tuple<unsigned int, std::string, unsigned int, std::string,
                          std::string>>

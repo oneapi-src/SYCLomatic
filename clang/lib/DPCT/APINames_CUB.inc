@@ -154,7 +154,7 @@ ENTRY_MEMBER_FUNCTION(cub::DeviceReduce, cub::DeviceReduce, Max, Max, true, NO_F
 ENTRY_MEMBER_FUNCTION(cub::DeviceReduce, cub::DeviceReduce, ArgMax, ArgMax, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY_MEMBER_FUNCTION(cub::DeviceReduce, cub::DeviceReduce, ReduceByKey, ReduceByKey, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY_MEMBER_FUNCTION(cub::DeviceRunLengthEncode, cub::DeviceRunLengthEncode, Encode, Encode, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
-ENTRY_MEMBER_FUNCTION(cub::DeviceRunLengthEncode, cub::DeviceRunLengthEncode, NonTrivialRuns, NonTrivialRuns, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cub::DeviceRunLengthEncode, cub::DeviceRunLengthEncode, NonTrivialRuns, NonTrivialRuns, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY_MEMBER_FUNCTION(cub::DeviceScan, cub::DeviceScan, ExclusiveSum, ExclusiveSum, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY_MEMBER_FUNCTION(cub::DeviceScan, cub::DeviceScan, ExclusiveScan, ExclusiveScan, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY_MEMBER_FUNCTION(cub::DeviceScan, cub::DeviceScan, InclusiveSum, InclusiveSum, true, NO_FLAG, P4, "Successful: DPCT1026/DPCT1027")

@@ -87,7 +87,7 @@ std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
 std::map<std::string, std::string>
     DpctGlobalInfo::FunctionCallInMacroMigrateRecord;
 std::map<std::string, SourceLocation> DpctGlobalInfo::EndOfEmptyMacros;
-std::map<std::string, SourceLocation> DpctGlobalInfo::BeginOfEmptyMacros;
+std::map<std::string, unsigned int> DpctGlobalInfo::BeginOfEmptyMacros;
 std::map<std::string, bool> DpctGlobalInfo::MacroDefines;
 std::set<std::string> DpctGlobalInfo::IncludingFileSet;
 std::set<std::string> DpctGlobalInfo::FileSetInCompiationDB;
@@ -2288,7 +2288,7 @@ void deduceTemplateArgumentFromType(std::vector<TemplateArgumentInfo> &TAIList,
       setTypeTemplateArgument(
           TAIList, PARM_TYPE_CAST(TemplateTypeParmType)->getIndex(), TL);
     } else {
-      ArgType.removeLocalCVRQualifiers(ParmType.getCVRQualifiers());
+      ArgType.removeLocalFastQualifiers(ParmType.getCVRQualifiers());
       setTypeTemplateArgument(
           TAIList, PARM_TYPE_CAST(TemplateTypeParmType)->getIndex(), ArgType);
     }
@@ -2728,7 +2728,10 @@ void CallFunctionExpr::buildInfo() {
 
   if (DpctGlobalInfo::isOptimizeMigration() && !FuncInfo->isInlined() &&
       !FuncInfo->IsSyclExternMacroNeeded()) {
-    FuncInfo->setAlwaysInlineDevFunc();
+    if (FuncInfo->isKernel())
+      FuncInfo->setForceInlineDevFunc();
+    else
+      FuncInfo->setAlwaysInlineDevFunc();
   }
 
   FuncInfo->buildInfo();
@@ -2968,6 +2971,11 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
 
   if (FuncInfo->IsAlwaysInlineDevFunc()) {
     std::string StrRepl = "inline ";
+    DpctGlobalInfo::getInstance().addReplacement(
+      std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl, nullptr));
+  }
+  if (FuncInfo->IsForceInlineDevFunc()) {
+    std::string StrRepl = "__dpct_inline__ ";
     DpctGlobalInfo::getInstance().addReplacement(
       std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl, nullptr));
   }

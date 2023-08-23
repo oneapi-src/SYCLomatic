@@ -9,6 +9,7 @@
 #ifndef MLIR_DIALECT_ARITH_IR_ARITH_H_
 #define MLIR_DIALECT_ARITH_IR_ARITH_H_
 
+#include "mlir/Bytecode/BytecodeOpInterface.h"
 #include "mlir/IR/Dialect.h"
 #include "mlir/IR/OpDefinition.h"
 #include "mlir/IR/OpImplementation.h"
@@ -123,6 +124,10 @@ bool applyCmpPredicate(arith::CmpFPredicate predicate, const APFloat &lhs,
 /// Returns the identity value attribute associated with an AtomicRMWKind op.
 TypedAttr getIdentityValueAttr(AtomicRMWKind kind, Type resultType,
                                OpBuilder &builder, Location loc);
+
+/// Return the identity numeric value associated to the give op. Return
+/// std::nullopt if there is no known neutral element.
+std::optional<TypedAttr> getNeutralElement(Operation *op);
 
 /// Returns the identity value associated with an AtomicRMWKind op.
 Value getIdentityValue(AtomicRMWKind op, Type resultType, OpBuilder &builder,

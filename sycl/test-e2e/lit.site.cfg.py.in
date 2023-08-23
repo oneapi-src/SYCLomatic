@@ -27,9 +27,6 @@ config.cuda_include = "@CUDA_INCLUDE@"
 config.opencl_include_dir = os.path.join(config.sycl_include, 'sycl')
 
 config.sycl_devices = lit_config.params.get("sycl_devices", "@SYCL_TEST_E2E_TARGETS@").split(';')
-if lit_config.params.get("target_devices") and lit_config.params.get("sycl_be"):
-    config.sycl_devices = ['{}:{}'.format(lit_config.params.get("sycl_be"), d)
-                           for d in lit_config.params.get("target_devices").split(',')]
 
 config.hip_platform = "@HIP_PLATFORM@"
 config.amd_arch = "@AMD_ARCH@"
@@ -40,6 +37,10 @@ config.c_flags = "@CMAKE_C_FLAGS@"
 config.external_tests = "@SYCL_EXTERNAL_TESTS@"
 config.extra_include = "@CMAKE_CURRENT_SOURCE_DIR@/include"
 config.gpu_aot_target_opts = lit_config.params.get("gpu_aot_target_opts", "@GPU_AOT_TARGET_OPTS@")
+
+config.vulkan_include_dir = "@Vulkan_INCLUDE_DIRS@"
+config.vulkan_lib = "@Vulkan_LIBRARY@"
+config.vulkan_found = "@Vulkan_FOUND@"
 
 config.run_launcher = lit_config.params.get('run_launcher', "@SYCL_E2E_RUN_LAUNCHER@")
 
