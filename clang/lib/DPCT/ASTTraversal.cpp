@@ -105,9 +105,12 @@ TextModification *clang::dpct::removeArg(const CallExpr *C, unsigned n,
 }
 
 auto parentStmt = []() {
-  return anyOf(hasParent(compoundStmt()), hasParent(forStmt()),
-               hasParent(whileStmt()), hasParent(doStmt()),
-               hasParent(ifStmt()));
+  return anyOf(
+      hasParent(compoundStmt()), hasParent(forStmt()), hasParent(whileStmt()),
+      hasParent(doStmt()), hasParent(ifStmt()),
+      hasParent(exprWithCleanups(anyOf(
+          hasParent(compoundStmt()), hasParent(forStmt()),
+          hasParent(whileStmt()), hasParent(doStmt()), hasParent(ifStmt())))));
 };
 
 static const CXXConstructorDecl *getIfConstructorDecl(const Decl *ND) {
@@ -8943,19 +8946,8 @@ void DeviceFunctionDeclRule::runRule(
     if (!Var->getInit())
       return;
 
-    if (auto EWC = dyn_cast<ExprWithCleanups>(Var->getInit())) {
-      auto CXXCExpr = dyn_cast<CXXConstructExpr>(EWC->getSubExpr());
-      if (!CXXCExpr)
-        return;
-
-      auto IgnoreUSIS = CXXCExpr->IgnoreUnlessSpelledInSource();
-      if (!IgnoreUSIS)
-        return;
-
-      auto CE = dyn_cast<CallExpr>(IgnoreUSIS);
-      if (!CE)
-        return;
-
+    if (auto CE =
+            dyn_cast<CallExpr>(Var->getInit()->IgnoreUnlessSpelledInSource())) {
       if (CE->getType().getCanonicalType().getAsString() !=
           "class cooperative_groups::__v1::grid_group")
         return;
