@@ -614,7 +614,6 @@ std::string CubRule::getOpRepl(const Expr *Operator) {
       [&](const CXXTemporaryObjectExpr *CXXTempObj) {
         std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
             CXXTempObj->getType().getCanonicalType());
-        std::cout << "OpType:" << OpType << std::endl;
         if (OpType == "cub::Sum" || OpType == "cuda::std::plus<void>") {
           OpRepl = MapNames::getClNamespace() + "plus<>()";
         } else if (OpType == "cub::Max") {
