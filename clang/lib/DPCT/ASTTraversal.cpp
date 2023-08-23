@@ -6865,8 +6865,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       emplaceTransformation(new ReplaceStmt(CE, ""));
     }
   } else if(FuncName == "cudaStreamSetAttribute" ||
-             FuncName == "cudaStreamGetAttribute" ||
-             FuncName == "cudaFuncSetAttribute"){
+             FuncName == "cudaStreamGetAttribute" ){
     std::string ArgStr = getStmtSpelling(CE->getArg(1));
     if (ArgStr == "cudaStreamAttributeAccessPolicyWindow") {
       if (IsAssigned) {
@@ -6882,8 +6881,37 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
             "SYCL currently does not support setting cache config on devices.");
         emplaceTransformation(new ReplaceStmt(CE, ""));
       }
-    } else if (ArgStr == "cudaFuncAttributePreferredSharedMemoryCarveout" ||
-               ArgStr == "cudaFuncAttributeMaxDynamicSharedMemorySize" ) {
+    } else if (ArgStr == "cudaLaunchAttributeIgnore") {
+      if (IsAssigned) {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
+               MapNames::ITFName.at(FuncName),
+               "this call is redundant in SYCL.");
+        emplaceTransformation(new ReplaceStmt(CE, "0"));
+      } else {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+               MapNames::ITFName.at(FuncName),
+               "this call is redundant in SYCL.");
+        emplaceTransformation(new ReplaceStmt(CE, ""));
+      }
+    } else {
+      if (IsAssigned) {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
+               MapNames::ITFName.at(FuncName),
+               "SYCL currently does not support adjusting attribute for "
+               "sycl::queue.");
+        emplaceTransformation(new ReplaceStmt(CE, "0"));
+      } else {
+        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+               MapNames::ITFName.at(FuncName),
+               "SYCL currently does not support adjusting attribute for "
+               "sycl::queue.");
+        emplaceTransformation(new ReplaceStmt(CE, ""));
+      }
+    }
+  } else if(FuncName == "cudaFuncSetAttribute"){
+    std::string ArgStr = getStmtSpelling(CE->getArg(1));
+    if (ArgStr == "cudaFuncAttributePreferredSharedMemoryCarveout" ||
+        ArgStr == "cudaFuncAttributeMaxDynamicSharedMemorySize") {
       if (IsAssigned) {
         report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
                MapNames::ITFName.at(FuncName),
@@ -6901,14 +6929,14 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       if (IsAssigned) {
         report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
                MapNames::ITFName.at(FuncName),
-               "SYCL currently does not support setting " + ArgStr +
-                   " on device.");
+               "SYCL currently does not support adjusting attribute for kernel "
+               "function.");
         emplaceTransformation(new ReplaceStmt(CE, "0"));
       } else {
         report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
                MapNames::ITFName.at(FuncName),
-               "SYCL currently does not support setting " + ArgStr +
-                   " on device.");
+               "SYCL currently does not support adjusting attribute for kernel "
+               "function.");
         emplaceTransformation(new ReplaceStmt(CE, ""));
       }
     }
