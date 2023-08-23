@@ -137,7 +137,7 @@ public:
   uint32_t get_device_id() const { return _device_id; }
   std::array<unsigned char, 16> get_uuid() const { return _uuid; }
   /// Returns estimated size of L2 cache in bytes.
-  unsigned int get_L2_cache_size() { return _L2_cache_size; }
+  unsigned int get_L2_cache_size() const { return _L2_cache_size; }
 
   // set interface
   void set_name(const char* name) {
