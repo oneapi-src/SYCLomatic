@@ -53,7 +53,7 @@ namespace {
 /// conditional and the source range covered by it.
 class PPValue {
   SourceRange Range;
-  IdentifierInfo *II;
+  IdentifierInfo *II = nullptr;
 
 public:
   llvm::APSInt Val;

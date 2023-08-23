@@ -1,6 +1,7 @@
 __global__ void test(const unsigned long long int ull, const long long int ll,
                      const unsigned long int ul, const long int l,
-                     const unsigned int u, const int i) {
+                     const unsigned int u, const int i, const float f,
+                     const double d) {
   // Start
   min(ull /*const unsigned long long int*/, ll /*const long long int*/);
   min(ll /*const long long int*/, ull /*const unsigned long long int*/);
@@ -15,5 +16,9 @@ __global__ void test(const unsigned long long int ull, const long long int ll,
   min(i /*const int*/, u /*const unsigned int*/);
   min(u /*const unsigned int*/, u /*const unsigned int*/);
   min(i /*const int*/, i /*const int*/);
+  min(f /*const float*/, f /*const float*/);
+  min(d /*const double*/, f /*const float*/);
+  min(f /*const float*/, d /*const double*/);
+  min(d /*const double*/, d /*const double*/);
   // End
 }
