@@ -973,15 +973,12 @@ public:
       break;
     }
   }
-
   void barrier() {
     switch (type) {
     case group_type::work_group:
       sycl::group_barrier(nd_item.get_group());
       break;
     case group_type::sub_group:
-      sycl::group_barrier(nd_item.get_sub_group());
-      break;
     case group_type::logical_group:
       sycl::group_barrier(nd_item.get_sub_group());
       break;
@@ -997,8 +994,7 @@ protected:
 };
 
 // The item_group is a container type that can storage supported group_type.
-// The item_group will call the real storaged group APIs. The CTAD is enabled
-// for the item_group constructor.
+// The item_group will call the real storaged group APIs.
 template <typename T, int dimensions = 3>
 class item_group : public group_base<dimensions> {
   using group_base<dimensions>::type;

@@ -32,6 +32,10 @@ __global__ void kernelFunc() {
   cg::thread_block_tile<32> tilePartition32 = cg::tiled_partition<32>(threadBlockGroup);
   // CHECK:  testThreadGroup(dpct::item_group(tilePartition32, item_ct1));
   testThreadGroup(tilePartition32);
+  // CHECK:  dpct::experimental::logical_group tilePartition16_1;
+  // CHECK:  sycl::sub_group tilePartition32_2;
+  cg::thread_block_tile<16> tilePartition16_1;
+  cg::thread_block_tile<32> tilePartition32_2;
 }
 
 
