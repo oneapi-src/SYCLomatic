@@ -6,8 +6,6 @@
 #include <cooperative_groups.h>
 #include <cooperative_groups/reduce.h>
 
-#define test11(a) testThreadGroup(a)
-
 namespace cg = cooperative_groups;
 __device__ void testThreadGroup(cg::thread_group g) {
   // CHECK:  g.get_local_linear_id();
@@ -34,10 +32,6 @@ __global__ void kernelFunc() {
   cg::thread_block_tile<32> tilePartition32 = cg::tiled_partition<32>(threadBlockGroup);
   // CHECK:  testThreadGroup(dpct::item_group(tilePartition32, item_ct1));
   testThreadGroup(tilePartition32);
-
-  test11(tilePartition16);
-  test11(tilePartition32);
-  test11(threadBlockGroup);
 }
 
 

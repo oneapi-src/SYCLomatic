@@ -2571,13 +2571,11 @@ void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
       getActualInsertLocation(InsertLocation, SM,
                               DpctGlobalInfo::getContext().getLangOpts()),
       0, SM, DpctGlobalInfo::getContext().getLangOpts()));
-  std::cout << " CCCCCCCC " << ExtraArgLoc << std::endl;
 }
 
 void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   if (!CE)
     return;
-  std::cout << "---- " << CE->getBeginLoc().printToString(DpctGlobalInfo::getSourceManager()) << std::endl;
   buildCalleeInfo(CE->getCallee()->IgnoreParenImpCasts());
   buildTextureObjectArgsInfo(CE);
 
@@ -2615,58 +2613,14 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
       // before the comma
       if (CE->getNumArgs() > FuncInfo->NonDefaultParamNum - 1) {
         auto &SM = DpctGlobalInfo::getSourceManager();
-
-        std::cout << CE->getArg(FuncInfo->NonDefaultParamNum - 1 + HasImplicitArg)
-                    ->getEndLoc().printToString(SM) << std::endl;
-        std::cout << " CE begin range " << CE->getBeginLoc().printToString(SM) << std::endl;
-        std::cout << " CE end range " << CE->getEndLoc().printToString(SM) << std::endl;
-
-        auto CERange = getDefinitionRange(CE->getBeginLoc(), CE->getEndLoc());
-        std::cout << " CEDEFINE  " << CERange.getBegin().printToString(SM) << std::endl;
-        std::cout << " CEDEFINE  " << CERange.getEnd().printToString(SM) << std::endl;
-        
-        auto TempLoc = Lexer::getLocForEndOfToken(CERange.getEnd(),  0, SM, DpctGlobalInfo::getContext().getLangOpts());
-        std::cout << "TEMP Loc " << TempLoc.printToString(SM) << std::endl; 
-        
-        auto PairRange = getRangeInRange(CE->getArg(FuncInfo->NonDefaultParamNum - 1 + HasImplicitArg), CERange.getBegin(), TempLoc);
-        std::cout << "PPPPPP " << PairRange.second.printToString(SM) << std::endl;
-        
-        auto RealEnd =  PairRange.second;
-        // auto RealEnd = TempLoc;
-        auto IT = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-            getCombinedStrFromLoc(RealEnd));
-        if (IT !=
-                dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
-            IT->second->TokenIndex == IT->second->NumTokens) {
-          std::cout << " RRRRR " << RealEnd.printToString(SM) << std::endl;
-          RealEnd = SM.getImmediateExpansionRange(
-                          CE->getArg(FuncInfo->NonDefaultParamNum - 1 +
-                                     HasImplicitArg)
-                              ->getEndLoc())
-                        .getEnd();
-          RealEnd = Lexer::getLocForEndOfToken(
-              RealEnd, 0, SM, DpctGlobalInfo::getContext().getLangOpts());
-          IT = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-              getCombinedStrFromLoc(RealEnd));
-        }
-        while (
-            IT !=
-                dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
-            RealEnd.isMacroID() &&
-            IT->second->TokenIndex == IT->second->NumTokens) {
-          std::cout << " RRRRR " << RealEnd.printToString(SM) << std::endl;
-          RealEnd = SM.getImmediateExpansionRange(RealEnd).getEnd();
-          RealEnd = Lexer::getLocForEndOfToken(
-              RealEnd, 0, SM, DpctGlobalInfo::getContext().getLangOpts());
-          IT = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-              getCombinedStrFromLoc(RealEnd));
-        }
-
-        std::cout << RealEnd.printToString(SM) << std::endl;
+        auto TokenLoc = Lexer::getLocForEndOfToken(
+            getActualInsertLocation(
+                CE->getArg(FuncInfo->NonDefaultParamNum - 1 + HasImplicitArg)
+                    ->getEndLoc(),
+                SM, DpctGlobalInfo::getContext().getLangOpts()),
+            0, SM, DpctGlobalInfo::getContext().getLangOpts());
         ExtraArgLoc =
-        //  DpctGlobalInfo::getSourceManager().getFileOffset(TokenLoc);
-            DpctGlobalInfo::getSourceManager().getFileOffset(RealEnd);
-        std::cout << "ExtraArgLoc " << ExtraArgLoc << std::endl;
+            DpctGlobalInfo::getSourceManager().getFileOffset(TokenLoc);
       } else {
         ExtraArgLoc = 0;
       }
@@ -2785,12 +2739,10 @@ void CallFunctionExpr::buildInfo() {
 void CallFunctionExpr::emplaceReplacement() {
   buildInfo();
 
-  if (ExtraArgLoc) {
+  if (ExtraArgLoc)
     DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, ExtraArgLoc, 0,
                                          getExtraArguments(), nullptr));
-  std::cout << "-------------- " << ExtraArgLoc << "   "<< getExtraArguments() << std::endl;
-  }
 }
 
 std::string CallFunctionExpr::getTemplateArguments(bool WrittenArgsOnly,
@@ -3286,7 +3238,6 @@ SourceLocation getActualInsertLocation(SourceLocation InsertLoc,
       // aaa, BBB) The insert location should be at the end of BBB instead of
       // the end of bbb.
       InsertLoc = SM.getImmediateExpansionRange(InsertLoc).getBegin();
-      std::cout << "First insert " << InsertLoc.printToString(SM) << std::endl;
     } else if (SM.isMacroArgExpansion(InsertLoc)) {
       // If is macro argument, continue to find if argument is macro or written
       // code.
@@ -3295,7 +3246,6 @@ SourceLocation getActualInsertLocation(SourceLocation InsertLoc,
       // #define CALL(x) foo(int aaa, x)
       // CALL(BBB)
       InsertLoc = SM.getImmediateSpellingLoc(InsertLoc);
-      std::cout << "Second insert " << InsertLoc.printToString(SM) << std::endl;
     } else {
       // Else return insert location directly,
       return InsertLoc;

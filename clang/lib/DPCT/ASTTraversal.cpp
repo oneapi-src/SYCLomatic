@@ -312,16 +312,6 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
             [getCombinedStrFromLoc(MI->getReplacementToken(i).getLocation())] =
                 R;
       }
-      std::shared_ptr<dpct::DpctGlobalInfo::MacroExpansionRecord> R =
-          std::make_shared<dpct::DpctGlobalInfo::MacroExpansionRecord>(
-              MacroNameTok.getIdentifierInfo(), MI, Range, IsInAnalysisScope,
-              MI->getNumTokens());
-      auto TEMPLoc = Lexer::getLocForEndOfToken(
-          MI->getReplacementToken(MI->getNumTokens() - 1).getLocation(), 0, SM,
-          DpctGlobalInfo::getContext().getLangOpts());
-
-      dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord()
-          [getCombinedStrFromLoc(TEMPLoc)] = R;
     }
 
     // If PredefinedStreamName is used with concatenated macro token,
@@ -2469,7 +2459,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     // migrate MatchedType.
     if (!DpctGlobalInfo::isInAnalysisScope(SM->getSpellingLoc(TL->getBeginLoc())) &&
         isPartOfMacroDef(SM->getSpellingLoc(TL->getBeginLoc()),
-                         SM->getSpellingLoc(TL->getEndLoc()))) {
+                         SM->getSpellingLoc(TL->getBeginLoc()))) {
       return;
     }
 
