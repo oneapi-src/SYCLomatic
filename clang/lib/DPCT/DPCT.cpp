@@ -753,22 +753,21 @@ int runDPCT(int argc, const char **argv) {
     static const std::string OptionStr{"// Option:"};
     if (SourceCode.starts_with(OptionStr)) {
       OptionMsg += " (with the option";
-      const auto Options =
-          SourceCode.substr(OptionStr.length(), SourceCode.find_first_of('\n') -
-                                                    OptionStr.length());
-      size_t PrePos = 0;
-      size_t NextPos = Options.find_first_of(' ');
-      while (PrePos != std::string::npos) {
-        auto Option = Options.substr(PrePos, NextPos - PrePos);
-        if (Option == "--use-dpcpp-extensions=intel_device_math") {
-          OptionMsg += " ";
-          OptionMsg += Option.str();
-          UseDPCPPExtensions.addValue(
-              DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath);
+      while (SourceCode.consume_front(OptionStr)) {
+        auto Option = SourceCode.substr(0, SourceCode.find_first_of('\n'));
+        Option = Option.trim(' ');
+        SourceCode = SourceCode.substr(SourceCode.find_first_of('\n') + 1);
+        OptionMsg += " ";
+        OptionMsg += Option.str();
+        if (Option.starts_with("--use-dpcpp-extensions")) {
+          if (Option.ends_with("intel_device_math"))
+            UseDPCPPExtensions.addValue(
+                DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath);
+        } else if (Option.starts_with("--use-experimental-features")) {
+          if (Option.ends_with("bfloat16_math_functions"))
+            Experimentals.addValue(ExperimentalFeatures::Exp_BFloat16Math);
         }
         // Need add more option.
-        PrePos = Options.find_first_not_of(' ', NextPos);
-        NextPos = Options.find_first_of(' ', PrePos);
       }
       OptionMsg += ")";
     }
@@ -784,8 +783,18 @@ int runDPCT(int argc, const char **argv) {
     StartPos = StartPos + StartStr.length();
     EndPos = SourceCode.find_last_of('\n', EndPos);
     llvm::outs() << SourceCode.substr(StartPos, EndPos - StartPos + 1);
+    static const std::string NoMigrate{"// Not migrate: "};
+    auto NoMigratePos = SourceCode.find(NoMigrate);
+    if (NoMigratePos != StringRef::npos) {
+      auto NoMigrateBegin = NoMigratePos + NoMigrate.length();
+      auto NoMigrateEnd = SourceCode.find_first_of('\n', NoMigratePos);
+      llvm::outs() << SourceCode.substr(NoMigrateBegin,
+                                        NoMigrateEnd - NoMigrateBegin + 1);
+      dpctExit(MigrationSucceeded);
+    }
     llvm::outs() << "Is migrated to" << OptionMsg << ":";
 
+    Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster("-w"));
     NoIncrementalMigration = true;
     // Need set a virtual path and it will used by AnalysisScope.
     InRoot = llvm::sys::path::parent_path(SourcePathList[0]).str();
@@ -1103,7 +1112,6 @@ int runDPCT(int argc, const char **argv) {
         llvm::outs() << I.piece().substr(It + StartStr.length());
       }
     }
-    llvm::sys::fs::remove(SourcePathList.front().c_str());
     return MigrationSucceeded;
   }
 
