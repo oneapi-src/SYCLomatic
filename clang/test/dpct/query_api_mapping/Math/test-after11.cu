@@ -344,3 +344,247 @@
 // FLOAT2BFLOAT16-NEXT:   __float2bfloat16(f /*float*/);
 // FLOAT2BFLOAT16-NEXT: Is migrated to:
 // FLOAT2BFLOAT16-NEXT:   sycl::ext::oneapi::bfloat16(f);
+
+/// Half Math Functions
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hceil | FileCheck %s -check-prefix=HCEIL
+// HCEIL: CUDA API:
+// HCEIL-NEXT:   hceil(h /*__half*/);
+// HCEIL-NEXT:   hceil(b /*__nv_bfloat16*/);
+// HCEIL-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// HCEIL-NEXT:   sycl::ext::intel::math::ceil(h);
+// HCEIL-NEXT:   sycl::ext::oneapi::experimental::ceil(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hcos | FileCheck %s -check-prefix=HCOS
+// HCOS: CUDA API:
+// HCOS-NEXT:   hcos(h /*__half*/);
+// HCOS-NEXT:   hcos(b /*__nv_bfloat16*/);
+// HCOS-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// HCOS-NEXT:   sycl::ext::intel::math::cos(h);
+// HCOS-NEXT:   sycl::ext::oneapi::experimental::cos(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hexp | FileCheck %s -check-prefix=HEXP
+// HEXP: CUDA API:
+// HEXP-NEXT:   hexp(h /*__half*/);
+// HEXP-NEXT:   hexp(b /*__nv_bfloat16*/);
+// HEXP-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// HEXP-NEXT:   sycl::ext::intel::math::exp(h);
+// HEXP-NEXT:   sycl::ext::oneapi::experimental::exp(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hexp10 | FileCheck %s -check-prefix=HEXP10
+// HEXP10: CUDA API:
+// HEXP10-NEXT:   hexp10(h /*__half*/);
+// HEXP10-NEXT:   hexp10(b /*__nv_bfloat16*/);
+// HEXP10-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// HEXP10-NEXT:   sycl::ext::intel::math::exp10(h);
+// HEXP10-NEXT:   sycl::ext::oneapi::experimental::exp10(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hexp2 | FileCheck %s -check-prefix=HEXP2
+// HEXP2: CUDA API:
+// HEXP2-NEXT:   hexp2(h /*__half*/);
+// HEXP2-NEXT:   hexp2(b /*__nv_bfloat16*/);
+// HEXP2-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// HEXP2-NEXT:   sycl::ext::intel::math::exp2(h);
+// HEXP2-NEXT:   sycl::ext::oneapi::experimental::exp2(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hfloor | FileCheck %s -check-prefix=HFLOOR
+// HFLOOR: CUDA API:
+// HFLOOR-NEXT:   hfloor(h /*__half*/);
+// HFLOOR-NEXT:   hfloor(b /*__nv_bfloat16*/);
+// HFLOOR-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// HFLOOR-NEXT:   sycl::ext::intel::math::floor(h);
+// HFLOOR-NEXT:   sycl::ext::oneapi::experimental::floor(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hlog | FileCheck %s -check-prefix=HLOG
+// HLOG: CUDA API:
+// HLOG-NEXT:   hlog(h /*__half*/);
+// HLOG-NEXT:   hlog(b /*__nv_bfloat16*/);
+// HLOG-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// HLOG-NEXT:   sycl::ext::intel::math::log(h);
+// HLOG-NEXT:   sycl::ext::oneapi::experimental::log(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hlog10 | FileCheck %s -check-prefix=HLOG10
+// HLOG10: CUDA API:
+// HLOG10-NEXT:   hlog10(h /*__half*/);
+// HLOG10-NEXT:   hlog10(b /*__nv_bfloat16*/);
+// HLOG10-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// HLOG10-NEXT:   sycl::ext::intel::math::log10(h);
+// HLOG10-NEXT:   sycl::ext::oneapi::experimental::log10(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hlog2 | FileCheck %s -check-prefix=HLOG2
+// HLOG2: CUDA API:
+// HLOG2-NEXT:   hlog2(h /*__half*/);
+// HLOG2-NEXT:   hlog2(b /*__nv_bfloat16*/);
+// HLOG2-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// HLOG2-NEXT:   sycl::ext::intel::math::log2(h);
+// HLOG2-NEXT:   sycl::ext::oneapi::experimental::log2(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hrcp | FileCheck %s -check-prefix=HRCP
+// HRCP: CUDA API:
+// HRCP-NEXT:   hrcp(h /*__half*/);
+// HRCP-NEXT:   hrcp(b /*__nv_bfloat16*/);
+// HRCP-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// HRCP-NEXT:   sycl::ext::intel::math::inv(h);
+// HRCP-NEXT:   sycl::half_precision::recip(float(b));
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hrint | FileCheck %s -check-prefix=HRINT
+// HRINT: CUDA API:
+// HRINT-NEXT:   hrint(h /*__half*/);
+// HRINT-NEXT:   hrint(b /*__nv_bfloat16*/);
+// HRINT-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// HRINT-NEXT:   sycl::ext::intel::math::rint(h);
+// HRINT-NEXT:   sycl::ext::oneapi::experimental::rint(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hrsqrt | FileCheck %s -check-prefix=HRSQRT
+// HRSQRT: CUDA API:
+// HRSQRT-NEXT:   hrsqrt(h /*__half*/);
+// HRSQRT-NEXT:   hrsqrt(b /*__nv_bfloat16*/);
+// HRSQRT-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// HRSQRT-NEXT:   sycl::ext::intel::math::rsqrt(h);
+// HRSQRT-NEXT:   sycl::ext::oneapi::experimental::rsqrt(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hsin | FileCheck %s -check-prefix=HSIN
+// HSIN: CUDA API:
+// HSIN-NEXT:   hsin(h /*__half*/);
+// HSIN-NEXT:   hsin(b /*__nv_bfloat16*/);
+// HSIN-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// HSIN-NEXT:   sycl::ext::intel::math::sin(h);
+// HSIN-NEXT:   sycl::ext::oneapi::experimental::sin(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=hsqrt | FileCheck %s -check-prefix=HSQRT
+// HSQRT: CUDA API:
+// HSQRT-NEXT:   hsqrt(h /*__half*/);
+// HSQRT-NEXT:   hsqrt(b /*__nv_bfloat16*/);
+// HSQRT-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// HSQRT-NEXT:   sycl::ext::intel::math::sqrt(h);
+// HSQRT-NEXT:   sycl::ext::oneapi::experimental::sqrt(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=htrunc | FileCheck %s -check-prefix=HTRUNC
+// HTRUNC: CUDA API:
+// HTRUNC-NEXT:   htrunc(h /*__half*/);
+// HTRUNC-NEXT:   htrunc(b /*__nv_bfloat16*/);
+// HTRUNC-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// HTRUNC-NEXT:   sycl::ext::intel::math::trunc(h);
+// HTRUNC-NEXT:   sycl::ext::oneapi::experimental::trunc(b);
+
+/// Half2 Math Functions
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=h2ceil | FileCheck %s -check-prefix=H2CEIL
+// H2CEIL: CUDA API:
+// H2CEIL-NEXT:   h2ceil(h /*__half2*/);
+// H2CEIL-NEXT:   h2ceil(b /*__nv_bfloat162*/);
+// H2CEIL-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// H2CEIL-NEXT:   sycl::ext::intel::math::ceil(h);
+// H2CEIL-NEXT:   sycl::ext::oneapi::experimental::ceil(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=h2cos | FileCheck %s -check-prefix=H2COS
+// H2COS: CUDA API:
+// H2COS-NEXT:   h2cos(h /*__half2*/);
+// H2COS-NEXT:   h2cos(b /*__nv_bfloat162*/);
+// H2COS-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// H2COS-NEXT:   sycl::ext::intel::math::cos(h);
+// H2COS-NEXT:   sycl::ext::oneapi::experimental::cos(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=h2exp | FileCheck %s -check-prefix=H2EXP
+// H2EXP: CUDA API:
+// H2EXP-NEXT:   h2exp(h /*__half2*/);
+// H2EXP-NEXT:   h2exp(b /*__nv_bfloat162*/);
+// H2EXP-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// H2EXP-NEXT:   sycl::ext::intel::math::exp(h);
+// H2EXP-NEXT:   sycl::ext::oneapi::experimental::exp(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=h2exp10 | FileCheck %s -check-prefix=H2EXP10
+// H2EXP10: CUDA API:
+// H2EXP10-NEXT:   h2exp10(h /*__half2*/);
+// H2EXP10-NEXT:   h2exp10(b /*__nv_bfloat162*/);
+// H2EXP10-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// H2EXP10-NEXT:   sycl::ext::intel::math::exp10(h);
+// H2EXP10-NEXT:   sycl::ext::oneapi::experimental::exp10(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=h2exp2 | FileCheck %s -check-prefix=H2EXP2
+// H2EXP2: CUDA API:
+// H2EXP2-NEXT:   h2exp2(h /*__half2*/);
+// H2EXP2-NEXT:   h2exp2(b /*__nv_bfloat162*/);
+// H2EXP2-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// H2EXP2-NEXT:   sycl::ext::intel::math::exp2(h);
+// H2EXP2-NEXT:   sycl::ext::oneapi::experimental::exp2(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=h2floor | FileCheck %s -check-prefix=H2FLOOR
+// H2FLOOR: CUDA API:
+// H2FLOOR-NEXT:   h2floor(h /*__half2*/);
+// H2FLOOR-NEXT:   h2floor(b /*__nv_bfloat162*/);
+// H2FLOOR-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// H2FLOOR-NEXT:   sycl::ext::intel::math::floor(h);
+// H2FLOOR-NEXT:   sycl::ext::oneapi::experimental::floor(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=h2log | FileCheck %s -check-prefix=H2LOG
+// H2LOG: CUDA API:
+// H2LOG-NEXT:   h2log(h /*__half2*/);
+// H2LOG-NEXT:   h2log(b /*__nv_bfloat162*/);
+// H2LOG-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// H2LOG-NEXT:   sycl::ext::intel::math::log(h);
+// H2LOG-NEXT:   sycl::ext::oneapi::experimental::log(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=h2log10 | FileCheck %s -check-prefix=H2LOG10
+// H2LOG10: CUDA API:
+// H2LOG10-NEXT:   h2log10(h /*__half2*/);
+// H2LOG10-NEXT:   h2log10(b /*__nv_bfloat162*/);
+// H2LOG10-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// H2LOG10-NEXT:   sycl::ext::intel::math::log10(h);
+// H2LOG10-NEXT:   sycl::ext::oneapi::experimental::log10(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=h2log2 | FileCheck %s -check-prefix=H2LOG2
+// H2LOG2: CUDA API:
+// H2LOG2-NEXT:   h2log2(h /*__half2*/);
+// H2LOG2-NEXT:   h2log2(b /*__nv_bfloat162*/);
+// H2LOG2-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// H2LOG2-NEXT:   sycl::ext::intel::math::log2(h);
+// H2LOG2-NEXT:   sycl::ext::oneapi::experimental::log2(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=h2rcp | FileCheck %s -check-prefix=H2RCP
+// H2RCP: CUDA API:
+// H2RCP-NEXT:   h2rcp(h /*__half2*/);
+// H2RCP-NEXT:   h2rcp(b /*__nv_bfloat162*/);
+// H2RCP-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// H2RCP-NEXT:   sycl::ext::intel::math::inv(h);
+// H2RCP-NEXT:   sycl::marray<sycl::ext::oneapi::bfloat16, 2>(sycl::half_precision::recip(float(b[0])), sycl::half_precision::recip(float(b[1])));
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=h2rint | FileCheck %s -check-prefix=H2RINT
+// H2RINT: CUDA API:
+// H2RINT-NEXT:   h2rint(h /*__half2*/);
+// H2RINT-NEXT:   h2rint(b /*__nv_bfloat162*/);
+// H2RINT-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// H2RINT-NEXT:   sycl::ext::intel::math::rint(h);
+// H2RINT-NEXT:   sycl::ext::oneapi::experimental::rint(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=h2rsqrt | FileCheck %s -check-prefix=H2RSQRT
+// H2RSQRT: CUDA API:
+// H2RSQRT-NEXT:   h2rsqrt(h /*__half2*/);
+// H2RSQRT-NEXT:   h2rsqrt(b /*__nv_bfloat162*/);
+// H2RSQRT-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// H2RSQRT-NEXT:   sycl::ext::intel::math::rsqrt(h);
+// H2RSQRT-NEXT:   sycl::ext::oneapi::experimental::rsqrt(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=h2sin | FileCheck %s -check-prefix=H2SIN
+// H2SIN: CUDA API:
+// H2SIN-NEXT:   h2sin(h /*__half2*/);
+// H2SIN-NEXT:   h2sin(b /*__nv_bfloat162*/);
+// H2SIN-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// H2SIN-NEXT:   sycl::ext::intel::math::sin(h);
+// H2SIN-NEXT:   sycl::ext::oneapi::experimental::sin(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=h2sqrt | FileCheck %s -check-prefix=H2SQRT
+// H2SQRT: CUDA API:
+// H2SQRT-NEXT:   h2sqrt(h /*__half2*/);
+// H2SQRT-NEXT:   h2sqrt(b /*__nv_bfloat162*/);
+// H2SQRT-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// H2SQRT-NEXT:   sycl::ext::intel::math::sqrt(h);
+// H2SQRT-NEXT:   sycl::ext::oneapi::experimental::sqrt(b);
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=h2trunc | FileCheck %s -check-prefix=H2TRUNC
+// H2TRUNC: CUDA API:
+// H2TRUNC-NEXT:   h2trunc(h /*__half2*/);
+// H2TRUNC-NEXT:   h2trunc(b /*__nv_bfloat162*/);
+// H2TRUNC-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math --use-experimental-features=bfloat16_math_functions):
+// H2TRUNC-NEXT:   sycl::ext::intel::math::trunc(h);
+// H2TRUNC-NEXT:   sycl::ext::oneapi::experimental::trunc(b);
