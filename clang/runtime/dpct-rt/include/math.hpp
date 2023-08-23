@@ -48,7 +48,7 @@ inline bool isnan(const sycl::ext::oneapi::bfloat16 a) {
 template <typename T>
 inline int64_t zero_or_signed_extent(T val, unsigned bit) {
   if constexpr (std::is_signed_v<T>) {
-    return int64_t(val << (64 - bit)) >> (64 - bit);
+    return int64_t(val) << (64 - bit) >> (64 - bit);
   }
   return val;
 }
@@ -56,12 +56,12 @@ inline int64_t zero_or_signed_extent(T val, unsigned bit) {
 template <typename RetT, bool needSat, typename AT, typename BT,
           typename BinaryOperation>
 inline constexpr RetT extend_binary(AT a, BT b, BinaryOperation binary_op) {
-  const RetT extend_a = zero_or_signed_extent(a, 33);
-  const RetT extend_b = zero_or_signed_extent(b, 33);
-  const RetT ret = binary_op(extend_a, extend_b);
+  const int64_t extend_a = zero_or_signed_extent(a, 33);
+  const int64_t extend_b = zero_or_signed_extent(b, 33);
+  const int64_t ret = binary_op(extend_a, extend_b);
   if constexpr (needSat)
-    return sycl::clamp(ret, std::numeric_limits<RetT>::min(),
-                       std::numeric_limits<RetT>::max());
+    return sycl::clamp<int64_t>(ret, std::numeric_limits<RetT>::min(),
+                                std::numeric_limits<RetT>::max());
   return ret;
 }
 
@@ -70,14 +70,16 @@ template <typename RetT, bool needSat, typename AT, typename BT, typename CT,
 inline constexpr RetT extend_binary(AT a, BT b, CT c,
                                     BinaryOperation1 binary_op,
                                     BinaryOperation2 second_op) {
-  const RetT extend_a = zero_or_signed_extent(a, 33);
-  const RetT extend_b = zero_or_signed_extent(b, 33);
-  RetT extend_temp = zero_or_signed_extent(binary_op(extend_a, extend_b), 34);
+  const int64_t extend_a = zero_or_signed_extent(a, 33);
+  const int64_t extend_b = zero_or_signed_extent(b, 33);
+  int64_t extend_temp =
+      zero_or_signed_extent(binary_op(extend_a, extend_b), 34);
   if constexpr (needSat)
-    extend_temp = sycl::clamp(extend_temp, std::numeric_limits<RetT>::min(),
-                              std::numeric_limits<RetT>::max());
-  const RetT extend_c = zero_or_signed_extent(c, 33);
-  return second_op(extend_temp, c);
+    extend_temp =
+        sycl::clamp<int64_t>(extend_temp, std::numeric_limits<RetT>::min(),
+                             std::numeric_limits<RetT>::max());
+  const int64_t extend_c = zero_or_signed_extent(c, 33);
+  return second_op(extend_temp, extend_c);
 }
 } // namespace detail
 
