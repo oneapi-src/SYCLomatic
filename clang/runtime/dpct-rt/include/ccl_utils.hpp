@@ -204,8 +204,8 @@ public:
   /// \param peer the rank that receives @c sendbuff
   /// \param queue_ptr a sycl::queue ptr associated with the operation
   /// \return @ref void
-  void send(const void *sendbuff, size_t count, oneapi::ccl::datatype dtype,
-            int peer, sycl::queue *queue_ptr) {
+  void send(void *sendbuff, size_t count, oneapi::ccl::datatype dtype, int peer,
+            sycl::queue *queue_ptr) {
     call_func_wrapper(
         [=](const oneapi::ccl::stream &stream) {
           return oneapi::ccl::send(sendbuff, count, dtype, peer, _comm, stream);
@@ -220,8 +220,8 @@ public:
   /// \param peer the rank that receives @c recvbuff
   /// \param queue_ptr a sycl::queue ptr associated with the operation
   /// \return @ref void
-  void recv(const void *recvbuff, size_t count, oneapi::ccl::datatype dtype,
-            int peer, sycl::queue *queue_ptr) {
+  void recv(void *recvbuff, size_t count, oneapi::ccl::datatype dtype, int peer,
+            sycl::queue *queue_ptr) {
     call_func_wrapper(
         [=](const oneapi::ccl::stream &stream) {
           return oneapi::ccl::recv(recvbuff, count, dtype, peer, _comm, stream);
