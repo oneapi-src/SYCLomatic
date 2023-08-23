@@ -81,6 +81,7 @@
 // ncclReduceScatter-NEXT:                     recvcount /*size_t*/, datatype /*ncclDataType_t*/,
 // ncclReduceScatter-NEXT:                     op /*ncclRedOp_t*/, comm /*ncclComm_t*/,
 // ncclReduceScatter-NEXT:                     stream /*cudaStream_t*/);
+// ncclReduceScatter-NEXT: Is migrated to:
 // ncclReduceScatter-NEXT:   comm->reduce_scatter(sendbuff, recvbuff, recvcount, datatype, op, stream);
 // ncclReduceScatter-EMPTY:
 
