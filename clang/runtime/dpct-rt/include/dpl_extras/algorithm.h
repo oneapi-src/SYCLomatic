@@ -1816,11 +1816,6 @@ __histogram_general_select_best(Policy &&policy, Iter1 first, Iter1 last,
 
   // Temporary use of stable non-public API from oneDPL,  this function will be
   // replaced with oneDPL call in an upcoming release.
-  auto keep_input = oneapi::dpl::__ranges::__get_sycl_range<
-      oneapi::dpl::__par_backend_hetero::access_mode::read, Iter1>();
-  auto input_buf = keep_input(first, last);
-  // Temporary use of stable non-public API from oneDPL,  this function will be
-  // replaced with oneDPL call in an upcoming release.
   auto keep_bins = oneapi::dpl::__ranges::__get_sycl_range<
       oneapi::dpl::__par_backend_hetero::access_mode::write, Iter2>();
   auto bins_buf = keep_bins(histogram_first, histogram_first + num_bins);
@@ -1828,41 +1823,56 @@ __histogram_general_select_best(Policy &&policy, Iter1 first, Iter1 last,
   oneapi::dpl::fill(std::forward<Policy>(policy), bins_buf.all_view().begin(),
                     bins_buf.all_view().end(), __histo_value_type(0));
   auto N = last - first;
-  if (num_bins < __max_registers) {
-    // If bins fit into registers, use register private accumulation
-    __histogram_general_registers_local_reduction<1024, 32, 16,
-                                                  __histo_value_type>(
-        ::std::forward<Policy>(policy), input_buf.all_view(),
-        bins_buf.all_view(), num_bins, func,
-        std::forward<Range...>(opt_range)...);
-  } else if (num_bins * sizeof(__histo_value_type) < __local_mem_size) {
-    // If bins fit into SLM, use local atomics
-
-    // Experimentally determined iters per work-item
-    if (N <= 524288) {
-      __histogram_general_local_atomics<1024, 4, __histo_value_type>(
-          ::std::forward<Policy>(policy), input_buf.all_view(),
-          bins_buf.all_view(), num_bins, func,
-          std::forward<Range...>(opt_range)...);
-    } else {
-      __histogram_general_local_atomics<1024, 32, __histo_value_type>(
-          ::std::forward<Policy>(policy), input_buf.all_view(),
-          bins_buf.all_view(), num_bins, func,
-          std::forward<Range...>(opt_range)...);
-    }
-  } else // Otherwise, use global atomics (private copies per workgroup)
+  if (N > 0)
   {
-    // Experimentally determined iters per work-item
-    if (N <= 524288) {
-      __histogram_general_private_global_atomics<1024, 4, __histo_value_type>(
+    // Temporary use of stable non-public API from oneDPL,  this function will be
+    // replaced with oneDPL call in an upcoming release.
+    auto keep_input = oneapi::dpl::__ranges::__get_sycl_range<
+        oneapi::dpl::__par_backend_hetero::access_mode::read, Iter1>();
+    auto input_buf = keep_input(first, last);
+
+
+    if (num_bins < __max_registers) {
+      //std::cout<<"registers"<<std::endl;
+
+      // If bins fit into registers, use register private accumulation
+      __histogram_general_registers_local_reduction<1024, 32, 16,
+                                                    __histo_value_type>(
           ::std::forward<Policy>(policy), input_buf.all_view(),
           bins_buf.all_view(), num_bins, func,
           std::forward<Range...>(opt_range)...);
-    } else {
-      __histogram_general_private_global_atomics<1024, 32, __histo_value_type>(
-          ::std::forward<Policy>(policy), input_buf.all_view(),
-          bins_buf.all_view(), num_bins, func,
-          std::forward<Range...>(opt_range)...);
+    } else if (num_bins * sizeof(__histo_value_type) < __local_mem_size) {
+      // If bins fit into SLM, use local atomics
+      //std::cout<<"local atomics"<<std::endl;
+
+      // Experimentally determined iters per work-item
+      if (N <= 524288) {
+        __histogram_general_local_atomics<1024, 4, __histo_value_type>(
+            ::std::forward<Policy>(policy), input_buf.all_view(),
+            bins_buf.all_view(), num_bins, func,
+            std::forward<Range...>(opt_range)...);
+      } else {
+        __histogram_general_local_atomics<1024, 32, __histo_value_type>(
+            ::std::forward<Policy>(policy), input_buf.all_view(),
+            bins_buf.all_view(), num_bins, func,
+            std::forward<Range...>(opt_range)...);
+      }
+    } else // Otherwise, use global atomics (private copies per workgroup)
+    {
+      //std::cout<<"private globals"<<std::endl;
+
+      // Experimentally determined iters per work-item
+      if (N <= 524288) {
+        __histogram_general_private_global_atomics<1024, 4, __histo_value_type>(
+            ::std::forward<Policy>(policy), input_buf.all_view(),
+            bins_buf.all_view(), num_bins, func,
+            std::forward<Range...>(opt_range)...);
+      } else {
+        __histogram_general_private_global_atomics<1024, 32, __histo_value_type>(
+            ::std::forward<Policy>(policy), input_buf.all_view(),
+            bins_buf.all_view(), num_bins, func,
+            std::forward<Range...>(opt_range)...);
+      }
     }
   }
   return histogram_first + num_bins;
