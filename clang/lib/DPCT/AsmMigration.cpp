@@ -1357,7 +1357,7 @@ protected:
     } else if (Inst->hasAttr(InstAttr::min)) {
       OS() << ", sycl::minimum<>()";
     } else if (Inst->hasAttr(InstAttr::max)) {
-      OS() << ", std::maximum<>()";
+      OS() << ", sycl::maximum<>()";
     }
 
     OS() << ")";

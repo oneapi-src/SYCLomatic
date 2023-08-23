@@ -26,7 +26,7 @@ __global__ void vadd() {
   // CHECK: a = dpct::extend_add_sat<int32_t>(b, c, d, sycl::minimum<>());
   asm("vadd.s32.u32.s32.sat.min %0, %1, %2, %3;" : "=r"(a) : "r"(b), "r"(c), "r"(d));
 
-  // CHECK: a = dpct::extend_add_sat<int32_t>(b, c, d, std::maximum<>());
+  // CHECK: a = dpct::extend_add_sat<int32_t>(b, c, d, sycl::maximum<>());
   asm("vadd.s32.u32.s32.sat.max %0, %1, %2, %3;" : "=r"(a) : "r"(b), "r"(c), "r"(d));
 }
 
@@ -51,7 +51,7 @@ __global__ void vsub() {
   // CHECK: a = dpct::extend_sub_sat<int32_t>(b, c, d, sycl::minimum<>());
   asm("vsub.s32.u32.s32.sat.min %0, %1, %2, %3;" : "=r"(a) : "r"(b), "r"(c), "r"(d));
 
-  // CHECK: a = dpct::extend_sub_sat<int32_t>(b, c, d, std::maximum<>());
+  // CHECK: a = dpct::extend_sub_sat<int32_t>(b, c, d, sycl::maximum<>());
   asm("vsub.s32.u32.s32.sat.max %0, %1, %2, %3;" : "=r"(a) : "r"(b), "r"(c), "r"(d));
 }
 
@@ -76,7 +76,7 @@ __global__ void vabsdiff() {
   // CHECK: a = dpct::extend_absdiff_sat<int32_t>(b, c, d, sycl::minimum<>());
   asm("vabsdiff.s32.u32.s32.sat.min %0, %1, %2, %3;" : "=r"(a) : "r"(b), "r"(c), "r"(d));
 
-  // CHECK: a = dpct::extend_absdiff_sat<int32_t>(b, c, d, std::maximum<>());
+  // CHECK: a = dpct::extend_absdiff_sat<int32_t>(b, c, d, sycl::maximum<>());
   asm("vabsdiff.s32.u32.s32.sat.max %0, %1, %2, %3;" : "=r"(a) : "r"(b), "r"(c), "r"(d));
 }
 
@@ -101,7 +101,7 @@ __global__ void vmin() {
   // CHECK: a = dpct::extend_min_sat<int32_t>(b, c, d, sycl::minimum<>());
   asm("vmin.s32.u32.s32.sat.min %0, %1, %2, %3;" : "=r"(a) : "r"(b), "r"(c), "r"(d));
 
-  // CHECK: a = dpct::extend_min_sat<int32_t>(b, c, d, std::maximum<>());
+  // CHECK: a = dpct::extend_min_sat<int32_t>(b, c, d, sycl::maximum<>());
   asm("vmin.s32.u32.s32.sat.max %0, %1, %2, %3;" : "=r"(a) : "r"(b), "r"(c), "r"(d));
 }
 
@@ -126,7 +126,7 @@ __global__ void vmax() {
   // CHECK: a = dpct::extend_max_sat<int32_t>(b, c, d, sycl::minimum<>());
   asm("vmax.s32.u32.s32.sat.min %0, %1, %2, %3;" : "=r"(a) : "r"(b), "r"(c), "r"(d));
 
-  // CHECK: a = dpct::extend_max_sat<int32_t>(b, c, d, std::maximum<>());
+  // CHECK: a = dpct::extend_max_sat<int32_t>(b, c, d, sycl::maximum<>());
   asm("vmax.s32.u32.s32.sat.max %0, %1, %2, %3;" : "=r"(a) : "r"(b), "r"(c), "r"(d));
 }
 // clang-format on
