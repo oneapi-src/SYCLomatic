@@ -401,9 +401,10 @@ Use 64 bits as memory_bus_width default value."
     // according to device properties.
     prop.set_max_register_size_per_work_group(65536);
 
-    // Set estimates max L2 cache size(16MB), feel free to update the value
-    // according to device properties.
-    prop.set_L2_cache_size(16777216);
+    // Set estimates max L2 cache size with global memory cache size, feel free
+    // to update the value according to device properties.
+    prop.set_L2_cache_size(
+        get_info<sycl::info::device::global_mem_cache_size>());
 
     out = prop;
   }
