@@ -1,3 +1,6 @@
+// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseSpMM_preprocess | FileCheck %s -check-prefix=cusparseSpMM_preprocess
 // cusparseSpMM_preprocess: CUDA API:
 // cusparseSpMM_preprocess-NEXT:   cusparseSpMM_preprocess(

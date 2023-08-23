@@ -1,3 +1,6 @@
+// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1
+// UNSUPPORTED: v8.0, v9.0, v9.1
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusolverDnSpotrsBatched | FileCheck %s -check-prefix=cusolverDnSpotrsBatched
 // cusolverDnSpotrsBatched: CUDA API:
 // cusolverDnSpotrsBatched-NEXT:   cusolverDnSpotrsBatched(
