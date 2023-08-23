@@ -36,6 +36,7 @@ const std::string OPTION_VcxprojFile = "VcxprojFile";
 const std::string OPTION_ProcessAll = "ProcessAll";
 const std::string OPTION_SyclNamedLambda = "SyclNamedLambda";
 const std::string OPTION_ExperimentalFlag = "ExperimentalFlag";
+const std::string OPTION_HelperFuncPreferenceFlag = "HelperFuncPreferenceFlag";
 const std::string OPTION_ExplicitNamespace = "ExplicitNamespace";
 const std::string OPTION_UsmLevel = "UsmLevel";
 const std::string OPTION_OptimizeMigration = "OptimizeMigration";

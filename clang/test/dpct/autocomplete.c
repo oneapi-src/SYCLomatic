@@ -25,6 +25,7 @@
 // DASH-NEXT: --gen-helper-function
 // DASH-NEXT: --help
 // DASH-NEXT: --helper-function-dir
+// DASH-NEXT: --helper-function-preference=
 // DASH-NEXT: --in-root
 // DASH-NEXT: --in-root-exclude
 // DASH-NEXT: --keep-original-code
@@ -50,7 +51,6 @@
 // DASH-NEXT: --use-dpcpp-extensions=
 // DASH-NEXT: --use-experimental-features=
 // DASH-NEXT: --use-explicit-namespace=
-// DASH-NEXT: --use-pure-sycl-queue
 // DASH-NEXT: --usm-level=
 // DASH-NEXT: --version
 // DASH-NEXT: -p

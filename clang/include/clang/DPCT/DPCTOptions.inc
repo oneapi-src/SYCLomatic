@@ -432,15 +432,19 @@ DPCT_NON_ENUM_OPTION(
         "Query functionally compatible SYCL API to migrate CUDA API."),
     llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 
-DPCT_NON_ENUM_OPTION(
-    DPCT_OPT_TYPE(static llvm::cl::opt<bool>), UsePureSyclQueue,
-    "use-pure-sycl-queue",
-    llvm::cl::desc("Generates pure SYCL code to get SYCL queue and device "
-                   "instead of calling helper functions. Notice that the "
-                   "runtime behavior may not be the same with the original "
-                   "code because there is only one global definition of SYCL "
-                   "queue and device, and will be passed to every place where "
-                   "SYCL queue and device are expected. Default: off."),
-    llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+DPCT_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::bits<HelperFuncPreference>), Preferences,
+    "helper-function-preference",
+    DPCT_OPTION_VALUES(DPCT_OPT_ENUM(
+        "no-queue-device", int(HelperFuncPreference::NoQueueDevice),
+        "Call SYCL API to get queue and device instead of calling helper function. Notice\n"
+        "that the runtime behavior may not be the same with the original code because\n"
+        "there is only one global definition of SYCL queue and device, which will be\n"
+        "passed to place where SYCL queue and device are expected.\n",
+        false)),
+    llvm::cl::desc("The preference of helper function usage in migration.\n"
+                   "The values are:\n"),
+    llvm::cl::CommaSeparated, llvm::cl::value_desc("value"),
+    llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
 
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT

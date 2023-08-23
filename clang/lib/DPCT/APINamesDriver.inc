@@ -77,7 +77,7 @@ FEATURE_REQUEST_FACTORY(
                                 ARG(1)))))
 
 CONDITIONAL_FACTORY_ENTRY(
-    checkIsUsePureSyclQueue(),
+    checkIsUseNoQueueDevice(),
     WARNING_FACTORY_ENTRY(
         "cuCtxCreate_v2",
         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxCreate_v2", DEREF(0),
@@ -93,7 +93,7 @@ CONDITIONAL_FACTORY_ENTRY(
             CALL(MapNames::getDpctNamespace() + "select_device", ARG(2))))))
 
 CONDITIONAL_FACTORY_ENTRY(
-    checkIsUsePureSyclQueue(),
+    checkIsUseNoQueueDevice(),
     WARNING_FACTORY_ENTRY(
         "cuDevicePrimaryCtxRetain",
         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuDevicePrimaryCtxRetain",
@@ -147,7 +147,7 @@ WARNING_FACTORY_ENTRY("cuDriverGetVersion",
     Diagnostics::TYPE_MISMATCH)
 
 CONDITIONAL_FACTORY_ENTRY(
-    clang::dpct::checkIsUsePureSyclQueue(),
+    clang::dpct::checkIsUseNoQueueDevice(),
     WARNING_FACTORY_ENTRY(
         "cuCtxGetDevice",
         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxGetDevice", DEREF(0),

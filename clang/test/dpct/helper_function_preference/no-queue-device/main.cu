@@ -1,7 +1,7 @@
 // UNSUPPORTED: system-windows
 
 // RUN: cp %S/* .
-// RUN: dpct --use-pure-sycl-queue -p=%S -out-root %T --cuda-include-path="%cuda-path/include"
+// RUN: dpct --helper-function-preference=no-queue-device -p=%S -out-root %T --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --input-file %T/kernel1.dp.cpp --match-full-lines %S/kernel1.cu
 // RUN: FileCheck --input-file %T/kernel2.dp.cpp --match-full-lines %S/kernel2.cu
 // RUN: FileCheck --input-file %T/main.dp.cpp --match-full-lines %S/main.cu

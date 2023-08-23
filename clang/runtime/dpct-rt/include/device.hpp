@@ -363,11 +363,11 @@ public:
   }
 
   int is_native_atomic_supported() { return 0; }
-  [[deprecated]] int get_major_version() const {
+  int get_major_version() const {
     return dpct::get_major_version(*this);
   }
 
-  [[deprecated]] int get_minor_version() const {
+  int get_minor_version() const {
     return dpct::get_minor_version(*this);
   }
 
@@ -425,7 +425,7 @@ public:
     total_memory = get_device_info().get_global_mem_size();
   }
 
-  [[deprecated]] void get_device_info(device_info &out) const {
+  void get_device_info(device_info &out) const {
     dpct::get_device_info(out, *this);
   }
 
@@ -534,7 +534,7 @@ private:
     return _queues.back().get();
   }
 
-  [[deprecated]] void get_version(int &major, int &minor) const {
+  void get_version(int &major, int &minor) const {
     detail::get_version(*this, major, minor);
   }
   sycl::queue *_q_in_order, *_q_out_of_order;

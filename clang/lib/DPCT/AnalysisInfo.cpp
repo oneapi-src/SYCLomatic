@@ -63,7 +63,6 @@ std::set<ExplicitNamespace> DpctGlobalInfo::ExplicitNamespaceSet;
 bool DpctGlobalInfo::EnableCtad = false;
 bool DpctGlobalInfo::GenBuildScript = false;
 bool DpctGlobalInfo::EnableComments = false;
-bool DpctGlobalInfo::UsePureSyclQueue = false;
 bool DpctGlobalInfo::TempEnableDPCTNamespace = false;
 bool DpctGlobalInfo::IsMLKHeaderUsed = false;
 ASTContext *DpctGlobalInfo::Context = nullptr;
@@ -144,6 +143,7 @@ std::unordered_map<std::shared_ptr<DeviceFunctionInfo>,
 unsigned DpctGlobalInfo::ExtensionDEFlag = static_cast<unsigned>(-1);
 unsigned DpctGlobalInfo::ExtensionDDFlag = 0;
 unsigned DpctGlobalInfo::ExperimentalFlag = 0;
+unsigned DpctGlobalInfo::HelperFuncPreferenceFlag = 0;
 unsigned int DpctGlobalInfo::ColorOption = 1;
 std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CubPlaceholderIndexMap;
@@ -378,7 +378,7 @@ void DpctGlobalInfo::buildReplacements() {
   }
 
   for (auto &Counter : TempVariableDeclCounterMap) {
-    if (DpctGlobalInfo::isUsePureSyclQueue()) {
+    if (DpctGlobalInfo::useNoQueueDevice()) {
       Counter.second.PlaceholderStr[1] = DpctGlobalInfo::getGlobalQueueName();
       Counter.second.PlaceholderStr[2] = DpctGlobalInfo::getGlobalDeviceName();
       // Need not insert q_ct1 and dev_ct1 declrations and request feature.
@@ -1176,7 +1176,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
             ExplicitNamespace::EN_CL)) {
       OS << "using namespace sycl;" << getNL();
     }
-    if (DpctGlobalInfo::isUsePureSyclQueue()) {
+    if (DpctGlobalInfo::useNoQueueDevice()) {
       static bool Flag = true;
       auto SourceFileType = GetSourceFileType(getFilePath());
       if (Flag && (SourceFileType == SPT_CudaSource ||
@@ -4371,11 +4371,11 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
 const std::string &getDefaultString(HelperFuncType HFT) {
   const static std::string NullString;
   const static std::string Q =
-      DpctGlobalInfo::isUsePureSyclQueue()
+      DpctGlobalInfo::useNoQueueDevice()
           ? DpctGlobalInfo::getGlobalQueueName()
           : MapNames::getDpctNamespace() + "get_default_queue()";
   const static std::string D =
-      DpctGlobalInfo::isUsePureSyclQueue()
+      DpctGlobalInfo::useNoQueueDevice()
           ? DpctGlobalInfo::getGlobalDeviceName()
           : MapNames::getDpctNamespace() + "get_current_device()";
   switch (HFT) {

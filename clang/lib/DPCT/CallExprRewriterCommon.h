@@ -885,9 +885,9 @@ inline std::function<bool(const CallExpr *C)> checkIsUSM() {
   };
 }
 
-inline std::function<bool(const CallExpr *C)> checkIsUsePureSyclQueue() {
+inline std::function<bool(const CallExpr *C)> checkIsUseNoQueueDevice() {
   return [](const CallExpr *C) -> bool {
-    return DpctGlobalInfo::isUsePureSyclQueue();
+    return DpctGlobalInfo::useNoQueueDevice();
   };
 }
 
