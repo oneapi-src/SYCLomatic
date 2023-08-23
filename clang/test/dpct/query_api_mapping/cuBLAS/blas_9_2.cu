@@ -119,7 +119,7 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasGetMathMode | FileCheck %s -check-prefix=cublasGetMathMode
 // cublasGetMathMode: CUDA API:
 // cublasGetMathMode-NEXT:   cublasGetMathMode(handle /*cublasHandle_t*/, precision /*cublasMath_t **/);
-// cublasGetMathMode-NEXT: The API is Removed because this it is redundant in SYCL.
+// cublasGetMathMode-NEXT: The API is Removed.
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasHgemmBatched | FileCheck %s -check-prefix=cublasHgemmBatched
 // cublasHgemmBatched: CUDA API:
@@ -135,7 +135,7 @@
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSetMathMode | FileCheck %s -check-prefix=cublasSetMathMode
 // cublasSetMathMode: CUDA API:
 // cublasSetMathMode-NEXT:   cublasSetMathMode(handle /*cublasHandle_t*/, precision /*cublasMath_t*/);
-// cublasSetMathMode-NEXT: The API is Removed because this it is redundant in SYCL.
+// cublasSetMathMode-NEXT: The API is Removed.
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSgemmBatched | FileCheck %s -check-prefix=cublasSgemmBatched
 // cublasSgemmBatched: CUDA API:

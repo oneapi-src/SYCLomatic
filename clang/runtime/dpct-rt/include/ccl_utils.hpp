@@ -107,10 +107,10 @@ public:
 
   /// \brief allreduce is a collective communication operation that performs the global reduction operation
   ///       on values from all ranks of communicator and distributes the result back to all ranks.
-  /// \param send_buf the buffer with @c count elements of @c dtype that stores local data to be reduced
-  /// \param recv_buf [out] the buffer to store reduced result, must have the same dimension as @c send_buf
-  /// \param count the number of elements of type @c dtype in @c send_buf and @c recv_buf
-  /// \param dtype the datatype of elements in @c send_buf and @c recv_buf
+  /// \param sendbuff the buffer with @c count elements of @c dtype that stores local data to be reduced
+  /// \param recvbuff [out] the buffer to store reduced result, must have the same dimension as @c sendbuff
+  /// \param count the number of elements of type @c dtype in @c sendbuff and @c recvbuff
+  /// \param dtype the datatype of elements in @c sendbuff and @c recvbuff
   /// \param rtype the type of the reduction operation to be applied
   /// \param queue_ptr a sycl::queue ptr associated with the operation
   /// \return @ref void
@@ -128,12 +128,12 @@ public:
   /// \brief reduce is a collective communication operation that performs the
   ///        global reduction operation on values from all ranks of the communicator
   ///        and returns the result to the root rank.
-  /// \param send_buf the buffer with @c count elements of @c dtype that stores
+  /// \param sendbuff the buffer with @c count elements of @c dtype that stores
   ///        local data to be reduced 
-  /// \param recv_buf [out] the buffer to store reduced result, 
-  ///        must have the same dimension as @c send_buf 
-  /// \param count the number of elements of type @c dtype in @c send_buf and @c recv_buf 
-  /// \param dtype the datatype of elements in @c send_buf and @c recv_buf 
+  /// \param recvbuff [out] the buffer to store reduced result, 
+  ///        must have the same dimension as @c sendbuff 
+  /// \param count the number of elements of type @c dtype in @c sendbuff and @c recvbuff 
+  /// \param dtype the datatype of elements in @c sendbuff and @c recvbuff 
   /// \param root the rank that gets the result of reduction 
   /// \param rtype the type of the reduction operation to be applied 
   /// \param queue_ptr a sycl::queue ptr associated with the operation 
@@ -152,9 +152,9 @@ public:
   /// \brief broadcast is a collective communication operation that broadcasts data
   ///        from one rank of communicator (denoted as root) to all other ranks.
   ///        Only support in-place operation
-  /// \param send_buf the buffer with @c count elements of @c dtype that stores
+  /// \param sendbuff the buffer with @c count elements of @c dtype that stores
   ///        local data to be reduced 
-  /// \param recv_buf [out] the buffer to store reduced result
+  /// \param recvbuff [out] the buffer to store reduced result
   /// \param count the number of elements of type @c dtype in @c buf 
   /// \param dtype thedatatype of elements in @c buf 
   /// \param root the rank that broadcasts @c buf
@@ -166,7 +166,7 @@ public:
     if (sendbuff != recvbuff) {
       throw std::runtime_error(
           "oneCCL broadcast only support in-place operation. "
-          "send_buf and recv_buf must be same.");
+          "sendbuff and recvbuff must be same.");
       return;
     }
     call_func_wrapper(
@@ -179,10 +179,10 @@ public:
 
   /// \brief reduce_scatter is a collective communication operation that performs the global reduction operation
   ///        on values from all ranks of the communicator and scatters the result in blocks back to all ranks.
-  /// \param send_buf the buffer with @c count elements of @c dtype that stores local data to be reduced
-  /// \param recv_buf [out] the buffer to store reduced result, must have the same dimension as @c send_buf
+  /// \param sendbuff the buffer with @c count elements of @c dtype that stores local data to be reduced
+  /// \param recvbuff [out] the buffer to store reduced result, must have the same dimension as @c sendbuff
   /// \param recv_count the number of elements of type @c dtype in receive block
-  /// \param dtype the datatype of elements in @c send_buf and @c recv_buf
+  /// \param dtype the datatype of elements in @c sendbuff and @c recvbuff
   /// \param rtype the type of the reduction operation to be applied
   /// \param queue_ptr a sycl::queue ptr associated with the operation
   /// \return @ref void
@@ -193,6 +193,38 @@ public:
         [=](const oneapi::ccl::stream &stream) {
           return oneapi::ccl::reduce_scatter(sendbuff, recvbuff, recv_count,
                                              dtype, rtype, _comm, stream);
+        },
+        queue_ptr);
+  }
+
+  /// \brief send is a pt2pt communication operation that sends data from one rank of communicator.
+  /// \param sendbuff the buffer with @c count elements of @c dtype serves as send buffer for root
+  /// \param count the number of elements of type @c dtype in @c sendbuff
+  /// \param dtype the datatype of elements in @c sendbuff
+  /// \param peer the rank that receives @c sendbuff
+  /// \param queue_ptr a sycl::queue ptr associated with the operation
+  /// \return @ref void
+  void send(void *sendbuff, size_t count, oneapi::ccl::datatype dtype, int peer,
+            sycl::queue *queue_ptr) {
+    call_func_wrapper(
+        [=](const oneapi::ccl::stream &stream) {
+          return oneapi::ccl::send(sendbuff, count, dtype, peer, _comm, stream);
+        },
+        queue_ptr);
+  }
+
+  /// \brief recv is a pt2pt communication operation that sends data from one rank of communicator.
+  /// \param recvbuff the buffer with @c count elements of @c dtype serves as  receive buffer
+  /// \param count the number of elements of type @c dtype in @c recvbuff
+  /// \param dtype the datatype of elements in @c recvbuff
+  /// \param peer the rank that receives @c recvbuff
+  /// \param queue_ptr a sycl::queue ptr associated with the operation
+  /// \return @ref void
+  void recv(void *recvbuff, size_t count, oneapi::ccl::datatype dtype, int peer,
+            sycl::queue *queue_ptr) {
+    call_func_wrapper(
+        [=](const oneapi::ccl::stream &stream) {
+          return oneapi::ccl::recv(recvbuff, count, dtype, peer, _comm, stream);
         },
         queue_ptr);
   }
