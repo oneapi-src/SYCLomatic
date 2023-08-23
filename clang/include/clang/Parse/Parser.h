@@ -1188,7 +1188,7 @@ private:
   /// RAII object used to modify the scope flags for the current scope.
   class ParseScopeFlags {
     Scope *CurScope;
-    unsigned OldFlags;
+    unsigned OldFlags = 0;
     ParseScopeFlags(const ParseScopeFlags &) = delete;
     void operator=(const ParseScopeFlags &) = delete;
 
@@ -1788,8 +1788,12 @@ public:
                                   bool IsUnevaluated);
 
   ExprResult ParseStringLiteralExpression(bool AllowUserDefinedLiteral = false);
+  ExprResult ParseUnevaluatedStringLiteralExpression();
 
 private:
+  ExprResult ParseStringLiteralExpression(bool AllowUserDefinedLiteral,
+                                          bool Unevaluated);
+
   ExprResult ParseExpressionWithLeadingAt(SourceLocation AtLoc);
 
   ExprResult ParseExpressionWithLeadingExtension(SourceLocation ExtLoc);
@@ -2218,7 +2222,8 @@ private:
     DSC_objc_method_result, // ObjC method result context, enables
                             // 'instancetype'
     DSC_condition,          // condition declaration context
-    DSC_association // A _Generic selection expression's type association
+    DSC_association, // A _Generic selection expression's type association
+    DSC_new,         // C++ new expression
   };
 
   /// Is this a context in which we are parsing just a type-specifier (or
@@ -2240,6 +2245,7 @@ private:
     case DeclSpecContext::DSC_trailing:
     case DeclSpecContext::DSC_alias_declaration:
     case DeclSpecContext::DSC_association:
+    case DeclSpecContext::DSC_new:
       return true;
     }
     llvm_unreachable("Missing DeclSpecContext case");
@@ -2288,6 +2294,7 @@ private:
     case DeclSpecContext::DSC_trailing:
     case DeclSpecContext::DSC_conv_operator:
     case DeclSpecContext::DSC_template_arg:
+    case DeclSpecContext::DSC_new:
       return AllowDefiningTypeSpec::No;
     }
     llvm_unreachable("Missing DeclSpecContext case");
@@ -2311,6 +2318,7 @@ private:
     case DeclSpecContext::DSC_association:
     case DeclSpecContext::DSC_conv_operator:
     case DeclSpecContext::DSC_template_arg:
+    case DeclSpecContext::DSC_new:
 
       return false;
     }
@@ -2330,6 +2338,7 @@ private:
     case DeclSpecContext::DSC_type_specifier:
     case DeclSpecContext::DSC_association:
     case DeclSpecContext::DSC_conv_operator:
+    case DeclSpecContext::DSC_new:
       return true;
 
     case DeclSpecContext::DSC_objc_method_result:
@@ -2352,6 +2361,7 @@ private:
     case DeclSpecContext::DSC_trailing:
     case DeclSpecContext::DSC_alias_declaration:
     case DeclSpecContext::DSC_template_param:
+    case DeclSpecContext::DSC_new:
       return ImplicitTypenameContext::Yes;
 
     case DeclSpecContext::DSC_normal:
@@ -2526,6 +2536,7 @@ private:
     TypeIdUnambiguous,
     TypeIdAsTemplateArgument,
     TypeIdInTrailingReturnType,
+    TypeIdAsGenericSelectionArgument,
   };
 
   /// isTypeIdInParens - Assumes that a '(' was parsed and now we want to know
@@ -2542,13 +2553,29 @@ private:
     return isTypeIdInParens(isAmbiguous);
   }
 
+  /// Checks whether the current tokens form a type-id or an expression for the
+  /// purposes of use as the initial operand to a generic selection expression.
+  /// This requires special handling in C++ because it accepts either a type or
+  /// an expression, and we need to disambiguate which is which. However, we
+  /// cannot use the same logic as we've used for sizeof expressions, because
+  /// that logic relies on the operator only accepting a single argument,
+  /// whereas _Generic accepts a list of arguments.
+  bool isTypeIdForGenericSelection() {
+    if (getLangOpts().CPlusPlus) {
+      bool isAmbiguous;
+      return isCXXTypeId(TypeIdAsGenericSelectionArgument, isAmbiguous);
+    }
+    return isTypeSpecifierQualifier();
+  }
+
   /// Checks if the current tokens form type-id or expression.
   /// It is similar to isTypeIdInParens but does not suppose that type-id
   /// is in parenthesis.
   bool isTypeIdUnambiguously() {
-    bool IsAmbiguous;
-    if (getLangOpts().CPlusPlus)
-      return isCXXTypeId(TypeIdUnambiguous, IsAmbiguous);
+    if (getLangOpts().CPlusPlus) {
+      bool isAmbiguous;
+      return isCXXTypeId(TypeIdUnambiguous, isAmbiguous);
+    }
     return isTypeSpecifierQualifier();
   }
 
@@ -2686,17 +2713,22 @@ public:
 private:
   void ParseBlockId(SourceLocation CaretLoc);
 
-  /// Are [[]] attributes enabled?
-  bool standardAttributesAllowed() const {
-    const LangOptions &LO = getLangOpts();
-    return LO.DoubleSquareBracketAttributes;
+  /// Return true if the next token should be treated as a [[]] attribute,
+  /// or as a keyword that behaves like one.  The former is only true if
+  /// [[]] attributes are enabled, whereas the latter is true whenever
+  /// such a keyword appears.  The arguments are as for
+  /// isCXX11AttributeSpecifier.
+  bool isAllowedCXX11AttributeSpecifier(bool Disambiguate = false,
+                                        bool OuterMightBeMessageSend = false) {
+    return (Tok.isRegularKeywordAttribute() ||
+            isCXX11AttributeSpecifier(Disambiguate, OuterMightBeMessageSend));
   }
 
   // Check for the start of an attribute-specifier-seq in a context where an
   // attribute is not allowed.
   bool CheckProhibitedCXX11Attribute() {
     assert(Tok.is(tok::l_square));
-    if (!standardAttributesAllowed() || NextToken().isNot(tok::l_square))
+    if (NextToken().isNot(tok::l_square))
       return false;
     return DiagnoseProhibitedCXX11Attribute();
   }
@@ -2704,9 +2736,8 @@ private:
   bool DiagnoseProhibitedCXX11Attribute();
   void CheckMisplacedCXX11Attribute(ParsedAttributes &Attrs,
                                     SourceLocation CorrectLocation) {
-    if (!standardAttributesAllowed())
-      return;
-    if ((Tok.isNot(tok::l_square) || NextToken().isNot(tok::l_square)) &&
+    if (!Tok.isRegularKeywordAttribute() &&
+        (Tok.isNot(tok::l_square) || NextToken().isNot(tok::l_square)) &&
         Tok.isNot(tok::kw_alignas))
       return;
     DiagnoseMisplacedCXX11Attribute(Attrs, CorrectLocation);
@@ -2722,7 +2753,7 @@ private:
                           SourceLocation FixItLoc = SourceLocation()) {
     if (Attrs.Range.isInvalid())
       return;
-    DiagnoseProhibitedAttributes(Attrs.Range, FixItLoc);
+    DiagnoseProhibitedAttributes(Attrs, FixItLoc);
     Attrs.clear();
   }
 
@@ -2730,10 +2761,10 @@ private:
                           SourceLocation FixItLoc = SourceLocation()) {
     if (Attrs.Range.isInvalid())
       return;
-    DiagnoseProhibitedAttributes(Attrs.Range, FixItLoc);
+    DiagnoseProhibitedAttributes(Attrs, FixItLoc);
     Attrs.clearListOnly();
   }
-  void DiagnoseProhibitedAttributes(const SourceRange &Range,
+  void DiagnoseProhibitedAttributes(const ParsedAttributesView &Attrs,
                                     SourceLocation FixItLoc);
 
   // Forbid C++11 and C2x attributes that appear on certain syntactic locations
@@ -2742,7 +2773,8 @@ private:
   // For the most cases we don't want to warn on unknown type attributes, but
   // left them to later diagnoses. However, for a few cases like module
   // declarations and module import declarations, we should do it.
-  void ProhibitCXX11Attributes(ParsedAttributes &Attrs, unsigned DiagID,
+  void ProhibitCXX11Attributes(ParsedAttributes &Attrs, unsigned AttrDiagID,
+                               unsigned KeywordDiagId,
                                bool DiagnoseEmptyAttrs = false,
                                bool WarnOnUnknownAttrs = false);
 
@@ -2796,7 +2828,7 @@ private:
   bool MaybeParseAttributes(unsigned WhichAttrKinds, ParsedAttributes &Attrs,
                             LateParsedAttrList *LateAttrs = nullptr) {
     if (Tok.isOneOf(tok::kw___attribute, tok::kw___declspec) ||
-        (standardAttributesAllowed() && isCXX11AttributeSpecifier())) {
+        isAllowedCXX11AttributeSpecifier()) {
       ParseAttributes(WhichAttrKinds, Attrs, LateAttrs);
       return true;
     }
@@ -2848,7 +2880,7 @@ private:
     }
   }
   void MaybeParseCXX11Attributes(Declarator &D) {
-    if (standardAttributesAllowed() && isCXX11AttributeSpecifier()) {
+    if (isAllowedCXX11AttributeSpecifier()) {
       ParsedAttributes Attrs(AttrFactory);
       ParseCXX11Attributes(Attrs);
       D.takeAttributes(Attrs);
@@ -2857,8 +2889,7 @@ private:
 
   bool MaybeParseCXX11Attributes(ParsedAttributes &Attrs,
                                  bool OuterMightBeMessageSend = false) {
-    if (standardAttributesAllowed() &&
-        isCXX11AttributeSpecifier(false, OuterMightBeMessageSend)) {
+    if (isAllowedCXX11AttributeSpecifier(false, OuterMightBeMessageSend)) {
       ParseCXX11Attributes(Attrs);
       return true;
     }
@@ -3005,8 +3036,9 @@ private:
                                          SourceLocation EndLoc);
   void ParseAtomicSpecifier(DeclSpec &DS);
 
-  ExprResult ParseAlignArgument(SourceLocation Start,
-                                SourceLocation &EllipsisLoc);
+  ExprResult ParseAlignArgument(StringRef KWName, SourceLocation Start,
+                                SourceLocation &EllipsisLoc, bool &IsType,
+                                ParsedType &Ty);
   void ParseAlignmentSpecifier(ParsedAttributes &Attrs,
                                SourceLocation *endLoc = nullptr);
   ExprResult ParseExtIntegerArgument();
@@ -3458,6 +3490,13 @@ private:
   /// nullptr.
   //
   OMPClause *ParseOpenMPInteropClause(OpenMPClauseKind Kind, bool ParseOnly);
+
+  /// Parses a ompx_attribute clause
+  ///
+  /// \param ParseOnly true to skip the clause's semantic actions and return
+  /// nullptr.
+  //
+  OMPClause *ParseOpenMPOMPXAttributesClause(bool ParseOnly);
 
 public:
   /// Parses simple expression in parens for single-expression clauses of OpenMP

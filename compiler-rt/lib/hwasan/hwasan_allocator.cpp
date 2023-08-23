@@ -265,7 +265,7 @@ static void *HwasanAllocate(StackTrace *stack, uptr orig_size, uptr alignment,
                                                   : __lsan::kDirectlyLeaked);
 #endif
   meta->SetAllocated(StackDepotPut(*stack), orig_size);
-  RunMallocHooks(user_ptr, size);
+  RunMallocHooks(user_ptr, orig_size);
   return user_ptr;
 }
 
@@ -345,7 +345,8 @@ static void HwasanDeallocate(StackTrace *stack, void *tagged_ptr) {
     internal_memset(aligned_ptr, flags()->free_fill_byte, fill_size);
   }
   if (in_taggable_region && flags()->tag_in_free && malloc_bisect(stack, 0) &&
-      atomic_load_relaxed(&hwasan_allocator_tagging_enabled)) {
+      atomic_load_relaxed(&hwasan_allocator_tagging_enabled) &&
+      allocator.FromPrimary(untagged_ptr) /* Secondary 0-tag and unmap.*/) {
     // Always store full 8-bit tags on free to maximize UAF detection.
     tag_t tag;
     if (t) {
@@ -440,6 +441,15 @@ static uptr AllocationSize(const void *p) {
     return 0;
   Metadata *b = (Metadata *)allocator.GetMetaData(beg);
   return b->GetRequestedSize();
+}
+
+static uptr AllocationSizeFast(const void *p) {
+  const void *untagged_ptr = UntagPtr(p);
+  void *aligned_ptr = reinterpret_cast<void *>(
+      RoundDownTo(reinterpret_cast<uptr>(untagged_ptr), kShadowAlignment));
+  Metadata *meta =
+      reinterpret_cast<Metadata *>(allocator.GetMetaData(aligned_ptr));
+  return meta->GetRequestedSize();
 }
 
 void *hwasan_malloc(uptr size, StackTrace *stack) {
@@ -679,5 +689,12 @@ const void *__sanitizer_get_allocated_begin(const void *p) {
 }
 
 uptr __sanitizer_get_allocated_size(const void *p) { return AllocationSize(p); }
+
+uptr __sanitizer_get_allocated_size_fast(const void *p) {
+  DCHECK_EQ(p, __sanitizer_get_allocated_begin(p));
+  uptr ret = AllocationSizeFast(p);
+  DCHECK_EQ(ret, __sanitizer_get_allocated_size(p));
+  return ret;
+}
 
 void __sanitizer_purge_allocator() { allocator.ForceReleaseToOS(); }

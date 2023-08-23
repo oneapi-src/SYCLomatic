@@ -252,19 +252,21 @@ void ProcessMachCore::LoadBinariesViaMetadata() {
       m_mach_kernel_addr = objfile_binary_value;
       m_dyld_plugin_name = DynamicLoaderDarwinKernel::GetPluginNameStatic();
       found_main_binary_definitively = true;
+    } else if (type == ObjectFile::eBinaryTypeUser) {
+      m_dyld_addr = objfile_binary_value;
+      m_dyld_plugin_name = DynamicLoaderMacOSXDYLD::GetPluginNameStatic();
     } else {
       const bool force_symbol_search = true;
       const bool notify = true;
+      const bool set_address_in_target = true;
+      const bool allow_memory_image_last_resort = false;
       if (DynamicLoader::LoadBinaryWithUUIDAndAddress(
               this, llvm::StringRef(), objfile_binary_uuid,
               objfile_binary_value, objfile_binary_value_is_offset,
-              force_symbol_search, notify)) {
+              force_symbol_search, notify, set_address_in_target,
+              allow_memory_image_last_resort)) {
         found_main_binary_definitively = true;
         m_dyld_plugin_name = DynamicLoaderStatic::GetPluginNameStatic();
-      }
-      if (type == ObjectFile::eBinaryTypeUser) {
-        m_dyld_addr = objfile_binary_value;
-        m_dyld_plugin_name = DynamicLoaderMacOSXDYLD::GetPluginNameStatic();
       }
     }
   }
@@ -314,9 +316,12 @@ void ProcessMachCore::LoadBinariesViaMetadata() {
       const bool value_is_offset = false;
       const bool force_symbol_search = true;
       const bool notify = true;
+      const bool set_address_in_target = true;
+      const bool allow_memory_image_last_resort = false;
       if (DynamicLoader::LoadBinaryWithUUIDAndAddress(
               this, llvm::StringRef(), ident_uuid, ident_binary_addr,
-              value_is_offset, force_symbol_search, notify)) {
+              value_is_offset, force_symbol_search, notify,
+              set_address_in_target, allow_memory_image_last_resort)) {
         found_main_binary_definitively = true;
         m_dyld_plugin_name = DynamicLoaderStatic::GetPluginNameStatic();
       }
@@ -325,7 +330,10 @@ void ProcessMachCore::LoadBinariesViaMetadata() {
 
   // Finally, load any binaries noted by "load binary" LC_NOTEs in the
   // corefile
-  core_objfile->LoadCoreFileImages(*this);
+  if (core_objfile->LoadCoreFileImages(*this)) {
+    found_main_binary_definitively = true;
+    m_dyld_plugin_name = DynamicLoaderStatic::GetPluginNameStatic();
+  }
 
   // LoadCoreFileImges may have set the dynamic loader, e.g. in
   // PlatformDarwinKernel::LoadPlatformBinaryAndSetup().

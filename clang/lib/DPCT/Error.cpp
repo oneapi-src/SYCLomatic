@@ -158,9 +158,6 @@ void ShowStatus(int Status, std::string Message) {
   case MigrationErrorNoAPIMapping:
     StatusString = "Error: The API Mapping is not available";
     break;
-  case MigrationErrorCannotCreateTempFile:
-    StatusString = "Error: Cannot create temp file.";
-    break;
   default:
     DpctLog() << "Unknown error\n";
     dpctExit(-1);

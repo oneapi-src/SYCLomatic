@@ -19,6 +19,7 @@ using namespace mlir::python::adaptors;
 static void populateDialectSparseTensorSubmodule(const py::module &m) {
   py::enum_<MlirSparseTensorDimLevelType>(m, "DimLevelType", py::module_local())
       .value("dense", MLIR_SPARSE_TENSOR_DIM_LEVEL_DENSE)
+      .value("compressed24", MLIR_SPARSE_TENSOR_DIM_LEVEL_TWO_OUT_OF_FOUR)
       .value("compressed", MLIR_SPARSE_TENSOR_DIM_LEVEL_COMPRESSED)
       .value("compressed-nu", MLIR_SPARSE_TENSOR_DIM_LEVEL_COMPRESSED_NU)
       .value("compressed-no", MLIR_SPARSE_TENSOR_DIM_LEVEL_COMPRESSED_NO)
@@ -40,18 +41,16 @@ static void populateDialectSparseTensorSubmodule(const py::module &m) {
       .def_classmethod(
           "get",
           [](py::object cls, std::vector<MlirSparseTensorDimLevelType> lvlTypes,
-             std::optional<MlirAffineMap> dimOrdering,
-             std::optional<MlirAffineMap> higherOrdering, int posWidth,
-             int crdWidth, MlirContext context) {
+             std::optional<MlirAffineMap> dimToLvl, int posWidth, int crdWidth,
+             MlirContext context) {
             return cls(mlirSparseTensorEncodingAttrGet(
                 context, lvlTypes.size(), lvlTypes.data(),
-                dimOrdering ? *dimOrdering : MlirAffineMap{nullptr},
-                higherOrdering ? *higherOrdering : MlirAffineMap{nullptr},
-                posWidth, crdWidth));
+                dimToLvl ? *dimToLvl : MlirAffineMap{nullptr}, posWidth,
+                crdWidth));
           },
-          py::arg("cls"), py::arg("lvl_types"), py::arg("dim_ordering"),
-          py::arg("higher_ordering"), py::arg("pos_width"),
-          py::arg("crd_width"), py::arg("context") = py::none(),
+          py::arg("cls"), py::arg("lvl_types"), py::arg("dim_to_lvl"),
+          py::arg("pos_width"), py::arg("crd_width"),
+          py::arg("context") = py::none(),
           "Gets a sparse_tensor.encoding from parameters.")
       .def_property_readonly(
           "lvl_types",
@@ -64,19 +63,9 @@ static void populateDialectSparseTensorSubmodule(const py::module &m) {
             return ret;
           })
       .def_property_readonly(
-          "dim_ordering",
+          "dim_to_lvl",
           [](MlirAttribute self) -> std::optional<MlirAffineMap> {
-            MlirAffineMap ret =
-                mlirSparseTensorEncodingAttrGetDimOrdering(self);
-            if (mlirAffineMapIsNull(ret))
-              return {};
-            return ret;
-          })
-      .def_property_readonly(
-          "higher_ordering",
-          [](MlirAttribute self) -> std::optional<MlirAffineMap> {
-            MlirAffineMap ret =
-                mlirSparseTensorEncodingAttrGetHigherOrdering(self);
+            MlirAffineMap ret = mlirSparseTensorEncodingAttrGetDimToLvl(self);
             if (mlirAffineMapIsNull(ret))
               return {};
             return ret;
