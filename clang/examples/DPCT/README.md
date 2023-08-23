@@ -24,6 +24,8 @@ __global__ void test(__half h1, __half h2, __half h3, __nv_bfloat16 b1,
 }
 ```
 
+- If the case need not be migrate, add the output message at the first line started with `// Not migrate: `.
+
 - Please format the code.
 
 - Add each API mapping test case in corresponding folder of `test/dpct/query_api_mapping`.

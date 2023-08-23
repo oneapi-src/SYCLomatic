@@ -271,6 +271,10 @@ int main(){
     // CHECK: dpct::dpct_memcpy(cpy2_to_data_ct1, cpy2_to_pos_ct1, cpy2_from_data_ct1, cpy2_from_pos_ct1, cpy2_size_ct1);
     cuMemcpy3D(&cpy2);
 
+    CUstream cs;
+    // CHECK: dpct::async_dpct_memcpy(cpy2_to_data_ct1, cpy2_to_pos_ct1, cpy2_from_data_ct1, cpy2_from_pos_ct1, cpy2_size_ct1, dpct::automatic, *cs);
+    cuMemcpy3DAsync(&cpy2, cs);
+
     float *h_A = (float *)malloc(100);
     // CHECK:sycl::free(h_A, q_ct1);
     cuMemFreeHost(h_A);
