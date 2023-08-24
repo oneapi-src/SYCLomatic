@@ -166,5 +166,6 @@ int my_max(int a, int b) {
 
 void foo7() {
   int a, b;
+  //CHECK: my_min(b, b);
   my_max(a, b);
 }
