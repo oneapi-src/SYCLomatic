@@ -21,32 +21,33 @@
 void f() {
   CUcontext ctx;
   CUdevice device;
+  cudaStream_t *stream;
   int major;
   int minor;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuCtxCreate_v2 was removed because it is redundant if it is migrated with option --use-pure-sycl-queue which declares a global SYCL device and queue.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuCtxCreate_v2 was removed because it is redundant if it is migrated with option --helper-function-preference=no-queue-device which declares a global SYCL device and queue.
   // CHECK-NEXT: */
   // CHECK-NEXT: ctx = device;
   cuCtxCreate_v2(&ctx, 0, device);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuDevicePrimaryCtxRetain was removed because it is redundant if it is migrated with option --use-pure-sycl-queue which declares a global SYCL device and queue.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuDevicePrimaryCtxRetain was removed because it is redundant if it is migrated with option --helper-function-preference=no-queue-device which declares a global SYCL device and queue.
   // CHECK-NEXT: */
   // CHECK-NEXT: ctx = device;
   cuDevicePrimaryCtxRetain(&ctx, device);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuCtxGetDevice was removed because it is redundant if it is migrated with option --use-pure-sycl-queue which declares a global SYCL device and queue.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuCtxGetDevice was removed because it is redundant if it is migrated with option --helper-function-preference=no-queue-device which declares a global SYCL device and queue.
   // CHECK-NEXT: */
   // CHECK-NEXT: device = 0;
   cuCtxGetDevice(&device);
   // CHECK: device = dpct::get_major_version(dev_ct1);
   cudaDriverGetVersion(&device);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaSetDevice was removed because it is redundant if it is migrated with option --use-pure-sycl-queue which declares a global SYCL device and queue.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaSetDevice was removed because it is redundant if it is migrated with option --helper-function-preference=no-queue-device which declares a global SYCL device and queue.
   // CHECK-NEXT: */
   // CHECK-NEXT: 0;
   cudaSetDevice(device);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaGetDevice was removed because it is redundant if it is migrated with option --use-pure-sycl-queue which declares a global SYCL device and queue.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaGetDevice was removed because it is redundant if it is migrated with option --helper-function-preference=no-queue-device which declares a global SYCL device and queue.
   // CHECK-NEXT: */
   // CHECK-NEXT: device = 0;
   cudaGetDevice(&device);
@@ -54,15 +55,21 @@ void f() {
   // CHECK-NEXT: minor = dpct::get_minor_version(dev_ct1);
   cuDeviceComputeCapability(&major, &minor, device);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuCtxSetCurrent was removed because it is redundant if it is migrated with option --use-pure-sycl-queue which declares a global SYCL device and queue.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuCtxSetCurrent was removed because it is redundant if it is migrated with option --helper-function-preference=no-queue-device which declares a global SYCL device and queue.
   // CHECK-NEXT: */
   // CHECK-NEXT: 0;
   cuCtxSetCurrent(ctx);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuCtxGetCurrent was removed because it is redundant if it is migrated with option --use-pure-sycl-queue which declares a global SYCL device and queue.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuCtxGetCurrent was removed because it is redundant if it is migrated with option --helper-function-preference=no-queue-device which declares a global SYCL device and queue.
   // CHECK-NEXT: */
   // CHECK-NEXT: ctx = 0;
   cuCtxGetCurrent(&ctx);
+  // CHECK: *(stream) = new sycl::queue(dev_ct1, sycl::property_list{sycl::property::queue::in_order()});
+  cudaStreamCreate(stream);
+  // CHECK: *(stream) = new sycl::queue(dev_ct1, sycl::property_list{sycl::property::queue::in_order()});
+  cudaStreamCreateWithFlags(stream, 1);
+  // CHECK: *(stream) = new sycl::queue(dev_ct1, sycl::property_list{sycl::property::queue::in_order()});
+  cudaStreamCreateWithPriority(stream, 1, 2);
 }
 
 // CHECK: int main() {

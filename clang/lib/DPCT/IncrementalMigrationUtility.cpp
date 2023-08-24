@@ -346,9 +346,10 @@ bool printOptions(
     if (Key == clang::dpct::OPTION_AnalysisScopePath) {
       Opts.emplace_back("--analysis-scope-path=\"" + Value + "\"");
     }
-    if (Key == clang::dpct::OPTION_UsePureSyclQueue) {
-      if ("true" == Value)
-        Opts.emplace_back("--use-pure-sycl-queue");
+    if (Key == clang::dpct::OPTION_HelperFuncPreferenceFlag && Specified) {
+      if (std::to_string(static_cast<unsigned int>(
+              HelperFuncPreference::NoQueueDevice)) == Value)
+        Opts.emplace_back("--helper-function-preference=no-queue-device");
     }
   }
 

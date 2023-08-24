@@ -6753,11 +6753,11 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaSetDevice") {
     if (DpctGlobalInfo::useNoQueueDevice()) {
       emplaceTransformation(new ReplaceStmt(CE, "0"));
-      report(
-          CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
-          "cudaSetDevice",
-          "it is redundant if it is migrated with option --use-pure-sycl-queue "
-          "which declares a global SYCL device and queue.");
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+             "cudaSetDevice",
+             "it is redundant if it is migrated with option "
+             "--helper-function-preference=no-queue-device "
+             "which declares a global SYCL device and queue.");
     } else {
       DpctGlobalInfo::setDeviceChangedFlag(true);
       report(CE->getBeginLoc(), Diagnostics::DEVICE_ID_DIFFERENT, false,
@@ -6830,11 +6830,11 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
     if (DpctGlobalInfo::useNoQueueDevice()) {
       emplaceTransformation(new ReplaceStmt(CE, "0"));
-      report(
-          CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
-          "cudaGetDevice",
-          "it is redundant if it is migrated with option --use-pure-sycl-queue "
-          "which declares a global SYCL device and queue.");
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+             "cudaGetDevice",
+             "it is redundant if it is migrated with option "
+             "--helper-function-preference=no-queue-device "
+             "which declares a global SYCL device and queue.");
     } else {
       emplaceTransformation(
           new ReplaceStmt(CE, MapNames::getDpctNamespace() +
@@ -8481,12 +8481,25 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     else
       ReplStr = "*(" + StmtStr0 + ")";
 
-    if (isPlaceholderIdxDuplicated(CE))
-      return;
-    int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-    buildTempVariableMap(Index, CE, HelperFuncType::HFT_CurrentDevice);
-    ReplStr += " = " + getNewQueue(Index);
-    requestFeature(HelperFeatureEnum::device_ext);
+    if (DpctGlobalInfo::useNoQueueDevice()) {
+      // Now the UsmLevel must not be UL_None here.
+      ReplStr += " = new " + MapNames::getClNamespace() + "queue(" +
+                DpctGlobalInfo::getGlobalDeviceName() + ", " +
+                MapNames::getClNamespace() + "property_list{" +
+                MapNames::getClNamespace() + "property::queue::in_order()";
+      if (DpctGlobalInfo::getEnablepProfilingFlag()) {
+        ReplStr += ", " + MapNames::getClNamespace() +
+                   "property::queue::enable_profiling()";
+      }
+      ReplStr += "})";
+    } else {
+      if (isPlaceholderIdxDuplicated(CE))
+        return;
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, CE, HelperFuncType::HFT_CurrentDevice);
+      ReplStr += " = " + getNewQueue(Index);
+      requestFeature(HelperFeatureEnum::device_ext);
+    }
     if (IsAssigned) {
       ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
     }
@@ -14235,11 +14248,11 @@ void DriverContextAPIRule::runRule(
   } else if (APIName == "cuCtxSetCurrent") {
     if (DpctGlobalInfo::useNoQueueDevice()) {
       OS << "0";
-      report(
-          CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
-          "cuCtxSetCurrent",
-          "it is redundant if it is migrated with option --use-pure-sycl-queue "
-          "which declares a global SYCL device and queue.");
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+             "cuCtxSetCurrent",
+             "it is redundant if it is migrated with option "
+             "--helper-function-preference=no-queue-device "
+             "which declares a global SYCL device and queue.");
     } else {
       auto Arg = CE->getArg(0)->IgnoreImplicitAsWritten();
       ExprAnalysis EA(Arg);
@@ -14254,11 +14267,11 @@ void DriverContextAPIRule::runRule(
     OS << " = ";
     if (DpctGlobalInfo::useNoQueueDevice()) {
       OS << "0";
-      report(
-          CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
-          "cuCtxGetCurrent",
-          "it is redundant if it is migrated with option --use-pure-sycl-queue "
-          "which declares a global SYCL device and queue.");
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+             "cuCtxGetCurrent",
+             "it is redundant if it is migrated with option "
+             "--helper-function-preference=no-queue-device "
+             "which declares a global SYCL device and queue.");
     } else {
       OS << MapNames::getDpctNamespace() +
                 "dev_mgr::instance().current_device_id()";

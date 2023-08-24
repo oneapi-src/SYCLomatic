@@ -84,7 +84,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                                 ARG(2))),
         Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxCreate_v2"),
         std::string("it is redundant if it is migrated with option "
-                    "--use-pure-sycl-queue which declares a global SYCL device "
+                    "--helper-function-preference=no-queue-device which declares a global SYCL device "
                     "and queue.")),
     FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::device_ext,
@@ -100,7 +100,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                                 DEREF(0), ARG(1))),
         Diagnostics::FUNC_CALL_REMOVED, std::string("cuDevicePrimaryCtxRetain"),
         std::string("it is redundant if it is migrated with option "
-                    "--use-pure-sycl-queue which declares a global SYCL device "
+                    "--helper-function-preference=no-queue-device which declares a global SYCL device "
                     "and queue.")),
     FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::device_ext,
@@ -154,7 +154,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                                 LITERAL("0"))),
         Diagnostics::FUNC_CALL_REMOVED, std::string("cuCtxGetDevice"),
         std::string("it is redundant if it is migrated with option "
-                    "--use-pure-sycl-queue which declares a global SYCL device "
+                    "--helper-function-preference=no-queue-device which declares a global SYCL device "
                     "and queue.")),
     FEATURE_REQUEST_FACTORY(HelperFeatureEnum::device_ext,
                             ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(

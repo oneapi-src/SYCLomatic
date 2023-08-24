@@ -29,7 +29,6 @@ const std::string OPTION_ExtensionDDFlag = "ExtensionDDFlag";
 const std::string OPTION_NoDRYPattern = "NoDRYPattern";
 const std::string OPTION_NoUseGenericSpace = "NoUseGenericSpace";
 const std::string OPTION_CompilationsDir = "CompilationsDir";
-const std::string OPTION_UsePureSyclQueue = "UsePureSyclQueue";
 #ifdef _WIN32
 const std::string OPTION_VcxprojFile = "VcxprojFile";
 #endif
