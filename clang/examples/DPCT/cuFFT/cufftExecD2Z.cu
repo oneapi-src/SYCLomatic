@@ -1,7 +1,9 @@
 #include "cufft.h"
 
-void test(cufftHandle plan, cufftDoubleReal *in, cufftDoubleComplex *out) {
+void test(cufftDoubleReal *in, cufftDoubleComplex *out) {
   // Start
+  cufftHandle plan;
+  cufftCreate(&plan /*cufftHandle **/);
   cufftExecD2Z(plan /*cufftHandle*/, in /*cufftDoubleReal **/,
                out /*cufftDoubleComplex **/);
   // End
