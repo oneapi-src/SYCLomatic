@@ -1068,7 +1068,6 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE,
   if (NNSL) {
     SR.setBegin(NNSL->getBeginLoc());
   }
-
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
   switch (TL.getTypeLocClass()) {
   case TypeLoc::Qualified:

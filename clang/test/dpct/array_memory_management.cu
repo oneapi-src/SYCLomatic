@@ -199,6 +199,28 @@ void foo() {
   // CHECK:  CHECK_ERR(DPCT_CHECK_ERROR(dpct::dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), a2->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1))));
   CHECK_ERR(cudaMemcpyArrayToArray(a1, woffset, hoffset, a2, woffset, hoffset, width, cudaMemcpyDeviceToHost));
 
+  CUstream cs;
+  CUarray acu;
+  // CHECK: dpct::dpct_memcpy((char *)(acu->to_pitched_data().get_data_ptr()) + woffset, data, width);
+  cuMemcpyHtoA(acu, woffset, data, width);
+  // CHECK: dpct::dpct_memcpy(data, (char *)(acu->to_pitched_data().get_data_ptr()) + woffset, width);
+  cuMemcpyAtoH(data, acu, woffset, width);
+  // CHECK: dpct::async_dpct_memcpy((char *)(acu->to_pitched_data().get_data_ptr()) + woffset, data, width, dpct::automatic, *cs);
+  cuMemcpyHtoAAsync(acu, woffset, data, width, cs);
+  // CHECK: dpct::async_dpct_memcpy(data, (char *)(acu->to_pitched_data().get_data_ptr()) + woffset, width, dpct::automatic, *cs);
+  cuMemcpyAtoHAsync(data, acu, woffset, width, cs);
+
+  CUdeviceptr data2;
+  cuMemAlloc(&data2, sizeof(int) * 30);
+  // CHECK: dpct::dpct_memcpy((char *)(acu->to_pitched_data().get_data_ptr()) + woffset, data2, width);
+  cuMemcpyDtoA(acu, woffset, data2, width);
+  // CHECK: dpct::dpct_memcpy(data2, (char *)(acu->to_pitched_data().get_data_ptr()) + woffset, width);
+  cuMemcpyAtoD(data2, acu, woffset, width);
+
+  CUarray acu2;
+  // CHECK: dpct::dpct_memcpy((char *)(acu->to_pitched_data().get_data_ptr()) + woffset, (char *)(acu2->to_pitched_data().get_data_ptr()) + woffset, width);
+  cuMemcpyAtoA(acu, woffset, acu2, woffset, width);
+
   // CHECK:  err = DPCT_CHECK_ERROR(delete a1);
   err = cudaFreeArray(a1);
   // CHECK:  checkError(DPCT_CHECK_ERROR(delete a1));

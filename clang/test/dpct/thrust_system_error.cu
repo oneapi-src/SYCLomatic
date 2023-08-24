@@ -8,12 +8,77 @@
 #include <thrust/system_error.h>
 #include <string>
 
-void cuda_safe_call(cudaError_t error, const std::string& message = "")
-{
-  if(error) {
-// CHECK: throw std::system_error(error, std::generic_category(), message);
+void cuda_safe_call(cudaError_t error, const std::string &message = "") {
+
+  thrust::errc::errc_t e;
+
+  // CHECK: std::system_error(error, std::generic_category(), message);
+  std::system_error(error, std::generic_category(), message);
+
+  // CHECK:	std::make_error_condition(e);
+  // CHECK-NEXT:	std::make_error_condition(e);
+  // CHECK-NEXT:	std::generic_category();
+  // CHECK-NEXT:  std::generic_category();
+  // CHECK-NEXT:	std::generic_category();
+  // CHECK-NEXT:	std::generic_category();
+  // CHECK-NEXT:	std::system_category();
+  // CHECK-NEXT:	std::system_category();
+  // CHECK-NEXT:	std::error_code t1(static_cast<int>(0), std::generic_category());
+  // CHECK-NEXT:	std::error_code t2(static_cast<int>(0), std::generic_category());
+  // CHECK-NEXT:  std::error_code t3(static_cast<int>(0), std::generic_category());
+  // CHECK-NEXT:  std::error_code t4(static_cast<int>(0), std::generic_category());
+  // CHECK-NEXT:  std::error_condition t5(0, std::generic_category());
+  // CHECK-NEXT:  std::error_condition t6(0, std::generic_category());
+  thrust::make_error_condition(e);
+  thrust::system::make_error_condition(e);
+  thrust::cuda_category();
+  thrust::system::cuda_category();
+  thrust::generic_category();
+  thrust::system::generic_category();
+  thrust::system_category();
+  thrust::system::system_category();
+  thrust::error_code t1(static_cast<int>(0), thrust::generic_category());
+  thrust::system::error_code t2(static_cast<int>(0), thrust::generic_category());
+  thrust::error_code t3(static_cast<int>(0), thrust::generic_category());
+  thrust::system::error_code t4(static_cast<int>(0), thrust::generic_category());
+  thrust::error_condition t5(0, thrust::generic_category());
+  thrust::system::error_condition t6(0, thrust::generic_category());
+
+  if (error) {
+    // CHECK: throw std::system_error(error, std::generic_category(), message);
     throw thrust::system_error(error, thrust::cuda_category(), message);
   }
+}
+
+void foo() {
+  thrust::error_code t1(static_cast<int>(0), thrust::generic_category());
+  std::string arg;
+  char *char_arg = "test";
+  int ev = 0;
+  // CHECK: std::system_error test_1(t1, arg);
+  // CHECK-NEXT: std::system_error test_2(t1, char_arg);
+  // CHECK-NEXT: std::system_error test_3(t1);
+  // CHECK-NEXT: std::system_error test_4(ev, std::generic_category(), arg);
+  // CHECK-NEXT: std::system_error test_5(ev, std::generic_category(), char_arg);
+  // CHECK-NEXT: std::system_error test_6(ev, std::generic_category());
+  // CHECK-NEXT: std::system_error test_7(t1, arg);
+  // CHECK-NEXT: std::system_error test_8(t1, char_arg);
+  // CHECK-NEXT: std::system_error test_9(t1);
+  // CHECK-NEXT: std::system_error test_10(ev, std::generic_category(), arg);
+  // CHECK-NEXT: std::system_error test_11(ev, std::generic_category(), char_arg);
+  // CHECK-NEXT: std::system_error test_12(ev, std::generic_category());
+  thrust::system::system_error test_1(t1, arg);
+  thrust::system::system_error test_2(t1, char_arg);
+  thrust::system::system_error test_3(t1);
+  thrust::system::system_error test_4(ev, thrust::cuda_category(), arg);
+  thrust::system::system_error test_5(ev, thrust::cuda_category(), char_arg);
+  thrust::system::system_error test_6(ev, thrust::cuda_category());
+  thrust::system_error test_7(t1, arg);
+  thrust::system_error test_8(t1, char_arg);
+  thrust::system_error test_9(t1);
+  thrust::system_error test_10(ev, thrust::cuda_category(), arg);
+  thrust::system_error test_11(ev, thrust::cuda_category(), char_arg);
+  thrust::system_error test_12(ev, thrust::cuda_category());
 }
 
 int main() {

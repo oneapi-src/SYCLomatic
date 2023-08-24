@@ -78,8 +78,8 @@ def parse_macro_entry(line: str):
         API_list = [line_list[1]]
         isMemberAPI = 0
     else:
-        API_list = [line_list[1]+'::'+line_list[2]]
-        isMemberAPI = 1
+        API_list = [line_list[1]+'::'+line_list[3]]
+        isMemberAPI = 2
     is_supported = False
     if(line_list[3 + isMemberAPI] == "true"):
         API_list.append("YES")
@@ -164,8 +164,8 @@ def do_update(args):
     if os.path.exists(output_path) is False:
         warnings.warn("output path is not exist")
         return False
-    lib_names = ['Runtime_and_Driver', 'CUB', 'cuBLAS', 'cuDNN', 'cuFFT', 'nvGRAPH', "ASM",
-                 'cuRAND', 'cuSOLVER', 'cuSPARSE', 'NCCL', 'nvJPEG', 'NVML', 'thrust']
+    lib_names = ['Runtime_and_Driver', 'CUB', 'cuBLAS', 'cuDNN', 'cuFFT', 'nvGRAPH', 'ASM',
+                 'cuRAND', 'cuSOLVER', 'cuSPARSE', 'NCCL', 'nvJPEG', 'NVML', 'thrust', 'wmma']
     # lib file name = APINames_$(libname).inc
     for lib_name in lib_names:
         if lib_name == 'Runtime_and_Driver':
