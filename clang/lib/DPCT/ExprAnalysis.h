@@ -180,6 +180,7 @@ private:
 /// Analyze expression and generate its migrated string
 class ExprAnalysis {
 public:
+  ExprAnalysis *ParentExprAnalysis = nullptr;
   inline std::string getRewritePrefix() { return RewritePrefix; }
 
   inline std::string getRewritePostfix() { return RewritePostfix; }
@@ -189,7 +190,8 @@ public:
     return EA.getReplacedString();
   }
   ExprAnalysis() : ExprAnalysis(nullptr) {}
-  explicit ExprAnalysis(const Expr *Expression);
+  explicit ExprAnalysis(const Expr *Expression,
+                        ExprAnalysis *ParentEA = nullptr);
 
   // Start analysis of the expression passed in when init-ed.
   inline void analyze() {
@@ -438,6 +440,7 @@ protected:
 
   // Replace a token with its begin location
   inline void addReplacement(SourceLocation SL, std::string Text) {
+    printf("428\n");
     auto SpellingLocInfo = getSpellingOffsetAndLength(SL);
     if (SM.getDecomposedLoc(SpellingLocInfo.first).first != FileId ||
         SM.getDecomposedLoc(SpellingLocInfo.first).second < SrcBegin ||
@@ -461,6 +464,8 @@ protected:
       // If the spelling location is inside the parent range, add string
       // replacement. The String replacement will be added to ExtReplacement
       // other where.
+            addExtReplacement(std::make_shared<ExtReplacement>(
+          SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
       auto LocInfo = getOffsetAndLength(SL);
       addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
     }
@@ -480,6 +485,7 @@ protected:
   // Replace string between begin location and end location
   inline void addReplacement(SourceLocation Begin, SourceLocation End,
                              std::string Text) {
+                              printf("473\n");
     auto SpellingLocInfo = getSpellingOffsetAndLength(Begin, End);
     if (SM.getDecomposedLoc(SpellingLocInfo.first).first != FileId ||
         SM.getDecomposedLoc(SpellingLocInfo.first).second < SrcBegin ||
@@ -505,6 +511,8 @@ protected:
       // other where.
       // addExtReplacement(std::make_shared<ExtReplacement>(
       //  SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
+      addExtReplacement(std::make_shared<ExtReplacement>(
+          SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
       auto LocInfo = getOffsetAndLength(Begin, End);
       addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
     }
@@ -520,6 +528,7 @@ protected:
   // Pass parent expr to calculate the correct location of macros
   inline void addReplacement(SourceLocation Begin, SourceLocation End,
                              const Expr *P, std::string Text) {
+                              printf("516\n");
     if (!P)
       return addReplacement(Begin, End, std::move(Text));
     auto LocInfo = getOffsetAndLength(Begin, End, P);
@@ -550,6 +559,8 @@ protected:
         // other where.
         // addExtReplacement(std::make_shared<ExtReplacement>(
         //  SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
+                addExtReplacement(std::make_shared<ExtReplacement>(
+            SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
         addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
       }
     }
@@ -680,6 +691,7 @@ private:
   const Expr *E;
   SourceLocation ExprBeginLoc;
   SourceLocation ExprEndLoc;
+  std::string SrcBeginFilePath;
   SourceLocation SrcBeginLoc;
   size_t SrcBegin;
   size_t SrcLength;

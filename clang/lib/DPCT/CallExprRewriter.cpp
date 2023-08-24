@@ -84,7 +84,8 @@ std::vector<std::string> CallExprRewriter::getMigratedArgs() {
   return ArgList;
 }
 
-std::optional<std::string> FuncCallExprRewriter::rewrite() {
+std::optional<std::string> FuncCallExprRewriter::rewrite(ExprAnalysis *ParentEA) {
+  ParentExprAnalysis = ParentEA;
   RewriteArgList = getMigratedArgs();
   return buildRewriteString();
 }

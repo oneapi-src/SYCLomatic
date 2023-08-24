@@ -30,7 +30,8 @@ using NoRewriteFuncNameRewriterFactory =
 /// Base class for rewriting math function calls
 class MathCallExprRewriter : public FuncCallExprRewriter {
 public:
-  virtual std::optional<std::string> rewrite() override;
+  virtual std::optional<std::string>
+  rewrite(ExprAnalysis *ParentEA = nullptr) override;
 
 protected:
   MathCallExprRewriter(const CallExpr *Call, StringRef SourceCalleeName,
@@ -48,7 +49,8 @@ protected:
                           StringRef TargetCalleeName)
       : Base(Call, SourceCalleeName, TargetCalleeName) {}
 
-  virtual std::optional<std::string> rewrite() override;
+  virtual std::optional<std::string>
+  rewrite(ExprAnalysis *ParentEA = nullptr) override;
 
   friend MathUnsupportedRewriterFactory;
 };
@@ -61,7 +63,8 @@ protected:
                        StringRef TargetCalleeName)
       : Base(Call, SourceCalleeName, TargetCalleeName) {}
 
-  virtual std::optional<std::string> rewrite() override;
+  virtual std::optional<std::string>
+  rewrite(ExprAnalysis *ParentEA = nullptr) override;
 
   friend MathTypeCastRewriterFactory;
 };
@@ -74,7 +77,8 @@ protected:
                         StringRef TargetCalleeName)
       : Base(Call, SourceCalleeName, TargetCalleeName) {}
 
-  virtual std::optional<std::string> rewrite() override;
+  virtual std::optional<std::string>
+  rewrite(ExprAnalysis *ParentEA = nullptr) override;
 
   friend MathSimulatedRewriterFactory;
 };
@@ -93,7 +97,8 @@ protected:
 public:
   virtual ~MathBinaryOperatorRewriter() {}
 
-  virtual std::optional<std::string> rewrite() override;
+  virtual std::optional<std::string>
+  rewrite(ExprAnalysis *ParentEA = nullptr) override;
 
 protected:
   void setLHS(std::string L) { LHS = L; }
@@ -117,7 +122,7 @@ protected:
       : MathCallExprRewriter(Call, SourceCalleeName, TargetCalleeName) {}
 
 public:
-  virtual std::optional<std::string> rewrite() override;
+  virtual std::optional<std::string> rewrite(ExprAnalysis *ParentEA = nullptr) override;
 
 protected:
   std::string getNewFuncName();
@@ -136,7 +141,9 @@ static inline bool isTargetMathFunction(const FunctionDecl *FD) {
   return true;
 }
 
-std::optional<std::string> MathFuncNameRewriter::rewrite() {
+std::optional<std::string>
+MathFuncNameRewriter::rewrite(ExprAnalysis *ParentEA) {
+  ParentExprAnalysis = ParentEA;
   // If the function is not a target math function, do not migrate it
   if (!isTargetMathFunction(Call->getDirectCallee())) {
     // No actions needed here, just return an empty string
@@ -375,7 +382,9 @@ std::string MathFuncNameRewriter::getNewFuncName() {
   return NewFuncName;
 }
 
-std::optional<std::string> MathCallExprRewriter::rewrite() {
+std::optional<std::string>
+MathCallExprRewriter::rewrite(ExprAnalysis *ParentEA) {
+  ParentExprAnalysis = ParentEA;
   RewriteArgList = getMigratedArgs();
   setTargetCalleeName(SourceCalleeName.str());
   return buildRewriteString();
@@ -388,13 +397,17 @@ void MathCallExprRewriter::reportUnsupportedRoundingMode() {
   }
 }
 
-std::optional<std::string> MathUnsupportedRewriter::rewrite() {
+std::optional<std::string>
+MathUnsupportedRewriter::rewrite(ExprAnalysis *ParentEA) {
+  ParentExprAnalysis = ParentEA;
   report(Diagnostics::API_NOT_MIGRATED, false,
          MapNames::ITFName.at(SourceCalleeName.str()));
   return Base::rewrite();
 }
 
-std::optional<std::string> MathTypeCastRewriter::rewrite() {
+std::optional<std::string>
+MathTypeCastRewriter::rewrite(ExprAnalysis *ParentEA) {
+  ParentExprAnalysis = ParentEA;
   auto FD = Call->getDirectCallee();
   if (!FD || !FD->hasAttr<CUDADeviceAttr>())
     return Base::rewrite();
@@ -481,7 +494,9 @@ std::optional<std::string> MathTypeCastRewriter::rewrite() {
   return ReplStr;
 }
 
-std::optional<std::string> MathSimulatedRewriter::rewrite() {
+std::optional<std::string>
+MathSimulatedRewriter::rewrite(ExprAnalysis *ParentEA) {
+  ParentExprAnalysis = ParentEA;
   std::string NamespaceStr;
   auto DRE = dyn_cast<DeclRefExpr>(Call->getCallee()->IgnoreImpCasts());
   if (DRE) {
@@ -864,7 +879,9 @@ std::optional<std::string> MathSimulatedRewriter::rewrite() {
   return ReplStr;
 }
 
-std::optional<std::string> MathBinaryOperatorRewriter::rewrite() {
+std::optional<std::string>
+MathBinaryOperatorRewriter::rewrite(ExprAnalysis *ParentEA) {
+  ParentExprAnalysis = ParentEA;
   reportUnsupportedRoundingMode();
   if (SourceCalleeName == "__hneg" || SourceCalleeName == "__hneg2") {
     setLHS("");

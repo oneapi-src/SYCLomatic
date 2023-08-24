@@ -241,7 +241,7 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
     auto Begin = getOffset(getExprLocation(BeginLoc));
     auto End = getOffsetAndLength(EndLoc);
     SrcBeginLoc = BeginLoc;
-
+    SrcBeginFilePath = dpct::DpctGlobalInfo::getLocInfo(SrcBeginLoc).first;
     // Avoid illegal range which will cause SIGABRT
     if (End.first + End.second < Begin) {
       return std::pair<size_t, size_t>(Begin, 0);
@@ -388,8 +388,8 @@ void StringReplacements::replaceString() {
   ReplMap.clear();
 }
 
-ExprAnalysis::ExprAnalysis(const Expr *Expression)
-    : Context(DpctGlobalInfo::getContext()),
+ExprAnalysis::ExprAnalysis(const Expr *Expression, ExprAnalysis *ParentEA)
+    : ParentExprAnalysis(ParentEA), Context(DpctGlobalInfo::getContext()),
       SM(DpctGlobalInfo::getSourceManager()) {
   analyze(Expression);
 }
@@ -627,7 +627,7 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
 
 void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   const auto BaseType = getBaseTypeRemoveTemplateArguments(ME);
-
+  printf("EA ME %p\n", (const void*)ParentExprAnalysis);
   std::string FieldName = "";
   if (ME->getMemberDecl()->getIdentifier()) {
     FieldName = ME->getMemberDecl()->getName().str();
@@ -814,6 +814,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   RefString +=
     BaseType +
     "." + ME->getMemberDecl()->getDeclName().getAsString();
+  applyAllSubExprRepl();
 }
 
 void ExprAnalysis::analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT) {
@@ -857,6 +858,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   if (!CallExprRewriterFactoryBase::RewriterMap)
     return;
   auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(RefString);
+  printf("RefString %s\n", RefString.c_str());
   if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
     for (unsigned I = 0, E = CE->getNumArgs(); I != E; ++I) {
       if (isa<PackExpansionExpr>(CE->getArg(I))) {
@@ -865,7 +867,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
     }
 
     auto Rewriter = Itr->second->create(CE);
-    auto Result = Rewriter->rewrite();
+    auto Result = Rewriter->rewrite(this);
     BlockLevelFormatFlag = Rewriter->getBlockLevelFormatFlag();
 
     if (Rewriter->isNoRewrite()) {
@@ -926,6 +928,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
         }
         addReplacement(CE, ResultStr);
         Rewriter->Analyzer.applyAllSubExprRepl();
+        printf("!!End RefString %s\n", RefString.c_str());
         return;
       }
     }
@@ -1222,12 +1225,35 @@ void ExprAnalysis::analyzeTemplateArgument(const TemplateArgumentLoc &TAL) {
 }
 
 void ExprAnalysis::applyAllSubExprRepl() {
+  if (!ParentExprAnalysis) {
+    // No parent EA, add all Repls in SubExprRepl to DpctGlobalInfo
+    for (std::shared_ptr<ExtReplacement> Repl : SubExprRepl) {
+      if (BlockLevelFormatFlag)
+        Repl->setBlockLevelFormatFlag();
+
+      DpctGlobalInfo::getInstance().addReplacement(Repl);
+    }
+    printf("add to global repl\n");
+    return;
+  }
+  // Apply in-range repls in SubExprRepl
   for (std::shared_ptr<ExtReplacement> Repl : SubExprRepl) {
     if (BlockLevelFormatFlag)
       Repl->setBlockLevelFormatFlag();
-
-    DpctGlobalInfo::getInstance().addReplacement(Repl);
+    if (Repl->getFilePath() == SrcBeginFilePath &&
+        Repl->getOffset() >= SrcBegin &&
+        Repl->getOffset() + Repl->getLength() <= SrcBegin + SrcLength) {
+      ReplSet.addStringReplacement(Repl->getOffset(), Repl->getLength(),
+                                   Repl->getReplacementText().str());
+    }
   }
+  printf("Append to Parent %d\n", SubExprRepl.size());
+  // Append local SubExprRepl to ParentExprAnalysis->SubExprRepl
+  ParentExprAnalysis->SubExprRepl.insert(ParentExprAnalysis->SubExprRepl.end(),
+                                         SubExprRepl.begin(),
+                                         SubExprRepl.end());
+  for(auto Repl:ParentExprAnalysis->SubExprRepl)
+    printf("subrepl: %s\n", Repl->toString().c_str());
 }
 
 const std::string &ArgumentAnalysis::getDefaultArgument(const Expr *E) {
