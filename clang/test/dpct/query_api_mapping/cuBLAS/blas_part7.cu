@@ -32,7 +32,7 @@
 // cublasGetPointerMode: CUDA API:
 // cublasGetPointerMode-NEXT:   cublasGetPointerMode(handle /*cublasHandle_t*/,
 // cublasGetPointerMode-NEXT:                        host_device /*cublasPointerMode_t **/);
-// cublasGetPointerMode-NEXT: The API is Removed because this it is redundant in SYCL.
+// cublasGetPointerMode-NEXT: The API is Removed.
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSrotg | FileCheck %s -check-prefix=cublasSrotg
 // cublasSrotg: CUDA API:

@@ -1,4 +1,4 @@
-// Not migrate: The API is Removed because this it is redundant in SYCL.
+// Migration desc: The API is Removed.
 #include "cublas_v2.h"
 
 void test(cublasHandle_t handle, cublasMath_t *precision) {
