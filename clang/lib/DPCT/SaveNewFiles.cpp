@@ -29,6 +29,7 @@
 #include "llvm/Support/raw_os_ostream.h"
 
 #include "Utility.h"
+#include "Rules.h"
 #include "llvm/Support/raw_os_ostream.h"
 #include <cassert>
 #include <fstream>
@@ -471,6 +472,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       // \r\n on windows.
       std::ofstream File(OutPath.str().str(), std::ios::binary);
       llvm::raw_os_ostream Stream(File);
+      std::string OutputString;
+      llvm::raw_string_ostream RSW(OutputString);
       if (!File) {
         std::string ErrMsg =
             "[ERROR] Create file: " + std::string(OutPath.str()) + " fail.\n";
@@ -530,11 +533,38 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
           std::make_pair(OutPath.str().str(), BlockLevelFormatRanges));
 
       tooling::applyAllReplacements(Entry.second, Rewrite);
-      Rewrite
-          .getEditBuffer(Sources.getOrCreateFileID(
-              Tool.getFiles().getFile(Entry.first).get(),
-              clang::SrcMgr::C_User /*normal user code*/))
-          .write(Stream);
+
+      if (MapNames::PatternRewriters.empty()) {
+        Rewrite
+            .getEditBuffer(Sources.getOrCreateFileID(
+                Tool.getFiles().getFile(Entry.first).get(),
+                clang::SrcMgr::C_User /*normal user code*/))
+            .write(Stream);
+      } else {
+        Rewrite
+            .getEditBuffer(Sources.getOrCreateFileID(
+                Tool.getFiles().getFile(Entry.first).get(),
+                clang::SrcMgr::C_User /*normal user code*/))
+            .write(RSW);
+
+        std::string LineEndingString;
+        // pattern_rewriter require the input file to be LF
+        bool IsCRLF = fixLineEndings(OutputString, LineEndingString);
+        for (const auto &PR : MapNames::PatternRewriters) {
+          LineEndingString = applyPatternRewriter(PR, LineEndingString);
+        }
+        // Restore line ending for the formator
+        if (IsCRLF) {
+          std::stringstream ResultStream;
+          std::vector<std::string> SplitedStr = split(LineEndingString, '\n');
+          for (auto &SS : SplitedStr) {
+            ResultStream << SS << "\r\n";
+          }
+          Stream << llvm::StringRef(ResultStream.str().c_str());
+        } else {
+          Stream << llvm::StringRef(LineEndingString.c_str());
+        }
+      }
     }
 
     // Print the in-root path and the number of processed files
@@ -674,13 +704,40 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         PrintMsg(ErrMsg);
         return status;
       }
-
       llvm::raw_os_ostream Stream(File);
-      Rewrite
-          .getEditBuffer(Sources.getOrCreateFileID(
-              Tool.getFiles().getFile(Entry.first).get(),
-              clang::SrcMgr::C_User /*normal user code*/))
-          .write(Stream);
+      std::string OutputString;
+      llvm::raw_string_ostream RSW(OutputString);
+      if (MapNames::PatternRewriters.empty()) {
+        Rewrite
+            .getEditBuffer(Sources.getOrCreateFileID(
+                Tool.getFiles().getFile(Entry.first).get(),
+                clang::SrcMgr::C_User /*normal user code*/))
+            .write(Stream);
+      } else {
+        Rewrite
+            .getEditBuffer(Sources.getOrCreateFileID(
+                Tool.getFiles().getFile(Entry.first).get(),
+                clang::SrcMgr::C_User /*normal user code*/))
+            .write(RSW);
+
+        std::string LineEndingString;
+        // pattern_rewriter require the input file to be LF
+        bool IsCRLF = fixLineEndings(OutputString, LineEndingString);
+        for (const auto &PR : MapNames::PatternRewriters) {
+          LineEndingString = applyPatternRewriter(PR, LineEndingString);
+        }
+        // Restore line ending for the formator
+        if (IsCRLF) {
+          std::stringstream ResultStream;
+          std::vector<std::string> SplitedStr = split(LineEndingString, '\n');
+          for (auto &SS : SplitedStr) {
+            ResultStream << SS << "\r\n";
+          }
+          Stream << llvm::StringRef(ResultStream.str().c_str());
+        } else {
+          Stream << llvm::StringRef(LineEndingString.c_str());
+        }
+      }
     }
   }
 

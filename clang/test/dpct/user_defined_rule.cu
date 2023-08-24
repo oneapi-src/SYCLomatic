@@ -159,3 +159,12 @@ __global__ void foo6(){
 //CHECK: std::ceil(2.5);
   std::ceil(2.5);
 }
+
+int my_max(int a, int b) {
+  return 0;
+}
+
+void foo7() {
+  int a, b;
+  my_max(a, b);
+}
