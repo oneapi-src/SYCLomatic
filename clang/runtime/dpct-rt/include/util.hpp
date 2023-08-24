@@ -958,7 +958,7 @@ public:
     case group_type::logical_group:
       return logical_group.get_local_linear_range();
     default:
-      throw std::runtime_error("The using group type is not support.");
+      return -1; // Unkonwn group type
     }
   }
   size_t get_local_linear_id() {
@@ -970,7 +970,7 @@ public:
     case group_type::logical_group:
       return logical_group.get_local_linear_id();
     default:
-      throw std::runtime_error("The using group type is not support.");
+      return -1; // Unkonwn group type
     }
   }
   void barrier() {
@@ -983,7 +983,7 @@ public:
       sycl::group_barrier(nd_item.get_sub_group());
       break;
     default:
-      throw std::runtime_error("The using group type is not support.");
+      break;
     }
   }
 
