@@ -9,8 +9,8 @@
 #ifndef __DPCT_ALGORITHM_H__
 #define __DPCT_ALGORITHM_H__
 
-#include <oneapi/dpl/execution>
 #include <oneapi/dpl/algorithm>
+#include <oneapi/dpl/execution>
 #include <oneapi/dpl/numeric>
 
 #include "functional.h"
@@ -1492,7 +1492,8 @@ struct __evenly_divided_binhash_impl<T, /* is_floating_point= */ false> {
       : __minimum(min), __num_bins(num_bins), __range_size(max - min) {}
   template <typename T2>::std::uint32_t operator()(T2 &&value) const {
     return ::std::uint32_t(
-        ((::std::uint64_t(::std::forward<T2>(value)) - __minimum) * ::std::uint64_t(__num_bins)) /
+        ((::std::uint64_t(::std::forward<T2>(value)) - __minimum) *
+         ::std::uint64_t(__num_bins)) /
         __range_size);
   }
 
@@ -1600,13 +1601,13 @@ inline void __reduce_out_histograms(const HistAccessorIn &in_histogram,
   }
 }
 
-template <::std::uint16_t ItersPerWorkItem,
-          ::std::uint8_t BinsPerWorkItem, typename BinType, typename Policy,
-          typename Range1, typename Range2, typename Size, typename IdxHashFunc,
-          typename... Range3>
+template <::std::uint16_t ItersPerWorkItem, ::std::uint8_t BinsPerWorkItem,
+          typename BinType, typename Policy, typename Range1, typename Range2,
+          typename Size, typename IdxHashFunc, typename... Range3>
 inline void __histogram_general_registers_local_reduction(
-    Policy &&policy, ::std::uint16_t work_group_size, Range1 &&input, Range2 &&bins, const Size &num_bins,
-    IdxHashFunc func, Range3 &&...opt_range) {
+    Policy &&policy, ::std::uint16_t work_group_size, Range1 &&input,
+    Range2 &&bins, const Size &num_bins, IdxHashFunc func,
+    Range3 &&...opt_range) {
   const ::std::size_t N = input.size();
   using __local_histogram_type = ::std::uint32_t;
   using __private_histogram_type = ::std::uint16_t;
@@ -1672,13 +1673,15 @@ inline void __histogram_general_registers_local_reduction(
   e.wait();
 }
 
-template <::std::uint16_t ItersPerWorkItem,
-          typename BinType, typename Policy, typename Range1, typename Range2,
-          typename Size, typename IdxHashFunc, typename... Range3>
-inline void
-__histogram_general_local_atomics(Policy &&policy, ::std::uint16_t work_group_size, Range1 &&input,
-                                  Range2 &&bins, const Size &num_bins,
-                                  IdxHashFunc func, Range3 &&...opt_range) {
+template <::std::uint16_t ItersPerWorkItem, typename BinType, typename Policy,
+          typename Range1, typename Range2, typename Size, typename IdxHashFunc,
+          typename... Range3>
+inline void __histogram_general_local_atomics(Policy &&policy,
+                                              ::std::uint16_t work_group_size,
+                                              Range1 &&input, Range2 &&bins,
+                                              const Size &num_bins,
+                                              IdxHashFunc func,
+                                              Range3 &&...opt_range) {
   const ::std::size_t N = input.size();
   ::std::size_t segments = __ceiling_div(N, work_group_size * ItersPerWorkItem);
   auto e = policy.queue().submit([&](auto &h) {
@@ -1734,8 +1737,9 @@ template <::std::uint16_t __min_iters_per_work_item, typename BinType,
           typename Policy, typename Range1, typename Range2, typename Size,
           typename IdxHashFunc, typename... Range3>
 inline void __histogram_general_private_global_atomics(
-    Policy &&policy, ::std::uint16_t work_group_size, Range1 &&input, Range2 &&bins, const Size &num_bins,
-    IdxHashFunc func, Range3 &&...opt_range) {
+    Policy &&policy, ::std::uint16_t work_group_size, Range1 &&input,
+    Range2 &&bins, const Size &num_bins, IdxHashFunc func,
+    Range3 &&...opt_range) {
 
   const ::std::size_t N = input.size();
   auto __global_mem_size =
@@ -1823,22 +1827,24 @@ __histogram_general_select_best(Policy &&policy, Iter1 first, Iter1 last,
   oneapi::dpl::fill(policy, bins_buf.all_view().begin(),
                     bins_buf.all_view().end(), __histo_value_type(0));
   auto N = last - first;
-  if (N > 0)
-  {
-    // Temporary use of stable non-public API from oneDPL,  this function will be
-    // replaced with oneDPL call in an upcoming release.
+  if (N > 0) {
+    // Temporary use of stable non-public API from oneDPL,  this function will
+    // be replaced with oneDPL call in an upcoming release.
     auto keep_input = oneapi::dpl::__ranges::__get_sycl_range<
         oneapi::dpl::__par_backend_hetero::access_mode::read, Iter1>();
     auto input_buf = keep_input(first, last);
 
-    ::std::size_t max_work_group_size = policy.queue().get_device().template get_info<sycl::info::device::max_work_group_size>();
-    ::std::size_t work_group_size = ::std::min(max_work_group_size, ::std::size_t(1024));
+    ::std::size_t max_work_group_size =
+        policy.queue()
+            .get_device()
+            .template get_info<sycl::info::device::max_work_group_size>();
+    ::std::size_t work_group_size =
+        ::std::min(max_work_group_size, ::std::size_t(1024));
 
     if (num_bins < __max_registers) {
 
       // If bins fit into registers, use register private accumulation
-      __histogram_general_registers_local_reduction<32, 16,
-                                                    __histo_value_type>(
+      __histogram_general_registers_local_reduction<32, 16, __histo_value_type>(
           ::std::forward<Policy>(policy), work_group_size, input_buf.all_view(),
           bins_buf.all_view(), num_bins, func,
           ::std::forward<Range...>(opt_range)...);
@@ -1848,13 +1854,13 @@ __histogram_general_select_best(Policy &&policy, Iter1 first, Iter1 last,
       // Experimentally determined iters per work-item
       if (N <= 524288) {
         __histogram_general_local_atomics<4, __histo_value_type>(
-            ::std::forward<Policy>(policy), work_group_size, input_buf.all_view(),
-            bins_buf.all_view(), num_bins, func,
+            ::std::forward<Policy>(policy), work_group_size,
+            input_buf.all_view(), bins_buf.all_view(), num_bins, func,
             ::std::forward<Range...>(opt_range)...);
       } else {
         __histogram_general_local_atomics<32, __histo_value_type>(
-            ::std::forward<Policy>(policy), work_group_size, input_buf.all_view(),
-            bins_buf.all_view(), num_bins, func,
+            ::std::forward<Policy>(policy), work_group_size,
+            input_buf.all_view(), bins_buf.all_view(), num_bins, func,
             ::std::forward<Range...>(opt_range)...);
       }
     } else // Otherwise, use global atomics (private copies per workgroup)
@@ -1862,13 +1868,13 @@ __histogram_general_select_best(Policy &&policy, Iter1 first, Iter1 last,
       // Experimentally determined iters per work-item
       if (N <= 524288) {
         __histogram_general_private_global_atomics<4, __histo_value_type>(
-            ::std::forward<Policy>(policy), work_group_size, input_buf.all_view(),
-            bins_buf.all_view(), num_bins, func,
+            ::std::forward<Policy>(policy), work_group_size,
+            input_buf.all_view(), bins_buf.all_view(), num_bins, func,
             ::std::forward<Range...>(opt_range)...);
       } else {
         __histogram_general_private_global_atomics<32, __histo_value_type>(
-            ::std::forward<Policy>(policy), work_group_size, input_buf.all_view(),
-            bins_buf.all_view(), num_bins, func,
+            ::std::forward<Policy>(policy), work_group_size,
+            input_buf.all_view(), bins_buf.all_view(), num_bins, func,
             ::std::forward<Range...>(opt_range)...);
       }
     }
