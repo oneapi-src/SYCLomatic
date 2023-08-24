@@ -1,8 +1,9 @@
 // Migration desc: The API is Removed.
 #include <cudnn.h>
 
-void test(cudnnActivationDescriptor_t *d) {
+void test() {
   // Start
-  cudnnCreateActivationDescriptor(d /*cudnnActivationDescriptor_t **/);
+  cudnnActivationDescriptor_t d;
+  cudnnCreateActivationDescriptor(&d /*cudnnActivationDescriptor_t **/);
   // End
 }

@@ -1,7 +1,8 @@
 #include <cudnn.h>
 
-void test(cudnnHandle_t *h) {
+void test() {
   // Start
-  cudnnCreate(h /*cudnnHandle_t **/);
+  cudnnHandle_t h;
+  cudnnCreate(&h /*cudnnHandle_t **/);
   // End
 }

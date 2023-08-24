@@ -1,11 +1,13 @@
 #include <cudnn.h>
 
-void test(cudnnHandle_t h, cudnnActivationDescriptor_t desc, void *alpha,
+void test(cudnnActivationDescriptor_t desc, void *alpha,
           void *beta, cudnnTensorDescriptor_t dst_d, void *dst,
           cudnnTensorDescriptor_t diff_dst_d, void *diff_dst,
           cudnnTensorDescriptor_t diff_src_d, void *diff_src,
           cudnnTensorDescriptor_t src_d, void *src) {
   // Start
+  cudnnHandle_t h;
+  cudnnCreate(&h /*cudnnHandle_t **/);
   cudnnActivationBackward(
       h /*cudnnHandle_t*/, desc /*cudnnActivationDescriptor_t*/,
       alpha /*void **/, dst_d /*cudnnTensorDescriptor_t*/, dst /*void **/,
