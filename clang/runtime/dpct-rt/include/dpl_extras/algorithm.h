@@ -1472,7 +1472,7 @@ struct __evenly_divided_binhash_impl<T, /* is_floating_point = */ true> {
                                 const ::std::uint32_t &num_bins)
       : __minimum(min), __maximum(max), __num_bins(num_bins),
         __scale(T(num_bins) / (max - min)) {}
-  template <typename T2>::std::uint32_t operator()(T2 &&value) const {
+  template <typename T2> std::uint32_t operator()(T2 &&value) const {
     return ::std::uint32_t((::std::forward<T2>(value) - __minimum) * __scale);
   }
 
