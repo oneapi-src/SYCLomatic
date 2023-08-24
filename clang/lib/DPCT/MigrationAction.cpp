@@ -125,6 +125,8 @@ DpctFrontEndAction::CreateASTConsumer(CompilerInstance &CI, StringRef InFile) {
 
 void DpctFrontEndAction::EndSourceFileAction() {
   getCompilerInstance().getASTContext().getParentMapContext().clear();
+  if (Info->Groups.isMKLEnabled())
+    DpctGlobalInfo::setMKLHeaderUsed();
 }
 
 DpctToolAction::DpctToolAction(

@@ -33,18 +33,19 @@ enum class RuleGroupKind : uint8_t {
   RK_NCCL,
   RK_Libcu,
   RK_Thrust,
+  RK_CUB,
+  RK_WMMA,
   NUM
 };
 
 struct DpctInclusionInfo {
   enum InclusionFlag {
-    HPF_MarkInserted,
-    HPF_Replace,
-    HPF_Remove,
-    HPF_DoNothing
+    IF_MarkInserted,
+    IF_Replace,
+    IF_Remove,
+    IF_DoNothing
   };
   unsigned ProcessFlag : 2;
-  unsigned IsMKLHeader : 1;
   unsigned MustAngled : 1;
   RuleGroupKind RuleGroup;
   llvm::SmallVector<HeaderType, 2> Headers;
@@ -62,6 +63,13 @@ class RuleGroups {
 public:
   void enableRuleGroup(RuleGroupKind K) { Flags |= flag(K); }
   bool isEnabled(RuleGroupKind K) const { return Flags & flag(K); }
+  bool isMKLEnabled() const {
+    static constexpr FlagsType MKLFlag =
+        flag(RuleGroupKind::RK_BLas) | flag(RuleGroupKind::RK_Sparse) |
+        flag(RuleGroupKind::RK_Solver) | flag(RuleGroupKind::RK_FFT) |
+        flag(RuleGroupKind::RK_Rng);
+    return Flags & MKLFlag;
+  }
 };
 
 class DpctInclusionHeadersMap {

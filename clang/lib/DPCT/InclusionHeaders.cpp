@@ -110,19 +110,6 @@ const DpctInclusionInfo *findInStartwithMode(StringRef Filename) {
   return nullptr;
 }
 
-bool isMKLHeader(RuleGroupKind Group) {
-  switch (Group) {
-  case clang::dpct::RuleGroupKind::RK_Sparse:
-  case clang::dpct::RuleGroupKind::RK_BLas:
-  case clang::dpct::RuleGroupKind::RK_Solver:
-  case clang::dpct::RuleGroupKind::RK_Rng:
-  case clang::dpct::RuleGroupKind::RK_FFT:
-    return true;
-  default:
-    return false;
-  }
-}
-
 } // namespace
 
 void IncludesCallbacks::InclusionDirective(
@@ -220,21 +207,18 @@ void IncludesCallbacks::InclusionDirective(
     if (Info.MustAngled && !IsAngled)
       break;
 
-    if (isMKLHeader(Info.RuleGroup))
-      Global.setMKLHeaderUsed(true);
-
     Groups.enableRuleGroup(Info.RuleGroup);
 
     switch (Info.ProcessFlag) {
-    case DpctInclusionInfo::HPF_Replace:
+    case DpctInclusionInfo::IF_Replace:
       insertHeaders(FileInfo, Info.Headers);
       LLVM_FALLTHROUGH;
-    case DpctInclusionInfo::HPF_Remove:
+    case DpctInclusionInfo::IF_Remove:
       RemoveInslusion();
       break;
-    case DpctInclusionInfo::HPF_MarkInserted:
+    case DpctInclusionInfo::IF_MarkInserted:
       setHeadersAsInserted(FileInfo, Info.Headers);
-    case DpctInclusionInfo::HPF_DoNothing:
+    case DpctInclusionInfo::IF_DoNothing:
     default:
       break;
     }
@@ -251,7 +235,6 @@ void IncludesCallbacks::InclusionDirective(
     if (!StringRef(CudaPath).startswith("/usr/include") ||
         isAlwaysRemoved(FileName)) {
       RemoveInslusion();
-      Updater.give_up();
     }
   }
 }
@@ -292,7 +275,7 @@ DpctInclusionHeadersMap::DpctInclusionHeadersMapInitializer::
 #define REGIST_INCLUSION(FILE, MODE, GROUP, FLAG, ...)                         \
   registInclusionHeaderEntry(FILE, DpctInclusionHeadersMap::Mode_##MODE,       \
                              RuleGroupKind::RK_##GROUP,                        \
-                             DpctInclusionInfo::HPF_##FLAG, __VA_ARGS__);
+                             DpctInclusionInfo::IF_##FLAG, __VA_ARGS__);
 #include "InclusionHeaders.inc"
 }
 
