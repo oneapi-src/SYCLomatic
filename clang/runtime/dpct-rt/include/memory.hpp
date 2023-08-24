@@ -991,11 +991,26 @@ static void dpct_memset(void *dev_ptr, int value, size_t size,
   detail::dpct_memset<unsigned char>(q, dev_ptr, value, size).wait();
 }
 
+/// Synchronously sets D16 \p value to the first \p size bytes starting from \p
+/// dev_ptr. The function will return after the memset operation is completed.
+///
+/// \param dev_ptr Pointer to the device memory address.
+/// \param value Value to be set.
+/// \param size Number of bytes to be set to the value.
+/// \param q The queue in which the operation is done.
+/// \returns no return value.
 static void dpct_memset_d16(void *dev_ptr, unsigned short value, size_t size,
                         sycl::queue &q = get_default_queue()) {
   detail::dpct_memset(q, dev_ptr, value, size).wait();
 }
-
+/// Synchronously sets D32 \p value to the first \p size bytes starting from \p
+/// dev_ptr. The function will return after the memset operation is completed.
+///
+/// \param dev_ptr Pointer to the device memory address.
+/// \param value Value to be set.
+/// \param size Number of bytes to be set to the value.
+/// \param q The queue in which the operation is done.
+/// \returns no return value.
 static void dpct_memset_d32(void *dev_ptr, unsigned int value, size_t size,
                         sycl::queue &q = get_default_queue()) {
   detail::dpct_memset(q, dev_ptr, value, size).wait();
@@ -1013,12 +1028,26 @@ static void async_dpct_memset(void *dev_ptr, int value, size_t size,
                               sycl::queue &q = dpct::get_default_queue()) {
   detail::dpct_memset<unsigned char>(q, dev_ptr, value, size);
 }
-
+/// Asynchronously sets D16 \p value to the first \p size bytes starting from \p
+/// dev_ptr. The return of the function does NOT guarantee the memset operation
+/// is completed.
+///
+/// \param dev_ptr Pointer to the device memory address.
+/// \param value Value to be set.
+/// \param size Number of bytes to be set to the value.
+/// \returns no return value.
 static void async_dpct_memset_d16(void *dev_ptr, unsigned short value, size_t size,
                               sycl::queue &q = dpct::get_default_queue()) {
   detail::dpct_memset(q, dev_ptr, value, size);
 }
-
+/// Asynchronously sets D32 \p value to the first \p size bytes starting from \p
+/// dev_ptr. The return of the function does NOT guarantee the memset operation
+/// is completed.
+///
+/// \param dev_ptr Pointer to the device memory address.
+/// \param value Value to be set.
+/// \param size Number of bytes to be set to the value.
+/// \returns no return value.
 static void async_dpct_memset_d32(void *dev_ptr, unsigned int value, size_t size,
                               sycl::queue &q = dpct::get_default_queue()) {
   detail::dpct_memset(q, dev_ptr, value, size);
@@ -1041,13 +1070,35 @@ static inline void dpct_memset(void *ptr, size_t pitch, int val, size_t x,
                                sycl::queue &q = get_default_queue()) {
   sycl::event::wait(detail::dpct_memset<unsigned char>(q, ptr, pitch, val, x, y));
 }
-
+/// Sets D16 \p value to the 2D memory region pointed by \p ptr in \p q. \p x and
+/// \p y specify the setted 2D memory size. \p pitch is the bytes in linear
+/// dimension, including padding bytes. The function will return after the
+/// memset operation is completed.
+///
+/// \param ptr Pointer to the device memory region.
+/// \param pitch Bytes in linear dimension, including padding bytes.
+/// \param value Value to be set.
+/// \param x The setted memory size in linear dimension.
+/// \param y The setted memory size in second dimension.
+/// \param q The queue in which the operation is done.
+/// \returns no return value.
 static inline void dpct_memset_d16(void *ptr, size_t pitch, unsigned short val, size_t x,
                                size_t y,
                                sycl::queue &q = get_default_queue()) {
   sycl::event::wait(detail::dpct_memset(q, ptr, pitch, val, x, y));
 }
-
+/// Sets D32 \p value to the 2D memory region pointed by \p ptr in \p q. \p x and
+/// \p y specify the setted 2D memory size. \p pitch is the bytes in linear
+/// dimension, including padding bytes. The function will return after the
+/// memset operation is completed.
+///
+/// \param ptr Pointer to the device memory region.
+/// \param pitch Bytes in linear dimension, including padding bytes.
+/// \param value Value to be set.
+/// \param x The setted memory size in linear dimension.
+/// \param y The setted memory size in second dimension.
+/// \param q The queue in which the operation is done.
+/// \returns no return value.
 static inline void dpct_memset_d32(void *ptr, size_t pitch, unsigned int val, size_t x,
                                size_t y,
                                sycl::queue &q = get_default_queue()) {
@@ -1072,15 +1123,39 @@ static inline void async_dpct_memset(void *ptr, size_t pitch, int val, size_t x,
   detail::dpct_memset<unsigned char>(q, ptr, pitch, val, x, y);
 }
 
-static inline void async_dpct_memset_d16(void *ptr, size_t pitch, unsigned short val, size_t x,
-                                     size_t y,
-                                     sycl::queue &q = get_default_queue()) {
+/// Sets D16 \p value to the 2D memory region pointed by \p ptr in \p q. \p x and
+/// \p y specify the setted 2D memory size. \p pitch is the bytes in linear
+/// dimension, including padding bytes. The return of the function does NOT
+/// guarantee the memset operation is completed.
+///
+/// \param ptr Pointer to the device memory region.
+/// \param pitch Bytes in linear dimension, including padding bytes.
+/// \param value Value to be set.
+/// \param x The setted memory size in linear dimension.
+/// \param y The setted memory size in second dimension.
+/// \param q The queue in which the operation is done.
+/// \returns no return value.
+static inline void async_dpct_memset_d16(void *ptr, size_t pitch,
+                                         unsigned short val, size_t x, size_t y,
+                                         sycl::queue &q = get_default_queue()) {
   detail::dpct_memset(q, ptr, pitch, val, x, y);
 }
 
-static inline void async_dpct_memset_d32(void *ptr, size_t pitch, unsigned int val, size_t x,
-                                     size_t y,
-                                     sycl::queue &q = get_default_queue()) {
+/// Sets D32 \p value to the 2D memory region pointed by \p ptr in \p q. \p x and
+/// \p y specify the setted 2D memory size. \p pitch is the bytes in linear
+/// dimension, including padding bytes. The return of the function does NOT
+/// guarantee the memset operation is completed.
+///
+/// \param ptr Pointer to the device memory region.
+/// \param pitch Bytes in linear dimension, including padding bytes.
+/// \param value Value to be set.
+/// \param x The setted memory size in linear dimension.
+/// \param y The setted memory size in second dimension.
+/// \param q The queue in which the operation is done.
+/// \returns no return value.
+static inline void async_dpct_memset_d32(void *ptr, size_t pitch,
+                                         unsigned int val, size_t x, size_t y,
+                                         sycl::queue &q = get_default_queue()) {
   detail::dpct_memset(q, ptr, pitch, val, x, y);
 }
 
@@ -1096,7 +1171,7 @@ static inline void async_dpct_memset_d32(void *ptr, size_t pitch, unsigned int v
 static inline void dpct_memset(pitched_data pitch, int val,
                                sycl::range<3> size,
                                sycl::queue &q = get_default_queue()) {
-  sycl::event::wait(detail::dpct_memset(q, pitch, val, size));
+  sycl::event::wait(detail::dpct_memset<unsigned char>(q, pitch, val, size));
 }
 
 /// Sets \p value to the 3D memory region specified by \p pitch in \p q. \p size
@@ -1111,7 +1186,7 @@ static inline void dpct_memset(pitched_data pitch, int val,
 static inline void async_dpct_memset(pitched_data pitch, int val,
                                      sycl::range<3> size,
                                      sycl::queue &q = get_default_queue()) {
-  detail::dpct_memset(q, pitch, val, size);
+  detail::dpct_memset<unsigned char>(q, pitch, val, size);
 }
 
 /// dpct accessor used as device function parameter.
