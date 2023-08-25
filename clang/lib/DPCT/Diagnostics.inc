@@ -13,6 +13,10 @@
 
 
 // FORMAT: {NAME, ID, MESSAGE}
+DEF_WARNING(ATOMIC_OPTIMIZATION, 1116, "The %0 was migrated to %1 for performance, and %2 is computed by (UINT_MAX + 1) / ('%3' + 1). This migration requires the initial value of '%4' to be scaled by multiplying %2, and any usage of value of '%4' outside atomic function to be scaled by dividing %2.")
+DEF_COMMENT(ATOMIC_OPTIMIZATION, 1116, "The {0} was migrated to {1} for performance, and {2} is computed by (UINT_MAX + 1) / ('{3}' + 1). This migration requires the initial value of '{4}' to be scaled by multiplying {2}, and any usage of value of '{4}' outside atomic function to be scaled by dividing {2}.")
+DEF_WARNING(SYMBOL_SCALE, 1117, "There is atomicInc/Dec operation on '%0' and value of '%0' was scaled by migration for performance, refer to DPCT1116. Using value of '%0' through '%1' should also be scaled by dividing or multiplying %2. You may need to adjust the code.")
+DEF_COMMENT(SYMBOL_SCALE, 1117, "There is atomicInc/Dec operation on '{0}' and value of '{0}' was scaled by migration for performance, refer to DPCT1116. Using value of '{0}' through '{1}' should also be scaled by dividing or multiplying {2}. You may need to adjust the code.")
 DEF_WARNING(IFSTMT_NOT_REMOVED, 1000, "Error handling if-stmt was detected but could not be rewritten.")
 DEF_COMMENT(IFSTMT_NOT_REMOVED, 1000, "Error handling if-stmt was detected but could not be rewritten.")
 DEF_WARNING(STMT_NOT_REMOVED, 1001, "The statement could not be removed.")

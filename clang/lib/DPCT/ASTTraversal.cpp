@@ -1921,17 +1921,22 @@ void AtomicFunctionOptimizationRule::optimizeMigration(
   std::string CEKey = CELocInfo.first + ":" + std::to_string(CELocInfo.second);
 
   auto ReplaceCE = [&](std::string Name, unsigned int Step) {
-    std::ostringstream OS;
     std::string StepStr = std::to_string(Step);
     ExprAnalysis AddrEA(Addr);
     std::string AddrRepl = AddrEA.getReplacedString();
-    OS << MapNames::getDpctNamespace() << Name
-       << "<sycl::access::address_space::generic_space>(" << AddrRepl << ", "
-       << StepStr << ")";
+    std::string FuncNameRepl = MapNames::getDpctNamespace() + Name;
+    std::string TemplateArgumentRepl =
+        "<sycl::access::address_space::generic_space>";
+    std::string FuncBodyRepl = "(" + AddrRepl + ", " + StepStr + ")";
     if (Step != 1) {
-      OS << " / " + StepStr;
+      FuncBodyRepl = FuncBodyRepl + " / " + StepStr;
+      report(CE->getBeginLoc(), Diagnostics::ATOMIC_OPTIMIZATION, false,
+             FuncName, FuncNameRepl + FuncBodyRepl, StepStr,
+             getStmtSpelling(Val),
+             IsArrayType ? VariableName + "[index]" : VariableName);
     }
-    emplaceTransformation(new ReplaceStmt(CE, OS.str()));
+    emplaceTransformation(new ReplaceStmt(
+        CE, FuncNameRepl + TemplateArgumentRepl + FuncBodyRepl));
   };
   // Ensure the 0x100000000ul(unsigned int range) is divisible by
   // (UpperLimit + 1).
@@ -1972,6 +1977,7 @@ void AtomicFunctionOptimizationRule::optimizeMigration(
   if (!VDecl || !Context.getParents(*VDecl)[0].get<TranslationUnitDecl>()) {
     return;
   }
+  VariableName = VDecl->getNameAsString();
   // 2. Check if the variable is processed.
   auto VDeclIt = DeclMap.find(VDecl);
   if (VDeclIt != DeclMap.end()) {
@@ -1984,10 +1990,11 @@ void AtomicFunctionOptimizationRule::optimizeMigration(
   DeclMap[VDecl] = false;
   // 3. Find the variable initial value.
   std::vector<const IntegerLiteral *> InitExprs;
-  VariableName = VDecl->getNameAsString();
+  if (VDecl->getType()->isArrayType()) {
+    IsArrayType = true;
+  } 
   if (VDecl->hasInit()) {
-    if (VDecl->getType()->isArrayType()) {
-      IsArrayType = true;
+    if (IsArrayType) {
       if (const auto ILE = dyn_cast<InitListExpr>(
               VDecl->getInit()->IgnoreImplicitAsWritten())) {
         auto Inits = ILE->inits();
@@ -2016,7 +2023,6 @@ void AtomicFunctionOptimizationRule::optimizeMigration(
   std::vector<const clang::DeclRefExpr *> Results;
   std::vector<const clang::Expr *> RValueRefs;
   std::vector<const clang::CallExpr *> CompareFunctions;
-  std::vector<const IntegerLiteral *> AssignExprs;
   findAllVarRef(DRE, Results, true);
   bool isSafeToOpt = false;
   auto getFunctionName = [&](const Stmt *S) -> std::string {
@@ -2072,58 +2078,23 @@ void AtomicFunctionOptimizationRule::optimizeMigration(
         }
       }
     } else if (CalleeName == "cudaGetSymbolAddress") {
-      const Expr *Arg = E->getArg(0)->IgnoreImplicitAsWritten();
-      auto ArgDRE = dyn_cast<DeclRefExpr>(Arg);
-      if (!ArgDRE) {
-        if (auto CCast = dyn_cast<CStyleCastExpr>(Arg)) {
-          ArgDRE = dyn_cast<DeclRefExpr>(
-              CCast->getSubExpr()->IgnoreImplicitAsWritten());
-          if (!ArgDRE) {
-            if (auto U = dyn_cast<UnaryOperator>(CCast->getSubExpr())) {
-              ArgDRE = dyn_cast<DeclRefExpr>(
-                  U->getSubExpr()->IgnoreImplicitAsWritten());
-            }
-          }
-        }
-      }
-      if (!ArgDRE) {
-        return;
-      }
-      std::vector<const clang::DeclRefExpr *> SymbolRefs;
-      const CallExpr *CExpr = nullptr;
-      findAllVarRef(ArgDRE, SymbolRefs);
-      bool isSymbolSafeToOpt = false;
-      for (auto &SymbolRef : SymbolRefs) {
-        if (ArgDRE == SymbolRef) {
+      std::string DREs;
+      auto DREResults = findDREInScope(E->getArg(0));
+      for (auto &Result : DREResults) {
+        const DeclRefExpr *MatchedDRE =
+            Result.getNodeAs<DeclRefExpr>("VarReference");
+        if (!MatchedDRE) {
           continue;
         }
-        if (auto LTRCastExpr =
-                Context.getParents(*SymbolRef)[0].get<ImplicitCastExpr>()) {
-          if (LTRCastExpr->getCastKind() == clang::CK_LValueToRValue) {
-            auto PNode = Context.getParents(*LTRCastExpr)[0];
-            if (auto ImpCastExpr = PNode.get<ImplicitCastExpr>()) {
-              CExpr = Context.getParents(*ImpCastExpr)[0].get<CallExpr>();
-            } else {
-              CExpr = PNode.get<CallExpr>();
-            }
-          }
-        }
-        if (CExpr) {
-          auto FuncName = getFunctionName(CExpr);
-          if(FuncName == "cudaMemset") {
-            auto SettingValueExpr = CExpr->getArg(1)->IgnoreImplicitAsWritten();
-            if (auto IL = dyn_cast<IntegerLiteral>(SettingValueExpr)) {
-              AssignExprs.push_back(IL);
-              isSymbolSafeToOpt = true;
-            }
-          } else if(FuncName == "cudaMemset") {
-            isSymbolSafeToOpt = true;
-          }
-        }
-        if (!isSymbolSafeToOpt) {
-          return;
+        if (DREs.empty()) {
+          DREs = getStmtSpelling(MatchedDRE);
+        } else {
+          DREs = DREs + ", " + getStmtSpelling(MatchedDRE);
         }
       }
+      report(E->getBeginLoc(), Diagnostics::SYMBOL_SCALE, false,
+             IsArrayType ? VariableName + "[index]" : VariableName, DREs,
+             std::to_string(Step));
       isSafeToOpt = true;
     }
   };
@@ -2224,14 +2195,6 @@ void AtomicFunctionOptimizationRule::optimizeMigration(
       InitList.append("}");
     }
     VInfo->setManualInitValue(InitList);
-  }
-  for (auto &AssignExpr : AssignExprs) {
-    auto LocInfo = DpctGlobalInfo::getLocInfo(
-        SM.getExpansionLoc(AssignExpr->getBeginLoc()));
-    std::string R = ProcessInitAndAssignExpr(
-        AssignExpr, AssignExpr->getValue().getZExtValue());
-    SpecialReplMap[LocInfo.first + ":" + std::to_string(LocInfo.second)] = R;
-    emplaceTransformation(new ReplaceStmt(AssignExpr, R));
   }
   for (auto &RValueRef : RValueRefs) {
     ExprAnalysis RefEA(RValueRef);
