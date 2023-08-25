@@ -1,3 +1,5 @@
+// UNSUPPORTED: system-linux
+// UNSUPPORTED: system-windows
 // RUN: dpct --format-range=none -usm-level=none -out-root %T/memory_data_types %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/memory_data_types/memory_data_types.dp.cpp %s
 

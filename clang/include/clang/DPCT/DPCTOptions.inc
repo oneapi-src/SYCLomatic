@@ -419,6 +419,13 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), GenHelperFunctio
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
 DPCT_NON_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<bool>), PathToHelperFunction,
+    "helper-function-dir",
+    llvm::cl::desc(
+        "Print the installation directory for helper function header files."),
+    llvm::cl::cat(DPCTCat), llvm::cl::init(false))
+
+DPCT_NON_ENUM_OPTION(
     DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), QueryAPIMapping,
     "query-api-mapping",
     llvm::cl::desc(

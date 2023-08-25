@@ -10,6 +10,7 @@
 #define DPCT_SAVE_NEW_FILES_H
 
 #include "ValidateArguments.h"
+#include "llvm/ADT/SmallString.h"
 #include "llvm/Support/Error.h"
 #include <map>
 

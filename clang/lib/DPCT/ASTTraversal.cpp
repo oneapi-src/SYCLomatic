@@ -12158,6 +12158,8 @@ void WarpFunctionsRule::registerMatcher(MatchFinder &MF) {
                                             "__any_sync",
                                             "__ballot",
                                             "__ballot_sync",
+                                            "__match_any_sync",
+                                            "__match_all_sync",
                                             "__activemask"};
 
   MF.addMatcher(callExpr(callee(functionDecl(internal::Matcher<NamedDecl>(
