@@ -83,16 +83,28 @@ enum class Comments {
 
 #define DEF_NOTE(NAME, ID, MSG)
 #define DEF_ERROR(NAME, ID, MSG)
-#define DEF_WARNING(NAME, ID, MSG) +1
+#define DEF_WARNING(NAME, ID, MSG) ID,
 #define DEF_COMMENT(NAME, ID, MSG)
-enum class WarningCounter {
-  COUNT = 0
+constexpr inline unsigned int WarningIDArray[] = {
 #include "Diagnostics.inc"
 #undef DEF_NOTE
 #undef DEF_ERROR
 #undef DEF_WARNING
 #undef DEF_COMMENT
 };
+
+constexpr int getMaxWarningID() {
+  unsigned int result = WarningIDArray[0];
+  for (size_t i = 1; i < sizeof(WarningIDArray) / sizeof(WarningIDArray[0]);
+       ++i) {
+    if (WarningIDArray[i] > result) {
+      result = WarningIDArray[i];
+    }
+  }
+  return result;
+}
+
+constexpr inline int MaxWarningID = getMaxWarningID();
 
 #define DEF_NOTE(NAME, ID, MSG)
 #define DEF_ERROR(NAME, ID, MSG)
@@ -105,7 +117,7 @@ enum class Warnings {
 #undef DEF_ERROR
 #undef DEF_WARNING
 #undef DEF_COMMENT
-  END = BEGIN + (size_t)WarningCounter::COUNT + 1
+  END = MaxWarningID + 1
 };
 
 #define DEF_COMMENT(NAME, ID, MSG) NAME = ID,
