@@ -205,7 +205,7 @@
 // cublasGetAtomicsMode: CUDA API:
 // cublasGetAtomicsMode-NEXT:   cublasGetAtomicsMode(handle /*cublasHandle_t*/,
 // cublasGetAtomicsMode-NEXT:                        atomics /*cublasAtomicsMode_t **/);
-// cublasGetAtomicsMode-NEXT: The API is Removed because this it is redundant in SYCL.
+// cublasGetAtomicsMode-NEXT: The API is Removed.
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZsyr2k | FileCheck %s -check-prefix=cublasZsyr2k
 // cublasZsyr2k: CUDA API:

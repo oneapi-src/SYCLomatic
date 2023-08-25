@@ -597,6 +597,23 @@ enum class HelperFeatureEnum : unsigned int {
 void requestFeature(HelperFeatureEnum Feature);
 void requestHelperFeatureForEnumNames(const std::string Name);
 void requestHelperFeatureForTypeNames(const std::string Name);
+
+class PairedPrinter {
+  StringRef Postfix;
+  llvm::raw_ostream &OS;
+
+public:
+  PairedPrinter(llvm::raw_ostream &Stream, StringRef PrefixString,
+                StringRef PosfixString, bool ShouldPrint = true)
+      : OS(Stream) {
+    if (ShouldPrint) {
+      OS << PrefixString;
+      Postfix = PosfixString;
+    }
+  }
+  ~PairedPrinter() { OS << Postfix; }
+};
+
 } // namespace dpct
 namespace ast_matchers {
 AST_MATCHER_P(DeclRefExpr, isDeclSameAs, const VarDecl *, TargetVD) {

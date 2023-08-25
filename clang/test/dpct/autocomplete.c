@@ -24,6 +24,7 @@
 // DASH-NEXT: --gen-build-script
 // DASH-NEXT: --gen-helper-function
 // DASH-NEXT: --help
+// DASH-NEXT: --helper-function-dir
 // DASH-NEXT: --in-root
 // DASH-NEXT: --in-root-exclude
 // DASH-NEXT: --keep-original-code
