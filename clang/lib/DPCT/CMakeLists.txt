@@ -147,6 +147,7 @@ add_clang_library(DPCT
   VcxprojParser.cpp
   LibraryAPIMigration.cpp
   GenMakefile.cpp
+  InclusionHeaders.cpp
   IncrementalMigrationUtility.cpp
   Rules.cpp
   Homoglyph.cpp
