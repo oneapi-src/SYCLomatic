@@ -86,3 +86,34 @@
 // all_of-NEXT:  oneapi::dpl::all_of(oneapi::dpl::execution::seq, h_A.begin(), h_A.begin() + 2, oneapi::dpl::identity());
 // all_of-NEXT:  oneapi::dpl::all_of(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.begin() + 2, oneapi::dpl::identity());
 // all_of-NEXT:  oneapi::dpl::all_of(oneapi::dpl::execution::make_device_policy(q_ct1), d_A.begin(), d_A.begin() + 2, oneapi::dpl::identity());
+// all_of-EMPTY:
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::uninitialized_fill_n | FileCheck %s -check-prefix=uninitialized_fill_n
+// uninitialized_fill_n:  oneapi::dpl::uninitialized_fill_n(oneapi::dpl::execution::make_device_policy(q_ct1), d_array, N, int_val);
+// uninitialized_fill_n-NEXT:  oneapi::dpl::uninitialized_fill_n(oneapi::dpl::execution::make_device_policy(q_ct1), d_array, N, int_val);
+// uninitialized_fill_n-NEXT:  oneapi::dpl::uninitialized_fill_n(oneapi::dpl::execution::seq, data, N, val);
+// uninitialized_fill_n-NEXT:  oneapi::dpl::uninitialized_fill_n(oneapi::dpl::execution::seq, data, N, val);
+// uninitialized_fill_n-EMPTY:
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::swap_ranges | FileCheck %s -check-prefix=swap_ranges
+// swap_ranges:  oneapi::dpl::swap_ranges(oneapi::dpl::execution::make_device_policy(q_ct1), d_v1.begin(), d_v1.end(), d_v2.begin());
+// swap_ranges-NEXT:  oneapi::dpl::swap_ranges(oneapi::dpl::execution::make_device_policy(q_ct1), d_v1.begin(), d_v1.end(), d_v2.begin());
+// swap_ranges-NEXT:  oneapi::dpl::swap_ranges(oneapi::dpl::execution::seq, h_v1.begin(), h_v1.end(), h_v2.begin());
+// swap_ranges-NEXT:  oneapi::dpl::swap_ranges(oneapi::dpl::execution::seq, h_v1.begin(), h_v1.end(), h_v2.begin());
+// swap_ranges-NEXT:  oneapi::dpl::swap_ranges(oneapi::dpl::execution::seq, v1, v1 + 2, v2);
+// swap_ranges-NEXT:  oneapi::dpl::swap_ranges(oneapi::dpl::execution::seq, v1, v1 + 2, v2);
+// swap_ranges-EMPTY:
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::set_symmetric_difference_by_key | FileCheck %s -check-prefix=set_symmetric_difference_by_key
+// set_symmetric_difference_by_key:  dpct::set_symmetric_difference(oneapi::dpl::execution::seq, A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result);
+// set_symmetric_difference_by_key-NEXT:  dpct::set_symmetric_difference(oneapi::dpl::execution::seq, A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result);
+// set_symmetric_difference_by_key-NEXT:  dpct::set_symmetric_difference(oneapi::dpl::execution::seq, A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result, Compare());
+// set_symmetric_difference_by_key-NEXT:  dpct::set_symmetric_difference(oneapi::dpl::execution::seq, A_keys, A_keys + 7, B_keys, B_keys + 5, A_vals, B_vals, keys_result, vals_result, Compare());
+// set_symmetric_difference_by_key-NEXT:  dpct::set_symmetric_difference(oneapi::dpl::execution::make_device_policy(q_ct1), d_A_keys.begin(), d_A_keys.end(), d_B_keys.begin(), d_B_keys.end(), d_A_vals.begin(), d_B_vals.begin(), d_keys_result.begin(), d_vals_result.begin());
+// set_symmetric_difference_by_key-NEXT:  dpct::set_symmetric_difference(oneapi::dpl::execution::make_device_policy(q_ct1), d_A_keys.begin(), d_A_keys.end(), d_B_keys.begin(), d_B_keys.end(), d_A_vals.begin(), d_B_vals.begin(), d_keys_result.begin(), d_vals_result.begin());
+// set_symmetric_difference_by_key-NEXT:  dpct::set_symmetric_difference(oneapi::dpl::execution::make_device_policy(q_ct1), d_A_keys.begin(), d_A_keys.end(), d_B_keys.begin(), d_B_keys.end(), d_A_vals.begin(), d_B_vals.begin(), d_keys_result.begin(), d_vals_result.begin(), Compare());
+// set_symmetric_difference_by_key-NEXT:  dpct::set_symmetric_difference(oneapi::dpl::execution::make_device_policy(q_ct1), d_A_keys.begin(), d_A_keys.end(), d_B_keys.begin(), d_B_keys.end(), d_A_vals.begin(), d_B_vals.begin(), d_keys_result.begin(), d_vals_result.begin(), Compare());
+// set_symmetric_difference_by_key-NEXT:  dpct::set_symmetric_difference(oneapi::dpl::execution::seq, h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin());
+// set_symmetric_difference_by_key-NEXT:  dpct::set_symmetric_difference(oneapi::dpl::execution::seq, h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin());
+// set_symmetric_difference_by_key-NEXT:  dpct::set_symmetric_difference(oneapi::dpl::execution::seq, h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin(), Compare());
+// set_symmetric_difference_by_key-NEXT:  dpct::set_symmetric_difference(oneapi::dpl::execution::seq, h_A_keys.begin(), h_A_keys.end(), h_B_keys.begin(), h_B_keys.end(), h_A_vals.begin(), h_B_vals.begin(), h_keys_result.begin(), h_vals_result.begin(), Compare());
