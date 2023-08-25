@@ -417,7 +417,7 @@ inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
     std::cerr << "Caught synchronous SYCL exception:" << std::endl
               << "reason: " << e.what() << std::endl;
     if (info)
-      dpct::detail::dpct_memset(q, info, 0, sizeof(int)).wait();
+      dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int)).wait();
     return 1;
   }
   return 0;
@@ -506,7 +506,7 @@ template <typename T> struct getrf_impl {
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     oneapi::mkl::lapack::getrf(q, m, n, a_data, lda, ipiv_data, device_ws_data,
                                device_ws_size);
-    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+    dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
   }
 };
 
@@ -524,7 +524,7 @@ template <typename T> struct getrs_impl {
     auto b_data = dpct::detail::get_memory(reinterpret_cast<T *>(b));
     oneapi::mkl::lapack::getrs(q, trans, n, nrhs, a_data, lda, ipiv_data,
                                b_data, ldb, device_ws_data, device_ws_size);
-    sycl::event e = dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+    sycl::event e = dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
     device_ws.set_event(e);
   }
 };
@@ -549,7 +549,7 @@ template <typename T> struct geqrf_impl {
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     oneapi::mkl::lapack::geqrf(q, m, n, a_data, lda, tau_data, device_ws_data,
                                device_ws_size);
-    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+    dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
   }
 };
 
@@ -569,7 +569,7 @@ template <typename T> struct getrfnp_impl {
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     oneapi::mkl::lapack::getrfnp_batch(q, m, n, a_data, lda, a_stride, 1,
                                        device_ws_data, device_ws_size);
-    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+    dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
 #endif
   }
 };
@@ -610,7 +610,7 @@ template <typename T> struct gesvd_impl {
     oneapi::mkl::lapack::gesvd(q, jobu, jobvt, m, n, a_data, lda, s_data,
                                u_data, ldu, vt_data, ldvt, device_ws_data,
                                device_ws_size);
-    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+    dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
   }
 };
 template <typename T> struct gesvd_conj_impl : public gesvd_impl<T> {
@@ -632,7 +632,7 @@ template <typename T> struct gesvd_conj_impl : public gesvd_impl<T> {
     auto vt_data = dpct::detail::get_memory(reinterpret_cast<T *>(vt));
     oneapi::mkl::blas::row_major::imatcopy(q, oneapi::mkl::transpose::conjtrans,
                                            n, n, T(1.0f), vt_data, ldvt, ldvt);
-    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+    dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
 #endif
   }
 };
@@ -655,7 +655,7 @@ template <typename T> struct potrf_impl {
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     oneapi::mkl::lapack::potrf(q, uplo, n, a_data, lda, device_ws_data,
                                device_ws_size);
-    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+    dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
   }
 };
 
@@ -672,7 +672,7 @@ template <typename T> struct potrs_impl {
     auto b_data = dpct::detail::get_memory(reinterpret_cast<T *>(b));
     oneapi::mkl::lapack::potrs(q, uplo, n, nrhs, a_data, lda, b_data, ldb,
                                device_ws_data, device_ws_size);
-    sycl::event e = dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+    sycl::event e = dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
     device_ws.set_event(e);
   }
 };
@@ -786,7 +786,7 @@ template <typename T> struct syheevx_impl {
                             memcpy_direction::device_to_device, q);
     dpct::async_dpct_memcpy(m, m_device.get_ptr(), sizeof(std::int64_t),
                             memcpy_direction::device_to_host, q);
-    sycl::event e = dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+    sycl::event e = dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
     z.set_event(e);
     m_device.set_event(e);
 #endif
@@ -848,7 +848,7 @@ template <typename T> struct syhegvx_impl {
                             memcpy_direction::device_to_device, q);
     dpct::async_dpct_memcpy(m, m_device.get_ptr(), sizeof(std::int64_t),
                             memcpy_direction::device_to_host, q);
-    sycl::event e = dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+    sycl::event e = dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
     z.set_event(e);
     m_device.set_event(e);
 #endif
@@ -879,7 +879,7 @@ template <typename T> struct syhegvd_impl {
     DISPATCH_FLOAT_FOR_CALCULATION(gvd, q, itype, jobz, uplo, n, a_data, lda,
                                    b_data, ldb, w_data, device_ws_data,
                                    device_ws_size);
-    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+    dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
   }
 };
 
@@ -927,7 +927,7 @@ template <typename T> struct syheev_impl {
     auto w_data = dpct::detail::get_memory(reinterpret_cast<value_t *>(w));
     DISPATCH_FLOAT_FOR_CALCULATION(ev, q, jobz, uplo, n, a_data, lda, w_data,
                                    device_ws_data, device_ws_size);
-    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+    dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
 #endif
   }
 };
@@ -953,7 +953,7 @@ template <typename T> struct syheevd_impl {
     auto w_data = dpct::detail::get_memory(reinterpret_cast<value_t *>(w));
     DISPATCH_FLOAT_FOR_CALCULATION(evd, q, jobz, uplo, n, a_data, lda, w_data,
                                    device_ws_data, device_ws_size);
-    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+    dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
   }
 };
 
@@ -990,7 +990,7 @@ template <typename T> struct trtri_impl {
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     oneapi::mkl::lapack::trtri(q, uplo, diag, n, a_data, lda, device_ws_data,
                                device_ws_size);
-    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+    dpct::detail::dpct_memset<unsigned char>(q, info, 0, sizeof(int));
 #endif
   }
 };

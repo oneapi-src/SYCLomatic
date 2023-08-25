@@ -508,3 +508,81 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
                     true),
                 makeCallArgCreatorWithCall(3)),
              makeCallArgCreatorWithCall(4)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD8_v2",
+                       CALL(MapNames::getDpctNamespace() + "dpct_memset",
+                            ARG(0), ARG(1), ARG(2)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD16_v2",
+                       CALL(MapNames::getDpctNamespace() + "dpct_memset_d16",
+                            ARG(0), ARG(1), ARG(2)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD32_v2",
+                       CALL(MapNames::getDpctNamespace() + "dpct_memset_d32",
+                            ARG(0), ARG(1), ARG(2)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD8Async",
+                       CALL(MapNames::getDpctNamespace() + "async_dpct_memset",
+                            ARG(0), ARG(1), ARG(2),
+                            DEREF(makeCallArgCreatorWithCall(3))))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD16Async",
+                       CALL(MapNames::getDpctNamespace() + "async_dpct_memset_d16",
+                            ARG(0), ARG(1), ARG(2),
+                            DEREF(makeCallArgCreatorWithCall(3))))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD32Async",
+                       CALL(MapNames::getDpctNamespace() + "async_dpct_memset_d32",
+                            ARG(0), ARG(1), ARG(2),
+                            DEREF(makeCallArgCreatorWithCall(3))))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD2D8_v2",
+                       CALL(MapNames::getDpctNamespace() + "dpct_memset",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD2D16_v2",
+                       CALL(MapNames::getDpctNamespace() + "dpct_memset_d16",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD2D32_v2",
+                       CALL(MapNames::getDpctNamespace() + "dpct_memset_d32",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD2D8Async",
+                       CALL(MapNames::getDpctNamespace() + "async_dpct_memset",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), 
+                            DEREF(makeCallArgCreatorWithCall(5))))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD2D16Async",
+                       CALL(MapNames::getDpctNamespace() + "async_dpct_memset_d16",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4),
+                            DEREF(makeCallArgCreatorWithCall(5))))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD2D32Async",
+                       CALL(MapNames::getDpctNamespace() + "async_dpct_memset_d32",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4),
+                            DEREF(makeCallArgCreatorWithCall(5))))))
