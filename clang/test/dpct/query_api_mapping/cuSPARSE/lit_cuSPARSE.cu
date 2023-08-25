@@ -10,7 +10,7 @@
 // cusparseSpMM_preprocess-NEXT:       beta /*const void **/, c /*cusparseDnMatDescr_t*/,
 // cusparseSpMM_preprocess-NEXT:       computetype /*cudaDataType*/, algo /*cusparseSpMMAlg_t*/,
 // cusparseSpMM_preprocess-NEXT:       workspace /*void **/);
-// cusparseSpMM_preprocess-NEXT: Is migrated to:
+// cusparseSpMM_preprocess-NEXT:   The API is Removed.
 // cusparseSpMM_preprocess-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cusparseSpMM_bufferSize | FileCheck %s -check-prefix=cusparseSpMM_bufferSize
