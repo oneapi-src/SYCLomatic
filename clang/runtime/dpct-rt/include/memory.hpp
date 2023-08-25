@@ -991,7 +991,7 @@ async_dpct_memcpy(pitched_data to, sycl::id<3> to_pos, pitched_data from,
   detail::dpct_memcpy(q, to, to_pos, from, from_pos, size, direction);
 }
 /**
- * @brief Sets D8 \p value to the first \p size elements starting from
+ * @brief Sets 1 byte data \p value to the first \p size elements starting from
  * \p dev_ptr in \p q synchronously.
  * @param [in] dev_ptr Pointer to the virtual device memory address.
  * @param [in] value The value to be set.
@@ -1004,7 +1004,7 @@ static void dpct_memset(void *dev_ptr, int value, size_t size,
 }
 
 /**
- * @brief Sets D16 \p value to the first \p size elements starting from
+ * @brief Sets 2 bytes data \p value to the first \p size elements starting from
  * \p dev_ptr in \p q synchronously.
  * @param [in] dev_ptr Pointer to the virtual device memory address.
  * @param [in] value The value to be set.
@@ -1016,7 +1016,7 @@ static void dpct_memset_d16(void *dev_ptr, unsigned short value, size_t size,
   detail::dpct_memset(q, dev_ptr, value, size).wait();
 }
 /**
- * @brief Sets D32 \p value to the first \p size elements starting from
+ * @brief Sets 4 bytes data \p value to the first \p size elements starting from
  * \p dev_ptr in \p q synchronously.
  * @param [in] dev_ptr Pointer to the virtual device memory address.
  * @param [in] value The value to be set.
@@ -1029,7 +1029,7 @@ static void dpct_memset_d32(void *dev_ptr, unsigned int value, size_t size,
 }
 
 /**
- * @brief Sets D8 \p value to the first \p size elements starting from
+ * @brief Sets 1 byte data \p value to the first \p size elements starting from
  * \p dev_ptr in \p q asynchronously.
  * @param [in] dev_ptr Pointer to the virtual device memory address.
  * @param [in] value The value to be set.
@@ -1041,7 +1041,7 @@ static void async_dpct_memset(void *dev_ptr, int value, size_t size,
   detail::dpct_memset<unsigned char>(q, dev_ptr, value, size);
 }
 /**
- * @brief Sets D16 \p value to the first \p size elements starting from
+ * @brief Sets 2 bytes data \p value to the first \p size elements starting from
  * \p dev_ptr in \p q asynchronously.
  * @param [in] dev_ptr Pointer to the virtual device memory address.
  * @param [in] value The value to be set.
@@ -1053,7 +1053,7 @@ static void async_dpct_memset_d16(void *dev_ptr, unsigned short value, size_t si
   detail::dpct_memset(q, dev_ptr, value, size);
 }
 /**
- * @brief Sets D32 \p value to the first \p size elements starting from
+ * @brief Sets 4 bytes data \p value to the first \p size elements starting from
  * \p dev_ptr in \p q asynchronously.
  * @param [in] dev_ptr Pointer to the virtual device memory address.
  * @param [in] value The value to be set.
@@ -1066,7 +1066,7 @@ static void async_dpct_memset_d32(void *dev_ptr, unsigned int value, size_t size
 }
 
 /**
- * @brief Sets D8 \p val to the pitched 2D memory region pointed by \p ptr in \p q
+ * @brief Sets 1 byte data \p val to the pitched 2D memory region pointed by \p ptr in \p q
  * synchronously.
  * @param [in] ptr Pointer to the virtual device memory.
  * @param [in] pitch The pitch size by number of elements, including padding.
@@ -1081,7 +1081,7 @@ static inline void dpct_memset(void *ptr, size_t pitch, int val, size_t x,
   sycl::event::wait(detail::dpct_memset<unsigned char>(q, ptr, pitch, val, x, y));
 }
 /**
- * @brief Sets D16 \p val to the pitched 2D memory region pointed by \p ptr in \p q
+ * @brief Sets 2 bytes data \p val to the pitched 2D memory region pointed by \p ptr in \p q
  * synchronously.
  * @param [in] ptr Pointer to the virtual device memory.
  * @param [in] pitch The pitch size by number of elements, including padding.
@@ -1096,7 +1096,7 @@ static inline void dpct_memset_d16(void *ptr, size_t pitch, unsigned short val, 
   sycl::event::wait(detail::dpct_memset(q, ptr, pitch, val, x, y));
 }
 /**
- * @brief Sets D32 \p val to the pitched 2D memory region pointed by \p ptr in \p q
+ * @brief Sets 4 bytes data \p val to the pitched 2D memory region pointed by \p ptr in \p q
  * synchronously.
  * @param [in] ptr Pointer to the virtual device memory.
  * @param [in] pitch The pitch size by number of elements, including padding.
@@ -1112,7 +1112,7 @@ static inline void dpct_memset_d32(void *ptr, size_t pitch, unsigned int val, si
 }
 
 /**
- * @brief Sets D8 \p val to the pitched 2D memory region pointed by \p ptr in \p q
+ * @brief Sets 1 byte data \p val to the pitched 2D memory region pointed by \p ptr in \p q
  * asynchronously.
  * @param [in] ptr Pointer to the virtual device memory.
  * @param [in] pitch The pitch size by number of elements, including padding.
@@ -1128,7 +1128,7 @@ static inline void async_dpct_memset(void *ptr, size_t pitch, int val, size_t x,
 }
 
 /**
- * @brief Sets D16 \p val to the pitched 2D memory region pointed by \p ptr in \p q
+ * @brief Sets 2 bytes data \p val to the pitched 2D memory region pointed by \p ptr in \p q
  * asynchronously.
  * @param [in] ptr Pointer to the virtual device memory.
  * @param [in] pitch The pitch size by number of elements, including padding.
@@ -1144,7 +1144,7 @@ static inline void async_dpct_memset_d16(void *ptr, size_t pitch,
 }
 
 /**
- * @brief Sets D32 \p val to the pitched 2D memory region pointed by \p ptr in \p q
+ * @brief Sets 4 bytes data \p val to the pitched 2D memory region pointed by \p ptr in \p q
  * asynchronously.
  * @param [in] ptr Pointer to the virtual device memory.
  * @param [in] pitch The pitch size by number of elements, including padding.
@@ -1160,7 +1160,7 @@ static inline void async_dpct_memset_d32(void *ptr, size_t pitch,
 }
 
 /**
- * @brief Sets D8 \p value to the 3D memory region pointed by \p data in \p q
+ * @brief Sets 1 byte data \p value to the 3D memory region pointed by \p data in \p q
  * synchronously.
  * @param [in] data Pointer to the pitched device memory region.
  * @param [in] value The value to be set.
@@ -1174,7 +1174,7 @@ static inline void dpct_memset(pitched_data pitch, int val,
 }
 
 /**
- * @brief Sets D8 \p value to the 3D memory region pointed by \p data in \p q
+ * @brief Sets 1 byte data \p value to the 3D memory region pointed by \p data in \p q
  * asynchronously.
  * @param [in] data Pointer to the pitched device memory region.
  * @param [in] value The value to be set.
