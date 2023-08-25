@@ -11,15 +11,19 @@
 namespace clang {
 namespace dpct {
 
-MigrationRuleManager::MigrationRuleManager(PassKind Kind, TransformSetTy &TS)
-    : PK(Kind), Transformers(TS) {}
+MigrationRuleManager::MigrationRuleManager(PassKind Kind, TransformSetTy &TS,
+                                           RuleGroups G)
+    : PK(Kind), Transformers(TS), Groups(G) {}
 
-void MigrationRuleManager::emplaceMigrationRule(const RuleFactoryMapType::value_type &RuleFactory) {
-  auto Rule = RuleFactory.second->createMigrationRule();
-  Rule->setName(RuleFactory.first);
-  Rule->setTransformSet(Transformers);
-  Rule->registerMatcher(Matchers);
-  Storage.push_back(std::move(Rule));
+void MigrationRuleManager::emplaceMigrationRule(
+    const RuleFactoryMapType::value_type &RuleFactory) {
+  if (Groups.isEnabled(RuleFactory.second->Group)) {
+    auto Rule = RuleFactory.second->createMigrationRule();
+    Rule->setName(RuleFactory.first);
+    Rule->setTransformSet(Transformers);
+    Rule->registerMatcher(Matchers);
+    Storage.push_back(std::move(Rule));
+  }
 }
 
 void MigrationRuleManager::emplaceAllRules() {
