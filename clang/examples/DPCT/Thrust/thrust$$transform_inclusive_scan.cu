@@ -55,22 +55,19 @@ void test() {
       binary_op /*AssociativeOperator*/);
   thrust::transform_inclusive_scan(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > &*/
-      ,
+                      > &*/,
       data /*InputIterator*/, data + N /*InputIterator*/,
       data /*OutputIterator*/, unary_op /*UnaryFunction*/,
       binary_op /*AssociativeOperator*/);
   thrust::transform_inclusive_scan(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > &*/
-      ,
+                      > &*/,
       h_vec_data.begin() /*InputIterator*/, h_vec_data.end() /*InputIterator*/,
       h_vec_data.begin() /*OutputIterator*/, unary_op /*UnaryFunction*/,
       binary_op /*AssociativeOperator*/);
   thrust::transform_inclusive_scan(
       thrust::device /*const thrust::detail::execution_policy_base<
-                        DerivedPolicy > &*/
-      ,
+                        DerivedPolicy > &*/,
       d_vec_data.begin() /*InputIterator*/, d_vec_data.end() /*InputIterator*/,
       d_vec_data.begin() /*OutputIterator*/, unary_op /*UnaryFunction*/,
       binary_op /*AssociativeOperator*/);

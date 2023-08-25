@@ -194,3 +194,69 @@
 // reverse-NEXT:  oneapi::dpl::reverse(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end());
 // reverse-NEXT:  oneapi::dpl::reverse(oneapi::dpl::execution::seq, host_data.begin(), host_data.end());
 // reverse-NEXT:  oneapi::dpl::reverse(oneapi::dpl::execution::seq, data, data + N);
+// reverse-EMPTY:
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::replace_copy | FileCheck %s -check-prefix=replace_copy
+// replace_copy:  oneapi::dpl::replace_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_data.begin(), d_data.end(), d_result.begin(), 1, 99);
+// replace_copy-NEXT:  oneapi::dpl::replace_copy(oneapi::dpl::execution::seq, h_data.begin(), h_data.end(), h_result.begin(), 1, 99);
+// replace_copy-NEXT:  oneapi::dpl::replace_copy(oneapi::dpl::execution::seq, data, data + N, result, 1, 99);
+// replace_copy-NEXT:  oneapi::dpl::replace_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_data.begin(), d_data.end(), d_result.begin(), 1, 99);
+// replace_copy-NEXT:  oneapi::dpl::replace_copy(oneapi::dpl::execution::seq, h_data.begin(), h_data.end(), h_result.begin(), 1, 99);
+// replace_copy-NEXT:  oneapi::dpl::replace_copy(oneapi::dpl::execution::seq, data, data + N, result, 1, 99);
+// replace_copy-EMPTY:
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::mismatch | FileCheck %s -check-prefix=mismatch
+// mismatch:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, VA.begin(), VA.end(), VB.begin());
+// mismatch-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, VA.begin(), VA.end(), VB.begin());
+// mismatch-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, VA.begin(), VA.end(), VB.begin(), oneapi::dpl::equal_to<int>());
+// mismatch-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, VA.begin(), VA.end(), VB.begin(), oneapi::dpl::equal_to<int>());
+// mismatch-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin());
+// mismatch-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin());
+// mismatch-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin(), oneapi::dpl::equal_to<int>());
+// mismatch-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin(), oneapi::dpl::equal_to<int>());
+// mismatch-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, A, A + N, B);
+// mismatch-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, A, A + N, B);
+// mismatch-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, A, A + N, B, oneapi::dpl::equal_to<int>());
+// mismatch-NEXT:  oneapi::dpl::mismatch(oneapi::dpl::execution::seq, A, A + N, B, oneapi::dpl::equal_to<int>());
+// mismatch-EMPTY:
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::find_if_not | FileCheck %s -check-prefix=find_if_not
+// find_if_not:  oneapi::dpl::find_if_not(oneapi::dpl::execution::seq, data, data + 3, greater_than_four());
+// find_if_not-NEXT:  oneapi::dpl::find_if_not(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end(), greater_than_four());
+// find_if_not-NEXT:  oneapi::dpl::find_if_not(oneapi::dpl::execution::seq, host_data.begin(), host_data.end(), greater_than_four());
+// find_if_not-NEXT:  oneapi::dpl::find_if_not(oneapi::dpl::execution::seq, data, data + 3, greater_than_four());
+// find_if_not-NEXT:  oneapi::dpl::find_if_not(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end(), greater_than_four());
+// find_if_not-NEXT:  oneapi::dpl::find_if_not(oneapi::dpl::execution::seq, host_data.begin(), host_data.end(), greater_than_four());
+// find_if_not-EMPTY:
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::find_if | FileCheck %s -check-prefix=find_if
+// find_if:  oneapi::dpl::find_if(oneapi::dpl::execution::seq, data, data + 3, greater_than_four());
+// find_if-NEXT:  oneapi::dpl::find_if(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end(), greater_than_four());
+// find_if-NEXT:  oneapi::dpl::find_if(oneapi::dpl::execution::seq, host_data.begin(), host_data.end(), greater_than_four());
+// find_if-NEXT:  oneapi::dpl::find_if(oneapi::dpl::execution::seq, data, data + 3, greater_than_four());
+// find_if-NEXT:  oneapi::dpl::find_if(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end(), greater_than_four());
+// find_if-NEXT:  oneapi::dpl::find_if(oneapi::dpl::execution::seq, host_data.begin(), host_data.end(), greater_than_four());
+// find_if-EMPTY:
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::remove | FileCheck %s -check-prefix=remove
+// remove:  oneapi::dpl::remove(oneapi::dpl::execution::seq, data, data + N, 1);
+// remove-NEXT:  oneapi::dpl::remove(oneapi::dpl::execution::seq, host_data.begin(), host_data.begin() + N, 1);
+// remove-NEXT:  oneapi::dpl::remove(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.begin() + N, 1);
+// remove-NEXT:  oneapi::dpl::remove(oneapi::dpl::execution::seq, data, data + N, 1);
+// remove-NEXT:  oneapi::dpl::remove(oneapi::dpl::execution::seq, host_data.begin(), host_data.begin() + N, 1);
+// remove-NEXT:  oneapi::dpl::remove(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.begin() + N, 1);
+// remove-EMPTY:
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::stable_partition_copy | FileCheck %s -check-prefix=stable_partition_copy
+// stable_partition_copy:  dpct::stable_partition_copy(oneapi::dpl::execution::seq, data, data + N, evens, odds, is_even());
+// stable_partition_copy-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::seq, host_a.begin(), host_a.begin() + N, host_evens.begin(), host_odds.begin(), is_even());
+// stable_partition_copy-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_a.begin(), device_a.begin() + N, device_evens.begin(), device_odds.begin(), is_even());
+// stable_partition_copy-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::seq, data, data + N, evens, odds, is_even());
+// stable_partition_copy-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::seq, host_a.begin(), host_a.begin() + N, host_evens.begin(), host_odds.begin(), is_even());
+// stable_partition_copy-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_a.begin(), device_a.begin() + N, device_evens.begin(), device_odds.begin(), is_even());
+// stable_partition_copy-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::seq, data, data + N, S, evens, odds, is_even());
+// stable_partition_copy-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::seq, host_a.begin(), host_a.begin() + N, host_S.begin(), host_evens.begin(), host_odds.begin(), is_even());
+// stable_partition_copy-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_a.begin(), device_a.begin() + N, device_S.begin(), device_evens.begin(), device_odds.begin(), is_even());
+// stable_partition_copy-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::seq, data, data + N, S, evens, odds, is_even());
+// stable_partition_copy-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::seq, host_a.begin(), host_a.begin() + N, host_S.begin(), host_evens.begin(), host_odds.begin(), is_even());
+// stable_partition_copy-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_a.begin(), device_a.begin() + N, device_S.begin(), device_evens.begin(), device_odds.begin(), is_even());

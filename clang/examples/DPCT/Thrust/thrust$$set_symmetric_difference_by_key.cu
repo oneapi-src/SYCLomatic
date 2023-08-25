@@ -34,8 +34,7 @@ void test() {
   // Start
   thrust::set_symmetric_difference_by_key(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > &*/
-      ,
+                      > &*/,
       A_keys /*InputIterator1 */, A_keys + 7 /*InputIterator1 */,
       B_keys /*InputIterator2*/, B_keys + 5 /*InputIterator2*/,
       A_vals /*InputIterator3*/, B_vals /*InputIterator4*/,
@@ -47,8 +46,7 @@ void test() {
       vals_result /*OutputIterator2*/);
   thrust::set_symmetric_difference_by_key(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > &*/
-      ,
+                      > &*/,
       A_keys /*InputIterator1 */, A_keys + 7 /*InputIterator1 */,
       B_keys /*InputIterator2*/, B_keys + 5 /*InputIterator2*/,
       A_vals /*InputIterator3*/, B_vals /*InputIterator4*/,
@@ -62,8 +60,7 @@ void test() {
       Compare() /*StrictWeakCompare*/);
   thrust::set_symmetric_difference_by_key(
       thrust::device /*const thrust::detail::execution_policy_base<
-                        DerivedPolicy > &*/
-      ,
+                        DerivedPolicy > &*/,
       d_A_keys.begin() /*InputIterator1*/, d_A_keys.end() /*InputIterator1 */,
       d_B_keys.begin() /*InputIterator2*/, d_B_keys.end() /*InputIterator2*/,
       d_A_vals.begin() /*InputIterator3*/, d_B_vals.begin() /*InputIterator4*/,
@@ -77,8 +74,7 @@ void test() {
       d_vals_result.begin() /*OutputIterator2*/);
   thrust::set_symmetric_difference_by_key(
       thrust::device /*const thrust::detail::execution_policy_base<
-                        DerivedPolicy > &*/
-      ,
+                        DerivedPolicy > &*/,
       d_A_keys.begin() /*InputIterator1 */, d_A_keys.end() /*InputIterator1 */,
       d_B_keys.begin() /*InputIterator2*/, d_B_keys.end() /*InputIterator2*/,
       d_A_vals.begin() /*InputIterator3*/, d_B_vals.begin() /*InputIterator4*/,
@@ -94,8 +90,7 @@ void test() {
       Compare() /*StrictWeakCompare*/);
   thrust::set_symmetric_difference_by_key(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > &*/
-      ,
+                      > &*/,
       h_A_keys.begin() /*InputIterator1 */, h_A_keys.end() /*InputIterator1 */,
       h_B_keys.begin() /*InputIterator2*/, h_B_keys.end() /*InputIterator2*/,
       h_A_vals.begin() /*InputIterator3*/, h_B_vals.begin() /*InputIterator4*/,
@@ -109,8 +104,7 @@ void test() {
       h_vals_result.begin() /*OutputIterator2*/);
   thrust::set_symmetric_difference_by_key(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > &*/
-      ,
+                      > &*/,
       h_A_keys.begin() /*InputIterator1 */, h_A_keys.end() /*InputIterator1 */,
       h_B_keys.begin() /*InputIterator2*/, h_B_keys.end() /*InputIterator2*/,
       h_A_vals.begin() /*InputIterator3*/, h_B_vals.begin() /*InputIterator4*/,

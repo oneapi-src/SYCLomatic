@@ -40,18 +40,15 @@ void test() {
 
   // Start
   thrust::reverse(thrust::device /*const thrust::detail::execution_policy_base<
-                                    DerivedPolicy > &*/
-                  ,
+                                    DerivedPolicy > &*/,
                   device_data.begin() /*BidirectionalIterator*/,
                   device_data.end() /*BidirectionalIterator*/);
   thrust::reverse(thrust::host /*const thrust::detail::execution_policy_base<
-                                  DerivedPolicy > &*/
-                  ,
+                                  DerivedPolicy > &*/,
                   host_data.begin() /*BidirectionalIterator*/,
                   host_data.end() /*BidirectionalIterator*/);
   thrust::reverse(thrust::host /*const thrust::detail::execution_policy_base<
-                                  DerivedPolicy > &*/
-                  ,
+                                  DerivedPolicy > &*/,
                   data /*BidirectionalIterator*/,
                   data + N /*BidirectionalIterator*/);
   thrust::reverse(device_data.begin() /*BidirectionalIterator*/,

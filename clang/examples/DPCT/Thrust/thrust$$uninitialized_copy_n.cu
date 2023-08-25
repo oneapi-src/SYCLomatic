@@ -48,14 +48,12 @@ void test() {
                                h_array /*ForwardIterator*/);
   thrust::uninitialized_copy_n(
       thrust::device /*const thrust::detail::execution_policy_base<
-                        DerivedPolicy > &*/
-      ,
+                        DerivedPolicy > &*/,
       d_input.begin() /*InputIterator*/, N /*Size*/,
       d_array /*ForwardIterator*/);
   thrust::uninitialized_copy_n(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > &*/
-      ,
+                      > &*/,
       h_data /*InputIterator*/, N /*Size*/, h_array /*ForwardIterator*/);
   // End
 }

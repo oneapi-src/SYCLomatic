@@ -17,15 +17,13 @@ void test() {
 
   // Start
   thrust::none_of(thrust::host /*const thrust::detail::execution_policy_base<
-                                  DerivedPolicy > &*/
-                  ,
+                                  DerivedPolicy > &*/,
                   A /*InputIterator */, A + 2 /*InputIterator */,
                   thrust::identity<bool>() /*Predicate */);
   thrust::none_of(A /*InputIterator */, A + 2 /*InputIterator */,
                   thrust::identity<bool>() /*Predicate */);
   thrust::none_of(thrust::host /*const thrust::detail::execution_policy_base<
-                                  DerivedPolicy > &*/
-                  ,
+                                  DerivedPolicy > &*/,
                   h_A.begin() /*InputIterator */,
                   h_A.begin() + 2 /*InputIterator */,
                   thrust::identity<bool>() /*Predicate */);
@@ -33,8 +31,7 @@ void test() {
                   h_A.begin() + 2 /*InputIterator */,
                   thrust::identity<bool>() /*Predicate */);
   thrust::none_of(thrust::device /*const thrust::detail::execution_policy_base<
-                                    DerivedPolicy > &*/
-                  ,
+                                    DerivedPolicy > &*/,
                   d_A.begin() /*InputIterator */,
                   d_A.begin() + 2 /*InputIterator */,
                   thrust::identity<bool>() /*Predicate */);

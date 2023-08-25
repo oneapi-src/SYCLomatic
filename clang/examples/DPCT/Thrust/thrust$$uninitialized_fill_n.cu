@@ -22,15 +22,13 @@ void test() {
                                int_val /*	const T & */);
   thrust::uninitialized_fill_n(
       thrust::device /*const thrust::detail::execution_policy_base<
-                        DerivedPolicy > &*/
-      ,
+                        DerivedPolicy > &*/,
       d_array /*ForwardIterator */, N /*Size */, int_val /*	const T & */);
   thrust::uninitialized_fill_n(data /*ForwardIterator */, N /*Size */,
                                val /*	const T & */);
   thrust::uninitialized_fill_n(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > &*/
-      ,
+                      > &*/,
       data /*ForwardIterator */, N /*Size */, val /*	const T & */);
   // End
 }

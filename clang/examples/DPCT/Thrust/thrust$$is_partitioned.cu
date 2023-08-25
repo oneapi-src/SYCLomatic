@@ -24,22 +24,19 @@ void test() {
   // Start
   thrust::is_partitioned(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > & 	exec*/
-      ,
+                      > & 	exec*/,
       A, A + 10, is_even());
   thrust::is_partitioned(A /*InputIterator */, A + 10 /*InputIterator */,
                          is_even() /*Predicate*/);
   thrust::is_partitioned(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > & 	exec*/
-      ,
+                      > & 	exec*/,
       h_A.begin() /*InputIterator */, h_A.end() /*InputIterator */, is_even());
   thrust::is_partitioned(h_A.begin() /*InputIterator */,
                          h_A.end() /*InputIterator */, is_even() /*Predicate*/);
   thrust::is_partitioned(
       thrust::device /*const thrust::detail::execution_policy_base<
-                        DerivedPolicy > & 	exec*/
-      ,
+                        DerivedPolicy > & 	exec*/,
       d_A.begin() /*InputIterator */, d_A.end() /*InputIterator */, is_even());
   thrust::is_partitioned(d_A.begin() /*InputIterator */,
                          d_A.end() /*InputIterator */, is_even() /*Predicate*/);

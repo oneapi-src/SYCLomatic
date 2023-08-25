@@ -26,8 +26,7 @@ void test() {
   // Start
   thrust::set_intersection(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > &*/
-      ,
+                      > &*/,
       A1 /*InputIterator1 */, A1 + 6 /*InputIterator1 */,
       A2 /*InputIterator2 */, A2 + 7 /*InputIterator2 */, result);
   thrust::set_intersection(A1 /*InputIterator1 */, A1 + 6 /*InputIterator1 */,
@@ -35,8 +34,7 @@ void test() {
                            result /*OutputIterator */);
   thrust::set_intersection(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > &*/
-      ,
+                      > &*/,
       A1 /*InputIterator1 */, A1 + 6 /*InputIterator1 */,
       A2 /*InputIterator2 */, A2 + 7 /*InputIterator2 */,
       result /*OutputIterator */,
@@ -47,8 +45,7 @@ void test() {
                            thrust::greater<int>() /*StrictWeakCompare */);
   thrust::set_intersection(
       thrust::device /*const thrust::detail::execution_policy_base<
-                        DerivedPolicy > &*/
-      ,
+                        DerivedPolicy > &*/,
       d_A1.begin() /*InputIterator1 */, d_A1.end() /*InputIterator1 */,
       d_A2.begin() /*InputIterator2 */, d_A2.end() /*InputIterator2 */,
       d_result.begin() /*OutputIterator */);
@@ -58,8 +55,7 @@ void test() {
       d_result.begin() /*OutputIterator */);
   thrust::set_intersection(
       thrust::device /*const thrust::detail::execution_policy_base<
-                        DerivedPolicy > &*/
-      ,
+                        DerivedPolicy > &*/,
       d_A1.begin() /*InputIterator1 */, d_A1.end() /*InputIterator1 */,
       d_A2.begin() /*InputIterator2 */, d_A2.end() /*InputIterator2 */,
       d_result.begin() /*OutputIterator */, thrust::greater<int>());
@@ -70,8 +66,7 @@ void test() {
       thrust::greater<int>() /*StrictWeakCompare */);
   thrust::set_intersection(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > &*/
-      ,
+                      > &*/,
       h_A1.begin() /*InputIterator1 */, h_A1.end() /*InputIterator1 */,
       h_A2.begin() /*InputIterator2 */, h_A2.end() /*InputIterator2 */,
       h_result.begin() /*OutputIterator */);
@@ -81,8 +76,7 @@ void test() {
       h_result.begin() /*OutputIterator */);
   thrust::set_intersection(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > &*/
-      ,
+                      > &*/,
       h_A1.begin() /*InputIterator1 */, h_A1.end() /*InputIterator1 */,
       h_A2.begin() /*InputIterator2 */, h_A2.end() /*InputIterator2 */,
       h_result.begin() /*OutputIterator */,

@@ -20,43 +20,37 @@ void test() {
   // Start
   thrust::is_sorted_until(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > &*/
-      ,
+                      > &*/,
       A /*ForwardIterator */, A + 8 /*ForwardIterator */);
   thrust::is_sorted_until(A /*ForwardIterator */, A + 8 /*ForwardIterator */);
   thrust::is_sorted_until(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > &*/
-      ,
+                      > &*/,
       A /*ForwardIterator */, A + 8 /*ForwardIterator */, comp /*Compare */);
   thrust::is_sorted_until(A /*ForwardIterator */, A + 8 /*ForwardIterator */,
                           comp /*Compare */);
   thrust::is_sorted_until(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > &*/
-      ,
+                      > &*/,
       h_A.begin() /*ForwardIterator */, h_A.end() /*ForwardIterator */);
   thrust::is_sorted_until(h_A.begin() /*ForwardIterator */,
                           h_A.end() /*ForwardIterator */);
   thrust::is_sorted_until(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > &*/
-      ,
+                      > &*/,
       h_A.begin() /*ForwardIterator */, h_A.end() /*ForwardIterator */,
       comp /*Compare */);
   thrust::is_sorted_until(h_A.begin() /*ForwardIterator */,
                           h_A.end() /*ForwardIterator */, comp /*Compare */);
   thrust::is_sorted_until(
       thrust::device /*const thrust::detail::execution_policy_base<
-                        DerivedPolicy > &*/
-      ,
+                        DerivedPolicy > &*/,
       d_A.begin() /*ForwardIterator */, d_A.end() /*ForwardIterator */);
   thrust::is_sorted_until(d_A.begin() /*ForwardIterator */,
                           d_A.end() /*ForwardIterator */);
   thrust::is_sorted_until(
       thrust::device /*const thrust::detail::execution_policy_base<
-                        DerivedPolicy > &*/
-      ,
+                        DerivedPolicy > &*/,
       d_A.begin() /*ForwardIterator */, d_A.end() /*ForwardIterator */,
       comp /*Compare */);
   thrust::is_sorted_until(d_A.begin() /*ForwardIterator */,

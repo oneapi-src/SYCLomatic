@@ -51,8 +51,7 @@ void test() {
 
   // Start
   thrust::equal(thrust::host /*const thrust::detail::execution_policy_base<
-                                DerivedPolicy > &*/
-                ,
+                                DerivedPolicy > &*/,
                 A1 /*InputIterator1*/, A1 + N /*InputIterator1*/,
                 A2 /*InputIterator2*/);
   thrust::equal(A1 /*InputIterator1*/, A1 + N /*InputIterator1*/,
@@ -60,13 +59,11 @@ void test() {
   thrust::equal(x /*InputIterator1*/, x + N /*InputIterator1*/, y,
                 compare_modulo_two() /*BinaryPredicate*/);
   thrust::equal(thrust::host /*const thrust::detail::execution_policy_base<
-                                DerivedPolicy > &*/
-                ,
+                                DerivedPolicy > &*/,
                 x /*InputIterator1*/, x + N /*InputIterator1*/, y,
                 compare_modulo_two() /*BinaryPredicate*/);
   thrust::equal(thrust::host /*const thrust::detail::execution_policy_base<
-                                DerivedPolicy > &*/
-                ,
+                                DerivedPolicy > &*/,
                 h_A1.begin() /*InputIterator1*/, h_A1.end() /*InputIterator1*/,
                 h_A2.begin() /*InputIterator2*/);
   thrust::equal(h_A1.begin() /*InputIterator1*/, h_A1.end() /*InputIterator1*/,
@@ -75,14 +72,12 @@ void test() {
                 h_y.begin() /*InputIterator2*/,
                 compare_modulo_two() /*BinaryPredicate*/);
   thrust::equal(thrust::host /*const thrust::detail::execution_policy_base<
-                                DerivedPolicy > &*/
-                ,
+                                DerivedPolicy > &*/,
                 h_x.begin() /*InputIterator1*/, h_x.end() /*InputIterator1*/,
                 h_y.begin() /*InputIterator2*/,
                 compare_modulo_two() /*BinaryPredicate*/);
   thrust::equal(thrust::device /*const thrust::detail::execution_policy_base<
-                                  DerivedPolicy > &*/
-                ,
+                                  DerivedPolicy > &*/,
                 d_A1.begin() /*InputIterator1*/, d_A1.end() /*InputIterator1*/,
                 d_A2.begin());
   thrust::equal(d_A1.begin() /*InputIterator1*/, d_A1.end() /*InputIterator1*/,
@@ -91,8 +86,7 @@ void test() {
                 d_y.begin() /*InputIterator2*/,
                 compare_modulo_two() /*BinaryPredicate*/);
   thrust::equal(thrust::device /*const thrust::detail::execution_policy_base<
-                                  DerivedPolicy > &*/
-                ,
+                                  DerivedPolicy > &*/,
                 d_x.begin() /*InputIterator1*/, d_x.end() /*InputIterator1*/,
                 d_y.begin() /*InputIterator2*/,
                 compare_modulo_two() /*BinaryPredicate*/);

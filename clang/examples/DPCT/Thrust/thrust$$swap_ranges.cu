@@ -13,20 +13,17 @@ void test() {
   // Start
   thrust::swap_ranges(
       thrust::device /*const thrust::detail::execution_policy_base<
-                        DerivedPolicy > & 	exec*/
-      ,
+                        DerivedPolicy > & 	exec*/,
       d_v1.begin()/*ForwardIterator1*/, d_v1.end()/*ForwardIterator1*/, d_v2.begin()/*ForwardIterator2*/);
   thrust::swap_ranges(d_v1.begin(), d_v1.end(), d_v2.begin()/*ForwardIterator2*/);
   thrust::swap_ranges(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > & 	exec*/
-      ,
+                      > & 	exec*/,
       h_v1.begin()/*ForwardIterator1*/, h_v1.end()/*ForwardIterator1*/, h_v2.begin()/*ForwardIterator2*/);
   thrust::swap_ranges(h_v1.begin()/*ForwardIterator1*/, h_v1.end()/*ForwardIterator1*/, h_v2.begin()/*ForwardIterator2*/);
   thrust::swap_ranges(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > & 	exec*/
-      ,
+                      > & 	exec*/,
       v1/*ForwardIterator1*/, v1 + 2/*ForwardIterator1*/, v2/*ForwardIterator2*/);
   thrust::swap_ranges(v1 /*ForwardIterator1*/, v1 + 2 /*ForwardIterator1*/,
                       v2 /*ForwardIterator2*/);

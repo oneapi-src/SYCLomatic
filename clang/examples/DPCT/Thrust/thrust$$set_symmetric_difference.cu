@@ -25,8 +25,7 @@ void test() {
   // Start
   thrust::set_symmetric_difference(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > &*/
-      ,
+                      > &*/,
       A1 /*InputIterator1*/, A1 + 4 /*InputIterator1*/, A2 /*InputIterator2*/,
       A2 + 2 /*InputIterator2*/, result /*OutputIterator*/);
   thrust::set_symmetric_difference(
@@ -34,8 +33,7 @@ void test() {
       A2 + 2 /*InputIterator2*/, result /*OutputIterator*/);
   thrust::set_symmetric_difference(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > &*/
-      ,
+                      > &*/,
       A1 /*InputIterator1*/, A1 + 5 /*InputIterator1*/, A2 /*InputIterator2*/,
       A2 + 5 /*InputIterator2*/, result /*OutputIterator*/,
       Compare() /*StrictWeakCompare*/);
@@ -45,8 +43,7 @@ void test() {
       Compare() /*StrictWeakCompare*/);
   thrust::set_symmetric_difference(
       thrust::device /*const thrust::detail::execution_policy_base<
-                        DerivedPolicy > &*/
-      ,
+                        DerivedPolicy > &*/,
       d_A1.begin() /*InputIterator1*/, d_A1.end() /*InputIterator1*/,
       d_A2.begin() /*InputIterator2*/, d_A2.end() /*InputIterator2*/,
       d_result.begin());
@@ -56,8 +53,7 @@ void test() {
       d_result.begin());
   thrust::set_symmetric_difference(
       thrust::device /*const thrust::detail::execution_policy_base<
-                        DerivedPolicy > &*/
-      ,
+                        DerivedPolicy > &*/,
       d_A1.begin() /*InputIterator1*/, d_A1.end() /*InputIterator1*/,
       d_A2.begin() /*InputIterator2*/, d_A2.end() /*InputIterator2*/,
       d_result.begin() /*OutputIterator*/, thrust::less<int>());
@@ -67,8 +63,7 @@ void test() {
       d_result.begin() /*OutputIterator*/, thrust::less<int>());
   thrust::set_symmetric_difference(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > &*/
-      ,
+                      > &*/,
       h_A1.begin() /*InputIterator1*/, h_A1.end() /*InputIterator1*/,
       h_A2.begin() /*InputIterator2*/, h_A2.end() /*InputIterator2*/,
       h_result.begin());
@@ -78,8 +73,7 @@ void test() {
       h_result.begin() /*OutputIterator*/);
   thrust::set_symmetric_difference(
       thrust::host /*const thrust::detail::execution_policy_base< DerivedPolicy
-                      > &*/
-      ,
+                      > &*/,
       h_A1.begin() /*InputIterator1*/, h_A1.end() /*InputIterator1*/,
       h_A2.begin() /*InputIterator2*/, h_A2.end() /*InputIterator2*/,
       h_result.begin(), thrust::less<int>());
