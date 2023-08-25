@@ -10247,6 +10247,14 @@ void MemoryMigrationRule::memsetMigration(
     Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
 
+  auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(Name);
+  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
+    ExprAnalysis EA(C);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  }
+
   std::string ReplaceStr;
   StringRef NameRef(Name);
   bool IsAsync = NameRef.endswith("Async");
@@ -10608,7 +10616,11 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cuMemHostGetFlags", "cuMemHostRegister_v2", "cuMemHostUnregister",
         "cuMemcpy", "cuMemcpyAsync", "cuMemcpyHtoA_v2", "cuMemcpyAtoH_v2",
         "cuMemcpyHtoAAsync_v2", "cuMemcpyAtoHAsync_v2", "cuMemcpyDtoA_v2",
-        "cuMemcpyAtoD_v2", "cuMemcpyAtoA_v2");
+        "cuMemcpyAtoD_v2", "cuMemcpyAtoA_v2", "cuMemsetD16_v2", "cuMemsetD16Async",
+        "cuMemsetD2D16_v2", "cuMemsetD2D16Async", "cuMemsetD2D32_v2",
+        "cuMemsetD2D32Async", "cuMemsetD2D8_v2", "cuMemsetD2D8Async",
+        "cuMemsetD32_v2", "cuMemsetD32Async", "cuMemsetD8_v2",
+        "cuMemsetD8Async");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -10820,6 +10832,18 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cudaMemset2DAsync", &MemoryMigrationRule::memsetMigration},
           {"cudaMemset3D", &MemoryMigrationRule::memsetMigration},
           {"cudaMemset3DAsync", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD16_v2", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD16Async", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD2D16_v2", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD2D16Async", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD2D32_v2", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD2D32Async", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD2D8_v2", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD2D8Async", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD32_v2", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD32Async", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD8_v2", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD8Async", &MemoryMigrationRule::memsetMigration},
           {"cudaGetSymbolAddress",
            &MemoryMigrationRule::getSymbolAddressMigration},
           {"cudaGetSymbolSize", &MemoryMigrationRule::getSymbolSizeMigration},
