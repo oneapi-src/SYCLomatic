@@ -1,3 +1,4 @@
+// Migration desc: The API is Removed.
 #include "cusparse.h"
 
 void test(cusparseHandle_t handle, cusparseOperation_t transa,
