@@ -991,7 +991,7 @@ async_dpct_memcpy(pitched_data to, sycl::id<3> to_pos, pitched_data from,
   detail::dpct_memcpy(q, to, to_pos, from, from_pos, size, direction);
 }
 /**
- * @brief Sets D8 \p value to the first \p size bytes starting from
+ * @brief Sets D8 \p value to the first \p size elements starting from
  * \p dev_ptr in \p q synchronously.
  * @param [in] dev_ptr Pointer to the virtual device memory address.
  * @param [in] value The value to be set.
