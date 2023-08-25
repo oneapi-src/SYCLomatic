@@ -1248,23 +1248,24 @@ void DpctGlobalInfo::insertBuiltinVarInfo(
   }
 }
 
+std::optional<std::string>
+DpctGlobalInfo::getAbsolutePath(const FileEntry &File) {
+  if (auto RealPath = File.tryGetRealPathName(); !RealPath.empty())
+    return RealPath.str();
+
+  llvm::SmallString<512> FilePathAbs(File.getName());
+  SM->getFileManager().makeAbsolutePath(FilePathAbs);
+  llvm::sys::path::native(FilePathAbs);
+  // Need to remove dot to keep the file path
+  // added by ASTMatcher and added by
+  // AnalysisInfo::getLocInfo() consistent.
+  llvm::sys::path::remove_dots(FilePathAbs, true);
+  return (std::string)FilePathAbs;
+}
 std::optional<std::string> DpctGlobalInfo::getAbsolutePath(FileID ID) {
   assert(SM && "SourceManager must be initialized");
-  if (const auto *FileEntry = SM->getFileEntryForID(ID)) {
-    // To avoid potential path inconsistent issue,
-    // using tryGetRealPathName while applicable.
-    if (!FileEntry->tryGetRealPathName().empty())
-      return FileEntry->tryGetRealPathName().str();
-
-    llvm::SmallString<512> FilePathAbs(FileEntry->getName());
-    SM->getFileManager().makeAbsolutePath(FilePathAbs);
-    llvm::sys::path::native(FilePathAbs);
-    // Need to remove dot to keep the file path
-    // added by ASTMatcher and added by
-    // AnalysisInfo::getLocInfo() consistent.
-    llvm::sys::path::remove_dots(FilePathAbs, true);
-    return (std::string)FilePathAbs;
-  }
+  if (const auto *FileEntry = SM->getFileEntryForID(ID))
+    return getAbsolutePath(*FileEntry);
   return std::nullopt;
 }
 
@@ -3609,6 +3610,12 @@ std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
   switch (Scope) {
   case clang::dpct::MemVarInfo::Local:
     if (DpctGlobalInfo::useGroupLocalMemory() && VD) {
+
+      auto FD = dyn_cast<FunctionDecl>(VD->getDeclContext());
+      if (FD && FD->hasAttr<CUDADeviceAttr>())
+        DiagnosticsUtils::report(getFilePath(), getOffset(),
+                                 Diagnostics::GROUP_LOCAL_MEMORY, true, false);
+
       std::string Ret;
       llvm::raw_string_ostream OS(Ret);
       OS << "auto &" << getName() << " = "

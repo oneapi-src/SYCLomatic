@@ -12,6 +12,7 @@
 #include "Error.h"
 #include "ExprAnalysis.h"
 #include "ExtReplacements.h"
+#include "InclusionHeaders.h"
 #include "LibraryAPIMigration.h"
 #include "Rules.h"
 #include "SaveNewFiles.h"
@@ -316,11 +317,6 @@ insertObject(MapType &Map, const typename MapType::key_type &Key,
 }
 
 void initHeaderSpellings();
-enum HeaderType {
-#define HEADER(Name, Spelling) HT_ ## Name,
-#include "HeaderTypes.inc"
-  NUM_HEADERS
-};
 
 enum UsingType {
   UT_Queue_P,
@@ -417,6 +413,9 @@ public:
 
   void setLastIncludeOffset(unsigned Offset) { LastIncludeOffset = Offset; }
 
+  void setHeaderInserted(HeaderType Header) {
+    HeaderInsertedBitMap[Header] = true;
+  }
   void setMathHeaderInserted(bool B = true) {
     HeaderInsertedBitMap[HeaderType::HT_Math] = B;
   }
@@ -1266,6 +1265,8 @@ public:
 
   // Return the absolute path of \p ID
   static std::optional<std::string> getAbsolutePath(FileID ID);
+  // Return the absolute path of \p File
+  static std::optional<std::string> getAbsolutePath(const FileEntry &File);
 
   static inline std::pair<std::string, unsigned>
   getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */) {

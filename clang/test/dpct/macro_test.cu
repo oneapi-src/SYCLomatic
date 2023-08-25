@@ -758,7 +758,7 @@ __host__ __device__ static inline double foo16(const float2 &x) { return FABS(x)
 //CHECK-NEXT: _mulhilo_(64, uint64_t, sycl::mul_hi)
 #include "cuda_fp16.h"
 #define _mulhilo_(W, Word, NAME)                       \
-__device__ Word mulhilo##W(Word a, Word b, Word* hip){ \
+__device__ Word mulhilo##W(Word a, Word b, Word* hip) { \
     *hip = NAME(a, b);                                 \
     return a*b;                                        \
 }
