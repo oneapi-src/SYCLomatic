@@ -3607,6 +3607,12 @@ std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
   switch (Scope) {
   case clang::dpct::MemVarInfo::Local:
     if (DpctGlobalInfo::useGroupLocalMemory() && VD) {
+
+      auto FD = dyn_cast<FunctionDecl>(VD->getDeclContext());
+      if (FD && FD->hasAttr<CUDADeviceAttr>())
+        DiagnosticsUtils::report(getFilePath(), getOffset(),
+                                 Diagnostics::GROUP_LOCAL_MEMORY, true, false);
+
       std::string Ret;
       llvm::raw_string_ostream OS(Ret);
       OS << "auto &" << getName() << " = "
