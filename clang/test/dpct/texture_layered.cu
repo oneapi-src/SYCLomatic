@@ -99,7 +99,7 @@ int main() {
   float4 *d;
   cudaMalloc(&d, sizeof(float4) * 4);
 
-  // CHECK:   dpct::get_default_queue().submit(
+  // CHECK:   dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
   // CHECK-NEXT:         auto d_acc_ct0 = dpct::get_access(d, cgh);
   // CHECK-EMPTY:

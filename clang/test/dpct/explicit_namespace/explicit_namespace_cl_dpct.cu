@@ -21,7 +21,7 @@ __global__ void kernel() {
 }
 
 void foo() {
-// CHECK:   dpct::get_default_queue().parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+// CHECK:   dpct::get_in_order_queue().parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, ceil(2.3)), cl::sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_{{[0-9a-z]+}}) {
 // CHECK-NEXT:           kernel();

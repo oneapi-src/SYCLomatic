@@ -16,7 +16,7 @@
 // CUDAFREE: CUDA API:
 // CUDAFREE-NEXT:   cudaFree(v /*void **/);
 // CUDAFREE-NEXT: Is migrated to:
-// CUDAFREE-NEXT:   sycl::free(v, dpct::get_default_queue());
+// CUDAFREE-NEXT:   sycl::free(v, dpct::get_in_order_queue());
 // CUDAFREE-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaFreeArray | FileCheck %s -check-prefix=CUDAFREEARRAY
@@ -30,7 +30,7 @@
 // CUDAFREEHOST: CUDA API:
 // CUDAFREEHOST-NEXT:   cudaFreeHost(v /*void **/);
 // CUDAFREEHOST-NEXT: Is migrated to:
-// CUDAFREEHOST-NEXT:   sycl::free(v, dpct::get_default_queue());
+// CUDAFREEHOST-NEXT:   sycl::free(v, dpct::get_in_order_queue());
 // CUDAFREEHOST-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGetSymbolAddress | FileCheck %s -check-prefix=CUDAGETSYMBOLADDRESS
@@ -55,7 +55,7 @@
 // CUDAHOSTALLOC: CUDA API:
 // CUDAHOSTALLOC-NEXT:   cudaHostAlloc(ppv /*void ***/, s /*size_t*/, u /*unsigned int*/);
 // CUDAHOSTALLOC-NEXT: Is migrated to:
-// CUDAHOSTALLOC-NEXT:   *ppv = (void *)sycl::malloc_host(s, dpct::get_default_queue());
+// CUDAHOSTALLOC-NEXT:   *ppv = (void *)sycl::malloc_host(s, dpct::get_in_order_queue());
 // CUDAHOSTALLOC-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaHostGetDevicePointer | FileCheck %s -check-prefix=CUDAHOSTGETDEVICEPOINTER
@@ -88,7 +88,7 @@
 // CUDAMALLOC: CUDA API:
 // CUDAMALLOC-NEXT:   cudaMalloc(ppv /*void ***/, s /*size_t*/);
 // CUDAMALLOC-NEXT: Is migrated to:
-// CUDAMALLOC-NEXT:   *ppv = (void *)sycl::malloc_device(s, dpct::get_default_queue());
+// CUDAMALLOC-NEXT:   *ppv = (void *)sycl::malloc_device(s, dpct::get_in_order_queue());
 // CUDAMALLOC-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMalloc3D | FileCheck %s -check-prefix=CUDAMALLOC3D
@@ -120,14 +120,14 @@
 // CUDAMALLOCHOST: CUDA API:
 // CUDAMALLOCHOST-NEXT:   cudaMallocHost(ppv /*void ***/, s /*size_t*/);
 // CUDAMALLOCHOST-NEXT: Is migrated to:
-// CUDAMALLOCHOST-NEXT:   *ppv = (void *)sycl::malloc_host(s, dpct::get_default_queue());
+// CUDAMALLOCHOST-NEXT:   *ppv = (void *)sycl::malloc_host(s, dpct::get_in_order_queue());
 // CUDAMALLOCHOST-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMallocManaged | FileCheck %s -check-prefix=CUDAMALLOCMANAGED
 // CUDAMALLOCMANAGED: CUDA API:
 // CUDAMALLOCMANAGED-NEXT:   cudaMallocManaged(ppv /*void ***/, s /*size_t*/, u /*unsigned int*/);
 // CUDAMALLOCMANAGED-NEXT: Is migrated to:
-// CUDAMALLOCMANAGED-NEXT:   *ppv = (void *)sycl::malloc_shared(s, dpct::get_default_queue());
+// CUDAMALLOCMANAGED-NEXT:   *ppv = (void *)sycl::malloc_shared(s, dpct::get_in_order_queue());
 // CUDAMALLOCMANAGED-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMallocPitch | FileCheck %s -check-prefix=CUDAMALLOCPITCH
@@ -143,7 +143,7 @@
 // CUDAMEMADVISE-NEXT:   cudaMemAdvise(pv /*const void **/, s /*size_t*/, m /*cudaMemoryAdvise*/,
 // CUDAMEMADVISE-NEXT:                 i /*int*/);
 // CUDAMEMADVISE-NEXT: Is migrated to:
-// CUDAMEMADVISE-NEXT:   dpct::get_device(i).default_queue().mem_advise(pv, s, m);
+// CUDAMEMADVISE-NEXT:   dpct::get_device(i).in_order_queue().mem_advise(pv, s, m);
 // CUDAMEMADVISE-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMemGetInfo | FileCheck %s -check-prefix=CUDAMEMGETINFO
@@ -168,7 +168,7 @@
 // CUDAMEMCPY-NEXT:   cudaMemcpy(pv /*void **/, cpv /*const void **/, s /*size_t*/,
 // CUDAMEMCPY-NEXT:              m /*cudaMemcpyKind*/);
 // CUDAMEMCPY-NEXT: Is migrated to:
-// CUDAMEMCPY-NEXT:   dpct::get_default_queue().memcpy(pv /*void **/, cpv /*const void **/, s /*cudaMemcpyKind*/).wait();
+// CUDAMEMCPY-NEXT:   dpct::get_in_order_queue().memcpy(pv /*void **/, cpv /*const void **/, s /*cudaMemcpyKind*/).wait();
 // CUDAMEMCPY-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMemcpy2D | FileCheck %s -check-prefix=CUDAMEMCPY2D
@@ -280,7 +280,7 @@
 // CUDAMEMCPYFROMSYMBOL-NEXT:   cudaMemcpyFromSymbol(pv /*void **/, cpv /*const void **/, s1 /*size_t*/,
 // CUDAMEMCPYFROMSYMBOL-NEXT:                        s2 /*size_t*/, m /*cudaMemcpyKind*/);
 // CUDAMEMCPYFROMSYMBOL-NEXT: Is migrated to:
-// CUDAMEMCPYFROMSYMBOL-NEXT:   dpct::get_default_queue().memcpy(pv /*void **/, cpv /*const void **/, s1 /*cudaMemcpyKind*/).wait();
+// CUDAMEMCPYFROMSYMBOL-NEXT:   dpct::get_in_order_queue().memcpy(pv /*void **/, cpv /*const void **/, s1 /*cudaMemcpyKind*/).wait();
 // CUDAMEMCPYFROMSYMBOL-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMemcpyFromSymbolAsync | FileCheck %s -check-prefix=CUDAMEMCPYFROMSYMBOLASYNC
@@ -299,7 +299,7 @@
 // CUDAMEMCPYTOSYMBOL-NEXT:   cudaMemcpyToSymbol(cpv1 /*const void **/, cpv2 /*const void **/,
 // CUDAMEMCPYTOSYMBOL-NEXT:                      s1 /*size_t*/, s2 /*size_t*/, m /*cudaMemcpyKind*/);
 // CUDAMEMCPYTOSYMBOL-NEXT: Is migrated to:
-// CUDAMEMCPYTOSYMBOL-NEXT:   dpct::get_default_queue().memcpy(cpv1 /*const void **/, cpv2 /*const void **/,
+// CUDAMEMCPYTOSYMBOL-NEXT:   dpct::get_in_order_queue().memcpy(cpv1 /*const void **/, cpv2 /*const void **/,
 // CUDAMEMCPYTOSYMBOL-NEXT:                       s1 /*cudaMemcpyKind*/).wait();
 // CUDAMEMCPYTOSYMBOL-EMPTY:
 
@@ -319,7 +319,7 @@
 // CUDAMEMSET: CUDA API:
 // CUDAMEMSET-NEXT:   cudaMemset(pv /*void **/, i /*int*/, s /*size_t*/);
 // CUDAMEMSET-NEXT: Is migrated to:
-// CUDAMEMSET-NEXT:   dpct::get_default_queue().memset(pv /*void **/, i /*int*/, s /*size_t*/).wait();
+// CUDAMEMSET-NEXT:   dpct::get_in_order_queue().memset(pv /*void **/, i /*int*/, s /*size_t*/).wait();
 // CUDAMEMSET-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaMemset2D | FileCheck %s -check-prefix=CUDAMEMSET2D

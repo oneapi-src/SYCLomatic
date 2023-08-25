@@ -88,7 +88,7 @@ int main() {
   };
 
   // CHECK: sycl::int2* data;
-  // CHECK-NEXT: dpct::get_default_queue().submit(
+  // CHECK-NEXT: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     dpct::access_wrapper<sycl::int2 *> data_acc_ct0(data, cgh);
   // CHECK-EMPTY:

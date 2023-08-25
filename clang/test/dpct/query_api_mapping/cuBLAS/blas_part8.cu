@@ -33,13 +33,13 @@
 // cublasScasum-NEXT: Is migrated to:
 // cublasScasum-NEXT:   float* res_temp_ptr_ct{{[0-9]+}} = res;
 // cublasScasum-NEXT:   if(sycl::get_pointer_type(res, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(res, handle->get_context())!=sycl::usm::alloc::shared) {
-// cublasScasum-NEXT:     res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, dpct::get_default_queue());
+// cublasScasum-NEXT:     res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, dpct::get_in_order_queue());
 // cublasScasum-NEXT:   }
 // cublasScasum-NEXT:   oneapi::mkl::blas::column_major::asum(*handle, n, (std::complex<float>*)x, incx, res_temp_ptr_ct{{[0-9]+}});
 // cublasScasum-NEXT:   if(sycl::get_pointer_type(res, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(res, handle->get_context())!=sycl::usm::alloc::shared) {
 // cublasScasum-NEXT:     handle->wait();
 // cublasScasum-NEXT:     *res = *res_temp_ptr_ct{{[0-9]+}};
-// cublasScasum-NEXT:     sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
+// cublasScasum-NEXT:     sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_in_order_queue());
 // cublasScasum-NEXT:   }
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSsyr2k | FileCheck %s -check-prefix=cublasSsyr2k
@@ -87,13 +87,13 @@
 // cublasZdotu-NEXT: Is migrated to:
 // cublasZdotu-NEXT:   sycl::double2* res_temp_ptr_ct{{[0-9]+}} = res;
 // cublasZdotu-NEXT:   if(sycl::get_pointer_type(res, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(res, handle->get_context())!=sycl::usm::alloc::shared) {
-// cublasZdotu-NEXT:     res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(1, dpct::get_default_queue());
+// cublasZdotu-NEXT:     res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(1, dpct::get_in_order_queue());
 // cublasZdotu-NEXT:   }
 // cublasZdotu-NEXT:   oneapi::mkl::blas::column_major::dotu(*handle, n, (std::complex<double>*)x, incx, (std::complex<double>*)y, incy, (std::complex<double>*)res_temp_ptr_ct{{[0-9]+}});
 // cublasZdotu-NEXT:   if(sycl::get_pointer_type(res, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(res, handle->get_context())!=sycl::usm::alloc::shared) {
 // cublasZdotu-NEXT:     handle->wait();
 // cublasZdotu-NEXT:     *res = *res_temp_ptr_ct{{[0-9]+}};
-// cublasZdotu-NEXT:     sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
+// cublasZdotu-NEXT:     sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_in_order_queue());
 // cublasZdotu-NEXT:   }
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasZdotc | FileCheck %s -check-prefix=cublasZdotc
@@ -105,13 +105,13 @@
 // cublasZdotc-NEXT: Is migrated to:
 // cublasZdotc-NEXT:   sycl::double2* res_temp_ptr_ct{{[0-9]+}} = res;
 // cublasZdotc-NEXT:   if(sycl::get_pointer_type(res, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(res, handle->get_context())!=sycl::usm::alloc::shared) {
-// cublasZdotc-NEXT:     res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(1, dpct::get_default_queue());
+// cublasZdotc-NEXT:     res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(1, dpct::get_in_order_queue());
 // cublasZdotc-NEXT:   }
 // cublasZdotc-NEXT:   oneapi::mkl::blas::column_major::dotc(*handle, n, (std::complex<double>*)x, incx, (std::complex<double>*)y, incy, (std::complex<double>*)res_temp_ptr_ct{{[0-9]+}});
 // cublasZdotc-NEXT:   if(sycl::get_pointer_type(res, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(res, handle->get_context())!=sycl::usm::alloc::shared) {
 // cublasZdotc-NEXT:     handle->wait();
 // cublasZdotc-NEXT:     *res = *res_temp_ptr_ct{{[0-9]+}};
-// cublasZdotc-NEXT:     sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
+// cublasZdotc-NEXT:     sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_in_order_queue());
 // cublasZdotc-NEXT:   }
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasSsymm | FileCheck %s -check-prefix=cublasSsymm

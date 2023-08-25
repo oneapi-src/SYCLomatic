@@ -11,7 +11,7 @@ int main() {
   cufftHandle plan;
   float2* iodata;
 
-  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_in_order_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
 
   //CHECK:plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward);
@@ -40,7 +40,7 @@ int foo2() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:plan_mmany64_Z2Z->commit(&dpct::get_default_queue(), 3, n_mmany64_Z2Z, inembed_mmany64_Z2Z, istride_mmany64_Z2Z, idist_mmany64_Z2Z, onembed_mmany64_Z2Z, ostride_mmany64_Z2Z, odist_mmany64_Z2Z, dpct::fft::fft_type::complex_double_to_complex_double, 12, work_size_mmany64_Z2Z);
+  //CHECK-NEXT:plan_mmany64_Z2Z->commit(&dpct::get_in_order_queue(), 3, n_mmany64_Z2Z, inembed_mmany64_Z2Z, istride_mmany64_Z2Z, idist_mmany64_Z2Z, onembed_mmany64_Z2Z, ostride_mmany64_Z2Z, odist_mmany64_Z2Z, dpct::fft::fft_type::complex_double_to_complex_double, 12, work_size_mmany64_Z2Z);
   cufftMakePlanMany64(plan_mmany64_Z2Z, 3, n_mmany64_Z2Z, inembed_mmany64_Z2Z, istride_mmany64_Z2Z, idist_mmany64_Z2Z, onembed_mmany64_Z2Z, ostride_mmany64_Z2Z, odist_mmany64_Z2Z, CUFFT_Z2Z, 12, work_size_mmany64_Z2Z);
 
   //CHECK:plan_mmany64_Z2Z->compute<sycl::double2, sycl::double2>(idata_mmany64_Z2Z, odata_mmany64_Z2Z, dpct::fft::fft_direction::forward);
@@ -58,7 +58,7 @@ int foo3(cudaStream_t stream) {
   cufftHandle plan;
   float2* iodata;
 
-  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_in_order_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:plan->set_queue(stream);
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   cufftSetStream(plan, stream);

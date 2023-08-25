@@ -36,7 +36,7 @@ __global__ void kernel(int dim) {}
 
 int main() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   // range default constructor does the right thing.
   // CHECK: sycl::range<3> deflt(1, 1, 1);
   dim3 deflt;

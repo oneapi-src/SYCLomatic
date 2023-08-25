@@ -63,7 +63,7 @@ int foo(int aaaaa){
   base0 = cusparseGetMatIndexBase(descrA);
   type0 = cusparseGetMatType(descrA);
 
-  //CHECK: handle = &dpct::get_default_queue();
+  //CHECK: handle = &dpct::get_in_order_queue();
   //CHECK-NEXT: descrA = std::make_shared<dpct::sparse::matrix_info>();
   //CHECK-NEXT: descrA->set_matrix_type((dpct::sparse::matrix_info::matrix_type)aaaaa);
   //CHECK-NEXT: descrA->set_index_base(oneapi::mkl::index_base::zero);

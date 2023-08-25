@@ -18,7 +18,7 @@ template <typename T> struct S {
 template <typename T> __global__ void g(const T *t) {}
 
 template <typename T> void f(const S<T> &s) {
-  // CHECK:  dpct::get_default_queue().submit(
+  // CHECK:  dpct::get_in_order_queue().submit(
   // CHECK-NEXT:    [&](sycl::handler &cgh) {
   // CHECK-NEXT:      auto s_t_ct0 = s.t;
   // CHECK-EMPTY:
@@ -34,7 +34,7 @@ template <typename T> void f(const S<T> &s) {
 int main()
 {
   CudaImage res;
-  // CHECK: dpct::get_default_queue().submit(
+  // CHECK: dpct::get_in_order_queue().submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       float *res_d_data_ct0 = res.d_data;
   // CHECK-NEXT:       float res_f_data_ct1 = res.f_data;

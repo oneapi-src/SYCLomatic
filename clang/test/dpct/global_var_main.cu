@@ -12,7 +12,7 @@ __global__ void kernel(){
 }
 
 //CHECK:extern "C" int foo(){
-//CHECK-NEXT:  dpct::get_default_queue().submit(
+//CHECK-NEXT:  dpct::get_in_order_queue().submit(
 //CHECK-NEXT:    [&](sycl::handler &cgh) {
 //CHECK-NEXT:      c_clusters.init();
 //CHECK-EMPTY:

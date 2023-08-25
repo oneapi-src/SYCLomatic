@@ -363,7 +363,8 @@ void DpctGlobalInfo::buildReplacements() {
     DevDecl << MapNames::getDpctNamespace()
             << "device_ext &dev_ct1 = " << MapNames::getDpctNamespace()
             << "get_current_device();";
-    QDecl << "&q_ct1 = dev_ct1.default_queue();";
+    QDecl << "&q_ct1 = dev_ct1." << DpctGlobalInfo::getDeviceQueueName()
+          << "();";
   } else {
     DevDecl << MapNames::getClNamespace() + "device dev_ct1;";
     // Now the UsmLevel must not be UL_None here.
@@ -4345,7 +4346,8 @@ const std::string &getDefaultString(HelperFuncType HFT) {
   switch (HFT) {
   case clang::dpct::HelperFuncType::HFT_DefaultQueue: {
     const static std::string DefaultQueue =
-        MapNames::getDpctNamespace() + "get_default_queue()";
+        buildString(MapNames::getDpctNamespace() + "get_" +
+                    DpctGlobalInfo::getDeviceQueueName() + "()");
     return DefaultQueue;
   }
   case clang::dpct::HelperFuncType::HFT_CurrentDevice: {
@@ -4396,6 +4398,26 @@ std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,
         .PlaceholderStr[static_cast<int>(HFT)];
   }
   return "";
+}
+
+const std::string &DpctGlobalInfo::getDeviceQueueName() {
+  static const std::string DeviceQueue = [&]() {
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
+      return "out_of_order_queue";
+    else
+      return "in_order_queue";
+  }();
+  return DeviceQueue;
+}
+
+std::string DpctGlobalInfo::getDefaultQueue(const Stmt *S) {
+  auto Idx = getPlaceholderIdx(S);
+  if (!Idx) {
+    Idx = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+    buildTempVariableMap(Idx, S, HelperFuncType::HFT_DefaultQueue);
+  }
+
+  return buildString(RegexPrefix, 'Q', Idx, RegexSuffix);
 }
 
 } // namespace dpct
