@@ -2525,13 +2525,15 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
         auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
         DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
-        std::string group_type = MapNames::getDpctNamespace() + "group_base";
-        if (CanonicalTypeStr == "cooperative_groups::__v1::thread_block") {
+        std::string group_type = "";
+        if (DpctGlobalInfo::useLogicalGroup())
+          group_type = MapNames::getDpctNamespace() + "experimental::group_base";
+        if (CanonicalTypeStr == "cooperative_groups::__v1::thread_block")
           group_type = MapNames::getClNamespace() + "group";
-        }
-        emplaceTransformation(new ReplaceText(
-            Begin, End.getRawEncoding() - Begin.getRawEncoding(),
-            group_type + "<{{NEEDREPLACEG" + std::to_string(Index) + "}}>"));
+        if (!group_type.empty())
+          emplaceTransformation(new ReplaceText(
+              Begin, End.getRawEncoding() - Begin.getRawEncoding(),
+              group_type + "<{{NEEDREPLACEG" + std::to_string(Index) + "}}>"));
         return;
       }
     }
@@ -11850,8 +11852,8 @@ void CooperativeGroupsFunctionRule::runRule(
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FuncCall");
   const DeclRefExpr *DR = getNodeAsType<DeclRefExpr>(Result, "declRef");
   const SourceManager &SM = DpctGlobalInfo::getSourceManager();
-  if (DR) {
-    std::string ReplacedStr = MapNames::getDpctNamespace() + "item_group" +
+  if (DR && DpctGlobalInfo::useLogicalGroup()) {
+    std::string ReplacedStr = MapNames::getDpctNamespace() + "experimental::group" +
                   "(" + DR->getNameInfo().getAsString() + ", " +
                   DpctGlobalInfo::getItem(DR) + ")";
     SourceRange DefRange = getDefinitionRange(DR->getBeginLoc(),  DR->getEndLoc());

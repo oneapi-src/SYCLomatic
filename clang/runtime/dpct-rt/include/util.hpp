@@ -826,6 +826,84 @@ inline int calculate_max_potential_wg(int *num_wg, int *wg_size,
   num_wg[0] = num_ss * num_wg[0];
   return 0;
 }
+
+/// Supported group type during migration.
+enum class group_type { work_group, sub_group, logical_group, root_group };
+
+/// The group_base will dispatch the function call to the specific interface
+/// based on the group type.
+template <int dimensions = 3> class group_base {
+public:
+  group_base(sycl::nd_item<dimensions> item)
+      : nd_item(item), logical_group(item) {}
+  ~group_base() {}
+  /// Returns the number of work-items in the group.
+  size_t get_local_linear_range() {
+    switch (type) {
+    case group_type::work_group:
+      return nd_item.get_group().get_local_linear_range();
+    case group_type::sub_group:
+      return nd_item.get_sub_group().get_local_linear_range();
+    case group_type::logical_group:
+      return logical_group.get_local_linear_range();
+    default:
+      return -1; // Unkonwn group type
+    }
+  }
+  /// Returns the index of the work-item within the group.
+  size_t get_local_linear_id() {
+    switch (type) {
+    case group_type::work_group:
+      return nd_item.get_group().get_local_linear_id();
+    case group_type::sub_group:
+      return nd_item.get_sub_group().get_local_linear_id();
+    case group_type::logical_group:
+      return logical_group.get_local_linear_id();
+    default:
+      return -1; // Unkonwn group type
+    }
+  }
+  /// Wait for all the elements within the group to complete their execution
+  /// before proceeding.
+  void barrier() {
+    switch (type) {
+    case group_type::work_group:
+      sycl::group_barrier(nd_item.get_group());
+      break;
+    case group_type::sub_group:
+    case group_type::logical_group:
+      sycl::group_barrier(nd_item.get_sub_group());
+      break;
+    default:
+      break;
+    }
+  }
+
+protected:
+  logical_group<dimensions> logical_group;
+  sycl::nd_item<dimensions> nd_item;
+  group_type type;
+};
+
+/// The group class is a container type that can storage supported group_type.
+template <typename T, int dimensions = 3>
+class group : public group_base<dimensions> {
+  using group_base<dimensions>::type;
+  using group_base<dimensions>::logical_group;
+
+public:
+  group(T g, sycl::nd_item<dimensions> item) : group_base<dimensions>(item) {
+    if constexpr (std::is_same_v<T, sycl::sub_group>) {
+      type = group_type::sub_group;
+    } else if constexpr (std::is_same_v<T, sycl::group<dimensions>>) {
+      type = group_type::work_group;
+    } else if constexpr (std::is_same_v<T, dpct::experimental::logical_group<
+                                               dimensions>>) {
+      logical_group = g;
+      type = group_type::logical_group;
+    }
+  }
+};
 } // namespace experimental
 
 /// If x <= 2, then return a pointer to the deafult queue;
@@ -937,80 +1015,6 @@ public:
       return *static_cast<arg_type<i>*>(kernel_params[i]);
     } else {
       return *reinterpret_cast<arg_type<i>*>(args_buffer + get_offset<i>());
-    }
-  }
-};
-
-// Supported group type during migration.
-enum class group_type { work_group, sub_group, logical_group, root_group };
-
-template <int dimensions = 3> class group_base {
-public:
-  group_base(sycl::nd_item<dimensions> item)
-      : nd_item(item), logical_group(item) {}
-  ~group_base() {}
-  size_t get_local_linear_range() {
-    switch (type) {
-    case group_type::work_group:
-      return nd_item.get_group().get_local_linear_range();
-    case group_type::sub_group:
-      return nd_item.get_sub_group().get_local_linear_range();
-    case group_type::logical_group:
-      return logical_group.get_local_linear_range();
-    default:
-      return -1; // Unkonwn group type
-    }
-  }
-  size_t get_local_linear_id() {
-    switch (type) {
-    case group_type::work_group:
-      return nd_item.get_group().get_local_linear_id();
-    case group_type::sub_group:
-      return nd_item.get_sub_group().get_local_linear_id();
-    case group_type::logical_group:
-      return logical_group.get_local_linear_id();
-    default:
-      return -1; // Unkonwn group type
-    }
-  }
-  void barrier() {
-    switch (type) {
-    case group_type::work_group:
-      sycl::group_barrier(nd_item.get_group());
-      break;
-    case group_type::sub_group:
-    case group_type::logical_group:
-      sycl::group_barrier(nd_item.get_sub_group());
-      break;
-    default:
-      break;
-    }
-  }
-
-protected:
-  experimental::logical_group<dimensions> logical_group;
-  sycl::nd_item<dimensions> nd_item;
-  group_type type;
-};
-
-// The item_group is a container type that can storage supported group_type.
-// The item_group will call the real storaged group APIs.
-template <typename T, int dimensions = 3>
-class item_group : public group_base<dimensions> {
-  using group_base<dimensions>::type;
-  using group_base<dimensions>::logical_group;
-
-public:
-  item_group(T group, sycl::nd_item<dimensions> item)
-      : group_base<dimensions>(item) {
-    if constexpr (std::is_same_v<T, sycl::sub_group>) {
-      type = group_type::sub_group;
-    } else if constexpr (std::is_same_v<T, sycl::group<dimensions>>) {
-      type = group_type::work_group;
-    } else if constexpr (std::is_same_v<T, dpct::experimental::logical_group<
-                                               dimensions>>) {
-      logical_group = group;
-      type = group_type::logical_group;
     }
   }
 };
