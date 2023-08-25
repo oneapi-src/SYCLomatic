@@ -149,6 +149,7 @@ add_clang_library(DPCT
   GenMakefile.cpp
   IncrementalMigrationUtility.cpp
   Rules.cpp
+  PatternRewriter.cpp
   Homoglyph.cpp
   MisleadingBidirectional.cpp
   BarrierFenceSpaceAnalyzer.cpp

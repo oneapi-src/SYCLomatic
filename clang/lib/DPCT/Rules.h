@@ -299,9 +299,4 @@ private:
 
 void importRules(llvm::cl::list<std::string> &RuleFiles);
 
-std::string applyPatternRewriter(const MetaRuleObject::PatternRewriter &PP,
-                                 const std::string &Input);
-
-bool fixLineEndings(const std::string &Input, std::string &Output);
-
 #endif // DPCT_RULES_H

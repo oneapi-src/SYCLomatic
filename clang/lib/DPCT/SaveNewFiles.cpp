@@ -29,7 +29,7 @@
 #include "llvm/Support/raw_os_ostream.h"
 
 #include "Utility.h"
-#include "Rules.h"
+#include "PatternRewriter.h"
 #include "llvm/Support/raw_os_ostream.h"
 #include <cassert>
 #include <fstream>
