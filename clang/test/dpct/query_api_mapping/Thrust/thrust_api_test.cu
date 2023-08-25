@@ -132,5 +132,65 @@
 // set_symmetric_difference-NEXT:  oneapi::dpl::set_symmetric_difference(oneapi::dpl::execution::seq, h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin());
 // set_symmetric_difference-NEXT:  oneapi::dpl::set_symmetric_difference(oneapi::dpl::execution::seq, h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin(), oneapi::dpl::less<int>());
 // set_symmetric_difference-NEXT:  oneapi::dpl::set_symmetric_difference(oneapi::dpl::execution::seq, h_A1.begin(), h_A1.end(), h_A2.begin(), h_A2.end(), h_result.begin(), oneapi::dpl::less<int>());
+// set_symmetric_difference-EMPTY:
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::equal | FileCheck %s -check-prefix=equal
+// equal:  oneapi::dpl::equal(oneapi::dpl::execution::seq, A1, A1 + N, A2);
+// equal-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::seq, A1, A1 + N, A2);
+// equal-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::seq, x, x + N, y, compare_modulo_two());
+// equal-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::seq, x, x + N, y, compare_modulo_two());
+// equal-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::seq, h_A1.begin(), h_A1.end(), h_A2.begin());
+// equal-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::seq, h_A1.begin(), h_A1.end(), h_A2.begin());
+// equal-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::seq, h_x.begin(), h_x.end(), h_y.begin(), compare_modulo_two());
+// equal-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::seq, h_x.begin(), h_x.end(), h_y.begin(), compare_modulo_two());
+// equal-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(q_ct1), d_A1.begin(), d_A1.end(), d_A2.begin());
+// equal-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(q_ct1), d_A1.begin(), d_A1.end(), d_A2.begin());
+// equal-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(q_ct1), d_x.begin(), d_x.end(), d_y.begin(), compare_modulo_two());
+// equal-NEXT:  oneapi::dpl::equal(oneapi::dpl::execution::make_device_policy(q_ct1), d_x.begin(), d_x.end(), d_y.begin(), compare_modulo_two());
+// equal-EMPTY:
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::uninitialized_copy_n | FileCheck %s -check-prefix=uninitialized_copy_n
+// uninitialized_copy_n:  oneapi::dpl::uninitialized_copy_n(oneapi::dpl::execution::make_device_policy(q_ct1), d_input.begin(), N, d_array);
+// uninitialized_copy_n-NEXT:  oneapi::dpl::uninitialized_copy_n(oneapi::dpl::execution::seq, h_data, N, h_array);
+// uninitialized_copy_n-NEXT:  oneapi::dpl::uninitialized_copy_n(oneapi::dpl::execution::make_device_policy(q_ct1), d_input.begin(), N, d_array);
+// uninitialized_copy_n-NEXT:  oneapi::dpl::uninitialized_copy_n(oneapi::dpl::execution::seq, h_data, N, h_array);
+// uninitialized_copy_n-EMPTY:
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::uninitialized_copy | FileCheck %s -check-prefix=uninitialized_copy
+// uninitialized_copy:  oneapi::dpl::uninitialized_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_input.begin(), d_input.end(), d_array);
+// uninitialized_copy-NEXT:  oneapi::dpl::uninitialized_copy(oneapi::dpl::execution::seq, data, data + N, array);
+// uninitialized_copy-NEXT:  oneapi::dpl::uninitialized_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_input.begin(), d_input.end(), d_array);
+// uninitialized_copy-NEXT:  oneapi::dpl::uninitialized_copy(oneapi::dpl::execution::seq, data, data + N, h_array);
+// uninitialized_copy-EMPTY:
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::transform_inclusive_scan | FileCheck %s -check-prefix=transform_inclusive_scan
+// transform_inclusive_scan:  oneapi::dpl::transform_inclusive_scan(oneapi::dpl::execution::seq, data, data + N, data, binary_op, unary_op);
+// transform_inclusive_scan-NEXT:  oneapi::dpl::transform_inclusive_scan(oneapi::dpl::execution::seq, h_vec_data.begin(), h_vec_data.end(), h_vec_data.begin(), binary_op, unary_op);
+// transform_inclusive_scan-NEXT:  oneapi::dpl::transform_inclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec_data.begin(), d_vec_data.end(), d_vec_data.begin(), binary_op, unary_op);
+// transform_inclusive_scan-NEXT:  oneapi::dpl::transform_inclusive_scan(oneapi::dpl::execution::seq, data, data + N, data, binary_op, unary_op);
+// transform_inclusive_scan-NEXT:  oneapi::dpl::transform_inclusive_scan(oneapi::dpl::execution::seq, h_vec_data.begin(), h_vec_data.end(), h_vec_data.begin(), binary_op, unary_op);
+// transform_inclusive_scan-NEXT:  oneapi::dpl::transform_inclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), d_vec_data.begin(), d_vec_data.end(), d_vec_data.begin(), binary_op, unary_op);
+// transform_inclusive_scan-EMPTY:
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::equal_range | FileCheck %s -check-prefix=equal_range
+// equal_range:  dpct::equal_range(oneapi::dpl::execution::make_device_policy(q_ct1), device_vec.begin(), device_vec.end(), 0);
+// equal_range-NEXT:  dpct::equal_range(oneapi::dpl::execution::make_device_policy(q_ct1), device_vec.begin(), device_vec.end(), 0);
+// equal_range-NEXT:  dpct::equal_range(oneapi::dpl::execution::make_device_policy(q_ct1), device_vec.begin(), device_vec.end(), 0, oneapi::dpl::less<int>());
+// equal_range-NEXT:  dpct::equal_range(oneapi::dpl::execution::make_device_policy(q_ct1), device_vec.begin(), device_vec.end(), 0, oneapi::dpl::less<int>());
+// equal_range-NEXT:  dpct::equal_range(oneapi::dpl::execution::seq, host_vec.begin(), host_vec.end(), 0);
+// equal_range-NEXT:  dpct::equal_range(oneapi::dpl::execution::seq, host_vec.begin(), host_vec.end(), 0);
+// equal_range-NEXT:  dpct::equal_range(oneapi::dpl::execution::seq, host_vec.begin(), host_vec.end(), 0, oneapi::dpl::less<int>());
+// equal_range-NEXT:  dpct::equal_range(oneapi::dpl::execution::seq, host_vec.begin(), host_vec.end(), 0, oneapi::dpl::less<int>());
+// equal_range-NEXT:  dpct::equal_range(oneapi::dpl::execution::seq, data, data + N, 0);
+// equal_range-NEXT:  dpct::equal_range(oneapi::dpl::execution::seq, data, data + N, 0);
+// equal_range-NEXT:  dpct::equal_range(oneapi::dpl::execution::seq, data, data + N, 0, oneapi::dpl::less<int>());
+// equal_range-NEXT:  dpct::equal_range(oneapi::dpl::execution::seq, data, data + N, 0, oneapi::dpl::less<int>());
+// equal_range-EMPTY:
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::reverse | FileCheck %s -check-prefix=reverse
+// reverse:   oneapi::dpl::reverse(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end());
+// reverse-NEXT:  oneapi::dpl::reverse(oneapi::dpl::execution::seq, host_data.begin(), host_data.end());
+// reverse-NEXT:  oneapi::dpl::reverse(oneapi::dpl::execution::seq, data, data + N);
+// reverse-NEXT:  oneapi::dpl::reverse(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.end());
+// reverse-NEXT:  oneapi::dpl::reverse(oneapi::dpl::execution::seq, host_data.begin(), host_data.end());
+// reverse-NEXT:  oneapi::dpl::reverse(oneapi::dpl::execution::seq, data, data + N);
