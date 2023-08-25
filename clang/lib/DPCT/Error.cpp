@@ -156,7 +156,9 @@ void ShowStatus(int Status, std::string Message) {
                    "as or a parent directory of --in-root";
     break;
   case MigrationErrorNoAPIMapping:
-    StatusString = "Error: This API Mapping query is not available now";
+    StatusString =
+        "Error: This API mapping query is not available yet. You may get the "
+        "API mapping by migrating a sample code of this API with the tool.";
     break;
   default:
     DpctLog() << "Unknown error\n";
