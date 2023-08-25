@@ -83,6 +83,19 @@ enum class Comments {
 
 #define DEF_NOTE(NAME, ID, MSG)
 #define DEF_ERROR(NAME, ID, MSG)
+#define DEF_WARNING(NAME, ID, MSG) +1
+#define DEF_COMMENT(NAME, ID, MSG)
+enum class WarningCounter {
+  COUNT = 0
+#include "Diagnostics.inc"
+#undef DEF_NOTE
+#undef DEF_ERROR
+#undef DEF_WARNING
+#undef DEF_COMMENT
+};
+
+#define DEF_NOTE(NAME, ID, MSG)
+#define DEF_ERROR(NAME, ID, MSG)
 #define DEF_WARNING(NAME, ID, MSG) NAME = ID,
 #define DEF_COMMENT(NAME, ID, MSG)
 enum class Warnings {
@@ -92,7 +105,7 @@ enum class Warnings {
 #undef DEF_ERROR
 #undef DEF_WARNING
 #undef DEF_COMMENT
-  END
+  END = BEGIN + (size_t)WarningCounter::COUNT + 1
 };
 
 #define DEF_COMMENT(NAME, ID, MSG) NAME = ID,
