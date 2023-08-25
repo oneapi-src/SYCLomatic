@@ -203,7 +203,6 @@ std::string Driver::GetResourcesPath(StringRef BinaryPath,
     // path of the embedding binary, which for LLVM binaries will be in bin/.
     // ../lib gets us to lib/ in both cases.
     P = llvm::sys::path::parent_path(Dir);
-<<<<<<< HEAD
 #ifdef SYCLomatic_CUSTOMIZATION
     SmallString<128> P1(P);
     llvm::sys::path::append(P, Twine("opt/dpct/") + CLANG_INSTALL_LIBDIR_BASENAME,
@@ -216,10 +215,8 @@ std::string Driver::GetResourcesPath(StringRef BinaryPath,
       return std::string(P1.str());
     }
 #endif // SYCLomatic_CUSTOMIZATION
-=======
     // This search path is also created in the COFF driver of lld, so any
     // changes here also needs to happen in lld/COFF/Driver.cpp
->>>>>>> SYCLomatic/SYCLomatic
     llvm::sys::path::append(P, CLANG_INSTALL_LIBDIR_BASENAME, "clang",
                             CLANG_VERSION_MAJOR_STRING);
   }
