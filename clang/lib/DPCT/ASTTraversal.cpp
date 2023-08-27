@@ -6897,48 +6897,26 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       if (IsAssigned) {
         report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
                MapNames::ITFName.at(FuncName),
-               "SYCL currently does not support adjusting attribute for "
-               "sycl::queue.");
+               "SYCL currently does not support corresponding setting.");
         emplaceTransformation(new ReplaceStmt(CE, "0"));
       } else {
         report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
                MapNames::ITFName.at(FuncName),
-               "SYCL currently does not support adjusting attribute for "
-               "sycl::queue.");
+               "SYCL currently does not support corresponding setting.");
         emplaceTransformation(new ReplaceStmt(CE, ""));
       }
     }
   } else if(FuncName == "cudaFuncSetAttribute"){
-    std::string ArgStr = getStmtSpelling(CE->getArg(1));
-    if (ArgStr == "cudaFuncAttributePreferredSharedMemoryCarveout" ||
-        ArgStr == "cudaFuncAttributeMaxDynamicSharedMemorySize") {
-      if (IsAssigned) {
-        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
-               MapNames::ITFName.at(FuncName),
-               "SYCL currently does not support configuring shared emory on "
-               "devices.");
-        emplaceTransformation(new ReplaceStmt(CE, "0"));
-      } else {
-        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
-               MapNames::ITFName.at(FuncName),
-               "SYCL currently does not support configuring shared emory on "
-               "devices.");
-        emplaceTransformation(new ReplaceStmt(CE, ""));
-      }
+    if (IsAssigned) {
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
+             MapNames::ITFName.at(FuncName),
+             "SYCL currently does not support corresponding setting.");
+      emplaceTransformation(new ReplaceStmt(CE, "0"));
     } else {
-      if (IsAssigned) {
-        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
-               MapNames::ITFName.at(FuncName),
-               "SYCL currently does not support adjusting attribute for kernel "
-               "function.");
-        emplaceTransformation(new ReplaceStmt(CE, "0"));
-      } else {
-        report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
-               MapNames::ITFName.at(FuncName),
-               "SYCL currently does not support adjusting attribute for kernel "
-               "function.");
-        emplaceTransformation(new ReplaceStmt(CE, ""));
-      }
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+             MapNames::ITFName.at(FuncName),
+             "SYCL currently does not support corresponding setting.");
+      emplaceTransformation(new ReplaceStmt(CE, ""));
     }
   }else if (FuncName == "cudaOccupancyMaxPotentialBlockSize") {
     report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,

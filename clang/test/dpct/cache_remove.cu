@@ -45,10 +45,10 @@ int main()
   cudaCtxResetPersistingL2Cache();
   // CHECK: DPCT1026:{{[0-9]+}}: The call to cuCtxResetPersistingL2Cache was removed because SYCL currently does not support setting cache config on devices.
   cuCtxResetPersistingL2Cache();
-  // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaFuncSetAttribute was removed because SYCL currently does not support configuring shared emory on devices.
+  // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaFuncSetAttribute was removed because SYCL currently does not support corresponding setting.
   cudaFuncSetAttribute(kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, 8 * 8 * 8);
-  // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaFuncSetAttribute was removed because SYCL currently does not support configuring shared emory on devices.
+  // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaFuncSetAttribute was removed because SYCL currently does not support corresponding setting.
   cudaFuncSetAttribute(kernel, cudaFuncAttributePreferredSharedMemoryCarveout, 8 * 8 * 8);
-  // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaFuncSetAttribute was removed because SYCL currently does not support adjusting attribute for kernel function.
+  // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaFuncSetAttribute was removed because SYCL currently does not support corresponding setting.
   cudaFuncSetAttribute(kernel, cudaFuncAttributeClusterDimMustBeSet, 8 * 8 * 8);
 }

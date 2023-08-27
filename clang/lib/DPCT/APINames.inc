@@ -95,7 +95,7 @@ ENTRY(cudaStreamCreateWithFlags, cudaStreamCreateWithFlags, true, NO_FLAG, P0, "
 ENTRY(cudaStreamCreateWithPriority, cudaStreamCreateWithPriority, true, NO_FLAG, P0, "Successful: DPCT1025")
 ENTRY(cudaStreamDestroy, cudaStreamDestroy, true, NO_FLAG, P0, "Successful")
 ENTRY(cudaStreamEndCapture, cudaStreamEndCapture, true, API_CALL_REMOVED, P4, "DPCT1026/DPCT1027")
-ENTRY(cudaStreamGetAttribute, cudaStreamGetAttribute, false, NO_FLAG, P7, "DPCT1026/DPCT1027")
+ENTRY(cudaStreamGetAttribute, cudaStreamGetAttribute, true, NO_FLAG, P7, "DPCT1026/DPCT1027")
 ENTRY(cudaStreamGetCaptureInfo, cudaStreamGetCaptureInfo_v2, false, NO_FLAG, P4, "comment")
 ENTRY(cudaStreamGetFlags, cudaStreamGetFlags, true, NO_FLAG, P4, "DPCT1014")
 ENTRY(cudaStreamGetId, cudaStreamGetId, false, NO_FLAG, P4, "comment")
