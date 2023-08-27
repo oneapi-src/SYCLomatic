@@ -173,6 +173,9 @@ __global__ void test10(float *arg1_ptr, int arg2_scalar, int arg3_scalar) {
       arg1_ptr[var1] = a;
     }
     // CHECK: /*
+    // CHECK-NEXT: DPCT1118:{{[0-9]+}}: SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1113:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier(sycl::access::fence_space::local_space) with sycl::nd_item::barrier() if function "test10" is called in a multidimensional kernel.
     // CHECK-NEXT: */
     // CHECK-NEXT: item_ct1.barrier(sycl::access::fence_space::local_space);
@@ -184,6 +187,9 @@ __global__ void test10(float *arg1_ptr, int arg2_scalar, int arg3_scalar) {
         var2[var1] += var2[var1 + var3];
       }
       // CHECK: var3 = var3 / 2;
+      // CHECK-NEXT: /*
+      // CHECK-NEXT: DPCT1118:{{[0-9]+}}: SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.
+      // CHECK-NEXT: */
       // CHECK-NEXT: /*
       // CHECK-NEXT: DPCT1113:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier(sycl::access::fence_space::local_space) with sycl::nd_item::barrier() if function "test10" is called in a multidimensional kernel.
       // CHECK-NEXT: */
@@ -266,7 +272,9 @@ __global__ void test11(float *a_ptr, float *b_ptr,
       local[var0 - 123] = a_c_ptr[idx - 123];
       local[var0 + var7] = a_c_ptr[idx + var7];
     }
-    // CHECK: item_ct1.barrier(sycl::access::fence_space::local_space);
+    // CHECK: DPCT1118:{{[0-9]+}}: SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: item_ct1.barrier(sycl::access::fence_space::local_space);
     // CHECK-NEXT: float var8 = 0;
     __syncthreads();
     float var8 = 0;
