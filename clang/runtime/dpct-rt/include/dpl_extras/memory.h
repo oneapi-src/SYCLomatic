@@ -745,38 +745,22 @@ inline constexpr bool is_host_policy_or_tag_v =
 
 } // namespace internal
 
-// TODO: Make this class an iterator adaptor
-template <typename Tag, typename T> class tagged_pointer_base {
-public:
-  using pointer = T *;
-  using difference_type = ::std::ptrdiff_t;
-  tagged_pointer_base() : m_ptr(nullptr) {}
-  tagged_pointer_base(T *ptr) : m_ptr(ptr) {}
-  operator const T *() const { return m_ptr; }
-  operator T *() { return m_ptr; }
-
-protected:
-  T *m_ptr;
-};
-
+// TODO: Make this class an iterator adaptor.
 // tagged_pointer provides a wrapper around a raw pointer type with a tag of the
 // location of the allocated memory. Standard pointer operations are supported
 // with this class.
-template <typename Tag, typename T = void>
-class tagged_pointer : public tagged_pointer_base<Tag, T> {
-  using super_t = tagged_pointer_base<Tag, T>;
-
+template <typename Tag, typename T = void> class tagged_pointer {
 public:
   using value_type = T;
-  using difference_type = typename super_t::difference_type;
-  using pointer = typename super_t::pointer;
+  using difference_type = ::std::ptrdiff_t;
+  using pointer = T *;
   using reference = T &;
   using iterator_category = std::random_access_iterator_tag;
   using is_hetero = ::std::false_type;
   using is_passed_directly = std::true_type;
 
-  tagged_pointer() : super_t() {}
-  tagged_pointer(T *ptr) : super_t(ptr) {}
+  tagged_pointer() : m_ptr(nullptr) {}
+  tagged_pointer(T *ptr) : m_ptr(ptr) {}
   T &operator[](difference_type idx) { return this->m_ptr[idx]; }
   const T &operator[](difference_type idx) const { return this->m_ptr[idx]; }
   tagged_pointer operator+(difference_type forward) const {
@@ -785,6 +769,8 @@ public:
   tagged_pointer operator-(difference_type backward) const {
     return tagged_pointer{this->m_ptr - backward};
   }
+  operator const T *() const { return m_ptr; }
+  operator T *() { return m_ptr; }
   T &operator*() { return *this->m_ptr; }
   const T &operator*() const { return *this->m_ptr; }
   T *operator->() { return this->m_ptr; }
@@ -818,24 +804,29 @@ public:
     this->m_ptr = this->m_ptr - backward;
     return *this;
   }
+
+private:
+  T *m_ptr;
 };
 
 // Void specialization for tagged pointers. Iterator traits are not provided but
 // conversion to other non-void tagged pointers is allowed. Pointer arithmetic
 // is disallowed with this specialization.
-template <typename Tag>
-class tagged_pointer<Tag, void> : public tagged_pointer_base<Tag, void> {
-  using super_t = tagged_pointer_base<Tag, void>;
-
+template <typename Tag> class tagged_pointer<Tag, void> {
 public:
-  using difference_type = typename super_t::difference_type;
-  using pointer = typename super_t::pointer;
-  tagged_pointer() : super_t() {}
-  tagged_pointer(pointer ptr) : super_t(ptr) {}
+  using difference_type = ::std::ptrdiff_t;
+  using pointer = void *;
+  tagged_pointer() : m_ptr(nullptr) {}
+  tagged_pointer(pointer ptr) : m_ptr(ptr) {}
+  operator const void *() const { return m_ptr; }
+  operator void *() { return m_ptr; }
   // Enable tagged void pointer to convert to all other raw pointer types.
   template <typename OtherPtr> operator OtherPtr *() const {
     return static_cast<OtherPtr *>(this->m_ptr);
   }
+
+private:
+  void *m_ptr;
 };
 
 namespace internal {
