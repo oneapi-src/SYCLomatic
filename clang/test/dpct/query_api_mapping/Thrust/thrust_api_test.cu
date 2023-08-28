@@ -260,3 +260,17 @@
 // stable_partition_copy-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::seq, data, data + N, S, evens, odds, is_even());
 // stable_partition_copy-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::seq, host_a.begin(), host_a.begin() + N, host_S.begin(), host_evens.begin(), host_odds.begin(), is_even());
 // stable_partition_copy-NEXT:  dpct::stable_partition_copy(oneapi::dpl::execution::make_device_policy(q_ct1), device_a.begin(), device_a.begin() + N, device_S.begin(), device_evens.begin(), device_odds.begin(), is_even());
+
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=thrust::stable_partition | FileCheck %s -check-prefix=stable_partition
+// stable_partition:  oneapi::dpl::stable_partition(oneapi::dpl::execution::seq, data, data + N, is_even());
+// stable_partition:  oneapi::dpl::stable_partition(oneapi::dpl::execution::seq, host_data.begin(), host_data.begin() + N, is_even());
+// stable_partition:  oneapi::dpl::stable_partition(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.begin() + N, is_even());
+// stable_partition:  oneapi::dpl::stable_partition(oneapi::dpl::execution::seq, data, data + N, is_even());
+// stable_partition:  oneapi::dpl::stable_partition(oneapi::dpl::execution::seq, host_data.begin(), host_data.begin() + N, is_even());
+// stable_partition:  oneapi::dpl::stable_partition(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.begin() + N, is_even());
+// stable_partition:  dpct::stable_partition(oneapi::dpl::execution::seq, data, data + N, S, is_even());
+// stable_partition:  dpct::stable_partition(oneapi::dpl::execution::seq, host_data.begin(), host_data.begin() + N, host_S.begin(), is_even());
+// stable_partition:  dpct::stable_partition(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.begin() + N, device_s.begin(), is_even());
+// stable_partition:  dpct::stable_partition(oneapi::dpl::execution::seq, data, data + N, S, is_even());
+// stable_partition:  dpct::stable_partition(oneapi::dpl::execution::seq, host_data.begin(), host_data.begin() + N, host_S.begin(), is_even());
+// stable_partition:  dpct::stable_partition(oneapi::dpl::execution::make_device_policy(q_ct1), device_data.begin(), device_data.begin() + N, device_s.begin(), is_even());
