@@ -24,3 +24,73 @@ Suggestions to Fix
 ------------------
 
 Use option ``--usm-level=restricted`` to migrate the code.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   struct AAA {
+     int * a;
+   };
+   
+   __global__ void k(AAA a) {
+     ...
+   }
+   
+   void foo(AAA a) {
+     k<<<1,1>>>(a);
+   }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   #define DPCT_USM_LEVEL_NONE
+   #include <sycl/sycl.hpp>
+   #include <dpct/dpct.hpp>
+   struct AAA {
+     int * a;
+   };
+   
+   void k(AAA a) {
+     ...
+   }
+   
+   void foo(AAA a) {
+     /*
+     DPCT1069:0: The argument 'a' of the kernel function contains virtual
+     pointer(s), which cannot be dereferenced. Try to migrate the code with
+     "usm-level=restricted".
+     */
+     dpct::get_default_queue().parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+         [=](sycl::nd_item<3> item_ct1) {
+           k(a);
+         });
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   #include <sycl/sycl.hpp>
+   #include <dpct/dpct.hpp>
+   struct AAA {
+     int * a;
+   };
+   
+   void k(AAA a) {
+     ...
+   }
+   
+   void foo(AAA a) {
+     dpct::get_default_queue().parallel_for(
+         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+         [=](sycl::nd_item<3> item_ct1) {
+           k(a);
+         });
+   }
+
