@@ -28,3 +28,45 @@ Set user-defined direction numbers to the basic Sobol generator and use it as
 Scrambled Sobol generator.
 
 See the `Random Number Generators <https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-dpcpp/current/engines-basic-random-number-generators.html>`_ topic for more information.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(){
+     ...
+     curandGenerator_t rng;
+     curandCreateGenerator(&rng, CURAND_RNG_QUASI_SCRAMBLED_SOBOL32);
+     curandSetQuasiRandomGeneratorDimensions(rng, 1234);
+   }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(){
+     ...
+     dpct::rng::host_rng_ptr rng;
+     /*
+     DPCT1033:0: Migrated code uses a basic Sobol generator. Initialize
+     oneapi::mkl::rng::sobol generator with user-defined direction numbers to use
+     it as Scrambled Sobol generator.
+     */
+     rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::sobol);
+     rng->set_dimensions(1234);
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo(){
+     ...
+     dpct::rng::host_rng_ptr rng;
+     rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::sobol);
+     rng->set_direction_numbers(direction_numbers /*Use user-defined direction numbers*/);
+   }
+

@@ -25,3 +25,62 @@ Suggestions to Fix
 ------------------
 
 Replace ``sycl::<...>::barrier()`` with ``sycl::<...>::barrier(sycl::access::fence_space::local_space)``.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   struct Data_t {
+     float *host_data;
+     float *device_data;
+   };
+   
+   __global__ void k(Data_t *data) {
+     auto tid = threadIdx.x + blockDim.x * blockIdx.x;
+     process_a(data[tid].device_data);
+     __syncthreads();
+     process_b(data[tid].device_data);
+   }
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   struct Data_t {
+     float *host_data;
+     float *device_data;
+   };
+   
+   void k(Data_t *data, const sycl::nd_item<3> &item_ct1) {
+     auto tid = item_ct1.get_local_id(2) +
+                item_ct1.get_local_range(2) * item_ct1.get_group(2);
+     process_a(data[tid].device_data);
+     /*
+     DPCT1065:0: Consider replacing sycl::nd_item::barrier() with
+     sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better
+     performance if there is no access to global memory.
+     */
+     item_ct1.barrier();
+     process_b(data[tid].device_data);
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   struct Data_t {
+     float *host_data;
+     float *device_data;
+   };
+   
+   void k(Data_t *data, const sycl::nd_item<3> &item_ct1) {
+     auto tid = item_ct1.get_local_id(2) +
+                item_ct1.get_local_range(2) * item_ct1.get_group(2);
+     process_a(data[tid].device_data);
+     item_ct1.barrier();
+     process_b(data[tid].device_data);
+   }
+

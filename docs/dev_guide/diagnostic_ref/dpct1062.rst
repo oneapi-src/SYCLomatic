@@ -28,17 +28,40 @@ For example, this original CUDA\* code:
 
 .. code-block:: cpp
    :linenos:
-  
-     __device__ void foo(const texture<char, 2, cudaReadModeNormalizedFloat> tex);
-     __device__ void foo (const texture<char, 2, cudaReadModeElementType> tex);
 
-results in the following migrated SYCL code:
+   __device__ void foo(const texture<char4, 2, cudaReadModeNormalizedFloat> tex) {
+     ...
+   }
+   __device__ void foo (const texture<char4, 2, cudaReadModeElementType> tex) {
+     ...
+   }
+
+results in the following migrated SYCL\* code:
 
 .. code-block:: cpp
    :linenos:
-  
-     void foo (dpct::image_accessor_ext<char, 2> tex);
-     void foo (dpct::image_accessor_ext<char, 2> tex);
+
+   /*
+   DPCT1062:0: SYCL Image doesn't support normalized read mode.
+   */
+   void foo(dpct::image_accessor_ext<sycl::char4, 2> tex) {
+     ...
+   }
+   void foo(dpct::image_accessor_ext<sycl::char4, 2> tex) {
+     ...
+   }
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void foo1(dpct::image_accessor_ext<sycl::char4, 2> tex) {
+     ...
+   }
+   void foo2(dpct::image_accessor_ext<sycl::char4, 2> tex) {
+     ...
+   }
 
 Suggestions to Fix
 ------------------
