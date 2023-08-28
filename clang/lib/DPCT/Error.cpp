@@ -61,8 +61,8 @@ void ShowStatus(int Status, std::string Message) {
   case MigrationErrorInvalidWarningID:
     StatusString = "Error: Invalid warning ID or range; "
                    "valid warning IDs range from " +
-                   std::to_string((size_t)Warnings::BEGIN) + " to " +
-                   std::to_string((size_t)Warnings::END - 1);
+                   std::to_string((size_t)DiagnosticsMessage::MinID) + " to " +
+                   std::to_string((size_t)DiagnosticsMessage::MaxID);
     break;
   case MigrationOptionParsingError:
     StatusString = "Option parsing error,"

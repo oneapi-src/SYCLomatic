@@ -81,7 +81,8 @@ void initWarningIDs() {
           reportInvalidWarningID(Str);
         size_t ID = std::stoi(Str);
         // Invalid warning ID, not in range: 999 or 1025
-        if (ID < (size_t)Warnings::BEGIN || ID >= (size_t)Warnings::END)
+        if (ID < (size_t)DiagnosticsMessage::MinID ||
+            ID > (size_t)DiagnosticsMessage::MaxID)
           reportInvalidWarningID(Str);
         WarningIDs.insert(std::stoi(Str));
       } else if (Range.size() == 2) {
@@ -97,12 +98,12 @@ void initWarningIDs() {
         size_t RangeBegin = std::stoi(Range[0]);
         size_t RangeEnd = std::stoi(Range[1]);
         // Invalid warning ID for begin, not in range: 999 or 1025
-        if (RangeBegin < (size_t)Warnings::BEGIN ||
-            RangeBegin >= (size_t)Warnings::END)
+        if (RangeBegin < (size_t)DiagnosticsMessage::MinID ||
+            RangeBegin > (size_t)DiagnosticsMessage::MaxID)
           reportInvalidWarningID(Range[0]);
         // Invalid warning ID for end, not in range: 999 or 1025
-        if (RangeEnd < (size_t)Warnings::BEGIN ||
-            RangeEnd >= (size_t)Warnings::END)
+        if (RangeEnd < (size_t)DiagnosticsMessage::MinID ||
+            RangeEnd > (size_t)DiagnosticsMessage::MaxID)
           reportInvalidWarningID(Range[1]);
         // Invalid range (begin > end): 1011-1010
         if (RangeBegin > RangeEnd)

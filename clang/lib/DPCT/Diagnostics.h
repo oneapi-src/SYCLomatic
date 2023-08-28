@@ -40,21 +40,6 @@ extern std::unordered_map<int, DiagnosticsMessage> MsgIDTable;
 
 extern std::set<int> WarningIDs;
 
-struct DiagnosticsMessage {
-  int ID;
-  int Category;
-  const char *Msg;
-  DiagnosticsMessage() = default;
-  DiagnosticsMessage(std::unordered_map<int, DiagnosticsMessage> &Table, int ID,
-                     int Category, const char *Msg)
-      : ID(ID), Category(Category), Msg(Msg) {
-    assert(Table.find(ID) == Table.end() && "[DPCT Internal error] Two "
-                                            "messages with the same ID "
-                                            "are being registered");
-    Table[ID] = *this;
-  }
-};
-
 #define DEF_NOTE(NAME, ID, MSG) NAME = ID,
 #define DEF_ERROR(NAME, ID, MSG) NAME = ID,
 #define DEF_WARNING(NAME, ID, MSG) NAME = ID,
@@ -65,7 +50,6 @@ enum class Diagnostics {
 #undef DEF_ERROR
 #undef DEF_WARNING
 #undef DEF_COMMENT
-  END
 };
 
 #define DEF_NOTE(NAME, ID, MSG)
@@ -78,7 +62,6 @@ enum class Comments {
 #undef DEF_ERROR
 #undef DEF_WARNING
 #undef DEF_COMMENT
-  END
 };
 
 #define DEF_NOTE(NAME, ID, MSG)
@@ -104,27 +87,39 @@ constexpr int getMaxWarningID() {
   return result;
 }
 
-constexpr inline int MaxWarningID = getMaxWarningID();
-
 #define DEF_NOTE(NAME, ID, MSG)
 #define DEF_ERROR(NAME, ID, MSG)
 #define DEF_WARNING(NAME, ID, MSG) NAME = ID,
 #define DEF_COMMENT(NAME, ID, MSG)
 enum class Warnings {
-  BEGIN = 1000,
 #include "Diagnostics.inc"
 #undef DEF_NOTE
 #undef DEF_ERROR
 #undef DEF_WARNING
 #undef DEF_COMMENT
-  END = MaxWarningID + 1
 };
 
 #define DEF_COMMENT(NAME, ID, MSG) NAME = ID,
 enum class MakefileMsgs {
 #include "DiagnosticsBuildScript.inc"
 #undef DEF_COMMENT
-  END
+};
+
+struct DiagnosticsMessage {
+  int ID;
+  int Category;
+  const char *Msg;
+  constexpr static int MinID = 1000;
+  constexpr static int MaxID = getMaxWarningID();
+  DiagnosticsMessage() = default;
+  DiagnosticsMessage(std::unordered_map<int, DiagnosticsMessage> &Table, int ID,
+                     int Category, const char *Msg)
+      : ID(ID), Category(Category), Msg(Msg) {
+    assert(Table.find(ID) == Table.end() && "[DPCT Internal error] Two "
+                                            "messages with the same ID "
+                                            "are being registered");
+    Table[ID] = *this;
+  }
 };
 
 namespace DiagnosticsUtils {
