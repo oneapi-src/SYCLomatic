@@ -432,4 +432,16 @@ DPCT_NON_ENUM_OPTION(
         "Query functionally compatible SYCL API to migrate CUDA API."),
     llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 
+DPCT_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::bits<HelperFuncPreference>), Preferences,
+    "helper-function-preference",
+    DPCT_OPTION_VALUES(DPCT_OPT_ENUM(
+        "no-queue-device", int(HelperFuncPreference::NoQueueDevice),
+        "Call SYCL API to get queue and device instead of calling helper function.\n",
+        false)),
+    llvm::cl::desc("The preference of helper function usage in migration.\n"
+                   "The values are:\n"),
+    llvm::cl::CommaSeparated, llvm::cl::value_desc("value"),
+    llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
+
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT

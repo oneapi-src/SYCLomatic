@@ -52,13 +52,14 @@ auto isDeviceFuncCallExpr = []() {
         "ExclusiveSumByKey", "Flagged", "Unique", "UniqueByKey", "Encode",
         "SortKeys", "SortKeysDescending", "SortPairs", "SortPairsDescending",
         "If", "StableSortKeys", "StableSortKeysDescending", "StableSortPairs",
-        "StableSortPairsDescending", "NonTrivialRuns");
+        "StableSortPairsDescending", "NonTrivialRuns", "HistogramEven",
+        "MultiHistogramEven", "HistogramRange", "MultiHistogramRange");
   };
   auto hasDeviceRecordName = []() {
     return hasAnyName("DeviceSegmentedReduce", "DeviceReduce", "DeviceScan",
                       "DeviceSelect", "DeviceRunLengthEncode",
                       "DeviceRadixSort", "DeviceSegmentedRadixSort",
-                      "DeviceSegmentedSort");
+                      "DeviceSegmentedSort", "DeviceHistogram");
   };
   return callExpr(callee(functionDecl(allOf(
       hasDeviceFuncName(),
@@ -609,28 +610,38 @@ std::string CubRule::getOpRepl(const Expr *Operator) {
   if (!Operator) {
     return MapNames::getClNamespace() + "plus<>()";
   }
+
+  auto processCXXTemporaryObjectExpr =
+      [&](const CXXTemporaryObjectExpr *CXXTempObj) {
+        std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
+            CXXTempObj->getType().getCanonicalType());
+        if (OpType == "cub::Sum" || OpType == "cuda::std::plus<void>") {
+          OpRepl = MapNames::getClNamespace() + "plus<>()";
+        } else if (OpType == "cub::Max") {
+          OpRepl = MapNames::getClNamespace() + "maximum<>()";
+        } else if (OpType == "cub::Min") {
+          OpRepl = MapNames::getClNamespace() + "minimum<>()";
+        }
+      };
+
   if (auto Op = dyn_cast<CXXConstructExpr>(Operator)) {
-    auto CtorArg = Op->getArg(0)->IgnoreImplicitAsWritten();
-    if (auto DRE = dyn_cast<DeclRefExpr>(CtorArg)) {
-      auto D = DRE->getDecl();
-      if (!D)
-        return OpRepl;
-      std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
-          D->getType().getCanonicalType());
-      if (OpType == "cub::Sum" || OpType == "cub::Max" ||
-          OpType == "cub::Min" || OpType == "cuda::std::plus<void>") {
-        ExprAnalysis EA(Operator);
-        OpRepl = EA.getReplacedString();
-      }
-    } else if (auto CXXTempObj = dyn_cast<CXXTemporaryObjectExpr>(CtorArg)) {
-      std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
-          CXXTempObj->getType().getCanonicalType());
-      if (OpType == "cub::Sum" || OpType == "cuda::std::plus<void>") {
-        OpRepl = MapNames::getClNamespace() + "plus<>()";
-      } else if (OpType == "cub::Max") {
-        OpRepl = MapNames::getClNamespace() + "maximum<>()";
-      } else if (OpType == "cub::Min") {
-        OpRepl = MapNames::getClNamespace() + "minimum<>()";
+    if (auto CXXTempObj = dyn_cast<CXXTemporaryObjectExpr>(Op)) {
+      processCXXTemporaryObjectExpr(CXXTempObj);
+    } else {
+      auto CtorArg = Op->getArg(0)->IgnoreImplicitAsWritten();
+      if (auto DRE = dyn_cast<DeclRefExpr>(CtorArg)) {
+        auto D = DRE->getDecl();
+        if (!D)
+          return OpRepl;
+        std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
+            D->getType().getCanonicalType());
+        if (OpType == "cub::Sum" || OpType == "cub::Max" ||
+            OpType == "cub::Min" || OpType == "cuda::std::plus<void>") {
+          ExprAnalysis EA(Operator);
+          OpRepl = EA.getReplacedString();
+        }
+      } else if (auto CXXTempObj = dyn_cast<CXXTemporaryObjectExpr>(CtorArg)) {
+        processCXXTemporaryObjectExpr(CXXTempObj);
       }
     }
   }

@@ -609,7 +609,7 @@ int runDPCT(int argc, const char **argv) {
       ShowStatus(MigrationErrorInvalidInstallPath);
       dpctExit(MigrationErrorInvalidInstallPath);
     }
-    DpctLog() << pathToHelperFunction.str() << "\n";
+    std::cout << pathToHelperFunction.c_str() << "\n";
     ShowStatus(MigrationSucceeded);
     dpctExit(MigrationSucceeded);
   }
@@ -759,6 +759,7 @@ int runDPCT(int argc, const char **argv) {
     APIMapping::initEntryMap();
     auto SourceCode = APIMapping::getAPISourceCode(QueryAPIMapping);
     if (SourceCode.empty()) {
+      ShowStatus(MigrationErrorNoAPIMapping);
       dpctExit(MigrationErrorNoAPIMapping);
     }
 
@@ -781,6 +782,9 @@ int runDPCT(int argc, const char **argv) {
         } else if (Option.starts_with("--use-experimental-features")) {
           if (Option.ends_with("bfloat16_math_functions"))
             Experimentals.addValue(ExperimentalFeatures::Exp_BFloat16Math);
+          else if (Option.ends_with("occupancy-calculation"))
+            Experimentals.addValue(
+                ExperimentalFeatures::Exp_OccupancyCalculation);
         }
         // Need add more option.
       }
@@ -912,6 +916,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
   DpctGlobalInfo::setGenBuildScriptEnabled(GenBuildScript);
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
+  DpctGlobalInfo::setHelperFuncPreferenceFlag(Preferences.getBits());
   DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
   DpctGlobalInfo::setExperimentalFlag(Experimentals.getBits());
   DpctGlobalInfo::setExtensionDEFlag(~(NoDPCPPExtensions.getBits()));
@@ -1007,6 +1012,9 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_ExperimentalFlag,
                      DpctGlobalInfo::getExperimentalFlag(),
                      Experimentals.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_HelperFuncPreferenceFlag,
+                     DpctGlobalInfo::getHelperFuncPreferenceFlag(),
+                     Preferences.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_ExplicitNamespace,
                      DpctGlobalInfo::getExplicitNamespaceSet(),
                      UseExplicitNamespace.getNumOccurrences());
@@ -1113,16 +1121,21 @@ int runDPCT(int argc, const char **argv) {
     bool Flag = false;
     for (auto I = RewriteBuffer.begin(), E = RewriteBuffer.end(); I != E;
          I.MoveToNextPiece()) {
+      size_t StartPos = 0;
+      if (!Flag) {
+        if (auto It = I.piece().find(StartStr); It != StringRef::npos) {
+          StartPos = It + StartStr.length();
+          Flag = true;
+        }
+      }
       if (Flag) {
+        size_t EndPos = I.piece().size();
         if (auto It = I.piece().find(EndStr); It != StringRef::npos) {
           auto TempStr = I.piece().substr(0, It);
-          llvm::outs() << TempStr.substr(0, TempStr.find_last_of("\n") + 1);
-          break;
+          EndPos = TempStr.find_last_of('\n') + 1;
+          Flag = false;
         }
-        llvm::outs() << I.piece();
-      } else if (auto It = I.piece().find(StartStr); It != StringRef::npos) {
-        Flag = true;
-        llvm::outs() << I.piece().substr(It + StartStr.length());
+        llvm::outs() << I.piece().substr(StartPos, EndPos - StartPos);
       }
     }
     return MigrationSucceeded;

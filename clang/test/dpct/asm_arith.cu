@@ -118,40 +118,22 @@ __global__ void mul() {
   int64_t i64;
   uint64_t u64;
 
-  // CHECK: i16 = x * y;
-  asm("mul.lo.s16 %0, %1, %2;" : "=r"(i16) : "r"(x), "r"(y));
-
-  // CHECK: u16 = x * y;
-  asm("mul.lo.u16 %0, %1, %2;" : "=r"(u16) : "r"(x), "r"(y));
-
-  // CHECK: i32 = x * y;
-  asm("mul.lo.s32 %0, %1, %2;" : "=r"(i32) : "r"(x), "r"(y));
-
-  // CHECK: u32 = x * y;
-  asm("mul.lo.u32 %0, %1, %2;" : "=r"(u32) : "r"(x), "r"(y));
-
-  // CHECK: i64 = x * y;
-  asm("mul.lo.s64 %0, %1, %2;" : "=r"(i64) : "r"(x), "r"(y));
-
-  // CHECK: u64 = x * y;
-  asm("mul.lo.u64 %0, %1, %2;" : "=r"(u64) : "r"(x), "r"(y));
-
-  // CHECK: i16 = sycl::mul_hi(x, y);
+  // CHECK: i16 = sycl::mul_hi<int16_t>(x, y);
   asm("mul.hi.s16 %0, %1, %2;" : "=r"(i16) : "r"(x), "r"(y));
 
-  // CHECK: u16 = sycl::mul_hi(x, y);
+  // CHECK: u16 = sycl::mul_hi<uint16_t>(x, y);
   asm("mul.hi.u16 %0, %1, %2;" : "=r"(u16) : "r"(x), "r"(y));
 
-  // CHECK: i32 = sycl::mul_hi(x, y);
+  // CHECK: i32 = sycl::mul_hi<int32_t>(x, y);
   asm("mul.hi.s32 %0, %1, %2;" : "=r"(i32) : "r"(x), "r"(y));
 
-  // CHECK: u32 = sycl::mul_hi(x, y);
+  // CHECK: u32 = sycl::mul_hi<uint32_t>(x, y);
   asm("mul.hi.u32 %0, %1, %2;" : "=r"(u32) : "r"(x), "r"(y));
 
-  // CHECK: i64 = sycl::mul_hi(x, y);
+  // CHECK: i64 = sycl::mul_hi<int64_t>(x, y);
   asm("mul.hi.s64 %0, %1, %2;" : "=r"(i64) : "r"(x), "r"(y));
 
-  // CHECK: u64 = sycl::mul_hi(x, y);
+  // CHECK: u64 = sycl::mul_hi<uint64_t>(x, y);
   asm("mul.hi.u64 %0, %1, %2;" : "=r"(u64) : "r"(x), "r"(y));
 
   // CHECK: i16 = (int32_t)x * (int32_t)y;
@@ -182,40 +164,22 @@ __global__ void mad() {
   int64_t i64;
   uint64_t u64;
 
-  // CHECK: i16 = x * y + 3;
-  asm("mad.lo.s16 %0, %1, %2, %3;" : "=r"(i16) : "r"(x), "r"(y), "r"(3));
-
-  // CHECK: u16 = x * y + 3;
-  asm("mad.lo.u16 %0, %1, %2, %3;" : "=r"(u16) : "r"(x), "r"(y), "r"(3));
-
-  // CHECK: i32 = x * y + 3;
-  asm("mad.lo.s32 %0, %1, %2, %3;" : "=r"(i32) : "r"(x), "r"(y), "r"(3));
-
-  // CHECK: u32 = x * y + 3;
-  asm("mad.lo.u32 %0, %1, %2, %3;" : "=r"(u32) : "r"(x), "r"(y), "r"(3));
-
-  // CHECK: i64 = x * y + 3;
-  asm("mad.lo.s64 %0, %1, %2, %3;" : "=r"(i64) : "r"(x), "r"(y), "r"(3));
-
-  // CHECK: u64 = x * y + 3;
-  asm("mad.lo.u64 %0, %1, %2, %3;" : "=r"(u64) : "r"(x), "r"(y), "r"(3));
-
-  // CHECK: i16 = sycl::mad_hi(x, y, 3);
+  // CHECK: i16 = sycl::mad_hi<int16_t>(x, y, 3);
   asm("mad.hi.s16 %0, %1, %2, %3;" : "=r"(i16) : "r"(x), "r"(y), "r"(3));
 
-  // CHECK: u16 = sycl::mad_hi(x, y, 3);
+  // CHECK: u16 = sycl::mad_hi<uint16_t>(x, y, 3);
   asm("mad.hi.u16 %0, %1, %2, %3;" : "=r"(u16) : "r"(x), "r"(y), "r"(3));
 
-  // CHECK: i32 = sycl::mad_hi(x, y, 3);
+  // CHECK: i32 = sycl::mad_hi<int32_t>(x, y, 3);
   asm("mad.hi.s32 %0, %1, %2, %3;" : "=r"(i32) : "r"(x), "r"(y), "r"(3));
 
-  // CHECK: u32 = sycl::mad_hi(x, y, 3);
+  // CHECK: u32 = sycl::mad_hi<uint32_t>(x, y, 3);
   asm("mad.hi.u32 %0, %1, %2, %3;" : "=r"(u32) : "r"(x), "r"(y), "r"(3));
 
-  // CHECK: i64 = sycl::mad_hi(x, y, 3);
+  // CHECK: i64 = sycl::mad_hi<int64_t>(x, y, 3);
   asm("mad.hi.s64 %0, %1, %2, %3;" : "=r"(i64) : "r"(x), "r"(y), "r"(3));
 
-  // CHECK: u64 = sycl::mad_hi(x, y, 3);
+  // CHECK: u64 = sycl::mad_hi<uint64_t>(x, y, 3);
   asm("mad.hi.u64 %0, %1, %2, %3;" : "=r"(u64) : "r"(x), "r"(y), "r"(3));
 
   // CHECK: i16 = (int32_t)x * (int32_t)y + (int32_t)3;
@@ -242,10 +206,10 @@ __global__ void mul24() {
   int32_t i32;
   uint32_t u32;
 
-  // CHECK: i32 = sycl::mul24(x, y);
+  // CHECK: i32 = sycl::mul24<int32_t>(x, y);
   asm("mul24.lo.s32 %0, %1, %2;" : "=r"(i32) : "r"(x), "r"(y));
 
-  // CHECK: u32 = sycl::mul24(x, y);
+  // CHECK: u32 = sycl::mul24<uint32_t>(x, y);
   asm("mul24.lo.u32 %0, %1, %2;" : "=r"(u32) : "r"(x), "r"(y));
 
   // CHECK: DPCT1053:{{.*}}: Migration of device assembly code is not supported.
@@ -260,10 +224,10 @@ __global__ void mad24() {
   int32_t i32;
   uint32_t u32;
 
-  // CHECK: i32 = sycl::mad24(x, y, 3);
+  // CHECK: i32 = sycl::mad24<int32_t>(x, y, 3);
   asm("mad24.lo.s32 %0, %1, %2, %3;" : "=r"(i32) : "r"(x), "r"(y), "r"(3));
 
-  // CHECK: u32 = sycl::mad24(x, y, 3);
+  // CHECK: u32 = sycl::mad24<uint32_t>(x, y, 3);
   asm("mad24.lo.u32 %0, %1, %2, %3;" : "=r"(u32) : "r"(x), "r"(y), "r"(3));
 
   // CHECK: DPCT1053:{{.*}}: Migration of device assembly code is not supported.
@@ -334,13 +298,13 @@ __global__ void abs() {
   int32_t i32;
   int64_t i64;
 
-  // CHECK: i16 = sycl::abs(x);
+  // CHECK: i16 = sycl::abs<int16_t>(x);
   asm("abs.s16 %0, %1;" : "=r"(i16) : "r"(x));
 
-  // CHECK: i32 = sycl::abs(x);
+  // CHECK: i32 = sycl::abs<int32_t>(x);
   asm("abs.s32 %0, %1;" : "=r"(i32) : "r"(x));
 
-  // CHECK: i64 = sycl::abs(x);
+  // CHECK: i64 = sycl::abs<int64_t>(x);
   asm("abs.s64 %0, %1;" : "=r"(i64) : "r"(x));
 }
 

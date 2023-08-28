@@ -25,6 +25,7 @@ struct TranslationUnitInfo {
   TransformSetTy Transforms;
   IncludeMapSetTy IncludeMapSet;
   std::shared_ptr<DpctFileInfo> MainFile;
+  RuleGroups Groups;
 };
 
 class DpctConsumer : public ASTConsumer {

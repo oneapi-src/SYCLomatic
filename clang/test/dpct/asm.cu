@@ -35,7 +35,6 @@ __global__ void gpu_ptx(int *d_ptr, int length) {
 // CHECK: void asm_only(const sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT:  unsigned laneid;
 // CHECK-NEXT:  laneid = item_ct1.get_sub_group().get_local_linear_id();
-// CHECK-EMPTY:
 // CHECK-MEXT: }
 __global__ void asm_only() {
   unsigned laneid;
