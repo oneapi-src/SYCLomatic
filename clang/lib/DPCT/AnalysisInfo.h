@@ -3474,6 +3474,11 @@ public:
 
   virtual std::string getExtraArguments();
 
+  inline void setHasSideEffects(bool Val = true) {
+    CallGroupFunctionInControlFlow = Val;
+  }
+  inline bool hasSideEffects() const { return CallGroupFunctionInControlFlow; }
+
   std::shared_ptr<TextureObjectInfo>
   addTextureObjectArgInfo(unsigned ArgIdx,
                           std::shared_ptr<TextureObjectInfo> Info) {
@@ -3560,6 +3565,7 @@ private:
   std::vector<std::pair<int, std::string>> ParmRefArgs;
   MemVarMap VarMap;
   bool HasArgs = false;
+  bool CallGroupFunctionInControlFlow = false;
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
 };
 
@@ -3789,6 +3795,20 @@ public:
     return {};
   }
 
+  inline void setCallGroupFunctionInControlFlow(bool Val = true) {
+    CallGroupFunctionInControlFlow = Val;
+  }
+  inline bool hasCallGroupFunctionInControlFlow() const {
+    return CallGroupFunctionInControlFlow;
+  }
+
+  inline void setHasSideEffectsAnalyzed(bool Val = true) {
+    HasCheckedCallGroupFunctionInControlFlow = Val;
+  }
+  inline bool hasSideEffectsAnalyzed() const {
+    return HasCheckedCallGroupFunctionInControlFlow;
+  }
+
   void buildInfo();
   inline bool hasParams() { return ParamsNum != 0; }
 
@@ -3893,6 +3913,8 @@ private:
   bool IsLambda;
   bool IsKernel = false;
   bool IsKernelInvoked = false;
+  bool CallGroupFunctionInControlFlow = false;
+  bool HasCheckedCallGroupFunctionInControlFlow = false;
 };
 
 class KernelPrinter {
