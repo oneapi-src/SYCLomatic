@@ -4556,6 +4556,8 @@ MapNames::MapTy TextureRule::ResourceTypeNames{{"devPtr", "data_ptr"},
                                                {"format", "channel_type"},
                                                {"numChannels", "channel_num"}};
 
+std::vector<MetaRuleObject::PatternRewriter> MapNames::PatternRewriters;
+
 const MapNames::MapTy MemoryDataTypeRule::PitchMemberNames{
     {"pitch", "pitch"}, {"ptr", "data_ptr"}, {"xsize", "x"}, {"ysize", "y"}};
 const MapNames::MapTy MemoryDataTypeRule::ExtentMemberNames{

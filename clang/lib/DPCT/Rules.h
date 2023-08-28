@@ -15,7 +15,7 @@
 #include <vector>
 
 
-enum RuleKind { API, DataType, Macro, Header, TypeRule, Class, Enum, DisableAPIMigration };
+enum RuleKind { API, DataType, Macro, Header, TypeRule, Class, Enum, DisableAPIMigration, PatternRewriter };
 
 enum RulePriority { Takeover, Default, Fallback };
 
@@ -73,6 +73,20 @@ public:
     bool ReplaceCalleeNameOnly = false;
     bool HasExplicitTemplateArgs = false;
   };
+
+  struct PatternRewriter {
+    std::string In;
+    std::string Out;
+    std::map<std::string, PatternRewriter> Subrules;
+    PatternRewriter(){};
+    PatternRewriter(
+        const std::string &I, const std::string &O,
+        const std::map<std::string, PatternRewriter> &S)
+        : In(I), Out(O) {
+      Subrules = std::move(S);
+    }
+  };
+
   static std::vector<std::string> RuleFiles;
   std::string RuleFile;
   std::string RuleId;
@@ -87,11 +101,34 @@ public:
   std::vector<std::string> Includes;
   std::vector<std::shared_ptr<ClassField>> Fields;
   std::vector<std::shared_ptr<ClassMethod>> Methods;
+  std::map<std::string, PatternRewriter> Subrules;
   MetaRuleObject()
       : Priority(RulePriority::Default), Kind(RuleKind::API) {}
   MetaRuleObject(std::string id, RulePriority priority, RuleKind kind)
       : RuleId(id), Priority(priority), Kind(kind) {}
   static void setRuleFiles(std::string File) { RuleFiles.push_back(File); }
+};
+
+template <>
+struct llvm::yaml::CustomMappingTraits<
+    std::map<std::string, MetaRuleObject::PatternRewriter>> {
+  static void
+  inputOne(IO &IO, StringRef Key,
+           std::map<std::string, MetaRuleObject::PatternRewriter> &Value) {
+    IO.mapRequired(Key.str().c_str(), Value[Key.str().c_str()]);
+  }
+
+  static void
+  output(IO &IO, std::map<std::string, MetaRuleObject::PatternRewriter> &V) {
+    for (auto &P : V) {
+      IO.mapRequired(P.first.c_str(), P.second);
+    }
+  }
+};
+
+template <>
+struct llvm::yaml::SequenceElementTraits<MetaRuleObject::PatternRewriter> {
+  static const bool flow = false;
 };
 
 template <class T>
@@ -125,6 +162,7 @@ template <> struct llvm::yaml::ScalarEnumerationTraits<RuleKind> {
     Io.enumCase(Value, "Class", RuleKind::Class);
     Io.enumCase(Value, "Enum", RuleKind::Enum);
     Io.enumCase(Value, "DisableAPIMigration", RuleKind::DisableAPIMigration);
+    Io.enumCase(Value, "PatternRewriter", RuleKind::PatternRewriter);
   }
 };
 
@@ -144,6 +182,7 @@ template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
     Io.mapOptional("Prefix", Doc->Prefix);
     Io.mapOptional("Postfix", Doc->Postfix);
     Io.mapOptional("Attributes", Doc->RuleAttributes);
+    Io.mapOptional("Subrules", Doc->Subrules);
   }
 };
 
@@ -166,6 +205,16 @@ struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject::ClassMethod>> {
     Doc = std::make_shared<MetaRuleObject::ClassMethod>();
     Io.mapRequired("In", Doc->In);
     Io.mapRequired("Out", Doc->Out);
+  }
+};
+
+template <>
+struct llvm::yaml::MappingTraits<MetaRuleObject::PatternRewriter> {
+  static void mapping(llvm::yaml::IO &Io,
+                      MetaRuleObject::PatternRewriter &Doc) {
+    Io.mapRequired("In", Doc.In);
+    Io.mapRequired("Out", Doc.Out);
+    Io.mapOptional("Subrules", Doc.Subrules);
   }
 };
 
