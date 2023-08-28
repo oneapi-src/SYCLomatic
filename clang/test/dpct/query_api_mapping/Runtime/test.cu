@@ -63,7 +63,7 @@
 // CUDAGETDEVICEPROPERTIES: CUDA API:
 // CUDAGETDEVICEPROPERTIES-NEXT:   cudaGetDeviceProperties(pd /*cudaDeviceProp **/, i /*int*/);
 // CUDAGETDEVICEPROPERTIES-NEXT: Is migrated to:
-// CUDAGETDEVICEPROPERTIES-NEXT:   dpct::dev_mgr::instance().get_device(i /*int*/).get_device_info(*pd);
+// CUDAGETDEVICEPROPERTIES-NEXT:   dpct::get_device_info(*pd /*cudaDeviceProp **/, dpct::dev_mgr::instance().get_device(i) /*int*/);
 // CUDAGETDEVICEPROPERTIES-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaSetDevice | FileCheck %s -check-prefix=CUDASETDEVICE
@@ -453,12 +453,12 @@
 // CUDADRIVERGETVERSION: CUDA API:
 // CUDADRIVERGETVERSION-NEXT:   cudaDriverGetVersion(pi /*int **/);
 // CUDADRIVERGETVERSION-NEXT: Is migrated to:
-// CUDADRIVERGETVERSION-NEXT:   *pi = dpct::get_current_device().get_major_version();
+// CUDADRIVERGETVERSION-NEXT:   *pi = dpct::get_major_version(dpct::get_current_device());
 // CUDADRIVERGETVERSION-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaRuntimeGetVersion | FileCheck %s -check-prefix=CUDARUNTIMEGETVERSION
 // CUDARUNTIMEGETVERSION: CUDA API:
 // CUDARUNTIMEGETVERSION-NEXT:   cudaRuntimeGetVersion(pi /*int **/);
 // CUDARUNTIMEGETVERSION-NEXT: Is migrated to:
-// CUDARUNTIMEGETVERSION-NEXT:   *pi = dpct::get_current_device().get_major_version();
+// CUDARUNTIMEGETVERSION-NEXT:   *pi = dpct::get_major_version(dpct::get_current_device());
 // CUDARUNTIMEGETVERSION-EMPTY:

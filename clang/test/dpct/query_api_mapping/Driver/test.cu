@@ -51,8 +51,8 @@
 // CUDEVICECOMPUTECAPABILITY: CUDA API:
 // CUDEVICECOMPUTECAPABILITY-NEXT:   cuDeviceComputeCapability(pi1 /*int **/, pi2 /*int **/, d /*CUdevice*/);
 // CUDEVICECOMPUTECAPABILITY-NEXT: Is migrated to:
-// CUDEVICECOMPUTECAPABILITY-NEXT:   *pi1 = dpct::dev_mgr::instance().get_device(d).get_major_version();
-// CUDEVICECOMPUTECAPABILITY-NEXT:   *pi2 = dpct::dev_mgr::instance().get_device(d).get_minor_version();
+// CUDEVICECOMPUTECAPABILITY-NEXT:   *pi1 = dpct::get_major_version(dpct::dev_mgr::instance().get_device(d));
+// CUDEVICECOMPUTECAPABILITY-NEXT:   *pi2 = dpct::get_minor_version(dpct::dev_mgr::instance().get_device(d));
 // CUDEVICECOMPUTECAPABILITY-EMPTY:
 
 /// Primary Context Management

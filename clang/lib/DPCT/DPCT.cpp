@@ -759,6 +759,7 @@ int runDPCT(int argc, const char **argv) {
     APIMapping::initEntryMap();
     auto SourceCode = APIMapping::getAPISourceCode(QueryAPIMapping);
     if (SourceCode.empty()) {
+      ShowStatus(MigrationErrorNoAPIMapping);
       dpctExit(MigrationErrorNoAPIMapping);
     }
 
@@ -917,6 +918,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
   DpctGlobalInfo::setGenBuildScriptEnabled(GenBuildScript);
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
+  DpctGlobalInfo::setHelperFuncPreferenceFlag(Preferences.getBits());
   DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
   DpctGlobalInfo::setExperimentalFlag(Experimentals.getBits());
   DpctGlobalInfo::setExtensionDEFlag(~(NoDPCPPExtensions.getBits()));
@@ -1012,6 +1014,9 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_ExperimentalFlag,
                      DpctGlobalInfo::getExperimentalFlag(),
                      Experimentals.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_HelperFuncPreferenceFlag,
+                     DpctGlobalInfo::getHelperFuncPreferenceFlag(),
+                     Preferences.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_ExplicitNamespace,
                      DpctGlobalInfo::getExplicitNamespaceSet(),
                      UseExplicitNamespace.getNumOccurrences());
