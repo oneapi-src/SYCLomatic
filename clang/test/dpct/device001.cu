@@ -110,8 +110,8 @@ int main(int argc, char **argv) {
 
   // CHECK: int buswidth = deviceProp.get_memory_bus_width();
   int buswidth = deviceProp.memoryBusWidth;
-  // CHECK: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with l2CacheSize. It was migrated to L2_cache_size. You may need to adjust the value of L2_cache_size for the specific device.
-  // CHECK: int L2CacheSize = deviceProp.get_L2_cache_size();
+  // CHECK: DPCT1051:{{[0-9]+}}: SYCL does not support a device property functionally compatible with l2CacheSize. It was migrated to global_mem_cache_size. You may need to adjust the value of global_mem_cache_size for the specific device.
+  // CHECK: int L2CacheSize = deviceProp.get_global_mem_cache_size();
   int L2CacheSize = deviceProp.l2CacheSize;
 
   // CHECK:  /*

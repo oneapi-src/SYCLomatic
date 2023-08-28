@@ -4458,7 +4458,7 @@ const MapNames::MapTy DeviceInfoVarRule::PropNamesMap{
     {"memoryBusWidth", "memory_bus_width"},
     {"pciDeviceID", "device_id"},
     {"uuid", "uuid"},
-    {"l2CacheSize", "L2_cache_size"},
+    {"l2CacheSize", "global_mem_cache_size"},
     // ...
 };
 

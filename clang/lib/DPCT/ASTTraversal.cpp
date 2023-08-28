@@ -3441,7 +3441,7 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
     return;
   } else if (MemberName == "l2CacheSize") {
     report(ME->getBeginLoc(), Diagnostics::UNCOMPATIBLE_DEVICE_PROP, false,
-           MemberName, "L2_cache_size");
+           MemberName, "global_mem_cache_size");
   } else if (MemberName == "ECCEnabled") {
     requestFeature(HelperFeatureEnum::device_ext);
     std::string Repl = MapNames::getDpctNamespace() +
