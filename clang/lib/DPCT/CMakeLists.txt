@@ -150,6 +150,7 @@ add_clang_library(DPCT
   InclusionHeaders.cpp
   IncrementalMigrationUtility.cpp
   Rules.cpp
+  PatternRewriter.cpp
   Homoglyph.cpp
   MisleadingBidirectional.cpp
   BarrierFenceSpaceAnalyzer.cpp
