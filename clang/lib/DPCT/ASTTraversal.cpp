@@ -1643,7 +1643,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cufftResult", "cufftType_t", "cufftType", "thrust::pair",
               "CUdeviceptr", "cudaDeviceAttr", "CUmodule", "CUjit_option",
               "CUfunction", "cudaMemcpyKind", "cudaComputeMode",
-              "__nv_bfloat16", "cooperative_groups::__v1::thread_block_tile",
+              "__nv_bfloat16", "cooperative_groups::__v1::thread_group",
+              "cooperative_groups::__v1::thread_block_tile",
               "cooperative_groups::__v1::thread_block", "libraryPropertyType_t",
               "libraryPropertyType", "cudaDataType_t", "cudaDataType",
               "cublasComputeType_t", "cublasAtomicsMode_t", "CUmem_advise_enum",
@@ -2173,12 +2174,11 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
 
-    if (CanonicalTypeStr == "cooperative_groups::__v1::thread_block") {
-      // Skip migrate the type in function body.
+    if (CanonicalTypeStr == "cooperative_groups::__v1::thread_group" ||
+        CanonicalTypeStr == "cooperative_groups::__v1::thread_block") {
       if (DpctGlobalInfo::findAncestor<clang::CompoundStmt>(TL) &&
           DpctGlobalInfo::findAncestor<clang::FunctionDecl>(TL))
         return;
-
       if (auto ETL = TL->getUnqualifiedLoc().getAs<ElaboratedTypeLoc>()) {
         SourceLocation Begin = ETL.getBeginLoc();
         SourceLocation End = ETL.getEndLoc();
@@ -2188,16 +2188,21 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
             End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
         if (End.isMacroID())
           return;
-        auto FD = DpctGlobalInfo::getParentFunction(TL);
+        const auto *FD = DpctGlobalInfo::getParentFunction(TL);
         if (!FD)
           return;
         auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
         auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
         DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
-        emplaceTransformation(new ReplaceText(
-            Begin, End.getRawEncoding() - Begin.getRawEncoding(),
-            MapNames::getClNamespace() + "group<{{NEEDREPLACEG" +
-                std::to_string(Index) + "}}>"));
+        std::string group_type = "";
+        if (DpctGlobalInfo::useLogicalGroup())
+          group_type = MapNames::getDpctNamespace() + "experimental::group_base";
+        if (CanonicalTypeStr == "cooperative_groups::__v1::thread_block")
+          group_type = MapNames::getClNamespace() + "group";
+        if (!group_type.empty())
+          emplaceTransformation(new ReplaceText(
+              Begin, End.getRawEncoding() - Begin.getRawEncoding(),
+              group_type + "<{{NEEDREPLACEG" + std::to_string(Index) + "}}>"));
         return;
       }
     }
@@ -11563,11 +11568,35 @@ void CooperativeGroupsFunctionRule::registerMatcher(MatchFinder &MF) {
                                                hasAttr(attr::CUDAGlobal))))))
           .bind("FuncCall"),
       this);
+  MF.addMatcher(
+      declRefExpr(
+          hasAncestor(
+              implicitCastExpr(
+                  hasImplicitDestinationType(qualType(hasCanonicalType(
+                      recordType(hasDeclaration(cxxRecordDecl(hasName(
+                          "cooperative_groups::__v1::thread_group"))))))))))
+          .bind("declRef"),
+      this);
 }
 
 void CooperativeGroupsFunctionRule::runRule(
     const MatchFinder::MatchResult &Result) {
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FuncCall");
+  const DeclRefExpr *DR = getNodeAsType<DeclRefExpr>(Result, "declRef");
+  const SourceManager &SM = DpctGlobalInfo::getSourceManager();
+  if (DR && DpctGlobalInfo::useLogicalGroup()) {
+    std::string ReplacedStr = MapNames::getDpctNamespace() + "experimental::group" +
+                  "(" + DR->getNameInfo().getAsString() + ", " +
+                  DpctGlobalInfo::getItem(DR) + ")";
+    SourceRange DefRange = getDefinitionRange(DR->getBeginLoc(),  DR->getEndLoc());
+    SourceLocation Begin = DefRange.getBegin();
+    SourceLocation End = DefRange.getEnd();
+    End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+        End, SM, DpctGlobalInfo::getContext().getLangOpts()));
+    emplaceTransformation(replaceText(Begin, End, std::move(ReplacedStr),
+                                      DpctGlobalInfo::getSourceManager()));
+    return;
+  }
   if (!CE)
     return;
   std::string FuncName =
