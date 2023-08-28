@@ -501,7 +501,7 @@ int eaccess(const char *pathname, int mode) {
   return call_eaccess(pathname, mode);
 }
 
-static call_stat(const char *pathname, struct stat *statbuf) {
+static int call_stat(const char *pathname, struct stat *statbuf) {
   typedef int (*func)(const char *, struct statbuf *);
   DLSYM(func, fp, "stat");
   int const result = (*fp)(pathname, statbuf);
