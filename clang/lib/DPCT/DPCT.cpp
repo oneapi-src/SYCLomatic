@@ -808,7 +808,9 @@ int runDPCT(int argc, const char **argv) {
     }
     StartPos = StartPos + StartStr.length();
     EndPos = SourceCode.find_last_of('\n', EndPos);
-    QueryAPIMappingStr += SourceCode.substr(StartPos, EndPos - StartPos + 1);
+    QueryAPIMappingStr +=
+        "\033[32m" + SourceCode.substr(StartPos, EndPos - StartPos + 1).str() +
+        "\033[0m"; // Make CUDA code green.
     static const std::string MigrateDesc{"// Migration desc: "};
     auto MigrateDescPos = SourceCode.find(MigrateDesc);
     if (MigrateDescPos != StringRef::npos) {
@@ -1130,6 +1132,7 @@ int runDPCT(int argc, const char **argv) {
     static const std::string StartStr{"// Start"};
     static const std::string EndStr{"// End"};
     bool Flag = false;
+    llvm::outs() << llvm::raw_ostream::BLUE;
     for (auto I = RewriteBuffer.begin(), E = RewriteBuffer.end(); I != E;
          I.MoveToNextPiece()) {
       size_t StartPos = 0;
@@ -1149,6 +1152,7 @@ int runDPCT(int argc, const char **argv) {
         llvm::outs() << I.piece().substr(StartPos, EndPos - StartPos);
       }
     }
+    llvm::outs() << llvm::raw_ostream::RESET;
     return MigrationSucceeded;
   }
 
