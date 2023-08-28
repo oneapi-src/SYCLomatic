@@ -153,39 +153,19 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand | FileCheck %s -check-prefix=CURAND
 // CURAND: CUDA API:
-// CURAND-NEXT:   curandStateMtgp32_t *ps1;
-// CURAND-NEXT:   curandStateScrambledSobol64_t *ps2;
-// CURAND-NEXT:   curandStateSobol64_t *ps3;
-// CURAND-NEXT:   curandStateScrambledSobol32_t *ps4;
-// CURAND-NEXT:   curandStateSobol32_t *ps5;
-// CURAND-NEXT:   curandStateMRG32k3a_t *ps6;
-// CURAND-NEXT:   curandStatePhilox4_32_10_t *ps7;
-// CURAND-NEXT:   curandStateXORWOW_t *ps8;
-// CURAND-NEXT:   curand(ps1 /*curandStateMtgp32_t **/);
-// CURAND-NEXT:   curand(ps2 /*curandStateScrambledSobol64_t **/);
-// CURAND-NEXT:   curand(ps3 /*curandStateSobol64_t **/);
-// CURAND-NEXT:   curand(ps4 /*curandStateScrambledSobol32_t **/);
-// CURAND-NEXT:   curand(ps5 /*curandStateSobol32_t **/);
-// CURAND-NEXT:   curand(ps6 /*curandStateMRG32k3a_t **/);
-// CURAND-NEXT:   curand(ps7 /*curandStatePhilox4_32_10_t **/);
-// CURAND-NEXT:   curand(ps8 /*curandStateXORWOW_t **/);
+// CURAND-NEXT:   curandStateMRG32k3a_t *ps1;
+// CURAND-NEXT:   curandStatePhilox4_32_10_t *ps2;
+// CURAND-NEXT:   curandStateXORWOW_t *ps3;
+// CURAND-NEXT:   curand(ps1 /*curandStateMRG32k3a_t **/);
+// CURAND-NEXT:   curand(ps2 /*curandStatePhilox4_32_10_t **/);
+// CURAND-NEXT:   curand(ps3 /*curandStateXORWOW_t **/);
 // CURAND-NEXT: Is migrated to:
-// CURAND-NEXT:   curandStateMtgp32_t *ps1;
-// CURAND-NEXT:   curandStateScrambledSobol64_t *ps2;
-// CURAND-NEXT:   curandStateSobol64_t *ps3;
-// CURAND-NEXT:   curandStateScrambledSobol32_t *ps4;
-// CURAND-NEXT:   curandStateSobol32_t *ps5;
-// CURAND-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *ps6;
-// CURAND-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps7;
-// CURAND-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *ps8;
+// CURAND-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *ps1;
+// CURAND-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps2;
+// CURAND-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *ps3;
 // CURAND-NEXT:   ps1->generate<oneapi::mkl::rng::device::bits<std::uint32_t>, 1>();
 // CURAND-NEXT:   ps2->generate<oneapi::mkl::rng::device::bits<std::uint32_t>, 1>();
-// CURAND-NEXT:   ps3->generate<oneapi::mkl::rng::device::bits<std::uint32_t>, 1>();
-// CURAND-NEXT:   ps4->generate<oneapi::mkl::rng::device::bits<std::uint32_t>, 1>();
-// CURAND-NEXT:   ps5->generate<oneapi::mkl::rng::device::bits<std::uint32_t>, 1>();
-// CURAND-NEXT:   ps6->generate<oneapi::mkl::rng::device::bits<std::uint32_t>, 1>();
-// CURAND-NEXT:   ps7->generate<oneapi::mkl::rng::device::bits<std::uint32_t>, 1>();
-// CURAND-NEXT:   ps8->generate<oneapi::mkl::rng::device::uniform_bits<std::uint32_t>, 1>();
+// CURAND-NEXT:   ps3->generate<oneapi::mkl::rng::device::uniform_bits<std::uint32_t>, 1>();
 // CURAND-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand4 | FileCheck %s -check-prefix=CURAND4
@@ -214,43 +194,21 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_log_normal | FileCheck %s -check-prefix=CURAND_LOG_NORMAL
 // CURAND_LOG_NORMAL: CUDA API:
-// CURAND_LOG_NORMAL-NEXT:   curandStateScrambledSobol64_t *ps1;
-// CURAND_LOG_NORMAL-NEXT:   curandStateSobol64_t *ps2;
-// CURAND_LOG_NORMAL-NEXT:   curandStateScrambledSobol32_t *ps3;
-// CURAND_LOG_NORMAL-NEXT:   curandStateSobol32_t *ps4;
-// CURAND_LOG_NORMAL-NEXT:   curandStateMtgp32_t *ps5;
-// CURAND_LOG_NORMAL-NEXT:   curandStateMRG32k3a_t *ps6;
-// CURAND_LOG_NORMAL-NEXT:   curandStatePhilox4_32_10_t *ps7;
-// CURAND_LOG_NORMAL-NEXT:   curandStateXORWOW_t *ps8;
-// CURAND_LOG_NORMAL-NEXT:   curand_log_normal(ps1 /*curandStateScrambledSobol64_t **/, f1 /*float*/,
+// CURAND_LOG_NORMAL-NEXT:   curandStateMRG32k3a_t *ps1;
+// CURAND_LOG_NORMAL-NEXT:   curandStatePhilox4_32_10_t *ps2;
+// CURAND_LOG_NORMAL-NEXT:   curandStateXORWOW_t *ps3;
+// CURAND_LOG_NORMAL-NEXT:   curand_log_normal(ps1 /*curandStateMRG32k3a_t **/, f1 /*float*/,
 // CURAND_LOG_NORMAL-NEXT:                     f2 /*float*/);
-// CURAND_LOG_NORMAL-NEXT:   curand_log_normal(ps2 /*curandStateSobol64_t **/, f1 /*float*/, f2 /*float*/);
-// CURAND_LOG_NORMAL-NEXT:   curand_log_normal(ps3 /*curandStateScrambledSobol32_t **/, f1 /*float*/,
+// CURAND_LOG_NORMAL-NEXT:   curand_log_normal(ps2 /*curandStatePhilox4_32_10_t **/, f1 /*float*/,
 // CURAND_LOG_NORMAL-NEXT:                     f2 /*float*/);
-// CURAND_LOG_NORMAL-NEXT:   curand_log_normal(ps4 /*curandStateSobol32_t **/, f1 /*float*/, f2 /*float*/);
-// CURAND_LOG_NORMAL-NEXT:   curand_log_normal(ps5 /*curandStateMtgp32_t **/, f1 /*float*/, f2 /*float*/);
-// CURAND_LOG_NORMAL-NEXT:   curand_log_normal(ps6 /*curandStateMRG32k3a_t **/, f1 /*float*/,
-// CURAND_LOG_NORMAL-NEXT:                     f2 /*float*/);
-// CURAND_LOG_NORMAL-NEXT:   curand_log_normal(ps7 /*curandStatePhilox4_32_10_t **/, f1 /*float*/,
-// CURAND_LOG_NORMAL-NEXT:                     f2 /*float*/);
-// CURAND_LOG_NORMAL-NEXT:   curand_log_normal(ps8 /*curandStateXORWOW_t **/, f1 /*float*/, f2 /*float*/);
+// CURAND_LOG_NORMAL-NEXT:   curand_log_normal(ps3 /*curandStateXORWOW_t **/, f1 /*float*/, f2 /*float*/);
 // CURAND_LOG_NORMAL-NEXT: Is migrated to:
-// CURAND_LOG_NORMAL-NEXT:   curandStateScrambledSobol64_t *ps1;
-// CURAND_LOG_NORMAL-NEXT:   curandStateSobol64_t *ps2;
-// CURAND_LOG_NORMAL-NEXT:   curandStateScrambledSobol32_t *ps3;
-// CURAND_LOG_NORMAL-NEXT:   curandStateSobol32_t *ps4;
-// CURAND_LOG_NORMAL-NEXT:   curandStateMtgp32_t *ps5;
-// CURAND_LOG_NORMAL-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *ps6;
-// CURAND_LOG_NORMAL-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps7;
-// CURAND_LOG_NORMAL-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *ps8;
+// CURAND_LOG_NORMAL-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *ps1;
+// CURAND_LOG_NORMAL-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps2;
+// CURAND_LOG_NORMAL-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *ps3;
 // CURAND_LOG_NORMAL-NEXT:   ps1->generate<oneapi::mkl::rng::device::lognormal<float>, 1>(f1, f2);
 // CURAND_LOG_NORMAL-NEXT:   ps2->generate<oneapi::mkl::rng::device::lognormal<float>, 1>(f1, f2);
 // CURAND_LOG_NORMAL-NEXT:   ps3->generate<oneapi::mkl::rng::device::lognormal<float>, 1>(f1, f2);
-// CURAND_LOG_NORMAL-NEXT:   ps4->generate<oneapi::mkl::rng::device::lognormal<float>, 1>(f1, f2);
-// CURAND_LOG_NORMAL-NEXT:   ps5->generate<oneapi::mkl::rng::device::lognormal<float>, 1>(f1, f2);
-// CURAND_LOG_NORMAL-NEXT:   ps6->generate<oneapi::mkl::rng::device::lognormal<float>, 1>(f1, f2);
-// CURAND_LOG_NORMAL-NEXT:   ps7->generate<oneapi::mkl::rng::device::lognormal<float>, 1>(f1, f2);
-// CURAND_LOG_NORMAL-NEXT:   ps8->generate<oneapi::mkl::rng::device::lognormal<float>, 1>(f1, f2);
 // CURAND_LOG_NORMAL-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_log_normal2 | FileCheck %s -check-prefix=CURAND_LOG_NORMAL2
@@ -304,84 +262,39 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_log_normal_double | FileCheck %s -check-prefix=CURAND_LOG_NORMAL_DOUBLE
 // CURAND_LOG_NORMAL_DOUBLE: CUDA API:
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curandStateScrambledSobol64_t *ps1;
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curandStateSobol64_t *ps2;
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curandStateScrambledSobol32_t *ps3;
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curandStateSobol32_t *ps4;
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curandStateMtgp32_t *ps5;
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curandStateMRG32k3a_t *ps6;
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curandStatePhilox4_32_10_t *ps7;
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curandStateXORWOW_t *ps8;
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curand_log_normal_double(ps1 /*curandStateScrambledSobol64_t **/,
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:                            d1 /*double*/, d2 /*double*/);
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curand_log_normal_double(ps2 /*curandStateSobol64_t **/, d1 /*double*/,
+// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curandStateMRG32k3a_t *ps1;
+// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curandStatePhilox4_32_10_t *ps2;
+// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curandStateXORWOW_t *ps3;
+// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curand_log_normal_double(ps1 /*curandStateMRG32k3a_t **/, d1 /*double*/,
 // CURAND_LOG_NORMAL_DOUBLE-NEXT:                            d2 /*double*/);
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curand_log_normal_double(ps3 /*curandStateScrambledSobol32_t **/,
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:                            d1 /*double*/, d2 /*double*/);
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curand_log_normal_double(ps4 /*curandStateSobol32_t **/, d1 /*double*/,
+// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curand_log_normal_double(ps2 /*curandStatePhilox4_32_10_t **/, d1 /*double*/,
 // CURAND_LOG_NORMAL_DOUBLE-NEXT:                            d2 /*double*/);
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curand_log_normal_double(ps5 /*curandStateMtgp32_t **/, d1 /*double*/,
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:                            d2 /*double*/);
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curand_log_normal_double(ps6 /*curandStateMRG32k3a_t **/, d1 /*double*/,
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:                            d2 /*double*/);
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curand_log_normal_double(ps7 /*curandStatePhilox4_32_10_t **/, d1 /*double*/,
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:                            d2 /*double*/);
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curand_log_normal_double(ps8 /*curandStateXORWOW_t **/, d1 /*double*/,
+// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curand_log_normal_double(ps3 /*curandStateXORWOW_t **/, d1 /*double*/,
 // CURAND_LOG_NORMAL_DOUBLE-NEXT:                            d2 /*double*/);
 // CURAND_LOG_NORMAL_DOUBLE-NEXT: Is migrated to:
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curandStateScrambledSobol64_t *ps1;
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curandStateSobol64_t *ps2;
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curandStateScrambledSobol32_t *ps3;
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curandStateSobol32_t *ps4;
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   curandStateMtgp32_t *ps5;
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *ps6;
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps7;
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *ps8;
+// CURAND_LOG_NORMAL_DOUBLE-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *ps1;
+// CURAND_LOG_NORMAL_DOUBLE-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps2;
+// CURAND_LOG_NORMAL_DOUBLE-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *ps3;
 // CURAND_LOG_NORMAL_DOUBLE-NEXT:   ps1->generate<oneapi::mkl::rng::device::lognormal<double>, 1>(d1, d2);
 // CURAND_LOG_NORMAL_DOUBLE-NEXT:   ps2->generate<oneapi::mkl::rng::device::lognormal<double>, 1>(d1, d2);
 // CURAND_LOG_NORMAL_DOUBLE-NEXT:   ps3->generate<oneapi::mkl::rng::device::lognormal<double>, 1>(d1, d2);
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   ps4->generate<oneapi::mkl::rng::device::lognormal<double>, 1>(d1, d2);
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   ps5->generate<oneapi::mkl::rng::device::lognormal<double>, 1>(d1, d2);
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   ps6->generate<oneapi::mkl::rng::device::lognormal<double>, 1>(d1, d2);
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   ps7->generate<oneapi::mkl::rng::device::lognormal<double>, 1>(d1, d2);
-// CURAND_LOG_NORMAL_DOUBLE-NEXT:   ps8->generate<oneapi::mkl::rng::device::lognormal<double>, 1>(d1, d2);
 // CURAND_LOG_NORMAL_DOUBLE-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_normal | FileCheck %s -check-prefix=CURAND_NORMAL
 // CURAND_NORMAL: CUDA API:
-// CURAND_NORMAL-NEXT:   curandStateScrambledSobol64_t *ps1;
-// CURAND_NORMAL-NEXT:   curandStateSobol64_t *ps2;
-// CURAND_NORMAL-NEXT:   curandStateScrambledSobol32_t *ps3;
-// CURAND_NORMAL-NEXT:   curandStateSobol32_t *ps4;
-// CURAND_NORMAL-NEXT:   curandStateMtgp32_t *ps5;
-// CURAND_NORMAL-NEXT:   curandStateMRG32k3a_t *ps6;
-// CURAND_NORMAL-NEXT:   curandStatePhilox4_32_10_t *ps7;
-// CURAND_NORMAL-NEXT:   curandStateXORWOW_t *ps8;
-// CURAND_NORMAL-NEXT:   curand_normal(ps1 /*curandStateScrambledSobol64_t **/);
-// CURAND_NORMAL-NEXT:   curand_normal(ps2 /*curandStateSobol64_t **/);
-// CURAND_NORMAL-NEXT:   curand_normal(ps3 /*curandStateScrambledSobol32_t **/);
-// CURAND_NORMAL-NEXT:   curand_normal(ps4 /*curandStateSobol32_t **/);
-// CURAND_NORMAL-NEXT:   curand_normal(ps5 /*curandStateMtgp32_t **/);
-// CURAND_NORMAL-NEXT:   curand_normal(ps6 /*curandStateMRG32k3a_t **/);
-// CURAND_NORMAL-NEXT:   curand_normal(ps7 /*curandStatePhilox4_32_10_t **/);
-// CURAND_NORMAL-NEXT:   curand_normal(ps8 /*curandStateXORWOW_t **/);
+// CURAND_NORMAL-NEXT:   curandStateMRG32k3a_t *ps1;
+// CURAND_NORMAL-NEXT:   curandStatePhilox4_32_10_t *ps2;
+// CURAND_NORMAL-NEXT:   curandStateXORWOW_t *ps3;
+// CURAND_NORMAL-NEXT:   curand_normal(ps1 /*curandStateMRG32k3a_t **/);
+// CURAND_NORMAL-NEXT:   curand_normal(ps2 /*curandStatePhilox4_32_10_t **/);
+// CURAND_NORMAL-NEXT:   curand_normal(ps3 /*curandStateXORWOW_t **/);
 // CURAND_NORMAL-NEXT: Is migrated to:
-// CURAND_NORMAL-NEXT:   curandStateScrambledSobol64_t *ps1;
-// CURAND_NORMAL-NEXT:   curandStateSobol64_t *ps2;
-// CURAND_NORMAL-NEXT:   curandStateScrambledSobol32_t *ps3;
-// CURAND_NORMAL-NEXT:   curandStateSobol32_t *ps4;
-// CURAND_NORMAL-NEXT:   curandStateMtgp32_t *ps5;
-// CURAND_NORMAL-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *ps6;
-// CURAND_NORMAL-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps7;
-// CURAND_NORMAL-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *ps8;
+// CURAND_NORMAL-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *ps1;
+// CURAND_NORMAL-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps2;
+// CURAND_NORMAL-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *ps3;
 // CURAND_NORMAL-NEXT:   ps1->generate<oneapi::mkl::rng::device::gaussian<float>, 1>();
 // CURAND_NORMAL-NEXT:   ps2->generate<oneapi::mkl::rng::device::gaussian<float>, 1>();
 // CURAND_NORMAL-NEXT:   ps3->generate<oneapi::mkl::rng::device::gaussian<float>, 1>();
-// CURAND_NORMAL-NEXT:   ps4->generate<oneapi::mkl::rng::device::gaussian<float>, 1>();
-// CURAND_NORMAL-NEXT:   ps5->generate<oneapi::mkl::rng::device::gaussian<float>, 1>();
-// CURAND_NORMAL-NEXT:   ps6->generate<oneapi::mkl::rng::device::gaussian<float>, 1>();
-// CURAND_NORMAL-NEXT:   ps7->generate<oneapi::mkl::rng::device::gaussian<float>, 1>();
-// CURAND_NORMAL-NEXT:   ps8->generate<oneapi::mkl::rng::device::gaussian<float>, 1>();
 // CURAND_NORMAL-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_normal2 | FileCheck %s -check-prefix=CURAND_NORMAL2
@@ -429,76 +342,36 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_normal_double | FileCheck %s -check-prefix=CURAND_NORMAL_DOUBLE
 // CURAND_NORMAL_DOUBLE: CUDA API:
-// CURAND_NORMAL_DOUBLE-NEXT:   curandStateScrambledSobol64_t *ps1;
-// CURAND_NORMAL_DOUBLE-NEXT:   curandStateSobol64_t *ps2;
-// CURAND_NORMAL_DOUBLE-NEXT:   curandStateScrambledSobol32_t *ps3;
-// CURAND_NORMAL_DOUBLE-NEXT:   curandStateSobol32_t *ps4;
-// CURAND_NORMAL_DOUBLE-NEXT:   curandStateMtgp32_t *ps5;
-// CURAND_NORMAL_DOUBLE-NEXT:   curandStateMRG32k3a_t *ps6;
-// CURAND_NORMAL_DOUBLE-NEXT:   curandStatePhilox4_32_10_t *ps7;
-// CURAND_NORMAL_DOUBLE-NEXT:   curandStateXORWOW_t *ps8;
-// CURAND_NORMAL_DOUBLE-NEXT:   curand_normal_double(ps1 /*curandStateScrambledSobol64_t **/);
-// CURAND_NORMAL_DOUBLE-NEXT:   curand_normal_double(ps2 /*curandStateSobol64_t **/);
-// CURAND_NORMAL_DOUBLE-NEXT:   curand_normal_double(ps3 /*curandStateScrambledSobol32_t **/);
-// CURAND_NORMAL_DOUBLE-NEXT:   curand_normal_double(ps4 /*curandStateSobol32_t **/);
-// CURAND_NORMAL_DOUBLE-NEXT:   curand_normal_double(ps5 /*curandStateMtgp32_t **/);
-// CURAND_NORMAL_DOUBLE-NEXT:   curand_normal_double(ps6 /*curandStateMRG32k3a_t **/);
-// CURAND_NORMAL_DOUBLE-NEXT:   curand_normal_double(ps7 /*curandStatePhilox4_32_10_t **/);
-// CURAND_NORMAL_DOUBLE-NEXT:   curand_normal_double(ps8 /*curandStateXORWOW_t **/);
+// CURAND_NORMAL_DOUBLE-NEXT:   curandStateMRG32k3a_t *ps1;
+// CURAND_NORMAL_DOUBLE-NEXT:   curandStatePhilox4_32_10_t *ps2;
+// CURAND_NORMAL_DOUBLE-NEXT:   curandStateXORWOW_t *ps3;
+// CURAND_NORMAL_DOUBLE-NEXT:   curand_normal_double(ps1 /*curandStateMRG32k3a_t **/);
+// CURAND_NORMAL_DOUBLE-NEXT:   curand_normal_double(ps2 /*curandStatePhilox4_32_10_t **/);
+// CURAND_NORMAL_DOUBLE-NEXT:   curand_normal_double(ps3 /*curandStateXORWOW_t **/);
 // CURAND_NORMAL_DOUBLE-NEXT: Is migrated to:
-// CURAND_NORMAL_DOUBLE-NEXT:   curandStateScrambledSobol64_t *ps1;
-// CURAND_NORMAL_DOUBLE-NEXT:   curandStateSobol64_t *ps2;
-// CURAND_NORMAL_DOUBLE-NEXT:   curandStateScrambledSobol32_t *ps3;
-// CURAND_NORMAL_DOUBLE-NEXT:   curandStateSobol32_t *ps4;
-// CURAND_NORMAL_DOUBLE-NEXT:   curandStateMtgp32_t *ps5;
-// CURAND_NORMAL_DOUBLE-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *ps6;
-// CURAND_NORMAL_DOUBLE-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps7;
-// CURAND_NORMAL_DOUBLE-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *ps8;
+// CURAND_NORMAL_DOUBLE-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *ps1;
+// CURAND_NORMAL_DOUBLE-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps2;
+// CURAND_NORMAL_DOUBLE-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *ps3;
 // CURAND_NORMAL_DOUBLE-NEXT:   ps1->generate<oneapi::mkl::rng::device::gaussian<double>, 1>();
 // CURAND_NORMAL_DOUBLE-NEXT:   ps2->generate<oneapi::mkl::rng::device::gaussian<double>, 1>();
 // CURAND_NORMAL_DOUBLE-NEXT:   ps3->generate<oneapi::mkl::rng::device::gaussian<double>, 1>();
-// CURAND_NORMAL_DOUBLE-NEXT:   ps4->generate<oneapi::mkl::rng::device::gaussian<double>, 1>();
-// CURAND_NORMAL_DOUBLE-NEXT:   ps5->generate<oneapi::mkl::rng::device::gaussian<double>, 1>();
-// CURAND_NORMAL_DOUBLE-NEXT:   ps6->generate<oneapi::mkl::rng::device::gaussian<double>, 1>();
-// CURAND_NORMAL_DOUBLE-NEXT:   ps7->generate<oneapi::mkl::rng::device::gaussian<double>, 1>();
-// CURAND_NORMAL_DOUBLE-NEXT:   ps8->generate<oneapi::mkl::rng::device::gaussian<double>, 1>();
 // CURAND_NORMAL_DOUBLE-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_poisson | FileCheck %s -check-prefix=CURAND_POISSON
 // CURAND_POISSON: CUDA API:
-// CURAND_POISSON-NEXT:   curandStateScrambledSobol64_t *ps1;
-// CURAND_POISSON-NEXT:   curandStateSobol64_t *ps2;
-// CURAND_POISSON-NEXT:   curandStateScrambledSobol32_t *ps3;
-// CURAND_POISSON-NEXT:   curandStateSobol32_t *ps4;
-// CURAND_POISSON-NEXT:   curandStateMtgp32_t *ps5;
-// CURAND_POISSON-NEXT:   curandStateMRG32k3a_t *ps6;
-// CURAND_POISSON-NEXT:   curandStatePhilox4_32_10_t *ps7;
-// CURAND_POISSON-NEXT:   curandStateXORWOW_t *ps8;
-// CURAND_POISSON-NEXT:   curand_poisson(ps1 /*curandStateScrambledSobol64_t **/, d /*double*/);
-// CURAND_POISSON-NEXT:   curand_poisson(ps2 /*curandStateSobol64_t **/, d /*double*/);
-// CURAND_POISSON-NEXT:   curand_poisson(ps3 /*curandStateScrambledSobol32_t **/, d /*double*/);
-// CURAND_POISSON-NEXT:   curand_poisson(ps4 /*curandStateSobol32_t **/, d /*double*/);
-// CURAND_POISSON-NEXT:   curand_poisson(ps5 /*curandStateMtgp32_t **/, d /*double*/);
-// CURAND_POISSON-NEXT:   curand_poisson(ps6 /*curandStateMRG32k3a_t **/, d /*double*/);
-// CURAND_POISSON-NEXT:   curand_poisson(ps7 /*curandStatePhilox4_32_10_t **/, d /*double*/);
-// CURAND_POISSON-NEXT:   curand_poisson(ps8 /*curandStateXORWOW_t **/, d /*double*/);
+// CURAND_POISSON-NEXT:   curandStateMRG32k3a_t *ps1;
+// CURAND_POISSON-NEXT:   curandStatePhilox4_32_10_t *ps2;
+// CURAND_POISSON-NEXT:   curandStateXORWOW_t *ps3;
+// CURAND_POISSON-NEXT:   curand_poisson(ps1 /*curandStateMRG32k3a_t **/, d /*double*/);
+// CURAND_POISSON-NEXT:   curand_poisson(ps2 /*curandStatePhilox4_32_10_t **/, d /*double*/);
+// CURAND_POISSON-NEXT:   curand_poisson(ps3 /*curandStateXORWOW_t **/, d /*double*/);
 // CURAND_POISSON-NEXT: Is migrated to:
-// CURAND_POISSON-NEXT:   curandStateScrambledSobol64_t *ps1;
-// CURAND_POISSON-NEXT:   curandStateSobol64_t *ps2;
-// CURAND_POISSON-NEXT:   curandStateScrambledSobol32_t *ps3;
-// CURAND_POISSON-NEXT:   curandStateSobol32_t *ps4;
-// CURAND_POISSON-NEXT:   curandStateMtgp32_t *ps5;
-// CURAND_POISSON-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *ps6;
-// CURAND_POISSON-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps7;
-// CURAND_POISSON-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *ps8;
+// CURAND_POISSON-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *ps1;
+// CURAND_POISSON-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps2;
+// CURAND_POISSON-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *ps3;
 // CURAND_POISSON-NEXT:   ps1->generate<oneapi::mkl::rng::device::poisson<std::uint32_t>, 1>(d);
 // CURAND_POISSON-NEXT:   ps2->generate<oneapi::mkl::rng::device::poisson<std::uint32_t>, 1>(d);
 // CURAND_POISSON-NEXT:   ps3->generate<oneapi::mkl::rng::device::poisson<std::uint32_t>, 1>(d);
-// CURAND_POISSON-NEXT:   ps4->generate<oneapi::mkl::rng::device::poisson<std::uint32_t>, 1>(d);
-// CURAND_POISSON-NEXT:   ps5->generate<oneapi::mkl::rng::device::poisson<std::uint32_t>, 1>(d);
-// CURAND_POISSON-NEXT:   ps6->generate<oneapi::mkl::rng::device::poisson<std::uint32_t>, 1>(d);
-// CURAND_POISSON-NEXT:   ps7->generate<oneapi::mkl::rng::device::poisson<std::uint32_t>, 1>(d);
-// CURAND_POISSON-NEXT:   ps8->generate<oneapi::mkl::rng::device::poisson<std::uint32_t>, 1>(d);
 // CURAND_POISSON-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_poisson4 | FileCheck %s -check-prefix=CURAND_POISSON4
@@ -512,39 +385,19 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_uniform | FileCheck %s -check-prefix=CURAND_UNIFORM
 // CURAND_UNIFORM: CUDA API:
-// CURAND_UNIFORM-NEXT:   curandStateScrambledSobol64_t *ps1;
-// CURAND_UNIFORM-NEXT:   curandStateSobol64_t *ps2;
-// CURAND_UNIFORM-NEXT:   curandStateScrambledSobol32_t *ps3;
-// CURAND_UNIFORM-NEXT:   curandStateSobol32_t *ps4;
-// CURAND_UNIFORM-NEXT:   curandStateMtgp32_t *ps5;
-// CURAND_UNIFORM-NEXT:   curandStateMRG32k3a_t *ps6;
-// CURAND_UNIFORM-NEXT:   curandStatePhilox4_32_10_t *ps7;
-// CURAND_UNIFORM-NEXT:   curandStateXORWOW_t *ps8;
-// CURAND_UNIFORM-NEXT:   curand_uniform(ps1 /*curandStateScrambledSobol64_t **/);
-// CURAND_UNIFORM-NEXT:   curand_uniform(ps2 /*curandStateSobol64_t **/);
-// CURAND_UNIFORM-NEXT:   curand_uniform(ps3 /*curandStateScrambledSobol32_t **/);
-// CURAND_UNIFORM-NEXT:   curand_uniform(ps4 /*curandStateSobol32_t **/);
-// CURAND_UNIFORM-NEXT:   curand_uniform(ps5 /*curandStateMtgp32_t **/);
-// CURAND_UNIFORM-NEXT:   curand_uniform(ps6 /*curandStateMRG32k3a_t **/);
-// CURAND_UNIFORM-NEXT:   curand_uniform(ps7 /*curandStatePhilox4_32_10_t **/);
-// CURAND_UNIFORM-NEXT:   curand_uniform(ps8 /*curandStateXORWOW_t **/);
+// CURAND_UNIFORM-NEXT:   curandStateMRG32k3a_t *ps1;
+// CURAND_UNIFORM-NEXT:   curandStatePhilox4_32_10_t *ps2;
+// CURAND_UNIFORM-NEXT:   curandStateXORWOW_t *ps3;
+// CURAND_UNIFORM-NEXT:   curand_uniform(ps1 /*curandStateMRG32k3a_t **/);
+// CURAND_UNIFORM-NEXT:   curand_uniform(ps2 /*curandStatePhilox4_32_10_t **/);
+// CURAND_UNIFORM-NEXT:   curand_uniform(ps3 /*curandStateXORWOW_t **/);
 // CURAND_UNIFORM-NEXT: Is migrated to:
-// CURAND_UNIFORM-NEXT:   curandStateScrambledSobol64_t *ps1;
-// CURAND_UNIFORM-NEXT:   curandStateSobol64_t *ps2;
-// CURAND_UNIFORM-NEXT:   curandStateScrambledSobol32_t *ps3;
-// CURAND_UNIFORM-NEXT:   curandStateSobol32_t *ps4;
-// CURAND_UNIFORM-NEXT:   curandStateMtgp32_t *ps5;
-// CURAND_UNIFORM-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *ps6;
-// CURAND_UNIFORM-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps7;
-// CURAND_UNIFORM-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *ps8;
+// CURAND_UNIFORM-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *ps1;
+// CURAND_UNIFORM-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps2;
+// CURAND_UNIFORM-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *ps3;
 // CURAND_UNIFORM-NEXT:   ps1->generate<oneapi::mkl::rng::device::uniform<float>, 1>();
 // CURAND_UNIFORM-NEXT:   ps2->generate<oneapi::mkl::rng::device::uniform<float>, 1>();
 // CURAND_UNIFORM-NEXT:   ps3->generate<oneapi::mkl::rng::device::uniform<float>, 1>();
-// CURAND_UNIFORM-NEXT:   ps4->generate<oneapi::mkl::rng::device::uniform<float>, 1>();
-// CURAND_UNIFORM-NEXT:   ps5->generate<oneapi::mkl::rng::device::uniform<float>, 1>();
-// CURAND_UNIFORM-NEXT:   ps6->generate<oneapi::mkl::rng::device::uniform<float>, 1>();
-// CURAND_UNIFORM-NEXT:   ps7->generate<oneapi::mkl::rng::device::uniform<float>, 1>();
-// CURAND_UNIFORM-NEXT:   ps8->generate<oneapi::mkl::rng::device::uniform<float>, 1>();
 // CURAND_UNIFORM-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_uniform2_double | FileCheck %s -check-prefix=CURAND_UNIFORM2_DOUBLE
@@ -567,39 +420,19 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=curand_uniform_double | FileCheck %s -check-prefix=CURAND_UNIFORM_DOUBLE
 // CURAND_UNIFORM_DOUBLE: CUDA API:
-// CURAND_UNIFORM_DOUBLE-NEXT:   curandStateScrambledSobol64_t *ps1;
-// CURAND_UNIFORM_DOUBLE-NEXT:   curandStateSobol64_t *ps2;
-// CURAND_UNIFORM_DOUBLE-NEXT:   curandStateScrambledSobol32_t *ps3;
-// CURAND_UNIFORM_DOUBLE-NEXT:   curandStateSobol32_t *ps4;
-// CURAND_UNIFORM_DOUBLE-NEXT:   curandStateMtgp32_t *ps5;
-// CURAND_UNIFORM_DOUBLE-NEXT:   curandStateMRG32k3a_t *ps6;
-// CURAND_UNIFORM_DOUBLE-NEXT:   curandStatePhilox4_32_10_t *ps7;
-// CURAND_UNIFORM_DOUBLE-NEXT:   curandStateXORWOW_t *ps8;
-// CURAND_UNIFORM_DOUBLE-NEXT:   curand_uniform_double(ps1 /*curandStateScrambledSobol64_t **/);
-// CURAND_UNIFORM_DOUBLE-NEXT:   curand_uniform_double(ps2 /*curandStateSobol64_t **/);
-// CURAND_UNIFORM_DOUBLE-NEXT:   curand_uniform_double(ps3 /*curandStateScrambledSobol32_t **/);
-// CURAND_UNIFORM_DOUBLE-NEXT:   curand_uniform_double(ps4 /*curandStateSobol32_t **/);
-// CURAND_UNIFORM_DOUBLE-NEXT:   curand_uniform_double(ps5 /*curandStateMtgp32_t **/);
-// CURAND_UNIFORM_DOUBLE-NEXT:   curand_uniform_double(ps6 /*curandStateMRG32k3a_t **/);
-// CURAND_UNIFORM_DOUBLE-NEXT:   curand_uniform_double(ps7 /*curandStatePhilox4_32_10_t **/);
-// CURAND_UNIFORM_DOUBLE-NEXT:   curand_uniform_double(ps8 /*curandStateXORWOW_t **/);
+// CURAND_UNIFORM_DOUBLE-NEXT:   curandStateMRG32k3a_t *ps1;
+// CURAND_UNIFORM_DOUBLE-NEXT:   curandStatePhilox4_32_10_t *ps2;
+// CURAND_UNIFORM_DOUBLE-NEXT:   curandStateXORWOW_t *ps3;
+// CURAND_UNIFORM_DOUBLE-NEXT:   curand_uniform_double(ps1 /*curandStateMRG32k3a_t **/);
+// CURAND_UNIFORM_DOUBLE-NEXT:   curand_uniform_double(ps2 /*curandStatePhilox4_32_10_t **/);
+// CURAND_UNIFORM_DOUBLE-NEXT:   curand_uniform_double(ps3 /*curandStateXORWOW_t **/);
 // CURAND_UNIFORM_DOUBLE-NEXT: Is migrated to:
-// CURAND_UNIFORM_DOUBLE-NEXT:   curandStateScrambledSobol64_t *ps1;
-// CURAND_UNIFORM_DOUBLE-NEXT:   curandStateSobol64_t *ps2;
-// CURAND_UNIFORM_DOUBLE-NEXT:   curandStateScrambledSobol32_t *ps3;
-// CURAND_UNIFORM_DOUBLE-NEXT:   curandStateSobol32_t *ps4;
-// CURAND_UNIFORM_DOUBLE-NEXT:   curandStateMtgp32_t *ps5;
-// CURAND_UNIFORM_DOUBLE-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *ps6;
-// CURAND_UNIFORM_DOUBLE-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps7;
-// CURAND_UNIFORM_DOUBLE-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *ps8;
+// CURAND_UNIFORM_DOUBLE-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>> *ps1;
+// CURAND_UNIFORM_DOUBLE-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *ps2;
+// CURAND_UNIFORM_DOUBLE-NEXT:   dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *ps3;
 // CURAND_UNIFORM_DOUBLE-NEXT:   ps1->generate<oneapi::mkl::rng::device::uniform<double>, 1>();
 // CURAND_UNIFORM_DOUBLE-NEXT:   ps2->generate<oneapi::mkl::rng::device::uniform<double>, 1>();
 // CURAND_UNIFORM_DOUBLE-NEXT:   ps3->generate<oneapi::mkl::rng::device::uniform<double>, 1>();
-// CURAND_UNIFORM_DOUBLE-NEXT:   ps4->generate<oneapi::mkl::rng::device::uniform<double>, 1>();
-// CURAND_UNIFORM_DOUBLE-NEXT:   ps5->generate<oneapi::mkl::rng::device::uniform<double>, 1>();
-// CURAND_UNIFORM_DOUBLE-NEXT:   ps6->generate<oneapi::mkl::rng::device::uniform<double>, 1>();
-// CURAND_UNIFORM_DOUBLE-NEXT:   ps7->generate<oneapi::mkl::rng::device::uniform<double>, 1>();
-// CURAND_UNIFORM_DOUBLE-NEXT:   ps8->generate<oneapi::mkl::rng::device::uniform<double>, 1>();
 // CURAND_UNIFORM_DOUBLE-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=skipahead | FileCheck %s -check-prefix=SKIPAHEAD

@@ -1,3 +1,5 @@
+#include "curand.h"
+
 void test(cudaStream_t s) {
   // Start
   curandGenerator_t g;

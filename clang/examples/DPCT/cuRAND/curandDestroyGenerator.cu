@@ -1,3 +1,5 @@
+#include "curand.h"
+
 void test() {
   // Start
   curandGenerator_t g;
