@@ -36,7 +36,7 @@ For example, this original CUDA\* code:
      ...
    }
 
-results in the following migrated SYCL\* code:
+results in the following migrated SYCL code:
 
 .. code-block:: cpp
    :linenos:

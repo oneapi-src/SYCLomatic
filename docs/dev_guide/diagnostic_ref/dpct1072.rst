@@ -35,7 +35,7 @@ For example, this original CUDA\* code:
      cudaMemGetInfo(&result1, &result2);
    }
 
-results in the following migrated SYCL\* code:
+results in the following migrated SYCL code:
 
 .. code-block:: cpp
    :linenos:

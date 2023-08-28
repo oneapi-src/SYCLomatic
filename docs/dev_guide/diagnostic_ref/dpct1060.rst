@@ -35,7 +35,7 @@ For example, this original CUDA\* code:
      int a = const_array[x][y][z][w];
    }
 
-results in the following migrated SYCL\* code:
+results in the following migrated SYCL code:
 
 .. code-block:: cpp
    :linenos:

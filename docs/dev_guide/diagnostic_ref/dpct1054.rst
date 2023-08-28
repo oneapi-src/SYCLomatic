@@ -109,7 +109,6 @@ which is rewritten to:
      });
    }
 
-
 Suggestions to Fix
 ------------------
 
