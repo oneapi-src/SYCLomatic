@@ -14,6 +14,7 @@
 #include "Utility.h"
 #include "llvm/Support/YAMLTraits.h"
 #include "NCCLAPIMigration.h"
+
 std::vector<std::string> MetaRuleObject::RuleFiles;
 std::vector<std::shared_ptr<MetaRuleObject>> MetaRules;
 
@@ -223,6 +224,11 @@ void deregisterAPIRule(MetaRuleObject &R) {
   CallExprRewriterFactoryBase::RewriterMap->erase(R.In);
 }
 
+void registerPatternRewriterRule(MetaRuleObject &R) {
+  MapNames::PatternRewriters.emplace_back(
+      MetaRuleObject::PatternRewriter(R.In, R.Out, R.Subrules));
+}
+
 void importRules(llvm::cl::list<std::string> &RuleFiles) {
   for (auto &RuleFile : RuleFiles) {
     makeCanonical(RuleFile);
@@ -275,6 +281,9 @@ void importRules(llvm::cl::list<std::string> &RuleFiles) {
         break;
       case (RuleKind::DisableAPIMigration):
         deregisterAPIRule(*r);
+        break;
+      case (RuleKind::PatternRewriter):
+        registerPatternRewriterRule(*r);
         break;
       default:
         break;

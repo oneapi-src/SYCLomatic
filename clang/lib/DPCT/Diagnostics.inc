@@ -11,7 +11,7 @@
 // A comment and diagnostics with the same ID have the same index space for format arguments:
 // warning may use %0 and comment may use {1} and in that way they are using different parts of parameter pack
 
-
+// clang-format off
 // FORMAT: {NAME, ID, MESSAGE}
 DEF_WARNING(ATOMIC_OPTIMIZATION, 1116, "The %0 was migrated to %1 for performance, and %2 is computed by (UINT_MAX + 1) / ('%3' + 1). This migration requires the initial value of '%4' to be scaled by multiplying %2, and any usage of value of '%4' outside atomic function to be scaled by dividing %2.")
 DEF_COMMENT(ATOMIC_OPTIMIZATION, 1116, "The {0} was migrated to {1} for performance, and {2} is computed by (UINT_MAX + 1) / ('{3}' + 1). This migration requires the initial value of '{4}' to be scaled by multiplying {2}, and any usage of value of '{4}' outside atomic function to be scaled by dividing {2}.")
@@ -249,3 +249,6 @@ DEF_WARNING(WAIT_REMOVE, 1114, "cudaMemcpy is migrated to asynchronization memcp
 DEF_COMMENT(WAIT_REMOVE, 1114, "cudaMemcpy is migrated to asynchronization memcpy, assuming in original code the source host memory is pageable memory. If this assumption doesn't hold, please append '.wait()' after memcpy to synchronize.")
 DEF_WARNING(GROUP_LOCAL_MEMORY, 1115, "The sycl::ext::oneapi::group_local_memory is used to allocate local memory at the none kernel functor scope of a work-group data parallel kernel. You may need to adjust the code.")
 DEF_COMMENT(GROUP_LOCAL_MEMORY, 1115, "The sycl::ext::oneapi::group_local_memory is used to allocate local memory at the none kernel functor scope of a work-group data parallel kernel. You may need to adjust the code.")
+DEF_WARNING(CALL_GROUP_FUNC_IN_COND, 1118, "SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.")
+DEF_COMMENT(CALL_GROUP_FUNC_IN_COND, 1118, "SYCL group functions and algorithms must be encountered in converged control flow. You should check this condition holds.")
+// clang-format on

@@ -1,5 +1,6 @@
-void test(cudaDeviceProp *pd, int i) {
+void test(int i) {
   // Start
-  cudaGetDeviceProperties(pd /*cudaDeviceProp **/, i /*int*/);
+  cudaDeviceProp *pd;
+  cudaGetDeviceProperties(pd, i /*int*/);
   // End
 }

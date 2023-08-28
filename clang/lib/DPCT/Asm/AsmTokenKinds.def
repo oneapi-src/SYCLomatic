@@ -55,6 +55,11 @@
 #ifndef CMP_OP
 #define CMP_OP(X, Y) KEYWORD(X, Y)
 #endif
+
+#ifndef BIN_OP
+#define BIN_OP(X, Y) KEYWORD(X, Y)
+#endif
+
 #ifndef BUILTIN_ID
 #define BUILTIN_ID(X, Y, Z) TOK(bi_ ## X)
 #endif
@@ -332,7 +337,12 @@ CMP_OP(geu, ".geu")
 CMP_OP(num, ".num")
 CMP_OP(nan, ".nan")
 
+BIN_OP(add, ".add")
+BIN_OP(min, ".min")
+BIN_OP(max, ".max")
+
 #undef BUILTIN_ID
+#undef BIN_OP
 #undef CMP_OP
 #undef MUL_MOD
 #undef SAT_MOD
