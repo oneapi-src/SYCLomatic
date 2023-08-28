@@ -15,20 +15,21 @@
 #include "DNNAPIMigration.h"
 #include "ExprAnalysis.h"
 #include "FFTAPIMigration.h"
+#include "GroupFunctionAnalyzer.h"
 #include "Homoglyph.h"
 #include "LIBCUAPIMigration.h"
 #include "MemberExprRewriter.h"
 #include "MigrationRuleManager.h"
 #include "MisleadingBidirectional.h"
 #include "NCCLAPIMigration.h"
+#include "OptimizeMigration.h"
 #include "SaveNewFiles.h"
 #include "TextModification.h"
 #include "ThrustAPIMigration.h"
 #include "Utility.h"
 #include "WMMAAPIMigration.h"
-#include "OptimizeMigration.h"
-#include "clang/AST/Expr.h"
 #include "clang/AST/Decl.h"
+#include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/Stmt.h"
 #include "clang/AST/Type.h"
@@ -8463,6 +8464,11 @@ bool isRecursiveDeviceCallExpr(const CallExpr* CE) {
   return false;
 }
 
+static void checkCallGroupFunctionInControlFlow(FunctionDecl *FD) {
+  GroupFunctionCallInControlFlowAnalyzer A(DpctGlobalInfo::getContext());
+  (void)A.checkCallGroupFunctionInControlFlow(FD);
+}
+
 // __device__ function call information collection
 void DeviceFunctionDeclRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto DeviceFunctionMatcher =
@@ -8623,7 +8629,10 @@ void DeviceFunctionDeclRule::runRule(
     if (isRecursiveDeviceCallExpr(CE))
       report(CE->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
                                 false, "Recursive functions");
-    FuncInfo->addCallee(CE);
+    auto CallInfo = FuncInfo->addCallee(CE);
+    checkCallGroupFunctionInControlFlow(const_cast<FunctionDecl *>(FD));
+    if (CallInfo->hasSideEffects())
+      report(CE->getBeginLoc(), Diagnostics::CALL_GROUP_FUNC_IN_COND, false);
   } else if (CE = getAssistNodeAsType<CallExpr>(Result, "PrintfExpr")) {
     if (FD->hasAttr<CUDAHostAttr>()) {
       report(CE->getBeginLoc(), Warnings::PRINTF_FUNC_NOT_SUPPORT, false);
@@ -11721,6 +11730,15 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
   if (FuncName == "__syncthreads") {
     DpctGlobalInfo::registerNDItemUser(CE);
+    const FunctionDecl *FD = nullptr;
+    if (FD = getAssistNodeAsType<FunctionDecl>(Result, "FuncDecl")) {
+      GroupFunctionCallInControlFlowAnalyzer A(DpctGlobalInfo::getContext());
+      A.checkCallGroupFunctionInControlFlow(const_cast<FunctionDecl *>(FD));
+      auto FnInfo = DeviceFunctionDecl::LinkRedecls(FD);
+      auto CallInfo = FnInfo->addCallee(CE);
+      if (CallInfo->hasSideEffects())
+        report(CE->getBeginLoc(), Diagnostics::CALL_GROUP_FUNC_IN_COND, false);
+    }
   } else if (FuncName == "this_thread_block") {
     if (auto P = getAncestorDeclStmt(CE)) {
       if (auto VD = dyn_cast<VarDecl>(*P->decl_begin())) {
