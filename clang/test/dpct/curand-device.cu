@@ -200,3 +200,57 @@ __device__ void foo2() {
   // CHECK: state.state = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<1>>(seed, {static_cast<std::uint64_t>(offset), static_cast<std::uint64_t>(sequence * 8)});
   curand_init(seed, sequence, offset, &state.state);
 }
+
+__device__ void foo3() {
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of curandStateScrambledSobol64_t type is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: curandStateScrambledSobol64_t *ps1;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of curandStateSobol64_t type is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: curandStateSobol64_t *ps2;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of curandStateScrambledSobol32_t type is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: curandStateScrambledSobol32_t *ps3;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of curandStateSobol32_t type is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: curandStateSobol32_t *ps4;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of curandStateMtgp32_t type is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: curandStateMtgp32_t *ps5;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of curandStateScrambledSobol64 type is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: curandStateScrambledSobol64 *ps6;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of curandStateSobol64 type is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: curandStateSobol64 *ps7;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of curandStateScrambledSobol32 type is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: curandStateScrambledSobol32 *ps8;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of curandStateSobol32 type is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: curandStateSobol32 *ps9;
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of curandStateMtgp32 type is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: curandStateMtgp32 *ps10;
+
+  curandStateScrambledSobol64_t *ps1;
+  curandStateSobol64_t *ps2;
+  curandStateScrambledSobol32_t *ps3;
+  curandStateSobol32_t *ps4;
+  curandStateMtgp32_t *ps5;
+  curandStateScrambledSobol64 *ps6;
+  curandStateSobol64 *ps7;
+  curandStateScrambledSobol32 *ps8;
+  curandStateSobol32 *ps9;
+  curandStateMtgp32 *ps10;
+}
