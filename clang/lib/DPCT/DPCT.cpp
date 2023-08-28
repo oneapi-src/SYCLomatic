@@ -759,6 +759,7 @@ int runDPCT(int argc, const char **argv) {
     APIMapping::initEntryMap();
     auto SourceCode = APIMapping::getAPISourceCode(QueryAPIMapping);
     if (SourceCode.empty()) {
+      ShowStatus(MigrationErrorNoAPIMapping);
       dpctExit(MigrationErrorNoAPIMapping);
     }
 
