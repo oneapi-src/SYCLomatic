@@ -1,3 +1,5 @@
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
+
 /// Single Precision Mathematical Functions
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=acosf | FileCheck %s -check-prefix=ACOSF

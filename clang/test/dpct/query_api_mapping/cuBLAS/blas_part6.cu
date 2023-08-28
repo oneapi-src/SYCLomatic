@@ -1,3 +1,5 @@
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasCsscal | FileCheck %s -check-prefix=cublasCsscal
 // cublasCsscal: CUDA API:
 // cublasCsscal-NEXT:   cublasCsscal(handle /*cublasHandle_t*/, n /*int*/, alpha /*const float **/,

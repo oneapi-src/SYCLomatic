@@ -1,3 +1,5 @@
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cufftExecZ2Z | FileCheck %s -check-prefix=cufftExecZ2Z
 // cufftExecZ2Z: CUDA API:
 // cufftExecZ2Z-NEXT:   cufftHandle plan;

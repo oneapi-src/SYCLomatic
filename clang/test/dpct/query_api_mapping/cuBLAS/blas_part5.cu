@@ -1,3 +1,5 @@
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasDsyr | FileCheck %s -check-prefix=cublasDsyr
 // cublasDsyr: CUDA API:
 // cublasDsyr-NEXT:   cublasDsyr(handle /*cublasHandle_t*/, upper_lower /*cublasFillMode_t*/,

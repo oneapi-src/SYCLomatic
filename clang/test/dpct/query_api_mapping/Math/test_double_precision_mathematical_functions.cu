@@ -1,3 +1,5 @@
+// UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
+
 /// Double Precision Mathematical Functions
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=acos | FileCheck %s -check-prefix=ACOS
