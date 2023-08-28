@@ -155,6 +155,12 @@ template <typename T> void swap(T &x, T &y) {
   y = tmp;
 }
 
+template <typename T>
+::std::ostream &operator<<(::std::ostream &out,
+                           const device_reference<T> &ref) {
+  return out << T(ref);
+}
+
 namespace internal {
 // struct for checking if iterator is heterogeneous or not
 template <typename Iter,

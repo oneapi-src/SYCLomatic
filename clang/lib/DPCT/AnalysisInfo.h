@@ -986,6 +986,16 @@ public:
   static void setExperimentalFlag(unsigned Flag) { ExperimentalFlag = Flag; }
   static unsigned getExperimentalFlag() { return ExperimentalFlag; }
 
+  static bool getHelperFuncPreference(HelperFuncPreference HFP) {
+    return HelperFuncPreferenceFlag & (1 << static_cast<unsigned>(HFP));
+  }
+  static void setHelperFuncPreferenceFlag(unsigned Flag) {
+    HelperFuncPreferenceFlag = Flag;
+  }
+  static unsigned getHelperFuncPreferenceFlag() {
+    return HelperFuncPreferenceFlag;
+  }
+
   inline static format::FormatRange getFormatRange() { return FmtRng; }
   inline static void setFormatRange(format::FormatRange FR) { FmtRng = FR; }
   inline static DPCTFormatStyle getFormatStyle() { return FmtST; }
@@ -1140,6 +1150,14 @@ public:
     int Res = CurrentMaxIndex;
     CurrentMaxIndex++;
     return Res;
+  }
+  inline static const std::string &getGlobalQueueName() {
+    const static std::string Q = "q_ct1";
+    return Q;
+  }
+  inline static const std::string &getGlobalDeviceName() {
+    const static std::string D = "dev_ct1";
+    return D;
   }
 
   static std::string getStringForRegexReplacement(StringRef);
@@ -1745,6 +1763,9 @@ public:
   static bool useExtBFloat16Math() {
     return getUsingExperimental<ExperimentalFeatures::Exp_BFloat16Math>();
   }
+  static bool useNoQueueDevice() {
+    return getHelperFuncPreference(HelperFuncPreference::NoQueueDevice);
+  }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
   }
@@ -2089,6 +2110,7 @@ private:
   static unsigned ExtensionDEFlag;
   static unsigned ExtensionDDFlag;
   static unsigned ExperimentalFlag;
+  static unsigned HelperFuncPreferenceFlag;
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;
@@ -3462,6 +3484,11 @@ public:
 
   virtual std::string getExtraArguments();
 
+  inline void setHasSideEffects(bool Val = true) {
+    CallGroupFunctionInControlFlow = Val;
+  }
+  inline bool hasSideEffects() const { return CallGroupFunctionInControlFlow; }
+
   std::shared_ptr<TextureObjectInfo>
   addTextureObjectArgInfo(unsigned ArgIdx,
                           std::shared_ptr<TextureObjectInfo> Info) {
@@ -3548,6 +3575,7 @@ private:
   std::vector<std::pair<int, std::string>> ParmRefArgs;
   MemVarMap VarMap;
   bool HasArgs = false;
+  bool CallGroupFunctionInControlFlow = false;
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
 };
 
@@ -3777,6 +3805,20 @@ public:
     return {};
   }
 
+  inline void setCallGroupFunctionInControlFlow(bool Val = true) {
+    CallGroupFunctionInControlFlow = Val;
+  }
+  inline bool hasCallGroupFunctionInControlFlow() const {
+    return CallGroupFunctionInControlFlow;
+  }
+
+  inline void setHasSideEffectsAnalyzed(bool Val = true) {
+    HasCheckedCallGroupFunctionInControlFlow = Val;
+  }
+  inline bool hasSideEffectsAnalyzed() const {
+    return HasCheckedCallGroupFunctionInControlFlow;
+  }
+
   void buildInfo();
   inline bool hasParams() { return ParamsNum != 0; }
 
@@ -3881,6 +3923,8 @@ private:
   bool IsLambda;
   bool IsKernel = false;
   bool IsKernelInvoked = false;
+  bool CallGroupFunctionInControlFlow = false;
+  bool HasCheckedCallGroupFunctionInControlFlow = false;
 };
 
 class KernelPrinter {
