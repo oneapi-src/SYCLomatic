@@ -357,7 +357,7 @@ void ExtReplacements::postProcess() {
     // C: cub group dim, used for cub API migration
     // F: free queries function migration, such as this_nd_item, this_group,
     // this_sub_group.
-    // R: group dim size, used for cg::thread_block migration
+    // G: group dim size, used for cg::thread_block migration
     StringRef OriginalText = R.second->getReplacementText();
     std::regex RE("\\{\\{NEEDREPLACE[DQVRFCG][0-9]*\\}\\}");
     std::match_results<StringRef::const_iterator> Result;

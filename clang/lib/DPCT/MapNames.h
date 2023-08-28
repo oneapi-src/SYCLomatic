@@ -432,6 +432,7 @@ public:
 
   static std::unordered_map<std::string, std::string> AtomicFuncNamesMap;
 
+  static std::vector<MetaRuleObject::PatternRewriter> PatternRewriters;
   /// {Original API, {ToType, FromType}}
   static std::unordered_map<std::string, std::pair<std::string, std::string>>
       MathTypeCastingMap;

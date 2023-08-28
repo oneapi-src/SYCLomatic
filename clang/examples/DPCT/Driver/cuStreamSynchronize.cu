@@ -1,5 +1,6 @@
-void test(CUstream s) {
+void test() {
   // Start
+  CUstream s;
   cuStreamSynchronize(s /*CUstream*/);
   // End
 }

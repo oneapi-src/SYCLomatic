@@ -15,7 +15,9 @@ using namespace cooperative_groups;
 __device__ void foo(int i) {}
 
 #define FOO(x) foo(x)
-
+__device__ void test(cg::thread_block cta) {
+  cg:sync(cta);
+}
 // CHECK: void k(const sycl::nd_item<3> &item_ct1) {
 __global__ void k() {
   // CHECK: auto cta = item_ct1.get_group();
