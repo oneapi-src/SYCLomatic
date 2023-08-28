@@ -2,7 +2,7 @@
 
 - Add the API mapping cases of different libraries in corresponding folder.
 
-- Make sure the file name is format as `${API_Name}.cu`.
+- Make sure the file name is format as `${API_Name}.cu` (change the `:` to `$`).
 
 - Content of `${API_Name}.cu`, take the `__hfma.cu` as an example (The comment with "///" is not the content of the file):
 
@@ -23,6 +23,8 @@ __global__ void test(__half h1, __half h2, __half h3, __nv_bfloat16 b1,
   // End
 }
 ```
+
+- If the case need not be migrate, add the output message at the first line started with `// Migration desc: `.
 
 - Please format the code.
 

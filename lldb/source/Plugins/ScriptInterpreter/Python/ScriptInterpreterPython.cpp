@@ -408,7 +408,7 @@ ScriptInterpreterPythonImpl::ScriptInterpreterPythonImpl(Debugger &debugger)
       m_session_dict(PyInitialValue::Invalid),
       m_sys_module_dict(PyInitialValue::Invalid), m_run_one_line_function(),
       m_run_one_line_str_global(),
-      m_dictionary_name(m_debugger.GetInstanceName().AsCString()),
+      m_dictionary_name(m_debugger.GetInstanceName()),
       m_active_io_handler(eIOHandlerNone), m_session_is_active(false),
       m_pty_secondary_is_open(false), m_valid_session(true), m_lock_count(0),
       m_command_thread_state(nullptr) {
@@ -582,10 +582,6 @@ void ScriptInterpreterPythonImpl::LeaveSession() {
   // up believing we have no thread state and PyImport_AddModule will crash if
   // that is the case - since that seems to only happen when destroying the
   // SBDebugger, we can make do without clearing up stdout and stderr
-
-  // rdar://problem/11292882
-  // When the current thread state is NULL, PyThreadState_Get() issues a fatal
-  // error.
   if (PyThreadState_GetDict()) {
     PythonDictionary &sys_module_dict = GetSysModuleDictionary();
     if (sys_module_dict.IsValid()) {
@@ -1519,6 +1515,17 @@ ScriptInterpreterPythonImpl::CreateScriptedProcessInterface() {
   return std::make_unique<ScriptedProcessPythonInterface>(*this);
 }
 
+StructuredData::ObjectSP
+ScriptInterpreterPythonImpl::CreateStructuredDataFromScriptObject(
+    ScriptObject obj) {
+  void *ptr = const_cast<void *>(obj.GetPointer());
+  PythonObject py_obj(PyRefType::Borrowed, static_cast<PyObject *>(ptr));
+  if (!py_obj.IsValid() || py_obj.IsNone())
+    return {};
+  Locker py_lock(this, Locker::AcquireLock | Locker::NoSTDIN, Locker::FreeLock);
+  return py_obj.CreateStructuredObject();
+}
+
 StructuredData::GenericSP
 ScriptInterpreterPythonImpl::OSPlugin_CreatePluginObject(
     const char *class_name, lldb::ProcessSP process_sp) {
@@ -1772,7 +1779,7 @@ lldb::StateType ScriptInterpreterPythonImpl::ScriptedThreadPlanGetRunState(
 
 bool
 ScriptInterpreterPythonImpl::ScriptedThreadPlanGetStopDescription(
-    StructuredData::ObjectSP implementor_sp, lldb_private::Stream *stream, 
+    StructuredData::ObjectSP implementor_sp, lldb_private::Stream *stream,
     bool &script_error) {
   StructuredData::Generic *generic = nullptr;
   if (implementor_sp)

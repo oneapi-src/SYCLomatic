@@ -1,5 +1,5 @@
 # MLIR project.
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.20.0)
 
 if(NOT DEFINED LLVM_COMMON_CMAKE_UTILS)
   set(LLVM_COMMON_CMAKE_UTILS ${CMAKE_CURRENT_SOURCE_DIR}/../cmake)
@@ -11,13 +11,6 @@ include(${LLVM_COMMON_CMAKE_UTILS}/Modules/CMakePolicy.cmake
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   project(mlir)
   set(MLIR_STANDALONE_BUILD TRUE)
-  if ("${CMAKE_VERSION}" VERSION_LESS "3.20.0")
-    message(WARNING
-      "Your CMake version is ${CMAKE_VERSION}. Starting with LLVM 17.0.0, the "
-      "minimum version of CMake required to build LLVM will become 3.20.0, and "
-      "using an older CMake will become an error. Please upgrade your CMake to "
-      "at least 3.20.0 now to avoid issues in the future!")
-  endif()
 endif()
 
 # Must go below project(..)
@@ -114,7 +107,7 @@ add_definitions(-DMLIR_CUDA_CONVERSIONS_ENABLED=${MLIR_ENABLE_CUDA_CONVERSIONS})
 
 # Build the ROCm conversions and run according tests if the AMDGPU backend
 # is available.
-if ("AMDGPU" IN_LIST LLVM_TARGETS_TO_BUILD AND MLIR_ENABLE_EXECUTION_ENGINE)
+if ("AMDGPU" IN_LIST LLVM_TARGETS_TO_BUILD)
   set(MLIR_ENABLE_ROCM_CONVERSIONS 1)
 else()
   set(MLIR_ENABLE_ROCM_CONVERSIONS 0)

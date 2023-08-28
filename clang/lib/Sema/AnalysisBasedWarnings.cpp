@@ -2218,8 +2218,8 @@ public:
     }
   }
 
-  // FIXME: rename to handleUnsafeVariable
-  void handleFixableVariable(const VarDecl *Variable,
+  void handleUnsafeVariableGroup(const VarDecl *Variable,
+                                 const DefMapTy &VarGrpMap,
                              FixItList &&Fixes) override {
     assert(!SuggestSuggestions &&
            "Unsafe buffer usage fixits displayed without suggestions!");
@@ -2227,18 +2227,90 @@ public:
         << Variable << (Variable->getType()->isPointerType() ? 0 : 1)
         << Variable->getSourceRange();
     if (!Fixes.empty()) {
-      unsigned FixItStrategy = 0; // For now we only has 'std::span' strategy
+      const auto VarGroupForVD = VarGrpMap.find(Variable)->second;
+      unsigned FixItStrategy = 0; // For now we only have 'std::span' strategy
       const auto &FD = S.Diag(Variable->getLocation(),
-                              diag::note_unsafe_buffer_variable_fixit);
+                              diag::note_unsafe_buffer_variable_fixit_group);
 
-      FD << Variable->getName() << FixItStrategy;
+      FD << Variable << FixItStrategy;
+      std::string AllVars = "";
+      if (VarGroupForVD.size() > 1) {
+        if (VarGroupForVD.size() == 2) {
+          if (VarGroupForVD[0] == Variable) {
+            AllVars.append("'" + VarGroupForVD[1]->getName().str() + "'");
+          } else {
+            AllVars.append("'" + VarGroupForVD[0]->getName().str() + "'");
+          }
+        } else {
+          bool first = false;
+          if (VarGroupForVD.size() == 3) {
+            for (const VarDecl * V : VarGroupForVD) {
+              if (V == Variable) {
+                continue;
+              }
+              if (!first) {
+                first = true;
+                AllVars.append("'" + V->getName().str() + "'" + " and ");
+              } else {
+                AllVars.append("'" + V->getName().str() + "'");
+              }
+            }
+          } else {
+            for (const VarDecl * V : VarGroupForVD) {
+              if (V == Variable) {
+                continue;
+              }
+              if (VarGroupForVD.back() != V) {
+                AllVars.append("'" + V->getName().str() + "'" + ", ");
+              } else {
+                AllVars.append("and '" + V->getName().str() + "'");
+              }
+            }
+          }
+        }
+        FD << AllVars << 1;
+      } else {
+        FD << "" << 0;
+      }
+
       for (const auto &F : Fixes)
         FD << F;
     }
+
+#ifndef NDEBUG
+    if (areDebugNotesRequested())
+      for (const DebugNote &Note: DebugNotesByVar[Variable])
+        S.Diag(Note.first, diag::note_safe_buffer_debug_mode) << Note.second;
+#endif
   }
 
   bool isSafeBufferOptOut(const SourceLocation &Loc) const override {
     return S.PP.isSafeBufferOptOut(S.getSourceManager(), Loc);
+  }
+
+  // Returns the text representation of clang::unsafe_buffer_usage attribute.
+  // `WSSuffix` holds customized "white-space"s, e.g., newline or whilespace
+  // characters.
+  std::string
+  getUnsafeBufferUsageAttributeTextAt(SourceLocation Loc,
+                                      StringRef WSSuffix = "") const override {
+    Preprocessor &PP = S.getPreprocessor();
+    TokenValue ClangUnsafeBufferUsageTokens[] = {
+        tok::l_square,
+        tok::l_square,
+        PP.getIdentifierInfo("clang"),
+        tok::coloncolon,
+        PP.getIdentifierInfo("unsafe_buffer_usage"),
+        tok::r_square,
+        tok::r_square};
+
+    StringRef MacroName;
+
+    // The returned macro (it returns) is guaranteed not to be function-like:
+    MacroName = PP.getLastMacroWithSpelling(Loc, ClangUnsafeBufferUsageTokens);
+    if (MacroName.empty())
+      MacroName = "[[clang::unsafe_buffer_usage]]";
+    return MacroName.str() + WSSuffix.str();
   }
 };
 } // namespace

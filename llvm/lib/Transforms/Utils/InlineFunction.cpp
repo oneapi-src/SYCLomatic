@@ -875,9 +875,6 @@ static void propagateMemProfHelper(const CallBase *OrigCall,
 // inlined callee's callsite metadata with that of the inlined call,
 // and moving the subset of any memprof contexts to the inlined callee
 // allocations if they match the new inlined call stack.
-// FIXME: Replace memprof metadata with function attribute if all MIB end up
-// having the same behavior. Do other context trimming/merging optimizations
-// too.
 static void
 propagateMemProfMetadata(Function *Callee, CallBase &CB,
                          bool ContainsMemProfMetadata,
@@ -1483,8 +1480,6 @@ static Value *HandleByValArgument(Type *ByValType, Value *Arg,
                                   const Function *CalledFunc,
                                   InlineFunctionInfo &IFI,
                                   MaybeAlign ByValAlignment) {
-  assert(cast<PointerType>(Arg->getType())
-             ->isOpaqueOrPointeeTypeMatches(ByValType));
   Function *Caller = TheCall->getFunction();
   const DataLayout &DL = Caller->getParent()->getDataLayout();
 
@@ -1635,6 +1630,12 @@ static void fixupLineNumbers(Function *Fn, Function::iterator FI,
       if (auto *AI = dyn_cast<AllocaInst>(BI))
         if (allocaWouldBeStaticInEntry(AI))
           continue;
+
+      // Do not force a debug loc for pseudo probes, since they do not need to
+      // be debuggable, and also they are expected to have a zero/null dwarf
+      // discriminator at this point which could be violated otherwise.
+      if (isa<PseudoProbeInst>(BI))
+        continue;
 
       BI->setDebugLoc(TheCallDL);
     }
@@ -2656,7 +2657,7 @@ llvm::InlineResult llvm::InlineFunction(CallBase &CB, InlineFunctionInfo &IFI,
     if (!CB.use_empty()) {
       ReturnInst *R = Returns[0];
       if (&CB == R->getReturnValue())
-        CB.replaceAllUsesWith(UndefValue::get(CB.getType()));
+        CB.replaceAllUsesWith(PoisonValue::get(CB.getType()));
       else
         CB.replaceAllUsesWith(R->getReturnValue());
     }
@@ -2768,7 +2769,7 @@ llvm::InlineResult llvm::InlineFunction(CallBase &CB, InlineFunctionInfo &IFI,
     // using the return value of the call with the computed value.
     if (!CB.use_empty()) {
       if (&CB == Returns[0]->getReturnValue())
-        CB.replaceAllUsesWith(UndefValue::get(CB.getType()));
+        CB.replaceAllUsesWith(PoisonValue::get(CB.getType()));
       else
         CB.replaceAllUsesWith(Returns[0]->getReturnValue());
     }

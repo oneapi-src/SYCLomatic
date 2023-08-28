@@ -640,6 +640,34 @@ CONDITIONAL_FACTORY_ENTRY(
                             LITERAL("1")),
                         false, "wait")))))))
 
+CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY("cub::DeviceRunLengthEncode::NonTrivialRuns"),
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_DPCT_DPL_Utils,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPL_Execution,
+            HEADER_INSERT_FACTORY(
+                HeaderType::HT_DPL_Algorithm,
+                REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+                    makeCheckAnd(CheckArgCount(8, std::greater_equal<>(),
+                                               /* IncludeDefaultArg */ false),
+                                 makeCheckNot(CheckArgIsDefaultCudaStream(7))),
+                    CALL_FACTORY_ENTRY(
+                        "cub::DeviceRunLengthEncode::NonTrivialRuns",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "nontrivial_run_length_encode",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  STREAM(7)),
+                             ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))),
+                    CALL_FACTORY_ENTRY(
+                        "cub::DeviceRunLengthEncode::NonTrivialRuns",
+                        CALL(MapNames::getDpctNamespace() +
+                                 "nontrivial_run_length_encode",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  QUEUESTR),
+                             ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))))))))
+
 // cub::DeviceSegmentedReduce::Reduce
 CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),
@@ -2381,4 +2409,173 @@ MEMBER_CALL_FACTORY_ENTRY("cub::CurrentDevice",
                                "dev_mgr::instance"),
                           false, "current_device_id")
 
+// cub::DeviceHistogram::HistogramEven
+CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY(
+        "cub::DeviceHistogram::HistogramEven"),
+    REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPCT_DPL_Utils,
+            REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
+                CASE(CheckArgCount(11, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                         "cub::DeviceHistogram::HistogramEven",
+                         CALL(MapNames::getDpctNamespace() +
+                                  "histogram_even_roi",
+                              CALL("oneapi::dpl::execution::device_policy",
+                                   STREAM(10)),
+                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9)))),
+                CASE(CheckArgCount(10, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                         "cub::DeviceHistogram::HistogramEven",
+                         CALL(MapNames::getDpctNamespace() +
+                                  "histogram_even_roi",
+                              CALL("oneapi::dpl::execution::device_policy",
+                                   QUEUESTR),
+                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9)))),
+                CASE(CheckArgCount(9, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                         "cub::DeviceHistogram::HistogramEven",
+                         CALL(MapNames::getDpctNamespace() +
+                                  "histogram_even",
+                              CALL("oneapi::dpl::execution::device_policy",
+                                   STREAM(8)),
+                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7)))),
+                OTHERWISE(CALL_FACTORY_ENTRY(
+                    "cub::DeviceHistogram::HistogramEven",
+                    CALL(MapNames::getDpctNamespace() + "histogram_even",
+                         CALL("oneapi::dpl::execution::device_policy",
+                              QUEUESTR),
+                         ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7))))))))))
+
+// cub::DeviceHistogram::MultiHistogramEven
+CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY(
+        "cub::DeviceHistogram::MultiHistogramEven"),
+    REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPCT_DPL_Utils,
+            REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
+                CASE(CheckArgCount(11, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                         "cub::DeviceHistogram::MultiHistogramEven",
+                         CALL(TEMPLATED_CALLEE(MapNames::getDpctNamespace() + "multi_histogram_even_roi", 0, 1),
+                              CALL("oneapi::dpl::execution::device_policy",
+                                   STREAM(10)),
+                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9)))),
+                CASE(CheckArgCount(10, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                         "cub::DeviceHistogram::MultiHistogramEven",
+                         CALL(TEMPLATED_CALLEE(MapNames::getDpctNamespace() + "multi_histogram_even_roi", 0, 1),
+                              CALL("oneapi::dpl::execution::device_policy",
+                                   QUEUESTR),
+                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9)))),
+                CASE(CheckArgCount(9, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                         "cub::DeviceHistogram::MultiHistogramEven",
+                         CALL(TEMPLATED_CALLEE(MapNames::getDpctNamespace() + "multi_histogram_even", 0, 1),
+                              CALL("oneapi::dpl::execution::device_policy",
+                                   STREAM(8)),
+                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7)))),
+                OTHERWISE(CALL_FACTORY_ENTRY(
+                    "cub::DeviceHistogram::MultiHistogramEven",
+                    CALL(TEMPLATED_CALLEE(MapNames::getDpctNamespace() + "multi_histogram_even", 0, 1),
+                         CALL("oneapi::dpl::execution::device_policy",
+                              QUEUESTR),
+                         ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7))))))))))
+
+// cub::DeviceHistogram::HistogramRange
+CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY(
+        "cub::DeviceHistogram::HistogramRange"),
+    REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPCT_DPL_Utils,
+            REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
+                CASE(CheckArgCount(10, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                         "cub::DeviceHistogram::HistogramRange",
+                         CALL(MapNames::getDpctNamespace() +
+                                  "histogram_range_roi",
+                              CALL("oneapi::dpl::execution::device_policy",
+                                   STREAM(9)),
+                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8)))),
+                CASE(CheckArgCount(9, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                         "cub::DeviceHistogram::HistogramRange",
+                         CALL(MapNames::getDpctNamespace() +
+                                  "histogram_range_roi",
+                              CALL("oneapi::dpl::execution::device_policy",
+                                   QUEUESTR),
+                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8)))),
+                CASE(CheckArgCount(8, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                         "cub::DeviceHistogram::HistogramRange",
+                         CALL(MapNames::getDpctNamespace() +
+                                  "histogram_range",
+                              CALL("oneapi::dpl::execution::device_policy",
+                                   STREAM(7)),
+                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))),
+                OTHERWISE(CALL_FACTORY_ENTRY(
+                    "cub::DeviceHistogram::HistogramRange",
+                    CALL(MapNames::getDpctNamespace() + "histogram_range",
+                         CALL("oneapi::dpl::execution::device_policy",
+                              QUEUESTR),
+                         ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))))))))))
+
+// cub::DeviceHistogram::MultiHistogramRange
+CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY(
+        "cub::DeviceHistogram::MultiHistogramRange"),
+    REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::device_ext,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPCT_DPL_Utils,
+            REMOVE_CUB_TEMP_STORAGE_FACTORY(CASE_FACTORY_ENTRY(
+                CASE(CheckArgCount(10, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                         "cub::DeviceHistogram::MultiHistogramRange",
+                         CALL(TEMPLATED_CALLEE(MapNames::getDpctNamespace() + "multi_histogram_range_roi", 0, 1),
+                              CALL("oneapi::dpl::execution::device_policy",
+                                   STREAM(9)),
+                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8)))),
+                CASE(CheckArgCount(9, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                         "cub::DeviceHistogram::MultiHistogramRange",
+                         CALL(TEMPLATED_CALLEE(MapNames::getDpctNamespace() + "multi_histogram_range_roi", 0, 1),
+                              CALL("oneapi::dpl::execution::device_policy",
+                                   QUEUESTR),
+                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8)))),
+                CASE(CheckArgCount(8, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                         "cub::DeviceHistogram::MultiHistogramRange",
+                         CALL(TEMPLATED_CALLEE(MapNames::getDpctNamespace() + "multi_histogram_range", 0, 1),
+                              CALL("oneapi::dpl::execution::device_policy",
+                                   STREAM(7)),
+                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))),
+                OTHERWISE(CALL_FACTORY_ENTRY(
+                    "cub::DeviceHistogram::MultiHistogramRange",
+                    CALL(TEMPLATED_CALLEE(MapNames::getDpctNamespace() + "multi_histogram_range", 0, 1),
+                         CALL("oneapi::dpl::execution::device_policy",
+                              QUEUESTR),
+                         ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))))))))))
 // clang-format on

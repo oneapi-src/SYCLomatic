@@ -47,6 +47,65 @@ __global__ void kernel(float *a, float *b, float *c){
         c[j] = a[j] + b[j];  
       }
     }
+
+    bool n;
+// CHECK: if(n)
+// CHECK-NEXT: #pragma unroll 
+// CHECK-NEXT: for(int i = 0; i < 10; i++) { c[i] = 0; }
+    if(n) for(int i = 0; i < 10; i++) { c[i] = 0; }
+}
+
+__device__ void bar(float *a, float *b, float *c) {
+  // CHECK: int i = 0;
+  // CHECK-NEXT:  #pragma unroll
+  // CHECK-NEXT:  for(i = 0; i < 10; i++) {
+  // CHECK-NEXT:    c[i] = a[i] + b[i];
+  // CHECK-NEXT:  }
+    int i = 0;
+    for(i = 0; i < 10; i++) {
+      c[i] = a[i] + b[i];
+    }
+}
+
+void foo1(float *a, float *b, float *c) {
+// CHECK: int i = 0;
+// CHECK-NOT:  #pragma unroll
+// CHECK-NEXT:  for(i = 0; i < 10; i++) {
+// CHECK-NEXT:    c[i] = a[i] + b[i];
+// CHECK-NEXT:  }
+  int i = 0;
+  for(i = 0; i < 10; i++) {
+    c[i] = a[i] + b[i];
+  }
+}
+
+class A{
+ int j = 0;
+public:
+ __device__ void a(float *a, float *b, float *c){
+  // CHECK: int i = 0;
+  // CHECK-NEXT:  #pragma unroll
+  // CHECK-NEXT:  for(i = 0; i < 10; i++) {
+  // CHECK-NEXT:    c[i] = a[i] + b[i];
+  // CHECK-NEXT:  }
+  int i = 0;
+  for(i = 0; i < 10; i++) {
+    c[i] = a[i] + b[i];
+  }
+ }
+}
+
+// CHECK: #define copy(dst, src, count)          \
+// CHECK-NEXT:     for (int i = 0; i != count; ++i) { \
+// CHECK-NEXT:         (dst)[i] = (src)[i];           \
+// CHECK-NEXT:     }
+#define copy(dst, src, count)          \
+    for (int i = 0; i != count; ++i) { \
+        (dst)[i] = (src)[i];           \
+    }
+__device__ void bar(float *a, float *b) {
+  // CHECK: copy(a, b, 10)
+  copy(a, b, 10)
 }
 
 int main(){

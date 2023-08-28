@@ -152,6 +152,16 @@ MlirType mlirF16TypeGet(MlirContext ctx) {
   return wrap(FloatType::getF16(unwrap(ctx)));
 }
 
+MlirTypeID mlirFloatTF32TypeGetTypeID() {
+  return wrap(FloatTF32Type::getTypeID());
+}
+
+bool mlirTypeIsATF32(MlirType type) { return unwrap(type).isTF32(); }
+
+MlirType mlirTF32TypeGet(MlirContext ctx) {
+  return wrap(FloatType::getTF32(unwrap(ctx)));
+}
+
 MlirTypeID mlirFloat32TypeGetTypeID() { return wrap(Float32Type::getTypeID()); }
 
 bool mlirTypeIsAF32(MlirType type) { return unwrap(type).isF32(); }
@@ -322,6 +332,10 @@ MlirType mlirUnrankedTensorTypeGet(MlirType elementType) {
 MlirType mlirUnrankedTensorTypeGetChecked(MlirLocation loc,
                                           MlirType elementType) {
   return wrap(UnrankedTensorType::getChecked(unwrap(loc), unwrap(elementType)));
+}
+
+MlirType mlirUnrankedTensorTypeGetElementType(MlirType type) {
+  return wrap(llvm::cast<UnrankedTensorType>(unwrap(type)).getElementType());
 }
 
 //===----------------------------------------------------------------------===//

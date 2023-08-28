@@ -113,7 +113,7 @@ void DumpProcessGDBRemotePacketHistory(void *p, const char *path) {
     return;
   }
   StreamFile stream(std::move(file.get()));
-  ((ProcessGDBRemote *)p)->GetGDBRemote().DumpHistory(stream);
+  ((Process *)p)->DumpPluginHistory(stream);
 }
 } // namespace lldb
 
@@ -203,6 +203,11 @@ lldb::ProcessSP ProcessGDBRemote::CreateInstance(
     process_sp = std::shared_ptr<ProcessGDBRemote>(
         new ProcessGDBRemote(target_sp, listener_sp));
   return process_sp;
+}
+
+void ProcessGDBRemote::DumpPluginHistory(Stream &s) {
+  GDBRemoteCommunicationClient &gdb_comm(GetGDBRemote());
+  gdb_comm.DumpHistory(s);
 }
 
 std::chrono::seconds ProcessGDBRemote::GetPacketTimeout() {
@@ -995,9 +1000,12 @@ void ProcessGDBRemote::LoadStubBinaries() {
     if (standalone_uuid.IsValid()) {
       const bool force_symbol_search = true;
       const bool notify = true;
+      const bool set_address_in_target = true;
+      const bool allow_memory_image_last_resort = false;
       DynamicLoader::LoadBinaryWithUUIDAndAddress(
           this, "", standalone_uuid, standalone_value,
-          standalone_value_is_offset, force_symbol_search, notify);
+          standalone_value_is_offset, force_symbol_search, notify,
+          set_address_in_target, allow_memory_image_last_resort);
     }
   }
 
@@ -1025,10 +1033,13 @@ void ProcessGDBRemote::LoadStubBinaries() {
         continue;
 
       const bool force_symbol_search = true;
+      const bool set_address_in_target = true;
+      const bool allow_memory_image_last_resort = false;
       // Second manually load this binary into the Target.
-      DynamicLoader::LoadBinaryWithUUIDAndAddress(this, llvm::StringRef(), uuid,
-                                                  addr, value_is_slide,
-                                                  force_symbol_search, notify);
+      DynamicLoader::LoadBinaryWithUUIDAndAddress(
+          this, llvm::StringRef(), uuid, addr, value_is_slide,
+          force_symbol_search, notify, set_address_in_target,
+          allow_memory_image_last_resort);
     }
   }
 }
@@ -3427,7 +3438,7 @@ bool ProcessGDBRemote::StartAsyncThread() {
         });
     if (!async_thread) {
       LLDB_LOG_ERROR(GetLog(LLDBLog::Host), async_thread.takeError(),
-                     "failed to launch host thread: {}");
+                     "failed to launch host thread: {0}");
       return false;
     }
     m_async_thread = *async_thread;
@@ -3919,7 +3930,7 @@ StructuredData::ObjectSP ProcessGDBRemote::GetSharedCacheInfo() {
 }
 
 Status ProcessGDBRemote::ConfigureStructuredData(
-    ConstString type_name, const StructuredData::ObjectSP &config_sp) {
+    llvm::StringRef type_name, const StructuredData::ObjectSP &config_sp) {
   return m_gdb_comm.ConfigureRemoteStructuredData(type_name, config_sp);
 }
 
@@ -5214,7 +5225,7 @@ public:
     ProcessGDBRemote *process =
         (ProcessGDBRemote *)m_interpreter.GetExecutionContext().GetProcessPtr();
     if (process) {
-      process->GetGDBRemote().DumpHistory(result.GetOutputStream());
+      process->DumpPluginHistory(result.GetOutputStream());
       result.SetStatus(eReturnStatusSuccessFinishResult);
       return true;
     }

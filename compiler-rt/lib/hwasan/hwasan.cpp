@@ -86,9 +86,11 @@ static void InitializeFlags() {
     cf.clear_shadow_mmap_threshold = 4096 * (SANITIZER_ANDROID ? 2 : 8);
     // Sigtrap is used in error reporting.
     cf.handle_sigtrap = kHandleSignalExclusive;
-    // For now only tested on Linux. Other plantforms can be turned on as they
-    // become ready.
-    cf.detect_leaks = cf.detect_leaks && SANITIZER_LINUX && !SANITIZER_ANDROID;
+    // For now only tested on Linux and Fuchsia. Other plantforms can be turned
+    // on as they become ready.
+    constexpr bool can_detect_leaks =
+        (SANITIZER_LINUX && !SANITIZER_ANDROID) || SANITIZER_FUCHSIA;
+    cf.detect_leaks = cf.detect_leaks && can_detect_leaks;
 
 #if SANITIZER_ANDROID
     // Let platform handle other signals. It is better at reporting them then we
@@ -530,6 +532,56 @@ void __hwasan_load16_noabort(uptr p) {
   CheckAddress<ErrorAction::Recover, AccessType::Load, 4>(p);
 }
 
+void __hwasan_loadN_match_all(uptr p, uptr sz, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddressSized<ErrorAction::Abort, AccessType::Load>(p, sz);
+}
+void __hwasan_load1_match_all(uptr p, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddress<ErrorAction::Abort, AccessType::Load, 0>(p);
+}
+void __hwasan_load2_match_all(uptr p, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddress<ErrorAction::Abort, AccessType::Load, 1>(p);
+}
+void __hwasan_load4_match_all(uptr p, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddress<ErrorAction::Abort, AccessType::Load, 2>(p);
+}
+void __hwasan_load8_match_all(uptr p, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddress<ErrorAction::Abort, AccessType::Load, 3>(p);
+}
+void __hwasan_load16_match_all(uptr p, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddress<ErrorAction::Abort, AccessType::Load, 4>(p);
+}
+
+void __hwasan_loadN_match_all_noabort(uptr p, uptr sz, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddressSized<ErrorAction::Recover, AccessType::Load>(p, sz);
+}
+void __hwasan_load1_match_all_noabort(uptr p, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddress<ErrorAction::Recover, AccessType::Load, 0>(p);
+}
+void __hwasan_load2_match_all_noabort(uptr p, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddress<ErrorAction::Recover, AccessType::Load, 1>(p);
+}
+void __hwasan_load4_match_all_noabort(uptr p, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddress<ErrorAction::Recover, AccessType::Load, 2>(p);
+}
+void __hwasan_load8_match_all_noabort(uptr p, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddress<ErrorAction::Recover, AccessType::Load, 3>(p);
+}
+void __hwasan_load16_match_all_noabort(uptr p, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddress<ErrorAction::Recover, AccessType::Load, 4>(p);
+}
+
 void __hwasan_storeN(uptr p, uptr sz) {
   CheckAddressSized<ErrorAction::Abort, AccessType::Store>(p, sz);
 }
@@ -566,6 +618,56 @@ void __hwasan_store8_noabort(uptr p) {
 }
 void __hwasan_store16_noabort(uptr p) {
   CheckAddress<ErrorAction::Recover, AccessType::Store, 4>(p);
+}
+
+void __hwasan_storeN_match_all(uptr p, uptr sz, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddressSized<ErrorAction::Abort, AccessType::Store>(p, sz);
+}
+void __hwasan_store1_match_all(uptr p, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddress<ErrorAction::Abort, AccessType::Store, 0>(p);
+}
+void __hwasan_store2_match_all(uptr p, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddress<ErrorAction::Abort, AccessType::Store, 1>(p);
+}
+void __hwasan_store4_match_all(uptr p, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddress<ErrorAction::Abort, AccessType::Store, 2>(p);
+}
+void __hwasan_store8_match_all(uptr p, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddress<ErrorAction::Abort, AccessType::Store, 3>(p);
+}
+void __hwasan_store16_match_all(uptr p, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddress<ErrorAction::Abort, AccessType::Store, 4>(p);
+}
+
+void __hwasan_storeN_match_all_noabort(uptr p, uptr sz, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddressSized<ErrorAction::Recover, AccessType::Store>(p, sz);
+}
+void __hwasan_store1_match_all_noabort(uptr p, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddress<ErrorAction::Recover, AccessType::Store, 0>(p);
+}
+void __hwasan_store2_match_all_noabort(uptr p, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddress<ErrorAction::Recover, AccessType::Store, 1>(p);
+}
+void __hwasan_store4_match_all_noabort(uptr p, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddress<ErrorAction::Recover, AccessType::Store, 2>(p);
+}
+void __hwasan_store8_match_all_noabort(uptr p, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddress<ErrorAction::Recover, AccessType::Store, 3>(p);
+}
+void __hwasan_store16_match_all_noabort(uptr p, u8 match_all_tag) {
+  if (GetTagFromPointer(p) != match_all_tag)
+    CheckAddress<ErrorAction::Recover, AccessType::Store, 4>(p);
 }
 
 void __hwasan_tag_memory(uptr p, u8 tag, uptr sz) {

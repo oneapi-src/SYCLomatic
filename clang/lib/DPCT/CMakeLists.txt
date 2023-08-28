@@ -147,8 +147,10 @@ add_clang_library(DPCT
   VcxprojParser.cpp
   LibraryAPIMigration.cpp
   GenMakefile.cpp
+  InclusionHeaders.cpp
   IncrementalMigrationUtility.cpp
   Rules.cpp
+  PatternRewriter.cpp
   Homoglyph.cpp
   MisleadingBidirectional.cpp
   BarrierFenceSpaceAnalyzer.cpp
@@ -173,9 +175,11 @@ add_clang_library(DPCT
   GenHelperFunction.cpp
   WMMAAPIMigration.cpp
   OptimizeMigration.cpp
+  GroupFunctionAnalyzer.cpp
 
   DEPENDS
   ClangDriverOptions
+  DeviceConfigFile
   dpct_helper_headers_and_inc
   genconfusable
 

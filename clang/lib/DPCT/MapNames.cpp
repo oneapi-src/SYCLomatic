@@ -272,6 +272,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"thrust::host",
        std::make_shared<TypeNameRule>("oneapi::dpl::execution::seq")},
       {"thrust::minus", std::make_shared<TypeNameRule>("std::minus")},
+      {"thrust::nullopt", std::make_shared<TypeNameRule>("std::nullopt")},
       {"thrust::greater", std::make_shared<TypeNameRule>("std::greater")},
       {"thrust::equal_to",
        std::make_shared<TypeNameRule>("oneapi::dpl::equal_to")},
@@ -4395,7 +4396,14 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
                         "CU_LAUNCH_PARAM_END", "((void *) 0)",
                         HelperFeatureEnum::device_ext)},
     {"CUDART_PI_F", MacroMigrationRule("CUDART_PI_F", RulePriority::Fallback,
-                        "CUDART_PI_F", "3.141592654F")}
+                                       "CUDART_PI_F", "3.141592654F")},
+    {"CUB_MAX", MacroMigrationRule("cub_macro_rule", RulePriority::Fallback,
+                                   "CUB_MAX", getClNamespace() + "max")},
+    {"CUB_MIN", MacroMigrationRule("cub_macro_rule", RulePriority::Fallback,
+                                   "CUB_MIN", getClNamespace() + "min")},
+    {"CUB_RUNTIME_FUNCTION",
+     MacroMigrationRule("cub_macro_rule", RulePriority::Fallback,
+                        "CUB_RUNTIME_FUNCTION", "")}
     //...
 };
 
@@ -4547,6 +4555,8 @@ MapNames::MapTy TextureRule::ResourceTypeNames{{"devPtr", "data_ptr"},
                                                {"hArray", "data_ptr"},
                                                {"format", "channel_type"},
                                                {"numChannels", "channel_num"}};
+
+std::vector<MetaRuleObject::PatternRewriter> MapNames::PatternRewriters;
 
 const MapNames::MapTy MemoryDataTypeRule::PitchMemberNames{
     {"pitch", "pitch"}, {"ptr", "data_ptr"}, {"xsize", "x"}, {"ysize", "y"}};

@@ -388,3 +388,201 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
                       DEREF(makeCallArgCreatorWithCall(1)),
                       makeCallArgCreatorWithCall(2),
                       makeCallArgCreatorWithCall(3)))))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY(
+        "cuMemcpyAtoH_v2",
+        CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
+             makeCallArgCreatorWithCall(0),
+             BO(BinaryOperatorKind::BO_Add,
+                makeCastExprCreator(
+                    makeCharPtrCreator(),
+                    MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(1), true,
+                                            "to_pitched_data"),
+                                false, "get_data_ptr"),
+                    true),
+                makeCallArgCreatorWithCall(2)),
+             makeCallArgCreatorWithCall(3)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY(
+        "cuMemcpyHtoA_v2",
+        CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
+             BO(BinaryOperatorKind::BO_Add,
+                makeCastExprCreator(
+                    makeCharPtrCreator(),
+                    MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(0), true,
+                                            "to_pitched_data"),
+                                false, "get_data_ptr"),
+                    true),
+                makeCallArgCreatorWithCall(1)),
+             makeCallArgCreatorWithCall(2), makeCallArgCreatorWithCall(3)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY(
+        "cuMemcpyAtoHAsync_v2",
+        CALL(MapNames::getDpctNamespace() + "async_dpct_memcpy",
+             makeCallArgCreatorWithCall(0),
+             BO(BinaryOperatorKind::BO_Add,
+                makeCastExprCreator(
+                    makeCharPtrCreator(),
+                    MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(1), true,
+                                            "to_pitched_data"),
+                                false, "get_data_ptr"),
+                    true),
+                makeCallArgCreatorWithCall(2)),
+             makeCallArgCreatorWithCall(3),
+             ARG(MapNames::getDpctNamespace() + "automatic"),
+             DEREF(makeCallArgCreatorWithCall(4))))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY(
+        "cuMemcpyHtoAAsync_v2",
+        CALL(MapNames::getDpctNamespace() + "async_dpct_memcpy",
+             BO(BinaryOperatorKind::BO_Add,
+                makeCastExprCreator(
+                    makeCharPtrCreator(),
+                    MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(0), true,
+                                            "to_pitched_data"),
+                                false, "get_data_ptr"),
+                    true),
+                makeCallArgCreatorWithCall(1)),
+             makeCallArgCreatorWithCall(2), makeCallArgCreatorWithCall(3),
+             ARG(MapNames::getDpctNamespace() + "automatic"),
+             DEREF(makeCallArgCreatorWithCall(4))))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY(
+        "cuMemcpyAtoD_v2",
+        CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
+             makeCallArgCreatorWithCall(0),
+             BO(BinaryOperatorKind::BO_Add,
+                makeCastExprCreator(
+                    makeCharPtrCreator(),
+                    MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(1), true,
+                                            "to_pitched_data"),
+                                false, "get_data_ptr"),
+                    true),
+                makeCallArgCreatorWithCall(2)),
+             makeCallArgCreatorWithCall(3)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY(
+        "cuMemcpyDtoA_v2",
+        CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
+             BO(BinaryOperatorKind::BO_Add,
+                makeCastExprCreator(
+                    makeCharPtrCreator(),
+                    MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(0), true,
+                                            "to_pitched_data"),
+                                false, "get_data_ptr"),
+                    true),
+                makeCallArgCreatorWithCall(1)),
+             makeCallArgCreatorWithCall(2), makeCallArgCreatorWithCall(3)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY(
+        "cuMemcpyAtoA_v2",
+        CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
+             BO(BinaryOperatorKind::BO_Add,
+                makeCastExprCreator(
+                    makeCharPtrCreator(),
+                    MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(0), true,
+                                            "to_pitched_data"),
+                                false, "get_data_ptr"),
+                    true),
+                makeCallArgCreatorWithCall(1)),
+             BO(BinaryOperatorKind::BO_Add,
+                makeCastExprCreator(
+                    makeCharPtrCreator(),
+                    MEMBER_CALL(MEMBER_CALL(makeCallArgCreatorWithCall(2), true,
+                                            "to_pitched_data"),
+                                false, "get_data_ptr"),
+                    true),
+                makeCallArgCreatorWithCall(3)),
+             makeCallArgCreatorWithCall(4)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD8_v2",
+                       CALL(MapNames::getDpctNamespace() + "dpct_memset",
+                            ARG(0), ARG(1), ARG(2)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD16_v2",
+                       CALL(MapNames::getDpctNamespace() + "dpct_memset_d16",
+                            ARG(0), ARG(1), ARG(2)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD32_v2",
+                       CALL(MapNames::getDpctNamespace() + "dpct_memset_d32",
+                            ARG(0), ARG(1), ARG(2)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD8Async",
+                       CALL(MapNames::getDpctNamespace() + "async_dpct_memset",
+                            ARG(0), ARG(1), ARG(2),
+                            DEREF(makeCallArgCreatorWithCall(3))))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD16Async",
+                       CALL(MapNames::getDpctNamespace() + "async_dpct_memset_d16",
+                            ARG(0), ARG(1), ARG(2),
+                            DEREF(makeCallArgCreatorWithCall(3))))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD32Async",
+                       CALL(MapNames::getDpctNamespace() + "async_dpct_memset_d32",
+                            ARG(0), ARG(1), ARG(2),
+                            DEREF(makeCallArgCreatorWithCall(3))))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD2D8_v2",
+                       CALL(MapNames::getDpctNamespace() + "dpct_memset",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD2D16_v2",
+                       CALL(MapNames::getDpctNamespace() + "dpct_memset_d16",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD2D32_v2",
+                       CALL(MapNames::getDpctNamespace() + "dpct_memset_d32",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD2D8Async",
+                       CALL(MapNames::getDpctNamespace() + "async_dpct_memset",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), 
+                            DEREF(makeCallArgCreatorWithCall(5))))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD2D16Async",
+                       CALL(MapNames::getDpctNamespace() + "async_dpct_memset_d16",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4),
+                            DEREF(makeCallArgCreatorWithCall(5))))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::device_ext,
+    CALL_FACTORY_ENTRY("cuMemsetD2D32Async",
+                       CALL(MapNames::getDpctNamespace() + "async_dpct_memset_d32",
+                            ARG(0), ARG(1), ARG(2), ARG(3), ARG(4),
+                            DEREF(makeCallArgCreatorWithCall(5))))))

@@ -394,11 +394,10 @@ void AssumingOp::build(
 //===----------------------------------------------------------------------===//
 
 LogicalResult mlir::shape::AddOp::inferReturnTypes(
-    MLIRContext *context, std::optional<Location> location, ValueRange operands,
-    DictionaryAttr attributes, OpaqueProperties properties, RegionRange regions,
-    SmallVectorImpl<Type> &inferredReturnTypes) {
-  if (llvm::isa<SizeType>(operands[0].getType()) ||
-      llvm::isa<SizeType>(operands[1].getType()))
+    MLIRContext *context, std::optional<Location> location,
+    AddOp::Adaptor adaptor, SmallVectorImpl<Type> &inferredReturnTypes) {
+  if (llvm::isa<SizeType>(adaptor.getLhs().getType()) ||
+      llvm::isa<SizeType>(adaptor.getRhs().getType()))
     inferredReturnTypes.assign({SizeType::get(context)});
   else
     inferredReturnTypes.assign({IndexType::get(context)});
@@ -856,9 +855,9 @@ OpFoldResult ConcatOp::fold(FoldAdaptor adaptor) {
   if (!adaptor.getLhs() || !adaptor.getRhs())
     return nullptr;
   auto lhsShape = llvm::to_vector<6>(
-      adaptor.getLhs().cast<DenseIntElementsAttr>().getValues<int64_t>());
+      llvm::cast<DenseIntElementsAttr>(adaptor.getLhs()).getValues<int64_t>());
   auto rhsShape = llvm::to_vector<6>(
-      adaptor.getRhs().cast<DenseIntElementsAttr>().getValues<int64_t>());
+      llvm::cast<DenseIntElementsAttr>(adaptor.getRhs()).getValues<int64_t>());
   SmallVector<int64_t, 6> resultShape;
   resultShape.append(lhsShape.begin(), lhsShape.end());
   resultShape.append(rhsShape.begin(), rhsShape.end());
@@ -916,22 +915,12 @@ void ConstShapeOp::getCanonicalizationPatterns(RewritePatternSet &patterns,
 }
 
 LogicalResult mlir::shape::ConstShapeOp::inferReturnTypes(
-    MLIRContext *context, std::optional<Location> location, ValueRange operands,
-    DictionaryAttr attributes, OpaqueProperties properties, RegionRange regions,
-    SmallVectorImpl<Type> &inferredReturnTypes) {
+    MLIRContext *context, std::optional<Location> location,
+    ConstShapeOp::Adaptor adaptor, SmallVectorImpl<Type> &inferredReturnTypes) {
   Builder b(context);
-  Properties *prop = properties.as<Properties *>();
-  DenseIntElementsAttr shape;
-  // TODO: this is only exercised by the Python bindings codepath which does not
-  // support properties
-  if (prop)
-    shape = prop->shape;
-  else
-    shape = attributes.getAs<DenseIntElementsAttr>("shape");
-  if (!shape)
-    return emitOptionalError(location, "missing shape attribute");
+  const Properties prop = adaptor.getProperties();
   inferredReturnTypes.assign({RankedTensorType::get(
-      {static_cast<int64_t>(shape.size())}, b.getIndexType())});
+      {static_cast<int64_t>(prop.shape.size())}, b.getIndexType())});
   return success();
 }
 
@@ -989,7 +978,7 @@ OpFoldResult CstrBroadcastableOp::fold(FoldAdaptor adaptor) {
           if (!operand)
             return false;
           extents.push_back(llvm::to_vector<6>(
-              operand.cast<DenseIntElementsAttr>().getValues<int64_t>()));
+              llvm::cast<DenseIntElementsAttr>(operand).getValues<int64_t>()));
         }
         return OpTrait::util::staticallyKnownBroadcastable(extents);
       }())
@@ -1095,7 +1084,7 @@ OpFoldResult DimOp::fold(FoldAdaptor adaptor) {
   std::optional<int64_t> index = getConstantIndex();
   if (!index.has_value())
     return nullptr;
-  if (index.value() >= valShapedType.getRank())
+  if (index.value() < 0 || index.value() >= valShapedType.getRank())
     return nullptr;
   auto extent = valShapedType.getDimSize(*index);
   if (ShapedType::isDynamic(extent))
@@ -1104,11 +1093,9 @@ OpFoldResult DimOp::fold(FoldAdaptor adaptor) {
 }
 
 LogicalResult mlir::shape::DimOp::inferReturnTypes(
-    MLIRContext *context, std::optional<Location> location, ValueRange operands,
-    DictionaryAttr attributes, OpaqueProperties properties, RegionRange regions,
-    SmallVectorImpl<Type> &inferredReturnTypes) {
-  DimOpAdaptor dimOp(operands);
-  inferredReturnTypes.assign({dimOp.getIndex().getType()});
+    MLIRContext *context, std::optional<Location> location,
+    DimOp::Adaptor adaptor, SmallVectorImpl<Type> &inferredReturnTypes) {
+  inferredReturnTypes.assign({adaptor.getIndex().getType()});
   return success();
 }
 
@@ -1116,26 +1103,15 @@ bool mlir::shape::DimOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
   return eachHasOnlyOneOfTypes<SizeType, IndexType>(l, r);
 }
 
-LogicalResult mlir::shape::DimOp::verify() {
-  auto st = llvm::cast<ShapedType>(getValue().getType());
-  if (!st.hasRank())
-    return success();
-  if (auto index = getConstantIndex()) {
-    if (*index < 0 || *index >= st.getRank())
-      return emitOpError("index is out of range");
-  }
-  return success();
-}
-
 //===----------------------------------------------------------------------===//
 // DivOp
 //===----------------------------------------------------------------------===//
 
 OpFoldResult DivOp::fold(FoldAdaptor adaptor) {
-  auto lhs = adaptor.getLhs().dyn_cast_or_null<IntegerAttr>();
+  auto lhs = llvm::dyn_cast_if_present<IntegerAttr>(adaptor.getLhs());
   if (!lhs)
     return nullptr;
-  auto rhs = adaptor.getRhs().dyn_cast_or_null<IntegerAttr>();
+  auto rhs = llvm::dyn_cast_if_present<IntegerAttr>(adaptor.getRhs());
   if (!rhs)
     return nullptr;
 
@@ -1152,11 +1128,10 @@ OpFoldResult DivOp::fold(FoldAdaptor adaptor) {
 }
 
 LogicalResult mlir::shape::DivOp::inferReturnTypes(
-    MLIRContext *context, std::optional<Location> location, ValueRange operands,
-    DictionaryAttr attributes, OpaqueProperties properties, RegionRange regions,
-    SmallVectorImpl<Type> &inferredReturnTypes) {
-  if (llvm::isa<SizeType>(operands[0].getType()) ||
-      llvm::isa<SizeType>(operands[1].getType()))
+    MLIRContext *context, std::optional<Location> location,
+    DivOp::Adaptor adaptor, SmallVectorImpl<Type> &inferredReturnTypes) {
+  if (llvm::isa<SizeType>(adaptor.getLhs().getType()) ||
+      llvm::isa<SizeType>(adaptor.getRhs().getType()))
     inferredReturnTypes.assign({SizeType::get(context)});
   else
     inferredReturnTypes.assign({IndexType::get(context)});
@@ -1346,7 +1321,7 @@ std::optional<int64_t> GetExtentOp::getConstantDim() {
 }
 
 OpFoldResult GetExtentOp::fold(FoldAdaptor adaptor) {
-  auto elements = adaptor.getShape().dyn_cast_or_null<DenseIntElementsAttr>();
+  auto elements = llvm::dyn_cast_if_present<DenseIntElementsAttr>(adaptor.getShape());
   if (!elements)
     return nullptr;
   std::optional<int64_t> dim = getConstantDim();
@@ -1372,9 +1347,8 @@ void GetExtentOp::build(OpBuilder &builder, OperationState &result, Value shape,
 }
 
 LogicalResult mlir::shape::GetExtentOp::inferReturnTypes(
-    MLIRContext *context, std::optional<Location> location, ValueRange operands,
-    DictionaryAttr attributes, OpaqueProperties properties, RegionRange regions,
-    SmallVectorImpl<Type> &inferredReturnTypes) {
+    MLIRContext *context, std::optional<Location> location,
+    GetExtentOp::Adaptor adaptor, SmallVectorImpl<Type> &inferredReturnTypes) {
   inferredReturnTypes.assign({IndexType::get(context)});
   return success();
 }
@@ -1410,10 +1384,9 @@ OpFoldResult IsBroadcastableOp::fold(FoldAdaptor adaptor) {
 //===----------------------------------------------------------------------===//
 
 LogicalResult mlir::shape::MeetOp::inferReturnTypes(
-    MLIRContext *context, std::optional<Location> location, ValueRange operands,
-    DictionaryAttr attributes, OpaqueProperties properties, RegionRange regions,
-    SmallVectorImpl<Type> &inferredReturnTypes) {
-  if (operands.empty())
+    MLIRContext *context, std::optional<Location> location,
+    MeetOp::Adaptor adaptor, SmallVectorImpl<Type> &inferredReturnTypes) {
+  if (adaptor.getOperands().empty())
     return failure();
 
   auto isShapeType = [](Type arg) {
@@ -1422,7 +1395,7 @@ LogicalResult mlir::shape::MeetOp::inferReturnTypes(
     return isExtentTensorType(arg);
   };
 
-  ValueRange::type_range types = operands.getTypes();
+  ValueRange::type_range types = adaptor.getOperands().getTypes();
   Type acc = types.front();
   for (auto t : drop_begin(types)) {
     Type l = acc, r = t;
@@ -1490,7 +1463,7 @@ bool mlir::shape::MeetOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
 //===----------------------------------------------------------------------===//
 
 OpFoldResult shape::RankOp::fold(FoldAdaptor adaptor) {
-  auto shape = adaptor.getShape().dyn_cast_or_null<DenseIntElementsAttr>();
+  auto shape = llvm::dyn_cast_if_present<DenseIntElementsAttr>(adaptor.getShape());
   if (!shape)
     return {};
   int64_t rank = shape.getNumElements();
@@ -1546,10 +1519,9 @@ void shape::RankOp::getCanonicalizationPatterns(RewritePatternSet &patterns,
 }
 
 LogicalResult mlir::shape::RankOp::inferReturnTypes(
-    MLIRContext *context, std::optional<Location> location, ValueRange operands,
-    DictionaryAttr attributes, OpaqueProperties properties, RegionRange regions,
-    SmallVectorImpl<Type> &inferredReturnTypes) {
-  if (llvm::isa<ShapeType>(operands[0].getType()))
+    MLIRContext *context, std::optional<Location> location,
+    RankOp::Adaptor adaptor, SmallVectorImpl<Type> &inferredReturnTypes) {
+  if (llvm::isa<ShapeType>(adaptor.getShape().getType()))
     inferredReturnTypes.assign({SizeType::get(context)});
   else
     inferredReturnTypes.assign({IndexType::get(context)});
@@ -1582,10 +1554,10 @@ OpFoldResult NumElementsOp::fold(FoldAdaptor adaptor) {
 }
 
 LogicalResult mlir::shape::NumElementsOp::inferReturnTypes(
-    MLIRContext *context, std::optional<Location> location, ValueRange operands,
-    DictionaryAttr attributes, OpaqueProperties properties, RegionRange regions,
+    MLIRContext *context, std::optional<Location> location,
+    NumElementsOp::Adaptor adaptor,
     SmallVectorImpl<Type> &inferredReturnTypes) {
-  if (llvm::isa<ShapeType>(operands[0].getType()))
+  if (llvm::isa<ShapeType>(adaptor.getShape().getType()))
     inferredReturnTypes.assign({SizeType::get(context)});
   else
     inferredReturnTypes.assign({IndexType::get(context)});
@@ -1614,11 +1586,10 @@ OpFoldResult MaxOp::fold(FoldAdaptor adaptor) {
 }
 
 LogicalResult mlir::shape::MaxOp::inferReturnTypes(
-    MLIRContext *context, std::optional<Location> location, ValueRange operands,
-    DictionaryAttr attributes, OpaqueProperties properties, RegionRange regions,
-    SmallVectorImpl<Type> &inferredReturnTypes) {
-  if (operands[0].getType() == operands[1].getType())
-    inferredReturnTypes.assign({operands[0].getType()});
+    MLIRContext *context, std::optional<Location> location,
+    MaxOp::Adaptor adaptor, SmallVectorImpl<Type> &inferredReturnTypes) {
+  if (adaptor.getLhs().getType() == adaptor.getRhs().getType())
+    inferredReturnTypes.assign({adaptor.getLhs().getType()});
   else
     inferredReturnTypes.assign({SizeType::get(context)});
   return success();
@@ -1646,11 +1617,10 @@ OpFoldResult MinOp::fold(FoldAdaptor adaptor) {
 }
 
 LogicalResult mlir::shape::MinOp::inferReturnTypes(
-    MLIRContext *context, std::optional<Location> location, ValueRange operands,
-    DictionaryAttr attributes, OpaqueProperties properties, RegionRange regions,
-    SmallVectorImpl<Type> &inferredReturnTypes) {
-  if (operands[0].getType() == operands[1].getType())
-    inferredReturnTypes.assign({operands[0].getType()});
+    MLIRContext *context, std::optional<Location> location,
+    MinOp::Adaptor adaptor, SmallVectorImpl<Type> &inferredReturnTypes) {
+  if (adaptor.getLhs().getType() == adaptor.getRhs().getType())
+    inferredReturnTypes.assign({adaptor.getLhs().getType()});
   else
     inferredReturnTypes.assign({SizeType::get(context)});
   return success();
@@ -1671,10 +1641,10 @@ bool mlir::shape::MinOp::isCompatibleReturnTypes(TypeRange l, TypeRange r) {
 //===----------------------------------------------------------------------===//
 
 OpFoldResult MulOp::fold(FoldAdaptor adaptor) {
-  auto lhs = adaptor.getLhs().dyn_cast_or_null<IntegerAttr>();
+  auto lhs = llvm::dyn_cast_if_present<IntegerAttr>(adaptor.getLhs());
   if (!lhs)
     return nullptr;
-  auto rhs = adaptor.getRhs().dyn_cast_or_null<IntegerAttr>();
+  auto rhs = llvm::dyn_cast_if_present<IntegerAttr>(adaptor.getRhs());
   if (!rhs)
     return nullptr;
   APInt folded = lhs.getValue() * rhs.getValue();
@@ -1683,11 +1653,10 @@ OpFoldResult MulOp::fold(FoldAdaptor adaptor) {
 }
 
 LogicalResult mlir::shape::MulOp::inferReturnTypes(
-    MLIRContext *context, std::optional<Location> location, ValueRange operands,
-    DictionaryAttr attributes, OpaqueProperties properties, RegionRange regions,
-    SmallVectorImpl<Type> &inferredReturnTypes) {
-  if (llvm::isa<SizeType>(operands[0].getType()) ||
-      llvm::isa<SizeType>(operands[1].getType()))
+    MLIRContext *context, std::optional<Location> location,
+    MulOp::Adaptor adaptor, SmallVectorImpl<Type> &inferredReturnTypes) {
+  if (llvm::isa<SizeType>(adaptor.getLhs().getType()) ||
+      llvm::isa<SizeType>(adaptor.getRhs().getType()))
     inferredReturnTypes.assign({SizeType::get(context)});
   else
     inferredReturnTypes.assign({IndexType::get(context)});
@@ -1770,13 +1739,12 @@ void ShapeOfOp::getCanonicalizationPatterns(RewritePatternSet &patterns,
 }
 
 LogicalResult mlir::shape::ShapeOfOp::inferReturnTypes(
-    MLIRContext *context, std::optional<Location> location, ValueRange operands,
-    DictionaryAttr attributes, OpaqueProperties properties, RegionRange regions,
-    SmallVectorImpl<Type> &inferredReturnTypes) {
-  if (llvm::isa<ValueShapeType>(operands[0].getType()))
+    MLIRContext *context, std::optional<Location> location,
+    ShapeOfOp::Adaptor adaptor, SmallVectorImpl<Type> &inferredReturnTypes) {
+  if (llvm::isa<ValueShapeType>(adaptor.getArg().getType()))
     inferredReturnTypes.assign({ShapeType::get(context)});
   else {
-    auto shapedTy = llvm::cast<ShapedType>(operands[0].getType());
+    auto shapedTy = llvm::cast<ShapedType>(adaptor.getArg().getType());
     int64_t rank =
         shapedTy.hasRank() ? shapedTy.getRank() : ShapedType::kDynamic;
     Type indexTy = IndexType::get(context);
@@ -1864,9 +1832,9 @@ LogicalResult SplitAtOp::fold(FoldAdaptor adaptor,
   if (!adaptor.getOperand() || !adaptor.getIndex())
     return failure();
   auto shapeVec = llvm::to_vector<6>(
-      adaptor.getOperand().cast<DenseIntElementsAttr>().getValues<int64_t>());
+      llvm::cast<DenseIntElementsAttr>(adaptor.getOperand()).getValues<int64_t>());
   auto shape = llvm::ArrayRef(shapeVec);
-  auto splitPoint = adaptor.getIndex().cast<IntegerAttr>().getInt();
+  auto splitPoint = llvm::cast<IntegerAttr>(adaptor.getIndex()).getInt();
   // Verify that the split point is in the correct range.
   // TODO: Constant fold to an "error".
   int64_t rank = shape.size();
@@ -1889,7 +1857,7 @@ OpFoldResult ToExtentTensorOp::fold(FoldAdaptor adaptor) {
     return OpFoldResult();
   Builder builder(getContext());
   auto shape = llvm::to_vector<6>(
-      adaptor.getInput().cast<DenseIntElementsAttr>().getValues<int64_t>());
+      llvm::cast<DenseIntElementsAttr>(adaptor.getInput()).getValues<int64_t>());
   auto type = RankedTensorType::get({static_cast<int64_t>(shape.size())},
                                     builder.getIndexType());
   return DenseIntElementsAttr::get(type, shape);

@@ -90,6 +90,33 @@ int main(){
     CALL(cuMemcpyAsync(f_D, f_D2, size, 0));
     // CHECK: r = DPCT_CHECK_ERROR(q_ct1.memcpy(f_D, f_D2, size));
     r = cuMemcpyAsync(f_D, f_D2, size, 0);
+    unsigned int v32 = 50000;
+    unsigned short v16 = 20000;
+    unsigned char v8 = (unsigned char) 200;
+    //CHECK: dpct::dpct_memset_d32(f_D, v32, size);
+    //CHECK-NEXT: dpct::dpct_memset_d16(f_D, v16, size * 2);
+    //CHECK-NEXT: dpct::dpct_memset(f_D, v8, size * 4);
+    //CHECK-NEXT: dpct::async_dpct_memset_d32(f_D, v32, size, *stream);
+    //CHECK-NEXT: dpct::async_dpct_memset_d16(f_D, v16, size * 2, *stream);
+    //CHECK-NEXT: dpct::async_dpct_memset(f_D, v8, size * 4, *stream);
+    //CHECK-NEXT: dpct::dpct_memset_d32(f_D, 1, v32, 4, 6);
+    //CHECK-NEXT: dpct::dpct_memset_d16(f_D, 1, v16, 4 * 2, 6);
+    //CHECK-NEXT: dpct::dpct_memset(f_D, 1, v8, 4 * 4, 6);
+    //CHECK-NEXT: dpct::async_dpct_memset_d32(f_D, 1, v32, 4, 6, *stream);
+    //CHECK-NEXT: dpct::async_dpct_memset_d16(f_D, 1, v16, 4 * 2, 6, *stream);
+    //CHECK-NEXT: dpct::async_dpct_memset(f_D, 1, v8, 4 * 4, 6, *stream);
+    cuMemsetD32(f_D, v32, size);
+    cuMemsetD16(f_D, v16, size * 2);
+    cuMemsetD8(f_D, v8, size * 4);
+    cuMemsetD32Async(f_D, v32, size, stream);
+    cuMemsetD16Async(f_D, v16, size * 2, stream);
+    cuMemsetD8Async(f_D, v8, size * 4, stream);
+    cuMemsetD2D32(f_D, 1, v32, 4, 6);
+    cuMemsetD2D16(f_D, 1, v16, 4 * 2, 6);
+    cuMemsetD2D8(f_D, 1, v8, 4 * 4, 6);
+    cuMemsetD2D32Async(f_D, 1, v32, 4, 6, stream);
+    cuMemsetD2D16Async(f_D, 1, v16, 4 * 2, 6, stream);
+    cuMemsetD2D8Async(f_D, 1, v8, 4 * 4, 6, stream);
 
     // CHECK: dpct::pitched_data cpy_from_data_ct1, cpy_to_data_ct1;
     // CHECK: sycl::id<3> cpy_from_pos_ct1(0, 0, 0), cpy_to_pos_ct1(0, 0, 0);
@@ -270,6 +297,10 @@ int main(){
 
     // CHECK: dpct::dpct_memcpy(cpy2_to_data_ct1, cpy2_to_pos_ct1, cpy2_from_data_ct1, cpy2_from_pos_ct1, cpy2_size_ct1);
     cuMemcpy3D(&cpy2);
+
+    CUstream cs;
+    // CHECK: dpct::async_dpct_memcpy(cpy2_to_data_ct1, cpy2_to_pos_ct1, cpy2_from_data_ct1, cpy2_from_pos_ct1, cpy2_size_ct1, dpct::automatic, *cs);
+    cuMemcpy3DAsync(&cpy2, cs);
 
     float *h_A = (float *)malloc(100);
     // CHECK:sycl::free(h_A, q_ct1);

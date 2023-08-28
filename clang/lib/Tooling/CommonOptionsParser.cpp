@@ -380,8 +380,33 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
       Adjuster = combineAdjusters(
           std::move(Adjuster),
           getInsertArgumentAdjuster(I.c_str(), ArgumentInsertPosition::BEGIN));
+    } else if(I.size() > 2 && I.substr(0, 2) == "-I") {
+      std::string IncPath = I.substr(2);
+      const auto StartPos = IncPath.find_first_not_of(" ");
+      if (StartPos != std::string::npos)
+        IncPath = IncPath.substr(StartPos);
+      ExtraIncPathList.push_back(IncPath);
     }
   }
+
+  if (AdjustingCompilations) {
+    for (const auto &SourceFile : AdjustingCompilations->getAllFiles()) {
+      std::vector<CompileCommand> CompileCommandsForFile =
+          AdjustingCompilations->getCompileCommands(SourceFile);
+      for (CompileCommand &CompileCommand : CompileCommandsForFile) {
+        for (auto &I : CompileCommand.CommandLine) {
+          if (I.size() > 2 && I.substr(0, 2) == "-I") {
+            std::string IncPath = I.substr(2);
+            const auto StartPos = IncPath.find_first_not_of(" ");
+            if (StartPos != std::string::npos)
+              IncPath = IncPath.substr(StartPos);
+            ExtraIncPathList.push_back(IncPath);
+          }
+        }
+      }
+    }
+  }
+
   if (IsCudaFile) {
     Adjuster = combineAdjusters(
         std::move(Adjuster),

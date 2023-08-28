@@ -31,8 +31,30 @@
 #include <windows.h>
 #endif
 
-
 namespace dpct {
+namespace detail {
+static void get_version(const sycl::device &dev, int &major, int &minor) {
+  // Version string has the following format:
+  // a. OpenCL<space><major.minor><space><vendor-specific-information>
+  // b. <major.minor>
+  std::string ver;
+  ver = dev.get_info<sycl::info::device::version>();
+  std::string::size_type i = 0;
+  while (i < ver.size()) {
+    if (isdigit(ver[i]))
+      break;
+    i++;
+  }
+  major = std::stoi(&(ver[i]));
+  while (i < ver.size()) {
+    if (ver[i] == '.')
+      break;
+    i++;
+  }
+  i++;
+  minor = std::stoi(&(ver[i]));
+}
+} // namespace detail
 
 /// SYCL default exception handler
 inline auto exception_handler = [](sycl::exception_list exceptions) {
@@ -72,13 +94,11 @@ public:
                              int> = 0>
   auto get_max_work_item_sizes() const {
     if constexpr (std::is_same_v<WorkItemSizesTy, sycl::range<3>>)
-      return _max_work_item_sizes;
+      return sycl::range<3>(_max_work_item_sizes_i[0],
+                            _max_work_item_sizes_i[1],
+                            _max_work_item_sizes_i[2]);
     else {
-      int max_work_item_sizes_i[3];
-      for (int i = 0;i<3;++i){
-        max_work_item_sizes_i[i] = _max_work_item_sizes[i];
-      }
-      return max_work_item_sizes_i;
+      return _max_work_item_sizes_i;
     }  
   }
   template <typename WorkItemSizesTy = sycl::range<3>,
@@ -87,13 +107,11 @@ public:
                              int> = 0>
   auto get_max_work_item_sizes() {
     if constexpr (std::is_same_v<WorkItemSizesTy, sycl::range<3>>)
-      return _max_work_item_sizes;
+      return sycl::range<3>(_max_work_item_sizes_i[0],
+                            _max_work_item_sizes_i[1],
+                            _max_work_item_sizes_i[2]);
     else {
-      int max_work_item_sizes_i[3];
-      for (int i = 0;i<3;++i){
-        max_work_item_sizes_i[i] = _max_work_item_sizes[i];
-      }
-      return max_work_item_sizes_i;
+      return _max_work_item_sizes_i;
     }  
   }
   bool get_host_unified_memory() const { return _host_unified_memory; }
@@ -151,12 +169,13 @@ public:
     }
   }
   void set_max_work_item_sizes(const sycl::range<3> max_work_item_sizes) {
-    _max_work_item_sizes = max_work_item_sizes;
+    for (int i = 0; i < 3; ++i)
+      _max_work_item_sizes_i[i] = max_work_item_sizes[i];
   }
   [[deprecated]] void
   set_max_work_item_sizes(const sycl::id<3> max_work_item_sizes) {
     for (int i = 0; i < 3; ++i) {
-      _max_work_item_sizes[i] = max_work_item_sizes[i];
+      _max_work_item_sizes_i[i] = max_work_item_sizes[i];
     }
   }
   void set_host_unified_memory(bool host_unified_memory) {
@@ -209,7 +228,7 @@ public:
   }
 private:
   char _name[256];
-  sycl::range<3> _max_work_item_sizes{1, 1, 1};
+  int _max_work_item_sizes_i[3];
   bool _host_unified_memory = false;
   int _major;
   int _minor;
@@ -232,6 +251,102 @@ private:
   std::array<unsigned char, 16> _uuid;
 };
 
+static int get_major_version(const sycl::device &dev) {
+  int major, minor;
+  detail::get_version(dev, major, minor);
+  return major;
+}
+
+static int get_minor_version(const sycl::device &dev) {
+  int major, minor;
+  detail::get_version(dev, major, minor);
+  return minor;
+}
+
+static void get_device_info(device_info &out, const sycl::device &dev) {
+  device_info prop;
+  prop.set_name(dev.get_info<sycl::info::device::name>().c_str());
+
+  int major, minor;
+  detail::get_version(dev, major, minor);
+  prop.set_major_version(major);
+  prop.set_minor_version(minor);
+
+  prop.set_max_work_item_sizes(
+#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION < 20220902)
+      // oneAPI DPC++ compiler older than 2022/09/02, where max_work_item_sizes
+      // is an enum class element
+      dev.get_info<sycl::info::device::max_work_item_sizes>());
+#else
+      // SYCL 2020-conformant code, max_work_item_sizes is a struct templated by
+      // an int
+      dev.get_info<sycl::info::device::max_work_item_sizes<3>>());
+#endif
+  prop.set_host_unified_memory(dev.has(sycl::aspect::usm_host_allocations));
+
+  prop.set_max_clock_frequency(
+      dev.get_info<sycl::info::device::max_clock_frequency>() * 1000);
+
+  prop.set_max_compute_units(
+      dev.get_info<sycl::info::device::max_compute_units>());
+  prop.set_max_work_group_size(
+      dev.get_info<sycl::info::device::max_work_group_size>());
+  prop.set_global_mem_size(dev.get_info<sycl::info::device::global_mem_size>());
+  prop.set_local_mem_size(dev.get_info<sycl::info::device::local_mem_size>());
+
+#if (defined(SYCL_EXT_INTEL_DEVICE_INFO) && SYCL_EXT_INTEL_DEVICE_INFO >= 6)
+  if (dev.has(sycl::aspect::ext_intel_memory_clock_rate)) {
+    unsigned int tmp =
+        dev.get_info<sycl::ext::intel::info::device::memory_clock_rate>();
+    if (tmp != 0)
+      prop.set_memory_clock_rate(1000 * tmp);
+  }
+  if (dev.has(sycl::aspect::ext_intel_memory_bus_width)) {
+    prop.set_memory_bus_width(
+        dev.get_info<sycl::ext::intel::info::device::memory_bus_width>());
+  }
+  if (dev.has(sycl::aspect::ext_intel_device_id)) {
+    prop.set_device_id(
+        dev.get_info<sycl::ext::intel::info::device::device_id>());
+  }
+  if (dev.has(sycl::aspect::ext_intel_device_info_uuid)) {
+    prop.set_uuid(dev.get_info<sycl::ext::intel::info::device::uuid>());
+  }
+#elif defined(_MSC_VER) && !defined(__clang__)
+#pragma message("get_device_info: querying memory_clock_rate and \
+memory_bus_width are not supported by the compiler used. \
+Use 3200000 kHz as memory_clock_rate default value. \
+Use 64 bits as memory_bus_width default value.")
+#else
+#warning "get_device_info: querying memory_clock_rate and \
+memory_bus_width are not supported by the compiler used. \
+Use 3200000 kHz as memory_clock_rate default value. \
+Use 64 bits as memory_bus_width default value."
+#endif
+
+  size_t max_sub_group_size = 1;
+  std::vector<size_t> sub_group_sizes =
+      dev.get_info<sycl::info::device::sub_group_sizes>();
+
+  for (const auto &sub_group_size : sub_group_sizes) {
+    if (max_sub_group_size < sub_group_size)
+      max_sub_group_size = sub_group_size;
+  }
+
+  prop.set_max_sub_group_size(max_sub_group_size);
+
+  prop.set_max_work_items_per_compute_unit(
+      dev.get_info<sycl::info::device::max_work_group_size>());
+  int max_nd_range_size[] = {0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF};
+  prop.set_max_nd_range_size(max_nd_range_size);
+
+  // Estimates max register size per work group, feel free to update the value
+  // according to device properties.
+  prop.set_max_register_size_per_work_group(65536);
+
+  out = prop;
+}
+
 /// dpct device extension
 class device_ext : public sycl::device {
   typedef std::mutex mutex_type;
@@ -249,15 +364,11 @@ public:
 
   int is_native_atomic_supported() { return 0; }
   int get_major_version() const {
-    int major, minor;
-    get_version(major, minor);
-    return major;
+    return dpct::get_major_version(*this);
   }
 
   int get_minor_version() const {
-    int major, minor;
-    get_version(major, minor);
-    return minor;
+    return dpct::get_minor_version(*this);
   }
 
   int get_max_compute_units() const {
@@ -315,93 +426,12 @@ public:
   }
 
   void get_device_info(device_info &out) const {
-    device_info prop;
-    prop.set_name(get_info<sycl::info::device::name>().c_str());
-
-    int major, minor;
-    get_version(major, minor);
-    prop.set_major_version(major);
-    prop.set_minor_version(minor);
-
-    prop.set_max_work_item_sizes(
-#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION<20220902)
-        // oneAPI DPC++ compiler older than 2022/09/02, where max_work_item_sizes is an enum class element
-        get_info<sycl::info::device::max_work_item_sizes>());
-#else
-        // SYCL 2020-conformant code, max_work_item_sizes is a struct templated by an int
-        get_info<sycl::info::device::max_work_item_sizes<3>>());
-#endif
-    prop.set_host_unified_memory(
-        this->has(sycl::aspect::usm_host_allocations));
-
-    prop.set_max_clock_frequency(
-        get_info<sycl::info::device::max_clock_frequency>() * 1000);
-
-    prop.set_max_compute_units(
-        get_info<sycl::info::device::max_compute_units>());
-    prop.set_max_work_group_size(
-        get_info<sycl::info::device::max_work_group_size>());
-    prop.set_global_mem_size(
-        get_info<sycl::info::device::global_mem_size>());
-    prop.set_local_mem_size(get_info<sycl::info::device::local_mem_size>());
-
-#if (defined(SYCL_EXT_INTEL_DEVICE_INFO) && SYCL_EXT_INTEL_DEVICE_INFO >= 6)
-    if (this->has(sycl::aspect::ext_intel_memory_clock_rate)) {
-      unsigned int tmp =
-          this->get_info<sycl::ext::intel::info::device::memory_clock_rate>();
-      if (tmp != 0)
-        prop.set_memory_clock_rate(1000 * tmp);
-    }
-    if (this->has(sycl::aspect::ext_intel_memory_bus_width)) {
-      prop.set_memory_bus_width(
-          this->get_info<sycl::ext::intel::info::device::memory_bus_width>());
-    }
-    if (this->has(sycl::aspect::ext_intel_device_id)) {
-      prop.set_device_id(
-          this->get_info<sycl::ext::intel::info::device::device_id>());
-    }
-    if (this->has(sycl::aspect::ext_intel_device_info_uuid)) {
-      prop.set_uuid(
-          this->get_info<sycl::ext::intel::info::device::uuid>());
-    }
-#elif defined(_MSC_VER) && !defined(__clang__)
-#pragma message("get_device_info: querying memory_clock_rate and \
-memory_bus_width are not supported by the compiler used. \
-Use 3200000 kHz as memory_clock_rate default value. \
-Use 64 bits as memory_bus_width default value.")
-#else
-#warning "get_device_info: querying memory_clock_rate and \
-memory_bus_width are not supported by the compiler used. \
-Use 3200000 kHz as memory_clock_rate default value. \
-Use 64 bits as memory_bus_width default value."
-#endif
-
-    size_t max_sub_group_size = 1;
-    std::vector<size_t> sub_group_sizes =
-        get_info<sycl::info::device::sub_group_sizes>();
-
-    for (const auto &sub_group_size : sub_group_sizes) {
-      if (max_sub_group_size < sub_group_size)
-        max_sub_group_size = sub_group_size;
-    }
-
-    prop.set_max_sub_group_size(max_sub_group_size);
-
-    prop.set_max_work_items_per_compute_unit(
-        get_info<sycl::info::device::max_work_group_size>());
-    int max_nd_range_size[] = {0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF};
-    prop.set_max_nd_range_size(max_nd_range_size);
-
-    // Estimates max register size per work group, feel free to update the value
-    // according to device properties.
-    prop.set_max_register_size_per_work_group(65536);
-
-    out = prop;
+    dpct::get_device_info(out, *this);
   }
 
   device_info get_device_info() const {
     device_info prop;
-    get_device_info(prop);
+    dpct::get_device_info(prop, *this);
     return prop;
   }
 
@@ -505,25 +535,7 @@ private:
   }
 
   void get_version(int &major, int &minor) const {
-    // Version string has the following format:
-    // a. OpenCL<space><major.minor><space><vendor-specific-information>
-    // b. <major.minor>
-    std::string ver;
-    ver = get_info<sycl::info::device::version>();
-    std::string::size_type i = 0;
-    while (i < ver.size()) {
-      if (isdigit(ver[i]))
-        break;
-      i++;
-    }
-    major = std::stoi(&(ver[i]));
-    while (i < ver.size()) {
-      if (ver[i] == '.')
-        break;
-      i++;
-    }
-    i++;
-    minor = std::stoi(&(ver[i]));
+    detail::get_version(*this, major, minor);
   }
   sycl::queue *_q_in_order, *_q_out_of_order;
   sycl::queue *_saved_queue;

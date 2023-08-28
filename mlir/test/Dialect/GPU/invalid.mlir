@@ -318,7 +318,7 @@ func.func @shuffle_mismatching_type(%arg0 : f32, %arg1 : i32, %arg2 : i32) {
 // -----
 
 func.func @shuffle_unsupported_type(%arg0 : index, %arg1 : i32, %arg2 : i32) {
-  // expected-error@+1 {{operand #0 must be i32 or f32}}
+  // expected-error@+1 {{operand #0 must be i32, i64, f32 or f64}}
   %shfl, %pred = gpu.shuffle xor %arg0, %arg1, %arg2 : index
   return
 }
@@ -608,5 +608,21 @@ module attributes {gpu.container_module} {
     gpu.func @kernel() kernel attributes {gpu.known_block_size = array<i32: 2, 1>} {
       gpu.return
     }
+  }
+}
+
+// -----
+
+module {
+  // expected-error @+1 {{'gpu.module' op attribute 'targets' failed to satisfy constraint: array of GPU target attributes with at least 1 elements}}
+  gpu.module @gpu_funcs [] {
+  }
+}
+
+// -----
+
+module {
+  // expected-error @+1 {{'gpu.module' op attribute 'targets' failed to satisfy constraint: array of GPU target attributes with at least 1 elements}}
+  gpu.module @gpu_funcs [1] {
   }
 }
