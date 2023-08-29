@@ -23,14 +23,14 @@ namespace dpct {
 namespace blas {
 class descriptor {
 public:
-  sycl::queue get_queue() { return _queue; }
-  void set_queue(sycl::queue q) { _queue = q; }
+  queue_ptr get_queue_ptr() { return *_queue_ptr; }
+  void set_queue_ptr(queue_ptr q_ptr) { _queue = q_ptr; }
 
 private:
-  sycl::queue _queue = dpct::get_default_queue();
+  sycl::queue *_queue_ptr = &dpct::get_default_queue();
 };
 
-using descriptor_ptr = descriptor *;
+using descriptor_ptr = std::shared_ptr<descriptor>;
 } // namespace blas
 
 /// Get the value of \p s.

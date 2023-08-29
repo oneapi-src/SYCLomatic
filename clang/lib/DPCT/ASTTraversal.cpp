@@ -5123,22 +5123,18 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
     if (FuncName == "cublasCreate_v2") {
       std::string LHS = getDrefName(CE->getArg(0));
-      if (isPlaceholderIdxDuplicated(CE))
-        return;
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
-      Repl = LHS + " = &{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
+      Repl = LHS + " = std::make_shared<"+ MapNames::getDpctNamespace()+"blas::descriptor>()";
     } else if (FuncName == "cublasDestroy_v2") {
       dpct::ExprAnalysis EA(CE->getArg(0));
-      Repl = EA.getReplacedString() + " = nullptr";
+      Repl = EA.getReplacedString() + ".reset()";
     } else if (FuncName == "cublasSetStream_v2") {
       dpct::ExprAnalysis EA0(CE->getArg(0));
       dpct::ExprAnalysis EA1(CE->getArg(1));
-      Repl = EA0.getReplacedString() + " = " + EA1.getReplacedString();
+      Repl = EA0.getReplacedString() + ".set_queue_ptr(" + EA1.getReplacedString() + ")";
     } else if (FuncName == "cublasGetStream_v2") {
       dpct::ExprAnalysis EA0(CE->getArg(0));
-      std::string LHS = getDrefName(CE->getArg(1));
-      Repl = LHS + " = " + EA0.getReplacedString();
+      dpct::ExprAnalysis EA1(CE->getArg(0));
+      Repl = EA1.getReplacedString() + " = " + EA0.getReplacedString() + ".get_queue_ptr()";
     } else if (FuncName == "cublasSetKernelStream") {
       dpct::ExprAnalysis EA(CE->getArg(0));
       if (isPlaceholderIdxDuplicated(CE))
