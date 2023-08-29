@@ -43,6 +43,21 @@ namespace dpct {
 
 struct null_type {};
 
+// Function object to wrap user defined functors to provide compile time "const"
+// workaround for user function objects.
+// The SYCL spec (4.12) states that writing to a function object during a SYCL
+// kernel is undefined behavior.  This wrapper is provided as a compile-time
+// work around, but functors used in SYCL kernels must be `const` in practice.
+template <typename _Op> struct mark_functor_const {
+  mutable _Op op;
+  mark_functor_const() : op() {}
+  mark_functor_const(const _Op &__op) : op(__op) {}
+  mark_functor_const(_Op &&__op) : op(::std::move(__op)) {}
+  template <typename... _T> auto operator()(_T &&...x) const {
+    return op(std::forward<_T>(x)...);
+  }
+};
+
 template <typename T>
 __dpct_inline__ ::std::enable_if_t<::std::is_unsigned_v<T>, T>
 bfe(T source, uint32_t bit_start, uint32_t num_bits) {
