@@ -24,7 +24,7 @@ namespace blas {
 class descriptor {
 public:
   queue_ptr get_queue_ptr() { return _queue_ptr; }
-  void set_queue_ptr(queue_ptr q_ptr) { _queue = q_ptr; }
+  void set_queue_ptr(queue_ptr q_ptr) { _queue_ptr = q_ptr; }
   sycl::queue get_queue() { return *_queue_ptr; }
 
 private:
