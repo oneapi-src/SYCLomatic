@@ -1,5 +1,6 @@
-void test(CUevent e) {
+void test() {
   // Start
+  CUevent e;
   cuEventSynchronize(e /*CUevent*/);
   // End
 }
