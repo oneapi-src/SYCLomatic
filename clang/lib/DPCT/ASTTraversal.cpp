@@ -11689,7 +11689,7 @@ void CooperativeGroupsFunctionRule::runRule(
         if (Checker2(CE) && DpctGlobalInfo::useLogicalGroup()) {
           FuncInfo->addSubGroupSizeRequest(32, CE->getBeginLoc(),
                                            MapNames::getDpctNamespace() +
-                                               "experimental::logical_group<3>");
+                                               "experimental::logical_group");
         } else {
           FuncInfo->addSubGroupSizeRequest(32, CE->getBeginLoc(),
                                            DpctGlobalInfo::getSubGroup(CE));
