@@ -126,8 +126,8 @@ bool ProcessAllFlag = false;
 bool AsyncHandlerFlag = false;
 static std::string SuppressWarningsMessage = "A comma separated list of migration warnings to suppress. Valid "
                 "warning IDs range\n"
-                "from " + std::to_string((size_t)DiagnosticsMessage::MinID) + " to " +
-                std::to_string((size_t)DiagnosticsMessage::MaxID) +
+                "from " + std::to_string(DiagnosticsMessage::MinID) + " to " +
+                std::to_string(DiagnosticsMessage::MaxID) +
                 ". Hyphen separated ranges are also allowed. For example:\n"
                 "--suppress-warnings=1000-1010,1011.";
 

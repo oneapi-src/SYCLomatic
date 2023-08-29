@@ -40,6 +40,35 @@ extern std::unordered_map<int, DiagnosticsMessage> MsgIDTable;
 
 extern std::set<int> WarningIDs;
 
+struct DiagnosticsMessage {
+  int ID;
+  int Category;
+  const char *Msg;
+#define DEF_NOTE(NAME, ID, MSG)
+#define DEF_ERROR(NAME, ID, MSG)
+#define DEF_WARNING(NAME, ID, MSG) ID,
+#define DEF_COMMENT(NAME, ID, MSG)
+  constexpr static size_t MinID = std::min({
+#include "Diagnostics.inc"
+  });
+  constexpr static size_t MaxID = std::max({
+#include "Diagnostics.inc"
+  });
+#undef DEF_NOTE
+#undef DEF_ERROR
+#undef DEF_WARNING
+#undef DEF_COMMENT
+  DiagnosticsMessage() = default;
+  DiagnosticsMessage(std::unordered_map<int, DiagnosticsMessage> &Table, int ID,
+                     int Category, const char *Msg)
+      : ID(ID), Category(Category), Msg(Msg) {
+    assert(Table.find(ID) == Table.end() && "[DPCT Internal error] Two "
+                                            "messages with the same ID "
+                                            "are being registered");
+    Table[ID] = *this;
+  }
+};
+
 #define DEF_NOTE(NAME, ID, MSG) NAME = ID,
 #define DEF_ERROR(NAME, ID, MSG) NAME = ID,
 #define DEF_WARNING(NAME, ID, MSG) NAME = ID,
@@ -66,29 +95,6 @@ enum class Comments {
 
 #define DEF_NOTE(NAME, ID, MSG)
 #define DEF_ERROR(NAME, ID, MSG)
-#define DEF_WARNING(NAME, ID, MSG) ID,
-#define DEF_COMMENT(NAME, ID, MSG)
-constexpr inline unsigned int WarningIDArray[] = {
-#include "Diagnostics.inc"
-#undef DEF_NOTE
-#undef DEF_ERROR
-#undef DEF_WARNING
-#undef DEF_COMMENT
-};
-
-constexpr int getMaxWarningID() {
-  unsigned int result = WarningIDArray[0];
-  for (size_t i = 1; i < sizeof(WarningIDArray) / sizeof(WarningIDArray[0]);
-       ++i) {
-    if (WarningIDArray[i] > result) {
-      result = WarningIDArray[i];
-    }
-  }
-  return result;
-}
-
-#define DEF_NOTE(NAME, ID, MSG)
-#define DEF_ERROR(NAME, ID, MSG)
 #define DEF_WARNING(NAME, ID, MSG) NAME = ID,
 #define DEF_COMMENT(NAME, ID, MSG)
 enum class Warnings {
@@ -103,23 +109,6 @@ enum class Warnings {
 enum class MakefileMsgs {
 #include "DiagnosticsBuildScript.inc"
 #undef DEF_COMMENT
-};
-
-struct DiagnosticsMessage {
-  int ID;
-  int Category;
-  const char *Msg;
-  constexpr static int MinID = 1000;
-  constexpr static int MaxID = getMaxWarningID();
-  DiagnosticsMessage() = default;
-  DiagnosticsMessage(std::unordered_map<int, DiagnosticsMessage> &Table, int ID,
-                     int Category, const char *Msg)
-      : ID(ID), Category(Category), Msg(Msg) {
-    assert(Table.find(ID) == Table.end() && "[DPCT Internal error] Two "
-                                            "messages with the same ID "
-                                            "are being registered");
-    Table[ID] = *this;
-  }
 };
 
 namespace DiagnosticsUtils {
