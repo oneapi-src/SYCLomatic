@@ -1,5 +1,6 @@
-void test(cudaPitchedPtr *pp, cudaExtent e) {
+void test(cudaPitchedPtr *pp) {
   // Start
-  cudaMalloc3D(pp /*cudaPitchedPtr **/, e /*cudaExtent*/);
+  cudaExtent e;
+  cudaMalloc3D(pp /*cudaPitchedPtr **/, e);
   // End
 }

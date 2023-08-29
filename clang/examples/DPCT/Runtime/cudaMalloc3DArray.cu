@@ -1,7 +1,6 @@
-void test(cudaArray_t *pa, const cudaChannelFormatDesc *pc, cudaExtent e,
-          unsigned int u) {
+void test(cudaArray_t *pa, cudaExtent e, unsigned int u) {
   // Start
-  cudaMalloc3DArray(pa /*cudaArray_t **/, pc /*cudaChannelFormatDesc **/,
-                    e /*cudaExtent*/, u /*unsigned int*/);
+  const cudaChannelFormatDesc *pc;
+  cudaMalloc3DArray(pa /*cudaArray_t **/, pc, e /*cudaExtent*/, u);
   // End
 }

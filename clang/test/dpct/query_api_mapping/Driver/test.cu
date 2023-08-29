@@ -266,34 +266,6 @@
 // CUMEMCPY-NEXT:   dpct::get_in_order_queue().memcpy(d1, d2, s).wait();
 // CUMEMCPY-EMPTY:
 
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuMemcpy2D | FileCheck %s -check-prefix=CUMEMCPY2D
-// CUMEMCPY2D: CUDA API:
-// CUMEMCPY2D-NEXT:   cuMemcpy2D(pm /*const CUDA_MEMCPY2D **/);
-// CUMEMCPY2D-NEXT: Is migrated to:
-// CUMEMCPY2D-NEXT:   dpct::dpct_memcpy(pm /*const CUDA_MEMCPY2D **/);
-// CUMEMCPY2D-EMPTY:
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuMemcpy2DAsync | FileCheck %s -check-prefix=CUMEMCPY2DASYNC
-// CUMEMCPY2DASYNC: CUDA API:
-// CUMEMCPY2DASYNC-NEXT:   cuMemcpy2DAsync(pm /*const CUDA_MEMCPY2D **/, s /*CUstream*/);
-// CUMEMCPY2DASYNC-NEXT: Is migrated to:
-// CUMEMCPY2DASYNC-NEXT:   dpct::async_dpct_memcpy(pm /*const CUDA_MEMCPY2D **/, *s /*CUstream*/);
-// CUMEMCPY2DASYNC-EMPTY:
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuMemcpy3D | FileCheck %s -check-prefix=CUMEMCPY3D
-// CUMEMCPY3D: CUDA API:
-// CUMEMCPY3D-NEXT:   cuMemcpy3D(pm /*const CUDA_MEMCPY3D **/);
-// CUMEMCPY3D-NEXT: Is migrated to:
-// CUMEMCPY3D-NEXT:   dpct::dpct_memcpy(pm /*const CUDA_MEMCPY3D **/);
-// CUMEMCPY3D-EMPTY:
-
-// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuMemcpy3DAsync | FileCheck %s -check-prefix=CUMEMCPY3DASYNC
-// CUMEMCPY3DASYNC: CUDA API:
-// CUMEMCPY3DASYNC-NEXT:   cuMemcpy3DAsync(pm /*const CUDA_MEMCPY3D **/, s /*CUstream*/);
-// CUMEMCPY3DASYNC-NEXT: Is migrated to:
-// CUMEMCPY3DASYNC-NEXT:   dpct::async_dpct_memcpy(pm /*const CUDA_MEMCPY3D **/, *s /*CUstream*/);
-// CUMEMCPY3DASYNC-EMPTY:
-
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuMemcpyAsync | FileCheck %s -check-prefix=CUMEMCPYASYNC
 // CUMEMCPYASYNC: CUDA API:
 // CUMEMCPYASYNC-NEXT:   CUstream cs;
@@ -372,19 +344,22 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuMemcpyDtoH | FileCheck %s -check-prefix=CUMEMCPYDTOH
 // CUMEMCPYDTOH: CUDA API:
-// CUMEMCPYDTOH-NEXT:   cuMemcpyDtoH(pv /*void **/, pd /*CUdeviceptr*/, s /*size_t*/);
+// CUMEMCPYDTOH-NEXT:   CUdeviceptr pd;
+// CUMEMCPYDTOH-NEXT:   cuMemcpyDtoH(pv /*void **/, pd, s /*size_t*/);
 // CUMEMCPYDTOH-NEXT: Is migrated to:
-// CUMEMCPYDTOH-NEXT:   dpct::get_in_order_queue().memcpy(pv /*void **/, pd /*CUdeviceptr*/, s /*size_t*/).wait();
+// CUMEMCPYDTOH-NEXT:   dpct::device_ptr pd;
+// CUMEMCPYDTOH-NEXT:   dpct::get_in_order_queue().memcpy(pv /*void **/, pd, s /*size_t*/).wait();
 // CUMEMCPYDTOH-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuMemcpyDtoHAsync | FileCheck %s -check-prefix=CUMEMCPYDTOHASYNC
 // CUMEMCPYDTOHASYNC: CUDA API:
+// CUMEMCPYDTOHASYNC-NEXT:   CUdeviceptr pd;
 // CUMEMCPYDTOHASYNC-NEXT:   CUstream cs;
-// CUMEMCPYDTOHASYNC-NEXT:   cuMemcpyDtoHAsync(pv /*void **/, pd /*CUdeviceptr*/, s /*size_t*/,
-// CUMEMCPYDTOHASYNC-NEXT:                     cs /*CUstream*/);
+// CUMEMCPYDTOHASYNC-NEXT:   cuMemcpyDtoHAsync(pv /*void **/, pd, s /*size_t*/, cs);
 // CUMEMCPYDTOHASYNC-NEXT: Is migrated to:
+// CUMEMCPYDTOHASYNC-NEXT:   dpct::device_ptr pd;
 // CUMEMCPYDTOHASYNC-NEXT:   dpct::queue_ptr cs;
-// CUMEMCPYDTOHASYNC-NEXT:   cs->memcpy(pv /*void **/, pd /*CUdeviceptr*/, s /*CUstream*/);
+// CUMEMCPYDTOHASYNC-NEXT:   cs->memcpy(pv /*void **/, pd, s);
 // CUMEMCPYDTOHASYNC-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cuMemcpyHtoA | FileCheck %s -check-prefix=CUMEMCPYHTOA

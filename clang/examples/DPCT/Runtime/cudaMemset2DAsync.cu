@@ -1,6 +1,7 @@
-void test(void *pv, size_t s1, int i, size_t s2, size_t s3, cudaStream_t s) {
+void test(void *pDev, size_t s1, int i, size_t s2, size_t s3) {
   // Start
-  cudaMemset2DAsync(pv /*void **/, s1 /*size_t*/, i /*int*/, s2 /*size_t*/,
-                    s3 /*size_t*/, s /*cudaStream_t*/);
+  cudaStream_t s;
+  cudaMemset2DAsync(pDev /*void **/, s1 /*size_t*/, i /*int*/, s2 /*size_t*/,
+                    s3 /*size_t*/, s);
   // End
 }
