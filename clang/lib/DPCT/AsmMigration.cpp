@@ -1066,7 +1066,7 @@ protected:
   }
 
   bool HandleMul24Mad24(const InlineAsmInstruction *Inst, bool isMad) {
-    if (Inst->getNumInputOperands() != 2 + isMad || Inst->getNumTypes() != 1)
+    if (Inst->getNumInputOperands() != 2U + isMad || Inst->getNumTypes() != 1)
       return SYCLGenError();
 
     const auto *Type = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
