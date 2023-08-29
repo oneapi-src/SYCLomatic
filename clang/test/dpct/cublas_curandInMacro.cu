@@ -39,8 +39,8 @@ int main() {
 
     // CHECK: dpct::queue_ptr stream1;
     // CHECK-NEXT: stream1 = dpct::get_current_device().create_queue();
-    // CHECK-NEXT: cublasErrCheck(DPCT_CHECK_ERROR(handle = stream1));
-    // CHECK-NEXT: cublasErrCheck(DPCT_CHECK_ERROR(stream1 = handle));
+    // CHECK-NEXT: cublasErrCheck(DPCT_CHECK_ERROR(handle->set_queue_ptr(stream1)));
+    // CHECK-NEXT: cublasErrCheck(DPCT_CHECK_ERROR(stream1 = handle->get_queue_ptr()));
     cudaStream_t stream1;
     cudaStreamCreate(&stream1);
     cublasErrCheck(cublasSetStream(handle, stream1));

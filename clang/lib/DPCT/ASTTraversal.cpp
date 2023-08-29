@@ -5130,11 +5130,11 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     } else if (FuncName == "cublasSetStream_v2") {
       dpct::ExprAnalysis EA0(CE->getArg(0));
       dpct::ExprAnalysis EA1(CE->getArg(1));
-      Repl = EA0.getReplacedString() + ".set_queue_ptr(" + EA1.getReplacedString() + ")";
+      Repl = EA0.getReplacedString() + "->set_queue_ptr(" + EA1.getReplacedString() + ")";
     } else if (FuncName == "cublasGetStream_v2") {
       dpct::ExprAnalysis EA0(CE->getArg(0));
-      dpct::ExprAnalysis EA1(CE->getArg(0));
-      Repl = EA1.getReplacedString() + " = " + EA0.getReplacedString() + ".get_queue_ptr()";
+      std::string LHS = getDrefName(CE->getArg(1));
+      Repl = LHS + " = " + EA0.getReplacedString() + "->get_queue_ptr()";
     } else if (FuncName == "cublasSetKernelStream") {
       dpct::ExprAnalysis EA(CE->getArg(0));
       if (isPlaceholderIdxDuplicated(CE))

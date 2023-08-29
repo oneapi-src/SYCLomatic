@@ -20,12 +20,10 @@ extern cublasHandle_t handle2;
 
 // CHECK: int foo2(dpct::library_data_t DT)  try {
 int foo2(cudaDataType DT) {
-  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // CHECK: int status;
   // CHECK-NEXT: dpct::blas::descriptor_ptr handle;
-  // CHECK-NEXT: handle = &q_ct1;
-  // CHECK: status = DPCT_CHECK_ERROR(handle = &q_ct1);
+  // CHECK-NEXT: handle = std::make_shared<dpct::blas::descriptor>();
+  // CHECK: status = DPCT_CHECK_ERROR(handle = std::make_shared<dpct::blas::descriptor>());
   // CHECK-NEXT: if (status != 0) {
   cublasStatus_t status;
   cublasHandle_t handle;
@@ -63,11 +61,11 @@ int foo2(cudaDataType DT) {
   cublasDataType_t cbdt;
 
   // CHECK: dpct::queue_ptr stream1;
-  // CHECK-NEXT: stream1 = dev_ct1.create_queue();
-  // CHECK-NEXT: handle = stream1;
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(handle = stream1);
-  // CHECK-NEXT: stream1 = handle;
-  // CHECK-NEXT: status = DPCT_CHECK_ERROR(stream1 = handle);
+  // CHECK-NEXT: stream1 = dpct::get_current_device().create_queue();
+  // CHECK-NEXT: handle->set_queue_ptr(stream1);
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(handle->set_queue_ptr(stream1));
+  // CHECK-NEXT: stream1 = handle->get_queue_ptr();
+  // CHECK-NEXT: status = DPCT_CHECK_ERROR(stream1 = handle->get_queue_ptr());
   cudaStream_t stream1;
   cudaStreamCreate(&stream1);
   cublasSetStream(handle, stream1);
@@ -191,8 +189,8 @@ int foo2(cudaDataType DT) {
   cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, &dA(10, 20), N, d_B_S, N, &beta_S, d_C_S, N);
 #undef dA(i, j)
 
-  // CHECK: status = DPCT_CHECK_ERROR(handle = nullptr);
-  // CHECK-NEXT: handle = nullptr;
+  // CHECK: status = DPCT_CHECK_ERROR(handle.reset());
+  // CHECK-NEXT: handle.reset();
   // CHECK-NEXT: return 0;
   status = cublasDestroy(handle);
   cublasDestroy(handle);
