@@ -14,9 +14,9 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaFree | FileCheck %s -check-prefix=CUDAFREE
 // CUDAFREE: CUDA API:
-// CUDAFREE-NEXT:   cudaFree(v /*void **/);
+// CUDAFREE-NEXT:   cudaFree(pv /*void **/);
 // CUDAFREE-NEXT: Is migrated to:
-// CUDAFREE-NEXT:   sycl::free(v, dpct::get_default_queue());
+// CUDAFREE-NEXT:   sycl::free(pv, dpct::get_default_queue());
 // CUDAFREE-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaFreeArray | FileCheck %s -check-prefix=CUDAFREEARRAY
@@ -28,9 +28,9 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaFreeHost | FileCheck %s -check-prefix=CUDAFREEHOST
 // CUDAFREEHOST: CUDA API:
-// CUDAFREEHOST-NEXT:   cudaFreeHost(v /*void **/);
+// CUDAFREEHOST-NEXT:   cudaFreeHost(pv /*void **/);
 // CUDAFREEHOST-NEXT: Is migrated to:
-// CUDAFREEHOST-NEXT:   sycl::free(v, dpct::get_default_queue());
+// CUDAFREEHOST-NEXT:   sycl::free(pv, dpct::get_default_queue());
 // CUDAFREEHOST-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudaGetSymbolAddress | FileCheck %s -check-prefix=CUDAGETSYMBOLADDRESS
