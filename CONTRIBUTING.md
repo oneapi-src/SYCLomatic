@@ -32,15 +32,10 @@ section of Get Started guide for more information.
   - [Clang-format](https://clang.llvm.org/docs/ClangFormat.html) and
     [clang-tidy](https://clang.llvm.org/extra/clang-tidy/) tools can be
     integrated into your workflow to ensure formatting and stylistic
-<<<<<<< HEAD
-    compliance of your changes.
-  - use
-=======
     compliance of your changes. To avoid code formatting misalignment with
     GitHub Actions check we recommend using 10 version of clang-format tool
     (default version on Ubuntu 22.04).
   - Use
->>>>>>> origin/sycl
 
     ```bash
     ./clang/tools/clang-format/git-clang-format `git merge-base origin/SYCLomatic HEAD`
@@ -104,17 +99,13 @@ instructions](https://help.github.com/articles/creating-a-pull-request/).
 - CI will run a signed-off check as soon as your PR is created - see the
 **check_pr** CI action results.
 - CI will run several build and functional testing checks as soon as the PR is
-<<<<<<< HEAD
-approved.
-=======
 approved by an Intel representative.
   - By default, pre-commit activies (build/test) will not auto start when PR
     is submitted for new contributors and non members of the project. If your
     PR shows "workflow awaiting approval" then your assigned code reviewer or 
     another member of the project will need to approve the test run and start
     it for you. If you are unable to reach someone to approve your run, please
-    contact the project gatekeepers (@intel/llvm-gatekeepers).  
->>>>>>> origin/sycl
+    contact the project reviewers (@oneapi-src/syclomatic-reviewers).  
   - A new approval is needed if the PR was updated (e.g. during code review).
 - Once the PR is approved and all checks have passed, the pull request is
 ready for merge.
