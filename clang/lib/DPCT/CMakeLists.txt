@@ -79,15 +79,20 @@ add_custom_target(dpct_helper_headers_and_inc
 
 # Handle API mapping cases header
 set(API_MAPPING_REGISTER_FOLDER ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/)
-set(API_MAPPING_REGISTER_FILE ${API_MAPPING_REGISTER_FOLDER}APIMappingRegister.def)
 file(GLOB SRC_FILES ../../examples/DPCT/*/*.cu)
-
-add_custom_target(gen_mapping_register
-  COMMAND "${CMAKE_COMMAND}"
-    -DTARGET="${API_MAPPING_REGISTER_FILE}"
-    -DSRC_DIRECTORY="${CMAKE_CURRENT_SOURCE_DIR}/../../examples/DPCT/"
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/APIMapping/GenerateRegister.cmake
-  DEPENDS ${SRC_FILES})
+file(WRITE ${API_MAPPING_REGISTER_FOLDER}APIMappingRegister.def "")
+set(API_NAME_SET)
+foreach(FILE ${SRC_FILES})
+  file(READ ${FILE} FILE_STR)
+  string(REGEX REPLACE ".*/(.*).cu$" "\\1" API_NAME ${FILE})
+  list(FIND API_NAME_SET ${API_NAME} INDEX)
+  if(${INDEX} GREATER_EQUAL 0)
+    message(FATAL_ERROR "The API Mapping cases name " ${API_NAME} " is duplicated.")
+  endif()
+  list(APPEND API_NAME_SET ${API_NAME})
+  file(APPEND ${API_MAPPING_REGISTER_FOLDER}APIMappingRegister.def
+  "registerEntry(\"" "${API_NAME}" "\",\nR\"(" "${FILE_STR}" ")\");\n")
+endforeach()
 include_directories(
   ${API_MAPPING_REGISTER_FOLDER}
   )
@@ -177,7 +182,6 @@ add_clang_library(DPCT
   DeviceConfigFile
   dpct_helper_headers_and_inc
   genconfusable
-  gen_mapping_register
 
   LINK_LIBS
   clangBasic
