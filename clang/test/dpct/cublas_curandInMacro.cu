@@ -53,7 +53,7 @@ int main() {
     // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
     // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
     // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
-    // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(*handle, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, trans1==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans1, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
+    // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(handle->get_queue(), trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, trans1==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans1, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
     // CHECK-NEXT: return 0;
     // CHECK-NEXT: }());
     cublasErrCheck(cublasSgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N));
@@ -70,18 +70,18 @@ int main() {
     // CHECK-NEXT: } else {
     // CHECK-NEXT:   result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
     // CHECK-NEXT: }
-    // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(*handle, N, x_S_buf_ct{{[0-9]+}}, N, res_temp_buf_ct{{[0-9]+}}, oneapi::mkl::index_base::one);
+    // CHECK-NEXT: oneapi::mkl::blas::column_major::iamax(handle->get_queue(), N, x_S_buf_ct{{[0-9]+}}, N, res_temp_buf_ct{{[0-9]+}}, oneapi::mkl::index_base::one);
     // CHECK-NEXT: result_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
     // CHECK-NEXT: return 0;
     // CHECK-NEXT: }());
     cublasErrCheck(cublasIsamax(handle, N, x_S, N, result));
 
 
-    //CHECK: cublasErrCheck(DPCT_CHECK_ERROR(dpct::syrk(*handle, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans1), N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)));
+    //CHECK: cublasErrCheck(DPCT_CHECK_ERROR(dpct::syrk(handle->get_queue(), fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans1), N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N)));
     cublasErrCheck(cublasSsyrkx(handle, (cublasFillMode_t)fill0, (cublasOperation_t)trans1, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N));
 
 
-    //CHECK: cublasErrCheck(DPCT_CHECK_ERROR(dpct::trmm(*handle, (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N)));
+    //CHECK: cublasErrCheck(DPCT_CHECK_ERROR(dpct::trmm(handle->get_queue(), (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N)));
     cublasErrCheck(cublasStrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N));
 
 
@@ -104,7 +104,7 @@ int main() {
     // CHECK-NEXT:auto d_A_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(d_A_C);
     // CHECK-NEXT:auto d_B_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(d_B_C);
     // CHECK-NEXT:auto d_C_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(d_C_C);
-    // CHECK-NEXT:oneapi::mkl::blas::column_major::gemm(*handle, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, trans1==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans1, N, N, N, std::complex<float>(alpha_C.x(), alpha_C.y()), d_A_C_buf_ct{{[0-9]+}}, N, d_B_C_buf_ct{{[0-9]+}}, N, std::complex<float>(beta_C.x(), beta_C.y()), d_C_C_buf_ct{{[0-9]+}}, N);
+    // CHECK-NEXT:oneapi::mkl::blas::column_major::gemm(handle->get_queue(), trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, trans1==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans1, N, N, N, std::complex<float>(alpha_C.x(), alpha_C.y()), d_A_C_buf_ct{{[0-9]+}}, N, d_B_C_buf_ct{{[0-9]+}}, N, std::complex<float>(beta_C.x(), beta_C.y()), d_C_C_buf_ct{{[0-9]+}}, N);
     // CHECK-NEXT:return 0;
     // CHECK-NEXT:}());
     cublasErrCheck(cublasCgemm(handle, (cublasOperation_t)trans0, (cublasOperation_t)trans1, N, N, N, &alpha_C, d_A_C, N, d_B_C, N, &beta_C, d_C_C, N));
@@ -121,19 +121,19 @@ int main() {
     // CHECK-NEXT:} else {
     // CHECK-NEXT:  result_buf_ct{{[0-9]+}} = sycl::buffer<int>(result, sycl::range<1>(1));
     // CHECK-NEXT:}
-    // CHECK-NEXT:oneapi::mkl::blas::column_major::iamax(*handle, N, x_C_buf_ct{{[0-9]+}}, N, res_temp_buf_ct{{[0-9]+}}, oneapi::mkl::index_base::one);
+    // CHECK-NEXT:oneapi::mkl::blas::column_major::iamax(handle->get_queue(), N, x_C_buf_ct{{[0-9]+}}, N, res_temp_buf_ct{{[0-9]+}}, oneapi::mkl::index_base::one);
     // CHECK-NEXT:result_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
     // CHECK-NEXT:return 0;
     // CHECK-NEXT:}());
     cublasErrCheck(cublasIcamax(handle, N, x_C, N, result));
 
-    // CHECK: cublasErrCheck(DPCT_CHECK_ERROR(dpct::trmm(*handle, (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, N, N, &alpha_C, d_A_C, N, d_B_C, N, d_C_C, N)));
+    // CHECK: cublasErrCheck(DPCT_CHECK_ERROR(dpct::trmm(handle->get_queue(), (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, N, N, &alpha_C, d_A_C, N, d_B_C, N, d_C_C, N)));
     cublasErrCheck(cublasCtrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_C, d_A_C, N, d_B_C, N, d_C_C, N));
 
     // CHECK: /*
     // CHECK-NEXT: DPCT1047:{{[0-9]+}}: The meaning of PivotArray in the dpct::getrf_batch_wrapper is different from the cublasSgetrfBatched. You may need to check the migrated code.
     // CHECK-NEXT: */
-    // CHECK-NEXT:cublasErrCheck(DPCT_CHECK_ERROR(dpct::getrf_batch_wrapper(*handle, N, Aarray_S, N, PivotArray, infoArray, batchSize)));
+    // CHECK-NEXT:cublasErrCheck(DPCT_CHECK_ERROR(dpct::getrf_batch_wrapper(handle->get_queue(), N, Aarray_S, N, PivotArray, infoArray, batchSize)));
     cublasErrCheck(cublasSgetrfBatched(handle, N, Aarray_S, N, PivotArray, infoArray, batchSize));
 
 

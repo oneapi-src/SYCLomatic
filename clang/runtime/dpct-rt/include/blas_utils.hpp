@@ -20,6 +20,19 @@
 
 namespace dpct {
 
+namespace blas {
+class descriptor {
+public:
+  sycl::queue get_queue() { return _queue; }
+  void set_queue(sycl::queue q) { _queue = q; }
+
+private:
+  sycl::queue _queue = dpct::get_default_queue();
+};
+
+using descriptor_ptr = descriptor *;
+} // namespace blas
+
 /// Get the value of \p s.
 /// Copy the data to host synchronously, then return the data.
 /// \param [in] p The pointer points the data.

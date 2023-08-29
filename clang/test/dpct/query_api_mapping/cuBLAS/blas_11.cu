@@ -21,8 +21,8 @@
 // cublasGemmBatchedEx-NEXT:       ctype /*cudaDataType*/, ldc /*int*/, group_count /*int*/,
 // cublasGemmBatchedEx-NEXT:       computetype_dataType /*cudaDataType*/, algo /*cublasGemmAlgo_t*/);
 // cublasGemmBatchedEx-NEXT: Is migrated to:
-// cublasGemmBatchedEx-NEXT:   dpct::gemm_batch(*handle, transa, transb, m, n, k, alpha, const_cast<void const **>(a), atype, lda, const_cast<void const **>(b), btype, ldb, beta, const_cast<void **>(c), ctype, ldc, group_count, computetype_computeType_t);
-// cublasGemmBatchedEx-NEXT:   dpct::gemm_batch(*handle, transa, transb, m, n, k, alpha, const_cast<void const **>(a), atype, lda, const_cast<void const **>(b), btype, ldb, beta, const_cast<void **>(c), ctype, ldc, group_count, computetype_dataType);
+// cublasGemmBatchedEx-NEXT:   dpct::gemm_batch(handle->get_queue(), transa, transb, m, n, k, alpha, const_cast<void const **>(a), atype, lda, const_cast<void const **>(b), btype, ldb, beta, const_cast<void **>(c), ctype, ldc, group_count, computetype_computeType_t);
+// cublasGemmBatchedEx-NEXT:   dpct::gemm_batch(handle->get_queue(), transa, transb, m, n, k, alpha, const_cast<void const **>(a), atype, lda, const_cast<void const **>(b), btype, ldb, beta, const_cast<void **>(c), ctype, ldc, group_count, computetype_dataType);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasGemmEx | FileCheck %s -check-prefix=cublasGemmEx
 // cublasGemmEx: CUDA API:
@@ -42,8 +42,8 @@
 // cublasGemmEx-NEXT:       beta /*const void **/, c /*void **/, ctype /*cudaDataType*/, ldc /*int*/,
 // cublasGemmEx-NEXT:       computetype_dataType /*cudaDataType*/, algo /*cublasGemmAlgo_t*/);
 // cublasGemmEx-NEXT: Is migrated to:
-// cublasGemmEx-NEXT:   dpct::gemm(*handle, transa, transb, m, n, k, alpha, a, atype, lda, b, btype, ldb, beta, c, ctype, ldc, computetype_computeType_t);
-// cublasGemmEx-NEXT:   dpct::gemm(*handle, transa, transb, m, n, k, alpha, a, atype, lda, b, btype, ldb, beta, c, ctype, ldc, computetype_dataType);
+// cublasGemmEx-NEXT:   dpct::gemm(handle->get_queue(), transa, transb, m, n, k, alpha, a, atype, lda, b, btype, ldb, beta, c, ctype, ldc, computetype_computeType_t);
+// cublasGemmEx-NEXT:   dpct::gemm(handle->get_queue(), transa, transb, m, n, k, alpha, a, atype, lda, b, btype, ldb, beta, c, ctype, ldc, computetype_dataType);
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasGemmStridedBatchedEx | FileCheck %s -check-prefix=cublasGemmStridedBatchedEx
 // cublasGemmStridedBatchedEx: CUDA API:
@@ -67,5 +67,5 @@
 // cublasGemmStridedBatchedEx-NEXT:       stridec /*long long int*/, group_count /*int*/,
 // cublasGemmStridedBatchedEx-NEXT:       computetype_dataType /*cudaDataType*/, algo /*cublasGemmAlgo_t*/);
 // cublasGemmStridedBatchedEx-NEXT: Is migrated to:
-// cublasGemmStridedBatchedEx-NEXT:   dpct::gemm_batch(*handle, transa, transb, m, n, k, alpha, a, atype, lda, stridea, b, btype, ldb, strideb, beta, c, ctype, ldc, stridec, group_count, computetype_computeType_t);
-// cublasGemmStridedBatchedEx-NEXT:   dpct::gemm_batch(*handle, transa, transb, m, n, k, alpha, a, atype, lda, stridea, b, btype, ldb, strideb, beta, c, ctype, ldc, stridec, group_count, computetype_dataType);
+// cublasGemmStridedBatchedEx-NEXT:   dpct::gemm_batch(handle->get_queue(), transa, transb, m, n, k, alpha, a, atype, lda, stridea, b, btype, ldb, strideb, beta, c, ctype, ldc, stridec, group_count, computetype_computeType_t);
+// cublasGemmStridedBatchedEx-NEXT:   dpct::gemm_batch(handle->get_queue(), transa, transb, m, n, k, alpha, a, atype, lda, stridea, b, btype, ldb, strideb, beta, c, ctype, ldc, stridec, group_count, computetype_dataType);

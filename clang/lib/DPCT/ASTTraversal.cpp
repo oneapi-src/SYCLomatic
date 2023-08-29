@@ -3654,7 +3654,7 @@ std::string getValueStr(const Expr *Expr, std::string ExprStr,
     }
   }
   requestFeature(HelperFeatureEnum::device_ext);
-  return MapNames::getDpctNamespace() + "get_value(" + ExprStr + ", *" +
+  return MapNames::getDpctNamespace() + "get_value(" + ExprStr + ", " +
          QueueStr + ")";
 }
 
@@ -4368,6 +4368,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       CallExprArguReplVec.push_back(EA.getReplacedString());
     }
 
+    CallExprArguReplVec[0] = CallExprArguReplVec[0] + "->get_queue()";
+
     std::string LdcTimesN =
         (needExtraParens(CE->getArg(9)) ? ("(" + CallExprArguReplVec[9] + ")")
                                         : CallExprArguReplVec[9]) +
@@ -4540,6 +4542,9 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         processParamIntCastToBLASEnum(CE->getArg(i), CSCE, i, IndentStr,
                                       EnumInfo, PrefixInsertStr,
                                       CurrentArgumentRepl);
+      } else if (i == 0) {
+        CurrentArgumentRepl =
+            ExprAnalysis::ref(CE->getArg(0)) + "->get_queue()";
       } else {
         ExprAnalysis EA;
         EA.analyze(CE->getArg(i));
@@ -4693,6 +4698,9 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         processParamIntCastToBLASEnum(CE->getArg(i), CSCE, i, IndentStr,
                                       EnumInfo, PrefixInsertStr,
                                       CurrentArgumentRepl);
+      } else if (i == 0) {
+        CurrentArgumentRepl =
+            ExprAnalysis::ref(CE->getArg(0)) + "->get_queue()";
       } else {
         ExprAnalysis EA;
         EA.analyze(CE->getArg(i));

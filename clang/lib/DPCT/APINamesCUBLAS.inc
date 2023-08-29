@@ -21,40 +21,40 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cublasNrm2Ex",
-                       CALL(MapNames::getDpctNamespace() + "nrm2", DEREF(makeDerefArgCreatorWithCall(0)),
+                       CALL(MapNames::getDpctNamespace() + "nrm2", MEMBER_CALL(ARG(0), true, "get_queue"),
                             ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cublasDotEx",
-                       CALL(MapNames::getDpctNamespace() + "dot", DEREF(makeDerefArgCreatorWithCall(0)),
+                       CALL(MapNames::getDpctNamespace() + "dot", MEMBER_CALL(ARG(0), true, "get_queue"),
                             ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
                             ARG(7), ARG(8), ARG(9)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cublasDotcEx",
-                       CALL(MapNames::getDpctNamespace() + "dotc", DEREF(makeDerefArgCreatorWithCall(0)),
+                       CALL(MapNames::getDpctNamespace() + "dotc", MEMBER_CALL(ARG(0), true, "get_queue"),
                             ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
                             ARG(7), ARG(8), ARG(9)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cublasScalEx",
-                       CALL(MapNames::getDpctNamespace() + "scal", DEREF(makeDerefArgCreatorWithCall(0)),
+                       CALL(MapNames::getDpctNamespace() + "scal", MEMBER_CALL(ARG(0), true, "get_queue"),
                             ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cublasAxpyEx",
-                       CALL(MapNames::getDpctNamespace() + "axpy", DEREF(makeDerefArgCreatorWithCall(0)),
+                       CALL(MapNames::getDpctNamespace() + "axpy", MEMBER_CALL(ARG(0), true, "get_queue"),
                             ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
                             ARG(7), ARG(8), ARG(9)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cublasRotEx",
-                       CALL(MapNames::getDpctNamespace() + "rot", DEREF(makeDerefArgCreatorWithCall(0)),
+                       CALL(MapNames::getDpctNamespace() + "rot", MEMBER_CALL(ARG(0), true, "get_queue"),
                             ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
                             ARG(7), ARG(8), ARG(9), ARG(10)))))
 
@@ -62,7 +62,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasGemmEx",
-        CALL(MapNames::getDpctNamespace() + "gemm", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "gemm", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
@@ -72,7 +72,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasGemmBatchedEx",
-        CALL(MapNames::getDpctNamespace() + "gemm_batch", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "gemm_batch", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              ARG(3), ARG(4), ARG(5), ARG(6), DOUBLE_POINTER_CONST_CAST(makeLiteral("void"), ARG(7), BOOL(true), BOOL(false)), ARG(8), ARG(9),
@@ -83,7 +83,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasGemmStridedBatchedEx",
-        CALL(MapNames::getDpctNamespace() + "gemm_batch", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "gemm_batch", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
@@ -94,7 +94,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasSsyrkx",
-        CALL(MapNames::getDpctNamespace() + "syrk", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "syrk", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
@@ -104,7 +104,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasDsyrkx",
-        CALL(MapNames::getDpctNamespace() + "syrk", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "syrk", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
@@ -114,7 +114,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasCsyrkx",
-        CALL(MapNames::getDpctNamespace() + "syrk", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "syrk", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
@@ -124,7 +124,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasZsyrkx",
-        CALL(MapNames::getDpctNamespace() + "syrk", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "syrk", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
@@ -134,7 +134,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasCherkx",
-        CALL(MapNames::getDpctNamespace() + "herk", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "herk", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
@@ -144,7 +144,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasZherkx",
-        CALL(MapNames::getDpctNamespace() + "herk", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "herk", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
@@ -154,7 +154,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasStrsmBatched",
-        CALL(MapNames::getDpctNamespace() + "trsm_batch", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "trsm_batch", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
              BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
@@ -165,7 +165,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasDtrsmBatched",
-        CALL(MapNames::getDpctNamespace() + "trsm_batch", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "trsm_batch", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
              BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
@@ -176,7 +176,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasCtrsmBatched",
-        CALL(MapNames::getDpctNamespace() + "trsm_batch", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "trsm_batch", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
              BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
@@ -187,7 +187,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasZtrsmBatched",
-        CALL(MapNames::getDpctNamespace() + "trsm_batch", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "trsm_batch", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
              BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
@@ -199,7 +199,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasStrmm_v2",
-        CALL(MapNames::getDpctNamespace() + "trmm", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "trmm", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
              BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
@@ -210,7 +210,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasDtrmm_v2",
-        CALL(MapNames::getDpctNamespace() + "trmm", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "trmm", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
              BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
@@ -221,7 +221,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasCtrmm_v2",
-        CALL(MapNames::getDpctNamespace() + "trmm", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "trmm", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
              BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
@@ -232,7 +232,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasZtrmm_v2",
-        CALL(MapNames::getDpctNamespace() + "trmm", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "trmm", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Side),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
              BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
@@ -244,7 +244,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasHgemmBatched",
-        CALL(MapNames::getDpctNamespace() + "gemm_batch", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "gemm_batch", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              ARG(3), ARG(4), ARG(5), ARG(6), CAST(makeLiteral("const void**"), ARG(7)), ARG(MapNames::getDpctNamespace() + "library_data_t::real_half"), ARG(8), CAST(makeLiteral("const void**"), ARG(9)),
@@ -254,7 +254,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasSgemmBatched",
-        CALL(MapNames::getDpctNamespace() + "gemm_batch", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "gemm_batch", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              ARG(3), ARG(4), ARG(5), ARG(6), CAST(makeLiteral("const void**"), ARG(7)), ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"), ARG(8), CAST(makeLiteral("const void**"), ARG(9)),
@@ -264,7 +264,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasDgemmBatched",
-        CALL(MapNames::getDpctNamespace() + "gemm_batch", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "gemm_batch", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              ARG(3), ARG(4), ARG(5), ARG(6), CAST(makeLiteral("const void**"), ARG(7)), ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"), ARG(8), CAST(makeLiteral("const void**"), ARG(9)),
@@ -274,7 +274,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasCgemmBatched",
-        CALL(MapNames::getDpctNamespace() + "gemm_batch", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "gemm_batch", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              ARG(3), ARG(4), ARG(5), ARG(6), CAST(makeLiteral("const void**"), ARG(7)), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"), ARG(8), CAST(makeLiteral("const void**"), ARG(9)),
@@ -284,7 +284,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasZgemmBatched",
-        CALL(MapNames::getDpctNamespace() + "gemm_batch", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "gemm_batch", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              ARG(3), ARG(4), ARG(5), ARG(6), CAST(makeLiteral("const void**"), ARG(7)), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"), ARG(8), CAST(makeLiteral("const void**"), ARG(9)),
@@ -297,7 +297,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasSgetrfBatched",
-        CALL(MapNames::getDpctNamespace() + "getrf_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "getrf_batch_wrapper", MEMBER_CALL(ARG(0), true, "get_queue"),
              ARG(1), DOUBLE_POINTER_CONST_CAST(makeLiteral("float"), ARG(2), BOOL(false), BOOL(false)), ARG(3), ARG(4), ARG(5), ARG(6))))),
 Diagnostics::DIFFERENT_LU_FACTORIZATION, ARG(4), ARG(MapNames::getDpctNamespace() + "getrf_batch_wrapper"), ARG("cublasSgetrfBatched"))
 WARNING_FACTORY_ENTRY("cublasDgetrfBatched",
@@ -305,7 +305,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasDgetrfBatched",
-        CALL(MapNames::getDpctNamespace() + "getrf_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "getrf_batch_wrapper", MEMBER_CALL(ARG(0), true, "get_queue"),
              ARG(1), DOUBLE_POINTER_CONST_CAST(makeLiteral("double"), ARG(2), BOOL(false), BOOL(false)), ARG(3), ARG(4), ARG(5), ARG(6))))),
 Diagnostics::DIFFERENT_LU_FACTORIZATION, ARG(4), ARG(MapNames::getDpctNamespace() + "getrf_batch_wrapper"), ARG("cublasDgetrfBatched"))
 WARNING_FACTORY_ENTRY("cublasCgetrfBatched",
@@ -313,7 +313,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasCgetrfBatched",
-        CALL(MapNames::getDpctNamespace() + "getrf_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "getrf_batch_wrapper", MEMBER_CALL(ARG(0), true, "get_queue"),
              ARG(1), DOUBLE_POINTER_CONST_CAST(makeLiteral(MapNames::getClNamespace() + "float2"), ARG(2), BOOL(false), BOOL(false)), ARG(3), ARG(4), ARG(5), ARG(6))))),
 Diagnostics::DIFFERENT_LU_FACTORIZATION, ARG(4), ARG(MapNames::getDpctNamespace() + "getrf_batch_wrapper"), ARG("cublasCgetrfBatched"))
 WARNING_FACTORY_ENTRY("cublasZgetrfBatched",
@@ -321,7 +321,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasZgetrfBatched",
-        CALL(MapNames::getDpctNamespace() + "getrf_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "getrf_batch_wrapper", MEMBER_CALL(ARG(0), true, "get_queue"),
              ARG(1), DOUBLE_POINTER_CONST_CAST(makeLiteral(MapNames::getClNamespace() + "double2"), ARG(2), BOOL(false), BOOL(false)), ARG(3), ARG(4), ARG(5), ARG(6))))),
 Diagnostics::DIFFERENT_LU_FACTORIZATION, ARG(4), ARG(MapNames::getDpctNamespace() + "getrf_batch_wrapper"), ARG("cublasZgetrfBatched"))
 
@@ -330,7 +330,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasSgetrsBatched",
-        CALL(MapNames::getDpctNamespace() + "getrs_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "getrs_batch_wrapper", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              ARG(2), ARG(3), DOUBLE_POINTER_CONST_CAST(makeLiteral("float"), ARG(4), BOOL(true), BOOL(false)),
              ARG(5), ARG(6), DOUBLE_POINTER_CONST_CAST(makeLiteral("float"), ARG(7), BOOL(false), BOOL(false)), ARG(8), ARG(9), ARG(10)))))
@@ -338,7 +338,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasDgetrsBatched",
-        CALL(MapNames::getDpctNamespace() + "getrs_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "getrs_batch_wrapper", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              ARG(2), ARG(3), DOUBLE_POINTER_CONST_CAST(makeLiteral("double"), ARG(4), BOOL(true), BOOL(false)),
              ARG(5), ARG(6), DOUBLE_POINTER_CONST_CAST(makeLiteral("double"), ARG(7), BOOL(false), BOOL(false)), ARG(8), ARG(9), ARG(10)))))
@@ -346,7 +346,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasCgetrsBatched",
-        CALL(MapNames::getDpctNamespace() + "getrs_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "getrs_batch_wrapper", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              ARG(2), ARG(3), DOUBLE_POINTER_CONST_CAST(makeLiteral(MapNames::getClNamespace() + "float2"), ARG(4), BOOL(true), BOOL(false)),
              ARG(5), ARG(6), DOUBLE_POINTER_CONST_CAST(makeLiteral(MapNames::getClNamespace() + "float2"), ARG(7), BOOL(false), BOOL(false)), ARG(8), ARG(9), ARG(10)))))
@@ -354,7 +354,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasZgetrsBatched",
-        CALL(MapNames::getDpctNamespace() + "getrs_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "getrs_batch_wrapper", MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              ARG(2), ARG(3), DOUBLE_POINTER_CONST_CAST(makeLiteral(MapNames::getClNamespace() + "double2"), ARG(4), BOOL(true), BOOL(false)),
              ARG(5), ARG(6), DOUBLE_POINTER_CONST_CAST(makeLiteral(MapNames::getClNamespace() + "double2"), ARG(7), BOOL(false), BOOL(false)), ARG(8), ARG(9), ARG(10)))))
@@ -364,28 +364,28 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasSgetriBatched",
-        CALL(MapNames::getDpctNamespace() + "getri_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "getri_batch_wrapper", MEMBER_CALL(ARG(0), true, "get_queue"),
              ARG(1), DOUBLE_POINTER_CONST_CAST(makeLiteral("float"), ARG(2), BOOL(true), BOOL(false)),
              ARG(3), ARG(4), DOUBLE_POINTER_CONST_CAST(makeLiteral("float"), ARG(5), BOOL(false), BOOL(false)), ARG(6), ARG(7), ARG(8)))))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasDgetriBatched",
-        CALL(MapNames::getDpctNamespace() + "getri_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "getri_batch_wrapper", MEMBER_CALL(ARG(0), true, "get_queue"),
              ARG(1), DOUBLE_POINTER_CONST_CAST(makeLiteral("double"), ARG(2), BOOL(true), BOOL(false)),
              ARG(3), ARG(4), DOUBLE_POINTER_CONST_CAST(makeLiteral("double"), ARG(5), BOOL(false), BOOL(false)), ARG(6), ARG(7), ARG(8)))))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasCgetriBatched",
-        CALL(MapNames::getDpctNamespace() + "getri_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "getri_batch_wrapper", MEMBER_CALL(ARG(0), true, "get_queue"),
              ARG(1), DOUBLE_POINTER_CONST_CAST(makeLiteral(MapNames::getClNamespace() + "float2"), ARG(2), BOOL(true), BOOL(false)),
              ARG(3), ARG(4), DOUBLE_POINTER_CONST_CAST(makeLiteral(MapNames::getClNamespace() + "float2"), ARG(5), BOOL(false), BOOL(false)), ARG(6), ARG(7), ARG(8)))))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasZgetriBatched",
-        CALL(MapNames::getDpctNamespace() + "getri_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "getri_batch_wrapper", MEMBER_CALL(ARG(0), true, "get_queue"),
              ARG(1), DOUBLE_POINTER_CONST_CAST(makeLiteral(MapNames::getClNamespace() + "double2"), ARG(2), BOOL(true), BOOL(false)),
              ARG(3), ARG(4), DOUBLE_POINTER_CONST_CAST(makeLiteral(MapNames::getClNamespace() + "double2"), ARG(5), BOOL(false), BOOL(false)), ARG(6), ARG(7), ARG(8)))))
 
@@ -394,35 +394,35 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasSgeqrfBatched",
-        CALL(MapNames::getDpctNamespace() + "geqrf_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "geqrf_batch_wrapper", MEMBER_CALL(ARG(0), true, "get_queue"),
              ARG(1), ARG(2), DOUBLE_POINTER_CONST_CAST(makeLiteral("float"), ARG(3), BOOL(false), BOOL(false)), ARG(4),
              DOUBLE_POINTER_CONST_CAST(makeLiteral("float"), ARG(5), BOOL(false), BOOL(false)), ARG(6), ARG(7)))))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasDgeqrfBatched",
-        CALL(MapNames::getDpctNamespace() + "geqrf_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "geqrf_batch_wrapper", MEMBER_CALL(ARG(0), true, "get_queue"),
              ARG(1), ARG(2), DOUBLE_POINTER_CONST_CAST(makeLiteral("double"), ARG(3), BOOL(false), BOOL(false)), ARG(4),
              DOUBLE_POINTER_CONST_CAST(makeLiteral("double"), ARG(5), BOOL(false), BOOL(false)), ARG(6), ARG(7)))))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasCgeqrfBatched",
-        CALL(MapNames::getDpctNamespace() + "geqrf_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "geqrf_batch_wrapper", MEMBER_CALL(ARG(0), true, "get_queue"),
              ARG(1), ARG(2), DOUBLE_POINTER_CONST_CAST(makeLiteral(MapNames::getClNamespace() + "float2"), ARG(3), BOOL(false), BOOL(false)), ARG(4),
              DOUBLE_POINTER_CONST_CAST(makeLiteral(MapNames::getClNamespace() + "float2"), ARG(5), BOOL(false), BOOL(false)), ARG(6), ARG(7)))))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY(
         "cublasZgeqrfBatched",
-        CALL(MapNames::getDpctNamespace() + "geqrf_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+        CALL(MapNames::getDpctNamespace() + "geqrf_batch_wrapper", MEMBER_CALL(ARG(0), true, "get_queue"),
              ARG(1), ARG(2), DOUBLE_POINTER_CONST_CAST(makeLiteral(MapNames::getClNamespace() + "double2"), ARG(3), BOOL(false), BOOL(false)), ARG(4),
              DOUBLE_POINTER_CONST_CAST(makeLiteral(MapNames::getClNamespace() + "double2"), ARG(5), BOOL(false), BOOL(false)), ARG(6), ARG(7)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cublasCrot_v2",
-                       CALL(MapNames::getDpctNamespace() + "rot", DEREF(makeDerefArgCreatorWithCall(0)),
+                       CALL(MapNames::getDpctNamespace() + "rot", MEMBER_CALL(ARG(0), true, "get_queue"),
                             ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"), ARG(3), ARG(4),
                             ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"),
                             ARG(5), ARG(6), ARG(7), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float")))))
@@ -430,7 +430,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::device_ext,
     CALL_FACTORY_ENTRY("cublasZrot_v2",
-                       CALL(MapNames::getDpctNamespace() + "rot", DEREF(makeDerefArgCreatorWithCall(0)),
+                       CALL(MapNames::getDpctNamespace() + "rot", MEMBER_CALL(ARG(0), true, "get_queue"),
                             ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"), ARG(3), ARG(4),
                             ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"),
                             ARG(5), ARG(6), ARG(7), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double")))))
@@ -448,7 +448,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     CALL_FACTORY_ENTRY(
         "cublasSgemmEx",
         CALL(MapNames::getDpctNamespace() + "gemm",
-             DEREF(makeDerefArgCreatorWithCall(0)),
+             MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
@@ -461,7 +461,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     CALL_FACTORY_ENTRY(
         "cublasCgemmEx",
         CALL(MapNames::getDpctNamespace() + "gemm",
-             DEREF(makeDerefArgCreatorWithCall(0)),
+             MEMBER_CALL(ARG(0), true, "get_queue"),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),

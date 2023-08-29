@@ -195,7 +195,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"ushort3", std::make_shared<TypeNameRule>(getClNamespace() + "ushort3")},
       {"ushort4", std::make_shared<TypeNameRule>(getClNamespace() + "ushort4")},
       {"cublasHandle_t", std::make_shared<TypeNameRule>(
-                             getDpctNamespace() + "queue_ptr",
+                             getDpctNamespace() + "blas::descriptor_ptr",
                              HelperFeatureEnum::device_ext)},
       {"cublasStatus_t", std::make_shared<TypeNameRule>("int")},
       {"cublasStatus", std::make_shared<TypeNameRule>("int")},

@@ -740,7 +740,7 @@ public:
       ResultStr = ResultStr + ", " + CallExprArguReplVec[i];
     }
 
-    return FuncName + "(*" + ResultStr + ")" +
+    return FuncName + "(" + ResultStr + ")" +
            (NeedWaitAPICall ? ".wait()" : "");
   }
 
@@ -750,10 +750,10 @@ public:
     auto getIfStmtStr = [=](const std::string Ptr) -> std::string {
       return "if(" + MapNames::getClNamespace() + "get_pointer_type(" + Ptr +
              ", " + CallExprArguReplVec[0] +
-             "->get_context())!=" + MapNames::getClNamespace() +
+             ".get_context())!=" + MapNames::getClNamespace() +
              "usm::alloc::device && " + MapNames::getClNamespace() +
              "get_pointer_type(" + Ptr + ", " + CallExprArguReplVec[0] +
-             "->get_context())!=" + MapNames::getClNamespace() +
+             ".get_context())!=" + MapNames::getClNamespace() +
              "usm::alloc::shared) {";
     };
 
@@ -824,7 +824,7 @@ public:
 
         Prefix = Prefix + std::string("}") + getNL() + IndentStr;
         Suffix = Suffix + getNL() + IndentStr + IfStmtStr + getNL() +
-                 IndentStr + "  " + CallExprArguReplVec[0] + "->wait();";
+                 IndentStr + "  " + CallExprArguReplVec[0] + ".wait();";
 
         copyBack(D1Ptr, "1", Type, 1);
         copyBack(D2Ptr, "1", Type, 2);
@@ -896,7 +896,7 @@ public:
 
         Prefix = Prefix + std::string("}") + getNL() + IndentStr;
         Suffix = Suffix + getNL() + IndentStr + IfStmtStr + getNL() +
-                 IndentStr + "  " + CallExprArguReplVec[0] + "->wait();";
+                 IndentStr + "  " + CallExprArguReplVec[0] + ".wait();";
 
         copyBack(APtr, "1", Type, 1);
         copyBack(BPtr, "1", Type, 2);
@@ -951,7 +951,7 @@ public:
                         getNL() + IndentStr + PrefixInsertStr;
       SuffixInsertStr =
           getNL() + IndentStr + IfStmtStr + getNL() + IndentStr + "  " +
-          CallExprArguReplVec[0] + "->wait();" + getNL() + IndentStr + "  " +
+          CallExprArguReplVec[0] + ".wait();" + getNL() + IndentStr + "  " +
           getDrefName(CE->getArg(ArgIndex)) + " = *" + ResultTempPtr + ";" +
           getNL() + IndentStr + "  " + MapNames::getClNamespace() + "free(" +
           ResultTempPtr + ", " + MapNames::getDpctNamespace() +

@@ -66,10 +66,10 @@ cudaEvent_t &&var4 = std::move(var1);
 }
 
 {
-// CHECK: dpct::queue_ptr var1;
-// CHECK-NEXT: dpct::queue_ptr *var2;
-// CHECK-NEXT: dpct::queue_ptr &var3 = var1;
-// CHECK-NEXT: dpct::queue_ptr &&var4 = std::move(var1);
+// CHECK: dpct::blas::descriptor_ptr var1;
+// CHECK-NEXT: dpct::blas::descriptor_ptr *var2;
+// CHECK-NEXT: dpct::blas::descriptor_ptr &var3 = var1;
+// CHECK-NEXT: dpct::blas::descriptor_ptr &&var4 = std::move(var1);
 cublasHandle_t var1;
 cublasHandle_t *var2;
 cublasHandle_t &var3 = var1;

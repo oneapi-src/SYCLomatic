@@ -1233,7 +1233,7 @@ void foo34() {
 
 
 //CHECK: #define ReturnErrorFunction                                                    \
-//CHECK-NEXT:   int amax(dpct::queue_ptr handle, const int n, const float *X,                \
+//CHECK-NEXT:   int amax(dpct::blas::descriptor_ptr handle, const int n, const float *X,     \
 //CHECK-NEXT:            const int incX, int &result) try {                                  \
 //CHECK-NEXT:     return cublasIsamax(handle, n, (const float *)X, incX, &result);           \
 //CHECK-NEXT:   }                                                                            \

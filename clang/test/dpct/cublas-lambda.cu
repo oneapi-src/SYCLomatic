@@ -30,7 +30,7 @@ int main() {
   // CHECK-NEXT:   auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT:   auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
   // CHECK-NEXT:   oneapi::mkl::blas::column_major::gemm(
-  // CHECK-NEXT:       *handle, oneapi::mkl::transpose::nontrans,
+  // CHECK-NEXT:       handle->get_queue(), oneapi::mkl::transpose::nontrans,
   // CHECK-NEXT:       oneapi::mkl::transpose::nontrans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N,
   // CHECK-NEXT:       d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
@@ -50,7 +50,7 @@ int main() {
   // CHECK-NEXT:            auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT:            auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
   // CHECK-NEXT:            oneapi::mkl::blas::column_major::gemm(
-  // CHECK-NEXT:                *handle, oneapi::mkl::transpose::nontrans,
+  // CHECK-NEXT:                handle->get_queue(), oneapi::mkl::transpose::nontrans,
   // CHECK-NEXT:                oneapi::mkl::transpose::nontrans, N, N, N, alpha_S,
   // CHECK-NEXT:                d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT:            return 0;
@@ -67,7 +67,7 @@ int main() {
   // CHECK-NEXT:   auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT:   auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
   // CHECK-NEXT:   oneapi::mkl::blas::column_major::gemm(
-  // CHECK-NEXT:       *handle, oneapi::mkl::transpose::nontrans,
+  // CHECK-NEXT:       handle->get_queue(), oneapi::mkl::transpose::nontrans,
   // CHECK-NEXT:       oneapi::mkl::transpose::nontrans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N,
   // CHECK-NEXT:       d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
@@ -87,7 +87,7 @@ int main() {
   // CHECK-NEXT:   auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT:   auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
   // CHECK-NEXT:   oneapi::mkl::blas::column_major::gemm(
-  // CHECK-NEXT:       *handle, oneapi::mkl::transpose::nontrans,
+  // CHECK-NEXT:       handle->get_queue(), oneapi::mkl::transpose::nontrans,
   // CHECK-NEXT:       oneapi::mkl::transpose::nontrans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N,
   // CHECK-NEXT:       d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
@@ -110,7 +110,7 @@ int main() {
   // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(
-  // CHECK-NEXT:     *handle, oneapi::mkl::transpose::nontrans,
+  // CHECK-NEXT:     handle->get_queue(), oneapi::mkl::transpose::nontrans,
   // CHECK-NEXT:     oneapi::mkl::transpose::nontrans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}},
   // CHECK-NEXT:     N, d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: return 0;
@@ -128,7 +128,7 @@ int main() {
   // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(
-  // CHECK-NEXT:     *handle, oneapi::mkl::transpose::nontrans,
+  // CHECK-NEXT:     handle->get_queue(), oneapi::mkl::transpose::nontrans,
   // CHECK-NEXT:     oneapi::mkl::transpose::nontrans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N,
   // CHECK-NEXT:     d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: return 0;
@@ -149,7 +149,7 @@ int main() {
   // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(
-  // CHECK-NEXT:     *handle, oneapi::mkl::transpose::nontrans,
+  // CHECK-NEXT:     handle->get_queue(), oneapi::mkl::transpose::nontrans,
   // CHECK-NEXT:     oneapi::mkl::transpose::nontrans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N,
   // CHECK-NEXT:     d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: return 0;
@@ -163,7 +163,7 @@ int main() {
   // CHECK-NEXT:   auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
   // CHECK-NEXT:   auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
   // CHECK-NEXT:   oneapi::mkl::blas::column_major::gemm(
-  // CHECK-NEXT:       *handle, oneapi::mkl::transpose::nontrans,
+  // CHECK-NEXT:       handle->get_queue(), oneapi::mkl::transpose::nontrans,
   // CHECK-NEXT:       oneapi::mkl::transpose::nontrans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N,
   // CHECK-NEXT:       d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
   // CHECK-NEXT: }
@@ -186,7 +186,7 @@ int main() {
 // CHECK-NEXT:  auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
 // CHECK-NEXT:  auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
 // CHECK-NEXT:  oneapi::mkl::blas::column_major::gemm(
-// CHECK-NEXT:      *handle, oneapi::mkl::transpose::nontrans,
+// CHECK-NEXT:      handle->get_queue(), oneapi::mkl::transpose::nontrans,
 // CHECK-NEXT:      oneapi::mkl::transpose::nontrans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N,
 // CHECK-NEXT:      d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
 // CHECK-NEXT:  /*
@@ -205,7 +205,7 @@ int foo() {
 // CHECK-NEXT:  auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
 // CHECK-NEXT:  auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
 // CHECK-NEXT:  oneapi::mkl::blas::column_major::gemm(
-// CHECK-NEXT:      *handle, oneapi::mkl::transpose::nontrans,
+// CHECK-NEXT:      handle->get_queue(), oneapi::mkl::transpose::nontrans,
 // CHECK-NEXT:      oneapi::mkl::transpose::nontrans, N, N, N, alpha_S, d_A_S_buf_ct{{[0-9]+}}, N,
 // CHECK-NEXT:      d_B_S_buf_ct{{[0-9]+}}, N, beta_S, d_C_S_buf_ct{{[0-9]+}}, N);
 // CHECK-NEXT:}
