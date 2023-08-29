@@ -18,6 +18,10 @@ __device__ void testThreadGroup(cg::thread_group g) {
   g.sync();
   // CHECK:  g.get_local_linear_range();
   g.size();
+
+  auto block = cg::this_thread_block();
+  // CHECK: item_ct1.get_local_id();
+  block.thread_index();
 }
 
 __global__ void kernelFunc() {
@@ -27,9 +31,7 @@ __global__ void kernelFunc() {
   // CHECK:  auto threadBlockGroup = sycl::ext::oneapi::experimental::this_group<3>();
   auto threadBlockGroup = cg::this_thread_block();
 
-  test11(tilePartition16);
-  test11(tilePartition32);
-  test11(threadBlockGroup);
+
   // CHECK:  testThreadGroup(dpct::experimental::group(threadBlockGroup, item_ct1));
   testThreadGroup(threadBlockGroup);
   // CHECK:  dpct::experimental::logical_group tilePartition16 = dpct::experimental::logical_group(item_ct1, sycl::ext::oneapi::experimental::this_group<3>(), 16);
@@ -44,6 +46,10 @@ __global__ void kernelFunc() {
   // CHECK:  sycl::sub_group tilePartition32_2(sycl::ext::oneapi::experimental::this_sub_group());
   cg::thread_block_tile<16> tilePartition16_1(cg::tiled_partition<16>(threadBlockGroup));
   cg::thread_block_tile<32> tilePartition32_2(cg::tiled_partition<32>(threadBlockGroup));
+
+  test11(tilePartition16);
+  test11(tilePartition32);
+  test11(threadBlockGroup);
 }
 
 
