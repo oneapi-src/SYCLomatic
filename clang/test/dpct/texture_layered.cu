@@ -30,7 +30,7 @@ static texture<float4, cudaTextureType2DLayered> tex42;
 // CHECK: dpct::image_wrapper<sycl::uint2, 2, true> tex21;
 static texture<uint2, cudaTextureType1DLayered> tex21;
 
-// CHECK: void device01(sycl::float4 *out, dpct::image_accessor_ext<sycl::uint2, 1, true> tex21) {
+// CHECK: inline void device01(sycl::float4 *out, dpct::image_accessor_ext<sycl::uint2, 1, true> tex21) {
 // CHECK-NEXT: sycl::uint2 u21 = tex21.read(12, 1.0f);
 // CHECK-NEXT: out[0].x() =  u21.x();
 __device__ void device01(float4 *out) {
@@ -38,7 +38,7 @@ __device__ void device01(float4 *out) {
   out[0].x = u21.x;
 }
 
-// CHECK: void kernel(sycl::float4 *out, dpct::image_accessor_ext<sycl::float4, 2, true> tex42,
+// CHECK: __dpct_inline__ void kernel(sycl::float4 *out, dpct::image_accessor_ext<sycl::float4, 2, true> tex42,
 // CHECK-NEXT:        dpct::image_accessor_ext<sycl::uint2, 1, true> tex21) {
 // CHECK-NEXT: device01(out, tex21);
 // CHECK-NEXT: out[1] = tex42.read(12, 1.0f, 1.0f);

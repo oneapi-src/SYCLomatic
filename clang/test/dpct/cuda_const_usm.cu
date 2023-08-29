@@ -14,7 +14,7 @@ public:
 // CHECK: static dpct::constant_memory<TestStruct, 0> t1;
 __constant__ TestStruct t1;
 
-// CHECK: void member_acc(TestStruct t1) {
+// CHECK: __dpct_inline__ void member_acc(TestStruct t1) {
 // CHECK-NEXT:  t1.test();
 // CHECK-NEXT:}
 __global__ void member_acc() {
@@ -43,7 +43,7 @@ struct FuncObj {
   }
 };
 
-// CHECK:void simple_kernel(float *d_array, const sycl::nd_item<3> &[[ITEM:item_ct1]],
+// CHECK: __dpct_inline__ void simple_kernel(float *d_array, const sycl::nd_item<3> &[[ITEM:item_ct1]],
 // CHECK-NEXT:              float const *const_angle, int * const const_ptr) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range(2) + [[ITEM]].get_local_id(2);
@@ -70,7 +70,7 @@ __global__ void simple_kernel(float *d_array) {
 // CHECK: static dpct::constant_memory<float, 0> const_one;
 __device__ __constant__ float const_one;
 
-// CHECK:void simple_kernel_one(float *d_array, const sycl::nd_item<3> &[[ITEM:item_ct1]],
+// CHECK: __dpct_inline__ void simple_kernel_one(float *d_array, const sycl::nd_item<3> &[[ITEM:item_ct1]],
 // CHECK-NEXT:                  dpct::accessor<float, dpct::constant, 2> const_float,
 // CHECK-NEXT:                  float const_one) {
 // CHECK-NEXT:  int index;
@@ -202,7 +202,7 @@ int main(int argc, char **argv) {
 }
 
 //CHECK:static dpct::constant_memory<float, 1> aaa(10);
-//CHECK-NEXT:void kernel1(float const *aaa) {
+//CHECK-NEXT: __dpct_inline__ void kernel1(float const *aaa) {
 //CHECK-NEXT:  float *a = const_cast<float *>(aaa + 5);
 //CHECK-NEXT:}
 //CHECK-NEXT:void foo1() {

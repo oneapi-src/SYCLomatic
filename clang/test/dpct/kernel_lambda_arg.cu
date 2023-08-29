@@ -10,7 +10,7 @@
 // So we disable this test on windows with v8.0 SDK.
 
 //CHECK:template <typename T>
-//CHECK-NEXT:void my_kernel1(const T func) {
+//CHECK-NEXT: __dpct_inline__ void my_kernel1(const T func) {
 //CHECK-NEXT:  func(10);
 //CHECK-NEXT:}
 template <typename T>
@@ -29,7 +29,7 @@ void run_foo1() {
   my_kernel1<<<1, 1>>>([=] __device__(int idx) { idx++; });
 }
 
-//     CHECK:template <typename Foo> void my_kernel2(const Foo &foo,
+//     CHECK:template <typename Foo> __dpct_inline__ void my_kernel2(const Foo &foo,
 //CHECK-NEXT:                                        const sycl::nd_item<3> &item_ct1) {
 //CHECK-NEXT:  std::tuple<unsigned int, unsigned int> seeds = {1, 2};
 //CHECK-NEXT:  int idx = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2);

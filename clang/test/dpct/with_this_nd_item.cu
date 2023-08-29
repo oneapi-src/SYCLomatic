@@ -16,7 +16,7 @@
 namespace cg = cooperative_groups;
 using namespace cooperative_groups;
 
-// CHECK: void test1() {
+// CHECK: __dpct_inline__ void test1() {
 // CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::experimental::this_nd_item<1>();
 // CHECK-NEXT:  int a = item_ct1.get_group(0) * item_ct1.get_local_range(0) + item_ct1.get_local_id(0) + item_ct1.get_group(0) +
 // CHECK-NEXT:  item_ct1.get_local_range(0) + item_ct1.get_local_id(0);
@@ -46,7 +46,7 @@ __global__ void test1() {
   __shfl(a, a);
 }
 
-// CHECK: void test2() {
+// CHECK: __dpct_inline__ void test2() {
 // CHECK-NEXT:  auto item_ct1 = sycl::ext::oneapi::experimental::this_nd_item<3>();
 // CHECK-NEXT:  int a = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2) + item_ct1.get_group(2) +
 // CHECK-NEXT:  item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
@@ -71,7 +71,7 @@ __global__ void test2() {
   __shfl(a, a);
 }
 
-// CHECK: void test3() {
+// CHECK: __dpct_inline__ void test3() {
 // CHECK-NEXT:  int a = sycl::ext::oneapi::experimental::this_nd_item<1>().get_local_id(0);
 // CHECK-NEXT:  TB1(b);
 // CHECK-NEXT:}

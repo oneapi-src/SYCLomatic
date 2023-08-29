@@ -61,11 +61,13 @@ public:
 
 __global__ void foo_kernel() {}
 
-//CHECK: void foo_kernel2(int a, int b
+//CHECK: __dpct_inline__ void foo_kernel2(int a, int b
 //CHECK-NEXT:   #ifdef MACRO_CC
-//CHECK-NEXT:   , int c
+//CHECK-NEXT:   ,
+//CHECK-NEXT:   int c
 //CHECK-NEXT:   #endif
-//CHECK-NEXT:   , const sycl::nd_item<3> &item_ct1) {
+//CHECK-NEXT:   ,
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
 //CHECK-NEXT:     int x = item_ct1.get_group(2);
 //CHECK-NEXT:   }
 __global__ void foo_kernel2(int a, int b
@@ -943,7 +945,7 @@ __global__ void foo21(){
 //CHECK: #define FUNCNAME(x) x
 //CHECK-NEXT: #define PASS(x) x
 //CHECK-NEXT: template <typename T, int X, int Y>
-//CHECK-NEXT: void doo(float f, const sycl::stream &stream_ct1) {
+//CHECK-NEXT: inline void doo(float f, const sycl::stream &stream_ct1) {
 //CHECK-NEXT:   stream_ct1 << "doo\n";
 //CHECK-NEXT: }
 #define FUNCNAME(x) x
@@ -1093,7 +1095,7 @@ void foo28(){
 #define local_allocate_store_charge()                                       \
     __shared__ double red_acc[8][BLOCK_PAIR / SIMD_SIZE];
 
-//CHECK: void foo29(sycl::local_accessor<double, 2> red_acc) {
+//CHECK: __dpct_inline__ void foo29(sycl::local_accessor<double, 2> red_acc) {
 //CHECK-NEXT: }
 __global__ void foo29() {
   local_allocate_store_charge();

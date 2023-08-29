@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 #define SIZE 100
-// CHECK: void staticReverse(int *d, int n, const sycl::nd_item<3> &item_ct1,
+// CHECK: __dpct_inline__ void staticReverse(int *d, int n, const sycl::nd_item<3> &item_ct1,
 // CHECK-NEXT:               uint8_t *dpct_local) {
 // CHECK-NEXT:  auto s = (int *)dpct_local; // the size of s is dynamic
 __global__ void staticReverse(int *d, int n) {
@@ -17,7 +17,7 @@ __global__ void staticReverse(int *d, int n) {
 }
 
 // CHECK: template<typename TData>
-// CHECK-NEXT: void templateReverse(TData *d, TData n, const sycl::nd_item<3> &item_ct1,
+// CHECK-NEXT: __dpct_inline__ void templateReverse(TData *d, TData n, const sycl::nd_item<3> &item_ct1,
 // CHECK-NEXT:                      uint8_t *dpct_local) {
 template<typename TData>
 __global__ void templateReverse(TData *d, TData n) {
@@ -138,12 +138,12 @@ __global__ void foo_3() {
 __shared__ extern char cuda_shared_memory[];
 #endif
 
-// CHECK: static char *Env_cuda_shared_memory(char *cuda_shared_memory) {
+// CHECK: inline static char *Env_cuda_shared_memory(char *cuda_shared_memory) {
 // CHECK-EMPTY:
 // CHECK: return cuda_shared_memory;
 // CHECK-EMPTY:
 // CHECK: }
-// CHECK: static char *Env_cuda_shared_memory_host_ct{{[0-9]+}}() {
+// CHECK: inline static char *Env_cuda_shared_memory_host_ct{{[0-9]+}}() {
 // CHECK-EMPTY:
 // CHECK: return (char *)0;
 // CHECK-EMPTY:
@@ -156,7 +156,7 @@ __host__ __device__ static char *Env_cuda_shared_memory() {
 #endif
 }
 
-// CHECK: void foo_4_g(char *cuda_shared_memory) { char *p = Env_cuda_shared_memory(cuda_shared_memory); }
+// CHECK: __dpct_inline__ void foo_4_g(char *cuda_shared_memory) { char *p = Env_cuda_shared_memory(cuda_shared_memory); }
 __global__ void foo_4_g() { char *p = Env_cuda_shared_memory(); }
 
 // CHECK: void foo_4_h() { char *p = Env_cuda_shared_memory_host_ct{{[0-9]+}}(); }

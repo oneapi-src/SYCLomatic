@@ -1,11 +1,11 @@
 #include<cuda_runtime.h>
 
-// CHECK: void test(){
+// CHECK: inline void test(){
 // CHECK:   int a;
 // CHECK:   unsigned long long b;
 // CHECK:   a++;
 // CHECK: }
-// CHECK: void test_host_ct{{[0-9]+}}(){
+// CHECK: inline void test_host_ct{{[0-9]+}}(){
 // CHECK:   int a;
 // CHECK:   unsigned long long b;
 // CHECK:   b++;

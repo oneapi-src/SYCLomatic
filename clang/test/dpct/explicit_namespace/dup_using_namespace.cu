@@ -16,7 +16,7 @@
 #include <thrust/device_free.h>
 #include <cuda_runtime.h>
 
-// CHECK: void kernel(std::complex<double> *det) {}
+// CHECK: __dpct_inline__ void kernel(std::complex<double> *det) {}
 __global__ void kernel(thrust::complex<double> *det) {}
 
 int main() {

@@ -39,7 +39,7 @@ template <typename T> struct absolute_value {
 };
 
 //CHECK: template<typename ExecutionPolicy, typename Iterator1, typename Iterator2, typename Predicate, typename Iterator3>
-//CHECK-NEXT: void copy_if_kernel(ExecutionPolicy exec, Iterator1 first, Iterator1 last, Iterator2 result1, Predicate pred, Iterator3 result2)
+//CHECK-NEXT: __dpct_inline__ void copy_if_kernel(ExecutionPolicy exec, Iterator1 first, Iterator1 last, Iterator2 result1, Predicate pred, Iterator3 result2)
 //CHECK-NEXT: {
 //CHECK-NEXT:   *result2 = std::copy_if(exec, first, last, result1, pred);
 //CHECK-NEXT: }

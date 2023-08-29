@@ -8,7 +8,7 @@
 namespace cg = cooperative_groups;
 using namespace cooperative_groups;
 
-// CHECK: void global1(const sycl::nd_item<1> &item_ct1) {
+// CHECK: __dpct_inline__ void global1(const sycl::nd_item<1> &item_ct1) {
 __global__ void global1() {
   // CHECK: auto cta = item_ct1.get_group();
   cg::thread_block cta = cg::this_thread_block();
@@ -26,12 +26,12 @@ __global__ void global1() {
 // CHECK: #define TB(b) auto b = item_ct1.get_group();
 #define TB(b) cg::thread_block b = cg::this_thread_block();
 
-// CHECK: void global2(const sycl::nd_item<1> &item_ct1) {
+// CHECK: __dpct_inline__ void global2(const sycl::nd_item<1> &item_ct1) {
 __global__ void global2() {
   TB(blk);
 }
 
-// CHECK: void global3(const sycl::nd_item<3> &item_ct1) {
+// CHECK: __dpct_inline__ void global3(const sycl::nd_item<3> &item_ct1) {
 __global__ void global3() {
   TB(blk);
 }

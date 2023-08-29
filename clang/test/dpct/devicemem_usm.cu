@@ -15,7 +15,7 @@ public:
 // CHECK: dpct::global_memory<TestStruct, 0> t1;
 __device__ TestStruct t1;
 
-// CHECK: void member_acc(TestStruct &t1) {
+// CHECK: __dpct_inline__ void member_acc(TestStruct &t1) {
 // CHECK-NEXT:  t1.test();
 // CHECK-NEXT:}
 __global__ void member_acc() {
@@ -27,7 +27,7 @@ __device__ float in[NUM_ELEMENTS];
 // CHECK: dpct::global_memory<int, 1> init(sycl::range<1>(4), {1, 2, 3, 4});
 __device__ int init[4] = {1, 2, 3, 4};
 
-// CHECK: void kernel1(float *out, const sycl::nd_item<3> &[[ITEM:item_ct1]], float *in) {
+// CHECK: __dpct_inline__ void kernel1(float *out, const sycl::nd_item<3> &[[ITEM:item_ct1]], float *in) {
 // CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] = in[{{.*}}[[ITEM]].get_local_id(2)];
 // CHECK: }
 __global__ void kernel1(float *out) {
@@ -47,7 +47,7 @@ __device__ float fx[2], fy[num_elements][4 * num_elements];
 // CHECK: dpct::global_memory<float, 1> tmp(size);
 const int size = 64;
 __device__ float tmp[size];
-// CHECK: void kernel2(float *out, const sycl::nd_item<3> &[[ITEM:item_ct1]], int &al, float *fx,
+// CHECK: __dpct_inline__ void kernel2(float *out, const sycl::nd_item<3> &[[ITEM:item_ct1]], int &al, float *fx,
 // CHECK:              dpct::accessor<float, dpct::global, 2> fy, float *tmp) {
 // CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] += al;
 // CHECK:   fx[{{.*}}[[ITEM]].get_local_id(2)] = fy[{{.*}}[[ITEM]].get_local_id(2)][{{.*}}[[ITEM]].get_local_id(2)];

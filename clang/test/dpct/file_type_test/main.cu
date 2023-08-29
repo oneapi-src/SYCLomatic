@@ -37,7 +37,7 @@
 // CHECK:#include "util_bar.hh"
 #include "util_bar.hh"
 
-// CHECK:void FooKernel() {
+// CHECK: __dpct_inline__ void FooKernel() {
 __global__ void FooKernel() {
    foo_util();
    util_bar();

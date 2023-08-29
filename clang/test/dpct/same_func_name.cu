@@ -12,7 +12,7 @@ __device__ int device_kernel()
 
 // global function
 // CHECK:template <typename ValueType>
-// CHECK-NEXT:void kernel(const sycl::nd_item<3> &item_ct1)
+// CHECK-NEXT: __dpct_inline__ void kernel(const sycl::nd_item<3> &item_ct1)
 template <typename ValueType>
 __global__ void kernel()
 {

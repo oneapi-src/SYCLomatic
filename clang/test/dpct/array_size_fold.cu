@@ -4,7 +4,7 @@
 #define S 3
 class C {};
 
-// CHECK: void f{{.*}}
+// CHECK: __dpct_inline__ void f{{.*}}
 // CHECK-NOT: DPCT1083:{{[0-9]+}}: The size of char3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK: }
 __global__ void f() {

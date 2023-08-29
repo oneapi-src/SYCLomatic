@@ -18,7 +18,7 @@ __global__ void simple_kernel(float *d_array) {
   return;
 }
 
-// CHECK: void k(){}
+// CHECK: __dpct_inline__ void k(){}
 // CHECK-NEXT: int main(int argc, char** argv) {
 // CHECK-NEXT:   const int N = 4;
 // CHECK-NEXT:   dpct::get_default_queue().parallel_for(

@@ -12,7 +12,7 @@ struct func_wrapper_t {
 };
 
 template <typename acc_t, typename func_t>
-// CHECK: func_wrapper_t<acc_t, func_t> func_wrapper(const func_t &op) {
+// CHECK: inline func_wrapper_t<acc_t, func_t> func_wrapper(const func_t &op) {
 __device__ func_wrapper_t<acc_t, func_t> func_wrapper(const func_t &op) {
   return func_wrapper_t<acc_t, func_t>{op};
 }

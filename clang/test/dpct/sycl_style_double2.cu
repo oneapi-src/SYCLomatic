@@ -7,14 +7,14 @@ void func3(double2 a, double2 b, double2 c) {
 // CHECK: void fun(sycl::double2 a) {}
 void fun(double2 a) {}
 
-// CHECK: void kernel(sycl::double2* data) {
+// CHECK: __dpct_inline__ void kernel(sycl::double2* data) {
 __global__ void kernel(double2* data) {
 }
 
 // CHECK: // Removed.
 static __shared__ double2 ctemp2[2]; // Removed.
 
-// CHECK: static void gpuMain(sycl::double2 *ctemp2){
+// CHECK: __dpct_inline__ static void gpuMain(sycl::double2 *ctemp2){
 // CHECK:   int* ctempi = (int*) ctemp2;
 // CHECK:   sycl::double2* ctempd =  ctemp2;
 // CHECK: }

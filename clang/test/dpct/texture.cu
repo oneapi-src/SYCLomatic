@@ -37,7 +37,7 @@ static texture<uint2, 1> tex21;
 // CHECK: #define FETCH(datai, tex, idx) datai[0] = tex.read(idx - 1)
 #define FETCH(datai, tex, idx) datai[0] = tex1Dfetch(tex, idx - 1)
 
-// CHECK: void device01(dpct::image_accessor_ext<sycl::uint2, 1> tex21) {
+// CHECK: inline void device01(dpct::image_accessor_ext<sycl::uint2, 1> tex21) {
 // CHECK-NEXT: sycl::uint2 u21 = tex21.read(1.0f);
 // CHECK-NEXT: /*
 // CHECK-NEXT: DPCT1112:{{[0-9]+}}: If the filter mode is set to 'linear', the behavior of "read" may be different from "tex1Dfetch". You may need to adjust the code.
@@ -52,7 +52,7 @@ __device__ void device01() {
   FETCH(data[0], tex21, 2);
 }
 
-// CHECK: void kernel(dpct::image_accessor_ext<sycl::float4, 2> tex42,
+// CHECK: __dpct_inline__ void kernel(dpct::image_accessor_ext<sycl::float4, 2> tex42,
 // CHECK-NEXT:        dpct::image_accessor_ext<sycl::uint2, 1> tex21) {
 // CHECK-NEXT: device01(tex21);
 // CHECK-NEXT: sycl::float4 f42 = tex42.read(1.0f, 1.0f);
@@ -368,7 +368,7 @@ texture<unsigned int, 1, cudaReadModeElementType> tex_tmp;
 texture<unsigned char, 2, cudaReadModeNormalizedFloat> tex;
 
 // CHECK:template <class T, class R>
-// CHECK-NEXT:R tex2D_bar(
+// CHECK-NEXT:inline R tex2D_bar(
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1062:{{[0-9]+}}: SYCL Image doesn't support normalized read mode.
 // CHECK-NEXT:    */

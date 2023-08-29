@@ -68,7 +68,7 @@ template <class T> void BindTextureObject(cudaArray_t &data, cudaTextureObject_t
   cudaCreateTextureObject(&tex, &res42, &texDesc42, NULL);
 }
 
-// CHECK: void device01(dpct::image_accessor_ext<sycl::uint2, 1> tex21) {
+// CHECK: inline void device01(dpct::image_accessor_ext<sycl::uint2, 1> tex21) {
 // CHECK-NEXT: sycl::uint2 u21;
 // CHECK-NEXT: u21 = tex21.read(0.5f);
 // CHECK-NEXT: /*
@@ -81,7 +81,7 @@ __device__ void device01(cudaTextureObject_t tex21) {
   tex1Dfetch(&u21, tex21, 1);
 }
 
-// CHECK: void kernel(dpct::image_accessor_ext<sycl::uint2, 1> tex2, dpct::image_accessor_ext<sycl::float4, 2> tex4) {
+// CHECK: __dpct_inline__ void kernel(dpct::image_accessor_ext<sycl::uint2, 1> tex2, dpct::image_accessor_ext<sycl::float4, 2> tex4) {
 // CHECK-NEXT: device01(tex2);
 // CHECK-NEXT: sycl::float4 f42;
 // CHECK-NEXT: f42 = tex4.read(0.5f, 0.5f);
@@ -301,7 +301,7 @@ struct TexList {
   cudaTextureObject_t tex3;
 };
 
-// CHECK: void texlist_device(TexList list, dpct::image_accessor_ext<int, 1> list_tex1) {
+// CHECK: inline void texlist_device(TexList list, dpct::image_accessor_ext<int, 1> list_tex1) {
 // CHECK-NEXT:  int a;
 // CHECK-NEXT: /*
 // CHECK-NEXT: DPCT1112:{{[0-9]+}}: If the filter mode is set to 'linear', the behavior of "read" may be different from "tex1Dfetch". You may need to adjust the code.
@@ -312,7 +312,7 @@ __device__ void texlist_device(TexList list) {
   tex1Dfetch(&a, list.tex1, 1);
 }
 
-// CHECK: void texlist_kernel(TexList list, dpct::image_accessor_ext<int, 1> list_tex1,
+// CHECK: __dpct_inline__ void texlist_kernel(TexList list, dpct::image_accessor_ext<int, 1> list_tex1,
 // CHECK-NEXT:                     dpct::image_accessor_ext<float, 2> list_tex2,
 // CHECK-NEXT:                    dpct::image_accessor_ext<float, 2> list_tex3) {
 // CHECK-NEXT:  float b;

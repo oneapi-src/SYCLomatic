@@ -3,13 +3,13 @@
 // RUN: dpct --format-range=none -usm-level=none -out-root %T/launch-kernel-cooperative %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/launch-kernel-cooperative/launch-kernel-cooperative.dp.cpp
 
-// CHECK: void template_device(T *d, T *s) {
+// CHECK: inline void template_device(T *d, T *s) {
 template<class T>
 __device__ void template_device(T *d) {
   __shared__ T s[16];
 }
 
-// CHECK: void template_kernel(T *d, const sycl::nd_item<3> &item_ct1,
+// CHECK: __dpct_inline__ void template_kernel(T *d, const sycl::nd_item<3> &item_ct1,
 // CHECK-NEXT: uint8_t *dpct_local, T *s) {
 template<class T>
 __global__ void template_kernel(T *d) {
@@ -18,7 +18,7 @@ __global__ void template_kernel(T *d) {
   template_device(d);
 }
 
-// CHECK: void kernel(int *d, dpct::image_accessor_ext<int, 1> tex, const sycl::nd_item<3> &item_ct1) {
+// CHECK: __dpct_inline__ void kernel(int *d, dpct::image_accessor_ext<int, 1> tex, const sycl::nd_item<3> &item_ct1) {
 __global__ void kernel(int *d, cudaTextureObject_t tex) {
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
   tex1D(d + gtid, tex, gtid);

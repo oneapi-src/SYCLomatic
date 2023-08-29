@@ -5,7 +5,7 @@
 //CHECK: dpct::image_wrapper_base_p tex;
 CUtexref tex;
 
-//CHECK: extern "C" void foo(float* k, float* y, const sycl::nd_item<3> &item_ct1,
+//CHECK: extern "C" __dpct_inline__ void foo(float* k, float* y, const sycl::nd_item<3> &item_ct1,
 //CHECK-NEXT:     uint8_t *dpct_local, unsigned int const *const_data);
 
 //CHECK:extern "C" {
@@ -16,7 +16,7 @@ extern "C" __global__ void foo(float* k, float* y);
 
 __constant__ unsigned int const_data[3] = {1, 2, 3};
 
-//CHECK: void foo(float* k, float* y, const sycl::nd_item<3> &item_ct1,
+//CHECK: __dpct_inline__ void foo(float* k, float* y, const sycl::nd_item<3> &item_ct1,
 //CHECK-NEXT: uint8_t *dpct_local, unsigned int const *const_data){
 //CHECK-NEXT: auto s = (int *)dpct_local;
 //CHECK-NEXT: unsigned int cd = const_data[2];

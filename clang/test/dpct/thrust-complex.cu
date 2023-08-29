@@ -1,4 +1,4 @@
-// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0
+thrust-complex.cu// UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
 // RUN: dpct --format-range=none -out-root %T/thrust-complex %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/thrust-complex/thrust-complex.dp.cpp --match-full-lines %s
@@ -22,13 +22,13 @@ thrust::complex<T> foo(thrust::complex<T> cp) {
 
 void bar(thrust::complex<double> *p);
 
-// CHECK: void kernel(std::complex<double> *p, std::complex<double> c, std::complex<double> *d,
+// CHECK: __dpct_inline__ void kernel(std::complex<double> *p, std::complex<double> c, std::complex<double> *d,
 // CHECK-NEXT:  std::complex<sycl::double2> *s) {
 __global__ void kernel(thrust::complex<double> *p, thrust::complex<double> c, thrust::complex<double> *d) {
   __shared__ thrust::complex<struct double2> s[10];
 }
 
-// CHECK: void template_kernel(T *, std::complex<T> *s) {
+// CHECK: __dpct_inline__ void template_kernel(T *, std::complex<T> *s) {
 template<class T>
 __global__ void template_kernel(T *) {
   __shared__ thrust::complex<T> s[10];

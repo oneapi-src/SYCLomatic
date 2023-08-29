@@ -6,14 +6,14 @@
 #include <cassert>
 #include <vector>
 
-// CHECK: void testDevice(const int *K) {
+// CHECK: inline void testDevice(const int *K) {
 // CHECK-NEXT: int t = K[0];
 // CHECK-NEXT: }
 __device__ void testDevice(const int *K) {
   int t = K[0];
 }
 
-// CHECK: void testKernelPtr(const int *L, const int *M, int N,
+// CHECK: __dpct_inline__ void testKernelPtr(const int *L, const int *M, int N,
 // CHECK-NEXT: const sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT: testDevice(L);
 // CHECK-NEXT: int gtid = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
@@ -44,7 +44,7 @@ int main() {
 }
 
 // CHECK:dpct::shared_memory<float, 1> result(32);
-// CHECK-NEXT:void my_kernel(float* result, const sycl::nd_item<3> &item_ct1,
+// CHECK-NEXT:__dpct_inline__ void my_kernel(float* result, const sycl::nd_item<3> &item_ct1,
 // CHECK-NEXT: float *resultInGroup) {
 // CHECK-NEXT:  // __shared__ variable
 // CHECK-NEXT:  resultInGroup[item_ct1.get_local_id(2)] = item_ct1.get_group(2);
@@ -122,7 +122,7 @@ int run_foo7 () {
 
 // CHECK:dpct::shared_memory<float, 0> in;
 // CHECK-NEXT:dpct::shared_memory<float, 0> out;
-// CHECK-NEXT:void my_kernel2(float in, float *out, const sycl::nd_item<3> &item_ct1) {
+// CHECK-NEXT:__dpct_inline__ void my_kernel2(float in, float *out, const sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT:  if (item_ct1.get_local_id(2) == 0) {
 // CHECK-NEXT:    memcpy(out, &in, sizeof(float));
 // CHECK-NEXT:  }
@@ -197,7 +197,7 @@ int run_foo9() {
   k<<<1,1>>>(vec[2].get_pointer());
 }
 
-// CHECK:void cuda_pme_forces_dev(float **afn_s) {
+// CHECK:__dpct_inline__ void cuda_pme_forces_dev(float **afn_s) {
 // CHECK-NEXT:  // __shared__ variable
 // CHECK-NEXT:}
 // CHECK-NEXT:int run_foo10() {

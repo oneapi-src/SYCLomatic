@@ -7,7 +7,7 @@
 // CHECK: /*
 // CHECK-NEXT: DPCT1080:{{[0-9]+}}: Variadic functions cannot be called in a SYCL kernel or by functions called by the kernel. You may need to adjust the code.
 // CHECK-NEXT: */
-// CHECK-NEXT: int variadic_prototype(int pa...){
+// CHECK-NEXT: inline int variadic_prototype(int pa...){
 __device__ int variadic_prototype(int pa...){
 
 va_list args;

@@ -9,7 +9,7 @@
 namespace cg = cooperative_groups;
 using namespace cooperative_groups;
 
-// CHECK: void kernel(const sycl::stream &stream_ct1) {
+// CHECK: __dpct_inline__ void kernel(const sycl::stream &stream_ct1) {
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1087:{{[0-9]+}}: SYCL currently does not support cross group synchronization. You can specify "--use-experimental-features=nd_range_barrier" to use the dpct helper function nd_range_barrier to migrate this_grid().
 // CHECK-NEXT:  */

@@ -29,7 +29,7 @@
 #include "inc/header4.c"
 
 // CHECK: #ifdef CUDA
-// CHECK-NEXT: void foo() {
+// CHECK-NEXT: __dpct_inline__ void foo() {
 // CHECK-NEXT: }
 #ifdef CUDA
 __global__ void foo() {

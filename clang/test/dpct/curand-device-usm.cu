@@ -44,7 +44,7 @@ __global__ void picount(int *totals) {
   }
 }
 
-//CHECK: void cuda_kernel_initRND(unsigned long seed, dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *States,
+//CHECK: __dpct_inline__ void cuda_kernel_initRND(unsigned long seed, dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *States,
 //CHECK:                     const sycl::nd_item<3> &item_ct1)
 __global__ void cuda_kernel_initRND(unsigned long seed, curandState *States)
 {
@@ -58,7 +58,7 @@ __global__ void cuda_kernel_initRND(unsigned long seed, curandState *States)
   curand_init(seed, pixel, 0, &States[id]);
 }
 
-//CHECK: void cuda_kernel_RNDnormalDitribution(double *Image, dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *States,
+//CHECK: __dpct_inline__ void cuda_kernel_RNDnormalDitribution(double *Image, dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *States,
 //CHECK:                                  const sycl::nd_item<3> &item_ct1)
 __global__ void cuda_kernel_RNDnormalDitribution(double *Image, curandState *States)
 {
@@ -141,7 +141,7 @@ __device__ void foo() {
   curand_init(seed, sequence, offset, &state.state);
 }
 
-// CHECK: void kernel(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *states) {}
+// CHECK: __dpct_inline__ void kernel(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *states) {}
 __global__ void kernel(curandState *states) {}
 
 // CHECK: void foo2(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *states_input) {

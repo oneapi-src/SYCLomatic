@@ -1,4 +1,4 @@
-// RUN: dpct --optimize-migration --format-range=none --no-cl-namespace-inline --usm-level=none -out-root %T/kernel-call %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing -std=c++14
+// RUN: dpct --format-range=none --no-cl-namespace-inline --usm-level=none -out-root %T/kernel-call %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing -std=c++14
 
 // RUN: FileCheck --input-file %T/kernel-call/kernel-call.dp.cpp --match-full-lines %s
 
@@ -809,11 +809,15 @@ void run_foo13(float* a_host[]) {
 __global__ void my_kernel6(float* a) {}
 
 void run_foo14(float* aa) {
-//CHECK:dpct::get_default_queue().parallel_for<dpct_kernel_name<class my_kernel6_{{[0-9a-z]+}}>>(
-//CHECK-NEXT:  cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
-//CHECK-NEXT:  [=](cl::sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:    my_kernel6((float *)nullptr);
-//CHECK-NEXT:  });
+//CHECK:  dpct::get_default_queue().submit(
+//CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
+//CHECK-NEXT:      dpct::access_wrapper<float *> aa_acc_ct0(aa, cgh);
+//CHECK:      cgh.parallel_for<dpct_kernel_name<class my_kernel6_{{[0-9a-z]+}}>>(
+//CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)), 
+//CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:          my_kernel6(aa_acc_ct0.get_raw_pointer());
+//CHECK-NEXT:        });
+//CHECK-NEXT:    });
   my_kernel6<<<1, 1>>>(aa);
 }
 
@@ -865,12 +869,13 @@ void run_foo16() {
   float *fa, *fb;
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](cl::sycl::handler &cgh) {
+  //CHECK-NEXT:    dpct::access_wrapper<float *> fa_acc_ct0(fa, cgh);
   //CHECK-NEXT:    dpct::access_wrapper<float *> fb_acc_ct1(fb, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel8_{{[0-9a-z]+}}, float>>(
   //CHECK-NEXT:      cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](cl::sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:        my_kernel8<float>(nullptr, fb_acc_ct1.get_raw_pointer());
+  //CHECK-NEXT:        my_kernel8<float>(fa_acc_ct0.get_raw_pointer(), fb_acc_ct1.get_raw_pointer());
   //CHECK-NEXT:      });
   //CHECK-NEXT:  });
   my_kernel8<float><<<1,1>>>(fa, fb);
