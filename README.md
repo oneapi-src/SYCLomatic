@@ -167,6 +167,7 @@ Follow instructions from the link below to build and run tests:
 * 32-bit host/target is not supported.
 
 
+<<<<<<< HEAD
 ## Useful Links
 * More information about how to use SYCLomatic can be found in the SYCLomatic online document:
     * [Get Started](https://oneapi-src.github.io/SYCLomatic/get_started/index.html)
@@ -179,6 +180,12 @@ Follow instructions from the link below to build and run tests:
 * SYCL\* 2020 specification:
 [https://www.khronos.org/registry/SYCL/](https://www.khronos.org/registry/SYCL/)
 * More information on oneAPI and DPC++ is available at [https://www.oneapi.com/](https://www.oneapi.com/)
+=======
+This project welcomes contributions from the community. Please refer to [CONTRIBUTING](/CONTRIBUTING.md) 
+for general guidelines around contributing to this project. You can then see 
+[ContributeToDPCPP](./sycl/doc/developer/ContributeToDPCPP.md) for DPC++ specific 
+guidelines.
+>>>>>>> origin/sycl
 
 ## License
 
