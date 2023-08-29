@@ -13,6 +13,7 @@
 #include "CrashRecovery.h"
 #include "Diagnostics.h"
 #include "FFTAPIMigration.h"
+#include "InclusionHeaders.h"
 #include "MapNames.h"
 #include "TextModification.h"
 #include "Utility.h"
@@ -36,14 +37,17 @@ class IncludesCallbacks : public PPCallbacks {
   TransformSetTy &TransformSet;
   IncludeMapSetTy &IncludeMapSet;
   SourceManager &SM;
+  RuleGroups &Groups;
 
   std::unordered_set<std::string> SeenFiles;
   bool IsFileInCmd = true;
 
 public:
   IncludesCallbacks(TransformSetTy &TransformSet,
-                    IncludeMapSetTy &IncludeMapSet, SourceManager &SM)
-      : TransformSet(TransformSet), IncludeMapSet(IncludeMapSet), SM(SM) {}
+                    IncludeMapSetTy &IncludeMapSet, SourceManager &SM,
+                    RuleGroups &G)
+      : TransformSet(TransformSet), IncludeMapSet(IncludeMapSet), SM(SM),
+        Groups(G) {}
   void InclusionDirective(SourceLocation HashLoc, const Token &IncludeTok,
                           StringRef FileName, bool IsAngled,
                           CharSourceRange FilenameRange,

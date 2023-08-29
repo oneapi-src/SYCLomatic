@@ -15,20 +15,21 @@
 #include "DNNAPIMigration.h"
 #include "ExprAnalysis.h"
 #include "FFTAPIMigration.h"
+#include "GroupFunctionAnalyzer.h"
 #include "Homoglyph.h"
 #include "LIBCUAPIMigration.h"
 #include "MemberExprRewriter.h"
 #include "MigrationRuleManager.h"
 #include "MisleadingBidirectional.h"
 #include "NCCLAPIMigration.h"
+#include "OptimizeMigration.h"
 #include "SaveNewFiles.h"
 #include "TextModification.h"
 #include "ThrustAPIMigration.h"
 #include "Utility.h"
 #include "WMMAAPIMigration.h"
-#include "OptimizeMigration.h"
-#include "clang/AST/Expr.h"
 #include "clang/AST/Decl.h"
+#include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/Stmt.h"
 #include "clang/AST/Type.h"
@@ -105,9 +106,12 @@ TextModification *clang::dpct::removeArg(const CallExpr *C, unsigned n,
 }
 
 auto parentStmt = []() {
-  return anyOf(hasParent(compoundStmt()), hasParent(forStmt()),
-               hasParent(whileStmt()), hasParent(doStmt()),
-               hasParent(ifStmt()));
+  return anyOf(
+      hasParent(compoundStmt()), hasParent(forStmt()), hasParent(whileStmt()),
+      hasParent(doStmt()), hasParent(ifStmt()),
+      hasParent(exprWithCleanups(anyOf(
+          hasParent(compoundStmt()), hasParent(forStmt()),
+          hasParent(whileStmt()), hasParent(doStmt()), hasParent(ifStmt())))));
 };
 
 static const CXXConstructorDecl *getIfConstructorDecl(const Decl *ND) {
@@ -779,340 +783,6 @@ bool IncludesCallbacks::ShouldEnter(StringRef FileName, bool IsAngled) {
 #else
   return true;
 #endif
-}
-
-// A class that uses the RAII idiom to selectively update the locations of the
-// last inclusion directives.
-class LastInclusionLocationUpdater {
-public:
-  LastInclusionLocationUpdater(SourceLocation Loc, bool UpdateNeeded = true)
-      : Loc(Loc), UpdateNeeded(UpdateNeeded) {}
-  ~LastInclusionLocationUpdater() {
-    if (UpdateNeeded)
-      DpctGlobalInfo::getInstance().setLastIncludeLocation(Loc);
-  }
-  void update(bool UpdateNeeded) { this->UpdateNeeded = UpdateNeeded; }
-
-private:
-  SourceLocation Loc;
-  bool UpdateNeeded;
-};
-
-void IncludesCallbacks::InclusionDirective(
-    SourceLocation HashLoc, const Token &IncludeTok, StringRef FileName,
-    bool IsAngled, CharSourceRange FilenameRange, OptionalFileEntryRef File,
-    StringRef SearchPath, StringRef RelativePath, const Module *Imported,
-    SrcMgr::CharacteristicKind FileType) {
-  // Record the locations of the first and last inclusion directives in a file
-  DpctGlobalInfo::getInstance().setFirstIncludeLocation(HashLoc);
-  LastInclusionLocationUpdater Updater{FilenameRange.getEnd()};
-
-  std::string IncludePath = SearchPath.str();
-  makeCanonical(IncludePath);
-
-  std::string IncludingFile = DpctGlobalInfo::getLocInfo(HashLoc).first;
-
-  // eg. '/home/path/util.h' -> '/home/path'
-  StringRef Directory = llvm::sys::path::parent_path(IncludingFile);
-  std::string AnalysisScope = DpctGlobalInfo::getAnalysisScope();
-
-  bool IsIncludingFileInAnalysisScope =
-      !isDirectory(IncludingFile) && isChildOrSamePath(AnalysisScope, Directory.str());
-
-  // If the header file included cannot be found, just return.
-  if (!File) {
-    return;
-  }
-
-  std::string FilePath;
-  if (!File->getFileEntry().tryGetRealPathName().empty()) {
-    FilePath = File->getFileEntry().tryGetRealPathName().str();
-  } else {
-    llvm::SmallString<512> FilePathAbs(File->getName());
-    DpctGlobalInfo::getSourceManager().getFileManager().makeAbsolutePath(
-        FilePathAbs);
-    llvm::sys::path::native(FilePathAbs);
-    llvm::sys::path::remove_dots(FilePathAbs, true);
-    FilePath = std::string(FilePathAbs.str());
-  }
-
-  std::string DirPath = llvm::sys::path::parent_path(FilePath).str();
-  bool IsFileInAnalysisScope = !isChildPath(DpctInstallPath, DirPath) &&
-                        (isChildOrSamePath(AnalysisScope, DirPath));
-  bool IsExcluded = DpctGlobalInfo::isExcluded(FilePath);
-
-  bool NeedMigrate = !IsExcluded && IsFileInAnalysisScope;
-
-  if (IsFileInAnalysisScope) {
-    auto FilePathWithoutSymlinks =
-        DpctGlobalInfo::removeSymlinks(SM.getFileManager(), FilePath);
-    IncludeFileMap[FilePathWithoutSymlinks] = false;
-    dpct::DpctGlobalInfo::getIncludingFileSet().insert(FilePathWithoutSymlinks);
-  }
-
-  if ((!SM.isWrittenInMainFile(HashLoc) && !IsIncludingFileInAnalysisScope) ||
-      IsExcluded) {
-    return;
-  }
-
-  // The "FilePath" is included by the "IncludingFile".
-  // If "FilePath" is not under the AnalysisScope folder, do not record the including
-  // relationship information.
-  if (DpctGlobalInfo::isInAnalysisScope(FilePath, false))
-    DpctGlobalInfo::getInstance().recordIncludingRelationship(IncludingFile,
-                                                              FilePath);
-
-  // Apply user-defined rule if needed
-  auto It = MapNames::HeaderRuleMap.find(FileName.str());
-  if (It != MapNames::HeaderRuleMap.end() &&
-      It->second.Priority == RulePriority::Takeover) {
-    std::string ReplHeaderStr = It->second.Prefix;
-    for (auto ItHeader = It->second.Includes.begin();
-         ItHeader != It->second.Includes.end(); ItHeader++) {
-      ReplHeaderStr += "#include ";
-      if ((*ItHeader)[0] != '<' && (*ItHeader)[0] != '"') {
-        ReplHeaderStr += "\"" + (*ItHeader) + "\"" + getNL();
-      } else {
-        ReplHeaderStr += (*ItHeader) + getNL();
-      }
-    }
-    ReplHeaderStr += "#include ";
-    if (It->second.Out[0] != '<' && It->second.Out[0] != '"') {
-      ReplHeaderStr += "\"" + It->second.Out + "\"" + getNL();
-    } else {
-      ReplHeaderStr += It->second.Out + getNL();
-    }
-    ReplHeaderStr += It->second.Postfix;
-    TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        std::move(ReplHeaderStr)));
-    return;
-  }
-
-  // Record that math header is included in this file
-  if (IsAngled && (FileName.compare(StringRef("math.h")) == 0 ||
-                   FileName.compare(StringRef("cmath")) == 0)) {
-    DpctGlobalInfo::getInstance().setMathHeaderInserted(HashLoc, true);
-  }
-
-  // Record that time header is included in this file
-  if (IsAngled && (FileName.compare(StringRef("time.h")) == 0)) {
-    DpctGlobalInfo::getInstance().setTimeHeaderInserted(HashLoc, true);
-  }
-
-  // Record that algorithm header is included in this file
-  if (IsAngled && FileName.compare(StringRef("algorithm")) == 0) {
-    DpctGlobalInfo::getInstance().setAlgorithmHeaderInserted(HashLoc, true);
-  }
-
-  if ((FileName.compare(StringRef("cublas_v2.h")) == 0) ||
-      (FileName.compare(StringRef("cublas.h")) == 0)) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_BLAS_Utils);
-
-    DpctGlobalInfo::setMKLHeaderUsed(true);
-
-    TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        ""));
-    Updater.update(false);
-  }
-
-  // Replace with <oneapi/mkl.hpp> and <oneapi/mkl/rng/device.hpp>
-  if ((FileName.compare(StringRef("curand.h")) == 0) ||
-      (FileName.compare(StringRef("curand_kernel.h")) == 0)) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_RNG_Utils);
-    DpctGlobalInfo::setMKLHeaderUsed(true);
-    TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        ""));
-    Updater.update(false);
-  }
-
-  // Replace with <mkl_spblas_sycl.hpp>
-  if ((FileName.compare(StringRef("cusparse.h")) == 0) ||
-      (FileName.compare(StringRef("cusparse_v2.h")) == 0)) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_SPBLAS_Utils);
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_BLAS_Utils);
-
-    DpctGlobalInfo::setMKLHeaderUsed(true);
-
-    TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        ""));
-    Updater.update(false);
-  }
-
-  if (FileName.compare(StringRef("cufft.h")) == 0) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_FFT_Utils);
-
-    DpctGlobalInfo::setMKLHeaderUsed(true);
-
-    TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        ""));
-    Updater.update(false);
-  }
-
-  if (FileName.compare(StringRef("cusolverDn.h")) == 0) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_LAPACK_Utils);
-
-    DpctGlobalInfo::setMKLHeaderUsed(true);
-
-    TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        ""));
-    Updater.update(false);
-  }
-
-  if (FileName.compare(StringRef("nccl.h")) == 0) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_CCL_Utils);
-    requestFeature(HelperFeatureEnum::device_ext);
-    TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        ""));
-    Updater.update(false);
-  }
-  if (FileName.startswith(StringRef("cudnn.h"))) {
-    if (isChildOrSamePath(AnalysisScope, DirPath)) {
-      return;
-    }
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_DNNL_Utils);
-    TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        ""));
-    Updater.update(false);
-  }
-  if (FileName.find("cuda/") != std::string::npos) {
-    if (FileName.compare(StringRef("cuda/atomic")) == 0 ||
-        FileName.compare(StringRef("cuda/std/atomic")) == 0) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_Atomic);
-      TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        ""));
-    Updater.update(false);
-    }
-    if (FileName.compare(StringRef("cuda/std/complex")) == 0) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Complex);
-    }
-    if (FileName.compare(StringRef("cuda/std/array")) == 0) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Array);
-    }
-    if (FileName.compare(StringRef("cuda/std/tuple")) == 0) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Tuple);
-    }
-
-  }
-
-  if (!isChildPath(CudaPath, IncludePath) &&
-      IncludePath.compare(0, 15, "/usr/local/cuda", 15)) {
-
-    // Replace "#include "*"" if needed
-    if (NeedMigrate) {
-      SmallString<512> NewFileName = FileName;
-      rewriteFileName(NewFileName, FilePath);
-      CharSourceRange InsertRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                                  /* IsTokenRange */ false);
-      if (NewFileName != FileName) {
-        const auto Extension = path::extension(FileName);
-        if (Extension == ".cu" || Extension == ".cuh") {
-          // For CUDA files, it will always change name.
-          TransformSet.emplace_back(new ReplaceInclude(
-              InsertRange, buildString("#include \"", NewFileName, "\"")));
-        } else {
-          // For other CppSource file type, it may change name or not, which
-          // determined by whether it has CUDA syntax, so just record the
-          // replacement in the IncludeMapSet.
-          IncludeMapSet[FilePath].emplace_back(new ReplaceInclude(
-              InsertRange, buildString("#include \"", NewFileName, "\"")));
-        }
-      }
-      return;
-    }
-  }
-
-  // Extra process thrust headers, map to PSTL mapping headers in runtime.
-  // For multi thrust header files, only insert once for PSTL mapping header.
-  if (FileName.find("thrust/") != std::string::npos) {
-    if (FileName.compare(StringRef("thrust/complex.h")) == 0) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Complex);
-    } else if (FileName.compare(StringRef("thrust/uninitialized_copy.h")) ==
-                   0 ||
-               FileName.compare(StringRef("thrust/uninitialized_fill.h")) ==
-                   0) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Memory);
-    } else if (FileName.compare(StringRef("thrust/random.h")) == 0) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Random);
-    } else {
-      if (FileName.compare(StringRef("thrust/functional.h")) == 0)
-        DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Functional);
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_DPL_Utils);
-      requestFeature(HelperFeatureEnum::device_ext);
-      TransformSet.emplace_back(new ReplaceInclude(
-          CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                          /*IsTokenRange=*/false),
-          ""));
-      Updater.update(false);
-
-      // The #include of oneapi/dpl/execution and oneapi/dpl/algorithm were
-      // previously added here.  However, due to some unfortunate include
-      // dependencies introduced with the PSTL/TBB headers from the
-      // gcc-9.3.0 include files, those two headers must now be included
-      // before the CL/sycl.hpp are included, so the FileInfo is set
-      // to hold a boolean that'll indicate whether to insert them when
-      // the #include CL/sycl.cpp is added later
-      auto BeginLocInfo = DpctGlobalInfo::getLocInfo(FilenameRange.getBegin());
-      auto FileInfo =
-          DpctGlobalInfo::getInstance().insertFile(BeginLocInfo.first);
-      FileInfo->insertHeader(HeaderType::HT_DPL_Execution);
-      FileInfo->insertHeader(HeaderType::HT_DPL_Algorithm);
-    }
-  }
-
-  //  TODO: implement one of this for each source language.
-  // If it's not an include from the SDK, leave it,
-  // unless it's runtime header, in which case it will be replaced.
-  // In other words, runtime header will be replaced regardless of where it's
-  // coming from.
-  if (!isChildOrSamePath(CudaPath, IncludePath) &&
-      IncludePath.compare(0, 15, "/usr/local/cuda", 15)) {
-    if (!(IsAngled && FileName.compare(StringRef("cuda_runtime.h")) == 0)) {
-      return;
-    }
-  }
-
-  // If CudaPath is in /usr/include,
-  // for all the include files without following pattern, keep it
-  if (!CudaPath.compare(0, 12, "/usr/include", 12)) {
-    if (!FileName.startswith("cuda") && !FileName.startswith("cusolver") &&
-        !FileName.startswith("cublas") && !FileName.startswith("cusparse") &&
-        !FileName.startswith("curand")) {
-      return;
-    }
-  }
-
-  // Always keep include of CL/*.  Do not delete even if
-  // they are found in a CUDA include directory.
-  // Only CUDA code is migrated, not OpenCL.
-  // Thus CL/* headers must be kept
-  if (FileName.startswith("CL/"))
-    return;
-
-  // Replace the complete include directive with an empty string.
-  // Also remove the trailing spaces to end of the line.
-  TransformSet.emplace_back(new ReplaceInclude(
-      CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                      /*IsTokenRange=*/false),
-      "", true));
-  Updater.update(false);
 }
 
 void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
@@ -1974,7 +1644,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               "cufftResult", "cufftType_t", "cufftType", "thrust::pair",
               "CUdeviceptr", "cudaDeviceAttr", "CUmodule", "CUjit_option",
               "CUfunction", "cudaMemcpyKind", "cudaComputeMode",
-              "__nv_bfloat16", "cooperative_groups::__v1::thread_block_tile",
+              "__nv_bfloat16", "cooperative_groups::__v1::thread_group",
+              "cooperative_groups::__v1::thread_block_tile",
               "cooperative_groups::__v1::thread_block", "libraryPropertyType_t",
               "libraryPropertyType", "cudaDataType_t", "cudaDataType",
               "cublasComputeType_t", "cublasAtomicsMode_t", "CUmem_advise_enum",
@@ -2504,12 +2175,11 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
 
-    if (CanonicalTypeStr == "cooperative_groups::__v1::thread_block") {
-      // Skip migrate the type in function body.
+    if (CanonicalTypeStr == "cooperative_groups::__v1::thread_group" ||
+        CanonicalTypeStr == "cooperative_groups::__v1::thread_block") {
       if (DpctGlobalInfo::findAncestor<clang::CompoundStmt>(TL) &&
           DpctGlobalInfo::findAncestor<clang::FunctionDecl>(TL))
         return;
-
       if (auto ETL = TL->getUnqualifiedLoc().getAs<ElaboratedTypeLoc>()) {
         SourceLocation Begin = ETL.getBeginLoc();
         SourceLocation End = ETL.getEndLoc();
@@ -2519,16 +2189,21 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
             End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
         if (End.isMacroID())
           return;
-        auto FD = DpctGlobalInfo::getParentFunction(TL);
+        const auto *FD = DpctGlobalInfo::getParentFunction(TL);
         if (!FD)
           return;
         auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
         auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
         DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
-        emplaceTransformation(new ReplaceText(
-            Begin, End.getRawEncoding() - Begin.getRawEncoding(),
-            MapNames::getClNamespace() + "group<{{NEEDREPLACEG" +
-                std::to_string(Index) + "}}>"));
+        std::string group_type = "";
+        if (DpctGlobalInfo::useLogicalGroup())
+          group_type = MapNames::getDpctNamespace() + "experimental::group_base";
+        if (CanonicalTypeStr == "cooperative_groups::__v1::thread_block")
+          group_type = MapNames::getClNamespace() + "group";
+        if (!group_type.empty())
+          emplaceTransformation(new ReplaceText(
+              Begin, End.getRawEncoding() - Begin.getRawEncoding(),
+              group_type + "<{{NEEDREPLACEG" + std::to_string(Index) + "}}>"));
         return;
       }
     }
@@ -3772,7 +3447,8 @@ void ManualMigrateEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(ManualMigrateEnumsRule, PassKind::PK_Migration)
+REGISTER_RULE(ManualMigrateEnumsRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_NCCL)
 
 // Rule for FFT enums.
 void FFTEnumsRule::registerMatcher(MatchFinder &MF) {
@@ -3798,7 +3474,7 @@ void FFTEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(FFTEnumsRule, PassKind::PK_Migration)
+REGISTER_RULE(FFTEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_FFT)
 
 // Rule for CU_JIT enums.
 void CU_JITEnumsRule::registerMatcher(MatchFinder &MF) {
@@ -3861,7 +3537,7 @@ void BLASEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(BLASEnumsRule, PassKind::PK_Migration)
+REGISTER_RULE(BLASEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_BLas)
 
 // Rule for RANDOM enums.
 void RandomEnumsRule::registerMatcher(MatchFinder &MF) {
@@ -3899,7 +3575,7 @@ void RandomEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(RandomEnumsRule, PassKind::PK_Migration)
+REGISTER_RULE(RandomEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Rng)
 
 // Rule for spBLAS enums.
 // Migrate spBLAS status values to corresponding int values
@@ -3942,7 +3618,7 @@ void SPBLASEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(SPBLASEnumsRule, PassKind::PK_Migration)
+REGISTER_RULE(SPBLASEnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Sparse)
 
 /// The function returns the migrated arguments of the scalar parameters.
 /// In the original code, the type of this parameter is pointer.
@@ -4064,7 +3740,8 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(SPBLASFunctionCallRule, PassKind::PK_Migration)
+REGISTER_RULE(SPBLASFunctionCallRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_Sparse)
 
 // Rule for Random function calls. Currently only support host APIs.
 void RandomFunctionCallRule::registerMatcher(MatchFinder &MF) {
@@ -4203,7 +3880,8 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(RandomFunctionCallRule, PassKind::PK_Migration)
+REGISTER_RULE(RandomFunctionCallRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_Rng)
 
 // Rule for device Random function calls.
 void DeviceRandomFunctionCallRule::registerMatcher(MatchFinder &MF) {
@@ -4356,7 +4034,8 @@ void DeviceRandomFunctionCallRule::runRule(
   }
 }
 
-REGISTER_RULE(DeviceRandomFunctionCallRule, PassKind::PK_Migration)
+REGISTER_RULE(DeviceRandomFunctionCallRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_Rng)
 
 void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
@@ -5895,7 +5574,8 @@ std::string BLASFunctionCallRule::processParamIntCastToBLASEnum(
   return DpctTempVarName;
 }
 
-REGISTER_RULE(BLASFunctionCallRule, PassKind::PK_Migration)
+REGISTER_RULE(BLASFunctionCallRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_BLas)
 
 // Rule for SOLVER enums.
 // Migrate SOLVER status values to corresponding int values
@@ -5935,7 +5615,7 @@ void SOLVEREnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(SOLVEREnumsRule, PassKind::PK_Migration)
+REGISTER_RULE(SOLVEREnumsRule, PassKind::PK_Migration, RuleGroupKind::RK_Solver)
 
 void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
@@ -6549,7 +6229,8 @@ SOLVERFunctionCallRule::getAncestralVarDecl(const clang::CallExpr *CE) {
   return nullptr;
 }
 
-REGISTER_RULE(SOLVERFunctionCallRule, PassKind::PK_Migration)
+REGISTER_RULE(SOLVERFunctionCallRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_Solver)
 
 void FunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
@@ -6709,11 +6390,18 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     std::string ResultVarName = getDrefName(CE->getArg(0));
     emplaceTransformation(
         new ReplaceStmt(CE->getCallee(), Prefix + MapNames::getDpctNamespace() +
-                                             "dev_mgr::instance().get_device"));
-    emplaceTransformation(new RemoveArg(CE, 0));
-    emplaceTransformation(new InsertAfterStmt(
-        CE, ".get_device_info(" + ResultVarName + ")" + Suffix));
-    requestFeature(HelperFeatureEnum::device_ext);
+                                             "get_device_info"));
+    emplaceTransformation(new ReplaceStmt(CE->getArg(0), ResultVarName));
+    if (DpctGlobalInfo::useNoQueueDevice()) {
+      emplaceTransformation(new ReplaceStmt(
+          CE->getArg(1), DpctGlobalInfo::getGlobalDeviceName()));
+    } else {
+      emplaceTransformation(new ReplaceStmt(
+          CE->getArg(1), MapNames::getDpctNamespace() +
+                             "dev_mgr::instance().get_device(" +
+                             getStmtSpelling(CE->getArg(1)) + ")"));
+      requestFeature(HelperFeatureEnum::device_ext);
+    }
   } else if (FuncName == "cudaDriverGetVersion" ||
              FuncName == "cudaRuntimeGetVersion") {
     if (IsAssigned) {
@@ -6723,9 +6411,14 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(
         new InsertBeforeStmt(CE, Prefix + ResultVarName + " = "));
 
-    std::string ReplStr =
-        MapNames::getDpctNamespace() + "get_current_device()." +
-          "get_major_version()";
+    std::string ReplStr = MapNames::getDpctNamespace() + "get_major_version(";
+    if (DpctGlobalInfo::useNoQueueDevice()) {
+      ReplStr += DpctGlobalInfo::getGlobalDeviceName();
+      ReplStr += ")";
+    } else {
+      ReplStr += MapNames::getDpctNamespace();
+      ReplStr += "get_current_device())";
+    }
     emplaceTransformation(new ReplaceStmt(CE, ReplStr + Suffix));
     report(CE->getBeginLoc(), Warnings::TYPE_MISMATCH, false);
     requestFeature(HelperFeatureEnum::device_ext);
@@ -6742,18 +6435,24 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                                                   "}}.reset()" + Suffix));
     requestFeature(HelperFeatureEnum::device_ext);
   } else if (FuncName == "cudaSetDevice") {
-    DpctGlobalInfo::setDeviceChangedFlag(true);
-    report(CE->getBeginLoc(), Diagnostics::DEVICE_ID_DIFFERENT, false,
-           getStmtSpelling(CE->getArg(0)));
-    if (IsAssigned) {
+    if (DpctGlobalInfo::useNoQueueDevice()) {
+      emplaceTransformation(new ReplaceStmt(CE, "0"));
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+             "cudaSetDevice",
+             "it is redundant if it is migrated with option "
+             "--helper-function-preference=no-queue-device "
+             "which declares a global SYCL device and queue.");
+    } else {
+      DpctGlobalInfo::setDeviceChangedFlag(true);
+      report(CE->getBeginLoc(), Diagnostics::DEVICE_ID_DIFFERENT, false,
+             getStmtSpelling(CE->getArg(0)));
+      emplaceTransformation(new ReplaceStmt(
+          CE->getCallee(),
+          Prefix + MapNames::getDpctNamespace() + "select_device"));
       requestFeature(HelperFeatureEnum::device_ext);
     }
-    emplaceTransformation(
-        new ReplaceStmt(CE->getCallee(), Prefix + MapNames::getDpctNamespace() +
-                                             "select_device"));
     if (IsAssigned)
       emplaceTransformation(new InsertAfterStmt(CE, ")"));
-    requestFeature(HelperFeatureEnum::device_ext);
   } else if (FuncName == "cudaDeviceGetAttribute") {
     std::string ResultVarName = getDrefName(CE->getArg(0));
     auto AttrArg = CE->getArg(1);
@@ -6813,19 +6512,33 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaGetDevice") {
     std::string ResultVarName = getDrefName(CE->getArg(0));
     emplaceTransformation(new InsertBeforeStmt(CE, ResultVarName + " = "));
-    emplaceTransformation(
-        new ReplaceStmt(CE, MapNames::getDpctNamespace() +
-                                "dev_mgr::instance().current_device_id()"));
-    requestFeature(HelperFeatureEnum::device_ext);
+    if (DpctGlobalInfo::useNoQueueDevice()) {
+      emplaceTransformation(new ReplaceStmt(CE, "0"));
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+             "cudaGetDevice",
+             "it is redundant if it is migrated with option "
+             "--helper-function-preference=no-queue-device "
+             "which declares a global SYCL device and queue.");
+    } else {
+      emplaceTransformation(
+          new ReplaceStmt(CE, MapNames::getDpctNamespace() +
+                                  "dev_mgr::instance().current_device_id()"));
+      requestFeature(HelperFeatureEnum::device_ext);
+    }
   } else if (FuncName == "cudaDeviceSynchronize" ||
              FuncName == "cudaThreadSynchronize") {
     if (isPlaceholderIdxDuplicated(CE))
       return;
-    int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-    buildTempVariableMap(Index, CE, HelperFuncType::HFT_CurrentDevice);
-    std::string ReplStr =
-        "{{NEEDREPLACED" + std::to_string(Index) + "}}.queues_wait_and_throw()";
-    requestFeature(HelperFeatureEnum::device_ext);
+    std::string ReplStr;
+    if (DpctGlobalInfo::useNoQueueDevice()) {
+      ReplStr = DpctGlobalInfo::getGlobalQueueName() + ".wait_and_throw()";
+    } else {
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, CE, HelperFuncType::HFT_CurrentDevice);
+      ReplStr = "{{NEEDREPLACED" + std::to_string(Index) +
+                "}}.queues_wait_and_throw()";
+      requestFeature(HelperFeatureEnum::device_ext);
+    }
     if (IsAssigned) {
       ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
       requestFeature(HelperFeatureEnum::device_ext);
@@ -6852,8 +6565,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaThreadSetLimit" ||
              FuncName == "cudaDeviceSetCacheConfig" ||
              FuncName == "cudaDeviceGetCacheConfig" ||
-             FuncName == "cuCtxSetCacheConfig" ||
-             FuncName == "cuCtxSetLimit") {
+             FuncName == "cuCtxSetCacheConfig" || FuncName == "cuCtxSetLimit") {
     auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
@@ -8453,12 +8165,25 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     else
       ReplStr = "*(" + StmtStr0 + ")";
 
-    if (isPlaceholderIdxDuplicated(CE))
-      return;
-    int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-    buildTempVariableMap(Index, CE, HelperFuncType::HFT_CurrentDevice);
-    ReplStr += " = " + getNewQueue(Index);
-    requestFeature(HelperFeatureEnum::device_ext);
+    if (DpctGlobalInfo::useNoQueueDevice()) {
+      // Now the UsmLevel must not be UL_None here.
+      ReplStr += " = new " + MapNames::getClNamespace() + "queue(" +
+                DpctGlobalInfo::getGlobalDeviceName() + ", " +
+                MapNames::getClNamespace() + "property_list{" +
+                MapNames::getClNamespace() + "property::queue::in_order()";
+      if (DpctGlobalInfo::getEnablepProfilingFlag()) {
+        ReplStr += ", " + MapNames::getClNamespace() +
+                   "property::queue::enable_profiling()";
+      }
+      ReplStr += "})";
+    } else {
+      if (isPlaceholderIdxDuplicated(CE))
+        return;
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, CE, HelperFuncType::HFT_CurrentDevice);
+      ReplStr += " = " + getNewQueue(Index);
+      requestFeature(HelperFeatureEnum::device_ext);
+    }
     if (IsAssigned) {
       ReplStr = "DPCT_CHECK_ERROR(" + ReplStr + ")";
     }
@@ -8744,6 +8469,11 @@ bool isRecursiveDeviceCallExpr(const CallExpr* CE) {
   return false;
 }
 
+static void checkCallGroupFunctionInControlFlow(FunctionDecl *FD) {
+  GroupFunctionCallInControlFlowAnalyzer A(DpctGlobalInfo::getContext());
+  (void)A.checkCallGroupFunctionInControlFlow(FD);
+}
+
 // __device__ function call information collection
 void DeviceFunctionDeclRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto DeviceFunctionMatcher =
@@ -8904,7 +8634,10 @@ void DeviceFunctionDeclRule::runRule(
     if (isRecursiveDeviceCallExpr(CE))
       report(CE->getBeginLoc(), Warnings::DEVICE_UNSUPPORTED_CALL_FUNCTION,
                                 false, "Recursive functions");
-    FuncInfo->addCallee(CE);
+    auto CallInfo = FuncInfo->addCallee(CE);
+    checkCallGroupFunctionInControlFlow(const_cast<FunctionDecl *>(FD));
+    if (CallInfo->hasSideEffects())
+      report(CE->getBeginLoc(), Diagnostics::CALL_GROUP_FUNC_IN_COND, false);
   } else if (CE = getAssistNodeAsType<CallExpr>(Result, "PrintfExpr")) {
     if (FD->hasAttr<CUDAHostAttr>()) {
       report(CE->getBeginLoc(), Warnings::PRINTF_FUNC_NOT_SUPPORT, false);
@@ -8946,19 +8679,8 @@ void DeviceFunctionDeclRule::runRule(
     if (!Var->getInit())
       return;
 
-    if (auto EWC = dyn_cast<ExprWithCleanups>(Var->getInit())) {
-      auto CXXCExpr = dyn_cast<CXXConstructExpr>(EWC->getSubExpr());
-      if (!CXXCExpr)
-        return;
-
-      auto IgnoreUSIS = CXXCExpr->IgnoreUnlessSpelledInSource();
-      if (!IgnoreUSIS)
-        return;
-
-      auto CE = dyn_cast<CallExpr>(IgnoreUSIS);
-      if (!CE)
-        return;
-
+    if (auto CE =
+            dyn_cast<CallExpr>(Var->getInit()->IgnoreUnlessSpelledInSource())) {
       if (CE->getType().getCanonicalType().getAsString() !=
           "class cooperative_groups::__v1::grid_group")
         return;
@@ -10586,6 +10308,14 @@ void MemoryMigrationRule::memsetMigration(
     Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
 
+  auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(Name);
+  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
+    ExprAnalysis EA(C);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  }
+
   std::string ReplaceStr;
   StringRef NameRef(Name);
   bool IsAsync = NameRef.endswith("Async");
@@ -10947,7 +10677,11 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cuMemHostGetFlags", "cuMemHostRegister_v2", "cuMemHostUnregister",
         "cuMemcpy", "cuMemcpyAsync", "cuMemcpyHtoA_v2", "cuMemcpyAtoH_v2",
         "cuMemcpyHtoAAsync_v2", "cuMemcpyAtoHAsync_v2", "cuMemcpyDtoA_v2",
-        "cuMemcpyAtoD_v2", "cuMemcpyAtoA_v2");
+        "cuMemcpyAtoD_v2", "cuMemcpyAtoA_v2", "cuMemsetD16_v2", "cuMemsetD16Async",
+        "cuMemsetD2D16_v2", "cuMemsetD2D16Async", "cuMemsetD2D32_v2",
+        "cuMemsetD2D32Async", "cuMemsetD2D8_v2", "cuMemsetD2D8Async",
+        "cuMemsetD32_v2", "cuMemsetD32Async", "cuMemsetD8_v2",
+        "cuMemsetD8Async");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -11159,6 +10893,18 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cudaMemset2DAsync", &MemoryMigrationRule::memsetMigration},
           {"cudaMemset3D", &MemoryMigrationRule::memsetMigration},
           {"cudaMemset3DAsync", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD16_v2", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD16Async", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD2D16_v2", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD2D16Async", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD2D32_v2", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD2D32Async", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD2D8_v2", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD2D8Async", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD32_v2", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD32Async", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD8_v2", &MemoryMigrationRule::memsetMigration},
+          {"cuMemsetD8Async", &MemoryMigrationRule::memsetMigration},
           {"cudaGetSymbolAddress",
            &MemoryMigrationRule::getSymbolAddressMigration},
           {"cudaGetSymbolSize", &MemoryMigrationRule::getSymbolSizeMigration},
@@ -11792,6 +11538,8 @@ void WarpFunctionsRule::registerMatcher(MatchFinder &MF) {
                                             "__any_sync",
                                             "__ballot",
                                             "__ballot_sync",
+                                            "__match_any_sync",
+                                            "__match_all_sync",
                                             "__activemask"};
 
   MF.addMatcher(callExpr(callee(functionDecl(internal::Matcher<NamedDecl>(
@@ -11832,11 +11580,35 @@ void CooperativeGroupsFunctionRule::registerMatcher(MatchFinder &MF) {
                                                hasAttr(attr::CUDAGlobal))))))
           .bind("FuncCall"),
       this);
+  MF.addMatcher(
+      declRefExpr(
+          hasAncestor(
+              implicitCastExpr(
+                  hasImplicitDestinationType(qualType(hasCanonicalType(
+                      recordType(hasDeclaration(cxxRecordDecl(hasName(
+                          "cooperative_groups::__v1::thread_group"))))))))))
+          .bind("declRef"),
+      this);
 }
 
 void CooperativeGroupsFunctionRule::runRule(
     const MatchFinder::MatchResult &Result) {
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FuncCall");
+  const DeclRefExpr *DR = getNodeAsType<DeclRefExpr>(Result, "declRef");
+  const SourceManager &SM = DpctGlobalInfo::getSourceManager();
+  if (DR && DpctGlobalInfo::useLogicalGroup()) {
+    std::string ReplacedStr = MapNames::getDpctNamespace() + "experimental::group" +
+                  "(" + DR->getNameInfo().getAsString() + ", " +
+                  DpctGlobalInfo::getItem(DR) + ")";
+    SourceRange DefRange = getDefinitionRange(DR->getBeginLoc(),  DR->getEndLoc());
+    SourceLocation Begin = DefRange.getBegin();
+    SourceLocation End = DefRange.getEnd();
+    End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+        End, SM, DpctGlobalInfo::getContext().getLangOpts()));
+    emplaceTransformation(replaceText(Begin, End, std::move(ReplacedStr),
+                                      DpctGlobalInfo::getSourceManager()));
+    return;
+  }
   if (!CE)
     return;
   std::string FuncName =
@@ -11963,6 +11735,15 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
   if (FuncName == "__syncthreads") {
     DpctGlobalInfo::registerNDItemUser(CE);
+    const FunctionDecl *FD = nullptr;
+    if (FD = getAssistNodeAsType<FunctionDecl>(Result, "FuncDecl")) {
+      GroupFunctionCallInControlFlowAnalyzer A(DpctGlobalInfo::getContext());
+      A.checkCallGroupFunctionInControlFlow(const_cast<FunctionDecl *>(FD));
+      auto FnInfo = DeviceFunctionDecl::LinkRedecls(FD);
+      auto CallInfo = FnInfo->addCallee(CE);
+      if (CallInfo->hasSideEffects())
+        report(CE->getBeginLoc(), Diagnostics::CALL_GROUP_FUNC_IN_COND, false);
+    }
   } else if (FuncName == "this_thread_block") {
     if (auto P = getAncestorDeclStmt(CE)) {
       if (auto VD = dyn_cast<VarDecl>(*P->decl_begin())) {
@@ -13874,7 +13655,8 @@ void FFTFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(FFTFunctionCallRule, PassKind::PK_Migration)
+REGISTER_RULE(FFTFunctionCallRule, PassKind::PK_Migration,
+              RuleGroupKind::RK_FFT)
 
 void DriverModuleAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto DriverModuleAPI = [&]() {
@@ -14019,29 +13801,36 @@ void DriverDeviceAPIRule::runRule(
     auto FirArg = CE->getArg(0)->IgnoreImplicitAsWritten();
     auto SecArg = CE->getArg(1)->IgnoreImplicitAsWritten();
     auto ThrArg = CE->getArg(2)->IgnoreImplicitAsWritten();
-    std::string ThrRep;
-    ExprAnalysis EA(ThrArg);
-    EA.analyze();
-    ThrRep = EA.getReplacedString();
-    std::string common_str = " = " + MapNames::getDpctNamespace() +
-                             "dev_mgr::instance().get_device(";
-    std::string major_api = ").get_major_version()";
-    std::string minor_api = ").get_minor_version()";
-    requestFeature(HelperFeatureEnum::device_ext);
+    std::string device_str;
+    if (DpctGlobalInfo::useNoQueueDevice()) {
+      device_str = DpctGlobalInfo::getGlobalDeviceName();
+    } else {
+      std::string ThrRep;
+      ExprAnalysis EA(ThrArg);
+      EA.analyze();
+      ThrRep = EA.getReplacedString();
+      device_str = MapNames::getDpctNamespace() +
+                   "dev_mgr::instance().get_device(" + ThrRep + ")";
+      requestFeature(HelperFeatureEnum::device_ext);
+    }
     if (IsAssigned) {
       OS << Indent << "  ";
       printDerefOp(OS, FirArg);
-      OS << common_str << ThrRep << major_api << ";" << getNL();
+      OS << " = " << MapNames::getDpctNamespace() << "get_major_version("
+         << device_str << ");" << getNL();
       OS << Indent << "  ";
       printDerefOp(OS, SecArg);
-      OS << common_str << ThrRep << minor_api << ";" << getNL();
+      OS << " = " << MapNames::getDpctNamespace() << "get_minor_version("
+         << device_str << ");" << getNL();
       OS << Indent << "  "
          << "return 0;" << getNL();
     } else {
       printDerefOp(OS, FirArg);
-      OS << common_str << ThrRep << major_api << ";" << getNL() << Indent;
+      OS << " = " << MapNames::getDpctNamespace() << "get_major_version("
+         << device_str << ");" << getNL() << Indent;
       printDerefOp(OS, SecArg);
-      OS << common_str << ThrRep << minor_api;
+      OS << " = " << MapNames::getDpctNamespace() << "get_minor_version("
+         << device_str << ")";
     }
     if (IsAssigned) {
       OS << Indent << "}()";
@@ -14196,19 +13985,37 @@ void DriverContextAPIRule::runRule(
     }
     return;
   } else if (APIName == "cuCtxSetCurrent") {
-    auto Arg = CE->getArg(0)->IgnoreImplicitAsWritten();
-    ExprAnalysis EA(Arg);
-    EA.analyze();
-    OS << MapNames::getDpctNamespace() + "select_device("
-       << EA.getReplacedString() << ")";
-    requestFeature(HelperFeatureEnum::device_ext);
+    if (DpctGlobalInfo::useNoQueueDevice()) {
+      OS << "0";
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+             "cuCtxSetCurrent",
+             "it is redundant if it is migrated with option "
+             "--helper-function-preference=no-queue-device "
+             "which declares a global SYCL device and queue.");
+    } else {
+      auto Arg = CE->getArg(0)->IgnoreImplicitAsWritten();
+      ExprAnalysis EA(Arg);
+      EA.analyze();
+      OS << MapNames::getDpctNamespace() + "select_device("
+         << EA.getReplacedString() << ")";
+      requestFeature(HelperFeatureEnum::device_ext);
+    }
   } else if (APIName == "cuCtxGetCurrent") {
     auto Arg = CE->getArg(0)->IgnoreImplicitAsWritten();
     printDerefOp(OS, Arg);
-    OS << " = "
-       << MapNames::getDpctNamespace() +
-              "dev_mgr::instance().current_device_id()";
-    requestFeature(HelperFeatureEnum::device_ext);
+    OS << " = ";
+    if (DpctGlobalInfo::useNoQueueDevice()) {
+      OS << "0";
+      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+             "cuCtxGetCurrent",
+             "it is redundant if it is migrated with option "
+             "--helper-function-preference=no-queue-device "
+             "which declares a global SYCL device and queue.");
+    } else {
+      OS << MapNames::getDpctNamespace() +
+                "dev_mgr::instance().current_device_id()";
+      requestFeature(HelperFeatureEnum::device_ext);
+    }
   } else if (APIName == "cuCtxSynchronize") {
     OS << MapNames::getDpctNamespace() +
               "get_current_device().queues_wait_and_throw()";
@@ -14417,17 +14224,17 @@ REGISTER_RULE(ConfusableIdentifierDetectionRule, PassKind::PK_Migration)
 
 REGISTER_RULE(MisleadingBidirectionalRule, PassKind::PK_Migration)
 
-REGISTER_RULE(CuDNNTypeRule, PassKind::PK_Migration)
+REGISTER_RULE(CuDNNTypeRule, PassKind::PK_Migration, RuleGroupKind::RK_DNN)
 
-REGISTER_RULE(CuDNNAPIRule, PassKind::PK_Migration)
+REGISTER_RULE(CuDNNAPIRule, PassKind::PK_Migration, RuleGroupKind::RK_DNN)
 
-REGISTER_RULE(NCCLRule, PassKind::PK_Migration)
+REGISTER_RULE(NCCLRule, PassKind::PK_Migration, RuleGroupKind::RK_NCCL)
 
-REGISTER_RULE(LIBCURule, PassKind::PK_Migration)
+REGISTER_RULE(LIBCURule, PassKind::PK_Migration, RuleGroupKind::RK_Libcu)
 
-REGISTER_RULE(ThrustAPIRule, PassKind::PK_Migration)
+REGISTER_RULE(ThrustAPIRule, PassKind::PK_Migration, RuleGroupKind::RK_Thrust)
 
-REGISTER_RULE(ThrustTypeRule, PassKind::PK_Migration)
+REGISTER_RULE(ThrustTypeRule, PassKind::PK_Migration, RuleGroupKind::RK_Thrust)
 
 REGISTER_RULE(WMMARule, PassKind::PK_Analysis)
 

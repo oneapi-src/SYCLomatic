@@ -286,6 +286,77 @@ T permute_sub_group_by_xor(sycl::sub_group g, T x, unsigned int mask,
                                      : id);
 }
 
+/// The function match_any_over_sub_group conducts a comparison of values
+/// across work-items within a sub-group. match_any_over_sub_group return a mask
+/// in which some bits are set to 1, indicating that the \p value provided by
+/// the work-item represented by these bits are equal. The n-th bit of mask
+/// representing the work-item with id n. The parameter \p member_mask
+/// indicating the work-items participating the call.
+/// \tparam T Input value type
+/// \param [in] g Input sub_group
+/// \param [in] member_mask Input mask
+/// \param [in] value Input value
+/// \returns The result
+template <typename T>
+unsigned int match_any_over_sub_group(sycl::sub_group g, unsigned member_mask,
+                                      T value) {
+  static_assert(std::is_arithmetic_v<T>, "Value type must be arithmetic type.");                    
+  if (!member_mask) {
+    return 0;
+  }
+  unsigned int id = g.get_local_linear_id();
+  unsigned int flag = 0, result = 0, reduce_result = 0;
+  unsigned int bit_index = 0x1 << id;
+  bool is_participate = member_mask & bit_index;
+  T broadcast_value = 0;
+  bool matched = false;
+  while (flag != member_mask) {
+    broadcast_value =
+        sycl::select_from_group(g, value, sycl::ctz((~flag & member_mask)));
+    reduce_result = sycl::reduce_over_group(
+        g, is_participate ? (broadcast_value == value ? bit_index : 0) : 0,
+        sycl::plus<>());
+    flag |= reduce_result;
+    matched = reduce_result & bit_index;
+    result = matched * reduce_result + (1 - matched) * result;
+  }
+  return result;
+}
+
+/// The function match_all_over_sub_group conducts a comparison of values
+/// across work-items within a sub-group. match_all_over_sub_group return \p
+/// member_mask and predicate \p pred will be set to 1 if all \p value that
+/// provided by each work-item in \p member_mask are equal, otherwise return 0
+/// and the predicate \p pred will be set to 0. The n-th bit of \p member_mask
+/// representing the work-item with id n. The parameter \p member_mask
+/// indicating the work-items participating the call.
+/// \tparam T Input value type
+/// \param [in] g Input sub_group
+/// \param [in] member_mask Input mask
+/// \param [in] value Input value
+/// \param [out] pred Output predicate
+/// \returns The result
+template <typename T>
+unsigned int match_all_over_sub_group(sycl::sub_group g, unsigned member_mask,
+                                      T value, int *pred) {
+  static_assert(std::is_arithmetic_v<T>, "Value type must be arithmetic type."); 
+  if (!member_mask) {
+    return 0;
+  }
+  unsigned int id = g.get_local_linear_id();
+  unsigned int bit_index = 0x1 << id;
+  bool is_participate = member_mask & bit_index;
+  T broadcast_value = sycl::select_from_group(g, value, sycl::ctz(member_mask));
+  unsigned int reduce_result = sycl::reduce_over_group(
+      g,
+      (member_mask & bit_index) ? (broadcast_value == value ? bit_index : 0)
+                                : 0,
+      sycl::plus<>());
+  bool all_equal = (reduce_result == member_mask);
+  *pred = is_participate & all_equal;
+  return all_equal * member_mask;
+}
+
 namespace experimental {
 /// Masked version of select_from_sub_group, which execute masked sub-group
 /// operation. The parameter member_mask indicating the work-items participating
@@ -584,9 +655,9 @@ nd_range_barrier(const sycl::nd_item<1> &item,
 /// work-group.
 /// Note: Please make sure that the logical-group size is a power of 2 in the
 /// range [1, current_sub_group_size].
-class logical_group {
-  sycl::nd_item<3> _item;
-  sycl::group<3> _g;
+template <int dimensions = 3> class logical_group {
+  sycl::nd_item<dimensions> _item;
+  sycl::group<dimensions> _g;
   uint32_t _logical_group_size;
   uint32_t _group_linear_range_in_parent;
 
@@ -595,12 +666,14 @@ public:
   /// \param [in] item Current work-item.
   /// \param [in] parent_group The group to be divided.
   /// \param [in] size The logical-group size.
-  logical_group(sycl::nd_item<3> item, sycl::group<3> parent_group,
-                uint32_t size)
+  logical_group(sycl::nd_item<dimensions> item,
+                sycl::group<dimensions> parent_group, uint32_t size)
       : _item(item), _g(parent_group), _logical_group_size(size) {
     _group_linear_range_in_parent =
         (_g.get_local_linear_range() - 1) / _logical_group_size + 1;
   }
+  logical_group(sycl::nd_item<dimensions> item)
+      : _item(item), _g(item.get_group()) {}
   /// Returns the index of the work-item within the logical-group.
   uint32_t get_local_linear_id() const {
     return _item.get_local_linear_id() % _logical_group_size;
@@ -753,6 +826,84 @@ inline int calculate_max_potential_wg(int *num_wg, int *wg_size,
   num_wg[0] = num_ss * num_wg[0];
   return 0;
 }
+
+/// Supported group type during migration.
+enum class group_type { work_group, sub_group, logical_group, root_group };
+
+/// The group_base will dispatch the function call to the specific interface
+/// based on the group type.
+template <int dimensions = 3> class group_base {
+public:
+  group_base(sycl::nd_item<dimensions> item)
+      : nd_item(item), logical_group(item) {}
+  ~group_base() {}
+  /// Returns the number of work-items in the group.
+  size_t get_local_linear_range() {
+    switch (type) {
+    case group_type::work_group:
+      return nd_item.get_group().get_local_linear_range();
+    case group_type::sub_group:
+      return nd_item.get_sub_group().get_local_linear_range();
+    case group_type::logical_group:
+      return logical_group.get_local_linear_range();
+    default:
+      return -1; // Unkonwn group type
+    }
+  }
+  /// Returns the index of the work-item within the group.
+  size_t get_local_linear_id() {
+    switch (type) {
+    case group_type::work_group:
+      return nd_item.get_group().get_local_linear_id();
+    case group_type::sub_group:
+      return nd_item.get_sub_group().get_local_linear_id();
+    case group_type::logical_group:
+      return logical_group.get_local_linear_id();
+    default:
+      return -1; // Unkonwn group type
+    }
+  }
+  /// Wait for all the elements within the group to complete their execution
+  /// before proceeding.
+  void barrier() {
+    switch (type) {
+    case group_type::work_group:
+      sycl::group_barrier(nd_item.get_group());
+      break;
+    case group_type::sub_group:
+    case group_type::logical_group:
+      sycl::group_barrier(nd_item.get_sub_group());
+      break;
+    default:
+      break;
+    }
+  }
+
+protected:
+  logical_group<dimensions> logical_group;
+  sycl::nd_item<dimensions> nd_item;
+  group_type type;
+};
+
+/// The group class is a container type that can storage supported group_type.
+template <typename T, int dimensions = 3>
+class group : public group_base<dimensions> {
+  using group_base<dimensions>::type;
+  using group_base<dimensions>::logical_group;
+
+public:
+  group(T g, sycl::nd_item<dimensions> item) : group_base<dimensions>(item) {
+    if constexpr (std::is_same_v<T, sycl::sub_group>) {
+      type = group_type::sub_group;
+    } else if constexpr (std::is_same_v<T, sycl::group<dimensions>>) {
+      type = group_type::work_group;
+    } else if constexpr (std::is_same_v<T, dpct::experimental::logical_group<
+                                               dimensions>>) {
+      logical_group = g;
+      type = group_type::logical_group;
+    }
+  }
+};
 } // namespace experimental
 
 /// If x <= 2, then return a pointer to the deafult queue;
@@ -875,7 +1026,5 @@ public:
 #endif
 
 } // namespace dpct
-
-
 
 #endif // __DPCT_UTIL_HPP__

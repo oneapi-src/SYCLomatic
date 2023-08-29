@@ -11,6 +11,16 @@
 // HABS-NEXT:   sycl::ext::intel::math::habs(h);
 // HABS-NEXT:   sycl::ext::oneapi::experimental::fabs(b);
 
+// RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__hadd | FileCheck %s -check-prefix=__HADD
+// __HADD: CUDA API:
+// __HADD-NEXT:   __hadd(h1 /*__half*/, h2 /*__half*/);
+// __HADD-NEXT:   __hadd(b1 /*__nv_bfloat16*/, b2 /*__nv_bfloat16*/);
+// __HADD-NEXT:   __hadd(i1 /*int*/, i2 /*int*/);
+// __HADD-NEXT: Is migrated to (with the option --use-dpcpp-extensions=intel_device_math):
+// __HADD-NEXT:   sycl::ext::intel::math::hadd(h1, h2);
+// __HADD-NEXT:   b1 + b2;
+// __HADD-NEXT:   sycl::hadd(i1, i2);
+
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=__hadd_sat | FileCheck %s -check-prefix=HADD_SAT
 // HADD_SAT: CUDA API:
 // HADD_SAT-NEXT:   __hadd_sat(h1 /*__half*/, h2 /*__half*/);

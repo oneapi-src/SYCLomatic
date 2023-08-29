@@ -233,44 +233,51 @@ static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y, size_t z,
   return dpct_malloc(pitch * y * z, q);
 }
 
-/// Set \p value to the first \p size bytes starting from \p dev_ptr in \p q.
-///
-/// \param q The queue in which the operation is done.
-/// \param dev_ptr Pointer to the device memory address.
-/// \param value Value to be set.
-/// \param size Number of bytes to be set to the value.
-/// \returns An event representing the memset operation.
+/**
+ * @brief Sets \p value to the first \p size elements starting from \p dev_ptr in \p q.
+ * @tparam valueT The type of the element to be set.
+ * @param [in] q The queue in which the operation is done.
+ * @param [in] dev_ptr Pointer to the virtual device memory address.
+ * @param [in] value The value to be set.
+ * @param [in] size Number of elements to be set to the value.
+ * @return An event representing the memset operation.
+ */
+template <typename valueT>
 static inline sycl::event dpct_memset(sycl::queue &q, void *dev_ptr,
-                                          int value, size_t size) {
+                                      valueT value, size_t size) {
 #ifdef DPCT_USM_LEVEL_NONE
   auto &mm = mem_mgr::instance();
   assert(mm.is_device_ptr(dev_ptr));
   auto alloc = mm.translate_ptr(dev_ptr);
-  size_t offset = (byte_t *)dev_ptr - alloc.alloc_ptr;
+  size_t offset = (valueT *)dev_ptr - (valueT *)alloc.alloc_ptr;
 
   return q.submit([&](sycl::handler &cgh) {
     auto r = sycl::range<1>(size);
     auto o = sycl::id<1>(offset);
-    sycl::accessor<byte_t, 1, sycl::access_mode::write,
-                       sycl::access::target::device>
-        acc(alloc.buffer, cgh, r, o);
-    cgh.fill(acc, (byte_t)value);
+    auto new_buffer = alloc.buffer.reinterpret<valueT>(
+        sycl::range<1>(alloc.size / sizeof(valueT)));
+    sycl::accessor<valueT, 1, sycl::access_mode::write,
+                   sycl::access::target::device>
+        acc(new_buffer, cgh, r, o);
+    cgh.fill(acc, value);
   });
 #else
-  return q.memset(dev_ptr, value, size);
+  return q.fill(dev_ptr, value, size);
 #endif // DPCT_USM_LEVEL_NONE
 }
 
-/// Set \p value to the 3D memory region pointed by \p data in \p q. \p size
-/// specifies the 3D memory size to set.
-///
-/// \param q The queue in which the operation is done.
-/// \param data Pointer to the device memory region.
-/// \param value Value to be set.
-/// \param size Memory region size.
-/// \returns An event list representing the memset operations.
+/**
+ * @brief Sets \p value to the 3D memory region pointed by \p data in \p q.
+ * @tparam valueT The type of the element to be set.
+ * @param [in] q The queue in which the operation is done.
+ * @param [in] data Pointer to the pitched device memory region.
+ * @param [in] value The value to be set.
+ * @param [in] size 3D memory region by number of elements.
+ * @return An event list representing the memset operations.
+ */
+template<typename valueT>
 static inline std::vector<sycl::event>
-dpct_memset(sycl::queue &q, pitched_data data, int value,
+dpct_memset(sycl::queue &q, pitched_data data, valueT value,
             sycl::range<3> size) {
   std::vector<sycl::event> event_list;
   size_t slice = data.get_pitch() * data.get_y();
@@ -286,9 +293,20 @@ dpct_memset(sycl::queue &q, pitched_data data, int value,
   return event_list;
 }
 
-/// memset 2D matrix with pitch.
+/**
+ * @brief Sets \p val to the pitched 2D memory region pointed by \p ptr in \p q.
+ * @tparam valueT The type of the element to be set.
+ * @param [in] q The queue in which the operation is done.
+ * @param [in] ptr Pointer to the virtual device memory.
+ * @param [in] pitch The pitch size by number of elements, including padding.
+ * @param [in] val The value to be set.
+ * @param [in] x The width of memory region by number of elements.
+ * @param [in] y The height of memory region by number of elements.
+ * @return An event list representing the memset operations.
+ */
+template<typename valueT>
 static inline std::vector<sycl::event>
-dpct_memset(sycl::queue &q, void *ptr, size_t pitch, int val, size_t x,
+dpct_memset(sycl::queue &q, void *ptr, size_t pitch, valueT val, size_t x,
             size_t y) {
   return dpct_memset(q, pitched_data(ptr, pitch, x, 1), val,
                      sycl::range<3>(x, y, 1));
@@ -972,97 +990,201 @@ async_dpct_memcpy(pitched_data to, sycl::id<3> to_pos, pitched_data from,
                   sycl::queue &q = get_default_queue()) {
   detail::dpct_memcpy(q, to, to_pos, from, from_pos, size, direction);
 }
-
-/// Synchronously sets \p value to the first \p size bytes starting from \p
-/// dev_ptr. The function will return after the memset operation is completed.
-///
-/// \param dev_ptr Pointer to the device memory address.
-/// \param value Value to be set.
-/// \param size Number of bytes to be set to the value.
-/// \param q The queue in which the operation is done.
-/// \returns no return value.
+/**
+ * @brief Sets 1 byte data \p value to the first \p size elements starting from
+ * \p dev_ptr in \p q synchronously.
+ * @param [in] dev_ptr Pointer to the virtual device memory address.
+ * @param [in] value The value to be set.
+ * @param [in] size Number of elements to be set to the value.
+ * @param [in] q The queue in which the operation is done.
+ */
 static void dpct_memset(void *dev_ptr, int value, size_t size,
+                        sycl::queue &q = get_default_queue()) {
+  detail::dpct_memset<unsigned char>(q, dev_ptr, value, size).wait();
+}
+
+/**
+ * @brief Sets 2 bytes data \p value to the first \p size elements starting from
+ * \p dev_ptr in \p q synchronously.
+ * @param [in] dev_ptr Pointer to the virtual device memory address.
+ * @param [in] value The value to be set.
+ * @param [in] size Number of elements to be set to the value.
+ * @param [in] q The queue in which the operation is done.
+ */
+static void dpct_memset_d16(void *dev_ptr, unsigned short value, size_t size,
+                        sycl::queue &q = get_default_queue()) {
+  detail::dpct_memset(q, dev_ptr, value, size).wait();
+}
+/**
+ * @brief Sets 4 bytes data \p value to the first \p size elements starting from
+ * \p dev_ptr in \p q synchronously.
+ * @param [in] dev_ptr Pointer to the virtual device memory address.
+ * @param [in] value The value to be set.
+ * @param [in] size Number of elements to be set to the value.
+ * @param [in] q The queue in which the operation is done.
+ */
+static void dpct_memset_d32(void *dev_ptr, unsigned int value, size_t size,
                         sycl::queue &q = get_default_queue()) {
   detail::dpct_memset(q, dev_ptr, value, size).wait();
 }
 
-/// Asynchronously sets \p value to the first \p size bytes starting from \p
-/// dev_ptr. The return of the function does NOT guarantee the memset operation
-/// is completed.
-///
-/// \param dev_ptr Pointer to the device memory address.
-/// \param value Value to be set.
-/// \param size Number of bytes to be set to the value.
-/// \returns no return value.
+/**
+ * @brief Sets 1 byte data \p value to the first \p size elements starting from
+ * \p dev_ptr in \p q asynchronously.
+ * @param [in] dev_ptr Pointer to the virtual device memory address.
+ * @param [in] value The value to be set.
+ * @param [in] size Number of elements to be set to the value.
+ * @param [in] q The queue in which the operation is done.
+ */
 static void async_dpct_memset(void *dev_ptr, int value, size_t size,
+                              sycl::queue &q = dpct::get_default_queue()) {
+  detail::dpct_memset<unsigned char>(q, dev_ptr, value, size);
+}
+/**
+ * @brief Sets 2 bytes data \p value to the first \p size elements starting from
+ * \p dev_ptr in \p q asynchronously.
+ * @param [in] dev_ptr Pointer to the virtual device memory address.
+ * @param [in] value The value to be set.
+ * @param [in] size Number of elements to be set to the value.
+ * @param [in] q The queue in which the operation is done.
+ */
+static void async_dpct_memset_d16(void *dev_ptr, unsigned short value, size_t size,
+                              sycl::queue &q = dpct::get_default_queue()) {
+  detail::dpct_memset(q, dev_ptr, value, size);
+}
+/**
+ * @brief Sets 4 bytes data \p value to the first \p size elements starting from
+ * \p dev_ptr in \p q asynchronously.
+ * @param [in] dev_ptr Pointer to the virtual device memory address.
+ * @param [in] value The value to be set.
+ * @param [in] size Number of elements to be set to the value.
+ * @param [in] q The queue in which the operation is done.
+ */
+static void async_dpct_memset_d32(void *dev_ptr, unsigned int value, size_t size,
                               sycl::queue &q = dpct::get_default_queue()) {
   detail::dpct_memset(q, dev_ptr, value, size);
 }
 
-/// Sets \p value to the 2D memory region pointed by \p ptr in \p q. \p x and
-/// \p y specify the setted 2D memory size. \p pitch is the bytes in linear
-/// dimension, including padding bytes. The function will return after the
-/// memset operation is completed.
-///
-/// \param ptr Pointer to the device memory region.
-/// \param pitch Bytes in linear dimension, including padding bytes.
-/// \param value Value to be set.
-/// \param x The setted memory size in linear dimension.
-/// \param y The setted memory size in second dimension.
-/// \param q The queue in which the operation is done.
-/// \returns no return value.
+/**
+ * @brief Sets 1 byte data \p val to the pitched 2D memory region pointed by \p ptr in \p q
+ * synchronously.
+ * @param [in] ptr Pointer to the virtual device memory.
+ * @param [in] pitch The pitch size by number of elements, including padding.
+ * @param [in] val The value to be set.
+ * @param [in] x The width of memory region by number of elements.
+ * @param [in] y The height of memory region by number of elements.
+ * @param [in] q The queue in which the operation is done.
+ */
 static inline void dpct_memset(void *ptr, size_t pitch, int val, size_t x,
+                               size_t y,
+                               sycl::queue &q = get_default_queue()) {
+  sycl::event::wait(detail::dpct_memset<unsigned char>(q, ptr, pitch, val, x, y));
+}
+/**
+ * @brief Sets 2 bytes data \p val to the pitched 2D memory region pointed by \p ptr in \p q
+ * synchronously.
+ * @param [in] ptr Pointer to the virtual device memory.
+ * @param [in] pitch The pitch size by number of elements, including padding.
+ * @param [in] val The value to be set.
+ * @param [in] x The width of memory region by number of elements.
+ * @param [in] y The height of memory region by number of elements.
+ * @param [in] q The queue in which the operation is done.
+ */
+static inline void dpct_memset_d16(void *ptr, size_t pitch, unsigned short val, size_t x,
+                               size_t y,
+                               sycl::queue &q = get_default_queue()) {
+  sycl::event::wait(detail::dpct_memset(q, ptr, pitch, val, x, y));
+}
+/**
+ * @brief Sets 4 bytes data \p val to the pitched 2D memory region pointed by \p ptr in \p q
+ * synchronously.
+ * @param [in] ptr Pointer to the virtual device memory.
+ * @param [in] pitch The pitch size by number of elements, including padding.
+ * @param [in] val The value to be set.
+ * @param [in] x The width of memory region by number of elements.
+ * @param [in] y The height of memory region by number of elements.
+ * @param [in] q The queue in which the operation is done.
+ */
+static inline void dpct_memset_d32(void *ptr, size_t pitch, unsigned int val, size_t x,
                                size_t y,
                                sycl::queue &q = get_default_queue()) {
   sycl::event::wait(detail::dpct_memset(q, ptr, pitch, val, x, y));
 }
 
-/// Sets \p value to the 2D memory region pointed by \p ptr in \p q. \p x and
-/// \p y specify the setted 2D memory size. \p pitch is the bytes in linear
-/// dimension, including padding bytes. The return of the function does NOT
-/// guarantee the memset operation is completed.
-///
-/// \param ptr Pointer to the device memory region.
-/// \param pitch Bytes in linear dimension, including padding bytes.
-/// \param value Value to be set.
-/// \param x The setted memory size in linear dimension.
-/// \param y The setted memory size in second dimension.
-/// \param q The queue in which the operation is done.
-/// \returns no return value.
+/**
+ * @brief Sets 1 byte data \p val to the pitched 2D memory region pointed by \p ptr in \p q
+ * asynchronously.
+ * @param [in] ptr Pointer to the virtual device memory.
+ * @param [in] pitch The pitch size by number of elements, including padding.
+ * @param [in] val The value to be set.
+ * @param [in] x The width of memory region by number of elements.
+ * @param [in] y The height of memory region by number of elements.
+ * @param [in] q The queue in which the operation is done.
+ */
 static inline void async_dpct_memset(void *ptr, size_t pitch, int val, size_t x,
                                      size_t y,
                                      sycl::queue &q = get_default_queue()) {
+  detail::dpct_memset<unsigned char>(q, ptr, pitch, val, x, y);
+}
+
+/**
+ * @brief Sets 2 bytes data \p val to the pitched 2D memory region pointed by \p ptr in \p q
+ * asynchronously.
+ * @param [in] ptr Pointer to the virtual device memory.
+ * @param [in] pitch The pitch size by number of elements, including padding.
+ * @param [in] val The value to be set.
+ * @param [in] x The width of memory region by number of elements.
+ * @param [in] y The height of memory region by number of elements.
+ * @param [in] q The queue in which the operation is done.
+ */
+static inline void async_dpct_memset_d16(void *ptr, size_t pitch,
+                                         unsigned short val, size_t x, size_t y,
+                                         sycl::queue &q = get_default_queue()) {
   detail::dpct_memset(q, ptr, pitch, val, x, y);
 }
 
-/// Sets \p value to the 3D memory region specified by \p pitch in \p q. \p size
-/// specify the setted 3D memory size. The function will return after the
-/// memset operation is completed.
-///
-/// \param pitch Specify the 3D memory region.
-/// \param value Value to be set.
-/// \param size The setted 3D memory size.
-/// \param q The queue in which the operation is done.
-/// \returns no return value.
+/**
+ * @brief Sets 4 bytes data \p val to the pitched 2D memory region pointed by \p ptr in \p q
+ * asynchronously.
+ * @param [in] ptr Pointer to the virtual device memory.
+ * @param [in] pitch The pitch size by number of elements, including padding.
+ * @param [in] val The value to be set.
+ * @param [in] x The width of memory region by number of elements.
+ * @param [in] y The height of memory region by number of elements.
+ * @param [in] q The queue in which the operation is done.
+ */
+static inline void async_dpct_memset_d32(void *ptr, size_t pitch,
+                                         unsigned int val, size_t x, size_t y,
+                                         sycl::queue &q = get_default_queue()) {
+  detail::dpct_memset(q, ptr, pitch, val, x, y);
+}
+
+/**
+ * @brief Sets 1 byte data \p value to the 3D memory region pointed by \p data in \p q
+ * synchronously.
+ * @param [in] data Pointer to the pitched device memory region.
+ * @param [in] value The value to be set.
+ * @param [in] size 3D memory region by number of elements.
+ * @param [in] q The queue in which the operation is done.
+ */
 static inline void dpct_memset(pitched_data pitch, int val,
                                sycl::range<3> size,
                                sycl::queue &q = get_default_queue()) {
-  sycl::event::wait(detail::dpct_memset(q, pitch, val, size));
+  sycl::event::wait(detail::dpct_memset<unsigned char>(q, pitch, val, size));
 }
 
-/// Sets \p value to the 3D memory region specified by \p pitch in \p q. \p size
-/// specify the setted 3D memory size. The return of the function does NOT
-/// guarantee the memset operation is completed.
-///
-/// \param pitch Specify the 3D memory region.
-/// \param value Value to be set.
-/// \param size The setted 3D memory size.
-/// \param q The queue in which the operation is done.
-/// \returns no return value.
+/**
+ * @brief Sets 1 byte data \p value to the 3D memory region pointed by \p data in \p q
+ * asynchronously.
+ * @param [in] data Pointer to the pitched device memory region.
+ * @param [in] value The value to be set.
+ * @param [in] size 3D memory region by number of elements.
+ * @param [in] q The queue in which the operation is done.
+ */
 static inline void async_dpct_memset(pitched_data pitch, int val,
                                      sycl::range<3> size,
                                      sycl::queue &q = get_default_queue()) {
-  detail::dpct_memset(q, pitch, val, size);
+  detail::dpct_memset<unsigned char>(q, pitch, val, size);
 }
 
 /// dpct accessor used as device function parameter.
@@ -1259,6 +1381,14 @@ private:
           _size, q.get_device(), q.get_context());
       return;
     }
+#ifdef SYCL_EXT_ONEAPI_USM_DEVICE_READ_ONLY
+    if (Memory == constant) {
+      _device_ptr = (value_t *)sycl::malloc_device(
+          _size, q.get_device(), q.get_context(),
+          sycl::ext::oneapi::property::usm::device_read_only());
+      return;
+    }
+#endif
 #endif
     _device_ptr = (value_t *)detail::dpct_malloc(_size, q);
   }
