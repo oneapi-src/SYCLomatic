@@ -39,15 +39,13 @@
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnCreateActivationDescriptor | FileCheck %s -check-prefix=cudnnCreateActivationDescriptor
 // cudnnCreateActivationDescriptor: CUDA API:
-// cudnnCreateActivationDescriptor-NEXT: cudnnActivationDescriptor_t d;
-// cudnnCreateActivationDescriptor-NEXT: cudnnCreateActivationDescriptor(&d /*cudnnActivationDescriptor_t **/);
+// cudnnCreateActivationDescriptor-NEXT:   cudnnCreateActivationDescriptor(d /*cudnnActivationDescriptor_t **/);
 // cudnnCreateActivationDescriptor-NEXT: The API is Removed.
 // cudnnCreateActivationDescriptor-EMPTY:
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cudnnCreateTensorDescriptor | FileCheck %s -check-prefix=cudnnCreateTensorDescriptor
 // cudnnCreateTensorDescriptor: CUDA API:
-// cudnnCreateTensorDescriptor-NEXT: cudnnTensorDescriptor_t d;
-// cudnnCreateTensorDescriptor-NEXT: cudnnCreateTensorDescriptor(&d /*cudnnTensorDescriptor_t **/);
+// cudnnCreateTensorDescriptor-NEXT:   cudnnCreateTensorDescriptor(d /*cudnnTensorDescriptor_t **/);
 // cudnnCreateTensorDescriptor-NEXT: The API is Removed.
 // cudnnCreateTensorDescriptor-EMPTY:
 
