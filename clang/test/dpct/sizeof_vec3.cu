@@ -56,7 +56,7 @@ __global__ void char3_noshared_kernel() {
 }
 
 // CHECK: void test_char3_shared() {
-// CHECK: dpct::get_default_queue().submit(
+// CHECK: dpct::get_in_order_queue().submit(
 // CHECK-NEXT: [&](sycl::handler &cgh) {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
@@ -126,7 +126,7 @@ __global__ void uchar3_noshared_kernel() {
 }
 
 // CHECK: void test_uchar3_shared() {
-// CHECK: dpct::get_default_queue().submit(
+// CHECK: dpct::get_in_order_queue().submit(
 // CHECK-NEXT: [&](sycl::handler &cgh) {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
@@ -196,7 +196,7 @@ __global__ void short3_noshared_kernel() {
 }
 
 // CHECK: void test_short3_shared() {
-// CHECK: dpct::get_default_queue().submit(
+// CHECK: dpct::get_in_order_queue().submit(
 // CHECK-NEXT: [&](sycl::handler &cgh) {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
@@ -266,7 +266,7 @@ __global__ void ushort3_noshared_kernel() {
 }
 
 // CHECK: void test_ushort3_shared() {
-// CHECK: dpct::get_default_queue().submit(
+// CHECK: dpct::get_in_order_queue().submit(
 // CHECK-NEXT: [&](sycl::handler &cgh) {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
@@ -336,7 +336,7 @@ __global__ void int3_noshared_kernel() {
 }
 
 // CHECK: void test_int3_shared() {
-// CHECK: dpct::get_default_queue().submit(
+// CHECK: dpct::get_in_order_queue().submit(
 // CHECK-NEXT: [&](sycl::handler &cgh) {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
@@ -406,7 +406,7 @@ __global__ void uint3_noshared_kernel() {
 }
 
 // CHECK: void test_uint3_shared() {
-// CHECK: dpct::get_default_queue().submit(
+// CHECK: dpct::get_in_order_queue().submit(
 // CHECK-NEXT: [&](sycl::handler &cgh) {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
@@ -476,7 +476,7 @@ __global__ void long3_noshared_kernel() {
 }
 
 // CHECK: void test_long3_shared() {
-// CHECK: dpct::get_default_queue().submit(
+// CHECK: dpct::get_in_order_queue().submit(
 // CHECK-NEXT: [&](sycl::handler &cgh) {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
@@ -546,7 +546,7 @@ __global__ void ulong3_noshared_kernel() {
 }
 
 // CHECK: void test_ulong3_shared() {
-// CHECK: dpct::get_default_queue().submit(
+// CHECK: dpct::get_in_order_queue().submit(
 // CHECK-NEXT: [&](sycl::handler &cgh) {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
@@ -616,7 +616,7 @@ __global__ void longlong3_noshared_kernel() {
 }
 
 // CHECK: void test_longlong3_shared() {
-// CHECK: dpct::get_default_queue().submit(
+// CHECK: dpct::get_in_order_queue().submit(
 // CHECK-NEXT: [&](sycl::handler &cgh) {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
@@ -686,7 +686,7 @@ __global__ void ulonglong3_noshared_kernel() {
 }
 
 // CHECK: void test_ulonglong3_shared() {
-// CHECK: dpct::get_default_queue().submit(
+// CHECK: dpct::get_in_order_queue().submit(
 // CHECK-NEXT: [&](sycl::handler &cgh) {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
@@ -757,7 +757,7 @@ __global__ void float3_noshared_kernel() {
 }
 
 // CHECK: void test_float3_shared() {
-// CHECK: dpct::get_default_queue().submit(
+// CHECK: dpct::get_in_order_queue().submit(
 // CHECK-NEXT: [&](sycl::handler &cgh) {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
@@ -827,7 +827,7 @@ __global__ void double3_noshared_kernel() {
 }
 
 // CHECK: void test_double3_shared() {
-// CHECK: dpct::get_default_queue().submit(
+// CHECK: dpct::get_in_order_queue().submit(
 // CHECK-NEXT: [&](sycl::handler &cgh) {
 // CHECK: /*
 // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.

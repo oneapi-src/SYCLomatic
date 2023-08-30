@@ -95,7 +95,7 @@ __global__ void simple_kernel_one(float *d_array) {
 
 int main(int argc, char **argv) {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   int size = 3200;
   int *d_int;
   float *d_array;
@@ -247,7 +247,7 @@ __device__ void foo() {
 //CHECK-NEXT:  float *a = const_cast<float *>(aaa + 5);
 //CHECK-NEXT:}
 //CHECK-NEXT:void foo1() {
-//CHECK-NEXT:  dpct::get_default_queue().submit(
+//CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:    [&](sycl::handler &cgh) {
 //CHECK-NEXT:      aaa.init();
 //CHECK-EMPTY:
