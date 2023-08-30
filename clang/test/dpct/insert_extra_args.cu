@@ -56,7 +56,7 @@ __global__ void kernelFoo2(int i = 0, int j = 0){
 
 int main(){
   //CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  //CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  //CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
   //CHECK: q_ct1.parallel_for(
   //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),
   //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {

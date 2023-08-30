@@ -63,7 +63,7 @@ void copy_if_device(ExecutionPolicy exec)
   thrust::device_vector<int> d_result(n);
   thrust::device_vector<typename thrust::device_vector<int>::iterator> dd(1);
 
-  //CHECK: dpct::get_default_queue().submit(
+  //CHECK: dpct::get_in_order_queue().submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
   //CHECK-NEXT:    auto d_data_begin_ct1 = d_data.begin();
   //CHECK-NEXT:    auto d_data_end_ct2 = d_data.end();

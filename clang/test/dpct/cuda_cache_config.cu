@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-  // CHECK: dpct::get_default_queue().submit(
+  // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     auto d_array_acc_ct0 = dpct::get_access(d_array, cgh);
   // CHECK-EMPTY:

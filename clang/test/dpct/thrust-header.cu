@@ -18,7 +18,7 @@
 #include <thrust/device_ptr.h>
 int main() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
   int *mapsp1D, *mapspkeyD,*mapspvalD;
   int numsH=10;
 

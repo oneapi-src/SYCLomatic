@@ -52,13 +52,14 @@ auto isDeviceFuncCallExpr = []() {
         "ExclusiveSumByKey", "Flagged", "Unique", "UniqueByKey", "Encode",
         "SortKeys", "SortKeysDescending", "SortPairs", "SortPairsDescending",
         "If", "StableSortKeys", "StableSortKeysDescending", "StableSortPairs",
-        "StableSortPairsDescending", "NonTrivialRuns");
+        "StableSortPairsDescending", "NonTrivialRuns", "HistogramEven",
+        "MultiHistogramEven", "HistogramRange", "MultiHistogramRange");
   };
   auto hasDeviceRecordName = []() {
     return hasAnyName("DeviceSegmentedReduce", "DeviceReduce", "DeviceScan",
                       "DeviceSelect", "DeviceRunLengthEncode",
                       "DeviceRadixSort", "DeviceSegmentedRadixSort",
-                      "DeviceSegmentedSort");
+                      "DeviceSegmentedSort", "DeviceHistogram");
   };
   return callExpr(callee(functionDecl(allOf(
       hasDeviceFuncName(),

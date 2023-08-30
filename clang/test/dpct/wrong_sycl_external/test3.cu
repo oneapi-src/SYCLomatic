@@ -13,7 +13,7 @@ template <typename T> __global__ void do_work() {
   func_wrapper<T>([] __host__ __device__ (T a, T b) { return a * b; }).reduce(x, y);
 }
 
-// CHECK: void kernel() { dpct::get_default_queue().parallel_for(
+// CHECK: void kernel() { dpct::get_out_of_order_queue().parallel_for(
 // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)), 
 // CHECK-NEXT:   [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:     do_work<int>();

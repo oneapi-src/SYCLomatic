@@ -892,6 +892,12 @@ inline std::function<bool(const CallExpr *C)> checkIsUSM() {
   };
 }
 
+inline std::function<bool(const CallExpr *C)> checkIsUseNoQueueDevice() {
+  return [](const CallExpr *C) -> bool {
+    return DpctGlobalInfo::useNoQueueDevice();
+  };
+}
+
 inline std::function<bool(const CallExpr *C)> checkArgSpelling(size_t index,
                                                         std::string str) {
   return [=](const CallExpr *C) -> bool {
@@ -1977,6 +1983,7 @@ public:
 #define STRUCT_DISMANTLE(idx, ...) makeStructDismantler(idx, {__VA_ARGS__})
 #define ARG(x) makeCallArgCreator(x)
 #define ARG_WC(x) makeDerefArgCreatorWithCall(x)
+#define TEMPLATE_ARG(x) makeCallArgCreatorFromTemplateArg(x)
 #define BOOL(x) makeBooleanCreator(x)
 #define BLAS_ENUM_ARG(x, BLAS_ENUM_TYPE)                                       \
   makeBLASEnumCallArgCreator(x, BLAS_ENUM_TYPE)

@@ -1,9 +1,8 @@
 // Migration desc: The API is Removed.
 #include <cudnn.h>
 
-void test() {
+void test(cudnnTensorDescriptor_t *d) {
   // Start
-  cudnnTensorDescriptor_t d;
-  cudnnCreateTensorDescriptor(&d /*cudnnTensorDescriptor_t **/);
+  cudnnCreateTensorDescriptor(d /*cudnnTensorDescriptor_t **/);
   // End
 }

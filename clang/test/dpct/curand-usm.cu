@@ -126,11 +126,11 @@ private:
 //CHECK-NEXT:  B(){
 //CHECK-NEXT:    rng = dpct::rng::create_host_rng(dpct::rng::random_engine_type::sobol);
 //CHECK-NEXT:    rng->set_dimensions(1243);
-//CHECK-NEXT:    karg1 = sycl::malloc_device<int>(32, dpct::get_default_queue());
+//CHECK-NEXT:    karg1 = sycl::malloc_device<int>(32, dpct::get_in_order_queue());
 //CHECK-NEXT:  }
 //CHECK-NEXT:  ~B(){
 //CHECK-NEXT:    rng.reset();
-//CHECK-NEXT:    sycl::free(karg1, dpct::get_default_queue());
+//CHECK-NEXT:    sycl::free(karg1, dpct::get_in_order_queue());
 //CHECK-NEXT:  }
      //CHECK:private:
 //CHECK-NEXT:  dpct::rng::host_rng_ptr rng;
