@@ -11,8 +11,10 @@ struct CustomMin {
 };
 
 void test(void *temp_storage, size_t &temp_storage_bytes, int *d_in, int *d_out,
-          int num_items, CustomMin op, int init_value, cudaStream_t stream) {
+          int num_items, CustomMin op, int init_value) {
   // Start
+  cudaStream_t stream;
+  cudaStreamCreate(&stream);
   cub::DeviceReduce::Reduce(temp_storage/*void **/, temp_storage_bytes/*size_t &*/, d_in/*InputIteratorT*/, d_out/*OutputIteratorT*/, num_items/*int*/, op/*ReductionOpT*/, init_value/*T*/, stream/*cudaStream_t*/);
   // End
 }

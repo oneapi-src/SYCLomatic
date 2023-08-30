@@ -17,8 +17,10 @@ struct CustomEqual {
 };
 
 void test(void *temp_storage, size_t &temp_storage_bytes, int *d_keys_in, int * d_values_in,int *d_values_out,
-          CustomSum scan_op, int init_value,int num_items, CustomEqual equality_op, cudaStream_t stream) {
+          CustomSum scan_op, int init_value,int num_items, CustomEqual equality_op) {
   // Start
+  cudaStream_t stream;
+  cudaStreamCreate(&stream);
   cub::DeviceScan::InclusiveScanByKey(temp_storage/*void **/, temp_storage_bytes/*size_t &*/, d_keys_in/*KeysInputIteratorT*/, d_values_in/*ValuesInputIteratorT*/, d_values_out/*ValuesOutputIteratorT*/, scan_op/*ScanOpT*/, num_items/*int*/, equality_op/*EqualityOpT*/, stream/*cudaStream_t*/);
   // End
 }
