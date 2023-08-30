@@ -6401,6 +6401,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                              getStmtSpelling(CE->getArg(1)) + ")"));
       requestFeature(HelperFeatureEnum::device_ext);
     }
+    emplaceTransformation(new InsertAfterStmt(CE, std::move(Suffix)));
   } else if (FuncName == "cudaDriverGetVersion" ||
              FuncName == "cudaRuntimeGetVersion") {
     if (IsAssigned) {
