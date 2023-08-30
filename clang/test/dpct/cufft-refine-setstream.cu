@@ -7,7 +7,7 @@ void foo1() {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_in_order_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:plan->set_queue(s);
   //CHECK-NEXT:plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward);
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
@@ -27,7 +27,7 @@ void foo2() {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_in_order_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:cufftCheck(DPCT_CHECK_ERROR(plan->set_queue(s)));
   //CHECK-NEXT:cufftCheck(DPCT_CHECK_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
@@ -52,7 +52,7 @@ void foo3() {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_in_order_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:HANDLE_CUFFT_ERROR(DPCT_CHECK_ERROR(plan->set_queue(s)));
   //CHECK-NEXT:HANDLE_CUFFT_ERROR(DPCT_CHECK_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
@@ -67,7 +67,7 @@ void foo4() {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_in_order_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:int err = DPCT_CHECK_ERROR(plan->set_queue(s));
   //CHECK-NEXT:err = DPCT_CHECK_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward)));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
@@ -87,7 +87,7 @@ void foo5() {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_in_order_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:CUFFT_CHECK(DPCT_CHECK_ERROR(plan->set_queue(s)));
   //CHECK-NEXT:CUFFT_CHECK(DPCT_CHECK_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
@@ -105,7 +105,7 @@ void foo6() {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_in_order_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:MY_ERROR_CHECKER(DPCT_CHECK_ERROR(plan->set_queue(s)));
   //CHECK-NEXT:MY_ERROR_CHECKER(DPCT_CHECK_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
@@ -127,7 +127,7 @@ void foo7() {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_in_order_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:CHECK_CUFFT(DPCT_CHECK_ERROR(plan->set_queue(s)));
   //CHECK-NEXT:CHECK_CUFFT(DPCT_CHECK_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
@@ -147,7 +147,7 @@ void foo8() {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_in_order_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:cufftCheck(DPCT_CHECK_ERROR(plan->set_queue(s)));
   //CHECK-NEXT:cufftCheck(DPCT_CHECK_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
@@ -161,7 +161,7 @@ void foo9() {
   float2* iodata;
   cudaStream_t s1, s2;
 
-  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_in_order_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:cufftCheck(DPCT_CHECK_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
   //CHECK-NEXT:cufftCheck(DPCT_CHECK_ERROR(plan->set_queue(s1)));
   //CHECK-NEXT:cufftCheck(DPCT_CHECK_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
@@ -181,7 +181,7 @@ void foo10(bool flag) {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_in_order_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:cufftCheck(DPCT_CHECK_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward))));
   //CHECK-NEXT:if (flag) {
   //CHECK-NEXT:  cufftCheck(DPCT_CHECK_ERROR(plan->set_queue(s)));
@@ -201,7 +201,7 @@ void foo11(bool flag) {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_in_order_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:if (flag)
   //CHECK-NEXT:  plan->set_queue(s);
   //CHECK-NEXT:plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward);
@@ -216,7 +216,7 @@ void foo12(cufftHandle plan2) {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_in_order_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:plan->set_queue(s);
   //CHECK-NEXT:plan = plan2;
   //CHECK-NEXT:plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward);
@@ -233,7 +233,7 @@ void foo13() {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_in_order_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:plan->set_queue(s);
   //CHECK-NEXT:changeHandle(plan);
   //CHECK-NEXT:plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward);
@@ -248,7 +248,7 @@ void foo14() {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_in_order_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:plan->set_queue(s);
   //CHECK-NEXT:plan = dpct::fft::fft_engine::create();
   //CHECK-NEXT:plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward);

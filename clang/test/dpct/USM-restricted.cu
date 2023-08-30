@@ -23,7 +23,7 @@ int foo_b(int a){
 
 void foo() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
   size_t size = 1234567 * sizeof(float);
   float *h_A = (float *)malloc(size);
   float *d_A = NULL;
@@ -392,7 +392,7 @@ void foo() {
 template <typename T>
 int foo2() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
   size_t size = 1234567 * sizeof(float);
   float *h_A = (float *)malloc(size);
   float *d_A = NULL;
@@ -798,15 +798,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemset3DAsync(p_A, 0xf, e, cudaStreamPerThread));
 
 
-  // CHECK: dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100);
-  // CHECK: dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100);
-  // CHECK: dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100)));
+  // CHECK: dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(d_A,100);
+  // CHECK: dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(d_A,100);
+  // CHECK: dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(d_A,100);
+  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(d_A,100));
+  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(d_A,100));
+  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(d_A,100));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(d_A,100)));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(d_A,100)));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(d_A,100)));
   cudaMemPrefetchAsync (d_A, 100, deviceID, cudaStreamDefault);
   cudaMemPrefetchAsync (d_A, 100, deviceID, cudaStreamLegacy);
   cudaMemPrefetchAsync (d_A, 100, deviceID, cudaStreamPerThread);
@@ -820,15 +820,15 @@ void foo3() {
   CUdevice cudevice = 0;
   // CHECK: dpct::device_ptr devPtr;
   CUdeviceptr devPtr;
-  // CHECK: dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100);
-  // CHECK: dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100);
-  // CHECK: dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100);
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100));
-  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100)));
-  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100)));
+  // CHECK: dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().prefetch(devPtr, 100);
+  // CHECK: dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().prefetch(devPtr, 100);
+  // CHECK: dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().prefetch(devPtr, 100);
+  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().prefetch(devPtr, 100));
+  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().prefetch(devPtr, 100));
+  // CHECK: errorCode = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().prefetch(devPtr, 100));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().prefetch(devPtr, 100)));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().prefetch(devPtr, 100)));
+  // CHECK: MY_SAFE_CALL(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(cudevice).in_order_queue().prefetch(devPtr, 100)));
   cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamDefault);
   cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamLegacy);
   cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamPerThread);
@@ -1062,7 +1062,7 @@ struct TEST_STR {
 void foo15() {
   std::vector<volatile TEST_STR *> buf;
   for (int i = 0; i < 32; i++) {
-    //CHECK: buf[i] = (volatile TEST_STR *)sycl::malloc_host(sizeof(TEST_STR), dpct::get_default_queue());
+    //CHECK: buf[i] = (volatile TEST_STR *)sycl::malloc_host(sizeof(TEST_STR), dpct::get_in_order_queue());
     cudaMallocHost(&buf[i], sizeof(TEST_STR));
   }
 }
@@ -1070,7 +1070,7 @@ void foo15() {
 void foo16() {
   std::vector<volatile TEST_STR *> buf;
   for (int i = 0; i < 32; i++) {
-    //CHECK: (buf.front()) = (volatile TEST_STR *)sycl::malloc_host(sizeof(TEST_STR), dpct::get_default_queue());
+    //CHECK: (buf.front()) = (volatile TEST_STR *)sycl::malloc_host(sizeof(TEST_STR), dpct::get_in_order_queue());
     cudaMallocHost(&buf.front(), sizeof(TEST_STR));
   }
 }

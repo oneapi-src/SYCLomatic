@@ -287,6 +287,12 @@ public:
   /// \param num_to_skip The number of random numbers to be skipped.
   virtual void skip_ahead(const std::uint64_t num_to_skip) = 0;
 
+  /// Set the direction numbers of host rng_generator. Only Sobol engine
+  /// supports this method.
+  /// \param direction_numbers The engine direction numbers.
+  virtual void set_direction_numbers(
+      const std::vector<std::uint32_t> &direction_numbers) = 0;
+
 protected:
   sycl::queue *_queue{&dpct::get_default_queue()};
   std::uint64_t _seed{0};
@@ -335,11 +341,20 @@ public:
   /// \param direction_numbers The user-defined direction numbers.
   void
   set_direction_numbers(const std::vector<std::uint32_t> &direction_numbers) {
-    if (direction_numbers == _direction_numbers) {
-      return;
+#ifndef __INTEL_MKL__
+    throw std::runtime_error("The oneAPI Math Kernel Library (oneMKL) "
+                             "Interfaces Project does not support this API.");
+#else
+    if constexpr (std::is_same_v<engine_t, oneapi::mkl::rng::sobol>) {
+      if (direction_numbers == _direction_numbers) {
+        return;
+      }
+      _direction_numbers = direction_numbers;
+      _engine = oneapi::mkl::rng::sobol(*_queue, _direction_numbers);
+    } else {
+      throw std::runtime_error("Only Sobol engine supports this method.");
     }
-    _direction_numbers = direction_numbers;
-    _engine = create_engine(_queue, _direction_numbers);
+#endif
   }
 
   /// Generate unsigned int random number(s) with 'uniform_bits' distribution.
@@ -459,11 +474,6 @@ private:
 #else
     return engine_t(*queue, seed);
 #endif
-  }
-  static inline engine_t
-  create_engine(sycl::queue *queue,
-                std::vector<std::uint32_t> &direction_numbers) {
-    return engine_t(*queue, direction_numbers);
   }
 
   template <typename distr_t, typename buffer_t, class... distr_params_t>

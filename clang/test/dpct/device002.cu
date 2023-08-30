@@ -13,7 +13,7 @@ int main(int argc, char **argv)
 {
 int devID = atoi(argv[1]);
 cudaDeviceProp cdp;
-// CHECK: dpct::err0 error_code = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(devID).get_device_info(cdp));
+// CHECK: dpct::err0 error_code = DPCT_CHECK_ERROR(dpct::get_device_info(cdp, dpct::dev_mgr::instance().get_device(devID)));
 cudaError_t error_code = cudaGetDeviceProperties(&cdp, devID);
 
 if (error_code == cudaSuccess) {
@@ -38,7 +38,7 @@ int dev_id;
 cudaGetDevice(&dev_id);
 
 cudaDeviceProp deviceProp;
-// CHECK: dpct::dev_mgr::instance().get_device(0).get_device_info(deviceProp);
+// CHECK: dpct::get_device_info(deviceProp, dpct::dev_mgr::instance().get_device(0));
 cudaGetDeviceProperties(&deviceProp, 0);
 
 int atomicSupported;

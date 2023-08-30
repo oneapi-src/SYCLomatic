@@ -143,6 +143,7 @@ std::unordered_map<std::shared_ptr<DeviceFunctionInfo>,
 unsigned DpctGlobalInfo::ExtensionDEFlag = static_cast<unsigned>(-1);
 unsigned DpctGlobalInfo::ExtensionDDFlag = 0;
 unsigned DpctGlobalInfo::ExperimentalFlag = 0;
+unsigned DpctGlobalInfo::HelperFuncPreferenceFlag = 0;
 unsigned int DpctGlobalInfo::ColorOption = 1;
 std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CubPlaceholderIndexMap;
@@ -363,7 +364,8 @@ void DpctGlobalInfo::buildReplacements() {
     DevDecl << MapNames::getDpctNamespace()
             << "device_ext &dev_ct1 = " << MapNames::getDpctNamespace()
             << "get_current_device();";
-    QDecl << "&q_ct1 = dev_ct1.default_queue();";
+    QDecl << "&q_ct1 = dev_ct1." << DpctGlobalInfo::getDeviceQueueName()
+          << "();";
   } else {
     DevDecl << MapNames::getClNamespace() + "device dev_ct1;";
     // Now the UsmLevel must not be UL_None here.
@@ -377,6 +379,12 @@ void DpctGlobalInfo::buildReplacements() {
   }
 
   for (auto &Counter : TempVariableDeclCounterMap) {
+    if (DpctGlobalInfo::useNoQueueDevice()) {
+      Counter.second.PlaceholderStr[1] = DpctGlobalInfo::getGlobalQueueName();
+      Counter.second.PlaceholderStr[2] = DpctGlobalInfo::getGlobalDeviceName();
+      // Need not insert q_ct1 and dev_ct1 declrations and request feature.
+      continue;
+    }
     const auto ColonPos = Counter.first.find_last_of(':');
     const auto DeclLocFile = Counter.first.substr(0, ColonPos);
     const auto DeclLocOffset = std::stoi(Counter.first.substr(ColonPos + 1));
@@ -1169,6 +1177,34 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
             ExplicitNamespace::EN_CL)) {
       OS << "using namespace sycl;" << getNL();
     }
+    if (DpctGlobalInfo::useNoQueueDevice()) {
+      static bool Flag = true;
+      auto SourceFileType = GetSourceFileType(getFilePath());
+      if (Flag && (SourceFileType == SPT_CudaSource ||
+                   SourceFileType == SPT_CppSource)) {
+        OS << MapNames::getClNamespace() << "device "
+           << DpctGlobalInfo::getGlobalDeviceName()
+           << "(sycl::default_selector_v);" << getNL();
+        // Now the UsmLevel must not be UL_None here.
+        OS << MapNames::getClNamespace() << "queue "
+           << DpctGlobalInfo::getGlobalQueueName() << "("
+           << DpctGlobalInfo::getGlobalDeviceName() << ", "
+           << MapNames::getClNamespace() << "property_list{"
+           << MapNames::getClNamespace() << "property::queue::in_order()";
+        if (DpctGlobalInfo::getEnablepProfilingFlag()) {
+          OS << ", " << MapNames::getClNamespace()
+             << "property::queue::enable_profiling()";
+        }
+        OS << "});" << getNL();
+        Flag = false;
+      } else {
+        OS << "extern " << MapNames::getClNamespace() << "device "
+           << DpctGlobalInfo::getGlobalDeviceName() << ";" << getNL();
+        // Now the UsmLevel must not be UL_None here.
+        OS << "extern " << MapNames::getClNamespace() << "queue "
+           << DpctGlobalInfo::getGlobalQueueName() << ";" << getNL();
+      }
+    }
     return insertHeader(OS.str(), FirstIncludeOffset, InsertPosition::IP_Left);
 
   // Because <dpct/dpl_utils.hpp> includes <oneapi/dpl/execution> and
@@ -1246,23 +1282,24 @@ void DpctGlobalInfo::insertBuiltinVarInfo(
   }
 }
 
+std::optional<std::string>
+DpctGlobalInfo::getAbsolutePath(const FileEntry &File) {
+  if (auto RealPath = File.tryGetRealPathName(); !RealPath.empty())
+    return RealPath.str();
+
+  llvm::SmallString<512> FilePathAbs(File.getName());
+  SM->getFileManager().makeAbsolutePath(FilePathAbs);
+  llvm::sys::path::native(FilePathAbs);
+  // Need to remove dot to keep the file path
+  // added by ASTMatcher and added by
+  // AnalysisInfo::getLocInfo() consistent.
+  llvm::sys::path::remove_dots(FilePathAbs, true);
+  return (std::string)FilePathAbs;
+}
 std::optional<std::string> DpctGlobalInfo::getAbsolutePath(FileID ID) {
   assert(SM && "SourceManager must be initialized");
-  if (const auto *FileEntry = SM->getFileEntryForID(ID)) {
-    // To avoid potential path inconsistent issue,
-    // using tryGetRealPathName while applicable.
-    if (!FileEntry->tryGetRealPathName().empty())
-      return FileEntry->tryGetRealPathName().str();
-
-    llvm::SmallString<512> FilePathAbs(FileEntry->getName());
-    SM->getFileManager().makeAbsolutePath(FilePathAbs);
-    llvm::sys::path::native(FilePathAbs);
-    // Need to remove dot to keep the file path
-    // added by ASTMatcher and added by
-    // AnalysisInfo::getLocInfo() consistent.
-    llvm::sys::path::remove_dots(FilePathAbs, true);
-    return (std::string)FilePathAbs;
-  }
+  if (const auto *FileEntry = SM->getFileEntryForID(ID))
+    return getAbsolutePath(*FileEntry);
   return std::nullopt;
 }
 
@@ -3607,6 +3644,12 @@ std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
   switch (Scope) {
   case clang::dpct::MemVarInfo::Local:
     if (DpctGlobalInfo::useGroupLocalMemory() && VD) {
+
+      auto FD = dyn_cast<FunctionDecl>(VD->getDeclContext());
+      if (FD && FD->hasAttr<CUDADeviceAttr>())
+        DiagnosticsUtils::report(getFilePath(), getOffset(),
+                                 Diagnostics::GROUP_LOCAL_MEMORY, true, false);
+
       std::string Ret;
       llvm::raw_string_ostream OS(Ret);
       OS << "auto &" << getName() << " = "
@@ -4338,13 +4381,18 @@ const std::string &getDefaultString(HelperFuncType HFT) {
   switch (HFT) {
   case clang::dpct::HelperFuncType::HFT_DefaultQueue: {
     const static std::string DefaultQueue =
-        MapNames::getDpctNamespace() + "get_default_queue()";
+        DpctGlobalInfo::useNoQueueDevice()
+            ? DpctGlobalInfo::getGlobalQueueName()
+            : buildString(MapNames::getDpctNamespace() + "get_" +
+                          DpctGlobalInfo::getDeviceQueueName() + "()");
     return DefaultQueue;
   }
   case clang::dpct::HelperFuncType::HFT_CurrentDevice: {
-    const static std::string DefaultQueue =
-        MapNames::getDpctNamespace() + "get_current_device()";
-    return DefaultQueue;
+    const static std::string DefaultDevice =
+        DpctGlobalInfo::useNoQueueDevice()
+            ? DpctGlobalInfo::getGlobalDeviceName()
+            : MapNames::getDpctNamespace() + "get_current_device()";
+    return DefaultDevice;
   }
   case clang::dpct::HelperFuncType::HFT_InitValue: {
     return NullString;
@@ -4389,6 +4437,26 @@ std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,
         .PlaceholderStr[static_cast<int>(HFT)];
   }
   return "";
+}
+
+const std::string &DpctGlobalInfo::getDeviceQueueName() {
+  static const std::string DeviceQueue = [&]() {
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
+      return "out_of_order_queue";
+    else
+      return "in_order_queue";
+  }();
+  return DeviceQueue;
+}
+
+std::string DpctGlobalInfo::getDefaultQueue(const Stmt *S) {
+  auto Idx = getPlaceholderIdx(S);
+  if (!Idx) {
+    Idx = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+    buildTempVariableMap(Idx, S, HelperFuncType::HFT_DefaultQueue);
+  }
+
+  return buildString(RegexPrefix, 'Q', Idx, RegexSuffix);
 }
 
 } // namespace dpct

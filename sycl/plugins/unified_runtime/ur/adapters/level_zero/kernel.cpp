@@ -240,7 +240,7 @@ UR_APIEXPORT ur_result_t UR_APICALL urEnqueueKernelLaunch(
   }
 
   urPrint("calling zeCommandListAppendLaunchKernel() with"
-          "  ZeEvent %#llx\n",
+          "  ZeEvent %#" PRIxPTR "\n",
           ur_cast<std::uintptr_t>(ZeEvent));
   printZeEventList((*Event)->WaitList);
 
@@ -419,12 +419,11 @@ UR_APIEXPORT ur_result_t UR_APICALL urKernelSetArgLocal(
     const ur_kernel_arg_local_properties_t
         *Properties ///< [in][optional] argument properties
 ) {
-  std::ignore = Kernel;
-  std::ignore = ArgIndex;
   std::ignore = Properties;
-  std::ignore = ArgSize;
-  urPrint("[UR][L0] %s function not implemented!\n", __FUNCTION__);
-  return UR_RESULT_ERROR_UNSUPPORTED_FEATURE;
+
+  UR_CALL(urKernelSetArgValue(Kernel, ArgIndex, ArgSize, nullptr, nullptr));
+
+  return UR_RESULT_SUCCESS;
 }
 
 UR_APIEXPORT ur_result_t UR_APICALL urKernelGetInfo(

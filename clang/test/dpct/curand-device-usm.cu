@@ -149,7 +149,7 @@ __global__ void kernel(curandState *states) {}
 // CHECK-NEXT:   DPCT1032:{{[0-9]+}}: A different random number generator is used. You may need to adjust the code.
 // CHECK-NEXT:   */
 // CHECK-NEXT:   static dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *states = states_input;
-// CHECK-NEXT:   dpct::get_default_queue().submit(
+// CHECK-NEXT:   dpct::get_in_order_queue().submit(
 // CHECK-NEXT:     [&](sycl::handler &cgh) {
 // CHECK-NEXT:       dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> * states_ct0 = states;
 // CHECK-EMPTY:

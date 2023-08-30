@@ -126,8 +126,8 @@ bool ProcessAllFlag = false;
 bool AsyncHandlerFlag = false;
 static std::string SuppressWarningsMessage = "A comma separated list of migration warnings to suppress. Valid "
                 "warning IDs range\n"
-                "from " + std::to_string((size_t)Warnings::BEGIN) + " to " +
-                std::to_string((size_t)Warnings::END - 1) +
+                "from " + std::to_string(DiagnosticsMessage::MinID) + " to " +
+                std::to_string(DiagnosticsMessage::MaxID) +
                 ". Hyphen separated ranges are also allowed. For example:\n"
                 "--suppress-warnings=1000-1010,1011.";
 
@@ -243,8 +243,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   return CudaPathAbs.str().str();
 }
 
-std::string getInstallPath(clang::tooling::ClangTool &Tool,
-                           const char *invokeCommand) {
+std::string getInstallPath(const char *invokeCommand) {
   SmallString<512> InstalledPath(invokeCommand);
 
   // Do a PATH lookup, if there are no directory components.
@@ -262,8 +261,8 @@ std::string getInstallPath(clang::tooling::ClangTool &Tool,
   StringRef InstallPath = llvm::sys::path::parent_path(InstalledPathParent);
 
   SmallString<512> InstallPathAbs;
-  std::error_code EC = llvm::sys::fs::real_path(InstallPath,
-                                                InstallPathAbs, true);
+  std::error_code EC =
+      llvm::sys::fs::real_path(InstallPath, InstallPathAbs, true);
   if ((bool)EC) {
     ShowStatus(MigrationErrorInvalidInstallPath);
     dpctExit(MigrationErrorInvalidInstallPath);
@@ -272,8 +271,7 @@ std::string getInstallPath(clang::tooling::ClangTool &Tool,
 }
 
 // To validate the root path of the project to be migrated.
-void ValidateInputDirectory(clang::tooling::RefactoringTool &Tool,
-                            std::string &InRoot) {
+void ValidateInputDirectory(std::string &InRoot) {
 
   if (isChildOrSamePath(CudaPath, InRoot)) {
     ShowStatus(MigrationErrorRunFromSDKFolder);
@@ -599,6 +597,23 @@ int runDPCT(int argc, const char **argv) {
   }
 
   initWarningIDs();
+
+  DpctInstallPath = getInstallPath(argv[0]);
+
+  if (PathToHelperFunction) {
+    SmallString<512> pathToHelperFunction(DpctInstallPath);
+    llvm::sys::path::append(pathToHelperFunction, "include");
+    if (!llvm::sys::fs::exists(pathToHelperFunction)) {
+      DpctLog() << "Error: Helper functions not found"
+                << "/n";
+      ShowStatus(MigrationErrorInvalidInstallPath);
+      dpctExit(MigrationErrorInvalidInstallPath);
+    }
+    std::cout << pathToHelperFunction.c_str() << "\n";
+    ShowStatus(MigrationSucceeded);
+    dpctExit(MigrationSucceeded);
+  }
+
   if (InRoot.size() >= MAX_PATH_LEN - 1) {
     DpctLog() << "Error: --in-root '" << InRoot << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
@@ -744,6 +759,7 @@ int runDPCT(int argc, const char **argv) {
     APIMapping::initEntryMap();
     auto SourceCode = APIMapping::getAPISourceCode(QueryAPIMapping);
     if (SourceCode.empty()) {
+      ShowStatus(MigrationErrorNoAPIMapping);
       dpctExit(MigrationErrorNoAPIMapping);
     }
 
@@ -753,22 +769,30 @@ int runDPCT(int argc, const char **argv) {
     static const std::string OptionStr{"// Option:"};
     if (SourceCode.starts_with(OptionStr)) {
       OptionMsg += " (with the option";
-      const auto Options =
-          SourceCode.substr(OptionStr.length(), SourceCode.find_first_of('\n') -
-                                                    OptionStr.length());
-      size_t PrePos = 0;
-      size_t NextPos = Options.find_first_of(' ');
-      while (PrePos != std::string::npos) {
-        auto Option = Options.substr(PrePos, NextPos - PrePos);
-        if (Option == "--use-dpcpp-extensions=intel_device_math") {
-          OptionMsg += " ";
-          OptionMsg += Option.str();
-          UseDPCPPExtensions.addValue(
-              DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath);
+      while (SourceCode.consume_front(OptionStr)) {
+        auto Option = SourceCode.substr(0, SourceCode.find_first_of('\n'));
+        Option = Option.trim(' ');
+        SourceCode = SourceCode.substr(SourceCode.find_first_of('\n') + 1);
+        OptionMsg += " ";
+        OptionMsg += Option.str();
+        if (Option.starts_with("--use-dpcpp-extensions")) {
+          if (Option.ends_with("intel_device_math"))
+            UseDPCPPExtensions.addValue(
+                DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath);
+        } else if (Option.starts_with("--use-experimental-features")) {
+          if (Option.ends_with("bfloat16_math_functions"))
+            Experimentals.addValue(ExperimentalFeatures::Exp_BFloat16Math);
+          else if (Option.ends_with("occupancy-calculation"))
+            Experimentals.addValue(
+                ExperimentalFeatures::Exp_OccupancyCalculation);
+          else if (Option.ends_with("free-function-queries"))
+            Experimentals.addValue(ExperimentalFeatures::Exp_FreeQueries);
+          else if (Option.ends_with("logical-group"))
+            Experimentals.addValue(ExperimentalFeatures::Exp_LogicalGroup);
+        } else if (Option == "--no-dry-pattern") {
+          NoDRYPatternFlag = true;
         }
         // Need add more option.
-        PrePos = Options.find_first_not_of(' ', NextPos);
-        NextPos = Options.find_first_of(' ', PrePos);
       }
       OptionMsg += ")";
     }
@@ -784,8 +808,18 @@ int runDPCT(int argc, const char **argv) {
     StartPos = StartPos + StartStr.length();
     EndPos = SourceCode.find_last_of('\n', EndPos);
     llvm::outs() << SourceCode.substr(StartPos, EndPos - StartPos + 1);
+    static const std::string MigrateDesc{"// Migration desc: "};
+    auto MigrateDescPos = SourceCode.find(MigrateDesc);
+    if (MigrateDescPos != StringRef::npos) {
+      auto MigrateDescBegin = MigrateDescPos + MigrateDesc.length();
+      auto MigrateDescEnd = SourceCode.find_first_of('\n', MigrateDescPos);
+      llvm::outs() << SourceCode.substr(MigrateDescBegin,
+                                        MigrateDescEnd - MigrateDescBegin + 1);
+      dpctExit(MigrationSucceeded);
+    }
     llvm::outs() << "Is migrated to" << OptionMsg << ":";
 
+    Tool.appendArgumentsAdjuster(getInsertArgumentAdjuster("-w"));
     NoIncrementalMigration = true;
     // Need set a virtual path and it will used by AnalysisScope.
     InRoot = llvm::sys::path::parent_path(SourcePathList[0]).str();
@@ -812,9 +846,7 @@ int runDPCT(int argc, const char **argv) {
   }
 
   Tool.setCompilationDatabaseDir(CompilationsDir);
-  DpctInstallPath = getInstallPath(Tool, argv[0]);
-
-  ValidateInputDirectory(Tool, InRoot);
+  ValidateInputDirectory(InRoot);
 
   // AnalysisScope defaults to the value of InRoot
   // InRoot must be the same as or child of AnalysisScope
@@ -823,7 +855,7 @@ int runDPCT(int argc, const char **argv) {
     ShowStatus(MigrationErrorInvalidAnalysisScope);
     dpctExit(MigrationErrorInvalidAnalysisScope);
   }
-  ValidateInputDirectory(Tool, AnalysisScope);
+  ValidateInputDirectory(AnalysisScope);
 
   if (GenHelperFunction.getValue()) {
     dpct::genHelperFunction(dpct::DpctGlobalInfo::getOutRoot());
@@ -890,6 +922,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setCtadEnabled(EnableCTAD);
   DpctGlobalInfo::setGenBuildScriptEnabled(GenBuildScript);
   DpctGlobalInfo::setCommentsEnabled(EnableComments);
+  DpctGlobalInfo::setHelperFuncPreferenceFlag(Preferences.getBits());
   DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
   DpctGlobalInfo::setExperimentalFlag(Experimentals.getBits());
   DpctGlobalInfo::setExtensionDEFlag(~(NoDPCPPExtensions.getBits()));
@@ -985,6 +1018,9 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_ExperimentalFlag,
                      DpctGlobalInfo::getExperimentalFlag(),
                      Experimentals.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_HelperFuncPreferenceFlag,
+                     DpctGlobalInfo::getHelperFuncPreferenceFlag(),
+                     Preferences.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_ExplicitNamespace,
                      DpctGlobalInfo::getExplicitNamespaceSet(),
                      UseExplicitNamespace.getNumOccurrences());
@@ -1091,19 +1127,23 @@ int runDPCT(int argc, const char **argv) {
     bool Flag = false;
     for (auto I = RewriteBuffer.begin(), E = RewriteBuffer.end(); I != E;
          I.MoveToNextPiece()) {
+      size_t StartPos = 0;
+      if (!Flag) {
+        if (auto It = I.piece().find(StartStr); It != StringRef::npos) {
+          StartPos = It + StartStr.length();
+          Flag = true;
+        }
+      }
       if (Flag) {
+        size_t EndPos = I.piece().size();
         if (auto It = I.piece().find(EndStr); It != StringRef::npos) {
           auto TempStr = I.piece().substr(0, It);
-          llvm::outs() << TempStr.substr(0, TempStr.find_last_of("\n") + 1);
-          break;
+          EndPos = TempStr.find_last_of('\n') + 1;
+          Flag = false;
         }
-        llvm::outs() << I.piece();
-      } else if (auto It = I.piece().find(StartStr); It != StringRef::npos) {
-        Flag = true;
-        llvm::outs() << I.piece().substr(It + StartStr.length());
+        llvm::outs() << I.piece().substr(StartPos, EndPos - StartPos);
       }
     }
-    llvm::sys::fs::remove(SourcePathList.front().c_str());
     return MigrationSucceeded;
   }
 

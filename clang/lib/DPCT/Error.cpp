@@ -61,8 +61,8 @@ void ShowStatus(int Status, std::string Message) {
   case MigrationErrorInvalidWarningID:
     StatusString = "Error: Invalid warning ID or range; "
                    "valid warning IDs range from " +
-                   std::to_string((size_t)Warnings::BEGIN) + " to " +
-                   std::to_string((size_t)Warnings::END - 1);
+                   std::to_string(DiagnosticsMessage::MinID) + " to " +
+                   std::to_string(DiagnosticsMessage::MaxID);
     break;
   case MigrationOptionParsingError:
     StatusString = "Option parsing error,"
@@ -156,7 +156,9 @@ void ShowStatus(int Status, std::string Message) {
                    "as or a parent directory of --in-root";
     break;
   case MigrationErrorNoAPIMapping:
-    StatusString = "Error: The API Mapping is not available";
+    StatusString =
+        "Error: This API mapping query is not available yet. You may get the "
+        "API mapping by migrating a sample code of this API with the tool.";
     break;
   default:
     DpctLog() << "Unknown error\n";

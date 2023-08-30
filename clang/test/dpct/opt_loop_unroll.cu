@@ -47,6 +47,12 @@ __global__ void kernel(float *a, float *b, float *c){
         c[j] = a[j] + b[j];  
       }
     }
+
+    bool n;
+// CHECK: if(n)
+// CHECK-NEXT: #pragma unroll 
+// CHECK-NEXT: for(int i = 0; i < 10; i++) { c[i] = 0; }
+    if(n) for(int i = 0; i < 10; i++) { c[i] = 0; }
 }
 
 __device__ void bar(float *a, float *b, float *c) {

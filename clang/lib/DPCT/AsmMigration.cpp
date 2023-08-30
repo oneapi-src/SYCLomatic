@@ -59,9 +59,11 @@ class SYCLGenBase {
   SmallString<4> NewLine;
   SmallVector<SmallString<10>, 4> VecExprTypeRecord;
   raw_ostream *Stream;
-  const GCCAsmStmt *GAS;
 
 protected:
+
+  const GCCAsmStmt *GAS;
+
   class BlockDelimiterGuard {
     SYCLGenBase &CodeGen;
 
@@ -930,6 +932,10 @@ protected:
            Type->getKind() == InlineAsmBuiltinType::TK_u64;
   }
 
+  std::string Cast(StringRef Type, StringRef Op) const {
+    return llvm::Twine("(").concat(Type).concat(")").concat(Op).str();
+  }
+
   bool handle_mul(const InlineAsmInstruction *Inst) override {
     if (Inst->getNumInputOperands() != 2 || Inst->getNumTypes() != 1)
       return SYCLGenError();
@@ -954,19 +960,23 @@ protected:
       if (tryEmitStmt(Op[I], Inst->getInputOperand(I)))
         return SYCLGenError();
 
+    std::string TypeStr;
+    if (tryEmitType(TypeStr, Type))
+      return SYCLGenError();
+
+    // mul.hi
     if (Inst->hasAttr(InstAttr::hi)) {
-      OS() << "sycl::mul_hi(" << Op[0] << ", " << Op[1] << ")";
+      OS() << "sycl::mul_hi<" << TypeStr << ">(" << Op[0] << ", " << Op[1]
+           << ")";
+      // mul.wide
     } else if (Inst->hasAttr(InstAttr::wide)) {
-      auto Cast = [&](StringRef Str) {
-        return llvm::Twine("(")
-            .concat(GetWiderTypeAsString(Type))
-            .concat(")")
-            .concat(Str)
-            .str();
-      };
-      OS() << Cast(Op[0]) << " * " << Cast(Op[1]);
+      OS() << Cast(GetWiderTypeAsString(Type), Op[0]) << " * "
+           << Cast(GetWiderTypeAsString(Type), Op[1]);
+      // mul.lo
     } else {
-      OS() << Op[0] << " * " << Op[1];
+      // Need to add a new help function.
+      // OS() << Op[0] << " * " << Op[1];
+      return SYCLGenError();
     }
 
     endstmt();
@@ -1003,20 +1013,29 @@ protected:
       if (tryEmitStmt(Op[I], Inst->getInputOperand(I)))
         return SYCLGenError();
 
+    std::string TypeStr;
+    if (tryEmitType(TypeStr, Type))
+      return SYCLGenError();
+
     // mad.hi.sat
     if (Inst->hasAttr(InstAttr::sat))
-      OS() << "sycl::clamp<int64_t>(sycl::mad_hi(" << Op[0] << ", " << Op[1]
-           << ", " << Op[2] << "), "
-           << "std::numeric_limits<int32_t>::min()"
-           << ", "
-           << "std::numeric_limits<int32_t>::max())";
+      OS() << llvm::formatv(
+          "sycl::add_sat<{0}>(sycl::mul_hi<{0}>({1}, {2}), {3})", TypeStr,
+          Op[0], Op[1], Op[2]);
+    // mad.hi
     else if (Inst->hasAttr(InstAttr::hi))
-      OS() << "sycl::mad_hi(" << Op[0] << ", " << Op[1] << ", " << Op[2] << ")";
+      OS() << "sycl::mad_hi<" << TypeStr << ">(" << Op[0] << ", " << Op[1]
+           << ", " << Op[2] << ")";
+    // mad.wide
     else if (Inst->hasAttr(InstAttr::wide))
       OS() << llvm::formatv("({3}){0} * ({3}){1} + ({3}){2}", Op[0], Op[1],
                             Op[2], GetWiderTypeAsString(Type));
-    else
-      OS() << Op[0] << " * " << Op[1] << " + " << Op[2];
+    // mad.lo
+    else {
+      // Need to add a new help function.
+      // OS() << Op[0] << " * " << Op[1] << " + " << Op[2];
+      return SYCLGenError();
+    }
 
     endstmt();
     return SYCLGenSuccess();
@@ -1046,9 +1065,8 @@ protected:
     return HandleDivRem(Inst, '%');
   }
 
-  bool HandleMul24Mad24(const InlineAsmInstruction *Inst) {
-    bool IsMad = Inst->is(asmtok::op_mad24);
-    if (Inst->getNumInputOperands() != 2 + IsMad || Inst->getNumTypes() != 1)
+  bool HandleMul24Mad24(const InlineAsmInstruction *Inst, bool isMad) {
+    if (Inst->getNumInputOperands() != 2U + isMad || Inst->getNumTypes() != 1)
       return SYCLGenError();
 
     const auto *Type = dyn_cast<InlineAsmBuiltinType>(Inst->getType(0));
@@ -1070,21 +1088,28 @@ protected:
       if (tryEmitStmt(Op[I], Inst->getInputOperand(I)))
         return SYCLGenError();
 
-    if (IsMad)
-      OS() << "sycl::mad24(" << Op[0] << ", " << Op[1] << ", " << Op[2] << ")";
-    else
-      OS() << "sycl::mul24(" << Op[0] << ", " << Op[1] << ")";
+    std::string TypeStr;
+    if (tryEmitType(TypeStr, Type))
+      return SYCLGenError();
+
+    if (isMad) {
+      OS() << "sycl::mad24<" << TypeStr << ">(" << Op[0] << ", " << Op[1]
+           << ", " << Op[2] << ")";
+    } else {
+      OS() << "sycl::mul24<" << TypeStr << ">(" << Op[0] << ", " << Op[1]
+           << ")";
+    }
 
     endstmt();
     return SYCLGenSuccess();
   }
 
   bool handle_mul24(const InlineAsmInstruction *Inst) override {
-    return HandleMul24Mad24(Inst);
+    return HandleMul24Mad24(Inst, /*isMad=*/false);
   }
 
   bool handle_mad24(const InlineAsmInstruction *Inst) override {
-    return HandleMul24Mad24(Inst);
+    return HandleMul24Mad24(Inst, /*isMad=*/true);
   }
 
   bool HandleAbsNeg(const InlineAsmInstruction *Inst) {
@@ -1110,8 +1135,12 @@ protected:
     if (tryEmitStmt(Op, Inst->getInputOperand(0)))
       return SYCLGenError();
 
+    std::string TypeStr;
+    if (tryEmitType(TypeStr, Type))
+      return SYCLGenError();
+
     if (Inst->is(asmtok::op_abs))
-      OS() << "sycl::abs(" << Op << ")";
+      OS() << llvm::formatv("sycl::abs<{0}>({1})", TypeStr, Op);
     else
       OS() << "-" << Op;
 
@@ -1162,7 +1191,7 @@ protected:
     return HandlePopcClz(Inst);
   }
 
-  bool HandleMinMax(const InlineAsmInstruction *Inst) {
+  bool HandleMinMax(const InlineAsmInstruction *Inst, StringRef Fn) {
     if (Inst->getNumInputOperands() != 2 || Inst->getNumTypes() != 1)
       return SYCLGenError();
 
@@ -1203,14 +1232,13 @@ protected:
     };
 
     if (Inst->hasAttr(InstAttr::relu)) {
-      std::string str = llvm::formatv(
-          "sycl::clamp<{0}>(sycl::{5}<{0}>({1}, {2}), {3}, {4})", TypeRepl,
-          Op[0], Op[1], GenZeroVal(), GenMaxVal(),
-          Inst->is(asmtok::op_min) ? "min" : "max").str();
+      std::string str =
+          llvm::formatv("sycl::clamp<{0}>({5}<{0}>({1}, {2}), {3}, {4})",
+                        TypeRepl, Op[0], Op[1], GenZeroVal(), GenMaxVal(), Fn)
+              .str();
       OS() << str;
     } else {
-      OS() << llvm::formatv("sycl::{3}<{0}>({1}, {2})", TypeRepl, Op[0], Op[1],
-                            Inst->is(asmtok::op_min) ? "min" : "max");
+      OS() << llvm::formatv("{3}<{0}>({1}, {2})", TypeRepl, Op[0], Op[1], Fn);
     }
 
     endstmt();
@@ -1218,11 +1246,11 @@ protected:
   }
 
   bool handle_min(const InlineAsmInstruction *Inst) override {
-    return HandleMinMax(Inst);
+    return HandleMinMax(Inst, "sycl::min");
   }
 
   bool handle_max(const InlineAsmInstruction *Inst) override {
-    return HandleMinMax(Inst);
+    return HandleMinMax(Inst, "sycl::max");
   }
 
   bool HandleBitwiseBinaryOp(const InlineAsmInstruction *Inst,
@@ -1313,6 +1341,77 @@ protected:
   bool handle_cnot(const InlineAsmInstruction *Inst) override {
     return HandleNot(Inst);
   }
+
+  // Handle the 1 element vadd/vsub/vmin/vmax/vabsdiff video instructions.
+  bool HandleOneElementAddSubMinMax(const InlineAsmInstruction *Inst, StringRef Fn) {
+    if (Inst->getNumInputOperands() < 2 || Inst->getNumTypes() != 3)
+      return SYCLGenError();
+    
+    // Arguments mismatch for instruction, which has a secondary arithmetic operation.
+    if (Inst->hasAttr(InstAttr::add, InstAttr::min, InstAttr::max) && Inst->getNumInputOperands() < 3)
+      return SYCLGenError();
+
+    // The type of operands must be one of s32/u32.
+    for (const auto *T : Inst->types()) {
+      if (const auto *BI = dyn_cast<InlineAsmBuiltinType>(T)) {
+        if (BI->getKind() == InlineAsmBuiltinType::TK_s32 ||
+            BI->getKind() == InlineAsmBuiltinType::TK_u32)
+          continue;
+      }
+      return SYCLGenError();
+    }
+
+    if (emitStmt(Inst->getOutputOperand()))
+      return SYCLGenError();
+
+    OS() << " = " << Fn;
+    if (Inst->hasAttr(InstAttr::sat)) OS() << "_sat";
+    OS() << "<";
+    if (emitType(Inst->getType(0)))
+      return SYCLGenError();
+    OS() << ">(";
+
+    std::string Op[3];
+    for (unsigned I = 0; I < Inst->getNumInputOperands(); ++I)
+      if (tryEmitStmt(Op[I], Inst->getInputOperand(I)))
+        return SYCLGenError();
+
+    OS() << llvm::join(ArrayRef(Op, Inst->getNumInputOperands()), ", ");
+    // The secondary arithmetic operation.
+    if (Inst->hasAttr(InstAttr::add)) {
+      OS() << ", sycl::plus<>()";
+    } else if (Inst->hasAttr(InstAttr::min)) {
+      OS() << ", sycl::minimum<>()";
+    } else if (Inst->hasAttr(InstAttr::max)) {
+      OS() << ", sycl::maximum<>()";
+    }
+
+    OS() << ")";
+    endstmt();
+    DpctGlobalInfo::getInstance().insertHeader(GAS->getBeginLoc(),
+                                               HeaderType::HT_DPCT_Math);
+    return SYCLGenSuccess();
+  }
+
+  bool handle_vadd(const InlineAsmInstruction *I) override {
+    return HandleOneElementAddSubMinMax(I, "dpct::extend_add");
+  }
+
+  bool handle_vsub(const InlineAsmInstruction *I) override {
+    return HandleOneElementAddSubMinMax(I, "dpct::extend_sub");
+  }
+
+  bool handle_vabsdiff(const InlineAsmInstruction *I) override {
+    return HandleOneElementAddSubMinMax(I, "dpct::extend_absdiff");
+  }
+
+  bool handle_vmax(const InlineAsmInstruction *I) override {
+    return HandleOneElementAddSubMinMax(I, "dpct::extend_max");
+  }
+
+  bool handle_vmin(const InlineAsmInstruction *I) override {
+    return HandleOneElementAddSubMinMax(I, "dpct::extend_min");
+  }
 };
 } // namespace
 
@@ -1378,25 +1477,30 @@ void AsmRule::doMigrateInternel(const GCCAsmStmt *GAS) {
   } while (!Parser.getCurToken().is(asmtok::eof));
 
   StringRef Ref = ReplaceString;
-  if (CodeGen.isInMacroDefine()) {
-    if (Ref.ends_with("\\\n")) {
-      ReplaceString.erase(ReplaceString.end() - 2);
-    } else if (Ref.ends_with("\\\r\n")) {
-      ReplaceString.erase(ReplaceString.end() - 3);
+
+  // Trim the trailing whitspace and ';'.
+  Ref = Ref.trim();
+  if (Ref.back() == ';')
+    Ref = Ref.drop_back();
+
+  if (CodeGen.isInMacroDefine() && Ref.ends_with("\\"))
+    Ref = Ref.drop_back();
+
+  // If the generated SYCL code in '{...}', we should remove ';' after AsmStmt.
+  if (Ref.front() == '{' && Ref.back() == '}') {
+    auto Tok = Lexer::findNextToken(GAS->getEndLoc(), SM, C.getLangOpts());
+
+    if (Tok.has_value() && Tok->is(tok::semi) &&
+        (!CodeGen.isInMacroDefine() ||
+         isInMacroDefinition(Tok->getLocation(), Tok->getEndLoc()))) {
+      emplaceTransformation(new ReplaceToken(Tok->getLocation(), ""));
     }
   }
 
-  auto *Repl = new ReplaceStmt(GAS, std::move(ReplaceString));
+  auto *Repl = new ReplaceStmt(GAS, std::move(Ref.str()));
   Repl->setBlockLevelFormatFlag();
   emplaceTransformation(Repl);
 
-  auto Tok = Lexer::findNextToken(GAS->getEndLoc(), SM, C.getLangOpts());
-
-  if (Tok.has_value() && Tok->is(tok::semi) &&
-      (!CodeGen.isInMacroDefine() ||
-       isInMacroDefinition(Tok->getLocation(), Tok->getEndLoc()))) {
-    emplaceTransformation(new ReplaceToken(Tok->getLocation(), ""));
-  }
   return;
 }
 

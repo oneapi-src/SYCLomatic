@@ -1,4 +1,5 @@
 // Option: --use-dpcpp-extensions=intel_device_math
+// Option: --use-experimental-features=bfloat16_math_functions
 #include "cuda_bf16.h"
 #include "cuda_fp16.h"
 

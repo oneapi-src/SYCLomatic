@@ -57,6 +57,7 @@ enum class InstAttr {
 #define SAT_MOD(X, Y) X,
 #define MUL_MOD(X, Y) X,
 #define CMP_OP(X, Y) X,
+#define BIN_OP(X, Y) X,
 #include "Asm/AsmTokenKinds.def"
 };
 
@@ -343,7 +344,8 @@ public:
     return is(OpKind) || (is(OpKinds) || ...);
   }
 
-  bool hasAttr(InstAttr Attr) const { return Attributes.contains(Attr); }
+  template <typename... Ts>
+  bool hasAttr(Ts... Attrs) const { return (Attributes.contains(Attrs) || ...); }
   const InlineAsmIdentifierInfo *getOpcodeID() const { return Opcode; }
   asmtok::TokenKind getOpcode() const { return Opcode->getTokenID(); }
   ArrayRef<InlineAsmType *> getTypes() const { return Types; }

@@ -95,7 +95,7 @@ __global__ void simple_kernel_one(float *d_array) {
 
 int main(int argc, char **argv) {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   int size = 3200;
   int *d_int;
   float *d_array;
@@ -114,20 +114,20 @@ int main(int argc, char **argv) {
 
   // CHECK:   const_ptr.assign(d_int, sizeof(int) * size);
   cudaMemcpyToSymbol(const_ptr, &d_int, sizeof(int *));
-  // CHECK:   DPCT_CHECK_ERROR(dpct::dpct_memcpy(const_angle.get_ptr(), &h_array[0], sizeof(float) * 360));
+  // CHECK:   dpct::dpct_memcpy(const_angle.get_ptr(), &h_array[0], sizeof(float) * 360);
   cudaMemcpyToSymbol(&const_angle[0], &h_array[0], sizeof(float) * 360);
 
-  // CHECK:   DPCT_CHECK_ERROR(dpct::dpct_memcpy(const_angle.get_ptr() + 3, &h_array[0], sizeof(float) * 357));
+  // CHECK:   dpct::dpct_memcpy(const_angle.get_ptr() + 3, &h_array[0], sizeof(float) * 357);
   cudaMemcpyToSymbol(&const_angle[3], &h_array[0], sizeof(float) * 357);
 
-  // CHECK:  DPCT_CHECK_ERROR(dpct::dpct_memcpy(&h_array[0], const_angle.get_ptr() + 3, sizeof(float) * 357));
+  // CHECK:  dpct::dpct_memcpy(&h_array[0], const_angle.get_ptr() + 3, sizeof(float) * 357);
   cudaMemcpyFromSymbol(&h_array[0], &const_angle[3], sizeof(float) * 357);
 
   #define NUM 3
-  // CHECK: DPCT_CHECK_ERROR(dpct::dpct_memcpy(const_angle.get_ptr() + 3+NUM, &h_array[0], sizeof(float) * 354));
+  // CHECK: dpct::dpct_memcpy(const_angle.get_ptr() + 3+NUM, &h_array[0], sizeof(float) * 354);
   cudaMemcpyToSymbol(&const_angle[3+NUM], &h_array[0], sizeof(float) * 354);
 
-  // CHECK:  DPCT_CHECK_ERROR(dpct::dpct_memcpy(&h_array[0], const_angle.get_ptr() + 3+NUM, sizeof(float) * 354));
+  // CHECK:  dpct::dpct_memcpy(&h_array[0], const_angle.get_ptr() + 3+NUM, sizeof(float) * 354);
   cudaMemcpyFromSymbol(&h_array[0], &const_angle[3+NUM], sizeof(float) * 354);
 
   // CHECK:   q_ct1.submit(
@@ -170,7 +170,7 @@ int main(int argc, char **argv) {
   }
 
   h_array[0] = 10.0f; // Just to test
-  // CHECK:  DPCT_CHECK_ERROR(dpct::dpct_memcpy(const_one.get_ptr(), &h_array[0], sizeof(float) * 1));
+  // CHECK:  dpct::dpct_memcpy(const_one.get_ptr(), &h_array[0], sizeof(float) * 1);
   cudaMemcpyToSymbol(&const_one, &h_array[0], sizeof(float) * 1);
 
   cudaStream_t stream;
@@ -247,7 +247,7 @@ __device__ void foo() {
 //CHECK-NEXT:  float *a = const_cast<float *>(aaa + 5);
 //CHECK-NEXT:}
 //CHECK-NEXT:void foo1() {
-//CHECK-NEXT:  dpct::get_default_queue().submit(
+//CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
 //CHECK-NEXT:    [&](sycl::handler &cgh) {
 //CHECK-NEXT:      aaa.init();
 //CHECK-EMPTY:

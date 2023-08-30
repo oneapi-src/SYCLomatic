@@ -71,7 +71,7 @@ struct UserMin
 
 //CHECK:  bool test_reduce_1(){
 //CHECK:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
-//CHECK:  sycl::queue &q_ct1 = dev_ct1.default_queue();
+//CHECK:  sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 //CHECK:    int          num_segments = 10;
 //CHECK:    int          *device_offsets;
 //CHECK:    int          *device_in;
@@ -140,7 +140,7 @@ bool test_reduce_1(){
 
 //CHECK:  bool test_reduce_2(){
 //CHECK:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
-//CHECK:  sycl::queue &q_ct1 = dev_ct1.default_queue();
+//CHECK:  sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 //CHECK:    int          num_segments = 10;
 //CHECK:    int          *device_offsets;
 //CHECK:    int          *device_in;
@@ -379,7 +379,7 @@ bool test_arg_max() {
 
 //CHECK:  bool test_sum_1(){
 //CHECK:    dpct::device_ext &dev_ct1 = dpct::get_current_device();
-//CHECK:    sycl::queue &q_ct1 = dev_ct1.default_queue();
+//CHECK:    sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 //CHECK:      int          num_segments = 10;
 //CHECK:      int          *device_offsets;
 //CHECK:      int          *device_in;
@@ -450,7 +450,7 @@ bool test_sum_1(){
 
 //CHECK:  bool test_sum_2(){
 //CHECK:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
-//CHECK:  sycl::queue &q_ct1 = dev_ct1.default_queue();
+//CHECK:  sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 //CHECK:    int          num_segments = 10;
 //CHECK:    int          *device_offsets;
 //CHECK:    int          *device_in;
@@ -522,7 +522,7 @@ bool test_sum_2(){
 
 //CHECK:  bool test_min(){
 //CHECK:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
-//CHECK:  sycl::queue &q_ct1 = dev_ct1.default_queue();
+//CHECK:  sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 //CHECK:    int          num_segments = 10;
 //CHECK:    int          *device_offsets;
 //CHECK:    int          *device_in;
@@ -593,7 +593,7 @@ bool test_min(){
 
 //CHECK:  bool test_max(){
 //CHECK:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
-//CHECK:  sycl::queue &q_ct1 = dev_ct1.default_queue();
+//CHECK:  sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 //CHECK:    int          num_segments = 10;
 //CHECK:    int          *device_offsets;
 //CHECK:    int          *device_in;

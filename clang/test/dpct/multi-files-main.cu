@@ -8,7 +8,7 @@ int main() {
   unsigned *i_array;
   cudaMalloc((void **)&i_array, sizeof(unsigned) * 360);
 
-  // CHECK: dpct::get_default_queue().submit(
+  // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     auto i_array_acc_ct0 = dpct::get_access(i_array, cgh);
   // CHECK-EMPTY:

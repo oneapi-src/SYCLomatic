@@ -13,6 +13,7 @@
 #include "CrashRecovery.h"
 #include "Diagnostics.h"
 #include "FFTAPIMigration.h"
+#include "InclusionHeaders.h"
 #include "MapNames.h"
 #include "TextModification.h"
 #include "Utility.h"
@@ -36,14 +37,17 @@ class IncludesCallbacks : public PPCallbacks {
   TransformSetTy &TransformSet;
   IncludeMapSetTy &IncludeMapSet;
   SourceManager &SM;
+  RuleGroups &Groups;
 
   std::unordered_set<std::string> SeenFiles;
   bool IsFileInCmd = true;
 
 public:
   IncludesCallbacks(TransformSetTy &TransformSet,
-                    IncludeMapSetTy &IncludeMapSet, SourceManager &SM)
-      : TransformSet(TransformSet), IncludeMapSet(IncludeMapSet), SM(SM) {}
+                    IncludeMapSetTy &IncludeMapSet, SourceManager &SM,
+                    RuleGroups &G)
+      : TransformSet(TransformSet), IncludeMapSet(IncludeMapSet), SM(SM),
+        Groups(G) {}
   void InclusionDirective(SourceLocation HashLoc, const Token &IncludeTok,
                           StringRef FileName, bool IsAngled,
                           CharSourceRange FilenameRange,
@@ -753,6 +757,8 @@ public:
              "usm::alloc::shared) {";
     };
 
+    auto DefaultQueue = DpctGlobalInfo::getDefaultQueue(CE);
+
     if (FuncName == "cublasSrotg_v2" || FuncName == "cublasDrotg_v2" ||
         FuncName == "cublasCrotg_v2" || FuncName == "cublasZrotg_v2" ||
         FuncName == "cublasSrotmg_v2" || FuncName == "cublasDrotmg_v2") {
@@ -781,11 +787,9 @@ public:
           Suffix = Suffix + getNL() + IndentStr + "  " +
                    getDrefName(CE->getArg(Idx)) + " = *" + Var + ";";
         else {
-          Suffix = Suffix + getNL() + IndentStr + "  " +
-                   MapNames::getDpctNamespace() +
-                   "get_default_queue().memcpy(" +
-                   ExprAnalysis::ref(CE->getArg(Idx)) + ", " + Var +
-                   ", sizeof(" + Type + ")*" + Size + ").wait();";
+          Suffix = Suffix + getNL() + IndentStr + "  " + DefaultQueue +
+                   ".memcpy(" + ExprAnalysis::ref(CE->getArg(Idx)) + ", " +
+                   Var + ", sizeof(" + Type + ")*" + Size + ").wait();";
           requestFeature(HelperFeatureEnum::device_ext);
         }
       };
@@ -802,8 +806,7 @@ public:
         requestFeature(HelperFeatureEnum::device_ext);
         Prefix = Prefix + IfStmtStr + getNL() + IndentStr;
         Prefix = Prefix + "  " + D1Ptr + " = " + MapNames::getClNamespace() +
-                 "malloc_shared<" + Type + ">(8, " +
-                 MapNames::getDpctNamespace() + "get_default_queue());" +
+                 "malloc_shared<" + Type + ">(8, " + DefaultQueue + ");" +
                  getNL() + IndentStr;
         Prefix = Prefix + "  " + D2Ptr + " = " + D1Ptr + " + 1;" + getNL() +
                  IndentStr;
@@ -829,7 +832,7 @@ public:
 
         Suffix = Suffix + getNL() + IndentStr + "  " +
                  MapNames::getClNamespace() + "free(" + D1Ptr + ", " +
-                 MapNames::getDpctNamespace() + "get_default_queue());";
+                 DefaultQueue + ");";
         Suffix = Suffix + getNL() + IndentStr + "}";
       } else {
         // cublasSrotg_v2, cublasDrotg_v2, cublasCrotg_v2 or cublasZrotg_v2
@@ -859,7 +862,7 @@ public:
         if (FuncName == "cublasSrotg_v2" || FuncName == "cublasDrotg_v2") {
           Prefix = Prefix + "  " + APtr + " = " + MapNames::getClNamespace() +
                    "malloc_shared<" + Type + ">(4, " +
-                   MapNames::getDpctNamespace() + "get_default_queue());" +
+                   DefaultQueue + ");" +
                    getNL() + IndentStr;
           Prefix = Prefix + "  " + BPtr + " = " + APtr + " + 1;" + getNL() +
                    IndentStr;
@@ -870,11 +873,11 @@ public:
         } else {
           Prefix = Prefix + "  " + APtr + " = " + MapNames::getClNamespace() +
                    "malloc_shared<" + Type + ">(3, " +
-                   MapNames::getDpctNamespace() + "get_default_queue());" +
+                   DefaultQueue + ");" +
                    getNL() + IndentStr;
           Prefix = Prefix + "  " + CPtr + " = " + MapNames::getClNamespace() +
                    "malloc_shared<" + RealType + ">(1, " +
-                   MapNames::getDpctNamespace() + "get_default_queue());" +
+                   DefaultQueue + ");" +
                    getNL() + IndentStr;
           Prefix = Prefix + "  " + BPtr + " = " + APtr + " + 1;" + getNL() +
                    IndentStr;
@@ -901,11 +904,11 @@ public:
 
         Suffix = Suffix + getNL() + IndentStr + "  " +
                  MapNames::getClNamespace() + "free(" + APtr + ", " +
-                 MapNames::getDpctNamespace() + "get_default_queue());";
+                 DefaultQueue + ");";
         if (FuncName == "cublasCrotg_v2" || FuncName == "cublasZrotg_v2") {
           Suffix = Suffix + getNL() + IndentStr + "  " +
                    MapNames::getClNamespace() + "free(" + CPtr + ", " +
-                   MapNames::getDpctNamespace() + "get_default_queue());";
+                   DefaultQueue + ");";
         }
         Suffix = Suffix + getNL() + IndentStr + "}";
       }
@@ -942,16 +945,15 @@ public:
                         EA.getReplacedString() + ";" + getNL() + IndentStr +
                         IfStmtStr + getNL() + IndentStr + "  " + ResultTempPtr +
                         " = " + MapNames::getClNamespace() + "malloc_shared<" +
-                        OriginType + ">(1, " + MapNames::getDpctNamespace() +
-                        "get_default_queue());" + getNL() + IndentStr + "}" +
-                        getNL() + IndentStr + PrefixInsertStr;
-      SuffixInsertStr =
-          getNL() + IndentStr + IfStmtStr + getNL() + IndentStr + "  " +
-          CallExprArguReplVec[0] + "->wait();" + getNL() + IndentStr + "  " +
-          getDrefName(CE->getArg(ArgIndex)) + " = *" + ResultTempPtr + ";" +
-          getNL() + IndentStr + "  " + MapNames::getClNamespace() + "free(" +
-          ResultTempPtr + ", " + MapNames::getDpctNamespace() +
-          "get_default_queue());" + getNL() + IndentStr + "}" + SuffixInsertStr;
+                        OriginType + ">(1, " + DefaultQueue + ");" + getNL() +
+                        IndentStr + "}" + getNL() + IndentStr + PrefixInsertStr;
+      SuffixInsertStr = getNL() + IndentStr + IfStmtStr + getNL() + IndentStr +
+                        "  " + CallExprArguReplVec[0] + "->wait();" + getNL() +
+                        IndentStr + "  " + getDrefName(CE->getArg(ArgIndex)) +
+                        " = *" + ResultTempPtr + ";" + getNL() + IndentStr +
+                        "  " + MapNames::getClNamespace() + "free(" +
+                        ResultTempPtr + ", " + DefaultQueue + ");" + getNL() +
+                        IndentStr + "}" + SuffixInsertStr;
     }
   }
 

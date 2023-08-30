@@ -317,7 +317,7 @@ __global__ void kernel33() {
 int main() {
 
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 
   // CHECK: q_ct1.parallel_for(
   // CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),

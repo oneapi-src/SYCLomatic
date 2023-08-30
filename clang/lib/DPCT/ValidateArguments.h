@@ -81,6 +81,7 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_BFloat16Math,
   Exp_ExperimentalFeaturesEnumSize
 };
+enum class HelperFuncPreference : unsigned int { NoQueueDevice = 0 };
 
 bool makeInRootCanonicalOrSetDefaults(
     std::string &InRoot, const std::vector<std::string> SourceFiles);

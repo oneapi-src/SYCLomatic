@@ -87,7 +87,7 @@ __global__ void foo3(int x, int y) {}
 
 void foo() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
   DDD d3;
 
 // CHECK: #ifdef DPCT_COMPATIBILITY_TEMP
@@ -555,7 +555,7 @@ __global__ void templatefoo(){
 //CHECK: #define AAA 15 + 3
 //CHECK-NEXT: #define CCC <<<1,1>>>()
 //CHECK-NEXT: #define KERNEL(A, B)                                                           \
-//CHECK-NEXT:   dpct::get_default_queue().parallel_for(                                      \
+//CHECK-NEXT:   dpct::get_in_order_queue().parallel_for(                                      \
 //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),   \
 //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { templatefoo<A, B>(); });
 //CHECK-NEXT: #define CALL_KERNEL(C, D) KERNEL(C, D); int a = 0;
@@ -690,7 +690,7 @@ real v5 = POW3(vx[id], 2);
 //CHECK-NEXT: #define SIZE2 8
 //CHECK-NEXT: void foo13(){
 //CHECK-NEXT:   int *a;
-//CHECK-NEXT:   CALL(a = sycl::malloc_device<int>(SIZE2 * 10, dpct::get_default_queue()));
+//CHECK-NEXT:   CALL(a = sycl::malloc_device<int>(SIZE2 * 10, dpct::get_in_order_queue()));
 //CHECK-NEXT: }
 #define CALL(call) call;
 #define SIZE2 8
@@ -758,7 +758,7 @@ __host__ __device__ static inline double foo16(const float2 &x) { return FABS(x)
 //CHECK-NEXT: _mulhilo_(64, uint64_t, sycl::mul_hi)
 #include "cuda_fp16.h"
 #define _mulhilo_(W, Word, NAME)                       \
-__device__ Word mulhilo##W(Word a, Word b, Word* hip){ \
+__device__ Word mulhilo##W(Word a, Word b, Word* hip) { \
     *hip = NAME(a, b);                                 \
     return a*b;                                        \
 }
@@ -845,8 +845,8 @@ void foo18(){
 // CHECK: static const int streamDefault2 = 0;
 // CHECK-NEXT: static const int streamDefault = CALL(0);
 // CHECK-NEXT: static const int streamNonBlocking = 0;
-// CHECK-NEXT: static const dpct::queue_ptr streamDefault3 = &dpct::get_default_queue();
-// CHECK-NEXT: static const dpct::queue_ptr streamDefault4 = CALL(&dpct::get_default_queue());
+// CHECK-NEXT: static const dpct::queue_ptr streamDefault3 = &dpct::get_in_order_queue();
+// CHECK-NEXT: static const dpct::queue_ptr streamDefault4 = CALL(&dpct::get_in_order_queue());
 static const int streamDefault2 = cudaStreamDefault;
 static const int streamDefault = CALL(CONCATE(StreamDefault));
 static const int streamNonBlocking = CONCATE(StreamNonBlocking);
@@ -1077,7 +1077,7 @@ MACRO_AA(MACRO_BB)
 
 #define CALL_K(...) __VA_ARGS__
 void foo28(){
-  //CHECK: CALL_K(dpct::get_default_queue().parallel_for(
+  //CHECK: CALL_K(dpct::get_in_order_queue().parallel_for(
   //CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:   [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:     foo_kernel();
@@ -1146,7 +1146,7 @@ __global__ void template_kernel(T t){
 
 int foo31(){
   //CHECK: VA_CALL(([&] {
-  //CHECK-NEXT:   dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+  //CHECK-NEXT:   dpct::get_in_order_queue().submit([&](sycl::handler &cgh) {
   //CHECK-NEXT:     sycl::local_accessor<int, 0> t2_acc_ct1(cgh);
   //CHECK:     cgh.parallel_for(
   //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -1166,7 +1166,7 @@ class ArgClass{};
 //CHECK-NEXT: #define VACALL3(...) VACALL4(__VA_ARGS__)
 //CHECK-NEXT: #define VACALL2(...) VACALL3(__VA_ARGS__)
 //CHECK-NEXT: #define VACALL(x)                                                              \
-//CHECK-NEXT:   dpct::get_default_queue().submit([&](sycl::handler &cgh) {                   \
+//CHECK-NEXT:   dpct::get_in_order_queue().submit([&](sycl::handler &cgh) {                   \
 //CHECK-NEXT:     int i_ct0 = i;                                                            \
 //CHECK-NEXT:     auto ac_ct0 = ac;                                                          \
 //CHECK:     cgh.parallel_for(                                                          \
@@ -1218,11 +1218,12 @@ void foo34() {
     {
       auto sorted_indices_dev = thrust::device_ptr<index_t>(ptr);
       auto dummy_dev = thrust::device_ptr<index_t>(ptr);
-      //CHECK: auto ends = dpct::unique_copy(
-      //CHECK-NEXT:   oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
-      //CHECK-NEXT:   sorted_indices_dev, sorted_indices_dev + numel,
-      //CHECK-NEXT:   dpct::make_counting_iterator(0), dummy_dev,
-      //CHECK-NEXT:   dpct::device_pointer<index_t>(ptr));
+// CHECK:      auto ends =
+// CHECK-NEXT: dpct::unique_copy(oneapi::dpl::execution::make_device_policy(
+// CHECK-NEXT:                       dpct::get_in_order_queue()),
+// CHECK-NEXT:                   sorted_indices_dev, sorted_indices_dev + numel,
+// CHECK-NEXT:                   dpct::make_counting_iterator(0), dummy_dev,
+// CHECK-NEXT:                   dpct::device_pointer<index_t>(ptr));
       auto ends = thrust::unique_by_key_copy(
           thrust::device, sorted_indices_dev, sorted_indices_dev + numel,
           thrust::make_counting_iterator(0), dummy_dev,
