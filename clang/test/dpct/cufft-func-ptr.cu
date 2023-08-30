@@ -17,7 +17,7 @@ static cufftResult (*pt2CufftExec)(cufftHandle, cufftDoubleComplex *,
 int main() {
 //CHECK:  dpct::fft::fft_engine_ptr plan1;
 //CHECK-NEXT:  plan1 = dpct::fft::fft_engine::create(
-//CHECK-NEXT:      &dpct::get_default_queue(), 10,
+//CHECK-NEXT:      &dpct::get_in_order_queue(), 10,
 //CHECK-NEXT:      dpct::fft::fft_type::complex_double_to_real_double, 1);
 //CHECK-NEXT:  double* odata;
 //CHECK-NEXT:  sycl::double2 *idata;
@@ -45,7 +45,7 @@ int foo1() {
 
 //CHECK:  dpct::fft::fft_engine_ptr plan1;
 //CHECK-NEXT:  plan1 = dpct::fft::fft_engine::create(
-//CHECK-NEXT:      &dpct::get_default_queue(), 10,
+//CHECK-NEXT:      &dpct::get_in_order_queue(), 10,
 //CHECK-NEXT:      dpct::fft::fft_type::complex_double_to_real_double, 1);
 //CHECK-NEXT:  double* odata;
 //CHECK-NEXT:  sycl::double2 *idata;
@@ -73,7 +73,7 @@ int foo2() {
 
 //CHECK:  dpct::fft::fft_engine_ptr plan1;
 //CHECK-NEXT:  plan1 = dpct::fft::fft_engine::create(
-//CHECK-NEXT:      &dpct::get_default_queue(), 10,
+//CHECK-NEXT:      &dpct::get_in_order_queue(), 10,
 //CHECK-NEXT:      dpct::fft::fft_type::complex_double_to_real_double, 1);
 //CHECK-NEXT:  double* odata;
 //CHECK-NEXT:  sycl::double2 *idata;
@@ -103,7 +103,7 @@ int foo3() {
 
 //CHECK:  dpct::fft::fft_engine_ptr plan1;
 //CHECK-NEXT:  plan1 = dpct::fft::fft_engine::create(
-//CHECK-NEXT:      &dpct::get_default_queue(), 10, 
+//CHECK-NEXT:      &dpct::get_in_order_queue(), 10, 
 //CHECK-NEXT:      dpct::fft::fft_type::complex_double_to_real_double, 1);
 //CHECK-NEXT:  double* odata;
 //CHECK-NEXT:  sycl::double2 *idata;
@@ -131,7 +131,7 @@ int foo4() {
 
 //CHECK:  dpct::fft::fft_engine_ptr plan1;
 //CHECK-NEXT:  plan1 = dpct::fft::fft_engine::create(
-//CHECK-NEXT:      &dpct::get_default_queue(), 10,
+//CHECK-NEXT:      &dpct::get_in_order_queue(), 10,
 //CHECK-NEXT:      dpct::fft::fft_type::complex_double_to_real_double, 1);
 //CHECK-NEXT:  double* odata;
 //CHECK-NEXT:  sycl::double2 *idata;

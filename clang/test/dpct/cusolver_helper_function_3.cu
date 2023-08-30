@@ -21,7 +21,7 @@ void foo1() {
   int64_t* tau_z;
 
   //CHECK:sycl::queue* handle;
-  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_default_queue());
+  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_in_order_queue());
   cusolverDnHandle_t handle;
   status = cusolverDnCreate(&handle);
 
@@ -93,7 +93,7 @@ void foo2() {
   int64_t* tau_z;
 
   //CHECK:sycl::queue* handle;
-  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_default_queue());
+  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_in_order_queue());
   cusolverDnHandle_t handle;
   status = cusolverDnCreate(&handle);
 
@@ -165,7 +165,7 @@ void foo3() {
   int64_t* ipiv_z;
 
   //CHECK:sycl::queue* handle;
-  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_default_queue());
+  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_in_order_queue());
   cusolverDnHandle_t handle;
   status = cusolverDnCreate(&handle);
 
@@ -249,7 +249,7 @@ void foo4() {
   int64_t* ipiv_z;
 
   //CHECK:sycl::queue* handle;
-  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_default_queue());
+  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_in_order_queue());
   cusolverDnHandle_t handle;
   status = cusolverDnCreate(&handle);
 
@@ -333,7 +333,7 @@ void foo5() {
   double2* b_z;
 
   //CHECK:sycl::queue* handle;
-  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_default_queue());
+  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_in_order_queue());
   cusolverDnHandle_t handle;
   status = cusolverDnCreate(&handle);
 
@@ -382,7 +382,7 @@ void foo6() {
   double2* b_z;
 
   //CHECK:sycl::queue* handle;
-  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_default_queue());
+  //CHECK-NEXT:status = DPCT_CHECK_ERROR(handle = &dpct::get_in_order_queue());
   cusolverDnHandle_t handle;
   status = cusolverDnCreate(&handle);
 

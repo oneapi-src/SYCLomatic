@@ -141,7 +141,7 @@ void test1() {
 
     float alpha = 1.5f, beta = 1.f;
     // CHECK: handle.async_pooling_forward(desc, alpha, dataTensor, data, beta, outTensor, out);
-    // CHECK: dpct::get_default_queue().memcpy(host_out.data(), out, ele_num2 * sizeof(HT)).wait();
+    // CHECK: dpct::get_in_order_queue().memcpy(host_out.data(), out, ele_num2 * sizeof(HT)).wait();
     // CHECK: dpct::get_current_device().queues_wait_and_throw();
     // CHECK: /*
     // CHECK: DPCT1097:{{[0-9]+}}: The function "async_pooling_backward" may require the workspace used to save intermediate results from function "async_pooling_forward". By default, a workspace from engine_ext is selected according to the source data pointer, but this may be incorrect and cause a workspace data race. You may need to rewrite this code.

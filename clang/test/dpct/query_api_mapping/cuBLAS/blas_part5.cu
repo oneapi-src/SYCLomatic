@@ -173,12 +173,12 @@
 // cublasIsamax: CUDA API:
 // cublasIsamax-NEXT:   cublasIsamax(handle /*cublasHandle_t*/, n /*int*/, x /*const float **/,
 // cublasIsamax-NEXT:                incx /*int*/, res /*int **/);
-// cublasIsamax-NEXT: Is migrated to:
-// cublasIsamax-NEXT:   int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_default_queue());
+// cublasIsamax-NEXT: Is migrated to (with the option --no-dry-pattern):
+// cublasIsamax-NEXT:   int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_in_order_queue());
 // cublasIsamax-NEXT:   oneapi::mkl::blas::column_major::iamax(*handle, n, x, incx, res_temp_ptr_ct{{[0-9]+}}, oneapi::mkl::index_base::one).wait();
 // cublasIsamax-NEXT:   int res_temp_host_ct{{[0-9]+}} = (int)*res_temp_ptr_ct{{[0-9]+}};
 // cublasIsamax-NEXT:   dpct::dpct_memcpy(res, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
-// cublasIsamax-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
+// cublasIsamax-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_in_order_queue());
 
 // RUN: dpct --cuda-include-path="%cuda-path/include" --query-api-mapping=cublasGetMatrix | FileCheck %s -check-prefix=cublasGetMatrix
 // cublasGetMatrix: CUDA API:

@@ -8,7 +8,7 @@ void runTest(int len);
 template<class T>
 void runTest(int len){
     T *d_idata;
-    // CHECK: d_idata = (T *)sycl::malloc_device(sizeof(T), dpct::get_default_queue());
+    // CHECK: d_idata = (T *)sycl::malloc_device(sizeof(T), dpct::get_in_order_queue());
     cudaMalloc((void **) &d_idata, sizeof(T));
 }
 
@@ -20,7 +20,7 @@ typedef struct {
 
 int main(){
     //CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-    //CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+    //CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
     runTest<float2>(32);
     runTest<int2>(64);
 

@@ -16,7 +16,7 @@ cub::DoubleBuffer<int> d_keys(d_keys_in, d_keys_out);
 
 // CHECK: void test1(void) {
 // CHECK:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
-// CHECK:   sycl::queue &q_ct1 = dev_ct1.default_queue();
+// CHECK:   sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 // CHECK:   /*
 // CHECK:   DPCT1026:0: The call to cub::DeviceSegmentedSort::StableSortKeys was removed because this call is redundant in SYCL.
 // CHECK:   */
@@ -32,7 +32,7 @@ void test1(void) {
 
 // CHECK: void test2(void) {
 // CHECK:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
-// CHECK:   sycl::queue &q_ct1 = dev_ct1.default_queue();
+// CHECK:   sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 // CHECK:   /*
 // CHECK:   DPCT1026:1: The call to cub::DeviceSegmentedSort::StableSortKeys was removed because this call is redundant in SYCL.
 // CHECK:   */
@@ -48,7 +48,7 @@ void test2(void) {
 
 // CHECK: void test3(void) {
 // CHECK:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
-// CHECK:   sycl::queue &q_ct1 = dev_ct1.default_queue();
+// CHECK:   sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 // CHECK:   dpct::queue_ptr s = &q_ct1;
 // CHECK:   /*
 // CHECK:   DPCT1026:2: The call to cub::DeviceSegmentedSort::StableSortKeys was removed because this call is redundant in SYCL.
@@ -82,7 +82,7 @@ void test4(void) {
 
 // CHECK: void test5(void) {
 // CHECK:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
-// CHECK:   sycl::queue &q_ct1 = dev_ct1.default_queue();
+// CHECK:   sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 // CHECK:   /*
 // CHECK:   DPCT1026:4: The call to cub::DeviceSegmentedSort::StableSortKeysDescending was removed because this call is redundant in SYCL.
 // CHECK:   */
@@ -98,7 +98,7 @@ void test5(void) {
 
 // CHECK: void test6(void) {
 // CHECK:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
-// CHECK:   sycl::queue &q_ct1 = dev_ct1.default_queue();
+// CHECK:   sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 // CHECK:   /*
 // CHECK:   DPCT1026:5: The call to cub::DeviceSegmentedSort::StableSortKeysDescending was removed because this call is redundant in SYCL.
 // CHECK:   */
@@ -114,7 +114,7 @@ void test6(void) {
 
 // CHECK: void test7(void) {
 // CHECK:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
-// CHECK:   sycl::queue &q_ct1 = dev_ct1.default_queue();
+// CHECK:   sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 // CHECK:   dpct::queue_ptr s = &q_ct1;
 // CHECK:   /*
 // CHECK:   DPCT1026:6: The call to cub::DeviceSegmentedSort::StableSortKeysDescending was removed because this call is redundant in SYCL.

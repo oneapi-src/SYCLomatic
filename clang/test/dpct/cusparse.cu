@@ -66,7 +66,7 @@ int main(){
   base0 = cusparseGetMatIndexBase(descrA);
   type0 = cusparseGetMatType(descrA);
 
-  //CHECK: handle = &dpct::get_default_queue();
+  //CHECK: handle = &dpct::get_out_of_order_queue();
   //CHECK-NEXT: handle = s;
   //CHECK-NEXT: s = handle;
   cusparseCreate(&handle);

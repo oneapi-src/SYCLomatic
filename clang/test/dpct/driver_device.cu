@@ -141,13 +141,13 @@ int main(){
   // CHECK-NEXT: cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_GPU_OVERLAP, device);
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_GPU_OVERLAP, device);
 
-  // CHECK: result1 = dpct::dev_mgr::instance().get_device(device).get_major_version();
-  // CHECK: result2 = dpct::dev_mgr::instance().get_device(device).get_minor_version();
+  // CHECK: result1 = dpct::get_major_version(dpct::dev_mgr::instance().get_device(device));
+  // CHECK: result2 = dpct::get_minor_version(dpct::dev_mgr::instance().get_device(device));
   cuDeviceComputeCapability(&result1, &result2, device);
 
   // CHECK: MY_SAFE_CALL([&](){
-  // CHECK-NEXT:   result1 = dpct::dev_mgr::instance().get_device(device).get_major_version();
-  // CHECK-NEXT:   result2 = dpct::dev_mgr::instance().get_device(device).get_minor_version();
+  // CHECK-NEXT:   result1 = dpct::get_major_version(dpct::dev_mgr::instance().get_device(device));
+  // CHECK-NEXT:   result2 = dpct::get_minor_version(dpct::dev_mgr::instance().get_device(device));
   // CHECK-NEXT:   return 0;
   // CHECK-NEXT: }());
   MY_SAFE_CALL(cuDeviceComputeCapability(&result1, &result2, device));

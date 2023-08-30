@@ -9,6 +9,7 @@
 #ifndef __DPCT_MATH_HPP__
 #define __DPCT_MATH_HPP__
 
+#include <limits>
 #include <sycl/sycl.hpp>
 
 namespace dpct {
@@ -42,6 +43,45 @@ inline bool isnan(const sycl::ext::oneapi::bfloat16 a) {
   throw std::runtime_error("bfloat16 version isnan is only supported in "
                            "sycl::ext::oneapi::experimental.");
 #endif
+}
+
+/// Extend the 'val' to 'bit' size, zero extend for unsigned int and signed
+/// extend for signed int.
+template <typename T>
+inline int64_t zero_or_signed_extent(T val, unsigned bit) {
+  if constexpr (std::is_signed_v<T>) {
+    return int64_t(val) << (64 - bit) >> (64 - bit);
+  }
+  return val;
+}
+
+template <typename RetT, bool needSat, typename AT, typename BT,
+          typename BinaryOperation>
+inline constexpr RetT extend_binary(AT a, BT b, BinaryOperation binary_op) {
+  const int64_t extend_a = zero_or_signed_extent(a, 33);
+  const int64_t extend_b = zero_or_signed_extent(b, 33);
+  const int64_t ret = binary_op(extend_a, extend_b);
+  if constexpr (needSat)
+    return sycl::clamp<int64_t>(ret, std::numeric_limits<RetT>::min(),
+                                std::numeric_limits<RetT>::max());
+  return ret;
+}
+
+template <typename RetT, bool needSat, typename AT, typename BT, typename CT,
+          typename BinaryOperation1, typename BinaryOperation2>
+inline constexpr RetT extend_binary(AT a, BT b, CT c,
+                                    BinaryOperation1 binary_op,
+                                    BinaryOperation2 second_op) {
+  const int64_t extend_a = zero_or_signed_extent(a, 33);
+  const int64_t extend_b = zero_or_signed_extent(b, 33);
+  int64_t extend_temp =
+      zero_or_signed_extent(binary_op(extend_a, extend_b), 34);
+  if constexpr (needSat)
+    extend_temp =
+        sycl::clamp<int64_t>(extend_temp, std::numeric_limits<RetT>::min(),
+                             std::numeric_limits<RetT>::max());
+  const int64_t extend_c = zero_or_signed_extent(c, 33);
+  return second_op(extend_temp, extend_c);
 }
 } // namespace detail
 
@@ -546,6 +586,315 @@ inline unsigned vectorized_sum_abs_diff(unsigned a, unsigned b) {
     sum += v4[i];
   }
   return sum;
+}
+
+/// Extend \p a and \p b to 33 bit and add them.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \returns The extend addition of the two values
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_add(AT a, BT b) {
+  return detail::extend_binary<RetT, false>(a, b, std::plus());
+}
+
+/// Extend Inputs to 33 bit, add \p a, \p b, then do \p second_op with \p c.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \tparam [in] CT The type of the third value
+/// \tparam [in] BinaryOperation The type of the second operation
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \param [in] second_op The operation to do with the third value
+/// \returns The extend addition of \p a, \p b and \p second_op with \p c
+template <typename RetT, typename AT, typename BT, typename CT,
+          typename BinaryOperation>
+inline constexpr RetT extend_add(AT a, BT b, CT c, BinaryOperation second_op) {
+  return detail::extend_binary<RetT, false>(a, b, c, std::plus(), second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and add them with saturation.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \returns The extend addition of the two values with saturation
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_add_sat(AT a, BT b) {
+  return detail::extend_binary<RetT, true>(a, b, std::plus());
+}
+
+/// Extend Inputs to 33 bit, add \p a, \p b with saturation, then do \p
+/// second_op with \p c.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \tparam [in] CT The type of the third value
+/// \tparam [in] BinaryOperation The type of the second operation
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \param [in] second_op The operation to do with the third value
+/// \returns The extend addition of \p a, \p b with saturation and \p second_op
+/// with \p c
+template <typename RetT, typename AT, typename BT, typename CT,
+          typename BinaryOperation>
+inline constexpr RetT extend_add_sat(AT a, BT b, CT c,
+                                     BinaryOperation second_op) {
+  return detail::extend_binary<RetT, true>(a, b, c, std::plus(), second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and minus them.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \returns The extend subtraction of the two values
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_sub(AT a, BT b) {
+  return detail::extend_binary<RetT, false>(a, b, std::minus());
+}
+
+/// Extend Inputs to 33 bit, minus \p a, \p b, then do \p second_op with \p c.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \tparam [in] CT The type of the third value
+/// \tparam [in] BinaryOperation The type of the second operation
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \param [in] second_op The operation to do with the third value
+/// \returns The extend subtraction of \p a, \p b and \p second_op with \p c
+template <typename RetT, typename AT, typename BT, typename CT,
+          typename BinaryOperation>
+inline constexpr RetT extend_sub(AT a, BT b, CT c, BinaryOperation second_op) {
+  return detail::extend_binary<RetT, false>(a, b, c, std::minus(), second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and minus them with saturation.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \returns The extend subtraction of the two values with saturation
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_sub_sat(AT a, BT b) {
+  return detail::extend_binary<RetT, true>(a, b, std::minus());
+}
+
+/// Extend Inputs to 33 bit, minus \p a, \p b with saturation, then do \p
+/// second_op with \p c.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \tparam [in] CT The type of the third value
+/// \tparam [in] BinaryOperation The type of the second operation
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \param [in] second_op The operation to do with the third value
+/// \returns The extend subtraction of \p a, \p b with saturation and \p
+/// second_op with \p c
+template <typename RetT, typename AT, typename BT, typename CT,
+          typename BinaryOperation>
+inline constexpr RetT extend_sub_sat(AT a, BT b, CT c,
+                                     BinaryOperation second_op) {
+  return detail::extend_binary<RetT, true>(a, b, c, std::minus(), second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and do abs_diff.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \returns The extend abs_diff of the two values
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_absdiff(AT a, BT b) {
+  return detail::extend_binary<RetT, false>(a, b, abs_diff());
+}
+
+/// Extend Inputs to 33 bit, abs_diff \p a, \p b, then do \p second_op with \p
+/// c.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \tparam [in] CT The type of the third value
+/// \tparam [in] BinaryOperation The type of the second operation
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \param [in] second_op The operation to do with the third value
+/// \returns The extend abs_diff of \p a, \p b and \p second_op with \p c
+template <typename RetT, typename AT, typename BT, typename CT,
+          typename BinaryOperation>
+inline constexpr RetT extend_absdiff(AT a, BT b, CT c,
+                                     BinaryOperation second_op) {
+  return detail::extend_binary<RetT, false>(a, b, c, abs_diff(), second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and do abs_diff with saturation.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \returns The extend abs_diff of the two values with saturation
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_absdiff_sat(AT a, BT b) {
+  return detail::extend_binary<RetT, true>(a, b, abs_diff());
+}
+
+/// Extend Inputs to 33 bit, abs_diff \p a, \p b with saturation, then do \p
+/// second_op with \p c.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \tparam [in] CT The type of the third value
+/// \tparam [in] BinaryOperation The type of the second operation
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \param [in] second_op The operation to do with the third value
+/// \returns The extend abs_diff of \p a, \p b with saturation and \p
+/// second_op with \p c
+template <typename RetT, typename AT, typename BT, typename CT,
+          typename BinaryOperation>
+inline constexpr RetT extend_absdiff_sat(AT a, BT b, CT c,
+                                         BinaryOperation second_op) {
+  return detail::extend_binary<RetT, true>(a, b, c, abs_diff(), second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and return smaller one.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \returns The smaller one of the two extended values
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_min(AT a, BT b) {
+  return detail::extend_binary<RetT, false>(a, b, minimum());
+}
+
+/// Extend Inputs to 33 bit, find the smaller one in \p a, \p b, then do \p
+/// second_op with \p c.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \tparam [in] CT The type of the third value
+/// \tparam [in] BinaryOperation The type of the second operation
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \param [in] second_op The operation to do with the third value
+/// \returns The smaller one of \p a, \p b and \p second_op with \p c
+template <typename RetT, typename AT, typename BT, typename CT,
+          typename BinaryOperation>
+inline constexpr RetT extend_min(AT a, BT b, CT c, BinaryOperation second_op) {
+  return detail::extend_binary<RetT, false>(a, b, c, minimum(), second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and return smaller one with saturation.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \returns The smaller one of the two extended values with saturation
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_min_sat(AT a, BT b) {
+  return detail::extend_binary<RetT, true>(a, b, minimum());
+}
+
+/// Extend Inputs to 33 bit, find the smaller one in \p a, \p b with saturation,
+/// then do \p second_op with \p c.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \tparam [in] CT The type of the third value
+/// \tparam [in] BinaryOperation The type of the second operation
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \param [in] second_op The operation to do with the third value
+/// \returns The smaller one of \p a, \p b with saturation and \p
+/// second_op with \p c
+template <typename RetT, typename AT, typename BT, typename CT,
+          typename BinaryOperation>
+inline constexpr RetT extend_min_sat(AT a, BT b, CT c,
+                                     BinaryOperation second_op) {
+  return detail::extend_binary<RetT, true>(a, b, c, minimum(), second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and return bigger one.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \returns The bigger one of the two extended values
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_max(AT a, BT b) {
+  return detail::extend_binary<RetT, false>(a, b, maximum());
+}
+
+/// Extend Inputs to 33 bit, find the bigger one in \p a, \p b, then do \p
+/// second_op with \p c.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \tparam [in] CT The type of the third value
+/// \tparam [in] BinaryOperation The type of the second operation
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \param [in] second_op The operation to do with the third value
+/// \returns The bigger one of \p a, \p b and \p second_op with \p c
+template <typename RetT, typename AT, typename BT, typename CT,
+          typename BinaryOperation>
+inline constexpr RetT extend_max(AT a, BT b, CT c, BinaryOperation second_op) {
+  return detail::extend_binary<RetT, false>(a, b, c, maximum(), second_op);
+}
+
+/// Extend \p a and \p b to 33 bit and return bigger one with saturation.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \returns The bigger one of the two extended values with saturation
+template <typename RetT, typename AT, typename BT>
+inline constexpr RetT extend_max_sat(AT a, BT b) {
+  return detail::extend_binary<RetT, true>(a, b, maximum());
+}
+
+/// Extend Inputs to 33 bit, find the bigger one in \p a, \p b with saturation,
+/// then do \p second_op with \p c.
+/// \tparam [in] RetT The type of the return value
+/// \tparam [in] AT The type of the first value
+/// \tparam [in] BT The type of the second value
+/// \tparam [in] CT The type of the third value
+/// \tparam [in] BinaryOperation The type of the second operation
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \param [in] c The third value
+/// \param [in] second_op The operation to do with the third value
+/// \returns The bigger one of \p a, \p b with saturation and \p
+/// second_op with \p c
+template <typename RetT, typename AT, typename BT, typename CT,
+          typename BinaryOperation>
+inline constexpr RetT extend_max_sat(AT a, BT b, CT c,
+                                     BinaryOperation second_op) {
+  return detail::extend_binary<RetT, true>(a, b, c, maximum(), second_op);
 }
 } // namespace dpct
 

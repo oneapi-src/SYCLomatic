@@ -81,7 +81,7 @@ void testTemplate() {
   cudaMalloc((void **)&d_d, mem_size);
   cudaMemcpy(d_d, a, mem_size, cudaMemcpyHostToDevice);
 
-  // CHECK: dpct::get_default_queue().submit(
+  // CHECK: dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     /*
   // CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'size * 2' expression was replaced with a value. Modify the code to use the original expression, provided in comments, if it is correct.
@@ -113,7 +113,7 @@ void testTemplate() {
 
 int main(void) {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   const int n = 64;
   int a[n], r[n], d[n];
   int *d_d;

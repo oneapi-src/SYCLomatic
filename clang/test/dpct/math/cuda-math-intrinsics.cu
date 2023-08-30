@@ -2614,11 +2614,11 @@ void testTypecasts() {
 __global__ void testConditionalOperator(float *deviceArrayFloat) {
   float &f0 = *deviceArrayFloat, &f1 = *(deviceArrayFloat + 1),
         &f2 = *(deviceArrayFloat + 2);
-  // CHECK: f0 = sycl::fmax(f0 = (f1) > (f1 == 1 ? 0 : -f2) ? sycl::pow<float>(f1, 2.f) / f1 : -f1, f1 + f1 < f2
-  // CHECK-NEXT:         ? ((f1) > (f1 == 1 ? 0 : -f2) ? sycl::pow<float>(f2, 2.f) / f1 : -f1)
+  // CHECK: f0 = sycl::fmax(f0 = (f1) > (f1 == 1 ? 0 : -f2) ? f1 * f1 / f1 : -f1, f1 + f1 < f2
+  // CHECK-NEXT:         ? ((f1) > (f1 == 1 ? 0 : -f2) ? f2 * f2 / f1 : -f1)
   // CHECK-NEXT:         : -f1);
-  // CHECK-NEXT: f0 = f1 > f2 ? sycl::pow<float>(f1, 2.f) / f1 : f1;
-  // CHECK-NEXT: f0 = sycl::fmax(0 ? sycl::pow<float>(f1, 2.f) / f1 : f1, f2);
+  // CHECK-NEXT: f0 = f1 > f2 ? f1 * f1 / f1 : f1;
+  // CHECK-NEXT: f0 = sycl::fmax(0 ? f1 * f1 / f1 : f1, f2);
   f0 = fmaxf(
       f0 = (f1) > (f1 == 1 ? 0 : -f2) ? __fdividef(__powf(f1, 2.f), f1) : -f1,
       f1 + f1 < f2
@@ -3436,15 +3436,15 @@ __global__ void test_side_effects() {
 
   // CHECK: int u1 = 2.0 * 2.0;
   int u1 = pow(2.0, 2.0);
-  // CHECK: int v = sycl::pow<double>(2.0, 1.99999999999999999);
+  // CHECK: int v = 2.0 * 2.0;
   int v = pow(2.0, 1.99999999999999999);
   // CHECK: int w = 2.0 * 2.0;
   int w = pow(2.0, 2.0f);
-  // CHECK: int w1 = sycl::pow<double>(2.0, 2.0000000001f);
+  // CHECK: int w1 = 2.0 * 2.0;
   int w1 = pow(2.0, 2.0000000001f);
-  // CHECK: int w2 = sycl::pow<double>(2.0, 2.0000001f);
+  // CHECK: int w2 = 2.0 * 2.0;
   int w2 = pow(2.0, 2.0000001f);
-  // CHECK: int w3 = sycl::pow<double>(2.0, 2.0000000000000001);
+  // CHECK: int w3 = 2.0 * 2.0;
   int w3 = pow(2.0, 2.0000000000000001);
   // CHECK: int x = 2.0 * 2.0;
   int x = pow(2.0, 2l);
@@ -3733,4 +3733,11 @@ __device__ void qualified(double d1,
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d4);
   __drcp_rz(d4);
+}
+
+__global__ void foo4(unsigned char *uc, int i) {
+  float f0, f1;
+  int tid = blockDim.x * blockIdx.x + threadIdx.x + i + 1;
+  // CHECK: uc[tid] = sycl::sqrt(f0 * f0 + f1 * f1);
+  uc[tid] = sqrtf(powf(f0, 2.f) + powf(f1, 2.f));
 }

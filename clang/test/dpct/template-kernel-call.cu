@@ -19,7 +19,7 @@ __global__ void kernel(int a, int b){
 // CHECK-NEXT:   int a;
 // CHECK-NEXT: public:
 // CHECK-NEXT:   void run(){
-// CHECK-NEXT:     dpct::get_default_queue().submit(
+// CHECK-NEXT:     dpct::get_out_of_order_queue().submit(
 // CHECK-NEXT:       [&](sycl::handler &cgh) {
 // CHECK-NEXT:         int this_a_ct0 = this->a;
 // CHECK-NEXT:         int ptest_data_ct1 = ptest->data;
@@ -85,7 +85,7 @@ class TestName;
 template<class T>
 void runTest() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   typedef TestTemplate<T> TT;
   const void *karg1 = 0;
   const T *karg2 = 0;
@@ -196,7 +196,7 @@ template void runTest<float>();
 
 int main() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   void *karg1 = 0;
   LA *karg2 = 0;
   // CHECK:/*
@@ -250,8 +250,8 @@ __global__ void convert_kernel(T b){
 // CHECK-NEXT:void convert(){
 // CHECK-NEXT:  T b;
 // CHECK-NEXT:  {
-// CHECK-NEXT:  dpct::has_capability_or_fail(dpct::get_default_queue().get_device(), {sycl::aspect::fp64});
-// CHECK-NEXT:  dpct::get_default_queue().submit(
+// CHECK-NEXT:  dpct::has_capability_or_fail(dpct::get_out_of_order_queue().get_device(), {sycl::aspect::fp64});
+// CHECK-NEXT:  dpct::get_out_of_order_queue().submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
 // CHECK-NEXT:      sycl::local_accessor<int, 1> aaa_acc_ct1(sycl::range<1>(0), cgh);
 // CHECK-NEXT:      sycl::local_accessor<double, 2> bbb_acc_ct1(sycl::range<2>(8, 0), cgh);
@@ -533,7 +533,7 @@ __global__ void test_kernel();
 template<class T>
 void test_host() {
   std::vector<T> vec;
-  // CHECK:  dpct::get_default_queue().parallel_for<dpct_kernel_name<class test_kernel_{{[a-f0-9]+}}>>(
+  // CHECK:  dpct::get_out_of_order_queue().parallel_for<dpct_kernel_name<class test_kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:  sycl::nd_range<3>(sycl::range<3>(1, 1, vec.size()), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:  [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:    test_kernel();

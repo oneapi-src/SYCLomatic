@@ -14,7 +14,7 @@ void my_error_checker(T ReturnValue, char const *const FuncName) {}
 //CHECK: template<typename T>
 //CHECK-NEXT: void test(){
 //CHECK-NEXT:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
-//CHECK-NEXT:   sycl::queue &q_ct1 = dev_ct1.default_queue();
+//CHECK-NEXT:   sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 //CHECK-NEXT:   int i = 0;
 //CHECK-NEXT:   T** ptr;
 //CHECK-NEXT:   T* array[10];
@@ -36,7 +36,7 @@ __device__ float d_A_static[10];
 
 int main(){
     //CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-    //CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+    //CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 
     float **data = NULL;
     float *d_A = NULL;
@@ -76,19 +76,19 @@ int main(){
     // CHECK: (*&stream)->prefetch(a,100);
     cudaMemPrefetchAsync (a, 100, deviceID, *&stream);
 
-    // CHECK: err = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100));
+    // CHECK: err = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(a,100));
     err = cudaMemPrefetchAsync(a, 100, deviceID);
 
-    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100)));
+    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(a,100)));
     MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, deviceID, NULL));
 
-    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100)));
+    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(a,100)));
     MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, deviceID, 0));
 
-    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100)));
+    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(a,100)));
     MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, deviceID, nullptr));
 
-    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::cpu_device().default_queue().prefetch(a,100)));
+    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::cpu_device().in_order_queue().prefetch(a,100)));
     MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, cudaCpuDeviceId, nullptr));
 
     //CHECK: stream_array[0]->memcpy(h_A, d_A, size2);
@@ -121,16 +121,16 @@ int foo() {
     // CHECK: (*&stream)->prefetch(a,100);
     cudaMemPrefetchAsync (a, 100, deviceID, *&stream);
 
-    // CHECK: err = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100));
+    // CHECK: err = DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(a,100));
     err = cudaMemPrefetchAsync(a, 100, deviceID);
 
-    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100)));
+    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(a,100)));
     MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, deviceID, NULL));
 
-    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100)));
+    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(a,100)));
     MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, deviceID, 0));
 
-    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(a,100)));
+    // CHECK: MY_ERROR_CHECKER(DPCT_CHECK_ERROR(dpct::dev_mgr::instance().get_device(deviceID).in_order_queue().prefetch(a,100)));
     MY_ERROR_CHECKER(cudaMemPrefetchAsync(a, 100, deviceID, nullptr));
     return 0;
 }
@@ -405,7 +405,7 @@ __global__ void MyKernel(cudaPitchedPtr devPitchedPtr,
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1049:0: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:  */
-// CHECK-NEXT:  dpct::get_default_queue().parallel_for(
+// CHECK-NEXT:  dpct::get_in_order_queue().parallel_for(
 // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 100) * sycl::range<3>(1, 1, 512), sycl::range<3>(1, 1, 512)),
 // CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:      MyKernel(devPitchedPtr, width, height, depth);
