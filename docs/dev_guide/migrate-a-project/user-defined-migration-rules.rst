@@ -1,3 +1,5 @@
+.. _user_define_rule_ref:
+
 User-defined Migration Rules
 ============================
 
@@ -52,7 +54,7 @@ Migration rules are specified in YAML files. A single rule file may contain mult
      - Required. Specifies the priority of the rule: ``Takeover`` > ``Default`` > ``Fallback``.
        When there are rule conflicts, the rule with higher priority will take precedence.
    * - Kind
-     - ``Macro`` | ``API`` | ``Header`` | ``Type`` | ``Class`` | ``Enum``
+     - ``Macro`` | ``API`` | ``Header`` | ``Type`` | ``Class`` | ``Enum`` | ``DisableAPIMigration`` | ``PatternRewriter``
      - Required. Specifies the rule type.
    * - In
      - String value
@@ -78,6 +80,8 @@ Migration rules are specified in YAML files. A single rule file may contain mult
    * - Postfix
      - String value
      - Specifies the postfix of a Header rule type. For example: ``#endif ...``
+   * - Subrules
+     - Specifies the subrules for PatternRewriter rule type. For more detail please refernce :ref:`_pattern_rewriter_rule_ref`.
 
 
 For example, the following user-defined migration rule file demonstrates different
@@ -134,7 +138,22 @@ rule types. The behavior of each rule is explained in the corresponding comment:
      In: OldType
      Out: NewType
      Includes: []
-
+   - Rule: disable_rule                                   # Disable the migration of an API
+     Kind: DisableAPIMigration
+     Priority: Takeover
+     In: foo                                              # Disable the migration of foo
+     Out: ""
+     Includes: []
+   - Rule: post_migration_rewriter_rule                   # For more detail, please reference :ref:`_pattern_rewriter_rule_ref`
+     Kind: PatternRewriter
+     Priority: Takeover
+     In: my_max(${args});
+     Out: my_min(${args});
+     Includes: []
+     Subrules:
+       args:
+         In: a
+         Out: b
    ...                                                    # [YAML syntax] End the document
 
 
