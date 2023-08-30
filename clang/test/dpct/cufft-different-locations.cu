@@ -195,7 +195,7 @@ cufftResult foo1(cufftHandle plan) {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:return DPCT_CHECK_ERROR(plan->commit(&dpct::get_default_queue(), 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size));
+  //CHECK-NEXT:return DPCT_CHECK_ERROR(plan->commit(&dpct::get_out_of_order_queue(), 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size));
   return cufftMakePlanMany(plan, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);
 }
 
@@ -211,7 +211,7 @@ cufftResult foo3(cufftHandle plan) {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(&dpct::get_default_queue(), 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size);
+  //CHECK-NEXT:plan->commit(&dpct::get_out_of_order_queue(), 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size);
   cufftMakePlanMany(plan, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);
 }
 

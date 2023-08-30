@@ -56,7 +56,7 @@ __global__ void kernel4() {
 int main() {
 
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK: sycl::queue &q_ct1 = dev_ct1.in_order_queue();
 
   auto BS = dim3(1);
   // CHECK: q_ct1.parallel_for(

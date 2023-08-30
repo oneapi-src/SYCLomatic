@@ -705,7 +705,7 @@ public:
 // The original source of the functions calculate_max_active_wg_per_xecore and
 // calculate_max_potential_wg were under the license below:
 //
-// Copyright Intel Corporation
+// Copyright (C) Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal

@@ -22,7 +22,7 @@ __global__ void f() {
 }
 
 int main() {
-  // CHECK: dpct::get_default_queue().submit(
+  // CHECK: dpct::get_in_order_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK: /*
   // CHECK-NEXT: DPCT1101:{{[0-9]+}}: 'S' expression was replaced with a value. Modify the code to use the original expression, provided in comments, if it is correct.

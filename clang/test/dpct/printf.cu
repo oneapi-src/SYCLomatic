@@ -32,7 +32,7 @@ void host_test() {
 }
 
 int main() {
-  // CHECK:  dpct::get_default_queue().submit(
+  // CHECK:  dpct::get_out_of_order_queue().submit(
   // CHECK-NEXT:    [&](sycl::handler &cgh) {
   // CHECK-NEXT:      sycl::stream [[STREAM:stream_ct1]](64 * 1024, 80, cgh);
   // CHECK-EMPTY:

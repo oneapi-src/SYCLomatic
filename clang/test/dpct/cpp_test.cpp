@@ -251,7 +251,7 @@ __global__ void testKernel(int L, int M, int N) {
 
 int kernel_test() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
+  // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.out_of_order_queue();
   dim3 griddim = 2;
   dim3 threaddim = 32;
   void *karg1 = 0;
