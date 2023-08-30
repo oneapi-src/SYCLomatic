@@ -13483,12 +13483,16 @@ void NamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     } else if (MapNames::MathFuncImpledWithNewRewriter.count(
                    UD->getNameAsString()) &&
                UD->getBeginLoc().isFileID() && UD->getEndLoc().isFileID()) {
-      const NestedNameSpecifier *Qualifier = UD->getQualifier();
+      const NestedNameSpecifier *Specifier = UD->getQualifier();
       if (UD->getCanonicalDecl()) {
-        Qualifier = UD->getCanonicalDecl()->getQualifier();
+        Specifier = UD->getCanonicalDecl()->getQualifier();
       }
-      if (Qualifier && Qualifier->getKind() ==
-                           clang::NestedNameSpecifier::SpecifierKind::Global) {
+      if (Specifier &&
+          ((Specifier->getKind() ==
+            clang::NestedNameSpecifier::SpecifierKind::Global) ||
+           (Specifier->getKind() ==
+                clang::NestedNameSpecifier::SpecifierKind::Namespace &&
+            Specifier->getAsNamespace()->getNameAsString() == "std"))) {
         auto NextTok = Lexer::findNextToken(
             End, SM, DpctGlobalInfo::getContext().getLangOpts());
         if (NextTok.has_value() && NextTok.value().is(tok::semi)) {
